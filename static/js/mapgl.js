@@ -15,12 +15,15 @@
 import * as pkg from './index.js';
 
 let map;  // carte de l'app
-let webgl;  // quel moteur graphique est utilisé
+let engine;  // quel moteur graphique est utilisé
 // les couches de cartographie
 let OSMLayer;
 let stamenWatercolorLayer;
 let stamenTonerLayer;
 let vectorTileLayer;
+// couche de points
+let vectorLayer;
+let features;
 
 
 // Initialisation de la carte
@@ -197,14 +200,9 @@ for (let mapLayer of mapChoices){
 // Fonction pour ajouter les données GeoJSON à la source vectorielle au chargement du GeoJSON
 export function addVector(data) {
     // Lire les entités GeoJSON
-    const features = new ol.format.GeoJSON().readFeatures(data, {
+    features = new ol.format.GeoJSON().readFeatures(data, {
         dataProjection: 'EPSG:4326',  // Projection des données GeoJSON
         featureProjection: 'EPSG:3857' // Projection de la carte
-    });
-
-    // Créer une source vectorielle avec les entités
-    const vectorSource = new ol.source.Vector({
-        features: features // Ajouter les entités lues
     });
 
     // selon que l'on choisisse webgl ou non on affiche les points avec le bon moteur
@@ -213,14 +211,19 @@ export function addVector(data) {
     if (engine == "webgl"){
         displayWebGLPoints(features);
     } else {
-        displayAllPoints2D(vectorSource);
+        displayAllPoints2D(features);
     }
     
 }
 
 // affichage des points 2D
-function displayAllPoints2D(vectorSource){
-    const vectorLayer = new ol.layer.Vector({
+function displayAllPoints2D(features){
+    // Créer une source vectorielle avec les entités
+    const vectorSource = new ol.source.Vector({
+        features: features // Ajouter les entités lues
+    });
+
+    vectorLayer = new ol.layer.Vector({
         source: vectorSource,
         style: new ol.style.Style({
             image: new ol.style.Circle({
@@ -239,7 +242,7 @@ function displayWebGLPoints(features){
     let vectorSourceGL = new ol.source.Vector();
 
     // Création de la couche vectorielle en utilisant la source vectorielle
-    let vectorLayer = new ol.layer.Vector({
+    vectorLayer = new ol.layer.Vector({
         source: vectorSourceGL
     });    
     // Ajout de la couche vectorielle à la carte
@@ -248,3 +251,18 @@ function displayWebGLPoints(features){
     vectorSourceGL.addFeatures(features);
 }
 
+
+export function refreshPoints(engine2){
+    map.removeLayer(vectorLayer);
+    console.log('remove')
+    console.log(engine2)
+    if (engine2 == "webgl"){
+        displayWebGLPoints(features);
+    } else {
+        displayAllPoints2D(features);
+    }
+}
+
+
+// TODO Fusionner les deux fonctions ci-dessus.
+// Mettre le switch dans la bonne position

@@ -1,6 +1,6 @@
 {
     "options": {
-        "engine": "webgl"
+        "engine": "2d"
     },
     "map": {
         "default": "stamenToner",

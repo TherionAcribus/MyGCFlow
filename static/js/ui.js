@@ -29,6 +29,22 @@ Array.from(tonerStyleElements).forEach(function(element) {
     element.addEventListener("click", changeStamenTonerStyle);
 });
 
+// OPTIONS 
+const switchEngine = document.getElementById('switchEngine');
+switchEngine.addEventListener('change', changeEngine);
+
+
+// ----------- OPTIONS DE L'APP ------------
+
+function changeEngine() {
+    let engine = switchEngine.checked ? "webgl" : "2D";
+    console.log(switchEngine.checked)
+    let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
+    optionsValues.options.engine = engine;
+    localStorage.setItem('optionsValues', JSON.stringify(optionsValues));
+    console.log("E", engine)
+    pkg.refreshPoints(engine); 
+}
 
 //  ------- CARTE VECTORIELLE -------
 
