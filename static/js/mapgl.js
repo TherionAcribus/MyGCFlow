@@ -4,34 +4,19 @@
 // CARTES
 // TODO Création de différents profils pour les cartes vectorielles (V2)
 // TODO Pour Stamen Toner, il est à priori possible d'avoir 3 types de layers avec ou non route / labels et possibilité choisir police labels (V2)
+// TODO Watercolor, on peut ajouter labels
+// TODO Vectorielle, il y a des version avec regions
 
 // Utilisation d'une localStorage pour stocker les options de la carte
 
 // Import des modules nécessaires d'OpenLayers
-import Map from 'ol/Map';
-import VectorSource from 'ol/source/Vector';
-import Vector from 'ol/source/Vector';
-import GeoJSON from 'ol/format/GeoJSON';
-import View from 'ol/View';
-import TileLayer from 'ol/layer/Tile';
-import OSM from 'ol/source/OSM';
-import StadiaMaps from 'ol/source/StadiaMaps.js';
-import MVT from 'ol/format/MVT.js';
-import OGCVectorTile from 'ol/source/OGCVectorTile.js';
-import VectorTileLayer from 'ol/layer/VectorTile.js';
-import { fromLonLat } from 'ol/proj';
-import WebGLPointsLayer from 'ol/layer/WebGLPoints';
-import Point from 'ol/geom/Point';
-import Feature from 'ol/Feature';
-import VectorLayer from 'ol/layer/Vector';
-import { Fill, Stroke, Style } from 'ol/style';
-import CircleStyle from 'ol/style/Circle';
 
 
-import * as pkg from './index';
+
+import * as pkg from './index.js';
 
 let map;  // carte de l'app
-let vectorSource = new VectorSource();  // Source pour ajouter les points GeoJSON
+let vectorSource = new ol.layer.Vector();  // Source pour ajouter les points GeoJSON
 // les couches de cartographie
 let OSMLayer;
 let stamenWatercolorLayer;
@@ -41,11 +26,10 @@ let vectorTileLayer;
 
 // Initialisation de la carte
 export function createMap(){
-    alert("createMap")
-    map = new Map({
+    map = new ol.Map({
         target: 'map',
         layers: [],
-        view: new View({
+        view: new ol.View({
             center: [49, 6],
             zoom: 3
         }),
@@ -56,18 +40,18 @@ export function createMap(){
 
 
 // ajoute les différents layers de cartes à la map et affiche la bonne
-export function addMaps(){
-    console.log("Add MAPS")
+export function addMaps() {
 
     let defaultSettings = JSON.parse(localStorage.getItem('optionsValues')).map;
 
-    OSMLayer = new TileLayer({
-        source: new OSM()
+    // Utilisation de l'objet global 'ol' pour accéder aux classes d'OpenLayers
+    OSMLayer = new ol.layer.Tile({
+        source: new ol.source.OSM()
     });
     map.addLayer(OSMLayer);
 
-    stamenWatercolorLayer = new TileLayer({
-        source: new StadiaMaps({layer: 'stamen_watercolor'})
+    stamenWatercolorLayer = new ol.layer.Tile({
+        source: new ol.source.StadiaMaps({layer: 'stamen_watercolor'})
     });
     map.addLayer(stamenWatercolorLayer);
     stamenWatercolorLayer.setVisible(false);
@@ -75,41 +59,51 @@ export function addMaps(){
     // Choix du type de Toner par défaut
     let stamenLayer;
     if (defaultSettings.stamenToner.type == "light") {
-        stamenLayer = 'stamen_toner_lite'
+        stamenLayer = 'toner-lite'
     } else if (defaultSettings.stamenToner.type == "dark") {
-        stamenLayer = 'stamen_toner'
+        stamenLayer = 'toner'
     }
 
-    stamenTonerLayer = new TileLayer({
-        source: new StadiaMaps({layer: stamenLayer})
+    stamenTonerLayer = new ol.layer.Tile({
+        source: new ol.source.StadiaMaps({layer: "stamen_toner_lite"})
     });
     map.addLayer(stamenTonerLayer);
     stamenTonerLayer.setVisible(false);
 
-    vectorTileLayer = new VectorTileLayer({
-        source: new OGCVectorTile({
-            url: 'https://maps.gnosis.earth/ogcapi/collections/NaturalEarth:cultural:ne_10m_admin_0_countries/tiles/WebMercatorQuad',
-            format: new MVT(),
+    vectorTileLayer = new ol.layer.VectorTile({
+        declutter: true,
+        source: new ol.source.VectorTile({
+          maxZoom: 15,
+          format: new ol.format.MVT({
+            idProperty: 'iso_a3',
+          }),
+          url:
+            'https://ahocevar.com/geoserver/gwc/service/tms/1.0.0/' +
+            'ne:ne_10m_admin_0_countries@EPSG%3A900913@pbf/{z}/{x}/{-y}.pbf',
         }),
-        background: defaultSettings.vectorMap.background,
-        style: {
-            'stroke-width': defaultSettings.vectorMap.strokeWidth,
-            'stroke-color': defaultSettings.vectorMap.strokeColor,
-            'fill-color': defaultSettings.vectorMap.fillColor,
-        },
+        style: new ol.style.Style({
+            stroke: new ol.style.Stroke({
+                width: defaultSettings.vectorMap.strokeWidth,
+                color: defaultSettings.vectorMap.strokeColor
+            }),
+            fill: new ol.style.Fill({
+                color: defaultSettings.vectorMap.fillColor
+            })
+        })
     });
+
     map.addLayer(vectorTileLayer);
-    vectorTileLayer.setVisible(false);    
+    vectorTileLayer.setVisible(false);  
 }
 
 // rafraîchit la carte VectorMap quand on change ses proprietés
 export function refreshVectorMap(newValues){
-    vectorTileLayer.setStyle(new Style({
-        stroke: new Stroke({
+    vectorTileLayer.setStyle(new ol.style.Style({
+        stroke: new ol.style.Stroke({
             color: newValues.strokeColor,
             width: newValues.strokeWidth
         }),
-        fill: new Fill({
+        fill: new ol.style.Fill({
             color: newValues.fillColor
         }),
     }));
@@ -127,7 +121,7 @@ export function refreshStamenTonerMap(newValues){
     } else if (newValues.type == "dark") {
         layerName = 'stamen_toner';
     }
-    stamenTonerLayer.setSource(new StadiaMaps({layer: layerName}));
+    stamenTonerLayer.setSource(new ol.source.StadiaMaps({layer: layerName}));
 }
 
 
@@ -142,7 +136,7 @@ export function centerMap(){
     // Coordonnées du centre de la France en longitude et latitude
     const franceCenterLonLat = [2.2137, 46.2276];
     // Conversion des coordonnées en EPSG:3857 pour OpenLayers
-    const franceCenterWebMercator = fromLonLat(franceCenterLonLat);
+    const franceCenterWebMercator = ol.proj.fromLonLat(franceCenterLonLat);
     map.getView().setCenter(franceCenterWebMercator);
     map.getView().setZoom(6); // Ajustez le niveau de zoom selon vos besoins
 }
@@ -204,13 +198,13 @@ for (let mapLayer of mapChoices){
 // Fonction pour ajouter les données GeoJSON à la source vectorielle au chargement du GeoJSON
 export function addVector(data) {
     // Lire les entités GeoJSON
-    const features = new GeoJSON().readFeatures(data, {
+    const features = new ol.format.GeoJSON().readFeatures(data, {
         dataProjection: 'EPSG:4326',  // Projection des données GeoJSON
         featureProjection: 'EPSG:3857' // Projection de la carte
     });
 
     // Créer une source vectorielle avec les entités
-    const vectorSource = new Vector({
+    const vectorSource = new ol.source.Vector({
         features: features // Ajouter les entités lues
     });
 
@@ -219,13 +213,13 @@ export function addVector(data) {
 
 
 function displayAllPoints2D(vectorSource){
-    const vectorLayer = new VectorLayer({
+    const vectorLayer = new ol.layer.Vector({
         source: vectorSource,
-        style: new Style({
-            image: new CircleStyle({
+        style: new ol.style.Style({
+            image: new ol.style.Circle({
                 radius: 5,
-                fill: new Fill({color: 'red'}),
-                stroke: new Stroke({color: 'black', width: 1})
+                fill: new ol.style.Fill({color: 'red'}),
+                stroke: new ol.style.Stroke({color: 'black', width: 1})
             })
         })
     });

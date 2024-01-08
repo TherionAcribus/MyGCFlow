@@ -4,22 +4,11 @@ from flask import Flask, render_template, jsonify, request, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_cors import cross_origin
-import os
-import sys
 from bdd import uploadBdd, get_progress_step, db_infos, create_geojson
 
-#base_dir = '.'
-#if hasattr(sys, '_MEIPASS'):
-#    base_dir = os.path.join(sys._MEIPASS)
-
 app = Flask(__name__)
-#@app.route('/js/<path:filename>')
-#def send_js(filename):
-#    print("ROUTE", app.static_folder, filename)
-#    return send_from_directory(app.static_folder, filename)
 
 CORS(app)
-window = webview.create_window("Geocaching", app)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///geocaching.db'
 db = SQLAlchemy(app)
@@ -86,5 +75,5 @@ def get_geojson_points():
 if __name__ == '__main__':
     # ouverture automatique du navigateur, pour l'instant en pause
     #webview.start()
-    webbrowser.open('http://127.0.0.1:5000')
+    #webbrowser.open('http://127.0.0.1:5000')
     app.run(debug=True)

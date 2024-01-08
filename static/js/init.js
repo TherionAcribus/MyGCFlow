@@ -4,8 +4,6 @@
 // npm start
 
 // Importation de Materialize CSS et JS
-import 'materialize-css/dist/css/materialize.css';
-import M from 'materialize-css';
 
 export let optionsValuesCache = "rien";
 
@@ -13,7 +11,7 @@ export let optionsValuesCache = "rien";
 //import '../js/materialize-colorpicker.min.js';
 // TODO : A implanter ou a supprimer
 
-import * as pkg from './index';
+import * as pkg from './index.js';
 
 document.addEventListener('DOMContentLoaded', function() {   
     // initialisation des elements de Materialize
