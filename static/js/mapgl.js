@@ -12,11 +12,10 @@
 // Import des modules nécessaires d'OpenLayers
 
 
-
 import * as pkg from './index.js';
 
 let map;  // carte de l'app
-let vectorSource = new ol.layer.Vector();  // Source pour ajouter les points GeoJSON
+let webgl;  // quel moteur graphique est utilisé
 // les couches de cartographie
 let OSMLayer;
 let stamenWatercolorLayer;
@@ -208,10 +207,18 @@ export function addVector(data) {
         features: features // Ajouter les entités lues
     });
 
-    displayAllPoints2D(vectorSource);
+    // selon que l'on choisisse webgl ou non on affiche les points avec le bon moteur
+    let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
+    engine = optionsValues.options.engine;
+    if (engine == "webgl"){
+        displayWebGLPoints(features);
+    } else {
+        displayAllPoints2D(vectorSource);
+    }
+    
 }
 
-
+// affichage des points 2D
 function displayAllPoints2D(vectorSource){
     const vectorLayer = new ol.layer.Vector({
         source: vectorSource,
@@ -225,7 +232,19 @@ function displayAllPoints2D(vectorSource){
     });
     
     map.addLayer(vectorLayer);
-    console.log("add")
 }
 
+// affichage des points WebGL
+function displayWebGLPoints(features){
+    let vectorSourceGL = new ol.source.Vector();
+
+    // Création de la couche vectorielle en utilisant la source vectorielle
+    let vectorLayer = new ol.layer.Vector({
+        source: vectorSourceGL
+    });    
+    // Ajout de la couche vectorielle à la carte
+    map.addLayer(vectorLayer);
+
+    vectorSourceGL.addFeatures(features);
+}
 

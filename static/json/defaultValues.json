@@ -1,4 +1,7 @@
 {
+    "options": {
+        "engine": "webgl"
+    },
     "map": {
         "default": "stamenToner",
         "vectorMap": {"strokeWidth": 0.6,

@@ -5,8 +5,6 @@
 
 // Importation de Materialize CSS et JS
 
-export let optionsValuesCache = "rien";
-
 //import '../css/materialize-colorpicker.min.css';
 //import '../js/materialize-colorpicker.min.js';
 // TODO : A implanter ou a supprimer
