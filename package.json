@@ -1,0 +1,25 @@
+{
+  "name": "GCMap",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "source": "templates/app.html",
+  "scripts": {
+    "start": "parcel templates/app.html",
+    "build": "parcel build --dist-dir public"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/core": "^7.23.7",
+    "@babel/preset-env": "^7.23.7",
+    "buffer": "^6.0.3",
+    "parcel": "^2.11.0"
+  },
+  "dependencies": {
+    "jquery": "^3.7.1",
+    "materialize-css": "^1.0.0-rc.2",
+    "ol": "^8.2.0"
+  }
+}

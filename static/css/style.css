@@ -1,0 +1,21 @@
+.btn-image {
+    position: relative; /* Position relative pour permettre le positionnement absolu du texte à l'intérieur */
+    overflow: hidden;
+    padding: 0;
+}
+
+.btn-image img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.btn-text {
+    position: absolute;
+    top: 50%; /* Centrer verticalement */
+    left: 50%; /* Centrer horizontalement */
+    transform: translate(-50%, -50%); /* Ajustement fin pour centrer parfaitement */
+    color: white; /* Couleur du texte */
+    font-weight: bold; /* Style du texte */
+    /* Autres styles de texte si nécessaire */
+}

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <link rel="stylesheet" href= "../static/css/style.css" />
+        <title>My Geocaching Map</title>
+    </head>
+
+    <body>
+        <main>
+            <!-- Carte -->
+            <div id="map" style="width: 100%; height: 600px;"></div>
+
+
+            <!-- Modal  -->
+            <div id="modal_loading" class="modal">
+                <div class="modal-content">
+                    <h4>Chargement du fichier</h4>
+                    <p>Chargement du fichier .gpx en cours</p>
+                    <div class="progress">
+                        <div id="progressBar" class="determinate" style="width: 0%"></div>
+                    </div>
+                    <div id="progressText"></div>
+                </div>
+                <div class="modal-footer">
+                <a href="#!" class="modal-close waves-effect waves-green btn-flat">Annuler</a>
+                </div>
+            </div>
+
+
+            <!-- Tabs -->
+            <div class="row">
+                <div class="col s12">
+                    <ul class="tabs">
+                        <li class="tab col s3"><a class="active" href="#bdd">BDD</a></li>
+                        <li class="tab col s3"><a href="#maps">Cartes</a></li>                        
+                        <li class="tab col s3 disabled"><a href="#test3">Disabled Tab</a></li>
+                        <li class="tab col s3"><a href="#pointAnimation">Animation du point</a></li>
+                    </ul>
+                </div>
+        
+                
+                <!-- Tabs pour la base de données -->
+                <div id="bdd" class="col s12">
+                    <div class="row">
+                        <div class="col s12">
+                            <ul class="tabs">
+                                <li class="tab col s3"><a class="active" href="#chargement">Chargement</a></li>
+                                <li class="tab col s3"><a href="#bddd">Options de la base de données</a></li>
+                                <li class="tab col s3"><a href="#contenu">Contenu</a></li>
+                                <li class="tab col s3"><a href="#test4">Test 4</a></li>
+                            </ul>
+                        </div>
+                        <div id="chargement" class="col s12">
+                            <form class="col s6" id="uploadBddForm">
+                                <input type="file" id="file-input" name="file" accept=".gpx" />
+                                <button type="submit">Envoyer</button>
+                            </form>
+                            <div id="infosBDD" class="col s6" >Aucune base de données chargée</div>
+                        </div>
+                        <div id="bddd" class="col s12">Test 2</div>
+                        <div id="contenu" class="col s12">Test 3</div>
+                        <div id="test4" class="col s12">Test 4</div>
+                    </div>
+                </div>
+
+
+                <!-- Tabs pour la carte -->
+                <div id="maps" class="col s12">
+                    <h3 class="center-align">Choix de la carte</h3>
+                    <div>
+                        <div class="col s12">
+                            <div class="col s3">
+                                <a id="OSM" class="changeMap btn-large waves-effect waves-light">
+                                    <img src="../static/images/osm.png" alt="Description" style="width: 100px; height: 100px;">
+                                    <span class="btn-text black-text">OSM</span>
+                                </a>
+                            </div>
+                            <div class="col s3">
+                                <a id="stamenToner" class="changeMap btn-large waves-effect waves-light">
+                                    <img src="../static/images/stamenToner.png" alt="Description" style="width: 100px; height: 100px;">
+                                    <span class="btn-text black-text">stamenToner</span>
+                                </a>
+                            </div>
+                            <div class="col s3">
+                                <a id="vectorMap" class="changeMap btn-large waves-effect waves-light">
+                                    <img src="../static/images/vector.png" alt="Description" style="width: 100px; height: 100px;">
+                                    <span class="btn-text black-text">Vectorielle</span>
+                                </a>
+                            </div>
+                            <div class="col s3">
+                                <a id="watercolor" class="changeMap btn-large waves-effect waves-light">
+                                    <img src="../static/images/watercolor.png" alt="Description" style="width: 100px; height: 100px;">
+                                    <span class="btn-text black-text">Watercolor</span>
+                                </a>
+                            </div>
+
+                        <div class="col s12" id="tonerMapOptions" style="display: none;">
+                            <h5 class="center-align">Options de la carte Stamen Toner</h5>
+                            <div class="row">
+                                <form class="col s12">
+                                    <!-- Color Pickers -->
+                                    <div class="col s6 center">
+                                        <a id="stamenTonerLight" class="changeTonerStyle btn-large waves-effect waves-light">
+                                            <img src="../static/images/stamenToner.png" alt="Description" style="width: 100px; height: 100px;">
+                                            <span class="btn-text black-text">Light</span>
+                                        </a>
+                                    </div>
+
+                                    <div class="col s6">
+                                        <a id="stamenTonerDark" class="changeTonerStyle btn-large waves-effect waves-light">
+                                            <img src="../static/images/stamerTonerDark.png" alt="Description" style="width: 100px; height: 100px;">
+                                            <span class="btn-text black-text">Dark</span>
+                                        </a>
+                                    </div>    
+                                </form>
+                            </div>
+                        </div>
+
+                    
+                    <div class="col s12" id="vectorMapOptions" style="display: block;">
+                        <h5 class="center-align">Options de la carte vectorielle</h5>
+                        <div class="row">
+                            <form class="col s12">
+                                <!-- Color Pickers -->
+                                <div class="input-field col s3">
+                                    <span>Couleur des bordures: </span>
+                                    <input type="color" id="fieldVectorMapStrokeColor" value="#ffffff">
+                                </div>
+
+                                <div class="input-field col s3">
+                                    <span>Couleur de remplissage: </span>
+                                    <input type="color" id="fieldVectorMapFillColor" value="#ffffff">
+                                </div>
+                                <div class="input-field col s3">
+                                    <span>Couleur de fond: </span>
+                                    <input type="color" id="fieldVectorMapBackgroundColor" value="#ffffff">
+                                </div>
+                        
+                                <!-- Input for Border Width -->
+                                <div class="input-field col s3">
+                                    <input type="number" id="fieldVectorMapStrokeWidth" value="0.6" min="0" step="0.1">
+                                    <label for="stroke-width">Stroke Width</label>
+                                </div>
+                            </form>
+                        </div>
+                    </div> <!-- fin Tab maps -->
+
+
+                    <div id="pointAnimation" class="col s12">
+                        <h3>Animation du point</h3>
+                        <div>
+                            Rien
+                        </div>
+                    </div>
+
+            </div>
+        
+
+        
+            </div>
+
+        </main>
+
+        <script type="module" src="../static/js/index.js"></script>
+        <!--<script src="{{ url_for('send_js', filename='index.js') }}"></script>-->
+
+    </body>
+</html>

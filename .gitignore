@@ -1,0 +1,9 @@
+node_modules
+node_modules
+output
+dist
+build
+.parcel-cache
+__pycache__
+virtual
+instance
