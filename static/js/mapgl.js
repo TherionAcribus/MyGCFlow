@@ -12,6 +12,10 @@
 // Import des modules nécessaires d'OpenLayers
 
 
+// TODO Fusionner les deux fonctions tout en bas.
+// Mettre le switch dans la bonne position
+// Aller lire le json s'il existe au lieu de recharger le fichier
+
 import * as pkg from './index.js';
 
 let map;  // carte de l'app
@@ -208,12 +212,22 @@ export function addVector(data) {
     // selon que l'on choisisse webgl ou non on affiche les points avec le bon moteur
     let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
     engine = optionsValues.options.engine;
+    selectEngineAndRefresh(engine);   
+}
+
+// fonction appelée au changement d'options graphique
+export function refreshPoints(engine){
+    map.removeLayer(vectorLayer);
+    selectEngineAndRefresh(engine);
+}
+
+// Envoie l'affichage des points de features dans le bon vecteur
+function selectEngineAndRefresh(engine){
     if (engine == "webgl"){
         displayWebGLPoints(features);
     } else {
         displayAllPoints2D(features);
     }
-    
 }
 
 // affichage des points 2D
@@ -252,17 +266,6 @@ function displayWebGLPoints(features){
 }
 
 
-export function refreshPoints(engine2){
-    map.removeLayer(vectorLayer);
-    console.log('remove')
-    console.log(engine2)
-    if (engine2 == "webgl"){
-        displayWebGLPoints(features);
-    } else {
-        displayAllPoints2D(features);
-    }
-}
 
 
-// TODO Fusionner les deux fonctions ci-dessus.
-// Mettre le switch dans la bonne position
+

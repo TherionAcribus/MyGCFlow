@@ -38,11 +38,9 @@ switchEngine.addEventListener('change', changeEngine);
 
 function changeEngine() {
     let engine = switchEngine.checked ? "webgl" : "2D";
-    console.log(switchEngine.checked)
     let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
     optionsValues.options.engine = engine;
     localStorage.setItem('optionsValues', JSON.stringify(optionsValues));
-    console.log("E", engine)
     pkg.refreshPoints(engine); 
 }
 
