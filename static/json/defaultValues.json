@@ -1,13 +1,13 @@
 {
     "options": {
-        "engine": "2d"
+        "engine": "webgl"
     },
     "map": {
         "default": "stamenToner",
         "vectorMap": {"strokeWidth": 0.6,
                     "strokeColor": "#8c8b8b",
-                    "fillColor": "#f7f7e9",
-                    "background": "#d1d1d1"
+                    "fillColor": "#8c8b8b",
+                    "background": "#8c8b8b"
         },
         "stamenToner": {"type": "light"}
     }

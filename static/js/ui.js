@@ -34,6 +34,29 @@ const switchEngine = document.getElementById('switchEngine');
 switchEngine.addEventListener('change', changeEngine);
 
 
+// initialisation les éléments des options par défaut
+export function init_ui(optionsValues) {
+    // ---------- OPTIONS ------------------
+    // switch 2D/3D
+    if (optionsValues.options.engine === "webgl") {
+        switchEngine.checked = true;
+    }
+    // ------- CARTE VECTORIELLE -------
+
+    // couleur de trait par défaut
+    cpStrokeColor.value = optionsValues.map.vectorMap.strokeColor;
+    // couleur de remplissage par défaut
+    cpFillColor.value = optionsValues.map.vectorMap.fillColor;
+    // couleur de fond par défaut
+    cpBackgroundColor.value = optionsValues.map.vectorMap.background;
+    // largeur de trait par défaut
+    strokeWidth.value = optionsValues.map.vectorMap.strokeWidth;
+    // ------- CARTE TONER -------
+    // deselectionne le bouton par défaut
+    changeButtonsStamenToner(optionsValues.map.stamenToner.type);
+}
+
+
 // ----------- OPTIONS DE L'APP ------------
 
 function changeEngine() {
@@ -107,7 +130,7 @@ function changeStamenTonerStyle(e){
 }
 
 // selectionne/deselectionne les boutons pour le Sous menu Stamen Toner au démarrage et au clic sur un des boutons
-export function changeButtonsStamenToner(style){
+function changeButtonsStamenToner(style){
     if (style == "dark"){
         btnStamenTonerLight.classList.remove('disabled');
         btnStamenTonerDark.classList.add('disabled');

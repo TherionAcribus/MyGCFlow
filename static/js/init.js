@@ -27,7 +27,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // centrer la carte
         pkg.centerMap();
         // mets les valeurs par défaut dans les formulaire
-        initForms(optionsValues);
+        //(optionsValues);
+        pkg.init_ui(optionsValues);
         // ... autres fonctions qui dépendent de optionsValues ... 
     });
     pkg.readBdd();
@@ -68,25 +69,5 @@ async function requeteDefaultValues(){
     }
 }
 
-// remplit les champs du formulaire avec les valeurs par défaut
-function initForms(optionsValues){
-    // ------- CARTE VECTORIELLE -------
-    // Champs pour les options de la carte vectorielle
-    const cpStrokeColor = document.getElementById('fieldVectorMapStrokeColor');
-    const cpFillColor = document.getElementById('fieldVectorMapFillColor');
-    const cpBackgroundColor = document.getElementById('fieldVectorMapBackgroundColor');
-    const strokeWidth = document.getElementById('fieldVectorMapStrokeWidth');
-    // couleur de trait par défaut
-    cpStrokeColor.value = optionsValues.map.vectorMap.strokeColor;
-    // couleur de remplissage par défaut
-    cpFillColor.value = optionsValues.map.vectorMap.fillColor;
-    // couleur de fond par défaut
-    cpBackgroundColor.value = optionsValues.map.vectorMap.background;
-    // largeur de trait par défaut
-    strokeWidth.value = optionsValues.map.vectorMap.strokeWidth;
-    // ------- CARTE TONER -------
-    // deselectionne le bouton par défaut
-    pkg.changeButtonsStamenToner(optionsValues.map.stamenToner.type);
-}
 
 
