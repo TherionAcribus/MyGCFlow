@@ -28,6 +28,24 @@ let vectorTileLayer;
 // couche de points
 let vectorLayer;
 let features;
+// couleurs GC par défaut
+let defaultGcColors;
+
+
+// récupère les couleurs GC par défaut dans le JSON 
+// (permet d'être facilement modifiable contrairement à un dict en dur)
+export async function requetedefaultGcColors(){
+    try {
+        const response = await fetch('http://localhost:5000/static/json/defaultGcColors.json');
+        if (!response.ok) {
+            throw new Error('Network response was not ok ' + response.statusText);
+        }
+        defaultGcColors = await response.json();
+        console.log(defaultGcColors)
+    } catch (error) {
+        console.error('There has been a problem with your fetch operation:', error);
+    }
+}
 
 
 // Initialisation de la carte
@@ -43,7 +61,6 @@ export function createMap(){
         controls: [] 
     });
 }
-
 
 // ajoute les différents layers de cartes à la map et affiche la bonne
 export function addMaps() {
@@ -237,19 +254,36 @@ function displayAllPoints2D(features){
         features: features // Ajouter les entités lues
     });
 
+    console.log("features : ", features)
+
     vectorLayer = new ol.layer.Vector({
         source: vectorSource,
-        style: new ol.style.Style({
-            image: new ol.style.Circle({
-                radius: 5,
-                fill: new ol.style.Fill({color: 'red'}),
-                stroke: new ol.style.Stroke({color: 'black', width: 1})
-            })
-        })
+        style: function(feature) {
+            return getStyle2D(feature);
+        }
     });
     
     map.addLayer(vectorLayer);
 }
+
+
+function getStyle2D(feature) {
+    // Type de la cache
+    var type = feature.get('type');
+
+    // Couleur par de la cache
+    var color = defaultGcColors[type] || 'gray'; // 'gray' est une couleur par défaut
+
+    // On retourne le style du point
+    return new ol.style.Style({
+        image: new ol.style.Circle({
+            radius: 5,
+            fill: new ol.style.Fill({color: color}),
+            stroke: new ol.style.Stroke({color: 'black', width: 1})
+        })
+    });
+}
+
 
 // affichage des points WebGL
 function displayWebGLPoints(features){
@@ -266,6 +300,9 @@ function displayWebGLPoints(features){
 }
 
 
-
+// changement du graphisme des points dans l'ui
+export function refreshPointStyle(pointStyle){
+    console.log(pointStyle);
+}
 
 

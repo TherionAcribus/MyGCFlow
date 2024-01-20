@@ -29,6 +29,14 @@ Array.from(tonerStyleElements).forEach(function(element) {
     element.addEventListener("click", changeStamenTonerStyle);
 });
 
+// POINTS
+// Colorpickers
+const cpPointBorderColor = document.getElementById('pointBorderColor');
+cpPointBorderColor.addEventListener('change', changePointStyleUI);
+const cpPointCenterColor = document.getElementById('pointCenterColor');
+cpPointCenterColor.addEventListener('change', changePointStyleUI);
+
+
 // OPTIONS 
 const switchEngine = document.getElementById('switchEngine');
 switchEngine.addEventListener('change', changeEngine);
@@ -41,6 +49,10 @@ export function init_ui(optionsValues) {
     if (optionsValues.options.engine === "webgl") {
         switchEngine.checked = true;
     }
+    // ---------- POINTS ------------------
+    cpPointBorderColor.value = optionsValues.point.border.color;
+    cpPointCenterColor.value = optionsValues.point.center.color;
+
     // ------- CARTE VECTORIELLE -------
 
     // couleur de trait par défaut
@@ -59,6 +71,7 @@ export function init_ui(optionsValues) {
 
 // ----------- OPTIONS DE L'APP ------------
 
+// passe de 2D à 3D et inversement
 function changeEngine() {
     let engine = switchEngine.checked ? "webgl" : "2D";
     let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
@@ -67,7 +80,23 @@ function changeEngine() {
     pkg.refreshPoints(engine); 
 }
 
+
+
+// ----------- POINTS ------------
+
+// recupère tous les changements liés aux points
+function changePointStyleUI(){
+    let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
+    optionsValues.point.border.color = cpPointBorderColor.value;
+    optionsValues.point.center.color = cpPointCenterColor.value;
+    localStorage.setItem('optionsValues', JSON.stringify(optionsValues));
+    // rafraichissement des points
+    pkg.refreshPointStyle(optionsValues.point);
+}
+
+
 //  ------- CARTE VECTORIELLE -------
+// TODO Faire comme pour les points : collecter tous les changements dans la même fonction
 
 // changement de couleur de trait
 function changecpStrokeColor() {

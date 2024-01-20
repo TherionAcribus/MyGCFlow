@@ -5,10 +5,24 @@
     "map": {
         "default": "stamenToner",
         "vectorMap": {"strokeWidth": 0.6,
-                    "strokeColor": "#8c8b8b",
-                    "fillColor": "#8c8b8b",
+                    "strokeColor": "#ffffff",
+                    "fillColor": "#000000",
                     "background": "#8c8b8b"
         },
         "stamenToner": {"type": "light"}
+    },
+    "point": {
+        "center" : {
+            "color": "#000000",
+            "size": 3,
+            "exist": true,
+            "gc": true
+        },
+        "border": {
+            "color": "#ff0022",
+            "size": 3,
+            "exist": true,
+            "gc": true
+        }
     }
 }

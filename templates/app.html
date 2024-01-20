@@ -21,13 +21,16 @@
                     <ul class="tabs">
                         <li class="tab col s3"><a class="active" href="#bdd">BDD</a></li>
                         <li class="tab col s3"><a href="#maps">Cartes</a></li>                        
-                        <li class="tab col s3 disabled"><a href="#test3">Disabled Tab</a></li>
+                        <li class="tab col s3"><a href="#points">Points</a></li>
                         <li class="tab col s3"><a href="#options">Préférences</a></li>
                     </ul>
                 </div>        
                 
                 <!-- Tabs pour la BDD -->
                 {% include 'menu_bdd.html' %}
+
+                <!-- Tabs pour le graphisme des points -->
+                {% include 'menu_points.html' %}
 
                 <!-- Tabs pour la carte -->
                 {% include 'menu_maps.html' %}
@@ -42,11 +45,15 @@
 
         </main>
 
+       
         <!-- Compiled and minified CSS -->
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
 
         <!-- Compiled and minified JavaScript -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+
+        <!-- COlorpicker -->
+        <script type="module" src="../static/js/materialize-colorpicker.min.js"></script>
 
         <!-- OpenLayers -->
         <script src="https://cdn.jsdelivr.net/npm/ol@v8.2.0/dist/ol.js"></script>

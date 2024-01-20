@@ -1,7 +1,6 @@
 // DEMARRAGE
 // .\virtual\Scripts\activate    
 // flask --app app.py --debug run
-// npm start
 
 // Importation de Materialize CSS et JS
 
@@ -11,11 +10,12 @@
 
 import * as pkg from './index.js';
 
-document.addEventListener('DOMContentLoaded', function() {   
+document.addEventListener('DOMContentLoaded', async function() {   
     // initialisation des elements de Materialize
     initTabs();
     initModals();
     pkg.createMap();
+    await pkg.requetedefaultGcColors();
     // check la présence d'une BDD et les affiche
     pkg.readBddValues();
     // recupération des options par défaut puis on initialise l'interface
@@ -68,6 +68,5 @@ async function requeteDefaultValues(){
         console.error('There has been a problem with your fetch operation:', error);
     }
 }
-
 
 

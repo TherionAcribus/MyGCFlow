@@ -1,0 +1,17 @@
+{
+    "Traditional Cache": "green", 
+    "Multi-cache": "orange", 
+    "Unknown Cache": "blue",
+    "Wherigo Cache": "blue", 
+    "Letterbox Hybrid": "blue",
+    "Earthcache": "lightblue", 
+    "Event Cache": "red",
+    "Giga-Event Cache": "red",
+    "Mega-Event Cache": "red",
+    "Cache In Trash Out Event": "red",
+    "Community Celebration Event": "red",
+    "GPS Adventures Exhibit": "red",
+    "Locationless (Reverse) Cache": "white",
+    "Virtual Cache": "lightblue",
+    "Webcam Cache": "lightblue"
+}
