@@ -4,37 +4,88 @@
     <h3>Graphisme des points</h3>
     <div>
         <form>
-            <p>
-                <label>
-                    <input class="with-gap" name="fillColorPoint" type="radio" value="gc"/>
-                    <span>Couleurs GC</span>
-                </label>
-            </p>
-            <p>
-                <label>
-                    <input class="with-gap" name="fillColorPoint" type="radio" value="none"/>
-                    <span>Pas de couleur</span>
-                </label>
-            </p>
-            <p>
-                <label>
-                    <input class="with-gap" name="fillColorPoint" type="radio" value="fix" />
-                    <span>Couleur unique</span>
-                </label>
-            </p>
+            <div class="col s6" id="centerOptions">
+                <div class="row">
+                    <!-- Slider -->
+                    <div class="col s6">
+                        <p class="range-field">
+                            <input type="range" id="sliderSizePoint" min="1" max="10" />
+                        </p>
+                    </div>
+                    
+                    <!-- Input Number -->
+                    <div class="col s6">
+                        <input type="number" id="inputSizePoint" min="1" max="10" />
+                    </div>            
+                </div>
 
-            <!-- Color Pickers Centre -->
-            <div class="input-field col s3">
-                <span>Couleur du centre: </span>
-                <input type="color" id="pointCenterColor" value="#ffffff">
+                <p>
+                    <label>
+                        <input class="with-gap" name="fillColorPoint" type="radio" value="gc"/>
+                        <span>Couleurs GC</span>
+                    </label>
+                </p>
+                <p>
+                    <label>
+                        <input class="with-gap" name="fillColorPoint" type="radio" value="none"/>
+                        <span>Pas de couleur</span>
+                    </label>
+                </p>
+                <p>
+                    <label>
+                        <input class="with-gap" name="fillColorPoint" type="radio" value="fix" />
+                        <span>Couleur unique</span>
+                    </label>
+                </p>
+
+                <!-- Color Pickers Centre -->
+                <div class="input-field col s3">
+                    <span>Couleur du centre: </span>
+                    <input type="color" id="pointCenterColor" value="#ffffff">
+                </div>
+
             </div>
 
-            <!-- Color Pickers Tours -->
-            <div class="input-field col s3">
-                <span>Couleur du contour: </span>
-                <input type="color" id="pointBorderColor" value="#ffffff">
-            </div>
+            <div class="col s6" id="borderOptions">
+                <div class="row">
+                    <!-- Slider -->
+                    <div class="col s6">
+                        <p class="range-field">
+                            <input type="range" id="sliderSizeBorder" min="1" max="10" />
+                        </p>
+                    </div>
+                    
+                    <!-- Input Number -->
+                    <div class="col s6">
+                        <input type="number" id="inputSizeBorder" min="1" max="10" />
+                    </div>            
+                </div>
 
+                <p>
+                    <label>
+                        <input class="with-gap" name="borderColorPoint" type="radio" value="gc"/>
+                        <span>Couleurs GC</span>
+                    </label>
+                </p>
+                <p>
+                    <label>
+                        <input class="with-gap" name="borderColorPoint" type="radio" value="none"/>
+                        <span>Pas de couleur</span>
+                    </label>
+                </p>
+                <p>
+                    <label>
+                        <input class="with-gap" name="borderColorPoint" type="radio" value="fix" />
+                        <span>Couleur unique</span>
+                    </label>
+                </p>
+                
+                <!-- Color Pickers Tours -->
+                <div class="input-field col s3">
+                    <span>Couleur du contour: </span>
+                    <input type="color" id="pointBorderColor" value="#ffffff">
+                </div>
+            </div>
 
         </form>
 

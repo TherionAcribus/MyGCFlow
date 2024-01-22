@@ -13,13 +13,13 @@
     },
     "point": {
         "center" : {
-            "color": "#000000",
+            "color": "#ff00ff",
             "size": 3,
             "mode": "fix"
         },
         "border": {
-            "color": "#ff0022",
-            "size": 3,
+            "color": "#000000",
+            "size": 10,
             "mode": "gc"
         }
     }

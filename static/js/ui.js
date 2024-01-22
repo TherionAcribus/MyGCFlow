@@ -31,15 +31,34 @@ Array.from(tonerStyleElements).forEach(function(element) {
 
 // POINTS
 // Colorpickers
-const cpPointBorderColor = document.getElementById('pointBorderColor');
-cpPointBorderColor.addEventListener('change', changePointStyleUI);
+// --- in
 const cpPointCenterColor = document.getElementById('pointCenterColor');
 cpPointCenterColor.addEventListener('change', changePointStyleUI);
+// -- out
+const cpPointBorderColor = document.getElementById('pointBorderColor');
+cpPointBorderColor.addEventListener('change', changePointStyleUI);
 // Radio buttons
+// --- in
 const radioFillColorPoint = document.getElementsByName('fillColorPoint');
 radioFillColorPoint.forEach(radio => {
     radio.addEventListener('change', () => changePointStyleUI(radio));
 });
+// -- out
+const radioborderColorPoint = document.getElementsByName('borderColorPoint');
+radioborderColorPoint.forEach(radio => {
+    radio.addEventListener('change', () => changePointStyleUI(radio));
+});
+// sliders et input associé
+// --- in
+const sliderSizePoint = document.getElementById('sliderSizePoint');
+const inputSizePoint = document.getElementById('inputSizePoint');
+sliderSizePoint.addEventListener('change', changePointStyleUI);
+inputSizePoint.addEventListener('change', changePointStyleUI);
+// -- out
+const sliderSizeBorder = document.getElementById('sliderSizeBorder');
+const inputSizeBorder = document.getElementById('inputSizeBorder');
+sliderSizeBorder.addEventListener('change', changePointStyleUI);
+inputSizeBorder.addEventListener('change', changePointStyleUI);
 
 // OPTIONS 
 const switchEngine = document.getElementById('switchEngine');
@@ -64,6 +83,18 @@ export function init_ui(optionsValues) {
             break;
         }
     }
+    for (let radio of radioborderColorPoint) {
+        console.log(radio)
+        if (radio.value === optionsValues.point.border.mode) {
+            radio.checked = true;
+            break;
+        }
+    }
+    // synchronise sliders et input associés
+    synchronizeSliderAndInputCenter(optionsValues);
+    synchronizeSliderAndInputBorder(optionsValues);
+
+    
 
     
     // ------- CARTE VECTORIELLE -------
@@ -104,14 +135,52 @@ function changePointStyleUI(event){
     optionsValues.point.center.color = cpPointCenterColor.value;
     // radio buttons
     if (event.type == "radio") {
-        if (event.name = "fillColorPoint"){
+        console.log(event);
+        if (event.name == "fillColorPoint"){
             optionsValues.point.center.mode = event.value;
         }
+        else if (event.name == "borderColorPoint"){
+            optionsValues.point.border.mode = event.value;
+        }
     }
+    // sliders
+    optionsValues.point.center.size = inputSizePoint.value
+    optionsValues.point.border.size = inputSizeBorder.value
     // stockage
     localStorage.setItem('optionsValues', JSON.stringify(optionsValues));
     // rafraichissement des points
     pkg.refreshPoints(optionsValues);
+}
+
+function synchronizeSliderAndInputCenter(optionsValues) {
+    sliderSizePoint.oninput = function() {
+        inputSizePoint.value = this.value;
+    };
+
+    // Mise à jour du slider lors de la modification de l'input number
+    inputSizePoint.oninput = function() {
+        sliderSizePoint.value = this.value;
+    };
+
+    // reglage des compteurs
+    sliderSizePoint.value = optionsValues.point.center.size
+    inputSizePoint.value = optionsValues.point.center.size
+}
+
+
+function synchronizeSliderAndInputBorder(optionsValues) {
+    sliderSizeBorder.oninput = function() {
+        inputSizeBorder.value = this.value;
+    };
+
+    // Mise à jour du slider lors de la modification de l'input number
+    inputSizeBorder.oninput = function() {
+        sliderSizeBorder.value = this.value;
+    };
+
+    // reglage des compteurs
+    sliderSizeBorder.value = optionsValues.point.border.size
+    inputSizeBorder.value = optionsValues.point.border.size
 }
 
 
