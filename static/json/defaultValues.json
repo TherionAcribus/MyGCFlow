@@ -1,6 +1,6 @@
 {
     "options": {
-        "engine": "webgl"
+        "engine": "2d"
     },
     "map": {
         "default": "stamenToner",
@@ -15,14 +15,12 @@
         "center" : {
             "color": "#000000",
             "size": 3,
-            "exist": true,
-            "gc": true
+            "mode": "fix"
         },
         "border": {
             "color": "#ff0022",
             "size": 3,
-            "exist": true,
-            "gc": true
+            "mode": "gc"
         }
     }
 }

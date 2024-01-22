@@ -35,7 +35,11 @@ const cpPointBorderColor = document.getElementById('pointBorderColor');
 cpPointBorderColor.addEventListener('change', changePointStyleUI);
 const cpPointCenterColor = document.getElementById('pointCenterColor');
 cpPointCenterColor.addEventListener('change', changePointStyleUI);
-
+// Radio buttons
+const radioFillColorPoint = document.getElementsByName('fillColorPoint');
+radioFillColorPoint.forEach(radio => {
+    radio.addEventListener('change', () => changePointStyleUI(radio));
+});
 
 // OPTIONS 
 const switchEngine = document.getElementById('switchEngine');
@@ -50,9 +54,18 @@ export function init_ui(optionsValues) {
         switchEngine.checked = true;
     }
     // ---------- POINTS ------------------
+    // colorpickers
     cpPointBorderColor.value = optionsValues.point.border.color;
     cpPointCenterColor.value = optionsValues.point.center.color;
+    // radio buttons
+    for (let radio of radioFillColorPoint) {
+        if (radio.value === optionsValues.point.center.mode) {
+            radio.checked = true;
+            break;
+        }
+    }
 
+    
     // ------- CARTE VECTORIELLE -------
 
     // couleur de trait par défaut
@@ -75,9 +88,8 @@ export function init_ui(optionsValues) {
 function changeEngine() {
     let engine = switchEngine.checked ? "webgl" : "2D";
     let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
-    optionsValues.options.engine = engine;
     localStorage.setItem('optionsValues', JSON.stringify(optionsValues));
-    pkg.refreshPoints(engine); 
+    pkg.refreshPoints(optionsValues); 
 }
 
 
@@ -85,13 +97,21 @@ function changeEngine() {
 // ----------- POINTS ------------
 
 // recupère tous les changements liés aux points
-function changePointStyleUI(){
+function changePointStyleUI(event){
     let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
+    // colorpickers
     optionsValues.point.border.color = cpPointBorderColor.value;
     optionsValues.point.center.color = cpPointCenterColor.value;
+    // radio buttons
+    if (event.type == "radio") {
+        if (event.name = "fillColorPoint"){
+            optionsValues.point.center.mode = event.value;
+        }
+    }
+    // stockage
     localStorage.setItem('optionsValues', JSON.stringify(optionsValues));
     // rafraichissement des points
-    pkg.refreshPointStyle(optionsValues.point);
+    pkg.refreshPoints(optionsValues);
 }
 
 

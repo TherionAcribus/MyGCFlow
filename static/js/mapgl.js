@@ -228,38 +228,37 @@ export function addVector(data) {
 
     // selon que l'on choisisse webgl ou non on affiche les points avec le bon moteur
     let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
-    engine = optionsValues.options.engine;
-    selectEngineAndRefresh(engine);   
+    selectEngineAndRefresh(optionsValues);   
 }
 
 // fonction appelée au changement d'options graphique
-export function refreshPoints(engine){
+export function refreshPoints(optionValues){
     map.removeLayer(vectorLayer);
-    selectEngineAndRefresh(engine);
+    selectEngineAndRefresh(optionValues);
 }
 
 // Envoie l'affichage des points de features dans le bon vecteur
-function selectEngineAndRefresh(engine){
+function selectEngineAndRefresh(optionsValues){
+    console.log("OC", optionsValues)
+    engine = optionsValues.options.engine;
     if (engine == "webgl"){
-        displayWebGLPoints(features);
+        displayWebGLPoints(features, optionsValues.point);
     } else {
-        displayAllPoints2D(features);
+        displayAllPoints2D(features, optionsValues.point);
     }
 }
 
 // affichage des points 2D
-function displayAllPoints2D(features){
+function displayAllPoints2D(features, pointOptions){
     // Créer une source vectorielle avec les entités
     const vectorSource = new ol.source.Vector({
         features: features // Ajouter les entités lues
     });
 
-    console.log("features : ", features)
-
     vectorLayer = new ol.layer.Vector({
         source: vectorSource,
         style: function(feature) {
-            return getStyle2D(feature);
+            return getStyle2D(feature, pointOptions);
         }
     });
     
@@ -267,49 +266,57 @@ function displayAllPoints2D(features){
 }
 
 
-function getStyle2D(feature) {
+function getStyle2D(feature, pointOptions) {
     // Type de la cache
-    var type = feature.get('type');
+    var cacheType = feature.get('cache_type');
 
-    // Couleur par de la
-    var color = defaultGcColors[type] || 'gray'; // 'gray' est une couleur par défaut
+    // Couleur du centre du point
+    let fillColor;
+    if (pointOptions.center.mode == "gc") {
+        fillColor = defaultGcColors[cacheType] || 'gray'; // couleur par défaut
+    } else if (pointOptions.center.mode == "fix") {
+        fillColor = pointOptions.center.color
+    }
+    
 
     // Retournez le style OpenLayers pour cette entité
     return new ol.style.Style({
         image: new ol.style.Circle({
             radius: 5,
-            fill: new ol.style.Fill({color: color}),
+            fill: new ol.style.Fill({color: fillColor}),
             stroke: new ol.style.Stroke({color: 'black', width: 1})
         })
     });
 }
 
-
-
-// changement du graphisme des points dans l'ui
-export function refreshPointStyle(pointStyle){
-    console.log(pointStyle);
-}
-
-
-function displayWebGLPoints(features) {
+function displayWebGLPoints(features, pointOptions) {
     const vectorSource = new ol.source.Vector({
         url: 'static/geojson_data.json',
         format: new ol.format.GeoJSON(),
         wrapX: true,
       });
 
-    const pointStyle = {
-        'circle-radius': 2,
-          'circle-fill-color': [
+    let fillColor;
+    console.log('pointOptions : ', pointOptions)
+    if (pointOptions.center.mode == "gc") {
+        fillColor = [
             'match',
             ['get', 'cache_type'],
             ...Object.entries(defaultGcColors).flat(), // Object.entries pour obtenir un tableau de paires clé-valeur, puis flat pour aplatir le tableau en un seul niveau
             '#000000' // couleur par défaut
-        ],
-          'circle-rotate-with-view': false,
-          'circle-displacement': [0, 0],
-          'circle-opacity': 0.9
+        ]
+    } else if (pointOptions.center.mode == "fix") {
+        fillColor = pointOptions.center.color
+    }
+    console.log('fillColor : ', fillColor)
+
+
+    const pointStyle = {
+        'circle-radius': 2,
+        'circle-fill-color': fillColor,
+        'circle-rotate-with-view': false,
+        'circle-displacement': [0, 0],
+        'circle-opacity': 0.9
       }
 
     let webGLLayer = new ol.layer.WebGLPoints({
@@ -322,8 +329,8 @@ function displayWebGLPoints(features) {
 }
 
 // animate the map
-function animate() {
-    map.render();
-    window.requestAnimationFrame(animate);
-  }
-  animate();
+//function animate() {
+//    map.render();
+//    window.requestAnimationFrame(animate);
+//  }
+//  animate();
