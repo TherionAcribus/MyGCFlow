@@ -271,10 +271,10 @@ function getStyle2D(feature) {
     // Type de la cache
     var type = feature.get('type');
 
-    // Couleur par de la cache
+    // Couleur par de la
     var color = defaultGcColors[type] || 'gray'; // 'gray' est une couleur par défaut
 
-    // On retourne le style du point
+    // Retournez le style OpenLayers pour cette entité
     return new ol.style.Style({
         image: new ol.style.Circle({
             radius: 5,
@@ -285,20 +285,6 @@ function getStyle2D(feature) {
 }
 
 
-// affichage des points WebGL
-function displayWebGLPoints(features){
-    let vectorSourceGL = new ol.source.Vector();
-
-    // Création de la couche vectorielle en utilisant la source vectorielle
-    vectorLayer = new ol.layer.Vector({
-        source: vectorSourceGL
-    });    
-    // Ajout de la couche vectorielle à la carte
-    map.addLayer(vectorLayer);
-
-    vectorSourceGL.addFeatures(features);
-}
-
 
 // changement du graphisme des points dans l'ui
 export function refreshPointStyle(pointStyle){
@@ -306,3 +292,38 @@ export function refreshPointStyle(pointStyle){
 }
 
 
+function displayWebGLPoints(features) {
+    const vectorSource = new ol.source.Vector({
+        url: 'static/geojson_data.json',
+        format: new ol.format.GeoJSON(),
+        wrapX: true,
+      });
+
+    const pointStyle = {
+        'circle-radius': 2,
+          'circle-fill-color': [
+            'match',
+            ['get', 'cache_type'],
+            ...Object.entries(defaultGcColors).flat(), // Object.entries pour obtenir un tableau de paires clé-valeur, puis flat pour aplatir le tableau en un seul niveau
+            '#000000' // couleur par défaut
+        ],
+          'circle-rotate-with-view': false,
+          'circle-displacement': [0, 0],
+          'circle-opacity': 0.9
+      }
+
+    let webGLLayer = new ol.layer.WebGLPoints({
+        source: vectorSource,
+        style: pointStyle
+    });
+
+    map.addLayer(webGLLayer);
+    console.log(map)
+}
+
+// animate the map
+function animate() {
+    map.render();
+    window.requestAnimationFrame(animate);
+  }
+  animate();

@@ -36,7 +36,7 @@ def uploadBdd(request, Geocache, db):
         cache_data = waypoint.find('groundspeak:cache', ns)
         if cache_data is not None:
             logs = cache_data.find('groundspeak:logs', ns)
-            type = cache_data.find('groundspeak:type', ns).text
+            cache_type = cache_data.find('groundspeak:type', ns).text
             if logs is not None:
                 for log_entry in logs.findall('groundspeak:log', ns):
                     date_find_str = log_entry.find('groundspeak:date', ns).text
@@ -48,7 +48,7 @@ def uploadBdd(request, Geocache, db):
             longitude=waypoint.attrib['lon'],
             name=waypoint.find('default:name', ns).text,
             date_find=date_find,
-            type = type
+            cache_type = cache_type
         )
         db.session.add(new_geocache)
 
@@ -114,7 +114,7 @@ def create_geojson(Geocache, request, app):
                 },
                 "properties": {
                     "date_find": point.date_find.strftime('%Y-%m-%d') if point.date_find else None,
-                    "type": point.type
+                    "cache_type": point.cache_type
                 }
             } for point in query
         ]

@@ -21,6 +21,8 @@ loading_progress = 0
 with app.app_context():
     db.create_all()
 
+
+# TODO Au 1er démarrage sans BDD prévoir un systeme pour éviter les erreurs "base de données geocacache inexistante"
 # MODELES
 class Geocache(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -28,10 +30,10 @@ class Geocache(db.Model):
     longitude = db.Column(db.Float)
     name = db.Column(db.String(255))
     date_find = db.Column(db.DateTime)
-    type = db.Column(db.String(50))
+    cache_type = db.Column(db.String(50))
 
     def __repr__(self):
-        return f"<Geocache {self.id}, {self.latitude}, {self.longitude}, {self.name}, {self.date_find}, {self.type}>"  # noqa: E501
+        return f"<Geocache {self.id}, {self.latitude}, {self.longitude}, {self.name}, {self.date_find}, {self.cache_type}>"  # noqa: E501
     
 
 @app.route('/')
