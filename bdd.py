@@ -127,4 +127,25 @@ def create_geojson(Geocache, request, app):
     with open(file_path, 'w') as f:
         json.dump(geojson, f, indent=4)
 
-    return jsonify(geojson)
+    return geojson
+
+
+def get_metadata_from_geojson(features):
+    print(type(features))
+    # Vérifier que la liste des features n'est pas vide
+    if features:
+        # Récupérer les dates du premier et du dernier élément
+        start_date = datetime.strptime(features[0]["properties"]["date_find"], '%Y-%m-%d')
+        end_date = datetime.strptime(features[-1]["properties"]["date_find"], '%Y-%m-%d')
+        delta_days = (end_date - start_date).days
+    else:
+        start_date, end_date, delta_days = None, None, None
+
+    metadata = {
+        "startDate": start_date.strftime('%Y-%m-%d') if start_date else None,
+        "endDate": end_date.strftime('%Y-%m-%d') if end_date else None,
+        "deltaDays": delta_days
+    }
+    print(metadata)
+
+    return metadata

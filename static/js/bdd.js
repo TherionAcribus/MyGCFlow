@@ -3,6 +3,9 @@ import * as pkg from './index.js';
 const btnuploadBddForm = document.getElementById('uploadBddForm');
 btnuploadBddForm.addEventListener('submit', uploadBddRequest);
 
+export let metadata;
+export let json_data;
+
 // TODO Gestion des erreurs
 // CHoix de la BDD 
 // Visualisation des informations
@@ -44,7 +47,7 @@ function checkLoadingProgress() {
             pkg.updateProgressBar(data);
             console.log(data.progress);
             if (data.progress < 100) {
-                setTimeout(checkLoadingProgress, 100); // Corrigez le nom de la fonction ici
+                setTimeout(checkLoadingProgress, 100);
             }
         })
         .catch(error => console.error('Error:', error));
@@ -84,8 +87,16 @@ export function readBdd(){
     fetch('http://localhost:5000/get_geojson_points')
     .then(response => response.json())
     .then(data => {
-        console.log(data);
-        pkg.addVector(data);
+        console.log('data', data);
+        json_data = data.geojson;
+        metadata = data.metadata;
+        dateStrToDate();
+        pkg.addVector(data.geojson);
     })
     .catch(error => console.error('Error:', error));
+}
+
+function dateStrToDate(){
+    metadata.startDate = new Date(metadata.startDate);
+    metadata.endDate = new Date(metadata.endDate);
 }

@@ -15,6 +15,7 @@
 // POINTS 
 // TODO GEstion des anneaux
 // WEBGL AVec style standard peut être plus rapide. A tester 
+// Taille relative ou absolue
 
 // TODO Fusionner les deux fonctions tout en bas.
 // Mettre le switch dans la bonne position
@@ -36,6 +37,14 @@ let vectorLayerBorder;
 let features;
 // couleurs GC par défaut
 let defaultGcColors;
+// ANIMATION
+// date en cours pour l'animation
+let currentDate;
+// ENREGISTREMENT
+// Compteur de frames pour le jour en cours
+let currentFrame = 0;  
+
+let vectorSource;
 
 
 // récupère les couleurs GC par défaut dans le JSON 
@@ -238,12 +247,7 @@ export function addVector(data) {
 
 // fonction appelée au changement d'options graphique
 export function refreshPoints(optionValues){
-    // on enleve la couche vectorielle avec les points
-    map.removeLayer(vectorLayer);
-    // on enleve la couche des bordures si elle existe (webgl)
-    if (isLayerOnMap(map, vectorLayerBorder)){
-        map.removeLayer(vectorLayerBorder);
-    }
+    clearMap();
     selectEngineAndRefresh(optionValues);
 }
 
@@ -327,11 +331,24 @@ function getStyle2D(feature, pointOptions) {
 }
 
 function displayWebGLPoints(features, pointOptions) {
-    const vectorSource = new ol.source.Vector({
-        url: 'static/geojson_data.json',
-        format: new ol.format.GeoJSON(),
+    //const vectorSource = new ol.source.Vector({
+    //    url: 'static/geojson_data.json',
+    //    format: new ol.format.GeoJSON(),
+    //    wrapX: true,
+    //  });
+
+    const geojsonObject = {
+        'type': 'FeatureCollection',
+        'features': features
+    };
+    vectorSource = new ol.source.Vector({
+        features: new ol.format.GeoJSON().readFeatures(geojsonObject, {
+            // Option pour définir le système de coordonnées des features GeoJSON
+            dataProjection: 'EPSG:4326',
+            featureProjection: 'EPSG:3857'
+        }),
         wrapX: true,
-      });
+    });
 
     let fillColor;
     if (pointOptions.center.mode == "gc") {
@@ -396,4 +413,57 @@ function displayWebGLPoints(features, pointOptions) {
 
     // on ajoute la couche des cercles intérieurs à la fin
     map.addLayer(vectorLayer);
+}
+
+// supprime les points de la carte (centre et bordures si existantes)
+function clearMap(){
+    // on enleve la couche vectorielle avec les points
+    map.removeLayer(vectorLayer);
+    // on enleve la couche des bordures si elle existe (webgl)
+    if (isLayerOnMap(map, vectorLayerBorder)){
+        map.removeLayer(vectorLayerBorder);
+    }
+}
+
+
+// ----------- ANIMATION DE LA CARTE  ------------
+export function startAnimation(record=false) {
+    const dayDuration = 200;
+    clearMap();
+    let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
+    currentDate = pkg.metadata.startDate;
+    interval = setInterval(() => {
+        displayFeaturesForDate(currentDate, optionsValues);
+        currentDate.setDate(currentDate.getDate() + 1);
+        if (currentDate > pkg.metadata.endDate) {
+            clearInterval(interval);
+        }
+    }, dayDuration);
+}
+
+
+export function recordAnimation(){
+    vectorSource.clear(); // Videz la source vectorielle avant de démarrer l'animation
+    getDateFormat();  // récupère le format de date
+    getSparkleShape();
+    currentDate = metadata.startDate;
+    // TEMPORAIRE !!!! JUSTE POUR AVOIR TRUC INTERESSANT A VOIR !!!!
+    currentDate = new Date(2018, 7, 27);
+    currentFrame = 0;  // Réinitialisez le compteur de frames
+    captureNextFrame(capture=true);
+}
+
+
+function displayFeaturesForDate(date, optionsValues) {
+    //console.log("currentDate", currentDate)
+
+    const featuresForDate = pkg.json_data.features.filter(feature => {
+        const featureDate = new Date(feature.properties.date_find);
+        return featureDate.toDateString() === date.toDateString();
+    });
+
+    console.log("featuresForDate", featuresForDate)
+    featuresForDate.forEach(featureData => {
+        displayWebGLPoints(featuresForDate, optionsValues.point)
+    });
 }

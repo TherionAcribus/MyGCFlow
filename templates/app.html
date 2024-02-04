@@ -3,6 +3,8 @@
 <html>
     <head>
         <link rel="stylesheet" href= "../static/css/style.css" />
+        <!-- Icones materialize -->
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
         <title>My Geocaching Map</title>
     </head>
 
@@ -19,10 +21,11 @@
             <div class="row">
                 <div class="col s12">
                     <ul class="tabs">
-                        <li class="tab col s3"><a href="#bdd">BDD</a></li>
-                        <li class="tab col s3"><a href="#maps">Cartes</a></li>                        
-                        <li class="tab col s3"><a class="active" href="#points">Points</a></li>
-                        <li class="tab col s3"><a href="#options">Préférences</a></li>
+                        <li class="tab col s2"><a href="#bdd">BDD</a></li>
+                        <li class="tab col s2"><a href="#maps">Cartes</a></li>                        
+                        <li class="tab col s2"><a href="#points">Points</a></li>
+                        <li class="tab col s2"><a class="active" href="#animation">Animation</a></li>
+                        <li class="tab col s2"><a href="#options">Préférences</a></li>
                     </ul>
                 </div>        
                 
@@ -35,6 +38,9 @@
                 <!-- Tabs pour la carte -->
                 {% include 'menu_maps.html' %}
 
+                <!-- Tabs pour l'animation -->
+                {% include 'menu_animation.html' %}
+
                 <!-- Tabs pour les options -->
                 {% include 'menu_options.html' %}
 
@@ -45,13 +51,14 @@
 
         </main>
 
-       
+      
         <!-- Compiled and minified CSS -->
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
 
         <!-- Compiled and minified JavaScript -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 
+        
         <!-- COlorpicker -->
         <script type="module" src="../static/js/materialize-colorpicker.min.js"></script>
 

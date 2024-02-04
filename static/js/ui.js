@@ -29,6 +29,7 @@ Array.from(tonerStyleElements).forEach(function(element) {
     element.addEventListener("click", changeStamenTonerStyle);
 });
 
+
 // POINTS
 // Colorpickers
 // --- in
@@ -59,6 +60,14 @@ const sliderSizeBorder = document.getElementById('sliderSizeBorder');
 const inputSizeBorder = document.getElementById('inputSizeBorder');
 sliderSizeBorder.addEventListener('change', changePointStyleUI);
 inputSizeBorder.addEventListener('change', changePointStyleUI);
+
+
+// ANIMATION DE LA CARTE
+const btnStartAnimation = document.getElementById('btnStartAnimation');
+btnStartAnimation.addEventListener('click', clickStartAnimation);
+const btnRecordAnimation = document.getElementById('btnRecordAnimation');
+btnRecordAnimation.addEventListener('click', clickRecordAnimation);
+
 
 // OPTIONS 
 const switchEngine = document.getElementById('switchEngine');
@@ -322,4 +331,16 @@ export function updateProgressBar(data) {
     progressText.innerText = data.message;
 }
 
+
+// ----------------- ANIMATION DE LA CARTE ----------------
+
+function clickStartAnimation(){
+    // Vide la source vectorielle avant de démarrer l'animation
+    pkg.startAnimation();
+}
+
+function clickRecordAnimation(){
+    // Vide la source vectorielle avant de démarrer l'animation
+    pkg.recordAnimation();
+}
 

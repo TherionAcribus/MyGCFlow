@@ -4,7 +4,7 @@ from flask import Flask, render_template, jsonify, request, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_cors import cross_origin
-from bdd import uploadBdd, get_progress_step, db_infos, create_geojson
+from bdd import uploadBdd, get_progress_step, db_infos, create_geojson, get_metadata_from_geojson
 
 app = Flask(__name__)
 
@@ -72,7 +72,13 @@ def db_status():
 
 @app.route('/get_geojson_points', methods=['POST', 'GET'])
 def get_geojson_points():
-    return create_geojson(Geocache, request, app)
+    geojson = create_geojson(Geocache, request, app)
+    metadata = get_metadata_from_geojson(geojson["features"])
+    response_data = {
+        'geojson': geojson,
+        'metadata': metadata,
+    }
+    return jsonify(response_data)
 
 if __name__ == '__main__':
     # ouverture automatique du navigateur, pour l'instant en pause

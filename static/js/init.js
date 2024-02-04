@@ -31,8 +31,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         pkg.init_ui(optionsValues);
         // ... autres fonctions qui dépendent de optionsValues ... 
     });
-    pkg.readBdd();
+    pkg.readBdd();  // creation du geojson et des metadatas
 });
+
 
 // initialisation des Tabs de Materialize
 function initTabs() {
