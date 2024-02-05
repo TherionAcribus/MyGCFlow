@@ -1,0 +1,43 @@
+<div id="flash" class="col s12">
+    <h3>Animation du Flash</h3>
+    <div>
+        <form>
+
+            <p>
+                <label>
+                    <input class="with-gap" name="flashMode" type="radio" value="none"/>
+                    <span>Pas de flash</span>
+                </label>
+            </p>
+            <p>
+                <label>
+                    <input class="with-gap" name="flashMode" type="radio" value="circle"/>
+                    <span>Cercle</span>
+                </label>
+            </p>
+            <p>
+                <label>
+                    <input class="with-gap" name="flashMode" type="radio" value="star" />
+                    <span>Etoile</span>
+                </label>
+            </p>
+
+            <div class="input-field">
+                <input placeholder="Durée du flash" id="inputTimeFlash" type="number" class="validate">
+                <label for="inputTimeFlash">Durée du flash en ms</label>
+            </div>
+
+            <div class="input-field">
+                <input placeholder="Taille du Flash" id="inputSizeFlash" type="number" class="validate">
+                <label for="inputSizeFlash">Taille du flash en ms</label>
+            </div>
+
+            <!-- Color Pickers Flash -->
+            <div class="input-field col s3">
+                <span>Couleur du flash: </span>
+                <input type="color" id="flashColor" value="#ffffff">
+            </div>
+
+        </form>
+    </div>
+</div>

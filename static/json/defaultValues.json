@@ -26,5 +26,11 @@
     "animation":{
         "timePerDay":200,
         "displayDaysWithoutCache": true
+    },
+    "flash":{
+        "mode": "circle",
+        "color": "#000000",
+        "duration": 200,
+        "size": 10
     }
 }

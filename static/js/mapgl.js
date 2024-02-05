@@ -46,6 +46,9 @@ let currentFrame = 0;
 // TEMP
 let framesPerDay = 24;  
 let imageCounter = 0;
+// FLASH
+let animationSource;
+let animationLayer;
 
 let vectorSource;
 
@@ -266,7 +269,6 @@ function isLayerOnMap(map, layerToFind) {
 function selectEngineAndRefresh(optionsValues){
     engine = optionsValues.options.engine;
     if (engine == "webgl"){
-        console.log(typeof(features), features);
         displayWebGLPoints(false, optionsValues.point);
     } else {
         // TODO AJouter barre chargement
@@ -342,6 +344,7 @@ function displayWebGLPoints(features, pointOptions) {
         wrapX: true,
       });
     }
+
     // sinon on lit les features (enregistrement ou animation)
     else {
         const geojsonObject = {
@@ -359,7 +362,6 @@ function displayWebGLPoints(features, pointOptions) {
     }
 
     let fillColor;
-    console.log(pointOptions)
     if (pointOptions.center.mode == "gc") {
         fillColor = [
             'match',
@@ -439,13 +441,13 @@ function clearMap(){
 export function startAnimation(record=false) {
     clearMap();
     createFlashElements();
-    
+
     let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
     const dayDuration = optionsValues.animation.timePerDay;
     const displayDaysWithoutCache = optionsValues.animation.displayDaysWithoutCache;
     currentDate = pkg.metadata.startDate;
     interval = setInterval(() => {
-        displayFeaturesForDate(currentDate, optionsValues.point);
+        displayFeaturesForDate(currentDate, optionsValues.point, optionsValues.flash, false);
         currentDate.setDate(currentDate.getDate() + 1);
         if (currentDate > pkg.metadata.endDate) {
             clearInterval(interval);
@@ -456,17 +458,18 @@ export function startAnimation(record=false) {
 
 export function recordAnimation(){
     clearMap();
+    createFlashElements();
+
     let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
     currentDate = pkg.metadata.startDate;
     // TEMPORAIRE !!!! JUSTE POUR AVOIR TRUC INTERESSANT A VOIR !!!!
     currentDate = new Date(2018, 7, 27);
     currentFrame = 0;  // Réinitialisez le compteur de frames
-    captureNextFrame(true, optionsValues.point);
+    captureNextFrame(true, optionsValues.point, optionsValues.flash);
 }
 
 
-function captureNextFrame(capture, pointOptions) {
-    console.log("captureNextFrame", pointOptions)
+function captureNextFrame(capture, pointOptions, flashOptions) {
     if (currentDate > pkg.metadata.endDate) {
         // Traitement de fin -> Assembler le film
         // Supprimer les images temporaires
@@ -477,27 +480,26 @@ function captureNextFrame(capture, pointOptions) {
     
     if (currentFrame < framesPerDay) {
         // Mettez à jour les styles d'animation avant de capturer la frame
-        //updateAnimationStyles();
+        updateAnimationStyles();
 
         // Capturez la frame actuelle
         if (capture == true) {
             captureElement().then(() => {
-                console.log("captured");
                 currentFrame++;
                 // Utilisation d'une fonction fléchée pour passer des arguments
-                requestAnimationFrame(() => captureNextFrame(true, pointOptions));
+                requestAnimationFrame(() => captureNextFrame(true, pointOptions, flashOptions));
             });
         } else {
             currentFrame++;
             // De même ici, si vous avez besoin de passer des arguments spécifiques
-            requestAnimationFrame(() => captureNextFrame(true, pointOptions));
+            requestAnimationFrame(() => captureNextFrame(true, pointOptions, flashOptions));
         }
     } else {
         // Passez au jour suivant
         currentDate.setDate(currentDate.getDate() + 1);
-        displayFeaturesForDate(currentDate, pointOptions);
+        displayFeaturesForDate(currentDate, pointOptions, true);
         currentFrame = 0;  // Réinitialisez le compteur de frames pour le nouveau jour
-        requestAnimationFrame(() => captureNextFrame(true, pointOptions));
+        requestAnimationFrame(() => captureNextFrame(true, pointOptions, flashOptions));
     }
 }
 
@@ -524,8 +526,8 @@ function captureElement() {
 }
 
 
-function displayFeaturesForDate(date, pointOptions) {
-    //console.log("currentDate", currentDate)
+function displayFeaturesForDate(date, pointOptions, flashOptions, record) {
+    console.log("currentDate", currentDate)
 
     const featuresForDate = pkg.json_data.features.filter(feature => {
         const featureDate = new Date(feature.properties.date_find);
@@ -533,65 +535,124 @@ function displayFeaturesForDate(date, pointOptions) {
     });
 
     console.log("featuresForDate", featuresForDate)
-    featuresForDate.forEach(featureData => {
-        displayWebGLPoints(featuresForDate, pointOptions)
-    });
+    displayWebGLPoints(featuresForDate, pointOptions)
 
-    // Ajouter à vectorSource pour l'affichage statique
-    const staticFeature = new Feature({ geometry: geometry, type: featureData.properties.type });
-    vectorSource.addFeature(staticFeature);
-
-    // Ajoutez ces lignes pour ajouter la caractéristique à la source d'animation et déclencher l'animation flash
-        const animationFeature = new Feature(new Point(
-            transform(
-                [featureData.geometry.coordinates[0], featureData.geometry.coordinates[1]],
-                'EPSG:4326',
-                'EPSG:3857'
-            )
-        ));
-        animationSource.addFeature(animationFeature);
-        flash(animationFeature);
+    if (flashOptions.mode != "none") {
+        // Animation de flash pour toutes les features filtrées
+        if (record) {
+            flashRecord(featuresForDate, flashOptions);
+        } else {
+            flashFeatures(featuresForDate, flashOptions);
+        }
+    }
 }
 
 
 // -------------- FLASH ---------------------------------------
 
-function flash(feature) {
+function flashRecord(features) {
+
+    features.forEach(featureData => {
+        const geometry = new ol.geom.Point(
+            ol.proj.transform(
+                [featureData.geometry.coordinates[0], featureData.geometry.coordinates[1]],
+                'EPSG:4326',
+                'EPSG:3857'
+            )
+        );
+
+        const animatedFeature = new ol.Feature({ geometry: geometry.clone(), type: featureData.properties.type });
+        animatedFeature.set('animationFrame', 0);
+        animationSource.addFeature(animatedFeature);
+
+        })
+
+}
+
+
+function updateAnimationStyles() {
+    animationSource.getFeatures().forEach(feature => {
+        const animationFrame = feature.get('animationFrame');
+        const maxAnimationFrames = 24; // Durée de l'animation pour chaque point
+
+        if (animationFrame > maxAnimationFrames) {
+            // Retirer l'entité de animationSource une fois l'animation terminée
+            animationSource.removeFeature(feature);
+        } else {
+            // Mettre à jour le style pour l'animation
+            const animationRatio = animationFrame / maxAnimationFrames;
+            const radius = ol.easing.easeOut(animationRatio) * 25 + 5;
+            const opacity = ol.easing.easeOut(1 - animationRatio);
+
+            const style = new ol.style.Style({
+                image: new ol.style.Circle({
+                    radius: radius,
+                    stroke: new ol.style.Stroke({
+                        color: `rgba(255, 0, 0, ${opacity})`,
+                        width: 2,
+                    }),
+                }),
+            });
+
+            feature.setStyle(style);
+            feature.set('animationFrame', animationFrame + 1); // Incrémenter le compteur de frames
+        }
+    });
+
+    map.render(); // Redéclenchez l'animation
+}
+
+
+function flashFeatures(features, flashOptions) {
+    features.forEach(featureData => {
+        // Assumons que featureData.geometry.coordinates contient les coordonnées en format [longitude, latitude]
+        const coords = ol.proj.fromLonLat([
+            featureData.geometry.coordinates[0],
+            featureData.geometry.coordinates[1]
+        ], 'EPSG:3857'); // Assurez-vous que la projection est correcte pour votre carte
+
+        // Création de la géométrie de point pour la feature
+        const featureGeometry = new ol.geom.Point(coords);
+        const feature = new ol.Feature({
+            geometry: featureGeometry,
+            // Autres propriétés si nécessaire
+        });
+
+        // Ajoutez ici la feature à une source/vector layer dédiée à l'animation si ce n'est pas déjà fait dans flash()
+        flash(feature, flashOptions); // Utilisez votre fonction flash existante
+    });
+
+}
+
+
+function flash(feature, flashOptions) {
     const start = Date.now();
     const flashGeom = feature.getGeometry().clone();
     const listenerKey = animationLayer.on('postrender', animate);
+    const duration = flashOptions.duration; 
 
     function animate(event) {
         const frameState = event.frameState;
         const elapsed = frameState.time - start;
         if (elapsed >= duration) {
-          unByKey(listenerKey);
+          ol.Observable.unByKey(listenerKey);
           return;
         }
 
         const elapsedRatio = elapsed / duration;
         // Définissez la taille et l'opacité de l'étoile
-        const radius = easeOut(elapsedRatio) * 25 + 5; // Taille de l'étoile
-        const opacity = easeOut(1 - elapsedRatio); // Opacité de l'étoile
+        const radius = ol.easing.easeOut(elapsedRatio) * 25 + 5; // Taille de l'élément 
+        const opacity = ol.easing.easeOut(1 - elapsedRatio); // Opacité de l'élément 
 
         // Style pour l'étoile
-        const style = new ol.style.Style({
-            image: new ol.style.RegularShape({
-                points: 5, // 5 points pour une étoile
-                radius: radius, // Rayon extérieur
-                radius2: radius / 2, // Rayon intérieur (pour la forme de l'étoile)
-                angle: 0, // Angle initial de l'étoile
-                stroke: new ol.style.Stroke({
-                    color: `rgba(255, 255, 0, ${opacity})`, // Couleur jaune avec l'opacité calculée
-                    width: 2, // Largeur du contour
-                }),
-                fill: new ol.style.Fill({
-                    color: `rgba(255, 255, 0, ${opacity})`, // Remplissage jaune avec l'opacité calculée
-                }),
-            }),
-        });
+        let style;
+        if (flashOptions.mode == "star") {
+            style = starStyle(radius, opacity, flashOptions);}
+        else if(flashOptions.mode == "circle") {
+            style = circleStyle(radius, opacity, flashOptions);
+        }
 
-        const vectorContext = getVectorContext(event);
+        const vectorContext = ol.render.getVectorContext(event);
         vectorContext.setStyle(style);
         vectorContext.drawGeometry(flashGeom);
         map.render();
@@ -600,11 +661,44 @@ function flash(feature) {
 
 
 function createFlashElements(){
-    const animationSource = new VectorSource();
-    const animationLayer = new VectorLayer({
+    animationSource = new ol.source.Vector();
+    animationLayer = new ol.layer.Vector({
     source: animationSource,
     style: null,  // nous définirons le style dans la fonction d'animation
     zIndex: 1100
 });
 map.addLayer(animationLayer);
+}
+
+
+function starStyle(radius, opacity, flashOptions){
+    const style = new ol.style.Style({
+        image: new ol.style.RegularShape({
+            points: 5, // 5 points pour une étoile
+            radius: radius, // Rayon extérieur
+            radius2: radius / 2, // Rayon intérieur (pour la forme de l'étoile)
+            angle: 0, // Angle initial de l'étoile
+            stroke: new ol.style.Stroke({
+                color: `rgba(255, 255, 0, ${opacity})`, // Couleur jaune avec l'opacité calculée
+                width: 2, // Largeur du contour
+            }),
+            fill: new ol.style.Fill({
+                color: `rgba(255, 255, 0, ${opacity})`, // Remplissage jaune avec l'opacité calculée
+            }),
+        }),
+    });
+    return style;
+}
+
+function circleStyle(radius, opacity, flashOptions){
+    const style = new ol.style.Style({
+        image: new ol.style.Circle({
+            radius: radius,
+            stroke: new ol.style.Stroke({
+                color: `rgba(255, 0, 0, ${opacity})`,
+                width: 2,
+            }),
+        }),
+    });
+    return style;
 }

@@ -72,6 +72,22 @@ inputTimePerDay.addEventListener('input', changeAnimationValues);
 const cbDisplayDaysWithoutCache = document.getElementById('cbDisplayDaysWithoutCache');
 cbDisplayDaysWithoutCache.addEventListener('change', changeAnimationValues);
 
+
+// FLASH
+// radio buttons
+const radioflashMode = document.getElementsByName('flashMode');
+radioflashMode.forEach(radio => {
+    radio.addEventListener('change', () => changeFlashValues(radio));
+});
+// inputs
+const inputTimeFlash = document.getElementById('inputTimeFlash');
+inputTimeFlash.addEventListener('input', changeFlashValues);
+const inputSizeFlash = document.getElementById('inputSizeFlash');
+inputSizeFlash.addEventListener('input', changeFlashValues);
+// colorpickers
+const cpFlashColor = document.getElementById('flashColor');
+cpFlashColor.addEventListener('change', changeFlashValues);
+
 // OPTIONS 
 const switchEngine = document.getElementById('switchEngine');
 switchEngine.addEventListener('change', changeEngine);
@@ -111,6 +127,19 @@ export function init_ui(optionsValues) {
     inputTimePerDay.value = optionsValues.animation.timePerDay;
     cbDisplayDaysWithoutCache.checked = optionsValues.animation.displayDaysWithoutCache;
 
+    // ------- FLASH -------
+    // colorpicker
+    cpFlashColor.value = optionsValues.flash.color;
+    // inputs
+    inputTimeFlash.value = optionsValues.flash.duration;
+    inputSizeFlash.value = optionsValues.flash.size;
+    // radio buttons
+    for (let radio of radioflashMode) {
+        if (radio.value === optionsValues.flash.mode) {
+            radio.checked = true;
+            break;
+        }
+    }
     
     // ------- CARTE VECTORIELLE -------
 
@@ -365,3 +394,29 @@ function changeAnimationValues(event){
     console.log(optionsValues);
 }
 
+
+// ----------------- FLASH ----------------
+// recupère tous les changements liés aux flashs
+function changeFlashValues(event){
+    let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
+
+    console.log(event)
+    // radiobuttons
+    if (event.type == "radio") {
+        if (event.name == "flashMode"){
+            optionsValues.flash.mode = event.value;
+        }
+    }
+    // inputs
+    optionsValues.flash.duration = inputTimeFlash.value
+    optionsValues.flash.size = inputSizeFlash.value
+    // colorpickers
+    optionsValues.flash.color = cpFlashColor.value
+
+    // stockage
+    localStorage.setItem('optionsValues', JSON.stringify(optionsValues));
+
+    // POUR VOIR SI TOUT FONCTIONNE  !!! TEMP
+    optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
+    console.log(optionsValues);
+}
