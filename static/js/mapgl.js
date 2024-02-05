@@ -43,6 +43,9 @@ let currentDate;
 // ENREGISTREMENT
 // Compteur de frames pour le jour en cours
 let currentFrame = 0;  
+// TEMP
+let framesPerDay = 24;  
+let imageCounter = 0;
 
 let vectorSource;
 
@@ -263,18 +266,18 @@ function isLayerOnMap(map, layerToFind) {
 function selectEngineAndRefresh(optionsValues){
     engine = optionsValues.options.engine;
     if (engine == "webgl"){
-        displayWebGLPoints(features, optionsValues.point);
+        console.log(typeof(features), features);
+        displayWebGLPoints(false, optionsValues.point);
     } else {
         // TODO AJouter barre chargement
         displayAllPoints2D(features, optionsValues.point);
-
     }
 }
 
 // affichage des points 2D
 function displayAllPoints2D(features, pointOptions){
     // Créer une source vectorielle avec les entités
-    const vectorSource = new ol.source.Vector({
+    vectorSource = new ol.source.Vector({
         features: features // Ajouter les entités lues
     });
 
@@ -331,26 +334,32 @@ function getStyle2D(feature, pointOptions) {
 }
 
 function displayWebGLPoints(features, pointOptions) {
-    //const vectorSource = new ol.source.Vector({
-    //    url: 'static/geojson_data.json',
-    //    format: new ol.format.GeoJSON(),
-    //    wrapX: true,
-    //  });
-
-    const geojsonObject = {
-        'type': 'FeatureCollection',
-        'features': features
-    };
+    // si pas de features (on lit le geojson : plus simple pour lire tout le fichier)
+    if (! features) {
     vectorSource = new ol.source.Vector({
-        features: new ol.format.GeoJSON().readFeatures(geojsonObject, {
-            // Option pour définir le système de coordonnées des features GeoJSON
-            dataProjection: 'EPSG:4326',
-            featureProjection: 'EPSG:3857'
-        }),
+        url: 'static/geojson_data.json',
+        format: new ol.format.GeoJSON(),
         wrapX: true,
-    });
+      });
+    }
+    // sinon on lit les features (enregistrement ou animation)
+    else {
+        const geojsonObject = {
+            'type': 'FeatureCollection',
+            'features': features
+        };
+        vectorSource = new ol.source.Vector({
+            features: new ol.format.GeoJSON().readFeatures(geojsonObject, {
+                // Option pour définir le système de coordonnées des features GeoJSON
+                dataProjection: 'EPSG:4326',
+                featureProjection: 'EPSG:3857'
+            }),
+            wrapX: true,
+        });
+    }
 
     let fillColor;
+    console.log(pointOptions)
     if (pointOptions.center.mode == "gc") {
         fillColor = [
             'match',
@@ -428,12 +437,15 @@ function clearMap(){
 
 // ----------- ANIMATION DE LA CARTE  ------------
 export function startAnimation(record=false) {
-    const dayDuration = 200;
     clearMap();
+    createFlashElements();
+    
     let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
+    const dayDuration = optionsValues.animation.timePerDay;
+    const displayDaysWithoutCache = optionsValues.animation.displayDaysWithoutCache;
     currentDate = pkg.metadata.startDate;
     interval = setInterval(() => {
-        displayFeaturesForDate(currentDate, optionsValues);
+        displayFeaturesForDate(currentDate, optionsValues.point);
         currentDate.setDate(currentDate.getDate() + 1);
         if (currentDate > pkg.metadata.endDate) {
             clearInterval(interval);
@@ -443,18 +455,76 @@ export function startAnimation(record=false) {
 
 
 export function recordAnimation(){
-    vectorSource.clear(); // Videz la source vectorielle avant de démarrer l'animation
-    getDateFormat();  // récupère le format de date
-    getSparkleShape();
-    currentDate = metadata.startDate;
+    clearMap();
+    let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
+    currentDate = pkg.metadata.startDate;
     // TEMPORAIRE !!!! JUSTE POUR AVOIR TRUC INTERESSANT A VOIR !!!!
     currentDate = new Date(2018, 7, 27);
     currentFrame = 0;  // Réinitialisez le compteur de frames
-    captureNextFrame(capture=true);
+    captureNextFrame(true, optionsValues.point);
 }
 
 
-function displayFeaturesForDate(date, optionsValues) {
+function captureNextFrame(capture, pointOptions) {
+    console.log("captureNextFrame", pointOptions)
+    if (currentDate > pkg.metadata.endDate) {
+        // Traitement de fin -> Assembler le film
+        // Supprimer les images temporaires
+        return;
+    }
+
+    //updateTextOverlay(`Date: ${currentDate.toDateString()}, Frame: ${currentFrame}`);
+    
+    if (currentFrame < framesPerDay) {
+        // Mettez à jour les styles d'animation avant de capturer la frame
+        //updateAnimationStyles();
+
+        // Capturez la frame actuelle
+        if (capture == true) {
+            captureElement().then(() => {
+                console.log("captured");
+                currentFrame++;
+                // Utilisation d'une fonction fléchée pour passer des arguments
+                requestAnimationFrame(() => captureNextFrame(true, pointOptions));
+            });
+        } else {
+            currentFrame++;
+            // De même ici, si vous avez besoin de passer des arguments spécifiques
+            requestAnimationFrame(() => captureNextFrame(true, pointOptions));
+        }
+    } else {
+        // Passez au jour suivant
+        currentDate.setDate(currentDate.getDate() + 1);
+        displayFeaturesForDate(currentDate, pointOptions);
+        currentFrame = 0;  // Réinitialisez le compteur de frames pour le nouveau jour
+        requestAnimationFrame(() => captureNextFrame(true, pointOptions));
+    }
+}
+
+function captureElement() {
+    return new Promise((resolve, reject) => {
+        const element = document.getElementById('map');
+        if (!element) {
+            // Si l'élément n'est pas trouvé, rejetez immédiatement la promesse.
+            reject('Élément non trouvé'); // Assurez-vous que cette ligne est à l'intérieur de la Promesse.
+            return; // Sortir de la fonction si l'élément n'est pas trouvé.
+        }
+        // Si l'élément est trouvé, continuez avec la conversion en PNG.
+        htmlToImage.toPng(element)
+          .then((dataUrl) => {
+            // Traitement de l'image capturée
+            pkg.sendImageToServer(dataUrl, imageCounter++);
+            resolve(); // Résolution de la promesse après l'envoi de l'image.
+          })
+          .catch((error) => {
+            console.error('Erreur lors de la capture de l’élément : ', error);
+            reject(error); // Rejet de la promesse en cas d'erreur.
+          });
+    });
+}
+
+
+function displayFeaturesForDate(date, pointOptions) {
     //console.log("currentDate", currentDate)
 
     const featuresForDate = pkg.json_data.features.filter(feature => {
@@ -464,6 +534,77 @@ function displayFeaturesForDate(date, optionsValues) {
 
     console.log("featuresForDate", featuresForDate)
     featuresForDate.forEach(featureData => {
-        displayWebGLPoints(featuresForDate, optionsValues.point)
+        displayWebGLPoints(featuresForDate, pointOptions)
     });
+
+    // Ajouter à vectorSource pour l'affichage statique
+    const staticFeature = new Feature({ geometry: geometry, type: featureData.properties.type });
+    vectorSource.addFeature(staticFeature);
+
+    // Ajoutez ces lignes pour ajouter la caractéristique à la source d'animation et déclencher l'animation flash
+        const animationFeature = new Feature(new Point(
+            transform(
+                [featureData.geometry.coordinates[0], featureData.geometry.coordinates[1]],
+                'EPSG:4326',
+                'EPSG:3857'
+            )
+        ));
+        animationSource.addFeature(animationFeature);
+        flash(animationFeature);
+}
+
+
+// -------------- FLASH ---------------------------------------
+
+function flash(feature) {
+    const start = Date.now();
+    const flashGeom = feature.getGeometry().clone();
+    const listenerKey = animationLayer.on('postrender', animate);
+
+    function animate(event) {
+        const frameState = event.frameState;
+        const elapsed = frameState.time - start;
+        if (elapsed >= duration) {
+          unByKey(listenerKey);
+          return;
+        }
+
+        const elapsedRatio = elapsed / duration;
+        // Définissez la taille et l'opacité de l'étoile
+        const radius = easeOut(elapsedRatio) * 25 + 5; // Taille de l'étoile
+        const opacity = easeOut(1 - elapsedRatio); // Opacité de l'étoile
+
+        // Style pour l'étoile
+        const style = new ol.style.Style({
+            image: new ol.style.RegularShape({
+                points: 5, // 5 points pour une étoile
+                radius: radius, // Rayon extérieur
+                radius2: radius / 2, // Rayon intérieur (pour la forme de l'étoile)
+                angle: 0, // Angle initial de l'étoile
+                stroke: new ol.style.Stroke({
+                    color: `rgba(255, 255, 0, ${opacity})`, // Couleur jaune avec l'opacité calculée
+                    width: 2, // Largeur du contour
+                }),
+                fill: new ol.style.Fill({
+                    color: `rgba(255, 255, 0, ${opacity})`, // Remplissage jaune avec l'opacité calculée
+                }),
+            }),
+        });
+
+        const vectorContext = getVectorContext(event);
+        vectorContext.setStyle(style);
+        vectorContext.drawGeometry(flashGeom);
+        map.render();
+    }
+}
+
+
+function createFlashElements(){
+    const animationSource = new VectorSource();
+    const animationLayer = new VectorLayer({
+    source: animationSource,
+    style: null,  // nous définirons le style dans la fonction d'animation
+    zIndex: 1100
+});
+map.addLayer(animationLayer);
 }

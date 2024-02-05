@@ -22,5 +22,9 @@
             "size": 10,
             "mode": "fix"
         }
+    },
+    "animation":{
+        "timePerDay":200,
+        "displayDaysWithoutCache": true
     }
 }

@@ -67,7 +67,10 @@ const btnStartAnimation = document.getElementById('btnStartAnimation');
 btnStartAnimation.addEventListener('click', clickStartAnimation);
 const btnRecordAnimation = document.getElementById('btnRecordAnimation');
 btnRecordAnimation.addEventListener('click', clickRecordAnimation);
-
+const inputTimePerDay = document.getElementById('inputTimePerDay');
+inputTimePerDay.addEventListener('input', changeAnimationValues);
+const cbDisplayDaysWithoutCache = document.getElementById('cbDisplayDaysWithoutCache');
+cbDisplayDaysWithoutCache.addEventListener('change', changeAnimationValues);
 
 // OPTIONS 
 const switchEngine = document.getElementById('switchEngine');
@@ -102,8 +105,11 @@ export function init_ui(optionsValues) {
     // synchronise sliders et input associés
     synchronizeSliderAndInputCenter(optionsValues);
     synchronizeSliderAndInputBorder(optionsValues);
-
     
+    // ------- ANIMATION DE LA CARTE -------   
+    // Inputs
+    inputTimePerDay.value = optionsValues.animation.timePerDay;
+    cbDisplayDaysWithoutCache.checked = optionsValues.animation.displayDaysWithoutCache;
 
     
     // ------- CARTE VECTORIELLE -------
@@ -144,7 +150,6 @@ function changePointStyleUI(event){
     optionsValues.point.center.color = cpPointCenterColor.value;
     // radio buttons
     if (event.type == "radio") {
-        console.log(event);
         if (event.name == "fillColorPoint"){
             optionsValues.point.center.mode = event.value;
         }
@@ -342,5 +347,21 @@ function clickStartAnimation(){
 function clickRecordAnimation(){
     // Vide la source vectorielle avant de démarrer l'animation
     pkg.recordAnimation();
+}
+
+// recupère tous les changements liés aux points
+function changeAnimationValues(event){
+    let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
+    // inputs
+    optionsValues.animation.timePerDay = inputTimePerDay.value;
+    // checkboxes
+    optionsValues.animation.displayDaysWithoutCache = cbDisplayDaysWithoutCache.checked;
+
+    // stockage
+    localStorage.setItem('optionsValues', JSON.stringify(optionsValues));
+
+    // POUR VOIR SI TOUT FONCTIONNE  !!! TEMP
+    optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
+    console.log(optionsValues);
 }
 

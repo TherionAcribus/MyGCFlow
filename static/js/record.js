@@ -1,5 +1,3 @@
-let imageCounter
-
 document.getElementById("startCapture").addEventListener("click", function() {
     console.log("start");
     startAnimation(4); // Démarre l'animation
@@ -31,20 +29,7 @@ function startCapture() {
     });
 }
 
-function captureElement() {
-    const element = document.getElementById('map'); 
-    toPng(element)
-      .then((dataUrl) => {
-        // Vous avez maintenant une image au format data URL que vous pouvez envoyer à votre serveur Flask
-        sendImageToServer(dataUrl, imageCounter++);
-      })
-      .catch((error) => {
-        console.error('Erreur lors de la capture de l’élément : ', error);
-      });
-  }
-
-
-function sendImageToServer(dataUrl, counter) {
+export function sendImageToServer(dataUrl, counter) {
     fetch('http://localhost:5000/upload_image', {
         method: 'POST',
         headers: {

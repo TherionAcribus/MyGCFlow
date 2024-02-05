@@ -5,6 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_cors import cross_origin
 from bdd import uploadBdd, get_progress_step, db_infos, create_geojson, get_metadata_from_geojson
+from capture import upload_image
 
 app = Flask(__name__)
 
@@ -79,6 +80,14 @@ def get_geojson_points():
         'metadata': metadata,
     }
     return jsonify(response_data)
+
+
+@app.route('/upload_image', methods=['POST'])
+@cross_origin()
+def get_upload_image():
+    print("uptkors")
+    return upload_image(request)
+
 
 if __name__ == '__main__':
     # ouverture automatique du navigateur, pour l'instant en pause
