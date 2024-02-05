@@ -7,19 +7,19 @@
 // TODO Watercolor, on peut ajouter labels
 // TODO Vectorielle, il y a des version avec regions
 
-// Utilisation d'une localStorage pour stocker les options de la carte
-
-// Import des modules nécessaires d'OpenLayers
-
+// stockage des infos dans cookies au lieu localstorage ? Laissez le choix ?
 
 // POINTS 
 // TODO GEstion des anneaux
 // WEBGL AVec style standard peut être plus rapide. A tester 
 // Taille relative ou absolue
+// remettre pas de bordures
 
 // TODO Fusionner les deux fonctions tout en bas.
 // Mettre le switch dans la bonne position
 // Aller lire le json s'il existe au lieu de recharger le fichier
+
+// TODO date et/ou nbre caches et/ou logos (v2)
 
 import * as pkg from './index.js';
 
@@ -336,6 +336,96 @@ function getStyle2D(feature, pointOptions) {
 }
 
 function displayWebGLPoints(features, pointOptions) {
+
+    let pointSize = parseInt(pointOptions.center.size)
+    let borderSize = pointSize + parseInt(pointOptions.border.size) / 5;
+    let borderColor;
+
+    if (pointOptions.border.mode == "gc") {
+        borderColor = [
+            'match',
+            ['get', 'cache_type'],
+            ...Object.entries(defaultGcColors).flat(), // Object.entries pour obtenir un tableau de paires clé-valeur, puis flat pour aplatir le tableau en un seul niveau
+            '#000000' // couleur par défaut
+        ]
+    } else if (pointOptions.border.mode == "fix") {
+        borderColor = pointOptions.border.color
+    }
+
+   
+    let fillColor;
+    if (pointOptions.center.mode == "gc") {
+        fillColor = [
+            'match',
+            ['get', 'cache_type'],
+            ...Object.entries(defaultGcColors).flat(), // Object.entries pour obtenir un tableau de paires clé-valeur, puis flat pour aplatir le tableau en un seul niveau
+            '#000000' // couleur par défaut
+        ]
+    } else if (pointOptions.center.mode == "fix") {
+        fillColor = pointOptions.center.color
+    }
+
+    const pointStyle = {
+        'circle-radius': pointSize,
+        'circle-fill-color': fillColor,
+        'circle-rotate-with-view': false,
+        'circle-displacement': [0, 0],
+        'circle-opacity': 0.9
+    }
+
+    let pointStyleBorder = {
+        'circle-radius': borderSize,
+        'circle-fill-color': borderColor,
+        'circle-rotate-with-view': false,
+        'circle-displacement': [0, 0],
+        'circle-opacity': 0.9
+    }
+
+    // Assurez-vous que vectorSource est initialisé une seule fois
+    if (!window.vectorSource) {
+        window.vectorSource = new ol.source.Vector({
+            wrapX: true,
+        });
+
+        vectorLayerBorder = new ol.layer.WebGLPoints({
+            source: window.vectorSource,
+            style: pointStyleBorder,
+        });
+        map.addLayer(vectorLayerBorder);
+
+        vectorLayer = new ol.layer.WebGLPoints({
+            source: window.vectorSource,
+            style: pointStyle,
+        });
+        map.addLayer(vectorLayer);
+    }
+
+    if (features) {
+        if (features.length > 0) {
+            // Puisque les features sont déjà au format GeoJSON, lisez-les directement
+            const newFeatures = new ol.format.GeoJSON().readFeatures({
+                type: 'FeatureCollection',
+                features: features // Utilisez directement votre tableau de features GeoJSON
+            }, {
+                dataProjection: 'EPSG:4326',
+                featureProjection: 'EPSG:3857'
+            });
+    
+            window.vectorSource.addFeatures(newFeatures);
+        }
+    } else {
+        // Chargez les features à partir d'un fichier GeoJSON si aucun feature n'est fourni
+        fetch('static/geojson_data.json').then(response => response.json()).then(data => {
+            const newFeatures = new ol.format.GeoJSON().readFeatures(data, {
+                dataProjection: 'EPSG:4326',
+                featureProjection: 'EPSG:3857'
+            });
+            window.vectorSource.addFeatures(newFeatures);
+        });
+    }
+}
+
+function displayWebGLPoints_old(features, pointOptions) {
     // si pas de features (on lit le geojson : plus simple pour lire tout le fichier)
     if (! features) {
     vectorSource = new ol.source.Vector({
@@ -429,25 +519,38 @@ function displayWebGLPoints(features, pointOptions) {
 // supprime les points de la carte (centre et bordures si existantes)
 function clearMap(){
     // on enleve la couche vectorielle avec les points
-    map.removeLayer(vectorLayer);
+    //map.removeLayer(vectorLayer);
     // on enleve la couche des bordures si elle existe (webgl)
-    if (isLayerOnMap(map, vectorLayerBorder)){
-        map.removeLayer(vectorLayerBorder);
+    //if (isLayerOnMap(map, vectorLayerBorder)){
+    //    map.removeLayer(vectorLayerBorder);
+    //}
+    window.vectorSource.clear();
+    if (window.borderLayer) {
+        map.removeLayer(window.borderLayer);
+        window.borderLayer = undefined; // Réinitialisez la référence
     }
+
+    if (window.centerLayer) {
+        map.removeLayer(window.centerLayer);
+        window.centerLayer = undefined; // Réinitialisez la référence
+    }
+    window.vectorSource = undefined;
 }
 
 
 // ----------- ANIMATION DE LA CARTE  ------------
-export function startAnimation(record=false) {
-    clearMap();
+export function startAnimation() {
+    window.vectorSource.clear();
     createFlashElements();
 
     let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
+    let flashOptions = optionsValues.flash
+    flashOptions.rgb = pkg.hexToRgb(flashOptions.color);
     const dayDuration = optionsValues.animation.timePerDay;
     const displayDaysWithoutCache = optionsValues.animation.displayDaysWithoutCache;
     currentDate = pkg.metadata.startDate;
     interval = setInterval(() => {
-        displayFeaturesForDate(currentDate, optionsValues.point, optionsValues.flash, false);
+        displayFeaturesForDate(currentDate, optionsValues.point, flashOptions, false);
         currentDate.setDate(currentDate.getDate() + 1);
         if (currentDate > pkg.metadata.endDate) {
             clearInterval(interval);
@@ -457,7 +560,7 @@ export function startAnimation(record=false) {
 
 
 export function recordAnimation(){
-    clearMap();
+    window.vectorSource.clear();
     createFlashElements();
 
     let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
@@ -497,7 +600,7 @@ function captureNextFrame(capture, pointOptions, flashOptions) {
     } else {
         // Passez au jour suivant
         currentDate.setDate(currentDate.getDate() + 1);
-        displayFeaturesForDate(currentDate, pointOptions, true);
+        displayFeaturesForDate(currentDate, pointOptions, flashOptions, true);
         currentFrame = 0;  // Réinitialisez le compteur de frames pour le nouveau jour
         requestAnimationFrame(() => captureNextFrame(true, pointOptions, flashOptions));
     }
@@ -513,15 +616,15 @@ function captureElement() {
         }
         // Si l'élément est trouvé, continuez avec la conversion en PNG.
         htmlToImage.toPng(element)
-          .then((dataUrl) => {
+        .then((dataUrl) => {
             // Traitement de l'image capturée
             pkg.sendImageToServer(dataUrl, imageCounter++);
             resolve(); // Résolution de la promesse après l'envoi de l'image.
-          })
-          .catch((error) => {
+        })
+        .catch((error) => {
             console.error('Erreur lors de la capture de l’élément : ', error);
             reject(error); // Rejet de la promesse en cas d'erreur.
-          });
+        });
     });
 }
 
@@ -534,7 +637,6 @@ function displayFeaturesForDate(date, pointOptions, flashOptions, record) {
         return featureDate.toDateString() === date.toDateString();
     });
 
-    console.log("featuresForDate", featuresForDate)
     displayWebGLPoints(featuresForDate, pointOptions)
 
     if (flashOptions.mode != "none") {
@@ -635,8 +737,8 @@ function flash(feature, flashOptions) {
         const frameState = event.frameState;
         const elapsed = frameState.time - start;
         if (elapsed >= duration) {
-          ol.Observable.unByKey(listenerKey);
-          return;
+            ol.Observable.unByKey(listenerKey);
+            return;
         }
 
         const elapsedRatio = elapsed / duration;
@@ -646,7 +748,7 @@ function flash(feature, flashOptions) {
 
         // Style pour l'étoile
         let style;
-        if (flashOptions.mode == "star") {
+         if (flashOptions.mode == "star") {
             style = starStyle(radius, opacity, flashOptions);}
         else if(flashOptions.mode == "circle") {
             style = circleStyle(radius, opacity, flashOptions);
@@ -672,6 +774,7 @@ map.addLayer(animationLayer);
 
 
 function starStyle(radius, opacity, flashOptions){
+    const color = `rgba(${flashOptions.rgb.r}, ${flashOptions.rgb.g}, ${flashOptions.rgb.b}, ${opacity})`;
     const style = new ol.style.Style({
         image: new ol.style.RegularShape({
             points: 5, // 5 points pour une étoile
@@ -679,11 +782,11 @@ function starStyle(radius, opacity, flashOptions){
             radius2: radius / 2, // Rayon intérieur (pour la forme de l'étoile)
             angle: 0, // Angle initial de l'étoile
             stroke: new ol.style.Stroke({
-                color: `rgba(255, 255, 0, ${opacity})`, // Couleur jaune avec l'opacité calculée
+                color: `rgba(0, 0, 0, ${opacity})`, // Couleur jaune avec l'opacité calculée
                 width: 2, // Largeur du contour
             }),
             fill: new ol.style.Fill({
-                color: `rgba(255, 255, 0, ${opacity})`, // Remplissage jaune avec l'opacité calculée
+                color: color, // Remplissage jaune avec l'opacité calculée
             }),
         }),
     });
@@ -691,11 +794,12 @@ function starStyle(radius, opacity, flashOptions){
 }
 
 function circleStyle(radius, opacity, flashOptions){
+    const color = `rgba(${flashOptions.rgb.r}, ${flashOptions.rgb.g}, ${flashOptions.rgb.b}, ${opacity})`;
     const style = new ol.style.Style({
         image: new ol.style.Circle({
             radius: radius,
             stroke: new ol.style.Stroke({
-                color: `rgba(255, 0, 0, ${opacity})`,
+                color: color,
                 width: 2,
             }),
         }),

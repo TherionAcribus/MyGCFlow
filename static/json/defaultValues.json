@@ -29,7 +29,7 @@
     },
     "flash":{
         "mode": "circle",
-        "color": "#000000",
+        "color": "#FF00FF",
         "duration": 200,
         "size": 10
     }
