@@ -26,6 +26,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         pkg.selectDefaultCarto();
         // centrer la carte
         pkg.centerMap();
+        // affiche les frames (infos, titre) si elles existent
+        pkg.displayFrames(optionsValues);
         // mets les valeurs par défaut dans les formulaire
         //(optionsValues);
         pkg.init_ui(optionsValues);

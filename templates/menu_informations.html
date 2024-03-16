@@ -1,0 +1,34 @@
+<!-- Tabs pour les informations à afficher -->
+<div id="infos" class="col s12">
+    <h3>Informations à afficher</h3>
+    <div>
+        <form>
+            <div class="col s4">
+                <label>
+                    <input id="cbDisplayTitle" type="checkbox"/>
+                    <span>Afficher un titre</span>
+                </label>
+
+                <div class="input-field">
+                    <input id="inputTitle" type="text" class="validate">
+                    <label for="inputTitle">Titre</label>
+                </div>
+                
+                <textarea hx-get="../static/css/titre.css" hx-trigger="load" id="inputTitleCss" class="cssEditor" rows="10" cols="50"></textarea>
+                <button id="btnTitleCss">Appliquer les Modifications</button>
+
+            </div>
+
+            <label>
+                <input id="cbDisplayNumberofCaches" type="checkbox"/>
+                <span>Afficher le nombre de caches trouvées</span>
+            </label>
+
+            <label>
+                <input id="cbDisplayCurrentDate" type="checkbox"/>
+                <span>Afficher la date</span>
+            </label>  
+
+        </form>
+    </div>
+</div>

@@ -1,0 +1,10 @@
+#titleFrame {
+    position: absolute;
+    top: 10px; /* Ajustez la position selon vos besoins */
+    right: 10px; /* Ajustez la position selon vos besoins */
+    background-color: white;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 0 5px rgba(0,0,0,0.2);
+    z-index: 100; /* S'assure que le titre est bien visible au-dessus de la carte */
+}

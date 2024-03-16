@@ -4,3 +4,4 @@ export * from './init.js';
 export * from './mapgl.js';
 export * from './bdd.js';
 export * from './record.js';
+export * from './frames.js';

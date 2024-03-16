@@ -27,6 +27,14 @@
         "timePerDay":200,
         "displayDaysWithoutCache": true
     },
+    "infos":{
+        "title": {
+            "display": true,
+            "text": "My Geocaching Map"
+        },
+        "displayNumberofCaches": false,
+        "displayCurrentDate": false
+    },
     "flash":{
         "mode": "circle",
         "color": "#FF00FF",

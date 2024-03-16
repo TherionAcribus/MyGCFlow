@@ -88,6 +88,26 @@ inputSizeFlash.addEventListener('input', changeFlashValues);
 const cpFlashColor = document.getElementById('flashColor');
 cpFlashColor.addEventListener('change', changeFlashValues);
 
+// INFOS 
+// checkboxes
+const cbDisplayTitle = document.getElementById('cbDisplayTitle');
+cbDisplayTitle.addEventListener('change', changeInfosValues);
+const cbDisplayNumberofCaches = document.getElementById('cbDisplayNumberofCaches');
+cbDisplayNumberofCaches.addEventListener('change', changeInfosValues);
+const cbDisplayCurrentDate = document.getElementById('cbDisplayCurrentDate');
+cbDisplayCurrentDate.addEventListener('change', changeInfosValues);
+// inputs
+const inputTitle = document.getElementById('inputTitle');
+inputTitle.addEventListener('input', changeInfosValues);
+// textareas
+const inputTitleCss = document.getElementById('inputTitleCss');
+// boutons
+const btnTitleCss = document.getElementById('btnTitleCss');
+btnTitleCss.addEventListener('click', () => {
+    console.log(inputTitleCss);
+    pkg.changeCssValues(inputTitleCss.value);
+});
+
 // OPTIONS 
 const switchEngine = document.getElementById('switchEngine');
 switchEngine.addEventListener('change', changeEngine);
@@ -140,7 +160,20 @@ export function init_ui(optionsValues) {
             break;
         }
     }
+    // ------- INFOS -------
+    // checkboxes
+    cbDisplayTitle.checked = optionsValues.infos.title.display;
+    cbDisplayNumberofCaches.checked = optionsValues.infos.displayNumberofCaches;
+    cbDisplayCurrentDate.checked = optionsValues.infos.displayCurrentDate;
+    // inputs
+    inputTitle.value = optionsValues.infos.title.text;
+    if (inputTitle.value != "My Geocaching Map") {
+        // enlève le placeholder si un texte est enregistré
+        M.updateTextFields();
+    }
+    // textAreas
     
+
     // ------- CARTE VECTORIELLE -------
 
     // couleur de trait par défaut
@@ -400,7 +433,6 @@ function changeAnimationValues(event){
 function changeFlashValues(event){
     let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
 
-    console.log(event)
     // radiobuttons
     if (event.type == "radio") {
         if (event.name == "flashMode"){
@@ -420,3 +452,50 @@ function changeFlashValues(event){
     optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
     console.log(optionsValues);
 }
+
+
+// -------------------- INFOS AFFICHéEs -------------------
+function changeInfosValues(event){
+    let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
+    console.log(event)
+
+    optionsValues.infos.title.display = cbDisplayTitle.checked;
+    optionsValues.infos.displayCurrentDate = cbDisplayCurrentDate.checked;
+    optionsValues.infos.displayNumberofCaches = cbDisplayNumberofCaches.checked;
+
+    console.log(event.target)
+
+    // ----- TITRE -----
+
+    // création / destruction du la Frame Titre
+    if (event.target.id == "cbDisplayTitle" && event.target.checked) {
+        console.log("cbDisplayTitle")
+        pkg.createTitleFrame();
+    } else if (event.target.id == "cbDisplayTitle" && !event.target.checked) {
+        pkg.destroyTitleFrame();
+    }
+
+    // changement texte titre
+    if (event.target.id == "inputTitle") {
+        console.log("inputTitle")
+        pkg.updateTitleFrame(event.target.value);
+    }
+}
+
+// fenetre css pour le titre. Le htmx charge tout le css avec également le #inputTitleCss {...} il faut donc le supprimer.
+// Comme changement impossible directement dans htmx (sauf à ajouter une adresse qui gère le chargement du css) on intercepte le changement
+// fait par le htmx et on le met à jour dans le textarea
+// Suppression des accolades et des espace en débuts de ligne
+document.addEventListener('htmx:afterSwap', function(event) {
+    if (event.target.id === 'inputTitleCss') {
+        const cssContent = event.target.value;
+        // Utiliser une expression régulière pour extraire le contenu entre les premières accolades trouvées
+        const match = cssContent.match(/\{([\s\S]*?)\}/);
+        if (match && match[1]) {
+            // Supprimer les espaces en début de chaque ligne
+            const cleanedCss = match[1].replace(/^\s*/gm, '');
+            // Mettre à jour le contenu du textarea avec le CSS nettoyé
+            event.target.value = cleanedCss.trim();
+        }
+    }
+});

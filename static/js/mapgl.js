@@ -806,3 +806,5 @@ function circleStyle(radius, opacity, flashOptions){
     });
     return style;
 }
+
+
