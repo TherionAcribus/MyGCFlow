@@ -4,19 +4,25 @@
     <head>
         <link rel="stylesheet" href="../static/css/style.css" />
         <link rel="stylesheet" href="../static/css/titre.css" />
+        <link rel="stylesheet" href="../static/css/infos.css" />
         <link rel="stylesheet" href="../static/css/materialize.min.css">
         <link rel="stylesheet" href="../static/css/ol.css">
-        <!-- Icones materialize -->
 
         <title>My Geocaching Map</title>
     </head>
 
     <body>
         <main>
-            <!-- Carte -->
-            <div id="map" style="width: 100%; height: 600px;"></div>
+            <div id="mapWithFrames">
+                <!-- Carte -->
+                <div id="map" style="width: 100%; height: 600px;"></div>
 
-            <div id="titleFrame" style="display:none"></div>
+                <!-- Titre -->
+                <div id="titleFrame" style="display:none"></div>
+
+                <!-- Infos -->
+                <div id="infosFrame" style="display:none"><span id ="spanNbCaches"></span> - <span id ="spanCurrentDate"></span></div>
+            </div>
 
             <!-- Modal de chargement -->
             {% include 'modal_loading.html' %}

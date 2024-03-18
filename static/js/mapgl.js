@@ -9,6 +9,12 @@
 
 // stockage des infos dans cookies au lieu localstorage ? Laissez le choix ?
 
+// FRAMES (TItre, infos)
+// TODO Faire input pour les différentes option et rendre css optionnel (v2)
+// TODO AJouter colorisation syntaxique pour le css (V2)
+// TODO Ajouter une image (V2)
+// TODO Nombre de caches du jour avec un chiffre qui grossi (+ gradient couleur) (V2)
+
 // POINTS 
 // TODO GEstion des anneaux
 // WEBGL AVec style standard peut être plus rapide. A tester 
@@ -19,7 +25,6 @@
 // Mettre le switch dans la bonne position
 // Aller lire le json s'il existe au lieu de recharger le fichier
 
-// TODO date et/ou nbre caches et/ou logos (v2)
 
 import * as pkg from './index.js';
 
@@ -545,12 +550,15 @@ export function startAnimation() {
 
     let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
     let flashOptions = optionsValues.flash
+
+    let infos = createObjectInfos(optionsValues);
+
     flashOptions.rgb = pkg.hexToRgb(flashOptions.color);
     const dayDuration = optionsValues.animation.timePerDay;
-    const displayDaysWithoutCache = optionsValues.animation.displayDaysWithoutCache;
+    //const displayDaysWithoutCache = optionsValues.animation.displayDaysWithoutCache;
     currentDate = pkg.metadata.startDate;
     interval = setInterval(() => {
-        displayFeaturesForDate(currentDate, optionsValues.point, flashOptions, false);
+        displayFeaturesForDate(currentDate, optionsValues.point, flashOptions, false, infos);
         currentDate.setDate(currentDate.getDate() + 1);
         if (currentDate > pkg.metadata.endDate) {
             clearInterval(interval);
@@ -558,21 +566,31 @@ export function startAnimation() {
     }, dayDuration);
 }
 
-
 export function recordAnimation(){
     window.vectorSource.clear();
     createFlashElements();
 
     let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
+    let infos = createObjectInfos(optionsValues);
     currentDate = pkg.metadata.startDate;
     // TEMPORAIRE !!!! JUSTE POUR AVOIR TRUC INTERESSANT A VOIR !!!!
     currentDate = new Date(2018, 7, 27);
     currentFrame = 0;  // Réinitialisez le compteur de frames
-    captureNextFrame(true, optionsValues.point, optionsValues.flash);
+    captureNextFrame(true, optionsValues.point, optionsValues.flash, infos);
 }
 
 
-function captureNextFrame(capture, pointOptions, flashOptions) {
+// créé un objet pour les infos pour permet de garder une consistance pour le nombre de caches
+function createObjectInfos(optionsValues){
+    let infos = new Object();
+    infos.displayDate = optionsValues.infos.numberOfCaches.display
+    infos.displayNumberofCaches = optionsValues.infos.numberOfCaches.display
+    infos.cacheNumber = 0;
+    return infos
+}
+
+
+function captureNextFrame(capture, pointOptions, flashOptions, infos) {
     if (currentDate > pkg.metadata.endDate) {
         // Traitement de fin -> Assembler le film
         // Supprimer les images temporaires
@@ -590,25 +608,25 @@ function captureNextFrame(capture, pointOptions, flashOptions) {
             captureElement().then(() => {
                 currentFrame++;
                 // Utilisation d'une fonction fléchée pour passer des arguments
-                requestAnimationFrame(() => captureNextFrame(true, pointOptions, flashOptions));
+                requestAnimationFrame(() => captureNextFrame(true, pointOptions, flashOptions, infos));
             });
         } else {
             currentFrame++;
             // De même ici, si vous avez besoin de passer des arguments spécifiques
-            requestAnimationFrame(() => captureNextFrame(true, pointOptions, flashOptions));
+            requestAnimationFrame(() => captureNextFrame(true, pointOptions, flashOptions, infos));
         }
     } else {
         // Passez au jour suivant
         currentDate.setDate(currentDate.getDate() + 1);
-        displayFeaturesForDate(currentDate, pointOptions, flashOptions, true);
+        displayFeaturesForDate(currentDate, pointOptions, flashOptions, true, infos);
         currentFrame = 0;  // Réinitialisez le compteur de frames pour le nouveau jour
-        requestAnimationFrame(() => captureNextFrame(true, pointOptions, flashOptions));
+        requestAnimationFrame(() => captureNextFrame(true, pointOptions, flashOptions, infos));
     }
 }
 
 function captureElement() {
     return new Promise((resolve, reject) => {
-        const element = document.getElementById('map');
+        const element = document.getElementById('mapWithFrames');
         if (!element) {
             // Si l'élément n'est pas trouvé, rejetez immédiatement la promesse.
             reject('Élément non trouvé'); // Assurez-vous que cette ligne est à l'intérieur de la Promesse.
@@ -629,8 +647,7 @@ function captureElement() {
 }
 
 
-function displayFeaturesForDate(date, pointOptions, flashOptions, record) {
-    console.log("currentDate", currentDate)
+function displayFeaturesForDate(date, pointOptions, flashOptions, record, infos) {
 
     const featuresForDate = pkg.json_data.features.filter(feature => {
         const featureDate = new Date(feature.properties.date_find);
@@ -647,8 +664,22 @@ function displayFeaturesForDate(date, pointOptions, flashOptions, record) {
             flashFeatures(featuresForDate, flashOptions);
         }
     }
+
+    // affiche éventuellement les infos demandées
+    displayInfosForDate(infos, date, featuresForDate);
 }
 
+// affiche les infos (date, nb de caches) en fonction des jours
+function displayInfosForDate(infos, date, featuresForDate) {
+    if (infos.displayDate) {
+        pkg.updateCurrentDate(date);
+    }
+    if (infos.displayNumberofCaches) {
+        const newCaches = featuresForDate.length;
+        infos.cacheNumber += newCaches
+        pkg.updateNbCaches(infos.cacheNumber);
+    }    
+}
 
 // -------------- FLASH ---------------------------------------
 
@@ -668,7 +699,6 @@ function flashRecord(features) {
         animationSource.addFeature(animatedFeature);
 
         })
-
 }
 
 
@@ -723,7 +753,6 @@ function flashFeatures(features, flashOptions) {
         // Ajoutez ici la feature à une source/vector layer dédiée à l'animation si ce n'est pas déjà fait dans flash()
         flash(feature, flashOptions); // Utilisez votre fonction flash existante
     });
-
 }
 
 
@@ -748,7 +777,7 @@ function flash(feature, flashOptions) {
 
         // Style pour l'étoile
         let style;
-         if (flashOptions.mode == "star") {
+        if (flashOptions.mode == "star") {
             style = starStyle(radius, opacity, flashOptions);}
         else if(flashOptions.mode == "circle") {
             style = circleStyle(radius, opacity, flashOptions);

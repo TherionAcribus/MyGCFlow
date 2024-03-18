@@ -101,11 +101,15 @@ const inputTitle = document.getElementById('inputTitle');
 inputTitle.addEventListener('input', changeInfosValues);
 // textareas
 const inputTitleCss = document.getElementById('inputTitleCss');
+const inputInfosCss = document.getElementById('inputInfosCss');
 // boutons
 const btnTitleCss = document.getElementById('btnTitleCss');
+const btnInfosCss = document.getElementById('btnInfosCss');
 btnTitleCss.addEventListener('click', () => {
-    console.log(inputTitleCss);
-    pkg.changeCssValues(inputTitleCss.value);
+    pkg.changeTitleCssValues(inputTitleCss.value);
+});
+btnInfosCss.addEventListener('click', () => {
+    pkg.changeInfosCssValues(inputInfosCss.value);
 });
 
 // OPTIONS 
@@ -163,8 +167,8 @@ export function init_ui(optionsValues) {
     // ------- INFOS -------
     // checkboxes
     cbDisplayTitle.checked = optionsValues.infos.title.display;
-    cbDisplayNumberofCaches.checked = optionsValues.infos.displayNumberofCaches;
-    cbDisplayCurrentDate.checked = optionsValues.infos.displayCurrentDate;
+    cbDisplayNumberofCaches.checked = optionsValues.infos.numberOfCaches.display;
+    cbDisplayCurrentDate.checked = optionsValues.infos.currentDate.display;
     // inputs
     inputTitle.value = optionsValues.infos.title.text;
     if (inputTitle.value != "My Geocaching Map") {
@@ -460,8 +464,8 @@ function changeInfosValues(event){
     console.log(event)
 
     optionsValues.infos.title.display = cbDisplayTitle.checked;
-    optionsValues.infos.displayCurrentDate = cbDisplayCurrentDate.checked;
-    optionsValues.infos.displayNumberofCaches = cbDisplayNumberofCaches.checked;
+    optionsValues.infos.currentDate.display = cbDisplayCurrentDate.checked;
+    optionsValues.infos.numberOfCaches.display = cbDisplayNumberofCaches.checked;
 
     console.log(event.target)
 
@@ -480,6 +484,21 @@ function changeInfosValues(event){
         console.log("inputTitle")
         pkg.updateTitleFrame(event.target.value);
     }
+
+    // ------- INFOS -----
+    // Nombre caches
+    if (event.target.id == "cbDisplayNumberofCaches" && event.target.checked) {
+        console.log("cbDisplayNumberofCaches")
+        pkg.createInfosFrame("number");
+    } else if (event.target.id == "cbDisplayCurrentDate" && event.target.checked) {
+        // Date
+        console.log("cbDisplayCurrentDate")
+        pkg.createInfosFrame("date");
+    } else if ((event.target.id == "cbDisplayNumberofCaches" || event.target.id == "cbDisplayCurrentDate" ) 
+        && (!cbDisplayNumberofCaches.checked && !cbDisplayCurrentDate.checked)) {
+        // fermeture si les deux sont desactivés
+        pkg.destroyInfosFrame();
+    }
 }
 
 // fenetre css pour le titre. Le htmx charge tout le css avec également le #inputTitleCss {...} il faut donc le supprimer.
@@ -487,7 +506,7 @@ function changeInfosValues(event){
 // fait par le htmx et on le met à jour dans le textarea
 // Suppression des accolades et des espace en débuts de ligne
 document.addEventListener('htmx:afterSwap', function(event) {
-    if (event.target.id === 'inputTitleCss') {
+    if (event.target.id === 'inputTitleCss' || event.target.id === 'inputInfosCss') {
         const cssContent = event.target.value;
         // Utiliser une expression régulière pour extraire le contenu entre les premières accolades trouvées
         const match = cssContent.match(/\{([\s\S]*?)\}/);

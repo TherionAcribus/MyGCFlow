@@ -24,7 +24,7 @@
         }
     },
     "animation":{
-        "timePerDay":200,
+        "timePerDay":50,
         "displayDaysWithoutCache": true
     },
     "infos":{
@@ -32,8 +32,12 @@
             "display": true,
             "text": "My Geocaching Map"
         },
-        "displayNumberofCaches": false,
-        "displayCurrentDate": false
+        "numberOfCaches": {
+            "display": true  
+        },
+        "currentDate": {
+            "display": true
+        }
     },
     "flash":{
         "mode": "circle",
