@@ -14,6 +14,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     // initialisation des elements de Materialize
     initTabs();
     initModals();
+    initSelect();
+    initPickers();
     pkg.createMap();
     await pkg.requetedefaultGcColors();
     // check la présence d'une BDD et les affiche
@@ -48,6 +50,22 @@ function initTabs() {
 function initModals() {
     var elemsModals = document.querySelectorAll('.modal');
     M.Modal.init(elemsModals, {});
+}
+
+// initialisation des Selects de Materialize
+function initSelect() {
+    var elems = document.querySelectorAll('select');
+    var instances = M.FormSelect.init(elems, options);
+}
+
+
+// initialisation des Pickers de Materialize
+function initPickers() {
+    console.log("initPickers")
+    var elems = document.querySelectorAll('.datepicker');
+    // Format de date du PIcker. TODO permettre de choisir pour tout le programme, le format de la date
+    const options = {format: 'yyyy-mm-dd'}
+    var instances = M.Datepicker.init(elems, options);
 }
 
 // recupération des options par défaut et les stocke dans sessionStorage dans la variable optionsValues

@@ -5,6 +5,7 @@ from datetime import datetime
 import os
 import json
 
+
 # variable globale pour le chargement du fichier
 loading_progress = 0
 loading_message = ""
@@ -37,18 +38,25 @@ def uploadBdd(request, Geocache, db):
         if cache_data is not None:
             logs = cache_data.find('groundspeak:logs', ns)
             cache_type = cache_data.find('groundspeak:type', ns).text
+            container = cache_data.find('groundspeak:container', ns).text
+            terrain = cache_data.find('groundspeak:terrain', ns).text
+            difficulty = cache_data.find('groundspeak:difficulty', ns).text
             if logs is not None:
                 for log_entry in logs.findall('groundspeak:log', ns):
                     date_find_str = log_entry.find('groundspeak:date', ns).text
                     if date_find_str:
                         date_find = datetime.strptime(date_find_str, '%Y-%m-%dT%H:%M:%SZ')
 
+
         new_geocache = Geocache(
             latitude=waypoint.attrib['lat'],
             longitude=waypoint.attrib['lon'],
             name=waypoint.find('default:name', ns).text,
             date_find=date_find,
-            cache_type = cache_type
+            cache_type = cache_type,
+            terrain = terrain,
+            difficulty = difficulty,
+            container = container
         )
         db.session.add(new_geocache)
 
@@ -71,24 +79,36 @@ def get_progress_step():
     return loading_progress, loading_message
 
 
-def db_infos():
+def db_infos(Geocache):
     """UTilisé pour voir si une BDD existe. Pour l'instant uniquement pour la BDD SQLLite geocaching.db"""
     db_path = 'instance/geocaching.db'  # Chemin de la base de données
     exists = database_exists(db_path)
     size = get_database_size(db_path)
-    return jsonify({'exists': exists, 'size': size})
+    if exists:
+        startDate, endDate = get_database_start_end(Geocache)
+        return jsonify({'exists': exists, 'size': size, 'startDate': startDate, 'endDate': endDate})
+    return jsonify({'exists': exists, 'size': size, 'startDate': None, 'endDate': None})
 
 
 def get_database_size(db_path):
     return os.path.getsize(db_path) if os.path.exists(db_path) else 0
 
 
+def get_database_start_end(Geocache):
+    """Premiere et derniere date de la base de données"""
+    first_entry = Geocache.query.order_by(Geocache.date_find).first()
+    last_entry = Geocache.query.order_by(Geocache.date_find.desc()).first()
+    startDate = first_entry.date_find if first_entry else None
+    endDate = last_entry.date_find if last_entry else None
+    return startDate, endDate
+
+
 def database_exists(db_path):
     return os.path.exists(db_path)
 
 
-def create_geojson(Geocache, request, app):
-    query = Geocache.query.order_by(Geocache.date_find)
+def create_geojson(query, Geocache, app):
+    query = query.order_by(Geocache.date_find)
     
     # Récupérer les données du formulaire
     #form_data = request.json
@@ -131,7 +151,6 @@ def create_geojson(Geocache, request, app):
 
 
 def get_metadata_from_geojson(features):
-    print(type(features))
     # Vérifier que la liste des features n'est pas vide
     if features:
         # Récupérer les dates du premier et du dernier élément
@@ -146,6 +165,30 @@ def get_metadata_from_geojson(features):
         "endDate": end_date.strftime('%Y-%m-%d') if end_date else None,
         "deltaDays": delta_days
     }
-    print(metadata)
 
     return metadata
+
+
+def filter_session(app, db, Geocache, selectedValues):
+    """ Filtre de la BDD et retourne une query qui sera transformée plus tard en GeoJSON """
+    print('selectedValues',selectedValues)
+
+    query = db.session.query(Geocache)
+    # Utilisez db.session pour faire la requête
+    query = query.filter(Geocache.cache_type.in_(selectedValues["type"]))
+    query = query.filter(Geocache.terrain.in_(selectedValues["terrain"]))
+    query = query.filter(Geocache.difficulty.in_(selectedValues["difficulty"]))
+    query = query.filter(Geocache.container.in_(selectedValues["container"]))
+
+    # Filtrage par plage de dates
+    start_date = convert_str_to_date(selectedValues["dates"]['startDate'])
+    end_date = convert_str_to_date(selectedValues["dates"]['endDate'])
+    query = query.filter(Geocache.date_find >= start_date, Geocache.date_find <= end_date)
+    
+    geocaches_data = create_geojson(query, Geocache, app)
+
+    return geocaches_data
+
+
+def convert_str_to_date(date_str):
+    return datetime.strptime(date_str, '%Y-%m-%d').date()

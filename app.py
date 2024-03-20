@@ -4,7 +4,7 @@ from flask import Flask, render_template, jsonify, request, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_cors import cross_origin
-from bdd import uploadBdd, get_progress_step, db_infos, create_geojson, get_metadata_from_geojson
+from bdd import uploadBdd, get_progress_step, db_infos, create_geojson, get_metadata_from_geojson, filter_session
 from capture import upload_image
 
 app = Flask(__name__)
@@ -32,9 +32,12 @@ class Geocache(db.Model):
     name = db.Column(db.String(255))
     date_find = db.Column(db.DateTime)
     cache_type = db.Column(db.String(50))
+    terrain = db.Column(db.Float)
+    difficulty = db.Column(db.Float)
+    container = db.Column(db.String(50))
 
     def __repr__(self):
-        return f"<Geocache {self.id}, {self.latitude}, {self.longitude}, {self.name}, {self.date_find}, {self.cache_type}>"  # noqa: E501
+        return f"<Geocache {self.id}, {self.latitude}, {self.longitude}, {self.name}, {self.date_find}, {self.cache_type}>" 
     
 
 @app.route('/')
@@ -60,7 +63,6 @@ def handle_upload():
     if file.filename == '':
         return jsonify({'message': 'Aucun fichier sélectionné'}), 400
     
-    print("upload")
     uploadBdd(request, Geocache, db)
 
     return jsonify({'message': 'Fichier reçu avec succès'})
@@ -68,12 +70,27 @@ def handle_upload():
 
 @app.route('/db_status')
 def db_status():
-    return db_infos()
+    return db_infos(Geocache)
+
+
+@app.route('/filter_caches', methods=['POST'])
+@cross_origin()
+def filter_caches():
+    data_request = request.json
+    selected_types  = data_request.get('types', [])  # Récupère le tableau des types
+    geojson = filter_session(app, db, Geocache, selected_types)
+    metadata = get_metadata_from_geojson(geojson["features"])
+    response_data = {
+        'geojson': geojson,
+        'metadata': metadata,
+    }
+    return jsonify(response_data)
 
 
 @app.route('/get_geojson_points', methods=['POST', 'GET'])
 def get_geojson_points():
-    geojson = create_geojson(Geocache, request, app)
+    # passage G.query et G pour être compatible avec la fonction filter
+    geojson = create_geojson(Geocache.query, Geocache, app)
     metadata = get_metadata_from_geojson(geojson["features"])
     response_data = {
         'geojson': geojson,
@@ -85,7 +102,6 @@ def get_geojson_points():
 @app.route('/upload_image', methods=['POST'])
 @cross_origin()
 def get_upload_image():
-    print("uptkors")
     return upload_image(request)
 
 

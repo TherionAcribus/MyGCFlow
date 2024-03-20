@@ -9,10 +9,11 @@ export let json_data;
 // TODO Gestion des erreurs
 // CHoix de la BDD 
 // Visualisation des informations
-// Résumé des informations à améliorer (nombre de points, date début et fin)
-// 
+// Résumé des informations à améliorer (nombre de points)
 
-// chargement d'un fichier dans la BSS
+// TODO Vu qu'il y a json_data, faut il garder json ? 
+
+// chargement d'un fichier dans la BDD
 function uploadBddRequest(e){
     e.preventDefault();
     pkg.openModalLoading();
@@ -78,6 +79,13 @@ function showBddInfos(data){
     } else {
         infos += " La base de données est vide. Vous devez commencer par ajouter un nouveau fichier .gpx avec vos trouvailles. EXPLICATIONS "
     }
+
+    if (data.exists){
+        infos += "\n 1er enregistrement : " + data.startDate + "\n Dernier enregistrement : " + data.endDate
+    } else {
+        infos += " La base de données est vide. Vous devez commencer par ajouter un nouveau fichier .gpx avec vos trouvailles. EXPLICATIONS "
+    }
+
     const divInfosBDD = document.getElementById('infosBDD');
 
     divInfosBDD.innerHTML = infos;
@@ -87,10 +95,12 @@ export function readBdd(){
     fetch('http://localhost:5000/get_geojson_points')
     .then(response => response.json())
     .then(data => {
-        console.log('data', data);
         json_data = data.geojson;
         metadata = data.metadata;
+        // conversion en objet date
         dateStrToDate();
+        // mise à jour des Date Pickers de l'ui (filtre BDD)
+        pkg.setPickerDates(metadata)
         pkg.addVector(data.geojson);
     })
     .catch(error => console.error('Error:', error));
@@ -99,4 +109,24 @@ export function readBdd(){
 function dateStrToDate(){
     metadata.startDate = new Date(metadata.startDate);
     metadata.endDate = new Date(metadata.endDate);
+}
+
+//
+export function changeSelect(selectedValues, optionValues) {
+    fetch('http://localhost:5000/filter_caches', {
+        method: 'POST', 
+        headers: {
+            'Content-Type': 'application/json', // Spécifie le type de contenu envoyé
+        },
+        body: JSON.stringify({ types: selectedValues }), // Convertit l'objet en chaîne JSON
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log(data);
+        json_data = data.geojson;
+        metadata = data.metadata;
+        dateStrToDate();
+        pkg.refreshPoints(optionValues);
+    })
+    .catch(error => console.error('Error:', error));
 }

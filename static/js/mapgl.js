@@ -1,3 +1,16 @@
+// TODO Afficher les informations de la carte (nombre de caches, date de la carte) au démarrage
+// TODO Afficher le contenu de la Session : stats, liste des caches, matrice (v3) Chargement dynamique au chargment de l'onglet
+
+// EN COURS -> CREATION DES DATEPICKERS. POur l'instant initialisés au démarrage avec des dates au pif. Réécrire JS pour mettre date début + fin 
+// + Voir si possible d'ajouter des infos sur nbre cache par date 
+// + coloration de la période ou il y a des caches ?
+
+// TODO Ajouter les autres filtres (Pays, Region, Poseur, Attributs)
+// TODO COloration selon autre critères que le type (T, D, size) (v2)
+// TODO Permettre afficher images à la place des cercles (icones officielles) (V2)
+// TODO Permettre d'afficher des images à la places des flash (avec icones officielles) (V2)
+
+
 // TODO Lors d'un refresh ou redémarrage de l'application demander si réinit ou si utilise les données du localstorage (si existe) ou utilisation cookies ?
 // TODO Gestion des préférences
 
@@ -14,6 +27,8 @@
 // TODO AJouter colorisation syntaxique pour le css (V2)
 // TODO Ajouter une image (V2)
 // TODO Nombre de caches du jour avec un chiffre qui grossi (+ gradient couleur) (V2)
+// TODO Raccourci clavier pour valider css
+// TODO Permettre de choisir le format de la date pour tout le programme (Frame, pickers...)
 
 // POINTS 
 // TODO GEstion des anneaux

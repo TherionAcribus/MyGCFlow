@@ -1,4 +1,23 @@
 import * as pkg from './index.js';
+
+// MENU BDD
+
+// select BDD
+const selectType = document.getElementById('selectType');
+selectType.addEventListener('change', changeSelection);
+const selectTerrain = document.getElementById('selectTerrain');
+selectTerrain.addEventListener('change', changeSelection);
+const selectDifficulty = document.getElementById('selectDifficulty');
+selectDifficulty.addEventListener('change', changeSelection);
+const selectContainer = document.getElementById('selectContainer');
+selectContainer.addEventListener('change', changeSelection);
+// datepicker
+const datePickerStart = document.getElementById('datePickerStart');
+const datePickerEnd = document.getElementById('datePickerEnd');
+datePickerStart.addEventListener('change', changeSelection);
+datePickerEnd.addEventListener('change', changeSelection);
+
+
 // MENU CARTES
 
 // boutons pour le choix des cartes
@@ -202,6 +221,49 @@ function changeEngine() {
     let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
     localStorage.setItem('optionsValues', JSON.stringify(optionsValues));
     pkg.refreshPoints(optionsValues); 
+}
+
+
+
+// ----------- BDD ------------
+
+// Filtres
+
+// synchronise les dates de selection des pickers avec BDD
+export function setPickerDates(metadata) {
+    const startDateElement = document.querySelector('#datePickerStart');
+    const endDateElement = document.querySelector('#datePickerEnd');
+
+    const startDatePicker = M.Datepicker.getInstance(startDateElement);
+    const endDatePicker = M.Datepicker.getInstance(endDateElement);
+
+    const formattedStartDate = formatDateForPickers(metadata.startDate);
+    const formattedEndDate = formatDateForPickers(metadata.endDate);
+
+    startDatePicker.setDate(metadata.startDate, true);
+    endDatePicker.setDate(metadata.endDate, true);
+
+    startDateElement.value = formattedStartDate;
+    endDateElement.value = formattedEndDate;
+}
+
+function formatDateForPickers(date) {
+    const options = { day: '2-digit', month: '2-digit', year: 'numeric', };
+    return new Date(date).toLocaleDateString('fr-CA', options);
+}
+
+// si on modifie un élement de la selection, on filtre et rafraichit
+function changeSelection(event){
+    console.log(event.target)
+    let selectedValues = {};
+    selectedValues["type"] = Array.from(selectType.selectedOptions).map(option => option.value);
+    selectedValues["terrain"] = Array.from(selectTerrain.selectedOptions).map(option => option.value);
+    selectedValues["difficulty"] = Array.from(selectDifficulty.selectedOptions).map(option => option.value);
+    selectedValues["container"] = Array.from(selectContainer.selectedOptions).map(option => option.value);
+    selectedValues["dates"] = {startDate: document.querySelector('#datePickerStart').value, endDate: document.querySelector('#datePickerEnd').value};
+
+    let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
+    pkg.changeSelect(selectedValues, optionsValues);
 }
 
 
