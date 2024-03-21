@@ -18,6 +18,14 @@ export function displayFrames(optionsValues){
 
 // -------------------- INFOS -------------------
 
+// Affiche le nombre de caches + date après Filtre ou 1er Chargement
+export function updateInfosFrameAfterReadBdd(metadata){
+    let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
+    console.log(metadata)
+    updateNbCaches(metadata.numberOfCaches);
+    updateCurrentDate(metadata.endDate);
+}
+
 // creation Frame Infos. Peut importe qui envoie la demande de création, on l'affiche si pas affiché
 export function createInfosFrame(){
     console.log("createInfosFrame")

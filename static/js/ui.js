@@ -130,6 +130,10 @@ btnTitleCss.addEventListener('click', () => {
 btnInfosCss.addEventListener('click', () => {
     pkg.changeInfosCssValues(inputInfosCss.value);
 });
+// Spans dans Frame Infos
+const spanNbCaches = document.getElementById('spanNbCaches');
+const spanCurrentDate = document.getElementById('spanCurrentDate');
+
 
 // OPTIONS 
 const switchEngine = document.getElementById('switchEngine');
@@ -550,17 +554,32 @@ function changeInfosValues(event){
     // ------- INFOS -----
     // Nombre caches
     if (event.target.id == "cbDisplayNumberofCaches" && event.target.checked) {
-        console.log("cbDisplayNumberofCaches")
+        // réaffiche span Caches
+        spanNbCaches.style.display = "inline";
         pkg.createInfosFrame("number");
     } else if (event.target.id == "cbDisplayCurrentDate" && event.target.checked) {
         // Date
-        console.log("cbDisplayCurrentDate")
+        // reaffiche span Date
+        spanCurrentDate.style.display = "inline";
         pkg.createInfosFrame("date");
     } else if ((event.target.id == "cbDisplayNumberofCaches" || event.target.id == "cbDisplayCurrentDate" ) 
         && (!cbDisplayNumberofCaches.checked && !cbDisplayCurrentDate.checked)) {
         // fermeture si les deux sont desactivés
         pkg.destroyInfosFrame();
     }
+    
+    // efface span Date ou Nombre de Caches si demandé indifférement de la Frame global
+    if (event.target.id == "cbDisplayNumberofCaches" && !event.target.checked) {
+        spanNbCaches.style.display = "none";
+    } else if (event.target.id == "cbDisplayCurrentDate" && !event.target.checked) {
+        console.log("cbDisplayCurrentDate")
+        spanCurrentDate.style.display = "none";
+    }
+
+
+    // sauvegarde des informations
+    localStorage.setItem('optionsValues', JSON.stringify(optionsValues));
+
 }
 
 // fenetre css pour le titre. Le htmx charge tout le css avec également le #inputTitleCss {...} il faut donc le supprimer.

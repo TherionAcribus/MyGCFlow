@@ -584,9 +584,8 @@ export function startAnimation() {
 export function recordAnimation(){
     window.vectorSource.clear();
     createFlashElements();
-
-    let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
-    let infos = createObjectInfos(optionsValues);
+    // creation objet pour stocker les infos liées aux Frames (dt nombre de caches)
+    let infos = createObjectInfos();
     currentDate = pkg.metadata.startDate;
     // TEMPORAIRE !!!! JUSTE POUR AVOIR TRUC INTERESSANT A VOIR !!!!
     currentDate = new Date(2018, 7, 27);
@@ -596,9 +595,10 @@ export function recordAnimation(){
 
 
 // créé un objet pour les infos pour permet de garder une consistance pour le nombre de caches
-function createObjectInfos(optionsValues){
+function createObjectInfos(){
     let infos = new Object();
-    infos.displayDate = optionsValues.infos.numberOfCaches.display
+    let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
+    infos.displayDate = optionsValues.infos.currentDate.display
     infos.displayNumberofCaches = optionsValues.infos.numberOfCaches.display
     infos.cacheNumber = 0;
     return infos
@@ -686,6 +686,7 @@ function displayFeaturesForDate(date, pointOptions, flashOptions, record, infos)
 
 // affiche les infos (date, nb de caches) en fonction des jours
 function displayInfosForDate(infos, date, featuresForDate) {
+    console.log(infos)
     if (infos.displayDate) {
         pkg.updateCurrentDate(date);
     }

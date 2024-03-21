@@ -99,6 +99,8 @@ export function readBdd(){
         metadata = data.metadata;
         // conversion en objet date
         dateStrToDate();
+        // MAJ des frames Infos
+        pkg.updateInfosFrameAfterReadBdd(metadata);
         // mise à jour des Date Pickers de l'ui (filtre BDD)
         pkg.setPickerDates(metadata)
         pkg.addVector(data.geojson);
@@ -111,7 +113,7 @@ function dateStrToDate(){
     metadata.endDate = new Date(metadata.endDate);
 }
 
-//
+// Si on change le filtre de la BDD on refait une requete
 export function changeSelect(selectedValues, optionValues) {
     fetch('http://localhost:5000/filter_caches', {
         method: 'POST', 
@@ -125,7 +127,10 @@ export function changeSelect(selectedValues, optionValues) {
         console.log(data);
         json_data = data.geojson;
         metadata = data.metadata;
+        // conversion en objet date
         dateStrToDate();
+        // MAJ des frames Infos
+        pkg.updateInfosFrameAfterReadBdd(metadata);
         pkg.refreshPoints(optionValues);
     })
     .catch(error => console.error('Error:', error));

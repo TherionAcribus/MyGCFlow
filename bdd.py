@@ -150,6 +150,7 @@ def create_geojson(query, Geocache, app):
     return geojson
 
 
+# TODO : C'est Pas terrible de récupérer infos depuis GeoJSON. Ce serait plus logique de les récupérer depuis la BDD
 def get_metadata_from_geojson(features):
     # Vérifier que la liste des features n'est pas vide
     if features:
@@ -163,7 +164,8 @@ def get_metadata_from_geojson(features):
     metadata = {
         "startDate": start_date.strftime('%Y-%m-%d') if start_date else None,
         "endDate": end_date.strftime('%Y-%m-%d') if end_date else None,
-        "deltaDays": delta_days
+        "deltaDays": delta_days,
+        "numberOfCaches": len(features)
     }
 
     return metadata
