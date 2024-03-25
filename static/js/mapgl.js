@@ -1,4 +1,5 @@
-// TODO Afficher les informations de la carte (nombre de caches, date de la carte) au démarrage
+// GESTION DE OPTIONVALUES DANS UN OBJET GLOBAL ????
+
 // TODO Afficher le contenu de la Session : stats, liste des caches, matrice (v3) Chargement dynamique au chargment de l'onglet
 
 // EN COURS -> CREATION DES DATEPICKERS. POur l'instant initialisés au démarrage avec des dates au pif. Réécrire JS pour mettre date début + fin 

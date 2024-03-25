@@ -5,7 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_cors import cross_origin
 from bdd import uploadBdd, get_progress_step, db_infos, create_geojson, get_metadata_from_geojson, filter_session
-from capture import upload_image
+from capture import upload_image, clear_pictures_directory
 
 app = Flask(__name__)
 
@@ -103,6 +103,12 @@ def get_geojson_points():
 @cross_origin()
 def get_upload_image():
     return upload_image(request)
+
+
+@app.route('/clear_pictures_directory', methods=['POST'])
+@cross_origin()
+def clear_pictures():
+    return clear_pictures_directory(request)
 
 
 if __name__ == '__main__':

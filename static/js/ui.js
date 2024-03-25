@@ -498,6 +498,26 @@ function changeAnimationValues(event){
 }
 
 
+// TMP : Pour l'instant on vider le repertoire via un bouton. Devra par la suite être automatique après assemblage.
+fetch('/clear_pictures_directory', {
+    method: 'POST', 
+    headers: {
+        'X-CSRFToken': csrftoken, 
+        'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ action: 'vider_repertoire' }),
+})
+.then(response => response.json())
+.then(data => {
+    console.log(data); // Traiter la réponse de Django
+    if(data.success) {
+        // Mettre à jour l'interface utilisateur en conséquence
+        console.log(data)
+    }
+})
+.catch(error => console.error('Erreur:', error));
+
+
 // ----------------- FLASH ----------------
 // recupère tous les changements liés aux flashs
 function changeFlashValues(event){
@@ -536,6 +556,8 @@ function changeInfosValues(event){
     console.log(event.target)
 
     // ----- TITRE -----
+
+    // A METTRE DANS FRAME.JS !!!!!
 
     // création / destruction du la Frame Titre
     if (event.target.id == "cbDisplayTitle" && event.target.checked) {
