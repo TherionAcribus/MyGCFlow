@@ -1,4 +1,4 @@
-// GESTION DE OPTIONVALUES DANS UN OBJET GLOBAL ????
+// TODO EN COURS -> Changer tous Les get / set par pkg.options
 
 // TODO Afficher le contenu de la Session : stats, liste des caches, matrice (v3) Chargement dynamique au chargment de l'onglet
 
@@ -63,7 +63,7 @@ let defaultGcColors;
 let currentDate;
 // ENREGISTREMENT
 // Compteur de frames pour le jour en cours
-let currentFrame = 0;  
+let currentFrame = 0;
 // TEMP
 let framesPerDay = 24;  
 let imageCounter = 0;
@@ -583,6 +583,9 @@ export function startAnimation() {
 }
 
 export function recordAnimation(){
+    // TODO Gérer date de début et fin personnalisées !!!!!
+    let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
+
     window.vectorSource.clear();
     createFlashElements();
     // creation objet pour stocker les infos liées aux Frames (dt nombre de caches)

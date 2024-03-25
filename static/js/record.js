@@ -1,3 +1,6 @@
+import * as pkg from './index.js';
+
+// ????? REVOIR CA EST CE UTILE ?????
 document.getElementById("startCapture").addEventListener("click", function() {
     console.log("start");
     startAnimation(4); // Démarre l'animation
@@ -7,7 +10,7 @@ document.getElementById("startCapture").addEventListener("click", function() {
     });
 });
 
-
+// ????? REVOIR CA EST CE UTILE ?????
 document.getElementById("makeMovie").addEventListener("click", function() {
     createMovie();
 })
@@ -35,7 +38,7 @@ export function sendImageToServer(dataUrl, counter) {
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ image: dataUrl, counter: counter })
+        body: JSON.stringify({ image: dataUrl, counter: counter, numberSize: pkg.options.record.sizeNumber })
     })
     .then(response => {
         if (!response.ok) {

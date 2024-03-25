@@ -27,6 +27,9 @@
         "timePerDay":50,
         "displayDaysWithoutCache": true
     },
+    "record": {
+        "fps": 24
+    },
     "infos":{
         "title": {
             "display": true,

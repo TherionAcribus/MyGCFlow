@@ -1,3 +1,4 @@
+export * from './mapOptions.js';
 export * from './utils.js';
 export * from './ui.js';
 export * from './init.js';

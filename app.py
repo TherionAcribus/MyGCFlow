@@ -5,7 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_cors import cross_origin
 from bdd import uploadBdd, get_progress_step, db_infos, create_geojson, get_metadata_from_geojson, filter_session
-from capture import upload_image, clear_pictures_directory
+from capture import upload_image, clear_pictures_directory, assemble_pictures_directory
 
 app = Flask(__name__)
 
@@ -108,7 +108,13 @@ def get_upload_image():
 @app.route('/clear_pictures_directory', methods=['POST'])
 @cross_origin()
 def clear_pictures():
-    return clear_pictures_directory(request)
+    return clear_pictures_directory()
+
+
+@app.route('/assemble_pictures_directory', methods=['POST'])
+@cross_origin()
+def assemble_pictures():
+    return assemble_pictures_directory("captured", "video/output.mp4", 24)
 
 
 if __name__ == '__main__':

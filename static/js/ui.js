@@ -82,14 +82,30 @@ inputSizeBorder.addEventListener('change', changePointStyleUI);
 
 
 // ANIMATION DE LA CARTE
+// Boutons
 const btnStartAnimation = document.getElementById('btnStartAnimation');
 btnStartAnimation.addEventListener('click', clickStartAnimation);
 const btnRecordAnimation = document.getElementById('btnRecordAnimation');
 btnRecordAnimation.addEventListener('click', clickRecordAnimation);
 const inputTimePerDay = document.getElementById('inputTimePerDay');
 inputTimePerDay.addEventListener('input', changeAnimationValues);
+// jours sans caches
 const cbDisplayDaysWithoutCache = document.getElementById('cbDisplayDaysWithoutCache');
 cbDisplayDaysWithoutCache.addEventListener('change', changeAnimationValues);
+// temps total
+const inputTotalTime = document.getElementById('inputTotalTime');
+inputTotalTime.addEventListener('input', changeAnimationValues);
+// temps par jour en minutes 
+const spanTotalTimeMinutes = document.getElementById('spanTotalTimeMinutes');
+const spanTotalTimeSeconds = document.getElementById('spanTotalTimeSeconds');
+// nombre de jours
+const spanDeltaDays = document.getElementById('spanDeltaDays');
+
+// TMP
+const btnCleanMoviePictures = document.getElementById('btnCleanMoviePictures');
+btnCleanMoviePictures.addEventListener('click', clear_pictures_directory);
+const btnAssembleMoviePictures = document.getElementById('btnAssembleMoviePictures');
+btnAssembleMoviePictures.addEventListener('click', assemble_pictures_directory);
 
 
 // FLASH
@@ -266,7 +282,7 @@ function changeSelection(event){
     selectedValues["container"] = Array.from(selectContainer.selectedOptions).map(option => option.value);
     selectedValues["dates"] = {startDate: document.querySelector('#datePickerStart').value, endDate: document.querySelector('#datePickerEnd').value};
 
-    let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
+    let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));    
     pkg.changeSelect(selectedValues, optionsValues);
 }
 
@@ -483,39 +499,97 @@ function clickRecordAnimation(){
 
 // recupère tous les changements liés aux points
 function changeAnimationValues(event){
+    // A virer
     let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
     // inputs
     optionsValues.animation.timePerDay = inputTimePerDay.value;
     // checkboxes
     optionsValues.animation.displayDaysWithoutCache = cbDisplayDaysWithoutCache.checked;
-
     // stockage
     localStorage.setItem('optionsValues', JSON.stringify(optionsValues));
+    // fin a virer
 
-    // POUR VOIR SI TOUT FONCTIONNE  !!! TEMP
-    optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
-    console.log(optionsValues);
+    pkg.options.animation.displayDaysWithoutCache = cbDisplayDaysWithoutCache.checked;
+    pkg.options.animation.timePerDay = inputTimePerDay.value;
+    // mise à jour du nombre de chiffre pour l'enregistrement des images
+    pkg.options.record.sizeNumber= pkg.sizeOfPictureNumber();
+
+    // mise à jour du temps de l'autre champs
+    if (event.target.id == 'inputTimePerDay'){
+        updateTotalTime();
+    } else if (event.target.id == 'inputTotalTime'){
+        updateTimePerDay();
+    }
+
+}
+
+export function updateAnimationMenuAfterReadBdd(metadata){
+    spanDeltaDays.innerText = metadata.deltaDays;
+    updateTotalTime();
+}
+
+function updateTotalTime(){
+    inputTotalTime.value = (pkg.metadata.deltaDays * inputTimePerDay.value / 60 / 1000).toFixed(2);
+    updateToMinutesAndSeconds();
+}
+
+function updateTimePerDay(){
+    const timePerDay = Math.floor(inputTotalTime.value / pkg.metadata.deltaDays * 60 * 1000) ;
+    pkg.options.animation.timePerDay = timePerDay;
+    inputTimePerDay.value = timePerDay;
+    //updateTotalTime();
+}
+
+function updateToMinutesAndSeconds(){
+    const time = pkg.convertToMinutesAndSeconds(inputTotalTime.value);
+    spanTotalTimeMinutes.innerText = time.minutes;
+    spanTotalTimeSeconds.innerText = time.seconds;
 }
 
 
+
+
+function clear_pictures_directory(){
 // TMP : Pour l'instant on vider le repertoire via un bouton. Devra par la suite être automatique après assemblage.
-fetch('/clear_pictures_directory', {
-    method: 'POST', 
-    headers: {
-        'X-CSRFToken': csrftoken, 
-        'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ action: 'vider_repertoire' }),
-})
-.then(response => response.json())
-.then(data => {
-    console.log(data); // Traiter la réponse de Django
-    if(data.success) {
-        // Mettre à jour l'interface utilisateur en conséquence
-        console.log(data)
-    }
-})
-.catch(error => console.error('Erreur:', error));
+    fetch('/clear_pictures_directory', {
+        method: 'POST', 
+        headers: {
+            'X-CSRFToken': pkg.getCookie('csrftoken'), 
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action: 'vider_repertoire' }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log(data); // Traiter la réponse de Django
+        if(data.success) {
+            // Mettre à jour l'interface utilisateur en conséquence
+            console.log(data)
+        }
+    })
+    .catch(error => console.error('Erreur:', error));
+}
+
+function assemble_pictures_directory(){
+    fetch('/assemble_pictures_directory', {
+        method: 'POST', 
+        headers: {
+            'X-CSRFToken': pkg.getCookie('csrftoken'), 
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action: 'assembler' }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log(data); // Traiter la réponse de Django
+        if(data.success) {
+            // Mettre à jour l'interface utilisateur en conséquence
+            console.log(data)
+        }
+    })
+    .catch(error => console.error('Erreur:', error));
+}
+
 
 
 // ----------------- FLASH ----------------

@@ -101,8 +101,12 @@ export function readBdd(){
         dateStrToDate();
         // MAJ des frames Infos
         pkg.updateInfosFrameAfterReadBdd(metadata);
+        // MAJ du menu d'animation
+        pkg.updateAnimationMenuAfterReadBdd(metadata);
         // mise à jour des Date Pickers de l'ui (filtre BDD)
         pkg.setPickerDates(metadata)
+        // mise à jour des options en fonction de la BDD (dates début et fin)
+        updateOptionsValues(metadata);
         pkg.addVector(data.geojson);
     })
     .catch(error => console.error('Error:', error));
@@ -112,6 +116,15 @@ function dateStrToDate(){
     metadata.startDate = new Date(metadata.startDate);
     metadata.endDate = new Date(metadata.endDate);
 }
+
+// mise à jour des optionsValues en fonction de la BDD (nbr jours pour l'instant)
+// appelé à l'init de la BDD et si filtrage
+export function updateOptionsValues(metadata){
+    pkg.options.date.deltaDays = metadata.deltaDays;
+    pkg.options.record.sizeNumber = pkg.sizeOfPictureNumber();
+    console.log("Size", pkg.options.record.sizeNumber);
+}
+
 
 // Si on change le filtre de la BDD on refait une requete
 export function changeSelect(selectedValues, optionValues) {
@@ -129,6 +142,8 @@ export function changeSelect(selectedValues, optionValues) {
         metadata = data.metadata;
         // conversion en objet date
         dateStrToDate();
+        // remets à jour les options/infos dépendant de la BDD (delayDate)
+        updateOptionsValues(metadata);
         // MAJ des frames Infos
         pkg.updateInfosFrameAfterReadBdd(metadata);
         pkg.refreshPoints(optionValues);

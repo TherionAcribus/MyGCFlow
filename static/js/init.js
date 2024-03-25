@@ -10,7 +10,7 @@
 
 import * as pkg from './index.js';
 
-document.addEventListener('DOMContentLoaded', async function() {   
+document.addEventListener('DOMContentLoaded', async function() {     
     // initialisation des elements de Materialize
     initTabs();
     initModals();
@@ -22,6 +22,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     pkg.readBddValues();
     // recupération des options par défaut puis on initialise l'interface
     pkg.getDefaultValues().then(optionsValues => {
+        // initialisation de la classe "options"
+        pkg.options.init(optionsValues);
         //creation des différentes cartographies
         pkg.addMaps();
         // affiche la bonne carte
