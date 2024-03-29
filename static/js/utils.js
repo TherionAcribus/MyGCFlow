@@ -40,9 +40,17 @@ export function updateInfosForPictures(){
     pkg.options.record.nbOfImages = nbImages;
     // nombres de chiffres dans la partie entière.
     pkg.options.record.numberOfDigits = Math.round(nbImages).toString().length;
-    // nombre de frames en plus en fin d'animation
-    const flashFrames = pkg.options.flash.duration * framesPerDay / 1000;
+
+    // valeur corrigée du nombre de Frames par seconde
+    const framesPerSec = nbImages / pkg.options.record.totalTimeInMilliSec * 1000;
+    pkg.options.record.framesPerSec = framesPerSec;
+
+    // nombre de frames d'un flash
+    const flashFrames = pkg.options.flash.duration * framesPerSec / 1000;
+    pkg.options.record.flashFrames = flashFrames;
+    // nombre de frames d'un flash + un temps supplementaire pour ne pas couper video brutalement
     pkg.options.record.extraFrames = flashFrames + 50;  // TODO GErer ce nombre de Frames en plus après la fin de l'animation
+    console.log(pkg.options.record)
 }
 
 

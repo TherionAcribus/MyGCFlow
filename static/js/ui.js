@@ -454,9 +454,18 @@ function unSelectAllMapsButtons(){
 
 // ----------------- MODAL CHARGEMENT ----------------
 
-export function openModalLoading(){
+export function openModalLoading(title, description){
     const instance = M.Modal.getInstance(document.getElementById('modal_loading'));
     instance.open();
+    updateTextsModal(title, description);
+}
+
+// changement du titre et de la description de la modale
+export function updateTextsModal(title, description){
+    const modalTitle = document.getElementById('modalTitle');
+    const modalDescription = document.getElementById('modalDescription');
+    modalTitle.innerText = title;
+    modalDescription.innerText = description;
 }
 
 export function closeModalLoading(){
@@ -493,13 +502,15 @@ function changeAnimationValues(event){
     pkg.updateInfosForPictures();
 
 
-
     // mise à jour du temps de l'autre champs
     if (event.target.id == 'inputTimePerDay'){
         updateTotalTime();
     } else if (event.target.id == 'inputTotalTime'){
         updateTimePerDay();
     }
+
+    // mise à jour du nombre de chiffre pour l'enregistrement des images
+    pkg.updateInfosForPictures();
 
 }
 
@@ -509,7 +520,11 @@ export function updateAnimationMenuAfterReadBdd(metadata){
 }
 
 function updateTotalTime(){
-    inputTotalTime.value = (pkg.metadata.deltaDays * inputTimePerDay.value / 60 / 1000).toFixed(2);
+    const totalTimeInMilliSec = pkg.metadata.deltaDays * inputTimePerDay.value
+    console.log("totalTimeInMilliSec", totalTimeInMilliSec)
+    // mise à jour du temps en ms pour futurs calculs
+    pkg.options.record.totalTimeInMilliSec = totalTimeInMilliSec;
+    inputTotalTime.value = (totalTimeInMilliSec / 60 / 1000).toFixed(2);
     updateToMinutesAndSeconds();
 }
 
@@ -517,7 +532,6 @@ function updateTimePerDay(){
     const timePerDay = Math.floor(inputTotalTime.value / pkg.metadata.deltaDays * 60 * 1000) ;
     pkg.options.animation.timePerDay = timePerDay;
     inputTimePerDay.value = timePerDay;
-    //updateTotalTime();
 }
 
 function updateToMinutesAndSeconds(){

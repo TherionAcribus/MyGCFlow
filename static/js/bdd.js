@@ -16,7 +16,7 @@ export let json_data;
 // chargement d'un fichier dans la BDD
 function uploadBddRequest(e){
     e.preventDefault();
-    pkg.openModalLoading();
+    pkg.openModalLoading("Chargement du fichier", "Chargement du fichier .gpx en cours");
 
     var formData = new FormData();
     var fileInput = document.getElementById('file-input');

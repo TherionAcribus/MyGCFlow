@@ -1,4 +1,4 @@
-// TODO EN COURS -> Changer tous Les get / set par pkg.options
+// TODO EN COURS -> Reprendre le nombre de Frame pas seconde et toute la chaine + Synchro Filtre et affichage dans Menu Animation. C'est peut être ça qui déconne
 
 // TODO Afficher le contenu de la Session : stats, liste des caches, matrice (v3) Chargement dynamique au chargment de l'onglet
 
@@ -585,10 +585,13 @@ export function recordAnimation(){
     // TODO Gérer date de début et fin personnalisées !!!!!
 
     // ouverture modale
-    pkg.openModalLoading();
+    pkg.openModalLoading("Capture en cours", "Les images sont en cours de capture... Ne pas bouger la fenetre !");
 
     // je fais une copie car plus rapide de gerer une valeur qu'un objet
     framesPerDay = pkg.options.record.framesPerDay
+
+    // mise à jour des options RGB (MEttre ailleurs ? + idem lecture seule)
+    pkg.options.flash.rgb = pkg.hexToRgb(pkg.options.flash.color);
     
     window.vectorSource.clear();
     createFlashElements();
@@ -618,8 +621,6 @@ function createObjectInfos(){
 // TODO Voir pour Capture, car à priori c'est forcement == True
 async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
     if (currentDate > pkg.metadata.endDate) {
-        console.log("End")
-        console.log(currentDate, pkg.metadata.endDate)
         for (let extraFrames = 0; extraFrames < pkg.options.record.extraFrames; extraFrames++) {
             updateAnimationStyles();
             if (capture == true) {
@@ -636,11 +637,9 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
         return;
     }
 
-    console.log('frame', currentFrame, 'framesPerDay', framesPerDay)
     if (currentFrame < framesPerDay) {
         // Mettez à jour les styles d'animation avant de capturer la frame
         updateAnimationStyles();
-
         // Capturez la frame actuelle
         if (capture == true) {
             captureElement().then(() => {
@@ -757,7 +756,8 @@ function flashRecord(features) {
 function updateAnimationStyles() {
     animationSource.getFeatures().forEach(feature => {
         const animationFrame = feature.get('animationFrame');
-        const maxAnimationFrames = 24; // Durée de l'animation pour chaque point
+        const maxAnimationFrames = pkg.options.record.flashFrames; // Durée de l'animation pour chaque point
+        console.log('up', pkg.options.record.flashFrames)
 
         if (animationFrame > maxAnimationFrames) {
             // Retirer l'entité de animationSource une fois l'animation terminée
@@ -768,16 +768,13 @@ function updateAnimationStyles() {
             const radius = ol.easing.easeOut(animationRatio) * 25 + 5;
             const opacity = ol.easing.easeOut(1 - animationRatio);
 
-            const style = new ol.style.Style({
-                image: new ol.style.Circle({
-                    radius: radius,
-                    stroke: new ol.style.Stroke({
-                        color: `rgba(255, 0, 0, ${opacity})`,
-                        width: 2,
-                    }),
-                }),
-            });
-
+            let style;
+            if (pkg.options.flash.mode == "star") {
+                style = starStyle(radius, opacity, pkg.options.flash);
+            } else if (pkg.options.flash.mode == "circle") {
+                style = circleStyle(radius, opacity, pkg.options.flash);
+            }
+            
             feature.setStyle(style);
             feature.set('animationFrame', animationFrame + 1); // Incrémenter le compteur de frames
         }

@@ -27,7 +27,6 @@ export function updateInfosFrameAfterReadBdd(metadata){
 
 // creation Frame Infos. Peut importe qui envoie la demande de création, on l'affiche si pas affiché
 export function createInfosFrame(){
-    console.log("createInfosFrame")
     const infosFrame = document.getElementById("infosFrame");
     if (infosFrame.style.display == "none") {
         infosFrame.style.display = "block";
