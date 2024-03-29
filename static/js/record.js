@@ -38,7 +38,7 @@ export function sendImageToServer(dataUrl, counter) {
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ image: dataUrl, counter: counter, numberSize: pkg.options.record.sizeNumber })
+        body: JSON.stringify({ image: dataUrl, counter: counter, numberSize: pkg.options.record.numberOfDigits })
     })
     .then(response => {
         if (!response.ok) {

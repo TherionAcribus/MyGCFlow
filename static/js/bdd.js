@@ -121,8 +121,8 @@ function dateStrToDate(){
 // appelé à l'init de la BDD et si filtrage
 export function updateOptionsValues(metadata){
     pkg.options.date.deltaDays = metadata.deltaDays;
-    pkg.options.record.sizeNumber = pkg.sizeOfPictureNumber();
-    console.log("Size", pkg.options.record.sizeNumber);
+    // MAj, nombre frame, nbre images, 
+    pkg.updateInfosForPictures();
 }
 
 

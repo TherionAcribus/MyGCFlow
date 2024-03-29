@@ -1,14 +1,14 @@
 // GESTION DES FRAMES d'INFORMATIONS ET DE TITRE 
+import * as pkg from './index.js';
 
-
-export function displayFrames(optionsValues){
+export function displayFrames(){
     // titre
-    const optionsTitre = optionsValues.infos.title;
+    const optionsTitre = pkg.options.infos.title;
     if (optionsTitre.display) {
         createTitleFrame();
         updateTitleFrame(optionsTitre.text);
     }
-    const optionsInfos = optionsValues.infos;
+    const optionsInfos = pkg.options.infos;
     console.log(optionsInfos)
     if (optionsInfos.numberOfCaches.display || optionsInfos.currentDate.display) {
         createInfosFrame();
@@ -20,7 +20,6 @@ export function displayFrames(optionsValues){
 
 // Affiche le nombre de caches + date après Filtre ou 1er Chargement
 export function updateInfosFrameAfterReadBdd(metadata){
-    let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
     console.log(metadata)
     updateNbCaches(metadata.numberOfCaches);
     updateCurrentDate(metadata.endDate);

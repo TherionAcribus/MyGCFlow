@@ -157,59 +157,59 @@ switchEngine.addEventListener('change', changeEngine);
 
 
 // initialisation les éléments des options par défaut
-export function init_ui(optionsValues) {
+export function init_ui() {
     // ---------- OPTIONS ------------------
     // switch 2D/3D
-    if (optionsValues.options.engine === "webgl") {
+    if (pkg.options.options.engine === "webgl") {
         switchEngine.checked = true;
     }
     // ---------- POINTS ------------------
     // colorpickers
-    cpPointBorderColor.value = optionsValues.point.border.color;
-    cpPointCenterColor.value = optionsValues.point.center.color;
+    cpPointBorderColor.value = pkg.options.point.border.color;
+    cpPointCenterColor.value = pkg.options.point.center.color;
     // radio buttons
     for (let radio of radioFillColorPoint) {
-        if (radio.value === optionsValues.point.center.mode) {
+        if (radio.value === pkg.options.point.center.mode) {
             radio.checked = true;
             break;
         }
     }
     for (let radio of radioborderColorPoint) {
         console.log(radio)
-        if (radio.value === optionsValues.point.border.mode) {
+        if (radio.value === pkg.options.point.border.mode) {
             radio.checked = true;
             break;
         }
     }
     // synchronise sliders et input associés
-    synchronizeSliderAndInputCenter(optionsValues);
-    synchronizeSliderAndInputBorder(optionsValues);
+    synchronizeSliderAndInputCenter();
+    synchronizeSliderAndInputBorder();
     
     // ------- ANIMATION DE LA CARTE -------   
     // Inputs
-    inputTimePerDay.value = optionsValues.animation.timePerDay;
-    cbDisplayDaysWithoutCache.checked = optionsValues.animation.displayDaysWithoutCache;
+    inputTimePerDay.value = pkg.options.animation.timePerDay;
+    cbDisplayDaysWithoutCache.checked = pkg.options.animation.displayDaysWithoutCache;
 
     // ------- FLASH -------
     // colorpicker
-    cpFlashColor.value = optionsValues.flash.color;
+    cpFlashColor.value = pkg.options.flash.color;
     // inputs
-    inputTimeFlash.value = optionsValues.flash.duration;
-    inputSizeFlash.value = optionsValues.flash.size;
+    inputTimeFlash.value = pkg.options.flash.duration;
+    inputSizeFlash.value = pkg.options.flash.size;
     // radio buttons
     for (let radio of radioflashMode) {
-        if (radio.value === optionsValues.flash.mode) {
+        if (radio.value === pkg.options.flash.mode) {
             radio.checked = true;
             break;
         }
     }
     // ------- INFOS -------
     // checkboxes
-    cbDisplayTitle.checked = optionsValues.infos.title.display;
-    cbDisplayNumberofCaches.checked = optionsValues.infos.numberOfCaches.display;
-    cbDisplayCurrentDate.checked = optionsValues.infos.currentDate.display;
+    cbDisplayTitle.checked = pkg.options.infos.title.display;
+    cbDisplayNumberofCaches.checked = pkg.options.infos.numberOfCaches.display;
+    cbDisplayCurrentDate.checked = pkg.options.infos.currentDate.display;
     // inputs
-    inputTitle.value = optionsValues.infos.title.text;
+    inputTitle.value = pkg.options.infos.title.text;
     if (inputTitle.value != "My Geocaching Map") {
         // enlève le placeholder si un texte est enregistré
         M.updateTextFields();
@@ -220,16 +220,16 @@ export function init_ui(optionsValues) {
     // ------- CARTE VECTORIELLE -------
 
     // couleur de trait par défaut
-    cpStrokeColor.value = optionsValues.map.vectorMap.strokeColor;
+    cpStrokeColor.value = pkg.options.map.vectorMap.strokeColor;
     // couleur de remplissage par défaut
-    cpFillColor.value = optionsValues.map.vectorMap.fillColor;
+    cpFillColor.value = pkg.options.map.vectorMap.fillColor;
     // couleur de fond par défaut
-    cpBackgroundColor.value = optionsValues.map.vectorMap.background;
+    cpBackgroundColor.value = pkg.options.map.vectorMap.background;
     // largeur de trait par défaut
-    strokeWidth.value = optionsValues.map.vectorMap.strokeWidth;
+    strokeWidth.value = pkg.options.map.vectorMap.strokeWidth;
     // ------- CARTE TONER -------
     // deselectionne le bouton par défaut
-    changeButtonsStamenToner(optionsValues.map.stamenToner.type);
+    changeButtonsStamenToner(pkg.options.map.stamenToner.type);
 }
 
 
@@ -282,8 +282,7 @@ function changeSelection(event){
     selectedValues["container"] = Array.from(selectContainer.selectedOptions).map(option => option.value);
     selectedValues["dates"] = {startDate: document.querySelector('#datePickerStart').value, endDate: document.querySelector('#datePickerEnd').value};
 
-    let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));    
-    pkg.changeSelect(selectedValues, optionsValues);
+    pkg.changeSelect(selectedValues, pkg.options);
 }
 
 
@@ -292,29 +291,27 @@ function changeSelection(event){
 
 // recupère tous les changements liés aux points
 function changePointStyleUI(event){
-    let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
     // colorpickers
-    optionsValues.point.border.color = cpPointBorderColor.value;
-    optionsValues.point.center.color = cpPointCenterColor.value;
+    pkg.options.point.border.color = cpPointBorderColor.value;
+    pkg.options.point.center.color = cpPointCenterColor.value;
     // radio buttons
     if (event.type == "radio") {
         if (event.name == "fillColorPoint"){
-            optionsValues.point.center.mode = event.value;
+            pkg.options.point.center.mode = event.value;
         }
         else if (event.name == "borderColorPoint"){
-            optionsValues.point.border.mode = event.value;
+            pkg.options.point.border.mode = event.value;
         }
     }
     // sliders
-    optionsValues.point.center.size = inputSizePoint.value
-    optionsValues.point.border.size = inputSizeBorder.value
-    // stockage
-    localStorage.setItem('optionsValues', JSON.stringify(optionsValues));
+    pkg.options.point.center.size = inputSizePoint.value
+    pkg.options.point.border.size = inputSizeBorder.value
+
     // rafraichissement des points
-    pkg.refreshPoints(optionsValues);
+    pkg.refreshPoints(pkg.options);
 }
 
-function synchronizeSliderAndInputCenter(optionsValues) {
+function synchronizeSliderAndInputCenter() {
     sliderSizePoint.oninput = function() {
         inputSizePoint.value = this.value;
     };
@@ -325,12 +322,12 @@ function synchronizeSliderAndInputCenter(optionsValues) {
     };
 
     // reglage des compteurs
-    sliderSizePoint.value = optionsValues.point.center.size
-    inputSizePoint.value = optionsValues.point.center.size
+    sliderSizePoint.value = pkg.options.point.center.size
+    inputSizePoint.value = pkg.options.point.center.size
 }
 
 
-function synchronizeSliderAndInputBorder(optionsValues) {
+function synchronizeSliderAndInputBorder() {
     sliderSizeBorder.oninput = function() {
         inputSizeBorder.value = this.value;
     };
@@ -341,8 +338,8 @@ function synchronizeSliderAndInputBorder(optionsValues) {
     };
 
     // reglage des compteurs
-    sliderSizeBorder.value = optionsValues.point.border.size
-    inputSizeBorder.value = optionsValues.point.border.size
+    sliderSizeBorder.value = pkg.options.point.border.size
+    inputSizeBorder.value = pkg.options.point.border.size
 }
 
 
@@ -351,34 +348,26 @@ function synchronizeSliderAndInputBorder(optionsValues) {
 
 // changement de couleur de trait
 function changecpStrokeColor() {
-    let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
-    optionsValues.map.vectorMap.strokeColor = cpStrokeColor.value;
-    localStorage.setItem('optionsValues', JSON.stringify(optionsValues));
-    pkg.refreshVectorMap(optionsValues.map.vectorMap);
+    pkg.options.map.vectorMap.strokeColor = cpStrokeColor.value;
+    pkg.refreshVectorMap(pkg.options.map.vectorMap);
 }
 
 // changement de couleur de remplissage
 function changecpfillColor() {
-    let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
-    optionsValues.map.vectorMap.fillColor = cpFillColor.value;
-    localStorage.setItem('optionsValues', JSON.stringify(optionsValues));
-    pkg.refreshVectorMap(optionsValues.map.vectorMap);
+    pkg.options.map.vectorMap.fillColor = cpFillColor.value;
+    pkg.refreshVectorMap(pkg.options.map.vectorMap);
 }
 
 // changement de couleur de fond
 function changecpBackgroundColor() {
-    let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
-    optionsValues.map.vectorMap.background = cpBackgroundColor.value;
-    localStorage.setItem('optionsValues', JSON.stringify(optionsValues));
-    pkg.refreshVectorMap(optionsValues.map.vectorMap);
+    pkg.options.map.vectorMap.background = cpBackgroundColor.value;
+    pkg.refreshVectorMap(pkg.options.map.vectorMap);
 }
 
 // changement de largeur de trait
 function changestrokeWidth() {
-    let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
-    optionsValues.map.vectorMap.strokeWidth = strokeWidth.value;
-    localStorage.setItem('optionsValues', JSON.stringify(optionsValues));
-    pkg.refreshVectorMap(optionsValues.map.vectorMap);
+    pkg.options.map.vectorMap.strokeWidth = strokeWidth.value;
+    pkg.refreshVectorMap(pkg.options.map.vectorMap);
 }
 
 
@@ -399,13 +388,12 @@ function changeStamenTonerStyle(e){
             } else if (styleName == "stamenTonerLight"){
                 style = "light"
             }
-            let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
-            optionsValues.map.stamenToner.type = style;
-            localStorage.setItem('optionsValues', JSON.stringify(optionsValues));  
+            pkg.options.map.stamenToner.type = style;
+
             // change boutons
             changeButtonsStamenToner(style);          
             // rafraichit carte
-            pkg.refreshStamenTonerMap(optionsValues.map.stamenToner);
+            pkg.refreshStamenTonerMap(pkg.options.map.stamenToner);
         }
 }
 
@@ -499,20 +487,12 @@ function clickRecordAnimation(){
 
 // recupère tous les changements liés aux points
 function changeAnimationValues(event){
-    // A virer
-    let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
-    // inputs
-    optionsValues.animation.timePerDay = inputTimePerDay.value;
-    // checkboxes
-    optionsValues.animation.displayDaysWithoutCache = cbDisplayDaysWithoutCache.checked;
-    // stockage
-    localStorage.setItem('optionsValues', JSON.stringify(optionsValues));
-    // fin a virer
-
     pkg.options.animation.displayDaysWithoutCache = cbDisplayDaysWithoutCache.checked;
     pkg.options.animation.timePerDay = inputTimePerDay.value;
     // mise à jour du nombre de chiffre pour l'enregistrement des images
-    pkg.options.record.sizeNumber= pkg.sizeOfPictureNumber();
+    pkg.updateInfosForPictures();
+
+
 
     // mise à jour du temps de l'autre champs
     if (event.target.id == 'inputTimePerDay'){
@@ -595,37 +575,27 @@ function assemble_pictures_directory(){
 // ----------------- FLASH ----------------
 // recupère tous les changements liés aux flashs
 function changeFlashValues(event){
-    let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
 
     // radiobuttons
     if (event.type == "radio") {
         if (event.name == "flashMode"){
-            optionsValues.flash.mode = event.value;
+            pkg.options.flash.mode = event.value;
         }
     }
     // inputs
-    optionsValues.flash.duration = inputTimeFlash.value
-    optionsValues.flash.size = inputSizeFlash.value
+    pkg.options.flash.duration = inputTimeFlash.value
+    pkg.options.flash.size = inputSizeFlash.value
     // colorpickers
-    optionsValues.flash.color = cpFlashColor.value
-
-    // stockage
-    localStorage.setItem('optionsValues', JSON.stringify(optionsValues));
-
-    // POUR VOIR SI TOUT FONCTIONNE  !!! TEMP
-    optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
-    console.log(optionsValues);
+    pkg.options.flash.color = cpFlashColor.value
 }
 
 
 // -------------------- INFOS AFFICHéEs -------------------
 function changeInfosValues(event){
-    let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
-    console.log(event)
 
-    optionsValues.infos.title.display = cbDisplayTitle.checked;
-    optionsValues.infos.currentDate.display = cbDisplayCurrentDate.checked;
-    optionsValues.infos.numberOfCaches.display = cbDisplayNumberofCaches.checked;
+    pkg.options.infos.title.display = cbDisplayTitle.checked;
+    pkg.options.infos.currentDate.display = cbDisplayCurrentDate.checked;
+    pkg.options.infos.numberOfCaches.display = cbDisplayNumberofCaches.checked;
 
     console.log(event.target)
 
@@ -671,10 +641,6 @@ function changeInfosValues(event){
         console.log("cbDisplayCurrentDate")
         spanCurrentDate.style.display = "none";
     }
-
-
-    // sauvegarde des informations
-    localStorage.setItem('optionsValues', JSON.stringify(optionsValues));
 
 }
 

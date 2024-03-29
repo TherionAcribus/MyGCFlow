@@ -64,8 +64,9 @@ let currentDate;
 // ENREGISTREMENT
 // Compteur de frames pour le jour en cours
 let currentFrame = 0;
+let infosProgressBar = new Object;
 // TEMP
-let framesPerDay = 24;  
+export let framesPerDay = 30;  
 let imageCounter = 0;
 // FLASH
 let animationSource;
@@ -106,7 +107,7 @@ export function createMap(){
 // ajoute les différents layers de cartes à la map et affiche la bonne
 export function addMaps() {
 
-    let defaultSettings = JSON.parse(localStorage.getItem('optionsValues')).map;
+    let defaultSettings = pkg.options.map;
 
     // Utilisation de l'objet global 'ol' pour accéder aux classes d'OpenLayers
     OSMLayer = new ol.layer.Tile({
@@ -191,7 +192,7 @@ export function refreshStamenTonerMap(newValues){
 
 // permet de faire le lien avec la fonction qui selectionne la bonne carte au lancement de l'application
 export function selectDefaultCarto(){
-    let layerName = JSON.parse(localStorage.getItem('optionsValues')).map.default;
+    let layerName = pkg.options.map.default;
     switchLayer(layerName);
 }
 
@@ -268,14 +269,13 @@ export function addVector(data) {
     });
 
     // selon que l'on choisisse webgl ou non on affiche les points avec le bon moteur
-    let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
-    selectEngineAndRefresh(optionsValues);   
+    selectEngineAndRefresh();   
 }
 
 // fonction appelée au changement d'options graphique
-export function refreshPoints(optionValues){
+export function refreshPoints(){
     clearMap();
-    selectEngineAndRefresh(optionValues);
+    selectEngineAndRefresh();
 }
 
 
@@ -287,13 +287,13 @@ function isLayerOnMap(map, layerToFind) {
 
 
 // Envoie l'affichage des points de features dans le bon vecteur
-function selectEngineAndRefresh(optionsValues){
-    engine = optionsValues.options.engine;
+function selectEngineAndRefresh(){
+    engine = pkg.options.options.engine;
     if (engine == "webgl"){
-        displayWebGLPoints(false, optionsValues.point);
+        displayWebGLPoints(false, pkg.options.point);
     } else {
         // TODO AJouter barre chargement
-        displayAllPoints2D(features, optionsValues.point);
+        displayAllPoints2D(features, pkg.options.point);
     }
 }
 
@@ -564,17 +564,16 @@ export function startAnimation() {
     window.vectorSource.clear();
     createFlashElements();
 
-    let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
-    let flashOptions = optionsValues.flash
+    let flashOptions = pkg.options.flash
 
-    let infos = createObjectInfos(optionsValues);
+    let infos = createObjectInfos();
 
     flashOptions.rgb = pkg.hexToRgb(flashOptions.color);
-    const dayDuration = optionsValues.animation.timePerDay;
-    //const displayDaysWithoutCache = optionsValues.animation.displayDaysWithoutCache;
+    const dayDuration = pkg.options.animation.timePerDay;
+    //const displayDaysWithoutCache = pkg.options.animation.displayDaysWithoutCache;
     currentDate = pkg.metadata.startDate;
     interval = setInterval(() => {
-        displayFeaturesForDate(currentDate, optionsValues.point, flashOptions, false, infos);
+        displayFeaturesForDate(currentDate, pkg.options.point, flashOptions, false, infos);
         currentDate.setDate(currentDate.getDate() + 1);
         if (currentDate > pkg.metadata.endDate) {
             clearInterval(interval);
@@ -584,40 +583,60 @@ export function startAnimation() {
 
 export function recordAnimation(){
     // TODO Gérer date de début et fin personnalisées !!!!!
-    let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
 
+    // ouverture modale
+    pkg.openModalLoading();
+
+    // je fais une copie car plus rapide de gerer une valeur qu'un objet
+    framesPerDay = pkg.options.record.framesPerDay
+    
     window.vectorSource.clear();
     createFlashElements();
     // creation objet pour stocker les infos liées aux Frames (dt nombre de caches)
     let infos = createObjectInfos();
     currentDate = pkg.metadata.startDate;
-    // TEMPORAIRE !!!! JUSTE POUR AVOIR TRUC INTERESSANT A VOIR !!!!
-    currentDate = new Date(2018, 7, 27);
+    // TEMP
+    currentDate = new Date("07-01-2018")
+    pkg.metadata.endDate = new Date("08-01-2018")
     currentFrame = 0;  // Réinitialisez le compteur de frames
-    captureNextFrame(true, optionsValues.point, optionsValues.flash, infos);
+    captureNextFrame(true, pkg.options.point, pkg.options.flash, infos);
+    console.log("STOP !!!!")
+    // CREATION FILM
 }
 
 
 // créé un objet pour les infos pour permet de garder une consistance pour le nombre de caches
 function createObjectInfos(){
     let infos = new Object();
-    let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
-    infos.displayDate = optionsValues.infos.currentDate.display
-    infos.displayNumberofCaches = optionsValues.infos.numberOfCaches.display
+    infos.displayDate = pkg.options.infos.currentDate.display
+    infos.displayNumberofCaches = pkg.options.infos.numberOfCaches.display
     infos.cacheNumber = 0;
     return infos
 }
 
 
-function captureNextFrame(capture, pointOptions, flashOptions, infos) {
+// TODO Voir pour Capture, car à priori c'est forcement == True
+async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
     if (currentDate > pkg.metadata.endDate) {
+        console.log("End")
+        console.log(currentDate, pkg.metadata.endDate)
+        for (let extraFrames = 0; extraFrames < pkg.options.record.extraFrames; extraFrames++) {
+            updateAnimationStyles();
+            if (capture == true) {
+                await captureElement();
+                currentFrame++;
+
+            } else {
+                currentFrame++;
+            }
+        }
+
         // Traitement de fin -> Assembler le film
         // Supprimer les images temporaires
         return;
     }
 
-    //updateTextOverlay(`Date: ${currentDate.toDateString()}, Frame: ${currentFrame}`);
-    
+    console.log('frame', currentFrame, 'framesPerDay', framesPerDay)
     if (currentFrame < framesPerDay) {
         // Mettez à jour les styles d'animation avant de capturer la frame
         updateAnimationStyles();
@@ -626,7 +645,6 @@ function captureNextFrame(capture, pointOptions, flashOptions, infos) {
         if (capture == true) {
             captureElement().then(() => {
                 currentFrame++;
-                // Utilisation d'une fonction fléchée pour passer des arguments
                 requestAnimationFrame(() => captureNextFrame(true, pointOptions, flashOptions, infos));
             });
         } else {
@@ -635,13 +653,27 @@ function captureNextFrame(capture, pointOptions, flashOptions, infos) {
             requestAnimationFrame(() => captureNextFrame(true, pointOptions, flashOptions, infos));
         }
     } else {
-        // Passez au jour suivant
+        // JOUR SUIVANT
+        // Mise à jour de la Modale
+        updateProgress();
+
         currentDate.setDate(currentDate.getDate() + 1);
         displayFeaturesForDate(currentDate, pointOptions, flashOptions, true, infos);
         currentFrame = 0;  // Réinitialisez le compteur de frames pour le nouveau jour
         requestAnimationFrame(() => captureNextFrame(true, pointOptions, flashOptions, infos));
     }
 }
+
+// mise à jour de la barre de progression
+function updateProgress(){
+    let percent = imageCounter / pkg.options.record.nbOfImages * 100 
+    console.log('percent', percent, imageCounter, pkg.options.record.nbOfImages)
+    infosProgressBar.progress = percent
+    infosProgressBar.message = percent + "%" + ":" + currentDate;
+    console.log(currentDate )
+    pkg.updateProgressBar(infosProgressBar)
+}
+
 
 function captureElement() {
     return new Promise((resolve, reject) => {

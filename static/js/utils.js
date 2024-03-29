@@ -30,13 +30,25 @@ export function getCookie(name) {
 }
 
 
-// calcul le nombre de zeros pour le nom du fichier de l'image pour qu'elles soient bien dans l'ordre
-export function sizeOfPictureNumber(){
+// Mets à jour le nombre de frames par jour, le nombre d'images, et le nombre de chiffres
+export function updateInfosForPictures(){
+    // frames par jour
+    const framesPerDay = calculFramePerDay(pkg.options.animation.timePerDay, pkg.framesPerDay);
+    pkg.options.record.framesPerDay = framesPerDay;
     // nombres d'images
-    let nbImages = pkg.options.date.deltaDays * pkg.options.record.fps * (pkg.options.animation.timePerDay / 1000);
+    const nbImages = pkg.options.date.deltaDays * framesPerDay;
+    pkg.options.record.nbOfImages = nbImages;
     // nombres de chiffres dans la partie entière.
-    const numberOfDigits = Math.round(nbImages).toString().length;
-    return numberOfDigits
+    pkg.options.record.numberOfDigits = Math.round(nbImages).toString().length;
+    // nombre de frames en plus en fin d'animation
+    const flashFrames = pkg.options.flash.duration * framesPerDay / 1000;
+    pkg.options.record.extraFrames = flashFrames + 50;  // TODO GErer ce nombre de Frames en plus après la fin de l'animation
+}
+
+
+// calcul le nombre de Frame pour 1 jour
+function calculFramePerDay(timePerDay, fps) {
+    return Math.round(timePerDay / (1000 / fps));
 }
 
 
@@ -51,3 +63,5 @@ export function convertToMinutesAndSeconds(timeInFraction) {
 
     return {minutes, seconds};
 }
+
+

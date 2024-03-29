@@ -31,10 +31,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         // centrer la carte
         pkg.centerMap();
         // affiche les frames (infos, titre) si elles existent
-        pkg.displayFrames(optionsValues);
+        pkg.displayFrames();
         // mets les valeurs par défaut dans les formulaire
         //(optionsValues);
-        pkg.init_ui(optionsValues);
+        pkg.init_ui();
         // ... autres fonctions qui dépendent de optionsValues ... 
     });
     pkg.readBdd();  // creation du geojson et des metadatas
