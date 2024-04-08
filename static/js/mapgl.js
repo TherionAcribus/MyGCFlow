@@ -10,12 +10,15 @@
 // TODO BDD:
 // Tester les fichiers GPX issus d'autres sources (GSAK, ProjectGC...)
 
+// TODO Virer tout ce qui concerne Non WebGL
 
 // TODO Ajouter les autres filtres (Pays, Region, Poseur, Attributs)
 // TODO COloration selon autre critères que le type (T, D, size) (v2)
 // TODO Permettre afficher images à la place des cercles (icones officielles) (V2)
 // TODO Permettre d'afficher des images à la places des flash (avec icones officielles) (V2)
 
+// Possibilité d'utiliser des icones:
+// https://openlayers.org/en/v8.1.0/examples/icon-sprite-webgl.html
 
 // TODO Lors d'un refresh ou redémarrage de l'application demander si réinit ou si utilise les données du localstorage (si existe) ou utilisation cookies ?
 // TODO Gestion des préférences
@@ -27,6 +30,12 @@
 // TODO Vectorielle, il y a des version avec regions
 
 // stockage des infos dans cookies au lieu localstorage ? Laissez le choix ?
+
+// TODO Gerer les arret / pause chargement
+
+// TODO GEstion Traduction
+
+// TODO Menu point : désactiver/réactiver ce qui n'est pas utilisable
 
 // FRAMES (TItre, infos)
 // TODO Faire input pour les différentes option et rendre css optionnel (v2)
@@ -45,6 +54,12 @@
 // TODO Fusionner les deux fonctions tout en bas.
 // Mettre le switch dans la bonne position
 // Aller lire le json s'il existe au lieu de recharger le fichier
+
+// TODO Juste une capture d'une image
+
+// TODO Forcer la taille de la carte (V2)
+
+// TODO Check nouvelle version -> Autoriser ou non (connexion serveur)
 
 
 import * as pkg from './index.js';
@@ -391,21 +406,59 @@ function displayWebGLPoints(features, pointOptions) {
         fillColor = pointOptions.center.color
     }
 
-    const pointStyle = {
-        'circle-radius': pointSize,
-        'circle-fill-color': fillColor,
-        'circle-rotate-with-view': false,
-        'circle-displacement': [0, 0],
-        'circle-opacity': 0.9
-    }
+    let pointStyle;
+    let pointStyleBorder;    
+    if (pointOptions.mode == "icone") {
+        const shape = `/static/images/icones/${pointOptions.shape}.png`
+        pointStyle = {
+            variables: {
+            filterShape: 'all',
+            },
+            'icon-src': shape,
+            'icon-width': pointSize *5,  // *5 pour être à peu près même taille que vectoriel
+            'icon-height': pointSize *5,
+            'icon-color': fillColor,
+            'icon-size': [32, 32],  // taille de l'image en pixel
+            'icon-scale': 1,
+        };
+    } else {
+        if (pointOptions.shape == "circle") {
+            pointStyle = {
+            'circle-radius': pointSize,
+            'circle-fill-color': fillColor,
+            'circle-rotate-with-view': false,
+            'circle-displacement': [0, 0],
+            'circle-opacity': 1
+            }
 
-    let pointStyleBorder = {
-        'circle-radius': borderSize,
-        'circle-fill-color': borderColor,
-        'circle-rotate-with-view': false,
-        'circle-displacement': [0, 0],
-        'circle-opacity': 0.9
-    }
+            pointStyleBorder = {
+                'circle-radius': borderSize,
+                'circle-fill-color': borderColor,
+                'circle-rotate-with-view': false,
+                'circle-displacement': [0, 0],
+                'circle-opacity': 1
+            }
+
+
+    } else if (pointOptions.shape == "triangle") {
+
+        pointStyle = {
+            'shape-points': 3,
+            'shape-radius': pointSize,
+            'shape-fill-color': fillColor,
+            'shape-rotate-with-view': true,
+            }
+
+        pointStyleBorder = {
+            'shape-points': 3,
+            'shape-radius': borderSize,
+            'shape-fill-color': borderColor,
+            'shape-rotate-with-view': true,
+            }
+        }
+
+    }   
+
 
     // Assurez-vous que vectorSource est initialisé une seule fois
     if (!window.vectorSource) {
@@ -413,11 +466,14 @@ function displayWebGLPoints(features, pointOptions) {
             wrapX: true,
         });
 
-        vectorLayerBorder = new ol.layer.WebGLPoints({
-            source: window.vectorSource,
-            style: pointStyleBorder,
-        });
-        map.addLayer(vectorLayerBorder);
+        console.log("mode", pointOptions)
+        if (pointOptions.mode == "vectoriel") {
+            vectorLayerBorder = new ol.layer.WebGLPoints({
+                source: window.vectorSource,
+                style: pointStyleBorder,
+            });
+            map.addLayer(vectorLayerBorder);
+        }
 
         vectorLayer = new ol.layer.WebGLPoints({
             source: window.vectorSource,
@@ -449,97 +505,6 @@ function displayWebGLPoints(features, pointOptions) {
             window.vectorSource.addFeatures(newFeatures);
         });
     }
-}
-
-function displayWebGLPoints_old(features, pointOptions) {
-    // si pas de features (on lit le geojson : plus simple pour lire tout le fichier)
-    if (! features) {
-    vectorSource = new ol.source.Vector({
-        url: 'static/geojson_data.json',
-        format: new ol.format.GeoJSON(),
-        wrapX: true,
-      });
-    }
-
-    // sinon on lit les features (enregistrement ou animation)
-    else {
-        const geojsonObject = {
-            'type': 'FeatureCollection',
-            'features': features
-        };
-        vectorSource = new ol.source.Vector({
-            features: new ol.format.GeoJSON().readFeatures(geojsonObject, {
-                // Option pour définir le système de coordonnées des features GeoJSON
-                dataProjection: 'EPSG:4326',
-                featureProjection: 'EPSG:3857'
-            }),
-            wrapX: true,
-        });
-    }
-
-    let fillColor;
-    if (pointOptions.center.mode == "gc") {
-        fillColor = [
-            'match',
-            ['get', 'cache_type'],
-            ...Object.entries(defaultGcColors).flat(), // Object.entries pour obtenir un tableau de paires clé-valeur, puis flat pour aplatir le tableau en un seul niveau
-            '#000000' // couleur par défaut
-        ]
-    } else if (pointOptions.center.mode == "fix") {
-        fillColor = pointOptions.center.color
-    }
-
-    let pointSize = parseInt(pointOptions.center.size)
-    let borderSize = pointSize + parseInt(pointOptions.border.size) / 5
-
-    const pointStyle = {
-        'circle-radius': pointSize,
-        'circle-fill-color': fillColor,
-        'circle-rotate-with-view': false,
-        'circle-displacement': [0, 0],
-        'circle-opacity': 0.9
-    }
-
-    vectorLayer = new ol.layer.WebGLPoints({
-        source: vectorSource,
-        style: pointStyle
-    });
-
-    // si on a demandé une couche de bordure
-    if (pointOptions.border.mode != "none"){
-
-        let borderColor;
-        if (pointOptions.border.mode == "gc") {
-            borderColor = [
-                'match',
-                ['get', 'cache_type'],
-                ...Object.entries(defaultGcColors).flat(), // Object.entries pour obtenir un tableau de paires clé-valeur, puis flat pour aplatir le tableau en un seul niveau
-                '#000000' // couleur par défaut
-            ]
-        } else if (pointOptions.border.mode == "fix") {
-            borderColor = pointOptions.border.color
-        }
-
-        // TODO CHoisir les réglages pour la taille des bordures
-        let pointStyleBorder = {
-            'circle-radius': borderSize,
-            'circle-fill-color': borderColor,
-            'circle-rotate-with-view': false,
-            'circle-displacement': [0, 0],
-            'circle-opacity': 0.9
-        }
-
-        vectorLayerBorder = new ol.layer.WebGLPoints({
-            source: vectorSource,
-            style: pointStyleBorder,
-            index: 1000
-        });
-
-        map.addLayer(vectorLayerBorder);
-    }
-
-    // on ajoute la couche des cercles intérieurs à la fin
-    map.addLayer(vectorLayer);
 }
 
 // supprime les points de la carte (centre et bordures si existantes)

@@ -79,6 +79,12 @@ const sliderSizeBorder = document.getElementById('sliderSizeBorder');
 const inputSizeBorder = document.getElementById('inputSizeBorder');
 sliderSizeBorder.addEventListener('change', changePointStyleUI);
 inputSizeBorder.addEventListener('change', changePointStyleUI);
+// switch
+const switchIconeVectoriel = document.getElementById('switchIconeVectoriel');
+switchIconeVectoriel.addEventListener('change', changePointStyleUI);
+// select
+const selectShape = document.getElementById('selectShape');
+selectShape.addEventListener('change', changePointStyleUI);
 
 
 // ANIMATION DE LA CARTE
@@ -158,11 +164,6 @@ switchEngine.addEventListener('change', changeEngine);
 
 // initialisation les éléments des options par défaut
 export function init_ui() {
-    // ---------- OPTIONS ------------------
-    // switch 2D/3D
-    if (pkg.options.options.engine === "webgl") {
-        switchEngine.checked = true;
-    }
     // ---------- POINTS ------------------
     // colorpickers
     cpPointBorderColor.value = pkg.options.point.border.color;
@@ -184,6 +185,14 @@ export function init_ui() {
     // synchronise sliders et input associés
     synchronizeSliderAndInputCenter();
     synchronizeSliderAndInputBorder();
+    // switch Icone/Vectoriel
+    if (pkg.options.point.mode === "vectoriel") {
+        switchIconeVectoriel.checked = true;
+    }
+    selectShape.value = pkg.options.point.shape
+    // Obliger Materialize à actualiser l'affichage du select pour refléter la nouvelle valeur sélectionnée
+    M.FormSelect.init(document.getElementById('selectShape'));
+
     
     // ------- ANIMATION DE LA CARTE -------   
     // Inputs
@@ -291,6 +300,12 @@ function changeSelection(event){
 
 // recupère tous les changements liés aux points
 function changePointStyleUI(event){
+    // switch
+    if (switchIconeVectoriel.checked) {
+        pkg.options.point.mode = "vectoriel";
+    } else {
+        pkg.options.point.mode = "icone";
+    }
     // colorpickers
     pkg.options.point.border.color = cpPointBorderColor.value;
     pkg.options.point.center.color = cpPointCenterColor.value;
@@ -306,6 +321,8 @@ function changePointStyleUI(event){
     // sliders
     pkg.options.point.center.size = inputSizePoint.value
     pkg.options.point.border.size = inputSizeBorder.value
+    // selects 
+    pkg.options.point.shape = selectShape.value
 
     // rafraichissement des points
     pkg.refreshPoints(pkg.options);
@@ -561,8 +578,6 @@ function updateToMinutesAndSeconds(){
     spanTotalTimeMinutes.innerText = time.minutes;
     spanTotalTimeSeconds.innerText = time.seconds;
 }
-
-
 
 
 function clear_pictures_directory(){

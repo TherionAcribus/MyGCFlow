@@ -3,7 +3,28 @@
 <div id="points" class="col s12">
     <h3>Graphisme des points</h3>
     <div>
-        <form>
+        <section>
+
+            <div>
+                <!-- Switch -->
+                <div class="switch">
+                    <label>
+                    Icone
+                    <input id="switchIconeVectoriel" type="checkbox">
+                    <span class="lever"></span>
+                    Vectoriel
+                    </label>
+                </div>
+            </div>
+
+            <div class="input-field col s12">
+                <select id="selectShape">
+                    <option value="circle">Cercle</option>
+                    <option value="triangle">Triangle</option>
+                </select>
+                <label>Choix de la forme</label>
+            </div>
+
             <div class="col s6" id="centerOptions">
                 <div class="row">
                     <!-- Slider -->
@@ -87,7 +108,7 @@
                 </div>
             </div>
 
-        </form>
+        </section>
 
     </div>
 </div>

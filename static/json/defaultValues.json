@@ -1,6 +1,7 @@
 {
     "options": {
-        "engine": "webgl"
+        "engine": "webgl",
+        "langage": "fr"
     },
     "map": {
         "default": "stamenToner",
@@ -12,6 +13,8 @@
         "stamenToner": {"type": "light"}
     },
     "point": {
+        "mode": "vectoriel",
+        "shape": "circle",
         "center" : {
             "color": "#ff00ff",
             "size": 3,
