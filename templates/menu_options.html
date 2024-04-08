@@ -1,16 +1,13 @@
 <div id="options" class="col s12">
-    <h3>Options</h3>
-    <div>
-        <section>
-            <!-- Switch -->
-            <div class="switch">
-                <label>
-                2D
-                <input id="switchEngine" type="checkbox">
-                <span class="lever"></span>
-                WebGL
-                </label>
-            </div>
-        </section>
-    </div>
+    <h3>{{ _('Options') }}</h3>
+    <section>
+        <div class="input-field col s12">
+            <select id="selectLanguage">
+                <option value="en">English</option>
+                <option value="fr">Français</option>
+            </select>
+            <label>{{ _('Language Choice') }}</label>
+        </div>
+
+    </section>
 </div>

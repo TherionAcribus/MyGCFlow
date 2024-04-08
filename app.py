@@ -1,16 +1,28 @@
 import webview
 import webbrowser
-from flask import Flask, render_template, jsonify, request, send_from_directory
+from flask import g, Flask, render_template, jsonify, request, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_cors import cross_origin
 from bdd import uploadBdd, get_progress_step, db_infos, create_geojson, get_metadata_from_geojson, filter_session, analyse
 from capture import upload_image, clear_pictures_directory, assemble_pictures_directory
+from flask_babel import Babel
 
 app = Flask(__name__)
 
 CORS(app)
 
+
+# traduction
+def get_locale():
+    print(request.accept_languages.best_match(['en', 'fr']))
+    return request.accept_languages.best_match(['en', 'fr'])
+app.config['BABEL_DEFAULT_LOCALE'] = 'en'
+babel = Babel(app, locale_selector=get_locale)
+# TODO Utiliser 1) json 2) get local
+
+
+# Configuration de la BDD
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///geocaching.db'
 db = SQLAlchemy(app)
 

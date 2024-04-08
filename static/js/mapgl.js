@@ -6,6 +6,10 @@
 // + Voir si possible d'ajouter des infos sur nbre cache par date 
 // + coloration de la période ou il y a des caches ?
 
+// TODO MODAL au premier affichage pour langue et connexion.
+
+// TODO Traduction
+// TODO Refresh page apres changement de langue + avertissement
 
 // TODO BDD:
 // Tester les fichiers GPX issus d'autres sources (GSAK, ProjectGC...)

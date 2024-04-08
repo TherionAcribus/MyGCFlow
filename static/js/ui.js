@@ -158,12 +158,15 @@ const spanCurrentDate = document.getElementById('spanCurrentDate');
 
 
 // OPTIONS 
-const switchEngine = document.getElementById('switchEngine');
-switchEngine.addEventListener('change', changeEngine);
-
+const selectLanguage = document.getElementById('selectLanguage');
+selectLanguage.addEventListener('change', changeOptionsValues);
 
 // initialisation les éléments des options par défaut
 export function init_ui() {
+    // ------- OPTIONS  -------   
+    selectLanguage.value = pkg.options.options.language;
+    M.FormSelect.init(document.getElementById('selectLanguage'));
+
     // ---------- POINTS ------------------
     // colorpickers
     cpPointBorderColor.value = pkg.options.point.border.color;
@@ -244,14 +247,11 @@ export function init_ui() {
 
 // ----------- OPTIONS DE L'APP ------------
 
-// passe de 2D à 3D et inversement
-function changeEngine() {
-    let engine = switchEngine.checked ? "webgl" : "2D";
-    let optionsValues = JSON.parse(localStorage.getItem('optionsValues'));
-    localStorage.setItem('optionsValues', JSON.stringify(optionsValues));
-    pkg.refreshPoints(optionsValues); 
+// 
+function changeOptionsValues() {
+    pkg.options.options.language = selectLanguage.value;
+    // TODO REFRESH AVEC AVERTISSEMENT
 }
-
 
 
 // ----------- BDD ------------
