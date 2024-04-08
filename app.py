@@ -4,7 +4,7 @@ from flask import Flask, render_template, jsonify, request, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_cors import cross_origin
-from bdd import uploadBdd, get_progress_step, db_infos, create_geojson, get_metadata_from_geojson, filter_session
+from bdd import uploadBdd, get_progress_step, db_infos, create_geojson, get_metadata_from_geojson, filter_session, analyse
 from capture import upload_image, clear_pictures_directory, assemble_pictures_directory
 
 app = Flask(__name__)
@@ -56,16 +56,16 @@ def get_progress():
 @app.route('/upload', methods=['POST'])
 @cross_origin()
 def handle_upload():
-    if 'file' not in request.files:
-        return jsonify({'message': 'Aucun fichier envoyé'}), 400
-    
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({'message': 'Aucun fichier sélectionné'}), 400
-    
+    # peuple la BDD, le check du fichier est fait en amont
     uploadBdd(request, Geocache, db)
+    return jsonify({'message': 'Fichier reçu avec succès'})   
 
-    return jsonify({'message': 'Fichier reçu avec succès'})
+
+@app.route('/analyse_file', methods=['POST'])
+@cross_origin()
+def analyse_file():
+    # peuple la BDD, le check du fichier est fait en amont
+    return analyse(request)
 
 
 @app.route('/db_status')

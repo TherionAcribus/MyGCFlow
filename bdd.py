@@ -10,6 +10,47 @@ import json
 loading_progress = 0
 loading_message = ""
 
+# analyse le fichier transmit pour peupler La BDD
+def analyse(request):
+    if 'file' not in request.files:
+        return jsonify({'message': 'Aucun fichier envoyé'}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'message': 'Aucun fichier sélectionné'}), 400
+    
+    # verification du fichier envoyé
+    checkFile = checkFileNameAndDesc(request)
+
+    if checkFile["success"]:
+        return jsonify(checkFile), 200
+    else:
+        return jsonify(checkFile), 400
+    
+
+def checkFileNameAndDesc(request):
+    """ Vérifie que le fichier envoyé est bien un GPX "My Finds" """
+    try:
+        # Essayer de parser le fichier comme un XML
+        gpxfile = request.files['file']
+        tree = ET.parse(gpxfile)
+        root = tree.getroot()
+        
+        # Trouver les éléments <name> et <desc> dans le fichier GPX
+        name = root.find('{http://www.topografix.com/GPX/1/0}name')
+        desc = root.find('{http://www.topografix.com/GPX/1/0}desc')
+
+        if name is None or "My Finds Pocket Query" not in name.text and "Groundspeak" in desc.text:
+            return {'success': False, 'message': "Le fichier GPX est une Pocket Query."}
+        elif "Groundspeak" not in desc.text:
+            return {'success': False, 'message': 'Le fichier GPX n\'est pas un fichier produit par Groundspeak.'}
+        
+    except ET.ParseError:
+        return {'success': False, 'message': 'Le fichier fourni n\'est pas un fichier GPX valide'}
+    
+    return {'success': True, 'message': 'Fichier reçu avec succès'}
+
+
 def uploadBdd(request, Geocache, db):
     # initialisation de la variable de chargement
     global loading_progress, loading_message

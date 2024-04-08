@@ -6,6 +6,11 @@
 // + Voir si possible d'ajouter des infos sur nbre cache par date 
 // + coloration de la période ou il y a des caches ?
 
+
+// TODO BDD:
+// Tester les fichiers GPX issus d'autres sources (GSAK, ProjectGC...)
+
+
 // TODO Ajouter les autres filtres (Pays, Region, Poseur, Attributs)
 // TODO COloration selon autre critères que le type (T, D, size) (v2)
 // TODO Permettre afficher images à la place des cercles (icones officielles) (V2)

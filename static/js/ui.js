@@ -482,6 +482,28 @@ export function updateProgressBar(data) {
 }
 
 
+// MODAL INFOS / ERREURS
+export function openModalnfos(title, description){
+    const instance = M.Modal.getInstance(document.getElementById('modal_infos'));
+    instance.open();
+    updateTextsModalInfos(title, description);
+}
+
+// changement du titre et de la description de la modale
+export function updateTextsModalInfos(title, description){
+    const modalTitle = document.getElementById('modalInfosTitle');
+    const modalDescription = document.getElementById('modalInfosDescription');
+    modalTitle.innerText = title;
+    modalDescription.innerText = description;
+}
+
+export function closeModalInfos(){
+    const instance = M.Modal.getInstance(document.getElementById('modal_infos'));
+    instance.close();
+}
+
+
+
 // ----------------- ANIMATION DE LA CARTE ----------------
 
 function clickStartAnimation(){

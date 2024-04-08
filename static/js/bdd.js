@@ -16,11 +16,37 @@ export let json_data;
 // chargement d'un fichier dans la BDD
 function uploadBddRequest(e){
     e.preventDefault();
-    pkg.openModalLoading("Chargement du fichier", "Chargement du fichier .gpx en cours");
+    pkg.openModalLoading("Chargement du fichier", "Analyse du fichier .gpx en cours");
 
     var formData = new FormData();
     var fileInput = document.getElementById('file-input');
     formData.append('file', fileInput.files[0]);
+
+    // d'abord on vérifie que le fichier soit correcte
+    fetch ('http://localhost:5000/analyse_file', {
+        method: 'POST',
+        body: formData,
+    }).then (response => response.json())
+    .then (data => {
+        console.log("data", data);
+        if (data.success) {
+            console.log("success");
+            // puis si c'est bon, on le charge
+            uploadBdd();
+        } else {
+            pkg.closeModalLoading();
+            pkg.openModalnfos("Erreur", data.message);
+        }
+    })
+}
+
+
+function uploadBdd (){
+    var formData = new FormData();
+    var fileInput = document.getElementById('file-input');
+    formData.append('file', fileInput.files[0]);
+
+    pkg.updateTextsModal("Chargement du fichier", "Chargement du fichier .gpx en cours");
 
     fetch('http://localhost:5000/upload', {
         method: 'POST',
@@ -28,7 +54,7 @@ function uploadBddRequest(e){
     })
     .then(response => response.json())
     .then(data => {
-        console.log(data);
+        console.log("data", data);
         // ferme la modale
         pkg.closeModalLoading();
         // mets à jour les infos de la BDD
@@ -39,7 +65,6 @@ function uploadBddRequest(e){
     });
     checkLoadingProgress(); // Commencez à vérifier la progression
 }
-
 
 function checkLoadingProgress() {
     fetch('http://localhost:5000/progressBar')
