@@ -98,6 +98,11 @@ let animationLayer;
 
 let vectorSource;
 
+// definition de l'interval hors de la fonction d'animation pour pouvoir l'arreter.
+let interval;
+// element qui stocke les infos à afficher dans les frames. Sortie de la fonction pour pouvoir les garder en mémoire
+let infos;
+
 
 // récupère les couleurs GC par défaut dans le JSON 
 // (permet d'être facilement modifiable contrairement à un dict en dur)
@@ -470,7 +475,6 @@ function displayWebGLPoints(features, pointOptions) {
             wrapX: true,
         });
 
-        console.log("mode", pointOptions)
         if (pointOptions.mode == "vectoriel") {
             vectorLayerBorder = new ol.layer.WebGLPoints({
                 source: window.vectorSource,
@@ -534,18 +538,21 @@ function clearMap(){
 
 
 // ----------- ANIMATION DE LA CARTE  ------------
-export function startAnimation() {
-    window.vectorSource.clear();
-    createFlashElements();
+export function startAnimation(restart=false) {
+    if (!restart) {
+        window.vectorSource.clear();
+        createFlashElements();
+        infos = createObjectInfos();
+    }
 
     let flashOptions = pkg.options.flash
-
-    let infos = createObjectInfos();
 
     flashOptions.rgb = pkg.hexToRgb(flashOptions.color);
     const dayDuration = pkg.options.animation.timePerDay;
     //const displayDaysWithoutCache = pkg.options.animation.displayDaysWithoutCache;
-    currentDate = pkg.metadata.startDate;
+    if (!restart) {
+        currentDate = new Date(pkg.metadata.startDate); // Initialisation de la date seulement si elle n'est pas déjà définie (restart)
+    }
     interval = setInterval(() => {
         displayFeaturesForDate(currentDate, pkg.options.point, flashOptions, false, infos);
         currentDate.setDate(currentDate.getDate() + 1);
@@ -553,6 +560,15 @@ export function startAnimation() {
             clearInterval(interval);
         }
     }, dayDuration);
+}
+
+export function stopAnimation(){
+    if (interval) {
+        clearInterval(interval);
+        interval = null; // Nettoyer la référence à l'intervalle
+    }
+    // on remets la carte comme au départ
+    refreshPoints();
 }
 
 export function recordAnimation(){
@@ -577,7 +593,6 @@ export function recordAnimation(){
     pkg.metadata.endDate = new Date("08-01-2018")
     currentFrame = 0;  // Réinitialisez le compteur de frames
     captureNextFrame(true, pkg.options.point, pkg.options.flash, infos);
-    console.log("STOP !!!!")
     // CREATION FILM
 }
 
@@ -640,10 +655,8 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
 // mise à jour de la barre de progression
 function updateProgress(){
     let percent = imageCounter / pkg.options.record.nbOfImages * 100 
-    console.log('percent', percent, imageCounter, pkg.options.record.nbOfImages)
     infosProgressBar.progress = percent
     infosProgressBar.message = percent + "%" + ":" + currentDate;
-    console.log(currentDate )
     pkg.updateProgressBar(infosProgressBar)
 }
 
@@ -695,7 +708,6 @@ function displayFeaturesForDate(date, pointOptions, flashOptions, record, infos)
 
 // affiche les infos (date, nb de caches) en fonction des jours
 function displayInfosForDate(infos, date, featuresForDate) {
-    console.log(infos)
     if (infos.displayDate) {
         pkg.updateCurrentDate(date);
     }
@@ -731,7 +743,6 @@ function updateAnimationStyles() {
     animationSource.getFeatures().forEach(feature => {
         const animationFrame = feature.get('animationFrame');
         const maxAnimationFrames = pkg.options.record.flashFrames; // Durée de l'animation pour chaque point
-        console.log('up', pkg.options.record.flashFrames)
 
         if (animationFrame > maxAnimationFrames) {
             // Retirer l'entité de animationSource une fois l'animation terminée

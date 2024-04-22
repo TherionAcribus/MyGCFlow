@@ -95,6 +95,10 @@ const btnRecordAnimation = document.getElementById('btnRecordAnimation');
 btnRecordAnimation.addEventListener('click', clickRecordAnimation);
 const inputTimePerDay = document.getElementById('inputTimePerDay');
 inputTimePerDay.addEventListener('input', changeAnimationValues);
+const btnStopAnimation = document.getElementById('btnStopAnimation');
+btnStopAnimation.addEventListener('click', pkg.stopAnimation);
+const btnPauseAnimation = document.getElementById('btnPauseAnimation');
+btnPauseAnimation.addEventListener('click', toggleButtonAnimationPauseAndRestart);
 // jours sans caches
 const cbDisplayDaysWithoutCache = document.getElementById('cbDisplayDaysWithoutCache');
 cbDisplayDaysWithoutCache.addEventListener('change', changeAnimationValues);
@@ -538,6 +542,7 @@ export function closeModalInfos(){
 // ----------------- ANIMATION DE LA CARTE ----------------
 
 function clickStartAnimation(){
+    toggleButtonAnimationPauseAndRestart(true);
     // Vide la source vectorielle avant de démarrer l'animation
     pkg.startAnimation();
 }
@@ -546,6 +551,33 @@ function clickRecordAnimation(){
     // Vide la source vectorielle avant de démarrer l'animation
     pkg.recordAnimation();
 }
+
+// on clique sur le bouton Pause/Restart
+// on change le texte du bouton et une class qui sert d'indicateur
+// si réinitialisation = true, c'est que l'on veut remettre le bouton dans son état d'origine 
+// sans lancer startAnimation. Utilisé quand on clique sur Start ou Annuler
+function toggleButtonAnimationPauseAndRestart(reinitialisation = false){ {
+    const btnPauseAnimation = document.getElementById('btnPauseAnimation');
+    const icon = btnPauseAnimation.querySelector('i.material-icons');
+
+    if (btnPauseAnimation.classList.contains('pause') && !reinitialisation) {
+        btnPauseAnimation.classList.remove('pause');
+        btnPauseAnimation.classList.add('restart');
+        btnPauseAnimation.childNodes[2].nodeValue = "Continue";  // Mettre à jour le texte
+        icon.textContent = 'chevron_right';  // Mettre à jour l'icône
+        pkg.stopAnimation();
+    } else if (btnPauseAnimation.classList.contains('restart') || reinitialisation) {
+        btnPauseAnimation.classList.remove('restart');
+        btnPauseAnimation.classList.add('pause');
+        btnPauseAnimation.childNodes[2].nodeValue = "Pause";  // Mettre à jour le texte
+        icon.textContent = 'pause';  // Mettre à jour l'icône
+        if (!reinitialisation) {
+            pkg.startAnimation("restart");
+            }
+        }
+    }
+}
+
 
 // recupère tous les changements liés aux points
 function changeAnimationValues(event){

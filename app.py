@@ -13,11 +13,10 @@ app = Flask(__name__)
 
 CORS(app)
 
-current_version = "1.0"
+current_version = "2.0"
 
 # traduction
 def get_locale():
-    print(request.accept_languages.best_match(['en', 'fr']))
     return request.accept_languages.best_match(['en', 'fr'])
 app.config['BABEL_DEFAULT_LOCALE'] = 'en'
 babel = Babel(app, locale_selector=get_locale)

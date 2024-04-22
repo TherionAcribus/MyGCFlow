@@ -3,7 +3,6 @@ import * as pkg from './index.js';
 export function checkVersionInit(){
     if (pkg.options.options.checkVersion == true) {
         checkVersion("init");
-        console.log("CHECK")
     }
 }
 
@@ -16,6 +15,9 @@ export function checkVersion(mode="manual"){
     .catch(error => console.error('Erreur:', error));
 }
 
+
+// le mode permet de savoir si checkversion depuis initialisation ou demande user
+// car on n'affiche la reponse si négative que si demande user
 function displayCheckVersion(data, mode){
     console.log(data.update_available);
     let title;
@@ -26,7 +28,7 @@ function displayCheckVersion(data, mode){
     } else {
         title = "No update available";
     }
-    console.log("av", data.update_available, mode);
+
     if (data.update_available || mode == "manual") {
     pkg.openModalnfos(title, data.release_notes, "html");
     }
