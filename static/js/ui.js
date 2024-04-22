@@ -160,12 +160,20 @@ const spanCurrentDate = document.getElementById('spanCurrentDate');
 // OPTIONS 
 const selectLanguage = document.getElementById('selectLanguage');
 selectLanguage.addEventListener('change', changeOptionsValues);
+const selectCheckVersionOnline = document.getElementById('selectCheckVersionOnline');
+selectCheckVersionOnline.addEventListener('change', changeOptionsValues);
+// boutons 
+const buttonCheckVersion = document.getElementById('buttonCheckVersion');
+buttonCheckVersion.addEventListener('click', pkg.checkVersion);
+
 
 // initialisation les éléments des options par défaut
 export function init_ui() {
     // ------- OPTIONS  -------   
     selectLanguage.value = pkg.options.options.language;
     M.FormSelect.init(document.getElementById('selectLanguage'));
+    selectCheckVersionOnline.value = pkg.options.options.checkVersion;
+    M.FormSelect.init(document.getElementById('selectCheckVersionOnline'));
 
     // ---------- POINTS ------------------
     // colorpickers
@@ -251,6 +259,7 @@ export function init_ui() {
 function changeOptionsValues() {
     pkg.options.options.language = selectLanguage.value;
     // TODO REFRESH AVEC AVERTISSEMENT
+    pkg.options.options.checkVersion = selectCheckVersionOnline.value;
 }
 
 
@@ -500,18 +509,23 @@ export function updateProgressBar(data) {
 
 
 // MODAL INFOS / ERREURS
-export function openModalnfos(title, description){
+export function openModalnfos(title, description, mode="text"){
     const instance = M.Modal.getInstance(document.getElementById('modal_infos'));
     instance.open();
-    updateTextsModalInfos(title, description);
+    updateTextsModalInfos(title, description, mode);
 }
 
 // changement du titre et de la description de la modale
-export function updateTextsModalInfos(title, description){
+export function updateTextsModalInfos(title, description, mode="text"){
     const modalTitle = document.getElementById('modalInfosTitle');
     const modalDescription = document.getElementById('modalInfosDescription');
+
     modalTitle.innerText = title;
-    modalDescription.innerText = description;
+    if (mode == "text"){
+        modalDescription.innerText = description;
+    } else if (mode == "html"){
+        modalDescription.innerHTML = description;
+    }
 }
 
 export function closeModalInfos(){

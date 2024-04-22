@@ -9,5 +9,15 @@
             <label>{{ _('Language Choice') }}</label>
         </div>
 
+        <div class="input-field col s12">
+            <select id="selectCheckVersionOnline">
+                <option value=true>{{ _('Yes') }}</option>
+                <option value=false>{{ _('No') }}</option>
+            </select>
+            <label>{{ _('Check for a new version at startup') }}</label>
+        </div>
+
+        <a id="buttonCheckVersion" class="waves-effect waves-light btn">{{ _('Check for a new version') }}</a>
+
     </section>
 </div>

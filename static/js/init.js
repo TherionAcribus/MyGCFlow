@@ -24,6 +24,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     pkg.getDefaultValues().then(optionsValues => {
         // initialisation de la classe "options"
         pkg.options.init(optionsValues);
+        // check la version
+        pkg.checkVersionInit();
         //creation des différentes cartographies
         pkg.addMaps();
         // affiche la bonne carte

@@ -1,7 +1,8 @@
 {
     "options": {
         "engine": "webgl",
-        "language": "fr"
+        "language": "fr",
+        "checkVersion": true
     },
     "map": {
         "default": "stamenToner",

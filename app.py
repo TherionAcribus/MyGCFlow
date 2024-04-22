@@ -6,12 +6,14 @@ from flask_cors import CORS
 from flask_cors import cross_origin
 from bdd import uploadBdd, get_progress_step, db_infos, create_geojson, get_metadata_from_geojson, filter_session, analyse
 from capture import upload_image, clear_pictures_directory, assemble_pictures_directory
+from options import check_version_online
 from flask_babel import Babel
 
 app = Flask(__name__)
 
 CORS(app)
 
+current_version = "1.0"
 
 # traduction
 def get_locale():
@@ -128,6 +130,11 @@ def clear_pictures():
 def assemble_pictures():
     return assemble_pictures_directory("captured", "video/output.mp4", 24)
 
+
+@app.route('/check_version', methods=['GET'])
+@cross_origin()
+def check_version():
+    return check_version_online(current_version)
 
 if __name__ == '__main__':
     # ouverture automatique du navigateur, pour l'instant en pause
