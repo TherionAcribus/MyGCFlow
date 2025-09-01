@@ -34,16 +34,28 @@
 .changeMap {
     width: 100%;
     margin-bottom: 1rem;
-    transition: transform 0.2s ease;
+    padding: 12px 16px;
+    text-align: center;
+    font-weight: 500;
+    font-size: 14px;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    border-radius: 8px;
 }
 
 .changeMap:hover {
     transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .changeMap.disabled {
     background-color: #4CAF50 !important;
     color: white !important;
+    transform: none;
+    box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
 }
 
 /* Style des boutons d'animation */

@@ -17,42 +17,42 @@ var selectLanguage, selectCheckVersionOnline, buttonCheckVersion;
 
 // Initialisation des éléments UI avec vérification d'existence
 function initUIElements() {
-    // MENU BDD
+// MENU BDD
 
-    // select BDD
-    const selectType = document.getElementById('selectType');
+// select BDD
+const selectType = document.getElementById('selectType');
     if (selectType) selectType.addEventListener('change', changeSelection);
 
-    const selectTerrain = document.getElementById('selectTerrain');
+const selectTerrain = document.getElementById('selectTerrain');
     if (selectTerrain) selectTerrain.addEventListener('change', changeSelection);
 
-    const selectDifficulty = document.getElementById('selectDifficulty');
+const selectDifficulty = document.getElementById('selectDifficulty');
     if (selectDifficulty) selectDifficulty.addEventListener('change', changeSelection);
 
-    const selectContainer = document.getElementById('selectContainer');
+const selectContainer = document.getElementById('selectContainer');
     if (selectContainer) selectContainer.addEventListener('change', changeSelection);
 
-    // datepicker
-    const datePickerStart = document.getElementById('datePickerStart');
-    const datePickerEnd = document.getElementById('datePickerEnd');
+// datepicker
+const datePickerStart = document.getElementById('datePickerStart');
+const datePickerEnd = document.getElementById('datePickerEnd');
     if (datePickerStart) datePickerStart.addEventListener('change', changeSelection);
     if (datePickerEnd) datePickerEnd.addEventListener('change', changeSelection);
 
-    // MENU CARTES
+// MENU CARTES
 
-    // boutons pour le choix des cartes
+// boutons pour le choix des cartes
     btnOSM = document.getElementById('OSM');
     btnWatercolor = document.getElementById('watercolor');
     btnStamenToner = document.getElementById('stamenToner');
     btnVectorMap = document.getElementById('vectorMap');
 
-    // sous menu pour le choix des cartes
+// sous menu pour le choix des cartes
     divVectorMapOptions = document.getElementById('vectorMapOptions');
     divTonerMapOptions = document.getElementById('tonerMapOptions');
     btnStamenTonerLight = document.getElementById('stamenTonerLight');
     btnStamenTonerDark = document.getElementById('stamenTonerDark');
 
-    // Champs pour les options de la carte vectorielle
+// Champs pour les options de la carte vectorielle
     cpStrokeColor = document.getElementById('fieldVectorMapStrokeColor');
     if (cpStrokeColor) cpStrokeColor.addEventListener('change', changecpStrokeColor);
 
@@ -65,62 +65,62 @@ function initUIElements() {
     strokeWidth = document.getElementById('fieldVectorMapStrokeWidth');
     if (strokeWidth) strokeWidth.addEventListener('change', changestrokeWidth);
 
-    // Champs pour les options de la carte Toner Stamen
-    const tonerStyleElements = document.getElementsByClassName("changeTonerStyle");
-    Array.from(tonerStyleElements).forEach(function(element) {
-        element.addEventListener("click", changeStamenTonerStyle);
-    });
+// Champs pour les options de la carte Toner Stamen
+const tonerStyleElements = document.getElementsByClassName("changeTonerStyle");
+Array.from(tonerStyleElements).forEach(function(element) {
+    element.addEventListener("click", changeStamenTonerStyle);
+});
 
 
-    // POINTS
-    // Colorpickers
-    // --- in
+// POINTS
+// Colorpickers
+// --- in
     cpPointCenterColor = document.getElementById('pointCenterColor');
     if (cpPointCenterColor) cpPointCenterColor.addEventListener('change', changePointStyleUI);
 
-    // -- out
+// -- out
     cpPointBorderColor = document.getElementById('pointBorderColor');
     if (cpPointBorderColor) cpPointBorderColor.addEventListener('change', changePointStyleUI);
 
-    // Radio buttons
-    // --- in
+// Radio buttons
+// --- in
     radioFillColorPoint = document.getElementsByName('fillColorPoint');
-    radioFillColorPoint.forEach(radio => {
-        radio.addEventListener('change', () => changePointStyleUI(radio));
-    });
-    // -- out
+radioFillColorPoint.forEach(radio => {
+    radio.addEventListener('change', () => changePointStyleUI(radio));
+});
+// -- out
     radioborderColorPoint = document.getElementsByName('borderColorPoint');
-    radioborderColorPoint.forEach(radio => {
-        radio.addEventListener('change', () => changePointStyleUI(radio));
-    });
+radioborderColorPoint.forEach(radio => {
+    radio.addEventListener('change', () => changePointStyleUI(radio));
+});
 
-    // sliders et input associé
-    // --- in
-    const sliderSizePoint = document.getElementById('sliderSizePoint');
-    const inputSizePoint = document.getElementById('inputSizePoint');
+// sliders et input associé
+// --- in
+const sliderSizePoint = document.getElementById('sliderSizePoint');
+const inputSizePoint = document.getElementById('inputSizePoint');
     if (sliderSizePoint) sliderSizePoint.addEventListener('change', changePointStyleUI);
     if (inputSizePoint) inputSizePoint.addEventListener('change', changePointStyleUI);
 
-    // -- out
-    const sliderSizeBorder = document.getElementById('sliderSizeBorder');
-    const inputSizeBorder = document.getElementById('inputSizeBorder');
+// -- out
+const sliderSizeBorder = document.getElementById('sliderSizeBorder');
+const inputSizeBorder = document.getElementById('inputSizeBorder');
     if (sliderSizeBorder) sliderSizeBorder.addEventListener('change', changePointStyleUI);
     if (inputSizeBorder) inputSizeBorder.addEventListener('change', changePointStyleUI);
 
-    // switch
+// switch
     switchIconeVectoriel = document.getElementById('switchIconeVectoriel');
     if (switchIconeVectoriel) switchIconeVectoriel.addEventListener('change', changePointStyleUI);
 
-    // select
+// select
     selectShape = document.getElementById('selectShape');
     if (selectShape) selectShape.addEventListener('change', changePointStyleUI);
 
-    // ANIMATION DE LA CARTE
-    // Boutons
-    const btnStartAnimation = document.getElementById('btnStartAnimation');
+// ANIMATION DE LA CARTE
+// Boutons
+const btnStartAnimation = document.getElementById('btnStartAnimation');
     if (btnStartAnimation) btnStartAnimation.addEventListener('click', clickStartAnimation);
 
-    const btnRecordAnimation = document.getElementById('btnRecordAnimation');
+const btnRecordAnimation = document.getElementById('btnRecordAnimation');
     if (btnRecordAnimation) btnRecordAnimation.addEventListener('click', clickRecordAnimation);
 
     inputTimePerDay = document.getElementById('inputTimePerDay');
@@ -129,10 +129,10 @@ function initUIElements() {
     cbDisplayDaysWithoutCache = document.getElementById('cbDisplayDaysWithoutCache');
     if (cbDisplayDaysWithoutCache) cbDisplayDaysWithoutCache.addEventListener('change', changeAnimationValues);
 
-    const btnStopAnimation = document.getElementById('btnStopAnimation');
+const btnStopAnimation = document.getElementById('btnStopAnimation');
     if (btnStopAnimation) btnStopAnimation.addEventListener('click', pkg.stopAnimation);
 
-    const btnPauseAnimation = document.getElementById('btnPauseAnimation');
+const btnPauseAnimation = document.getElementById('btnPauseAnimation');
     if (btnPauseAnimation) btnPauseAnimation.addEventListener('click', toggleButtonAnimationPauseAndRestart);
 
     // FLASH
