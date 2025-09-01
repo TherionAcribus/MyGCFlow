@@ -826,18 +826,37 @@ function flash(feature, flashOptions) {
         const radius = ol.easing.easeOut(elapsedRatio) * 25 + 5; // Taille de l'élément 
         const opacity = ol.easing.easeOut(1 - elapsedRatio); // Opacité de l'élément 
 
-        // Style pour l'étoile
+        // Style pour l'animation de flash
         let style;
-        if (flashOptions.mode == "star") {
-            style = starStyle(radius, opacity, flashOptions);}
-        else if(flashOptions.mode == "circle") {
-            style = circleStyle(radius, opacity, flashOptions);
+        switch (flashOptions.mode) {
+            case "star":
+                style = starStyle(radius, opacity, flashOptions);
+                break;
+            case "circle":
+                style = circleStyle(radius, opacity, flashOptions);
+                break;
+            case "square":
+                style = squareStyle(radius, opacity, flashOptions);
+                break;
+            case "triangle":
+                style = triangleStyle(radius, opacity, flashOptions);
+                break;
+            case "diamond":
+                style = diamondStyle(radius, opacity, flashOptions);
+                break;
+            default:
+                // Style par défaut (cercle) si le mode n'est pas reconnu
+                style = circleStyle(radius, opacity, flashOptions);
+                break;
         }
 
-        const vectorContext = ol.render.getVectorContext(event);
-        vectorContext.setStyle(style);
-        vectorContext.drawGeometry(flashGeom);
-        map.render();
+        // Vérifier que le style est valide avant de l'appliquer
+        if (style) {
+            const vectorContext = ol.render.getVectorContext(event);
+            vectorContext.setStyle(style);
+            vectorContext.drawGeometry(flashGeom);
+            map.render();
+        }
     }
 }
 
@@ -853,7 +872,7 @@ map.addLayer(animationLayer);
 }
 
 
-function starStyle(radius, opacity, flashOptions){
+export function starStyle(radius, opacity, flashOptions){
     const color = `rgba(${flashOptions.rgb.r}, ${flashOptions.rgb.g}, ${flashOptions.rgb.b}, ${opacity})`;
     const style = new ol.style.Style({
         image: new ol.style.RegularShape({
@@ -873,7 +892,7 @@ function starStyle(radius, opacity, flashOptions){
     return style;
 }
 
-function circleStyle(radius, opacity, flashOptions){
+export function circleStyle(radius, opacity, flashOptions){
     const color = `rgba(${flashOptions.rgb.r}, ${flashOptions.rgb.g}, ${flashOptions.rgb.b}, ${opacity})`;
     const style = new ol.style.Style({
         image: new ol.style.Circle({
@@ -886,5 +905,64 @@ function circleStyle(radius, opacity, flashOptions){
     });
     return style;
 }
+
+export function squareStyle(radius, opacity, flashOptions){
+    const color = `rgba(${flashOptions.rgb.r}, ${flashOptions.rgb.g}, ${flashOptions.rgb.b}, ${opacity})`;
+    const style = new ol.style.Style({
+        image: new ol.style.RegularShape({
+            points: 4,
+            radius: radius,
+            angle: Math.PI / 4, // Rotation de 45° pour un carré aligné
+            stroke: new ol.style.Stroke({
+                color: `rgba(0, 0, 0, ${opacity})`,
+                width: 2,
+            }),
+            fill: new ol.style.Fill({
+                color: color,
+            }),
+        }),
+    });
+    return style;
+}
+
+export function triangleStyle(radius, opacity, flashOptions){
+    const color = `rgba(${flashOptions.rgb.r}, ${flashOptions.rgb.g}, ${flashOptions.rgb.b}, ${opacity})`;
+    const style = new ol.style.Style({
+        image: new ol.style.RegularShape({
+            points: 3,
+            radius: radius,
+            angle: 0,
+            stroke: new ol.style.Stroke({
+                color: `rgba(0, 0, 0, ${opacity})`,
+                width: 2,
+            }),
+            fill: new ol.style.Fill({
+                color: color,
+            }),
+        }),
+    });
+    return style;
+}
+
+export function diamondStyle(radius, opacity, flashOptions){
+    const color = `rgba(${flashOptions.rgb.r}, ${flashOptions.rgb.g}, ${flashOptions.rgb.b}, ${opacity})`;
+    const style = new ol.style.Style({
+        image: new ol.style.RegularShape({
+            points: 4,
+            radius: radius,
+            angle: 0, // Losange pointant vers le haut
+            stroke: new ol.style.Stroke({
+                color: `rgba(0, 0, 0, ${opacity})`,
+                width: 2,
+            }),
+            fill: new ol.style.Fill({
+                color: color,
+            }),
+        }),
+    });
+    return style;
+}
+
+
 
 

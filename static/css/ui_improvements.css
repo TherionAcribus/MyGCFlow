@@ -428,27 +428,101 @@
     }
 
     /* Ajustements pour les contrôles Vector sur mobile */
-    .vector-control-group {
-        text-align: center;
+.vector-control-group {
+    text-align: center;
+}
+
+.vector-label {
+    text-align: center;
+    margin-bottom: 12px;
+}
+
+.vector-slider-container {
+    flex-direction: column;
+    gap: 8px;
+}
+
+.vector-slider-value {
+    align-self: center;
+    min-width: 50px;
+}
+
+.vector-color-picker {
+    width: 50px;
+    height: 35px;
+}
+
+/* Styles pour les animations de flash */
+.flash-animation {
+    position: absolute;
+    pointer-events: none;
+    z-index: 1000;
+    transform-origin: center;
+    transition: all 0.3s ease-out;
+}
+
+.flash-circle {
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.2) 70%, transparent 100%);
+}
+
+.flash-square {
+    background: linear-gradient(45deg, rgba(255,255,255,0.8), rgba(255,255,255,0.4));
+}
+
+.flash-triangle {
+    filter: drop-shadow(0 0 10px rgba(255,255,255,0.5));
+}
+
+.flash-diamond {
+    background: linear-gradient(45deg, rgba(255,255,255,0.8), rgba(255,255,255,0.4));
+    filter: drop-shadow(0 0 8px rgba(255,255,255,0.6));
+}
+
+
+
+/* Styles pour le formulaire flash */
+#flash {
+    padding: 20px;
+    margin: 10px 0;
+}
+
+#flash .input-field {
+    margin: 15px 0;
+}
+
+#flash input[type="color"] {
+    width: 60px;
+    height: 40px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+/* Style amélioré pour le select de flash */
+#selectFlashMode {
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+#selectFlashMode option {
+    padding: 8px;
+    background: white;
+    color: #333;
+}
+
+#selectFlashMode option:hover {
+    background: #f5f5f5;
+}
+
+/* Responsive pour le flash */
+@media only screen and (max-width: 600px) {
+    #flash {
+        padding: 15px;
     }
 
-    .vector-label {
-        text-align: center;
-        margin-bottom: 12px;
+    #selectFlashMode {
+        font-size: 0.9rem;
     }
-
-    .vector-slider-container {
-        flex-direction: column;
-        gap: 8px;
-    }
-
-    .vector-slider-value {
-        align-self: center;
-        min-width: 50px;
-    }
-
-    .vector-color-picker {
-        width: 50px;
-        height: 35px;
-    }
+}
 }

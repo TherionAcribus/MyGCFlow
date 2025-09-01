@@ -8,6 +8,8 @@ export * from './record.js';
 export * from './frames.js';
 export * from './options.js';
 export * from './notifications.js';
+export * from './flash_animations.js';
 
 // Import du fichier de démonstration (uniquement en développement)
 import './demo_toasts.js';
+import './demo_flash.js';

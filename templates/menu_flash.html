@@ -3,24 +3,18 @@
     <div>
         <form>
 
-            <p>
-                <label>
-                    <input class="with-gap" name="flashMode" type="radio" value="none"/>
-                    <span>Pas de flash</span>
-                </label>
-            </p>
-            <p>
-                <label>
-                    <input class="with-gap" name="flashMode" type="radio" value="circle"/>
-                    <span>Cercle</span>
-                </label>
-            </p>
-            <p>
-                <label>
-                    <input class="with-gap" name="flashMode" type="radio" value="star" />
-                    <span>Etoile</span>
-                </label>
-            </p>
+            <!-- Select pour choisir la forme du flash (remplace les anciens radio buttons) -->
+            <div class="input-field">
+                <select id="selectFlashMode">
+                    <option value="none">Pas de flash</option>
+                    <option value="circle">Cercle</option>
+                    <option value="star">Étoile</option>
+                    <option value="square">Carré</option>
+                    <option value="triangle">Triangle</option>
+                    <option value="diamond">Losange</option>
+                </select>
+                <label for="selectFlashMode">Forme du flash</label>
+            </div>
 
             <div class="input-field">
                 <input placeholder="Durée du flash" id="inputTimeFlash" type="number" class="validate">

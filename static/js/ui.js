@@ -8,7 +8,7 @@ var cpPointCenterColor, cpPointBorderColor;
 var radioFillColorPoint, radioborderColorPoint;
 var switchIconeVectoriel, selectShape;
 var inputTimePerDay, cbDisplayDaysWithoutCache;
-var radioflashMode, inputTimeFlash, inputSizeFlash, cpFlashColor;
+var selectFlashMode, inputTimeFlash, inputSizeFlash, cpFlashColor;
 var cpStrokeColor, cpFillColor, cpBackgroundColor, strokeWidth;
 var cbDisplayTitle, cbDisplayNumberofCaches, cbDisplayCurrentDate, inputTitle;
 var inputTitleCss, inputInfosCss, btnTitleCss, btnInfosCss;
@@ -159,11 +159,13 @@ const btnPauseAnimation = document.getElementById('btnPauseAnimation');
     if (btnPauseAnimation) btnPauseAnimation.addEventListener('click', toggleButtonAnimationPauseAndRestart);
 
     // FLASH
-    // radio buttons
-    radioflashMode = document.getElementsByName('flashMode');
-    radioflashMode.forEach(radio => {
-        radio.addEventListener('change', () => changeFlashValues(radio));
-    });
+    // select pour le mode de flash
+    selectFlashMode = document.getElementById('selectFlashMode');
+    if (selectFlashMode) {
+        selectFlashMode.addEventListener('change', () => changeFlashValues(selectFlashMode));
+        // Initialiser Materialize Select
+        M.FormSelect.init(selectFlashMode);
+    }
     // inputs
     inputTimeFlash = document.getElementById('inputTimeFlash');
     if (inputTimeFlash) inputTimeFlash.addEventListener('input', changeFlashValues);
@@ -306,16 +308,15 @@ export function init_ui() {
 
     // ------- FLASH -------
     // colorpicker
-    cpFlashColor.value = pkg.options.flash.color;
+    if (cpFlashColor) cpFlashColor.value = pkg.options.flash.color;
     // inputs
-    inputTimeFlash.value = pkg.options.flash.duration;
-    inputSizeFlash.value = pkg.options.flash.size;
-    // radio buttons
-    for (let radio of radioflashMode) {
-        if (radio.value === pkg.options.flash.mode) {
-            radio.checked = true;
-            break;
-        }
+    if (inputTimeFlash) inputTimeFlash.value = pkg.options.flash.duration;
+    if (inputSizeFlash) inputSizeFlash.value = pkg.options.flash.size;
+    // select pour le mode de flash
+    if (selectFlashMode) {
+        selectFlashMode.value = pkg.options.flash.mode;
+        // Rafraîchir le select Materialize après avoir changé la valeur
+        M.FormSelect.init(selectFlashMode);
     }
     // ------- INFOS -------
     // checkboxes
@@ -855,17 +856,15 @@ function assemble_pictures_directory(){
 // recupère tous les changements liés aux flashs
 function changeFlashValues(event){
 
-    // radiobuttons
-    if (event.type == "radio") {
-        if (event.name == "flashMode"){
-            pkg.options.flash.mode = event.value;
-        }
+    // select pour le mode de flash
+    if (event.id === "selectFlashMode") {
+        pkg.options.flash.mode = event.value;
     }
     // inputs
-    pkg.options.flash.duration = inputTimeFlash.value
-    pkg.options.flash.size = inputSizeFlash.value
+    if (inputTimeFlash) pkg.options.flash.duration = inputTimeFlash.value;
+    if (inputSizeFlash) pkg.options.flash.size = inputSizeFlash.value;
     // colorpickers
-    pkg.options.flash.color = cpFlashColor.value
+    if (cpFlashColor) pkg.options.flash.color = cpFlashColor.value;
 }
 
 
