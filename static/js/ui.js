@@ -265,7 +265,13 @@ btnAssembleMoviePictures.addEventListener('click', assemble_pictures_directory);
 
 // initialisation les éléments des options par défaut
 export function init_ui() {
-    // ------- OPTIONS  -------   
+    // ------- OPTIONS  -------
+    // Charger la langue depuis localStorage si elle existe, sinon utiliser celle par défaut
+    const savedLanguage = localStorage.getItem('selectedLanguage');
+    if (savedLanguage && (savedLanguage === 'fr' || savedLanguage === 'en')) {
+        pkg.options.options.language = savedLanguage;
+    }
+
     selectLanguage.value = pkg.options.options.language;
     M.FormSelect.init(document.getElementById('selectLanguage'));
     selectCheckVersionOnline.value = pkg.options.options.checkVersion;
@@ -353,11 +359,39 @@ export function init_ui() {
 
 // ----------- OPTIONS DE L'APP ------------
 
-// 
+//
 function changeOptionsValues() {
-    pkg.options.options.language = selectLanguage.value;
-    // TODO REFRESH AVEC AVERTISSEMENT
+    const newLanguage = selectLanguage.value;
+    const currentLanguage = pkg.options.options.language;
+
+    // Sauvegarder la nouvelle langue dans les options
+    pkg.options.options.language = newLanguage;
     pkg.options.options.checkVersion = selectCheckVersionOnline.value;
+
+    // Sauvegarder dans localStorage
+    localStorage.setItem('selectedLanguage', newLanguage);
+
+    // Si la langue a changé, recharger la page avec la nouvelle langue
+    if (newLanguage !== currentLanguage) {
+        // Afficher un message de confirmation dans la langue appropriée
+        let confirmMessage = 'La langue a été changée. La page va se recharger pour appliquer les modifications.'; // fallback
+
+        if (window.TRANSLATIONS) {
+            // Utiliser le message dans la langue cible
+            if (newLanguage === 'en') {
+                confirmMessage = window.TRANSLATIONS.language_changed_message_en || 'The language has been changed. The page will reload to apply the changes.';
+            } else {
+                confirmMessage = window.TRANSLATIONS.language_changed_message || 'La langue a été changée. La page va se recharger pour appliquer les modifications.';
+            }
+        }
+
+        if (confirm(confirmMessage)) {
+            // Recharger la page avec le paramètre de langue
+            const url = new URL(window.location);
+            url.searchParams.set('lang', newLanguage);
+            window.location.href = url.toString();
+        }
+    }
 }
 
 

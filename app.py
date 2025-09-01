@@ -1,13 +1,17 @@
 import webview
 import webbrowser
-from flask import g, Flask, render_template, jsonify, request, send_from_directory
+import json
+from flask import g, Flask, render_template, jsonify, request, send_from_directory, make_response
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_cors import cross_origin
 from bdd import uploadBdd, get_progress_step, db_infos, create_geojson, get_metadata_from_geojson, filter_session, analyse
-from capture import upload_image, clear_pictures_directory, assemble_pictures_directory
+# from capture import upload_image, clear_pictures_directory, assemble_pictures_directory  # Temporairement commenté à cause de moviepy
 from options import check_version_online
-from flask_babel import Babel
+from flask_babel import Babel, gettext as _
+
+# Créer un alias pour la fonction de traduction
+gettext = _
 
 app = Flask(__name__)
 
@@ -15,11 +19,25 @@ CORS(app)
 
 current_version = "2.0"
 
-# traduction
+# Configuration de la traduction
+app.config['BABEL_DEFAULT_LOCALE'] = 'fr'  # Langue par défaut français
+app.config['BABEL_SUPPORTED_LOCALES'] = ['en', 'fr']
+app.config['BABEL_TRANSLATION_DIRECTORIES'] = 'translations'
+
 def get_locale():
-    return request.accept_languages.best_match(['en', 'fr'])
-app.config['BABEL_DEFAULT_LOCALE'] = 'en'
+    # Essayer d'abord de récupérer la langue depuis les paramètres de la requête
+    locale = request.args.get('lang')
+    if locale in app.config['BABEL_SUPPORTED_LOCALES']:
+        return locale
+    # Sinon utiliser la langue du navigateur
+    return request.accept_languages.best_match(app.config['BABEL_SUPPORTED_LOCALES'])
+
 babel = Babel(app, locale_selector=get_locale)
+
+# Assurer que la fonction gettext est disponible dans les templates
+app.jinja_env.globals['_'] = _
+
+# Les traductions sont automatiquement chargées par Flask-Babel
 # TODO Utiliser 1) json 2) get local
 
 
@@ -110,28 +128,69 @@ def get_geojson_points():
     return jsonify(response_data)
 
 
-@app.route('/upload_image', methods=['POST'])
-@cross_origin()
-def get_upload_image():
-    return upload_image(request)
+# @app.route('/upload_image', methods=['POST'])
+# @cross_origin()
+# def get_upload_image():
+#     return upload_image(request)
 
 
-@app.route('/clear_pictures_directory', methods=['POST'])
-@cross_origin()
-def clear_pictures():
-    return clear_pictures_directory()
+# @app.route('/clear_pictures_directory', methods=['POST'])
+# @cross_origin()
+# def clear_pictures():
+#     return clear_pictures_directory()
 
 
-@app.route('/assemble_pictures_directory', methods=['POST'])
-@cross_origin()
-def assemble_pictures():
-    return assemble_pictures_directory("captured", "video/output.mp4", 24)
+# @app.route('/assemble_pictures_directory', methods=['POST'])
+# @cross_origin()
+# def assemble_pictures():
+#     return assemble_pictures_directory("captured", "video/output.mp4", 24)
 
 
 @app.route('/check_version', methods=['GET'])
 @cross_origin()
 def check_version():
     return check_version_online(current_version)
+
+
+@app.route('/test_translations')
+def test_translations():
+    """Route de test pour vérifier que les traductions fonctionnent"""
+    return jsonify({
+        'current_locale': get_locale(),
+        'test_strings': {
+            'base_de_donnees': _('Base de données'),
+            'choisir_fichier': _('Choisir fichier'),
+            'filtres': _('Filtres'),
+            'cartes': _('Cartes'),
+            'parametres': _('Paramètres'),
+            'annuler': _('Cancel')
+        }
+    })
+
+
+@app.route('/js_translations.js')
+def js_translations():
+    """Sert les traductions JavaScript pour le frontend"""
+    # Forcer le rechargement des traductions pour la locale actuelle
+    current_lang = get_locale()
+
+    translations = {
+        'language_changed_message': _('La langue a été changée. La page va se recharger pour appliquer les modifications.'),
+        'language_changed_message_en': _('The language has been changed. The page will reload to apply the changes.'),
+        'current_lang': current_lang,
+        'test_translation': _('Base de données')  # Test pour voir si les traductions fonctionnent
+    }
+
+    js_content = f"""
+// Traductions JavaScript
+window.TRANSLATIONS = {json.dumps(translations)};
+console.log('Traductions chargées pour la langue:', '{current_lang}');
+console.log('Test de traduction:', '{_("Base de données")}');
+"""
+
+    response = make_response(js_content)
+    response.headers['Content-Type'] = 'application/javascript'
+    return response
 
 if __name__ == '__main__':
     # ouverture automatique du navigateur, pour l'instant en pause

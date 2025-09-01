@@ -4,28 +4,28 @@
 
         <!-- Section Cartes -->
         <div class="col s12 m6 l4">
-            <h5>🗺️ Cartes</h5>
+            <h5>🗺️ {{ _("Cartes") }}</h5>
             <div class="card-panel">
                 <div class="row">
                     <div class="col s6">
-                        <a id="OSM" class="changeMap btn waves-effect waves-light" title="OpenStreetMap">
+                        <a id="OSM" class="changeMap btn waves-effect waves-light" title="{{ _("OpenStreetMap") }}">
                             <span class="btn-text">OSM</span>
                         </a>
                     </div>
                     <div class="col s6">
-                        <a id="stamenToner" class="changeMap btn waves-effect waves-light" title="Stamen Toner">
+                        <a id="stamenToner" class="changeMap btn waves-effect waves-light" title="{{ _("Stamen Toner") }}">
                             <span class="btn-text">Toner</span>
                         </a>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col s6">
-                        <a id="vectorMap" class="changeMap btn waves-effect waves-light" title="Carte vectorielle">
+                        <a id="vectorMap" class="changeMap btn waves-effect waves-light" title="{{ _("Carte vectorielle") }}">
                             <span class="btn-text">Vector</span>
                         </a>
                     </div>
                     <div class="col s6">
-                        <a id="watercolor" class="changeMap btn waves-effect waves-light" title="Watercolor">
+                        <a id="watercolor" class="changeMap btn waves-effect waves-light" title="{{ _("Watercolor") }}">
                             <span class="btn-text">Water</span>
                         </a>
                     </div>
@@ -33,20 +33,20 @@
 
                 <!-- Options cartographiques -->
                 <div id="vectorMapOptions" style="display: none;">
-                    <h6>🎨 Style Vector</h6>
+                    <h6>🎨 {{ _("Style Vector") }}</h6>
 
                     <!-- Ligne 1 : Couleurs de contour et remplissage -->
                     <div class="row">
                         <div class="col s12 m6">
                             <div class="vector-control-group">
-                                <label for="fieldVectorMapStrokeColor" class="vector-label" title="Définit la couleur des bordures des géocaches">Couleur contour</label>
-                                <input type="color" id="fieldVectorMapStrokeColor" class="vector-color-picker" title="Cliquez pour choisir la couleur des contours" />
+                                <label for="fieldVectorMapStrokeColor" class="vector-label" title="{{ _("Définit la couleur des bordures des géocaches") }}">{{ _("Couleur contour") }}</label>
+                                <input type="color" id="fieldVectorMapStrokeColor" class="vector-color-picker" title="{{ _("Cliquez pour choisir la couleur des contours") }}" />
                             </div>
                         </div>
                         <div class="col s12 m6">
                             <div class="vector-control-group">
-                                <label for="fieldVectorMapFillColor" class="vector-label" title="Définit la couleur intérieure des géocaches">Couleur remplissage</label>
-                                <input type="color" id="fieldVectorMapFillColor" class="vector-color-picker" title="Cliquez pour choisir la couleur de remplissage" />
+                                <label for="fieldVectorMapFillColor" class="vector-label" title="{{ _("Définit la couleur intérieure des géocaches") }}">{{ _("Couleur remplissage") }}</label>
+                                <input type="color" id="fieldVectorMapFillColor" class="vector-color-picker" title="{{ _("Cliquez pour choisir la couleur de remplissage") }}" />
                             </div>
                         </div>
                     </div>
@@ -55,16 +55,16 @@
                     <div class="row">
                         <div class="col s12 m6">
                             <div class="vector-control-group">
-                                <label for="fieldVectorMapBackgroundColor" class="vector-label" title="Définit la couleur de fond de la carte">Couleur fond</label>
-                                <input type="color" id="fieldVectorMapBackgroundColor" class="vector-color-picker" title="Cliquez pour choisir la couleur de fond" />
+                                <label for="fieldVectorMapBackgroundColor" class="vector-label" title="{{ _("Définit la couleur de fond de la carte") }}">{{ _("Couleur fond") }}</label>
+                                <input type="color" id="fieldVectorMapBackgroundColor" class="vector-color-picker" title="{{ _("Cliquez pour choisir la couleur de fond") }}" />
                             </div>
                         </div>
                         <div class="col s12 m6">
                             <div class="vector-control-group">
-                                <label for="fieldVectorMapStrokeWidth" class="vector-label" title="Définit l'épaisseur des bordures des géocaches">Largeur contour</label>
+                                <label for="fieldVectorMapStrokeWidth" class="vector-label" title="{{ _("Définit l'épaisseur des bordures des géocaches") }}">{{ _("Largeur contour") }}</label>
                                 <div class="vector-slider-container">
-                                    <input type="range" id="fieldVectorMapStrokeWidth" min="0.1" max="5" step="0.1" class="vector-slider" title="Faites glisser pour ajuster l'épaisseur" />
-                                    <span class="vector-slider-value" title="Valeur actuelle de l'épaisseur">2.5</span>
+                                    <input type="range" id="fieldVectorMapStrokeWidth" min="0.1" max="5" step="0.1" class="vector-slider" title="{{ _("Faites glisser pour ajuster l'épaisseur") }}" />
+                                    <span class="vector-slider-value" title="{{ _("Valeur actuelle de l'épaisseur") }}">2.5</span>
                                 </div>
                             </div>
                         </div>
@@ -72,18 +72,18 @@
                 </div>
 
                 <div id="tonerMapOptions" style="display: none;">
-                    <h6>🎨 Style Toner</h6>
+                    <h6>🎨 {{ _("Style Toner") }}</h6>
                     <div class="row">
                         <div class="col s6">
                             <a id="stamenTonerLight" class="btn waves-effect waves-light">
                                 <i class="material-icons right">brightness_high</i>
-                                Clair
+                                {{ _("Clair") }}
                             </a>
                         </div>
                         <div class="col s6">
                             <a id="stamenTonerDark" class="btn waves-effect waves-light">
                                 <i class="material-icons right">brightness_low</i>
-                                Sombre
+                                {{ _("Sombre") }}
                             </a>
                         </div>
                     </div>
@@ -93,7 +93,7 @@
 
         <!-- Section Points -->
         <div class="col s12 m6 l4">
-            <h5>📍 Points</h5>
+            <h5>📍 {{ _("Points") }}</h5>
             <div class="card-panel">
                 {% include 'menu_points.html' %}
             </div>
@@ -101,7 +101,7 @@
 
         <!-- Section Flash -->
         <div class="col s12 m6 l4">
-            <h5>✨ Flash</h5>
+            <h5>✨ {{ _("Flash") }}</h5>
             <div class="card-panel">
                 {% include 'menu_flash.html' %}
             </div>

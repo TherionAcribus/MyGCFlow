@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2024-04-08 15:40+0200\n"
+"POT-Creation-Date: 2025-09-01 18:03+0200\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -18,11 +18,123 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.14.0\n"
 
+#: templates/app.html:13
+msgid "My Geocaching Map"
+msgstr "Ma carte de géocaching"
+
+#: templates/app.html:39
+msgid "Données"
+msgstr "Données"
+
+#: templates/app.html:40
+msgid "Style"
+msgstr "Style"
+
+#: templates/app.html:41
+msgid "Animation"
+msgstr "Animation"
+
+#: templates/app.html:42
+msgid "Paramètres"
+msgstr "Paramètres"
+
+#: templates/menu_data.html:6
+msgid "Base de données"
+msgstr "Base de données"
+
+#: templates/menu_data.html:11
+msgid "Choisir fichier"
+msgstr "Choisir fichier"
+
+#: templates/menu_data.html:15
+msgid "Sélectionnez un fichier .gpx de vos trouvailles"
+msgstr "Sélectionnez un fichier .gpx de vos trouvailles"
+
+#: templates/menu_data.html:19
+msgid "Charger données"
+msgstr "Charger données"
+
+#: templates/menu_data.html:23
+msgid "Aucune base de données chargée"
+msgstr "Aucune base de données chargée"
+
+#: templates/menu_data.html:30
+msgid "Filtres"
+msgstr "Filtres"
+
+#: templates/menu_filtre.html:4
+msgid "Filtrer par type de cache"
+msgstr "Filtrer par type de cache"
+
+#: templates/menu_filtre.html:20
+msgid "Type de cache"
+msgstr "Type de cache"
+
+#: templates/menu_filtre.html:26
+msgid "Filtrer par difficulté"
+msgstr "Filtrer par difficulté"
+
+#: templates/menu_filtre.html:37
+msgid "Difficulté"
+msgstr "Difficulté"
+
+#: templates/menu_filtre.html:43
+msgid "Filtrer par terrain"
+msgstr "Filtrer par terrain"
+
+#: templates/menu_filtre.html:54
+msgid "Terrain"
+msgstr "Terrain"
+
+#: templates/menu_filtre.html:67
+msgid "Filtrer par taille"
+msgstr "Filtrer par taille"
+
 #: templates/menu_maps.html:4
 msgid "Map Choice"
 msgstr "Choix de la carte"
 
+#: templates/menu_options.html:2
+msgid "Paramètres généraux"
+msgstr "Paramètres généraux"
+
+#: templates/menu_options.html:7
+msgid "English"
+msgstr "Anglais"
+
+#: templates/menu_options.html:8
+msgid "Français"
+msgstr "Français"
+
+#: templates/menu_options.html:10
+msgid "Language Choice"
+msgstr "Choix de la langue"
+
+#: templates/menu_options.html:15
+msgid "Yes"
+msgstr "Oui"
+
+#: templates/menu_options.html:16
+msgid "No"
+msgstr "Non"
+
+#: templates/menu_options.html:18
+msgid "Check for a new version at startup"
+msgstr "Vérifier les nouvelles versions au démarrage"
+
+#: templates/menu_options.html:23
+msgid "Check for a new version"
+msgstr "Vérifier les nouvelles versions"
+
 #: templates/modal_infos.html:9
 msgid "Cancel"
 msgstr "Annuler"
+
+#: static/js/ui.js:371
+msgid "La langue a été changée. La page va se recharger pour appliquer les modifications."
+msgstr "La langue a été changée. La page va se recharger pour appliquer les modifications."
+
+#: static/js/ui.js:378
+msgid "The language has been changed. The page will reload to apply the changes."
+msgstr "The language has been changed. The page will reload to apply the changes."
 
