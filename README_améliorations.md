@@ -9,12 +9,13 @@ GCMap est une application Flask permettant d'afficher des points de géocaching 
 ### 🔴 **Priorité 1 - Corrections critiques**
 
 #### Bugs à corriger
-- [ ] **Erreur JavaScript** : Variable `options` non définie dans `initSelect()` (ligne 62 de `init.js`)
-- [ ] **Gestion d'erreurs** : Améliorer les try/catch dans les fonctions de chargement
-- [ ] **URLs en dur** : Remplacer `http://localhost:5000` par une configuration dynamique
-- [ ] **Variables globales** : Organiser `loading_progress` et `loading_message` dans un objet dédié
+- [x] **Erreur JavaScript** : Variable `options` non définie dans `initSelect()` (ligne 62 de `init.js`)
+- [x] **Gestion d'erreurs** : Améliorer les try/catch dans les fonctions de chargement
+- [x] **URLs en dur** : Remplacer `http://localhost:5000` par une configuration dynamique
+- [x] **Variables globales** : Organiser `loading_progress` et `loading_message` dans un objet dédié
 
 #### Performance
+- [x] **Index par date** : Pré-calculer l'index des points par date pour éviter le filtrage répétitif
 - [ ] **Chargement GeoJSON** : Implémenter un système de pagination pour les gros volumes de données
 - [ ] **Animation continue** : Optimiser `requestAnimationFrame` (pause quand fenêtre inactive)
 - [ ] **Cache ressources** : Ajouter des headers de cache pour les fichiers statiques

@@ -6,6 +6,8 @@ btnuploadBddForm.addEventListener('submit', uploadBddRequest);
 
 export let metadata;
 export let json_data;
+// Index pré-calculé des points par date pour optimiser l'animation
+export let pointsByDate = new Map();
 
 // TODO Gestion des erreurs
 // CHoix de la BDD 
@@ -117,12 +119,38 @@ function showBddInfos(data){
     divInfosBDD.innerHTML = infos;
 }
 
+// Pré-calcule l'index des points par date pour optimiser l'animation
+function buildPointsByDateIndex(features) {
+    pointsByDate.clear();
+    console.log(`Pré-calcul de l'index pour ${features.length} points...`);
+
+    features.forEach(feature => {
+        const dateStr = feature.properties.date_find;
+        if (dateStr) {
+            // Utilise seulement la date (YYYY-MM-DD) comme clé, pas l'heure
+            const date = new Date(dateStr);
+            const dateKey = date.toDateString();
+
+            if (!pointsByDate.has(dateKey)) {
+                pointsByDate.set(dateKey, []);
+            }
+            pointsByDate.get(dateKey).push(feature);
+        }
+    });
+
+    console.log(`Index créé avec ${pointsByDate.size} dates différentes`);
+}
+
 export function readBdd(){
     fetch(`${CONFIG.BASE_URL}/get_geojson_points`)
     .then(response => response.json())
     .then(data => {
         json_data = data.geojson;
         metadata = data.metadata;
+
+        // Pré-calcul de l'index des points par date pour optimiser l'animation
+        buildPointsByDateIndex(data.geojson.features);
+
         // conversion en objet date
         dateStrToDate();
         // MAJ des frames Infos
@@ -166,6 +194,10 @@ export function changeSelect(selectedValues, optionValues) {
         console.log(data);
         json_data = data.geojson;
         metadata = data.metadata;
+
+        // Reconstruit l'index des points par date avec les données filtrées
+        buildPointsByDateIndex(data.geojson.features);
+
         // conversion en objet date
         dateStrToDate();
         // remets à jour les options/infos dépendant de la BDD (delayDate)

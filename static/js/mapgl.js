@@ -702,10 +702,11 @@ function captureElement() {
 
 function displayFeaturesForDate(date, pointOptions, flashOptions, record, infos) {
 
-    const featuresForDate = pkg.json_data.features.filter(feature => {
-        const featureDate = new Date(feature.properties.date_find);
-        return featureDate.toDateString() === date.toDateString();
-    });
+    // OPTIMISATION PERFORMANCE : Utilise l'index pré-calculé au lieu du filter coûteux
+    // Avant : filter() sur tous les points à chaque frame (très lent)
+    // Après : lookup instantanée dans Map pré-calculé (très rapide)
+    const dateKey = date.toDateString();
+    const featuresForDate = pkg.pointsByDate.get(dateKey) || [];
 
     displayWebGLPoints(featuresForDate, pointOptions)
 
