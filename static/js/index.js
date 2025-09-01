@@ -7,3 +7,7 @@ export * from './bdd.js';
 export * from './record.js';
 export * from './frames.js';
 export * from './options.js';
+export * from './notifications.js';
+
+// Import du fichier de démonstration (uniquement en développement)
+import './demo_toasts.js';

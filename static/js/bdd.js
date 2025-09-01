@@ -19,11 +19,13 @@ export let pointsByDate = new Map();
 // chargement d'un fichier dans la BDD
 function uploadBddRequest(e){
     e.preventDefault();
-    pkg.openModalLoading("Chargement du fichier", "Analyse du fichier .gpx en cours");
 
     var formData = new FormData();
     var fileInput = document.getElementById('file-input');
     formData.append('file', fileInput.files[0]);
+
+    // Afficher un toast de chargement non-bloquant
+    const loadingToast = pkg.showLoadingToast("Analyse du fichier GPX en cours...", "Analyse");
 
     // d'abord on vérifie que le fichier soit correcte
     fetch (`${CONFIG.BASE_URL}/analyse_file`, {
@@ -34,13 +36,20 @@ function uploadBddRequest(e){
         console.log("data", data);
         if (data.success) {
             console.log("success");
-            // puis si c'est bon, on le charge
+            // Masquer le toast d'analyse et commencer le chargement
+            pkg.hideToast(loadingToast);
             uploadBdd();
         } else {
-            pkg.closeModalLoading();
-            pkg.openModalnfos("Erreur", data.message);
+            // Erreur d'analyse
+            pkg.hideToast(loadingToast);
+            pkg.showToast(data.message, "error", "Erreur d'analyse");
         }
     })
+    .catch(error => {
+        pkg.hideToast(loadingToast);
+        pkg.showToast("Erreur lors de l'analyse du fichier", "error", "Erreur");
+        console.error("Erreur analyse:", error);
+    });
 }
 
 
@@ -49,7 +58,8 @@ function uploadBdd (){
     var fileInput = document.getElementById('file-input');
     formData.append('file', fileInput.files[0]);
 
-    pkg.updateTextsModal("Chargement du fichier", "Chargement du fichier .gpx en cours");
+    // Afficher un toast de chargement avec progress bar
+    const uploadToast = pkg.showLoadingToast("Chargement du fichier GPX en cours...", "Chargement");
 
     fetch(`${CONFIG.BASE_URL}/upload`, {
         method: 'POST',
@@ -58,28 +68,52 @@ function uploadBdd (){
     .then(response => response.json())
     .then(data => {
         console.log("data", data);
-        // ferme la modale
-        pkg.closeModalLoading();
+        // Masquer le toast et afficher succès
+        pkg.hideToast(uploadToast);
+        pkg.showToast("Fichier chargé avec succès !", "success", "Terminé");
+
         // mets à jour les infos de la BDD
         readBddValues();
     })
     .catch(error => {
         console.error('Error:', error);
+        pkg.hideToast(uploadToast);
+        pkg.showToast("Erreur lors du chargement du fichier", "error", "Erreur");
     });
-    checkLoadingProgress(); // Commencez à vérifier la progression
+
+    // Démarrer la surveillance du progrès
+    checkLoadingProgress(uploadToast);
 }
 
-function checkLoadingProgress() {
+function checkLoadingProgress(uploadToast) {
     fetch(`${CONFIG.BASE_URL}/progressBar`)
         .then(response => response.json())
         .then(data => {
-            pkg.updateProgressBar(data);
+            // Mettre à jour la progress bar du toast
+            pkg.updateToastProgress(uploadToast, data.progress);
+
+            // Mettre à jour le message du toast avec les détails
+            const messageElement = uploadToast.querySelector('.toast-message');
+            if (messageElement && data.message) {
+                messageElement.textContent = data.message;
+            }
+
             console.log(data.progress);
             if (data.progress < 100) {
-                setTimeout(checkLoadingProgress, 100);
+                setTimeout(() => checkLoadingProgress(uploadToast), 200); // Un peu moins fréquent
+            } else {
+                // Chargement terminé - masquer le toast après un court délai
+                setTimeout(() => {
+                    pkg.hideToast(uploadToast);
+                    pkg.showToast("Base de données prête !", "success", "Prêt");
+                }, 500);
             }
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => {
+            console.error('Error:', error);
+            pkg.hideToast(uploadToast);
+            pkg.showToast("Erreur lors du suivi du progrès", "error", "Erreur");
+        });
 }
 
 // regarde si une base de données est disponible et si elle est remplie

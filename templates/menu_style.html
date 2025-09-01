@@ -1,0 +1,90 @@
+<!-- Onglet Style : Cartes, Points et Flash -->
+<div id="style" class="col s12">
+    <div class="row">
+
+        <!-- Section Cartes -->
+        <div class="col s12 m6 l4">
+            <h5>🗺️ Cartes</h5>
+            <div class="card-panel">
+                <div class="row">
+                    <div class="col s6">
+                        <a id="OSM" class="changeMap btn waves-effect waves-light" title="OpenStreetMap">
+                            <i class="material-icons">map</i><br>
+                            <span class="btn-text">OSM</span>
+                        </a>
+                    </div>
+                    <div class="col s6">
+                        <a id="stamenToner" class="changeMap btn waves-effect waves-light" title="Stamen Toner">
+                            <i class="material-icons">terrain</i><br>
+                            <span class="btn-text">Toner</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col s6">
+                        <a id="vectorMap" class="changeMap btn waves-effect waves-light" title="Carte vectorielle">
+                            <i class="material-icons">layers</i><br>
+                            <span class="btn-text">Vector</span>
+                        </a>
+                    </div>
+                    <div class="col s6">
+                        <a id="watercolor" class="changeMap btn waves-effect waves-light" title="Watercolor">
+                            <i class="material-icons">palette</i><br>
+                            <span class="btn-text">Water</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Options cartographiques -->
+                <div id="vectorMapOptions" style="display: none;">
+                    <h6>Options vectorielles</h6>
+                    <div class="input-field">
+                        <input type="color" id="fieldVectorMapStrokeColor" />
+                        <label for="fieldVectorMapStrokeColor">Couleur contour</label>
+                    </div>
+                    <div class="input-field">
+                        <input type="color" id="fieldVectorMapFillColor" />
+                        <label for="fieldVectorMapFillColor">Couleur remplissage</label>
+                    </div>
+                    <div class="input-field">
+                        <input type="color" id="fieldVectorMapBackgroundColor" />
+                        <label for="fieldVectorMapBackgroundColor">Couleur fond</label>
+                    </div>
+                    <div class="input-field">
+                        <input type="range" id="fieldVectorMapStrokeWidth" min="0.1" max="5" step="0.1" />
+                        <label for="fieldVectorMapStrokeWidth">Largeur contour</label>
+                    </div>
+                </div>
+
+                <div id="tonerMapOptions" style="display: none;">
+                    <h6>Options Toner</h6>
+                    <div class="row">
+                        <div class="col s6">
+                            <a id="stamenTonerLight" class="btn-small">Clair</a>
+                        </div>
+                        <div class="col s6">
+                            <a id="stamenTonerDark" class="btn-small">Sombre</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section Points -->
+        <div class="col s12 m6 l4">
+            <h5>📍 Points</h5>
+            <div class="card-panel">
+                {% include 'menu_points.html' %}
+            </div>
+        </div>
+
+        <!-- Section Flash -->
+        <div class="col s12 m6 l4">
+            <h5>✨ Flash</h5>
+            <div class="card-panel">
+                {% include 'menu_flash.html' %}
+            </div>
+        </div>
+
+    </div>
+</div>

@@ -1,0 +1,251 @@
+/* Améliorations UX pour la nouvelle interface */
+
+/* Style des onglets principaux */
+.tabs .tab a {
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.tabs .tab a.active {
+    background-color: rgba(33, 150, 243, 0.1);
+    color: #2196F3 !important;
+}
+
+/* Amélioration des card-panels */
+.card-panel {
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: box-shadow 0.3s ease;
+}
+
+.card-panel:hover {
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+
+/* Style des sections dans les onglets */
+.card-panel h5 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: #424242;
+    font-weight: 500;
+}
+
+/* Amélioration des boutons de cartes */
+.changeMap {
+    width: 100%;
+    margin-bottom: 1rem;
+    transition: transform 0.2s ease;
+}
+
+.changeMap:hover {
+    transform: translateY(-2px);
+}
+
+.changeMap.disabled {
+    background-color: #4CAF50 !important;
+    color: white !important;
+}
+
+/* Style des boutons d'animation */
+.btn-large {
+    margin: 0.5rem;
+    min-width: 120px;
+}
+
+/* Amélioration des inputs */
+.input-field input:focus + label,
+.input-field input.valid + label {
+    color: #2196F3 !important;
+}
+
+.input-field input:focus,
+.input-field input.valid {
+    border-bottom: 2px solid #2196F3 !important;
+    box-shadow: 0 1px 0 0 #2196F3 !important;
+}
+
+/* Style des informations */
+.grey-text {
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}
+
+/* Système de notifications toast */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    max-width: 400px;
+}
+
+.toast {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    margin-bottom: 10px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    transform: translateX(100%);
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    opacity: 0;
+    border-left: 4px solid #2196F3;
+}
+
+.toast.show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.toast.success {
+    border-left-color: #4CAF50;
+}
+
+.toast.error {
+    border-left-color: #F44336;
+}
+
+.toast.warning {
+    border-left-color: #FF9800;
+}
+
+.toast.info {
+    border-left-color: #2196F3;
+}
+
+.toast-icon {
+    margin-right: 12px;
+    font-size: 24px;
+}
+
+.toast-content {
+    flex: 1;
+}
+
+.toast-title {
+    font-weight: 500;
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+
+.toast-message {
+    font-size: 13px;
+    color: #666;
+    margin: 0;
+}
+
+.toast-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #999;
+    font-size: 18px;
+    padding: 0;
+    margin-left: 8px;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.toast-close:hover {
+    color: #666;
+}
+
+/* Progress bar dans les toasts */
+.toast-progress {
+    margin-top: 8px;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 4px;
+    background-color: #e0e0e0;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #2196F3, #21CBF3);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+.toast.success .progress-fill {
+    background: linear-gradient(90deg, #4CAF50, #81C784);
+}
+
+.toast.error .progress-fill {
+    background: linear-gradient(90deg, #F44336, #EF5350);
+}
+
+.toast.warning .progress-fill {
+    background: linear-gradient(90deg, #FF9800, #FFB74D);
+}
+
+/* Indicateur de chargement global */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(2px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.loading-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.loading-spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #2196F3;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive design */
+@media only screen and (max-width: 600px) {
+    .tabs .tab {
+        width: 25%;
+    }
+
+    .btn-large {
+        width: 100%;
+        margin: 0.25rem 0;
+        min-width: auto;
+    }
+
+    .card-panel .row .col {
+        margin-bottom: 1rem;
+    }
+
+    .toast-container {
+        left: 10px;
+        right: 10px;
+        top: 10px;
+    }
+
+    .toast {
+        padding: 12px;
+    }
+}

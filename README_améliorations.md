@@ -23,8 +23,8 @@ GCMap est une application Flask permettant d'afficher des points de géocaching 
 ### 🟡 **Priorité 2 - Améliorations fonctionnelles**
 
 #### Interface utilisateur
-- [ ] **UX simplifiée** : Réorganiser les onglets pour une navigation plus intuitive
-- [ ] **Feedback visuel** : Ajouter des indicateurs de chargement plus visibles
+- [x] **UX simplifiée** : Réorganiser les onglets pour une navigation plus intuitive ✅ TERMINÉ
+- [x] **Feedback visuel** : Ajouter des indicateurs de chargement plus visibles ✅ TERMINÉ
 - [ ] **Notifications** : Implémenter un système de notifications toast
 - [ ] **Accessibilité** : Ajouter des labels ARIA et navigation clavier
 

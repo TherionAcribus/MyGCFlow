@@ -549,59 +549,84 @@ function unSelectAllMapsButtons(){
 }
 
 
-// ----------------- MODAL CHARGEMENT ----------------
+// ----------------- SYSTÈME DE NOTIFICATIONS (remplace les modales) ----------------
+
+// Fonctions de compatibilité pour remplacer les modales
+let currentLoadingToast = null;
 
 export function openModalLoading(title, description){
-    const instance = M.Modal.getInstance(document.getElementById('modal_loading'));
-    instance.open();
-    updateTextsModal(title, description);
+    // Remplacer la modal par un toast non-bloquant
+    currentLoadingToast = showLoadingToast(description, title);
 }
 
-// changement du titre et de la description de la modale
 export function updateTextsModal(title, description){
-    const modalTitle = document.getElementById('modalTitle');
-    const modalDescription = document.getElementById('modalDescription');
-    modalTitle.innerText = title;
-    modalDescription.innerText = description;
-}
-
-export function closeModalLoading(){
-    const instance = M.Modal.getInstance(document.getElementById('modal_loading'));
-    instance.close();
-}
-
-export function updateProgressBar(data) {
-    // Mets à jour l'avancement de la barre de progression
-    const progressBar = document.getElementById('progressBar');
-    progressBar.style.width = data.progress + '%';
-    const progressText = document.getElementById('progressText');
-    progressText.innerText = data.message;
-}
-
-
-// MODAL INFOS / ERREURS
-export function openModalnfos(title, description, mode="text"){
-    const instance = M.Modal.getInstance(document.getElementById('modal_infos'));
-    instance.open();
-    updateTextsModalInfos(title, description, mode);
-}
-
-// changement du titre et de la description de la modale
-export function updateTextsModalInfos(title, description, mode="text"){
-    const modalTitle = document.getElementById('modalInfosTitle');
-    const modalDescription = document.getElementById('modalInfosDescription');
-
-    modalTitle.innerText = title;
-    if (mode == "text"){
-        modalDescription.innerText = description;
-    } else if (mode == "html"){
-        modalDescription.innerHTML = description;
+    // Mettre à jour le toast actuel si existant
+    if (currentLoadingToast) {
+        const titleElement = currentLoadingToast.querySelector('.toast-title');
+        const messageElement = currentLoadingToast.querySelector('.toast-message');
+        if (titleElement) titleElement.textContent = title;
+        if (messageElement) messageElement.textContent = description;
     }
 }
 
+export function closeModalLoading(){
+    // Fermer le toast de chargement
+    if (currentLoadingToast) {
+        hideToast(currentLoadingToast);
+        currentLoadingToast = null;
+    }
+}
+
+export function updateProgressBar(data) {
+    // Mettre à jour la progress bar du toast actuel
+    if (currentLoadingToast) {
+        updateToastProgress(currentLoadingToast, data.progress);
+
+        // Mettre à jour le message si fourni
+        if (data.message) {
+            const messageElement = currentLoadingToast.querySelector('.toast-message');
+            if (messageElement) {
+                messageElement.textContent = data.message;
+            }
+        }
+    }
+}
+
+
+// SYSTÈME DE NOTIFICATIONS (remplace les modales d'infos)
+export function openModalnfos(title, description, mode="text"){
+    // Déterminer le type de toast selon le titre
+    let type = 'info';
+    if (title.toLowerCase().includes('erreur') || title.toLowerCase().includes('error')) {
+        type = 'error';
+    } else if (title.toLowerCase().includes('succès') || title.toLowerCase().includes('success')) {
+        type = 'success';
+    } else if (title.toLowerCase().includes('attention') || title.toLowerCase().includes('warning')) {
+        type = 'warning';
+    }
+
+    // Nettoyer le HTML si nécessaire pour l'affichage en toast
+    let cleanDescription = description;
+    if (mode === "html") {
+        // Extraire le texte des balises HTML simples
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = description;
+        cleanDescription = tempDiv.textContent || tempDiv.innerText || description;
+    }
+
+    // Afficher le toast
+    showToast(cleanDescription, type, title, 8000); // 8 secondes pour les messages importants
+}
+
+// Fonction de compatibilité (plus nécessaire mais gardée pour compatibilité)
+export function updateTextsModalInfos(title, description, mode="text"){
+    // Cette fonction n'est plus nécessaire avec les toasts
+    console.log("updateTextsModalInfos:", title, description);
+}
+
 export function closeModalInfos(){
-    const instance = M.Modal.getInstance(document.getElementById('modal_infos'));
-    instance.close();
+    // Cette fonction n'est plus nécessaire avec les toasts
+    // Les toasts se ferment automatiquement ou manuellement
 }
 
 

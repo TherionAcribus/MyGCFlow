@@ -1,33 +1,74 @@
 <div id="animation" class="col s12">
-    <h3>Animations</h3>
-    <div>
-        <section>
-            <label>
-                <input id="cbDisplayDaysWithoutCache" type="checkbox"/>
-                <span>Supprimer les jours sans cache</span>
-            </label>
+    <div class="row">
 
-            <div class="input-field">
-                <input placeholder="Temps en ms par jour" id="inputTimePerDay" type="number" class="validate">
-                <label for="inputTimePerDay">Entrez une durée en millisecondes</label>
-            </div>
-            <div class="input-field">
-                <input placeholder="Temps total" id="inputTotalTime" type="number" step="0.01" class="validate">
-                <label for="inputTotalTime">Temps total en minutes (fraction)</label>
-                <span id="spanTotalTimeMinutes"></span> minutes et <span id="spanTotalTimeSeconds"></span> secondes, pour <span id="spanDeltaDays"></span> jours.
-            </div>
-            
-            
-            <a class="waves-effect waves-light btn-large" id="btnStartAnimation"><i class="material-icons right">play_arrow</i>Start</a>
-            <a class="waves-effect waves-light btn-large" id="btnRecordAnimation"><i class="material-icons right">play_circle_outline</i>Enregistrer</a>
-            <a class="waves-effect waves-light btn-large pause" id="btnPauseAnimation">
-                <i class="material-icons right">pause</i>
-                Pause
-            </a>
-            <a class="waves-effect waves-light btn-large" id="btnStopAnimation"><i class="material-icons right">stop</i>Annuler</a>
-            <a class="btn-large" id="btnCleanMoviePictures">Clean</a>
-            <a class="btn-large" id="btnAssembleMoviePictures">Assembler</a>
+        <!-- Section Animation -->
+        <div class="col s12 m8">
+            <h5>🎬 Contrôles d'animation</h5>
+            <div class="card-panel">
+                <div class="row">
+                    <div class="col s12 m6">
+                        <label>
+                            <input id="cbDisplayDaysWithoutCache" type="checkbox"/>
+                            <span>Supprimer les jours sans cache</span>
+                        </label>
+                    </div>
+                </div>
 
-        </section>
+                <div class="row">
+                    <div class="col s12 m6">
+                        <div class="input-field">
+                            <input placeholder="Temps en ms par jour" id="inputTimePerDay" type="number" class="validate">
+                            <label for="inputTimePerDay">Durée par jour (ms)</label>
+                        </div>
+                    </div>
+                    <div class="col s12 m6">
+                        <div class="input-field">
+                            <input placeholder="Temps total" id="inputTotalTime" type="number" step="0.01" class="validate">
+                            <label for="inputTotalTime">Temps total (minutes)</label>
+                        </div>
+                        <p class="grey-text">
+                            <span id="spanTotalTimeMinutes"></span> min <span id="spanTotalTimeSeconds"></span> sec pour <span id="spanDeltaDays"></span> jours
+                        </p>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col s12">
+                        <a class="waves-effect waves-light btn-large green" id="btnStartAnimation">
+                            <i class="material-icons right">play_arrow</i>Démarrer
+                        </a>
+                        <a class="waves-effect waves-light btn-large orange" id="btnRecordAnimation">
+                            <i class="material-icons right">videocam</i>Enregistrer
+                        </a>
+                        <a class="waves-effect waves-light btn-large yellow darken-2" id="btnPauseAnimation">
+                            <i class="material-icons right">pause</i>Pause
+                        </a>
+                        <a class="waves-effect waves-light btn-large red" id="btnStopAnimation">
+                            <i class="material-icons right">stop</i>Arrêter
+                        </a>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col s12">
+                        <a class="waves-effect waves-light btn" id="btnCleanMoviePictures">
+                            <i class="material-icons right">delete_sweep</i>Nettoyer images
+                        </a>
+                        <a class="waves-effect waves-light btn" id="btnAssembleMoviePictures">
+                            <i class="material-icons right">movie</i>Assembler film
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section Informations d'affichage -->
+        <div class="col s12 m4">
+            <h5>📋 Informations</h5>
+            <div class="card-panel">
+                {% include 'menu_informations.html' %}
+            </div>
+        </div>
+
     </div>
 </div>
