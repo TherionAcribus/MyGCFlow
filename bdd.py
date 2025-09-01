@@ -6,9 +6,25 @@ import os
 import json
 
 
-# variable globale pour le chargement du fichier
-loading_progress = 0
-loading_message = ""
+# Objet dédié pour gérer l'état du chargement
+class LoadingState:
+    def __init__(self):
+        self.progress = 0
+        self.message = ""
+
+    def reset(self):
+        self.progress = 0
+        self.message = ""
+
+    def update(self, progress, message):
+        self.progress = progress
+        self.message = message
+
+    def complete(self):
+        self.progress = 101  # Valeur > 100 pour indiquer la fin
+
+# Instance globale pour l'état du chargement
+loading_state = LoadingState()
 
 # analyse le fichier transmit pour peupler La BDD
 def analyse(request):
@@ -52,10 +68,9 @@ def checkFileNameAndDesc(request):
 
 
 def uploadBdd(request, Geocache, db):
-    # initialisation de la variable de chargement
-    global loading_progress, loading_message
-    loading_progress = 0
-    loading_message = "Lecture du fichier GPX..."
+    # initialisation de l'état du chargement
+    loading_state.reset()
+    loading_state.message = "Lecture du fichier GPX..."
 
     # Assurez-vous que la table existe
     db.create_all()
@@ -104,20 +119,21 @@ def uploadBdd(request, Geocache, db):
         # Commit tous les 100 points
         if (index + 1) % 100 == 0:
             db.session.commit()
-            loading_message = f'Ajout du point {index + 1} sur {total_waypoints} à la base de données'
-            loading_progress = index / total_waypoints * 100
+            loading_state.update(
+                index / total_waypoints * 100,
+                f'Ajout du point {index + 1} sur {total_waypoints} à la base de données'
+            )
 
     # Pour s'assurer que les derniers points sont également enregistrés
     db.session.commit()
-    # On met à jour la variable de chargement > 100 pour être sûr d'arreter le processus de verification de l'avancement
-    loading_progress = 101
+    # On marque le chargement comme terminé
+    loading_state.complete()
 
 
 def get_progress_step():
-    """ Sert juste à servir les infos d'avancement car la variable loading_progress n'est pas dans le même fichier
-    Pour l'instant une seule variable donc solution pratique. Si plus, penser à utiliser Redis """
-    global loading_progress, loading_message
-    return loading_progress, loading_message
+    """ Sert à récupérer l'état d'avancement du chargement depuis l'objet dédié
+    Utilise maintenant une classe LoadingState au lieu de variables globales """
+    return loading_state.progress, loading_state.message
 
 
 def db_infos(Geocache):

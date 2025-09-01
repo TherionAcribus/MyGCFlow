@@ -1,4 +1,5 @@
 import * as pkg from './index.js';
+import { CONFIG } from './init.js';
 
 const btnuploadBddForm = document.getElementById('uploadBddForm');
 btnuploadBddForm.addEventListener('submit', uploadBddRequest);
@@ -23,7 +24,7 @@ function uploadBddRequest(e){
     formData.append('file', fileInput.files[0]);
 
     // d'abord on vérifie que le fichier soit correcte
-    fetch ('http://localhost:5000/analyse_file', {
+    fetch (`${CONFIG.BASE_URL}/analyse_file`, {
         method: 'POST',
         body: formData,
     }).then (response => response.json())
@@ -48,7 +49,7 @@ function uploadBdd (){
 
     pkg.updateTextsModal("Chargement du fichier", "Chargement du fichier .gpx en cours");
 
-    fetch('http://localhost:5000/upload', {
+    fetch(`${CONFIG.BASE_URL}/upload`, {
         method: 'POST',
         body: formData,
     })
@@ -67,7 +68,7 @@ function uploadBdd (){
 }
 
 function checkLoadingProgress() {
-    fetch('http://localhost:5000/progressBar')
+    fetch(`${CONFIG.BASE_URL}/progressBar`)
         .then(response => response.json())
         .then(data => {
             pkg.updateProgressBar(data);
@@ -81,7 +82,7 @@ function checkLoadingProgress() {
 
 // regarde si une base de données est disponible et si elle est remplie
 export function readBddValues() {
-    fetch('http://localhost:5000/db_status')
+    fetch(`${CONFIG.BASE_URL}/db_status`)
         .then(response => response.json())
         .then(data => {
             console.log(data);
@@ -117,7 +118,7 @@ function showBddInfos(data){
 }
 
 export function readBdd(){
-    fetch('http://localhost:5000/get_geojson_points')
+    fetch(`${CONFIG.BASE_URL}/get_geojson_points`)
     .then(response => response.json())
     .then(data => {
         json_data = data.geojson;
@@ -153,8 +154,8 @@ export function updateOptionsValues(metadata){
 
 // Si on change le filtre de la BDD on refait une requete
 export function changeSelect(selectedValues, optionValues) {
-    fetch('http://localhost:5000/filter_caches', {
-        method: 'POST', 
+    fetch(`${CONFIG.BASE_URL}/filter_caches`, {
+        method: 'POST',
         headers: {
             'Content-Type': 'application/json', // Spécifie le type de contenu envoyé
         },

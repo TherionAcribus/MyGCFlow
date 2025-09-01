@@ -1,19 +1,42 @@
 import * as pkg from './index.js';
+import { CONFIG } from './init.js';
 
-// ????? REVOIR CA EST CE UTILE ?????
-document.getElementById("startCapture").addEventListener("click", function() {
-    console.log("start");
-    startAnimation(4); // Démarre l'animation
-    startCapture().then(() => {
-        // Cette fonction ne s'exécute que lorsque startCapture est terminé
-        createMovie();
-    });
-});
+// Initialisation des event listeners pour les boutons d'enregistrement
+function initRecordEventListeners() {
+    const startCaptureBtn = document.getElementById("startCapture");
+    const makeMovieBtn = document.getElementById("makeMovie");
 
-// ????? REVOIR CA EST CE UTILE ?????
-document.getElementById("makeMovie").addEventListener("click", function() {
-    createMovie();
-})
+    // ????? REVOIR CA EST CE UTILE ?????
+    if (startCaptureBtn) {
+        startCaptureBtn.addEventListener("click", function() {
+            console.log("start");
+            startAnimation(4); // Démarre l'animation
+            startCapture().then(() => {
+                // Cette fonction ne s'exécute que lorsque startCapture est terminé
+                createMovie();
+            });
+        });
+    } else {
+        console.warn("Bouton 'startCapture' non trouvé dans le DOM");
+    }
+
+    // ????? REVOIR CA EST CE UTILE ?????
+    if (makeMovieBtn) {
+        makeMovieBtn.addEventListener("click", function() {
+            createMovie();
+        });
+    } else {
+        console.warn("Bouton 'makeMovie' non trouvé dans le DOM");
+    }
+}
+
+// Initialiser les event listeners quand le DOM est chargé
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initRecordEventListeners);
+} else {
+    // DOM déjà chargé
+    initRecordEventListeners();
+}
 
 function startCapture() {
     return new Promise((resolve, reject) => {
@@ -33,7 +56,7 @@ function startCapture() {
 }
 
 export function sendImageToServer(dataUrl, counter) {
-    fetch('http://localhost:5000/upload_image', {
+    fetch(`${CONFIG.BASE_URL}/upload_image`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -55,7 +78,7 @@ export function sendImageToServer(dataUrl, counter) {
 }
 
 function createMovie() {
-    fetch('http://localhost:5000/start_create_video')
+    fetch(`${CONFIG.BASE_URL}/start_create_video`)
         .then(response => response.json())
         .then(data => console.log(data))
         .catch(error => console.error('Erreur:', error));

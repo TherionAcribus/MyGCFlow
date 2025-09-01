@@ -27,9 +27,7 @@ babel = Babel(app, locale_selector=get_locale)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///geocaching.db'
 db = SQLAlchemy(app)
 
-# VARIABLES GLOBALES
-# Variable pour déterminer l'avancement du chargement du fichier gpx
-loading_progress = 0
+# Les variables globales de chargement sont maintenant gérées dans bdd.py via LoadingState
 
 # Initialisation de la base de données si n'existe pas, mais ne créera pas de doublon
 with app.app_context():

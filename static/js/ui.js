@@ -1,107 +1,219 @@
 import * as pkg from './index.js';
 
-// MENU BDD
+// Variables globales pour les éléments UI
+var btnOSM, btnWatercolor, btnStamenToner, btnVectorMap;
+var divVectorMapOptions, divTonerMapOptions;
+var btnStamenTonerLight, btnStamenTonerDark;
+var cpPointCenterColor, cpPointBorderColor;
+var radioFillColorPoint, radioborderColorPoint;
+var switchIconeVectoriel, selectShape;
+var inputTimePerDay, cbDisplayDaysWithoutCache;
+var radioflashMode, inputTimeFlash, inputSizeFlash, cpFlashColor;
+var cpStrokeColor, cpFillColor, cpBackgroundColor, strokeWidth;
+var cbDisplayTitle, cbDisplayNumberofCaches, cbDisplayCurrentDate, inputTitle;
+var inputTitleCss, inputInfosCss, btnTitleCss, btnInfosCss;
+var spanNbCaches, spanCurrentDate;
+var selectLanguage, selectCheckVersionOnline, buttonCheckVersion;
 
-// select BDD
-const selectType = document.getElementById('selectType');
-selectType.addEventListener('change', changeSelection);
-const selectTerrain = document.getElementById('selectTerrain');
-selectTerrain.addEventListener('change', changeSelection);
-const selectDifficulty = document.getElementById('selectDifficulty');
-selectDifficulty.addEventListener('change', changeSelection);
-const selectContainer = document.getElementById('selectContainer');
-selectContainer.addEventListener('change', changeSelection);
-// datepicker
-const datePickerStart = document.getElementById('datePickerStart');
-const datePickerEnd = document.getElementById('datePickerEnd');
-datePickerStart.addEventListener('change', changeSelection);
-datePickerEnd.addEventListener('change', changeSelection);
+// Initialisation des éléments UI avec vérification d'existence
+function initUIElements() {
+    // MENU BDD
+
+    // select BDD
+    const selectType = document.getElementById('selectType');
+    if (selectType) selectType.addEventListener('change', changeSelection);
+
+    const selectTerrain = document.getElementById('selectTerrain');
+    if (selectTerrain) selectTerrain.addEventListener('change', changeSelection);
+
+    const selectDifficulty = document.getElementById('selectDifficulty');
+    if (selectDifficulty) selectDifficulty.addEventListener('change', changeSelection);
+
+    const selectContainer = document.getElementById('selectContainer');
+    if (selectContainer) selectContainer.addEventListener('change', changeSelection);
+
+    // datepicker
+    const datePickerStart = document.getElementById('datePickerStart');
+    const datePickerEnd = document.getElementById('datePickerEnd');
+    if (datePickerStart) datePickerStart.addEventListener('change', changeSelection);
+    if (datePickerEnd) datePickerEnd.addEventListener('change', changeSelection);
+
+    // MENU CARTES
+
+    // boutons pour le choix des cartes
+    btnOSM = document.getElementById('OSM');
+    btnWatercolor = document.getElementById('watercolor');
+    btnStamenToner = document.getElementById('stamenToner');
+    btnVectorMap = document.getElementById('vectorMap');
+
+    // sous menu pour le choix des cartes
+    divVectorMapOptions = document.getElementById('vectorMapOptions');
+    divTonerMapOptions = document.getElementById('tonerMapOptions');
+    btnStamenTonerLight = document.getElementById('stamenTonerLight');
+    btnStamenTonerDark = document.getElementById('stamenTonerDark');
+
+    // Champs pour les options de la carte vectorielle
+    cpStrokeColor = document.getElementById('fieldVectorMapStrokeColor');
+    if (cpStrokeColor) cpStrokeColor.addEventListener('change', changecpStrokeColor);
+
+    cpFillColor = document.getElementById('fieldVectorMapFillColor');
+    if (cpFillColor) cpFillColor.addEventListener('change', changecpfillColor);
+
+    cpBackgroundColor = document.getElementById('fieldVectorMapBackgroundColor');
+    if (cpBackgroundColor) cpBackgroundColor.addEventListener('change', changecpBackgroundColor);
+
+    strokeWidth = document.getElementById('fieldVectorMapStrokeWidth');
+    if (strokeWidth) strokeWidth.addEventListener('change', changestrokeWidth);
+
+    // Champs pour les options de la carte Toner Stamen
+    const tonerStyleElements = document.getElementsByClassName("changeTonerStyle");
+    Array.from(tonerStyleElements).forEach(function(element) {
+        element.addEventListener("click", changeStamenTonerStyle);
+    });
 
 
-// MENU CARTES
+    // POINTS
+    // Colorpickers
+    // --- in
+    cpPointCenterColor = document.getElementById('pointCenterColor');
+    if (cpPointCenterColor) cpPointCenterColor.addEventListener('change', changePointStyleUI);
 
-// boutons pour le choix des cartes
-const btnOSM = document.getElementById('OSM');
-const btnWatercolor = document.getElementById('watercolor');
-const btnStamenToner = document.getElementById('stamenToner');
-const btnVectorMap = document.getElementById('vectorMap');
+    // -- out
+    cpPointBorderColor = document.getElementById('pointBorderColor');
+    if (cpPointBorderColor) cpPointBorderColor.addEventListener('change', changePointStyleUI);
 
-// sous menu pour le choix des cartes
-const divVectorMapOptions = document.getElementById('vectorMapOptions');
-const divTonerMapOptions = document.getElementById('tonerMapOptions');
-const btnStamenTonerLight = document.getElementById('stamenTonerLight');
-const btnStamenTonerDark = document.getElementById('stamenTonerDark');
+    // Radio buttons
+    // --- in
+    radioFillColorPoint = document.getElementsByName('fillColorPoint');
+    radioFillColorPoint.forEach(radio => {
+        radio.addEventListener('change', () => changePointStyleUI(radio));
+    });
+    // -- out
+    radioborderColorPoint = document.getElementsByName('borderColorPoint');
+    radioborderColorPoint.forEach(radio => {
+        radio.addEventListener('change', () => changePointStyleUI(radio));
+    });
 
-// Champs pour les options de la carte vectorielle
-const cpStrokeColor = document.getElementById('fieldVectorMapStrokeColor');
-cpStrokeColor.addEventListener('change', changecpStrokeColor);
-const cpFillColor = document.getElementById('fieldVectorMapFillColor');
-cpFillColor.addEventListener('change', changecpfillColor);
-const cpBackgroundColor = document.getElementById('fieldVectorMapBackgroundColor');
-cpBackgroundColor.addEventListener('change', changecpBackgroundColor);
-const strokeWidth = document.getElementById('fieldVectorMapStrokeWidth');
-strokeWidth.addEventListener('change', changestrokeWidth);
+    // sliders et input associé
+    // --- in
+    const sliderSizePoint = document.getElementById('sliderSizePoint');
+    const inputSizePoint = document.getElementById('inputSizePoint');
+    if (sliderSizePoint) sliderSizePoint.addEventListener('change', changePointStyleUI);
+    if (inputSizePoint) inputSizePoint.addEventListener('change', changePointStyleUI);
 
-// Champs pour les options de la carte Toner Stamen
-const tonerStyleElements = document.getElementsByClassName("changeTonerStyle");
-Array.from(tonerStyleElements).forEach(function(element) {
-    element.addEventListener("click", changeStamenTonerStyle);
-});
+    // -- out
+    const sliderSizeBorder = document.getElementById('sliderSizeBorder');
+    const inputSizeBorder = document.getElementById('inputSizeBorder');
+    if (sliderSizeBorder) sliderSizeBorder.addEventListener('change', changePointStyleUI);
+    if (inputSizeBorder) inputSizeBorder.addEventListener('change', changePointStyleUI);
 
+    // switch
+    switchIconeVectoriel = document.getElementById('switchIconeVectoriel');
+    if (switchIconeVectoriel) switchIconeVectoriel.addEventListener('change', changePointStyleUI);
 
-// POINTS
-// Colorpickers
-// --- in
-const cpPointCenterColor = document.getElementById('pointCenterColor');
-cpPointCenterColor.addEventListener('change', changePointStyleUI);
-// -- out
-const cpPointBorderColor = document.getElementById('pointBorderColor');
-cpPointBorderColor.addEventListener('change', changePointStyleUI);
-// Radio buttons
-// --- in
-const radioFillColorPoint = document.getElementsByName('fillColorPoint');
-radioFillColorPoint.forEach(radio => {
-    radio.addEventListener('change', () => changePointStyleUI(radio));
-});
-// -- out
-const radioborderColorPoint = document.getElementsByName('borderColorPoint');
-radioborderColorPoint.forEach(radio => {
-    radio.addEventListener('change', () => changePointStyleUI(radio));
-});
-// sliders et input associé
-// --- in
-const sliderSizePoint = document.getElementById('sliderSizePoint');
-const inputSizePoint = document.getElementById('inputSizePoint');
-sliderSizePoint.addEventListener('change', changePointStyleUI);
-inputSizePoint.addEventListener('change', changePointStyleUI);
-// -- out
-const sliderSizeBorder = document.getElementById('sliderSizeBorder');
-const inputSizeBorder = document.getElementById('inputSizeBorder');
-sliderSizeBorder.addEventListener('change', changePointStyleUI);
-inputSizeBorder.addEventListener('change', changePointStyleUI);
-// switch
-const switchIconeVectoriel = document.getElementById('switchIconeVectoriel');
-switchIconeVectoriel.addEventListener('change', changePointStyleUI);
-// select
-const selectShape = document.getElementById('selectShape');
-selectShape.addEventListener('change', changePointStyleUI);
+    // select
+    selectShape = document.getElementById('selectShape');
+    if (selectShape) selectShape.addEventListener('change', changePointStyleUI);
+
+    // ANIMATION DE LA CARTE
+    // Boutons
+    const btnStartAnimation = document.getElementById('btnStartAnimation');
+    if (btnStartAnimation) btnStartAnimation.addEventListener('click', clickStartAnimation);
+
+    const btnRecordAnimation = document.getElementById('btnRecordAnimation');
+    if (btnRecordAnimation) btnRecordAnimation.addEventListener('click', clickRecordAnimation);
+
+    inputTimePerDay = document.getElementById('inputTimePerDay');
+    if (inputTimePerDay) inputTimePerDay.addEventListener('input', changeAnimationValues);
+
+    cbDisplayDaysWithoutCache = document.getElementById('cbDisplayDaysWithoutCache');
+    if (cbDisplayDaysWithoutCache) cbDisplayDaysWithoutCache.addEventListener('change', changeAnimationValues);
+
+    const btnStopAnimation = document.getElementById('btnStopAnimation');
+    if (btnStopAnimation) btnStopAnimation.addEventListener('click', pkg.stopAnimation);
+
+    const btnPauseAnimation = document.getElementById('btnPauseAnimation');
+    if (btnPauseAnimation) btnPauseAnimation.addEventListener('click', toggleButtonAnimationPauseAndRestart);
+
+    // FLASH
+    // radio buttons
+    radioflashMode = document.getElementsByName('flashMode');
+    radioflashMode.forEach(radio => {
+        radio.addEventListener('change', () => changeFlashValues(radio));
+    });
+    // inputs
+    inputTimeFlash = document.getElementById('inputTimeFlash');
+    if (inputTimeFlash) inputTimeFlash.addEventListener('input', changeFlashValues);
+
+    inputSizeFlash = document.getElementById('inputSizeFlash');
+    if (inputSizeFlash) inputSizeFlash.addEventListener('input', changeFlashValues);
+
+    // colorpickers
+    cpFlashColor = document.getElementById('flashColor');
+    if (cpFlashColor) cpFlashColor.addEventListener('change', changeFlashValues);
+
+    // INFOS
+    // checkboxes
+    cbDisplayTitle = document.getElementById('cbDisplayTitle');
+    if (cbDisplayTitle) cbDisplayTitle.addEventListener('change', changeInfosValues);
+
+    cbDisplayNumberofCaches = document.getElementById('cbDisplayNumberofCaches');
+    if (cbDisplayNumberofCaches) cbDisplayNumberofCaches.addEventListener('change', changeInfosValues);
+
+    cbDisplayCurrentDate = document.getElementById('cbDisplayCurrentDate');
+    if (cbDisplayCurrentDate) cbDisplayCurrentDate.addEventListener('change', changeInfosValues);
+
+    // inputs
+    inputTitle = document.getElementById('inputTitle');
+    if (inputTitle) inputTitle.addEventListener('input', changeInfosValues);
+
+    // textareas
+    inputTitleCss = document.getElementById('inputTitleCss');
+    inputInfosCss = document.getElementById('inputInfosCss');
+
+    // boutons
+    btnTitleCss = document.getElementById('btnTitleCss');
+    if (btnTitleCss) {
+        btnTitleCss.addEventListener('click', () => {
+            pkg.changeTitleCssValues(inputTitleCss.value);
+        });
+    }
+
+    btnInfosCss = document.getElementById('btnInfosCss');
+    if (btnInfosCss) {
+        btnInfosCss.addEventListener('click', () => {
+            pkg.changeInfosCssValues(inputInfosCss.value);
+        });
+    }
+
+    // Spans dans Frame Infos
+    spanNbCaches = document.getElementById('spanNbCaches');
+    spanCurrentDate = document.getElementById('spanCurrentDate');
+
+    // OPTIONS
+    selectLanguage = document.getElementById('selectLanguage');
+    if (selectLanguage) selectLanguage.addEventListener('change', changeOptionsValues);
+
+    selectCheckVersionOnline = document.getElementById('selectCheckVersionOnline');
+    if (selectCheckVersionOnline) selectCheckVersionOnline.addEventListener('change', changeOptionsValues);
+
+    // boutons
+    buttonCheckVersion = document.getElementById('buttonCheckVersion');
+    if (buttonCheckVersion) buttonCheckVersion.addEventListener('click', pkg.checkVersion);
+}
+
+// Initialiser les éléments UI quand le DOM est chargé
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initUIElements);
+} else {
+    // DOM déjà chargé
+    initUIElements();
+}
 
 
 // ANIMATION DE LA CARTE
-// Boutons
-const btnStartAnimation = document.getElementById('btnStartAnimation');
-btnStartAnimation.addEventListener('click', clickStartAnimation);
-const btnRecordAnimation = document.getElementById('btnRecordAnimation');
-btnRecordAnimation.addEventListener('click', clickRecordAnimation);
-const inputTimePerDay = document.getElementById('inputTimePerDay');
-inputTimePerDay.addEventListener('input', changeAnimationValues);
-const btnStopAnimation = document.getElementById('btnStopAnimation');
-btnStopAnimation.addEventListener('click', pkg.stopAnimation);
-const btnPauseAnimation = document.getElementById('btnPauseAnimation');
-btnPauseAnimation.addEventListener('click', toggleButtonAnimationPauseAndRestart);
-// jours sans caches
-const cbDisplayDaysWithoutCache = document.getElementById('cbDisplayDaysWithoutCache');
-cbDisplayDaysWithoutCache.addEventListener('change', changeAnimationValues);
+// Boutons (Ces éléments sont maintenant gérés dans initUIElements pour éviter les erreurs)
+// jours sans caches - déplacé dans initUIElements()
 // temps total
 const inputTotalTime = document.getElementById('inputTotalTime');
 inputTotalTime.addEventListener('input', changeAnimationValues);
@@ -118,57 +230,12 @@ const btnAssembleMoviePictures = document.getElementById('btnAssembleMoviePictur
 btnAssembleMoviePictures.addEventListener('click', assemble_pictures_directory);
 
 
-// FLASH
-// radio buttons
-const radioflashMode = document.getElementsByName('flashMode');
-radioflashMode.forEach(radio => {
-    radio.addEventListener('change', () => changeFlashValues(radio));
-});
-// inputs
-const inputTimeFlash = document.getElementById('inputTimeFlash');
-inputTimeFlash.addEventListener('input', changeFlashValues);
-const inputSizeFlash = document.getElementById('inputSizeFlash');
-inputSizeFlash.addEventListener('input', changeFlashValues);
-// colorpickers
-const cpFlashColor = document.getElementById('flashColor');
-cpFlashColor.addEventListener('change', changeFlashValues);
+// FLASH - éléments déplacés dans initUIElements()
 
-// INFOS 
-// checkboxes
-const cbDisplayTitle = document.getElementById('cbDisplayTitle');
-cbDisplayTitle.addEventListener('change', changeInfosValues);
-const cbDisplayNumberofCaches = document.getElementById('cbDisplayNumberofCaches');
-cbDisplayNumberofCaches.addEventListener('change', changeInfosValues);
-const cbDisplayCurrentDate = document.getElementById('cbDisplayCurrentDate');
-cbDisplayCurrentDate.addEventListener('change', changeInfosValues);
-// inputs
-const inputTitle = document.getElementById('inputTitle');
-inputTitle.addEventListener('input', changeInfosValues);
-// textareas
-const inputTitleCss = document.getElementById('inputTitleCss');
-const inputInfosCss = document.getElementById('inputInfosCss');
-// boutons
-const btnTitleCss = document.getElementById('btnTitleCss');
-const btnInfosCss = document.getElementById('btnInfosCss');
-btnTitleCss.addEventListener('click', () => {
-    pkg.changeTitleCssValues(inputTitleCss.value);
-});
-btnInfosCss.addEventListener('click', () => {
-    pkg.changeInfosCssValues(inputInfosCss.value);
-});
-// Spans dans Frame Infos
-const spanNbCaches = document.getElementById('spanNbCaches');
-const spanCurrentDate = document.getElementById('spanCurrentDate');
+// INFOS - éléments déplacés dans initUIElements()
 
 
-// OPTIONS 
-const selectLanguage = document.getElementById('selectLanguage');
-selectLanguage.addEventListener('change', changeOptionsValues);
-const selectCheckVersionOnline = document.getElementById('selectCheckVersionOnline');
-selectCheckVersionOnline.addEventListener('change', changeOptionsValues);
-// boutons 
-const buttonCheckVersion = document.getElementById('buttonCheckVersion');
-buttonCheckVersion.addEventListener('click', pkg.checkVersion);
+// OPTIONS - éléments déplacés dans initUIElements()
 
 
 // initialisation les éléments des options par défaut

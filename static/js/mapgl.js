@@ -67,6 +67,7 @@
 
 
 import * as pkg from './index.js';
+import { CONFIG } from './init.js';
 
 let map;  // carte de l'app
 let engine;  // quel moteur graphique est utilisé
@@ -104,17 +105,32 @@ let interval;
 let infos;
 
 
-// récupère les couleurs GC par défaut dans le JSON 
+// récupère les couleurs GC par défaut dans le JSON
 // (permet d'être facilement modifiable contrairement à un dict en dur)
 export async function requetedefaultGcColors(){
     try {
-        const response = await fetch('http://localhost:5000/static/json/defaultGcColors.json');
+        const response = await fetch(`${CONFIG.BASE_URL}/static/json/defaultGcColors.json`);
         if (!response.ok) {
-            throw new Error('Network response was not ok ' + response.statusText);
+            const errorMsg = `Erreur lors du chargement des couleurs GC (${response.status}): ${response.statusText}`;
+            console.error(errorMsg);
+            throw new Error(errorMsg);
         }
         defaultGcColors = await response.json();
+        console.log('Couleurs GC chargées avec succès:', defaultGcColors);
     } catch (error) {
-        console.error('There has been a problem with your fetch operation:', error);
+        console.error('Erreur lors du chargement des couleurs GC:', error);
+        // Utiliser des couleurs par défaut en cas d'erreur
+        defaultGcColors = {
+            'Traditional Cache': '#FF0000',
+            'Multi-cache': '#00FF00',
+            'Mystery Cache': '#0000FF',
+            'EarthCache': '#8B4513',
+            'Letterbox Hybrid': '#FFA500',
+            'Event Cache': '#800080',
+            'Virtual Cache': '#FFC0CB',
+            'Webcam Cache': '#A52A2A'
+        };
+        console.warn('Utilisation des couleurs GC par défaut suite à une erreur de chargement');
     }
 }
 

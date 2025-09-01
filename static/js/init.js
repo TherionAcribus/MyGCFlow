@@ -1,5 +1,5 @@
 // DEMARRAGE
-// .\virtual\Scripts\activate    
+// .\virtual\Scripts\activate
 // flask --app app.py --debug run
 
 // Importation de Materialize CSS et JS
@@ -9,6 +9,12 @@
 // TODO : A implanter ou a supprimer
 
 import * as pkg from './index.js';
+
+// Configuration de base - URL dynamique pour éviter les URLs en dur
+export const CONFIG = {
+    BASE_URL: window.location.origin,
+    API_BASE: `${window.location.origin}`
+};
 
 document.addEventListener('DOMContentLoaded', async function() {     
     // initialisation des elements de Materialize
@@ -59,6 +65,7 @@ function initModals() {
 // initialisation des Selects de Materialize
 function initSelect() {
     var elems = document.querySelectorAll('select');
+    var options = {}; // Options par défaut pour les selects Materialize
     var instances = M.FormSelect.init(elems, options);
 }
 
@@ -83,14 +90,26 @@ export function getDefaultValues() {
 // fait la requête pour récupere les options par défaut
 async function requeteDefaultValues(){
     try {
-        const response = await fetch('http://localhost:5000/static/json/defaultValues.json');
+        const response = await fetch(`${CONFIG.BASE_URL}/static/json/defaultValues.json`);
         if (!response.ok) {
-            throw new Error('Network response was not ok ' + response.statusText);
+            const errorMsg = `Erreur réseau (${response.status}): ${response.statusText}`;
+            console.error(errorMsg);
+            throw new Error(errorMsg);
         }
         const data = await response.json();
         return data;
     } catch (error) {
-        console.error('There has been a problem with your fetch operation:', error);
+        console.error('Erreur lors du chargement des valeurs par défaut:', error);
+        // Retourner des valeurs par défaut en cas d'erreur
+        return {
+            map: { center: [48.8566, 2.3522], zoom: 10 },
+            point: { size: 8, color: '#ff0000' },
+            animation: { speed: 1 },
+            infos: { show: true },
+            flash: { show: false },
+            date: { format: 'yyyy-mm-dd' },
+            record: { numberOfDigits: 4 }
+        };
     }
 }
 

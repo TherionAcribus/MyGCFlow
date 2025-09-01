@@ -1,4 +1,5 @@
 import * as pkg from './index.js';
+import { CONFIG } from './init.js';
 
 export function checkVersionInit(){
     if (pkg.options.options.checkVersion == true) {
@@ -7,12 +8,27 @@ export function checkVersionInit(){
 }
 
 export function checkVersion(mode="manual"){
-    fetch('http://localhost:5000/check_version')
-    .then(response => response.json())
+    fetch(`${CONFIG.BASE_URL}/check_version`)
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Erreur HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+    })
     .then(data => {
         displayCheckVersion(data, mode);
     })
-    .catch(error => console.error('Erreur:', error));
+    .catch(error => {
+        console.error('Erreur lors de la vérification de version:', error);
+        // En cas d'erreur, afficher un message d'erreur seulement en mode manuel
+        if (mode === "manual") {
+            const errorData = {
+                error: true,
+                release_notes: `Erreur lors de la vérification de version: ${error.message}`
+            };
+            displayCheckVersion(errorData, mode);
+        }
+    });
 }
 
 
