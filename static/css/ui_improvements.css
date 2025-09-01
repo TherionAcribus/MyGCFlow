@@ -95,27 +95,139 @@
     margin-left: 4px;
 }
 
-/* Style pour les options Toner - cohérence avec les autres sections */
-#tonerMapOptions {
+/* Style pour les options de cartes - cohérence parfaite */
+#vectorMapOptions, #tonerMapOptions {
     margin-top: 1rem;
-    padding: 1rem;
+    padding: 0;
     background-color: rgba(33, 150, 243, 0.05);
     border: 1px solid rgba(33, 150, 243, 0.1);
     border-radius: 8px;
     transition: all 0.3s ease;
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
 }
 
-#tonerMapOptions:hover {
+#vectorMapOptions, #tonerMapOptions {
+    transform: translateY(-10px);
+}
+
+#vectorMapOptions.show, #tonerMapOptions.show {
+    padding: 1rem;
+    max-height: 500px;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+#vectorMapOptions:hover, #tonerMapOptions:hover {
     background-color: rgba(33, 150, 243, 0.08);
     border-color: rgba(33, 150, 243, 0.2);
+    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.1);
 }
 
-#tonerMapOptions h6 {
+#vectorMapOptions h6, #tonerMapOptions h6 {
     margin-top: 0;
     margin-bottom: 1rem;
     color: #2196F3;
     font-weight: 600;
     font-size: 1rem;
+}
+
+/* Nouveaux styles pour les contrôles Vector */
+.vector-control-group {
+    margin-bottom: 1rem;
+}
+
+.vector-label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #555;
+    margin-bottom: 8px;
+    text-align: left;
+}
+
+.vector-color-picker {
+    width: 60px;
+    height: 40px;
+    padding: 0;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: none;
+}
+
+.vector-color-picker:hover {
+    border-color: #2196F3;
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
+}
+
+.vector-slider-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.vector-slider {
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    background: #ddd;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.vector-slider:hover {
+    background: #bbb;
+}
+
+.vector-slider::-webkit-slider-thumb {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #2196F3;
+    cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+}
+
+.vector-slider::-webkit-slider-thumb:hover {
+    background: #1976D2;
+    transform: scale(1.1);
+}
+
+.vector-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #2196F3;
+    cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+}
+
+.vector-slider-value {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #2196F3;
+    min-width: 35px;
+    text-align: center;
+    background: rgba(33, 150, 243, 0.1);
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+/* Focus amélioré pour tous les contrôles Vector */
+.vector-color-picker:focus,
+.vector-slider:focus {
+    outline: none;
+    border-color: #2196F3;
+    box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.3);
 }
 
 /* Amélioration des inputs */
@@ -313,5 +425,30 @@
 
     .toast {
         padding: 12px;
+    }
+
+    /* Ajustements pour les contrôles Vector sur mobile */
+    .vector-control-group {
+        text-align: center;
+    }
+
+    .vector-label {
+        text-align: center;
+        margin-bottom: 12px;
+    }
+
+    .vector-slider-container {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .vector-slider-value {
+        align-self: center;
+        min-width: 50px;
+    }
+
+    .vector-color-picker {
+        width: 50px;
+        height: 35px;
     }
 }

@@ -69,7 +69,7 @@ const datePickerEnd = document.getElementById('datePickerEnd');
         console.warn('Bouton stamenTonerDark non trouvé');
     }
 
-// Champs pour les options de la carte vectorielle
+    // Champs pour les options de la carte vectorielle
     cpStrokeColor = document.getElementById('fieldVectorMapStrokeColor');
     if (cpStrokeColor) cpStrokeColor.addEventListener('change', changecpStrokeColor);
 
@@ -80,7 +80,13 @@ const datePickerEnd = document.getElementById('datePickerEnd');
     if (cpBackgroundColor) cpBackgroundColor.addEventListener('change', changecpBackgroundColor);
 
     strokeWidth = document.getElementById('fieldVectorMapStrokeWidth');
-    if (strokeWidth) strokeWidth.addEventListener('change', changestrokeWidth);
+    if (strokeWidth) {
+        strokeWidth.addEventListener('change', changestrokeWidth);
+        strokeWidth.addEventListener('input', updateStrokeWidthValue);
+    }
+
+    // Initialiser la valeur du slider
+    updateStrokeWidthValue();
 
 // Champs pour les options de la carte Toner Stamen
 const tonerStyleElements = document.getElementsByClassName("changeTonerStyle");
@@ -328,13 +334,16 @@ export function init_ui() {
     // ------- CARTE VECTORIELLE -------
 
     // couleur de trait par défaut
-    cpStrokeColor.value = pkg.options.map.vectorMap.strokeColor;
+    if (cpStrokeColor) cpStrokeColor.value = pkg.options.map.vectorMap.strokeColor;
     // couleur de remplissage par défaut
-    cpFillColor.value = pkg.options.map.vectorMap.fillColor;
+    if (cpFillColor) cpFillColor.value = pkg.options.map.vectorMap.fillColor;
     // couleur de fond par défaut
-    cpBackgroundColor.value = pkg.options.map.vectorMap.background;
+    if (cpBackgroundColor) cpBackgroundColor.value = pkg.options.map.vectorMap.background;
     // largeur de trait par défaut
-    strokeWidth.value = pkg.options.map.vectorMap.strokeWidth;
+    if (strokeWidth) strokeWidth.value = pkg.options.map.vectorMap.strokeWidth;
+
+    // Mettre à jour l'affichage de la valeur du slider
+    updateStrokeWidthValue();
     // ------- CARTE TONER -------
     // deselectionne le bouton par défaut
     changeButtonsStamenToner(pkg.options.map.stamenToner.type);
@@ -484,6 +493,14 @@ function changestrokeWidth() {
     pkg.refreshVectorMap(pkg.options.map.vectorMap);
 }
 
+// mise à jour de l'affichage de la valeur du slider
+function updateStrokeWidthValue() {
+    const sliderValueElement = document.querySelector('.vector-slider-value');
+    if (sliderValueElement && strokeWidth) {
+        sliderValueElement.textContent = parseFloat(strokeWidth.value).toFixed(1);
+    }
+}
+
 
 // ---------------- CARTE TONER -------------------
 
@@ -531,41 +548,80 @@ function changeButtonsStamenToner(style){
 // -------------CHANGEMENT DES CARTES ----------------
 
 export function selectVectorMapMenu(){
-    // TODO quand existera : on efface tous les autres sous menu
-    // on affiche le sous menu
-    divVectorMapOptions.style.display = 'block';
-    divTonerMapOptions.style.display = 'none';
+    // Animation fluide avec classes CSS
+    if (divVectorMapOptions) {
+        divVectorMapOptions.style.display = 'block';
+        divVectorMapOptions.classList.add('show');
+    }
+    if (divTonerMapOptions) {
+        divTonerMapOptions.classList.remove('show');
+        // Délai pour l'animation avant de masquer complètement
+        setTimeout(() => {
+            if (divTonerMapOptions) divTonerMapOptions.style.display = 'none';
+        }, 300);
+    }
+
     // on reaffiche tous les boutons
     unSelectAllMapsButtons();
     // on selectionne (disables) le bouton de la carte en question
-    btnVectorMap.classList.add('disabled');
+    if (btnVectorMap) btnVectorMap.classList.add('disabled');
 }
 
 export function selectOSMMapMenu(){
-    divVectorMapOptions.style.display = 'none';
-    divTonerMapOptions.style.display = 'none';
+    // Masquer toutes les options avec animation
+    if (divVectorMapOptions) {
+        divVectorMapOptions.classList.remove('show');
+        setTimeout(() => {
+            if (divVectorMapOptions) divVectorMapOptions.style.display = 'none';
+        }, 300);
+    }
+    if (divTonerMapOptions) {
+        divTonerMapOptions.classList.remove('show');
+        setTimeout(() => {
+            if (divTonerMapOptions) divTonerMapOptions.style.display = 'none';
+        }, 300);
+    }
+
     unSelectAllMapsButtons();
-    btnOSM.classList.add('disabled');
+    if (btnOSM) btnOSM.classList.add('disabled');
 }
 
 export function selectWatercolorMapMenu(){
-    divVectorMapOptions.style.display = 'none';
-    divTonerMapOptions.style.display = 'none';
+    // Masquer toutes les options avec animation
+    if (divVectorMapOptions) {
+        divVectorMapOptions.classList.remove('show');
+        setTimeout(() => {
+            if (divVectorMapOptions) divVectorMapOptions.style.display = 'none';
+        }, 300);
+    }
+    if (divTonerMapOptions) {
+        divTonerMapOptions.classList.remove('show');
+        setTimeout(() => {
+            if (divTonerMapOptions) divTonerMapOptions.style.display = 'none';
+        }, 300);
+    }
+
     unSelectAllMapsButtons();
-    btnWatercolor.classList.add('disabled');
+    if (btnWatercolor) btnWatercolor.classList.add('disabled');
 }
 
 export function selectStamenTonerMapMenu(){
-    console.log('Affichage des options Toner');
+    console.log('Affichage des options Toner avec animation');
+
     if (divTonerMapOptions) {
         divTonerMapOptions.style.display = 'block';
-        console.log('Options Toner affichées');
+        divTonerMapOptions.classList.add('show');
+        console.log('Options Toner affichées avec animation');
     } else {
         console.warn('divTonerMapOptions non trouvé');
     }
 
     if (divVectorMapOptions) {
-        divVectorMapOptions.style.display = 'none';
+        divVectorMapOptions.classList.remove('show');
+        // Délai pour l'animation avant de masquer complètement
+        setTimeout(() => {
+            if (divVectorMapOptions) divVectorMapOptions.style.display = 'none';
+        }, 300);
     }
 
     unSelectAllMapsButtons();
