@@ -35,7 +35,7 @@
 
 // stockage des infos dans cookies au lieu localstorage ? Laissez le choix ?
 
-// TODO Gerer les arret / pause chargement
+// TODO Gerer les arret / pause chargement pour Enregistrement
 
 // TODO GEstion Traduction
 
@@ -59,7 +59,7 @@
 // Mettre le switch dans la bonne position
 // Aller lire le json s'il existe au lieu de recharger le fichier
 
-// TODO Juste une capture d'une image
+// TODO Juste une capture d'une image (a Faire affichage carte avec choix d'une date précise)
 
 // TODO Forcer la taille de la carte (V2)
 
