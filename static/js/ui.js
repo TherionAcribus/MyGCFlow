@@ -46,11 +46,28 @@ const datePickerEnd = document.getElementById('datePickerEnd');
     btnStamenToner = document.getElementById('stamenToner');
     btnVectorMap = document.getElementById('vectorMap');
 
-// sous menu pour le choix des cartes
+    // sous menu pour le choix des cartes
     divVectorMapOptions = document.getElementById('vectorMapOptions');
     divTonerMapOptions = document.getElementById('tonerMapOptions');
     btnStamenTonerLight = document.getElementById('stamenTonerLight');
+    if (btnStamenTonerLight) {
+        btnStamenTonerLight.addEventListener('click', function() {
+            console.log('Bouton Clair cliqué');
+            changeStamenTonerStyle.call(this);
+        });
+    } else {
+        console.warn('Bouton stamenTonerLight non trouvé');
+    }
+
     btnStamenTonerDark = document.getElementById('stamenTonerDark');
+    if (btnStamenTonerDark) {
+        btnStamenTonerDark.addEventListener('click', function() {
+            console.log('Bouton Sombre cliqué');
+            changeStamenTonerStyle.call(this);
+        });
+    } else {
+        console.warn('Bouton stamenTonerDark non trouvé');
+    }
 
 // Champs pour les options de la carte vectorielle
     cpStrokeColor = document.getElementById('fieldVectorMapStrokeColor');
@@ -470,28 +487,33 @@ function changestrokeWidth() {
 
 // ---------------- CARTE TONER -------------------
 
-function changeStamenTonerStyle(e){
-    // comme il y a un bouton avec plusieurs layers, il faut remonter dans les éléments parent pour trouver le layer du bouton
-    let targetElement = e.target;
-        while (targetElement != null && !targetElement.classList.contains("changeTonerStyle")) {
-            targetElement = targetElement.parentElement;
-        }
-            // Si un élément avec 'changeMap' a été trouvé, récupérer son ID
-        if (targetElement) {
-            let styleName = targetElement.id;
-            let style;
-            if (styleName == "stamenTonerDark"){
-                style = "dark"
-            } else if (styleName == "stamenTonerLight"){
-                style = "light"
-            }
-            pkg.options.map.stamenToner.type = style;
+function changeStamenTonerStyle(){
+    // Récupérer l'ID du bouton cliqué directement
+    const styleName = this.id;
+    console.log('Changement de style Toner:', styleName);
 
-            // change boutons
-            changeButtonsStamenToner(style);          
-            // rafraichit carte
-            pkg.refreshStamenTonerMap(pkg.options.map.stamenToner);
-        }
+    let style;
+    if (styleName === "stamenTonerDark"){
+        style = "dark";
+        console.log('Style sombre sélectionné');
+    } else if (styleName === "stamenTonerLight"){
+        style = "light";
+        console.log('Style clair sélectionné');
+    } else {
+        console.warn('Style non reconnu:', styleName);
+        return;
+    }
+
+    // Mettre à jour les options
+    pkg.options.map.stamenToner.type = style;
+    console.log('Options mises à jour:', pkg.options.map.stamenToner);
+
+    // Changer l'apparence des boutons
+    changeButtonsStamenToner(style);
+
+    // Rafraîchir la carte
+    pkg.refreshStamenTonerMap(pkg.options.map.stamenToner);
+    console.log('Carte rafraîchie');
 }
 
 // selectionne/deselectionne les boutons pour le Sous menu Stamen Toner au démarrage et au clic sur un des boutons
@@ -534,10 +556,22 @@ export function selectWatercolorMapMenu(){
 }
 
 export function selectStamenTonerMapMenu(){
-    divTonerMapOptions.style.display = 'block';
-    divVectorMapOptions.style.display = 'none';
+    console.log('Affichage des options Toner');
+    if (divTonerMapOptions) {
+        divTonerMapOptions.style.display = 'block';
+        console.log('Options Toner affichées');
+    } else {
+        console.warn('divTonerMapOptions non trouvé');
+    }
+
+    if (divVectorMapOptions) {
+        divVectorMapOptions.style.display = 'none';
+    }
+
     unSelectAllMapsButtons();
-    btnStamenToner.classList.add('disabled');
+    if (btnStamenToner) {
+        btnStamenToner.classList.add('disabled');
+    }
 }
 
 // permet de deselectionner tous les boutons de cartes avant de reselectionner le bon
