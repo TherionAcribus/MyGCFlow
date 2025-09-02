@@ -56,7 +56,7 @@ function startCapture() {
 }
 
 export function sendImageToServer(dataUrl, counter) {
-    fetch(`${CONFIG.BASE_URL}/upload_image`, {
+    return fetch(`${CONFIG.BASE_URL}/upload_image`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -71,9 +71,11 @@ export function sendImageToServer(dataUrl, counter) {
     })
     .then(data => {
         //console.log('Image envoyée avec succès:', data);
+        return data;
     })
     .catch(error => {
         console.error('Erreur lors de l’envoi de l’image:', error);
+        throw error;
     });
 }
 

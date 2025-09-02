@@ -90,6 +90,15 @@ let currentDate;
 // Compteur de frames pour le jour en cours
 let currentFrame = 0;
 let infosProgressBar = new Object;
+let perfMetrics = {
+    totalFrames: 0,
+    capturedFrames: 0,
+    uploadOk: 0,
+    uploadFail: 0,
+    captureTimeMs: 0,
+    uploadTimeMs: 0,
+    startedAt: 0,
+};
 // TEMP
 export let framesPerDay = 30;  
 let imageCounter = 0;
@@ -607,6 +616,9 @@ export function recordAnimation(){
     // ouverture modale
     pkg.openModalLoading("Capture en cours", "Les images sont en cours de capture... Ne pas bouger la fenetre !");
 
+    // Init métriques
+    perfMetrics = { totalFrames: 0, capturedFrames: 0, uploadOk: 0, uploadFail: 0, captureTimeMs: 0, uploadTimeMs: 0, startedAt: performance.now() };
+
     // je fais une copie car plus rapide de gerer une valeur qu'un objet
     framesPerDay = pkg.options.record.framesPerDay
 
@@ -693,7 +705,11 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
 function updateProgress(){
     let percent = imageCounter / pkg.options.record.nbOfImages * 100 
     infosProgressBar.progress = percent
-    infosProgressBar.message = percent + "%" + ":" + currentDate;
+    const elapsed = performance.now() - perfMetrics.startedAt;
+    const avgCapture = perfMetrics.capturedFrames ? (perfMetrics.captureTimeMs / perfMetrics.capturedFrames).toFixed(1) : 0;
+    const avgUpload = (perfMetrics.uploadOk + perfMetrics.uploadFail) ? (perfMetrics.uploadTimeMs / (perfMetrics.uploadOk + perfMetrics.uploadFail)).toFixed(1) : 0;
+    const fps = elapsed > 0 ? (perfMetrics.capturedFrames / (elapsed / 1000)).toFixed(1) : 0;
+    infosProgressBar.message = `${percent.toFixed(1)}% | ${currentDate.toLocaleDateString()} | f:${perfMetrics.capturedFrames}/${perfMetrics.totalFrames} | fps:${fps} | cap:${avgCapture}ms | up:${avgUpload}ms`;
     pkg.updateProgressBar(infosProgressBar)
 }
 
@@ -727,12 +743,26 @@ function captureElement() {
                 logging: false // Désactiver les logs pour éviter le spam
             };
 
+            const t0Capture = performance.now();
             tryCapture(html2canvas, canvasOptions)
             .then(canvas => {
                 const dataUrl = canvas.toDataURL('image/png', 0.95);
-                pkg.sendImageToServer(dataUrl, imageCounter++);
-                resolve();
+                const t1Capture = performance.now();
+                perfMetrics.captureTimeMs += (t1Capture - t0Capture);
+                perfMetrics.capturedFrames += 1;
+                perfMetrics.totalFrames += 1;
+                const t0Upload = performance.now();
+                return pkg.sendImageToServer(dataUrl, imageCounter++).then(() => {
+                    const t1Upload = performance.now();
+                    perfMetrics.uploadTimeMs += (t1Upload - t0Upload);
+                    perfMetrics.uploadOk += 1;
+                }).catch(() => {
+                    const t1Upload = performance.now();
+                    perfMetrics.uploadTimeMs += (t1Upload - t0Upload);
+                    perfMetrics.uploadFail += 1;
+                });
             })
+            .then(() => resolve())
             .catch(canvasError => {
                 console.warn('html2canvas a échoué, tentative avec html-to-image:', canvasError.message);
 
@@ -747,11 +777,25 @@ function captureElement() {
                     }
                 };
 
+                const t0Capture2 = performance.now();
                 tryCapture(htmlToImage.toPng, htmlToImageOptions)
                 .then(dataUrl => {
-                    pkg.sendImageToServer(dataUrl, imageCounter++);
-                    resolve();
+                    const t1Capture2 = performance.now();
+                    perfMetrics.captureTimeMs += (t1Capture2 - t0Capture2);
+                    perfMetrics.capturedFrames += 1;
+                    perfMetrics.totalFrames += 1;
+                    const t0Upload2 = performance.now();
+                    return pkg.sendImageToServer(dataUrl, imageCounter++).then(() => {
+                        const t1Upload2 = performance.now();
+                        perfMetrics.uploadTimeMs += (t1Upload2 - t0Upload2);
+                        perfMetrics.uploadOk += 1;
+                    }).catch(() => {
+                        const t1Upload2 = performance.now();
+                        perfMetrics.uploadTimeMs += (t1Upload2 - t0Upload2);
+                        perfMetrics.uploadFail += 1;
+                    });
                 })
+                .then(() => resolve())
                 .catch(htmlToImageError => {
                     console.error('Les deux méthodes de capture ont échoué:', htmlToImageError);
                     reject(htmlToImageError);
