@@ -597,6 +597,13 @@ export function stopAnimation(){
 export function recordAnimation(){
     // TODO Gérer date de début et fin personnalisées !!!!!
 
+    // Remise à zéro de l'état de la carte et des informations affichées
+    clearMap(); // Nettoie les points sur la carte
+
+    // Remise à zéro de l'affichage des informations
+    pkg.updateNbCaches(0); // Remet le compteur de géocaches à zéro
+    pkg.updateCurrentDate(pkg.metadata.startDate); // Remet la date au début
+
     // ouverture modale
     pkg.openModalLoading("Capture en cours", "Les images sont en cours de capture... Ne pas bouger la fenetre !");
 
