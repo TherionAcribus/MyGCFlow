@@ -681,7 +681,7 @@ let currentLoadingToast = null;
 
 export function openModalLoading(title, description){
     // Remplacer la modal par un toast non-bloquant
-    currentLoadingToast = showLoadingToast(description, title);
+    currentLoadingToast = pkg.showLoadingToast(description, title);
 }
 
 export function updateTextsModal(title, description){
@@ -697,7 +697,7 @@ export function updateTextsModal(title, description){
 export function closeModalLoading(){
     // Fermer le toast de chargement
     if (currentLoadingToast) {
-        hideToast(currentLoadingToast);
+        pkg.hideToast(currentLoadingToast);
         currentLoadingToast = null;
     }
 }
@@ -705,7 +705,7 @@ export function closeModalLoading(){
 export function updateProgressBar(data) {
     // Mettre à jour la progress bar du toast actuel
     if (currentLoadingToast) {
-        updateToastProgress(currentLoadingToast, data.progress);
+        pkg.updateToastProgress(currentLoadingToast, data.progress);
 
         // Mettre à jour le message si fourni
         if (data.message) {
@@ -740,7 +740,7 @@ export function openModalnfos(title, description, mode="text"){
     }
 
     // Afficher le toast
-    showToast(cleanDescription, type, title, 8000); // 8 secondes pour les messages importants
+    pkg.showToast(cleanDescription, type, title, 8000); // 8 secondes pour les messages importants
 }
 
 // Fonction de compatibilité (plus nécessaire mais gardée pour compatibilité)

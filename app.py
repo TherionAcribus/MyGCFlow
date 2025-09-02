@@ -6,7 +6,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_cors import cross_origin
 from bdd import uploadBdd, get_progress_step, db_infos, create_geojson, get_metadata_from_geojson, filter_session, analyse
-# from capture import upload_image, clear_pictures_directory, assemble_pictures_directory  # Temporairement commenté à cause de moviepy
+from capture import upload_image, clear_pictures_directory, assemble_pictures_directory
 from options import check_version_online
 from flask_babel import Babel, gettext as _
 
@@ -128,10 +128,20 @@ def get_geojson_points():
     return jsonify(response_data)
 
 
-# @app.route('/upload_image', methods=['POST'])
-# @cross_origin()
-# def get_upload_image():
-#     return upload_image(request)
+@app.route('/upload_image', methods=['POST'])
+@cross_origin()
+def get_upload_image():
+    return upload_image(request)
+
+
+@app.route('/start_create_video', methods=['GET'])
+@cross_origin()
+def start_create_video():
+    try:
+        result = assemble_pictures_directory("captured", "video/output.mp4", 24)
+        return result
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
 
 
 # @app.route('/clear_pictures_directory', methods=['POST'])

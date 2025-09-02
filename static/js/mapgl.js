@@ -539,7 +539,11 @@ function clearMap(){
     //if (isLayerOnMap(map, vectorLayerBorder)){
     //    map.removeLayer(vectorLayerBorder);
     //}
-    window.vectorSource.clear();
+
+    // Vérification que vectorSource existe avant de l'utiliser
+    if (window.vectorSource) {
+        window.vectorSource.clear();
+    }
     if (window.borderLayer) {
         map.removeLayer(window.borderLayer);
         window.borderLayer = undefined; // Réinitialisez la référence
@@ -556,7 +560,10 @@ function clearMap(){
 // ----------- ANIMATION DE LA CARTE  ------------
 export function startAnimation(restart=false) {
     if (!restart) {
-        window.vectorSource.clear();
+        // Vérification que vectorSource existe avant de l'utiliser
+        if (window.vectorSource) {
+            window.vectorSource.clear();
+        }
         createFlashElements();
         infos = createObjectInfos();
     }
@@ -598,7 +605,14 @@ export function recordAnimation(){
 
     // mise à jour des options RGB (MEttre ailleurs ? + idem lecture seule)
     pkg.options.flash.rgb = pkg.hexToRgb(pkg.options.flash.color);
-    
+
+    // Assurez-vous que vectorSource est initialisé
+    if (!window.vectorSource) {
+        window.vectorSource = new ol.source.Vector({
+            wrapX: true,
+        });
+    }
+
     window.vectorSource.clear();
     createFlashElements();
     // creation objet pour stocker les infos liées aux Frames (dt nombre de caches)
@@ -681,21 +695,79 @@ function captureElement() {
     return new Promise((resolve, reject) => {
         const element = document.getElementById('mapWithFrames');
         if (!element) {
-            // Si l'élément n'est pas trouvé, rejetez immédiatement la promesse.
-            reject('Élément non trouvé'); // Assurez-vous que cette ligne est à l'intérieur de la Promesse.
-            return; // Sortir de la fonction si l'élément n'est pas trouvé.
+            reject('Élément non trouvé');
+            return;
         }
-        // Si l'élément est trouvé, continuez avec la conversion en PNG.
-        htmlToImage.toPng(element)
-        .then((dataUrl) => {
-            // Traitement de l'image capturée
-            pkg.sendImageToServer(dataUrl, imageCounter++);
-            resolve(); // Résolution de la promesse après l'envoi de l'image.
-        })
-        .catch((error) => {
-            console.error('Erreur lors de la capture de l’élément : ', error);
-            reject(error); // Rejet de la promesse en cas d'erreur.
-        });
+
+        // Fonction utilitaire pour essayer différentes méthodes de capture
+        const tryCapture = (method, options) => {
+            return new Promise((resolveCapture, rejectCapture) => {
+                method(element, options)
+                .then(dataUrl => resolveCapture(dataUrl))
+                .catch(error => rejectCapture(error));
+            });
+        };
+
+        // Essayer d'abord avec html2canvas (plus fiable pour les problèmes CORS)
+        if (typeof html2canvas !== 'undefined') {
+            const canvasOptions = {
+                backgroundColor: '#ffffff',
+                scale: 1,
+                useCORS: true,
+                allowTaint: false,
+                width: element.offsetWidth,
+                height: element.offsetHeight,
+                logging: false // Désactiver les logs pour éviter le spam
+            };
+
+            tryCapture(html2canvas, canvasOptions)
+            .then(canvas => {
+                const dataUrl = canvas.toDataURL('image/png', 0.95);
+                pkg.sendImageToServer(dataUrl, imageCounter++);
+                resolve();
+            })
+            .catch(canvasError => {
+                console.warn('html2canvas a échoué, tentative avec html-to-image:', canvasError.message);
+
+                // Fallback vers html-to-image avec configuration simplifiée
+                const htmlToImageOptions = {
+                    backgroundColor: '#ffffff',
+                    quality: 0.95,
+                    skipFonts: true,
+                    filter: (domNode) => {
+                        // Exclure les éléments problématiques
+                        return !(domNode.tagName === 'LINK' && domNode.rel === 'stylesheet');
+                    }
+                };
+
+                tryCapture(htmlToImage.toPng, htmlToImageOptions)
+                .then(dataUrl => {
+                    pkg.sendImageToServer(dataUrl, imageCounter++);
+                    resolve();
+                })
+                .catch(htmlToImageError => {
+                    console.error('Les deux méthodes de capture ont échoué:', htmlToImageError);
+                    reject(htmlToImageError);
+                });
+            });
+        } else {
+            // html2canvas non disponible, utiliser html-to-image directement
+            const htmlToImageOptions = {
+                backgroundColor: '#ffffff',
+                quality: 0.95,
+                skipFonts: true
+            };
+
+            tryCapture(htmlToImage.toPng, htmlToImageOptions)
+            .then(dataUrl => {
+                pkg.sendImageToServer(dataUrl, imageCounter++);
+                resolve();
+            })
+            .catch(error => {
+                console.error('Erreur lors de la capture:', error);
+                reject(error);
+            });
+        }
     });
 }
 

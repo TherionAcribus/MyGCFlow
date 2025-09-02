@@ -48,10 +48,17 @@ def clear_pictures_directory():
     
 
 def assemble_pictures_directory(image_folder, output_video, fps=24):
-    # Obtenez la liste des fichiers d'image dans le dossier
-    image_files = [os.path.join(image_folder, img) for img in sorted(os.listdir(image_folder)) if img.endswith(".png")]
-    # Créez un clip vidéo à partir des images
-    clip = ImageSequenceClip(image_files, fps=fps)
-    # Écrivez le clip vidéo dans un fichier
-    clip.write_videofile(output_video, fps=fps)
-    return jsonify({'success': False})
+    try:
+        # Obtenez la liste des fichiers d'image dans le dossier
+        image_files = [os.path.join(image_folder, img) for img in sorted(os.listdir(image_folder)) if img.endswith(".png")]
+
+        if not image_files:
+            return jsonify({'success': False, 'message': 'Aucune image trouvée dans le dossier'})
+
+        # Créez un clip vidéo à partir des images
+        clip = ImageSequenceClip(image_files, fps=fps)
+        # Écrivez le clip vidéo dans un fichier
+        clip.write_videofile(output_video, fps=fps)
+        return jsonify({'success': True, 'message': 'Vidéo créée avec succès'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
