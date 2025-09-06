@@ -1,4 +1,6 @@
 <section>
+    <!-- Ligne 1 : Type + Taille -->
+    <div class="row">
     <div class="input-field col s6">
         <select multiple id="selectType">
             <option value="" disabled selected>{{ _("Filtrer par type de cache") }}</option>
@@ -15,26 +17,54 @@
             <option value="GPS Adventures Exhibit" selected>GPS Adventures Exhibit</option>
             <option value="Locationless (Reverse) Cache" selected>Locationless (Reverse) Cache</option>
             <option value="Virtual Cache" selected>Virtual Cache</option>
-            <option value="Webcam Cache" selected>Webcam Cache"</option>          
+            <option value="Webcam Cache" selected>Webcam Cache</option>          
         </select>        
         <label>{{ _("Type de cache") }}</label>
+        <div>
+            <a id="btnAllType" class="btn-flat waves-effect">{{ _("Tout") }}</a>
+            <a id="btnNoneType" class="btn-flat waves-effect">{{ _("Aucun") }}</a>
+        </div>
+    </div>
+
+    <div class="input-field col s6">
+        <select multiple id="selectContainer">
+            <option value="" disabled selected>{{ _("Filtrer par taille") }}</option>
+            <option value="Small" selected>Small</option>
+            <option value="Micro" selected>Micro</option>
+            <option value="Regular" selected>Regular</option>
+            <option value="Large" selected>Large</option>        
+            <option value="Other" selected>Other</option>
+            <option value="Virtual" selected>Virtual</option>
+        </select>
+        <label>{{ _("Taille") }}</label>
+        <div>
+            <a id="btnAllContainer" class="btn-flat waves-effect">{{ _("Tout") }}</a>
+            <a id="btnNoneContainer" class="btn-flat waves-effect">{{ _("Aucun") }}</a>
+        </div>
+    </div>
     </div>
 
 
+    <!-- Ligne 2 : Difficultés + Terrain -->
+    <div class="row">
     <div class="input-field col s6">
         <select multiple id="selectDifficulty">
             <option value="" disabled selected>{{ _("Filtrer par difficulté") }}</option>
             <option value="1" selected>1</option>
             <option value="1.5" selected>1.5</option>
             <option value="2" selected>2</option>
-            <option value="2" selected>2.5</option>
+            <option value="2.5" selected>2.5</option>
             <option value="3" selected>3</option>
             <option value="3.5" selected>3.5</option>
             <option value="4" selected>4</option>
             <option value="4.5" selected>4.5</option>
             <option value="5" selected>5</option>
         </select>
-        <label>{{ _("Difficulté") }}</label>
+        <label>{{ _("Difficultés") }}</label>
+        <div>
+            <a id="btnAllDifficulty" class="btn-flat waves-effect">{{ _("Tout") }}</a>
+            <a id="btnNoneDifficulty" class="btn-flat waves-effect">{{ _("Aucun") }}</a>
+        </div>
     </div>
 
 
@@ -44,7 +74,7 @@
             <option value="1" selected>1</option>
             <option value="1.5" selected>1.5</option>
             <option value="2" selected>2</option>
-            <option value="2" selected>2.5</option>
+            <option value="2.5" selected>2.5</option>
             <option value="3" selected>3</option>
             <option value="3.5" selected>3.5</option>
             <option value="4" selected>4</option>
@@ -52,25 +82,25 @@
             <option value="5" selected>5</option>
         </select>
         <label>{{ _("Terrain") }}</label>
+        <div>
+            <a id="btnAllTerrain" class="btn-flat waves-effect">{{ _("Tout") }}</a>
+            <a id="btnNoneTerrain" class="btn-flat waves-effect">{{ _("Aucun") }}</a>
+        </div>
+    </div>
     </div>
 
-    <div class="input-field col s6">
-        <input id="datePickerStart" type="text" class="datepicker">
-    </div>
-    <div class="input-field col s6">
-        <input id="datePickerEnd" type="text" class="datepicker">
+    <!-- Ligne 3 : Période (dates) sur une ligne avec titre -->
+    <div class="row">
+        <div class="col s12" style="margin-bottom: 8px;">
+            <span class="grey-text text-darken-1">🗓️ {{ _("Période (dates)") }}</span>
+        </div>
+        <div class="input-field col s6">
+            <input id="datePickerStart" type="text" class="datepicker">
+            <label for="datePickerStart" class="active">{{ _("Date de début") }}</label>
+        </div>
+        <div class="input-field col s6">
+            <input id="datePickerEnd" type="text" class="datepicker">
+            <label for="datePickerEnd" class="active">{{ _("Date de fin") }}</label>
+        </div>
     </div>
 </section>
-
-<div class="input-field col s6">
-    <select multiple id="selectContainer">
-        <option value="" disabled selected>{{ _("Filtrer par taille") }}</option>
-        <option value="Small" selected>Small</option>
-        <option value="Micro" selected>Micro</option>
-        <option value="Regular" selected>Regular</option>
-        <option value="Large" selected>Large</option>        
-        <option value="Other" selected>Other</option>
-        <option value="Virtual" selected>Virtual</option>
-    </select>
-    <label>Terrain</label>
-</div>

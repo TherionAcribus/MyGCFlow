@@ -7,6 +7,10 @@ var btnStamenTonerLight, btnStamenTonerDark;
 var cpPointCenterColor, cpPointBorderColor;
 var radioFillColorPoint, radioborderColorPoint;
 var switchIconeVectoriel, selectShape;
+// Filtres BDD - boutons d'aide
+var btnAllType, btnNoneType, btnAllDifficulty, btnNoneDifficulty, btnAllTerrain, btnNoneTerrain, btnAllContainer, btnNoneContainer;
+var debounceTimer = null;
+const DEBOUNCE_DELAY = 200; // ms
 var inputTimePerDay, cbDisplayDaysWithoutCache;
 var selectFlashMode, inputTimeFlash, inputSizeFlash, cpFlashColor;
 var cpStrokeColor, cpFillColor, cpBackgroundColor, strokeWidth;
@@ -29,22 +33,51 @@ function initUIElements() {
 
 // select BDD
 const selectType = document.getElementById('selectType');
-    if (selectType) selectType.addEventListener('change', changeSelection);
+    if (selectType) selectType.addEventListener('change', onSelectionChangedDebounced);
 
 const selectTerrain = document.getElementById('selectTerrain');
-    if (selectTerrain) selectTerrain.addEventListener('change', changeSelection);
+    if (selectTerrain) selectTerrain.addEventListener('change', onSelectionChangedDebounced);
 
 const selectDifficulty = document.getElementById('selectDifficulty');
-    if (selectDifficulty) selectDifficulty.addEventListener('change', changeSelection);
+    if (selectDifficulty) selectDifficulty.addEventListener('change', onSelectionChangedDebounced);
 
 const selectContainer = document.getElementById('selectContainer');
-    if (selectContainer) selectContainer.addEventListener('change', changeSelection);
+    if (selectContainer) selectContainer.addEventListener('change', onSelectionChangedDebounced);
 
 // datepicker
 const datePickerStart = document.getElementById('datePickerStart');
 const datePickerEnd = document.getElementById('datePickerEnd');
-    if (datePickerStart) datePickerStart.addEventListener('change', changeSelection);
-    if (datePickerEnd) datePickerEnd.addEventListener('change', changeSelection);
+    if (datePickerStart) datePickerStart.addEventListener('change', onSelectionChangedDebounced);
+    if (datePickerEnd) datePickerEnd.addEventListener('change', onSelectionChangedDebounced);
+
+// Boutons Tout/Aucun
+    btnAllType = document.getElementById('btnAllType');
+    btnNoneType = document.getElementById('btnNoneType');
+    if (btnAllType) btnAllType.addEventListener('click', () => selectAllOptions(selectType));
+    if (btnNoneType) btnNoneType.addEventListener('click', () => deselectAllOptions(selectType));
+
+    btnAllDifficulty = document.getElementById('btnAllDifficulty');
+    btnNoneDifficulty = document.getElementById('btnNoneDifficulty');
+    if (btnAllDifficulty) btnAllDifficulty.addEventListener('click', () => selectAllOptions(selectDifficulty));
+    if (btnNoneDifficulty) btnNoneDifficulty.addEventListener('click', () => deselectAllOptions(selectDifficulty));
+
+    btnAllTerrain = document.getElementById('btnAllTerrain');
+    btnNoneTerrain = document.getElementById('btnNoneTerrain');
+    if (btnAllTerrain) btnAllTerrain.addEventListener('click', () => selectAllOptions(selectTerrain));
+    if (btnNoneTerrain) btnNoneTerrain.addEventListener('click', () => deselectAllOptions(selectTerrain));
+
+    btnAllContainer = document.getElementById('btnAllContainer');
+    btnNoneContainer = document.getElementById('btnNoneContainer');
+    if (btnAllContainer) btnAllContainer.addEventListener('click', () => selectAllOptions(selectContainer));
+    if (btnNoneContainer) btnNoneContainer.addEventListener('click', () => deselectAllOptions(selectContainer));
+
+    // Initialiser Materialize Selects
+    if (selectType) M.FormSelect.init(selectType);
+    if (selectDifficulty) M.FormSelect.init(selectDifficulty);
+    if (selectTerrain) M.FormSelect.init(selectTerrain);
+    if (selectContainer) M.FormSelect.init(selectContainer);
+    // Restaurer la sélection si existante
+    restoreSelectedValues();
 
 // MENU CARTES
 
@@ -473,18 +506,75 @@ function formatDateForPickers(date) {
     return new Date(date).toLocaleDateString('fr-CA', options);
 }
 
-// si on modifie un élement de la selection, on filtre et rafraichit
-function changeSelection(event){
-    console.log(event.target)
-    let selectedValues = {};
-    selectedValues["type"] = Array.from(selectType.selectedOptions).map(option => option.value);
-    selectedValues["terrain"] = Array.from(selectTerrain.selectedOptions).map(option => option.value);
-    selectedValues["difficulty"] = Array.from(selectDifficulty.selectedOptions).map(option => option.value);
-    selectedValues["container"] = Array.from(selectContainer.selectedOptions).map(option => option.value);
-    selectedValues["dates"] = {startDate: document.querySelector('#datePickerStart').value, endDate: document.querySelector('#datePickerEnd').value};
+// Debounce et wrapper
+function onSelectionChangedDebounced(){
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(applySelectionChange, DEBOUNCE_DELAY);
+}
 
+function applySelectionChange(){
+    const selectedValues = collectSelectedValues();
+    persistSelectedValues(selectedValues);
     pkg.changeSelect(selectedValues, pkg.options);
 }
+
+function collectSelectedValues(){
+    let selectedValues = {};
+    selectedValues["type"] = selectType ? Array.from(selectType.selectedOptions).map(option => option.value) : [];
+    selectedValues["terrain"] = selectTerrain ? Array.from(selectTerrain.selectedOptions).map(option => option.value) : [];
+    selectedValues["difficulty"] = selectDifficulty ? Array.from(selectDifficulty.selectedOptions).map(option => option.value) : [];
+    selectedValues["container"] = selectContainer ? Array.from(selectContainer.selectedOptions).map(option => option.value) : [];
+    selectedValues["dates"] = {startDate: document.querySelector('#datePickerStart')?.value, endDate: document.querySelector('#datePickerEnd')?.value};
+    return selectedValues;
+}
+
+function persistSelectedValues(values){
+    try {
+        localStorage.setItem('filtersSelection', JSON.stringify(values));
+    } catch(e) { console.warn('Persist filters error', e); }
+}
+
+function restoreSelectedValues(){
+    try {
+        const raw = localStorage.getItem('filtersSelection');
+        if (!raw) return;
+        const values = JSON.parse(raw);
+        setSelectValues(selectType, values.type);
+        setSelectValues(selectDifficulty, values.difficulty);
+        setSelectValues(selectTerrain, values.terrain);
+        setSelectValues(selectContainer, values.container);
+        // dates
+        const start = document.querySelector('#datePickerStart');
+        const end = document.querySelector('#datePickerEnd');
+        if (start && values.dates?.startDate) start.value = values.dates.startDate;
+        if (end && values.dates?.endDate) end.value = values.dates.endDate;
+        // refresh UI (Materialize)
+        if (selectType) M.FormSelect.init(selectType);
+        if (selectDifficulty) M.FormSelect.init(selectDifficulty);
+        if (selectTerrain) M.FormSelect.init(selectTerrain);
+        if (selectContainer) M.FormSelect.init(selectContainer);
+        updateFiltersSummary(values);
+    } catch(e) { console.warn('Restore filters error', e); }
+}
+
+function setSelectValues(selectEl, values){
+    if (!selectEl || !values) return;
+    Array.from(selectEl.options).forEach(opt => { opt.selected = values.includes(opt.value); });
+}
+
+function selectAllOptions(selectEl){
+    if (!selectEl) return;
+    Array.from(selectEl.options).forEach(opt => { if (!opt.disabled) opt.selected = true; });
+    onSelectionChangedDebounced();
+}
+
+function deselectAllOptions(selectEl){
+    if (!selectEl) return;
+    Array.from(selectEl.options).forEach(opt => { opt.selected = false; });
+    onSelectionChangedDebounced();
+}
+
+// (Résumé des filtres retiré)
 
 
 
