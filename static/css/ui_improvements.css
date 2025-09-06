@@ -669,3 +669,9 @@ html body.fullscreen-mode main #mapWithFrames #infosFrame span {
     background: rgba(76, 175, 80, 0.12);
     border-radius: 6px;
 }
+
+/* Compteur de sélection */
+.filters-counter {
+    margin-top: 8px;
+    font-weight: 500;
+}

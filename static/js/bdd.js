@@ -6,6 +6,7 @@ btnuploadBddForm.addEventListener('submit', uploadBddRequest);
 
 export let metadata;
 export let json_data;
+let totalCaches = 0; // total initial (toutes caches de la BDD)
 // Index pré-calculé des points par date pour optimiser l'animation
 export let pointsByDate = new Map();
 
@@ -182,6 +183,9 @@ export function readBdd(){
         json_data = data.geojson;
         metadata = data.metadata;
 
+        // Mémoriser le total de caches initial
+        totalCaches = metadata.numberOfCaches || (data.geojson?.features?.length || 0);
+
         // Pré-calcul de l'index des points par date pour optimiser l'animation
         buildPointsByDateIndex(data.geojson.features);
 
@@ -196,6 +200,9 @@ export function readBdd(){
         // mise à jour des options en fonction de la BDD (dates début et fin)
         updateOptionsValues(metadata);
         pkg.addVector(data.geojson);
+
+        // Mettre à jour le compteur : sélection = total au chargement initial
+        updateFiltersCounter(metadata.numberOfCaches || 0, totalCaches);
     })
     .catch(error => console.error('Error:', error));
 }
@@ -239,6 +246,18 @@ export function changeSelect(selectedValues, optionValues) {
         // MAJ des frames Infos
         pkg.updateInfosFrameAfterReadBdd(metadata);
         pkg.refreshPoints(optionValues);
+
+        // Mettre à jour le compteur : sélection courante / total initial
+        updateFiltersCounter(metadata.numberOfCaches || (data.geojson?.features?.length || 0), totalCaches);
     })
     .catch(error => console.error('Error:', error));
+}
+
+function updateFiltersCounter(selected, total){
+    try {
+        const el = document.getElementById('filtersCounter');
+        if (el) {
+            el.textContent = `Sélection: ${selected} / ${total}`;
+        }
+    } catch(e) { console.warn('updateFiltersCounter error', e); }
 }
