@@ -15,6 +15,14 @@ var inputTitleCss, inputInfosCss, btnTitleCss, btnInfosCss;
 var spanNbCaches, spanCurrentDate;
 var selectLanguage, selectCheckVersionOnline, buttonCheckVersion;
 
+// États de l'application
+var isAnimationRunning = false;
+var isRecording = false;
+var isFullscreen = false;
+
+// État visuel du bouton fullscreen
+var fullscreenButtonActive = false;
+
 // Initialisation des éléments UI avec vérification d'existence
 function initUIElements() {
 // MENU BDD
@@ -163,8 +171,8 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     if (btnPauseAnimation) btnPauseAnimation.addEventListener('click', toggleButtonAnimationPauseAndRestart);
 
     // Contrôles plein écran
-    const cbFullscreenMode = document.getElementById('cbFullscreenMode');
-    if (cbFullscreenMode) cbFullscreenMode.addEventListener('change', toggleFullscreenMode);
+    const btnFullscreenMode = document.getElementById('btnFullscreenMode');
+    if (btnFullscreenMode) btnFullscreenMode.addEventListener('click', toggleFullscreenMode);
 
     const btnStartBar = document.getElementById('btnStartBar');
     if (btnStartBar) btnStartBar.addEventListener('click', () => {
@@ -197,6 +205,9 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     showStartRecordButtons();
     console.log("Appel updateControlBar depuis initUIElements");
     updateControlBar();
+
+    // Initialiser l'apparence du bouton fullscreen
+    updateFullscreenButtonAppearance();
 
     // FLASH
     // select pour le mode de flash
@@ -1066,12 +1077,15 @@ document.addEventListener('htmx:afterSwap', function(event) {
 
 // Gestion du mode plein écran
 function toggleFullscreenMode() {
-    const cbFullscreenMode = document.getElementById('cbFullscreenMode');
+    const btnFullscreenMode = document.getElementById('btnFullscreenMode');
     const mainElement = document.querySelector('main');
     const controlBar = document.getElementById('controlBar');
     const mapElement = document.getElementById('map');
 
-    if (cbFullscreenMode.checked) {
+    // Basculer l'état
+    fullscreenButtonActive = !fullscreenButtonActive;
+
+    if (fullscreenButtonActive) {
         // Activer le mode plein écran
         mainElement.classList.add('fullscreen-mode');
         controlBar.style.display = 'flex';
@@ -1107,6 +1121,9 @@ function toggleFullscreenMode() {
         exitFullscreenMode();
     }
 
+    // Mettre à jour l'apparence du bouton
+    updateFullscreenButtonAppearance();
+
     // Mettre à jour la barre latérale
     updateControlBar();
 }
@@ -1114,13 +1131,11 @@ function toggleFullscreenMode() {
 function exitFullscreenMode() {
     const mainElement = document.querySelector('main');
     const controlBar = document.getElementById('controlBar');
-    const cbFullscreenMode = document.getElementById('cbFullscreenMode');
     const mapElement = document.getElementById('map');
 
     // Désactiver le mode plein écran
     mainElement.classList.remove('fullscreen-mode');
     controlBar.style.display = 'none';
-    cbFullscreenMode.checked = false;
 
     // Restaurer la taille normale de la carte
     mapElement.style.height = '600px';
@@ -1130,6 +1145,27 @@ function exitFullscreenMode() {
     setTimeout(() => {
         window.dispatchEvent(new Event('resize'));
     }, 100);
+}
+
+// Mettre à jour l'apparence du bouton fullscreen
+function updateFullscreenButtonAppearance() {
+    const btnFullscreenMode = document.getElementById('btnFullscreenMode');
+    if (!btnFullscreenMode) return;
+
+    const icon = btnFullscreenMode.querySelector('i');
+    if (fullscreenButtonActive) {
+        // Mode plein écran actif
+        btnFullscreenMode.classList.remove('grey');
+        btnFullscreenMode.classList.add('blue');
+        if (icon) icon.textContent = 'fullscreen_exit';
+        btnFullscreenMode.title = 'Quitter le plein écran';
+    } else {
+        // Mode normal
+        btnFullscreenMode.classList.remove('blue');
+        btnFullscreenMode.classList.add('grey');
+        if (icon) icon.textContent = 'fullscreen';
+        btnFullscreenMode.title = 'Passer en plein écran';
+    }
 }
 
 function updateControlBar() {
@@ -1250,10 +1286,10 @@ function updateControlBar() {
 // Bouton de bascule plein écran depuis la barre latérale
 function toggleFullscreenFromButton(){
     const mainElement = document.querySelector('main');
-    const cbFullscreenMode = document.getElementById('cbFullscreenMode');
     const isFs = mainElement.classList.contains('fullscreen-mode');
-    if (cbFullscreenMode) {
-        cbFullscreenMode.checked = !isFs;
+    // Si on est déjà en fullscreen, on veut quitter
+    if (isFs) {
+        fullscreenButtonActive = true; // Pour forcer la bascule
     }
     toggleFullscreenMode();
 }
