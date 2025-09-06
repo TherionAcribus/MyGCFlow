@@ -330,12 +330,53 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     if (buttonCheckVersion) buttonCheckVersion.addEventListener('click', pkg.checkVersion);
 }
 
+// Gestion de la mémorisation des onglets
+function initTabMemory() {
+    // Vérifier s'il y a un hash dans l'URL (priorité sur localStorage)
+    const urlHash = window.location.hash.substring(1); // Enlever le #
+    let activeTab = urlHash || localStorage.getItem('activeTab') || 'data'; // Défaut sur 'data'
+
+    // Vérifier que l'onglet existe
+    const tabElement = document.querySelector(`a[href="#${activeTab}"]`);
+    if (tabElement) {
+        // Retirer la classe active de tous les onglets
+        document.querySelectorAll('.tabs .tab a').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        // Ajouter la classe active à l'onglet sélectionné
+        tabElement.classList.add('active');
+
+        // Activer l'onglet dans Materialize
+        const tabsInstance = M.Tabs.getInstance(document.querySelector('.tabs'));
+        if (tabsInstance) {
+            tabsInstance.select(activeTab);
+        }
+
+        // Sauvegarder dans localStorage si ce n'était pas déjà fait
+        if (!urlHash) {
+            localStorage.setItem('activeTab', activeTab);
+        }
+    }
+
+    // Gérer le changement d'onglet
+    document.querySelectorAll('.tabs .tab a').forEach(tab => {
+        tab.addEventListener('click', function() {
+            const tabId = this.getAttribute('href').substring(1); // Enlever le #
+            localStorage.setItem('activeTab', tabId);
+        });
+    });
+}
+
 // Initialiser les éléments UI quand le DOM est chargé
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initUIElements);
+    document.addEventListener('DOMContentLoaded', function() {
+        initUIElements();
+        initTabMemory();
+    });
 } else {
     // DOM déjà chargé
     initUIElements();
+    initTabMemory();
 }
 
 
@@ -489,9 +530,16 @@ function changeOptionsValues() {
         }
 
         if (confirm(confirmMessage)) {
-            // Recharger la page avec le paramètre de langue
+            // Recharger la page avec le paramètre de langue et préserver l'onglet actif
             const url = new URL(window.location);
             url.searchParams.set('lang', newLanguage);
+
+            // Récupérer l'onglet actif actuel et l'ajouter à l'URL
+            const activeTab = localStorage.getItem('activeTab');
+            if (activeTab && activeTab !== 'data') { // 'data' est l'onglet par défaut
+                url.hash = activeTab;
+            }
+
             window.location.href = url.toString();
         }
     }
