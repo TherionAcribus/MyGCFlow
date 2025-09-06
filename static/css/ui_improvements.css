@@ -653,3 +653,19 @@ html body.fullscreen-mode main #mapWithFrames #infosFrame span {
 }
 
 /* (Styles des chips retirés) */
+/* Infos filtres */
+.filter-info {
+    margin-top: 6px;
+    font-size: 0.9rem;
+    color: #424242;
+}
+
+.filter-info.filter-info-all {
+    font-weight: 600;
+    color: #2e7d32; /* vert discret pour TOUT */
+}
+
+.btn-flat.filter-all-active {
+    background: rgba(76, 175, 80, 0.12);
+    border-radius: 6px;
+}

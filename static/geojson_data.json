@@ -158388,20 +158388,6 @@
             "geometry": {
                 "type": "Point",
                 "coordinates": [
-                    6.075167,
-                    49.2358
-                ]
-            },
-            "properties": {
-                "date_find": "2020-08-01",
-                "cache_type": "Community Celebration Event"
-            }
-        },
-        {
-            "type": "Feature",
-            "geometry": {
-                "type": "Point",
-                "coordinates": [
                     6.240017,
                     49.4679
                 ]
@@ -158913,20 +158899,6 @@
             "properties": {
                 "date_find": "2020-08-29",
                 "cache_type": "Wherigo Cache"
-            }
-        },
-        {
-            "type": "Feature",
-            "geometry": {
-                "type": "Point",
-                "coordinates": [
-                    6.157,
-                    49.308167
-                ]
-            },
-            "properties": {
-                "date_find": "2020-08-30",
-                "cache_type": "Community Celebration Event"
             }
         },
         {
@@ -191064,34 +191036,6 @@
             "geometry": {
                 "type": "Point",
                 "coordinates": [
-                    14.41315,
-                    50.047583
-                ]
-            },
-            "properties": {
-                "date_find": "2022-05-14",
-                "cache_type": "GPS Adventures Exhibit"
-            }
-        },
-        {
-            "type": "Feature",
-            "geometry": {
-                "type": "Point",
-                "coordinates": [
-                    14.4137,
-                    50.049717
-                ]
-            },
-            "properties": {
-                "date_find": "2022-05-14",
-                "cache_type": "Community Celebration Event"
-            }
-        },
-        {
-            "type": "Feature",
-            "geometry": {
-                "type": "Point",
-                "coordinates": [
                     14.413333,
                     50.048333
                 ]
@@ -191225,20 +191169,6 @@
             "properties": {
                 "date_find": "2022-05-14",
                 "cache_type": "Traditional Cache"
-            }
-        },
-        {
-            "type": "Feature",
-            "geometry": {
-                "type": "Point",
-                "coordinates": [
-                    -122.352083,
-                    47.621833
-                ]
-            },
-            "properties": {
-                "date_find": "2022-05-14",
-                "cache_type": "Locationless (Reverse) Cache"
             }
         },
         {
@@ -195292,20 +195222,6 @@
             "geometry": {
                 "type": "Point",
                 "coordinates": [
-                    2.58455,
-                    50.4361
-                ]
-            },
-            "properties": {
-                "date_find": "2022-07-16",
-                "cache_type": "GPS Adventures Exhibit"
-            }
-        },
-        {
-            "type": "Feature",
-            "geometry": {
-                "type": "Point",
-                "coordinates": [
                     2.585833,
                     50.435333
                 ]
@@ -195999,20 +195915,6 @@
             "properties": {
                 "date_find": "2022-07-16",
                 "cache_type": "Traditional Cache"
-            }
-        },
-        {
-            "type": "Feature",
-            "geometry": {
-                "type": "Point",
-                "coordinates": [
-                    2.583733,
-                    50.436433
-                ]
-            },
-            "properties": {
-                "date_find": "2022-07-17",
-                "cache_type": "Community Celebration Event"
             }
         },
         {
@@ -204147,20 +204049,6 @@
             "properties": {
                 "date_find": "2023-02-19",
                 "cache_type": "Unknown Cache"
-            }
-        },
-        {
-            "type": "Feature",
-            "geometry": {
-                "type": "Point",
-                "coordinates": [
-                    -122.3525,
-                    47.621833
-                ]
-            },
-            "properties": {
-                "date_find": "2023-02-28",
-                "cache_type": "Locationless (Reverse) Cache"
             }
         },
         {
@@ -231188,20 +231076,6 @@
             "geometry": {
                 "type": "Point",
                 "coordinates": [
-                    6.091667,
-                    49.236667
-                ]
-            },
-            "properties": {
-                "date_find": "2025-01-01",
-                "cache_type": "Community Celebration Event"
-            }
-        },
-        {
-            "type": "Feature",
-            "geometry": {
-                "type": "Point",
-                "coordinates": [
                     6.092083,
                     49.346333
                 ]
@@ -241534,20 +241408,6 @@
             "geometry": {
                 "type": "Point",
                 "coordinates": [
-                    4.337267,
-                    48.976583
-                ]
-            },
-            "properties": {
-                "date_find": "2025-05-31",
-                "cache_type": "GPS Adventures Exhibit"
-            }
-        },
-        {
-            "type": "Feature",
-            "geometry": {
-                "type": "Point",
-                "coordinates": [
                     4.393283,
                     48.90525
                 ]
@@ -245531,20 +245391,6 @@
             "properties": {
                 "date_find": "2025-06-27",
                 "cache_type": "Traditional Cache"
-            }
-        },
-        {
-            "type": "Feature",
-            "geometry": {
-                "type": "Point",
-                "coordinates": [
-                    5.993,
-                    49.8775
-                ]
-            },
-            "properties": {
-                "date_find": "2025-06-28",
-                "cache_type": "Community Celebration Event"
             }
         },
         {

@@ -9,6 +9,7 @@ var radioFillColorPoint, radioborderColorPoint;
 var switchIconeVectoriel, selectShape;
 // Filtres BDD - boutons d'aide
 var btnAllType, btnNoneType, btnAllDifficulty, btnNoneDifficulty, btnAllTerrain, btnNoneTerrain, btnAllContainer, btnNoneContainer;
+var infoType, infoDifficulty, infoTerrain, infoContainer;
 var debounceTimer = null;
 const DEBOUNCE_DELAY = 200; // ms
 var inputTimePerDay, cbDisplayDaysWithoutCache;
@@ -71,6 +72,12 @@ const datePickerEnd = document.getElementById('datePickerEnd');
     if (btnAllContainer) btnAllContainer.addEventListener('click', () => selectAllOptions(selectContainer));
     if (btnNoneContainer) btnNoneContainer.addEventListener('click', () => deselectAllOptions(selectContainer));
 
+    // Zones d'information sous chaque filtre
+    infoType = document.getElementById('infoType');
+    infoDifficulty = document.getElementById('infoDifficulty');
+    infoTerrain = document.getElementById('infoTerrain');
+    infoContainer = document.getElementById('infoContainer');
+
     // Initialiser Materialize Selects
     if (selectType) M.FormSelect.init(selectType);
     if (selectDifficulty) M.FormSelect.init(selectDifficulty);
@@ -78,6 +85,9 @@ const datePickerEnd = document.getElementById('datePickerEnd');
     if (selectContainer) M.FormSelect.init(selectContainer);
     // Restaurer la sélection si existante
     restoreSelectedValues();
+
+    // Première mise à jour des infos
+    updateFilterInfos();
 
 // MENU CARTES
 
@@ -515,6 +525,7 @@ function onSelectionChangedDebounced(){
 function applySelectionChange(){
     const selectedValues = collectSelectedValues();
     persistSelectedValues(selectedValues);
+    updateFilterInfos();
     pkg.changeSelect(selectedValues, pkg.options);
 }
 
@@ -553,7 +564,7 @@ function restoreSelectedValues(){
         if (selectDifficulty) M.FormSelect.init(selectDifficulty);
         if (selectTerrain) M.FormSelect.init(selectTerrain);
         if (selectContainer) M.FormSelect.init(selectContainer);
-        updateFiltersSummary(values);
+        updateFilterInfos();
     } catch(e) { console.warn('Restore filters error', e); }
 }
 
@@ -566,15 +577,49 @@ function selectAllOptions(selectEl){
     if (!selectEl) return;
     Array.from(selectEl.options).forEach(opt => { if (!opt.disabled) opt.selected = true; });
     onSelectionChangedDebounced();
+    updateFilterInfos();
 }
 
 function deselectAllOptions(selectEl){
     if (!selectEl) return;
     Array.from(selectEl.options).forEach(opt => { opt.selected = false; });
     onSelectionChangedDebounced();
+    updateFilterInfos();
 }
 
-// (Résumé des filtres retiré)
+// Mise à jour des informations sous chaque filtre et surbrillance "TOUT"
+function updateFilterInfos(){
+    updateFilterInfoFor(selectType, infoType, btnAllType);
+    updateFilterInfoFor(selectDifficulty, infoDifficulty, btnAllDifficulty);
+    updateFilterInfoFor(selectTerrain, infoTerrain, btnAllTerrain);
+    updateFilterInfoFor(selectContainer, infoContainer, btnAllContainer);
+}
+
+function updateFilterInfoFor(selectEl, infoEl, btnAllEl){
+    if (!selectEl || !infoEl) return;
+    const all = areAllSelected(selectEl);
+    if (all) {
+        infoEl.textContent = 'TOUT';
+        infoEl.classList.add('filter-info-all');
+        if (btnAllEl) btnAllEl.classList.add('filter-all-active');
+    } else {
+        const text = getSelectedValuesText(selectEl);
+        infoEl.textContent = text.length ? text : 'Aucun';
+        infoEl.classList.remove('filter-info-all');
+        if (btnAllEl) btnAllEl.classList.remove('filter-all-active');
+    }
+}
+
+function areAllSelected(selectEl){
+    const options = Array.from(selectEl.options).filter(opt => !opt.disabled && opt.value !== '');
+    const selected = options.filter(opt => opt.selected);
+    return options.length > 0 && selected.length === options.length;
+}
+
+function getSelectedValuesText(selectEl){
+    const values = Array.from(selectEl.selectedOptions).map(o => o.textContent.trim());
+    return values.join(', ');
+}
 
 
 
