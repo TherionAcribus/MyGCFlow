@@ -1141,13 +1141,10 @@ function toggleButtonAnimationPauseAndRestart(reinitialisation = false){ {
 // recupère tous les changements liés aux points
 function changeAnimationValues(event){
     pkg.options.animation.displayDaysWithoutCache = cbDisplayDaysWithoutCache.checked;
-    pkg.options.animation.timePerDay = inputTimePerDay.value;
-    // mise à jour du nombre de chiffre pour l'enregistrement des images
-    pkg.updateInfosForPictures();
-
 
     // mise à jour du temps de l'autre champs
     if (event.target.id == 'inputTimePerDay'){
+        pkg.options.animation.timePerDay = inputTimePerDay.value;
         updateTotalTime();
     } else if (event.target.id == 'inputTotalTime'){
         updateTimePerDay();
@@ -1155,7 +1152,6 @@ function changeAnimationValues(event){
 
     // mise à jour du nombre de chiffre pour l'enregistrement des images
     pkg.updateInfosForPictures();
-
 }
 
 export function updateAnimationMenuAfterReadBdd(metadata){
@@ -1176,6 +1172,10 @@ function updateTimePerDay(){
     const timePerDay = Math.floor(inputTotalTime.value / pkg.metadata.deltaDays * 60 * 1000) ;
     pkg.options.animation.timePerDay = timePerDay;
     inputTimePerDay.value = timePerDay;
+    // Mettre à jour le temps total en millisecondes pour les calculs futurs
+    pkg.options.record.totalTimeInMilliSec = inputTotalTime.value * 60 * 1000;
+    // Mettre à jour l'affichage des minutes/secondes
+    updateToMinutesAndSeconds();
 }
 
 function updateToMinutesAndSeconds(){
