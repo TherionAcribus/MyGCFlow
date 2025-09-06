@@ -78,8 +78,6 @@ let stamenTonerLayer;
 let vectorTileLayer;
 // couche de points
 let vectorLayer;
-// couche de bordures (webGL)
-let vectorLayerBorder;
 let features;
 // couleurs GC par défaut
 let defaultGcColors;
@@ -384,7 +382,7 @@ function getStyle2D(feature, pointOptions) {
 
     // Veut on une bordure ?
     let stroke = null;
-    if (pointOptions.border.mode != "none") {
+    if (pointOptions.border.mode != "none" && parseInt(pointOptions.border.size) > 0) {
 
         let borderSize = parseInt(pointOptions.border.size) / 5;
 
@@ -413,7 +411,9 @@ function getStyle2D(feature, pointOptions) {
 function displayWebGLPoints(features, pointOptions) {
 
     let pointSize = parseInt(pointOptions.center.size)
-    let borderSize = pointSize + parseInt(pointOptions.border.size) / 5;
+    let borderSizeValue = parseInt(pointOptions.border.size)
+    let borderWidth = borderSizeValue / 5; // Épaisseur réelle de la bordure
+    let borderSize = pointSize + borderWidth; // Rayon total pour le layer de bordure
     let borderColor;
 
     if (pointOptions.border.mode == "gc") {
@@ -457,43 +457,52 @@ function displayWebGLPoints(features, pointOptions) {
         };
     } else {
         if (pointOptions.shape == "circle") {
-            pointStyle = {
-            'circle-radius': pointSize,
-            'circle-fill-color': fillColor || '#FF0000', // Couleur rouge par défaut
-            'circle-stroke-color': '#000000', // Bordure noire
-            'circle-stroke-width': 2,
-            'circle-rotate-with-view': false,
-            'circle-displacement': [0, 0],
-            'circle-opacity': 1
-            }
-
-            pointStyleBorder = {
-                'circle-radius': borderSize,
-                'circle-fill-color': borderColor,
-                'circle-rotate-with-view': false,
-                'circle-displacement': [0, 0],
-                'circle-opacity': 1
+            // Si taille bordure = 0, pas de bordure du tout
+            if (borderSizeValue == 0) {
+                pointStyle = {
+                    'circle-radius': pointSize,
+                    'circle-fill-color': fillColor || '#FF0000',
+                    'circle-rotate-with-view': false,
+                    'circle-displacement': [0, 0],
+                    'circle-opacity': 1
+                }
+            } else {
+                // Bordure avec épaisseur variable
+                pointStyle = {
+                    'circle-radius': pointSize,
+                    'circle-fill-color': fillColor || '#FF0000',
+                    'circle-stroke-color': borderColor || '#000000',
+                    'circle-stroke-width': borderWidth,
+                    'circle-rotate-with-view': false,
+                    'circle-displacement': [0, 0],
+                    'circle-opacity': 1
+                }
             }
 
 
     } else if (pointOptions.shape == "triangle") {
-
-        pointStyle = {
-            'shape-points': 3,
-            'shape-radius': pointSize,
-            'shape-fill-color': fillColor,
-            'shape-rotate-with-view': true,
+        // Si taille bordure = 0, pas de bordure du tout
+        if (borderSizeValue == 0) {
+            pointStyle = {
+                'shape-points': 3,
+                'shape-radius': pointSize,
+                'shape-fill-color': fillColor,
+                'shape-rotate-with-view': true,
             }
-
-        pointStyleBorder = {
-            'shape-points': 3,
-            'shape-radius': borderSize,
-            'shape-fill-color': borderColor,
-            'shape-rotate-with-view': true,
+        } else {
+            // Bordure avec épaisseur variable
+            pointStyle = {
+                'shape-points': 3,
+                'shape-radius': pointSize,
+                'shape-fill-color': fillColor,
+                'shape-stroke-color': borderColor || '#000000',
+                'shape-stroke-width': borderWidth,
+                'shape-rotate-with-view': true,
             }
         }
+    }
 
-    }   
+    }
 
 
     // Assurez-vous que vectorSource et les layers sont initialisés
@@ -502,14 +511,7 @@ function displayWebGLPoints(features, pointOptions) {
             wrapX: true,
         });
 
-        if (pointOptions.mode == "vectoriel") {
-            vectorLayerBorder = new ol.layer.WebGLPoints({
-                source: window.vectorSource,
-                style: pointStyleBorder,
-                zIndex: 1000, // Z-index élevé pour visibilité
-            });
-            map.addLayer(vectorLayerBorder);
-        }
+        // Plus besoin de layer séparé pour la bordure - elle est intégrée dans pointStyle
 
         vectorLayer = new ol.layer.WebGLPoints({
             source: window.vectorSource,
@@ -519,11 +521,7 @@ function displayWebGLPoints(features, pointOptions) {
         map.addLayer(vectorLayer);
     }
 
-    // Vérifier que les layers existent toujours sur la carte (ils peuvent avoir été supprimés)
-    if (pointOptions.mode == "vectoriel" && vectorLayerBorder &&
-        !map.getLayers().getArray().includes(vectorLayerBorder)) {
-        map.addLayer(vectorLayerBorder);
-    }
+    // Vérifier que le layer existe toujours sur la carte (il peut avoir été supprimé)
     if (vectorLayer && !map.getLayers().getArray().includes(vectorLayer)) {
         map.addLayer(vectorLayer);
     }
@@ -561,7 +559,6 @@ function clearMap(){
     }
     // Réinitialiser les références aux layers pour forcer leur recréation
     vectorLayer = undefined;
-    vectorLayerBorder = undefined;
 
     // Supprimer les autres layers si nécessaire
     if (window.borderLayer) {
