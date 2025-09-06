@@ -9,6 +9,9 @@ export let json_data;
 let totalCaches = 0; // total initial (toutes caches de la BDD)
 // Index pré-calculé des points par date pour optimiser l'animation
 export let pointsByDate = new Map();
+// Toasts de chargement
+let readLoadingToast = null;
+let filterLoadingToast = null;
 
 // TODO Gestion des erreurs
 // CHoix de la BDD 
@@ -177,6 +180,7 @@ function buildPointsByDateIndex(features) {
 }
 
 export function readBdd(){
+    try { readLoadingToast = pkg.showLoadingToast("Chargement de l'application...", "Chargement"); } catch(e) {}
     fetch(`${CONFIG.BASE_URL}/get_geojson_points`)
     .then(response => response.json())
     .then(data => {
@@ -203,8 +207,9 @@ export function readBdd(){
 
         // Mettre à jour le compteur : sélection = total au chargement initial
         updateFiltersCounter(metadata.numberOfCaches || 0, totalCaches);
+        try { if (readLoadingToast) { pkg.hideToast(readLoadingToast); readLoadingToast = null; } } catch(e) {}
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => { console.error('Error:', error); try { if (readLoadingToast) { pkg.hideToast(readLoadingToast); readLoadingToast = null; } } catch(e) {} });
 }
 
 function dateStrToDate(){
@@ -223,6 +228,7 @@ export function updateOptionsValues(metadata){
 
 // Si on change le filtre de la BDD on refait une requete
 export function changeSelect(selectedValues, optionValues) {
+    try { if (filterLoadingToast) { pkg.hideToast(filterLoadingToast); filterLoadingToast = null; } filterLoadingToast = pkg.showLoadingToast("Filtrage des caches...", "Filtrage"); } catch(e) {}
     fetch(`${CONFIG.BASE_URL}/filter_caches`, {
         method: 'POST',
         headers: {
@@ -249,8 +255,9 @@ export function changeSelect(selectedValues, optionValues) {
 
         // Mettre à jour le compteur : sélection courante / total initial
         updateFiltersCounter(metadata.numberOfCaches || (data.geojson?.features?.length || 0), totalCaches);
+        try { if (filterLoadingToast) { pkg.hideToast(filterLoadingToast); filterLoadingToast = null; } } catch(e) {}
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => { console.error('Error:', error); try { if (filterLoadingToast) { pkg.hideToast(filterLoadingToast); filterLoadingToast = null; } } catch(e) {} });
 }
 
 function updateFiltersCounter(selected, total){
