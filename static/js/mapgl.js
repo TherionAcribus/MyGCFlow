@@ -461,13 +461,13 @@ function displayWebGLPoints(features, pointOptions) {
         if (pointOptions.shape == "circle") {
             // Si taille bordure = 0 OU mode = none, pas de bordure du tout
             if (borderSizeValue == 0 || pointOptions.border.mode == "none") {
-                pointStyle = {
-                    'circle-radius': pointSize,
+            pointStyle = {
+            'circle-radius': pointSize,
                     'circle-fill-color': fillColor || '#FF0000',
-                    'circle-rotate-with-view': false,
-                    'circle-displacement': [0, 0],
-                    'circle-opacity': 1
-                }
+            'circle-rotate-with-view': false,
+            'circle-displacement': [0, 0],
+            'circle-opacity': 1
+            }
             } else {
                 // Bordure avec épaisseur variable
                 pointStyle = {
@@ -475,9 +475,9 @@ function displayWebGLPoints(features, pointOptions) {
                     'circle-fill-color': fillColor || '#FF0000',
                     'circle-stroke-color': borderColor || '#000000',
                     'circle-stroke-width': borderWidth,
-                    'circle-rotate-with-view': false,
-                    'circle-displacement': [0, 0],
-                    'circle-opacity': 1
+                'circle-rotate-with-view': false,
+                'circle-displacement': [0, 0],
+                'circle-opacity': 1
                 }
             }
 
@@ -485,26 +485,26 @@ function displayWebGLPoints(features, pointOptions) {
     } else if (pointOptions.shape == "triangle") {
         // Si taille bordure = 0 OU mode = none, pas de bordure du tout
         if (borderSizeValue == 0 || pointOptions.border.mode == "none") {
-            pointStyle = {
-                'shape-points': 3,
-                'shape-radius': pointSize,
-                'shape-fill-color': fillColor,
-                'shape-rotate-with-view': true,
+        pointStyle = {
+            'shape-points': 3,
+            'shape-radius': pointSize,
+            'shape-fill-color': fillColor,
+            'shape-rotate-with-view': true,
             }
         } else {
             // Bordure avec épaisseur variable
             pointStyle = {
-                'shape-points': 3,
+            'shape-points': 3,
                 'shape-radius': pointSize,
                 'shape-fill-color': fillColor,
                 'shape-stroke-color': borderColor || '#000000',
                 'shape-stroke-width': borderWidth,
-                'shape-rotate-with-view': true,
+            'shape-rotate-with-view': true,
+            }
             }
         }
-    }
 
-    }
+    }   
 
 
     // Assurez-vous que vectorSource et les layers sont initialisés

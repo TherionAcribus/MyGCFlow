@@ -155,8 +155,30 @@ const btnRecordAnimation = document.getElementById('btnRecordAnimation');
 const btnStopAnimation = document.getElementById('btnStopAnimation');
     if (btnStopAnimation) btnStopAnimation.addEventListener('click', pkg.stopAnimation);
 
-const btnPauseAnimation = document.getElementById('btnPauseAnimation');
+    const btnPauseAnimation = document.getElementById('btnPauseAnimation');
     if (btnPauseAnimation) btnPauseAnimation.addEventListener('click', toggleButtonAnimationPauseAndRestart);
+
+    // Contrôles plein écran
+    const cbFullscreenMode = document.getElementById('cbFullscreenMode');
+    if (cbFullscreenMode) cbFullscreenMode.addEventListener('change', toggleFullscreenMode);
+
+    const btnPauseFullscreen = document.getElementById('btnPauseFullscreen');
+    if (btnPauseFullscreen) btnPauseFullscreen.addEventListener('click', () => {
+        toggleButtonAnimationPauseAndRestart();
+        updateFullscreenControls();
+    });
+
+    const btnStopFullscreen = document.getElementById('btnStopFullscreen');
+    if (btnStopFullscreen) btnStopFullscreen.addEventListener('click', () => {
+        pkg.stopAnimation();
+        exitFullscreenMode();
+    });
+
+    const btnExitFullscreen = document.getElementById('btnExitFullscreen');
+    if (btnExitFullscreen) btnExitFullscreen.addEventListener('click', exitFullscreenMode);
+
+    // Initialiser l'état des contrôles fullscreen
+    updateFullscreenControls();
 
     // FLASH
     // select pour le mode de flash
@@ -793,6 +815,9 @@ function toggleButtonAnimationPauseAndRestart(reinitialisation = false){ {
             }
         }
     }
+
+    // Mettre à jour les contrôles fullscreen
+    updateFullscreenControls();
 }
 
 
@@ -973,3 +998,72 @@ document.addEventListener('htmx:afterSwap', function(event) {
         }
     }
 });
+
+// Gestion du mode plein écran
+function toggleFullscreenMode() {
+    const cbFullscreenMode = document.getElementById('cbFullscreenMode');
+    const mainElement = document.querySelector('main');
+    const fullscreenControls = document.getElementById('fullscreenControls');
+    const mapElement = document.getElementById('map');
+
+    if (cbFullscreenMode.checked) {
+        // Activer le mode plein écran
+        mainElement.classList.add('fullscreen-mode');
+        fullscreenControls.style.display = 'block';
+
+        // Redimensionner la carte pour prendre tout l'espace
+        mapElement.style.height = 'calc(100vh - 60px)';
+        mapElement.style.width = '100vw';
+
+        // Forcer le redimensionnement d'OpenLayers
+        setTimeout(() => {
+            window.dispatchEvent(new Event('resize'));
+        }, 100);
+
+    } else {
+        // Désactiver le mode plein écran
+        exitFullscreenMode();
+    }
+}
+
+function exitFullscreenMode() {
+    const mainElement = document.querySelector('main');
+    const fullscreenControls = document.getElementById('fullscreenControls');
+    const cbFullscreenMode = document.getElementById('cbFullscreenMode');
+    const mapElement = document.getElementById('map');
+
+    // Désactiver le mode plein écran
+    mainElement.classList.remove('fullscreen-mode');
+    fullscreenControls.style.display = 'none';
+    cbFullscreenMode.checked = false;
+
+    // Restaurer la taille normale de la carte
+    mapElement.style.height = '600px';
+    mapElement.style.width = '100%';
+
+    // Forcer le redimensionnement d'OpenLayers
+    setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+    }, 100);
+}
+
+function updateFullscreenControls() {
+    const btnPauseFullscreen = document.getElementById('btnPauseFullscreen');
+    const btnPauseAnimation = document.getElementById('btnPauseAnimation');
+
+    if (btnPauseFullscreen && btnPauseAnimation) {
+        // Synchroniser l'état du bouton pause fullscreen avec le bouton normal
+        const isPaused = btnPauseAnimation.classList.contains('restart');
+        const icon = btnPauseFullscreen.querySelector('i');
+
+        if (isPaused) {
+            btnPauseFullscreen.classList.add('green');
+            btnPauseFullscreen.classList.remove('yellow', 'darken-2');
+            icon.textContent = 'play_arrow';
+        } else {
+            btnPauseFullscreen.classList.remove('green');
+            btnPauseFullscreen.classList.add('yellow', 'darken-2');
+            icon.textContent = 'pause';
+        }
+    }
+}
