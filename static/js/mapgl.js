@@ -708,10 +708,9 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
         updateAnimationStyles();
         // Capturez la frame actuelle
         if (capture == true) {
-            captureElement().then(() => {
-                currentFrame++;
-                requestAnimationFrame(() => captureNextFrame(true, pointOptions, flashOptions, infos));
-            });
+            await captureElement();
+            currentFrame++;
+            requestAnimationFrame(() => captureNextFrame(true, pointOptions, flashOptions, infos));
         } else {
             currentFrame++;
             // De même ici, si vous avez besoin de passer des arguments spécifiques
@@ -746,7 +745,7 @@ function updateProgress(){
 }
 
 
-function captureElement() {
+async function captureElement() {
     return new Promise((resolve, reject) => {
         const element = document.getElementById('mapWithFrames');
         if (!element) {
@@ -762,62 +761,66 @@ function captureElement() {
             map.renderSync();
 
             // Attendre que le rendu soit complet pour capturer tous les calques
-            map.once('rendercomplete', () => {
-                // Récupérer tous les canvas de la carte (carte + points WebGL + animations)
-                const viewport = map.getViewport();
-                const allCanvases = viewport.querySelectorAll('canvas');
+            map.once('rendercomplete', async () => {
+                try {
+                    // Récupérer tous les canvas de la carte (carte + points WebGL + animations)
+                    const viewport = map.getViewport();
+                    const allCanvases = viewport.querySelectorAll('canvas');
 
-                if (allCanvases.length === 0) {
-                    reject(new Error('Aucun canvas trouvé dans la carte'));
-                    return;
-                }
-
-                // Utiliser les dimensions du viewport
-                const rect = viewport.getBoundingClientRect();
-                const canvasWidth = rect.width;
-                const canvasHeight = rect.height;
-
-                // Créer un canvas de sortie
-                const outCanvas = document.createElement('canvas');
-                outCanvas.width = canvasWidth;
-                outCanvas.height = canvasHeight;
-                const ctx = outCanvas.getContext('2d', { willReadFrequently: true });
-
-                // Composer tous les canvas (carte + points WebGL + animations)
-                allCanvases.forEach(canvas => {
-                    if (canvas.width > 0 && canvas.height > 0) {
-                        ctx.drawImage(canvas, 0, 0, canvasWidth, canvasHeight);
-                    }
-                });
-
-                // Ajouter les overlays (titre, date, nombre de caches)
-                addOverlaysToCanvas(ctx, canvasWidth, canvasHeight);
-
-                // Convertir en WebP Blob et uploader
-                outCanvas.toBlob((blob) => {
-                    if (!blob) {
-                        reject(new Error('Échec conversion canvas en blob'));
+                    if (allCanvases.length === 0) {
+                        reject(new Error('Aucun canvas trouvé dans la carte'));
                         return;
                     }
 
-                    // Mesurer le temps de capture
-                    perfMetrics.captureTimeMs += performance.now() - perfMetrics.lastCaptureStart;
-                    perfMetrics.capturedFrames += 1;
-                    perfMetrics.totalFrames += 1;
+                    // Utiliser les dimensions du viewport
+                    const rect = viewport.getBoundingClientRect();
+                    const canvasWidth = rect.width;
+                    const canvasHeight = rect.height;
 
-                    const t0Upload = performance.now();
-                    pkg.sendImageToServer(blob, imageCounter++).then(() => {
-                        const t1Upload = performance.now();
-                        perfMetrics.uploadTimeMs += (t1Upload - t0Upload);
-                        perfMetrics.uploadOk += 1;
-                        resolve();
-                    }).catch((uploadError) => {
-                        const t1Upload = performance.now();
-                        perfMetrics.uploadTimeMs += (t1Upload - t0Upload);
-                        perfMetrics.uploadFail += 1;
-                        reject(uploadError);
+                    // Créer un canvas de sortie
+                    const outCanvas = document.createElement('canvas');
+                    outCanvas.width = canvasWidth;
+                    outCanvas.height = canvasHeight;
+                    const ctx = outCanvas.getContext('2d', { willReadFrequently: true });
+
+                    // Composer tous les canvas (carte + points WebGL + animations)
+                    allCanvases.forEach(canvas => {
+                        if (canvas.width > 0 && canvas.height > 0) {
+                            ctx.drawImage(canvas, 0, 0, canvasWidth, canvasHeight);
+                        }
                     });
-                }, 'image/webp', 0.9);
+
+                    // Ajouter les overlays (titre, date, nombre de caches)
+                    await addOverlaysToCanvas(ctx, canvasWidth, canvasHeight);
+
+                    // Convertir en WebP Blob et uploader
+                    outCanvas.toBlob((blob) => {
+                        if (!blob) {
+                            reject(new Error('Échec conversion canvas en blob'));
+                            return;
+                        }
+
+                        // Mesurer le temps de capture
+                        perfMetrics.captureTimeMs += performance.now() - perfMetrics.lastCaptureStart;
+                        perfMetrics.capturedFrames += 1;
+                        perfMetrics.totalFrames += 1;
+
+                        const t0Upload = performance.now();
+                        pkg.sendImageToServer(blob, imageCounter++).then(() => {
+                            const t1Upload = performance.now();
+                            perfMetrics.uploadTimeMs += (t1Upload - t0Upload);
+                            perfMetrics.uploadOk += 1;
+                            resolve();
+                        }).catch((uploadError) => {
+                            const t1Upload = performance.now();
+                            perfMetrics.uploadTimeMs += (t1Upload - t0Upload);
+                            perfMetrics.uploadFail += 1;
+                            reject(uploadError);
+                        });
+                    }, 'image/webp', 0.9);
+                } catch (error) {
+                    reject(error);
+                }
             });
 
             // Forcer un rendu complet
@@ -866,31 +869,141 @@ function captureElement() {
 }
 
 // Fonction pour ajouter les overlays (titre, date, nb caches) au canvas
-function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight) {
-    // Fond semi-transparent pour les overlays
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-    ctx.fillRect(12, 12, Math.min(300, canvasWidth - 24), 60);
+async function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight) {
+    try {
+        const container = document.getElementById('mapWithFrames');
+        if (!container) return;
+        const containerRect = container.getBoundingClientRect();
 
-    // Style du texte
-    ctx.fillStyle = '#000';
-    ctx.font = '16px Arial';
-    ctx.textBaseline = 'top';
+        const renderStyledElement = (el) => {
+            if (!el || el.style.display === 'none') return;
+            const rect = el.getBoundingClientRect();
+            const x = Math.round(rect.left - containerRect.left);
+            const y = Math.round(rect.top - containerRect.top);
+            const w = Math.round(rect.width);
+            const h = Math.round(rect.height);
+            const style = window.getComputedStyle(el);
 
-    // Titre
-    const titleText = pkg.options.infos.title.display && pkg.options.infos.title.text ?
-        pkg.options.infos.title.text : 'My Geocaching Map';
-    ctx.fillText(titleText, 20, 20);
+            // Lire styles
+            const bg = style.backgroundColor || 'rgba(255,255,255,1)';
+            const color = style.color || '#000';
+            const radius = parseFloat(style.borderRadius) || 0;
+            const padL = parseFloat(style.paddingLeft) || 0;
+            const padR = parseFloat(style.paddingRight) || 0;
+            const padT = parseFloat(style.paddingTop) || 0;
+            const padB = parseFloat(style.paddingBottom) || 0;
+            const font = style.font && style.font !== '' ? style.font : `${style.fontWeight || 'normal'} ${style.fontSize || '16px'} ${style.fontFamily || 'Arial'}`;
+            const textAlignCss = style.textAlign || 'left';
 
-    // Date
-    if (pkg.options.infos.currentDate.display && currentDate) {
-        const dateText = currentDate.toLocaleDateString('fr-FR');
-        ctx.fillText(dateText, 20, 40);
+            // Box-shadow (simple parse)
+            const shadow = style.boxShadow && style.boxShadow !== 'none' ? style.boxShadow : null;
+            let shColor = 'rgba(0,0,0,0)'; let shBlur = 0; let shOffX = 0; let shOffY = 0;
+            if (shadow) {
+                // ex: rgba(0, 0, 0, 0.2) 0px 0px 5px 0px
+                const parts = shadow.match(/(rgba?\([^\)]+\))\s+([-0-9.]+)px\s+([-0-9.]+)px\s+([-0-9.]+)px/);
+                if (parts) {
+                    shColor = parts[1];
+                    shOffX = parseFloat(parts[2]);
+                    shOffY = parseFloat(parts[3]);
+                    shBlur = parseFloat(parts[4]);
+                }
+            }
+
+            // Dessin de la boîte
+            ctx.save();
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            if (shadow) { ctx.shadowColor = shColor; ctx.shadowBlur = shBlur; ctx.shadowOffsetX = shOffX; ctx.shadowOffsetY = shOffY; }
+            drawRoundedRect(ctx, x, y, w, h, radius, bg);
+            // Texte
+            ctx.shadowColor = 'rgba(0,0,0,0)';
+            ctx.fillStyle = color;
+            ctx.font = font;
+            ctx.textBaseline = 'alphabetic';
+            // Alignement horizontal
+            if (textAlignCss === 'center') {
+                ctx.textAlign = 'center';
+            } else if (textAlignCss === 'right' || textAlignCss === 'end') {
+                ctx.textAlign = 'right';
+            } else {
+                ctx.textAlign = 'left';
+            }
+            const text = el.textContent || '';
+            const metrics = ctx.measureText(text);
+            const textHeight = (metrics.actualBoundingBoxAscent || 0) + (metrics.actualBoundingBoxDescent || 0);
+            const innerH = Math.max(0, h - padT - padB);
+            let yText = y + padT + Math.max(0, (innerH - textHeight) / 2) + (metrics.actualBoundingBoxAscent || 0);
+            let xText = x + padL; // left par défaut
+            if (ctx.textAlign === 'center') {
+                xText = x + (w / 2);
+            } else if (ctx.textAlign === 'right') {
+                xText = x + w - padR;
+            }
+            ctx.fillText(text, xText, yText);
+            ctx.restore();
+        };
+
+        renderStyledElement(document.getElementById('titleFrame'));
+        renderStyledElement(document.getElementById('infosFrame'));
+
+    } catch (error) {
+        console.warn('Erreur lors du rendu des overlays:', error);
+        drawManualOverlay(ctx, 'title');
+        drawManualOverlay(ctx, 'infos', infos);
     }
+}
 
-    // Nombre de caches
-    if (pkg.options.infos.numberOfCaches.display) {
-        const cacheCount = infos ? infos.cacheNumber || 0 : 0;
-        ctx.fillText(`${cacheCount} caches`, 20, 50);
+function drawRoundedRect(ctx, x, y, width, height, radius, fillStyle) {
+    const r = Math.max(0, Math.min(radius || 0, Math.min(width, height) / 2));
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + width - r, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+    ctx.lineTo(x + width, y + height - r);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+    ctx.lineTo(x + r, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+    ctx.fillStyle = fillStyle;
+    ctx.fill();
+}
+
+// Fonction fallback pour dessiner manuellement les overlays
+function drawManualOverlay(ctx, type, infos = null) {
+    let x, y, text;
+
+    if (type === 'title') {
+        x = 20;
+        y = 20;
+        text = pkg.options.infos.title.display && pkg.options.infos.title.text ?
+            pkg.options.infos.title.text : 'My Geocaching Map';
+    } else if (type === 'infos') {
+        x = 20;
+        y = 40;
+
+        // Fond semi-transparent pour les overlays
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+        ctx.fillRect(12, 12, Math.min(300, ctx.canvas.width - 24), 60);
+
+        // Style du texte
+        ctx.fillStyle = '#000';
+        ctx.font = '16px Arial';
+        ctx.textBaseline = 'top';
+
+        // Date
+        if (pkg.options.infos.currentDate.display && currentDate) {
+            const dateText = currentDate.toLocaleDateString('fr-FR');
+            ctx.fillText(dateText, x, y);
+            y += 20;
+        }
+
+        // Nombre de caches
+        if (pkg.options.infos.numberOfCaches.display) {
+            const cacheCount = infos ? infos.cacheNumber || 0 : 0;
+            ctx.fillText(`${cacheCount} caches`, x, y);
+        }
     }
 }
 
