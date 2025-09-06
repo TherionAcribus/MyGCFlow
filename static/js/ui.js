@@ -12,6 +12,9 @@ var btnAllType, btnNoneType, btnAllDifficulty, btnNoneDifficulty, btnAllTerrain,
 var infoType, infoDifficulty, infoTerrain, infoContainer;
 var debounceTimer = null;
 const DEBOUNCE_DELAY = 200; // ms
+// Dates par défaut (capture au chargement BDD)
+var defaultStartDate = null;
+var defaultEndDate = null;
 var inputTimePerDay, cbDisplayDaysWithoutCache;
 var selectFlashMode, inputTimeFlash, inputSizeFlash, cpFlashColor;
 var cpStrokeColor, cpFillColor, cpBackgroundColor, strokeWidth;
@@ -50,6 +53,12 @@ const datePickerStart = document.getElementById('datePickerStart');
 const datePickerEnd = document.getElementById('datePickerEnd');
     if (datePickerStart) datePickerStart.addEventListener('change', onSelectionChangedDebounced);
     if (datePickerEnd) datePickerEnd.addEventListener('change', onSelectionChangedDebounced);
+
+// Boutons reset dates (valeurs par défaut de la BDD)
+    const btnResetStartDate = document.getElementById('btnResetStartDate');
+    const btnResetEndDate = document.getElementById('btnResetEndDate');
+    if (btnResetStartDate) btnResetStartDate.addEventListener('click', resetStartDateToDefault);
+    if (btnResetEndDate) btnResetEndDate.addEventListener('click', resetEndDateToDefault);
 
 // Boutons Tout/Aucun
     btnAllType = document.getElementById('btnAllType');
@@ -501,19 +510,68 @@ export function setPickerDates(metadata) {
     const startDatePicker = M.Datepicker.getInstance(startDateElement);
     const endDatePicker = M.Datepicker.getInstance(endDateElement);
 
-    const formattedStartDate = formatDateForPickers(metadata.startDate);
-    const formattedEndDate = formatDateForPickers(metadata.endDate);
+    // Capture des dates par défaut (clonées pour éviter toute mutation)
+    defaultStartDate = metadata.startDate ? new Date(metadata.startDate) : null;
+    defaultEndDate = metadata.endDate ? new Date(metadata.endDate) : null;
 
-    startDatePicker.setDate(metadata.startDate, true);
-    endDatePicker.setDate(metadata.endDate, true);
+    const formattedStartDate = formatDateForPickers(defaultStartDate);
+    const formattedEndDate = formatDateForPickers(defaultEndDate);
+
+    startDatePicker.setDate(defaultStartDate, true);
+    endDatePicker.setDate(defaultEndDate, true);
 
     startDateElement.value = formattedStartDate;
     endDateElement.value = formattedEndDate;
+
+    // Mettre à jour les libellés des boutons reset
+    const btnResetStartDate = document.getElementById('btnResetStartDate');
+    const btnResetEndDate = document.getElementById('btnResetEndDate');
+    if (btnResetStartDate) btnResetStartDate.textContent = `⟲ ${formattedStartDate}`;
+    if (btnResetEndDate) btnResetEndDate.textContent = `⟲ ${formattedEndDate}`;
+    updateResetButtonsHighlight();
 }
 
 function formatDateForPickers(date) {
     const options = { day: '2-digit', month: '2-digit', year: 'numeric', };
     return new Date(date).toLocaleDateString('fr-CA', options);
+}
+function resetStartDateToDefault(){
+    const el = document.querySelector('#datePickerStart');
+    const start = defaultStartDate;
+    if (!el || !start) return;
+    const inst = M.Datepicker.getInstance(el);
+    inst.setDate(start, true);
+    el.value = formatDateForPickers(start);
+    onSelectionChangedDebounced();
+    updateResetButtonsHighlight();
+}
+
+function resetEndDateToDefault(){
+    const el = document.querySelector('#datePickerEnd');
+    const end = defaultEndDate;
+    if (!el || !end) return;
+    const inst = M.Datepicker.getInstance(el);
+    inst.setDate(end, true);
+    el.value = formatDateForPickers(end);
+    onSelectionChangedDebounced();
+    updateResetButtonsHighlight();
+}
+
+function updateResetButtonsHighlight(){
+    const btnStart = document.getElementById('btnResetStartDate');
+    const btnEnd = document.getElementById('btnResetEndDate');
+    const currentStart = document.querySelector('#datePickerStart')?.value;
+    const currentEnd = document.querySelector('#datePickerEnd')?.value;
+    const defaultStartStr = defaultStartDate ? formatDateForPickers(defaultStartDate) : null;
+    const defaultEndStr = defaultEndDate ? formatDateForPickers(defaultEndDate) : null;
+    if (btnStart) {
+        if (currentStart && defaultStartStr && currentStart === defaultStartStr) btnStart.classList.add('active-reset');
+        else btnStart.classList.remove('active-reset');
+    }
+    if (btnEnd) {
+        if (currentEnd && defaultEndStr && currentEnd === defaultEndStr) btnEnd.classList.add('active-reset');
+        else btnEnd.classList.remove('active-reset');
+    }
 }
 
 // Debounce et wrapper

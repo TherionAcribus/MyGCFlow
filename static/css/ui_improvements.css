@@ -675,3 +675,17 @@ html body.fullscreen-mode main #mapWithFrames #infosFrame span {
     margin-top: 8px;
     font-weight: 500;
 }
+
+/* Boutons de reset de dates */
+.date-reset-btn {
+    margin-top: 4px;
+    min-width: 110px;
+    text-align: center;
+    display: inline-block;
+}
+
+.date-reset-btn.active-reset {
+    background: rgba(76, 175, 80, 0.12);
+    border-radius: 6px;
+    font-weight: 600;
+}
