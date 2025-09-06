@@ -459,7 +459,7 @@
     height: 40px;
     padding: 0;
     border-radius: 50%;
-    display: flex !important;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
