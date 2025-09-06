@@ -425,6 +425,8 @@ function displayWebGLPoints(features, pointOptions) {
         ]
     } else if (pointOptions.border.mode == "fix") {
         borderColor = pointOptions.border.color
+    } else if (pointOptions.border.mode == "none") {
+        borderColor = 'transparent' // Pas utilisé mais défini pour cohérence
     }
 
    
@@ -457,8 +459,8 @@ function displayWebGLPoints(features, pointOptions) {
         };
     } else {
         if (pointOptions.shape == "circle") {
-            // Si taille bordure = 0, pas de bordure du tout
-            if (borderSizeValue == 0) {
+            // Si taille bordure = 0 OU mode = none, pas de bordure du tout
+            if (borderSizeValue == 0 || pointOptions.border.mode == "none") {
                 pointStyle = {
                     'circle-radius': pointSize,
                     'circle-fill-color': fillColor || '#FF0000',
@@ -481,8 +483,8 @@ function displayWebGLPoints(features, pointOptions) {
 
 
     } else if (pointOptions.shape == "triangle") {
-        // Si taille bordure = 0, pas de bordure du tout
-        if (borderSizeValue == 0) {
+        // Si taille bordure = 0 OU mode = none, pas de bordure du tout
+        if (borderSizeValue == 0 || pointOptions.border.mode == "none") {
             pointStyle = {
                 'shape-points': 3,
                 'shape-radius': pointSize,

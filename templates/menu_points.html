@@ -1,114 +1,236 @@
-<!-- Tabs pour le graphisme des points  -->
+<!-- Graphisme des points avec UX améliorée -->
 
 <div id="points" class="col s12">
-    <h3>Graphisme des points</h3>
-    <div>
-        <section>
+    <div class="row">
+        <div class="col s12">
+            <h4 class="center-align">
+                <i class="material-icons left">palette</i>
+                Graphisme des points
+            </h4>
+        </div>
+    </div>
 
-            <div>
-                <!-- Switch -->
-                <div class="switch">
-                    <label>
-                    Icone
-                    <input id="switchIconeVectoriel" type="checkbox">
-                    <span class="lever"></span>
-                    Vectoriel
-                    </label>
-                </div>
-            </div>
+    <!-- Section principale -->
+    <div class="row">
 
-            <div class="input-field col s12">
-                <select id="selectShape">
-                    <option value="circle">Cercle</option>
-                    <option value="triangle">Triangle</option>
-                </select>
-                <label>Choix de la forme</label>
-            </div>
+        <!-- Configuration générale -->
+        <div class="col s12">
+            <div class="card">
+                <div class="card-content">
+                    <span class="card-title">
+                        <i class="material-icons">settings</i>
+                        Configuration générale
+                    </span>
 
-            <div class="col s6" id="centerOptions">
-                <div class="row">
-                    <!-- Slider -->
-                    <div class="col s6">
-                        <p class="range-field">
-                            <input type="range" id="sliderSizePoint" min="1" max="10" />
-                        </p>
+                    <div class="row">
+                        <!-- Mode d'affichage -->
+                        <div class="col s6">
+                            <div class="switch">
+                                <label>
+                                    <i class="material-icons">image</i> Icône
+                                    <input id="switchIconeVectoriel" type="checkbox">
+                                    <span class="lever"></span>
+                                    <i class="material-icons">shape_line</i> Vectoriel
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Choix de la forme -->
+                        <div class="col s6">
+                            <div class="input-field">
+                                <select id="selectShape">
+                                    <option value="circle">🔵 Cercle</option>
+                                    <option value="triangle">🔺 Triangle</option>
+                                </select>
+                                <label>
+                                    <i class="material-icons">category</i>
+                                    Forme des points
+                                </label>
+                            </div>
+                        </div>
                     </div>
-                    
-                    <!-- Input Number -->
-                    <div class="col s6">
-                        <input type="number" id="inputSizePoint" min="1" max="10" />
-                    </div>            
                 </div>
-
-                <p>
-                    <label>
-                        <input class="with-gap" name="fillColorPoint" type="radio" value="gc"/>
-                        <span>Couleurs GC</span>
-                    </label>
-                </p>
-                <p>
-                    <label>
-                        <input class="with-gap" name="fillColorPoint" type="radio" value="none"/>
-                        <span>Pas de couleur</span>
-                    </label>
-                </p>
-                <p>
-                    <label>
-                        <input class="with-gap" name="fillColorPoint" type="radio" value="fix" />
-                        <span>Couleur unique</span>
-                    </label>
-                </p>
-
-                <!-- Color Pickers Centre -->
-                <div class="input-field col s3">
-                    <span>Couleur du centre: </span>
-                    <input type="color" id="pointCenterColor" value="#ffffff">
-                </div>
-
             </div>
+        </div>
+    </div>
 
-            <div class="col s6" id="borderOptions">
-                <div class="row">
-                    <!-- Slider -->
-                    <div class="col s6">
-                        <p class="range-field">
-                            <input type="range" id="sliderSizeBorder" min="0" max="10" />
-                        </p>
+    <!-- Section Centre du point -->
+    <div class="row">
+        <div class="col s12 m6">
+            <div class="card blue lighten-5">
+                <div class="card-content">
+                    <span class="card-title blue-text">
+                        <i class="material-icons">circle</i>
+                        Centre du point
+                    </span>
+
+                    <!-- Taille du centre -->
+                    <div class="row">
+                        <div class="col s12">
+                            <label>
+                                <i class="material-icons">straighten</i>
+                                Taille du centre
+                            </label>
+                        </div>
+                        <div class="col s6">
+                            <p class="range-field">
+                                <input type="range" id="sliderSizePoint" min="1" max="10" />
+                            </p>
+                        </div>
+                        <div class="col s6">
+                            <div class="input-field">
+                                <input type="number" id="inputSizePoint" min="1" max="10" />
+                                <label>pixels</label>
+                            </div>
+                        </div>
                     </div>
-                    
-                    <!-- Input Number -->
-                    <div class="col s6">
-                        <input type="number" id="inputSizeBorder" min="0" max="10" />
-                    </div>            
-                </div>
 
-                <p>
-                    <label>
-                        <input class="with-gap" name="borderColorPoint" type="radio" value="gc"/>
-                        <span>Couleurs GC</span>
-                    </label>
-                </p>
-                <p>
-                    <label>
-                        <input class="with-gap" name="borderColorPoint" type="radio" value="none"/>
-                        <span>Pas de couleur</span>
-                    </label>
-                </p>
-                <p>
-                    <label>
-                        <input class="with-gap" name="borderColorPoint" type="radio" value="fix" />
-                        <span>Couleur unique</span>
-                    </label>
-                </p>
-                
-                <!-- Color Pickers Tours -->
-                <div class="input-field col s3">
-                    <span>Couleur du contour: </span>
-                    <input type="color" id="pointBorderColor" value="#ffffff">
+                    <!-- Couleur du centre -->
+                    <div class="row">
+                        <div class="col s12">
+                            <label>
+                                <i class="material-icons">palette</i>
+                                Couleur du centre
+                            </label>
+                        </div>
+
+                        <div class="col s12">
+                            <p>
+                                <label>
+                                    <input class="with-gap" name="fillColorPoint" type="radio" value="gc"/>
+                                    <span>
+                                        <i class="material-icons">color_lens</i>
+                                        Couleurs GC (par type)
+                                    </span>
+                                </label>
+                            </p>
+                            <p>
+                                <label>
+                                    <input class="with-gap" name="fillColorPoint" type="radio" value="none"/>
+                                    <span>
+                                        <i class="material-icons">clear</i>
+                                        Transparent
+                                    </span>
+                                </label>
+                            </p>
+                            <p>
+                                <label>
+                                    <input class="with-gap" name="fillColorPoint" type="radio" value="fix" />
+                                    <span>
+                                        <i class="material-icons">colorize</i>
+                                        Couleur unique
+                                    </span>
+                                </label>
+                            </p>
+                        </div>
+
+                        <!-- Color Picker Centre -->
+                        <div class="col s12">
+                            <div class="input-field">
+                                <input type="color" id="pointCenterColor" value="#ffffff">
+                                <label for="pointCenterColor">
+                                    <i class="material-icons">colorize</i>
+                                    Choisir la couleur
+                                </label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
+        </div>
 
-        </section>
+        <!-- Section Bordure du point -->
+        <div class="col s12 m6">
+            <div class="card orange lighten-5">
+                <div class="card-content">
+                    <span class="card-title orange-text">
+                        <i class="material-icons">border_outer</i>
+                        Bordure du point
+                    </span>
 
+                    <!-- Taille de la bordure -->
+                    <div class="row">
+                        <div class="col s12">
+                            <label>
+                                <i class="material-icons">border_clear</i>
+                                Épaisseur de la bordure (0 = aucune)
+                            </label>
+                        </div>
+                        <div class="col s6">
+                            <p class="range-field">
+                                <input type="range" id="sliderSizeBorder" min="0" max="10" />
+                            </p>
+                        </div>
+                        <div class="col s6">
+                            <div class="input-field">
+                                <input type="number" id="inputSizeBorder" min="0" max="10" />
+                                <label>pixels</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Couleur de la bordure -->
+                    <div class="row">
+                        <div class="col s12">
+                            <label>
+                                <i class="material-icons">format_color_fill</i>
+                                Couleur de la bordure
+                            </label>
+                        </div>
+
+                        <div class="col s12">
+                            <p>
+                                <label>
+                                    <input class="with-gap" name="borderColorPoint" type="radio" value="gc"/>
+                                    <span>
+                                        <i class="material-icons">color_lens</i>
+                                        Couleurs GC (par type)
+                                    </span>
+                                </label>
+                            </p>
+                            <p>
+                                <label>
+                                    <input class="with-gap" name="borderColorPoint" type="radio" value="none"/>
+                                    <span>
+                                        <i class="material-icons">clear</i>
+                                        Transparent
+                                    </span>
+                                </label>
+                            </p>
+                            <p>
+                                <label>
+                                    <input class="with-gap" name="borderColorPoint" type="radio" value="fix" />
+                                    <span>
+                                        <i class="material-icons">colorize</i>
+                                        Couleur unique
+                                    </span>
+                                </label>
+                            </p>
+                        </div>
+
+                        <!-- Color Picker Bordure -->
+                        <div class="col s12">
+                            <div class="input-field">
+                                <input type="color" id="pointBorderColor" value="#000000">
+                                <label for="pointBorderColor">
+                                    <i class="material-icons">colorize</i>
+                                    Choisir la couleur
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section d'aperçu -->
+    <div class="row">
+        <div class="col s12">
+            <div class="card-panel grey lighten-4 center-align">
+                <i class="material-icons medium">visibility</i>
+                <p>Les modifications sont appliquées en temps réel sur la carte</p>
+            </div>
+        </div>
     </div>
 </div>
