@@ -166,37 +166,37 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     const cbFullscreenMode = document.getElementById('cbFullscreenMode');
     if (cbFullscreenMode) cbFullscreenMode.addEventListener('change', toggleFullscreenMode);
 
-    const btnStartFullscreen = document.getElementById('btnStartFullscreen');
-    if (btnStartFullscreen) btnStartFullscreen.addEventListener('click', () => {
+    const btnStartBar = document.getElementById('btnStartBar');
+    if (btnStartBar) btnStartBar.addEventListener('click', () => {
         clickStartAnimation();
     });
 
-    const btnRecordFullscreen = document.getElementById('btnRecordFullscreen');
-    if (btnRecordFullscreen) btnRecordFullscreen.addEventListener('click', () => {
+    const btnRecordBar = document.getElementById('btnRecordBar');
+    if (btnRecordBar) btnRecordBar.addEventListener('click', () => {
         clickRecordAnimation();
     });
 
-    const btnPauseFullscreen = document.getElementById('btnPauseFullscreen');
-    if (btnPauseFullscreen) btnPauseFullscreen.addEventListener('click', () => {
+    const btnPauseBar = document.getElementById('btnPauseBar');
+    if (btnPauseBar) btnPauseBar.addEventListener('click', () => {
         toggleButtonAnimationPauseAndRestart();
-        updateFullscreenControls();
+        updateControlBar();
     });
 
-    const btnStopFullscreen = document.getElementById('btnStopFullscreen');
-    if (btnStopFullscreen) btnStopFullscreen.addEventListener('click', () => {
+    const btnStopBar = document.getElementById('btnStopBar');
+    if (btnStopBar) btnStopBar.addEventListener('click', () => {
         pkg.stopAnimation();
         showStartRecordButtons();
-        updateFullscreenControls();
+        updateControlBar();
     });
 
-    const btnExitFullscreen = document.getElementById('btnExitFullscreen');
-    if (btnExitFullscreen) btnExitFullscreen.addEventListener('click', toggleFullscreenFromButton);
+    const btnToggleFullscreen = document.getElementById('btnToggleFullscreen');
+    if (btnToggleFullscreen) btnToggleFullscreen.addEventListener('click', toggleFullscreenFromButton);
 
-    // Initialiser l'état des contrôles (boutons principaux et fullscreen)
+    // Initialiser l'état des contrôles (boutons principaux et barre latérale)
     console.log("=== INITIALISATION DES CONTROLES ===");
     showStartRecordButtons();
-    console.log("Appel updateFullscreenControls depuis initUIElements");
-    updateFullscreenControls();
+    console.log("Appel updateControlBar depuis initUIElements");
+    updateControlBar();
 
     // FLASH
     // select pour le mode de flash
@@ -846,14 +846,14 @@ function clickStartAnimation(){
     // Vide la source vectorielle avant de démarrer l'animation
     pkg.startAnimation();
     showPauseStopButtons();
-    updateFullscreenControls();
+    updateControlBar();
 }
 
 function clickRecordAnimation(){
     // Vide la source vectorielle avant de démarrer l'animation
     pkg.recordAnimation();
     showPauseStopButtons();
-    updateFullscreenControls();
+    updateControlBar();
 }
 
 // on clique sur le bouton Pause/Restart
@@ -882,7 +882,7 @@ function toggleButtonAnimationPauseAndRestart(reinitialisation = false){ {
     }
 
     // Mettre à jour les contrôles
-    updateFullscreenControls();
+    updateControlBar();
 }
 
 
@@ -1068,24 +1068,30 @@ document.addEventListener('htmx:afterSwap', function(event) {
 function toggleFullscreenMode() {
     const cbFullscreenMode = document.getElementById('cbFullscreenMode');
     const mainElement = document.querySelector('main');
-    const fullscreenControls = document.getElementById('fullscreenControls');
+    const controlBar = document.getElementById('controlBar');
     const mapElement = document.getElementById('map');
 
     if (cbFullscreenMode.checked) {
         // Activer le mode plein écran
         mainElement.classList.add('fullscreen-mode');
-        fullscreenControls.style.display = 'block';
+        controlBar.style.display = 'flex';
 
-        // Forcer l'état initial des boutons de la barre latérale
-        const btnStartFullscreen = document.getElementById('btnStartFullscreen');
-        const btnRecordFullscreen = document.getElementById('btnRecordFullscreen');
-        const btnPauseFullscreen = document.getElementById('btnPauseFullscreen');
-        const btnStopFullscreen = document.getElementById('btnStopFullscreen');
+        // Forcer l'état initial des boutons de la barre latérale selon l'état actuel
+        const btnStartAnimation = document.getElementById('btnStartAnimation');
+        const isIdle = btnStartAnimation && window.getComputedStyle(btnStartAnimation).display !== 'none';
 
-        if (btnStartFullscreen) btnStartFullscreen.style.display = 'flex';
-        if (btnRecordFullscreen) btnRecordFullscreen.style.display = 'flex';
-        if (btnPauseFullscreen) btnPauseFullscreen.style.display = 'none';
-        if (btnStopFullscreen) btnStopFullscreen.style.display = 'none';
+        if (isIdle) {
+            // État repos : afficher Start/Record, masquer Pause/Stop
+            const btnStartBar = document.getElementById('btnStartBar');
+            const btnRecordBar = document.getElementById('btnRecordBar');
+            const btnPauseBar = document.getElementById('btnPauseBar');
+            const btnStopBar = document.getElementById('btnStopBar');
+
+            if (btnStartBar) btnStartBar.style.setProperty('display', 'flex', 'important');
+            if (btnRecordBar) btnRecordBar.style.setProperty('display', 'flex', 'important');
+            if (btnPauseBar) btnPauseBar.style.setProperty('display', 'none', 'important');
+            if (btnStopBar) btnStopBar.style.setProperty('display', 'none', 'important');
+        }
 
         // Redimensionner la carte pour prendre tout l'espace
         mapElement.style.height = 'calc(100vh - 60px)';
@@ -1102,18 +1108,18 @@ function toggleFullscreenMode() {
     }
 
     // Mettre à jour la barre latérale
-    updateFullscreenControls();
+    updateControlBar();
 }
 
 function exitFullscreenMode() {
     const mainElement = document.querySelector('main');
-    const fullscreenControls = document.getElementById('fullscreenControls');
+    const controlBar = document.getElementById('controlBar');
     const cbFullscreenMode = document.getElementById('cbFullscreenMode');
     const mapElement = document.getElementById('map');
 
     // Désactiver le mode plein écran
     mainElement.classList.remove('fullscreen-mode');
-    fullscreenControls.style.display = 'none';
+    controlBar.style.display = 'none';
     cbFullscreenMode.checked = false;
 
     // Restaurer la taille normale de la carte
@@ -1126,30 +1132,30 @@ function exitFullscreenMode() {
     }, 100);
 }
 
-function updateFullscreenControls() {
-    console.log("=== updateFullscreenControls ===");
-    const fullscreenControls = document.getElementById('fullscreenControls');
-    const btnStartFullscreen = document.getElementById('btnStartFullscreen');
-    const btnRecordFullscreen = document.getElementById('btnRecordFullscreen');
-    const btnPauseFullscreen = document.getElementById('btnPauseFullscreen');
-    const btnStopFullscreen = document.getElementById('btnStopFullscreen');
-    const btnExitFullscreen = document.getElementById('btnExitFullscreen');
+function updateControlBar() {
+    console.log("=== updateControlBar ===");
+    const controlBar = document.getElementById('controlBar');
+    const btnStartBar = document.getElementById('btnStartBar');
+    const btnRecordBar = document.getElementById('btnRecordBar');
+    const btnPauseBar = document.getElementById('btnPauseBar');
+    const btnStopBar = document.getElementById('btnStopBar');
+    const btnToggleFullscreen = document.getElementById('btnToggleFullscreen');
     const btnStartAnimation = document.getElementById('btnStartAnimation');
     const btnPauseAnimation = document.getElementById('btnPauseAnimation');
     const btnStopAnimation = document.getElementById('btnStopAnimation');
 
     console.log("Boutons trouvés:", {
-        fullscreenControls: !!fullscreenControls,
-        btnStartFullscreen: !!btnStartFullscreen,
-        btnRecordFullscreen: !!btnRecordFullscreen,
-        btnPauseFullscreen: !!btnPauseFullscreen,
-        btnStopFullscreen: !!btnStopFullscreen,
-        btnExitFullscreen: !!btnExitFullscreen,
+        controlBar: !!controlBar,
+        btnStartBar: !!btnStartBar,
+        btnRecordBar: !!btnRecordBar,
+        btnPauseBar: !!btnPauseBar,
+        btnStopBar: !!btnStopBar,
+        btnToggleFullscreen: !!btnToggleFullscreen,
         btnStartAnimation: !!btnStartAnimation
     });
 
-    if (!fullscreenControls) {
-        console.log("❌ fullscreenControls non trouvé");
+    if (!controlBar) {
+        console.log("❌ controlBar non trouvé");
         return;
     }
 
@@ -1167,75 +1173,75 @@ function updateFullscreenControls() {
     });
 
     // Gestion des boutons selon l'état
-    console.log("Configuration des boutons fullscreen:");
+    console.log("Configuration des boutons de la barre latérale:");
     if (isIdle) {
         console.log("  Mode IDLE: afficher Start/Record, masquer Pause/Stop");
         // État repos -> afficher Start/Record, masquer Pause/Stop
-        if (btnStartFullscreen) {
-            console.log("    btnStartFullscreen avant:", window.getComputedStyle(btnStartFullscreen).display);
-            btnStartFullscreen.style.display = 'flex';
-            console.log("    btnStartFullscreen après:", window.getComputedStyle(btnStartFullscreen).display);
+        if (btnStartBar) {
+            console.log("    btnStartBar avant:", window.getComputedStyle(btnStartBar).display);
+            btnStartBar.style.setProperty('display', 'flex', 'important');
+            console.log("    btnStartBar après:", window.getComputedStyle(btnStartBar).display);
         }
-        if (btnRecordFullscreen) {
-            console.log("    btnRecordFullscreen avant:", window.getComputedStyle(btnRecordFullscreen).display);
-            btnRecordFullscreen.style.display = 'flex';
-            console.log("    btnRecordFullscreen après:", window.getComputedStyle(btnRecordFullscreen).display);
+        if (btnRecordBar) {
+            console.log("    btnRecordBar avant:", window.getComputedStyle(btnRecordBar).display);
+            btnRecordBar.style.setProperty('display', 'flex', 'important');
+            console.log("    btnRecordBar après:", window.getComputedStyle(btnRecordBar).display);
         }
-        if (btnPauseFullscreen) {
-            console.log("    btnPauseFullscreen avant:", window.getComputedStyle(btnPauseFullscreen).display);
-            btnPauseFullscreen.style.display = 'none';
-            console.log("    btnPauseFullscreen après:", window.getComputedStyle(btnPauseFullscreen).display);
+        if (btnPauseBar) {
+            console.log("    btnPauseBar avant:", window.getComputedStyle(btnPauseBar).display);
+            btnPauseBar.style.setProperty('display', 'none', 'important');
+            console.log("    btnPauseBar après:", window.getComputedStyle(btnPauseBar).display);
         }
-        if (btnStopFullscreen) {
-            console.log("    btnStopFullscreen avant:", window.getComputedStyle(btnStopFullscreen).display);
-            btnStopFullscreen.style.display = 'none';
-            console.log("    btnStopFullscreen après:", window.getComputedStyle(btnStopFullscreen).display);
+        if (btnStopBar) {
+            console.log("    btnStopBar avant:", window.getComputedStyle(btnStopBar).display);
+            btnStopBar.style.setProperty('display', 'none', 'important');
+            console.log("    btnStopBar après:", window.getComputedStyle(btnStopBar).display);
         }
     } else {
         console.log("  Mode RUNNING: masquer Start/Record, afficher Pause/Stop");
         // Animation/enregistrement en cours -> masquer Start/Record, afficher Pause/Stop
-        if (btnStartFullscreen) {
-            console.log("    btnStartFullscreen avant:", window.getComputedStyle(btnStartFullscreen).display);
-            btnStartFullscreen.style.display = 'none';
-            console.log("    btnStartFullscreen après:", window.getComputedStyle(btnStartFullscreen).display);
+        if (btnStartBar) {
+            console.log("    btnStartBar avant:", window.getComputedStyle(btnStartBar).display);
+            btnStartBar.style.setProperty('display', 'none', 'important');
+            console.log("    btnStartBar après:", window.getComputedStyle(btnStartBar).display);
         }
-        if (btnRecordFullscreen) {
-            console.log("    btnRecordFullscreen avant:", window.getComputedStyle(btnRecordFullscreen).display);
-            btnRecordFullscreen.style.display = 'none';
-            console.log("    btnRecordFullscreen après:", window.getComputedStyle(btnRecordFullscreen).display);
+        if (btnRecordBar) {
+            console.log("    btnRecordBar avant:", window.getComputedStyle(btnRecordBar).display);
+            btnRecordBar.style.setProperty('display', 'none', 'important');
+            console.log("    btnRecordBar après:", window.getComputedStyle(btnRecordBar).display);
         }
-        if (btnPauseFullscreen) {
-            console.log("    btnPauseFullscreen avant:", window.getComputedStyle(btnPauseFullscreen).display);
-            btnPauseFullscreen.style.display = 'flex';
-            console.log("    btnPauseFullscreen après:", window.getComputedStyle(btnPauseFullscreen).display);
+        if (btnPauseBar) {
+            console.log("    btnPauseBar avant:", window.getComputedStyle(btnPauseBar).display);
+            btnPauseBar.style.setProperty('display', 'flex', 'important');
+            console.log("    btnPauseBar après:", window.getComputedStyle(btnPauseBar).display);
         }
-        if (btnStopFullscreen) {
-            console.log("    btnStopFullscreen avant:", window.getComputedStyle(btnStopFullscreen).display);
-            btnStopFullscreen.style.display = 'flex';
-            console.log("    btnStopFullscreen après:", window.getComputedStyle(btnStopFullscreen).display);
+        if (btnStopBar) {
+            console.log("    btnStopBar avant:", window.getComputedStyle(btnStopBar).display);
+            btnStopBar.style.setProperty('display', 'flex', 'important');
+            console.log("    btnStopBar après:", window.getComputedStyle(btnStopBar).display);
         }
     }
 
     // Toujours afficher le bouton pour basculer plein écran quand la barre est visible
-    if (btnExitFullscreen) {
-        btnExitFullscreen.style.display = 'flex';
-        const iconToggle = btnExitFullscreen.querySelector('i');
+    if (btnToggleFullscreen) {
+        btnToggleFullscreen.style.display = 'flex';
+        const iconToggle = btnToggleFullscreen.querySelector('i');
         const isFs = document.querySelector('main').classList.contains('fullscreen-mode');
         if (iconToggle) iconToggle.textContent = isFs ? 'fullscreen_exit' : 'fullscreen';
-        btnExitFullscreen.title = isFs ? 'Quitter le plein écran' : 'Passer en plein écran';
+        btnToggleFullscreen.title = isFs ? 'Quitter le plein écran' : 'Passer en plein écran';
     }
 
     // Synchroniser l'icône Pause/Play
-    if (btnPauseFullscreen && btnPauseAnimation) {
+    if (btnPauseBar && btnPauseAnimation) {
         const isPaused = btnPauseAnimation.classList.contains('restart');
-        const icon = btnPauseFullscreen.querySelector('i');
+        const icon = btnPauseBar.querySelector('i');
         if (isPaused) {
-            btnPauseFullscreen.classList.add('green');
-            btnPauseFullscreen.classList.remove('yellow', 'darken-2');
+            btnPauseBar.classList.add('green');
+            btnPauseBar.classList.remove('yellow', 'darken-2');
             if (icon) icon.textContent = 'play_arrow';
         } else {
-            btnPauseFullscreen.classList.remove('green');
-            btnPauseFullscreen.classList.add('yellow', 'darken-2');
+            btnPauseBar.classList.remove('green');
+            btnPauseBar.classList.add('yellow', 'darken-2');
             if (icon) icon.textContent = 'pause';
         }
     }

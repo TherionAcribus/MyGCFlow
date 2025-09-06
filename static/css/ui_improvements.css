@@ -427,8 +427,8 @@
 }
 
 
-/* Barre de contrôle - verticale à droite */
-.fullscreen-controls {
+/* Barre de contrôle latérale - verticale à droite */
+.control-bar {
     position: fixed;
     top: 50%;
     right: 10px;
@@ -446,7 +446,7 @@
     gap: 8px;
 }
 
-.fullscreen-controls-content {
+.control-bar-content {
     display: flex;
     flex-direction: column !important; /* Vertical */
     gap: 8px;
@@ -454,7 +454,7 @@
     justify-content: center;
 }
 
-.fullscreen-controls .btn {
+.control-bar .btn {
     min-width: 40px;
     height: 40px;
     padding: 0;
@@ -465,7 +465,7 @@
     flex-shrink: 0;
 }
 
-.fullscreen-controls .btn i {
+.control-bar .btn i {
     font-size: 20px;
 }
 
