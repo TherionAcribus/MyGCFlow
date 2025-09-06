@@ -412,9 +412,6 @@ function getStyle2D(feature, pointOptions) {
 
 function displayWebGLPoints(features, pointOptions) {
 
-    console.log(`[DEBUG] displayWebGLPoints appelé avec ${features.length} features`);
-    console.log(`[DEBUG] pointOptions:`, pointOptions);
-
     let pointSize = parseInt(pointOptions.center.size)
     let borderSize = pointSize + parseInt(pointOptions.border.size) / 5;
     let borderColor;
@@ -460,9 +457,8 @@ function displayWebGLPoints(features, pointOptions) {
         };
     } else {
         if (pointOptions.shape == "circle") {
-            console.log(`[DEBUG] Configuration cercle - size: ${pointSize}, fillColor: ${fillColor}`);
             pointStyle = {
-            'circle-radius': Math.max(pointSize, 8), // Minimum 8px pour visibilité
+            'circle-radius': pointSize,
             'circle-fill-color': fillColor || '#FF0000', // Couleur rouge par défaut
             'circle-stroke-color': '#000000', // Bordure noire
             'circle-stroke-width': 2,
@@ -510,7 +506,7 @@ function displayWebGLPoints(features, pointOptions) {
             vectorLayerBorder = new ol.layer.WebGLPoints({
                 source: window.vectorSource,
                 style: pointStyleBorder,
-                zIndex: 1000, // Z-index élevé pour être au-dessus
+                zIndex: 1000, // Z-index élevé pour visibilité
             });
             map.addLayer(vectorLayerBorder);
         }
@@ -518,28 +514,19 @@ function displayWebGLPoints(features, pointOptions) {
         vectorLayer = new ol.layer.WebGLPoints({
             source: window.vectorSource,
             style: pointStyle,
-            zIndex: 1001, // Z-index élevé pour être au-dessus des bordures
+            zIndex: 1001, // Z-index élevé pour visibilité
         });
         map.addLayer(vectorLayer);
-        console.log(`[DEBUG] ✅ Layers RECRÉÉS - vectorLayer:`, !!vectorLayer, `visible:`, vectorLayer.getVisible());
-        console.log(`[DEBUG] Style pointStyle:`, pointStyle);
-        console.log(`[DEBUG] Style pointStyleBorder:`, pointStyleBorder);
     }
 
     // Vérifier que les layers existent toujours sur la carte (ils peuvent avoir été supprimés)
-    if (pointOptions.mode == "vectoriel" && vectorLayerBorder && !map.getLayers().getArray().includes(vectorLayerBorder)) {
+    if (pointOptions.mode == "vectoriel" && vectorLayerBorder &&
+        !map.getLayers().getArray().includes(vectorLayerBorder)) {
         map.addLayer(vectorLayerBorder);
-        console.log(`[DEBUG] vectorLayerBorder rajouté à la carte`);
     }
     if (vectorLayer && !map.getLayers().getArray().includes(vectorLayer)) {
         map.addLayer(vectorLayer);
-        console.log(`[DEBUG] vectorLayer rajouté à la carte`);
     }
-
-    // Log de l'état des layers
-    console.log(`[DEBUG] État des layers - vectorLayer:`, !!vectorLayer, `visible:`, vectorLayer?.getVisible());
-    console.log(`[DEBUG] État des layers - vectorLayerBorder:`, !!vectorLayerBorder, `visible:`, vectorLayerBorder?.getVisible());
-    console.log(`[DEBUG] Nombre total de layers sur la carte:`, map.getLayers().getArray().length);
 
     if (features) {
         if (features.length > 0) {
@@ -553,15 +540,6 @@ function displayWebGLPoints(features, pointOptions) {
             });
 
             window.vectorSource.addFeatures(newFeatures);
-            console.log(`[DEBUG] ${newFeatures.length} features ajoutées au vectorSource`);
-
-            // Log des coordonnées de la première feature pour vérifier
-            if (newFeatures.length > 0) {
-                const firstFeature = newFeatures[0];
-                const geometry = firstFeature.getGeometry();
-                console.log(`[DEBUG] Première feature coordonnées:`, geometry.getCoordinates());
-                console.log(`[DEBUG] Première feature projection:`, geometry.get('featureProjection'));
-            }
         }
     } else {
         // Chargez les features à partir d'un fichier GeoJSON si aucun feature n'est fourni
@@ -577,33 +555,23 @@ function displayWebGLPoints(features, pointOptions) {
 
 // supprime les points de la carte (centre et bordures si existantes)
 function clearMap(){
-    // on enleve la couche vectorielle avec les points
-    //map.removeLayer(vectorLayer);
-    // on enleve la couche des bordures si elle existe (webgl)
-    //if (isLayerOnMap(map, vectorLayerBorder)){
-    //    map.removeLayer(vectorLayerBorder);
-    //}
-
-    // Vérification que vectorSource existe avant de l'utiliser
-    if (window.vectorSource) {
-        window.vectorSource.clear();
-    }
-    if (window.borderLayer) {
-        map.removeLayer(window.borderLayer);
-        window.borderLayer = undefined; // Réinitialisez la référence
-    }
-
-    if (window.centerLayer) {
-        map.removeLayer(window.centerLayer);
-        window.centerLayer = undefined; // Réinitialisez la référence
-    }
-    // Garder vectorSource mais vider son contenu et supprimer les layers
+    // Garder vectorSource mais vider son contenu
     if (window.vectorSource) {
         window.vectorSource.clear();
     }
     // Réinitialiser les références aux layers pour forcer leur recréation
     vectorLayer = undefined;
     vectorLayerBorder = undefined;
+
+    // Supprimer les autres layers si nécessaire
+    if (window.borderLayer) {
+        map.removeLayer(window.borderLayer);
+        window.borderLayer = undefined;
+    }
+    if (window.centerLayer) {
+        map.removeLayer(window.centerLayer);
+        window.centerLayer = undefined;
+    }
 }
 
 
@@ -647,10 +615,10 @@ export function stopAnimation(){
 export function recordAnimation(){
     // TODO Gérer date de début et fin personnalisées !!!!!
 
-    // Vérifier que les données sont prêtes avant de commencer
+    // Vérifier que les données sont prêtes
     if (!pkg.pointsByDate || pkg.pointsByDate.size === 0) {
-        console.error("Les données de géocaches ne sont pas encore chargées. Veuillez patienter...");
-        pkg.showToast("Données en cours de chargement. Veuillez réessayer dans quelques instants.", "warning", "Attention");
+        console.error("Les données de géocaches ne sont pas encore chargées");
+        pkg.showToast("Données en cours de chargement. Veuillez réessayer.", "warning", "Attention");
         return;
     }
 
@@ -685,16 +653,12 @@ export function recordAnimation(){
     // creation objet pour stocker les infos liées aux Frames (dt nombre de caches)
     let infos = createObjectInfos();
     currentDate = pkg.metadata.startDate;
-    // TEMP - Utilisons des dates consécutives avec des données
-    currentDate = new Date("2010-06-20"); // 2 features
-    pkg.metadata.endDate = new Date("2010-06-24"); // Inclut le 23 juin qui a des données
-
-    // Centrer la carte sur la France pour voir les points
-    map.getView().setCenter(ol.proj.fromLonLat([2.2137, 46.2276])); // Centre de la France
-    map.getView().setZoom(6);
+    // TEMP
+    currentDate = new Date("07-01-2018")
+    pkg.metadata.endDate = new Date("08-01-2018")
     currentFrame = 0;  // Réinitialisez le compteur de frames
 
-    // Afficher les points initiaux pour la date de début avant de commencer la capture
+    // Afficher les points initiaux pour la date de début
     displayFeaturesForDate(currentDate, pkg.options.point, pkg.options.flash, true, infos);
 
     // Attendre que le rendu soit complet avant de commencer la capture
@@ -706,6 +670,7 @@ export function recordAnimation(){
 
     // Forcer un rendu pour déclencher rendercomplete
     map.renderSync();
+
     // CREATION FILM
 }
 
@@ -894,21 +859,6 @@ function displayFeaturesForDate(date, pointOptions, flashOptions, record, infos)
     // Après : lookup instantanée dans Map pré-calculé (très rapide)
     const dateKey = date.toDateString();
     const featuresForDate = pkg.pointsByDate.get(dateKey) || [];
-
-    // Debug pour vérifier les données
-    console.log(`[DEBUG] Date: ${dateKey}, Features trouvées: ${featuresForDate.length}`);
-
-    // Log pour voir les dates disponibles autour de cette date
-    if (featuresForDate.length === 0) {
-        console.log(`[DEBUG] Dates disponibles dans l'index:`, Array.from(pkg.pointsByDate.keys()).slice(0, 10));
-        // Cherchons une date proche qui a des données
-        for (const [availableDate, features] of pkg.pointsByDate) {
-            if (features.length > 0) {
-                console.log(`[DEBUG] Première date avec données trouvée: ${availableDate} (${features.length} features)`);
-                break;
-            }
-        }
-    }
 
     displayWebGLPoints(featuresForDate, pointOptions)
 
