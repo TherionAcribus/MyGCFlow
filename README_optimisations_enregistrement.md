@@ -39,17 +39,17 @@ Objectif: réduire drastiquement le temps de capture et le poids des images/vid�
 
 ### Étapes d’implémentation (checklist)
 
-- [ ] A. Implémenter « Canvas-only » pour la capture OL
-  - [ ] Utiliser `map.getViewport().querySelector('canvas')` (ou composites) comme source
-  - [ ] Copier dans un `outCanvas` et dessiner overlays au `ctx`
-  - [ ] `outCanvas.toBlob('image/webp', 0.9)` → upload
+- [x] A. Implémenter « Canvas-only » pour la capture OL
+  - [x] Utiliser `map.getViewport().querySelector('canvas')` (ou composites) comme source
+  - [x] Copier dans un `outCanvas` et dessiner overlays au `ctx`
+  - [x] `outCanvas.toBlob('image/webp', 0.9)` → upload
 
-- [ ] B. Passer l’upload en `FormData` + Blob
-  - [ ] Client: `fetch('/upload_image', { method: 'POST', body: formData })`
-  - [ ] Serveur: accepter `multipart/form-data` (extraction via `request.files`), enregistrer directement le binaire
+- [x] B. Passer l’upload en `FormData` + Blob
+  - [x] Client: `fetch('/upload_image', { method: 'POST', body: formData })`
+  - [x] Serveur: accepter `multipart/form-data` (extraction via `request.files`), enregistrer directement le binaire
 
-- [ ] C. Throttle des toasts/progress
-  - [ ] Mettre à jour la barre toutes les 10 frames (paramétrable)
+- [x] C. Throttle des toasts/progress
+  - [x] Mettre à jour la barre toutes les 5 frames (optimisé)
 
 - [ ] D. Désactiver animations/logs pendant capture
   - [ ] Basculer un flag global (désactive transitions CSS/Materialize init/logs)
@@ -138,5 +138,47 @@ def upload_image_binary():
 6. Option: batching upload, OffscreenCanvas/Worker
 
 Ces étapes peuvent être activées via un « mode capture » (flag) pour ne pas impacter l’usage normal.
+
+---
+
+## Résultats attendus des optimisations
+
+### Métriques avant/après optimisation
+
+**Avant optimisation (votre situation actuelle) :**
+- FPS: ~0.6 frames/seconde
+- Taille images: ~PNG full size
+- Mémoire: Élevée (html2canvas traite tout le DOM)
+- CPU: Élevé (conversion Base64, traitement DOM complet)
+
+**Après optimisation (résultats attendus) :**
+- FPS: 3-8 frames/seconde (amélioration de 5-13x)
+- Taille images: -33% (WebP vs PNG)
+- Mémoire: Réduite (canvas-only, pas de DOM)
+- CPU: Réduit (pas de traitement DOM, upload binaire)
+
+### Comment mesurer les améliorations
+
+Le toast affiche maintenant en temps réel :
+```
+25.0% | 15/07/2018 | f:25/120 | fps:4.2 | cap:45.3ms | up:120.1ms
+```
+
+- `fps`: Frames par seconde (objectif: 3-8)
+- `cap`: Temps moyen de capture en ms (objectif: <100ms)
+- `up`: Temps moyen d'upload en ms (objectif: <200ms)
+
+### Test de performance
+
+1. Lancez un enregistrement avant optimisation
+2. Notez les métriques dans le toast
+3. Redémarrez l'application avec les optimisations
+4. Lancez un nouvel enregistrement
+5. Comparez les métriques
+
+**Résultat typique attendu :**
+- Amélioration FPS: 5-10x
+- Réduction taille: 30-40%
+- Stabilité UI: Plus fluide (throttling toasts)
 
 

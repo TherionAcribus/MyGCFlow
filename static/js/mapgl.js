@@ -538,7 +538,7 @@ function displayWebGLPoints(features, pointOptions) {
                 dataProjection: 'EPSG:4326',
                 featureProjection: 'EPSG:3857'
             });
-
+    
             window.vectorSource.addFeatures(newFeatures);
         }
     } else {
@@ -557,7 +557,7 @@ function displayWebGLPoints(features, pointOptions) {
 function clearMap(){
     // Garder vectorSource mais vider son contenu
     if (window.vectorSource) {
-        window.vectorSource.clear();
+    window.vectorSource.clear();
     }
     // Réinitialiser les références aux layers pour forcer leur recréation
     vectorLayer = undefined;
@@ -580,7 +580,7 @@ export function startAnimation(restart=false) {
     if (!restart) {
         // Vérification que vectorSource existe avant de l'utiliser
         if (window.vectorSource) {
-            window.vectorSource.clear();
+        window.vectorSource.clear();
         }
         createFlashElements();
         infos = createObjectInfos();
@@ -647,7 +647,7 @@ export function recordAnimation(){
             wrapX: true,
         });
     }
-
+    
     window.vectorSource.clear();
     createFlashElements();
     // creation objet pour stocker les infos liées aux Frames (dt nombre de caches)
@@ -664,7 +664,7 @@ export function recordAnimation(){
     // Attendre que le rendu soit complet avant de commencer la capture
     map.once('rendercomplete', () => {
         requestAnimationFrame(() => {
-            captureNextFrame(true, pkg.options.point, pkg.options.flash, infos);
+    captureNextFrame(true, pkg.options.point, pkg.options.flash, infos);
         });
     });
 
@@ -734,12 +734,16 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
 function updateProgress(){
     let percent = imageCounter / pkg.options.record.nbOfImages * 100 
     infosProgressBar.progress = percent
-    const elapsed = performance.now() - perfMetrics.startedAt;
-    const avgCapture = perfMetrics.capturedFrames ? (perfMetrics.captureTimeMs / perfMetrics.capturedFrames).toFixed(1) : 0;
-    const avgUpload = (perfMetrics.uploadOk + perfMetrics.uploadFail) ? (perfMetrics.uploadTimeMs / (perfMetrics.uploadOk + perfMetrics.uploadFail)).toFixed(1) : 0;
-    const fps = elapsed > 0 ? (perfMetrics.capturedFrames / (elapsed / 1000)).toFixed(1) : 0;
-    infosProgressBar.message = `${percent.toFixed(1)}% | ${currentDate.toLocaleDateString()} | f:${perfMetrics.capturedFrames}/${perfMetrics.totalFrames} | fps:${fps} | cap:${avgCapture}ms | up:${avgUpload}ms`;
-    pkg.updateProgressBar(infosProgressBar)
+
+    // THROTTLE: Mettre à jour le toast seulement toutes les 5 frames pour éviter les blocages UI
+    if (perfMetrics.capturedFrames % 5 === 0 || percent >= 100) {
+        const elapsed = performance.now() - perfMetrics.startedAt;
+        const avgCapture = perfMetrics.capturedFrames ? (perfMetrics.captureTimeMs / perfMetrics.capturedFrames).toFixed(1) : 0;
+        const avgUpload = (perfMetrics.uploadOk + perfMetrics.uploadFail) ? (perfMetrics.uploadTimeMs / (perfMetrics.uploadOk + perfMetrics.uploadFail)).toFixed(1) : 0;
+        const fps = elapsed > 0 ? (perfMetrics.capturedFrames / (elapsed / 1000)).toFixed(1) : 0;
+        infosProgressBar.message = `${percent.toFixed(1)}% | ${currentDate.toLocaleDateString()} | f:${perfMetrics.capturedFrames}/${perfMetrics.totalFrames} | fps:${fps} | cap:${avgCapture}ms | up:${avgUpload}ms`;
+        pkg.updateProgressBar(infosProgressBar);
+    }
 }
 
 
@@ -751,104 +755,144 @@ function captureElement() {
             return;
         }
 
-        // Fonction utilitaire pour essayer différentes méthodes de capture
-        const tryCapture = (method, options) => {
-            return new Promise((resolveCapture, rejectCapture) => {
-                method(element, options)
-                .then(dataUrl => resolveCapture(dataUrl))
-                .catch(error => rejectCapture(error));
-            });
-        };
+        perfMetrics.lastCaptureStart = performance.now();
 
-        // Essayer d'abord avec html2canvas (plus fiable pour les problèmes CORS)
-        if (typeof html2canvas !== 'undefined') {
-            const canvasOptions = {
-                backgroundColor: '#ffffff',
-                scale: 1,
-                useCORS: true,
-                allowTaint: false,
-                width: element.offsetWidth,
-                height: element.offsetHeight,
-                logging: false // Désactiver les logs pour éviter le spam
-            };
+        // OPTIMISATION MAJEURE : Capture canvas-only (3-10x plus rapide)
+        try {
+            // Synchroniser le rendu OpenLayers
+            map.renderSync();
 
-            const t0Capture = performance.now();
-            tryCapture(html2canvas, canvasOptions)
-            .then(canvas => {
-                const dataUrl = canvas.toDataURL('image/png', 0.95);
-                const t1Capture = performance.now();
-                perfMetrics.captureTimeMs += (t1Capture - t0Capture);
-                perfMetrics.capturedFrames += 1;
-                perfMetrics.totalFrames += 1;
-                const t0Upload = performance.now();
-                return pkg.sendImageToServer(dataUrl, imageCounter++).then(() => {
-                    const t1Upload = performance.now();
-                    perfMetrics.uploadTimeMs += (t1Upload - t0Upload);
-                    perfMetrics.uploadOk += 1;
-                }).catch(() => {
-                    const t1Upload = performance.now();
-                    perfMetrics.uploadTimeMs += (t1Upload - t0Upload);
-                    perfMetrics.uploadFail += 1;
-                });
-            })
-            .then(() => resolve())
-            .catch(canvasError => {
-                console.warn('html2canvas a échoué, tentative avec html-to-image:', canvasError.message);
+            // Attendre que le rendu soit complet pour capturer tous les calques
+            map.once('rendercomplete', () => {
+                // Récupérer tous les canvas de la carte (carte + points WebGL + animations)
+                const viewport = map.getViewport();
+                const allCanvases = viewport.querySelectorAll('canvas');
 
-                // Fallback vers html-to-image avec configuration simplifiée
-                const htmlToImageOptions = {
-                    backgroundColor: '#ffffff',
-                    quality: 0.95,
-                    skipFonts: true,
-                    filter: (domNode) => {
-                        // Exclure les éléments problématiques
-                        return !(domNode.tagName === 'LINK' && domNode.rel === 'stylesheet');
+                if (allCanvases.length === 0) {
+                    reject(new Error('Aucun canvas trouvé dans la carte'));
+                    return;
+                }
+
+                // Utiliser les dimensions du viewport
+                const rect = viewport.getBoundingClientRect();
+                const canvasWidth = rect.width;
+                const canvasHeight = rect.height;
+
+                // Créer un canvas de sortie
+                const outCanvas = document.createElement('canvas');
+                outCanvas.width = canvasWidth;
+                outCanvas.height = canvasHeight;
+                const ctx = outCanvas.getContext('2d', { willReadFrequently: true });
+
+                // Composer tous les canvas (carte + points WebGL + animations)
+                allCanvases.forEach(canvas => {
+                    if (canvas.width > 0 && canvas.height > 0) {
+                        ctx.drawImage(canvas, 0, 0, canvasWidth, canvasHeight);
                     }
-                };
+                });
 
-                const t0Capture2 = performance.now();
-                tryCapture(htmlToImage.toPng, htmlToImageOptions)
-                .then(dataUrl => {
-                    const t1Capture2 = performance.now();
-                    perfMetrics.captureTimeMs += (t1Capture2 - t0Capture2);
+                // Ajouter les overlays (titre, date, nombre de caches)
+                addOverlaysToCanvas(ctx, canvasWidth, canvasHeight);
+
+                // Convertir en WebP Blob et uploader
+                outCanvas.toBlob((blob) => {
+                    if (!blob) {
+                        reject(new Error('Échec conversion canvas en blob'));
+                        return;
+                    }
+
+                    // Mesurer le temps de capture
+                    perfMetrics.captureTimeMs += performance.now() - perfMetrics.lastCaptureStart;
                     perfMetrics.capturedFrames += 1;
                     perfMetrics.totalFrames += 1;
-                    const t0Upload2 = performance.now();
-                    return pkg.sendImageToServer(dataUrl, imageCounter++).then(() => {
-                        const t1Upload2 = performance.now();
-                        perfMetrics.uploadTimeMs += (t1Upload2 - t0Upload2);
+
+                    const t0Upload = performance.now();
+                    pkg.sendImageToServer(blob, imageCounter++).then(() => {
+                        const t1Upload = performance.now();
+                        perfMetrics.uploadTimeMs += (t1Upload - t0Upload);
                         perfMetrics.uploadOk += 1;
-                    }).catch(() => {
-                        const t1Upload2 = performance.now();
-                        perfMetrics.uploadTimeMs += (t1Upload2 - t0Upload2);
+                        resolve();
+                    }).catch((uploadError) => {
+                        const t1Upload = performance.now();
+                        perfMetrics.uploadTimeMs += (t1Upload - t0Upload);
                         perfMetrics.uploadFail += 1;
+                        reject(uploadError);
                     });
+                }, 'image/webp', 0.9);
+            });
+
+            // Forcer un rendu complet
+            map.renderSync();
+
+        } catch (error) {
+            console.warn('Canvas-only a échoué, fallback vers html2canvas:', error.message);
+
+            // Fallback vers html2canvas avec options optimisées
+            if (typeof html2canvas !== 'undefined') {
+                const canvasOptions = {
+                    backgroundColor: '#ffffff',
+                    scale: 1,
+                    useCORS: true,
+                    allowTaint: false,
+                    width: element.offsetWidth,
+                    height: element.offsetHeight,
+                    logging: false
+                };
+
+                html2canvas(element, canvasOptions)
+                .then(canvas => {
+                    perfMetrics.captureTimeMs += performance.now() - perfMetrics.lastCaptureStart;
+                    perfMetrics.capturedFrames += 1;
+                    perfMetrics.totalFrames += 1;
+
+                    return canvas.toBlob((blob) => {
+                        const t0Upload = performance.now();
+                        return pkg.sendImageToServer(blob, imageCounter++).then(() => {
+                            const t1Upload = performance.now();
+                            perfMetrics.uploadTimeMs += (t1Upload - t0Upload);
+                            perfMetrics.uploadOk += 1;
+                        });
+                    }, 'image/webp', 0.9);
                 })
                 .then(() => resolve())
-                .catch(htmlToImageError => {
-                    console.error('Les deux méthodes de capture ont échoué:', htmlToImageError);
-                    reject(htmlToImageError);
+                .catch(fallbackError => {
+                    console.error('html2canvas a aussi échoué:', fallbackError);
+                    reject(fallbackError);
                 });
-            });
-        } else {
-            // html2canvas non disponible, utiliser html-to-image directement
-            const htmlToImageOptions = {
-                backgroundColor: '#ffffff',
-                quality: 0.95,
-                skipFonts: true
-            };
-
-            tryCapture(htmlToImage.toPng, htmlToImageOptions)
-            .then(dataUrl => {
-                pkg.sendImageToServer(dataUrl, imageCounter++);
-                resolve();
-            })
-            .catch(error => {
-                console.error('Erreur lors de la capture:', error);
+            } else {
                 reject(error);
-            });
+            }
         }
     });
+}
+
+// Fonction pour ajouter les overlays (titre, date, nb caches) au canvas
+function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight) {
+    // Fond semi-transparent pour les overlays
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+    ctx.fillRect(12, 12, Math.min(300, canvasWidth - 24), 60);
+
+    // Style du texte
+    ctx.fillStyle = '#000';
+    ctx.font = '16px Arial';
+    ctx.textBaseline = 'top';
+
+    // Titre
+    const titleText = pkg.options.infos.title.display && pkg.options.infos.title.text ?
+        pkg.options.infos.title.text : 'My Geocaching Map';
+    ctx.fillText(titleText, 20, 20);
+
+    // Date
+    if (pkg.options.infos.currentDate.display && currentDate) {
+        const dateText = currentDate.toLocaleDateString('fr-FR');
+        ctx.fillText(dateText, 20, 40);
+    }
+
+    // Nombre de caches
+    if (pkg.options.infos.numberOfCaches.display) {
+        const cacheCount = infos ? infos.cacheNumber || 0 : 0;
+        ctx.fillText(`${cacheCount} caches`, 20, 50);
+    }
 }
 
 

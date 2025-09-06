@@ -4,21 +4,43 @@ import base64
 from moviepy.editor import ImageSequenceClip
 
 
-def upload_image(requests):
-    data = requests.json
-    numberSize = int(data["numberSize"])  # Le nombre total d'images prévu
-    image_data = base64.b64decode(data['image'].split(',')[1])
-    counter = int(data['counter'])
-    
-    # Calculer le nombre de zéros nécessaires pour le formatage
-    # Utilisation de str.zfill() pour ajouter des zéros non significatifs
-    image_filename = f'image_{str(counter).zfill(numberSize)}.png'
+def upload_image(request):
+    try:
+        # Vérifier si c'est du multipart/form-data (nouvelle méthode optimisée)
+        if request.files and 'image' in request.files:
+            image_file = request.files['image']
+            counter = int(request.form.get('counter', 0))
+            numberSize = int(request.form.get('numberSize', 4))
 
-    # TODO: Pouvoir choisir le répertoire tmp
-    with open(os.path.join('captured/', image_filename), 'wb') as file:
-        file.write(image_data)
+            # Utiliser le nom de fichier fourni ou en générer un
+            if image_file.filename:
+                image_filename = image_file.filename
+            else:
+                image_filename = f'image_{str(counter).zfill(numberSize)}.webp'
 
-    return jsonify({'message': 'Image reçue avec succès'})
+            # Sauvegarder directement le fichier binaire
+            os.makedirs('captured', exist_ok=True)
+            image_file.save(os.path.join('captured', image_filename))
+
+        # Fallback pour l'ancienne méthode JSON/Base64 (compatibilité)
+        elif request.is_json:
+            data = request.json
+            numberSize = int(data["numberSize"])
+            image_data = base64.b64decode(data['image'].split(',')[1])
+            counter = int(data['counter'])
+
+            image_filename = f'image_{str(counter).zfill(numberSize)}.png'
+            os.makedirs('captured', exist_ok=True)
+
+            with open(os.path.join('captured/', image_filename), 'wb') as file:
+                file.write(image_data)
+        else:
+            return jsonify({'success': False, 'message': 'Format de données non supporté'}), 400
+
+        return jsonify({'success': True, 'message': 'Image reçue avec succès'})
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 
 def clear_pictures_directory():
