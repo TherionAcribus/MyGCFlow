@@ -1075,7 +1075,7 @@ function updateAnimationStyles() {
         } else {
             // Mettre à jour le style pour l'animation
             const animationRatio = animationFrame / maxAnimationFrames;
-            const radius = ol.easing.easeOut(animationRatio) * 25 + 5;
+            const radius = ol.easing.easeOut(animationRatio) * (pkg.options.flash.size / 2) + (pkg.options.flash.size / 10);
             const opacity = ol.easing.easeOut(1 - animationRatio);
 
             let style;
@@ -1131,7 +1131,7 @@ function flash(feature, flashOptions) {
 
         const elapsedRatio = elapsed / duration;
         // Définissez la taille et l'opacité de l'étoile
-        const radius = ol.easing.easeOut(elapsedRatio) * 25 + 5; // Taille de l'élément 
+        const radius = ol.easing.easeOut(elapsedRatio) * (flashOptions.size / 2) + (flashOptions.size / 10); // Taille de l'élément basée sur les options utilisateur
         const opacity = ol.easing.easeOut(1 - elapsedRatio); // Opacité de l'élément 
 
         // Style pour l'animation de flash

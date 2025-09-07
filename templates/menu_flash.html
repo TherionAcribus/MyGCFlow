@@ -7,7 +7,7 @@
             <div class="input-field">
                 <select id="selectFlashMode">
                     <option value="none">Pas de flash</option>
-                    <option value="circle">Cercle</option>
+                    <option value="circle" selected>Cercle</option>
                     <option value="star">Étoile</option>
                     <option value="square">Carré</option>
                     <option value="triangle">Triangle</option>
@@ -17,19 +17,19 @@
             </div>
 
             <div class="input-field">
-                <input placeholder="Durée du flash" id="inputTimeFlash" type="number" class="validate">
+                <input placeholder="Durée du flash" id="inputTimeFlash" type="number" class="validate" min="100" max="10000" step="100">
                 <label for="inputTimeFlash">Durée du flash en ms</label>
             </div>
 
             <div class="input-field">
-                <input placeholder="Taille du Flash" id="inputSizeFlash" type="number" class="validate">
-                <label for="inputSizeFlash">Taille du flash en ms</label>
+                <input placeholder="Taille du Flash" id="inputSizeFlash" type="number" class="validate" min="5" max="200" step="5">
+                <label for="inputSizeFlash">Taille du flash en px</label>
             </div>
 
             <!-- Color Pickers Flash -->
             <div class="input-field col s3">
                 <span>Couleur du flash: </span>
-                <input type="color" id="flashColor" value="#ffffff">
+                <input type="color" id="flashColor" value="#FF00FF">
             </div>
 
         </form>

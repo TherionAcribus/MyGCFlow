@@ -271,10 +271,16 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     }
     // inputs
     inputTimeFlash = document.getElementById('inputTimeFlash');
-    if (inputTimeFlash) inputTimeFlash.addEventListener('input', changeFlashValues);
+    if (inputTimeFlash) {
+        inputTimeFlash.addEventListener('input', changeFlashValues);
+        inputTimeFlash.addEventListener('blur', validateTimeFlash); // Validation seulement à la perte de focus
+    }
 
     inputSizeFlash = document.getElementById('inputSizeFlash');
-    if (inputSizeFlash) inputSizeFlash.addEventListener('input', changeFlashValues);
+    if (inputSizeFlash) {
+        inputSizeFlash.addEventListener('input', changeFlashValues);
+        inputSizeFlash.addEventListener('blur', validateSizeFlash); // Validation seulement à la perte de focus
+    }
 
     // colorpickers
     cpFlashColor = document.getElementById('flashColor');
@@ -1236,11 +1242,55 @@ function changeFlashValues(event){
     if (event.id === "selectFlashMode") {
         pkg.options.flash.mode = event.value;
     }
-    // inputs
-    if (inputTimeFlash) pkg.options.flash.duration = inputTimeFlash.value;
-    if (inputSizeFlash) pkg.options.flash.size = inputSizeFlash.value;
+    // inputs avec validation légère (pendant la saisie)
+    if (inputTimeFlash) {
+        let duration = parseInt(inputTimeFlash.value);
+        // Ne valide que si c'est un nombre valide
+        if (!isNaN(duration)) {
+            pkg.options.flash.duration = duration;
+        }
+    }
+    if (inputSizeFlash) {
+        let size = parseInt(inputSizeFlash.value);
+        // Ne valide que si c'est un nombre valide
+        if (!isNaN(size)) {
+            pkg.options.flash.size = size;
+        }
+    }
     // colorpickers
     if (cpFlashColor) pkg.options.flash.color = cpFlashColor.value;
+}
+
+// Fonction de validation à la perte de focus pour la durée du flash
+function validateTimeFlash() {
+    if (inputTimeFlash) {
+        let duration = parseInt(inputTimeFlash.value);
+        // Validation de la durée (100ms à 10000ms) seulement à la perte de focus
+        if (isNaN(duration) || duration < 100) {
+            duration = 100;
+            inputTimeFlash.value = duration;
+        } else if (duration > 10000) {
+            duration = 10000;
+            inputTimeFlash.value = duration;
+        }
+        pkg.options.flash.duration = duration;
+    }
+}
+
+// Fonction de validation à la perte de focus pour la taille du flash
+function validateSizeFlash() {
+    if (inputSizeFlash) {
+        let size = parseInt(inputSizeFlash.value);
+        // Validation de la taille (5px à 200px) seulement à la perte de focus
+        if (isNaN(size) || size < 5) {
+            size = 5;
+            inputSizeFlash.value = size;
+        } else if (size > 200) {
+            size = 200;
+            inputSizeFlash.value = size;
+        }
+        pkg.options.flash.size = size;
+    }
 }
 
 
