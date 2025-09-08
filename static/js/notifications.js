@@ -10,9 +10,9 @@ class NotificationManager {
     }
 
     init() {
-        // Créer le conteneur de toasts
+        // Créer le conteneur de toasts (avec classes namespacées pour éviter les conflits CSS)
         this.container = document.createElement('div');
-        this.container.className = 'toast-container';
+        this.container.className = 'gcm-toast-container';
         document.body.appendChild(this.container);
     }
 
@@ -27,7 +27,7 @@ class NotificationManager {
      */
     show(message, type = 'info', title = '', duration = 5000, showProgress = false, progress = 0) {
         const toast = document.createElement('div');
-        toast.className = `toast ${type}`;
+        toast.className = `gcm-toast ${type}`;
 
         const iconMap = {
             info: 'ℹ️',
@@ -37,19 +37,19 @@ class NotificationManager {
         };
 
         toast.innerHTML = `
-            <div class="toast-icon">${iconMap[type] || 'ℹ️'}</div>
-            <div class="toast-content">
-                ${title ? `<div class="toast-title">${title}</div>` : ''}
-                <div class="toast-message">${message}</div>
+            <div class="gcm-toast-icon">${iconMap[type] || 'ℹ️'}</div>
+            <div class="gcm-toast-content">
+                ${title ? `<div class="gcm-toast-title">${title}</div>` : ''}
+                <div class="gcm-toast-message">${message}</div>
                 ${showProgress ? `
-                    <div class="toast-progress">
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: ${progress}%"></div>
+                    <div class="gcm-toast-progress">
+                        <div class="gcm-progress-bar">
+                            <div class="gcm-progress-fill" style="width: ${progress}%"></div>
                         </div>
                     </div>
                 ` : ''}
             </div>
-            <button class="toast-close" onclick="this.parentElement.remove()">×</button>
+            <button class="gcm-toast-close" onclick="this.parentElement.remove()">×</button>
         `;
 
         this.container.appendChild(toast);
@@ -86,7 +86,7 @@ class NotificationManager {
      * @param {number} progress - Valeur du progrès (0-100)
      */
     updateProgress(toast, progress) {
-        const progressFill = toast.querySelector('.progress-fill');
+        const progressFill = toast.querySelector('.gcm-progress-fill');
         if (progressFill) {
             progressFill.style.width = `${Math.min(100, Math.max(0, progress))}%`;
         }

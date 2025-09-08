@@ -69,6 +69,10 @@
 import * as pkg from './index.js';
 import { CONFIG } from './init.js';
 
+// Debug toasts/assemblage
+const TOAST_DEBUG = true;
+function logToast(...args) { if (TOAST_DEBUG) { try { console.log('[TOAST]', ...args); } catch(e) {} } }
+
 let map;  // carte de l'app
 let engine;  // quel moteur graphique est utilisé
 // les couches de cartographie
@@ -788,6 +792,32 @@ export function recordAnimation(){
         return;
     }
 
+    // Nettoyage initial du répertoire d'images avant la capture
+    const prepToast = pkg.showToast && pkg.showToast('Préparation de l\'enregistrement...', 'info', 'Nettoyage initial', 0);
+    fetch(`${CONFIG.BASE_URL}/clear_pictures_directory`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'vider_repertoire' })
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (prepToast) { pkg.hideToast && pkg.hideToast(prepToast); }
+        if (d && d.success) {
+            pkg.showToast && pkg.showToast('Répertoire d’images nettoyé.', 'success', 'Préparation', 2000);
+        } else {
+            pkg.showToast && pkg.showToast('Nettoyage initial impossible. Poursuite de l\'enregistrement.', 'warning', 'Attention', 3000);
+        }
+        startRecordingProcess();
+    })
+    .catch(err => {
+        if (prepToast) { pkg.hideToast && pkg.hideToast(prepToast); }
+        pkg.showToast && pkg.showToast('Erreur nettoyage initial. Poursuite.', 'warning', 'Attention', 3000);
+        startRecordingProcess();
+    });
+    return;
+}
+
+function startRecordingProcess(){
     // Remise à zéro de l'état de la carte et des informations affichées
     clearMap(); // Nettoie les points sur la carte
 
@@ -796,7 +826,6 @@ export function recordAnimation(){
     if (filteredPointsAtStart.length > 0) {
         displayWebGLPoints(filteredPointsAtStart, pkg.options.point);
     }
-
 
     // Déterminer plage de dates d'animation si définie
     if (pkg.options.animation.dateStart instanceof Date) {
@@ -816,12 +845,28 @@ export function recordAnimation(){
 
     console.log('[RECORD] 🚀 Démarrage enregistrement avec date:', currentDate, '->', pkg.metadata.endDate);
 
+    // Calculer le nombre de jours d'animation (basé sur la plage sélectionnée, pas toute la BDD)
+    try {
+        const start = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
+        const end = new Date(pkg.metadata.endDate.getFullYear(), pkg.metadata.endDate.getMonth(), pkg.metadata.endDate.getDate());
+        const MS_PER_DAY = 24 * 60 * 60 * 1000;
+        const rawDays = Math.floor((end - start) / MS_PER_DAY) + 1; // inclusif
+        const animationDays = Math.max(1, rawDays);
+
+        // Mettre à jour le total d'images attendu pour la progression
+        const framesPerDayLocal = Number(pkg.options.record?.framesPerDay) || framesPerDay || 1;
+        const extra = Math.max(0, Math.round(Number(pkg.options.record?.extraFrames) || 0));
+        pkg.options.record.nbOfImages = animationDays * framesPerDayLocal + extra;
+        pkg.options.record.numberOfDigits = Math.max(4, Math.round(pkg.options.record.nbOfImages).toString().length);
+        console.log('[RECORD] Jours animation:', animationDays, 'frames/jour:', framesPerDayLocal, 'total images:', pkg.options.record.nbOfImages);
+    } catch(e) { console.warn('Calcul jours animation échoué:', e); }
+
     // Remise à zéro de l'affichage des informations
     pkg.updateNbCaches(0); // Remet le compteur de géocaches à zéro
     pkg.updateCurrentDate(currentDate); // Remet la date au début effectif
 
-    // ouverture modale
-    pkg.openModalLoading("Capture en cours", "Les images sont en cours de capture... Ne pas bouger la fenetre !");
+    // ouverture modale (progress) avec instruction intégrée
+    pkg.openModalLoading("Capture en cours", "Ne pas bouger la fenêtre pendant la capture.");
 
     // Init métriques
     perfMetrics = { totalFrames: 0, capturedFrames: 0, uploadOk: 0, uploadFail: 0, captureTimeMs: 0, uploadTimeMs: 0, startedAt: performance.now() };
@@ -855,14 +900,12 @@ export function recordAnimation(){
     // Attendre que le rendu soit complet avant de commencer la capture
     map.once('rendercomplete', () => {
         requestAnimationFrame(() => {
-    captureNextFrame(true, pkg.options.point, pkg.options.flash, infos);
+            captureNextFrame(true, pkg.options.point, pkg.options.flash, infos);
         });
     });
 
     // Forcer un rendu pour déclencher rendercomplete
     map.renderSync();
-
-    // CREATION FILM
 }
 
 
@@ -978,7 +1021,121 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
         }
 
         try { pkg.resetControlsToInitialState && pkg.resetControlsToInitialState(); } catch(e) { console.warn(e); }
-        // TODO: assembler le film / nettoyage si nécessaire
+
+        // Assembler automatiquement puis nettoyer
+        console.log('[RECORD END] Démarrage de l\'assemblage automatique...');
+
+        // Désactiver temporairement les boutons pour éviter les clics multiples
+        const assembleBtn = document.getElementById('btnAssembleMoviePictures');
+        const cleanBtn = document.getElementById('btnCleanMoviePictures');
+        const recordBtn = document.getElementById('btnRecordAnimation');
+
+        if (assembleBtn) {
+          assembleBtn.disabled = true;
+          assembleBtn.textContent = 'Assemblage en cours...';
+        }
+        if (cleanBtn) {
+          cleanBtn.disabled = true;
+          cleanBtn.textContent = 'Nettoyage en cours...';
+        }
+        if (recordBtn) {
+          recordBtn.disabled = true;
+        }
+
+        // Réutiliser la modal/loader existante pour garantir l'affichage (système qui marche déjà chez toi)
+        try { pkg.openModalLoading('Assemblage en cours', 'Création de la vidéo à partir des images...'); } catch(e) { console.warn('openModalLoading erreur:', e); }
+
+        fetch(`${CONFIG.BASE_URL}/start_create_video`)
+          .then(response => { logToast('Réponse assemblage reçue, status:', response?.status); return response.json(); })
+          .then(data => {
+            if (data && data.success) {
+              console.log('[RECORD END] Assemblage réussi, nettoyage automatique...');
+              // Mettre à jour le loader (70%) et texte via UI utils existants
+              try { pkg.updateProgressBar({progress: 70, message: 'Vidéo créée. Nettoyage des images...'}); } catch(e) {}
+              try { pkg.updateTextsModal('Nettoyage en cours', 'Vidéo créée avec succès. Nettoyage des images...'); } catch(e) {}
+
+              // Nettoyer automatiquement
+              return fetch(`${CONFIG.BASE_URL}/clear_pictures_directory`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ action: 'vider_repertoire' })
+              });
+            } else {
+              console.warn('[RECORD END] Échec de l\'assemblage:', data.message);
+              // Réactiver les boutons en cas d'erreur
+              if (assembleBtn) {
+                assembleBtn.disabled = false;
+                assembleBtn.textContent = 'Assembler film';
+              }
+              if (cleanBtn) {
+                cleanBtn.disabled = false;
+                cleanBtn.textContent = 'Nettoyer images';
+              }
+              if (recordBtn) {
+                recordBtn.disabled = false;
+              }
+              try { pkg.closeModalLoading(); } catch(e) {}
+              pkg.showToast && pkg.showToast('Erreur lors de la création de la vidéo: ' + (data.message || 'Erreur inconnue'), 'error', 'Échec assemblage', 5000);
+              throw new Error('Assemblage failed');
+            }
+          })
+          .then(response => response ? response.json() : null)
+          .then(cleanData => {
+            if (cleanData && cleanData.success) {
+              console.log('[RECORD END] Nettoyage automatique terminé');
+              // Réactiver les boutons et restaurer les textes
+              if (assembleBtn) {
+                assembleBtn.disabled = false;
+                assembleBtn.textContent = 'Assembler film';
+              }
+              if (cleanBtn) {
+                cleanBtn.disabled = false;
+                cleanBtn.textContent = 'Nettoyer images';
+              }
+              if (recordBtn) {
+                recordBtn.disabled = false;
+              }
+
+              try { pkg.updateProgressBar({progress: 100, message: 'Nettoyage terminé'}); } catch(e) {}
+              setTimeout(() => { try { pkg.closeModalLoading(); } catch(e) {} }, 400);
+              pkg.showToast && pkg.showToast('Traitement automatique terminé avec succès !', 'success', 'Vidéo prête', 5000);
+            } else if (cleanData) {
+              console.warn('[RECORD END] Échec du nettoyage:', cleanData.message);
+              // Réactiver les boutons même si le nettoyage échoue
+              if (assembleBtn) {
+                assembleBtn.disabled = false;
+                assembleBtn.textContent = 'Assembler film';
+              }
+              if (cleanBtn) {
+                cleanBtn.disabled = false;
+                cleanBtn.textContent = 'Nettoyer images';
+              }
+              if (recordBtn) {
+                recordBtn.disabled = false;
+              }
+              try { pkg.closeModalLoading(); } catch(e) {}
+            }
+          })
+          .catch(err => {
+            console.error('[RECORD END] Erreur dans la chaîne automatique:', err);
+            // Réactiver les boutons en cas d'erreur
+            if (assembleBtn) {
+              assembleBtn.disabled = false;
+              assembleBtn.textContent = 'Assembler film';
+            }
+            if (cleanBtn) {
+              cleanBtn.disabled = false;
+              cleanBtn.textContent = 'Nettoyer images';
+            }
+            if (recordBtn) {
+              recordBtn.disabled = false;
+            }
+            try { pkg.closeModalLoading(); } catch(e) {}
+            pkg.showToast && pkg.showToast('Erreur lors du traitement automatique: ' + err.message, 'error', 'Erreur chaîne', 5000);
+          });
+
         return;
     }
 
@@ -1009,17 +1166,19 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
 
 // mise à jour de la barre de progression
 function updateProgress(){
-    let percent = imageCounter / pkg.options.record.nbOfImages * 100 
+    // Sécuriser nbOfImages pour éviter une division par 0 ou undefined
+    const totalImages = Math.max(1, Number(pkg.options.record?.nbOfImages) || 1);
+    let percent = Math.min(100, (imageCounter / totalImages) * 100)
     infosProgressBar.progress = percent
 
-    // THROTTLE: Mettre à jour le toast seulement toutes les 5 frames pour éviter les blocages UI
-    if (perfMetrics.capturedFrames % 5 === 0 || percent >= 100) {
+    // THROTTLE: Mettre à jour le toast toutes les 2 frames (plus fluide mais raisonnable)
+    if (perfMetrics.capturedFrames % 2 === 0 || percent >= 100) {
         const elapsed = performance.now() - perfMetrics.startedAt;
         const avgCapture = perfMetrics.capturedFrames ? (perfMetrics.captureTimeMs / perfMetrics.capturedFrames).toFixed(1) : 0;
         const avgUpload = (perfMetrics.uploadOk + perfMetrics.uploadFail) ? (perfMetrics.uploadTimeMs / (perfMetrics.uploadOk + perfMetrics.uploadFail)).toFixed(1) : 0;
         const fps = elapsed > 0 ? (perfMetrics.capturedFrames / (elapsed / 1000)).toFixed(1) : 0;
-        infosProgressBar.message = `${percent.toFixed(1)}% | ${currentDate.toLocaleDateString()} | f:${perfMetrics.capturedFrames}/${perfMetrics.totalFrames} | fps:${fps} | cap:${avgCapture}ms | up:${avgUpload}ms`;
-        pkg.updateProgressBar(infosProgressBar);
+        const msg = `${percent.toFixed(1)}% | ${currentDate ? currentDate.toLocaleDateString() : ''} | f:${imageCounter}/${totalImages} | fps:${fps} | cap:${avgCapture}ms | up:${avgUpload}ms`;
+        pkg.updateProgressBar({ progress: percent, message: msg });
     }
 }
 
@@ -1089,6 +1248,8 @@ async function captureElement() {
                             const t1Upload = performance.now();
                             perfMetrics.uploadTimeMs += (t1Upload - t0Upload);
                             perfMetrics.uploadOk += 1;
+                            // Mise à jour du toast de progression plus fréquemment (par frame)
+                            try { updateProgress(); } catch(e) {}
                             resolve();
                         }).catch((uploadError) => {
                             const t1Upload = performance.now();
@@ -1132,6 +1293,8 @@ async function captureElement() {
                             const t1Upload = performance.now();
                             perfMetrics.uploadTimeMs += (t1Upload - t0Upload);
                             perfMetrics.uploadOk += 1;
+                            // Mise à jour du toast de progression (fallback)
+                            try { updateProgress(); } catch(e) {}
                         });
                     }, 'image/webp', 0.9);
                 })

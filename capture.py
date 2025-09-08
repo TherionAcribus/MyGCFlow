@@ -71,11 +71,16 @@ def clear_pictures_directory():
 
 def assemble_pictures_directory(image_folder, output_video, fps=24):
     try:
+        # Inclure plusieurs formats d'images (webp par défaut côté client, mais aussi png et autres)
+        exts = (".webp", ".png", ".jpg", ".jpeg")
         # Obtenez la liste des fichiers d'image dans le dossier
-        image_files = [os.path.join(image_folder, img) for img in sorted(os.listdir(image_folder)) if img.endswith(".png")]
+        image_files = [os.path.join(image_folder, img) for img in sorted(os.listdir(image_folder)) if img.lower().endswith(exts)]
 
         if not image_files:
             return jsonify({'success': False, 'message': 'Aucune image trouvée dans le dossier'})
+
+        # Assurez-vous que le répertoire de sortie existe
+        os.makedirs(os.path.dirname(output_video), exist_ok=True)
 
         # Créez un clip vidéo à partir des images
         clip = ImageSequenceClip(image_files, fps=fps)

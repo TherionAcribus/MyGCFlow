@@ -144,16 +144,16 @@ def start_create_video():
         return jsonify({'success': False, 'message': str(e)})
 
 
-# @app.route('/clear_pictures_directory', methods=['POST'])
-# @cross_origin()
-# def clear_pictures():
-#     return clear_pictures_directory()
+@app.route('/clear_pictures_directory', methods=['POST'])
+@cross_origin()
+def clear_pictures():
+    return clear_pictures_directory()
 
 
-# @app.route('/assemble_pictures_directory', methods=['POST'])
-# @cross_origin()
-# def assemble_pictures():
-#     return assemble_pictures_directory("captured", "video/output.mp4", 24)
+@app.route('/assemble_pictures_directory', methods=['POST'])
+@cross_origin()
+def assemble_pictures():
+    return assemble_pictures_directory("captured", "video/output.mp4", 24)
 
 
 @app.route('/check_version', methods=['GET'])

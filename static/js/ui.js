@@ -1073,42 +1073,124 @@ function unSelectAllMapsButtons(){
 
 // Fonctions de compatibilité pour remplacer les modales
 let currentLoadingToast = null;
+let currentLoadingOverlay = null;
 
 export function openModalLoading(title, description){
     // Remplacer la modal par un toast non-bloquant
-    currentLoadingToast = pkg.showLoadingToast(description, title);
+    try {
+        currentLoadingToast = pkg.showLoadingToast(description, title);
+        console.log('[LOADER] openModalLoading créé:', !!currentLoadingToast, currentLoadingToast);
+    } catch (e) {
+        console.warn('[LOADER] showLoadingToast a échoué, fallback manuel', e);
+        // Fallback manuel
+        const container = document.querySelector('.gcm-toast-container') || (function(){
+            const c = document.createElement('div');
+            c.className = 'gcm-toast-container';
+            c.style.position = 'fixed';
+            c.style.top = '20px';
+            c.style.right = '20px';
+            c.style.zIndex = '2147483000';
+            c.style.maxWidth = '400px';
+            document.body.appendChild(c);
+            return c;
+        })();
+        const toast = document.createElement('div');
+        toast.className = 'gcm-toast info show';
+        toast.innerHTML = `
+            <div class="gcm-toast-icon">ℹ️</div>
+            <div class="gcm-toast-content">
+                ${title ? `<div class=\"gcm-toast-title\">${title}</div>` : ''}
+                <div class="gcm-toast-message">${description || ''}</div>
+                <div class="gcm-toast-progress">
+                    <div class="gcm-progress-bar"><div class="gcm-progress-fill" style="width:0%"></div></div>
+                </div>
+            </div>
+            <button class="gcm-toast-close" onclick="this.parentElement.remove()">×</button>
+        `;
+        container.appendChild(toast);
+        currentLoadingToast = toast;
+    }
+
+    // Créer/afficher un overlay pour forcer la visibilité (au-dessus de tout)
+    try {
+        if (!currentLoadingOverlay) {
+            const ov = document.createElement('div');
+            ov.id = 'gcm-loader-overlay';
+            ov.style.position = 'fixed';
+            ov.style.top = '0';
+            ov.style.left = '0';
+            ov.style.width = '100vw';
+            ov.style.height = '100vh';
+            ov.style.zIndex = '2147483600';
+            ov.style.pointerEvents = 'none';
+            ov.style.display = 'flex';
+            ov.style.alignItems = 'flex-start';
+            ov.style.justifyContent = 'flex-end';
+            ov.style.padding = '20px';
+            document.body.appendChild(ov);
+            currentLoadingOverlay = ov;
+        }
+        if (currentLoadingToast && !currentLoadingOverlay.contains(currentLoadingToast)) {
+            // Déplacer le toast dans l'overlay
+            const parent = currentLoadingToast.parentElement;
+            currentLoadingOverlay.appendChild(currentLoadingToast);
+            // Autoriser l’interaction avec le toast
+            currentLoadingToast.style.pointerEvents = 'auto';
+            if (parent && parent.childElementCount === 0 && parent.classList.contains('gcm-toast-container')) {
+                parent.remove();
+            }
+        }
+    } catch(e) {
+        console.warn('[LOADER] overlay erreur:', e);
+    }
 }
 
 export function updateTextsModal(title, description){
     // Mettre à jour le toast actuel si existant
     if (currentLoadingToast) {
-        const titleElement = currentLoadingToast.querySelector('.toast-title');
-        const messageElement = currentLoadingToast.querySelector('.toast-message');
+        const titleElement = currentLoadingToast.querySelector('.toast-title, .gcm-toast-title');
+        const messageElement = currentLoadingToast.querySelector('.toast-message, .gcm-toast-message');
         if (titleElement) titleElement.textContent = title;
         if (messageElement) messageElement.textContent = description;
+        console.log('[LOADER] updateTextsModal ok');
+    } else {
+        console.warn('[LOADER] updateTextsModal sans loader');
     }
 }
 
 export function closeModalLoading(){
     // Fermer le toast de chargement
     if (currentLoadingToast) {
-        pkg.hideToast(currentLoadingToast);
+        try { pkg.hideToast(currentLoadingToast); } catch(e) { try { currentLoadingToast.remove(); } catch(_) {} }
         currentLoadingToast = null;
+        console.log('[LOADER] closeModalLoading');
     }
+    try {
+        if (currentLoadingOverlay) {
+            currentLoadingOverlay.remove();
+            currentLoadingOverlay = null;
+        }
+    } catch(e) {}
 }
 
 export function updateProgressBar(data) {
     // Mettre à jour la progress bar du toast actuel
     if (currentLoadingToast) {
-        pkg.updateToastProgress(currentLoadingToast, data.progress);
+        try { pkg.updateToastProgress(currentLoadingToast, data.progress); } catch(e) {
+            const fill = currentLoadingToast.querySelector('.gcm-progress-fill, .progress-fill');
+            if (fill && typeof data.progress === 'number') fill.style.width = `${Math.min(100, Math.max(0, data.progress))}%`;
+        }
 
         // Mettre à jour le message si fourni
         if (data.message) {
-            const messageElement = currentLoadingToast.querySelector('.toast-message');
+            const messageElement = currentLoadingToast.querySelector('.toast-message, .gcm-toast-message');
             if (messageElement) {
                 messageElement.textContent = data.message;
             }
         }
+        console.log('[LOADER] updateProgressBar:', data.progress);
+    } else {
+        console.warn('[LOADER] updateProgressBar sans loader');
     }
 }
 

@@ -249,15 +249,15 @@
 }
 
 /* Système de notifications toast */
-.toast-container {
+.gcm-toast-container {
     position: fixed;
     top: 20px;
     right: 20px;
-    z-index: 10000;
+    z-index: 2147483000; /* Max over everything */
     max-width: 400px;
 }
 
-.toast {
+.gcm-toast {
     background: white;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -271,49 +271,49 @@
     border-left: 4px solid #2196F3;
 }
 
-.toast.show {
+.gcm-toast.show {
     transform: translateX(0);
     opacity: 1;
 }
 
-.toast.success {
+.gcm-toast.success {
     border-left-color: #4CAF50;
 }
 
-.toast.error {
+.gcm-toast.error {
     border-left-color: #F44336;
 }
 
-.toast.warning {
+.gcm-toast.warning {
     border-left-color: #FF9800;
 }
 
-.toast.info {
+.gcm-toast.info {
     border-left-color: #2196F3;
 }
 
-.toast-icon {
+.gcm-toast-icon {
     margin-right: 12px;
     font-size: 24px;
 }
 
-.toast-content {
+.gcm-toast-content {
     flex: 1;
 }
 
-.toast-title {
+.gcm-toast-title {
     font-weight: 500;
     margin-bottom: 4px;
     font-size: 14px;
 }
 
-.toast-message {
+.gcm-toast-message {
     font-size: 13px;
     color: #666;
     margin: 0;
 }
 
-.toast-close {
+.gcm-toast-close {
     background: none;
     border: none;
     cursor: pointer;
@@ -328,16 +328,16 @@
     justify-content: center;
 }
 
-.toast-close:hover {
+.gcm-toast-close:hover {
     color: #666;
 }
 
 /* Progress bar dans les toasts */
-.toast-progress {
+.gcm-toast-progress {
     margin-top: 8px;
 }
 
-.progress-bar {
+.gcm-progress-bar {
     width: 100%;
     height: 4px;
     background-color: #e0e0e0;
@@ -345,7 +345,7 @@
     overflow: hidden;
 }
 
-.progress-fill {
+.gcm-progress-fill {
     height: 100%;
     background: linear-gradient(90deg, #2196F3, #21CBF3);
     border-radius: 2px;
