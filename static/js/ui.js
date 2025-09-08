@@ -252,6 +252,34 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     const btnToggleFullscreen = document.getElementById('btnToggleFullscreen');
     if (btnToggleFullscreen) btnToggleFullscreen.addEventListener('click', toggleFullscreenFromButton);
 
+    // Datepickers Animation (même UI que Données)
+    const animDateStart = document.getElementById('animDateStart');
+    const animDateEnd = document.getElementById('animDateEnd');
+    if (animDateStart) {
+        const dp1 = M.Datepicker.init(animDateStart, { format: 'dd/mm/yyyy' });
+        // Les dates seront pré-remplies dans setPickerDates() quand la BDD sera chargée
+        animDateStart.addEventListener('change', () => {
+            const parsedDate = pkg.parseDateInput(animDateStart.value);
+            pkg.options.animation.dateStart = parsedDate;
+            updateResetAnimButtonsHighlight();
+        });
+    }
+    if (animDateEnd) {
+        const dp2 = M.Datepicker.init(animDateEnd, { format: 'dd/mm/yyyy' });
+        // Les dates seront pré-remplies dans setPickerDates() quand la BDD sera chargée
+        animDateEnd.addEventListener('change', () => {
+            const parsedDate = pkg.parseDateInput(animDateEnd.value);
+            pkg.options.animation.dateEnd = parsedDate;
+            updateResetAnimButtonsHighlight();
+        });
+    }
+
+    // Boutons reset dates Animation
+    const btnResetAnimStartDate = document.getElementById('btnResetAnimStartDate');
+    const btnResetAnimEndDate = document.getElementById('btnResetAnimEndDate');
+    if (btnResetAnimStartDate) btnResetAnimStartDate.addEventListener('click', resetAnimStartDateToDefault);
+    if (btnResetAnimEndDate) btnResetAnimEndDate.addEventListener('click', resetAnimEndDateToDefault);
+
     // Initialiser l'état des contrôles (boutons principaux et barre latérale)
     console.log("=== INITIALISATION DES CONTROLES ===");
     showStartRecordButtons();
@@ -583,6 +611,31 @@ export function setPickerDates(metadata) {
     if (btnResetStartDate) btnResetStartDate.textContent = `⟲ ${formattedStartDate}`;
     if (btnResetEndDate) btnResetEndDate.textContent = `⟲ ${formattedEndDate}`;
     updateResetButtonsHighlight();
+
+    // Pré-remplir les datepickers Animation avec les dates par défaut
+    const animStartElement = document.querySelector('#animDateStart');
+    const animEndElement = document.querySelector('#animDateEnd');
+
+    if (animStartElement && defaultStartDate) {
+        const animStartPicker = M.Datepicker.getInstance(animStartElement);
+        if (animStartPicker) {
+            animStartPicker.setDate(defaultStartDate, true);
+            animStartElement.value = formattedStartDate;
+            pkg.options.animation.dateStart = defaultStartDate;
+        }
+    }
+
+    if (animEndElement && defaultEndDate) {
+        const animEndPicker = M.Datepicker.getInstance(animEndElement);
+        if (animEndPicker) {
+            animEndPicker.setDate(defaultEndDate, true);
+            animEndElement.value = formattedEndDate;
+            pkg.options.animation.dateEnd = defaultEndDate;
+        }
+    }
+
+    // Mettre à jour les boutons reset Animation aussi
+    updateResetAnimButtonsHighlight();
 }
 
 function formatDateForPickers(date) {
@@ -598,6 +651,7 @@ function resetStartDateToDefault(){
     el.value = formatDateForPickers(start);
     onSelectionChangedDebounced();
     updateResetButtonsHighlight();
+    updateResetAnimButtonsHighlight();
 }
 
 function resetEndDateToDefault(){
@@ -609,6 +663,7 @@ function resetEndDateToDefault(){
     el.value = formatDateForPickers(end);
     onSelectionChangedDebounced();
     updateResetButtonsHighlight();
+    updateResetAnimButtonsHighlight();
 }
 
 function updateResetButtonsHighlight(){
@@ -623,6 +678,48 @@ function updateResetButtonsHighlight(){
         else btnStart.classList.remove('active-reset');
     }
     if (btnEnd) {
+        if (currentEnd && defaultEndStr && currentEnd === defaultEndStr) btnEnd.classList.add('active-reset');
+        else btnEnd.classList.remove('active-reset');
+    }
+}
+
+function resetAnimStartDateToDefault(){
+    const el = document.querySelector('#animDateStart');
+    const start = defaultStartDate;
+    if (!el || !start) return;
+    const inst = M.Datepicker.getInstance(el);
+    inst.setDate(start, true);
+    el.value = formatDateForPickers(start);
+    pkg.options.animation.dateStart = start;
+    updateResetAnimButtonsHighlight();
+}
+
+function resetAnimEndDateToDefault(){
+    const el = document.querySelector('#animDateEnd');
+    const end = defaultEndDate;
+    if (!el || !end) return;
+    const inst = M.Datepicker.getInstance(el);
+    inst.setDate(end, true);
+    el.value = formatDateForPickers(end);
+    pkg.options.animation.dateEnd = end;
+    updateResetAnimButtonsHighlight();
+}
+
+function updateResetAnimButtonsHighlight(){
+    const btnStart = document.getElementById('btnResetAnimStartDate');
+    const btnEnd = document.getElementById('btnResetAnimEndDate');
+    const currentStart = document.querySelector('#animDateStart')?.value;
+    const currentEnd = document.querySelector('#animDateEnd')?.value;
+    const defaultStartStr = defaultStartDate ? formatDateForPickers(defaultStartDate) : null;
+    const defaultEndStr = defaultEndDate ? formatDateForPickers(defaultEndDate) : null;
+
+    if (btnStart) {
+        btnStart.textContent = defaultStartStr ? `⟲ ${defaultStartStr}` : '⟲';
+        if (currentStart && defaultStartStr && currentStart === defaultStartStr) btnStart.classList.add('active-reset');
+        else btnStart.classList.remove('active-reset');
+    }
+    if (btnEnd) {
+        btnEnd.textContent = defaultEndStr ? `⟲ ${defaultEndStr}` : '⟲';
         if (currentEnd && defaultEndStr && currentEnd === defaultEndStr) btnEnd.classList.add('active-reset');
         else btnEnd.classList.remove('active-reset');
     }

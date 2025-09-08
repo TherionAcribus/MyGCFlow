@@ -54,6 +54,46 @@ export function updateInfosForPictures(){
 }
 
 
+// Utilitaires date pour UI Animation
+export function parseDateInput(value){
+    // Gère dd/mm/yyyy (format français) et yyyy-mm-dd (format datepicker)
+    if (!value || typeof value !== 'string') return null;
+
+    const trimmedValue = value.trim();
+
+    // Essai format dd/mm/yyyy (français)
+    let m = trimmedValue.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    let d, mo, y;
+
+    if (m) {
+        d = parseInt(m[1],10);
+        mo = parseInt(m[2],10)-1;
+        y = parseInt(m[3],10);
+    } else {
+        // Essai format yyyy-mm-dd (datepicker)
+        m = trimmedValue.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (m) {
+            y = parseInt(m[1],10);
+            mo = parseInt(m[2],10)-1;
+            d = parseInt(m[3],10);
+        } else {
+            return null; // Aucun format reconnu
+        }
+    }
+
+    const dt = new Date(y, mo, d);
+    return isNaN(dt.getTime()) ? null : dt;
+}
+
+export function formatDateInput(date){
+    if (!(date instanceof Date)) return '';
+    const dd = String(date.getDate()).padStart(2,'0');
+    const mm = String(date.getMonth()+1).padStart(2,'0');
+    const yy = date.getFullYear();
+    return `${dd}/${mm}/${yy}`;
+}
+
+
 // calcul le nombre de Frame pour 1 jour
 function calculFramePerDay(timePerDay, fps) {
     return Math.round(timePerDay / (1000 / fps));

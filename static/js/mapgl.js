@@ -575,12 +575,52 @@ function clearMap(){
 
 
 // ----------- ANIMATION DE LA CARTE  ------------
+// Fonction helper pour récupérer tous les points filtrés jusqu'à la date de début d'animation
+function getFilteredPointsAtStart() {
+    const allPoints = [];
+    if (pkg.pointsByDate) {
+        // Utiliser la date de début d'animation comme limite supérieure
+        const animationStartDate = pkg.options.animation.dateStart instanceof Date
+            ? pkg.options.animation.dateStart
+            : pkg.metadata.startDate;
+
+        for (const [dateKey, points] of pkg.pointsByDate.entries()) {
+            const date = new Date(dateKey);
+            if (date <= animationStartDate) {
+                allPoints.push(...points);
+            }
+        }
+    }
+    return allPoints;
+}
+
+// Fonction helper pour récupérer tous les points jusqu'à une date donnée (incluse)
+function getPointsUpToDate(targetDate) {
+    const allPoints = [];
+    if (pkg.pointsByDate) {
+        for (const [dateKey, points] of pkg.pointsByDate.entries()) {
+            const date = new Date(dateKey);
+            if (date <= targetDate) {
+                allPoints.push(...points);
+            }
+        }
+    }
+    return allPoints;
+}
+
 export function startAnimation(restart=false) {
     if (!restart) {
         // Vérification que vectorSource existe avant de l'utiliser
         if (window.vectorSource) {
         window.vectorSource.clear();
         }
+
+        // Afficher les caches filtrés jusqu'à la date de début d'animation (sans effet flash)
+        const filteredPointsAtStart = getFilteredPointsAtStart();
+        if (filteredPointsAtStart.length > 0) {
+            displayWebGLPoints(filteredPointsAtStart, pkg.options.point);
+        }
+
         createFlashElements();
         infos = createObjectInfos();
     }
@@ -589,9 +629,31 @@ export function startAnimation(restart=false) {
 
     flashOptions.rgb = pkg.hexToRgb(flashOptions.color);
     const dayDuration = pkg.options.animation.timePerDay;
+
+    // Debug: Afficher les options d'animation
+    console.log('[DEBUG ANIMATION] Options animation:', pkg.options.animation);
+    console.log('[DEBUG ANIMATION] dateStart type:', typeof pkg.options.animation.dateStart, 'value:', pkg.options.animation.dateStart);
+    console.log('[DEBUG ANIMATION] dateEnd type:', typeof pkg.options.animation.dateEnd, 'value:', pkg.options.animation.dateEnd);
+
+    // Appliquer plage de dates définie dans l'onglet Animation si présente
+    if (pkg.options.animation.dateStart instanceof Date) {
+        pkg.metadata.startDate = new Date(pkg.options.animation.dateStart);
+        console.log('[ANIMATION] ✅ Date de début personnalisée appliquée:', pkg.metadata.startDate);
+    } else {
+        console.log('[ANIMATION] ❌ Pas de date de début personnalisée, utilisation par défaut:', pkg.metadata.startDate);
+    }
+
+    if (pkg.options.animation.dateEnd instanceof Date) {
+        pkg.metadata.endDate = new Date(pkg.options.animation.dateEnd);
+        console.log('[ANIMATION] ✅ Date de fin personnalisée appliquée:', pkg.metadata.endDate);
+    } else {
+        console.log('[ANIMATION] ❌ Pas de date de fin personnalisée, utilisation par défaut:', pkg.metadata.endDate);
+    }
+
     //const displayDaysWithoutCache = pkg.options.animation.displayDaysWithoutCache;
     if (!restart) {
-        currentDate = new Date(pkg.metadata.startDate); // Initialisation de la date seulement si elle n'est pas déjà définie (restart)
+        currentDate = new Date(pkg.metadata.startDate); // Initialisation de la date avec la date de début (personnalisée ou par défaut)
+        console.log('[ANIMATION] 🚀 Démarrage avec date:', currentDate, '->', pkg.metadata.endDate);
     }
     interval = setInterval(() => {
         displayFeaturesForDate(currentDate, pkg.options.point, flashOptions, false, infos);
@@ -617,8 +679,6 @@ export function stopAnimation(){
 }
 
 export function recordAnimation(){
-    // TODO Gérer date de début et fin personnalisées !!!!!
-
     // Vérifier que les données sont prêtes
     if (!pkg.pointsByDate || pkg.pointsByDate.size === 0) {
         console.error("Les données de géocaches ne sont pas encore chargées");
@@ -629,9 +689,34 @@ export function recordAnimation(){
     // Remise à zéro de l'état de la carte et des informations affichées
     clearMap(); // Nettoie les points sur la carte
 
+    // Afficher les caches filtrés jusqu'à la date de début d'animation (sans effet flash)
+    const filteredPointsAtStart = getFilteredPointsAtStart();
+    if (filteredPointsAtStart.length > 0) {
+        displayWebGLPoints(filteredPointsAtStart, pkg.options.point);
+    }
+
+
+    // Déterminer plage de dates d'animation si définie
+    if (pkg.options.animation.dateStart instanceof Date) {
+        currentDate = new Date(pkg.options.animation.dateStart);
+        pkg.metadata.startDate = new Date(pkg.options.animation.dateStart);
+        console.log('[RECORD] ✅ Date de début personnalisée appliquée:', pkg.metadata.startDate);
+    } else {
+        currentDate = pkg.metadata.startDate;
+        console.log('[RECORD] ❌ Utilisation date de début par défaut:', currentDate);
+    }
+    if (pkg.options.animation.dateEnd instanceof Date) {
+        pkg.metadata.endDate = new Date(pkg.options.animation.dateEnd);
+        console.log('[RECORD] ✅ Date de fin personnalisée appliquée:', pkg.metadata.endDate);
+    } else {
+        console.log('[RECORD] ❌ Utilisation date de fin par défaut:', pkg.metadata.endDate);
+    }
+
+    console.log('[RECORD] 🚀 Démarrage enregistrement avec date:', currentDate, '->', pkg.metadata.endDate);
+
     // Remise à zéro de l'affichage des informations
     pkg.updateNbCaches(0); // Remet le compteur de géocaches à zéro
-    pkg.updateCurrentDate(pkg.metadata.startDate); // Remet la date au début
+    pkg.updateCurrentDate(currentDate); // Remet la date au début effectif
 
     // ouverture modale
     pkg.openModalLoading("Capture en cours", "Les images sont en cours de capture... Ne pas bouger la fenetre !");
@@ -656,10 +741,7 @@ export function recordAnimation(){
     createFlashElements();
     // creation objet pour stocker les infos liées aux Frames (dt nombre de caches)
     let infos = createObjectInfos();
-    currentDate = pkg.metadata.startDate;
-    // TEMP
-    currentDate = new Date("07-01-2018")
-    pkg.metadata.endDate = new Date("08-01-2018")
+
     currentFrame = 0;  // Réinitialisez le compteur de frames
 
     // Afficher les points initiaux pour la date de début
@@ -715,8 +797,8 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
         // Capturez la frame actuelle
         if (capture == true) {
             await captureElement();
-            currentFrame++;
-            requestAnimationFrame(() => captureNextFrame(true, pointOptions, flashOptions, infos));
+                currentFrame++;
+                requestAnimationFrame(() => captureNextFrame(true, pointOptions, flashOptions, infos));
         } else {
             currentFrame++;
             // De même ici, si vous avez besoin de passer des arguments spécifiques
@@ -1019,13 +1101,17 @@ function displayFeaturesForDate(date, pointOptions, flashOptions, record, infos)
     // OPTIMISATION PERFORMANCE : Utilise l'index pré-calculé au lieu du filter coûteux
     // Avant : filter() sur tous les points à chaque frame (très lent)
     // Après : lookup instantanée dans Map pré-calculé (très rapide)
+
+    // Afficher tous les points jusqu'à la date courante (caches filtrés restent visibles)
+    const pointsUpToDate = getPointsUpToDate(date);
+    displayWebGLPoints(pointsUpToDate, pointOptions);
+
+    // Pour l'effet flash, utiliser seulement les points de la date courante
     const dateKey = date.toDateString();
     const featuresForDate = pkg.pointsByDate.get(dateKey) || [];
 
-    displayWebGLPoints(featuresForDate, pointOptions)
-
     if (flashOptions.mode != "none") {
-        // Animation de flash pour toutes les features filtrées
+        // Animation de flash seulement pour les nouvelles features (date courante)
         if (record) {
             flashRecord(featuresForDate, flashOptions);
         } else {
