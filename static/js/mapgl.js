@@ -110,6 +110,8 @@ let vectorSource;
 let interval;
 // element qui stocke les infos à afficher dans les frames. Sortie de la fonction pour pouvoir les garder en mémoire
 let infos;
+// flag pour indiquer si un enregistrement est en cours
+let isRecording = false;
 
 
 // récupère les couleurs GC par défaut dans le JSON
@@ -555,26 +557,53 @@ function displayWebGLPoints(features, pointOptions) {
 
 // supprime les points de la carte (centre et bordures si existantes)
 function clearMap(){
+    console.log('[CLEAR] Début du nettoyage de la carte');
+
     // Garder vectorSource mais vider son contenu
     if (window.vectorSource) {
-    window.vectorSource.clear();
+        window.vectorSource.clear();
+        console.log('[CLEAR] Vector source nettoyé');
     }
+
     // Réinitialiser les références aux layers pour forcer leur recréation
     vectorLayer = undefined;
+    console.log('[CLEAR] vectorLayer remis à undefined');
 
     // Supprimer les autres layers si nécessaire
     if (window.borderLayer) {
         map.removeLayer(window.borderLayer);
         window.borderLayer = undefined;
+        console.log('[CLEAR] borderLayer supprimé');
     }
     if (window.centerLayer) {
         map.removeLayer(window.centerLayer);
         window.centerLayer = undefined;
+        console.log('[CLEAR] centerLayer supprimé');
     }
+
+    // Nettoyer les layers d'animation
+    if (window.animationLayer) {
+        window.animationLayer.setVisible(false);
+        window.animationLayer = undefined;
+        console.log('[CLEAR] animationLayer nettoyé');
+    }
+
+    console.log('[CLEAR] Fin du nettoyage de la carte');
 }
 
 
 // ----------- ANIMATION DE LA CARTE  ------------
+// Fonction helper pour récupérer tous les points filtrés
+function getAllFilteredPoints() {
+    const allPoints = [];
+    if (pkg.pointsByDate) {
+        for (const points of pkg.pointsByDate.values()) {
+            allPoints.push(...points);
+        }
+    }
+    return allPoints;
+}
+
 // Fonction helper pour récupérer tous les points filtrés jusqu'à la date de début d'animation
 function getFilteredPointsAtStart() {
     const allPoints = [];
@@ -668,12 +697,85 @@ export function startAnimation(restart=false) {
 }
 
 export function stopAnimation(){
+    // Arrêter l'enregistrement si en cours
+    isRecording = false;
+
     if (interval) {
         clearInterval(interval);
         interval = null; // Nettoyer la référence à l'intervalle
     }
-    // on remets la carte comme au départ
-    refreshPoints();
+
+    // Fermer le toast de chargement s'il est ouvert
+    try {
+        // Essayer différents sélecteurs pour le toast
+        const loadingToast = document.querySelector('.toast-loading') ||
+                           document.querySelector('.toast') ||
+                           document.querySelector('[class*="toast"]');
+        if (loadingToast) {
+            console.log('[STOP] Toast trouvé, tentative de fermeture:', loadingToast);
+            pkg.hideToast && pkg.hideToast(loadingToast);
+        } else {
+            console.log('[STOP] Aucun toast trouvé avec les sélecteurs testés');
+        }
+
+        // Essayer aussi de fermer tous les toasts visibles
+        const allToasts = document.querySelectorAll('.toast, [class*="toast"]');
+        allToasts.forEach((toast, index) => {
+            console.log(`[STOP] Fermeture toast ${index}:`, toast.textContent);
+            pkg.hideToast && pkg.hideToast(toast);
+        });
+    } catch(e) {
+        console.warn('Erreur lors de la fermeture du toast:', e);
+    }
+
+    // Remettre la carte à l'état d'origine avec tous les points filtrés
+    console.log('[STOP] Nettoyage de la carte...');
+    clearMap();
+
+    // Nettoyer les animations et effets
+    if (window.vectorSource) {
+        window.vectorSource.clear();
+        console.log('[STOP] Vector source nettoyé');
+    }
+
+    // Nettoyer les animations de flash
+    if (animationSource) {
+        animationSource.clear();
+        console.log('[STOP] Animation source nettoyé');
+    }
+
+    // Nettoyer les layers d'animation
+    if (animationLayer) {
+        animationLayer.setVisible(false);
+        console.log('[STOP] Animation layer masqué');
+    }
+
+    // Nettoyer les références globales
+    if (window.animationSource) {
+        window.animationSource.clear();
+        window.animationSource = undefined;
+        console.log('[STOP] Window animation source nettoyé');
+    }
+
+    if (window.animationLayer) {
+        window.animationLayer.setVisible(false);
+        window.animationLayer = undefined;
+        console.log('[STOP] Window animation layer nettoyé');
+    }
+
+    // Remettre les styles par défaut
+    updateAnimationStyles();
+    console.log('[STOP] Styles d\'animation remis à zéro');
+
+    const allFilteredPoints = getAllFilteredPoints();
+    console.log('[STOP] Nombre de points filtrés à afficher:', allFilteredPoints.length);
+    if (allFilteredPoints.length > 0) {
+        displayWebGLPoints(allFilteredPoints, pkg.options.point);
+        console.log('[STOP] ✅ Points affichés avec succès');
+    } else {
+        console.log('[STOP] ⚠️ Aucun point à afficher');
+    }
+
     // Remettre les contrôles UI dans l'état initial
     try { pkg.resetControlsToInitialState && pkg.resetControlsToInitialState(); } catch(e) { console.warn(e); }
 }
@@ -724,6 +826,9 @@ export function recordAnimation(){
     // Init métriques
     perfMetrics = { totalFrames: 0, capturedFrames: 0, uploadOk: 0, uploadFail: 0, captureTimeMs: 0, uploadTimeMs: 0, startedAt: performance.now() };
 
+    // Marquer le début de l'enregistrement
+    isRecording = true;
+
     // je fais une copie car plus rapide de gerer une valeur qu'un objet
     framesPerDay = pkg.options.record.framesPerDay
 
@@ -773,6 +878,54 @@ function createObjectInfos(){
 
 // TODO Voir pour Capture, car à priori c'est forcement == True
 async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
+    // Vérifier si l'enregistrement a été arrêté
+    if (!isRecording) {
+        console.log('[CAPTURE] Enregistrement arrêté par l\'utilisateur');
+
+        // Fermer le toast de chargement
+        try {
+            const loadingToast = document.querySelector('.toast-loading') ||
+                               document.querySelector('.toast') ||
+                               document.querySelector('[class*="toast"]');
+            if (loadingToast) {
+                console.log('[CAPTURE] Toast trouvé, tentative de fermeture:', loadingToast);
+                pkg.hideToast && pkg.hideToast(loadingToast);
+            } else {
+                console.log('[CAPTURE] Aucun toast trouvé avec les sélecteurs testés');
+            }
+
+            // Essayer aussi de fermer tous les toasts visibles
+            const allToasts = document.querySelectorAll('.toast, [class*="toast"]');
+            allToasts.forEach((toast, index) => {
+                console.log(`[CAPTURE] Fermeture toast ${index}:`, toast.textContent);
+                pkg.hideToast && pkg.hideToast(toast);
+            });
+        } catch(e) {
+            console.warn('Erreur lors de la fermeture du toast:', e);
+        }
+
+        // Nettoyer les animations de flash
+        if (animationSource) {
+            animationSource.clear();
+            console.log('[CAPTURE] Animation source nettoyé');
+        }
+        if (animationLayer) {
+            animationLayer.setVisible(false);
+            console.log('[CAPTURE] Animation layer masqué');
+        }
+
+        // Remettre la carte avec tous les points filtrés
+        clearMap();
+        const allFilteredPoints = getAllFilteredPoints();
+        if (allFilteredPoints.length > 0) {
+            displayWebGLPoints(allFilteredPoints, pkg.options.point);
+            console.log('[CAPTURE] Affichage de', allFilteredPoints.length, 'points filtrés');
+        }
+
+        try { pkg.resetControlsToInitialState && pkg.resetControlsToInitialState(); } catch(e) { console.warn(e); }
+        return;
+    }
+
     if (currentDate > pkg.metadata.endDate) {
         for (let extraFrames = 0; extraFrames < pkg.options.record.extraFrames; extraFrames++) {
             updateAnimationStyles();
@@ -786,6 +939,44 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
         }
 
         // Traitement de fin
+        isRecording = false; // Marquer la fin de l'enregistrement
+
+        // Fermer le toast de chargement
+        try {
+            const loadingToast = document.querySelector('.toast-loading') ||
+                               document.querySelector('.toast') ||
+                               document.querySelector('[class*="toast"]');
+            if (loadingToast) {
+                pkg.hideToast && pkg.hideToast(loadingToast);
+            }
+
+            // Essayer aussi de fermer tous les toasts visibles
+            const allToasts = document.querySelectorAll('.toast, [class*="toast"]');
+            allToasts.forEach((toast, index) => {
+                pkg.hideToast && pkg.hideToast(toast);
+            });
+        } catch(e) {
+            console.warn('Erreur lors de la fermeture du toast:', e);
+        }
+
+        // Nettoyer les animations de flash
+        if (animationSource) {
+            animationSource.clear();
+            console.log('[RECORD END] Animation source nettoyé');
+        }
+        if (animationLayer) {
+            animationLayer.setVisible(false);
+            console.log('[RECORD END] Animation layer masqué');
+        }
+
+        // Remettre la carte avec tous les points filtrés
+        clearMap();
+        const allFilteredPoints = getAllFilteredPoints();
+        if (allFilteredPoints.length > 0) {
+            displayWebGLPoints(allFilteredPoints, pkg.options.point);
+            console.log('[RECORD END] Affichage de', allFilteredPoints.length, 'points filtrés');
+        }
+
         try { pkg.resetControlsToInitialState && pkg.resetControlsToInitialState(); } catch(e) { console.warn(e); }
         // TODO: assembler le film / nettoyage si nécessaire
         return;
