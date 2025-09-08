@@ -597,7 +597,10 @@ export function startAnimation(restart=false) {
         displayFeaturesForDate(currentDate, pkg.options.point, flashOptions, false, infos);
         currentDate.setDate(currentDate.getDate() + 1);
         if (currentDate > pkg.metadata.endDate) {
+            console.log('[ANIMATION] Fin atteinte. currentDate:', currentDate);
             clearInterval(interval);
+            interval = null;
+            try { pkg.resetControlsToInitialState && pkg.resetControlsToInitialState(); } catch(e) { console.warn(e); }
         }
     }, dayDuration);
 }
@@ -609,6 +612,8 @@ export function stopAnimation(){
     }
     // on remets la carte comme au départ
     refreshPoints();
+    // Remettre les contrôles UI dans l'état initial
+    try { pkg.resetControlsToInitialState && pkg.resetControlsToInitialState(); } catch(e) { console.warn(e); }
 }
 
 export function recordAnimation(){
@@ -698,8 +703,9 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
             }
         }
 
-        // Traitement de fin -> Assembler le film
-        // Supprimer les images temporaires
+        // Traitement de fin
+        try { pkg.resetControlsToInitialState && pkg.resetControlsToInitialState(); } catch(e) { console.warn(e); }
+        // TODO: assembler le film / nettoyage si nécessaire
         return;
     }
 

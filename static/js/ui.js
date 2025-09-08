@@ -1114,6 +1114,21 @@ function clickRecordAnimation(){
     updateControlBar();
 }
 
+// Exposé pour remise à zéro depuis mapgl.js
+export function resetControlsToInitialState(){
+    try {
+        console.log('[UI] resetControlsToInitialState()');
+        // Boutons principaux
+        showStartRecordButtons();
+        // Barre latérale
+        updateControlBar();
+        // Bouton plein écran (garde l'état courant visuel)
+        updateFullscreenButtonAppearance && updateFullscreenButtonAppearance();
+    } catch (e) {
+        console.warn('resetControlsToInitialState error:', e);
+    }
+}
+
 // on clique sur le bouton Pause/Restart
 // on change le texte du bouton et une class qui sert d'indicateur
 // si réinitialisation = true, c'est que l'on veut remettre le bouton dans son état d'origine 
