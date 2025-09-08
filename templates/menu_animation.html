@@ -3,18 +3,18 @@
 
         <!-- Section Animation -->
         <div class="col s12 m8">
-            <h5>🎬 Contrôles d'animation</h5>
+            <h5>🎬 {{ _("Contrôles d'animation") }}</h5>
             <div class="card-panel">
                 <div class="row">
                     <div class="col s12 m6">
                         <label>
                             <input id="cbDisplayDaysWithoutCache" type="checkbox"/>
-                            <span>Supprimer les jours sans cache</span>
+                            <span>{{ _("Supprimer les jours sans cache") }}</span>
                         </label>
                     </div>
                     <div class="col s12 m6">
                         <a class="waves-effect waves-light btn grey" id="btnFullscreenMode">
-                            Plein écran
+                            {{ _("Plein écran") }}
                             <i class="material-icons right">fullscreen</i>
                         </a>
                     </div>
@@ -22,18 +22,18 @@
 
                 <div class="row">
                     <div class="col s12">
-                        <h6>🗓️ Plage de dates de l'animation</h6>
+                        <h6>🗓️ {{ _("Plage de dates de l'animation") }}</h6>
                     </div>
                     <div class="input-field col s6">
                         <input id="animDateStart" type="text" class="datepicker">
-                        <label for="animDateStart" class="active">Date de début</label>
+                        <label for="animDateStart" class="active">{{ _("Date de début") }}</label>
                         <div>
                             <a id="btnResetAnimStartDate" class="btn-flat waves-effect date-reset-btn"></a>
                         </div>
                     </div>
                     <div class="input-field col s6">
                         <input id="animDateEnd" type="text" class="datepicker">
-                        <label for="animDateEnd" class="active">Date de fin</label>
+                        <label for="animDateEnd" class="active">{{ _("Date de fin") }}</label>
                         <div>
                             <a id="btnResetAnimEndDate" class="btn-flat waves-effect date-reset-btn"></a>
                         </div>
@@ -43,17 +43,17 @@
                 <div class="row">
                     <div class="col s12 m6">
                         <div class="input-field">
-                            <input placeholder="Temps en ms par jour" id="inputTimePerDay" type="number" class="validate">
-                            <label for="inputTimePerDay">Durée par jour (ms)</label>
+                            <input placeholder="{{ _('Temps en ms par jour') }}" id="inputTimePerDay" type="number" class="validate">
+                            <label for="inputTimePerDay">{{ _("Durée par jour (ms)") }}</label>
                         </div>
                     </div>
                     <div class="col s12 m6">
                         <div class="input-field">
-                            <input placeholder="Temps total" id="inputTotalTime" type="number" step="0.01" class="validate">
-                            <label for="inputTotalTime">Temps total (minutes)</label>
+                            <input placeholder="{{ _('Temps total') }}" id="inputTotalTime" type="number" step="0.01" class="validate">
+                            <label for="inputTotalTime">{{ _("Temps total (minutes)") }}</label>
                         </div>
                         <p class="grey-text">
-                            <span id="spanTotalTimeMinutes"></span> min <span id="spanTotalTimeSeconds"></span> sec pour <span id="spanDeltaDays"></span> jours
+                            <span id="spanTotalTimeMinutes"></span> {{ _("min") }} <span id="spanTotalTimeSeconds"></span> {{ _("sec pour") }} <span id="spanDeltaDays"></span> {{ _("jours") }}
                         </p>
                     </div>
                 </div>
@@ -61,16 +61,16 @@
                 <div class="row">
                     <div class="col s12">
                         <a class="waves-effect waves-light btn-large green" id="btnStartAnimation">
-                            <i class="material-icons right">play_arrow</i>Démarrer
+                            <i class="material-icons right">play_arrow</i>{{ _("Démarrer") }}
                         </a>
                         <a class="waves-effect waves-light btn-large orange" id="btnRecordAnimation">
-                            <i class="material-icons right">videocam</i>Enregistrer
+                            <i class="material-icons right">videocam</i>{{ _("Enregistrer") }}
                         </a>
                         <a class="waves-effect waves-light btn-large yellow darken-2" id="btnPauseAnimation">
-                            <i class="material-icons right">pause</i>Pause
+                            <i class="material-icons right">pause</i>{{ _("Pause") }}
                         </a>
                         <a class="waves-effect waves-light btn-large red" id="btnStopAnimation">
-                            <i class="material-icons right">stop</i>Arrêter
+                            <i class="material-icons right">stop</i>{{ _("Arrêter") }}
                         </a>
                     </div>
                 </div>
@@ -78,10 +78,10 @@
                 <div class="row">
                     <div class="col s12">
                         <a class="waves-effect waves-light btn" id="btnCleanMoviePictures">
-                            <i class="material-icons right">delete_sweep</i>Nettoyer images
+                            <i class="material-icons right">delete_sweep</i>{{ _("Nettoyer images") }}
                         </a>
                         <a class="waves-effect waves-light btn" id="btnAssembleMoviePictures">
-                            <i class="material-icons right">movie</i>Assembler film
+                            <i class="material-icons right">movie</i>{{ _("Assembler film") }}
                         </a>
                     </div>
                 </div>
@@ -90,7 +90,7 @@
 
         <!-- Section Informations d'affichage -->
         <div class="col s12 m4">
-            <h5>📋 Informations</h5>
+            <h5>📋 {{ _("Informations") }}</h5>
             <div>
                 {% include 'menu_informations.html' %}
             </div>

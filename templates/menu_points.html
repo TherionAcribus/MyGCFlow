@@ -5,7 +5,7 @@
         <div class="col s12">
             <h4 class="center-align">
                 <i class="material-icons left">palette</i>
-                Graphisme des points
+                {{ _("Graphisme des points") }}
             </h4>
         </div>
     </div>
@@ -19,7 +19,7 @@
                 <div class="card-content">
                     <span class="card-title">
                         <i class="material-icons">settings</i>
-                        Configuration générale
+                        {{ _("Configuration générale") }}
                     </span>
 
                     <div class="row">
@@ -44,7 +44,7 @@
                                 </select>
                                 <label>
                                     <i class="material-icons">category</i>
-                                    Forme des points
+                                    {{ _("Forme des points") }}
                                 </label>
                             </div>
                         </div>
@@ -61,7 +61,7 @@
                 <div class="card-content">
                     <span class="card-title blue-text">
                         <i class="material-icons">circle</i>
-                        Centre du point
+                        {{ _("Centre du point") }}
                     </span>
 
                     <!-- Taille du centre -->
@@ -69,7 +69,7 @@
                         <div class="col s12">
                             <label>
                                 <i class="material-icons">straighten</i>
-                                Taille du centre
+                                {{ _("Taille du centre") }}
                             </label>
                         </div>
                         <div class="col s6">
@@ -90,7 +90,7 @@
                         <div class="col s12">
                             <label>
                                 <i class="material-icons">palette</i>
-                                Couleur du centre
+                                {{ _("Couleur du centre") }}
                             </label>
                         </div>
 
@@ -100,7 +100,7 @@
                                     <input class="with-gap" name="fillColorPoint" type="radio" value="gc"/>
                                     <span>
                                         <i class="material-icons">color_lens</i>
-                                        Couleurs GC (par type)
+                                        {{ _("Couleurs GC (par type)") }}
                                     </span>
                                 </label>
                             </p>
@@ -109,7 +109,7 @@
                                     <input class="with-gap" name="fillColorPoint" type="radio" value="none"/>
                                     <span>
                                         <i class="material-icons">clear</i>
-                                        Transparent
+                                        {{ _("Transparent") }}
                                     </span>
                                 </label>
                             </p>
@@ -118,7 +118,7 @@
                                     <input class="with-gap" name="fillColorPoint" type="radio" value="fix" />
                                     <span>
                                         <i class="material-icons">colorize</i>
-                                        Couleur unique
+                                        {{ _("Couleur unique") }}
                                     </span>
                                 </label>
                             </p>
@@ -130,7 +130,7 @@
                                 <input type="color" id="pointCenterColor" value="#ffffff">
                                 <label for="pointCenterColor">
                                     <i class="material-icons">colorize</i>
-                                    Choisir la couleur
+                                    {{ _("Choisir la couleur") }}
                                 </label>
                             </div>
                         </div>
@@ -145,7 +145,7 @@
                 <div class="card-content">
                     <span class="card-title orange-text">
                         <i class="material-icons">border_outer</i>
-                        Bordure du point
+                        {{ _("Bordure du point") }}
                     </span>
 
                     <!-- Taille de la bordure -->
@@ -153,7 +153,7 @@
                         <div class="col s12">
                             <label>
                                 <i class="material-icons">border_clear</i>
-                                Épaisseur de la bordure (0 = aucune)
+                                {{ _("Épaisseur de la bordure (0 = aucune)") }}
                             </label>
                         </div>
                         <div class="col s6">
@@ -174,7 +174,7 @@
                         <div class="col s12">
                             <label>
                                 <i class="material-icons">format_color_fill</i>
-                                Couleur de la bordure
+                                {{ _("Couleur de la bordure") }}
                             </label>
                         </div>
 
@@ -184,7 +184,7 @@
                                     <input class="with-gap" name="borderColorPoint" type="radio" value="gc"/>
                                     <span>
                                         <i class="material-icons">color_lens</i>
-                                        Couleurs GC (par type)
+                                        {{ _("Couleurs GC (par type)") }}
                                     </span>
                                 </label>
                             </p>
@@ -193,7 +193,7 @@
                                     <input class="with-gap" name="borderColorPoint" type="radio" value="none"/>
                                     <span>
                                         <i class="material-icons">clear</i>
-                                        Transparent
+                                        {{ _("Transparent") }}
                                     </span>
                                 </label>
                             </p>
@@ -202,7 +202,7 @@
                                     <input class="with-gap" name="borderColorPoint" type="radio" value="fix" />
                                     <span>
                                         <i class="material-icons">colorize</i>
-                                        Couleur unique
+                                        {{ _("Couleur unique") }}
                                     </span>
                                 </label>
                             </p>
@@ -214,7 +214,7 @@
                                 <input type="color" id="pointBorderColor" value="#000000">
                                 <label for="pointBorderColor">
                                     <i class="material-icons">colorize</i>
-                                    Choisir la couleur
+                                    {{ _("Choisir la couleur") }}
                                 </label>
                             </div>
                         </div>
@@ -229,7 +229,7 @@
         <div class="col s12">
             <div class="card-panel grey lighten-4 center-align">
                 <i class="material-icons medium">visibility</i>
-                <p>Les modifications sont appliquées en temps réel sur la carte</p>
+                <p>{{ _("Les modifications sont appliquées en temps réel sur la carte") }}</p>
             </div>
         </div>
     </div>

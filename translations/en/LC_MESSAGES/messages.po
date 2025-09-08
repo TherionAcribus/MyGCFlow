@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-09-01 18:08+0200\n"
+"POT-Creation-Date: 2025-09-08 18:20+0200\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -22,21 +22,101 @@ msgstr ""
 msgid "My Geocaching Map"
 msgstr "My Geocaching Map"
 
-#: templates/app.html:39
+#: templates/app.html:60
 msgid "Données"
 msgstr "Data"
 
-#: templates/app.html:40
+#: templates/app.html:61
 msgid "Style"
 msgstr "Style"
 
-#: templates/app.html:41
+#: templates/app.html:62
 msgid "Animation"
 msgstr "Animation"
 
-#: templates/app.html:42
+#: templates/app.html:63
 msgid "Paramètres"
 msgstr "Settings"
+
+#: templates/menu_animation.html:6
+msgid "Contrôles d'animation"
+msgstr "Animation controls"
+
+#: templates/menu_animation.html:12
+msgid "Supprimer les jours sans cache"
+msgstr "Remove days without cache"
+
+#: templates/menu_animation.html:17
+msgid "Plein écran"
+msgstr "Fullscreen"
+
+#: templates/menu_animation.html:25
+msgid "Plage de dates de l'animation"
+msgstr "Animation date range"
+
+#: templates/menu_animation.html:29 templates/menu_filtre.html:103
+msgid "Date de début"
+msgstr "Start date"
+
+#: templates/menu_animation.html:36 templates/menu_filtre.html:110
+msgid "Date de fin"
+msgstr "End date"
+
+#: templates/menu_animation.html:46
+msgid "Temps en ms par jour"
+msgstr "Time in ms per day"
+
+#: templates/menu_animation.html:47
+msgid "Durée par jour (ms)"
+msgstr "Duration per day (ms)"
+
+#: templates/menu_animation.html:52
+msgid "Temps total"
+msgstr "Total time"
+
+#: templates/menu_animation.html:53
+msgid "Temps total (minutes)"
+msgstr "Total time (minutes)"
+
+#: templates/menu_animation.html:56
+msgid "min"
+msgstr "min"
+
+#: templates/menu_animation.html:56
+msgid "sec pour"
+msgstr "sec for"
+
+#: templates/menu_animation.html:56
+msgid "jours"
+msgstr "days"
+
+#: templates/menu_animation.html:64
+msgid "Démarrer"
+msgstr "Start"
+
+#: templates/menu_animation.html:67
+msgid "Enregistrer"
+msgstr "Record"
+
+#: templates/menu_animation.html:70
+msgid "Pause"
+msgstr "Pause"
+
+#: templates/menu_animation.html:73
+msgid "Arrêter"
+msgstr "Stop"
+
+#: templates/menu_animation.html:81
+msgid "Nettoyer images"
+msgstr "Clean images"
+
+#: templates/menu_animation.html:84
+msgid "Assembler film"
+msgstr "Assemble movie"
+
+#: templates/menu_animation.html:93
+msgid "Informations"
+msgstr "Information"
 
 #: templates/menu_data.html:6
 msgid "Base de données"
@@ -62,33 +142,131 @@ msgstr "No database loaded"
 msgid "Filtres"
 msgstr "Filters"
 
-#: templates/menu_filtre.html:4
+#: templates/menu_data.html:38
+msgid "Sélection: 0 / 0"
+msgstr "Selection: 0 / 0"
+
+#: templates/menu_filtre.html:6
 msgid "Filtrer par type de cache"
 msgstr "Filter by cache type"
 
-#: templates/menu_filtre.html:20
+#: templates/menu_filtre.html:22
 msgid "Type de cache"
 msgstr "Cache type"
 
-#: templates/menu_filtre.html:26
+#: templates/menu_filtre.html:24 templates/menu_filtre.html:42
+#: templates/menu_filtre.html:67 templates/menu_filtre.html:89
+msgid "Tout"
+msgstr "All"
+
+#: templates/menu_filtre.html:25 templates/menu_filtre.html:43
+#: templates/menu_filtre.html:68 templates/menu_filtre.html:90
+msgid "Aucun"
+msgstr "None"
+
+#: templates/menu_filtre.html:32
+msgid "Filtrer par taille"
+msgstr "Filter by size"
+
+#: templates/menu_filtre.html:40
+msgid "Taille"
+msgstr "Size"
+
+#: templates/menu_filtre.html:54
 msgid "Filtrer par difficulté"
 msgstr "Filter by difficulty"
 
-#: templates/menu_filtre.html:37
-msgid "Difficulté"
-msgstr "Difficulty"
+#: templates/menu_filtre.html:65
+msgid "Difficultés"
+msgstr "Difficulties"
 
-#: templates/menu_filtre.html:43
+#: templates/menu_filtre.html:76
 msgid "Filtrer par terrain"
 msgstr "Filter by terrain"
 
-#: templates/menu_filtre.html:54
+#: templates/menu_filtre.html:87
 msgid "Terrain"
 msgstr "Terrain"
 
-#: templates/menu_filtre.html:67
-msgid "Filtrer par taille"
-msgstr "Filter by size"
+#: templates/menu_filtre.html:99
+msgid "Période (dates)"
+msgstr "Period (dates)"
+
+#: templates/menu_flash.html:2
+msgid "Animation du Flash"
+msgstr "Flash animation"
+
+#: templates/menu_flash.html:9
+msgid "Pas de flash"
+msgstr "No flash"
+
+#: templates/menu_flash.html:10
+msgid "Cercle"
+msgstr "Circle"
+
+#: templates/menu_flash.html:11
+msgid "Étoile"
+msgstr "Star"
+
+#: templates/menu_flash.html:12
+msgid "Carré"
+msgstr "Square"
+
+#: templates/menu_flash.html:13
+msgid "Triangle"
+msgstr "Triangle"
+
+#: templates/menu_flash.html:14
+msgid "Losange"
+msgstr "Diamond"
+
+#: templates/menu_flash.html:16
+msgid "Forme du flash"
+msgstr "Flash shape"
+
+#: templates/menu_flash.html:20
+msgid "Durée du flash"
+msgstr "Flash duration"
+
+#: templates/menu_flash.html:21
+msgid "Durée du flash en ms"
+msgstr "Flash duration in ms"
+
+#: templates/menu_flash.html:25
+msgid "Taille du Flash"
+msgstr "Flash size"
+
+#: templates/menu_flash.html:26
+msgid "Taille du flash en px"
+msgstr "Flash size in px"
+
+#: templates/menu_flash.html:31
+msgid "Couleur du flash"
+msgstr "Flash color"
+
+#: templates/menu_informations.html:3
+msgid "Informations à afficher"
+msgstr "Information to display"
+
+#: templates/menu_informations.html:10
+msgid "Afficher un titre"
+msgstr "Display a title"
+
+#: templates/menu_informations.html:15
+msgid "Titre"
+msgstr "Title"
+
+#: templates/menu_informations.html:19 templates/menu_informations.html:36
+msgid "Appliquer les Modifications"
+msgstr "Apply Changes"
+
+#: templates/menu_informations.html:26
+msgid "Afficher le nombre de caches trouvées"
+msgstr "Display number of caches found"
+
+#: templates/menu_informations.html:31
+msgid "Afficher la date"
+msgstr "Display date"
 
 #: templates/menu_maps.html:4
 msgid "Map Choice"
@@ -125,6 +303,62 @@ msgstr ""
 #: templates/menu_options.html:23
 msgid "Check for a new version"
 msgstr ""
+
+#: templates/menu_points.html:8
+msgid "Graphisme des points"
+msgstr "Point graphics"
+
+#: templates/menu_points.html:22
+msgid "Configuration générale"
+msgstr "General configuration"
+
+#: templates/menu_points.html:47
+msgid "Forme des points"
+msgstr "Point shape"
+
+#: templates/menu_points.html:64
+msgid "Centre du point"
+msgstr "Point center"
+
+#: templates/menu_points.html:72
+msgid "Taille du centre"
+msgstr "Center size"
+
+#: templates/menu_points.html:93
+msgid "Couleur du centre"
+msgstr "Center color"
+
+#: templates/menu_points.html:103 templates/menu_points.html:187
+msgid "Couleurs GC (par type)"
+msgstr "GC colors (by type)"
+
+#: templates/menu_points.html:112 templates/menu_points.html:196
+msgid "Transparent"
+msgstr "Transparent"
+
+#: templates/menu_points.html:121 templates/menu_points.html:205
+msgid "Couleur unique"
+msgstr "Single color"
+
+#: templates/menu_points.html:133 templates/menu_points.html:217
+msgid "Choisir la couleur"
+msgstr "Choose color"
+
+#: templates/menu_points.html:148
+msgid "Bordure du point"
+msgstr "Point border"
+
+#: templates/menu_points.html:156
+msgid "Épaisseur de la bordure (0 = aucune)"
+msgstr "Border thickness (0 = none)"
+
+#: templates/menu_points.html:177
+msgid "Couleur de la bordure"
+msgstr "Border color"
+
+#: templates/menu_points.html:232
+msgid "Les modifications sont appliquées en temps réel sur la carte"
+msgstr "Changes are applied in real time on the map"
 
 #: templates/menu_style.html:7
 msgid "Cartes"

@@ -28,14 +28,26 @@ def get_locale():
     # Essayer d'abord de récupérer la langue depuis les paramètres de la requête
     locale = request.args.get('lang')
     if locale in app.config['BABEL_SUPPORTED_LOCALES']:
+        print(f"DEBUG: Langue détectée depuis URL: {locale}")  # Debug
         return locale
+
     # Sinon utiliser la langue du navigateur
-    return request.accept_languages.best_match(app.config['BABEL_SUPPORTED_LOCALES'])
+    browser_locale = request.accept_languages.best_match(app.config['BABEL_SUPPORTED_LOCALES'])
+    print(f"DEBUG: Langue détectée depuis navigateur: {browser_locale}")  # Debug
+    return browser_locale
 
 babel = Babel(app, locale_selector=get_locale)
 
 # Assurer que la fonction gettext est disponible dans les templates
 app.jinja_env.globals['_'] = _
+
+# Debug: Vérifier que les traductions sont chargées
+print("DEBUG: Configuration Babel:")
+print(f"  Default locale: {app.config['BABEL_DEFAULT_LOCALE']}")
+print(f"  Supported locales: {app.config['BABEL_SUPPORTED_LOCALES']}")
+print(f"  Translation directories: {app.config['BABEL_TRANSLATION_DIRECTORIES']}")
+print(f"  Test traduction immédiate 'Données': {_('Données')}")
+print(f"  Test traduction immédiate 'Style': {_('Style')}")
 
 # Les traductions sont automatiquement chargées par Flask-Babel
 # TODO Utiliser 1) json 2) get local
@@ -71,6 +83,10 @@ class Geocache(db.Model):
 
 @app.route('/')
 def index():
+    current_lang = get_locale()
+    print(f"DEBUG: Route / appelée avec langue: {current_lang}")  # Debug
+    print(f"DEBUG: Test traduction 'Données': {_('Données')}")  # Debug
+    print(f"DEBUG: Test traduction 'Style': {_('Style')}")  # Debug
     return render_template('app.html')
 
 
@@ -165,6 +181,9 @@ def check_version():
 @app.route('/test_translations')
 def test_translations():
     """Route de test pour vérifier que les traductions fonctionnent"""
+    current_lang = get_locale()
+    print(f"DEBUG: Route test_translations appelée avec langue: {current_lang}")  # Debug
+
     return jsonify({
         'current_locale': get_locale(),
         'test_strings': {
@@ -173,7 +192,9 @@ def test_translations():
             'filtres': _('Filtres'),
             'cartes': _('Cartes'),
             'parametres': _('Paramètres'),
-            'annuler': _('Cancel')
+            'annuler': _('Cancel'),
+            'graphisme_des_points': _('Graphisme des points'),  # Test de la nouvelle traduction
+            'centre_du_point': _('Centre du point')  # Test d'une autre nouvelle traduction
         }
     })
 

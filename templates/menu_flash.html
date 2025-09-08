@@ -1,34 +1,34 @@
 <div id="flash" class="col s12">
-    <h3>Animation du Flash</h3>
+    <h3>{{ _("Animation du Flash") }}</h3>
     <div>
         <form>
 
             <!-- Select pour choisir la forme du flash (remplace les anciens radio buttons) -->
             <div class="input-field">
                 <select id="selectFlashMode">
-                    <option value="none">Pas de flash</option>
-                    <option value="circle" selected>Cercle</option>
-                    <option value="star">Étoile</option>
-                    <option value="square">Carré</option>
-                    <option value="triangle">Triangle</option>
-                    <option value="diamond">Losange</option>
+                    <option value="none">{{ _("Pas de flash") }}</option>
+                    <option value="circle" selected>{{ _("Cercle") }}</option>
+                    <option value="star">{{ _("Étoile") }}</option>
+                    <option value="square">{{ _("Carré") }}</option>
+                    <option value="triangle">{{ _("Triangle") }}</option>
+                    <option value="diamond">{{ _("Losange") }}</option>
                 </select>
-                <label for="selectFlashMode">Forme du flash</label>
+                <label for="selectFlashMode">{{ _("Forme du flash") }}</label>
             </div>
 
             <div class="input-field">
-                <input placeholder="Durée du flash" id="inputTimeFlash" type="number" class="validate" min="100" max="10000" step="100">
-                <label for="inputTimeFlash">Durée du flash en ms</label>
+                <input placeholder="{{ _('Durée du flash') }}" id="inputTimeFlash" type="number" class="validate" min="100" max="10000" step="100">
+                <label for="inputTimeFlash">{{ _("Durée du flash en ms") }}</label>
             </div>
 
             <div class="input-field">
-                <input placeholder="Taille du Flash" id="inputSizeFlash" type="number" class="validate" min="5" max="200" step="5">
-                <label for="inputSizeFlash">Taille du flash en px</label>
+                <input placeholder="{{ _('Taille du Flash') }}" id="inputSizeFlash" type="number" class="validate" min="5" max="200" step="5">
+                <label for="inputSizeFlash">{{ _("Taille du flash en px") }}</label>
             </div>
 
             <!-- Color Pickers Flash -->
             <div class="input-field col s3">
-                <span>Couleur du flash: </span>
+                <span>{{ _("Couleur du flash") }}: </span>
                 <input type="color" id="flashColor" value="#FF00FF">
             </div>
 

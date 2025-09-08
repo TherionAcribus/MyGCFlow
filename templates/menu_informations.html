@@ -1,39 +1,39 @@
 <!-- Tabs pour les informations à afficher -->
 <div id="infos" class="col s12">
-    <h3>Informations à afficher</h3>
+    <h3>{{ _("Informations à afficher") }}</h3>
     <div>
         <section>
             <div class="col s6">
 
                 <label>
                     <input id="cbDisplayTitle" type="checkbox"/>
-                    <span>Afficher un titre</span>
+                    <span>{{ _("Afficher un titre") }}</span>
                 </label>
 
                 <div class="input-field">
                     <input id="inputTitle" type="text" class="validate">
-                    <label for="inputTitle">Titre</label>
+                    <label for="inputTitle">{{ _("Titre") }}</label>
                 </div>
                 
                 <textarea hx-get="../static/css/titre.css" hx-trigger="load" id="inputTitleCss" class="cssEditor" rows="30" cols="50"></textarea>
-                <button id="btnTitleCss">Appliquer les Modifications</button>
+                <button id="btnTitleCss">{{ _("Appliquer les Modifications") }}</button>
 
             </div>
 
             <div class="col s6">
                 <label>
                     <input id="cbDisplayNumberofCaches" type="checkbox"/>
-                    <span>Afficher le nombre de caches trouvées</span>
+                    <span>{{ _("Afficher le nombre de caches trouvées") }}</span>
                 </label>
 
                 <label>
                     <input id="cbDisplayCurrentDate" type="checkbox"/>
-                    <span>Afficher la date</span>
+                    <span>{{ _("Afficher la date") }}</span>
                 </label>
 
                 <div>
                     <textarea hx-get="../static/css/infos.css" hx-trigger="load" id="inputInfosCss" class="cssEditor" rows="30" cols="50"></textarea>
-                    <button id="btnInfosCss">Appliquer les Modifications</button>
+                    <button id="btnInfosCss">{{ _("Appliquer les Modifications") }}</button>
                 </div>
 
             </div>
