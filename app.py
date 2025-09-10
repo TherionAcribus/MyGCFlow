@@ -9,6 +9,7 @@ from bdd import uploadBdd, get_progress_step, db_infos, create_geojson, get_meta
 from capture import upload_image, clear_pictures_directory, assemble_pictures_directory
 from options import check_version_online
 from flask_babel import Babel, gettext as _
+from settings_manager import SettingsManager, AppSettings, MapProfile
 
 # Créer un alias pour la fonction de traduction
 gettext = _
@@ -18,6 +19,9 @@ app = Flask(__name__)
 CORS(app)
 
 current_version = "2.0"
+# Settings / Profiles manager (stdlib)
+settings_manager = SettingsManager()
+
 
 # Configuration de la traduction
 app.config['BABEL_DEFAULT_LOCALE'] = 'fr'  # Langue par défaut français
@@ -222,6 +226,182 @@ console.log('Test de traduction:', '{_("Base de données")}');
     response = make_response(js_content)
     response.headers['Content-Type'] = 'application/javascript'
     return response
+
+
+# ------------------------
+# API: App settings
+# ------------------------
+@app.route('/api/settings', methods=['GET'])
+def api_get_settings():
+    s = settings_manager.get_app_settings()
+    return jsonify({
+        'version': s.version,
+        'language': s.language,
+        'check_updates': s.check_updates,
+    })
+
+
+@app.route('/api/settings', methods=['PUT'])
+def api_put_settings():
+    data = request.get_json(silent=True) or {}
+    current = settings_manager.get_app_settings()
+    language = data.get('language', current.language)
+    check_updates = bool(data.get('check_updates', current.check_updates))
+    updated = AppSettings(version=current.version, language=language, check_updates=check_updates)
+    settings_manager.save_app_settings(updated)
+    return jsonify({'success': True})
+
+
+@app.route('/api/settings/reset', methods=['POST'])
+def api_reset_settings():
+    settings_manager.reset_app_settings()
+    return jsonify({'success': True})
+
+
+# ------------------------
+# API: Profiles
+# ------------------------
+@app.route('/api/profiles', methods=['GET'])
+def api_list_profiles():
+    return jsonify(settings_manager.list_profiles())
+
+
+@app.route('/api/profiles/<name>', methods=['GET'])
+def api_get_profile(name: str):
+    prof = settings_manager.load_profile(name)
+    print(f"📤 SERVEUR - Envoi profil '{name}' avec flash: mode={prof.flash.mode}, duration={prof.flash.duration}, size={prof.flash.size}, color={prof.flash.color}")
+    return jsonify({
+        'version': prof.version,
+        'name': prof.name,
+        'uid': prof.uid,
+        'map': {
+            'tile_provider': prof.map.tile_provider,
+            'default_center': list(prof.map.default_center),
+            'default_zoom': prof.map.default_zoom,
+        },
+        'animation': {
+            'enabled': prof.animation.enabled,
+            'speed': prof.animation.speed,
+        },
+        'points': {
+            'size': prof.points.size,
+            'color': prof.points.color,
+            'shape': prof.points.shape,
+            'halo': prof.points.halo,
+            'border_color': prof.points.border_color,
+            'border_size': prof.points.border_size,
+            'fill_color_type': prof.points.fill_color_type,
+            'border_color_type': prof.points.border_color_type,
+        },
+        'flash': {
+            'mode': prof.flash.mode,
+            'duration': prof.flash.duration,
+            'size': prof.flash.size,
+            'color': prof.flash.color,
+        }
+    })
+
+
+@app.route('/api/profiles', methods=['POST'])
+def api_create_profile():
+    data = request.get_json(silent=True) or {}
+    name = data.get('name') or 'NewProfile'
+    base = data.get('base')
+    prof = settings_manager.create_profile(name, base)
+    return jsonify({'success': True, 'name': prof.name})
+
+
+@app.route('/api/profiles/<name>', methods=['PUT'])
+def api_save_profile(name: str):
+    data = request.get_json(silent=True) or {}
+    print(f"🔄 SERVEUR - Sauvegarde profil '{name}': {data}")
+    prof = settings_manager.load_profile(name)
+    prof.name = data.get('name', prof.name)
+    m = data.get('map', {})
+    prof.map.tile_provider = m.get('tile_provider', prof.map.tile_provider)
+    if 'default_center' in m:
+        try:
+            dc = m['default_center']
+            prof.map.default_center = (float(dc[0]), float(dc[1]))
+        except Exception:
+            pass
+    if 'default_zoom' in m:
+        try:
+            prof.map.default_zoom = int(m['default_zoom'])
+        except Exception:
+            pass
+    a = data.get('animation', {})
+    if 'enabled' in a:
+        prof.animation.enabled = bool(a['enabled'])
+    if 'speed' in a:
+        try:
+            prof.animation.speed = float(a['speed'])
+        except Exception:
+            pass
+    pt = data.get('points', {})
+    if 'size' in pt:
+        try:
+            prof.points.size = int(pt['size'])
+        except Exception:
+            pass
+    if 'color' in pt:
+        prof.points.color = pt['color']
+    if 'shape' in pt:
+        prof.points.shape = pt['shape']
+    if 'halo' in pt:
+        prof.points.halo = bool(pt['halo'])
+    if 'border_color' in pt:
+        prof.points.border_color = pt['border_color']
+    if 'border_size' in pt:
+        try:
+            prof.points.border_size = int(pt['border_size'])
+        except Exception:
+            pass
+    if 'fill_color_type' in pt:
+        prof.points.fill_color_type = pt['fill_color_type']
+    if 'border_color_type' in pt:
+        prof.points.border_color_type = pt['border_color_type']
+
+    # Gestion du champ flash
+    f = data.get('flash', {})
+    if 'mode' in f:
+        prof.flash.mode = f['mode']
+    if 'duration' in f:
+        try:
+            prof.flash.duration = int(f['duration'])
+        except Exception:
+            pass
+    if 'size' in f:
+        try:
+            prof.flash.size = int(f['size'])
+        except Exception:
+            pass
+    if 'color' in f:
+        prof.flash.color = f['color']
+
+    print(f"💾 SERVEUR - Profil sauvegardé avec flash: mode={prof.flash.mode}, duration={prof.flash.duration}, size={prof.flash.size}, color={prof.flash.color}")
+    settings_manager.save_profile(prof)
+    return jsonify({'success': True})
+
+
+@app.route('/api/profiles/<name>/duplicate', methods=['POST'])
+def api_duplicate_profile(name: str):
+    data = request.get_json(silent=True) or {}
+    new_name = data.get('new_name') or f"{name}_copy"
+    prof = settings_manager.duplicate_profile(name, new_name)
+    return jsonify({'success': True, 'name': prof.name})
+
+
+@app.route('/api/profiles/<name>', methods=['DELETE'])
+def api_delete_profile(name: str):
+    settings_manager.delete_profile(name)
+    return jsonify({'success': True})
+
+
+@app.route('/api/profiles/<name>/reset', methods=['POST'])
+def api_reset_profile(name: str):
+    settings_manager.reset_profile(name)
+    return jsonify({'success': True})
 
 if __name__ == '__main__':
     # ouverture automatique du navigateur, pour l'instant en pause

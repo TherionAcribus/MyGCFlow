@@ -489,3 +489,48 @@ msgstr "Annuler"
 #~ "page will reload to apply the "
 #~ "changes."
 
+msgid "Profils"
+msgstr "Profils"
+
+msgid "Nouveau"
+msgstr "Nouveau"
+
+msgid "Sauvegarder"
+msgstr "Sauvegarder"
+
+msgid "Nouveau profil"
+msgstr "Nouveau profil"
+
+msgid "Nom du profil"
+msgstr "Nom du profil"
+
+msgid "Créer"
+msgstr "Créer"
+
+msgid "Confirmer la suppression"
+msgstr "Confirmer la suppression"
+
+msgid "Êtes-vous sûr de vouloir supprimer ce profil ?"
+msgstr "Êtes-vous sûr de vouloir supprimer ce profil ?"
+
+msgid "Supprimer"
+msgstr "Supprimer"
+
+msgid "Default"
+msgstr "Par défaut"
+
+msgid "Clair"
+msgstr "Clair"
+
+msgid "Sombre"
+msgstr "Sombre"
+
+msgid "Présentation"
+msgstr "Présentation"
+
+msgid "actif:"
+msgstr "actif:"
+
+msgid "aucun profil actif"
+msgstr "aucun profil actif"
+

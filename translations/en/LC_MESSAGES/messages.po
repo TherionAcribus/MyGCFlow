@@ -460,3 +460,48 @@ msgstr ""
 msgid "Cancel"
 msgstr ""
 
+msgid "Profils"
+msgstr "Profiles"
+
+msgid "Nouveau"
+msgstr "New"
+
+msgid "Sauvegarder"
+msgstr "Save"
+
+msgid "Nouveau profil"
+msgstr "New profile"
+
+msgid "Nom du profil"
+msgstr "Profile name"
+
+msgid "Créer"
+msgstr "Create"
+
+msgid "Confirmer la suppression"
+msgstr "Confirm deletion"
+
+msgid "Êtes-vous sûr de vouloir supprimer ce profil ?"
+msgstr "Are you sure you want to delete this profile?"
+
+msgid "Supprimer"
+msgstr "Delete"
+
+msgid "Default"
+msgstr "Default"
+
+msgid "Clair"
+msgstr "Light"
+
+msgid "Sombre"
+msgstr "Dark"
+
+msgid "Présentation"
+msgstr "Presentation"
+
+msgid "actif:"
+msgstr "active:"
+
+msgid "aucun profil actif"
+msgstr "no active profile"
+

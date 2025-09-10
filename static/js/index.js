@@ -9,6 +9,7 @@ export * from './frames.js';
 export * from './options.js';
 export * from './notifications.js';
 export * from './flash_animations.js';
+export * from './profiles.js';
 
 // Import du fichier de démonstration (uniquement en développement)
 import './demo_toasts.js';
