@@ -372,35 +372,60 @@ class ProfileManager {
         // Charger les paramètres actuels depuis l'interface
         try {
             // Paramètres de la carte - détecter le fournisseur actif
-            let currentTileProvider = 'OpenStreetMap'; // Valeur par défaut
+            let currentTileProvider = 'OSM'; // Valeur par défaut
 
-            // Vérifier quel bouton de carte est actif (celui qui a la classe 'active' ou 'selected')
+            // Vérifier quel bouton de carte est actif (celui qui a la classe 'disabled' - logique de l'app)
             const mapButtons = ['OSM', 'stamenToner', 'vectorMap', 'watercolor'];
+
+            // Log de l'état de tous les boutons
+            console.log('🔍 État des boutons carte:');
+            mapButtons.forEach(btnId => {
+                const btn = document.getElementById(btnId);
+                const isDisabled = btn && btn.classList.contains('disabled');
+                console.log(`  ${btnId}: ${isDisabled ? 'ACTIF (disabled)' : 'inactif'}`);
+            });
+
             for (const buttonId of mapButtons) {
                 const button = document.getElementById(buttonId);
-                if (button && (button.classList.contains('active') || button.classList.contains('selected'))) {
-                    // Mapper les IDs vers les noms attendus
+                if (button && button.classList.contains('disabled')) {
+                    console.log('🎯 Bouton actif trouvé:', buttonId);
+                    // Les vrais noms des providers correspondent aux IDs des boutons
                     const idToProvider = {
-                        'OSM': 'OpenStreetMap',
+                        'OSM': 'OSM',
                         'stamenToner': 'stamenToner',
                         'vectorMap': 'vectorMap',
                         'watercolor': 'watercolor'
                     };
-                    currentTileProvider = idToProvider[buttonId] || 'OpenStreetMap';
+                    currentTileProvider = idToProvider[buttonId] || 'OSM';
                     break;
                 }
             }
 
+            // Log si aucun bouton n'a été trouvé
+            if (currentTileProvider === 'OSM') {
+                console.log('⚠️ Aucun bouton carte trouvé disabled, utilisation valeur par défaut OSM');
+            }
+
             // Essayer aussi de détecter via d'autres indices (classes CSS, etc.)
-            if (currentTileProvider === 'OpenStreetMap') {
+            if (currentTileProvider === 'OSM') {
+                console.log('🔍 Recherche par visibilité des options...');
+
                 // Vérifier si une option spécifique est visible
                 const vectorOptions = document.getElementById('vectorMapOptions');
                 const tonerOptions = document.getElementById('tonerMapOptions');
 
+                console.log('  vectorMapOptions:', vectorOptions ? vectorOptions.style.display : 'non trouvé');
+                console.log('  tonerMapOptions:', tonerOptions ? tonerOptions.style.display : 'non trouvé');
+
+                // Détection par visibilité des options
                 if (vectorOptions && vectorOptions.style.display !== 'none') {
+                    console.log('🎯 Options vectorMap visibles, changement vers vectorMap');
                     currentTileProvider = 'vectorMap';
                 } else if (tonerOptions && tonerOptions.style.display !== 'none') {
+                    console.log('🎯 Options toner visibles, changement vers stamenToner');
                     currentTileProvider = 'stamenToner';
+                } else {
+                    console.log('⚠️ Aucune option visible trouvée');
                 }
             }
 
@@ -409,6 +434,8 @@ class ProfileManager {
                 default_center: [46.603354, 1.888334], // Centre de la France
                 default_zoom: 6
             };
+
+            console.log('🗺️ Carte détectée - Provider:', currentTileProvider, 'Settings:', mapSettings);
 
             // Si la carte est disponible, récupérer la vue actuelle
             if (window.map && typeof window.map.getView === 'function') {
@@ -730,15 +757,22 @@ class ProfileManager {
 // Fonctions d'application des paramètres (appelées depuis applyProfile)
 function applyMapSettings(mapOptions) {
     try {
+        console.log('🗺️ Application carte - Provider demandé:', mapOptions.tile_provider);
+
         // Changer le fournisseur de carte
         const mapButton = document.querySelector(`a[id="${mapOptions.tile_provider}"]`);
+        console.log('🗺️ Bouton carte trouvé:', !!mapButton, 'ID:', mapOptions.tile_provider);
+
         if (mapButton) {
+            console.log('🗺️ Clic sur le bouton carte:', mapOptions.tile_provider);
             mapButton.click();
 
             // Attendre un peu puis appliquer les options spécifiques
             setTimeout(() => {
                 applyMapSpecificOptions(mapOptions.tile_provider, mapOptions);
             }, 100);
+        } else {
+            console.error('❌ Bouton carte non trouvé pour provider:', mapOptions.tile_provider);
         }
 
         // Changer la vue (centre et zoom) - si la carte est initialisée

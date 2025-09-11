@@ -216,7 +216,7 @@ class SettingsManager:
             "Default": MapProfile(
                 name="Default",
                 map=MapOptions(
-                    tile_provider="OpenStreetMap",
+                    tile_provider="OSM",
                     default_center=(48.8566, 2.3522),  # Paris
                     default_zoom=6,
                     vector_options=VectorMapOptions(
@@ -249,7 +249,7 @@ class SettingsManager:
             "Clair": MapProfile(
                 name="Clair",
                 map=MapOptions(
-                    tile_provider="OpenStreetMap",
+                    tile_provider="OSM",
                     default_center=(46.603354, 1.888334),  # Centre de la France
                     default_zoom=6,
                     vector_options=VectorMapOptions(
@@ -315,7 +315,7 @@ class SettingsManager:
             "Présentation": MapProfile(
                 name="Présentation",
                 map=MapOptions(
-                    tile_provider="OpenStreetMap",
+                    tile_provider="OSM",
                     default_center=(46.0, 2.0),  # Vue large sur la France
                     default_zoom=5,
                     vector_options=VectorMapOptions(
