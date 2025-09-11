@@ -238,6 +238,7 @@ def api_get_settings():
         'version': s.version,
         'language': s.language,
         'check_updates': s.check_updates,
+        'default_profile': s.default_profile,
     })
 
 
@@ -247,7 +248,13 @@ def api_put_settings():
     current = settings_manager.get_app_settings()
     language = data.get('language', current.language)
     check_updates = bool(data.get('check_updates', current.check_updates))
-    updated = AppSettings(version=current.version, language=language, check_updates=check_updates)
+    default_profile = data.get('default_profile', current.default_profile)
+    updated = AppSettings(
+        version=current.version,
+        language=language,
+        check_updates=check_updates,
+        default_profile=default_profile
+    )
     settings_manager.save_app_settings(updated)
     return jsonify({'success': True})
 

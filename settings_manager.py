@@ -54,6 +54,7 @@ class AppSettings:
     version: int = 1
     language: str = "fr"
     check_updates: bool = True
+    default_profile: str = "Default"
 
 
 @dataclass
@@ -118,6 +119,7 @@ def coerce_settings(d: dict) -> AppSettings:
     if isinstance(d, dict):
         s.language = d.get("language", s.language)
         s.check_updates = bool(d.get("check_updates", s.check_updates))
+        s.default_profile = d.get("default_profile", s.default_profile)
         try:
             s.version = int(d.get("version", s.version))
         except Exception:

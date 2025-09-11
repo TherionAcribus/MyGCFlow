@@ -256,6 +256,118 @@ class ProfileManager {
         }
     }
 
+    // Gestion du profil par défaut
+    async loadAppSettings() {
+        try {
+            const response = await fetch('/api/settings');
+            const settings = await response.json();
+            console.log('🔧 Paramètres app chargés:', settings);
+            return settings;
+        } catch (error) {
+            console.error('❌ Erreur chargement paramètres app:', error);
+            return { default_profile: 'Default' };
+        }
+    }
+
+    async saveAppSettings(settings) {
+        try {
+            const response = await fetch('/api/settings', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(settings)
+            });
+            const result = await response.json();
+            console.log('💾 Paramètres app sauvegardés:', result);
+            return result;
+        } catch (error) {
+            console.error('❌ Erreur sauvegarde paramètres app:', error);
+            return { success: false };
+        }
+    }
+
+    async populateDefaultProfileSelector() {
+        try {
+            const selector = document.getElementById('selectDefaultProfile');
+            if (!selector) return;
+
+            // Charger la liste des profils
+            const profiles = await this.apiCall('/api/profiles');
+            const settings = await this.loadAppSettings();
+
+            // Vider le sélecteur
+            selector.innerHTML = '';
+
+            // Ajouter l'option "Aucun" (pas de profil par défaut)
+            const noneOption = document.createElement('option');
+            noneOption.value = '';
+            noneOption.textContent = 'Aucun profil par défaut';
+            selector.appendChild(noneOption);
+
+            // Ajouter tous les profils disponibles
+            profiles.forEach(profileName => {
+                const option = document.createElement('option');
+                option.value = profileName;
+                option.textContent = profileName;
+                selector.appendChild(option);
+            });
+
+            // Sélectionner le profil par défaut actuel
+            selector.value = settings.default_profile || '';
+
+            // Initialiser Materialize Select
+            M.FormSelect.init(selector);
+
+            console.log('📋 Sélecteur profil par défaut rempli avec:', profiles);
+        } catch (error) {
+            console.error('❌ Erreur remplissage sélecteur profil par défaut:', error);
+        }
+    }
+
+    async handleDefaultProfileChange() {
+        const selector = document.getElementById('selectDefaultProfile');
+        if (!selector) return;
+
+        const selectedProfile = selector.value;
+        console.log('🔄 Changement profil par défaut:', selectedProfile);
+
+        // Appliquer immédiatement le profil si un profil est sélectionné
+        if (selectedProfile && selectedProfile !== '') {
+            console.log('🎯 Application immédiate du profil:', selectedProfile);
+            await this.loadProfile(selectedProfile);
+        } else {
+            console.log('🚫 Aucun profil sélectionné - pas d\'application');
+        }
+
+        // Sauvegarder le nouveau profil par défaut
+        const currentSettings = await this.loadAppSettings();
+        currentSettings.default_profile = selectedProfile;
+
+        const result = await this.saveAppSettings(currentSettings);
+        if (result.success) {
+            this.showToast(
+                selectedProfile ?
+                    `Profil "${selectedProfile}" appliqué et défini comme profil par défaut` :
+                    'Aucun profil par défaut défini',
+                selectedProfile ? 'success' : 'info'
+            );
+        }
+    }
+
+    async loadDefaultProfileAtStartup() {
+        try {
+            const settings = await this.loadAppSettings();
+            const defaultProfile = settings.default_profile;
+
+            if (defaultProfile && defaultProfile !== '' && defaultProfile !== 'Default') {
+                console.log('🚀 Chargement profil par défaut au démarrage:', defaultProfile);
+                await this.loadProfile(defaultProfile);
+                this.showToast(`Profil par défaut "${defaultProfile}" chargé`, 'info');
+            }
+        } catch (error) {
+            console.error('❌ Erreur chargement profil par défaut au démarrage:', error);
+        }
+    }
+
     loadCurrentSettings() {
         // Charger les paramètres actuels depuis l'interface
         try {
@@ -873,5 +985,20 @@ document.addEventListener('DOMContentLoaded', function() {
     // Mettre à jour l'indicateur initial
     setTimeout(() => {
         profileManager.updateCurrentProfileIndicator();
+
+        // Remplir le sélecteur de profil par défaut
+        profileManager.populateDefaultProfileSelector();
+
+        // Charger le profil par défaut au démarrage
+        profileManager.loadDefaultProfileAtStartup();
+
+        // Écouter les changements du sélecteur de profil par défaut
+        const defaultProfileSelector = document.getElementById('selectDefaultProfile');
+        if (defaultProfileSelector) {
+            defaultProfileSelector.addEventListener('change', () => {
+                console.log('🎯 Changement détecté dans sélecteur profil par défaut');
+                profileManager.handleDefaultProfileChange();
+            });
+        }
     }, 100);
 });

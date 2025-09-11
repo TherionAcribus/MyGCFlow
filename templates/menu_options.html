@@ -18,6 +18,13 @@
             <label>{{ _("Check for a new version at startup") }}</label>
         </div>
 
+        <div class="input-field col s12">
+            <select id="selectDefaultProfile">
+                <!-- Les options seront remplies dynamiquement par JavaScript -->
+            </select>
+            <label>{{ _("Default profile at startup") }}</label>
+        </div>
+
             <div class="col s12">
                 <a id="buttonCheckVersion" class="waves-effect waves-light btn blue">
                     <i class="material-icons right">system_update</i>{{ _("Check for a new version") }}

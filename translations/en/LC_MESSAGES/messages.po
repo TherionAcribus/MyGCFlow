@@ -505,3 +505,15 @@ msgstr "active:"
 msgid "aucun profil actif"
 msgstr "no active profile"
 
+msgid "Default profile at startup"
+msgstr "Default profile at startup"
+
+msgid "Aucun profil par défaut"
+msgstr "No default profile"
+
+msgid "Profil \"${selectedProfile}\" appliqué et défini comme profil par défaut"
+msgstr "Profile \"${selectedProfile}\" applied and set as default profile"
+
+msgid "Aucun profil par défaut défini"
+msgstr "No default profile set"
+

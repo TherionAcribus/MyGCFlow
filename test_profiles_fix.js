@@ -120,6 +120,65 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 console.log('🍞 Test système toast terminé.');
 
+                // Test du profil par défaut
+                console.log('🏠 Test profil par défaut...');
+                try {
+                    // Tester le chargement des paramètres app
+                    if (window.profileManager && window.profileManager.loadAppSettings) {
+                        window.profileManager.loadAppSettings().then(settings => {
+                            console.log('✅ Paramètres app chargés:', settings);
+
+                            // Tester le remplissage du sélecteur
+                            setTimeout(() => {
+                                window.profileManager.populateDefaultProfileSelector().then(() => {
+                                    console.log('✅ Sélecteur profil par défaut rempli');
+
+                                    // Tester le changement de profil par défaut
+                                    const selector = document.getElementById('selectDefaultProfile');
+                                    if (selector) {
+                                        console.log('📋 Valeur actuelle sélecteur:', selector.value);
+                                        console.log('✅ Sélecteur trouvé et fonctionnel');
+                                    } else {
+                                        console.log('❌ Sélecteur non trouvé');
+                                    }
+                                });
+                            }, 1000);
+                        });
+                    } else {
+                        console.log('❌ Méthodes de gestion paramètres app non disponibles');
+                    }
+                } catch (error) {
+                    console.error('❌ Erreur test profil par défaut:', error);
+                }
+
+                console.log('🏠 Test profil par défaut terminé.');
+
+                // Test application immédiate du profil par défaut
+                console.log('⚡ Test application immédiate du profil par défaut...');
+                try {
+                    if (window.profileManager && window.profileManager.handleDefaultProfileChange) {
+                        // Simuler un changement de profil
+                        const selector = document.getElementById('selectDefaultProfile');
+                        if (selector && selector.options.length > 1) {
+                            // Sélectionner le deuxième profil (pas "Aucun")
+                            selector.value = selector.options[1].value;
+                            console.log('📋 Profil simulé sélectionné:', selector.value);
+
+                            // Tester la méthode (sans vraiment l'exécuter pour éviter les appels API)
+                            console.log('✅ Méthode handleDefaultProfileChange disponible');
+                            console.log('💡 Cette méthode appliquera immédiatement le profil sélectionné');
+                        } else {
+                            console.log('⚠️ Sélecteur non trouvé ou pas assez d\'options');
+                        }
+                    } else {
+                        console.log('❌ Méthode handleDefaultProfileChange non disponible');
+                    }
+                } catch (error) {
+                    console.error('❌ Erreur test application immédiate:', error);
+                }
+
+                console.log('⚡ Test application immédiate terminé.');
+
                 // Test spécifique des types de couleur
                 console.log('🎨 Test des types de couleur...');
                 const fillColorChecked = document.querySelector('input[name="fillColorPoint"]:checked');
