@@ -1655,8 +1655,12 @@ async function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight) {
         if (!container) return;
         const containerRect = container.getBoundingClientRect();
 
-        const renderStyledElement = (el) => {
+        const renderStyledElement = (el, lines) => {
+            // Vérifier seulement l'état DOM (maintenant synchronisé avec les paramètres utilisateur)
             if (!el || el.style.display === 'none') return;
+            // Aucune ligne à dessiner => rien
+            if (!lines || (Array.isArray(lines) && lines.length === 0)) return;
+
             const rect = el.getBoundingClientRect();
             const x = Math.round(rect.left - containerRect.left);
             const y = Math.round(rect.top - containerRect.top);
@@ -1695,7 +1699,7 @@ async function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight) {
             ctx.imageSmoothingQuality = 'high';
             if (shadow) { ctx.shadowColor = shColor; ctx.shadowBlur = shBlur; ctx.shadowOffsetX = shOffX; ctx.shadowOffsetY = shOffY; }
             drawRoundedRect(ctx, x, y, w, h, radius, bg);
-            // Texte
+            // Texte(s)
             ctx.shadowColor = 'rgba(0,0,0,0)';
             ctx.fillStyle = color;
             ctx.font = font;
@@ -1708,28 +1712,60 @@ async function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight) {
             } else {
                 ctx.textAlign = 'left';
             }
-            const text = el.textContent || '';
-            const metrics = ctx.measureText(text);
-            const textHeight = (metrics.actualBoundingBoxAscent || 0) + (metrics.actualBoundingBoxDescent || 0);
+            const texts = Array.isArray(lines) ? lines : [String(lines)];
             const innerH = Math.max(0, h - padT - padB);
-            let yText = y + padT + Math.max(0, (innerH - textHeight) / 2) + (metrics.actualBoundingBoxAscent || 0);
-            let xText = x + padL; // left par défaut
-            if (ctx.textAlign === 'center') {
-                xText = x + (w / 2);
-            } else if (ctx.textAlign === 'right') {
-                xText = x + w - padR;
-            }
-            ctx.fillText(text, xText, yText);
+            const lineGap = 18; // px entre lignes
+            let currentY = y + padT + 14; // marge supérieure + première ligne
+
+            texts.forEach((text) => {
+                if (!text) return;
+                const metrics = ctx.measureText(text);
+                let xText = x + padL; // left par défaut
+                if (ctx.textAlign === 'center') {
+                    xText = x + (w / 2);
+                } else if (ctx.textAlign === 'right') {
+                    xText = x + w - padR;
+                }
+                ctx.fillText(text, xText, currentY);
+                currentY += lineGap;
+            });
             ctx.restore();
         };
 
-        renderStyledElement(document.getElementById('titleFrame'));
-        renderStyledElement(document.getElementById('infosFrame'));
+        // Titre: dessiner uniquement si visible et activé
+        try {
+            const titleEl = document.getElementById('titleFrame');
+            const titleOn = !!(pkg.options?.infos?.title?.display);
+            if (titleOn && titleEl && titleEl.style.display !== 'none') {
+                const titleText = titleEl.textContent || '';
+                renderStyledElement(titleEl, titleText);
+            }
+        } catch(_) {}
+
+        // Infos: construire les lignes en fonction des options (date / caches)
+        try {
+            const infosEl = document.getElementById('infosFrame');
+            if (infosEl && infosEl.style.display !== 'none') {
+                const lines = [];
+                const showDate = !!(pkg.options?.infos?.currentDate?.display);
+                const showCaches = !!(pkg.options?.infos?.numberOfCaches?.display);
+                if (showDate && typeof currentDate !== 'undefined' && currentDate) {
+                    lines.push(currentDate.toLocaleDateString('fr-FR'));
+                }
+                if (showCaches) {
+                    const cacheCount = (typeof infos !== 'undefined' && infos && typeof infos.cacheNumber !== 'undefined') ? infos.cacheNumber : 0;
+                    // Garder la même convention que l'UI: nombre seul (le libellé est déjà dans l'UI si besoin)
+                    lines.push(String(cacheCount));
+                }
+                if (lines.length > 0) {
+                    renderStyledElement(infosEl, lines);
+                }
+            }
+        } catch(_) {}
 
     } catch (error) {
         console.warn('Erreur lors du rendu des overlays:', error);
-        drawManualOverlay(ctx, 'title');
-        drawManualOverlay(ctx, 'infos', infos);
+        // Le fallback drawManualOverlay() respecte maintenant les paramètres utilisateur
     }
 }
 
@@ -1755,11 +1791,17 @@ function drawManualOverlay(ctx, type, infos = null) {
     let x, y, text;
 
     if (type === 'title') {
+        // Vérifier le paramètre utilisateur pour le titre
+        if (!pkg.options?.infos?.title?.display) return;
         x = 20;
         y = 20;
-        text = pkg.options.infos.title.display && pkg.options.infos.title.text ?
-            pkg.options.infos.title.text : 'My Geocaching Map';
+        text = pkg.options.infos.title.text ? pkg.options.infos.title.text : 'My Geocaching Map';
     } else if (type === 'infos') {
+        // Vérifier si au moins un paramètre est activé
+        const shouldDisplayDate = pkg.options?.infos?.currentDate?.display === true;
+        const shouldDisplayCaches = pkg.options?.infos?.numberOfCaches?.display === true;
+        if (!shouldDisplayDate && !shouldDisplayCaches) return;
+
         x = 20;
         y = 40;
 
@@ -1773,14 +1815,14 @@ function drawManualOverlay(ctx, type, infos = null) {
         ctx.textBaseline = 'top';
 
         // Date
-        if (pkg.options.infos.currentDate.display && currentDate) {
+        if (shouldDisplayDate && currentDate) {
             const dateText = currentDate.toLocaleDateString('fr-FR');
             ctx.fillText(dateText, x, y);
             y += 20;
         }
 
         // Nombre de caches
-        if (pkg.options.infos.numberOfCaches.display) {
+        if (shouldDisplayCaches) {
             const cacheCount = infos ? infos.cacheNumber || 0 : 0;
             ctx.fillText(`${cacheCount} caches`, x, y);
         }

@@ -636,6 +636,9 @@ function initOptionsUI() {
 
         // Mettre à jour la visibilité après l'initialisation
         updateMediaRecorderOptionsVisibility();
+
+        // Synchroniser la visibilité des overlays avec les paramètres utilisateur
+        updateOverlayElementsVisibility();
     } catch(e) { console.warn('Init enregistrement UI error:', e); }
 }
 
@@ -1690,11 +1693,12 @@ function changeInfosValues(event){
     pkg.options.infos.currentDate.display = cbDisplayCurrentDate.checked;
     pkg.options.infos.numberOfCaches.display = cbDisplayNumberofCaches.checked;
 
+    // Mettre à jour immédiatement l'état des éléments DOM selon les paramètres
+    updateOverlayElementsVisibility();
+
     console.log(event.target)
 
     // ----- TITRE -----
-
-    // A METTRE DANS FRAME.JS !!!!!
 
     // création / destruction du la Frame Titre
     if (event.target.id == "cbDisplayTitle" && event.target.checked) {
@@ -1721,12 +1725,12 @@ function changeInfosValues(event){
         // reaffiche span Date
         spanCurrentDate.style.display = "inline";
         pkg.createInfosFrame("date");
-    } else if ((event.target.id == "cbDisplayNumberofCaches" || event.target.id == "cbDisplayCurrentDate" ) 
+    } else if ((event.target.id == "cbDisplayNumberofCaches" || event.target.id == "cbDisplayCurrentDate" )
         && (!cbDisplayNumberofCaches.checked && !cbDisplayCurrentDate.checked)) {
         // fermeture si les deux sont desactivés
         pkg.destroyInfosFrame();
     }
-    
+
     // efface span Date ou Nombre de Caches si demandé indifférement de la Frame global
     if (event.target.id == "cbDisplayNumberofCaches" && !event.target.checked) {
         spanNbCaches.style.display = "none";
@@ -1735,6 +1739,44 @@ function changeInfosValues(event){
         spanCurrentDate.style.display = "none";
     }
 
+}
+
+// Fonction pour synchroniser la visibilité des éléments DOM avec les paramètres utilisateur
+function updateOverlayElementsVisibility() {
+    try {
+        // Gérer le titre
+        const titleFrame = document.getElementById('titleFrame');
+        if (titleFrame) {
+            if (pkg.options.infos?.title?.display === true) {
+                titleFrame.style.display = 'block';
+            } else {
+                titleFrame.style.display = 'none';
+            }
+        }
+
+        // Gérer les infos (date + nombre de caches)
+        const infosFrame = document.getElementById('infosFrame');
+        const shouldShowInfos = pkg.options.infos?.currentDate?.display === true ||
+                               pkg.options.infos?.numberOfCaches?.display === true;
+
+        if (infosFrame) {
+            if (shouldShowInfos) {
+                infosFrame.style.display = 'block';
+            } else {
+                infosFrame.style.display = 'none';
+            }
+        }
+
+        console.log('[OVERLAY] Visibilité mise à jour:', {
+            title: pkg.options.infos?.title?.display,
+            date: pkg.options.infos?.currentDate?.display,
+            caches: pkg.options.infos?.numberOfCaches?.display,
+            titleFrame: titleFrame?.style.display,
+            infosFrame: infosFrame?.style.display
+        });
+    } catch(e) {
+        console.warn('Erreur updateOverlayElementsVisibility:', e);
+    }
 }
 
 // fenetre css pour le titre. Le htmx charge tout le css avec également le #inputTitleCss {...} il faut donc le supprimer.
