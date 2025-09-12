@@ -482,4 +482,114 @@ class SettingsManager:
     def reset_profile(self, name: str) -> None:
         self.save_profile(MapProfile(name=name))
 
+    # ---------- Import/Export utilitaires ----------
+    def _iter_profile_files(self):
+        for p in PROFILES_DIR.glob("*.json"):
+            yield p
+
+    def _name_exists(self, name: str) -> bool:
+        return self._profile_path(name).exists()
+
+    def _uid_exists(self, uid: str) -> bool:
+        for p in self._iter_profile_files():
+            try:
+                data = read_json(p)
+                if data.get("uid") == uid:
+                    return True
+            except Exception:
+                continue
+        return False
+
+    def _generate_unique_name(self, base_name: str) -> str:
+        if not self._name_exists(base_name):
+            return base_name
+        idx = 1
+        while True:
+            candidate = f"{base_name} ({idx})"
+            if not self._name_exists(candidate):
+                return candidate
+            idx += 1
+
+    def export_profile_payload(self, name: str, app_version: str) -> dict:
+        prof = self.load_profile(name)
+        payload = {
+            "$schema": "gcmap.profile.v1",
+            "kind": "profile",
+            "app": APP_NAME,
+            "app_version": app_version,
+            "profile": {
+                "version": prof.version,
+                "name": prof.name,
+                "uid": prof.uid,
+                "map": {
+                    "tile_provider": prof.map.tile_provider,
+                    "default_center": list(prof.map.default_center),
+                    "default_zoom": prof.map.default_zoom,
+                    "vector_options": {
+                        "stroke_color": prof.map.vector_options.stroke_color,
+                        "fill_color": prof.map.vector_options.fill_color,
+                        "background_color": prof.map.vector_options.background_color,
+                        "stroke_width": prof.map.vector_options.stroke_width,
+                    },
+                    "toner_options": {
+                        "variant": prof.map.toner_options.variant,
+                    },
+                },
+                "animation": {
+                    "enabled": prof.animation.enabled,
+                    "speed": prof.animation.speed,
+                },
+                "points": {
+                    "size": prof.points.size,
+                    "color": prof.points.color,
+                    "shape": prof.points.shape,
+                    "halo": prof.points.halo,
+                    "border_color": prof.points.border_color,
+                    "border_size": prof.points.border_size,
+                    "fill_color_type": prof.points.fill_color_type,
+                    "border_color_type": prof.points.border_color_type,
+                },
+                "flash": {
+                    "mode": prof.flash.mode,
+                    "duration": prof.flash.duration,
+                    "size": prof.flash.size,
+                    "color": prof.flash.color,
+                },
+                "infos": {
+                    "title": {
+                        "display": prof.infos.title.display,
+                        "text": prof.infos.title.text,
+                    },
+                    "number_of_caches": prof.infos.number_of_caches,
+                    "current_date": prof.infos.current_date,
+                    "title_css": prof.infos.title_css,
+                    "infos_css": prof.infos.infos_css,
+                },
+            },
+        }
+        return payload
+
+    def import_profile_payload(self, payload: dict) -> MapProfile:
+        """Importe un profil depuis un payload JSON validé. Retourne le profil sauvegardé."""
+        if not isinstance(payload, dict):
+            raise ValueError("Payload invalide")
+        if payload.get("$schema") != "gcmap.profile.v1" or payload.get("kind") != "profile":
+            raise ValueError("Fichier de profil invalide (détrompeur manquant)")
+
+        prof_dict = payload.get("profile")
+        if not isinstance(prof_dict, dict):
+            raise ValueError("Section 'profile' manquante")
+
+        prof = coerce_profile(prof_dict)
+
+        # Gérer conflits de nom
+        prof.name = self._generate_unique_name(prof.name or "Imported")
+
+        # Gérer collisions d'UUID
+        if not prof.uid or self._uid_exists(prof.uid):
+            prof.uid = uuid.uuid4().hex
+
+        self.save_profile(prof)
+        return prof
+
 

@@ -43,6 +43,36 @@ class ProfileManager {
         document.querySelectorAll('.modal').forEach(modal => {
             M.Modal.init(modal);
         });
+
+
+        // Import profil
+        const inputImport = document.getElementById('input-import-profile');
+        document.getElementById('btn-import-profile')?.addEventListener('click', () => {
+            inputImport && inputImport.click();
+        });
+        inputImport?.addEventListener('change', async (e) => {
+            try {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const text = await file.text();
+                const json = JSON.parse(text);
+                const resp = await fetch('/api/profiles/import', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(json)
+                });
+                const data = await resp.json();
+                if (!resp.ok || !data.success) throw new Error(data.message || 'Import échoué');
+
+                this.showToast(`Profil "${data.name}" importé`, 'green');
+                await this.loadProfilesList();
+            } catch (e) {
+                console.error('Import error', e);
+                this.showToast('Erreur import du profil', 'red');
+            } finally {
+                if (inputImport) inputImport.value = '';
+            }
+        });
     }
 
     // API calls
@@ -189,6 +219,29 @@ class ProfileManager {
         }
     }
 
+    async exportProfile(name) {
+        try {
+            console.log('📤 Export profil:', name);
+            const resp = await fetch(`/api/profiles/${encodeURIComponent(name)}/export`);
+            const data = await resp.json();
+            if (!resp.ok) throw new Error(data.message || 'Export échoué');
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${name}.gcmap-profile.json`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+            this.showToast(`Profil "${name}" exporté`, 'green');
+        } catch (e) {
+            console.error('Export error', e);
+            this.showToast('Erreur export du profil', 'red');
+        }
+    }
+
     // UI methods
     renderProfilesList() {
         const container = document.getElementById('profiles-list');
@@ -221,10 +274,11 @@ class ProfileManager {
                             <i class="material-icons">more_vert</i>
                         </a>
                         <ul id="dropdown-${profileName.replace(/\s+/g, '-')}" class="dropdown-content">
-                            <li><a href="#!" onclick="profileManager.duplicateProfile('${profileName.replace(/'/g, "\\'")}', '${profileName.replace(/'/g, "\\'")}_copy')"><i class="material-icons">content_copy</i>Dupliquer</a></li>
-                            <li><a href="#!" onclick="profileManager.renameProfile('${profileName.replace(/'/g, "\\'")}')"><i class="material-icons">edit</i>Renommer</a></li>
-                            <li><a href="#!" onclick="profileManager.resetProfile('${profileName.replace(/'/g, "\\'")}')"><i class="material-icons">refresh</i>Réinitialiser</a></li>
-                            <li><a href="#!" onclick="profileManager.confirmDelete('${profileName.replace(/'/g, "\\'")}')"><i class="material-icons">delete</i>Supprimer</a></li>
+                            <li><a href="#!" onclick="profileManager.duplicateProfile('${profileName.replace(/'/g, "\\'")}', '${profileName.replace(/'/g, "\\'")}_copy')"><i class="material-icons">content_copy</i>${window.gettext ? window.gettext('Dupliquer') : 'Dupliquer'}</a></li>
+                            <li><a href="#!" onclick="profileManager.renameProfile('${profileName.replace(/'/g, "\\'")}')"><i class="material-icons">edit</i>${window.gettext ? window.gettext('Renommer') : 'Renommer'}</a></li>
+                            <li><a href="#!" onclick="profileManager.exportProfile('${profileName.replace(/'/g, "\\'")}')"><i class="material-icons">file_download</i>${window.gettext ? window.gettext('Exporter') : 'Exporter'}</a></li>
+                            <li><a href="#!" onclick="profileManager.resetProfile('${profileName.replace(/'/g, "\\'")}')"><i class="material-icons">refresh</i>${window.gettext ? window.gettext('Réinitialiser') : 'Réinitialiser'}</a></li>
+                            <li><a href="#!" onclick="profileManager.confirmDelete('${profileName.replace(/'/g, "\\'")}')"><i class="material-icons">delete</i>${window.gettext ? window.gettext('Supprimer') : 'Supprimer'}</a></li>
                         </ul>
                     </div>
                 </div>
@@ -592,10 +646,18 @@ class ProfileManager {
             const titleCssTextarea = document.getElementById('inputTitleCss');
             const infosCssTextarea = document.getElementById('inputInfosCss');
 
-            // Nettoyage basique du CSS (éviter caractères qui cassent JSON)
-            function cleanCss(css) {
+            // Nettoyage du CSS (extrait seulement les déclarations)
+            function extractCssDeclarations(css) {
                 if (!css || typeof css !== 'string') return '';
-                return css.trim();
+                let text = css.trim();
+                const first = text.indexOf('{');
+                const last = text.lastIndexOf('}');
+                if (first !== -1 && last !== -1 && last > first) {
+                    text = text.substring(first + 1, last);
+                }
+                // Nettoyage des espaces superflus en début de ligne
+                text = text.replace(/^\s+/gm, '');
+                return text.trim();
             }
 
             const infosSettings = {
@@ -605,8 +667,8 @@ class ProfileManager {
                 },
                 number_of_caches: displayNumberofCachesCheckbox ? !!displayNumberofCachesCheckbox.checked : true,
                 current_date: displayCurrentDateCheckbox ? !!displayCurrentDateCheckbox.checked : true,
-                title_css: cleanCss(titleCssTextarea ? titleCssTextarea.value : ''),
-                infos_css: cleanCss(infosCssTextarea ? infosCssTextarea.value : ''),
+                title_css: extractCssDeclarations(titleCssTextarea ? titleCssTextarea.value : ''),
+                infos_css: extractCssDeclarations(infosCssTextarea ? infosCssTextarea.value : ''),
             };
 
             console.log('📄 Paramètres infos récupérés:', {
@@ -745,16 +807,18 @@ class ProfileManager {
 
                 // CSS titre / infos (via fonctions existantes)
                 if (typeof pkg.changeTitleCssValues === 'function' && typeof profile.infos.title_css === 'string') {
-                    // Autoriser plein CSS (#titleFrame { ... }) ou seulement les déclarations
-                    pkg.changeTitleCssValues(profile.infos.title_css);
+                    // Nettoyer le CSS avant application
+                    const cleanedTitleCss = extractCssDeclarations(profile.infos.title_css);
+                    pkg.changeTitleCssValues(cleanedTitleCss);
                     const titleCssTextarea = document.getElementById('inputTitleCss');
-                    if (titleCssTextarea) titleCssTextarea.value = profile.infos.title_css;
+                    if (titleCssTextarea) titleCssTextarea.value = cleanedTitleCss;
                 }
                 if (typeof pkg.changeInfosCssValues === 'function' && typeof profile.infos.infos_css === 'string') {
-                    // Idem pour infos
-                    pkg.changeInfosCssValues(profile.infos.infos_css);
+                    // Nettoyer le CSS avant application
+                    const cleanedInfosCss = extractCssDeclarations(profile.infos.infos_css);
+                    pkg.changeInfosCssValues(cleanedInfosCss);
                     const infosCssTextarea = document.getElementById('inputInfosCss');
-                    if (infosCssTextarea) infosCssTextarea.value = profile.infos.infos_css;
+                    if (infosCssTextarea) infosCssTextarea.value = cleanedInfosCss;
                 }
             } catch (e) {
                 console.warn('⚠️ Application des paramètres infos: erreur non bloquante', e);

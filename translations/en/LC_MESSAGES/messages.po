@@ -469,6 +469,21 @@ msgstr "New"
 msgid "Sauvegarder"
 msgstr "Save"
 
+msgid "Exporter"
+msgstr "Export"
+
+msgid "Importer"
+msgstr "Import"
+
+msgid "Dupliquer"
+msgstr "Duplicate"
+
+msgid "Renommer"
+msgstr "Rename"
+
+msgid "Réinitialiser"
+msgstr "Reset"
+
 msgid "Nouveau profil"
 msgstr "New profile"
 

@@ -515,6 +515,32 @@ def api_reset_profile(name: str):
     settings_manager.reset_profile(name)
     return jsonify({'success': True})
 
+
+# ------------------------
+# API: Profiles Import/Export
+# ------------------------
+@app.route('/api/profiles/<name>/export', methods=['GET'])
+def api_export_profile(name: str):
+    try:
+        payload = settings_manager.export_profile_payload(name, current_version)
+        return jsonify(payload)
+    except FileNotFoundError:
+        return jsonify({'success': False, 'message': f"Profil '{name}' introuvable"}), 404
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 400
+
+
+@app.route('/api/profiles/import', methods=['POST'])
+def api_import_profile():
+    try:
+        data = request.get_json(silent=True) or {}
+        prof = settings_manager.import_profile_payload(data)
+        return jsonify({'success': True, 'name': prof.name, 'uid': prof.uid})
+    except ValueError as ve:
+        return jsonify({'success': False, 'message': str(ve)}), 400
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 if __name__ == '__main__':
     # ouverture automatique du navigateur, pour l'instant en pause
     #webview.start()
