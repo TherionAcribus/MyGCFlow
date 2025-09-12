@@ -410,11 +410,14 @@ function onRecordModeChange() {
         pkg.options.record.mediaRecorder = pkg.options.record.mediaRecorder || {};
         const mode = selectRecordMode.value === 'mediarecorder' ? 'mediarecorder' : 'images';
         pkg.options.record.mode = mode;
+
+        // Sauvegarder immédiatement le changement de mode
+        saveRecordSettings();
     } catch(e) {
         console.warn('Mode change error:', e);
     }
 
-    changeRecordValues(); // Met à jour les autres options
+    changeRecordValues(); // Met à jour les autres options et sauvegarde
     updateMediaRecorderOptionsVisibility(); // Met à jour la visibilité
 }
 
@@ -614,6 +617,9 @@ export function init_ui() {
 function initOptionsUI() {
     // ------- ENREGISTREMENT -------
     try {
+        // Restaurer les paramètres sauvegardés
+        loadRecordSettings();
+
         if (selectRecordMode) {
             selectRecordMode.value = (pkg.options.record?.mode) || 'mediarecorder'; // MediaRecorder par défaut
             M.FormSelect.init(selectRecordMode);
@@ -706,10 +712,62 @@ function changeRecordValues() {
         if (cbRecordDownload) {
             pkg.options.record.mediaRecorder.downloadLocal = !!cbRecordDownload.checked;
         }
+
+        // Sauvegarder automatiquement les paramètres d'enregistrement
+        saveRecordSettings();
+
         // Pas de recalcul forcé ici; les valeurs seront lues à l'enregistrement
     } catch(e) {
         console.warn('changeRecordValues error:', e);
     }
+}
+
+// Sauvegarde les paramètres d'enregistrement dans localStorage
+function saveRecordSettings() {
+    try {
+        const recordSettings = {
+            mode: pkg.options.record?.mode || 'mediarecorder',
+            fps: pkg.options.record?.fps || 24,
+            mediaRecorder: {
+                mimeType: pkg.options.record?.mediaRecorder?.mimeType || 'video/webm;codecs=vp9',
+                videoBitsPerSecond: pkg.options.record?.mediaRecorder?.videoBitsPerSecond || 6000000,
+                slowdownFactor: pkg.options.record?.mediaRecorder?.slowdownFactor || 1,
+                uploadToServer: pkg.options.record?.mediaRecorder?.uploadToServer || true,
+                downloadLocal: pkg.options.record?.mediaRecorder?.downloadLocal || true,
+                offlineNormalization: pkg.options.record?.mediaRecorder?.offlineNormalization || true
+            }
+        };
+        localStorage.setItem('recordSettings', JSON.stringify(recordSettings));
+    } catch(e) {
+        console.warn('Save record settings error:', e);
+    }
+}
+
+// Restaure les paramètres d'enregistrement depuis localStorage
+function loadRecordSettings() {
+    try {
+        const saved = localStorage.getItem('recordSettings');
+        if (saved) {
+            const recordSettings = JSON.parse(saved);
+            // Appliquer les paramètres sauvegardés
+            if (recordSettings.mode) {
+                pkg.options.record = pkg.options.record || {};
+                pkg.options.record.mode = recordSettings.mode;
+                pkg.options.record.fps = recordSettings.fps || 24;
+                pkg.options.record.mediaRecorder = pkg.options.record.mediaRecorder || {};
+                pkg.options.record.mediaRecorder.mimeType = recordSettings.mediaRecorder?.mimeType || 'video/webm;codecs=vp9';
+                pkg.options.record.mediaRecorder.videoBitsPerSecond = recordSettings.mediaRecorder?.videoBitsPerSecond || 6000000;
+                pkg.options.record.mediaRecorder.slowdownFactor = recordSettings.mediaRecorder?.slowdownFactor || 1;
+                pkg.options.record.mediaRecorder.uploadToServer = recordSettings.mediaRecorder?.uploadToServer ?? true;
+                pkg.options.record.mediaRecorder.downloadLocal = recordSettings.mediaRecorder?.downloadLocal ?? true;
+                pkg.options.record.mediaRecorder.offlineNormalization = recordSettings.mediaRecorder?.offlineNormalization ?? true;
+            }
+            return true;
+        }
+    } catch(e) {
+        console.warn('Load record settings error:', e);
+    }
+    return false;
 }
 
 
