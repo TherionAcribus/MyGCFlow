@@ -1176,9 +1176,26 @@ function applyMapSpecificOptions(tileProvider, mapOptions) {
                 if (strokeWidth != null) {
                     const strokeWidthInput = document.getElementById('fieldVectorMapStrokeWidth');
                     if (strokeWidthInput) {
-                        strokeWidthInput.value = strokeWidth;
+                        const numWidth = typeof strokeWidth === 'string' ? parseFloat(strokeWidth) : strokeWidth;
+                        strokeWidthInput.value = numWidth;
                         strokeWidthInput.dispatchEvent(new Event('input'));
                     }
+                }
+
+                // Rafraîchir explicitement la carte vectorielle avec les nouvelles valeurs
+                const finalStrokeColor = v.strokeColor || v.stroke_color;
+                const finalFillColor = v.fillColor || v.fill_color;
+                const finalBackgroundColor = v.backgroundColor || v.background_color;
+                const finalStrokeWidth = typeof strokeWidth === 'string' ? parseFloat(strokeWidth) : strokeWidth;
+
+                const vectorValues = {
+                    strokeColor: finalStrokeColor,
+                    fillColor: finalFillColor,
+                    background: finalBackgroundColor,
+                    strokeWidth: finalStrokeWidth
+                };
+                if (typeof pkg.refreshVectorMap === 'function') {
+                    pkg.refreshVectorMap(vectorValues);
                 }
             }
         } else if (tileProvider === 'stamenToner') {
@@ -1197,6 +1214,12 @@ function applyMapSpecificOptions(tileProvider, mapOptions) {
                     if (darkBtn) {
                         darkBtn.click();
                     }
+                }
+
+                // Rafraîchir explicitement la carte toner avec les nouvelles valeurs
+                const tonerValues = { type: variant };
+                if (typeof pkg.refreshStamenTonerMap === 'function') {
+                    pkg.refreshStamenTonerMap(tonerValues);
                 }
             }
         }

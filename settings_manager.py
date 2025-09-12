@@ -517,6 +517,27 @@ class SettingsManager:
 
     def export_profile_payload(self, name: str, app_version: str) -> dict:
         prof = self.load_profile(name)
+
+        # Construction des options de carte selon le provider
+        map_dict = {
+            "tile_provider": prof.map.tile_provider,
+            "default_center": list(prof.map.default_center),
+            "default_zoom": prof.map.default_zoom,
+        }
+
+        # Ajouter seulement les options pertinentes au provider actuel
+        if prof.map.tile_provider == "vectorMap":
+            map_dict["vector_options"] = {
+                "stroke_color": prof.map.vector_options.stroke_color,
+                "fill_color": prof.map.vector_options.fill_color,
+                "background_color": prof.map.vector_options.background_color,
+                "stroke_width": prof.map.vector_options.stroke_width,
+            }
+        elif prof.map.tile_provider == "stamenToner":
+            map_dict["toner_options"] = {
+                "variant": prof.map.toner_options.variant,
+            }
+
         payload = {
             "$schema": "gcmap.profile.v1",
             "kind": "profile",
@@ -526,20 +547,7 @@ class SettingsManager:
                 "version": prof.version,
                 "name": prof.name,
                 "uid": prof.uid,
-                "map": {
-                    "tile_provider": prof.map.tile_provider,
-                    "default_center": list(prof.map.default_center),
-                    "default_zoom": prof.map.default_zoom,
-                    "vector_options": {
-                        "stroke_color": prof.map.vector_options.stroke_color,
-                        "fill_color": prof.map.vector_options.fill_color,
-                        "background_color": prof.map.vector_options.background_color,
-                        "stroke_width": prof.map.vector_options.stroke_width,
-                    },
-                    "toner_options": {
-                        "variant": prof.map.toner_options.variant,
-                    },
-                },
+                "map": map_dict,
                 "animation": {
                     "enabled": prof.animation.enabled,
                     "speed": prof.animation.speed,
