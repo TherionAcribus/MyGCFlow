@@ -75,6 +75,8 @@ class MapOptions:
     default_zoom: int = 6
     vector_options: VectorMapOptions = field(default_factory=VectorMapOptions)
     toner_options: TonerMapOptions = field(default_factory=TonerMapOptions)
+    # Réservé à l'avenir: support d'options spécifiques providers (souples)
+    # extra: dict = field(default_factory=dict)
 
 
 @dataclass
@@ -186,16 +188,19 @@ def coerce_profile(d: dict) -> MapProfile:
             default_center_tuple = p.map.default_center
 
         # Options vectorielles
-        vm = m.get("vector_options", {}) if isinstance(m.get("vector_options", {}), dict) else {}
+        # Accepte les deux casse: snake_case et camelCase
+        raw_vm = m.get("vector_options") or m.get("vectorOptions") or {}
+        vm = raw_vm if isinstance(raw_vm, dict) else {}
         vector_options = VectorMapOptions(
-            stroke_color=vm.get("stroke_color", p.map.vector_options.stroke_color),
-            fill_color=vm.get("fill_color", p.map.vector_options.fill_color),
-            background_color=vm.get("background_color", p.map.vector_options.background_color),
-            stroke_width=float(vm.get("stroke_width", p.map.vector_options.stroke_width)),
+            stroke_color=vm.get("stroke_color", vm.get("strokeColor", p.map.vector_options.stroke_color)),
+            fill_color=vm.get("fill_color", vm.get("fillColor", p.map.vector_options.fill_color)),
+            background_color=vm.get("background_color", vm.get("backgroundColor", p.map.vector_options.background_color)),
+            stroke_width=float(vm.get("stroke_width", vm.get("strokeWidth", p.map.vector_options.stroke_width))),
         )
 
         # Options Toner
-        tm = m.get("toner_options", {}) if isinstance(m.get("toner_options", {}), dict) else {}
+        raw_tm = m.get("toner_options") or m.get("tonerOptions") or {}
+        tm = raw_tm if isinstance(raw_tm, dict) else {}
         toner_options = TonerMapOptions(
             variant=tm.get("variant", p.map.toner_options.variant),
         )

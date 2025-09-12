@@ -311,6 +311,15 @@ def api_get_profile(name: str):
             'tile_provider': prof.map.tile_provider,
             'default_center': list(prof.map.default_center),
             'default_zoom': prof.map.default_zoom,
+            'vector_options': {
+                'stroke_color': prof.map.vector_options.stroke_color,
+                'fill_color': prof.map.vector_options.fill_color,
+                'background_color': prof.map.vector_options.background_color,
+                'stroke_width': prof.map.vector_options.stroke_width,
+            },
+            'toner_options': {
+                'variant': prof.map.toner_options.variant,
+            },
         },
         'animation': {
             'enabled': prof.animation.enabled,
@@ -358,6 +367,15 @@ def api_get_profile_by_uid(uid: str):
             'tile_provider': prof.map.tile_provider,
             'default_center': list(prof.map.default_center),
             'default_zoom': prof.map.default_zoom,
+            'vector_options': {
+                'stroke_color': prof.map.vector_options.stroke_color,
+                'fill_color': prof.map.vector_options.fill_color,
+                'background_color': prof.map.vector_options.background_color,
+                'stroke_width': prof.map.vector_options.stroke_width,
+            },
+            'toner_options': {
+                'variant': prof.map.toner_options.variant,
+            },
         },
         'animation': {
             'enabled': prof.animation.enabled,
@@ -424,6 +442,24 @@ def api_save_profile(name: str):
             prof.map.default_zoom = int(m['default_zoom'])
         except Exception:
             pass
+    # Options spécifiques cartes (vector/toner)
+    vm = m.get('vector_options') or m.get('vectorOptions') or {}
+    if isinstance(vm, dict):
+        if 'stroke_color' in vm:
+            prof.map.vector_options.stroke_color = vm['stroke_color']
+        if 'fill_color' in vm:
+            prof.map.vector_options.fill_color = vm['fill_color']
+        if 'background_color' in vm:
+            prof.map.vector_options.background_color = vm['background_color']
+        if 'stroke_width' in vm:
+            try:
+                prof.map.vector_options.stroke_width = float(vm['stroke_width'])
+            except Exception:
+                pass
+    tm = m.get('toner_options') or m.get('tonerOptions') or {}
+    if isinstance(tm, dict):
+        if 'variant' in tm:
+            prof.map.toner_options.variant = tm['variant']
     a = data.get('animation', {})
     if 'enabled' in a:
         prof.animation.enabled = bool(a['enabled'])

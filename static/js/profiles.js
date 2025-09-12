@@ -5,6 +5,20 @@
 
 import * as pkg from './index.js';
 
+// Helper global: nettoie une chaîne CSS pour ne garder que les déclarations
+function extractCssDeclarations(css) {
+    if (!css || typeof css !== 'string') return '';
+    let text = css.trim();
+    const first = text.indexOf('{');
+    const last = text.lastIndexOf('}');
+    if (first !== -1 && last !== -1 && last > first) {
+        text = text.substring(first + 1, last);
+    }
+    // Nettoyage des espaces superflus en début de ligne
+    text = text.replace(/^\s+/gm, '');
+    return text.trim();
+}
+
 class ProfileManager {
     constructor() {
         this.currentProfile = null;
@@ -551,6 +565,35 @@ class ProfileManager {
                 default_zoom: 6
             };
 
+            // Options spécifiques par carte (souple)
+            try {
+                // Vector map options (si UI présente)
+                const strokeColorEl = document.getElementById('fieldVectorMapStrokeColor');
+                const fillColorEl = document.getElementById('fieldVectorMapFillColor');
+                const backgroundColorEl = document.getElementById('fieldVectorMapBackgroundColor');
+                const strokeWidthEl = document.getElementById('fieldVectorMapStrokeWidth');
+                if (strokeColorEl || fillColorEl || backgroundColorEl || strokeWidthEl) {
+                    mapSettings.vectorOptions = {
+                        strokeColor: strokeColorEl ? strokeColorEl.value : undefined,
+                        fillColor: fillColorEl ? fillColorEl.value : undefined,
+                        backgroundColor: backgroundColorEl ? backgroundColorEl.value : undefined,
+                        strokeWidth: strokeWidthEl ? parseFloat(strokeWidthEl.value) : undefined,
+                    };
+                }
+
+                // Toner options: déterminer le variant via les boutons actifs
+                const lightBtn = document.getElementById('stamenTonerLight');
+                const darkBtn = document.getElementById('stamenTonerDark');
+                let variant = undefined;
+                if (lightBtn && lightBtn.classList.contains('disabled')) variant = 'light';
+                if (darkBtn && darkBtn.classList.contains('disabled')) variant = 'dark';
+                if (variant) {
+                    mapSettings.tonerOptions = { variant };
+                }
+            } catch (e) {
+                console.warn('⚠️ Lecture options spécifiques carte: non bloquant', e);
+            }
+
             console.log('🗺️ Carte détectée - Provider:', currentTileProvider, 'Settings:', mapSettings);
 
             // Si la carte est disponible, récupérer la vue actuelle
@@ -837,10 +880,25 @@ class ProfileManager {
         // Récupérer les paramètres actuels
         this.loadCurrentSettings();
 
+        // Normaliser map pour le serveur (dupliquer camelCase -> snake_case)
+        const m = this.currentSettings.map || {};
+        const mapNormalized = { ...m };
+        if (m.vectorOptions) {
+            mapNormalized.vector_options = {
+                stroke_color: m.vectorOptions.strokeColor,
+                fill_color: m.vectorOptions.fillColor,
+                background_color: m.vectorOptions.backgroundColor,
+                stroke_width: m.vectorOptions.strokeWidth,
+            };
+        }
+        if (m.tonerOptions) {
+            mapNormalized.toner_options = { variant: m.tonerOptions.variant };
+        }
+
         // Créer l'objet profil complet
         const profileData = {
             name: this.currentProfile.name,
-            map: this.currentSettings.map,
+            map: mapNormalized,
             animation: this.currentSettings.animation,
             points: this.currentSettings.points,
             flash: this.currentSettings.flash,
@@ -1084,36 +1142,41 @@ function applyMapSpecificOptions(tileProvider, mapOptions) {
         if (tileProvider === 'vectorMap') {
             // Options pour la carte vectorielle
             const vectorOptions = document.getElementById('vectorMapOptions');
-            if (vectorOptions && mapOptions.vectorOptions) {
+            const v = (mapOptions.vectorOptions || mapOptions.vector_options || null);
+            if (vectorOptions && v) {
                 // Couleurs
-                if (mapOptions.vectorOptions.strokeColor) {
+                const strokeColor = v.strokeColor || v.stroke_color;
+                if (strokeColor) {
                     const strokeColorInput = document.getElementById('fieldVectorMapStrokeColor');
                     if (strokeColorInput) {
-                        strokeColorInput.value = mapOptions.vectorOptions.strokeColor;
+                        strokeColorInput.value = strokeColor;
                         strokeColorInput.dispatchEvent(new Event('change'));
                     }
                 }
 
-                if (mapOptions.vectorOptions.fillColor) {
+                const fillColor = v.fillColor || v.fill_color;
+                if (fillColor) {
                     const fillColorInput = document.getElementById('fieldVectorMapFillColor');
                     if (fillColorInput) {
-                        fillColorInput.value = mapOptions.vectorOptions.fillColor;
+                        fillColorInput.value = fillColor;
                         fillColorInput.dispatchEvent(new Event('change'));
                     }
                 }
 
-                if (mapOptions.vectorOptions.backgroundColor) {
+                const backgroundColor = v.backgroundColor || v.background_color;
+                if (backgroundColor) {
                     const bgColorInput = document.getElementById('fieldVectorMapBackgroundColor');
                     if (bgColorInput) {
-                        bgColorInput.value = mapOptions.vectorOptions.backgroundColor;
+                        bgColorInput.value = backgroundColor;
                         bgColorInput.dispatchEvent(new Event('change'));
                     }
                 }
 
-                if (mapOptions.vectorOptions.strokeWidth) {
+                const strokeWidth = v.strokeWidth != null ? v.strokeWidth : v.stroke_width;
+                if (strokeWidth != null) {
                     const strokeWidthInput = document.getElementById('fieldVectorMapStrokeWidth');
                     if (strokeWidthInput) {
-                        strokeWidthInput.value = mapOptions.vectorOptions.strokeWidth;
+                        strokeWidthInput.value = strokeWidth;
                         strokeWidthInput.dispatchEvent(new Event('input'));
                     }
                 }
@@ -1121,13 +1184,15 @@ function applyMapSpecificOptions(tileProvider, mapOptions) {
         } else if (tileProvider === 'stamenToner') {
             // Options pour Stamen Toner
             const tonerOptions = document.getElementById('tonerMapOptions');
-            if (tonerOptions && mapOptions.tonerOptions) {
-                if (mapOptions.tonerOptions.variant === 'light') {
+            const t = (mapOptions.tonerOptions || mapOptions.toner_options || null);
+            if (tonerOptions && t) {
+                const variant = t.variant;
+                if (variant === 'light') {
                     const lightBtn = document.getElementById('stamenTonerLight');
                     if (lightBtn) {
                         lightBtn.click();
                     }
-                } else if (mapOptions.tonerOptions.variant === 'dark') {
+                } else if (variant === 'dark') {
                     const darkBtn = document.getElementById('stamenTonerDark');
                     if (darkBtn) {
                         darkBtn.click();
