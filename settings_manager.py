@@ -54,7 +54,7 @@ class AppSettings:
     version: int = 1
     language: str = "fr"
     check_updates: bool = True
-    default_profile: str = "Default"
+    default_profile_uid: Optional[str] = None  # UUID du profil par défaut (None = aucun)
 
 
 @dataclass
@@ -135,7 +135,31 @@ def coerce_settings(d: dict) -> AppSettings:
     if isinstance(d, dict):
         s.language = d.get("language", s.language)
         s.check_updates = bool(d.get("check_updates", s.check_updates))
-        s.default_profile = d.get("default_profile", s.default_profile)
+
+        # Migration: ancien format (nom) vers nouveau format (UUID)
+        old_profile_name = d.get("default_profile")
+        if old_profile_name and not d.get("default_profile_uid"):
+            # Si on a un ancien nom de profil mais pas d'UUID, essayer de trouver l'UUID correspondant
+            try:
+                # Charger tous les profils pour trouver celui avec ce nom
+                profiles_dir = Path(CONFIG_DIR) / "profiles"
+                if profiles_dir.exists():
+                    for profile_file in profiles_dir.glob("*.json"):
+                        try:
+                            profile_data = json.loads(profile_file.read_text(encoding="utf-8"))
+                            if profile_data.get("name") == old_profile_name:
+                                s.default_profile_uid = profile_data.get("uid")
+                                print(f"Migration: profil '{old_profile_name}' -> UUID '{s.default_profile_uid}'")
+                                break
+                        except Exception as e:
+                            print(f"Erreur lors de la migration du profil {old_profile_name}: {e}")
+            except Exception as e:
+                print(f"Erreur lors de la migration des paramètres: {e}")
+
+        # Nouveau format: UUID direct
+        if d.get("default_profile_uid"):
+            s.default_profile_uid = d.get("default_profile_uid")
+
         try:
             s.version = int(d.get("version", s.version))
         except Exception:
@@ -404,6 +428,31 @@ class SettingsManager:
     def load_profile(self, name: str) -> MapProfile:
         path = self._profile_path(name)
         return coerce_profile(read_json(path))
+
+    def load_profile_by_uid(self, uid: str) -> MapProfile:
+        """Charge un profil par son UUID"""
+        profiles_dir = CONFIG_DIR / "profiles"
+        if not profiles_dir.exists():
+            raise FileNotFoundError(f"Répertoire des profils introuvable: {profiles_dir}")
+
+        for profile_file in profiles_dir.glob("*.json"):
+            try:
+                profile_data = json.loads(profile_file.read_text(encoding="utf-8"))
+                if profile_data.get("uid") == uid:
+                    return coerce_profile(profile_data)
+            except Exception as e:
+                print(f"Erreur lors de la lecture du profil {profile_file}: {e}")
+                continue
+
+        raise FileNotFoundError(f"Aucun profil trouvé avec l'UUID: {uid}")
+
+    def get_profile_name_by_uid(self, uid: str) -> Optional[str]:
+        """Retourne le nom d'un profil par son UUID"""
+        try:
+            profile = self.load_profile_by_uid(uid)
+            return profile.name
+        except FileNotFoundError:
+            return None
 
     def save_profile(self, profile: MapProfile) -> None:
         write_json(self._profile_path(profile.name), asdict(profile))

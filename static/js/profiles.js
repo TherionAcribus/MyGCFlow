@@ -102,7 +102,6 @@ class ProfileManager {
 
             this.currentProfile = profile;
             this.applyProfile(profile);
-            this.updateCurrentProfileIndicator();
             this.loadProfilesList(); // Rafraîchir pour montrer le profil actif
             this.showToast(`Profil "${name}" chargé`, 'green');
         } catch (error) {
@@ -237,7 +236,7 @@ class ProfileManager {
         // Initialiser les dropdowns Materialize
         M.Dropdown.init(document.querySelectorAll('.dropdown-trigger'));
 
-        // Mettre à jour l'indicateur du profil actif
+        // Mettre à jour l'indicateur du profil actif (nécessaire pour le rendu initial)
         this.updateCurrentProfileIndicator();
     }
 
@@ -285,6 +284,34 @@ class ProfileManager {
         }
     }
 
+    async loadProfileByUid(uid) {
+        try {
+            console.log('🔄 Chargement profil par UUID:', uid);
+            const response = await fetch(`/api/profiles/uid/${encodeURIComponent(uid)}`);
+            const profile = await response.json();
+
+            console.log('📥 PROFIL REÇU PAR UUID:', {
+                profile_name: profile.name,
+                uid: profile.uid,
+                version: profile.version,
+                map: profile.map,
+                animation: profile.animation,
+                points: profile.points,
+                flash: profile.flash,
+                infos: profile.infos,
+                raw_response: profile
+            });
+
+            this.currentProfile = profile;
+            this.applyProfile(profile);
+            this.loadProfilesList(); // Rafraîchir pour montrer le profil actif
+            this.showToast(`Profil "${profile.name}" chargé`, 'green');
+        } catch (error) {
+            console.error('❌ Erreur chargement profil par UUID:', error);
+            this.showToast('Erreur lors du chargement du profil par défaut', 'red');
+        }
+    }
+
     async populateDefaultProfileSelector() {
         try {
             const selector = document.getElementById('selectDefaultProfile');
@@ -311,13 +338,14 @@ class ProfileManager {
                 selector.appendChild(option);
             });
 
-            // Sélectionner le profil par défaut actuel
-            selector.value = settings.default_profile || '';
+            // Sélectionner le profil par défaut actuel (par nom si disponible)
+            selector.value = settings.default_profile_name || '';
 
             // Initialiser Materialize Select
             M.FormSelect.init(selector);
 
             console.log('📋 Sélecteur profil par défaut rempli avec:', profiles);
+            console.log('🎯 Profil par défaut actuel:', settings.default_profile_name || 'aucun');
         } catch (error) {
             console.error('❌ Erreur remplissage sélecteur profil par défaut:', error);
         }
@@ -327,44 +355,78 @@ class ProfileManager {
         const selector = document.getElementById('selectDefaultProfile');
         if (!selector) return;
 
-        const selectedProfile = selector.value;
-        console.log('🔄 Changement profil par défaut:', selectedProfile);
+        const selectedProfileName = selector.value;
+        console.log('🔄 Changement profil par défaut:', selectedProfileName);
+
+        let selectedProfileUid = null;
+        let appliedProfileName = null;
 
         // Appliquer immédiatement le profil si un profil est sélectionné
-        if (selectedProfile && selectedProfile !== '') {
-            console.log('🎯 Application immédiate du profil:', selectedProfile);
-            await this.loadProfile(selectedProfile);
+        if (selectedProfileName && selectedProfileName !== '') {
+            console.log('🎯 Application immédiate du profil:', selectedProfileName);
+            try {
+                await this.loadProfile(selectedProfileName);
+                // Récupérer l'UUID du profil chargé
+                if (this.currentProfile && this.currentProfile.uid) {
+                    selectedProfileUid = this.currentProfile.uid;
+                    appliedProfileName = this.currentProfile.name;
+                }
+            } catch (error) {
+                console.error('❌ Erreur lors du chargement du profil:', error);
+            }
         } else {
             console.log('🚫 Aucun profil sélectionné - pas d\'application');
         }
 
-        // Sauvegarder le nouveau profil par défaut
+        // Sauvegarder le nouveau profil par défaut avec UUID
         const currentSettings = await this.loadAppSettings();
-        currentSettings.default_profile = selectedProfile;
+        console.log('💾 Sauvegarde profil par défaut:', {
+            ancien_uuid: currentSettings.default_profile_uid,
+            nouveau_uuid: selectedProfileUid,
+            nom_profil: appliedProfileName,
+            nom_selectionne: selectedProfileName
+        });
+
+        currentSettings.default_profile_uid = selectedProfileUid;
 
         const result = await this.saveAppSettings(currentSettings);
         if (result.success) {
+            console.log('✅ Profil par défaut sauvegardé avec succès, UUID:', selectedProfileUid);
             this.showToast(
-                selectedProfile ?
-                    `Profil "${selectedProfile}" appliqué et défini comme profil par défaut` :
+                appliedProfileName ?
+                    `Profil "${appliedProfileName}" appliqué et défini comme profil par défaut` :
                     'Aucun profil par défaut défini',
-                selectedProfile ? 'success' : 'info'
+                appliedProfileName ? 'success' : 'info'
             );
+        } else {
+            console.error('❌ Échec de la sauvegarde du profil par défaut');
         }
     }
 
     async loadDefaultProfileAtStartup() {
         try {
             const settings = await this.loadAppSettings();
-            const defaultProfile = settings.default_profile;
+            console.log('🔧 Paramètres chargés au démarrage:', {
+                default_profile_uid: settings.default_profile_uid,
+                default_profile_name: settings.default_profile_name,
+                all_settings: settings
+            });
 
-            if (defaultProfile && defaultProfile !== '' && defaultProfile !== 'Default') {
-                console.log('🚀 Chargement profil par défaut au démarrage:', defaultProfile);
-                await this.loadProfile(defaultProfile);
-                this.showToast(`Profil par défaut "${defaultProfile}" chargé`, 'info');
+            const defaultProfileUid = settings.default_profile_uid;
+
+            if (defaultProfileUid) {
+                console.log('🚀 Chargement profil par défaut au démarrage (UUID):', defaultProfileUid);
+                console.log('📋 Nom du profil par défaut:', settings.default_profile_name);
+
+                await this.loadProfileByUid(defaultProfileUid);
+                // Le toast est déjà affiché dans loadProfileByUid
+            } else {
+                console.log('🚫 Aucun profil par défaut défini (default_profile_uid est null/undefined)');
+                console.log('⚠️ Vérifiez que le profil a bien été défini comme par défaut');
             }
         } catch (error) {
             console.error('❌ Erreur chargement profil par défaut au démarrage:', error);
+            console.error('📋 Détails de l\'erreur:', error.message);
         }
     }
 
@@ -785,13 +847,92 @@ class ProfileManager {
         } else if (confirmBtn.dataset.action === 'rename') {
             const originalName = confirmBtn.dataset.originalName;
             if (originalName !== name) {
-                // Pour renommer, on crée un nouveau profil et on supprime l'ancien
-                this.duplicateProfile(originalName, name);
-                setTimeout(() => this.deleteProfile(originalName), 500);
+                // Pour renommer, on charge l'ancien profil et on le sauvegarde avec le nouveau nom (même UUID)
+                this.renameProfileProperly(originalName, name);
             }
         }
 
         M.Modal.getInstance(document.getElementById('profile-modal')).close();
+    }
+
+    async renameProfileProperly(oldName, newName) {
+        try {
+            console.log('🔄 Renommage profil:', oldName, '->', newName);
+
+            // Vérifier si c'était le profil actuellement sélectionné
+            const wasCurrentProfile = this.currentProfile && this.currentProfile.name === oldName;
+
+            // SAUVEGARDER L'ÉTAT DE SÉLECTION ACTUEL pour le restaurer après
+            const originalCurrentProfile = this.currentProfile;
+
+            // Charger les données du profil SANS l'appliquer (pour éviter de changer l'interface)
+            const profileData = await this.apiCall(`/api/profiles/${encodeURIComponent(oldName)}`);
+
+            // Préparer les données pour la sauvegarde avec le nouveau nom mais l'ancien UUID
+            const updatedProfileData = {
+                name: newName,
+                uid: profileData.uid,  // IMPORTANT: garder le même UUID du profil chargé
+                map: profileData.map,
+                animation: profileData.animation,
+                points: profileData.points,
+                flash: profileData.flash,
+                infos: profileData.infos
+            };
+
+            console.log('💾 Sauvegarde profil renommé avec UUID conservé:', updatedProfileData.uid);
+
+            // Sauvegarder en utilisant l'ancien nom dans l'URL mais le nouveau nom dans les données
+            const result = await this.apiCall(`/api/profiles/${encodeURIComponent(oldName)}`, 'PUT', updatedProfileData);
+
+            if (result.success) {
+                console.log('✅ Profil renommé avec succès:', oldName, '->', newName);
+
+                // Supprimer l'ancien profil seulement après confirmation de la sauvegarde
+                setTimeout(async () => {
+                    try {
+                        // Sauvegarder temporairement currentProfile pour éviter qu'il soit remis à null
+                        const tempCurrentProfile = this.currentProfile;
+
+                        await this.deleteProfile(oldName);
+
+                        // Restaurer currentProfile après la suppression
+                        this.currentProfile = tempCurrentProfile;
+
+                        // GESTION DE LA SÉLECTION APRÈS RENOMMAGE
+                        if (wasCurrentProfile) {
+                            // Si c'était le profil sélectionné, mettre à jour avec le nouveau nom
+                            if (this.currentProfile) {
+                                this.currentProfile.name = newName;
+                            }
+                        } else {
+                            // Si ce n'était pas le profil sélectionné, restaurer l'état original
+                            this.currentProfile = originalCurrentProfile;
+                        }
+
+                        // Rafraîchir la liste des profils APRÈS mise à jour de currentProfile
+                        await this.loadProfilesList();
+
+                        // Rafraîchir l'indicateur de profil actif UNIQUEMENT si nécessaire
+                        if (wasCurrentProfile) {
+                            // Mettre à jour l'indicateur après rerender
+                            await new Promise(r => setTimeout(r, 50));
+                            this.updateCurrentProfileIndicator();
+                        }
+
+                        // Mettre à jour le sélecteur de profil par défaut si nécessaire
+                        this.populateDefaultProfileSelector();
+
+                        this.showToast(`Profil renommé en "${newName}"`, 'success');
+                    } catch (error) {
+                        console.error('❌ Erreur suppression ancien profil:', error);
+                    }
+                }, 500);
+            }
+
+        } catch (error) {
+            console.error('❌ Erreur lors du renommage du profil:', error);
+            this.showToast('Erreur lors du renommage du profil', 'red');
+        }
     }
 
     confirmDelete(profileName) {

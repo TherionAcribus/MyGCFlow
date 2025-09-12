@@ -234,11 +234,17 @@ console.log('Test de traduction:', '{_("Base de données")}');
 @app.route('/api/settings', methods=['GET'])
 def api_get_settings():
     s = settings_manager.get_app_settings()
+    # Récupérer le nom du profil par défaut si un UUID est défini
+    default_profile_name = None
+    if s.default_profile_uid:
+        default_profile_name = settings_manager.get_profile_name_by_uid(s.default_profile_uid)
+
     return jsonify({
         'version': s.version,
         'language': s.language,
         'check_updates': s.check_updates,
-        'default_profile': s.default_profile,
+        'default_profile_uid': s.default_profile_uid,
+        'default_profile_name': default_profile_name,  # Pour compatibilité frontend
     })
 
 
@@ -248,12 +254,32 @@ def api_put_settings():
     current = settings_manager.get_app_settings()
     language = data.get('language', current.language)
     check_updates = bool(data.get('check_updates', current.check_updates))
-    default_profile = data.get('default_profile', current.default_profile)
+
+    # Gestion du profil par défaut
+    default_profile_uid = data.get('default_profile_uid')
+
+    # Si on reçoit un nom de profil au lieu d'un UUID (compatibilité)
+    if not default_profile_uid and data.get('default_profile'):
+        profile_name = data.get('default_profile')
+        try:
+            # Essayer de trouver l'UUID du profil par son nom
+            from settings_manager import PROFILES_DIR
+            for profile_file in PROFILES_DIR.glob("*.json"):
+                try:
+                    profile_data = json.loads(profile_file.read_text(encoding="utf-8"))
+                    if profile_data.get("name") == profile_name:
+                        default_profile_uid = profile_data.get("uid")
+                        break
+                except Exception:
+                    continue
+        except Exception as e:
+            print(f"Erreur lors de la résolution du nom de profil '{profile_name}': {e}")
+
     updated = AppSettings(
         version=current.version,
         language=language,
         check_updates=check_updates,
-        default_profile=default_profile
+        default_profile_uid=default_profile_uid
     )
     settings_manager.save_app_settings(updated)
     return jsonify({'success': True})
@@ -319,6 +345,53 @@ def api_get_profile(name: str):
     })
 
 
+@app.route('/api/profiles/uid/<uid>', methods=['GET'])
+def api_get_profile_by_uid(uid: str):
+    """Charge un profil par son UUID"""
+    prof = settings_manager.load_profile_by_uid(uid)
+    print(f"📤 SERVEUR - Envoi profil par UUID '{uid}' (nom: '{prof.name}')")
+    return jsonify({
+        'version': prof.version,
+        'name': prof.name,
+        'uid': prof.uid,
+        'map': {
+            'tile_provider': prof.map.tile_provider,
+            'default_center': list(prof.map.default_center),
+            'default_zoom': prof.map.default_zoom,
+        },
+        'animation': {
+            'enabled': prof.animation.enabled,
+            'speed': prof.animation.speed,
+        },
+        'points': {
+            'size': prof.points.size,
+            'color': prof.points.color,
+            'shape': prof.points.shape,
+            'halo': prof.points.halo,
+            'border_color': prof.points.border_color,
+            'border_size': prof.points.border_size,
+            'fill_color_type': prof.points.fill_color_type,
+            'border_color_type': prof.points.border_color_type,
+        },
+        'flash': {
+            'mode': prof.flash.mode,
+            'duration': prof.flash.duration,
+            'size': prof.flash.size,
+            'color': prof.flash.color,
+        },
+        'infos': {
+            'title': {
+                'display': prof.infos.title.display,
+                'text': prof.infos.title.text,
+            },
+            'number_of_caches': prof.infos.number_of_caches,
+            'current_date': prof.infos.current_date,
+            'title_css': prof.infos.title_css,
+            'infos_css': prof.infos.infos_css,
+        }
+    })
+
+
 @app.route('/api/profiles', methods=['POST'])
 def api_create_profile():
     data = request.get_json(silent=True) or {}
@@ -334,6 +407,10 @@ def api_save_profile(name: str):
     print(f"🔄 SERVEUR - Sauvegarde profil '{name}': {data}")
     prof = settings_manager.load_profile(name)
     prof.name = data.get('name', prof.name)
+
+    # Gérer l'UUID si fourni (important pour le renommage)
+    if data.get('uid'):
+        prof.uid = data.get('uid')
     m = data.get('map', {})
     prof.map.tile_provider = m.get('tile_provider', prof.map.tile_provider)
     if 'default_center' in m:
