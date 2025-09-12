@@ -32,4 +32,48 @@
             </div>
         </div>
     </div>
+
+    <h5>🎥 {{ _("Paramètres d'enregistrement") }}</h5>
+    <div class="card-panel blue-grey lighten-5">
+        <div class="row">
+            <div class="input-field col s12 m6">
+                <select id="selectRecordMode">
+                    <option value="mediarecorder">{{ _("MediaRecorder .webm (client)") }}</option>
+                    <option value="images">{{ _("Images + MoviePy (serveur)") }}</option>
+                </select>
+                <label for="selectRecordMode">{{ _("Mode d'enregistrement") }}</label>
+            </div>
+            <div class="input-field col s6 m3 mediarecorder-only">
+                <input id="inputRecordFps" type="number" min="1" max="60" class="validate">
+                <label for="inputRecordFps">{{ _("FPS") }}</label>
+            </div>
+            <div class="input-field col s6 m3 mediarecorder-only">
+                <input id="inputRecordBitrate" type="number" min="100000" step="100000" class="validate">
+                <label for="inputRecordBitrate">{{ _("Bitrate vidéo (bps)") }}</label>
+            </div>
+            <div class="input-field col s6 m3 mediarecorder-only">
+                <input id="inputRecordSlowdown" type="number" min="1" step="1" class="validate" value="1">
+                <label for="inputRecordSlowdown">{{ _("Ralentir par (x)") }}</label>
+            </div>
+            <div class="input-field col s12 m6 mediarecorder-only">
+                <select id="selectRecordMime">
+                    <option value="video/webm;codecs=vp9">{{ _("VP9 (recommandé - haute qualité)") }}</option>
+                    <option value="video/webm;codecs=vp8">{{ _("VP8 (compatible partout)") }}</option>
+                    <option value="video/mp4;codecs=h264">{{ _("H.264 (format MP4)") }}</option>
+                    <option value="video/webm">{{ _("WebM simple (fallback)") }}</option>
+                </select>
+                <label for="selectRecordMime">{{ _("Format vidéo") }}</label>
+            </div>
+            <div class="col s12 m3 mediarecorder-only" style="margin-top: 12px;">
+                <label style="display:block;">
+                    <input id="cbRecordUpload" type="checkbox"/>
+                    <span>{{ _("Uploader vers serveur") }}</span>
+                </label>
+                <label style="display:block;">
+                    <input id="cbRecordDownload" type="checkbox"/>
+                    <span>{{ _("Télécharger local") }}</span>
+                </label>
+            </div>
+        </div>
+    </div>
 </div>

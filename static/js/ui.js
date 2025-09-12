@@ -23,7 +23,7 @@ var inputTitleCss, inputInfosCss, btnTitleCss, btnInfosCss;
 var spanNbCaches, spanCurrentDate;
 var selectLanguage, selectCheckVersionOnline, buttonCheckVersion;
 // Enregistrement
-var selectRecordMode, inputRecordFps, inputRecordBitrate, inputRecordMime, inputRecordSlowdown, cbRecordUpload, cbRecordDownload;
+var selectRecordMode, inputRecordFps, inputRecordBitrate, selectRecordMime, inputRecordSlowdown, cbRecordUpload, cbRecordDownload;
 
 // États de l'application
 var isAnimationRunning = false;
@@ -373,24 +373,68 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     buttonCheckVersion = document.getElementById('buttonCheckVersion');
     if (buttonCheckVersion) buttonCheckVersion.addEventListener('click', pkg.checkVersion);
 
+    // Initialiser les éléments du menu paramètres
+    initOptionsElements();
+}
+
+// Initialisation des éléments du menu paramètres
+function initOptionsElements() {
     // ENREGISTREMENT
     selectRecordMode = document.getElementById('selectRecordMode');
     if (selectRecordMode) {
-        selectRecordMode.addEventListener('change', changeRecordValues);
+        selectRecordMode.addEventListener('change', onRecordModeChange);
         M.FormSelect.init(selectRecordMode);
     }
     inputRecordFps = document.getElementById('inputRecordFps');
     if (inputRecordFps) inputRecordFps.addEventListener('input', changeRecordValues);
     inputRecordBitrate = document.getElementById('inputRecordBitrate');
     if (inputRecordBitrate) inputRecordBitrate.addEventListener('input', changeRecordValues);
-    inputRecordMime = document.getElementById('inputRecordMime');
-    if (inputRecordMime) inputRecordMime.addEventListener('input', changeRecordValues);
+    selectRecordMime = document.getElementById('selectRecordMime');
+    if (selectRecordMime) {
+        selectRecordMime.addEventListener('change', changeRecordValues);
+        M.FormSelect.init(selectRecordMime);
+    }
     inputRecordSlowdown = document.getElementById('inputRecordSlowdown');
     if (inputRecordSlowdown) inputRecordSlowdown.addEventListener('input', changeRecordValues);
     cbRecordUpload = document.getElementById('cbRecordUpload');
     if (cbRecordUpload) cbRecordUpload.addEventListener('change', changeRecordValues);
     cbRecordDownload = document.getElementById('cbRecordDownload');
     if (cbRecordDownload) cbRecordDownload.addEventListener('change', changeRecordValues);
+}
+
+// Gestionnaire pour le changement de mode d'enregistrement
+function onRecordModeChange() {
+    // Met à jour le mode d'enregistrement
+    try {
+        pkg.options.record = pkg.options.record || {};
+        pkg.options.record.mediaRecorder = pkg.options.record.mediaRecorder || {};
+        const mode = selectRecordMode.value === 'mediarecorder' ? 'mediarecorder' : 'images';
+        pkg.options.record.mode = mode;
+    } catch(e) {
+        console.warn('Mode change error:', e);
+    }
+
+    changeRecordValues(); // Met à jour les autres options
+    updateMediaRecorderOptionsVisibility(); // Met à jour la visibilité
+}
+
+// Met à jour la visibilité des options MediaRecorder
+function updateMediaRecorderOptionsVisibility() {
+    const isMediaRecorder = selectRecordMode && selectRecordMode.value === 'mediarecorder';
+    const mediaRecorderOptions = document.querySelectorAll('.mediarecorder-only');
+
+    mediaRecorderOptions.forEach(element => {
+        if (isMediaRecorder) {
+            element.style.display = 'block';
+            // Réinitialiser Materialize si c'est un select
+            if (element.querySelector('select')) {
+                const select = element.querySelector('select');
+                M.FormSelect.init(select);
+            }
+        } else {
+            element.style.display = 'none';
+        }
+    });
 }
 
 // Gestion de la mémorisation des onglets
@@ -562,18 +606,30 @@ export function init_ui() {
     // deselectionne le bouton par défaut
     changeButtonsStamenToner(pkg.options.map.stamenToner.type);
 
+    // Initialiser l'interface des paramètres (enregistrement)
+    initOptionsUI();
+}
+
+// Initialisation des valeurs UI pour les paramètres
+function initOptionsUI() {
     // ------- ENREGISTREMENT -------
     try {
         if (selectRecordMode) {
-            selectRecordMode.value = (pkg.options.record?.mode) || 'images';
+            selectRecordMode.value = (pkg.options.record?.mode) || 'mediarecorder'; // MediaRecorder par défaut
             M.FormSelect.init(selectRecordMode);
         }
         if (inputRecordFps) inputRecordFps.value = (pkg.options.record?.fps) || 24;
         if (inputRecordBitrate) inputRecordBitrate.value = (pkg.options.record?.mediaRecorder?.videoBitsPerSecond) || 6000000;
-        if (inputRecordMime) inputRecordMime.value = (pkg.options.record?.mediaRecorder?.mimeType) || 'video/webm;codecs=vp9';
+        if (selectRecordMime) {
+            selectRecordMime.value = (pkg.options.record?.mediaRecorder?.mimeType) || 'video/webm;codecs=vp9';
+            M.FormSelect.init(selectRecordMime);
+        }
         if (inputRecordSlowdown) inputRecordSlowdown.value = (pkg.options.record?.mediaRecorder?.slowdownFactor) || 1;
         if (cbRecordUpload) cbRecordUpload.checked = !!(pkg.options.record?.mediaRecorder?.uploadToServer);
         if (cbRecordDownload) cbRecordDownload.checked = !!(pkg.options.record?.mediaRecorder?.downloadLocal);
+
+        // Mettre à jour la visibilité après l'initialisation
+        updateMediaRecorderOptionsVisibility();
     } catch(e) { console.warn('Init enregistrement UI error:', e); }
 }
 
@@ -629,10 +685,6 @@ function changeRecordValues() {
         pkg.options.record = pkg.options.record || {};
         pkg.options.record.mediaRecorder = pkg.options.record.mediaRecorder || {};
 
-        if (selectRecordMode) {
-            const mode = selectRecordMode.value === 'mediarecorder' ? 'mediarecorder' : 'images';
-            pkg.options.record.mode = mode;
-        }
         if (inputRecordFps && inputRecordFps.value !== '') {
             const fps = Math.max(1, Math.min(60, parseInt(inputRecordFps.value)) || 24);
             pkg.options.record.fps = fps;
@@ -641,8 +693,8 @@ function changeRecordValues() {
             const vbps = Math.max(100000, parseInt(inputRecordBitrate.value) || 6000000);
             pkg.options.record.mediaRecorder.videoBitsPerSecond = vbps;
         }
-        if (inputRecordMime && inputRecordMime.value !== '') {
-            pkg.options.record.mediaRecorder.mimeType = inputRecordMime.value.trim();
+        if (selectRecordMime && selectRecordMime.value !== '') {
+            pkg.options.record.mediaRecorder.mimeType = selectRecordMime.value;
         }
         if (inputRecordSlowdown && inputRecordSlowdown.value !== '') {
             const sd = Math.max(1, parseInt(inputRecordSlowdown.value) || 1);
