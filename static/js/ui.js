@@ -337,14 +337,22 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     btnTitleCss = document.getElementById('btnTitleCss');
     if (btnTitleCss) {
         btnTitleCss.addEventListener('click', () => {
-            pkg.changeTitleCssValues(inputTitleCss.value);
+            try {
+                const value = inputTitleCss ? inputTitleCss.value : '';
+                pkg.changeTitleCssValues(value);
+                console.log('[CSS] TitleFrame appliqué:', value.substring(0, 100));
+            } catch(e) { console.warn('[CSS] TitleFrame erreur', e); }
         });
     }
 
     btnInfosCss = document.getElementById('btnInfosCss');
     if (btnInfosCss) {
         btnInfosCss.addEventListener('click', () => {
-            pkg.changeInfosCssValues(inputInfosCss.value);
+            try {
+                const value = inputInfosCss ? inputInfosCss.value : '';
+                pkg.changeInfosCssValues(value);
+                console.log('[CSS] InfosFrame appliqué:', value.substring(0, 100));
+            } catch(e) { console.warn('[CSS] InfosFrame erreur', e); }
         });
     }
 

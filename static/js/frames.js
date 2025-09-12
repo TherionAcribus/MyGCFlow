@@ -70,7 +70,14 @@ function formatDate(date) {
 // Changement css via formulaire
 export function changeInfosCssValues(userCss){
     const infosFrame = document.getElementById("infosFrame"); 
-    infosFrame.style = userCss;
+    if (!infosFrame) return;
+    const cleaned = extractCssDeclarations(userCss);
+    // Appliquer le CSS
+    infosFrame.style.cssText = cleaned;
+    // S'assurer que la frame est visible si l'utilisateur n'a pas spécifié display
+    if (!/\bdisplay\s*:/i.test(cleaned)) {
+        infosFrame.style.display = 'block';
+    }
 }
 
 
@@ -97,7 +104,28 @@ export function updateTitleFrame(title){
 // Changement css via formulaire
 export function changeTitleCssValues(userCss){
     const titleFrame = document.getElementById("titleFrame"); 
-    titleFrame.style = userCss;
+    if (!titleFrame) return;
+    const cleaned = extractCssDeclarations(userCss);
+    // Appliquer le CSS
+    titleFrame.style.cssText = cleaned;
+    // S'assurer que la frame est visible si l'utilisateur n'a pas spécifié display
+    if (!/\bdisplay\s*:/i.test(cleaned)) {
+        titleFrame.style.display = 'block';
+    }
+}
+
+// Utilitaire: extrait uniquement les déclarations CSS (retire sélecteurs et accolades)
+function extractCssDeclarations(css) {
+    if (!css || typeof css !== 'string') return '';
+    let text = css.trim();
+    const first = text.indexOf('{');
+    const last = text.lastIndexOf('}');
+    if (first !== -1 && last !== -1 && last > first) {
+        text = text.substring(first + 1, last);
+    }
+    // Nettoyage des espaces superflus en début de ligne
+    text = text.replace(/^\s+/gm, '');
+    return text.trim();
 }
 
 

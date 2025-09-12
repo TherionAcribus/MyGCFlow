@@ -104,6 +104,21 @@ class PointStyle:
 
 
 @dataclass
+class InfosTitle:
+    display: bool = True
+    text: str = "My Geocaching Map"
+
+
+@dataclass
+class InfosOptions:
+    title: InfosTitle = field(default_factory=InfosTitle)
+    number_of_caches: bool = True
+    current_date: bool = True
+    title_css: str = ""
+    infos_css: str = ""
+
+
+@dataclass
 class MapProfile:
     version: int = 1
     name: str = "Default"
@@ -112,6 +127,7 @@ class MapProfile:
     animation: AnimationOptions = field(default_factory=AnimationOptions)
     points: PointStyle = field(default_factory=PointStyle)
     flash: FlashOptions = field(default_factory=FlashOptions)
+    infos: InfosOptions = field(default_factory=InfosOptions)
 
 
 def coerce_settings(d: dict) -> AppSettings:
@@ -195,6 +211,20 @@ def coerce_profile(d: dict) -> MapProfile:
             duration=int(f.get("duration", p.flash.duration)),
             size=int(f.get("size", p.flash.size)),
             color=f.get("color", p.flash.color),
+        )
+
+        # Options infos (titre, cases à cocher, CSS)
+        i = d.get("infos", {}) if isinstance(d.get("infos", {}), dict) else {}
+        t = i.get("title", {}) if isinstance(i.get("title", {}), dict) else {}
+        p.infos = InfosOptions(
+            title=InfosTitle(
+                display=bool(t.get("display", p.infos.title.display)),
+                text=t.get("text", p.infos.title.text),
+            ),
+            number_of_caches=bool(i.get("number_of_caches", p.infos.number_of_caches)),
+            current_date=bool(i.get("current_date", p.infos.current_date)),
+            title_css=i.get("title_css", p.infos.title_css) or "",
+            infos_css=i.get("infos_css", p.infos.infos_css) or "",
         )
 
     return p

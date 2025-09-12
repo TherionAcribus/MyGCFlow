@@ -305,6 +305,16 @@ def api_get_profile(name: str):
             'duration': prof.flash.duration,
             'size': prof.flash.size,
             'color': prof.flash.color,
+        },
+        'infos': {
+            'title': {
+                'display': prof.infos.title.display,
+                'text': prof.infos.title.text,
+            },
+            'number_of_caches': prof.infos.number_of_caches,
+            'current_date': prof.infos.current_date,
+            'title_css': prof.infos.title_css,
+            'infos_css': prof.infos.infos_css,
         }
     })
 
@@ -386,7 +396,25 @@ def api_save_profile(name: str):
     if 'color' in f:
         prof.flash.color = f['color']
 
-    print(f"💾 SERVEUR - Profil sauvegardé avec flash: mode={prof.flash.mode}, duration={prof.flash.duration}, size={prof.flash.size}, color={prof.flash.color}")
+    # Gestion du champ infos (titre, cases à cocher, CSS)
+    i = data.get('infos', {}) or {}
+    if isinstance(i, dict):
+        t = i.get('title', {}) or {}
+        if isinstance(t, dict):
+            if 'display' in t:
+                prof.infos.title.display = bool(t['display'])
+            if 'text' in t:
+                prof.infos.title.text = t['text']
+        if 'number_of_caches' in i:
+            prof.infos.number_of_caches = bool(i['number_of_caches'])
+        if 'current_date' in i:
+            prof.infos.current_date = bool(i['current_date'])
+        if 'title_css' in i:
+            prof.infos.title_css = i['title_css'] or ''
+        if 'infos_css' in i:
+            prof.infos.infos_css = i['infos_css'] or ''
+
+    print(f"💾 SERVEUR - Profil sauvegardé avec flash: mode={prof.flash.mode}, duration={prof.flash.duration}, size={prof.flash.size}, color={prof.flash.color} | infos: title.display={prof.infos.title.display}, title.text={prof.infos.title.text}, number_of_caches={prof.infos.number_of_caches}, current_date={prof.infos.current_date}, title_css_len={len(prof.infos.title_css or '')}, infos_css_len={len(prof.infos.infos_css or '')}")
     settings_manager.save_profile(prof)
     return jsonify({'success': True})
 

@@ -522,11 +522,47 @@ class ProfileManager {
                 final_flash: flashSettings
             });
 
+            // Paramètres infos - récupération depuis menu_informations.html
+            const displayTitleCheckbox = document.getElementById('cbDisplayTitle');
+            const titleInput = document.getElementById('inputTitle');
+            const displayNumberofCachesCheckbox = document.getElementById('cbDisplayNumberofCaches');
+            const displayCurrentDateCheckbox = document.getElementById('cbDisplayCurrentDate');
+            const titleCssTextarea = document.getElementById('inputTitleCss');
+            const infosCssTextarea = document.getElementById('inputInfosCss');
+
+            // Nettoyage basique du CSS (éviter caractères qui cassent JSON)
+            function cleanCss(css) {
+                if (!css || typeof css !== 'string') return '';
+                return css.trim();
+            }
+
+            const infosSettings = {
+                title: {
+                    display: displayTitleCheckbox ? !!displayTitleCheckbox.checked : true,
+                    text: titleInput && titleInput.value !== undefined ? titleInput.value : 'My Geocaching Map'
+                },
+                number_of_caches: displayNumberofCachesCheckbox ? !!displayNumberofCachesCheckbox.checked : true,
+                current_date: displayCurrentDateCheckbox ? !!displayCurrentDateCheckbox.checked : true,
+                title_css: cleanCss(titleCssTextarea ? titleCssTextarea.value : ''),
+                infos_css: cleanCss(infosCssTextarea ? infosCssTextarea.value : ''),
+            };
+
+            console.log('📄 Paramètres infos récupérés:', {
+                element_title_display: displayTitleCheckbox ? displayTitleCheckbox.checked : 'null',
+                element_title_text: titleInput ? titleInput.value : 'null',
+                element_title_css_length: titleCssTextarea ? (titleCssTextarea.value || '').length : 'null',
+                element_infos_css_length: infosCssTextarea ? (infosCssTextarea.value || '').length : 'null',
+                element_caches_display: displayNumberofCachesCheckbox ? displayNumberofCachesCheckbox.checked : 'null',
+                element_date_display: displayCurrentDateCheckbox ? displayCurrentDateCheckbox.checked : 'null',
+                final_infos: infosSettings
+            });
+
             this.currentSettings = {
                 map: mapSettings,
                 animation: animationSettings,
                 points: pointSettings,
-                flash: flashSettings
+                flash: flashSettings,
+                infos: infosSettings,
             };
 
             console.log('📊 PARAMÈTRES ACTUELS COMPLÈTS - Récupérés depuis l\'interface:', {
@@ -534,6 +570,7 @@ class ProfileManager {
                 animation: animationSettings,
                 points: pointSettings,
                 flash: flashSettings,
+                infos: infosSettings,
                 timestamp: new Date().toISOString()
             });
 
@@ -579,6 +616,7 @@ class ProfileManager {
             animation: profile.animation,
             points: profile.points,
             flash: profile.flash,
+            infos: profile.infos,
             timestamp: new Date().toISOString()
         });
 
@@ -615,6 +653,52 @@ class ProfileManager {
             }
         }
 
+        // Appliquer les paramètres infos (titre / infosFrame / CSS)
+        if (profile.infos) {
+            console.log('📄 Application paramètres infos:', profile.infos);
+            try {
+                // Titre (affichage + texte)
+                const displayTitleCheckbox = document.getElementById('cbDisplayTitle');
+                const titleInput = document.getElementById('inputTitle');
+                if (displayTitleCheckbox) {
+                    displayTitleCheckbox.checked = !!(profile.infos.title && profile.infos.title.display);
+                    displayTitleCheckbox.dispatchEvent(new Event('change'));
+                }
+                if (titleInput && profile.infos.title && typeof profile.infos.title.text === 'string') {
+                    titleInput.value = profile.infos.title.text;
+                    titleInput.dispatchEvent(new Event('input'));
+                }
+
+                // Cases à cocher infos (nombre de caches, date)
+                const cbCaches = document.getElementById('cbDisplayNumberofCaches');
+                const cbDate = document.getElementById('cbDisplayCurrentDate');
+                if (cbCaches) {
+                    cbCaches.checked = !!profile.infos.number_of_caches;
+                    cbCaches.dispatchEvent(new Event('change'));
+                }
+                if (cbDate) {
+                    cbDate.checked = !!profile.infos.current_date;
+                    cbDate.dispatchEvent(new Event('change'));
+                }
+
+                // CSS titre / infos (via fonctions existantes)
+                if (typeof pkg.changeTitleCssValues === 'function' && typeof profile.infos.title_css === 'string') {
+                    // Autoriser plein CSS (#titleFrame { ... }) ou seulement les déclarations
+                    pkg.changeTitleCssValues(profile.infos.title_css);
+                    const titleCssTextarea = document.getElementById('inputTitleCss');
+                    if (titleCssTextarea) titleCssTextarea.value = profile.infos.title_css;
+                }
+                if (typeof pkg.changeInfosCssValues === 'function' && typeof profile.infos.infos_css === 'string') {
+                    // Idem pour infos
+                    pkg.changeInfosCssValues(profile.infos.infos_css);
+                    const infosCssTextarea = document.getElementById('inputInfosCss');
+                    if (infosCssTextarea) infosCssTextarea.value = profile.infos.infos_css;
+                }
+            } catch (e) {
+                console.warn('⚠️ Application des paramètres infos: erreur non bloquante', e);
+            }
+        }
+
         console.log('✅ Profil appliqué avec succès:', profile.name);
     }
 
@@ -633,7 +717,8 @@ class ProfileManager {
             map: this.currentSettings.map,
             animation: this.currentSettings.animation,
             points: this.currentSettings.points,
-            flash: this.currentSettings.flash
+            flash: this.currentSettings.flash,
+            infos: this.currentSettings.infos,
         };
 
         console.log('💾 SAUVEGARDE PROFIL - Données complètes:', {
@@ -642,6 +727,7 @@ class ProfileManager {
             animation: profileData.animation,
             points: profileData.points,
             flash: profileData.flash,
+            infos: profileData.infos,
             timestamp: new Date().toISOString()
         });
 
