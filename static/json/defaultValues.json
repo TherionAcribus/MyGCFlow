@@ -32,7 +32,18 @@
         "displayDaysWithoutCache": true
     },
     "record": {
-        "fps": 24
+        "fps": 24,
+        "mode": "images", 
+        "mediaRecorder": {
+            "enabled": true,
+            "mimeType": "video/webm;codecs=vp9",
+            "videoBitsPerSecond": 6000000,
+            "slowdownFactor": 1,
+            "offlineNormalization": true,
+            "uploadToServer": true,
+            "downloadLocal": true,
+            "fileName": "output.webm"
+        }
     },
     "infos":{
         "title": {

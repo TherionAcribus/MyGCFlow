@@ -2,6 +2,7 @@ from flask import jsonify, request
 import os
 import base64
 from moviepy.editor import ImageSequenceClip
+from werkzeug.utils import secure_filename
 
 
 def upload_image(request):
@@ -89,3 +90,27 @@ def assemble_pictures_directory(image_folder, output_video, fps=24):
         return jsonify({'success': True, 'message': 'Vidéo créée avec succès'})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
+
+
+def upload_video(request):
+    """Réceptionne un fichier vidéo (ex: .webm) via multipart/form-data et l'enregistre dans le dossier video/.
+
+    Champs attendus:
+      - 'video': le fichier binaire
+      - 'fileName' (optionnel): nom suggéré; sinon fallback sur 'output.webm'
+    """
+    try:
+        if not request.files or 'video' not in request.files:
+            return jsonify({'success': False, 'message': 'Aucun fichier vidéo fourni'}), 400
+
+        video_file = request.files['video']
+        file_name = request.form.get('fileName') or video_file.filename or 'output.webm'
+        file_name = secure_filename(file_name) or 'output.webm'
+
+        os.makedirs('video', exist_ok=True)
+        save_path = os.path.join('video', file_name)
+        video_file.save(save_path)
+
+        return jsonify({'success': True, 'message': 'Vidéo reçue et sauvegardée', 'path': save_path})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500

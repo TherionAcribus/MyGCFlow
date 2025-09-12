@@ -117,6 +117,16 @@ let infos;
 // flag pour indiquer si un enregistrement est en cours
 let isRecording = false;
 
+// MediaRecorder pipeline state
+let mrRecorder = null;
+let mrRecordedChunks = [];
+let mrOutCanvas = null;
+let mrOutCtx = null;
+let mrDrawIntervalId = null;
+let mrProgressIntervalId = null;
+let isMediaRecording = false;
+let mrOnFinalizeRestoreTimePerDay = null;
+
 
 // récupère les couleurs GC par défaut dans le JSON
 // (permet d'être facilement modifiable contrairement à un dict en dur)
@@ -656,6 +666,11 @@ export function startAnimation(restart=false) {
 
         createFlashElements();
         infos = createObjectInfos();
+    } else {
+        // En mode restart, s'assurer que 'infos' existe pour éviter les erreurs
+        if (!infos) {
+            infos = createObjectInfos();
+        }
     }
 
     let flashOptions = pkg.options.flash
@@ -703,6 +718,13 @@ export function startAnimation(restart=false) {
 export function stopAnimation(){
     // Arrêter l'enregistrement si en cours
     isRecording = false;
+
+    // Arrêter le pipeline MediaRecorder si actif
+    try {
+        if (isMediaRecording) {
+            stopMediaRecorderPipeline(true);
+        }
+    } catch(e) { console.warn('Erreur arrêt MediaRecorder:', e); }
 
     if (interval) {
         clearInterval(interval);
@@ -785,6 +807,17 @@ export function stopAnimation(){
 }
 
 export function recordAnimation(){
+    // Branche MediaRecorder si demandé et supporté
+    try {
+        const mode = pkg.options?.record?.mode;
+        if (mode === 'mediarecorder' && isMediaRecorderSupported()) {
+            recordAnimationMediaRecorder();
+            return;
+        } else if (mode === 'mediarecorder' && !isMediaRecorderSupported()) {
+            pkg.showToast && pkg.showToast('MediaRecorder non supporté, bascule en mode images.', 'warning', 'Compatibilité');
+        }
+    } catch(e) { console.warn('Detection MediaRecorder error:', e); }
+
     // Vérifier que les données sont prêtes
     if (!pkg.pointsByDate || pkg.pointsByDate.size === 0) {
         console.error("Les données de géocaches ne sont pas encore chargées");
@@ -1162,6 +1195,311 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
         currentFrame = 0;  // Réinitialisez le compteur de frames pour le nouveau jour
         requestAnimationFrame(() => captureNextFrame(true, pointOptions, flashOptions, infos));
     }
+}
+
+// ---------------- MEDIARECORDER PIPELINE ----------------
+function isMediaRecorderSupported() {
+    try {
+        const mime = pkg.options?.record?.mediaRecorder?.mimeType || 'video/webm;codecs=vp9';
+        const hasMR = typeof window !== 'undefined' && 'MediaRecorder' in window;
+        const hasCanvasCapture = typeof HTMLCanvasElement !== 'undefined' && typeof HTMLCanvasElement.prototype.captureStream === 'function';
+        const mimeOk = hasMR ? (MediaRecorder.isTypeSupported ? MediaRecorder.isTypeSupported(mime) : true) : false;
+        return hasMR && hasCanvasCapture && mimeOk;
+    } catch(_) { return false; }
+}
+
+function recordAnimationMediaRecorder(){
+    // Vérifier données
+    if (!pkg.pointsByDate || pkg.pointsByDate.size === 0) {
+        pkg.showToast && pkg.showToast('Données en cours de chargement. Réessayez.', 'warning', 'Attention');
+        return;
+    }
+
+    // Préparation carte: points initiaux, animations, etc.
+    try { clearMap(); } catch(_) {}
+
+    const filteredPointsAtStart = getFilteredPointsAtStart();
+    if (filteredPointsAtStart.length > 0) {
+        displayWebGLPoints(filteredPointsAtStart, pkg.options.point);
+    }
+
+    // Déterminer plage de dates
+    if (pkg.options.animation.dateStart instanceof Date) {
+        currentDate = new Date(pkg.options.animation.dateStart);
+        pkg.metadata.startDate = new Date(pkg.options.animation.dateStart);
+    } else {
+        currentDate = pkg.metadata.startDate;
+    }
+    if (pkg.options.animation.dateEnd instanceof Date) {
+        pkg.metadata.endDate = new Date(pkg.options.animation.dateEnd);
+    }
+
+    // Frames/informations
+    window.vectorSource = window.vectorSource || new ol.source.Vector({ wrapX: true });
+    window.vectorSource.clear();
+    createFlashElements();
+    let infosLocal = createObjectInfos();
+    pkg.updateNbCaches(0);
+    pkg.updateCurrentDate(currentDate);
+
+    // UI loader
+    const totalMs = computeTotalAnimationMs();
+    try { pkg.openModalLoading('Enregistrement en cours', 'Ne pas bouger la fenêtre pendant la capture.'); } catch(_) {}
+
+    // Appliquer un éventuel ralentissement utilisateur sur la timeline
+    const originalTimePerDay = pkg.options.animation.timePerDay;
+    const originalFlashDuration = pkg.options.flash.duration;
+    let appliedSlowdown = 1;
+    try {
+        const sd = Math.max(1, parseInt(pkg.options?.record?.mediaRecorder?.slowdownFactor) || 1);
+        appliedSlowdown = sd;
+        if (sd > 1) {
+            pkg.options.animation.timePerDay = originalTimePerDay * sd;
+            // Ralentir aussi l'animation des flashs pour compenser la normalisation
+            pkg.options.flash.duration = originalFlashDuration * sd;
+            console.log('[RECORD] Slowdown x' + sd + ' appliqué: timePerDay=' + pkg.options.animation.timePerDay + ', flash.duration=' + pkg.options.flash.duration);
+        }
+    } catch(_) {}
+
+    // Démarrer animation timeline existante
+    try { startAnimation(true); } catch(_) { startAnimation(); }
+
+    // Démarrer capture MediaRecorder
+    startMediaRecorderPipeline(totalMs * appliedSlowdown).catch(e => {
+        console.error('MediaRecorder pipeline error:', e);
+        pkg.showToast && pkg.showToast('Erreur MediaRecorder, bascule en mode images.', 'error', 'Enregistrement');
+        // Fallback vers pipeline images
+        try { stopMediaRecorderPipeline(false); } catch(_) {}
+        recordAnimation(); // relance en mode images (si l’option est encore mediarecorder, la détection support retournera false)
+    });
+
+    // Restaurer timePerDay après démarrage (sera effectif pour la suite)
+    // On le fera surtout à la fin (onStop) pour garantir l’état UI
+    mrOnFinalizeRestoreTimePerDay = () => {
+        try { pkg.options.animation.timePerDay = originalTimePerDay; } catch(_) {}
+        try { pkg.options.flash.duration = originalFlashDuration; } catch(_) {}
+    };
+}
+
+function computeTotalAnimationMs(){
+    try {
+        const start = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
+        const end = new Date(pkg.metadata.endDate.getFullYear(), pkg.metadata.endDate.getMonth(), pkg.metadata.endDate.getDate());
+        const MS_PER_DAY = 24 * 60 * 60 * 1000;
+        const rawDays = Math.floor((end - start) / MS_PER_DAY) + 1; // inclusif
+        const animationDays = Math.max(1, rawDays);
+        const perDay = Number(pkg.options.animation?.timePerDay) || 50;
+        const base = animationDays * perDay;
+        const fps = Number(pkg.options.record?.fps) || 24;
+        const extraFrames = Math.max(0, Math.round(Number(pkg.options.record?.extraFrames) || 0));
+        const tail = Math.round((extraFrames / fps) * 1000);
+        return base + tail;
+    } catch(_) { return 3000; }
+}
+
+async function startMediaRecorderPipeline(totalDurationMs){
+    const fps = Number(pkg.options.record?.fps) || 24;
+    const mime = pkg.options?.record?.mediaRecorder?.mimeType || 'video/webm;codecs=vp9';
+    const vbps = Number(pkg.options?.record?.mediaRecorder?.videoBitsPerSecond) || 6000000;
+
+    const viewport = map.getViewport();
+    const rect = viewport.getBoundingClientRect();
+    mrOutCanvas = document.createElement('canvas');
+    mrOutCanvas.width = Math.max(1, Math.floor(rect.width));
+    mrOutCanvas.height = Math.max(1, Math.floor(rect.height));
+    mrOutCtx = mrOutCanvas.getContext('2d', { willReadFrequently: true });
+
+    const stream = mrOutCanvas.captureStream(fps);
+    mrRecordedChunks = [];
+    mrRecorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: vbps });
+    isMediaRecording = true;
+
+    mrRecorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) mrRecordedChunks.push(e.data); };
+    mrRecorder.onstop = () => finalizeMediaRecorderVideo();
+    mrRecorder.start(Math.max(1000 / fps, 50));
+
+    // Dessin périodique (compositing)
+    let drawing = false;
+    const intervalMs = Math.max(4, Math.floor(1000 / fps));
+    mrDrawIntervalId = setInterval(async () => {
+        if (!isMediaRecording || drawing) return;
+        drawing = true;
+        try {
+            map.renderSync();
+            const canvasList = viewport.querySelectorAll('canvas');
+            const w = mrOutCanvas.width;
+            const h = mrOutCanvas.height;
+            mrOutCtx.clearRect(0, 0, w, h);
+            canvasList.forEach(c => { if (c.width > 0 && c.height > 0) mrOutCtx.drawImage(c, 0, 0, w, h); });
+            await addOverlaysToCanvas(mrOutCtx, w, h);
+        } catch(e) {
+            console.warn('Composite frame error:', e);
+        } finally {
+            drawing = false;
+        }
+    }, intervalMs);
+
+    // Progression
+    const t0 = performance.now();
+    mrProgressIntervalId = setInterval(() => {
+        const elapsed = performance.now() - t0;
+        const progress = Math.min(100, Math.max(0, (elapsed / totalDurationMs) * 100));
+        const msg = `${progress.toFixed(1)}% | capture .webm`;
+        try { pkg.updateProgressBar({ progress, message: msg }); } catch(_) {}
+    }, 200);
+
+    // Arrêt programmé
+    setTimeout(() => {
+        if (isMediaRecording) stopMediaRecorderPipeline(true);
+    }, Math.max(0, totalDurationMs));
+}
+
+function stopMediaRecorderPipeline(finalize){
+    try { if (mrDrawIntervalId) { clearInterval(mrDrawIntervalId); mrDrawIntervalId = null; } } catch(_) {}
+    try { if (mrProgressIntervalId) { clearInterval(mrProgressIntervalId); mrProgressIntervalId = null; } } catch(_) {}
+    if (mrRecorder && mrRecorder.state !== 'inactive') {
+        try { mrRecorder.stop(); } catch(_) {}
+    } else if (finalize) {
+        finalizeMediaRecorderVideo();
+    }
+    isMediaRecording = false;
+}
+
+function finalizeMediaRecorderVideo(){
+    try {
+        const mime = pkg.options?.record?.mediaRecorder?.mimeType || 'video/webm;codecs=vp9';
+        const blob = new Blob(mrRecordedChunks || [], { type: mime });
+        const fileName = (pkg.options?.record?.mediaRecorder?.fileName) || 'output.webm';
+
+        const wantsDownload = !!pkg.options?.record?.mediaRecorder?.downloadLocal;
+        const wantsUpload = !!pkg.options?.record?.mediaRecorder?.uploadToServer;
+        const slowdown = Math.max(1, parseInt(pkg.options?.record?.mediaRecorder?.slowdownFactor) || 1);
+        const doNormalize = !!pkg.options?.record?.mediaRecorder?.offlineNormalization && slowdown > 1;
+
+        const afterAll = () => {
+            // Réactiver boutons et fermer loader
+            try { pkg.updateProgressBar({ progress: 100, message: 'Terminé' }); } catch(_) {}
+            setTimeout(() => { try { pkg.closeModalLoading(); } catch(_) {} }, 400);
+            pkg.showToast && pkg.showToast('Vidéo prête', 'success', 'Enregistrement');
+        };
+
+        const proceedWith = (finalBlob) => {
+            const tasks = [];
+            if (wantsDownload) {
+                try {
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(finalBlob);
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+                } catch(e) { console.warn('Download failed:', e); }
+            }
+
+            if (wantsUpload) {
+                try {
+                    const fd = new FormData();
+                    fd.append('video', finalBlob, fileName);
+                    fd.append('fileName', fileName);
+                    tasks.push(fetch(`${CONFIG.BASE_URL}/upload_video`, { method: 'POST', body: fd }).then(r => r.json()).catch(e => ({ success:false, message: e?.message || 'upload error'}))
+                        .then(res => { if (!res?.success) throw new Error(res?.message || 'Upload échoué'); }));
+                } catch(e) { console.warn('Upload setup failed:', e); }
+            }
+
+            if (tasks.length) {
+                Promise.allSettled(tasks).then(() => afterAll()).catch(() => afterAll());
+            } else {
+                afterAll();
+            }
+        };
+
+        if (doNormalize) {
+            try { pkg.updateTextsModal('Normalisation', `Accélération x${slowdown} pour lecture à vitesse normale...`); } catch(_) {}
+            normalizeRecordedVideoSpeed(blob, slowdown).then((normBlob) => {
+                proceedWith(normBlob || blob);
+            }).catch((e) => {
+                console.warn('Normalization failed, using original blob:', e);
+                proceedWith(blob);
+            });
+        } else {
+            proceedWith(blob);
+        }
+
+    } catch(e) {
+        console.error('Finalize MediaRecorder error:', e);
+        try { pkg.closeModalLoading(); } catch(_) {}
+    } finally {
+        try { if (typeof mrOnFinalizeRestoreTimePerDay === 'function') { mrOnFinalizeRestoreTimePerDay(); } } catch(_) {}
+        mrRecorder = null;
+        mrRecordedChunks = [];
+        mrOutCanvas = null;
+        mrOutCtx = null;
+    }
+}
+
+function normalizeRecordedVideoSpeed(sourceBlob, factor){
+    return new Promise((resolve, reject) => {
+        try {
+            const video = document.createElement('video');
+            video.muted = true;
+            video.playsInline = true;
+            video.preload = 'auto';
+            const url = URL.createObjectURL(sourceBlob);
+            video.src = url;
+
+            const fps = Number(pkg.options?.record?.fps) || 24;
+            const mime = pkg.options?.record?.mediaRecorder?.mimeType || 'video/webm;codecs=vp9';
+            const vbps = Number(pkg.options?.record?.mediaRecorder?.videoBitsPerSecond) || 6000000;
+
+            let rec = null; let chunks = [];
+            let progressTimer = null;
+
+            const cleanup = () => {
+                try { if (progressTimer) clearInterval(progressTimer); } catch(_) {}
+                try { URL.revokeObjectURL(url); } catch(_) {}
+                try { rec && rec.state !== 'inactive' && rec.stop(); } catch(_) {}
+            };
+
+            video.addEventListener('loadedmetadata', () => {
+                try { video.playbackRate = factor; } catch(_) {}
+                const duration = video.duration || 0;
+
+                const stream = (typeof video.captureStream === 'function') ? video.captureStream(fps) : null;
+                if (!stream) { cleanup(); reject(new Error('captureStream non supporté pour la normalisation')); return; }
+
+                rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: vbps });
+                rec.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunks.push(e.data); };
+                rec.onstop = () => {
+                    cleanup();
+                    try { resolve(new Blob(chunks, { type: mime })); } catch(e) { resolve(new Blob(chunks)); }
+                };
+                rec.start(Math.max(1000 / fps, 50));
+
+                progressTimer = setInterval(() => {
+                    try {
+                        const p = duration > 0 ? Math.min(100, Math.max(0, (video.currentTime / duration) * 100)) : 0;
+                        pkg.updateProgressBar({ progress: p, message: `Normalisation ${p.toFixed(1)}%` });
+                    } catch(_) {}
+                }, 200);
+
+                video.addEventListener('ended', () => {
+                    try { rec && rec.state !== 'inactive' && rec.stop(); } catch(_) {}
+                });
+
+                video.play().catch(err => {
+                    cleanup();
+                    reject(err);
+                });
+            });
+
+            video.addEventListener('error', (e) => {
+                cleanup();
+                reject(new Error('Erreur lecture vidéo pour normalisation'));
+            });
+        } catch(e) {
+            reject(e);
+        }
+    });
 }
 
 // mise à jour de la barre de progression

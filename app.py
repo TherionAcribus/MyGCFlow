@@ -6,7 +6,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_cors import cross_origin
 from bdd import uploadBdd, get_progress_step, db_infos, create_geojson, get_metadata_from_geojson, filter_session, analyse
-from capture import upload_image, clear_pictures_directory, assemble_pictures_directory
+from capture import upload_image, clear_pictures_directory, assemble_pictures_directory, upload_video
 from options import check_version_online
 from flask_babel import Babel, gettext as _
 from settings_manager import SettingsManager, AppSettings, MapProfile
@@ -174,6 +174,11 @@ def clear_pictures():
 @cross_origin()
 def assemble_pictures():
     return assemble_pictures_directory("captured", "video/output.mp4", 24)
+@app.route('/upload_video', methods=['POST'])
+@cross_origin()
+def route_upload_video():
+    return upload_video(request)
+
 
 
 @app.route('/check_version', methods=['GET'])

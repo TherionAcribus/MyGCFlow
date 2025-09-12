@@ -60,6 +60,45 @@
 
                 <div class="row">
                     <div class="col s12">
+                        <h6>🎥 {{ _("Paramètres d'enregistrement") }}</h6>
+                    </div>
+                    <div class="input-field col s12 m6">
+                        <select id="selectRecordMode">
+                            <option value="images">{{ _("Images + MoviePy (serveur)") }}</option>
+                            <option value="mediarecorder">{{ _("MediaRecorder .webm (client)") }}</option>
+                        </select>
+                        <label for="selectRecordMode">{{ _("Mode d'enregistrement") }}</label>
+                    </div>
+                    <div class="input-field col s6 m3">
+                        <input id="inputRecordFps" type="number" min="1" max="60" class="validate">
+                        <label for="inputRecordFps">{{ _("FPS") }}</label>
+                    </div>
+                    <div class="input-field col s6 m3">
+                        <input id="inputRecordBitrate" type="number" min="100000" step="100000" class="validate">
+                        <label for="inputRecordBitrate">{{ _("Bitrate vidéo (bps)") }}</label>
+                    </div>
+                    <div class="input-field col s6 m3">
+                        <input id="inputRecordSlowdown" type="number" min="1" step="1" class="validate" value="1">
+                        <label for="inputRecordSlowdown">{{ _("Ralentir par (x)") }}</label>
+                    </div>
+                    <div class="input-field col s12 m8">
+                        <input id="inputRecordMime" type="text" class="validate" placeholder="video/webm;codecs=vp9">
+                        <label for="inputRecordMime">{{ _("MIME (ex: video/webm;codecs=vp9)") }}</label>
+                    </div>
+                    <div class="col s12 m4" style="margin-top: 12px;">
+                        <label style="display:block;">
+                            <input id="cbRecordUpload" type="checkbox"/>
+                            <span>{{ _("Uploader la vidéo vers le serveur") }}</span>
+                        </label>
+                        <label style="display:block;">
+                            <input id="cbRecordDownload" type="checkbox"/>
+                            <span>{{ _("Télécharger localement") }}</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col s12">
                         <a class="waves-effect waves-light btn-large green" id="btnStartAnimation">
                             <i class="material-icons right">play_arrow</i>{{ _("Démarrer") }}
                         </a>
