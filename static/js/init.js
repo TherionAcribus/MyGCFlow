@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         // mets les valeurs par défaut dans les formulaire
         //(optionsValues);
         pkg.init_ui();
-        // ... autres fonctions qui dépendent de optionsValues ... 
+        // ... autres fonctions qui dépendent de optionsValues ...
     });
     pkg.readBdd();  // creation du geojson et des metadatas
 });

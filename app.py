@@ -18,7 +18,7 @@ app = Flask(__name__)
 
 CORS(app)
 
-current_version = "2.0"
+current_version = "1.0"
 # Settings / Profiles manager (stdlib)
 settings_manager = SettingsManager()
 
@@ -184,7 +184,10 @@ def route_upload_video():
 @app.route('/check_version', methods=['GET'])
 @cross_origin()
 def check_version():
-    return check_version_online(current_version)
+    # Utiliser la langue détectée automatiquement (URL > navigateur)
+    user_language = get_locale().split('_')[0]
+    print(f"DEBUG: check_version appelée avec langue détectée: {user_language}")
+    return check_version_online(current_version, user_language)
 
 
 @app.route('/test_translations')
@@ -205,6 +208,15 @@ def test_translations():
             'graphisme_des_points': _('Graphisme des points'),  # Test de la nouvelle traduction
             'centre_du_point': _('Centre du point')  # Test d'une autre nouvelle traduction
         }
+    })
+
+@app.route('/api/locale')
+@cross_origin()
+def get_current_locale():
+    """Route pour récupérer la langue actuelle détectée"""
+    return jsonify({
+        'locale': get_locale(),
+        'language': get_locale().split('_')[0]  # 'fr' ou 'en'
     })
 
 
