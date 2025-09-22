@@ -1294,6 +1294,14 @@ let currentLoadingToast = null;
 let currentLoadingOverlay = null;
 
 export function openModalLoading(title, description){
+    // Fermer un éventuel loader précédent pour éviter les doublons
+    try {
+        if (currentLoadingToast) {
+            try { pkg.hideToast(currentLoadingToast); } catch(_) { try { currentLoadingToast.remove(); } catch(_) {} }
+            currentLoadingToast = null;
+        }
+    } catch(_) {}
+
     // Remplacer la modal par un toast non-bloquant
     try {
         currentLoadingToast = pkg.showLoadingToast(description, title);
@@ -1394,9 +1402,8 @@ export function closeModalLoading(){
 export function updateProgressBar(data) {
     // Mettre à jour la progress bar du toast actuel
     if (currentLoadingToast) {
-        // Normaliser la progression: accepter 0..1 ou 0..100
+        // Progression attendue en pourcentage 0..100
         let p = data && typeof data.progress === 'number' ? data.progress : 0;
-        if (p <= 1) { p = p * 100; }
         p = Math.min(100, Math.max(0, p));
         try { pkg.updateToastProgress(currentLoadingToast, p); } catch(e) {
             const fill = currentLoadingToast.querySelector('.gcm-progress-fill, .progress-fill');
