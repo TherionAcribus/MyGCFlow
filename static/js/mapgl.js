@@ -698,7 +698,6 @@ export function startAnimation(restart=false) {
         console.log('[ANIMATION] ❌ Pas de date de fin personnalisée, utilisation par défaut:', pkg.metadata.endDate);
     }
 
-    //const displayDaysWithoutCache = pkg.options.animation.displayDaysWithoutCache;
     if (!restart) {
         currentDate = new Date(pkg.metadata.startDate); // Initialisation de la date avec la date de début (personnalisée ou par défaut)
         console.log('[ANIMATION] 🚀 Démarrage avec date:', currentDate, '->', pkg.metadata.endDate);

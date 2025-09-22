@@ -28,8 +28,7 @@
         }
     },
     "animation":{
-        "timePerDay":50,
-        "displayDaysWithoutCache": true
+        "timePerDay":50
     },
     "record": {
         "fps": 24,

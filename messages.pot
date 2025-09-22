@@ -41,10 +41,6 @@ msgstr ""
 msgid "Contrôles d'animation"
 msgstr ""
 
-#: templates/menu_animation.html:12
-msgid "Supprimer les jours sans cache"
-msgstr ""
-
 #: templates/menu_animation.html:17
 msgid "Plein écran"
 msgstr ""

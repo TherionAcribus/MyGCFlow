@@ -42,10 +42,6 @@ msgstr "Settings"
 msgid "Contrôles d'animation"
 msgstr "Animation controls"
 
-#: templates/menu_animation.html:12
-msgid "Supprimer les jours sans cache"
-msgstr "Remove days without cache"
-
 #: templates/menu_animation.html:17
 msgid "Plein écran"
 msgstr "Fullscreen"

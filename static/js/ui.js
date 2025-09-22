@@ -15,7 +15,7 @@ const DEBOUNCE_DELAY = 200; // ms
 // Dates par défaut (capture au chargement BDD)
 var defaultStartDate = null;
 var defaultEndDate = null;
-var inputTimePerDay, cbDisplayDaysWithoutCache;
+var inputTimePerDay;
 var selectFlashMode, inputTimeFlash, inputSizeFlash, cpFlashColor;
 var cpStrokeColor, cpFillColor, cpBackgroundColor, strokeWidth;
 var cbDisplayTitle, cbDisplayNumberofCaches, cbDisplayCurrentDate, inputTitle;
@@ -210,9 +210,6 @@ const btnRecordAnimation = document.getElementById('btnRecordAnimation');
 
     inputTimePerDay = document.getElementById('inputTimePerDay');
     if (inputTimePerDay) inputTimePerDay.addEventListener('input', changeAnimationValues);
-
-    cbDisplayDaysWithoutCache = document.getElementById('cbDisplayDaysWithoutCache');
-    if (cbDisplayDaysWithoutCache) cbDisplayDaysWithoutCache.addEventListener('change', changeAnimationValues);
 
 const btnStopAnimation = document.getElementById('btnStopAnimation');
     if (btnStopAnimation) btnStopAnimation.addEventListener('click', () => {
@@ -561,10 +558,9 @@ export function init_ui() {
     M.FormSelect.init(document.getElementById('selectShape'));
 
     
-    // ------- ANIMATION DE LA CARTE -------   
+    // ------- ANIMATION DE LA CARTE -------
     // Inputs
     inputTimePerDay.value = pkg.options.animation.timePerDay;
-    cbDisplayDaysWithoutCache.checked = pkg.options.animation.displayDaysWithoutCache;
 
     // ------- FLASH -------
     // colorpicker
@@ -1560,8 +1556,6 @@ function toggleButtonAnimationPauseAndRestart(reinitialisation = false){ {
 
 // recupère tous les changements liés aux points
 function changeAnimationValues(event){
-    pkg.options.animation.displayDaysWithoutCache = cbDisplayDaysWithoutCache.checked;
-
     // mise à jour du temps de l'autre champs
     if (event.target.id == 'inputTimePerDay'){
         pkg.options.animation.timePerDay = inputTimePerDay.value;
