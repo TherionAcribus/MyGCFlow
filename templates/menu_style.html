@@ -114,36 +114,32 @@
             </h5>
             <div class="card-panel">
                 <div id="profiles-section">
-                    <!-- Liste des profils -->
-                    <div id="profiles-list" class="collection">
-                        <!-- Les profils seront chargés dynamiquement -->
-                    </div>
-
-                    <!-- Boutons d'action -->
-                    <div class="row">
-                        <div class="col s6">
+                    <!-- Boutons d'action - maintenant au-dessus de la zone scrollable -->
+                    <div class="row" style="margin-bottom: 15px;">
+                        <div class="col s4">
                             <a id="btn-new-profile" class="btn waves-effect waves-light btn-small">
                                 <i class="material-icons left">add</i>
                                 {{ _("Nouveau") }}
                             </a>
                         </div>
-                        <div class="col s6">
+                        <div class="col s4">
                             <a id="btn-save-profile" class="btn waves-effect waves-light btn-small blue">
                                 <i class="material-icons left">save</i>
                                 {{ _("Sauvegarder") }}
                             </a>
                         </div>
-                    </div>
-
-                    <!-- Bouton Import -->
-                    <div class="row">
-                        <div class="col s12">
+                        <div class="col s4">
                             <a id="btn-import-profile" class="btn waves-effect waves-light btn-small orange">
                                 <i class="material-icons left">file_upload</i>
                                 {{ _("Importer") }}
                             </a>
                             <input id="input-import-profile" type="file" accept="application/json" style="display:none" />
                         </div>
+                    </div>
+
+                    <!-- Liste des profils - zone scrollable -->
+                    <div id="profiles-list" class="collection" style="max-height: 300px; overflow-y: auto;">
+                        <!-- Les profils seront chargés dynamiquement -->
                     </div>
 
                     <!-- Modal pour créer/renommer profil -->
