@@ -607,6 +607,9 @@ export function init_ui() {
 
     // Initialiser l'interface des paramètres (enregistrement)
     initOptionsUI();
+
+    // Mettre à jour tous les champs Materialize pour repositionner les labels
+    M.updateTextFields();
 }
 
 // Initialisation des valeurs UI pour les paramètres
@@ -848,6 +851,9 @@ export function setPickerDates(metadata) {
 
     // Mettre à jour les boutons reset Animation aussi
     updateResetAnimButtonsHighlight();
+
+    // Mettre à jour les labels Materialize après avoir défini les valeurs des datepickers
+    M.updateTextFields();
 }
 
 function formatDateForPickers(date) {
