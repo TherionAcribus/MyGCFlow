@@ -646,7 +646,7 @@ function initOptionsUI() {
 // ----------- OPTIONS DE L'APP ------------
 
 //
-function changeOptionsValues() {
+async function changeOptionsValues() {
     const newLanguage = selectLanguage.value;
     const currentLanguage = pkg.options.options.language;
 
@@ -656,6 +656,28 @@ function changeOptionsValues() {
 
     // Sauvegarder dans localStorage
     localStorage.setItem('selectedLanguage', newLanguage);
+
+    // Sauvegarder côté serveur via l'API settings (comme les profils)
+    try {
+        const currentSettings = await (await fetch('/api/settings')).json();
+        currentSettings.language = newLanguage;
+        currentSettings.check_updates = selectCheckVersionOnline.value === 'true' || selectCheckVersionOnline.value === true;
+
+        const saveResponse = await fetch('/api/settings', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(currentSettings)
+        });
+
+        if (saveResponse.ok) {
+            console.log('✅ Paramètres sauvegardés côté serveur:', { language: newLanguage, check_updates: currentSettings.check_updates });
+        } else {
+            console.warn('⚠️ Échec sauvegarde côté serveur, paramètres locaux seulement');
+        }
+    } catch (error) {
+        console.error('❌ Erreur sauvegarde paramètres côté serveur:', error);
+        console.warn('⚠️ Paramètres sauvegardés localement seulement');
+    }
 
     // Si la langue a changé, recharger la page avec la nouvelle langue
     if (newLanguage !== currentLanguage) {

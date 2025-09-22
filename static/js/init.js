@@ -27,9 +27,13 @@ document.addEventListener('DOMContentLoaded', async function() {
     // check la présence d'une BDD et les affiche
     pkg.readBddValues();
     // recupération des options par défaut puis on initialise l'interface
-    pkg.getDefaultValues().then(optionsValues => {
+    pkg.getDefaultValues().then(async optionsValues => {
         // initialisation de la classe "options"
         pkg.options.init(optionsValues);
+
+        // Charger les paramètres utilisateur sauvegardés (comme pour les profils)
+        await loadUserSettings();
+
         // check la version
         pkg.checkVersionInit();
         //creation des différentes cartographies
@@ -85,6 +89,40 @@ export function getDefaultValues() {
         localStorage.setItem('optionsValues', JSON.stringify(optionsValues));
         return optionsValues;
     });
+}
+
+// Charger et appliquer les paramètres utilisateur sauvegardés
+async function loadUserSettings() {
+    try {
+        console.log('🔧 Chargement des paramètres utilisateur...');
+        const response = await fetch(`${CONFIG.BASE_URL}/api/settings`);
+        if (!response.ok) {
+            throw new Error(`Erreur HTTP ${response.status}`);
+        }
+
+        const userSettings = await response.json();
+        console.log('✅ Paramètres utilisateur chargés:', userSettings);
+
+        // Appliquer les paramètres utilisateur aux options locales
+        if (userSettings.language) {
+            pkg.options.options.language = userSettings.language;
+            console.log('🌐 Langue appliquée:', userSettings.language);
+        }
+
+        if (typeof userSettings.check_updates === 'boolean') {
+            pkg.options.options.checkVersion = userSettings.check_updates;
+            console.log('🔄 Option checkVersion appliquée:', userSettings.check_updates);
+        }
+
+        // Sauvegarder dans localStorage pour cohérence
+        if (userSettings.language) {
+            localStorage.setItem('selectedLanguage', userSettings.language);
+        }
+
+    } catch (error) {
+        console.warn('⚠️ Impossible de charger les paramètres utilisateur:', error.message);
+        console.log('🔄 Utilisation des paramètres par défaut');
+    }
 }
 
 // fait la requête pour récupere les options par défaut
