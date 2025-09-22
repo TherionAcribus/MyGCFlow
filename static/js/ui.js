@@ -21,7 +21,7 @@ var cpStrokeColor, cpFillColor, cpBackgroundColor, strokeWidth;
 var cbDisplayTitle, cbDisplayNumberofCaches, cbDisplayCurrentDate, inputTitle;
 var inputTitleCss, inputInfosCss, btnTitleCss, btnInfosCss;
 var spanNbCaches, spanCurrentDate;
-var selectLanguage, selectCheckVersionOnline, buttonCheckVersion, buttonTestModal;
+var selectLanguage, selectCheckVersionOnline, buttonCheckVersion, buttonHome, buttonTestModal;
 // Enregistrement
 var selectRecordMode, inputRecordFps, inputRecordBitrate, selectRecordMime, inputRecordSlowdown, cbRecordUpload, cbRecordDownload;
 
@@ -369,6 +369,9 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     // boutons
     buttonCheckVersion = document.getElementById('buttonCheckVersion');
     if (buttonCheckVersion) buttonCheckVersion.addEventListener('click', pkg.checkVersion);
+
+    buttonHome = document.getElementById('buttonHome');
+    if (buttonHome) buttonHome.addEventListener('click', pkg.openHomePage);
 
     buttonTestModal = document.getElementById('buttonTestModal');
     if (buttonTestModal) buttonTestModal.addEventListener('click', () => {

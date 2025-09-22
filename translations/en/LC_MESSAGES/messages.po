@@ -300,6 +300,10 @@ msgstr ""
 msgid "Check for a new version"
 msgstr ""
 
+#: templates/menu_options.html:35
+msgid "Home"
+msgstr "Home"
+
 #: templates/menu_points.html:8
 msgid "Graphisme des points"
 msgstr "Point graphics"

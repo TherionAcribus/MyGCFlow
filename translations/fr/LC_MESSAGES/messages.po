@@ -300,6 +300,10 @@ msgstr "Vérifier les nouvelles versions au démarrage"
 msgid "Check for a new version"
 msgstr "Vérifier les nouvelles versions"
 
+#: templates/menu_options.html:35
+msgid "Home"
+msgstr "Accueil"
+
 #: templates/menu_points.html:8
 msgid "Graphisme des points"
 msgstr "Graphisme des points"
