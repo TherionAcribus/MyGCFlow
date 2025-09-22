@@ -1,0 +1,1 @@
+window.openLanguageChangeModal('en', 'fr');

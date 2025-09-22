@@ -229,6 +229,14 @@ def js_translations():
     translations = {
         'language_changed_message': _('La langue a été changée. La page va se recharger pour appliquer les modifications.'),
         'language_changed_message_en': _('The language has been changed. The page will reload to apply the changes.'),
+        'language_change_title': _('Changement de langue'),
+        'language_change_title_en': _('Language Change'),
+        'language_change_message': _('La langue a été changée. L\'application va redémarrer pour appliquer les modifications.'),
+        'language_change_message_en': _('The language has been changed. The application will restart to apply the changes.'),
+        'confirm': _('Confirmer'),
+        'confirm_en': _('Confirm'),
+        'cancel': _('Annuler'),
+        'cancel_en': _('Cancel'),
         'current_lang': current_lang,
         'test_translation': _('Base de données')  # Test pour voir si les traductions fonctionnent
     }

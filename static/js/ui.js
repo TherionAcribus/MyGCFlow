@@ -21,7 +21,7 @@ var cpStrokeColor, cpFillColor, cpBackgroundColor, strokeWidth;
 var cbDisplayTitle, cbDisplayNumberofCaches, cbDisplayCurrentDate, inputTitle;
 var inputTitleCss, inputInfosCss, btnTitleCss, btnInfosCss;
 var spanNbCaches, spanCurrentDate;
-var selectLanguage, selectCheckVersionOnline, buttonCheckVersion;
+var selectLanguage, selectCheckVersionOnline, buttonCheckVersion, buttonTestModal;
 // Enregistrement
 var selectRecordMode, inputRecordFps, inputRecordBitrate, selectRecordMime, inputRecordSlowdown, cbRecordUpload, cbRecordDownload;
 
@@ -370,6 +370,12 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     buttonCheckVersion = document.getElementById('buttonCheckVersion');
     if (buttonCheckVersion) buttonCheckVersion.addEventListener('click', pkg.checkVersion);
 
+    buttonTestModal = document.getElementById('buttonTestModal');
+    if (buttonTestModal) buttonTestModal.addEventListener('click', () => {
+        // Test de la modale : simuler un changement de fr vers en
+        openLanguageChangeModal('en', 'fr');
+    });
+
     // Initialiser les éléments du menu paramètres
     initOptionsElements();
 }
@@ -678,33 +684,9 @@ async function changeOptionsValues() {
         console.warn('⚠️ Paramètres sauvegardés localement seulement');
     }
 
-    // Si la langue a changé, recharger la page avec la nouvelle langue
+    // Si la langue a changé, afficher la modale de confirmation
     if (newLanguage !== currentLanguage) {
-        // Afficher un message de confirmation dans la langue appropriée
-        let confirmMessage = 'La langue a été changée. La page va se recharger pour appliquer les modifications.'; // fallback
-
-        if (window.TRANSLATIONS) {
-            // Utiliser le message dans la langue cible
-            if (newLanguage === 'en') {
-                confirmMessage = window.TRANSLATIONS.language_changed_message_en || 'The language has been changed. The page will reload to apply the changes.';
-            } else {
-                confirmMessage = window.TRANSLATIONS.language_changed_message || 'La langue a été changée. La page va se recharger pour appliquer les modifications.';
-            }
-        }
-
-        if (confirm(confirmMessage)) {
-            // Recharger la page avec le paramètre de langue et préserver l'onglet actif
-            const url = new URL(window.location);
-            url.searchParams.set('lang', newLanguage);
-
-            // Récupérer l'onglet actif actuel et l'ajouter à l'URL
-            const activeTab = localStorage.getItem('activeTab');
-            if (activeTab && activeTab !== 'data') { // 'data' est l'onglet par défaut
-                url.hash = activeTab;
-            }
-
-            window.location.href = url.toString();
-        }
+        openLanguageChangeModal(newLanguage, currentLanguage);
     }
 }
 
@@ -2043,4 +2025,182 @@ function toggleFullscreenFromButton(){
         fullscreenButtonActive = true; // Pour forcer la bascule
     }
     toggleFullscreenMode();
+}
+
+// Fonction pour ouvrir une modale de confirmation de changement de langue
+function openLanguageChangeModal(newLanguage, currentLanguage) {
+    // Créer l'ID unique pour la modal
+    const modalId = 'language-change-modal-' + Date.now();
+
+    // Déterminer les noms des langues
+    const languageNames = {
+        'fr': { fr: 'Français', en: 'French' },
+        'en': { fr: 'Anglais', en: 'English' }
+    };
+
+    // Déterminer les textes selon la langue actuelle et cible
+    let title, message, confirmText, cancelText;
+
+    if (window.TRANSLATIONS) {
+        // Titre dans la langue actuelle
+        if (currentLanguage === 'en') {
+            title = window.TRANSLATIONS.language_change_title_en || 'Language Change';
+        } else {
+            title = window.TRANSLATIONS.language_change_title || 'Changement de langue';
+        }
+
+        // Question bilingue : langue actuelle + langue cible
+        const targetLangNameCurrent = languageNames[newLanguage][currentLanguage] || newLanguage.toUpperCase();
+        const targetLangNameTarget = languageNames[newLanguage][newLanguage] || newLanguage.toUpperCase();
+
+        const switchTextCurrent = currentLanguage === 'en' ?
+            `Switch to ${targetLangNameCurrent}?` :
+            `Passer en ${targetLangNameCurrent} ?`;
+
+        const switchTextTarget = newLanguage === 'en' ?
+            `Switch to ${targetLangNameTarget}?` :
+            `Passer en ${targetLangNameTarget} ?`;
+
+        const messageCurrent = currentLanguage === 'en' ?
+            'The language will be changed. The application will restart to apply the changes.' :
+            'La langue va être changée. L\'application va redémarrer pour appliquer les modifications.';
+
+        const messageTarget = newLanguage === 'en' ?
+            'The language will be changed. The application will restart to apply the changes.' :
+            'La langue va être changée. L\'application va redémarrer pour appliquer les modifications.';
+
+        message = `<div class="language-change-message">
+            <div class="bilingual-question">
+                <div class="lang-current"><strong>${switchTextCurrent}</strong></div>
+                <div class="lang-target"><strong>${switchTextTarget}</strong></div>
+            </div>
+            <div class="bilingual-message">
+                <div class="lang-current">${messageCurrent}</div>
+                <div class="lang-target">${messageTarget}</div>
+            </div>
+        </div>`;
+
+        // Boutons dans la langue actuelle
+        if (currentLanguage === 'en') {
+            confirmText = window.TRANSLATIONS.confirm_en || 'Confirm';
+            cancelText = window.TRANSLATIONS.cancel_en || 'Cancel';
+        } else {
+            confirmText = window.TRANSLATIONS.confirm || 'Confirmer';
+            cancelText = window.TRANSLATIONS.cancel || 'Annuler';
+        }
+    } else {
+        // Fallback si les traductions ne sont pas chargées
+        const targetLangNameCurrent = languageNames[newLanguage][currentLanguage] || newLanguage.toUpperCase();
+        const targetLangNameTarget = languageNames[newLanguage][newLanguage] || newLanguage.toUpperCase();
+
+        const switchTextCurrent = currentLanguage === 'en' ?
+            `Switch to ${targetLangNameCurrent}?` :
+            `Passer en ${targetLangNameCurrent} ?`;
+
+        const switchTextTarget = newLanguage === 'en' ?
+            `Switch to ${targetLangNameTarget}?` :
+            `Passer en ${targetLangNameTarget} ?`;
+
+        if (currentLanguage === 'en') {
+            title = 'Language Change';
+            message = `<div class="language-change-message">
+                <div class="bilingual-question">
+                    <div class="lang-current"><strong>${switchTextCurrent}</strong></div>
+                    <div class="lang-target"><strong>${switchTextTarget}</strong></div>
+                </div>
+                <div class="bilingual-message">
+                    <div class="lang-current">The language will be changed. The application will restart to apply the changes.</div>
+                    <div class="lang-target">La langue va être changée. L'application va redémarrer pour appliquer les modifications.</div>
+                </div>
+            </div>`;
+            confirmText = 'Confirm';
+            cancelText = 'Cancel';
+        } else {
+            title = 'Changement de langue';
+            message = `<div class="language-change-message">
+                <div class="bilingual-question">
+                    <div class="lang-current"><strong>${switchTextCurrent}</strong></div>
+                    <div class="lang-target"><strong>${switchTextTarget}</strong></div>
+                </div>
+                <div class="bilingual-message">
+                    <div class="lang-current">La langue va être changée. L'application va redémarrer pour appliquer les modifications.</div>
+                    <div class="lang-target">The language will be changed. The application will restart to apply the changes.</div>
+                </div>
+            </div>`;
+            confirmText = 'Confirmer';
+            cancelText = 'Annuler';
+        }
+    }
+
+    // Créer le contenu HTML de la modal Materialize
+    const modalHTML = `
+        <div id="${modalId}" class="modal">
+            <div class="modal-content">
+                <h4 class="center-align">${title}</h4>
+                ${message}
+            </div>
+            <div class="modal-footer">
+                <a href="#!" class="modal-close waves-effect waves-red btn-flat">${cancelText}</a>
+                <a href="#!" id="confirm-language-change" class="waves-effect waves-green btn">${confirmText}</a>
+            </div>
+        </div>
+        <style>
+            #${modalId} .language-change-message {
+                text-align: center;
+                margin: 20px 0;
+            }
+            #${modalId} .bilingual-question {
+                margin-bottom: 15px;
+                padding-bottom: 10px;
+                border-bottom: 1px solid #e0e0e0;
+            }
+            #${modalId} .bilingual-message {
+                padding-top: 15px;
+                margin-top: 15px;
+            }
+            #${modalId} .lang-current {
+                margin-bottom: 8px;
+                font-weight: 500;
+                color: #424242;
+            }
+            #${modalId} .lang-target {
+                font-style: italic;
+                color: #666;
+                font-size: 0.9em;
+            }
+        </style>
+    `;
+
+    // Ajouter la modal au DOM
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // Initialiser et ouvrir la modal Materialize
+    const modalElement = document.getElementById(modalId);
+    const modalInstance = M.Modal.init(modalElement, {
+        dismissible: false, // Empêcher la fermeture en cliquant à l'extérieur
+        onCloseEnd: function() {
+            // Nettoyer la modal du DOM après fermeture
+            modalElement.remove();
+        }
+    });
+
+    // Gérer le clic sur le bouton de confirmation
+    document.getElementById('confirm-language-change').addEventListener('click', function() {
+        modalInstance.close();
+        // Recharger la page avec le paramètre de langue et préserver l'onglet actif
+        const url = new URL(window.location);
+        url.searchParams.set('lang', newLanguage);
+
+        // Récupérer l'onglet actif actuel et l'ajouter à l'URL
+        const activeTab = localStorage.getItem('activeTab');
+        if (activeTab && activeTab !== 'data') { // 'data' est l'onglet par défaut
+            url.hash = activeTab;
+        }
+
+        // Recharger la page avec la nouvelle langue
+        window.location.href = url.toString();
+    });
+
+    // Ouvrir la modal
+    modalInstance.open();
 }
