@@ -428,7 +428,17 @@ class SettingsManager:
         return PROFILES_DIR / f"{safe}.json"
 
     def list_profiles(self) -> List[str]:
-        return sorted(p.stem for p in PROFILES_DIR.glob("*.json"))
+        """Retourne la liste des noms de profils (pas les noms de fichiers)"""
+        profiles = []
+        for p in PROFILES_DIR.glob("*.json"):
+            try:
+                data = read_json(p)
+                name = data.get("name", p.stem)
+                profiles.append(name)
+            except Exception:
+                # En cas d'erreur, utiliser le nom du fichier comme fallback
+                profiles.append(p.stem)
+        return sorted(profiles)
 
     def load_profile(self, name: str) -> MapProfile:
         path = self._profile_path(name)
