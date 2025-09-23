@@ -77,6 +77,21 @@
                     <span>{{ _("Télécharger local") }}</span>
                 </label>
             </div>
+            <!-- Audio utilisateur (accessible dans tous les modes) -->
+            <div class="col s12 m6" style="margin-top: 12px;">
+                <label style="display:block; margin-bottom:6px;">{{ _("Musique (optionnel)") }}</label>
+                <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+                    <label style="display:flex; align-items:center; gap:6px;">
+                        <input id="cbRecordAudioEnable" type="checkbox"/>
+                        <span>{{ _("Inclure la musique") }}</span>
+                    </label>
+                    <input id="inputAudioFile" type="file" accept="audio/*" style="max-width:260px;" />
+                </div>
+                <div class="input-field" style="margin-top:8px;">
+                    <input id="inputAudioVolume" type="number" min="0" max="1" step="0.05" value="1">
+                    <label class="active" for="inputAudioVolume">{{ _("Volume musique (0-1)") }}</label>
+                </div>
+            </div>
         </div>
     </div>
 </div>

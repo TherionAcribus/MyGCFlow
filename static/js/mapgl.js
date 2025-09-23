@@ -127,6 +127,49 @@ let mrProgressIntervalId = null;
 let isMediaRecording = false;
 let mrOnFinalizeRestoreTimePerDay = null;
 
+// Audio lecture seule (hors enregistrement) et audio pour MediaRecorder
+let bgAudioCtx = null, bgAudioEl = null, bgAudioSource = null, bgAudioGain = null, bgAudioActive = false;
+let mrAudioCtx = null, mrAudioSource = null, mrAudioDest = null, mrAudioGain = null, mrAudioEl = null, mrHadAudio = false;
+
+function startBackgroundMusicIfAny(){
+    try {
+        // Si on enregistre via MediaRecorder, c'est un autre pipeline audio
+        if (typeof isMediaRecording !== 'undefined' && isMediaRecording) return;
+
+        const enabled = !!(pkg.options?.record?.audio?.enabled);
+        if (!enabled) return;
+
+        const input = document.getElementById('inputAudioFile');
+        const file = input?.files?.[0];
+        if (!file) return;
+
+        const volume = Number(pkg.options?.record?.audio?.volume) || 1;
+        const AC = window.AudioContext || window.webkitAudioContext;
+        bgAudioCtx = new AC();
+
+        bgAudioEl = new Audio(URL.createObjectURL(file));
+        bgAudioEl.preload = 'auto';
+        bgAudioEl.loop = true;
+
+        bgAudioSource = bgAudioCtx.createMediaElementSource(bgAudioEl);
+        bgAudioGain = bgAudioCtx.createGain();
+        bgAudioGain.gain.value = Math.max(0, Math.min(1, volume));
+        bgAudioSource.connect(bgAudioGain).connect(bgAudioCtx.destination);
+
+        try { bgAudioCtx.resume().catch(()=>{}); } catch(_) {}
+        bgAudioEl.play().then(()=>{ bgAudioActive = true; }).catch(e => console.warn('Lecture audio bloquée:', e));
+    } catch(e) {
+        console.warn('startBackgroundMusicIfAny error:', e);
+    }
+}
+
+function stopBackgroundMusic(){
+    try { if (bgAudioEl) { bgAudioEl.pause(); URL.revokeObjectURL(bgAudioEl.src); } } catch(_) {}
+    try { if (bgAudioCtx) { bgAudioCtx.close(); } } catch(_) {}
+    bgAudioEl = bgAudioCtx = bgAudioSource = bgAudioGain = null;
+    bgAudioActive = false;
+}
+
 
 // récupère les couleurs GC par défaut dans le JSON
 // (permet d'être facilement modifiable contrairement à un dict en dur)
@@ -682,6 +725,8 @@ export function startAnimation(restart=false) {
 
         createFlashElements();
         infos = createObjectInfos();
+        // Démarrer la musique de fond si activée (lecture seule)
+        try { startBackgroundMusicIfAny(); } catch(e) { console.warn('startBackgroundMusicIfAny error:', e); }
     } else {
         // En mode restart, s'assurer que 'infos' existe pour éviter les erreurs
         if (!infos) {
@@ -740,6 +785,9 @@ export function stopAnimation(){
             stopMediaRecorderPipeline(true);
         }
     } catch(e) { console.warn('Erreur arrêt MediaRecorder:', e); }
+
+    // Arrêter musique de fond si lecture seule
+    try { stopBackgroundMusic(); } catch(e) { console.warn('stopBackgroundMusic error:', e); }
 
     if (interval) {
         clearInterval(interval);
@@ -1093,7 +1141,34 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
         // Réutiliser la modal/loader existante pour garantir l'affichage (système qui marche déjà chez toi)
         try { pkg.openModalLoading('Assemblage en cours', 'Création de la vidéo à partir des images...'); } catch(e) { console.warn('openModalLoading erreur:', e); }
 
-        fetch(`${CONFIG.BASE_URL}/start_create_video`)
+        // Si un audio utilisateur est activé en mode images, l'uploader et passer son nom à l'assemblage
+        const tryAssembleWithAudio = async () => {
+            try {
+                let audioFileName = null;
+                const input = document.getElementById('inputAudioFile');
+                const file = input?.files?.[0];
+                const audioEnabled = !!(pkg.options?.record?.audio?.enabled);
+                const audioVol = (typeof pkg.options?.record?.audio?.volume === 'number') ? pkg.options.record.audio.volume : 1;
+                if (audioEnabled && file) {
+                    const fd = new FormData();
+                    fd.append('audio', file);
+                    const up = await fetch(`${CONFIG.BASE_URL}/upload_audio`, { method: 'POST', body: fd });
+                    const upRes = await up.json().catch(()=>({success:false}));
+                    if (upRes?.success && upRes?.file) audioFileName = upRes.file;
+                }
+                const url = new URL(`${CONFIG.BASE_URL}/start_create_video`, window.location.origin);
+                if (audioFileName) {
+                    url.searchParams.set('audio', audioFileName);
+                    url.searchParams.set('audio_volume', String(audioVol));
+                }
+                return fetch(url.toString());
+            } catch(e) {
+                console.warn('Assemblage avec audio: fallback sans audio', e);
+                return fetch(`${CONFIG.BASE_URL}/start_create_video`);
+            }
+        };
+
+        tryAssembleWithAudio()
           .then(response => { logToast('Réponse assemblage reçue, status:', response?.status); return response.json(); })
           .then(data => {
             if (data && data.success) {
@@ -1324,14 +1399,49 @@ async function startMediaRecorderPipeline(totalDurationMs){
     mrOutCanvas.height = Math.max(1, Math.floor(rect.height));
     mrOutCtx = mrOutCanvas.getContext('2d', { willReadFrequently: true });
 
-    const stream = mrOutCanvas.captureStream(fps);
+    const canvasStream = mrOutCanvas.captureStream(fps);
+    // Mixage audio utilisateur si disponible
+    mrHadAudio = false;
+    let mixedStream = canvasStream;
+    try {
+        const audioEnabled = !!pkg.options?.record?.audio?.enabled;
+        const volume = Number(pkg.options?.record?.audio?.volume) || 1;
+        const fileInput = document.getElementById('inputAudioFile');
+        const file = fileInput && fileInput.files && fileInput.files[0];
+        if (audioEnabled && file) {
+            mrAudioEl = new Audio(URL.createObjectURL(file));
+            mrAudioEl.preload = 'auto';
+            mrAudioEl.loop = false;
+            mrAudioEl.currentTime = 0;
+
+            const AC = window.AudioContext || window.webkitAudioContext;
+            mrAudioCtx = new AC();
+            mrAudioSource = mrAudioCtx.createMediaElementSource(mrAudioEl);
+            mrAudioGain = mrAudioCtx.createGain();
+            mrAudioGain.gain.value = Math.max(0, Math.min(1, volume));
+            mrAudioDest = mrAudioCtx.createMediaStreamDestination();
+
+            mrAudioSource.connect(mrAudioGain).connect(mrAudioDest);     // vers flux capturé
+            mrAudioSource.connect(mrAudioCtx.destination);                // lecture locale
+            mixedStream = new MediaStream([...canvasStream.getVideoTracks(), ...mrAudioDest.stream.getAudioTracks()]);
+            mrHadAudio = true;
+        }
+    } catch(e) { console.warn('Audio setup failed:', e); }
+
     mrRecordedChunks = [];
-    mrRecorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: vbps });
+    const abps = Number(pkg.options?.record?.mediaRecorder?.audioBitsPerSecond) || 128000;
+    mrRecorder = new MediaRecorder(mixedStream, { mimeType: mime, videoBitsPerSecond: vbps, audioBitsPerSecond: abps });
     isMediaRecording = true;
 
     mrRecorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) mrRecordedChunks.push(e.data); };
     mrRecorder.onstop = () => finalizeMediaRecorderVideo();
     mrRecorder.start(Math.max(1000 / fps, 50));
+
+    // Démarrer la musique (après démarrage du recorder pour éviter désync)
+    if (mrAudioEl && mrAudioCtx) {
+        try { mrAudioCtx.resume().catch(()=>{}); } catch(_) {}
+        mrAudioEl.play().catch((e)=>console.warn('Audio play blocked:', e));
+    }
 
     // Dessin périodique (compositing)
     let drawing = false;
@@ -1378,6 +1488,11 @@ function stopMediaRecorderPipeline(finalize){
         finalizeMediaRecorderVideo();
     }
     isMediaRecording = false;
+
+    // Nettoyage audio MR
+    try { if (mrAudioEl) { mrAudioEl.pause(); mrAudioEl.currentTime = 0; URL.revokeObjectURL(mrAudioEl.src); } } catch(_) {}
+    try { if (mrAudioCtx) { mrAudioCtx.close(); } } catch(_) {}
+    mrAudioEl = mrAudioCtx = mrAudioSource = mrAudioDest = mrAudioGain = null;
 }
 
 function finalizeMediaRecorderVideo(){
@@ -1389,7 +1504,9 @@ function finalizeMediaRecorderVideo(){
         const wantsDownload = !!pkg.options?.record?.mediaRecorder?.downloadLocal;
         const wantsUpload = !!pkg.options?.record?.mediaRecorder?.uploadToServer;
         const slowdown = Math.max(1, parseInt(pkg.options?.record?.mediaRecorder?.slowdownFactor) || 1);
-        const doNormalize = !!pkg.options?.record?.mediaRecorder?.offlineNormalization && slowdown > 1;
+        const hasAudio = !!mrHadAudio;
+        const wantsNorm = !!pkg.options?.record?.mediaRecorder?.offlineNormalization;
+        const doNormalize = wantsNorm && slowdown > 1 && !hasAudio;
 
         const afterAll = () => {
             // Réactiver boutons et fermer loader

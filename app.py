@@ -4,7 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_cors import cross_origin
 from bdd import uploadBdd, get_progress_step, db_infos, create_geojson, get_metadata_from_geojson, filter_session, analyse
-from capture import upload_image, clear_pictures_directory, assemble_pictures_directory, upload_video
+from capture import upload_image, clear_pictures_directory, assemble_pictures_directory, upload_video, upload_audio
 from options import check_version_online
 from flask_babel import Babel, gettext as _
 from settings_manager import SettingsManager, AppSettings
@@ -156,7 +156,13 @@ def get_upload_image():
 @cross_origin()
 def start_create_video():
     try:
-        result = assemble_pictures_directory("captured", "video/output.mp4", 24)
+        audio = request.args.get('audio')
+        audio_volume = request.args.get('audio_volume', default='1.0')
+        try:
+            vol = float(audio_volume)
+        except Exception:
+            vol = 1.0
+        result = assemble_pictures_directory("captured", "video/output.mp4", 24, audio_path=audio, audio_volume=vol)
         return result
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
@@ -176,6 +182,11 @@ def assemble_pictures():
 @cross_origin()
 def route_upload_video():
     return upload_video(request)
+
+@app.route('/upload_audio', methods=['POST'])
+@cross_origin()
+def route_upload_audio():
+    return upload_audio(request)
 
 
 

@@ -24,6 +24,7 @@ var spanNbCaches, spanCurrentDate;
 var selectLanguage, selectCheckVersionOnline, buttonCheckVersion, buttonHome;
 // Enregistrement
 var selectRecordMode, inputRecordFps, inputRecordBitrate, selectRecordMime, inputRecordSlowdown, cbRecordUpload, cbRecordDownload;
+var cbRecordAudioEnable, inputAudioFile, inputAudioVolume;
 
 // États de l'application
 var isAnimationRunning = false;
@@ -402,6 +403,12 @@ function initOptionsElements() {
     if (cbRecordUpload) cbRecordUpload.addEventListener('change', changeRecordValues);
     cbRecordDownload = document.getElementById('cbRecordDownload');
     if (cbRecordDownload) cbRecordDownload.addEventListener('change', changeRecordValues);
+    // Audio utilisateur
+    cbRecordAudioEnable = document.getElementById('cbRecordAudioEnable');
+    if (cbRecordAudioEnable) cbRecordAudioEnable.addEventListener('change', changeRecordValues);
+    inputAudioVolume = document.getElementById('inputAudioVolume');
+    if (inputAudioVolume) inputAudioVolume.addEventListener('input', changeRecordValues);
+    inputAudioFile = document.getElementById('inputAudioFile');
 }
 
 // Gestionnaire pour le changement de mode d'enregistrement
@@ -638,6 +645,15 @@ function initOptionsUI() {
         if (cbRecordUpload) cbRecordUpload.checked = !!(pkg.options.record?.mediaRecorder?.uploadToServer);
         if (cbRecordDownload) cbRecordDownload.checked = !!(pkg.options.record?.mediaRecorder?.downloadLocal);
 
+        // ------- AUDIO UTILISATEUR -------
+        try {
+            // Restaurer options audio si existantes
+            pkg.options.record = pkg.options.record || {};
+            pkg.options.record.audio = pkg.options.record.audio || {};
+            if (cbRecordAudioEnable) cbRecordAudioEnable.checked = !!pkg.options.record.audio.enabled;
+            if (inputAudioVolume) inputAudioVolume.value = (typeof pkg.options.record.audio.volume === 'number') ? pkg.options.record.audio.volume : 1;
+        } catch(e) { console.warn('Init audio UI error:', e); }
+
         // Mettre à jour la visibilité après l'initialisation
         updateMediaRecorderOptionsVisibility();
 
@@ -718,6 +734,18 @@ function changeRecordValues() {
             pkg.options.record.mediaRecorder.downloadLocal = !!cbRecordDownload.checked;
         }
 
+        // ------- AUDIO UTILISATEUR -------
+        try {
+            pkg.options.record.audio = pkg.options.record.audio || {};
+            if (cbRecordAudioEnable) {
+                pkg.options.record.audio.enabled = !!cbRecordAudioEnable.checked;
+            }
+            if (inputAudioVolume && inputAudioVolume.value !== '') {
+                const vol = Math.max(0, Math.min(1, parseFloat(inputAudioVolume.value) || 1));
+                pkg.options.record.audio.volume = vol;
+            }
+        } catch(e) { console.warn('changeRecordValues audio error:', e); }
+
         // Sauvegarder automatiquement les paramètres d'enregistrement
         saveRecordSettings();
 
@@ -740,6 +768,10 @@ function saveRecordSettings() {
                 uploadToServer: pkg.options.record?.mediaRecorder?.uploadToServer || true,
                 downloadLocal: pkg.options.record?.mediaRecorder?.downloadLocal || true,
                 offlineNormalization: pkg.options.record?.mediaRecorder?.offlineNormalization || true
+            },
+            audio: {
+                enabled: pkg.options.record?.audio?.enabled || false,
+                volume: (typeof pkg.options.record?.audio?.volume === 'number') ? pkg.options.record.audio.volume : 1
             }
         };
         localStorage.setItem('recordSettings', JSON.stringify(recordSettings));
@@ -766,6 +798,10 @@ function loadRecordSettings() {
                 pkg.options.record.mediaRecorder.uploadToServer = recordSettings.mediaRecorder?.uploadToServer ?? true;
                 pkg.options.record.mediaRecorder.downloadLocal = recordSettings.mediaRecorder?.downloadLocal ?? true;
                 pkg.options.record.mediaRecorder.offlineNormalization = recordSettings.mediaRecorder?.offlineNormalization ?? true;
+                // Audio utilisateur
+                pkg.options.record.audio = pkg.options.record.audio || {};
+                pkg.options.record.audio.enabled = recordSettings.audio?.enabled || false;
+                pkg.options.record.audio.volume = (typeof recordSettings.audio?.volume === 'number') ? recordSettings.audio.volume : 1;
             }
             return true;
         }

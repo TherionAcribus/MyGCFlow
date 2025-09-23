@@ -1,7 +1,7 @@
 from flask import jsonify, request
 import os
 import base64
-from moviepy.editor import ImageSequenceClip
+from moviepy.editor import ImageSequenceClip, AudioFileClip
 from werkzeug.utils import secure_filename
 
 
@@ -70,7 +70,7 @@ def clear_pictures_directory():
         return jsonify({'success': False, 'message': str(e)})
     
 
-def assemble_pictures_directory(image_folder, output_video, fps=24):
+def assemble_pictures_directory(image_folder, output_video, fps=24, audio_path=None, audio_volume=1.0):
     try:
         # Inclure plusieurs formats d'images (webp par défaut côté client, mais aussi png et autres)
         exts = (".webp", ".png", ".jpg", ".jpeg")
@@ -85,8 +85,30 @@ def assemble_pictures_directory(image_folder, output_video, fps=24):
 
         # Créez un clip vidéo à partir des images
         clip = ImageSequenceClip(image_files, fps=fps)
+
+        # Option: ajouter l'audio si fourni (audio_path est un nom de fichier dans 'audio/')
+        if audio_path:
+            try:
+                os.makedirs('audio', exist_ok=True)
+                safe_name = secure_filename(os.path.basename(audio_path))
+                audio_file = os.path.join('audio', safe_name)
+                if os.path.exists(audio_file):
+                    vol = 1.0
+                    try:
+                        vol = max(0.0, float(audio_volume))
+                    except Exception:
+                        vol = 1.0
+                    audio = AudioFileClip(audio_file).volumex(vol)
+                    if audio.duration >= clip.duration:
+                        audio = audio.subclip(0, clip.duration)
+                    clip = clip.set_audio(audio)
+            except Exception as e:
+                # En cas d'erreur audio, on continue avec la vidéo seule
+                print(f"[assemble] Audio ignoré: {e}")
+
         # Écrivez le clip vidéo dans un fichier
-        clip.write_videofile(output_video, fps=fps)
+        # Codec 'libx264' + 'aac' pour compatibilité (nécessite ffmpeg)
+        clip.write_videofile(output_video, fps=fps, codec='libx264', audio_codec='aac')
         return jsonify({'success': True, 'message': 'Vidéo créée avec succès'})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
@@ -112,5 +134,27 @@ def upload_video(request):
         video_file.save(save_path)
 
         return jsonify({'success': True, 'message': 'Vidéo reçue et sauvegardée', 'path': save_path})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+def upload_audio(request):
+    """Réceptionne un fichier audio via multipart/form-data et l'enregistre dans audio/.
+
+    Champs attendus:
+      - 'audio': le fichier binaire
+    Retourne:
+      - { success: true, file: <nom de fichier>, path: <chemin> }
+    """
+    try:
+        if not request.files or 'audio' not in request.files:
+            return jsonify({'success': False, 'message': 'Aucun fichier audio fourni'}), 400
+
+        audio_file = request.files['audio']
+        file_name = secure_filename(audio_file.filename or 'music.mp3')
+        os.makedirs('audio', exist_ok=True)
+        save_path = os.path.join('audio', file_name)
+        audio_file.save(save_path)
+        return jsonify({'success': True, 'file': file_name, 'path': save_path})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
