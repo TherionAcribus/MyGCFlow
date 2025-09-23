@@ -52,6 +52,29 @@
                     </div>
                 </div>
 
+                <!-- Audio utilisateur (lecture/record) -->
+                <div class="row">
+                    <div class="col s12 m6">
+                        <label style="display:block; margin-bottom:6px;">{{ _("Musique (optionnel)") }}</label>
+                        <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+                            <label style="display:flex; align-items:center; gap:6px;">
+                                <input id="cbRecordAudioEnable" type="checkbox"/>
+                                <span>{{ _("Inclure la musique") }}</span>
+                            </label>
+                            <input id="inputAudioFile" type="file" accept="audio/*" style="max-width:260px;" />
+                        </div>
+                        <div class="input-field" style="margin-top:8px;">
+                            <input id="inputAudioVolume" type="number" min="0" max="1" step="0.05" value="1">
+                            <label class="active" for="inputAudioVolume">{{ _("Volume musique (0-1)") }}</label>
+                        </div>
+                        <div style="margin-top:8px;">
+                            <a class="waves-effect waves-light btn-small disabled" id="btnSetDurationFromAudio" title="{{ _('Utiliser la durée de la musique comme temps total') }}">
+                                <i class="material-icons left">timer</i>{{ _("Définir la durée de l'animation à partir de la musique") }}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="row">
                     <div class="col s12">
                         <a class="waves-effect waves-light btn-large" id="btnStartAnimation">

@@ -409,6 +409,43 @@ function initOptionsElements() {
     inputAudioVolume = document.getElementById('inputAudioVolume');
     if (inputAudioVolume) inputAudioVolume.addEventListener('input', changeRecordValues);
     inputAudioFile = document.getElementById('inputAudioFile');
+    if (inputAudioFile) {
+        // Coche automatiquement la case quand un fichier audio est sélectionné
+        inputAudioFile.addEventListener('change', function() {
+            if (this.files && this.files.length > 0 && cbRecordAudioEnable) {
+                cbRecordAudioEnable.checked = true;
+                changeRecordValues(); // Met à jour les options
+            }
+            // Activer/désactiver le bouton de durée selon si un fichier est chargé
+            updateAudioDurationButton();
+        });
+    }
+
+    // Bouton pour définir la durée depuis la musique
+    const btnSetDurationFromAudio = document.getElementById('btnSetDurationFromAudio');
+    if (btnSetDurationFromAudio) {
+        btnSetDurationFromAudio.addEventListener('click', async function() {
+            if (inputAudioFile && inputAudioFile.files && inputAudioFile.files.length > 0) {
+                try {
+                    const audioDurationSec = await getAudioDuration(inputAudioFile.files[0]);
+                    if (audioDurationSec && audioDurationSec > 0) {
+                        // Convertir en minutes pour le champ inputTotalTime
+                        const audioDurationMin = audioDurationSec / 60;
+                        inputTotalTime.value = audioDurationMin.toFixed(2);
+
+                        // Recalculer le temps par jour basé sur cette nouvelle durée totale
+                        updateTimePerDay();
+
+                        console.log(`Durée audio appliquée: ${audioDurationSec.toFixed(2)}s (${audioDurationMin.toFixed(2)}min)`);
+                        pkg.showToast && pkg.showToast('Durée de l\'animation ajustée selon la musique', 'info', 'Musique', 3000);
+                    }
+                } catch(e) {
+                    console.warn('Erreur lors de la récupération de la durée audio:', e);
+                    pkg.showToast && pkg.showToast('Erreur lors de la lecture du fichier audio', 'error', 'Erreur', 3000);
+                }
+            }
+        });
+    }
 }
 
 // Gestionnaire pour le changement de mode d'enregistrement
@@ -647,10 +684,10 @@ function initOptionsUI() {
 
         // ------- AUDIO UTILISATEUR -------
         try {
-            // Restaurer options audio si existantes
+            // Restaurer options audio si existantes (désactivé par défaut)
             pkg.options.record = pkg.options.record || {};
             pkg.options.record.audio = pkg.options.record.audio || {};
-            if (cbRecordAudioEnable) cbRecordAudioEnable.checked = !!pkg.options.record.audio.enabled;
+            if (cbRecordAudioEnable) cbRecordAudioEnable.checked = !!pkg.options.record.audio.enabled; // False par défaut si non défini
             if (inputAudioVolume) inputAudioVolume.value = (typeof pkg.options.record.audio.volume === 'number') ? pkg.options.record.audio.volume : 1;
         } catch(e) { console.warn('Init audio UI error:', e); }
 
@@ -659,6 +696,9 @@ function initOptionsUI() {
 
         // Synchroniser la visibilité des overlays avec les paramètres utilisateur
         updateOverlayElementsVisibility();
+
+        // Mettre à jour l'état du bouton durée audio
+        updateAudioDurationButton();
     } catch(e) { console.warn('Init enregistrement UI error:', e); }
 }
 
@@ -2081,6 +2121,43 @@ function toggleFullscreenFromButton(){
         fullscreenButtonActive = true; // Pour forcer la bascule
     }
     toggleFullscreenMode();
+}
+
+// Fonction pour activer/désactiver le bouton de durée audio selon si un fichier est chargé
+function updateAudioDurationButton() {
+    const btn = document.getElementById('btnSetDurationFromAudio');
+    const inputAudio = document.getElementById('inputAudioFile');
+    if (btn && inputAudio) {
+        if (inputAudio.files && inputAudio.files.length > 0) {
+            btn.classList.remove('disabled');
+        } else {
+            btn.classList.add('disabled');
+        }
+    }
+}
+
+// Fonction pour extraire la durée d'un fichier audio
+async function getAudioDuration(file) {
+    return new Promise((resolve, reject) => {
+        try {
+            const audio = new Audio();
+            const url = URL.createObjectURL(file);
+
+            audio.addEventListener('loadedmetadata', () => {
+                URL.revokeObjectURL(url);
+                resolve(audio.duration);
+            });
+
+            audio.addEventListener('error', (e) => {
+                URL.revokeObjectURL(url);
+                reject(new Error('Erreur lors du chargement du fichier audio'));
+            });
+
+            audio.src = url;
+        } catch(e) {
+            reject(e);
+        }
+    });
 }
 
 // Fonction pour ouvrir une modale de confirmation de changement de langue
