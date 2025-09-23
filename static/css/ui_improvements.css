@@ -689,3 +689,14 @@ html body.fullscreen-mode main #mapWithFrames #infosFrame span {
     border-radius: 6px;
     font-weight: 600;
 }
+
+/* Panneau sticky pour Profils */
+.sticky-panel {
+    position: sticky;
+    top: 20px;
+}
+
+/* Marges pour les contenus d'onglets internes */
+#tabMapOverlay, #tabPointsFlash {
+    margin-top: 10px;
+}

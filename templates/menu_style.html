@@ -2,172 +2,194 @@
 <div id="style" class="col s12">
     <div class="row">
 
-        <!-- Section Cartes -->
-        <div class="col s12 m6 l3">
-            <h5>🗺️ {{ _("Cartes") }}</h5>
+        <!-- Zone principale avec sous-menu -->
+        <div class="col s12 l8">
             <div class="card-panel">
-                <div class="row">
-                    <div class="col s6">
-                        <a id="OSM" class="changeMap btn waves-effect waves-light" title="{{ _("OpenStreetMap") }}">
-                            <span class="btn-text">OSM</span>
-                        </a>
-                    </div>
-                    <div class="col s6">
-                        <a id="stamenToner" class="changeMap btn waves-effect waves-light" title="{{ _("Stamen Toner") }}">
-                            <span class="btn-text">Toner</span>
-                        </a>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col s6">
-                        <a id="vectorMap" class="changeMap btn waves-effect waves-light" title="{{ _("Carte vectorielle") }}">
-                            <span class="btn-text">Vector</span>
-                        </a>
-                    </div>
-                    <div class="col s6">
-                        <a id="watercolor" class="changeMap btn waves-effect waves-light" title="{{ _("Watercolor") }}">
-                            <span class="btn-text">Water</span>
-                        </a>
-                    </div>
-                </div>
+                <ul class="tabs tabs-fixed-width">
+                    <li class="tab col s6"><a href="#tabMapOverlay">{{ _("Cartes & Overlays") }}</a></li>
+                    <li class="tab col s6"><a href="#tabPointsFlash">{{ _("Points & Flash") }}</a></li>
+                </ul>
 
-                <!-- Options cartographiques -->
-                <div id="vectorMapOptions" style="display: none;">
-                    <h6>🎨 {{ _("Style Vector") }}</h6>
-
-                    <!-- Ligne 1 : Couleurs de contour et remplissage -->
+                <div id="tabMapOverlay" class="col s12" style="padding-top: 20px;">
                     <div class="row">
                         <div class="col s12 m6">
-                            <div class="vector-control-group">
-                                <label for="fieldVectorMapStrokeColor" class="vector-label" title="{{ _("Définit la couleur des bordures des géocaches") }}">{{ _("Couleur contour") }}</label>
-                                <input type="color" id="fieldVectorMapStrokeColor" class="vector-color-picker" title="{{ _("Cliquez pour choisir la couleur des contours") }}" />
-                            </div>
-                        </div>
-                        <div class="col s12 m6">
-                            <div class="vector-control-group">
-                                <label for="fieldVectorMapFillColor" class="vector-label" title="{{ _("Définit la couleur intérieure des géocaches") }}">{{ _("Couleur remplissage") }}</label>
-                                <input type="color" id="fieldVectorMapFillColor" class="vector-color-picker" title="{{ _("Cliquez pour choisir la couleur de remplissage") }}" />
-                            </div>
-                        </div>
-                    </div>
+                            <h5>🗺️ {{ _("Cartes") }}</h5>
+                            <div class="card-panel">
+                                <div class="row">
+                                    <div class="col s6">
+                                        <a id="OSM" class="changeMap btn waves-effect waves-light" title="{{ _("OpenStreetMap") }}">
+                                            <span class="btn-text">OSM</span>
+                                        </a>
+                                    </div>
+                                    <div class="col s6">
+                                        <a id="stamenToner" class="changeMap btn waves-effect waves-light" title="{{ _("Stamen Toner") }}">
+                                            <span class="btn-text">Toner</span>
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col s6">
+                                        <a id="vectorMap" class="changeMap btn waves-effect waves-light" title="{{ _("Carte vectorielle") }}">
+                                            <span class="btn-text">Vector</span>
+                                        </a>
+                                    </div>
+                                    <div class="col s6">
+                                        <a id="watercolor" class="changeMap btn waves-effect waves-light" title="{{ _("Watercolor") }}">
+                                            <span class="btn-text">Water</span>
+                                        </a>
+                                    </div>
+                                </div>
 
-                    <!-- Ligne 2 : Couleur de fond et largeur -->
-                    <div class="row">
-                        <div class="col s12 m6">
-                            <div class="vector-control-group">
-                                <label for="fieldVectorMapBackgroundColor" class="vector-label" title="{{ _("Définit la couleur de fond de la carte") }}">{{ _("Couleur fond") }}</label>
-                                <input type="color" id="fieldVectorMapBackgroundColor" class="vector-color-picker" title="{{ _("Cliquez pour choisir la couleur de fond") }}" />
-                            </div>
-                        </div>
-                        <div class="col s12 m6">
-                            <div class="vector-control-group">
-                                <label for="fieldVectorMapStrokeWidth" class="vector-label" title="{{ _("Définit l'épaisseur des bordures des géocaches") }}">{{ _("Largeur contour") }}</label>
-                                <div class="vector-slider-container">
-                                    <input type="range" id="fieldVectorMapStrokeWidth" min="0.1" max="5" step="0.1" class="vector-slider" title="{{ _("Faites glisser pour ajuster l'épaisseur") }}" />
-                                    <span class="vector-slider-value" title="{{ _("Valeur actuelle de l'épaisseur") }}">2.5</span>
+                                <!-- Options cartographiques -->
+                                <div id="vectorMapOptions" style="display: none;">
+                                    <h6>🎨 {{ _("Style Vector") }}</h6>
+
+                                    <!-- Ligne 1 : Couleurs de contour et remplissage -->
+                                    <div class="row">
+                                        <div class="col s12 m6">
+                                            <div class="vector-control-group">
+                                                <label for="fieldVectorMapStrokeColor" class="vector-label" title="{{ _("Définit la couleur des bordures des géocaches") }}">{{ _("Couleur contour") }}</label>
+                                                <input type="color" id="fieldVectorMapStrokeColor" class="vector-color-picker" title="{{ _("Cliquez pour choisir la couleur des contours") }}" />
+                                            </div>
+                                        </div>
+                                        <div class="col s12 m6">
+                                            <div class="vector-control-group">
+                                                <label for="fieldVectorMapFillColor" class="vector-label" title="{{ _("Définit la couleur intérieure des géocaches") }}">{{ _("Couleur remplissage") }}</label>
+                                                <input type="color" id="fieldVectorMapFillColor" class="vector-color-picker" title="{{ _("Cliquez pour choisir la couleur de remplissage") }}" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Ligne 2 : Couleur de fond et largeur -->
+                                    <div class="row">
+                                        <div class="col s12 m6">
+                                            <div class="vector-control-group">
+                                                <label for="fieldVectorMapBackgroundColor" class="vector-label" title="{{ _("Définit la couleur de fond de la carte") }}">{{ _("Couleur fond") }}</label>
+                                                <input type="color" id="fieldVectorMapBackgroundColor" class="vector-color-picker" title="{{ _("Cliquez pour choisir la couleur de fond") }}" />
+                                            </div>
+                                        </div>
+                                        <div class="col s12 m6">
+                                            <div class="vector-control-group">
+                                                <label for="fieldVectorMapStrokeWidth" class="vector-label" title="{{ _("Définit l'épaisseur des bordures des géocaches") }}">{{ _("Largeur contour") }}</label>
+                                                <div class="vector-slider-container">
+                                                    <input type="range" id="fieldVectorMapStrokeWidth" min="0.1" max="5" step="0.1" class="vector-slider" title="{{ _("Faites glisser pour ajuster l'épaisseur") }}" />
+                                                    <span class="vector-slider-value" title="{{ _("Valeur actuelle de l'épaisseur") }}">2.5</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div id="tonerMapOptions" style="display: none;">
+                                    <h6>🎨 {{ _("Style Toner") }}</h6>
+                                    <div class="row">
+                                        <div class="col s6">
+                                            <a id="stamenTonerLight" class="btn waves-effect waves-light">
+                                                <i class="material-icons right">brightness_high</i>
+                                                {{ _("Clair") }}
+                                            </a>
+                                        </div>
+                                        <div class="col s6">
+                                            <a id="stamenTonerDark" class="btn waves-effect waves-light">
+                                                <i class="material-icons right">brightness_low</i>
+                                                {{ _("Sombre") }}
+                                            </a>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-
-                <div id="tonerMapOptions" style="display: none;">
-                    <h6>🎨 {{ _("Style Toner") }}</h6>
-                    <div class="row">
-                        <div class="col s6">
-                            <a id="stamenTonerLight" class="btn waves-effect waves-light">
-                                <i class="material-icons right">brightness_high</i>
-                                {{ _("Clair") }}
-                            </a>
-                        </div>
-                        <div class="col s6">
-                            <a id="stamenTonerDark" class="btn waves-effect waves-light">
-                                <i class="material-icons right">brightness_low</i>
-                                {{ _("Sombre") }}
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Section Points -->
-        <div class="col s12 m6 l3">
-            <h5>📍 {{ _("Points") }}</h5>
-            <div>
-                {% include 'menu_points.html' %}
-            </div>
-        </div>
-
-        <!-- Section Flash -->
-        <div class="col s12 m6 l3">
-            <h5>✨ {{ _("Flash") }}</h5>
-            <div>
-                {% include 'menu_flash.html' %}
-            </div>
-        </div>
-
-        <!-- Section Profils -->
-        <div class="col s12 m6 l3">
-            <h5>🎨 {{ _("Profils") }}
-                <span id="current-profile-indicator" class="right" style="font-size: 12px; color: #666; font-weight: normal;"></span>
-            </h5>
-            <div class="card-panel">
-                <div id="profiles-section">
-                    <!-- Boutons d'action - maintenant au-dessus de la zone scrollable -->
-                    <div class="row" style="margin-bottom: 15px;">
-                        <div class="col s4">
-                            <a id="btn-new-profile" class="btn waves-effect waves-light btn-small">
-                                <i class="material-icons left">add</i>
-                                {{ _("Nouveau") }}
-                            </a>
-                        </div>
-                        <div class="col s4">
-                            <a id="btn-save-profile" class="btn waves-effect waves-light btn-small blue">
-                                <i class="material-icons left">save</i>
-                                {{ _("Sauvegarder") }}
-                            </a>
-                        </div>
-                        <div class="col s4">
-                            <a id="btn-import-profile" class="btn waves-effect waves-light btn-small orange">
-                                <i class="material-icons left">file_upload</i>
-                                {{ _("Importer") }}
-                            </a>
-                            <input id="input-import-profile" type="file" accept="application/json" style="display:none" />
-                        </div>
-                    </div>
-
-                    <!-- Liste des profils - zone scrollable -->
-                    <div id="profiles-list" class="collection" style="max-height: 300px; overflow-y: auto;">
-                        <!-- Les profils seront chargés dynamiquement -->
-                    </div>
-
-                    <!-- Modal pour créer/renommer profil -->
-                    <div id="profile-modal" class="modal">
-                        <div class="modal-content">
-                            <h4 id="profile-modal-title">{{ _("Nouveau profil") }}</h4>
-                            <div class="row">
-                                <div class="input-field col s12">
-                                    <input type="text" id="profile-name-input" maxlength="50">
-                                    <label for="profile-name-input">{{ _("Nom du profil") }}</label>
-                                </div>
+                        <div class="col s12 m6">
+                            <h5>📋 {{ _("Informations et Overlays") }}</h5>
+                            <div class="card-panel">
+                                {% include 'menu_informations.html' %}
                             </div>
                         </div>
-                        <div class="modal-footer">
-                            <a href="#!" class="modal-close waves-effect waves-red btn-flat">{{ _("Annuler") }}</a>
-                            <a href="#!" id="btn-confirm-profile" class="waves-effect waves-green btn">{{ _("Créer") }}</a>
+                    </div>
+                </div>
+
+                <div id="tabPointsFlash" class="col s12" style="padding-top: 20px;">
+                    <div class="row">
+                        <div class="col s12 m6">
+                            <h5>📍 {{ _("Points") }}</h5>
+                            <div>
+                                {% include 'menu_points.html' %}
+                            </div>
+                        </div>
+                        <div class="col s12 m6">
+                            <h5>✨ {{ _("Flash") }}</h5>
+                            <div>
+                                {% include 'menu_flash.html' %}
+                            </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
 
-                    <!-- Modal de confirmation suppression -->
-                    <div id="delete-profile-modal" class="modal">
-                        <div class="modal-content">
-                            <h4>{{ _("Confirmer la suppression") }}</h4>
-                            <p id="delete-profile-message">{{ _("Êtes-vous sûr de vouloir supprimer ce profil ?") }}</p>
+        <!-- Section Profils (sticky) -->
+        <div class="col s12 l4">
+            <div class="sticky-panel">
+                <h5>🎨 {{ _("Profils") }}
+                    <span id="current-profile-indicator" class="right" style="font-size: 12px; color: #666; font-weight: normal;"></span>
+                </h5>
+                <div class="card-panel">
+                    <div id="profiles-section">
+                        <!-- Boutons d'action - maintenant au-dessus de la zone scrollable -->
+                        <div class="row" style="margin-bottom: 15px;">
+                            <div class="col s4">
+                                <a id="btn-new-profile" class="btn waves-effect waves-light btn-small">
+                                    <i class="material-icons left">add</i>
+                                    {{ _("Nouveau") }}
+                                </a>
+                            </div>
+                            <div class="col s4">
+                                <a id="btn-save-profile" class="btn waves-effect waves-light btn-small blue">
+                                    <i class="material-icons left">save</i>
+                                    {{ _("Sauvegarder") }}
+                                </a>
+                            </div>
+                            <div class="col s4">
+                                <a id="btn-import-profile" class="btn waves-effect waves-light btn-small orange">
+                                    <i class="material-icons left">file_upload</i>
+                                    {{ _("Importer") }}
+                                </a>
+                                <input id="input-import-profile" type="file" accept="application/json" style="display:none" />
+                            </div>
                         </div>
-                        <div class="modal-footer">
-                            <a href="#!" class="modal-close waves-effect waves-red btn-flat">{{ _("Annuler") }}</a>
-                            <a href="#!" id="btn-confirm-delete" class="waves-effect waves-green btn red">{{ _("Supprimer") }}</a>
+
+                        <!-- Liste des profils - zone scrollable -->
+                        <div id="profiles-list" class="collection" style="max-height: 300px; overflow-y: auto;">
+                            <!-- Les profils seront chargés dynamiquement -->
+                        </div>
+
+                        <!-- Modal pour créer/renommer profil -->
+                        <div id="profile-modal" class="modal">
+                            <div class="modal-content">
+                                <h4 id="profile-modal-title">{{ _("Nouveau profil") }}</h4>
+                                <div class="row">
+                                    <div class="input-field col s12">
+                                        <input type="text" id="profile-name-input" maxlength="50">
+                                        <label for="profile-name-input">{{ _("Nom du profil") }}</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <a href="#!" class="modal-close waves-effect waves-red btn-flat">{{ _("Annuler") }}</a>
+                                <a href="#!" id="btn-confirm-profile" class="waves-effect waves-green btn">{{ _("Créer") }}</a>
+                            </div>
+                        </div>
+
+                        <!-- Modal de confirmation suppression -->
+                        <div id="delete-profile-modal" class="modal">
+                            <div class="modal-content">
+                                <h4>{{ _("Confirmer la suppression") }}</h4>
+                                <p id="delete-profile-message">{{ _("Êtes-vous sûr de vouloir supprimer ce profil ?") }}</p>
+                            </div>
+                            <div class="modal-footer">
+                                <a href="#!" class="modal-close waves-effect waves-red btn-flat">{{ _("Annuler") }}</a>
+                                <a href="#!" id="btn-confirm-delete" class="waves-effect waves-green btn red">{{ _("Supprimer") }}</a>
+                            </div>
                         </div>
                     </div>
                 </div>
