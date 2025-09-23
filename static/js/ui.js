@@ -261,6 +261,7 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
             const parsedDate = pkg.parseDateInput(animDateStart.value);
             pkg.options.animation.dateStart = parsedDate;
             updateResetAnimButtonsHighlight();
+            updateDeltaDaysAndTimes();
         });
     }
     if (animDateEnd) {
@@ -270,6 +271,7 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
             const parsedDate = pkg.parseDateInput(animDateEnd.value);
             pkg.options.animation.dateEnd = parsedDate;
             updateResetAnimButtonsHighlight();
+            updateDeltaDaysAndTimes();
         });
     }
 
@@ -889,6 +891,7 @@ function resetAnimStartDateToDefault(){
     el.value = formatDateForPickers(start);
     pkg.options.animation.dateStart = start;
     updateResetAnimButtonsHighlight();
+    updateDeltaDaysAndTimes();
 }
 
 function resetAnimEndDateToDefault(){
@@ -900,6 +903,7 @@ function resetAnimEndDateToDefault(){
     el.value = formatDateForPickers(end);
     pkg.options.animation.dateEnd = end;
     updateResetAnimButtonsHighlight();
+    updateDeltaDaysAndTimes();
 }
 
 function updateResetAnimButtonsHighlight(){
@@ -1563,6 +1567,25 @@ function changeAnimationValues(event){
 export function updateAnimationMenuAfterReadBdd(metadata){
     spanDeltaDays.innerText = metadata.deltaDays;
     updateTotalTime();
+}
+
+function updateDeltaDaysAndTimes(){
+    // Calculer le nouveau deltaDays basé sur les dates d'animation sélectionnées
+    if (pkg.options.animation.dateStart && pkg.options.animation.dateEnd) {
+        const deltaTime = pkg.options.animation.dateEnd.getTime() - pkg.options.animation.dateStart.getTime();
+        const deltaDays = Math.ceil(deltaTime / (1000 * 60 * 60 * 24)) + 1; // +1 pour inclure le dernier jour
+
+        // Mettre à jour le metadata et les options
+        pkg.metadata.deltaDays = deltaDays;
+        pkg.options.date.deltaDays = deltaDays;
+        spanDeltaDays.innerText = deltaDays;
+
+        // Recalculer les temps
+        updateTotalTime();
+
+        // Mettre à jour les informations pour les images
+        pkg.updateInfosForPictures();
+    }
 }
 
 function updateTotalTime(){
