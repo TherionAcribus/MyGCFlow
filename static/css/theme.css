@@ -59,6 +59,67 @@ h5, h6 { color: var(--color-text); font-weight: 600; }
     background: rgba(0,0,0,0.04) !important;
 }
 
+/* Boutons de réinitialisation de dates (filtre + animation) */
+.date-reset-btn {
+    color: var(--color-accent) !important;
+    border: 1px solid var(--color-accent);
+    border-radius: 6px;
+    padding: 6px 12px;
+    line-height: 1.2;
+    background: transparent !important;
+}
+.date-reset-btn:hover {
+    background: var(--color-accent-weak) !important;
+}
+.date-reset-btn.active-reset {
+    background: var(--color-accent-weak) !important;
+    color: var(--color-accent) !important;
+    border-color: var(--color-accent) !important;
+    font-weight: 600;
+}
+
+/* ===================== */
+/* Materialize Datepicker */
+/* ===================== */
+.datepicker-modal .datepicker-date-display {
+    background-color: var(--color-accent) !important;
+    color: #fff !important;
+}
+
+.datepicker-modal .year-text,
+.datepicker-modal .date-text {
+    color: #fff !important;
+}
+
+.datepicker-modal .datepicker-table td.is-selected,
+.datepicker-modal .datepicker-table td.is-selected .datepicker-day-button {
+    background-color: var(--color-accent) !important;
+    color: #fff !important;
+}
+
+.datepicker-modal .datepicker-table td.is-today .datepicker-day-button {
+    border: 1px solid var(--color-accent) !important;
+    color: var(--color-accent) !important;
+}
+
+.datepicker-modal .datepicker-day-button:focus,
+.datepicker-modal .datepicker-day-button:hover {
+    background-color: var(--color-accent-weak) !important;
+}
+
+.datepicker-modal .month-prev,
+.datepicker-modal .month-next,
+.datepicker-modal .select-month input.select-dropdown,
+.datepicker-modal .select-year input.select-dropdown {
+    color: var(--color-accent) !important;
+}
+
+.datepicker-modal .modal-footer .btn-flat.datepicker-cancel,
+.datepicker-modal .modal-footer .btn-flat.datepicker-clear,
+.datepicker-modal .modal-footer .btn-flat.datepicker-done {
+    color: var(--color-accent) !important;
+}
+
 /* Boutons: palette réduite */
 .btn, .btn-large, .btn-small {
     background-color: var(--color-accent);
@@ -87,6 +148,10 @@ h5, h6 { color: var(--color-text); font-weight: 600; }
 /* Collections / listes */
 .collection .collection-item { border-bottom: 1px solid var(--color-border) !important; }
 .collection .collection-item.active { background: var(--color-accent-weak) !important; color: var(--color-accent) !important; }
+/* Infos filtres */
+.filter-info { margin-top: 6px; font-size: 0.9rem; color: #424242; }
+.filter-info.filter-info-all { font-weight: 600; color: var(--color-accent); }
+.btn-flat.filter-all-active { background: var(--color-accent-weak); border-radius: 6px; }
 
 /* Dropdown profils (actions) */
 .dropdown-content li > a.dropdown-item {
