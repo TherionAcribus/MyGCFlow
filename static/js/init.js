@@ -94,24 +94,24 @@ export function getDefaultValues() {
 // Charger et appliquer les paramètres utilisateur sauvegardés
 async function loadUserSettings() {
     try {
-        console.log('🔧 Chargement des paramètres utilisateur...');
+        console.log('Chargement des paramètres utilisateur...');
         const response = await fetch(`${CONFIG.BASE_URL}/api/settings`);
         if (!response.ok) {
             throw new Error(`Erreur HTTP ${response.status}`);
         }
 
         const userSettings = await response.json();
-        console.log('✅ Paramètres utilisateur chargés:', userSettings);
+        console.log('Paramètres utilisateur chargés:', userSettings);
 
         // Appliquer les paramètres utilisateur aux options locales
         if (userSettings.language) {
             pkg.options.options.language = userSettings.language;
-            console.log('🌐 Langue appliquée:', userSettings.language);
+            console.log('Langue appliquée:', userSettings.language);
         }
 
         if (typeof userSettings.check_updates === 'boolean') {
             pkg.options.options.checkVersion = userSettings.check_updates;
-            console.log('🔄 Option checkVersion appliquée:', userSettings.check_updates);
+            console.log('Option checkVersion appliquée:', userSettings.check_updates);
         }
 
         // Sauvegarder dans localStorage pour cohérence
@@ -120,8 +120,8 @@ async function loadUserSettings() {
         }
 
     } catch (error) {
-        console.warn('⚠️ Impossible de charger les paramètres utilisateur:', error.message);
-        console.log('🔄 Utilisation des paramètres par défaut');
+        console.warn('Impossible de charger les paramètres utilisateur:', error.message);
+        console.log('Utilisation des paramètres par défaut');
     }
 }
 

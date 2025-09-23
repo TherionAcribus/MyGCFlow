@@ -7,6 +7,7 @@
         <link rel="stylesheet" href="../static/css/infos.css" />
         <link rel="stylesheet" href="../static/css/materialize.min.css">
         <link rel="stylesheet" href="../static/css/ui_improvements.css" />
+        <link rel="stylesheet" href="../static/css/theme.css" />
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v10.6.0/ol.css">
         <!--<link rel="stylesheet" href="../static/css/ol.css">-->
 
@@ -28,19 +29,19 @@
                 <!-- Barre de contrôle latérale -->
                 <div id="controlBar" class="control-bar" style="display: none;">
                     <div class="control-bar-content">
-                        <button id="btnStartBar" class="btn waves-effect waves-light green" style="display: none;">
+                        <button id="btnStartBar" class="btn waves-effect waves-light" style="display: none;">
                             <i class="material-icons">play_arrow</i>
                         </button>
-                        <button id="btnRecordBar" class="btn waves-effect waves-light orange" style="display: none;">
+                        <button id="btnRecordBar" class="btn waves-effect waves-light" style="display: none;">
                             <i class="material-icons">videocam</i>
                         </button>
-                        <button id="btnPauseBar" class="btn waves-effect waves-light yellow darken-2" style="display: none;">
+                        <button id="btnPauseBar" class="btn waves-effect waves-light" style="display: none;">
                             <i class="material-icons">pause</i>
                         </button>
-                        <button id="btnStopBar" class="btn waves-effect waves-light red" style="display: none;">
+                        <button id="btnStopBar" class="btn waves-effect waves-light" style="display: none;">
                             <i class="material-icons">stop</i>
                         </button>
-                        <button id="btnToggleFullscreen" class="btn waves-effect waves-light grey">
+                        <button id="btnToggleFullscreen" class="btn waves-effect waves-light">
                             <i class="material-icons">fullscreen_exit</i>
                         </button>
                     </div>
@@ -57,10 +58,10 @@
             <div class="row">
                 <div class="col s12">
                     <ul class="tabs">
-                        <li class="tab col s3"><a class="active" href="#data">📊 {{ _("Données") }}</a></li>
-                        <li class="tab col s3"><a href="#style">🎨 {{ _("Style") }}</a></li>
-                        <li class="tab col s3"><a href="#animation">▶️ {{ _("Animation") }}</a></li>
-                        <li class="tab col s3"><a href="#settings">⚙️ {{ _("Paramètres") }}</a></li>
+                        <li class="tab col s3"><a class="active" href="#data">{{ _("Données") }}</a></li>
+                        <li class="tab col s3"><a href="#style">{{ _("Style") }}</a></li>
+                        <li class="tab col s3"><a href="#animation">{{ _("Animation") }}</a></li>
+                        <li class="tab col s3"><a href="#settings">{{ _("Paramètres") }}</a></li>
                     </ul>
                 </div>        
                 

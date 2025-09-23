@@ -1,7 +1,5 @@
-import webview
-import webbrowser
 import json
-from flask import g, Flask, render_template, jsonify, request, send_from_directory, make_response
+from flask import Flask, render_template, jsonify, request, make_response
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_cors import cross_origin
@@ -9,7 +7,7 @@ from bdd import uploadBdd, get_progress_step, db_infos, create_geojson, get_meta
 from capture import upload_image, clear_pictures_directory, assemble_pictures_directory, upload_video
 from options import check_version_online
 from flask_babel import Babel, gettext as _
-from settings_manager import SettingsManager, AppSettings, MapProfile
+from settings_manager import SettingsManager, AppSettings
 
 # Créer un alias pour la fonction de traduction
 gettext = _
@@ -447,7 +445,7 @@ def api_create_profile():
 @app.route('/api/profiles/<name>', methods=['PUT'])
 def api_save_profile(name: str):
     data = request.get_json(silent=True) or {}
-    print(f"🔄 SERVEUR - Sauvegarde profil '{name}': {data}")
+    print(f"SERVEUR - Sauvegarde profil '{name}': {data}")
     prof = settings_manager.load_profile(name)
     prof.name = data.get('name', prof.name)
 

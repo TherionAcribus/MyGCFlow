@@ -1,9 +1,7 @@
-<!-- Tabs pour les informations à afficher -->
-<div id="infos" class="col s12">
-    <h3>{{ _("Informations à afficher") }}</h3>
-    <div>
-        <section>
-            <div class="col s6">
+<!-- Informations à afficher -->
+<div id="infos">
+    <div class="row">
+        <div class="col s12 m6">
 
                 <label>
                     <input id="cbDisplayTitle" type="checkbox"/>
@@ -18,9 +16,9 @@
                 <textarea hx-get="../static/css/titre.css" hx-trigger="load" id="inputTitleCss" class="cssEditor" rows="30" cols="50"></textarea>
                 <button id="btnTitleCss">{{ _("Appliquer les Modifications") }}</button>
 
-            </div>
+        </div>
 
-            <div class="col s6">
+        <div class="col s12 m6">
                 <label>
                     <input id="cbDisplayNumberofCaches" type="checkbox"/>
                     <span>{{ _("Afficher le nombre de caches trouvées") }}</span>
@@ -31,13 +29,11 @@
                     <span>{{ _("Afficher la date") }}</span>
                 </label>
 
-                <div>
+                <div class="input-field">
                     <textarea hx-get="../static/css/infos.css" hx-trigger="load" id="inputInfosCss" class="cssEditor" rows="30" cols="50"></textarea>
                     <button id="btnInfosCss">{{ _("Appliquer les Modifications") }}</button>
                 </div>
 
-            </div>
-
-        </section>
+        </div>
     </div>
 </div>

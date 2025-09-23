@@ -130,7 +130,7 @@ class ProfileManager {
 
     async loadProfile(name) {
         try {
-            console.log('🔄 Chargement profil depuis API:', name);
+            console.log('Chargement profil depuis API:', name);
             const profile = await this.apiCall(`/api/profiles/${encodeURIComponent(name)}`);
 
             console.log('📥 PROFIL REÇU DU SERVEUR:', {
@@ -165,7 +165,7 @@ class ProfileManager {
             const result = await this.apiCall(`/api/profiles/${encodeURIComponent(profileData.name)}`, 'PUT', profileData);
 
             if (result.success) {
-                console.log('✅ Profil sauvegardé avec succès:', profileData.name);
+                console.log('Profil sauvegardé avec succès:', profileData.name);
                 this.showToast(`Profil "${profileData.name}" sauvegardé`, 'green');
                 this.loadProfilesList(); // Rafraîchir la liste
             }
@@ -288,11 +288,11 @@ class ProfileManager {
                             <i class="material-icons">more_vert</i>
                         </a>
                         <ul id="dropdown-${profileName.replace(/\s+/g, '-')}" class="dropdown-content">
-                            <li><a href="#!" onclick="profileManager.duplicateProfile('${profileName.replace(/'/g, "\\'")}', '${profileName.replace(/'/g, "\\'")}_copy')"><i class="material-icons">content_copy</i>${window.gettext ? window.gettext('Dupliquer') : 'Dupliquer'}</a></li>
-                            <li><a href="#!" onclick="profileManager.renameProfile('${profileName.replace(/'/g, "\\'")}')"><i class="material-icons">edit</i>${window.gettext ? window.gettext('Renommer') : 'Renommer'}</a></li>
-                            <li><a href="#!" onclick="profileManager.exportProfile('${profileName.replace(/'/g, "\\'")}')"><i class="material-icons">file_download</i>${window.gettext ? window.gettext('Exporter') : 'Exporter'}</a></li>
-                            <li><a href="#!" onclick="profileManager.resetProfile('${profileName.replace(/'/g, "\\'")}')"><i class="material-icons">refresh</i>${window.gettext ? window.gettext('Réinitialiser') : 'Réinitialiser'}</a></li>
-                            <li><a href="#!" onclick="profileManager.confirmDelete('${profileName.replace(/'/g, "\\'")}')"><i class="material-icons">delete</i>${window.gettext ? window.gettext('Supprimer') : 'Supprimer'}</a></li>
+                            <li><a class="dropdown-item" href="#!" onclick="profileManager.duplicateProfile('${profileName.replace(/'/g, "\\'")}', '${profileName.replace(/'/g, "\\'")}_copy')"><i class="material-icons">content_copy</i>${window.gettext ? window.gettext('Dupliquer') : 'Dupliquer'}</a></li>
+                            <li><a class="dropdown-item" href="#!" onclick="profileManager.renameProfile('${profileName.replace(/'/g, "\\'")}')"><i class="material-icons">edit</i>${window.gettext ? window.gettext('Renommer') : 'Renommer'}</a></li>
+                            <li><a class="dropdown-item" href="#!" onclick="profileManager.exportProfile('${profileName.replace(/'/g, "\\'")}')"><i class="material-icons">file_download</i>${window.gettext ? window.gettext('Exporter') : 'Exporter'}</a></li>
+                            <li><a class="dropdown-item danger" href="#!" onclick="profileManager.resetProfile('${profileName.replace(/'/g, "\\'")}')"><i class="material-icons">refresh</i>${window.gettext ? window.gettext('Réinitialiser') : 'Réinitialiser'}</a></li>
+                            <li><a class="dropdown-item danger" href="#!" onclick="profileManager.confirmDelete('${profileName.replace(/'/g, "\\'")}')"><i class="material-icons">delete</i>${window.gettext ? window.gettext('Supprimer') : 'Supprimer'}</a></li>
                         </ul>
                     </div>
                 </div>
@@ -301,8 +301,13 @@ class ProfileManager {
             container.appendChild(item);
         });
 
-        // Initialiser les dropdowns Materialize
-        M.Dropdown.init(document.querySelectorAll('.dropdown-trigger'));
+        // Initialiser les dropdowns Materialize avec largeur non contrainte
+        M.Dropdown.init(document.querySelectorAll('.dropdown-trigger'), {
+            constrainWidth: false,
+            coverTrigger: false,
+            alignment: 'right',
+            container: document.body
+        });
 
         // Mettre à jour l'indicateur du profil actif (nécessaire pour le rendu initial)
         this.updateCurrentProfileIndicator();
@@ -328,7 +333,7 @@ class ProfileManager {
         try {
             const response = await fetch('/api/settings');
             const settings = await response.json();
-            console.log('🔧 Paramètres app chargés:', settings);
+            console.log('Paramètres app chargés:', settings);
             return settings;
         } catch (error) {
             console.error('❌ Erreur chargement paramètres app:', error);
@@ -354,7 +359,7 @@ class ProfileManager {
 
     async loadProfileByUid(uid) {
         try {
-            console.log('🔄 Chargement profil par UUID:', uid);
+            console.log('Chargement profil par UUID:', uid);
             const response = await fetch(`/api/profiles/uid/${encodeURIComponent(uid)}`);
             const profile = await response.json();
 
@@ -412,7 +417,7 @@ class ProfileManager {
             // Initialiser Materialize Select
             M.FormSelect.init(selector);
 
-            console.log('📋 Sélecteur profil par défaut rempli avec:', profiles);
+            console.log('Sélecteur profil par défaut rempli avec:', profiles);
             console.log('🎯 Profil par défaut actuel:', settings.default_profile_name || 'aucun');
         } catch (error) {
             console.error('❌ Erreur remplissage sélecteur profil par défaut:', error);
@@ -424,7 +429,7 @@ class ProfileManager {
         if (!selector) return;
 
         const selectedProfileName = selector.value;
-        console.log('🔄 Changement profil par défaut:', selectedProfileName);
+        console.log('Changement profil par défaut:', selectedProfileName);
 
         let selectedProfileUid = null;
         let appliedProfileName = null;
@@ -459,7 +464,7 @@ class ProfileManager {
 
         const result = await this.saveAppSettings(currentSettings);
         if (result.success) {
-            console.log('✅ Profil par défaut sauvegardé avec succès, UUID:', selectedProfileUid);
+            console.log('Profil par défaut sauvegardé avec succès, UUID:', selectedProfileUid);
             this.showToast(
                 appliedProfileName ?
                     `Profil "${appliedProfileName}" appliqué et défini comme profil par défaut` :
@@ -474,7 +479,7 @@ class ProfileManager {
     async loadDefaultProfileAtStartup() {
         try {
             const settings = await this.loadAppSettings();
-            console.log('🔧 Paramètres chargés au démarrage:', {
+            console.log('Paramètres chargés au démarrage:', {
                 default_profile_uid: settings.default_profile_uid,
                 default_profile_name: settings.default_profile_name,
                 all_settings: settings
@@ -484,17 +489,17 @@ class ProfileManager {
 
             if (defaultProfileUid) {
                 console.log('🚀 Chargement profil par défaut au démarrage (UUID):', defaultProfileUid);
-                console.log('📋 Nom du profil par défaut:', settings.default_profile_name);
+                console.log('Nom du profil par défaut:', settings.default_profile_name);
 
                 await this.loadProfileByUid(defaultProfileUid);
                 // Le toast est déjà affiché dans loadProfileByUid
             } else {
                 console.log('🚫 Aucun profil par défaut défini (default_profile_uid est null/undefined)');
-                console.log('⚠️ Vérifiez que le profil a bien été défini comme par défaut');
+                console.log('Vérifiez que le profil a bien été défini comme par défaut');
             }
         } catch (error) {
             console.error('❌ Erreur chargement profil par défaut au démarrage:', error);
-            console.error('📋 Détails de l\'erreur:', error.message);
+            console.error('Détails de l\'erreur:', error.message);
         }
     }
 
@@ -533,7 +538,7 @@ class ProfileManager {
 
             // Log si aucun bouton n'a été trouvé
             if (currentTileProvider === 'OSM') {
-                console.log('⚠️ Aucun bouton carte trouvé disabled, utilisation valeur par défaut OSM');
+                console.log('Aucun bouton carte trouvé disabled, utilisation valeur par défaut OSM');
             }
 
             // Essayer aussi de détecter via d'autres indices (classes CSS, etc.)
@@ -555,7 +560,7 @@ class ProfileManager {
                     console.log('🎯 Options toner visibles, changement vers stamenToner');
                     currentTileProvider = 'stamenToner';
                 } else {
-                    console.log('⚠️ Aucune option visible trouvée');
+                    console.log('Aucune option visible trouvée');
                 }
             }
 
@@ -591,10 +596,10 @@ class ProfileManager {
                     mapSettings.tonerOptions = { variant };
                 }
             } catch (e) {
-                console.warn('⚠️ Lecture options spécifiques carte: non bloquant', e);
+                console.warn('Lecture options spécifiques carte: non bloquant', e);
             }
 
-            console.log('🗺️ Carte détectée - Provider:', currentTileProvider, 'Settings:', mapSettings);
+            console.log('Carte détectée - Provider:', currentTileProvider, 'Settings:', mapSettings);
 
             // Si la carte est disponible, récupérer la vue actuelle
             if (window.map && typeof window.map.getView === 'function') {
@@ -626,7 +631,7 @@ class ProfileManager {
                 border_color_type: borderColorType ? borderColorType.value || 'fix' : 'fix'
             };
 
-            console.log('📍 Paramètres points récupérés:', {
+            console.log('Paramètres points récupérés:', {
                 size: pointSettings.size,
                 color: pointSettings.color,
                 shape: pointSettings.shape,
@@ -732,7 +737,7 @@ class ProfileManager {
                 infos: infosSettings,
             };
 
-            console.log('📊 PARAMÈTRES ACTUELS COMPLÈTS - Récupérés depuis l\'interface:', {
+            console.log('PARAMÈTRES ACTUELS COMPLÈTS - Récupérés depuis l\'interface:', {
                 map: mapSettings,
                 animation: animationSettings,
                 points: pointSettings,
@@ -789,7 +794,7 @@ class ProfileManager {
 
         // Appliquer les paramètres du profil à l'interface
         if (profile.map) {
-            console.log('🗺️ Application paramètres carte:', profile.map);
+            console.log('Application paramètres carte:', profile.map);
             // Appliquer les paramètres de carte
             if (typeof applyMapSettings === 'function') {
                 applyMapSettings(profile.map);
@@ -797,7 +802,7 @@ class ProfileManager {
         }
 
         if (profile.points) {
-            console.log('📍 Application paramètres points:', profile.points);
+            console.log('Application paramètres points:', profile.points);
             // Appliquer les paramètres des points
             if (typeof applyPointSettings === 'function') {
                 applyPointSettings(profile.points);
@@ -805,7 +810,7 @@ class ProfileManager {
         }
 
         if (profile.animation) {
-            console.log('🎬 Application paramètres animation:', profile.animation);
+            console.log('Application paramètres animation:', profile.animation);
             // Appliquer les paramètres d'animation
             if (typeof applyAnimationSettings === 'function') {
                 applyAnimationSettings(profile.animation);
@@ -813,7 +818,7 @@ class ProfileManager {
         }
 
         if (profile.flash) {
-            console.log('✨ Application paramètres flash:', profile.flash);
+            console.log('Application paramètres flash:', profile.flash);
             // Appliquer les paramètres flash
             if (typeof applyFlashSettings === 'function') {
                 applyFlashSettings(profile.flash);
@@ -864,11 +869,11 @@ class ProfileManager {
                     if (infosCssTextarea) infosCssTextarea.value = cleanedInfosCss;
                 }
             } catch (e) {
-                console.warn('⚠️ Application des paramètres infos: erreur non bloquante', e);
+                console.warn('Application des paramètres infos: erreur non bloquante', e);
             }
         }
 
-        console.log('✅ Profil appliqué avec succès:', profile.name);
+        console.log('Profil appliqué avec succès:', profile.name);
     }
 
     saveCurrentAsProfile() {
@@ -979,7 +984,7 @@ class ProfileManager {
 
     async renameProfileProperly(oldName, newName) {
         try {
-            console.log('🔄 Renommage profil:', oldName, '->', newName);
+            console.log('Renommage profil:', oldName, '->', newName);
 
             // Vérifier si c'était le profil actuellement sélectionné
             const wasCurrentProfile = this.currentProfile && this.currentProfile.name === oldName;
@@ -1007,7 +1012,7 @@ class ProfileManager {
             const result = await this.apiCall(`/api/profiles/${encodeURIComponent(oldName)}`, 'PUT', updatedProfileData);
 
             if (result.success) {
-                console.log('✅ Profil renommé avec succès:', oldName, '->', newName);
+                console.log('Profil renommé avec succès:', oldName, '->', newName);
 
                 // Supprimer l'ancien profil seulement après confirmation de la sauvegarde
                 setTimeout(async () => {
@@ -1106,14 +1111,14 @@ class ProfileManager {
 // Fonctions d'application des paramètres (appelées depuis applyProfile)
 function applyMapSettings(mapOptions) {
     try {
-        console.log('🗺️ Application carte - Provider demandé:', mapOptions.tile_provider);
+        console.log('Application carte - Provider demandé:', mapOptions.tile_provider);
 
         // Changer le fournisseur de carte
         const mapButton = document.querySelector(`a[id="${mapOptions.tile_provider}"]`);
-        console.log('🗺️ Bouton carte trouvé:', !!mapButton, 'ID:', mapOptions.tile_provider);
+        console.log('Bouton carte trouvé:', !!mapButton, 'ID:', mapOptions.tile_provider);
 
         if (mapButton) {
-            console.log('🗺️ Clic sur le bouton carte:', mapOptions.tile_provider);
+            console.log('Clic sur le bouton carte:', mapOptions.tile_provider);
             mapButton.click();
 
             // Attendre un peu puis appliquer les options spécifiques
@@ -1248,7 +1253,7 @@ function applyPointSettings(pointOptions) {
         }
 
         // Appliquer le type de couleur des points
-        console.log('🎨 Application type de couleur des points:', pointOptions.fill_color_type);
+        console.log('Application type de couleur des points:', pointOptions.fill_color_type);
         const fillColorRadio = document.querySelector(`input[name="fillColorPoint"][value="${pointOptions.fill_color_type}"]`);
         if (fillColorRadio) {
             fillColorRadio.checked = true;
@@ -1282,7 +1287,7 @@ function applyPointSettings(pointOptions) {
 
         if (pointOptions.halo) {
             // Activer le type de couleur approprié pour la bordure
-            console.log('🎨 Application type de couleur des bordures:', pointOptions.border_color_type);
+            console.log('Application type de couleur des bordures:', pointOptions.border_color_type);
             const borderColorRadio = document.querySelector(`input[name="borderColorPoint"][value="${pointOptions.border_color_type}"]`);
             if (borderColorRadio) {
                 borderColorRadio.checked = true;
@@ -1321,7 +1326,7 @@ function applyPointSettings(pointOptions) {
             new_border_color: borderColorInput ? borderColorInput.value : 'null'
         });
 
-        console.log('✅ Paramètres des points appliqués avec succès:', pointOptions);
+        console.log('Paramètres des points appliqués avec succès:', pointOptions);
     } catch (error) {
         console.error('❌ Erreur lors de l\'application des paramètres des points:', error);
     }

@@ -1,43 +1,43 @@
 <div id="settings" class="col s12">
-    <h5>⚙️ {{ _("Paramètres généraux") }}</h5>
-    <div class="card-panel blue-grey lighten-5">
+    <h5>{{ _("Paramètres généraux") }}</h5>
+    <div class="card-panel">
         <div class="row">
-        <div class="input-field col s12">
-            <select id="selectLanguage">
-                <option value="en">{{ _("English") }}</option>
-                <option value="fr">{{ _("Français") }}</option>
-            </select>
-            <label>{{ _("Language Choice") }}</label>
-        </div>
+            <div class="input-field col s12 m6">
+                <select id="selectLanguage">
+                    <option value="en">{{ _("English") }}</option>
+                    <option value="fr">{{ _("Français") }}</option>
+                </select>
+                <label>{{ _("Language Choice") }}</label>
+            </div>
 
-        <div class="input-field col s12">
-            <select id="selectCheckVersionOnline">
-                <option value=true>{{ _("Yes") }}</option>
-                <option value=false>{{ _("No") }}</option>
-            </select>
-            <label>{{ _("Check for a new version at startup") }}</label>
-        </div>
+            <div class="input-field col s12 m6">
+                <select id="selectCheckVersionOnline">
+                    <option value=true>{{ _("Yes") }}</option>
+                    <option value=false>{{ _("No") }}</option>
+                </select>
+                <label>{{ _("Check for a new version at startup") }}</label>
+            </div>
 
-        <div class="input-field col s12">
-            <select id="selectDefaultProfile">
-                <!-- Les options seront remplies dynamiquement par JavaScript -->
-            </select>
-            <label>{{ _("Default profile at startup") }}</label>
-        </div>
+            <div class="input-field col s12 m6">
+                <select id="selectDefaultProfile">
+                    <!-- Les options seront remplies dynamiquement par JavaScript -->
+                </select>
+                <label>{{ _("Default profile at startup") }}</label>
+            </div>
 
-            <div class="col s12">
-                <a id="buttonCheckVersion" class="waves-effect waves-light btn blue">
+            <div class="col s12 m6" style="display:flex; gap:10px; align-items:center; margin-top: 8px;">
+                <a id="buttonCheckVersion" class="waves-effect waves-light btn">
                     <i class="material-icons right">system_update</i>{{ _("Check for a new version") }}
                 </a>
-                <a id="buttonHome" class="waves-effect waves-light btn green" target="_blank" style="margin-left: 10px;">
+                <a id="buttonHome" class="waves-effect waves-light btn" target="_blank">
                     <i class="material-icons right">home</i>{{ _("Home") }}
                 </a>
             </div>
         </div>
     </div>
 
-    <h5>🎥 {{ _("Paramètres d'enregistrement") }}</h5>
-    <div class="card-panel blue-grey lighten-5">
+    <h5>{{ _("Paramètres d'enregistrement") }}</h5>
+    <div class="card-panel">
         <div class="row">
             <div class="input-field col s12 m6">
                 <select id="selectRecordMode">

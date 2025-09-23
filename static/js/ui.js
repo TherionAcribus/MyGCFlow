@@ -672,13 +672,13 @@ async function changeOptionsValues() {
         });
 
         if (saveResponse.ok) {
-            console.log('✅ Paramètres sauvegardés côté serveur:', { language: newLanguage, check_updates: currentSettings.check_updates });
+            console.log('Paramètres sauvegardés côté serveur:', { language: newLanguage, check_updates: currentSettings.check_updates });
         } else {
-            console.warn('⚠️ Échec sauvegarde côté serveur, paramètres locaux seulement');
+            console.warn('Échec sauvegarde côté serveur, paramètres locaux seulement');
         }
     } catch (error) {
         console.error('❌ Erreur sauvegarde paramètres côté serveur:', error);
-        console.warn('⚠️ Paramètres sauvegardés localement seulement');
+        console.warn('Paramètres sauvegardés localement seulement');
     }
 
     // Si la langue a changé, afficher la modale de confirmation
@@ -1455,7 +1455,7 @@ function showStartRecordButtons(){
         return;
     }
 
-    console.log("✅ Configuration boutons principaux:");
+    console.log("Configuration boutons principaux:");
     console.log("  Start avant:", window.getComputedStyle(btnStart).display);
     console.log("  Record avant:", window.getComputedStyle(btnRecord).display);
     console.log("  Pause avant:", window.getComputedStyle(btnPause).display);

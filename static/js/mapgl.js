@@ -319,6 +319,22 @@ export function switchLayer(layerName) {
             pkg.selectStamenTonerMapMenu();
             break;
     }
+
+    // Mettre à jour l'état visuel des boutons de cartes
+    try {
+        const buttons = document.getElementsByClassName('changeMap');
+        for (let btn of buttons) {
+            if (btn && btn.classList) {
+                btn.classList.remove('is-selected');
+            }
+        }
+        const active = document.getElementById(layerName);
+        if (active && active.classList) {
+            active.classList.add('is-selected');
+        }
+    } catch (e) {
+        // fail safe : ne casse pas l'app si DOM non présent
+    }
 }
 
 // Événement pour changer la couche de fond de carte
@@ -686,14 +702,14 @@ export function startAnimation(restart=false) {
     // Appliquer plage de dates définie dans l'onglet Animation si présente
     if (pkg.options.animation.dateStart instanceof Date) {
         pkg.metadata.startDate = new Date(pkg.options.animation.dateStart);
-        console.log('[ANIMATION] ✅ Date de début personnalisée appliquée:', pkg.metadata.startDate);
+        console.log('[ANIMATION] Date de début personnalisée appliquée:', pkg.metadata.startDate);
     } else {
         console.log('[ANIMATION] ❌ Pas de date de début personnalisée, utilisation par défaut:', pkg.metadata.startDate);
     }
 
     if (pkg.options.animation.dateEnd instanceof Date) {
         pkg.metadata.endDate = new Date(pkg.options.animation.dateEnd);
-        console.log('[ANIMATION] ✅ Date de fin personnalisée appliquée:', pkg.metadata.endDate);
+        console.log('[ANIMATION] Date de fin personnalisée appliquée:', pkg.metadata.endDate);
     } else {
         console.log('[ANIMATION] ❌ Pas de date de fin personnalisée, utilisation par défaut:', pkg.metadata.endDate);
     }
@@ -796,9 +812,9 @@ export function stopAnimation(){
     console.log('[STOP] Nombre de points filtrés à afficher:', allFilteredPoints.length);
     if (allFilteredPoints.length > 0) {
         displayWebGLPoints(allFilteredPoints, pkg.options.point);
-        console.log('[STOP] ✅ Points affichés avec succès');
+        console.log('[STOP] Points affichés avec succès');
     } else {
-        console.log('[STOP] ⚠️ Aucun point à afficher');
+        console.log('[STOP] Aucun point à afficher');
     }
 
     // Remettre les contrôles UI dans l'état initial
@@ -863,14 +879,14 @@ function startRecordingProcess(){
     if (pkg.options.animation.dateStart instanceof Date) {
         currentDate = new Date(pkg.options.animation.dateStart);
         pkg.metadata.startDate = new Date(pkg.options.animation.dateStart);
-        console.log('[RECORD] ✅ Date de début personnalisée appliquée:', pkg.metadata.startDate);
+        console.log('[RECORD] Date de début personnalisée appliquée:', pkg.metadata.startDate);
     } else {
         currentDate = pkg.metadata.startDate;
         console.log('[RECORD] ❌ Utilisation date de début par défaut:', currentDate);
     }
     if (pkg.options.animation.dateEnd instanceof Date) {
         pkg.metadata.endDate = new Date(pkg.options.animation.dateEnd);
-        console.log('[RECORD] ✅ Date de fin personnalisée appliquée:', pkg.metadata.endDate);
+        console.log('[RECORD] Date de fin personnalisée appliquée:', pkg.metadata.endDate);
     } else {
         console.log('[RECORD] ❌ Utilisation date de fin par défaut:', pkg.metadata.endDate);
     }

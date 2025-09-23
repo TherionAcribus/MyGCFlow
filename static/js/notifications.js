@@ -30,14 +30,14 @@ class NotificationManager {
         toast.className = `gcm-toast ${type}`;
 
         const iconMap = {
-            info: 'ℹ️',
-            success: '✅',
-            warning: '⚠️',
-            error: '❌'
+            info: '',
+            success: '',
+            warning: '',
+            error: ''
         };
 
         toast.innerHTML = `
-            <div class="gcm-toast-icon">${iconMap[type] || 'ℹ️'}</div>
+            <div class="gcm-toast-icon">${iconMap[type] || ''}</div>
             <div class="gcm-toast-content">
                 ${title ? `<div class="gcm-toast-title">${title}</div>` : ''}
                 <div class="gcm-toast-message">${message}</div>
