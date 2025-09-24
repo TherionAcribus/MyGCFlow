@@ -1556,7 +1556,7 @@ function finalizeMediaRecorderVideo(){
         // Orchestration: si normalisation requise, normaliser d'abord, puis mux audio si présent
         const doMux = (videoBlob) => {
             if (audioEnabled && audioFile) {
-                try { pkg.updateTextsModal('Ajout audio', 'Fusion de la piste audio avec la vidéo...'); } catch(_) {}
+                try { pkg.updateTextsModal('Ajout audio', 'Fusion de la piste audio avec la vidéo en cours...'); } catch(_) {}
                 muxRecordedVideoWithAudio(videoBlob, audioFile).then((mixed) => {
                     proceedWith(mixed || videoBlob);
                 }).catch((e) => {
@@ -1704,10 +1704,8 @@ function muxRecordedVideoWithAudio(sourceBlob, audioFile){
             const muxMime = pickMuxMime();
 
             let rec = null; let chunks = [];
-            let progressTimer = null;
 
             const cleanup = () => {
-                try { if (progressTimer) clearInterval(progressTimer); } catch(_) {}
                 try { URL.revokeObjectURL(videoUrl); } catch(_) {}
                 try { if (audioUrl) URL.revokeObjectURL(audioUrl); } catch(_) {}
                 try { if (audioCtx && audioCtx !== window.mrMuxAudioCtx) audioCtx.close(); } catch(_) {}
@@ -1746,15 +1744,6 @@ function muxRecordedVideoWithAudio(sourceBlob, audioFile){
                                 try { resolve(new Blob(chunks, { type: outType })); } catch(e) { resolve(new Blob(chunks)); }
                             };
                             rec.start(Math.max(1000 / fps, 50));
-
-                            // Progression basée sur la lecture vidéo
-                            const duration = video.duration || 0;
-                            progressTimer = setInterval(() => {
-                                try {
-                                    const p = duration > 0 ? Math.min(100, Math.max(0, (video.currentTime / duration) * 100)) : 0;
-                                    pkg.updateProgressBar && pkg.updateProgressBar({ progress: p, message: `Ajout audio ${p.toFixed(1)}%` });
-                                } catch(_) {}
-                            }, 200);
 
                             // Fin: quand la vidéo se termine
                             video.addEventListener('ended', () => {
