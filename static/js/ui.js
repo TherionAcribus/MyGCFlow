@@ -428,17 +428,24 @@ function initOptionsElements() {
     if (inputAudioVolume) inputAudioVolume.addEventListener('input', changeRecordValues);
     inputAudioFile = document.getElementById('inputAudioFile');
     if (inputAudioFile) {
-        // Coche automatiquement la case quand un fichier audio est sélectionné
+        // Gérer la sélection/désélection d'un fichier audio
         inputAudioFile.addEventListener('change', function() {
-            if (this.files && this.files.length > 0 && cbRecordAudioEnable) {
-                cbRecordAudioEnable.checked = true;
+            if (this.files && this.files.length > 0) {
+                // Fichier sélectionné - cocher automatiquement la checkbox
+                if (cbRecordAudioEnable) {
+                    cbRecordAudioEnable.checked = true;
+                }
                 changeRecordValues(); // Met à jour les options
             } else {
-                // Si aucun fichier, délocker la durée audio
+                // Aucun fichier - délocker la durée audio et décocher/désactiver la checkbox
                 isDurationLockedToAudio = false;
                 updateDurationLockIndicator();
+                if (cbRecordAudioEnable) {
+                    cbRecordAudioEnable.checked = false;
+                    cbRecordAudioEnable.disabled = true;
+                }
             }
-            // Activer/désactiver le bouton de durée selon si un fichier est chargé
+            // Activer/désactiver le bouton de durée et la checkbox selon si un fichier est chargé
             updateAudioDurationButton();
         });
     }
@@ -721,7 +728,12 @@ function initOptionsUI() {
             // Restaurer options audio si existantes (désactivé par défaut)
             pkg.options.record = pkg.options.record || {};
             pkg.options.record.audio = pkg.options.record.audio || {};
-            if (cbRecordAudioEnable) cbRecordAudioEnable.checked = !!pkg.options.record.audio.enabled; // False par défaut si non défini
+            if (cbRecordAudioEnable) {
+                // Ne cocher que si explicitement activé ET qu'un fichier est chargé
+                const hasFile = inputAudioFile && inputAudioFile.files && inputAudioFile.files.length > 0;
+                cbRecordAudioEnable.checked = !!pkg.options.record.audio.enabled && hasFile;
+                cbRecordAudioEnable.disabled = !hasFile; // Désactiver si pas de fichier
+            }
             if (inputAudioVolume) inputAudioVolume.value = (typeof pkg.options.record.audio.volume === 'number') ? pkg.options.record.audio.volume : 1;
         } catch(e) { console.warn('Init audio UI error:', e); }
 
@@ -2187,15 +2199,31 @@ function toggleFullscreenFromButton(){
     toggleFullscreenMode();
 }
 
-// Fonction pour activer/désactiver le bouton de durée audio selon si un fichier est chargé
+// Fonction pour activer/désactiver le bouton de durée audio et la checkbox selon si un fichier est chargé
 function updateAudioDurationButton() {
     const btn = document.getElementById('btnSetDurationFromAudio');
     const inputAudio = document.getElementById('inputAudioFile');
-    if (btn && inputAudio) {
-        if (inputAudio.files && inputAudio.files.length > 0) {
+    const cbAudio = document.getElementById('cbRecordAudioEnable');
+    const hasFile = inputAudio && inputAudio.files && inputAudio.files.length > 0;
+
+    // Bouton de durée
+    if (btn) {
+        if (hasFile) {
             btn.classList.remove('disabled');
         } else {
             btn.classList.add('disabled');
+        }
+    }
+
+    // Checkbox
+    if (cbAudio) {
+        cbAudio.disabled = !hasFile;
+        if (!hasFile) {
+            cbAudio.checked = false; // Décocher si pas de fichier
+        }
+        // Si fichier chargé et checkbox pas encore cochée, la cocher (sécurité)
+        if (hasFile && !cbAudio.checked) {
+            cbAudio.checked = true;
         }
     }
 }
