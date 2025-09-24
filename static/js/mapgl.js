@@ -1506,9 +1506,8 @@ function finalizeMediaRecorderVideo(){
         const wantsDownload = !!pkg.options?.record?.mediaRecorder?.downloadLocal;
         const wantsUpload = !!pkg.options?.record?.mediaRecorder?.uploadToServer;
         const slowdown = Math.max(1, parseInt(pkg.options?.record?.mediaRecorder?.slowdownFactor) || 1);
-        const hasAudio = !!mrHadAudio;
         const wantsNorm = !!pkg.options?.record?.mediaRecorder?.offlineNormalization;
-        const doNormalize = wantsNorm && slowdown > 1 && !hasAudio;
+        const doNormalize = wantsNorm && slowdown > 1;
 
         const afterAll = () => {
             // Réactiver boutons et fermer loader
@@ -1549,29 +1548,36 @@ function finalizeMediaRecorderVideo(){
             }
         };
 
-        // Si une musique utilisateur est sélectionnée, faire un muxage post-enregistrement
+        // Audio utilisateur éventuellement sélectionné
         const fileInput = document.getElementById('inputAudioFile');
         const audioFile = fileInput && fileInput.files && fileInput.files[0];
         const audioEnabled = !!(pkg.options?.record?.audio?.enabled);
 
-        if (audioEnabled && audioFile) {
-            try { pkg.updateTextsModal('Ajout audio', 'Fusion de la piste audio avec la vidéo...'); } catch(_) {}
-            muxRecordedVideoWithAudio(blob, audioFile).then((mixed) => {
-                proceedWith(mixed || blob);
-            }).catch((e) => {
-                console.warn('Mux audio échoué, utilisation de la vidéo seule:', e);
-                proceedWith(blob);
-            });
-        } else if (doNormalize) {
+        // Orchestration: si normalisation requise, normaliser d'abord, puis mux audio si présent
+        const doMux = (videoBlob) => {
+            if (audioEnabled && audioFile) {
+                try { pkg.updateTextsModal('Ajout audio', 'Fusion de la piste audio avec la vidéo...'); } catch(_) {}
+                muxRecordedVideoWithAudio(videoBlob, audioFile).then((mixed) => {
+                    proceedWith(mixed || videoBlob);
+                }).catch((e) => {
+                    console.warn('Mux audio échoué, utilisation de la vidéo seule:', e);
+                    proceedWith(videoBlob);
+                });
+            } else {
+                proceedWith(videoBlob);
+            }
+        };
+
+        if (doNormalize) {
             try { pkg.updateTextsModal('Normalisation', `Accélération x${slowdown} pour lecture à vitesse normale...`); } catch(_) {}
             normalizeRecordedVideoSpeed(blob, slowdown).then((normBlob) => {
-                proceedWith(normBlob || blob);
+                doMux(normBlob || blob);
             }).catch((e) => {
-                console.warn('Normalization failed, using original blob:', e);
-                proceedWith(blob);
+                console.warn('Normalization failed, continue without normalization:', e);
+                doMux(blob);
             });
         } else {
-            proceedWith(blob);
+            doMux(blob);
         }
 
     } catch(e) {
