@@ -1635,7 +1635,9 @@ async function startMediaRecorderPipeline(totalDurationMs){
 
     mrRecorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) mrRecordedChunks.push(e.data); };
     mrRecorder.onstop = () => finalizeMediaRecorderVideo();
-    mrRecorder.start(Math.max(1000 / fps, 50));
+    // Utiliser un timeslice plus grand pour réduire le nombre de chunks et la pression GC
+    const timesliceMs = Math.max(200, Number(pkg.options?.record?.mediaRecorder?.timesliceMs) || 1000);
+    mrRecorder.start(timesliceMs);
 
     // Ne pas jouer la musique pendant l'enregistrement (audio différé)
 
@@ -1646,7 +1648,7 @@ async function startMediaRecorderPipeline(totalDurationMs){
     // Démarrer la surveillance des performances
     recordingPerformanceMonitor.startMonitoring();
     
-    mrDrawIntervalId = setInterval(async () => {
+    mrDrawIntervalId = setInterval(() => {
         if (!isMediaRecording || drawing) return;
         drawing = true;
         
@@ -1658,7 +1660,7 @@ async function startMediaRecorderPipeline(totalDurationMs){
             const h = mrOutCanvas.height;
             mrOutCtx.clearRect(0, 0, w, h);
             canvasList.forEach(c => { if (c.width > 0 && c.height > 0) mrOutCtx.drawImage(c, 0, 0, w, h); });
-            await addOverlaysToCanvas(mrOutCtx, w, h);
+            addOverlaysToCanvas(mrOutCtx, w, h);
         } catch(e) {
             console.warn('Composite frame error:', e);
         } finally {
@@ -2049,7 +2051,7 @@ async function captureElement() {
                     });
 
                     // Ajouter les overlays (titre, date, nombre de caches)
-                    await addOverlaysToCanvas(ctx, canvasWidth, canvasHeight);
+                    addOverlaysToCanvas(ctx, canvasWidth, canvasHeight);
 
                     // Convertir en WebP Blob et uploader
                     outCanvas.toBlob((blob) => {
@@ -2137,7 +2139,7 @@ async function captureElement() {
 }
 
 // Fonction pour ajouter les overlays (titre, date, nb caches) au canvas
-async function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight) {
+function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight) {
     try {
         const container = document.getElementById('mapWithFrames');
         if (!container) return;
@@ -2315,13 +2317,17 @@ function displayFeaturesForDate(date, pointOptions, flashOptions, record, infos)
     // Avant : filter() sur tous les points à chaque frame (très lent)
     // Après : lookup instantanée dans Map pré-calculé (très rapide)
 
-    // Afficher tous les points jusqu'à la date courante (caches filtrés restent visibles)
-    const pointsUpToDate = getPointsUpToDate(date);
-    displayWebGLPoints(pointsUpToDate, pointOptions);
+    // IMPORTANT: n'ajouter que les nouveaux points du jour pour éviter l'accumulation de doublons
+    // Les points des jours précédents restent déjà visibles car ajoutés aux itérations antérieures
 
     // Pour l'effet flash, utiliser seulement les points de la date courante
     const dateKey = date.toDateString();
     const featuresForDate = pkg.pointsByDate.get(dateKey) || [];
+
+    // Afficher seulement les points du jour courant
+    if (featuresForDate.length > 0) {
+        displayWebGLPoints(featuresForDate, pointOptions);
+    }
 
     if (flashOptions.mode != "none") {
         // Animation de flash seulement pour les nouvelles features (date courante)
