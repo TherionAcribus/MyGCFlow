@@ -12,6 +12,12 @@ if (btnClearDatabase) {
     btnClearDatabase.addEventListener('click', clearDatabaseWithConfirmation);
 }
 
+// Formulaire de chargement dans la modale de première utilisation
+const btnUploadBddFormModal = document.getElementById('uploadBddFormModal');
+if (btnUploadBddFormModal) {
+    btnUploadBddFormModal.addEventListener('submit', uploadBddRequestFromModal);
+}
+
 export let metadata;
 export let json_data;
 let totalCaches = 0; // total initial (toutes caches de la BDD)
@@ -536,5 +542,133 @@ export function showClearDatabaseButton() {
     const btnClearDatabase = document.getElementById('clearDatabaseBtn');
     if (btnClearDatabase) {
         btnClearDatabase.style.display = 'block';
+    }
+}
+
+// Fonction pour vérifier le statut de la base de données au démarrage et ouvrir la modale si nécessaire
+export function checkDatabaseOnStartup() {
+    fetch(`${CONFIG.BASE_URL}/db_status`)
+        .then(response => response.json())
+        .then(data => {
+            console.log('Statut de la base au démarrage:', data);
+            
+            // Si la base n'existe pas ou est vide, ouvrir la modale de première utilisation
+            if (!data.exists || data.isEmpty) {
+                openFirstUseModal();
+            }
+        })
+        .catch(error => {
+            console.error('Erreur lors de la vérification de la base au démarrage:', error);
+            // En cas d'erreur, ouvrir quand même la modale pour être sûr
+            openFirstUseModal();
+        });
+}
+
+// Fonction pour ouvrir la modale de première utilisation
+function openFirstUseModal() {
+    const modalElement = document.getElementById('modal_first_use');
+    if (modalElement) {
+        const modal = M.Modal.init(modalElement, {
+            dismissible: true,
+            preventScrolling: true
+        });
+        modal.open();
+        console.log('[FIRST_USE] Modale de première utilisation ouverte');
+    }
+}
+
+// Fonction pour gérer le chargement de fichier depuis la modale
+function uploadBddRequestFromModal(e) {
+    e.preventDefault();
+
+    var formData = new FormData();
+    var fileInput = document.getElementById('file-input-modal');
+    
+    if (!fileInput.files[0]) {
+        showError("Veuillez sélectionner un fichier .gpx", "Aucun fichier");
+        return;
+    }
+    
+    formData.append('file', fileInput.files[0]);
+
+    // Afficher un toast de chargement avec progress bar
+    const uploadToast = pkg.showLoadingToast("Chargement du fichier GPX en cours...", "Chargement");
+
+    fetch(`${CONFIG.BASE_URL}/upload`, {
+        method: 'POST',
+        body: formData,
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log("data depuis modale", data);
+        // Masquer le toast et afficher succès
+        pkg.hideToast(uploadToast);
+        showSuccess("Fichier chargé avec succès !", "Chargement terminé");
+
+        // Fermer la modale de première utilisation
+        const modalElement = document.getElementById('modal_first_use');
+        if (modalElement) {
+            const modal = M.Modal.getInstance(modalElement);
+            if (modal) {
+                modal.close();
+            }
+        }
+
+        // Mettre à jour les infos de la BDD
+        readBddValues();
+        
+        // Optionnel : rediriger vers l'onglet de données
+        switchToDataTab();
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        pkg.hideToast(uploadToast);
+        showError("Erreur lors du chargement du fichier", "Erreur");
+    });
+
+    // Démarrer la surveillance du progrès
+    checkLoadingProgressModal(uploadToast);
+}
+
+// Fonction pour surveiller le progrès depuis la modale (similaire à checkLoadingProgress)
+function checkLoadingProgressModal(uploadToast) {
+    fetch(`${CONFIG.BASE_URL}/progressBar`)
+        .then(response => response.json())
+        .then(data => {
+            // Mettre à jour la progress bar du toast
+            pkg.updateToastProgress(uploadToast, data.progress);
+
+            // Mettre à jour le message du toast avec les détails
+            const messageElement = uploadToast.querySelector('.toast-message');
+            if (messageElement && data.message) {
+                messageElement.textContent = data.message;
+            }
+
+            console.log(data.progress);
+            if (data.progress < 100) {
+                setTimeout(() => checkLoadingProgressModal(uploadToast), 200);
+            } else {
+                // Chargement terminé - masquer le toast après un court délai
+                setTimeout(() => {
+                    pkg.hideToast(uploadToast);
+                    showSuccess("Base de données prête !", "Prêt");
+                }, 1000);
+            }
+        })
+        .catch(error => {
+            console.error('Erreur lors de la surveillance du progrès:', error);
+        });
+}
+
+// Fonction pour basculer vers l'onglet de données
+function switchToDataTab() {
+    try {
+        // Cliquer sur l'onglet "Données" pour l'activer
+        const dataTab = document.querySelector('a[href="#data"]');
+        if (dataTab) {
+            dataTab.click();
+        }
+    } catch (e) {
+        console.warn('Impossible de basculer vers l\'onglet de données:', e);
     }
 }

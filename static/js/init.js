@@ -26,6 +26,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     await pkg.requetedefaultGcColors();
     // check la présence d'une BDD et les affiche
     pkg.readBddValues();
+    
+    // Vérifier si la base est vide pour afficher la modale de première utilisation
+    setTimeout(() => {
+        pkg.checkDatabaseOnStartup();
+    }, 500); // Délai pour laisser le temps aux autres initialisations
     // recupération des options par défaut puis on initialise l'interface
     pkg.getDefaultValues().then(async optionsValues => {
         // initialisation de la classe "options"
