@@ -100,6 +100,193 @@ let perfMetrics = {
     captureTimeMs: 0,
     uploadTimeMs: 0,
     startedAt: 0,
+    lastCaptureStart: 0, // Ajouté pour perfMetrics.lastCaptureStart
+};
+
+// Système global de surveillance des performances d'enregistrement
+let recordingPerformanceMonitor = {
+    frameTimings: [],
+    performanceWarningShown: false,
+    lastWarningLevel: 0, // Niveau de la dernière alerte (pour permettre les alertes successives)
+    isMonitoring: false,
+    currentPerformanceToast: null, // Référence au toast de performance actuel
+    
+    reset() {
+        this.frameTimings = [];
+        this.performanceWarningShown = false;
+        this.lastWarningLevel = 0;
+        this.isMonitoring = false;
+        this.currentPerformanceToast = null;
+    },
+    
+    startMonitoring() {
+        this.reset();
+        this.isMonitoring = true;
+    },
+
+    stopMonitoring() {
+        this.isMonitoring = false;
+        // Fermer le toast de performance en cours
+        this.closeCurrentPerformanceToast();
+    },
+    
+    // Fonction pour fermer le toast actuel
+    closeCurrentPerformanceToast() {
+        if (this.currentPerformanceToast) {
+            try {
+                pkg.hideToast && pkg.hideToast(this.currentPerformanceToast);
+            } catch(_) {
+                try { this.currentPerformanceToast.remove(); } catch(_) {}
+            }
+            this.currentPerformanceToast = null;
+        }
+    },
+    
+    // Fonction pour vérifier si le toast existe encore
+    isPerformanceToastVisible() {
+        if (!this.currentPerformanceToast) return false;
+        
+        // Vérifier si l'élément existe encore dans le DOM
+        return document.body.contains(this.currentPerformanceToast);
+    },
+    
+    // Fonction pour mettre à jour le contenu d'un toast existant
+    updatePerformanceToastContent(newMessage, newTitle = 'Performance enregistrement') {
+        if (!this.isPerformanceToastVisible()) return false;
+
+        try {
+            const titleElement = this.currentPerformanceToast.querySelector('.gcm-toast-title');
+            const messageElement = this.currentPerformanceToast.querySelector('.gcm-toast-message');
+
+            if (titleElement) titleElement.textContent = newTitle;
+            if (messageElement) messageElement.textContent = newMessage;
+
+            // Réanimer le toast pour attirer l'attention
+            this.currentPerformanceToast.classList.remove('show');
+            setTimeout(() => {
+                if (this.currentPerformanceToast) {
+                    this.currentPerformanceToast.classList.add('show');
+                }
+            }, 100);
+
+            return true;
+        } catch(err) {
+            return false;
+        }
+    },
+    
+    checkPerformance(frameTime, expectedFrameTime, recordingMode = 'unknown') {
+        if (!this.isMonitoring) return;
+        
+        this.frameTimings.push(frameTime);
+        
+        const PERFORMANCE_CHECK_INTERVAL = 30;
+        const FRAME_TIME_THRESHOLD = expectedFrameTime * 2.5; // 2.5x le temps attendu
+        const BAD_FRAMES_THRESHOLD = 0.2; // 20% de frames lentes = problème
+        
+        if (this.frameTimings.length >= PERFORMANCE_CHECK_INTERVAL) {
+            const slowFrames = this.frameTimings.filter(time => time > FRAME_TIME_THRESHOLD).length;
+            const slowFrameRatio = slowFrames / this.frameTimings.length;
+            
+            // Déterminer le niveau de sévérité (permet plusieurs alertes)
+            const warningLevel = Math.floor(slowFrameRatio * 10); // 0-10 selon pourcentage
+            const shouldAlert = slowFrameRatio > BAD_FRAMES_THRESHOLD && warningLevel > this.lastWarningLevel;
+            
+            if (shouldAlert) {
+                this.lastWarningLevel = warningLevel;
+                const currentSlowdown = Math.max(1, parseInt(pkg.options?.record?.mediaRecorder?.slowdownFactor) || 1);
+                const suggestedSlowdown = Math.min(8, currentSlowdown + 1);
+                
+                
+                if (recordingMode === 'mediarecorder' && suggestedSlowdown <= 8) {
+                    // Offrir d'augmenter automatiquement le ralentissement
+                    const message = `Performance d'enregistrement instable (${Math.round(slowFrameRatio * 100)}% de frames lentes). Souhaitez-vous augmenter le ralentissement à x${suggestedSlowdown} automatiquement ?`;
+                    
+                    // Vérifier si on peut réutiliser le toast existant
+                    if (this.isPerformanceToastVisible()) {
+                        // Mettre à jour le toast existant
+                        const updated = this.updatePerformanceToastContent(message);
+                        if (updated) {
+                            return; // Pas besoin de créer un nouveau toast
+                        } else {
+                            // Échec de la mise à jour, fermer l'ancien
+                            this.closeCurrentPerformanceToast();
+                        }
+                    }
+
+                    // Créer un nouveau toast seulement si nécessaire
+                    try {
+                        if (pkg && pkg.showConfirmation) {
+                            this.currentPerformanceToast = pkg.showConfirmation(
+                                message,
+                                'Performance enregistrement',
+                                () => {
+                                    // Confirmation : augmenter le ralentissement
+                                    try {
+                                        pkg.options.record.mediaRecorder.slowdownFactor = suggestedSlowdown;
+                                        // Sauvegarder dans les paramètres persistants si possible
+                                        try { pkg.saveRecordSettings && pkg.saveRecordSettings(); } catch(_) {}
+                                        // Mettre à jour l'interface
+                                        const slowdownInput = document.getElementById('inputRecordSlowdown');
+                                        if (slowdownInput) slowdownInput.value = suggestedSlowdown;
+                                        
+                                        pkg.showToast && pkg.showToast(`Ralentissement augmenté à x${suggestedSlowdown}. Redémarrez l'enregistrement pour appliquer le changement.`, 'success', 'Paramètre mis à jour', 8000);
+                                    } catch(err) {
+                                        console.error('Erreur lors de l\'application du ralentissement:', err);
+                                        pkg.showToast && pkg.showToast('Erreur lors de la mise à jour du paramètre.', 'error', 'Erreur', 5000);
+                                    }
+                                    this.currentPerformanceToast = null; // Reset après confirmation
+                                },
+                                () => {
+                                    // Annulation : juste afficher un conseil
+                                    pkg.showToast && pkg.showToast(`Vous pouvez manuellement augmenter le ralentissement à x${suggestedSlowdown} dans les paramètres d'enregistrement.`, 'info', 'Conseil', 8000);
+                                    this.currentPerformanceToast = null; // Reset après annulation
+                                }
+                            );
+                        } else {
+                            throw new Error('showConfirmation non disponible');
+                        }
+                    } catch(err) {
+                        // Fallback vers toast simple
+                        const fallbackMessage = `Performance instable (${Math.round(slowFrameRatio * 100)}% de frames lentes). Augmentez le ralentissement à x${suggestedSlowdown} dans les paramètres.`;
+                        
+                        // Même logique pour le fallback
+                        if (this.isPerformanceToastVisible()) {
+                            this.updatePerformanceToastContent(fallbackMessage);
+                        } else if (pkg && pkg.showToast) {
+                            this.currentPerformanceToast = pkg.showToast(fallbackMessage, 'warning', 'Performance enregistrement', 10000);
+                        }
+                    }
+                } else {
+                    // Mode images ou ralentissement déjà au maximum
+                    let suggestion = '';
+                    if (recordingMode === 'mediarecorder') {
+                        suggestion = `Le ralentissement est déjà au maximum (x${currentSlowdown}). Réduisez le nombre de points affichés ou la résolution.`;
+                    } else {
+                        suggestion = `Réduisez la vitesse d'animation (augmentez la durée par jour) ou le nombre de points affichés.`;
+                    }
+                    
+                    const message = `Performance d'enregistrement instable (${Math.round(slowFrameRatio * 100)}% de frames lentes). ${suggestion}`;
+                    
+                    // Même logique pour les suggestions
+                    if (this.isPerformanceToastVisible()) {
+                        this.updatePerformanceToastContent(message);
+                    } else {
+                        try {
+                            if (pkg && pkg.showToast) {
+                                this.currentPerformanceToast = pkg.showToast(message, 'warning', 'Performance enregistrement', 10000);
+                            }
+                        } catch(err) {
+                            // Silencieux en cas d'erreur d'affichage toast
+                        }
+                    }
+                }
+            }
+            
+            // Limiter la taille du buffer 
+            this.frameTimings = this.frameTimings.slice(-PERFORMANCE_CHECK_INTERVAL);
+        }
+    }
 };
 // TEMP
 export let framesPerDay = 30;  
@@ -892,6 +1079,9 @@ export function recordAnimation(){
         return;
     }
 
+    // Démarrer la surveillance des performances pour le mode images
+    recordingPerformanceMonitor.startMonitoring();
+
     // Nettoyage initial du répertoire d'images avant la capture
     const prepToast = pkg.showToast && pkg.showToast('Préparation de l\'enregistrement...', 'info', 'Nettoyage initial', 0);
     fetch(`${CONFIG.BASE_URL}/clear_pictures_directory`, {
@@ -1095,6 +1285,10 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
 
         // Traitement de fin
         isRecording = false; // Marquer la fin de l'enregistrement
+        
+        // Arrêter la surveillance des performances
+        recordingPerformanceMonitor.stopMonitoring();
+        
         try { blockBackgroundAudioPlayback = false; } catch(_) {}
 
         // Fermer le toast de chargement
@@ -1448,9 +1642,15 @@ async function startMediaRecorderPipeline(totalDurationMs){
     // Dessin périodique (compositing)
     let drawing = false;
     const intervalMs = Math.max(4, Math.floor(1000 / fps));
+    
+    // Démarrer la surveillance des performances
+    recordingPerformanceMonitor.startMonitoring();
+    
     mrDrawIntervalId = setInterval(async () => {
         if (!isMediaRecording || drawing) return;
         drawing = true;
+        
+        const frameStart = performance.now();
         try {
             map.renderSync();
             const canvasList = viewport.querySelectorAll('canvas');
@@ -1462,6 +1662,12 @@ async function startMediaRecorderPipeline(totalDurationMs){
         } catch(e) {
             console.warn('Composite frame error:', e);
         } finally {
+            const frameEnd = performance.now();
+            const frameTime = frameEnd - frameStart;
+            
+            // Utiliser le système global de surveillance
+            recordingPerformanceMonitor.checkPerformance(frameTime, intervalMs, 'mediarecorder');
+            
             drawing = false;
         }
     }, intervalMs);
@@ -1484,6 +1690,10 @@ async function startMediaRecorderPipeline(totalDurationMs){
 function stopMediaRecorderPipeline(finalize){
     try { if (mrDrawIntervalId) { clearInterval(mrDrawIntervalId); mrDrawIntervalId = null; } } catch(_) {}
     try { if (mrProgressIntervalId) { clearInterval(mrProgressIntervalId); mrProgressIntervalId = null; } } catch(_) {}
+    
+    // Arrêter la surveillance des performances
+    recordingPerformanceMonitor.stopMonitoring();
+    
     if (mrRecorder && mrRecorder.state !== 'inactive') {
         try { mrRecorder.stop(); } catch(_) {}
     } else if (finalize) {
@@ -1800,7 +2010,8 @@ async function captureElement() {
             return;
         }
 
-        perfMetrics.lastCaptureStart = performance.now();
+        const captureStart = performance.now();
+        perfMetrics.lastCaptureStart = captureStart;
 
         // OPTIMISATION MAJEURE : Capture canvas-only (3-10x plus rapide)
         try {
@@ -1857,6 +2068,12 @@ async function captureElement() {
                             const t1Upload = performance.now();
                             perfMetrics.uploadTimeMs += (t1Upload - t0Upload);
                             perfMetrics.uploadOk += 1;
+                            
+                            // Surveillance des performances pour mode images
+                            const totalCaptureTime = t1Upload - captureStart;
+                            const expectedFrameTime = pkg.options?.animation?.timePerDay || 100; // Temps par jour comme référence
+                            recordingPerformanceMonitor.checkPerformance(totalCaptureTime, expectedFrameTime, 'images');
+                            
                             // Mise à jour du toast de progression plus fréquemment (par frame)
                             try { updateProgress(); } catch(e) {}
                             resolve();
