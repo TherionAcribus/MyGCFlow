@@ -130,11 +130,15 @@ let mrOnFinalizeRestoreTimePerDay = null;
 // Audio lecture seule (hors enregistrement) et audio pour MediaRecorder
 let bgAudioCtx = null, bgAudioEl = null, bgAudioSource = null, bgAudioGain = null, bgAudioActive = false;
 let mrAudioCtx = null, mrAudioSource = null, mrAudioDest = null, mrAudioGain = null, mrAudioEl = null, mrHadAudio = false;
+let blockBackgroundAudioPlayback = false;
+let mrMuxAudioCtx = null; // Contexte audio "déverrouillé" par un geste utilisateur pour le mux post-enregistrement
 
 function startBackgroundMusicIfAny(){
     try {
-        // Si on enregistre via MediaRecorder, c'est un autre pipeline audio
+        // Ne pas jouer pendant l'enregistrement ni si bloqué explicitement
+        if (typeof isRecording !== 'undefined' && isRecording) return;
         if (typeof isMediaRecording !== 'undefined' && isMediaRecording) return;
+        if (blockBackgroundAudioPlayback) return;
 
         const enabled = !!(pkg.options?.record?.audio?.enabled);
         if (!enabled) return;
@@ -969,6 +973,18 @@ function startRecordingProcess(){
 
     // Marquer le début de l'enregistrement
     isRecording = true;
+    // Bloquer la musique de fond pendant la capture d'images et informer l'utilisateur si un fichier audio est chargé
+    try {
+        blockBackgroundAudioPlayback = true;
+        stopBackgroundMusic();
+        const input = document.getElementById('inputAudioFile');
+        const file = input?.files?.[0];
+        const audioEnabled = !!(pkg.options?.record?.audio?.enabled);
+        if (audioEnabled && file) {
+            const name = file.name || 'audio';
+            pkg.showToast && pkg.showToast(`Enregistrement: audio sera ajouté après capture: ${name}`, 'info', 'Audio différé', 4000);
+        }
+    } catch(_) {}
 
     // je fais une copie car plus rapide de gerer une valeur qu'un objet
     framesPerDay = pkg.options.record.framesPerDay
@@ -1079,6 +1095,7 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
 
         // Traitement de fin
         isRecording = false; // Marquer la fin de l'enregistrement
+        try { blockBackgroundAudioPlayback = false; } catch(_) {}
 
         // Fermer le toast de chargement
         try {
@@ -1305,6 +1322,19 @@ function recordAnimationMediaRecorder(){
         return;
     }
 
+    // Empêcher toute lecture de musique pendant l'enregistrement MR
+    try {
+        blockBackgroundAudioPlayback = true;
+        stopBackgroundMusic();
+        const input = document.getElementById('inputAudioFile');
+        const file = input?.files?.[0];
+        const audioEnabled = !!(pkg.options?.record?.audio?.enabled);
+        if (audioEnabled && file) {
+            const name = file.name || 'audio';
+            pkg.showToast && pkg.showToast(`Enregistrement: audio sera ajouté après capture: ${name}`, 'info', 'Audio différé', 4000);
+        }
+    } catch(_) {}
+
     // Préparation carte: points initiaux, animations, etc.
     try { clearMap(); } catch(_) {}
 
@@ -1351,7 +1381,7 @@ function recordAnimationMediaRecorder(){
         }
     } catch(_) {}
 
-    // Démarrer animation timeline existante
+    // Démarrer animation timeline existante (musique bloquée)
     try { startAnimation(true); } catch(_) { startAnimation(); }
 
     // Démarrer capture MediaRecorder
@@ -1400,33 +1430,9 @@ async function startMediaRecorderPipeline(totalDurationMs){
     mrOutCtx = mrOutCanvas.getContext('2d', { willReadFrequently: true });
 
     const canvasStream = mrOutCanvas.captureStream(fps);
-    // Mixage audio utilisateur si disponible
+    // Pas d'audio pendant l'enregistrement MediaRecorder (audio ajouté après)
     mrHadAudio = false;
-    let mixedStream = canvasStream;
-    try {
-        const audioEnabled = !!pkg.options?.record?.audio?.enabled;
-        const volume = Number(pkg.options?.record?.audio?.volume) || 1;
-        const fileInput = document.getElementById('inputAudioFile');
-        const file = fileInput && fileInput.files && fileInput.files[0];
-        if (audioEnabled && file) {
-            mrAudioEl = new Audio(URL.createObjectURL(file));
-            mrAudioEl.preload = 'auto';
-            mrAudioEl.loop = false;
-            mrAudioEl.currentTime = 0;
-
-            const AC = window.AudioContext || window.webkitAudioContext;
-            mrAudioCtx = new AC();
-            mrAudioSource = mrAudioCtx.createMediaElementSource(mrAudioEl);
-            mrAudioGain = mrAudioCtx.createGain();
-            mrAudioGain.gain.value = Math.max(0, Math.min(1, volume));
-            mrAudioDest = mrAudioCtx.createMediaStreamDestination();
-
-            mrAudioSource.connect(mrAudioGain).connect(mrAudioDest);     // vers flux capturé
-            mrAudioSource.connect(mrAudioCtx.destination);                // lecture locale
-            mixedStream = new MediaStream([...canvasStream.getVideoTracks(), ...mrAudioDest.stream.getAudioTracks()]);
-            mrHadAudio = true;
-        }
-    } catch(e) { console.warn('Audio setup failed:', e); }
+    const mixedStream = canvasStream;
 
     mrRecordedChunks = [];
     const abps = Number(pkg.options?.record?.mediaRecorder?.audioBitsPerSecond) || 128000;
@@ -1437,11 +1443,7 @@ async function startMediaRecorderPipeline(totalDurationMs){
     mrRecorder.onstop = () => finalizeMediaRecorderVideo();
     mrRecorder.start(Math.max(1000 / fps, 50));
 
-    // Démarrer la musique (après démarrage du recorder pour éviter désync)
-    if (mrAudioEl && mrAudioCtx) {
-        try { mrAudioCtx.resume().catch(()=>{}); } catch(_) {}
-        mrAudioEl.play().catch((e)=>console.warn('Audio play blocked:', e));
-    }
+    // Ne pas jouer la musique pendant l'enregistrement (audio différé)
 
     // Dessin périodique (compositing)
     let drawing = false;
@@ -1513,6 +1515,8 @@ function finalizeMediaRecorderVideo(){
             try { pkg.updateProgressBar({ progress: 100, message: 'Terminé' }); } catch(_) {}
             setTimeout(() => { try { pkg.closeModalLoading(); } catch(_) {} }, 400);
             pkg.showToast && pkg.showToast('Vidéo prête', 'success', 'Enregistrement');
+            // Débloquer la lecture de fond après enregistrement MR
+            try { blockBackgroundAudioPlayback = false; } catch(_) {}
         };
 
         const proceedWith = (finalBlob) => {
@@ -1545,7 +1549,20 @@ function finalizeMediaRecorderVideo(){
             }
         };
 
-        if (doNormalize) {
+        // Si une musique utilisateur est sélectionnée, faire un muxage post-enregistrement
+        const fileInput = document.getElementById('inputAudioFile');
+        const audioFile = fileInput && fileInput.files && fileInput.files[0];
+        const audioEnabled = !!(pkg.options?.record?.audio?.enabled);
+
+        if (audioEnabled && audioFile) {
+            try { pkg.updateTextsModal('Ajout audio', 'Fusion de la piste audio avec la vidéo...'); } catch(_) {}
+            muxRecordedVideoWithAudio(blob, audioFile).then((mixed) => {
+                proceedWith(mixed || blob);
+            }).catch((e) => {
+                console.warn('Mux audio échoué, utilisation de la vidéo seule:', e);
+                proceedWith(blob);
+            });
+        } else if (doNormalize) {
             try { pkg.updateTextsModal('Normalisation', `Accélération x${slowdown} pour lecture à vitesse normale...`); } catch(_) {}
             normalizeRecordedVideoSpeed(blob, slowdown).then((normBlob) => {
                 proceedWith(normBlob || blob);
@@ -1627,6 +1644,133 @@ function normalizeRecordedVideoSpeed(sourceBlob, factor){
             video.addEventListener('error', (e) => {
                 cleanup();
                 reject(new Error('Erreur lecture vidéo pour normalisation'));
+            });
+        } catch(e) {
+            reject(e);
+        }
+    });
+}
+
+function muxRecordedVideoWithAudio(sourceBlob, audioFile){
+    return new Promise((resolve, reject) => {
+        try {
+            const video = document.createElement('video');
+            video.muted = true; // pas de sortie audio à l'écran
+            video.playsInline = true;
+            video.preload = 'auto';
+            const videoUrl = URL.createObjectURL(sourceBlob);
+            video.src = videoUrl;
+
+            // Préparer chargement/décodage audio (WebAudio, pas d'élément <audio>)
+            const AC = window.AudioContext || window.webkitAudioContext;
+            let audioCtx = window.mrMuxAudioCtx || null, audioGain = null, audioDest = null, audioBuffer = null, audioNode = null;
+            let audioUrl = null; // conservé pour cleanup si nécessaire
+            const loadAudioBuffer = async () => {
+                const arr = await audioFile.arrayBuffer();
+                if (!audioCtx) audioCtx = new AC();
+                audioGain = audioCtx.createGain();
+                audioGain.gain.value = Math.max(0, Math.min(1, Number(pkg.options?.record?.audio?.volume) || 1));
+                audioDest = audioCtx.createMediaStreamDestination();
+                audioGain.connect(audioDest);
+                audioBuffer = await audioCtx.decodeAudioData(arr);
+                audioNode = audioCtx.createBufferSource();
+                audioNode.buffer = audioBuffer;
+                audioNode.connect(audioGain);
+            };
+
+            const fps = Number(pkg.options?.record?.fps) || 24;
+            const vbps = Number(pkg.options?.record?.mediaRecorder?.videoBitsPerSecond) || 6000000;
+            const abps = Number(pkg.options?.record?.mediaRecorder?.audioBitsPerSecond) || 128000;
+
+            // Choisir un mime compatible audio (opus)
+            const pickMuxMime = () => {
+                const candidates = [
+                    'video/webm;codecs=vp9,opus',
+                    'video/webm;codecs=vp8,opus',
+                    'video/webm;codecs=opus',
+                    'video/webm'
+                ];
+                for (const m of candidates) {
+                    try { if (MediaRecorder.isTypeSupported(m)) return m; } catch(_) {}
+                }
+                return '';
+            };
+            const muxMime = pickMuxMime();
+
+            let rec = null; let chunks = [];
+            let progressTimer = null;
+
+            const cleanup = () => {
+                try { if (progressTimer) clearInterval(progressTimer); } catch(_) {}
+                try { URL.revokeObjectURL(videoUrl); } catch(_) {}
+                try { if (audioUrl) URL.revokeObjectURL(audioUrl); } catch(_) {}
+                try { if (audioCtx && audioCtx !== window.mrMuxAudioCtx) audioCtx.close(); } catch(_) {}
+                try { if (rec && rec.state !== 'inactive') rec.stop(); } catch(_) {}
+            };
+
+            video.addEventListener('loadedmetadata', () => {
+                try {
+                    const vStream = (typeof video.captureStream === 'function') ? video.captureStream(fps) : null;
+                    if (!vStream) { cleanup(); reject(new Error('captureStream non supporté pour mux audio')); return; }
+
+                    // Charger et préparer le buffer audio
+                    // (pas de sortie vers destination pour rester silencieux)
+                    // Utiliser des promesses pour garantir l'ordre
+                    Promise.resolve()
+                        .then(() => loadAudioBuffer())
+                        .then(() => {
+                            // Composer flux (vidéo + piste audio)
+                            const composed = new MediaStream([
+                                ...vStream.getVideoTracks(),
+                                ...audioDest.stream.getAudioTracks()
+                            ]);
+
+                            // Debug: vérifier présence des pistes
+                            try {
+                                console.log('[MUX] tracks video:', vStream.getVideoTracks().length, 'audio:', audioDest.stream.getAudioTracks().length, 'mime:', muxMime);
+                            } catch(_) {}
+
+                            const mrOpts = { videoBitsPerSecond: vbps, audioBitsPerSecond: abps };
+                            if (muxMime) mrOpts.mimeType = muxMime;
+                            rec = new MediaRecorder(composed, mrOpts);
+                            rec.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunks.push(e.data); };
+                            rec.onstop = () => {
+                                cleanup();
+                                const outType = muxMime || 'video/webm';
+                                try { resolve(new Blob(chunks, { type: outType })); } catch(e) { resolve(new Blob(chunks)); }
+                            };
+                            rec.start(Math.max(1000 / fps, 50));
+
+                            // Progression basée sur la lecture vidéo
+                            const duration = video.duration || 0;
+                            progressTimer = setInterval(() => {
+                                try {
+                                    const p = duration > 0 ? Math.min(100, Math.max(0, (video.currentTime / duration) * 100)) : 0;
+                                    pkg.updateProgressBar && pkg.updateProgressBar({ progress: p, message: `Ajout audio ${p.toFixed(1)}%` });
+                                } catch(_) {}
+                            }, 200);
+
+                            // Fin: quand la vidéo se termine
+                            video.addEventListener('ended', () => {
+                                try { rec && rec.state !== 'inactive' && rec.stop(); } catch(_) {}
+                            });
+
+                            // Démarrer la lecture silencieuse
+                            try { audioCtx.resume().catch(()=>{}); } catch(_) {}
+                            try { video.currentTime = 0; } catch(_) {}
+                            try { audioNode.start(0); } catch(_) {}
+                            video.play().catch(err => { cleanup(); reject(err); });
+                        })
+                        .catch((e) => { cleanup(); reject(e); });
+                } catch(e) {
+                    cleanup();
+                    reject(e);
+                }
+            });
+
+            video.addEventListener('error', (e) => {
+                cleanup();
+                reject(new Error('Erreur lecture vidéo pour mux audio'));
             });
         } catch(e) {
             reject(e);

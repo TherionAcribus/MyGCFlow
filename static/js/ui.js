@@ -425,6 +425,14 @@ function initOptionsElements() {
     const btnSetDurationFromAudio = document.getElementById('btnSetDurationFromAudio');
     if (btnSetDurationFromAudio) {
         btnSetDurationFromAudio.addEventListener('click', async function() {
+            try {
+                // Pré-déverrouiller un AudioContext global si nécessaire pour le mux post-enregistrement
+                if (typeof window.mrMuxAudioCtx === 'undefined' || !window.mrMuxAudioCtx) {
+                    const AC = window.AudioContext || window.webkitAudioContext;
+                    window.mrMuxAudioCtx = new AC();
+                    try { window.mrMuxAudioCtx.resume().catch(()=>{}); } catch(_) {}
+                }
+            } catch(_) {}
             if (inputAudioFile && inputAudioFile.files && inputAudioFile.files.length > 0) {
                 try {
                     const audioDurationSec = await getAudioDuration(inputAudioFile.files[0]);
