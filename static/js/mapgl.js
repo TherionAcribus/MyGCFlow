@@ -2230,23 +2230,14 @@ async function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight) {
             }
         } catch(_) {}
 
-        // Infos: construire les lignes en fonction des options (date / caches)
+        // Infos: utiliser le contenu textuel de l'élément HTML pour respecter la structure originale
         try {
             const infosEl = document.getElementById('infosFrame');
             if (infosEl && infosEl.style.display !== 'none') {
-                const lines = [];
-                const showDate = !!(pkg.options?.infos?.currentDate?.display);
-                const showCaches = !!(pkg.options?.infos?.numberOfCaches?.display);
-                if (showDate && typeof currentDate !== 'undefined' && currentDate) {
-                    lines.push(currentDate.toLocaleDateString('fr-FR'));
-                }
-                if (showCaches) {
-                    const cacheCount = (typeof infos !== 'undefined' && infos && typeof infos.cacheNumber !== 'undefined') ? infos.cacheNumber : 0;
-                    // Garder la même convention que l'UI: nombre seul (le libellé est déjà dans l'UI si besoin)
-                    lines.push(String(cacheCount));
-                }
-                if (lines.length > 0) {
-                    renderStyledElement(infosEl, lines);
+                // Récupérer le contenu textuel tel qu'il est affiché à l'écran (respecte la structure HTML)
+                const infosText = infosEl.textContent || infosEl.innerText || '';
+                if (infosText.trim()) {
+                    renderStyledElement(infosEl, infosText.trim());
                 }
             }
         } catch(_) {}
