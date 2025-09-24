@@ -1615,12 +1615,13 @@ async function startMediaRecorderPipeline(totalDurationMs){
     const fps = Number(pkg.options.record?.fps) || 24;
     const mime = pkg.options?.record?.mediaRecorder?.mimeType || 'video/webm;codecs=vp9';
     const vbps = Number(pkg.options?.record?.mediaRecorder?.videoBitsPerSecond) || 6000000;
+    const scaleFactor = Math.max(1, Math.min(3, Number(pkg.options?.record?.mediaRecorder?.scaleFactor) || 1));
 
     const viewport = map.getViewport();
     const rect = viewport.getBoundingClientRect();
     mrOutCanvas = document.createElement('canvas');
-    mrOutCanvas.width = Math.max(1, Math.floor(rect.width));
-    mrOutCanvas.height = Math.max(1, Math.floor(rect.height));
+    mrOutCanvas.width = Math.max(1, Math.floor(rect.width * scaleFactor));
+    mrOutCanvas.height = Math.max(1, Math.floor(rect.height * scaleFactor));
     mrOutCtx = mrOutCanvas.getContext('2d', { willReadFrequently: true });
 
     const canvasStream = mrOutCanvas.captureStream(fps);
@@ -1660,7 +1661,7 @@ async function startMediaRecorderPipeline(totalDurationMs){
             const h = mrOutCanvas.height;
             mrOutCtx.clearRect(0, 0, w, h);
             canvasList.forEach(c => { if (c.width > 0 && c.height > 0) mrOutCtx.drawImage(c, 0, 0, w, h); });
-            addOverlaysToCanvas(mrOutCtx, w, h);
+            addOverlaysToCanvas(mrOutCtx, w, h, scaleFactor);
         } catch(e) {
             console.warn('Composite frame error:', e);
         } finally {
@@ -2050,8 +2051,8 @@ async function captureElement() {
                         }
                     });
 
-                    // Ajouter les overlays (titre, date, nombre de caches)
-                    addOverlaysToCanvas(ctx, canvasWidth, canvasHeight);
+                    // Ajouter les overlays (titre, date, nombre de caches) - scaleFactor 1 car pipeline images n'utilise pas le suréchantillonnage
+                    addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, 1);
 
                     // Convertir en WebP Blob et uploader
                     outCanvas.toBlob((blob) => {
@@ -2139,7 +2140,7 @@ async function captureElement() {
 }
 
 // Fonction pour ajouter les overlays (titre, date, nb caches) au canvas
-function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight) {
+function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor = 1) {
     try {
         const container = document.getElementById('mapWithFrames');
         if (!container) return;
@@ -2152,21 +2153,26 @@ function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight) {
             if (!lines || (Array.isArray(lines) && lines.length === 0)) return;
 
             const rect = el.getBoundingClientRect();
-            const x = Math.round(rect.left - containerRect.left);
-            const y = Math.round(rect.top - containerRect.top);
-            const w = Math.round(rect.width);
-            const h = Math.round(rect.height);
+            const x = Math.round((rect.left - containerRect.left) * scaleFactor);
+            const y = Math.round((rect.top - containerRect.top) * scaleFactor);
+            const w = Math.round(rect.width * scaleFactor);
+            const h = Math.round(rect.height * scaleFactor);
             const style = window.getComputedStyle(el);
 
             // Lire styles
             const bg = style.backgroundColor || 'rgba(255,255,255,1)';
             const color = style.color || '#000';
             const radius = parseFloat(style.borderRadius) || 0;
-            const padL = parseFloat(style.paddingLeft) || 0;
-            const padR = parseFloat(style.paddingRight) || 0;
-            const padT = parseFloat(style.paddingTop) || 0;
-            const padB = parseFloat(style.paddingBottom) || 0;
-            const font = style.font && style.font !== '' ? style.font : `${style.fontWeight || 'normal'} ${style.fontSize || '16px'} ${style.fontFamily || 'Arial'}`;
+            const padL = (parseFloat(style.paddingLeft) || 0) * scaleFactor;
+            const padR = (parseFloat(style.paddingRight) || 0) * scaleFactor;
+            const padT = (parseFloat(style.paddingTop) || 0) * scaleFactor;
+            const padB = (parseFloat(style.paddingBottom) || 0) * scaleFactor;
+            // Mise à l'échelle de la police
+            const fontSizePx = parseFloat(style.fontSize) || 16;
+            const fontSizeScaled = (fontSizePx * scaleFactor) + 'px';
+            const fontFamily = style.fontFamily || 'Arial';
+            const fontWeight = style.fontWeight || 'normal';
+            const font = `${fontWeight} ${fontSizeScaled} ${fontFamily}`;
             const textAlignCss = style.textAlign || 'left';
 
             // Box-shadow (simple parse)
@@ -2177,9 +2183,9 @@ function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight) {
                 const parts = shadow.match(/(rgba?\([^\)]+\))\s+([-0-9.]+)px\s+([-0-9.]+)px\s+([-0-9.]+)px/);
                 if (parts) {
                     shColor = parts[1];
-                    shOffX = parseFloat(parts[2]);
-                    shOffY = parseFloat(parts[3]);
-                    shBlur = parseFloat(parts[4]);
+                    shOffX = parseFloat(parts[2]) * scaleFactor;
+                    shOffY = parseFloat(parts[3]) * scaleFactor;
+                    shBlur = parseFloat(parts[4]) * scaleFactor;
                 }
             }
 
@@ -2204,8 +2210,8 @@ function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight) {
             }
             const texts = Array.isArray(lines) ? lines : [String(lines)];
             const innerH = Math.max(0, h - padT - padB);
-            const lineGap = 18; // px entre lignes
-            let currentY = y + padT + 14; // marge supérieure + première ligne
+            const lineGap = Math.round(18 * scaleFactor); // px entre lignes
+            let currentY = y + padT + Math.round(14 * scaleFactor); // marge supérieure + première ligne
 
             texts.forEach((text) => {
                 if (!text) return;

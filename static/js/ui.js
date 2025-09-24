@@ -23,7 +23,7 @@ var inputTitleCss, inputInfosCss, btnTitleCss, btnInfosCss;
 var spanNbCaches, spanCurrentDate;
 var selectLanguage, selectCheckVersionOnline, buttonCheckVersion, buttonHome;
 // Enregistrement
-var selectRecordMode, inputRecordFps, inputRecordBitrate, selectRecordMime, inputRecordSlowdown, cbRecordUpload, cbRecordDownload;
+var selectRecordMode, inputRecordFps, inputRecordBitrate, selectRecordMime, inputRecordSlowdown, inputRecordScaleFactor, cbRecordUpload, cbRecordDownload;
 var cbRecordAudioEnable, inputAudioFile, inputAudioVolume;
 // Flag pour savoir si la durée totale est définie depuis la musique
 var isDurationLockedToAudio = false;
@@ -417,6 +417,8 @@ function initOptionsElements() {
     }
     inputRecordSlowdown = document.getElementById('inputRecordSlowdown');
     if (inputRecordSlowdown) inputRecordSlowdown.addEventListener('input', changeRecordValues);
+    inputRecordScaleFactor = document.getElementById('inputRecordScaleFactor');
+    if (inputRecordScaleFactor) inputRecordScaleFactor.addEventListener('input', changeRecordValues);
     cbRecordUpload = document.getElementById('cbRecordUpload');
     if (cbRecordUpload) cbRecordUpload.addEventListener('change', changeRecordValues);
     cbRecordDownload = document.getElementById('cbRecordDownload');
@@ -723,6 +725,7 @@ function initOptionsUI() {
             M.FormSelect.init(selectRecordMime);
         }
         if (inputRecordSlowdown) inputRecordSlowdown.value = (pkg.options.record?.mediaRecorder?.slowdownFactor) || 1;
+        if (inputRecordScaleFactor) inputRecordScaleFactor.value = (pkg.options.record?.mediaRecorder?.scaleFactor) || 1;
         if (cbRecordUpload) cbRecordUpload.checked = !!(pkg.options.record?.mediaRecorder?.uploadToServer);
         if (cbRecordDownload) cbRecordDownload.checked = !!(pkg.options.record?.mediaRecorder?.downloadLocal);
 
@@ -818,6 +821,10 @@ function changeRecordValues() {
             const sd = Math.max(1, parseInt(inputRecordSlowdown.value) || 1);
             pkg.options.record.mediaRecorder.slowdownFactor = sd;
         }
+        if (inputRecordScaleFactor && inputRecordScaleFactor.value !== '') {
+            const sc = Math.max(1, Math.min(3, parseFloat(inputRecordScaleFactor.value) || 1));
+            pkg.options.record.mediaRecorder.scaleFactor = sc;
+        }
         if (cbRecordUpload) {
             pkg.options.record.mediaRecorder.uploadToServer = !!cbRecordUpload.checked;
         }
@@ -866,6 +873,8 @@ function saveRecordSettings() {
                 uploadToServer: pkg.options.record?.mediaRecorder?.uploadToServer || true,
                 downloadLocal: pkg.options.record?.mediaRecorder?.downloadLocal || true,
                 offlineNormalization: pkg.options.record?.mediaRecorder?.offlineNormalization || true
+                ,
+                scaleFactor: pkg.options.record?.mediaRecorder?.scaleFactor || 1
             },
             audio: {
                 enabled: pkg.options.record?.audio?.enabled || false,
@@ -896,6 +905,7 @@ function loadRecordSettings() {
                 pkg.options.record.mediaRecorder.uploadToServer = recordSettings.mediaRecorder?.uploadToServer ?? true;
                 pkg.options.record.mediaRecorder.downloadLocal = recordSettings.mediaRecorder?.downloadLocal ?? true;
                 pkg.options.record.mediaRecorder.offlineNormalization = recordSettings.mediaRecorder?.offlineNormalization ?? true;
+                pkg.options.record.mediaRecorder.scaleFactor = recordSettings.mediaRecorder?.scaleFactor || 1;
                 // Audio utilisateur
                 pkg.options.record.audio = pkg.options.record.audio || {};
                 pkg.options.record.audio.enabled = recordSettings.audio?.enabled || false;

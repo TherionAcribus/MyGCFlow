@@ -58,6 +58,10 @@
                 <input id="inputRecordSlowdown" type="number" min="1" step="1" class="validate" value="1">
                 <label class="active" for="inputRecordSlowdown">{{ _("Ralentir par (x)") }}</label>
             </div>
+            <div class="input-field col s6 m3 mediarecorder-only">
+                <input id="inputRecordScaleFactor" type="number" min="1" max="3" step="0.25" class="validate">
+                <label for="inputRecordScaleFactor">{{ _("Facteur d'échelle (qualité)") }}</label>
+            </div>
             <div class="input-field col s12 m6 mediarecorder-only">
                 <select id="selectRecordMime">
                     <option value="video/webm;codecs=vp9">{{ _("VP9 (recommandé - haute qualité)") }}</option>
