@@ -92,6 +92,9 @@ function uploadBdd (){
 
         // mets à jour les infos de la BDD
         readBddValues();
+        
+        // Charger et afficher les points sur la carte
+        loadAndDisplayPoints();
     })
     .catch(error => {
         console.error('Error:', error);
@@ -617,6 +620,9 @@ function uploadBddRequestFromModal(e) {
         // Mettre à jour les infos de la BDD
         readBddValues();
         
+        // Charger et afficher les points sur la carte
+        loadAndDisplayPoints();
+        
         // Optionnel : rediriger vers l'onglet de données
         switchToDataTab();
     })
@@ -657,6 +663,49 @@ function checkLoadingProgressModal(uploadToast) {
         })
         .catch(error => {
             console.error('Erreur lors de la surveillance du progrès:', error);
+        });
+}
+
+// Fonction pour charger et afficher les points sur la carte après chargement de fichier
+function loadAndDisplayPoints() {
+    console.log('[LOAD_POINTS] Chargement des points après upload...');
+    
+    fetch(`${CONFIG.BASE_URL}/get_geojson_points`)
+        .then(response => response.json())
+        .then(data => {
+            console.log('[LOAD_POINTS] Données GeoJSON reçues:', data);
+            
+            json_data = data.geojson;
+            metadata = data.metadata;
+
+            // Mémoriser le total de caches initial
+            totalCaches = metadata.numberOfCaches || (data.geojson?.features?.length || 0);
+
+            // Pré-calcul de l'index des points par date pour optimiser l'animation
+            buildPointsByDateIndex(data.geojson.features);
+
+            // conversion en objet date
+            dateStrToDate();
+            // MAJ des frames Infos
+            pkg.updateInfosFrameAfterReadBdd(metadata);
+            // MAJ du menu d'animation
+            pkg.updateAnimationMenuAfterReadBdd(metadata);
+            // mise à jour des Date Pickers de l'ui (filtre BDD)
+            pkg.setPickerDates(metadata)
+            // mise à jour des options en fonction de la BDD (dates début et fin)
+            updateOptionsValues(metadata);
+            
+            // Ajouter les points à la carte
+            pkg.addVector(data.geojson);
+
+            // Mettre à jour le compteur : sélection = total au chargement initial
+            updateFiltersCounter(metadata.numberOfCaches || 0, totalCaches);
+            
+            console.log('[LOAD_POINTS] Points affichés sur la carte');
+        })
+        .catch(error => {
+            console.error('[LOAD_POINTS] Erreur lors du chargement des points:', error);
+            showError("Erreur lors de l'affichage des points sur la carte", "Erreur d'affichage");
         });
 }
 
