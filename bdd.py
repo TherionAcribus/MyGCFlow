@@ -137,14 +137,54 @@ def get_progress_step():
 
 
 def db_infos(Geocache):
-    """UTilisé pour voir si une BDD existe. Pour l'instant uniquement pour la BDD SQLLite geocaching.db"""
+    """Utilisé pour voir si une BDD existe et obtenir ses informations détaillées"""
     db_path = 'instance/geocaching.db'  # Chemin de la base de données
     exists = database_exists(db_path)
     size = get_database_size(db_path)
+    
     if exists:
-        startDate, endDate = get_database_start_end(Geocache)
-        return jsonify({'exists': exists, 'size': size, 'startDate': startDate, 'endDate': endDate})
-    return jsonify({'exists': exists, 'size': size, 'startDate': None, 'endDate': None})
+        # Compter le nombre total d'entrées
+        total_points = Geocache.query.count()
+        
+        if total_points > 0:
+            # Base de données existe et contient des données
+            startDate, endDate = get_database_start_end(Geocache)
+            # Date de dernière modification du fichier de base de données
+            import datetime
+            modification_time = os.path.getmtime(db_path)
+            load_date = datetime.datetime.fromtimestamp(modification_time).strftime('%Y-%m-%d %H:%M:%S')
+            
+            return jsonify({
+                'exists': exists, 
+                'size': size, 
+                'isEmpty': False,
+                'totalPoints': total_points,
+                'startDate': startDate, 
+                'endDate': endDate,
+                'loadDate': load_date
+            })
+        else:
+            # Base de données existe mais est vide
+            return jsonify({
+                'exists': exists, 
+                'size': size, 
+                'isEmpty': True,
+                'totalPoints': 0,
+                'startDate': None, 
+                'endDate': None,
+                'loadDate': None
+            })
+    else:
+        # Base de données n'existe pas
+        return jsonify({
+            'exists': exists, 
+            'size': 0, 
+            'isEmpty': None,  # N/A car n'existe pas
+            'totalPoints': 0,
+            'startDate': None, 
+            'endDate': None,
+            'loadDate': None
+        })
 
 
 def get_database_size(db_path):

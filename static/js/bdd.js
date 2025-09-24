@@ -141,30 +141,123 @@ export function readBddValues() {
 
 // affiche le texte d'information sur la BDD
 function showBddInfos(data){
-    let infos = ""
-    if (data.exists){
-        infos = "La base de données SQL Lite est disponible."
+    const divInfosBDD = document.getElementById('infosBDD');
+    let htmlContent = '';
+    
+    if (!data.exists) {
+        // Base de données n'existe pas
+        htmlContent = `
+            <div class="chip red lighten-4 red-text">
+                <i class="material-icons tiny">error</i>
+                Base de données non trouvée
+            </div>
+            <p class="grey-text">
+                La base de données SQLite n'existe pas encore. 
+                Commencez par charger un fichier .gpx avec vos trouvailles.
+            </p>
+        `;
+        divInfosBDD.className = 'mt-3';
+        
+    } else if (data.isEmpty) {
+        // Base de données existe mais est vide
+        htmlContent = `
+            <div class="chip orange lighten-4 orange-text">
+                <i class="material-icons tiny">warning</i>
+                Base de données vide
+            </div>
+            <p class="grey-text">
+                La base de données SQLite existe mais ne contient aucune donnée.<br>
+                Taille du fichier : <strong>${formatFileSize(data.size)}</strong>
+            </p>
+            <p class="grey-text">
+                Chargez un fichier .gpx pour commencer à utiliser l'application.
+            </p>
+        `;
+        divInfosBDD.className = 'mt-3';
+        
     } else {
-        infos = "La base de données SQL Lite n'est pas disponible. Quelque chose s'est mal déroulé lors de l'initialisation du programme."
-    }
-
-    if (data.size > 0){
-        infos += " La base de données fait " + data.size + " octets."
+        // Base de données existe et contient des données
+        htmlContent = `
+            <div class="chip green lighten-4 green-text">
+                <i class="material-icons tiny">check_circle</i>
+                Base de données chargée
+            </div>
+            <div class="db-info-grid" style="margin-top: 10px;">
+                <div class="row" style="margin-bottom: 5px;">
+                    <div class="col s6">
+                        <span class="grey-text text-darken-1">Nombre de points :</span>
+                    </div>
+                    <div class="col s6">
+                        <strong>${data.totalPoints.toLocaleString()}</strong>
+                    </div>
+                </div>
+                
+                <div class="row" style="margin-bottom: 5px;">
+                    <div class="col s6">
+                        <span class="grey-text text-darken-1">Taille du fichier :</span>
+                    </div>
+                    <div class="col s6">
+                        <strong>${formatFileSize(data.size)}</strong>
+                    </div>
+                </div>
+                
+                ${data.loadDate ? `
+                <div class="row" style="margin-bottom: 5px;">
+                    <div class="col s6">
+                        <span class="grey-text text-darken-1">Dernière mise à jour :</span>
+                    </div>
+                    <div class="col s6">
+                        <strong>${formatDate(data.loadDate)}</strong>
+                    </div>
+                </div>
+                ` : ''}
+                
+                ${data.startDate && data.endDate ? `
+                <div class="row" style="margin-bottom: 5px;">
+                    <div class="col s6">
+                        <span class="grey-text text-darken-1">Période couverte :</span>
+                    </div>
+                    <div class="col s6">
+                        <strong>${formatDate(data.startDate)} - ${formatDate(data.endDate)}</strong>
+                    </div>
+                </div>
+                ` : ''}
+            </div>
+        `;
+        divInfosBDD.className = 'mt-3';
+        
         // Afficher le bouton de vidage si la base de données contient des données
         showClearDatabaseButton();
-    } else {
-        infos += " La base de données est vide. Vous devez commencer par ajouter un nouveau fichier .gpx avec vos trouvailles. EXPLICATIONS "
     }
+    
+    divInfosBDD.innerHTML = htmlContent;
+}
 
-    if (data.exists){
-        infos += "\n 1er enregistrement : " + data.startDate + "\n Dernier enregistrement : " + data.endDate
-    } else {
-        infos += " La base de données est vide. Vous devez commencer par ajouter un nouveau fichier .gpx avec vos trouvailles. EXPLICATIONS "
+// Fonction utilitaire pour formater la taille de fichier
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Fonction utilitaire pour formater les dates
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    
+    try {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('fr-FR', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    } catch (e) {
+        return dateString; // Retourner la chaîne originale si le parsing échoue
     }
-
-    const divInfosBDD = document.getElementById('infosBDD');
-
-    divInfosBDD.innerHTML = infos;
 }
 
 // Pré-calcule l'index des points par date pour optimiser l'animation
@@ -417,11 +510,8 @@ function updateUIAfterClear() {
     }
     
     // Mettre à jour les informations de la base de données
-    const divInfosBDD = document.getElementById('infosBDD');
-    if (divInfosBDD) {
-        divInfosBDD.textContent = 'Aucune base de données chargée';
-        divInfosBDD.className = 'mt-3 grey-text text-darken-2';
-    }
+    // Relancer la vérification du statut de la base de données pour afficher l'état correct
+    readBddValues();
     
     // Réinitialiser le compteur de filtres
     updateFiltersCounter(0, 0);
