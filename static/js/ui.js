@@ -25,6 +25,24 @@ var selectLanguage, selectCheckVersionOnline, buttonCheckVersion, buttonHome;
 // Enregistrement
 var selectRecordMode, inputRecordFps, inputRecordBitrate, selectRecordMime, inputRecordSlowdown, cbRecordUpload, cbRecordDownload;
 var cbRecordAudioEnable, inputAudioFile, inputAudioVolume;
+// Flag pour savoir si la durée totale est définie depuis la musique
+var isDurationLockedToAudio = false;
+
+// Fonction pour mettre à jour l'apparence du label selon si la durée est lockée
+function updateDurationLockIndicator() {
+    const label = document.getElementById('labelTotalTime');
+    if (label) {
+        if (isDurationLockedToAudio) {
+            const lockedText = label.getAttribute('data-locked-text') || 'Temps total (minutes) - défini par musique';
+            label.innerHTML = '<i class="material-icons" style="font-size:14px; vertical-align:middle;">music_note</i> ' + lockedText;
+            label.style.color = '#2196F3'; // Bleu Material Design
+        } else {
+            const normalText = label.getAttribute('data-normal-text') || 'Temps total (minutes)';
+            label.innerHTML = normalText;
+            label.style.color = ''; // Couleur par défaut
+        }
+    }
+}
 
 // États de l'application
 var isAnimationRunning = false;
@@ -415,6 +433,10 @@ function initOptionsElements() {
             if (this.files && this.files.length > 0 && cbRecordAudioEnable) {
                 cbRecordAudioEnable.checked = true;
                 changeRecordValues(); // Met à jour les options
+            } else {
+                // Si aucun fichier, délocker la durée audio
+                isDurationLockedToAudio = false;
+                updateDurationLockIndicator();
             }
             // Activer/désactiver le bouton de durée selon si un fichier est chargé
             updateAudioDurationButton();
@@ -441,10 +463,14 @@ function initOptionsElements() {
                         const audioDurationMin = audioDurationSec / 60;
                         inputTotalTime.value = audioDurationMin.toFixed(2);
 
+                        // Marquer que la durée est maintenant lockée à la musique
+                        isDurationLockedToAudio = true;
+                        updateDurationLockIndicator();
+
                         // Recalculer le temps par jour basé sur cette nouvelle durée totale
                         updateTimePerDay();
 
-                        console.log(`Durée audio appliquée: ${audioDurationSec.toFixed(2)}s (${audioDurationMin.toFixed(2)}min)`);
+                        console.log(`Durée audio appliquée: ${audioDurationSec.toFixed(2)}s (${audioDurationMin.toFixed(2)}min) - Durée lockée`);
                         pkg.showToast && pkg.showToast('Durée de l\'animation ajustée selon la musique', 'info', 'Musique', 3000);
                     }
                 } catch(e) {
@@ -707,6 +733,8 @@ function initOptionsUI() {
 
         // Mettre à jour l'état du bouton durée audio
         updateAudioDurationButton();
+        // Initialiser l'indicateur de durée lockée
+        updateDurationLockIndicator();
     } catch(e) { console.warn('Init enregistrement UI error:', e); }
 }
 
@@ -786,7 +814,14 @@ function changeRecordValues() {
         try {
             pkg.options.record.audio = pkg.options.record.audio || {};
             if (cbRecordAudioEnable) {
+                const wasEnabled = pkg.options.record.audio.enabled;
                 pkg.options.record.audio.enabled = !!cbRecordAudioEnable.checked;
+                // Si l'utilisateur désactive l'audio, délocker la durée
+                if (wasEnabled && !pkg.options.record.audio.enabled && isDurationLockedToAudio) {
+                    isDurationLockedToAudio = false;
+                    updateDurationLockIndicator();
+                    console.log('Durée délockée - audio désactivé');
+                }
             }
             if (inputAudioVolume && inputAudioVolume.value !== '') {
                 const vol = Math.max(0, Math.min(1, parseFloat(inputAudioVolume.value) || 1));
@@ -1639,8 +1674,20 @@ function changeAnimationValues(event){
     // mise à jour du temps de l'autre champs
     if (event.target.id == 'inputTimePerDay'){
         pkg.options.animation.timePerDay = inputTimePerDay.value;
+        // Si l'utilisateur change la durée par jour manuellement, délocker la durée audio
+        if (isDurationLockedToAudio) {
+            isDurationLockedToAudio = false;
+            updateDurationLockIndicator();
+            console.log('Durée délockée - utilisateur a modifié la durée par jour');
+        }
         updateTotalTime();
     } else if (event.target.id == 'inputTotalTime'){
+        // Si l'utilisateur change le temps total manuellement, délocker la durée audio
+        if (isDurationLockedToAudio) {
+            isDurationLockedToAudio = false;
+            updateDurationLockIndicator();
+            console.log('Durée délockée - utilisateur a modifié le temps total');
+        }
         updateTimePerDay();
     }
 
@@ -1664,8 +1711,13 @@ function updateDeltaDaysAndTimes(){
         pkg.options.date.deltaDays = deltaDays;
         spanDeltaDays.innerText = deltaDays;
 
-        // Recalculer les temps
-        updateTotalTime();
+        // Si la durée est lockée à la musique, recalculer la durée par jour
+        if (isDurationLockedToAudio) {
+            updateTimePerDay();
+        } else {
+            // Recalculer les temps normalement (durée par jour constante)
+            updateTotalTime();
+        }
 
         // Mettre à jour les informations pour les images
         pkg.updateInfosForPictures();
@@ -1677,8 +1729,12 @@ function updateTotalTime(){
     console.log("totalTimeInMilliSec", totalTimeInMilliSec)
     // mise à jour du temps en ms pour futurs calculs
     pkg.options.record.totalTimeInMilliSec = totalTimeInMilliSec;
-    inputTotalTime.value = (totalTimeInMilliSec / 60 / 1000).toFixed(2);
-    updateToMinutesAndSeconds();
+
+    // Ne pas modifier le temps total si la durée est lockée à la musique
+    if (!isDurationLockedToAudio) {
+        inputTotalTime.value = (totalTimeInMilliSec / 60 / 1000).toFixed(2);
+        updateToMinutesAndSeconds();
+    }
 }
 
 function updateTimePerDay(){

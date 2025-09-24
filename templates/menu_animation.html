@@ -44,7 +44,7 @@
                     <div class="col s12 m6">
                         <div class="input-field">
                             <input placeholder="{{ _('Temps total') }}" id="inputTotalTime" type="number" step="0.01" class="validate">
-                            <label for="inputTotalTime">{{ _("Temps total (minutes)") }}</label>
+                            <label for="inputTotalTime" id="labelTotalTime" data-locked-text="{{ _('Temps total (minutes) - défini par musique') }}" data-normal-text="{{ _('Temps total (minutes)') }}">{{ _("Temps total (minutes)") }}</label>
                         </div>
                         <p class="grey-text">
                             <span id="spanTotalTimeMinutes"></span> {{ _("min") }} <span id="spanTotalTimeSeconds"></span> {{ _("sec pour") }} <span id="spanDeltaDays"></span> {{ _("jours") }}
