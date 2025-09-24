@@ -6,6 +6,17 @@ import { clearMap } from './mapgl.js';
 const btnuploadBddForm = document.getElementById('uploadBddForm');
 btnuploadBddForm.addEventListener('submit', uploadBddRequest);
 
+// Gestionnaire pour le chargement automatique lors de la sélection de fichier
+const fileInput = document.getElementById('file-input');
+if (fileInput) {
+    fileInput.addEventListener('change', function(e) {
+        if (e.target.files && e.target.files[0]) {
+            // Lancer automatiquement le chargement quand un fichier est sélectionné
+            uploadBddRequest(e);
+        }
+    });
+}
+
 // Bouton pour vider la base de données
 const btnClearDatabase = document.getElementById('clearDatabaseBtn');
 if (btnClearDatabase) {
@@ -16,6 +27,17 @@ if (btnClearDatabase) {
 const btnUploadBddFormModal = document.getElementById('uploadBddFormModal');
 if (btnUploadBddFormModal) {
     btnUploadBddFormModal.addEventListener('submit', uploadBddRequestFromModal);
+}
+
+// Gestionnaire pour le chargement automatique dans la modale lors de la sélection de fichier
+const fileInputModal = document.getElementById('file-input-modal');
+if (fileInputModal) {
+    fileInputModal.addEventListener('change', function(e) {
+        if (e.target.files && e.target.files[0]) {
+            // Lancer automatiquement le chargement quand un fichier est sélectionné
+            uploadBddRequestFromModal(e);
+        }
+    });
 }
 
 export let metadata;
@@ -40,7 +62,14 @@ function uploadBddRequest(e){
 
     var formData = new FormData();
     var fileInput = document.getElementById('file-input');
-    formData.append('file', fileInput.files[0]);
+    var selectedFile = fileInput.files[0];
+
+    if (!selectedFile) {
+        showError("Veuillez sélectionner un fichier .gpx", "Aucun fichier");
+        return;
+    }
+
+    formData.append('file', selectedFile);
 
     // Afficher un toast de chargement non-bloquant
     const loadingToast = pkg.showLoadingToast("Analyse du fichier GPX en cours...", "Analyse");
@@ -586,13 +615,14 @@ function uploadBddRequestFromModal(e) {
 
     var formData = new FormData();
     var fileInput = document.getElementById('file-input-modal');
-    
-    if (!fileInput.files[0]) {
+    var selectedFile = fileInput.files[0];
+
+    if (!selectedFile) {
         showError("Veuillez sélectionner un fichier .gpx", "Aucun fichier");
         return;
     }
-    
-    formData.append('file', fileInput.files[0]);
+
+    formData.append('file', selectedFile);
 
     // Afficher un toast de chargement avec progress bar
     const uploadToast = pkg.showLoadingToast("Chargement du fichier GPX en cours...", "Chargement");
