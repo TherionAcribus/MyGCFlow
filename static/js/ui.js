@@ -435,9 +435,12 @@ function initOptionsElements() {
                 if (cbRecordAudioEnable) {
                     cbRecordAudioEnable.checked = true;
                 }
+                // Afficher les informations du fichier audio
+                displayAudioFileInfo(this.files[0]);
                 changeRecordValues(); // Met à jour les options
             } else {
-                // Aucun fichier - délocker la durée audio et décocher/désactiver la checkbox
+                // Aucun fichier - masquer les infos, délocker la durée audio et décocher/désactiver la checkbox
+                hideAudioFileInfo();
                 isDurationLockedToAudio = false;
                 updateDurationLockIndicator();
                 if (cbRecordAudioEnable) {
@@ -2225,6 +2228,91 @@ function updateAudioDurationButton() {
         if (hasFile && !cbAudio.checked) {
             cbAudio.checked = true;
         }
+    }
+}
+
+// Fonction pour afficher les informations du fichier audio (maintenant seulement la tooltip)
+async function displayAudioFileInfo(file) {
+    const infoDiv = document.getElementById('audioFileInfo');
+
+    if (!infoDiv) return;
+
+    try {
+        // Afficher le nom complet du fichier sélectionné
+        const fileName = file.name;
+        infoDiv.innerHTML = `<strong>${fileName}</strong>`;
+
+        // Ajouter la tooltip avec métadonnées détaillées sur le nom du fichier
+        await addAudioMetadataTooltip(file, infoDiv);
+
+    } catch(e) {
+        console.warn('Erreur lors de l\'affichage des infos audio:', e);
+        infoDiv.innerHTML = `<strong>${file.name}</strong>`;
+    }
+}
+
+// Fonction pour masquer les informations du fichier audio (remettre le message par défaut)
+function hideAudioFileInfo() {
+    const infoDiv = document.getElementById('audioFileInfo');
+    if (infoDiv) {
+        infoDiv.innerHTML = '<em>Aucune musique sélectionnée</em>';
+    }
+}
+
+// Fonction pour ajouter une tooltip avec les métadonnées audio
+async function addAudioMetadataTooltip(file, element) {
+    try {
+        // Informations de base du fichier
+        const sizeKB = Math.round(file.size / 1024);
+        const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+        const type = file.type || 'Type inconnu';
+
+        // Essayer d'extraire plus de métadonnées si disponible
+        let metadata = {
+            name: file.name,
+            size: `${sizeKB} KB (${sizeMB} MB)`,
+            type: type,
+            lastModified: new Date(file.lastModified).toLocaleDateString()
+        };
+
+        // Essayer d'extraire la durée via Web Audio
+        try {
+            const duration = await getAudioDuration(file);
+            if (duration && duration > 0) {
+                const minutes = Math.floor(duration / 60);
+                const seconds = Math.floor(duration % 60);
+                metadata.duration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }
+        } catch(e) {
+            metadata.duration = 'Non disponible';
+        }
+
+        // Créer le contenu de la tooltip
+        const tooltipContent = `
+            <div style="max-width:300px;">
+                <strong>${metadata.name}</strong><br>
+                <small>
+                    Taille: ${metadata.size}<br>
+                    Type: ${metadata.type}<br>
+                    Durée: ${metadata.duration}<br>
+                    Modifié: ${metadata.lastModified}
+                </small>
+            </div>
+        `;
+
+        // Ajouter la tooltip Materialize
+        element.setAttribute('data-tooltip', tooltipContent);
+        element.classList.add('tooltipped');
+        if (typeof M !== 'undefined' && M.Tooltip) {
+            M.Tooltip.init(element, {
+                html: true,
+                position: 'top',
+                margin: 5
+            });
+        }
+
+    } catch(e) {
+        console.warn('Erreur lors de l\'extraction des métadonnées:', e);
     }
 }
 
