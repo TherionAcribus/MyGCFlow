@@ -152,6 +152,28 @@ def get_upload_image():
     return upload_image(request)
 
 
+@app.route('/clear_database', methods=['POST'])
+@cross_origin()
+def clear_database():
+    """Vide complètement la base de données"""
+    try:
+        # Supprimer toutes les entrées de la base de données
+        num_deleted = Geocache.query.delete()
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'message': f'Base de données vidée avec succès. {num_deleted} entrées supprimées.'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False, 
+            'message': f'Erreur lors du vidage de la base de données: {str(e)}'
+        }), 500
+
+
 @app.route('/start_create_video', methods=['GET'])
 @cross_origin()
 def start_create_video():

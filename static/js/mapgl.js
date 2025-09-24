@@ -820,7 +820,7 @@ function displayWebGLPoints(features, pointOptions) {
 }
 
 // supprime les points de la carte (centre et bordures si existantes)
-function clearMap(){
+export function clearMap(){
     console.log('[CLEAR] Début du nettoyage de la carte');
 
     // Garder vectorSource mais vider son contenu

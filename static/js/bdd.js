@@ -1,8 +1,16 @@
 import * as pkg from './index.js';
 import { CONFIG } from './init.js';
+import { showSuccess, showError, showInfo } from './notifications.js';
+import { clearMap } from './mapgl.js';
 
 const btnuploadBddForm = document.getElementById('uploadBddForm');
 btnuploadBddForm.addEventListener('submit', uploadBddRequest);
+
+// Bouton pour vider la base de données
+const btnClearDatabase = document.getElementById('clearDatabaseBtn');
+if (btnClearDatabase) {
+    btnClearDatabase.addEventListener('click', clearDatabaseWithConfirmation);
+}
 
 export let metadata;
 export let json_data;
@@ -142,6 +150,8 @@ function showBddInfos(data){
 
     if (data.size > 0){
         infos += " La base de données fait " + data.size + " octets."
+        // Afficher le bouton de vidage si la base de données contient des données
+        showClearDatabaseButton();
     } else {
         infos += " La base de données est vide. Vous devez commencer par ajouter un nouveau fichier .gpx avec vos trouvailles. EXPLICATIONS "
     }
@@ -267,4 +277,174 @@ function updateFiltersCounter(selected, total){
             el.textContent = `Sélection: ${selected} / ${total}`;
         }
     } catch(e) { console.warn('updateFiltersCounter error', e); }
+}
+
+// Fonction pour afficher une confirmation avant de vider la base de données
+function clearDatabaseWithConfirmation() {
+    // Créer une modale de confirmation en utilisant la même structure que celle des mises à jour
+    const modalId = 'clear-database-modal-' + Date.now();
+    
+    const modalHTML = `
+        <div id="${modalId}" class="modal">
+            <div class="modal-content">
+                <div class="center-align">
+                    <i class="material-icons large red-text">warning</i>
+                    <h4>Vider la base de données</h4>
+                    <p class="flow-text">
+                        Êtes-vous sûr de vouloir vider complètement la base de données ?
+                    </p>
+                    <p class="red-text">
+                        <strong>⚠️ Cette action est irréversible !</strong><br>
+                        Toutes les données seront définitivement supprimées :
+                    </p>
+                    <ul class="left-align" style="display: inline-block;">
+                        <li>• Tous les points de géocaches</li>
+                        <li>• Les données GeoJSON</li>
+                        <li>• L'historique des trouvailles</li>
+                        <li>• Les filtres appliqués</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="center-align">
+                    <button class="waves-effect waves-light btn red" onclick="confirmClearDatabase('${modalId}')">
+                        <i class="material-icons left">delete_forever</i>
+                        Vider définitivement
+                    </button>
+                    <button class="waves-effect waves-light btn-flat modal-close">
+                        <i class="material-icons left">close</i>
+                        Annuler
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Ajouter la modale au DOM
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Initialiser et ouvrir la modale Materialize
+    const modalElement = document.getElementById(modalId);
+    const modal = M.Modal.init(modalElement, {
+        dismissible: true,
+        onCloseEnd: function() {
+            // Supprimer la modale du DOM après fermeture
+            modalElement.remove();
+        }
+    });
+    
+    modal.open();
+}
+
+// Fonction globale pour confirmer le vidage (appelée depuis la modale)
+window.confirmClearDatabase = function(modalId) {
+    // Fermer la modale
+    const modalElement = document.getElementById(modalId);
+    if (modalElement) {
+        const modal = M.Modal.getInstance(modalElement);
+        modal.close();
+    }
+    
+    // Effectuer le vidage
+    clearDatabase();
+};
+
+// Fonction pour effectuer le vidage de la base de données
+async function clearDatabase() {
+    let clearingToast = null;
+    
+    try {
+        // Afficher un toast de chargement
+        clearingToast = pkg.showLoadingToast("Vidage de la base de données...", "Suppression");
+        
+        // Appel à l'endpoint pour vider la base de données
+        const response = await fetch('/clear_database', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Vider les données locales
+            clearLocalData();
+            
+            // Vider la carte
+            clearMap();
+            
+            // Mettre à jour l'interface
+            updateUIAfterClear();
+            
+            // Masquer le toast de chargement et afficher le succès
+            if (clearingToast) {
+                pkg.hideToast(clearingToast);
+            }
+            showSuccess("Base de données vidée avec succès", "Suppression réussie");
+            
+        } else {
+            throw new Error(result.message || 'Erreur inconnue');
+        }
+        
+    } catch (error) {
+        console.error('Erreur lors du vidage de la base de données:', error);
+        
+        if (clearingToast) {
+            pkg.hideToast(clearingToast);
+        }
+        showError("Erreur lors du vidage de la base de données: " + error.message, "Erreur");
+    }
+}
+
+// Fonction pour vider les données locales
+function clearLocalData() {
+    // Réinitialiser les variables globales
+    json_data = null;
+    metadata = null;
+    totalCaches = 0;
+    pointsByDate.clear();
+    
+    console.log('[CLEAR] Données locales vidées');
+}
+
+// Fonction pour mettre à jour l'interface après vidage
+function updateUIAfterClear() {
+    // Masquer le bouton de vidage
+    const btnClearDatabase = document.getElementById('clearDatabaseBtn');
+    if (btnClearDatabase) {
+        btnClearDatabase.style.display = 'none';
+    }
+    
+    // Mettre à jour les informations de la base de données
+    const divInfosBDD = document.getElementById('infosBDD');
+    if (divInfosBDD) {
+        divInfosBDD.textContent = 'Aucune base de données chargée';
+        divInfosBDD.className = 'mt-3 grey-text text-darken-2';
+    }
+    
+    // Réinitialiser le compteur de filtres
+    updateFiltersCounter(0, 0);
+    
+    // Réinitialiser le champ de fichier
+    const fileInput = document.getElementById('file-input');
+    if (fileInput) {
+        fileInput.value = '';
+    }
+    
+    // Réinitialiser le champ de chemin de fichier Materialize
+    const filePathInput = document.querySelector('.file-path');
+    if (filePathInput) {
+        filePathInput.value = '';
+    }
+    
+    console.log('[CLEAR] Interface mise à jour après vidage');
+}
+
+// Fonction pour afficher le bouton de vidage (appelée quand des données sont chargées)
+export function showClearDatabaseButton() {
+    const btnClearDatabase = document.getElementById('clearDatabaseBtn');
+    if (btnClearDatabase) {
+        btnClearDatabase.style.display = 'block';
+    }
 }
