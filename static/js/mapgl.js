@@ -593,14 +593,12 @@ export function addVector(data) {
 // fonction appelée au changement d'options graphique
 export function refreshPoints(){
     // Afficher un toast pour l'affichage des points
-    try {
-        const pointsToast = pkg.showLoadingToast('Mise à jour de l\'affichage des points...', 'Affichage des points');
-        setTimeout(() => {
-            try { pkg.hideToast(pointsToast); } catch(e) {}
-        }, 1500);
-    } catch(e) {
-        console.warn('[POINTS] Erreur affichage toast:', e);
-    }
+    pkg.showPointsToast('Mise à jour de l\'affichage des points...', 'Affichage des points');
+
+    // Masquer automatiquement après 1.5 secondes
+    setTimeout(() => {
+        pkg.hidePointsToast();
+    }, 1500);
 
     clearMap();
     selectEngineAndRefresh();

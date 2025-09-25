@@ -701,12 +701,7 @@ function loadAndDisplayPoints() {
     console.log('[LOAD_POINTS] Chargement des points après upload...');
 
     // Afficher un toast pour l'affichage initial des points
-    let initialPointsToast;
-    try {
-        initialPointsToast = pkg.showLoadingToast('Chargement et affichage des points...', 'Affichage des points');
-    } catch(e) {
-        console.warn('[POINTS] Erreur affichage toast initial:', e);
-    }
+    pkg.showPointsToast('Chargement et affichage des points...', 'Affichage des points');
 
     fetch(`${CONFIG.BASE_URL}/get_geojson_points`)
         .then(response => response.json())
@@ -740,13 +735,7 @@ function loadAndDisplayPoints() {
             updateFiltersCounter(metadata.numberOfCaches || 0, totalCaches);
 
             // Masquer le toast d'affichage initial
-            try {
-                if (initialPointsToast) {
-                    pkg.hideToast(initialPointsToast);
-                }
-            } catch(e) {
-                console.warn('[POINTS] Erreur masquage toast initial:', e);
-            }
+            pkg.hidePointsToast();
 
             console.log('[LOAD_POINTS] Points affichés sur la carte');
         })
@@ -754,11 +743,7 @@ function loadAndDisplayPoints() {
             console.error('[LOAD_POINTS] Erreur lors du chargement des points:', error);
 
             // Masquer le toast en cas d'erreur
-            try {
-                if (initialPointsToast) {
-                    pkg.hideToast(initialPointsToast);
-                }
-            } catch(e) {}
+            pkg.hidePointsToast();
 
             showError("Erreur lors de l'affichage des points sur la carte", "Erreur d'affichage");
         });

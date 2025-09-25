@@ -157,6 +157,40 @@ export function hideToast(toast) {
     notificationManager.hide(toast);
 }
 
+// Gestion centralisée des toasts d'affichage des points
+let currentPointsToast = null;
+
+export function showPointsToast(message = 'Affichage des points...', title = 'Affichage des points') {
+    // Masquer tout toast existant
+    if (currentPointsToast) {
+        try {
+            hideToast(currentPointsToast);
+        } catch(e) {
+            console.warn('[POINTS_TOAST] Erreur masquage toast existant:', e);
+        }
+    }
+
+    try {
+        currentPointsToast = showLoadingToast(message, title);
+        return currentPointsToast;
+    } catch(e) {
+        console.warn('[POINTS_TOAST] Erreur création toast:', e);
+        currentPointsToast = null;
+        return null;
+    }
+}
+
+export function hidePointsToast() {
+    if (currentPointsToast) {
+        try {
+            hideToast(currentPointsToast);
+        } catch(e) {
+            console.warn('[POINTS_TOAST] Erreur masquage toast:', e);
+        }
+        currentPointsToast = null;
+    }
+}
+
 export function clearAllToasts() {
     notificationManager.clearAll();
 }
