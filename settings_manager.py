@@ -103,6 +103,7 @@ class PointStyle:
     border_size: int = 0
     fill_color_type: str = "fix"  # "gc", "none", "fix"
     border_color_type: str = "fix"  # "gc", "none", "fix"
+    mode: str = "vectoriel"  # "icone", "vectoriel"
 
 
 @dataclass
@@ -231,6 +232,7 @@ def coerce_profile(d: dict) -> MapProfile:
             border_size=int(pt.get("border_size", p.points.border_size)),
             fill_color_type=pt.get("fill_color_type", p.points.fill_color_type),
             border_color_type=pt.get("border_color_type", p.points.border_color_type),
+            mode=pt.get("mode", p.points.mode),
         )
 
         # Options flash
@@ -295,7 +297,8 @@ class SettingsManager:
                     border_color="#000000",
                     border_size=0,
                     fill_color_type="fix",
-                    border_color_type="fix"
+                    border_color_type="fix",
+                    mode="vectoriel"
                 ),
                 flash=FlashOptions(
                     mode="circle",
@@ -328,7 +331,8 @@ class SettingsManager:
                     border_color="#ffffff",
                     border_size=2,
                     fill_color_type="fix",
-                    border_color_type="fix"
+                    border_color_type="fix",
+                    mode="vectoriel"
                 ),
                 flash=FlashOptions(
                     mode="star",
@@ -361,7 +365,8 @@ class SettingsManager:
                     border_color="#cccccc",
                     border_size=1,
                     fill_color_type="fix",
-                    border_color_type="fix"
+                    border_color_type="fix",
+                    mode="vectoriel"
                 ),
                 flash=FlashOptions(
                     mode="diamond",
@@ -394,7 +399,8 @@ class SettingsManager:
                     border_color="#ffffff",
                     border_size=3,
                     fill_color_type="fix",
-                    border_color_type="fix"
+                    border_color_type="fix",
+                    mode="vectoriel"
                 ),
                 flash=FlashOptions(
                     mode="square",
@@ -571,6 +577,7 @@ class SettingsManager:
                     "border_size": prof.points.border_size,
                     "fill_color_type": prof.points.fill_color_type,
                     "border_color_type": prof.points.border_color_type,
+                    "mode": prof.points.mode,
                 },
                 "flash": {
                     "mode": prof.flash.mode,

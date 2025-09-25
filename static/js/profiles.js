@@ -615,6 +615,7 @@ class ProfileManager {
             const shapeSelect = document.getElementById('selectShape');
             const borderInput = document.getElementById('sliderSizeBorder');
             const borderColorInput = document.getElementById('pointBorderColor');
+            const modeSwitch = document.getElementById('switchIconeVectoriel');
 
             // Récupération des types de couleur
             const fillColorType = document.querySelector('input[name="fillColorPoint"]:checked');
@@ -628,7 +629,8 @@ class ProfileManager {
                 border_color: borderColorInput ? borderColorInput.value || '#000000' : '#000000',
                 border_size: borderInput ? parseInt(borderInput.value) || 0 : 0,
                 fill_color_type: fillColorType ? fillColorType.value || 'fix' : 'fix',
-                border_color_type: borderColorType ? borderColorType.value || 'fix' : 'fix'
+                border_color_type: borderColorType ? borderColorType.value || 'fix' : 'fix',
+                mode: modeSwitch ? (modeSwitch.checked ? 'vectoriel' : 'icone') : 'vectoriel'
             };
 
             console.log('Paramètres points récupérés:', {
@@ -639,7 +641,8 @@ class ProfileManager {
                 border_color: pointSettings.border_color,
                 border_size: pointSettings.border_size,
                 fill_color_type: pointSettings.fill_color_type,
-                border_color_type: pointSettings.border_color_type
+                border_color_type: pointSettings.border_color_type,
+                mode: pointSettings.mode
             });
 
             console.log('🔍 État des éléments HTML:', {
@@ -1238,6 +1241,14 @@ function applyMapSpecificOptions(tileProvider, mapOptions) {
 function applyPointSettings(pointOptions) {
     try {
         console.log('🎯 APPLICATION PARAMÈTRES POINTS - Données reçues:', pointOptions);
+
+        // Appliquer le mode (icone/vectoriel)
+        const modeSwitch = document.getElementById('switchIconeVectoriel');
+        if (modeSwitch && pointOptions.mode) {
+            modeSwitch.checked = pointOptions.mode === 'vectoriel';
+            modeSwitch.dispatchEvent(new Event('change'));
+            console.log('🎯 Application mode des points:', pointOptions.mode, '-> switch checked:', modeSwitch.checked);
+        }
 
         // Appliquer la taille des points
         const sizeInput = document.getElementById('sliderSizePoint');
