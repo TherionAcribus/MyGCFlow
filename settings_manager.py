@@ -91,6 +91,7 @@ class FlashOptions:
     duration: int = 1000  # en ms
     size: int = 50  # en px
     color: str = "#FF00FF"
+    color_type: str = "fix"  # "gc", "none", "fix"
 
 
 @dataclass
@@ -242,6 +243,7 @@ def coerce_profile(d: dict) -> MapProfile:
             duration=int(f.get("duration", p.flash.duration)),
             size=int(f.get("size", p.flash.size)),
             color=f.get("color", p.flash.color),
+            color_type=f.get("color_type", p.flash.color_type),
         )
 
         # Options infos (titre, cases à cocher, CSS)
@@ -304,7 +306,8 @@ class SettingsManager:
                     mode="circle",
                     duration=1000,
                     size=50,
-                    color="#FF00FF"
+                    color="#FF00FF",
+                    color_type="fix"
                 )
             ),
 
@@ -338,7 +341,8 @@ class SettingsManager:
                     mode="star",
                     duration=800,
                     size=40,
-                    color="#00ff00"
+                    color="#00ff00",
+                    color_type="fix"
                 )
             ),
 
@@ -372,7 +376,8 @@ class SettingsManager:
                     mode="diamond",
                     duration=1500,
                     size=60,
-                    color="#ffffff"
+                    color="#ffffff",
+                    color_type="fix"
                 )
             ),
 
@@ -406,7 +411,8 @@ class SettingsManager:
                     mode="square",
                     duration=600,
                     size=80,
-                    color="#ff9800"
+                    color="#ff9800",
+                    color_type="fix"
                 )
             )
         }
@@ -633,6 +639,7 @@ class SettingsManager:
                     "duration": prof.flash.duration,
                     "size": prof.flash.size,
                     "color": prof.flash.color,
+                    "color_type": prof.flash.color_type,
                 },
                 "infos": {
                     "title": {

@@ -358,7 +358,7 @@ def api_list_profiles():
 @app.route('/api/profiles/<name>', methods=['GET'])
 def api_get_profile(name: str):
     prof = settings_manager.load_profile(name)
-    print(f"📤 SERVEUR - Envoi profil '{name}' avec flash: mode={prof.flash.mode}, duration={prof.flash.duration}, size={prof.flash.size}, color={prof.flash.color}")
+    print(f"📤 SERVEUR - Envoi profil '{name}' avec flash: mode={prof.flash.mode}, duration={prof.flash.duration}, size={prof.flash.size}, color={prof.flash.color}, color_type={getattr(prof.flash, 'color_type', 'fix')}")
     return jsonify({
         'version': prof.version,
         'name': prof.name,
@@ -396,6 +396,7 @@ def api_get_profile(name: str):
             'duration': prof.flash.duration,
             'size': prof.flash.size,
             'color': prof.flash.color,
+            'color_type': getattr(prof.flash, 'color_type', 'fix'),
         },
         'infos': {
             'title': {
@@ -414,7 +415,7 @@ def api_get_profile(name: str):
 def api_get_profile_by_uid(uid: str):
     """Charge un profil par son UUID"""
     prof = settings_manager.load_profile_by_uid(uid)
-    print(f"📤 SERVEUR - Envoi profil par UUID '{uid}' (nom: '{prof.name}')")
+    print(f"📤 SERVEUR - Envoi profil par UUID '{uid}' (nom: '{prof.name}'), flash.color_type={getattr(prof.flash, 'color_type', 'fix')}")
     return jsonify({
         'version': prof.version,
         'name': prof.name,
@@ -452,6 +453,7 @@ def api_get_profile_by_uid(uid: str):
             'duration': prof.flash.duration,
             'size': prof.flash.size,
             'color': prof.flash.color,
+            'color_type': getattr(prof.flash, 'color_type', 'fix'),
         },
         'infos': {
             'title': {
@@ -564,6 +566,8 @@ def api_save_profile(name: str):
             pass
     if 'color' in f:
         prof.flash.color = f['color']
+    if 'color_type' in f:
+        prof.flash.color_type = f['color_type']
 
     # Gestion du champ infos (titre, cases à cocher, CSS)
     i = data.get('infos', {}) or {}
@@ -583,7 +587,7 @@ def api_save_profile(name: str):
         if 'infos_css' in i:
             prof.infos.infos_css = i['infos_css'] or ''
 
-    print(f"💾 SERVEUR - Profil sauvegardé avec flash: mode={prof.flash.mode}, duration={prof.flash.duration}, size={prof.flash.size}, color={prof.flash.color} | infos: title.display={prof.infos.title.display}, title.text={prof.infos.title.text}, number_of_caches={prof.infos.number_of_caches}, current_date={prof.infos.current_date}, title_css_len={len(prof.infos.title_css or '')}, infos_css_len={len(prof.infos.infos_css or '')}")
+    print(f"💾 SERVEUR - Profil sauvegardé avec flash: mode={prof.flash.mode}, duration={prof.flash.duration}, size={prof.flash.size}, color={prof.flash.color}, color_type={getattr(prof.flash, 'color_type', 'fix')} | infos: title.display={prof.infos.title.display}, title.text={prof.infos.title.text}, number_of_caches={prof.infos.number_of_caches}, current_date={prof.infos.current_date}, title_css_len={len(prof.infos.title_css or '')}, infos_css_len={len(prof.infos.infos_css or '')}")
     settings_manager.save_profile(prof)
     return jsonify({'success': True})
 
