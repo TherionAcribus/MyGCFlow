@@ -137,3 +137,70 @@ font-feature-settings: 'liga';
     padding: 15px 20px;
 }
 
+/* Styles pour les options de points */
+.point-options {
+    transition: all 0.3s ease;
+}
+
+.point-options.hidden {
+    display: none !important;
+}
+
+/* Styles pour la grille d'icônes */
+.icon-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 10px;
+    margin-top: 15px;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 10px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background-color: #fafafa;
+}
+
+.icon-sprite {
+    width: 32px;
+    height: 32px;
+    background-repeat: no-repeat;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+}
+
+.icon-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background-color: white;
+}
+
+.icon-item:hover {
+    border-color: #2196f3;
+    background-color: #e3f2fd;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.icon-item.selected {
+    border-color: #4caf50;
+    background-color: #e8f5e8;
+}
+
+.icon-item i, .icon-item span {
+    font-size: 24px;
+    margin-bottom: 4px;
+}
+
+.icon-item .icon-label {
+    font-size: 10px;
+    text-align: center;
+    color: #666;
+    font-weight: 500;
+}
+

@@ -644,6 +644,9 @@ export function init_ui() {
     // synchronise sliders et input associés
     synchronizeSliderAndInputCenter();
     synchronizeSliderAndInputBorder();
+
+    // Initialiser l'affichage des sous-menus de points
+    updatePointOptionsDisplay();
     // switch Icone/Vectoriel
     console.log('🎨 [INIT_UI] Application du mode des points:', {
         mode_dans_options: pkg.options.point.mode,
@@ -1201,6 +1204,9 @@ function changePointStyleUI(event){
     } else {
         pkg.options.point.mode = "icone";
     }
+
+    // Gestion de l'affichage des sous-menus
+    updatePointOptionsDisplay();
     // colorpickers
     pkg.options.point.border.color = cpPointBorderColor.value;
     pkg.options.point.center.color = cpPointCenterColor.value;
@@ -1222,6 +1228,156 @@ function changePointStyleUI(event){
     // rafraichissement des points
     pkg.refreshPoints(pkg.options);
 }
+
+// Gestion de l'affichage des sous-menus pour les points
+function updatePointOptionsDisplay() {
+    const vectorielOptions = document.getElementById('vectorielOptions');
+    const iconeOptions = document.getElementById('iconeOptions');
+
+    if (switchIconeVectoriel.checked) {
+        // Mode vectoriel - afficher les options vectorielles, masquer les icônes
+        if (vectorielOptions) vectorielOptions.style.display = 'block';
+        if (iconeOptions) iconeOptions.style.display = 'none';
+    } else {
+        // Mode icône - afficher les options d'icônes, masquer les vectorielles
+        if (vectorielOptions) vectorielOptions.style.display = 'none';
+        if (iconeOptions) iconeOptions.style.display = 'block';
+
+        // Initialiser les options d'icônes si nécessaire
+        initializeIconOptions();
+    }
+}
+
+// Initialisation des options d'icônes
+function initializeIconOptions() {
+    // Synchroniser les sliders de taille d'icône
+    const sliderSizeIcon = document.getElementById('sliderSizeIcon');
+    const inputSizeIcon = document.getElementById('inputSizeIcon');
+
+    if (sliderSizeIcon && inputSizeIcon) {
+        // Synchronisation des contrôles
+        sliderSizeIcon.oninput = function() {
+            inputSizeIcon.value = this.value;
+            updateIconSize();
+        };
+        inputSizeIcon.oninput = function() {
+            sliderSizeIcon.value = this.value;
+            updateIconSize();
+        };
+
+        // Valeurs par défaut
+        if (!sliderSizeIcon.value) sliderSizeIcon.value = 32;
+        if (!inputSizeIcon.value) inputSizeIcon.value = 32;
+    }
+
+    // Gestion du select d'icônes
+    const selectIconSet = document.getElementById('selectIconSet');
+    if (selectIconSet) {
+        selectIconSet.addEventListener('change', updateIconSet);
+        // Initialiser avec le premier jeu d'icônes
+        updateIconSet();
+    }
+}
+
+// Mise à jour du jeu d'icônes affiché
+function updateIconSet() {
+    const selectIconSet = document.getElementById('selectIconSet');
+    const iconPreview = document.getElementById('iconPreview');
+
+    if (!selectIconSet || !iconPreview) return;
+
+    const selectedSet = selectIconSet.value;
+    let icons = [];
+    let useSprite = false;
+    let spriteMeta = null; // {url, sheetWidth, sheetHeight, items: [{key,x,y,w,h}]}
+
+    // Définir les icônes selon le jeu sélectionné
+    switch (selectedSet) {
+        case 'geocaching':
+            // Sprite Geocaching: définir la meta (à adapter à votre sprite)
+            useSprite = true;
+            spriteMeta = {
+                url: '/static/img/geocaching-sprite.png',
+                sheetWidth: 1800,
+                sheetHeight: 200,
+                items: [
+                    { key: 'trad',    x:   0, y:  0, w:50, h:50, label: 'Traditional' },
+                    { key: 'multi',   x:  100, y:  0, w:50, h:50, label: 'APE' },
+                    { key: 'myst',    x:  200, y:  0, w:50, h:50, label: 'HQ' },
+                    { key: 'letter',  x:  300, y:  0, w:50, h:50, label: 'Mystery' },
+                    { key: 'event',   x: 400, y:  0, w:50, h:50, label: 'Event' },
+                    { key: 'mega',    x: 500, y:  0, w:50, h:50, label: 'CITO' },
+                    { key: 'giga',    x: 600, y:  0, w:50, h:50, label: 'Mega' },
+                    { key: 'earth',   x: 700, y:  0, w:50, h:50, label: 'Giga' },
+                    { key: 'cito',    x: 800, y:  0, w:50, h:50, label: 'GPS Maze' },
+                    { key: 'lab',     x: 900, y:  0, w:50, h:50, label: 'Earthcache' },
+                    { key: 'wherigo', x: 1000, y:  0, w:50, h:50, label: 'Virtual' },
+                    { key: 'virtual', x: 1200, y:  0, w:50, h:50, label: 'Locationless' },
+                    { key: 'ape',     x: 1300, y:  0, w:50, h:50, label: 'Unknown' },
+                    { key: 'hq',      x: 1400, y:  0, w:50, h:50, label: 'Letterbox' },
+                    { key: 'block',   x: 1500, y:  0, w:50, h:50, label: 'Wherigo' },
+                    // Autres à ajouter éventuellement)
+                ]
+            };
+            break;
+    }
+
+    if (useSprite && spriteMeta) {
+        // Rendu via sprite atlas
+        iconPreview.innerHTML = spriteMeta.items.map((it) => `
+            <div class="icon-item" data-icon="${it.key}" onclick="selectSpriteIcon('${it.key}')">
+                <div class="icon-sprite" style="
+                    background-image:url('${spriteMeta.url}');
+                    background-position:-${it.x}px -${it.y}px;
+                    width:${it.w}px; height:${it.h}px;
+                    background-size:${spriteMeta.sheetWidth}px ${spriteMeta.sheetHeight}px;
+                "></div>
+                <div class="icon-label">${it.label}</div>
+            </div>
+        `).join('');
+
+        // Sauvegarder la meta pour le rendu carte
+        pkg.options.point.iconSet = 'geocaching';
+        pkg.options.point.sprite = {
+            url: spriteMeta.url,
+            sheetWidth: spriteMeta.sheetWidth,
+            sheetHeight: spriteMeta.sheetHeight,
+            map: Object.fromEntries(spriteMeta.items.map(it => [it.key, {x:it.x,y:it.y,w:it.w,h:it.h}]))
+        };
+
+        // Restaure sélection
+        const current = pkg.options?.point?.iconKey || spriteMeta.items[0].key;
+        selectSpriteIcon(current);
+    }
+}
+
+// (suppression du mode emoji)
+
+// Sélection d'une icône dans le sprite
+function selectSpriteIcon(iconKey) {
+    document.querySelectorAll('.icon-item').forEach(item => item.classList.remove('selected'));
+    const selectedItem = document.querySelector(`[data-icon="${iconKey}"]`);
+    if (selectedItem) selectedItem.classList.add('selected');
+
+    if (pkg.options && pkg.options.point) {
+        pkg.options.point.iconKey = iconKey; // clé logique (trad, multi, ...)
+        pkg.options.point.icon = iconKey;    // compat
+        pkg.refreshPoints(pkg.options);
+    }
+}
+
+// Mise à jour de la taille des icônes
+function updateIconSize() {
+    const inputSizeIcon = document.getElementById('inputSizeIcon');
+    if (inputSizeIcon && pkg.options && pkg.options.point) {
+        pkg.options.point.iconSize = parseInt(inputSizeIcon.value) || 32;
+        pkg.refreshPoints(pkg.options);
+    }
+}
+
+// Exposer les fonctions globalement pour les appels depuis le HTML
+window.selectSpriteIcon = selectSpriteIcon;
+window.updateIconSize = updateIconSize;
 
 function synchronizeSliderAndInputCenter() {
     sliderSizePoint.oninput = function() {

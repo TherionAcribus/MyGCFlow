@@ -54,168 +54,236 @@
         </div>
     </div>
 
-    <!-- Section Centre du point -->
-    <div class="row">
-        <div class="col s12 m6">
-            <div class="card blue lighten-5">
-                <div class="card-content">
-                    <span class="card-title blue-text">
-                        <i class="material-icons">circle</i>
-                        {{ _("Centre du point") }}
-                    </span>
+    <!-- Sous-menu Vectoriel -->
+    <div id="vectorielOptions" class="point-options">
+        <div class="row">
+            <!-- Section Centre du point -->
+            <div class="col s12 m6">
+                <div class="card blue lighten-5">
+                    <div class="card-content">
+                        <span class="card-title blue-text">
+                            <i class="material-icons">circle</i>
+                            {{ _("Centre du point") }}
+                        </span>
 
-                    <!-- Taille du centre -->
-                    <div class="row">
-                        <div class="col s12">
-                            <label>
-                                <i class="material-icons">straighten</i>
-                                {{ _("Taille du centre") }}
-                            </label>
+                        <!-- Taille du centre -->
+                        <div class="row">
+                            <div class="col s12">
+                                <label>
+                                    <i class="material-icons">straighten</i>
+                                    {{ _("Taille du centre") }}
+                                </label>
+                            </div>
+                            <div class="col s6">
+                                <p class="range-field">
+                                    <input type="range" id="sliderSizePoint" min="1" max="10" />
+                                </p>
+                            </div>
+                            <div class="col s6">
+                                <div class="input-field">
+                                    <input type="number" id="inputSizePoint" min="1" max="10" />
+                                    <label>pixels</label>
+                                </div>
+                            </div>
                         </div>
-                        <div class="col s6">
-                            <p class="range-field">
-                                <input type="range" id="sliderSizePoint" min="1" max="10" />
-                            </p>
-                        </div>
-                        <div class="col s6">
-                            <div class="input-field">
-                                <input type="number" id="inputSizePoint" min="1" max="10" />
-                                <label>pixels</label>
+
+                        <!-- Couleur du centre -->
+                        <div class="row">
+                            <div class="col s12">
+                                <label>
+                                    <i class="material-icons">palette</i>
+                                    {{ _("Couleur du centre") }}
+                                </label>
+                            </div>
+
+                            <div class="col s12">
+                                <p>
+                                    <label>
+                                        <input class="with-gap" name="fillColorPoint" type="radio" value="gc"/>
+                                        <span>
+                                            <i class="material-icons">color_lens</i>
+                                            {{ _("Couleurs GC (par type)") }}
+                                        </span>
+                                    </label>
+                                </p>
+                                <p>
+                                    <label>
+                                        <input class="with-gap" name="fillColorPoint" type="radio" value="none"/>
+                                        <span>
+                                            <i class="material-icons">clear</i>
+                                            {{ _("Transparent") }}
+                                        </span>
+                                    </label>
+                                </p>
+                                <p>
+                                    <label>
+                                        <input class="with-gap" name="fillColorPoint" type="radio" value="fix" />
+                                        <span>
+                                            <i class="material-icons">colorize</i>
+                                            {{ _("Couleur unique") }}
+                                        </span>
+                                    </label>
+                                </p>
+                            </div>
+
+                            <!-- Color Picker Centre -->
+                            <div class="col s12">
+                                <div class="input-field">
+                                    <input type="color" id="pointCenterColor" value="#ffffff">
+                                    <label class="active" for="pointCenterColor">
+                                        <i class="material-icons">colorize</i>
+                                        {{ _("Choisir la couleur") }}
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <!-- Couleur du centre -->
-                    <div class="row">
-                        <div class="col s12">
-                            <label>
-                                <i class="material-icons">palette</i>
-                                {{ _("Couleur du centre") }}
-                            </label>
+            <!-- Section Bordure du point -->
+            <div class="col s12 m6">
+                <div class="card orange lighten-5">
+                    <div class="card-content">
+                        <span class="card-title orange-text">
+                            <i class="material-icons">border_outer</i>
+                            {{ _("Bordure du point") }}
+                        </span>
+
+                        <!-- Taille de la bordure -->
+                        <div class="row">
+                            <div class="col s12">
+                                <label>
+                                    <i class="material-icons">border_clear</i>
+                                    {{ _("Épaisseur de la bordure (0 = aucune)") }}
+                                </label>
+                            </div>
+                            <div class="col s6">
+                                <p class="range-field">
+                                    <input type="range" id="sliderSizeBorder" min="0" max="10" />
+                                </p>
+                            </div>
+                            <div class="col s6">
+                                <div class="input-field">
+                                    <input type="number" id="inputSizeBorder" min="0" max="10" />
+                                    <label>pixels</label>
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="col s12">
-                            <p>
+                        <!-- Couleur de la bordure -->
+                        <div class="row">
+                            <div class="col s12">
                                 <label>
-                                    <input class="with-gap" name="fillColorPoint" type="radio" value="gc"/>
-                                    <span>
-                                        <i class="material-icons">color_lens</i>
-                                        {{ _("Couleurs GC (par type)") }}
-                                    </span>
+                                    <i class="material-icons">format_color_fill</i>
+                                    {{ _("Couleur de la bordure") }}
                                 </label>
-                            </p>
-                            <p>
-                                <label>
-                                    <input class="with-gap" name="fillColorPoint" type="radio" value="none"/>
-                                    <span>
-                                        <i class="material-icons">clear</i>
-                                        {{ _("Transparent") }}
-                                    </span>
-                                </label>
-                            </p>
-                            <p>
-                                <label>
-                                    <input class="with-gap" name="fillColorPoint" type="radio" value="fix" />
-                                    <span>
+                            </div>
+
+                            <div class="col s12">
+                                <p>
+                                    <label>
+                                        <input class="with-gap" name="borderColorPoint" type="radio" value="gc"/>
+                                        <span>
+                                            <i class="material-icons">color_lens</i>
+                                            {{ _("Couleurs GC (par type)") }}
+                                        </span>
+                                    </label>
+                                </p>
+                                <p>
+                                    <label>
+                                        <input class="with-gap" name="borderColorPoint" type="radio" value="none"/>
+                                        <span>
+                                            <i class="material-icons">clear</i>
+                                            {{ _("Transparent") }}
+                                        </span>
+                                    </label>
+                                </p>
+                                <p>
+                                    <label>
+                                        <input class="with-gap" name="borderColorPoint" type="radio" value="fix" />
+                                        <span>
+                                            <i class="material-icons">colorize</i>
+                                            {{ _("Couleur unique") }}
+                                        </span>
+                                    </label>
+                                </p>
+                            </div>
+
+                            <!-- Color Picker Bordure -->
+                            <div class="col s12">
+                                <div class="input-field">
+                                    <input type="color" id="pointBorderColor" value="#000000">
+                                    <label class="active" for="pointBorderColor">
                                         <i class="material-icons">colorize</i>
-                                        {{ _("Couleur unique") }}
-                                    </span>
-                                </label>
-                            </p>
-                        </div>
-
-                        <!-- Color Picker Centre -->
-                        <div class="col s12">
-                            <div class="input-field">
-                                <input type="color" id="pointCenterColor" value="#ffffff">
-                                <label class="active" for="pointCenterColor">
-                                    <i class="material-icons">colorize</i>
-                                    {{ _("Choisir la couleur") }}
-                                </label>
+                                        {{ _("Choisir la couleur") }}
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Section Bordure du point -->
-        <div class="col s12 m6">
-            <div class="card orange lighten-5">
-                <div class="card-content">
-                    <span class="card-title orange-text">
-                        <i class="material-icons">border_outer</i>
-                        {{ _("Bordure du point") }}
-                    </span>
+    <!-- Sous-menu Icône -->
+    <div id="iconeOptions" class="point-options" style="display: none;">
+        <div class="row">
+            <div class="col s12">
+                <div class="card green lighten-5">
+                    <div class="card-content">
+                        <span class="card-title green-text">
+                            <i class="material-icons">image</i>
+                            {{ _("Configuration des icônes") }}
+                        </span>
 
-                    <!-- Taille de la bordure -->
-                    <div class="row">
-                        <div class="col s12">
-                            <label>
-                                <i class="material-icons">border_clear</i>
-                                {{ _("Épaisseur de la bordure (0 = aucune)") }}
-                            </label>
-                        </div>
-                        <div class="col s6">
-                            <p class="range-field">
-                                <input type="range" id="sliderSizeBorder" min="0" max="10" />
-                            </p>
-                        </div>
-                        <div class="col s6">
-                            <div class="input-field">
-                                <input type="number" id="inputSizeBorder" min="0" max="10" />
-                                <label>pixels</label>
+                        <!-- Choix du jeu d'icônes -->
+                        <div class="row">
+                            <div class="col s12">
+                                <div class="input-field">
+                                    <select id="selectIconSet">
+                                        <option value="geocaching">🧭 Geocaching</option>
+                                    </select>
+                                    <label>
+                                        <i class="material-icons">collections</i>
+                                        {{ _("Jeu d'icônes") }}
+                                    </label>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Couleur de la bordure -->
-                    <div class="row">
-                        <div class="col s12">
-                            <label>
-                                <i class="material-icons">format_color_fill</i>
-                                {{ _("Couleur de la bordure") }}
-                            </label>
+                        <!-- Taille des icônes -->
+                        <div class="row">
+                            <div class="col s12">
+                                <label>
+                                    <i class="material-icons">straighten</i>
+                                    {{ _("Taille des icônes") }}
+                                </label>
+                            </div>
+                            <div class="col s6">
+                                <p class="range-field">
+                                    <input type="range" id="sliderSizeIcon" min="16" max="64" />
+                                </p>
+                            </div>
+                            <div class="col s6">
+                                <div class="input-field">
+                                    <input type="number" id="inputSizeIcon" min="16" max="64" />
+                                    <label>pixels</label>
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="col s12">
-                            <p>
+                        <!-- Aperçu des icônes disponibles -->
+                        <div class="row">
+                            <div class="col s12">
                                 <label>
-                                    <input class="with-gap" name="borderColorPoint" type="radio" value="gc"/>
-                                    <span>
-                                        <i class="material-icons">color_lens</i>
-                                        {{ _("Couleurs GC (par type)") }}
-                                    </span>
+                                    <i class="material-icons">preview</i>
+                                    {{ _("Aperçu des icônes") }}
                                 </label>
-                            </p>
-                            <p>
-                                <label>
-                                    <input class="with-gap" name="borderColorPoint" type="radio" value="none"/>
-                                    <span>
-                                        <i class="material-icons">clear</i>
-                                        {{ _("Transparent") }}
-                                    </span>
-                                </label>
-                            </p>
-                            <p>
-                                <label>
-                                    <input class="with-gap" name="borderColorPoint" type="radio" value="fix" />
-                                    <span>
-                                        <i class="material-icons">colorize</i>
-                                        {{ _("Couleur unique") }}
-                                    </span>
-                                </label>
-                            </p>
-                        </div>
-
-                        <!-- Color Picker Bordure -->
-                        <div class="col s12">
-                            <div class="input-field">
-                                <input type="color" id="pointBorderColor" value="#000000">
-                                <label class="active" for="pointBorderColor">
-                                    <i class="material-icons">colorize</i>
-                                    {{ _("Choisir la couleur") }}
-                                </label>
+                                <div id="iconPreview" class="icon-grid">
+                                    <!-- Les icônes seront générées dynamiquement ici -->
+                                </div>
                             </div>
                         </div>
                     </div>

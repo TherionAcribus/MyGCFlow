@@ -721,18 +721,39 @@ function displayWebGLPoints(features, pointOptions) {
     let pointStyle;
     let pointStyleBorder;    
     if (pointOptions.mode == "icone") {
-        const shape = `/static/images/icones/${pointOptions.shape}.png`
-        pointStyle = {
-            variables: {
-            filterShape: 'all',
-            },
-            'icon-src': shape,
-            'icon-width': pointSize *5,  // *5 pour être à peu près même taille que vectoriel
-            'icon-height': pointSize *5,
-            'icon-color': fillColor,
-            'icon-size': [32, 32],  // taille de l'image en pixel
-            'icon-scale': 1,
-        };
+        // Utilisation du sprite si disponible
+        if (pointOptions.sprite && pointOptions.iconKey && pointOptions.sprite.map[pointOptions.iconKey]) {
+            const sp = pointOptions.sprite;
+            const rect = sp.map[pointOptions.iconKey]; // {x,y,w,h}
+            pointStyle = {
+                variables: {
+                    filterShape: 'all',
+                },
+                'icon-src': sp.url,
+                'icon-size': [rect.w, rect.h],
+                'icon-width': Math.round((pointOptions.iconSize || rect.w)),
+                'icon-height': Math.round((pointOptions.iconSize || rect.h)),
+                'icon-color': undefined, // icône en couleur native
+                'icon-offset': [rect.x, rect.y],
+                'icon-origin': 'top-left',
+                'icon-img-size': [sp.sheetWidth, sp.sheetHeight],
+                'icon-rotate-with-view': false,
+            };
+        } else {
+            // Fallback ancienne logique (image par forme)
+            const shape = `/static/images/icones/${pointOptions.shape}.png`
+            pointStyle = {
+                variables: {
+                    filterShape: 'all',
+                },
+                'icon-src': shape,
+                'icon-width': pointSize *5,
+                'icon-height': pointSize *5,
+                'icon-color': fillColor,
+                'icon-size': [32, 32],
+                'icon-scale': 1,
+            };
+        }
     } else {
         if (pointOptions.shape == "circle") {
             // Si taille bordure = 0 OU mode = none, pas de bordure du tout
