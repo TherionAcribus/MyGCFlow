@@ -45,22 +45,27 @@
                     <option value="images">{{ _("Images + MoviePy (serveur)") }}</option>
                 </select>
                 <label for="selectRecordMode">{{ _("Mode d'enregistrement") }}</label>
+                <i class="material-icons tooltipped" data-position="right" data-tooltip="{{ _('MediaRecorder : enregistrement direct en WebM côté navigateur, rapide et léger. Images + MoviePy : capture d\'images puis assemblage côté serveur, plus flexible mais plus lent') }}">help_outline</i>
             </div>
             <div class="input-field col s6 m3 mediarecorder-only">
                 <input id="inputRecordFps" type="number" min="1" max="60" class="validate">
                 <label for="inputRecordFps">{{ _("FPS") }}</label>
+                <i class="material-icons tooltipped" data-position="top" data-tooltip="{{ _('Nombre d\'images capturées par seconde. 30 FPS = vidéo fluide, 60 FPS = ultra-fluide mais fichier 2x plus lourd. Adapté à votre débit internet et puissance machine') }}">help_outline</i>
             </div>
             <div class="input-field col s6 m3 mediarecorder-only">
                 <input id="inputRecordBitrate" type="number" min="100000" step="100000" class="validate">
                 <label for="inputRecordBitrate">{{ _("Bitrate vidéo (bps)") }}</label>
+                <i class="material-icons tooltipped" data-position="top" data-tooltip="{{ _('Débit de données vidéo en bits/seconde. 1Mbps = bonne qualité, 5Mbps = haute qualité, 10Mbps = excellente qualité. Fichier plus lourd avec débit élevé') }}">help_outline</i>
             </div>
             <div class="input-field col s6 m3 mediarecorder-only">
                 <input id="inputRecordSlowdown" type="number" min="1" step="1" class="validate" value="1">
                 <label class="active" for="inputRecordSlowdown">{{ _("Ralentir par (x)") }}</label>
+                <i class="material-icons tooltipped" data-position="top" data-tooltip="{{ _('Multiplicateur de ralentissement temporel. 1 = vitesse normale, 2 = 2x plus lente (moitié vitesse), 0.5 = 2x plus rapide. Idéal pour analyser les animations détaillées') }}">help_outline</i>
             </div>
             <div class="input-field col s6 m3 mediarecorder-only">
                 <input id="inputRecordScaleFactor" type="number" min="1" max="3" step="0.25" class="validate">
                 <label for="inputRecordScaleFactor">{{ _("Facteur d'échelle (qualité)") }}</label>
+                <i class="material-icons tooltipped" data-position="top" data-tooltip="{{ _('Multiplicateur de résolution temporaire. 1.5 = 50% plus grande pendant l\'enregistrement puis réduction. Améliore la netteté des détails fins sans changer la taille finale du fichier') }}">help_outline</i>
             </div>
             <div class="input-field col s12 m6 mediarecorder-only">
                 <select id="selectRecordMime">
@@ -70,15 +75,18 @@
                     <option value="video/webm">{{ _("WebM simple (fallback)") }}</option>
                 </select>
                 <label for="selectRecordMime">{{ _("Format vidéo") }}</label>
+                <i class="material-icons tooltipped" data-position="right" data-tooltip="{{ _('Codec de compression WebM. VP9 = meilleure qualité/compression, VP8 = compatible avec tous navigateurs, H.264 = format MP4 universel, WebM simple = fallback basique') }}">help_outline</i>
             </div>
             <div class="col s12 m3 mediarecorder-only" style="margin-top: 12px;">
                 <label style="display:block;">
                     <input id="cbRecordUpload" type="checkbox"/>
                     <span>{{ _("Uploader vers serveur") }}</span>
+                    <i class="material-icons tooltipped" data-position="right" data-tooltip="{{ _('Transfère automatiquement la vidéo vers le serveur une fois l\'enregistrement terminé. Utile pour archivage centralisé ou partage avec d\'autres utilisateurs via l\'interface web') }}" style="font-size: 16px; vertical-align: middle; margin-left: 5px;">help_outline</i>
                 </label>
                 <label style="display:block;">
                     <input id="cbRecordDownload" type="checkbox"/>
                     <span>{{ _("Télécharger local") }}</span>
+                    <i class="material-icons tooltipped" data-position="right" data-tooltip="{{ _('Sauvegarde automatiquement la vidéo dans le dossier de téléchargements de votre navigateur une fois l\'enregistrement terminé. Pratique pour archivage local immédiat') }}" style="font-size: 16px; vertical-align: middle; margin-left: 5px;">help_outline</i>
                 </label>
             </div>
         </div>

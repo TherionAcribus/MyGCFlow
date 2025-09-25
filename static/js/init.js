@@ -16,10 +16,11 @@ export const CONFIG = {
     API_BASE: `${window.location.origin}`
 };
 
-document.addEventListener('DOMContentLoaded', async function() {     
+document.addEventListener('DOMContentLoaded', async function() {
     // initialisation des elements de Materialize
     initTabs();
     initModals();
+    initTooltips();
     initSelect();
     initPickers();
     pkg.createMap();
@@ -69,6 +70,12 @@ function initTabs() {
 function initModals() {
     var elemsModals = document.querySelectorAll('.modal');
     M.Modal.init(elemsModals, {});
+}
+
+// initialisation des Tooltips de Materialize
+function initTooltips() {
+    var elemsTooltips = document.querySelectorAll('.tooltipped');
+    M.Tooltip.init(elemsTooltips, {});
 }
 
 // initialisation des Selects de Materialize
