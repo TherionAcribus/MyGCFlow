@@ -1266,8 +1266,8 @@ function initializeIconOptions() {
         };
 
         // Valeurs par défaut
-        if (!sliderSizeIcon.value) sliderSizeIcon.value = 32;
-        if (!inputSizeIcon.value) inputSizeIcon.value = 32;
+        if (!sliderSizeIcon.value) sliderSizeIcon.value = 24;
+        if (!inputSizeIcon.value) inputSizeIcon.value = 24;
     }
 
     // Gestion du select d'icônes
@@ -1387,7 +1387,7 @@ function selectSpriteIcon(iconKey) {
 function updateIconSize() {
     const inputSizeIcon = document.getElementById('inputSizeIcon');
     if (inputSizeIcon && pkg.options && pkg.options.point) {
-        pkg.options.point.iconSize = parseInt(inputSizeIcon.value) || 32;
+        pkg.options.point.iconSize = parseInt(inputSizeIcon.value) || 24;
         pkg.refreshPoints(pkg.options);
     }
 }
