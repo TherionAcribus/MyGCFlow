@@ -1418,7 +1418,6 @@ function unSelectAllMapsButtons(){
 
 // Fonctions de compatibilité pour remplacer les modales
 let currentLoadingToast = null;
-let currentLoadingOverlay = null;
 
 export function openModalLoading(title, description){
     // Fermer un éventuel loader précédent pour éviter les doublons
@@ -1464,38 +1463,7 @@ export function openModalLoading(title, description){
         currentLoadingToast = toast;
     }
 
-    // Créer/afficher un overlay pour forcer la visibilité (au-dessus de tout)
-    try {
-        if (!currentLoadingOverlay) {
-            const ov = document.createElement('div');
-            ov.id = 'gcm-loader-overlay';
-            ov.style.position = 'fixed';
-            ov.style.top = '0';
-            ov.style.left = '0';
-            ov.style.width = '100vw';
-            ov.style.height = '100vh';
-            ov.style.zIndex = '2147483600';
-            ov.style.pointerEvents = 'none';
-            ov.style.display = 'flex';
-            ov.style.alignItems = 'flex-start';
-            ov.style.justifyContent = 'flex-end';
-            ov.style.padding = '20px';
-            document.body.appendChild(ov);
-            currentLoadingOverlay = ov;
-        }
-        if (currentLoadingToast && !currentLoadingOverlay.contains(currentLoadingToast)) {
-            // Déplacer le toast dans l'overlay
-            const parent = currentLoadingToast.parentElement;
-            currentLoadingOverlay.appendChild(currentLoadingToast);
-            // Autoriser l’interaction avec le toast
-            currentLoadingToast.style.pointerEvents = 'auto';
-            if (parent && parent.childElementCount === 0 && parent.classList.contains('gcm-toast-container')) {
-                parent.remove();
-            }
-        }
-    } catch(e) {
-        console.warn('[LOADER] overlay erreur:', e);
-    }
+    // Plus besoin d'overlay séparé - le toast est déjà dans le bon conteneur
 }
 
 export function updateTextsModal(title, description){
@@ -1518,12 +1486,6 @@ export function closeModalLoading(){
         currentLoadingToast = null;
         console.log('[LOADER] closeModalLoading');
     }
-    try {
-        if (currentLoadingOverlay) {
-            currentLoadingOverlay.remove();
-            currentLoadingOverlay = null;
-        }
-    } catch(e) {}
 }
 
 export function updateProgressBar(data) {
