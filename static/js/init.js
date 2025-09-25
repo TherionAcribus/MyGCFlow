@@ -34,11 +34,25 @@ document.addEventListener('DOMContentLoaded', async function() {
     }, 500); // Délai pour laisser le temps aux autres initialisations
     // recupération des options par défaut puis on initialise l'interface
     pkg.getDefaultValues().then(async optionsValues => {
+        console.log('🚀 [INIT] Valeurs par défaut chargées:', {
+            point_mode: optionsValues.point?.mode,
+            all_options: optionsValues
+        });
+
         // initialisation de la classe "options"
         pkg.options.init(optionsValues);
+        console.log('🚀 [INIT] Options initialisées avec valeurs par défaut:', {
+            point_mode: pkg.options.point?.mode,
+            all_options: pkg.options
+        });
 
         // Charger les paramètres utilisateur sauvegardés (comme pour les profils)
         await loadUserSettings();
+        console.log('🚀 [INIT] Après loadUserSettings:', {
+            point_mode: pkg.options.point?.mode,
+            language: pkg.options.options?.language,
+            checkVersion: pkg.options.options?.checkVersion
+        });
 
         // check la version
         pkg.checkVersionInit();
@@ -50,9 +64,28 @@ document.addEventListener('DOMContentLoaded', async function() {
         pkg.centerMap();
         // affiche les frames (infos, titre) si elles existent
         pkg.displayFrames();
+
+        console.log('🚀 [INIT] Avant init_ui():', {
+            point_mode: pkg.options.point?.mode
+        });
+
         // mets les valeurs par défaut dans les formulaire
         //(optionsValues);
         pkg.init_ui();
+
+        console.log('🚀 [INIT] Après init_ui() - état du switch:', {
+            switch_checked: document.getElementById('switchIconeVectoriel')?.checked,
+            point_mode: pkg.options.point?.mode
+        });
+
+        // Charger le profil par défaut APRÈS l'initialisation complète de l'interface
+        console.log('🚀 [INIT] Interface initialisée, chargement du profil par défaut...');
+        setTimeout(() => {
+            if (window.profileManager) {
+                window.profileManager.loadDefaultProfileAtStartup();
+            }
+        }, 200); // Petit délai supplémentaire pour s'assurer que tout est prêt
+
         // ... autres fonctions qui dépendent de optionsValues ...
     });
     pkg.readBdd();  // creation du geojson et des metadatas
@@ -106,25 +139,31 @@ export function getDefaultValues() {
 // Charger et appliquer les paramètres utilisateur sauvegardés
 async function loadUserSettings() {
     try {
-        console.log('Chargement des paramètres utilisateur...');
+        console.log('📥 [USER_SETTINGS] Chargement des paramètres utilisateur...');
         const response = await fetch(`${CONFIG.BASE_URL}/api/settings`);
         if (!response.ok) {
             throw new Error(`Erreur HTTP ${response.status}`);
         }
 
         const userSettings = await response.json();
-        console.log('Paramètres utilisateur chargés:', userSettings);
+        console.log('📥 [USER_SETTINGS] Paramètres utilisateur chargés:', userSettings);
 
         // Appliquer les paramètres utilisateur aux options locales
         if (userSettings.language) {
             pkg.options.options.language = userSettings.language;
-            console.log('Langue appliquée:', userSettings.language);
+            console.log('📥 [USER_SETTINGS] Langue appliquée:', userSettings.language);
         }
 
         if (typeof userSettings.check_updates === 'boolean') {
             pkg.options.options.checkVersion = userSettings.check_updates;
-            console.log('Option checkVersion appliquée:', userSettings.check_updates);
+            console.log('📥 [USER_SETTINGS] Option checkVersion appliquée:', userSettings.check_updates);
         }
+
+        console.log('📥 [USER_SETTINGS] État après application:', {
+            language: pkg.options.options.language,
+            checkVersion: pkg.options.options.checkVersion,
+            point_mode: pkg.options.point?.mode  // Vérifier si les points sont affectés
+        });
 
         // Sauvegarder dans localStorage pour cohérence
         if (userSettings.language) {
@@ -132,8 +171,8 @@ async function loadUserSettings() {
         }
 
     } catch (error) {
-        console.warn('Impossible de charger les paramètres utilisateur:', error.message);
-        console.log('Utilisation des paramètres par défaut');
+        console.warn('📥 [USER_SETTINGS] Impossible de charger les paramètres utilisateur:', error.message);
+        console.log('📥 [USER_SETTINGS] Utilisation des paramètres par défaut');
     }
 }
 

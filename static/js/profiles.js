@@ -359,14 +359,20 @@ class ProfileManager {
 
     async loadProfileByUid(uid) {
         try {
-            console.log('Chargement profil par UUID:', uid);
+            console.log('🔄 [LOAD_PROFILE] Chargement profil par UUID:', uid);
+            console.log('🔄 [LOAD_PROFILE] État avant chargement:', {
+                point_mode: pkg?.options?.point?.mode,
+                switch_checked: document.getElementById('switchIconeVectoriel')?.checked
+            });
+
             const response = await fetch(`/api/profiles/uid/${encodeURIComponent(uid)}`);
             const profile = await response.json();
 
-            console.log('📥 PROFIL REÇU PAR UUID:', {
+            console.log('🔄 [LOAD_PROFILE] PROFIL REÇU PAR UUID:', {
                 profile_name: profile.name,
                 uid: profile.uid,
                 version: profile.version,
+                points_mode: profile.points?.mode,
                 map: profile.map,
                 animation: profile.animation,
                 points: profile.points,
@@ -377,10 +383,17 @@ class ProfileManager {
 
             this.currentProfile = profile;
             this.applyProfile(profile);
+
+            console.log('🔄 [LOAD_PROFILE] État après application du profil:', {
+                point_mode: pkg?.options?.point?.mode,
+                switch_checked: document.getElementById('switchIconeVectoriel')?.checked,
+                profile_applied: profile.name
+            });
+
             this.loadProfilesList(); // Rafraîchir pour montrer le profil actif
             this.showToast(`Profil "${profile.name}" chargé`, 'green');
         } catch (error) {
-            console.error('❌ Erreur chargement profil par UUID:', error);
+            console.error('❌ [LOAD_PROFILE] Erreur chargement profil par UUID:', error);
             this.showToast('Erreur lors du chargement du profil par défaut', 'red');
         }
     }
@@ -478,8 +491,13 @@ class ProfileManager {
 
     async loadDefaultProfileAtStartup() {
         try {
+            console.log('🎯 [DEFAULT_PROFILE] Vérification du profil par défaut - État actuel:', {
+                point_mode: pkg?.options?.point?.mode,
+                switch_checked: document.getElementById('switchIconeVectoriel')?.checked
+            });
+
             const settings = await this.loadAppSettings();
-            console.log('Paramètres chargés au démarrage:', {
+            console.log('🎯 [DEFAULT_PROFILE] Paramètres chargés au démarrage:', {
                 default_profile_uid: settings.default_profile_uid,
                 default_profile_name: settings.default_profile_name,
                 all_settings: settings
@@ -488,18 +506,42 @@ class ProfileManager {
             const defaultProfileUid = settings.default_profile_uid;
 
             if (defaultProfileUid) {
-                console.log('🚀 Chargement profil par défaut au démarrage (UUID):', defaultProfileUid);
-                console.log('Nom du profil par défaut:', settings.default_profile_name);
+                console.log('🎯 [DEFAULT_PROFILE] Chargement profil par défaut au démarrage (UUID):', defaultProfileUid);
+                console.log('🎯 [DEFAULT_PROFILE] Nom du profil par défaut:', settings.default_profile_name);
+
+                console.log('🎯 [DEFAULT_PROFILE] État avant chargement du profil:', {
+                    point_mode: pkg?.options?.point?.mode,
+                    switch_checked: document.getElementById('switchIconeVectoriel')?.checked
+                });
 
                 await this.loadProfileByUid(defaultProfileUid);
+
+                console.log('🎯 [DEFAULT_PROFILE] État après chargement du profil:', {
+                    point_mode: pkg?.options?.point?.mode,
+                    switch_checked: document.getElementById('switchIconeVectoriel')?.checked,
+                    profile_name: this.currentProfile?.name || 'aucun'
+                });
+
+                // Vérification finale de cohérence
+                const finalSwitchState = document.getElementById('switchIconeVectoriel')?.checked;
+                const finalPointMode = pkg?.options?.point?.mode;
+                const isConsistent = (finalPointMode === 'vectoriel' && finalSwitchState) ||
+                                   (finalPointMode === 'icone' && !finalSwitchState);
+
+                if (isConsistent) {
+                    console.log('✅ [DEFAULT_PROFILE] Mode des points cohérent:', finalPointMode);
+                } else {
+                    console.warn('⚠️ [DEFAULT_PROFILE] Incohérence détectée - Mode:', finalPointMode, 'Switch:', finalSwitchState);
+                }
+
                 // Le toast est déjà affiché dans loadProfileByUid
             } else {
-                console.log('🚫 Aucun profil par défaut défini (default_profile_uid est null/undefined)');
-                console.log('Vérifiez que le profil a bien été défini comme par défaut');
+                console.log('🎯 [DEFAULT_PROFILE] Aucun profil par défaut défini (default_profile_uid est null/undefined)');
+                console.log('🎯 [DEFAULT_PROFILE] Vérifiez que le profil a bien été défini comme par défaut');
             }
         } catch (error) {
-            console.error('❌ Erreur chargement profil par défaut au démarrage:', error);
-            console.error('Détails de l\'erreur:', error.message);
+            console.error('❌ [DEFAULT_PROFILE] Erreur chargement profil par défaut au démarrage:', error);
+            console.error('❌ [DEFAULT_PROFILE] Détails de l\'erreur:', error.message);
         }
     }
 
@@ -1114,14 +1156,22 @@ class ProfileManager {
 // Fonctions d'application des paramètres (appelées depuis applyProfile)
 function applyMapSettings(mapOptions) {
     try {
-        console.log('Application carte - Provider demandé:', mapOptions.tile_provider);
+        console.log('🎯 Application carte - Provider demandé:', mapOptions.tile_provider);
+
+        // Vérifier si la carte est initialisée
+        if (!window.map) {
+            console.warn('⚠️ Carte non initialisée, report de l\'application des paramètres carte');
+            // Reporter l'application dans 500ms
+            setTimeout(() => applyMapSettings(mapOptions), 500);
+            return;
+        }
 
         // Changer le fournisseur de carte
         const mapButton = document.querySelector(`a[id="${mapOptions.tile_provider}"]`);
-        console.log('Bouton carte trouvé:', !!mapButton, 'ID:', mapOptions.tile_provider);
+        console.log('🎯 Bouton carte trouvé:', !!mapButton, 'ID:', mapOptions.tile_provider);
 
         if (mapButton) {
-            console.log('Clic sur le bouton carte:', mapOptions.tile_provider);
+            console.log('🎯 Clic sur le bouton carte:', mapOptions.tile_provider);
             mapButton.click();
 
             // Attendre un peu puis appliquer les options spécifiques
@@ -1139,18 +1189,22 @@ function applyMapSettings(mapOptions) {
             view.setZoom(mapOptions.default_zoom);
         }
 
-        console.log('Paramètres de carte appliqués:', mapOptions);
+        console.log('✅ Paramètres de carte appliqués:', mapOptions);
     } catch (error) {
-        console.error('Erreur lors de l\'application des paramètres de carte:', error);
+        console.error('❌ Erreur lors de l\'application des paramètres de carte:', error);
     }
 }
 
 function applyMapSpecificOptions(tileProvider, mapOptions) {
     try {
+        console.log('🎯 Application options spécifiques pour:', tileProvider);
+
         if (tileProvider === 'vectorMap') {
             // Options pour la carte vectorielle
             const vectorOptions = document.getElementById('vectorMapOptions');
             const v = (mapOptions.vectorOptions || mapOptions.vector_options || null);
+            console.log('🎯 Options vectorMap - element trouvé:', !!vectorOptions, 'options:', !!v);
+
             if (vectorOptions && v) {
                 // Couleurs
                 const strokeColor = v.strokeColor || v.stroke_color;
@@ -1203,7 +1257,10 @@ function applyMapSpecificOptions(tileProvider, mapOptions) {
                     strokeWidth: finalStrokeWidth
                 };
                 if (typeof pkg.refreshVectorMap === 'function') {
+                    console.log('🎯 Rafraîchissement carte vectorielle avec:', vectorValues);
                     pkg.refreshVectorMap(vectorValues);
+                } else {
+                    console.warn('⚠️ Fonction refreshVectorMap non disponible');
                 }
             }
         } else if (tileProvider === 'stamenToner') {
@@ -1227,7 +1284,10 @@ function applyMapSpecificOptions(tileProvider, mapOptions) {
                 // Rafraîchir explicitement la carte toner avec les nouvelles valeurs
                 const tonerValues = { type: variant };
                 if (typeof pkg.refreshStamenTonerMap === 'function') {
+                    console.log('🎯 Rafraîchissement carte Stamen Toner avec:', tonerValues);
                     pkg.refreshStamenTonerMap(tonerValues);
+                } else {
+                    console.warn('⚠️ Fonction refreshStamenTonerMap non disponible');
                 }
             }
         }
@@ -1418,8 +1478,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Remplir le sélecteur de profil par défaut
         profileManager.populateDefaultProfileSelector();
 
-        // Charger le profil par défaut au démarrage
-        profileManager.loadDefaultProfileAtStartup();
+        // Le chargement du profil par défaut est maintenant géré dans init.js après init_ui()
 
         // Écouter les changements du sélecteur de profil par défaut
         const defaultProfileSelector = document.getElementById('selectDefaultProfile');

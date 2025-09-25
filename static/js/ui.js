@@ -645,9 +645,23 @@ export function init_ui() {
     synchronizeSliderAndInputCenter();
     synchronizeSliderAndInputBorder();
     // switch Icone/Vectoriel
+    console.log('🎨 [INIT_UI] Application du mode des points:', {
+        mode_dans_options: pkg.options.point.mode,
+        switch_actuel: switchIconeVectoriel.checked
+    });
+
     if (pkg.options.point.mode === "vectoriel") {
         switchIconeVectoriel.checked = true;
+        console.log('🎨 [INIT_UI] Mode vectoriel appliqué - switch coché');
+    } else if (pkg.options.point.mode === "icone") {
+        switchIconeVectoriel.checked = false;
+        console.log('🎨 [INIT_UI] Mode icone appliqué - switch décoché');
+    } else {
+        console.warn('🎨 [INIT_UI] Mode inconnu:', pkg.options.point.mode, '- utilisation de la valeur par défaut (vectoriel)');
+        switchIconeVectoriel.checked = true; // valeur par défaut
     }
+
+    console.log('🎨 [INIT_UI] État final du switch:', switchIconeVectoriel.checked);
     selectShape.value = pkg.options.point.shape
     // Obliger Materialize à actualiser l'affichage du select pour refléter la nouvelle valeur sélectionnée
     M.FormSelect.init(document.getElementById('selectShape'));
