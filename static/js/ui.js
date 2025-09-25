@@ -334,6 +334,12 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     cpFlashColor = document.getElementById('flashColor');
     if (cpFlashColor) cpFlashColor.addEventListener('change', changeFlashValues);
 
+    // radio buttons pour les couleurs du flash
+    const radioFlashColor = document.getElementsByName('flashColor');
+    radioFlashColor.forEach(radio => {
+        radio.addEventListener('change', () => changeFlashColorType(radio));
+    });
+
     // INFOS
     // checkboxes
     cbDisplayTitle = document.getElementById('cbDisplayTitle');
@@ -685,6 +691,16 @@ export function init_ui() {
         selectFlashMode.value = pkg.options.flash.mode;
         // Rafraîchir le select Materialize après avoir changé la valeur
         M.FormSelect.init(selectFlashMode);
+    }
+    // radio buttons pour le type de couleur du flash
+    const flashColorRadios = document.getElementsByName('flashColor');
+    for (let radio of flashColorRadios) {
+        if (radio.value === pkg.options.flash.color_type) {
+            radio.checked = true;
+            // Déclencher l'événement pour mettre à jour l'affichage
+            radio.dispatchEvent(new Event('change'));
+            break;
+        }
     }
     // ------- INFOS -------
     // checkboxes
@@ -1998,6 +2014,27 @@ function changeFlashValues(event){
     }
     // colorpickers
     if (cpFlashColor) pkg.options.flash.color = cpFlashColor.value;
+}
+
+// Gestion du type de couleur du flash (GC, fix, none)
+function changeFlashColorType(event) {
+    // Mettre à jour le mode de couleur dans les options
+    pkg.options.flash.color_type = event.value;
+
+    // Gestion de l'affichage du color picker
+    const flashColorPickerContainer = document.querySelector('#flashColor').closest('.input-field');
+
+    if (event.value === 'fix') {
+        // Afficher le color picker pour couleur fixe
+        if (flashColorPickerContainer) {
+            flashColorPickerContainer.style.display = 'block';
+        }
+    } else {
+        // Masquer le color picker pour GC ou transparent
+        if (flashColorPickerContainer) {
+            flashColorPickerContainer.style.display = 'none';
+        }
+    }
 }
 
 // Fonction de validation à la perte de focus pour la durée du flash

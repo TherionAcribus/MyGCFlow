@@ -59,6 +59,7 @@
     "flash":{
         "mode": "circle",
         "color": "#FF00FF",
+        "color_type": "fix",
         "duration": 2000,
         "size": 10
     }

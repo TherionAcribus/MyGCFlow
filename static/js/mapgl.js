@@ -373,19 +373,29 @@ export async function requetedefaultGcColors(){
             throw new Error(errorMsg);
         }
         defaultGcColors = await response.json();
-        console.log('Couleurs GC chargées avec succès:', defaultGcColors);
+        console.log('🎨 Couleurs GC chargées avec succès:', defaultGcColors);
+        console.log('🎨 Test hexToRgb avec #008000:', pkg.hexToRgb('#008000'));
+        console.log('🎨 Toutes les clés disponibles:', Object.keys(defaultGcColors));
     } catch (error) {
         console.error('Erreur lors du chargement des couleurs GC:', error);
         // Utiliser des couleurs par défaut en cas d'erreur
         defaultGcColors = {
-            'Traditional Cache': '#FF0000',
-            'Multi-cache': '#00FF00',
+            'Traditional Cache': '#008000',
+            'Multi-cache': '#FFA500',
             'Mystery Cache': '#0000FF',
-            'EarthCache': '#8B4513',
-            'Letterbox Hybrid': '#FFA500',
-            'Event Cache': '#800080',
-            'Virtual Cache': '#FFC0CB',
-            'Webcam Cache': '#A52A2A'
+            'EarthCache': '#87CEEB',
+            'Letterbox Hybrid': '#0000FF',
+            'Event Cache': '#FF0000',
+            'Unknown Cache': '#0000FF',
+            'Wherigo Cache': '#0000FF',
+            'Virtual Cache': '#87CEEB',
+            'Webcam Cache': '#87CEEB',
+            'Giga-Event Cache': '#FF0000',
+            'Mega-Event Cache': '#FF0000',
+            'Cache In Trash Out Event': '#FF0000',
+            'Community Celebration Event': '#FF0000',
+            'GPS Adventures Exhibit': '#FF0000',
+            'Locationless (Reverse) Cache': '#FFFFFF'
         };
         console.warn('Utilisation des couleurs GC par défaut suite à une erreur de chargement');
     }
@@ -2442,7 +2452,7 @@ function flashRecord(features) {
             )
         );
 
-        const animatedFeature = new ol.Feature({ geometry: geometry.clone(), type: featureData.properties.type });
+        const animatedFeature = new ol.Feature({ geometry: geometry.clone(), type: featureData.properties.cache_type });
         animatedFeature.set('animationFrame', 0);
         animationSource.addFeature(animatedFeature);
 
@@ -2465,10 +2475,11 @@ function updateAnimationStyles() {
             const opacity = ol.easing.easeOut(1 - animationRatio);
 
             let style;
+            const cacheType = feature.get('type'); // Récupérer le type de cache depuis la feature
             if (pkg.options.flash.mode == "star") {
-                style = starStyle(radius, opacity, pkg.options.flash);
+                style = starStyle(radius, opacity, pkg.options.flash, cacheType);
             } else if (pkg.options.flash.mode == "circle") {
-                style = circleStyle(radius, opacity, pkg.options.flash);
+                style = circleStyle(radius, opacity, pkg.options.flash, cacheType);
             }
             
             feature.setStyle(style);
@@ -2492,7 +2503,7 @@ function flashFeatures(features, flashOptions) {
         const featureGeometry = new ol.geom.Point(coords);
         const feature = new ol.Feature({
             geometry: featureGeometry,
-            // Autres propriétés si nécessaire
+            type: featureData.properties.cache_type // Définir le type de cache pour les couleurs GC
         });
 
         // Ajoutez ici la feature à une source/vector layer dédiée à l'animation si ce n'est pas déjà fait dans flash()
@@ -2522,25 +2533,26 @@ function flash(feature, flashOptions) {
 
         // Style pour l'animation de flash
         let style;
+        const cacheType = feature.get('type'); // Récupérer le type de cache depuis la feature
         switch (flashOptions.mode) {
             case "star":
-                style = starStyle(radius, opacity, flashOptions);
+                style = starStyle(radius, opacity, flashOptions, cacheType);
                 break;
             case "circle":
-                style = circleStyle(radius, opacity, flashOptions);
+                style = circleStyle(radius, opacity, flashOptions, cacheType);
                 break;
             case "square":
-                style = squareStyle(radius, opacity, flashOptions);
+                style = squareStyle(radius, opacity, flashOptions, cacheType);
                 break;
             case "triangle":
-                style = triangleStyle(radius, opacity, flashOptions);
+                style = triangleStyle(radius, opacity, flashOptions, cacheType);
                 break;
             case "diamond":
-                style = diamondStyle(radius, opacity, flashOptions);
+                style = diamondStyle(radius, opacity, flashOptions, cacheType);
                 break;
             default:
                 // Style par défaut (cercle) si le mode n'est pas reconnu
-                style = circleStyle(radius, opacity, flashOptions);
+                style = circleStyle(radius, opacity, flashOptions, cacheType);
                 break;
         }
 
@@ -2566,8 +2578,33 @@ map.addLayer(animationLayer);
 }
 
 
-export function starStyle(radius, opacity, flashOptions){
-    const color = `rgba(${flashOptions.rgb.r}, ${flashOptions.rgb.g}, ${flashOptions.rgb.b}, ${opacity})`;
+export function starStyle(radius, opacity, flashOptions, cacheType = null){
+    let color;
+
+    // Déterminer la couleur selon le type sélectionné
+    if (flashOptions.color_type === 'gc' && cacheType && defaultGcColors) {
+        // Utiliser la couleur GC du type de cache
+        const gcColor = defaultGcColors[cacheType];
+        console.log('⭐ GC mode - gcColor trouvé:', gcColor, 'pour type:', cacheType);
+        if (gcColor) {
+            const rgb = pkg.hexToRgb(gcColor);
+            color = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacity})`;
+            console.log('⭐ Couleur GC finale:', color);
+        } else {
+            // Couleur par défaut si le type n'est pas trouvé
+            color = `rgba(128, 128, 128, ${opacity})`;
+            console.log('⭐ Couleur par défaut (type non trouvé):', color);
+        }
+    } else if (flashOptions.color_type === 'none') {
+        // Transparent
+        color = `rgba(0, 0, 0, 0)`;
+        console.log('⭐ Mode transparent');
+    } else {
+        // Couleur fixe (par défaut)
+        color = `rgba(${flashOptions.rgb.r}, ${flashOptions.rgb.g}, ${flashOptions.rgb.b}, ${opacity})`;
+        console.log('⭐ Mode couleur fixe:', color, 'rgb:', flashOptions.rgb);
+    }
+
     const style = new ol.style.Style({
         image: new ol.style.RegularShape({
             points: 5, // 5 points pour une étoile
@@ -2575,19 +2612,47 @@ export function starStyle(radius, opacity, flashOptions){
             radius2: radius / 2, // Rayon intérieur (pour la forme de l'étoile)
             angle: 0, // Angle initial de l'étoile
             stroke: new ol.style.Stroke({
-                color: `rgba(0, 0, 0, ${opacity})`, // Couleur jaune avec l'opacité calculée
+                color: `rgba(0, 0, 0, ${opacity})`, // Contour noir avec l'opacité calculée
                 width: 2, // Largeur du contour
             }),
             fill: new ol.style.Fill({
-                color: color, // Remplissage jaune avec l'opacité calculée
+                color: color, // Remplissage avec la couleur déterminée
             }),
         }),
     });
     return style;
 }
 
-export function circleStyle(radius, opacity, flashOptions){
-    const color = `rgba(${flashOptions.rgb.r}, ${flashOptions.rgb.g}, ${flashOptions.rgb.b}, ${opacity})`;
+export function circleStyle(radius, opacity, flashOptions, cacheType = null){
+    let color;
+
+    // Déterminer la couleur selon le type sélectionné
+    if (flashOptions.color_type === 'gc' && cacheType && defaultGcColors) {
+        // Utiliser la couleur GC du type de cache
+        const gcColor = defaultGcColors[cacheType];
+        if (gcColor) {
+            // gcColor est déjà un nom de couleur CSS valide (green, orange, etc.)
+            // On peut l'utiliser directement avec une opacité
+            if (gcColor.startsWith('#')) {
+                // Si c'est une valeur hexadécimale, convertir en rgba
+                const rgb = pkg.hexToRgb(gcColor);
+                color = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacity})`;
+            } else {
+                // Si c'est un nom de couleur CSS, l'utiliser directement
+                color = gcColor; // Les noms de couleurs CSS sont supportés par OpenLayers
+            }
+        } else {
+            // Couleur par défaut si le type n'est pas trouvé
+            color = `rgba(128, 128, 128, ${opacity})`;
+        }
+    } else if (flashOptions.color_type === 'none') {
+        // Transparent
+        color = `rgba(0, 0, 0, 0)`;
+    } else {
+        // Couleur fixe (par défaut)
+        color = `rgba(${flashOptions.rgb.r}, ${flashOptions.rgb.g}, ${flashOptions.rgb.b}, ${opacity})`;
+    }
+
     const style = new ol.style.Style({
         image: new ol.style.Circle({
             radius: radius,
@@ -2600,8 +2665,36 @@ export function circleStyle(radius, opacity, flashOptions){
     return style;
 }
 
-export function squareStyle(radius, opacity, flashOptions){
-    const color = `rgba(${flashOptions.rgb.r}, ${flashOptions.rgb.g}, ${flashOptions.rgb.b}, ${opacity})`;
+export function squareStyle(radius, opacity, flashOptions, cacheType = null){
+    let color;
+
+    // Déterminer la couleur selon le type sélectionné
+    if (flashOptions.color_type === 'gc' && cacheType && defaultGcColors) {
+        // Utiliser la couleur GC du type de cache
+        const gcColor = defaultGcColors[cacheType];
+        if (gcColor) {
+            // gcColor est déjà un nom de couleur CSS valide (green, orange, etc.)
+            // On peut l'utiliser directement avec une opacité
+            if (gcColor.startsWith('#')) {
+                // Si c'est une valeur hexadécimale, convertir en rgba
+                const rgb = pkg.hexToRgb(gcColor);
+                color = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacity})`;
+            } else {
+                // Si c'est un nom de couleur CSS, l'utiliser directement
+                color = gcColor; // Les noms de couleurs CSS sont supportés par OpenLayers
+            }
+        } else {
+            // Couleur par défaut si le type n'est pas trouvé
+            color = `rgba(128, 128, 128, ${opacity})`;
+        }
+    } else if (flashOptions.color_type === 'none') {
+        // Transparent
+        color = `rgba(0, 0, 0, 0)`;
+    } else {
+        // Couleur fixe (par défaut)
+        color = `rgba(${flashOptions.rgb.r}, ${flashOptions.rgb.g}, ${flashOptions.rgb.b}, ${opacity})`;
+    }
+
     const style = new ol.style.Style({
         image: new ol.style.RegularShape({
             points: 4,
@@ -2619,8 +2712,36 @@ export function squareStyle(radius, opacity, flashOptions){
     return style;
 }
 
-export function triangleStyle(radius, opacity, flashOptions){
-    const color = `rgba(${flashOptions.rgb.r}, ${flashOptions.rgb.g}, ${flashOptions.rgb.b}, ${opacity})`;
+export function triangleStyle(radius, opacity, flashOptions, cacheType = null){
+    let color;
+
+    // Déterminer la couleur selon le type sélectionné
+    if (flashOptions.color_type === 'gc' && cacheType && defaultGcColors) {
+        // Utiliser la couleur GC du type de cache
+        const gcColor = defaultGcColors[cacheType];
+        if (gcColor) {
+            // gcColor est déjà un nom de couleur CSS valide (green, orange, etc.)
+            // On peut l'utiliser directement avec une opacité
+            if (gcColor.startsWith('#')) {
+                // Si c'est une valeur hexadécimale, convertir en rgba
+                const rgb = pkg.hexToRgb(gcColor);
+                color = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacity})`;
+            } else {
+                // Si c'est un nom de couleur CSS, l'utiliser directement
+                color = gcColor; // Les noms de couleurs CSS sont supportés par OpenLayers
+            }
+        } else {
+            // Couleur par défaut si le type n'est pas trouvé
+            color = `rgba(128, 128, 128, ${opacity})`;
+        }
+    } else if (flashOptions.color_type === 'none') {
+        // Transparent
+        color = `rgba(0, 0, 0, 0)`;
+    } else {
+        // Couleur fixe (par défaut)
+        color = `rgba(${flashOptions.rgb.r}, ${flashOptions.rgb.g}, ${flashOptions.rgb.b}, ${opacity})`;
+    }
+
     const style = new ol.style.Style({
         image: new ol.style.RegularShape({
             points: 3,
@@ -2638,8 +2759,36 @@ export function triangleStyle(radius, opacity, flashOptions){
     return style;
 }
 
-export function diamondStyle(radius, opacity, flashOptions){
-    const color = `rgba(${flashOptions.rgb.r}, ${flashOptions.rgb.g}, ${flashOptions.rgb.b}, ${opacity})`;
+export function diamondStyle(radius, opacity, flashOptions, cacheType = null){
+    let color;
+
+    // Déterminer la couleur selon le type sélectionné
+    if (flashOptions.color_type === 'gc' && cacheType && defaultGcColors) {
+        // Utiliser la couleur GC du type de cache
+        const gcColor = defaultGcColors[cacheType];
+        if (gcColor) {
+            // gcColor est déjà un nom de couleur CSS valide (green, orange, etc.)
+            // On peut l'utiliser directement avec une opacité
+            if (gcColor.startsWith('#')) {
+                // Si c'est une valeur hexadécimale, convertir en rgba
+                const rgb = pkg.hexToRgb(gcColor);
+                color = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacity})`;
+            } else {
+                // Si c'est un nom de couleur CSS, l'utiliser directement
+                color = gcColor; // Les noms de couleurs CSS sont supportés par OpenLayers
+            }
+        } else {
+            // Couleur par défaut si le type n'est pas trouvé
+            color = `rgba(128, 128, 128, ${opacity})`;
+        }
+    } else if (flashOptions.color_type === 'none') {
+        // Transparent
+        color = `rgba(0, 0, 0, 0)`;
+    } else {
+        // Couleur fixe (par défaut)
+        color = `rgba(${flashOptions.rgb.r}, ${flashOptions.rgb.g}, ${flashOptions.rgb.b}, ${opacity})`;
+    }
+
     const style = new ol.style.Style({
         image: new ol.style.RegularShape({
             points: 4,

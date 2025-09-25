@@ -706,6 +706,7 @@ class ProfileManager {
             const flashDurationInput = document.getElementById('inputTimeFlash');
             const flashSizeInput = document.getElementById('inputSizeFlash');
             const flashColorInput = document.getElementById('flashColor');
+            const flashColorTypeRadio = document.querySelector('input[name="flashColor"]:checked');
 
             // Récupération avec vérification des valeurs
             const flashMode = flashModeSelect && flashModeSelect.value ? flashModeSelect.value : 'circle';
@@ -715,12 +716,14 @@ class ProfileManager {
                 parseInt(flashSizeInput.value) : 50;
             const flashColor = flashColorInput && flashColorInput.value ?
                 flashColorInput.value : '#FF00FF';
+            const flashColorType = flashColorTypeRadio ? flashColorTypeRadio.value : 'fix';
 
             const flashSettings = {
                 mode: flashMode,
                 duration: flashDuration,
                 size: flashSize,
-                color: flashColor
+                color: flashColor,
+                color_type: flashColorType
             };
 
             console.log('🔍 Paramètres flash récupérés:', {
@@ -728,6 +731,7 @@ class ProfileManager {
                 element_duration: flashDurationInput ? flashDurationInput.value : 'null',
                 element_size: flashSizeInput ? flashSizeInput.value : 'null',
                 element_color: flashColorInput ? flashColorInput.value : 'null',
+                element_color_type: flashColorTypeRadio ? flashColorTypeRadio.value : 'null',
                 final_flash: flashSettings
             });
 
@@ -1422,6 +1426,10 @@ function applyAnimationSettings(animationOptions) {
 
 function applyFlashSettings(flashOptions) {
     try {
+        // Définir color_type par défaut si non défini (compatibilité profils anciens)
+        if (!flashOptions.color_type) {
+            flashOptions.color_type = 'fix';
+        }
         // Appliquer la forme du flash
         if (flashOptions.mode) {
             const flashModeSelect = document.getElementById('selectFlashMode');
@@ -1455,6 +1463,22 @@ function applyFlashSettings(flashOptions) {
             if (colorInput) {
                 colorInput.value = flashOptions.color;
                 colorInput.dispatchEvent(new Event('change'));
+            }
+        }
+
+        // Appliquer le type de couleur du flash
+        if (flashOptions.color_type) {
+            const colorTypeRadio = document.querySelector(`input[name="flashColor"][value="${flashOptions.color_type}"]`);
+            if (colorTypeRadio) {
+                colorTypeRadio.checked = true;
+                // Déclencher l'événement pour mettre à jour l'interface
+                colorTypeRadio.dispatchEvent(new Event('change'));
+            }
+
+            // Mettre à jour l'affichage du color picker selon le type
+            const flashColorPickerContainer = document.querySelector('#flashColor').closest('.input-field');
+            if (flashColorPickerContainer) {
+                flashColorPickerContainer.style.display = (flashOptions.color_type === 'fix') ? 'block' : 'none';
             }
         }
 

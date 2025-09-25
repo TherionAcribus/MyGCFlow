@@ -26,10 +26,50 @@
                 <label for="inputSizeFlash">{{ _("Taille du flash en px") }}</label>
             </div>
 
-            <!-- Color Pickers Flash -->
-            <div class="input-field col s3">
-                <span>{{ _("Couleur du flash") }}: </span>
-                <input type="color" id="flashColor" value="#FF00FF">
+            <!-- Couleur du flash -->
+            <div class="row">
+                <div class="col s12">
+                    <label>
+                        {{ _("Couleur du flash") }}
+                    </label>
+                </div>
+
+                <div class="col s12">
+                    <p>
+                        <label>
+                            <input class="with-gap" name="flashColor" type="radio" value="gc"/>
+                            <span>
+                                {{ _("Couleurs GC (par type)") }}
+                            </span>
+                        </label>
+                    </p>
+                    <p>
+                        <label>
+                            <input class="with-gap" name="flashColor" type="radio" value="none"/>
+                            <span>
+                                {{ _("Transparent") }}
+                            </span>
+                        </label>
+                    </p>
+                    <p>
+                        <label>
+                            <input class="with-gap" name="flashColor" type="radio" value="fix" checked/>
+                            <span>
+                                {{ _("Couleur unique") }}
+                            </span>
+                        </label>
+                    </p>
+                </div>
+
+                <!-- Color Picker Flash -->
+                <div class="col s12">
+                    <div class="input-field">
+                        <input type="color" id="flashColor" value="#FF00FF">
+                        <label class="active" for="flashColor">
+                            {{ _("Choisir la couleur") }}
+                        </label>
+                    </div>
+                </div>
             </div>
 
         </form>
