@@ -24,27 +24,13 @@
 
                     <div class="row">
                         <!-- Mode d'affichage -->
-                        <div class="col s6">
+                        <div class="col s12">
                             <div class="switch">
                                 <label>
                                     <i class="material-icons">image</i> Icône
                                     <input id="switchIconeVectoriel" type="checkbox">
                                     <span class="lever"></span>
                                     <i class="material-icons">shape_line</i> Vectoriel
-                                </label>
-                            </div>
-                        </div>
-
-                        <!-- Choix de la forme -->
-                        <div class="col s6">
-                            <div class="input-field">
-                                <select id="selectShape">
-                                    <option value="circle">🔵 Cercle</option>
-                                    <option value="triangle">🔺 Triangle</option>
-                                </select>
-                                <label>
-                                    <i class="material-icons">category</i>
-                                    {{ _("Forme des points") }}
                                 </label>
                             </div>
                         </div>
@@ -137,11 +123,39 @@
                                 </div>
                             </div>
                         </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section Forme du point -->
+        <div class="col s12 m6">
+            <div class="card green lighten-5">
+                <div class="card-content">
+                    <span class="card-title green-text">
+                        <i class="material-icons">category</i>
+                        {{ _("Forme du point") }}
+                    </span>
+
+                    <!-- Choix de la forme -->
+                    <div class="row">
+                        <div class="col s12">
+                            <div class="input-field">
+                                <select id="selectShape">
+                                    <option value="circle">🔵 Cercle</option>
+                                    <option value="triangle">🔺 Triangle</option>
+                                </select>
+                                <label>
+                                    <i class="material-icons">category</i>
+                                    {{ _("Forme des points") }}
+                                </label>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Section Bordure du point -->
+        <!-- Section Bordure du point -->
             <div class="col s12 m6">
                 <div class="card orange lighten-5">
                     <div class="card-content">
