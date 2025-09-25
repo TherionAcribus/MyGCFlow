@@ -1302,24 +1302,40 @@ function updateIconSet() {
                 sheetHeight: 200,
                 items: [
                     { key: 'trad',    x:   0, y:  0, w:50, h:50, label: 'Traditional' },
-                    { key: 'multi',   x:  100, y:  0, w:50, h:50, label: 'APE' },
-                    { key: 'myst',    x:  200, y:  0, w:50, h:50, label: 'HQ' },
-                    { key: 'letter',  x:  300, y:  0, w:50, h:50, label: 'Mystery' },
+                    { key: 'ape',   x:  100, y:  0, w:50, h:50, label: 'APE' },
+                    { key: 'hq',    x:  200, y:  0, w:50, h:50, label: 'HQ' },
+                    { key: 'multi',  x:  300, y:  0, w:50, h:50, label: 'Multi' },
                     { key: 'event',   x: 400, y:  0, w:50, h:50, label: 'Event' },
-                    { key: 'mega',    x: 500, y:  0, w:50, h:50, label: 'CITO' },
-                    { key: 'giga',    x: 600, y:  0, w:50, h:50, label: 'Mega' },
-                    { key: 'earth',   x: 700, y:  0, w:50, h:50, label: 'Giga' },
-                    { key: 'cito',    x: 800, y:  0, w:50, h:50, label: 'GPS Maze' },
-                    { key: 'lab',     x: 900, y:  0, w:50, h:50, label: 'Earthcache' },
-                    { key: 'wherigo', x: 1000, y:  0, w:50, h:50, label: 'Virtual' },
-                    { key: 'virtual', x: 1200, y:  0, w:50, h:50, label: 'Locationless' },
-                    { key: 'ape',     x: 1300, y:  0, w:50, h:50, label: 'Unknown' },
-                    { key: 'hq',      x: 1400, y:  0, w:50, h:50, label: 'Letterbox' },
-                    { key: 'block',   x: 1500, y:  0, w:50, h:50, label: 'Wherigo' },
+                    { key: 'cito',    x: 500, y:  0, w:50, h:50, label: 'CITO' },
+                    { key: 'mega',    x: 600, y:  0, w:50, h:50, label: 'Mega' },
+                    { key: 'giga',   x: 700, y:  0, w:50, h:50, label: 'Giga' },
+                    { key: 'maze',    x: 800, y:  0, w:50, h:50, label: 'GPS Maze' },
+                    { key: 'earth',     x: 900, y:  0, w:50, h:50, label: 'Earthcache' },
+                    { key: 'virtual', x: 1000, y:  0, w:50, h:50, label: 'Virtual' },
+                    { key: 'webcam', x: 1100, y:  0, w:50, h:50, label: 'Webcam' },
+                    { key: 'locationless', x: 1200, y:  0, w:50, h:50, label: 'Locationless' },
+                    { key: 'unknown',     x: 1300, y:  0, w:50, h:50, label: 'Unknown' },
+                    { key: 'letterbox',      x: 1400, y:  0, w:50, h:50, label: 'Letterbox' },
+                    { key: 'wherigo',   x: 1500, y:  0, w:50, h:50, label: 'Wherigo' },
                     // Autres à ajouter éventuellement)
                 ]
             };
             break;
+        case 'cercle':
+            // Mode vectoriel cercle: ne pas utiliser de sprite, mais basculer le mode/shape
+            pkg.options.point.mode = 'vectoriel';
+            pkg.options.point.shape = 'circle';
+            pkg.refreshPoints(pkg.options);
+            // Effacer le preview d'icônes car non pertinent
+            iconPreview.innerHTML = '';
+            return;
+        case 'triangle':
+            // Mode vectoriel triangle
+            pkg.options.point.mode = 'vectoriel';
+            pkg.options.point.shape = 'triangle';
+            pkg.refreshPoints(pkg.options);
+            iconPreview.innerHTML = '';
+            return;
     }
 
     if (useSprite && spriteMeta) {
@@ -1337,6 +1353,7 @@ function updateIconSet() {
         `).join('');
 
         // Sauvegarder la meta pour le rendu carte
+        pkg.options.point.mode = 'icone';
         pkg.options.point.iconSet = 'geocaching';
         pkg.options.point.sprite = {
             url: spriteMeta.url,

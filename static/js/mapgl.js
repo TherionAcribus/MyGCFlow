@@ -721,37 +721,74 @@ function displayWebGLPoints(features, pointOptions) {
     let pointStyle;
     let pointStyleBorder;    
     if (pointOptions.mode == "icone") {
-        // Utilisation du sprite si disponible
-        if (pointOptions.sprite && pointOptions.iconKey && pointOptions.sprite.map[pointOptions.iconKey]) {
+        // Utilisation du sprite Geocaching: offset/size dynamiques selon le type ('cache_type')
+        if (pointOptions.sprite && pointOptions.sprite.map) {
             const sp = pointOptions.sprite;
-            const rect = sp.map[pointOptions.iconKey]; // {x,y,w,h}
+
+            // Mapping des valeurs 'cache_type' des features -> clés du sprite
+            const typeToKey = (sp.typeMap) || {
+                'Traditional Cache': 'trad',
+                'Multi-cache': 'multi',
+                'Mystery Cache': 'myst',
+                'Unknown Cache': 'myst',
+                'Letterbox Hybrid': 'letterbox',
+                'Event Cache': 'event',
+                'Mega-Event Cache': 'mega',
+                'Giga-Event Cache': 'giga',
+                'Earthcache': 'earth',
+                'Virtual Cache': 'virtual',
+                'Wherigo Cache': 'wherigo',
+                'Lab Cache': 'lab',
+                'Cache In Trash Out Event': 'cito',
+                'Community Celebration Event': 'block',
+                'GPS Adventures Exhibit': 'event',
+                'Locationless (Reverse) Cache': 'locationless',
+                'Webcam Cache': 'webcam'
+            };
+
+            const typeEntries = Object.entries(typeToKey);
+
+            // Construire des expressions 'match' par type réel
+            const buildMatchArray = (prop, defaultValue) => {
+                const arr = ['match', ['get', 'cache_type']];
+                typeEntries.forEach(([cacheType, key]) => {
+                    const r = sp.map[key];
+                    if (!r) return;
+                    if (prop === 'offset') {
+                        arr.push(cacheType, [r.x, r.y]);
+                    } else if (prop === 'size') {
+                        arr.push(cacheType, [r.w, r.h]);
+                    }
+                });
+                arr.push(defaultValue);
+                return arr;
+            };
+
+            // Par défaut: premier rect dispo
+            const defaultRect = (() => {
+                const firstKey = Object.keys(sp.map)[0];
+                return firstKey ? sp.map[firstKey] : {x:0,y:0,w:32,h:32};
+            })();
+
+            const desiredPx = Math.max(1, parseInt(pointOptions.iconSize || defaultRect.w));
+            const scaleRatio = desiredPx / (defaultRect.w || 1);
+
             pointStyle = {
-                variables: {
-                    filterShape: 'all',
-                },
                 'icon-src': sp.url,
-                'icon-size': [rect.w, rect.h],
-                'icon-width': Math.round((pointOptions.iconSize || rect.w)),
-                'icon-height': Math.round((pointOptions.iconSize || rect.h)),
-                'icon-color': undefined, // icône en couleur native
-                'icon-offset': [rect.x, rect.y],
-                'icon-origin': 'top-left',
-                'icon-img-size': [sp.sheetWidth, sp.sheetHeight],
+                'icon-size': buildMatchArray('size', [defaultRect.w, defaultRect.h]),
+                // taille réelle de la feuille (sprite sheet)
+                'icon-width': sp.sheetWidth,
+                'icon-height': sp.sheetHeight,
+                'icon-offset': buildMatchArray('offset', [defaultRect.x, defaultRect.y]),
+                'icon-offset-origin': 'top-left',
+                'icon-scale': scaleRatio,
                 'icon-rotate-with-view': false,
             };
         } else {
-            // Fallback ancienne logique (image par forme)
-            const shape = `/static/images/icones/${pointOptions.shape}.png`
+            // Fallback simple: rien si sprite absent
             pointStyle = {
-                variables: {
-                    filterShape: 'all',
-                },
-                'icon-src': shape,
-                'icon-width': pointSize *5,
-                'icon-height': pointSize *5,
-                'icon-color': fillColor,
-                'icon-size': [32, 32],
-                'icon-scale': 1,
+                'circle-radius': pointSize,
+                'circle-fill-color': fillColor || '#FF0000'
             };
         }
     } else {
