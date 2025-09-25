@@ -1199,10 +1199,10 @@ function changePointStyleUI(event){
             pkg.options.point.border.mode = event.value;
         }
     }
-    // sliders
-    pkg.options.point.center.size = inputSizePoint.value
-    pkg.options.point.border.size = inputSizeBorder.value
-    // selects 
+    // sliders - validation pour éviter NaN
+    pkg.options.point.center.size = Math.max(1, parseInt(inputSizePoint.value) || 3);
+    pkg.options.point.border.size = Math.max(0, parseInt(inputSizeBorder.value) || 0);
+    // selects
     pkg.options.point.shape = selectShape.value
 
     // rafraichissement des points

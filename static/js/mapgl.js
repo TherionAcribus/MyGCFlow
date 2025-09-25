@@ -656,9 +656,10 @@ function getStyle2D(feature, pointOptions) {
 
     // Veut on une bordure ?
     let stroke = null;
-    if (pointOptions.border.mode != "none" && parseInt(pointOptions.border.size) > 0) {
+    let borderSizeValue = Math.max(0, parseInt(pointOptions.border.size) || 0);
+    if (pointOptions.border.mode != "none" && borderSizeValue > 0) {
 
-        let borderSize = parseInt(pointOptions.border.size) / 5;
+        let borderSize = borderSizeValue / 5;
 
         let borderColor;
         if (pointOptions.border.mode == "gc") {
@@ -668,9 +669,9 @@ function getStyle2D(feature, pointOptions) {
         }
 
         stroke = new ol.style.Stroke({color: borderColor, width: borderSize})
-    } 
-    
-    let pointSize = parseInt(pointOptions.center.size)
+    }
+
+    let pointSize = Math.max(1, parseInt(pointOptions.center.size) || 3);
 
     // Retournez le style OpenLayers pour cette entité
     return new ol.style.Style({
@@ -684,8 +685,9 @@ function getStyle2D(feature, pointOptions) {
 
 function displayWebGLPoints(features, pointOptions) {
 
-    let pointSize = parseInt(pointOptions.center.size)
-    let borderSizeValue = parseInt(pointOptions.border.size)
+    // Validation et valeurs par défaut pour éviter NaN dans les shaders WebGL
+    let pointSize = Math.max(1, parseInt(pointOptions.center.size) || 3);
+    let borderSizeValue = Math.max(0, parseInt(pointOptions.border.size) || 0);
     let borderWidth = borderSizeValue / 5; // Épaisseur réelle de la bordure
     let borderSize = pointSize + borderWidth; // Rayon total pour le layer de bordure
     let borderColor;
