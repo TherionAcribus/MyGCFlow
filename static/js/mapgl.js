@@ -592,6 +592,16 @@ export function addVector(data) {
 
 // fonction appelée au changement d'options graphique
 export function refreshPoints(){
+    // Afficher un toast pour l'affichage des points
+    try {
+        const pointsToast = pkg.showLoadingToast('Mise à jour de l\'affichage des points...', 'Affichage des points');
+        setTimeout(() => {
+            try { pkg.hideToast(pointsToast); } catch(e) {}
+        }, 1500);
+    } catch(e) {
+        console.warn('[POINTS] Erreur affichage toast:', e);
+    }
+
     clearMap();
     selectEngineAndRefresh();
 }
@@ -1846,7 +1856,8 @@ function normalizeRecordedVideoSpeed(sourceBlob, factor){
                 progressTimer = setInterval(() => {
                     try {
                         const p = duration > 0 ? Math.min(100, Math.max(0, (video.currentTime / duration) * 100)) : 0;
-                        pkg.updateProgressBar({ progress: p, message: `Normalisation ${p.toFixed(1)}%` });
+                        const message = p > 0 ? `Normalisation ${p.toFixed(1)}%` : 'Normalisation en cours';
+                        pkg.updateProgressBar({ progress: p, message: message });
                     } catch(_) {}
                 }, 200);
 

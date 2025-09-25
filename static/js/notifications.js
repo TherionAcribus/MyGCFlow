@@ -83,12 +83,35 @@ class NotificationManager {
     /**
      * Met à jour la progress bar d'une notification
      * @param {HTMLElement} toast - Élément toast
-     * @param {number} progress - Valeur du progrès (0-100)
+     * @param {number} progress - Valeur du progrès (0-100). Si <= 0 ou NaN, garde l'animation indéterminée
      */
     updateProgress(toast, progress) {
         const progressFill = toast.querySelector('.gcm-progress-fill');
         if (progressFill) {
-            progressFill.style.width = `${Math.min(100, Math.max(0, progress))}%`;
+            const clampedProgress = Math.min(100, Math.max(0, progress));
+
+            // Si la progression est 0 ou invalide, activer l'animation indéterminée
+            if (clampedProgress === 0 || isNaN(progress) || progress < 0) {
+                // Activer l'animation indéterminée
+                progressFill.classList.add('indeterminate');
+                progressFill.style.width = '30%'; // Largeur de base pour l'animation
+            } else {
+                // Progression réelle connue, désactiver l'animation et mettre la vraie valeur
+                progressFill.style.width = `${clampedProgress}%`;
+                progressFill.classList.remove('indeterminate');
+            }
+        }
+    }
+
+    /**
+     * Marque la progress bar comme indéterminée (animation continue)
+     * @param {HTMLElement} toast - Élément toast
+     */
+    setIndeterminateProgress(toast) {
+        const progressFill = toast.querySelector('.gcm-progress-fill');
+        if (progressFill) {
+            progressFill.classList.add('indeterminate');
+            progressFill.style.width = '30%'; // Largeur de base pour l'animation
         }
     }
 
@@ -124,6 +147,10 @@ export function showLoadingToast(message = 'Chargement en cours...', title = 'Ch
 
 export function updateToastProgress(toast, progress) {
     notificationManager.updateProgress(toast, progress);
+}
+
+export function setIndeterminateProgress(toast) {
+    notificationManager.setIndeterminateProgress(toast);
 }
 
 export function hideToast(toast) {

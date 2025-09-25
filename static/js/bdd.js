@@ -699,12 +699,20 @@ function checkLoadingProgressModal(uploadToast) {
 // Fonction pour charger et afficher les points sur la carte après chargement de fichier
 function loadAndDisplayPoints() {
     console.log('[LOAD_POINTS] Chargement des points après upload...');
-    
+
+    // Afficher un toast pour l'affichage initial des points
+    let initialPointsToast;
+    try {
+        initialPointsToast = pkg.showLoadingToast('Chargement et affichage des points...', 'Affichage des points');
+    } catch(e) {
+        console.warn('[POINTS] Erreur affichage toast initial:', e);
+    }
+
     fetch(`${CONFIG.BASE_URL}/get_geojson_points`)
         .then(response => response.json())
         .then(data => {
             console.log('[LOAD_POINTS] Données GeoJSON reçues:', data);
-            
+
             json_data = data.geojson;
             metadata = data.metadata;
 
@@ -724,17 +732,34 @@ function loadAndDisplayPoints() {
             pkg.setPickerDates(metadata)
             // mise à jour des options en fonction de la BDD (dates début et fin)
             updateOptionsValues(metadata);
-            
+
             // Ajouter les points à la carte
             pkg.addVector(data.geojson);
 
             // Mettre à jour le compteur : sélection = total au chargement initial
             updateFiltersCounter(metadata.numberOfCaches || 0, totalCaches);
-            
+
+            // Masquer le toast d'affichage initial
+            try {
+                if (initialPointsToast) {
+                    pkg.hideToast(initialPointsToast);
+                }
+            } catch(e) {
+                console.warn('[POINTS] Erreur masquage toast initial:', e);
+            }
+
             console.log('[LOAD_POINTS] Points affichés sur la carte');
         })
         .catch(error => {
             console.error('[LOAD_POINTS] Erreur lors du chargement des points:', error);
+
+            // Masquer le toast en cas d'erreur
+            try {
+                if (initialPointsToast) {
+                    pkg.hideToast(initialPointsToast);
+                }
+            } catch(e) {}
+
             showError("Erreur lors de l'affichage des points sur la carte", "Erreur d'affichage");
         });
 }

@@ -352,6 +352,23 @@
     transition: width 0.3s ease;
 }
 
+/* Animation pour les barres de progression indéterminées */
+.gcm-progress-fill.indeterminate {
+    animation: indeterminate-progress 2s ease-in-out infinite;
+}
+
+@keyframes indeterminate-progress {
+    0% {
+        transform: translateX(0%);
+    }
+    50% {
+        transform: translateX(233%);
+    }
+    100% {
+        transform: translateX(0%);
+    }
+}
+
 .toast.success .progress-fill {
     background: linear-gradient(90deg, #4CAF50, #81C784);
 }

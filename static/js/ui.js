@@ -1432,6 +1432,8 @@ export function openModalLoading(title, description){
     try {
         currentLoadingToast = pkg.showLoadingToast(description, title);
         console.log('[LOADER] openModalLoading créé:', !!currentLoadingToast, currentLoadingToast);
+        // Activer l'animation indéterminée pour montrer que quelque chose se passe
+        pkg.setIndeterminateProgress && pkg.setIndeterminateProgress(currentLoadingToast);
     } catch (e) {
         console.warn('[LOADER] showLoadingToast a échoué, fallback manuel', e);
         // Fallback manuel
@@ -1454,7 +1456,7 @@ export function openModalLoading(title, description){
                 ${title ? `<div class=\"gcm-toast-title\">${title}</div>` : ''}
                 <div class="gcm-toast-message">${description || ''}</div>
                 <div class="gcm-toast-progress">
-                    <div class="gcm-progress-bar"><div class="gcm-progress-fill" style="width:0%"></div></div>
+                    <div class="gcm-progress-bar"><div class="gcm-progress-fill indeterminate" style="width:30%"></div></div>
                 </div>
             </div>
             <button class="gcm-toast-close" onclick="this.parentElement.remove()">×</button>
