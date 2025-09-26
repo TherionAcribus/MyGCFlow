@@ -237,18 +237,43 @@ def uploadBdd(request, Geocache, db):
             # Logs -> déterminer l'état trouvé et la datetime de référence
             logs = cache_data.find('groundspeak:logs', ns)
             if logs is not None:
-                # Prendre la dernière entrée "Found it" comme référence
+                # Types d'événements qui utilisent "Attended" au lieu de "Found it"
+                event_types = {
+                    'Event Cache',
+                    'Mega-Event Cache',
+                    'Giga-Event Cache',
+                    'Cache In Trash Out Event',
+                    'Geocaching HQ Block Party',
+                    'GPS Adventures Exhibit',
+                    'Community Celebration Event'
+                }
+
+                # Types spéciaux avec leurs types de logs spécifiques
+                special_cache_types = {
+                    'Webcam Cache': 'Webcam Photo Taken'
+                }
+
+                # Prendre la dernière entrée "Found it", "Attended" (pour les événements) ou type spécial comme référence
                 last_found_dt = None
                 for log_entry in logs.findall('groundspeak:log', ns):
                     type_el = log_entry.find('groundspeak:type', ns)
                     date_el = log_entry.find('groundspeak:date', ns)
-                    if type_el is not None and type_el.text == 'Found it' and date_el is not None and date_el.text:
-                        try:
-                            dt = datetime.strptime(date_el.text, '%Y-%m-%dT%H:%M:%SZ')
-                            if (last_found_dt is None) or (dt > last_found_dt):
-                                last_found_dt = dt
-                        except Exception:
-                            continue
+                    if type_el is not None and date_el is not None and date_el.text:
+                        log_type = type_el.text
+                        # Pour les événements, considérer "Attended" comme équivalent à "Found it"
+                        # Pour les caches spéciaux, considérer leur type de log spécifique
+                        is_valid_log = (
+                            log_type == 'Found it' or
+                            (cache_type in event_types and log_type == 'Attended') or
+                            (cache_type in special_cache_types and log_type == special_cache_types[cache_type])
+                        )
+                        if is_valid_log:
+                            try:
+                                dt = datetime.strptime(date_el.text, '%Y-%m-%dT%H:%M:%SZ')
+                                if (last_found_dt is None) or (dt > last_found_dt):
+                                    last_found_dt = dt
+                            except Exception:
+                                continue
                 if last_found_dt is not None:
                     found = True
                     date_find = last_found_dt
