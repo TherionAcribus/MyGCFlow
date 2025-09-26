@@ -661,8 +661,12 @@ function initPopupOverlay(){
         popupEl.style.padding = '8px 10px';
         popupEl.style.borderRadius = '6px';
         popupEl.style.fontSize = '12px';
-        popupEl.style.pointerEvents = 'auto';
-        popupEl.style.maxWidth = '260px';
+        popupEl.style.pointerEvents = 'none';
+        popupEl.style.width = '320px';
+        popupEl.style.maxWidth = '700px';
+        popupEl.style.wordWrap = 'break-word';
+        popupEl.style.overflowWrap = 'break-word';
+        popupEl.style.whiteSpace = 'normal';
         popupEl.style.boxShadow = '0 2px 8px rgba(0,0,0,0.35)';
         popupEl.style.display = 'none';
         // petite flèche
@@ -716,14 +720,10 @@ function initPopupOverlay(){
 
         const html = `
             <div style="display:flex;flex-direction:column;gap:4px;">
-                <div style="font-weight:600;font-size:13px;">${name || 'Sans nom'}</div>
-                <div><span style="opacity:.8">Type:</span> ${type || '-'}</div>
-                <div><span style="opacity:.8">D/T:</span> ${(dif||'-')}/${(ter||'-')}</div>
-                <div><span style="opacity:.8">Contenant:</span> ${cont || '-'}</div>
-                ${linkHref ? `<div><span style=\"opacity:.8\">Code:</span> <a href=\"${linkHref}\" target=\"_blank\" rel=\"noopener noreferrer\">${gcEsc}</a></div>` : ''}
-                ${owner ? `<div><span style="opacity:.8">Propriétaire:</span> ${owner}</div>` : ''}
-                <div><span style="opacity:.8">Trouvée:</span> ${foundText}</div>
-                ${dateFind ? `<div><span style=\"opacity:.8\">Jour:</span> ${dateFind}</div>` : ''}
+                <div style="font-weight:600;font-size:13px;">${linkHref ? `<a href=\"${linkHref}\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color:#fff;text-decoration:underline;pointer-events:auto;cursor:pointer;\">` : ''}${gcEsc}${linkHref ? '</a>' : ''} - ${name || 'Sans nom'}</div>
+                <div>${type || '-'}, ${cont || '-'}, ${dif||'-'}/${ter||'-'}</div>
+                ${owner ? `<div>${owner}</div>` : ''}
+                <div>${foundText === 'Oui' ? 'Trouvé' : 'DNF'} ${dateFind ? `le ${dateFind}` : ''}</div>
             </div>`;
         popupEl.innerHTML = html;
         popupEl.style.display = 'block';
