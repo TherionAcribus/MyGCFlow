@@ -15,6 +15,9 @@ const DEBOUNCE_DELAY = 200; // ms
 // Dates par défaut (capture au chargement BDD)
 var defaultStartDate = null;
 var defaultEndDate = null;
+// Dates de publication par défaut
+var defaultPublishedStartDate = null;
+var defaultPublishedEndDate = null;
 var inputTimePerDay;
 var selectFlashMode, inputTimeFlash, inputSizeFlash, cpFlashColor;
 var cpStrokeColor, cpFillColor, cpBackgroundColor, strokeWidth;
@@ -69,17 +72,29 @@ const selectDifficulty = document.getElementById('selectDifficulty');
 const selectContainer = document.getElementById('selectContainer');
     if (selectContainer) selectContainer.addEventListener('change', onSelectionChangedDebounced);
 
-// datepicker
+// datepicker (trouvaille)
 const datePickerStart = document.getElementById('datePickerStart');
 const datePickerEnd = document.getElementById('datePickerEnd');
     if (datePickerStart) datePickerStart.addEventListener('change', onSelectionChangedDebounced);
     if (datePickerEnd) datePickerEnd.addEventListener('change', onSelectionChangedDebounced);
+
+// datepicker (pose)
+const publishedDatePickerStart = document.getElementById('publishedDatePickerStart');
+const publishedDatePickerEnd = document.getElementById('publishedDatePickerEnd');
+    if (publishedDatePickerStart) publishedDatePickerStart.addEventListener('change', onSelectionChangedDebounced);
+    if (publishedDatePickerEnd) publishedDatePickerEnd.addEventListener('change', onSelectionChangedDebounced);
 
 // Boutons reset dates (valeurs par défaut de la BDD)
     const btnResetStartDate = document.getElementById('btnResetStartDate');
     const btnResetEndDate = document.getElementById('btnResetEndDate');
     if (btnResetStartDate) btnResetStartDate.addEventListener('click', resetStartDateToDefault);
     if (btnResetEndDate) btnResetEndDate.addEventListener('click', resetEndDateToDefault);
+
+    // Boutons reset dates de publication
+    const btnResetPublishedStartDate = document.getElementById('btnResetPublishedStartDate');
+    const btnResetPublishedEndDate = document.getElementById('btnResetPublishedEndDate');
+    if (btnResetPublishedStartDate) btnResetPublishedStartDate.addEventListener('click', resetPublishedStartDateToDefault);
+    if (btnResetPublishedEndDate) btnResetPublishedEndDate.addEventListener('click', resetPublishedEndDateToDefault);
 
 // Boutons Tout/Aucun
     btnAllType = document.getElementById('btnAllType');
@@ -968,6 +983,9 @@ export function setPickerDates(metadata) {
     // Capture des dates par défaut (clonées pour éviter toute mutation)
     defaultStartDate = metadata.startDate ? new Date(metadata.startDate) : null;
     defaultEndDate = metadata.endDate ? new Date(metadata.endDate) : null;
+    // Pour les dates de publication, on utilise les mêmes dates que trouvaille (pas d'info spécifique dans metadata)
+    defaultPublishedStartDate = metadata.startDate ? new Date(metadata.startDate) : null;
+    defaultPublishedEndDate = metadata.endDate ? new Date(metadata.endDate) : null;
 
     const formattedStartDate = formatDateForPickers(defaultStartDate);
     const formattedEndDate = formatDateForPickers(defaultEndDate);
@@ -984,6 +1002,37 @@ export function setPickerDates(metadata) {
     if (btnResetStartDate) btnResetStartDate.textContent = `⟲ ${formattedStartDate}`;
     if (btnResetEndDate) btnResetEndDate.textContent = `⟲ ${formattedEndDate}`;
     updateResetButtonsHighlight();
+
+    // Initialiser les datepickers de publication avec les mêmes valeurs par défaut
+    const publishedStartElement = document.querySelector('#publishedDatePickerStart');
+    const publishedEndElement = document.querySelector('#publishedDatePickerEnd');
+    if (publishedStartElement && publishedEndElement) {
+        const publishedStartPicker = M.Datepicker.getInstance(publishedStartElement) || M.Datepicker.init(publishedStartElement, {
+            format: 'yyyy-mm-dd',
+            autoClose: true,
+            showClearBtn: false,
+            i18n: frenchDatePickerConfig
+        });
+        const publishedEndPicker = M.Datepicker.getInstance(publishedEndElement) || M.Datepicker.init(publishedEndElement, {
+            format: 'yyyy-mm-dd',
+            autoClose: true,
+            showClearBtn: false,
+            i18n: frenchDatePickerConfig
+        });
+
+        publishedStartPicker.setDate(defaultPublishedStartDate, true);
+        publishedEndPicker.setDate(defaultPublishedEndDate, true);
+
+        publishedStartElement.value = formattedStartDate;
+        publishedEndElement.value = formattedEndDate;
+
+        // Mettre à jour les libellés des boutons reset publication
+        const btnResetPublishedStartDate = document.getElementById('btnResetPublishedStartDate');
+        const btnResetPublishedEndDate = document.getElementById('btnResetPublishedEndDate');
+        if (btnResetPublishedStartDate) btnResetPublishedStartDate.textContent = `⟲ ${formattedStartDate}`;
+        if (btnResetPublishedEndDate) btnResetPublishedEndDate.textContent = `⟲ ${formattedEndDate}`;
+        updatePublishedResetButtonsHighlight();
+    }
 
     // Pré-remplir les datepickers Animation avec les dates par défaut
     const animStartElement = document.querySelector('#animDateStart');
@@ -1040,6 +1089,49 @@ function resetEndDateToDefault(){
     onSelectionChangedDebounced();
     updateResetButtonsHighlight();
     updateResetAnimButtonsHighlight();
+}
+
+function resetPublishedStartDateToDefault(){
+    const el = document.querySelector('#publishedDatePickerStart');
+    const start = defaultPublishedStartDate;
+    if (!el || !start) return;
+    const inst = M.Datepicker.getInstance(el);
+    if (inst) {
+        inst.setDate(start, true);
+        el.value = formatDateForPickers(start);
+        onSelectionChangedDebounced();
+        updatePublishedResetButtonsHighlight();
+    }
+}
+
+function resetPublishedEndDateToDefault(){
+    const el = document.querySelector('#publishedDatePickerEnd');
+    const end = defaultPublishedEndDate;
+    if (!el || !end) return;
+    const inst = M.Datepicker.getInstance(el);
+    if (inst) {
+        inst.setDate(end, true);
+        el.value = formatDateForPickers(end);
+        onSelectionChangedDebounced();
+        updatePublishedResetButtonsHighlight();
+    }
+}
+
+function updatePublishedResetButtonsHighlight(){
+    const btnStart = document.getElementById('btnResetPublishedStartDate');
+    const btnEnd = document.getElementById('btnResetPublishedEndDate');
+    const currentStart = document.querySelector('#publishedDatePickerStart')?.value;
+    const currentEnd = document.querySelector('#publishedDatePickerEnd')?.value;
+    const defaultStartStr = defaultPublishedStartDate ? formatDateForPickers(defaultPublishedStartDate) : null;
+    const defaultEndStr = defaultPublishedEndDate ? formatDateForPickers(defaultPublishedEndDate) : null;
+    if (btnStart) {
+        if (currentStart && defaultStartStr && currentStart === defaultStartStr) btnStart.classList.add('active-reset');
+        else btnStart.classList.remove('active-reset');
+    }
+    if (btnEnd) {
+        if (currentEnd && defaultEndStr && currentEnd === defaultEndStr) btnEnd.classList.add('active-reset');
+        else btnEnd.classList.remove('active-reset');
+    }
 }
 
 function updateResetButtonsHighlight(){
@@ -1123,6 +1215,7 @@ function collectSelectedValues(){
     selectedValues["difficulty"] = selectDifficulty ? Array.from(selectDifficulty.selectedOptions).map(option => option.value) : [];
     selectedValues["container"] = selectContainer ? Array.from(selectContainer.selectedOptions).map(option => option.value) : [];
     selectedValues["dates"] = {startDate: document.querySelector('#datePickerStart')?.value, endDate: document.querySelector('#datePickerEnd')?.value};
+    selectedValues["published_dates"] = {startDate: document.querySelector('#publishedDatePickerStart')?.value, endDate: document.querySelector('#publishedDatePickerEnd')?.value};
     return selectedValues;
 }
 

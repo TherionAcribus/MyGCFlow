@@ -96,7 +96,7 @@
     <!-- Ligne 3 : Période (dates) sur une ligne avec titre -->
     <div class="row">
         <div class="col s12" style="margin-bottom: 8px;">
-            <span class="grey-text text-darken-1">{{ _("Période (dates)") }}</span>
+            <span class="grey-text text-darken-1">{{ _("Période de découverte") }}</span>
         </div>
         <div class="input-field col s6">
             <input id="datePickerStart" type="text" class="datepicker">
@@ -110,6 +110,27 @@
             <label for="datePickerEnd" class="active">{{ _("Date de fin") }}</label>
             <div>
                 <a id="btnResetEndDate" class="btn-flat waves-effect date-reset-btn"></a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ligne 4 : Période de pose sur une ligne avec titre -->
+    <div class="row">
+        <div class="col s12" style="margin-bottom: 8px;">
+            <span class="grey-text text-darken-1">{{ _("Période de pose") }}</span>
+        </div>
+        <div class="input-field col s6">
+            <input id="publishedDatePickerStart" type="text" class="datepicker">
+            <label for="publishedDatePickerStart" class="active">{{ _("Date de début") }}</label>
+            <div>
+                <a id="btnResetPublishedStartDate" class="btn-flat waves-effect date-reset-btn"></a>
+            </div>
+        </div>
+        <div class="input-field col s6">
+            <input id="publishedDatePickerEnd" type="text" class="datepicker">
+            <label for="publishedDatePickerEnd" class="active">{{ _("Date de fin") }}</label>
+            <div>
+                <a id="btnResetPublishedEndDate" class="btn-flat waves-effect date-reset-btn"></a>
             </div>
         </div>
     </div>

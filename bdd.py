@@ -495,10 +495,17 @@ def filter_session(app, db, Geocache, selectedValues):
     query = query.filter(Geocache.difficulty.in_(selectedValues["difficulty"]))
     query = query.filter(Geocache.container.in_(selectedValues["container"]))
 
-    # Filtrage par plage de dates
+    # Filtrage par plage de dates (trouvaille)
     start_date = convert_str_to_date(selectedValues["dates"]['startDate'])
     end_date = convert_str_to_date(selectedValues["dates"]['endDate'])
     query = query.filter(Geocache.date_find >= start_date, Geocache.date_find <= end_date)
+
+    # Filtrage par plage de dates de publication
+    if "published_dates" in selectedValues and selectedValues["published_dates"]["startDate"] and selectedValues["published_dates"]["endDate"]:
+        published_start_date = convert_str_to_date(selectedValues["published_dates"]['startDate'])
+        published_end_date = convert_str_to_date(selectedValues["published_dates"]['endDate'])
+        if published_start_date and published_end_date:
+            query = query.filter(Geocache.published_date >= published_start_date, Geocache.published_date <= published_end_date)
     
     geocaches_data = create_geojson(query, Geocache, app)
 
