@@ -85,6 +85,9 @@ let vectorLayer;
 let features;
 // couleurs GC par défaut
 let defaultGcColors;
+// Popup d'information (overlay)
+let popupOverlay;
+let popupEl;
 // ANIMATION
 // date en cours pour l'animation
 let currentDate;
@@ -414,6 +417,9 @@ export function createMap(){
         renderer: "webgl",
         controls: [] 
     });
+
+    // Initialiser l'overlay de popup et les écouteurs de clics
+    try { initPopupOverlay(); } catch(e) { console.warn('Init popup error:', e); }
 }
 
 // ajoute les différents layers de cartes à la map et affiche la bonne
@@ -631,6 +637,110 @@ function selectEngineAndRefresh(){
         // TODO AJouter barre chargement
         displayAllPoints2D(features, pkg.options.point);
     }
+}
+
+// Détermine si l'application est au repos (ni animation, ni enregistrement en cours)
+function isIdleState(){
+    try {
+        const isAnimating = !!interval; // interval actif => animation en cours
+        const rec = !!isRecording || !!isMediaRecording; // enregistrement en cours
+        return !isAnimating && !rec;
+    } catch(_) { return true; }
+}
+
+// Initialise l'overlay de popup et les interactions de clic
+function initPopupOverlay(){
+    // Créer l'élément DOM de la popup s'il n'existe pas
+    popupEl = document.getElementById('gcPopup');
+    if (!popupEl) {
+        popupEl = document.createElement('div');
+        popupEl.id = 'gcPopup';
+        popupEl.style.position = 'absolute';
+        popupEl.style.background = 'rgba(0,0,0,0.75)';
+        popupEl.style.color = '#fff';
+        popupEl.style.padding = '8px 10px';
+        popupEl.style.borderRadius = '6px';
+        popupEl.style.fontSize = '12px';
+        popupEl.style.pointerEvents = 'auto';
+        popupEl.style.maxWidth = '260px';
+        popupEl.style.boxShadow = '0 2px 8px rgba(0,0,0,0.35)';
+        popupEl.style.display = 'none';
+        // petite flèche
+        popupEl.style.transform = 'translate(-50%, -100%)';
+        document.body.appendChild(popupEl);
+    }
+
+    // Créer l'overlay OpenLayers si besoin
+    if (!popupOverlay) {
+        popupOverlay = new ol.Overlay({
+            element: popupEl,
+            offset: [0, -10],
+            positioning: 'bottom-center',
+            stopEvent: true
+        });
+        map.addOverlay(popupOverlay);
+    }
+
+    // Clic sur la carte
+    map.on('click', function(evt){
+        // Afficher seulement si au repos
+        if (!isIdleState()) {
+            hidePopup();
+            return;
+        }
+
+        const pixel = evt.pixel;
+        const feature = map.forEachFeatureAtPixel(pixel, function(ft, layer){
+            // On cible uniquement nos couches de points
+            if (layer === vectorLayer) return ft;
+        });
+
+        if (!feature) {
+            hidePopup();
+            return;
+        }
+
+        const props = feature.getProperties() || {};
+        // Construire le contenu
+        const name = sanitize(props.name);
+        const type = sanitize(props.cache_type);
+        const dif = sanitize(props.difficulty);
+        const ter = sanitize(props.terrain);
+        const cont = sanitize(props.container);
+
+        const html = `
+            <div style="display:flex;flex-direction:column;gap:4px;">
+                <div style="font-weight:600;font-size:13px;">${name || 'Sans nom'}</div>
+                <div><span style="opacity:.8">Type:</span> ${type || '-'}</div>
+                <div><span style="opacity:.8">D/T:</span> ${(dif||'-')}/${(ter||'-')}</div>
+                <div><span style="opacity:.8">Contenant:</span> ${cont || '-'}</div>
+            </div>`;
+        popupEl.innerHTML = html;
+        popupEl.style.display = 'block';
+        popupOverlay.setPosition(evt.coordinate);
+    });
+
+    // Masquer à l'échappement
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') hidePopup();
+    });
+
+    // Masquer si on clique ailleurs sur la carte (sans feature)
+    map.on('pointermove', function(evt){
+        if (!isIdleState()) return; // pas de survol en mode non-idle
+        const hit = map.hasFeatureAtPixel(evt.pixel, { layerFilter: l => l === vectorLayer });
+        map.getTargetElement().style.cursor = hit ? 'pointer' : '';
+    });
+}
+
+function hidePopup(){
+    if (popupEl) popupEl.style.display = 'none';
+    if (popupOverlay) popupOverlay.setPosition(undefined);
+}
+
+function sanitize(v){
+    if (v == null) return '';
+    return String(v).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 }
 
 // affichage des points 2D
@@ -1040,6 +1150,7 @@ export function startAnimation(restart=false) {
             clearInterval(interval);
             interval = null;
             try { pkg.resetControlsToInitialState && pkg.resetControlsToInitialState(); } catch(e) { console.warn(e); }
+            try { hidePopup(); } catch(_) {}
         }
     }, dayDuration);
 }
@@ -1136,6 +1247,9 @@ export function stopAnimation(){
 
     // Remettre les contrôles UI dans l'état initial
     try { pkg.resetControlsToInitialState && pkg.resetControlsToInitialState(); } catch(e) { console.warn(e); }
+
+    // S'assurer que la popup est masquée
+    try { hidePopup(); } catch(_) {}
 }
 
 export function recordAnimation(){
@@ -1182,6 +1296,7 @@ export function recordAnimation(){
         pkg.showToast && pkg.showToast('Erreur nettoyage initial. Poursuite.', 'warning', 'Attention', 3000);
         startRecordingProcess();
     });
+    try { hidePopup(); } catch(_) {}
     return;
 }
 

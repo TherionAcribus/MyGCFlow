@@ -1163,6 +1163,8 @@ function setSelectValues(selectEl, values){
 function selectAllOptions(selectEl){
     if (!selectEl) return;
     Array.from(selectEl.options).forEach(opt => { if (!opt.disabled) opt.selected = true; });
+    // Réinitialiser Materialize pour mettre à jour l'affichage visuel
+    M.FormSelect.init(selectEl);
     onSelectionChangedDebounced();
     updateFilterInfos();
 }
@@ -1170,6 +1172,8 @@ function selectAllOptions(selectEl){
 function deselectAllOptions(selectEl){
     if (!selectEl) return;
     Array.from(selectEl.options).forEach(opt => { opt.selected = false; });
+    // Réinitialiser Materialize pour mettre à jour l'affichage visuel
+    M.FormSelect.init(selectEl);
     onSelectionChangedDebounced();
     updateFilterInfos();
 }

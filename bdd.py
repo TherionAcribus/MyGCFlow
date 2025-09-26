@@ -231,7 +231,11 @@ def create_geojson(query, Geocache, app):
                 },
                 "properties": {
                     "date_find": point.date_find.strftime('%Y-%m-%d') if point.date_find else None,
-                    "cache_type": point.cache_type
+                    "cache_type": point.cache_type,
+                    "name": point.name,
+                    "difficulty": point.difficulty,
+                    "terrain": point.terrain,
+                    "container": point.container
                 }
             } for point in query
         ]
