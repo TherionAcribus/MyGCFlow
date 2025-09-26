@@ -72,15 +72,29 @@ class Geocache(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     latitude = db.Column(db.Float)
     longitude = db.Column(db.Float)
-    name = db.Column(db.String(255))
+    # GC code (ex: GC2VMA0). Historically stored in 'name'.
+    gc_code = db.Column(db.String(255))
+    # Human-readable cache name (groundspeak:name/urlname)
+    cache_name = db.Column(db.String(255))
     date_find = db.Column(db.DateTime)
+    # Optional time portion of the find (HH:MM:SS)
+    time_find = db.Column(db.String(16))
+    # Whether the cache was found by the user
+    found = db.Column(db.Boolean, default=False)
     cache_type = db.Column(db.String(50))
     terrain = db.Column(db.Float)
     difficulty = db.Column(db.Float)
     container = db.Column(db.String(50))
+    # Additional metadata
+    country = db.Column(db.String(100))
+    state = db.Column(db.String(100))
+    owner = db.Column(db.String(255))
+    placed_by = db.Column(db.String(255))
+    # JSON-encoded attributes array (list of {id, name, inc})
+    attributes = db.Column(db.Text)
 
     def __repr__(self):
-        return f"<Geocache {self.id}, {self.latitude}, {self.longitude}, {self.name}, {self.date_find}, {self.cache_type}>" 
+        return f"<Geocache {self.id}, {self.latitude}, {self.longitude}, {self.gc_code}, {self.cache_name}, {self.date_find}, {self.cache_type}>" 
     
 
 @app.route('/')

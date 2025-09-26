@@ -74,6 +74,11 @@ def uploadBdd(request, Geocache, db):
 
     # Assurez-vous que la table existe
     db.create_all()
+    # Étendre le schéma si nécessaire (ajout de colonnes manquantes)
+    try:
+        ensure_geocache_columns(db)
+    except Exception as e:
+        print(f"[MIGRATION] Warning while ensuring columns: {e}")
 
     # Videz la table si elle contient déjà des données
     db.session.query(Geocache).delete()
@@ -89,30 +94,113 @@ def uploadBdd(request, Geocache, db):
     total_waypoints = len(root.findall('default:wpt', ns))
 
     for index, waypoint in enumerate(root.findall('default:wpt', ns)):
-        date_find = None
-        cache_data = waypoint.find('groundspeak:cache', ns)
-        if cache_data is not None:
-            logs = cache_data.find('groundspeak:logs', ns)
-            cache_type = cache_data.find('groundspeak:type', ns).text
-            container = cache_data.find('groundspeak:container', ns).text
-            terrain = cache_data.find('groundspeak:terrain', ns).text
-            difficulty = cache_data.find('groundspeak:difficulty', ns).text
-            if logs is not None:
-                for log_entry in logs.findall('groundspeak:log', ns):
-                    date_find_str = log_entry.find('groundspeak:date', ns).text
-                    if date_find_str:
-                        date_find = datetime.strptime(date_find_str, '%Y-%m-%dT%H:%M:%SZ')
+        # Coordonnées
+        lat = waypoint.attrib.get('lat')
+        lon = waypoint.attrib.get('lon')
 
+        # Codes/noms
+        gc_code = waypoint.find('default:name', ns).text if waypoint.find('default:name', ns) is not None else None
+        urlname = waypoint.find('default:urlname', ns)
+        cache_data = waypoint.find('groundspeak:cache', ns)
+        gs_name = cache_data.find('groundspeak:name', ns).text if (cache_data is not None and cache_data.find('groundspeak:name', ns) is not None) else None
+        cache_name = (urlname.text if urlname is not None else gs_name)
+
+        # Champs par défaut
+        cache_type = None
+        container = None
+        terrain = None
+        difficulty = None
+        owner = None
+        placed_by = None
+        country = None
+        state = None
+        attributes = []
+        found = False
+        date_find = None
+        time_find = None
+
+        if cache_data is not None:
+            # Champs primitifs
+            ct = cache_data.find('groundspeak:type', ns)
+            if ct is not None and ct.text:
+                cache_type = ct.text
+            co = cache_data.find('groundspeak:container', ns)
+            if co is not None and co.text:
+                container = co.text
+            te = cache_data.find('groundspeak:terrain', ns)
+            if te is not None and te.text:
+                try:
+                    terrain = float(te.text)
+                except Exception:
+                    terrain = None
+            di = cache_data.find('groundspeak:difficulty', ns)
+            if di is not None and di.text:
+                try:
+                    difficulty = float(di.text)
+                except Exception:
+                    difficulty = None
+            ow = cache_data.find('groundspeak:owner', ns)
+            if ow is not None and ow.text:
+                owner = ow.text
+            pb = cache_data.find('groundspeak:placed_by', ns)
+            if pb is not None and pb.text:
+                placed_by = pb.text
+            co_ = cache_data.find('groundspeak:country', ns)
+            if co_ is not None and co_.text:
+                country = co_.text
+            st_ = cache_data.find('groundspeak:state', ns)
+            if st_ is not None and st_.text:
+                state = st_.text
+
+            # Attributs (peut être vide)
+            attrs = cache_data.find('groundspeak:attributes', ns)
+            if attrs is not None:
+                for a in attrs.findall('groundspeak:attribute', ns):
+                    try:
+                        attr_id = a.attrib.get('id')
+                        inc = a.attrib.get('inc')
+                        name_attr = a.text or ''
+                        attributes.append({'id': attr_id, 'name': name_attr, 'inc': inc})
+                    except Exception:
+                        continue
+
+            # Logs -> déterminer l'état trouvé et la datetime de référence
+            logs = cache_data.find('groundspeak:logs', ns)
+            if logs is not None:
+                # Prendre la dernière entrée "Found it" comme référence
+                last_found_dt = None
+                for log_entry in logs.findall('groundspeak:log', ns):
+                    type_el = log_entry.find('groundspeak:type', ns)
+                    date_el = log_entry.find('groundspeak:date', ns)
+                    if type_el is not None and type_el.text == 'Found it' and date_el is not None and date_el.text:
+                        try:
+                            dt = datetime.strptime(date_el.text, '%Y-%m-%dT%H:%M:%SZ')
+                            if (last_found_dt is None) or (dt > last_found_dt):
+                                last_found_dt = dt
+                        except Exception:
+                            continue
+                if last_found_dt is not None:
+                    found = True
+                    date_find = last_found_dt
+                    time_find = last_found_dt.strftime('%H:%M:%S')
 
         new_geocache = Geocache(
-            latitude=waypoint.attrib['lat'],
-            longitude=waypoint.attrib['lon'],
-            name=waypoint.find('default:name', ns).text,
+            latitude=lat,
+            longitude=lon,
+            gc_code=gc_code,
+            cache_name=cache_name,
             date_find=date_find,
-            cache_type = cache_type,
-            terrain = terrain,
-            difficulty = difficulty,
-            container = container
+            time_find=time_find,
+            found=found,
+            cache_type=cache_type,
+            terrain=terrain,
+            difficulty=difficulty,
+            container=container,
+            owner=owner,
+            placed_by=placed_by,
+            country=country,
+            state=state,
+            attributes=json.dumps(attributes) if attributes else None
         )
         db.session.add(new_geocache)
 
@@ -231,11 +319,19 @@ def create_geojson(query, Geocache, app):
                 },
                 "properties": {
                     "date_find": point.date_find.strftime('%Y-%m-%d') if point.date_find else None,
+                    "time_find": getattr(point, 'time_find', None),
+                    "found": bool(getattr(point, 'found', False)),
                     "cache_type": point.cache_type,
-                    "name": point.name,
+                    "gc_code": getattr(point, 'gc_code', None),
+                    "name": getattr(point, 'cache_name', None),
                     "difficulty": point.difficulty,
                     "terrain": point.terrain,
-                    "container": point.container
+                    "container": point.container,
+                    "owner": getattr(point, 'owner', None),
+                    "placed_by": getattr(point, 'placed_by', None),
+                    "country": getattr(point, 'country', None),
+                    "state": getattr(point, 'state', None),
+                    "attributes": json.loads(point.attributes) if getattr(point, 'attributes', None) else None
                 }
             } for point in query
         ]
@@ -255,10 +351,17 @@ def create_geojson(query, Geocache, app):
 def get_metadata_from_geojson(features):
     # Vérifier que la liste des features n'est pas vide
     if features:
-        # Récupérer les dates du premier et du dernier élément
-        start_date = datetime.strptime(features[0]["properties"]["date_find"], '%Y-%m-%d')
-        end_date = datetime.strptime(features[-1]["properties"]["date_find"], '%Y-%m-%d')
-        delta_days = (end_date - start_date).days
+        # Extraire uniquement les dates valides (ignorer None)
+        valid_dates = [f["properties"].get("date_find") for f in features if f.get("properties") and f["properties"].get("date_find")]
+        if valid_dates:
+            try:
+                start_date = datetime.strptime(valid_dates[0], '%Y-%m-%d')
+                end_date = datetime.strptime(valid_dates[-1], '%Y-%m-%d')
+            except Exception:
+                start_date, end_date = None, None
+        else:
+            start_date, end_date = None, None
+        delta_days = (end_date - start_date).days if start_date and end_date else None
     else:
         start_date, end_date, delta_days = None, None, None
 
@@ -270,6 +373,34 @@ def get_metadata_from_geojson(features):
     }
 
     return metadata
+
+
+def ensure_geocache_columns(db):
+    """Ajoute les colonnes manquantes dans la table geocache (SQLite)."""
+    from sqlalchemy import text
+    conn = db.engine.connect()
+    try:
+        res = conn.execute(text("PRAGMA table_info(geocache);"))
+        cols = {row[1] for row in res}
+        wanted = {
+            'gc_code': "ALTER TABLE geocache ADD COLUMN gc_code VARCHAR(255)",
+            'cache_name': "ALTER TABLE geocache ADD COLUMN cache_name VARCHAR(255)",
+            'time_find': "ALTER TABLE geocache ADD COLUMN time_find VARCHAR(16)",
+            'found': "ALTER TABLE geocache ADD COLUMN found BOOLEAN DEFAULT 0",
+            'country': "ALTER TABLE geocache ADD COLUMN country VARCHAR(100)",
+            'state': "ALTER TABLE geocache ADD COLUMN state VARCHAR(100)",
+            'owner': "ALTER TABLE geocache ADD COLUMN owner VARCHAR(255)",
+            'placed_by': "ALTER TABLE geocache ADD COLUMN placed_by VARCHAR(255)",
+            'attributes': "ALTER TABLE geocache ADD COLUMN attributes TEXT"
+        }
+        for col, stmt in wanted.items():
+            if col not in cols:
+                try:
+                    conn.execute(text(stmt))
+                except Exception as e:
+                    print(f"[MIGRATION] Could not add column {col}: {e}")
+    finally:
+        conn.close()
 
 
 def filter_session(app, db, Geocache, selectedValues):

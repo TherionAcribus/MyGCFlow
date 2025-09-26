@@ -707,6 +707,12 @@ function initPopupOverlay(){
         const dif = sanitize(props.difficulty);
         const ter = sanitize(props.terrain);
         const cont = sanitize(props.container);
+        const gcRaw = props.gc_code ? String(props.gc_code) : '';
+        const gcEsc = sanitize(gcRaw);
+        const linkHref = gcRaw ? `https://coord.info/${encodeURIComponent(gcRaw)}` : null;
+        const foundText = props.found ? 'Oui' : 'Non';
+        const owner = sanitize(props.owner);
+        const dateFind = sanitize(props.date_find);
 
         const html = `
             <div style="display:flex;flex-direction:column;gap:4px;">
@@ -714,6 +720,10 @@ function initPopupOverlay(){
                 <div><span style="opacity:.8">Type:</span> ${type || '-'}</div>
                 <div><span style="opacity:.8">D/T:</span> ${(dif||'-')}/${(ter||'-')}</div>
                 <div><span style="opacity:.8">Contenant:</span> ${cont || '-'}</div>
+                ${linkHref ? `<div><span style=\"opacity:.8\">Code:</span> <a href=\"${linkHref}\" target=\"_blank\" rel=\"noopener noreferrer\">${gcEsc}</a></div>` : ''}
+                ${owner ? `<div><span style="opacity:.8">Propriétaire:</span> ${owner}</div>` : ''}
+                <div><span style="opacity:.8">Trouvée:</span> ${foundText}</div>
+                ${dateFind ? `<div><span style=\"opacity:.8\">Jour:</span> ${dateFind}</div>` : ''}
             </div>`;
         popupEl.innerHTML = html;
         popupEl.style.display = 'block';
