@@ -1413,8 +1413,20 @@ function persistSelectedValues(values){
 function restoreSelectedValues(){
     try {
         const raw = localStorage.getItem('filtersSelection');
-        if (!raw) return;
+        if (!raw) {
+            // Pas de sauvegarde, utiliser les valeurs par défaut du HTML (attributs selected)
+            console.log('[FILTER] No saved filters, using HTML defaults');
+            // Juste rafraîchir Materialize pour afficher les valeurs selected du HTML
+            if (selectType) M.FormSelect.init(selectType);
+            if (selectDifficulty) M.FormSelect.init(selectDifficulty);
+            if (selectTerrain) M.FormSelect.init(selectTerrain);
+            if (selectContainer) M.FormSelect.init(selectContainer);
+            updateFilterInfos();
+            return;
+        }
+        
         const values = JSON.parse(raw);
+        console.log('[FILTER] Restoring saved filters:', values);
         setSelectValues(selectType, values.type);
         setSelectValues(selectDifficulty, values.difficulty);
         setSelectValues(selectTerrain, values.terrain);
@@ -1430,7 +1442,15 @@ function restoreSelectedValues(){
         if (selectTerrain) M.FormSelect.init(selectTerrain);
         if (selectContainer) M.FormSelect.init(selectContainer);
         updateFilterInfos();
-    } catch(e) { console.warn('Restore filters error', e); }
+    } catch(e) { 
+        console.warn('Restore filters error', e);
+        // En cas d'erreur, utiliser les valeurs par défaut du HTML
+        if (selectType) M.FormSelect.init(selectType);
+        if (selectDifficulty) M.FormSelect.init(selectDifficulty);
+        if (selectTerrain) M.FormSelect.init(selectTerrain);
+        if (selectContainer) M.FormSelect.init(selectContainer);
+        updateFilterInfos();
+    }
 }
 
 function setSelectValues(selectEl, values){
