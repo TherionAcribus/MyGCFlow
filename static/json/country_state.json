@@ -1,0 +1,93 @@
+{
+  "Belgium": [
+    "Antwerpen",
+    "Brabant wallon",
+    "Brussels",
+    "Hainaut",
+    "Limburg",
+    "Liège",
+    "Luxembourg",
+    "Namur",
+    "Vlaams-Brabant"
+  ],
+  "Costa Rica": [
+    "None"
+  ],
+  "Czechia": [
+    "Hlavní město Praha",
+    "Plzeňský kraj",
+    "Středočeský kraj"
+  ],
+  "Denmark": [
+    "Region Syddanmark"
+  ],
+  "France": [
+    "Auvergne-Rhône-Alpes",
+    "Bourgogne-Franche-Comté",
+    "Bretagne",
+    "Centre-Val-de-Loire",
+    "Corse",
+    "Grand-Est",
+    "Hauts-de-France",
+    "Normandie",
+    "Nouvelle-Aquitaine",
+    "Occitanie",
+    "Pays de la Loire",
+    "Provence-Alpes-Côte d'Azur",
+    "Île-de-France"
+  ],
+  "Germany": [
+    "Baden-Württemberg",
+    "Bayern",
+    "Bremen",
+    "Hamburg",
+    "Hessen",
+    "Niedersachsen",
+    "Nordrhein-Westfalen",
+    "Rheinland-Pfalz",
+    "Saarland",
+    "Schleswig-Holstein"
+  ],
+  "Italy": [
+    "Calabria",
+    "Liguria",
+    "Sicilia"
+  ],
+  "Luxembourg": [
+    "None"
+  ],
+  "Malta": [
+    "None"
+  ],
+  "Mayotte": [
+    "None"
+  ],
+  "Monaco": [
+    "None"
+  ],
+  "Netherlands": [
+    "Limburg",
+    "Noord-Brabant"
+  ],
+  "Réunion": [
+    "None"
+  ],
+  "Spain": [
+    "Cataluña"
+  ],
+  "Switzerland": [
+    "Basel Stadt",
+    "Bern",
+    "Neuchâtel",
+    "Vaud"
+  ],
+  "Ukraine": [
+    "None"
+  ],
+  "United Kingdom": [
+    "London"
+  ],
+  "United States": [
+    "Washington"
+  ]
+}

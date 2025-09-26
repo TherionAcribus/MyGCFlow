@@ -33,7 +33,7 @@
             <option value="Small" selected>Small</option>
             <option value="Micro" selected>Micro</option>
             <option value="Regular" selected>Regular</option>
-            <option value="Large" selected>Large</option>        
+            <option value="Large" selected>Large</option>
             <option value="Other" selected>Other</option>
             <option value="Virtual" selected>Virtual</option>
         </select>
@@ -132,6 +132,32 @@
             <div>
                 <a id="btnResetPublishedEndDate" class="btn-flat waves-effect date-reset-btn"></a>
             </div>
+        </div>
+    </div>
+
+    <!-- Ligne 5 : Pays et Régions/États sur une ligne -->
+    <div class="row">
+        <div class="input-field col s6">
+        <select multiple id="selectCountry">
+            <option value="" disabled selected>{{ _("Filtrer par pays") }}</option>
+        </select>
+            <label>{{ _("Pays") }}</label>
+        <div>
+            <a id="btnAllCountry" class="btn-flat waves-effect blue-text text-darken-2">{{ _("Tout") }}</a>
+            <a id="btnNoneCountry" class="btn-flat waves-effect blue-text text-darken-2">{{ _("Aucun") }}</a>
+        </div>
+        <div id="infoCountry" class="filter-info"></div>
+        </div>
+        <div class="input-field col s6">
+            <select multiple id="selectState">
+                <option value="" disabled selected>{{ _("Filtrer par région/état") }}</option>
+            </select>
+            <label>{{ _("Région / État") }}</label>
+        <div>
+            <a id="btnAllState" class="btn-flat waves-effect blue-text text-darken-2">{{ _("Tout") }}</a>
+            <a id="btnNoneState" class="btn-flat waves-effect blue-text text-darken-2">{{ _("Aucun") }}</a>
+        </div>
+        <div id="infoState" class="filter-info"></div>
         </div>
     </div>
 </section>

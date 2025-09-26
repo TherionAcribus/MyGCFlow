@@ -18,6 +18,8 @@ var defaultEndDate = null;
 // Dates de publication par défaut
 var defaultPublishedStartDate = null;
 var defaultPublishedEndDate = null;
+// Pays/Etats
+let countryToStates = {};
 var inputTimePerDay;
 var selectFlashMode, inputTimeFlash, inputSizeFlash, cpFlashColor;
 var cpStrokeColor, cpFillColor, cpBackgroundColor, strokeWidth;
@@ -72,6 +74,12 @@ const selectDifficulty = document.getElementById('selectDifficulty');
 const selectContainer = document.getElementById('selectContainer');
     if (selectContainer) selectContainer.addEventListener('change', onSelectionChangedDebounced);
 
+// Country/State selects
+const selectCountry = document.getElementById('selectCountry');
+const selectState = document.getElementById('selectState');
+    if (selectCountry) selectCountry.addEventListener('change', onSelectionChangedDebounced);
+    if (selectState) selectState.addEventListener('change', onSelectionChangedDebounced);
+
 // datepicker (trouvaille)
 const datePickerStart = document.getElementById('datePickerStart');
 const datePickerEnd = document.getElementById('datePickerEnd');
@@ -116,6 +124,31 @@ const publishedDatePickerEnd = document.getElementById('publishedDatePickerEnd')
     btnNoneContainer = document.getElementById('btnNoneContainer');
     if (btnAllContainer) btnAllContainer.addEventListener('click', () => selectAllOptions(selectContainer));
     if (btnNoneContainer) btnNoneContainer.addEventListener('click', () => deselectAllOptions(selectContainer));
+
+    // Pays / États - boutons Tout/Aucun et infos
+    const btnAllCountry = document.getElementById('btnAllCountry');
+    const btnNoneCountry = document.getElementById('btnNoneCountry');
+    const btnAllState = document.getElementById('btnAllState');
+    const btnNoneState = document.getElementById('btnNoneState');
+    const selectCountryEl = document.getElementById('selectCountry');
+    const selectStateEl = document.getElementById('selectState');
+    if (btnAllCountry) btnAllCountry.addEventListener('click', () => selectAllOptions(selectCountryEl));
+    if (btnNoneCountry) btnNoneCountry.addEventListener('click', () => {
+        deselectAllOptions(selectCountryEl);
+        // si aucun pays, vider aussi les états
+        if (selectStateEl) {
+            Array.from(selectStateEl.options).forEach(opt => { opt.selected = false; });
+            M.FormSelect.init(selectStateEl);
+        }
+        onSelectionChangedDebounced();
+        updateFilterInfos();
+    });
+    if (btnAllState) btnAllState.addEventListener('click', () => selectAllOptions(selectStateEl));
+    if (btnNoneState) btnNoneState.addEventListener('click', () => {
+        deselectAllOptions(selectStateEl);
+        onSelectionChangedDebounced();
+        updateFilterInfos();
+    });
 
     // Zones d'information sous chaque filtre
     infoType = document.getElementById('infoType');
@@ -643,6 +676,53 @@ export function init_ui() {
     M.FormSelect.init(document.getElementById('selectLanguage'));
     selectCheckVersionOnline.value = pkg.options.options.checkVersion;
     M.FormSelect.init(document.getElementById('selectCheckVersionOnline'));
+
+    // Charger l'arbre Country/State et peupler selects
+    try {
+        console.log('[COUNTRY] Fetching /api/country_state ...');
+        const apiUrl = `${window.location.origin}/api/country_state`;
+        fetch(apiUrl)
+            .then(async r => {
+                console.log('[COUNTRY] Response ok=', r.ok, 'status=', r.status);
+                const txt = await r.text();
+                console.log('[COUNTRY] Response length=', txt?.length);
+                let data;
+                try {
+                    data = txt ? JSON.parse(txt) : {};
+                } catch(err) {
+                    console.warn('[COUNTRY] JSON parse failed for API. Falling back to static file.', err);
+                    // Fallback vers le JSON statique
+                const staticUrl = `${window.location.origin}/static/json/country_state.json`;
+                    return fetch(staticUrl)
+                        .then(rr => rr.json())
+                        .then(dd => {
+                            countryToStates = dd || {};
+                            console.log('[COUNTRY] Fallback static JSON loaded. Countries:', Object.keys(countryToStates).length);
+                            populateCountryStateSelects(countryToStates);
+                            setTimeout(() => {
+                                console.log('[COUNTRY] Re-populate after delay (fallback)');
+                                populateCountryStateSelects(countryToStates);
+                            }, 800);
+                        })
+                        .catch(e => console.warn('[COUNTRY] Fallback fetch error:', e));
+                }
+                countryToStates = data || {};
+                console.log('[COUNTRY] Data received. Countries:', Object.keys(countryToStates).length);
+                populateCountryStateSelects(countryToStates);
+            setTimeout(() => {
+                console.log('[COUNTRY] Re-populate after delay');
+                populateCountryStateSelects(countryToStates);
+                // Mise à jour finale des infos après remplissage
+                setTimeout(() => {
+                    updateFilterInfos();
+                }, 200);
+            }, 800);
+            })
+            .catch((e)=>{ console.warn('[COUNTRY] Fetch error:', e); })
+            .finally(()=>{ console.log('[COUNTRY] Fetch chain completed'); });
+    } catch(e) {
+        console.warn('[COUNTRY] Outer try/catch error:', e);
+    }
 
     // ---------- POINTS ------------------
     // colorpickers
@@ -1214,9 +1294,114 @@ function collectSelectedValues(){
     selectedValues["terrain"] = selectTerrain ? Array.from(selectTerrain.selectedOptions).map(option => option.value) : [];
     selectedValues["difficulty"] = selectDifficulty ? Array.from(selectDifficulty.selectedOptions).map(option => option.value) : [];
     selectedValues["container"] = selectContainer ? Array.from(selectContainer.selectedOptions).map(option => option.value) : [];
+    const selCountry = document.getElementById('selectCountry');
+    const selState = document.getElementById('selectState');
+    if (selCountry) selectedValues["countries"] = Array.from(selCountry.selectedOptions).map(o => o.value);
+    if (selState) selectedValues["states"] = Array.from(selState.selectedOptions).map(o => o.value);
     selectedValues["dates"] = {startDate: document.querySelector('#datePickerStart')?.value, endDate: document.querySelector('#datePickerEnd')?.value};
     selectedValues["published_dates"] = {startDate: document.querySelector('#publishedDatePickerStart')?.value, endDate: document.querySelector('#publishedDatePickerEnd')?.value};
     return selectedValues;
+}
+
+function populateCountryStateSelects(tree){
+    const selCountry = document.getElementById('selectCountry');
+    const selState = document.getElementById('selectState');
+    if (!selCountry || !selState) {
+        console.log('[COUNTRY] Selects not ready, retry later');
+        setTimeout(() => populateCountryStateSelects(tree), 200);
+        return;
+    }
+    // Populate countries
+    selCountry.innerHTML = '';
+    // Ajouter l'option placeholder pour les pays
+    const placeholderCountry = document.createElement('option');
+    placeholderCountry.value = '';
+    placeholderCountry.disabled = true;
+    placeholderCountry.textContent = 'Filtrer par pays';
+    selCountry.appendChild(placeholderCountry);
+    
+    const countries = Object.keys(tree).sort((a,b)=>a.localeCompare(b));
+    console.log('[COUNTRY] Populating countries:', countries.length);
+    const fragC = document.createDocumentFragment();
+    for (const c of countries){
+        const opt = document.createElement('option');
+        opt.value = c; opt.textContent = c; opt.selected = true;
+        fragC.appendChild(opt);
+    }
+    selCountry.appendChild(fragC);
+    // Détruire l'instance Materialize existante si déjà initialisée
+    try { M.FormSelect.getInstance(selCountry)?.destroy?.(); } catch(_) {}
+    M.FormSelect.init(selCountry);
+
+    // Populate states (from selected countries or all)
+    const statesSet = new Set();
+    for (const list of Object.values(tree)) { (list||[]).forEach(s => statesSet.add(s)); }
+    console.log('[COUNTRY] Populating states total unique:', statesSet.size);
+    selState.innerHTML = '';
+    // Ajouter l'option placeholder pour les états
+    const placeholderState = document.createElement('option');
+    placeholderState.value = '';
+    placeholderState.disabled = true;
+    placeholderState.textContent = 'Filtrer par région/état';
+    selState.appendChild(placeholderState);
+    
+    const fragS = document.createDocumentFragment();
+    for (const s of Array.from(statesSet).sort((a,b)=>a.localeCompare(b))){
+        const opt = document.createElement('option');
+        opt.value = s; opt.textContent = s; opt.selected = true;
+        fragS.appendChild(opt);
+    }
+    selState.appendChild(fragS);
+    try { M.FormSelect.getInstance(selState)?.destroy?.(); } catch(_) {}
+    M.FormSelect.init(selState);
+
+    selCountry.addEventListener('change', () => {
+        // Si des vraies options sont sélectionnées, désélectionner le placeholder
+        const realSelected = Array.from(selCountry.selectedOptions).filter(o => !o.disabled && o.value !== '');
+        if (realSelected.length > 0) {
+            const placeholder = selCountry.querySelector('option[disabled][value=""]');
+            if (placeholder) placeholder.selected = false;
+        }
+        
+        const selected = Array.from(selCountry.selectedOptions).map(o => o.value);
+        console.log('[COUNTRY] Country change selected=', selected);
+        const sset = new Set();
+        selected.forEach(c => (tree[c]||[]).forEach(s => sset.add(s)));
+        selState.innerHTML = '';
+        // Toujours ajouter le placeholder en premier
+        const placeholderStateChange = document.createElement('option');
+        placeholderStateChange.value = '';
+        placeholderStateChange.disabled = true;
+        placeholderStateChange.textContent = 'Filtrer par région/état';
+        selState.appendChild(placeholderStateChange);
+        
+        const frag = document.createDocumentFragment();
+        Array.from(sset).sort((a,b)=>a.localeCompare(b)).forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s; opt.textContent = s; opt.selected = selected.length > 0; // si aucun pays, rien sélectionné
+            frag.appendChild(opt);
+        });
+        selState.appendChild(frag);
+        try { M.FormSelect.getInstance(selState)?.destroy?.(); } catch(_) {}
+        M.FormSelect.init(selState);
+        console.log('[COUNTRY] States populated for selection=', sset.size);
+        // Mise à jour des infos et déclenchement filtrage
+        updateFilterInfos();
+        onSelectionChangedDebounced();
+    });
+
+    // Déclencher le filtrage quand l'utilisateur change la sélection des états directement
+    selState.addEventListener('change', () => {
+        console.log('[COUNTRY] State selection changed');
+        // Si des vraies options sont sélectionnées, désélectionner le placeholder
+        const realSelected = Array.from(selState.selectedOptions).filter(o => !o.disabled && o.value !== '');
+        if (realSelected.length > 0) {
+            const placeholder = selState.querySelector('option[disabled][value=""]');
+            if (placeholder) placeholder.selected = false;
+        }
+        updateFilterInfos();
+        onSelectionChangedDebounced();
+    });
 }
 
 function persistSelectedValues(values){
@@ -1265,6 +1450,13 @@ function selectAllOptions(selectEl){
 function deselectAllOptions(selectEl){
     if (!selectEl) return;
     Array.from(selectEl.options).forEach(opt => { opt.selected = false; });
+    
+    // Pour les selects avec placeholder, sélectionner le placeholder quand tout est vide
+    const placeholderOption = selectEl.querySelector('option[disabled][value=""]');
+    if (placeholderOption) {
+        placeholderOption.selected = true;
+    }
+    
     // Réinitialiser Materialize pour mettre à jour l'affichage visuel
     M.FormSelect.init(selectEl);
     onSelectionChangedDebounced();
@@ -1277,6 +1469,15 @@ function updateFilterInfos(){
     updateFilterInfoFor(selectDifficulty, infoDifficulty, btnAllDifficulty);
     updateFilterInfoFor(selectTerrain, infoTerrain, btnAllTerrain);
     updateFilterInfoFor(selectContainer, infoContainer, btnAllContainer);
+    // Country/State
+    const selectCountryEl = document.getElementById('selectCountry');
+    const selectStateEl = document.getElementById('selectState');
+    const btnAllCountry = document.getElementById('btnAllCountry');
+    const btnAllState = document.getElementById('btnAllState');
+    const infoCountry = document.getElementById('infoCountry');
+    const infoState = document.getElementById('infoState');
+    updateFilterInfoFor(selectCountryEl, infoCountry, btnAllCountry);
+    updateFilterInfoFor(selectStateEl, infoState, btnAllState);
 }
 
 function updateFilterInfoFor(selectEl, infoEl, btnAllEl){
@@ -1301,7 +1502,9 @@ function areAllSelected(selectEl){
 }
 
 function getSelectedValuesText(selectEl){
-    const values = Array.from(selectEl.selectedOptions).map(o => o.textContent.trim());
+    const values = Array.from(selectEl.selectedOptions)
+        .filter(o => !o.disabled && o.value !== '') // Exclure les placeholders
+        .map(o => o.textContent.trim());
     return values.join(', ');
 }
 

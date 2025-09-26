@@ -8,6 +8,7 @@ from capture import upload_image, clear_pictures_directory, assemble_pictures_di
 from options import check_version_online
 from flask_babel import Babel, gettext as _
 from settings_manager import SettingsManager, AppSettings
+import os
 
 # Créer un alias pour la fonction de traduction
 gettext = _
@@ -162,6 +163,21 @@ def get_geojson_points():
     return jsonify(response_data)
 
 
+@app.route('/api/country_state', methods=['GET'])
+def api_country_state():
+    """Renvoie l'arbre Country -> [States] généré lors de l'import GPX"""
+    try:
+        path = os.path.join(app.root_path, 'static', 'json', 'country_state.json')
+        if not os.path.exists(path):
+            return jsonify({})
+        import json as _json
+        with open(path, 'r', encoding='utf-8') as f:
+            data = _json.load(f)
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({ 'error': str(e) }), 500
+
+
 @app.route('/upload_image', methods=['POST'])
 @cross_origin()
 def get_upload_image():
@@ -176,6 +192,13 @@ def clear_database():
         # Supprimer toutes les entrées de la base de données
         num_deleted = Geocache.query.delete()
         db.session.commit()
+        # Supprimer l'arbre Country/State généré
+        try:
+            path = os.path.join(app.root_path, 'static', 'json', 'country_state.json')
+            if os.path.exists(path):
+                os.remove(path)
+        except Exception as e:
+            print(f"[CLEAR_DB] Could not remove country_state.json: {e}")
         
         return jsonify({
             'success': True, 

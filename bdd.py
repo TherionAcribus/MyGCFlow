@@ -1,5 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
-from flask import jsonify
+from flask import jsonify, current_app
 import xml.etree.ElementTree as ET
 from datetime import datetime
 import os
@@ -289,6 +289,11 @@ def uploadBdd(request, Geocache, db):
         non_null_pd = db.session.query(Geocache).filter(Geocache.published_date != None).count()
         total_rows = db.session.query(Geocache).count()
         print(f"[UPLOAD] Import finished. published_date non-null: {non_null_pd}/{total_rows}")
+        # Générer l'arborescence Country > State une fois l'import terminé
+        try:
+            build_country_state_tree(db, Geocache, current_app)
+        except Exception as e:
+            print(f"[UPLOAD] build_country_state_tree error: {e}")
     except Exception as e:
         print(f"[UPLOAD] Post-import count error: {e}")
     # On marque le chargement comme terminé
@@ -490,10 +495,33 @@ def filter_session(app, db, Geocache, selectedValues):
 
     query = db.session.query(Geocache)
     # Utilisez db.session pour faire la requête
-    query = query.filter(Geocache.cache_type.in_(selectedValues["type"]))
-    query = query.filter(Geocache.terrain.in_(selectedValues["terrain"]))
-    query = query.filter(Geocache.difficulty.in_(selectedValues["difficulty"]))
-    query = query.filter(Geocache.container.in_(selectedValues["container"]))
+    # Appliquer les filtres uniquement si la liste n'est pas vide
+    if selectedValues.get("type"):
+        query = query.filter(Geocache.cache_type.in_(selectedValues["type"]))
+    if selectedValues.get("terrain"):
+        query = query.filter(Geocache.terrain.in_(selectedValues["terrain"]))
+    if selectedValues.get("difficulty"):
+        query = query.filter(Geocache.difficulty.in_(selectedValues["difficulty"]))
+    if selectedValues.get("container"):
+        query = query.filter(Geocache.container.in_(selectedValues["container"]))
+
+    # Filtrage par pays
+    countries = selectedValues.get("countries") or []
+    if isinstance(countries, list):
+        if len(countries) > 0:
+            query = query.filter(Geocache.country.in_(countries))
+        else:
+            # Aucun pays sélectionné => aucun résultat
+            query = query.filter(Geocache.country == '__NONE__')
+
+    # Filtrage par états/régions
+    states = selectedValues.get("states") or []
+    if isinstance(states, list):
+        if len(states) > 0:
+            query = query.filter(Geocache.state.in_(states))
+        else:
+            # Aucun état sélectionné => aucun résultat
+            query = query.filter(Geocache.state == '__NONE__')
 
     # Filtrage par plage de dates (trouvaille)
     start_date = convert_str_to_date(selectedValues["dates"]['startDate'])
@@ -514,3 +542,31 @@ def filter_session(app, db, Geocache, selectedValues):
 
 def convert_str_to_date(date_str):
     return datetime.strptime(date_str, '%Y-%m-%d').date()
+
+
+def build_country_state_tree(db, Geocache, app):
+    """Construit un dictionnaire Country -> [States] depuis la BDD et l'écrit dans static/json/country_state.json"""
+    try:
+        rows = db.session.query(Geocache.country, Geocache.state).distinct().all()
+        tree = {}
+        for country, state in rows:
+            if not country:
+                continue
+            key = country.strip()
+            val = (state or '').strip() if state else None
+            if key not in tree:
+                tree[key] = set()
+            if val:
+                tree[key].add(val)
+        # Convertir les sets en listes triées
+        tree_sorted = { c: sorted(list(states)) for c, states in sorted(tree.items(), key=lambda x: x[0].lower()) }
+
+        # Écriture JSON
+        out_dir = os.path.join(app.root_path, 'static', 'json')
+        os.makedirs(out_dir, exist_ok=True)
+        out_path = os.path.join(out_dir, 'country_state.json')
+        with open(out_path, 'w', encoding='utf-8') as f:
+            json.dump(tree_sorted, f, ensure_ascii=False, indent=2)
+        print(f"[UPLOAD] Country/State tree generated: {out_path} ({len(tree_sorted)} countries)")
+    except Exception as e:
+        print(f"[UPLOAD] build_country_state_tree failed: {e}")
