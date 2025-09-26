@@ -717,12 +717,14 @@ function initPopupOverlay(){
         const foundText = props.found ? 'Oui' : 'Non';
         const owner = sanitize(props.owner);
         const dateFind = sanitize(props.date_find);
+        const publishedDate = sanitize(props.published_date);
 
         const html = `
             <div style="display:flex;flex-direction:column;gap:4px;">
                 <div style="font-weight:600;font-size:13px;">${linkHref ? `<a href=\"${linkHref}\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color:#fff;text-decoration:underline;pointer-events:auto;cursor:pointer;\">` : ''}${gcEsc}${linkHref ? '</a>' : ''} - ${name || 'Sans nom'}</div>
                 <div>${type || '-'}, ${cont || '-'}, ${dif||'-'}/${ter||'-'}</div>
                 ${owner ? `<div>${owner}</div>` : ''}
+                ${publishedDate ? `<div>Publié le ${publishedDate}</div>` : ''}
                 <div>${foundText === 'Oui' ? 'Trouvé' : 'DNF'} ${dateFind ? `le ${dateFind}` : ''}</div>
             </div>`;
         popupEl.innerHTML = html;

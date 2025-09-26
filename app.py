@@ -81,6 +81,8 @@ class Geocache(db.Model):
     time_find = db.Column(db.String(16))
     # Whether the cache was found by the user
     found = db.Column(db.Boolean, default=False)
+    # Cache publication date
+    published_date = db.Column(db.DateTime)
     cache_type = db.Column(db.String(50))
     terrain = db.Column(db.Float)
     difficulty = db.Column(db.Float)

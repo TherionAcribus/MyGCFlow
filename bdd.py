@@ -26,6 +26,55 @@ class LoadingState:
 # Instance globale pour l'état du chargement
 loading_state = LoadingState()
 
+# --- Utils ---
+def parse_gpx_time(text: str):
+    """Parse GPX <time> values accepting with/without 'Z' and date-only.
+    Returns a datetime or None.
+    """
+    if not text:
+        return None
+    s = text.strip()
+    # Remove fractional seconds if present
+    if '.' in s:
+        # keep only up to seconds and optional trailing 'Z'
+        base, rest = s.split('.', 1)
+        # try to keep trailing 'Z'
+        if rest.endswith('Z'):
+            s = base + 'Z'
+        else:
+            s = base
+    patterns = [
+        '%Y-%m-%dT%H:%M:%SZ',  # with Z
+        '%Y-%m-%dT%H:%M:%S',   # without Z
+        '%Y-%m-%d',            # date only
+    ]
+    for p in patterns:
+        try:
+            return datetime.strptime(s, p)
+        except Exception:
+            continue
+    return None
+
+def get_child_text_anyns(element, local_name):
+    """Return direct child text by local name regardless of namespace.
+    Checks namespaced, non-namespaced, and any child whose tag endswith '}local'.
+    """
+    try:
+        # Try common namespace prefixes
+        # Note: callers generally pass 'default' and ns dict, but be resilient
+        # 1) exact non-namespaced
+        el = element.find(local_name)
+        if el is not None and el.text:
+            return el.text
+        # 2) search namespaced children by suffix
+        for child in list(element):
+            tag = child.tag or ''
+            if tag.endswith('}' + local_name) or tag == local_name:
+                return child.text
+    except Exception:
+        pass
+    return None
+
 # analyse le fichier transmit pour peupler La BDD
 def analyse(request):
     if 'file' not in request.files:
@@ -74,6 +123,11 @@ def uploadBdd(request, Geocache, db):
 
     # Assurez-vous que la table existe
     db.create_all()
+    print('[UPLOAD] DB schema check: ensuring columns...')
+    try:
+        ensure_geocache_columns(db)
+    except Exception as e:
+        print(f"[UPLOAD] ensure_geocache_columns error: {e}")
     # Étendre le schéma si nécessaire (ajout de colonnes manquantes)
     try:
         ensure_geocache_columns(db)
@@ -92,18 +146,34 @@ def uploadBdd(request, Geocache, db):
         'groundspeak': 'http://www.groundspeak.com/cache/1/0/1'}
 
     total_waypoints = len(root.findall('default:wpt', ns))
+    print(f"[UPLOAD] GPX waypoints detected: {total_waypoints}")
 
     for index, waypoint in enumerate(root.findall('default:wpt', ns)):
         # Coordonnées
         lat = waypoint.attrib.get('lat')
         lon = waypoint.attrib.get('lon')
 
+        # Date de publication (du waypoint)
+        published_date = None
+        # Extraire time (<time>) quelle que soit la namespace
+        time_text = get_child_text_anyns(waypoint, 'time')
+        if time_text:
+            parsed_pd = parse_gpx_time(time_text)
+            published_date = parsed_pd
+        else:
+            parsed_pd = None
+
         # Codes/noms
-        gc_code = waypoint.find('default:name', ns).text if waypoint.find('default:name', ns) is not None else None
-        urlname = waypoint.find('default:urlname', ns)
+        # Extraire name (<name>) et urlname (<urlname>) robustement
+        gc_code = get_child_text_anyns(waypoint, 'name')
+        urlname_text = get_child_text_anyns(waypoint, 'urlname')
         cache_data = waypoint.find('groundspeak:cache', ns)
         gs_name = cache_data.find('groundspeak:name', ns).text if (cache_data is not None and cache_data.find('groundspeak:name', ns) is not None) else None
-        cache_name = (urlname.text if urlname is not None else gs_name)
+        cache_name = (urlname_text if urlname_text is not None else gs_name)
+
+        # Logs debug pour les 50 premiers (et ensuite tous les 200)
+        if index < 50 or (index % 200 == 0):
+            print(f"[UPLOAD][{index+1}/{total_waypoints}] code={gc_code} lat={lat} lon={lon} time_raw={time_text} parsed_published={parsed_pd}")
 
         # Champs par défaut
         cache_type = None
@@ -192,6 +262,7 @@ def uploadBdd(request, Geocache, db):
             date_find=date_find,
             time_find=time_find,
             found=found,
+            published_date=published_date,
             cache_type=cache_type,
             terrain=terrain,
             difficulty=difficulty,
@@ -214,6 +285,12 @@ def uploadBdd(request, Geocache, db):
 
     # Pour s'assurer que les derniers points sont également enregistrés
     db.session.commit()
+    try:
+        non_null_pd = db.session.query(Geocache).filter(Geocache.published_date != None).count()
+        total_rows = db.session.query(Geocache).count()
+        print(f"[UPLOAD] Import finished. published_date non-null: {non_null_pd}/{total_rows}")
+    except Exception as e:
+        print(f"[UPLOAD] Post-import count error: {e}")
     # On marque le chargement comme terminé
     loading_state.complete()
 
@@ -321,6 +398,7 @@ def create_geojson(query, Geocache, app):
                     "date_find": point.date_find.strftime('%Y-%m-%d') if point.date_find else None,
                     "time_find": getattr(point, 'time_find', None),
                     "found": bool(getattr(point, 'found', False)),
+                    "published_date": getattr(point, 'published_date', None).strftime('%Y-%m-%d') if getattr(point, 'published_date', None) else None,
                     "cache_type": point.cache_type,
                     "gc_code": getattr(point, 'gc_code', None),
                     "name": getattr(point, 'cache_name', None),
@@ -382,11 +460,13 @@ def ensure_geocache_columns(db):
     try:
         res = conn.execute(text("PRAGMA table_info(geocache);"))
         cols = {row[1] for row in res}
+        print(f"[MIGRATION] Existing columns: {sorted(list(cols))}")
         wanted = {
             'gc_code': "ALTER TABLE geocache ADD COLUMN gc_code VARCHAR(255)",
             'cache_name': "ALTER TABLE geocache ADD COLUMN cache_name VARCHAR(255)",
             'time_find': "ALTER TABLE geocache ADD COLUMN time_find VARCHAR(16)",
             'found': "ALTER TABLE geocache ADD COLUMN found BOOLEAN DEFAULT 0",
+            'published_date': "ALTER TABLE geocache ADD COLUMN published_date DATETIME",
             'country': "ALTER TABLE geocache ADD COLUMN country VARCHAR(100)",
             'state': "ALTER TABLE geocache ADD COLUMN state VARCHAR(100)",
             'owner': "ALTER TABLE geocache ADD COLUMN owner VARCHAR(255)",
@@ -396,6 +476,7 @@ def ensure_geocache_columns(db):
         for col, stmt in wanted.items():
             if col not in cols:
                 try:
+                    print(f"[MIGRATION] Adding missing column: {col}")
                     conn.execute(text(stmt))
                 except Exception as e:
                     print(f"[MIGRATION] Could not add column {col}: {e}")
