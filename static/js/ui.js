@@ -1708,6 +1708,18 @@ function updateIconSet() {
                 ]
             };
             break;
+        case 'smiley':
+            // Sprite Smiley: seulement l'icône "found it" du geocaching
+            useSprite = true;
+            spriteMeta = {
+                url: '/static/img/geocaching-sprite.png',
+                sheetWidth: 1800,
+                sheetHeight: 200,
+                items: [
+                    { key: 'found', x: 1700, y: 0, w: 50, h: 50, label: 'Found It' }
+                ]
+            };
+            break;
         case 'cercle':
             // Mode vectoriel cercle: ne pas utiliser de sprite, mais basculer le mode/shape
             pkg.options.point.mode = 'vectoriel';
@@ -1741,13 +1753,15 @@ function updateIconSet() {
 
         // Sauvegarder la meta pour le rendu carte
         pkg.options.point.mode = 'icone';
-        pkg.options.point.iconSet = 'geocaching';
+        pkg.options.point.iconSet = selectedSet;
         pkg.options.point.sprite = {
             url: spriteMeta.url,
             sheetWidth: spriteMeta.sheetWidth,
             sheetHeight: spriteMeta.sheetHeight,
             map: Object.fromEntries(spriteMeta.items.map(it => [it.key, {x:it.x,y:it.y,w:it.w,h:it.h}]))
         };
+
+        pkg.refreshPoints(pkg.options);
     }
 }
 

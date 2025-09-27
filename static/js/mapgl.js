@@ -878,6 +878,13 @@ function displayWebGLPoints(features, pointOptions) {
                 'Webcam Cache': 'webcam'
             };
 
+            // Pour le jeu 'smiley', forcer tous les points à utiliser 'found'
+            if (pointOptions.iconSet === 'smiley') {
+                Object.keys(typeToKey).forEach(cacheType => {
+                    typeToKey[cacheType] = 'found';
+                });
+            }
+
             const typeEntries = Object.entries(typeToKey);
 
             // Construire des expressions 'match' par type réel
