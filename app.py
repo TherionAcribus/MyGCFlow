@@ -141,8 +141,14 @@ def db_status():
 @cross_origin()
 def filter_caches():
     data_request = request.json
-    selected_types  = data_request.get('types', [])  # Récupère le tableau des types
-    geojson = filter_session(app, db, Geocache, selected_types)
+    print(f"[FILTER] Raw request data: {data_request}")
+    selected_values = data_request.get('types', {})  # Récupère tous les filtres
+    print(f"[FILTER] Selected values: {selected_values}")
+    print(f"[FILTER] Type of selected_values: {type(selected_values)}")
+    geojson = filter_session(app, db, Geocache, selected_values)
+    print(f"[FILTER] GeoJSON features count: {len(geojson['features'])}")
+    webcam_count = len([f for f in geojson['features'] if f['properties']['cache_type'] == 'Webcam Cache'])
+    print(f"[FILTER] Webcam caches in result: {webcam_count}")
     metadata = get_metadata_from_geojson(geojson["features"])
     response_data = {
         'geojson': geojson,

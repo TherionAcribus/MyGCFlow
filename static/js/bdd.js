@@ -369,6 +369,8 @@ export function updateOptionsValues(metadata){
 
 // Si on change le filtre de la BDD on refait une requete
 export function changeSelect(selectedValues, optionValues) {
+    console.log('[FILTER] changeSelect called with selectedValues:', selectedValues);
+    console.log('[FILTER] Types selected:', selectedValues.type);
     try { if (filterLoadingToast) { pkg.hideToast(filterLoadingToast); filterLoadingToast = null; } filterLoadingToast = pkg.showLoadingToast("Filtrage des caches...", "Filtrage"); } catch(e) {}
     fetch(`${CONFIG.BASE_URL}/filter_caches`, {
         method: 'POST',
@@ -379,7 +381,9 @@ export function changeSelect(selectedValues, optionValues) {
     })
     .then(response => response.json())
     .then(data => {
-        console.log(data);
+        console.log('[FILTER] Response received:', data);
+        console.log('[FILTER] Number of features returned:', data.geojson?.features?.length || 0);
+        console.log('[FILTER] Webcam caches in response:', data.geojson?.features?.filter(f => f.properties.cache_type === 'Webcam Cache').length || 0);
         json_data = data.geojson;
         metadata = data.metadata;
 

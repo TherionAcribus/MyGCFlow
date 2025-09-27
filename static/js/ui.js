@@ -1063,9 +1063,9 @@ export function setPickerDates(metadata) {
     // Capture des dates par défaut (clonées pour éviter toute mutation)
     defaultStartDate = metadata.startDate ? new Date(metadata.startDate) : null;
     defaultEndDate = metadata.endDate ? new Date(metadata.endDate) : null;
-    // Pour les dates de publication, on utilise les mêmes dates que trouvaille (pas d'info spécifique dans metadata)
-    defaultPublishedStartDate = metadata.startDate ? new Date(metadata.startDate) : null;
-    defaultPublishedEndDate = metadata.endDate ? new Date(metadata.endDate) : null;
+    // Utiliser les vraies dates de publication depuis les métadonnées
+    defaultPublishedStartDate = metadata.publishedStartDate ? new Date(metadata.publishedStartDate) : null;
+    defaultPublishedEndDate = metadata.publishedEndDate ? new Date(metadata.publishedEndDate) : null;
 
     const formattedStartDate = formatDateForPickers(defaultStartDate);
     const formattedEndDate = formatDateForPickers(defaultEndDate);
@@ -1103,14 +1103,17 @@ export function setPickerDates(metadata) {
         publishedStartPicker.setDate(defaultPublishedStartDate, true);
         publishedEndPicker.setDate(defaultPublishedEndDate, true);
 
-        publishedStartElement.value = formattedStartDate;
-        publishedEndElement.value = formattedEndDate;
+        const formattedPublishedStartDate = formatDateForPickers(defaultPublishedStartDate);
+        const formattedPublishedEndDate = formatDateForPickers(defaultPublishedEndDate);
+        
+        publishedStartElement.value = formattedPublishedStartDate;
+        publishedEndElement.value = formattedPublishedEndDate;
 
         // Mettre à jour les libellés des boutons reset publication
         const btnResetPublishedStartDate = document.getElementById('btnResetPublishedStartDate');
         const btnResetPublishedEndDate = document.getElementById('btnResetPublishedEndDate');
-        if (btnResetPublishedStartDate) btnResetPublishedStartDate.textContent = `⟲ ${formattedStartDate}`;
-        if (btnResetPublishedEndDate) btnResetPublishedEndDate.textContent = `⟲ ${formattedEndDate}`;
+        if (btnResetPublishedStartDate) btnResetPublishedStartDate.textContent = `⟲ ${formattedPublishedStartDate}`;
+        if (btnResetPublishedEndDate) btnResetPublishedEndDate.textContent = `⟲ ${formattedPublishedEndDate}`;
         updatePublishedResetButtonsHighlight();
     }
 
@@ -1290,14 +1293,14 @@ function applySelectionChange(){
 
 function collectSelectedValues(){
     let selectedValues = {};
-    selectedValues["type"] = selectType ? Array.from(selectType.selectedOptions).map(option => option.value) : [];
-    selectedValues["terrain"] = selectTerrain ? Array.from(selectTerrain.selectedOptions).map(option => option.value) : [];
-    selectedValues["difficulty"] = selectDifficulty ? Array.from(selectDifficulty.selectedOptions).map(option => option.value) : [];
-    selectedValues["container"] = selectContainer ? Array.from(selectContainer.selectedOptions).map(option => option.value) : [];
+    selectedValues["type"] = selectType ? Array.from(selectType.selectedOptions).map(option => option.value).filter(v => v !== '') : [];
+    selectedValues["terrain"] = selectTerrain ? Array.from(selectTerrain.selectedOptions).map(option => option.value).filter(v => v !== '') : [];
+    selectedValues["difficulty"] = selectDifficulty ? Array.from(selectDifficulty.selectedOptions).map(option => option.value).filter(v => v !== '') : [];
+    selectedValues["container"] = selectContainer ? Array.from(selectContainer.selectedOptions).map(option => option.value).filter(v => v !== '') : [];
     const selCountry = document.getElementById('selectCountry');
     const selState = document.getElementById('selectState');
-    if (selCountry) selectedValues["countries"] = Array.from(selCountry.selectedOptions).map(o => o.value);
-    if (selState) selectedValues["states"] = Array.from(selState.selectedOptions).map(o => o.value);
+    if (selCountry) selectedValues["countries"] = Array.from(selCountry.selectedOptions).map(o => o.value).filter(v => v !== '');
+    if (selState) selectedValues["states"] = Array.from(selState.selectedOptions).map(o => o.value).filter(v => v !== '');
     selectedValues["dates"] = {startDate: document.querySelector('#datePickerStart')?.value, endDate: document.querySelector('#datePickerEnd')?.value};
     selectedValues["published_dates"] = {startDate: document.querySelector('#publishedDatePickerStart')?.value, endDate: document.querySelector('#publishedDatePickerEnd')?.value};
     return selectedValues;

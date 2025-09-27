@@ -459,25 +459,39 @@ def create_geojson(query, Geocache, app):
 def get_metadata_from_geojson(features):
     # Vérifier que la liste des features n'est pas vide
     if features:
-        # Extraire uniquement les dates valides (ignorer None)
-        valid_dates = [f["properties"].get("date_find") for f in features if f.get("properties") and f["properties"].get("date_find")]
-        if valid_dates:
+        # Extraire uniquement les dates de découverte valides (ignorer None)
+        valid_find_dates = [f["properties"].get("date_find") for f in features if f.get("properties") and f["properties"].get("date_find")]
+        if valid_find_dates:
             try:
-                start_date = datetime.strptime(valid_dates[0], '%Y-%m-%d')
-                end_date = datetime.strptime(valid_dates[-1], '%Y-%m-%d')
+                start_date = datetime.strptime(valid_find_dates[0], '%Y-%m-%d')
+                end_date = datetime.strptime(valid_find_dates[-1], '%Y-%m-%d')
             except Exception:
                 start_date, end_date = None, None
         else:
             start_date, end_date = None, None
         delta_days = (end_date - start_date).days if start_date and end_date else None
+
+        # Extraire les dates de publication valides
+        valid_published_dates = [f["properties"].get("published_date") for f in features if f.get("properties") and f["properties"].get("published_date")]
+        if valid_published_dates:
+            try:
+                published_start_date = datetime.strptime(min(valid_published_dates), '%Y-%m-%d')
+                published_end_date = datetime.strptime(max(valid_published_dates), '%Y-%m-%d')
+            except Exception:
+                published_start_date, published_end_date = None, None
+        else:
+            published_start_date, published_end_date = None, None
     else:
         start_date, end_date, delta_days = None, None, None
+        published_start_date, published_end_date = None, None
 
     metadata = {
         "startDate": start_date.strftime('%Y-%m-%d') if start_date else None,
         "endDate": end_date.strftime('%Y-%m-%d') if end_date else None,
         "deltaDays": delta_days,
-        "numberOfCaches": len(features)
+        "numberOfCaches": len(features),
+        "publishedStartDate": published_start_date.strftime('%Y-%m-%d') if published_start_date else None,
+        "publishedEndDate": published_end_date.strftime('%Y-%m-%d') if published_end_date else None
     }
 
     return metadata
