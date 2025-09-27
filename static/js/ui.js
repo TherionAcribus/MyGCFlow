@@ -49,6 +49,47 @@ function updateDurationLockIndicator() {
     }
 }
 
+// Fonction pour mettre à jour l'indicateur de correspondance des durées
+async function updateDurationMatchIndicator() {
+    const indicator = document.getElementById('durationMatchIndicator');
+    const btnSetDuration = document.getElementById('btnSetDurationFromAudio');
+
+    if (!indicator || !btnSetDuration) return;
+
+    // Vérifier si l'audio est activé et si une musique est sélectionnée
+    const audioEnabled = cbRecordAudioEnable && cbRecordAudioEnable.checked;
+    const hasFile = inputAudioFile && inputAudioFile.files && inputAudioFile.files.length > 0;
+
+    if (!audioEnabled || !hasFile) {
+        indicator.style.display = 'none';
+        return;
+    }
+
+    try {
+        const audioDurationSec = await getAudioDuration(inputAudioFile.files[0]);
+        const audioDurationMin = audioDurationSec / 60;
+        const currentTotalTime = parseFloat(inputTotalTime.value) || 0;
+
+        const tolerance = 0.01; // Tolérance de 0.01 minute (~0.6 seconde)
+        const matches = Math.abs(audioDurationMin - currentTotalTime) <= tolerance;
+
+        if (matches) {
+            // Ne rien afficher si les durées coïncident
+            indicator.style.display = 'none';
+        } else {
+            // Afficher la différence seulement si les durées ne coïncident pas
+            const diff = audioDurationMin - currentTotalTime;
+            const diffText = diff > 0 ? `+${diff.toFixed(2)} min` : `${diff.toFixed(2)} min`;
+            indicator.innerHTML = '<i class="material-icons" style="font-size:14px; vertical-align:middle; color:#FF9800;">warning</i> Différence: ' + diffText;
+            indicator.style.color = '#FF9800';
+            indicator.style.display = 'inline';
+        }
+    } catch(e) {
+        console.warn('Erreur lors de la vérification de la durée audio:', e);
+        indicator.style.display = 'none';
+    }
+}
+
 // États de l'application
 var isAnimationRunning = false;
 var isRecording = false;
@@ -506,6 +547,8 @@ function initOptionsElements() {
             }
             // Activer/désactiver le bouton de durée et la checkbox selon si un fichier est chargé
             updateAudioDurationButton();
+            // Mettre à jour l'indicateur de correspondance des durées
+            updateDurationMatchIndicator();
         });
     }
 
@@ -535,6 +578,9 @@ function initOptionsElements() {
 
                         // Recalculer le temps par jour basé sur cette nouvelle durée totale
                         updateTimePerDay();
+
+                        // Mettre à jour l'indicateur de correspondance des durées
+                        updateDurationMatchIndicator();
 
                         console.log(`Durée audio appliquée: ${audioDurationSec.toFixed(2)}s (${audioDurationMin.toFixed(2)}min) - Durée lockée`);
                         pkg.showToast && pkg.showToast('Durée de l\'animation ajustée selon la musique', 'info', 'Musique', 3000);
@@ -972,6 +1018,8 @@ function changeRecordValues() {
                     updateDurationLockIndicator();
                     console.log('Durée délockée - audio désactivé');
                 }
+                // Mettre à jour l'indicateur de correspondance des durées
+                updateDurationMatchIndicator();
             }
             if (inputAudioVolume && inputAudioVolume.value !== '') {
                 const vol = Math.max(0, Math.min(1, parseFloat(inputAudioVolume.value) || 1));
@@ -2196,6 +2244,8 @@ function changeAnimationValues(event){
             console.log('Durée délockée - utilisateur a modifié la durée par jour');
         }
         updateTotalTime();
+        // Mettre à jour l'indicateur de correspondance des durées
+        updateDurationMatchIndicator();
     } else if (event.target.id == 'inputTotalTime'){
         // Si l'utilisateur change le temps total manuellement, délocker la durée audio
         if (isDurationLockedToAudio) {
@@ -2204,6 +2254,8 @@ function changeAnimationValues(event){
             console.log('Durée délockée - utilisateur a modifié le temps total');
         }
         updateTimePerDay();
+        // Mettre à jour l'indicateur de correspondance des durées
+        updateDurationMatchIndicator();
     }
 
     // mise à jour du nombre de chiffre pour l'enregistrement des images
@@ -2213,6 +2265,8 @@ function changeAnimationValues(event){
 export function updateAnimationMenuAfterReadBdd(metadata){
     spanDeltaDays.innerText = metadata.deltaDays;
     updateTotalTime();
+    // Mettre à jour l'indicateur de correspondance des durées
+    updateDurationMatchIndicator();
 }
 
 function updateDeltaDaysAndTimes(){
@@ -2232,6 +2286,8 @@ function updateDeltaDaysAndTimes(){
         } else {
             // Recalculer les temps normalement (durée par jour constante)
             updateTotalTime();
+            // Mettre à jour l'indicateur de correspondance des durées
+            updateDurationMatchIndicator();
         }
 
         // Mettre à jour les informations pour les images
