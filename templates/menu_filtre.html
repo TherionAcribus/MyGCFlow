@@ -3,7 +3,7 @@
     <div class="row">
     <div class="input-field col s6">
         <select multiple id="selectType">
-            <option value="" disabled selected>{{ _("Filtrer par type de cache") }}</option>
+            <option value="" disabled>{{ _("Filtrer par type de cache") }}</option>
             <option value="Traditional Cache" selected>Traditional Cache</option>
             <option value="Unknown Cache" selected>Unknown Cache</option>
             <option value="Wherigo Cache" selected>Wherigo Cache</option>
@@ -29,7 +29,7 @@
 
     <div class="input-field col s6">
         <select multiple id="selectContainer">
-            <option value="" disabled selected>{{ _("Filtrer par taille") }}</option>
+            <option value="" disabled>{{ _("Filtrer par taille") }}</option>
             <option value="Small" selected>Small</option>
             <option value="Micro" selected>Micro</option>
             <option value="Regular" selected>Regular</option>
@@ -46,12 +46,11 @@
     </div>
     </div>
 
-
     <!-- Ligne 2 : Difficultés + Terrain -->
     <div class="row">
     <div class="input-field col s6">
         <select multiple id="selectDifficulty">
-            <option value="" disabled selected>{{ _("Filtrer par difficulté") }}</option>
+            <option value="" disabled>{{ _("Filtrer par difficulté") }}</option>
             <option value="1" selected>1</option>
             <option value="1.5" selected>1.5</option>
             <option value="2" selected>2</option>
@@ -73,7 +72,7 @@
 
     <div class="input-field col s6">
         <select multiple id="selectTerrain">
-            <option value="" disabled selected>{{ _("Filtrer par terrain") }}</option>
+            <option value="" disabled>{{ _("Filtrer par terrain") }}</option>
             <option value="1" selected>1</option>
             <option value="1.5" selected>1.5</option>
             <option value="2" selected>2</option>
@@ -139,7 +138,7 @@
     <div class="row">
         <div class="input-field col s6">
         <select multiple id="selectCountry">
-            <option value="" disabled selected>{{ _("Filtrer par pays") }}</option>
+            <option value="" disabled>{{ _("Filtrer par pays") }}</option>
         </select>
             <label>{{ _("Pays") }}</label>
         <div>
@@ -150,7 +149,7 @@
         </div>
         <div class="input-field col s6">
             <select multiple id="selectState">
-                <option value="" disabled selected>{{ _("Filtrer par région/état") }}</option>
+                <option value="" disabled>{{ _("Filtrer par région/état") }}</option>
             </select>
             <label>{{ _("Région / État") }}</label>
         <div>
@@ -159,5 +158,6 @@
         </div>
         <div id="infoState" class="filter-info"></div>
         </div>
+    </div>
     </div>
 </section>
