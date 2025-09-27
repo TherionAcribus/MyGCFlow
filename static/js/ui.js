@@ -1720,21 +1720,6 @@ function updateIconSet() {
                 ]
             };
             break;
-        case 'cercle':
-            // Mode vectoriel cercle: ne pas utiliser de sprite, mais basculer le mode/shape
-            pkg.options.point.mode = 'vectoriel';
-            pkg.options.point.shape = 'circle';
-            pkg.refreshPoints(pkg.options);
-            // Effacer le preview d'icônes car non pertinent
-            iconPreview.innerHTML = '';
-            return;
-        case 'triangle':
-            // Mode vectoriel triangle
-            pkg.options.point.mode = 'vectoriel';
-            pkg.options.point.shape = 'triangle';
-            pkg.refreshPoints(pkg.options);
-            iconPreview.innerHTML = '';
-            return;
     }
 
     if (useSprite && spriteMeta) {
