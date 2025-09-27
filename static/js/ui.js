@@ -1728,7 +1728,7 @@ function updateIconSet() {
     if (useSprite && spriteMeta) {
         // Rendu via sprite atlas
         iconPreview.innerHTML = spriteMeta.items.map((it) => `
-            <div class="icon-item" data-icon="${it.key}" onclick="selectSpriteIcon('${it.key}')">
+            <div class="icon-item" data-icon="${it.key}">
                 <div class="icon-sprite" style="
                     background-image:url('${spriteMeta.url}');
                     background-position:-${it.x}px -${it.y}px;
@@ -1748,10 +1748,6 @@ function updateIconSet() {
             sheetHeight: spriteMeta.sheetHeight,
             map: Object.fromEntries(spriteMeta.items.map(it => [it.key, {x:it.x,y:it.y,w:it.w,h:it.h}]))
         };
-
-        // Restaure sélection
-        const current = pkg.options?.point?.iconKey || spriteMeta.items[0].key;
-        selectSpriteIcon(current);
     }
 }
 
