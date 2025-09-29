@@ -366,6 +366,12 @@ class ProfileManager {
             });
 
             const response = await fetch(`/api/profiles/uid/${encodeURIComponent(uid)}`);
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                throw new Error(`HTTP ${response.status}: ${errorData.message || errorData.error || 'Profile not found'}`);
+            }
+
             const profile = await response.json();
 
             console.log('🔄 [LOAD_PROFILE] PROFIL REÇU PAR UUID:', {
@@ -514,13 +520,54 @@ class ProfileManager {
                     switch_checked: document.getElementById('switchIconeVectoriel')?.checked
                 });
 
-                await this.loadProfileByUid(defaultProfileUid);
+                try {
+                    await this.loadProfileByUid(defaultProfileUid);
 
-                console.log('🎯 [DEFAULT_PROFILE] État après chargement du profil:', {
-                    point_mode: pkg?.options?.point?.mode,
-                    switch_checked: document.getElementById('switchIconeVectoriel')?.checked,
-                    profile_name: this.currentProfile?.name || 'aucun'
-                });
+                    console.log('🎯 [DEFAULT_PROFILE] État après chargement du profil:', {
+                        point_mode: pkg?.options?.point?.mode,
+                        switch_checked: document.getElementById('switchIconeVectoriel')?.checked,
+                        profile_name: this.currentProfile?.name || 'aucun'
+                    });
+                } catch (error) {
+                    console.warn('⚠️ [DEFAULT_PROFILE] Impossible de charger le profil par défaut:', error.message);
+                    console.log('🎯 [DEFAULT_PROFILE] Tentative de chargement du profil par défaut du système...');
+
+                    // Essayer de charger un profil par défaut du système
+                    try {
+                        await this.loadProfile('Default');
+                        console.log('✅ [DEFAULT_PROFILE] Profil "Default" chargé comme fallback');
+                    } catch (fallbackError) {
+                        console.error('❌ [DEFAULT_PROFILE] Échec du chargement du profil "Default":', fallbackError.message);
+
+                        // Si même le profil Default n'existe pas, créer un profil temporaire basique
+                        console.log('🎯 [DEFAULT_PROFILE] Création d\'un profil temporaire basique...');
+                        try {
+                            this.currentProfile = {
+                                name: 'Profil Temporaire',
+                                uid: 'temp-' + Date.now(),
+                                version: '1.0',
+                                map: {
+                                    tile_provider: 'osm',
+                                    default_center: [0, 0],
+                                    default_zoom: 2
+                                },
+                                points: {
+                                    mode: 'icone'
+                                },
+                                flash: {
+                                    color_type: 'fix'
+                                },
+                                animation: {},
+                                infos: {}
+                            };
+                            this.applyProfile(this.currentProfile);
+                            this.showToast('Profil temporaire chargé (profil par défaut manquant)', 'orange');
+                        } catch (createError) {
+                            console.error('❌ [DEFAULT_PROFILE] Impossible de créer un profil temporaire:', createError.message);
+                            this.showToast('Erreur lors du chargement du profil par défaut', 'red');
+                        }
+                    }
+                }
 
                 // Vérification finale de cohérence
                 const finalSwitchState = document.getElementById('switchIconeVectoriel')?.checked;

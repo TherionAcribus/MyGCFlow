@@ -459,7 +459,10 @@ def api_get_profile(name: str):
 @app.route('/api/profiles/uid/<uid>', methods=['GET'])
 def api_get_profile_by_uid(uid: str):
     """Charge un profil par son UUID"""
-    prof = settings_manager.load_profile_by_uid(uid)
+    try:
+        prof = settings_manager.load_profile_by_uid(uid)
+    except FileNotFoundError as e:
+        return jsonify({'error': 'Profile not found', 'message': str(e)}), 404
     print(f"📤 SERVEUR - Envoi profil par UUID '{uid}' (nom: '{prof.name}'), flash.color_type={getattr(prof.flash, 'color_type', 'fix')}")
     return jsonify({
         'version': prof.version,
