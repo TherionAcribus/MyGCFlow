@@ -53,9 +53,9 @@
                 <i class="material-icons tooltipped" data-position="top" data-tooltip="{{ _('Nombre d\'images capturées par seconde. 30 FPS = vidéo fluide, 60 FPS = ultra-fluide mais fichier 2x plus lourd. Adapté à votre débit internet et puissance machine') }}">help_outline</i>
             </div>
             <div class="input-field col s6 m3 mediarecorder-only">
-                <input id="inputRecordBitrate" type="number" min="100000" step="100000" class="validate">
-                <label for="inputRecordBitrate">{{ _("Bitrate vidéo (bps)") }}</label>
-                <i class="material-icons tooltipped" data-position="top" data-tooltip="{{ _('Débit de données vidéo en bits/seconde. 1Mbps = bonne qualité, 5Mbps = haute qualité, 10Mbps = excellente qualité. Fichier plus lourd avec débit élevé') }}">help_outline</i>
+                <input id="inputRecordBitrate" type="number" min="1" step="1" class="validate">
+                <label for="inputRecordBitrate">{{ _("Bitrate vidéo (Mbps)") }}</label>
+                <i class="material-icons tooltipped" data-position="top" data-tooltip="{{ _('Débit de données vidéo en mégabits/seconde. 1Mbps = bonne qualité, 5Mbps = haute qualité, 10Mbps = excellente qualité. Fichier plus lourd avec débit élevé') }}">help_outline</i>
             </div>
             <div class="input-field col s6 m3 mediarecorder-only">
                 <input id="inputRecordSlowdown" type="number" min="1" step="1" class="validate" value="1">

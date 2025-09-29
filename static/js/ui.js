@@ -893,7 +893,7 @@ function initOptionsUI() {
             M.FormSelect.init(selectRecordMode);
         }
         if (inputRecordFps) inputRecordFps.value = (pkg.options.record?.fps) || 24;
-        if (inputRecordBitrate) inputRecordBitrate.value = (pkg.options.record?.mediaRecorder?.videoBitsPerSecond) || 6000000;
+        if (inputRecordBitrate) inputRecordBitrate.value = ((pkg.options.record?.mediaRecorder?.videoBitsPerSecond) || 6000000) / 1000000;
         if (selectRecordMime) {
             selectRecordMime.value = (pkg.options.record?.mediaRecorder?.mimeType) || 'video/webm;codecs=vp9';
             M.FormSelect.init(selectRecordMime);
@@ -985,7 +985,7 @@ function changeRecordValues() {
             pkg.options.record.fps = fps;
         }
         if (inputRecordBitrate && inputRecordBitrate.value !== '') {
-            const vbps = Math.max(100000, parseInt(inputRecordBitrate.value) || 6000000);
+            const vbps = Math.max(1000000, parseInt(inputRecordBitrate.value) * 1000000 || 6000000);
             pkg.options.record.mediaRecorder.videoBitsPerSecond = vbps;
         }
         if (selectRecordMime && selectRecordMime.value !== '') {
