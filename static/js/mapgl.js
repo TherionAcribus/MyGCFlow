@@ -1818,7 +1818,19 @@ function computeTotalAnimationMs(){
         const base = animationDays * perDay;
         const fps = Number(pkg.options.record?.fps) || 24;
         const extraFrames = Math.max(0, Math.round(Number(pkg.options.record?.extraFrames) || 0));
-        const tail = Math.round((extraFrames / fps) * 1000);
+
+        // Pour MediaRecorder, utiliser une durée fixe pour extraFrames (indépendante du FPS)
+        // Pour éviter que la durée totale change avec le FPS
+        const isMediaRecorder = pkg.options.record?.mode === 'mediarecorder';
+        let tail;
+        if (isMediaRecorder) {
+            // Durée fixe de 3 secondes pour laisser les effets flash se terminer
+            tail = 3000;
+        } else {
+            // Pour l'enregistrement par images, utiliser la logique existante
+            tail = Math.round((extraFrames / fps) * 1000);
+        }
+
         return base + tail;
     } catch(_) { return 3000; }
 }
