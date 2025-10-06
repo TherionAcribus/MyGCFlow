@@ -669,6 +669,26 @@ html body.fullscreen-mode main #mapWithFrames #infosFrame span {
 }
 }
 
+/* Style personnalisé pour les checkboxes - couleur bleue comme les boutons */
+input[type="checkbox"]:checked + span:not(.lever):before {
+    border-right: 2px solid #1e88e5 !important;
+    border-bottom: 2px solid #1e88e5 !important;
+}
+
+input[type="checkbox"] + span:not(.lever):before {
+    border: 2px solid #5a5a5a;
+    transition: border-color 0.3s ease;
+}
+
+input[type="checkbox"]:not(:checked) + span:not(.lever):hover:before {
+    border-color: #1e88e5;
+}
+
+input[type="checkbox"]:checked + span:not(.lever):after {
+    background-color: #1e88e5 !important;
+    border: 2px solid #1e88e5 !important;
+}
+
 /* (Styles des chips retirés) */
 /* Infos filtres */
 .filter-info {
