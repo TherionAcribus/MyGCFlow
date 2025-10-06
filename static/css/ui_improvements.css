@@ -684,6 +684,110 @@ input[type="checkbox"]:not(:checked) + span:not(.lever):hover:before {
     border-color: #1e88e5;
 }
 
+/* Couleurs distinctes pour les boutons de la barre latérale de contrôle */
+/* Bouton Démarrer - Vert (action positive) */
+#btnStartBar {
+    background-color: #4caf50 !important;
+}
+#btnStartBar:hover {
+    background-color: #45a049 !important;
+}
+
+/* Bouton Enregistrer - Rouge/Orange (action d'enregistrement) */
+#btnRecordBar {
+    background-color: #ff9800 !important;
+}
+#btnRecordBar:hover {
+    background-color: #e68900 !important;
+}
+
+/* Bouton Pause - Jaune (déjà géré dans JS, mais on assure la cohérence) */
+#btnPauseBar.yellow.darken-2 {
+    background-color: #f57c00 !important;
+}
+#btnPauseBar.yellow.darken-2:hover {
+    background-color: #ef6c00 !important;
+}
+#btnPauseBar.green {
+    background-color: #4caf50 !important;
+}
+#btnPauseBar.green:hover {
+    background-color: #45a049 !important;
+}
+
+/* Bouton Arrêter - Rouge foncé (action destructive) */
+#btnStopBar {
+    background-color: #f44336 !important;
+}
+#btnStopBar:hover {
+    background-color: #d32f2f !important;
+}
+
+/* Bouton Plein écran - Bleu (action neutre/interface) */
+#btnToggleFullscreen {
+    background-color: #2196f3 !important;
+}
+#btnToggleFullscreen:hover {
+    background-color: #1976d2 !important;
+}
+
+/* Couleurs des boutons du menu Animation (même schéma que la barre latérale) */
+/* Bouton Démarrer - Vert (action positive) */
+#btnStartAnimation {
+    background-color: #4caf50 !important;
+}
+#btnStartAnimation:hover {
+    background-color: #45a049 !important;
+}
+
+/* Bouton Enregistrer - Orange (action d'enregistrement) */
+#btnRecordAnimation {
+    background-color: #ff9800 !important;
+}
+#btnRecordAnimation:hover {
+    background-color: #e68900 !important;
+}
+
+/* Bouton Pause - Jaune (état de pause) */
+#btnPauseAnimation {
+    background-color: #f57c00 !important;
+}
+#btnPauseAnimation:hover {
+    background-color: #ef6c00 !important;
+}
+
+/* Bouton Arrêter - Rouge foncé (action destructive) */
+#btnStopAnimation {
+    background-color: #f44336 !important;
+}
+#btnStopAnimation:hover {
+    background-color: #d32f2f !important;
+}
+
+/* Bouton Plein écran du menu - Bleu (action neutre/interface) */
+#btnFullscreenMode {
+    background-color: #2196f3 !important;
+}
+#btnFullscreenMode:hover {
+    background-color: #1976d2 !important;
+}
+
+/* Bouton Nettoyer images - Rouge pâle (action de nettoyage) */
+#btnCleanMoviePictures {
+    background-color: #ffab91 !important;
+}
+#btnCleanMoviePictures:hover {
+    background-color: #ff8a65 !important;
+}
+
+/* Bouton Assembler film - Bleu-vert (action constructive) */
+#btnAssembleMoviePictures {
+    background-color: #26a69a !important;
+}
+#btnAssembleMoviePictures:hover {
+    background-color: #009688 !important;
+}
+
 input[type="checkbox"]:checked + span:not(.lever):after {
     background-color: #1e88e5 !important;
     border: 2px solid #1e88e5 !important;
