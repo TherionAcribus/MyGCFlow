@@ -862,7 +862,7 @@ function displayWebGLPoints(features, pointOptions) {
                 'Traditional Cache': 'trad',
                 'Multi-cache': 'multi',
                 'Mystery Cache': 'myst',
-                'Unknown Cache': 'myst',
+                'Unknown Cache': 'unknown',
                 'Letterbox Hybrid': 'letterbox',
                 'Event Cache': 'event',
                 'Mega-Event Cache': 'mega',
@@ -872,8 +872,8 @@ function displayWebGLPoints(features, pointOptions) {
                 'Wherigo Cache': 'wherigo',
                 'Lab Cache': 'lab',
                 'Cache In Trash Out Event': 'cito',
-                'Community Celebration Event': 'block',
-                'GPS Adventures Exhibit': 'event',
+                'Community Celebration Event': 'event',
+                'GPS Adventures Exhibit': 'maze',
                 'Locationless (Reverse) Cache': 'locationless',
                 'Webcam Cache': 'webcam'
             };

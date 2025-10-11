@@ -1696,7 +1696,7 @@ function updateIconSet() {
                     { key: 'cito',    x: 500, y:  0, w:50, h:50, label: 'CITO' },
                     { key: 'mega',    x: 600, y:  0, w:50, h:50, label: 'Mega' },
                     { key: 'giga',   x: 700, y:  0, w:50, h:50, label: 'Giga' },
-                    { key: 'maze',    x: 800, y:  0, w:50, h:50, label: 'GPS Maze' },
+                    { key: 'maze',    x: 800, y:  0, w:50, h:50, label: 'GPS Adventures Exhibit' },
                     { key: 'earth',     x: 900, y:  0, w:50, h:50, label: 'Earthcache' },
                     { key: 'virtual', x: 1000, y:  0, w:50, h:50, label: 'Virtual' },
                     { key: 'webcam', x: 1100, y:  0, w:50, h:50, label: 'Webcam' },
