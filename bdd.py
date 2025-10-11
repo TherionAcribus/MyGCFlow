@@ -534,9 +534,13 @@ def filter_session(app, db, Geocache, selectedValues):
 
     query = db.session.query(Geocache)
     # Utilisez db.session pour faire la requête
-    # Appliquer les filtres uniquement si la liste n'est pas vide
-    if selectedValues.get("type"):
-        query = query.filter(Geocache.cache_type.in_(selectedValues["type"]))
+    # Appliquer les filtres de type de cache
+    types = selectedValues.get("type") or []
+    if len(types) > 0:
+        query = query.filter(Geocache.cache_type.in_(types))
+    else:
+        # Aucun type sélectionné => aucun résultat
+        query = query.filter(Geocache.cache_type == '__NONE__')
     if selectedValues.get("terrain"):
         query = query.filter(Geocache.terrain.in_(selectedValues["terrain"]))
     if selectedValues.get("difficulty"):

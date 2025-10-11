@@ -43,6 +43,7 @@ if (fileInputModal) {
 export let metadata;
 export let json_data;
 let totalCaches = 0; // total initial (toutes caches de la BDD)
+let noCacheToast = null; // Référence à la toast d'alerte "aucune cache visible"
 // Index pré-calculé des points par date pour optimiser l'animation
 export let pointsByDate = new Map();
 // Toasts de chargement
@@ -410,6 +411,24 @@ function updateFiltersCounter(selected, total){
         const el = document.getElementById('filtersCounter');
         if (el) {
             el.textContent = `Sélection: ${selected} / ${total}`;
+        }
+
+        // Gérer la toast d'alerte "aucune cache visible"
+        if (selected === 0 && total > 0) {
+            // Afficher la toast si elle n'existe pas encore
+            if (!noCacheToast) {
+                noCacheToast = pkg.showToast('Aucune cache ne correspond aux critères sélectionnés par les filtres.', 'warning', 'Aucune cache visible', 0);
+            }
+        } else {
+            // Fermer la toast si elle existe et qu'il y a des caches affichées
+            if (noCacheToast) {
+                try {
+                    pkg.hideToast(noCacheToast);
+                } catch(e) {
+                    console.warn('Erreur lors de la fermeture de la toast "aucune cache visible"', e);
+                }
+                noCacheToast = null;
+            }
         }
     } catch(e) { console.warn('updateFiltersCounter error', e); }
 }
