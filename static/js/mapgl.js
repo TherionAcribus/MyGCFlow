@@ -343,7 +343,8 @@ function startBackgroundMusicIfAny(){
 
         bgAudioEl = new Audio(URL.createObjectURL(file));
         bgAudioEl.preload = 'auto';
-        bgAudioEl.loop = true;
+        // Lecture unique : le son ne doit pas se relancer automatiquement en fin de piste
+        bgAudioEl.loop = false;
 
         bgAudioSource = bgAudioCtx.createMediaElementSource(bgAudioEl);
         bgAudioGain = bgAudioCtx.createGain();
@@ -1174,6 +1175,8 @@ export function startAnimation(restart=false) {
             console.log('[ANIMATION] Fin atteinte. currentDate:', currentDate);
             clearInterval(interval);
             interval = null;
+            // Couper la musique de fond à la fin de l'animation
+            try { stopBackgroundMusic(); } catch(e) { console.warn('stopBackgroundMusic error:', e); }
             try { pkg.resetControlsToInitialState && pkg.resetControlsToInitialState(); } catch(e) { console.warn(e); }
             try { hidePopup(); } catch(_) {}
         }
