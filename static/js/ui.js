@@ -21,6 +21,7 @@ var defaultPublishedEndDate = null;
 // Pays/Etats
 let countryToStates = {};
 var inputTimePerDay;
+var inputExtraEndTime;
 var selectFlashMode, inputTimeFlash, inputSizeFlash, cpFlashColor;
 var cpStrokeColor, cpFillColor, cpBackgroundColor, strokeWidth;
 var cbDisplayTitle, cbDisplayNumberofCaches, cbDisplayCurrentDate, inputTitle;
@@ -327,6 +328,8 @@ const btnRecordAnimation = document.getElementById('btnRecordAnimation');
 
     inputTimePerDay = document.getElementById('inputTimePerDay');
     if (inputTimePerDay) inputTimePerDay.addEventListener('input', changeAnimationValues);
+    inputExtraEndTime = document.getElementById('inputExtraEndTime');
+    if (inputExtraEndTime) inputExtraEndTime.addEventListener('input', changeAnimationValues);
 
 const btnStopAnimation = document.getElementById('btnStopAnimation');
     if (btnStopAnimation) btnStopAnimation.addEventListener('click', () => {
@@ -831,6 +834,11 @@ export function init_ui() {
     // ------- ANIMATION DE LA CARTE -------
     // Inputs
     inputTimePerDay.value = pkg.options.animation.timePerDay;
+    if (inputExtraEndTime) {
+        const extraSeconds = Number(pkg.options.animation.extraEndSeconds) || 0;
+        pkg.options.animation.extraEndSeconds = Math.max(0, extraSeconds);
+        inputExtraEndTime.value = pkg.options.animation.extraEndSeconds;
+    }
 
     // ------- FLASH -------
     // colorpicker
@@ -2280,6 +2288,15 @@ function changeAnimationValues(event){
         updateTimePerDay();
         // Mettre à jour l'indicateur de correspondance des durées
         updateDurationMatchIndicator();
+    } else if (event.target.id == 'inputExtraEndTime'){
+        const extraSeconds = Math.max(0, parseFloat(inputExtraEndTime.value) || 0);
+        pkg.options.animation.extraEndSeconds = extraSeconds;
+        if (isDurationLockedToAudio) {
+            updateTimePerDay();
+        } else {
+            updateTotalTime();
+        }
+        updateDurationMatchIndicator();
     }
 
     // mise à jour du nombre de chiffre pour l'enregistrement des images
@@ -2319,33 +2336,60 @@ function updateDeltaDaysAndTimes(){
     }
 }
 
+function getExtraEndMs(){
+    const extraSeconds = Number(pkg.options.animation.extraEndSeconds) || 0;
+    return Math.max(0, extraSeconds) * 1000;
+}
+
 function updateTotalTime(){
-    const totalTimeInMilliSec = pkg.metadata.deltaDays * inputTimePerDay.value
-    console.log("totalTimeInMilliSec", totalTimeInMilliSec)
+    const baseTimeMs = pkg.metadata.deltaDays * inputTimePerDay.value;
+    const extraMs = getExtraEndMs();
+    const totalTimeInMilliSec = baseTimeMs + extraMs;
+    console.log("totalTimeInMilliSec", totalTimeInMilliSec);
     // mise à jour du temps en ms pour futurs calculs
     pkg.options.record.totalTimeInMilliSec = totalTimeInMilliSec;
 
     // Ne pas modifier le temps total si la durée est lockée à la musique
     if (!isDurationLockedToAudio) {
         inputTotalTime.value = (totalTimeInMilliSec / 60 / 1000).toFixed(2);
-        updateToMinutesAndSeconds();
     }
+    updateTimeBreakdown(baseTimeMs, extraMs, totalTimeInMilliSec);
 }
 
 function updateTimePerDay(){
-    const timePerDay = Math.floor(inputTotalTime.value / pkg.metadata.deltaDays * 60 * 1000) ;
+    const totalTimeMs = inputTotalTime.value * 60 * 1000;
+    const extraMs = getExtraEndMs();
+    const baseTimeMs = Math.max(1, totalTimeMs - extraMs);
+    const timePerDay = Math.floor(baseTimeMs / pkg.metadata.deltaDays);
     pkg.options.animation.timePerDay = timePerDay;
     inputTimePerDay.value = timePerDay;
     // Mettre à jour le temps total en millisecondes pour les calculs futurs
-    pkg.options.record.totalTimeInMilliSec = inputTotalTime.value * 60 * 1000;
-    // Mettre à jour l'affichage des minutes/secondes
-    updateToMinutesAndSeconds();
+    pkg.options.record.totalTimeInMilliSec = baseTimeMs + extraMs;
+    // Mettre à jour l'affichage des minutes/secondes et du détail
+    updateTimeBreakdown(baseTimeMs, extraMs, pkg.options.record.totalTimeInMilliSec);
 }
 
-function updateToMinutesAndSeconds(){
-    const time = pkg.convertToMinutesAndSeconds(inputTotalTime.value);
-    spanTotalTimeMinutes.innerText = time.minutes;
-    spanTotalTimeSeconds.innerText = time.seconds;
+function updateTimeBreakdown(baseMs, extraMs, totalMs){
+    const toMinSec = (ms) => {
+        const minutesFraction = ms / 60000;
+        const { minutes, seconds } = pkg.convertToMinutesAndSeconds(minutesFraction);
+        return { minutes, seconds };
+    };
+
+    const total = toMinSec(totalMs);
+    const base = toMinSec(baseMs);
+    const extra = toMinSec(extraMs);
+
+    spanTotalTimeMinutes.innerText = total.minutes;
+    spanTotalTimeSeconds.innerText = total.seconds;
+    const baseMinutesEl = document.getElementById('spanBaseTimeMinutes');
+    const baseSecondsEl = document.getElementById('spanBaseTimeSeconds');
+    const extraMinutesEl = document.getElementById('spanExtraTimeMinutes');
+    const extraSecondsEl = document.getElementById('spanExtraTimeSeconds');
+    if (baseMinutesEl) baseMinutesEl.innerText = base.minutes;
+    if (baseSecondsEl) baseSecondsEl.innerText = base.seconds;
+    if (extraMinutesEl) extraMinutesEl.innerText = extra.minutes;
+    if (extraSecondsEl) extraSecondsEl.innerText = extra.seconds;
 }
 
 

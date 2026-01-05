@@ -302,6 +302,7 @@ let vectorSource;
 
 // definition de l'interval hors de la fonction d'animation pour pouvoir l'arreter.
 let interval;
+let endTimeout = null;
 // element qui stocke les infos à afficher dans les frames. Sortie de la fonction pour pouvoir les garder en mémoire
 let infos;
 // flag pour indiquer si un enregistrement est en cours
@@ -1115,7 +1116,24 @@ function getPointsUpToDate(targetDate) {
     return allPoints;
 }
 
+function getExtraEndMs() {
+    const extraSeconds = Number(pkg.options?.animation?.extraEndSeconds) || 0;
+    return Math.max(0, extraSeconds) * 1000;
+}
+
+function finalizeAnimationEnd() {
+    // Couper la musique de fond et remettre l'interface
+    try { stopBackgroundMusic(); } catch(e) { console.warn('stopBackgroundMusic error:', e); }
+    try { pkg.resetControlsToInitialState && pkg.resetControlsToInitialState(); } catch(e) { console.warn(e); }
+    try { hidePopup(); } catch(_) {}
+    endTimeout = null;
+}
+
 export function startAnimation(restart=false) {
+    if (endTimeout) {
+        clearTimeout(endTimeout);
+        endTimeout = null;
+    }
     if (!restart) {
         // Vérification que vectorSource existe avant de l'utiliser
         if (window.vectorSource) {
@@ -1175,10 +1193,15 @@ export function startAnimation(restart=false) {
             console.log('[ANIMATION] Fin atteinte. currentDate:', currentDate);
             clearInterval(interval);
             interval = null;
-            // Couper la musique de fond à la fin de l'animation
-            try { stopBackgroundMusic(); } catch(e) { console.warn('stopBackgroundMusic error:', e); }
-            try { pkg.resetControlsToInitialState && pkg.resetControlsToInitialState(); } catch(e) { console.warn(e); }
-            try { hidePopup(); } catch(_) {}
+            const extraMs = getExtraEndMs();
+            if (extraMs > 0) {
+                if (endTimeout) {
+                    clearTimeout(endTimeout);
+                }
+                endTimeout = setTimeout(() => finalizeAnimationEnd(), extraMs);
+            } else {
+                finalizeAnimationEnd();
+            }
         }
     }, dayDuration);
 }
@@ -1186,6 +1209,11 @@ export function startAnimation(restart=false) {
 export function stopAnimation(){
     // Arrêter l'enregistrement si en cours
     isRecording = false;
+
+    if (endTimeout) {
+        clearTimeout(endTimeout);
+        endTimeout = null;
+    }
 
     // Arrêter le pipeline MediaRecorder si actif
     try {
@@ -1827,14 +1855,15 @@ function computeTotalAnimationMs(){
         const base = animationDays * perDay;
         const fps = Number(pkg.options.record?.fps) || 24;
         const extraFrames = Math.max(0, Math.round(Number(pkg.options.record?.extraFrames) || 0));
+        const extraEndMs = Math.max(0, Number(pkg.options?.animation?.extraEndSeconds) || 0) * 1000;
 
         // Pour MediaRecorder, utiliser une durée fixe pour extraFrames (indépendante du FPS)
         // Pour éviter que la durée totale change avec le FPS
         const isMediaRecorder = pkg.options.record?.mode === 'mediarecorder';
         let tail;
         if (isMediaRecorder) {
-            // Durée fixe de 3 secondes pour laisser les effets flash se terminer
-            tail = 3000;
+            // Duree fixe de 3 secondes + temps additionnel pour la fin d'animation
+            tail = 3000 + extraEndMs;
         } else {
             // Pour l'enregistrement par images, utiliser la logique existante
             tail = Math.round((extraFrames / fps) * 1000);
@@ -2960,4 +2989,3 @@ export function diamondStyle(radius, opacity, flashOptions, cacheType = null){
     });
     return style;
 }
-

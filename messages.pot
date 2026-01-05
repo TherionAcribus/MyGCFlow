@@ -73,6 +73,10 @@ msgstr ""
 msgid "Temps total (minutes)"
 msgstr ""
 
+#: templates/menu_animation.html:60
+msgid "Temps additionnel (sec)"
+msgstr ""
+
 #: templates/menu_animation.html:56
 msgid "min"
 msgstr ""

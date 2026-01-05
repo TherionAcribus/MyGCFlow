@@ -194,7 +194,7 @@ async function requeteDefaultValues(){
         return {
             map: { center: [48.8566, 2.3522], zoom: 10 },
             point: { size: 8, color: '#ff0000' },
-            animation: { speed: 1 },
+            animation: { speed: 1, timePerDay: 50, extraEndSeconds: 0 },
             infos: { show: true },
             flash: { show: false },
             date: { format: 'yyyy-mm-dd' },
@@ -202,4 +202,3 @@ async function requeteDefaultValues(){
         };
     }
 }
-

@@ -28,7 +28,8 @@
         }
     },
     "animation":{
-        "timePerDay":50
+        "timePerDay":50,
+        "extraEndSeconds": 0
     },
     "record": {
         "fps": 24,
