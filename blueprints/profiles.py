@@ -15,13 +15,21 @@ def api_get_settings():
     if s.default_profile_uid:
         default_profile_name = settings_manager.get_profile_name_by_uid(s.default_profile_uid)
 
-    return jsonify({
+    response = jsonify({
         'version': s.version,
         'language': s.language,
         'check_updates': s.check_updates,
         'default_profile_uid': s.default_profile_uid,
         'default_profile_name': default_profile_name,
     })
+    response.set_cookie(
+        'gcmap_lang',
+        s.language,
+        max_age=60 * 60 * 24 * 365,
+        samesite='Lax',
+        path='/'
+    )
+    return response
 
 
 @profiles_bp.route('/api/settings', methods=['PUT'])
@@ -55,7 +63,15 @@ def api_put_settings():
         default_profile_uid=default_profile_uid
     )
     settings_manager.save_app_settings(updated)
-    return jsonify({'success': True})
+    response = jsonify({'success': True, 'language': language})
+    response.set_cookie(
+        'gcmap_lang',
+        language,
+        max_age=60 * 60 * 24 * 365,
+        samesite='Lax',
+        path='/'
+    )
+    return response
 
 
 @profiles_bp.route('/api/settings/reset', methods=['POST'])

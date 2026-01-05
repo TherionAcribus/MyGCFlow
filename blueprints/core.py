@@ -1,6 +1,6 @@
 import json
 
-from flask import Blueprint, current_app, jsonify, make_response, render_template
+from flask import Blueprint, current_app, jsonify, make_response, render_template, request
 from flask_babel import gettext as _
 from flask_cors import cross_origin
 
@@ -12,7 +12,17 @@ core_bp = Blueprint('core', __name__)
 
 @core_bp.route('/')
 def index():
-    return render_template('app.html')
+    current_locale = get_locale()
+    response = make_response(render_template('app.html'))
+    if current_locale:
+        response.set_cookie(
+            'gcmap_lang',
+            current_locale,
+            max_age=60 * 60 * 24 * 365,
+            samesite='Lax',
+            path='/'
+        )
+    return response
 
 
 @core_bp.route('/check_version', methods=['GET'])

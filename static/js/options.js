@@ -51,7 +51,7 @@ export function checkVersion(mode="manual"){
     // Récupérer la langue actuelle détectée par l'app
     const currentLang = getCurrentLanguage();
 
-    fetch(`${CONFIG.BASE_URL}/check_version?lang=${currentLang}`)
+    fetch(`${CONFIG.BASE_URL}/check_version`)
     .then(response => {
         if (!response.ok) {
             throw new Error(`Erreur HTTP ${response.status}: ${response.statusText}`);
@@ -183,24 +183,41 @@ async function displayCheckVersion(data, mode){
     }
 }
 
-// Fonction pour récupérer la langue actuelle depuis l'URL
+function normalizeLanguage(lang) {
+    if (!lang) return null;
+    const lower = `${lang}`.toLowerCase();
+    if (lower.startsWith('fr')) return 'fr';
+    if (lower.startsWith('en')) return 'en';
+    return null;
+}
+
+function getLanguageFromCookie() {
+    const cookie = document.cookie.split(';').map(part => part.trim()).find(part => part.startsWith('gcmap_lang='));
+    if (!cookie) return null;
+    return cookie.split('=')[1];
+}
+
+// Fonction pour récupérer la langue actuelle en utilisant les préférences persistées
 function getCurrentLanguage() {
-    // Extraire la langue depuis les paramètres URL
     const urlParams = new URLSearchParams(window.location.search);
     const langParam = urlParams.get('lang');
 
-    if (langParam && (langParam === 'fr' || langParam === 'en')) {
-        return langParam;
+    const sources = [
+        langParam,
+        localStorage.getItem('selectedLanguage'),
+        getLanguageFromCookie(),
+        window.TRANSLATIONS && window.TRANSLATIONS.current_lang
+    ];
+
+    for (const source of sources) {
+        const normalized = normalizeLanguage(source);
+        if (normalized) {
+            return normalized;
+        }
     }
 
-    // Fallback : langue du navigateur
-    const browserLang = navigator.language || navigator.userLanguage;
-    if (browserLang && browserLang.startsWith('en')) {
-        return 'en';
-    }
-
-    // Défaut français
-    return 'fr';
+    const browserLang = normalizeLanguage(navigator.language || navigator.userLanguage);
+    return browserLang || 'fr';
 }
 
 // Fonction pour ouvrir une vraie modale Materialize avec les détails de mise à jour

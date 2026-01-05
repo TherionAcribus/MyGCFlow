@@ -33,6 +33,15 @@ var cbRecordAudioEnable, inputAudioFile, inputAudioVolume;
 // Flag pour savoir si la durée totale est définie depuis la musique
 var isDurationLockedToAudio = false;
 
+const LANGUAGE_COOKIE_NAME = 'gcmap_lang';
+
+function persistLanguagePreference(language) {
+    if (!language) return;
+    localStorage.setItem('selectedLanguage', language);
+    // Cookie lisible côté serveur pour Flask-Babel
+    document.cookie = `${LANGUAGE_COOKIE_NAME}=${language}; path=/; max-age=31536000; samesite=Lax`;
+}
+
 // Fonction pour mettre à jour l'apparence du label selon si la durée est lockée
 function updateDurationLockIndicator() {
     const label = document.getElementById('labelTotalTime');
@@ -718,6 +727,8 @@ export function init_ui() {
         pkg.options.options.language = savedLanguage;
     }
 
+    persistLanguagePreference(pkg.options.options.language);
+
     selectLanguage.value = pkg.options.options.language;
     M.FormSelect.init(document.getElementById('selectLanguage'));
     selectCheckVersionOnline.value = pkg.options.options.checkVersion;
@@ -940,16 +951,20 @@ async function changeOptionsValues() {
 
     // Sauvegarder la nouvelle langue dans les options
     pkg.options.options.language = newLanguage;
-    pkg.options.options.checkVersion = selectCheckVersionOnline.value;
+    if (selectCheckVersionOnline) {
+        pkg.options.options.checkVersion = selectCheckVersionOnline.value;
+    }
 
-    // Sauvegarder dans localStorage
-    localStorage.setItem('selectedLanguage', newLanguage);
+    // Sauvegarder dans localStorage + cookie pour le backend
+    persistLanguagePreference(newLanguage);
 
     // Sauvegarder côté serveur via l'API settings (comme les profils)
     try {
         const currentSettings = await (await fetch('/api/settings')).json();
         currentSettings.language = newLanguage;
-        currentSettings.check_updates = selectCheckVersionOnline.value === 'true' || selectCheckVersionOnline.value === true;
+        if (selectCheckVersionOnline) {
+            currentSettings.check_updates = selectCheckVersionOnline.value === 'true' || selectCheckVersionOnline.value === true;
+        }
 
         const saveResponse = await fetch('/api/settings', {
             method: 'PUT',
@@ -3072,9 +3087,12 @@ function openLanguageChangeModal(newLanguage, currentLanguage) {
     // Gérer le clic sur le bouton de confirmation
     document.getElementById('confirm-language-change').addEventListener('click', function() {
         modalInstance.close();
-        // Recharger la page avec le paramètre de langue et préserver l'onglet actif
+        // Persister la langue côté navigateur + backend
+        persistLanguagePreference(newLanguage);
+
+        // Recharger la page en conservant l'onglet actif (sans dépendre du paramètre lang)
         const url = new URL(window.location);
-        url.searchParams.set('lang', newLanguage);
+        url.searchParams.delete('lang');
 
         // Récupérer l'onglet actif actuel et l'ajouter à l'URL
         const activeTab = localStorage.getItem('activeTab');
@@ -3082,8 +3100,10 @@ function openLanguageChangeModal(newLanguage, currentLanguage) {
             url.hash = activeTab;
         }
 
-        // Recharger la page avec la nouvelle langue
-        window.location.href = url.toString();
+        // Recharger la page avec la nouvelle langue (détectée via cookie/localStorage)
+        window.location.replace(url.toString());
+        // Sécurité : forcer un reload même si l'URL est identique
+        setTimeout(() => window.location.reload(), 100);
     });
 
     // Ouvrir la modal

@@ -152,6 +152,7 @@ async function loadUserSettings() {
         if (userSettings.language) {
             pkg.options.options.language = userSettings.language;
             console.log('📥 [USER_SETTINGS] Langue appliquée:', userSettings.language);
+            document.cookie = `gcmap_lang=${userSettings.language}; path=/; max-age=31536000; samesite=Lax`;
         }
 
         if (typeof userSettings.check_updates === 'boolean') {
@@ -201,5 +202,4 @@ async function requeteDefaultValues(){
         };
     }
 }
-
 
