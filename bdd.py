@@ -316,7 +316,7 @@ def uploadBdd(request, Geocache, db):
         print(f"[UPLOAD] Import finished. published_date non-null: {non_null_pd}/{total_rows}")
         # Générer l'arborescence Country > State une fois l'import terminé
         try:
-            build_country_state_tree(db, Geocache, current_app)
+            build_country_state_tree(db, Geocache)
         except Exception as e:
             print(f"[UPLOAD] build_country_state_tree error: {e}")
     except Exception as e:
@@ -399,7 +399,7 @@ def database_exists(db_path):
     return os.path.exists(db_path)
 
 
-def create_geojson(query, Geocache, app):
+def create_geojson(query, Geocache):
     query = query.order_by(Geocache.date_find)
     
     # Récupérer les données du formulaire
@@ -446,7 +446,7 @@ def create_geojson(query, Geocache, app):
     }
 
     # Chemin du fichier où sauvegarder le GeoJSON
-    file_path = os.path.join(app.root_path, 'static', 'geojson_data.json')
+    file_path = os.path.join(current_app.root_path, 'static', 'geojson_data.json')
 
     # Sauvegarde du GeoJSON dans un fichier
     with open(file_path, 'w') as f:
@@ -528,7 +528,7 @@ def ensure_geocache_columns(db):
         conn.close()
 
 
-def filter_session(app, db, Geocache, selectedValues):
+def filter_session(db, Geocache, selectedValues):
     """ Filtre de la BDD et retourne une query qui sera transformée plus tard en GeoJSON """
     print('selectedValues',selectedValues)
 
@@ -578,7 +578,7 @@ def filter_session(app, db, Geocache, selectedValues):
         if published_start_date and published_end_date:
             query = query.filter(Geocache.published_date >= published_start_date, Geocache.published_date <= published_end_date)
     
-    geocaches_data = create_geojson(query, Geocache, app)
+    geocaches_data = create_geojson(query, Geocache)
 
     return geocaches_data
 
@@ -587,7 +587,7 @@ def convert_str_to_date(date_str):
     return datetime.strptime(date_str, '%Y-%m-%d').date()
 
 
-def build_country_state_tree(db, Geocache, app):
+def build_country_state_tree(db, Geocache):
     """Construit un dictionnaire Country -> [States] depuis la BDD et l'écrit dans static/json/country_state.json"""
     try:
         rows = db.session.query(Geocache.country, Geocache.state).distinct().all()
@@ -605,7 +605,7 @@ def build_country_state_tree(db, Geocache, app):
         tree_sorted = { c: sorted(list(states)) for c, states in sorted(tree.items(), key=lambda x: x[0].lower()) }
 
         # Écriture JSON
-        out_dir = os.path.join(app.root_path, 'static', 'json')
+        out_dir = os.path.join(current_app.root_path, 'static', 'json')
         os.makedirs(out_dir, exist_ok=True)
         out_path = os.path.join(out_dir, 'country_state.json')
         with open(out_path, 'w', encoding='utf-8') as f:
