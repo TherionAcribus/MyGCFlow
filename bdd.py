@@ -4,6 +4,9 @@ import xml.etree.ElementTree as ET
 from datetime import datetime
 import os
 import json
+from typing import Optional
+
+from task_manager import TaskStatus, task_manager
 
 
 # Objet dédié pour gérer l'état du chargement
@@ -26,6 +29,18 @@ class LoadingState:
 # Instance globale pour l'état du chargement
 loading_state = LoadingState()
 
+# Types de tâches connus pour les traitements lourds
+TASK_TYPE_IMPORT = "gpx_import"
+TASK_TYPE_GEOJSON = "geojson_generation"
+
+
+def _update_progress(status: Optional[TaskStatus], progress: float, message: str = ""):
+    """Propagate progress to both the task status (if provided) and legacy loading_state."""
+    if status:
+        status.set_progress(progress, message)
+    # L'état legacy n'est utilisé que pour l'import GPX (progressBar historique)
+    if status is None or getattr(status, "type", None) == TASK_TYPE_IMPORT:
+        loading_state.update(progress, message)
 # --- Utils ---
 def parse_gpx_time(text: str):
     """Parse GPX <time> values accepting with/without 'Z' and date-only.
@@ -128,10 +143,10 @@ def checkFileNameAndDesc(request):
     return {'success': True, 'message': 'Fichier reçu avec succès'}
 
 
-def uploadBdd(request, Geocache, db):
+def uploadBdd(file_path, Geocache, db, status: Optional[TaskStatus] = None):
     # initialisation de l'état du chargement
     loading_state.reset()
-    loading_state.message = "Lecture du fichier GPX..."
+    _update_progress(status, 0, "Lecture du fichier GPX...")
 
     # Assurez-vous que la table existe
     db.create_all()
@@ -150,8 +165,8 @@ def uploadBdd(request, Geocache, db):
     db.session.query(Geocache).delete()
     db.session.commit()
 
-    gpxfile = request.files['file']
-    tree = ET.parse(gpxfile)
+    with open(file_path, 'rb') as gpxfile:
+        tree = ET.parse(gpxfile)
     root = tree.getroot()
 
     ns = {'default': 'http://www.topografix.com/GPX/1/0',
@@ -315,8 +330,10 @@ def uploadBdd(request, Geocache, db):
         # Commit tous les 100 points
         if (index + 1) % 100 == 0:
             db.session.commit()
-            loading_state.update(
-                index / total_waypoints * 100,
+            progress_value = ((index + 1) / max(total_waypoints, 1)) * 100
+            _update_progress(
+                status,
+                progress_value,
                 f'Ajout du point {index + 1} sur {total_waypoints} à la base de données'
             )
 
@@ -335,12 +352,19 @@ def uploadBdd(request, Geocache, db):
         print(f"[UPLOAD] Post-import count error: {e}")
     # On marque le chargement comme terminé
     loading_state.complete()
+    _update_progress(status, 100, "Import terminé")
 
 
-def get_progress_step():
-    """ Sert à récupérer l'état d'avancement du chargement depuis l'objet dédié
-    Utilise maintenant une classe LoadingState au lieu de variables globales """
-    return loading_state.progress, loading_state.message
+def get_progress_step(task_id: Optional[str] = None):
+    """Retourne l'état d'une tâche d'import (progression, message, état, id)."""
+    task = None
+    if task_id:
+        task = task_manager.get(task_id)
+    if task is None:
+        task = task_manager.get_last(TASK_TYPE_IMPORT)
+    if task:
+        return task.progress, task.message, task.state, task.id, task.error
+    return loading_state.progress, loading_state.message, "unknown", None, None
 
 
 def db_infos(Geocache):
@@ -411,50 +435,45 @@ def database_exists(db_path):
     return os.path.exists(db_path)
 
 
-def create_geojson(query, Geocache):
+def create_geojson(query, Geocache, status: Optional[TaskStatus] = None):
     query = query.order_by(Geocache.date_find)
-    
-    # Récupérer les données du formulaire
-    #form_data = request.json
-    #cache_types = form_data.get('cacheType', [])
-    #print('cache_types',cache_types)
-    
-    # Filtrer la requête si cache_types ne contient pas "all"
-    #if "all" not in cache_types and cache_types:
-    #    query = query.filter(Geocache.type.in_(cache_types))
-        
-        # Exécutez la requête pour obtenir la liste des points
-        #query = query.all()
+    total_points = query.count() if status else None
 
-    # Créez une structure GeoJSON pour les points
+    features = []
+    for idx, point in enumerate(query):
+        feature = {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [point.longitude, point.latitude]
+            },
+            "properties": {
+                "date_find": point.date_find.strftime('%Y-%m-%d') if point.date_find else None,
+                "time_find": getattr(point, 'time_find', None),
+                "found": bool(getattr(point, 'found', False)),
+                "published_date": getattr(point, 'published_date', None).strftime('%Y-%m-%d') if getattr(point, 'published_date', None) else None,
+                "cache_type": point.cache_type,
+                "gc_code": getattr(point, 'gc_code', None),
+                "name": getattr(point, 'cache_name', None),
+                "difficulty": point.difficulty,
+                "terrain": point.terrain,
+                "container": point.container,
+                "owner": getattr(point, 'owner', None),
+                "placed_by": getattr(point, 'placed_by', None),
+                "country": getattr(point, 'country', None),
+                "state": getattr(point, 'state', None),
+                "attributes": json.loads(point.attributes) if getattr(point, 'attributes', None) else None
+            }
+        }
+        features.append(feature)
+
+        if status and total_points:
+            progress_value = ((idx + 1) / total_points) * 100
+            _update_progress(status, progress_value, f"Génération du GeoJSON ({idx + 1}/{total_points})")
+
     geojson = {
         "type": "FeatureCollection",
-        "features": [
-            {
-                "type": "Feature",
-                "geometry": {
-                    "type": "Point",
-                    "coordinates": [point.longitude, point.latitude]
-                },
-                "properties": {
-                    "date_find": point.date_find.strftime('%Y-%m-%d') if point.date_find else None,
-                    "time_find": getattr(point, 'time_find', None),
-                    "found": bool(getattr(point, 'found', False)),
-                    "published_date": getattr(point, 'published_date', None).strftime('%Y-%m-%d') if getattr(point, 'published_date', None) else None,
-                    "cache_type": point.cache_type,
-                    "gc_code": getattr(point, 'gc_code', None),
-                    "name": getattr(point, 'cache_name', None),
-                    "difficulty": point.difficulty,
-                    "terrain": point.terrain,
-                    "container": point.container,
-                    "owner": getattr(point, 'owner', None),
-                    "placed_by": getattr(point, 'placed_by', None),
-                    "country": getattr(point, 'country', None),
-                    "state": getattr(point, 'state', None),
-                    "attributes": json.loads(point.attributes) if getattr(point, 'attributes', None) else None
-                }
-            } for point in query
-        ]
+        "features": features
     }
 
     # Chemin du fichier où sauvegarder le GeoJSON
@@ -540,8 +559,8 @@ def ensure_geocache_columns(db):
         conn.close()
 
 
-def filter_session(db, Geocache, selectedValues):
-    """ Filtre de la BDD et retourne une query qui sera transformée plus tard en GeoJSON """
+def filter_session(db, Geocache, selectedValues, status: Optional[TaskStatus] = None):
+    """Filtre la BDD et retourne un GeoJSON généré en tâche de fond si status fourni."""
     print('selectedValues',selectedValues)
 
     query = db.session.query(Geocache)
@@ -590,7 +609,7 @@ def filter_session(db, Geocache, selectedValues):
         if published_start_date and published_end_date:
             query = query.filter(Geocache.published_date >= published_start_date, Geocache.published_date <= published_end_date)
     
-    geocaches_data = create_geojson(query, Geocache)
+    geocaches_data = create_geojson(query, Geocache, status)
 
     return geocaches_data
 
@@ -625,3 +644,27 @@ def build_country_state_tree(db, Geocache):
         print(f"[UPLOAD] Country/State tree generated: {out_path} ({len(tree_sorted)} countries)")
     except Exception as e:
         print(f"[UPLOAD] build_country_state_tree failed: {e}")
+
+
+def run_import_task(status: TaskStatus, app, file_path: str, Geocache, db):
+    """Tâche de fond pour l'import GPX (exécutée dans un thread)."""
+    try:
+        with app.app_context():
+            uploadBdd(file_path, Geocache, db, status=status)
+    finally:
+        try:
+            os.remove(file_path)
+        except Exception:
+            pass
+
+
+def run_geojson_task(status: TaskStatus, app, Geocache, db, selected_values: Optional[dict] = None):
+    """Tâche de fond pour générer le GeoJSON complet ou filtré."""
+    with app.app_context():
+        status.set_progress(1, "Préparation des données GeoJSON...")
+        if selected_values is None:
+            geojson = create_geojson(db.session.query(Geocache), Geocache, status)
+        else:
+            geojson = filter_session(db, Geocache, selected_values, status)
+        metadata = get_metadata_from_geojson(geojson["features"])
+        status.set_result({"geojson": geojson, "metadata": metadata})

@@ -50,6 +50,51 @@ export let pointsByDate = new Map();
 let readLoadingToast = null;
 let filterLoadingToast = null;
 
+function pollTaskStatus(taskId, { onProgress, onSuccess, onError, delay = 400 } = {}) {
+    fetch(`${CONFIG.BASE_URL}/tasks/${taskId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error && !data.state) {
+                throw new Error(data.error);
+            }
+            if (data.state === 'failed') {
+                throw new Error(data.error || 'La tâche a échoué');
+            }
+
+            if (onProgress) {
+                onProgress(data);
+            }
+
+            if (data.state !== 'finished') {
+                setTimeout(() => pollTaskStatus(taskId, { onProgress, onSuccess, onError, delay }), delay);
+                return;
+            }
+
+            if (onSuccess) {
+                onSuccess(data.result || {}, data);
+            }
+        })
+        .catch(err => {
+            console.error('[TASK] Erreur de suivi de tâche:', err);
+            if (onError) {
+                onError(err);
+            }
+        });
+}
+
+function pollGeojsonTask(taskId, { onProgress, onSuccess, onError, delay = 400 } = {}) {
+    pollTaskStatus(taskId, {
+        onProgress,
+        onSuccess: (result) => {
+            if (onSuccess) {
+                onSuccess(result || {});
+            }
+        },
+        onError,
+        delay,
+    });
+}
+
 // TODO Gestion des erreurs
 // CHoix de la BDD 
 // Visualisation des informations
@@ -116,55 +161,62 @@ function uploadBdd (){
     .then(response => response.json())
     .then(data => {
         console.log("data", data);
-        // Masquer le toast et afficher succès
-        pkg.hideToast(uploadToast);
-        pkg.showToast("Fichier chargé avec succès !", "success", "Terminé");
+        if (!data.success || !data.task_id) {
+            throw new Error(data.message || "Impossible de lancer l'import GPX");
+        }
 
-        // mets à jour les infos de la BDD
-        readBddValues();
-        
-        // Charger et afficher les points sur la carte
-        loadAndDisplayPoints();
+        checkLoadingProgress(uploadToast, data.task_id, () => {
+            pkg.hideToast(uploadToast);
+            pkg.showToast("Fichier chargé avec succès !", "success", "Terminé");
+
+            // mets à jour les infos de la BDD
+            readBddValues();
+            
+            // Charger et afficher les points sur la carte
+            loadAndDisplayPoints();
+        }, (message) => {
+            pkg.hideToast(uploadToast);
+            pkg.showToast(message || "Erreur lors du chargement du fichier", "error", "Erreur");
+        });
     })
     .catch(error => {
         console.error('Error:', error);
         pkg.hideToast(uploadToast);
         pkg.showToast("Erreur lors du chargement du fichier", "error", "Erreur");
     });
-
-    // Démarrer la surveillance du progrès
-    checkLoadingProgress(uploadToast);
 }
 
-function checkLoadingProgress(uploadToast) {
-    fetch(`${CONFIG.BASE_URL}/progressBar`)
-        .then(response => response.json())
-        .then(data => {
-            // Mettre à jour la progress bar du toast
-            pkg.updateToastProgress(uploadToast, data.progress);
+function checkLoadingProgress(uploadToast, taskId, onDone, onError) {
+    if (!taskId) {
+        if (onError) {
+            onError("Identifiant de tâche manquant");
+        }
+        return;
+    }
 
-            // Mettre à jour le message du toast avec les détails
+    pollTaskStatus(taskId, {
+        onProgress: (data) => {
+            pkg.updateToastProgress(uploadToast, data.progress || 0);
+
             const messageElement = uploadToast.querySelector('.toast-message');
             if (messageElement && data.message) {
                 messageElement.textContent = data.message;
             }
-
-            console.log(data.progress);
-            if (data.progress < 100) {
-                setTimeout(() => checkLoadingProgress(uploadToast), 200); // Un peu moins fréquent
-            } else {
-                // Chargement terminé - masquer le toast après un court délai
-                setTimeout(() => {
-                    pkg.hideToast(uploadToast);
-                    pkg.showToast("Base de données prête !", "success", "Prêt");
-                }, 500);
+        },
+        onSuccess: () => {
+            pkg.updateToastProgress(uploadToast, 100);
+            if (onDone) {
+                onDone();
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            pkg.hideToast(uploadToast);
-            pkg.showToast("Erreur lors du suivi du progrès", "error", "Erreur");
-        });
+        },
+        onError: (err) => {
+            console.error('Erreur lors du suivi du progrès:', err);
+            if (onError) {
+                onError(err?.message || err);
+            }
+        },
+        delay: 300,
+    });
 }
 
 // regarde si une base de données est disponible et si elle est remplie
@@ -322,36 +374,52 @@ function buildPointsByDateIndex(features) {
 }
 
 export function readBdd(){
-    try { readLoadingToast = pkg.showLoadingToast("Chargement de l'application...", "Chargement"); } catch(e) {}
-    fetch(`${CONFIG.BASE_URL}/get_geojson_points`)
+    try { readLoadingToast = pkg.showLoadingToast("Chargement de l'application...", 'Chargement'); } catch(e) {}
+    fetch(`${CONFIG.BASE_URL}/get_geojson_points`, { method: 'POST' })
     .then(response => response.json())
     .then(data => {
-        json_data = data.geojson;
-        metadata = data.metadata;
+        if (!data.task_id) {
+            throw new Error(data.message || 'Impossible de lancer le chargement de la BDD');
+        }
+        pollGeojsonTask(data.task_id, {
+            onSuccess: (result) => {
+                json_data = result.geojson;
+                metadata = result.metadata || {};
 
-        // Mémoriser le total de caches initial
-        totalCaches = metadata.numberOfCaches || (data.geojson?.features?.length || 0);
+                // M?moriser le total de caches initial
+                totalCaches = metadata.numberOfCaches || (result.geojson?.features?.length || 0);
 
-        // Pré-calcul de l'index des points par date pour optimiser l'animation
-        buildPointsByDateIndex(data.geojson.features);
+                // Pr?-calcul de l'index des points par date pour optimiser l'animation
+                buildPointsByDateIndex(result.geojson?.features || []);
 
-        // conversion en objet date
-        dateStrToDate();
-        // MAJ des frames Infos
-        pkg.updateInfosFrameAfterReadBdd(metadata);
-        // MAJ du menu d'animation
-        pkg.updateAnimationMenuAfterReadBdd(metadata);
-        // mise à jour des Date Pickers de l'ui (filtre BDD)
-        pkg.setPickerDates(metadata)
-        // mise à jour des options en fonction de la BDD (dates début et fin)
-        updateOptionsValues(metadata);
-        pkg.addVector(data.geojson);
+                // conversion en objet date
+                dateStrToDate();
+                // MAJ des frames Infos
+                pkg.updateInfosFrameAfterReadBdd(metadata);
+                // MAJ du menu d'animation
+                pkg.updateAnimationMenuAfterReadBdd(metadata);
+                // mise ? jour des Date Pickers de l'ui (filtre BDD)
+                pkg.setPickerDates(metadata);
+                // mise ? jour des options en fonction de la BDD (dates d?but et fin)
+                updateOptionsValues(metadata);
+                pkg.addVector(result.geojson);
 
-        // Mettre à jour le compteur : sélection = total au chargement initial
-        updateFiltersCounter(metadata.numberOfCaches || 0, totalCaches);
-        try { if (readLoadingToast) { pkg.hideToast(readLoadingToast); readLoadingToast = null; } } catch(e) {}
+                // Mettre ? jour le compteur : s?lection = total au chargement initial
+                updateFiltersCounter(metadata.numberOfCaches || 0, totalCaches);
+                try { if (readLoadingToast) { pkg.hideToast(readLoadingToast); readLoadingToast = null; } } catch(e) {}
+            },
+            onError: (err) => {
+                console.error('Erreur lors du chargement de la BDD:', err);
+                try { if (readLoadingToast) { pkg.hideToast(readLoadingToast); readLoadingToast = null; } } catch(e) {}
+                showError('Erreur lors du chargement des donn?es', 'Erreur');
+            }
+        });
     })
-    .catch(error => { console.error('Error:', error); try { if (readLoadingToast) { pkg.hideToast(readLoadingToast); readLoadingToast = null; } } catch(e) {} });
+    .catch(error => {
+        console.error('Error:', error);
+        try { if (readLoadingToast) { pkg.hideToast(readLoadingToast); readLoadingToast = null; } } catch(e) {}
+        showError('Erreur lors du chargement des donn?es', 'Erreur');
+    });
 }
 
 function dateStrToDate(){
@@ -372,38 +440,54 @@ export function updateOptionsValues(metadata){
 export function changeSelect(selectedValues, optionValues) {
     console.log('[FILTER] changeSelect called with selectedValues:', selectedValues);
     console.log('[FILTER] Types selected:', selectedValues.type);
-    try { if (filterLoadingToast) { pkg.hideToast(filterLoadingToast); filterLoadingToast = null; } filterLoadingToast = pkg.showLoadingToast("Filtrage des caches...", "Filtrage"); } catch(e) {}
+    try { if (filterLoadingToast) { pkg.hideToast(filterLoadingToast); filterLoadingToast = null; } filterLoadingToast = pkg.showLoadingToast('Filtrage des caches...', 'Filtrage'); } catch(e) {}
     fetch(`${CONFIG.BASE_URL}/filter_caches`, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json', // Spécifie le type de contenu envoyé
+            'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ types: selectedValues }), // Convertit l'objet en chaîne JSON
+        body: JSON.stringify({ types: selectedValues }),
     })
     .then(response => response.json())
     .then(data => {
-        console.log('[FILTER] Response received:', data);
-        console.log('[FILTER] Number of features returned:', data.geojson?.features?.length || 0);
-        console.log('[FILTER] Webcam caches in response:', data.geojson?.features?.filter(f => f.properties.cache_type === 'Webcam Cache').length || 0);
-        json_data = data.geojson;
-        metadata = data.metadata;
+        if (!data.task_id) {
+            throw new Error(data.message || 'Impossible de lancer le filtrage');
+        }
+        pollGeojsonTask(data.task_id, {
+            onSuccess: (result) => {
+                const geojson = result.geojson;
+                const meta = result.metadata || {};
+                console.log('[FILTER] GeoJSON g?n?r?:', geojson?.features?.length || 0);
+                json_data = geojson;
+                metadata = meta;
 
-        // Reconstruit l'index des points par date avec les données filtrées
-        buildPointsByDateIndex(data.geojson.features);
+                // Reconstruit l'index des points par date avec les donn?es filtr?es
+                buildPointsByDateIndex(geojson?.features || []);
 
-        // conversion en objet date
-        dateStrToDate();
-        // remets à jour les options/infos dépendant de la BDD (delayDate)
-        updateOptionsValues(metadata);
-        // MAJ des frames Infos
-        pkg.updateInfosFrameAfterReadBdd(metadata);
-        pkg.refreshPoints(optionValues);
+                // conversion en objet date
+                dateStrToDate();
+                // remets ? jour les options/infos d?pendant de la BDD (delayDate)
+                updateOptionsValues(metadata);
+                // MAJ des frames Infos
+                pkg.updateInfosFrameAfterReadBdd(metadata);
+                pkg.refreshPoints(optionValues);
 
-        // Mettre à jour le compteur : sélection courante / total initial
-        updateFiltersCounter(metadata.numberOfCaches || (data.geojson?.features?.length || 0), totalCaches);
-        try { if (filterLoadingToast) { pkg.hideToast(filterLoadingToast); filterLoadingToast = null; } } catch(e) {}
+                // Mettre ? jour le compteur : s?lection courante / total initial
+                updateFiltersCounter(metadata.numberOfCaches || (geojson?.features?.length || 0), totalCaches);
+                try { if (filterLoadingToast) { pkg.hideToast(filterLoadingToast); filterLoadingToast = null; } } catch(e) {}
+            },
+            onError: (err) => {
+                console.error('[FILTER] Erreur lors du suivi du filtrage:', err);
+                try { if (filterLoadingToast) { pkg.hideToast(filterLoadingToast); filterLoadingToast = null; } } catch(e) {}
+                showError('Erreur lors du filtrage des caches', 'Erreur de filtrage');
+            }
+        });
     })
-    .catch(error => { console.error('Error:', error); try { if (filterLoadingToast) { pkg.hideToast(filterLoadingToast); filterLoadingToast = null; } } catch(e) {} });
+    .catch(error => {
+        console.error('Error:', error);
+        try { if (filterLoadingToast) { pkg.hideToast(filterLoadingToast); filterLoadingToast = null; } } catch(e) {}
+        showError('Erreur lors du filtrage des caches', 'Erreur de filtrage');
+    });
 }
 
 function updateFiltersCounter(selected, total){
@@ -671,36 +755,6 @@ function uploadBddRequestFromModal(e) {
     });
 }
 
-// Fonction pour surveiller le progrès depuis la modale (similaire à checkLoadingProgress)
-function checkLoadingProgressModal(uploadToast) {
-    fetch(`${CONFIG.BASE_URL}/progressBar`)
-        .then(response => response.json())
-        .then(data => {
-            // Mettre à jour la progress bar du toast
-            pkg.updateToastProgress(uploadToast, data.progress);
-
-            // Mettre à jour le message du toast avec les détails
-            const messageElement = uploadToast.querySelector('.toast-message');
-            if (messageElement && data.message) {
-                messageElement.textContent = data.message;
-            }
-
-            console.log(data.progress);
-            if (data.progress < 100) {
-                setTimeout(() => checkLoadingProgressModal(uploadToast), 200);
-            } else {
-                // Chargement terminé - masquer le toast après un court délai
-                setTimeout(() => {
-                    pkg.hideToast(uploadToast);
-                    showSuccess("Base de données prête !", "Prêt");
-                }, 1000);
-            }
-        })
-        .catch(error => {
-            console.error('Erreur lors de la surveillance du progrès:', error);
-        });
-}
-
 function performUploadFromModal(file){
     var formData = new FormData();
     formData.append('file', file);
@@ -715,83 +769,102 @@ function performUploadFromModal(file){
     .then(response => response.json())
     .then(data => {
         console.log("data depuis modale", data);
-        // Masquer le toast et afficher succès
-        pkg.hideToast(uploadToast);
-        showSuccess("Fichier chargé avec succès !", "Chargement terminé");
-
-        // Fermer la modale de première utilisation
-        const modalElement = document.getElementById('modal_first_use');
-        if (modalElement) {
-            const modal = M.Modal.getInstance(modalElement);
-            if (modal) {
-                modal.close();
-            }
+        if (!data.success || !data.task_id) {
+            throw new Error(data.message || "Impossible de lancer l'import GPX");
         }
 
-        // Mettre à jour les infos de la BDD
-        readBddValues();
-        
-        // Charger et afficher les points sur la carte
-        loadAndDisplayPoints();
-        
-        // Optionnel : rediriger vers l'onglet de données
-        switchToDataTab();
+        checkLoadingProgress(uploadToast, data.task_id, () => {
+            pkg.hideToast(uploadToast);
+            showSuccess("Fichier chargé avec succès !", "Chargement terminé");
+
+            // Fermer la modale de première utilisation
+            const modalElement = document.getElementById('modal_first_use');
+            if (modalElement) {
+                const modal = M.Modal.getInstance(modalElement);
+                if (modal) {
+                    modal.close();
+                }
+            }
+
+            // Mettre à jour les infos de la BDD
+            readBddValues();
+            
+            // Charger et afficher les points sur la carte
+            loadAndDisplayPoints();
+            
+            // Optionnel : rediriger vers l'onglet de données
+            switchToDataTab();
+        }, (message) => {
+            pkg.hideToast(uploadToast);
+            showError(message || "Erreur lors du chargement du fichier", "Erreur");
+        });
     })
     .catch(error => {
         console.error('Erreur:', error);
         pkg.hideToast(uploadToast);
         showError("Erreur lors du chargement du fichier", "Erreur");
     });
-
-    // Démarrer la surveillance du progrès
-    checkLoadingProgressModal(uploadToast);
 }
 
 // Fonction pour charger et afficher les points sur la carte après chargement de fichier
 function loadAndDisplayPoints() {
-    console.log('[LOAD_POINTS] Chargement des points après upload...');
+    console.log('[LOAD_POINTS] Chargement des points apr?s upload...');
 
     // Afficher un toast pour l'affichage initial des points
     pkg.showPointsToast('Chargement et affichage des points...', 'Affichage des points');
 
-    fetch(`${CONFIG.BASE_URL}/get_geojson_points`)
+    fetch(`${CONFIG.BASE_URL}/get_geojson_points`, { method: 'POST' })
         .then(response => response.json())
         .then(data => {
-            console.log('[LOAD_POINTS] Données GeoJSON reçues:', data);
+            if (!data.task_id) {
+                throw new Error(data.message || 'Impossible de lancer la g?n?ration du GeoJSON');
+            }
+            pollGeojsonTask(data.task_id, {
+                onSuccess: (result) => {
+                    const geojson = result.geojson;
+                    const meta = result.metadata || {};
+                    console.log('[LOAD_POINTS] Donn?es GeoJSON re?ues:', result);
 
-            json_data = data.geojson;
-            metadata = data.metadata;
+                    json_data = geojson;
+                    metadata = meta;
 
-            // Mémoriser le total de caches initial
-            totalCaches = metadata.numberOfCaches || (data.geojson?.features?.length || 0);
+                    // M?moriser le total de caches initial
+                    totalCaches = metadata.numberOfCaches || (geojson?.features?.length || 0);
 
-            // Pré-calcul de l'index des points par date pour optimiser l'animation
-            buildPointsByDateIndex(data.geojson.features);
+                    // Pr?-calcul de l'index des points par date pour optimiser l'animation
+                    buildPointsByDateIndex(geojson?.features || []);
 
-            // conversion en objet date
-            dateStrToDate();
-            // MAJ des frames Infos
-            pkg.updateInfosFrameAfterReadBdd(metadata);
-            // MAJ du menu d'animation
-            pkg.updateAnimationMenuAfterReadBdd(metadata);
-            // mise à jour des Date Pickers de l'ui (filtre BDD)
-            pkg.setPickerDates(metadata)
-            // mise à jour des options en fonction de la BDD (dates début et fin)
-            updateOptionsValues(metadata);
+                    // conversion en objet date
+                    dateStrToDate();
+                    // MAJ des frames Infos
+                    pkg.updateInfosFrameAfterReadBdd(metadata);
+                    // MAJ du menu d'animation
+                    pkg.updateAnimationMenuAfterReadBdd(metadata);
+                    // mise ? jour des Date Pickers de l'ui (filtre BDD)
+                    pkg.setPickerDates(metadata);
+                    // mise ? jour des options en fonction de la BDD (dates d?but et fin)
+                    updateOptionsValues(metadata);
 
-            // Ajouter les points à la carte
-            pkg.addVector(data.geojson);
+                    // Ajouter les points ? la carte
+                    pkg.addVector(geojson);
 
-            // Mettre à jour le compteur : sélection = total au chargement initial
-            updateFiltersCounter(metadata.numberOfCaches || 0, totalCaches);
+                    // Mettre ? jour le compteur : s?lection = total au chargement initial
+                    updateFiltersCounter(metadata.numberOfCaches || 0, totalCaches);
 
-            // Masquer le toast d'affichage initial
-            pkg.hidePointsToast();
+                    // Masquer le toast d'affichage initial
+                    pkg.hidePointsToast();
 
-            console.log('[LOAD_POINTS] Points affichés sur la carte');
+                    console.log('[LOAD_POINTS] Points affich?s sur la carte');
+                },
+                onError: (err) => {
+                    console.error('[LOAD_POINTS] Erreur lors du suivi de la g?n?ration GeoJSON:', err);
+                    pkg.hidePointsToast();
+                    showError("Erreur lors de l'affichage des points sur la carte", "Erreur d'affichage");
+                }
+            });
         })
         .catch(error => {
-            console.error('[LOAD_POINTS] Erreur lors du chargement des points:', error);
+            console.error('[LOAD_POINTS] Erreur lors du lancement de la g?n?ration des points:', error);
 
             // Masquer le toast en cas d'erreur
             pkg.hidePointsToast();
