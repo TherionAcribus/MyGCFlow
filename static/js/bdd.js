@@ -647,6 +647,64 @@ function uploadBddRequestFromModal(e) {
 
     formData.append('file', selectedFile);
 
+    // Étape 1 : analyse du fichier (même logique que l'upload principal)
+    const analyseToast = pkg.showLoadingToast("Analyse du fichier GPX en cours...", "Analyse");
+
+    fetch (`${CONFIG.BASE_URL}/analyse_file`, {
+        method: 'POST',
+        body: formData,
+    }).then (response => response.json())
+    .then (data => {
+        if (data.success) {
+            pkg.hideToast(analyseToast);
+            // Étape 2 : upload réel (progress)
+            performUploadFromModal(selectedFile);
+        } else {
+            pkg.hideToast(analyseToast);
+            pkg.showToast(data.message, "error", "Erreur d'analyse");
+        }
+    })
+    .catch(error => {
+        console.error('Erreur analyse (modale):', error);
+        pkg.hideToast(analyseToast);
+        pkg.showToast("Erreur lors de l'analyse du fichier", "error", "Erreur");
+    });
+}
+
+// Fonction pour surveiller le progrès depuis la modale (similaire à checkLoadingProgress)
+function checkLoadingProgressModal(uploadToast) {
+    fetch(`${CONFIG.BASE_URL}/progressBar`)
+        .then(response => response.json())
+        .then(data => {
+            // Mettre à jour la progress bar du toast
+            pkg.updateToastProgress(uploadToast, data.progress);
+
+            // Mettre à jour le message du toast avec les détails
+            const messageElement = uploadToast.querySelector('.toast-message');
+            if (messageElement && data.message) {
+                messageElement.textContent = data.message;
+            }
+
+            console.log(data.progress);
+            if (data.progress < 100) {
+                setTimeout(() => checkLoadingProgressModal(uploadToast), 200);
+            } else {
+                // Chargement terminé - masquer le toast après un court délai
+                setTimeout(() => {
+                    pkg.hideToast(uploadToast);
+                    showSuccess("Base de données prête !", "Prêt");
+                }, 1000);
+            }
+        })
+        .catch(error => {
+            console.error('Erreur lors de la surveillance du progrès:', error);
+        });
+}
+
+function performUploadFromModal(file){
+    var formData = new FormData();
+    formData.append('file', file);
+
     // Afficher un toast de chargement avec progress bar
     const uploadToast = pkg.showLoadingToast("Chargement du fichier GPX en cours...", "Chargement");
 
@@ -687,36 +745,6 @@ function uploadBddRequestFromModal(e) {
 
     // Démarrer la surveillance du progrès
     checkLoadingProgressModal(uploadToast);
-}
-
-// Fonction pour surveiller le progrès depuis la modale (similaire à checkLoadingProgress)
-function checkLoadingProgressModal(uploadToast) {
-    fetch(`${CONFIG.BASE_URL}/progressBar`)
-        .then(response => response.json())
-        .then(data => {
-            // Mettre à jour la progress bar du toast
-            pkg.updateToastProgress(uploadToast, data.progress);
-
-            // Mettre à jour le message du toast avec les détails
-            const messageElement = uploadToast.querySelector('.toast-message');
-            if (messageElement && data.message) {
-                messageElement.textContent = data.message;
-            }
-
-            console.log(data.progress);
-            if (data.progress < 100) {
-                setTimeout(() => checkLoadingProgressModal(uploadToast), 200);
-            } else {
-                // Chargement terminé - masquer le toast après un court délai
-                setTimeout(() => {
-                    pkg.hideToast(uploadToast);
-                    showSuccess("Base de données prête !", "Prêt");
-                }, 1000);
-            }
-        })
-        .catch(error => {
-            console.error('Erreur lors de la surveillance du progrès:', error);
-        });
 }
 
 // Fonction pour charger et afficher les points sur la carte après chargement de fichier

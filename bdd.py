@@ -104,11 +104,23 @@ def checkFileNameAndDesc(request):
         # Trouver les éléments <name> et <desc> dans le fichier GPX
         name = root.find('{http://www.topografix.com/GPX/1/0}name')
         desc = root.find('{http://www.topografix.com/GPX/1/0}desc')
+        author = root.find('{http://www.topografix.com/GPX/1/0}author')
 
-        if name is None or "My Finds Pocket Query" not in name.text and "Groundspeak" in desc.text:
-            return {'success': False, 'message': "Le fichier GPX est une Pocket Query."}
-        elif "Groundspeak" not in desc.text:
+        # Vérifier la provenance Groundspeak (champ desc ou author)
+        desc_text = desc.text if desc is not None else ''
+        author_text = author.text if author is not None else ''
+
+        is_ground_speak = (
+            (desc_text is not None and 'Groundspeak' in desc_text)
+            or (author_text is not None and 'Groundspeak' in author_text)
+        )
+
+        if not is_ground_speak:
             return {'success': False, 'message': 'Le fichier GPX n\'est pas un fichier produit par Groundspeak.'}
+
+        # Vérifier que le fichier est bien un "My Finds"
+        if name is None or not name.text or "My Finds Pocket Query" not in name.text:
+            return {'success': False, 'message': "Le fichier GPX est une Pocket Query et non un fichier My Finds."}
         
     except ET.ParseError:
         return {'success': False, 'message': 'Le fichier fourni n\'est pas un fichier GPX valide'}
