@@ -1,5 +1,60 @@
 /* Améliorations UX pour la nouvelle interface */
 
+/* Synchronisation filtre -> animation */
+.date-inline-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.filter-sync-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 0; /* aligné sur la même ligne que le reset */
+}
+
+.filter-sync-chip {
+    border: 1px solid #ffb74d;
+    color: #e65100 !important;
+    background-color: #fff3e0 !important;
+    border-radius: 6px;
+    padding: 0 12px;
+    line-height: 32px;
+    height: 32px;
+    min-width: 110px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+}
+
+.filter-sync-chip:hover {
+    background-color: #ffe0b2 !important;
+}
+
+.filter-sync-label {
+    font-size: 0.9rem;
+    color: #546e7a;
+}
+
+.filter-sync-value {
+    font-weight: 600;
+    color: #263238;
+}
+
+.filter-sync-btn {
+    background-color: #e3f2fd !important;
+    color: #1976d2 !important;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+.filter-sync-btn:hover {
+    background-color: #bbdefb !important;
+}
+
 /* Style des onglets principaux */
 .tabs .tab a {
     font-size: 1.1rem;

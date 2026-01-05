@@ -134,8 +134,8 @@ const selectState = document.getElementById('selectState');
 // datepicker (trouvaille)
 const datePickerStart = document.getElementById('datePickerStart');
 const datePickerEnd = document.getElementById('datePickerEnd');
-    if (datePickerStart) datePickerStart.addEventListener('change', onSelectionChangedDebounced);
-    if (datePickerEnd) datePickerEnd.addEventListener('change', onSelectionChangedDebounced);
+    if (datePickerStart) datePickerStart.addEventListener('change', () => { onSelectionChangedDebounced(); updateAnimFilterInfo(); });
+    if (datePickerEnd) datePickerEnd.addEventListener('change', () => { onSelectionChangedDebounced(); updateAnimFilterInfo(); });
 
 // datepicker (pose)
 const publishedDatePickerStart = document.getElementById('publishedDatePickerStart');
@@ -400,6 +400,11 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     const btnResetAnimEndDate = document.getElementById('btnResetAnimEndDate');
     if (btnResetAnimStartDate) btnResetAnimStartDate.addEventListener('click', resetAnimStartDateToDefault);
     if (btnResetAnimEndDate) btnResetAnimEndDate.addEventListener('click', resetAnimEndDateToDefault);
+    // Initialiser tooltips Materialize (dates BDD + dates filtre)
+    const tooltipElements = document.querySelectorAll('.tooltipped');
+    if (tooltipElements && tooltipElements.length > 0) {
+        M.Tooltip.init(tooltipElements, { position: 'top' });
+    }
 
     // Initialiser l'état des contrôles (boutons principaux et barre latérale)
     console.log("=== INITIALISATION DES CONTROLES ===");
@@ -1231,6 +1236,7 @@ function resetStartDateToDefault(){
     onSelectionChangedDebounced();
     updateResetButtonsHighlight();
     updateResetAnimButtonsHighlight();
+    updateAnimFilterInfo();
 }
 
 function resetEndDateToDefault(){
@@ -1243,6 +1249,7 @@ function resetEndDateToDefault(){
     onSelectionChangedDebounced();
     updateResetButtonsHighlight();
     updateResetAnimButtonsHighlight();
+    updateAnimFilterInfo();
 }
 
 function resetPublishedStartDateToDefault(){
@@ -1347,6 +1354,69 @@ function updateResetAnimButtonsHighlight(){
         if (currentEnd && defaultEndStr && currentEnd === defaultEndStr) btnEnd.classList.add('active-reset');
         else btnEnd.classList.remove('active-reset');
     }
+}
+
+// Affichage conditionnel des dates de filtre sous les champs Animation
+function updateAnimFilterInfo(){
+    const startRow = document.getElementById('animFilterStartInfo');
+    const endRow = document.getElementById('animFilterEndInfo');
+    const startValueEl = document.getElementById('animFilterStartValue');
+    const endValueEl = document.getElementById('animFilterEndValue');
+
+    const filterStart = document.querySelector('#datePickerStart')?.value?.trim();
+    const filterEnd = document.querySelector('#datePickerEnd')?.value?.trim();
+    const defaultStartStr = defaultStartDate ? formatDateForPickers(defaultStartDate) : null;
+    const defaultEndStr = defaultEndDate ? formatDateForPickers(defaultEndDate) : null;
+
+    const showStart = !!(startRow && filterStart && defaultStartStr && filterStart !== defaultStartStr);
+    const showEnd = !!(endRow && filterEnd && defaultEndStr && filterEnd !== defaultEndStr);
+
+    if (startRow) {
+        startRow.style.display = showStart ? 'flex' : 'none';
+        if (showStart && startValueEl) {
+            startValueEl.textContent = `⟲ ${filterStart}`;
+            startValueEl.onclick = applyFilterStartToAnim;
+        }
+    }
+    if (endRow) {
+        endRow.style.display = showEnd ? 'flex' : 'none';
+        if (showEnd && endValueEl) {
+            endValueEl.textContent = `⟲ ${filterEnd}`;
+            endValueEl.onclick = applyFilterEndToAnim;
+        }
+    }
+}
+
+function applyFilterStartToAnim(){
+    const filterStart = document.querySelector('#datePickerStart')?.value;
+    if (!filterStart) return;
+    const parsed = pkg.parseDateInput(filterStart);
+    if (!parsed) return;
+    const animStartEl = document.querySelector('#animDateStart');
+    const animStartPicker = animStartEl ? M.Datepicker.getInstance(animStartEl) : null;
+    if (animStartPicker && animStartEl) {
+        animStartPicker.setDate(parsed, true);
+        animStartEl.value = formatDateForPickers(parsed);
+    }
+    pkg.options.animation.dateStart = parsed;
+    updateResetAnimButtonsHighlight();
+    updateDeltaDaysAndTimes();
+}
+
+function applyFilterEndToAnim(){
+    const filterEnd = document.querySelector('#datePickerEnd')?.value;
+    if (!filterEnd) return;
+    const parsed = pkg.parseDateInput(filterEnd);
+    if (!parsed) return;
+    const animEndEl = document.querySelector('#animDateEnd');
+    const animEndPicker = animEndEl ? M.Datepicker.getInstance(animEndEl) : null;
+    if (animEndPicker && animEndEl) {
+        animEndPicker.setDate(parsed, true);
+        animEndEl.value = formatDateForPickers(parsed);
+    }
+    pkg.options.animation.dateEnd = parsed;
+    updateResetAnimButtonsHighlight();
+    updateDeltaDaysAndTimes();
 }
 
 // Debounce et wrapper
