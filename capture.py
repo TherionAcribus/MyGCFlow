@@ -1,6 +1,7 @@
 from flask import jsonify, request
 import os
 import base64
+from datetime import datetime
 from moviepy.editor import ImageSequenceClip, AudioFileClip
 from werkzeug.utils import secure_filename
 
@@ -70,6 +71,21 @@ def clear_pictures_directory():
         return jsonify({'success': False, 'message': str(e)})
     
 
+def _timestamped_name(base: str, ext_fallback: str):
+    """Return <base>_YYYYMMDD-HHMMSS.ext (ext from base or fallback)."""
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    base = base or "gcmap"
+    name, ext = os.path.splitext(base)
+    ext = ext.lstrip(".") or ext_fallback
+    return f"{name}_{stamp}.{ext}"
+
+
+def default_video_output(ext: str = "mp4"):
+    """Return a default output path under video/ with timestamp."""
+    base = f"gcmap.{ext}"
+    return os.path.join("video", _timestamped_name(base, ext))
+
+
 def assemble_pictures_directory(image_folder, output_video, fps=24, audio_path=None, audio_volume=1.0):
     try:
         # Inclure plusieurs formats d'images (webp par défaut côté client, mais aussi png et autres)
@@ -119,18 +135,29 @@ def upload_video(request):
 
     Champs attendus:
       - 'video': le fichier binaire
-      - 'fileName' (optionnel): nom suggéré; sinon fallback sur 'output.webm'
+      - 'fileName' (optionnel): nom suggéré; sinon fallback sur nom horodaté
     """
     try:
         if not request.files or 'video' not in request.files:
             return jsonify({'success': False, 'message': 'Aucun fichier vidéo fourni'}), 400
 
         video_file = request.files['video']
-        file_name = request.form.get('fileName') or video_file.filename or 'output.webm'
-        file_name = secure_filename(file_name) or 'output.webm'
+        suggested = request.form.get('fileName') or video_file.filename
+
+        # Sécuriser le nom fourni et horodater si absent
+        safe_suggested = secure_filename(suggested) if suggested else None
+        base = safe_suggested or _timestamped_name("gcmap.webm", "webm")
+        ext = os.path.splitext(base)[1].lstrip(".") or "webm"
 
         os.makedirs('video', exist_ok=True)
-        save_path = os.path.join('video', file_name)
+        save_path = os.path.join('video', base)
+
+        # Si le fichier existe déjà, suffixer avec un horodatage pour éviter l'écrasement
+        if os.path.exists(save_path):
+            file_name = _timestamped_name(base, ext)
+            save_path = os.path.join('video', file_name)
+        else:
+            file_name = base
         video_file.save(save_path)
 
         return jsonify({'success': True, 'message': 'Vidéo reçue et sauvegardée', 'path': save_path})

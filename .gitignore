@@ -11,5 +11,5 @@ instance/
 *.gpx
 captured/
 static/geojson_data.json
-video/output.webm
+video/
 gcmap_versions.json

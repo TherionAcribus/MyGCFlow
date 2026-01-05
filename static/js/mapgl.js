@@ -1988,7 +1988,23 @@ function finalizeMediaRecorderVideo(){
     try {
         const mime = pkg.options?.record?.mediaRecorder?.mimeType || 'video/webm;codecs=vp9';
         const blob = new Blob(mrRecordedChunks || [], { type: mime });
-        const fileName = (pkg.options?.record?.mediaRecorder?.fileName) || 'output.webm';
+
+        // Construire un nom horodaté pour éviter l'écrasement
+        const buildTimestampedName = (base) => {
+            const safeBase = (base || 'gcmap.webm').trim();
+            const now = new Date();
+            const pad = (n) => String(n).padStart(2, '0');
+            const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+            const lastDot = safeBase.lastIndexOf('.');
+            if (lastDot > 0 && lastDot < safeBase.length - 1) {
+                const name = safeBase.slice(0, lastDot);
+                const ext = safeBase.slice(lastDot);
+                return `${name}_${stamp}${ext}`;
+            }
+            return `${safeBase}_${stamp}.webm`;
+        };
+
+        const fileName = buildTimestampedName(pkg.options?.record?.mediaRecorder?.fileName);
 
         const wantsDownload = !!pkg.options?.record?.mediaRecorder?.downloadLocal;
         const wantsUpload = !!pkg.options?.record?.mediaRecorder?.uploadToServer;

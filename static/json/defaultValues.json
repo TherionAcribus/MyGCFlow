@@ -42,7 +42,7 @@
             "offlineNormalization": true,
             "uploadToServer": true,
             "downloadLocal": true,
-            "fileName": "output.webm"
+            "fileName": "gcmap.webm"
         }
     },
     "infos":{
