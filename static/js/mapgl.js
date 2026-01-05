@@ -915,12 +915,19 @@ function displayWebGLPoints(features, pointOptions) {
             const desiredPx = Math.max(1, parseInt(pointOptions.iconSize || defaultRect.w));
             const scaleRatio = desiredPx / (defaultRect.w || 1);
 
+            // Support retina (@2x) sans changer la méta logique : on choisit l'URL selon devicePixelRatio, mais
+            // on conserve width/height logiques (1x) pour les offsets et icon-scale.
+            const pixelRatio = (window.devicePixelRatio && window.devicePixelRatio >= 2) ? 2 : 1;
+            const iconUrl = (pixelRatio > 1 && sp.url2x) ? sp.url2x : sp.url;
+            const logicalSheetW = sp.sheetWidth;
+            const logicalSheetH = sp.sheetHeight;
+
             pointStyle = {
-                'icon-src': sp.url,
+                'icon-src': iconUrl,
                 'icon-size': buildMatchArray('size', [defaultRect.w, defaultRect.h]),
-                // taille réelle de la feuille (sprite sheet)
-                'icon-width': sp.sheetWidth,
-                'icon-height': sp.sheetHeight,
+                // tailles de feuille RESTENT logiques (1x) pour préserver les offsets
+                'icon-width': logicalSheetW,
+                'icon-height': logicalSheetH,
                 'icon-offset': buildMatchArray('offset', [defaultRect.x, defaultRect.y]),
                 'icon-offset-origin': 'top-left',
                 'icon-scale': scaleRatio,

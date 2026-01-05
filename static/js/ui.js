@@ -1700,11 +1700,13 @@ function updateIconSet() {
             useSprite = true;
             spriteMeta = {
                 url: '/static/img/geocaching-sprite.png',
+                url2x: '/static/img/geocaching-sprite@2x.png',
                 sheetWidth: 1800,
                 sheetHeight: 200,
                 items: [
                     { key: 'trad',    x:   0, y:  0, w:50, h:50, label: 'Traditional' },
                     { key: 'ape',   x:  100, y:  0, w:50, h:50, label: 'APE' },
+
                     { key: 'hq',    x:  200, y:  0, w:50, h:50, label: 'HQ' },
                     { key: 'multi',  x:  300, y:  0, w:50, h:50, label: 'Multi' },
                     { key: 'event',   x: 400, y:  0, w:50, h:50, label: 'Event' },
@@ -1728,6 +1730,7 @@ function updateIconSet() {
             useSprite = true;
             spriteMeta = {
                 url: '/static/img/geocaching-sprite.png',
+                url2x: '/static/img/geocaching-sprite@2x.png',
                 sheetWidth: 1800,
                 sheetHeight: 200,
                 items: [
@@ -1739,13 +1742,22 @@ function updateIconSet() {
 
     if (useSprite && spriteMeta) {
         // Rendu via sprite atlas
+        const sheetW = spriteMeta.sheetWidth;
+        const sheetH = spriteMeta.sheetHeight;
+        const url1x = spriteMeta.url;
+        const url2x = spriteMeta.url2x;
+
         iconPreview.innerHTML = spriteMeta.items.map((it) => `
             <div class="icon-item" data-icon="${it.key}">
                 <div class="icon-sprite" style="
-                    background-image:url('${spriteMeta.url}');
+                    background-image:url('${url1x}');
+                    ${url2x ? `background-image: image-set(
+                        url('${url1x}') 1x,
+                        url('${url2x}') 2x
+                    );` : ''}
                     background-position:-${it.x}px -${it.y}px;
                     width:${it.w}px; height:${it.h}px;
-                    background-size:${spriteMeta.sheetWidth}px ${spriteMeta.sheetHeight}px;
+                    background-size:${sheetW}px ${sheetH}px;
                 "></div>
                 <div class="icon-label">${it.label}</div>
             </div>
@@ -1756,6 +1768,7 @@ function updateIconSet() {
         pkg.options.point.iconSet = selectedSet;
         pkg.options.point.sprite = {
             url: spriteMeta.url,
+            url2x: spriteMeta.url2x,
             sheetWidth: spriteMeta.sheetWidth,
             sheetHeight: spriteMeta.sheetHeight,
             map: Object.fromEntries(spriteMeta.items.map(it => [it.key, {x:it.x,y:it.y,w:it.w,h:it.h}]))
@@ -1765,6 +1778,7 @@ function updateIconSet() {
     }
 }
 
+// ... (rest of the code remains the same)
 // (suppression du mode emoji)
 
 // Sélection d'une icône dans le sprite
