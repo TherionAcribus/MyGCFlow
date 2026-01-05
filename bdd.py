@@ -6,6 +6,7 @@ import os
 import json
 from typing import Optional
 
+from geojson_cache import GeojsonIndexCache, build_metadata_from_features
 from task_manager import TaskStatus, task_manager
 
 
@@ -32,6 +33,8 @@ loading_state = LoadingState()
 # Types de tâches connus pour les traitements lourds
 TASK_TYPE_IMPORT = "gpx_import"
 TASK_TYPE_GEOJSON = "geojson_generation"
+
+geojson_cache = GeojsonIndexCache()
 
 
 def _update_progress(status: Optional[TaskStatus], progress: float, message: str = ""):
@@ -353,6 +356,7 @@ def uploadBdd(file_path, Geocache, db, status: Optional[TaskStatus] = None):
     # On marque le chargement comme terminé
     loading_state.complete()
     _update_progress(status, 100, "Import terminé")
+    geojson_cache.invalidate("gpx_import")
 
 
 def get_progress_step(task_id: Optional[str] = None):
@@ -488,44 +492,7 @@ def create_geojson(query, Geocache, status: Optional[TaskStatus] = None):
 
 # TODO : C'est Pas terrible de récupérer infos depuis GeoJSON. Ce serait plus logique de les récupérer depuis la BDD
 def get_metadata_from_geojson(features):
-    # Vérifier que la liste des features n'est pas vide
-    if features:
-        # Extraire uniquement les dates de découverte valides (ignorer None)
-        valid_find_dates = [f["properties"].get("date_find") for f in features if f.get("properties") and f["properties"].get("date_find")]
-        if valid_find_dates:
-            try:
-                start_date = datetime.strptime(valid_find_dates[0], '%Y-%m-%d')
-                end_date = datetime.strptime(valid_find_dates[-1], '%Y-%m-%d')
-            except Exception:
-                start_date, end_date = None, None
-        else:
-            start_date, end_date = None, None
-        delta_days = (end_date - start_date).days if start_date and end_date else None
-
-        # Extraire les dates de publication valides
-        valid_published_dates = [f["properties"].get("published_date") for f in features if f.get("properties") and f["properties"].get("published_date")]
-        if valid_published_dates:
-            try:
-                published_start_date = datetime.strptime(min(valid_published_dates), '%Y-%m-%d')
-                published_end_date = datetime.strptime(max(valid_published_dates), '%Y-%m-%d')
-            except Exception:
-                published_start_date, published_end_date = None, None
-        else:
-            published_start_date, published_end_date = None, None
-    else:
-        start_date, end_date, delta_days = None, None, None
-        published_start_date, published_end_date = None, None
-
-    metadata = {
-        "startDate": start_date.strftime('%Y-%m-%d') if start_date else None,
-        "endDate": end_date.strftime('%Y-%m-%d') if end_date else None,
-        "deltaDays": delta_days,
-        "numberOfCaches": len(features),
-        "publishedStartDate": published_start_date.strftime('%Y-%m-%d') if published_start_date else None,
-        "publishedEndDate": published_end_date.strftime('%Y-%m-%d') if published_end_date else None
-    }
-
-    return metadata
+    return build_metadata_from_features(features)
 
 
 def ensure_geocache_columns(db):
@@ -584,18 +551,12 @@ def filter_session(db, Geocache, selectedValues, status: Optional[TaskStatus] = 
     if isinstance(countries, list):
         if len(countries) > 0:
             query = query.filter(Geocache.country.in_(countries))
-        else:
-            # Aucun pays sélectionné => aucun résultat
-            query = query.filter(Geocache.country == '__NONE__')
 
     # Filtrage par états/régions
     states = selectedValues.get("states") or []
     if isinstance(states, list):
         if len(states) > 0:
             query = query.filter(Geocache.state.in_(states))
-        else:
-            # Aucun état sélectionné => aucun résultat
-            query = query.filter(Geocache.state == '__NONE__')
 
     # Filtrage par plage de dates (trouvaille)
     start_date = convert_str_to_date(selectedValues["dates"]['startDate'])
@@ -662,9 +623,41 @@ def run_geojson_task(status: TaskStatus, app, Geocache, db, selected_values: Opt
     """Tâche de fond pour générer le GeoJSON complet ou filtré."""
     with app.app_context():
         status.set_progress(1, "Préparation des données GeoJSON...")
+        db_mtime = geojson_cache.get_database_mtime()
+        geojson_cache.invalidate_if_db_changed(db_mtime)
+
+        geojson = None
+        metadata = None
+
         if selected_values is None:
-            geojson = create_geojson(db.session.query(Geocache), Geocache, status)
+            cached_full = geojson_cache.get_base_dataset_if_current(db_mtime)
+            if cached_full:
+                geojson, metadata = cached_full
+                status.set_progress(30, "GeoJSON servi depuis le cache")
+            else:
+                status.set_progress(5, "Génération du GeoJSON complet...")
+                geojson = create_geojson(db.session.query(Geocache), Geocache, status)
+                metadata = get_metadata_from_geojson(geojson["features"])
+                geojson_cache.set_base_dataset(geojson, metadata, db_mtime)
         else:
-            geojson = filter_session(db, Geocache, selected_values, status)
-        metadata = get_metadata_from_geojson(geojson["features"])
+            cached_filtered = geojson_cache.get_filtered_if_current(selected_values, db_mtime)
+            if cached_filtered:
+                geojson, metadata = cached_filtered
+                status.set_progress(35, "Résultat filtré servi depuis le cache")
+            else:
+                if geojson_cache.get_base_dataset_if_current(db_mtime) is None:
+                    status.set_progress(5, "Pré-calcul du GeoJSON complet pour indexer les filtres...")
+                    base_geojson = create_geojson(db.session.query(Geocache), Geocache, status)
+                    base_metadata = get_metadata_from_geojson(base_geojson["features"])
+                    geojson_cache.set_base_dataset(base_geojson, base_metadata, db_mtime)
+                status.set_progress(45, "Application des index mémoire (date/type/région)...")
+                filtered = geojson_cache.filter_with_indexes(selected_values, db_mtime)
+                if filtered is None:
+                    status.set_progress(60, "Filtrage direct en base (fallback)...")
+                    geojson = filter_session(db, Geocache, selected_values, status)
+                    metadata = get_metadata_from_geojson(geojson["features"])
+                    geojson_cache.store_filtered_result(selected_values, geojson, metadata, db_mtime)
+                else:
+                    geojson, metadata = filtered
+
         status.set_result({"geojson": geojson, "metadata": metadata})

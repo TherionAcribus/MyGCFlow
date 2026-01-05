@@ -631,11 +631,12 @@ function isLayerOnMap(map, layerToFind) {
 // Envoie l'affichage des points de features dans le bon vecteur
 function selectEngineAndRefresh(){
     engine = pkg.options.options.engine;
+    const currentFeatures = features || [];
     if (engine == "webgl"){
-        displayWebGLPoints(false, pkg.options.point);
+        displayWebGLPoints(currentFeatures, pkg.options.point);
     } else {
         // TODO AJouter barre chargement
-        displayAllPoints2D(features, pkg.options.point);
+        displayAllPoints2D(currentFeatures, pkg.options.point);
     }
 }
 
@@ -816,6 +817,8 @@ function getStyle2D(feature, pointOptions) {
 }
 
 function displayWebGLPoints(features, pointOptions) {
+
+    const featureList = Array.isArray(features) ? features : [];
 
     // Validation et valeurs par défaut pour éviter NaN dans les shaders WebGL
     let pointSize = Math.max(1, parseInt(pointOptions.center.size) || 3);
@@ -1001,28 +1004,24 @@ function displayWebGLPoints(features, pointOptions) {
         map.addLayer(vectorLayer);
     }
 
-    if (features) {
-        if (features.length > 0) {
-            // Puisque les features sont déjà au format GeoJSON, lisez-les directement
-            const newFeatures = new ol.format.GeoJSON().readFeatures({
+    // Alimenter la source avec les features filtrées
+    if (featureList.length > 0) {
+        let toAdd = featureList;
+        const first = featureList[0];
+        const isOlFeature = first && typeof first.getGeometry === 'function';
+
+        if (!isOlFeature) {
+            // Convertir des features GeoJSON en features OL
+            toAdd = new ol.format.GeoJSON().readFeatures({
                 type: 'FeatureCollection',
-                features: features // Utilisez directement votre tableau de features GeoJSON
+                features: featureList
             }, {
                 dataProjection: 'EPSG:4326',
                 featureProjection: 'EPSG:3857'
             });
-    
-            window.vectorSource.addFeatures(newFeatures);
         }
-    } else {
-        // Chargez les features à partir d'un fichier GeoJSON si aucun feature n'est fourni
-        fetch('static/geojson_data.json').then(response => response.json()).then(data => {
-            const newFeatures = new ol.format.GeoJSON().readFeatures(data, {
-                dataProjection: 'EPSG:4326',
-                featureProjection: 'EPSG:3857'
-            });
-            window.vectorSource.addFeatures(newFeatures);
-        });
+
+        window.vectorSource.addFeatures(toAdd);
     }
 }
 
@@ -2951,7 +2950,4 @@ export function diamondStyle(radius, opacity, flashOptions, cacheType = null){
     });
     return style;
 }
-
-
-
 

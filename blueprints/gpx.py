@@ -4,7 +4,7 @@ import tempfile
 from flask import Blueprint, current_app, jsonify, request
 from flask_cors import cross_origin
 
-from bdd import TASK_TYPE_IMPORT, analyse, db_infos, get_progress_step, run_import_task
+from bdd import TASK_TYPE_IMPORT, analyse, db_infos, get_progress_step, run_import_task, geojson_cache
 from extensions import db
 from models import Geocache
 from task_manager import task_manager
@@ -74,6 +74,11 @@ def clear_database():
                 os.remove(path)
         except Exception as e:
             print(f"[CLEAR_DB] Could not remove country_state.json: {e}")
+
+        try:
+            geojson_cache.invalidate("clear_database")
+        except Exception as e:
+            print(f"[CLEAR_DB] Cache invalidation failed: {e}")
 
         return jsonify({
             'success': True,

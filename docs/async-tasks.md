@@ -42,3 +42,8 @@ Ce projet exécute désormais les prétraitements lourds (import GPX et généra
 
 ## Rappels d’usage
 - Les appels `/upload`, `/get_geojson_points`, `/filter_caches` répondent maintenant en différé (`202`). Les clients doivent **obligatoirement** consommer `/tasks/<task_id>` (ou `/progressBar` pour l’import) pour obtenir l’issue et les données.
+
+## Index & cache GeoJSON
+- `geojson_cache.py` maintient un cache mémoire des jeux GeoJSON complets et filtrés, plus des index persistés (date/type/pays/état) dans `instance/geojson_indexes.json` adossés au fichier `static/geojson_data.json`.
+- `run_geojson_task` sert d’abord les requêtes depuis ces caches; si le cache est manquant ou périmé, il regénère le GeoJSON complet puis applique les filtres via les index avant de retomber sur le filtrage SQL.
+- Le cache est invalidé automatiquement après import GPX, vidage BDD et dès qu’un changement d’horodatage de `instance/geocaching.db` est détecté.

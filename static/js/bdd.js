@@ -470,6 +470,8 @@ export function changeSelect(selectedValues, optionValues) {
                 updateOptionsValues(metadata);
                 // MAJ des frames Infos
                 pkg.updateInfosFrameAfterReadBdd(metadata);
+                // Mettre ? jour les features affich?es sur la carte
+                pkg.addVector(geojson);
                 pkg.refreshPoints(optionValues);
 
                 // Mettre ? jour le compteur : s?lection courante / total initial
