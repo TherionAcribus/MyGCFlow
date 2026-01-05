@@ -256,6 +256,44 @@ class ProfileManager {
         }
     }
 
+    /**
+     * Définir un profil comme profil par défaut depuis le menu contextuel.
+     * - Charge le profil pour récupérer son UID
+     * - Applique le profil immédiatement
+     * - Sauvegarde l'UUID comme profil par défaut
+     * - Met à jour le sélecteur et l'indicateur d'actif
+     */
+    async setProfileAsDefault(profileName) {
+        try {
+            const profile = await this.apiCall(`/api/profiles/${encodeURIComponent(profileName)}`);
+            if (!profile || !profile.uid) {
+                throw new Error('Profil introuvable ou UID manquant');
+            }
+
+            // Appliquer immédiatement le profil
+            this.currentProfile = profile;
+            this.applyProfile(profile);
+
+            // Sauvegarder l'UUID comme profil par défaut
+            const settings = await this.loadAppSettings();
+            settings.default_profile_uid = profile.uid;
+            const result = await this.saveAppSettings(settings);
+
+            if (!result.success) {
+                throw new Error('Échec de la sauvegarde du profil par défaut');
+            }
+
+            this.showToast(`Profil "${profile.name}" défini comme par défaut`, 'green');
+
+            // Rafraîchir les éléments UI dépendants
+            this.populateDefaultProfileSelector();
+            this.updateCurrentProfileIndicator();
+        } catch (error) {
+            console.error('❌ Erreur définition profil par défaut:', error);
+            this.showToast('Erreur lors de la définition du profil par défaut', 'red');
+        }
+    }
+
     // UI methods
     renderProfilesList() {
         const container = document.getElementById('profiles-list');
@@ -293,6 +331,8 @@ class ProfileManager {
                             <li><a class="dropdown-item" href="#!" onclick="profileManager.exportProfile('${profileName.replace(/'/g, "\\'")}')"><i class="material-icons">file_download</i>${window.gettext ? window.gettext('Exporter') : 'Exporter'}</a></li>
                             <li><a class="dropdown-item danger" href="#!" onclick="profileManager.resetProfile('${profileName.replace(/'/g, "\\'")}')"><i class="material-icons">refresh</i>${window.gettext ? window.gettext('Réinitialiser') : 'Réinitialiser'}</a></li>
                             <li><a class="dropdown-item danger" href="#!" onclick="profileManager.confirmDelete('${profileName.replace(/'/g, "\\'")}')"><i class="material-icons">delete</i>${window.gettext ? window.gettext('Supprimer') : 'Supprimer'}</a></li>
+                            <li class="divider" tabindex="-1"></li>
+                            <li><a class="dropdown-item" href="#!" onclick="profileManager.setProfileAsDefault('${profileName.replace(/'/g, "\\'")}')"><i class="material-icons">star</i>${window.gettext ? window.gettext('Définir comme par défaut') : 'Définir comme par défaut'}</a></li>
                         </ul>
                     </div>
                 </div>
