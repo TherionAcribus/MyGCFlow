@@ -2108,6 +2108,11 @@ export function openModalLoading(title, description){
     try {
         currentLoadingToast = pkg.showLoadingToast(description, title);
         console.log('[LOADER] openModalLoading créé:', !!currentLoadingToast, currentLoadingToast);
+        // S'assurer que le toast est bien visible (certaines implémentations peuvent retourner un élément déjà dans le DOM mais masqué)
+        if (currentLoadingToast) {
+            try { currentLoadingToast.style.display = 'flex'; } catch(_) {}
+            try { currentLoadingToast.classList.add('show'); } catch(_) {}
+        }
         // Activer l'animation indéterminée pour montrer que quelque chose se passe
         pkg.setIndeterminateProgress && pkg.setIndeterminateProgress(currentLoadingToast);
     } catch (e) {

@@ -16,6 +16,21 @@ class NotificationManager {
         document.body.appendChild(this.container);
     }
 
+    ensureContainer() {
+        // Si le conteneur a été supprimé du DOM (par erreur ou nettoyage trop large), le recréer
+        try {
+            if (!this.container || !(this.container instanceof HTMLElement)) {
+                this.init();
+                return;
+            }
+            if (!document.body.contains(this.container)) {
+                document.body.appendChild(this.container);
+            }
+        } catch (_) {
+            try { this.init(); } catch (_) {}
+        }
+    }
+
     /**
      * Affiche une notification toast
      * @param {string} message - Message principal
@@ -26,6 +41,7 @@ class NotificationManager {
      * @param {number} progress - Valeur initiale du progrès (0-100)
      */
     show(message, type = 'info', title = '', duration = 5000, showProgress = false, progress = 0) {
+        this.ensureContainer();
         const toast = document.createElement('div');
         toast.className = `gcm-toast ${type}`;
 
@@ -128,7 +144,8 @@ class NotificationManager {
      * Cache toutes les notifications
      */
     clearAll() {
-        const toasts = this.container.querySelectorAll('.toast');
+        this.ensureContainer();
+        const toasts = this.container.querySelectorAll('.gcm-toast');
         toasts.forEach(toast => this.hide(toast));
     }
 }

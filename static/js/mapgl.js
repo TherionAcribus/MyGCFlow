@@ -1477,10 +1477,12 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
         console.log('[CAPTURE] Enregistrement arrêté par l\'utilisateur');
 
         // Fermer le toast de chargement
+        // IMPORTANT: ne pas utiliser de sélecteur large type [class*="toast"] qui peut matcher le conteneur (.gcm-toast-container)
+        // et casser l'affichage des loaders suivants.
         try {
             const loadingToast = document.querySelector('.toast-loading') ||
-                               document.querySelector('.toast') ||
-                               document.querySelector('[class*="toast"]');
+                               document.querySelector('.gcm-toast') ||
+                               document.querySelector('.toast');
             if (loadingToast) {
                 console.log('[CAPTURE] Toast trouvé, tentative de fermeture:', loadingToast);
                 pkg.hideToast && pkg.hideToast(loadingToast);
@@ -1488,8 +1490,8 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
                 console.log('[CAPTURE] Aucun toast trouvé avec les sélecteurs testés');
             }
 
-            // Essayer aussi de fermer tous les toasts visibles
-            const allToasts = document.querySelectorAll('.toast, [class*="toast"]');
+            // Essayer aussi de fermer tous les toasts visibles (sans toucher au conteneur)
+            const allToasts = document.querySelectorAll('.gcm-toast, .toast, .toast-loading');
             allToasts.forEach((toast, index) => {
                 console.log(`[CAPTURE] Fermeture toast ${index}:`, toast.textContent);
                 pkg.hideToast && pkg.hideToast(toast);
@@ -1541,16 +1543,18 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
         try { blockBackgroundAudioPlayback = false; } catch(_) {}
 
         // Fermer le toast de chargement
+        // IMPORTANT: ne pas utiliser de sélecteur large type [class*="toast"] qui peut matcher le conteneur (.gcm-toast-container)
+        // et casser l'affichage des loaders suivants.
         try {
             const loadingToast = document.querySelector('.toast-loading') ||
-                               document.querySelector('.toast') ||
-                               document.querySelector('[class*="toast"]');
+                               document.querySelector('.gcm-toast') ||
+                               document.querySelector('.toast');
             if (loadingToast) {
                 pkg.hideToast && pkg.hideToast(loadingToast);
             }
 
-            // Essayer aussi de fermer tous les toasts visibles
-            const allToasts = document.querySelectorAll('.toast, [class*="toast"]');
+            // Essayer aussi de fermer tous les toasts visibles (sans toucher au conteneur)
+            const allToasts = document.querySelectorAll('.gcm-toast, .toast, .toast-loading');
             allToasts.forEach((toast, index) => {
                 pkg.hideToast && pkg.hideToast(toast);
             });
