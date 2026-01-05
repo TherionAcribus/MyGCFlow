@@ -179,6 +179,8 @@ let recordingPerformanceMonitor = {
     },
     
     checkPerformance(frameTime, expectedFrameTime, recordingMode = 'unknown') {
+        // Pas pertinent pour le mode images/MoviePy (juste plus long, pas un problème perf interactif)
+        if (recordingMode === 'images') return;
         if (!this.isMonitoring) return;
         
         this.frameTimings.push(frameTime);
