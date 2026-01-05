@@ -426,7 +426,16 @@ class SettingsManager:
     # App settings
     def get_app_settings(self) -> AppSettings:
         data = read_json(SETTINGS_PATH)
-        return coerce_settings(data)
+        settings = coerce_settings(data)
+
+        # Si le profil par défaut pointé n'existe plus (ex: après suppression des fichiers de profils),
+        # on nettoie la référence pour éviter des erreurs 404 récurrentes au démarrage.
+        if settings.default_profile_uid and not self.get_profile_name_by_uid(settings.default_profile_uid):
+            print(f"[SETTINGS] Profil par défaut introuvable (uid={settings.default_profile_uid}), réinitialisation.")
+            settings.default_profile_uid = None
+            self.save_app_settings(settings)
+
+        return settings
 
     def save_app_settings(self, settings: AppSettings) -> None:
         write_json(SETTINGS_PATH, asdict(settings))
