@@ -1360,6 +1360,11 @@ function startRecordingProcess(){
     // Remise à zéro de l'état de la carte et des informations affichées
     clearMap(); // Nettoie les points sur la carte
 
+    // Remise à zéro des compteurs d'images/frames pour un nouvel enregistrement
+    imageCounter = 0;
+    currentFrame = 0;
+    infosProgressBar = {};
+
     // Afficher les caches filtrés jusqu'à la date de début d'animation (sans effet flash)
     const filteredPointsAtStart = getFilteredPointsAtStart();
     if (filteredPointsAtStart.length > 0) {
@@ -1403,6 +1408,7 @@ function startRecordingProcess(){
     // Remise à zéro de l'affichage des informations
     pkg.updateNbCaches(0); // Remet le compteur de géocaches à zéro
     pkg.updateCurrentDate(currentDate); // Remet la date au début effectif
+    try { pkg.updateProgressBar({ progress: 0, message: '0% | préparation...' }); } catch(_) {}
 
     // ouverture modale (progress) avec instruction intégrée
     pkg.openModalLoading("Capture en cours", "Ne pas bouger la fenêtre pendant la capture.");
