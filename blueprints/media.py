@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
 from flask_cors import cross_origin
 
-from capture import assemble_pictures_directory, clear_pictures_directory, default_video_output, upload_audio, upload_image, upload_video
+from capture import assemble_pictures_directory, clear_pictures_directory, default_video_output, open_video_folder, upload_audio, upload_image, upload_video
 
 media_bp = Blueprint('media', __name__)
 
@@ -38,6 +38,12 @@ def clear_pictures():
 @cross_origin()
 def assemble_pictures():
     return assemble_pictures_directory("captured", default_video_output("mp4"), 24)
+
+
+@media_bp.route('/open_video_folder', methods=['POST'])
+@cross_origin()
+def route_open_video_folder():
+    return open_video_folder()
 
 
 @media_bp.route('/upload_video', methods=['POST'])

@@ -2,6 +2,8 @@ from flask import jsonify, request
 import os
 import base64
 from datetime import datetime
+import platform
+import subprocess
 from moviepy.editor import ImageSequenceClip, AudioFileClip
 from werkzeug.utils import secure_filename
 
@@ -41,6 +43,29 @@ def upload_image(request):
 
         return jsonify({'success': True, 'message': 'Image reçue avec succès'})
 
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+def open_video_folder():
+    """Ouvre le dossier vidéo côté serveur (utile en déploiement local/desktop)."""
+    try:
+        folder = os.path.abspath('video')
+        os.makedirs(folder, exist_ok=True)
+
+        system = platform.system().lower()
+        try:
+            if system == 'windows':
+                os.startfile(folder)  # type: ignore[attr-defined]
+            elif system == 'darwin':
+                subprocess.Popen(['open', folder])
+            else:
+                subprocess.Popen(['xdg-open', folder])
+        except Exception:
+            # Si l'ouverture échoue (serveur headless, etc.), on continue et on renvoie seulement le chemin
+            pass
+
+        return jsonify({'success': True, 'folder': folder})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 

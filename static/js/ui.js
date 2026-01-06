@@ -713,9 +713,11 @@ const spanDeltaDays = document.getElementById('spanDeltaDays');
 
 // TMP
 const btnCleanMoviePictures = document.getElementById('btnCleanMoviePictures');
-btnCleanMoviePictures.addEventListener('click', clear_pictures_directory);
+if (btnCleanMoviePictures) btnCleanMoviePictures.addEventListener('click', clear_pictures_directory);
 const btnAssembleMoviePictures = document.getElementById('btnAssembleMoviePictures');
-btnAssembleMoviePictures.addEventListener('click', assemble_pictures_directory);
+if (btnAssembleMoviePictures) btnAssembleMoviePictures.addEventListener('click', assemble_pictures_directory);
+const btnOpenVideoFolder = document.getElementById('btnOpenVideoFolder');
+if (btnOpenVideoFolder) btnOpenVideoFolder.addEventListener('click', open_video_folder);
 
 
 // FLASH - éléments déplacés dans initUIElements()
@@ -2487,6 +2489,29 @@ function clear_pictures_directory(){
         }
     })
     .catch(error => console.error('Erreur:', error));
+}
+
+function open_video_folder(){
+    fetch('/open_video_folder', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': pkg.getCookie('csrftoken'),
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log(data);
+        if (data?.success && data.folder) {
+            pkg.showToast && pkg.showToast(`Dossier vidéo: ${data.folder}`, 'info', 'Ouverture');
+        } else {
+            pkg.showToast && pkg.showToast(data?.message || 'Impossible d’ouvrir le dossier vidéo', 'error', 'Ouverture');
+        }
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        pkg.showToast && pkg.showToast('Erreur lors de l’ouverture du dossier vidéo', 'error', 'Ouverture');
+    });
 }
 
 function assemble_pictures_directory(){
