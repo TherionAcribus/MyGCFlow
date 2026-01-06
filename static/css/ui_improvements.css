@@ -468,33 +468,40 @@
     height: 100vh;
     z-index: 2000;
     background: #fff;
+    overflow: hidden;
 }
 
-.fullscreen-mode #map {
-    height: calc(100vh - 60px) !important; /* Laisser de la place pour la barre de contrôle */
+main.fullscreen-mode #map {
+    height: 100vh !important;
     width: 100vw !important;
 }
 
 /* Masquer TOUS les éléments d'interface en mode plein écran */
-.fullscreen-mode main > * {
+main.fullscreen-mode > * {
     display: none !important;
 }
 
 /* Exceptions : garder visible la carte et la barre de contrôle */
-.fullscreen-mode #mapWithFrames,
-.fullscreen-mode #fullscreenControls {
+main.fullscreen-mode #mapWithFrames,
+main.fullscreen-mode #fullscreenControls {
     display: block !important;
 }
 
-.fullscreen-mode #mapWithFrames * {
+/* S'assurer que le conteneur prend tout l'espace */
+main.fullscreen-mode #mapWithFrames {
+    height: 100vh !important;
+    width: 100vw !important;
+}
+
+main.fullscreen-mode #mapWithFrames * {
     display: block !important;
 }
 
 /* Nouvelle approche : barre verticale à droite - plus besoin des règles d'horizontalité */
 
 /* Masquer aussi les modals en mode plein écran */
-.fullscreen-mode .modal,
-.fullscreen-mode .modal-overlay {
+main.fullscreen-mode .modal,
+main.fullscreen-mode .modal-overlay {
     display: none !important;
 }
 
@@ -544,7 +551,7 @@
 /* Styles nettoyés pour la nouvelle disposition verticale */
 
 /* Corriger la fenêtre de titre en mode plein écran */
-.fullscreen-mode #titleFrame {
+main.fullscreen-mode #titleFrame {
     display: block !important;
     flex-direction: row !important;
     text-align: center !important;
@@ -552,7 +559,7 @@
 }
 
 /* Corriger la barre d'infos en mode plein écran */
-.fullscreen-mode #infosFrame {
+main.fullscreen-mode #infosFrame {
     display: block !important;
     flex-direction: row !important;
     white-space: nowrap !important;
@@ -560,10 +567,10 @@
 }
 
 /* Forcer l'horizontalité des spans dans la barre d'infos */
-.fullscreen-mode #infosFrame,
-.fullscreen-mode #infosFrame span,
-.fullscreen-mode #infosFrame #spanNbCaches,
-.fullscreen-mode #infosFrame #spanCurrentDate {
+main.fullscreen-mode #infosFrame,
+main.fullscreen-mode #infosFrame span,
+main.fullscreen-mode #infosFrame #spanNbCaches,
+main.fullscreen-mode #infosFrame #spanCurrentDate {
     display: inline !important;
     float: none !important;
     clear: none !important;
@@ -572,14 +579,14 @@
 }
 
 /* Surcharge maximale pour la barre d'infos */
-html body.fullscreen-mode main #mapWithFrames #infosFrame {
+main.fullscreen-mode #mapWithFrames #infosFrame {
     display: flex !important;
     flex-direction: row !important;
     align-items: center !important;
     white-space: nowrap !important;
 }
 
-html body.fullscreen-mode main #mapWithFrames #infosFrame span {
+main.fullscreen-mode #mapWithFrames #infosFrame span {
     display: inline !important;
     float: none !important;
 }

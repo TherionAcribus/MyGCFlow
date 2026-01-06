@@ -2735,8 +2735,8 @@ function toggleFullscreenMode() {
             if (btnStopBar) btnStopBar.style.setProperty('display', 'none', 'important');
         }
 
-        // Redimensionner la carte pour prendre tout l'espace
-        mapElement.style.height = 'calc(100vh - 60px)';
+        // Redimensionner la carte pour prendre tout l'espace sans bande résiduelle
+        mapElement.style.height = '100vh';
         mapElement.style.width = '100vw';
 
         // Forcer le redimensionnement d'OpenLayers
