@@ -488,6 +488,8 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
         });
     }
 
+    initCssAssistant();
+
     // Spans dans Frame Infos
     spanNbCaches = document.getElementById('spanNbCaches');
     spanCurrentDate = document.getElementById('spanCurrentDate');
@@ -2725,8 +2727,428 @@ document.addEventListener('htmx:afterSwap', function(event) {
             // Mettre à jour le contenu du textarea avec le CSS nettoyé
             event.target.value = cleanedCss.trim();
         }
+
+        try {
+            if (typeof window.gcCssAssistantSyncFromTextareas === 'function') {
+                window.gcCssAssistantSyncFromTextareas();
+            }
+        } catch(e) {}
     }
 });
+
+function initCssAssistant() {
+    const root = document.getElementById('gcCssAssistant');
+    if (!root) return;
+
+    const btnTargetTitle = document.getElementById('gcCssTargetTitle');
+    const btnTargetInfos = document.getElementById('gcCssTargetInfos');
+    const btnCopyToOther = document.getElementById('gcCssCopyToOther');
+    const badgeUnmanaged = document.getElementById('gcCssUnmanagedBadge');
+    const cbAdvanced = document.getElementById('gcCssAdvancedMode');
+    const advancedPanel = document.getElementById('gcCssAdvancedPanel');
+    const rawEditor = document.getElementById('gcCssRawEditor');
+    const btnApply = document.getElementById('gcCssApply');
+    const tabLinks = root.querySelectorAll('.gc-css-tab');
+
+    const infosPanelTitle = document.getElementById('gcInfosPanelTitle');
+    const infosPanelInfos = document.getElementById('gcInfosPanelInfos');
+
+    if (!btnTargetTitle || !btnTargetInfos || !btnCopyToOther || !badgeUnmanaged || !cbAdvanced || !advancedPanel || !rawEditor || !btnApply) return;
+
+    const fields = {
+        textColor: document.getElementById('gcCssTextColor'),
+        fontSize: document.getElementById('gcCssFontSize'),
+        fontFamily: document.getElementById('gcCssFontFamily'),
+        fontWeight: document.getElementById('gcCssFontWeight'),
+        textAlign: document.getElementById('gcCssTextAlign'),
+        backgroundColor: document.getElementById('gcCssBackgroundColor'),
+        padding: document.getElementById('gcCssPadding'),
+        borderRadius: document.getElementById('gcCssBorderRadius'),
+        borderWidth: document.getElementById('gcCssBorderWidth'),
+        borderStyle: document.getElementById('gcCssBorderStyle'),
+        borderColor: document.getElementById('gcCssBorderColor'),
+        boxShadowEnable: document.getElementById('gcCssBoxShadowEnable'),
+        shadowX: document.getElementById('gcCssShadowX'),
+        shadowY: document.getElementById('gcCssShadowY'),
+        shadowBlur: document.getElementById('gcCssShadowBlur'),
+        shadowSpread: document.getElementById('gcCssShadowSpread'),
+        shadowColor: document.getElementById('gcCssShadowColor'),
+        position: document.getElementById('gcCssPosition'),
+        zIndex: document.getElementById('gcCssZIndex'),
+        top: document.getElementById('gcCssTop'),
+        right: document.getElementById('gcCssRight'),
+        bottom: document.getElementById('gcCssBottom'),
+        left: document.getElementById('gcCssLeft'),
+        opacity: document.getElementById('gcCssOpacity'),
+    };
+
+    let activeTarget = 'title';
+
+    const managedProps = new Set([
+        'color',
+        'font-size',
+        'font-family',
+        'font-weight',
+        'text-align',
+        'background-color',
+        'padding',
+        'border-radius',
+        'border',
+        'border-width',
+        'border-style',
+        'border-color',
+        'box-shadow',
+        'position',
+        'z-index',
+        'top',
+        'right',
+        'bottom',
+        'left',
+        'opacity',
+    ]);
+
+    function normalizeColorToHex(value) {
+        if (!value || typeof value !== 'string') return '';
+        const v = value.trim();
+        if (/^#([0-9a-f]{3})$/i.test(v)) {
+            const m = v.substring(1);
+            return `#${m[0]}${m[0]}${m[1]}${m[1]}${m[2]}${m[2]}`.toLowerCase();
+        }
+        if (/^#([0-9a-f]{6})$/i.test(v)) return v.toLowerCase();
+        const rgb = v.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([0-9.]+))?\s*\)$/i);
+        if (rgb) {
+            const r = Math.max(0, Math.min(255, parseInt(rgb[1], 10)));
+            const g = Math.max(0, Math.min(255, parseInt(rgb[2], 10)));
+            const b = Math.max(0, Math.min(255, parseInt(rgb[3], 10)));
+            return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+        }
+        return '';
+    }
+
+    function parseDeclarations(css) {
+        const out = {};
+        const unmanaged = [];
+        if (!css || typeof css !== 'string') return { declarations: out, unmanaged };
+        const parts = css.split(';');
+        for (const p of parts) {
+            const part = p.trim();
+            if (!part) continue;
+            const idx = part.indexOf(':');
+            if (idx === -1) continue;
+            const prop = part.substring(0, idx).trim().toLowerCase();
+            const value = part.substring(idx + 1).trim();
+            out[prop] = value;
+            if (!managedProps.has(prop)) unmanaged.push(prop);
+        }
+        return { declarations: out, unmanaged };
+    }
+
+    function ensureSelectRefresh(selectEl) {
+        if (!selectEl) return;
+        try { M.FormSelect.getInstance(selectEl)?.destroy?.(); } catch(_) {}
+        try { M.FormSelect.init(selectEl); } catch(_) {}
+    }
+
+    function setBadgeCount(count) {
+        if (!badgeUnmanaged) return;
+        if (count && count > 0) {
+            badgeUnmanaged.textContent = `Non pris en compte: ${count}`;
+            badgeUnmanaged.style.display = 'inline-flex';
+        } else {
+            badgeUnmanaged.textContent = '';
+            badgeUnmanaged.style.display = 'none';
+        }
+    }
+
+    function getTextareaForTarget(t) {
+        if (t === 'infos') return inputInfosCss;
+        return inputTitleCss;
+    }
+
+    function applyCssToTarget(t, css) {
+        const textarea = getTextareaForTarget(t);
+        if (textarea) textarea.value = css;
+        if (t === 'infos') {
+            if (typeof pkg.changeInfosCssValues === 'function') pkg.changeInfosCssValues(css);
+        } else {
+            if (typeof pkg.changeTitleCssValues === 'function') pkg.changeTitleCssValues(css);
+        }
+    }
+
+    function syncFormFromCss(target) {
+        const textarea = getTextareaForTarget(target);
+        const css = textarea ? (textarea.value || '') : '';
+        rawEditor.value = css;
+
+        const { declarations, unmanaged } = parseDeclarations(css);
+        const unmanagedExtra = [];
+
+        if (fields.textColor) {
+            const v = normalizeColorToHex(declarations['color']);
+            if (v) fields.textColor.value = v;
+            else if (declarations['color']) unmanagedExtra.push('color');
+        }
+        if (fields.fontSize) {
+            const m = (declarations['font-size'] || '').match(/(-?\d+(?:\.\d+)?)px/i);
+            if (m) fields.fontSize.value = m[1];
+            else if (declarations['font-size']) unmanagedExtra.push('font-size');
+        }
+        if (fields.fontFamily) {
+            fields.fontFamily.value = declarations['font-family'] || '';
+            ensureSelectRefresh(fields.fontFamily);
+        }
+        if (fields.fontWeight) {
+            fields.fontWeight.value = declarations['font-weight'] || '';
+            ensureSelectRefresh(fields.fontWeight);
+        }
+        if (fields.textAlign) {
+            fields.textAlign.value = declarations['text-align'] || '';
+            ensureSelectRefresh(fields.textAlign);
+        }
+        if (fields.backgroundColor) {
+            const v = normalizeColorToHex(declarations['background-color']);
+            if (v) fields.backgroundColor.value = v;
+            else if (declarations['background-color']) unmanagedExtra.push('background-color');
+        }
+        if (fields.padding) {
+            const m = (declarations['padding'] || '').match(/(\d+(?:\.\d+)?)px/i);
+            if (m) fields.padding.value = m[1];
+            else if (declarations['padding']) unmanagedExtra.push('padding');
+        }
+        if (fields.borderRadius) {
+            const m = (declarations['border-radius'] || '').match(/(\d+(?:\.\d+)?)px/i);
+            if (m) fields.borderRadius.value = m[1];
+            else if (declarations['border-radius']) unmanagedExtra.push('border-radius');
+        }
+
+        let borderWidth = declarations['border-width'] || '';
+        let borderStyle = declarations['border-style'] || '';
+        let borderColor = declarations['border-color'] || '';
+        const border = declarations['border'] || '';
+        if (border && (!borderWidth || !borderStyle || !borderColor)) {
+            const bm = border.match(/\b(-?\d+(?:\.\d+)?)px\b\s+(solid|dashed|dotted|none)\b\s+(.+)$/i);
+            if (bm) {
+                if (!borderWidth) borderWidth = `${bm[1]}px`;
+                if (!borderStyle) borderStyle = bm[2].toLowerCase();
+                if (!borderColor) borderColor = bm[3].trim();
+            }
+        }
+
+        if (fields.borderWidth) {
+            const m = (borderWidth || '').match(/(\d+(?:\.\d+)?)px/i);
+            if (m) fields.borderWidth.value = m[1];
+            else if (borderWidth) unmanagedExtra.push('border-width');
+        }
+        if (fields.borderStyle) {
+            fields.borderStyle.value = borderStyle || '';
+            ensureSelectRefresh(fields.borderStyle);
+        }
+        if (fields.borderColor) {
+            const v = normalizeColorToHex(borderColor);
+            if (v) fields.borderColor.value = v;
+            else if (borderColor) unmanagedExtra.push('border-color');
+        }
+
+        if (fields.boxShadowEnable) {
+            const bs = declarations['box-shadow'] || '';
+            if (bs && bs !== 'none') {
+                fields.boxShadowEnable.checked = true;
+                const sm = bs.match(/(-?\d+(?:\.\d+)?)px\s+(-?\d+(?:\.\d+)?)px\s+(\d+(?:\.\d+)?)px\s+(-?\d+(?:\.\d+)?)px\s+(.+)$/i);
+                if (sm) {
+                    if (fields.shadowX) fields.shadowX.value = sm[1];
+                    if (fields.shadowY) fields.shadowY.value = sm[2];
+                    if (fields.shadowBlur) fields.shadowBlur.value = sm[3];
+                    if (fields.shadowSpread) fields.shadowSpread.value = sm[4];
+                    if (fields.shadowColor) {
+                        const c = normalizeColorToHex(sm[5]);
+                        if (c) fields.shadowColor.value = c;
+                        else unmanagedExtra.push('box-shadow');
+                    }
+                } else {
+                    unmanagedExtra.push('box-shadow');
+                }
+            } else {
+                fields.boxShadowEnable.checked = false;
+            }
+        }
+
+        if (fields.position) {
+            fields.position.value = declarations['position'] || '';
+            ensureSelectRefresh(fields.position);
+        }
+        if (fields.zIndex) fields.zIndex.value = declarations['z-index'] || '';
+
+        const setPxNum = (el, prop) => {
+            if (!el) return;
+            const m = (declarations[prop] || '').match(/(-?\d+(?:\.\d+)?)px/i);
+            if (m) el.value = m[1];
+            else if (declarations[prop]) unmanagedExtra.push(prop);
+        };
+        setPxNum(fields.top, 'top');
+        setPxNum(fields.right, 'right');
+        setPxNum(fields.bottom, 'bottom');
+        setPxNum(fields.left, 'left');
+
+        if (fields.opacity) {
+            const op = declarations['opacity'];
+            if (op !== undefined && op !== '') {
+                const n = parseFloat(op);
+                if (!Number.isNaN(n)) fields.opacity.value = n;
+                else unmanagedExtra.push('opacity');
+            }
+        }
+
+        try { M.updateTextFields(); } catch(_) {}
+        setBadgeCount(new Set(unmanaged.concat(unmanagedExtra)).size);
+    }
+
+    function buildCssFromForm() {
+        const lines = [];
+
+        const push = (prop, val) => {
+            if (val === undefined || val === null) return;
+            const v = `${val}`.trim();
+            if (!v) return;
+            lines.push(`${prop}: ${v};`);
+        };
+
+        if (fields.textColor && fields.textColor.value) push('color', fields.textColor.value);
+        if (fields.fontSize && fields.fontSize.value !== '') push('font-size', `${fields.fontSize.value}px`);
+        if (fields.fontFamily && fields.fontFamily.value) push('font-family', fields.fontFamily.value);
+        if (fields.fontWeight && fields.fontWeight.value) push('font-weight', fields.fontWeight.value);
+        if (fields.textAlign && fields.textAlign.value) push('text-align', fields.textAlign.value);
+
+        if (fields.backgroundColor && fields.backgroundColor.value) push('background-color', fields.backgroundColor.value);
+        if (fields.padding && fields.padding.value !== '') push('padding', `${fields.padding.value}px`);
+        if (fields.borderRadius && fields.borderRadius.value !== '') push('border-radius', `${fields.borderRadius.value}px`);
+
+        const bw = fields.borderWidth && fields.borderWidth.value !== '' ? `${fields.borderWidth.value}px` : '';
+        const bs = fields.borderStyle && fields.borderStyle.value ? fields.borderStyle.value : '';
+        const bc = fields.borderColor && fields.borderColor.value ? fields.borderColor.value : '';
+        if (bw || bs || bc) {
+            const style = bs || 'solid';
+            const width = bw || '1px';
+            const color = bc || '#000000';
+            push('border', `${width} ${style} ${color}`);
+        }
+
+        if (fields.boxShadowEnable && fields.boxShadowEnable.checked) {
+            const x = fields.shadowX && fields.shadowX.value !== '' ? fields.shadowX.value : '0';
+            const y = fields.shadowY && fields.shadowY.value !== '' ? fields.shadowY.value : '0';
+            const blur = fields.shadowBlur && fields.shadowBlur.value !== '' ? fields.shadowBlur.value : '0';
+            const spread = fields.shadowSpread && fields.shadowSpread.value !== '' ? fields.shadowSpread.value : '0';
+            const color = fields.shadowColor && fields.shadowColor.value ? fields.shadowColor.value : '#000000';
+            push('box-shadow', `${x}px ${y}px ${blur}px ${spread}px ${color}`);
+        }
+
+        if (fields.position && fields.position.value) push('position', fields.position.value);
+        if (fields.zIndex && fields.zIndex.value !== '') push('z-index', fields.zIndex.value);
+        const pushPx = (prop, el) => {
+            if (!el) return;
+            if (el.value === '' || el.value === null || el.value === undefined) return;
+            push(prop, `${el.value}px`);
+        };
+        pushPx('top', fields.top);
+        pushPx('right', fields.right);
+        pushPx('bottom', fields.bottom);
+        pushPx('left', fields.left);
+        if (fields.opacity && fields.opacity.value !== '') push('opacity', fields.opacity.value);
+
+        return lines.join('\n');
+    }
+
+    function refreshTargetButtons() {
+        btnTargetTitle.classList.toggle('is-selected', activeTarget === 'title');
+        btnTargetInfos.classList.toggle('is-selected', activeTarget === 'infos');
+    }
+
+    function refreshInfosPanels() {
+        if (infosPanelTitle) infosPanelTitle.style.display = activeTarget === 'title' ? 'block' : 'none';
+        if (infosPanelInfos) infosPanelInfos.style.display = activeTarget === 'infos' ? 'block' : 'none';
+    }
+
+    function updateAdvancedVisibility() {
+        const on = !!cbAdvanced.checked;
+        advancedPanel.style.display = on ? 'block' : 'none';
+    }
+
+    function applyCurrentCss() {
+        const css = cbAdvanced.checked ? (rawEditor.value || '') : buildCssFromForm();
+        rawEditor.value = css;
+        applyCssToTarget(activeTarget, css);
+        syncFormFromCss(activeTarget);
+    }
+
+    function switchTarget(t) {
+        if (t !== 'title' && t !== 'infos') return;
+        activeTarget = t;
+        refreshTargetButtons();
+        refreshInfosPanels();
+        syncFormFromCss(activeTarget);
+    }
+
+    tabLinks.forEach(a => {
+        a.addEventListener('click', () => {
+            const paneId = a.getAttribute('data-pane');
+            if (!paneId) return;
+            tabLinks.forEach(x => x.classList.remove('active'));
+            a.classList.add('active');
+            root.querySelectorAll('.gc-css-pane').forEach(p => p.classList.remove('active'));
+            const pane = document.getElementById(paneId);
+            if (pane) pane.classList.add('active');
+        });
+    });
+
+    btnTargetTitle.addEventListener('click', () => switchTarget('title'));
+    btnTargetInfos.addEventListener('click', () => switchTarget('infos'));
+    btnCopyToOther.addEventListener('click', () => {
+        const from = activeTarget;
+        const to = from === 'title' ? 'infos' : 'title';
+        const css = cbAdvanced.checked ? (rawEditor.value || '') : buildCssFromForm();
+        applyCssToTarget(to, css);
+        if (to === activeTarget) syncFormFromCss(activeTarget);
+    });
+
+    cbAdvanced.addEventListener('change', () => {
+        updateAdvancedVisibility();
+        const t = getTextareaForTarget(activeTarget);
+        rawEditor.value = t ? (t.value || '') : '';
+    });
+
+    btnApply.addEventListener('click', () => {
+        applyCurrentCss();
+    });
+
+    const onFieldChange = () => {
+        if (cbAdvanced.checked) return;
+        const css = buildCssFromForm();
+        rawEditor.value = css;
+        applyCssToTarget(activeTarget, css);
+        syncFormFromCss(activeTarget);
+    };
+
+    Object.values(fields).forEach(el => {
+        if (!el) return;
+        const evt = (el.tagName || '').toLowerCase() === 'select' ? 'change' : 'input';
+        el.addEventListener(evt, onFieldChange);
+    });
+
+    rawEditor.addEventListener('input', () => {
+        if (!cbAdvanced.checked) return;
+        const css = rawEditor.value || '';
+        applyCssToTarget(activeTarget, css);
+        syncFormFromCss(activeTarget);
+    });
+
+    window.gcCssAssistantSyncFromTextareas = function() {
+        syncFormFromCss(activeTarget);
+    };
+
+    refreshTargetButtons();
+    refreshInfosPanels();
+    updateAdvancedVisibility();
+    syncFormFromCss(activeTarget);
+}
 
 // Gestion du mode plein écran
 function toggleFullscreenMode() {

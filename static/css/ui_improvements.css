@@ -895,11 +895,122 @@ input[type="checkbox"]:checked + span:not(.lever):after {
 
 /* Panneau sticky pour Profils */
 .sticky-panel {
-    position: sticky;
-    top: 20px;
+position: sticky;
+top: 20px;
 }
 
 /* Marges pour les contenus d'onglets internes */
 #tabMapOverlay, #tabPointsFlash {
-    margin-top: 10px;
+margin-top: 10px;
+}
+
+.gc-css-assistant {
+margin-top: 8px;
+}
+
+.gc-css-assistant-header-row {
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 8px;
+}
+
+.gc-css-target {
+display: inline-flex;
+gap: 6px;
+align-items: center;
+}
+
+.gc-css-status {
+display: inline-flex;
+align-items: center;
+gap: 10px;
+}
+
+.gc-css-advanced-toggle {
+display: inline-flex;
+align-items: center;
+}
+
+.gc-css-advanced-toggle span {
+padding-left: 8px;
+}
+
+.gc-css-tabs {
+display: flex;
+gap: 8px;
+border-bottom: 1px solid rgba(0,0,0,0.12);
+margin-bottom: 8px;
+}
+
+.gc-css-tab {
+cursor: pointer;
+padding: 6px 8px;
+font-weight: 600;
+font-size: 0.9rem;
+color: #546e7a;
+}
+
+.gc-css-tab.active {
+color: #1e88e5;
+border-bottom: 2px solid #1e88e5;
+}
+
+.gc-css-pane {
+display: none;
+}
+
+.gc-css-pane.active {
+display: block;
+}
+
+.gc-css-assistant .input-field {
+margin: 0;
+}
+
+.gc-css-assistant label {
+font-size: 0.85rem;
+}
+
+.gc-css-color {
+width: 52px;
+height: 34px;
+padding: 0;
+border: 2px solid #ddd;
+border-radius: 8px;
+cursor: pointer;
+background: none;
+}
+
+.gc-css-actions {
+display: flex;
+justify-content: space-between;
+align-items: center;
+gap: 10px;
+}
+
+.gc-css-actions .btn {
+margin-left: auto;
+}
+
+.gc-infos-panel {
+margin-bottom: 8px;
+padding: 8px 10px;
+border: 1px solid rgba(0,0,0,0.08);
+border-radius: 8px;
+background: rgba(33, 150, 243, 0.04);
+}
+
+.gc-css-unmanaged {
+display: inline-flex;
+align-items: center;
+border: 1px solid #ffb74d;
+color: #e65100;
+background-color: #fff3e0;
+border-radius: 6px;
+padding: 0 10px;
+line-height: 26px;
+height: 26px;
+font-weight: 600;
+font-size: 0.8rem;
 }

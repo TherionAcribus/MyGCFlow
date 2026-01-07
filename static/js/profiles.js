@@ -1004,6 +1004,14 @@ class ProfileManager {
                     const infosCssTextarea = document.getElementById('inputInfosCss');
                     if (infosCssTextarea) infosCssTextarea.value = cleanedInfosCss;
                 }
+
+                try {
+                    if (typeof window.gcCssAssistantSyncFromTextareas === 'function') {
+                        window.gcCssAssistantSyncFromTextareas();
+                    }
+                } catch (e) {
+                    // non bloquant
+                }
             } catch (e) {
                 console.warn('Application des paramètres infos: erreur non bloquante', e);
             }

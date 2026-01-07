@@ -1,39 +1,294 @@
 <!-- Informations à afficher -->
 <div id="infos">
     <div class="row">
-        <div class="col s12 m6">
-
-                <label>
-                    <input id="cbDisplayTitle" type="checkbox"/>
-                    <span>{{ _("Afficher un titre") }}</span>
-                </label>
-
-                <div class="input-field">
-                    <input id="inputTitle" type="text" class="validate">
-                    <label for="inputTitle">{{ _("Titre") }}</label>
+        <div class="col s12">
+            <div id="gcCssAssistant" class="gc-css-assistant">
+                <div class="row gc-css-assistant-header" style="margin-bottom: 6px;">
+                    <div class="col s12">
+                        <div class="gc-css-assistant-header-row">
+                            <div class="gc-css-target">
+                                <a id="gcCssTargetTitle" class="changeMap btn-small waves-effect waves-light">{{ _("Titre") }}</a>
+                                <a id="gcCssTargetInfos" class="changeMap btn-small waves-effect waves-light">{{ _("Infos") }}</a>
+                            </div>
+                            <div class="gc-css-status">
+                                <span id="gcCssUnmanagedBadge" class="gc-css-unmanaged" style="display:none"></span>
+                                <label class="gc-css-advanced-toggle">
+                                    <input id="gcCssAdvancedMode" type="checkbox" />
+                                    <span>{{ _("CSS") }}</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                
-                <textarea hx-get="../static/css/titre.css" hx-trigger="load" id="inputTitleCss" class="cssEditor" rows="30" cols="50"></textarea>
-                <button id="btnTitleCss">{{ _("Appliquer les Modifications") }}</button>
 
-        </div>
+                <div class="row" style="margin-bottom: 0;">
+                    <div class="col s12">
+                        <div id="gcInfosPanelTitle" class="gc-infos-panel">
+                            <label>
+                                <input id="cbDisplayTitle" type="checkbox"/>
+                                <span>{{ _("Afficher un titre") }}</span>
+                            </label>
 
-        <div class="col s12 m6">
-                <label>
-                    <input id="cbDisplayNumberofCaches" type="checkbox"/>
-                    <span>{{ _("Afficher le nombre de caches trouvées") }}</span>
-                </label>
+                            <div class="input-field" style="margin-top: 8px;">
+                                <input id="inputTitle" type="text" class="validate">
+                                <label for="inputTitle">{{ _("Titre") }}</label>
+                            </div>
+                        </div>
 
-                <label>
-                    <input id="cbDisplayCurrentDate" type="checkbox"/>
-                    <span>{{ _("Afficher la date") }}</span>
-                </label>
+                        <div id="gcInfosPanelInfos" class="gc-infos-panel" style="display:none;">
+                            <label>
+                                <input id="cbDisplayNumberofCaches" type="checkbox"/>
+                                <span>{{ _("Afficher le nombre de caches trouvées") }}</span>
+                            </label>
 
-                <div class="input-field">
+                            <label>
+                                <input id="cbDisplayCurrentDate" type="checkbox"/>
+                                <span>{{ _("Afficher la date") }}</span>
+                            </label>
+                        </div>
+
+                        <div class="gc-css-tabs">
+                            <a id="gcCssTabText" class="gc-css-tab active" data-pane="gcCssPaneText">{{ _("Texte") }}</a>
+                            <a id="gcCssTabBox" class="gc-css-tab" data-pane="gcCssPaneBox">{{ _("Boîte") }}</a>
+                            <a id="gcCssTabShadow" class="gc-css-tab" data-pane="gcCssPaneShadow">{{ _("Ombre") }}</a>
+                            <a id="gcCssTabPosition" class="gc-css-tab" data-pane="gcCssPanePosition">{{ _("Position") }}</a>
+                        </div>
+
+                        <div id="gcCssPaneText" class="gc-css-pane active">
+                            <div class="row" style="margin-bottom: 0;">
+                                <div class="col s6">
+                                    <label for="gcCssTextColor">{{ _("Couleur") }}</label>
+                                    <input id="gcCssTextColor" type="color" class="gc-css-color" />
+                                </div>
+                                <div class="col s6">
+                                    <div class="input-field" style="margin-top: 0;">
+                                        <input id="gcCssFontSize" type="number" min="6" max="72" step="1" />
+                                        <label for="gcCssFontSize">{{ _("Taille (px)") }}</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row" style="margin-bottom: 0;">
+                                <div class="col s6">
+                                    <div class="input-field" style="margin-top: 0;">
+                                        <select id="gcCssFontFamily">
+                                            <option value="">{{ _("Défaut") }}</option>
+                                            <option value="Arial">Arial</option>
+                                            <option value="Verdana">Verdana</option>
+                                            <option value="Trebuchet MS">Trebuchet</option>
+                                            <option value="Georgia">Georgia</option>
+                                            <option value="Courier New">Courier</option>
+                                            <option value="sans-serif">sans-serif</option>
+                                            <option value="serif">serif</option>
+                                            <option value="monospace">monospace</option>
+                                        </select>
+                                        <label for="gcCssFontFamily">{{ _("Police") }}</label>
+                                    </div>
+                                </div>
+                                <div class="col s6">
+                                    <div class="input-field" style="margin-top: 0;">
+                                        <select id="gcCssFontWeight">
+                                            <option value="">{{ _("Défaut") }}</option>
+                                            <option value="normal">normal</option>
+                                            <option value="bold">bold</option>
+                                            <option value="100">100</option>
+                                            <option value="200">200</option>
+                                            <option value="300">300</option>
+                                            <option value="400">400</option>
+                                            <option value="500">500</option>
+                                            <option value="600">600</option>
+                                            <option value="700">700</option>
+                                            <option value="800">800</option>
+                                            <option value="900">900</option>
+                                        </select>
+                                        <label for="gcCssFontWeight">{{ _("Graisse") }}</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row" style="margin-bottom: 0;">
+                                <div class="col s12">
+                                    <div class="input-field" style="margin-top: 0;">
+                                        <select id="gcCssTextAlign">
+                                            <option value="">{{ _("Défaut") }}</option>
+                                            <option value="left">left</option>
+                                            <option value="center">center</option>
+                                            <option value="right">right</option>
+                                        </select>
+                                        <label for="gcCssTextAlign">{{ _("Alignement") }}</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="gcCssPaneBox" class="gc-css-pane">
+                            <div class="row" style="margin-bottom: 0;">
+                                <div class="col s6">
+                                    <label for="gcCssBackgroundColor">{{ _("Fond") }}</label>
+                                    <input id="gcCssBackgroundColor" type="color" class="gc-css-color" />
+                                </div>
+                                <div class="col s6">
+                                    <div class="input-field" style="margin-top: 0;">
+                                        <input id="gcCssPadding" type="number" min="0" max="60" step="1" />
+                                        <label for="gcCssPadding">{{ _("Padding (px)") }}</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row" style="margin-bottom: 0;">
+                                <div class="col s6">
+                                    <div class="input-field" style="margin-top: 0;">
+                                        <input id="gcCssBorderRadius" type="number" min="0" max="60" step="1" />
+                                        <label for="gcCssBorderRadius">{{ _("Arrondi (px)") }}</label>
+                                    </div>
+                                </div>
+                                <div class="col s6">
+                                    <div class="input-field" style="margin-top: 0;">
+                                        <input id="gcCssBorderWidth" type="number" min="0" max="20" step="1" />
+                                        <label for="gcCssBorderWidth">{{ _("Bordure (px)") }}</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row" style="margin-bottom: 0;">
+                                <div class="col s6">
+                                    <div class="input-field" style="margin-top: 0;">
+                                        <select id="gcCssBorderStyle">
+                                            <option value="">{{ _("Défaut") }}</option>
+                                            <option value="none">none</option>
+                                            <option value="solid">solid</option>
+                                            <option value="dashed">dashed</option>
+                                            <option value="dotted">dotted</option>
+                                        </select>
+                                        <label for="gcCssBorderStyle">{{ _("Style") }}</label>
+                                    </div>
+                                </div>
+                                <div class="col s6">
+                                    <label for="gcCssBorderColor">{{ _("Couleur") }}</label>
+                                    <input id="gcCssBorderColor" type="color" class="gc-css-color" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="gcCssPaneShadow" class="gc-css-pane">
+                            <div class="row" style="margin-bottom: 0;">
+                                <div class="col s12">
+                                    <label>
+                                        <input id="gcCssBoxShadowEnable" type="checkbox" />
+                                        <span>{{ _("Activer") }}</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="row" style="margin-bottom: 0;">
+                                <div class="col s3">
+                                    <div class="input-field" style="margin-top: 0;">
+                                        <input id="gcCssShadowX" type="number" step="1" />
+                                        <label for="gcCssShadowX">X</label>
+                                    </div>
+                                </div>
+                                <div class="col s3">
+                                    <div class="input-field" style="margin-top: 0;">
+                                        <input id="gcCssShadowY" type="number" step="1" />
+                                        <label for="gcCssShadowY">Y</label>
+                                    </div>
+                                </div>
+                                <div class="col s3">
+                                    <div class="input-field" style="margin-top: 0;">
+                                        <input id="gcCssShadowBlur" type="number" min="0" step="1" />
+                                        <label for="gcCssShadowBlur">Blur</label>
+                                    </div>
+                                </div>
+                                <div class="col s3">
+                                    <div class="input-field" style="margin-top: 0;">
+                                        <input id="gcCssShadowSpread" type="number" step="1" />
+                                        <label for="gcCssShadowSpread">Spread</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row" style="margin-bottom: 0;">
+                                <div class="col s12">
+                                    <label for="gcCssShadowColor">{{ _("Couleur") }}</label>
+                                    <input id="gcCssShadowColor" type="color" class="gc-css-color" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="gcCssPanePosition" class="gc-css-pane">
+                            <div class="row" style="margin-bottom: 0;">
+                                <div class="col s6">
+                                    <div class="input-field" style="margin-top: 0;">
+                                        <select id="gcCssPosition">
+                                            <option value="">{{ _("Défaut") }}</option>
+                                            <option value="relative">relative</option>
+                                            <option value="absolute">absolute</option>
+                                            <option value="fixed">fixed</option>
+                                        </select>
+                                        <label for="gcCssPosition">{{ _("Position") }}</label>
+                                    </div>
+                                </div>
+                                <div class="col s6">
+                                    <div class="input-field" style="margin-top: 0;">
+                                        <input id="gcCssZIndex" type="number" step="1" />
+                                        <label for="gcCssZIndex">z-index</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row" style="margin-bottom: 0;">
+                                <div class="col s3">
+                                    <div class="input-field" style="margin-top: 0;">
+                                        <input id="gcCssTop" type="number" step="1" />
+                                        <label for="gcCssTop">top</label>
+                                    </div>
+                                </div>
+                                <div class="col s3">
+                                    <div class="input-field" style="margin-top: 0;">
+                                        <input id="gcCssRight" type="number" step="1" />
+                                        <label for="gcCssRight">right</label>
+                                    </div>
+                                </div>
+                                <div class="col s3">
+                                    <div class="input-field" style="margin-top: 0;">
+                                        <input id="gcCssBottom" type="number" step="1" />
+                                        <label for="gcCssBottom">bottom</label>
+                                    </div>
+                                </div>
+                                <div class="col s3">
+                                    <div class="input-field" style="margin-top: 0;">
+                                        <input id="gcCssLeft" type="number" step="1" />
+                                        <label for="gcCssLeft">left</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row" style="margin-bottom: 0;">
+                                <div class="col s12">
+                                    <div class="input-field" style="margin-top: 0;">
+                                        <input id="gcCssOpacity" type="number" min="0" max="1" step="0.05" />
+                                        <label for="gcCssOpacity">opacity</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="gcCssAdvancedPanel" style="display:none;">
+                            <div class="row" style="margin-bottom: 0;">
+                                <div class="col s12">
+                                    <textarea id="gcCssRawEditor" class="cssEditor" rows="10" cols="50"></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row" style="margin-bottom: 0;">
+                            <div class="col s12 gc-css-actions">
+                                <a id="gcCssCopyToOther" class="btn-small waves-effect waves-light">{{ _("Dupliquer le CSS") }}</a>
+                                <a id="gcCssApply" class="btn waves-effect waves-light">{{ _("Appliquer") }}</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display:none;">
+                    <textarea hx-get="../static/css/titre.css" hx-trigger="load" id="inputTitleCss" class="cssEditor" rows="30" cols="50"></textarea>
+                    <button id="btnTitleCss">{{ _("Appliquer les Modifications") }}</button>
                     <textarea hx-get="../static/css/infos.css" hx-trigger="load" id="inputInfosCss" class="cssEditor" rows="30" cols="50"></textarea>
                     <button id="btnInfosCss">{{ _("Appliquer les Modifications") }}</button>
                 </div>
-
+            </div>
         </div>
     </div>
 </div>
