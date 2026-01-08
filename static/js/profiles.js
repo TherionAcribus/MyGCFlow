@@ -1047,6 +1047,8 @@ class ProfileManager {
         // Créer l'objet profil complet
         const profileData = {
             name: this.currentProfile.name,
+            uid: this.currentProfile.uid,
+            version: this.currentProfile.version,
             map: mapNormalized,
             animation: this.currentSettings.animation,
             points: this.currentSettings.points,

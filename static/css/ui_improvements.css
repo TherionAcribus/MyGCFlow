@@ -487,10 +487,19 @@ main.fullscreen-mode #fullscreenControls {
     display: block !important;
 }
 
+main.fullscreen-mode #mapTabsContainer {
+    display: block !important;
+}
+
 /* S'assurer que le conteneur prend tout l'espace */
 main.fullscreen-mode #mapWithFrames {
     height: 100vh !important;
     width: 100vw !important;
+}
+
+main.fullscreen-mode #mapTabsResizer,
+main.fullscreen-mode #tabsPanel {
+    display: none !important;
 }
 
 main.fullscreen-mode #mapWithFrames * {
@@ -637,8 +646,8 @@ main.fullscreen-mode #mapWithFrames #infosFrame span {
 }
 
 .vector-label {
-    text-align: center;
-    margin-bottom: 12px;
+    display: block;
+    margin-bottom: 10px;
 }
 
 .vector-slider-container {
@@ -654,6 +663,42 @@ main.fullscreen-mode #mapWithFrames #infosFrame span {
 .vector-color-picker {
     width: 50px;
     height: 35px;
+}
+
+}
+
+#mapTabsContainer {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+
+#mapTabsContainer > #mapWithFrames {
+    flex: 0 0 auto;
+}
+
+#mapTabsResizer {
+    height: 8px;
+    cursor: row-resize;
+    background: rgba(0, 0, 0, 0.08);
+    flex: 0 0 auto;
+    touch-action: none;
+}
+
+#mapTabsResizer:hover {
+    background: rgba(0, 0, 0, 0.14);
+}
+
+#mapTabsContainer.is-resizing #mapTabsResizer {
+    background: rgba(33, 150, 243, 0.25);
+}
+
+#tabsPanel {
+    flex: 1 1 auto;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    min-height: 0;
 }
 
 /* Styles pour les animations de flash */
@@ -729,7 +774,7 @@ main.fullscreen-mode #mapWithFrames #infosFrame span {
         font-size: 0.9rem;
     }
 }
-}
+
 
 /* Style personnalisé pour les checkboxes - couleur bleue comme les boutons */
 input[type="checkbox"]:checked + span:not(.lever):before {

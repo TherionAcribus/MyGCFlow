@@ -688,16 +688,162 @@ function initTabMemory() {
     });
 }
 
+function initMapTabsSplitPane() {
+    const container = document.getElementById('mapTabsContainer');
+    const mapWithFrames = document.getElementById('mapWithFrames');
+    const resizer = document.getElementById('mapTabsResizer');
+    const tabsPanel = document.getElementById('tabsPanel');
+    const mainEl = document.querySelector('main');
+
+    if (!container || !mapWithFrames || !resizer || !tabsPanel) return;
+
+    const STORAGE_KEY = 'mapTabsMapHeightPx';
+    const MIN_MAP_PX = 200;
+    const MIN_TABS_PX = 80;
+
+    let isResizing = false;
+    let suppressResizeHandler = false;
+    let dragStartY = 0;
+    let dragStartMapHeight = 0;
+    let prevCursor = '';
+    let prevUserSelect = '';
+    let prevBodyOverflow = '';
+
+    function isFullscreenMode() {
+        return !!(mainEl && mainEl.classList.contains('fullscreen-mode'));
+    }
+
+    function dispatchMapResize() {
+        suppressResizeHandler = true;
+        setTimeout(() => {
+            try { window.dispatchEvent(new Event('resize')); } catch(_) {}
+            setTimeout(() => { suppressResizeHandler = false; }, 0);
+        }, 0);
+    }
+
+    function getResizerHeight() {
+        const h = resizer.getBoundingClientRect().height;
+        return Number.isFinite(h) && h > 0 ? h : 8;
+    }
+
+    function clampMapHeightPx(mapHeightPx) {
+        const containerHeight = container.clientHeight;
+        const resizerHeight = getResizerHeight();
+        const maxMapPx = Math.max(MIN_MAP_PX, containerHeight - MIN_TABS_PX - resizerHeight);
+        const clamped = Math.max(MIN_MAP_PX, Math.min(mapHeightPx, maxMapPx));
+        return { clamped, containerHeight };
+    }
+
+    function applyMapHeightPx(mapHeightPx, persist) {
+        const { clamped, containerHeight } = clampMapHeightPx(mapHeightPx);
+        mapWithFrames.style.height = `${clamped}px`;
+
+        if (persist) {
+            localStorage.setItem(STORAGE_KEY, String(Math.round(clamped)));
+        }
+
+        if (!isResizing) {
+            dispatchMapResize();
+        }
+    }
+
+    function applySavedRatioIfAny() {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        const savedPx = raw ? parseFloat(raw) : NaN;
+        if (!Number.isFinite(savedPx) || savedPx <= 0) {
+            const currentHeight = mapWithFrames.getBoundingClientRect().height;
+            if (Number.isFinite(currentHeight) && currentHeight > 0) {
+                applyMapHeightPx(currentHeight, false);
+            }
+            return;
+        }
+
+        applyMapHeightPx(savedPx, false);
+    }
+
+    function beginResize() {
+        container.classList.add('is-resizing');
+        prevCursor = document.body.style.cursor;
+        prevUserSelect = document.body.style.userSelect;
+        prevBodyOverflow = document.body.style.overflow;
+        document.body.style.cursor = 'row-resize';
+        document.body.style.userSelect = 'none';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function endResize(persist) {
+        container.classList.remove('is-resizing');
+        document.body.style.cursor = prevCursor;
+        document.body.style.userSelect = prevUserSelect;
+        document.body.style.overflow = prevBodyOverflow;
+
+        if (persist) {
+            const currentHeight = mapWithFrames.getBoundingClientRect().height;
+            if (Number.isFinite(currentHeight) && currentHeight > 0) {
+                applyMapHeightPx(currentHeight, true);
+            }
+        }
+    }
+
+    resizer.addEventListener('pointerdown', (e) => {
+        if (isFullscreenMode()) return;
+        if (e.pointerType !== 'touch' && e.button !== 0) return;
+
+        try { resizer.setPointerCapture(e.pointerId); } catch(_) {}
+        isResizing = true;
+        beginResize();
+
+        dragStartY = e.clientY;
+        dragStartMapHeight = mapWithFrames.getBoundingClientRect().height;
+        applyMapHeightPx(dragStartMapHeight, false);
+        e.preventDefault();
+    });
+
+    resizer.addEventListener('pointermove', (e) => {
+        if (!isResizing) return;
+        if (isFullscreenMode()) return;
+
+        const deltaY = e.clientY - dragStartY;
+        applyMapHeightPx(dragStartMapHeight + deltaY, false);
+        e.preventDefault();
+    });
+
+    function stopPointerResize(e) {
+        if (!isResizing) return;
+        try { resizer.releasePointerCapture(e.pointerId); } catch(_) {}
+        endResize(true);
+        isResizing = false;
+        dispatchMapResize();
+    }
+
+    resizer.addEventListener('pointerup', stopPointerResize);
+    resizer.addEventListener('pointercancel', stopPointerResize);
+
+    window.addEventListener('resize', () => {
+        if (isFullscreenMode()) return;
+        if (isResizing) return;
+        if (suppressResizeHandler) return;
+        applySavedRatioIfAny();
+    });
+
+    requestAnimationFrame(() => {
+        if (isFullscreenMode()) return;
+        applySavedRatioIfAny();
+    });
+}
+
 // Initialiser les éléments UI quand le DOM est chargé
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
         initUIElements();
         initTabMemory();
+        initMapTabsSplitPane();
     });
 } else {
     // DOM déjà chargé
     initUIElements();
     initTabMemory();
+    initMapTabsSplitPane();
 }
 
 
@@ -3183,8 +3329,8 @@ function toggleFullscreenMode() {
         }
 
         // Redimensionner la carte pour prendre tout l'espace sans bande résiduelle
-        mapElement.style.height = '100vh';
-        mapElement.style.width = '100vw';
+        mapElement.style.height = '100%';
+        mapElement.style.width = '100%';
 
         // Forcer le redimensionnement d'OpenLayers
         setTimeout(() => {
@@ -3212,8 +3358,8 @@ function exitFullscreenMode() {
     mainElement.classList.remove('fullscreen-mode');
     controlBar.style.display = 'none';
 
-    // Restaurer la taille normale de la carte
-    mapElement.style.height = '600px';
+    // Restaurer la taille normale de la carte (gérée par le split-pane)
+    mapElement.style.height = '100%';
     mapElement.style.width = '100%';
 
     // Forcer le redimensionnement d'OpenLayers
