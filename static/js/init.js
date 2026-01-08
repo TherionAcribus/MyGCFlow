@@ -16,6 +16,24 @@ export const CONFIG = {
     API_BASE: `${window.location.origin}`
 };
 
+ function waitForProfileManager(timeoutMs = 3000, intervalMs = 50) {
+     const startedAt = Date.now();
+     return new Promise((resolve, reject) => {
+         const tick = () => {
+             if (window.profileManager) {
+                 resolve(window.profileManager);
+                 return;
+             }
+             if (Date.now() - startedAt > timeoutMs) {
+                 reject(new Error('profileManager not available'));
+                 return;
+             }
+             setTimeout(tick, intervalMs);
+         };
+         tick();
+     });
+ }
+
 document.addEventListener('DOMContentLoaded', async function() {
     // initialisation des elements de Materialize
     initTabs();
@@ -23,71 +41,82 @@ document.addEventListener('DOMContentLoaded', async function() {
     initTooltips();
     initSelect();
     initPickers();
-    pkg.createMap();
+
     await pkg.requetedefaultGcColors();
+
     // check la présence d'une BDD et les affiche
     pkg.readBddValues();
-    
+
     // Vérifier si la base est vide pour afficher la modale de première utilisation
     setTimeout(() => {
         pkg.checkDatabaseOnStartup();
     }, 500); // Délai pour laisser le temps aux autres initialisations
+
     // recupération des options par défaut puis on initialise l'interface
-    pkg.getDefaultValues().then(async optionsValues => {
-        console.log('🚀 [INIT] Valeurs par défaut chargées:', {
-            point_mode: optionsValues.point?.mode,
-            all_options: optionsValues
-        });
+    const optionsValues = await pkg.getDefaultValues();
+    console.log('🚀 [INIT] Valeurs par défaut chargées:', {
+        point_mode: optionsValues.point?.mode,
+        all_options: optionsValues
+    });
 
-        // initialisation de la classe "options"
-        pkg.options.init(optionsValues);
-        console.log('🚀 [INIT] Options initialisées avec valeurs par défaut:', {
-            point_mode: pkg.options.point?.mode,
-            all_options: pkg.options
-        });
+    // initialisation de la classe "options"
+    pkg.options.init(optionsValues);
+    console.log('🚀 [INIT] Options initialisées avec valeurs par défaut:', {
+        point_mode: pkg.options.point?.mode,
+        all_options: pkg.options
+    });
 
-        // Charger les paramètres utilisateur sauvegardés (comme pour les profils)
-        await loadUserSettings();
-        console.log('🚀 [INIT] Après loadUserSettings:', {
-            point_mode: pkg.options.point?.mode,
-            language: pkg.options.options?.language,
-            checkVersion: pkg.options.options?.checkVersion
-        });
+    // Charger les paramètres utilisateur sauvegardés (comme pour les profils)
+    await loadUserSettings();
+    console.log('🚀 [INIT] Après loadUserSettings:', {
+        point_mode: pkg.options.point?.mode,
+        language: pkg.options.options?.language,
+        checkVersion: pkg.options.options?.checkVersion
+    });
 
-        // check la version
-        pkg.checkVersionInit();
-        //creation des différentes cartographies
-        pkg.addMaps();
+    // Initialiser la carte uniquement une fois que les options sont prêtes
+    pkg.createMap();
+
+    // check la version
+    pkg.checkVersionInit();
+    //creation des différentes cartographies
+    pkg.addMaps();
+
+    console.log('🚀 [INIT] Avant init_ui():', {
+        point_mode: pkg.options.point?.mode
+    });
+
+    // mets les valeurs par défaut dans les formulaire
+    //(optionsValues);
+    pkg.init_ui();
+
+    console.log('🚀 [INIT] Après init_ui() - état du switch:', {
+        switch_checked: document.getElementById('switchIconeVectoriel')?.checked,
+        point_mode: pkg.options.point?.mode
+    });
+
+    // Charger le profil par défaut APRÈS l'initialisation complète de l'interface
+    console.log('🚀 [INIT] Interface initialisée, chargement du profil par défaut...');
+    let defaultProfileApplied = false;
+    try {
+        const pm = await waitForProfileManager();
+        await pm.loadDefaultProfileAtStartup();
+        defaultProfileApplied = !!(pm && pm.currentProfile && pm.currentProfile.uid);
+    } catch (e) {
+        console.warn('⚠️ [INIT] Chargement profil par défaut ignoré:', e?.message || e);
+    }
+
+    if (!defaultProfileApplied) {
         // affiche la bonne carte
         pkg.selectDefaultCarto();
         // centrer la carte
         pkg.centerMap();
-        // affiche les frames (infos, titre) si elles existent
-        pkg.displayFrames();
+    }
 
-        console.log('🚀 [INIT] Avant init_ui():', {
-            point_mode: pkg.options.point?.mode
-        });
+    // affiche les frames (infos, titre) si elles existent
+    // (après le profil par défaut, pour éviter un "saut" visuel)
+    pkg.displayFrames();
 
-        // mets les valeurs par défaut dans les formulaire
-        //(optionsValues);
-        pkg.init_ui();
-
-        console.log('🚀 [INIT] Après init_ui() - état du switch:', {
-            switch_checked: document.getElementById('switchIconeVectoriel')?.checked,
-            point_mode: pkg.options.point?.mode
-        });
-
-        // Charger le profil par défaut APRÈS l'initialisation complète de l'interface
-        console.log('🚀 [INIT] Interface initialisée, chargement du profil par défaut...');
-        setTimeout(() => {
-            if (window.profileManager) {
-                window.profileManager.loadDefaultProfileAtStartup();
-            }
-        }, 200); // Petit délai supplémentaire pour s'assurer que tout est prêt
-
-        // ... autres fonctions qui dépendent de optionsValues ...
-    });
     pkg.readBdd();  // creation du geojson et des metadatas
 });
 
