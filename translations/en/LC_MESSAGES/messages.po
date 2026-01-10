@@ -122,17 +122,17 @@ msgstr "Information"
 msgid "Base de données"
 msgstr "Database"
 
-#: templates/menu_data.html:11
-msgid "Choisir fichier"
-msgstr "Choose file"
+#: templates/menu_data.html:10 templates/modal_first_use.html:29
+msgid "Sélectionner et charger un fichier .gpx"
+msgstr "Select and upload a .gpx file"
 
 #: templates/menu_data.html:15
 msgid "Sélectionnez un fichier .gpx de vos trouvailles"
 msgstr "Select a .gpx file of your finds"
 
 #: templates/menu_data.html:19
-msgid "Charger données"
-msgstr "Load data"
+msgid "Vider la base de données"
+msgstr "Clear the database"
 
 #: templates/menu_data.html:23
 msgid "Aucune base de données chargée"
@@ -189,8 +189,12 @@ msgid "Terrain"
 msgstr "Terrain"
 
 #: templates/menu_filtre.html:99
-msgid "Période (dates)"
-msgstr "Period (dates)"
+msgid "Période de découverte"
+msgstr "Found period"
+
+#: templates/menu_filtre.html:120
+msgid "Période de pose"
+msgstr "Published period"
 
 #: templates/menu_flash.html:2
 msgid "Animation du Flash"
@@ -270,7 +274,7 @@ msgstr "Display date"
 
 #: templates/menu_maps.html:4
 msgid "Map Choice"
-msgstr ""
+msgstr "Map Choice"
 
 #: templates/menu_options.html:2
 msgid "Paramètres généraux"
@@ -290,19 +294,19 @@ msgstr "Language Choice"
 
 #: templates/menu_options.html:15
 msgid "Yes"
-msgstr ""
+msgstr "Yes"
 
 #: templates/menu_options.html:16
 msgid "No"
-msgstr ""
+msgstr "No"
 
 #: templates/menu_options.html:18
 msgid "Check for a new version at startup"
-msgstr ""
+msgstr "Check for a new version at startup"
 
 #: templates/menu_options.html:23
 msgid "Check for a new version"
-msgstr ""
+msgstr "Check for a new version"
 
 #: templates/menu_options.html:35
 msgid "Home"
@@ -366,103 +370,103 @@ msgstr "Changes are applied in real time on the map"
 
 #: templates/menu_style.html:7
 msgid "Cartes"
-msgstr ""
+msgstr "Maps"
 
 #: templates/menu_style.html:11
 msgid "OpenStreetMap"
-msgstr ""
+msgstr "OpenStreetMap"
 
 #: templates/menu_style.html:16
 msgid "Stamen Toner"
-msgstr ""
+msgstr "Stamen Toner"
 
 #: templates/menu_style.html:23
 msgid "Carte vectorielle"
-msgstr ""
+msgstr "Vector map"
 
 #: templates/menu_style.html:28
 msgid "Watercolor"
-msgstr ""
+msgstr "Watercolor"
 
 #: templates/menu_style.html:36
 msgid "Style Vector"
-msgstr ""
+msgstr "Vector Style"
 
 #: templates/menu_style.html:42
 msgid "Définit la couleur des bordures des géocaches"
-msgstr ""
+msgstr "Sets the border color of geocaches"
 
 #: templates/menu_style.html:42
 msgid "Couleur contour"
-msgstr ""
+msgstr "Border color"
 
 #: templates/menu_style.html:43
 msgid "Cliquez pour choisir la couleur des contours"
-msgstr ""
+msgstr "Click to choose the border color"
 
 #: templates/menu_style.html:48
 msgid "Définit la couleur intérieure des géocaches"
-msgstr ""
+msgstr "Sets the fill color of geocaches"
 
 #: templates/menu_style.html:48
 msgid "Couleur remplissage"
-msgstr ""
+msgstr "Fill color"
 
 #: templates/menu_style.html:49
 msgid "Cliquez pour choisir la couleur de remplissage"
-msgstr ""
+msgstr "Click to choose the fill color"
 
 #: templates/menu_style.html:58
 msgid "Définit la couleur de fond de la carte"
-msgstr ""
+msgstr "Sets the map background color"
 
 #: templates/menu_style.html:58
 msgid "Couleur fond"
-msgstr ""
+msgstr "Background color"
 
 #: templates/menu_style.html:59
 msgid "Cliquez pour choisir la couleur de fond"
-msgstr ""
+msgstr "Click to choose the background color"
 
 #: templates/menu_style.html:64
 msgid "Définit l'épaisseur des bordures des géocaches"
-msgstr ""
+msgstr "Sets the thickness of geocache borders"
 
 #: templates/menu_style.html:64
 msgid "Largeur contour"
-msgstr ""
+msgstr "Border width"
 
 #: templates/menu_style.html:66
 msgid "Faites glisser pour ajuster l'épaisseur"
-msgstr ""
+msgstr "Drag to adjust the thickness"
 
 #: templates/menu_style.html:67
 msgid "Valeur actuelle de l'épaisseur"
-msgstr ""
+msgstr "Current thickness value"
 
 #: templates/menu_style.html:75
 msgid "Style Toner"
-msgstr ""
+msgstr "Toner Style"
 
 #: templates/menu_style.html:80
 msgid "Clair"
-msgstr ""
+msgstr "Light"
 
 #: templates/menu_style.html:86
 msgid "Sombre"
-msgstr ""
+msgstr "Dark"
 
 #: templates/menu_style.html:96
 msgid "Points"
-msgstr ""
+msgstr "Points"
 
 #: templates/menu_style.html:104
 msgid "Flash"
-msgstr ""
+msgstr "Flash"
 
 #: templates/modal_infos.html:9
 msgid "Cancel"
-msgstr ""
+msgstr "Cancel"
 
 msgid "Profils"
 msgstr "Profiles"
