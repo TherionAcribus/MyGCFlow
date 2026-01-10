@@ -520,10 +520,22 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     fieldLon = document.getElementById('fieldLon');
     fieldCombined = document.getElementById('fieldCombined');
     rowLatLon = document.getElementById('rowLatLon');
-    if (inputMapCenterLat) inputMapCenterLat.addEventListener('blur', saveMapCenterSettings);
-    if (inputMapCenterLon) inputMapCenterLon.addEventListener('blur', saveMapCenterSettings);
-    if (inputMapCenterCombined) inputMapCenterCombined.addEventListener('blur', onCombinedCenterBlur);
-    if (inputMapDefaultZoom) inputMapDefaultZoom.addEventListener('blur', saveMapCenterSettings);
+    if (inputMapCenterLat) {
+        inputMapCenterLat.addEventListener('blur', saveMapCenterSettings);
+        inputMapCenterLat.addEventListener('keydown', onMapCenterKeyDown);
+    }
+    if (inputMapCenterLon) {
+        inputMapCenterLon.addEventListener('blur', saveMapCenterSettings);
+        inputMapCenterLon.addEventListener('keydown', onMapCenterKeyDown);
+    }
+    if (inputMapCenterCombined) {
+        inputMapCenterCombined.addEventListener('blur', onCombinedCenterBlur);
+        inputMapCenterCombined.addEventListener('keydown', onMapCenterKeyDown);
+    }
+    if (inputMapDefaultZoom) {
+        inputMapDefaultZoom.addEventListener('blur', saveMapCenterSettings);
+        inputMapDefaultZoom.addEventListener('keydown', onMapCenterKeyDown);
+    }
 
     btnUseCurrentMapCenter = document.getElementById('btnUseCurrentMapCenter');
     if (btnUseCurrentMapCenter) btnUseCurrentMapCenter.addEventListener('click', applyCurrentMapViewAsDefault);
@@ -929,9 +941,11 @@ export function init_ui() {
             const latVal = String(s.map_default_center[0] ?? '');
             const lonVal = String(s.map_default_center[1] ?? '');
             setLatLonInputs(latVal, lonVal);
+            lastSavedCenterKey = centerKey([latVal, lonVal]);
         }
         if (s && (typeof s.map_default_zoom === 'number' || typeof s.map_default_zoom === 'string')) {
             if (inputMapDefaultZoom) inputMapDefaultZoom.value = String(s.map_default_zoom ?? '');
+            lastSavedZoom = parseInt(s.map_default_zoom);
         }
     } catch(_) {}
 
@@ -1100,26 +1114,59 @@ export function init_ui() {
 
 let isPickingMapCenter = false;
 let pickMapCenterHandler = null;
+let lastMapCenterToast = null;
+let lastSavedCenterKey = null;
+let lastSavedZoom = null;
 
 function parseCoordinate(value) {
     if (value === null || typeof value === 'undefined') return null;
     if (typeof value !== 'string') value = String(value);
-    const s = value.trim();
+    let s = value.trim();
     if (!s) return null;
 
-    const direct = parseFloat(s.replace(',', '.'));
-    if (Number.isFinite(direct)) return direct;
+    s = s.toUpperCase();
 
-    const m = s.toUpperCase().match(/^\s*([+-]?\d+(?:[\.,]\d+)?)\s*[°\s]\s*(\d+(?:[\.,]\d+)?)?\s*['\s]?\s*(\d+(?:[\.,]\d+)?)?\s*\"?\s*([NSEW])?\s*$/);
-    if (!m) return null;
+    let hemi = null;
+    const startH = s.match(/^\s*([NSEW])\s+/);
+    if (startH) {
+        hemi = startH[1];
+        s = s.replace(/^\s*[NSEW]\s+/, '').trim();
+    }
+    const endH = s.match(/\s*([NSEW])\s*$/);
+    if (endH) {
+        if (!hemi) hemi = endH[1];
+        s = s.replace(/\s*[NSEW]\s*$/, '').trim();
+    }
 
-    const deg = parseFloat((m[1] || '').replace(',', '.'));
-    const min = m[2] ? parseFloat(m[2].replace(',', '.')) : 0;
-    const sec = m[3] ? parseFloat(m[3].replace(',', '.')) : 0;
+    s = s.replace(',', '.');
+
+    const numericOnly = s.match(/^\s*([+-]?\d+(?:\.\d+)?)\s*$/);
+    if (numericOnly) {
+        const degVal = parseFloat(numericOnly[1]);
+        if (!Number.isFinite(degVal)) return null;
+        let sign = degVal < 0 ? -1 : 1;
+        if (hemi === 'S' || hemi === 'W') sign = -1;
+        if (hemi === 'N' || hemi === 'E') sign = 1;
+        return sign * Math.abs(degVal);
+    }
+
+    const cleaned = s
+        .replace(/[°º]/g, ' ')
+        .replace(/[′’']/g, ' ')
+        .replace(/[″"]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    const parts = cleaned.split(' ').filter(Boolean);
+    if (parts.length === 0) return null;
+
+    const deg = parseFloat(parts[0]);
+    const min = parts.length >= 2 ? parseFloat(parts[1]) : 0;
+    const sec = parts.length >= 3 ? parseFloat(parts[2]) : 0;
     if (!Number.isFinite(deg) || !Number.isFinite(min) || !Number.isFinite(sec)) return null;
+    if (Math.abs(min) >= 60 || Math.abs(sec) >= 60) return null;
 
     let sign = deg < 0 ? -1 : 1;
-    const hemi = m[4];
     if (hemi === 'S' || hemi === 'W') sign = -1;
     if (hemi === 'N' || hemi === 'E') sign = 1;
 
@@ -1129,8 +1176,25 @@ function parseCoordinate(value) {
 
 function parseCombinedLatLon(value) {
     if (!value) return { lat: null, lon: null };
-    const raw = value.replace(';', ',').replace(/\s+/g, ' ').trim();
-    const parts = raw.split(/[, ]+/).filter(Boolean);
+    const raw = value.replace(/\s+/g, ' ').trim();
+
+    const geo = raw.toUpperCase().match(/^\s*([NS])\s*([0-9°º\.,\s'"′’]+?)\s*([EW])\s*([0-9°º\.,\s'"′’]+?)\s*$/);
+    if (geo) {
+        const lat = parseCoordinate(`${geo[1]} ${geo[2]}`);
+        const lon = parseCoordinate(`${geo[3]} ${geo[4]}`);
+        return { lat, lon };
+    }
+
+    const raw2 = raw.replace(';', ',');
+    if (raw2.includes(',')) {
+        const parts = raw2.split(',').map(s => s.trim()).filter(Boolean);
+        if (parts.length < 2) return { lat: null, lon: null };
+        const lat = parseCoordinate(parts[0]);
+        const lon = parseCoordinate(parts[1]);
+        return { lat, lon };
+    }
+
+    const parts = raw2.split(/\s+/).filter(Boolean);
     if (parts.length < 2) return { lat: null, lon: null };
     const lat = parseCoordinate(parts[0]);
     const lon = parseCoordinate(parts[1]);
@@ -1142,6 +1206,29 @@ function setLatLonInputs(latVal, lonVal) {
     if (inputMapCenterLon) inputMapCenterLon.value = lonVal;
     if (inputMapCenterCombined) inputMapCenterCombined.value = `${latVal}, ${lonVal}`;
     M.updateTextFields();
+}
+
+function centerKey(center) {
+    if (!center || center.length !== 2) return 'null';
+    const lat = Number(center[0]);
+    const lon = Number(center[1]);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return 'null';
+    return `${lat.toFixed(6)}|${lon.toFixed(6)}`;
+}
+
+function setCoordinateValidity({ latValid = true, lonValid = true, combinedValid = true } = {}) {
+    if (inputMapCenterLat) {
+        inputMapCenterLat.classList.toggle('invalid', !latValid);
+        if (latValid) inputMapCenterLat.classList.remove('invalid');
+    }
+    if (inputMapCenterLon) {
+        inputMapCenterLon.classList.toggle('invalid', !lonValid);
+        if (lonValid) inputMapCenterLon.classList.remove('invalid');
+    }
+    if (inputMapCenterCombined) {
+        inputMapCenterCombined.classList.toggle('invalid', !combinedValid);
+        if (combinedValid) inputMapCenterCombined.classList.remove('invalid');
+    }
 }
 
 function setLatLonMode(useCombined) {
@@ -1163,6 +1250,17 @@ function onCombinedCenterBlur() {
     if (lat !== null) inputMapCenterLat.value = lat;
     if (lon !== null) inputMapCenterLon.value = lon;
     M.updateTextFields();
+    saveMapCenterSettings();
+}
+
+function onMapCenterKeyDown(e) {
+    if (!e) return;
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    if (e.target === inputMapCenterCombined) {
+        onCombinedCenterBlur();
+        return;
+    }
     saveMapCenterSettings();
 }
 
@@ -1192,30 +1290,50 @@ async function saveMapCenterSettings() {
         if (!inputMapCenterLat || !inputMapCenterLon || !inputMapDefaultZoom || !inputMapCenterCombined) return;
 
         const patch = {};
+        setCoordinateValidity({ latValid: true, lonValid: true, combinedValid: true });
 
-        let latRaw = (inputMapCenterLat.value || '').trim();
-        let lonRaw = (inputMapCenterLon.value || '').trim();
+        let lat = null;
+        let lon = null;
+        let newCenterKey = 'null';
 
-        // Si mode combiné actif ou si les champs séparés sont vides, essayer de parser le champ combiné
-        if (isCombinedLatLonMode || (!latRaw && !lonRaw)) {
-            const { lat, lon } = parseCombinedLatLon(inputMapCenterCombined.value);
-            if (lat !== null) latRaw = `${lat}`;
-            if (lon !== null) lonRaw = `${lon}`;
-            if (lat !== null && lon !== null) {
-                if (inputMapCenterLat) inputMapCenterLat.value = lat;
-                if (inputMapCenterLon) inputMapCenterLon.value = lon;
-            }
-        }
-
-        if (!latRaw && !lonRaw) {
-            patch.map_default_center = null;
-        } else {
-            const lat = parseCoordinate(latRaw);
-            const lon = parseCoordinate(lonRaw);
-            if (lat !== null && lon !== null) {
-                if (lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
-                    patch.map_default_center = [lat, lon];
+        if (isCombinedLatLonMode) {
+            const rawCombined = (inputMapCenterCombined.value || '').trim();
+            if (!rawCombined) {
+                patch.map_default_center = null;
+            } else {
+                const parsed = parseCombinedLatLon(rawCombined);
+                lat = parsed.lat;
+                lon = parsed.lon;
+                const inRange = lat !== null && lon !== null && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
+                if (!inRange) {
+                    setCoordinateValidity({ latValid: true, lonValid: true, combinedValid: false });
+                    pkg.showToast && pkg.showToast('Coordonnées invalides. Ex: 48.85, 2.35 ou N 49° 16.029 E 006° 07.512', 'warning', 'Carte', 5000);
+                    return false;
                 }
+                patch.map_default_center = [lat, lon];
+                inputMapCenterLat.value = lat;
+                inputMapCenterLon.value = lon;
+                newCenterKey = centerKey(patch.map_default_center);
+            }
+        } else {
+            const latRaw = (inputMapCenterLat.value || '').trim();
+            const lonRaw = (inputMapCenterLon.value || '').trim();
+
+            if (!latRaw && !lonRaw) {
+                patch.map_default_center = null;
+            } else {
+                lat = parseCoordinate(latRaw);
+                lon = parseCoordinate(lonRaw);
+                const inRange = lat !== null && lon !== null && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
+                if (!inRange) {
+                    const latValid = lat !== null && lat >= -90 && lat <= 90;
+                    const lonValid = lon !== null && lon >= -180 && lon <= 180;
+                    setCoordinateValidity({ latValid, lonValid, combinedValid: true });
+                    pkg.showToast && pkg.showToast('Coordonnées invalides. Ex: N 49° 16.029 / E 006° 07.512', 'warning', 'Carte', 5000);
+                    return false;
+                }
+                patch.map_default_center = [lat, lon];
+                newCenterKey = centerKey(patch.map_default_center);
             }
         }
 
@@ -1227,6 +1345,12 @@ async function saveMapCenterSettings() {
             if (Number.isFinite(z)) patch.map_default_zoom = z;
         }
 
+        const zoomChanged = (patch.map_default_zoom !== undefined) && (patch.map_default_zoom !== lastSavedZoom);
+        const centerChanged = newCenterKey !== lastSavedCenterKey;
+        if (!centerChanged && !zoomChanged) {
+            return true;
+        }
+
         const ok = await saveAppSettingsPatch(patch);
         if (!ok) {
             pkg.showToast && pkg.showToast('Échec sauvegarde paramètres carte', 'warning', 'Paramètres', 3000);
@@ -1235,6 +1359,17 @@ async function saveMapCenterSettings() {
             const latStr = `${patch.map_default_center[0]}`;
             const lonStr = `${patch.map_default_center[1]}`;
             inputMapCenterCombined.value = `${latStr}, ${lonStr}`;
+            setCoordinateValidity({ latValid: true, lonValid: true, combinedValid: true });
+            try {
+                if (lastMapCenterToast) pkg.hideToast(lastMapCenterToast);
+            } catch(_) {}
+            if (centerChanged) {
+                lastMapCenterToast = pkg.showToast && pkg.showToast('Coordonnées enregistrées', 'success', 'Carte', 2500);
+            }
+        }
+        lastSavedCenterKey = newCenterKey;
+        if (patch.map_default_zoom !== undefined) {
+            lastSavedZoom = patch.map_default_zoom;
         }
         M.updateTextFields();
         return ok;
