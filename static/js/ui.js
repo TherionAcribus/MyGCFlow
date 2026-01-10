@@ -28,8 +28,10 @@ var cbDisplayTitle, cbDisplayNumberofCaches, cbDisplayCurrentDate, inputTitle;
 var inputTitleCss, inputInfosCss, btnTitleCss, btnInfosCss;
 var spanNbCaches, spanCurrentDate;
 var selectLanguage, selectCheckVersionOnline, buttonCheckVersion, buttonHome;
-var inputMapCenterLat, inputMapCenterLon, inputMapDefaultZoom;
+var inputMapCenterLat, inputMapCenterLon, inputMapCenterCombined, inputMapDefaultZoom;
 var btnUseCurrentMapCenter, btnPickMapCenter, btnClearMapCenter;
+var btnToggleLatLonMode, fieldLat, fieldLon, fieldCombined, rowLatLon;
+let isCombinedLatLonMode = true;
 // Enregistrement
 var selectRecordMode, inputRecordFps, inputRecordBitrate, selectRecordMime, inputRecordSlowdown, inputRecordScaleFactor, cbRecordUpload, cbRecordDownload;
 var cbRecordAudioEnable, inputAudioFile, inputAudioVolume;
@@ -512,9 +514,15 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
 
     inputMapCenterLat = document.getElementById('inputMapCenterLat');
     inputMapCenterLon = document.getElementById('inputMapCenterLon');
+    inputMapCenterCombined = document.getElementById('inputMapCenterCombined');
     inputMapDefaultZoom = document.getElementById('inputMapDefaultZoom');
+    fieldLat = document.getElementById('fieldLat');
+    fieldLon = document.getElementById('fieldLon');
+    fieldCombined = document.getElementById('fieldCombined');
+    rowLatLon = document.getElementById('rowLatLon');
     if (inputMapCenterLat) inputMapCenterLat.addEventListener('blur', saveMapCenterSettings);
     if (inputMapCenterLon) inputMapCenterLon.addEventListener('blur', saveMapCenterSettings);
+    if (inputMapCenterCombined) inputMapCenterCombined.addEventListener('blur', onCombinedCenterBlur);
     if (inputMapDefaultZoom) inputMapDefaultZoom.addEventListener('blur', saveMapCenterSettings);
 
     btnUseCurrentMapCenter = document.getElementById('btnUseCurrentMapCenter');
@@ -525,6 +533,11 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
 
     btnClearMapCenter = document.getElementById('btnClearMapCenter');
     if (btnClearMapCenter) btnClearMapCenter.addEventListener('click', clearMapCenterSettings);
+
+    btnToggleLatLonMode = document.getElementById('btnToggleLatLonMode');
+    if (btnToggleLatLonMode) btnToggleLatLonMode.addEventListener('click', toggleLatLonMode);
+    // Mode combiné par défaut
+    setLatLonMode(true);
 
     // Initialiser les éléments du menu paramètres
     initOptionsElements();
@@ -913,8 +926,9 @@ export function init_ui() {
     try {
         const s = window.userSettings;
         if (s && Array.isArray(s.map_default_center) && s.map_default_center.length === 2) {
-            if (inputMapCenterLat) inputMapCenterLat.value = String(s.map_default_center[0] ?? '');
-            if (inputMapCenterLon) inputMapCenterLon.value = String(s.map_default_center[1] ?? '');
+            const latVal = String(s.map_default_center[0] ?? '');
+            const lonVal = String(s.map_default_center[1] ?? '');
+            setLatLonInputs(latVal, lonVal);
         }
         if (s && (typeof s.map_default_zoom === 'number' || typeof s.map_default_zoom === 'string')) {
             if (inputMapDefaultZoom) inputMapDefaultZoom.value = String(s.map_default_zoom ?? '');
@@ -1113,6 +1127,45 @@ function parseCoordinate(value) {
     return sign * abs;
 }
 
+function parseCombinedLatLon(value) {
+    if (!value) return { lat: null, lon: null };
+    const raw = value.replace(';', ',').replace(/\s+/g, ' ').trim();
+    const parts = raw.split(/[, ]+/).filter(Boolean);
+    if (parts.length < 2) return { lat: null, lon: null };
+    const lat = parseCoordinate(parts[0]);
+    const lon = parseCoordinate(parts[1]);
+    return { lat, lon };
+}
+
+function setLatLonInputs(latVal, lonVal) {
+    if (inputMapCenterLat) inputMapCenterLat.value = latVal;
+    if (inputMapCenterLon) inputMapCenterLon.value = lonVal;
+    if (inputMapCenterCombined) inputMapCenterCombined.value = `${latVal}, ${lonVal}`;
+    M.updateTextFields();
+}
+
+function setLatLonMode(useCombined) {
+    isCombinedLatLonMode = !!useCombined;
+    if (fieldCombined) fieldCombined.classList.toggle('hide', !useCombined);
+    if (rowLatLon) rowLatLon.classList.toggle('hide', useCombined);
+    if (fieldLat) fieldLat.classList.toggle('hide', useCombined);
+    if (fieldLon) fieldLon.classList.toggle('hide', useCombined);
+    M.updateTextFields();
+}
+
+function toggleLatLonMode() {
+    setLatLonMode(!isCombinedLatLonMode);
+}
+
+function onCombinedCenterBlur() {
+    if (!inputMapCenterCombined) return;
+    const { lat, lon } = parseCombinedLatLon(inputMapCenterCombined.value);
+    if (lat !== null) inputMapCenterLat.value = lat;
+    if (lon !== null) inputMapCenterLon.value = lon;
+    M.updateTextFields();
+    saveMapCenterSettings();
+}
+
 async function saveAppSettingsPatch(patch) {
     try {
         const currentSettings = await (await fetch('/api/settings')).json();
@@ -1136,12 +1189,23 @@ async function saveAppSettingsPatch(patch) {
 
 async function saveMapCenterSettings() {
     try {
-        if (!inputMapCenterLat || !inputMapCenterLon || !inputMapDefaultZoom) return;
+        if (!inputMapCenterLat || !inputMapCenterLon || !inputMapDefaultZoom || !inputMapCenterCombined) return;
 
         const patch = {};
 
-        const latRaw = (inputMapCenterLat.value || '').trim();
-        const lonRaw = (inputMapCenterLon.value || '').trim();
+        let latRaw = (inputMapCenterLat.value || '').trim();
+        let lonRaw = (inputMapCenterLon.value || '').trim();
+
+        // Si mode combiné actif ou si les champs séparés sont vides, essayer de parser le champ combiné
+        if (isCombinedLatLonMode || (!latRaw && !lonRaw)) {
+            const { lat, lon } = parseCombinedLatLon(inputMapCenterCombined.value);
+            if (lat !== null) latRaw = `${lat}`;
+            if (lon !== null) lonRaw = `${lon}`;
+            if (lat !== null && lon !== null) {
+                if (inputMapCenterLat) inputMapCenterLat.value = lat;
+                if (inputMapCenterLon) inputMapCenterLon.value = lon;
+            }
+        }
 
         if (!latRaw && !lonRaw) {
             patch.map_default_center = null;
@@ -1167,6 +1231,13 @@ async function saveMapCenterSettings() {
         if (!ok) {
             pkg.showToast && pkg.showToast('Échec sauvegarde paramètres carte', 'warning', 'Paramètres', 3000);
         }
+        if (patch.map_default_center && inputMapCenterCombined) {
+            const latStr = `${patch.map_default_center[0]}`;
+            const lonStr = `${patch.map_default_center[1]}`;
+            inputMapCenterCombined.value = `${latStr}, ${lonStr}`;
+        }
+        M.updateTextFields();
+        return ok;
     } catch(e) {
     }
 }
@@ -1197,6 +1268,7 @@ function clearMapCenterSettings() {
     try {
         if (inputMapCenterLat) inputMapCenterLat.value = '';
         if (inputMapCenterLon) inputMapCenterLon.value = '';
+        if (inputMapCenterCombined) inputMapCenterCombined.value = '';
         if (inputMapDefaultZoom) inputMapDefaultZoom.value = '';
         M.updateTextFields();
         saveAppSettingsPatch({ map_default_center: null, map_default_zoom: null });
@@ -1225,6 +1297,7 @@ function togglePickMapCenter() {
                 const lat = lonLat[1];
                 if (inputMapCenterLat) inputMapCenterLat.value = lat.toFixed(6);
                 if (inputMapCenterLon) inputMapCenterLon.value = lon.toFixed(6);
+                if (inputMapCenterCombined) inputMapCenterCombined.value = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
                 try {
                     const view = map.getView();
                     if (view && inputMapDefaultZoom) inputMapDefaultZoom.value = String(view.getZoom());

@@ -28,13 +28,26 @@
             <div class="col s12">
                 <div class="card-panel" style="padding:16px; margin-top:8px;">
                     <div class="row" style="margin-bottom:0;">
-                        <div class="input-field col s12 m6">
-                            <input id="inputMapCenterLat" type="text" class="validate">
-                            <label for="inputMapCenterLat">{{ _("Default map center - Latitude") }}</label>
+                        <div class="col s12 m1" style="display:flex; justify-content:flex-start; align-items:center; margin-top:8px;">
+                            <a id="btnToggleLatLonMode" class="btn-flat tooltipped" data-position="bottom" data-tooltip="{{ _('Switch input mode') }}">
+                                <i class="material-icons">link</i>
+                            </a>
                         </div>
-                        <div class="input-field col s12 m6">
-                            <input id="inputMapCenterLon" type="text" class="validate">
-                            <label for="inputMapCenterLon">{{ _("Default map center - Longitude") }}</label>
+                        <div class="col s12 m11">
+                            <div class="row" style="margin-bottom:0;">
+                                <div class="input-field col s12" id="fieldCombined">
+                                    <input id="inputMapCenterCombined" type="text" class="validate" placeholder="48.85, 2.35">
+                                    <label for="inputMapCenterCombined">{{ _("Default map center - Lat, Lon") }}</label>
+                                </div>
+                                <div class="input-field col s12 m6 hide" id="fieldLat">
+                                    <input id="inputMapCenterLat" type="text" class="validate">
+                                    <label for="inputMapCenterLat">{{ _("Default map center - Latitude") }}</label>
+                                </div>
+                                <div class="input-field col s12 m6 hide" id="fieldLon">
+                                    <input id="inputMapCenterLon" type="text" class="validate">
+                                    <label for="inputMapCenterLon">{{ _("Default map center - Longitude") }}</label>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="row" style="margin-bottom:0;">
