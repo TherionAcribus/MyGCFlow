@@ -209,9 +209,36 @@ class ProfileManager {
             const result = await this.apiCall(`/api/profiles/${encodeURIComponent(name)}`, 'DELETE');
             if (result.success) {
                 this.showToast(`Profil "${name}" supprimé`, 'orange');
-                this.loadProfilesList();
+                // Rafraîchir la liste des profils avant de choisir un fallback
+                await this.loadProfilesList();
+
+                // Si on vient de supprimer le profil actif, on bascule sur un profil valide
                 if (this.currentProfile && this.currentProfile.name === name) {
                     this.currentProfile = null;
+
+                    // 1) Tenter le profil par défaut (UUID)
+                    try {
+                        const settings = await this.loadAppSettings();
+                        const defaultUid = settings?.default_profile_uid;
+                        if (defaultUid) {
+                            await this.loadProfileByUid(defaultUid);
+                            return;
+                        }
+                    } catch (e) {
+                        console.warn('Fallback profil par défaut impossible:', e);
+                    }
+
+                    // 2) Sinon charger le premier profil restant (s'il en existe)
+                    if (Array.isArray(this.profilesList) && this.profilesList.length > 0) {
+                        const firstProfile = this.profilesList[0];
+                        if (firstProfile) {
+                            await this.loadProfile(firstProfile);
+                            return;
+                        }
+                    }
+
+                    // 3) Plus aucun profil : rester sans profil actif
+                    this.updateCurrentProfileIndicator();
                 }
             }
         } catch (error) {
