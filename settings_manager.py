@@ -105,6 +105,8 @@ class PointStyle:
     fill_color_type: str = "fix"  # "gc", "none", "fix"
     border_color_type: str = "fix"  # "gc", "none", "fix"
     mode: str = "vectoriel"  # "icone", "vectoriel"
+    icon_set: str = "geocaching"
+    icon_size: int = 24
 
 
 @dataclass
@@ -234,6 +236,8 @@ def coerce_profile(d: dict) -> MapProfile:
             fill_color_type=pt.get("fill_color_type", p.points.fill_color_type),
             border_color_type=pt.get("border_color_type", p.points.border_color_type),
             mode=pt.get("mode", p.points.mode),
+            icon_set=pt.get("icon_set", pt.get("iconSet", p.points.icon_set)) or p.points.icon_set,
+            icon_size=int(pt.get("icon_size", pt.get("iconSize", p.points.icon_size)) or p.points.icon_size),
         )
 
         # Options flash
@@ -642,6 +646,8 @@ class SettingsManager:
                     "fill_color_type": prof.points.fill_color_type,
                     "border_color_type": prof.points.border_color_type,
                     "mode": prof.points.mode,
+                    "icon_set": prof.points.icon_set,
+                    "icon_size": prof.points.icon_size,
                 },
                 "flash": {
                     "mode": prof.flash.mode,

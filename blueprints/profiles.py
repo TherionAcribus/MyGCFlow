@@ -120,6 +120,9 @@ def api_get_profile(name: str):
             'border_size': prof.points.border_size,
             'fill_color_type': prof.points.fill_color_type,
             'border_color_type': prof.points.border_color_type,
+            'mode': getattr(prof.points, 'mode', 'vectoriel'),
+            'icon_set': getattr(prof.points, 'icon_set', 'geocaching'),
+            'icon_size': getattr(prof.points, 'icon_size', 24),
         },
         'flash': {
             'mode': prof.flash.mode,
@@ -179,6 +182,9 @@ def api_get_profile_by_uid(uid: str):
             'border_size': prof.points.border_size,
             'fill_color_type': prof.points.fill_color_type,
             'border_color_type': prof.points.border_color_type,
+            'mode': getattr(prof.points, 'mode', 'vectoriel'),
+            'icon_set': getattr(prof.points, 'icon_set', 'geocaching'),
+            'icon_size': getattr(prof.points, 'icon_size', 24),
         },
         'flash': {
             'mode': prof.flash.mode,
@@ -279,6 +285,17 @@ def api_save_profile(name: str):
         prof.points.fill_color_type = pt['fill_color_type']
     if 'border_color_type' in pt:
         prof.points.border_color_type = pt['border_color_type']
+
+    # Mode points + options icône
+    if 'mode' in pt:
+        prof.points.mode = pt['mode']
+    if 'icon_set' in pt or 'iconSet' in pt:
+        prof.points.icon_set = pt.get('icon_set', pt.get('iconSet')) or getattr(prof.points, 'icon_set', 'geocaching')
+    if 'icon_size' in pt or 'iconSize' in pt:
+        try:
+            prof.points.icon_size = int(pt.get('icon_size', pt.get('iconSize')))
+        except Exception:
+            pass
 
     f = data.get('flash', {})
     if 'mode' in f:

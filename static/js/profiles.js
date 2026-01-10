@@ -746,6 +746,10 @@ class ProfileManager {
             const borderColorInput = document.getElementById('pointBorderColor');
             const modeSwitch = document.getElementById('switchIconeVectoriel');
 
+            // Options spécifiques au mode icône
+            const selectIconSet = document.getElementById('selectIconSet');
+            const inputSizeIcon = document.getElementById('inputSizeIcon');
+
             // Récupération des types de couleur
             const fillColorType = document.querySelector('input[name="fillColorPoint"]:checked');
             const borderColorType = document.querySelector('input[name="borderColorPoint"]:checked');
@@ -759,7 +763,9 @@ class ProfileManager {
                 border_size: borderInput ? parseInt(borderInput.value) || 0 : 0,
                 fill_color_type: fillColorType ? fillColorType.value || 'fix' : 'fix',
                 border_color_type: borderColorType ? borderColorType.value || 'fix' : 'fix',
-                mode: modeSwitch ? (modeSwitch.checked ? 'vectoriel' : 'icone') : 'vectoriel'
+                mode: modeSwitch ? (modeSwitch.checked ? 'vectoriel' : 'icone') : 'vectoriel',
+                icon_set: selectIconSet ? (selectIconSet.value || 'geocaching') : (pkg?.options?.point?.iconSet || 'geocaching'),
+                icon_size: inputSizeIcon ? (parseInt(inputSizeIcon.value) || 24) : (parseInt(pkg?.options?.point?.iconSize) || 24)
             };
 
             console.log('Paramètres points récupérés:', {
@@ -942,6 +948,17 @@ class ProfileManager {
             // Appliquer les paramètres des points
             if (typeof applyPointSettings === 'function') {
                 applyPointSettings(profile.points);
+                // Forcer le reflet sur le switch vectoriel/icône si présent
+                try {
+                    const switchVector = document.getElementById('switchIconeVectoriel');
+                    if (switchVector) {
+                        const isVector = profile.points.mode === 'vectoriel';
+                        switchVector.checked = isVector;
+                        switchVector.dispatchEvent(new Event('change'));
+                    }
+                } catch (e) {
+                    console.warn('Switch vectoriel/icône non mis à jour:', e);
+                }
             }
         }
 
@@ -1403,12 +1420,40 @@ function applyPointSettings(pointOptions) {
     try {
         console.log('🎯 APPLICATION PARAMÈTRES POINTS - Données reçues:', pointOptions);
 
-        // Appliquer le mode (icone/vectoriel)
+        // Appliquer le mode (icone/vectoriel) + options icône (set/taille)
         const modeSwitch = document.getElementById('switchIconeVectoriel');
+        const selectIconSet = document.getElementById('selectIconSet');
+        const sliderSizeIcon = document.getElementById('sliderSizeIcon');
+        const inputSizeIcon = document.getElementById('inputSizeIcon');
+
+        // Si mode icône: préparer d'abord les champs, puis déclencher le switch (qui appelle initializeIconOptions/updateIconSet)
+        if (pointOptions.mode === 'icone') {
+            if (selectIconSet && (pointOptions.icon_set || pointOptions.iconSet)) {
+                selectIconSet.value = pointOptions.icon_set || pointOptions.iconSet;
+                try { M.FormSelect.init(selectIconSet); } catch (_) {}
+            }
+            const size = parseInt(pointOptions.icon_size || pointOptions.iconSize);
+            if (Number.isFinite(size) && size > 0) {
+                if (sliderSizeIcon) sliderSizeIcon.value = size;
+                if (inputSizeIcon) inputSizeIcon.value = size;
+            }
+        }
+
         if (modeSwitch && pointOptions.mode) {
             modeSwitch.checked = pointOptions.mode === 'vectoriel';
             modeSwitch.dispatchEvent(new Event('change'));
             console.log('🎯 Application mode des points:', pointOptions.mode, '-> switch checked:', modeSwitch.checked);
+        }
+
+        // Après initialisation en mode icône, appliquer set/taille au rendu
+        if (pointOptions.mode === 'icone') {
+            if (selectIconSet) {
+                // updateIconSet() est globale (ui.js)
+                try { window.updateIconSet?.(); } catch (_) {}
+            }
+            if (inputSizeIcon) {
+                try { window.updateIconSize?.(); } catch (_) {}
+            }
         }
 
         // Appliquer la taille des points
