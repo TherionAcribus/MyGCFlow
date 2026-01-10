@@ -121,12 +121,27 @@ font-feature-settings: 'liga';
 }
 
 /* Styles pour les modals des profils */
+#profile-modal.modal {
+    max-height: none;
+    height: auto;
+    overflow-y: visible;
+}
+#profile-modal .modal-content {
+    padding: 24px;
+}
 #profile-modal .input-field {
     margin-top: 20px;
 }
-
 #profile-modal .modal-footer {
-    padding: 15px 20px;
+    padding: 16px 20px 18px;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+#profile-modal .modal-footer .btn,
+#profile-modal .modal-footer .btn-flat {
+    margin: 0;
 }
 
 /* Modal suppression profil - aligné sur les autres modales */
