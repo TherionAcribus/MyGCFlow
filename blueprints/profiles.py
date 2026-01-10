@@ -21,6 +21,8 @@ def api_get_settings():
         'check_updates': s.check_updates,
         'default_profile_uid': s.default_profile_uid,
         'default_profile_name': default_profile_name,
+        'map_default_center': list(s.map_default_center) if s.map_default_center else None,
+        'map_default_zoom': s.map_default_zoom,
     })
     response.set_cookie(
         'gcmap_lang',
@@ -41,6 +43,28 @@ def api_put_settings():
 
     default_profile_uid = data.get('default_profile_uid')
 
+    map_default_center = current.map_default_center
+    if 'map_default_center' in data:
+        raw_center = data.get('map_default_center')
+        if isinstance(raw_center, (list, tuple)) and len(raw_center) == 2:
+            try:
+                map_default_center = (float(raw_center[0]), float(raw_center[1]))
+            except Exception:
+                map_default_center = current.map_default_center
+        else:
+            map_default_center = None
+
+    map_default_zoom = current.map_default_zoom
+    if 'map_default_zoom' in data:
+        raw_zoom = data.get('map_default_zoom')
+        if raw_zoom is None:
+            map_default_zoom = None
+        else:
+            try:
+                map_default_zoom = int(raw_zoom)
+            except Exception:
+                map_default_zoom = current.map_default_zoom
+
     if not default_profile_uid and data.get('default_profile'):
         profile_name = data.get('default_profile')
         try:
@@ -60,7 +84,9 @@ def api_put_settings():
         version=current.version,
         language=language,
         check_updates=check_updates,
-        default_profile_uid=default_profile_uid
+        default_profile_uid=default_profile_uid,
+        map_default_center=map_default_center,
+        map_default_zoom=map_default_zoom,
     )
     settings_manager.save_app_settings(updated)
     response = jsonify({'success': True, 'language': language})

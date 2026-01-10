@@ -28,6 +28,8 @@ var cbDisplayTitle, cbDisplayNumberofCaches, cbDisplayCurrentDate, inputTitle;
 var inputTitleCss, inputInfosCss, btnTitleCss, btnInfosCss;
 var spanNbCaches, spanCurrentDate;
 var selectLanguage, selectCheckVersionOnline, buttonCheckVersion, buttonHome;
+var inputMapCenterLat, inputMapCenterLon, inputMapDefaultZoom;
+var btnUseCurrentMapCenter, btnPickMapCenter, btnClearMapCenter;
 // Enregistrement
 var selectRecordMode, inputRecordFps, inputRecordBitrate, selectRecordMime, inputRecordSlowdown, inputRecordScaleFactor, cbRecordUpload, cbRecordDownload;
 var cbRecordAudioEnable, inputAudioFile, inputAudioVolume;
@@ -508,6 +510,22 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     buttonHome = document.getElementById('buttonHome');
     if (buttonHome) buttonHome.addEventListener('click', pkg.openHomePage);
 
+    inputMapCenterLat = document.getElementById('inputMapCenterLat');
+    inputMapCenterLon = document.getElementById('inputMapCenterLon');
+    inputMapDefaultZoom = document.getElementById('inputMapDefaultZoom');
+    if (inputMapCenterLat) inputMapCenterLat.addEventListener('blur', saveMapCenterSettings);
+    if (inputMapCenterLon) inputMapCenterLon.addEventListener('blur', saveMapCenterSettings);
+    if (inputMapDefaultZoom) inputMapDefaultZoom.addEventListener('blur', saveMapCenterSettings);
+
+    btnUseCurrentMapCenter = document.getElementById('btnUseCurrentMapCenter');
+    if (btnUseCurrentMapCenter) btnUseCurrentMapCenter.addEventListener('click', applyCurrentMapViewAsDefault);
+
+    btnPickMapCenter = document.getElementById('btnPickMapCenter');
+    if (btnPickMapCenter) btnPickMapCenter.addEventListener('click', togglePickMapCenter);
+
+    btnClearMapCenter = document.getElementById('btnClearMapCenter');
+    if (btnClearMapCenter) btnClearMapCenter.addEventListener('click', clearMapCenterSettings);
+
     // Initialiser les éléments du menu paramètres
     initOptionsElements();
 }
@@ -892,6 +910,17 @@ export function init_ui() {
     selectCheckVersionOnline.value = pkg.options.options.checkVersion;
     M.FormSelect.init(document.getElementById('selectCheckVersionOnline'));
 
+    try {
+        const s = window.userSettings;
+        if (s && Array.isArray(s.map_default_center) && s.map_default_center.length === 2) {
+            if (inputMapCenterLat) inputMapCenterLat.value = String(s.map_default_center[0] ?? '');
+            if (inputMapCenterLon) inputMapCenterLon.value = String(s.map_default_center[1] ?? '');
+        }
+        if (s && (typeof s.map_default_zoom === 'number' || typeof s.map_default_zoom === 'string')) {
+            if (inputMapDefaultZoom) inputMapDefaultZoom.value = String(s.map_default_zoom ?? '');
+        }
+    } catch(_) {}
+
     // Charger l'arbre Country/State et peupler selects
     try {
         console.log('[COUNTRY] Fetching /api/country_state ...');
@@ -1053,6 +1082,177 @@ export function init_ui() {
 
     // Mettre à jour tous les champs Materialize pour repositionner les labels
     M.updateTextFields();
+}
+
+let isPickingMapCenter = false;
+let pickMapCenterHandler = null;
+
+function parseCoordinate(value) {
+    if (value === null || typeof value === 'undefined') return null;
+    if (typeof value !== 'string') value = String(value);
+    const s = value.trim();
+    if (!s) return null;
+
+    const direct = parseFloat(s.replace(',', '.'));
+    if (Number.isFinite(direct)) return direct;
+
+    const m = s.toUpperCase().match(/^\s*([+-]?\d+(?:[\.,]\d+)?)\s*[°\s]\s*(\d+(?:[\.,]\d+)?)?\s*['\s]?\s*(\d+(?:[\.,]\d+)?)?\s*\"?\s*([NSEW])?\s*$/);
+    if (!m) return null;
+
+    const deg = parseFloat((m[1] || '').replace(',', '.'));
+    const min = m[2] ? parseFloat(m[2].replace(',', '.')) : 0;
+    const sec = m[3] ? parseFloat(m[3].replace(',', '.')) : 0;
+    if (!Number.isFinite(deg) || !Number.isFinite(min) || !Number.isFinite(sec)) return null;
+
+    let sign = deg < 0 ? -1 : 1;
+    const hemi = m[4];
+    if (hemi === 'S' || hemi === 'W') sign = -1;
+    if (hemi === 'N' || hemi === 'E') sign = 1;
+
+    const abs = Math.abs(deg) + (Math.abs(min) / 60) + (Math.abs(sec) / 3600);
+    return sign * abs;
+}
+
+async function saveAppSettingsPatch(patch) {
+    try {
+        const currentSettings = await (await fetch('/api/settings')).json();
+        const merged = Object.assign({}, currentSettings, patch || {});
+        const saveResponse = await fetch('/api/settings', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(merged)
+        });
+        if (!saveResponse.ok) {
+            return false;
+        }
+        try {
+            window.userSettings = merged;
+        } catch(_) {}
+        return true;
+    } catch(e) {
+        return false;
+    }
+}
+
+async function saveMapCenterSettings() {
+    try {
+        if (!inputMapCenterLat || !inputMapCenterLon || !inputMapDefaultZoom) return;
+
+        const patch = {};
+
+        const latRaw = (inputMapCenterLat.value || '').trim();
+        const lonRaw = (inputMapCenterLon.value || '').trim();
+
+        if (!latRaw && !lonRaw) {
+            patch.map_default_center = null;
+        } else {
+            const lat = parseCoordinate(latRaw);
+            const lon = parseCoordinate(lonRaw);
+            if (lat !== null && lon !== null) {
+                if (lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
+                    patch.map_default_center = [lat, lon];
+                }
+            }
+        }
+
+        const zoomRaw = (inputMapDefaultZoom.value || '').trim();
+        if (!zoomRaw) {
+            patch.map_default_zoom = null;
+        } else {
+            const z = parseInt(zoomRaw);
+            if (Number.isFinite(z)) patch.map_default_zoom = z;
+        }
+
+        const ok = await saveAppSettingsPatch(patch);
+        if (!ok) {
+            pkg.showToast && pkg.showToast('Échec sauvegarde paramètres carte', 'warning', 'Paramètres', 3000);
+        }
+    } catch(e) {
+    }
+}
+
+async function applyCurrentMapViewAsDefault() {
+    try {
+        const map = pkg.getMap && pkg.getMap();
+        if (!map || !map.getView) return;
+        const view = map.getView();
+        const center3857 = view.getCenter();
+        if (!center3857) return;
+        const lonLat = ol.proj.toLonLat(center3857);
+        const lon = lonLat[0];
+        const lat = lonLat[1];
+        if (inputMapCenterLat) inputMapCenterLat.value = lat.toFixed(6);
+        if (inputMapCenterLon) inputMapCenterLon.value = lon.toFixed(6);
+        if (inputMapDefaultZoom) inputMapDefaultZoom.value = String(view.getZoom());
+        M.updateTextFields();
+        const ok = await saveMapCenterSettings();
+        if (ok !== false && pkg.showToast) {
+            pkg.showToast('Centre par défaut mis à jour depuis la vue actuelle', 'success', 'Carte', 3000);
+        }
+    } catch(e) {
+    }
+}
+
+function clearMapCenterSettings() {
+    try {
+        if (inputMapCenterLat) inputMapCenterLat.value = '';
+        if (inputMapCenterLon) inputMapCenterLon.value = '';
+        if (inputMapDefaultZoom) inputMapDefaultZoom.value = '';
+        M.updateTextFields();
+        saveAppSettingsPatch({ map_default_center: null, map_default_zoom: null });
+    } catch(e) {
+    }
+}
+
+function togglePickMapCenter() {
+    try {
+        const map = pkg.getMap && pkg.getMap();
+        if (!map || !map.on) return;
+
+        if (isPickingMapCenter) {
+            disablePickMapCenter(map);
+            return;
+        }
+
+        isPickingMapCenter = true;
+        try { map.getTargetElement().style.cursor = 'crosshair'; } catch(_) {}
+        pkg.showToast && pkg.showToast('Cliquez sur la carte pour choisir le centre', 'info', 'Carte', 4000);
+
+        pickMapCenterHandler = async function(evt) {
+            try {
+                const lonLat = ol.proj.toLonLat(evt.coordinate);
+                const lon = lonLat[0];
+                const lat = lonLat[1];
+                if (inputMapCenterLat) inputMapCenterLat.value = lat.toFixed(6);
+                if (inputMapCenterLon) inputMapCenterLon.value = lon.toFixed(6);
+                try {
+                    const view = map.getView();
+                    if (view && inputMapDefaultZoom) inputMapDefaultZoom.value = String(view.getZoom());
+                } catch(_) {}
+                M.updateTextFields();
+                const ok = await saveMapCenterSettings();
+                if (ok !== false && pkg.showToast) {
+                    pkg.showToast('Centre par défaut mis à jour depuis la carte', 'success', 'Carte', 3000);
+                }
+            } finally {
+                disablePickMapCenter(map);
+            }
+        };
+
+        map.on('singleclick', pickMapCenterHandler);
+    } catch(e) {
+    }
+}
+
+function disablePickMapCenter(map) {
+    isPickingMapCenter = false;
+    try { map.getTargetElement().style.cursor = ''; } catch(_) {}
+    try {
+        if (map && pickMapCenterHandler && typeof map.un === 'function') {
+            map.un('singleclick', pickMapCenterHandler);
+        }
+    } catch(_) {}
+    pickMapCenterHandler = null;
 }
 
 // Initialisation des valeurs UI pour les paramètres

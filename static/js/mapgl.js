@@ -326,6 +326,10 @@ let mrAudioCtx = null, mrAudioSource = null, mrAudioDest = null, mrAudioGain = n
 let blockBackgroundAudioPlayback = false;
 let mrMuxAudioCtx = null; // Contexte audio "déverrouillé" par un geste utilisateur pour le mux post-enregistrement
 
+export function getMap() {
+    return map;
+}
+
 function startBackgroundMusicIfAny(){
     try {
         // Ne pas jouer pendant l'enregistrement ni si bloqué explicitement
@@ -522,10 +526,31 @@ export function selectDefaultCarto(){
 export function centerMap(){
     // Coordonnées du centre de la France en longitude et latitude
     const franceCenterLonLat = [2.2137, 46.2276];
+    let lonLat = franceCenterLonLat;
+    let zoom = 6;
+
+    try {
+        const s = window.userSettings;
+        if (s && Array.isArray(s.map_default_center) && s.map_default_center.length === 2) {
+            const lat = parseFloat(s.map_default_center[0]);
+            const lon = parseFloat(s.map_default_center[1]);
+            if (Number.isFinite(lat) && Number.isFinite(lon)) {
+                lonLat = [lon, lat];
+            }
+        }
+        if (s && (typeof s.map_default_zoom === 'number' || typeof s.map_default_zoom === 'string')) {
+            const z = parseInt(s.map_default_zoom);
+            if (Number.isFinite(z)) {
+                zoom = z;
+            }
+        }
+    } catch(e) {
+    }
+
     // Conversion des coordonnées en EPSG:3857 pour OpenLayers
-    const franceCenterWebMercator = ol.proj.fromLonLat(franceCenterLonLat);
-    map.getView().setCenter(franceCenterWebMercator);
-    map.getView().setZoom(6); // Ajustez le niveau de zoom selon vos besoins
+    const webMercator = ol.proj.fromLonLat(lonLat);
+    map.getView().setCenter(webMercator);
+    map.getView().setZoom(zoom); // Ajustez le niveau de zoom selon vos besoins
 }
 
 

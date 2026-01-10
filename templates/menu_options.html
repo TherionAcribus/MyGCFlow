@@ -25,6 +25,38 @@
                 <label>{{ _("Default profile at startup") }}</label>
             </div>
 
+            <div class="col s12">
+                <div class="card-panel" style="padding:16px; margin-top:8px;">
+                    <div class="row" style="margin-bottom:0;">
+                        <div class="input-field col s12 m6">
+                            <input id="inputMapCenterLat" type="text" class="validate">
+                            <label for="inputMapCenterLat">{{ _("Default map center - Latitude") }}</label>
+                        </div>
+                        <div class="input-field col s12 m6">
+                            <input id="inputMapCenterLon" type="text" class="validate">
+                            <label for="inputMapCenterLon">{{ _("Default map center - Longitude") }}</label>
+                        </div>
+                    </div>
+                    <div class="row" style="margin-bottom:0;">
+                        <div class="input-field col s12 m6">
+                            <input id="inputMapDefaultZoom" type="number" min="0" max="22" class="validate">
+                            <label for="inputMapDefaultZoom">{{ _("Default map zoom") }}</label>
+                        </div>
+                        <div class="col s12 m6" style="display:flex; gap:10px; align-items:center; margin-top: 16px; flex-wrap: wrap;">
+                            <a id="btnUseCurrentMapCenter" class="waves-effect waves-light btn">
+                                <i class="material-icons right">my_location</i>{{ _("Use current map view") }}
+                            </a>
+                            <a id="btnPickMapCenter" class="waves-effect waves-light btn">
+                                <i class="material-icons right">place</i>{{ _("Pick on map") }}
+                            </a>
+                            <a id="btnClearMapCenter" class="waves-effect waves-light btn">
+                                <i class="material-icons right">clear</i>{{ _("Clear") }}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="col s12 m6" style="display:flex; gap:10px; align-items:center; margin-top: 8px;">
                 <a id="buttonCheckVersion" class="waves-effect waves-light btn">
                     <i class="material-icons right">system_update</i>{{ _("Check for a new version") }}

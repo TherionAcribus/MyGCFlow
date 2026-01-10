@@ -55,6 +55,8 @@ class AppSettings:
     language: str = "fr"
     check_updates: bool = True
     default_profile_uid: Optional[str] = None  # UUID du profil par défaut (None = aucun)
+    map_default_center: Optional[Tuple[float, float]] = None
+    map_default_zoom: Optional[int] = None
 
 
 @dataclass
@@ -141,6 +143,20 @@ def coerce_settings(d: dict) -> AppSettings:
     if isinstance(d, dict):
         s.language = d.get("language", s.language)
         s.check_updates = bool(d.get("check_updates", s.check_updates))
+
+        raw_center = d.get("map_default_center")
+        if isinstance(raw_center, (list, tuple)) and len(raw_center) == 2:
+            try:
+                s.map_default_center = (float(raw_center[0]), float(raw_center[1]))
+            except Exception:
+                pass
+
+        raw_zoom = d.get("map_default_zoom")
+        if raw_zoom is not None:
+            try:
+                s.map_default_zoom = int(raw_zoom)
+            except Exception:
+                pass
 
         # Migration: ancien format (nom) vers nouveau format (UUID)
         old_profile_name = d.get("default_profile")

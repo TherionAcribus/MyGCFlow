@@ -113,6 +113,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         pkg.centerMap();
     }
 
+    // Appliquer les préférences utilisateur (centre/zoom) même si un profil a été appliqué
+    applyUserMapDefaults();
+
     // affiche les frames (infos, titre) si elles existent
     // (après le profil par défaut, pour éviter un "saut" visuel)
     pkg.displayFrames();
@@ -157,6 +160,44 @@ function initPickers() {
     var instances = M.Datepicker.init(elems, options);
 }
 
+// Applique centre/zoom depuis les préférences utilisateur (settings)
+function applyUserMapDefaults() {
+    try {
+        const s = window.userSettings;
+        const map = pkg.getMap && pkg.getMap();
+        if (!s || !map || !map.getView) return;
+        const view = map.getView();
+        let applied = false;
+
+        if (Array.isArray(s.map_default_center) && s.map_default_center.length === 2) {
+            const lat = parseFloat(s.map_default_center[0]);
+            const lon = parseFloat(s.map_default_center[1]);
+            if (Number.isFinite(lat) && Number.isFinite(lon)) {
+                const webMercator = ol.proj.fromLonLat([lon, lat]);
+                view.setCenter(webMercator);
+                applied = true;
+            }
+        }
+
+        if (typeof s.map_default_zoom === 'number' || typeof s.map_default_zoom === 'string') {
+            const z = parseInt(s.map_default_zoom);
+            if (Number.isFinite(z)) {
+                view.setZoom(z);
+                applied = true;
+            }
+        }
+
+        if (applied) {
+            console.log('[INIT] Carte centrée selon préférences utilisateur', {
+                center: s.map_default_center,
+                zoom: s.map_default_zoom
+            });
+        }
+    } catch(e) {
+        console.warn('[INIT] applyUserMapDefaults error:', e);
+    }
+}
+
 // recupération des options par défaut et les stocke dans sessionStorage dans la variable optionsValues
 export function getDefaultValues() {
     return requeteDefaultValues().then(optionsValues => {
@@ -176,6 +217,9 @@ async function loadUserSettings() {
 
         const userSettings = await response.json();
         console.log('📥 [USER_SETTINGS] Paramètres utilisateur chargés:', userSettings);
+        try {
+            window.userSettings = userSettings;
+        } catch(_) {}
 
         // Appliquer les paramètres utilisateur aux options locales
         if (userSettings.language) {
