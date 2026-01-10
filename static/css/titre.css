@@ -2,7 +2,8 @@
     position: absolute;
     top: 10px; /* Ajustez la position selon vos besoins */
     right: 10px; /* Ajustez la position selon vos besoins */
-    background-color: white;
+    background-color: #ffffff;
+
     padding: 10px;
     border-radius: 5px;
     box-shadow: 0 0 5px rgba(0,0,0,0.2);

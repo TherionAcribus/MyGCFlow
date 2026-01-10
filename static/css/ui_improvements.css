@@ -600,6 +600,13 @@ main.fullscreen-mode #mapWithFrames #infosFrame span {
     float: none !important;
 }
 
+/* Valeur par défaut : boites titre/infos sur fond blanc lisible */
+#titleFrame,
+#infosFrame {
+    background-color: #fff;
+    color: #000;
+}
+
 .loading-spinner {
     width: 60px;
     height: 60px;

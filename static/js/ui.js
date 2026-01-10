@@ -2928,6 +2928,14 @@ function initCssAssistant() {
         opacity: document.getElementById('gcCssOpacity'),
     };
 
+    // Valeurs par défaut pour éviter le fond noir au démarrage
+    if (fields.backgroundColor && !fields.backgroundColor.value) {
+        fields.backgroundColor.value = '#ffffff';
+    }
+    if (fields.textColor && !fields.textColor.value) {
+        fields.textColor.value = '#000000';
+    }
+
     let activeTarget = 'title';
 
     const managedProps = new Set([
@@ -3055,6 +3063,7 @@ function initCssAssistant() {
             const v = normalizeColorToHex(declarations['background-color']);
             if (v) fields.backgroundColor.value = v;
             else if (declarations['background-color']) unmanagedExtra.push('background-color');
+            else fields.backgroundColor.value = '#ffffff';
         }
         if (fields.padding) {
             const m = (declarations['padding'] || '').match(/(\d+(?:\.\d+)?)px/i);
@@ -3275,8 +3284,14 @@ function initCssAssistant() {
 
     Object.values(fields).forEach(el => {
         if (!el) return;
-        const evt = (el.tagName || '').toLowerCase() === 'select' ? 'change' : 'input';
-        el.addEventListener(evt, onFieldChange);
+        const tag = (el.tagName || '').toLowerCase();
+        if (tag === 'select') {
+            el.addEventListener('change', onFieldChange);
+        } else {
+            // Certains color pickers déclenchent seulement l'événement change selon le navigateur
+            el.addEventListener('input', onFieldChange);
+            el.addEventListener('change', onFieldChange);
+        }
     });
 
     rawEditor.addEventListener('input', () => {
