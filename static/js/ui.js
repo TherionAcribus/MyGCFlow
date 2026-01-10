@@ -3275,7 +3275,8 @@ function initCssAssistant() {
     });
 
     const onFieldChange = () => {
-        if (cbAdvanced.checked) return;
+        // Même en mode avancé, si l'utilisateur modifie un champ du formulaire,
+        // on reconstruit et applique le CSS pour garder la prévisualisation active.
         const css = buildCssFromForm();
         rawEditor.value = css;
         applyCssToTarget(activeTarget, css);
