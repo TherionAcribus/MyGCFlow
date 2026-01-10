@@ -183,8 +183,14 @@
                         <!-- Modal de confirmation suppression -->
                         <div id="delete-profile-modal" class="modal">
                             <div class="modal-content">
-                                <h4>{{ _("Confirmer la suppression") }}</h4>
-                                <p id="delete-profile-message">{{ _("Êtes-vous sûr de vouloir supprimer ce profil ?") }}</p>
+                                <div class="modal-header-row">
+                                    <span class="modal-icon warning"><i class="material-icons">warning</i></span>
+                                    <div>
+                                        <h4>{{ _("Confirmer la suppression") }}</h4>
+                                        <p class="modal-subtitle">{{ _("Cette action est définitive") }}</p>
+                                    </div>
+                                </div>
+                                <p id="delete-profile-message" class="modal-body-text">{{ _("Êtes-vous sûr de vouloir supprimer ce profil ?") }}</p>
                             </div>
                             <div class="modal-footer">
                                 <a href="#!" class="modal-close waves-effect waves-red btn-flat">{{ _("Annuler") }}</a>
