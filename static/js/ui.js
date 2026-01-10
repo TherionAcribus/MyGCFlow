@@ -3305,8 +3305,8 @@ function initCssAssistant() {
         syncFormFromCss(activeTarget);
     };
 
-    refreshTargetButtons();
-    refreshInfosPanels();
+    // Forcer la sélection initiale sur Titre
+    switchTarget('title');
     updateAdvancedVisibility();
     syncFormFromCss(activeTarget);
 }
