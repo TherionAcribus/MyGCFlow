@@ -29,7 +29,7 @@
                 <div class="card-panel" style="padding:16px; margin-top:8px;">
                     <div class="row" style="margin-bottom:0;">
                         <div class="col s12 m1" style="display:flex; justify-content:flex-start; align-items:center; margin-top:8px;">
-                            <a id="btnToggleLatLonMode" class="btn-flat tooltipped" data-position="bottom" data-tooltip="{{ _('Switch input mode') }}">
+                            <a id="btnToggleLatLonMode" class="btn-flat tooltipped" data-position="bottom" data-tooltip="{{ _('Basculer le mode de saisie') }}">
                                 <i class="material-icons">link</i>
                             </a>
                         </div>
@@ -37,15 +37,15 @@
                             <div class="row" style="margin-bottom:0;">
                                 <div class="input-field col s12" id="fieldCombined">
                                     <input id="inputMapCenterCombined" type="text" class="validate" placeholder="48.85, 2.35">
-                                    <label for="inputMapCenterCombined">{{ _("Default map center - Lat, Lon") }}</label>
+                                    <label for="inputMapCenterCombined">{{ _("Centre de carte par défaut - Lat, Lon") }}</label>
                                 </div>
                                 <div class="input-field col s12 m6 hide" id="fieldLat">
                                     <input id="inputMapCenterLat" type="text" class="validate">
-                                    <label for="inputMapCenterLat">{{ _("Default map center - Latitude") }}</label>
+                                    <label for="inputMapCenterLat">{{ _("Centre de carte par défaut - Latitude") }}</label>
                                 </div>
                                 <div class="input-field col s12 m6 hide" id="fieldLon">
                                     <input id="inputMapCenterLon" type="text" class="validate">
-                                    <label for="inputMapCenterLon">{{ _("Default map center - Longitude") }}</label>
+                                    <label for="inputMapCenterLon">{{ _("Centre de carte par défaut - Longitude") }}</label>
                                 </div>
                             </div>
                         </div>
@@ -53,17 +53,17 @@
                     <div class="row" style="margin-bottom:0;">
                         <div class="input-field col s12 m6">
                             <input id="inputMapDefaultZoom" type="number" min="0" max="22" class="validate">
-                            <label for="inputMapDefaultZoom">{{ _("Default map zoom") }}</label>
+                            <label for="inputMapDefaultZoom">{{ _("Zoom de carte par défaut") }}</label>
                         </div>
                         <div class="col s12 m6" style="display:flex; gap:10px; align-items:center; margin-top: 16px; flex-wrap: wrap;">
                             <a id="btnUseCurrentMapCenter" class="waves-effect waves-light btn">
-                                <i class="material-icons right">my_location</i>{{ _("Use current map view") }}
+                                <i class="material-icons right">my_location</i>{{ _("Utiliser la vue actuelle de la carte") }}
                             </a>
                             <a id="btnPickMapCenter" class="waves-effect waves-light btn">
-                                <i class="material-icons right">place</i>{{ _("Pick on map") }}
+                                <i class="material-icons right">place</i>{{ _("Choisir sur la carte") }}
                             </a>
                             <a id="btnClearMapCenter" class="waves-effect waves-light btn">
-                                <i class="material-icons right">clear</i>{{ _("Clear") }}
+                                <i class="material-icons right">clear</i>{{ _("Réinitialiser") }}
                             </a>
                         </div>
                     </div>

@@ -292,6 +292,38 @@ msgstr "French"
 msgid "Language Choice"
 msgstr "Language Choice"
 
+#: templates/menu_options.html:32
+msgid "Basculer le mode de saisie"
+msgstr "Switch input mode"
+
+#: templates/menu_options.html:40
+msgid "Centre de carte par défaut - Lat, Lon"
+msgstr "Default map center - Lat, Lon"
+
+#: templates/menu_options.html:44
+msgid "Centre de carte par défaut - Latitude"
+msgstr "Default map center - Latitude"
+
+#: templates/menu_options.html:48
+msgid "Centre de carte par défaut - Longitude"
+msgstr "Default map center - Longitude"
+
+#: templates/menu_options.html:56
+msgid "Zoom de carte par défaut"
+msgstr "Default map zoom"
+
+#: templates/menu_options.html:60
+msgid "Utiliser la vue actuelle de la carte"
+msgstr "Use current map view"
+
+#: templates/menu_options.html:63
+msgid "Choisir sur la carte"
+msgstr "Pick on map"
+
+#: templates/menu_options.html:66
+msgid "Réinitialiser"
+msgstr "Clear"
+
 #: templates/menu_options.html:15
 msgid "Yes"
 msgstr "Yes"
