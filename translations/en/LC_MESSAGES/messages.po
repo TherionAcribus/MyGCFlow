@@ -540,3 +540,198 @@ msgstr "Profile \"${selectedProfile}\" applied and set as default profile"
 msgid "Aucun profil par défaut défini"
 msgstr "No default profile set"
 
+msgid "Succès"
+msgstr "Success"
+
+msgid "Erreur"
+msgstr "Error"
+
+msgid "Attention"
+msgstr "Warning"
+
+msgid "Information"
+msgstr "Information"
+
+msgid "Chargement"
+msgstr "Loading"
+
+msgid "Chargement en cours..."
+msgstr "Loading..."
+
+msgid "Chargement de l'application"
+msgstr "Loading the application"
+
+msgid "Chargement de l'application..."
+msgstr "Loading the application..."
+
+msgid "Capture en cours"
+msgstr "Capture in progress"
+
+msgid "Enregistrement en cours"
+msgstr "Recording in progress"
+
+msgid "Assemblage en cours"
+msgstr "Assembling in progress"
+
+msgid "Assemblage en cours..."
+msgstr "Assembling in progress..."
+
+msgid "Ne pas bouger la fenêtre pendant la capture."
+msgstr "Do not move the window during capture."
+
+msgid "Création de la vidéo à partir des images..."
+msgstr "Creating the video from images..."
+
+msgid "Affichage des points..."
+msgstr "Displaying points..."
+
+msgid "Affichage des points"
+msgstr "Points display"
+
+msgid "Mise à jour de l'affichage des points..."
+msgstr "Updating point display..."
+
+msgid "Confirmation"
+msgstr "Confirmation"
+
+msgid "Confirmer"
+msgstr "Confirm"
+
+msgid "Annuler"
+msgstr "Cancel"
+
+#, no-c-format
+msgid "Performance d'enregistrement instable (${pct}% de frames lentes). Souhaitez-vous augmenter le ralentissement à x${slowdown} automatiquement ?"
+msgstr "Recording performance is unstable (${pct}% de slow frames). Would you like to automatically increase slowdown to x${slowdown}?"
+
+msgid "Ralentissement augmenté à x${slowdown}. Redémarrez l'enregistrement pour appliquer le changement."
+msgstr "Slowdown increased to x${slowdown}. Restart the recording to apply the change."
+
+msgid "Vous pouvez manuellement augmenter le ralentissement à x${slowdown} dans les paramètres d'enregistrement."
+msgstr "You can manually increase slowdown to x${slowdown} in the recording settings."
+
+#, no-c-format
+msgid "Performance instable (${pct}% de frames lentes). Augmentez le ralentissement à x${slowdown} dans les paramètres."
+msgstr "Unstable performance (${pct}% de slow frames). Increase slowdown to x${slowdown} in the settings."
+
+msgid "Le ralentissement est déjà au maximum (x${slowdown}). Réduisez le nombre de points affichés ou la résolution."
+msgstr "Slowdown is already at the maximum (x${slowdown}). Reduce the number of displayed points or the resolution."
+
+msgid "Réduisez la vitesse d'animation (augmentez la durée par jour) ou le nombre de points affichés."
+msgstr "Reduce the animation speed (increase duration per day) or the number of displayed points."
+
+#, no-c-format
+msgid "Performance d'enregistrement instable (${pct}% de frames lentes). ${suggestion}"
+msgstr "Recording performance is unstable (${pct}% de slow frames). ${suggestion}"
+
+msgid "Enregistrement: audio sera ajouté après capture: ${name}"
+msgstr "Recording: audio will be added after capture: ${name}"
+
+msgid "Erreur lors de la création de la vidéo: ${message}"
+msgstr "Error while creating the video: ${message}"
+
+msgid "Erreur lors du traitement automatique: ${message}"
+msgstr "Error during automatic processing: ${message}"
+
+msgid "Dossier vidéo: ${folder}"
+msgstr "Video folder: ${folder}"
+
+msgid "Veuillez sélectionner un fichier .gpx"
+msgstr "Please select a .gpx file"
+
+msgid "Aucun fichier"
+msgstr "No file"
+
+msgid "Analyse du fichier GPX en cours..."
+msgstr "Analyzing GPX file..."
+
+msgid "Analyse"
+msgstr "Analysis"
+
+msgid "Erreur d'analyse"
+msgstr "Analysis error"
+
+msgid "Erreur lors de l'analyse du fichier"
+msgstr "Error while analyzing the file"
+
+msgid "Chargement du fichier GPX en cours..."
+msgstr "Uploading GPX file..."
+
+msgid "Fichier chargé avec succès !"
+msgstr "File uploaded successfully!"
+
+msgid "Terminé"
+msgstr "Done"
+
+msgid "Erreur lors du chargement du fichier"
+msgstr "Error while uploading the file"
+
+msgid "Erreur lors du chargement des données"
+msgstr "Error while loading data"
+
+msgid "Filtrage des caches..."
+msgstr "Filtering caches..."
+
+msgid "Filtrage"
+msgstr "Filtering"
+
+msgid "Erreur lors du filtrage des caches"
+msgstr "Error while filtering caches"
+
+msgid "Erreur de filtrage"
+msgstr "Filtering error"
+
+msgid "Aucune cache ne correspond aux critères sélectionnés par les filtres."
+msgstr "No cache matches the criteria selected by the filters."
+
+msgid "Aucune cache visible"
+msgstr "No visible cache"
+
+msgid "Chargement et affichage des points..."
+msgstr "Loading and displaying points..."
+
+msgid "Vidage de la base de données..."
+msgstr "Clearing the database..."
+
+msgid "Suppression"
+msgstr "Deletion"
+
+msgid "Base de données vidée avec succès"
+msgstr "Database cleared successfully"
+
+msgid "Suppression réussie"
+msgstr "Deletion successful"
+
+msgid "Erreur lors du vidage de la base de données: "
+msgstr "Error while clearing the database: "
+
+msgid "Profil \"${name}\" importé"
+msgstr "Profile \"${name}\" imported"
+
+msgid "Erreur: ${message}"
+msgstr "Error: ${message}"
+
+msgid "Profil \"${name}\" chargé"
+msgstr "Profile \"${name}\" loaded"
+
+msgid "Profil \"${name}\" sauvegardé"
+msgstr "Profile \"${name}\" saved"
+
+msgid "Profil \"${name}\" créé"
+msgstr "Profile \"${name}\" created"
+
+msgid "Profil dupliqué: \"${name}\""
+msgstr "Profile duplicated: \"${name}\""
+
+msgid "Profil \"${name}\" supprimé"
+msgstr "Profile \"${name}\" deleted"
+
+msgid "Profil \"${name}\" réinitialisé"
+msgstr "Profile \"${name}\" reset"
+
+msgid "Profil \"${name}\" exporté"
+msgstr "Profile \"${name}\" exported"
+
+msgid "Profil renommé en \"${name}\""
+msgstr "Profile renamed to \"${name}\""
+

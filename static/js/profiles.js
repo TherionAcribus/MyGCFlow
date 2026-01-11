@@ -78,7 +78,7 @@ class ProfileManager {
                 const data = await resp.json();
                 if (!resp.ok || !data.success) throw new Error(data.message || 'Import échoué');
 
-                this.showToast(`Profil "${data.name}" importé`, 'green');
+                this.showToast(pkg.t('Profil "${name}" importé', { name: data.name }), 'green');
                 await this.loadProfilesList();
             } catch (e) {
                 console.error('Import error', e);
@@ -113,7 +113,7 @@ class ProfileManager {
             return result;
         } catch (error) {
             console.error('Erreur API:', error);
-            this.showToast('Erreur: ' + error.message, 'red');
+            this.showToast(pkg.t('Erreur: ${message}', { message: error.message }), 'red');
             throw error;
         }
     }
@@ -147,7 +147,7 @@ class ProfileManager {
             this.currentProfile = profile;
             this.applyProfile(profile);
             this.loadProfilesList(); // Rafraîchir pour montrer le profil actif
-            this.showToast(`Profil "${name}" chargé`, 'green');
+            this.showToast(pkg.t('Profil "${name}" chargé', { name }), 'green');
         } catch (error) {
             console.error('❌ Erreur chargement profil:', error);
         }
@@ -166,7 +166,7 @@ class ProfileManager {
 
             if (result.success) {
                 console.log('Profil sauvegardé avec succès:', profileData.name);
-                this.showToast(`Profil "${profileData.name}" sauvegardé`, 'green');
+                this.showToast(pkg.t('Profil "${name}" sauvegardé', { name: profileData.name }), 'green');
                 this.loadProfilesList(); // Rafraîchir la liste
             }
         } catch (error) {
@@ -181,7 +181,7 @@ class ProfileManager {
                 base: baseProfile
             });
             if (result.success) {
-                this.showToast(`Profil "${name}" créé`, 'green');
+                this.showToast(pkg.t('Profil "${name}" créé', { name }), 'green');
                 this.loadProfilesList();
                 this.currentProfile = { name: name };
             }
@@ -196,7 +196,7 @@ class ProfileManager {
                 new_name: newName
             });
             if (result.success) {
-                this.showToast(`Profil dupliqué: "${newName}"`, 'green');
+                this.showToast(pkg.t('Profil dupliqué: "${name}"', { name: newName }), 'green');
                 this.loadProfilesList();
             }
         } catch (error) {
@@ -208,7 +208,7 @@ class ProfileManager {
         try {
             const result = await this.apiCall(`/api/profiles/${encodeURIComponent(name)}`, 'DELETE');
             if (result.success) {
-                this.showToast(`Profil "${name}" supprimé`, 'orange');
+                this.showToast(pkg.t('Profil "${name}" supprimé', { name }), 'orange');
                 // Rafraîchir la liste des profils avant de choisir un fallback
                 await this.loadProfilesList();
 
@@ -250,7 +250,7 @@ class ProfileManager {
         try {
             const result = await this.apiCall(`/api/profiles/${encodeURIComponent(name)}/reset`, 'POST');
             if (result.success) {
-                this.showToast(`Profil "${name}" réinitialisé`, 'blue');
+                this.showToast(pkg.t('Profil "${name}" réinitialisé', { name }), 'blue');
                 if (this.currentProfile && this.currentProfile.name === name) {
                     this.loadProfile(name);
                 }
@@ -276,7 +276,7 @@ class ProfileManager {
             a.click();
             a.remove();
             URL.revokeObjectURL(url);
-            this.showToast(`Profil "${name}" exporté`, 'green');
+            this.showToast(pkg.t('Profil "${name}" exporté', { name }), 'green');
         } catch (e) {
             console.error('Export error', e);
             this.showToast('Erreur export du profil', 'red');
@@ -464,7 +464,7 @@ class ProfileManager {
             });
 
             this.loadProfilesList(); // Rafraîchir pour montrer le profil actif
-            this.showToast(`Profil "${profile.name}" chargé`, 'green');
+            this.showToast(pkg.t('Profil "${name}" chargé', { name: profile.name }), 'green');
         } catch (error) {
             console.error('❌ [LOAD_PROFILE] Erreur chargement profil par UUID:', error);
             this.showToast('Erreur lors du chargement du profil par défaut', 'red');
@@ -553,7 +553,7 @@ class ProfileManager {
             console.log('Profil par défaut sauvegardé avec succès, UUID:', selectedProfileUid);
             this.showToast(
                 appliedProfileName ?
-                    `Profil "${appliedProfileName}" appliqué et défini comme profil par défaut` :
+                    pkg.t('Profil "${selectedProfile}" appliqué et défini comme profil par défaut', { selectedProfile: appliedProfileName }) :
                     'Aucun profil par défaut défini',
                 appliedProfileName ? 'success' : 'info'
             );
@@ -1239,7 +1239,7 @@ class ProfileManager {
                         // Mettre à jour le sélecteur de profil par défaut si nécessaire
                         this.populateDefaultProfileSelector();
 
-                        this.showToast(`Profil renommé en "${newName}"`, 'success');
+                        this.showToast(pkg.t('Profil renommé en "${name}"', { name: newName }), 'success');
                     } catch (error) {
                         console.error('❌ Erreur suppression ancien profil:', error);
                     }

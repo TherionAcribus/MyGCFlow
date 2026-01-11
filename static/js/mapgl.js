@@ -205,7 +205,10 @@ let recordingPerformanceMonitor = {
                 
                 if (recordingMode === 'mediarecorder' && suggestedSlowdown <= 8) {
                     // Offrir d'augmenter automatiquement le ralentissement
-                    const message = `Performance d'enregistrement instable (${Math.round(slowFrameRatio * 100)}% de frames lentes). Souhaitez-vous augmenter le ralentissement à x${suggestedSlowdown} automatiquement ?`;
+                    const message = pkg.t(
+                        "Performance d'enregistrement instable (${pct}% de frames lentes). Souhaitez-vous augmenter le ralentissement à x${slowdown} automatiquement ?",
+                        { pct: Math.round(slowFrameRatio * 100), slowdown: suggestedSlowdown }
+                    );
                     
                     // Vérifier si on peut réutiliser le toast existant
                     if (this.isPerformanceToastVisible()) {
@@ -224,7 +227,7 @@ let recordingPerformanceMonitor = {
                         if (pkg && pkg.showConfirmation) {
                             this.currentPerformanceToast = pkg.showConfirmation(
                                 message,
-                                'Performance enregistrement',
+                                "Performance enregistrement",
                                 () => {
                                     // Confirmation : augmenter le ralentissement
                                     try {
@@ -235,7 +238,12 @@ let recordingPerformanceMonitor = {
                                         const slowdownInput = document.getElementById('inputRecordSlowdown');
                                         if (slowdownInput) slowdownInput.value = suggestedSlowdown;
                                         
-                                        pkg.showToast && pkg.showToast(`Ralentissement augmenté à x${suggestedSlowdown}. Redémarrez l'enregistrement pour appliquer le changement.`, 'success', 'Paramètre mis à jour', 8000);
+                                        pkg.showToast && pkg.showToast(
+                                            pkg.t("Ralentissement augmenté à x${slowdown}. Redémarrez l'enregistrement pour appliquer le changement.", { slowdown: suggestedSlowdown }),
+                                            'success',
+                                            'Paramètre mis à jour',
+                                            8000
+                                        );
                                     } catch(err) {
                                         console.error('Erreur lors de l\'application du ralentissement:', err);
                                         pkg.showToast && pkg.showToast('Erreur lors de la mise à jour du paramètre.', 'error', 'Erreur', 5000);
@@ -244,7 +252,12 @@ let recordingPerformanceMonitor = {
                                 },
                                 () => {
                                     // Annulation : juste afficher un conseil
-                                    pkg.showToast && pkg.showToast(`Vous pouvez manuellement augmenter le ralentissement à x${suggestedSlowdown} dans les paramètres d'enregistrement.`, 'info', 'Conseil', 8000);
+                                    pkg.showToast && pkg.showToast(
+                                        pkg.t("Vous pouvez manuellement augmenter le ralentissement à x${slowdown} dans les paramètres d'enregistrement.", { slowdown: suggestedSlowdown }),
+                                        'info',
+                                        'Conseil',
+                                        8000
+                                    );
                                     this.currentPerformanceToast = null; // Reset après annulation
                                 }
                             );
@@ -253,7 +266,10 @@ let recordingPerformanceMonitor = {
                         }
                     } catch(err) {
                         // Fallback vers toast simple
-                        const fallbackMessage = `Performance instable (${Math.round(slowFrameRatio * 100)}% de frames lentes). Augmentez le ralentissement à x${suggestedSlowdown} dans les paramètres.`;
+                        const fallbackMessage = pkg.t(
+                            "Performance instable (${pct}% de frames lentes). Augmentez le ralentissement à x${slowdown} dans les paramètres.",
+                            { pct: Math.round(slowFrameRatio * 100), slowdown: suggestedSlowdown }
+                        );
                         
                         // Même logique pour le fallback
                         if (this.isPerformanceToastVisible()) {
@@ -266,12 +282,18 @@ let recordingPerformanceMonitor = {
                     // Mode images ou ralentissement déjà au maximum
                     let suggestion = '';
                     if (recordingMode === 'mediarecorder') {
-                        suggestion = `Le ralentissement est déjà au maximum (x${currentSlowdown}). Réduisez le nombre de points affichés ou la résolution.`;
+                        suggestion = pkg.t(
+                            "Le ralentissement est déjà au maximum (x${slowdown}). Réduisez le nombre de points affichés ou la résolution.",
+                            { slowdown: currentSlowdown }
+                        );
                     } else {
-                        suggestion = `Réduisez la vitesse d'animation (augmentez la durée par jour) ou le nombre de points affichés.`;
+                        suggestion = "Réduisez la vitesse d'animation (augmentez la durée par jour) ou le nombre de points affichés.";
                     }
                     
-                    const message = `Performance d'enregistrement instable (${Math.round(slowFrameRatio * 100)}% de frames lentes). ${suggestion}`;
+                    const message = pkg.t(
+                        "Performance d'enregistrement instable (${pct}% de frames lentes). ${suggestion}",
+                        { pct: Math.round(slowFrameRatio * 100), suggestion }
+                    );
                     
                     // Même logique pour les suggestions
                     if (this.isPerformanceToastVisible()) {
@@ -638,7 +660,9 @@ export function addVector(data) {
 // fonction appelée au changement d'options graphique
 export function refreshPoints(){
     // Afficher un toast pour l'affichage des points
-    pkg.showPointsToast('Mise à jour de l\'affichage des points...', 'Affichage des points');
+    const title = pkg.t ? pkg.t('Affichage des points') : 'Affichage des points';
+    const message = pkg.t ? pkg.t('Mise à jour de l\'affichage des points...') : 'Mise à jour de l\'affichage des points...';
+    pkg.showPointsToast(message, title);
 
     // Masquer automatiquement après 1.5 secondes
     setTimeout(() => {
@@ -1454,7 +1478,12 @@ function startRecordingProcess(){
         const audioEnabled = !!(pkg.options?.record?.audio?.enabled);
         if (audioEnabled && file) {
             const name = file.name || 'audio';
-            pkg.showToast && pkg.showToast(`Enregistrement: audio sera ajouté après capture: ${name}`, 'info', 'Audio différé', 4000);
+            pkg.showToast && pkg.showToast(
+                pkg.t("Enregistrement: audio sera ajouté après capture: ${name}", { name }),
+                'info',
+                'Audio différé',
+                4000
+            );
         }
     } catch(_) {}
 
@@ -1697,7 +1726,12 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
                 recordBtn.disabled = false;
               }
               try { pkg.closeModalLoading(); } catch(e) {}
-              pkg.showToast && pkg.showToast('Erreur lors de la création de la vidéo: ' + (data.message || 'Erreur inconnue'), 'error', 'Échec assemblage', 5000);
+              pkg.showToast && pkg.showToast(
+                pkg.t('Erreur lors de la création de la vidéo: ${message}', { message: (data.message || 'Erreur inconnue') }),
+                'error',
+                'Échec assemblage',
+                5000
+              );
               throw new Error('Assemblage failed');
             }
           })
@@ -1753,7 +1787,12 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
               recordBtn.disabled = false;
             }
             try { pkg.closeModalLoading(); } catch(e) {}
-            pkg.showToast && pkg.showToast('Erreur lors du traitement automatique: ' + err.message, 'error', 'Erreur chaîne', 5000);
+            pkg.showToast && pkg.showToast(
+              pkg.t('Erreur lors du traitement automatique: ${message}', { message: err.message }),
+              'error',
+              'Erreur chaîne',
+              5000
+            );
           });
 
         return;
@@ -1811,7 +1850,12 @@ function recordAnimationMediaRecorder(){
         const audioEnabled = !!(pkg.options?.record?.audio?.enabled);
         if (audioEnabled && file) {
             const name = file.name || 'audio';
-            pkg.showToast && pkg.showToast(`Enregistrement: audio sera ajouté après capture: ${name}`, 'info', 'Audio différé', 4000);
+            pkg.showToast && pkg.showToast(
+                pkg.t("Enregistrement: audio sera ajouté après capture: ${name}", { name }),
+                'info',
+                'Audio différé',
+                4000
+            );
         }
     } catch(_) {}
 

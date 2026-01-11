@@ -153,13 +153,36 @@ class NotificationManager {
 // Instance globale
 const notificationManager = new NotificationManager();
 
-// Fonctions d'export pour un usage facile
-export function showToast(message, type = 'info', title = '', duration = 5000) {
-    return notificationManager.show(message, type, title, duration, false);
+export function t(msgid, vars) {
+    try {
+        if (typeof globalThis !== 'undefined' && typeof globalThis.t === 'function') {
+            return globalThis.t(msgid, vars);
+        }
+    } catch (_) {}
+    if (vars && typeof vars === 'object') {
+        try {
+            return String(msgid).replace(/\$\{(\w+)\}/g, (m, key) => {
+                if (Object.prototype.hasOwnProperty.call(vars, key) && vars[key] !== undefined && vars[key] !== null) {
+                    return String(vars[key]);
+                }
+                return m;
+            });
+        } catch (_) {}
+    }
+    return msgid;
 }
 
-export function showLoadingToast(message = 'Chargement en cours...', title = 'Chargement') {
-    return notificationManager.showLoading(message, title);
+// Fonctions d'export pour un usage facile
+export function showToast(message, type = 'info', title = '', duration = 5000) {
+    const msg = (typeof message === 'string') ? t(message) : message;
+    const ttl = (typeof title === 'string' && title) ? t(title) : title;
+    return notificationManager.show(msg, type, ttl, duration, false);
+}
+
+export function showLoadingToast(message = t('Chargement en cours...'), title = t('Chargement')) {
+    const msg = (typeof message === 'string') ? t(message) : message;
+    const ttl = (typeof title === 'string' && title) ? t(title) : title;
+    return notificationManager.showLoading(msg, ttl);
 }
 
 export function updateToastProgress(toast, progress) {
@@ -177,7 +200,7 @@ export function hideToast(toast) {
 // Gestion centralisée des toasts d'affichage des points
 let currentPointsToast = null;
 
-export function showPointsToast(message = 'Affichage des points...', title = 'Affichage des points') {
+export function showPointsToast(message = t('Affichage des points...'), title = t('Affichage des points')) {
     // Masquer tout toast existant
     if (currentPointsToast) {
         try {
@@ -213,28 +236,28 @@ export function clearAllToasts() {
 }
 
 // Fonctions utilitaires pour usage courant
-export function showSuccess(message, title = "Succès") {
+export function showSuccess(message, title = t('Succès')) {
     return showToast(message, "success", title, 5000);
 }
 
-export function showError(message, title = "Erreur") {
+export function showError(message, title = t('Erreur')) {
     return showToast(message, "error", title, 8000);
 }
 
-export function showWarning(message, title = "Attention") {
+export function showWarning(message, title = t('Attention')) {
     return showToast(message, "warning", title, 7000);
 }
 
-export function showInfo(message, title = "Information") {
+export function showInfo(message, title = t('Information')) {
     return showToast(message, "info", title, 6000);
 }
 
 // Fonction pour afficher une confirmation
-export function showConfirmation(message, title = "Confirmation", onConfirm = null, onCancel = null) {
-    const toast = showToast(message, "warning", title, 0); // Ne se ferme pas automatiquement
+export function showConfirmation(message, title = t('Confirmation'), onConfirm = null, onCancel = null) {
+    const toast = showToast((typeof message === 'string') ? t(message) : message, "warning", title, 0); // Ne se ferme pas automatiquement
 
     // Ajouter des boutons personnalisés
-    const content = toast.querySelector('.toast-content');
+    const content = toast.querySelector('.gcm-toast-content');
     if (content) {
         const buttonContainer = document.createElement('div');
         buttonContainer.style.marginTop = '12px';
@@ -242,7 +265,7 @@ export function showConfirmation(message, title = "Confirmation", onConfirm = nu
         buttonContainer.style.gap = '8px';
 
         const confirmBtn = document.createElement('button');
-        confirmBtn.textContent = 'Confirmer';
+        confirmBtn.textContent = t('Confirmer');
         confirmBtn.style.padding = '4px 8px';
         confirmBtn.style.background = '#4CAF50';
         confirmBtn.style.color = 'white';
@@ -251,7 +274,7 @@ export function showConfirmation(message, title = "Confirmation", onConfirm = nu
         confirmBtn.style.cursor = 'pointer';
 
         const cancelBtn = document.createElement('button');
-        cancelBtn.textContent = 'Annuler';
+        cancelBtn.textContent = t('Annuler');
         cancelBtn.style.padding = '4px 8px';
         cancelBtn.style.background = '#f44336';
         cancelBtn.style.color = 'white';

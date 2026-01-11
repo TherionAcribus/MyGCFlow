@@ -1393,7 +1393,9 @@ async function applyCurrentMapViewAsDefault() {
         M.updateTextFields();
         const ok = await saveMapCenterSettings();
         if (ok !== false && pkg.showToast) {
-            pkg.showToast('Centre par défaut mis à jour depuis la vue actuelle', 'success', 'Carte', 3000);
+            const title = pkg.t ? pkg.t('Carte') : 'Carte';
+            const message = pkg.t ? pkg.t('Centre par défaut mis à jour depuis la vue actuelle') : 'Centre par défaut mis à jour depuis la vue actuelle';
+            pkg.showToast(message, 'success', title, 3000);
         }
     } catch(e) {
     }
@@ -2654,6 +2656,12 @@ function unSelectAllMapsButtons(){
 let currentLoadingToast = null;
 
 export function openModalLoading(title, description){
+    try {
+        if (pkg && typeof pkg.t === 'function') {
+            title = title ? pkg.t(title) : title;
+            description = description ? pkg.t(description) : description;
+        }
+    } catch(_) {}
     // Fermer un éventuel loader précédent pour éviter les doublons
     try {
         if (currentLoadingToast) {
@@ -2708,6 +2716,12 @@ export function openModalLoading(title, description){
 }
 
 export function updateTextsModal(title, description){
+    try {
+        if (pkg && typeof pkg.t === 'function') {
+            title = title ? pkg.t(title) : title;
+            description = description ? pkg.t(description) : description;
+        }
+    } catch(_) {}
     // Mettre à jour le toast actuel si existant
     if (currentLoadingToast) {
         const titleElement = currentLoadingToast.querySelector('.toast-title, .gcm-toast-title');
@@ -3059,7 +3073,7 @@ function open_video_folder(){
     .then(data => {
         console.log(data);
         if (data?.success && data.folder) {
-            pkg.showToast && pkg.showToast(`Dossier vidéo: ${data.folder}`, 'info', 'Ouverture');
+            pkg.showToast && pkg.showToast(pkg.t('Dossier vidéo: ${folder}', { folder: data.folder }), 'info', 'Ouverture');
         } else {
             pkg.showToast && pkg.showToast(data?.message || 'Impossible d’ouvrir le dossier vidéo', 'error', 'Ouverture');
         }

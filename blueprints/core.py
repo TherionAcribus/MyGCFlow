@@ -1,4 +1,6 @@
 import json
+import gettext
+import os
 
 from flask import Blueprint, current_app, jsonify, make_response, render_template, request
 from flask_babel import gettext as _
@@ -38,11 +40,11 @@ def test_translations():
     return jsonify({
         'current_locale': get_locale(),
         'test_strings': {
-            'base_de_donnees': _('Base de donnÇ¸es'),
+            'base_de_donnees': _('Base de données'),
             'choisir_fichier': _('Choisir fichier'),
             'filtres': _('Filtres'),
             'cartes': _('Cartes'),
-            'parametres': _('ParamÇùtres'),
+            'parametres': _('Paramètres'),
             'annuler': _('Cancel'),
             'graphisme_des_points': _('Graphisme des points'),
             'centre_du_point': _('Centre du point')
@@ -62,27 +64,56 @@ def get_current_locale():
 
 @core_bp.route('/js_translations.js')
 def js_translations():
-    current_lang = get_locale()
+    current_locale = get_locale() or 'fr'
+    current_lang = (current_locale or 'fr').split('_')[0]
+
     translations = {
-        'language_changed_message': _('La langue a Ç¸tÇ¸ changÇ¸e. La page va se recharger pour appliquer les modifications.'),
-        'language_changed_message_en': _('The language has been changed. The page will reload to apply the changes.'),
+        'language_changed_message': _('La langue a été changée. La page va se recharger pour appliquer les modifications.'),
+        'language_changed_message_en': 'The language has been changed. The page will reload to apply the changes.',
         'language_change_title': _('Changement de langue'),
-        'language_change_title_en': _('Language Change'),
-        'language_change_message': _('La langue a Ç¸tÇ¸ changÇ¸e. L\'application va redÇ¸marrer pour appliquer les modifications.'),
-        'language_change_message_en': _('The language has been changed. The application will restart to apply the changes.'),
+        'language_change_title_en': 'Language Change',
+        'language_change_message': _('La langue a été changée. L\'application va redémarrer pour appliquer les modifications.'),
+        'language_change_message_en': 'The language has been changed. The application will restart to apply the changes.',
         'confirm': _('Confirmer'),
-        'confirm_en': _('Confirm'),
+        'confirm_en': 'Confirm',
         'cancel': _('Annuler'),
-        'cancel_en': _('Cancel'),
+        'cancel_en': 'Cancel',
         'current_lang': current_lang,
-        'test_translation': _('Base de donnÇ¸es')
+        'test_translation': _('Base de données')
     }
+
+    localedir = current_app.config.get('BABEL_TRANSLATION_DIRECTORIES', 'translations')
+    localedir = os.path.join(current_app.root_path, localedir)
+    try:
+        gt = gettext.translation('messages', localedir=localedir, languages=[current_lang], fallback=True)
+        catalog = getattr(gt, '_catalog', {}) or {}
+        js_messages = {k: v for k, v in catalog.items() if isinstance(k, str) and isinstance(v, str) and v}
+    except Exception:
+        js_messages = {}
 
     js_content = f"""
 // Traductions JavaScript
-window.TRANSLATIONS = {json.dumps(translations)};
-console.log('Traductions chargÇ¸es pour la langue:', '{current_lang}');
-console.log('Test de traduction:', '{_("Base de donnÇ¸es")}');
+window.TRANSLATIONS = window.TRANSLATIONS || {{}};
+Object.assign(window.TRANSLATIONS, {json.dumps(translations, ensure_ascii=False)});
+window.TRANSLATIONS.messages = {json.dumps(js_messages, ensure_ascii=False)};
+
+window.t = function(msgid, vars) {{
+    try {{
+        const dict = (window.TRANSLATIONS && window.TRANSLATIONS.messages) ? window.TRANSLATIONS.messages : {{}};
+        let s = (dict && Object.prototype.hasOwnProperty.call(dict, msgid)) ? dict[msgid] : msgid;
+        if (vars && typeof vars === 'object') {{
+            s = String(s).replace(/\\$\\{{(\\w+)\\}}/g, function(m, key) {{
+                if (Object.prototype.hasOwnProperty.call(vars, key) && vars[key] !== undefined && vars[key] !== null) {{
+                    return String(vars[key]);
+                }}
+                return m;
+            }});
+        }}
+        return s;
+    }} catch (_) {{
+        return msgid;
+    }}
+}};
 """
     response = make_response(js_content)
     response.headers['Content-Type'] = 'application/javascript'

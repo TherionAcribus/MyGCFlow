@@ -49,7 +49,13 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Vérifier si la base est vide pour afficher la modale de première utilisation
     setTimeout(() => {
-        pkg.checkDatabaseOnStartup();
+        try {
+            if (pkg && typeof pkg.checkDatabaseOnStartup === 'function') {
+                pkg.checkDatabaseOnStartup();
+            }
+        } catch (e) {
+            console.warn('checkDatabaseOnStartup failed:', e);
+        }
     }, 500); // Délai pour laisser le temps aux autres initialisations
 
     // recupération des options par défaut puis on initialise l'interface
