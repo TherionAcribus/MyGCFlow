@@ -1043,18 +1043,19 @@ function displayWebGLPoints(features, pointOptions) {
     }   
 
 
-    // Assurez-vous que vectorSource et les layers sont initialisés
-    if (!window.vectorSource || !vectorLayer) {
+    // Réutiliser la source existante si possible (évite les sources orphelines)
+    if (!window.vectorSource) {
         window.vectorSource = new ol.source.Vector({
             wrapX: true,
         });
+    }
 
-        // Plus besoin de layer séparé pour la bordure - elle est intégrée dans pointStyle
-
+    // Créer le layer seulement si absent (la source est réutilisée)
+    if (!vectorLayer) {
         vectorLayer = new ol.layer.WebGLPoints({
             source: window.vectorSource,
             style: pointStyle,
-            zIndex: 1001, // Z-index élevé pour visibilité
+            zIndex: 1001,
         });
         map.addLayer(vectorLayer);
     }
@@ -1095,9 +1096,12 @@ export function clearMap(){
         console.log('[CLEAR] Vector source nettoyé');
     }
 
-    // Réinitialiser les références aux layers pour forcer leur recréation
-    vectorLayer = undefined;
-    console.log('[CLEAR] vectorLayer remis à undefined');
+    // Retirer vectorLayer de la carte avant de perdre la référence
+    if (vectorLayer) {
+        map.removeLayer(vectorLayer);
+        vectorLayer = undefined;
+        console.log('[CLEAR] vectorLayer retiré de la carte');
+    }
 
     // Supprimer les autres layers si nécessaire
     if (window.borderLayer) {
@@ -2849,13 +2853,16 @@ function flash(feature, flashOptions) {
 
 
 function createFlashElements(){
+    if (animationLayer) {
+        map.removeLayer(animationLayer);
+    }
     animationSource = new ol.source.Vector();
     animationLayer = new ol.layer.Vector({
-    source: animationSource,
-    style: null,  // nous définirons le style dans la fonction d'animation
-    zIndex: 1100
-});
-map.addLayer(animationLayer);
+        source: animationSource,
+        style: null,
+        zIndex: 1100
+    });
+    map.addLayer(animationLayer);
 }
 
 

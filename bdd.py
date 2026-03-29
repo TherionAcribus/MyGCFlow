@@ -435,7 +435,7 @@ def database_exists(db_path):
     return os.path.exists(db_path)
 
 
-def create_geojson(query, Geocache, status: Optional[TaskStatus] = None):
+def create_geojson(query, Geocache, status: Optional[TaskStatus] = None, persist: bool = True):
     query = query.order_by(Geocache.date_find)
     total_points = query.count() if status else None
 
@@ -476,12 +476,10 @@ def create_geojson(query, Geocache, status: Optional[TaskStatus] = None):
         "features": features
     }
 
-    # Chemin du fichier où sauvegarder le GeoJSON
-    file_path = os.path.join(current_app.root_path, 'static', 'geojson_data.json')
-
-    # Sauvegarde du GeoJSON dans un fichier (compact pour réduire la taille)
-    with open(file_path, 'w') as f:
-        json.dump(geojson, f)
+    if persist:
+        file_path = os.path.join(current_app.root_path, 'static', 'geojson_data.json')
+        with open(file_path, 'w') as f:
+            json.dump(geojson, f)
 
     return geojson
 
@@ -598,7 +596,7 @@ def filter_session(db, Geocache, selectedValues, status: Optional[TaskStatus] = 
         if published_start_date and published_end_date:
             query = query.filter(Geocache.published_date >= published_start_date, Geocache.published_date <= published_end_date)
     
-    geocaches_data = create_geojson(query, Geocache, status)
+    geocaches_data = create_geojson(query, Geocache, status, persist=False)
 
     return geocaches_data
 
