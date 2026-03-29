@@ -290,8 +290,28 @@ class SettingsManager:
         if not SETTINGS_PATH.exists():
             self.save_app_settings(AppSettings())
 
+        # Cache uid→path pour éviter les scans disque répétés
+        self._uid_to_path_cache: dict[str, Path] = {}
+        self._build_uid_cache()
+
         # Créer des profils d'exemple si c'est le premier lancement
         self._create_example_profiles()
+
+    def _build_uid_cache(self) -> None:
+        """Construit le cache uid→path en scannant une fois les profils."""
+        self._uid_to_path_cache.clear()
+        for profile_file in PROFILES_DIR.glob("*.json"):
+            try:
+                data = read_json(profile_file)
+                uid = data.get("uid")
+                if uid:
+                    self._uid_to_path_cache[uid] = profile_file
+            except Exception:
+                continue
+
+    def _invalidate_uid_cache(self) -> None:
+        """Invalide et reconstruit le cache uid→path."""
+        self._build_uid_cache()
 
     def _create_example_profiles(self) -> None:
         """Crée des profils d'exemple au premier lancement"""
@@ -487,19 +507,21 @@ class SettingsManager:
 
     def load_profile_by_uid(self, uid: str) -> MapProfile:
         """Charge un profil par son UUID"""
-        profiles_dir = CONFIG_DIR / "profiles"
-        if not profiles_dir.exists():
-            raise FileNotFoundError(f"Répertoire des profils introuvable: {profiles_dir}")
-
-        for profile_file in profiles_dir.glob("*.json"):
+        # Utiliser le cache uid→path
+        profile_path = self._uid_to_path_cache.get(uid)
+        if profile_path and profile_path.exists():
             try:
-                profile_data = json.loads(profile_file.read_text(encoding="utf-8"))
-                if profile_data.get("uid") == uid:
-                    return coerce_profile(profile_data)
+                profile_data = json.loads(profile_path.read_text(encoding="utf-8"))
+                return coerce_profile(profile_data)
             except Exception as e:
-                print(f"Erreur lors de la lecture du profil {profile_file}: {e}")
-                continue
-
+                print(f"Erreur lors de la lecture du profil {profile_path}: {e}")
+                # Fallback: reconstruire le cache et réessayer une fois
+                self._build_uid_cache()
+                profile_path = self._uid_to_path_cache.get(uid)
+                if profile_path and profile_path.exists():
+                    profile_data = json.loads(profile_path.read_text(encoding="utf-8"))
+                    return coerce_profile(profile_data)
+        
         raise FileNotFoundError(f"Aucun profil trouvé avec l'UUID: {uid}")
 
     def get_profile_name_by_uid(self, uid: str) -> Optional[str]:
@@ -512,6 +534,7 @@ class SettingsManager:
 
     def save_profile(self, profile: MapProfile) -> None:
         write_json(self._profile_path(profile.name), asdict(profile))
+        self._invalidate_uid_cache()
 
     def create_profile(self, name: str, base: Optional[str] = None) -> MapProfile:
         if base and self._profile_path(base).exists():
@@ -534,6 +557,7 @@ class SettingsManager:
         path = self._profile_path(name)
         if path.exists():
             path.unlink()
+            self._invalidate_uid_cache()
 
     def reset_profile(self, name: str) -> None:
         self.save_profile(MapProfile(name=name))
