@@ -153,16 +153,12 @@ def uploadBdd(file_path, Geocache, db, status: Optional[TaskStatus] = None):
 
     # Assurez-vous que la table existe
     db.create_all()
-    print('[UPLOAD] DB schema check: ensuring columns...')
+    print('[UPLOAD] DB schema check: ensuring columns and indexes...')
     try:
         ensure_geocache_columns(db)
+        ensure_geocache_indexes(db)
     except Exception as e:
-        print(f"[UPLOAD] ensure_geocache_columns error: {e}")
-    # Étendre le schéma si nécessaire (ajout de colonnes manquantes)
-    try:
-        ensure_geocache_columns(db)
-    except Exception as e:
-        print(f"[MIGRATION] Warning while ensuring columns: {e}")
+        print(f"[MIGRATION] Warning while ensuring schema: {e}")
 
     # Videz la table si elle contient déjà des données
     db.session.query(Geocache).delete()
@@ -522,6 +518,38 @@ def ensure_geocache_columns(db):
                     conn.execute(text(stmt))
                 except Exception as e:
                     print(f"[MIGRATION] Could not add column {col}: {e}")
+    finally:
+        conn.close()
+
+
+def ensure_geocache_indexes(db):
+    """Crée les index manquants sur la table geocache (SQLite)."""
+    from sqlalchemy import text
+    conn = db.engine.connect()
+    try:
+        # Récupérer la liste des index existants
+        res = conn.execute(text("SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='geocache';"))
+        existing_indexes = {row[0] for row in res}
+        print(f"[MIGRATION] Existing indexes: {sorted(list(existing_indexes))}")
+        
+        # Index à créer (nom -> statement SQL)
+        wanted_indexes = {
+            'ix_geocache_date_find': "CREATE INDEX IF NOT EXISTS ix_geocache_date_find ON geocache (date_find)",
+            'ix_geocache_published_date': "CREATE INDEX IF NOT EXISTS ix_geocache_published_date ON geocache (published_date)",
+            'ix_geocache_type_date': "CREATE INDEX IF NOT EXISTS ix_geocache_type_date ON geocache (cache_type, date_find)",
+            'ix_geocache_country_state': "CREATE INDEX IF NOT EXISTS ix_geocache_country_state ON geocache (country, state)",
+        }
+        
+        for idx_name, stmt in wanted_indexes.items():
+            if idx_name not in existing_indexes:
+                try:
+                    print(f"[MIGRATION] Creating index: {idx_name}")
+                    conn.execute(text(stmt))
+                    conn.commit()
+                except Exception as e:
+                    print(f"[MIGRATION] Could not create index {idx_name}: {e}")
+            else:
+                print(f"[MIGRATION] Index {idx_name} already exists")
     finally:
         conn.close()
 

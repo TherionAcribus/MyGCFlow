@@ -21,5 +21,12 @@ class Geocache(db.Model):
     placed_by = db.Column(db.String(255))
     attributes = db.Column(db.Text)
 
+    __table_args__ = (
+        db.Index('ix_geocache_date_find', 'date_find'),
+        db.Index('ix_geocache_published_date', 'published_date'),
+        db.Index('ix_geocache_type_date', 'cache_type', 'date_find'),
+        db.Index('ix_geocache_country_state', 'country', 'state'),
+    )
+
     def __repr__(self):
         return f"<Geocache {self.id}, {self.latitude}, {self.longitude}, {self.gc_code}, {self.cache_name}, {self.date_find}, {self.cache_type}>"
