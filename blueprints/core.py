@@ -117,4 +117,5 @@ window.t = function(msgid, vars) {{
 """
     response = make_response(js_content)
     response.headers['Content-Type'] = 'application/javascript'
+    response.headers['Cache-Control'] = 'public, max-age=3600'  # Cache 1 heure
     return response

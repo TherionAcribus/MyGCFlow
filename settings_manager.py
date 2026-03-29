@@ -639,74 +639,72 @@ class SettingsManager:
                 return candidate
             idx += 1
 
-    def export_profile_payload(self, name: str, app_version: str) -> dict:
-        prof = self.load_profile(name)
-
-        # Construction des options de carte selon le provider
-        map_dict = {
-            "tile_provider": prof.map.tile_provider,
-            "default_center": list(prof.map.default_center),
-            "default_zoom": prof.map.default_zoom,
+    def _profile_to_dict(self, prof: MapProfile) -> dict:
+        """Convertit un MapProfile en dictionnaire pour l'API/export."""
+        return {
+            'version': prof.version,
+            'name': prof.name,
+            'uid': prof.uid,
+            'map': {
+                'tile_provider': prof.map.tile_provider,
+                'default_center': list(prof.map.default_center),
+                'default_zoom': prof.map.default_zoom,
+                'vector_options': {
+                    'stroke_color': prof.map.vector_options.stroke_color,
+                    'fill_color': prof.map.vector_options.fill_color,
+                    'background_color': prof.map.vector_options.background_color,
+                    'stroke_width': prof.map.vector_options.stroke_width,
+                },
+                'toner_options': {
+                    'variant': prof.map.toner_options.variant,
+                },
+            },
+            'animation': {
+                'enabled': prof.animation.enabled,
+                'speed': prof.animation.speed,
+            },
+            'points': {
+                'size': prof.points.size,
+                'color': prof.points.color,
+                'shape': prof.points.shape,
+                'halo': prof.points.halo,
+                'border_color': prof.points.border_color,
+                'border_size': prof.points.border_size,
+                'fill_color_type': prof.points.fill_color_type,
+                'border_color_type': prof.points.border_color_type,
+                'mode': prof.points.mode,
+                'icon_set': prof.points.icon_set,
+                'icon_size': prof.points.icon_size,
+            },
+            'flash': {
+                'mode': prof.flash.mode,
+                'duration': prof.flash.duration,
+                'size': prof.flash.size,
+                'color': prof.flash.color,
+                'color_type': prof.flash.color_type,
+            },
+            'infos': {
+                'title': {
+                    'display': prof.infos.title.display,
+                    'text': prof.infos.title.text,
+                },
+                'number_of_caches': prof.infos.number_of_caches,
+                'current_date': prof.infos.current_date,
+                'title_css': prof.infos.title_css,
+                'infos_css': prof.infos.infos_css,
+            }
         }
 
-        # Ajouter seulement les options pertinentes au provider actuel
-        if prof.map.tile_provider == "vectorMap":
-            map_dict["vector_options"] = {
-                "stroke_color": prof.map.vector_options.stroke_color,
-                "fill_color": prof.map.vector_options.fill_color,
-                "background_color": prof.map.vector_options.background_color,
-                "stroke_width": prof.map.vector_options.stroke_width,
-            }
-        elif prof.map.tile_provider == "stamenToner":
-            map_dict["toner_options"] = {
-                "variant": prof.map.toner_options.variant,
-            }
-
+    def export_profile_payload(self, name: str, app_version: str) -> dict:
+        prof = self.load_profile(name)
+        profile_dict = self._profile_to_dict(prof)
+        
         payload = {
             "$schema": "gcmap.profile.v1",
             "kind": "profile",
             "app": APP_NAME,
             "app_version": app_version,
-            "profile": {
-                "version": prof.version,
-                "name": prof.name,
-                "uid": prof.uid,
-                "map": map_dict,
-                "animation": {
-                    "enabled": prof.animation.enabled,
-                    "speed": prof.animation.speed,
-                },
-                "points": {
-                    "size": prof.points.size,
-                    "color": prof.points.color,
-                    "shape": prof.points.shape,
-                    "halo": prof.points.halo,
-                    "border_color": prof.points.border_color,
-                    "border_size": prof.points.border_size,
-                    "fill_color_type": prof.points.fill_color_type,
-                    "border_color_type": prof.points.border_color_type,
-                    "mode": prof.points.mode,
-                    "icon_set": prof.points.icon_set,
-                    "icon_size": prof.points.icon_size,
-                },
-                "flash": {
-                    "mode": prof.flash.mode,
-                    "duration": prof.flash.duration,
-                    "size": prof.flash.size,
-                    "color": prof.flash.color,
-                    "color_type": prof.flash.color_type,
-                },
-                "infos": {
-                    "title": {
-                        "display": prof.infos.title.display,
-                        "text": prof.infos.title.text,
-                    },
-                    "number_of_caches": prof.infos.number_of_caches,
-                    "current_date": prof.infos.current_date,
-                    "title_css": prof.infos.title_css,
-                    "infos_css": prof.infos.infos_css,
-                },
-            },
+            "profile": profile_dict,
         }
         return payload
 

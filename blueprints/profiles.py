@@ -114,60 +114,7 @@ def api_list_profiles():
 @profiles_bp.route('/api/profiles/<name>', methods=['GET'])
 def api_get_profile(name: str):
     prof = settings_manager.load_profile(name)
-    print(f"ÐY\"Ï SERVEUR - Envoi profil '{name}' avec flash: mode={prof.flash.mode}, duration={prof.flash.duration}, size={prof.flash.size}, color={prof.flash.color}, color_type={getattr(prof.flash, 'color_type', 'fix')}")
-    return jsonify({
-        'version': prof.version,
-        'name': prof.name,
-        'uid': prof.uid,
-        'map': {
-            'tile_provider': prof.map.tile_provider,
-            'default_center': list(prof.map.default_center),
-            'default_zoom': prof.map.default_zoom,
-            'vector_options': {
-                'stroke_color': prof.map.vector_options.stroke_color,
-                'fill_color': prof.map.vector_options.fill_color,
-                'background_color': prof.map.vector_options.background_color,
-                'stroke_width': prof.map.vector_options.stroke_width,
-            },
-            'toner_options': {
-                'variant': prof.map.toner_options.variant,
-            },
-        },
-        'animation': {
-            'enabled': prof.animation.enabled,
-            'speed': prof.animation.speed,
-        },
-        'points': {
-            'size': prof.points.size,
-            'color': prof.points.color,
-            'shape': prof.points.shape,
-            'halo': prof.points.halo,
-            'border_color': prof.points.border_color,
-            'border_size': prof.points.border_size,
-            'fill_color_type': prof.points.fill_color_type,
-            'border_color_type': prof.points.border_color_type,
-            'mode': getattr(prof.points, 'mode', 'vectoriel'),
-            'icon_set': getattr(prof.points, 'icon_set', 'geocaching'),
-            'icon_size': getattr(prof.points, 'icon_size', 24),
-        },
-        'flash': {
-            'mode': prof.flash.mode,
-            'duration': prof.flash.duration,
-            'size': prof.flash.size,
-            'color': prof.flash.color,
-            'color_type': getattr(prof.flash, 'color_type', 'fix'),
-        },
-        'infos': {
-            'title': {
-                'display': prof.infos.title.display,
-                'text': prof.infos.title.text,
-            },
-            'number_of_caches': prof.infos.number_of_caches,
-            'current_date': prof.infos.current_date,
-            'title_css': prof.infos.title_css,
-            'infos_css': prof.infos.infos_css,
-        }
-    })
+    return jsonify(settings_manager._profile_to_dict(prof))
 
 
 @profiles_bp.route('/api/profiles/uid/<uid>', methods=['GET'])
@@ -176,60 +123,7 @@ def api_get_profile_by_uid(uid: str):
         prof = settings_manager.load_profile_by_uid(uid)
     except FileNotFoundError as e:
         return jsonify({'error': 'Profile not found', 'message': str(e)}), 404
-    print(f"ÐY\"Ï SERVEUR - Envoi profil par UUID '{uid}' (nom: '{prof.name}'), flash.color_type={getattr(prof.flash, 'color_type', 'fix')}")
-    return jsonify({
-        'version': prof.version,
-        'name': prof.name,
-        'uid': prof.uid,
-        'map': {
-            'tile_provider': prof.map.tile_provider,
-            'default_center': list(prof.map.default_center),
-            'default_zoom': prof.map.default_zoom,
-            'vector_options': {
-                'stroke_color': prof.map.vector_options.stroke_color,
-                'fill_color': prof.map.vector_options.fill_color,
-                'background_color': prof.map.vector_options.background_color,
-                'stroke_width': prof.map.vector_options.stroke_width,
-            },
-            'toner_options': {
-                'variant': prof.map.toner_options.variant,
-            },
-        },
-        'animation': {
-            'enabled': prof.animation.enabled,
-            'speed': prof.animation.speed,
-        },
-        'points': {
-            'size': prof.points.size,
-            'color': prof.points.color,
-            'shape': prof.points.shape,
-            'halo': prof.points.halo,
-            'border_color': prof.points.border_color,
-            'border_size': prof.points.border_size,
-            'fill_color_type': prof.points.fill_color_type,
-            'border_color_type': prof.points.border_color_type,
-            'mode': getattr(prof.points, 'mode', 'vectoriel'),
-            'icon_set': getattr(prof.points, 'icon_set', 'geocaching'),
-            'icon_size': getattr(prof.points, 'icon_size', 24),
-        },
-        'flash': {
-            'mode': prof.flash.mode,
-            'duration': prof.flash.duration,
-            'size': prof.flash.size,
-            'color': prof.flash.color,
-            'color_type': getattr(prof.flash, 'color_type', 'fix'),
-        },
-        'infos': {
-            'title': {
-                'display': prof.infos.title.display,
-                'text': prof.infos.title.text,
-            },
-            'number_of_caches': prof.infos.number_of_caches,
-            'current_date': prof.infos.current_date,
-            'title_css': prof.infos.title_css,
-            'infos_css': prof.infos.infos_css,
-        }
-    })
+    return jsonify(settings_manager._profile_to_dict(prof))
 
 
 @profiles_bp.route('/api/profiles', methods=['POST'])

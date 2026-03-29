@@ -479,9 +479,9 @@ def create_geojson(query, Geocache, status: Optional[TaskStatus] = None):
     # Chemin du fichier où sauvegarder le GeoJSON
     file_path = os.path.join(current_app.root_path, 'static', 'geojson_data.json')
 
-    # Sauvegarde du GeoJSON dans un fichier
+    # Sauvegarde du GeoJSON dans un fichier (compact pour réduire la taille)
     with open(file_path, 'w') as f:
-        json.dump(geojson, f, indent=4)
+        json.dump(geojson, f)
 
     return geojson
 

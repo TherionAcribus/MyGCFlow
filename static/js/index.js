@@ -11,6 +11,8 @@ export * from './notifications.js';
 export * from './flash_animations.js';
 export * from './profiles.js';
 
-// Import du fichier de démonstration (uniquement en développement)
-import './demo_toasts.js';
-import './demo_flash.js';
+// Import des fichiers de démonstration uniquement en développement
+if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    import('./demo_toasts.js');
+    import('./demo_flash.js');
+}
