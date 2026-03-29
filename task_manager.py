@@ -62,11 +62,12 @@ class TaskStatus:
 class TaskManager:
     """Simple background task manager backed by a thread pool."""
 
-    def __init__(self, max_workers: int = 2):
+    def __init__(self, max_workers: int = 2, task_ttl_seconds: int = 900):
         self.executor = ThreadPoolExecutor(max_workers=max_workers)
         self.tasks: Dict[str, TaskStatus] = {}
         self.last_by_type: Dict[str, str] = {}
         self._lock = threading.Lock()
+        self.task_ttl_seconds = task_ttl_seconds  # 15 minutes par défaut
 
     def submit(self, task_type: str, fn, *args, **kwargs) -> TaskStatus:
         status = TaskStatus(task_type)
@@ -85,6 +86,10 @@ class TaskManager:
                 status.fail(exc)
 
         self.executor.submit(_runner)
+        
+        # Purger les anciennes tâches après chaque soumission
+        self.purge_old_tasks()
+        
         return status
 
     def get(self, task_id: str) -> Optional[TaskStatus]:
@@ -96,6 +101,30 @@ class TaskManager:
         if last_id:
             return self.tasks.get(last_id)
         return None
+
+    def purge_old_tasks(self) -> int:
+        """Supprime les tâches terminées/échouées au-delà du TTL. Retourne le nombre de tâches purgées."""
+        now = datetime.utcnow()
+        purged = 0
+        with self._lock:
+            to_remove = []
+            for task_id, status in self.tasks.items():
+                if status.state in ("finished", "failed") and status.finished_at:
+                    age_seconds = (now - status.finished_at).total_seconds()
+                    if age_seconds > self.task_ttl_seconds:
+                        to_remove.append(task_id)
+            
+            for task_id in to_remove:
+                del self.tasks[task_id]
+                purged += 1
+                # Nettoyer last_by_type si nécessaire
+                for task_type, last_id in list(self.last_by_type.items()):
+                    if last_id == task_id:
+                        del self.last_by_type[task_type]
+        
+        if purged > 0:
+            print(f"[TASK_MANAGER] Purged {purged} old task(s)")
+        return purged
 
 
 # Global manager instance

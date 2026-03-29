@@ -654,13 +654,12 @@ def run_geojson_task(status: TaskStatus, app, Geocache, db, selected_values: Opt
         db_mtime = geojson_cache.get_database_mtime()
         geojson_cache.invalidate_if_db_changed(db_mtime)
 
-        geojson = None
         metadata = None
 
         if selected_values is None:
             cached_full = geojson_cache.get_base_dataset_if_current(db_mtime)
             if cached_full:
-                geojson, metadata = cached_full
+                _, metadata = cached_full
                 status.set_progress(30, "GeoJSON servi depuis le cache")
             else:
                 status.set_progress(5, "Génération du GeoJSON complet...")
@@ -670,7 +669,7 @@ def run_geojson_task(status: TaskStatus, app, Geocache, db, selected_values: Opt
         else:
             cached_filtered = geojson_cache.get_filtered_if_current(selected_values, db_mtime)
             if cached_filtered:
-                geojson, metadata = cached_filtered
+                _, metadata = cached_filtered
                 status.set_progress(35, "Résultat filtré servi depuis le cache")
             else:
                 if geojson_cache.get_base_dataset_if_current(db_mtime) is None:
@@ -686,6 +685,14 @@ def run_geojson_task(status: TaskStatus, app, Geocache, db, selected_values: Opt
                     metadata = get_metadata_from_geojson(geojson["features"])
                     geojson_cache.store_filtered_result(selected_values, geojson, metadata, db_mtime)
                 else:
-                    geojson, metadata = filtered
+                    _, metadata = filtered
 
-        status.set_result({"geojson": geojson, "metadata": metadata})
+        # Stocker seulement une référence légère au lieu du GeoJSON complet
+        status.set_result({
+            "cache_ref": {
+                "type": "base" if selected_values is None else "filtered",
+                "selected_values": selected_values,
+                "db_mtime": db_mtime
+            },
+            "metadata": metadata
+        })
