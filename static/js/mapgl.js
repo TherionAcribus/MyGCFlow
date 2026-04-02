@@ -2873,24 +2873,19 @@ export function starStyle(radius, opacity, flashOptions, cacheType = null){
     if (flashOptions.color_type === 'gc' && cacheType && defaultGcColors) {
         // Utiliser la couleur GC du type de cache
         const gcColor = defaultGcColors[cacheType];
-        console.log('⭐ GC mode - gcColor trouvé:', gcColor, 'pour type:', cacheType);
         if (gcColor) {
             const rgb = pkg.hexToRgb(gcColor);
             color = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacity})`;
-            console.log('⭐ Couleur GC finale:', color);
         } else {
             // Couleur par défaut si le type n'est pas trouvé
             color = `rgba(128, 128, 128, ${opacity})`;
-            console.log('⭐ Couleur par défaut (type non trouvé):', color);
         }
     } else if (flashOptions.color_type === 'none') {
         // Transparent
         color = `rgba(0, 0, 0, 0)`;
-        console.log('⭐ Mode transparent');
     } else {
         // Couleur fixe (par défaut)
         color = `rgba(${flashOptions.rgb.r}, ${flashOptions.rgb.g}, ${flashOptions.rgb.b}, ${opacity})`;
-        console.log('⭐ Mode couleur fixe:', color, 'rgb:', flashOptions.rgb);
     }
 
     const style = new ol.style.Style({

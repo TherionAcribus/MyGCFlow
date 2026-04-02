@@ -311,6 +311,18 @@ class GeojsonIndexCache:
             return None
 
         features = (self._base_geojson or {}).get("features", [])
+        precomputed = {
+            "types": set(selected_values.get("type") or []),
+            "terrain": {str(v) for v in (selected_values.get("terrain") or [])},
+            "difficulty": {str(v) for v in (selected_values.get("difficulty") or [])},
+            "container": {str(v) for v in (selected_values.get("container") or [])},
+            "countries": {str(v) for v in (selected_values.get("countries") or [])},
+            "states": {str(v) for v in (selected_values.get("states") or [])},
+            "date_start": _parse_date((selected_values.get("dates") or {}).get("startDate")),
+            "date_end": _parse_date((selected_values.get("dates") or {}).get("endDate")),
+            "pub_start": _parse_date((selected_values.get("published_dates") or {}).get("startDate")),
+            "pub_end": _parse_date((selected_values.get("published_dates") or {}).get("endDate")),
+        }
         filtered_features = []
         for idx in candidate_ids:
             try:
@@ -318,7 +330,7 @@ class GeojsonIndexCache:
             except Exception:
                 continue
             props = feature.get("properties") or {}
-            if self._matches_filters(props, selected_values):
+            if self._matches_filters(props, precomputed):
                 filtered_features.append(feature)
 
         geojson = {"type": "FeatureCollection", "features": filtered_features}
@@ -378,45 +390,35 @@ class GeojsonIndexCache:
 
         return sorted(list(candidates))
 
-    def _matches_filters(self, props: Dict, selected_values: Dict) -> bool:
+    def _matches_filters(self, props: Dict, precomputed: Dict) -> bool:
         """Filtre final (terrain/difficulté/container/publication) après indexation."""
-        cache_type = props.get("cache_type")
-        types = selected_values.get("type") or []
-        if cache_type not in types:
+        if props.get("cache_type") not in precomputed["types"]:
             return False
 
-        def _matches_list(prop_val, values):
-            if not values:
-                return True
-            return str(prop_val) in set(str(v) for v in values)
+        def _m(val, value_set):
+            return not value_set or str(val) in value_set
 
-        if not _matches_list(props.get("terrain"), selected_values.get("terrain") or []):
+        if not _m(props.get("terrain"), precomputed["terrain"]):
             return False
-        if not _matches_list(props.get("difficulty"), selected_values.get("difficulty") or []):
+        if not _m(props.get("difficulty"), precomputed["difficulty"]):
             return False
-        if not _matches_list(props.get("container"), selected_values.get("container") or []):
+        if not _m(props.get("container"), precomputed["container"]):
             return False
-        if not _matches_list(props.get("country"), selected_values.get("countries") or []):
+        if not _m(props.get("country"), precomputed["countries"]):
             return False
-        if not _matches_list(props.get("state"), selected_values.get("states") or []):
+        if not _m(props.get("state"), precomputed["states"]):
             return False
 
-        # Date de trouvaille
-        dates = selected_values.get("dates") or {}
-        start_date = _parse_date(dates.get("startDate"))
-        end_date = _parse_date(dates.get("endDate"))
-        find_date = _parse_date(props.get("date_find"))
-        if start_date and end_date:
-            if not find_date or not (start_date <= find_date <= end_date):
+        # Date de trouvaille (seule la date par feature est à parser, les bornes sont précalculées)
+        if precomputed["date_start"] and precomputed["date_end"]:
+            find_date = _parse_date(props.get("date_find"))
+            if not find_date or not (precomputed["date_start"] <= find_date <= precomputed["date_end"]):
                 return False
 
         # Date de publication
-        published_dates = selected_values.get("published_dates") or {}
-        pub_start = _parse_date(published_dates.get("startDate"))
-        pub_end = _parse_date(published_dates.get("endDate"))
-        published_date = _parse_date(props.get("published_date"))
-        if pub_start and pub_end:
-            if not published_date or not (pub_start <= published_date <= pub_end):
+        if precomputed["pub_start"] and precomputed["pub_end"]:
+            published_date = _parse_date(props.get("published_date"))
+            if not published_date or not (precomputed["pub_start"] <= published_date <= precomputed["pub_end"]):
                 return False
 
         return True
