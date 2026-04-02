@@ -119,31 +119,37 @@ fetch('/api/profiles/Mon Profil', {
 
 ## Profils d'exemple inclus
 
-Au premier lancement, GCMap crée automatiquement 4 profils d'exemple :
+Au premier lancement, GCMap crée automatiquement 5 profils d'exemple :
 
 ### 🏠 **Default** (Par défaut)
 - **Carte** : OpenStreetMap centrée sur Paris (zoom 6)
-- **Points** : Cercle orange moyen (taille 8, sans halo)
+- **Points** : Cercle avec couleurs GC, halo blanc et flash circulaire par type
 - **Animation** : Activée, vitesse normale
-- **Usage** : Configuration de base équilibrée
+- **Usage** : Configuration générale équilibrée et immédiatement lisible
 
-### ☀️ **Clair** (Light)
-- **Carte** : OpenStreetMap centrée sur la France (zoom 6)
-- **Points** : Cercle bleu clair avec halo (taille 10)
-- **Animation** : Activée, vitesse légèrement augmentée
-- **Usage** : Bonne visibilité en extérieur/jour
+### 🌃 **Nocturne Neon**
+- **Carte** : Stamen Toner sombre centrée sur Paris (zoom 7)
+- **Points** : Triangles cyan avec halo sombre
+- **Animation** : Activée, légèrement accélérée
+- **Usage** : Rendu nocturne fort pour captures, vidéos et démos
 
-### 🌙 **Sombre** (Dark)
-- **Carte** : Stamen Toner (fond sombre) centrée sur Paris (zoom 7)
-- **Points** : Triangle blanc avec halo (taille 6)
-- **Animation** : Désactivée pour économiser la batterie
-- **Usage** : Économique pour la batterie, nuit/extérieur sombre
+### 🎨 **Carnet Aquarelle**
+- **Carte** : Watercolor centrée sur la France (zoom 6)
+- **Points** : Icônes geocaching avec encarts style carnet
+- **Animation** : Activée, légèrement ralentie
+- **Usage** : Ambiance voyage, douce et illustrative
 
-### 📊 **Présentation** (Presentation)
+### 🗺️ **Atlas Vintage**
+- **Carte** : Carte vectorielle en palette papier ancien, centrée sur Lyon (zoom 6)
+- **Points** : Triangles terracotta avec bordure crème
+- **Animation** : Activée, discrète
+- **Usage** : Rendu cartographique rétro, adapté aux exports statiques
+
+### 📣 **Présentation Impact**
 - **Carte** : OpenStreetMap vue large sur la France (zoom 5)
-- **Points** : Cercle vert avec halo (taille 12)
+- **Points** : Cercles orange avec halo blanc et flash carré ample
 - **Animation** : Activée, vitesse doublée
-- **Usage** : Optimisé pour les présentations/démonstrations
+- **Usage** : Profil conçu pour présentation, projection ou vidéo
 
 ### Extension
 

@@ -315,6 +315,15 @@ class SettingsManager:
 
     def _create_example_profiles(self) -> None:
         """Crée des profils d'exemple au premier lancement"""
+        def build_infos(title_text: str, title_css: str, infos_css: str) -> InfosOptions:
+            return InfosOptions(
+                title=InfosTitle(display=True, text=title_text),
+                number_of_caches=True,
+                current_date=True,
+                title_css=title_css.strip(),
+                infos_css=infos_css.strip(),
+            )
+
         example_profiles = {
             "Default": MapProfile(
                 name="Default",
@@ -323,122 +332,242 @@ class SettingsManager:
                     default_center=(48.8566, 2.3522),  # Paris
                     default_zoom=6,
                     vector_options=VectorMapOptions(
-                        stroke_color="#000000",
-                        fill_color="#ff5722",
-                        background_color="#ffffff",
-                        stroke_width=2.5
+                        stroke_color="#1f2937",
+                        fill_color="#f97316",
+                        background_color="#f8fafc",
+                        stroke_width=2.2
                     ),
                     toner_options=TonerMapOptions(variant="light")
                 ),
                 animation=AnimationOptions(enabled=True, speed=1.0),
                 points=PointStyle(
                     size=8,
-                    color="#ff5722",
+                    color="#f97316",
                     shape="circle",
-                    halo=False,
-                    border_color="#000000",
-                    border_size=0,
-                    fill_color_type="fix",
+                    halo=True,
+                    border_color="#ffffff",
+                    border_size=2,
+                    fill_color_type="gc",
                     border_color_type="fix",
                     mode="vectoriel"
                 ),
                 flash=FlashOptions(
                     mode="circle",
-                    duration=1000,
-                    size=50,
-                    color="#FF00FF",
-                    color_type="fix"
+                    duration=900,
+                    size=42,
+                    color="#f59e0b",
+                    color_type="gc"
+                ),
+                infos=build_infos(
+                    "My Geocaching Map",
+                    """
+                    color: #ffffff;
+                    background: rgba(15, 23, 42, 0.78);
+                    padding: 10px 16px;
+                    border-radius: 999px;
+                    font-weight: 700;
+                    letter-spacing: 0.4px;
+                    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.24);
+                    """,
+                    """
+                    color: #0f172a;
+                    background: rgba(255, 255, 255, 0.88);
+                    padding: 8px 12px;
+                    border-radius: 10px;
+                    border: 1px solid rgba(148, 163, 184, 0.5);
+                    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+                    """
                 )
             ),
 
-            "Clair": MapProfile(
-                name="Clair",
+            "Nocturne Neon": MapProfile(
+                name="Nocturne Neon",
                 map=MapOptions(
-                    tile_provider="OSM",
-                    default_center=(46.603354, 1.888334),  # Centre de la France
-                    default_zoom=6,
+                    tile_provider="stamenToner",
+                    default_center=(48.8566, 2.3522),
+                    default_zoom=7,
                     vector_options=VectorMapOptions(
-                        stroke_color="#2196f3",
-                        fill_color="#4caf50",
-                        background_color="#f5f5f5",
-                        stroke_width=2.0
+                        stroke_color="#6ef2ff",
+                        fill_color="#111827",
+                        background_color="#020617",
+                        stroke_width=1.6
                     ),
-                    toner_options=TonerMapOptions(variant="light")
+                    toner_options=TonerMapOptions(variant="dark")
                 ),
-                animation=AnimationOptions(enabled=True, speed=1.2),
+                animation=AnimationOptions(enabled=True, speed=1.4),
                 points=PointStyle(
-                    size=10,
-                    color="#2196f3",
-                    shape="circle",
+                    size=7,
+                    color="#6ef2ff",
+                    shape="triangle",
                     halo=True,
-                    border_color="#ffffff",
+                    border_color="#0b1020",
                     border_size=2,
                     fill_color_type="fix",
                     border_color_type="fix",
                     mode="vectoriel"
                 ),
                 flash=FlashOptions(
-                    mode="star",
-                    duration=800,
-                    size=40,
-                    color="#00ff00",
+                    mode="diamond",
+                    duration=1200,
+                    size=65,
+                    color="#ff4fd8",
                     color_type="fix"
+                ),
+                infos=build_infos(
+                    "Night Cache Trail",
+                    """
+                    color: #6ef2ff;
+                    background: rgba(11, 16, 32, 0.82);
+                    padding: 10px 16px;
+                    border-radius: 8px;
+                    border: 1px solid #ff4fd8;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                    letter-spacing: 2px;
+                    box-shadow: 0 0 24px rgba(110, 242, 255, 0.16);
+                    """,
+                    """
+                    color: #f8fafc;
+                    background: rgba(11, 16, 32, 0.76);
+                    padding: 8px 12px;
+                    border-radius: 8px;
+                    border-left: 3px solid #6ef2ff;
+                    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+                    """
                 )
             ),
 
-            "Sombre": MapProfile(
-                name="Sombre",
+            "Carnet Aquarelle": MapProfile(
+                name="Carnet Aquarelle",
                 map=MapOptions(
-                    tile_provider="stamenToner",
-                    default_center=(48.8566, 2.3522),
-                    default_zoom=7,
+                    tile_provider="watercolor",
+                    default_center=(46.603354, 1.888334),  # Centre de la France
+                    default_zoom=6,
                     vector_options=VectorMapOptions(
-                        stroke_color="#ffffff",
-                        fill_color="#666666",
-                        background_color="#000000",
-                        stroke_width=1.5
+                        stroke_color="#b08968",
+                        fill_color="#e6ccb2",
+                        background_color="#fff8eb",
+                        stroke_width=1.4
                     ),
-                    toner_options=TonerMapOptions(variant="dark")
+                    toner_options=TonerMapOptions(variant="light")
                 ),
-                animation=AnimationOptions(enabled=False, speed=1.0),
+                animation=AnimationOptions(enabled=True, speed=0.95),
                 points=PointStyle(
-                    size=6,
-                    color="#ffffff",
+                    size=7,
+                    color="#7c5a43",
+                    shape="circle",
+                    halo=False,
+                    border_color="#d7c1a2",
+                    border_size=0,
+                    fill_color_type="fix",
+                    border_color_type="fix",
+                    mode="icone",
+                    icon_set="geocaching",
+                    icon_size=22
+                ),
+                flash=FlashOptions(
+                    mode="none",
+                    duration=900,
+                    size=35,
+                    color="#d7c1a2",
+                    color_type="none"
+                ),
+                infos=build_infos(
+                    "Carnet de Geocaching",
+                    """
+                    color: #5c4633;
+                    background: rgba(255, 248, 235, 0.88);
+                    padding: 10px 14px;
+                    border-radius: 6px;
+                    border: 1px solid #d7c1a2;
+                    font-family: Georgia;
+                    font-weight: 700;
+                    box-shadow: 0 8px 24px rgba(87, 69, 48, 0.18);
+                    """,
+                    """
+                    color: #5c4633;
+                    background: rgba(255, 252, 244, 0.9);
+                    padding: 8px 12px;
+                    border-radius: 6px;
+                    border: 1px dashed #d7c1a2;
+                    box-shadow: 0 6px 18px rgba(87, 69, 48, 0.12);
+                    """
+                )
+            ),
+
+            "Atlas Vintage": MapProfile(
+                name="Atlas Vintage",
+                map=MapOptions(
+                    tile_provider="vectorMap",
+                    default_center=(45.7640, 4.8357),  # Lyon
+                    default_zoom=6,
+                    vector_options=VectorMapOptions(
+                        stroke_color="#6b5b4d",
+                        fill_color="#d8ccb4",
+                        background_color="#efe6d2",
+                        stroke_width=1.6
+                    ),
+                    toner_options=TonerMapOptions(variant="light")
+                ),
+                animation=AnimationOptions(enabled=True, speed=0.85),
+                points=PointStyle(
+                    size=8,
+                    color="#8b3a2e",
                     shape="triangle",
                     halo=True,
-                    border_color="#cccccc",
-                    border_size=1,
+                    border_color="#f6f0e3",
+                    border_size=2,
                     fill_color_type="fix",
                     border_color_type="fix",
                     mode="vectoriel"
                 ),
                 flash=FlashOptions(
-                    mode="diamond",
-                    duration=1500,
-                    size=60,
-                    color="#ffffff",
-                    color_type="fix"
+                    mode="none",
+                    duration=1000,
+                    size=40,
+                    color="#8b3a2e",
+                    color_type="none"
+                ),
+                infos=build_infos(
+                    "Atlas Geocaching",
+                    """
+                    color: #4e342e;
+                    background: rgba(246, 240, 227, 0.92);
+                    padding: 10px 16px;
+                    border-radius: 4px;
+                    border: 1px solid #6b5b4d;
+                    font-family: Georgia;
+                    font-weight: 700;
+                    letter-spacing: 0.6px;
+                    """,
+                    """
+                    color: #5f4339;
+                    background: rgba(239, 230, 210, 0.9);
+                    padding: 8px 12px;
+                    border-radius: 4px;
+                    border-top: 2px solid #8b3a2e;
+                    """
                 )
             ),
 
-            "Présentation": MapProfile(
-                name="Présentation",
+            "Présentation Impact": MapProfile(
+                name="Présentation Impact",
                 map=MapOptions(
                     tile_provider="OSM",
                     default_center=(46.0, 2.0),  # Vue large sur la France
                     default_zoom=5,
                     vector_options=VectorMapOptions(
-                        stroke_color="#000000",
-                        fill_color="#4caf50",
+                        stroke_color="#111827",
+                        fill_color="#ff6b35",
                         background_color="#ffffff",
-                        stroke_width=3.0
+                        stroke_width=2.8
                     ),
                     toner_options=TonerMapOptions(variant="light")
                 ),
                 animation=AnimationOptions(enabled=True, speed=2.0),
                 points=PointStyle(
-                    size=12,
-                    color="#4caf50",
+                    size=10,
+                    color="#ff6b35",
                     shape="circle",
                     halo=True,
                     border_color="#ffffff",
@@ -449,10 +578,31 @@ class SettingsManager:
                 ),
                 flash=FlashOptions(
                     mode="square",
-                    duration=600,
-                    size=80,
-                    color="#ff9800",
+                    duration=700,
+                    size=90,
+                    color="#ffd166",
                     color_type="fix"
+                ),
+                infos=build_infos(
+                    "GCMap Highlights",
+                    """
+                    color: #ffffff;
+                    background: rgba(17, 24, 39, 0.85);
+                    padding: 14px 18px;
+                    border-radius: 12px;
+                    font-size: 32px;
+                    font-weight: 800;
+                    letter-spacing: 1px;
+                    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+                    """,
+                    """
+                    color: #111827;
+                    background: rgba(255, 255, 255, 0.92);
+                    padding: 10px 14px;
+                    border-radius: 10px;
+                    border-left: 4px solid #ff6b35;
+                    box-shadow: 0 10px 24px rgba(17, 24, 39, 0.12);
+                    """
                 )
             )
         }
@@ -730,5 +880,4 @@ class SettingsManager:
 
         self.save_profile(prof)
         return prof
-
 
