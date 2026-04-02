@@ -2863,6 +2863,13 @@ function clickRecordAnimation(){
     // Vide la source vectorielle avant de démarrer l'animation
     pkg.recordAnimation();
     showPauseStopButtons();
+    // En mode enregistrement, la pause ferait un arrêt complet sans feedback
+    // → on désactive le bouton Pause et on redirige vers Arrêter
+    const btnPause = document.getElementById('btnPauseAnimation');
+    if (btnPause) {
+        btnPause.disabled = true;
+        btnPause.title = 'Pause non disponible pendant l\'enregistrement - utilisez Arrêter';
+    }
     updateControlBar();
 }
 
@@ -2872,6 +2879,9 @@ export function resetControlsToInitialState(){
         console.log('[UI] resetControlsToInitialState()');
         // Boutons principaux
         showStartRecordButtons();
+        // Réactiver le bouton Pause (peut avoir été désactivé en mode enregistrement)
+        const btnPause = document.getElementById('btnPauseAnimation');
+        if (btnPause) { btnPause.disabled = false; btnPause.title = ''; }
         // Barre latérale
         updateControlBar();
         // Bouton plein écran (garde l'état courant visuel)
@@ -2894,7 +2904,7 @@ function toggleButtonAnimationPauseAndRestart(reinitialisation = false){ {
         btnPauseAnimation.classList.add('restart');
         btnPauseAnimation.childNodes[2].nodeValue = "Continue";  // Mettre à jour le texte
         icon.textContent = 'chevron_right';  // Mettre à jour l'icône
-        pkg.stopAnimation();
+        pkg.pauseAnimation(); // pause douce : stoppe l'interval sans vider la carte
     } else if (btnPauseAnimation.classList.contains('restart') || reinitialisation) {
         btnPauseAnimation.classList.remove('restart');
         btnPauseAnimation.classList.add('pause');

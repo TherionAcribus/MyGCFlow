@@ -94,6 +94,7 @@ let currentDate;
 // ENREGISTREMENT
 // Compteur de frames pour le jour en cours
 let currentFrame = 0;
+let globalRecordFrame = 0;  // avance d'1 par capture (pas par rendu)
 let infosProgressBar = new Object;
 let perfMetrics = {
     totalFrames: 0,
@@ -339,6 +340,7 @@ let mrOutCanvas = null;
 let mrOutCtx = null;
 let mrDrawIntervalId = null;
 let mrProgressIntervalId = null;
+let mrStopTimeoutId = null;
 let isMediaRecording = false;
 let mrOnFinalizeRestoreTimePerDay = null;
 
@@ -1363,6 +1365,27 @@ export function stopAnimation(){
     try { hidePopup(); } catch(_) {}
 }
 
+/**
+ * Pause l'animation en cours (lecture seule) sans vider la carte ni réinitialiser l'état.
+ * La reprise se fait via startAnimation("restart") qui reprend depuis currentDate.
+ * NE PAS appeler en mode enregistrement (utiliser stopAnimation() à la place).
+ */
+export function pauseAnimation() {
+    // Stopper uniquement l'interval d'avancement des dates
+    if (interval) {
+        clearInterval(interval);
+        interval = null;
+    }
+    // Stopper le timeout de fin éventuel
+    if (endTimeout) {
+        clearTimeout(endTimeout);
+        endTimeout = null;
+    }
+    // Mettre la musique de fond en pause (elle reprendra à la reprise)
+    try { stopBackgroundMusic(); } catch(e) { console.warn('pauseAnimation stopBackgroundMusic error:', e); }
+    // La carte, vectorSource, les points et currentDate sont conservés tels quels
+}
+
 export function recordAnimation(){
     // Branche MediaRecorder si demandé et supporté
     try {
@@ -1418,6 +1441,7 @@ function startRecordingProcess(){
     // Remise à zéro des compteurs d'images/frames pour un nouvel enregistrement
     imageCounter = 0;
     currentFrame = 0;
+    globalRecordFrame = 0;
     infosProgressBar = {};
 
     // Afficher les caches filtrés jusqu'à la date de début d'animation (sans effet flash)
@@ -1432,7 +1456,7 @@ function startRecordingProcess(){
         pkg.metadata.startDate = new Date(pkg.options.animation.dateStart);
         console.log('[RECORD] Date de début personnalisée appliquée:', pkg.metadata.startDate);
     } else {
-        currentDate = pkg.metadata.startDate;
+        currentDate = new Date(pkg.metadata.startDate); // copie explicite pour ne pas muter pkg.metadata via setDate()
         console.log('[RECORD] ❌ Utilisation date de début par défaut:', currentDate);
     }
     if (pkg.options.animation.dateEnd instanceof Date) {
@@ -1443,6 +1467,20 @@ function startRecordingProcess(){
     }
 
     console.log('[RECORD] 🚀 Démarrage enregistrement avec date:', currentDate, '->', pkg.metadata.endDate);
+
+    // Calculer framesPerDay de façon autonome (ne pas dépendre d'un appel préalable à updateInfosForPictures)
+    {
+        const _fps       = pkg.options.record.fps || 24;
+        const _tpd       = pkg.options.animation.timePerDay || 50;
+        const _fpd       = Math.max(1, Math.round(_tpd * _fps / 1000));
+        framesPerDay     = Math.max(1, Number(pkg.options.record.framesPerDay) || _fpd);
+        // Recalculer framesPerSec et flashFrames si non définis ou issus d'un framesPerDay=0
+        const _fps2      = framesPerDay * 1000 / _tpd;
+        pkg.options.record.framesPerSec  = _fps2;
+        pkg.options.record.framesPerDay  = framesPerDay;
+        const _flashMs   = pkg.options.flash.duration || 2000;
+        pkg.options.record.flashFrames   = _flashMs * _fps2 / 1000;
+    }
 
     // Calculer le nombre de jours d'animation (basé sur la plage sélectionnée, pas toute la BDD)
     try {
@@ -1490,9 +1528,6 @@ function startRecordingProcess(){
             );
         }
     } catch(_) {}
-
-    // je fais une copie car plus rapide de gerer une valeur qu'un objet
-    framesPerDay = pkg.options.record.framesPerDay
 
     // mise à jour des options RGB (MEttre ailleurs ? + idem lecture seule)
     pkg.options.flash.rgb = pkg.hexToRgb(pkg.options.flash.color);
@@ -1803,11 +1838,10 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
     }
 
     if (currentFrame < framesPerDay) {
-        // Mettez à jour les styles d'animation avant de capturer la frame
-        updateAnimationStyles();
         // Capturez la frame actuelle
         if (capture == true) {
             await captureElement();
+                globalRecordFrame++;  // avancer l'animation d'1 cran par capture
                 currentFrame++;
                 requestAnimationFrame(() => captureNextFrame(true, pointOptions, flashOptions, infos));
         } else {
@@ -1876,7 +1910,7 @@ function recordAnimationMediaRecorder(){
         currentDate = new Date(pkg.options.animation.dateStart);
         pkg.metadata.startDate = new Date(pkg.options.animation.dateStart);
     } else {
-        currentDate = pkg.metadata.startDate;
+        currentDate = new Date(pkg.metadata.startDate); // copie explicite pour ne pas muter pkg.metadata via setDate()
     }
     if (pkg.options.animation.dateEnd instanceof Date) {
         pkg.metadata.endDate = new Date(pkg.options.animation.dateEnd);
@@ -1916,9 +1950,13 @@ function recordAnimationMediaRecorder(){
     startMediaRecorderPipeline(totalMs * appliedSlowdown).catch(e => {
         console.error('MediaRecorder pipeline error:', e);
         pkg.showToast && pkg.showToast('Erreur MediaRecorder, bascule en mode images.', 'error', 'Enregistrement');
-        // Fallback vers pipeline images
+        // Stopper proprement la boucle animation setInterval déjà lancée par startAnimation()
+        // AVANT de relancer recordAnimation(), pour éviter deux boucles d'avancement de date en parallèle
         try { stopMediaRecorderPipeline(false); } catch(_) {}
-        recordAnimation(); // relance en mode images (si l’option est encore mediarecorder, la détection support retournera false)
+        if (interval) { clearInterval(interval); interval = null; }
+        // Forcer le mode images pour éviter une boucle infinie MediaRecorder → fallback → MediaRecorder
+        try { pkg.options.record.mode = 'images'; } catch(_) {}
+        recordAnimation();
     });
 
     // Restaurer timePerDay après démarrage (sera effectif pour la suite)
@@ -2031,8 +2069,9 @@ async function startMediaRecorderPipeline(totalDurationMs){
         try { pkg.updateProgressBar({ progress, message: msg }); } catch(_) {}
     }, 200);
 
-    // Arrêt programmé
-    setTimeout(() => {
+    // Arrêt programmé (stocké pour pouvoir l'annuler si l'utilisateur arrête manuellement)
+    mrStopTimeoutId = setTimeout(() => {
+        mrStopTimeoutId = null;
         if (isMediaRecording) stopMediaRecorderPipeline(true);
     }, Math.max(0, totalDurationMs));
 }
@@ -2040,6 +2079,7 @@ async function startMediaRecorderPipeline(totalDurationMs){
 function stopMediaRecorderPipeline(finalize){
     try { if (mrDrawIntervalId) { clearInterval(mrDrawIntervalId); mrDrawIntervalId = null; } } catch(_) {}
     try { if (mrProgressIntervalId) { clearInterval(mrProgressIntervalId); mrProgressIntervalId = null; } } catch(_) {}
+    try { if (mrStopTimeoutId) { clearTimeout(mrStopTimeoutId); mrStopTimeoutId = null; } } catch(_) {}
     
     // Arrêter la surveillance des performances
     recordingPerformanceMonitor.stopMonitoring();
@@ -2184,9 +2224,11 @@ function normalizeRecordedVideoSpeed(sourceBlob, factor){
 
             let rec = null; let chunks = [];
             let progressTimer = null;
+            let safetyTimeout = null;
 
             const cleanup = () => {
                 try { if (progressTimer) clearInterval(progressTimer); } catch(_) {}
+                try { if (safetyTimeout) clearTimeout(safetyTimeout); } catch(_) {}
                 try { URL.revokeObjectURL(url); } catch(_) {}
                 try { rec && rec.state !== 'inactive' && rec.stop(); } catch(_) {}
             };
@@ -2197,6 +2239,14 @@ function normalizeRecordedVideoSpeed(sourceBlob, factor){
 
                 const stream = (typeof video.captureStream === 'function') ? video.captureStream(fps) : null;
                 if (!stream) { cleanup(); reject(new Error('captureStream non supporté pour la normalisation')); return; }
+
+                // Timeout de sécurité : durée de la vidéo normalisée + 60s de marge
+                const maxMs = duration > 0 ? ((duration / factor) * 1000 + 60000) : 120000;
+                safetyTimeout = setTimeout(() => {
+                    safetyTimeout = null;
+                    cleanup();
+                    reject(new Error('Timeout normalisation vidéo (' + Math.round(maxMs / 1000) + 's) : lecture bloquée ?'));
+                }, maxMs);
 
                 rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: vbps });
                 rec.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunks.push(e.data); };
@@ -2281,8 +2331,10 @@ function muxRecordedVideoWithAudio(sourceBlob, audioFile){
             const muxMime = pickMuxMime();
 
             let rec = null; let chunks = [];
+            let muxSafetyTimeout = null;
 
             const cleanup = () => {
+                try { if (muxSafetyTimeout) clearTimeout(muxSafetyTimeout); } catch(_) {}
                 try { URL.revokeObjectURL(videoUrl); } catch(_) {}
                 try { if (audioUrl) URL.revokeObjectURL(audioUrl); } catch(_) {}
                 try { if (audioCtx && audioCtx !== window.mrMuxAudioCtx) audioCtx.close(); } catch(_) {}
@@ -2293,6 +2345,15 @@ function muxRecordedVideoWithAudio(sourceBlob, audioFile){
                 try {
                     const vStream = (typeof video.captureStream === 'function') ? video.captureStream(fps) : null;
                     if (!vStream) { cleanup(); reject(new Error('captureStream non supporté pour mux audio')); return; }
+
+                    // Timeout de sécurité : durée vidéo + 60s de marge
+                    const duration = video.duration || 0;
+                    const maxMs = duration > 0 ? (duration * 1000 + 60000) : 120000;
+                    muxSafetyTimeout = setTimeout(() => {
+                        muxSafetyTimeout = null;
+                        cleanup();
+                        reject(new Error('Timeout mux audio (' + Math.round(maxMs / 1000) + 's) : lecture bloquée ?'));
+                    }, maxMs);
 
                     // Charger et préparer le buffer audio
                     // (pas de sortie vers destination pour rester silencieux)
@@ -2382,11 +2443,24 @@ async function captureElement() {
 
         // OPTIMISATION MAJEURE : Capture canvas-only (3-10x plus rapide)
         try {
-            // Synchroniser le rendu OpenLayers
-            map.renderSync();
+            // Timeout de sécurité : si rendercomplete ne se déclenche pas dans 5s,
+            // on rejette la Promise pour éviter un blocage silencieux de la capture
+            let renderCompleteListenerKey = null;
+            const renderTimeout = setTimeout(() => {
+                if (renderCompleteListenerKey) {
+                    ol.Observable.unByKey(renderCompleteListenerKey);
+                    renderCompleteListenerKey = null;
+                }
+                reject(new Error('Timeout rendercomplete (5s) : rendu carte bloqué'));
+            }, 5000);
 
-            // Attendre que le rendu soit complet pour capturer tous les calques
-            map.once('rendercomplete', async () => {
+            // IMPORTANT : enregistrer le listener AVANT map.renderSync() car renderSync()
+            // déclenche rendercomplete de façon synchrone. Si le listener est enregistré après,
+            // il rate cet événement et la capture se fait sur un rendu ultérieur qui peut ne pas
+            // inclure les calques d'animation (animationLayer) mis à jour.
+            renderCompleteListenerKey = map.once('rendercomplete', async () => {
+                clearTimeout(renderTimeout);
+                renderCompleteListenerKey = null;
                 try {
                     // Récupérer tous les canvas de la carte (carte + points WebGL + animations)
                     const viewport = map.getViewport();
@@ -2456,7 +2530,8 @@ async function captureElement() {
                 }
             });
 
-            // Forcer un rendu complet
+            // Forcer un rendu complet (marquer animationLayer dirty pour que postrender fire)
+            if (animationLayer) { animationLayer.changed(); }
             map.renderSync();
 
         } catch (error) {
@@ -2480,16 +2555,21 @@ async function captureElement() {
                     perfMetrics.capturedFrames += 1;
                     perfMetrics.totalFrames += 1;
 
-                    return canvas.toBlob((blob) => {
-                        const t0Upload = performance.now();
-                        return pkg.sendImageToServer(blob, imageCounter++).then(() => {
-                            const t1Upload = performance.now();
-                            perfMetrics.uploadTimeMs += (t1Upload - t0Upload);
-                            perfMetrics.uploadOk += 1;
-                            // Mise à jour du toast de progression (fallback)
-                            try { updateProgress(); } catch(e) {}
-                        });
-                    }, 'image/webp', 0.9);
+                    // toBlob() est callback-based (retourne void) : on le wrappe dans une Promise
+                    // pour attendre réellement la fin de l'upload avant de resolve()
+                    return new Promise((resBlob, rejBlob) => {
+                        canvas.toBlob((blob) => {
+                            if (!blob) { rejBlob(new Error('html2canvas toBlob a retourné null')); return; }
+                            const t0Upload = performance.now();
+                            pkg.sendImageToServer(blob, imageCounter++).then(() => {
+                                const t1Upload = performance.now();
+                                perfMetrics.uploadTimeMs += (t1Upload - t0Upload);
+                                perfMetrics.uploadOk += 1;
+                                try { updateProgress(); } catch(e) {}
+                                resBlob();
+                            }).catch(rejBlob);
+                        }, 'image/webp', 0.9);
+                    });
                 })
                 .then(() => resolve())
                 .catch(fallbackError => {
@@ -2727,21 +2807,47 @@ function displayInfosForDate(infos, date, featuresForDate) {
 // -------------- FLASH ---------------------------------------
 
 function flashRecord(features) {
+    const flashOptions = pkg.options.flash;
+    const maxFrames = Math.max(1, pkg.options.record.flashFrames || 1);
+    // Capturer la valeur de globalRecordFrame au moment de l'appel (frame de départ du flash)
+    const startFrame = globalRecordFrame;
+
 
     features.forEach(featureData => {
-        const geometry = new ol.geom.Point(
-            ol.proj.transform(
-                [featureData.geometry.coordinates[0], featureData.geometry.coordinates[1]],
-                'EPSG:4326',
-                'EPSG:3857'
-            )
-        );
+        const coords = ol.proj.fromLonLat([
+            featureData.geometry.coordinates[0],
+            featureData.geometry.coordinates[1]
+        ]);
+        const flashGeom = new ol.geom.Point(coords);
+        const cacheType = featureData.properties?.cache_type;
 
-        const animatedFeature = new ol.Feature({ geometry: geometry.clone(), type: featureData.properties.cache_type });
-        animatedFeature.set('animationFrame', 0);
-        animationSource.addFeature(animatedFeature);
+        const listenerKey = animationLayer.on('postrender', function(event) {
+            // elapsed = nombre de captures depuis le début de ce flash
+            const elapsed = globalRecordFrame - startFrame;
 
-        })
+            if (elapsed >= maxFrames) {
+                ol.Observable.unByKey(listenerKey);
+                return;
+            }
+            const animationRatio = elapsed / maxFrames;
+            const radius = ol.easing.easeOut(animationRatio) * (flashOptions.size / 2) + (flashOptions.size / 10);
+            const opacity = ol.easing.easeOut(1 - animationRatio);
+            let style;
+            switch (flashOptions.mode) {
+                case "star":     style = starStyle(radius, opacity, flashOptions, cacheType);     break;
+                case "circle":   style = circleStyle(radius, opacity, flashOptions, cacheType);   break;
+                case "square":   style = squareStyle(radius, opacity, flashOptions, cacheType);   break;
+                case "triangle": style = triangleStyle(radius, opacity, flashOptions, cacheType); break;
+                case "diamond":  style = diamondStyle(radius, opacity, flashOptions, cacheType);  break;
+                default:         style = circleStyle(radius, opacity, flashOptions, cacheType);   break;
+            }
+            if (style) {
+                const vectorContext = ol.render.getVectorContext(event);
+                vectorContext.setStyle(style);
+                vectorContext.drawGeometry(flashGeom);
+            }
+        });
+    });
 }
 
 
@@ -2761,10 +2867,25 @@ function updateAnimationStyles() {
 
             let style;
             const cacheType = feature.get('type'); // Récupérer le type de cache depuis la feature
-            if (pkg.options.flash.mode == "star") {
-                style = starStyle(radius, opacity, pkg.options.flash, cacheType);
-            } else if (pkg.options.flash.mode == "circle") {
-                style = circleStyle(radius, opacity, pkg.options.flash, cacheType);
+            switch (pkg.options.flash.mode) {
+                case "star":
+                    style = starStyle(radius, opacity, pkg.options.flash, cacheType);
+                    break;
+                case "circle":
+                    style = circleStyle(radius, opacity, pkg.options.flash, cacheType);
+                    break;
+                case "square":
+                    style = squareStyle(radius, opacity, pkg.options.flash, cacheType);
+                    break;
+                case "triangle":
+                    style = triangleStyle(radius, opacity, pkg.options.flash, cacheType);
+                    break;
+                case "diamond":
+                    style = diamondStyle(radius, opacity, pkg.options.flash, cacheType);
+                    break;
+                default:
+                    style = circleStyle(radius, opacity, pkg.options.flash, cacheType);
+                    break;
             }
             
             feature.setStyle(style);

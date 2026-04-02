@@ -126,6 +126,7 @@ def assemble_pictures_directory(image_folder, output_video, fps=24, audio_path=N
 
         # Créez un clip vidéo à partir des images
         clip = ImageSequenceClip(image_files, fps=fps)
+        audio_clip = None
 
         # Option: ajouter l'audio si fourni (audio_path est un nom de fichier dans 'audio/')
         if audio_path:
@@ -139,17 +140,28 @@ def assemble_pictures_directory(image_folder, output_video, fps=24, audio_path=N
                         vol = max(0.0, float(audio_volume))
                     except Exception:
                         vol = 1.0
-                    audio = AudioFileClip(audio_file).volumex(vol)
-                    if audio.duration >= clip.duration:
-                        audio = audio.subclip(0, clip.duration)
-                    clip = clip.set_audio(audio)
+                    audio_clip = AudioFileClip(audio_file).volumex(vol)
+                    if audio_clip.duration >= clip.duration:
+                        audio_clip = audio_clip.subclip(0, clip.duration)
+                    clip = clip.set_audio(audio_clip)
             except Exception as e:
                 # En cas d'erreur audio, on continue avec la vidéo seule
                 print(f"[assemble] Audio ignoré: {e}")
 
         # Écrivez le clip vidéo dans un fichier
         # Codec 'libx264' + 'aac' pour compatibilité (nécessite ffmpeg)
-        clip.write_videofile(output_video, fps=fps, codec='libx264', audio_codec='aac')
+        try:
+            clip.write_videofile(output_video, fps=fps, codec='libx264', audio_codec='aac')
+        finally:
+            try:
+                clip.close()
+            except Exception:
+                pass
+            if audio_clip is not None:
+                try:
+                    audio_clip.close()
+                except Exception:
+                    pass
         return jsonify({'success': True, 'message': 'Vidéo créée avec succès'})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})

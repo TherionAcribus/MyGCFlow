@@ -33,7 +33,8 @@ export function getCookie(name) {
 // Mets à jour le nombre de frames par jour, le nombre d'images, et le nombre de chiffres
 export function updateInfosForPictures(){
     // frames par jour
-    const framesPerDay = calculFramePerDay(pkg.options.animation.timePerDay, pkg.framesPerDay);
+    const fps = pkg.options.record.fps || 24;
+    const framesPerDay = calculFramePerDay(pkg.options.animation.timePerDay, fps);
     pkg.options.record.framesPerDay = framesPerDay;
     // nombres d'images
     const nbImages = pkg.options.date.deltaDays * framesPerDay;
