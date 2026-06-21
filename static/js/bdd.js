@@ -155,7 +155,7 @@ function updateOptionsValues(meta) {
     }
 }
 
-function pollGeojsonTask(taskId, { onSuccess, onError, intervalMs = 400, timeoutMs = 120000 } = {}) {
+function pollGeojsonTask(taskId, { onSuccess, onError, onProgress, intervalMs = 400, timeoutMs = 120000 } = {}) {
     const startedAt = Date.now();
 
     const tick = () => {
@@ -175,6 +175,7 @@ function pollGeojsonTask(taskId, { onSuccess, onError, intervalMs = 400, timeout
             const state = status?.state;
 
             if (state === 'finished') {
+                if (typeof onProgress === 'function') onProgress(100);
                 if (status && status.result) {
                     if (typeof onSuccess === 'function') onSuccess(status.result);
                 } else {
@@ -187,6 +188,10 @@ function pollGeojsonTask(taskId, { onSuccess, onError, intervalMs = 400, timeout
                 const msg = status?.error || status?.message || 'Task failed';
                 if (typeof onError === 'function') onError(new Error(msg));
                 return;
+            }
+
+            if (typeof onProgress === 'function' && typeof status?.progress === 'number') {
+                onProgress(status.progress);
             }
 
             setTimeout(tick, intervalMs);
@@ -203,6 +208,9 @@ function checkLoadingProgress(toast, taskId, onSuccess, onError, { intervalMs = 
     pollGeojsonTask(taskId, {
         intervalMs,
         timeoutMs,
+        onProgress: (p) => {
+            try { if (toast) pkg.updateToastProgress(toast, p); } catch(_) {}
+        },
         onSuccess: () => {
             if (typeof onSuccess === 'function') onSuccess();
         },
@@ -303,6 +311,9 @@ export function readBdd(){
             throw new Error(data.message || 'Impossible de lancer le chargement de la BDD');
         }
         pollGeojsonTask(data.task_id, {
+            onProgress: (p) => {
+                try { if (readLoadingToast) pkg.updateToastProgress(readLoadingToast, p); } catch(_) {}
+            },
             onSuccess: (result) => {
                 if (result.error || !result.geojson) {
                     console.error('Erreur tâche GeoJSON (readBdd):', result.error || 'geojson manquant');
@@ -370,6 +381,9 @@ function changeSelect(selectedValues, optionValues) {
             throw new Error(data.message || 'Impossible de lancer le filtrage');
         }
         pollGeojsonTask(data.task_id, {
+            onProgress: (p) => {
+                try { if (filterLoadingToast) pkg.updateToastProgress(filterLoadingToast, p); } catch(_) {}
+            },
             onSuccess: (result) => {
                 const geojson = result.geojson;
                 const meta = result.metadata || {};
@@ -571,7 +585,7 @@ function performUploadFromModal(file){
 
 function loadAndDisplayPoints() {
     // Afficher un toast pour l'affichage initial des points
-    pkg.showPointsToast(t('Chargement et affichage des points...'), t('Affichage des points'));
+    const pointsToast = pkg.showPointsToast(t('Chargement et affichage des points...'), t('Affichage des points'));
 
     fetch(`${CONFIG.BASE_URL}/get_geojson_points`, { method: 'POST' })
         .then(response => response.json())
@@ -580,6 +594,9 @@ function loadAndDisplayPoints() {
                 throw new Error(data.message || 'Impossible de lancer la génération du GeoJSON');
             }
             pollGeojsonTask(data.task_id, {
+                onProgress: (p) => {
+                    try { if (pointsToast) pkg.updateToastProgress(pointsToast, p); } catch(_) {}
+                },
                 onSuccess: (result) => {
                     console.log('[loadAndDisplayPoints] onSuccess - features:', result?.geojson?.features?.length, '| error:', result?.error);
                     if (result.error || !result.geojson) {

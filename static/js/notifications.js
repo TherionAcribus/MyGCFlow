@@ -60,7 +60,7 @@ class NotificationManager {
                 ${showProgress ? `
                     <div class="gcm-toast-progress">
                         <div class="gcm-progress-bar">
-                            <div class="gcm-progress-fill" style="width: ${progress}%"></div>
+                            <div class="gcm-progress-fill${progress <= 0 ? ' indeterminate' : ''}" style="width: ${progress <= 0 ? '30' : progress}%"></div>
                         </div>
                     </div>
                 ` : ''}
