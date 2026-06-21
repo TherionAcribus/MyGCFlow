@@ -9,7 +9,6 @@ export function displayFrames(){
         updateTitleFrame(optionsTitre.text);
     }
     const optionsInfos = pkg.options.infos;
-    console.log(optionsInfos)
     if (optionsInfos.numberOfCaches.display || optionsInfos.currentDate.display) {
         createInfosFrame();
     }
@@ -20,7 +19,6 @@ export function displayFrames(){
 
 // Affiche le nombre de caches + date après Filtre ou 1er Chargement
 export function updateInfosFrameAfterReadBdd(metadata){
-    console.log(metadata)
     updateNbCaches(metadata.numberOfCaches);
     updateCurrentDate(metadata.endDate);
 }
@@ -56,14 +54,14 @@ export function updateCurrentDate(currentDate){
 
 // formatage date au format jour/mois/annee (optimisé car pas de manipulation d'objets)
 function formatDate(date) {
-    let day = date.getDate();
-    let month = date.getMonth() + 1; // Les mois sont indexés à partir de 0
-    let year = date.getFullYear();
-
-    // Ajouter un zéro au début si le jour ou le mois est inférieur à 10
+    if (!date) return '--/--/----';
+    const d = date instanceof Date ? date : new Date(date);
+    if (isNaN(d.getTime())) return '--/--/----';
+    let day = d.getDate();
+    let month = d.getMonth() + 1;
+    let year = d.getFullYear();
     day = day < 10 ? '0' + day : day;
     month = month < 10 ? '0' + month : month;
-
     return `${day}/${month}/${year}`;
 }
 
