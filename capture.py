@@ -4,7 +4,7 @@ import base64
 from datetime import datetime
 import platform
 import subprocess
-from moviepy.editor import ImageSequenceClip, AudioFileClip
+from moviepy import ImageSequenceClip, AudioFileClip
 from werkzeug.utils import secure_filename
 
 
