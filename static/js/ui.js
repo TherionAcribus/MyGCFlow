@@ -2033,9 +2033,11 @@ function populateCountryStateSelects(tree){
         fragC.appendChild(opt);
     }
     selCountry.appendChild(fragC);
-    // Détruire l'instance Materialize existante si déjà initialisée
     try { M.FormSelect.getInstance(selCountry)?.destroy?.(); } catch(_) {}
-    M.FormSelect.init(selCountry);
+    // Materialize FormSelect crashe sur un select sans options réelles (uniquement placeholder)
+    if (countries.length > 0) {
+        try { M.FormSelect.init(selCountry); } catch(_) {}
+    }
 
     // Populate states (from selected countries or all)
     const statesSet = new Set();
@@ -2048,7 +2050,7 @@ function populateCountryStateSelects(tree){
     placeholderState.disabled = true;
     placeholderState.textContent = 'Filtrer par région/état';
     selState.appendChild(placeholderState);
-    
+
     const fragS = document.createDocumentFragment();
     for (const s of Array.from(statesSet).sort((a,b)=>a.localeCompare(b))){
         const opt = document.createElement('option');
@@ -2057,7 +2059,9 @@ function populateCountryStateSelects(tree){
     }
     selState.appendChild(fragS);
     try { M.FormSelect.getInstance(selState)?.destroy?.(); } catch(_) {}
-    M.FormSelect.init(selState);
+    if (statesSet.size > 0) {
+        try { M.FormSelect.init(selState); } catch(_) {}
+    }
 
     selCountry.addEventListener('change', () => {
         // Si des vraies options sont sélectionnées, désélectionner le placeholder
@@ -2087,7 +2091,9 @@ function populateCountryStateSelects(tree){
         });
         selState.appendChild(frag);
         try { M.FormSelect.getInstance(selState)?.destroy?.(); } catch(_) {}
-        M.FormSelect.init(selState);
+        if (sset.size > 0) {
+            try { M.FormSelect.init(selState); } catch(_) {}
+        }
         console.log('[COUNTRY] States populated for selection=', sset.size);
         // Mise à jour des infos et déclenchement filtrage
         updateFilterInfos();

@@ -500,8 +500,8 @@ class ProfileManager {
             // Sélectionner le profil par défaut actuel (par nom si disponible)
             selector.value = settings.default_profile_name || '';
 
-            // Initialiser Materialize Select
-            M.FormSelect.init(selector);
+            // Initialiser Materialize Select (dans try/catch car peut crasher si panel caché)
+            try { M.FormSelect.init(selector); } catch(_) {}
 
             console.log('Sélecteur profil par défaut rempli avec:', profiles);
             console.log('🎯 Profil par défaut actuel:', settings.default_profile_name || 'aucun');
