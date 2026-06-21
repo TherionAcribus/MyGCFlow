@@ -587,7 +587,8 @@ def filter_session(db, Geocache, selectedValues, status: Optional[TaskStatus] = 
     # Filtrage par plage de dates (trouvaille)
     start_date = convert_str_to_date(selectedValues["dates"]['startDate'])
     end_date = convert_str_to_date(selectedValues["dates"]['endDate'])
-    query = query.filter(Geocache.date_find >= start_date, Geocache.date_find <= end_date)
+    if start_date and end_date:
+        query = query.filter(Geocache.date_find >= start_date, Geocache.date_find <= end_date)
 
     # Filtrage par plage de dates de publication
     if "published_dates" in selectedValues and selectedValues["published_dates"]["startDate"] and selectedValues["published_dates"]["endDate"]:
@@ -602,6 +603,8 @@ def filter_session(db, Geocache, selectedValues, status: Optional[TaskStatus] = 
 
 
 def convert_str_to_date(date_str):
+    if not date_str:
+        return None
     return datetime.strptime(date_str, '%Y-%m-%d').date()
 
 
