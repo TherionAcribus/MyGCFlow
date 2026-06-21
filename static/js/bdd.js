@@ -295,8 +295,9 @@ export function readBdd(){
                 pkg.updateAnimationMenuAfterReadBdd(metadata);
                 // mise à jour des Date Pickers de l'ui (filtre BDD)
                 pkg.setPickerDates(metadata);
-                // mise à jour des options en fonction de la BDD (dates d?but et fin)
+                // mise à jour des options en fonction de la BDD (dates début et fin)
                 updateOptionsValues(metadata);
+                clearMap();
                 pkg.addVector(result.geojson);
 
                 // Mettre à jour le compteur : sélection = total au chargement initial
@@ -574,7 +575,8 @@ function loadAndDisplayPoints() {
                     // mise ? jour des options en fonction de la BDD (dates d?but et fin)
                     updateOptionsValues(metadata);
 
-                    // Ajouter les points ? la carte
+                    // Ajouter les points à la carte
+                    clearMap();
                     pkg.addVector(geojson);
 
                     // Mettre ? jour le compteur : s?lection = total au chargement initial
