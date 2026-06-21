@@ -480,6 +480,10 @@ class ProfileManager {
             const profiles = await this.apiCall('/api/profiles');
             const settings = await this.loadAppSettings();
 
+            // Détruire l'instance Materialize AVANT de modifier le DOM,
+            // pour éviter les références orphelines à _inputEl qui causent un crash async.
+            try { const inst = M.FormSelect.getInstance(selector); if (inst) inst.destroy(); } catch(_) {}
+
             // Vider le sélecteur
             selector.innerHTML = '';
 
@@ -500,7 +504,6 @@ class ProfileManager {
             // Sélectionner le profil par défaut actuel (par nom si disponible)
             selector.value = settings.default_profile_name || '';
 
-            // Initialiser Materialize Select (dans try/catch car peut crasher si panel caché)
             try { M.FormSelect.init(selector); } catch(_) {}
 
             console.log('Sélecteur profil par défaut rempli avec:', profiles);
