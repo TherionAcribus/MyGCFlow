@@ -655,8 +655,14 @@ export function addVector(data) {
         featureProjection: 'EPSG:3857' // Projection de la carte
     });
 
+    // Vider la source avant le rechargement pour éviter l'accumulation de features
+    // (sans supprimer le layer WebGL, ce qui évite une recréation du contexte)
+    if (window.vectorSource) {
+        window.vectorSource.clear();
+    }
+
     // selon que l'on choisisse webgl ou non on affiche les points avec le bon moteur
-    selectEngineAndRefresh();   
+    selectEngineAndRefresh();
 }
 
 // fonction appelée au changement d'options graphique
