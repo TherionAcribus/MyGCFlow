@@ -428,6 +428,16 @@ function updateFiltersCounter(selected, total){
             el.textContent = `Sélection: ${selected} / ${total}`;
         }
 
+        const badge = document.getElementById('dataTabBadge');
+        if (badge) {
+            if (total > 0 && selected < total) {
+                badge.textContent = `${selected}/${total}`;
+                badge.style.display = '';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
         // Gérer la toast d'alerte "aucune cache visible"
         if (selected === 0 && total > 0) {
             // Afficher la toast si elle n'existe pas encore

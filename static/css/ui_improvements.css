@@ -985,6 +985,21 @@ input[type="checkbox"]:checked + span:not(.lever):after {
     font-weight: 500;
 }
 
+/* Badge filtre actif sur l'onglet Données */
+.data-tab-badge {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 6px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 16px;
+    color: #fff;
+    background-color: #2196F3;
+    border-radius: 10px;
+    vertical-align: middle;
+    letter-spacing: 0.02em;
+}
+
 /* Boutons de reset de dates */
 .date-reset-btn {
     margin-top: 4px;
