@@ -336,7 +336,7 @@ export function readBdd(){
                 updateFiltersCounter(metadata.numberOfCaches || 0, totalCaches);
 
                 const btn = document.getElementById('clearDatabaseBtn');
-                if (btn) btn.style.display = '';
+                if (btn) btn.style.display = totalCaches > 0 ? '' : 'none';
 
                 try { if (readLoadingToast) { pkg.hideToast(readLoadingToast); readLoadingToast = null; } } catch(e) {}
             },
