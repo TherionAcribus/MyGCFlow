@@ -353,8 +353,8 @@ function changeSelect(selectedValues, optionValues) {
                 // MAJ des frames Infos
                 pkg.updateInfosFrameAfterReadBdd(metadata);
                 // Mettre à jour les features affichées sur la carte
+                clearMap();
                 pkg.addVector(geojson);
-                pkg.refreshPoints(optionValues);
 
                 // Mettre à jour le compteur : sélection courante / total initial
                 updateFiltersCounter(metadata.numberOfCaches || (geojson?.features?.length || 0), totalCaches);
