@@ -101,32 +101,42 @@
 
                 <div class="row">
                     <div class="col s12">
-                        <a class="waves-effect waves-light btn-large" id="btnStartAnimation">
-                            <i class="material-icons right">play_arrow</i>{{ _("Démarrer") }}
-                        </a>
-                        <a class="waves-effect waves-light btn-large" id="btnRecordAnimation">
-                            <i class="material-icons right">videocam</i>{{ _("Enregistrer") }}
-                        </a>
-                        <a class="waves-effect waves-light btn-large" id="btnPauseAnimation">
-                            <i class="material-icons right">pause</i>{{ _("Pause") }}
-                        </a>
-                        <a class="waves-effect waves-light btn-large" id="btnStopAnimation">
-                            <i class="material-icons right">stop</i>{{ _("Arrêter") }}
-                        </a>
+                        <div class="anim-section-divider">
+                            <span class="anim-section-label">{{ _("Contrôles") }}</span>
+                        </div>
+                        <div class="anim-btn-group">
+                            <a class="waves-effect waves-light btn-large" id="btnStartAnimation">
+                                <i class="material-icons right">play_arrow</i>{{ _("Démarrer") }}
+                            </a>
+                            <a class="waves-effect waves-light btn-large" id="btnRecordAnimation">
+                                <i class="material-icons right">videocam</i>{{ _("Enregistrer") }}
+                            </a>
+                            <a class="waves-effect waves-light btn-large" id="btnPauseAnimation">
+                                <i class="material-icons right">pause</i>{{ _("Pause") }}
+                            </a>
+                            <a class="waves-effect waves-light btn-large" id="btnStopAnimation">
+                                <i class="material-icons right">stop</i>{{ _("Arrêter") }}
+                            </a>
+                        </div>
                     </div>
                 </div>
 
-                <div class="row">
+                <div class="row" style="margin-top: 8px;">
                     <div class="col s12">
-                        <a class="waves-effect waves-light btn" id="btnCleanMoviePictures">
-                            <i class="material-icons right">delete_sweep</i>{{ _("Nettoyer images") }}
-                        </a>
-                        <a class="waves-effect waves-light btn" id="btnAssembleMoviePictures">
-                            <i class="material-icons right">movie</i>{{ _("Assembler film") }}
-                        </a>
-                        <a class="waves-effect waves-light btn" id="btnOpenVideoFolder">
-                            <i class="material-icons right">folder_open</i>{{ _("Ouvrir le dossier vidéo") }}
-                        </a>
+                        <div class="anim-section-divider">
+                            <span class="anim-section-label">{{ _("Vidéo") }}</span>
+                        </div>
+                        <div class="anim-btn-group">
+                            <a class="waves-effect waves-light btn" id="btnCleanMoviePictures">
+                                <i class="material-icons right">delete_sweep</i>{{ _("Nettoyer images") }}
+                            </a>
+                            <a class="waves-effect waves-light btn" id="btnAssembleMoviePictures">
+                                <i class="material-icons right">movie</i>{{ _("Assembler film") }}
+                            </a>
+                            <a class="waves-effect waves-light btn" id="btnOpenVideoFolder">
+                                <i class="material-icons right">folder_open</i>{{ _("Ouvrir le dossier vidéo") }}
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
