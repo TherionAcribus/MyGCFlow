@@ -209,9 +209,7 @@ function uploadBddRequest(e){
         body: formData,
     }).then (response => response.json())
     .then (data => {
-        console.log("data", data);
         if (data.success) {
-            console.log("success");
             // Masquer le toast d'analyse et commencer le chargement
             pkg.hideToast(loadingToast);
             uploadBdd();
@@ -242,7 +240,6 @@ function uploadBdd (){
     })
     .then(response => response.json())
     .then(data => {
-        console.log("data", data);
         if (!data.success || !data.task_id) {
             throw new Error(data.message || "Impossible de lancer l'import GPX");
         }
@@ -319,8 +316,6 @@ export function readBdd(){
 }
 
 function changeSelect(selectedValues, optionValues) {
-    console.log('[FILTER] changeSelect called with selectedValues:', selectedValues);
-    console.log('[FILTER] Types selected:', selectedValues.type);
     try { if (filterLoadingToast) { pkg.hideToast(filterLoadingToast); filterLoadingToast = null; } filterLoadingToast = pkg.showLoadingToast(t('Filtrage des caches...'), t('Filtrage')); } catch(e) {}
 
     fetch(`${CONFIG.BASE_URL}/filter_caches`, {
@@ -339,7 +334,6 @@ function changeSelect(selectedValues, optionValues) {
             onSuccess: (result) => {
                 const geojson = result.geojson;
                 const meta = result.metadata || {};
-                console.log('[FILTER] GeoJSON généré:', geojson?.features?.length || 0);
                 json_data = geojson;
                 setMetadata(meta);
 
@@ -499,7 +493,6 @@ function performUploadFromModal(file){
     })
     .then(response => response.json())
     .then(data => {
-        console.log("data depuis modale", data);
         if (!data.success || !data.task_id) {
             throw new Error(data.message || "Impossible de lancer l'import GPX");
         }
@@ -538,8 +531,6 @@ function performUploadFromModal(file){
 }
 
 function loadAndDisplayPoints() {
-    console.log('[LOAD_POINTS] Chargement des points après upload...');
-
     // Afficher un toast pour l'affichage initial des points
     pkg.showPointsToast(t('Chargement et affichage des points...'), t('Affichage des points'));
 

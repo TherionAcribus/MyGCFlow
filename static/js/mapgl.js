@@ -70,7 +70,7 @@ import * as pkg from './index.js';
 import { CONFIG } from './init.js';
 
 // Debug toasts/assemblage
-const TOAST_DEBUG = true;
+const TOAST_DEBUG = false;
 function logToast(...args) { if (TOAST_DEBUG) { try { console.log('[TOAST]', ...args); } catch(e) {} } }
 
 let map;  // carte de l'app
@@ -1090,41 +1090,32 @@ function displayWebGLPoints(features, pointOptions) {
 
 // supprime les points de la carte (centre et bordures si existantes)
 export function clearMap(){
-    console.log('[CLEAR] Début du nettoyage de la carte');
-
     // Garder vectorSource mais vider son contenu
     if (window.vectorSource) {
         window.vectorSource.clear();
-        console.log('[CLEAR] Vector source nettoyé');
     }
 
     // Retirer vectorLayer de la carte avant de perdre la référence
     if (vectorLayer) {
         map.removeLayer(vectorLayer);
         vectorLayer = undefined;
-        console.log('[CLEAR] vectorLayer retiré de la carte');
     }
 
     // Supprimer les autres layers si nécessaire
     if (window.borderLayer) {
         map.removeLayer(window.borderLayer);
         window.borderLayer = undefined;
-        console.log('[CLEAR] borderLayer supprimé');
     }
     if (window.centerLayer) {
         map.removeLayer(window.centerLayer);
         window.centerLayer = undefined;
-        console.log('[CLEAR] centerLayer supprimé');
     }
 
     // Nettoyer les layers d'animation
     if (window.animationLayer) {
         window.animationLayer.setVisible(false);
         window.animationLayer = undefined;
-        console.log('[CLEAR] animationLayer nettoyé');
     }
-
-    console.log('[CLEAR] Fin du nettoyage de la carte');
 }
 
 
@@ -1219,35 +1210,22 @@ export function startAnimation(restart=false) {
     flashOptions.rgb = pkg.hexToRgb(flashOptions.color);
     const dayDuration = pkg.options.animation.timePerDay;
 
-    // Debug: Afficher les options d'animation
-    console.log('[DEBUG ANIMATION] Options animation:', pkg.options.animation);
-    console.log('[DEBUG ANIMATION] dateStart type:', typeof pkg.options.animation.dateStart, 'value:', pkg.options.animation.dateStart);
-    console.log('[DEBUG ANIMATION] dateEnd type:', typeof pkg.options.animation.dateEnd, 'value:', pkg.options.animation.dateEnd);
-
     // Appliquer plage de dates définie dans l'onglet Animation si présente
     if (pkg.options.animation.dateStart instanceof Date) {
         pkg.metadata.startDate = new Date(pkg.options.animation.dateStart);
-        console.log('[ANIMATION] Date de début personnalisée appliquée:', pkg.metadata.startDate);
-    } else {
-        console.log('[ANIMATION] ❌ Pas de date de début personnalisée, utilisation par défaut:', pkg.metadata.startDate);
     }
 
     if (pkg.options.animation.dateEnd instanceof Date) {
         pkg.metadata.endDate = new Date(pkg.options.animation.dateEnd);
-        console.log('[ANIMATION] Date de fin personnalisée appliquée:', pkg.metadata.endDate);
-    } else {
-        console.log('[ANIMATION] ❌ Pas de date de fin personnalisée, utilisation par défaut:', pkg.metadata.endDate);
     }
 
     if (!restart) {
-        currentDate = new Date(pkg.metadata.startDate); // Initialisation de la date avec la date de début (personnalisée ou par défaut)
-        console.log('[ANIMATION] 🚀 Démarrage avec date:', currentDate, '->', pkg.metadata.endDate);
+        currentDate = new Date(pkg.metadata.startDate);
     }
     interval = setInterval(() => {
         displayFeaturesForDate(currentDate, pkg.options.point, flashOptions, false, infos);
         currentDate.setDate(currentDate.getDate() + 1);
         if (currentDate > pkg.metadata.endDate) {
-            console.log('[ANIMATION] Fin atteinte. currentDate:', currentDate);
             clearInterval(interval);
             interval = null;
             const extraMs = getExtraEndMs();
