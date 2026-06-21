@@ -194,7 +194,7 @@ let recordingPerformanceMonitor = {
         
         const PERFORMANCE_CHECK_INTERVAL = 30;
         const FRAME_TIME_THRESHOLD = expectedFrameTime * 2.5; // 2.5x le temps attendu
-        const BAD_FRAMES_THRESHOLD = 0.2; // 20% de frames lentes = problème
+        const BAD_FRAMES_THRESHOLD = 0.3; // 30% de frames lentes = problème
         
         if (this.frameTimings.length >= PERFORMANCE_CHECK_INTERVAL) {
             const slowFrames = this.frameTimings.filter(time => time > FRAME_TIME_THRESHOLD).length;
@@ -348,6 +348,7 @@ let mrDrawIntervalId = null;
 let mrProgressIntervalId = null;
 let mrStopTimeoutId = null;
 let isMediaRecording = false;
+let mrIsFinalizing = false;
 let mrOnFinalizeRestoreTimePerDay = null;
 
 // Audio lecture seule (hors enregistrement) et audio pour MediaRecorder
@@ -2093,8 +2094,12 @@ function stopMediaRecorderPipeline(finalize){
         try { mrRecorder.stop(); } catch(_) {}
     } else if (finalize) {
         finalizeMediaRecorderVideo();
+    } else {
+        // Annulation sans finalization : restaurer timePerDay immédiatement
+        try { mrOnFinalizeRestoreTimePerDay?.(); mrOnFinalizeRestoreTimePerDay = null; } catch(_) {}
     }
     isMediaRecording = false;
+    mrIsFinalizing = false;
 
     // Nettoyage audio MR
     try { if (mrAudioEl) { mrAudioEl.pause(); mrAudioEl.currentTime = 0; URL.revokeObjectURL(mrAudioEl.src); } } catch(_) {}
@@ -2103,6 +2108,8 @@ function stopMediaRecorderPipeline(finalize){
 }
 
 function finalizeMediaRecorderVideo(){
+    if (mrIsFinalizing) return;
+    mrIsFinalizing = true;
     try {
         const mime = pkg.options?.record?.mediaRecorder?.mimeType || 'video/webm;codecs=vp9';
         const blob = new Blob(mrRecordedChunks || [], { type: mime });
@@ -2206,10 +2213,12 @@ function finalizeMediaRecorderVideo(){
         try { pkg.closeModalLoading(); } catch(_) {}
     } finally {
         try { if (typeof mrOnFinalizeRestoreTimePerDay === 'function') { mrOnFinalizeRestoreTimePerDay(); } } catch(_) {}
+        mrOnFinalizeRestoreTimePerDay = null;
         mrRecorder = null;
         mrRecordedChunks = [];
         mrOutCanvas = null;
         mrOutCtx = null;
+        mrIsFinalizing = false;
     }
 }
 
@@ -2245,8 +2254,8 @@ function normalizeRecordedVideoSpeed(sourceBlob, factor){
                 const stream = (typeof video.captureStream === 'function') ? video.captureStream(fps) : null;
                 if (!stream) { cleanup(); reject(new Error('captureStream non supporté pour la normalisation')); return; }
 
-                // Timeout de sécurité : durée de la vidéo normalisée + 60s de marge
-                const maxMs = duration > 0 ? ((duration / factor) * 1000 + 60000) : 120000;
+                // Timeout basé sur la durée à 1x + 60s : couvre le cas où playbackRate échoue silencieusement
+                const maxMs = duration > 0 ? (duration * 1000 + 60000) : 120000;
                 safetyTimeout = setTimeout(() => {
                     safetyTimeout = null;
                     cleanup();
@@ -2367,8 +2376,14 @@ function muxRecordedVideoWithAudio(sourceBlob, audioFile){
                         .then(() => loadAudioBuffer())
                         .then(() => {
                             // Composer flux (vidéo + piste audio)
+                            const videoTracks = vStream.getVideoTracks();
+                            if (videoTracks.length === 0) {
+                                cleanup();
+                                reject(new Error('Aucune piste vidéo disponible pour le mux audio'));
+                                return;
+                            }
                             const composed = new MediaStream([
-                                ...vStream.getVideoTracks(),
+                                ...videoTracks,
                                 ...audioDest.stream.getAudioTracks()
                             ]);
 
@@ -2396,7 +2411,13 @@ function muxRecordedVideoWithAudio(sourceBlob, audioFile){
                             // Démarrer la lecture silencieuse
                             try { audioCtx.resume().catch(()=>{}); } catch(_) {}
                             try { video.currentTime = 0; } catch(_) {}
-                            try { audioNode.start(0); } catch(_) {}
+                            try {
+                                audioNode.start(0);
+                            } catch(e) {
+                                cleanup();
+                                reject(new Error('Impossible de démarrer la piste audio : ' + e.message));
+                                return;
+                            }
                             video.play().catch(err => { cleanup(); reject(err); });
                         })
                         .catch((e) => { cleanup(); reject(e); });
