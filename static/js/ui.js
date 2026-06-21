@@ -595,7 +595,13 @@ function initOptionsElements() {
     cbRecordAudioEnable = document.getElementById('cbRecordAudioEnable');
     if (cbRecordAudioEnable) cbRecordAudioEnable.addEventListener('change', changeRecordValues);
     inputAudioVolume = document.getElementById('inputAudioVolume');
-    if (inputAudioVolume) inputAudioVolume.addEventListener('input', changeRecordValues);
+    if (inputAudioVolume) {
+        inputAudioVolume.addEventListener('input', () => {
+            const display = document.getElementById('spanAudioVolumeDisplay');
+            if (display) display.textContent = Math.round(parseFloat(inputAudioVolume.value) * 100) + '%';
+            changeRecordValues();
+        });
+    }
     inputAudioFile = document.getElementById('inputAudioFile');
     if (inputAudioFile) {
         // Gérer la sélection/désélection d'un fichier audio
@@ -1499,6 +1505,24 @@ function initOptionsUI() {
         if (cbRecordDownload) cbRecordDownload.checked = !!(pkg.options.record?.mediaRecorder?.downloadLocal);
         if (cbRecordNormalize) cbRecordNormalize.checked = !!(pkg.options.record?.mediaRecorder?.offlineNormalization ?? true);
 
+        // Vérifier le format sauvegardé et l'état initial de normalize
+        if (selectRecordMime && typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported) {
+            const savedMime = selectRecordMime.value;
+            if (savedMime && !MediaRecorder.isTypeSupported(savedMime)) {
+                setTimeout(() => {
+                    pkg.showToast && pkg.showToast(
+                        pkg.t ? pkg.t('Le format vidéo sauvegardé (${mime}) n\'est pas supporté par ce navigateur.', { mime: savedMime }) : `Format ${savedMime} non supporté.`,
+                        'warning', 'Format non supporté', 7000
+                    );
+                }, 1500);
+            }
+        }
+        if (cbRecordNormalize && inputRecordSlowdown) {
+            const sd = Math.max(1, parseInt(inputRecordSlowdown.value) || 1);
+            cbRecordNormalize.disabled = sd === 1;
+            if (sd === 1) cbRecordNormalize.closest('label').style.opacity = '0.4';
+        }
+
         // ------- AUDIO UTILISATEUR -------
         try {
             // Restaurer options audio si existantes (désactivé par défaut)
@@ -1510,7 +1534,12 @@ function initOptionsUI() {
                 cbRecordAudioEnable.checked = !!pkg.options.record.audio.enabled && hasFile;
                 cbRecordAudioEnable.disabled = !hasFile; // Désactiver si pas de fichier
             }
-            if (inputAudioVolume) inputAudioVolume.value = (typeof pkg.options.record.audio.volume === 'number') ? pkg.options.record.audio.volume : 1;
+            if (inputAudioVolume) {
+                const vol = (typeof pkg.options.record.audio.volume === 'number') ? pkg.options.record.audio.volume : 1;
+                inputAudioVolume.value = vol;
+                const display = document.getElementById('spanAudioVolumeDisplay');
+                if (display) display.textContent = Math.round(vol * 100) + '%';
+            }
         } catch(e) { console.warn('Init audio UI error:', e); }
 
         // Mettre à jour la visibilité après l'initialisation
@@ -1594,6 +1623,11 @@ function changeRecordValues() {
         if (inputRecordSlowdown && inputRecordSlowdown.value !== '') {
             const sd = Math.max(1, parseInt(inputRecordSlowdown.value) || 1);
             pkg.options.record.mediaRecorder.slowdownFactor = sd;
+            if (cbRecordNormalize) {
+                cbRecordNormalize.disabled = sd === 1;
+                if (sd === 1) cbRecordNormalize.closest('label').style.opacity = '0.4';
+                else cbRecordNormalize.closest('label').style.opacity = '';
+            }
         }
         if (inputRecordScaleFactor && inputRecordScaleFactor.value !== '') {
             const sc = Math.max(1, Math.min(3, parseFloat(inputRecordScaleFactor.value) || 1));
@@ -1656,10 +1690,9 @@ function saveRecordSettings() {
                 mimeType: pkg.options.record?.mediaRecorder?.mimeType || 'video/webm;codecs=vp9',
                 videoBitsPerSecond: pkg.options.record?.mediaRecorder?.videoBitsPerSecond || 6000000,
                 slowdownFactor: pkg.options.record?.mediaRecorder?.slowdownFactor || 1,
-                uploadToServer: pkg.options.record?.mediaRecorder?.uploadToServer || true,
-                downloadLocal: pkg.options.record?.mediaRecorder?.downloadLocal || true,
-                offlineNormalization: pkg.options.record?.mediaRecorder?.offlineNormalization || true
-                ,
+                uploadToServer: pkg.options.record?.mediaRecorder?.uploadToServer ?? true,
+                downloadLocal: pkg.options.record?.mediaRecorder?.downloadLocal ?? true,
+                offlineNormalization: pkg.options.record?.mediaRecorder?.offlineNormalization ?? true,
                 scaleFactor: pkg.options.record?.mediaRecorder?.scaleFactor || 1
             },
             audio: {

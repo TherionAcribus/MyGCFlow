@@ -86,9 +86,12 @@
                         <div id="audioFileInfo" style="margin-top:8px; font-size:0.9em; color:#666;">
                             <em>{{ _("Aucune musique sélectionnée") }}</em>
                         </div>
-                        <div class="input-field" style="margin-top:8px;">
-                            <input id="inputAudioVolume" type="number" min="0" max="1" step="0.05" value="1">
-                            <label class="active" for="inputAudioVolume">{{ _("Volume musique (0-1)") }}</label>
+                        <div style="margin-top:12px;">
+                            <label style="display:block; font-size:0.9rem; color:#555; margin-bottom:6px;">{{ _("Volume musique") }}</label>
+                            <div class="vector-slider-container">
+                                <input id="inputAudioVolume" type="range" min="0" max="1" step="0.05" value="1" class="vector-slider">
+                                <span id="spanAudioVolumeDisplay" class="vector-slider-value">100%</span>
+                            </div>
                         </div>
                         <div style="margin-top:8px;">
                             <a class="waves-effect waves-light btn-small disabled" id="btnSetDurationFromAudio" title="{{ _('Utiliser la durée de la musique comme temps total') }}">
