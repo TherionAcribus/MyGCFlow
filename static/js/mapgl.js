@@ -85,6 +85,9 @@ let vectorLayer;
 let features;
 // couleurs GC par défaut
 let defaultGcColors;
+// Tableau à plat des couleurs GC précalculé pour les expressions WebGL 'match'
+// Évite de recalculer Object.entries().flat() à chaque appel de displayWebGLPoints
+let gcColorsFlat = [];
 // Popup d'information (overlay)
 let popupOverlay;
 let popupEl;
@@ -434,6 +437,7 @@ export async function requetedefaultGcColors(){
         };
         console.warn('Utilisation des couleurs GC par défaut suite à une erreur de chargement');
     }
+    gcColorsFlat = Object.entries(defaultGcColors).flat();
 }
 
 
@@ -897,7 +901,7 @@ function displayWebGLPoints(features, pointOptions) {
         borderColor = [
             'match',
             ['get', 'cache_type'],
-            ...Object.entries(defaultGcColors).flat(), // Object.entries pour obtenir un tableau de paires clé-valeur, puis flat pour aplatir le tableau en un seul niveau
+            ...gcColorsFlat,
             '#000000' // couleur par défaut
         ]
     } else if (pointOptions.border.mode == "fix") {
@@ -912,7 +916,7 @@ function displayWebGLPoints(features, pointOptions) {
         fillColor = [
             'match',
             ['get', 'cache_type'],
-            ...Object.entries(defaultGcColors).flat(), // Object.entries pour obtenir un tableau de paires clé-valeur, puis flat pour aplatir le tableau en un seul niveau
+            ...gcColorsFlat,
             '#000000' // couleur par défaut
         ]
     } else if (pointOptions.center.mode == "fix") {
