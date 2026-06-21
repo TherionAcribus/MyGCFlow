@@ -604,6 +604,341 @@ class SettingsManager:
                     box-shadow: 0 10px 24px rgba(17, 24, 39, 0.12);
                     """
                 )
+            ),
+
+            "Bonbon Pop": MapProfile(
+                name="Bonbon Pop",
+                map=MapOptions(
+                    tile_provider="OSM",
+                    default_center=(46.603354, 1.888334),  # France
+                    default_zoom=6,
+                    vector_options=VectorMapOptions(
+                        stroke_color="#ff4d9d",
+                        fill_color="#ffe14d",
+                        background_color="#fff5fb",
+                        stroke_width=2.4
+                    ),
+                    toner_options=TonerMapOptions(variant="light")
+                ),
+                animation=AnimationOptions(enabled=True, speed=1.6),
+                points=PointStyle(
+                    size=10,
+                    color="#ff4d9d",
+                    shape="circle",
+                    halo=True,
+                    border_color="#ffffff",
+                    border_size=3,
+                    fill_color_type="fix",
+                    border_color_type="fix",
+                    mode="vectoriel"
+                ),
+                flash=FlashOptions(
+                    mode="star",
+                    duration=800,
+                    size=70,
+                    color="#ffe14d",
+                    color_type="fix"
+                ),
+                infos=build_infos(
+                    "Candy Cache Map",
+                    """
+                    color: #ff2e88;
+                    background: rgba(255, 255, 255, 0.92);
+                    padding: 10px 18px;
+                    border-radius: 999px;
+                    font-weight: 800;
+                    letter-spacing: 0.5px;
+                    box-shadow: 0 10px 24px rgba(255, 77, 157, 0.32);
+                    """,
+                    """
+                    color: #ff2e88;
+                    background: rgba(255, 245, 251, 0.94);
+                    padding: 8px 14px;
+                    border-radius: 999px;
+                    border: 2px solid #ffd1e8;
+                    box-shadow: 0 8px 18px rgba(255, 77, 157, 0.18);
+                    """
+                )
+            ),
+
+            "Coucher Tropical": MapProfile(
+                name="Coucher Tropical",
+                map=MapOptions(
+                    tile_provider="watercolor",
+                    default_center=(43.7102, 7.2620),  # Méditerranée (Nice)
+                    default_zoom=6,
+                    vector_options=VectorMapOptions(
+                        stroke_color="#ff6b6b",
+                        fill_color="#ffd29d",
+                        background_color="#fff3e0",
+                        stroke_width=1.6
+                    ),
+                    toner_options=TonerMapOptions(variant="light")
+                ),
+                animation=AnimationOptions(enabled=True, speed=1.1),
+                points=PointStyle(
+                    size=9,
+                    color="#ff6b6b",
+                    shape="circle",
+                    halo=True,
+                    border_color="#fff3e0",
+                    border_size=2,
+                    fill_color_type="gc",
+                    border_color_type="fix",
+                    mode="vectoriel"
+                ),
+                flash=FlashOptions(
+                    mode="diamond",
+                    duration=1000,
+                    size=60,
+                    color="#ff9e2c",
+                    color_type="gc"
+                ),
+                infos=build_infos(
+                    "Sunset Cache Trail",
+                    """
+                    color: #fff3e0;
+                    background: linear-gradient(135deg, #ff9e2c 0%, #ff6b6b 100%);
+                    padding: 12px 18px;
+                    border-radius: 14px;
+                    font-weight: 700;
+                    letter-spacing: 0.6px;
+                    box-shadow: 0 12px 26px rgba(255, 107, 107, 0.3);
+                    """,
+                    """
+                    color: #7a3b1d;
+                    background: rgba(255, 243, 224, 0.92);
+                    padding: 8px 14px;
+                    border-radius: 12px;
+                    border-left: 4px solid #ff9e2c;
+                    box-shadow: 0 8px 18px rgba(255, 107, 107, 0.16);
+                    """
+                )
+            ),
+
+            "Forêt Émeraude": MapProfile(
+                name="Forêt Émeraude",
+                map=MapOptions(
+                    tile_provider="vectorMap",
+                    default_center=(45.8992, 6.1294),  # Alpes (Annecy)
+                    default_zoom=6,
+                    vector_options=VectorMapOptions(
+                        stroke_color="#1b4332",
+                        fill_color="#95d5b2",
+                        background_color="#ecf8f0",
+                        stroke_width=1.6
+                    ),
+                    toner_options=TonerMapOptions(variant="light")
+                ),
+                animation=AnimationOptions(enabled=True, speed=0.9),
+                points=PointStyle(
+                    size=8,
+                    color="#2d6a4f",
+                    shape="triangle",
+                    halo=True,
+                    border_color="#d8f3dc",
+                    border_size=2,
+                    fill_color_type="fix",
+                    border_color_type="fix",
+                    mode="vectoriel"
+                ),
+                flash=FlashOptions(
+                    mode="triangle",
+                    duration=1000,
+                    size=50,
+                    color="#74c69d",
+                    color_type="fix"
+                ),
+                infos=build_infos(
+                    "Forest Geocaching",
+                    """
+                    color: #1b4332;
+                    background: rgba(236, 248, 240, 0.94);
+                    padding: 10px 16px;
+                    border-radius: 10px;
+                    border: 1px solid #74c69d;
+                    font-weight: 700;
+                    letter-spacing: 0.4px;
+                    box-shadow: 0 8px 20px rgba(45, 106, 79, 0.18);
+                    """,
+                    """
+                    color: #1b4332;
+                    background: rgba(216, 243, 220, 0.9);
+                    padding: 8px 12px;
+                    border-radius: 10px;
+                    border-left: 4px solid #2d6a4f;
+                    box-shadow: 0 6px 16px rgba(45, 106, 79, 0.14);
+                    """
+                )
+            ),
+
+            "Océan Bubble": MapProfile(
+                name="Océan Bubble",
+                map=MapOptions(
+                    tile_provider="OSM",
+                    default_center=(48.3905, -4.4860),  # Côte (Brest)
+                    default_zoom=6,
+                    vector_options=VectorMapOptions(
+                        stroke_color="#0077b6",
+                        fill_color="#90e0ef",
+                        background_color="#f0fbff",
+                        stroke_width=2.0
+                    ),
+                    toner_options=TonerMapOptions(variant="light")
+                ),
+                animation=AnimationOptions(enabled=True, speed=1.0),
+                points=PointStyle(
+                    size=9,
+                    color="#00b4d8",
+                    shape="circle",
+                    halo=True,
+                    border_color="#ffffff",
+                    border_size=3,
+                    fill_color_type="fix",
+                    border_color_type="fix",
+                    mode="vectoriel"
+                ),
+                flash=FlashOptions(
+                    mode="circle",
+                    duration=1000,
+                    size=80,
+                    color="#90e0ef",
+                    color_type="fix"
+                ),
+                infos=build_infos(
+                    "Ocean Cache Map",
+                    """
+                    color: #023e8a;
+                    background: rgba(240, 251, 255, 0.92);
+                    padding: 10px 18px;
+                    border-radius: 999px;
+                    font-weight: 700;
+                    letter-spacing: 0.5px;
+                    box-shadow: 0 10px 24px rgba(0, 180, 216, 0.26);
+                    """,
+                    """
+                    color: #023e8a;
+                    background: rgba(144, 224, 239, 0.32);
+                    padding: 8px 14px;
+                    border-radius: 999px;
+                    border: 1px solid rgba(0, 180, 216, 0.5);
+                    box-shadow: 0 8px 18px rgba(0, 180, 216, 0.16);
+                    """
+                )
+            ),
+
+            "Arcade 80": MapProfile(
+                name="Arcade 80",
+                map=MapOptions(
+                    tile_provider="stamenToner",
+                    default_center=(48.8566, 2.3522),  # Paris
+                    default_zoom=7,
+                    vector_options=VectorMapOptions(
+                        stroke_color="#2effc7",
+                        fill_color="#1a1a2e",
+                        background_color="#0d0d1a",
+                        stroke_width=1.8
+                    ),
+                    toner_options=TonerMapOptions(variant="dark")
+                ),
+                animation=AnimationOptions(enabled=True, speed=1.8),
+                points=PointStyle(
+                    size=9,
+                    color="#ffe14d",
+                    shape="circle",
+                    halo=True,
+                    border_color="#ff2e88",
+                    border_size=2,
+                    fill_color_type="fix",
+                    border_color_type="fix",
+                    mode="vectoriel"
+                ),
+                flash=FlashOptions(
+                    mode="square",
+                    duration=500,
+                    size=50,
+                    color="#2effc7",
+                    color_type="fix"
+                ),
+                infos=build_infos(
+                    "ARCADE CACHE RUN",
+                    """
+                    color: #2effc7;
+                    background: rgba(13, 13, 26, 0.9);
+                    padding: 10px 16px;
+                    border-radius: 4px;
+                    border: 2px solid #ff2e88;
+                    font-family: monospace;
+                    font-weight: 800;
+                    text-transform: uppercase;
+                    letter-spacing: 3px;
+                    box-shadow: 0 0 22px rgba(46, 255, 199, 0.25);
+                    """,
+                    """
+                    color: #ffe14d;
+                    background: rgba(13, 13, 26, 0.85);
+                    padding: 8px 12px;
+                    border-radius: 4px;
+                    border-left: 3px solid #2effc7;
+                    font-family: monospace;
+                    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3);
+                    """
+                )
+            ),
+
+            "Fête Confetti": MapProfile(
+                name="Fête Confetti",
+                map=MapOptions(
+                    tile_provider="OSM",
+                    default_center=(46.0, 2.0),  # Vue large sur la France
+                    default_zoom=5,
+                    vector_options=VectorMapOptions(
+                        stroke_color="#7b2ff7",
+                        fill_color="#ffd166",
+                        background_color="#fffdf5",
+                        stroke_width=2.2
+                    ),
+                    toner_options=TonerMapOptions(variant="light")
+                ),
+                animation=AnimationOptions(enabled=True, speed=1.5),
+                points=PointStyle(
+                    size=9,
+                    color="#7b2ff7",
+                    shape="circle",
+                    halo=True,
+                    border_color="#ffffff",
+                    border_size=2,
+                    fill_color_type="gc",
+                    border_color_type="gc",
+                    mode="vectoriel"
+                ),
+                flash=FlashOptions(
+                    mode="star",
+                    duration=800,
+                    size=65,
+                    color="#ff4fd8",
+                    color_type="gc"
+                ),
+                infos=build_infos(
+                    "Cache Party!",
+                    """
+                    color: #ffffff;
+                    background: linear-gradient(135deg, #7b2ff7 0%, #ff4fd8 50%, #ffd166 100%);
+                    padding: 12px 20px;
+                    border-radius: 14px;
+                    font-weight: 800;
+                    letter-spacing: 0.8px;
+                    box-shadow: 0 12px 28px rgba(123, 47, 247, 0.28);
+                    """,
+                    """
+                    color: #4a148c;
+                    background: rgba(255, 253, 245, 0.94);
+                    padding: 8px 14px;
+                    border-radius: 12px;
+                    border-left: 4px solid #ff4fd8;
+                    box-shadow: 0 8px 20px rgba(123, 47, 247, 0.16);
+                    """
+                )
             )
         }
 

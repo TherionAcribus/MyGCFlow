@@ -119,7 +119,7 @@ fetch('/api/profiles/Mon Profil', {
 
 ## Profils d'exemple inclus
 
-Au premier lancement, GCMap crée automatiquement 5 profils d'exemple :
+Au premier lancement, GCMap crée automatiquement 11 profils d'exemple :
 
 ### 🏠 **Default** (Par défaut)
 - **Carte** : OpenStreetMap centrée sur Paris (zoom 6)
@@ -150,6 +150,42 @@ Au premier lancement, GCMap crée automatiquement 5 profils d'exemple :
 - **Points** : Cercles orange avec halo blanc et flash carré ample
 - **Animation** : Activée, vitesse doublée
 - **Usage** : Profil conçu pour présentation, projection ou vidéo
+
+### 🍬 **Bonbon Pop**
+- **Carte** : OSM clair centrée sur la France (zoom 6)
+- **Points** : Cercles rose bonbon, halo blanc épais, flash étoile jaune
+- **Animation** : Activée, vive
+- **Usage** : Look acidulé et contrasté sur fond clair
+
+### 🌅 **Coucher Tropical**
+- **Carte** : Watercolor centrée sur la Méditerranée (zoom 6)
+- **Points** : Cercles corail colorés par type de cache, flash losange orange
+- **Animation** : Activée, posée
+- **Usage** : Ambiance chaude « carte postale »
+
+### 🌿 **Forêt Émeraude**
+- **Carte** : Carte vectorielle en palette verte, centrée sur les Alpes (zoom 6)
+- **Points** : Triangles vert forêt, halo clair, flash triangle
+- **Animation** : Activée, calme
+- **Usage** : Rendu nature, apaisant et lisible
+
+### 🫧 **Océan Bubble**
+- **Carte** : OSM clair centré sur la côte (zoom 6)
+- **Points** : Cercles turquoise, gros halo blanc, flash cercle qui s'étend
+- **Animation** : Activée, vitesse normale
+- **Usage** : Effet aquatique et frais
+
+### 🕹️ **Arcade 80**
+- **Carte** : Stamen Toner sombre centrée sur Paris (zoom 7)
+- **Points** : Cercles jaunes à halo rose, flash carré vert menthe rapide
+- **Animation** : Activée, nerveuse
+- **Usage** : Néon rétro joueur, vibe pixel/arcade
+
+### 🎉 **Fête Confetti**
+- **Carte** : OSM vue large sur la France (zoom 5)
+- **Points** : Cercles colorés par type de cache (remplissage + bordure), flash étoile par type
+- **Animation** : Activée, enjouée
+- **Usage** : Le plus multicolore, esprit festif
 
 ### Extension
 
