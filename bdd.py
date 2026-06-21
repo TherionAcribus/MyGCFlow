@@ -641,6 +641,10 @@ def run_import_task(status: TaskStatus, app, file_path: str, Geocache, db):
     try:
         with app.app_context():
             uploadBdd(file_path, Geocache, db, status=status)
+            # SQLite WAL mode ne met pas à jour le mtime du fichier principal immédiatement.
+            # Sans cette invalidation, run_geojson_task verrait le même mtime et servirait
+            # le GeoJSON vide du cache de démarrage au lieu de régénérer.
+            geojson_cache.invalidate("post_import")
     finally:
         try:
             os.remove(file_path)

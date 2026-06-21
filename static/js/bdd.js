@@ -302,6 +302,11 @@ export function readBdd(){
         }
         pollGeojsonTask(data.task_id, {
             onSuccess: (result) => {
+                if (result.error || !result.geojson) {
+                    console.error('Erreur tâche GeoJSON (readBdd):', result.error || 'geojson manquant');
+                    try { if (readLoadingToast) { pkg.hideToast(readLoadingToast); readLoadingToast = null; } } catch(e) {}
+                    return;
+                }
                 json_data = result.geojson;
                 setMetadata(result.metadata || {});
 
@@ -572,6 +577,12 @@ function loadAndDisplayPoints() {
             }
             pollGeojsonTask(data.task_id, {
                 onSuccess: (result) => {
+                    if (result.error || !result.geojson) {
+                        console.error('Erreur tâche GeoJSON (loadAndDisplayPoints):', result.error || 'geojson manquant');
+                        pkg.hidePointsToast();
+                        showError(t("Erreur lors de l'affichage des points sur la carte"), t("Erreur d'affichage"));
+                        return;
+                    }
                     const geojson = result.geojson;
                     const meta = result.metadata || {};
 

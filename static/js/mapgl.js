@@ -649,6 +649,10 @@ for (let mapLayer of mapChoices){
 
 // Fonction pour ajouter les données GeoJSON à la source vectorielle au chargement du GeoJSON
 export function addVector(data) {
+    if (!data) {
+        features = [];
+        return;
+    }
     // Lire les entités GeoJSON
     features = new ol.format.GeoJSON().readFeatures(data, {
         dataProjection: 'EPSG:4326',  // Projection des données GeoJSON
