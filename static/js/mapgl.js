@@ -2655,10 +2655,17 @@ function buildOverlayCache(scaleFactor) {
         const fontPx = Math.round(fontSizePx * scaleFactor);
         const lineHeightCss = parseFloat(style.lineHeight);
 
+        // Bordure (uniforme : on se base sur le côté haut)
+        const borderW = (parseFloat(style.borderTopWidth) || 0) * scaleFactor;
+        const borderStyle = style.borderTopStyle || 'none';
+        const borderColor = style.borderTopColor || 'rgba(0,0,0,0)';
+        const hasBorder = borderW > 0 && borderStyle !== 'none';
+
         return {
             el, x, y, w, h, bg, color, radius, padL, padR: (parseFloat(style.paddingRight) || 0) * scaleFactor,
             padT, padB, font, fontPx, textAlignCss, hasShadow: !!shadowRaw,
             shColor, shBlur, shOffX, shOffY,
+            hasBorder, borderW, borderColor,
             lineGap: Math.round((Number.isFinite(lineHeightCss) ? lineHeightCss : fontSizePx * 1.2) * scaleFactor),
         };
     };
@@ -2687,7 +2694,8 @@ function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor = 1) {
             if (!text || !text.trim()) return;
 
             const { x, y, w, h, bg, color, radius, padL, padR, padT, padB, font, fontPx, textAlignCss,
-                    hasShadow, shColor, shBlur, shOffX, shOffY, lineGap } = cached;
+                    hasShadow, shColor, shBlur, shOffX, shOffY, lineGap,
+                    hasBorder, borderW, borderColor } = cached;
 
             ctx.save();
             ctx.imageSmoothingEnabled = true;
@@ -2718,7 +2726,8 @@ function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor = 1) {
             const drawH = Math.max(h, Math.ceil(padT + textBlockH + padB));
 
             if (hasShadow) { ctx.shadowColor = shColor; ctx.shadowBlur = shBlur; ctx.shadowOffsetX = shOffX; ctx.shadowOffsetY = shOffY; }
-            drawRoundedRect(ctx, x, y, drawW, drawH, radius, bg);
+            drawRoundedRect(ctx, x, y, drawW, drawH, radius, bg,
+                            hasBorder ? borderColor : null, hasBorder ? borderW : 0);
             ctx.shadowColor = 'rgba(0,0,0,0)';
 
             ctx.fillStyle = color;
@@ -2749,7 +2758,7 @@ function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor = 1) {
     }
 }
 
-function drawRoundedRect(ctx, x, y, width, height, radius, fillStyle) {
+function roundedRectPath(ctx, x, y, width, height, radius) {
     const r = Math.max(0, Math.min(radius || 0, Math.min(width, height) / 2));
     ctx.beginPath();
     ctx.moveTo(x + r, y);
@@ -2762,8 +2771,23 @@ function drawRoundedRect(ctx, x, y, width, height, radius, fillStyle) {
     ctx.lineTo(x, y + r);
     ctx.quadraticCurveTo(x, y, x + r, y);
     ctx.closePath();
-    ctx.fillStyle = fillStyle;
-    ctx.fill();
+}
+
+function drawRoundedRect(ctx, x, y, width, height, radius, fillStyle, strokeStyle = null, lineWidth = 0) {
+    roundedRectPath(ctx, x, y, width, height, radius);
+    if (fillStyle) { ctx.fillStyle = fillStyle; ctx.fill(); }
+
+    if (strokeStyle && lineWidth > 0) {
+        // La bordure CSS est dessinée à l'intérieur de la border-box : on trace le contour
+        // en retrait d'une demi-épaisseur pour que le trait reste dans la boîte.
+        const inset = lineWidth / 2;
+        // Pas d'ombre sur le trait de bordure (l'ombre vient déjà du fond)
+        ctx.shadowColor = 'rgba(0,0,0,0)';
+        roundedRectPath(ctx, x + inset, y + inset, width - lineWidth, height - lineWidth, Math.max(0, radius - inset));
+        ctx.lineWidth = lineWidth;
+        ctx.strokeStyle = strokeStyle;
+        ctx.stroke();
+    }
 }
 
 // Fonction fallback pour dessiner manuellement les overlays
