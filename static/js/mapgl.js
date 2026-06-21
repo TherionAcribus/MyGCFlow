@@ -95,6 +95,9 @@ let popupEl;
 // date en cours pour l'animation
 let currentDate;
 // ENREGISTREMENT
+// Cache des overlays (titre, infos) : calculé une seule fois au démarrage de chaque session
+// pour éviter getElementById / getBoundingClientRect / getComputedStyle à chaque frame
+let overlayCache = null;
 // Compteur de frames pour le jour en cours
 let currentFrame = 0;
 let globalRecordFrame = 0;  // avance d'1 par capture (pas par rendu)
@@ -1545,6 +1548,9 @@ function startRecordingProcess(){
 
     currentFrame = 0;  // Réinitialisez le compteur de frames
 
+    // Précalculer les propriétés statiques des overlays (scaleFactor=1 pour le pipeline images)
+    buildOverlayCache(1);
+
     // Afficher les points initiaux pour la date de début
     displayFeaturesForDate(currentDate, pkg.options.point, pkg.options.flash, true, infos);
 
@@ -2024,7 +2030,8 @@ async function startMediaRecorderPipeline(totalDurationMs){
     const timesliceMs = Math.max(200, Number(pkg.options?.record?.mediaRecorder?.timesliceMs) || 1000);
     mrRecorder.start(timesliceMs);
 
-    // Ne pas jouer la musique pendant l'enregistrement (audio différé)
+    // Précalculer les propriétés statiques des overlays pour éviter les reflows par frame
+    buildOverlayCache(scaleFactor);
 
     // Dessin périodique (compositing)
     let drawing = false;
@@ -2582,120 +2589,116 @@ async function captureElement() {
     });
 }
 
-// Fonction pour ajouter les overlays (titre, date, nb caches) au canvas
-function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor = 1) {
-    try {
-        const container = document.getElementById('mapWithFrames');
-        if (!container) return;
-        const containerRect = container.getBoundingClientRect();
+// Précalcule les propriétés statiques d'un overlay (styles CSS, position, shadow, font)
+// pour éviter getElementById/getBoundingClientRect/getComputedStyle à chaque frame.
+// Appelé une seule fois au démarrage de chaque session d'enregistrement.
+function buildOverlayCache(scaleFactor) {
+    overlayCache = null;
+    const container = document.getElementById('mapWithFrames');
+    if (!container) return;
+    const containerRect = container.getBoundingClientRect();
 
-        const renderStyledElement = (el, lines) => {
-            // Vérifier seulement l'état DOM (maintenant synchronisé avec les paramètres utilisateur)
-            if (!el || el.style.display === 'none') return;
-            // Aucune ligne à dessiner => rien
-            if (!lines || (Array.isArray(lines) && lines.length === 0)) return;
+    const cacheElement = (id) => {
+        const el = document.getElementById(id);
+        if (!el) return null;
+        const rect = el.getBoundingClientRect();
+        const style = window.getComputedStyle(el);
 
-            const rect = el.getBoundingClientRect();
-            const x = Math.round((rect.left - containerRect.left) * scaleFactor);
-            const y = Math.round((rect.top - containerRect.top) * scaleFactor);
-            const w = Math.round(rect.width * scaleFactor);
-            const h = Math.round(rect.height * scaleFactor);
-            const style = window.getComputedStyle(el);
+        const x = Math.round((rect.left - containerRect.left) * scaleFactor);
+        const y = Math.round((rect.top - containerRect.top) * scaleFactor);
+        const w = Math.round(rect.width * scaleFactor);
+        const h = Math.round(rect.height * scaleFactor);
 
-            // Lire styles
-            const bg = style.backgroundColor || 'rgba(255,255,255,1)';
-            const color = style.color || '#000';
-            const radius = parseFloat(style.borderRadius) || 0;
-            const padL = (parseFloat(style.paddingLeft) || 0) * scaleFactor;
-            const padR = (parseFloat(style.paddingRight) || 0) * scaleFactor;
-            const padT = (parseFloat(style.paddingTop) || 0) * scaleFactor;
-            const padB = (parseFloat(style.paddingBottom) || 0) * scaleFactor;
-            // Mise à l'échelle de la police
-            const fontSizePx = parseFloat(style.fontSize) || 16;
-            const fontSizeScaled = (fontSizePx * scaleFactor) + 'px';
-            const fontFamily = style.fontFamily || 'Arial';
-            const fontWeight = style.fontWeight || 'normal';
-            const font = `${fontWeight} ${fontSizeScaled} ${fontFamily}`;
-            const textAlignCss = style.textAlign || 'left';
+        const bg = style.backgroundColor || 'rgba(255,255,255,1)';
+        const color = style.color || '#000';
+        const radius = parseFloat(style.borderRadius) || 0;
+        const padL = (parseFloat(style.paddingLeft) || 0) * scaleFactor;
+        const padR = (parseFloat(style.paddingRight) || 0) * scaleFactor;
+        const padT = (parseFloat(style.paddingTop) || 0) * scaleFactor;
+        const fontSizePx = parseFloat(style.fontSize) || 16;
+        const font = `${style.fontWeight || 'normal'} ${Math.round(fontSizePx * scaleFactor)}px ${style.fontFamily || 'Arial'}`;
+        const textAlignCss = style.textAlign || 'left';
 
-            // Box-shadow (simple parse)
-            const shadow = style.boxShadow && style.boxShadow !== 'none' ? style.boxShadow : null;
-            let shColor = 'rgba(0,0,0,0)'; let shBlur = 0; let shOffX = 0; let shOffY = 0;
-            if (shadow) {
-                // ex: rgba(0, 0, 0, 0.2) 0px 0px 5px 0px
-                const parts = shadow.match(/(rgba?\([^\)]+\))\s+([-0-9.]+)px\s+([-0-9.]+)px\s+([-0-9.]+)px/);
-                if (parts) {
-                    shColor = parts[1];
-                    shOffX = parseFloat(parts[2]) * scaleFactor;
-                    shOffY = parseFloat(parts[3]) * scaleFactor;
-                    shBlur = parseFloat(parts[4]) * scaleFactor;
-                }
+        const shadowRaw = style.boxShadow && style.boxShadow !== 'none' ? style.boxShadow : null;
+        let shColor = 'rgba(0,0,0,0)', shBlur = 0, shOffX = 0, shOffY = 0;
+        if (shadowRaw) {
+            const parts = shadowRaw.match(/(rgba?\([^\)]+\))\s+([-0-9.]+)px\s+([-0-9.]+)px\s+([-0-9.]+)px/);
+            if (parts) {
+                shColor = parts[1];
+                shOffX = parseFloat(parts[2]) * scaleFactor;
+                shOffY = parseFloat(parts[3]) * scaleFactor;
+                shBlur = parseFloat(parts[4]) * scaleFactor;
             }
+        }
 
-            // Dessin de la boîte
+        return {
+            el, x, y, w, h, bg, color, radius, padL, padR: (parseFloat(style.paddingRight) || 0) * scaleFactor,
+            padT, font, textAlignCss, hasShadow: !!shadowRaw,
+            shColor, shBlur, shOffX, shOffY,
+            lineGap: Math.round(18 * scaleFactor),
+            firstLineY: Math.round(14 * scaleFactor),
+        };
+    };
+
+    overlayCache = {
+        scaleFactor,
+        titleOn: !!(pkg.options?.infos?.title?.display),
+        title: cacheElement('titleFrame'),
+        infos: cacheElement('infosFrame'),
+    };
+}
+
+// Ajoute les overlays (titre, date, nb caches) au canvas d'enregistrement.
+// Les propriétés statiques (styles CSS, positions) sont lues depuis overlayCache
+// pour éviter des reflows à chaque frame. Seuls display et textContent sont lus en direct.
+function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor = 1) {
+    if (!overlayCache || overlayCache.scaleFactor !== scaleFactor) {
+        buildOverlayCache(scaleFactor);
+    }
+    if (!overlayCache) return;
+
+    try {
+        const renderFromCache = (cached, getText) => {
+            if (!cached || !cached.el || cached.el.style.display === 'none') return;
+            const text = getText();
+            if (!text || !text.trim()) return;
+
+            const { x, y, w, h, bg, color, radius, padL, padR, padT, font, textAlignCss,
+                    hasShadow, shColor, shBlur, shOffX, shOffY, lineGap, firstLineY } = cached;
+
             ctx.save();
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
-            if (shadow) { ctx.shadowColor = shColor; ctx.shadowBlur = shBlur; ctx.shadowOffsetX = shOffX; ctx.shadowOffsetY = shOffY; }
+            if (hasShadow) { ctx.shadowColor = shColor; ctx.shadowBlur = shBlur; ctx.shadowOffsetX = shOffX; ctx.shadowOffsetY = shOffY; }
             drawRoundedRect(ctx, x, y, w, h, radius, bg);
-            // Texte(s)
             ctx.shadowColor = 'rgba(0,0,0,0)';
             ctx.fillStyle = color;
             ctx.font = font;
             ctx.textBaseline = 'alphabetic';
-            // Alignement horizontal
-            if (textAlignCss === 'center') {
-                ctx.textAlign = 'center';
-            } else if (textAlignCss === 'right' || textAlignCss === 'end') {
-                ctx.textAlign = 'right';
-            } else {
-                ctx.textAlign = 'left';
-            }
-            const texts = Array.isArray(lines) ? lines : [String(lines)];
-            const innerH = Math.max(0, h - padT - padB);
-            const lineGap = Math.round(18 * scaleFactor); // px entre lignes
-            let currentY = y + padT + Math.round(14 * scaleFactor); // marge supérieure + première ligne
+            if (textAlignCss === 'center') ctx.textAlign = 'center';
+            else if (textAlignCss === 'right' || textAlignCss === 'end') ctx.textAlign = 'right';
+            else ctx.textAlign = 'left';
 
-            texts.forEach((text) => {
-                if (!text) return;
-                const metrics = ctx.measureText(text);
-                let xText = x + padL; // left par défaut
-                if (ctx.textAlign === 'center') {
-                    xText = x + (w / 2);
-                } else if (ctx.textAlign === 'right') {
-                    xText = x + w - padR;
-                }
-                ctx.fillText(text, xText, currentY);
-                currentY += lineGap;
+            const lines = Array.isArray(text) ? text : [String(text)];
+            let curY = y + padT + firstLineY;
+            lines.forEach(line => {
+                if (!line) return;
+                let xText = x + padL;
+                if (ctx.textAlign === 'center') xText = x + (w / 2);
+                else if (ctx.textAlign === 'right') xText = x + w - padR;
+                ctx.fillText(line, xText, curY);
+                curY += lineGap;
             });
             ctx.restore();
         };
 
-        // Titre: dessiner uniquement si visible et activé
-        try {
-            const titleEl = document.getElementById('titleFrame');
-            const titleOn = !!(pkg.options?.infos?.title?.display);
-            if (titleOn && titleEl && titleEl.style.display !== 'none') {
-                const titleText = titleEl.textContent || '';
-                renderStyledElement(titleEl, titleText);
-            }
-        } catch(_) {}
-
-        // Infos: utiliser le contenu textuel de l'élément HTML pour respecter la structure originale
-        try {
-            const infosEl = document.getElementById('infosFrame');
-            if (infosEl && infosEl.style.display !== 'none') {
-                // Récupérer le contenu textuel tel qu'il est affiché à l'écran (respecte la structure HTML)
-                const infosText = infosEl.textContent || infosEl.innerText || '';
-                if (infosText.trim()) {
-                    renderStyledElement(infosEl, infosText.trim());
-                }
-            }
-        } catch(_) {}
+        if (overlayCache.titleOn) {
+            renderFromCache(overlayCache.title, () => overlayCache.title?.el?.textContent || '');
+        }
+        renderFromCache(overlayCache.infos, () => (overlayCache.infos?.el?.textContent || overlayCache.infos?.el?.innerText || '').trim());
 
     } catch (error) {
         console.warn('Erreur lors du rendu des overlays:', error);
-        // Le fallback drawManualOverlay() respecte maintenant les paramètres utilisateur
     }
 }
 
