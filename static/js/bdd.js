@@ -410,7 +410,7 @@ async function clearDatabase() {
         clearingToast = pkg.showLoadingToast(t("Vidage de la base de données..."), t("Suppression"));
 
         // Appel à l'endpoint pour vider la base de données
-        const response = await fetch('/clear_database', {
+        const response = await fetch(`${CONFIG.BASE_URL}/clear_database`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
