@@ -23,6 +23,11 @@ if (fileInput) {
     });
 }
 
+const clearDatabaseBtn = document.getElementById('clearDatabaseBtn');
+if (clearDatabaseBtn) {
+    clearDatabaseBtn.addEventListener('click', clearDatabase);
+}
+
 export function readBddValues(){
     try {
         fetch(`${CONFIG.BASE_URL}/db_status`)
@@ -46,6 +51,9 @@ export function readBddValues(){
 
             if (infos) infos.textContent = text;
             if (infosModal) infosModal.textContent = text;
+
+            const btn = document.getElementById('clearDatabaseBtn');
+            if (btn) btn.style.display = (data && data.exists && data.isEmpty === false) ? '' : 'none';
         })
         .catch(err => {
             console.error('Erreur lecture infos BDD:', err);
@@ -78,6 +86,25 @@ function setMetadata(meta) {
     } catch (e) {
         console.warn('setMetadata error:', e);
     }
+}
+
+function clearLocalData() {
+    json_data = null;
+    for (const k of Object.keys(metadata)) delete metadata[k];
+    pointsByDate.clear();
+    totalCaches = 0;
+}
+
+function updateUIAfterClear() {
+    const infos = document.getElementById('infosBDD');
+    const infosModal = document.getElementById('infosBDDModal');
+    const btn = document.getElementById('clearDatabaseBtn');
+    const counter = document.getElementById('filtersCounter');
+
+    if (infos) infos.textContent = t('Aucune base de données chargée');
+    if (infosModal) infosModal.textContent = t('Aucune base de données chargée');
+    if (btn) btn.style.display = 'none';
+    if (counter) counter.textContent = t('Sélection: 0 / 0');
 }
 
 function buildPointsByDateIndex(features = []) {
@@ -298,6 +325,10 @@ export function readBdd(){
 
                 // Mettre à jour le compteur : sélection = total au chargement initial
                 updateFiltersCounter(metadata.numberOfCaches || 0, totalCaches);
+
+                const btn = document.getElementById('clearDatabaseBtn');
+                if (btn) btn.style.display = '';
+
                 try { if (readLoadingToast) { pkg.hideToast(readLoadingToast); readLoadingToast = null; } } catch(e) {}
             },
             onError: (err) => {
@@ -569,6 +600,9 @@ function loadAndDisplayPoints() {
 
                     // Mettre à jour le compteur : sélection = total au chargement initial
                     updateFiltersCounter(metadata.numberOfCaches || 0, totalCaches);
+
+                    const btn = document.getElementById('clearDatabaseBtn');
+                    if (btn) btn.style.display = '';
 
                     // Masquer le toast d'affichage initial
                     pkg.hidePointsToast();
