@@ -2651,12 +2651,15 @@ function buildOverlayCache(scaleFactor) {
             }
         }
 
+        const padB = (parseFloat(style.paddingBottom) || 0) * scaleFactor;
+        const fontPx = Math.round(fontSizePx * scaleFactor);
+        const lineHeightCss = parseFloat(style.lineHeight);
+
         return {
             el, x, y, w, h, bg, color, radius, padL, padR: (parseFloat(style.paddingRight) || 0) * scaleFactor,
-            padT, font, textAlignCss, hasShadow: !!shadowRaw,
+            padT, padB, font, fontPx, textAlignCss, hasShadow: !!shadowRaw,
             shColor, shBlur, shOffX, shOffY,
-            lineGap: Math.round(18 * scaleFactor),
-            firstLineY: Math.round(14 * scaleFactor),
+            lineGap: Math.round((Number.isFinite(lineHeightCss) ? lineHeightCss : fontSizePx * 1.2) * scaleFactor),
         };
     };
 
@@ -2683,31 +2686,55 @@ function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor = 1) {
             const text = getText();
             if (!text || !text.trim()) return;
 
-            const { x, y, w, h, bg, color, radius, padL, padR, padT, font, textAlignCss,
-                    hasShadow, shColor, shBlur, shOffX, shOffY, lineGap, firstLineY } = cached;
+            const { x, y, w, h, bg, color, radius, padL, padR, padT, padB, font, fontPx, textAlignCss,
+                    hasShadow, shColor, shBlur, shOffX, shOffY, lineGap } = cached;
 
             ctx.save();
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
-            if (hasShadow) { ctx.shadowColor = shColor; ctx.shadowBlur = shBlur; ctx.shadowOffsetX = shOffX; ctx.shadowOffsetY = shOffY; }
-            drawRoundedRect(ctx, x, y, w, h, radius, bg);
-            ctx.shadowColor = 'rgba(0,0,0,0)';
-            ctx.fillStyle = color;
             ctx.font = font;
             ctx.textBaseline = 'alphabetic';
+
+            const lines = Array.isArray(text) ? text : [String(text)];
+
+            // Mesurer le texte pour adapter la boîte (le contenu grandit pendant l'animation :
+            // compteur de caches, dates plus longues...). La largeur cachée du DOM correspond
+            // au texte initial court et provoquerait un débordement.
+            let maxTextW = 0;
+            for (const line of lines) {
+                if (!line) continue;
+                const m = ctx.measureText(line);
+                if (m.width > maxTextW) maxTextW = m.width;
+            }
+            // Métriques verticales (fallback si actualBoundingBox non disponible)
+            const fm = ctx.measureText('Mg');
+            const ascent = fm.actualBoundingBoxAscent || (fontPx * 0.8);
+            const descent = fm.actualBoundingBoxDescent || (fontPx * 0.2);
+            const lh = Math.max(lineGap, ascent + descent);
+            const textBlockH = ascent + descent + (lines.length - 1) * lh;
+
+            // La boîte ne rétrécit jamais sous la taille CSS, mais grandit pour contenir le texte
+            const drawW = Math.max(w, Math.ceil(padL + maxTextW + padR));
+            const drawH = Math.max(h, Math.ceil(padT + textBlockH + padB));
+
+            if (hasShadow) { ctx.shadowColor = shColor; ctx.shadowBlur = shBlur; ctx.shadowOffsetX = shOffX; ctx.shadowOffsetY = shOffY; }
+            drawRoundedRect(ctx, x, y, drawW, drawH, radius, bg);
+            ctx.shadowColor = 'rgba(0,0,0,0)';
+
+            ctx.fillStyle = color;
             if (textAlignCss === 'center') ctx.textAlign = 'center';
             else if (textAlignCss === 'right' || textAlignCss === 'end') ctx.textAlign = 'right';
             else ctx.textAlign = 'left';
 
-            const lines = Array.isArray(text) ? text : [String(text)];
-            let curY = y + padT + firstLineY;
+            // Centrer verticalement le bloc de texte dans la boîte
+            let curY = y + (drawH - textBlockH) / 2 + ascent;
             lines.forEach(line => {
-                if (!line) return;
+                if (!line) { curY += lh; return; }
                 let xText = x + padL;
-                if (ctx.textAlign === 'center') xText = x + (w / 2);
-                else if (ctx.textAlign === 'right') xText = x + w - padR;
+                if (ctx.textAlign === 'center') xText = x + (drawW / 2);
+                else if (ctx.textAlign === 'right') xText = x + drawW - padR;
                 ctx.fillText(line, xText, curY);
-                curY += lineGap;
+                curY += lh;
             });
             ctx.restore();
         };
