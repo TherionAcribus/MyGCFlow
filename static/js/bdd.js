@@ -547,21 +547,20 @@ function loadAndDisplayPoints() {
         .then(response => response.json())
         .then(data => {
             if (!data.task_id) {
-                throw new Error(data.message || 'Impossible de lancer la g?n?ration du GeoJSON');
+                throw new Error(data.message || 'Impossible de lancer la génération du GeoJSON');
             }
             pollGeojsonTask(data.task_id, {
                 onSuccess: (result) => {
                     const geojson = result.geojson;
                     const meta = result.metadata || {};
-                    console.log('[LOAD_POINTS] Donn?es GeoJSON re?ues:', result);
 
                     json_data = geojson;
                     setMetadata(meta);
 
-                    // M?moriser le total de caches initial
+                    // Mémoriser le total de caches initial
                     totalCaches = metadata.numberOfCaches || (geojson?.features?.length || 0);
 
-                    // Pr?-calcul de l'index des points par date pour optimiser l'animation
+                    // Pré-calcul de l'index des points par date pour optimiser l'animation
                     buildPointsByDateIndex(geojson?.features || []);
 
                     // conversion en objet date
@@ -570,37 +569,32 @@ function loadAndDisplayPoints() {
                     pkg.updateInfosFrameAfterReadBdd(metadata);
                     // MAJ du menu d'animation
                     pkg.updateAnimationMenuAfterReadBdd(metadata);
-                    // mise ? jour des Date Pickers de l'ui (filtre BDD)
+                    // mise à jour des Date Pickers de l'ui (filtre BDD)
                     pkg.setPickerDates(metadata);
-                    // mise ? jour des options en fonction de la BDD (dates d?but et fin)
+                    // mise à jour des options en fonction de la BDD (dates début et fin)
                     updateOptionsValues(metadata);
 
                     // Ajouter les points à la carte
                     clearMap();
                     pkg.addVector(geojson);
 
-                    // Mettre ? jour le compteur : s?lection = total au chargement initial
+                    // Mettre à jour le compteur : sélection = total au chargement initial
                     updateFiltersCounter(metadata.numberOfCaches || 0, totalCaches);
 
                     // Masquer le toast d'affichage initial
                     pkg.hidePointsToast();
-
-                    console.log('[LOAD_POINTS] Points affich?s sur la carte');
                 },
                 onError: (err) => {
-                    console.error('[LOAD_POINTS] Erreur lors du suivi de la g?n?ration GeoJSON:', err);
+                    console.error('[LOAD_POINTS] Erreur lors du suivi de la génération GeoJSON:', err);
                     pkg.hidePointsToast();
-                    showError("Erreur lors de l'affichage des points sur la carte", "Erreur d'affichage");
+                    showError(t("Erreur lors de l'affichage des points sur la carte"), t("Erreur d'affichage"));
                 }
             });
         })
         .catch(error => {
-            console.error('[LOAD_POINTS] Erreur lors du lancement de la g?n?ration des points:', error);
-
-            // Masquer le toast en cas d'erreur
+            console.error('[LOAD_POINTS] Erreur lors du lancement de la génération des points:', error);
             pkg.hidePointsToast();
-
-            showError("Erreur lors de l'affichage des points sur la carte", "Erreur d'affichage");
+            showError(t("Erreur lors de l'affichage des points sur la carte"), t("Erreur d'affichage"));
         });
 }
 
