@@ -39,7 +39,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     initTabs();
     initModals();
     initTooltips();
-    initSelect();
+    // Note: initSelect() supprimé — l'init globale sur des <select> cachés schedule
+    // des RAF (requestAnimationFrame) en Materialize qui crashent quand le destroy()
+    // ultérieur vide _inputEl. Chaque select est initialisé individuellement par
+    // la fonction qui le gère (populateCountryStateSelects, init_ui, etc.)
     initPickers();
 
     await pkg.requetedefaultGcColors();
