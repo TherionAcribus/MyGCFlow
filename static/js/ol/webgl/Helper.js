@@ -774,7 +774,22 @@ class WebGLHelper extends Disposable {
           uniform.texture = gl.createTexture();
         }
         this.bindTexture(uniform.texture, textureSlot, uniform.name);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        // Mipmaps activés uniquement pour les textures puissance-de-2 (contrainte WebGL1).
+        // Pour les atlas d'icônes paddés en POT, ça lisse fortement la minification (réduction
+        // d'icônes en petite taille) et supprime l'aliasing. Les NPOT gardent le filtrage linéaire simple.
+        const texW = value.naturalWidth || value.width || 0;
+        const texH = value.naturalHeight || value.height || 0;
+        const isPowerOfTwo =
+          texW > 0 &&
+          texH > 0 &&
+          (texW & (texW - 1)) === 0 &&
+          (texH & (texH - 1)) === 0;
+        gl.texParameteri(
+          gl.TEXTURE_2D,
+          gl.TEXTURE_MIN_FILTER,
+          isPowerOfTwo ? gl.LINEAR_MIPMAP_LINEAR : gl.LINEAR
+        );
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
@@ -791,6 +806,10 @@ class WebGLHelper extends Disposable {
             gl.UNSIGNED_BYTE,
             value
           );
+          // La pyramide de mipmaps doit être (re)générée après chaque upload de données.
+          if (isPowerOfTwo) {
+            gl.generateMipmap(gl.TEXTURE_2D);
+          }
         }
         textureSlot++;
       } else if (Array.isArray(value) && value.length === 6) {

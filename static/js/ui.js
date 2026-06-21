@@ -2402,8 +2402,10 @@ function updateIconSet() {
             spriteMeta = {
                 url: '/static/img/geocaching-sprite.png',
                 url2x: '/static/img/geocaching-sprite@2x.png',
-                sheetWidth: 1800,
-                sheetHeight: 200,
+                // Feuille paddée en puissance de 2 (2048x256) pour autoriser les mipmaps GPU (WebGL1).
+                // Les icônes restent ancrées en haut-gauche, le padding est en bas-droite : les offsets ne changent pas.
+                sheetWidth: 2048,
+                sheetHeight: 256,
                 items: [
                     { key: 'trad',    x:   0, y:  0, w:50, h:50, label: 'Traditional' },
                     { key: 'ape',   x:  100, y:  0, w:50, h:50, label: 'APE' },
@@ -2432,8 +2434,9 @@ function updateIconSet() {
             spriteMeta = {
                 url: '/static/img/geocaching-sprite.png',
                 url2x: '/static/img/geocaching-sprite@2x.png',
-                sheetWidth: 1800,
-                sheetHeight: 200,
+                // Feuille paddée en puissance de 2 (2048x256) — voir cas 'geocaching'.
+                sheetWidth: 2048,
+                sheetHeight: 256,
                 items: [
                     { key: 'found', x: 1700, y: 0, w: 50, h: 50, label: 'Found It' }
                 ]
