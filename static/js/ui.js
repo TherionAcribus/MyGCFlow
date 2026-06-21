@@ -33,7 +33,7 @@ var btnUseCurrentMapCenter, btnPickMapCenter, btnClearMapCenter;
 var btnToggleLatLonMode, fieldLat, fieldLon, fieldCombined, rowLatLon;
 let isCombinedLatLonMode = true;
 // Enregistrement
-var selectRecordMode, inputRecordFps, inputRecordBitrate, selectRecordMime, inputRecordSlowdown, inputRecordScaleFactor, cbRecordUpload, cbRecordDownload;
+var selectRecordMode, inputRecordFps, inputRecordBitrate, selectRecordMime, inputRecordSlowdown, inputRecordScaleFactor, cbRecordUpload, cbRecordDownload, cbRecordNormalize;
 var cbRecordAudioEnable, inputAudioFile, inputAudioVolume;
 // Flag pour savoir si la durée totale est définie depuis la musique
 var isDurationLockedToAudio = false;
@@ -569,7 +569,16 @@ function initOptionsElements() {
     if (inputRecordBitrate) inputRecordBitrate.addEventListener('input', changeRecordValues);
     selectRecordMime = document.getElementById('selectRecordMime');
     if (selectRecordMime) {
-        selectRecordMime.addEventListener('change', changeRecordValues);
+        selectRecordMime.addEventListener('change', () => {
+            const mime = selectRecordMime.value;
+            if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported && !MediaRecorder.isTypeSupported(mime)) {
+                pkg.showToast && pkg.showToast(
+                    pkg.t ? pkg.t('Ce format vidéo n\'est pas supporté par votre navigateur et sera ignoré au démarrage de l\'enregistrement.') : 'Format non supporté par ce navigateur.',
+                    'warning', 'Format non supporté', 6000
+                );
+            }
+            changeRecordValues();
+        });
         M.FormSelect.init(selectRecordMime);
     }
     inputRecordSlowdown = document.getElementById('inputRecordSlowdown');
@@ -580,6 +589,8 @@ function initOptionsElements() {
     if (cbRecordUpload) cbRecordUpload.addEventListener('change', changeRecordValues);
     cbRecordDownload = document.getElementById('cbRecordDownload');
     if (cbRecordDownload) cbRecordDownload.addEventListener('change', changeRecordValues);
+    cbRecordNormalize = document.getElementById('cbRecordNormalize');
+    if (cbRecordNormalize) cbRecordNormalize.addEventListener('change', changeRecordValues);
     // Audio utilisateur
     cbRecordAudioEnable = document.getElementById('cbRecordAudioEnable');
     if (cbRecordAudioEnable) cbRecordAudioEnable.addEventListener('change', changeRecordValues);
@@ -1486,6 +1497,7 @@ function initOptionsUI() {
         if (inputRecordScaleFactor) inputRecordScaleFactor.value = (pkg.options.record?.mediaRecorder?.scaleFactor) || 1;
         if (cbRecordUpload) cbRecordUpload.checked = !!(pkg.options.record?.mediaRecorder?.uploadToServer);
         if (cbRecordDownload) cbRecordDownload.checked = !!(pkg.options.record?.mediaRecorder?.downloadLocal);
+        if (cbRecordNormalize) cbRecordNormalize.checked = !!(pkg.options.record?.mediaRecorder?.offlineNormalization ?? true);
 
         // ------- AUDIO UTILISATEUR -------
         try {
@@ -1592,6 +1604,16 @@ function changeRecordValues() {
         }
         if (cbRecordDownload) {
             pkg.options.record.mediaRecorder.downloadLocal = !!cbRecordDownload.checked;
+        }
+        if (cbRecordNormalize) {
+            pkg.options.record.mediaRecorder.offlineNormalization = !!cbRecordNormalize.checked;
+        }
+
+        if (cbRecordUpload && cbRecordDownload && !cbRecordUpload.checked && !cbRecordDownload.checked) {
+            pkg.showToast && pkg.showToast(
+                pkg.t ? pkg.t('La vidéo ne sera ni téléchargée ni uploadée : elle sera perdue après l\'enregistrement.') : 'La vidéo sera perdue si aucune destination n\'est sélectionnée.',
+                'warning', 'Aucune destination', 5000
+            );
         }
 
         // ------- AUDIO UTILISATEUR -------

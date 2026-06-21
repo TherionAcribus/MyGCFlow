@@ -2020,8 +2020,7 @@ async function startMediaRecorderPipeline(totalDurationMs){
     const mixedStream = canvasStream;
 
     mrRecordedChunks = [];
-    const abps = Number(pkg.options?.record?.mediaRecorder?.audioBitsPerSecond) || 128000;
-    mrRecorder = new MediaRecorder(mixedStream, { mimeType: mime, videoBitsPerSecond: vbps, audioBitsPerSecond: abps });
+    mrRecorder = new MediaRecorder(mixedStream, { mimeType: mime, videoBitsPerSecond: vbps });
     isMediaRecording = true;
 
     mrRecorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) mrRecordedChunks.push(e.data); };

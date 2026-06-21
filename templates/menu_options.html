@@ -105,7 +105,7 @@
             <div class="input-field col s6 m3 mediarecorder-only">
                 <input id="inputRecordSlowdown" type="number" min="1" step="1" class="validate" value="1">
                 <label class="active" for="inputRecordSlowdown">{{ _("Ralentir par (x)") }}</label>
-                <i class="material-icons tooltipped" data-position="top" data-tooltip="{{ _('Multiplicateur de ralentissement temporel. 1 = vitesse normale, 2 = 2x plus lente (moitié vitesse), 0.5 = 2x plus rapide. Idéal pour analyser les animations détaillées') }}">help_outline</i>
+                <i class="material-icons tooltipped" data-position="top" data-tooltip="{{ _('Ralentit la capture pour améliorer la qualité. 2 = capture 2x plus lente (plus de frames par seconde d\'animation). La vidéo finale reste à vitesse normale si \"Normaliser la vitesse\" est activé.') }}">help_outline</i>
             </div>
             <div class="input-field col s6 m3 mediarecorder-only">
                 <input id="inputRecordScaleFactor" type="number" min="1" max="3" step="0.25" class="validate">
@@ -132,6 +132,11 @@
                     <input id="cbRecordDownload" type="checkbox"/>
                     <span>{{ _("Télécharger local") }}</span>
                     <i class="material-icons tooltipped" data-position="right" data-tooltip="{{ _('Sauvegarde automatiquement la vidéo dans le dossier de téléchargements de votre navigateur une fois l\'enregistrement terminé. Pratique pour archivage local immédiat') }}" style="font-size: 16px; vertical-align: middle; margin-left: 5px;">help_outline</i>
+                </label>
+                <label style="display:block;">
+                    <input id="cbRecordNormalize" type="checkbox"/>
+                    <span>{{ _("Normaliser la vitesse") }}</span>
+                    <i class="material-icons tooltipped" data-position="right" data-tooltip="{{ _('Si le ralentissement est > 1, ré-accélère la vidéo finale pour la ramener à vitesse normale. Désactiver pour conserver la vidéo au ralenti.') }}" style="font-size: 16px; vertical-align: middle; margin-left: 5px;">help_outline</i>
                 </label>
             </div>
         </div>
