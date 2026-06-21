@@ -1020,6 +1020,50 @@ position: sticky;
 top: 20px;
 }
 
+/* Boutons d'action des profils */
+.profile-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.profile-actions .btn-small {
+    flex: 1 1 auto;
+    min-width: 90px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* Badge profil actif sous le titre */
+.profile-active-indicator {
+    display: none;
+    margin-top: -8px;
+    margin-bottom: 10px;
+}
+
+.profile-active-indicator.active {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #e8f5e9;
+    color: #2e7d32;
+    border: 1px solid #a5d6a7;
+    border-radius: 12px;
+    padding: 2px 10px;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.profile-active-indicator.active::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background-color: #4caf50;
+    flex-shrink: 0;
+}
+
 /* Marges pour les contenus d'onglets internes */
 #tabMapOverlay, #tabPointsFlash {
 margin-top: 10px;

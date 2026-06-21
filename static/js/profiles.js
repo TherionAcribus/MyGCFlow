@@ -384,13 +384,11 @@ class ProfileManager {
         const indicator = document.getElementById('current-profile-indicator');
         if (indicator) {
             if (this.currentProfile && this.currentProfile.name) {
-                indicator.textContent = `(actif: ${this.currentProfile.name})`;
-                indicator.style.color = '#4caf50';
-                indicator.style.fontWeight = 'bold';
+                indicator.textContent = this.currentProfile.name;
+                indicator.classList.add('active');
             } else {
-                indicator.textContent = '(aucun profil actif)';
-                indicator.style.color = '#666';
-                indicator.style.fontWeight = 'normal';
+                indicator.textContent = '';
+                indicator.classList.remove('active');
             }
         }
     }

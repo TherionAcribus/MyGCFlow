@@ -130,32 +130,22 @@
         <!-- Section Profils (sticky) -->
         <div class="col s12 l4">
             <div class="sticky-panel">
-                <h5>{{ _("Profils") }}
-                    <span id="current-profile-indicator" class="right" style="font-size: 12px; color: #666; font-weight: normal;"></span>
-                </h5>
+                <h5>{{ _("Profils") }}</h5>
+                <div id="current-profile-indicator" class="profile-active-indicator"></div>
                 <div class="card-panel">
                     <div id="profiles-section">
-                        <!-- Boutons d'action - maintenant au-dessus de la zone scrollable -->
-                        <div class="row" style="margin-bottom: 15px;">
-                            <div class="col s4">
-                                <a id="btn-new-profile" class="btn waves-effect waves-light btn-small">
-                                    <i class="material-icons left">add</i>
-                                    {{ _("Nouveau") }}
-                                </a>
-                            </div>
-                            <div class="col s4">
-                                <a id="btn-save-profile" class="btn waves-effect waves-light btn-small">
-                                    <i class="material-icons left">save</i>
-                                    {{ _("Sauvegarder") }}
-                                </a>
-                            </div>
-                            <div class="col s4">
-                                <a id="btn-import-profile" class="btn waves-effect waves-light btn-small">
-                                    <i class="material-icons left">file_upload</i>
-                                    {{ _("Importer") }}
-                                </a>
-                                <input id="input-import-profile" type="file" accept="application/json" style="display:none" />
-                            </div>
+                        <!-- Boutons d'action -->
+                        <div class="profile-actions">
+                            <a id="btn-new-profile" class="btn waves-effect waves-light btn-small tooltipped" data-position="bottom" data-tooltip="{{ _('Nouveau profil') }}">
+                                <i class="material-icons left">add</i>{{ _("Nouveau") }}
+                            </a>
+                            <a id="btn-save-profile" class="btn waves-effect waves-light btn-small tooltipped" data-position="bottom" data-tooltip="{{ _('Sauvegarder le profil actif') }}">
+                                <i class="material-icons left">save</i>{{ _("Sauvegarder") }}
+                            </a>
+                            <a id="btn-import-profile" class="btn waves-effect waves-light btn-small tooltipped" data-position="bottom" data-tooltip="{{ _('Importer un profil JSON') }}">
+                                <i class="material-icons left">file_upload</i>{{ _("Importer") }}
+                            </a>
+                            <input id="input-import-profile" type="file" accept="application/json" style="display:none" />
                         </div>
 
                         <!-- Liste des profils - zone scrollable -->
