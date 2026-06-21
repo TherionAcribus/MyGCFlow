@@ -650,22 +650,22 @@ for (let mapLayer of mapChoices){
 // Fonction pour ajouter les données GeoJSON à la source vectorielle au chargement du GeoJSON
 export function addVector(data) {
     if (!data) {
+        console.warn('[addVector] data is null/undefined, abort');
         features = [];
         return;
     }
     // Lire les entités GeoJSON
     features = new ol.format.GeoJSON().readFeatures(data, {
-        dataProjection: 'EPSG:4326',  // Projection des données GeoJSON
-        featureProjection: 'EPSG:3857' // Projection de la carte
+        dataProjection: 'EPSG:4326',
+        featureProjection: 'EPSG:3857'
     });
+    console.log('[addVector] features lues:', features.length, '| vectorSource existant:', !!window.vectorSource, '| vectorLayer existant:', !!vectorLayer);
 
     // Vider la source avant le rechargement pour éviter l'accumulation de features
-    // (sans supprimer le layer WebGL, ce qui évite une recréation du contexte)
     if (window.vectorSource) {
         window.vectorSource.clear();
     }
 
-    // selon que l'on choisisse webgl ou non on affiche les points avec le bon moteur
     selectEngineAndRefresh();
 }
 
@@ -697,10 +697,10 @@ function isLayerOnMap(map, layerToFind) {
 function selectEngineAndRefresh(){
     engine = pkg.options.options.engine;
     const currentFeatures = features || [];
+    console.log('[selectEngineAndRefresh] engine:', engine, '| features count:', currentFeatures.length, '| point.mode:', pkg.options?.point?.mode);
     if (engine == "webgl"){
         displayWebGLPoints(currentFeatures, pkg.options.point);
     } else {
-        // TODO AJouter barre chargement
         displayAllPoints2D(currentFeatures, pkg.options.point);
     }
 }
@@ -882,6 +882,7 @@ function getStyle2D(feature, pointOptions) {
 }
 
 function displayWebGLPoints(features, pointOptions) {
+    console.log('[displayWebGLPoints] featureList count:', (Array.isArray(features) ? features.length : 'not-array'), '| mode:', pointOptions?.mode, '| shape:', pointOptions?.shape, '| sprite:', !!pointOptions?.sprite);
 
     const featureList = Array.isArray(features) ? features : [];
 
@@ -1057,13 +1058,13 @@ function displayWebGLPoints(features, pointOptions) {
 
     // Réutiliser la source existante si possible (évite les sources orphelines)
     if (!window.vectorSource) {
-        window.vectorSource = new ol.source.Vector({
-            wrapX: true,
-        });
+        console.log('[displayWebGLPoints] Création nouvelle vectorSource');
+        window.vectorSource = new ol.source.Vector({ wrapX: true });
     }
 
     // Créer le layer seulement si absent (la source est réutilisée)
     if (!vectorLayer) {
+        console.log('[displayWebGLPoints] Création nouveau vectorLayer WebGLPoints');
         vectorLayer = new ol.layer.WebGLPoints({
             source: window.vectorSource,
             style: pointStyle,
@@ -1073,7 +1074,10 @@ function displayWebGLPoints(features, pointOptions) {
     }
 
     // Vérifier que le layer existe toujours sur la carte (il peut avoir été supprimé)
-    if (vectorLayer && !map.getLayers().getArray().includes(vectorLayer)) {
+    const layerOnMap = map.getLayers().getArray().includes(vectorLayer);
+    console.log('[displayWebGLPoints] vectorLayer sur carte:', layerOnMap, '| vectorSource features avant add:', window.vectorSource.getFeatures().length);
+    if (vectorLayer && !layerOnMap) {
+        console.log('[displayWebGLPoints] Re-ajout du layer sur la carte');
         map.addLayer(vectorLayer);
     }
 
@@ -1082,9 +1086,9 @@ function displayWebGLPoints(features, pointOptions) {
         let toAdd = featureList;
         const first = featureList[0];
         const isOlFeature = first && typeof first.getGeometry === 'function';
+        console.log('[displayWebGLPoints] isOlFeature:', isOlFeature, '| toAdd count:', toAdd.length);
 
         if (!isOlFeature) {
-            // Convertir des features GeoJSON en features OL
             toAdd = new ol.format.GeoJSON().readFeatures({
                 type: 'FeatureCollection',
                 features: featureList
@@ -1095,6 +1099,9 @@ function displayWebGLPoints(features, pointOptions) {
         }
 
         window.vectorSource.addFeatures(toAdd);
+        console.log('[displayWebGLPoints] Après addFeatures:', window.vectorSource.getFeatures().length, 'features dans source');
+    } else {
+        console.warn('[displayWebGLPoints] featureList vide, rien à afficher');
     }
 }
 

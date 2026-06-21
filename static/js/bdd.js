@@ -272,15 +272,17 @@ function uploadBdd (){
         }
 
         checkLoadingProgress(uploadToast, data.task_id, () => {
+            console.log('[uploadBdd] Import terminé, lancement loadAndDisplayPoints');
             pkg.hideToast(uploadToast);
             pkg.showToast(t("Fichier chargé avec succès !"), "success", t("Terminé"));
 
             // mets à jour les infos de la BDD
             readBddValues();
-            
+
             // Charger et afficher les points sur la carte
             loadAndDisplayPoints();
         }, (message) => {
+            console.error('[uploadBdd] Erreur import:', message);
             pkg.hideToast(uploadToast);
             pkg.showToast(message || t("Erreur lors du chargement du fichier"), "error", t("Erreur"));
         });
@@ -307,6 +309,7 @@ export function readBdd(){
                     try { if (readLoadingToast) { pkg.hideToast(readLoadingToast); readLoadingToast = null; } } catch(e) {}
                     return;
                 }
+                console.log('[readBdd] onSuccess - features:', result.geojson?.features?.length, 'metadata:', result.metadata);
                 json_data = result.geojson;
                 setMetadata(result.metadata || {});
 
@@ -326,6 +329,7 @@ export function readBdd(){
                 pkg.setPickerDates(metadata);
                 // mise à jour des options en fonction de la BDD (dates début et fin)
                 updateOptionsValues(metadata);
+                console.log('[readBdd] Appel addVector avec', result.geojson?.features?.length, 'features');
                 pkg.addVector(result.geojson);
 
                 // Mettre à jour le compteur : sélection = total au chargement initial
@@ -577,6 +581,7 @@ function loadAndDisplayPoints() {
             }
             pollGeojsonTask(data.task_id, {
                 onSuccess: (result) => {
+                    console.log('[loadAndDisplayPoints] onSuccess - features:', result?.geojson?.features?.length, '| error:', result?.error);
                     if (result.error || !result.geojson) {
                         console.error('Erreur tâche GeoJSON (loadAndDisplayPoints):', result.error || 'geojson manquant');
                         pkg.hidePointsToast();

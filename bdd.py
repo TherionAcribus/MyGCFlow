@@ -645,6 +645,9 @@ def run_import_task(status: TaskStatus, app, file_path: str, Geocache, db):
             # Sans cette invalidation, run_geojson_task verrait le même mtime et servirait
             # le GeoJSON vide du cache de démarrage au lieu de régénérer.
             geojson_cache.invalidate("post_import")
+            # pollGeojsonTask() côté JS vérifie status.result pour distinguer succès/échec.
+            # Sans set_result(), la tâche serait traitée comme une erreur côté frontend.
+            status.set_result({"success": True})
     finally:
         try:
             os.remove(file_path)
