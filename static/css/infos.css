@@ -1,10 +1,10 @@
 #infosFrame {
     position: absolute;
-    top: 10px; /* Ajustez la position selon vos besoins */
-    left: 10px; /* Ajustez la position selon vos besoins */
-    background-color: white;
+    top: 10px;
+    left: 10px;
+    background-color: #ffffff;
     padding: 10px;
     border-radius: 5px;
-    box-shadow: 0 0 5px rgba(0,0,0,0.2);
-    z-index: 100; /* S'assure que le titre est bien visible au-dessus de la carte */
+    box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.2);
+    z-index: 100;
 }
