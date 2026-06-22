@@ -1894,6 +1894,19 @@ function recordAnimationMediaRecorder(){
         const audioEnabled = !!(pkg.options?.record?.audio?.enabled);
         if (audioEnabled && file) {
             _mrAudioNote = ` ♪ La musique sera intégrée automatiquement après la capture.`;
+            // Débloquer un AudioContext PENDANT le geste utilisateur (clic Enregistrer).
+            // Le mux audio s'exécute après la capture, hors geste : un contexte créé à ce
+            // moment-là resterait "suspended" et produirait une vidéo muette. On le pré-crée
+            // et le résume ici pour que muxRecordedVideoWithAudio le réutilise.
+            try {
+                const AC = window.AudioContext || window.webkitAudioContext;
+                if (AC && (!window.mrMuxAudioCtx || window.mrMuxAudioCtx.state === 'closed')) {
+                    window.mrMuxAudioCtx = new AC();
+                }
+                if (window.mrMuxAudioCtx && window.mrMuxAudioCtx.state === 'suspended') {
+                    window.mrMuxAudioCtx.resume().catch(()=>{});
+                }
+            } catch(_) {}
         }
     } catch(_) {}
 
@@ -2247,13 +2260,16 @@ function normalizeRecordedVideoSpeed(sourceBlob, factor){
 
             video.addEventListener('loadedmetadata', () => {
                 try { video.playbackRate = factor; } catch(_) {}
-                const duration = video.duration || 0;
+                // Les .webm de MediaRecorder rapportent souvent duration === Infinity :
+                // ne pas le laisser fuiter dans setTimeout (Infinity → 0 → déclenchement immédiat).
+                const rawDur = video.duration;
+                const duration = (Number.isFinite(rawDur) && rawDur > 0) ? rawDur : 0;
 
                 const stream = (typeof video.captureStream === 'function') ? video.captureStream(fps) : null;
                 if (!stream) { cleanup(); reject(new Error('captureStream non supporté pour la normalisation')); return; }
 
                 // Timeout basé sur la durée à 1x + 60s : couvre le cas où playbackRate échoue silencieusement
-                const maxMs = duration > 0 ? (duration * 1000 + 60000) : 120000;
+                const maxMs = duration > 0 ? (duration * 1000 + 60000) : 1800000; // 30 min de garde si durée inconnue
                 safetyTimeout = setTimeout(() => {
                     safetyTimeout = null;
                     cleanup();
@@ -2358,9 +2374,15 @@ function muxRecordedVideoWithAudio(sourceBlob, audioFile){
                     const vStream = (typeof video.captureStream === 'function') ? video.captureStream(fps) : null;
                     if (!vStream) { cleanup(); reject(new Error('captureStream non supporté pour mux audio')); return; }
 
-                    // Timeout de sécurité : durée vidéo + 60s de marge
-                    const duration = video.duration || 0;
-                    const maxMs = duration > 0 ? (duration * 1000 + 60000) : 120000;
+                    // Timeout de sécurité : durée vidéo + 60s de marge.
+                    // ATTENTION : les .webm issus de MediaRecorder rapportent souvent
+                    // video.duration === Infinity (pas de cue de durée dans l'en-tête).
+                    // Infinity passé à setTimeout est converti en 0 → déclenchement immédiat
+                    // → le mux échouait toujours. On retombe donc sur un délai fixe généreux
+                    // si la durée n'est pas finie ; l'arrêt normal se fait sur l'évènement 'ended'.
+                    const rawDur = video.duration;
+                    const duration = (Number.isFinite(rawDur) && rawDur > 0) ? rawDur : 0;
+                    const maxMs = duration > 0 ? (duration * 1000 + 60000) : 1800000; // 30 min de garde
                     muxSafetyTimeout = setTimeout(() => {
                         muxSafetyTimeout = null;
                         cleanup();

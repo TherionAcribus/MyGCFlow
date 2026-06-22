@@ -129,24 +129,33 @@ def assemble_pictures_directory(image_folder, output_video, fps=24, audio_path=N
         audio_clip = None
 
         # Option: ajouter l'audio si fourni (audio_path est un nom de fichier dans 'audio/')
+        print(f"[assemble] audio_path={audio_path!r} audio_volume={audio_volume!r}")
         if audio_path:
             try:
                 os.makedirs('audio', exist_ok=True)
                 safe_name = secure_filename(os.path.basename(audio_path))
                 audio_file = os.path.join('audio', safe_name)
+                print(f"[assemble] recherche audio: {audio_file} existe={os.path.exists(audio_file)}")
                 if os.path.exists(audio_file):
                     vol = 1.0
                     try:
                         vol = max(0.0, float(audio_volume))
                     except Exception:
                         vol = 1.0
-                    audio_clip = AudioFileClip(audio_file).volumex(vol)
+                    audio_clip = AudioFileClip(audio_file).with_volume_scaled(vol)
                     if audio_clip.duration >= clip.duration:
-                        audio_clip = audio_clip.subclip(0, clip.duration)
-                    clip = clip.set_audio(audio_clip)
+                        audio_clip = audio_clip.subclipped(0, clip.duration)
+                    clip = clip.with_audio(audio_clip)
+                    print(f"[assemble] Audio attaché OK (vol={vol}, durée audio={audio_clip.duration:.1f}s, durée vidéo={clip.duration:.1f}s)")
+                else:
+                    print(f"[assemble] FICHIER AUDIO INTROUVABLE: {audio_file}")
             except Exception as e:
                 # En cas d'erreur audio, on continue avec la vidéo seule
-                print(f"[assemble] Audio ignoré: {e}")
+                import traceback
+                print(f"[assemble] Audio ignoré (ERREUR): {e}")
+                traceback.print_exc()
+        else:
+            print("[assemble] Aucun audio demandé (audio_path vide)")
 
         # Écrivez le clip vidéo dans un fichier
         # Codec 'libx264' + 'aac' pour compatibilité (nécessite ffmpeg)
