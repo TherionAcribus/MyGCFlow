@@ -68,6 +68,7 @@
 
 import * as pkg from './index.js';
 import { CONFIG } from './init.js';
+import fixWebmDuration from './fix-webm-duration.js';
 
 // Debug toasts/assemblage
 const TOAST_DEBUG = false;
@@ -2157,7 +2158,7 @@ function finalizeMediaRecorderVideo(){
             try { blockBackgroundAudioPlayback = false; } catch(_) {}
         };
 
-        const proceedWith = (finalBlob) => {
+        const deliver = (finalBlob) => {
             const tasks = [];
             if (wantsDownload) {
                 try {
@@ -2185,6 +2186,14 @@ function finalizeMediaRecorderVideo(){
             } else {
                 afterAll();
             }
+        };
+
+        // Avant livraison : réécrire l'en-tête WebM pour y injecter la durée réelle.
+        // Sans ça, MediaRecorder produit un .webm sans "Duration" : les lecteurs
+        // n'affichent pas la durée et la barre de progression ne permet pas de chercher.
+        const proceedWith = (finalBlob) => {
+            try { pkg.updateTextsModal('Finalisation', 'Écriture de la durée de la vidéo...'); } catch(_) {}
+            fixWebmFinalDuration(finalBlob).then((fixedBlob) => deliver(fixedBlob || finalBlob));
         };
 
         // Audio utilisateur éventuellement sélectionné
@@ -2455,6 +2464,58 @@ function muxRecordedVideoWithAudio(sourceBlob, audioFile){
             reject(e);
         }
     });
+}
+
+// Mesure la durée réelle (en ms) d'un blob vidéo, même si l'en-tête WebM
+// rapporte duration === Infinity (cas MediaRecorder). On utilise l'astuce
+// du "seek vers la fin" qui force le navigateur à recalculer la vraie durée.
+function getBlobDurationMs(blob){
+    return new Promise((resolve) => {
+        let settled = false;
+        const v = document.createElement('video');
+        v.preload = 'metadata';
+        v.muted = true;
+        const url = URL.createObjectURL(blob);
+        const finish = (durSec) => {
+            if (settled) return;
+            settled = true;
+            try { URL.revokeObjectURL(url); } catch(_) {}
+            resolve((Number.isFinite(durSec) && durSec > 0) ? Math.round(durSec * 1000) : 0);
+        };
+        v.onloadedmetadata = () => {
+            const d = v.duration;
+            if (!Number.isFinite(d) || d <= 0) {
+                // Forcer la résolution de la durée en cherchant très loin
+                v.ontimeupdate = () => { v.ontimeupdate = null; finish(v.duration); };
+                try { v.currentTime = 1e101; } catch(_) { finish(0); }
+            } else {
+                finish(d);
+            }
+        };
+        v.onerror = () => finish(0);
+        // Garde-fou si aucun évènement ne se déclenche
+        setTimeout(() => finish(v.duration), 10000);
+        v.src = url;
+    });
+}
+
+// Réécrit l'en-tête WebM du blob final pour y inscrire la durée → les lecteurs
+// affichent la durée et autorisent la navigation (seek). Renvoie le blob corrigé
+// (ou l'original en cas d'échec ou de format non-WebM).
+async function fixWebmFinalDuration(blob){
+    try {
+        if (!blob || !/webm/i.test(blob.type || '')) return blob;
+        const durMs = await getBlobDurationMs(blob);
+        if (durMs > 0) {
+            const fixed = await fixWebmDuration(blob, durMs, { logger: false });
+            console.log('[duration-fix] durée écrite:', durMs, 'ms');
+            return fixed || blob;
+        }
+        console.warn('[duration-fix] durée non mesurable, blob inchangé');
+    } catch(e) {
+        console.warn('[duration-fix] échec, blob inchangé:', e);
+    }
+    return blob;
 }
 
 // mise à jour de la barre de progression
