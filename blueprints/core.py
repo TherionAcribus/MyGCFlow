@@ -27,6 +27,22 @@ def index():
     return response
 
 
+@core_bp.route('/guide')
+def guide():
+    """Mode d'emploi pas-à-pas, ouvert dans une page séparée."""
+    current_locale = get_locale()
+    response = make_response(render_template('guide.html'))
+    if current_locale:
+        response.set_cookie(
+            'gcmap_lang',
+            current_locale,
+            max_age=60 * 60 * 24 * 365,
+            samesite='Lax',
+            path='/'
+        )
+    return response
+
+
 @core_bp.route('/check_version', methods=['GET'])
 @cross_origin()
 def check_version():

@@ -1506,15 +1506,8 @@ function startRecordingProcess(){
     pkg.updateCurrentDate(currentDate); // Remet la date au début effectif
     try { pkg.updateProgressBar({ progress: 0, message: '0% | préparation...' }); } catch(_) {}
 
-    // ouverture modale (progress) avec instruction intégrée
-    pkg.openModalLoading("Capture en cours", "Ne pas bouger la fenêtre pendant la capture.");
-
-    // Init métriques
-    perfMetrics = { totalFrames: 0, capturedFrames: 0, uploadOk: 0, uploadFail: 0, captureTimeMs: 0, uploadTimeMs: 0, startedAt: performance.now() };
-
-    // Marquer le début de l'enregistrement
-    isRecording = true;
-    // Bloquer la musique de fond pendant la capture d'images et informer l'utilisateur si un fichier audio est chargé
+    // Bloquer la musique et détecter l'audio pour l'intégrer dans le toast
+    let _captureAudioNote = '';
     try {
         blockBackgroundAudioPlayback = true;
         stopBackgroundMusic();
@@ -1522,15 +1515,21 @@ function startRecordingProcess(){
         const file = input?.files?.[0];
         const audioEnabled = !!(pkg.options?.record?.audio?.enabled);
         if (audioEnabled && file) {
-            const name = file.name || 'audio';
-            pkg.showToast && pkg.showToast(
-                pkg.t("Enregistrement: audio sera ajouté après capture: ${name}", { name }),
-                'info',
-                'Audio différé',
-                4000
-            );
+            _captureAudioNote = ` ♪ La musique sera intégrée automatiquement après la capture.`;
         }
     } catch(_) {}
+
+    // ouverture modale avec avertissement dans le titre et info audio dans le message
+    pkg.openModalLoading(
+        "Capture en cours – Ne pas bouger la fenêtre",
+        "Préparation de la capture..." + _captureAudioNote
+    );
+
+    // Init métriques
+    perfMetrics = { totalFrames: 0, capturedFrames: 0, uploadOk: 0, uploadFail: 0, captureTimeMs: 0, uploadTimeMs: 0, startedAt: performance.now() };
+
+    // Marquer le début de l'enregistrement
+    isRecording = true;
 
     // mise à jour des options RGB (MEttre ailleurs ? + idem lecture seule)
     pkg.options.flash.rgb = pkg.hexToRgb(pkg.options.flash.color);
@@ -1885,7 +1884,8 @@ function recordAnimationMediaRecorder(){
         return;
     }
 
-    // Empêcher toute lecture de musique pendant l'enregistrement MR
+    // Bloquer la musique et détecter l'audio pour l'intégrer dans le toast
+    let _mrAudioNote = '';
     try {
         blockBackgroundAudioPlayback = true;
         stopBackgroundMusic();
@@ -1893,13 +1893,7 @@ function recordAnimationMediaRecorder(){
         const file = input?.files?.[0];
         const audioEnabled = !!(pkg.options?.record?.audio?.enabled);
         if (audioEnabled && file) {
-            const name = file.name || 'audio';
-            pkg.showToast && pkg.showToast(
-                pkg.t("Enregistrement: audio sera ajouté après capture: ${name}", { name }),
-                'info',
-                'Audio différé',
-                4000
-            );
+            _mrAudioNote = ` ♪ La musique sera intégrée automatiquement après la capture.`;
         }
     } catch(_) {}
 
@@ -1932,7 +1926,10 @@ function recordAnimationMediaRecorder(){
 
     // UI loader
     const totalMs = computeTotalAnimationMs();
-    try { pkg.openModalLoading('Enregistrement en cours', 'Ne pas bouger la fenêtre pendant la capture.'); } catch(_) {}
+    try { pkg.openModalLoading(
+        'Enregistrement en cours – Ne pas bouger la fenêtre',
+        'Démarrage de la capture...' + _mrAudioNote
+    ); } catch(_) {}
 
     // Appliquer un éventuel ralentissement utilisateur sur la timeline
     const originalTimePerDay = pkg.options.animation.timePerDay;
@@ -2071,7 +2068,8 @@ async function startMediaRecorderPipeline(totalDurationMs){
     mrProgressIntervalId = setInterval(() => {
         const elapsed = performance.now() - t0;
         const progress = Math.min(100, Math.max(0, (elapsed / totalDurationMs) * 100));
-        const msg = `${progress.toFixed(1)}% | capture .webm`;
+        const _hasAudio = !!(pkg.options?.record?.audio?.enabled) && !!document.getElementById('inputAudioFile')?.files?.[0];
+        const msg = `${progress.toFixed(1)}% | capture .webm${_hasAudio ? ' ♪' : ''}`;
         try { pkg.updateProgressBar({ progress, message: msg }); } catch(_) {}
     }, 200);
 
@@ -2908,6 +2906,7 @@ function flashRecord(features) {
             let style;
             switch (flashOptions.mode) {
                 case "star":     style = starStyle(radius, opacity, flashOptions, cacheType);     break;
+                case "sparkle":  style = sparkleStyle(radius, opacity, flashOptions, cacheType);  break;
                 case "circle":   style = circleStyle(radius, opacity, flashOptions, cacheType);   break;
                 case "square":   style = squareStyle(radius, opacity, flashOptions, cacheType);   break;
                 case "triangle": style = triangleStyle(radius, opacity, flashOptions, cacheType); break;
@@ -2943,6 +2942,9 @@ function updateAnimationStyles() {
             switch (pkg.options.flash.mode) {
                 case "star":
                     style = starStyle(radius, opacity, pkg.options.flash, cacheType);
+                    break;
+                case "sparkle":
+                    style = sparkleStyle(radius, opacity, pkg.options.flash, cacheType);
                     break;
                 case "circle":
                     style = circleStyle(radius, opacity, pkg.options.flash, cacheType);
@@ -3016,6 +3018,9 @@ function flash(feature, flashOptions) {
         switch (flashOptions.mode) {
             case "star":
                 style = starStyle(radius, opacity, flashOptions, cacheType);
+                break;
+            case "sparkle":
+                style = sparkleStyle(radius, opacity, flashOptions, cacheType);
                 break;
             case "circle":
                 style = circleStyle(radius, opacity, flashOptions, cacheType);
@@ -3094,6 +3099,49 @@ export function starStyle(radius, opacity, flashOptions, cacheType = null){
             }),
             fill: new ol.style.Fill({
                 color: color, // Remplissage avec la couleur déterminée
+            }),
+        }),
+    });
+    return style;
+}
+
+// Scintillement : étoile fine à 4 branches avec un éclat blanc, pour un effet
+// d'étincelle qui brille à l'apparition du point. Utilise les mêmes réglages que
+// les autres flashs (taille, durée, couleur).
+export function sparkleStyle(radius, opacity, flashOptions, cacheType = null){
+    let color;
+
+    // Déterminer la couleur selon le type sélectionné (même logique que les autres flashs)
+    if (flashOptions.color_type === 'gc' && cacheType && defaultGcColors) {
+        const gcColor = defaultGcColors[cacheType];
+        if (gcColor) {
+            if (gcColor.startsWith('#')) {
+                const rgb = pkg.hexToRgb(gcColor);
+                color = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacity})`;
+            } else {
+                color = gcColor;
+            }
+        } else {
+            color = `rgba(128, 128, 128, ${opacity})`;
+        }
+    } else if (flashOptions.color_type === 'none') {
+        color = `rgba(0, 0, 0, 0)`;
+    } else {
+        color = `rgba(${flashOptions.rgb.r}, ${flashOptions.rgb.g}, ${flashOptions.rgb.b}, ${opacity})`;
+    }
+
+    const style = new ol.style.Style({
+        image: new ol.style.RegularShape({
+            points: 4,                 // 4 branches = forme d'étincelle
+            radius: radius,            // rayon extérieur (pointe des branches)
+            radius2: radius * 0.18,    // rayon intérieur faible = branches fines et pointues
+            angle: 0,
+            fill: new ol.style.Fill({
+                color: color,
+            }),
+            stroke: new ol.style.Stroke({
+                color: `rgba(255, 255, 255, ${opacity})`, // éclat blanc lumineux
+                width: 1.5,
             }),
         }),
     });

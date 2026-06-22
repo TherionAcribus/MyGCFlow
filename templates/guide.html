@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ _("Mode d'emploi") }} — GCMap</title>
+    <link rel="stylesheet" href="../static/css/style.css" />
+    <link rel="stylesheet" href="../static/css/guide.css" />
+</head>
+<body>
+
+    <!-- En-tête -->
+    <header class="guide-header">
+        <button class="guide-menu-toggle" id="guideMenuToggle" aria-label="Menu">
+            <i class="material-icons">menu</i>
+        </button>
+        <div class="guide-logo">
+            <i class="material-icons">map</i>
+            <span>{{ _("Mode d'emploi") }}</span>
+        </div>
+        <div class="guide-spacer"></div>
+        <a href="/" class="guide-back-btn">
+            <i class="material-icons">arrow_back</i>
+            {{ _("Retour à l'application") }}
+        </a>
+    </header>
+
+    <div class="guide-overlay" id="guideOverlay"></div>
+
+    <div class="guide-layout">
+
+        <!-- Menu latéral -->
+        <aside class="guide-sidebar" id="guideSidebar">
+            <nav class="guide-nav">
+                <div class="guide-nav-section-title">{{ _("Démarrage") }}</div>
+                <a href="#intro" class="guide-nav-link">
+                    <i class="material-icons">rocket_launch</i>{{ _("Bienvenue") }}
+                </a>
+
+                <div class="guide-nav-section-title">{{ _("Les 4 étapes") }}</div>
+                <a href="#data" class="guide-nav-link">
+                    <span class="nav-num">1</span>{{ _("Données") }}
+                </a>
+                <a href="#style" class="guide-nav-link">
+                    <span class="nav-num">2</span>{{ _("Style") }}
+                </a>
+                <a href="#animation" class="guide-nav-link">
+                    <span class="nav-num">3</span>{{ _("Animation") }}
+                </a>
+                <a href="#settings" class="guide-nav-link">
+                    <span class="nav-num">4</span>{{ _("Paramètres") }}
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Contenu -->
+        <main class="guide-content">
+
+            <!-- ===================== INTRO ===================== -->
+            <section id="intro" class="guide-section">
+                <div class="guide-hero">
+                    <h1>{{ _("Bienvenue dans GCMap !") }}</h1>
+                    <p>{{ _("GCMap transforme vos trouvailles de géocaching en une carte animée que vous pouvez personnaliser et enregistrer en vidéo. Suivez ce guide en 4 étapes : chargez vos données, choisissez un style, lancez l'animation, puis ajustez les paramètres.") }}</p>
+                </div>
+
+                <div class="guide-quicksteps">
+                    <div class="guide-quickstep">
+                        <div class="qs-num">1</div>
+                        <strong>{{ _("Données") }}</strong>
+                        <span>{{ _("Chargez votre fichier .gpx et filtrez vos caches") }}</span>
+                    </div>
+                    <div class="guide-quickstep">
+                        <div class="qs-num">2</div>
+                        <strong>{{ _("Style") }}</strong>
+                        <span>{{ _("Personnalisez la carte, les points et les titres") }}</span>
+                    </div>
+                    <div class="guide-quickstep">
+                        <div class="qs-num">3</div>
+                        <strong>{{ _("Animation") }}</strong>
+                        <span>{{ _("Lancez et enregistrez votre vidéo") }}</span>
+                    </div>
+                    <div class="guide-quickstep">
+                        <div class="qs-num">4</div>
+                        <strong>{{ _("Paramètres") }}</strong>
+                        <span>{{ _("Réglez la langue, la qualité et les valeurs par défaut") }}</span>
+                    </div>
+                </div>
+
+                <div class="guide-callout info">
+                    <i class="material-icons">info</i>
+                    <div>{{ _("Astuce : en haut de l'application, des onglets") }} <span class="ui-chip">{{ _("Données") }}</span>, <span class="ui-chip">{{ _("Style") }}</span>, <span class="ui-chip">{{ _("Animation") }}</span> {{ _("et") }} <span class="ui-chip">{{ _("Paramètres") }}</span> {{ _("correspondent aux 4 sections de ce guide.") }}</div>
+                </div>
+            </section>
+
+            <!-- ===================== 1. DONNÉES ===================== -->
+            <section id="data" class="guide-section">
+                <div class="guide-section-head">
+                    <span class="sec-badge"><i class="material-icons">storage</i></span>
+                    <h2>1. {{ _("Données") }}</h2>
+                </div>
+                <p class="guide-section-intro">{{ _("Tout commence ici : importez vos trouvailles puis sélectionnez celles que vous voulez afficher.") }}</p>
+
+                <ol class="guide-steps">
+                    <li>
+                        <h3>{{ _("Récupérez votre fichier .gpx") }}</h3>
+                        <p>{{ _("Connectez-vous à geocaching.com, puis allez dans") }} <strong>Profil &rsaquo; Pocket Query &rsaquo; My Finds</strong> {{ _("(en bas de la page). Cliquez sur") }} <em>« Add to Queue »</em> {{ _("pour générer le fichier, puis téléchargez-le une fois prêt.") }}</p>
+                        <div class="guide-callout tip">
+                            <i class="material-icons">lightbulb</i>
+                            <div>{{ _("Le fichier .gpx contient toutes vos caches trouvées avec leur date et leurs coordonnées : c'est le carburant de l'animation.") }}</div>
+                        </div>
+                    </li>
+                    <li>
+                        <h3>{{ _("Chargez le fichier dans GCMap") }}</h3>
+                        <p>{{ _("Dans l'onglet") }} <span class="ui-chip">{{ _("Données") }}</span>, {{ _("section") }} <strong>{{ _("Base de données") }}</strong>, {{ _("cliquez sur") }} <span class="ui-chip"><i class="material-icons">cloud_upload</i> {{ _("Sélectionner et charger un fichier .gpx") }}</span> {{ _("et choisissez votre fichier. Le nombre de caches importées s'affiche une fois le chargement terminé.") }}</p>
+                    </li>
+                    <li>
+                        <h3>{{ _("Filtrez vos caches") }}</h3>
+                        <p>{{ _("Dans la section") }} <strong>{{ _("Filtres") }}</strong>, {{ _("affinez la sélection selon vos besoins :") }}</p>
+                        <ul class="sub">
+                            <li>{{ _("par type de cache (Traditional, Mystery, Multi…)") }}</li>
+                            <li>{{ _("par période (dates de début et de fin)") }}</li>
+                            <li>{{ _("par pays ou région") }}</li>
+                        </ul>
+                        <p>{{ _("Le compteur") }} <span class="ui-chip">{{ _("Sélection : 0 / 0") }}</span> {{ _("indique combien de caches sont retenues par rapport au total.") }}</p>
+                    </li>
+                    <li>
+                        <h3>{{ _("Repartir de zéro (optionnel)") }}</h3>
+                        <p>{{ _("Le bouton") }} <span class="ui-chip"><i class="material-icons">delete</i> {{ _("Vider la base de données") }}</span> {{ _("supprime les données chargées si vous voulez importer un autre fichier.") }}</p>
+                    </li>
+                </ol>
+            </section>
+
+            <!-- ===================== 2. STYLE ===================== -->
+            <section id="style" class="guide-section">
+                <div class="guide-section-head">
+                    <span class="sec-badge"><i class="material-icons">palette</i></span>
+                    <h2>2. {{ _("Style") }}</h2>
+                </div>
+                <p class="guide-section-intro">{{ _("Donnez à votre carte l'apparence que vous souhaitez : fond de carte, points, titres et effets. Tout se règle dans l'onglet") }} <span class="ui-chip">{{ _("Style") }}</span>.</p>
+
+                <ol class="guide-steps">
+                    <li>
+                        <h3>{{ _("Choisissez un fond de carte") }}</h3>
+                        <p>{{ _("Dans le sous-onglet") }} <span class="ui-chip">{{ _("Cartes & Overlays") }}</span>, {{ _("sélectionnez un style :") }}</p>
+                        <ul class="sub">
+                            <li><strong>OSM</strong> — {{ _("OpenStreetMap, carte classique colorée") }}</li>
+                            <li><strong>Toner</strong> — {{ _("noir et blanc, version claire ou sombre") }}</li>
+                            <li><strong>Vector</strong> — {{ _("carte vectorielle dont vous réglez les couleurs (contour, remplissage, fond) et l'épaisseur des traits") }}</li>
+                            <li><strong>Watercolor</strong> — {{ _("rendu aquarelle artistique") }}</li>
+                        </ul>
+                    </li>
+                    <li>
+                        <h3>{{ _("Ajoutez un titre et des informations") }}</h3>
+                        <p>{{ _("Dans") }} <strong>{{ _("Informations et Overlays") }}</strong>, {{ _("activez") }} <span class="ui-chip">{{ _("Afficher un titre") }}</span> {{ _("et saisissez votre texte. Vous pouvez aussi afficher le nombre de caches trouvées et la date.") }}</p>
+                        <ul class="sub">
+                            <li>{{ _("Basculez entre la cible") }} <strong>{{ _("Titre") }}</strong> {{ _("et") }} <strong>{{ _("Infos") }}</strong> {{ _("pour les styliser séparément.") }}</li>
+                            <li>{{ _("Réglez le") }} <strong>{{ _("Texte") }}</strong>, {{ _("la") }} <strong>{{ _("Boîte") }}</strong>, {{ _("l'") }}<strong>{{ _("Ombre") }}</strong> {{ _("et la") }} <strong>{{ _("Position") }}</strong> {{ _("via les onglets dédiés.") }}</li>
+                            <li>{{ _("Pour un contrôle total, cochez") }} <span class="ui-chip">CSS</span> {{ _("et éditez le style à la main.") }}</li>
+                        </ul>
+                        <div class="guide-callout info">
+                            <i class="material-icons">touch_app</i>
+                            <div>{{ _("N'oubliez pas de cliquer sur") }} <span class="ui-chip">{{ _("Appliquer") }}</span> {{ _("pour valider vos modifications.") }}</div>
+                        </div>
+                    </li>
+                    <li>
+                        <h3>{{ _("Personnalisez les points") }}</h3>
+                        <p>{{ _("Dans le sous-onglet") }} <span class="ui-chip">{{ _("Points & Flash") }}</span>, {{ _("section") }} <strong>{{ _("Points") }}</strong>, {{ _("choisissez le mode d'affichage avec l'interrupteur") }} <strong>{{ _("Icône / Vectoriel") }}</strong> :</p>
+                        <ul class="sub">
+                            <li><strong>{{ _("Vectoriel") }}</strong> — {{ _("réglez la forme (cercle, triangle), la taille, la couleur du centre et de la bordure. Les couleurs peuvent suivre le type de cache (Couleurs GC), être transparentes ou uniques.") }}</li>
+                            <li><strong>{{ _("Icône") }}</strong> — {{ _("choisissez un jeu d'icônes (Geocaching ou Smiley) et leur taille.") }}</li>
+                        </ul>
+                    </li>
+                    <li>
+                        <h3>{{ _("Réglez l'effet « Flash »") }}</h3>
+                        <p>{{ _("Toujours dans") }} <span class="ui-chip">{{ _("Points & Flash") }}</span>, {{ _("la section") }} <strong>{{ _("Flash") }}</strong> {{ _("définit l'animation jouée à l'apparition de chaque cache pendant la vidéo.") }}</p>
+                    </li>
+                    <li>
+                        <h3>{{ _("Sauvegardez votre style dans un profil") }}</h3>
+                        <p>{{ _("Le panneau") }} <strong>{{ _("Profils") }}</strong> {{ _("(à droite) mémorise toute votre configuration de style.") }}</p>
+                        <ul class="sub">
+                            <li><span class="ui-chip"><i class="material-icons">add</i> {{ _("Nouveau") }}</span> {{ _("crée un profil ;") }} <span class="ui-chip"><i class="material-icons">save</i> {{ _("Sauvegarder") }}</span> {{ _("enregistre le profil actif.") }}</li>
+                            <li><span class="ui-chip"><i class="material-icons">file_upload</i> {{ _("Importer") }}</span> {{ _("permet de récupérer un profil partagé au format JSON.") }}</li>
+                        </ul>
+                    </li>
+                </ol>
+            </section>
+
+            <!-- ===================== 3. ANIMATION ===================== -->
+            <section id="animation" class="guide-section">
+                <div class="guide-section-head">
+                    <span class="sec-badge"><i class="material-icons">movie</i></span>
+                    <h2>3. {{ _("Animation") }}</h2>
+                </div>
+                <p class="guide-section-intro">{{ _("C'est le moment de donner vie à votre carte et, si vous le souhaitez, de l'enregistrer en vidéo. Tout se passe dans l'onglet") }} <span class="ui-chip">{{ _("Animation") }}</span>.</p>
+
+                <ol class="guide-steps">
+                    <li>
+                        <h3>{{ _("Définissez la période") }}</h3>
+                        <p>{{ _("Renseignez la") }} <span class="ui-chip">{{ _("Date de début") }}</span> {{ _("et la") }} <span class="ui-chip">{{ _("Date de fin") }}</span> {{ _("de l'animation. Par défaut elles couvrent toute votre base ; vous pouvez aussi reprendre les dates issues du filtre.") }}</p>
+                    </li>
+                    <li>
+                        <h3>{{ _("Réglez la vitesse") }}</h3>
+                        <ul class="sub">
+                            <li><strong>{{ _("Durée par jour (ms)") }}</strong> — {{ _("temps passé à l'écran pour chaque journée de géocaching.") }}</li>
+                            <li><strong>{{ _("Temps total (minutes)") }}</strong> — {{ _("durée globale visée ; l'app affiche le détail du calcul.") }}</li>
+                            <li><strong>{{ _("Temps additionnel (sec)") }}</strong> — {{ _("pause à la fin pour laisser la carte finale visible.") }}</li>
+                        </ul>
+                    </li>
+                    <li>
+                        <h3>{{ _("Ajoutez une musique (optionnel)") }}</h3>
+                        <p>{{ _("Cochez") }} <span class="ui-chip">{{ _("Inclure la musique") }}</span>, {{ _("sélectionnez un fichier audio et ajustez le volume. Le bouton") }} <span class="ui-chip"><i class="material-icons">timer</i> {{ _("Définir la durée de l'animation à partir de la musique") }}</span> {{ _("cale la durée totale sur celle du morceau.") }}</p>
+                    </li>
+                    <li>
+                        <h3>{{ _("Lancez l'aperçu puis enregistrez") }}</h3>
+                        <ul class="sub">
+                            <li><span class="ui-chip"><i class="material-icons">play_arrow</i> {{ _("Démarrer") }}</span> — {{ _("joue l'animation à l'écran pour vérifier le rendu.") }}</li>
+                            <li><span class="ui-chip"><i class="material-icons">videocam</i> {{ _("Enregistrer") }}</span> — {{ _("lance l'animation en capturant la vidéo.") }}</li>
+                            <li><span class="ui-chip"><i class="material-icons">pause</i> {{ _("Pause") }}</span> {{ _("et") }} <span class="ui-chip"><i class="material-icons">stop</i> {{ _("Arrêter") }}</span> {{ _("contrôlent la lecture.") }}</li>
+                        </ul>
+                        <div class="guide-callout tip">
+                            <i class="material-icons">lightbulb</i>
+                            <div>{{ _("Lancez d'abord un") }} <strong>{{ _("Démarrer") }}</strong> {{ _("pour valider le style et la vitesse, puis seulement") }} <strong>{{ _("Enregistrer") }}</strong> {{ _("pour la version finale.") }}</div>
+                        </div>
+                    </li>
+                    <li>
+                        <h3>{{ _("Récupérez votre vidéo") }}</h3>
+                        <p>{{ _("Selon le mode d'enregistrement, utilisez les boutons de la section") }} <strong>{{ _("Vidéo") }}</strong> :</p>
+                        <ul class="sub">
+                            <li><span class="ui-chip"><i class="material-icons">movie</i> {{ _("Assembler film") }}</span> — {{ _("génère la vidéo à partir des images capturées.") }}</li>
+                            <li><span class="ui-chip"><i class="material-icons">folder_open</i> {{ _("Ouvrir le dossier vidéo") }}</span> — {{ _("accède au dossier contenant vos vidéos.") }}</li>
+                            <li><span class="ui-chip"><i class="material-icons">delete_sweep</i> {{ _("Nettoyer images") }}</span> — {{ _("vide les images temporaires avant un nouvel enregistrement.") }}</li>
+                        </ul>
+                    </li>
+                </ol>
+            </section>
+
+            <!-- ===================== 4. PARAMÈTRES ===================== -->
+            <section id="settings" class="guide-section">
+                <div class="guide-section-head">
+                    <span class="sec-badge"><i class="material-icons">settings</i></span>
+                    <h2>4. {{ _("Paramètres") }}</h2>
+                </div>
+                <p class="guide-section-intro">{{ _("Réglez une fois pour toutes le comportement de l'application et la qualité des enregistrements dans l'onglet") }} <span class="ui-chip">{{ _("Paramètres") }}</span>.</p>
+
+                <ol class="guide-steps">
+                    <li>
+                        <h3>{{ _("Préférences générales") }}</h3>
+                        <ul class="sub">
+                            <li><strong>{{ _("Langue") }}</strong> — {{ _("basculez entre français et anglais.") }}</li>
+                            <li><strong>{{ _("Vérifier les mises à jour au démarrage") }}</strong> — {{ _("soyez prévenu d'une nouvelle version.") }}</li>
+                            <li><strong>{{ _("Profil par défaut au démarrage") }}</strong> — {{ _("le profil de style chargé automatiquement à l'ouverture.") }}</li>
+                        </ul>
+                    </li>
+                    <li>
+                        <h3>{{ _("Vue de carte par défaut") }}</h3>
+                        <p>{{ _("Définissez le centre (latitude, longitude) et le zoom utilisés au démarrage.") }}</p>
+                        <ul class="sub">
+                            <li><span class="ui-chip"><i class="material-icons">my_location</i> {{ _("Utiliser la vue actuelle de la carte") }}</span> — {{ _("reprend la position affichée.") }}</li>
+                            <li><span class="ui-chip"><i class="material-icons">place</i> {{ _("Choisir sur la carte") }}</span> — {{ _("cliquez directement le point souhaité.") }}</li>
+                        </ul>
+                    </li>
+                    <li>
+                        <h3>{{ _("Qualité d'enregistrement") }}</h3>
+                        <p>{{ _("Dans") }} <strong>{{ _("Paramètres d'enregistrement") }}</strong>, {{ _("choisissez le") }} <strong>{{ _("Mode d'enregistrement") }}</strong> :</p>
+                        <ul class="sub">
+                            <li><strong>MediaRecorder (.webm)</strong> — {{ _("rapide et léger, directement dans le navigateur.") }}</li>
+                            <li><strong>Images + MoviePy</strong> — {{ _("plus lent mais plus flexible, assemblage côté serveur.") }}</li>
+                        </ul>
+                        <p>{{ _("Vous pouvez ensuite ajuster les FPS, le bitrate, le format vidéo et l'échelle de qualité.") }}</p>
+                        <div class="guide-callout info">
+                            <i class="material-icons">help_outline</i>
+                            <div>{{ _("Chaque réglage dispose d'une icône d'aide") }} <i class="material-icons" style="font-size:16px;vertical-align:middle;">help_outline</i> {{ _("dans l'application : survolez-la pour en savoir plus.") }}</div>
+                        </div>
+                    </li>
+                </ol>
+
+                <div class="guide-callout tip" style="margin-top:28px;">
+                    <i class="material-icons">check_circle</i>
+                    <div><strong>{{ _("Vous êtes prêt !") }}</strong> {{ _("Chargez vos données, composez votre style, lancez l'animation et partagez votre carte de géocaching.") }}</div>
+                </div>
+
+                <div class="guide-footer">
+                    <a href="/" class="guide-back-btn" style="margin-top:8px;">
+                        <i class="material-icons">arrow_back</i>{{ _("Retour à l'application") }}
+                    </a>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        (function () {
+            var sidebar = document.getElementById('guideSidebar');
+            var overlay = document.getElementById('guideOverlay');
+            var toggle = document.getElementById('guideMenuToggle');
+            var links = Array.prototype.slice.call(document.querySelectorAll('.guide-nav-link'));
+            var sections = links
+                .map(function (l) { return document.querySelector(l.getAttribute('href')); })
+                .filter(Boolean);
+
+            function openMenu() { sidebar.classList.add('open'); overlay.classList.add('show'); }
+            function closeMenu() { sidebar.classList.remove('open'); overlay.classList.remove('show'); }
+
+            toggle.addEventListener('click', function () {
+                sidebar.classList.contains('open') ? closeMenu() : openMenu();
+            });
+            overlay.addEventListener('click', closeMenu);
+
+            // Fermer le menu après un clic (mobile)
+            links.forEach(function (l) {
+                l.addEventListener('click', function () {
+                    if (window.innerWidth <= 900) closeMenu();
+                });
+            });
+
+            // Surligner la section visible
+            function onScroll() {
+                var pos = window.scrollY + 120;
+                var current = sections[0];
+                sections.forEach(function (s) {
+                    if (s.offsetTop <= pos) current = s;
+                });
+                links.forEach(function (l) {
+                    l.classList.toggle('active', l.getAttribute('href') === '#' + current.id);
+                });
+            }
+            window.addEventListener('scroll', onScroll, { passive: true });
+            onScroll();
+        })();
+    </script>
+</body>
+</html>

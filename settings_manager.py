@@ -89,7 +89,7 @@ class AnimationOptions:
 
 @dataclass
 class FlashOptions:
-    mode: str = "circle"  # "none", "circle", "star", "square", "triangle", "diamond"
+    mode: str = "circle"  # "none", "circle", "star", "sparkle", "square", "triangle", "diamond"
     duration: int = 1000  # en ms
     size: int = 50  # en px
     color: str = "#FF00FF"
@@ -633,7 +633,7 @@ class SettingsManager:
                     mode="vectoriel"
                 ),
                 flash=FlashOptions(
-                    mode="star",
+                    mode="sparkle",
                     duration=800,
                     size=70,
                     color="#ffe14d",
@@ -913,7 +913,7 @@ class SettingsManager:
                     mode="vectoriel"
                 ),
                 flash=FlashOptions(
-                    mode="star",
+                    mode="sparkle",
                     duration=800,
                     size=65,
                     color="#ff4fd8",

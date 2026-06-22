@@ -16,6 +16,10 @@ export const FLASH_ANIMATIONS = {
         name: "Étoile",
         description: "Étoile à 5 branches"
     },
+    sparkle: {
+        name: "Scintillement",
+        description: "Étincelle brillante à 4 branches"
+    },
     square: {
         name: "Carré",
         description: "Carré expansif"
