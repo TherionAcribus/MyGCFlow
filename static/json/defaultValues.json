@@ -33,7 +33,9 @@
     },
     "record": {
         "fps": 24,
-        "mode": "images", 
+        "mode": "images",
+        "uploadRetries": 3,
+        "frameRetries": 2, 
         "mediaRecorder": {
             "enabled": true,
             "mimeType": "video/webm;codecs=vp9",

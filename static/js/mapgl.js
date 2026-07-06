@@ -1556,10 +1556,10 @@ function startRecordingProcess(){
     displayFeaturesForDate(currentDate, pkg.options.point, pkg.options.flash, true, infos);
 
     // Attendre que le rendu soit complet avant de commencer la capture
+    // scheduleCaptureFrame attrape toute erreur de la boucle asynchrone pour
+    // éviter que la modale reste bloquée en cas d'échec (upload, timeout, etc.)
     map.once('rendercomplete', () => {
-        requestAnimationFrame(() => {
-            captureNextFrame(true, pkg.options.point, pkg.options.flash, infos);
-        });
+        scheduleCaptureFrame(pkg.options.point, pkg.options.flash, infos);
     });
 
     // Forcer un rendu pour déclencher rendercomplete
@@ -1576,6 +1576,90 @@ function createObjectInfos(){
     return infos
 }
 
+
+// Capture une frame avec retry automatique. captureElement() peut rejeter
+// (timeout rendercomplete, toBlob null, upload épuisé) : on retente quelques
+// fois avant d'abandonner, pour absorber les incidents transitoires.
+async function captureElementWithRetry() {
+    const maxRetries = Math.max(0, Number(pkg.options?.record?.frameRetries ?? 2));
+    let lastError;
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+            await captureElement();
+            return;
+        } catch (error) {
+            lastError = error;
+            if (attempt < maxRetries) {
+                console.warn(`[CAPTURE] Frame ${imageCounter} échouée (tentative ${attempt + 1}/${maxRetries + 1}): ${error?.message || error} — nouvel essai`);
+                await new Promise(r => setTimeout(r, 300));
+            }
+        }
+    }
+    throw lastError;
+}
+
+// Planifie la frame suivante en attrapant TOUTE erreur de la boucle asynchrone.
+// Sans ce .catch(), une seule frame échouée tuait la boucle silencieusement et
+// laissait la modale « Capture en cours » ouverte à jamais.
+function scheduleCaptureFrame(pointOptions, flashOptions, infos) {
+    requestAnimationFrame(() => {
+        captureNextFrame(true, pointOptions, flashOptions, infos).catch(err => {
+            abortRecordingOnError(err);
+        });
+    });
+}
+
+// Termine proprement l'enregistrement en cas d'erreur irrécupérable :
+// ferme la modale/les toasts, nettoie les animations, restaure la carte et
+// les contrôles, puis affiche un message d'erreur explicite à l'utilisateur.
+function abortRecordingOnError(error) {
+    console.error('[CAPTURE] Abandon de l\'enregistrement suite à une erreur:', error);
+
+    isRecording = false;
+    try { recordingPerformanceMonitor.stopMonitoring(); } catch(_) {}
+    try { blockBackgroundAudioPlayback = false; } catch(_) {}
+
+    // Fermer la modale de chargement et les toasts
+    try { pkg.closeModalLoading && pkg.closeModalLoading(); } catch(_) {}
+    try {
+        const allToasts = document.querySelectorAll('.gcm-toast, .toast, .toast-loading');
+        allToasts.forEach(toast => { pkg.hideToast && pkg.hideToast(toast); });
+    } catch(_) {}
+
+    // Nettoyer les animations de flash
+    try { if (animationSource) animationSource.clear(); } catch(_) {}
+    try { if (animationLayer) animationLayer.setVisible(false); } catch(_) {}
+
+    // Remettre la carte avec tous les points filtrés
+    try {
+        clearMap();
+        const allFilteredPoints = getAllFilteredPoints();
+        if (allFilteredPoints.length > 0) {
+            displayWebGLPoints(allFilteredPoints, pkg.options.point);
+        }
+    } catch(_) {}
+
+    // Réactiver les boutons et restaurer les contrôles
+    try {
+        const assembleBtn = document.getElementById('btnAssembleMoviePictures');
+        const cleanBtn = document.getElementById('btnCleanMoviePictures');
+        const recordBtn = document.getElementById('btnRecordAnimation');
+        if (assembleBtn) { assembleBtn.disabled = false; assembleBtn.textContent = 'Assembler film'; }
+        if (cleanBtn) { cleanBtn.disabled = false; cleanBtn.textContent = 'Nettoyer images'; }
+        if (recordBtn) { recordBtn.disabled = false; }
+    } catch(_) {}
+    try { pkg.resetControlsToInitialState && pkg.resetControlsToInitialState(); } catch(_) {}
+
+    // Informer l'utilisateur
+    try {
+        pkg.showToast && pkg.showToast(
+            pkg.t('La capture a été interrompue suite à une erreur : ${message}', { message: (error?.message || 'erreur inconnue') }),
+            'error',
+            'Capture interrompue',
+            8000
+        );
+    } catch(_) {}
+}
 
 // TODO Voir pour Capture, car à priori c'est forcement == True
 async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
@@ -1633,7 +1717,7 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
         for (let extraFrames = 0; extraFrames < pkg.options.record.extraFrames; extraFrames++) {
             updateAnimationStyles();
             if (capture == true) {
-                await captureElement();
+                await captureElementWithRetry();
                 currentFrame++;
 
             } else {
@@ -1846,14 +1930,14 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
     if (currentFrame < framesPerDay) {
         // Capturez la frame actuelle
         if (capture == true) {
-            await captureElement();
+            await captureElementWithRetry();
                 globalRecordFrame++;  // avancer l'animation d'1 cran par capture
                 currentFrame++;
-                requestAnimationFrame(() => captureNextFrame(true, pointOptions, flashOptions, infos));
+                scheduleCaptureFrame(pointOptions, flashOptions, infos);
         } else {
             currentFrame++;
             // De même ici, si vous avez besoin de passer des arguments spécifiques
-            requestAnimationFrame(() => captureNextFrame(true, pointOptions, flashOptions, infos));
+            scheduleCaptureFrame(pointOptions, flashOptions, infos);
         }
     } else {
         // JOUR SUIVANT
@@ -1863,7 +1947,7 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
         currentDate.setDate(currentDate.getDate() + 1);
         displayFeaturesForDate(currentDate, pointOptions, flashOptions, true, infos);
         currentFrame = 0;  // Réinitialisez le compteur de frames pour le nouveau jour
-        requestAnimationFrame(() => captureNextFrame(true, pointOptions, flashOptions, infos));
+        scheduleCaptureFrame(pointOptions, flashOptions, infos);
     }
 }
 
