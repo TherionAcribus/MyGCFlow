@@ -13,20 +13,26 @@
     <div class="input-field col s6">
         <select multiple id="selectType">
             <option value="" disabled selected>{{ _("Filtrer par type de cache") }}</option>
-            <option value="Traditional Cache" selected>Traditional Cache</option>
-            <option value="Unknown Cache" selected>Unknown Cache</option>
-            <option value="Wherigo Cache" selected>Wherigo Cache</option>
-            <option value="Letterbox Hybrid" selected>Letterbox Hybrid</option>
-            <option value="Earthcache" selected>Earthcache</option>
-            <option value="Event Cache" selected>Event Cache</option>
-            <option value="Giga-Event Cache" selected>Giga-Event Cache</option>
-            <option value="Mega-Event Cache" selected>Mega-Event Cache</option>
-            <option value="Cache In Trash Out Event" selected>Cache In Trash Out Event</option>
-            <option value="Community Celebration Event" selected>Community Celebration Event</option>
-            <option value="GPS Adventures Exhibit" selected>GPS Adventures Exhibit</option>
-            <option value="Locationless (Reverse) Cache" selected>Locationless (Reverse) Cache</option>
-            <option value="Virtual Cache" selected>Virtual Cache</option>
-            <option value="Webcam Cache" selected>Webcam Cache</option>          
+            <optgroup label="{{ _("Caches classiques") }}">
+                <option value="Traditional Cache" selected>Traditional Cache</option>
+                <option value="Unknown Cache" selected>Unknown Cache</option>
+                <option value="Wherigo Cache" selected>Wherigo Cache</option>
+                <option value="Letterbox Hybrid" selected>Letterbox Hybrid</option>
+                <option value="Earthcache" selected>Earthcache</option>
+                <option value="Virtual Cache" selected>Virtual Cache</option>
+                <option value="Webcam Cache" selected>Webcam Cache</option>
+            </optgroup>
+            <optgroup label="{{ _("Events") }}">
+                <option value="Event Cache" selected>Event Cache</option>
+                <option value="Giga-Event Cache" selected>Giga-Event Cache</option>
+                <option value="Mega-Event Cache" selected>Mega-Event Cache</option>
+                <option value="Cache In Trash Out Event" selected>Cache In Trash Out Event</option>
+                <option value="Community Celebration Event" selected>Community Celebration Event</option>
+            </optgroup>
+            <optgroup label="{{ _("Autres") }}">
+                <option value="GPS Adventures Exhibit" selected>GPS Adventures Exhibit</option>
+                <option value="Locationless (Reverse) Cache" selected>Locationless (Reverse) Cache</option>
+            </optgroup>
         </select>        
         <label>{{ _("Type de cache") }}</label>
         <div>

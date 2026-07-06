@@ -150,6 +150,18 @@ msgstr "Sélection: 0 / 0"
 msgid "Filtrer par type de cache"
 msgstr "Filtrer par type de cache"
 
+#: templates/menu_filtre.html:16
+msgid "Caches classiques"
+msgstr "Caches classiques"
+
+#: templates/menu_filtre.html:25
+msgid "Events"
+msgstr "Events"
+
+#: templates/menu_filtre.html:32
+msgid "Autres"
+msgstr "Autres"
+
 #: templates/menu_filtre.html:22
 msgid "Type de cache"
 msgstr "Type de cache"
