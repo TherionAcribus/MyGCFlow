@@ -1,9 +1,15 @@
 import json
 import os
 import threading
-from collections import defaultdict
+from collections import OrderedDict, defaultdict
 from datetime import date, datetime
 from typing import Dict, List, Optional, Tuple
+
+
+# Taille max du cache LRU des résultats filtrés (combinaisons de filtres).
+# Chaque entrée stocke un GeoJSON complet potentiellement lourd ; on borne la
+# mémoire consommée en évictant l'entrée la moins récemment utilisée.
+FILTER_CACHE_MAX_SIZE = 32
 
 
 def _parse_date(value) -> Optional[date]:
@@ -131,7 +137,7 @@ class GeojsonIndexCache:
     def _reset(self, db_mtime: Optional[float]):
         self._base_geojson: Optional[Dict] = None
         self._base_metadata: Optional[Dict] = None
-        self._filter_cache: Dict[Tuple, Dict] = {}
+        self._filter_cache: "OrderedDict[Tuple, Dict]" = OrderedDict()
         self._indexes: Dict[str, Dict[str, List[int]]] = {
             "date": defaultdict(list),
             "type": defaultdict(list),
@@ -208,7 +214,7 @@ class GeojsonIndexCache:
                     "country": defaultdict(list, indexes.get("country") or {}),
                     "state": defaultdict(list, indexes.get("state") or {}),
                 }
-                self._filter_cache = {}
+                self._filter_cache = OrderedDict()
             return True
         except Exception as exc:
             print(f"[CACHE] Impossible de recharger le cache persistant: {exc}")
@@ -229,7 +235,7 @@ class GeojsonIndexCache:
                 geojson.get("features", [])
             )
             self._db_mtime = db_mtime
-            self._filter_cache = {}
+            self._filter_cache = OrderedDict()
             self._build_indexes_locked()
             self._persist_indexes_locked()
 
@@ -282,7 +288,12 @@ class GeojsonIndexCache:
             if not cached:
                 return None
             if db_mtime is not None and cached.get("db_mtime") != db_mtime:
+                # Entrée périmée : l'évicter proactivement plutôt que d'attendre
+                # qu'elle soit poussée dehors par la taille.
+                self._filter_cache.pop(key, None)
                 return None
+            # Hit : marquer comme récemment utilisé (LRU).
+            self._filter_cache.move_to_end(key)
             return cached["geojson"], cached["metadata"]
 
     def store_filtered_result(
@@ -294,11 +305,21 @@ class GeojsonIndexCache:
     ):
         key = _normalize_filter_key(selected_values)
         with self._lock:
+            # Mise à jour d'une clé existante ou insertion d'une nouvelle entrée.
+            # OrderedDict.move_to_end n'est pas nécessaire ici : l'affectation
+            # ci-dessous ne réordonne pas, on le fait donc explicitement pour
+            # garantir que la clé fraîchement écrite soit la plus récente.
             self._filter_cache[key] = {
                 "geojson": geojson,
                 "metadata": metadata,
                 "db_mtime": db_mtime,
             }
+            self._filter_cache.move_to_end(key)
+            # Éviction LRU : retirer l'entrée la moins récemment utilisée
+            # tant qu'on dépasse la taille max.
+            while len(self._filter_cache) > FILTER_CACHE_MAX_SIZE:
+                evicted_key, _ = self._filter_cache.popitem(last=False)
+                print(f"[CACHE] LRU éviction d'un résultat filtré (taille max={FILTER_CACHE_MAX_SIZE})")
 
     def filter_with_indexes(
         self, selected_values: Dict, db_mtime: Optional[float] = None
