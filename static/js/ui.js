@@ -232,6 +232,9 @@ const publishedDatePickerEnd = document.getElementById('publishedDatePickerEnd')
     // Première mise à jour des infos
     updateFilterInfos();
 
+    // Accessibilité : rendre les boutons Tout/Aucun/Reset navigables au clavier
+    setupFilterButtonAccessibility();
+
 // MENU CARTES
 
 // boutons pour le choix des cartes
@@ -2340,6 +2343,29 @@ function setBtnDisabled(btnEl, disabled){
         btnEl.classList.remove('filter-btn-disabled');
         btnEl.removeAttribute('aria-disabled');
     }
+}
+
+// Accessibilité : rend les <a> du panneau de filtres navigables au clavier.
+// Ajoute role="button", tabindex="0" et déclenche le click sur Enter/Space.
+function setupFilterButtonAccessibility(){
+    const panel = document.getElementById('filterPanel');
+    if (!panel) return;
+    const buttons = panel.querySelectorAll('a.btn-flat');
+    buttons.forEach(btn => {
+        btn.setAttribute('role', 'button');
+        btn.setAttribute('tabindex', '0');
+        // Éviter d'ajouter plusieurs fois le handler
+        if (btn.dataset.a11yBound) return;
+        btn.dataset.a11yBound = '1';
+        btn.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+                e.preventDefault();
+                // Respecter aria-disabled (boutons grisés du point 14)
+                if (btn.getAttribute('aria-disabled') === 'true') return;
+                btn.click();
+            }
+        });
+    });
 }
 
 function areAllSelected(selectEl){
