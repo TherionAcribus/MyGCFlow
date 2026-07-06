@@ -12,6 +12,11 @@ let readLoadingToast = null;
 let filterLoadingToast = null;
 let noCacheToast = null;
 
+// Époque de filtrage : incrémentée à chaque appel à changeSelect.
+// Permet d'ignorer les résultats d'une tâche de filtrage obsolète
+// (l'utilisateur a changé les filtres pendant que la tâche précédente tournait).
+let filterEpoch = 0;
+
 // Gestionnaire pour le chargement automatique lors de la sélection de fichier
 const fileInput = document.getElementById('file-input');
 if (fileInput) {
@@ -366,6 +371,10 @@ export function readBdd(){
 }
 
 export function changeSelect(selectedValues, optionValues) {
+    // Incrémenter l'époque : toute tâche de filtrage issue d'un appel
+    // précédent ignorera son résultat (onSuccess/onError ci-dessous).
+    const myEpoch = ++filterEpoch;
+
     try { if (filterLoadingToast) { pkg.hideToast(filterLoadingToast); filterLoadingToast = null; } filterLoadingToast = pkg.showLoadingToast(t('Filtrage des caches...'), t('Filtrage')); } catch(e) {}
 
     fetch(`${CONFIG.BASE_URL}/filter_caches`, {
@@ -380,11 +389,26 @@ export function changeSelect(selectedValues, optionValues) {
         if (!data.task_id) {
             throw new Error(data.message || 'Impossible de lancer le filtrage');
         }
+        // Si l'utilisateur a déjà changé les filtres pendant le fetch POST,
+        // ne pas poller du tout — la tâche serveur tournera mais son résultat
+        // sera ignoré par l'époque.
+        if (myEpoch !== filterEpoch) {
+            console.log('[FILTER] Tâche obsolète (époque dépassée pendant le POST), polling annulé');
+            return;
+        }
         pollGeojsonTask(data.task_id, {
             onProgress: (p) => {
+                // Ne mettre à jour la toast que si on est toujours l'époque courante
+                if (myEpoch !== filterEpoch) return;
                 try { if (filterLoadingToast) pkg.updateToastProgress(filterLoadingToast, p); } catch(_) {}
             },
             onSuccess: (result) => {
+                // Ignorer ce résultat si une nouvelle requête de filtrage a été lancée
+                // entre-temps : son résultat serait écrasé par celui-ci (race condition).
+                if (myEpoch !== filterEpoch) {
+                    console.log('[FILTER] Résultat obsolète ignoré (époque dépassée)');
+                    return;
+                }
                 const geojson = result.geojson;
                 const meta = result.metadata || {};
                 json_data = geojson;
@@ -408,6 +432,11 @@ export function changeSelect(selectedValues, optionValues) {
                 try { if (filterLoadingToast) { pkg.hideToast(filterLoadingToast); filterLoadingToast = null; } } catch(e) {}
             },
             onError: (err) => {
+                // Ne pas afficher d'erreur ni cacher la toast si on n'est plus l'époque courante
+                if (myEpoch !== filterEpoch) {
+                    console.log('[FILTER] Erreur d\'une tâche obsolète ignorée (époque dépassée)');
+                    return;
+                }
                 console.error('[FILTER] Erreur lors du suivi du filtrage:', err);
                 try { if (filterLoadingToast) { pkg.hideToast(filterLoadingToast); filterLoadingToast = null; } } catch(e) {}
                 showError(t('Erreur lors du filtrage des caches'), t('Erreur de filtrage'));
@@ -415,6 +444,8 @@ export function changeSelect(selectedValues, optionValues) {
         });
     })
     .catch(error => {
+        // Erreur du fetch POST lui-même : ne traiter que si on est encore courant
+        if (myEpoch !== filterEpoch) return;
         console.error('Error:', error);
         try { if (filterLoadingToast) { pkg.hideToast(filterLoadingToast); filterLoadingToast = null; } } catch(e) {}
         showError(t('Erreur lors du filtrage des caches'), t('Erreur de filtrage'));
