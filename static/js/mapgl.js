@@ -347,7 +347,9 @@ let mrOutCanvas = null;
 let mrOutCtx = null;
 let mrDrawIntervalId = null;
 let mrProgressIntervalId = null;
-let mrStopTimeoutId = null;
+let mrStopTimeoutId = null;      // filet de sécurité (durée théorique très généreuse)
+let mrTailStopTimeoutId = null;  // arrêt réel piloté par la fin d'animation + tail freeze
+let mrTailMs = 3000;             // durée du gel de la dernière frame après la fin d'animation
 let isMediaRecording = false;
 let mrIsFinalizing = false;
 let mrOnFinalizeRestoreTimePerDay = null;
@@ -1196,11 +1198,31 @@ function getExtraEndMs() {
 }
 
 function finalizeAnimationEnd() {
+    endTimeout = null;
+
+    // Fin RÉELLE de l'animation atteinte. En mode MediaRecorder, c'est ici qu'il
+    // faut arrêter le recorder : le setTimeout théorique se désynchronise dès que
+    // le rendu rame (l'animation prend du retard) et tronque la vidéo. On stoppe
+    // depuis la fin réelle, après un court "tail" pour figer la dernière frame.
+    if (isMediaRecording) {
+        // Annuler le filet de sécurité théorique
+        try { if (mrStopTimeoutId) { clearTimeout(mrStopTimeoutId); mrStopTimeoutId = null; } } catch(_) {}
+        const tailMs = Math.max(0, Number(mrTailMs) || 0);
+        if (tailMs > 0) {
+            try { if (mrTailStopTimeoutId) clearTimeout(mrTailStopTimeoutId); } catch(_) {}
+            mrTailStopTimeoutId = setTimeout(() => {
+                mrTailStopTimeoutId = null;
+                if (isMediaRecording) stopMediaRecorderPipeline(true);
+            }, tailMs);
+        } else if (isMediaRecording) {
+            stopMediaRecorderPipeline(true);
+        }
+    }
+
     // Couper la musique de fond et remettre l'interface
     try { stopBackgroundMusic(); } catch(e) { console.warn('stopBackgroundMusic error:', e); }
     try { pkg.resetControlsToInitialState && pkg.resetControlsToInitialState(); } catch(e) { console.warn(e); }
     try { hidePopup(); } catch(_) {}
-    endTimeout = null;
 }
 
 export function startAnimation(restart=false) {
@@ -2098,6 +2120,11 @@ async function startMediaRecorderPipeline(totalDurationMs){
     const vbps = Number(pkg.options?.record?.mediaRecorder?.videoBitsPerSecond) || 6000000;
     const scaleFactor = Math.max(1, Math.min(3, Number(pkg.options?.record?.mediaRecorder?.scaleFactor) || 1));
 
+    // Durée du gel de la dernière frame après la fin réelle de l'animation.
+    // L'arrêt du recorder est piloté par finalizeAnimationEnd (fin réelle), pas
+    // par un setTimeout théorique qui tronque la vidéo si le rendu prend du retard.
+    mrTailMs = Math.max(0, Number(pkg.options?.record?.mediaRecorder?.tailFreezeMs ?? 3000));
+
     const viewport = map.getViewport();
     const rect = viewport.getBoundingClientRect();
     mrOutCanvas = document.createElement('canvas');
@@ -2166,17 +2193,26 @@ async function startMediaRecorderPipeline(totalDurationMs){
         try { pkg.updateProgressBar({ progress, message: msg }); } catch(_) {}
     }, 200);
 
-    // Arrêt programmé (stocké pour pouvoir l'annuler si l'utilisateur arrête manuellement)
+    // Filet de sécurité UNIQUEMENT : l'arrêt normal est déclenché par
+    // finalizeAnimationEnd() (fin réelle de l'animation). Ce timeout, volontairement
+    // très généreux, ne sert qu'à éviter un enregistrement infini si la fin
+    // d'animation n'était jamais atteinte (cas anormal). Il ne doit surtout PAS
+    // se déclencher avant la fin réelle, même quand le rendu rame fortement.
+    const safetyMs = Math.max(0, totalDurationMs) * 4 + 60000;
     mrStopTimeoutId = setTimeout(() => {
         mrStopTimeoutId = null;
-        if (isMediaRecording) stopMediaRecorderPipeline(true);
-    }, Math.max(0, totalDurationMs));
+        if (isMediaRecording) {
+            console.warn('[MediaRecorder] Arrêt par filet de sécurité (fin d\'animation non détectée)');
+            stopMediaRecorderPipeline(true);
+        }
+    }, safetyMs);
 }
 
 function stopMediaRecorderPipeline(finalize){
     try { if (mrDrawIntervalId) { clearInterval(mrDrawIntervalId); mrDrawIntervalId = null; } } catch(_) {}
     try { if (mrProgressIntervalId) { clearInterval(mrProgressIntervalId); mrProgressIntervalId = null; } } catch(_) {}
     try { if (mrStopTimeoutId) { clearTimeout(mrStopTimeoutId); mrStopTimeoutId = null; } } catch(_) {}
+    try { if (mrTailStopTimeoutId) { clearTimeout(mrTailStopTimeoutId); mrTailStopTimeoutId = null; } } catch(_) {}
     
     // Arrêter la surveillance des performances
     recordingPerformanceMonitor.stopMonitoring();
