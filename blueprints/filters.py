@@ -17,7 +17,8 @@ filters_bp = Blueprint('filters', __name__)
 def filter_caches():
     data_request = request.json or {}
     print(f"[FILTER] Raw request data: {data_request}")
-    selected_values = data_request.get('types', {})
+    # Clé 'filters' (nommage explicite). 'types' conservé pour compat arrière.
+    selected_values = data_request.get('filters') or data_request.get('types') or {}
     print(f"[FILTER] Selected values: {selected_values}")
     print(f"[FILTER] Type of selected_values: {type(selected_values)}")
 

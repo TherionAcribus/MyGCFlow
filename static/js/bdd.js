@@ -373,7 +373,7 @@ export function changeSelect(selectedValues, optionValues) {
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ types: selectedValues }),
+        body: JSON.stringify({ filters: selectedValues }),
     })
     .then(response => response.json())
     .then(data => {
