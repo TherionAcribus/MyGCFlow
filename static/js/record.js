@@ -9,7 +9,9 @@ function dataUrlToBlob(dataUrl) {
             const canvas = document.createElement('canvas');
             canvas.width = img.width;
             canvas.height = img.height;
-            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            // Pas de willReadFrequently : canvas seulement dessiné puis exporté via toBlob
+            // (jamais relu), ce qui préserve l'accélération GPU.
+            const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0);
 
             canvas.toBlob((blob) => {

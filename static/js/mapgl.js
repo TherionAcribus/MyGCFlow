@@ -360,6 +360,60 @@ let mrAudioCtx = null, mrAudioSource = null, mrAudioDest = null, mrAudioGain = n
 let blockBackgroundAudioPlayback = false;
 let mrMuxAudioCtx = null; // Contexte audio "déverrouillé" par un geste utilisateur pour le mux post-enregistrement
 
+// --- File d'upload bornée (mode images) ---
+// Découple la capture de l'upload : on n'attend plus la fin du POST avant de capturer
+// la frame suivante (l'upload bloquait la capture → saccades). Un plafond de concurrence
+// évite une consommation mémoire non bornée si le réseau est plus lent que la capture.
+const MAX_UPLOAD_CONCURRENCY = 4;
+let uploadInFlight = 0;
+let pendingUploads = [];
+let uploadQueueError = null;
+
+function resetUploadQueue() {
+    uploadInFlight = 0;
+    pendingUploads = [];
+    uploadQueueError = null;
+}
+
+// Lance un upload en tâche de fond (suivi pour backpressure et attente finale).
+function enqueueImageUpload(blob, counter) {
+    uploadInFlight++;
+    const t0 = performance.now();
+    const p = pkg.sendImageToServer(blob, counter)
+        .then(() => {
+            perfMetrics.uploadTimeMs += (performance.now() - t0);
+            perfMetrics.uploadOk += 1;
+        })
+        .catch((err) => {
+            perfMetrics.uploadFail += 1;
+            if (!uploadQueueError) uploadQueueError = err;
+            throw err;
+        })
+        .finally(() => {
+            uploadInFlight--;
+            const i = pendingUploads.indexOf(p);
+            if (i >= 0) pendingUploads.splice(i, 1);
+        });
+    pendingUploads.push(p);
+    return p;
+}
+
+// Backpressure : attend qu'un créneau se libère si trop d'uploads sont en vol.
+// Propage une éventuelle erreur d'upload déjà survenue pour abandonner tôt.
+async function awaitUploadSlot() {
+    if (uploadQueueError) throw uploadQueueError;
+    while (uploadInFlight >= MAX_UPLOAD_CONCURRENCY) {
+        await Promise.race(pendingUploads.map(p => p.catch(() => {})));
+        if (uploadQueueError) throw uploadQueueError;
+    }
+}
+
+// Attend la fin de tous les uploads en attente (fin d'enregistrement, avant assemblage).
+async function awaitAllUploads() {
+    await Promise.allSettled(pendingUploads.slice());
+    if (uploadQueueError) throw uploadQueueError;
+}
+
 export function getMap() {
     return map;
 }
@@ -1197,6 +1251,12 @@ function getExtraEndMs() {
     return Math.max(0, extraSeconds) * 1000;
 }
 
+// Ratio de pixels device utilisé pour la capture (borné pour éviter des sorties démesurées).
+// OpenLayers rend la carte en pixels device ; capturer à ce ratio évite le flou HiDPI.
+function getCaptureDpr() {
+    return Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+}
+
 function finalizeAnimationEnd() {
     endTimeout = null;
 
@@ -1551,6 +1611,9 @@ function startRecordingProcess(){
     // Init métriques
     perfMetrics = { totalFrames: 0, capturedFrames: 0, uploadOk: 0, uploadFail: 0, captureTimeMs: 0, uploadTimeMs: 0, startedAt: performance.now() };
 
+    // Réinitialiser la file d'upload (uploads découplés de la capture en mode images)
+    resetUploadQueue();
+
     // Marquer le début de l'enregistrement
     isRecording = true;
 
@@ -1571,8 +1634,9 @@ function startRecordingProcess(){
 
     currentFrame = 0;  // Réinitialisez le compteur de frames
 
-    // Précalculer les propriétés statiques des overlays (scaleFactor=1 pour le pipeline images)
-    buildOverlayCache(1);
+    // Précalculer les propriétés statiques des overlays à l'échelle dpr (pixels device),
+    // cohérent avec le canvas de capture images dimensionné en pixels device.
+    buildOverlayCache(getCaptureDpr());
 
     // Afficher les points initiaux pour la date de début
     displayFeaturesForDate(currentDate, pkg.options.point, pkg.options.flash, true, infos);
@@ -1773,6 +1837,13 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
                 currentFrame++;
             }
         }
+
+        // Les uploads sont découplés de la capture : attendre que TOUTES les images
+        // soient effectivement envoyées avant de lancer l'assemblage (sinon la vidéo
+        // serait assemblée sur des images manquantes). Une erreur d'upload propage ici
+        // et déclenche l'abandon propre via scheduleCaptureFrame().
+        try { pkg.updateProgressBar({ progress: 99, message: 'Envoi des dernières images...' }); } catch(_) {}
+        await awaitAllUploads();
 
         // Traitement de fin
         isRecording = false; // Marquer la fin de l'enregistrement
@@ -2129,12 +2200,21 @@ async function startMediaRecorderPipeline(totalDurationMs){
     // par un setTimeout théorique qui tronque la vidéo si le rendu prend du retard.
     mrTailMs = Math.max(0, Number(pkg.options?.record?.mediaRecorder?.tailFreezeMs ?? 3000));
 
+    // devicePixelRatio : les canvas de la carte sont rendus par OpenLayers en pixels
+    // device (rect.width * dpr). Ignorer le dpr sous-échantillonnait la sortie → vidéo
+    // floue sur écran HiDPI. On capture donc à scaleFactor * dpr.
+    const dpr = getCaptureDpr();
+    const effScale = scaleFactor * dpr;
+
     const viewport = map.getViewport();
     const rect = viewport.getBoundingClientRect();
     mrOutCanvas = document.createElement('canvas');
-    mrOutCanvas.width = Math.max(1, Math.floor(rect.width * scaleFactor));
-    mrOutCanvas.height = Math.max(1, Math.floor(rect.height * scaleFactor));
-    mrOutCtx = mrOutCanvas.getContext('2d', { willReadFrequently: true });
+    mrOutCanvas.width = Math.max(1, Math.floor(rect.width * effScale));
+    mrOutCanvas.height = Math.max(1, Math.floor(rect.height * effScale));
+    // Pas de willReadFrequently : ce canvas n'est jamais relu (getImageData) ; il est
+    // uniquement composité puis exporté via captureStream. willReadFrequently:true
+    // forçait un backing store CPU (pas d'accélération GPU) → compositing lent et saccades.
+    mrOutCtx = mrOutCanvas.getContext('2d');
 
     const canvasStream = mrOutCanvas.captureStream(fps);
     // Pas d'audio pendant l'enregistrement MediaRecorder (audio ajouté après)
@@ -2152,7 +2232,7 @@ async function startMediaRecorderPipeline(totalDurationMs){
     mrRecorder.start(timesliceMs);
 
     // Précalculer les propriétés statiques des overlays pour éviter les reflows par frame
-    buildOverlayCache(scaleFactor);
+    buildOverlayCache(effScale);
 
     // Dessin périodique (compositing)
     let drawing = false;
@@ -2173,7 +2253,7 @@ async function startMediaRecorderPipeline(totalDurationMs){
             const h = mrOutCanvas.height;
             mrOutCtx.clearRect(0, 0, w, h);
             canvasList.forEach(c => { if (c.width > 0 && c.height > 0) mrOutCtx.drawImage(c, 0, 0, w, h); });
-            addOverlaysToCanvas(mrOutCtx, w, h, scaleFactor);
+            addOverlaysToCanvas(mrOutCtx, w, h, effScale);
         } catch(e) {
             console.warn('Composite frame error:', e);
         } finally {
@@ -2751,16 +2831,20 @@ async function captureElement() {
                         return;
                     }
 
-                    // Utiliser les dimensions du viewport
+                    // Dimensions en pixels device (dpr) pour éviter le flou HiDPI :
+                    // les canvas de la carte sont rendus par OpenLayers en pixels device.
                     const rect = viewport.getBoundingClientRect();
-                    const canvasWidth = rect.width;
-                    const canvasHeight = rect.height;
+                    const dpr = getCaptureDpr();
+                    const canvasWidth = Math.max(1, Math.floor(rect.width * dpr));
+                    const canvasHeight = Math.max(1, Math.floor(rect.height * dpr));
 
                     // Créer un canvas de sortie
+                    // Pas de willReadFrequently : canvas jamais relu (uniquement composité puis toBlob).
+                    // willReadFrequently:true forçait un backing store CPU → compositing lent.
                     const outCanvas = document.createElement('canvas');
                     outCanvas.width = canvasWidth;
                     outCanvas.height = canvasHeight;
-                    const ctx = outCanvas.getContext('2d', { willReadFrequently: true });
+                    const ctx = outCanvas.getContext('2d');
 
                     // Composer tous les canvas (carte + points WebGL + animations)
                     allCanvases.forEach(canvas => {
@@ -2769,11 +2853,13 @@ async function captureElement() {
                         }
                     });
 
-                    // Ajouter les overlays (titre, date, nombre de caches) - scaleFactor 1 car pipeline images n'utilise pas le suréchantillonnage
-                    addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, 1);
+                    // Ajouter les overlays (titre, date, nombre de caches) à l'échelle dpr
+                    addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, dpr);
 
-                    // Convertir en WebP Blob et uploader
-                    outCanvas.toBlob((blob) => {
+                    // Convertir en WebP Blob puis uploader SANS bloquer la capture suivante.
+                    // L'upload est mis en file (concurrence bornée) et la Promise se résout
+                    // dès que la frame est prête → capture et upload se recouvrent (pipeline).
+                    outCanvas.toBlob(async (blob) => {
                         if (!blob) {
                             reject(new Error('Échec conversion canvas en blob'));
                             return;
@@ -2784,26 +2870,24 @@ async function captureElement() {
                         perfMetrics.capturedFrames += 1;
                         perfMetrics.totalFrames += 1;
 
-                        const t0Upload = performance.now();
-                        pkg.sendImageToServer(blob, imageCounter++).then(() => {
-                            const t1Upload = performance.now();
-                            perfMetrics.uploadTimeMs += (t1Upload - t0Upload);
-                            perfMetrics.uploadOk += 1;
-                            
-                            // Surveillance des performances pour mode images
-                            const totalCaptureTime = t1Upload - captureStart;
-                            const expectedFrameTime = pkg.options?.animation?.timePerDay || 100; // Temps par jour comme référence
+                        try {
+                            // Backpressure : attend un créneau si trop d'uploads en vol,
+                            // et remonte une éventuelle erreur d'upload déjà survenue.
+                            await awaitUploadSlot();
+                        } catch (e) { reject(e); return; }
+
+                        // Upload en tâche de fond (ne bloque pas la frame suivante)
+                        enqueueImageUpload(blob, imageCounter++);
+
+                        // Surveillance des performances (temps de capture seul, upload désormais async)
+                        try {
+                            const totalCaptureTime = performance.now() - captureStart;
+                            const expectedFrameTime = pkg.options?.animation?.timePerDay || 100;
                             recordingPerformanceMonitor.checkPerformance(totalCaptureTime, expectedFrameTime, 'images');
-                            
-                            // Mise à jour du toast de progression plus fréquemment (par frame)
-                            try { updateProgress(); } catch(e) {}
-                            resolve();
-                        }).catch((uploadError) => {
-                            const t1Upload = performance.now();
-                            perfMetrics.uploadTimeMs += (t1Upload - t0Upload);
-                            perfMetrics.uploadFail += 1;
-                            reject(uploadError);
-                        });
+                        } catch(e) {}
+
+                        try { updateProgress(); } catch(e) {}
+                        resolve();
                     }, 'image/webp', 0.9);
                 } catch (error) {
                     reject(error);
@@ -2835,19 +2919,15 @@ async function captureElement() {
                     perfMetrics.capturedFrames += 1;
                     perfMetrics.totalFrames += 1;
 
-                    // toBlob() est callback-based (retourne void) : on le wrappe dans une Promise
-                    // pour attendre réellement la fin de l'upload avant de resolve()
+                    // toBlob() est callback-based : on le wrappe dans une Promise. L'upload
+                    // est découplé (file bornée) comme dans le chemin principal.
                     return new Promise((resBlob, rejBlob) => {
-                        canvas.toBlob((blob) => {
+                        canvas.toBlob(async (blob) => {
                             if (!blob) { rejBlob(new Error('html2canvas toBlob a retourné null')); return; }
-                            const t0Upload = performance.now();
-                            pkg.sendImageToServer(blob, imageCounter++).then(() => {
-                                const t1Upload = performance.now();
-                                perfMetrics.uploadTimeMs += (t1Upload - t0Upload);
-                                perfMetrics.uploadOk += 1;
-                                try { updateProgress(); } catch(e) {}
-                                resBlob();
-                            }).catch(rejBlob);
+                            try { await awaitUploadSlot(); } catch(e) { rejBlob(e); return; }
+                            enqueueImageUpload(blob, imageCounter++);
+                            try { updateProgress(); } catch(e) {}
+                            resBlob();
                         }, 'image/webp', 0.9);
                     });
                 })
@@ -3301,7 +3381,12 @@ function flash(feature, flashOptions) {
             const vectorContext = ol.render.getVectorContext(event);
             vectorContext.setStyle(style);
             vectorContext.drawGeometry(flashGeom);
-            map.render();
+            // En capture MediaRecorder, la boucle de dessin (renderSync @fps) pilote déjà
+            // les rendus : se re-planifier ici via map.render() doublerait (voire pire, en
+            // rafale rAF) le rendu par frame → saccades. On ne le fait qu'en lecture live.
+            if (!isMediaRecording) {
+                map.render();
+            }
         }
     }
 }
