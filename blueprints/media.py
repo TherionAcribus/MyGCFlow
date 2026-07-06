@@ -1,7 +1,17 @@
 from flask import Blueprint, jsonify, request
 from flask_cors import cross_origin
 
-from capture import assemble_pictures_directory, clear_pictures_directory, default_video_output, open_video_folder, upload_audio, upload_image, upload_video
+from capture import (
+    TASK_TYPE_VIDEO,
+    clear_pictures_directory,
+    default_video_output,
+    open_video_folder,
+    run_assemble_video_task,
+    upload_audio,
+    upload_image,
+    upload_video,
+)
+from task_manager import task_manager
 
 media_bp = Blueprint('media', __name__)
 
@@ -37,8 +47,19 @@ def start_create_video():
         # FPS configurable côté client : sans cela la vitesse de lecture est
         # fausse dès qu'on change le FPS (le client calcule les frames avec son FPS).
         fps = _parse_fps(request.args.get('fps'))
-        result = assemble_pictures_directory("captured", default_video_output("mp4"), fps, audio_path=audio, audio_volume=vol)
-        return result
+        # Assemblage lancé en tâche de fond : évite l'expiration du fetch HTTP
+        # sur les vidéos longues. Le client suit l'avancement via /tasks/<id>.
+        output_video = default_video_output("mp4")
+        status = task_manager.submit(
+            TASK_TYPE_VIDEO, run_assemble_video_task,
+            "captured", output_video, fps, audio, vol,
+        )
+        return jsonify({
+            'success': True,
+            'message': 'Assemblage vidéo lancé en tâche de fond',
+            'task_id': status.id,
+            'state': status.state,
+        }), 202
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
 
@@ -60,7 +81,18 @@ def assemble_pictures():
     if raw_fps is None:
         raw_fps = request.args.get('fps')
     fps = _parse_fps(raw_fps)
-    return assemble_pictures_directory("captured", default_video_output("mp4"), fps)
+    # Tâche de fond + suivi via /tasks/<id> (idem start_create_video)
+    output_video = default_video_output("mp4")
+    status = task_manager.submit(
+        TASK_TYPE_VIDEO, run_assemble_video_task,
+        "captured", output_video, fps,
+    )
+    return jsonify({
+        'success': True,
+        'message': 'Assemblage vidéo lancé en tâche de fond',
+        'task_id': status.id,
+        'state': status.state,
+    }), 202
 
 
 @media_bp.route('/open_video_folder', methods=['POST'])

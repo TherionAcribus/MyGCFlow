@@ -3160,10 +3160,33 @@ function open_video_folder(){
     });
 }
 
+// Poll d'une tâche de fond serveur (/tasks/<id>) jusqu'à sa fin.
+function pollAssembleTask(taskId, { intervalMs = 700, timeoutMs = 1800000, onProgress } = {}){
+    return new Promise((resolve, reject) => {
+        const startedAt = Date.now();
+        const tick = () => {
+            if (!taskId) { reject(new Error('task_id manquant')); return; }
+            if (Date.now() - startedAt > timeoutMs) { reject(new Error('Délai d\'assemblage dépassé')); return; }
+            fetch(`/tasks/${encodeURIComponent(taskId)}?include_result=true`, { method: 'GET' })
+                .then(r => r.json())
+                .then(status => {
+                    if (typeof onProgress === 'function' && typeof status?.progress === 'number') onProgress(status.progress, status.message);
+                    if (status?.state === 'finished') { resolve(status?.result || {}); return; }
+                    if (status?.state === 'failed') { reject(new Error(status?.error || status?.message || 'Tâche échouée')); return; }
+                    setTimeout(tick, intervalMs);
+                })
+                .catch(reject);
+        };
+        tick();
+    });
+}
+
 function assemble_pictures_directory(){
     // FPS configurable : doit correspondre à celui utilisé pour calculer les frames,
     // sinon la vitesse de lecture de la vidéo assemblée est faussée.
     const fps = Number(pkg.options?.record?.fps) || 24;
+    const tr = (s) => (pkg.t ? pkg.t(s) : s);
+    const assembleToast = pkg.showLoadingToast ? pkg.showLoadingToast(tr("Assemblage de la vidéo en cours..."), tr("Assemblage")) : null;
     fetch('/assemble_pictures_directory', {
         method: 'POST', 
         headers: {
@@ -3174,13 +3197,23 @@ function assemble_pictures_directory(){
     })
     .then(response => response.json())
     .then(data => {
-        console.log(data); // Traiter la réponse de Django
-        if(data.success) {
-            // Mettre à jour l'interface utilisateur en conséquence
-            console.log(data)
+        // Assemblage en tâche de fond : on suit la progression via /tasks/<id>
+        if (!data || !data.task_id) {
+            throw new Error(data && data.message ? data.message : "Impossible de lancer l'assemblage");
         }
+        return pollAssembleTask(data.task_id, {
+            onProgress: (p) => { try { if (assembleToast) pkg.updateToastProgress(assembleToast, p); } catch(_) {} }
+        });
     })
-    .catch(error => console.error('Erreur:', error));
+    .then(() => {
+        try { if (assembleToast) pkg.hideToast(assembleToast); } catch(_) {}
+        pkg.showToast && pkg.showToast(tr("Vidéo créée avec succès !"), "success", tr("Vidéo prête"));
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        try { if (assembleToast) pkg.hideToast(assembleToast); } catch(_) {}
+        pkg.showToast && pkg.showToast(tr("Erreur lors de l'assemblage de la vidéo"), "error", tr("Erreur"));
+    });
 }
 
 

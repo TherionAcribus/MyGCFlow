@@ -1661,6 +1661,33 @@ function abortRecordingOnError(error) {
     } catch(_) {}
 }
 
+// Poll générique d'une tâche de fond serveur (/tasks/<id>) jusqu'à ce qu'elle
+// soit terminée. Résout avec le résultat, rejette en cas d'échec ou de timeout.
+// Utilisé pour l'assemblage vidéo, lancé en tâche de fond côté serveur pour
+// éviter l'expiration du fetch HTTP sur les vidéos longues.
+function pollTaskStatus(taskId, { intervalMs = 700, timeoutMs = 1800000, onProgress } = {}) {
+    return new Promise((resolve, reject) => {
+        const startedAt = Date.now();
+        const tick = () => {
+            if (!taskId) { reject(new Error('task_id manquant')); return; }
+            if (Date.now() - startedAt > timeoutMs) { reject(new Error('Délai d\'assemblage dépassé')); return; }
+            fetch(`${CONFIG.BASE_URL}/tasks/${encodeURIComponent(taskId)}?include_result=true`, { method: 'GET' })
+                .then(r => r.json())
+                .then(status => {
+                    const state = status?.state;
+                    if (typeof onProgress === 'function' && typeof status?.progress === 'number') {
+                        onProgress(status.progress, status.message);
+                    }
+                    if (state === 'finished') { resolve(status?.result || {}); return; }
+                    if (state === 'failed') { reject(new Error(status?.error || status?.message || 'Tâche échouée')); return; }
+                    setTimeout(tick, intervalMs);
+                })
+                .catch(err => reject(err));
+        };
+        tick();
+    });
+}
+
 // TODO Voir pour Capture, car à priori c'est forcement == True
 async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
     // Vérifier si l'enregistrement a été arrêté
@@ -1830,98 +1857,59 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
             }
         };
 
+        // Réactive les boutons de l'UI (factorisé, utilisé dans plusieurs branches)
+        const reEnableRecordButtons = () => {
+          if (assembleBtn) { assembleBtn.disabled = false; assembleBtn.textContent = 'Assembler film'; }
+          if (cleanBtn) { cleanBtn.disabled = false; cleanBtn.textContent = 'Nettoyer images'; }
+          if (recordBtn) { recordBtn.disabled = false; }
+        };
+
         tryAssembleWithAudio()
           .then(response => { logToast('Réponse assemblage reçue, status:', response?.status); return response.json(); })
           .then(data => {
-            if (data && data.success) {
-              console.log('[RECORD END] Assemblage réussi, nettoyage automatique...');
-              // Mettre à jour le loader (70%) et texte via UI utils existants
-              try { pkg.updateProgressBar({progress: 70, message: 'Vidéo créée. Nettoyage des images...'}); } catch(e) {}
-              try { pkg.updateTextsModal('Nettoyage en cours', 'Vidéo créée avec succès. Nettoyage des images...'); } catch(e) {}
-
-              // Nettoyer automatiquement
-              return fetch(`${CONFIG.BASE_URL}/clear_pictures_directory`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ action: 'vider_repertoire' })
-              });
-            } else {
-              console.warn('[RECORD END] Échec de l\'assemblage:', data.message);
-              // Réactiver les boutons en cas d'erreur
-              if (assembleBtn) {
-                assembleBtn.disabled = false;
-                assembleBtn.textContent = 'Assembler film';
-              }
-              if (cleanBtn) {
-                cleanBtn.disabled = false;
-                cleanBtn.textContent = 'Nettoyer images';
-              }
-              if (recordBtn) {
-                recordBtn.disabled = false;
-              }
-              try { pkg.closeModalLoading(); } catch(e) {}
-              pkg.showToast && pkg.showToast(
-                pkg.t('Erreur lors de la création de la vidéo: ${message}', { message: (data.message || 'Erreur inconnue') }),
-                'error',
-                'Échec assemblage',
-                5000
-              );
-              throw new Error('Assemblage failed');
+            // L'assemblage tourne désormais en tâche de fond : on récupère un task_id
+            // et on suit sa progression via /tasks/<id> (fini l'expiration du fetch).
+            if (!data || !data.task_id) {
+              throw new Error(data && data.message ? data.message : 'Impossible de lancer l\'assemblage vidéo');
             }
+            console.log('[RECORD END] Assemblage lancé en tâche de fond, task_id:', data.task_id);
+            return pollTaskStatus(data.task_id, {
+              onProgress: (p, msg) => {
+                // Encodage vidéo mappé sur 0→70% de la barre globale
+                try { pkg.updateProgressBar({ progress: Math.round(p * 0.7), message: msg || 'Création de la vidéo...' }); } catch(e) {}
+              }
+            });
+          })
+          .then(() => {
+            console.log('[RECORD END] Assemblage réussi, nettoyage automatique...');
+            try { pkg.updateProgressBar({progress: 70, message: 'Vidéo créée. Nettoyage des images...'}); } catch(e) {}
+            try { pkg.updateTextsModal('Nettoyage en cours', 'Vidéo créée avec succès. Nettoyage des images...'); } catch(e) {}
+
+            // Nettoyer automatiquement
+            return fetch(`${CONFIG.BASE_URL}/clear_pictures_directory`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ action: 'vider_repertoire' })
+            });
           })
           .then(response => response ? response.json() : null)
           .then(cleanData => {
+            reEnableRecordButtons();
             if (cleanData && cleanData.success) {
               console.log('[RECORD END] Nettoyage automatique terminé');
-              // Réactiver les boutons et restaurer les textes
-              if (assembleBtn) {
-                assembleBtn.disabled = false;
-                assembleBtn.textContent = 'Assembler film';
-              }
-              if (cleanBtn) {
-                cleanBtn.disabled = false;
-                cleanBtn.textContent = 'Nettoyer images';
-              }
-              if (recordBtn) {
-                recordBtn.disabled = false;
-              }
-
               try { pkg.updateProgressBar({progress: 100, message: 'Nettoyage terminé'}); } catch(e) {}
               setTimeout(() => { try { pkg.closeModalLoading(); } catch(e) {} }, 400);
               pkg.showToast && pkg.showToast('Traitement automatique terminé avec succès !', 'success', 'Vidéo prête', 5000);
-            } else if (cleanData) {
-              console.warn('[RECORD END] Échec du nettoyage:', cleanData.message);
-              // Réactiver les boutons même si le nettoyage échoue
-              if (assembleBtn) {
-                assembleBtn.disabled = false;
-                assembleBtn.textContent = 'Assembler film';
-              }
-              if (cleanBtn) {
-                cleanBtn.disabled = false;
-                cleanBtn.textContent = 'Nettoyer images';
-              }
-              if (recordBtn) {
-                recordBtn.disabled = false;
-              }
+            } else {
+              if (cleanData) console.warn('[RECORD END] Échec du nettoyage:', cleanData.message);
               try { pkg.closeModalLoading(); } catch(e) {}
             }
           })
           .catch(err => {
             console.error('[RECORD END] Erreur dans la chaîne automatique:', err);
-            // Réactiver les boutons en cas d'erreur
-            if (assembleBtn) {
-              assembleBtn.disabled = false;
-              assembleBtn.textContent = 'Assembler film';
-            }
-            if (cleanBtn) {
-              cleanBtn.disabled = false;
-              cleanBtn.textContent = 'Nettoyer images';
-            }
-            if (recordBtn) {
-              recordBtn.disabled = false;
-            }
+            reEnableRecordButtons();
             try { pkg.closeModalLoading(); } catch(e) {}
             pkg.showToast && pkg.showToast(
               pkg.t('Erreur lors du traitement automatique: ${message}', { message: err.message }),

@@ -111,69 +111,146 @@ def default_video_output(ext: str = "mp4"):
     return os.path.join("video", _timestamped_name(base, ext))
 
 
-def assemble_pictures_directory(image_folder, output_video, fps=24, audio_path=None, audio_volume=1.0):
-    try:
-        # Inclure plusieurs formats d'images (webp par défaut côté client, mais aussi png et autres)
-        exts = (".webp", ".png", ".jpg", ".jpeg")
-        # Obtenez la liste des fichiers d'image dans le dossier
-        image_files = [os.path.join(image_folder, img) for img in sorted(os.listdir(image_folder)) if img.lower().endswith(exts)]
+# Type de tâche de fond pour l'assemblage vidéo (utilisé par le TaskManager)
+TASK_TYPE_VIDEO = "video_assembly"
 
-        if not image_files:
-            return jsonify({'success': False, 'message': 'Aucune image trouvée dans le dossier'})
 
-        # Assurez-vous que le répertoire de sortie existe
-        os.makedirs(os.path.dirname(output_video), exist_ok=True)
+# Logger optionnel qui relaie la progression d'encodage de MoviePy vers un TaskStatus.
+# MoviePy s'appuie sur proglog ; on reste défensif si le module est absent.
+try:
+    from proglog import ProgressBarLogger
 
-        # Créez un clip vidéo à partir des images
-        clip = ImageSequenceClip(image_files, fps=fps)
-        audio_clip = None
+    class _StatusProgressLogger(ProgressBarLogger):
+        """Relaie la progression d'encodage MoviePy vers un TaskStatus (bornée start..end)."""
 
-        # Option: ajouter l'audio si fourni (audio_path est un nom de fichier dans 'audio/')
-        print(f"[assemble] audio_path={audio_path!r} audio_volume={audio_volume!r}")
-        if audio_path:
+        def __init__(self, status, start=10, end=99):
+            super().__init__()
+            self._status = status
+            self._start = start
+            self._end = end
+
+        def bars_callback(self, bar, attr, value, old_value=None):
+            if attr != 'index':
+                return
             try:
-                os.makedirs('audio', exist_ok=True)
-                safe_name = secure_filename(os.path.basename(audio_path))
-                audio_file = os.path.join('audio', safe_name)
-                print(f"[assemble] recherche audio: {audio_file} existe={os.path.exists(audio_file)}")
-                if os.path.exists(audio_file):
-                    vol = 1.0
-                    try:
-                        vol = max(0.0, float(audio_volume))
-                    except Exception:
-                        vol = 1.0
-                    audio_clip = AudioFileClip(audio_file).with_volume_scaled(vol)
-                    if audio_clip.duration >= clip.duration:
-                        audio_clip = audio_clip.subclipped(0, clip.duration)
-                    clip = clip.with_audio(audio_clip)
-                    print(f"[assemble] Audio attaché OK (vol={vol}, durée audio={audio_clip.duration:.1f}s, durée vidéo={clip.duration:.1f}s)")
-                else:
-                    print(f"[assemble] FICHIER AUDIO INTROUVABLE: {audio_file}")
-            except Exception as e:
-                # En cas d'erreur audio, on continue avec la vidéo seule
-                import traceback
-                print(f"[assemble] Audio ignoré (ERREUR): {e}")
-                traceback.print_exc()
-        else:
-            print("[assemble] Aucun audio demandé (audio_path vide)")
-
-        # Écrivez le clip vidéo dans un fichier
-        # Codec 'libx264' + 'aac' pour compatibilité (nécessite ffmpeg)
-        try:
-            clip.write_videofile(output_video, fps=fps, codec='libx264', audio_codec='aac')
-        finally:
-            try:
-                clip.close()
+                total = self.bars[bar].get('total') or 0
+                if total <= 0:
+                    return
+                frac = max(0.0, min(1.0, value / total))
+                pct = self._start + (self._end - self._start) * frac
+                self._status.set_progress(pct, f"Encodage vidéo... {int(frac * 100)}%")
             except Exception:
                 pass
-            if audio_clip is not None:
+except Exception:  # pragma: no cover - proglog devrait être fourni par moviepy
+    ProgressBarLogger = None
+    _StatusProgressLogger = None
+
+
+def _assemble_pictures(image_folder, output_video, fps=24, audio_path=None, audio_volume=1.0, status=None):
+    """Coeur de l'assemblage vidéo. Retourne un dict {'success', 'message', ...}.
+
+    Met à jour un TaskStatus optionnel (`status`) pour le suivi de progression,
+    ce qui permet de l'exécuter en tâche de fond sans bloquer la requête HTTP.
+    """
+    def _progress(p, msg):
+        if status is not None:
+            try:
+                status.set_progress(p, msg)
+            except Exception:
+                pass
+
+    # Inclure plusieurs formats d'images (webp par défaut côté client, mais aussi png et autres)
+    exts = (".webp", ".png", ".jpg", ".jpeg")
+    # Obtenez la liste des fichiers d'image dans le dossier
+    image_files = [os.path.join(image_folder, img) for img in sorted(os.listdir(image_folder)) if img.lower().endswith(exts)]
+
+    if not image_files:
+        return {'success': False, 'message': 'Aucune image trouvée dans le dossier'}
+
+    # Assurez-vous que le répertoire de sortie existe
+    os.makedirs(os.path.dirname(output_video), exist_ok=True)
+
+    _progress(5, "Préparation des images...")
+
+    # Créez un clip vidéo à partir des images
+    clip = ImageSequenceClip(image_files, fps=fps)
+    audio_clip = None
+
+    # Option: ajouter l'audio si fourni (audio_path est un nom de fichier dans 'audio/')
+    print(f"[assemble] audio_path={audio_path!r} audio_volume={audio_volume!r}")
+    if audio_path:
+        try:
+            os.makedirs('audio', exist_ok=True)
+            safe_name = secure_filename(os.path.basename(audio_path))
+            audio_file = os.path.join('audio', safe_name)
+            print(f"[assemble] recherche audio: {audio_file} existe={os.path.exists(audio_file)}")
+            if os.path.exists(audio_file):
+                vol = 1.0
                 try:
-                    audio_clip.close()
+                    vol = max(0.0, float(audio_volume))
                 except Exception:
-                    pass
-        return jsonify({'success': True, 'message': 'Vidéo créée avec succès'})
+                    vol = 1.0
+                audio_clip = AudioFileClip(audio_file).with_volume_scaled(vol)
+                if audio_clip.duration >= clip.duration:
+                    audio_clip = audio_clip.subclipped(0, clip.duration)
+                clip = clip.with_audio(audio_clip)
+                print(f"[assemble] Audio attaché OK (vol={vol}, durée audio={audio_clip.duration:.1f}s, durée vidéo={clip.duration:.1f}s)")
+            else:
+                print(f"[assemble] FICHIER AUDIO INTROUVABLE: {audio_file}")
+        except Exception as e:
+            # En cas d'erreur audio, on continue avec la vidéo seule
+            import traceback
+            print(f"[assemble] Audio ignoré (ERREUR): {e}")
+            traceback.print_exc()
+    else:
+        print("[assemble] Aucun audio demandé (audio_path vide)")
+
+    _progress(10, "Encodage de la vidéo...")
+
+    # Logger de progression si on suit une tâche de fond, sinon barre console MoviePy
+    logger = 'bar'
+    if status is not None and _StatusProgressLogger is not None:
+        logger = _StatusProgressLogger(status)
+
+    # Écrivez le clip vidéo dans un fichier
+    # Codec 'libx264' + 'aac' pour compatibilité (nécessite ffmpeg)
+    try:
+        clip.write_videofile(output_video, fps=fps, codec='libx264', audio_codec='aac', logger=logger)
+    finally:
+        try:
+            clip.close()
+        except Exception:
+            pass
+        if audio_clip is not None:
+            try:
+                audio_clip.close()
+            except Exception:
+                pass
+
+    _progress(100, "Vidéo créée avec succès")
+    return {'success': True, 'message': 'Vidéo créée avec succès', 'output': output_video}
+
+
+def assemble_pictures_directory(image_folder, output_video, fps=24, audio_path=None, audio_volume=1.0):
+    """Assemblage synchrone (conservé pour compatibilité). Retourne une réponse JSON Flask."""
+    try:
+        result = _assemble_pictures(image_folder, output_video, fps, audio_path, audio_volume)
+        return jsonify(result)
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
+
+
+def run_assemble_video_task(status, image_folder, output_video, fps=24, audio_path=None, audio_volume=1.0):
+    """Tâche de fond : assemble la vidéo et met à jour la progression via TaskStatus.
+
+    Exécutée par le TaskManager dans un thread, ce qui évite l'expiration du
+    fetch HTTP côté client sur les assemblages longs (plusieurs minutes).
+    """
+    result = _assemble_pictures(image_folder, output_video, fps, audio_path, audio_volume, status=status)
+    if not result.get('success'):
+        status.fail(result.get('message', "Échec de l'assemblage"))
+        return
+    status.set_result(result)
 
 
 def upload_video(request):
