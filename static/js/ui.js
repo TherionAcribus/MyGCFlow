@@ -3161,13 +3161,16 @@ function open_video_folder(){
 }
 
 function assemble_pictures_directory(){
+    // FPS configurable : doit correspondre à celui utilisé pour calculer les frames,
+    // sinon la vitesse de lecture de la vidéo assemblée est faussée.
+    const fps = Number(pkg.options?.record?.fps) || 24;
     fetch('/assemble_pictures_directory', {
         method: 'POST', 
         headers: {
             'X-CSRFToken': pkg.getCookie('csrftoken'), 
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ action: 'assembler' }),
+        body: JSON.stringify({ action: 'assembler', fps: fps }),
     })
     .then(response => response.json())
     .then(data => {

@@ -5,6 +5,18 @@ from capture import assemble_pictures_directory, clear_pictures_directory, defau
 
 media_bp = Blueprint('media', __name__)
 
+# FPS d'assemblage par défaut (utilisé si le client n'en fournit pas)
+DEFAULT_FPS = 24
+
+
+def _parse_fps(raw, default=DEFAULT_FPS):
+    """Convertit une valeur FPS reçue du client en entier valide (borné 1..240)."""
+    try:
+        fps = int(round(float(raw)))
+    except (TypeError, ValueError):
+        return default
+    return max(1, min(240, fps))
+
 
 @media_bp.route('/upload_image', methods=['POST'])
 @cross_origin()
@@ -22,7 +34,10 @@ def start_create_video():
             vol = float(audio_volume)
         except Exception:
             vol = 1.0
-        result = assemble_pictures_directory("captured", default_video_output("mp4"), 24, audio_path=audio, audio_volume=vol)
+        # FPS configurable côté client : sans cela la vitesse de lecture est
+        # fausse dès qu'on change le FPS (le client calcule les frames avec son FPS).
+        fps = _parse_fps(request.args.get('fps'))
+        result = assemble_pictures_directory("captured", default_video_output("mp4"), fps, audio_path=audio, audio_volume=vol)
         return result
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
@@ -37,7 +52,15 @@ def clear_pictures():
 @media_bp.route('/assemble_pictures_directory', methods=['POST'])
 @cross_origin()
 def assemble_pictures():
-    return assemble_pictures_directory("captured", default_video_output("mp4"), 24)
+    # FPS envoyé par le client (JSON ou query), sinon valeur par défaut
+    raw_fps = None
+    payload = request.get_json(silent=True) or {}
+    if isinstance(payload, dict):
+        raw_fps = payload.get('fps')
+    if raw_fps is None:
+        raw_fps = request.args.get('fps')
+    fps = _parse_fps(raw_fps)
+    return assemble_pictures_directory("captured", default_video_output("mp4"), fps)
 
 
 @media_bp.route('/open_video_folder', methods=['POST'])

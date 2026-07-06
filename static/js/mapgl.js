@@ -1811,7 +1811,11 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
                     const upRes = await up.json().catch(()=>({success:false}));
                     if (upRes?.success && upRes?.file) audioFileName = upRes.file;
                 }
+                // FPS configurable : doit correspondre à celui utilisé pour calculer
+                // les frames, sinon la vitesse de lecture est faussée côté serveur.
+                const fps = Number(pkg.options?.record?.fps) || 24;
                 const url = new URL(`${CONFIG.BASE_URL}/start_create_video`, window.location.origin);
+                url.searchParams.set('fps', String(fps));
                 if (audioFileName) {
                     url.searchParams.set('audio', audioFileName);
                     url.searchParams.set('audio_volume', String(audioVol));
@@ -1819,7 +1823,10 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
                 return fetch(url.toString());
             } catch(e) {
                 console.warn('Assemblage avec audio: fallback sans audio', e);
-                return fetch(`${CONFIG.BASE_URL}/start_create_video`);
+                const fps = Number(pkg.options?.record?.fps) || 24;
+                const fallbackUrl = new URL(`${CONFIG.BASE_URL}/start_create_video`, window.location.origin);
+                fallbackUrl.searchParams.set('fps', String(fps));
+                return fetch(fallbackUrl.toString());
             }
         };
 
