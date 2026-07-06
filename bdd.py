@@ -585,15 +585,18 @@ def filter_session(db, Geocache, selectedValues, status: Optional[TaskStatus] = 
             query = query.filter(Geocache.state.in_(states))
 
     # Filtrage par plage de dates (trouvaille)
-    start_date = convert_str_to_date(selectedValues["dates"]['startDate'])
-    end_date = convert_str_to_date(selectedValues["dates"]['endDate'])
-    if start_date and end_date:
-        query = query.filter(Geocache.date_find >= start_date, Geocache.date_find <= end_date)
+    dates = selectedValues.get("dates") or {}
+    if isinstance(dates, dict):
+        start_date = convert_str_to_date(dates.get('startDate'))
+        end_date = convert_str_to_date(dates.get('endDate'))
+        if start_date and end_date:
+            query = query.filter(Geocache.date_find >= start_date, Geocache.date_find <= end_date)
 
     # Filtrage par plage de dates de publication
-    if "published_dates" in selectedValues and selectedValues["published_dates"]["startDate"] and selectedValues["published_dates"]["endDate"]:
-        published_start_date = convert_str_to_date(selectedValues["published_dates"]['startDate'])
-        published_end_date = convert_str_to_date(selectedValues["published_dates"]['endDate'])
+    published_dates = selectedValues.get("published_dates") or {}
+    if isinstance(published_dates, dict):
+        published_start_date = convert_str_to_date(published_dates.get('startDate'))
+        published_end_date = convert_str_to_date(published_dates.get('endDate'))
         if published_start_date and published_end_date:
             query = query.filter(Geocache.published_date >= published_start_date, Geocache.published_date <= published_end_date)
     
