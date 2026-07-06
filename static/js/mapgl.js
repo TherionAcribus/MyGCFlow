@@ -2035,7 +2035,11 @@ function recordAnimationMediaRecorder(){
     window.vectorSource = window.vectorSource || new ol.source.Vector({ wrapX: true });
     window.vectorSource.clear();
     createFlashElements();
-    let infosLocal = createObjectInfos();
+    // IMPORTANT : réinitialiser la variable module 'infos' (compteur de caches).
+    // startAnimation(true) réutilise ce même objet ; sans reset, cacheNumber
+    // repart de l'ancien total accumulé → compteur faux. (Avant : un 'infosLocal'
+    // local était créé puis jamais utilisé.)
+    infos = createObjectInfos();
     pkg.updateNbCaches(0);
     pkg.updateCurrentDate(currentDate);
 
