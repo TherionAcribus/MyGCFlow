@@ -365,7 +365,7 @@ export function readBdd(){
     });
 }
 
-function changeSelect(selectedValues, optionValues) {
+export function changeSelect(selectedValues, optionValues) {
     try { if (filterLoadingToast) { pkg.hideToast(filterLoadingToast); filterLoadingToast = null; } filterLoadingToast = pkg.showLoadingToast(t('Filtrage des caches...'), t('Filtrage')); } catch(e) {}
 
     fetch(`${CONFIG.BASE_URL}/filter_caches`, {

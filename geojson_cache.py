@@ -70,6 +70,17 @@ def build_metadata_from_features(features: List[Dict]) -> Dict:
     }
 
 
+def _float_set(values) -> set:
+    """Convertit une liste de chaînes/floats en un set de floats (ignore les invalides)."""
+    out = set()
+    for v in values or []:
+        try:
+            out.add(float(v))
+        except (TypeError, ValueError):
+            continue
+    return out
+
+
 def _normalize_filter_key(selected_values: Dict) -> Tuple:
     """Crée une clé stable pour le cache de filtres (ordre des listes ignoré)."""
     def _list_key(values):
@@ -313,8 +324,10 @@ class GeojsonIndexCache:
         features = (self._base_geojson or {}).get("features", [])
         precomputed = {
             "types": set(selected_values.get("type") or []),
-            "terrain": {str(v) for v in (selected_values.get("terrain") or [])},
-            "difficulty": {str(v) for v in (selected_values.get("difficulty") or [])},
+            # terrain/difficulty sont des floats en base (db.Float) ; on compare
+            # donc en float pour éviter str(5.0)="5.0" != "5" (sélection du <select>).
+            "terrain": _float_set(selected_values.get("terrain") or []),
+            "difficulty": _float_set(selected_values.get("difficulty") or []),
             "container": {str(v) for v in (selected_values.get("container") or [])},
             "countries": {str(v) for v in (selected_values.get("countries") or [])},
             "states": {str(v) for v in (selected_values.get("states") or [])},
@@ -398,9 +411,17 @@ class GeojsonIndexCache:
         def _m(val, value_set):
             return not value_set or str(val) in value_set
 
-        if not _m(props.get("terrain"), precomputed["terrain"]):
+        def _m_float(val, value_set):
+            if not value_set:
+                return True
+            try:
+                return float(val) in value_set
+            except (TypeError, ValueError):
+                return False
+
+        if not _m_float(props.get("terrain"), precomputed["terrain"]):
             return False
-        if not _m(props.get("difficulty"), precomputed["difficulty"]):
+        if not _m_float(props.get("difficulty"), precomputed["difficulty"]):
             return False
         if not _m(props.get("container"), precomputed["container"]):
             return False
