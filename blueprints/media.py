@@ -1,11 +1,15 @@
-from flask import Blueprint, jsonify, request
+import os
+
+from flask import Blueprint, abort, jsonify, request, send_from_directory
 from flask_cors import cross_origin
+from werkzeug.utils import secure_filename
 
 from capture import (
     TASK_TYPE_VIDEO,
     clear_pictures_directory,
     default_video_output,
     open_video_folder,
+    process_recorded_video,
     run_assemble_video_task,
     upload_audio,
     upload_image,
@@ -111,3 +115,24 @@ def route_upload_video():
 @cross_origin()
 def route_upload_audio():
     return upload_audio(request)
+
+
+@media_bp.route('/process_recorded_video', methods=['POST'])
+@cross_origin()
+def route_process_recorded_video():
+    # Post-traitement serveur (ffmpeg) d'un enregistrement MediaRecorder :
+    # normalisation de la vitesse + mux audio en une passe, en tâche de fond.
+    return process_recorded_video(request)
+
+
+@media_bp.route('/download_video/<path:filename>', methods=['GET'])
+@cross_origin()
+def route_download_video(filename):
+    # Sert un fichier du dossier video/ pour téléchargement navigateur.
+    safe_name = secure_filename(os.path.basename(filename))
+    if not safe_name:
+        abort(404)
+    video_dir = os.path.abspath('video')
+    if not os.path.exists(os.path.join(video_dir, safe_name)):
+        abort(404)
+    return send_from_directory(video_dir, safe_name, as_attachment=True)

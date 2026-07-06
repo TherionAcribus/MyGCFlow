@@ -2316,7 +2316,8 @@ function finalizeMediaRecorderVideo(){
         const audioFile = fileInput && fileInput.files && fileInput.files[0];
         const audioEnabled = !!(pkg.options?.record?.audio?.enabled);
 
-        // Orchestration: si normalisation requise, normaliser d'abord, puis mux audio si présent
+        // ---- Repli navigateur (ancien pipeline) : normalisation playbackRate + mux par re-capture ----
+        // Lent et doublement lossy, conservé uniquement en secours si le serveur échoue.
         const doMux = (videoBlob) => {
             if (audioEnabled && audioFile) {
                 try { pkg.updateTextsModal('Ajout audio', 'Fusion de la piste audio avec la vidéo en cours...'); } catch(_) {}
@@ -2330,18 +2331,71 @@ function finalizeMediaRecorderVideo(){
                 proceedWith(videoBlob);
             }
         };
-
-        if (doNormalize) {
-            try { pkg.updateTextsModal('Normalisation', `Accélération x${slowdown} pour lecture à vitesse normale...`); } catch(_) {}
-            normalizeRecordedVideoSpeed(blob, slowdown).then((normBlob) => {
-                doMux(normBlob || blob);
-            }).catch((e) => {
-                console.warn('Normalization failed, continue without normalization:', e);
+        const runClientFallback = () => {
+            if (doNormalize) {
+                try { pkg.updateTextsModal('Normalisation', `Accélération x${slowdown} pour lecture à vitesse normale...`); } catch(_) {}
+                normalizeRecordedVideoSpeed(blob, slowdown).then((normBlob) => {
+                    doMux(normBlob || blob);
+                }).catch((e) => {
+                    console.warn('Normalization failed, continue without normalization:', e);
+                    doMux(blob);
+                });
+            } else {
                 doMux(blob);
-            });
-        } else {
-            doMux(blob);
-        }
+            }
+        };
+
+        // ---- Traitement serveur (ffmpeg, une seule passe) : normalisation + mux ----
+        // Rapide, robuste, sans onglet actif obligatoire. Remplace jusqu'à 3 ré-encodages navigateur.
+        const processOnServer = () => new Promise((resolve, reject) => {
+            try { pkg.updateTextsModal('Traitement serveur', 'Envoi de la vidéo au serveur...'); } catch(_) {}
+            // Réécrire la durée du .webm pour que ffmpeg la lise correctement (opération légère, pas de ré-encodage)
+            fixWebmFinalDuration(blob).then((fixedBlob) => {
+                const toSend = fixedBlob || blob;
+                const fd = new FormData();
+                fd.append('video', toSend, 'recording.webm');
+                fd.append('slowdown', String(slowdown));
+                fd.append('fps', String(Number(pkg.options?.record?.fps) || 24));
+                fd.append('fileName', fileName);
+                if (audioEnabled && audioFile) {
+                    fd.append('audio', audioFile, audioFile.name || 'music');
+                    const vol = (typeof pkg.options?.record?.audio?.volume === 'number') ? pkg.options.record.audio.volume : 1;
+                    fd.append('audio_volume', String(vol));
+                }
+                try { pkg.updateProgressBar({ progress: 0, message: 'Traitement serveur...' }); } catch(_) {}
+                fetch(`${CONFIG.BASE_URL}/process_recorded_video`, { method: 'POST', body: fd })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (!data || !data.task_id) throw new Error(data && data.message ? data.message : 'Traitement serveur non démarré');
+                        return pollTaskStatus(data.task_id, {
+                            onProgress: (p, msg) => { try { pkg.updateProgressBar({ progress: p, message: msg || 'Traitement serveur...' }); } catch(_) {} }
+                        });
+                    })
+                    .then(result => {
+                        const file = result && result.file;
+                        // Si téléchargement local demandé, récupérer le MP4 traité depuis le serveur
+                        if (wantsDownload && file) {
+                            try {
+                                const a = document.createElement('a');
+                                a.href = `${CONFIG.BASE_URL}/download_video/${encodeURIComponent(file)}`;
+                                a.download = file;
+                                document.body.appendChild(a);
+                                a.click();
+                                setTimeout(() => a.remove(), 1000);
+                            } catch(e) { console.warn('Téléchargement du résultat échoué:', e); }
+                        }
+                        afterAll();
+                        resolve();
+                    })
+                    .catch(reject);
+            }).catch(reject);
+        });
+
+        processOnServer().catch((err) => {
+            console.warn('Traitement serveur échoué, repli sur le pipeline navigateur:', err);
+            try { pkg.showToast && pkg.showToast('Traitement serveur indisponible, repli local...', 'warning', 'Enregistrement', 4000); } catch(_) {}
+            runClientFallback();
+        });
 
     } catch(e) {
         console.error('Finalize MediaRecorder error:', e);

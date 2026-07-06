@@ -1,5 +1,6 @@
 from flask import jsonify, request
 import os
+import re
 import base64
 from datetime import datetime
 import platform
@@ -251,6 +252,246 @@ def run_assemble_video_task(status, image_folder, output_video, fps=24, audio_pa
         status.fail(result.get('message', "Échec de l'assemblage"))
         return
     status.set_result(result)
+
+
+# --------- Traitement vidéo MediaRecorder (normalisation vitesse + mux audio) ---------
+# Type de tâche de fond pour le post-traitement d'un enregistrement MediaRecorder
+TASK_TYPE_VIDEO_PROCESS = "video_processing"
+
+_FFMPEG_DURATION_RE = re.compile(r"Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)")
+
+
+def _get_ffmpeg_exe():
+    """Chemin de l'exécutable ffmpeg fourni par imageio-ffmpeg (dépendance de moviepy)."""
+    try:
+        import imageio_ffmpeg
+        return imageio_ffmpeg.get_ffmpeg_exe()
+    except Exception:
+        return "ffmpeg"  # repli sur un ffmpeg système éventuel
+
+
+def _probe_duration_seconds(input_path):
+    """Durée du média en secondes, lue depuis l'en-tête via ffmpeg. None si inconnue."""
+    try:
+        proc = subprocess.run(
+            [_get_ffmpeg_exe(), '-i', input_path],
+            stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
+            universal_newlines=True, encoding='utf-8', errors='replace',
+        )
+        m = _FFMPEG_DURATION_RE.search(proc.stderr or '')
+        if m:
+            h, mn, s = m.groups()
+            return int(h) * 3600 + int(mn) * 60 + float(s)
+    except Exception as e:
+        print(f"[process] probe durée échoué: {e}")
+    return None
+
+
+def _process_recorded_video(input_path, output_path, slowdown=1.0, audio_path=None, audio_volume=1.0, fps=None, status=None):
+    """Normalise la vitesse (setpts) et mux l'audio en UNE passe ffmpeg → MP4 H.264/AAC.
+
+    Remplace l'ancien pipeline navigateur (jusqu'à 3 ré-encodages temps réel,
+    onglet actif obligatoire). Met à jour un TaskStatus optionnel pour la progression.
+    """
+    def _progress(p, msg):
+        if status is not None:
+            try:
+                status.set_progress(p, msg)
+            except Exception:
+                pass
+
+    if not input_path or not os.path.exists(input_path):
+        return {'success': False, 'message': 'Fichier vidéo introuvable'}
+
+    try:
+        sd = max(1.0, float(slowdown))
+    except Exception:
+        sd = 1.0
+    try:
+        vol = max(0.0, float(audio_volume))
+    except Exception:
+        vol = 1.0
+    # fps de sortie : setpts accélère la vidéo sans redécimer (le framerate serait
+    # multiplié par sd). On force le fps cible pour un résultat propre et compact.
+    try:
+        out_fps = int(round(float(fps))) if fps else None
+        if out_fps is not None:
+            out_fps = max(1, min(120, out_fps))
+    except Exception:
+        out_fps = None
+
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    ffmpeg = _get_ffmpeg_exe()
+
+    # Résoudre le fichier audio (nom de fichier attendu dans audio/)
+    audio_file = None
+    if audio_path:
+        safe_name = secure_filename(os.path.basename(audio_path))
+        candidate = os.path.join('audio', safe_name)
+        if os.path.exists(candidate):
+            audio_file = candidate
+        else:
+            print(f"[process] audio introuvable, vidéo seule: {candidate}")
+
+    # Durée de sortie attendue (pour la progression) = durée brute / facteur de ralentissement
+    in_dur = _probe_duration_seconds(input_path)
+    out_dur = (in_dur / sd) if (in_dur and sd > 0) else None
+
+    # Construire la commande ffmpeg (une seule passe).
+    # setpts=PTS/sd accélère la vidéo de sd pour revenir à la vitesse normale.
+    cmd = [ffmpeg, '-y', '-i', input_path]
+    if audio_file:
+        cmd += ['-i', audio_file]
+        if out_dur and out_dur > 0:
+            # Durée vidéo connue : on borne la sortie à out_dur avec -t et on complète
+            # l'audio par du silence (apad) si besoin. On N'utilise PAS -shortest avec apad
+            # (l'audio paddé devient infini et -shortest ne le coupe pas de façon fiable
+            # en filter_complex → encodage sans fin).
+            cmd += [
+                '-filter_complex', f"[0:v]setpts=PTS/{sd}[v];[1:a]volume={vol},apad[a]",
+                '-map', '[v]', '-map', '[a]',
+                '-t', f"{out_dur:.3f}",
+                '-c:a', 'aac', '-b:a', '192k',
+            ]
+        else:
+            # Durée inconnue : pas d'apad (sinon infini) ; -shortest coupe au flux le plus court.
+            cmd += [
+                '-filter_complex', f"[0:v]setpts=PTS/{sd}[v];[1:a]volume={vol}[a]",
+                '-map', '[v]', '-map', '[a]',
+                '-c:a', 'aac', '-b:a', '192k',
+                '-shortest',
+            ]
+    else:
+        cmd += ['-filter:v', f"setpts=PTS/{sd}", '-an']
+    if out_fps:
+        cmd += ['-r', str(out_fps)]
+    cmd += [
+        '-c:v', 'libx264', '-preset', 'medium', '-crf', '20', '-pix_fmt', 'yuv420p',
+        '-movflags', '+faststart',
+        '-progress', 'pipe:1', '-nostats',
+        output_path,
+    ]
+
+    _progress(2, "Démarrage du traitement vidéo...")
+    try:
+        print("[process] ffmpeg:", " ".join(cmd))
+    except Exception:
+        pass
+
+    proc = subprocess.Popen(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        universal_newlines=True, encoding='utf-8', errors='replace',
+    )
+
+    tail_lines = []  # dernières lignes non-progress (pour message d'erreur)
+    for line in proc.stdout:
+        line = line.strip()
+        if not line:
+            continue
+        if line.startswith('out_time_us=') or line.startswith('out_time_ms='):
+            try:
+                micros = float(line.split('=', 1)[1])
+                cur = micros / 1_000_000.0
+                if out_dur and out_dur > 0:
+                    frac = max(0.0, min(1.0, cur / out_dur))
+                    _progress(2 + frac * 96, f"Traitement vidéo... {int(frac * 100)}%")
+                else:
+                    _progress(50, "Traitement vidéo en cours...")
+            except Exception:
+                pass
+        elif not line.startswith(('frame=', 'fps=', 'bitrate=', 'total_size=',
+                                  'out_time=', 'dup_frames=', 'drop_frames=',
+                                  'speed=', 'progress=', 'stream_')):
+            tail_lines.append(line)
+            if len(tail_lines) > 60:
+                tail_lines.pop(0)
+
+    proc.wait()
+    if proc.returncode != 0:
+        msg = "\n".join(tail_lines[-8:]) or f"ffmpeg a échoué (code {proc.returncode})"
+        return {'success': False, 'message': f"Traitement ffmpeg échoué: {msg}"}
+
+    # Nettoyer le .webm brut temporaire une fois le MP4 produit
+    try:
+        os.remove(input_path)
+    except Exception:
+        pass
+
+    _progress(100, "Vidéo prête")
+    return {
+        'success': True,
+        'message': 'Vidéo traitée avec succès',
+        'output': output_path,
+        'file': os.path.basename(output_path),
+    }
+
+
+def run_process_video_task(status, input_path, output_path, slowdown=1.0, audio_path=None, audio_volume=1.0, fps=None):
+    """Tâche de fond : post-traite un enregistrement MediaRecorder via ffmpeg."""
+    result = _process_recorded_video(input_path, output_path, slowdown, audio_path, audio_volume, fps=fps, status=status)
+    if not result.get('success'):
+        status.fail(result.get('message', "Échec du traitement vidéo"))
+        return
+    status.set_result(result)
+
+
+def process_recorded_video(request):
+    """Réceptionne le .webm brut (+ options) et lance le traitement ffmpeg en tâche de fond.
+
+    Champs multipart attendus:
+      - 'video': le .webm brut du MediaRecorder (obligatoire)
+      - 'audio' (fichier) OU 'audio' (nom déjà présent dans audio/) : piste audio optionnelle
+      - 'slowdown', 'audio_volume', 'fileName' : options
+    """
+    from task_manager import task_manager
+
+    if not request.files or 'video' not in request.files:
+        return jsonify({'success': False, 'message': 'Aucun fichier vidéo fourni'}), 400
+
+    os.makedirs('video', exist_ok=True)
+    raw_name = _timestamped_name("gcmap_raw.webm", "webm")
+    raw_path = os.path.join('video', raw_name)
+    request.files['video'].save(raw_path)
+
+    # Audio : soit un fichier uploadé ici, soit un nom déjà présent dans audio/
+    audio_path = None
+    if 'audio' in request.files and request.files['audio'].filename:
+        af = request.files['audio']
+        os.makedirs('audio', exist_ok=True)
+        aname = secure_filename(af.filename or 'music.mp3')
+        af.save(os.path.join('audio', aname))
+        audio_path = aname
+    else:
+        audio_path = request.form.get('audio') or None
+
+    def _num(name, default):
+        try:
+            return float(request.form.get(name, default))
+        except Exception:
+            return default
+
+    slowdown = _num('slowdown', 1.0)
+    audio_volume = _num('audio_volume', 1.0)
+    fps = _num('fps', 0) or None
+
+    # Nom de sortie basé sur fileName fourni, forcé en .mp4
+    suggested = request.form.get('fileName')
+    if suggested:
+        base = os.path.splitext(secure_filename(suggested))[0] + '.mp4'
+        out_path = os.path.join('video', _timestamped_name(base, 'mp4'))
+    else:
+        out_path = default_video_output('mp4')
+
+    status = task_manager.submit(
+        TASK_TYPE_VIDEO_PROCESS, run_process_video_task,
+        raw_path, out_path, slowdown, audio_path, audio_volume, fps,
+    )
+    return jsonify({
+        'success': True,
+        'message': 'Traitement vidéo lancé en tâche de fond',
+        'task_id': status.id,
+        'state': status.state,
+    }), 202
 
 
 def upload_video(request):
