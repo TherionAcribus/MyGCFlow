@@ -12,6 +12,7 @@ var btnAllType, btnNoneType, btnAllDifficulty, btnNoneDifficulty, btnAllTerrain,
 var infoType, infoDifficulty, infoTerrain, infoContainer;
 var debounceTimer = null;
 const DEBOUNCE_DELAY = 200; // ms
+var isBatchReset = false; // court-circuite le debounce pendant un reset groupé
 // Dates par défaut (capture au chargement BDD)
 var defaultStartDate = null;
 var defaultEndDate = null;
@@ -204,6 +205,10 @@ const publishedDatePickerEnd = document.getElementById('publishedDatePickerEnd')
         onSelectionChangedDebounced();
         updateFilterInfos();
     });
+
+    // Bouton "Réinitialiser tous les filtres"
+    const btnResetAllFilters = document.getElementById('btnResetAllFilters');
+    if (btnResetAllFilters) btnResetAllFilters.addEventListener('click', resetAllFilters);
 
     // Zones d'information sous chaque filtre
     infoType = document.getElementById('infoType');
@@ -2036,6 +2041,7 @@ function applyFilterEndToAnim(){
 
 // Debounce et wrapper
 function onSelectionChangedDebounced(){
+    if (isBatchReset) return; // ignoré pendant un reset groupé
     if (debounceTimer) clearTimeout(debounceTimer);
     debounceTimer = setTimeout(applySelectionChange, DEBOUNCE_DELAY);
 }
@@ -2248,6 +2254,32 @@ function deselectAllOptions(selectEl){
     M.FormSelect.init(selectEl);
     onSelectionChangedDebounced();
     updateFilterInfos();
+}
+
+// Réinitialise tous les filtres (selects + dates) aux valeurs par défaut en un seul cycle
+function resetAllFilters(){
+    isBatchReset = true;
+    try {
+        // Selects : tout sélectionner (valeur par défaut = tout)
+        selectAllOptions(selectType);
+        selectAllOptions(selectDifficulty);
+        selectAllOptions(selectTerrain);
+        selectAllOptions(selectContainer);
+        const selCountry = document.getElementById('selectCountry');
+        const selState = document.getElementById('selectState');
+        if (selCountry) selectAllOptions(selCountry);
+        if (selState) selectAllOptions(selState);
+        // Dates : reset aux valeurs par défaut
+        resetStartDateToDefault();
+        resetEndDateToDefault();
+        resetPublishedStartDateToDefault();
+        resetPublishedEndDateToDefault();
+    } finally {
+        isBatchReset = false;
+    }
+    // Un seul cycle de filtrage à la fin
+    updateFilterInfos();
+    onSelectionChangedDebounced();
 }
 
 // Mise à jour des informations sous chaque filtre et surbrillance "TOUT"

@@ -164,6 +164,10 @@ msgstr "Tout"
 msgid "Aucun"
 msgstr "Aucun"
 
+#: templates/menu_filtre.html:10
+msgid "Réinitialiser tous les filtres"
+msgstr "Réinitialiser tous les filtres"
+
 #: templates/menu_filtre.html:32
 msgid "Filtrer par taille"
 msgstr "Filtrer par taille"
