@@ -1783,8 +1783,8 @@ export function setPickerDates(metadata) {
     // Mettre à jour les libellés des boutons reset
     const btnResetStartDate = document.getElementById('btnResetStartDate');
     const btnResetEndDate = document.getElementById('btnResetEndDate');
-    if (btnResetStartDate) btnResetStartDate.textContent = `⟲ ${formattedStartDate}`;
-    if (btnResetEndDate) btnResetEndDate.textContent = `⟲ ${formattedEndDate}`;
+    if (btnResetStartDate) btnResetStartDate.title = formattedStartDate ? `↩ ${formattedStartDate}` : '';
+    if (btnResetEndDate) btnResetEndDate.title = formattedEndDate ? `↩ ${formattedEndDate}` : '';
     updateResetButtonsHighlight();
 
     // Initialiser les datepickers de publication avec les mêmes valeurs par défaut
@@ -1816,8 +1816,8 @@ export function setPickerDates(metadata) {
         // Mettre à jour les libellés des boutons reset publication
         const btnResetPublishedStartDate = document.getElementById('btnResetPublishedStartDate');
         const btnResetPublishedEndDate = document.getElementById('btnResetPublishedEndDate');
-        if (btnResetPublishedStartDate) btnResetPublishedStartDate.textContent = `⟲ ${formattedPublishedStartDate}`;
-        if (btnResetPublishedEndDate) btnResetPublishedEndDate.textContent = `⟲ ${formattedPublishedEndDate}`;
+        if (btnResetPublishedStartDate) btnResetPublishedStartDate.title = formattedPublishedStartDate ? `↩ ${formattedPublishedStartDate}` : '';
+        if (btnResetPublishedEndDate) btnResetPublishedEndDate.title = formattedPublishedEndDate ? `↩ ${formattedPublishedEndDate}` : '';
         updatePublishedResetButtonsHighlight();
     }
 
@@ -1914,12 +1914,18 @@ function updatePublishedResetButtonsHighlight(){
     const defaultStartStr = defaultPublishedStartDate ? formatDateForPickers(defaultPublishedStartDate) : null;
     const defaultEndStr = defaultPublishedEndDate ? formatDateForPickers(defaultPublishedEndDate) : null;
     if (btnStart) {
-        if (currentStart && defaultStartStr && currentStart === defaultStartStr) btnStart.classList.add('active-reset');
+        const atDefault = currentStart && defaultStartStr && currentStart === defaultStartStr;
+        if (atDefault) btnStart.classList.add('active-reset');
         else btnStart.classList.remove('active-reset');
+        btnStart.textContent = atDefault ? '⟲' : `⟲ ${defaultStartStr || ''}`;
+        if (defaultStartStr) btnStart.title = `↩ ${defaultStartStr}`;
     }
     if (btnEnd) {
-        if (currentEnd && defaultEndStr && currentEnd === defaultEndStr) btnEnd.classList.add('active-reset');
+        const atDefault = currentEnd && defaultEndStr && currentEnd === defaultEndStr;
+        if (atDefault) btnEnd.classList.add('active-reset');
         else btnEnd.classList.remove('active-reset');
+        btnEnd.textContent = atDefault ? '⟲' : `⟲ ${defaultEndStr || ''}`;
+        if (defaultEndStr) btnEnd.title = `↩ ${defaultEndStr}`;
     }
 }
 
@@ -1931,12 +1937,19 @@ function updateResetButtonsHighlight(){
     const defaultStartStr = defaultStartDate ? formatDateForPickers(defaultStartDate) : null;
     const defaultEndStr = defaultEndDate ? formatDateForPickers(defaultEndDate) : null;
     if (btnStart) {
-        if (currentStart && defaultStartStr && currentStart === defaultStartStr) btnStart.classList.add('active-reset');
+        const atDefault = currentStart && defaultStartStr && currentStart === defaultStartStr;
+        if (atDefault) btnStart.classList.add('active-reset');
         else btnStart.classList.remove('active-reset');
+        // Afficher la date cible uniquement si elle diffère du défaut
+        btnStart.textContent = atDefault ? '⟲' : `⟲ ${defaultStartStr || ''}`;
+        if (defaultStartStr) btnStart.title = `↩ ${defaultStartStr}`;
     }
     if (btnEnd) {
-        if (currentEnd && defaultEndStr && currentEnd === defaultEndStr) btnEnd.classList.add('active-reset');
+        const atDefault = currentEnd && defaultEndStr && currentEnd === defaultEndStr;
+        if (atDefault) btnEnd.classList.add('active-reset');
         else btnEnd.classList.remove('active-reset');
+        btnEnd.textContent = atDefault ? '⟲' : `⟲ ${defaultEndStr || ''}`;
+        if (defaultEndStr) btnEnd.title = `↩ ${defaultEndStr}`;
     }
 }
 

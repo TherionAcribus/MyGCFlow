@@ -1011,15 +1011,19 @@ input[type="checkbox"]:checked + span:not(.lever):after {
 /* Boutons de reset de dates */
 .date-reset-btn {
     margin-top: 4px;
-    min-width: 110px;
+    min-width: 32px;
+    padding: 0 8px;
     text-align: center;
     display: inline-block;
+    transition: opacity 0.15s ease;
 }
 
 .date-reset-btn.active-reset {
     background: rgba(76, 175, 80, 0.12);
     border-radius: 6px;
     font-weight: 600;
+    opacity: 0.55;
+}
 }
 
 /* Panneau sticky pour Profils */
