@@ -3,6 +3,11 @@ import { CONFIG } from './init.js';
 import { showSuccess, showError, showInfo, t } from './notifications.js';
 import { clearMap } from './mapgl.js';
 
+// Flag de debug pour les filtres (FILTER).
+// Mettre à true pour réactiver les logs en console.
+const DEBUG_FILTERS = false;
+const dbgFilters = (...args) => { if (DEBUG_FILTERS) console.log(...args); };
+
 export let json_data = null;
 export const metadata = {};
 export const pointsByDate = new Map();
@@ -393,7 +398,7 @@ export function changeSelect(selectedValues, optionValues) {
         // ne pas poller du tout — la tâche serveur tournera mais son résultat
         // sera ignoré par l'époque.
         if (myEpoch !== filterEpoch) {
-            console.log('[FILTER] Tâche obsolète (époque dépassée pendant le POST), polling annulé');
+            dbgFilters('[FILTER] Tâche obsolète (époque dépassée pendant le POST), polling annulé');
             return;
         }
         pollGeojsonTask(data.task_id, {
@@ -406,7 +411,7 @@ export function changeSelect(selectedValues, optionValues) {
                 // Ignorer ce résultat si une nouvelle requête de filtrage a été lancée
                 // entre-temps : son résultat serait écrasé par celui-ci (race condition).
                 if (myEpoch !== filterEpoch) {
-                    console.log('[FILTER] Résultat obsolète ignoré (époque dépassée)');
+                    dbgFilters('[FILTER] Résultat obsolète ignoré (époque dépassée)');
                     return;
                 }
                 const geojson = result.geojson;
@@ -434,7 +439,7 @@ export function changeSelect(selectedValues, optionValues) {
             onError: (err) => {
                 // Ne pas afficher d'erreur ni cacher la toast si on n'est plus l'époque courante
                 if (myEpoch !== filterEpoch) {
-                    console.log('[FILTER] Erreur d\'une tâche obsolète ignorée (époque dépassée)');
+                    dbgFilters('[FILTER] Erreur d\'une tâche obsolète ignorée (époque dépassée)');
                     return;
                 }
                 console.error('[FILTER] Erreur lors du suivi du filtrage:', err);

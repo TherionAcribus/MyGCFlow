@@ -1,5 +1,10 @@
 import * as pkg from './index.js';
 
+// Flag de debug pour les filtres (COUNTRY/FILTER).
+// Mettre à true pour réactiver les logs en console.
+const DEBUG_FILTERS = false;
+const dbgFilters = (...args) => { if (DEBUG_FILTERS) console.log(...args); };
+
 // Variables globales pour les éléments UI
 var btnOSM, btnWatercolor, btnStamenToner, btnVectorMap;
 var divVectorMapOptions, divTonerMapOptions;
@@ -973,13 +978,13 @@ export function init_ui() {
 
     // Charger l'arbre Country/State et peupler selects
     try {
-        console.log('[COUNTRY] Fetching /api/country_state ...');
+        dbgFilters('[COUNTRY] Fetching /api/country_state ...');
         const apiUrl = `${window.location.origin}/api/country_state`;
         fetch(apiUrl)
             .then(async r => {
-                console.log('[COUNTRY] Response ok=', r.ok, 'status=', r.status);
+                dbgFilters('[COUNTRY] Response ok=', r.ok, 'status=', r.status);
                 const txt = await r.text();
-                console.log('[COUNTRY] Response length=', txt?.length);
+                dbgFilters('[COUNTRY] Response length=', txt?.length);
                 let data;
                 try {
                     data = txt ? JSON.parse(txt) : {};
@@ -991,20 +996,20 @@ export function init_ui() {
                         .then(rr => rr.json())
                         .then(dd => {
                             countryToStates = dd || {};
-                            console.log('[COUNTRY] Fallback static JSON loaded. Countries:', Object.keys(countryToStates).length);
+                            dbgFilters('[COUNTRY] Fallback static JSON loaded. Countries:', Object.keys(countryToStates).length);
                             populateCountryStateSelects(countryToStates);
                             setTimeout(() => {
-                                console.log('[COUNTRY] Re-populate after delay (fallback)');
+                                dbgFilters('[COUNTRY] Re-populate after delay (fallback)');
                                 populateCountryStateSelects(countryToStates);
                             }, 800);
                         })
                         .catch(e => console.warn('[COUNTRY] Fallback fetch error:', e));
                 }
                 countryToStates = data || {};
-                console.log('[COUNTRY] Data received. Countries:', Object.keys(countryToStates).length);
+                dbgFilters('[COUNTRY] Data received. Countries:', Object.keys(countryToStates).length);
                 populateCountryStateSelects(countryToStates);
             setTimeout(() => {
-                console.log('[COUNTRY] Re-populate after delay');
+                dbgFilters('[COUNTRY] Re-populate after delay');
                 populateCountryStateSelects(countryToStates);
                 // Mise à jour finale des infos après remplissage
                 setTimeout(() => {
@@ -1013,7 +1018,7 @@ export function init_ui() {
             }, 800);
             })
             .catch((e)=>{ console.warn('[COUNTRY] Fetch error:', e); })
-            .finally(()=>{ console.log('[COUNTRY] Fetch chain completed'); });
+            .finally(()=>{ dbgFilters('[COUNTRY] Fetch chain completed'); });
     } catch(e) {
         console.warn('[COUNTRY] Outer try/catch error:', e);
     }
@@ -2072,7 +2077,7 @@ function populateCountryStateSelects(tree){
     const selCountry = document.getElementById('selectCountry');
     const selState = document.getElementById('selectState');
     if (!selCountry || !selState) {
-        console.log('[COUNTRY] Selects not ready, retry later');
+        dbgFilters('[COUNTRY] Selects not ready, retry later');
         setTimeout(() => populateCountryStateSelects(tree), 200);
         return;
     }
@@ -2090,7 +2095,7 @@ function populateCountryStateSelects(tree){
     selCountry.appendChild(placeholderCountry);
 
     const countries = Object.keys(tree).sort((a,b)=>a.localeCompare(b));
-    console.log('[COUNTRY] Populating countries:', countries.length);
+    dbgFilters('[COUNTRY] Populating countries:', countries.length);
     const fragC = document.createDocumentFragment();
     for (const c of countries){
         const opt = document.createElement('option');
@@ -2106,7 +2111,7 @@ function populateCountryStateSelects(tree){
     // Populate states (from selected countries or all)
     const statesSet = new Set();
     for (const list of Object.values(tree)) { (list||[]).forEach(s => statesSet.add(s)); }
-    console.log('[COUNTRY] Populating states total unique:', statesSet.size);
+    dbgFilters('[COUNTRY] Populating states total unique:', statesSet.size);
     selState.innerHTML = '';
     // Ajouter l'option placeholder pour les états
     const placeholderState = document.createElement('option');
@@ -2135,7 +2140,7 @@ function populateCountryStateSelects(tree){
         }
         
         const selected = Array.from(selCountry.selectedOptions).map(o => o.value);
-        console.log('[COUNTRY] Country change selected=', selected);
+        dbgFilters('[COUNTRY] Country change selected=', selected);
         const sset = new Set();
         selected.forEach(c => (tree[c]||[]).forEach(s => sset.add(s)));
         selState.innerHTML = '';
@@ -2157,7 +2162,7 @@ function populateCountryStateSelects(tree){
         if (sset.size > 0) {
             try { M.FormSelect.init(selState); } catch(_) {}
         }
-        console.log('[COUNTRY] States populated for selection=', sset.size);
+        dbgFilters('[COUNTRY] States populated for selection=', sset.size);
         // Mise à jour des infos et déclenchement filtrage
         updateFilterInfos();
         onSelectionChangedDebounced();
@@ -2165,7 +2170,7 @@ function populateCountryStateSelects(tree){
 
     // Déclencher le filtrage quand l'utilisateur change la sélection des états directement
     selState.addEventListener('change', () => {
-        console.log('[COUNTRY] State selection changed');
+        dbgFilters('[COUNTRY] State selection changed');
         // Si des vraies options sont sélectionnées, désélectionner le placeholder
         const realSelected = Array.from(selState.selectedOptions).filter(o => !o.disabled && o.value !== '');
         if (realSelected.length > 0) {
@@ -2188,7 +2193,7 @@ function restoreSelectedValues(){
         const raw = localStorage.getItem('filtersSelection');
         if (!raw) {
             // Pas de sauvegarde, utiliser les valeurs par défaut du HTML (attributs selected)
-            console.log('[FILTER] No saved filters, using HTML defaults');
+            dbgFilters('[FILTER] No saved filters, using HTML defaults');
             // Juste rafraîchir Materialize pour afficher les valeurs selected du HTML
             if (selectType) M.FormSelect.init(selectType);
             if (selectDifficulty) M.FormSelect.init(selectDifficulty);
@@ -2199,7 +2204,7 @@ function restoreSelectedValues(){
         }
         
         const values = JSON.parse(raw);
-        console.log('[FILTER] Restoring saved filters:', values);
+        dbgFilters('[FILTER] Restoring saved filters:', values);
         setSelectValues(selectType, values.type);
         setSelectValues(selectDifficulty, values.difficulty);
         setSelectValues(selectTerrain, values.terrain);
