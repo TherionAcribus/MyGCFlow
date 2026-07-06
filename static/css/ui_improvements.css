@@ -979,6 +979,14 @@ input[type="checkbox"]:checked + span:not(.lever):after {
     border-radius: 6px;
 }
 
+/* Boutons Tout/Aucun désactivés (sans effet) */
+.btn-flat.filter-btn-disabled {
+    opacity: 0.4;
+    cursor: default;
+    pointer-events: none;
+    user-select: none;
+}
+
 /* Compteur de sélection */
 .filters-counter {
     margin-top: 8px;

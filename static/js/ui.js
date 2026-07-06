@@ -2233,6 +2233,8 @@ function setSelectValues(selectEl, values){
 
 function selectAllOptions(selectEl){
     if (!selectEl) return;
+    // No-op si tout est déjà sélectionné (évite un cycle de filtrage inutile)
+    if (areAllSelected(selectEl)) return;
     Array.from(selectEl.options).forEach(opt => { if (!opt.disabled) opt.selected = true; });
     // Réinitialiser Materialize pour mettre à jour l'affichage visuel
     M.FormSelect.init(selectEl);
@@ -2242,6 +2244,8 @@ function selectAllOptions(selectEl){
 
 function deselectAllOptions(selectEl){
     if (!selectEl) return;
+    // No-op si rien n'est déjà sélectionné (évite un cycle de filtrage inutile)
+    if (areNoneSelected(selectEl)) return;
     Array.from(selectEl.options).forEach(opt => { opt.selected = false; });
     
     // Pour les selects avec placeholder, sélectionner le placeholder quand tout est vide
@@ -2284,24 +2288,27 @@ function resetAllFilters(){
 
 // Mise à jour des informations sous chaque filtre et surbrillance "TOUT"
 function updateFilterInfos(){
-    updateFilterInfoFor(selectType, infoType, btnAllType);
-    updateFilterInfoFor(selectDifficulty, infoDifficulty, btnAllDifficulty);
-    updateFilterInfoFor(selectTerrain, infoTerrain, btnAllTerrain);
-    updateFilterInfoFor(selectContainer, infoContainer, btnAllContainer);
+    updateFilterInfoFor(selectType, infoType, btnAllType, btnNoneType);
+    updateFilterInfoFor(selectDifficulty, infoDifficulty, btnAllDifficulty, btnNoneDifficulty);
+    updateFilterInfoFor(selectTerrain, infoTerrain, btnAllTerrain, btnNoneTerrain);
+    updateFilterInfoFor(selectContainer, infoContainer, btnAllContainer, btnNoneContainer);
     // Country/State
     const selectCountryEl = document.getElementById('selectCountry');
     const selectStateEl = document.getElementById('selectState');
     const btnAllCountry = document.getElementById('btnAllCountry');
     const btnAllState = document.getElementById('btnAllState');
+    const btnNoneCountry = document.getElementById('btnNoneCountry');
+    const btnNoneState = document.getElementById('btnNoneState');
     const infoCountry = document.getElementById('infoCountry');
     const infoState = document.getElementById('infoState');
-    updateFilterInfoFor(selectCountryEl, infoCountry, btnAllCountry);
-    updateFilterInfoFor(selectStateEl, infoState, btnAllState);
+    updateFilterInfoFor(selectCountryEl, infoCountry, btnAllCountry, btnNoneCountry);
+    updateFilterInfoFor(selectStateEl, infoState, btnAllState, btnNoneState);
 }
 
-function updateFilterInfoFor(selectEl, infoEl, btnAllEl){
+function updateFilterInfoFor(selectEl, infoEl, btnAllEl, btnNoneEl){
     if (!selectEl || !infoEl) return;
     const all = areAllSelected(selectEl);
+    const none = areNoneSelected(selectEl);
     if (all) {
         infoEl.textContent = 'TOUT';
         infoEl.classList.add('filter-info-all');
@@ -2312,12 +2319,35 @@ function updateFilterInfoFor(selectEl, infoEl, btnAllEl){
         infoEl.classList.remove('filter-info-all');
         if (btnAllEl) btnAllEl.classList.remove('filter-all-active');
     }
+    // Désactivation visuelle des boutons sans effet :
+    // "Tout" grisé quand tout est déjà sélectionné,
+    // "Aucun" grisé quand rien n'est sélectionné.
+    setBtnDisabled(btnAllEl, all);
+    setBtnDisabled(btnNoneEl, none);
+}
+
+function setBtnDisabled(btnEl, disabled){
+    if (!btnEl) return;
+    if (disabled) {
+        btnEl.classList.add('filter-btn-disabled');
+        btnEl.setAttribute('aria-disabled', 'true');
+    } else {
+        btnEl.classList.remove('filter-btn-disabled');
+        btnEl.removeAttribute('aria-disabled');
+    }
 }
 
 function areAllSelected(selectEl){
     const options = Array.from(selectEl.options).filter(opt => !opt.disabled && opt.value !== '');
     const selected = options.filter(opt => opt.selected);
     return options.length > 0 && selected.length === options.length;
+}
+
+function areNoneSelected(selectEl){
+    const options = Array.from(selectEl.options).filter(opt => !opt.disabled && opt.value !== '');
+    if (options.length === 0) return true;
+    const selected = options.filter(opt => opt.selected);
+    return selected.length === 0;
 }
 
 function getSelectedValuesText(selectEl){
