@@ -192,6 +192,14 @@ msgstr "Filter by terrain"
 msgid "Terrain"
 msgstr "Terrain"
 
+#: templates/menu_filtre.html:151
+msgid "Filtrer par pays"
+msgstr "Filter by country"
+
+#: templates/menu_filtre.html:162
+msgid "Filtrer par région/état"
+msgstr "Filter by region/state"
+
 #: templates/menu_filtre.html:99
 msgid "Période de découverte"
 msgstr "Found period"

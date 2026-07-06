@@ -2086,7 +2086,7 @@ function populateCountryStateSelects(tree){
     const placeholderCountry = document.createElement('option');
     placeholderCountry.value = '';
     placeholderCountry.disabled = true;
-    placeholderCountry.textContent = 'Filtrer par pays';
+    placeholderCountry.textContent = pkg.t ? pkg.t('Filtrer par pays') : 'Filtrer par pays';
     selCountry.appendChild(placeholderCountry);
 
     const countries = Object.keys(tree).sort((a,b)=>a.localeCompare(b));
@@ -2112,7 +2112,7 @@ function populateCountryStateSelects(tree){
     const placeholderState = document.createElement('option');
     placeholderState.value = '';
     placeholderState.disabled = true;
-    placeholderState.textContent = 'Filtrer par région/état';
+    placeholderState.textContent = pkg.t ? pkg.t('Filtrer par région/état') : 'Filtrer par région/état';
     selState.appendChild(placeholderState);
 
     const fragS = document.createDocumentFragment();
@@ -2143,7 +2143,7 @@ function populateCountryStateSelects(tree){
         const placeholderStateChange = document.createElement('option');
         placeholderStateChange.value = '';
         placeholderStateChange.disabled = true;
-        placeholderStateChange.textContent = 'Filtrer par région/état';
+        placeholderStateChange.textContent = pkg.t ? pkg.t('Filtrer par région/état') : 'Filtrer par région/état';
         selState.appendChild(placeholderStateChange);
         
         const frag = document.createDocumentFragment();
