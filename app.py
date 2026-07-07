@@ -2,7 +2,7 @@ from flask import Flask
 from flask_babel import gettext as _
 
 from config import Config
-from extensions import babel, cors, db
+from extensions import babel, compress, cors, db
 from localization import get_locale
 from blueprints import register_blueprints
 
@@ -21,6 +21,9 @@ def create_app(config_object=None):
     cors.init_app(app)
     babel.init_app(app, locale_selector=get_locale)
     db.init_app(app)
+    # Compression HTTP (gzip/deflate/brotli) pour toutes les réponses — le
+    # GeoJSON (10+ Mo pour un gros compte) compresse à ~10–15 % de sa taille.
+    compress.init_app(app)
 
     register_blueprints(app)
 
