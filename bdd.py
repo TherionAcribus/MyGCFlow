@@ -9,6 +9,14 @@ from typing import Optional
 from geojson_cache import GeojsonIndexCache, build_metadata_from_features
 from task_manager import TaskStatus, task_manager
 
+# Namespaces GPX en notation Clark ({uri}) — utilisés par ET.iterparse qui
+# renvoie les tags sous cette forme, contrairement à ET.find avec dictionnaire ns.
+NS_GPX = '{http://www.topografix.com/GPX/1/0}'
+NS_GS = '{http://www.groundspeak.com/cache/1/0/1}'
+# Dictionnaire équivalent pour elem.find() qui attend des préfixes
+_NS_DICT = {'default': 'http://www.topografix.com/GPX/1/0',
+            'groundspeak': 'http://www.groundspeak.com/cache/1/0/1'}
+
 
 # Objet dédié pour gérer l'état du chargement
 class LoadingState:
@@ -114,30 +122,21 @@ def analyse(request):
 def checkFileNameAndDesc(request):
     """ Vérifie que le fichier envoyé est bien un GPX "My Finds" """
     try:
-        # Essayer de parser le fichier comme un XML
         gpxfile = request.files['file']
-        tree = ET.parse(gpxfile)
-        root = tree.getroot()
-        return validate_gpx_root(root)
+        name_text, desc_text, author_text = _read_gpx_header(gpxfile)
+        return validate_gpx_header(name_text, desc_text, author_text)
     except ET.ParseError:
         return {'success': False, 'message': 'Le fichier fourni n\'est pas un fichier GPX valide'}
 
 
-def validate_gpx_root(root):
-    """Valide qu'un élément racine GPX correspond à un fichier "My Finds" Groundspeak.
+def validate_gpx_header(name_text, desc_text, author_text):
+    """Valide qu'un en-tête GPX correspond à un fichier "My Finds" Groundspeak.
 
-    Source unique de vérité pour la validation, appelée par le pipeline d'import
-    (uploadBdd) pour rejeter les fichiers invalides avant de toucher à la base.
+    Source unique de vérité pour la validation. Travailler sur les textes
+    (et non sur un arbre XML) permet de l'appeler aussi bien depuis
+    checkFileNameAndDesc (flux request) que depuis uploadBdd (iterparse).
     """
-    # Trouver les éléments <name> et <desc> dans le fichier GPX
-    name = root.find('{http://www.topografix.com/GPX/1/0}name')
-    desc = root.find('{http://www.topografix.com/GPX/1/0}desc')
-    author = root.find('{http://www.topografix.com/GPX/1/0}author')
-
     # Vérifier la provenance Groundspeak (champ desc ou author)
-    desc_text = desc.text if desc is not None else ''
-    author_text = author.text if author is not None else ''
-
     is_ground_speak = (
         (desc_text is not None and 'Groundspeak' in desc_text)
         or (author_text is not None and 'Groundspeak' in author_text)
@@ -147,10 +146,39 @@ def validate_gpx_root(root):
         return {'success': False, 'message': 'Le fichier GPX n\'est pas un fichier produit par Groundspeak.'}
 
     # Vérifier que le fichier est bien un "My Finds"
-    if name is None or not name.text or "My Finds Pocket Query" not in name.text:
+    if name_text is None or not name_text or "My Finds Pocket Query" not in name_text:
         return {'success': False, 'message': "Le fichier GPX est une Pocket Query et non un fichier My Finds."}
 
     return {'success': True, 'message': 'Fichier reçu avec succès'}
+
+
+def _read_gpx_header(source):
+    """Lit l'en-tête d'un GPX (<name>, <desc>, <author>) via ET.iterparse.
+
+    S'arrête au premier <wpt> — ces éléments d'en-tête précèdent toujours les
+    waypoints dans un GPX valide. Évite de charger tout le fichier en mémoire
+    (ET.parse) juste pour valider l'en-tête.
+
+    Args:
+        source: chemin de fichier ou objet fichier (comme request.files['file']).
+
+    Returns:
+        (name_text, desc_text, author_text) — textes des éléments, ou None.
+    """
+    name_text = desc_text = author_text = None
+    for event, elem in ET.iterparse(source, events=('end',)):
+        if elem.tag == NS_GPX + 'name':
+            name_text = elem.text
+        elif elem.tag == NS_GPX + 'desc':
+            desc_text = elem.text
+        elif elem.tag == NS_GPX + 'author':
+            author_text = elem.text
+        elif elem.tag == NS_GPX + 'wpt':
+            # Premier waypoint : l'en-tête est complet, on s'arrête ici.
+            elem.clear()
+            break
+        elem.clear()
+    return name_text, desc_text, author_text
 
 
 def uploadBdd(file_path, Geocache, db, status: Optional[TaskStatus] = None):
@@ -167,31 +195,58 @@ def uploadBdd(file_path, Geocache, db, status: Optional[TaskStatus] = None):
     except Exception as e:
         print(f"[MIGRATION] Warning while ensuring schema: {e}")
 
-    # --- Étape 1 : parser le GPX et construire tous les objets en mémoire ---
-    # On parse et construit les Geocache AVANT de toucher à la base existante,
-    # afin qu'un échec de parsing (fichier corrompu, crash) ne vide pas la BDD
-    # de l'utilisateur. Le remplacement n'a lieu qu'une fois le parsing réussi.
+    # --- Étape 1 : valider l'en-tête, compter les waypoints, puis construire
+    # les objets en mémoire ---
+    # On utilise ET.iterparse (streaming) au lieu de ET.parse (charge tout le
+    # fichier en mémoire). Deux passes sur le fichier :
+    #   Pass 1 : valide l'en-tête (<name>/<desc>/<author> avant le 1er <wpt>)
+    #            et compte les waypoints pour la barre de progression.
+    #   Pass 2 : traite chaque <wpt> en libérant la mémoire (elem.clear()).
+    # Les objets Geocache sont construits AVANT de toucher à la base, afin qu'un
+    # échec de parsing ne vide pas la BDD de l'utilisateur.
     try:
-        with open(file_path, 'rb') as gpxfile:
-            tree = ET.parse(gpxfile)
-        root = tree.getroot()
+        ns = _NS_DICT
+        wpt_tag = NS_GPX + 'wpt'
 
-        # Validation côté serveur : le client appelle /upload directement (sans
-        # pré-validation via /analyse_file). Un fichier invalide est rejeté ici,
-        # avant de toucher à la base. L'erreur remonte via status.fail() côté
-        # task_manager et est affichée au frontend via checkLoadingProgress.
-        check = validate_gpx_root(root)
-        if not check.get('success'):
-            raise ValueError(check.get('message', 'Fichier GPX invalide'))
+        # --- Pass 1 : validation + comptage ---
+        header = {}
+        validated = False
+        total_waypoints = 0
+        for event, elem in ET.iterparse(file_path, events=('end',)):
+            if elem.tag == NS_GPX + 'name':
+                header['name'] = elem.text
+            elif elem.tag == NS_GPX + 'desc':
+                header['desc'] = elem.text
+            elif elem.tag == NS_GPX + 'author':
+                header['author'] = elem.text
+            elif elem.tag == wpt_tag:
+                # Premier waypoint : l'en-tête est complet, on valide maintenant.
+                if not validated:
+                    check = validate_gpx_header(
+                        header.get('name'), header.get('desc'), header.get('author')
+                    )
+                    if not check.get('success'):
+                        raise ValueError(check.get('message', 'Fichier GPX invalide'))
+                    validated = True
+                total_waypoints += 1
+            elem.clear()
 
-        ns = {'default': 'http://www.topografix.com/GPX/1/0',
-            'groundspeak': 'http://www.groundspeak.com/cache/1/0/1'}
+        if not validated:
+            # Aucun <wpt> trouvé — l'en-tête n'a jamais pu être validé.
+            raise ValueError('Aucun waypoint trouvé dans le fichier GPX')
 
-        total_waypoints = len(root.findall('default:wpt', ns))
         print(f"[UPLOAD] GPX waypoints detected: {total_waypoints}")
 
+        # --- Pass 2 : traitement des waypoints ---
         new_caches = []
-        for index, waypoint in enumerate(root.findall('default:wpt', ns)):
+        wpt_index = 0
+        for event, waypoint in ET.iterparse(file_path, events=('end',)):
+            if waypoint.tag != wpt_tag:
+                waypoint.clear()
+                continue
+
+            wpt_index += 1
+
             # Coordonnées
             lat = waypoint.attrib.get('lat')
             lon = waypoint.attrib.get('lon')
@@ -215,8 +270,8 @@ def uploadBdd(file_path, Geocache, db, status: Optional[TaskStatus] = None):
             cache_name = (urlname_text if urlname_text is not None else gs_name)
 
             # Logs debug pour les 50 premiers (et ensuite tous les 200)
-            if index < 50 or (index % 200 == 0):
-                print(f"[UPLOAD][{index+1}/{total_waypoints}] code={gc_code} lat={lat} lon={lon} time_raw={time_text} parsed_published={parsed_pd}")
+            if wpt_index <= 50 or (wpt_index % 200 == 0):
+                print(f"[UPLOAD][{wpt_index}/{total_waypoints}] code={gc_code} lat={lat} lon={lon} time_raw={time_text} parsed_published={parsed_pd}")
 
             # Champs par défaut
             cache_type = None
@@ -345,13 +400,18 @@ def uploadBdd(file_path, Geocache, db, status: Optional[TaskStatus] = None):
 
             # Mise à jour de la progression tous les 100 points (sans commit :
             # les objets sont accumulés en mémoire, la BDD n'est pas encore touchée)
-            if (index + 1) % 100 == 0:
-                progress_value = ((index + 1) / max(total_waypoints, 1)) * 100
+            count = len(new_caches)
+            if count % 100 == 0:
+                progress_value = (count / max(total_waypoints, 1)) * 100
                 _update_progress(
                     status,
                     progress_value,
-                    f'Ajout du point {index + 1} sur {total_waypoints} à la base de données'
+                    f'Ajout du point {count} sur {total_waypoints} à la base de données'
                 )
+
+            # Libérer la mémoire de l'élément traité (avantage clé d'iterparse
+            # vs ET.parse : le DOM du waypoint est libéré au fur et à mesure).
+            waypoint.clear()
 
     except Exception as exc:
         # Parsing/processing échoué : la base existante est intacte, aucun
