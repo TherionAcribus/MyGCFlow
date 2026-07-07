@@ -160,184 +160,199 @@ def uploadBdd(file_path, Geocache, db, status: Optional[TaskStatus] = None):
     except Exception as e:
         print(f"[MIGRATION] Warning while ensuring schema: {e}")
 
-    # Videz la table si elle contient déjà des données
-    db.session.query(Geocache).delete()
-    db.session.commit()
+    # --- Étape 1 : parser le GPX et construire tous les objets en mémoire ---
+    # On parse et construit les Geocache AVANT de toucher à la base existante,
+    # afin qu'un échec de parsing (fichier corrompu, crash) ne vide pas la BDD
+    # de l'utilisateur. Le remplacement n'a lieu qu'une fois le parsing réussi.
+    try:
+        with open(file_path, 'rb') as gpxfile:
+            tree = ET.parse(gpxfile)
+        root = tree.getroot()
 
-    with open(file_path, 'rb') as gpxfile:
-        tree = ET.parse(gpxfile)
-    root = tree.getroot()
+        ns = {'default': 'http://www.topografix.com/GPX/1/0',
+            'groundspeak': 'http://www.groundspeak.com/cache/1/0/1'}
 
-    ns = {'default': 'http://www.topografix.com/GPX/1/0',
-        'groundspeak': 'http://www.groundspeak.com/cache/1/0/1'}
+        total_waypoints = len(root.findall('default:wpt', ns))
+        print(f"[UPLOAD] GPX waypoints detected: {total_waypoints}")
 
-    total_waypoints = len(root.findall('default:wpt', ns))
-    print(f"[UPLOAD] GPX waypoints detected: {total_waypoints}")
+        new_caches = []
+        for index, waypoint in enumerate(root.findall('default:wpt', ns)):
+            # Coordonnées
+            lat = waypoint.attrib.get('lat')
+            lon = waypoint.attrib.get('lon')
 
-    for index, waypoint in enumerate(root.findall('default:wpt', ns)):
-        # Coordonnées
-        lat = waypoint.attrib.get('lat')
-        lon = waypoint.attrib.get('lon')
+            # Date de publication (du waypoint)
+            published_date = None
+            # Extraire time (<time>) quelle que soit la namespace
+            time_text = get_child_text_anyns(waypoint, 'time')
+            if time_text:
+                parsed_pd = parse_gpx_time(time_text)
+                published_date = parsed_pd
+            else:
+                parsed_pd = None
 
-        # Date de publication (du waypoint)
-        published_date = None
-        # Extraire time (<time>) quelle que soit la namespace
-        time_text = get_child_text_anyns(waypoint, 'time')
-        if time_text:
-            parsed_pd = parse_gpx_time(time_text)
-            published_date = parsed_pd
-        else:
-            parsed_pd = None
+            # Codes/noms
+            # Extraire name (<name>) et urlname (<urlname>) robustement
+            gc_code = get_child_text_anyns(waypoint, 'name')
+            urlname_text = get_child_text_anyns(waypoint, 'urlname')
+            cache_data = waypoint.find('groundspeak:cache', ns)
+            gs_name = cache_data.find('groundspeak:name', ns).text if (cache_data is not None and cache_data.find('groundspeak:name', ns) is not None) else None
+            cache_name = (urlname_text if urlname_text is not None else gs_name)
 
-        # Codes/noms
-        # Extraire name (<name>) et urlname (<urlname>) robustement
-        gc_code = get_child_text_anyns(waypoint, 'name')
-        urlname_text = get_child_text_anyns(waypoint, 'urlname')
-        cache_data = waypoint.find('groundspeak:cache', ns)
-        gs_name = cache_data.find('groundspeak:name', ns).text if (cache_data is not None and cache_data.find('groundspeak:name', ns) is not None) else None
-        cache_name = (urlname_text if urlname_text is not None else gs_name)
+            # Logs debug pour les 50 premiers (et ensuite tous les 200)
+            if index < 50 or (index % 200 == 0):
+                print(f"[UPLOAD][{index+1}/{total_waypoints}] code={gc_code} lat={lat} lon={lon} time_raw={time_text} parsed_published={parsed_pd}")
 
-        # Logs debug pour les 50 premiers (et ensuite tous les 200)
-        if index < 50 or (index % 200 == 0):
-            print(f"[UPLOAD][{index+1}/{total_waypoints}] code={gc_code} lat={lat} lon={lon} time_raw={time_text} parsed_published={parsed_pd}")
+            # Champs par défaut
+            cache_type = None
+            container = None
+            terrain = None
+            difficulty = None
+            owner = None
+            placed_by = None
+            country = None
+            state = None
+            attributes = []
+            found = False
+            date_find = None
+            time_find = None
 
-        # Champs par défaut
-        cache_type = None
-        container = None
-        terrain = None
-        difficulty = None
-        owner = None
-        placed_by = None
-        country = None
-        state = None
-        attributes = []
-        found = False
-        date_find = None
-        time_find = None
-
-        if cache_data is not None:
-            # Champs primitifs
-            ct = cache_data.find('groundspeak:type', ns)
-            if ct is not None and ct.text:
-                cache_type = ct.text
-            co = cache_data.find('groundspeak:container', ns)
-            if co is not None and co.text:
-                container = co.text
-            te = cache_data.find('groundspeak:terrain', ns)
-            if te is not None and te.text:
-                try:
-                    terrain = float(te.text)
-                except Exception:
-                    terrain = None
-            di = cache_data.find('groundspeak:difficulty', ns)
-            if di is not None and di.text:
-                try:
-                    difficulty = float(di.text)
-                except Exception:
-                    difficulty = None
-            ow = cache_data.find('groundspeak:owner', ns)
-            if ow is not None and ow.text:
-                owner = ow.text
-            pb = cache_data.find('groundspeak:placed_by', ns)
-            if pb is not None and pb.text:
-                placed_by = pb.text
-            co_ = cache_data.find('groundspeak:country', ns)
-            if co_ is not None and co_.text:
-                country = co_.text
-            st_ = cache_data.find('groundspeak:state', ns)
-            if st_ is not None and st_.text:
-                state = st_.text
-
-            # Attributs (peut être vide)
-            attrs = cache_data.find('groundspeak:attributes', ns)
-            if attrs is not None:
-                for a in attrs.findall('groundspeak:attribute', ns):
+            if cache_data is not None:
+                # Champs primitifs
+                ct = cache_data.find('groundspeak:type', ns)
+                if ct is not None and ct.text:
+                    cache_type = ct.text
+                co = cache_data.find('groundspeak:container', ns)
+                if co is not None and co.text:
+                    container = co.text
+                te = cache_data.find('groundspeak:terrain', ns)
+                if te is not None and te.text:
                     try:
-                        attr_id = a.attrib.get('id')
-                        inc = a.attrib.get('inc')
-                        name_attr = a.text or ''
-                        attributes.append({'id': attr_id, 'name': name_attr, 'inc': inc})
+                        terrain = float(te.text)
                     except Exception:
-                        continue
+                        terrain = None
+                di = cache_data.find('groundspeak:difficulty', ns)
+                if di is not None and di.text:
+                    try:
+                        difficulty = float(di.text)
+                    except Exception:
+                        difficulty = None
+                ow = cache_data.find('groundspeak:owner', ns)
+                if ow is not None and ow.text:
+                    owner = ow.text
+                pb = cache_data.find('groundspeak:placed_by', ns)
+                if pb is not None and pb.text:
+                    placed_by = pb.text
+                co_ = cache_data.find('groundspeak:country', ns)
+                if co_ is not None and co_.text:
+                    country = co_.text
+                st_ = cache_data.find('groundspeak:state', ns)
+                if st_ is not None and st_.text:
+                    state = st_.text
 
-            # Logs -> déterminer l'état trouvé et la datetime de référence
-            logs = cache_data.find('groundspeak:logs', ns)
-            if logs is not None:
-                # Types d'événements qui utilisent "Attended" au lieu de "Found it"
-                event_types = {
-                    'Event Cache',
-                    'Mega-Event Cache',
-                    'Giga-Event Cache',
-                    'Cache In Trash Out Event',
-                    'Geocaching HQ Block Party',
-                    'GPS Adventures Exhibit',
-                    'Community Celebration Event'
-                }
+                # Attributs (peut être vide)
+                attrs = cache_data.find('groundspeak:attributes', ns)
+                if attrs is not None:
+                    for a in attrs.findall('groundspeak:attribute', ns):
+                        try:
+                            attr_id = a.attrib.get('id')
+                            inc = a.attrib.get('inc')
+                            name_attr = a.text or ''
+                            attributes.append({'id': attr_id, 'name': name_attr, 'inc': inc})
+                        except Exception:
+                            continue
 
-                # Types spéciaux avec leurs types de logs spécifiques
-                special_cache_types = {
-                    'Webcam Cache': 'Webcam Photo Taken'
-                }
+                # Logs -> déterminer l'état trouvé et la datetime de référence
+                logs = cache_data.find('groundspeak:logs', ns)
+                if logs is not None:
+                    # Types d'événements qui utilisent "Attended" au lieu de "Found it"
+                    event_types = {
+                        'Event Cache',
+                        'Mega-Event Cache',
+                        'Giga-Event Cache',
+                        'Cache In Trash Out Event',
+                        'Geocaching HQ Block Party',
+                        'GPS Adventures Exhibit',
+                        'Community Celebration Event'
+                    }
 
-                # Prendre la dernière entrée "Found it", "Attended" (pour les événements) ou type spécial comme référence
-                last_found_dt = None
-                for log_entry in logs.findall('groundspeak:log', ns):
-                    type_el = log_entry.find('groundspeak:type', ns)
-                    date_el = log_entry.find('groundspeak:date', ns)
-                    if type_el is not None and date_el is not None and date_el.text:
-                        log_type = type_el.text
-                        # Pour les événements, considérer "Attended" comme équivalent à "Found it"
-                        # Pour les caches spéciaux, considérer leur type de log spécifique
-                        is_valid_log = (
-                            log_type == 'Found it' or
-                            (cache_type in event_types and log_type == 'Attended') or
-                            (cache_type in special_cache_types and log_type == special_cache_types[cache_type])
-                        )
-                        if is_valid_log:
-                            try:
-                                dt = datetime.strptime(date_el.text, '%Y-%m-%dT%H:%M:%SZ')
-                                if (last_found_dt is None) or (dt > last_found_dt):
-                                    last_found_dt = dt
-                            except Exception:
-                                continue
-                if last_found_dt is not None:
-                    found = True
-                    date_find = last_found_dt
-                    time_find = last_found_dt.strftime('%H:%M:%S')
+                    # Types spéciaux avec leurs types de logs spécifiques
+                    special_cache_types = {
+                        'Webcam Cache': 'Webcam Photo Taken'
+                    }
 
-        new_geocache = Geocache(
-            latitude=lat,
-            longitude=lon,
-            gc_code=gc_code,
-            cache_name=cache_name,
-            date_find=date_find,
-            time_find=time_find,
-            found=found,
-            published_date=published_date,
-            cache_type=cache_type,
-            terrain=terrain,
-            difficulty=difficulty,
-            container=container,
-            owner=owner,
-            placed_by=placed_by,
-            country=country,
-            state=state,
-            attributes=json.dumps(attributes) if attributes else None
-        )
-        db.session.add(new_geocache)
+                    # Prendre la dernière entrée "Found it", "Attended" (pour les événements) ou type spécial comme référence
+                    last_found_dt = None
+                    for log_entry in logs.findall('groundspeak:log', ns):
+                        type_el = log_entry.find('groundspeak:type', ns)
+                        date_el = log_entry.find('groundspeak:date', ns)
+                        if type_el is not None and date_el is not None and date_el.text:
+                            log_type = type_el.text
+                            # Pour les événements, considérer "Attended" comme équivalent à "Found it"
+                            # Pour les caches spéciaux, considérer leur type de log spécifique
+                            is_valid_log = (
+                                log_type == 'Found it' or
+                                (cache_type in event_types and log_type == 'Attended') or
+                                (cache_type in special_cache_types and log_type == special_cache_types[cache_type])
+                            )
+                            if is_valid_log:
+                                try:
+                                    dt = datetime.strptime(date_el.text, '%Y-%m-%dT%H:%M:%SZ')
+                                    if (last_found_dt is None) or (dt > last_found_dt):
+                                        last_found_dt = dt
+                                except Exception:
+                                    continue
+                    if last_found_dt is not None:
+                        found = True
+                        date_find = last_found_dt
+                        time_find = last_found_dt.strftime('%H:%M:%S')
 
-        # Commit tous les 100 points
-        if (index + 1) % 100 == 0:
-            db.session.commit()
-            progress_value = ((index + 1) / max(total_waypoints, 1)) * 100
-            _update_progress(
-                status,
-                progress_value,
-                f'Ajout du point {index + 1} sur {total_waypoints} à la base de données'
+            new_geocache = Geocache(
+                latitude=lat,
+                longitude=lon,
+                gc_code=gc_code,
+                cache_name=cache_name,
+                date_find=date_find,
+                time_find=time_find,
+                found=found,
+                published_date=published_date,
+                cache_type=cache_type,
+                terrain=terrain,
+                difficulty=difficulty,
+                container=container,
+                owner=owner,
+                placed_by=placed_by,
+                country=country,
+                state=state,
+                attributes=json.dumps(attributes) if attributes else None
             )
+            new_caches.append(new_geocache)
 
-    # Pour s'assurer que les derniers points sont également enregistrés
+            # Mise à jour de la progression tous les 100 points (sans commit :
+            # les objets sont accumulés en mémoire, la BDD n'est pas encore touchée)
+            if (index + 1) % 100 == 0:
+                progress_value = ((index + 1) / max(total_waypoints, 1)) * 100
+                _update_progress(
+                    status,
+                    progress_value,
+                    f'Ajout du point {index + 1} sur {total_waypoints} à la base de données'
+                )
+
+    except Exception as exc:
+        # Parsing/processing échoué : la base existante est intacte, aucun
+        # DELETE ni INSERT n'a été émis. On rollback par sécurité et on propage.
+        db.session.rollback()
+        print(f"[UPLOAD] Parsing/processing failed, DB left untouched: {exc}")
+        raise
+
+    # --- Étape 2 : remplacer le contenu en une seule transaction ---
+    # Le DELETE et tous les INSERTs sont commités atomiquement. Si le commit
+    # échoue, l'ancienne base est préservée (rollback automatique de SQLAlchemy).
+    _update_progress(status, 99, "Enregistrement en base de données...")
+    db.session.query(Geocache).delete()
+    db.session.add_all(new_caches)
     db.session.commit()
+
     try:
         non_null_pd = db.session.query(Geocache).filter(Geocache.published_date != None).count()
         total_rows = db.session.query(Geocache).count()
