@@ -2,12 +2,28 @@
 
 <html>
     <head>
+        <!-- Tabler 1.4.0 (inclut Bootstrap 5) — chargé AVANT Materialize
+             pour permettre la coexistence pendant la migration template par template.
+             Les templates migrés utilisent les classes Tabler/Bootstrap ;
+             les templates non migrés conservent Materialize. -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.4.0/dist/css/tabler.min.css">
+        <!-- Tabler Icons (webfont) — remplace progressivement Material Icons -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.34.1/dist/tabler-icons.min.css">
+        <!-- Tom Select 2.x — multi-selects avec checkboxes/recherche/tags -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/css/tom-select.bootstrap5.css">
+        <!-- Tempus Dominus 6.x — datepickers Bootstrap 5 natif -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@eonasdan/tempus-dominus@6.10.4/dist/css/tempus-dominus.min.css">
+
+        <!-- CSS custom GCMap (avant Materialize pour override) -->
         <link rel="stylesheet" href="../static/css/style.css" />
         <link rel="stylesheet" href="../static/css/titre.css" />
         <link rel="stylesheet" href="../static/css/infos.css" />
-        <link rel="stylesheet" href="../static/css/materialize.min.css">
+
+        <!-- CSS custom GCMap -->
         <link rel="stylesheet" href="../static/css/ui_improvements.css" />
         <link rel="stylesheet" href="../static/css/theme.css" />
+        <link rel="stylesheet" href="../static/css/tabler_theme.css" />
+
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v10.6.0/ol.css">
         <!--<link rel="stylesheet" href="../static/css/ol.css">-->
 
@@ -30,20 +46,20 @@
                     <!-- Barre de contrôle latérale -->
                     <div id="controlBar" class="control-bar" style="display: none;">
                         <div class="control-bar-content">
-                            <button id="btnStartBar" class="btn waves-effect waves-light" style="display: none;">
-                                <i class="material-icons">play_arrow</i>
+                            <button id="btnStartBar" class="btn btn-icon" style="display: none;">
+                                <i class="ti ti-player-play"></i>
                             </button>
-                            <button id="btnRecordBar" class="btn waves-effect waves-light" style="display: none;">
-                                <i class="material-icons">videocam</i>
+                            <button id="btnRecordBar" class="btn btn-icon" style="display: none;">
+                                <i class="ti ti-video"></i>
                             </button>
-                            <button id="btnPauseBar" class="btn waves-effect waves-light" style="display: none;">
-                                <i class="material-icons">pause</i>
+                            <button id="btnPauseBar" class="btn btn-icon" style="display: none;">
+                                <i class="ti ti-player-pause"></i>
                             </button>
-                            <button id="btnStopBar" class="btn waves-effect waves-light" style="display: none;">
-                                <i class="material-icons">stop</i>
+                            <button id="btnStopBar" class="btn btn-icon" style="display: none;">
+                                <i class="ti ti-player-stop"></i>
                             </button>
-                            <button id="btnToggleFullscreen" class="btn waves-effect waves-light">
-                                <i class="material-icons">fullscreen_exit</i>
+                            <button id="btnToggleFullscreen" class="btn btn-icon">
+                                <i class="ti ti-minimize"></i>
                             </button>
                         </div>
                     </div>
@@ -53,30 +69,32 @@
 
                 <div id="tabsPanel">
 
-            <!-- Tabs -->
+            <!-- Tabs (Bootstrap 5) -->
             <div class="row">
-                <div class="col s12">
-                    <ul class="tabs">
-                        <li class="tab col s3"><a class="active" href="#data">{{ _("Données") }}<span id="dataTabBadge" class="data-tab-badge" style="display:none;"></span></a></li>
-                        <li class="tab col s3"><a href="#style">{{ _("Style") }}</a></li>
-                        <li class="tab col s3"><a href="#animation">{{ _("Animation") }}</a></li>
-                        <li class="tab col s3"><a href="#settings">{{ _("Paramètres") }}</a></li>
+                <div class="col-12">
+                    <ul class="nav nav-tabs mb-3" id="mainTabs" role="tablist">
+                        <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#data" role="tab" aria-selected="true">{{ _("Données") }}<span id="dataTabBadge" class="data-tab-badge" style="display:none;"></span></a></li>
+                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#style" role="tab" aria-selected="false">{{ _("Style") }}</a></li>
+                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#animation" role="tab" aria-selected="false">{{ _("Animation") }}</a></li>
+                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#settings" role="tab" aria-selected="false">{{ _("Paramètres") }}</a></li>
                     </ul>
-                </div>        
-                
-                <!-- Onglet Données -->
-                {% include 'menu_data.html' %}
 
-                <!-- Onglet Style -->
-                {% include 'menu_style.html' %}
+                    <div class="tab-content">
+                        <!-- Onglet Données -->
+                        {% include 'menu_data.html' %}
 
-                <!-- Onglet Animation -->
-                {% include 'menu_animation.html' %}
+                        <!-- Onglet Style -->
+                        {% include 'menu_style.html' %}
 
-                <!-- Onglet Paramètres -->
-                {% include 'menu_options.html' %}
+                        <!-- Onglet Animation -->
+                        {% include 'menu_animation.html' %}
 
-            </div>       
+                        <!-- Onglet Paramètres -->
+                        {% include 'menu_options.html' %}
+                    </div>
+                </div>
+
+            </div>
 
                 </div>
 
@@ -97,11 +115,17 @@
         <!-- HTMX   -->
         <script src="https://unpkg.com/htmx.org"></script>
 
-        <!-- Compiled and minified JavaScript -->
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+        <!-- Tabler JS (inclut Bootstrap 5 bundle — ne pas charger un second bundle Bootstrap) -->
+        <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.4.0/dist/js/tabler.min.js"></script>
 
-        <!-- COlorpicker -->
-        <script type="module" src="../static/js/materialize-colorpicker.min.js"></script>
+        <!-- Tom Select 2.x (multi-selects) -->
+        <script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/js/tom-select.complete.min.js"></script>
+
+        <!-- Popper.js (requis par Tempus Dominus — doit être chargé avant) -->
+        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+
+        <!-- Tempus Dominus 6.x (datepickers) -->
+        <script src="https://cdn.jsdelivr.net/npm/@eonasdan/tempus-dominus@6.10.4/dist/js/tempus-dominus.min.js"></script>
 
         <!-- OpenLayers -->
         <script src="https://cdn.jsdelivr.net/npm/ol@v10.6.0/dist/ol.js"></script>

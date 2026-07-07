@@ -1,221 +1,130 @@
 <!-- Graphisme des points avec UX améliorée -->
 
-<div id="points" class="col s12">
-    <div class="row">
-        <div class="col s12">
-            <h4 class="center-align">
-                {{ _("Graphisme des points") }}
-            </h4>
-        </div>
-    </div>
+<div id="points">
+    <h5 class="mb-3">
+        <i class="ti ti-dots-circle-2 text-muted me-1"></i>{{ _("Graphisme des points") }}
+    </h5>
 
     <!-- Section principale -->
-    <div class="row">
-
-        <!-- Configuration générale -->
-        <div class="col s12">
-            <div class="card">
-                <div class="card-content">
-                    <span class="card-title">
-                        {{ _("Configuration générale") }}
-                    </span>
-
-                    <div class="row">
-                        <!-- Mode d'affichage -->
-                        <div class="col s12">
-                            <div class="switch">
-                                <label>
-                                     Icône
-                                    <input id="switchIconeVectoriel" type="checkbox">
-                                    <span class="lever"></span>
-                                     Vectoriel
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="switchIconeVectoriel" role="switch" aria-checked="false">
+                <label class="form-check-label" for="switchIconeVectoriel">{{ _("Icône / Vectoriel") }}</label>
             </div>
         </div>
     </div>
 
     <!-- Sous-menu Vectoriel -->
     <div id="vectorielOptions" class="point-options">
-        <div class="row">
+        <div class="row g-3">
             <!-- Section Centre du point -->
-            <div class="col s12 m6">
-                <div class="card blue lighten-5">
-                    <div class="card-content">
-                        <span class="card-title blue-text">
-                            {{ _("Centre du point") }}
-                        </span>
-
+            <div class="col-12 col-md-6">
+                <div class="card card-accent card-accent-primary h-100">
+                    <div class="card-header">
+                        <h6 class="card-title m-0">
+                            <i class="ti ti-circle-filled text-primary me-1"></i>{{ _("Centre du point") }}
+                        </h6>
+                    </div>
+                    <div class="card-body">
                         <!-- Taille du centre -->
-                        <div class="row">
-                            <div class="col s12">
-                                <label>
-                                    {{ _("Taille du centre") }}
-                                </label>
+                        <label class="form-label" for="sliderSizePoint">{{ _("Taille du centre") }}</label>
+                        <div class="row g-2 align-items-center">
+                            <div class="col-7">
+                                <input type="range" class="form-range" id="sliderSizePoint" min="1" max="10" aria-label="{{ _('Taille du centre') }}">
                             </div>
-                            <div class="col s6">
-                                <p class="range-field">
-                                    <input type="range" id="sliderSizePoint" min="1" max="10" />
-                                </p>
-                            </div>
-                            <div class="col s6">
-                                <div class="input-field">
-                                    <input type="number" id="inputSizePoint" min="1" max="10" />
-                                    <label>pixels</label>
+                            <div class="col-5">
+                                <div class="input-group input-group-sm">
+                                    <input type="number" class="form-control" id="inputSizePoint" min="1" max="10" aria-label="{{ _('Taille en pixels') }}">
+                                    <span class="input-group-text">{{ _("px") }}</span>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Couleur du centre -->
-                        <div class="row">
-                            <div class="col s12">
-                                <label>
-                                    {{ _("Couleur du centre") }}
-                                </label>
-                            </div>
-
-                            <div class="col s12">
-                                <p>
-                                    <label>
-                                        <input class="with-gap" name="fillColorPoint" type="radio" value="gc"/>
-                                        <span>
-                                            {{ _("Couleurs GC (par type)") }}
-                                        </span>
-                                    </label>
-                                </p>
-                                <p>
-                                    <label>
-                                        <input class="with-gap" name="fillColorPoint" type="radio" value="none"/>
-                                        <span>
-                                            {{ _("Transparent") }}
-                                        </span>
-                                    </label>
-                                </p>
-                                <p>
-                                    <label>
-                                        <input class="with-gap" name="fillColorPoint" type="radio" value="fix" />
-                                        <span>
-                                            {{ _("Couleur unique") }}
-                                        </span>
-                                    </label>
-                                </p>
-                            </div>
-
-                            <!-- Color Picker Centre -->
-                            <div class="col s12">
-                                <div class="input-field">
-                                    <input type="color" id="pointCenterColor" value="#ffffff">
-                                    <label class="active" for="pointCenterColor">
-                                        {{ _("Choisir la couleur") }}
-                                    </label>
-                                </div>
-                            </div>
+                        <label class="form-label mt-3">{{ _("Couleur du centre") }}</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="fillColorPoint" id="fillColorPointGc" value="gc">
+                            <label class="form-check-label" for="fillColorPointGc">{{ _("Couleurs GC (par type)") }}</label>
                         </div>
-                </div>
-            </div>
-        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="fillColorPoint" id="fillColorPointNone" value="none">
+                            <label class="form-check-label" for="fillColorPointNone">{{ _("Transparent") }}</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="fillColorPoint" id="fillColorPointFix" value="fix">
+                            <label class="form-check-label" for="fillColorPointFix">{{ _("Couleur unique") }}</label>
+                        </div>
 
-        <!-- Section Forme du point -->
-        <div class="col s12 m6">
-            <div class="card green lighten-5">
-                <div class="card-content">
-                    <span class="card-title green-text">
-                        {{ _("Forme du point") }}
-                    </span>
-
-                    <!-- Choix de la forme -->
-                    <div class="row">
-                        <div class="col s12">
-                            <div class="input-field">
-                                <select id="selectShape">
-                                    <option value="circle">Cercle</option>
-                                    <option value="triangle">Triangle</option>
-                                </select>
-                                <label>
-                                    {{ _("Forme des points") }}
-                                </label>
-                            </div>
+                        <!-- Color Picker Centre -->
+                        <div class="mt-2">
+                            <label class="form-label" for="pointCenterColor">{{ _("Choisir la couleur") }}</label>
+                            <input type="color" class="form-control form-control-color" id="pointCenterColor" value="#ffffff" aria-label="{{ _('Choisir la couleur du centre') }}">
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Section Bordure du point -->
-            <div class="col s12 m6">
-                <div class="card orange lighten-5">
-                    <div class="card-content">
-                        <span class="card-title orange-text">
-                            {{ _("Bordure du point") }}
-                        </span>
+            <!-- Section Forme du point -->
+            <div class="col-12 col-md-6">
+                <div class="card card-accent card-accent-success h-100">
+                    <div class="card-header">
+                        <h6 class="card-title m-0">
+                            <i class="ti ti-shape text-success me-1"></i>{{ _("Forme du point") }}
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <label class="form-label" for="selectShape">{{ _("Forme des points") }}</label>
+                        <select id="selectShape" class="form-select" aria-label="{{ _('Forme des points') }}">
+                            <option value="circle">{{ _("Cercle") }}</option>
+                            <option value="triangle">{{ _("Triangle") }}</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
 
+            <!-- Section Bordure du point -->
+            <div class="col-12 col-md-6">
+                <div class="card card-accent card-accent-warning h-100">
+                    <div class="card-header">
+                        <h6 class="card-title m-0">
+                            <i class="ti ti-border-outer text-warning me-1"></i>{{ _("Bordure du point") }}
+                        </h6>
+                    </div>
+                    <div class="card-body">
                         <!-- Taille de la bordure -->
-                        <div class="row">
-                            <div class="col s12">
-                                <label>
-                                    {{ _("Épaisseur de la bordure (0 = aucune)") }}
-                                </label>
+                        <label class="form-label" for="sliderSizeBorder">{{ _("Épaisseur de la bordure (0 = aucune)") }}</label>
+                        <div class="row g-2 align-items-center">
+                            <div class="col-7">
+                                <input type="range" class="form-range" id="sliderSizeBorder" min="0" max="10" aria-label="{{ _('Épaisseur de la bordure') }}">
                             </div>
-                            <div class="col s6">
-                                <p class="range-field">
-                                    <input type="range" id="sliderSizeBorder" min="0" max="10" />
-                                </p>
-                            </div>
-                            <div class="col s6">
-                                <div class="input-field">
-                                    <input type="number" id="inputSizeBorder" min="0" max="10" />
-                                    <label>pixels</label>
+                            <div class="col-5">
+                                <div class="input-group input-group-sm">
+                                    <input type="number" class="form-control" id="inputSizeBorder" min="0" max="10" aria-label="{{ _('Épaisseur en pixels') }}">
+                                    <span class="input-group-text">{{ _("px") }}</span>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Couleur de la bordure -->
-                        <div class="row">
-                            <div class="col s12">
-                                <label>
-                                    {{ _("Couleur de la bordure") }}
-                                </label>
-                            </div>
+                        <label class="form-label mt-3">{{ _("Couleur de la bordure") }}</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="borderColorPoint" id="borderColorPointGc" value="gc">
+                            <label class="form-check-label" for="borderColorPointGc">{{ _("Couleurs GC (par type)") }}</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="borderColorPoint" id="borderColorPointNone" value="none">
+                            <label class="form-check-label" for="borderColorPointNone">{{ _("Transparent") }}</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="borderColorPoint" id="borderColorPointFix" value="fix">
+                            <label class="form-check-label" for="borderColorPointFix">{{ _("Couleur unique") }}</label>
+                        </div>
 
-                            <div class="col s12">
-                                <p>
-                                    <label>
-                                        <input class="with-gap" name="borderColorPoint" type="radio" value="gc"/>
-                                        <span>
-                                            {{ _("Couleurs GC (par type)") }}
-                                        </span>
-                                    </label>
-                                </p>
-                                <p>
-                                    <label>
-                                        <input class="with-gap" name="borderColorPoint" type="radio" value="none"/>
-                                        <span>
-                                            {{ _("Transparent") }}
-                                        </span>
-                                    </label>
-                                </p>
-                                <p>
-                                    <label>
-                                        <input class="with-gap" name="borderColorPoint" type="radio" value="fix" />
-                                        <span>
-                                            {{ _("Couleur unique") }}
-                                        </span>
-                                    </label>
-                                </p>
-                            </div>
-
-                            <!-- Color Picker Bordure -->
-                            <div class="col s12">
-                                <div class="input-field">
-                                    <input type="color" id="pointBorderColor" value="#000000">
-                                    <label class="active" for="pointBorderColor">
-                                        {{ _("Choisir la couleur") }}
-                                    </label>
-                                </div>
-                            </div>
+                        <!-- Color Picker Bordure -->
+                        <div class="mt-2">
+                            <label class="form-label" for="pointBorderColor">{{ _("Choisir la couleur") }}</label>
+                            <input type="color" class="form-control form-control-color" id="pointBorderColor" value="#000000" aria-label="{{ _('Choisir la couleur de la bordure') }}">
                         </div>
                     </div>
                 </div>
@@ -225,61 +134,38 @@
 
     <!-- Sous-menu Icône -->
     <div id="iconeOptions" class="point-options" style="display: none;">
-        <div class="row">
-            <div class="col s12">
-                <div class="card">
-                    <div class="card-content">
-                        <span class="card-title">
-                            {{ _("Configuration des icônes") }}
-                        </span>
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title m-0">
+                    <i class="ti ti-icons text-muted me-1"></i>{{ _("Configuration des icônes") }}
+                </h6>
+            </div>
+            <div class="card-body">
+                <!-- Choix du jeu d'icônes -->
+                <label class="form-label" for="selectIconSet">{{ _("Jeu d'icônes") }}</label>
+                <select id="selectIconSet" class="form-select mb-3" aria-label="{{ _("Jeu d'icônes") }}">
+                    <option value="geocaching">Geocaching</option>
+                    <option value="smiley">Smiley</option>
+                </select>
 
-                        <!-- Choix du jeu d'icônes -->
-                        <div class="row">
-                            <div class="col s12">
-                                <div class="input-field">
-                                    <select id="selectIconSet">
-                                        <option value="geocaching">Geocaching</option>
-                                        <option value="smiley">Smiley</option>
-                                    </select>
-                                    <label>
-                                        {{ _("Jeu d'icônes") }}
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Taille des icônes -->
-                        <div class="row">
-                            <div class="col s12">
-                                <label>
-                                    {{ _("Taille des icônes") }}
-                                </label>
-                            </div>
-                            <div class="col s6">
-                                <p class="range-field">
-                                    <input type="range" id="sliderSizeIcon" min="12" max="40" />
-                                </p>
-                            </div>
-                            <div class="col s6">
-                                <div class="input-field">
-                                    <input type="number" id="inputSizeIcon" min="12" max="40" />
-                                    <label>pixels</label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Aperçu des icônes disponibles -->
-                        <div class="row">
-                            <div class="col s12">
-                                <label>
-                                    {{ _("Aperçu des icônes") }}
-                                </label>
-                                <div id="iconPreview" class="icon-grid">
-                                    <!-- Les icônes seront générées dynamiquement ici -->
-                                </div>
-                            </div>
+                <!-- Taille des icônes -->
+                <label class="form-label" for="sliderSizeIcon">{{ _("Taille des icônes") }}</label>
+                <div class="row g-2 align-items-center">
+                    <div class="col-7">
+                        <input type="range" class="form-range" id="sliderSizeIcon" min="12" max="40" aria-label="{{ _('Taille des icônes') }}">
+                    </div>
+                    <div class="col-5">
+                        <div class="input-group input-group-sm">
+                            <input type="number" class="form-control" id="inputSizeIcon" min="12" max="40" aria-label="{{ _('Taille en pixels') }}">
+                            <span class="input-group-text">{{ _("px") }}</span>
                         </div>
                     </div>
+                </div>
+
+                <!-- Aperçu des icônes disponibles -->
+                <label class="form-label mt-3">{{ _("Aperçu des icônes") }}</label>
+                <div id="iconPreview" class="icon-grid" aria-live="polite">
+                    <!-- Les icônes seront générées dynamiquement ici -->
                 </div>
             </div>
         </div>

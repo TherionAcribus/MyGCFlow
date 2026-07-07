@@ -232,36 +232,41 @@ async function openUpdateDetailsModal(data) {
     // Créer l'ID unique pour la modal
     const modalId = 'update-details-modal-' + Date.now();
 
-    // Créer le contenu HTML de la modal Materialize
+    // Créer le contenu HTML de la modal Bootstrap 5
     const modalHTML = `
-        <div id="${modalId}" class="modal">
-            <div class="modal-content">
-                <div class="update-modal-content">
-                    <div class="update-header">
-                        <h4 class="center-align">${translations.modalTitle}</h4>
+        <div id="${modalId}" class="modal bs-modal" tabindex="-1">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title text-center w-100">${translations.modalTitle}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
+                    <div class="modal-body">
+                        <div class="update-modal-content">
+                            <div class="update-header">
+                            </div>
 
-                    <div class="update-versions">
-                        <div class="row">
-                            <div class="col s6 center-align">
-                                <div class="version-card current-version">
-                                    <h6>${translations.currentVersion}</h6>
-                                    <div class="version-number">${currentVersion}</div>
+                            <div class="update-versions">
+                                <div class="row">
+                                    <div class="col-6 text-center">
+                                        <div class="version-card current-version">
+                                            <h6>${translations.currentVersion}</h6>
+                                            <div class="version-number">${currentVersion}</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 text-center">
+                                        <div class="version-card latest-version">
+                                            <h6>${translations.latestVersion}</h6>
+                                            <div class="version-number">${data.latest_version.version}</div>
+                                            ${data.latest_version.date ? `<div class="version-date">${data.latest_version.date}</div>` : ''}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col s6 center-align">
-                                <div class="version-card latest-version">
-                                    <h6>${translations.latestVersion}</h6>
-                                    <div class="version-number">${data.latest_version.version}</div>
-                                    ${data.latest_version.date ? `<div class="version-date">${data.latest_version.date}</div>` : ''}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
-                    <div class="update-changelog">
-                        <h5>${translations.newFeatures}</h5>
-                        <div class="changelog-content">
+                            <div class="update-changelog">
+                                <h5>${translations.newFeatures}</h5>
+                                <div class="changelog-content">
     `;
 
     let fullModalHTML = modalHTML;
@@ -289,22 +294,24 @@ async function openUpdateDetailsModal(data) {
     }
 
     fullModalHTML += `
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <div class="update-actions center-align">
-                    ${data.latest_version.download_url ? `
-                        <a href="${data.latest_version.download_url}" target="_blank" class="waves-effect waves-light btn green">
-                            <i class="material-icons left">download</i>
-                            ${translations.downloadUpdate}
-                        </a>
-                    ` : ''}
-                    <button class="waves-effect waves-light btn-flat modal-close">
-                        <i class="material-icons left">close</i>
-                        ${translations.later}
-                    </button>
+                    <div class="modal-footer">
+                        <div class="update-actions text-center">
+                            ${data.latest_version.download_url ? `
+                                <a href="${data.latest_version.download_url}" target="_blank" class="btn btn-success">
+                                    <i class="ti ti-download me-1"></i>
+                                    ${translations.downloadUpdate}
+                                </a>
+                            ` : ''}
+                            <button class="btn btn-secondary modal-close" data-bs-dismiss="modal">
+                                <i class="ti ti-x me-1"></i>
+                                ${translations.later}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -424,15 +431,15 @@ async function openUpdateDetailsModal(data) {
                 min-width: 160px;
             }
 
-            .update-actions .btn-flat {
+            .update-actions .btn-secondary {
                 color: #666;
             }
 
-            .update-actions .btn-flat:hover {
+            .update-actions .btn-secondary:hover {
                 background-color: #f5f5f5 !important;
             }
 
-            /* Style pour la modal Materialize */
+            /* Style pour la modal Bootstrap 5 */
             #${modalId} .modal-content {
                 padding-bottom: 0;
             }
@@ -444,25 +451,23 @@ async function openUpdateDetailsModal(data) {
         </style>
     `;
 
-    console.log("Création de la modal Materialize avec ID:", modalId);
+    console.log("Création de la modal Bootstrap 5 avec ID:", modalId);
 
     // Ajouter la modal au DOM
     document.body.insertAdjacentHTML('beforeend', fullModalHTML);
 
-    // Initialiser et ouvrir la modal Materialize
+    // Initialiser et ouvrir la modal Bootstrap 5
     const modalElement = document.getElementById(modalId);
-    const modalInstance = M.Modal.init(modalElement, {
-        dismissible: true,
-        opacity: 0.5,
-        inDuration: 300,
-        outDuration: 200,
-        onCloseEnd: function() {
-            // Nettoyer la modal du DOM après fermeture
-            modalElement.remove();
-        }
+    const bsModal = new bootstrap.Modal(modalElement, {
+        backdrop: true,
+        keyboard: true
+    });
+    // Nettoyer la modal du DOM après fermeture
+    modalElement.addEventListener('hidden.bs.modal', function() {
+        modalElement.remove();
     });
 
     // Ouvrir la modal
-    modalInstance.open();
-    console.log("Modal Materialize ouverte avec succès");
+    bsModal.show();
+    console.log("Modal Bootstrap 5 ouverte avec succès");
 }

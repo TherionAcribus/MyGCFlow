@@ -131,7 +131,10 @@ def api_create_profile():
     data = request.get_json(silent=True) or {}
     name = data.get('name') or 'NewProfile'
     base = data.get('base')
-    prof = settings_manager.create_profile(name, base)
+    try:
+        prof = settings_manager.create_profile(name, base)
+    except ValueError as e:
+        return jsonify({'success': False, 'message': str(e)}), 409
     return jsonify({'success': True, 'name': prof.name})
 
 
@@ -140,7 +143,11 @@ def api_save_profile(name: str):
     data = request.get_json(silent=True) or {}
     print(f"SERVEUR - Sauvegarde profil '{name}': {data}")
     prof = settings_manager.load_profile(name)
-    prof.name = data.get('name', prof.name)
+
+    new_name = data.get('name', prof.name)
+    if new_name != prof.name and not settings_manager.is_name_available(new_name, exclude_uid=prof.uid):
+        return jsonify({'success': False, 'message': f"Un profil nommé '{new_name}' existe déjà"}), 409
+    prof.name = new_name
 
     if data.get('uid'):
         prof.uid = data.get('uid')
@@ -261,7 +268,10 @@ def api_save_profile(name: str):
 def api_duplicate_profile(name: str):
     data = request.get_json(silent=True) or {}
     new_name = data.get('new_name') or f"{name}_copy"
-    prof = settings_manager.duplicate_profile(name, new_name)
+    try:
+        prof = settings_manager.duplicate_profile(name, new_name)
+    except ValueError as e:
+        return jsonify({'success': False, 'message': str(e)}), 404
     return jsonify({'success': True, 'name': prof.name})
 
 

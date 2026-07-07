@@ -1,14 +1,18 @@
-<!-- Modal de chargement -->
-<div id="modal_loading" class="modal">
-    <div class="modal-content">
-        <h4 id="modalTitle"></h4>
-        <p id="modalDescription"></p>
-        <div class="progress">
-            <div id="progressBar" class="determinate" style="width: 0%"></div>
+<!-- Modal de chargement (Tabler/Bootstrap 5) -->
+<div id="modal_loading" class="modal bs-modal fade" tabindex="-1" aria-labelledby="modalTitle" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body">
+                <h5 class="modal-title mb-2" id="modalTitle"></h5>
+                <p id="modalDescription" class="text-muted"></p>
+                <div class="progress progress-sm mt-3">
+                    <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <div id="progressText" class="form-hint mt-2"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-link" data-bs-dismiss="modal">{{ _("Annuler") }}</button>
+            </div>
         </div>
-        <div id="progressText"></div>
-    </div>
-    <div class="modal-footer">
-    <a href="#!" class="modal-close waves-effect waves-green btn-flat">Annuler</a>
     </div>
 </div>

@@ -1,71 +1,70 @@
 <section id="filterPanel">
     <!-- Barre d'actions : reset global -->
-    <div class="row" style="margin-bottom: 4px;">
-        <div class="col s12 right-align">
-            <a id="btnResetAllFilters" class="btn-flat waves-effect red-text text-darken-1" style="font-size: 0.85rem;">
-                <i class="material-icons left" style="font-size: 1.1rem;">refresh</i>{{ _("Réinitialiser tous les filtres") }}
-            </a>
-        </div>
+    <div class="d-flex justify-content-end mb-2">
+        <button type="button" id="btnResetAllFilters" class="btn btn-sm btn-outline-danger">
+            <i class="ti ti-refresh me-1"></i>{{ _("Réinitialiser tous les filtres") }}
+        </button>
     </div>
 
     <!-- Ligne 1 : Type + Taille -->
-    <div class="row">
-    <div class="input-field col s6">
-        <select multiple id="selectType">
+    <div class="row g-2">
+    <div class="mb-3 col-6">
+        <label class="form-label" for="selectType">{{ _("Type de cache") }}</label>
+        <select multiple id="selectType" class="form-select" aria-label="{{ _('Type de cache') }}">
             <option value="" disabled selected>{{ _("Filtrer par type de cache") }}</option>
             <optgroup label="{{ _("Caches classiques") }}">
-                <option value="Traditional Cache" selected>Traditional Cache</option>
-                <option value="Unknown Cache" selected>Unknown Cache</option>
-                <option value="Wherigo Cache" selected>Wherigo Cache</option>
-                <option value="Letterbox Hybrid" selected>Letterbox Hybrid</option>
-                <option value="Earthcache" selected>Earthcache</option>
-                <option value="Virtual Cache" selected>Virtual Cache</option>
-                <option value="Webcam Cache" selected>Webcam Cache</option>
+                <option value="Traditional Cache" selected>{{ _("Traditional Cache") }}</option>
+                <option value="Unknown Cache" selected>{{ _("Unknown Cache") }}</option>
+                <option value="Wherigo Cache" selected>{{ _("Wherigo Cache") }}</option>
+                <option value="Letterbox Hybrid" selected>{{ _("Letterbox Hybrid") }}</option>
+                <option value="Earthcache" selected>{{ _("Earthcache") }}</option>
+                <option value="Virtual Cache" selected>{{ _("Virtual Cache") }}</option>
+                <option value="Webcam Cache" selected>{{ _("Webcam Cache") }}</option>
             </optgroup>
             <optgroup label="{{ _("Events") }}">
-                <option value="Event Cache" selected>Event Cache</option>
-                <option value="Giga-Event Cache" selected>Giga-Event Cache</option>
-                <option value="Mega-Event Cache" selected>Mega-Event Cache</option>
-                <option value="Cache In Trash Out Event" selected>Cache In Trash Out Event</option>
-                <option value="Community Celebration Event" selected>Community Celebration Event</option>
+                <option value="Event Cache" selected>{{ _("Event Cache") }}</option>
+                <option value="Giga-Event Cache" selected>{{ _("Giga-Event Cache") }}</option>
+                <option value="Mega-Event Cache" selected>{{ _("Mega-Event Cache") }}</option>
+                <option value="Cache In Trash Out Event" selected>{{ _("Cache In Trash Out Event") }}</option>
+                <option value="Community Celebration Event" selected>{{ _("Community Celebration Event") }}</option>
             </optgroup>
             <optgroup label="{{ _("Autres") }}">
-                <option value="GPS Adventures Exhibit" selected>GPS Adventures Exhibit</option>
-                <option value="Locationless (Reverse) Cache" selected>Locationless (Reverse) Cache</option>
+                <option value="GPS Adventures Exhibit" selected>{{ _("GPS Adventures Exhibit") }}</option>
+                <option value="Locationless (Reverse) Cache" selected>{{ _("Locationless (Reverse) Cache") }}</option>
             </optgroup>
-        </select>        
-        <label>{{ _("Type de cache") }}</label>
-        <div>
-            <a id="btnAllType" class="btn-flat waves-effect">{{ _("Tout") }}</a>
-            <a id="btnNoneType" class="btn-flat waves-effect">{{ _("Aucun") }}</a>
+        </select>
+        <div class="filter-actions mt-1">
+            <button type="button" id="btnAllType" class="btn btn-link btn-sm p-0 me-2"><i class="ti ti-checks me-1"></i>{{ _("Tout") }}</button>
+            <button type="button" id="btnNoneType" class="btn btn-link btn-sm p-0"><i class="ti ti-x me-1"></i>{{ _("Aucun") }}</button>
+            <span id="infoType" class="filter-info-badge"></span>
         </div>
-        <div id="infoType" class="filter-info"></div>
     </div>
 
-    <div class="input-field col s6">
-        <select multiple id="selectContainer">
+    <div class="mb-3 col-6">
+        <label class="form-label" for="selectContainer">{{ _("Taille") }}</label>
+        <select multiple id="selectContainer" class="form-select" aria-label="{{ _('Taille') }}">
             <option value="" disabled selected>{{ _("Filtrer par taille") }}</option>
-            <option value="Small" selected>Small</option>
-            <option value="Micro" selected>Micro</option>
-            <option value="Regular" selected>Regular</option>
-            <option value="Large" selected>Large</option>
-            <option value="Other" selected>Other</option>
-            <option value="Virtual" selected>Virtual</option>
+            <option value="Small" selected>{{ _("Small") }}</option>
+            <option value="Micro" selected>{{ _("Micro") }}</option>
+            <option value="Regular" selected>{{ _("Regular") }}</option>
+            <option value="Large" selected>{{ _("Large") }}</option>
+            <option value="Other" selected>{{ _("Other") }}</option>
+            <option value="Virtual" selected>{{ _("Virtual") }}</option>
         </select>
-        <label>{{ _("Taille") }}</label>
-        <div>
-            <a id="btnAllContainer" class="btn-flat waves-effect">{{ _("Tout") }}</a>
-            <a id="btnNoneContainer" class="btn-flat waves-effect">{{ _("Aucun") }}</a>
+        <div class="filter-actions mt-1">
+            <button type="button" id="btnAllContainer" class="btn btn-link btn-sm p-0 me-2"><i class="ti ti-checks me-1"></i>{{ _("Tout") }}</button>
+            <button type="button" id="btnNoneContainer" class="btn btn-link btn-sm p-0"><i class="ti ti-x me-1"></i>{{ _("Aucun") }}</button>
+            <span id="infoContainer" class="filter-info-badge"></span>
         </div>
-        <div id="infoContainer" class="filter-info"></div>
     </div>
     </div>
 
 
     <!-- Ligne 2 : Difficultés + Terrain -->
-    <div class="row">
-    <div class="input-field col s6">
-        <select multiple id="selectDifficulty">
+    <div class="row g-2">
+    <div class="mb-3 col-6">
+        <label class="form-label" for="selectDifficulty">{{ _("Difficultés") }}</label>
+        <select multiple id="selectDifficulty" class="form-select" aria-label="{{ _('Difficultés') }}">
             <option value="" disabled selected>{{ _("Filtrer par difficulté") }}</option>
             <option value="1" selected>1</option>
             <option value="1.5" selected>1.5</option>
@@ -77,17 +76,17 @@
             <option value="4.5" selected>4.5</option>
             <option value="5" selected>5</option>
         </select>
-        <label>{{ _("Difficultés") }}</label>
-        <div>
-            <a id="btnAllDifficulty" class="btn-flat waves-effect">{{ _("Tout") }}</a>
-            <a id="btnNoneDifficulty" class="btn-flat waves-effect">{{ _("Aucun") }}</a>
+        <div class="filter-actions mt-1">
+            <button type="button" id="btnAllDifficulty" class="btn btn-link btn-sm p-0 me-2"><i class="ti ti-checks me-1"></i>{{ _("Tout") }}</button>
+            <button type="button" id="btnNoneDifficulty" class="btn btn-link btn-sm p-0"><i class="ti ti-x me-1"></i>{{ _("Aucun") }}</button>
+            <span id="infoDifficulty" class="filter-info-badge"></span>
         </div>
-        <div id="infoDifficulty" class="filter-info"></div>
     </div>
 
 
-    <div class="input-field col s6">
-        <select multiple id="selectTerrain">
+    <div class="mb-3 col-6">
+        <label class="form-label" for="selectTerrain">{{ _("Terrain") }}</label>
+        <select multiple id="selectTerrain" class="form-select" aria-label="{{ _('Terrain') }}">
             <option value="" disabled selected>{{ _("Filtrer par terrain") }}</option>
             <option value="1" selected>1</option>
             <option value="1.5" selected>1.5</option>
@@ -99,80 +98,71 @@
             <option value="4.5" selected>4.5</option>
             <option value="5" selected>5</option>
         </select>
-        <label>{{ _("Terrain") }}</label>
-        <div>
-            <a id="btnAllTerrain" class="btn-flat waves-effect">{{ _("Tout") }}</a>
-            <a id="btnNoneTerrain" class="btn-flat waves-effect">{{ _("Aucun") }}</a>
+        <div class="filter-actions mt-1">
+            <button type="button" id="btnAllTerrain" class="btn btn-link btn-sm p-0 me-2"><i class="ti ti-checks me-1"></i>{{ _("Tout") }}</button>
+            <button type="button" id="btnNoneTerrain" class="btn btn-link btn-sm p-0"><i class="ti ti-x me-1"></i>{{ _("Aucun") }}</button>
+            <span id="infoTerrain" class="filter-info-badge"></span>
         </div>
-        <div id="infoTerrain" class="filter-info"></div>
     </div>
     </div>
 
-    <!-- Ligne 3 : Période (dates) sur une ligne avec titre -->
-    <div class="row">
-        <div class="col s12" style="margin-bottom: 8px;">
-            <span class="grey-text text-darken-1">{{ _("Période de découverte") }}</span>
+    <!-- Ligne 3 : Période de découverte (dates) -->
+    <div class="row g-2">
+        <div class="col-12 mb-1">
+            <span class="form-label text-muted mb-0">{{ _("Période de découverte") }}</span>
         </div>
-        <div class="input-field col s6">
-            <input id="datePickerStart" type="text" class="datepicker">
-            <label for="datePickerStart" class="active">{{ _("Date de début") }}</label>
-            <div>
-                <a id="btnResetStartDate" class="btn-flat waves-effect date-reset-btn"></a>
-            </div>
+        <div class="mb-3 col-6">
+            <label for="datePickerStart" class="form-label">{{ _("Date de début") }}</label>
+            <input id="datePickerStart" type="text" class="form-control td-input" aria-label="{{ _('Date de début') }}">
+            <button type="button" id="btnResetStartDate" class="btn btn-link btn-sm date-reset-btn p-0 mt-1"></button>
         </div>
-        <div class="input-field col s6">
-            <input id="datePickerEnd" type="text" class="datepicker">
-            <label for="datePickerEnd" class="active">{{ _("Date de fin") }}</label>
-            <div>
-                <a id="btnResetEndDate" class="btn-flat waves-effect date-reset-btn"></a>
-            </div>
+        <div class="mb-3 col-6">
+            <label for="datePickerEnd" class="form-label">{{ _("Date de fin") }}</label>
+            <input id="datePickerEnd" type="text" class="form-control td-input" aria-label="{{ _('Date de fin') }}">
+            <button type="button" id="btnResetEndDate" class="btn btn-link btn-sm date-reset-btn p-0 mt-1"></button>
         </div>
     </div>
 
-    <!-- Ligne 4 : Période de pose sur une ligne avec titre -->
-    <div class="row">
-        <div class="col s12" style="margin-bottom: 8px;">
-            <span class="grey-text text-darken-1">{{ _("Période de pose") }}</span>
+    <!-- Ligne 4 : Période de pose -->
+    <div class="row g-2">
+        <div class="col-12 mb-1">
+            <span class="form-label text-muted mb-0">{{ _("Période de pose") }}</span>
         </div>
-        <div class="input-field col s6">
-            <input id="publishedDatePickerStart" type="text" class="datepicker">
-            <label for="publishedDatePickerStart" class="active">{{ _("Date de début") }}</label>
-            <div>
-                <a id="btnResetPublishedStartDate" class="btn-flat waves-effect date-reset-btn"></a>
-            </div>
+        <div class="mb-3 col-6">
+            <label for="publishedDatePickerStart" class="form-label">{{ _("Date de début") }}</label>
+            <input id="publishedDatePickerStart" type="text" class="form-control td-input" aria-label="{{ _('Date de début') }}">
+            <button type="button" id="btnResetPublishedStartDate" class="btn btn-link btn-sm date-reset-btn p-0 mt-1"></button>
         </div>
-        <div class="input-field col s6">
-            <input id="publishedDatePickerEnd" type="text" class="datepicker">
-            <label for="publishedDatePickerEnd" class="active">{{ _("Date de fin") }}</label>
-            <div>
-                <a id="btnResetPublishedEndDate" class="btn-flat waves-effect date-reset-btn"></a>
-            </div>
+        <div class="mb-3 col-6">
+            <label for="publishedDatePickerEnd" class="form-label">{{ _("Date de fin") }}</label>
+            <input id="publishedDatePickerEnd" type="text" class="form-control td-input" aria-label="{{ _('Date de fin') }}">
+            <button type="button" id="btnResetPublishedEndDate" class="btn btn-link btn-sm date-reset-btn p-0 mt-1"></button>
         </div>
     </div>
 
-    <!-- Ligne 5 : Pays et Régions/États sur une ligne -->
-    <div class="row">
-        <div class="input-field col s6">
-        <select multiple id="selectCountry">
+    <!-- Ligne 5 : Pays et Régions/États -->
+    <div class="row g-2">
+        <div class="mb-3 col-6">
+        <label class="form-label" for="selectCountry">{{ _("Pays") }}</label>
+        <select multiple id="selectCountry" class="form-select" aria-label="{{ _('Pays') }}">
             <option value="" disabled selected>{{ _("Filtrer par pays") }}</option>
         </select>
-            <label>{{ _("Pays") }}</label>
-        <div>
-            <a id="btnAllCountry" class="btn-flat waves-effect blue-text text-darken-2">{{ _("Tout") }}</a>
-            <a id="btnNoneCountry" class="btn-flat waves-effect blue-text text-darken-2">{{ _("Aucun") }}</a>
+        <div class="filter-actions mt-1">
+            <button type="button" id="btnAllCountry" class="btn btn-link btn-sm p-0 me-2"><i class="ti ti-checks me-1"></i>{{ _("Tout") }}</button>
+            <button type="button" id="btnNoneCountry" class="btn btn-link btn-sm p-0"><i class="ti ti-x me-1"></i>{{ _("Aucun") }}</button>
+            <span id="infoCountry" class="filter-info-badge"></span>
         </div>
-        <div id="infoCountry" class="filter-info"></div>
         </div>
-        <div class="input-field col s6">
-            <select multiple id="selectState">
+        <div class="mb-3 col-6">
+            <label class="form-label" for="selectState">{{ _("Région / État") }}</label>
+            <select multiple id="selectState" class="form-select" aria-label="{{ _('Région / État') }}">
                 <option value="" disabled selected>{{ _("Filtrer par région/état") }}</option>
             </select>
-            <label>{{ _("Région / État") }}</label>
-        <div>
-            <a id="btnAllState" class="btn-flat waves-effect blue-text text-darken-2">{{ _("Tout") }}</a>
-            <a id="btnNoneState" class="btn-flat waves-effect blue-text text-darken-2">{{ _("Aucun") }}</a>
+        <div class="filter-actions mt-1">
+            <button type="button" id="btnAllState" class="btn btn-link btn-sm p-0 me-2"><i class="ti ti-checks me-1"></i>{{ _("Tout") }}</button>
+            <button type="button" id="btnNoneState" class="btn btn-link btn-sm p-0"><i class="ti ti-x me-1"></i>{{ _("Aucun") }}</button>
+            <span id="infoState" class="filter-info-badge"></span>
         </div>
-        <div id="infoState" class="filter-info"></div>
         </div>
     </div>
 </section>

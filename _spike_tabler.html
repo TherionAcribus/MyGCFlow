@@ -1,0 +1,789 @@
+<!doctype html>
+<html lang="fr" data-bs-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GCMap — Spike de migration Materialize → Tabler</title>
+
+  <!-- ===================================================================
+       CDN — Tabler 1.4.0 (inclut Bootstrap 5 + ses composants JS)
+       Le bundle JS de Tabler contient déjà Bootstrap 5, donc inutile de
+       charger un second bundle Bootstrap (double init risquée).
+  ==================================================================== -->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/@tabler/core@1.4.0/dist/css/tabler.min.css" />
+
+  <!-- Material Icons (police d'icônes utilisée par l'app actuelle) -->
+  <link rel="stylesheet"
+        href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+
+  <!-- vanilla-colorful 0.7.2 : colorpicker léger sans dépendance (ES module) -->
+  <script type="module"
+          src="https://cdn.jsdelivr.net/npm/vanilla-colorful@0.7.2/dist/index.js"></script>
+
+  <!-- Styles spécifiques au spike (reproduction de la control-bar, etc.) -->
+  <style>
+    /* --- Control-bar latérale droite (reproduction du controlBar GCMap) --- */
+    .control-bar {
+      position: fixed;
+      top: 50%;
+      right: 0;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: .25rem;
+      padding: .5rem;
+      background: var(--tblr-bg-surface);
+      border: 1px solid var(--tblr-border-color);
+      border-right: none;
+      border-radius: .5rem 0 0 .5rem;
+      box-shadow: var(--tblr-shadow-card);
+      z-index: 1030;
+    }
+    .control-bar .btn {
+      width: 2.5rem;
+      height: 2.5rem;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .control-bar .btn .material-icons { font-size: 1.25rem; }
+
+    /* --- Aperçu couleur pour le colorpicker --- */
+    .color-preview {
+      width: 100%;
+      height: 3rem;
+      border-radius: .375rem;
+      border: 1px solid var(--tblr-border-color);
+    }
+
+    /* --- Zone principale : on réserve l'espace de la control-bar --- */
+    .main-area { padding-right: 4rem; }
+
+    /* --- Slider range natif stylé sommairement (Tabler ne fournit pas
+            de skin avancé pour input[type=range] hors noUiSlider) --- */
+    input[type="range"].spike-range { accent-color: var(--tblr-primary); }
+  </style>
+</head>
+
+<body>
+  <!-- ===================================================================
+       NAVBAR / EN-TÊTE
+  ==================================================================== -->
+  <header class="navbar navbar-expand-md d-print-none">
+    <div class="container-fluid">
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+              data-bs-target="#navbar-menu">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <h1 class="navbar-brand navbar-brand-autodown d-none-navbar-horizontal pe-0 pe-md-3">
+        GCMap <span class="badge bg-blue-lt ms-2">Spike Tabler</span>
+      </h1>
+
+      <div class="navbar-nav flex-row order-md-last ms-auto">
+        <!-- Toggle Dark / Light mode -->
+        <button id="theme-toggle" class="btn btn-icon btn-ghost-light" type="button"
+                title="Basculer le thème">
+          <span class="material-icons" id="theme-icon">dark_mode</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===================================================================
+       CONTENU PRINCIPAL
+  ==================================================================== -->
+  <div class="page">
+    <div class="container-fluid main-area">
+
+      <!-- En-tête de page -->
+      <div class="page-header d-print-none">
+        <div class="row align-items-center">
+          <div class="col">
+            <h2 class="page-title">Validation de faisabilité — Migration vers Tabler</h2>
+            <div class="text-secondary mt-1">
+              Démonstration hors-app des composants clés de GCMap.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================================================================
+           ONGLETS — 4 tabs (Données / Style / Animation / Paramètres)
+      ================================================================ -->
+      <ul class="nav nav-tabs mb-3" id="spike-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" data-bs-toggle="tab"
+                  data-bs-target="#tab-donnees" type="button" role="tab">Données</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" data-bs-toggle="tab"
+                  data-bs-target="#tab-style" type="button" role="tab">Style</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" data-bs-toggle="tab"
+                  data-bs-target="#tab-animation" type="button" role="tab">Animation</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" data-bs-toggle="tab"
+                  data-bs-target="#tab-parametres" type="button" role="tab">Paramètres</button>
+        </li>
+      </ul>
+
+      <div class="tab-content">
+
+        <!-- ====================== TAB : DONNÉES ====================== -->
+        <div class="tab-pane fade show active" id="tab-donnees" role="tabpanel">
+          <div class="row g-3">
+
+            <!-- Form select (pays) -->
+            <div class="col-12 col-md-6">
+              <label class="form-label">Pays</label>
+              <select class="form-select" id="select-pays">
+                <option value="">— Sélectionner —</option>
+                <option value="FR">France</option>
+                <option value="BE">Belgique</option>
+                <option value="CH">Suisse</option>
+                <option value="CA">Canada</option>
+                <option value="US">États-Unis</option>
+              </select>
+            </div>
+
+            <!-- Input text avec label flottant -->
+            <div class="col-12 col-md-6">
+              <div class="form-floating">
+                <input type="text" class="form-control" id="flt-nom"
+                       placeholder="Nom du jeu de données" value="Population 2024">
+                <label for="flt-nom">Nom du jeu de données</label>
+              </div>
+            </div>
+
+            <!-- Switch on/off -->
+            <div class="col-12 col-md-6">
+              <label class="form-label">Affichage des étiquettes</label>
+              <label class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="sw-labels" checked>
+                <span class="form-check-label">Activer les étiquettes</span>
+              </label>
+            </div>
+
+            <!-- Slider range (opacité 0-100) -->
+            <div class="col-12 col-md-6">
+              <label class="form-label">Opacité : <span id="lbl-opacite">80</span>%</label>
+              <input type="range" class="form-range spike-range"
+                     id="rng-opacite" min="0" max="100" value="80">
+            </div>
+
+            <!-- Card avec chips -->
+            <div class="col-12">
+              <div class="card">
+                <div class="card-header">
+                  <h3 class="card-title">Filtres actifs</h3>
+                </div>
+                <div class="card-body">
+                  <!-- Chips = badges Tabler avec bouton de suppression -->
+                  <span class="badge bg-blue-lt me-1">Europe
+                    <a href="#" class="badge-link ms-1" onclick="this.parentElement.remove();return false;">×</a>
+                  </span>
+                  <span class="badge bg-azure-lt me-1">2024
+                    <a href="#" class="badge-link ms-1" onclick="this.parentElement.remove();return false;">×</a>
+                  </span>
+                  <span class="badge bg-lime-lt me-1">Population
+                    <a href="#" class="badge-link ms-1" onclick="this.parentElement.remove();return false;">×</a>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Collapsible / accordion -->
+            <div class="col-12">
+              <div class="accordion" id="acc-donnees">
+                <div class="accordion-item">
+                  <h2 class="accordion-header">
+                    <button class="accordion-button" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#acc-1">
+                      Source des données
+                    </button>
+                  </h2>
+                  <div id="acc-1" class="accordion-collapse collapse show"
+                       data-bs-parent="#acc-donnees">
+                    <div class="accordion-body">
+                      Données issues de l'INSEE et de l'OCDE, mises à jour mensuellement.
+                    </div>
+                  </div>
+                </div>
+                <div class="accordion-item">
+                  <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#acc-2">
+                      Méthode de calcul
+                    </button>
+                  </h2>
+                  <div id="acc-2" class="accordion-collapse collapse"
+                       data-bs-parent="#acc-donnees">
+                    <div class="accordion-body">
+                      Agrégation par région puis lissage temporel sur 12 mois.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ====================== TAB : STYLE ====================== -->
+        <div class="tab-pane fade" id="tab-style" role="tabpanel">
+          <div class="row g-3">
+            <div class="col-12 col-md-6">
+              <div class="card">
+                <div class="card-header">
+                  <h3 class="card-title">Color picker (vanilla-colorful)</h3>
+                </div>
+                <div class="card-body">
+                  <!-- Aperçu de la couleur courante -->
+                  <div class="color-preview mb-3" id="color-preview"
+                       style="background:#3b82f6;"></div>
+
+                  <!-- Sélecteur HEX (custom element de vanilla-colorful) -->
+                  <hex-color-picker id="hex-picker"
+                                    color="#3b82f6"
+                                    style="width:100%;"></hex-color-picker>
+
+                  <!-- Valeur hex lisible / éditable -->
+                  <div class="mt-3">
+                    <label class="form-label">Valeur HEX</label>
+                    <input type="text" class="form-control" id="hex-input" value="#3b82f6">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-12 col-md-6">
+              <div class="card">
+                <div class="card-header"><h3 class="card-title">Notes</h3></div>
+                <div class="card-body text-secondary">
+                  Tabler ne fournit pas de colorpicker natif.
+                  <code>vanilla-colorful</code> (2,7 KB) est utilisé ici comme
+                  replacement du fork <code>materialize-colorpicker</code>.
+                  Il expose les custom elements <code>&lt;hex-color-picker&gt;</code>,
+                  <code>&lt;rgb-color-picker&gt;</code>, etc.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ====================== TAB : ANIMATION ====================== -->
+        <div class="tab-pane fade" id="tab-animation" role="tabpanel">
+          <div class="row g-3">
+
+            <!-- Slider vitesse -->
+            <div class="col-12 col-md-6">
+              <label class="form-label">Vitesse : <span id="lbl-vitesse">50</span></label>
+              <input type="range" class="form-range spike-range"
+                     id="rng-vitesse" min="0" max="100" value="50">
+            </div>
+
+            <!-- Slider durée -->
+            <div class="col-12 col-md-6">
+              <label class="form-label">Durée (s) : <span id="lbl-duree">10</span></label>
+              <input type="range" class="form-range spike-range"
+                     id="rng-duree" min="1" max="60" value="10">
+            </div>
+
+            <!-- Boutons de contrôle (material-icons) -->
+            <div class="col-12">
+              <div class="btn-list">
+                <button class="btn btn-primary" id="btn-play">
+                  <span class="material-icons me-1">play_arrow</span> Lecture
+                </button>
+                <button class="btn btn-warning" id="btn-pause">
+                  <span class="material-icons me-1">pause</span> Pause
+                </button>
+                <button class="btn btn-danger" id="btn-stop">
+                  <span class="material-icons me-1">stop</span> Stop
+                </button>
+              </div>
+            </div>
+
+            <!-- Progress bar -->
+            <div class="col-12">
+              <label class="form-label">Progression de l'animation</label>
+              <div class="progress">
+                <div class="progress-bar progress-bar-striped progress-bar-animated"
+                     id="anim-progress" role="progressbar" style="width: 0%">0%</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ====================== TAB : PARAMÈTRES ====================== -->
+        <div class="tab-pane fade" id="tab-parametres" role="tabpanel">
+          <div class="row g-3">
+
+            <!-- Switches -->
+            <div class="col-12 col-md-6">
+              <div class="card">
+                <div class="card-header"><h3 class="card-title">Préférences</h3></div>
+                <div class="card-body">
+                  <label class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" checked>
+                    <span class="form-check-label">Synchronisation automatique</span>
+                  </label>
+                  <label class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox">
+                    <span class="form-check-label">Notifications par email</span>
+                  </label>
+                  <label class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" checked>
+                    <span class="form-check-label">Mode haute précision</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Dropdown + tooltip -->
+            <div class="col-12 col-md-6">
+              <div class="card">
+                <div class="card-header"><h3 class="card-title">Actions</h3></div>
+                <div class="card-body">
+                  <!-- Dropdown -->
+                  <div class="dropdown mb-3">
+                    <button class="btn btn-secondary dropdown-toggle"
+                            data-bs-toggle="dropdown">Langue de l'interface</button>
+                    <div class="dropdown-menu">
+                      <a class="dropdown-item" href="#">Français</a>
+                      <a class="dropdown-item" href="#">English</a>
+                      <a class="dropdown-item" href="#">Deutsch</a>
+                    </div>
+                  </div>
+
+                  <!-- Tooltip -->
+                  <button class="btn btn-outline-secondary"
+                          data-bs-toggle="tooltip" data-bs-placement="top"
+                          title="Astuce : double-cliquez pour réinitialiser">
+                    <span class="material-icons me-1">help_outline</span> Aide
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bouton réinitialiser -->
+            <div class="col-12">
+              <button class="btn btn-danger" id="btn-reset">
+                <span class="material-icons me-1">restart_alt</span> Réinitialiser
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+      </div><!-- /tab-content -->
+
+      <!-- ================================================================
+           DÉCLENCHEURS DE MODALS & TOASTS
+      ================================================================ -->
+      <div class="card mt-4">
+        <div class="card-header"><h3 class="card-title">Modals &amp; Notifications</h3></div>
+        <div class="card-body">
+          <div class="btn-list">
+            <button class="btn btn-primary" data-bs-toggle="modal"
+                    data-bs-target="#modal-chargement">Modal Chargement</button>
+            <button class="btn btn-info" data-bs-toggle="modal"
+                    data-bs-target="#modal-infos">Modal Infos</button>
+            <button class="btn btn-success" data-bs-toggle="modal"
+                    data-bs-target="#modal-premiere">Modal Première utilisation</button>
+            <button class="btn btn-success" id="btn-toast-success">Toast succès</button>
+            <button class="btn btn-danger" id="btn-toast-error">Toast erreur</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================================================================
+           NOTES DE MIGRATION (visibles dans la page)
+      ================================================================ -->
+      <div class="card mt-4">
+        <div class="card-header">
+          <h3 class="card-title">Notes de migration — Materialize → Tabler</h3>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-vcenter table-striped">
+              <thead>
+                <tr>
+                  <th>Composant Materialize</th>
+                  <th>Équivalent Tabler / Bootstrap</th>
+                  <th>Différences notables</th>
+                  <th>Libs tierces</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Tabs (4 onglets)</td>
+                  <td><code>.nav-tabs</code> + <code>.tab-pane</code> (Bootstrap)</td>
+                  <td>Structure HTML différente (boutons au lieu de liens) ; pas d'indicateur animé Materialize.</td>
+                  <td>—</td>
+                </tr>
+                <tr>
+                  <td>Modals</td>
+                  <td><code>.modal</code> Bootstrap 5 (inclus dans le bundle Tabler)</td>
+                  <td>API JS <code>bootstrap.Modal</code> ; pas de <code>modal({dismissible})</code>, géré via <code>data-bs-backdrop</code>.</td>
+                  <td>—</td>
+                </tr>
+                <tr>
+                  <td>Sliders / range</td>
+                  <td><code>input[type=range]</code> + classe <code>.form-range</code></td>
+                  <td>Le rendu natif est sobre ; pas de pips/ticks natifs. Pour un rendu avancé, utiliser <strong>noUiSlider</strong>.</td>
+                  <td>noUiSlider (optionnel)</td>
+                </tr>
+                <tr>
+                  <td>Colorpicker (fork Materialize)</td>
+                  <td>Aucun natif → <strong>vanilla-colorful</strong></td>
+                  <td>Custom elements web (<code>&lt;hex-color-picker&gt;</code>) ; pas de palette prédéfinie, à ajouter manuellement.</td>
+                  <td>vanilla-colorful 0.7.2</td>
+                </tr>
+                <tr>
+                  <td>Toasts</td>
+                  <td><code>.toast</code> Bootstrap 5</td>
+                  <td>Empilement manuel via conteneur ; pas de <code>M.toast()</code> global. Couleurs via classes Tabler.</td>
+                  <td>—</td>
+                </tr>
+                <tr>
+                  <td>Tooltips</td>
+                  <td><code>data-bs-toggle="tooltip"</code> (Bootstrap)</td>
+                  <td>Initialisation explicite requise (<code>new bootstrap.Tooltip()</code>).</td>
+                  <td>—</td>
+                </tr>
+                <tr>
+                  <td>Form selects</td>
+                  <td><code>.form-select</code></td>
+                  <td>Style natif cohérent ; pour le multi-select/search, utiliser <strong>Tom Select</strong> (recommandé par Tabler).</td>
+                  <td>Tom Select (optionnel)</td>
+                </tr>
+                <tr>
+                  <td>Switches</td>
+                  <td><code>.form-switch</code> (Bootstrap)</td>
+                  <td>Marqueur différent (cercle vs carré) ; comportement identique.</td>
+                  <td>—</td>
+                </tr>
+                <tr>
+                  <td>Boutons waves-effect</td>
+                  <td><code>.btn</code> Tabler (pas d'effet ripple natif)</td>
+                  <td>Pas de ripple au clic. Ajouter <strong>Waves</strong> si l'effet est souhaité.</td>
+                  <td>Waves (optionnel)</td>
+                </tr>
+                <tr>
+                  <td>Cards</td>
+                  <td><code>.card</code> Bootstrap/Tabler</td>
+                  <td>Structure <code>card-header / card-body</code> similaire. Ombres et rayons différents.</td>
+                  <td>—</td>
+                </tr>
+                <tr>
+                  <td>Chips</td>
+                  <td><code>.badge</code> Tabler</td>
+                  <td>Pas de chip « input » natif ; combiner badge + bouton de fermeture, ou utiliser Tom Select.</td>
+                  <td>—</td>
+                </tr>
+                <tr>
+                  <td>Collapsibles</td>
+                  <td><code>.accordion</code> Bootstrap</td>
+                  <td>API <code>data-bs-toggle="collapse"</code> ; comportement équivalent.</td>
+                  <td>—</td>
+                </tr>
+                <tr>
+                  <td>Dropdowns</td>
+                  <td><code>.dropdown</code> Bootstrap</td>
+                  <td>Équivalent direct ; activation via <code>data-bs-toggle</code>.</td>
+                  <td>—</td>
+                </tr>
+                <tr>
+                  <td>material-icons</td>
+                  <td>Police Google Material Icons (inchangée)</td>
+                  <td>Aucune dépendance Materialize ; fonctionne tel quel avec Tabler.</td>
+                  <td>Google Fonts (Material Icons)</td>
+                </tr>
+                <tr>
+                  <td>Control-bar latérale</td>
+                  <td>Layout custom (CSS maison) + <code>.btn-icon</code> Tabler</td>
+                  <td>Pas de composant dédié ; à recréer en CSS (fait dans ce spike).</td>
+                  <td>—</td>
+                </tr>
+                <tr>
+                  <td>Dark mode (theme.css)</td>
+                  <td><code>data-bs-theme="dark|light"</code> sur <code>&lt;html&gt;</code></td>
+                  <td>Géré nativement par Tabler via variables CSS ; bascule simple par attribut.</td>
+                  <td>—</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h4 class="mt-4">Points d'attention détectés</h4>
+          <ul>
+            <li><strong>Colorpicker</strong> : Tabler n'en fournit aucun. <code>vanilla-colorful</code> est un bon remplaçant (léger, accessible, sans dépendance), mais il faudra recréer la palette de couleurs prédéfinies du fork Materialize.</li>
+            <li><strong>Sliders avancés</strong> : les <code>input[type=range]</code> natifs suffisent pour l'opacité/vitesse, mais si l'app utilise des ticks/pips ou des sliders à deux poignées, <code>noUiSlider</code> sera nécessaire.</li>
+            <li><strong>Effet ripple (waves-effect)</strong> : absent de Tabler. Si cet effet est jugé important pour l'UX, intégrer la lib <code>Waves</code> (~3 KB).</li>
+            <li><strong>Toasts</strong> : pas d'API globale <code>M.toast()</code> ; il faut instancier <code>bootstrap.Toast</code> et gérer le conteneur d'empilement.</li>
+            <li><strong>Chips dynamiques (input)</strong> : Tabler n'a pas de « chip input » ; à recréer ou utiliser Tom Select en mode tags.</li>
+            <li><strong>Material Icons</strong> : indépendants de Materialize, donc conservables sans risque.</li>
+            <li><strong>Bundle JS</strong> : <code>tabler.min.js</code> inclut déjà Bootstrap 5 ; ne <strong>pas</strong> recharger un bundle Bootstrap séparé (risque de double initialisation des composants).</li>
+          </ul>
+
+          <h4 class="mt-3">Recommandation finale</h4>
+          <p>
+            <strong>Tabler couvre la quasi-totalité des besoins fonctionnels de GCMap.</strong>
+            Les composants structurels (tabs, modals, cards, dropdowns, accordions, switches,
+            selects, tooltips, toasts, dark mode) sont disponibles nativement. Les seuls
+            écarts nécessitant une lib tierce sont le <strong>colorpicker</strong>
+            (vanilla-colorful) et,optionnellement, les <strong>sliders avancés</strong>
+            (noUiSlider) et l'<strong>effet ripple</strong> (Waves).
+          </p>
+          <p>
+            <strong>Risques résiduels :</strong>
+          </p>
+          <ul>
+            <li>Refonte CSS du <code>theme.css</code> actuel vers les variables Tabler (<code>--tblr-*</code>).</li>
+            <li>Recréation de la <strong>control-bar</strong> latérale (pas de composant dédié).</li>
+            <li>Migration du <strong>fork materialize-colorpicker</strong> (palette + API) vers vanilla-colorful.</li>
+            <li>Réécriture des appels JS Materialize (<code>M.modal</code>, <code>M.toast</code>, <code>M.tabs</code>, etc.) vers les API Bootstrap/Tabler.</li>
+          </ul>
+          <p class="text-secondary">
+            <em>Verdict : migration faisable, effort modéré, dépendances tierces minimales et bien identifiées.</em>
+          </p>
+        </div>
+      </div>
+
+    </div><!-- /container-fluid -->
+  </div><!-- /page -->
+
+  <!-- ===================================================================
+       CONTROL-BAR LATÉRALE DROITE (boutons icônes)
+  ==================================================================== -->
+  <div class="control-bar">
+    <button class="btn btn-ghost-primary" title="Lecture">
+      <span class="material-icons">play_arrow</span>
+    </button>
+    <button class="btn btn-ghost-danger" title="Enregistrer">
+      <span class="material-icons">fiber_manual_record</span>
+    </button>
+    <button class="btn btn-ghost-warning" title="Pause">
+      <span class="material-icons">pause</span>
+    </button>
+    <button class="btn btn-ghost-secondary" title="Stop">
+      <span class="material-icons">stop</span>
+    </button>
+    <button class="btn btn-ghost-info" title="Plein écran" id="btn-fullscreen">
+      <span class="material-icons">fullscreen</span>
+    </button>
+  </div>
+
+  <!-- ===================================================================
+       MODALS
+  ==================================================================== -->
+
+  <!-- Modal : Chargement (spinner) -->
+  <div class="modal fade" id="modal-chargement" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+      <div class="modal-content">
+        <div class="modal-body text-center p-4">
+          <div class="spinner-border spinner-border-lg text-primary mb-3" role="status"></div>
+          <div>Chargement des données en cours…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal : Infos / erreurs -->
+  <div class="modal fade" id="modal-infos" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Informations</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          Le jeu de données « Population 2024 » a été chargé avec succès.
+          42 régions traitées, 1 298 communes indexées.
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary" data-bs-dismiss="modal">Fermer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal : Première utilisation -->
+  <div class="modal fade" id="modal-premiere" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Bienvenue dans GCMap</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p>Ceci est votre première utilisation. Voici quelques conseils pour démarrer :</p>
+          <ul>
+            <li>Sélectionnez un pays dans l'onglet <em>Données</em>.</li>
+            <li>Ajustez le style dans l'onglet <em>Style</em>.</li>
+            <li>Lancez une animation depuis l'onglet <em>Animation</em>.</li>
+          </ul>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-success" data-bs-dismiss="modal">Commencer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================
+       CONTENEUR DE TOASTS
+  ==================================================================== -->
+  <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toast-container"></div>
+
+  <!-- ===================================================================
+       SCRIPTS
+  ==================================================================== -->
+  <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.4.0/dist/js/tabler.min.js"></script>
+  <script>
+    /* --------------------------------------------------------------------
+       Initialisation des composants Bootstrap/Tabler nécessitant une
+       activation explicite (tooltips notamment).
+    -------------------------------------------------------------------- */
+    document.addEventListener('DOMContentLoaded', function () {
+
+      // --- Tooltips : activation globale ---
+      var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+      tooltipTriggerList.map(function (el) {
+        return new bootstrap.Tooltip(el);
+      });
+
+      // --- Dark mode : bascule light/dark via data-bs-theme ---
+      var html = document.documentElement;
+      var btnTheme = document.getElementById('theme-toggle');
+      var iconTheme = document.getElementById('theme-icon');
+      btnTheme.addEventListener('click', function () {
+        var current = html.getAttribute('data-bs-theme');
+        var next = (current === 'dark') ? 'light' : 'dark';
+        html.setAttribute('data-bs-theme', next);
+        iconTheme.textContent = (next === 'dark') ? 'light_mode' : 'dark_mode';
+      });
+
+      // --- Slider opacité (tab Données) ---
+      var rngOpacite = document.getElementById('rng-opacite');
+      var lblOpacite = document.getElementById('lbl-opacite');
+      rngOpacite.addEventListener('input', function () {
+        lblOpacite.textContent = rngOpacite.value;
+      });
+
+      // --- Sliders Animation ---
+      var rngVitesse = document.getElementById('rng-vitesse');
+      var lblVitesse = document.getElementById('lbl-vitesse');
+      rngVitesse.addEventListener('input', function () { lblVitesse.textContent = rngVitesse.value; });
+
+      var rngDuree = document.getElementById('rng-duree');
+      var lblDuree = document.getElementById('lbl-duree');
+      rngDuree.addEventListener('input', function () { lblDuree.textContent = rngDuree.value; });
+
+      // --- Animation : barre de progression pilotée par Play ---
+      var progressBar = document.getElementById('anim-progress');
+      var animTimer = null;
+      var animValue = 0;
+
+      function startAnim() {
+        stopAnim();
+        animValue = 0;
+        animTimer = setInterval(function () {
+          animValue += 2;
+          if (animValue > 100) { animValue = 100; stopAnim(); }
+          progressBar.style.width = animValue + '%';
+          progressBar.textContent = animValue + '%';
+        }, 200);
+      }
+      function pauseAnim() {
+        if (animTimer) { clearInterval(animTimer); animTimer = null; }
+      }
+      function stopAnim() {
+        pauseAnim();
+        animValue = 0;
+        progressBar.style.width = '0%';
+        progressBar.textContent = '0%';
+      }
+
+      document.getElementById('btn-play').addEventListener('click', startAnim);
+      document.getElementById('btn-pause').addEventListener('click', pauseAnim);
+      document.getElementById('btn-stop').addEventListener('click', stopAnim);
+
+      // --- Colorpicker (vanilla-colorful) ---
+      var picker = document.getElementById('hex-picker');
+      var preview = document.getElementById('color-preview');
+      var hexInput = document.getElementById('hex-input');
+
+      // Mise à jour de l'aperçu et du champ texte quand la couleur change
+      picker.addEventListener('color-changed', function (e) {
+        var hex = e.detail.value;
+        preview.style.background = hex;
+        hexInput.value = hex;
+      });
+
+      // Mise à jour du picker quand on saisit une valeur hex
+      hexInput.addEventListener('change', function () {
+        var v = hexInput.value.trim();
+        if (/^#?[0-9a-fA-F]{6}$/.test(v)) {
+          if (v[0] !== '#') v = '#' + v;
+          picker.color = v;
+          preview.style.background = v;
+        }
+      });
+
+      // --- Toasts : helpers succès / erreur ---
+      function showToast(message, type) {
+        // type : 'success' ou 'danger'
+        var bg = (type === 'success') ? 'text-bg-success' : 'text-bg-danger';
+        var icon = (type === 'success') ? 'check_circle' : 'error';
+        var el = document.createElement('div');
+        el.className = 'toast align-items-center ' + bg + ' border-0';
+        el.role = 'alert';
+        el.innerHTML =
+          '<div class="d-flex">' +
+            '<div class="toast-body">' +
+              '<span class="material-icons align-middle me-1">' + icon + '</span>' +
+              message +
+            '</div>' +
+            '<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>' +
+          '</div>';
+        document.getElementById('toast-container').appendChild(el);
+        var toast = new bootstrap.Toast(el, { delay: 4000 });
+        toast.show();
+        // Nettoyage du DOM une fois le toast masqué
+        el.addEventListener('hidden.bs.toast', function () { el.remove(); });
+      }
+
+      document.getElementById('btn-toast-success').addEventListener('click', function () {
+        showToast('Données enregistrées avec succès.', 'success');
+      });
+      document.getElementById('btn-toast-error').addEventListener('click', function () {
+        showToast('Erreur : impossible de contacter le serveur.', 'danger');
+      });
+
+      // --- Bouton Réinitialiser ---
+      document.getElementById('btn-reset').addEventListener('click', function () {
+        showToast('Paramètres réinitialisés.', 'success');
+      });
+
+      // --- Plein écran (control-bar) ---
+      document.getElementById('btn-fullscreen').addEventListener('click', function () {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen();
+        } else {
+          document.exitFullscreen();
+        }
+      });
+
+    });
+  </script>
+</body>
+</html>

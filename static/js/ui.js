@@ -1,4 +1,5 @@
 import * as pkg from './index.js';
+import { showBsTab, getBsTab, initTomSelect, getTomSelect, refreshTomSelect, initTempusDominus, getTempusDominus, setTdDate, getTdDate } from './ui_bootstrap.js';
 
 // Flag de debug pour les filtres (COUNTRY/FILTER).
 // Mettre à true pour réactiver les logs en console.
@@ -199,7 +200,7 @@ const publishedDatePickerEnd = document.getElementById('publishedDatePickerEnd')
         // si aucun pays, vider aussi les états
         if (selectStateEl) {
             Array.from(selectStateEl.options).forEach(opt => { opt.selected = false; });
-            M.FormSelect.init(selectStateEl);
+            refreshTomSelect(selectStateEl);
         }
         onSelectionChangedDebounced();
         updateFilterInfos();
@@ -221,11 +222,29 @@ const publishedDatePickerEnd = document.getElementById('publishedDatePickerEnd')
     infoTerrain = document.getElementById('infoTerrain');
     infoContainer = document.getElementById('infoContainer');
 
-    // Initialiser Materialize Selects
-    if (selectType) M.FormSelect.init(selectType);
-    if (selectDifficulty) M.FormSelect.init(selectDifficulty);
-    if (selectTerrain) M.FormSelect.init(selectTerrain);
-    if (selectContainer) M.FormSelect.init(selectContainer);
+    // Initialiser Tom Select (remplace Materialize FormSelect)
+    const tsOptions = {
+        plugins: ['remove_button'],
+        maxItems: null,
+        hideSelected: false,
+        hidePlaceholder: true,
+        closeAfterSelect: false,
+    };
+    if (selectType) initTomSelect(selectType, tsOptions);
+    if (selectDifficulty) initTomSelect(selectDifficulty, tsOptions);
+    if (selectTerrain) initTomSelect(selectTerrain, tsOptions);
+    if (selectContainer) initTomSelect(selectContainer, tsOptions);
+
+    // Initialiser Tempus Dominus sur les datepickers de filtre (remplace Materialize Datepicker)
+    const tdOptions = {
+        display: { components: { clock: false } },
+        localization: { format: 'yyyy-MM-dd' },
+    };
+    if (datePickerStart) initTempusDominus(datePickerStart, tdOptions);
+    if (datePickerEnd) initTempusDominus(datePickerEnd, tdOptions);
+    if (publishedDatePickerStart) initTempusDominus(publishedDatePickerStart, tdOptions);
+    if (publishedDatePickerEnd) initTempusDominus(publishedDatePickerEnd, tdOptions);
+
     // Restaurer la sélection si existante
     restoreSelectedValues();
 
@@ -333,7 +352,10 @@ const inputSizeBorder = document.getElementById('inputSizeBorder');
 
 // select
     selectShape = document.getElementById('selectShape');
-    if (selectShape) selectShape.addEventListener('change', changePointStyleUI);
+    if (selectShape) {
+        selectShape.addEventListener('change', changePointStyleUI);
+        initTomSelect(selectShape, {});
+    }
 
 // ANIMATION DE LA CARTE
 // Boutons
@@ -388,11 +410,11 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     const btnToggleFullscreen = document.getElementById('btnToggleFullscreen');
     if (btnToggleFullscreen) btnToggleFullscreen.addEventListener('click', toggleFullscreenFromButton);
 
-    // Datepickers Animation (même UI que Données)
+    // Datepickers Animation (Tempus Dominus — remplace Materialize Datepicker)
     const animDateStart = document.getElementById('animDateStart');
     const animDateEnd = document.getElementById('animDateEnd');
     if (animDateStart) {
-        const dp1 = M.Datepicker.init(animDateStart, { format: 'dd/mm/yyyy' });
+        initTempusDominus(animDateStart, { display: { components: { clock: false } }, localization: { format: 'yyyy-MM-dd' } });
         // Les dates seront pré-remplies dans setPickerDates() quand la BDD sera chargée
         animDateStart.addEventListener('change', () => {
             const parsedDate = pkg.parseDateInput(animDateStart.value);
@@ -402,7 +424,7 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
         });
     }
     if (animDateEnd) {
-        const dp2 = M.Datepicker.init(animDateEnd, { format: 'dd/mm/yyyy' });
+        initTempusDominus(animDateEnd, { display: { components: { clock: false } }, localization: { format: 'yyyy-MM-dd' } });
         // Les dates seront pré-remplies dans setPickerDates() quand la BDD sera chargée
         animDateEnd.addEventListener('change', () => {
             const parsedDate = pkg.parseDateInput(animDateEnd.value);
@@ -417,11 +439,8 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     const btnResetAnimEndDate = document.getElementById('btnResetAnimEndDate');
     if (btnResetAnimStartDate) btnResetAnimStartDate.addEventListener('click', resetAnimStartDateToDefault);
     if (btnResetAnimEndDate) btnResetAnimEndDate.addEventListener('click', resetAnimEndDateToDefault);
-    // Initialiser tooltips Materialize (dates BDD + dates filtre)
-    const tooltipElements = document.querySelectorAll('.tooltipped');
-    if (tooltipElements && tooltipElements.length > 0) {
-        M.Tooltip.init(tooltipElements, { position: 'top' });
-    }
+    // Initialiser tooltips Bootstrap 5 (remplace Materialize Tooltips)
+    pkg.initBsTooltips();
 
     // Initialiser l'état des contrôles (boutons principaux et barre latérale)
     console.log("=== INITIALISATION DES CONTROLES ===");
@@ -437,8 +456,8 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     selectFlashMode = document.getElementById('selectFlashMode');
     if (selectFlashMode) {
         selectFlashMode.addEventListener('change', () => changeFlashValues(selectFlashMode));
-        // Initialiser Materialize Select
-        M.FormSelect.init(selectFlashMode);
+        // Initialiser Tom Select (remplace Materialize)
+        initTomSelect(selectFlashMode, {});
     }
     // inputs
     inputTimeFlash = document.getElementById('inputTimeFlash');
@@ -513,10 +532,20 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
 
     // OPTIONS
     selectLanguage = document.getElementById('selectLanguage');
-    if (selectLanguage) selectLanguage.addEventListener('change', changeOptionsValues);
+    if (selectLanguage) {
+        selectLanguage.addEventListener('change', changeOptionsValues);
+        initTomSelect(selectLanguage, {});
+    }
 
     selectCheckVersionOnline = document.getElementById('selectCheckVersionOnline');
-    if (selectCheckVersionOnline) selectCheckVersionOnline.addEventListener('change', changeOptionsValues);
+    if (selectCheckVersionOnline) {
+        selectCheckVersionOnline.addEventListener('change', changeOptionsValues);
+        initTomSelect(selectCheckVersionOnline, {});
+    }
+
+    // Select profil par défaut (Tom Select)
+    const selectDefaultProfile = document.getElementById('selectDefaultProfile');
+    if (selectDefaultProfile) initTomSelect(selectDefaultProfile, {});
 
     // boutons
     buttonCheckVersion = document.getElementById('buttonCheckVersion');
@@ -574,7 +603,7 @@ function initOptionsElements() {
     selectRecordMode = document.getElementById('selectRecordMode');
     if (selectRecordMode) {
         selectRecordMode.addEventListener('change', onRecordModeChange);
-        M.FormSelect.init(selectRecordMode);
+        initTomSelect(selectRecordMode, {});
     }
     inputRecordFps = document.getElementById('inputRecordFps');
     if (inputRecordFps) inputRecordFps.addEventListener('input', changeRecordValues);
@@ -592,7 +621,7 @@ function initOptionsElements() {
             }
             changeRecordValues();
         });
-        M.FormSelect.init(selectRecordMime);
+        initTomSelect(selectRecordMime, {});
     }
     inputRecordSlowdown = document.getElementById('inputRecordSlowdown');
     if (inputRecordSlowdown) inputRecordSlowdown.addEventListener('input', changeRecordValues);
@@ -713,10 +742,10 @@ function updateMediaRecorderOptionsVisibility() {
     mediaRecorderOptions.forEach(element => {
         if (isMediaRecorder) {
             element.style.display = 'block';
-            // Réinitialiser Materialize si c'est un select
+            // Rafraîchir Tom Select si c'est un select
             if (element.querySelector('select')) {
                 const select = element.querySelector('select');
-                M.FormSelect.init(select);
+                refreshTomSelect(select);
             }
         } else {
             element.style.display = 'none';
@@ -733,18 +762,8 @@ function initTabMemory() {
     // Vérifier que l'onglet existe
     const tabElement = document.querySelector(`a[href="#${activeTab}"]`);
     if (tabElement) {
-        // Retirer la classe active de tous les onglets
-        document.querySelectorAll('.tabs .tab a').forEach(tab => {
-            tab.classList.remove('active');
-        });
-        // Ajouter la classe active à l'onglet sélectionné
-        tabElement.classList.add('active');
-
-        // Activer l'onglet dans Materialize
-        const tabsInstance = M.Tabs.getInstance(document.querySelector('.tabs'));
-        if (tabsInstance) {
-            tabsInstance.select(activeTab);
-        }
+        // Activer l'onglet via Bootstrap 5 (remplace M.Tabs.select)
+        showBsTab(tabElement);
 
         // Sauvegarder dans localStorage si ce n'était pas déjà fait
         if (!urlHash) {
@@ -752,8 +771,8 @@ function initTabMemory() {
         }
     }
 
-    // Gérer le changement d'onglet
-    document.querySelectorAll('.tabs .tab a').forEach(tab => {
+    // Gérer le changement d'onglet (tabs Bootstrap 5 + tabs Materialize restantes)
+    document.querySelectorAll('#mainTabs .nav-link, .tabs .tab a').forEach(tab => {
         tab.addEventListener('click', function() {
             const tabId = this.getAttribute('href').substring(1); // Enlever le #
             localStorage.setItem('activeTab', tabId);
@@ -961,9 +980,9 @@ export function init_ui() {
     persistLanguagePreference(pkg.options.options.language);
 
     selectLanguage.value = pkg.options.options.language;
-    M.FormSelect.init(document.getElementById('selectLanguage'));
+    refreshTomSelect(document.getElementById('selectLanguage'));
     selectCheckVersionOnline.value = pkg.options.options.checkVersion;
-    M.FormSelect.init(document.getElementById('selectCheckVersionOnline'));
+    refreshTomSelect(document.getElementById('selectCheckVersionOnline'));
 
     try {
         const s = window.userSettings;
@@ -1069,8 +1088,8 @@ export function init_ui() {
 
     console.log('🎨 [INIT_UI] État final du switch:', switchIconeVectoriel.checked);
     selectShape.value = pkg.options.point.shape
-    // Obliger Materialize à actualiser l'affichage du select pour refléter la nouvelle valeur sélectionnée
-    M.FormSelect.init(document.getElementById('selectShape'));
+    // Rafraîchir Tom Select pour refléter la nouvelle valeur sélectionnée
+    refreshTomSelect(document.getElementById('selectShape'));
 
     
     // ------- ANIMATION DE LA CARTE -------
@@ -1091,8 +1110,8 @@ export function init_ui() {
     // select pour le mode de flash
     if (selectFlashMode) {
         selectFlashMode.value = pkg.options.flash.mode;
-        // Rafraîchir le select Materialize après avoir changé la valeur
-        M.FormSelect.init(selectFlashMode);
+        // Rafraîchir Tom Select après avoir changé la valeur
+        refreshTomSelect(selectFlashMode);
     }
     // radio buttons pour le type de couleur du flash
     const flashColorRadios = document.getElementsByName('flashColor');
@@ -1113,7 +1132,7 @@ export function init_ui() {
     inputTitle.value = pkg.options.infos.title.text;
     if (inputTitle.value != "My Geocaching Map") {
         // enlève le placeholder si un texte est enregistré
-        M.updateTextFields();
+        /* M.updateTextFields() — removed (Bootstrap 5 handles labels) */
     }
     // textAreas
     
@@ -1139,7 +1158,7 @@ export function init_ui() {
     initOptionsUI();
 
     // Mettre à jour tous les champs Materialize pour repositionner les labels
-    M.updateTextFields();
+    /* M.updateTextFields() — removed (Bootstrap 5 handles labels) */
 }
 
 let isPickingMapCenter = false;
@@ -1235,7 +1254,7 @@ function setLatLonInputs(latVal, lonVal) {
     if (inputMapCenterLat) inputMapCenterLat.value = latVal;
     if (inputMapCenterLon) inputMapCenterLon.value = lonVal;
     if (inputMapCenterCombined) inputMapCenterCombined.value = `${latVal}, ${lonVal}`;
-    M.updateTextFields();
+    /* M.updateTextFields() — removed (Bootstrap 5 handles labels) */
 }
 
 function centerKey(center) {
@@ -1267,7 +1286,7 @@ function setLatLonMode(useCombined) {
     if (rowLatLon) rowLatLon.classList.toggle('hide', useCombined);
     if (fieldLat) fieldLat.classList.toggle('hide', useCombined);
     if (fieldLon) fieldLon.classList.toggle('hide', useCombined);
-    M.updateTextFields();
+    /* M.updateTextFields() — removed (Bootstrap 5 handles labels) */
 }
 
 function toggleLatLonMode() {
@@ -1279,7 +1298,7 @@ function onCombinedCenterBlur() {
     const { lat, lon } = parseCombinedLatLon(inputMapCenterCombined.value);
     if (lat !== null) inputMapCenterLat.value = lat;
     if (lon !== null) inputMapCenterLon.value = lon;
-    M.updateTextFields();
+    /* M.updateTextFields() — removed (Bootstrap 5 handles labels) */
     saveMapCenterSettings();
 }
 
@@ -1401,7 +1420,7 @@ async function saveMapCenterSettings() {
         if (patch.map_default_zoom !== undefined) {
             lastSavedZoom = patch.map_default_zoom;
         }
-        M.updateTextFields();
+        /* M.updateTextFields() — removed (Bootstrap 5 handles labels) */
         return ok;
     } catch(e) {
     }
@@ -1420,7 +1439,7 @@ async function applyCurrentMapViewAsDefault() {
         if (inputMapCenterLat) inputMapCenterLat.value = lat.toFixed(6);
         if (inputMapCenterLon) inputMapCenterLon.value = lon.toFixed(6);
         if (inputMapDefaultZoom) inputMapDefaultZoom.value = String(view.getZoom());
-        M.updateTextFields();
+        /* M.updateTextFields() — removed (Bootstrap 5 handles labels) */
         const ok = await saveMapCenterSettings();
         if (ok !== false && pkg.showToast) {
             const title = pkg.t ? pkg.t('Carte') : 'Carte';
@@ -1437,7 +1456,7 @@ function clearMapCenterSettings() {
         if (inputMapCenterLon) inputMapCenterLon.value = '';
         if (inputMapCenterCombined) inputMapCenterCombined.value = '';
         if (inputMapDefaultZoom) inputMapDefaultZoom.value = '';
-        M.updateTextFields();
+        /* M.updateTextFields() — removed (Bootstrap 5 handles labels) */
         saveAppSettingsPatch({ map_default_center: null, map_default_zoom: null });
     } catch(e) {
     }
@@ -1469,7 +1488,7 @@ function togglePickMapCenter() {
                     const view = map.getView();
                     if (view && inputMapDefaultZoom) inputMapDefaultZoom.value = String(view.getZoom());
                 } catch(_) {}
-                M.updateTextFields();
+                /* M.updateTextFields() — removed (Bootstrap 5 handles labels) */
                 const ok = await saveMapCenterSettings();
                 if (ok !== false && pkg.showToast) {
                     pkg.showToast('Centre par défaut mis à jour depuis la carte', 'success', 'Carte', 3000);
@@ -1504,13 +1523,13 @@ function initOptionsUI() {
 
         if (selectRecordMode) {
             selectRecordMode.value = (pkg.options.record?.mode) || 'mediarecorder'; // MediaRecorder par défaut
-            M.FormSelect.init(selectRecordMode);
+            refreshTomSelect(selectRecordMode);
         }
         if (inputRecordFps) inputRecordFps.value = (pkg.options.record?.fps) || 24;
         if (inputRecordBitrate) inputRecordBitrate.value = ((pkg.options.record?.mediaRecorder?.videoBitsPerSecond) || 6000000) / 1000000;
         if (selectRecordMime) {
             selectRecordMime.value = (pkg.options.record?.mediaRecorder?.mimeType) || 'video/webm;codecs=vp9';
-            M.FormSelect.init(selectRecordMime);
+            refreshTomSelect(selectRecordMime);
         }
         if (inputRecordSlowdown) inputRecordSlowdown.value = (pkg.options.record?.mediaRecorder?.slowdownFactor) || 1;
         if (inputRecordScaleFactor) inputRecordScaleFactor.value = (pkg.options.record?.mediaRecorder?.scaleFactor) || 1;
@@ -1761,9 +1780,6 @@ export function setPickerDates(metadata) {
     const startDateElement = document.querySelector('#datePickerStart');
     const endDateElement = document.querySelector('#datePickerEnd');
 
-    const startDatePicker = M.Datepicker.getInstance(startDateElement);
-    const endDatePicker = M.Datepicker.getInstance(endDateElement);
-
     // Capture des dates par défaut (clonées pour éviter toute mutation)
     defaultStartDate = metadata.startDate ? new Date(metadata.startDate) : null;
     defaultEndDate = metadata.endDate ? new Date(metadata.endDate) : null;
@@ -1774,9 +1790,9 @@ export function setPickerDates(metadata) {
     const formattedStartDate = formatDateForPickers(defaultStartDate);
     const formattedEndDate = formatDateForPickers(defaultEndDate);
 
-    startDatePicker.setDate(defaultStartDate, true);
-    endDatePicker.setDate(defaultEndDate, true);
-
+    // Tempus Dominus : définir la date via l'API + l'input texte
+    setTdDate(startDateElement, defaultStartDate);
+    setTdDate(endDateElement, defaultEndDate);
     startDateElement.value = formattedStartDate;
     endDateElement.value = formattedEndDate;
 
@@ -1791,25 +1807,20 @@ export function setPickerDates(metadata) {
     const publishedStartElement = document.querySelector('#publishedDatePickerStart');
     const publishedEndElement = document.querySelector('#publishedDatePickerEnd');
     if (publishedStartElement && publishedEndElement) {
-        const publishedStartPicker = M.Datepicker.getInstance(publishedStartElement) || M.Datepicker.init(publishedStartElement, {
-            format: 'yyyy-mm-dd',
-            autoClose: true,
-            showClearBtn: false,
-            i18n: frenchDatePickerConfig
-        });
-        const publishedEndPicker = M.Datepicker.getInstance(publishedEndElement) || M.Datepicker.init(publishedEndElement, {
-            format: 'yyyy-mm-dd',
-            autoClose: true,
-            showClearBtn: false,
-            i18n: frenchDatePickerConfig
-        });
+        // S'assurer que Tempus Dominus est initialisé
+        if (!getTempusDominus(publishedStartElement)) {
+            initTempusDominus(publishedStartElement, { display: { components: { clock: false } }, localization: { format: 'yyyy-MM-dd' } });
+        }
+        if (!getTempusDominus(publishedEndElement)) {
+            initTempusDominus(publishedEndElement, { display: { components: { clock: false } }, localization: { format: 'yyyy-MM-dd' } });
+        }
 
-        publishedStartPicker.setDate(defaultPublishedStartDate, true);
-        publishedEndPicker.setDate(defaultPublishedEndDate, true);
+        setTdDate(publishedStartElement, defaultPublishedStartDate);
+        setTdDate(publishedEndElement, defaultPublishedEndDate);
 
         const formattedPublishedStartDate = formatDateForPickers(defaultPublishedStartDate);
         const formattedPublishedEndDate = formatDateForPickers(defaultPublishedEndDate);
-        
+
         publishedStartElement.value = formattedPublishedStartDate;
         publishedEndElement.value = formattedPublishedEndDate;
 
@@ -1826,28 +1837,22 @@ export function setPickerDates(metadata) {
     const animEndElement = document.querySelector('#animDateEnd');
 
     if (animStartElement && defaultStartDate) {
-        const animStartPicker = M.Datepicker.getInstance(animStartElement);
-        if (animStartPicker) {
-            animStartPicker.setDate(defaultStartDate, true);
-            animStartElement.value = formattedStartDate;
-            pkg.options.animation.dateStart = defaultStartDate;
-        }
+        setTdDate(animStartElement, defaultStartDate);
+        animStartElement.value = formattedStartDate;
+        pkg.options.animation.dateStart = defaultStartDate;
     }
 
     if (animEndElement && defaultEndDate) {
-        const animEndPicker = M.Datepicker.getInstance(animEndElement);
-        if (animEndPicker) {
-            animEndPicker.setDate(defaultEndDate, true);
-            animEndElement.value = formattedEndDate;
-            pkg.options.animation.dateEnd = defaultEndDate;
-        }
+        setTdDate(animEndElement, defaultEndDate);
+        animEndElement.value = formattedEndDate;
+        pkg.options.animation.dateEnd = defaultEndDate;
     }
 
     // Mettre à jour les boutons reset Animation aussi
     updateResetAnimButtonsHighlight();
 
     // Mettre à jour les labels Materialize après avoir défini les valeurs des datepickers
-    M.updateTextFields();
+    /* M.updateTextFields() — removed (Bootstrap 5 handles labels) */
 }
 
 function formatDateForPickers(date) {
@@ -1858,8 +1863,7 @@ function resetStartDateToDefault(){
     const el = document.querySelector('#datePickerStart');
     const start = defaultStartDate;
     if (!el || !start) return;
-    const inst = M.Datepicker.getInstance(el);
-    inst.setDate(start, true);
+    setTdDate(el, start);
     el.value = formatDateForPickers(start);
     onSelectionChangedDebounced();
     updateResetButtonsHighlight();
@@ -1871,8 +1875,7 @@ function resetEndDateToDefault(){
     const el = document.querySelector('#datePickerEnd');
     const end = defaultEndDate;
     if (!el || !end) return;
-    const inst = M.Datepicker.getInstance(el);
-    inst.setDate(end, true);
+    setTdDate(el, end);
     el.value = formatDateForPickers(end);
     onSelectionChangedDebounced();
     updateResetButtonsHighlight();
@@ -1884,26 +1887,20 @@ function resetPublishedStartDateToDefault(){
     const el = document.querySelector('#publishedDatePickerStart');
     const start = defaultPublishedStartDate;
     if (!el || !start) return;
-    const inst = M.Datepicker.getInstance(el);
-    if (inst) {
-        inst.setDate(start, true);
-        el.value = formatDateForPickers(start);
-        onSelectionChangedDebounced();
-        updatePublishedResetButtonsHighlight();
-    }
+    setTdDate(el, start);
+    el.value = formatDateForPickers(start);
+    onSelectionChangedDebounced();
+    updatePublishedResetButtonsHighlight();
 }
 
 function resetPublishedEndDateToDefault(){
     const el = document.querySelector('#publishedDatePickerEnd');
     const end = defaultPublishedEndDate;
     if (!el || !end) return;
-    const inst = M.Datepicker.getInstance(el);
-    if (inst) {
-        inst.setDate(end, true);
-        el.value = formatDateForPickers(end);
-        onSelectionChangedDebounced();
-        updatePublishedResetButtonsHighlight();
-    }
+    setTdDate(el, end);
+    el.value = formatDateForPickers(end);
+    onSelectionChangedDebounced();
+    updatePublishedResetButtonsHighlight();
 }
 
 function updatePublishedResetButtonsHighlight(){
@@ -1957,8 +1954,7 @@ function resetAnimStartDateToDefault(){
     const el = document.querySelector('#animDateStart');
     const start = defaultStartDate;
     if (!el || !start) return;
-    const inst = M.Datepicker.getInstance(el);
-    inst.setDate(start, true);
+    setTdDate(el, start);
     el.value = formatDateForPickers(start);
     pkg.options.animation.dateStart = start;
     updateResetAnimButtonsHighlight();
@@ -1969,8 +1965,7 @@ function resetAnimEndDateToDefault(){
     const el = document.querySelector('#animDateEnd');
     const end = defaultEndDate;
     if (!el || !end) return;
-    const inst = M.Datepicker.getInstance(el);
-    inst.setDate(end, true);
+    setTdDate(el, end);
     el.value = formatDateForPickers(end);
     pkg.options.animation.dateEnd = end;
     updateResetAnimButtonsHighlight();
@@ -2034,9 +2029,8 @@ function applyFilterStartToAnim(){
     const parsed = pkg.parseDateInput(filterStart);
     if (!parsed) return;
     const animStartEl = document.querySelector('#animDateStart');
-    const animStartPicker = animStartEl ? M.Datepicker.getInstance(animStartEl) : null;
-    if (animStartPicker && animStartEl) {
-        animStartPicker.setDate(parsed, true);
+    if (animStartEl) {
+        setTdDate(animStartEl, parsed);
         animStartEl.value = formatDateForPickers(parsed);
     }
     pkg.options.animation.dateStart = parsed;
@@ -2050,9 +2044,8 @@ function applyFilterEndToAnim(){
     const parsed = pkg.parseDateInput(filterEnd);
     if (!parsed) return;
     const animEndEl = document.querySelector('#animDateEnd');
-    const animEndPicker = animEndEl ? M.Datepicker.getInstance(animEndEl) : null;
-    if (animEndPicker && animEndEl) {
-        animEndPicker.setDate(parsed, true);
+    if (animEndEl) {
+        setTdDate(animEndEl, parsed);
         animEndEl.value = formatDateForPickers(parsed);
     }
     pkg.options.animation.dateEnd = parsed;
@@ -2097,9 +2090,9 @@ function populateCountryStateSelects(tree){
         setTimeout(() => populateCountryStateSelects(tree), 200);
         return;
     }
-    // Détruire les instances Materialize AVANT de modifier le DOM
-    try { const inst = M.FormSelect.getInstance(selCountry); if (inst) inst.destroy(); } catch(_) {}
-    try { const inst = M.FormSelect.getInstance(selState); if (inst) inst.destroy(); } catch(_) {}
+    // Détruire les instances Tom Select AVANT de modifier le DOM
+    try { const ts = getTomSelect(selCountry); if (ts) ts.destroy(); } catch(_) {}
+    try { const ts = getTomSelect(selState); if (ts) ts.destroy(); } catch(_) {}
 
     // Populate countries
     selCountry.innerHTML = '';
@@ -2119,9 +2112,9 @@ function populateCountryStateSelects(tree){
         fragC.appendChild(opt);
     }
     selCountry.appendChild(fragC);
-    // Materialize FormSelect crashe sur un select sans options réelles (uniquement placeholder)
+    // Initialiser Tom Select sur les pays
     if (countries.length > 0) {
-        try { M.FormSelect.init(selCountry); } catch(_) {}
+        try { initTomSelect(selCountry, { plugins: ['remove_button'], maxItems: null, hideSelected: false, hidePlaceholder: true, closeAfterSelect: false }); } catch(_) {}
     }
 
     // Populate states (from selected countries or all)
@@ -2144,7 +2137,7 @@ function populateCountryStateSelects(tree){
     }
     selState.appendChild(fragS);
     if (statesSet.size > 0) {
-        try { M.FormSelect.init(selState); } catch(_) {}
+        try { initTomSelect(selState, { plugins: ['remove_button'], maxItems: null, hideSelected: false, hidePlaceholder: true, closeAfterSelect: false }); } catch(_) {}
     }
 
     selCountry.addEventListener('change', () => {
@@ -2154,7 +2147,7 @@ function populateCountryStateSelects(tree){
             const placeholder = selCountry.querySelector('option[disabled][value=""]');
             if (placeholder) placeholder.selected = false;
         }
-        
+
         const selected = Array.from(selCountry.selectedOptions).map(o => o.value);
         dbgFilters('[COUNTRY] Country change selected=', selected);
         const sset = new Set();
@@ -2166,7 +2159,7 @@ function populateCountryStateSelects(tree){
         placeholderStateChange.disabled = true;
         placeholderStateChange.textContent = pkg.t ? pkg.t('Filtrer par région/état') : 'Filtrer par région/état';
         selState.appendChild(placeholderStateChange);
-        
+
         const frag = document.createDocumentFragment();
         Array.from(sset).sort((a,b)=>a.localeCompare(b)).forEach(s => {
             const opt = document.createElement('option');
@@ -2174,9 +2167,10 @@ function populateCountryStateSelects(tree){
             frag.appendChild(opt);
         });
         selState.appendChild(frag);
-        try { M.FormSelect.getInstance(selState)?.destroy?.(); } catch(_) {}
+        // Détruire et réinitialiser Tom Select pour les états
+        try { const ts = getTomSelect(selState); if (ts) ts.destroy(); } catch(_) {}
         if (sset.size > 0) {
-            try { M.FormSelect.init(selState); } catch(_) {}
+            try { initTomSelect(selState, { plugins: ['remove_button'], maxItems: null, hideSelected: false, hidePlaceholder: true, closeAfterSelect: false }); } catch(_) {}
         }
         dbgFilters('[COUNTRY] States populated for selection=', sset.size);
         // Mise à jour des infos et déclenchement filtrage
@@ -2210,15 +2204,15 @@ function restoreSelectedValues(){
         if (!raw) {
             // Pas de sauvegarde, utiliser les valeurs par défaut du HTML (attributs selected)
             dbgFilters('[FILTER] No saved filters, using HTML defaults');
-            // Juste rafraîchir Materialize pour afficher les valeurs selected du HTML
-            if (selectType) M.FormSelect.init(selectType);
-            if (selectDifficulty) M.FormSelect.init(selectDifficulty);
-            if (selectTerrain) M.FormSelect.init(selectTerrain);
-            if (selectContainer) M.FormSelect.init(selectContainer);
+            // Juste rafraîchir Tom Select pour afficher les valeurs selected du HTML
+            if (selectType) refreshTomSelect(selectType);
+            if (selectDifficulty) refreshTomSelect(selectDifficulty);
+            if (selectTerrain) refreshTomSelect(selectTerrain);
+            if (selectContainer) refreshTomSelect(selectContainer);
             updateFilterInfos();
             return;
         }
-        
+
         const values = JSON.parse(raw);
         dbgFilters('[FILTER] Restoring saved filters:', values);
         setSelectValues(selectType, values.type);
@@ -2230,19 +2224,19 @@ function restoreSelectedValues(){
         const end = document.querySelector('#datePickerEnd');
         if (start && values.dates?.startDate) start.value = values.dates.startDate;
         if (end && values.dates?.endDate) end.value = values.dates.endDate;
-        // refresh UI (Materialize)
-        if (selectType) M.FormSelect.init(selectType);
-        if (selectDifficulty) M.FormSelect.init(selectDifficulty);
-        if (selectTerrain) M.FormSelect.init(selectTerrain);
-        if (selectContainer) M.FormSelect.init(selectContainer);
+        // refresh UI (Tom Select)
+        if (selectType) refreshTomSelect(selectType);
+        if (selectDifficulty) refreshTomSelect(selectDifficulty);
+        if (selectTerrain) refreshTomSelect(selectTerrain);
+        if (selectContainer) refreshTomSelect(selectContainer);
         updateFilterInfos();
-    } catch(e) { 
+    } catch(e) {
         console.warn('Restore filters error', e);
         // En cas d'erreur, utiliser les valeurs par défaut du HTML
-        if (selectType) M.FormSelect.init(selectType);
-        if (selectDifficulty) M.FormSelect.init(selectDifficulty);
-        if (selectTerrain) M.FormSelect.init(selectTerrain);
-        if (selectContainer) M.FormSelect.init(selectContainer);
+        if (selectType) refreshTomSelect(selectType);
+        if (selectDifficulty) refreshTomSelect(selectDifficulty);
+        if (selectTerrain) refreshTomSelect(selectTerrain);
+        if (selectContainer) refreshTomSelect(selectContainer);
         updateFilterInfos();
     }
 }
@@ -2257,8 +2251,8 @@ function selectAllOptions(selectEl){
     // No-op si tout est déjà sélectionné (évite un cycle de filtrage inutile)
     if (areAllSelected(selectEl)) return;
     Array.from(selectEl.options).forEach(opt => { if (!opt.disabled) opt.selected = true; });
-    // Réinitialiser Materialize pour mettre à jour l'affichage visuel
-    M.FormSelect.init(selectEl);
+    // Synchroniser Tom Select pour mettre à jour l'affichage visuel
+    refreshTomSelect(selectEl);
     onSelectionChangedDebounced();
     updateFilterInfos();
 }
@@ -2268,15 +2262,15 @@ function deselectAllOptions(selectEl){
     // No-op si rien n'est déjà sélectionné (évite un cycle de filtrage inutile)
     if (areNoneSelected(selectEl)) return;
     Array.from(selectEl.options).forEach(opt => { opt.selected = false; });
-    
+
     // Pour les selects avec placeholder, sélectionner le placeholder quand tout est vide
     const placeholderOption = selectEl.querySelector('option[disabled][value=""]');
     if (placeholderOption) {
         placeholderOption.selected = true;
     }
-    
-    // Réinitialiser Materialize pour mettre à jour l'affichage visuel
-    M.FormSelect.init(selectEl);
+
+    // Synchroniser Tom Select pour mettre à jour l'affichage visuel
+    refreshTomSelect(selectEl);
     onSelectionChangedDebounced();
     updateFilterInfos();
 }
@@ -2363,7 +2357,7 @@ function setBtnDisabled(btnEl, disabled){
 function setupFilterButtonAccessibility(){
     const panel = document.getElementById('filterPanel');
     if (!panel) return;
-    const buttons = panel.querySelectorAll('a.btn-flat');
+    const buttons = panel.querySelectorAll('a.btn-link, a.btn-flat');
     buttons.forEach(btn => {
         btn.setAttribute('role', 'button');
         btn.setAttribute('tabindex', '0');
@@ -2483,6 +2477,7 @@ function initializeIconOptions() {
     const selectIconSet = document.getElementById('selectIconSet');
     if (selectIconSet) {
         selectIconSet.addEventListener('change', updateIconSet);
+        initTomSelect(selectIconSet, { maxItems: 1 });
         // Initialiser avec le premier jeu d'icônes
         updateIconSet();
     }
@@ -3568,6 +3563,13 @@ function initCssAssistant() {
         opacity: document.getElementById('gcCssOpacity'),
     };
 
+    // Initialiser Tom Select sur les selects du panneau d'informations
+    ['fontFamily', 'fontWeight', 'textAlign', 'borderStyle', 'position'].forEach(key => {
+        if (fields[key] && fields[key].tagName === 'SELECT') {
+            initTomSelect(fields[key], {});
+        }
+    });
+
     // Valeurs par défaut pour éviter le fond noir au démarrage
     if (fields.backgroundColor && !fields.backgroundColor.value) {
         fields.backgroundColor.value = '#ffffff';
@@ -3639,8 +3641,7 @@ function initCssAssistant() {
 
     function ensureSelectRefresh(selectEl) {
         if (!selectEl) return;
-        try { M.FormSelect.getInstance(selectEl)?.destroy?.(); } catch(_) {}
-        try { M.FormSelect.init(selectEl); } catch(_) {}
+        refreshTomSelect(selectEl);
     }
 
     function setBadgeCount(count) {
@@ -3793,7 +3794,7 @@ function initCssAssistant() {
             }
         }
 
-        try { M.updateTextFields(); } catch(_) {}
+        try { /* M.updateTextFields() — removed (Bootstrap 5 handles labels) */ } catch(_) {}
         setBadgeCount(new Set(unmanaged.concat(unmanagedExtra)).size);
     }
 
@@ -3865,6 +3866,12 @@ function initCssAssistant() {
     function updateAdvancedVisibility() {
         const on = !!cbAdvanced.checked;
         advancedPanel.style.display = on ? 'block' : 'none';
+        // Masquer les onglets et panes du formulaire quand le mode CSS avancé est actif
+        const tabsBar = root.querySelector('.gc-css-tabs');
+        if (tabsBar) tabsBar.style.display = on ? 'none' : '';
+        root.querySelectorAll('.gc-css-pane').forEach(p => {
+            p.style.display = on ? 'none' : '';
+        });
     }
 
     function applyCurrentCss() {
@@ -4269,15 +4276,12 @@ async function addAudioMetadataTooltip(file, element) {
             </div>
         `;
 
-        // Ajouter la tooltip Materialize
-        element.setAttribute('data-tooltip', tooltipContent);
-        element.classList.add('tooltipped');
-        if (typeof M !== 'undefined' && M.Tooltip) {
-            M.Tooltip.init(element, {
-                html: true,
-                position: 'top',
-                margin: 5
-            });
+        // Ajouter la tooltip Bootstrap 5
+        element.setAttribute('data-bs-toggle', 'tooltip');
+        element.setAttribute('data-bs-html', 'true');
+        element.setAttribute('data-bs-title', tooltipContent);
+        if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+            new bootstrap.Tooltip(element, { html: true, placement: 'top' });
         }
 
     } catch(e) {
@@ -4414,16 +4418,23 @@ function openLanguageChangeModal(newLanguage, currentLanguage) {
         }
     }
 
-    // Créer le contenu HTML de la modal Materialize
+    // Créer le contenu HTML de la modal Bootstrap 5
     const modalHTML = `
-        <div id="${modalId}" class="modal">
-            <div class="modal-content">
-                <h4 class="center-align">${title}</h4>
-                ${message}
-            </div>
-            <div class="modal-footer">
-                <a href="#!" class="modal-close waves-effect waves-red btn-flat">${cancelText}</a>
-                <a href="#!" id="confirm-language-change" class="waves-effect waves-green btn">${confirmText}</a>
+        <div id="${modalId}" class="modal bs-modal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title text-center">${title}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        ${message}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary modal-close" data-bs-dismiss="modal">${cancelText}</button>
+                        <button type="button" id="confirm-language-change" class="btn btn-primary">${confirmText}</button>
+                    </div>
+                </div>
             </div>
         </div>
         <style>
@@ -4456,19 +4467,21 @@ function openLanguageChangeModal(newLanguage, currentLanguage) {
     // Ajouter la modal au DOM
     document.body.insertAdjacentHTML('beforeend', modalHTML);
 
-    // Initialiser et ouvrir la modal Materialize
+    // Initialiser et ouvrir la modal Bootstrap 5
     const modalElement = document.getElementById(modalId);
-    const modalInstance = M.Modal.init(modalElement, {
-        dismissible: false, // Empêcher la fermeture en cliquant à l'extérieur
-        onCloseEnd: function() {
-            // Nettoyer la modal du DOM après fermeture
-            modalElement.remove();
-        }
+    const bsModal = new bootstrap.Modal(modalElement, {
+        backdrop: 'static', // Empêcher la fermeture en cliquant à l'extérieur
+        keyboard: false
     });
+    // Nettoyer la modal du DOM après fermeture
+    modalElement.addEventListener('hidden.bs.modal', function() {
+        modalElement.remove();
+    });
+    bsModal.show();
 
     // Gérer le clic sur le bouton de confirmation
     document.getElementById('confirm-language-change').addEventListener('click', function() {
-        modalInstance.close();
+        bsModal.hide();
         // Persister la langue côté navigateur + backend
         persistLanguagePreference(newLanguage);
 

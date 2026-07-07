@@ -85,53 +85,10 @@
     font-weight: 500;
 }
 
-/* Amélioration des boutons de cartes */
-.changeMap {
-    width: 100%;
-    margin-bottom: 1rem;
-    padding: 12px 16px;
-    text-align: center;
-    font-weight: 500;
-    font-size: 14px;
-    min-height: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-    border-radius: 8px;
-}
+/* Boutons de cartes : voir .map-card dans la section composants post-migration */
+/* (les anciens overrides .changeMap avec transform/colors hardcoded ont été supprimés) */
 
-.changeMap:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.changeMap.disabled {
-    background-color: #4CAF50 !important;
-    color: white !important;
-    transform: none;
-    box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
-}
-
-/* Bouton sélectionné (titre/infos) aligné sur le style des cartes */
-.changeMap.is-selected {
-    background-color: #0d47a1 !important;
-    color: #fff !important;
-    box-shadow: inset 0 0 0 2px #ffffff33, 0 2px 6px rgba(13, 71, 161, 0.45);
-}
-
-/* Boutons de sélection Titre/Infos (assistant CSS) */
-.gc-css-target-btn {
-    background-color: #2196f3 !important;
-    color: #fff !important;
-    border-radius: 6px;
-    box-shadow: 0 2px 4px rgba(33, 150, 243, 0.35);
-    margin-right: 6px;
-}
-.gc-css-target-btn.is-selected {
-    background-color: #0d47a1 !important;
-    box-shadow: inset 0 0 0 2px #ffffff33, 0 2px 6px rgba(13, 71, 161, 0.45);
-}
+/* Boutons de sélection Titre/Infos : voir .gc-css-target-btn dans la section composants */
 
 /* Style des boutons d'animation */
 .btn-large {
@@ -173,73 +130,32 @@
     white-space: nowrap;
 }
 
-/* Style spécifique pour les boutons Toner - cohérence avec Materialize */
-#stamenTonerLight {
-    background-color: #f5f5f5 !important;
-    color: #333 !important;
-    border: 1px solid #ddd !important;
-}
-
-#stamenTonerLight:hover {
-    background-color: #e8e8e8 !important;
-    border-color: #bbb !important;
-}
-
+/* Boutons Toner - groupe de toggle Clair/Sombre */
+#stamenTonerLight,
 #stamenTonerDark {
-    background-color: #424242 !important;
-    color: #ffffff !important;
-    border: 1px solid #333 !important;
+    background: transparent !important;
+    color: var(--color-text) !important;
+    border: 1px solid var(--color-border) !important;
 }
-
+#stamenTonerLight:hover,
 #stamenTonerDark:hover {
-    background-color: #616161 !important;
-    border-color: #555 !important;
+    background: var(--color-accent-weak) !important;
+    color: var(--color-accent) !important;
 }
-
-/* Amélioration des icônes dans les boutons Toner */
-#stamenTonerLight .material-icons,
-#stamenTonerDark .material-icons {
-    font-size: 18px;
-    vertical-align: middle;
-    margin-left: 4px;
-}
-
-/* Style pour les options de cartes - cohérence parfaite */
-#vectorMapOptions, #tonerMapOptions {
-    margin-top: 1rem;
-    padding: 0;
-    background-color: rgba(33, 150, 243, 0.05);
-    border: 1px solid rgba(33, 150, 243, 0.1);
-    border-radius: 8px;
-    transition: all 0.3s ease;
-    overflow: hidden;
-    max-height: 0;
-    opacity: 0;
-}
-
-#vectorMapOptions, #tonerMapOptions {
-    transform: translateY(-10px);
-}
-
-#vectorMapOptions.show, #tonerMapOptions.show {
-    padding: 1rem;
-    max-height: 500px;
+/* Bouton actif (JS ajoute .disabled pour indiquer la sélection) */
+#stamenTonerLight.disabled,
+#stamenTonerDark.disabled {
+    background: var(--color-accent) !important;
+    color: #fff !important;
+    border-color: var(--color-accent) !important;
     opacity: 1;
-    transform: translateY(0);
+    cursor: default;
 }
 
-#vectorMapOptions:hover, #tonerMapOptions:hover {
-    background-color: rgba(33, 150, 243, 0.08);
-    border-color: rgba(33, 150, 243, 0.2);
-    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.1);
-}
-
-#vectorMapOptions h6, #tonerMapOptions h6 {
-    margin-top: 0;
-    margin-bottom: 1rem;
-    color: #2196F3;
-    font-weight: 600;
-    font-size: 1rem;
+/* Options de cartes Vector/Toner - gérées par JS via .show et style.display */
+/* Le styling de base est dans .map-options (section composants post-migration) */
+#vectorMapOptions.show, #tonerMapOptions.show {
+    /* JS gère display:block/none; .show est conservé pour compatibilité */
 }
 
 /* Nouveaux styles pour les contrôles Vector */
@@ -962,30 +878,8 @@ input[type="checkbox"]:checked + span:not(.lever):after {
 }
 
 /* (Styles des chips retirés) */
-/* Infos filtres */
-.filter-info {
-    margin-top: 6px;
-    font-size: 0.9rem;
-    color: #424242;
-}
-
-.filter-info.filter-info-all {
-    font-weight: 600;
-    color: #2e7d32; /* vert discret pour TOUT */
-}
-
-.btn-flat.filter-all-active {
-    background: rgba(76, 175, 80, 0.12);
-    border-radius: 6px;
-}
-
-/* Boutons Tout/Aucun désactivés (sans effet) */
-.btn-flat.filter-btn-disabled {
-    opacity: 0.4;
-    cursor: default;
-    pointer-events: none;
-    user-select: none;
-}
+/* Infos filtres — voir .filter-info-badge dans la section composants post-migration */
+/* (les anciens styles .filter-info et .btn-flat.* ont été remplacés par .filter-info-badge et .btn-link.*) */
 
 /* Compteur de sélection */
 .filters-counter {
@@ -1023,7 +917,6 @@ input[type="checkbox"]:checked + span:not(.lever):after {
     border-radius: 6px;
     font-weight: 600;
     opacity: 0.55;
-}
 }
 
 /* Panneau sticky pour Profils */
@@ -1190,4 +1083,447 @@ line-height: 26px;
 height: 26px;
 font-weight: 600;
 font-size: 0.8rem;
+}
+
+/* =====================================================================
+   Composants post-migration Tabler
+   ===================================================================== */
+
+/* Cartes de sélection de fond de carte (galerie visuelle) */
+.map-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    padding: 8px;
+    border: 2px solid var(--color-border);
+    border-radius: 8px;
+    background: var(--color-surface);
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+    overflow: hidden;
+}
+.map-card:hover {
+    border-color: var(--color-accent);
+    box-shadow: var(--shadow-md);
+}
+.map-card:active {
+    transform: scale(0.98);
+}
+.map-card:focus-visible {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.25);
+}
+.map-card-img {
+    width: 100%;
+    height: 70px;
+    object-fit: cover;
+    border-radius: 4px;
+    display: block;
+}
+.map-card-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-text);
+}
+.map-card-check {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    font-size: 18px;
+    color: #fff;
+    background: var(--color-accent);
+    border-radius: 50%;
+    padding: 2px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+.map-card.is-selected {
+    border-color: var(--color-accent);
+    box-shadow: inset 0 0 0 1px var(--color-accent), var(--shadow-md);
+}
+.map-card.is-selected .map-card-check {
+    opacity: 1;
+}
+.map-card.disabled {
+    opacity: 0.6;
+    cursor: default;
+    border-color: var(--color-success);
+}
+.map-card.disabled .map-card-check {
+    opacity: 1;
+    background: var(--color-success);
+}
+
+/* Panneau d'options de carte (Vector / Toner) */
+.map-options {
+    padding: 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: var(--color-accent-weak);
+}
+.map-options-title {
+    margin: 0 0 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--color-accent);
+}
+
+/* Cartes avec accent latéral (card-accent) */
+.card-accent {
+    position: relative;
+    overflow: hidden;
+}
+.card-accent .card-header {
+    background: transparent;
+    border-bottom: 1px solid var(--color-border);
+    padding: 0.5rem 1rem;
+}
+.card-accent .card-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+.card-accent-primary { border-left: 3px solid var(--color-accent); }
+.card-accent-success { border-left: 3px solid var(--color-success); }
+.card-accent-warning { border-left: 3px solid var(--color-warning); }
+.card-accent-danger  { border-left: 3px solid var(--color-danger); }
+
+/* Liste des profils scrollable */
+.profiles-list-scrollable {
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+}
+
+/* Actions de filtre (boutons Tout/Aucun + badge info) */
+.filter-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+.filter-actions .btn-link {
+    font-size: 0.85rem;
+    text-decoration: none;
+    background: transparent !important;
+    color: var(--color-accent);
+}
+.filter-actions .btn-link:hover {
+    text-decoration: underline;
+    background: transparent !important;
+}
+.filter-actions .btn-link.filter-btn-disabled {
+    opacity: 0.4;
+    cursor: default;
+    pointer-events: none;
+    user-select: none;
+}
+.filter-actions .btn-link.filter-all-active {
+    /* Même apparence que les autres boutons — pas de distinction visuelle */
+}
+
+/* Badge d'info filtre (non-interactif, à côté des boutons) */
+.filter-info-badge {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 6px;
+    padding: 1px 8px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    background: var(--color-surface-alt, rgba(0,0,0,0.04));
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    line-height: 1.6;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: default;
+    user-select: none;
+}
+.filter-info-badge.filter-info-all {
+    /* Même apparence que le badge normal — pas de distinction visuelle */
+}
+.filter-info-badge:empty {
+    display: none;
+}
+
+/* Badge compteur de filtres */
+.filters-counter {
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+/* Indicateur de profil actif */
+.profile-active-indicator {
+    min-height: 0;
+    margin-bottom: 8px;
+}
+
+/* Panneau sticky pour la section profils */
+.sticky-panel {
+    position: sticky;
+    top: 1rem;
+}
+
+/* Slider value compact */
+.vector-slider-value {
+    min-width: 42px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--color-accent);
+    background: var(--color-accent-weak);
+}
+
+/* Textareas CSS editor */
+.cssEditor {
+    font-family: var(--tblr-font-monospace, monospace);
+    font-size: 0.85rem;
+}
+
+/* Grille d'icônes (aperçu) */
+.icon-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 8px;
+    margin-top: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 8px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: var(--color-surface);
+}
+.icon-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 6px;
+    border-radius: 4px;
+    transition: background 0.15s ease;
+}
+.icon-item:hover {
+    background: var(--color-accent-weak);
+}
+.icon-item .icon-label {
+    font-size: 10px;
+    text-align: center;
+    color: var(--color-text-muted);
+    font-weight: 500;
+    margin-top: 2px;
+}
+
+/* Séparateur de section animation */
+.anim-section-divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.anim-section-divider::before,
+.anim-section-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--color-border);
+}
+.anim-section-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+}
+.anim-btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+/* Chip de synchronisation filtre -> animation */
+.filter-sync-chip {
+    border: 1px solid var(--color-warning);
+    color: var(--color-warning) !important;
+    background-color: rgba(239, 108, 0, 0.1) !important;
+    border-radius: 6px;
+    font-weight: 600;
+    text-decoration: none;
+}
+.filter-sync-chip:hover {
+    background-color: rgba(239, 108, 0, 0.18) !important;
+}
+
+/* Ligne inline pour dates (reset + sync) */
+.date-inline-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.filter-sync-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Bouton de reset de date compact */
+.date-reset-btn {
+    color: var(--color-accent) !important;
+    text-decoration: none;
+    font-size: 0.85rem;
+}
+.date-reset-btn:hover {
+    text-decoration: underline;
+}
+.date-reset-btn.active-reset {
+    font-weight: 600;
+}
+
+/* Info de filtre (compteur par section) */
+.filter-info {
+    margin-top: 4px;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+}
+.filter-info.filter-info-all {
+    font-weight: 600;
+    color: var(--color-accent);
+}
+
+/* Onglets CSS assistant */
+.gc-css-tabs .gc-css-tab {
+    cursor: pointer;
+}
+.gc-css-tabs .gc-css-tab.active {
+    font-weight: 600;
+}
+.gc-css-pane {
+    display: none;
+}
+.gc-css-pane.active {
+    display: block;
+}
+
+/* Boutons cible Titre/Infos */
+.gc-css-target-btn {
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text-muted);
+    transition: all 0.15s ease;
+}
+.gc-css-target-btn:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+}
+.gc-css-target-btn.is-selected {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: #fff;
+}
+
+/* Badge non géré */
+.gc-css-unmanaged {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--color-warning);
+    color: var(--color-warning);
+    background-color: rgba(239, 108, 0, 0.1);
+    border-radius: 6px;
+    padding: 0 10px;
+    line-height: 26px;
+    height: 26px;
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+/* Panneau d'infos (Titre/Infos) */
+.gc-infos-panel {
+    margin-bottom: 8px;
+    padding: 10px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: var(--color-bg);
+}
+
+/* Actions CSS assistant */
+.gc-css-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Color picker compact */
+.gc-css-color {
+    width: 100%;
+    height: 38px;
+    padding: 2px;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    cursor: pointer;
+    background: none;
+}
+
+/* Profil actif dans la liste */
+.active-profile {
+    color: var(--color-accent);
+    background: var(--color-accent-weak);
+    border: 1px solid var(--color-accent);
+    border-radius: 6px;
+    padding: 6px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.active-profile .active-badge {
+    background: var(--color-success);
+    color: #fff;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Barre de contrôle latérale (plein écran) */
+.control-bar {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    background: rgba(33, 33, 33, 0.85);
+    border-radius: 8px;
+    padding: 6px;
+    z-index: 1000;
+}
+.control-bar-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.control-bar .btn-icon {
+    background: transparent;
+    border: none;
+    color: #fff;
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+.control-bar .btn-icon:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+.control-bar .btn-icon i {
+    color: #fff;
+    font-size: 18px;
 }

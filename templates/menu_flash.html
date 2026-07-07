@@ -1,78 +1,53 @@
-<div id="flash" class="col s12">
-    <h3>{{ _("Animation du Flash") }}</h3>
-    <div>
-        <form>
+<div id="flash">
+    <h5 class="mb-3">
+        <i class="ti ti-bolt text-warning me-1"></i>{{ _("Animation du Flash") }}
+    </h5>
+    <form>
+        <!-- Select pour choisir la forme du flash (remplace les anciens radio buttons) -->
+        <div class="mb-3">
+            <label class="form-label" for="selectFlashMode">{{ _("Forme du flash") }}</label>
+            <select id="selectFlashMode" class="form-select" aria-label="{{ _('Forme du flash') }}">
+                <option value="none">{{ _("Pas de flash") }}</option>
+                <option value="circle" selected>{{ _("Cercle") }}</option>
+                <option value="star">{{ _("Étoile") }}</option>
+                <option value="sparkle">{{ _("Scintillement") }}</option>
+                <option value="square">{{ _("Carré") }}</option>
+                <option value="triangle">{{ _("Triangle") }}</option>
+                <option value="diamond">{{ _("Losange") }}</option>
+            </select>
+        </div>
 
-            <!-- Select pour choisir la forme du flash (remplace les anciens radio buttons) -->
-            <div class="input-field">
-                <select id="selectFlashMode">
-                    <option value="none">{{ _("Pas de flash") }}</option>
-                    <option value="circle" selected>{{ _("Cercle") }}</option>
-                    <option value="star">{{ _("Étoile") }}</option>
-                    <option value="sparkle">{{ _("Scintillement") }}</option>
-                    <option value="square">{{ _("Carré") }}</option>
-                    <option value="triangle">{{ _("Triangle") }}</option>
-                    <option value="diamond">{{ _("Losange") }}</option>
-                </select>
-                <label for="selectFlashMode">{{ _("Forme du flash") }}</label>
-            </div>
+        <div class="mb-3">
+            <label class="form-label" for="inputTimeFlash">{{ _("Durée du flash en ms") }}</label>
+            <input id="inputTimeFlash" type="number" class="form-control" min="100" max="10000" step="100" placeholder="{{ _('Durée du flash') }}" aria-describedby="helpTimeFlash">
+            <small id="helpTimeFlash" class="form-hint text-muted">{{ _("100 à 10000 ms") }}</small>
+        </div>
 
-            <div class="input-field">
-                <input placeholder="{{ _('Durée du flash') }}" id="inputTimeFlash" type="number" class="validate" min="100" max="10000" step="100">
-                <label for="inputTimeFlash">{{ _("Durée du flash en ms") }}</label>
-            </div>
+        <div class="mb-3">
+            <label class="form-label" for="inputSizeFlash">{{ _("Taille du flash en px") }}</label>
+            <input id="inputSizeFlash" type="number" class="form-control" min="5" max="200" step="5" placeholder="{{ _('Taille du Flash') }}" aria-describedby="helpSizeFlash">
+            <small id="helpSizeFlash" class="form-hint text-muted">{{ _("5 à 200 px") }}</small>
+        </div>
 
-            <div class="input-field">
-                <input placeholder="{{ _('Taille du Flash') }}" id="inputSizeFlash" type="number" class="validate" min="5" max="200" step="5">
-                <label for="inputSizeFlash">{{ _("Taille du flash en px") }}</label>
-            </div>
+        <!-- Couleur du flash -->
+        <label class="form-label">{{ _("Couleur du flash") }}</label>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="flashColor" id="flashColorGc" value="gc">
+            <label class="form-check-label" for="flashColorGc">{{ _("Couleurs GC (par type)") }}</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="flashColor" id="flashColorNone" value="none">
+            <label class="form-check-label" for="flashColorNone">{{ _("Transparent") }}</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="flashColor" id="flashColorFix" value="fix" checked>
+            <label class="form-check-label" for="flashColorFix">{{ _("Couleur unique") }}</label>
+        </div>
 
-            <!-- Couleur du flash -->
-            <div class="row">
-                <div class="col s12">
-                    <label>
-                        {{ _("Couleur du flash") }}
-                    </label>
-                </div>
-
-                <div class="col s12">
-                    <p>
-                        <label>
-                            <input class="with-gap" name="flashColor" type="radio" value="gc"/>
-                            <span>
-                                {{ _("Couleurs GC (par type)") }}
-                            </span>
-                        </label>
-                    </p>
-                    <p>
-                        <label>
-                            <input class="with-gap" name="flashColor" type="radio" value="none"/>
-                            <span>
-                                {{ _("Transparent") }}
-                            </span>
-                        </label>
-                    </p>
-                    <p>
-                        <label>
-                            <input class="with-gap" name="flashColor" type="radio" value="fix" checked/>
-                            <span>
-                                {{ _("Couleur unique") }}
-                            </span>
-                        </label>
-                    </p>
-                </div>
-
-                <!-- Color Picker Flash -->
-                <div class="col s12">
-                    <div class="input-field">
-                        <input type="color" id="flashColor" value="#FF00FF">
-                        <label class="active" for="flashColor">
-                            {{ _("Choisir la couleur") }}
-                        </label>
-                    </div>
-                </div>
-            </div>
-
-        </form>
-    </div>
+        <!-- Color Picker Flash -->
+        <div class="mt-2">
+            <label class="form-label" for="flashColor">{{ _("Choisir la couleur") }}</label>
+            <input type="color" class="form-control form-control-color" id="flashColor" value="#FF00FF" aria-label="{{ _('Choisir la couleur du flash') }}">
+        </div>
+    </form>
 </div>

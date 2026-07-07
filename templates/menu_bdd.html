@@ -1,38 +1,45 @@
-<!-- Tabs pour la base de données -->
-<div id="bdd" class="col s12">
+<!-- Tabs pour la base de données (Bootstrap 5) -->
+<div id="bdd" class="col-12">
     <div class="row">
-        <div class="col s12">
-            <ul class="tabs">
-                <li class="tab col s3"><a class="active" href="#chargement">{{ _("Chargement") }}</a></li>
-                <li class="tab col s3"><a href="#bddd">{{ _("Options de la base de données") }}</a></li>
-                <li class="tab col s3"><a href="#filtre">{{ _("Filtres") }}</a></li>
-                <li class="tab col s3"><a href="#contenu">{{ _("Contenu") }}</a></li>
+        <div class="col-12">
+            <ul class="nav nav-tabs mb-3" role="tablist" aria-label="{{ _('Base de données') }}">
+                <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#chargement" role="tab" aria-selected="true">{{ _("Chargement") }}</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#bddd" role="tab" aria-selected="false">{{ _("Options de la base de données") }}</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#filtre" role="tab" aria-selected="false">{{ _("Filtres") }}</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#contenu" role="tab" aria-selected="false">{{ _("Contenu") }}</a></li>
             </ul>
-        </div>
 
-        <div id="chargement" class="col s12">
-            <div class="card-panel">
-                <div class="row">
-                    <form class="col s12 m6" id="uploadBddForm">
-                        <input type="file" id="file-input" name="file" accept=".gpx" />
-                        <button type="submit" class="btn">{{ _("Envoyer") }}</button>
-                    </form>
-                    <div id="infosBDD" class="col s12 m6">{{ _("Aucune base de données chargée") }}</div>
+            <div class="tab-content">
+                <div id="chargement" class="tab-pane fade show active">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row g-2">
+                        <form class="col-12 col-md-6" id="uploadBddForm">
+                            <label for="file-input-bdd" class="form-label">{{ _("Fichier .gpx") }}</label>
+                            <input type="file" id="file-input-bdd" name="file" accept=".gpx" class="form-control mb-2" aria-label="{{ _('Fichier .gpx') }}" />
+                            <button type="submit" class="btn btn-primary"><i class="ti ti-upload me-1"></i>{{ _("Envoyer") }}</button>
+                        </form>
+                        <div id="infosBDD" class="col-12 col-md-6 text-muted align-self-center">{{ _("Aucune base de données chargée") }}</div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div id="filtre" class="col s12">
-            <div class="card-panel">
-                {% include 'menu_filtre.html' %}
+        <div id="filtre" class="tab-pane fade">
+            <div class="card">
+                <div class="card-body">
+                    {% include 'menu_filtre.html' %}
+                </div>
             </div>
         </div>
 
-        <div id="bddd" class="col s12">
-            <div class="card-panel">{{ _("Options à venir") }}</div>
+        <div id="bddd" class="tab-pane fade">
+            <div class="card"><div class="card-body">{{ _("Options à venir") }}</div></div>
         </div>
-        <div id="contenu" class="col s12">
-            <div class="card-panel">{{ _("Contenu à venir") }}</div>
+        <div id="contenu" class="tab-pane fade">
+            <div class="card"><div class="card-body">{{ _("Contenu à venir") }}</div></div>
+        </div>
+            </div><!-- /.tab-content -->
         </div>
     </div>
 </div>

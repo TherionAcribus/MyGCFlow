@@ -1,150 +1,140 @@
-<div id="animation" class="col s12">
-    <div class="row">
+<div id="animation" class="col-12 tab-pane fade">
+    <div class="row g-3">
 
         <!-- Section Animation -->
-        <div class="col s12">
-            <h5>{{ _("Contrôles d'animation") }}</h5>
-            <div class="card-panel">
-                <div class="row">
-                    <div class="col s12 m6">
-                        <a class="waves-effect waves-light btn grey" id="btnFullscreenMode">
-                            {{ _("Plein écran") }}
-                            <i class="material-icons right">fullscreen</i>
-                        </a>
+        <div class="col-12">
+            <h5 class="mb-2">
+                <i class="ti ti-movie text-muted me-1"></i>{{ _("Contrôles d'animation") }}
+            </h5>
+            <div class="card">
+                <div class="card-body">
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-secondary" id="btnFullscreenMode">
+                            <i class="ti ti-maximize me-1"></i>{{ _("Plein écran") }}
+                        </button>
                     </div>
-                </div>
 
-                <div class="row">
-                    <div class="col s12">
-                        <h6>{{ _("Plage de dates de l'animation") }}</h6>
-                    </div>
-                    <div class="input-field col s6">
-                        <input id="animDateStart" type="text" class="datepicker">
-                        <label for="animDateStart" class="active">{{ _("Date de début") }}</label>
-                        <div class="date-inline-row">
-                            <a id="btnResetAnimStartDate" class="btn-flat waves-effect date-reset-btn tooltipped" data-tooltip="{{ _('Date par défaut (BDD)') }}"></a>
-                            <div id="animFilterStartInfo" class="filter-sync-row" style="display:none;">
-                                <a id="animFilterStartValue" class="btn-flat waves-effect filter-sync-chip tooltipped" data-tooltip="{{ _('Date issue du filtre') }}"></a>
+                    <h6 class="mt-3">{{ _("Plage de dates de l'animation") }}</h6>
+                    <div class="row g-2">
+                        <div class="mb-3 col-6">
+                            <label for="animDateStart" class="form-label">{{ _("Date de début") }}</label>
+                            <input id="animDateStart" type="text" class="form-control td-input" aria-label="{{ _('Date de début') }}">
+                            <div class="date-inline-row mt-1">
+                                <button type="button" id="btnResetAnimStartDate" class="btn btn-link btn-sm date-reset-btn p-0" data-bs-toggle="tooltip" data-bs-title="{{ _('Date par défaut (BDD)') }}"></button>
+                                <div id="animFilterStartInfo" class="filter-sync-row" style="display:none;">
+                                    <button type="button" id="animFilterStartValue" class="btn btn-link btn-sm filter-sync-chip p-0" data-bs-toggle="tooltip" data-bs-title="{{ _('Date issue du filtre') }}"></button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3 col-6">
+                            <label for="animDateEnd" class="form-label">{{ _("Date de fin") }}</label>
+                            <input id="animDateEnd" type="text" class="form-control td-input" aria-label="{{ _('Date de fin') }}">
+                            <div class="date-inline-row mt-1">
+                                <button type="button" id="btnResetAnimEndDate" class="btn btn-link btn-sm date-reset-btn p-0" data-bs-toggle="tooltip" data-bs-title="{{ _('Date par défaut (BDD)') }}"></button>
+                                <div id="animFilterEndInfo" class="filter-sync-row" style="display:none;">
+                                    <button type="button" id="animFilterEndValue" class="btn btn-link btn-sm filter-sync-chip p-0" data-bs-toggle="tooltip" data-bs-title="{{ _('Date issue du filtre') }}"></button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="input-field col s6">
-                        <input id="animDateEnd" type="text" class="datepicker">
-                        <label for="animDateEnd" class="active">{{ _("Date de fin") }}</label>
-                        <div class="date-inline-row">
-                            <a id="btnResetAnimEndDate" class="btn-flat waves-effect date-reset-btn tooltipped" data-tooltip="{{ _('Date par défaut (BDD)') }}"></a>
-                            <div id="animFilterEndInfo" class="filter-sync-row" style="display:none;">
-                                <a id="animFilterEndValue" class="btn-flat waves-effect filter-sync-chip tooltipped" data-tooltip="{{ _('Date issue du filtre') }}"></a>
+
+                    <div class="row g-2 mt-1">
+                        <div class="col-12 col-md-6">
+                            <div class="mb-3">
+                                <label for="inputTimePerDay" class="form-label">{{ _("Durée par jour (ms)") }}</label>
+                                <input placeholder="{{ _('Temps en ms par jour') }}" id="inputTimePerDay" type="number" class="form-control">
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="mb-3">
+                                <label for="inputTotalTime" id="labelTotalTime" class="form-label" data-locked-text="{{ _('Temps total (minutes) - défini par musique') }}" data-normal-text="{{ _('Temps total (minutes)') }}">{{ _("Temps total (minutes)") }}</label>
+                                <input placeholder="{{ _('Temps total') }}" id="inputTotalTime" type="number" step="0.01" class="form-control">
+                            </div>
+                            <p class="form-hint text-muted mb-1">
+                                <span id="spanTotalTimeMinutes"></span> {{ _("min") }} <span id="spanTotalTimeSeconds"></span> {{ _("sec pour") }} <span id="spanDeltaDays"></span> {{ _("jours") }}
+                            </p>
+                            <p class="form-hint text-muted">
+                                {{ _("Calcul") }} :
+                                <span id="spanBaseTimeMinutes"></span> {{ _("min") }} <span id="spanBaseTimeSeconds"></span> {{ _("sec (animation)") }}
+                                +
+                                <span id="spanExtraTimeMinutes"></span> {{ _("min") }} <span id="spanExtraTimeSeconds"></span> {{ _("sec (temps additionnel)") }}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-12 col-md-6">
+                            <div class="mb-3">
+                                <label for="inputExtraEndTime" class="form-label">{{ _("Temps additionnel (sec)") }}</label>
+                                <input placeholder="{{ _('Temps additionnel (sec)') }}" id="inputExtraEndTime" type="number" min="0" step="1" class="form-control">
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="row">
-                    <div class="col s12 m6">
-                        <div class="input-field">
-                            <input placeholder="{{ _('Temps en ms par jour') }}" id="inputTimePerDay" type="number" class="validate">
-                            <label for="inputTimePerDay">{{ _("Durée par jour (ms)") }}</label>
-                        </div>
-                    </div>
-                    <div class="col s12 m6">
-                        <div class="input-field">
-                            <input placeholder="{{ _('Temps total') }}" id="inputTotalTime" type="number" step="0.01" class="validate">
-                            <label for="inputTotalTime" id="labelTotalTime" data-locked-text="{{ _('Temps total (minutes) - défini par musique') }}" data-normal-text="{{ _('Temps total (minutes)') }}">{{ _("Temps total (minutes)") }}</label>
-                        </div>
-                        <p class="grey-text" style="margin-bottom:4px;">
-                            <span id="spanTotalTimeMinutes"></span> {{ _("min") }} <span id="spanTotalTimeSeconds"></span> {{ _("sec pour") }} <span id="spanDeltaDays"></span> {{ _("jours") }}
-                        </p>
-                        <p class="grey-text" style="font-size:0.95rem;">
-                            {{ _("Calcul") }} : 
-                            <span id="spanBaseTimeMinutes"></span> {{ _("min") }} <span id="spanBaseTimeSeconds"></span> {{ _("sec (animation)") }}
-                            +
-                            <span id="spanExtraTimeMinutes"></span> {{ _("min") }} <span id="spanExtraTimeSeconds"></span> {{ _("sec (temps additionnel)") }}
-                        </p>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col s12 m6">
-                        <div class="input-field">
-                            <input placeholder="{{ _('Temps additionnel (sec)') }}" id="inputExtraEndTime" type="number" min="0" step="1" class="validate">
-                            <label for="inputExtraEndTime">{{ _("Temps additionnel (sec)") }}</label>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Audio utilisateur (lecture/record) -->
-                <div class="row">
-                    <div class="col s12 m6">
-                        <label style="display:block; margin-bottom:6px;">{{ _("Musique (optionnel)") }}</label>
-                        <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-                            <label style="display:flex; align-items:center; gap:6px;">
-                                <input id="cbRecordAudioEnable" type="checkbox"/>
-                                <span>{{ _("Inclure la musique") }}</span>
-                            </label>
-                            <input id="inputAudioFile" type="file" accept="audio/*" style="max-width:200px;" />
-                        </div>
-                        <div id="audioFileInfo" style="margin-top:8px; font-size:0.9em; color:#666;">
-                            <em>{{ _("Aucune musique sélectionnée") }}</em>
-                        </div>
-                        <div style="margin-top:12px;">
-                            <label style="display:block; font-size:0.9rem; color:#555; margin-bottom:6px;">{{ _("Volume musique") }}</label>
-                            <div class="vector-slider-container">
-                                <input id="inputAudioVolume" type="range" min="0" max="1" step="0.05" value="1" class="vector-slider">
-                                <span id="spanAudioVolumeDisplay" class="vector-slider-value">100%</span>
+                    <!-- Audio utilisateur (lecture/record) -->
+                    <div class="row g-2">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label d-block mb-2">{{ _("Musique (optionnel)") }}</label>
+                            <div class="d-flex gap-3 align-items-center flex-wrap">
+                                <div class="form-check">
+                                    <input id="cbRecordAudioEnable" class="form-check-input" type="checkbox">
+                                    <label class="form-check-label" for="cbRecordAudioEnable">{{ _("Inclure la musique") }}</label>
+                                </div>
+                                <input id="inputAudioFile" type="file" accept="audio/*" class="form-control form-control-sm" style="max-width:200px;">
+                            </div>
+                            <div id="audioFileInfo" class="form-hint text-muted mt-2">
+                                <em>{{ _("Aucune musique sélectionnée") }}</em>
+                            </div>
+                            <div class="mt-3">
+                                <label class="form-label d-block mb-1" for="inputAudioVolume">{{ _("Volume musique") }}</label>
+                                <div class="vector-slider-container">
+                                    <input id="inputAudioVolume" type="range" min="0" max="1" step="0.05" value="1" class="form-range vector-slider">
+                                    <span id="spanAudioVolumeDisplay" class="vector-slider-value">100%</span>
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <button type="button" class="btn btn-sm btn-secondary disabled" id="btnSetDurationFromAudio" title="{{ _('Utiliser la durée de la musique comme temps total') }}">
+                                    <i class="ti ti-clock me-1"></i>{{ _("Définir la durée de l'animation à partir de la musique") }}
+                                </button>
+                                <span id="durationMatchIndicator" class="ms-2" style="display:none;"></span>
                             </div>
                         </div>
-                        <div style="margin-top:8px;">
-                            <a class="waves-effect waves-light btn-small disabled" id="btnSetDurationFromAudio" title="{{ _('Utiliser la durée de la musique comme temps total') }}">
-                                <i class="material-icons left">timer</i>{{ _("Définir la durée de l'animation à partir de la musique") }}
-                            </a>
-                            <span id="durationMatchIndicator" style="margin-left: 10px; font-size: 0.9em; display: none;"></span>
-                        </div>
                     </div>
-                </div>
 
-                <div class="row">
-                    <div class="col s12">
-                        <div class="anim-section-divider">
-                            <span class="anim-section-label">{{ _("Contrôles") }}</span>
-                        </div>
-                        <div class="anim-btn-group">
-                            <a class="waves-effect waves-light btn-large" id="btnStartAnimation">
-                                <i class="material-icons right">play_arrow</i>{{ _("Démarrer") }}
-                            </a>
-                            <a class="waves-effect waves-light btn-large" id="btnRecordAnimation">
-                                <i class="material-icons right">videocam</i>{{ _("Enregistrer") }}
-                            </a>
-                            <a class="waves-effect waves-light btn-large" id="btnPauseAnimation">
-                                <i class="material-icons right">pause</i>{{ _("Pause") }}
-                            </a>
-                            <a class="waves-effect waves-light btn-large" id="btnStopAnimation">
-                                <i class="material-icons right">stop</i>{{ _("Arrêter") }}
-                            </a>
-                        </div>
+                    <div class="anim-section-divider mt-3">
+                        <span class="anim-section-label">{{ _("Contrôles") }}</span>
                     </div>
-                </div>
+                    <div class="anim-btn-group">
+                        <button type="button" class="btn btn-lg btn-primary" id="btnStartAnimation">
+                            <i class="ti ti-player-play me-1"></i>{{ _("Démarrer") }}
+                        </button>
+                        <button type="button" class="btn btn-lg btn-primary" id="btnRecordAnimation">
+                            <i class="ti ti-video me-1"></i>{{ _("Enregistrer") }}
+                        </button>
+                        <button type="button" class="btn btn-lg btn-secondary" id="btnPauseAnimation">
+                            <i class="ti ti-player-pause me-1"></i>{{ _("Pause") }}
+                        </button>
+                        <button type="button" class="btn btn-lg btn-secondary" id="btnStopAnimation">
+                            <i class="ti ti-player-stop me-1"></i>{{ _("Arrêter") }}
+                        </button>
+                    </div>
 
-                <div class="row" style="margin-top: 8px;">
-                    <div class="col s12">
-                        <div class="anim-section-divider">
-                            <span class="anim-section-label">{{ _("Vidéo") }}</span>
-                        </div>
-                        <div class="anim-btn-group">
-                            <a class="waves-effect waves-light btn" id="btnCleanMoviePictures">
-                                <i class="material-icons right">delete_sweep</i>{{ _("Nettoyer images") }}
-                            </a>
-                            <a class="waves-effect waves-light btn" id="btnAssembleMoviePictures">
-                                <i class="material-icons right">movie</i>{{ _("Assembler film") }}
-                            </a>
-                            <a class="waves-effect waves-light btn" id="btnOpenVideoFolder">
-                                <i class="material-icons right">folder_open</i>{{ _("Ouvrir le dossier vidéo") }}
-                            </a>
-                        </div>
+                    <div class="anim-section-divider mt-3">
+                        <span class="anim-section-label">{{ _("Vidéo") }}</span>
+                    </div>
+                    <div class="anim-btn-group">
+                        <button type="button" class="btn btn-secondary" id="btnCleanMoviePictures">
+                            <i class="ti ti-trash-x me-1"></i>{{ _("Nettoyer images") }}
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="btnAssembleMoviePictures">
+                            <i class="ti ti-movie me-1"></i>{{ _("Assembler film") }}
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="btnOpenVideoFolder">
+                            <i class="ti ti-folder-open me-1"></i>{{ _("Ouvrir le dossier vidéo") }}
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
-
 
     </div>
 </div>

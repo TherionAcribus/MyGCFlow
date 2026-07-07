@@ -4,6 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{ _("Mode d'emploi") }} — GCMap</title>
+    <!-- Tabler Icons (webfont) — remplace Material Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.34.1/dist/tabler-icons.min.css">
     <link rel="stylesheet" href="../static/css/style.css" />
     <link rel="stylesheet" href="../static/css/guide.css" />
 </head>
@@ -12,15 +14,15 @@
     <!-- En-tête -->
     <header class="guide-header">
         <button class="guide-menu-toggle" id="guideMenuToggle" aria-label="Menu">
-            <i class="material-icons">menu</i>
+            <i class="ti ti-menu-2"></i>
         </button>
         <div class="guide-logo">
-            <i class="material-icons">map</i>
+            <i class="ti ti-map"></i>
             <span>{{ _("Mode d'emploi") }}</span>
         </div>
         <div class="guide-spacer"></div>
         <a href="/" class="guide-back-btn">
-            <i class="material-icons">arrow_back</i>
+            <i class="ti ti-arrow-left"></i>
             {{ _("Retour à l'application") }}
         </a>
     </header>
@@ -34,7 +36,7 @@
             <nav class="guide-nav">
                 <div class="guide-nav-section-title">{{ _("Démarrage") }}</div>
                 <a href="#intro" class="guide-nav-link">
-                    <i class="material-icons">rocket_launch</i>{{ _("Bienvenue") }}
+                    <i class="ti ti-rocket"></i>{{ _("Bienvenue") }}
                 </a>
 
                 <div class="guide-nav-section-title">{{ _("Les 4 étapes") }}</div>
@@ -87,7 +89,7 @@
                 </div>
 
                 <div class="guide-callout info">
-                    <i class="material-icons">info</i>
+                    <i class="ti ti-info-circle"></i>
                     <div>{{ _("Astuce : en haut de l'application, des onglets") }} <span class="ui-chip">{{ _("Données") }}</span>, <span class="ui-chip">{{ _("Style") }}</span>, <span class="ui-chip">{{ _("Animation") }}</span> {{ _("et") }} <span class="ui-chip">{{ _("Paramètres") }}</span> {{ _("correspondent aux 4 sections de ce guide.") }}</div>
                 </div>
             </section>
@@ -95,7 +97,7 @@
             <!-- ===================== 1. DONNÉES ===================== -->
             <section id="data" class="guide-section">
                 <div class="guide-section-head">
-                    <span class="sec-badge"><i class="material-icons">storage</i></span>
+                    <span class="sec-badge"><i class="ti ti-database"></i></span>
                     <h2>1. {{ _("Données") }}</h2>
                 </div>
                 <p class="guide-section-intro">{{ _("Tout commence ici : importez vos trouvailles puis sélectionnez celles que vous voulez afficher.") }}</p>
@@ -105,13 +107,13 @@
                         <h3>{{ _("Récupérez votre fichier .gpx") }}</h3>
                         <p>{{ _("Connectez-vous à geocaching.com, puis allez dans") }} <strong>Profil &rsaquo; Pocket Query &rsaquo; My Finds</strong> {{ _("(en bas de la page). Cliquez sur") }} <em>« Add to Queue »</em> {{ _("pour générer le fichier, puis téléchargez-le une fois prêt.") }}</p>
                         <div class="guide-callout tip">
-                            <i class="material-icons">lightbulb</i>
+                            <i class="ti ti-bulb"></i>
                             <div>{{ _("Le fichier .gpx contient toutes vos caches trouvées avec leur date et leurs coordonnées : c'est le carburant de l'animation.") }}</div>
                         </div>
                     </li>
                     <li>
                         <h3>{{ _("Chargez le fichier dans GCMap") }}</h3>
-                        <p>{{ _("Dans l'onglet") }} <span class="ui-chip">{{ _("Données") }}</span>, {{ _("section") }} <strong>{{ _("Base de données") }}</strong>, {{ _("cliquez sur") }} <span class="ui-chip"><i class="material-icons">cloud_upload</i> {{ _("Sélectionner et charger un fichier .gpx") }}</span> {{ _("et choisissez votre fichier. Le nombre de caches importées s'affiche une fois le chargement terminé.") }}</p>
+                        <p>{{ _("Dans l'onglet") }} <span class="ui-chip">{{ _("Données") }}</span>, {{ _("section") }} <strong>{{ _("Base de données") }}</strong>, {{ _("cliquez sur") }} <span class="ui-chip"><i class="ti ti-cloud-upload"></i> {{ _("Sélectionner et charger un fichier .gpx") }}</span> {{ _("et choisissez votre fichier. Le nombre de caches importées s'affiche une fois le chargement terminé.") }}</p>
                     </li>
                     <li>
                         <h3>{{ _("Filtrez vos caches") }}</h3>
@@ -125,7 +127,7 @@
                     </li>
                     <li>
                         <h3>{{ _("Repartir de zéro (optionnel)") }}</h3>
-                        <p>{{ _("Le bouton") }} <span class="ui-chip"><i class="material-icons">delete</i> {{ _("Vider la base de données") }}</span> {{ _("supprime les données chargées si vous voulez importer un autre fichier.") }}</p>
+                        <p>{{ _("Le bouton") }} <span class="ui-chip"><i class="ti ti-trash"></i> {{ _("Vider la base de données") }}</span> {{ _("supprime les données chargées si vous voulez importer un autre fichier.") }}</p>
                     </li>
                 </ol>
             </section>
@@ -133,7 +135,7 @@
             <!-- ===================== 2. STYLE ===================== -->
             <section id="style" class="guide-section">
                 <div class="guide-section-head">
-                    <span class="sec-badge"><i class="material-icons">palette</i></span>
+                    <span class="sec-badge"><i class="ti ti-color-swatch"></i></span>
                     <h2>2. {{ _("Style") }}</h2>
                 </div>
                 <p class="guide-section-intro">{{ _("Donnez à votre carte l'apparence que vous souhaitez : fond de carte, points, titres et effets. Tout se règle dans l'onglet") }} <span class="ui-chip">{{ _("Style") }}</span>.</p>
@@ -158,7 +160,7 @@
                             <li>{{ _("Pour un contrôle total, cochez") }} <span class="ui-chip">CSS</span> {{ _("et éditez le style à la main.") }}</li>
                         </ul>
                         <div class="guide-callout info">
-                            <i class="material-icons">touch_app</i>
+                            <i class="ti ti-hand-click"></i>
                             <div>{{ _("N'oubliez pas de cliquer sur") }} <span class="ui-chip">{{ _("Appliquer") }}</span> {{ _("pour valider vos modifications.") }}</div>
                         </div>
                     </li>
@@ -178,8 +180,8 @@
                         <h3>{{ _("Sauvegardez votre style dans un profil") }}</h3>
                         <p>{{ _("Le panneau") }} <strong>{{ _("Profils") }}</strong> {{ _("(à droite) mémorise toute votre configuration de style.") }}</p>
                         <ul class="sub">
-                            <li><span class="ui-chip"><i class="material-icons">add</i> {{ _("Nouveau") }}</span> {{ _("crée un profil ;") }} <span class="ui-chip"><i class="material-icons">save</i> {{ _("Sauvegarder") }}</span> {{ _("enregistre le profil actif.") }}</li>
-                            <li><span class="ui-chip"><i class="material-icons">file_upload</i> {{ _("Importer") }}</span> {{ _("permet de récupérer un profil partagé au format JSON.") }}</li>
+                            <li><span class="ui-chip"><i class="ti ti-plus"></i> {{ _("Nouveau") }}</span> {{ _("crée un profil ;") }} <span class="ui-chip"><i class="ti ti-device-floppy"></i> {{ _("Sauvegarder") }}</span> {{ _("enregistre le profil actif.") }}</li>
+                            <li><span class="ui-chip"><i class="ti ti-file-upload"></i> {{ _("Importer") }}</span> {{ _("permet de récupérer un profil partagé au format JSON.") }}</li>
                         </ul>
                     </li>
                 </ol>
@@ -188,7 +190,7 @@
             <!-- ===================== 3. ANIMATION ===================== -->
             <section id="animation" class="guide-section">
                 <div class="guide-section-head">
-                    <span class="sec-badge"><i class="material-icons">movie</i></span>
+                    <span class="sec-badge"><i class="ti ti-movie"></i></span>
                     <h2>3. {{ _("Animation") }}</h2>
                 </div>
                 <p class="guide-section-intro">{{ _("C'est le moment de donner vie à votre carte et, si vous le souhaitez, de l'enregistrer en vidéo. Tout se passe dans l'onglet") }} <span class="ui-chip">{{ _("Animation") }}</span>.</p>
@@ -208,17 +210,17 @@
                     </li>
                     <li>
                         <h3>{{ _("Ajoutez une musique (optionnel)") }}</h3>
-                        <p>{{ _("Cochez") }} <span class="ui-chip">{{ _("Inclure la musique") }}</span>, {{ _("sélectionnez un fichier audio et ajustez le volume. Le bouton") }} <span class="ui-chip"><i class="material-icons">timer</i> {{ _("Définir la durée de l'animation à partir de la musique") }}</span> {{ _("cale la durée totale sur celle du morceau.") }}</p>
+                        <p>{{ _("Cochez") }} <span class="ui-chip">{{ _("Inclure la musique") }}</span>, {{ _("sélectionnez un fichier audio et ajustez le volume. Le bouton") }} <span class="ui-chip"><i class="ti ti-clock"></i> {{ _("Définir la durée de l'animation à partir de la musique") }}</span> {{ _("cale la durée totale sur celle du morceau.") }}</p>
                     </li>
                     <li>
                         <h3>{{ _("Lancez l'aperçu puis enregistrez") }}</h3>
                         <ul class="sub">
-                            <li><span class="ui-chip"><i class="material-icons">play_arrow</i> {{ _("Démarrer") }}</span> — {{ _("joue l'animation à l'écran pour vérifier le rendu.") }}</li>
-                            <li><span class="ui-chip"><i class="material-icons">videocam</i> {{ _("Enregistrer") }}</span> — {{ _("lance l'animation en capturant la vidéo.") }}</li>
-                            <li><span class="ui-chip"><i class="material-icons">pause</i> {{ _("Pause") }}</span> {{ _("et") }} <span class="ui-chip"><i class="material-icons">stop</i> {{ _("Arrêter") }}</span> {{ _("contrôlent la lecture.") }}</li>
+                            <li><span class="ui-chip"><i class="ti ti-player-play"></i> {{ _("Démarrer") }}</span> — {{ _("joue l'animation à l'écran pour vérifier le rendu.") }}</li>
+                            <li><span class="ui-chip"><i class="ti ti-video"></i> {{ _("Enregistrer") }}</span> — {{ _("lance l'animation en capturant la vidéo.") }}</li>
+                            <li><span class="ui-chip"><i class="ti ti-player-pause"></i> {{ _("Pause") }}</span> {{ _("et") }} <span class="ui-chip"><i class="ti ti-player-stop"></i> {{ _("Arrêter") }}</span> {{ _("contrôlent la lecture.") }}</li>
                         </ul>
                         <div class="guide-callout tip">
-                            <i class="material-icons">lightbulb</i>
+                            <i class="ti ti-bulb"></i>
                             <div>{{ _("Lancez d'abord un") }} <strong>{{ _("Démarrer") }}</strong> {{ _("pour valider le style et la vitesse, puis seulement") }} <strong>{{ _("Enregistrer") }}</strong> {{ _("pour la version finale.") }}</div>
                         </div>
                     </li>
@@ -226,9 +228,9 @@
                         <h3>{{ _("Récupérez votre vidéo") }}</h3>
                         <p>{{ _("Selon le mode d'enregistrement, utilisez les boutons de la section") }} <strong>{{ _("Vidéo") }}</strong> :</p>
                         <ul class="sub">
-                            <li><span class="ui-chip"><i class="material-icons">movie</i> {{ _("Assembler film") }}</span> — {{ _("génère la vidéo à partir des images capturées.") }}</li>
-                            <li><span class="ui-chip"><i class="material-icons">folder_open</i> {{ _("Ouvrir le dossier vidéo") }}</span> — {{ _("accède au dossier contenant vos vidéos.") }}</li>
-                            <li><span class="ui-chip"><i class="material-icons">delete_sweep</i> {{ _("Nettoyer images") }}</span> — {{ _("vide les images temporaires avant un nouvel enregistrement.") }}</li>
+                            <li><span class="ui-chip"><i class="ti ti-movie"></i> {{ _("Assembler film") }}</span> — {{ _("génère la vidéo à partir des images capturées.") }}</li>
+                            <li><span class="ui-chip"><i class="ti ti-folder-open"></i> {{ _("Ouvrir le dossier vidéo") }}</span> — {{ _("accède au dossier contenant vos vidéos.") }}</li>
+                            <li><span class="ui-chip"><i class="ti ti-trash-x"></i> {{ _("Nettoyer images") }}</span> — {{ _("vide les images temporaires avant un nouvel enregistrement.") }}</li>
                         </ul>
                     </li>
                 </ol>
@@ -237,7 +239,7 @@
             <!-- ===================== 4. PARAMÈTRES ===================== -->
             <section id="settings" class="guide-section">
                 <div class="guide-section-head">
-                    <span class="sec-badge"><i class="material-icons">settings</i></span>
+                    <span class="sec-badge"><i class="ti ti-settings"></i></span>
                     <h2>4. {{ _("Paramètres") }}</h2>
                 </div>
                 <p class="guide-section-intro">{{ _("Réglez une fois pour toutes le comportement de l'application et la qualité des enregistrements dans l'onglet") }} <span class="ui-chip">{{ _("Paramètres") }}</span>.</p>
@@ -255,8 +257,8 @@
                         <h3>{{ _("Vue de carte par défaut") }}</h3>
                         <p>{{ _("Définissez le centre (latitude, longitude) et le zoom utilisés au démarrage.") }}</p>
                         <ul class="sub">
-                            <li><span class="ui-chip"><i class="material-icons">my_location</i> {{ _("Utiliser la vue actuelle de la carte") }}</span> — {{ _("reprend la position affichée.") }}</li>
-                            <li><span class="ui-chip"><i class="material-icons">place</i> {{ _("Choisir sur la carte") }}</span> — {{ _("cliquez directement le point souhaité.") }}</li>
+                            <li><span class="ui-chip"><i class="ti ti-current-location"></i> {{ _("Utiliser la vue actuelle de la carte") }}</span> — {{ _("reprend la position affichée.") }}</li>
+                            <li><span class="ui-chip"><i class="ti ti-map-pin"></i> {{ _("Choisir sur la carte") }}</span> — {{ _("cliquez directement le point souhaité.") }}</li>
                         </ul>
                     </li>
                     <li>
@@ -268,20 +270,20 @@
                         </ul>
                         <p>{{ _("Vous pouvez ensuite ajuster les FPS, le bitrate, le format vidéo et l'échelle de qualité.") }}</p>
                         <div class="guide-callout info">
-                            <i class="material-icons">help_outline</i>
-                            <div>{{ _("Chaque réglage dispose d'une icône d'aide") }} <i class="material-icons" style="font-size:16px;vertical-align:middle;">help_outline</i> {{ _("dans l'application : survolez-la pour en savoir plus.") }}</div>
+                            <i class="ti ti-help"></i>
+                            <div>{{ _("Chaque réglage dispose d'une icône d'aide") }} <i class="ti ti-help" style="font-size:16px;vertical-align:middle;"></i> {{ _("dans l'application : survolez-la pour en savoir plus.") }}</div>
                         </div>
                     </li>
                 </ol>
 
                 <div class="guide-callout tip" style="margin-top:28px;">
-                    <i class="material-icons">check_circle</i>
+                    <i class="ti ti-circle-check"></i>
                     <div><strong>{{ _("Vous êtes prêt !") }}</strong> {{ _("Chargez vos données, composez votre style, lancez l'animation et partagez votre carte de géocaching.") }}</div>
                 </div>
 
                 <div class="guide-footer">
                     <a href="/" class="guide-back-btn" style="margin-top:8px;">
-                        <i class="material-icons">arrow_back</i>{{ _("Retour à l'application") }}
+                        <i class="ti ti-arrow-left"></i>{{ _("Retour à l'application") }}
                     </a>
                 </div>
             </section>

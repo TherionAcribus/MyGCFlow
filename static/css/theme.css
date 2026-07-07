@@ -120,16 +120,20 @@ h5, h6 { color: var(--color-text); font-weight: 600; }
     color: var(--color-accent) !important;
 }
 
-/* Boutons: palette réduite */
-.btn, .btn-large, .btn-small {
+/* Boutons: palette réduite — uniquement les variantes pleines (pas btn-link, btn-outline-*, btn-ghost, gc-css-target-btn) */
+.btn:not(.btn-link):not(.btn-outline-danger):not(.btn-outline-primary):not(.btn-outline-secondary):not(.btn-outline-success):not(.btn-outline-warning):not(.btn-outline-info):not(.btn-outline-light):not(.btn-outline-dark):not(.btn-ghost):not(.gc-css-target-btn),
+.btn-large,
+.btn-small {
     background-color: var(--color-accent);
     transition: background-color 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
 }
-.btn:hover, .btn-large:hover, .btn-small:hover {
+.btn:hover:not(.btn-link):not(.btn-outline-danger):not(.btn-outline-primary):not(.btn-outline-secondary):not(.btn-outline-success):not(.btn-outline-warning):not(.btn-outline-info):not(.btn-outline-light):not(.btn-outline-dark):not(.btn-ghost):not(.gc-css-target-btn),
+.btn-large:hover,
+.btn-small:hover {
     background-color: #1976d2; /* accent assombri, hover sobre et uniforme */
     box-shadow: var(--shadow-md);
 }
-.btn:focus {
+.btn:focus:not(.btn-link):not(.btn-outline-danger):not(.btn-outline-primary):not(.btn-outline-secondary):not(.btn-outline-success):not(.btn-outline-warning):not(.btn-outline-info):not(.btn-outline-light):not(.btn-outline-dark):not(.btn-ghost):not(.gc-css-target-btn) {
     background-color: #1565c0;
 }
 
@@ -151,7 +155,7 @@ h5, h6 { color: var(--color-text); font-weight: 600; }
 /* Infos filtres */
 .filter-info { margin-top: 6px; font-size: 0.9rem; color: #424242; }
 .filter-info.filter-info-all { font-weight: 600; color: var(--color-accent); }
-.btn-flat.filter-all-active { background: var(--color-accent-weak); border-radius: 6px; }
+/* filter-all-active maintenant géré par .btn-link.filter-all-active dans ui_improvements.css */
 
 /* Dropdown profils (actions) */
 .dropdown-content li > a.dropdown-item {
@@ -202,7 +206,7 @@ h5, h6 { color: var(--color-text); font-weight: 600; }
 }
 
 /* Réduction de l’impact visuel des emojis dans les titres (si présents) */
-h5 .material-icons, h6 .material-icons { color: var(--color-text-muted); }
+h5 .ti, h6 .ti { color: var(--color-text-muted); }
 
 /* Profil actif plus subtil */
 .active-profile {

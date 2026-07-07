@@ -1,0 +1,84 @@
+<!-- Tabs pour les cartes (Bootstrap 5) -->
+
+<div id="maps" class="col-12">
+    <h3 class="text-center">{{ _("Map Choice") }}</h3>
+    <div>
+        <div class="col-12">
+            <div class="col-3">
+                <a id="OSM" class="changeMap btn btn-lg btn-primary">
+                    <img src="../static/images/osm.png" alt="Description" style="width: 100px; height: 100px;">
+                    <span class="btn-text text-dark">OSM</span>
+                </a>
+            </div>
+            <div class="col-3">
+                <a id="stamenToner" class="changeMap btn btn-lg btn-primary">
+                    <img src="../static/images/stamenToner.png" alt="Description" style="width: 100px; height: 100px;">
+                    <span class="btn-text text-dark">stamenToner</span>
+                </a>
+            </div>
+            <div class="col-3">
+                <a id="vectorMap" class="changeMap btn btn-lg btn-primary">
+                    <img src="../static/images/vector.png" alt="Description" style="width: 100px; height: 100px;">
+                    <span class="btn-text text-dark">Vectorielle</span>
+                </a>
+            </div>
+            <div class="col-3">
+                <a id="watercolor" class="changeMap btn btn-lg btn-primary">
+                    <img src="../static/images/watercolor.png" alt="Description" style="width: 100px; height: 100px;">
+                    <span class="btn-text text-dark">Watercolor</span>
+                </a>
+            </div>
+
+        <div class="col-12" id="tonerMapOptions" style="display: none;">
+            <h5 class="text-center">Options de la carte Stamen Toner</h5>
+            <div class="row">
+                <form class="col-12">
+                    <!-- Color Pickers -->
+                    <div class="col-6 text-center">
+                        <a id="stamenTonerLight" class="changeTonerStyle btn btn-lg btn-primary">
+                            <img src="../static/images/stamenToner.png" alt="Description" style="width: 100px; height: 100px;">
+                            <span class="btn-text text-dark">Light</span>
+                        </a>
+                    </div>
+
+                    <div class="col-6">
+                        <a id="stamenTonerDark" class="changeTonerStyle btn btn-lg btn-primary">
+                            <img src="../static/images/stamerTonerDark.png" alt="Description" style="width: 100px; height: 100px;">
+                            <span class="btn-text text-dark">Dark</span>
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+
+        <div class="col-12" id="vectorMapOptions" style="display: block;">
+            <h5 class="text-center">Options de la carte vectorielle</h5>
+            <div class="row">
+                <form class="col-12">
+                    <!-- Color Pickers -->
+                    <div class="mb-3 col-3">
+                        <span>Couleur des bordures: </span>
+                        <input type="color" class="form-control form-control-color" id="fieldVectorMapStrokeColor" value="#ffffff">
+                    </div>
+
+                    <div class="mb-3 col-3">
+                        <span>Couleur de remplissage: </span>
+                        <input type="color" class="form-control form-control-color" id="fieldVectorMapFillColor" value="#ffffff">
+                    </div>
+                    <div class="mb-3 col-3">
+                        <span>Couleur de fond: </span>
+                        <input type="color" class="form-control form-control-color" id="fieldVectorMapBackgroundColor" value="#ffffff">
+                    </div>
+
+                    <!-- Input for Border Width -->
+                    <div class="mb-3 col-3">
+                        <input type="number" class="form-control" id="fieldVectorMapStrokeWidth" value="0.6" min="0" step="0.1">
+                        <label for="stroke-width" class="form-label">Stroke Width</label>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    </div>
+</div>

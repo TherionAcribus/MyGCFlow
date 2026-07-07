@@ -1,146 +1,174 @@
-<div id="settings" class="col s12">
-    <h5>{{ _("Paramètres généraux") }}</h5>
-    <div class="card-panel">
-        <div class="row">
-            <div class="input-field col s12 m6">
-                <select id="selectLanguage">
-                    <option value="en">{{ _("English") }}</option>
-                    <option value="fr">{{ _("Français") }}</option>
-                </select>
-                <label>{{ _("Language Choice") }}</label>
-            </div>
+<div id="settings" class="col-12 tab-pane fade">
+    <h5 class="mb-2">
+        <i class="ti ti-settings text-muted me-1"></i>{{ _("Paramètres généraux") }}
+    </h5>
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="row g-2">
+                <div class="mb-3 col-12 col-md-6">
+                    <label class="form-label" for="selectLanguage">{{ _("Language Choice") }}</label>
+                    <select id="selectLanguage" class="form-select" aria-label="{{ _('Langue') }}">
+                        <option value="en">{{ _("English") }}</option>
+                        <option value="fr">{{ _("Français") }}</option>
+                    </select>
+                </div>
 
-            <div class="input-field col s12 m6">
-                <select id="selectCheckVersionOnline">
-                    <option value=true>{{ _("Yes") }}</option>
-                    <option value=false>{{ _("No") }}</option>
-                </select>
-                <label>{{ _("Check for a new version at startup") }}</label>
-            </div>
+                <div class="mb-3 col-12 col-md-6">
+                    <label class="form-label" for="selectCheckVersionOnline">{{ _("Check for a new version at startup") }}</label>
+                    <select id="selectCheckVersionOnline" class="form-select" aria-label="{{ _('Vérifier version au démarrage') }}">
+                        <option value="true">{{ _("Yes") }}</option>
+                        <option value="false">{{ _("No") }}</option>
+                    </select>
+                </div>
 
-            <div class="input-field col s12 m6">
-                <select id="selectDefaultProfile">
-                    <!-- Les options seront remplies dynamiquement par JavaScript -->
-                </select>
-                <label>{{ _("Default profile at startup") }}</label>
-            </div>
+                <div class="mb-3 col-12 col-md-6">
+                    <label class="form-label" for="selectDefaultProfile">{{ _("Default profile at startup") }}</label>
+                    <select id="selectDefaultProfile" class="form-select" aria-label="{{ _('Profil par défaut') }}">
+                        <!-- Les options seront remplies dynamiquement par JavaScript -->
+                    </select>
+                </div>
 
-            <div class="col s12">
-                <div class="card-panel" style="padding:16px; margin-top:8px;">
-                    <div class="row" style="margin-bottom:0;">
-                        <div class="col s12 m1" style="display:flex; justify-content:flex-start; align-items:center; margin-top:8px;">
-                            <a id="btnToggleLatLonMode" class="btn-flat tooltipped" data-position="bottom" data-tooltip="{{ _('Basculer le mode de saisie') }}">
-                                <i class="material-icons">link</i>
-                            </a>
-                        </div>
-                        <div class="col s12 m11">
-                            <div class="row" style="margin-bottom:0;">
-                                <div class="input-field col s12" id="fieldCombined">
-                                    <input id="inputMapCenterCombined" type="text" class="validate" placeholder="48.85, 2.35">
-                                    <label for="inputMapCenterCombined">{{ _("Centre de carte par défaut - Lat, Lon") }}</label>
+                <div class="col-12">
+                    <div class="card mt-2">
+                        <div class="card-body">
+                            <div class="row g-2 mb-0">
+                                <div class="col-12 col-md-1 d-flex justify-content-start align-items-center mt-2">
+                                    <button type="button" id="btnToggleLatLonMode" class="btn btn-link p-0" data-bs-toggle="tooltip" data-bs-title="{{ _('Basculer le mode de saisie') }}" aria-label="{{ _('Basculer le mode de saisie') }}">
+                                        <i class="ti ti-link"></i>
+                                    </button>
                                 </div>
-                                <div class="input-field col s12 m6 hide" id="fieldLat">
-                                    <input id="inputMapCenterLat" type="text" class="validate">
-                                    <label for="inputMapCenterLat">{{ _("Centre de carte par défaut - Latitude") }}</label>
+                                <div class="col-12 col-md-11">
+                                    <div class="row g-2 mb-0">
+                                        <div class="mb-3 col-12" id="fieldCombined">
+                                            <label for="inputMapCenterCombined" class="form-label">{{ _("Centre de carte par défaut - Lat, Lon") }}</label>
+                                            <input id="inputMapCenterCombined" type="text" class="form-control" placeholder="48.85, 2.35">
+                                        </div>
+                                        <div class="mb-3 col-12 col-md-6 d-none" id="fieldLat">
+                                            <label for="inputMapCenterLat" class="form-label">{{ _("Centre de carte par défaut - Latitude") }}</label>
+                                            <input id="inputMapCenterLat" type="text" class="form-control">
+                                        </div>
+                                        <div class="mb-3 col-12 col-md-6 d-none" id="fieldLon">
+                                            <label for="inputMapCenterLon" class="form-label">{{ _("Centre de carte par défaut - Longitude") }}</label>
+                                            <input id="inputMapCenterLon" type="text" class="form-control">
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="input-field col s12 m6 hide" id="fieldLon">
-                                    <input id="inputMapCenterLon" type="text" class="validate">
-                                    <label for="inputMapCenterLon">{{ _("Centre de carte par défaut - Longitude") }}</label>
+                            </div>
+                            <div class="row g-2 mb-0">
+                                <div class="mb-3 col-12 col-md-6">
+                                    <label for="inputMapDefaultZoom" class="form-label">{{ _("Zoom de carte par défaut") }}</label>
+                                    <input id="inputMapDefaultZoom" type="number" min="0" max="22" class="form-control">
+                                </div>
+                                <div class="col-12 col-md-6 d-flex gap-2 align-items-center flex-wrap mt-md-3">
+                                    <button type="button" id="btnUseCurrentMapCenter" class="btn btn-primary">
+                                        <i class="ti ti-current-location me-1"></i>{{ _("Utiliser la vue actuelle de la carte") }}
+                                    </button>
+                                    <button type="button" id="btnPickMapCenter" class="btn btn-primary">
+                                        <i class="ti ti-map-pin me-1"></i>{{ _("Choisir sur la carte") }}
+                                    </button>
+                                    <button type="button" id="btnClearMapCenter" class="btn btn-secondary">
+                                        <i class="ti ti-x me-1"></i>{{ _("Réinitialiser") }}
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="row" style="margin-bottom:0;">
-                        <div class="input-field col s12 m6">
-                            <input id="inputMapDefaultZoom" type="number" min="0" max="22" class="validate">
-                            <label for="inputMapDefaultZoom">{{ _("Zoom de carte par défaut") }}</label>
-                        </div>
-                        <div class="col s12 m6" style="display:flex; gap:10px; align-items:center; margin-top: 16px; flex-wrap: wrap;">
-                            <a id="btnUseCurrentMapCenter" class="waves-effect waves-light btn">
-                                <i class="material-icons right">my_location</i>{{ _("Utiliser la vue actuelle de la carte") }}
-                            </a>
-                            <a id="btnPickMapCenter" class="waves-effect waves-light btn">
-                                <i class="material-icons right">place</i>{{ _("Choisir sur la carte") }}
-                            </a>
-                            <a id="btnClearMapCenter" class="waves-effect waves-light btn">
-                                <i class="material-icons right">clear</i>{{ _("Réinitialiser") }}
-                            </a>
-                        </div>
-                    </div>
                 </div>
-            </div>
 
-            <div class="col s12 m6" style="display:flex; gap:10px; align-items:center; margin-top: 8px;">
-                <a id="buttonCheckVersion" class="waves-effect waves-light btn">
-                    <i class="material-icons right">system_update</i>{{ _("Check for a new version") }}
-                </a>
-                <a id="buttonHome" class="waves-effect waves-light btn" target="_blank">
-                    <i class="material-icons right">home</i>{{ _("Home") }}
-                </a>
-                <a id="buttonGuide" class="waves-effect waves-light btn" href="/guide" target="_blank">
-                    <i class="material-icons right">help_outline</i>{{ _("Mode d'emploi") }}
-                </a>
+                <div class="col-12 col-md-6 d-flex gap-2 align-items-center flex-wrap mt-2">
+                    <button type="button" id="buttonCheckVersion" class="btn btn-primary">
+                        <i class="ti ti-device-desktop-analytics me-1"></i>{{ _("Check for a new version") }}
+                    </button>
+                    <button type="button" id="buttonHome" class="btn btn-secondary" target="_blank">
+                        <i class="ti ti-home me-1"></i>{{ _("Home") }}
+                    </button>
+                    <a id="buttonGuide" class="btn btn-secondary" href="/guide" target="_blank">
+                        <i class="ti ti-help me-1"></i>{{ _("Mode d'emploi") }}
+                    </a>
+                </div>
             </div>
         </div>
     </div>
 
-    <h5>{{ _("Paramètres d'enregistrement") }}</h5>
-    <div class="card-panel">
-        <div class="row">
-            <div class="input-field col s12 m6">
-                <select id="selectRecordMode">
-                    <option value="mediarecorder">{{ _("MediaRecorder .webm (client)") }}</option>
-                    <option value="images">{{ _("Images + MoviePy (serveur)") }}</option>
-                </select>
-                <label for="selectRecordMode">{{ _("Mode d'enregistrement") }}</label>
-                <i class="material-icons tooltipped" data-position="right" data-tooltip="{{ _('MediaRecorder : enregistrement direct en WebM côté navigateur, rapide et léger. Images + MoviePy : capture d\'images puis assemblage côté serveur, plus flexible mais plus lent') }}">help_outline</i>
-            </div>
-            <div class="input-field col s6 m3 mediarecorder-only">
-                <input id="inputRecordFps" type="number" min="1" max="60" class="validate">
-                <label for="inputRecordFps">{{ _("FPS") }}</label>
-                <i class="material-icons tooltipped" data-position="top" data-tooltip="{{ _('Nombre d\'images capturées par seconde. 30 FPS = vidéo fluide, 60 FPS = ultra-fluide mais fichier 2x plus lourd. Adapté à votre débit internet et puissance machine') }}">help_outline</i>
-            </div>
-            <div class="input-field col s6 m3 mediarecorder-only">
-                <input id="inputRecordBitrate" type="number" min="1" step="1" class="validate">
-                <label for="inputRecordBitrate">{{ _("Bitrate vidéo (Mbps)") }}</label>
-                <i class="material-icons tooltipped" data-position="top" data-tooltip="{{ _('Débit de données vidéo en mégabits/seconde. 1Mbps = bonne qualité, 5Mbps = haute qualité, 10Mbps = excellente qualité. Fichier plus lourd avec débit élevé') }}">help_outline</i>
-            </div>
-            <div class="input-field col s6 m3 mediarecorder-only">
-                <input id="inputRecordSlowdown" type="number" min="1" step="1" class="validate" value="1">
-                <label class="active" for="inputRecordSlowdown">{{ _("Ralentir par (x)") }}</label>
-                <i class="material-icons tooltipped" data-position="top" data-tooltip="{{ _('Ralentit la capture pour améliorer la qualité. 2 = capture 2x plus lente (plus de frames par seconde d\'animation). La vidéo finale reste à vitesse normale si \"Normaliser la vitesse\" est activé.') }}">help_outline</i>
-            </div>
-            <div class="input-field col s6 m3 mediarecorder-only">
-                <input id="inputRecordScaleFactor" type="number" min="1" max="3" step="0.25" class="validate">
-                <label for="inputRecordScaleFactor">{{ _("Facteur d'échelle (qualité)") }}</label>
-                <i class="material-icons tooltipped" data-position="top" data-tooltip="{{ _('Multiplicateur de résolution temporaire. 1.5 = 50% plus grande pendant l\'enregistrement puis réduction. Améliore la netteté des détails fins sans changer la taille finale du fichier') }}">help_outline</i>
-            </div>
-            <div class="input-field col s12 m6 mediarecorder-only">
-                <select id="selectRecordMime">
-                    <option value="video/webm;codecs=vp9">{{ _("VP9 (recommandé - haute qualité)") }}</option>
-                    <option value="video/webm;codecs=vp8">{{ _("VP8 (compatible partout)") }}</option>
-                    <option value="video/mp4;codecs=h264">{{ _("H.264 (format MP4)") }}</option>
-                    <option value="video/webm">{{ _("WebM simple (fallback)") }}</option>
-                </select>
-                <label for="selectRecordMime">{{ _("Format vidéo") }}</label>
-                <i class="material-icons tooltipped" data-position="right" data-tooltip="{{ _('Codec de compression WebM. VP9 = meilleure qualité/compression, VP8 = compatible avec tous navigateurs, H.264 = format MP4 universel, WebM simple = fallback basique') }}">help_outline</i>
-            </div>
-            <div class="col s12 m3 mediarecorder-only" style="margin-top: 12px;">
-                <label style="display:block;">
-                    <input id="cbRecordUpload" type="checkbox"/>
-                    <span>{{ _("Uploader vers serveur") }}</span>
-                    <i class="material-icons tooltipped" data-position="right" data-tooltip="{{ _('Transfère automatiquement la vidéo vers le serveur une fois l\'enregistrement terminé. Utile pour archivage centralisé ou partage avec d\'autres utilisateurs via l\'interface web') }}" style="font-size: 16px; vertical-align: middle; margin-left: 5px;">help_outline</i>
-                </label>
-                <label style="display:block;">
-                    <input id="cbRecordDownload" type="checkbox"/>
-                    <span>{{ _("Télécharger local") }}</span>
-                    <i class="material-icons tooltipped" data-position="right" data-tooltip="{{ _('Sauvegarde automatiquement la vidéo dans le dossier de téléchargements de votre navigateur une fois l\'enregistrement terminé. Pratique pour archivage local immédiat') }}" style="font-size: 16px; vertical-align: middle; margin-left: 5px;">help_outline</i>
-                </label>
-                <label style="display:block;">
-                    <input id="cbRecordNormalize" type="checkbox"/>
-                    <span>{{ _("Normaliser la vitesse") }}</span>
-                    <i class="material-icons tooltipped" data-position="right" data-tooltip="{{ _('Si le ralentissement est > 1, ré-accélère la vidéo finale pour la ramener à vitesse normale. Désactiver pour conserver la vidéo au ralenti.') }}" style="font-size: 16px; vertical-align: middle; margin-left: 5px;">help_outline</i>
-                </label>
+    <h5 class="mb-2">
+        <i class="ti ti-video text-muted me-1"></i>{{ _("Paramètres d'enregistrement") }}
+    </h5>
+    <div class="card">
+        <div class="card-body">
+            <div class="row g-2">
+                <div class="mb-3 col-12 col-md-6">
+                    <label for="selectRecordMode" class="form-label">
+                        {{ _("Mode d'enregistrement") }}
+                        <i class="ti ti-help ms-1" data-bs-toggle="tooltip" data-bs-title="{{ _('MediaRecorder : enregistrement direct en WebM côté navigateur, rapide et léger. Images + MoviePy : capture d\'images puis assemblage côté serveur, plus flexible mais plus lent') }}"></i>
+                    </label>
+                    <select id="selectRecordMode" class="form-select">
+                        <option value="mediarecorder">{{ _("MediaRecorder .webm (client)") }}</option>
+                        <option value="images">{{ _("Images + MoviePy (serveur)") }}</option>
+                    </select>
+                </div>
+                <div class="mb-3 col-6 col-md-3 mediarecorder-only">
+                    <label for="inputRecordFps" class="form-label">
+                        {{ _("FPS") }}
+                        <i class="ti ti-help ms-1" data-bs-toggle="tooltip" data-bs-title="{{ _('Nombre d\'images capturées par seconde. 30 FPS = vidéo fluide, 60 FPS = ultra-fluide mais fichier 2x plus lourd. Adapté à votre débit internet et puissance machine') }}"></i>
+                    </label>
+                    <input id="inputRecordFps" type="number" min="1" max="60" class="form-control">
+                </div>
+                <div class="mb-3 col-6 col-md-3 mediarecorder-only">
+                    <label for="inputRecordBitrate" class="form-label">
+                        {{ _("Bitrate vidéo (Mbps)") }}
+                        <i class="ti ti-help ms-1" data-bs-toggle="tooltip" data-bs-title="{{ _('Débit de données vidéo en mégabits/seconde. 1Mbps = bonne qualité, 5Mbps = haute qualité, 10Mbps = excellente qualité. Fichier plus lourd avec débit élevé') }}"></i>
+                    </label>
+                    <input id="inputRecordBitrate" type="number" min="1" step="1" class="form-control">
+                </div>
+                <div class="mb-3 col-6 col-md-3 mediarecorder-only">
+                    <label for="inputRecordSlowdown" class="form-label">
+                        {{ _("Ralentir par (x)") }}
+                        <i class="ti ti-help ms-1" data-bs-toggle="tooltip" data-bs-title="{{ _('Ralentit la capture pour améliorer la qualité. 2 = capture 2x plus lente (plus de frames par seconde d\'animation). La vidéo finale reste à vitesse normale si "Normaliser la vitesse" est activé.') }}"></i>
+                    </label>
+                    <input id="inputRecordSlowdown" type="number" min="1" step="1" class="form-control" value="1">
+                </div>
+                <div class="mb-3 col-6 col-md-3 mediarecorder-only">
+                    <label for="inputRecordScaleFactor" class="form-label">
+                        {{ _("Facteur d'échelle (qualité)") }}
+                        <i class="ti ti-help ms-1" data-bs-toggle="tooltip" data-bs-title="{{ _('Multiplicateur de résolution temporaire. 1.5 = 50% plus grande pendant l\'enregistrement puis réduction. Améliore la netteté des détails fins sans changer la taille finale du fichier') }}"></i>
+                    </label>
+                    <input id="inputRecordScaleFactor" type="number" min="1" max="3" step="0.25" class="form-control">
+                </div>
+                <div class="mb-3 col-12 col-md-6 mediarecorder-only">
+                    <label for="selectRecordMime" class="form-label">
+                        {{ _("Format vidéo") }}
+                        <i class="ti ti-help ms-1" data-bs-toggle="tooltip" data-bs-title="{{ _('Codec de compression WebM. VP9 = meilleure qualité/compression, VP8 = compatible avec tous navigateurs, H.264 = format MP4 universel, WebM simple = fallback basique') }}"></i>
+                    </label>
+                    <select id="selectRecordMime" class="form-select">
+                        <option value="video/webm;codecs=vp9">{{ _("VP9 (recommandé - haute qualité)") }}</option>
+                        <option value="video/webm;codecs=vp8">{{ _("VP8 (compatible partout)") }}</option>
+                        <option value="video/mp4;codecs=h264">{{ _("H.264 (format MP4)") }}</option>
+                        <option value="video/webm">{{ _("WebM simple (fallback)") }}</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-3 mediarecorder-only mt-3">
+                    <div class="form-check mb-2">
+                        <input id="cbRecordUpload" class="form-check-input" type="checkbox">
+                        <label class="form-check-label" for="cbRecordUpload">
+                            {{ _("Uploader vers serveur") }}
+                            <i class="ti ti-help ms-1" data-bs-toggle="tooltip" data-bs-title="{{ _('Transfère automatiquement la vidéo vers le serveur une fois l\'enregistrement terminé. Utile pour archivage centralisé ou partage avec d\'autres utilisateurs via l\'interface web') }}"></i>
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input id="cbRecordDownload" class="form-check-input" type="checkbox">
+                        <label class="form-check-label" for="cbRecordDownload">
+                            {{ _("Télécharger local") }}
+                            <i class="ti ti-help ms-1" data-bs-toggle="tooltip" data-bs-title="{{ _('Sauvegarde automatiquement la vidéo dans le dossier de téléchargements de votre navigateur une fois l\'enregistrement terminé. Pratique pour archivage local immédiat') }}"></i>
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input id="cbRecordNormalize" class="form-check-input" type="checkbox">
+                        <label class="form-check-label" for="cbRecordNormalize">
+                            {{ _("Normaliser la vitesse") }}
+                            <i class="ti ti-help ms-1" data-bs-toggle="tooltip" data-bs-title="{{ _('Si le ralentissement est > 1, ré-accélère la vidéo finale pour la ramener à vitesse normale. Désactiver pour conserver la vidéo au ralenti.') }}"></i>
+                        </label>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

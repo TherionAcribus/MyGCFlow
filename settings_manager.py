@@ -1021,7 +1021,23 @@ class SettingsManager:
         write_json(self._profile_path(profile.name), asdict(profile))
         self._invalidate_uid_cache()
 
+    def is_name_available(self, name: str, exclude_uid: Optional[str] = None) -> bool:
+        """Vérifie si un nom de profil est libre.
+
+        Un nom est considéré pris si le fichier sanitizé correspondant existe déjà,
+        sauf si ce fichier appartient au profil `exclude_uid` (renommage cosmétique
+        d'un profil vers un nom qui sanitize vers le même fichier que l'actuel).
+        """
+        path = self._profile_path(name)
+        if not path.exists():
+            return True
+        if exclude_uid is None:
+            return False
+        return read_json(path).get("uid") == exclude_uid
+
     def create_profile(self, name: str, base: Optional[str] = None) -> MapProfile:
+        if not self.is_name_available(name):
+            raise ValueError(f"Un profil nommé '{name}' existe déjà")
         if base and self._profile_path(base).exists():
             prof = self.load_profile(base)
             prof.name = name
@@ -1032,8 +1048,10 @@ class SettingsManager:
         return prof
 
     def duplicate_profile(self, name: str, new_name: str) -> MapProfile:
+        if not self._profile_path(name).exists():
+            raise ValueError(f"Profil source '{name}' introuvable")
         prof = self.load_profile(name)
-        prof.name = new_name
+        prof.name = self._generate_unique_name(new_name)
         prof.uid = uuid.uuid4().hex
         self.save_profile(prof)
         return prof

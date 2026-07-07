@@ -4,6 +4,7 @@
  */
 
 import * as pkg from './index.js';
+import { refreshTomSelect, initTomSelect, getTomSelect, showBsModal, hideBsModal, getBsModal } from './ui_bootstrap.js';
 
 // Helper global: nettoie une chaîne CSS pour ne garder que les déclarations
 function extractCssDeclarations(css) {
@@ -53,9 +54,9 @@ class ProfileManager {
             this.confirmDeleteProfile();
         });
 
-        // Fermeture des modals
-        document.querySelectorAll('.modal').forEach(modal => {
-            M.Modal.init(modal);
+        // Initialiser les modals Bootstrap 5
+        document.querySelectorAll('.modal.bs-modal').forEach(modal => {
+            getBsModal(modal);
         });
 
 
@@ -196,7 +197,8 @@ class ProfileManager {
                 new_name: newName
             });
             if (result.success) {
-                this.showToast(pkg.t('Profil dupliqué: "${name}"', { name: newName }), 'green');
+                // Le serveur peut avoir choisi un nom différent en cas de collision (ex: "X (1)")
+                this.showToast(pkg.t('Profil dupliqué: "${name}"', { name: result.name }), 'green');
                 this.loadProfilesList();
             }
         } catch (error) {
@@ -329,38 +331,40 @@ class ProfileManager {
         container.innerHTML = '';
 
         if (this.profilesList.length === 0) {
-            container.innerHTML = '<div class="collection-item center-align">Aucun profil</div>';
+            container.innerHTML = '<div class="list-group-item text-center">Aucun profil</div>';
             return;
         }
 
         this.profilesList.forEach(profileName => {
             const item = document.createElement('div');
-            item.className = 'collection-item';
+            item.className = 'list-group-item';
 
             const isActive = this.currentProfile && this.currentProfile.name === profileName;
 
             item.innerHTML = `
                 <div class="row" style="margin-bottom: 0;">
-                    <div class="col s8">
+                    <div class="col-8">
                         <div class="${isActive ? 'active-profile' : ''}" style="cursor: pointer; position: relative;" onclick="profileManager.loadProfile('${profileName.replace(/'/g, "\\'")}')">
-                            <i class="material-icons left">palette</i>
+                            <i class="ti ti-color-swatch me-1"></i>
                             <span class="profile-name">${profileName}</span>
-                            ${isActive ? '<i class="material-icons right">check_circle</i><span class="active-badge">ACTIF</span>' : ''}
+                            ${isActive ? '<i class="ti ti-circle-check ms-1"></i><span class="active-badge">ACTIF</span>' : ''}
                         </div>
                     </div>
-                    <div class="col s4 right-align">
-                        <a href="#!" class="btn-flat btn-small dropdown-trigger" data-target="dropdown-${profileName.replace(/\s+/g, '-')}">
-                            <i class="material-icons">more_vert</i>
-                        </a>
-                        <ul id="dropdown-${profileName.replace(/\s+/g, '-')}" class="dropdown-content">
-                            <li><a class="dropdown-item" href="#!" onclick="profileManager.duplicateProfile('${profileName.replace(/'/g, "\\'")}', '${profileName.replace(/'/g, "\\'")}_copy')"><i class="material-icons">content_copy</i>${window.gettext ? window.gettext('Dupliquer') : 'Dupliquer'}</a></li>
-                            <li><a class="dropdown-item" href="#!" onclick="profileManager.renameProfile('${profileName.replace(/'/g, "\\'")}')"><i class="material-icons">edit</i>${window.gettext ? window.gettext('Renommer') : 'Renommer'}</a></li>
-                            <li><a class="dropdown-item" href="#!" onclick="profileManager.exportProfile('${profileName.replace(/'/g, "\\'")}')"><i class="material-icons">file_download</i>${window.gettext ? window.gettext('Exporter') : 'Exporter'}</a></li>
-                            <li><a class="dropdown-item danger" href="#!" onclick="profileManager.resetProfile('${profileName.replace(/'/g, "\\'")}')"><i class="material-icons">refresh</i>${window.gettext ? window.gettext('Réinitialiser') : 'Réinitialiser'}</a></li>
-                            <li><a class="dropdown-item danger" href="#!" onclick="profileManager.confirmDelete('${profileName.replace(/'/g, "\\'")}')"><i class="material-icons">delete</i>${window.gettext ? window.gettext('Supprimer') : 'Supprimer'}</a></li>
-                            <li class="divider" tabindex="-1"></li>
-                            <li><a class="dropdown-item" href="#!" onclick="profileManager.setProfileAsDefault('${profileName.replace(/'/g, "\\'")}')"><i class="material-icons">star</i>${window.gettext ? window.gettext('Définir comme par défaut') : 'Définir comme par défaut'}</a></li>
-                        </ul>
+                    <div class="col-4 text-end">
+                        <div class="dropdown">
+                            <button class="btn btn-link btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="ti ti-dots-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="#!" onclick="profileManager.duplicateProfile('${profileName.replace(/'/g, "\\'")}', '${profileName.replace(/'/g, "\\'")}_copy')"><i class="ti ti-copy me-1"></i>${window.gettext ? window.gettext('Dupliquer') : 'Dupliquer'}</a></li>
+                                <li><a class="dropdown-item" href="#!" onclick="profileManager.renameProfile('${profileName.replace(/'/g, "\\'")}')"><i class="ti ti-edit me-1"></i>${window.gettext ? window.gettext('Renommer') : 'Renommer'}</a></li>
+                                <li><a class="dropdown-item" href="#!" onclick="profileManager.exportProfile('${profileName.replace(/'/g, "\\'")}')"><i class="ti ti-download me-1"></i>${window.gettext ? window.gettext('Exporter') : 'Exporter'}</a></li>
+                                <li><a class="dropdown-item text-danger" href="#!" onclick="profileManager.resetProfile('${profileName.replace(/'/g, "\\'")}')"><i class="ti ti-refresh me-1"></i>${window.gettext ? window.gettext('Réinitialiser') : 'Réinitialiser'}</a></li>
+                                <li><a class="dropdown-item text-danger" href="#!" onclick="profileManager.confirmDelete('${profileName.replace(/'/g, "\\'")}')"><i class="ti ti-trash me-1"></i>${window.gettext ? window.gettext('Supprimer') : 'Supprimer'}</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="#!" onclick="profileManager.setProfileAsDefault('${profileName.replace(/'/g, "\\'")}')"><i class="ti ti-star me-1"></i>${window.gettext ? window.gettext('Définir comme par défaut') : 'Définir comme par défaut'}</a></li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             `;
@@ -368,13 +372,8 @@ class ProfileManager {
             container.appendChild(item);
         });
 
-        // Initialiser les dropdowns Materialize avec largeur non contrainte
-        M.Dropdown.init(document.querySelectorAll('.dropdown-trigger'), {
-            constrainWidth: false,
-            coverTrigger: false,
-            alignment: 'right',
-            container: document.body
-        });
+        // Les dropdowns Bootstrap 5 sont auto-initialisés via data-bs-toggle="dropdown"
+        // (plus besoin d'initialisation manuelle comme avec Materialize)
 
         // Mettre à jour l'indicateur du profil actif (nécessaire pour le rendu initial)
         this.updateCurrentProfileIndicator();
@@ -478,9 +477,9 @@ class ProfileManager {
             const profiles = await this.apiCall('/api/profiles');
             const settings = await this.loadAppSettings();
 
-            // Détruire l'instance Materialize AVANT de modifier le DOM,
-            // pour éviter les références orphelines à _inputEl qui causent un crash async.
-            try { const inst = M.FormSelect.getInstance(selector); if (inst) inst.destroy(); } catch(_) {}
+            // Détruire l'instance Tom Select AVANT de modifier le DOM,
+            // pour éviter les références orphelines qui causent un crash async.
+            try { const ts = getTomSelect(selector); if (ts) ts.destroy(); } catch(_) {}
 
             // Vider le sélecteur
             selector.innerHTML = '';
@@ -502,7 +501,7 @@ class ProfileManager {
             // Sélectionner le profil par défaut actuel (par nom si disponible)
             selector.value = settings.default_profile_name || '';
 
-            try { M.FormSelect.init(selector); } catch(_) {}
+            try { initTomSelect(selector, {}); } catch(_) {}
 
             console.log('Sélecteur profil par défaut rempli avec:', profiles);
             console.log('🎯 Profil par défaut actuel:', settings.default_profile_name || 'aucun');
@@ -1128,7 +1127,7 @@ class ProfileManager {
         // Stocker l'action
         confirmBtn.dataset.action = 'create';
 
-        M.Modal.getInstance(modal).open();
+        showBsModal(modal);
         setTimeout(() => input.focus(), 100);
     }
 
@@ -1146,7 +1145,7 @@ class ProfileManager {
         confirmBtn.dataset.action = 'rename';
         confirmBtn.dataset.originalName = profileName;
 
-        M.Modal.getInstance(modal).open();
+        showBsModal(modal);
         setTimeout(() => input.select(), 100);
     }
 
@@ -1170,7 +1169,7 @@ class ProfileManager {
             }
         }
 
-        M.Modal.getInstance(document.getElementById('profile-modal')).close();
+        hideBsModal(document.getElementById('profile-modal'));
     }
 
     async renameProfileProperly(oldName, newName) {
@@ -1200,6 +1199,7 @@ class ProfileManager {
             console.log('💾 Sauvegarde profil renommé avec UUID conservé:', updatedProfileData.uid);
 
             // Sauvegarder en utilisant l'ancien nom dans l'URL mais le nouveau nom dans les données
+            // (le serveur refuse avec une erreur si newName est déjà pris par un AUTRE profil)
             const result = await this.apiCall(`/api/profiles/${encodeURIComponent(oldName)}`, 'PUT', updatedProfileData);
 
             if (result.success) {
@@ -1208,10 +1208,23 @@ class ProfileManager {
                 // Supprimer l'ancien profil seulement après confirmation de la sauvegarde
                 setTimeout(async () => {
                     try {
+                        // Si l'ancien et le nouveau nom "sanitizent" vers le même fichier (ex: "Mon Profil"
+                        // -> "MonProfil"), l'ancien nom pointe maintenant vers le fichier qu'on vient de
+                        // renommer: il ne faut surtout pas le supprimer.
+                        let sameFile = false;
+                        try {
+                            const oldStillThere = await this.apiCall(`/api/profiles/${encodeURIComponent(oldName)}`);
+                            sameFile = oldStillThere && oldStillThere.uid === updatedProfileData.uid;
+                        } catch (_) {
+                            sameFile = false; // l'ancien nom n'existe plus: suppression normale à suivre
+                        }
+
                         // Sauvegarder temporairement currentProfile pour éviter qu'il soit remis à null
                         const tempCurrentProfile = this.currentProfile;
 
-                        await this.deleteProfile(oldName);
+                        if (!sameFile) {
+                            await this.deleteProfile(oldName);
+                        }
 
                         // Restaurer currentProfile après la suppression
                         this.currentProfile = tempCurrentProfile;
@@ -1261,7 +1274,7 @@ class ProfileManager {
         message.textContent = `Êtes-vous sûr de vouloir supprimer le profil "${profileName}" ?`;
         confirmBtn.dataset.profileName = profileName;
 
-        M.Modal.getInstance(modal).open();
+        showBsModal(modal);
     }
 
     confirmDeleteProfile() {
@@ -1269,7 +1282,7 @@ class ProfileManager {
         const profileName = confirmBtn.dataset.profileName;
 
         this.deleteProfile(profileName);
-        M.Modal.getInstance(document.getElementById('delete-profile-modal')).close();
+        hideBsModal(document.getElementById('delete-profile-modal'));
     }
 
     showToast(message, color = 'blue') {
@@ -1288,13 +1301,9 @@ class ProfileManager {
         try {
             pkg.showToast(message, gcmType, 'Profils');
         } catch (error) {
-            // Fallback vers Materialize si le système GCM échoue
-            console.warn('Erreur système toast GCM, fallback Materialize:', error);
-            M.toast({
-                html: message,
-                classes: color + ' white-text',
-                displayLength: 4000
-            });
+            // Fallback : alert simple si le système GCM échoue
+            console.warn('Erreur système toast GCM:', error);
+            console.log('[Profile toast]', message);
         }
     }
 }
@@ -1458,7 +1467,7 @@ function applyPointSettings(pointOptions) {
         if (pointOptions.mode === 'icone') {
             if (selectIconSet && (pointOptions.icon_set || pointOptions.iconSet)) {
                 selectIconSet.value = pointOptions.icon_set || pointOptions.iconSet;
-                try { M.FormSelect.init(selectIconSet); } catch (_) {}
+                try { refreshTomSelect(selectIconSet); } catch (_) {}
             }
             const size = parseInt(pointOptions.icon_size || pointOptions.iconSize);
             if (Number.isFinite(size) && size > 0) {

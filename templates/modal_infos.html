@@ -1,11 +1,15 @@
-<!-- Modal d'informations -->
-<div id="modal_infos" class="modal">
-    <div class="modal-content">
-        <h4 id="modalInfosTitle"></h4>
-        <p id="modalInfosDescription"></p>
-        <div id="modalInfosTitre"></div>
-    </div>
-    <div class="modal-footer">
-    <a href="#!" class="modal-close waves-effect waves-green btn-flat">{{ _("Cancel") }}</a>
+<!-- Modal d'informations (Tabler/Bootstrap 5) -->
+<div id="modal_infos" class="modal bs-modal fade" tabindex="-1" aria-labelledby="modalInfosTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body">
+                <h5 class="modal-title mb-2" id="modalInfosTitle"></h5>
+                <p id="modalInfosDescription" class="text-muted mb-2"></p>
+                <div id="modalInfosTitre"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-link" data-bs-dismiss="modal">{{ _("Fermer") }}</button>
+            </div>
+        </div>
     </div>
 </div>

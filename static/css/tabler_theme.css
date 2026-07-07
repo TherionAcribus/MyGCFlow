@@ -1,0 +1,257 @@
+/* =====================================================================
+   tabler_theme.css — Mapping des variables GCMap vers Tabler (Bootstrap 5)
+   ---------------------------------------------------------------------
+   Ce fichier centralise l'adaptation du thème GCMap au système Tabler.
+   Il surcharge les variables --tblr-* avec la palette GCMap existante
+   pour conserver l'identité visuelle pendant et après la migration.
+   ===================================================================== */
+
+/* --- Palette GCMap (conservée depuis theme.css) --- */
+:root {
+    /* Neutres */
+    --color-bg: #fafafa;
+    --color-surface: #ffffff;
+    --color-border: #e5e5e5;
+    --color-text: #2b2b2b;
+    --color-text-muted: #6b6b6b;
+
+    /* Accent principal */
+    --color-accent: #1e88e5;
+    --color-accent-weak: #e8f2fd;
+    --color-accent-strong: #1976d2;
+    --color-accent-deep: #1565c0;
+
+    /* États sémantiques */
+    --color-success: #2e7d32;
+    --color-warning: #ef6c00;
+    --color-danger:  #c62828;
+
+    /* Elevation */
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
+    --shadow-md: 0 2px 6px rgba(0,0,0,0.10);
+
+    /* --- Mapping vers les variables Tabler --- */
+    --tblr-primary: var(--color-accent);
+    --tblr-primary-fg: #ffffff;
+    --tblr-primary-darken: var(--color-accent-strong);
+    --tblr-bg-surface: var(--color-surface);
+    --tblr-bg-surface-secondary: var(--color-bg);
+    --tblr-border-color: var(--color-border);
+    --tblr-text-muted: var(--color-text-muted);
+    --tblr-text-dark: var(--color-text);
+    --tblr-success: var(--color-success);
+    --tblr-warning: var(--color-warning);
+    --tblr-danger: var(--color-danger);
+    --tblr-shadow-card: var(--shadow-sm);
+}
+
+/* --- Dark mode (data-bs-theme="dark" sur <html>) --- */
+[data-bs-theme="dark"] {
+    --color-bg: #1e2228;
+    --color-surface: #242a33;
+    --color-border: #2f3640;
+    --color-text: #d6dce5;
+    --color-text-muted: #8a94a3;
+    --color-accent-weak: rgba(30, 136, 229, 0.18);
+
+    --tblr-bg-surface: var(--color-surface);
+    --tblr-bg-surface-secondary: var(--color-bg);
+    --tblr-border-color: var(--color-border);
+    --tblr-text-muted: var(--color-text-muted);
+    --tblr-text-dark: var(--color-text);
+}
+
+/* --- Base body --- */
+body {
+    background: var(--color-bg);
+    color: var(--color-text);
+}
+
+/* --- Cartes / surfaces --- */
+.card,
+.card-panel {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-sm);
+}
+
+/* --- Titres --- */
+h5, h6 { color: var(--color-text); font-weight: 600; }
+.text-muted { color: var(--color-text-muted) !important; }
+
+/* --- Boutons : aligner sur l'accent GCMap --- */
+.btn-primary {
+    --tblr-btn-color: #ffffff;
+    --tblr-btn-bg: var(--color-accent);
+    --tblr-btn-border-color: var(--color-accent);
+    --tblr-btn-hover-bg: var(--color-accent-strong);
+    --tblr-btn-hover-border-color: var(--color-accent-strong);
+    --tblr-btn-active-bg: var(--color-accent-deep);
+    --tblr-btn-active-border-color: var(--color-accent-deep);
+}
+
+/* --- Nav-tabs : indicateur d'accent --- */
+.nav-tabs .nav-link {
+    color: var(--color-text-muted);
+    font-weight: 500;
+}
+.nav-tabs .nav-link:hover {
+    color: var(--color-accent);
+    border-color: transparent;
+}
+.nav-tabs .nav-link.active,
+.nav-tabs .nav-item.show .nav-link {
+    color: var(--color-accent);
+    background-color: var(--color-accent-weak);
+    border-color: var(--color-border) var(--color-border) var(--color-surface);
+    font-weight: 600;
+}
+
+/* --- Form controls : focus accent --- */
+.form-control:focus,
+.form-select:focus,
+.form-check-input:focus {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 0.25rem rgba(30, 136, 229, 0.25);
+}
+
+/* --- Form-floating : labels --- */
+.form-floating > label {
+    color: var(--color-text-muted);
+}
+
+/* --- Tooltips Bootstrap : couleur d'accent --- */
+.tooltip-inner {
+    background-color: var(--color-text);
+}
+
+/* --- Tom Select : aligner sur l'accent --- */
+.ts-control {
+    border-color: var(--color-border);
+}
+.ts-control:focus,
+.ts-wrapper.focus .ts-control {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 0.25rem rgba(30, 136, 229, 0.25);
+}
+.ts-wrapper.plugin-checkbox_options .option.active,
+.ts-dropdown .active {
+    background-color: var(--color-accent-weak);
+    color: var(--color-accent);
+}
+.ts-dropdown .selected {
+    background-color: var(--color-accent);
+    color: #fff;
+}
+
+/* --- Tempus Dominus : aligner sur l'accent --- */
+.tempus-dominus-widget .date-container .date.active,
+.tempus-dominus-widget .time-container .time.active {
+    background-color: var(--color-accent);
+    color: #fff;
+}
+.tempus-dominus-widget .date-container .date.today {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+}
+
+/* --- Tempus Dominus : intégration Tabler --- */
+.tempus-dominus-widget {
+    border-radius: 8px;
+    box-shadow: var(--shadow-md, 0 4px 12px rgba(0,0,0,0.15));
+    border: 1px solid var(--color-border, rgba(0,0,0,0.1));
+}
+.tempus-dominus-widget .date-container .date:not(.active):hover,
+.tempus-dominus-widget .time-container .time:not(.active):hover {
+    background-color: var(--color-accent-weak, #e8f2fd);
+    border-radius: 4px;
+}
+.tempus-dominus-widget [data-action] {
+    border-radius: 4px;
+}
+.tempus-dominus-widget [data-action]:hover {
+    background-color: var(--color-accent-weak, #e8f2fd);
+}
+
+/* Input avec icône calendrier */
+.td-input {
+    cursor: pointer;
+}
+.td-input.form-control {
+    background-image: none; /* Tabler peut ajouter une icône, on laisse TD gérer */
+}
+
+/* --- Progress Bootstrap --- */
+.progress-bar {
+    background-color: var(--color-accent);
+}
+
+/* --- Badges / chips --- */
+.badge.bg-primary {
+    background-color: var(--color-accent) !important;
+}
+
+/* --- Alertes sémantiques atténuées --- */
+.alert-success { background-color: rgba(46, 125, 50, 0.1); border-color: rgba(46, 125, 50, 0.25); color: var(--color-success); }
+.alert-warning { background-color: rgba(239, 108, 0, 0.1); border-color: rgba(239, 108, 0, 0.25); color: var(--color-warning); }
+.alert-danger  { background-color: rgba(198, 40, 40, 0.1); border-color: rgba(198, 40, 40, 0.25); color: var(--color-danger); }
+.alert-info    { background-color: var(--color-accent-weak); border-color: rgba(30, 136, 229, 0.25); color: var(--color-accent-strong); }
+
+/* --- List-group (équivalent collection Materialize) --- */
+.list-group-item.active {
+    background-color: var(--color-accent-weak);
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+}
+
+/* --- Control-bar latérale (custom GCMap, conservée) --- */
+.control-bar {
+    background: rgba(33, 33, 33, 0.85);
+}
+.control-bar .btn i {
+    color: #fff;
+}
+
+/* --- Toasts custom GCMap (système existant, conservé) --- */
+.gcm-toast { border-left-color: var(--color-accent); }
+.gcm-toast.success { border-left-color: var(--color-success); }
+.gcm-toast.error   { border-left-color: var(--color-danger); }
+.gcm-toast.warning { border-left-color: var(--color-warning); }
+
+/* --- Boutons custom GCMap conservés --- */
+.changeMap {
+    background-color: var(--color-accent);
+    color: #fff;
+}
+.changeMap:hover { background-color: var(--color-accent-strong); }
+.changeMap.is-selected {
+    background-color: var(--color-accent-deep) !important;
+    box-shadow: inset 0 0 0 2px #ffffff33, var(--shadow-md);
+}
+
+/* --- Boutons de reset de dates (filtres + animation) --- */
+.date-reset-btn {
+    color: var(--color-accent) !important;
+    border: 1px solid var(--color-accent);
+    border-radius: 6px;
+    padding: 6px 12px;
+    line-height: 1.2;
+    background: transparent !important;
+}
+.date-reset-btn:hover { background: var(--color-accent-weak) !important; }
+.date-reset-btn.active-reset {
+    background: var(--color-accent-weak) !important;
+    color: var(--color-accent) !important;
+    border-color: var(--color-accent) !important;
+    font-weight: 600;
+}
+
+/* --- Profil actif --- */
+.active-profile {
+    color: var(--color-accent);
+    background: var(--color-accent-weak);
+    border-color: var(--color-accent);
+}
+.active-profile .active-badge { background: var(--color-success); }
+
+/* --- Fin thème Tabler --- */

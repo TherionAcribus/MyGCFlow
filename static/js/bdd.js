@@ -2,6 +2,7 @@ import * as pkg from './index.js';
 import { CONFIG } from './init.js';
 import { showSuccess, showError, showInfo, t } from './notifications.js';
 import { clearMap } from './mapgl.js';
+import { hideBsModal } from './ui_bootstrap.js';
 
 // Flag de debug pour les filtres (FILTER).
 // Mettre à true pour réactiver les logs en console.
@@ -600,13 +601,10 @@ function performUploadFromModal(file){
             pkg.hideToast(uploadToast);
             showSuccess(t("Fichier chargé avec succès !"), t("Chargement terminé"));
 
-            // Fermer la modale de première utilisation
+            // Fermer la modale de première utilisation (Bootstrap 5)
             const modalElement = document.getElementById('modal_first_use');
             if (modalElement) {
-                const modal = M.Modal.getInstance(modalElement);
-                if (modal) {
-                    modal.close();
-                }
+                hideBsModal(modalElement);
             }
 
             // Mettre à jour les infos de la BDD

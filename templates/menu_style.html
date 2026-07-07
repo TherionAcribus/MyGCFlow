@@ -1,190 +1,202 @@
 <!-- Onglet Style : Cartes, Points et Flash -->
-<div id="style" class="col s12">
-    <div class="row">
+<div id="style" class="col-12 tab-pane fade">
+    <div class="row g-3">
 
         <!-- Zone principale avec sous-menu -->
-        <div class="col s12 l8">
-            <div class="card-panel">
-                <ul class="tabs tabs-fixed-width">
-                    <li class="tab col s6"><a href="#tabMapOverlay">{{ _("Cartes & Overlays") }}</a></li>
-                    <li class="tab col s6"><a href="#tabPointsFlash">{{ _("Points & Flash") }}</a></li>
-                </ul>
+        <div class="col-12 col-lg-8">
+            <div class="card">
+                <div class="card-body">
+                    <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
+                        <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tabMapOverlay" role="tab" aria-selected="true">{{ _("Cartes & Overlays") }}</a></li>
+                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabPointsFlash" role="tab" aria-selected="false">{{ _("Points & Flash") }}</a></li>
+                    </ul>
 
-                <div id="tabMapOverlay" class="col s12" style="padding-top: 20px;">
-                    <div class="row">
-                        <div class="col s12 m6">
-                            <h5>{{ _("Cartes") }}</h5>
-                            <div class="card-panel">
-                                <div class="row">
-                                    <div class="col s6">
-                                        <a id="OSM" class="changeMap btn waves-effect waves-light" title="{{ _("OpenStreetMap") }}">
-                                            <span class="btn-text">OSM</span>
-                                        </a>
+                    <div class="tab-content pt-3">
+                    <!-- Sous-onglet Cartes & Overlays -->
+                    <div id="tabMapOverlay" class="tab-pane fade show active">
+                        <div class="row g-3">
+                            <div class="col-12 col-md-6">
+                                <h6 class="mb-2">
+                                    <i class="ti ti-map text-muted me-1"></i>{{ _("Cartes") }}
+                                </h6>
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <button type="button" id="OSM" class="changeMap map-card" aria-label="{{ _('OpenStreetMap') }}" title="{{ _('OpenStreetMap') }}">
+                                            <img src="../static/images/osm.png" alt="" class="map-card-img">
+                                            <span class="map-card-label">OSM</span>
+                                            <i class="ti ti-check map-card-check"></i>
+                                        </button>
                                     </div>
-                                    <div class="col s6">
-                                        <a id="stamenToner" class="changeMap btn waves-effect waves-light" title="{{ _("Stamen Toner") }}">
-                                            <span class="btn-text">Toner</span>
-                                        </a>
+                                    <div class="col-6">
+                                        <button type="button" id="stamenToner" class="changeMap map-card" aria-label="{{ _('Stamen Toner') }}" title="{{ _('Stamen Toner') }}">
+                                            <img src="../static/images/stamenToner.png" alt="" class="map-card-img">
+                                            <span class="map-card-label">Toner</span>
+                                            <i class="ti ti-check map-card-check"></i>
+                                        </button>
+                                    </div>
+                                    <div class="col-6">
+                                        <button type="button" id="vectorMap" class="changeMap map-card" aria-label="{{ _('Carte vectorielle') }}" title="{{ _('Carte vectorielle') }}">
+                                            <img src="../static/images/vector.png" alt="" class="map-card-img">
+                                            <span class="map-card-label">Vector</span>
+                                            <i class="ti ti-check map-card-check"></i>
+                                        </button>
+                                    </div>
+                                    <div class="col-6">
+                                        <button type="button" id="watercolor" class="changeMap map-card" aria-label="{{ _('Watercolor') }}" title="{{ _('Watercolor') }}">
+                                            <img src="../static/images/watercolor.png" alt="" class="map-card-img">
+                                            <span class="map-card-label">Water</span>
+                                            <i class="ti ti-check map-card-check"></i>
+                                        </button>
                                     </div>
                                 </div>
-                                <div class="row">
-                                    <div class="col s6">
-                                        <a id="vectorMap" class="changeMap btn waves-effect waves-light" title="{{ _("Carte vectorielle") }}">
-                                            <span class="btn-text">Vector</span>
-                                        </a>
-                                    </div>
-                                    <div class="col s6">
-                                        <a id="watercolor" class="changeMap btn waves-effect waves-light" title="{{ _("Watercolor") }}">
-                                            <span class="btn-text">Water</span>
-                                        </a>
-                                    </div>
-                                </div>
 
-                                <!-- Options cartographiques -->
-                                <div id="vectorMapOptions" style="display: none;">
-                                    <h6>{{ _("Style Vector") }}</h6>
-
-                                    <!-- Ligne 1 : Couleurs de contour et remplissage -->
-                                    <div class="row">
-                                        <div class="col s12 m6">
-                                            <div class="vector-control-group">
-                                                <label for="fieldVectorMapStrokeColor" class="vector-label" title="{{ _("Définit la couleur des bordures des géocaches") }}">{{ _("Couleur contour") }}</label>
-                                                <input type="color" id="fieldVectorMapStrokeColor" class="vector-color-picker" title="{{ _("Cliquez pour choisir la couleur des contours") }}" />
-                                            </div>
+                                <!-- Options Vector -->
+                                <div id="vectorMapOptions" class="map-options mt-3" style="display: none;">
+                                    <h6 class="map-options-title">
+                                        <i class="ti ti-vector text-primary me-1"></i>{{ _("Style Vector") }}
+                                    </h6>
+                                    <div class="row g-2">
+                                        <div class="col-12 col-md-6">
+                                            <label class="form-label" for="fieldVectorMapStrokeColor" title="{{ _('Définit la couleur des bordures des géocaches') }}">{{ _("Couleur contour") }}</label>
+                                            <input type="color" id="fieldVectorMapStrokeColor" class="form-control form-control-color" title="{{ _('Cliquez pour choisir la couleur des contours') }}">
                                         </div>
-                                        <div class="col s12 m6">
-                                            <div class="vector-control-group">
-                                                <label for="fieldVectorMapFillColor" class="vector-label" title="{{ _("Définit la couleur intérieure des géocaches") }}">{{ _("Couleur remplissage") }}</label>
-                                                <input type="color" id="fieldVectorMapFillColor" class="vector-color-picker" title="{{ _("Cliquez pour choisir la couleur de remplissage") }}" />
-                                            </div>
+                                        <div class="col-12 col-md-6">
+                                            <label class="form-label" for="fieldVectorMapFillColor" title="{{ _('Définit la couleur intérieure des géocaches') }}">{{ _("Couleur remplissage") }}</label>
+                                            <input type="color" id="fieldVectorMapFillColor" class="form-control form-control-color" title="{{ _('Cliquez pour choisir la couleur de remplissage') }}">
                                         </div>
-                                    </div>
-
-                                    <!-- Ligne 2 : Couleur de fond et largeur -->
-                                    <div class="row">
-                                        <div class="col s12 m6">
-                                            <div class="vector-control-group">
-                                                <label for="fieldVectorMapBackgroundColor" class="vector-label" title="{{ _("Définit la couleur de fond de la carte") }}">{{ _("Couleur fond") }}</label>
-                                                <input type="color" id="fieldVectorMapBackgroundColor" class="vector-color-picker" title="{{ _("Cliquez pour choisir la couleur de fond") }}" />
-                                            </div>
+                                        <div class="col-12 col-md-6">
+                                            <label class="form-label" for="fieldVectorMapBackgroundColor" title="{{ _('Définit la couleur de fond de la carte') }}">{{ _("Couleur fond") }}</label>
+                                            <input type="color" id="fieldVectorMapBackgroundColor" class="form-control form-control-color" title="{{ _('Cliquez pour choisir la couleur de fond') }}">
                                         </div>
-                                        <div class="col s12 m6">
-                                            <div class="vector-control-group">
-                                                <label for="fieldVectorMapStrokeWidth" class="vector-label" title="{{ _("Définit l'épaisseur des bordures des géocaches") }}">{{ _("Largeur contour") }}</label>
-                                                <div class="vector-slider-container">
-                                                    <input type="range" id="fieldVectorMapStrokeWidth" min="0.1" max="5" step="0.1" class="vector-slider" title="{{ _("Faites glisser pour ajuster l'épaisseur") }}" />
-                                                    <span class="vector-slider-value" title="{{ _("Valeur actuelle de l'épaisseur") }}">2.5</span>
-                                                </div>
+                                        <div class="col-12 col-md-6">
+                                            <label class="form-label" for="fieldVectorMapStrokeWidth" title="{{ _('Définit l\'épaisseur des bordures des géocaches') }}">{{ _("Largeur contour") }}</label>
+                                            <div class="input-group input-group-sm">
+                                                <input type="range" id="fieldVectorMapStrokeWidth" min="0.1" max="5" step="0.1" class="form-range" title="{{ _('Faites glisser pour ajuster l\'épaisseur') }}">
+                                                <span class="input-group-text vector-slider-value">2.5</span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div id="tonerMapOptions" style="display: none;">
-                                    <h6>{{ _("Style Toner") }}</h6>
-                                    <div class="row">
-                                        <div class="col s6">
-                                            <a id="stamenTonerLight" class="btn waves-effect waves-light">
-                                                <i class="material-icons right">brightness_high</i>
-                                                {{ _("Clair") }}
-                                            </a>
-                                        </div>
-                                        <div class="col s6">
-                                            <a id="stamenTonerDark" class="btn waves-effect waves-light">
-                                                <i class="material-icons right">brightness_low</i>
-                                                {{ _("Sombre") }}
-                                            </a>
-                                        </div>
+                                <!-- Options Toner -->
+                                <div id="tonerMapOptions" class="map-options mt-3" style="display: none;">
+                                    <h6 class="map-options-title">
+                                        <i class="ti ti-contrast text-muted me-1"></i>{{ _("Style Toner") }}
+                                    </h6>
+                                    <div class="btn-group w-100" role="group" aria-label="{{ _('Style Toner') }}">
+                                        <button type="button" id="stamenTonerLight" class="btn btn-outline-secondary">
+                                            <i class="ti ti-sun-high me-1"></i>{{ _("Clair") }}
+                                        </button>
+                                        <button type="button" id="stamenTonerDark" class="btn btn-outline-secondary">
+                                            <i class="ti ti-moon me-1"></i>{{ _("Sombre") }}
+                                        </button>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="col s12 m6">
-                            <h5>{{ _("Informations et Overlays") }}</h5>
-                            <div class="card-panel">
-                                {% include 'menu_informations.html' %}
+                            <div class="col-12 col-md-6">
+                                <h6 class="mb-2">
+                                    <i class="ti ti-info-circle text-muted me-1"></i>{{ _("Informations et Overlays") }}
+                                </h6>
+                                <div class="card">
+                                    <div class="card-body">
+                                        {% include 'menu_informations.html' %}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div id="tabPointsFlash" class="col s12" style="padding-top: 20px;">
-                    <div class="row">
-                        <div class="col s12 m6">
-                            <h5>{{ _("Points") }}</h5>
-                            <div>
+                    <!-- Sous-onglet Points & Flash -->
+                    <div id="tabPointsFlash" class="tab-pane fade">
+                        <div class="row g-3">
+                            <div class="col-12 col-md-6">
                                 {% include 'menu_points.html' %}
                             </div>
-                        </div>
-                        <div class="col s12 m6">
-                            <h5>{{ _("Flash") }}</h5>
-                            <div>
+                            <div class="col-12 col-md-6">
                                 {% include 'menu_flash.html' %}
                             </div>
                         </div>
                     </div>
+                    </div><!-- /.tab-content -->
+
                 </div>
             </div>
         </div>
 
         <!-- Section Profils (sticky) -->
-        <div class="col s12 l4">
+        <div class="col-12 col-lg-4">
             <div class="sticky-panel">
-                <h5>{{ _("Profils") }}</h5>
+                <h5 class="mb-2">
+                    <i class="ti ti-users text-muted me-1"></i>{{ _("Profils") }}
+                </h5>
                 <div id="current-profile-indicator" class="profile-active-indicator"></div>
-                <div class="card-panel">
-                    <div id="profiles-section">
-                        <!-- Boutons d'action -->
-                        <div class="profile-actions">
-                            <a id="btn-new-profile" class="btn waves-effect waves-light btn-small tooltipped" data-position="bottom" data-tooltip="{{ _('Nouveau profil') }}">
-                                <i class="material-icons left">add</i>{{ _("Nouveau") }}
-                            </a>
-                            <a id="btn-save-profile" class="btn waves-effect waves-light btn-small tooltipped" data-position="bottom" data-tooltip="{{ _('Sauvegarder le profil actif') }}">
-                                <i class="material-icons left">save</i>{{ _("Sauvegarder") }}
-                            </a>
-                            <a id="btn-import-profile" class="btn waves-effect waves-light btn-small tooltipped" data-position="bottom" data-tooltip="{{ _('Importer un profil JSON') }}">
-                                <i class="material-icons left">file_upload</i>{{ _("Importer") }}
-                            </a>
-                            <input id="input-import-profile" type="file" accept="application/json" style="display:none" />
-                        </div>
+                <div class="card">
+                    <div class="card-body">
+                        <div id="profiles-section">
+                            <!-- Boutons d'action -->
+                            <div class="profile-actions d-flex flex-wrap gap-1 mb-2">
+                                <button type="button" id="btn-new-profile" class="btn btn-sm btn-primary" data-bs-toggle="tooltip" data-bs-title="{{ _('Nouveau profil') }}">
+                                    <i class="ti ti-plus me-1"></i>{{ _("Nouveau") }}
+                                </button>
+                                <button type="button" id="btn-save-profile" class="btn btn-sm btn-secondary" data-bs-toggle="tooltip" data-bs-title="{{ _('Sauvegarder le profil actif') }}">
+                                    <i class="ti ti-device-floppy me-1"></i>{{ _("Sauvegarder") }}
+                                </button>
+                                <button type="button" id="btn-import-profile" class="btn btn-sm btn-secondary" data-bs-toggle="tooltip" data-bs-title="{{ _('Importer un profil JSON') }}">
+                                    <i class="ti ti-file-upload me-1"></i>{{ _("Importer") }}
+                                </button>
+                                <input id="input-import-profile" type="file" accept="application/json" style="display:none">
+                            </div>
 
-                        <!-- Liste des profils - zone scrollable -->
-                        <div id="profiles-list" class="collection" style="max-height: 300px; overflow-y: auto;">
-                            <!-- Les profils seront chargés dynamiquement -->
-                        </div>
+                            <!-- Liste des profils - zone scrollable -->
+                            <div id="profiles-list" class="list-group profiles-list-scrollable" style="max-height: 300px; overflow-y: auto;">
+                                <!-- Les profils seront chargés dynamiquement -->
+                            </div>
 
-                        <!-- Modal pour créer/renommer profil -->
-                        <div id="profile-modal" class="modal">
-                            <div class="modal-content">
-                                <h4 id="profile-modal-title">{{ _("Nouveau profil") }}</h4>
-                                <div class="row">
-                                    <div class="input-field col s12">
-                                        <input type="text" id="profile-name-input" maxlength="50">
-                                        <label for="profile-name-input">{{ _("Nom du profil") }}</label>
+                            <!-- Modal pour créer/renommer profil (Bootstrap 5) -->
+                            <div id="profile-modal" class="modal bs-modal" tabindex="-1" aria-labelledby="profile-modal-title" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 id="profile-modal-title" class="modal-title">{{ _("Nouveau profil") }}</h5>
+                                            <button type="button" class="btn-close modal-close" data-bs-dismiss="modal" aria-label="{{ _('Fermer') }}"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="mb-3">
+                                                <label for="profile-name-input" class="form-label">{{ _("Nom du profil") }}</label>
+                                                <input type="text" id="profile-name-input" maxlength="50" class="form-control" placeholder="{{ _('Nom du profil') }}">
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary modal-close" data-bs-dismiss="modal">{{ _("Annuler") }}</button>
+                                            <button type="button" id="btn-confirm-profile" class="btn btn-primary">{{ _("Créer") }}</button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="modal-footer">
-                                <a href="#!" class="modal-close waves-effect waves-red btn-flat">{{ _("Annuler") }}</a>
-                                <a href="#!" id="btn-confirm-profile" class="waves-effect waves-green btn">{{ _("Créer") }}</a>
-                            </div>
-                        </div>
 
-                        <!-- Modal de confirmation suppression -->
-                        <div id="delete-profile-modal" class="modal">
-                            <div class="modal-content">
-                                <div class="modal-header-row">
-                                    <span class="modal-icon warning"><i class="material-icons">warning</i></span>
-                                    <div>
-                                        <h4>{{ _("Confirmer la suppression") }}</h4>
-                                        <p class="modal-subtitle">{{ _("Cette action est définitive") }}</p>
+                            <!-- Modal de confirmation suppression (Bootstrap 5) -->
+                            <div id="delete-profile-modal" class="modal bs-modal" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <div class="modal-header-row d-flex align-items-center gap-2">
+                                                <span class="modal-icon warning"><i class="ti ti-alert-triangle"></i></span>
+                                                <div>
+                                                    <h5 class="modal-title">{{ _("Confirmer la suppression") }}</h5>
+                                                    <p class="modal-subtitle text-muted">{{ _("Cette action est définitive") }}</p>
+                                                </div>
+                                            </div>
+                                            <button type="button" class="btn-close modal-close" data-bs-dismiss="modal" aria-label="{{ _('Fermer') }}"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p id="delete-profile-message" class="modal-body-text">{{ _("Êtes-vous sûr de vouloir supprimer ce profil ?") }}</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary modal-close" data-bs-dismiss="modal">{{ _("Annuler") }}</button>
+                                            <button type="button" id="btn-confirm-delete" class="btn btn-danger">{{ _("Supprimer") }}</button>
+                                        </div>
                                     </div>
                                 </div>
-                                <p id="delete-profile-message" class="modal-body-text">{{ _("Êtes-vous sûr de vouloir supprimer ce profil ?") }}</p>
-                            </div>
-                            <div class="modal-footer">
-                                <a href="#!" class="modal-close waves-effect waves-red btn-flat">{{ _("Annuler") }}</a>
-                                <a href="#!" id="btn-confirm-delete" class="waves-effect waves-green btn red">{{ _("Supprimer") }}</a>
                             </div>
                         </div>
                     </div>

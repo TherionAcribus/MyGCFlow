@@ -55,7 +55,7 @@ a:hover { text-decoration: underline; }
     color: var(--g-text);
 }
 
-.guide-header .guide-logo .material-icons {
+.guide-header .guide-logo .ti {
     color: var(--g-accent);
     font-size: 28px;
 }
@@ -74,7 +74,7 @@ a:hover { text-decoration: underline; }
     font-size: 0.9rem;
 }
 .guide-back-btn:hover { text-decoration: none; background: #1565c0; }
-.guide-back-btn .material-icons { font-size: 18px; }
+.guide-back-btn .ti { font-size: 18px; }
 
 /* Bouton ouverture menu (mobile) */
 .guide-menu-toggle {
@@ -85,7 +85,7 @@ a:hover { text-decoration: underline; }
     color: var(--g-text);
     padding: 4px;
 }
-.guide-menu-toggle .material-icons { font-size: 28px; }
+.guide-menu-toggle .ti { font-size: 28px; }
 
 /* ---------- Mise en page ---------- */
 .guide-layout {
@@ -152,7 +152,7 @@ a:hover { text-decoration: underline; }
     background: var(--g-accent);
     color: #fff;
 }
-.guide-nav a .material-icons { font-size: 20px; }
+.guide-nav a .ti { font-size: 20px; }
 
 /* ---------- Contenu ---------- */
 .guide-content {
@@ -181,7 +181,7 @@ a:hover { text-decoration: underline; }
     align-items: center;
     justify-content: center;
 }
-.guide-section-head .sec-badge .material-icons { font-size: 28px; }
+.guide-section-head .sec-badge .ti { font-size: 28px; }
 .guide-section-head h2 {
     margin: 0;
     font-size: 1.65rem;
@@ -295,7 +295,7 @@ a:hover { text-decoration: underline; }
     font-weight: 600;
     white-space: nowrap;
 }
-.ui-chip .material-icons { font-size: 15px; }
+.ui-chip .ti { font-size: 15px; }
 
 /* Encadré astuce / info */
 .guide-callout {
@@ -308,13 +308,13 @@ a:hover { text-decoration: underline; }
     border: 1px solid var(--g-border);
     background: var(--g-surface);
 }
-.guide-callout .material-icons { flex: 0 0 auto; }
+.guide-callout .ti { flex: 0 0 auto; }
 .guide-callout.tip { background: #eefaf0; border-color: #c8eccf; }
-.guide-callout.tip .material-icons { color: var(--g-success, #2e7d32); }
+.guide-callout.tip .ti { color: var(--g-success, #2e7d32); }
 .guide-callout.info { background: var(--g-accent-weak); border-color: #cfe3f7; }
-.guide-callout.info .material-icons { color: var(--g-accent); }
+.guide-callout.info .ti { color: var(--g-accent); }
 .guide-callout.warn { background: #fff5e6; border-color: #ffd9a8; }
-.guide-callout.warn .material-icons { color: #ef6c00; }
+.guide-callout.warn .ti { color: #ef6c00; }
 .guide-callout strong { display: inline; }
 
 .guide-footer {
