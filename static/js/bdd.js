@@ -513,6 +513,27 @@ function updateFiltersCounter(selected, total){
 }
 
 async function clearDatabase() {
+    // Action destructive et irréversible : demander confirmation avant toute
+    // requête vers /clear_database. On s'appuie sur showConfirmation (toast
+    // bloquant avec boutons Confirmer/Annuler) déjà utilisé ailleurs (mapgl.js).
+    const confirmed = await new Promise(resolve => {
+        if (pkg && pkg.showConfirmation) {
+            pkg.showConfirmation(
+                t("Êtes-vous sûr de vouloir vider la base de données ? Cette action est irréversible et supprimera toutes vos trouvailles."),
+                t("Confirmation de suppression"),
+                () => resolve(true),
+                () => resolve(false)
+            );
+        } else {
+            // Fallback : pas de système de confirmation disponible, on n'efface pas
+            // silencieusement — on alerte l'utilisateur.
+            showError(t("Confirmation non disponible, action annulée."), t("Suppression"));
+            resolve(false);
+        }
+    });
+
+    if (!confirmed) return;
+
     let clearingToast = null;
     
     try {
