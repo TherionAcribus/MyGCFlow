@@ -1,5 +1,3 @@
-import json
-
 from flask import Blueprint, jsonify, request, current_app
 
 from settings_manager import AppSettings, SettingsManager
@@ -68,23 +66,6 @@ def api_put_settings():
                 map_default_zoom = int(raw_zoom)
             except Exception:
                 map_default_zoom = current.map_default_zoom
-
-    # Compat: anciens clients qui envoient encore un nom de profil plutôt qu'un UUID.
-    # Ne se déclenche que si le client n'a pas envoyé default_profile_uid du tout.
-    if 'default_profile_uid' not in data and data.get('default_profile'):
-        profile_name = data.get('default_profile')
-        try:
-            from settings_manager import PROFILES_DIR
-            for profile_file in PROFILES_DIR.glob("*.json"):
-                try:
-                    profile_data = json.loads(profile_file.read_text(encoding="utf-8"))
-                    if profile_data.get("name") == profile_name:
-                        default_profile_uid = profile_data.get("uid")
-                        break
-                except Exception:
-                    continue
-        except Exception as e:
-            print(f"Erreur lors de la résolution du nom de profil '{profile_name}': {e}")
 
     updated = AppSettings(
         version=current.version,
@@ -170,7 +151,7 @@ def api_save_profile(name: str):
             prof.map.default_zoom = int(m['default_zoom'])
         except Exception:
             pass
-    vm = m.get('vector_options') or m.get('vectorOptions') or {}
+    vm = m.get('vector_options') or {}
     if isinstance(vm, dict):
         if 'stroke_color' in vm:
             prof.map.vector_options.stroke_color = vm['stroke_color']
@@ -183,7 +164,7 @@ def api_save_profile(name: str):
                 prof.map.vector_options.stroke_width = float(vm['stroke_width'])
             except Exception:
                 pass
-    tm = m.get('toner_options') or m.get('tonerOptions') or {}
+    tm = m.get('toner_options') or {}
     if isinstance(tm, dict):
         if 'variant' in tm:
             prof.map.toner_options.variant = tm['variant']
@@ -222,11 +203,11 @@ def api_save_profile(name: str):
     # Mode points + options icône
     if 'mode' in pt:
         prof.points.mode = pt['mode']
-    if 'icon_set' in pt or 'iconSet' in pt:
-        prof.points.icon_set = pt.get('icon_set', pt.get('iconSet')) or getattr(prof.points, 'icon_set', 'geocaching')
-    if 'icon_size' in pt or 'iconSize' in pt:
+    if 'icon_set' in pt:
+        prof.points.icon_set = pt.get('icon_set') or prof.points.icon_set
+    if 'icon_size' in pt:
         try:
-            prof.points.icon_size = int(pt.get('icon_size', pt.get('iconSize')))
+            prof.points.icon_size = int(pt.get('icon_size'))
         except Exception:
             pass
 

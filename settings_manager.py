@@ -158,27 +158,6 @@ def coerce_settings(d: dict) -> AppSettings:
             except Exception:
                 pass
 
-        # Migration: ancien format (nom) vers nouveau format (UUID)
-        old_profile_name = d.get("default_profile")
-        if old_profile_name and not d.get("default_profile_uid"):
-            # Si on a un ancien nom de profil mais pas d'UUID, essayer de trouver l'UUID correspondant
-            try:
-                # Charger tous les profils pour trouver celui avec ce nom
-                profiles_dir = Path(CONFIG_DIR) / "profiles"
-                if profiles_dir.exists():
-                    for profile_file in profiles_dir.glob("*.json"):
-                        try:
-                            profile_data = json.loads(profile_file.read_text(encoding="utf-8"))
-                            if profile_data.get("name") == old_profile_name:
-                                s.default_profile_uid = profile_data.get("uid")
-                                print(f"Migration: profil '{old_profile_name}' -> UUID '{s.default_profile_uid}'")
-                                break
-                        except Exception as e:
-                            print(f"Erreur lors de la migration du profil {old_profile_name}: {e}")
-            except Exception as e:
-                print(f"Erreur lors de la migration des paramètres: {e}")
-
-        # Nouveau format: UUID direct
         if d.get("default_profile_uid"):
             s.default_profile_uid = d.get("default_profile_uid")
 
@@ -208,18 +187,17 @@ def coerce_profile(d: dict) -> MapProfile:
             default_center_tuple = p.map.default_center
 
         # Options vectorielles
-        # Accepte les deux casse: snake_case et camelCase
-        raw_vm = m.get("vector_options") or m.get("vectorOptions") or {}
+        raw_vm = m.get("vector_options") or {}
         vm = raw_vm if isinstance(raw_vm, dict) else {}
         vector_options = VectorMapOptions(
-            stroke_color=vm.get("stroke_color", vm.get("strokeColor", p.map.vector_options.stroke_color)),
-            fill_color=vm.get("fill_color", vm.get("fillColor", p.map.vector_options.fill_color)),
-            background_color=vm.get("background_color", vm.get("backgroundColor", p.map.vector_options.background_color)),
-            stroke_width=float(vm.get("stroke_width", vm.get("strokeWidth", p.map.vector_options.stroke_width))),
+            stroke_color=vm.get("stroke_color", p.map.vector_options.stroke_color),
+            fill_color=vm.get("fill_color", p.map.vector_options.fill_color),
+            background_color=vm.get("background_color", p.map.vector_options.background_color),
+            stroke_width=float(vm.get("stroke_width", p.map.vector_options.stroke_width)),
         )
 
         # Options Toner
-        raw_tm = m.get("toner_options") or m.get("tonerOptions") or {}
+        raw_tm = m.get("toner_options") or {}
         tm = raw_tm if isinstance(raw_tm, dict) else {}
         toner_options = TonerMapOptions(
             variant=tm.get("variant", p.map.toner_options.variant),
@@ -252,8 +230,8 @@ def coerce_profile(d: dict) -> MapProfile:
             fill_color_type=pt.get("fill_color_type", p.points.fill_color_type),
             border_color_type=pt.get("border_color_type", p.points.border_color_type),
             mode=pt.get("mode", p.points.mode),
-            icon_set=pt.get("icon_set", pt.get("iconSet", p.points.icon_set)) or p.points.icon_set,
-            icon_size=int(pt.get("icon_size", pt.get("iconSize", p.points.icon_size)) or p.points.icon_size),
+            icon_set=pt.get("icon_set", p.points.icon_set) or p.points.icon_set,
+            icon_size=int(pt.get("icon_size", p.points.icon_size) or p.points.icon_size),
         )
 
         # Options flash

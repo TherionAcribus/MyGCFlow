@@ -1357,12 +1357,12 @@ function applyMapSpecificOptions(tileProvider, mapOptions) {
         if (tileProvider === 'vectorMap') {
             // Options pour la carte vectorielle
             const vectorOptions = document.getElementById('vectorMapOptions');
-            const v = (mapOptions.vectorOptions || mapOptions.vector_options || null);
+            const v = mapOptions.vector_options || null;
             console.log('🎯 Options vectorMap - element trouvé:', !!vectorOptions, 'options:', !!v);
 
             if (vectorOptions && v) {
                 // Couleurs
-                const strokeColor = v.strokeColor || v.stroke_color;
+                const strokeColor = v.stroke_color;
                 if (strokeColor) {
                     const strokeColorInput = document.getElementById('fieldVectorMapStrokeColor');
                     if (strokeColorInput) {
@@ -1371,7 +1371,7 @@ function applyMapSpecificOptions(tileProvider, mapOptions) {
                     }
                 }
 
-                const fillColor = v.fillColor || v.fill_color;
+                const fillColor = v.fill_color;
                 if (fillColor) {
                     const fillColorInput = document.getElementById('fieldVectorMapFillColor');
                     if (fillColorInput) {
@@ -1380,7 +1380,7 @@ function applyMapSpecificOptions(tileProvider, mapOptions) {
                     }
                 }
 
-                const backgroundColor = v.backgroundColor || v.background_color;
+                const backgroundColor = v.background_color;
                 if (backgroundColor) {
                     const bgColorInput = document.getElementById('fieldVectorMapBackgroundColor');
                     if (bgColorInput) {
@@ -1389,7 +1389,7 @@ function applyMapSpecificOptions(tileProvider, mapOptions) {
                     }
                 }
 
-                const strokeWidth = v.strokeWidth != null ? v.strokeWidth : v.stroke_width;
+                const strokeWidth = v.stroke_width;
                 if (strokeWidth != null) {
                     const strokeWidthInput = document.getElementById('fieldVectorMapStrokeWidth');
                     if (strokeWidthInput) {
@@ -1400,15 +1400,12 @@ function applyMapSpecificOptions(tileProvider, mapOptions) {
                 }
 
                 // Rafraîchir explicitement la carte vectorielle avec les nouvelles valeurs
-                const finalStrokeColor = v.strokeColor || v.stroke_color;
-                const finalFillColor = v.fillColor || v.fill_color;
-                const finalBackgroundColor = v.backgroundColor || v.background_color;
                 const finalStrokeWidth = typeof strokeWidth === 'string' ? parseFloat(strokeWidth) : strokeWidth;
 
                 const vectorValues = {
-                    strokeColor: finalStrokeColor,
-                    fillColor: finalFillColor,
-                    background: finalBackgroundColor,
+                    strokeColor: strokeColor,
+                    fillColor: fillColor,
+                    background: backgroundColor,
                     strokeWidth: finalStrokeWidth
                 };
                 if (typeof pkg.refreshVectorMap === 'function') {
@@ -1421,7 +1418,7 @@ function applyMapSpecificOptions(tileProvider, mapOptions) {
         } else if (tileProvider === 'stamenToner') {
             // Options pour Stamen Toner
             const tonerOptions = document.getElementById('tonerMapOptions');
-            const t = (mapOptions.tonerOptions || mapOptions.toner_options || null);
+            const t = mapOptions.toner_options || null;
             if (tonerOptions && t) {
                 const variant = t.variant;
                 if (variant === 'light') {
@@ -1465,11 +1462,11 @@ function applyPointSettings(pointOptions) {
 
         // Si mode icône: préparer d'abord les champs, puis déclencher le switch (qui appelle initializeIconOptions/updateIconSet)
         if (pointOptions.mode === 'icone') {
-            if (selectIconSet && (pointOptions.icon_set || pointOptions.iconSet)) {
-                selectIconSet.value = pointOptions.icon_set || pointOptions.iconSet;
+            if (selectIconSet && pointOptions.icon_set) {
+                selectIconSet.value = pointOptions.icon_set;
                 try { refreshTomSelect(selectIconSet); } catch (_) {}
             }
-            const size = parseInt(pointOptions.icon_size || pointOptions.iconSize);
+            const size = parseInt(pointOptions.icon_size);
             if (Number.isFinite(size) && size > 0) {
                 if (sliderSizeIcon) sliderSizeIcon.value = size;
                 if (inputSizeIcon) inputSizeIcon.value = size;
