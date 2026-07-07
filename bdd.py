@@ -377,25 +377,25 @@ def uploadBdd(file_path, Geocache, db, status: Optional[TaskStatus] = None):
                         date_find = last_found_dt
                         time_find = last_found_dt.strftime('%H:%M:%S')
 
-            new_geocache = Geocache(
-                latitude=lat,
-                longitude=lon,
-                gc_code=gc_code,
-                cache_name=cache_name,
-                date_find=date_find,
-                time_find=time_find,
-                found=found,
-                published_date=published_date,
-                cache_type=cache_type,
-                terrain=terrain,
-                difficulty=difficulty,
-                container=container,
-                owner=owner,
-                placed_by=placed_by,
-                country=country,
-                state=state,
-                attributes=json.dumps(attributes) if attributes else None
-            )
+            new_geocache = {
+                'latitude': lat,
+                'longitude': lon,
+                'gc_code': gc_code,
+                'cache_name': cache_name,
+                'date_find': date_find,
+                'time_find': time_find,
+                'found': found,
+                'published_date': published_date,
+                'cache_type': cache_type,
+                'terrain': terrain,
+                'difficulty': difficulty,
+                'container': container,
+                'owner': owner,
+                'placed_by': placed_by,
+                'country': country,
+                'state': state,
+                'attributes': json.dumps(attributes) if attributes else None
+            }
             new_caches.append(new_geocache)
 
             # Mise à jour de la progression tous les 100 points (sans commit :
@@ -423,9 +423,20 @@ def uploadBdd(file_path, Geocache, db, status: Optional[TaskStatus] = None):
     # --- Étape 2 : remplacer le contenu en une seule transaction ---
     # Le DELETE et tous les INSERTs sont commités atomiquement. Si le commit
     # échoue, l'ancienne base est préservée (rollback automatique de SQLAlchemy).
+    # On utilise bulk_insert_mappings (par lots de 1000) au lieu de add_all() :
+    # cela bypass l'identity map de la session — pas d'objets ORM, pas de state
+    # tracking, juste des INSERTs bruts. Typiquement 5–10× plus rapide sur SQLite.
     _update_progress(status, 99, "Enregistrement en base de données...")
     db.session.query(Geocache).delete()
-    db.session.add_all(new_caches)
+
+    BATCH_SIZE = 1000
+    total_mappings = len(new_caches)
+    for i in range(0, total_mappings, BATCH_SIZE):
+        batch = new_caches[i:i + BATCH_SIZE]
+        db.session.bulk_insert_mappings(Geocache, batch)
+        # flush pour que chaque lot soit envoyé à SQLite sans fermer la transaction
+        db.session.flush()
+
     db.session.commit()
 
     try:
