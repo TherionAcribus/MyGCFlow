@@ -118,31 +118,39 @@ def checkFileNameAndDesc(request):
         gpxfile = request.files['file']
         tree = ET.parse(gpxfile)
         root = tree.getroot()
-        
-        # Trouver les éléments <name> et <desc> dans le fichier GPX
-        name = root.find('{http://www.topografix.com/GPX/1/0}name')
-        desc = root.find('{http://www.topografix.com/GPX/1/0}desc')
-        author = root.find('{http://www.topografix.com/GPX/1/0}author')
-
-        # Vérifier la provenance Groundspeak (champ desc ou author)
-        desc_text = desc.text if desc is not None else ''
-        author_text = author.text if author is not None else ''
-
-        is_ground_speak = (
-            (desc_text is not None and 'Groundspeak' in desc_text)
-            or (author_text is not None and 'Groundspeak' in author_text)
-        )
-
-        if not is_ground_speak:
-            return {'success': False, 'message': 'Le fichier GPX n\'est pas un fichier produit par Groundspeak.'}
-
-        # Vérifier que le fichier est bien un "My Finds"
-        if name is None or not name.text or "My Finds Pocket Query" not in name.text:
-            return {'success': False, 'message': "Le fichier GPX est une Pocket Query et non un fichier My Finds."}
-        
+        return validate_gpx_root(root)
     except ET.ParseError:
         return {'success': False, 'message': 'Le fichier fourni n\'est pas un fichier GPX valide'}
-    
+
+
+def validate_gpx_root(root):
+    """Valide qu'un élément racine GPX correspond à un fichier "My Finds" Groundspeak.
+
+    Centralise la vérification utilisée à la fois par /analyse_file (via
+    checkFileNameAndDesc) et par le pipeline d'import (uploadBdd), afin que la
+    validation ne dépende pas uniquement du client.
+    """
+    # Trouver les éléments <name> et <desc> dans le fichier GPX
+    name = root.find('{http://www.topografix.com/GPX/1/0}name')
+    desc = root.find('{http://www.topografix.com/GPX/1/0}desc')
+    author = root.find('{http://www.topografix.com/GPX/1/0}author')
+
+    # Vérifier la provenance Groundspeak (champ desc ou author)
+    desc_text = desc.text if desc is not None else ''
+    author_text = author.text if author is not None else ''
+
+    is_ground_speak = (
+        (desc_text is not None and 'Groundspeak' in desc_text)
+        or (author_text is not None and 'Groundspeak' in author_text)
+    )
+
+    if not is_ground_speak:
+        return {'success': False, 'message': 'Le fichier GPX n\'est pas un fichier produit par Groundspeak.'}
+
+    # Vérifier que le fichier est bien un "My Finds"
+    if name is None or not name.text or "My Finds Pocket Query" not in name.text:
+        return {'success': False, 'message': "Le fichier GPX est une Pocket Query et non un fichier My Finds."}
+
     return {'success': True, 'message': 'Fichier reçu avec succès'}
 
 
@@ -168,6 +176,15 @@ def uploadBdd(file_path, Geocache, db, status: Optional[TaskStatus] = None):
         with open(file_path, 'rb') as gpxfile:
             tree = ET.parse(gpxfile)
         root = tree.getroot()
+
+        # Re-validation côté serveur : /analyse_file a déjà vérifié ce fichier,
+        # mais /upload et /analyse_file sont deux appels découplés côté client.
+        # Un client malveillant ou bogué pourrait appeler /upload directement
+        # avec n'importe quel XML. On rejette donc ici aussi les fichiers qui
+        # ne sont pas un "My Finds" Groundspeak, avant de toucher à la base.
+        check = validate_gpx_root(root)
+        if not check.get('success'):
+            raise ValueError(check.get('message', 'Fichier GPX invalide'))
 
         ns = {'default': 'http://www.topografix.com/GPX/1/0',
             'groundspeak': 'http://www.groundspeak.com/cache/1/0/1'}
