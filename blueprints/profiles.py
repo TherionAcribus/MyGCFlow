@@ -251,6 +251,21 @@ def api_save_profile(name: str):
     return jsonify({'success': True})
 
 
+@profiles_bp.route('/api/profiles/<name>/rename', methods=['POST'])
+def api_rename_profile(name: str):
+    data = request.get_json(silent=True) or {}
+    new_name = (data.get('new_name') or '').strip()
+    if not new_name:
+        return jsonify({'success': False, 'message': 'Nouveau nom manquant'}), 400
+    try:
+        prof = settings_manager.rename_profile(name, new_name)
+    except FileNotFoundError as e:
+        return jsonify({'success': False, 'message': str(e)}), 404
+    except ValueError as e:
+        return jsonify({'success': False, 'message': str(e)}), 409
+    return jsonify({'success': True, 'name': prof.name, 'uid': prof.uid})
+
+
 @profiles_bp.route('/api/profiles/<name>/duplicate', methods=['POST'])
 def api_duplicate_profile(name: str):
     data = request.get_json(silent=True) or {}

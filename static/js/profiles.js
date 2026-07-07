@@ -1174,95 +1174,33 @@ class ProfileManager {
 
     async renameProfileProperly(oldName, newName) {
         try {
-            console.log('Renommage profil:', oldName, '->', newName);
-
             // Vérifier si c'était le profil actuellement sélectionné
             const wasCurrentProfile = this.currentProfile && this.currentProfile.name === oldName;
 
-            // SAUVEGARDER L'ÉTAT DE SÉLECTION ACTUEL pour le restaurer après
-            const originalCurrentProfile = this.currentProfile;
-
-            // Charger les données du profil SANS l'appliquer (pour éviter de changer l'interface)
-            const profileData = await this.apiCall(`/api/profiles/${encodeURIComponent(oldName)}`);
-
-            // Préparer les données pour la sauvegarde avec le nouveau nom mais l'ancien UUID
-            const updatedProfileData = {
-                name: newName,
-                uid: profileData.uid,  // IMPORTANT: garder le même UUID du profil chargé
-                map: profileData.map,
-                animation: profileData.animation,
-                points: profileData.points,
-                flash: profileData.flash,
-                infos: profileData.infos
-            };
-
-            console.log('💾 Sauvegarde profil renommé avec UUID conservé:', updatedProfileData.uid);
-
-            // Sauvegarder en utilisant l'ancien nom dans l'URL mais le nouveau nom dans les données
-            // (le serveur refuse avec une erreur si newName est déjà pris par un AUTRE profil)
-            const result = await this.apiCall(`/api/profiles/${encodeURIComponent(oldName)}`, 'PUT', updatedProfileData);
+            // Renommage atomique côté serveur (conserve l'UUID, refuse si le nouveau nom
+            // est déjà pris par un AUTRE profil, gère seule la collision de sanitization)
+            const result = await this.apiCall(`/api/profiles/${encodeURIComponent(oldName)}/rename`, 'POST', {
+                new_name: newName
+            });
 
             if (result.success) {
-                console.log('Profil renommé avec succès:', oldName, '->', newName);
+                if (wasCurrentProfile && this.currentProfile) {
+                    this.currentProfile.name = result.name;
+                }
 
-                // Supprimer l'ancien profil seulement après confirmation de la sauvegarde
-                setTimeout(async () => {
-                    try {
-                        // Si l'ancien et le nouveau nom "sanitizent" vers le même fichier (ex: "Mon Profil"
-                        // -> "MonProfil"), l'ancien nom pointe maintenant vers le fichier qu'on vient de
-                        // renommer: il ne faut surtout pas le supprimer.
-                        let sameFile = false;
-                        try {
-                            const oldStillThere = await this.apiCall(`/api/profiles/${encodeURIComponent(oldName)}`);
-                            sameFile = oldStillThere && oldStillThere.uid === updatedProfileData.uid;
-                        } catch (_) {
-                            sameFile = false; // l'ancien nom n'existe plus: suppression normale à suivre
-                        }
+                await this.loadProfilesList();
 
-                        // Sauvegarder temporairement currentProfile pour éviter qu'il soit remis à null
-                        const tempCurrentProfile = this.currentProfile;
+                if (wasCurrentProfile) {
+                    this.updateCurrentProfileIndicator();
+                }
 
-                        if (!sameFile) {
-                            await this.deleteProfile(oldName);
-                        }
+                this.populateDefaultProfileSelector();
 
-                        // Restaurer currentProfile après la suppression
-                        this.currentProfile = tempCurrentProfile;
-
-                        // GESTION DE LA SÉLECTION APRÈS RENOMMAGE
-                        if (wasCurrentProfile) {
-                            // Si c'était le profil sélectionné, mettre à jour avec le nouveau nom
-                            if (this.currentProfile) {
-                                this.currentProfile.name = newName;
-                            }
-                        } else {
-                            // Si ce n'était pas le profil sélectionné, restaurer l'état original
-                            this.currentProfile = originalCurrentProfile;
-                        }
-
-                        // Rafraîchir la liste des profils APRÈS mise à jour de currentProfile
-                        await this.loadProfilesList();
-
-                        // Rafraîchir l'indicateur de profil actif UNIQUEMENT si nécessaire
-                        if (wasCurrentProfile) {
-                            // Mettre à jour l'indicateur après rerender
-                            await new Promise(r => setTimeout(r, 50));
-                            this.updateCurrentProfileIndicator();
-                        }
-
-                        // Mettre à jour le sélecteur de profil par défaut si nécessaire
-                        this.populateDefaultProfileSelector();
-
-                        this.showToast(pkg.t('Profil renommé en "${name}"', { name: newName }), 'success');
-                    } catch (error) {
-                        console.error('❌ Erreur suppression ancien profil:', error);
-                    }
-                }, 500);
+                this.showToast(pkg.t('Profil renommé en "${name}"', { name: result.name }), 'success');
             }
-
         } catch (error) {
+            // apiCall affiche déjà un toast d'erreur avec le message du serveur
             console.error('❌ Erreur lors du renommage du profil:', error);
-            this.showToast('Erreur lors du renommage du profil', 'red');
         }
     }
 

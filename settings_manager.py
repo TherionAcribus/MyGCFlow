@@ -1025,6 +1025,28 @@ class SettingsManager:
         self.save_profile(prof)
         return prof
 
+    def rename_profile(self, old_name: str, new_name: str) -> MapProfile:
+        """Renomme un profil de façon atomique (conserve son UUID).
+
+        Écrit d'abord le nouveau fichier puis supprime l'ancien, sauf si les deux
+        noms sanitizent vers le même fichier (auquel cas il n'y a rien à supprimer).
+        """
+        old_path = self._profile_path(old_name)
+        if not old_path.exists():
+            raise FileNotFoundError(f"Profil '{old_name}' introuvable")
+
+        prof = coerce_profile(read_json(old_path))
+        if new_name != prof.name and not self.is_name_available(new_name, exclude_uid=prof.uid):
+            raise ValueError(f"Un profil nommé '{new_name}' existe déjà")
+
+        prof.name = new_name
+        new_path = self._profile_path(new_name)
+        self.save_profile(prof)
+        if new_path != old_path and old_path.exists():
+            old_path.unlink()
+            self._invalidate_uid_cache()
+        return prof
+
     def duplicate_profile(self, name: str, new_name: str) -> MapProfile:
         if not self._profile_path(name).exists():
             raise ValueError(f"Profil source '{name}' introuvable")
