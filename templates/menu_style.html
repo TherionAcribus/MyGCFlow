@@ -198,6 +198,31 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Modal de confirmation réinitialisation (Bootstrap 5) -->
+                            <div id="reset-profile-modal" class="modal bs-modal" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <div class="modal-header-row d-flex align-items-center gap-2">
+                                                <span class="modal-icon warning"><i class="ti ti-alert-triangle"></i></span>
+                                                <div>
+                                                    <h5 class="modal-title">{{ _("Confirmer la réinitialisation") }}</h5>
+                                                    <p class="modal-subtitle text-muted">{{ _("Cette action est définitive") }}</p>
+                                                </div>
+                                            </div>
+                                            <button type="button" class="btn-close modal-close" data-bs-dismiss="modal" aria-label="{{ _('Fermer') }}"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p id="reset-profile-message" class="modal-body-text">{{ _("Êtes-vous sûr de vouloir réinitialiser ce profil aux valeurs par défaut ?") }}</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary modal-close" data-bs-dismiss="modal">{{ _("Annuler") }}</button>
+                                            <button type="button" id="btn-confirm-reset" class="btn btn-danger">{{ _("Réinitialiser") }}</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

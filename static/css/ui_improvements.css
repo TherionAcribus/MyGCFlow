@@ -969,6 +969,16 @@ top: 20px;
     flex-shrink: 0;
 }
 
+.profile-active-indicator.active.unsaved {
+    background: #fff3e0;
+    color: #e65100;
+    border-color: #ffcc80;
+}
+
+.profile-active-indicator.active.unsaved::before {
+    background-color: #ff9800;
+}
+
 /* Marges pour les contenus d'onglets internes */
 #tabMapOverlay, #tabPointsFlash {
 margin-top: 10px;

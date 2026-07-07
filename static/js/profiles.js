@@ -24,6 +24,8 @@ class ProfileManager {
     constructor() {
         this.currentProfile = null;
         this.profilesList = [];
+        this.hasUnsavedChanges = false;
+        this._lastSavedSnapshot = null;
         this.init();
     }
 
@@ -31,6 +33,8 @@ class ProfileManager {
         this.bindEvents();
         this.loadProfilesList();
         this.loadCurrentSettings();
+        this._lastSavedSnapshot = JSON.stringify(this.currentSettings);
+        this._bindDirtyTracking();
     }
 
     bindEvents() {
@@ -52,6 +56,11 @@ class ProfileManager {
         // Modal de suppression
         document.getElementById('btn-confirm-delete')?.addEventListener('click', () => {
             this.confirmDeleteProfile();
+        });
+
+        // Modal de réinitialisation
+        document.getElementById('btn-confirm-reset')?.addEventListener('click', () => {
+            this.confirmResetProfile();
         });
 
         // Initialiser les modals Bootstrap 5
@@ -130,6 +139,7 @@ class ProfileManager {
     }
 
     async loadProfile(name) {
+        if (!this._confirmDiscardChangesIfNeeded()) return;
         try {
             console.log('Chargement profil depuis API:', name);
             const profile = await this.apiCall(`/api/profiles/${encodeURIComponent(name)}`);
@@ -147,6 +157,7 @@ class ProfileManager {
 
             this.currentProfile = profile;
             this.applyProfile(profile);
+            this._markSaved();
             this.loadProfilesList(); // Rafraîchir pour montrer le profil actif
             this.showToast(pkg.t('Profil "${name}" chargé', { name }), 'green');
         } catch (error) {
@@ -170,8 +181,10 @@ class ProfileManager {
                 this.showToast(pkg.t('Profil "${name}" sauvegardé', { name: profileData.name }), 'green');
                 this.loadProfilesList(); // Rafraîchir la liste
             }
+            return result;
         } catch (error) {
             console.error('❌ Erreur sauvegarde profil:', error);
+            return { success: false };
         }
     }
 
@@ -217,6 +230,10 @@ class ProfileManager {
                 // Si on vient de supprimer le profil actif, on bascule sur un profil valide
                 if (this.currentProfile && this.currentProfile.name === name) {
                     this.currentProfile = null;
+                    // Le profil vient d'être supprimé: les éventuelles modifications non
+                    // sauvegardées le concernant n'ont plus de sens, et ne doivent pas
+                    // redemander une confirmation lors du basculement vers un profil de secours.
+                    this.hasUnsavedChanges = false;
 
                     // 1) Tenter le profil par défaut (UUID)
                     try {
@@ -293,6 +310,7 @@ class ProfileManager {
      * - Met à jour le sélecteur et l'indicateur d'actif
      */
     async setProfileAsDefault(profileName) {
+        if (!this._confirmDiscardChangesIfNeeded()) return;
         try {
             const profile = await this.apiCall(`/api/profiles/${encodeURIComponent(profileName)}`);
             if (!profile || !profile.uid) {
@@ -302,6 +320,7 @@ class ProfileManager {
             // Appliquer immédiatement le profil
             this.currentProfile = profile;
             this.applyProfile(profile);
+            this._markSaved();
 
             // Sauvegarder l'UUID comme profil par défaut
             const settings = await this.loadAppSettings();
@@ -359,7 +378,7 @@ class ProfileManager {
                                 <li><a class="dropdown-item" href="#!" onclick="profileManager.duplicateProfile('${profileName.replace(/'/g, "\\'")}', '${profileName.replace(/'/g, "\\'")}_copy')"><i class="ti ti-copy me-1"></i>${window.gettext ? window.gettext('Dupliquer') : 'Dupliquer'}</a></li>
                                 <li><a class="dropdown-item" href="#!" onclick="profileManager.renameProfile('${profileName.replace(/'/g, "\\'")}')"><i class="ti ti-edit me-1"></i>${window.gettext ? window.gettext('Renommer') : 'Renommer'}</a></li>
                                 <li><a class="dropdown-item" href="#!" onclick="profileManager.exportProfile('${profileName.replace(/'/g, "\\'")}')"><i class="ti ti-download me-1"></i>${window.gettext ? window.gettext('Exporter') : 'Exporter'}</a></li>
-                                <li><a class="dropdown-item text-danger" href="#!" onclick="profileManager.resetProfile('${profileName.replace(/'/g, "\\'")}')"><i class="ti ti-refresh me-1"></i>${window.gettext ? window.gettext('Réinitialiser') : 'Réinitialiser'}</a></li>
+                                <li><a class="dropdown-item text-danger" href="#!" onclick="profileManager.confirmReset('${profileName.replace(/'/g, "\\'")}')"><i class="ti ti-refresh me-1"></i>${window.gettext ? window.gettext('Réinitialiser') : 'Réinitialiser'}</a></li>
                                 <li><a class="dropdown-item text-danger" href="#!" onclick="profileManager.confirmDelete('${profileName.replace(/'/g, "\\'")}')"><i class="ti ti-trash me-1"></i>${window.gettext ? window.gettext('Supprimer') : 'Supprimer'}</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="#!" onclick="profileManager.setProfileAsDefault('${profileName.replace(/'/g, "\\'")}')"><i class="ti ti-star me-1"></i>${window.gettext ? window.gettext('Définir comme par défaut') : 'Définir comme par défaut'}</a></li>
@@ -383,13 +402,57 @@ class ProfileManager {
         const indicator = document.getElementById('current-profile-indicator');
         if (indicator) {
             if (this.currentProfile && this.currentProfile.name) {
-                indicator.textContent = this.currentProfile.name;
+                const suffix = this.hasUnsavedChanges ? ' •' : '';
+                indicator.textContent = this.currentProfile.name + suffix;
                 indicator.classList.add('active');
+                indicator.classList.toggle('unsaved', !!this.hasUnsavedChanges);
+                indicator.title = this.hasUnsavedChanges
+                    ? (window.gettext ? window.gettext('Modifications non enregistrées') : 'Modifications non enregistrées')
+                    : '';
             } else {
                 indicator.textContent = '';
                 indicator.classList.remove('active');
+                indicator.classList.remove('unsaved');
+                indicator.title = '';
             }
         }
+    }
+
+    // Snapshot des réglages actuels comme référence "sauvegardée" (après chargement/sauvegarde d'un profil)
+    _markSaved() {
+        this.loadCurrentSettings();
+        this._lastSavedSnapshot = JSON.stringify(this.currentSettings);
+        this.hasUnsavedChanges = false;
+        this.updateCurrentProfileIndicator();
+    }
+
+    // Écoute les changements des contrôles de style pour détecter les modifications non sauvegardées
+    _bindDirtyTracking() {
+        const container = document.getElementById('style') || document;
+        let debounceTimer = null;
+        const recompute = () => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                if (!this.currentProfile) return;
+                this.loadCurrentSettings();
+                const dirty = JSON.stringify(this.currentSettings) !== this._lastSavedSnapshot;
+                if (dirty !== this.hasUnsavedChanges) {
+                    this.hasUnsavedChanges = dirty;
+                    this.updateCurrentProfileIndicator();
+                }
+            }, 300);
+        };
+        container.addEventListener('input', recompute, true);
+        container.addEventListener('change', recompute, true);
+    }
+
+    // Avertit avant d'abandonner des modifications non sauvegardées (chargement d'un autre profil, etc.)
+    _confirmDiscardChangesIfNeeded() {
+        if (!this.hasUnsavedChanges) return true;
+        const message = window.gettext
+            ? window.gettext('Vous avez des modifications non enregistrées. Les abandonner ?')
+            : 'Vous avez des modifications non enregistrées. Les abandonner ?';
+        return window.confirm(message);
     }
 
     // Gestion du profil par défaut
@@ -422,6 +485,7 @@ class ProfileManager {
     }
 
     async loadProfileByUid(uid) {
+        if (!this._confirmDiscardChangesIfNeeded()) return;
         try {
             console.log('🔄 [LOAD_PROFILE] Chargement profil par UUID:', uid);
             console.log('🔄 [LOAD_PROFILE] État avant chargement:', {
@@ -453,6 +517,7 @@ class ProfileManager {
 
             this.currentProfile = profile;
             this.applyProfile(profile);
+            this._markSaved();
 
             console.log('🔄 [LOAD_PROFILE] État après application du profil:', {
                 point_mode: pkg?.options?.point?.mode,
@@ -628,6 +693,7 @@ class ProfileManager {
                                 infos: {}
                             };
                             this.applyProfile(this.currentProfile);
+                            this._markSaved();
                             this.showToast('Profil temporaire chargé (profil par défaut manquant)', 'orange');
                         } catch (createError) {
                             console.error('❌ [DEFAULT_PROFILE] Impossible de créer un profil temporaire:', createError.message);
@@ -1064,7 +1130,7 @@ class ProfileManager {
         console.log('Profil appliqué avec succès:', profile.name);
     }
 
-    saveCurrentAsProfile() {
+    async saveCurrentAsProfile() {
         if (!this.currentProfile) {
             this.showNewProfileModal();
             return;
@@ -1110,7 +1176,11 @@ class ProfileManager {
             timestamp: new Date().toISOString()
         });
 
-        this.saveProfile(profileData);
+        const result = await this.saveProfile(profileData);
+        if (result && result.success) {
+            this._lastSavedSnapshot = JSON.stringify(this.currentSettings);
+            this.hasUnsavedChanges = false;
+        }
         this.updateCurrentProfileIndicator();
     }
 
@@ -1221,6 +1291,25 @@ class ProfileManager {
 
         this.deleteProfile(profileName);
         hideBsModal(document.getElementById('delete-profile-modal'));
+    }
+
+    confirmReset(profileName) {
+        const modal = document.getElementById('reset-profile-modal');
+        const message = document.getElementById('reset-profile-message');
+        const confirmBtn = document.getElementById('btn-confirm-reset');
+
+        message.textContent = `Êtes-vous sûr de vouloir réinitialiser le profil "${profileName}" aux valeurs par défaut ?`;
+        confirmBtn.dataset.profileName = profileName;
+
+        showBsModal(modal);
+    }
+
+    confirmResetProfile() {
+        const confirmBtn = document.getElementById('btn-confirm-reset');
+        const profileName = confirmBtn.dataset.profileName;
+
+        this.resetProfile(profileName);
+        hideBsModal(document.getElementById('reset-profile-modal'));
     }
 
     showToast(message, color = 'blue') {
