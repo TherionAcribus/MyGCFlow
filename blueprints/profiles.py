@@ -41,7 +41,11 @@ def api_put_settings():
     language = data.get('language', current.language)
     check_updates = bool(data.get('check_updates', current.check_updates))
 
-    default_profile_uid = data.get('default_profile_uid')
+    # Ne modifier default_profile_uid que si le client l'a explicitement envoyé
+    # (sinon un PUT partiel effacerait silencieusement le profil par défaut).
+    default_profile_uid = current.default_profile_uid
+    if 'default_profile_uid' in data:
+        default_profile_uid = data.get('default_profile_uid')
 
     map_default_center = current.map_default_center
     if 'map_default_center' in data:
@@ -65,7 +69,9 @@ def api_put_settings():
             except Exception:
                 map_default_zoom = current.map_default_zoom
 
-    if not default_profile_uid and data.get('default_profile'):
+    # Compat: anciens clients qui envoient encore un nom de profil plutôt qu'un UUID.
+    # Ne se déclenche que si le client n'a pas envoyé default_profile_uid du tout.
+    if 'default_profile_uid' not in data and data.get('default_profile'):
         profile_name = data.get('default_profile')
         try:
             from settings_manager import PROFILES_DIR
@@ -78,7 +84,7 @@ def api_put_settings():
                 except Exception:
                     continue
         except Exception as e:
-            print(f"Erreur lors de la rÇ¸solution du nom de profil '{profile_name}': {e}")
+            print(f"Erreur lors de la résolution du nom de profil '{profile_name}': {e}")
 
     updated = AppSettings(
         version=current.version,
