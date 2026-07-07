@@ -39,6 +39,18 @@ if (clearDatabaseBtn) {
     clearDatabaseBtn.addEventListener('click', clearDatabase);
 }
 
+// Gestionnaire pour le chargement depuis la modale de première utilisation.
+// Même logique que l'input principal, mais sur l'élément #file-input-modal
+// présent dans templates/modal_first_use.html.
+const fileInputModal = document.getElementById('file-input-modal');
+if (fileInputModal) {
+    fileInputModal.addEventListener('change', function(e) {
+        if (e.target.files && e.target.files[0]) {
+            uploadBddRequestFromModal(e);
+        }
+    });
+}
+
 export function readBddValues(){
     try {
         fetch(`${CONFIG.BASE_URL}/db_status`)
