@@ -74,6 +74,7 @@ def api_put_settings():
         default_profile_uid=default_profile_uid,
         map_default_center=map_default_center,
         map_default_zoom=map_default_zoom,
+        examples_seeded=current.examples_seeded,
     )
     settings_manager.save_app_settings(updated)
     response = jsonify({'success': True, 'language': language})

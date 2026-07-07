@@ -57,6 +57,7 @@ class AppSettings:
     default_profile_uid: Optional[str] = None  # UUID du profil par défaut (None = aucun)
     map_default_center: Optional[Tuple[float, float]] = None
     map_default_zoom: Optional[int] = None
+    examples_seeded: bool = False  # True une fois les profils d'exemple créés (premier lancement)
 
 
 @dataclass
@@ -160,6 +161,8 @@ def coerce_settings(d: dict) -> AppSettings:
 
         if d.get("default_profile_uid"):
             s.default_profile_uid = d.get("default_profile_uid")
+
+        s.examples_seeded = bool(d.get("examples_seeded", s.examples_seeded))
 
         try:
             s.version = int(d.get("version", s.version))
@@ -272,8 +275,14 @@ class SettingsManager:
         self._uid_to_path_cache: dict[str, Path] = {}
         self._build_uid_cache()
 
-        # Créer des profils d'exemple si c'est le premier lancement
-        self._create_example_profiles()
+        # Créer les profils d'exemple une seule fois, au tout premier lancement.
+        # Une fois ce flag posé, un utilisateur qui supprime un exemple ne le voit
+        # pas revenir au redémarrage suivant.
+        app_settings = self.get_app_settings()
+        if not app_settings.examples_seeded:
+            self._create_example_profiles()
+            app_settings.examples_seeded = True
+            self.save_app_settings(app_settings)
 
     def _build_uid_cache(self) -> None:
         """Construit le cache uid→path en scannant une fois les profils."""
@@ -944,7 +953,10 @@ class SettingsManager:
         write_json(SETTINGS_PATH, asdict(settings))
 
     def reset_app_settings(self) -> None:
-        self.save_app_settings(AppSettings())
+        # examples_seeded est un flag interne de migration, pas une préférence utilisateur:
+        # un reset des paramètres ne doit pas faire revenir les profils d'exemple supprimés.
+        current = self.get_app_settings()
+        self.save_app_settings(AppSettings(examples_seeded=current.examples_seeded))
 
     # Profiles
     def _profile_path(self, name: str) -> Path:
