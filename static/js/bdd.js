@@ -4,24 +4,18 @@ import { showSuccess, showError, showInfo, t } from './notifications.js';
 import { clearMap } from './mapgl.js';
 import { hideBsModal } from './ui_bootstrap.js';
 
-// Flag de debug pour les filtres (FILTER).
-// Mettre à true pour réactiver les logs en console.
-const DEBUG_FILTERS = false;
-const dbgFilters = (...args) => { if (DEBUG_FILTERS) console.log(...args); };
-
 export let json_data = null;
 export const metadata = {};
 export const pointsByDate = new Map();
 export let totalCaches = 0;
 
 let readLoadingToast = null;
-let filterLoadingToast = null;
 let noCacheToast = null;
 
-// Époque de filtrage : incrémentée à chaque appel à changeSelect.
-// Permet d'ignorer les résultats d'une tâche de filtrage obsolète
-// (l'utilisateur a changé les filtres pendant que la tâche précédente tournait).
-let filterEpoch = 0;
+// Jeu de données complet (toutes les caches) conservé en mémoire pour permettre
+// un filtrage 100% côté client, sans aller-retour serveur. Alimenté à chaque
+// chargement complet (readBdd / loadAndDisplayPoints) et remis à null au vidage.
+let baseGeojson = null;
 
 // Gestionnaire pour le chargement automatique lors de la sélection de fichier
 const fileInput = document.getElementById('file-input');
@@ -113,6 +107,7 @@ function setMetadata(meta) {
 
 function clearLocalData() {
     json_data = null;
+    baseGeojson = null;
     for (const k of Object.keys(metadata)) delete metadata[k];
     pointsByDate.clear();
     totalCaches = 0;
@@ -153,6 +148,118 @@ function buildPointsByDateIndex(features = []) {
 function dateStrToDate() {
     // Historique: conversion des dates côté frontend.
     // Désormais l'index pointsByDate fait l'essentiel (via buildPointsByDateIndex).
+}
+
+// --- Filtrage côté client -------------------------------------------------
+// Reproduit fidèlement la sémantique du filtrage serveur
+// (geojson_cache.py : _matches_filters / build_metadata_from_features) afin
+// d'éviter tout aller-retour réseau lorsqu'un filtre change. Les dates (find /
+// published) et les bornes des date pickers sont au format ISO 'YYYY-MM-DD',
+// donc comparables lexicographiquement.
+
+function toFloatSet(values) {
+    const s = new Set();
+    for (const v of values || []) {
+        const n = Number(v);
+        if (Number.isFinite(n)) s.add(n);
+    }
+    return s;
+}
+
+function toStrSet(values) {
+    const s = new Set();
+    for (const v of values || []) s.add(String(v));
+    return s;
+}
+
+function normIsoDate(value) {
+    if (typeof value !== 'string' || value.length < 10) return null;
+    const iso = value.slice(0, 10);
+    return /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso : null;
+}
+
+function filterFeaturesClientSide(features, sel) {
+    const types = new Set(sel.type || []);
+    // Aucun type sélectionné => aucun résultat (comportement identique au serveur).
+    if (types.size === 0) return [];
+
+    const terrains = toFloatSet(sel.terrain);
+    const difficulties = toFloatSet(sel.difficulty);
+    const containers = toStrSet(sel.container);
+    const countries = toStrSet(sel.countries);
+    const states = toStrSet(sel.states);
+
+    const dStart = normIsoDate(sel.dates?.startDate);
+    const dEnd = normIsoDate(sel.dates?.endDate);
+    const dateActive = !!(dStart && dEnd);
+
+    const pStart = normIsoDate(sel.published_dates?.startDate);
+    const pEnd = normIsoDate(sel.published_dates?.endDate);
+    const pubActive = !!(pStart && pEnd);
+
+    const matchFloat = (val, set) => {
+        if (set.size === 0) return true;
+        const n = Number(val);
+        return Number.isFinite(n) && set.has(n);
+    };
+    const matchStr = (val, set) => set.size === 0 || set.has(String(val));
+
+    const out = [];
+    for (const f of features) {
+        const p = (f && f.properties) || {};
+        if (!types.has(p.cache_type)) continue;
+        if (!matchFloat(p.terrain, terrains)) continue;
+        if (!matchFloat(p.difficulty, difficulties)) continue;
+        if (!matchStr(p.container, containers)) continue;
+        if (!matchStr(p.country, countries)) continue;
+        if (!matchStr(p.state, states)) continue;
+        if (dateActive) {
+            const df = normIsoDate(p.date_find);
+            if (!df || df < dStart || df > dEnd) continue;
+        }
+        if (pubActive) {
+            const pd = normIsoDate(p.published_date);
+            if (!pd || pd < pStart || pd > pEnd) continue;
+        }
+        out.push(f);
+    }
+    return out;
+}
+
+function buildMetadataClientSide(features) {
+    if (!features || features.length === 0) {
+        return {
+            startDate: null, endDate: null, deltaDays: null,
+            numberOfCaches: 0, publishedStartDate: null, publishedEndDate: null,
+        };
+    }
+    let minFind = null, maxFind = null, minPub = null, maxPub = null;
+    for (const f of features) {
+        const p = (f && f.properties) || {};
+        const df = p.date_find;
+        if (df) {
+            if (minFind === null || df < minFind) minFind = df;
+            if (maxFind === null || df > maxFind) maxFind = df;
+        }
+        const pd = p.published_date;
+        if (pd) {
+            if (minPub === null || pd < minPub) minPub = pd;
+            if (maxPub === null || pd > maxPub) maxPub = pd;
+        }
+    }
+    let deltaDays = null;
+    if (minFind && maxFind) {
+        const a = new Date(`${minFind}T00:00:00`);
+        const b = new Date(`${maxFind}T00:00:00`);
+        if (!Number.isNaN(a.getTime()) && !Number.isNaN(b.getTime())) {
+            deltaDays = Math.round((b - a) / 86400000);
+        }
+    }
+    return {
+        startDate: minFind, endDate: maxFind, deltaDays,
+        numberOfCaches: features.length,
+        publishedStartDate: minPub, publishedEndDate: maxPub,
+    };
 }
 
 function updateOptionsValues(meta) {
@@ -328,6 +435,8 @@ export function readBdd(){
                 }
                 console.log('[readBdd] onSuccess - features:', result.geojson?.features?.length, 'metadata:', result.metadata);
                 json_data = result.geojson;
+                // Conserver le jeu complet pour le filtrage client-side ultérieur.
+                baseGeojson = result.geojson;
                 setMetadata(result.metadata || {});
 
                 // Mémoriser le total de caches initial
@@ -372,85 +481,38 @@ export function readBdd(){
 }
 
 export function changeSelect(selectedValues, optionValues) {
-    // Incrémenter l'époque : toute tâche de filtrage issue d'un appel
-    // précédent ignorera son résultat (onSuccess/onError ci-dessous).
-    const myEpoch = ++filterEpoch;
+    // Filtrage 100% côté client : le jeu de données complet est déjà en mémoire
+    // (baseGeojson). Plus aucun aller-retour serveur — donc plus de tâche, de
+    // polling, de toast d'attente ni de mécanisme d'époque anti-race-condition :
+    // le traitement est synchrone, il ne peut plus y avoir de résultat obsolète.
+    if (!baseGeojson || !Array.isArray(baseGeojson.features)) {
+        // Données pas encore chargées : rien à filtrer pour l'instant.
+        return;
+    }
 
-    try { if (filterLoadingToast) { pkg.hideToast(filterLoadingToast); filterLoadingToast = null; } filterLoadingToast = pkg.showLoadingToast(t('Filtrage des caches...'), t('Filtrage')); } catch(e) {}
+    const sel = selectedValues || {};
+    const filteredFeatures = filterFeaturesClientSide(baseGeojson.features, sel);
+    const geojson = { type: 'FeatureCollection', features: filteredFeatures };
+    const meta = buildMetadataClientSide(filteredFeatures);
 
-    fetch(`${CONFIG.BASE_URL}/filter_caches`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ filters: selectedValues }),
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (!data.task_id) {
-            throw new Error(data.message || 'Impossible de lancer le filtrage');
-        }
-        // Si l'utilisateur a déjà changé les filtres pendant le fetch POST,
-        // ne pas poller du tout — la tâche serveur tournera mais son résultat
-        // sera ignoré par l'époque.
-        if (myEpoch !== filterEpoch) {
-            dbgFilters('[FILTER] Tâche obsolète (époque dépassée pendant le POST), polling annulé');
-            return;
-        }
-        pollGeojsonTask(data.task_id, {
-            onProgress: (p) => {
-                // Ne mettre à jour la toast que si on est toujours l'époque courante
-                if (myEpoch !== filterEpoch) return;
-                try { if (filterLoadingToast) pkg.updateToastProgress(filterLoadingToast, p); } catch(_) {}
-            },
-            onSuccess: (result) => {
-                // Ignorer ce résultat si une nouvelle requête de filtrage a été lancée
-                // entre-temps : son résultat serait écrasé par celui-ci (race condition).
-                if (myEpoch !== filterEpoch) {
-                    dbgFilters('[FILTER] Résultat obsolète ignoré (époque dépassée)');
-                    return;
-                }
-                const geojson = result.geojson;
-                const meta = result.metadata || {};
-                json_data = geojson;
-                setMetadata(meta);
+    json_data = geojson;
+    setMetadata(meta);
 
-                // Reconstruit l'index des points par date avec les données filtrées
-                buildPointsByDateIndex(geojson?.features || []);
+    // Reconstruit l'index des points par date avec les données filtrées
+    buildPointsByDateIndex(filteredFeatures);
 
-                // conversion en objet date
-                dateStrToDate();
-                // remets à jour les options/infos dépendant de la BDD (delayDate)
-                updateOptionsValues(metadata);
-                // MAJ des frames Infos
-                pkg.updateInfosFrameAfterReadBdd(metadata);
-                // Mettre à jour les features affichées sur la carte
-                clearMap();
-                pkg.addVector(geojson);
+    // conversion en objet date
+    dateStrToDate();
+    // remets à jour les options/infos dépendant de la BDD (deltaDays, dates)
+    updateOptionsValues(metadata);
+    // MAJ des frames Infos
+    pkg.updateInfosFrameAfterReadBdd(metadata);
+    // Mettre à jour les features affichées sur la carte
+    clearMap();
+    pkg.addVector(geojson);
 
-                // Mettre à jour le compteur : sélection courante / total initial
-                updateFiltersCounter(metadata.numberOfCaches || (geojson?.features?.length || 0), totalCaches);
-                try { if (filterLoadingToast) { pkg.hideToast(filterLoadingToast); filterLoadingToast = null; } } catch(e) {}
-            },
-            onError: (err) => {
-                // Ne pas afficher d'erreur ni cacher la toast si on n'est plus l'époque courante
-                if (myEpoch !== filterEpoch) {
-                    dbgFilters('[FILTER] Erreur d\'une tâche obsolète ignorée (époque dépassée)');
-                    return;
-                }
-                console.error('[FILTER] Erreur lors du suivi du filtrage:', err);
-                try { if (filterLoadingToast) { pkg.hideToast(filterLoadingToast); filterLoadingToast = null; } } catch(e) {}
-                showError(t('Erreur lors du filtrage des caches'), t('Erreur de filtrage'));
-            }
-        });
-    })
-    .catch(error => {
-        // Erreur du fetch POST lui-même : ne traiter que si on est encore courant
-        if (myEpoch !== filterEpoch) return;
-        console.error('Error:', error);
-        try { if (filterLoadingToast) { pkg.hideToast(filterLoadingToast); filterLoadingToast = null; } } catch(e) {}
-        showError(t('Erreur lors du filtrage des caches'), t('Erreur de filtrage'));
-    });
+    // Mettre à jour le compteur : sélection courante / total initial
+    updateFiltersCounter(metadata.numberOfCaches || filteredFeatures.length, totalCaches);
 }
 
 function updateFiltersCounter(selected, total){
@@ -651,6 +713,8 @@ function loadAndDisplayPoints() {
                     const meta = result.metadata || {};
 
                     json_data = geojson;
+                    // Conserver le jeu complet pour le filtrage client-side ultérieur.
+                    baseGeojson = geojson;
                     setMetadata(meta);
 
                     // Mémoriser le total de caches initial
