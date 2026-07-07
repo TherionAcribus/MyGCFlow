@@ -256,6 +256,11 @@ function uploadBddRequest(e){
         return;
     }
 
+    // Réinitialiser la valeur dès maintenant pour qu'une re-sélection du
+    // même fichier (typiquement après un échec) déclenche à nouveau l'événement
+    // change. Le fichier est capturé ci-dessus et passé explicitement à uploadBdd.
+    fileInput.value = '';
+
     formData.append('file', selectedFile);
 
     // Afficher un toast de chargement non-bloquant
@@ -270,7 +275,7 @@ function uploadBddRequest(e){
         if (data.success) {
             // Masquer le toast d'analyse et commencer le chargement
             pkg.hideToast(loadingToast);
-            uploadBdd();
+            uploadBdd(selectedFile);
         } else {
             // Erreur d'analyse
             pkg.hideToast(loadingToast);
@@ -284,10 +289,9 @@ function uploadBddRequest(e){
     });
 }
 
-function uploadBdd (){
+function uploadBdd (file){
     var formData = new FormData();
-    var fileInput = document.getElementById('file-input');
-    formData.append('file', fileInput.files[0]);
+    formData.append('file', file);
 
     // Afficher un toast de chargement avec progress bar
     const uploadToast = pkg.showLoadingToast(t("Chargement du fichier GPX en cours..."), t("Chargement"));
@@ -565,6 +569,11 @@ function uploadBddRequestFromModal(e) {
         showError(t("Veuillez sélectionner un fichier .gpx"), t("Aucun fichier"));
         return;
     }
+
+    // Réinitialiser la valeur pour qu'une re-sélection du même fichier
+    // (typiquement après un échec) déclenche à nouveau l'événement change.
+    // Le fichier est capturé ci-dessus et passé explicitement à performUploadFromModal.
+    fileInput.value = '';
 
     formData.append('file', selectedFile);
 
