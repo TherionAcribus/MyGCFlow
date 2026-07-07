@@ -247,7 +247,6 @@ function checkLoadingProgress(toast, taskId, onSuccess, onError, { intervalMs = 
 function uploadBddRequest(e){
     e.preventDefault();
 
-    var formData = new FormData();
     var fileInput = document.getElementById('file-input');
     var selectedFile = fileInput.files[0];
 
@@ -261,32 +260,12 @@ function uploadBddRequest(e){
     // change. Le fichier est capturé ci-dessus et passé explicitement à uploadBdd.
     fileInput.value = '';
 
-    formData.append('file', selectedFile);
-
-    // Afficher un toast de chargement non-bloquant
-    const loadingToast = pkg.showLoadingToast(t("Analyse du fichier GPX en cours..."), t("Analyse"));
-
-    // d'abord on vérifie que le fichier soit correcte
-    fetch (`${CONFIG.BASE_URL}/analyse_file`, {
-        method: 'POST',
-        body: formData,
-    }).then (response => response.json())
-    .then (data => {
-        if (data.success) {
-            // Masquer le toast d'analyse et commencer le chargement
-            pkg.hideToast(loadingToast);
-            uploadBdd(selectedFile);
-        } else {
-            // Erreur d'analyse
-            pkg.hideToast(loadingToast);
-            pkg.showToast(data.message, "error", t("Erreur d'analyse"));
-        }
-    })
-    .catch(error => {
-        pkg.hideToast(loadingToast);
-        pkg.showToast(t("Erreur lors de l'analyse du fichier"), "error", t("Erreur"));
-        console.error("Erreur analyse:", error);
-    });
+    // Autrefois, un premier appel à /analyse_file validait le fichier avant de
+    // le ré-uploader via /upload — soit deux transferts complets du GPX (20–100 Mo).
+    // La validation vit désormais dans le pipeline d'import (uploadBdd côté serveur),
+    // on appelle donc /upload directement. Un fichier invalide est rejeté par la
+    // tâche de fond et l'erreur remonte via checkLoadingProgress → onError.
+    uploadBdd(selectedFile);
 }
 
 function uploadBdd (file){
@@ -582,7 +561,6 @@ async function clearDatabase() {
 function uploadBddRequestFromModal(e) {
     e.preventDefault();
 
-    var formData = new FormData();
     var fileInput = document.getElementById('file-input-modal');
     var selectedFile = fileInput.files[0];
 
@@ -596,30 +574,8 @@ function uploadBddRequestFromModal(e) {
     // Le fichier est capturé ci-dessus et passé explicitement à performUploadFromModal.
     fileInput.value = '';
 
-    formData.append('file', selectedFile);
-
-    // Étape 1 : analyse du fichier (même logique que l'upload principal)
-    const analyseToast = pkg.showLoadingToast(t("Analyse du fichier GPX en cours..."), t("Analyse"));
-
-    fetch (`${CONFIG.BASE_URL}/analyse_file`, {
-        method: 'POST',
-        body: formData,
-    }).then (response => response.json())
-    .then (data => {
-        if (data.success) {
-            pkg.hideToast(analyseToast);
-            // Étape 2 : upload réel (progress)
-            performUploadFromModal(selectedFile);
-        } else {
-            pkg.hideToast(analyseToast);
-            pkg.showToast(data.message, "error", t("Erreur d'analyse"));
-        }
-    })
-    .catch(error => {
-        console.error('Erreur analyse (modale):', error);
-        pkg.hideToast(analyseToast);
-        pkg.showToast(t("Erreur lors de l'analyse du fichier"), "error", t("Erreur"));
-    });
+    // Validation et import fusionnés en un seul appel à /upload (cf. uploadBddRequest).
+    performUploadFromModal(selectedFile);
 }
 
 function performUploadFromModal(file){

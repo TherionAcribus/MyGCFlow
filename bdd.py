@@ -126,9 +126,8 @@ def checkFileNameAndDesc(request):
 def validate_gpx_root(root):
     """Valide qu'un élément racine GPX correspond à un fichier "My Finds" Groundspeak.
 
-    Centralise la vérification utilisée à la fois par /analyse_file (via
-    checkFileNameAndDesc) et par le pipeline d'import (uploadBdd), afin que la
-    validation ne dépende pas uniquement du client.
+    Source unique de vérité pour la validation, appelée par le pipeline d'import
+    (uploadBdd) pour rejeter les fichiers invalides avant de toucher à la base.
     """
     # Trouver les éléments <name> et <desc> dans le fichier GPX
     name = root.find('{http://www.topografix.com/GPX/1/0}name')
@@ -177,11 +176,10 @@ def uploadBdd(file_path, Geocache, db, status: Optional[TaskStatus] = None):
             tree = ET.parse(gpxfile)
         root = tree.getroot()
 
-        # Re-validation côté serveur : /analyse_file a déjà vérifié ce fichier,
-        # mais /upload et /analyse_file sont deux appels découplés côté client.
-        # Un client malveillant ou bogué pourrait appeler /upload directement
-        # avec n'importe quel XML. On rejette donc ici aussi les fichiers qui
-        # ne sont pas un "My Finds" Groundspeak, avant de toucher à la base.
+        # Validation côté serveur : le client appelle /upload directement (sans
+        # pré-validation via /analyse_file). Un fichier invalide est rejeté ici,
+        # avant de toucher à la base. L'erreur remonte via status.fail() côté
+        # task_manager et est affichée au frontend via checkLoadingProgress.
         check = validate_gpx_root(root)
         if not check.get('success'):
             raise ValueError(check.get('message', 'Fichier GPX invalide'))
