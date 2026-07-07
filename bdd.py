@@ -2,12 +2,15 @@ from flask_sqlalchemy import SQLAlchemy
 from flask import jsonify, current_app
 import xml.etree.ElementTree as ET
 from datetime import datetime
+import logging
 import os
 import json
 from typing import Optional
 
 from geojson_cache import GeojsonIndexCache, build_metadata_from_features
 from task_manager import TaskStatus, task_manager
+
+logger = logging.getLogger(__name__)
 
 # Namespaces GPX en notation Clark ({uri}) — utilisés par ET.iterparse qui
 # renvoie les tags sous cette forme, contrairement à ET.find avec dictionnaire ns.
@@ -188,12 +191,12 @@ def uploadBdd(file_path, Geocache, db, status: Optional[TaskStatus] = None):
 
     # Assurez-vous que la table existe
     db.create_all()
-    print('[UPLOAD] DB schema check: ensuring columns and indexes...')
+    logger.info('DB schema check: ensuring columns and indexes...')
     try:
         ensure_geocache_columns(db)
         ensure_geocache_indexes(db)
     except Exception as e:
-        print(f"[MIGRATION] Warning while ensuring schema: {e}")
+        logger.warning("Warning while ensuring schema: %s", e)
 
     # --- Étape 1 : valider l'en-tête, compter les waypoints, puis construire
     # les objets en mémoire ---
@@ -235,7 +238,7 @@ def uploadBdd(file_path, Geocache, db, status: Optional[TaskStatus] = None):
             # Aucun <wpt> trouvé — l'en-tête n'a jamais pu être validé.
             raise ValueError('Aucun waypoint trouvé dans le fichier GPX')
 
-        print(f"[UPLOAD] GPX waypoints detected: {total_waypoints}")
+        logger.info("GPX waypoints detected: %d", total_waypoints)
 
         # --- Pass 2 : traitement des waypoints ---
         new_caches = []
@@ -271,7 +274,8 @@ def uploadBdd(file_path, Geocache, db, status: Optional[TaskStatus] = None):
 
             # Logs debug pour les 50 premiers (et ensuite tous les 200)
             if wpt_index <= 50 or (wpt_index % 200 == 0):
-                print(f"[UPLOAD][{wpt_index}/{total_waypoints}] code={gc_code} lat={lat} lon={lon} time_raw={time_text} parsed_published={parsed_pd}")
+                logger.debug("[%d/%d] code=%s lat=%s lon=%s time_raw=%s parsed_published=%s",
+                             wpt_index, total_waypoints, gc_code, lat, lon, time_text, parsed_pd)
 
             # Champs par défaut
             cache_type = None
@@ -417,7 +421,7 @@ def uploadBdd(file_path, Geocache, db, status: Optional[TaskStatus] = None):
         # Parsing/processing échoué : la base existante est intacte, aucun
         # DELETE ni INSERT n'a été émis. On rollback par sécurité et on propage.
         db.session.rollback()
-        print(f"[UPLOAD] Parsing/processing failed, DB left untouched: {exc}")
+        logger.error("Parsing/processing failed, DB left untouched: %s", exc)
         raise
 
     # --- Étape 2 : remplacer le contenu en une seule transaction ---
@@ -442,14 +446,14 @@ def uploadBdd(file_path, Geocache, db, status: Optional[TaskStatus] = None):
     try:
         non_null_pd = db.session.query(Geocache).filter(Geocache.published_date != None).count()
         total_rows = db.session.query(Geocache).count()
-        print(f"[UPLOAD] Import finished. published_date non-null: {non_null_pd}/{total_rows}")
+        logger.info("Import finished. published_date non-null: %d/%d", non_null_pd, total_rows)
         # Générer l'arborescence Country > State une fois l'import terminé
         try:
             build_country_state_tree(db, Geocache)
         except Exception as e:
-            print(f"[UPLOAD] build_country_state_tree error: {e}")
+            logger.error("build_country_state_tree error: %s", e)
     except Exception as e:
-        print(f"[UPLOAD] Post-import count error: {e}")
+        logger.error("Post-import count error: %s", e)
     # On marque le chargement comme terminé
     loading_state.complete()
     _update_progress(status, 100, "Import terminé")
@@ -597,7 +601,7 @@ def ensure_geocache_columns(db):
     try:
         res = conn.execute(text("PRAGMA table_info(geocache);"))
         cols = {row[1] for row in res}
-        print(f"[MIGRATION] Existing columns: {sorted(list(cols))}")
+        logger.debug("Existing columns: %s", sorted(list(cols)))
         wanted = {
             'gc_code': "ALTER TABLE geocache ADD COLUMN gc_code VARCHAR(255)",
             'cache_name': "ALTER TABLE geocache ADD COLUMN cache_name VARCHAR(255)",
@@ -613,10 +617,10 @@ def ensure_geocache_columns(db):
         for col, stmt in wanted.items():
             if col not in cols:
                 try:
-                    print(f"[MIGRATION] Adding missing column: {col}")
+                    logger.info("Adding missing column: %s", col)
                     conn.execute(text(stmt))
                 except Exception as e:
-                    print(f"[MIGRATION] Could not add column {col}: {e}")
+                    logger.warning("Could not add column %s: %s", col, e)
     finally:
         conn.close()
 
@@ -629,7 +633,7 @@ def ensure_geocache_indexes(db):
         # Récupérer la liste des index existants
         res = conn.execute(text("SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='geocache';"))
         existing_indexes = {row[0] for row in res}
-        print(f"[MIGRATION] Existing indexes: {sorted(list(existing_indexes))}")
+        logger.debug("Existing indexes: %s", sorted(list(existing_indexes)))
         
         # Index à créer (nom -> statement SQL)
         wanted_indexes = {
@@ -642,20 +646,20 @@ def ensure_geocache_indexes(db):
         for idx_name, stmt in wanted_indexes.items():
             if idx_name not in existing_indexes:
                 try:
-                    print(f"[MIGRATION] Creating index: {idx_name}")
+                    logger.info("Creating index: %s", idx_name)
                     conn.execute(text(stmt))
                     conn.commit()
                 except Exception as e:
-                    print(f"[MIGRATION] Could not create index {idx_name}: {e}")
+                    logger.warning("Could not create index %s: %s", idx_name, e)
             else:
-                print(f"[MIGRATION] Index {idx_name} already exists")
+                logger.debug("Index %s already exists", idx_name)
     finally:
         conn.close()
 
 
 def filter_session(db, Geocache, selectedValues, status: Optional[TaskStatus] = None):
     """Filtre la BDD et retourne un GeoJSON généré en tâche de fond si status fourni."""
-    print('selectedValues',selectedValues)
+    logger.debug("selectedValues: %s", selectedValues)
 
     query = db.session.query(Geocache)
     # Utilisez db.session pour faire la requête
@@ -735,9 +739,9 @@ def build_country_state_tree(db, Geocache):
         out_path = os.path.join(out_dir, 'country_state.json')
         with open(out_path, 'w', encoding='utf-8') as f:
             json.dump(tree_sorted, f, ensure_ascii=False, indent=2)
-        print(f"[UPLOAD] Country/State tree generated: {out_path} ({len(tree_sorted)} countries)")
+        logger.info("Country/State tree generated: %s (%d countries)", out_path, len(tree_sorted))
     except Exception as e:
-        print(f"[UPLOAD] build_country_state_tree failed: {e}")
+        logger.error("build_country_state_tree failed: %s", e)
 
 
 def run_import_task(status: TaskStatus, app, file_path: str, Geocache, db):
