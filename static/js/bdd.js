@@ -45,6 +45,92 @@ if (fileInputModal) {
     });
 }
 
+// --- Drag & drop de fichiers GPX -----------------------------------------
+// Un overlay plein écran apparaît dès qu'un fichier est glissé au-dessus de la
+// fenêtre (n'importe où, y compris sur la carte). Le drop route vers le même
+// pipeline d'upload que les inputs fichier.
+
+function isGpxFile(file) {
+    return !!file && /\.gpx$/i.test(file.name || '');
+}
+
+// Route un fichier vers le bon flux selon que la modale de bienvenue est ouverte.
+function handleGpxFile(file) {
+    if (!isGpxFile(file)) {
+        showError(t("Veuillez déposer un fichier .gpx"), t("Format invalide"));
+        return;
+    }
+    const modalEl = document.getElementById('modal_first_use');
+    const modalOpen = !!(modalEl && modalEl.classList.contains('show'));
+    if (modalOpen) {
+        performUploadFromModal(file);
+    } else {
+        uploadBdd(file);
+    }
+}
+
+// Vrai si le drag transporte des fichiers (et non du texte/HTML).
+function dragHasFiles(e) {
+    const dt = e.dataTransfer;
+    if (!dt) return false;
+    // dt.types peut être un DOMStringList ou un array selon le navigateur.
+    return Array.prototype.indexOf.call(dt.types || [], 'Files') !== -1;
+}
+
+function setupGpxDragAndDrop() {
+    if (!document.body) return;
+
+    let overlay = document.getElementById('gpxDropOverlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'gpxDropOverlay';
+        overlay.className = 'gpx-drop-overlay';
+        overlay.setAttribute('aria-hidden', 'true');
+        overlay.innerHTML =
+            '<div class="gpx-drop-overlay__inner">' +
+            '<i class="ti ti-file-upload"></i>' +
+            '<div class="gpx-drop-overlay__text">' +
+            t('Déposez votre fichier .gpx pour le charger') +
+            '</div></div>';
+        document.body.appendChild(overlay);
+    }
+
+    // Compteur de profondeur : dragenter/dragleave se déclenchent aussi au
+    // passage d'un élément enfant à l'autre ; on ne masque l'overlay que
+    // lorsqu'on a réellement quitté la fenêtre.
+    let dragDepth = 0;
+    const show = () => overlay.classList.add('is-visible');
+    const hide = () => { dragDepth = 0; overlay.classList.remove('is-visible'); };
+
+    window.addEventListener('dragenter', (e) => {
+        if (!dragHasFiles(e)) return;
+        e.preventDefault();
+        dragDepth++;
+        show();
+    });
+    window.addEventListener('dragover', (e) => {
+        if (!dragHasFiles(e)) return;
+        e.preventDefault(); // indispensable pour autoriser le drop
+        try { e.dataTransfer.dropEffect = 'copy'; } catch (_) {}
+    });
+    window.addEventListener('dragleave', (e) => {
+        if (!dragHasFiles(e)) return;
+        dragDepth = Math.max(0, dragDepth - 1);
+        if (dragDepth === 0) hide();
+    });
+    window.addEventListener('drop', (e) => {
+        if (!dragHasFiles(e)) return;
+        e.preventDefault();
+        hide();
+        const file = e.dataTransfer.files && e.dataTransfer.files[0];
+        if (file) handleGpxFile(file);
+    });
+    // Sécurité : si le drag est abandonné hors fenêtre, masquer l'overlay.
+    window.addEventListener('dragend', hide);
+}
+
+setupGpxDragAndDrop();
+
 export function readBddValues(){
     try {
         fetch(`${CONFIG.BASE_URL}/db_status`)

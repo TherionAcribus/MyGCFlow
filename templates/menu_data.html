@@ -11,7 +11,12 @@
                     <form id="uploadBddForm">
                         <div class="mb-3">
                             <label for="file-input" class="form-label">{{ _("Sélectionner et charger un fichier .gpx") }}</label>
-                            <input type="file" class="form-control" id="file-input" name="file" accept=".gpx" aria-label="{{ _('Fichier .gpx') }}" />
+                            <div class="gpx-dropzone">
+                                <input type="file" class="form-control" id="file-input" name="file" accept=".gpx" aria-label="{{ _('Fichier .gpx') }}" />
+                                <div class="gpx-dropzone__hint">
+                                    <i class="ti ti-drag-drop me-1"></i>{{ _("ou glissez-déposez votre fichier n'importe où sur la page") }}
+                                </div>
+                            </div>
                         </div>
                     </form>
 

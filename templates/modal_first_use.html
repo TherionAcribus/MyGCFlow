@@ -25,7 +25,12 @@
                         <form id="uploadBddFormModal">
                             <div class="mb-3">
                                 <label for="file-input-modal" class="form-label">{{ _("Sélectionner et charger un fichier .gpx") }}</label>
-                                <input type="file" class="form-control" id="file-input-modal" name="file" accept=".gpx" />
+                                <div class="gpx-dropzone">
+                                    <input type="file" class="form-control" id="file-input-modal" name="file" accept=".gpx" />
+                                    <div class="gpx-dropzone__hint">
+                                        <i class="ti ti-drag-drop me-1"></i>{{ _("ou glissez-déposez votre fichier ici") }}
+                                    </div>
+                                </div>
                             </div>
                         </form>
                         <div id="infosBDDModal" class="form-hint text-muted mt-2">
