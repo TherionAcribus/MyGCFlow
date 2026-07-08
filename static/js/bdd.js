@@ -45,6 +45,31 @@ if (fileInputModal) {
     });
 }
 
+// --- Verrouillage des contrôles pendant un import --------------------------
+// Un import vide puis remplit la table Geocache en une transaction côté
+// serveur (voir bdd.py:uploadBdd). Lancer un second import ou un vidage de
+// base pendant qu'un premier tourne entrelacerait ces opérations. On désactive
+// donc les points d'entrée (inputs fichier, bouton de suppression) pendant
+// toute la durée d'un import ; le drag & drop, qui ne passe pas par ces
+// éléments (listeners globaux sur window), est bloqué via le flag ci-dessous.
+let importInProgress = false;
+
+function setImportControlsDisabled(disabled) {
+    if (fileInput) fileInput.disabled = disabled;
+    if (fileInputModal) fileInputModal.disabled = disabled;
+    if (clearDatabaseBtn) clearDatabaseBtn.disabled = disabled;
+}
+
+function beginImport() {
+    importInProgress = true;
+    setImportControlsDisabled(true);
+}
+
+function endImport() {
+    importInProgress = false;
+    setImportControlsDisabled(false);
+}
+
 // --- Drag & drop de fichiers GPX -----------------------------------------
 // Un overlay plein écran apparaît dès qu'un fichier est glissé au-dessus de la
 // fenêtre (n'importe où, y compris sur la carte). Le drop route vers le même
@@ -138,6 +163,14 @@ async function validateGpxFile(file) {
 // ou glisser-déposer) : valide, puis route vers le bon flux selon que la
 // modale de bienvenue est ouverte.
 async function handleGpxFile(file) {
+    if (importInProgress) {
+        // Les inputs/bouton sont désactivés pendant un import, mais le drag &
+        // drop passe par des listeners globaux sur window : cette garde le
+        // couvre aussi (double clic très rapide, drop pendant la validation
+        // asynchrone du fichier précédent, etc.).
+        showError(t('Un import est déjà en cours, veuillez patienter.'), t('Import en cours'));
+        return;
+    }
     const result = await validateGpxFile(file);
     if (!result.ok) {
         showError(result.message, t('Fichier invalide'));
@@ -596,6 +629,11 @@ function uploadBddRequest(e){
 }
 
 function uploadBdd (file){
+    // Verrouiller les contrôles (inputs, bouton de suppression) pour toute la
+    // durée de l'import : évite qu'un second import ou un vidage de base ne
+    // s'entrelace avec celui-ci.
+    beginImport();
+
     // Afficher un toast de chargement avec progress bar : uploadGpxWithProgress
     // pilote la barre pendant l'envoi réseau, puis checkLoadingProgress prend
     // le relais pour la phase de traitement serveur.
@@ -604,6 +642,7 @@ function uploadBdd (file){
     uploadGpxWithProgress(file, uploadToast)
     .then(data => {
         checkLoadingProgress(uploadToast, data.task_id, () => {
+            endImport();
             console.log('[uploadBdd] Import terminé, lancement loadAndDisplayPoints');
             pkg.hideToast(uploadToast);
             pkg.showToast(t("Fichier chargé avec succès !"), "success", t("Terminé"));
@@ -614,12 +653,14 @@ function uploadBdd (file){
             // Charger et afficher les points sur la carte
             loadAndDisplayPoints();
         }, (message) => {
+            endImport();
             console.error('[uploadBdd] Erreur import:', message);
             pkg.hideToast(uploadToast);
             pkg.showToast(message || t("Erreur lors du chargement du fichier"), "error", t("Erreur"));
         });
     })
     .catch(error => {
+        endImport();
         console.error('Error:', error);
         pkg.hideToast(uploadToast);
         pkg.showToast(error?.message || t("Erreur lors du chargement du fichier"), "error", t("Erreur"));
@@ -765,6 +806,14 @@ function updateFiltersCounter(selected, total){
 }
 
 async function clearDatabase() {
+    // Le bouton est désactivé pendant un import (setImportControlsDisabled),
+    // mais un clic en file d'attente juste avant la désactivation reste
+    // possible : cette garde couvre ce cas limite.
+    if (importInProgress) {
+        showError(t('Un import est en cours, veuillez patienter avant de vider la base.'), t('Import en cours'));
+        return;
+    }
+
     // Action destructive et irréversible : demander confirmation avant toute
     // requête vers /clear_database. On s'appuie sur showConfirmation (toast
     // bloquant avec boutons Confirmer/Annuler) déjà utilisé ailleurs (mapgl.js).
@@ -853,6 +902,9 @@ function uploadBddRequestFromModal(e) {
 }
 
 function performUploadFromModal(file){
+    // Verrouiller les contrôles pour toute la durée de l'import (cf. uploadBdd).
+    beginImport();
+
     // Afficher un toast de chargement avec progress bar : uploadGpxWithProgress
     // pilote la barre pendant l'envoi réseau, puis checkLoadingProgress prend
     // le relais pour la phase de traitement serveur.
@@ -861,6 +913,7 @@ function performUploadFromModal(file){
     uploadGpxWithProgress(file, uploadToast)
     .then(data => {
         checkLoadingProgress(uploadToast, data.task_id, () => {
+            endImport();
             pkg.hideToast(uploadToast);
             showSuccess(t("Fichier chargé avec succès !"), t("Chargement terminé"));
 
@@ -879,11 +932,13 @@ function performUploadFromModal(file){
             // Optionnel : rediriger vers l'onglet de données
             switchToDataTab();
         }, (message) => {
+            endImport();
             pkg.hideToast(uploadToast);
             showError(message || t("Erreur lors du chargement du fichier"), t("Erreur"));
         });
     })
     .catch(error => {
+        endImport();
         console.error('Erreur:', error);
         pkg.hideToast(uploadToast);
         showError(error?.message || t("Erreur lors du chargement du fichier"), t("Erreur"));
