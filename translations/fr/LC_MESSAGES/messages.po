@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-06 19:41+0200\n"
+"POT-Creation-Date: 2026-07-08 13:40+0200\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -18,30 +18,143 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
-#: templates/app.html:30
-msgid "My Geocaching Map"
-msgstr "Ma carte de géocaching"
+#: bdd.py:111
+msgid "Aucun fichier envoyé"
+msgstr "Aucun fichier envoyé"
+
+#: bdd.py:115 templates/modal_first_use.html:37
+msgid "Aucun fichier sélectionné"
+msgstr "Aucun fichier sélectionné"
+
+#: bdd.py:133
+msgid "Le fichier fourni n'est pas un fichier GPX valide"
+msgstr "Le fichier fourni n'est pas un fichier GPX valide"
+
+#: bdd.py:150
+msgid "Le fichier GPX n'est pas un fichier produit par Groundspeak."
+msgstr "Le fichier GPX n'est pas un fichier produit par Groundspeak."
+
+#: bdd.py:154
+msgid "Le fichier GPX est une Pocket Query et non un fichier My Finds."
+msgstr "Le fichier GPX est une Pocket Query et non un fichier My Finds."
+
+#: bdd.py:156
+msgid "Fichier reçu avec succès"
+msgstr "Fichier reçu avec succès"
+
+#: bdd.py:256
+msgid "Fichier GPX invalide"
+msgstr "Fichier GPX invalide"
+
+#: bdd.py:263
+msgid "Aucun waypoint trouvé dans le fichier GPX"
+msgstr "Aucun waypoint trouvé dans le fichier GPX"
+
+#: blueprints/core.py:59 blueprints/core.py:98 templates/guide.html:116
+#: templates/menu_bdd.html:5 templates/menu_data.html:7 test_translations.py:27
+msgid "Base de données"
+msgstr "Base de données"
+
+#: blueprints/core.py:61 templates/guide.html:120 templates/menu_bdd.html:8
+#: templates/menu_data.html:40 test_translations.py:28
+msgid "Filtres"
+msgstr "Filtres"
+
+#: blueprints/core.py:63 templates/app.html:79 templates/guide.html:53
+#: templates/guide.html:86 templates/guide.html:93 templates/guide.html:243
+#: templates/guide.html:245 test_translations.py:29
+msgid "Paramètres"
+msgstr "Paramètres"
 
 #: templates/app.html:76 templates/guide.html:44 templates/guide.html:71
 #: templates/guide.html:93 templates/guide.html:101 templates/guide.html:116
+#: test_translations.py:30
 msgid "Données"
 msgstr "Données"
 
 #: templates/app.html:77 templates/guide.html:47 templates/guide.html:76
 #: templates/guide.html:93 templates/guide.html:139 templates/guide.html:141
-#: templates/menu_informations.html:135
+#: templates/menu_informations.html:135 test_translations.py:31
 msgid "Style"
 msgstr "Style"
 
 #: templates/app.html:78 templates/guide.html:50 templates/guide.html:81
 #: templates/guide.html:93 templates/guide.html:194 templates/guide.html:196
+#: test_translations.py:32
 msgid "Animation"
 msgstr "Animation"
 
-#: templates/app.html:79 templates/guide.html:53 templates/guide.html:86
-#: templates/guide.html:93 templates/guide.html:243 templates/guide.html:245
-msgid "Paramètres"
+#: blueprints/core.py:60
+msgid "Choisir fichier"
+msgstr "Choisir fichier"
+
+#: blueprints/core.py:62 templates/menu_style.html:20
+msgid "Cartes"
 msgstr "Paramètres"
+
+#: blueprints/core.py:64
+msgid "Cancel"
+msgstr "Annuler"
+
+#: blueprints/core.py:65 templates/menu_points.html:5
+msgid "Graphisme des points"
+msgstr "Graphisme des points"
+
+#: blueprints/core.py:66 templates/menu_points.html:26
+msgid "Centre du point"
+msgstr "Centre du point"
+
+#: blueprints/core.py:87
+msgid ""
+"La langue a été changée. La page va se recharger pour appliquer les "
+"modifications."
+msgstr "La langue a été changée. La page va se recharger pour appliquer les modifications."
+
+#: blueprints/core.py:89
+msgid "Changement de langue"
+msgstr "Changement de langue"
+
+#: blueprints/core.py:91
+msgid ""
+"La langue a été changée. L'application va redémarrer pour appliquer les "
+"modifications."
+msgstr "La langue a été changée. L'application va redémarrer pour appliquer les modifications."
+
+#: blueprints/core.py:93
+msgid "Confirmer"
+msgstr "Confirmer"
+
+#: blueprints/core.py:95 templates/menu_style.html:170
+#: templates/menu_style.html:195 templates/menu_style.html:220
+#: templates/modal_loading.html:14
+msgid "Annuler"
+msgstr "Annuler"
+
+#: blueprints/gpx.py:34
+msgid "Aucun fichier fourni"
+msgstr "Aucun fichier fourni"
+
+#: blueprints/gpx.py:38
+msgid "Nom de fichier vide"
+msgstr "Nom de fichier vide"
+
+#: blueprints/gpx.py:57
+msgid "Import GPX lancé en tâche de fond"
+msgstr "Import GPX lancé en tâche de fond"
+
+#: blueprints/gpx.py:96
+#, python-format
+msgid "Base de données vidée avec succès. %(count)s entrées supprimées."
+msgstr "Base de données vidée avec succès. %(count)s entrées supprimées."
+
+#: blueprints/gpx.py:103
+#, python-format
+msgid "Erreur lors du vidage de la base de données: %(error)s"
+msgstr "Erreur lors du vidage de la base de données: %(error)s"
+
+#: templates/app.html:30
+msgid "My Geocaching Map"
+msgstr "Ma carte de géocaching"
 
 #: templates/guide.html:6 templates/guide.html:21
 #: templates/menu_options.html:86
@@ -144,11 +257,6 @@ msgstr "Dans l'onglet"
 msgid "section"
 msgstr "Présentation"
 
-#: templates/guide.html:116 templates/menu_bdd.html:5
-#: templates/menu_data.html:7
-msgid "Base de données"
-msgstr "Base de données"
-
 #: templates/guide.html:116
 msgid "cliquez sur"
 msgstr "Dupliquer"
@@ -171,11 +279,6 @@ msgstr "Filtrer par type de cache"
 #: templates/guide.html:120
 msgid "Dans la section"
 msgstr "Dans la section"
-
-#: templates/guide.html:120 templates/menu_bdd.html:8
-#: templates/menu_data.html:35
-msgid "Filtres"
-msgstr "Filtres"
 
 #: templates/guide.html:120
 msgid "affinez la sélection selon vos besoins :"
@@ -269,7 +372,7 @@ msgstr "Ajoutez un titre et des informations"
 msgid "Dans"
 msgstr "Dans"
 
-#: templates/guide.html:156 templates/menu_style.html:102
+#: templates/guide.html:156 templates/menu_style.html:98
 msgid "Informations et Overlays"
 msgstr "Informations à afficher"
 
@@ -429,7 +532,7 @@ msgstr "Sauvegardez votre style dans un profil"
 msgid "Le panneau"
 msgstr "Le panneau"
 
-#: templates/guide.html:181 templates/menu_style.html:134
+#: templates/guide.html:181 templates/menu_style.html:130
 msgid "Profils"
 msgstr "Profils"
 
@@ -437,7 +540,7 @@ msgstr "Profils"
 msgid "(à droite) mémorise toute votre configuration de style."
 msgstr "(à droite) mémorise toute votre configuration de style."
 
-#: templates/guide.html:183 templates/menu_style.html:143
+#: templates/guide.html:183 templates/menu_style.html:139
 msgid "Nouveau"
 msgstr "Nouveau"
 
@@ -445,7 +548,7 @@ msgstr "Nouveau"
 msgid "crée un profil ;"
 msgstr "aucun profil actif"
 
-#: templates/guide.html:183 templates/menu_style.html:146
+#: templates/guide.html:183 templates/menu_style.html:142
 msgid "Sauvegarder"
 msgstr "Sauvegarder"
 
@@ -453,7 +556,7 @@ msgstr "Sauvegarder"
 msgid "enregistre le profil actif."
 msgstr "aucun profil actif"
 
-#: templates/guide.html:184 templates/menu_style.html:149
+#: templates/guide.html:184 templates/menu_style.html:145
 msgid "Importer"
 msgstr "Importer"
 
@@ -828,7 +931,7 @@ msgid "Contenu"
 msgstr "Contenu"
 
 #: templates/menu_bdd.html:18 templates/menu_bdd.html:19
-#: templates/menu_data.html:14
+#: templates/menu_data.html:15
 msgid "Fichier .gpx"
 msgstr "Fichier .gpx"
 
@@ -836,7 +939,7 @@ msgstr "Fichier .gpx"
 msgid "Envoyer"
 msgstr "Renommer"
 
-#: templates/menu_bdd.html:22 templates/menu_data.html:26
+#: templates/menu_bdd.html:22 templates/menu_data.html:31
 msgid "Aucune base de données chargée"
 msgstr "Aucune base de données chargée"
 
@@ -848,11 +951,15 @@ msgstr "Options à venir"
 msgid "Contenu à venir"
 msgstr "Contenu à venir"
 
-#: templates/menu_data.html:21
+#: templates/menu_data.html:17
+msgid "ou glissez-déposez votre fichier n'importe où sur la page"
+msgstr "ou glissez-déposez votre fichier n'importe où sur la page"
+
+#: templates/menu_data.html:26
 msgid "Supprimer la base de données"
 msgstr "Supprimer la base de données"
 
-#: templates/menu_data.html:46
+#: templates/menu_data.html:51
 msgid "Sélection: 0 / 0"
 msgstr "Sélection: 0 / 0"
 
@@ -1112,6 +1219,12 @@ msgstr "Choisir la couleur"
 msgid "Cible du style"
 msgstr "Cible du style"
 
+#: templates/menu_informations.html:12
+msgid ""
+"Certaines propriétés CSS du fichier ne sont pas gérées par les champs ci-"
+"dessous. Utilisez le mode CSS avancé pour les éditer manuellement."
+msgstr ""
+
 #: templates/menu_informations.html:15
 msgid "CSS"
 msgstr "CSS"
@@ -1171,9 +1284,16 @@ msgstr "Bordure du point"
 msgid "Activer"
 msgstr "actif:"
 
+#: templates/menu_informations.html:233
+msgid ""
+"Copier le style de la cible actuelle vers l'autre cible (Titre → Infos ou"
+" inversement)"
+msgstr ""
+
 #: templates/menu_informations.html:234
-msgid "Dupliquer le CSS"
-msgstr "Dupliquer"
+#, fuzzy
+msgid "Copier vers l'autre"
+msgstr "Couleur de la bordure"
 
 #: templates/menu_informations.html:245 templates/menu_informations.html:247
 msgid "Appliquer les Modifications"
@@ -1239,7 +1359,7 @@ msgstr "Centre de carte par défaut - Longitude"
 msgid "Zoom de carte par défaut"
 msgstr "Zoom de carte par défaut"
 
-#: templates/menu_options.html:70
+#: templates/menu_options.html:70 templates/menu_style.html:221
 msgid "Réinitialiser"
 msgstr "Réinitialiser"
 
@@ -1369,14 +1489,6 @@ msgid ""
 " à vitesse normale. Désactiver pour conserver la vidéo au ralenti."
 msgstr ""
 
-#: templates/menu_points.html:5
-msgid "Graphisme des points"
-msgstr "Graphisme des points"
-
-#: templates/menu_points.html:26
-msgid "Centre du point"
-msgstr "Centre du point"
-
 #: templates/menu_points.html:31 templates/menu_points.html:34
 msgid "Taille du centre"
 msgstr "Taille du centre"
@@ -1446,10 +1558,6 @@ msgstr "Taille du centre"
 msgid "Aperçu des icônes"
 msgstr "Aperçu des icônes"
 
-#: templates/menu_style.html:20
-msgid "Cartes"
-msgstr "Paramètres"
-
 #: templates/menu_style.html:24
 msgid "OpenStreetMap"
 msgstr "OpenStreetMap"
@@ -1518,63 +1626,68 @@ msgstr "Largeur contour"
 msgid "Faites glisser pour ajuster l'épaisseur"
 msgstr "Faites glisser pour ajuster l'épaisseur"
 
-#: templates/menu_style.html:84
+#: templates/menu_style.html:84 templates/menu_style.html:86
 msgid "Style Toner"
 msgstr "Style"
 
-#: templates/menu_style.html:89
+#: templates/menu_style.html:88
 msgid "Clair"
 msgstr "Carré"
 
-#: templates/menu_style.html:94
+#: templates/menu_style.html:91
 msgid "Sombre"
 msgstr "Sombre"
 
-#: templates/menu_style.html:142 templates/menu_style.html:164
+#: templates/menu_style.html:138 templates/menu_style.html:160
 msgid "Nouveau profil"
 msgstr "Nouveau profil"
 
-#: templates/menu_style.html:145
+#: templates/menu_style.html:141
 msgid "Sauvegarder le profil actif"
 msgstr "aucun profil actif"
 
-#: templates/menu_style.html:148
+#: templates/menu_style.html:144
 msgid "Importer un profil JSON"
 msgstr "Importer un profil JSON"
 
-#: templates/menu_style.html:165 templates/menu_style.html:193
-#: templates/modal_infos.html:11
+#: templates/menu_style.html:161 templates/menu_style.html:189
+#: templates/menu_style.html:214 templates/modal_infos.html:11
 msgid "Fermer"
 msgstr "Fermer"
 
-#: templates/menu_style.html:169 templates/menu_style.html:170
+#: templates/menu_style.html:165 templates/menu_style.html:166
 msgid "Nom du profil"
 msgstr "Nom du profil"
 
-#: templates/menu_style.html:174 templates/menu_style.html:199
-#: templates/modal_loading.html:14
-msgid "Annuler"
-msgstr "Annuler"
-
-#: templates/menu_style.html:175
+#: templates/menu_style.html:171
 msgid "Créer"
 msgstr "Créer"
 
-#: templates/menu_style.html:189
+#: templates/menu_style.html:185
 msgid "Confirmer la suppression"
 msgstr "Confirmer la suppression"
 
-#: templates/menu_style.html:190
+#: templates/menu_style.html:186 templates/menu_style.html:211
 msgid "Cette action est définitive"
 msgstr "Cette action est définitive"
 
-#: templates/menu_style.html:196
+#: templates/menu_style.html:192
 msgid "Êtes-vous sûr de vouloir supprimer ce profil ?"
 msgstr "Êtes-vous sûr de vouloir supprimer ce profil ?"
 
-#: templates/menu_style.html:200
+#: templates/menu_style.html:196
 msgid "Supprimer"
 msgstr "Supprimer"
+
+#: templates/menu_style.html:210
+#, fuzzy
+msgid "Confirmer la réinitialisation"
+msgstr "Confirmer la suppression"
+
+#: templates/menu_style.html:217
+#, fuzzy
+msgid "Êtes-vous sûr de vouloir réinitialiser ce profil aux valeurs par défaut ?"
+msgstr "Êtes-vous sûr de vouloir supprimer ce profil ?"
 
 #: templates/modal_first_use.html:7
 msgid ""
@@ -1603,15 +1716,15 @@ msgstr ""
 msgid "Chargement de vos données"
 msgstr "Charger données"
 
-#: templates/modal_first_use.html:32
-msgid "Aucun fichier sélectionné"
-msgstr "Aucun fichier sélectionné"
+#: templates/modal_first_use.html:31
+msgid "ou glissez-déposez votre fichier ici"
+msgstr "ou glissez-déposez votre fichier ici"
 
-#: templates/modal_first_use.html:39
+#: templates/modal_first_use.html:44
 msgid "Voir le mode d'emploi"
 msgstr "Voir le mode d'emploi"
 
-#: templates/modal_first_use.html:41
+#: templates/modal_first_use.html:46
 msgid "Ignorer pour l'instant"
 msgstr "Ignorer pour l'instant"
 
@@ -1651,4 +1764,7 @@ msgstr "Ignorer pour l'instant"
 #~ msgstr ""
 #~ "Profil \"${selectedProfile}\" appliqué et "
 #~ "défini comme profil par défaut"
+
+#~ msgid "Dupliquer le CSS"
+#~ msgstr "Dupliquer"
 

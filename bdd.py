@@ -1,5 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask import jsonify, current_app
+from flask_babel import gettext as _, force_locale
 import xml.etree.ElementTree as ET
 from datetime import datetime
 import logging
@@ -107,11 +108,11 @@ def get_child_text_anyns(element, local_name):
 # analyse le fichier transmit pour peupler La BDD
 def analyse(request):
     if 'file' not in request.files:
-        return jsonify({'message': 'Aucun fichier envoyé'}), 400
-    
+        return jsonify({'message': _('Aucun fichier envoyé')}), 400
+
     file = request.files['file']
     if file.filename == '':
-        return jsonify({'message': 'Aucun fichier sélectionné'}), 400
+        return jsonify({'message': _('Aucun fichier sélectionné')}), 400
     
     # verification du fichier envoyé
     checkFile = checkFileNameAndDesc(request)
@@ -129,7 +130,7 @@ def checkFileNameAndDesc(request):
         name_text, desc_text, author_text = _read_gpx_header(gpxfile)
         return validate_gpx_header(name_text, desc_text, author_text)
     except ET.ParseError:
-        return {'success': False, 'message': 'Le fichier fourni n\'est pas un fichier GPX valide'}
+        return {'success': False, 'message': _("Le fichier fourni n'est pas un fichier GPX valide")}
 
 
 def validate_gpx_header(name_text, desc_text, author_text):
@@ -146,13 +147,13 @@ def validate_gpx_header(name_text, desc_text, author_text):
     )
 
     if not is_ground_speak:
-        return {'success': False, 'message': 'Le fichier GPX n\'est pas un fichier produit par Groundspeak.'}
+        return {'success': False, 'message': _("Le fichier GPX n'est pas un fichier produit par Groundspeak.")}
 
     # Vérifier que le fichier est bien un "My Finds"
     if name_text is None or not name_text or "My Finds Pocket Query" not in name_text:
-        return {'success': False, 'message': "Le fichier GPX est une Pocket Query et non un fichier My Finds."}
+        return {'success': False, 'message': _("Le fichier GPX est une Pocket Query et non un fichier My Finds.")}
 
-    return {'success': True, 'message': 'Fichier reçu avec succès'}
+    return {'success': True, 'message': _('Fichier reçu avec succès')}
 
 
 def _read_gpx_header(source):
@@ -252,14 +253,14 @@ def uploadBdd(file_path, Geocache, db, status: Optional[TaskStatus] = None):
                         header.get('name'), header.get('desc'), header.get('author')
                     )
                     if not check.get('success'):
-                        raise ValueError(check.get('message', 'Fichier GPX invalide'))
+                        raise ValueError(check.get('message', _('Fichier GPX invalide')))
                     validated = True
                 total_waypoints += 1
             elem.clear()
 
         if not validated:
             # Aucun <wpt> trouvé — l'en-tête n'a jamais pu être validé.
-            raise ValueError('Aucun waypoint trouvé dans le fichier GPX')
+            raise ValueError(_('Aucun waypoint trouvé dans le fichier GPX'))
 
         logger.info("GPX waypoints detected: %d", total_waypoints)
 
@@ -773,11 +774,24 @@ def build_country_state_tree(db, Geocache):
         logger.error("build_country_state_tree failed: %s", e)
 
 
-def run_import_task(status: TaskStatus, app, file_path: str, Geocache, db):
-    """Tâche de fond pour l'import GPX (exécutée dans un thread)."""
+def run_import_task(status: TaskStatus, app, file_path: str, Geocache, db, locale: Optional[str] = None):
+    """Tâche de fond pour l'import GPX (exécutée dans un thread).
+
+    locale : langue capturée dans la requête d'origine (avant soumission de la
+    tâche) et figée ici via force_locale(). uploadBdd valide l'en-tête GPX et
+    peut lever des messages d'erreur traduits (_()) ; or ce thread n'a qu'un
+    app_context (pas de requête), et notre locale_selector (localization.
+    get_locale) lit request.cookies/args — sans force_locale, l'appel à _()
+    tomberait sur le filet de sécurité (locale par défaut) plutôt que sur la
+    langue réellement choisie par l'utilisateur.
+    """
     try:
         with app.app_context():
-            uploadBdd(file_path, Geocache, db, status=status)
+            if locale:
+                with force_locale(locale):
+                    uploadBdd(file_path, Geocache, db, status=status)
+            else:
+                uploadBdd(file_path, Geocache, db, status=status)
             # SQLite WAL mode ne met pas à jour le mtime du fichier principal immédiatement.
             # Sans cette invalidation, run_geojson_task verrait le même mtime et servirait
             # le GeoJSON vide du cache de démarrage au lieu de régénérer.

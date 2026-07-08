@@ -2,10 +2,12 @@ import os
 import tempfile
 
 from flask import Blueprint, current_app, jsonify, request
+from flask_babel import gettext as _
 from flask_cors import cross_origin
 
 from bdd import TASK_TYPE_IMPORT, analyse, db_infos, get_progress_step, run_import_task, geojson_cache
 from extensions import db
+from localization import get_locale
 from models import Geocache
 from task_manager import task_manager
 
@@ -29,11 +31,11 @@ def get_progress():
 @cross_origin()
 def handle_upload():
     if 'file' not in request.files:
-        return jsonify({'success': False, 'message': 'Aucun fichier fourni'}), 400
+        return jsonify({'success': False, 'message': _('Aucun fichier fourni')}), 400
 
     uploaded_file = request.files['file']
     if uploaded_file.filename == '':
-        return jsonify({'success': False, 'message': 'Nom de fichier vide'}), 400
+        return jsonify({'success': False, 'message': _('Nom de fichier vide')}), 400
 
     tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".gpx")
     uploaded_file.save(tmp_file)
@@ -41,11 +43,18 @@ def handle_upload():
     tmp_file.close()
 
     app_obj = current_app._get_current_object()
-    status = task_manager.submit(TASK_TYPE_IMPORT, run_import_task, app_obj, tmp_file_path, Geocache, db)
+    # Capturée ici (dans la requête, seul endroit où cookies/headers sont
+    # lisibles) puis transmise à la tâche de fond : uploadBdd y valide l'en-tête
+    # GPX et peut lever des messages d'erreur traduits, mais le thread de fond
+    # n'a qu'un app_context (voir bdd.run_import_task pour le détail).
+    current_locale = get_locale()
+    status = task_manager.submit(
+        TASK_TYPE_IMPORT, run_import_task, app_obj, tmp_file_path, Geocache, db, current_locale
+    )
 
     return jsonify({
         'success': True,
-        'message': 'Import GPX lancé en tâche de fond',
+        'message': _('Import GPX lancé en tâche de fond'),
         'task_id': status.id,
         'state': status.state,
     }), 202
@@ -82,12 +91,14 @@ def clear_database():
 
         return jsonify({
             'success': True,
-            'message': f'Base de données vidée avec succès. {num_deleted} entrées supprimées.'
+            # %(count)s (pas un f-string) : le msgid doit rester statique pour
+            # être traduisible par gettext, la valeur est substituée après coup.
+            'message': _('Base de données vidée avec succès. %(count)s entrées supprimées.', count=num_deleted)
         })
 
     except Exception as e:
         db.session.rollback()
         return jsonify({
             'success': False,
-            'message': f'Erreur lors du vidage de la base de données: {str(e)}'
+            'message': _('Erreur lors du vidage de la base de données: %(error)s', error=str(e))
         }), 500
