@@ -487,8 +487,18 @@ function updateOptionsValues(meta) {
     }
 }
 
-function pollGeojsonTask(taskId, { onSuccess, onError, onProgress, intervalMs = 400, timeoutMs = 120000 } = {}) {
-    const startedAt = Date.now();
+// stallTimeoutMs est un timeout d'INACTIVITÉ (aucune réponse serveur reçue
+// depuis stallTimeoutMs), pas un plafond de durée totale : il est repoussé à
+// chaque réponse valide, quel que soit l'état/la progression rapportés. Un
+// gros import peut légitimement rester plusieurs minutes à progress=99
+// ("Enregistrement en base de données...", cf. bdd.py) sans que le
+// pourcentage bouge — un timeout basé sur la durée totale afficherait alors
+// une erreur côté client alors que l'import continue et réussit côté serveur.
+// maxConsecutiveErrors tolère quelques ratés réseau transitoires (Wi-Fi qui
+// clignote, etc.) sans abandonner tout le suivi de la tâche.
+function pollGeojsonTask(taskId, { onSuccess, onError, onProgress, intervalMs = 400, stallTimeoutMs = 120000, maxConsecutiveErrors = 10 } = {}) {
+    let lastActivityAt = Date.now();
+    let consecutiveErrors = 0;
 
     const tick = () => {
         if (!taskId) {
@@ -496,7 +506,7 @@ function pollGeojsonTask(taskId, { onSuccess, onError, onProgress, intervalMs = 
             return;
         }
 
-        if (Date.now() - startedAt > timeoutMs) {
+        if (Date.now() - lastActivityAt > stallTimeoutMs) {
             if (typeof onError === 'function') onError(new Error('Task polling timeout'));
             return;
         }
@@ -504,6 +514,12 @@ function pollGeojsonTask(taskId, { onSuccess, onError, onProgress, intervalMs = 
         fetch(`${CONFIG.BASE_URL}/tasks/${encodeURIComponent(taskId)}?include_result=true`, { method: 'GET' })
         .then(r => r.json())
         .then(status => {
+            // Réponse valide reçue : le serveur est joignable et suit toujours
+            // la tâche — on repousse le timeout d'inactivité et on remet à
+            // zéro le compteur d'erreurs réseau transitoires.
+            lastActivityAt = Date.now();
+            consecutiveErrors = 0;
+
             const state = status?.state;
 
             if (state === 'finished') {
@@ -529,17 +545,26 @@ function pollGeojsonTask(taskId, { onSuccess, onError, onProgress, intervalMs = 
             setTimeout(tick, intervalMs);
         })
         .catch(err => {
-            if (typeof onError === 'function') onError(err);
+            consecutiveErrors++;
+            if (consecutiveErrors >= maxConsecutiveErrors) {
+                if (typeof onError === 'function') onError(err);
+                return;
+            }
+            // Raté réseau isolé (pas une absence de réponse prolongée) : on
+            // retente au prochain intervalle plutôt que d'abandonner tout de
+            // suite. lastActivityAt n'est volontairement pas repoussé ici :
+            // stallTimeoutMs reste le filet de sécurité en cas de panne réelle.
+            setTimeout(tick, intervalMs);
         });
     };
 
     tick();
 }
 
-function checkLoadingProgress(toast, taskId, onSuccess, onError, { intervalMs = 400, timeoutMs = 120000 } = {}) {
+function checkLoadingProgress(toast, taskId, onSuccess, onError, { intervalMs = 400, stallTimeoutMs = 120000 } = {}) {
     pollGeojsonTask(taskId, {
         intervalMs,
-        timeoutMs,
+        stallTimeoutMs,
         onProgress: (p) => {
             try { if (toast) pkg.updateToastProgress(toast, p); } catch(_) {}
         },
