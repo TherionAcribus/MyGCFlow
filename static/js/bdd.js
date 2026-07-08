@@ -520,6 +520,58 @@ function checkLoadingProgress(toast, taskId, onSuccess, onError, { intervalMs = 
     });
 }
 
+// Envoie le fichier GPX via XMLHttpRequest plutôt que fetch : fetch ne rapporte
+// aucune progression d'envoi, la toast resterait donc figée pendant tout le
+// transfert d'un gros fichier sur une connexion lente. xhr.upload.progress
+// permet d'afficher l'avancement réel ("Envoi du fichier : 43 %").
+// Une fois le fichier reçu par le serveur, la promesse se résout et l'appelant
+// bascule sur checkLoadingProgress, qui pilote la barre pour la phase suivante
+// (parsing + import côté serveur — une échelle 0-100 distincte de l'upload).
+function uploadGpxWithProgress(file, toast) {
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        const formData = new FormData();
+        formData.append('file', file);
+
+        xhr.upload.addEventListener('progress', (e) => {
+            if (!e.lengthComputable) return;
+            const pct = Math.round((e.loaded / e.total) * 100);
+            try {
+                pkg.updateToastProgress(toast, pct);
+                pkg.updateToastMessage(toast, t('Envoi du fichier : ${pct}%', { pct }));
+            } catch (_) {}
+        });
+
+        xhr.addEventListener('load', () => {
+            let data;
+            try {
+                data = JSON.parse(xhr.responseText);
+            } catch (e) {
+                reject(new Error(t('Réponse invalide du serveur')));
+                return;
+            }
+            if (xhr.status < 200 || xhr.status >= 300 || !data.success || !data.task_id) {
+                reject(new Error(data.message || t("Impossible de lancer l'import GPX")));
+                return;
+            }
+            // Transfert terminé : bascule visuellement vers la phase de
+            // traitement serveur, dont la progression est pilotée séparément
+            // par checkLoadingProgress (appelé par l'appelant avec data.task_id).
+            try {
+                pkg.updateToastMessage(toast, t('Traitement du fichier en cours...'));
+                pkg.setIndeterminateProgress(toast);
+            } catch (_) {}
+            resolve(data);
+        });
+
+        xhr.addEventListener('error', () => reject(new Error(t("Erreur réseau lors de l'envoi du fichier"))));
+        xhr.addEventListener('abort', () => reject(new Error(t('Envoi du fichier annulé'))));
+
+        xhr.open('POST', `${CONFIG.BASE_URL}/upload`);
+        xhr.send(formData);
+    });
+}
+
 function uploadBddRequest(e){
     e.preventDefault();
 
@@ -544,22 +596,13 @@ function uploadBddRequest(e){
 }
 
 function uploadBdd (file){
-    var formData = new FormData();
-    formData.append('file', file);
+    // Afficher un toast de chargement avec progress bar : uploadGpxWithProgress
+    // pilote la barre pendant l'envoi réseau, puis checkLoadingProgress prend
+    // le relais pour la phase de traitement serveur.
+    const uploadToast = pkg.showLoadingToast(t("Préparation de l'envoi..."), t("Chargement"));
 
-    // Afficher un toast de chargement avec progress bar
-    const uploadToast = pkg.showLoadingToast(t("Chargement du fichier GPX en cours..."), t("Chargement"));
-
-    fetch(`${CONFIG.BASE_URL}/upload`, {
-        method: 'POST',
-        body: formData,
-    })
-    .then(response => response.json())
+    uploadGpxWithProgress(file, uploadToast)
     .then(data => {
-        if (!data.success || !data.task_id) {
-            throw new Error(data.message || "Impossible de lancer l'import GPX");
-        }
-
         checkLoadingProgress(uploadToast, data.task_id, () => {
             console.log('[uploadBdd] Import terminé, lancement loadAndDisplayPoints');
             pkg.hideToast(uploadToast);
@@ -579,7 +622,7 @@ function uploadBdd (file){
     .catch(error => {
         console.error('Error:', error);
         pkg.hideToast(uploadToast);
-        pkg.showToast(t("Erreur lors du chargement du fichier"), "error", t("Erreur"));
+        pkg.showToast(error?.message || t("Erreur lors du chargement du fichier"), "error", t("Erreur"));
     });
 }
 
@@ -810,22 +853,13 @@ function uploadBddRequestFromModal(e) {
 }
 
 function performUploadFromModal(file){
-    var formData = new FormData();
-    formData.append('file', file);
+    // Afficher un toast de chargement avec progress bar : uploadGpxWithProgress
+    // pilote la barre pendant l'envoi réseau, puis checkLoadingProgress prend
+    // le relais pour la phase de traitement serveur.
+    const uploadToast = pkg.showLoadingToast(t("Préparation de l'envoi..."), t("Chargement"));
 
-    // Afficher un toast de chargement avec progress bar
-    const uploadToast = pkg.showLoadingToast(t("Chargement du fichier GPX en cours..."), t("Chargement"));
-
-    fetch(`${CONFIG.BASE_URL}/upload`, {
-        method: 'POST',
-        body: formData,
-    })
-    .then(response => response.json())
+    uploadGpxWithProgress(file, uploadToast)
     .then(data => {
-        if (!data.success || !data.task_id) {
-            throw new Error(data.message || "Impossible de lancer l'import GPX");
-        }
-
         checkLoadingProgress(uploadToast, data.task_id, () => {
             pkg.hideToast(uploadToast);
             showSuccess(t("Fichier chargé avec succès !"), t("Chargement terminé"));
@@ -838,10 +872,10 @@ function performUploadFromModal(file){
 
             // Mettre à jour les infos de la BDD
             readBddValues();
-            
+
             // Charger et afficher les points sur la carte
             loadAndDisplayPoints();
-            
+
             // Optionnel : rediriger vers l'onglet de données
             switchToDataTab();
         }, (message) => {
@@ -852,7 +886,7 @@ function performUploadFromModal(file){
     .catch(error => {
         console.error('Erreur:', error);
         pkg.hideToast(uploadToast);
-        showError(t("Erreur lors du chargement du fichier"), t("Erreur"));
+        showError(error?.message || t("Erreur lors du chargement du fichier"), t("Erreur"));
     });
 }
 

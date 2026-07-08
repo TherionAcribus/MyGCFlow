@@ -120,6 +120,19 @@ class NotificationManager {
     }
 
     /**
+     * Met à jour le texte principal d'une notification (ex: progression d'un
+     * transfert réseau exprimée en %, changement de phase d'un traitement).
+     * @param {HTMLElement} toast - Élément toast
+     * @param {string} message - Nouveau message
+     */
+    updateMessage(toast, message) {
+        const messageEl = toast && toast.querySelector('.gcm-toast-message');
+        if (messageEl) {
+            messageEl.textContent = message;
+        }
+    }
+
+    /**
      * Marque la progress bar comme indéterminée (animation continue)
      * @param {HTMLElement} toast - Élément toast
      */
@@ -187,6 +200,10 @@ export function showLoadingToast(message = t('Chargement en cours...'), title = 
 
 export function updateToastProgress(toast, progress) {
     notificationManager.updateProgress(toast, progress);
+}
+
+export function updateToastMessage(toast, message) {
+    notificationManager.updateMessage(toast, message);
 }
 
 export function setIndeterminateProgress(toast) {

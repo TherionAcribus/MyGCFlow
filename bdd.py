@@ -162,6 +162,12 @@ def _read_gpx_header(source):
     waypoints dans un GPX valide. Évite de charger tout le fichier en mémoire
     (ET.parse) juste pour valider l'en-tête.
 
+    Chaque <wpt> a lui-même un enfant <name> (le code GC). Comme les
+    évènements 'end' d'un enfant sont émis avant celui de son parent, ce
+    <name> se refermerait AVANT le <wpt> englobant et écraserait le <name>
+    d'en-tête (le titre du GPX) si on ne s'arrêtait pas de capturer dès
+    l'ouverture du premier <wpt> — d'où events=('start', 'end') ci-dessous.
+
     Args:
         source: chemin de fichier ou objet fichier (comme request.files['file']).
 
@@ -169,15 +175,21 @@ def _read_gpx_header(source):
         (name_text, desc_text, author_text) — textes des éléments, ou None.
     """
     name_text = desc_text = author_text = None
-    for event, elem in ET.iterparse(source, events=('end',)):
-        if elem.tag == NS_GPX + 'name':
-            name_text = elem.text
-        elif elem.tag == NS_GPX + 'desc':
-            desc_text = elem.text
-        elif elem.tag == NS_GPX + 'author':
-            author_text = elem.text
-        elif elem.tag == NS_GPX + 'wpt':
-            # Premier waypoint : l'en-tête est complet, on s'arrête ici.
+    header_closed = False
+    for event, elem in ET.iterparse(source, events=('start', 'end')):
+        if event == 'start':
+            if elem.tag == NS_GPX + 'wpt':
+                header_closed = True
+            continue
+        if not header_closed:
+            if elem.tag == NS_GPX + 'name':
+                name_text = elem.text
+            elif elem.tag == NS_GPX + 'desc':
+                desc_text = elem.text
+            elif elem.tag == NS_GPX + 'author':
+                author_text = elem.text
+        if elem.tag == NS_GPX + 'wpt':
+            # Premier waypoint entièrement lu : l'en-tête est complet, on s'arrête ici.
             elem.clear()
             break
         elem.clear()
@@ -212,17 +224,28 @@ def uploadBdd(file_path, Geocache, db, status: Optional[TaskStatus] = None):
         wpt_tag = NS_GPX + 'wpt'
 
         # --- Pass 1 : validation + comptage ---
+        # header_closed passe à True dès l'OUVERTURE du premier <wpt> (évènement
+        # 'start') : chaque waypoint a lui-même un enfant <name> (le code GC)
+        # dont l'évènement 'end' seraît émis avant celui du <wpt> englobant et
+        # écraserait sinon le <name> d'en-tête (le titre du GPX) avant même que
+        # la validation ne s'exécute — d'où le passage à events=('start','end').
         header = {}
         validated = False
+        header_closed = False
         total_waypoints = 0
-        for event, elem in ET.iterparse(file_path, events=('end',)):
-            if elem.tag == NS_GPX + 'name':
-                header['name'] = elem.text
-            elif elem.tag == NS_GPX + 'desc':
-                header['desc'] = elem.text
-            elif elem.tag == NS_GPX + 'author':
-                header['author'] = elem.text
-            elif elem.tag == wpt_tag:
+        for event, elem in ET.iterparse(file_path, events=('start', 'end')):
+            if event == 'start':
+                if elem.tag == wpt_tag:
+                    header_closed = True
+                continue
+            if not header_closed:
+                if elem.tag == NS_GPX + 'name':
+                    header['name'] = elem.text
+                elif elem.tag == NS_GPX + 'desc':
+                    header['desc'] = elem.text
+                elif elem.tag == NS_GPX + 'author':
+                    header['author'] = elem.text
+            if elem.tag == wpt_tag:
                 # Premier waypoint : l'en-tête est complet, on valide maintenant.
                 if not validated:
                     check = validate_gpx_header(
