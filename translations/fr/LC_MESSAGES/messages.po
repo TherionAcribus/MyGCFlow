@@ -187,7 +187,7 @@ msgid ""
 "vous pouvez personnaliser et enregistrer en vidéo. Suivez ce guide en 4 "
 "étapes : chargez vos données, choisissez un style, lancez l'animation, "
 "puis ajustez les paramètres."
-msgstr ""
+msgstr "GCMap transforme vos trouvailles de géocaching en une carte animée que vous pouvez personnaliser et enregistrer en vidéo. Suivez ce guide en 4 étapes : chargez vos données, choisissez un style, lancez l'animation, puis ajustez les paramètres."
 
 #: templates/guide.html:72
 msgid "Chargez votre fichier .gpx et filtrez vos caches"
@@ -221,7 +221,7 @@ msgstr "correspondent aux 4 sections de ce guide."
 msgid ""
 "Tout commence ici : importez vos trouvailles puis sélectionnez celles que"
 " vous voulez afficher."
-msgstr ""
+msgstr "Tout commence ici : importez vos trouvailles puis sélectionnez celles que vous voulez afficher."
 
 #: templates/guide.html:107
 msgid "Récupérez votre fichier .gpx"
@@ -243,7 +243,7 @@ msgstr "pour générer le fichier, puis téléchargez-le une fois prêt."
 msgid ""
 "Le fichier .gpx contient toutes vos caches trouvées avec leur date et "
 "leurs coordonnées : c'est le carburant de l'animation."
-msgstr ""
+msgstr "Le fichier .gpx contient toutes vos caches trouvées avec leur date et leurs coordonnées : c'est le carburant de l'animation."
 
 #: templates/guide.html:115
 msgid "Chargez le fichier dans GCMap"
@@ -270,7 +270,7 @@ msgstr "Sélectionnez un fichier .gpx de vos trouvailles"
 msgid ""
 "et choisissez votre fichier. Le nombre de caches importées s'affiche une "
 "fois le chargement terminé."
-msgstr ""
+msgstr "et choisissez votre fichier. Le nombre de caches importées s'affiche une fois le chargement terminé."
 
 #: templates/guide.html:119
 msgid "Filtrez vos caches"
@@ -328,7 +328,7 @@ msgstr "supprime les données chargées si vous voulez importer un autre fichier
 msgid ""
 "Donnez à votre carte l'apparence que vous souhaitez : fond de carte, "
 "points, titres et effets. Tout se règle dans l'onglet"
-msgstr ""
+msgstr "Donnez à votre carte l'apparence que vous souhaitez : fond de carte, points, titres et effets. Tout se règle dans l'onglet"
 
 #: templates/guide.html:145
 msgid "Choisissez un fond de carte"
@@ -358,7 +358,7 @@ msgstr "noir et blanc, version claire ou sombre"
 msgid ""
 "carte vectorielle dont vous réglez les couleurs (contour, remplissage, "
 "fond) et l'épaisseur des traits"
-msgstr ""
+msgstr "carte vectorielle dont vous réglez les couleurs (contour, remplissage, fond) et l'épaisseur des traits"
 
 #: templates/guide.html:151
 msgid "rendu aquarelle artistique"
@@ -388,7 +388,7 @@ msgstr "Afficher un titre"
 msgid ""
 "et saisissez votre texte. Vous pouvez aussi afficher le nombre de caches "
 "trouvées et la date."
-msgstr ""
+msgstr "et saisissez votre texte. Vous pouvez aussi afficher le nombre de caches trouvées et la date."
 
 #: templates/guide.html:158
 msgid "Basculez entre la cible"
@@ -494,7 +494,7 @@ msgid ""
 "réglez la forme (cercle, triangle), la taille, la couleur du centre et de"
 " la bordure. Les couleurs peuvent suivre le type de cache (Couleurs GC), "
 "être transparentes ou uniques."
-msgstr ""
+msgstr "réglez la forme (cercle, triangle), la taille, la couleur du centre et de la bordure. Les couleurs peuvent suivre le type de cache (Couleurs GC), être transparentes ou uniques."
 
 #: templates/guide.html:172
 msgid "Icône"
@@ -568,7 +568,7 @@ msgstr "permet de récupérer un profil partagé au format JSON."
 msgid ""
 "C'est le moment de donner vie à votre carte et, si vous le souhaitez, de "
 "l'enregistrer en vidéo. Tout se passe dans l'onglet"
-msgstr ""
+msgstr "C'est le moment de donner vie à votre carte et, si vous le souhaitez, de l'enregistrer en vidéo. Tout se passe dans l'onglet"
 
 #: templates/guide.html:200
 msgid "Définissez la période"
@@ -596,7 +596,7 @@ msgstr "Date de fin"
 msgid ""
 "de l'animation. Par défaut elles couvrent toute votre base ; vous pouvez "
 "aussi reprendre les dates issues du filtre."
-msgstr ""
+msgstr "de l'animation. Par défaut elles couvrent toute votre base ; vous pouvez aussi reprendre les dates issues du filtre."
 
 #: templates/guide.html:204
 msgid "Réglez la vitesse"
@@ -737,7 +737,7 @@ msgstr "vide les images temporaires avant un nouvel enregistrement."
 msgid ""
 "Réglez une fois pour toutes le comportement de l'application et la "
 "qualité des enregistrements dans l'onglet"
-msgstr ""
+msgstr "Réglez une fois pour toutes le comportement de l'application et la qualité des enregistrements dans l'onglet"
 
 #: templates/guide.html:249
 msgid "Préférences générales"
@@ -775,7 +775,7 @@ msgstr "Vue de carte par défaut"
 msgid ""
 "Définissez le centre (latitude, longitude) et le zoom utilisés au "
 "démarrage."
-msgstr ""
+msgstr "Définissez le centre (latitude, longitude) et le zoom utilisés au démarrage."
 
 #: templates/guide.html:260 templates/menu_options.html:64
 msgid "Utiliser la vue actuelle de la carte"
@@ -821,7 +821,7 @@ msgstr "plus lent mais plus flexible, assemblage côté serveur."
 msgid ""
 "Vous pouvez ensuite ajuster les FPS, le bitrate, le format vidéo et "
 "l'échelle de qualité."
-msgstr ""
+msgstr "Vous pouvez ensuite ajuster les FPS, le bitrate, le format vidéo et l'échelle de qualité."
 
 #: templates/guide.html:274
 msgid "Chaque réglage dispose d'une icône d'aide"
@@ -839,7 +839,7 @@ msgstr "Vous êtes prêt !"
 msgid ""
 "Chargez vos données, composez votre style, lancez l'animation et partagez"
 " votre carte de géocaching."
-msgstr ""
+msgstr "Chargez vos données, composez votre style, lancez l'animation et partagez votre carte de géocaching."
 
 #: templates/menu_animation.html:7
 msgid "Contrôles d'animation"
@@ -1223,7 +1223,7 @@ msgstr "Cible du style"
 msgid ""
 "Certaines propriétés CSS du fichier ne sont pas gérées par les champs ci-"
 "dessous. Utilisez le mode CSS avancé pour les éditer manuellement."
-msgstr ""
+msgstr "Certaines propriétés CSS du fichier ne sont pas gérées par les champs ci-dessous. Utilisez le mode CSS avancé pour les éditer manuellement."
 
 #: templates/menu_informations.html:15
 msgid "CSS"
@@ -1288,12 +1288,11 @@ msgstr "actif:"
 msgid ""
 "Copier le style de la cible actuelle vers l'autre cible (Titre → Infos ou"
 " inversement)"
-msgstr ""
+msgstr "Copier le style de la cible actuelle vers l'autre cible (Titre → Infos ou inversement)"
 
 #: templates/menu_informations.html:234
-#, fuzzy
 msgid "Copier vers l'autre"
-msgstr "Couleur de la bordure"
+msgstr "Copier vers l'autre"
 
 #: templates/menu_informations.html:245 templates/menu_informations.html:247
 msgid "Appliquer les Modifications"
@@ -1376,7 +1375,7 @@ msgid ""
 "MediaRecorder : enregistrement direct en WebM côté navigateur, rapide et "
 "léger. Images + MoviePy : capture d'images puis assemblage côté serveur, "
 "plus flexible mais plus lent"
-msgstr ""
+msgstr "MediaRecorder : enregistrement direct en WebM côté navigateur, rapide et léger. Images + MoviePy : capture d'images puis assemblage côté serveur, plus flexible mais plus lent"
 
 #: templates/menu_options.html:105
 msgid "MediaRecorder .webm (client)"
@@ -1395,7 +1394,7 @@ msgid ""
 "Nombre d'images capturées par seconde. 30 FPS = vidéo fluide, 60 FPS = "
 "ultra-fluide mais fichier 2x plus lourd. Adapté à votre débit internet et"
 " puissance machine"
-msgstr ""
+msgstr "Nombre d'images capturées par seconde. 30 FPS = vidéo fluide, 60 FPS = ultra-fluide mais fichier 2x plus lourd. Adapté à votre débit internet et puissance machine"
 
 #: templates/menu_options.html:118
 msgid "Bitrate vidéo (Mbps)"
@@ -1406,7 +1405,7 @@ msgid ""
 "Débit de données vidéo en mégabits/seconde. 1Mbps = bonne qualité, 5Mbps "
 "= haute qualité, 10Mbps = excellente qualité. Fichier plus lourd avec "
 "débit élevé"
-msgstr ""
+msgstr "Débit de données vidéo en mégabits/seconde. 1Mbps = bonne qualité, 5Mbps = haute qualité, 10Mbps = excellente qualité. Fichier plus lourd avec débit élevé"
 
 #: templates/menu_options.html:125
 msgid "Ralentir par (x)"
@@ -1417,7 +1416,7 @@ msgid ""
 "Ralentit la capture pour améliorer la qualité. 2 = capture 2x plus lente "
 "(plus de frames par seconde d'animation). La vidéo finale reste à vitesse"
 " normale si \"Normaliser la vitesse\" est activé."
-msgstr ""
+msgstr "Ralentit la capture pour améliorer la qualité. 2 = capture 2x plus lente (plus de frames par seconde d'animation). La vidéo finale reste à vitesse normale si \"Normaliser la vitesse\" est activé."
 
 #: templates/menu_options.html:132
 msgid "Facteur d'échelle (qualité)"
@@ -1428,7 +1427,7 @@ msgid ""
 "Multiplicateur de résolution temporaire. 1.5 = 50% plus grande pendant "
 "l'enregistrement puis réduction. Améliore la netteté des détails fins "
 "sans changer la taille finale du fichier"
-msgstr ""
+msgstr "Multiplicateur de résolution temporaire. 1.5 = 50% plus grande pendant l'enregistrement puis réduction. Améliore la netteté des détails fins sans changer la taille finale du fichier"
 
 #: templates/menu_options.html:139
 msgid "Format vidéo"
@@ -1439,7 +1438,7 @@ msgid ""
 "Codec de compression WebM. VP9 = meilleure qualité/compression, VP8 = "
 "compatible avec tous navigateurs, H.264 = format MP4 universel, WebM "
 "simple = fallback basique"
-msgstr ""
+msgstr "Codec de compression WebM. VP9 = meilleure qualité/compression, VP8 = compatible avec tous navigateurs, H.264 = format MP4 universel, WebM simple = fallback basique"
 
 #: templates/menu_options.html:143
 msgid "VP9 (recommandé - haute qualité)"
@@ -1466,7 +1465,7 @@ msgid ""
 "Transfère automatiquement la vidéo vers le serveur une fois "
 "l'enregistrement terminé. Utile pour archivage centralisé ou partage avec"
 " d'autres utilisateurs via l'interface web"
-msgstr ""
+msgstr "Transfère automatiquement la vidéo vers le serveur une fois l'enregistrement terminé. Utile pour archivage centralisé ou partage avec d'autres utilisateurs via l'interface web"
 
 #: templates/menu_options.html:160
 msgid "Télécharger local"
@@ -1477,7 +1476,7 @@ msgid ""
 "Sauvegarde automatiquement la vidéo dans le dossier de téléchargements de"
 " votre navigateur une fois l'enregistrement terminé. Pratique pour "
 "archivage local immédiat"
-msgstr ""
+msgstr "Sauvegarde automatiquement la vidéo dans le dossier de téléchargements de votre navigateur une fois l'enregistrement terminé. Pratique pour archivage local immédiat"
 
 #: templates/menu_options.html:167
 msgid "Normaliser la vitesse"
@@ -1487,7 +1486,7 @@ msgstr "Normaliser la vitesse"
 msgid ""
 "Si le ralentissement est > 1, ré-accélère la vidéo finale pour la ramener"
 " à vitesse normale. Désactiver pour conserver la vidéo au ralenti."
-msgstr ""
+msgstr "Si le ralentissement est > 1, ré-accélère la vidéo finale pour la ramener à vitesse normale. Désactiver pour conserver la vidéo au ralenti."
 
 #: templates/menu_points.html:31 templates/menu_points.html:34
 msgid "Taille du centre"
@@ -1680,20 +1679,18 @@ msgid "Supprimer"
 msgstr "Supprimer"
 
 #: templates/menu_style.html:210
-#, fuzzy
 msgid "Confirmer la réinitialisation"
-msgstr "Confirmer la suppression"
+msgstr "Confirmer la réinitialisation"
 
 #: templates/menu_style.html:217
-#, fuzzy
 msgid "Êtes-vous sûr de vouloir réinitialiser ce profil aux valeurs par défaut ?"
-msgstr "Êtes-vous sûr de vouloir supprimer ce profil ?"
+msgstr "Êtes-vous sûr de vouloir réinitialiser ce profil aux valeurs par défaut ?"
 
 #: templates/modal_first_use.html:7
 msgid ""
 "Pour commencer à utiliser l'application, vous devez charger un fichier "
 ".gpx contenant vos trouvailles de géocaching."
-msgstr ""
+msgstr "Pour commencer à utiliser l'application, vous devez charger un fichier .gpx contenant vos trouvailles de géocaching."
 
 #: templates/modal_first_use.html:13
 msgid "Comment obtenir votre fichier .gpx ?"
@@ -1703,14 +1700,14 @@ msgstr "Comment obtenir votre fichier .gpx ?"
 msgid ""
 "Pour fonctionner cette application à besoin que vous chargiez un fichier "
 ".gpx contenant vos trouvailles de géocaching."
-msgstr ""
+msgstr "Pour fonctionner cette application à besoin que vous chargiez un fichier .gpx contenant vos trouvailles de géocaching."
 
 #: templates/modal_first_use.html:16
 msgid ""
 "Ce fichier est disponible sur le site de géocaching.com dans Profil > "
 "Pocket Query > My Finds (en bas de la page). Puis récupérer le fichier en"
 " cliquant sur \"Add to Queue\"."
-msgstr ""
+msgstr "Ce fichier est disponible sur le site de géocaching.com dans Profil > Pocket Query > My Finds (en bas de la page). Puis récupérer le fichier en cliquant sur \"Add to Queue\"."
 
 #: templates/modal_first_use.html:22
 msgid "Chargement de vos données"

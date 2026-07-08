@@ -159,29 +159,27 @@ msgstr "My Geocaching Map"
 #: templates/guide.html:6 templates/guide.html:21
 #: templates/menu_options.html:86
 msgid "Mode d'emploi"
-msgstr ""
+msgstr "User guide"
 
 #: templates/guide.html:26 templates/guide.html:286
-#, fuzzy
 msgid "Retour à l'application"
-msgstr "Loading the application"
+msgstr "Back to the application"
 
 #: templates/guide.html:37
-#, fuzzy
 msgid "Démarrage"
-msgstr "Start"
+msgstr "Getting started"
 
 #: templates/guide.html:39
 msgid "Bienvenue"
-msgstr ""
+msgstr "Welcome"
 
 #: templates/guide.html:42
 msgid "Les 4 étapes"
-msgstr ""
+msgstr "The 4 steps"
 
 #: templates/guide.html:64 templates/modal_first_use.html:6
 msgid "Bienvenue dans GCMap !"
-msgstr ""
+msgstr "Welcome to GCMap!"
 
 #: templates/guide.html:65
 msgid ""
@@ -189,81 +187,79 @@ msgid ""
 "vous pouvez personnaliser et enregistrer en vidéo. Suivez ce guide en 4 "
 "étapes : chargez vos données, choisissez un style, lancez l'animation, "
 "puis ajustez les paramètres."
-msgstr ""
+msgstr "GCMap turns your geocaching finds into an animated map you can customize and record as a video. Follow this guide in 4 steps: load your data, choose a style, run the animation, then adjust the settings."
 
 #: templates/guide.html:72
 msgid "Chargez votre fichier .gpx et filtrez vos caches"
-msgstr ""
+msgstr "Load your .gpx file and filter your caches"
 
 #: templates/guide.html:77
 msgid "Personnalisez la carte, les points et les titres"
-msgstr ""
+msgstr "Customize the map, the points and the titles"
 
 #: templates/guide.html:82
 msgid "Lancez et enregistrez votre vidéo"
-msgstr ""
+msgstr "Run and record your video"
 
 #: templates/guide.html:87
 msgid "Réglez la langue, la qualité et les valeurs par défaut"
-msgstr ""
+msgstr "Set the language, quality and default values"
 
 #: templates/guide.html:93
 msgid "Astuce : en haut de l'application, des onglets"
-msgstr ""
+msgstr "Tip: at the top of the application, the tabs"
 
 #: templates/guide.html:93 templates/guide.html:158 templates/guide.html:220
 msgid "et"
-msgstr ""
+msgstr "and"
 
 #: templates/guide.html:93
 msgid "correspondent aux 4 sections de ce guide."
-msgstr ""
+msgstr "correspond to the 4 sections of this guide."
 
 #: templates/guide.html:103
 msgid ""
 "Tout commence ici : importez vos trouvailles puis sélectionnez celles que"
 " vous voulez afficher."
-msgstr ""
+msgstr "It all starts here: import your finds, then select the ones you want to display."
 
 #: templates/guide.html:107
 msgid "Récupérez votre fichier .gpx"
-msgstr ""
+msgstr "Get your .gpx file"
 
 #: templates/guide.html:108
 msgid "Connectez-vous à geocaching.com, puis allez dans"
-msgstr ""
+msgstr "Log in to geocaching.com, then go to"
 
 #: templates/guide.html:108
 msgid "(en bas de la page). Cliquez sur"
-msgstr ""
+msgstr "(at the bottom of the page). Click"
 
 #: templates/guide.html:108
 msgid "pour générer le fichier, puis téléchargez-le une fois prêt."
-msgstr ""
+msgstr "to generate the file, then download it once ready."
 
 #: templates/guide.html:111
 msgid ""
 "Le fichier .gpx contient toutes vos caches trouvées avec leur date et "
 "leurs coordonnées : c'est le carburant de l'animation."
-msgstr ""
+msgstr "The .gpx file contains all your found caches with their date and coordinates: it's the fuel for the animation."
 
 #: templates/guide.html:115
 msgid "Chargez le fichier dans GCMap"
-msgstr ""
+msgstr "Load the file into GCMap"
 
 #: templates/guide.html:116
 msgid "Dans l'onglet"
-msgstr ""
+msgstr "In the"
 
 #: templates/guide.html:116 templates/guide.html:169
-#, fuzzy
 msgid "section"
-msgstr "Presentation"
+msgstr "section"
 
 #: templates/guide.html:116
-#, fuzzy
 msgid "cliquez sur"
-msgstr "Duplicate"
+msgstr "click"
 
 #: templates/guide.html:116 templates/menu_data.html:13
 #: templates/modal_first_use.html:27
@@ -274,54 +270,51 @@ msgstr "Select and upload a .gpx file"
 msgid ""
 "et choisissez votre fichier. Le nombre de caches importées s'affiche une "
 "fois le chargement terminé."
-msgstr ""
+msgstr "and choose your file. The number of imported caches is shown once loading is complete."
 
 #: templates/guide.html:119
-#, fuzzy
 msgid "Filtrez vos caches"
-msgstr "Filtering caches..."
+msgstr "Filter your caches"
 
 #: templates/guide.html:120
 msgid "Dans la section"
-msgstr ""
+msgstr "In the"
 
 #: templates/guide.html:120
 msgid "affinez la sélection selon vos besoins :"
-msgstr ""
+msgstr "refine the selection to your needs:"
 
 #: templates/guide.html:122
 msgid "par type de cache (Traditional, Mystery, Multi…)"
-msgstr ""
+msgstr "by cache type (Traditional, Mystery, Multi…)"
 
 #: templates/guide.html:123
 msgid "par période (dates de début et de fin)"
-msgstr ""
+msgstr "by period (start and end dates)"
 
 #: templates/guide.html:124
 msgid "par pays ou région"
-msgstr ""
+msgstr "by country or region"
 
 #: templates/guide.html:126
 msgid "Le compteur"
-msgstr ""
+msgstr "The counter"
 
 #: templates/guide.html:126
-#, fuzzy
 msgid "Sélection : 0 / 0"
 msgstr "Selection: 0 / 0"
 
 #: templates/guide.html:126
 msgid "indique combien de caches sont retenues par rapport au total."
-msgstr ""
+msgstr "shows how many caches are selected out of the total."
 
 #: templates/guide.html:129
 msgid "Repartir de zéro (optionnel)"
-msgstr ""
+msgstr "Start over (optional)"
 
 #: templates/guide.html:130
-#, fuzzy
 msgid "Le bouton"
-msgstr "Toner Style"
+msgstr "The button"
 
 #: templates/guide.html:130
 msgid "Vider la base de données"
@@ -329,66 +322,63 @@ msgstr "Clear the database"
 
 #: templates/guide.html:130
 msgid "supprime les données chargées si vous voulez importer un autre fichier."
-msgstr ""
+msgstr "deletes the loaded data if you want to import another file."
 
 #: templates/guide.html:141
 msgid ""
 "Donnez à votre carte l'apparence que vous souhaitez : fond de carte, "
 "points, titres et effets. Tout se règle dans l'onglet"
-msgstr ""
+msgstr "Give your map the look you want: basemap, points, titles and effects. Everything is set in the"
 
 #: templates/guide.html:145
-#, fuzzy
 msgid "Choisissez un fond de carte"
-msgstr "Pick on map"
+msgstr "Choose a basemap"
 
 #: templates/guide.html:146 templates/guide.html:169
 msgid "Dans le sous-onglet"
-msgstr ""
+msgstr "In the sub-tab"
 
 #: templates/guide.html:146 templates/menu_style.html:10
 msgid "Cartes & Overlays"
-msgstr ""
+msgstr "Maps & Overlays"
 
 #: templates/guide.html:146
 msgid "sélectionnez un style :"
-msgstr ""
+msgstr "select a style:"
 
 #: templates/guide.html:148
 msgid "OpenStreetMap, carte classique colorée"
-msgstr ""
+msgstr "OpenStreetMap, classic colored map"
 
 #: templates/guide.html:149
 msgid "noir et blanc, version claire ou sombre"
-msgstr ""
+msgstr "black and white, light or dark version"
 
 #: templates/guide.html:150
 msgid ""
 "carte vectorielle dont vous réglez les couleurs (contour, remplissage, "
 "fond) et l'épaisseur des traits"
-msgstr ""
+msgstr "vector map where you adjust the colors (outline, fill, background) and the line thickness"
 
 #: templates/guide.html:151
 msgid "rendu aquarelle artistique"
-msgstr ""
+msgstr "artistic watercolor rendering"
 
 #: templates/guide.html:155
 msgid "Ajoutez un titre et des informations"
-msgstr ""
+msgstr "Add a title and information"
 
 #: templates/guide.html:156 templates/guide.html:266
 msgid "Dans"
-msgstr ""
+msgstr "In"
 
 #: templates/guide.html:156 templates/menu_style.html:98
-#, fuzzy
 msgid "Informations et Overlays"
-msgstr "Information to display"
+msgstr "Information and Overlays"
 
 #: templates/guide.html:156
-#, fuzzy
 msgid "activez"
-msgstr "active:"
+msgstr "enable"
 
 #: templates/guide.html:156 templates/menu_informations.html:25
 msgid "Afficher un titre"
@@ -398,11 +388,11 @@ msgstr "Display a title"
 msgid ""
 "et saisissez votre texte. Vous pouvez aussi afficher le nombre de caches "
 "trouvées et la date."
-msgstr ""
+msgstr "and enter your text. You can also display the number of caches found and the date."
 
 #: templates/guide.html:158
 msgid "Basculez entre la cible"
-msgstr ""
+msgstr "Switch between the"
 
 #: templates/guide.html:158 templates/menu_informations.html:8
 #: templates/menu_informations.html:28 templates/menu_informations.html:29
@@ -411,84 +401,77 @@ msgstr "Title"
 
 #: templates/guide.html:158 templates/menu_informations.html:9
 msgid "Infos"
-msgstr ""
+msgstr "Info"
 
 #: templates/guide.html:158
 msgid "pour les styliser séparément."
-msgstr ""
+msgstr "target to style them separately."
 
 #: templates/guide.html:159
 msgid "Réglez le"
-msgstr ""
+msgstr "Set the"
 
 #: templates/guide.html:159 templates/menu_informations.html:47
-#, fuzzy
 msgid "Texte"
-msgstr "Export"
+msgstr "Text"
 
 #: templates/guide.html:159
 msgid "la"
-msgstr ""
+msgstr "the"
 
 #: templates/guide.html:159 templates/menu_informations.html:48
 msgid "Boîte"
-msgstr ""
+msgstr "Box"
 
 #: templates/guide.html:159
 msgid "l'"
-msgstr ""
+msgstr "the "
 
 #: templates/guide.html:159 templates/menu_informations.html:49
-#, fuzzy
 msgid "Ombre"
-msgstr "Dark"
+msgstr "Shadow"
 
 #: templates/guide.html:159 templates/guide.html:201
 msgid "et la"
-msgstr ""
+msgstr "and the"
 
 #: templates/guide.html:159 templates/menu_informations.html:50
 #: templates/menu_informations.html:187
-#, fuzzy
 msgid "Position"
-msgstr "Presentation"
+msgstr "Position"
 
 #: templates/guide.html:159
 msgid "via les onglets dédiés."
-msgstr ""
+msgstr "via the dedicated tabs."
 
 #: templates/guide.html:160
 msgid "Pour un contrôle total, cochez"
-msgstr ""
+msgstr "For full control, check"
 
 #: templates/guide.html:160
 msgid "et éditez le style à la main."
-msgstr ""
+msgstr "and edit the style by hand."
 
 #: templates/guide.html:164
 msgid "N'oubliez pas de cliquer sur"
-msgstr ""
+msgstr "Don't forget to click"
 
 #: templates/guide.html:164 templates/menu_informations.html:237
-#, fuzzy
 msgid "Appliquer"
-msgstr "Duplicate"
+msgstr "Apply"
 
 #: templates/guide.html:164
-#, fuzzy
 msgid "pour valider vos modifications."
-msgstr "Apply Changes"
+msgstr "to apply your changes."
 
 #: templates/guide.html:168
-#, fuzzy
 msgid "Personnalisez les points"
-msgstr "Point graphics"
+msgstr "Customize the points"
 
 #: templates/guide.html:169 templates/guide.html:177
 #: templates/menu_style.html:11
-#, fuzzy
 msgid "Points & Flash"
-msgstr "No flash"
+msgstr "Points & Flash"
 
 #: templates/guide.html:169
 msgid "Points"
@@ -496,45 +479,42 @@ msgstr "Points"
 
 #: templates/guide.html:169
 msgid "choisissez le mode d'affichage avec l'interrupteur"
-msgstr ""
+msgstr "choose the display mode with the"
 
 #: templates/guide.html:169 templates/menu_points.html:13
-#, fuzzy
 msgid "Icône / Vectoriel"
-msgstr "Vector map"
+msgstr "Icon / Vector"
 
 #: templates/guide.html:171
-#, fuzzy
 msgid "Vectoriel"
-msgstr "Vector map"
+msgstr "Vector"
 
 #: templates/guide.html:171
 msgid ""
 "réglez la forme (cercle, triangle), la taille, la couleur du centre et de"
 " la bordure. Les couleurs peuvent suivre le type de cache (Couleurs GC), "
 "être transparentes ou uniques."
-msgstr ""
+msgstr "adjust the shape (circle, triangle), size, and center/border color. Colors can follow the cache type (GC Colors), be transparent, or a single color."
 
 #: templates/guide.html:172
 msgid "Icône"
-msgstr ""
+msgstr "Icon"
 
 #: templates/guide.html:172
 msgid "choisissez un jeu d'icônes (Geocaching ou Smiley) et leur taille."
-msgstr ""
+msgstr "choose an icon set (Geocaching or Smiley) and their size."
 
 #: templates/guide.html:176
 msgid "Réglez l'effet « Flash »"
-msgstr ""
+msgstr "Adjust the “Flash” effect"
 
 #: templates/guide.html:177
 msgid "Toujours dans"
-msgstr ""
+msgstr "Still in"
 
 #: templates/guide.html:177
-#, fuzzy
 msgid "la section"
-msgstr "Warning"
+msgstr "the"
 
 #: templates/guide.html:177
 msgid "Flash"
@@ -542,15 +522,15 @@ msgstr "Flash"
 
 #: templates/guide.html:177
 msgid "définit l'animation jouée à l'apparition de chaque cache pendant la vidéo."
-msgstr ""
+msgstr "section defines the animation played when each cache appears during the video."
 
 #: templates/guide.html:180
 msgid "Sauvegardez votre style dans un profil"
-msgstr ""
+msgstr "Save your style in a profile"
 
 #: templates/guide.html:181
 msgid "Le panneau"
-msgstr ""
+msgstr "The"
 
 #: templates/guide.html:181 templates/menu_style.html:130
 msgid "Profils"
@@ -558,25 +538,23 @@ msgstr "Profiles"
 
 #: templates/guide.html:181
 msgid "(à droite) mémorise toute votre configuration de style."
-msgstr ""
+msgstr "panel (on the right) remembers your entire style configuration."
 
 #: templates/guide.html:183 templates/menu_style.html:139
 msgid "Nouveau"
 msgstr "New"
 
 #: templates/guide.html:183
-#, fuzzy
 msgid "crée un profil ;"
-msgstr "no active profile"
+msgstr "creates a profile;"
 
 #: templates/guide.html:183 templates/menu_style.html:142
 msgid "Sauvegarder"
 msgstr "Save"
 
 #: templates/guide.html:183
-#, fuzzy
 msgid "enregistre le profil actif."
-msgstr "no active profile"
+msgstr "saves the active profile."
 
 #: templates/guide.html:184 templates/menu_style.html:145
 msgid "Importer"
@@ -584,21 +562,21 @@ msgstr "Import"
 
 #: templates/guide.html:184
 msgid "permet de récupérer un profil partagé au format JSON."
-msgstr ""
+msgstr "lets you retrieve a profile shared as JSON."
 
 #: templates/guide.html:196
 msgid ""
 "C'est le moment de donner vie à votre carte et, si vous le souhaitez, de "
 "l'enregistrer en vidéo. Tout se passe dans l'onglet"
-msgstr ""
+msgstr "This is where your map comes to life and, if you want, gets recorded as a video. It all happens in the"
 
 #: templates/guide.html:200
 msgid "Définissez la période"
-msgstr ""
+msgstr "Set the date range"
 
 #: templates/guide.html:201
 msgid "Renseignez la"
-msgstr ""
+msgstr "Fill in the"
 
 #: templates/guide.html:201 templates/menu_animation.html:20
 #: templates/menu_animation.html:21 templates/menu_filtre.html:115
@@ -618,11 +596,11 @@ msgstr "End date"
 msgid ""
 "de l'animation. Par défaut elles couvrent toute votre base ; vous pouvez "
 "aussi reprendre les dates issues du filtre."
-msgstr ""
+msgstr "for the animation. By default they cover your whole database; you can also reuse the dates from the filter."
 
 #: templates/guide.html:204
 msgid "Réglez la vitesse"
-msgstr ""
+msgstr "Set the speed"
 
 #: templates/guide.html:206 templates/menu_animation.html:44
 msgid "Durée par jour (ms)"
@@ -630,7 +608,7 @@ msgstr "Duration per day (ms)"
 
 #: templates/guide.html:206
 msgid "temps passé à l'écran pour chaque journée de géocaching."
-msgstr ""
+msgstr "time spent on screen for each day of geocaching."
 
 #: templates/guide.html:207 templates/menu_animation.html:50
 msgid "Temps total (minutes)"
@@ -638,7 +616,7 @@ msgstr "Total time (minutes)"
 
 #: templates/guide.html:207
 msgid "durée globale visée ; l'app affiche le détail du calcul."
-msgstr ""
+msgstr "targeted overall duration; the app shows the calculation details."
 
 #: templates/guide.html:208 templates/menu_animation.html:67
 #: templates/menu_animation.html:68
@@ -647,36 +625,35 @@ msgstr "Extra time (sec)"
 
 #: templates/guide.html:208
 msgid "pause à la fin pour laisser la carte finale visible."
-msgstr ""
+msgstr "pause at the end to keep the final map visible."
 
 #: templates/guide.html:212
 msgid "Ajoutez une musique (optionnel)"
-msgstr ""
+msgstr "Add music (optional)"
 
 #: templates/guide.html:213
 msgid "Cochez"
-msgstr ""
+msgstr "Check"
 
 #: templates/guide.html:213 templates/menu_animation.html:80
-#, fuzzy
 msgid "Inclure la musique"
-msgstr "Single color"
+msgstr "Include music"
 
 #: templates/guide.html:213
 msgid "sélectionnez un fichier audio et ajustez le volume. Le bouton"
-msgstr ""
+msgstr "select an audio file and adjust the volume. The"
 
 #: templates/guide.html:213 templates/menu_animation.html:96
 msgid "Définir la durée de l'animation à partir de la musique"
-msgstr ""
+msgstr "Set the animation duration from the music"
 
 #: templates/guide.html:213
 msgid "cale la durée totale sur celle du morceau."
-msgstr ""
+msgstr "button matches the total duration to the track's length."
 
 #: templates/guide.html:216
 msgid "Lancez l'aperçu puis enregistrez"
-msgstr ""
+msgstr "Preview, then record"
 
 #: templates/guide.html:218 templates/guide.html:224
 #: templates/menu_animation.html:108
@@ -685,7 +662,7 @@ msgstr "Start"
 
 #: templates/guide.html:218
 msgid "joue l'animation à l'écran pour vérifier le rendu."
-msgstr ""
+msgstr "plays the animation on screen to check the result."
 
 #: templates/guide.html:219 templates/guide.html:224
 #: templates/menu_animation.html:111
@@ -694,7 +671,7 @@ msgstr "Record"
 
 #: templates/guide.html:219
 msgid "lance l'animation en capturant la vidéo."
-msgstr ""
+msgstr "runs the animation while capturing the video."
 
 #: templates/guide.html:220 templates/menu_animation.html:114
 msgid "Pause"
@@ -706,48 +683,47 @@ msgstr "Stop"
 
 #: templates/guide.html:220
 msgid "contrôlent la lecture."
-msgstr ""
+msgstr "control playback."
 
 #: templates/guide.html:224
 msgid "Lancez d'abord un"
-msgstr ""
+msgstr "First run a"
 
 #: templates/guide.html:224
 msgid "pour valider le style et la vitesse, puis seulement"
-msgstr ""
+msgstr "to validate the style and speed, then only"
 
 #: templates/guide.html:224
 msgid "pour la version finale."
-msgstr ""
+msgstr "for the final version."
 
 #: templates/guide.html:228
 msgid "Récupérez votre vidéo"
-msgstr ""
+msgstr "Get your video"
 
 #: templates/guide.html:229
 msgid "Selon le mode d'enregistrement, utilisez les boutons de la section"
-msgstr ""
+msgstr "Depending on the recording mode, use the buttons in the"
 
 #: templates/guide.html:229 templates/menu_animation.html:122
 msgid "Vidéo"
-msgstr ""
+msgstr "Video"
 
 #: templates/guide.html:231 templates/menu_animation.html:129
 msgid "Assembler film"
 msgstr "Assemble movie"
 
 #: templates/guide.html:231
-#, fuzzy
 msgid "génère la vidéo à partir des images capturées."
-msgstr "Creating the video from images..."
+msgstr "generates the video from the captured images."
 
 #: templates/guide.html:232 templates/menu_animation.html:132
 msgid "Ouvrir le dossier vidéo"
-msgstr ""
+msgstr "Open the video folder"
 
 #: templates/guide.html:232
 msgid "accède au dossier contenant vos vidéos."
-msgstr ""
+msgstr "opens the folder containing your videos."
 
 #: templates/guide.html:233 templates/menu_animation.html:126
 msgid "Nettoyer images"
@@ -755,55 +731,51 @@ msgstr "Clean images"
 
 #: templates/guide.html:233
 msgid "vide les images temporaires avant un nouvel enregistrement."
-msgstr ""
+msgstr "clears the temporary images before a new recording."
 
 #: templates/guide.html:245
 msgid ""
 "Réglez une fois pour toutes le comportement de l'application et la "
 "qualité des enregistrements dans l'onglet"
-msgstr ""
+msgstr "Set the application's behavior and recording quality once and for all in the"
 
 #: templates/guide.html:249
-#, fuzzy
 msgid "Préférences générales"
-msgstr "General Settings"
+msgstr "General preferences"
 
 #: templates/guide.html:251 templates/menu_options.html:10
-#, fuzzy
 msgid "Langue"
-msgstr "Diamond"
+msgstr "Language"
 
 #: templates/guide.html:251
 msgid "basculez entre français et anglais."
-msgstr ""
+msgstr "switch between French and English."
 
 #: templates/guide.html:252
 msgid "Vérifier les mises à jour au démarrage"
-msgstr ""
+msgstr "Check for updates at startup"
 
 #: templates/guide.html:252
 msgid "soyez prévenu d'une nouvelle version."
-msgstr ""
+msgstr "be notified of a new version."
 
 #: templates/guide.html:253
-#, fuzzy
 msgid "Profil par défaut au démarrage"
-msgstr "No default profile set"
+msgstr "Default profile at startup"
 
 #: templates/guide.html:253
 msgid "le profil de style chargé automatiquement à l'ouverture."
-msgstr ""
+msgstr "the style profile loaded automatically on startup."
 
 #: templates/guide.html:257
-#, fuzzy
 msgid "Vue de carte par défaut"
-msgstr "Default map zoom"
+msgstr "Default map view"
 
 #: templates/guide.html:258
 msgid ""
 "Définissez le centre (latitude, longitude) et le zoom utilisés au "
 "démarrage."
-msgstr ""
+msgstr "Set the center (latitude, longitude) and zoom used at startup."
 
 #: templates/guide.html:260 templates/menu_options.html:64
 msgid "Utiliser la vue actuelle de la carte"
@@ -811,7 +783,7 @@ msgstr "Use current map view"
 
 #: templates/guide.html:260
 msgid "reprend la position affichée."
-msgstr ""
+msgstr "reuses the currently displayed position."
 
 #: templates/guide.html:261 templates/menu_options.html:67
 msgid "Choisir sur la carte"
@@ -819,57 +791,55 @@ msgstr "Pick on map"
 
 #: templates/guide.html:261
 msgid "cliquez directement le point souhaité."
-msgstr ""
+msgstr "click directly on the desired point."
 
 #: templates/guide.html:265
 msgid "Qualité d'enregistrement"
-msgstr ""
+msgstr "Recording quality"
 
 #: templates/guide.html:266 templates/menu_options.html:94
 msgid "Paramètres d'enregistrement"
-msgstr ""
+msgstr "Recording settings"
 
 #: templates/guide.html:266
-#, fuzzy
 msgid "choisissez le"
-msgstr "Pick on map"
+msgstr "choose the"
 
 #: templates/guide.html:266 templates/menu_options.html:101
-#, fuzzy
 msgid "Mode d'enregistrement"
-msgstr "Recording in progress"
+msgstr "Recording mode"
 
 #: templates/guide.html:268
 msgid "rapide et léger, directement dans le navigateur."
-msgstr ""
+msgstr "fast and lightweight, directly in the browser."
 
 #: templates/guide.html:269
 msgid "plus lent mais plus flexible, assemblage côté serveur."
-msgstr ""
+msgstr "slower but more flexible, server-side assembly."
 
 #: templates/guide.html:271
 msgid ""
 "Vous pouvez ensuite ajuster les FPS, le bitrate, le format vidéo et "
 "l'échelle de qualité."
-msgstr ""
+msgstr "You can then adjust the FPS, bitrate, video format and quality scale."
 
 #: templates/guide.html:274
 msgid "Chaque réglage dispose d'une icône d'aide"
-msgstr ""
+msgstr "Each setting has a help icon"
 
 #: templates/guide.html:274
 msgid "dans l'application : survolez-la pour en savoir plus."
-msgstr ""
+msgstr "in the application: hover over it to learn more."
 
 #: templates/guide.html:281
 msgid "Vous êtes prêt !"
-msgstr ""
+msgstr "You're all set!"
 
 #: templates/guide.html:281
 msgid ""
 "Chargez vos données, composez votre style, lancez l'animation et partagez"
 " votre carte de géocaching."
-msgstr ""
+msgstr "Load your data, compose your style, run the animation, and share your geocaching map."
 
 #: templates/menu_animation.html:7
 msgid "Contrôles d'animation"
@@ -884,23 +854,20 @@ msgid "Plage de dates de l'animation"
 msgstr "Animation date range"
 
 #: templates/menu_animation.html:23 templates/menu_animation.html:33
-#, fuzzy
 msgid "Date par défaut (BDD)"
-msgstr "Default map zoom"
+msgstr "Default date (database)"
 
 #: templates/menu_animation.html:25 templates/menu_animation.html:35
-#, fuzzy
 msgid "Date issue du filtre"
-msgstr "Start date"
+msgstr "Date from the filter"
 
 #: templates/menu_animation.html:45
 msgid "Temps en ms par jour"
 msgstr "Time in ms per day"
 
 #: templates/menu_animation.html:50
-#, fuzzy
 msgid "Temps total (minutes) - défini par musique"
-msgstr "Total time (minutes)"
+msgstr "Total time (minutes) - set by music"
 
 #: templates/menu_animation.html:51
 msgid "Temps total"
@@ -920,63 +887,57 @@ msgid "jours"
 msgstr "days"
 
 #: templates/menu_animation.html:57
-#, fuzzy
 msgid "Calcul"
-msgstr "Cancel"
+msgstr "Calculation"
 
 #: templates/menu_animation.html:58
-#, fuzzy
 msgid "sec (animation)"
-msgstr "Animation"
+msgstr "sec (animation)"
 
 #: templates/menu_animation.html:60
-#, fuzzy
 msgid "sec (temps additionnel)"
-msgstr "Extra time (sec)"
+msgstr "sec (extra time)"
 
 #: templates/menu_animation.html:76
 msgid "Musique (optionnel)"
-msgstr ""
+msgstr "Music (optional)"
 
 #: templates/menu_animation.html:85
 msgid "Aucune musique sélectionnée"
-msgstr ""
+msgstr "No music selected"
 
 #: templates/menu_animation.html:88
 msgid "Volume musique"
-msgstr ""
+msgstr "Music volume"
 
 #: templates/menu_animation.html:95
 msgid "Utiliser la durée de la musique comme temps total"
-msgstr ""
+msgstr "Use the music duration as total time"
 
 #: templates/menu_animation.html:104
-#, fuzzy
 msgid "Contrôles"
-msgstr "Animation controls"
+msgstr "Controls"
 
 #: templates/menu_bdd.html:6
 msgid "Chargement"
 msgstr "Loading"
 
 #: templates/menu_bdd.html:7
-#, fuzzy
 msgid "Options de la base de données"
-msgstr "Clear the database"
+msgstr "Database options"
 
 #: templates/menu_bdd.html:9
 msgid "Contenu"
-msgstr ""
+msgstr "Content"
 
 #: templates/menu_bdd.html:18 templates/menu_bdd.html:19
 #: templates/menu_data.html:15
 msgid "Fichier .gpx"
-msgstr ""
+msgstr ".gpx file"
 
 #: templates/menu_bdd.html:20
-#, fuzzy
 msgid "Envoyer"
-msgstr "Rename"
+msgstr "Send"
 
 #: templates/menu_bdd.html:22 templates/menu_data.html:31
 msgid "Aucune base de données chargée"
@@ -984,20 +945,19 @@ msgstr "No database loaded"
 
 #: templates/menu_bdd.html:37
 msgid "Options à venir"
-msgstr ""
+msgstr "Options coming soon"
 
 #: templates/menu_bdd.html:40
 msgid "Contenu à venir"
-msgstr ""
+msgstr "Content coming soon"
 
 #: templates/menu_data.html:17
 msgid "ou glissez-déposez votre fichier n'importe où sur la page"
 msgstr "or drag and drop your file anywhere on the page"
 
 #: templates/menu_data.html:26
-#, fuzzy
 msgid "Supprimer la base de données"
-msgstr "Clear the database"
+msgstr "Delete the database"
 
 #: templates/menu_data.html:51
 msgid "Sélection: 0 / 0"
@@ -1021,31 +981,31 @@ msgstr "Classic caches"
 
 #: templates/menu_filtre.html:16
 msgid "Traditional Cache"
-msgstr ""
+msgstr "Traditional Cache"
 
 #: templates/menu_filtre.html:17
 msgid "Unknown Cache"
-msgstr ""
+msgstr "Unknown Cache"
 
 #: templates/menu_filtre.html:18
 msgid "Wherigo Cache"
-msgstr ""
+msgstr "Wherigo Cache"
 
 #: templates/menu_filtre.html:19
 msgid "Letterbox Hybrid"
-msgstr ""
+msgstr "Letterbox Hybrid"
 
 #: templates/menu_filtre.html:20
 msgid "Earthcache"
-msgstr ""
+msgstr "Earthcache"
 
 #: templates/menu_filtre.html:21
 msgid "Virtual Cache"
-msgstr ""
+msgstr "Virtual Cache"
 
 #: templates/menu_filtre.html:22
 msgid "Webcam Cache"
-msgstr ""
+msgstr "Webcam Cache"
 
 #: templates/menu_filtre.html:24
 msgid "Events"
@@ -1053,23 +1013,23 @@ msgstr "Events"
 
 #: templates/menu_filtre.html:25
 msgid "Event Cache"
-msgstr ""
+msgstr "Event Cache"
 
 #: templates/menu_filtre.html:26
 msgid "Giga-Event Cache"
-msgstr ""
+msgstr "Giga-Event Cache"
 
 #: templates/menu_filtre.html:27
 msgid "Mega-Event Cache"
-msgstr ""
+msgstr "Mega-Event Cache"
 
 #: templates/menu_filtre.html:28
 msgid "Cache In Trash Out Event"
-msgstr ""
+msgstr "Cache In Trash Out Event"
 
 #: templates/menu_filtre.html:29
 msgid "Community Celebration Event"
-msgstr ""
+msgstr "Community Celebration Event"
 
 #: templates/menu_filtre.html:31
 msgid "Autres"
@@ -1077,11 +1037,11 @@ msgstr "Others"
 
 #: templates/menu_filtre.html:32
 msgid "GPS Adventures Exhibit"
-msgstr ""
+msgstr "GPS Adventures Exhibit"
 
 #: templates/menu_filtre.html:33
 msgid "Locationless (Reverse) Cache"
-msgstr ""
+msgstr "Locationless (Reverse) Cache"
 
 #: templates/menu_filtre.html:37 templates/menu_filtre.html:55
 #: templates/menu_filtre.html:80 templates/menu_filtre.html:102
@@ -1105,30 +1065,27 @@ msgstr "Filter by size"
 
 #: templates/menu_filtre.html:47
 msgid "Small"
-msgstr ""
+msgstr "Small"
 
 #: templates/menu_filtre.html:48
 msgid "Micro"
-msgstr ""
+msgstr "Micro"
 
 #: templates/menu_filtre.html:49
-#, fuzzy
 msgid "Regular"
-msgstr "Error"
+msgstr "Regular"
 
 #: templates/menu_filtre.html:50
-#, fuzzy
 msgid "Large"
-msgstr "Diamond"
+msgstr "Large"
 
 #: templates/menu_filtre.html:51
-#, fuzzy
 msgid "Other"
-msgstr "Import"
+msgstr "Other"
 
 #: templates/menu_filtre.html:52
 msgid "Virtual"
-msgstr ""
+msgstr "Virtual"
 
 #: templates/menu_filtre.html:66 templates/menu_filtre.html:67
 msgid "Difficultés"
@@ -1155,18 +1112,16 @@ msgid "Période de pose"
 msgstr "Published period"
 
 #: templates/menu_filtre.html:146 templates/menu_filtre.html:147
-#, fuzzy
 msgid "Pays"
-msgstr "Pause"
+msgstr "Country"
 
 #: templates/menu_filtre.html:148
 msgid "Filtrer par pays"
 msgstr "Filter by country"
 
 #: templates/menu_filtre.html:157 templates/menu_filtre.html:158
-#, fuzzy
 msgid "Région / État"
-msgstr "Filter by region/state"
+msgstr "Region / State"
 
 #: templates/menu_filtre.html:159
 msgid "Filtrer par région/état"
@@ -1194,7 +1149,7 @@ msgstr "Star"
 
 #: templates/menu_flash.html:13
 msgid "Scintillement"
-msgstr ""
+msgstr "Sparkle"
 
 #: templates/menu_flash.html:14
 msgid "Carré"
@@ -1218,7 +1173,7 @@ msgstr "Flash duration"
 
 #: templates/menu_flash.html:23
 msgid "100 à 10000 ms"
-msgstr ""
+msgstr "100 to 10000 ms"
 
 #: templates/menu_flash.html:27
 msgid "Taille du flash en px"
@@ -1230,7 +1185,7 @@ msgstr "Flash size"
 
 #: templates/menu_flash.html:29
 msgid "5 à 200 px"
-msgstr ""
+msgstr "5 to 200 px"
 
 #: templates/menu_flash.html:33
 msgid "Couleur du flash"
@@ -1257,23 +1212,22 @@ msgid "Choisir la couleur"
 msgstr "Choose color"
 
 #: templates/menu_flash.html:50
-#, fuzzy
 msgid "Choisir la couleur du flash"
-msgstr "Choose color"
+msgstr "Choose the flash color"
 
 #: templates/menu_informations.html:7
 msgid "Cible du style"
-msgstr ""
+msgstr "Style target"
 
 #: templates/menu_informations.html:12
 msgid ""
 "Certaines propriétés CSS du fichier ne sont pas gérées par les champs ci-"
 "dessous. Utilisez le mode CSS avancé pour les éditer manuellement."
-msgstr ""
+msgstr "Some CSS properties in the file are not handled by the fields below. Use advanced CSS mode to edit them manually."
 
 #: templates/menu_informations.html:15
 msgid "CSS"
-msgstr ""
+msgstr "CSS"
 
 #: templates/menu_informations.html:37
 msgid "Afficher le nombre de caches trouvées"
@@ -1285,68 +1239,60 @@ msgstr "Display date"
 
 #: templates/menu_informations.html:57 templates/menu_informations.html:145
 #: templates/menu_informations.html:177
-#, fuzzy
 msgid "Couleur"
-msgstr "Background color"
+msgstr "Color"
 
 #: templates/menu_informations.html:61
-#, fuzzy
 msgid "Taille (px)"
-msgstr "Size"
+msgstr "Size (px)"
 
 #: templates/menu_informations.html:67
-#, fuzzy
 msgid "Police"
-msgstr "Map Choice"
+msgstr "Font"
 
 #: templates/menu_informations.html:69 templates/menu_informations.html:83
 #: templates/menu_informations.html:102 templates/menu_informations.html:137
 #: templates/menu_informations.html:189
-#, fuzzy
 msgid "Défaut"
 msgstr "Default"
 
 #: templates/menu_informations.html:81
 msgid "Epaisseur"
-msgstr ""
+msgstr "Weight"
 
 #: templates/menu_informations.html:100
-#, fuzzy
 msgid "Alignement"
-msgstr "Loading"
+msgstr "Alignment"
 
 #: templates/menu_informations.html:115
 msgid "Fond"
-msgstr ""
+msgstr "Background"
 
 #: templates/menu_informations.html:119
 msgid "Padding (px)"
-msgstr ""
+msgstr "Padding (px)"
 
 #: templates/menu_informations.html:125
 msgid "Arrondi (px)"
-msgstr ""
+msgstr "Corner radius (px)"
 
 #: templates/menu_informations.html:129
-#, fuzzy
 msgid "Bordure (px)"
-msgstr "Point border"
+msgstr "Border (px)"
 
 #: templates/menu_informations.html:155
-#, fuzzy
 msgid "Activer"
-msgstr "active:"
+msgstr "Enable"
 
 #: templates/menu_informations.html:233
 msgid ""
 "Copier le style de la cible actuelle vers l'autre cible (Titre → Infos ou"
 " inversement)"
-msgstr ""
+msgstr "Copy the style from the current target to the other target (Title → Info or vice versa)"
 
 #: templates/menu_informations.html:234
-#, fuzzy
 msgid "Copier vers l'autre"
-msgstr "Border color"
+msgstr "Copy to the other"
 
 #: templates/menu_informations.html:245 templates/menu_informations.html:247
 msgid "Appliquer les Modifications"
@@ -1374,7 +1320,7 @@ msgstr "Check for a new version at startup"
 
 #: templates/menu_options.html:18
 msgid "Vérifier version au démarrage"
-msgstr ""
+msgstr "Check version at startup"
 
 #: templates/menu_options.html:19
 msgid "Yes"
@@ -1389,9 +1335,8 @@ msgid "Default profile at startup"
 msgstr "Default profile at startup"
 
 #: templates/menu_options.html:26
-#, fuzzy
 msgid "Profil par défaut"
-msgstr "No default profile"
+msgstr "Default profile"
 
 #: templates/menu_options.html:36
 msgid "Basculer le mode de saisie"
@@ -1430,145 +1375,141 @@ msgid ""
 "MediaRecorder : enregistrement direct en WebM côté navigateur, rapide et "
 "léger. Images + MoviePy : capture d'images puis assemblage côté serveur, "
 "plus flexible mais plus lent"
-msgstr ""
+msgstr "MediaRecorder: direct WebM recording in the browser, fast and lightweight. Images + MoviePy: image capture then server-side assembly, more flexible but slower"
 
 #: templates/menu_options.html:105
 msgid "MediaRecorder .webm (client)"
-msgstr ""
+msgstr "MediaRecorder .webm (client)"
 
 #: templates/menu_options.html:106
 msgid "Images + MoviePy (serveur)"
-msgstr ""
+msgstr "Images + MoviePy (server)"
 
 #: templates/menu_options.html:111
 msgid "FPS"
-msgstr ""
+msgstr "FPS"
 
 #: templates/menu_options.html:112
 msgid ""
 "Nombre d'images capturées par seconde. 30 FPS = vidéo fluide, 60 FPS = "
 "ultra-fluide mais fichier 2x plus lourd. Adapté à votre débit internet et"
 " puissance machine"
-msgstr ""
+msgstr "Number of frames captured per second. 30 FPS = smooth video, 60 FPS = ultra-smooth but a 2x heavier file. Adapt to your internet speed and machine power"
 
 #: templates/menu_options.html:118
 msgid "Bitrate vidéo (Mbps)"
-msgstr ""
+msgstr "Video bitrate (Mbps)"
 
 #: templates/menu_options.html:119
 msgid ""
 "Débit de données vidéo en mégabits/seconde. 1Mbps = bonne qualité, 5Mbps "
 "= haute qualité, 10Mbps = excellente qualité. Fichier plus lourd avec "
 "débit élevé"
-msgstr ""
+msgstr "Video data rate in megabits/second. 1Mbps = good quality, 5Mbps = high quality, 10Mbps = excellent quality. Heavier file with a higher bitrate"
 
 #: templates/menu_options.html:125
 msgid "Ralentir par (x)"
-msgstr ""
+msgstr "Slow down by (x)"
 
 #: templates/menu_options.html:126
 msgid ""
 "Ralentit la capture pour améliorer la qualité. 2 = capture 2x plus lente "
 "(plus de frames par seconde d'animation). La vidéo finale reste à vitesse"
 " normale si \"Normaliser la vitesse\" est activé."
-msgstr ""
+msgstr "Slows down the capture to improve quality. 2 = capture 2x slower (more frames per second of animation). The final video stays at normal speed if \"Normalize speed\" is enabled."
 
 #: templates/menu_options.html:132
 msgid "Facteur d'échelle (qualité)"
-msgstr ""
+msgstr "Scale factor (quality)"
 
 #: templates/menu_options.html:133
 msgid ""
 "Multiplicateur de résolution temporaire. 1.5 = 50% plus grande pendant "
 "l'enregistrement puis réduction. Améliore la netteté des détails fins "
 "sans changer la taille finale du fichier"
-msgstr ""
+msgstr "Temporary resolution multiplier. 1.5 = 50% larger during recording, then downscaled. Improves fine-detail sharpness without changing the final file size"
 
 #: templates/menu_options.html:139
-#, fuzzy
 msgid "Format vidéo"
-msgstr "Information"
+msgstr "Video format"
 
 #: templates/menu_options.html:140
 msgid ""
 "Codec de compression WebM. VP9 = meilleure qualité/compression, VP8 = "
 "compatible avec tous navigateurs, H.264 = format MP4 universel, WebM "
 "simple = fallback basique"
-msgstr ""
+msgstr "WebM compression codec. VP9 = best quality/compression, VP8 = compatible with all browsers, H.264 = universal MP4 format, plain WebM = basic fallback"
 
 #: templates/menu_options.html:143
 msgid "VP9 (recommandé - haute qualité)"
-msgstr ""
+msgstr "VP9 (recommended - high quality)"
 
 #: templates/menu_options.html:144
 msgid "VP8 (compatible partout)"
-msgstr ""
+msgstr "VP8 (compatible everywhere)"
 
 #: templates/menu_options.html:145
 msgid "H.264 (format MP4)"
-msgstr ""
+msgstr "H.264 (MP4 format)"
 
 #: templates/menu_options.html:146
 msgid "WebM simple (fallback)"
-msgstr ""
+msgstr "Plain WebM (fallback)"
 
 #: templates/menu_options.html:153
 msgid "Uploader vers serveur"
-msgstr ""
+msgstr "Upload to server"
 
 #: templates/menu_options.html:154
 msgid ""
 "Transfère automatiquement la vidéo vers le serveur une fois "
 "l'enregistrement terminé. Utile pour archivage centralisé ou partage avec"
 " d'autres utilisateurs via l'interface web"
-msgstr ""
+msgstr "Automatically transfers the video to the server once recording is finished. Useful for centralized archiving or sharing with other users via the web interface"
 
 #: templates/menu_options.html:160
 msgid "Télécharger local"
-msgstr ""
+msgstr "Download locally"
 
 #: templates/menu_options.html:161
 msgid ""
 "Sauvegarde automatiquement la vidéo dans le dossier de téléchargements de"
 " votre navigateur une fois l'enregistrement terminé. Pratique pour "
 "archivage local immédiat"
-msgstr ""
+msgstr "Automatically saves the video to your browser's downloads folder once recording is finished. Handy for immediate local archiving"
 
 #: templates/menu_options.html:167
 msgid "Normaliser la vitesse"
-msgstr ""
+msgstr "Normalize speed"
 
 #: templates/menu_options.html:168
 msgid ""
 "Si le ralentissement est > 1, ré-accélère la vidéo finale pour la ramener"
 " à vitesse normale. Désactiver pour conserver la vidéo au ralenti."
-msgstr ""
+msgstr "If the slowdown is > 1, speeds the final video back up to normal speed. Disable to keep the video in slow motion."
 
 #: templates/menu_points.html:31 templates/menu_points.html:34
 msgid "Taille du centre"
 msgstr "Center size"
 
 #: templates/menu_points.html:38 templates/menu_points.html:159
-#, fuzzy
 msgid "Taille en pixels"
-msgstr "Flash size in px"
+msgstr "Size in pixels"
 
 #: templates/menu_points.html:39 templates/menu_points.html:104
 #: templates/menu_points.html:160
 msgid "px"
-msgstr ""
+msgstr "px"
 
 #: templates/menu_points.html:45
 msgid "Couleur du centre"
 msgstr "Center color"
 
 #: templates/menu_points.html:62
-#, fuzzy
 msgid "Choisir la couleur du centre"
-msgstr "Choose color"
+msgstr "Choose the center color"
 
 #: templates/menu_points.html:73
-#, fuzzy
 msgid "Forme du point"
 msgstr "Point shape"
 
@@ -1585,40 +1526,36 @@ msgid "Épaisseur de la bordure (0 = aucune)"
 msgstr "Border thickness (0 = none)"
 
 #: templates/menu_points.html:99
-#, fuzzy
 msgid "Épaisseur de la bordure"
-msgstr "Border thickness (0 = none)"
+msgstr "Border thickness"
 
 #: templates/menu_points.html:103
 msgid "Épaisseur en pixels"
-msgstr ""
+msgstr "Thickness in pixels"
 
 #: templates/menu_points.html:110
 msgid "Couleur de la bordure"
 msgstr "Border color"
 
 #: templates/menu_points.html:127
-#, fuzzy
 msgid "Choisir la couleur de la bordure"
-msgstr "Border color"
+msgstr "Choose the border color"
 
 #: templates/menu_points.html:140
-#, fuzzy
 msgid "Configuration des icônes"
-msgstr "General configuration"
+msgstr "Icon configuration"
 
 #: templates/menu_points.html:145 templates/menu_points.html:146
 msgid "Jeu d'icônes"
-msgstr ""
+msgstr "Icon set"
 
 #: templates/menu_points.html:152 templates/menu_points.html:155
-#, fuzzy
 msgid "Taille des icônes"
-msgstr "Center size"
+msgstr "Icon size"
 
 #: templates/menu_points.html:166
 msgid "Aperçu des icônes"
-msgstr ""
+msgstr "Icon preview"
 
 #: templates/menu_style.html:24
 msgid "OpenStreetMap"
@@ -1705,19 +1642,17 @@ msgid "Nouveau profil"
 msgstr "New profile"
 
 #: templates/menu_style.html:141
-#, fuzzy
 msgid "Sauvegarder le profil actif"
-msgstr "no active profile"
+msgstr "Save the active profile"
 
 #: templates/menu_style.html:144
 msgid "Importer un profil JSON"
-msgstr ""
+msgstr "Import a JSON profile"
 
 #: templates/menu_style.html:161 templates/menu_style.html:189
 #: templates/menu_style.html:214 templates/modal_infos.html:11
-#, fuzzy
 msgid "Fermer"
-msgstr "Confirm"
+msgstr "Close"
 
 #: templates/menu_style.html:165 templates/menu_style.html:166
 msgid "Nom du profil"
@@ -1733,7 +1668,7 @@ msgstr "Confirm deletion"
 
 #: templates/menu_style.html:186 templates/menu_style.html:211
 msgid "Cette action est définitive"
-msgstr ""
+msgstr "This action is permanent"
 
 #: templates/menu_style.html:192
 msgid "Êtes-vous sûr de vouloir supprimer ce profil ?"
@@ -1744,42 +1679,39 @@ msgid "Supprimer"
 msgstr "Delete"
 
 #: templates/menu_style.html:210
-#, fuzzy
 msgid "Confirmer la réinitialisation"
-msgstr "Confirm deletion"
+msgstr "Confirm reset"
 
 #: templates/menu_style.html:217
-#, fuzzy
 msgid "Êtes-vous sûr de vouloir réinitialiser ce profil aux valeurs par défaut ?"
-msgstr "Are you sure you want to delete this profile?"
+msgstr "Are you sure you want to reset this profile to its default values?"
 
 #: templates/modal_first_use.html:7
 msgid ""
 "Pour commencer à utiliser l'application, vous devez charger un fichier "
 ".gpx contenant vos trouvailles de géocaching."
-msgstr ""
+msgstr "To start using the application, you need to load a .gpx file containing your geocaching finds."
 
 #: templates/modal_first_use.html:13
 msgid "Comment obtenir votre fichier .gpx ?"
-msgstr ""
+msgstr "How do I get my .gpx file?"
 
 #: templates/modal_first_use.html:15
 msgid ""
 "Pour fonctionner cette application à besoin que vous chargiez un fichier "
 ".gpx contenant vos trouvailles de géocaching."
-msgstr ""
+msgstr "For this application to work, you need to load a .gpx file containing your geocaching finds."
 
 #: templates/modal_first_use.html:16
 msgid ""
 "Ce fichier est disponible sur le site de géocaching.com dans Profil > "
 "Pocket Query > My Finds (en bas de la page). Puis récupérer le fichier en"
 " cliquant sur \"Add to Queue\"."
-msgstr ""
+msgstr "This file is available on geocaching.com under Profile > Pocket Query > My Finds (at the bottom of the page). Then get the file by clicking \"Add to Queue\"."
 
 #: templates/modal_first_use.html:22
-#, fuzzy
 msgid "Chargement de vos données"
-msgstr "Error while loading data"
+msgstr "Loading your data"
 
 #: templates/modal_first_use.html:31
 msgid "ou glissez-déposez votre fichier ici"
@@ -1787,11 +1719,11 @@ msgstr "or drag and drop your file here"
 
 #: templates/modal_first_use.html:44
 msgid "Voir le mode d'emploi"
-msgstr ""
+msgstr "View the user guide"
 
 #: templates/modal_first_use.html:46
 msgid "Ignorer pour l'instant"
-msgstr ""
+msgstr "Skip for now"
 
 #~ msgid "Informations"
 #~ msgstr "Information"
