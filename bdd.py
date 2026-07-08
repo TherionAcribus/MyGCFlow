@@ -264,11 +264,17 @@ def uploadBdd(file_path, Geocache, db, status: Optional[TaskStatus] = None):
         logger.info("GPX waypoints detected: %d", total_waypoints)
 
         # --- Pass 2 : traitement des waypoints ---
+        # Ne PAS clear() les éléments non-<wpt> ici : leurs évènements 'end'
+        # sont émis avant celui de leur <wpt> parent (les enfants se ferment
+        # avant leur parent), donc un clear() prématuré viderait <name>,
+        # <groundspeak:cache> et ses descendants (type/terrain/logs/...) avant
+        # même que le code ci-dessous ne les lise — d'où des caches importées
+        # sans nom/date/type. On ne libère la mémoire qu'une fois le <wpt>
+        # entièrement traité (waypoint.clear() en fin de boucle, ligne ~441).
         new_caches = []
         wpt_index = 0
         for event, waypoint in ET.iterparse(file_path, events=('end',)):
             if waypoint.tag != wpt_tag:
-                waypoint.clear()
                 continue
 
             wpt_index += 1
