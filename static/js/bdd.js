@@ -54,10 +54,93 @@ function isGpxFile(file) {
     return !!file && /\.gpx$/i.test(file.name || '');
 }
 
-// Route un fichier vers le bon flux selon que la modale de bienvenue est ouverte.
-function handleGpxFile(file) {
+// Un vrai GPX "My Finds" ne dépasse jamais quelques dizaines de Mo ; au-delà,
+// il s'agit presque certainement du mauvais fichier. On bloque tôt plutôt que
+// de laisser l'utilisateur attendre un upload voué à l'échec.
+const GPX_MAX_SIZE_BYTES = 200 * 1024 * 1024; // 200 Mo
+// Nombre d'octets lus en tête de fichier pour sniffer <name>/<desc>/<author>
+// avant le premier <wpt>, sans upload réseau (cf. GPX_HEADER_SNIFF_BYTES ci-dessous
+// et bdd.py:_read_gpx_header pour la même logique, côté serveur, en streaming).
+const GPX_HEADER_SNIFF_BYTES = 64 * 1024;
+
+// Extrait le texte du premier tag <tagName>...</tagName> rencontré (sans
+// espace de nom). Suffisant ici : les tags d'en-tête GPX (<name>, <desc>,
+// <author>) ne sont jamais préfixés dans les exports Groundspeak.
+function extractFirstTagText(text, tagName) {
+    const re = new RegExp(`<${tagName}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${tagName}>`, 'i');
+    const m = text.match(re);
+    return m ? m[1].trim() : null;
+}
+
+// Sniffe l'en-tête GPX (avant le 1er <wpt>) pour vérifier localement qu'il
+// s'agit d'un fichier "My Finds" Groundspeak — sans envoyer le fichier au
+// serveur. Reproduit la logique de bdd.py:validate_gpx_header (source unique
+// de vérité côté serveur) ; le rejet définitif reste toujours fait côté
+// serveur, cette étape n'est qu'une pré-validation pour économiser la bande
+// passante sur les cas évidents.
+async function sniffGpxHeader(file) {
+    let head;
+    try {
+        head = await file.slice(0, GPX_HEADER_SNIFF_BYTES).text();
+    } catch (e) {
+        // Lecture locale impossible : ne pas bloquer, le serveur validera.
+        return { checked: false };
+    }
+
+    const wptIndex = head.search(/<wpt[\s>]/i);
+    const headerText = wptIndex === -1 ? head : head.slice(0, wptIndex);
+
+    const nameText = extractFirstTagText(headerText, 'name');
+    const descText = extractFirstTagText(headerText, 'desc');
+    const authorText = extractFirstTagText(headerText, 'author');
+
+    // Aucun tag d'en-tête trouvé ET aucun <wpt> atteint dans la portion lue :
+    // fichier atypique (en-tête anormalement long) — on ne peut pas conclure,
+    // on laisse passer et le serveur validera pleinement.
+    if (nameText === null && descText === null && authorText === null && wptIndex === -1) {
+        return { checked: false };
+    }
+
+    const isGroundspeak = (descText && descText.includes('Groundspeak'))
+        || (authorText && authorText.includes('Groundspeak'));
+    if (!isGroundspeak) {
+        return { checked: true, ok: false, message: t("Le fichier GPX n'est pas un fichier produit par Groundspeak.") };
+    }
+
+    if (!nameText || !nameText.includes('My Finds Pocket Query')) {
+        return { checked: true, ok: false, message: t("Le fichier GPX est une Pocket Query et non un fichier My Finds.") };
+    }
+
+    return { checked: true, ok: true };
+}
+
+// Validation cliente avant tout envoi réseau : extension, taille, puis
+// contenu de l'en-tête (lu localement, sans upload).
+async function validateGpxFile(file) {
     if (!isGpxFile(file)) {
-        showError(t("Veuillez déposer un fichier .gpx"), t("Format invalide"));
+        return { ok: false, message: t('Veuillez sélectionner un fichier .gpx') };
+    }
+    if (file.size === 0) {
+        return { ok: false, message: t('Le fichier sélectionné est vide') };
+    }
+    if (file.size > GPX_MAX_SIZE_BYTES) {
+        return { ok: false, message: t('Le fichier est trop volumineux (200 Mo max)') };
+    }
+
+    const header = await sniffGpxHeader(file);
+    if (header.checked && !header.ok) {
+        return { ok: false, message: header.message };
+    }
+    return { ok: true };
+}
+
+// Point d'entrée unique pour tout fichier GPX à charger (sélection via input
+// ou glisser-déposer) : valide, puis route vers le bon flux selon que la
+// modale de bienvenue est ouverte.
+async function handleGpxFile(file) {
+    const result = await validateGpxFile(file);
+    if (!result.ok) {
+        showError(result.message, t('Fichier invalide'));
         return;
     }
     const modalEl = document.getElementById('modal_first_use');
@@ -450,15 +533,14 @@ function uploadBddRequest(e){
 
     // Réinitialiser la valeur dès maintenant pour qu'une re-sélection du
     // même fichier (typiquement après un échec) déclenche à nouveau l'événement
-    // change. Le fichier est capturé ci-dessus et passé explicitement à uploadBdd.
+    // change. Le fichier est capturé ci-dessus et passé explicitement à handleGpxFile.
     fileInput.value = '';
 
-    // Autrefois, un premier appel à /analyse_file validait le fichier avant de
-    // le ré-uploader via /upload — soit deux transferts complets du GPX (20–100 Mo).
-    // La validation vit désormais dans le pipeline d'import (uploadBdd côté serveur),
-    // on appelle donc /upload directement. Un fichier invalide est rejeté par la
-    // tâche de fond et l'erreur remonte via checkLoadingProgress → onError.
-    uploadBdd(selectedFile);
+    // handleGpxFile valide localement (extension/taille/en-tête) avant tout envoi
+    // réseau, puis appelle /upload. La validation complète reste faite côté
+    // serveur (uploadBdd) : un fichier invalide qui passerait le sniff client
+    // serait quand même rejeté par la tâche de fond.
+    handleGpxFile(selectedFile);
 }
 
 function uploadBdd (file){
@@ -719,11 +801,12 @@ function uploadBddRequestFromModal(e) {
 
     // Réinitialiser la valeur pour qu'une re-sélection du même fichier
     // (typiquement après un échec) déclenche à nouveau l'événement change.
-    // Le fichier est capturé ci-dessus et passé explicitement à performUploadFromModal.
+    // Le fichier est capturé ci-dessus et passé explicitement à handleGpxFile.
     fileInput.value = '';
 
-    // Validation et import fusionnés en un seul appel à /upload (cf. uploadBddRequest).
-    performUploadFromModal(selectedFile);
+    // handleGpxFile valide localement puis route vers performUploadFromModal
+    // (la modale est ouverte, donc c'est bien ce flux qui sera choisi).
+    handleGpxFile(selectedFile);
 }
 
 function performUploadFromModal(file){
