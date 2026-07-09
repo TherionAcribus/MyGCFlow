@@ -4153,22 +4153,32 @@ function updateControlBar() {
         btnToggleFullscreen.style.display = 'flex';
         const iconToggle = btnToggleFullscreen.querySelector('i');
         const isFs = document.querySelector('main').classList.contains('fullscreen-mode');
-        if (iconToggle) iconToggle.textContent = isFs ? 'fullscreen_exit' : 'fullscreen';
-        btnToggleFullscreen.title = isFs ? 'Quitter le plein écran' : 'Passer en plein écran';
+        // Icône Tabler selon l'état. L'ancien code posait un textContent Material
+        // ('fullscreen'/'fullscreen_exit') qui s'affichait en toutes lettres à côté
+        // du glyphe sur les éléments .ti. Le nom accessible et la tooltip sont
+        // désormais portés statiquement par le HTML (aria-label + data-bs-title) ;
+        // on ne touche donc plus à .title, qui doublerait la tooltip Bootstrap.
+        if (iconToggle) {
+            iconToggle.classList.toggle('ti-minimize', isFs);
+            iconToggle.classList.toggle('ti-maximize', !isFs);
+        }
     }
 
     // Synchroniser l'icône Pause/Play
     if (btnPauseBar && btnPauseAnimation) {
         const isPaused = btnPauseAnimation.classList.contains('restart');
         const icon = btnPauseBar.querySelector('i');
+        // Icône Tabler selon l'état (même correctif que le bouton plein écran :
+        // l'ancien textContent Material 'play_arrow'/'pause' s'affichait en toutes
+        // lettres sur l'élément .ti).
         if (isPaused) {
             btnPauseBar.classList.add('green');
             btnPauseBar.classList.remove('yellow', 'darken-2');
-            if (icon) icon.textContent = 'play_arrow';
+            if (icon) { icon.classList.add('ti-player-play'); icon.classList.remove('ti-player-pause'); }
         } else {
             btnPauseBar.classList.remove('green');
             btnPauseBar.classList.add('yellow', 'darken-2');
-            if (icon) icon.textContent = 'pause';
+            if (icon) { icon.classList.add('ti-player-pause'); icon.classList.remove('ti-player-play'); }
         }
     }
 }

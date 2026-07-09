@@ -43,22 +43,35 @@
                     <!-- Infos -->
                     <div id="infosFrame" style="display:none"><span id ="spanNbCaches"></span> - <span id ="spanCurrentDate"></span></div>
 
-                    <!-- Barre de contrôle latérale -->
+                    <!-- Barre de contrôle latérale.
+                         Boutons icône-seuls : chacun porte un aria-label (nom accessible
+                         annoncé par les lecteurs d'écran) ET une tooltip Bootstrap
+                         (data-bs-toggle="tooltip", activée par initBsTooltips au démarrage). -->
                     <div id="controlBar" class="control-bar" style="display: none;">
                         <div class="control-bar-content">
-                            <button id="btnStartBar" class="btn btn-icon" style="display: none;">
+                            <button type="button" id="btnStartBar" class="btn btn-icon" style="display: none;"
+                                    aria-label="{{ _('Lancer l\'animation') }}"
+                                    data-bs-toggle="tooltip" data-bs-title="{{ _('Lancer l\'animation') }}">
                                 <i class="ti ti-player-play"></i>
                             </button>
-                            <button id="btnRecordBar" class="btn btn-icon" style="display: none;">
+                            <button type="button" id="btnRecordBar" class="btn btn-icon" style="display: none;"
+                                    aria-label="{{ _('Enregistrer la vidéo') }}"
+                                    data-bs-toggle="tooltip" data-bs-title="{{ _('Enregistrer la vidéo') }}">
                                 <i class="ti ti-video"></i>
                             </button>
-                            <button id="btnPauseBar" class="btn btn-icon" style="display: none;">
+                            <button type="button" id="btnPauseBar" class="btn btn-icon" style="display: none;"
+                                    aria-label="{{ _('Pause / Reprendre') }}"
+                                    data-bs-toggle="tooltip" data-bs-title="{{ _('Pause / Reprendre') }}">
                                 <i class="ti ti-player-pause"></i>
                             </button>
-                            <button id="btnStopBar" class="btn btn-icon" style="display: none;">
+                            <button type="button" id="btnStopBar" class="btn btn-icon" style="display: none;"
+                                    aria-label="{{ _('Arrêter l\'animation') }}"
+                                    data-bs-toggle="tooltip" data-bs-title="{{ _('Arrêter l\'animation') }}">
                                 <i class="ti ti-player-stop"></i>
                             </button>
-                            <button id="btnToggleFullscreen" class="btn btn-icon">
+                            <button type="button" id="btnToggleFullscreen" class="btn btn-icon"
+                                    aria-label="{{ _('Basculer le plein écran') }}"
+                                    data-bs-toggle="tooltip" data-bs-title="{{ _('Basculer le plein écran') }}">
                                 <i class="ti ti-minimize"></i>
                             </button>
                         </div>

@@ -1113,7 +1113,7 @@ msgstr "Période (dates)"
 
 #: templates/menu_filtre.html:146 templates/menu_filtre.html:147
 msgid "Pays"
-msgstr "Pause"
+msgstr "Pays"
 
 #: templates/menu_filtre.html:148
 msgid "Filtrer par pays"
