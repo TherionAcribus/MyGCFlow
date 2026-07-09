@@ -1703,6 +1703,10 @@ document.addEventListener('DOMContentLoaded', function() {
     profileManager = new ProfileManager();
     // Rendre disponible globalement pour les événements HTML
     window.profileManager = profileManager;
+    // Signaler que le gestionnaire de profils est prêt. init.js attend cet
+    // événement (waitForProfileManager) au lieu de scruter window.profileManager
+    // en boucle : ce handler DOMContentLoaded s'exécute après celui d'init.js.
+    window.dispatchEvent(new Event('profilemanager:ready'));
 
     // Mettre à jour l'indicateur initial
     setTimeout(() => {
