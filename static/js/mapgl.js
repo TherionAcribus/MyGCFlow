@@ -74,6 +74,31 @@ import fixWebmDuration from './fix-webm-duration.js';
 const TOAST_DEBUG = false;
 function logToast(...args) { if (TOAST_DEBUG) { try { console.log('[TOAST]', ...args); } catch(e) {} } }
 
+// html2canvas n'est utilisé que comme repli rare quand la capture "canvas-only"
+// échoue pendant l'enregistrement image par image (cf. scheduleCaptureFrame) : le
+// charger sur chaque page serait du poids mort pour l'immense majorité des sessions
+// qui n'en ont jamais besoin. On l'injecte donc à la demande, en tâche de fond, dès
+// le début d'un enregistrement (le temps de téléchargement se recouvre alors avec le
+// début de la capture plutôt que de bloquer la première frame qui en aurait besoin).
+let html2canvasLoadPromise = null;
+function loadHtml2Canvas() {
+    if (typeof html2canvas !== 'undefined') return Promise.resolve();
+    if (html2canvasLoadPromise) return html2canvasLoadPromise;
+    html2canvasLoadPromise = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+        script.onload = () => resolve();
+        script.onerror = () => {
+            // Échec de chargement : on remet à null pour permettre un nouvel essai
+            // lors d'un prochain enregistrement, plutôt que de rester bloqué en échec.
+            html2canvasLoadPromise = null;
+            reject(new Error('Impossible de charger html2canvas'));
+        };
+        document.head.appendChild(script);
+    });
+    return html2canvasLoadPromise;
+}
+
 let map;  // carte de l'app
 let engine;  // quel moteur graphique est utilisé
 // les couches de cartographie
@@ -1562,6 +1587,11 @@ export function recordAnimation(){
 }
 
 function startRecordingProcess(){
+    // Précharger html2canvas en tâche de fond : s'il est nécessaire (repli rare,
+    // cf. scheduleCaptureFrame), le téléchargement se recouvre avec le début de
+    // la capture au lieu de bloquer la première frame qui en aurait besoin.
+    loadHtml2Canvas().catch(() => {});
+
     // Remise à zéro de l'état de la carte et des informations affichées
     clearMap(); // Nettoie les points sur la carte
 
@@ -2942,8 +2972,11 @@ async function captureElement() {
         } catch (error) {
             console.warn('Canvas-only a échoué, fallback vers html2canvas:', error.message);
 
-            // Fallback vers html2canvas avec options optimisées
-            if (typeof html2canvas !== 'undefined') {
+            // Fallback vers html2canvas avec options optimisées. Chargé à la demande
+            // (cf. loadHtml2Canvas) : le préchargement lancé par startRecordingProcess()
+            // a normalement déjà résolu à ce stade ; s'il ne l'a pas encore fait (tout
+            // premier fallback d'une session, réseau lent), on attend simplement ici.
+            loadHtml2Canvas().then(() => {
                 const canvasOptions = {
                     backgroundColor: '#ffffff',
                     scale: 1,
@@ -2954,7 +2987,7 @@ async function captureElement() {
                     logging: false
                 };
 
-                html2canvas(element, canvasOptions)
+                return html2canvas(element, canvasOptions)
                 .then(canvas => {
                     perfMetrics.captureTimeMs += performance.now() - perfMetrics.lastCaptureStart;
                     perfMetrics.capturedFrames += 1;
@@ -2977,9 +3010,12 @@ async function captureElement() {
                     console.error('html2canvas a aussi échoué:', fallbackError);
                     reject(fallbackError);
                 });
-            } else {
+            }).catch(() => {
+                // Échec de chargement de html2canvas : impossible de tenter le repli,
+                // on rejette avec l'erreur d'origine (comportement identique à l'ancien
+                // cas "typeof html2canvas === 'undefined'").
                 reject(error);
-            }
+            });
         }
     });
 }
