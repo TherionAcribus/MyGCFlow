@@ -332,8 +332,16 @@ let animationLayer;
 
 let vectorSource;
 
-// definition de l'interval hors de la fonction d'animation pour pouvoir l'arreter.
-let interval;
+// Boucle de prévisualisation (startAnimation/pauseAnimation/stopAnimation) pilotée
+// par requestAnimationFrame + accumulateur de temps plutôt que setInterval : un
+// setInterval dont le délai est plus court que le temps de rendu d'un jour (frame
+// dense, onglet en arrière-plan, etc.) empile ses callbacks et les décharge en
+// rafale dès que le thread se libère, ce qui saccade l'animation. rAF ne peut pas
+// s'empiler (un seul callback par frame de rendu) et l'accumulateur ne rattrape
+// jamais plus d'un jour à la fois, donc jamais de rafale.
+let animationRafId = null;
+let animationLastTs = null;
+let animationAccMs = 0;
 let endTimeout = null;
 // element qui stocke les infos à afficher dans les frames. Sortie de la fonction pour pouvoir les garder en mémoire
 let infos;
@@ -773,7 +781,7 @@ function selectEngineAndRefresh(){
 // Détermine si l'application est au repos (ni animation, ni enregistrement en cours)
 function isIdleState(){
     try {
-        const isAnimating = !!interval; // interval actif => animation en cours
+        const isAnimating = !!animationRafId; // boucle rAF active => animation en cours
         const rec = !!isRecording || !!isMediaRecording; // enregistrement en cours
         return !isAnimating && !rec;
     } catch(_) { return true; }
@@ -1340,28 +1348,55 @@ export function startAnimation(restart=false) {
     if (!restart) {
         currentDate = new Date(pkg.metadata.startDate);
     }
-    interval = setInterval(() => {
-        displayFeaturesForDate(currentDate, pkg.options.point, flashOptions, false, infos);
-        currentDate.setDate(currentDate.getDate() + 1);
-        if (currentDate > pkg.metadata.endDate) {
-            clearInterval(interval);
-            interval = null;
-            const extraMs = getExtraEndMs();
-            if (extraMs > 0) {
-                if (endTimeout) {
-                    clearTimeout(endTimeout);
+
+    // Repart avec un accumulateur neutre : la reprise (restart=true) ne rattrape
+    // pas le temps écoulé pendant la pause, exactement comme l'ancien
+    // setInterval + clearInterval + nouveau setInterval.
+    animationLastTs = null;
+    animationAccMs = 0;
+
+    const animationStep = (ts) => {
+        if (animationLastTs === null) animationLastTs = ts;
+        // Borner le delta évite qu'un onglet remis au premier plan après une
+        // longue mise en arrière-plan ne fasse défiler des dizaines de jours
+        // d'un coup (rAF est suspendu en arrière-plan, contrairement à setInterval).
+        animationAccMs += Math.min(ts - animationLastTs, dayDuration * 5);
+        animationLastTs = ts;
+
+        // Rattrape au plus un jour par frame : jamais de rafale, contrairement à
+        // un setInterval dont les callbacks en retard se déchargeraient d'un coup.
+        if (animationAccMs >= dayDuration) {
+            animationAccMs -= dayDuration;
+            displayFeaturesForDate(currentDate, pkg.options.point, flashOptions, false, infos);
+            currentDate.setDate(currentDate.getDate() + 1);
+            if (currentDate > pkg.metadata.endDate) {
+                animationRafId = null;
+                const extraMs = getExtraEndMs();
+                if (extraMs > 0) {
+                    if (endTimeout) {
+                        clearTimeout(endTimeout);
+                    }
+                    endTimeout = setTimeout(() => finalizeAnimationEnd(), extraMs);
+                } else {
+                    finalizeAnimationEnd();
                 }
-                endTimeout = setTimeout(() => finalizeAnimationEnd(), extraMs);
-            } else {
-                finalizeAnimationEnd();
+                return;
             }
         }
-    }, dayDuration);
+        animationRafId = requestAnimationFrame(animationStep);
+    };
+    animationRafId = requestAnimationFrame(animationStep);
 }
 
 export function stopAnimation(){
     // Arrêter l'enregistrement si en cours
     isRecording = false;
+
+    if (animationRafId) {
+        cancelAnimationFrame(animationRafId);
+        animationRafId = null;
+    }
+    animationLastTs = null;
 
     if (endTimeout) {
         clearTimeout(endTimeout);
@@ -1377,11 +1412,6 @@ export function stopAnimation(){
 
     // Arrêter musique de fond si lecture seule
     try { stopBackgroundMusic(); } catch(e) { console.warn('stopBackgroundMusic error:', e); }
-
-    if (interval) {
-        clearInterval(interval);
-        interval = null; // Nettoyer la référence à l'intervalle
-    }
 
     // Fermer le toast de chargement s'il est ouvert
     try {
@@ -1467,11 +1497,12 @@ export function stopAnimation(){
  * NE PAS appeler en mode enregistrement (utiliser stopAnimation() à la place).
  */
 export function pauseAnimation() {
-    // Stopper uniquement l'interval d'avancement des dates
-    if (interval) {
-        clearInterval(interval);
-        interval = null;
+    // Stopper uniquement la boucle rAF d'avancement des dates
+    if (animationRafId) {
+        cancelAnimationFrame(animationRafId);
+        animationRafId = null;
     }
+    animationLastTs = null;
     // Stopper le timeout de fin éventuel
     if (endTimeout) {
         clearTimeout(endTimeout);
@@ -2153,10 +2184,10 @@ function recordAnimationMediaRecorder(){
     startMediaRecorderPipeline(totalMs * appliedSlowdown).catch(e => {
         console.error('MediaRecorder pipeline error:', e);
         pkg.showToast && pkg.showToast('Erreur MediaRecorder, bascule en mode images.', 'error', 'Enregistrement');
-        // Stopper proprement la boucle animation setInterval déjà lancée par startAnimation()
+        // Stopper proprement la boucle animation (rAF) déjà lancée par startAnimation()
         // AVANT de relancer recordAnimation(), pour éviter deux boucles d'avancement de date en parallèle
         try { stopMediaRecorderPipeline(false); } catch(_) {}
-        if (interval) { clearInterval(interval); interval = null; }
+        if (animationRafId) { cancelAnimationFrame(animationRafId); animationRafId = null; }
         // Forcer le mode images pour éviter une boucle infinie MediaRecorder → fallback → MediaRecorder
         try { pkg.options.record.mode = 'images'; } catch(_) {}
         recordAnimation();
