@@ -6,6 +6,12 @@
 import * as pkg from './index.js';
 import { refreshTomSelect, initTomSelect, getTomSelect, showBsModal, hideBsModal, getBsModal } from './ui_bootstrap.js';
 
+// Flag de debug pour ce fichier. Mettre à true pour réactiver les logs en
+// console (désactivés par défaut : sérialiser des objets/chaînes à chaque
+// appel a un coût, sensible sur les chemins fréquents).
+const DEBUG_PROFILES = false;
+const dbgProfiles = (...args) => { if (DEBUG_PROFILES) console.log(...args); };
+
 // Helper global: nettoie une chaîne CSS pour ne garder que les déclarations
 function extractCssDeclarations(css) {
     if (!css || typeof css !== 'string') return '';
@@ -141,10 +147,10 @@ class ProfileManager {
     async loadProfile(name) {
         if (!this._confirmDiscardChangesIfNeeded()) return;
         try {
-            console.log('Chargement profil depuis API:', name);
+            dbgProfiles('Chargement profil depuis API:', name);
             const profile = await this.apiCall(`/api/profiles/${encodeURIComponent(name)}`);
 
-            console.log('📥 PROFIL REÇU DU SERVEUR:', {
+            dbgProfiles('📥 PROFIL REÇU DU SERVEUR:', {
                 profile_name: profile.name,
                 uid: profile.uid,
                 version: profile.version,
@@ -167,7 +173,7 @@ class ProfileManager {
 
     async saveProfile(profileData) {
         try {
-            console.log('📤 ENVOI PROFIL AU SERVEUR:', {
+            dbgProfiles('📤 ENVOI PROFIL AU SERVEUR:', {
                 endpoint: `/api/profiles/${encodeURIComponent(profileData.name)}`,
                 method: 'PUT',
                 data: profileData,
@@ -177,7 +183,7 @@ class ProfileManager {
             const result = await this.apiCall(`/api/profiles/${encodeURIComponent(profileData.name)}`, 'PUT', profileData);
 
             if (result.success) {
-                console.log('Profil sauvegardé avec succès:', profileData.name);
+                dbgProfiles('Profil sauvegardé avec succès:', profileData.name);
                 this.showToast(pkg.t('Profil "${name}" sauvegardé', { name: profileData.name }), 'green');
                 this.loadProfilesList(); // Rafraîchir la liste
             }
@@ -281,7 +287,7 @@ class ProfileManager {
 
     async exportProfile(name) {
         try {
-            console.log('📤 Export profil:', name);
+            dbgProfiles('📤 Export profil:', name);
             const resp = await fetch(`/api/profiles/${encodeURIComponent(name)}/export`);
             const data = await resp.json();
             if (!resp.ok) throw new Error(data.message || 'Export échoué');
@@ -460,7 +466,7 @@ class ProfileManager {
         try {
             const response = await fetch('/api/settings');
             const settings = await response.json();
-            console.log('Paramètres app chargés:', settings);
+            dbgProfiles('Paramètres app chargés:', settings);
             return settings;
         } catch (error) {
             console.error('❌ Erreur chargement paramètres app:', error);
@@ -476,7 +482,7 @@ class ProfileManager {
                 body: JSON.stringify(settings)
             });
             const result = await response.json();
-            console.log('💾 Paramètres app sauvegardés:', result);
+            dbgProfiles('💾 Paramètres app sauvegardés:', result);
             return result;
         } catch (error) {
             console.error('❌ Erreur sauvegarde paramètres app:', error);
@@ -487,8 +493,8 @@ class ProfileManager {
     async loadProfileByUid(uid) {
         if (!this._confirmDiscardChangesIfNeeded()) return;
         try {
-            console.log('🔄 [LOAD_PROFILE] Chargement profil par UUID:', uid);
-            console.log('🔄 [LOAD_PROFILE] État avant chargement:', {
+            dbgProfiles('🔄 [LOAD_PROFILE] Chargement profil par UUID:', uid);
+            dbgProfiles('🔄 [LOAD_PROFILE] État avant chargement:', {
                 point_mode: pkg?.options?.point?.mode,
                 switch_checked: document.getElementById('switchIconeVectoriel')?.checked
             });
@@ -502,7 +508,7 @@ class ProfileManager {
 
             const profile = await response.json();
 
-            console.log('🔄 [LOAD_PROFILE] PROFIL REÇU PAR UUID:', {
+            dbgProfiles('🔄 [LOAD_PROFILE] PROFIL REÇU PAR UUID:', {
                 profile_name: profile.name,
                 uid: profile.uid,
                 version: profile.version,
@@ -519,7 +525,7 @@ class ProfileManager {
             this.applyProfile(profile);
             this._markSaved();
 
-            console.log('🔄 [LOAD_PROFILE] État après application du profil:', {
+            dbgProfiles('🔄 [LOAD_PROFILE] État après application du profil:', {
                 point_mode: pkg?.options?.point?.mode,
                 switch_checked: document.getElementById('switchIconeVectoriel')?.checked,
                 profile_applied: profile.name
@@ -568,8 +574,8 @@ class ProfileManager {
 
             try { initTomSelect(selector, {}); } catch(_) {}
 
-            console.log('Sélecteur profil par défaut rempli avec:', profiles);
-            console.log('🎯 Profil par défaut actuel:', settings.default_profile_name || 'aucun');
+            dbgProfiles('Sélecteur profil par défaut rempli avec:', profiles);
+            dbgProfiles('🎯 Profil par défaut actuel:', settings.default_profile_name || 'aucun');
         } catch (error) {
             console.error('❌ Erreur remplissage sélecteur profil par défaut:', error);
         }
@@ -580,14 +586,14 @@ class ProfileManager {
         if (!selector) return;
 
         const selectedProfileName = selector.value;
-        console.log('Changement profil par défaut:', selectedProfileName);
+        dbgProfiles('Changement profil par défaut:', selectedProfileName);
 
         let selectedProfileUid = null;
         let appliedProfileName = null;
 
         // Appliquer immédiatement le profil si un profil est sélectionné
         if (selectedProfileName && selectedProfileName !== '') {
-            console.log('🎯 Application immédiate du profil:', selectedProfileName);
+            dbgProfiles('🎯 Application immédiate du profil:', selectedProfileName);
             try {
                 await this.loadProfile(selectedProfileName);
                 // Récupérer l'UUID du profil chargé
@@ -599,12 +605,12 @@ class ProfileManager {
                 console.error('❌ Erreur lors du chargement du profil:', error);
             }
         } else {
-            console.log('🚫 Aucun profil sélectionné - pas d\'application');
+            dbgProfiles('🚫 Aucun profil sélectionné - pas d\'application');
         }
 
         // Sauvegarder le nouveau profil par défaut avec UUID
         const currentSettings = await this.loadAppSettings();
-        console.log('💾 Sauvegarde profil par défaut:', {
+        dbgProfiles('💾 Sauvegarde profil par défaut:', {
             ancien_uuid: currentSettings.default_profile_uid,
             nouveau_uuid: selectedProfileUid,
             nom_profil: appliedProfileName,
@@ -615,7 +621,7 @@ class ProfileManager {
 
         const result = await this.saveAppSettings(currentSettings);
         if (result.success) {
-            console.log('Profil par défaut sauvegardé avec succès, UUID:', selectedProfileUid);
+            dbgProfiles('Profil par défaut sauvegardé avec succès, UUID:', selectedProfileUid);
             this.showToast(
                 appliedProfileName ?
                     pkg.t('Profil "${selectedProfile}" appliqué et défini comme profil par défaut', { selectedProfile: appliedProfileName }) :
@@ -629,13 +635,13 @@ class ProfileManager {
 
     async loadDefaultProfileAtStartup() {
         try {
-            console.log('🎯 [DEFAULT_PROFILE] Vérification du profil par défaut - État actuel:', {
+            dbgProfiles('🎯 [DEFAULT_PROFILE] Vérification du profil par défaut - État actuel:', {
                 point_mode: pkg?.options?.point?.mode,
                 switch_checked: document.getElementById('switchIconeVectoriel')?.checked
             });
 
             const settings = await this.loadAppSettings();
-            console.log('🎯 [DEFAULT_PROFILE] Paramètres chargés au démarrage:', {
+            dbgProfiles('🎯 [DEFAULT_PROFILE] Paramètres chargés au démarrage:', {
                 default_profile_uid: settings.default_profile_uid,
                 default_profile_name: settings.default_profile_name,
                 all_settings: settings
@@ -644,10 +650,10 @@ class ProfileManager {
             const defaultProfileUid = settings.default_profile_uid;
 
             if (defaultProfileUid) {
-                console.log('🎯 [DEFAULT_PROFILE] Chargement profil par défaut au démarrage (UUID):', defaultProfileUid);
-                console.log('🎯 [DEFAULT_PROFILE] Nom du profil par défaut:', settings.default_profile_name);
+                dbgProfiles('🎯 [DEFAULT_PROFILE] Chargement profil par défaut au démarrage (UUID):', defaultProfileUid);
+                dbgProfiles('🎯 [DEFAULT_PROFILE] Nom du profil par défaut:', settings.default_profile_name);
 
-                console.log('🎯 [DEFAULT_PROFILE] État avant chargement du profil:', {
+                dbgProfiles('🎯 [DEFAULT_PROFILE] État avant chargement du profil:', {
                     point_mode: pkg?.options?.point?.mode,
                     switch_checked: document.getElementById('switchIconeVectoriel')?.checked
                 });
@@ -655,24 +661,24 @@ class ProfileManager {
                 try {
                     await this.loadProfileByUid(defaultProfileUid);
 
-                    console.log('🎯 [DEFAULT_PROFILE] État après chargement du profil:', {
+                    dbgProfiles('🎯 [DEFAULT_PROFILE] État après chargement du profil:', {
                         point_mode: pkg?.options?.point?.mode,
                         switch_checked: document.getElementById('switchIconeVectoriel')?.checked,
                         profile_name: this.currentProfile?.name || 'aucun'
                     });
                 } catch (error) {
                     console.warn('⚠️ [DEFAULT_PROFILE] Impossible de charger le profil par défaut:', error.message);
-                    console.log('🎯 [DEFAULT_PROFILE] Tentative de chargement du profil par défaut du système...');
+                    dbgProfiles('🎯 [DEFAULT_PROFILE] Tentative de chargement du profil par défaut du système...');
 
                     // Essayer de charger un profil par défaut du système
                     try {
                         await this.loadProfile('Default');
-                        console.log('✅ [DEFAULT_PROFILE] Profil "Default" chargé comme fallback');
+                        dbgProfiles('✅ [DEFAULT_PROFILE] Profil "Default" chargé comme fallback');
                     } catch (fallbackError) {
                         console.error('❌ [DEFAULT_PROFILE] Échec du chargement du profil "Default":', fallbackError.message);
 
                         // Si même le profil Default n'existe pas, créer un profil temporaire basique
-                        console.log('🎯 [DEFAULT_PROFILE] Création d\'un profil temporaire basique...');
+                        dbgProfiles('🎯 [DEFAULT_PROFILE] Création d\'un profil temporaire basique...');
                         try {
                             this.currentProfile = {
                                 name: 'Profil Temporaire',
@@ -709,15 +715,15 @@ class ProfileManager {
                                    (finalPointMode === 'icone' && !finalSwitchState);
 
                 if (isConsistent) {
-                    console.log('✅ [DEFAULT_PROFILE] Mode des points cohérent:', finalPointMode);
+                    dbgProfiles('✅ [DEFAULT_PROFILE] Mode des points cohérent:', finalPointMode);
                 } else {
                     console.warn('⚠️ [DEFAULT_PROFILE] Incohérence détectée - Mode:', finalPointMode, 'Switch:', finalSwitchState);
                 }
 
                 // Le toast est déjà affiché dans loadProfileByUid
             } else {
-                console.log('🎯 [DEFAULT_PROFILE] Aucun profil par défaut défini (default_profile_uid est null/undefined)');
-                console.log('🎯 [DEFAULT_PROFILE] Vérifiez que le profil a bien été défini comme par défaut');
+                dbgProfiles('🎯 [DEFAULT_PROFILE] Aucun profil par défaut défini (default_profile_uid est null/undefined)');
+                dbgProfiles('🎯 [DEFAULT_PROFILE] Vérifiez que le profil a bien été défini comme par défaut');
             }
         } catch (error) {
             console.error('❌ [DEFAULT_PROFILE] Erreur chargement profil par défaut au démarrage:', error);
@@ -735,17 +741,17 @@ class ProfileManager {
             const mapButtons = ['OSM', 'stamenToner', 'vectorMap', 'watercolor'];
 
             // Log de l'état de tous les boutons
-            console.log('🔍 État des boutons carte:');
+            dbgProfiles('🔍 État des boutons carte:');
             mapButtons.forEach(btnId => {
                 const btn = document.getElementById(btnId);
                 const isDisabled = btn && btn.classList.contains('disabled');
-                console.log(`  ${btnId}: ${isDisabled ? 'ACTIF (disabled)' : 'inactif'}`);
+                dbgProfiles(`  ${btnId}: ${isDisabled ? 'ACTIF (disabled)' : 'inactif'}`);
             });
 
             for (const buttonId of mapButtons) {
                 const button = document.getElementById(buttonId);
                 if (button && button.classList.contains('disabled')) {
-                    console.log('🎯 Bouton actif trouvé:', buttonId);
+                    dbgProfiles('🎯 Bouton actif trouvé:', buttonId);
                     // Les vrais noms des providers correspondent aux IDs des boutons
                     const idToProvider = {
                         'OSM': 'OSM',
@@ -760,29 +766,29 @@ class ProfileManager {
 
             // Log si aucun bouton n'a été trouvé
             if (currentTileProvider === 'OSM') {
-                console.log('Aucun bouton carte trouvé disabled, utilisation valeur par défaut OSM');
+                dbgProfiles('Aucun bouton carte trouvé disabled, utilisation valeur par défaut OSM');
             }
 
             // Essayer aussi de détecter via d'autres indices (classes CSS, etc.)
             if (currentTileProvider === 'OSM') {
-                console.log('🔍 Recherche par visibilité des options...');
+                dbgProfiles('🔍 Recherche par visibilité des options...');
 
                 // Vérifier si une option spécifique est visible
                 const vectorOptions = document.getElementById('vectorMapOptions');
                 const tonerOptions = document.getElementById('tonerMapOptions');
 
-                console.log('  vectorMapOptions:', vectorOptions ? vectorOptions.style.display : 'non trouvé');
-                console.log('  tonerMapOptions:', tonerOptions ? tonerOptions.style.display : 'non trouvé');
+                dbgProfiles('  vectorMapOptions:', vectorOptions ? vectorOptions.style.display : 'non trouvé');
+                dbgProfiles('  tonerMapOptions:', tonerOptions ? tonerOptions.style.display : 'non trouvé');
 
                 // Détection par visibilité des options
                 if (vectorOptions && vectorOptions.style.display !== 'none') {
-                    console.log('🎯 Options vectorMap visibles, changement vers vectorMap');
+                    dbgProfiles('🎯 Options vectorMap visibles, changement vers vectorMap');
                     currentTileProvider = 'vectorMap';
                 } else if (tonerOptions && tonerOptions.style.display !== 'none') {
-                    console.log('🎯 Options toner visibles, changement vers stamenToner');
+                    dbgProfiles('🎯 Options toner visibles, changement vers stamenToner');
                     currentTileProvider = 'stamenToner';
                 } else {
-                    console.log('Aucune option visible trouvée');
+                    dbgProfiles('Aucune option visible trouvée');
                 }
             }
 
@@ -821,7 +827,7 @@ class ProfileManager {
                 console.warn('Lecture options spécifiques carte: non bloquant', e);
             }
 
-            console.log('Carte détectée - Provider:', currentTileProvider, 'Settings:', mapSettings);
+            dbgProfiles('Carte détectée - Provider:', currentTileProvider, 'Settings:', mapSettings);
 
             // Si la carte est disponible, récupérer la vue actuelle
             if (window.map && typeof window.map.getView === 'function') {
@@ -861,7 +867,7 @@ class ProfileManager {
                 icon_size: inputSizeIcon ? (parseInt(inputSizeIcon.value) || 24) : (parseInt(pkg?.options?.point?.iconSize) || 24)
             };
 
-            console.log('Paramètres points récupérés:', {
+            dbgProfiles('Paramètres points récupérés:', {
                 size: pointSettings.size,
                 color: pointSettings.color,
                 shape: pointSettings.shape,
@@ -873,7 +879,7 @@ class ProfileManager {
                 mode: pointSettings.mode
             });
 
-            console.log('🔍 État des éléments HTML:', {
+            dbgProfiles('🔍 État des éléments HTML:', {
                 sizeInput_value: sizeInput ? sizeInput.value : 'null',
                 colorInput_value: colorInput ? colorInput.value : 'null',
                 borderInput_value: borderInput ? borderInput.value : 'null',
@@ -912,7 +918,7 @@ class ProfileManager {
                 color_type: flashColorType
             };
 
-            console.log('🔍 Paramètres flash récupérés:', {
+            dbgProfiles('🔍 Paramètres flash récupérés:', {
                 element_mode: flashModeSelect ? flashModeSelect.value : 'null',
                 element_duration: flashDurationInput ? flashDurationInput.value : 'null',
                 element_size: flashSizeInput ? flashSizeInput.value : 'null',
@@ -954,7 +960,7 @@ class ProfileManager {
                 infos_css: extractCssDeclarations(infosCssTextarea ? infosCssTextarea.value : ''),
             };
 
-            console.log('📄 Paramètres infos récupérés:', {
+            dbgProfiles('📄 Paramètres infos récupérés:', {
                 element_title_display: displayTitleCheckbox ? displayTitleCheckbox.checked : 'null',
                 element_title_text: titleInput ? titleInput.value : 'null',
                 element_title_css_length: titleCssTextarea ? (titleCssTextarea.value || '').length : 'null',
@@ -972,7 +978,7 @@ class ProfileManager {
                 infos: infosSettings,
             };
 
-            console.log('PARAMÈTRES ACTUELS COMPLÈTS - Récupérés depuis l\'interface:', {
+            dbgProfiles('PARAMÈTRES ACTUELS COMPLÈTS - Récupérés depuis l\'interface:', {
                 map: mapSettings,
                 animation: animationSettings,
                 points: pointSettings,
@@ -1015,7 +1021,7 @@ class ProfileManager {
     }
 
     applyProfile(profile) {
-        console.log('🎯 APPLICATION PROFIL - Profil complet chargé:', {
+        dbgProfiles('🎯 APPLICATION PROFIL - Profil complet chargé:', {
             profile_name: profile.name,
             uid: profile.uid,
             version: profile.version,
@@ -1029,7 +1035,7 @@ class ProfileManager {
 
         // Appliquer les paramètres du profil à l'interface
         if (profile.map) {
-            console.log('Application paramètres carte:', profile.map);
+            dbgProfiles('Application paramètres carte:', profile.map);
             // Appliquer les paramètres de carte
             if (typeof applyMapSettings === 'function') {
                 applyMapSettings(profile.map);
@@ -1037,7 +1043,7 @@ class ProfileManager {
         }
 
         if (profile.points) {
-            console.log('Application paramètres points:', profile.points);
+            dbgProfiles('Application paramètres points:', profile.points);
             // Appliquer les paramètres des points
             if (typeof applyPointSettings === 'function') {
                 applyPointSettings(profile.points);
@@ -1056,7 +1062,7 @@ class ProfileManager {
         }
 
         if (profile.animation) {
-            console.log('Application paramètres animation:', profile.animation);
+            dbgProfiles('Application paramètres animation:', profile.animation);
             // Appliquer les paramètres d'animation
             if (typeof applyAnimationSettings === 'function') {
                 applyAnimationSettings(profile.animation);
@@ -1064,7 +1070,7 @@ class ProfileManager {
         }
 
         if (profile.flash) {
-            console.log('Application paramètres flash:', profile.flash);
+            dbgProfiles('Application paramètres flash:', profile.flash);
             // Appliquer les paramètres flash
             if (typeof applyFlashSettings === 'function') {
                 applyFlashSettings(profile.flash);
@@ -1073,7 +1079,7 @@ class ProfileManager {
 
         // Appliquer les paramètres infos (titre / infosFrame / CSS)
         if (profile.infos) {
-            console.log('📄 Application paramètres infos:', profile.infos);
+            dbgProfiles('📄 Application paramètres infos:', profile.infos);
             try {
                 // Titre (affichage + texte)
                 const displayTitleCheckbox = document.getElementById('cbDisplayTitle');
@@ -1127,7 +1133,7 @@ class ProfileManager {
             }
         }
 
-        console.log('Profil appliqué avec succès:', profile.name);
+        dbgProfiles('Profil appliqué avec succès:', profile.name);
     }
 
     async saveCurrentAsProfile() {
@@ -1166,7 +1172,7 @@ class ProfileManager {
             infos: this.currentSettings.infos,
         };
 
-        console.log('💾 SAUVEGARDE PROFIL - Données complètes:', {
+        dbgProfiles('💾 SAUVEGARDE PROFIL - Données complètes:', {
             profile_name: profileData.name,
             map: profileData.map,
             animation: profileData.animation,
@@ -1330,7 +1336,7 @@ class ProfileManager {
         } catch (error) {
             // Fallback : alert simple si le système GCM échoue
             console.warn('Erreur système toast GCM:', error);
-            console.log('[Profile toast]', message);
+            dbgProfiles('[Profile toast]', message);
         }
     }
 }
@@ -1338,7 +1344,7 @@ class ProfileManager {
 // Fonctions d'application des paramètres (appelées depuis applyProfile)
 function applyMapSettings(mapOptions) {
     try {
-        console.log('🎯 Application carte - Provider demandé:', mapOptions.tile_provider);
+        dbgProfiles('🎯 Application carte - Provider demandé:', mapOptions.tile_provider);
 
         // Vérifier si la carte est initialisée
         if (!window.map) {
@@ -1350,10 +1356,10 @@ function applyMapSettings(mapOptions) {
 
         // Changer le fournisseur de carte
         const mapButton = document.querySelector(`a[id="${mapOptions.tile_provider}"]`);
-        console.log('🎯 Bouton carte trouvé:', !!mapButton, 'ID:', mapOptions.tile_provider);
+        dbgProfiles('🎯 Bouton carte trouvé:', !!mapButton, 'ID:', mapOptions.tile_provider);
 
         if (mapButton) {
-            console.log('🎯 Clic sur le bouton carte:', mapOptions.tile_provider);
+            dbgProfiles('🎯 Clic sur le bouton carte:', mapOptions.tile_provider);
             mapButton.click();
 
             // Attendre un peu puis appliquer les options spécifiques
@@ -1371,7 +1377,7 @@ function applyMapSettings(mapOptions) {
             view.setZoom(mapOptions.default_zoom);
         }
 
-        console.log('✅ Paramètres de carte appliqués:', mapOptions);
+        dbgProfiles('✅ Paramètres de carte appliqués:', mapOptions);
     } catch (error) {
         console.error('❌ Erreur lors de l\'application des paramètres de carte:', error);
     }
@@ -1379,13 +1385,13 @@ function applyMapSettings(mapOptions) {
 
 function applyMapSpecificOptions(tileProvider, mapOptions) {
     try {
-        console.log('🎯 Application options spécifiques pour:', tileProvider);
+        dbgProfiles('🎯 Application options spécifiques pour:', tileProvider);
 
         if (tileProvider === 'vectorMap') {
             // Options pour la carte vectorielle
             const vectorOptions = document.getElementById('vectorMapOptions');
             const v = mapOptions.vector_options || null;
-            console.log('🎯 Options vectorMap - element trouvé:', !!vectorOptions, 'options:', !!v);
+            dbgProfiles('🎯 Options vectorMap - element trouvé:', !!vectorOptions, 'options:', !!v);
 
             if (vectorOptions && v) {
                 // Couleurs
@@ -1436,7 +1442,7 @@ function applyMapSpecificOptions(tileProvider, mapOptions) {
                     strokeWidth: finalStrokeWidth
                 };
                 if (typeof pkg.refreshVectorMap === 'function') {
-                    console.log('🎯 Rafraîchissement carte vectorielle avec:', vectorValues);
+                    dbgProfiles('🎯 Rafraîchissement carte vectorielle avec:', vectorValues);
                     pkg.refreshVectorMap(vectorValues);
                 } else {
                     console.warn('⚠️ Fonction refreshVectorMap non disponible');
@@ -1463,7 +1469,7 @@ function applyMapSpecificOptions(tileProvider, mapOptions) {
                 // Rafraîchir explicitement la carte toner avec les nouvelles valeurs
                 const tonerValues = { type: variant };
                 if (typeof pkg.refreshStamenTonerMap === 'function') {
-                    console.log('🎯 Rafraîchissement carte Stamen Toner avec:', tonerValues);
+                    dbgProfiles('🎯 Rafraîchissement carte Stamen Toner avec:', tonerValues);
                     pkg.refreshStamenTonerMap(tonerValues);
                 } else {
                     console.warn('⚠️ Fonction refreshStamenTonerMap non disponible');
@@ -1471,7 +1477,7 @@ function applyMapSpecificOptions(tileProvider, mapOptions) {
             }
         }
 
-        console.log('Options spécifiques de carte appliquées pour:', tileProvider);
+        dbgProfiles('Options spécifiques de carte appliquées pour:', tileProvider);
     } catch (error) {
         console.error('Erreur lors de l\'application des options spécifiques de carte:', error);
     }
@@ -1479,7 +1485,7 @@ function applyMapSpecificOptions(tileProvider, mapOptions) {
 
 function applyPointSettings(pointOptions) {
     try {
-        console.log('🎯 APPLICATION PARAMÈTRES POINTS - Données reçues:', pointOptions);
+        dbgProfiles('🎯 APPLICATION PARAMÈTRES POINTS - Données reçues:', pointOptions);
 
         // Appliquer le mode (icone/vectoriel) + options icône (set/taille)
         const modeSwitch = document.getElementById('switchIconeVectoriel');
@@ -1503,7 +1509,7 @@ function applyPointSettings(pointOptions) {
         if (modeSwitch && pointOptions.mode) {
             modeSwitch.checked = pointOptions.mode === 'vectoriel';
             modeSwitch.dispatchEvent(new Event('change'));
-            console.log('🎯 Application mode des points:', pointOptions.mode, '-> switch checked:', modeSwitch.checked);
+            dbgProfiles('🎯 Application mode des points:', pointOptions.mode, '-> switch checked:', modeSwitch.checked);
         }
 
         // Après initialisation en mode icône, appliquer set/taille au rendu
@@ -1531,7 +1537,7 @@ function applyPointSettings(pointOptions) {
         }
 
         // Appliquer le type de couleur des points
-        console.log('Application type de couleur des points:', pointOptions.fill_color_type);
+        dbgProfiles('Application type de couleur des points:', pointOptions.fill_color_type);
         const fillColorRadio = document.querySelector(`input[name="fillColorPoint"][value="${pointOptions.fill_color_type}"]`);
         if (fillColorRadio) {
             fillColorRadio.checked = true;
@@ -1556,7 +1562,7 @@ function applyPointSettings(pointOptions) {
         const borderColorInput = document.getElementById('pointBorderColor');
         const borderNumberInput = document.getElementById('inputSizeBorder');
 
-        console.log('🔍 État avant application bordure:', {
+        dbgProfiles('🔍 État avant application bordure:', {
             borderSizeInput_exists: !!borderSizeInput,
             borderColorInput_exists: !!borderColorInput,
             current_border_size: borderSizeInput ? borderSizeInput.value : 'null',
@@ -1565,7 +1571,7 @@ function applyPointSettings(pointOptions) {
 
         if (pointOptions.halo) {
             // Activer le type de couleur approprié pour la bordure
-            console.log('Application type de couleur des bordures:', pointOptions.border_color_type);
+            dbgProfiles('Application type de couleur des bordures:', pointOptions.border_color_type);
             const borderColorRadio = document.querySelector(`input[name="borderColorPoint"][value="${pointOptions.border_color_type}"]`);
             if (borderColorRadio) {
                 borderColorRadio.checked = true;
@@ -1579,14 +1585,14 @@ function applyPointSettings(pointOptions) {
                     borderNumberInput.value = borderSizeInput.value;
                 }
                 borderSizeInput.dispatchEvent(new Event('input'));
-                console.log('🔵 Application taille bordure:', pointOptions.border_size, '->', borderSizeInput.value);
+                dbgProfiles('🔵 Application taille bordure:', pointOptions.border_size, '->', borderSizeInput.value);
             }
 
             // Appliquer la couleur de bordure sauvegardée
             if (borderColorInput) {
                 borderColorInput.value = pointOptions.border_color || '#000000';
                 borderColorInput.dispatchEvent(new Event('change'));
-                console.log('🟥 Application couleur bordure:', pointOptions.border_color, '->', borderColorInput.value);
+                dbgProfiles('🟥 Application couleur bordure:', pointOptions.border_color, '->', borderColorInput.value);
             }
         } else {
             // Désactiver la bordure
@@ -1599,12 +1605,12 @@ function applyPointSettings(pointOptions) {
             }
         }
 
-        console.log('🔍 État après application bordure:', {
+        dbgProfiles('🔍 État après application bordure:', {
             new_border_size: borderSizeInput ? borderSizeInput.value : 'null',
             new_border_color: borderColorInput ? borderColorInput.value : 'null'
         });
 
-        console.log('Paramètres des points appliqués avec succès:', pointOptions);
+        dbgProfiles('Paramètres des points appliqués avec succès:', pointOptions);
     } catch (error) {
         console.error('❌ Erreur lors de l\'application des paramètres des points:', error);
     }
@@ -1621,7 +1627,7 @@ function applyAnimationSettings(animationOptions) {
             timeInput.dispatchEvent(new Event('change'));
         }
 
-        console.log('Paramètres d\'animation appliqués:', animationOptions, 'timePerDay:', timePerDay);
+        dbgProfiles('Paramètres d\'animation appliqués:', animationOptions, 'timePerDay:', timePerDay);
     } catch (error) {
         console.error('Erreur lors de l\'application des paramètres d\'animation:', error);
     }
@@ -1685,7 +1691,7 @@ function applyFlashSettings(flashOptions) {
             }
         }
 
-        console.log('Paramètres flash appliqués:', flashOptions);
+        dbgProfiles('Paramètres flash appliqués:', flashOptions);
     } catch (error) {
         console.error('Erreur lors de l\'application des paramètres flash:', error);
     }
@@ -1711,7 +1717,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const defaultProfileSelector = document.getElementById('selectDefaultProfile');
         if (defaultProfileSelector) {
             defaultProfileSelector.addEventListener('change', () => {
-                console.log('🎯 Changement détecté dans sélecteur profil par défaut');
+                dbgProfiles('🎯 Changement détecté dans sélecteur profil par défaut');
                 profileManager.handleDefaultProfileChange();
             });
         }

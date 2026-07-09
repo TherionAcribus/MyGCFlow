@@ -74,6 +74,13 @@ import fixWebmDuration from './fix-webm-duration.js';
 const TOAST_DEBUG = false;
 function logToast(...args) { if (TOAST_DEBUG) { try { console.log('[TOAST]', ...args); } catch(e) {} } }
 
+// Flag de debug général pour le reste de ce fichier. Mettre à true pour
+// réactiver les logs en console. Désactivé par défaut : certains de ces logs
+// sérialisent des compteurs/objets à chaque frame (boucle d'animation,
+// displayWebGLPoints), ce qui a un coût mesurable pendant une animation.
+const DEBUG_MAPGL = false;
+const dbgMapgl = (...args) => { if (DEBUG_MAPGL) console.log(...args); };
+
 // html2canvas n'est utilisé que comme repli rare quand la capture "canvas-only"
 // échoue pendant l'enregistrement image par image (cf. scheduleCaptureFrame) : le
 // charger sur chaque page serait du poids mort pour l'immense majorité des sessions
@@ -505,9 +512,9 @@ export async function requetedefaultGcColors(){
             throw new Error(errorMsg);
         }
         defaultGcColors = await response.json();
-        console.log('🎨 Couleurs GC chargées avec succès:', defaultGcColors);
-        console.log('🎨 Test hexToRgb avec #008000:', pkg.hexToRgb('#008000'));
-        console.log('🎨 Toutes les clés disponibles:', Object.keys(defaultGcColors));
+        dbgMapgl('🎨 Couleurs GC chargées avec succès:', defaultGcColors);
+        dbgMapgl('🎨 Test hexToRgb avec #008000:', pkg.hexToRgb('#008000'));
+        dbgMapgl('🎨 Toutes les clés disponibles:', Object.keys(defaultGcColors));
     } catch (error) {
         console.error('Erreur lors du chargement des couleurs GC:', error);
         // Utiliser des couleurs par défaut en cas d'erreur
@@ -757,7 +764,7 @@ export function addVector(data) {
         dataProjection: 'EPSG:4326',
         featureProjection: 'EPSG:3857'
     });
-    console.log('[addVector] features lues:', features.length, '| vectorSource existant:', !!window.vectorSource, '| vectorLayer existant:', !!vectorLayer);
+    dbgMapgl('[addVector] features lues:', features.length, '| vectorSource existant:', !!window.vectorSource, '| vectorLayer existant:', !!vectorLayer);
 
     // Vider la source avant le rechargement pour éviter l'accumulation de features
     if (window.vectorSource) {
@@ -795,7 +802,7 @@ function isLayerOnMap(map, layerToFind) {
 function selectEngineAndRefresh(){
     engine = pkg.options.options.engine;
     const currentFeatures = features || [];
-    console.log('[selectEngineAndRefresh] engine:', engine, '| features count:', currentFeatures.length, '| point.mode:', pkg.options?.point?.mode);
+    dbgMapgl('[selectEngineAndRefresh] engine:', engine, '| features count:', currentFeatures.length, '| point.mode:', pkg.options?.point?.mode);
     if (engine == "webgl"){
         displayWebGLPoints(currentFeatures, pkg.options.point);
     } else {
@@ -1155,13 +1162,13 @@ function buildPointStyle(pointOptions) {
 }
 
 function displayWebGLPoints(features, pointOptions) {
-    console.log('[displayWebGLPoints] featureList count:', (Array.isArray(features) ? features.length : 'not-array'), '| mode:', pointOptions?.mode, '| shape:', pointOptions?.shape, '| sprite:', !!pointOptions?.sprite);
+    dbgMapgl('[displayWebGLPoints] featureList count:', (Array.isArray(features) ? features.length : 'not-array'), '| mode:', pointOptions?.mode, '| shape:', pointOptions?.shape, '| sprite:', !!pointOptions?.sprite);
 
     const featureList = Array.isArray(features) ? features : [];
 
     // Réutiliser la source existante si possible (évite les sources orphelines)
     if (!window.vectorSource) {
-        console.log('[displayWebGLPoints] Création nouvelle vectorSource');
+        dbgMapgl('[displayWebGLPoints] Création nouvelle vectorSource');
         window.vectorSource = new ol.source.Vector({ wrapX: true });
     }
 
@@ -1172,7 +1179,7 @@ function displayWebGLPoints(features, pointOptions) {
     // n'est pas recréé (cf. clearMap() dans les autres appelants qui veulent
     // réellement changer le style).
     if (!vectorLayer) {
-        console.log('[displayWebGLPoints] Création nouveau vectorLayer WebGLPoints');
+        dbgMapgl('[displayWebGLPoints] Création nouveau vectorLayer WebGLPoints');
         vectorLayer = new ol.layer.WebGLPoints({
             source: window.vectorSource,
             style: buildPointStyle(pointOptions),
@@ -1183,9 +1190,9 @@ function displayWebGLPoints(features, pointOptions) {
 
     // Vérifier que le layer existe toujours sur la carte (il peut avoir été supprimé)
     const layerOnMap = map.getLayers().getArray().includes(vectorLayer);
-    console.log('[displayWebGLPoints] vectorLayer sur carte:', layerOnMap, '| vectorSource features avant add:', window.vectorSource.getFeatures().length);
+    dbgMapgl('[displayWebGLPoints] vectorLayer sur carte:', layerOnMap, '| vectorSource features avant add:', window.vectorSource.getFeatures().length);
     if (vectorLayer && !layerOnMap) {
-        console.log('[displayWebGLPoints] Re-ajout du layer sur la carte');
+        dbgMapgl('[displayWebGLPoints] Re-ajout du layer sur la carte');
         map.addLayer(vectorLayer);
     }
 
@@ -1194,7 +1201,7 @@ function displayWebGLPoints(features, pointOptions) {
         let toAdd = featureList;
         const first = featureList[0];
         const isOlFeature = first && typeof first.getGeometry === 'function';
-        console.log('[displayWebGLPoints] isOlFeature:', isOlFeature, '| toAdd count:', toAdd.length);
+        dbgMapgl('[displayWebGLPoints] isOlFeature:', isOlFeature, '| toAdd count:', toAdd.length);
 
         if (!isOlFeature) {
             toAdd = new ol.format.GeoJSON().readFeatures({
@@ -1207,7 +1214,7 @@ function displayWebGLPoints(features, pointOptions) {
         }
 
         window.vectorSource.addFeatures(toAdd);
-        console.log('[displayWebGLPoints] Après addFeatures:', window.vectorSource.getFeatures().length, 'features dans source');
+        dbgMapgl('[displayWebGLPoints] Après addFeatures:', window.vectorSource.getFeatures().length, 'features dans source');
     } else {
         console.warn('[displayWebGLPoints] featureList vide, rien à afficher');
     }
@@ -1445,16 +1452,16 @@ export function stopAnimation(){
                            document.querySelector('.toast') ||
                            document.querySelector('[class*="toast"]');
         if (loadingToast) {
-            console.log('[STOP] Toast trouvé, tentative de fermeture:', loadingToast);
+            dbgMapgl('[STOP] Toast trouvé, tentative de fermeture:', loadingToast);
             pkg.hideToast && pkg.hideToast(loadingToast);
         } else {
-            console.log('[STOP] Aucun toast trouvé avec les sélecteurs testés');
+            dbgMapgl('[STOP] Aucun toast trouvé avec les sélecteurs testés');
         }
 
         // Essayer aussi de fermer tous les toasts visibles
         const allToasts = document.querySelectorAll('.toast, [class*="toast"]');
         allToasts.forEach((toast, index) => {
-            console.log(`[STOP] Fermeture toast ${index}:`, toast.textContent);
+            dbgMapgl(`[STOP] Fermeture toast ${index}:`, toast.textContent);
             pkg.hideToast && pkg.hideToast(toast);
         });
     } catch(e) {
@@ -1462,51 +1469,51 @@ export function stopAnimation(){
     }
 
     // Remettre la carte à l'état d'origine avec tous les points filtrés
-    console.log('[STOP] Nettoyage de la carte...');
+    dbgMapgl('[STOP] Nettoyage de la carte...');
     clearMap();
 
     // Nettoyer les animations et effets
     if (window.vectorSource) {
         window.vectorSource.clear();
-        console.log('[STOP] Vector source nettoyé');
+        dbgMapgl('[STOP] Vector source nettoyé');
     }
 
     // Nettoyer les animations de flash
     if (animationSource) {
         animationSource.clear();
-        console.log('[STOP] Animation source nettoyé');
+        dbgMapgl('[STOP] Animation source nettoyé');
     }
 
     // Nettoyer les layers d'animation
     if (animationLayer) {
         animationLayer.setVisible(false);
-        console.log('[STOP] Animation layer masqué');
+        dbgMapgl('[STOP] Animation layer masqué');
     }
 
     // Nettoyer les références globales
     if (window.animationSource) {
         window.animationSource.clear();
         window.animationSource = undefined;
-        console.log('[STOP] Window animation source nettoyé');
+        dbgMapgl('[STOP] Window animation source nettoyé');
     }
 
     if (window.animationLayer) {
         window.animationLayer.setVisible(false);
         window.animationLayer = undefined;
-        console.log('[STOP] Window animation layer nettoyé');
+        dbgMapgl('[STOP] Window animation layer nettoyé');
     }
 
     // Remettre les styles par défaut
     updateAnimationStyles();
-    console.log('[STOP] Styles d\'animation remis à zéro');
+    dbgMapgl('[STOP] Styles d\'animation remis à zéro');
 
     const allFilteredPoints = getAllFilteredPoints();
-    console.log('[STOP] Nombre de points filtrés à afficher:', allFilteredPoints.length);
+    dbgMapgl('[STOP] Nombre de points filtrés à afficher:', allFilteredPoints.length);
     if (allFilteredPoints.length > 0) {
         displayWebGLPoints(allFilteredPoints, pkg.options.point);
-        console.log('[STOP] Points affichés avec succès');
+        dbgMapgl('[STOP] Points affichés avec succès');
     } else {
-        console.log('[STOP] Aucun point à afficher');
+        dbgMapgl('[STOP] Aucun point à afficher');
     }
 
     // Remettre les contrôles UI dans l'état initial
@@ -1611,19 +1618,19 @@ function startRecordingProcess(){
     if (pkg.options.animation.dateStart instanceof Date) {
         currentDate = new Date(pkg.options.animation.dateStart);
         pkg.metadata.startDate = new Date(pkg.options.animation.dateStart);
-        console.log('[RECORD] Date de début personnalisée appliquée:', pkg.metadata.startDate);
+        dbgMapgl('[RECORD] Date de début personnalisée appliquée:', pkg.metadata.startDate);
     } else {
         currentDate = new Date(pkg.metadata.startDate); // copie explicite pour ne pas muter pkg.metadata via setDate()
-        console.log('[RECORD] ❌ Utilisation date de début par défaut:', currentDate);
+        dbgMapgl('[RECORD] ❌ Utilisation date de début par défaut:', currentDate);
     }
     if (pkg.options.animation.dateEnd instanceof Date) {
         pkg.metadata.endDate = new Date(pkg.options.animation.dateEnd);
-        console.log('[RECORD] Date de fin personnalisée appliquée:', pkg.metadata.endDate);
+        dbgMapgl('[RECORD] Date de fin personnalisée appliquée:', pkg.metadata.endDate);
     } else {
-        console.log('[RECORD] ❌ Utilisation date de fin par défaut:', pkg.metadata.endDate);
+        dbgMapgl('[RECORD] ❌ Utilisation date de fin par défaut:', pkg.metadata.endDate);
     }
 
-    console.log('[RECORD] 🚀 Démarrage enregistrement avec date:', currentDate, '->', pkg.metadata.endDate);
+    dbgMapgl('[RECORD] 🚀 Démarrage enregistrement avec date:', currentDate, '->', pkg.metadata.endDate);
 
     // Calculer framesPerDay de façon autonome (ne pas dépendre d'un appel préalable à updateInfosForPictures)
     {
@@ -1652,7 +1659,7 @@ function startRecordingProcess(){
         const extra = Math.max(0, Math.round(Number(pkg.options.record?.extraFrames) || 0));
         pkg.options.record.nbOfImages = animationDays * framesPerDayLocal + extra;
         pkg.options.record.numberOfDigits = Math.max(4, Math.round(pkg.options.record.nbOfImages).toString().length);
-        console.log('[RECORD] Jours animation:', animationDays, 'frames/jour:', framesPerDayLocal, 'total images:', pkg.options.record.nbOfImages);
+        dbgMapgl('[RECORD] Jours animation:', animationDays, 'frames/jour:', framesPerDayLocal, 'total images:', pkg.options.record.nbOfImages);
     } catch(e) { console.warn('Calcul jours animation échoué:', e); }
 
     // Remise à zéro de l'affichage des informations
@@ -1849,7 +1856,7 @@ function pollTaskStatus(taskId, { intervalMs = 700, timeoutMs = 1800000, onProgr
 async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
     // Vérifier si l'enregistrement a été arrêté
     if (!isRecording) {
-        console.log('[CAPTURE] Enregistrement arrêté par l\'utilisateur');
+        dbgMapgl('[CAPTURE] Enregistrement arrêté par l\'utilisateur');
 
         // Fermer le toast de chargement
         // IMPORTANT: ne pas utiliser de sélecteur large type [class*="toast"] qui peut matcher le conteneur (.gcm-toast-container)
@@ -1859,16 +1866,16 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
                                document.querySelector('.gcm-toast') ||
                                document.querySelector('.toast');
             if (loadingToast) {
-                console.log('[CAPTURE] Toast trouvé, tentative de fermeture:', loadingToast);
+                dbgMapgl('[CAPTURE] Toast trouvé, tentative de fermeture:', loadingToast);
                 pkg.hideToast && pkg.hideToast(loadingToast);
             } else {
-                console.log('[CAPTURE] Aucun toast trouvé avec les sélecteurs testés');
+                dbgMapgl('[CAPTURE] Aucun toast trouvé avec les sélecteurs testés');
             }
 
             // Essayer aussi de fermer tous les toasts visibles (sans toucher au conteneur)
             const allToasts = document.querySelectorAll('.gcm-toast, .toast, .toast-loading');
             allToasts.forEach((toast, index) => {
-                console.log(`[CAPTURE] Fermeture toast ${index}:`, toast.textContent);
+                dbgMapgl(`[CAPTURE] Fermeture toast ${index}:`, toast.textContent);
                 pkg.hideToast && pkg.hideToast(toast);
             });
         } catch(e) {
@@ -1878,11 +1885,11 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
         // Nettoyer les animations de flash
         if (animationSource) {
             animationSource.clear();
-            console.log('[CAPTURE] Animation source nettoyé');
+            dbgMapgl('[CAPTURE] Animation source nettoyé');
         }
         if (animationLayer) {
             animationLayer.setVisible(false);
-            console.log('[CAPTURE] Animation layer masqué');
+            dbgMapgl('[CAPTURE] Animation layer masqué');
         }
 
         // Remettre la carte avec tous les points filtrés
@@ -1890,7 +1897,7 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
         const allFilteredPoints = getAllFilteredPoints();
         if (allFilteredPoints.length > 0) {
             displayWebGLPoints(allFilteredPoints, pkg.options.point);
-            console.log('[CAPTURE] Affichage de', allFilteredPoints.length, 'points filtrés');
+            dbgMapgl('[CAPTURE] Affichage de', allFilteredPoints.length, 'points filtrés');
         }
 
         try { pkg.resetControlsToInitialState && pkg.resetControlsToInitialState(); } catch(e) { console.warn(e); }
@@ -1947,11 +1954,11 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
         // Nettoyer les animations de flash
         if (animationSource) {
             animationSource.clear();
-            console.log('[RECORD END] Animation source nettoyé');
+            dbgMapgl('[RECORD END] Animation source nettoyé');
         }
         if (animationLayer) {
             animationLayer.setVisible(false);
-            console.log('[RECORD END] Animation layer masqué');
+            dbgMapgl('[RECORD END] Animation layer masqué');
         }
 
         // Remettre la carte avec tous les points filtrés
@@ -1959,13 +1966,13 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
         const allFilteredPoints = getAllFilteredPoints();
         if (allFilteredPoints.length > 0) {
             displayWebGLPoints(allFilteredPoints, pkg.options.point);
-            console.log('[RECORD END] Affichage de', allFilteredPoints.length, 'points filtrés');
+            dbgMapgl('[RECORD END] Affichage de', allFilteredPoints.length, 'points filtrés');
         }
 
         try { pkg.resetControlsToInitialState && pkg.resetControlsToInitialState(); } catch(e) { console.warn(e); }
 
         // Assembler automatiquement puis nettoyer
-        console.log('[RECORD END] Démarrage de l\'assemblage automatique...');
+        dbgMapgl('[RECORD END] Démarrage de l\'assemblage automatique...');
 
         // Désactiver temporairement les boutons pour éviter les clics multiples
         const assembleBtn = document.getElementById('btnAssembleMoviePictures');
@@ -2036,7 +2043,7 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
             if (!data || !data.task_id) {
               throw new Error(data && data.message ? data.message : 'Impossible de lancer l\'assemblage vidéo');
             }
-            console.log('[RECORD END] Assemblage lancé en tâche de fond, task_id:', data.task_id);
+            dbgMapgl('[RECORD END] Assemblage lancé en tâche de fond, task_id:', data.task_id);
             return pollTaskStatus(data.task_id, {
               onProgress: (p, msg) => {
                 // Encodage vidéo mappé sur 0→70% de la barre globale
@@ -2045,7 +2052,7 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
             });
           })
           .then(() => {
-            console.log('[RECORD END] Assemblage réussi, nettoyage automatique...');
+            dbgMapgl('[RECORD END] Assemblage réussi, nettoyage automatique...');
             try { pkg.updateProgressBar({progress: 70, message: 'Vidéo créée. Nettoyage des images...'}); } catch(e) {}
             try { pkg.updateTextsModal('Nettoyage en cours', 'Vidéo créée avec succès. Nettoyage des images...'); } catch(e) {}
 
@@ -2062,7 +2069,7 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
           .then(cleanData => {
             reEnableRecordButtons();
             if (cleanData && cleanData.success) {
-              console.log('[RECORD END] Nettoyage automatique terminé');
+              dbgMapgl('[RECORD END] Nettoyage automatique terminé');
               try { pkg.updateProgressBar({progress: 100, message: 'Nettoyage terminé'}); } catch(e) {}
               setTimeout(() => { try { pkg.closeModalLoading(); } catch(e) {} }, 400);
               pkg.showToast && pkg.showToast('Traitement automatique terminé avec succès !', 'success', 'Vidéo prête', 5000);
@@ -2203,7 +2210,7 @@ function recordAnimationMediaRecorder(){
             pkg.options.animation.timePerDay = originalTimePerDay * sd;
             // Ralentir aussi l'animation des flashs pour compenser la normalisation
             pkg.options.flash.duration = originalFlashDuration * sd;
-            console.log('[RECORD] Slowdown x' + sd + ' appliqué: timePerDay=' + pkg.options.animation.timePerDay + ', flash.duration=' + pkg.options.flash.duration);
+            dbgMapgl('[RECORD] Slowdown x' + sd + ' appliqué: timePerDay=' + pkg.options.animation.timePerDay + ', flash.duration=' + pkg.options.flash.duration);
         }
     } catch(_) {}
 
@@ -2742,7 +2749,7 @@ function muxRecordedVideoWithAudio(sourceBlob, audioFile){
 
                             // Debug: vérifier présence des pistes
                             try {
-                                console.log('[MUX] tracks video:', vStream.getVideoTracks().length, 'audio:', audioDest.stream.getAudioTracks().length, 'mime:', muxMime);
+                                dbgMapgl('[MUX] tracks video:', vStream.getVideoTracks().length, 'audio:', audioDest.stream.getAudioTracks().length, 'mime:', muxMime);
                             } catch(_) {}
 
                             const mrOpts = { videoBitsPerSecond: vbps, audioBitsPerSecond: abps };
@@ -2832,7 +2839,7 @@ async function fixWebmFinalDuration(blob){
         const durMs = await getBlobDurationMs(blob);
         if (durMs > 0) {
             const fixed = await fixWebmDuration(blob, durMs, { logger: false });
-            console.log('[duration-fix] durée écrite:', durMs, 'ms');
+            dbgMapgl('[duration-fix] durée écrite:', durMs, 'ms');
             return fixed || blob;
         }
         console.warn('[duration-fix] durée non mesurable, blob inchangé');

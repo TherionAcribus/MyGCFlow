@@ -2,12 +2,6 @@
 // .\virtual\Scripts\activate
 // flask --app app.py --debug run
 
-// Importation de Materialize CSS et JS
-
-//import '../css/materialize-colorpicker.min.css';
-//import '../js/materialize-colorpicker.min.js';
-// TODO : A implanter ou a supprimer
-
 import * as pkg from './index.js';
 
 // Import de la couche d'abstraction Bootstrap/Tabler (remplace progressivement M.*)

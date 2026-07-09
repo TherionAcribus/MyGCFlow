@@ -6,6 +6,12 @@ import { showBsTab, getBsTab, initTomSelect, getTomSelect, refreshTomSelect, ini
 const DEBUG_FILTERS = false;
 const dbgFilters = (...args) => { if (DEBUG_FILTERS) console.log(...args); };
 
+// Flag de debug général pour le reste de ce fichier. Mettre à true pour
+// réactiver les logs en console (désactivés par défaut : sérialiser des
+// objets/chaînes à chaque appel a un coût, sensible sur les chemins fréquents).
+const DEBUG_UI = false;
+const dbgUi = (...args) => { if (DEBUG_UI) console.log(...args); };
+
 // Variables globales pour les éléments UI
 var btnOSM, btnWatercolor, btnStamenToner, btnVectorMap;
 var divVectorMapOptions, divTonerMapOptions;
@@ -268,7 +274,7 @@ const publishedDatePickerEnd = document.getElementById('publishedDatePickerEnd')
     btnStamenTonerLight = document.getElementById('stamenTonerLight');
     if (btnStamenTonerLight) {
         btnStamenTonerLight.addEventListener('click', function() {
-            console.log('Bouton Clair cliqué');
+            dbgUi('Bouton Clair cliqué');
             changeStamenTonerStyle.call(this);
         });
     } else {
@@ -278,7 +284,7 @@ const publishedDatePickerEnd = document.getElementById('publishedDatePickerEnd')
     btnStamenTonerDark = document.getElementById('stamenTonerDark');
     if (btnStamenTonerDark) {
         btnStamenTonerDark.addEventListener('click', function() {
-            console.log('Bouton Sombre cliqué');
+            dbgUi('Bouton Sombre cliqué');
             changeStamenTonerStyle.call(this);
         });
     } else {
@@ -443,9 +449,9 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     pkg.initBsTooltips();
 
     // Initialiser l'état des contrôles (boutons principaux et barre latérale)
-    console.log("=== INITIALISATION DES CONTROLES ===");
+    dbgUi("=== INITIALISATION DES CONTROLES ===");
     showStartRecordButtons();
-    console.log("Appel updateControlBar depuis initUIElements");
+    dbgUi("Appel updateControlBar depuis initUIElements");
     updateControlBar();
 
     // Initialiser l'apparence du bouton fullscreen
@@ -508,7 +514,7 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
             try {
                 const value = inputTitleCss ? inputTitleCss.value : '';
                 pkg.changeTitleCssValues(value);
-                console.log('[CSS] TitleFrame appliqué:', value.substring(0, 100));
+                dbgUi('[CSS] TitleFrame appliqué:', value.substring(0, 100));
             } catch(e) { console.warn('[CSS] TitleFrame erreur', e); }
         });
     }
@@ -519,7 +525,7 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
             try {
                 const value = inputInfosCss ? inputInfosCss.value : '';
                 pkg.changeInfosCssValues(value);
-                console.log('[CSS] InfosFrame appliqué:', value.substring(0, 100));
+                dbgUi('[CSS] InfosFrame appliqué:', value.substring(0, 100));
             } catch(e) { console.warn('[CSS] InfosFrame erreur', e); }
         });
     }
@@ -703,7 +709,7 @@ function initOptionsElements() {
                         // Mettre à jour l'indicateur de correspondance des durées
                         updateDurationMatchIndicator();
 
-                        console.log(`Durée audio appliquée: ${audioDurationSec.toFixed(2)}s (${audioDurationMin.toFixed(2)}min) - Durée lockée`);
+                        dbgUi(`Durée audio appliquée: ${audioDurationSec.toFixed(2)}s (${audioDurationMin.toFixed(2)}min) - Durée lockée`);
                         pkg.showToast && pkg.showToast('Durée de l\'animation ajustée selon la musique', 'info', 'Musique', 3000);
                     }
                 } catch(e) {
@@ -1057,7 +1063,7 @@ export function init_ui() {
         }
     }
     for (let radio of radioborderColorPoint) {
-        console.log(radio)
+        dbgUi(radio)
         if (radio.value === pkg.options.point.border.mode) {
             radio.checked = true;
             break;
@@ -1070,23 +1076,23 @@ export function init_ui() {
     // Initialiser l'affichage des sous-menus de points
     updatePointOptionsDisplay();
     // switch Icone/Vectoriel
-    console.log('🎨 [INIT_UI] Application du mode des points:', {
+    dbgUi('🎨 [INIT_UI] Application du mode des points:', {
         mode_dans_options: pkg.options.point.mode,
         switch_actuel: switchIconeVectoriel.checked
     });
 
     if (pkg.options.point.mode === "vectoriel") {
         switchIconeVectoriel.checked = true;
-        console.log('🎨 [INIT_UI] Mode vectoriel appliqué - switch coché');
+        dbgUi('🎨 [INIT_UI] Mode vectoriel appliqué - switch coché');
     } else if (pkg.options.point.mode === "icone") {
         switchIconeVectoriel.checked = false;
-        console.log('🎨 [INIT_UI] Mode icone appliqué - switch décoché');
+        dbgUi('🎨 [INIT_UI] Mode icone appliqué - switch décoché');
     } else {
         console.warn('🎨 [INIT_UI] Mode inconnu:', pkg.options.point.mode, '- utilisation de la valeur par défaut (vectoriel)');
         switchIconeVectoriel.checked = true; // valeur par défaut
     }
 
-    console.log('🎨 [INIT_UI] État final du switch:', switchIconeVectoriel.checked);
+    dbgUi('🎨 [INIT_UI] État final du switch:', switchIconeVectoriel.checked);
     selectShape.value = pkg.options.point.shape
     // Rafraîchir Tom Select pour refléter la nouvelle valeur sélectionnée
     refreshTomSelect(document.getElementById('selectShape'));
@@ -1619,7 +1625,7 @@ async function changeOptionsValues() {
         });
 
         if (saveResponse.ok) {
-            console.log('Paramètres sauvegardés côté serveur:', { language: newLanguage, check_updates: currentSettings.check_updates });
+            dbgUi('Paramètres sauvegardés côté serveur:', { language: newLanguage, check_updates: currentSettings.check_updates });
         } else {
             console.warn('Échec sauvegarde côté serveur, paramètres locaux seulement');
         }
@@ -1692,7 +1698,7 @@ function changeRecordValues() {
                 if (wasEnabled && !pkg.options.record.audio.enabled && isDurationLockedToAudio) {
                     isDurationLockedToAudio = false;
                     updateDurationLockIndicator();
-                    console.log('Durée délockée - audio désactivé');
+                    dbgUi('Durée délockée - audio désactivé');
                 }
                 // Mettre à jour l'indicateur de correspondance des durées
                 updateDurationMatchIndicator();
@@ -2685,15 +2691,15 @@ function updateStrokeWidthValue() {
 function changeStamenTonerStyle(){
     // Récupérer l'ID du bouton cliqué directement
     const styleName = this.id;
-    console.log('Changement de style Toner:', styleName);
+    dbgUi('Changement de style Toner:', styleName);
 
     let style;
     if (styleName === "stamenTonerDark"){
         style = "dark";
-        console.log('Style sombre sélectionné');
+        dbgUi('Style sombre sélectionné');
     } else if (styleName === "stamenTonerLight"){
         style = "light";
-        console.log('Style clair sélectionné');
+        dbgUi('Style clair sélectionné');
     } else {
         console.warn('Style non reconnu:', styleName);
         return;
@@ -2701,14 +2707,14 @@ function changeStamenTonerStyle(){
 
     // Mettre à jour les options
     pkg.options.map.stamenToner.type = style;
-    console.log('Options mises à jour:', pkg.options.map.stamenToner);
+    dbgUi('Options mises à jour:', pkg.options.map.stamenToner);
 
     // Changer l'apparence des boutons
     changeButtonsStamenToner(style);
 
     // Rafraîchir la carte
     pkg.refreshStamenTonerMap(pkg.options.map.stamenToner);
-    console.log('Carte rafraîchie');
+    dbgUi('Carte rafraîchie');
 }
 
 // selectionne/deselectionne les boutons pour le Sous menu Stamen Toner au démarrage et au clic sur un des boutons
@@ -2784,12 +2790,12 @@ export function selectWatercolorMapMenu(){
 }
 
 export function selectStamenTonerMapMenu(){
-    console.log('Affichage des options Toner avec animation');
+    dbgUi('Affichage des options Toner avec animation');
 
     if (divTonerMapOptions) {
         divTonerMapOptions.style.display = 'block';
         divTonerMapOptions.classList.add('show');
-        console.log('Options Toner affichées avec animation');
+        dbgUi('Options Toner affichées avec animation');
     } else {
         console.warn('divTonerMapOptions non trouvé');
     }
@@ -2840,7 +2846,7 @@ export function openModalLoading(title, description){
     // Remplacer la modal par un toast non-bloquant
     try {
         currentLoadingToast = pkg.showLoadingToast(description, title);
-        console.log('[LOADER] openModalLoading créé:', !!currentLoadingToast, currentLoadingToast);
+        dbgUi('[LOADER] openModalLoading créé:', !!currentLoadingToast, currentLoadingToast);
         // S'assurer que le toast est bien visible (certaines implémentations peuvent retourner un élément déjà dans le DOM mais masqué)
         if (currentLoadingToast) {
             try { currentLoadingToast.style.display = 'flex'; } catch(_) {}
@@ -2895,7 +2901,7 @@ export function updateTextsModal(title, description){
         const messageElement = currentLoadingToast.querySelector('.toast-message, .gcm-toast-message');
         if (titleElement) titleElement.textContent = title;
         if (messageElement) messageElement.textContent = description;
-        console.log('[LOADER] updateTextsModal ok');
+        dbgUi('[LOADER] updateTextsModal ok');
     } else {
         console.warn('[LOADER] updateTextsModal sans loader');
     }
@@ -2906,7 +2912,7 @@ export function closeModalLoading(){
     if (currentLoadingToast) {
         try { pkg.hideToast(currentLoadingToast); } catch(e) { try { currentLoadingToast.remove(); } catch(_) {} }
         currentLoadingToast = null;
-        console.log('[LOADER] closeModalLoading');
+        dbgUi('[LOADER] closeModalLoading');
     }
 }
 
@@ -2928,7 +2934,7 @@ export function updateProgressBar(data) {
                 messageElement.textContent = data.message;
             }
         }
-        console.log('[LOADER] updateProgressBar:', data.progress);
+        dbgUi('[LOADER] updateProgressBar:', data.progress);
     } else {
         console.warn('[LOADER] updateProgressBar sans loader');
     }
@@ -2963,7 +2969,7 @@ export function openModalnfos(title, description, mode="text"){
 // Fonction de compatibilité (plus nécessaire mais gardée pour compatibilité)
 export function updateTextsModalInfos(title, description, mode="text"){
     // Cette fonction n'est plus nécessaire avec les toasts
-    console.log("updateTextsModalInfos:", title, description);
+    dbgUi("updateTextsModalInfos:", title, description);
 }
 
 export function closeModalInfos(){
@@ -2977,35 +2983,35 @@ export function closeModalInfos(){
 
 // Affichage boutons principaux
 function showStartRecordButtons(){
-    console.log("=== showStartRecordButtons ===");
+    dbgUi("=== showStartRecordButtons ===");
     const btnStart = document.getElementById('btnStartAnimation');
     const btnRecord = document.getElementById('btnRecordAnimation');
     const btnPause = document.getElementById('btnPauseAnimation');
     const btnStop = document.getElementById('btnStopAnimation');
     if (!btnStart || !btnRecord || !btnPause || !btnStop) {
-        console.log("❌ Boutons manquants:", {btnStart: !!btnStart, btnRecord: !!btnRecord, btnPause: !!btnPause, btnStop: !!btnStop});
+        dbgUi("❌ Boutons manquants:", {btnStart: !!btnStart, btnRecord: !!btnRecord, btnPause: !!btnPause, btnStop: !!btnStop});
         return;
     }
 
-    console.log("Configuration boutons principaux:");
-    console.log("  Start avant:", window.getComputedStyle(btnStart).display);
-    console.log("  Record avant:", window.getComputedStyle(btnRecord).display);
-    console.log("  Pause avant:", window.getComputedStyle(btnPause).display);
-    console.log("  Stop avant:", window.getComputedStyle(btnStop).display);
+    dbgUi("Configuration boutons principaux:");
+    dbgUi("  Start avant:", window.getComputedStyle(btnStart).display);
+    dbgUi("  Record avant:", window.getComputedStyle(btnRecord).display);
+    dbgUi("  Pause avant:", window.getComputedStyle(btnPause).display);
+    dbgUi("  Stop avant:", window.getComputedStyle(btnStop).display);
 
     btnStart.style.setProperty('display', 'inline-block', 'important');
     btnRecord.style.setProperty('display', 'inline-block', 'important');
     btnPause.style.setProperty('display', 'none', 'important');
     btnStop.style.setProperty('display', 'none', 'important');
 
-    console.log("  Start après:", window.getComputedStyle(btnStart).display);
-    console.log("  Record après:", window.getComputedStyle(btnRecord).display);
-    console.log("  Pause après:", window.getComputedStyle(btnPause).display);
-    console.log("  Stop après:", window.getComputedStyle(btnStop).display);
+    dbgUi("  Start après:", window.getComputedStyle(btnStart).display);
+    dbgUi("  Record après:", window.getComputedStyle(btnRecord).display);
+    dbgUi("  Pause après:", window.getComputedStyle(btnPause).display);
+    dbgUi("  Stop après:", window.getComputedStyle(btnStop).display);
 }
 
 function showPauseStopButtons(){
-    console.log("showPauseStopButtons")
+    dbgUi("showPauseStopButtons")
     const btnStart = document.getElementById('btnStartAnimation');
     const btnRecord = document.getElementById('btnRecordAnimation');
     const btnPause = document.getElementById('btnPauseAnimation');
@@ -3043,7 +3049,7 @@ function clickRecordAnimation(){
 // Exposé pour remise à zéro depuis mapgl.js
 export function resetControlsToInitialState(){
     try {
-        console.log('[UI] resetControlsToInitialState()');
+        dbgUi('[UI] resetControlsToInitialState()');
         // Boutons principaux
         showStartRecordButtons();
         // Réactiver le bouton Pause (peut avoir été désactivé en mode enregistrement)
@@ -3097,7 +3103,7 @@ function changeAnimationValues(event){
         if (isDurationLockedToAudio) {
             isDurationLockedToAudio = false;
             updateDurationLockIndicator();
-            console.log('Durée délockée - utilisateur a modifié la durée par jour');
+            dbgUi('Durée délockée - utilisateur a modifié la durée par jour');
         }
         updateTotalTime();
         // Mettre à jour l'indicateur de correspondance des durées
@@ -3107,7 +3113,7 @@ function changeAnimationValues(event){
         if (isDurationLockedToAudio) {
             isDurationLockedToAudio = false;
             updateDurationLockIndicator();
-            console.log('Durée délockée - utilisateur a modifié le temps total');
+            dbgUi('Durée délockée - utilisateur a modifié le temps total');
         }
         updateTimePerDay();
         // Mettre à jour l'indicateur de correspondance des durées
@@ -3169,7 +3175,7 @@ function updateTotalTime(){
     const baseTimeMs = pkg.metadata.deltaDays * inputTimePerDay.value;
     const extraMs = getExtraEndMs();
     const totalTimeInMilliSec = baseTimeMs + extraMs;
-    console.log("totalTimeInMilliSec", totalTimeInMilliSec);
+    dbgUi("totalTimeInMilliSec", totalTimeInMilliSec);
     // mise à jour du temps en ms pour futurs calculs
     pkg.options.record.totalTimeInMilliSec = totalTimeInMilliSec;
 
@@ -3229,10 +3235,10 @@ function clear_pictures_directory(){
     })
     .then(response => response.json())
     .then(data => {
-        console.log(data); // Traiter la réponse de Django
+        dbgUi(data); // Traiter la réponse de Django
         if(data.success) {
             // Mettre à jour l'interface utilisateur en conséquence
-            console.log(data)
+            dbgUi(data)
         }
     })
     .catch(error => console.error('Erreur:', error));
@@ -3248,7 +3254,7 @@ function open_video_folder(){
     })
     .then(response => response.json())
     .then(data => {
-        console.log(data);
+        dbgUi(data);
         if (data?.success && data.folder) {
             pkg.showToast && pkg.showToast(pkg.t('Dossier vidéo: ${folder}', { folder: data.folder }), 'info', 'Ouverture');
         } else {
@@ -3410,13 +3416,13 @@ function changeInfosValues(event){
     // Mettre à jour immédiatement l'état des éléments DOM selon les paramètres
     updateOverlayElementsVisibility();
 
-    console.log(event.target)
+    dbgUi(event.target)
 
     // ----- TITRE -----
 
     // création / destruction du la Frame Titre
     if (event.target.id == "cbDisplayTitle" && event.target.checked) {
-        console.log("cbDisplayTitle")
+        dbgUi("cbDisplayTitle")
         pkg.createTitleFrame();
     } else if (event.target.id == "cbDisplayTitle" && !event.target.checked) {
         pkg.destroyTitleFrame();
@@ -3424,7 +3430,7 @@ function changeInfosValues(event){
 
     // changement texte titre
     if (event.target.id == "inputTitle") {
-        console.log("inputTitle")
+        dbgUi("inputTitle")
         pkg.updateTitleFrame(event.target.value);
     }
 
@@ -3449,7 +3455,7 @@ function changeInfosValues(event){
     if (event.target.id == "cbDisplayNumberofCaches" && !event.target.checked) {
         spanNbCaches.style.display = "none";
     } else if (event.target.id == "cbDisplayCurrentDate" && !event.target.checked) {
-        console.log("cbDisplayCurrentDate")
+        dbgUi("cbDisplayCurrentDate")
         spanCurrentDate.style.display = "none";
     }
 
@@ -3481,7 +3487,7 @@ function updateOverlayElementsVisibility() {
             }
         }
 
-        console.log('[OVERLAY] Visibilité mise à jour:', {
+        dbgUi('[OVERLAY] Visibilité mise à jour:', {
             title: pkg.options.infos?.title?.display,
             date: pkg.options.infos?.currentDate?.display,
             caches: pkg.options.infos?.numberOfCaches?.display,
@@ -4053,7 +4059,7 @@ function updateFullscreenButtonAppearance() {
 }
 
 function updateControlBar() {
-    console.log("=== updateControlBar ===");
+    dbgUi("=== updateControlBar ===");
     const controlBar = document.getElementById('controlBar');
     const btnStartBar = document.getElementById('btnStartBar');
     const btnRecordBar = document.getElementById('btnRecordBar');
@@ -4064,7 +4070,7 @@ function updateControlBar() {
     const btnPauseAnimation = document.getElementById('btnPauseAnimation');
     const btnStopAnimation = document.getElementById('btnStopAnimation');
 
-    console.log("Boutons trouvés:", {
+    dbgUi("Boutons trouvés:", {
         controlBar: !!controlBar,
         btnStartBar: !!btnStartBar,
         btnRecordBar: !!btnRecordBar,
@@ -4075,7 +4081,7 @@ function updateControlBar() {
     });
 
     if (!controlBar) {
-        console.log("❌ controlBar non trouvé");
+        dbgUi("❌ controlBar non trouvé");
         return;
     }
 
@@ -4085,7 +4091,7 @@ function updateControlBar() {
         isIdle = true;
     }
 
-    console.log("État détecté:", {
+    dbgUi("État détecté:", {
         isIdle: isIdle,
         btnStartAnimation_display: btnStartAnimation ? window.getComputedStyle(btnStartAnimation).display : 'null',
         btnPauseAnimation_display: btnPauseAnimation ? window.getComputedStyle(btnPauseAnimation).display : 'null',
@@ -4093,52 +4099,52 @@ function updateControlBar() {
     });
 
     // Gestion des boutons selon l'état
-    console.log("Configuration des boutons de la barre latérale:");
+    dbgUi("Configuration des boutons de la barre latérale:");
     if (isIdle) {
-        console.log("  Mode IDLE: afficher Start/Record, masquer Pause/Stop");
+        dbgUi("  Mode IDLE: afficher Start/Record, masquer Pause/Stop");
         // État repos -> afficher Start/Record, masquer Pause/Stop
         if (btnStartBar) {
-            console.log("    btnStartBar avant:", window.getComputedStyle(btnStartBar).display);
+            dbgUi("    btnStartBar avant:", window.getComputedStyle(btnStartBar).display);
             btnStartBar.style.setProperty('display', 'flex', 'important');
-            console.log("    btnStartBar après:", window.getComputedStyle(btnStartBar).display);
+            dbgUi("    btnStartBar après:", window.getComputedStyle(btnStartBar).display);
         }
         if (btnRecordBar) {
-            console.log("    btnRecordBar avant:", window.getComputedStyle(btnRecordBar).display);
+            dbgUi("    btnRecordBar avant:", window.getComputedStyle(btnRecordBar).display);
             btnRecordBar.style.setProperty('display', 'flex', 'important');
-            console.log("    btnRecordBar après:", window.getComputedStyle(btnRecordBar).display);
+            dbgUi("    btnRecordBar après:", window.getComputedStyle(btnRecordBar).display);
         }
         if (btnPauseBar) {
-            console.log("    btnPauseBar avant:", window.getComputedStyle(btnPauseBar).display);
+            dbgUi("    btnPauseBar avant:", window.getComputedStyle(btnPauseBar).display);
             btnPauseBar.style.setProperty('display', 'none', 'important');
-            console.log("    btnPauseBar après:", window.getComputedStyle(btnPauseBar).display);
+            dbgUi("    btnPauseBar après:", window.getComputedStyle(btnPauseBar).display);
         }
         if (btnStopBar) {
-            console.log("    btnStopBar avant:", window.getComputedStyle(btnStopBar).display);
+            dbgUi("    btnStopBar avant:", window.getComputedStyle(btnStopBar).display);
             btnStopBar.style.setProperty('display', 'none', 'important');
-            console.log("    btnStopBar après:", window.getComputedStyle(btnStopBar).display);
+            dbgUi("    btnStopBar après:", window.getComputedStyle(btnStopBar).display);
         }
     } else {
-        console.log("  Mode RUNNING: masquer Start/Record, afficher Pause/Stop");
+        dbgUi("  Mode RUNNING: masquer Start/Record, afficher Pause/Stop");
         // Animation/enregistrement en cours -> masquer Start/Record, afficher Pause/Stop
         if (btnStartBar) {
-            console.log("    btnStartBar avant:", window.getComputedStyle(btnStartBar).display);
+            dbgUi("    btnStartBar avant:", window.getComputedStyle(btnStartBar).display);
             btnStartBar.style.setProperty('display', 'none', 'important');
-            console.log("    btnStartBar après:", window.getComputedStyle(btnStartBar).display);
+            dbgUi("    btnStartBar après:", window.getComputedStyle(btnStartBar).display);
         }
         if (btnRecordBar) {
-            console.log("    btnRecordBar avant:", window.getComputedStyle(btnRecordBar).display);
+            dbgUi("    btnRecordBar avant:", window.getComputedStyle(btnRecordBar).display);
             btnRecordBar.style.setProperty('display', 'none', 'important');
-            console.log("    btnRecordBar après:", window.getComputedStyle(btnRecordBar).display);
+            dbgUi("    btnRecordBar après:", window.getComputedStyle(btnRecordBar).display);
         }
         if (btnPauseBar) {
-            console.log("    btnPauseBar avant:", window.getComputedStyle(btnPauseBar).display);
+            dbgUi("    btnPauseBar avant:", window.getComputedStyle(btnPauseBar).display);
             btnPauseBar.style.setProperty('display', 'flex', 'important');
-            console.log("    btnPauseBar après:", window.getComputedStyle(btnPauseBar).display);
+            dbgUi("    btnPauseBar après:", window.getComputedStyle(btnPauseBar).display);
         }
         if (btnStopBar) {
-            console.log("    btnStopBar avant:", window.getComputedStyle(btnStopBar).display);
+            dbgUi("    btnStopBar avant:", window.getComputedStyle(btnStopBar).display);
             btnStopBar.style.setProperty('display', 'flex', 'important');
-            console.log("    btnStopBar après:", window.getComputedStyle(btnStopBar).display);
+            dbgUi("    btnStopBar après:", window.getComputedStyle(btnStopBar).display);
         }
     }
 
