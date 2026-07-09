@@ -2,7 +2,7 @@ import * as pkg from './index.js';
 import { CONFIG } from './init.js';
 import { showSuccess, showError, showInfo, t } from './notifications.js';
 import { clearMap } from './mapgl.js';
-import { hideBsModal } from './ui_bootstrap.js';
+import { showBsModal, hideBsModal } from './ui_bootstrap.js';
 
 export let json_data = null;
 export const metadata = {};
@@ -247,7 +247,13 @@ function setupGpxDragAndDrop() {
 
 setupGpxDragAndDrop();
 
-export function readBddValues(){
+// Lit l'état de la BDD (/db_status) et le reflète dans l'UI (texte d'infos +
+// visibilité du bouton de vidage). Avec { offerFirstUse: true } (uniquement au
+// démarrage), affiche en plus la modale de première utilisation quand aucune
+// donnée n'est présente (base absente ou vide) pour inviter à charger un GPX.
+// Ce flag n'est PAS activé sur les appels post-import (la base n'est alors pas
+// vide de toute façon) ni ailleurs, pour éviter que la modale ne resurgisse.
+export function readBddValues({ offerFirstUse = false } = {}){
     try {
         fetch(`${CONFIG.BASE_URL}/db_status`)
         .then(response => response.json())
@@ -255,15 +261,17 @@ export function readBddValues(){
             const infos = document.getElementById('infosBDD');
             const infosModal = document.getElementById('infosBDDModal');
 
+            // "A des données" = base présente ET non vide. Les deux autres cas
+            // (vide, ou inexistante) sont traités de façon identique côté UI.
+            const hasData = !!(data && data.exists && data.isEmpty === false);
+
             let text = '';
-            if (data && data.exists && data.isEmpty === false) {
+            if (hasData) {
                 const total = data.totalPoints ?? 0;
                 const start = data.startDate ?? '';
                 const end = data.endDate ?? '';
                 const load = data.loadDate ?? '';
                 text = `${total} caches | ${start} → ${end}${load ? ' | ' + load : ''}`;
-            } else if (data && data.exists && data.isEmpty === true) {
-                text = t('Aucune base de données chargée');
             } else {
                 text = t('Aucune base de données chargée');
             }
@@ -272,7 +280,14 @@ export function readBddValues(){
             if (infosModal) infosModal.textContent = text;
 
             const btn = document.getElementById('clearDatabaseBtn');
-            if (btn) btn.style.display = (data && data.exists && data.isEmpty === false) ? '' : 'none';
+            if (btn) btn.style.display = hasData ? '' : 'none';
+
+            // Première utilisation : pas de données → inviter à charger un GPX.
+            if (offerFirstUse && !hasData) {
+                try { showBsModal('modal_first_use'); } catch (e) {
+                    console.warn('Affichage modale première utilisation impossible:', e);
+                }
+            }
         })
         .catch(err => {
             console.error('Erreur lecture infos BDD:', err);

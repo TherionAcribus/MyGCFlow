@@ -75,8 +75,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     const defaultValuesPromise = pkg.getDefaultValues();
     const userSettingsPromise = fetchUserSettings();
 
-    // check la présence d'une BDD et les affiche (fire-and-forget, indépendant)
-    pkg.readBddValues();
+    // check la présence d'une BDD et les affiche (fire-and-forget, indépendant).
+    // offerFirstUse: sur base absente ou vide, affiche la modale de première
+    // utilisation invitant à charger un fichier GPX.
+    pkg.readBddValues({ offerFirstUse: true });
 
     // Les valeurs par défaut sont requises pour initialiser la classe "options".
     const optionsValues = await defaultValuesPromise;
