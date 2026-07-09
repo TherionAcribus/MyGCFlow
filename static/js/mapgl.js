@@ -946,16 +946,15 @@ function getStyle2D(feature, pointOptions) {
     });
 }
 
-function displayWebGLPoints(features, pointOptions) {
-    console.log('[displayWebGLPoints] featureList count:', (Array.isArray(features) ? features.length : 'not-array'), '| mode:', pointOptions?.mode, '| shape:', pointOptions?.shape, '| sprite:', !!pointOptions?.sprite);
-
-    const featureList = Array.isArray(features) ? features : [];
-
+// Construit l'objet de style WebGLPoints (icône sprite ou cercle/triangle uni)
+// à partir des options de points courantes. Le style WebGL est figé à la
+// création du layer (il compile des shaders) : cette fonction n'est donc à
+// appeler qu'à la (re)création du layer, jamais à chaque frame d'animation.
+function buildPointStyle(pointOptions) {
     // Validation et valeurs par défaut pour éviter NaN dans les shaders WebGL
-    let pointSize = Math.max(1, parseInt(pointOptions.center.size) || 3);
-    let borderSizeValue = Math.max(0, parseInt(pointOptions.border.size) || 0);
-    let borderWidth = borderSizeValue / 5; // Épaisseur réelle de la bordure
-    let borderSize = pointSize + borderWidth; // Rayon total pour le layer de bordure
+    const pointSize = Math.max(1, parseInt(pointOptions.center.size) || 3);
+    const borderSizeValue = Math.max(0, parseInt(pointOptions.border.size) || 0);
+    const borderWidth = borderSizeValue / 5; // Épaisseur réelle de la bordure
     let borderColor;
 
     if (pointOptions.border.mode == "gc") {
@@ -971,7 +970,7 @@ function displayWebGLPoints(features, pointOptions) {
         borderColor = 'transparent' // Pas utilisé mais défini pour cohérence
     }
 
-   
+
     let fillColor;
     if (pointOptions.center.mode == "gc") {
         fillColor = [
@@ -985,7 +984,6 @@ function displayWebGLPoints(features, pointOptions) {
     }
 
     let pointStyle;
-    let pointStyleBorder;    
     if (pointOptions.mode == "icone") {
         // Utilisation du sprite Geocaching: offset/size dynamiques selon le type ('cache_type')
         if (pointOptions.sprite && pointOptions.sprite.map) {
@@ -1118,8 +1116,15 @@ function displayWebGLPoints(features, pointOptions) {
             }
         }
 
-    }   
+    }
 
+    return pointStyle;
+}
+
+function displayWebGLPoints(features, pointOptions) {
+    console.log('[displayWebGLPoints] featureList count:', (Array.isArray(features) ? features.length : 'not-array'), '| mode:', pointOptions?.mode, '| shape:', pointOptions?.shape, '| sprite:', !!pointOptions?.sprite);
+
+    const featureList = Array.isArray(features) ? features : [];
 
     // Réutiliser la source existante si possible (évite les sources orphelines)
     if (!window.vectorSource) {
@@ -1127,12 +1132,17 @@ function displayWebGLPoints(features, pointOptions) {
         window.vectorSource = new ol.source.Vector({ wrapX: true });
     }
 
-    // Créer le layer seulement si absent (la source est réutilisée)
+    // Créer le layer seulement si absent (la source est réutilisée). Le style
+    // n'est calculé que dans ce cas : il était auparavant reconstruit à chaque
+    // appel (donc à chaque frame de l'animation) puis jeté sans être utilisé,
+    // puisqu'un layer WebGLPoints existant ignore un nouveau style tant qu'il
+    // n'est pas recréé (cf. clearMap() dans les autres appelants qui veulent
+    // réellement changer le style).
     if (!vectorLayer) {
         console.log('[displayWebGLPoints] Création nouveau vectorLayer WebGLPoints');
         vectorLayer = new ol.layer.WebGLPoints({
             source: window.vectorSource,
-            style: pointStyle,
+            style: buildPointStyle(pointOptions),
             zIndex: 1001,
         });
         map.addLayer(vectorLayer);
