@@ -821,28 +821,23 @@ function isIdleState(){
 
 // Initialise l'overlay de popup et les interactions de clic
 function initPopupOverlay(){
-    // Créer l'élément DOM de la popup s'il n'existe pas
+    // Créer l'élément DOM de la popup à partir du gabarit s'il n'existe pas
+    // déjà (initPopupOverlay peut être rappelée si la carte est recréée).
+    // Styles visuels : classes .gc-popup* (tabler_theme.css), pas de style inline.
     popupEl = document.getElementById('gcPopup');
     if (!popupEl) {
-        popupEl = document.createElement('div');
-        popupEl.id = 'gcPopup';
-        popupEl.style.position = 'absolute';
-        popupEl.style.background = 'rgba(0,0,0,0.75)';
-        popupEl.style.color = '#fff';
-        popupEl.style.padding = '8px 10px';
-        popupEl.style.borderRadius = '6px';
-        popupEl.style.fontSize = '12px';
-        popupEl.style.pointerEvents = 'none';
-        popupEl.style.width = '320px';
-        popupEl.style.maxWidth = '700px';
-        popupEl.style.wordWrap = 'break-word';
-        popupEl.style.overflowWrap = 'break-word';
-        popupEl.style.whiteSpace = 'normal';
-        popupEl.style.boxShadow = '0 2px 8px rgba(0,0,0,0.35)';
-        popupEl.style.display = 'none';
-        // petite flèche
-        popupEl.style.transform = 'translate(-50%, -100%)';
-        document.body.appendChild(popupEl);
+        const template = document.getElementById('gcPopupTemplate');
+        if (template) {
+            document.body.appendChild(template.content.cloneNode(true));
+            popupEl = document.getElementById('gcPopup');
+        } else {
+            // Fallback si le gabarit est absent de la page (ne devrait pas arriver)
+            popupEl = document.createElement('div');
+            popupEl.id = 'gcPopup';
+            popupEl.className = 'gc-popup';
+            popupEl.innerHTML = '<div class="gc-popup-content"></div>';
+            document.body.appendChild(popupEl);
+        }
     }
 
     // Créer l'overlay OpenLayers si besoin
@@ -891,15 +886,14 @@ function initPopupOverlay(){
         const publishedDate = sanitize(props.published_date);
 
         const html = `
-            <div style="display:flex;flex-direction:column;gap:4px;">
-                <div style="font-weight:600;font-size:13px;">${linkHref ? `<a href=\"${linkHref}\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color:#fff;text-decoration:underline;pointer-events:auto;cursor:pointer;\">` : ''}${gcEsc}${linkHref ? '</a>' : ''} - ${name || 'Sans nom'}</div>
-                <div>${type || '-'}, ${cont || '-'}, ${dif||'-'}/${ter||'-'}</div>
-                ${owner ? `<div>${owner}</div>` : ''}
-                ${publishedDate ? `<div>Publié le ${publishedDate}</div>` : ''}
-                <div>${foundText === 'Oui' ? 'Trouvé' : 'DNF'} ${dateFind ? `le ${dateFind}` : ''}</div>
-            </div>`;
-        popupEl.innerHTML = html;
-        popupEl.style.display = 'block';
+            <div class="gc-popup-title">${linkHref ? `<a href=\"${linkHref}\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"gc-popup-link\">` : ''}${gcEsc}${linkHref ? '</a>' : ''} - ${name || 'Sans nom'}</div>
+            <div>${type || '-'}, ${cont || '-'}, ${dif||'-'}/${ter||'-'}</div>
+            ${owner ? `<div>${owner}</div>` : ''}
+            ${publishedDate ? `<div>Publié le ${publishedDate}</div>` : ''}
+            <div>${foundText === 'Oui' ? 'Trouvé' : 'DNF'} ${dateFind ? `le ${dateFind}` : ''}</div>`;
+        const contentEl = popupEl.querySelector('.gc-popup-content') || popupEl;
+        contentEl.innerHTML = html;
+        popupEl.classList.add('is-visible');
         popupOverlay.setPosition(evt.coordinate);
     });
 
@@ -917,7 +911,7 @@ function initPopupOverlay(){
 }
 
 function hidePopup(){
-    if (popupEl) popupEl.style.display = 'none';
+    if (popupEl) popupEl.classList.remove('is-visible');
     if (popupOverlay) popupOverlay.setPosition(undefined);
 }
 

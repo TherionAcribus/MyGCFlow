@@ -94,6 +94,17 @@
                     </div>
                 </div>
 
+                <!-- Gabarit de la popup d'information OpenLayers (clic sur un point).
+                     Cloné une fois par mapgl.js::initPopupOverlay() et rattaché à
+                     <body> (l'overlay OL le repositionne ensuite lui-même). Le
+                     contenu par point est régénéré à chaque clic dans .gc-popup-content ;
+                     toute l'habillage visuel vit dans les classes .gc-popup* (tabler_theme.css). -->
+                <template id="gcPopupTemplate">
+                    <div id="gcPopup" class="gc-popup">
+                        <div class="gc-popup-content"></div>
+                    </div>
+                </template>
+
                 <div id="mapTabsResizer"></div>
 
                 <div id="tabsPanel">

@@ -254,6 +254,47 @@ h5, h6 { color: var(--color-text); font-weight: 600; }
 }
 .active-profile .active-badge { background: var(--color-success); }
 
+/* --- Popup d'information OpenLayers (clic sur un point de la carte) ---
+   Gabarit HTML : <template id="gcPopupTemplate"> dans app.html.
+   Couleurs fixes (fond sombre, texte blanc) volontairement indépendantes du
+   thème d'interface : c'est un overlay SUR la carte, sa lisibilité doit
+   rester constante quel que soit le fond de carte affiché. */
+.gc-popup {
+    position: absolute;
+    display: none;
+    background: rgba(0, 0, 0, 0.75);
+    color: #fff;
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    pointer-events: none;
+    width: 320px;
+    max-width: 700px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    transform: translate(-50%, -100%);
+}
+.gc-popup.is-visible {
+    display: block;
+}
+.gc-popup-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.gc-popup-title {
+    font-weight: 600;
+    font-size: 13px;
+}
+.gc-popup-link {
+    color: #fff;
+    text-decoration: underline;
+    pointer-events: auto;
+    cursor: pointer;
+}
+
 /* =====================================================================
    Dark mode — overrides des surfaces custom à couleurs codées en dur
    ---------------------------------------------------------------------
