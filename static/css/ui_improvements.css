@@ -653,6 +653,14 @@ main.fullscreen-mode #mapWithFrames #infosFrame span {
 
 #mapTabsContainer > #mapWithFrames {
     flex: 0 0 auto;
+    /* Hauteur par défaut avant que initMapTabsSplitPane() (ui.js) ne restaure la
+       valeur sauvegardée en localStorage ou n'ajuste au conteneur. Responsive
+       (vh) plutôt qu'une valeur fixe, pour éviter qu'une hauteur figée ne
+       dépasse un viewport court avant l'exécution du JS. Les bornes reprennent
+       les constantes JS (MIN_MAP_PX=200, MIN_TABS_PX=80 + 8px de resizer). */
+    height: 60vh;
+    min-height: 200px;
+    max-height: calc(100vh - 88px);
 }
 
 #mapTabsResizer {
