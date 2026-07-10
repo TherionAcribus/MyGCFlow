@@ -11,6 +11,7 @@ export * from './options.js';
 export * from './notifications.js';
 export * from './flash_animations.js';
 export * from './profiles.js';
+export * from './theme.js';
 
 // Import des fichiers de démonstration uniquement en développement
 if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {

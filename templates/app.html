@@ -2,6 +2,22 @@
 
 <html>
     <head>
+        <!-- Thème (clair/sombre) appliqué AVANT tout CSS pour éviter le flash
+             (FOUC) : on lit la préférence enregistrée (ou le réglage système) et
+             on pose data-bs-theme sur <html> dès le parsing du <head>. La suite
+             de la logique (toggle, réactivité) vit dans static/js/theme.js. -->
+        <script>
+            (function () {
+                try {
+                    var pref = localStorage.getItem('gcmap_theme') || 'system';
+                    var dark = pref === 'dark'
+                        || (pref !== 'light' && window.matchMedia
+                            && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                    document.documentElement.setAttribute('data-bs-theme', dark ? 'dark' : 'light');
+                } catch (e) {}
+            })();
+        </script>
+
         <!-- Tabler 1.4.0 (inclut Bootstrap 5) — chargé AVANT Materialize
              pour permettre la coexistence pendant la migration template par template.
              Les templates migrés utilisent les classes Tabler/Bootstrap ;

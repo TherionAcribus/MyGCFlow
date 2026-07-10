@@ -254,4 +254,97 @@ h5, h6 { color: var(--color-text); font-weight: 600; }
 }
 .active-profile .active-badge { background: var(--color-success); }
 
+/* =====================================================================
+   Dark mode — overrides des surfaces custom à couleurs codées en dur
+   ---------------------------------------------------------------------
+   Poser data-bs-theme="dark" active à la fois le mode sombre natif de
+   Tabler (tous ses composants) et le bloc de variables --color-* ci-dessus,
+   donc l'essentiel de l'UI bascule automatiquement. Ce bloc ne rattrape que
+   les surfaces CUSTOM dont les couleurs étaient écrites en dur (fonds clairs,
+   textes sombres, bordures/pistes claires) et qui ne suivent pas les
+   variables. Chargé en dernier (tabler_theme.css est le dernier <link>), et
+   plus spécifique que les règles d'origine — pas besoin de !important.
+   Note : #titleFrame / #infosFrame (fond blanc) sont des overlays SUR la
+   carte, personnalisables par l'utilisateur via l'éditeur CSS — laissés tels
+   quels volontairement (leur lisibilité dépend du fond de carte, pas du thème
+   de l'interface).
+   ===================================================================== */
+
+/* --- Chrome / structure --- */
+
+/* Poignée de redimensionnement carte/panneau : la teinte noire-alpha
+   d'origine disparaît sur fond sombre → on passe en blanc-alpha. */
+[data-bs-theme="dark"] #mapTabsResizer { background: rgba(255, 255, 255, 0.10); }
+[data-bs-theme="dark"] #mapTabsResizer:hover { background: rgba(255, 255, 255, 0.18); }
+[data-bs-theme="dark"] #mapTabsContainer.is-resizing #mapTabsResizer {
+    background: rgba(30, 136, 229, 0.4);
+}
+
+/* Overlay de chargement plein écran (était blanc translucide). */
+[data-bs-theme="dark"] .loading-overlay { background: rgba(18, 22, 28, 0.8); }
+[data-bs-theme="dark"] .loading-spinner {
+    border-color: #3a4250;
+    border-top-color: var(--color-accent);
+}
+
+/* Fond du mode plein écran (visible en bordure autour de la carte). */
+[data-bs-theme="dark"] .fullscreen-mode { background: var(--color-bg); }
+
+/* Toasts custom GCMap (fond blanc + textes gris codés en dur). */
+[data-bs-theme="dark"] .gcm-toast { background: var(--color-surface); color: var(--color-text); }
+[data-bs-theme="dark"] .gcm-toast-message { color: var(--color-text-muted); }
+[data-bs-theme="dark"] .gcm-toast-close { color: var(--color-text-muted); }
+[data-bs-theme="dark"] .gcm-toast-close:hover { color: var(--color-text); }
+[data-bs-theme="dark"] .gcm-progress-bar { background-color: #3a4250; }
+
+/* Options natives du select de flash (best effort : le rendu des <option>
+   dépend de l'OS/navigateur, mais on évite le blanc forcé). */
+[data-bs-theme="dark"] #selectFlashMode option {
+    background: var(--color-surface);
+    color: var(--color-text);
+}
+[data-bs-theme="dark"] #selectFlashMode option:hover { background: var(--color-bg); }
+
+/* --- Textes secondaires sombres codés en dur → éclaircis --- */
+[data-bs-theme="dark"] .vector-label,
+[data-bs-theme="dark"] .filter-sync-label,
+[data-bs-theme="dark"] .gc-css-tab,
+[data-bs-theme="dark"] .filter-info { color: var(--color-text-muted); }
+[data-bs-theme="dark"] .filter-sync-value,
+[data-bs-theme="dark"] .card-panel h5 { color: var(--color-text); }
+[data-bs-theme="dark"] #delete-profile-modal .modal-subtitle { color: var(--color-text-muted); }
+[data-bs-theme="dark"] #delete-profile-modal .modal-body-text { color: var(--color-text); }
+
+/* --- Bordures / pistes de sliders claires → assombries --- */
+[data-bs-theme="dark"] .vector-color-picker,
+[data-bs-theme="dark"] .gc-css-color,
+[data-bs-theme="dark"] #flash input[type="color"] { border-color: var(--color-border); }
+[data-bs-theme="dark"] .vector-slider { background: #3a4250; }
+[data-bs-theme="dark"] .vector-slider:hover { background: #454e5c; }
+[data-bs-theme="dark"] .collection-item { border-bottom-color: var(--color-border); }
+[data-bs-theme="dark"] .collection-item:hover { background-color: rgba(255, 255, 255, 0.04); }
+[data-bs-theme="dark"] #profile-modal .modal-footer,
+[data-bs-theme="dark"] #delete-profile-modal .modal-footer { border-top-color: var(--color-border); }
+/* Checkbox custom Materialize legacy (bordure grise) — au cas où encore présent. */
+[data-bs-theme="dark"] input[type="checkbox"] + span:not(.lever):before { border-color: #6b7480; }
+
+/* --- Badges / pastilles à fond pastel clair → variantes sombres --- */
+[data-bs-theme="dark"] .profile-active-indicator.active {
+    background: rgba(76, 175, 80, 0.15);
+    color: #81c784;
+    border-color: rgba(76, 175, 80, 0.4);
+}
+[data-bs-theme="dark"] .profile-active-indicator.active.unsaved {
+    background: rgba(239, 108, 0, 0.15);
+    color: #ffb74d;
+    border-color: rgba(239, 108, 0, 0.4);
+}
+[data-bs-theme="dark"] #delete-profile-modal .modal-icon.warning {
+    background: rgba(239, 108, 0, 0.15);
+    color: #ffb74d;
+    box-shadow: inset 0 0 0 1px rgba(239, 108, 0, 0.4);
+}
+/* Dropdown profils Materialize legacy : survol clair → sombre. */
+[data-bs-theme="dark"] .dropdown-content li > a:hover { background-color: rgba(255, 255, 255, 0.06); }
+
 /* --- Fin thème Tabler --- */

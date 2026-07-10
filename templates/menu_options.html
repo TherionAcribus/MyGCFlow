@@ -14,6 +14,15 @@
                 </div>
 
                 <div class="mb-3 col-12 col-md-6">
+                    <label class="form-label" for="selectTheme">{{ _("Thème") }}</label>
+                    <select id="selectTheme" class="form-select" aria-label="{{ _('Thème de l\'interface') }}">
+                        <option value="system">{{ _("Système") }}</option>
+                        <option value="light">{{ _("Clair") }}</option>
+                        <option value="dark">{{ _("Sombre") }}</option>
+                    </select>
+                </div>
+
+                <div class="mb-3 col-12 col-md-6">
                     <label class="form-label" for="selectCheckVersionOnline">{{ _("Check for a new version at startup") }}</label>
                     <select id="selectCheckVersionOnline" class="form-select" aria-label="{{ _('Vérifier version au démarrage') }}">
                         <option value="true">{{ _("Yes") }}</option>

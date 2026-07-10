@@ -1631,7 +1631,7 @@ msgstr "Style"
 
 #: templates/menu_style.html:88
 msgid "Clair"
-msgstr "Carré"
+msgstr "Clair"
 
 #: templates/menu_style.html:91
 msgid "Sombre"
