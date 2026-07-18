@@ -1724,3 +1724,6 @@ msgstr ""
 msgid "Ignorer pour l'instant"
 msgstr ""
 
+#: templates/menu_animation.html:28 templates/menu_animation.html:42
+msgid "Filtre"
+msgstr ""

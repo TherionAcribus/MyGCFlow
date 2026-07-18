@@ -8,9 +8,9 @@
 
     <!-- Ligne 1 : Type + Taille -->
     <div class="row g-2">
-    <div class="mb-3 col-6">
+    <div class="mb-3 col-12 col-md-6 filter-field">
         <label class="form-label" for="selectType">{{ _("Type de cache") }}</label>
-        <select multiple id="selectType" class="form-select" aria-label="{{ _('Type de cache') }}">
+        <select multiple id="selectType" class="form-select filter-select" aria-label="{{ _('Type de cache') }}">
             <option value="" disabled selected>{{ _("Filtrer par type de cache") }}</option>
             <optgroup label="{{ _("Caches classiques") }}">
                 <option value="Traditional Cache" selected>{{ _("Traditional Cache") }}</option>
@@ -40,9 +40,9 @@
         </div>
     </div>
 
-    <div class="mb-3 col-6">
+    <div class="mb-3 col-12 col-md-6 filter-field">
         <label class="form-label" for="selectContainer">{{ _("Taille") }}</label>
-        <select multiple id="selectContainer" class="form-select" aria-label="{{ _('Taille') }}">
+        <select multiple id="selectContainer" class="form-select filter-select" aria-label="{{ _('Taille') }}">
             <option value="" disabled selected>{{ _("Filtrer par taille") }}</option>
             <option value="Small" selected>{{ _("Small") }}</option>
             <option value="Micro" selected>{{ _("Micro") }}</option>
@@ -62,9 +62,9 @@
 
     <!-- Ligne 2 : Difficultés + Terrain -->
     <div class="row g-2">
-    <div class="mb-3 col-6">
+    <div class="mb-3 col-12 col-md-6 filter-field">
         <label class="form-label" for="selectDifficulty">{{ _("Difficultés") }}</label>
-        <select multiple id="selectDifficulty" class="form-select" aria-label="{{ _('Difficultés') }}">
+        <select multiple id="selectDifficulty" class="form-select filter-select" aria-label="{{ _('Difficultés') }}">
             <option value="" disabled selected>{{ _("Filtrer par difficulté") }}</option>
             <option value="1" selected>1</option>
             <option value="1.5" selected>1.5</option>
@@ -84,9 +84,9 @@
     </div>
 
 
-    <div class="mb-3 col-6">
+    <div class="mb-3 col-12 col-md-6 filter-field">
         <label class="form-label" for="selectTerrain">{{ _("Terrain") }}</label>
-        <select multiple id="selectTerrain" class="form-select" aria-label="{{ _('Terrain') }}">
+        <select multiple id="selectTerrain" class="form-select filter-select" aria-label="{{ _('Terrain') }}">
             <option value="" disabled selected>{{ _("Filtrer par terrain") }}</option>
             <option value="1" selected>1</option>
             <option value="1.5" selected>1.5</option>
@@ -114,12 +114,20 @@
         <div class="mb-3 col-6">
             <label for="datePickerStart" class="form-label">{{ _("Date de début") }}</label>
             <input id="datePickerStart" type="text" class="form-control td-input" aria-label="{{ _('Date de début') }}">
-            <button type="button" id="btnResetStartDate" class="btn btn-link btn-sm date-reset-btn p-0 mt-1"></button>
+            <div class="date-source-row mt-2">
+                <button type="button" id="btnResetStartDate" class="date-source-btn" data-bs-toggle="tooltip" data-bs-title="{{ _('Date par défaut (BDD)') }}">
+                    <i class="ti ti-database" aria-hidden="true"></i><span class="date-source-label">BDD</span><span class="date-source-separator" aria-hidden="true">·</span><span class="date-source-value">—</span><i class="ti ti-check date-source-check" aria-hidden="true"></i>
+                </button>
+            </div>
         </div>
         <div class="mb-3 col-6">
             <label for="datePickerEnd" class="form-label">{{ _("Date de fin") }}</label>
             <input id="datePickerEnd" type="text" class="form-control td-input" aria-label="{{ _('Date de fin') }}">
-            <button type="button" id="btnResetEndDate" class="btn btn-link btn-sm date-reset-btn p-0 mt-1"></button>
+            <div class="date-source-row mt-2">
+                <button type="button" id="btnResetEndDate" class="date-source-btn" data-bs-toggle="tooltip" data-bs-title="{{ _('Date par défaut (BDD)') }}">
+                    <i class="ti ti-database" aria-hidden="true"></i><span class="date-source-label">BDD</span><span class="date-source-separator" aria-hidden="true">·</span><span class="date-source-value">—</span><i class="ti ti-check date-source-check" aria-hidden="true"></i>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -131,20 +139,28 @@
         <div class="mb-3 col-6">
             <label for="publishedDatePickerStart" class="form-label">{{ _("Date de début") }}</label>
             <input id="publishedDatePickerStart" type="text" class="form-control td-input" aria-label="{{ _('Date de début') }}">
-            <button type="button" id="btnResetPublishedStartDate" class="btn btn-link btn-sm date-reset-btn p-0 mt-1"></button>
+            <div class="date-source-row mt-2">
+                <button type="button" id="btnResetPublishedStartDate" class="date-source-btn" data-bs-toggle="tooltip" data-bs-title="{{ _('Date par défaut (BDD)') }}">
+                    <i class="ti ti-database" aria-hidden="true"></i><span class="date-source-label">BDD</span><span class="date-source-separator" aria-hidden="true">·</span><span class="date-source-value">—</span><i class="ti ti-check date-source-check" aria-hidden="true"></i>
+                </button>
+            </div>
         </div>
         <div class="mb-3 col-6">
             <label for="publishedDatePickerEnd" class="form-label">{{ _("Date de fin") }}</label>
             <input id="publishedDatePickerEnd" type="text" class="form-control td-input" aria-label="{{ _('Date de fin') }}">
-            <button type="button" id="btnResetPublishedEndDate" class="btn btn-link btn-sm date-reset-btn p-0 mt-1"></button>
+            <div class="date-source-row mt-2">
+                <button type="button" id="btnResetPublishedEndDate" class="date-source-btn" data-bs-toggle="tooltip" data-bs-title="{{ _('Date par défaut (BDD)') }}">
+                    <i class="ti ti-database" aria-hidden="true"></i><span class="date-source-label">BDD</span><span class="date-source-separator" aria-hidden="true">·</span><span class="date-source-value">—</span><i class="ti ti-check date-source-check" aria-hidden="true"></i>
+                </button>
+            </div>
         </div>
     </div>
 
     <!-- Ligne 5 : Pays et Régions/États -->
     <div class="row g-2">
-        <div class="mb-3 col-6">
+        <div class="mb-3 col-12 col-md-6 filter-field">
         <label class="form-label" for="selectCountry">{{ _("Pays") }}</label>
-        <select multiple id="selectCountry" class="form-select" aria-label="{{ _('Pays') }}">
+        <select multiple id="selectCountry" class="form-select filter-select" aria-label="{{ _('Pays') }}">
             <option value="" disabled selected>{{ _("Filtrer par pays") }}</option>
         </select>
         <div class="filter-actions mt-1">
@@ -153,9 +169,9 @@
             <span id="infoCountry" class="filter-info-badge"></span>
         </div>
         </div>
-        <div class="mb-3 col-6">
+        <div class="mb-3 col-12 col-md-6 filter-field">
             <label class="form-label" for="selectState">{{ _("Région / État") }}</label>
-            <select multiple id="selectState" class="form-select" aria-label="{{ _('Région / État') }}">
+            <select multiple id="selectState" class="form-select filter-select" aria-label="{{ _('Région / État') }}">
                 <option value="" disabled selected>{{ _("Filtrer par région/état") }}</option>
             </select>
         <div class="filter-actions mt-1">

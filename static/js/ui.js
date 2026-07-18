@@ -151,14 +151,14 @@ const selectState = document.getElementById('selectState');
 // datepicker (trouvaille)
 const datePickerStart = document.getElementById('datePickerStart');
 const datePickerEnd = document.getElementById('datePickerEnd');
-    if (datePickerStart) datePickerStart.addEventListener('change', () => { onSelectionChangedDebounced(); updateAnimFilterInfo(); });
-    if (datePickerEnd) datePickerEnd.addEventListener('change', () => { onSelectionChangedDebounced(); updateAnimFilterInfo(); });
+    if (datePickerStart) datePickerStart.addEventListener('change', () => { onSelectionChangedDebounced(); updateResetButtonsHighlight(); updateAnimFilterInfo(); });
+    if (datePickerEnd) datePickerEnd.addEventListener('change', () => { onSelectionChangedDebounced(); updateResetButtonsHighlight(); updateAnimFilterInfo(); });
 
 // datepicker (pose)
 const publishedDatePickerStart = document.getElementById('publishedDatePickerStart');
 const publishedDatePickerEnd = document.getElementById('publishedDatePickerEnd');
-    if (publishedDatePickerStart) publishedDatePickerStart.addEventListener('change', onSelectionChangedDebounced);
-    if (publishedDatePickerEnd) publishedDatePickerEnd.addEventListener('change', onSelectionChangedDebounced);
+    if (publishedDatePickerStart) publishedDatePickerStart.addEventListener('change', () => { onSelectionChangedDebounced(); updatePublishedResetButtonsHighlight(); });
+    if (publishedDatePickerEnd) publishedDatePickerEnd.addEventListener('change', () => { onSelectionChangedDebounced(); updatePublishedResetButtonsHighlight(); });
 
 // Boutons reset dates (valeurs par défaut de la BDD)
     const btnResetStartDate = document.getElementById('btnResetStartDate');
@@ -229,17 +229,10 @@ const publishedDatePickerEnd = document.getElementById('publishedDatePickerEnd')
     infoContainer = document.getElementById('infoContainer');
 
     // Initialiser Tom Select (remplace Materialize FormSelect)
-    const tsOptions = {
-        plugins: ['remove_button'],
-        maxItems: null,
-        hideSelected: false,
-        hidePlaceholder: true,
-        closeAfterSelect: false,
-    };
-    if (selectType) initTomSelect(selectType, tsOptions);
-    if (selectDifficulty) initTomSelect(selectDifficulty, tsOptions);
-    if (selectTerrain) initTomSelect(selectTerrain, tsOptions);
-    if (selectContainer) initTomSelect(selectContainer, tsOptions);
+    if (selectType) initFilterTomSelect(selectType);
+    if (selectDifficulty) initFilterTomSelect(selectDifficulty);
+    if (selectTerrain) initFilterTomSelect(selectTerrain);
+    if (selectContainer) initFilterTomSelect(selectContainer);
 
     // Initialiser Tempus Dominus sur les datepickers de filtre (remplace Materialize Datepicker)
     const tdOptions = {
@@ -1026,24 +1019,12 @@ export function init_ui() {
                             countryToStates = dd || {};
                             dbgFilters('[COUNTRY] Fallback static JSON loaded. Countries:', Object.keys(countryToStates).length);
                             populateCountryStateSelects(countryToStates);
-                            setTimeout(() => {
-                                dbgFilters('[COUNTRY] Re-populate after delay (fallback)');
-                                populateCountryStateSelects(countryToStates);
-                            }, 800);
                         })
                         .catch(e => console.warn('[COUNTRY] Fallback fetch error:', e));
                 }
                 countryToStates = data || {};
                 dbgFilters('[COUNTRY] Data received. Countries:', Object.keys(countryToStates).length);
                 populateCountryStateSelects(countryToStates);
-            setTimeout(() => {
-                dbgFilters('[COUNTRY] Re-populate after delay');
-                populateCountryStateSelects(countryToStates);
-                // Mise à jour finale des infos après remplissage
-                setTimeout(() => {
-                    updateFilterInfos();
-                }, 200);
-            }, 800);
             })
             .catch((e)=>{ console.warn('[COUNTRY] Fetch error:', e); })
             .finally(()=>{ dbgFilters('[COUNTRY] Fetch chain completed'); });
@@ -1802,11 +1783,6 @@ export function setPickerDates(metadata) {
     startDateElement.value = formattedStartDate;
     endDateElement.value = formattedEndDate;
 
-    // Mettre à jour les libellés des boutons reset
-    const btnResetStartDate = document.getElementById('btnResetStartDate');
-    const btnResetEndDate = document.getElementById('btnResetEndDate');
-    if (btnResetStartDate) btnResetStartDate.title = formattedStartDate ? `↩ ${formattedStartDate}` : '';
-    if (btnResetEndDate) btnResetEndDate.title = formattedEndDate ? `↩ ${formattedEndDate}` : '';
     updateResetButtonsHighlight();
 
     // Initialiser les datepickers de publication avec les mêmes valeurs par défaut
@@ -1830,11 +1806,6 @@ export function setPickerDates(metadata) {
         publishedStartElement.value = formattedPublishedStartDate;
         publishedEndElement.value = formattedPublishedEndDate;
 
-        // Mettre à jour les libellés des boutons reset publication
-        const btnResetPublishedStartDate = document.getElementById('btnResetPublishedStartDate');
-        const btnResetPublishedEndDate = document.getElementById('btnResetPublishedEndDate');
-        if (btnResetPublishedStartDate) btnResetPublishedStartDate.title = formattedPublishedStartDate ? `↩ ${formattedPublishedStartDate}` : '';
-        if (btnResetPublishedEndDate) btnResetPublishedEndDate.title = formattedPublishedEndDate ? `↩ ${formattedPublishedEndDate}` : '';
         updatePublishedResetButtonsHighlight();
     }
 
@@ -1909,6 +1880,15 @@ function resetPublishedEndDateToDefault(){
     updatePublishedResetButtonsHighlight();
 }
 
+function updateDateSourceButton(button, value, isActive){
+    if (!button) return;
+    const valueElement = button.querySelector('.date-source-value');
+    if (valueElement) valueElement.textContent = value || '—';
+    button.disabled = !value;
+    button.classList.toggle('is-active', Boolean(isActive));
+    button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+}
+
 function updatePublishedResetButtonsHighlight(){
     const btnStart = document.getElementById('btnResetPublishedStartDate');
     const btnEnd = document.getElementById('btnResetPublishedEndDate');
@@ -1918,17 +1898,11 @@ function updatePublishedResetButtonsHighlight(){
     const defaultEndStr = defaultPublishedEndDate ? formatDateForPickers(defaultPublishedEndDate) : null;
     if (btnStart) {
         const atDefault = currentStart && defaultStartStr && currentStart === defaultStartStr;
-        if (atDefault) btnStart.classList.add('active-reset');
-        else btnStart.classList.remove('active-reset');
-        btnStart.textContent = atDefault ? '⟲' : `⟲ ${defaultStartStr || ''}`;
-        if (defaultStartStr) btnStart.title = `↩ ${defaultStartStr}`;
+        updateDateSourceButton(btnStart, defaultStartStr, atDefault);
     }
     if (btnEnd) {
         const atDefault = currentEnd && defaultEndStr && currentEnd === defaultEndStr;
-        if (atDefault) btnEnd.classList.add('active-reset');
-        else btnEnd.classList.remove('active-reset');
-        btnEnd.textContent = atDefault ? '⟲' : `⟲ ${defaultEndStr || ''}`;
-        if (defaultEndStr) btnEnd.title = `↩ ${defaultEndStr}`;
+        updateDateSourceButton(btnEnd, defaultEndStr, atDefault);
     }
 }
 
@@ -1941,18 +1915,11 @@ function updateResetButtonsHighlight(){
     const defaultEndStr = defaultEndDate ? formatDateForPickers(defaultEndDate) : null;
     if (btnStart) {
         const atDefault = currentStart && defaultStartStr && currentStart === defaultStartStr;
-        if (atDefault) btnStart.classList.add('active-reset');
-        else btnStart.classList.remove('active-reset');
-        // Afficher la date cible uniquement si elle diffère du défaut
-        btnStart.textContent = atDefault ? '⟲' : `⟲ ${defaultStartStr || ''}`;
-        if (defaultStartStr) btnStart.title = `↩ ${defaultStartStr}`;
+        updateDateSourceButton(btnStart, defaultStartStr, atDefault);
     }
     if (btnEnd) {
         const atDefault = currentEnd && defaultEndStr && currentEnd === defaultEndStr;
-        if (atDefault) btnEnd.classList.add('active-reset');
-        else btnEnd.classList.remove('active-reset');
-        btnEnd.textContent = atDefault ? '⟲' : `⟲ ${defaultEndStr || ''}`;
-        if (defaultEndStr) btnEnd.title = `↩ ${defaultEndStr}`;
+        updateDateSourceButton(btnEnd, defaultEndStr, atDefault);
     }
 }
 
@@ -1987,15 +1954,12 @@ function updateResetAnimButtonsHighlight(){
     const defaultEndStr = defaultEndDate ? formatDateForPickers(defaultEndDate) : null;
 
     if (btnStart) {
-        btnStart.textContent = defaultStartStr ? `⟲ ${defaultStartStr}` : '⟲';
-        if (currentStart && defaultStartStr && currentStart === defaultStartStr) btnStart.classList.add('active-reset');
-        else btnStart.classList.remove('active-reset');
+        updateDateSourceButton(btnStart, defaultStartStr, currentStart && defaultStartStr && currentStart === defaultStartStr);
     }
     if (btnEnd) {
-        btnEnd.textContent = defaultEndStr ? `⟲ ${defaultEndStr}` : '⟲';
-        if (currentEnd && defaultEndStr && currentEnd === defaultEndStr) btnEnd.classList.add('active-reset');
-        else btnEnd.classList.remove('active-reset');
+        updateDateSourceButton(btnEnd, defaultEndStr, currentEnd && defaultEndStr && currentEnd === defaultEndStr);
     }
+    updateAnimFilterInfo();
 }
 
 // Affichage conditionnel des dates de filtre sous les champs Animation
@@ -2007,6 +1971,8 @@ function updateAnimFilterInfo(){
 
     const filterStart = document.querySelector('#datePickerStart')?.value?.trim();
     const filterEnd = document.querySelector('#datePickerEnd')?.value?.trim();
+    const animStart = document.querySelector('#animDateStart')?.value?.trim();
+    const animEnd = document.querySelector('#animDateEnd')?.value?.trim();
     const defaultStartStr = defaultStartDate ? formatDateForPickers(defaultStartDate) : null;
     const defaultEndStr = defaultEndDate ? formatDateForPickers(defaultEndDate) : null;
 
@@ -2016,14 +1982,14 @@ function updateAnimFilterInfo(){
     if (startRow) {
         startRow.style.display = showStart ? 'flex' : 'none';
         if (showStart && startValueEl) {
-            startValueEl.textContent = `⟲ ${filterStart}`;
+            updateDateSourceButton(startValueEl, filterStart, animStart === filterStart);
             startValueEl.onclick = applyFilterStartToAnim;
         }
     }
     if (endRow) {
         endRow.style.display = showEnd ? 'flex' : 'none';
         if (showEnd && endValueEl) {
-            endValueEl.textContent = `⟲ ${filterEnd}`;
+            updateDateSourceButton(endValueEl, filterEnd, animEnd === filterEnd);
             endValueEl.onclick = applyFilterEndToAnim;
         }
     }
@@ -2088,6 +2054,50 @@ function collectSelectedValues(){
     return selectedValues;
 }
 
+// Affiche un résumé compact dans le champ fermé et place la recherche dans le
+// menu déroulant. La liste reste ouverte pendant les choix multiples et chaque
+// option dispose d'une case à cocher.
+function initFilterTomSelect(selectEl){
+    if (!selectEl) return null;
+    const placeholderOption = selectEl.querySelector('option[disabled][value=""]');
+    const searchPlaceholder = placeholderOption?.textContent?.trim()
+        || selectEl.getAttribute('aria-label')
+        || '';
+    const ts = initTomSelect(selectEl, {
+        plugins: ['checkbox_options', 'dropdown_input'],
+        maxItems: null,
+        hideSelected: false,
+        hidePlaceholder: true,
+        closeAfterSelect: false,
+    });
+    if (!ts) return null;
+
+    ts.wrapper.classList.add('filter-select-control');
+    const searchInput = ts.dropdown?.querySelector('input');
+    if (searchInput) {
+        searchInput.placeholder = searchPlaceholder;
+        searchInput.setAttribute('aria-label', searchPlaceholder);
+    }
+    updateCompactFilterSummary(selectEl);
+    return ts;
+}
+
+function updateCompactFilterSummary(selectEl, all = null, none = null){
+    const ts = getTomSelect(selectEl);
+    if (!ts) return;
+    const options = Array.from(selectEl.options).filter(opt => !opt.disabled && opt.value !== '');
+    const selectedCount = options.filter(opt => opt.selected).length;
+    const isAll = all ?? (options.length > 0 && selectedCount === options.length);
+    const isNone = none ?? selectedCount === 0;
+    const summary = isAll
+        ? `${pkg.t ? pkg.t('Tout') : 'Tout'} (${options.length})`
+        : isNone
+            ? (pkg.t ? pkg.t('Aucun') : 'Aucun')
+            : `${selectedCount} / ${options.length}`;
+    ts.control.dataset.summary = summary;
+    ts.control.setAttribute('aria-label', `${selectEl.getAttribute('aria-label') || ''}: ${summary}`);
+}
+
 function populateCountryStateSelects(tree){
     const selCountry = document.getElementById('selectCountry');
     const selState = document.getElementById('selectState');
@@ -2120,7 +2130,7 @@ function populateCountryStateSelects(tree){
     selCountry.appendChild(fragC);
     // Initialiser Tom Select sur les pays
     if (countries.length > 0) {
-        try { initTomSelect(selCountry, { plugins: ['remove_button'], maxItems: null, hideSelected: false, hidePlaceholder: true, closeAfterSelect: false }); } catch(_) {}
+        try { initFilterTomSelect(selCountry); } catch(_) {}
     }
 
     // Populate states (from selected countries or all)
@@ -2143,7 +2153,7 @@ function populateCountryStateSelects(tree){
     }
     selState.appendChild(fragS);
     if (statesSet.size > 0) {
-        try { initTomSelect(selState, { plugins: ['remove_button'], maxItems: null, hideSelected: false, hidePlaceholder: true, closeAfterSelect: false }); } catch(_) {}
+        try { initFilterTomSelect(selState); } catch(_) {}
     }
 
     selCountry.addEventListener('change', () => {
@@ -2158,6 +2168,9 @@ function populateCountryStateSelects(tree){
         dbgFilters('[COUNTRY] Country change selected=', selected);
         const sset = new Set();
         selected.forEach(c => (tree[c]||[]).forEach(s => sset.add(s)));
+        // Détruire avant de modifier le <select> natif afin que Tom Select ne
+        // conserve pas d'options obsolètes dans son DOM interne.
+        try { const ts = getTomSelect(selState); if (ts) ts.destroy(); } catch(_) {}
         selState.innerHTML = '';
         // Toujours ajouter le placeholder en premier
         const placeholderStateChange = document.createElement('option');
@@ -2173,10 +2186,8 @@ function populateCountryStateSelects(tree){
             frag.appendChild(opt);
         });
         selState.appendChild(frag);
-        // Détruire et réinitialiser Tom Select pour les états
-        try { const ts = getTomSelect(selState); if (ts) ts.destroy(); } catch(_) {}
         if (sset.size > 0) {
-            try { initTomSelect(selState, { plugins: ['remove_button'], maxItems: null, hideSelected: false, hidePlaceholder: true, closeAfterSelect: false }); } catch(_) {}
+            try { initFilterTomSelect(selState); } catch(_) {}
         }
         dbgFilters('[COUNTRY] States populated for selection=', sset.size);
         // Mise à jour des infos et déclenchement filtrage
@@ -2345,6 +2356,7 @@ function updateFilterInfoFor(selectEl, infoEl, btnAllEl, btnNoneEl){
     // "Aucun" grisé quand rien n'est sélectionné.
     setBtnDisabled(btnAllEl, all);
     setBtnDisabled(btnNoneEl, none);
+    updateCompactFilterSummary(selectEl, all, none);
 }
 
 function setBtnDisabled(btnEl, disabled){

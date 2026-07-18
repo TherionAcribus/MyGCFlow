@@ -1941,3 +1941,7 @@ msgstr "Skip for now"
 #~ msgid "Dupliquer le CSS"
 #~ msgstr "Duplicate"
 
+#: templates/menu_animation.html:28 templates/menu_animation.html:42
+msgid "Filtre"
+msgstr "Filter"
+

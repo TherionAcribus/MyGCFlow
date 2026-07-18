@@ -19,20 +19,28 @@
                         <div class="mb-3 col-6">
                             <label for="animDateStart" class="form-label">{{ _("Date de début") }}</label>
                             <input id="animDateStart" type="text" class="form-control td-input" aria-label="{{ _('Date de début') }}">
-                            <div class="date-inline-row mt-1">
-                                <button type="button" id="btnResetAnimStartDate" class="btn btn-link btn-sm date-reset-btn p-0" data-bs-toggle="tooltip" data-bs-title="{{ _('Date par défaut (BDD)') }}"></button>
+                            <div class="date-source-row mt-2">
+                                <button type="button" id="btnResetAnimStartDate" class="date-source-btn" data-bs-toggle="tooltip" data-bs-title="{{ _('Date par défaut (BDD)') }}">
+                                    <i class="ti ti-database" aria-hidden="true"></i><span class="date-source-label">BDD</span><span class="date-source-separator" aria-hidden="true">·</span><span class="date-source-value">—</span><i class="ti ti-check date-source-check" aria-hidden="true"></i>
+                                </button>
                                 <div id="animFilterStartInfo" class="filter-sync-row" style="display:none;">
-                                    <button type="button" id="animFilterStartValue" class="btn btn-link btn-sm filter-sync-chip p-0" data-bs-toggle="tooltip" data-bs-title="{{ _('Date issue du filtre') }}"></button>
+                                    <button type="button" id="animFilterStartValue" class="date-source-btn date-source-filter" data-bs-toggle="tooltip" data-bs-title="{{ _('Date issue du filtre') }}">
+                                        <i class="ti ti-filter" aria-hidden="true"></i><span class="date-source-label">{{ _('Filtre') }}</span><span class="date-source-separator" aria-hidden="true">·</span><span class="date-source-value">—</span><i class="ti ti-check date-source-check" aria-hidden="true"></i>
+                                    </button>
                                 </div>
                             </div>
                         </div>
                         <div class="mb-3 col-6">
                             <label for="animDateEnd" class="form-label">{{ _("Date de fin") }}</label>
                             <input id="animDateEnd" type="text" class="form-control td-input" aria-label="{{ _('Date de fin') }}">
-                            <div class="date-inline-row mt-1">
-                                <button type="button" id="btnResetAnimEndDate" class="btn btn-link btn-sm date-reset-btn p-0" data-bs-toggle="tooltip" data-bs-title="{{ _('Date par défaut (BDD)') }}"></button>
+                            <div class="date-source-row mt-2">
+                                <button type="button" id="btnResetAnimEndDate" class="date-source-btn" data-bs-toggle="tooltip" data-bs-title="{{ _('Date par défaut (BDD)') }}">
+                                    <i class="ti ti-database" aria-hidden="true"></i><span class="date-source-label">BDD</span><span class="date-source-separator" aria-hidden="true">·</span><span class="date-source-value">—</span><i class="ti ti-check date-source-check" aria-hidden="true"></i>
+                                </button>
                                 <div id="animFilterEndInfo" class="filter-sync-row" style="display:none;">
-                                    <button type="button" id="animFilterEndValue" class="btn btn-link btn-sm filter-sync-chip p-0" data-bs-toggle="tooltip" data-bs-title="{{ _('Date issue du filtre') }}"></button>
+                                    <button type="button" id="animFilterEndValue" class="date-source-btn date-source-filter" data-bs-toggle="tooltip" data-bs-title="{{ _('Date issue du filtre') }}">
+                                        <i class="ti ti-filter" aria-hidden="true"></i><span class="date-source-label">{{ _('Filtre') }}</span><span class="date-source-separator" aria-hidden="true">·</span><span class="date-source-value">—</span><i class="ti ti-check date-source-check" aria-hidden="true"></i>
+                                    </button>
                                 </div>
                             </div>
                         </div>

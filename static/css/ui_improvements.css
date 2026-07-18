@@ -1,6 +1,78 @@
 /* Améliorations UX pour la nouvelle interface */
 
 /* Synchronisation filtre -> animation */
+.date-source-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.date-source-btn {
+    display: inline-flex;
+    min-height: 32px;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.65rem;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    color: var(--color-text-muted);
+    background: var(--color-surface);
+    font-size: 0.78rem;
+    font-weight: 500;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.date-source-btn:hover:not(:disabled) {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+    background: var(--color-accent-weak);
+}
+
+.date-source-btn:focus-visible {
+    outline: 0;
+    box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.22);
+}
+
+.date-source-btn.is-active {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+    background: var(--color-accent-weak);
+    font-weight: 600;
+}
+
+.date-source-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.date-source-btn .date-source-check {
+    display: none;
+}
+
+.date-source-btn.is-active .date-source-check {
+    display: inline-block;
+}
+
+.date-source-btn .date-source-value {
+    font-variant-numeric: tabular-nums;
+}
+
+.date-source-filter:not(.is-active) {
+    border-color: var(--color-warning);
+    color: var(--color-warning);
+}
+
+.date-source-filter.is-active,
+.date-source-filter:hover:not(:disabled) {
+    border-color: var(--color-warning);
+    color: var(--color-warning);
+    background: rgba(239, 108, 0, 0.1);
+}
+
 .date-inline-row {
     display: flex;
     align-items: center;
@@ -1240,6 +1312,75 @@ font-size: 0.8rem;
 }
 .filter-actions .btn-link.filter-all-active {
     /* Même apparence que les autres boutons — pas de distinction visuelle */
+}
+
+/* Multi-sélections compactes : le choix se fait dans une liste recherchable
+   à cases à cocher, le contrôle fermé n'affiche qu'un résumé. */
+.filter-select-control .ts-control {
+    min-height: 38px;
+    align-items: center;
+    cursor: pointer;
+    overflow: hidden;
+}
+.filter-select-control .ts-control > .item,
+.filter-select-control .ts-control > input {
+    display: none !important;
+}
+.filter-select-control .ts-control::before {
+    content: attr(data-summary);
+    min-width: 0;
+    overflow: hidden;
+    color: var(--color-text, inherit);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.filter-select-control .dropdown-input-wrap {
+    position: sticky;
+    z-index: 1;
+    top: 0;
+    padding: 0.5rem;
+    background: var(--color-surface, #fff);
+    border-bottom: 1px solid var(--color-border);
+}
+.filter-select-control .dropdown-input {
+    min-height: 36px;
+    padding-left: 2rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%236b7280' stroke-width='2' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-4-4'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: 0.65rem center;
+}
+.filter-select-control .ts-dropdown-content {
+    max-height: 18rem;
+}
+.filter-select-control .ts-dropdown,
+.filter-select-control .ts-dropdown-content,
+.filter-select-control .optgroup {
+    /* Le séparateur natif entre optgroups utilise une marge. Le fond doit donc
+       être porté par toute la liste, pas uniquement par son en-tête. */
+    background-color: #fff;
+}
+.filter-select-control .option {
+    padding-block: 0.45rem;
+}
+.filter-select-control .optgroup-header {
+    /* Tom Select utilise --bs-body-bg, qui n'est pas toujours défini dans
+       cette vue : sans repli, les titres Events/Autres deviennent transparents. */
+    background-color: #fff;
+    opacity: 1;
+}
+[data-bs-theme="dark"] .filter-select-control .optgroup-header {
+    background-color: var(--color-surface, #242a33);
+}
+[data-bs-theme="dark"] .filter-select-control .ts-dropdown,
+[data-bs-theme="dark"] .filter-select-control .ts-dropdown-content,
+[data-bs-theme="dark"] .filter-select-control .optgroup {
+    background-color: var(--color-surface, #242a33);
+}
+
+@media (max-width: 767.98px) {
+    .filter-field {
+        margin-bottom: 0.75rem !important;
+    }
 }
 
 /* Badge d'info filtre (non-interactif, à côté des boutons) */
