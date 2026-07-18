@@ -90,7 +90,7 @@ msgstr "Choisir fichier"
 
 #: blueprints/core.py:62 templates/menu_style.html:20
 msgid "Cartes"
-msgstr "Paramètres"
+msgstr "Cartes"
 
 #: blueprints/core.py:64
 msgid "Cancel"
@@ -167,7 +167,7 @@ msgstr "Retour à l'application"
 
 #: templates/guide.html:37
 msgid "Démarrage"
-msgstr "Démarrer"
+msgstr "Démarrage"
 
 #: templates/guide.html:39
 msgid "Bienvenue"
@@ -255,16 +255,16 @@ msgstr "Dans l'onglet"
 
 #: templates/guide.html:116 templates/guide.html:169
 msgid "section"
-msgstr "Présentation"
+msgstr "section"
 
 #: templates/guide.html:116
 msgid "cliquez sur"
-msgstr "Dupliquer"
+msgstr "cliquez sur"
 
 #: templates/guide.html:116 templates/menu_data.html:13
 #: templates/modal_first_use.html:27
 msgid "Sélectionner et charger un fichier .gpx"
-msgstr "Sélectionnez un fichier .gpx de vos trouvailles"
+msgstr "Sélectionner et charger un fichier .gpx"
 
 #: templates/guide.html:116
 msgid ""
@@ -274,7 +274,7 @@ msgstr "et choisissez votre fichier. Le nombre de caches importées s'affiche un
 
 #: templates/guide.html:119
 msgid "Filtrez vos caches"
-msgstr "Filtrer par type de cache"
+msgstr "Filtrez vos caches"
 
 #: templates/guide.html:120
 msgid "Dans la section"
@@ -302,7 +302,7 @@ msgstr "Le compteur"
 
 #: templates/guide.html:126
 msgid "Sélection : 0 / 0"
-msgstr "Sélection: 0 / 0"
+msgstr "Sélection : 0 / 0"
 
 #: templates/guide.html:126
 msgid "indique combien de caches sont retenues par rapport au total."
@@ -314,7 +314,7 @@ msgstr "Repartir de zéro (optionnel)"
 
 #: templates/guide.html:130
 msgid "Le bouton"
-msgstr "Style"
+msgstr "Le bouton"
 
 #: templates/guide.html:130
 msgid "Vider la base de données"
@@ -373,12 +373,12 @@ msgid "Dans"
 msgstr "Dans"
 
 #: templates/guide.html:156 templates/menu_style.html:98
-msgid "Informations et Overlays"
-msgstr "Informations à afficher"
+msgid "Titre et informations"
+msgstr "Titre et informations"
 
 #: templates/guide.html:156
 msgid "activez"
-msgstr "actif:"
+msgstr "activez"
 
 #: templates/guide.html:156 templates/menu_informations.html:25
 msgid "Afficher un titre"
@@ -413,7 +413,7 @@ msgstr "Réglez le"
 
 #: templates/guide.html:159 templates/menu_informations.html:47
 msgid "Texte"
-msgstr "Exporter"
+msgstr "Texte"
 
 #: templates/guide.html:159
 msgid "la"
@@ -429,7 +429,7 @@ msgstr "l'"
 
 #: templates/guide.html:159 templates/menu_informations.html:49
 msgid "Ombre"
-msgstr "Accueil"
+msgstr "Ombre"
 
 #: templates/guide.html:159 templates/guide.html:201
 msgid "et la"
@@ -438,7 +438,7 @@ msgstr "et la"
 #: templates/guide.html:159 templates/menu_informations.html:50
 #: templates/menu_informations.html:187
 msgid "Position"
-msgstr "Présentation"
+msgstr "Position"
 
 #: templates/guide.html:159
 msgid "via les onglets dédiés."
@@ -458,15 +458,15 @@ msgstr "N'oubliez pas de cliquer sur"
 
 #: templates/guide.html:164 templates/menu_informations.html:237
 msgid "Appliquer"
-msgstr "Dupliquer"
+msgstr "Appliquer"
 
 #: templates/guide.html:164
 msgid "pour valider vos modifications."
-msgstr "Appliquer les Modifications"
+msgstr "pour valider vos modifications."
 
 #: templates/guide.html:168
 msgid "Personnalisez les points"
-msgstr "Graphisme des points"
+msgstr "Personnalisez les points"
 
 #: templates/guide.html:169 templates/guide.html:177
 #: templates/menu_style.html:11
@@ -546,7 +546,7 @@ msgstr "Nouveau"
 
 #: templates/guide.html:183
 msgid "crée un profil ;"
-msgstr "aucun profil actif"
+msgstr "crée un profil ;"
 
 #: templates/guide.html:183 templates/menu_style.html:142
 msgid "Sauvegarder"
@@ -554,7 +554,7 @@ msgstr "Sauvegarder"
 
 #: templates/guide.html:183
 msgid "enregistre le profil actif."
-msgstr "aucun profil actif"
+msgstr "enregistre le profil actif."
 
 #: templates/guide.html:184 templates/menu_style.html:145
 msgid "Importer"
@@ -741,11 +741,11 @@ msgstr "Réglez une fois pour toutes le comportement de l'application et la qual
 
 #: templates/guide.html:249
 msgid "Préférences générales"
-msgstr "Paramètres généraux"
+msgstr "Préférences générales"
 
 #: templates/guide.html:251 templates/menu_options.html:10
 msgid "Langue"
-msgstr "Losange"
+msgstr "Langue"
 
 #: templates/guide.html:251
 msgid "basculez entre français et anglais."
@@ -761,7 +761,7 @@ msgstr "soyez prévenu d'une nouvelle version."
 
 #: templates/guide.html:253
 msgid "Profil par défaut au démarrage"
-msgstr "Aucun profil par défaut défini"
+msgstr "Profil par défaut au démarrage"
 
 #: templates/guide.html:253
 msgid "le profil de style chargé automatiquement à l'ouverture."
@@ -787,7 +787,7 @@ msgstr "reprend la position affichée."
 
 #: templates/guide.html:261 templates/menu_options.html:67
 msgid "Choisir sur la carte"
-msgstr "Choisir la couleur"
+msgstr "Choisir sur la carte"
 
 #: templates/guide.html:261
 msgid "cliquez directement le point souhaité."
@@ -807,7 +807,7 @@ msgstr "choisissez le"
 
 #: templates/guide.html:266 templates/menu_options.html:101
 msgid "Mode d'enregistrement"
-msgstr "Enregistrer"
+msgstr "Mode d'enregistrement"
 
 #: templates/guide.html:268
 msgid "rapide et léger, directement dans le navigateur."
@@ -924,7 +924,7 @@ msgstr "Chargement"
 
 #: templates/menu_bdd.html:7
 msgid "Options de la base de données"
-msgstr "Base de données"
+msgstr "Options de la base de données"
 
 #: templates/menu_bdd.html:9
 msgid "Contenu"
@@ -937,7 +937,7 @@ msgstr "Fichier .gpx"
 
 #: templates/menu_bdd.html:20
 msgid "Envoyer"
-msgstr "Renommer"
+msgstr "Envoyer"
 
 #: templates/menu_bdd.html:22 templates/menu_data.html:31
 msgid "Aucune base de données chargée"
@@ -1105,11 +1105,11 @@ msgstr "Filtrer par terrain"
 
 #: templates/menu_filtre.html:112
 msgid "Période de découverte"
-msgstr "Période (dates)"
+msgstr "Période de découverte"
 
 #: templates/menu_filtre.html:129
 msgid "Période de pose"
-msgstr "Période (dates)"
+msgstr "Période de pose"
 
 #: templates/menu_filtre.html:146 templates/menu_filtre.html:147
 msgid "Pays"
@@ -1121,7 +1121,7 @@ msgstr "Filtrer par pays"
 
 #: templates/menu_filtre.html:157 templates/menu_filtre.html:158
 msgid "Région / État"
-msgstr "Filtrer par région/état"
+msgstr "Région / État"
 
 #: templates/menu_filtre.html:159
 msgid "Filtrer par région/état"
@@ -1213,7 +1213,7 @@ msgstr "Choisir la couleur"
 
 #: templates/menu_flash.html:50
 msgid "Choisir la couleur du flash"
-msgstr "Choisir la couleur"
+msgstr "Choisir la couleur du flash"
 
 #: templates/menu_informations.html:7
 msgid "Cible du style"
@@ -1240,21 +1240,21 @@ msgstr "Afficher la date"
 #: templates/menu_informations.html:57 templates/menu_informations.html:145
 #: templates/menu_informations.html:177
 msgid "Couleur"
-msgstr "Couleur unique"
+msgstr "Couleur"
 
 #: templates/menu_informations.html:61
 msgid "Taille (px)"
-msgstr "Taille"
+msgstr "Taille (px)"
 
 #: templates/menu_informations.html:67
 msgid "Police"
-msgstr "Choix de la carte"
+msgstr "Police"
 
 #: templates/menu_informations.html:69 templates/menu_informations.html:83
 #: templates/menu_informations.html:102 templates/menu_informations.html:137
 #: templates/menu_informations.html:189
 msgid "Défaut"
-msgstr "Par défaut"
+msgstr "Défaut"
 
 #: templates/menu_informations.html:81
 msgid "Epaisseur"
@@ -1278,11 +1278,11 @@ msgstr "Arrondi (px)"
 
 #: templates/menu_informations.html:129
 msgid "Bordure (px)"
-msgstr "Bordure du point"
+msgstr "Bordure (px)"
 
 #: templates/menu_informations.html:155
 msgid "Activer"
-msgstr "actif:"
+msgstr "Activer"
 
 #: templates/menu_informations.html:233
 msgid ""
@@ -1336,7 +1336,7 @@ msgstr "Profil par défaut au démarrage"
 
 #: templates/menu_options.html:26
 msgid "Profil par défaut"
-msgstr "Aucun profil par défaut"
+msgstr "Profil par défaut"
 
 #: templates/menu_options.html:36
 msgid "Basculer le mode de saisie"
@@ -1431,7 +1431,7 @@ msgstr "Multiplicateur de résolution temporaire. 1.5 = 50% plus grande pendant 
 
 #: templates/menu_options.html:139
 msgid "Format vidéo"
-msgstr "Informations"
+msgstr "Format vidéo"
 
 #: templates/menu_options.html:140
 msgid ""
@@ -1494,7 +1494,7 @@ msgstr "Taille du centre"
 
 #: templates/menu_points.html:38 templates/menu_points.html:159
 msgid "Taille en pixels"
-msgstr "Taille du flash en px"
+msgstr "Taille en pixels"
 
 #: templates/menu_points.html:39 templates/menu_points.html:104
 #: templates/menu_points.html:160
@@ -1507,11 +1507,11 @@ msgstr "Couleur du centre"
 
 #: templates/menu_points.html:62
 msgid "Choisir la couleur du centre"
-msgstr "Choisir la couleur"
+msgstr "Choisir la couleur du centre"
 
 #: templates/menu_points.html:73
 msgid "Forme du point"
-msgstr "Forme des points"
+msgstr "Forme du point"
 
 #: templates/menu_points.html:77 templates/menu_points.html:78
 msgid "Forme des points"
@@ -1527,7 +1527,7 @@ msgstr "Épaisseur de la bordure (0 = aucune)"
 
 #: templates/menu_points.html:99
 msgid "Épaisseur de la bordure"
-msgstr "Épaisseur de la bordure (0 = aucune)"
+msgstr "Épaisseur de la bordure"
 
 #: templates/menu_points.html:103
 msgid "Épaisseur en pixels"
@@ -1539,11 +1539,11 @@ msgstr "Couleur de la bordure"
 
 #: templates/menu_points.html:127
 msgid "Choisir la couleur de la bordure"
-msgstr "Couleur de la bordure"
+msgstr "Choisir la couleur de la bordure"
 
 #: templates/menu_points.html:140
 msgid "Configuration des icônes"
-msgstr "Configuration générale"
+msgstr "Configuration des icônes"
 
 #: templates/menu_points.html:145 templates/menu_points.html:146
 msgid "Jeu d'icônes"
@@ -1551,7 +1551,7 @@ msgstr "Jeu d'icônes"
 
 #: templates/menu_points.html:152 templates/menu_points.html:155
 msgid "Taille des icônes"
-msgstr "Taille du centre"
+msgstr "Taille des icônes"
 
 #: templates/menu_points.html:166
 msgid "Aperçu des icônes"
@@ -1578,24 +1578,24 @@ msgid "Style Vector"
 msgstr "Style Vector"
 
 #: templates/menu_style.html:60
-msgid "Définit la couleur des bordures des géocaches"
-msgstr "Définit la couleur des bordures des géocaches"
+msgid "Définit la couleur des contours de la carte"
+msgstr "Définit la couleur des contours de la carte"
 
 #: templates/menu_style.html:60
 msgid "Couleur contour"
-msgstr "Couleur du centre"
+msgstr "Couleur contour"
 
 #: templates/menu_style.html:61
 msgid "Cliquez pour choisir la couleur des contours"
 msgstr "Cliquez pour choisir la couleur des contours"
 
 #: templates/menu_style.html:64
-msgid "Définit la couleur intérieure des géocaches"
-msgstr "Définit la couleur intérieure des géocaches"
+msgid "Définit la couleur de remplissage de la carte"
+msgstr "Définit la couleur de remplissage de la carte"
 
 #: templates/menu_style.html:64
 msgid "Couleur remplissage"
-msgstr "Couleur unique"
+msgstr "Couleur remplissage"
 
 #: templates/menu_style.html:65
 msgid "Cliquez pour choisir la couleur de remplissage"
@@ -1607,15 +1607,15 @@ msgstr "Définit la couleur de fond de la carte"
 
 #: templates/menu_style.html:68
 msgid "Couleur fond"
-msgstr "Couleur unique"
+msgstr "Couleur fond"
 
 #: templates/menu_style.html:69
 msgid "Cliquez pour choisir la couleur de fond"
-msgstr "Choisir la couleur"
+msgstr "Cliquez pour choisir la couleur de fond"
 
 #: templates/menu_style.html:72
-msgid "Définit l'épaisseur des bordures des géocaches"
-msgstr "Épaisseur de la bordure (0 = aucune)"
+msgid "Définit l'épaisseur des contours de la carte"
+msgstr "Définit l'épaisseur des contours de la carte"
 
 #: templates/menu_style.html:72
 msgid "Largeur contour"
@@ -1627,7 +1627,7 @@ msgstr "Faites glisser pour ajuster l'épaisseur"
 
 #: templates/menu_style.html:84 templates/menu_style.html:86
 msgid "Style Toner"
-msgstr "Style"
+msgstr "Style Toner"
 
 #: templates/menu_style.html:88
 msgid "Clair"
@@ -1643,7 +1643,7 @@ msgstr "Nouveau profil"
 
 #: templates/menu_style.html:141
 msgid "Sauvegarder le profil actif"
-msgstr "aucun profil actif"
+msgstr "Sauvegarder le profil actif"
 
 #: templates/menu_style.html:144
 msgid "Importer un profil JSON"
@@ -1711,7 +1711,7 @@ msgstr "Ce fichier est disponible sur le site de géocaching.com dans Profil > P
 
 #: templates/modal_first_use.html:22
 msgid "Chargement de vos données"
-msgstr "Charger données"
+msgstr "Chargement de vos données"
 
 #: templates/modal_first_use.html:31
 msgid "ou glissez-déposez votre fichier ici"

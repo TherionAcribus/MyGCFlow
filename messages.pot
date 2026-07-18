@@ -372,7 +372,7 @@ msgid "Dans"
 msgstr ""
 
 #: templates/guide.html:156 templates/menu_style.html:98
-msgid "Informations et Overlays"
+msgid "Titre et informations"
 msgstr ""
 
 #: templates/guide.html:156
@@ -1577,7 +1577,7 @@ msgid "Style Vector"
 msgstr ""
 
 #: templates/menu_style.html:60
-msgid "Définit la couleur des bordures des géocaches"
+msgid "Définit la couleur des contours de la carte"
 msgstr ""
 
 #: templates/menu_style.html:60
@@ -1589,7 +1589,7 @@ msgid "Cliquez pour choisir la couleur des contours"
 msgstr ""
 
 #: templates/menu_style.html:64
-msgid "Définit la couleur intérieure des géocaches"
+msgid "Définit la couleur de remplissage de la carte"
 msgstr ""
 
 #: templates/menu_style.html:64
@@ -1613,7 +1613,7 @@ msgid "Cliquez pour choisir la couleur de fond"
 msgstr ""
 
 #: templates/menu_style.html:72
-msgid "Définit l'épaisseur des bordures des géocaches"
+msgid "Définit l'épaisseur des contours de la carte"
 msgstr ""
 
 #: templates/menu_style.html:72

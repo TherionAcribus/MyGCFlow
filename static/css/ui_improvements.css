@@ -1227,20 +1227,36 @@ font-size: 0.8rem;
     position: absolute;
     top: 6px;
     right: 6px;
-    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    font-size: 15px;
     color: #fff;
     background: var(--color-accent);
     border-radius: 50%;
-    padding: 2px;
+    /* Anneau blanc pour que la pastille reste lisible sur n'importe quelle miniature */
+    box-shadow: 0 0 0 2px var(--color-surface);
     opacity: 0;
-    transition: opacity 0.15s ease;
+    transform: scale(0.6);
+    transition: opacity 0.15s ease, transform 0.15s ease;
 }
+/* État sélectionné : bordure accentuée, léger fond teinté, anneau net et
+   étiquette en couleur d'accent → nettement plus lisible que l'ancien
+   « bleu estompé ». */
 .map-card.is-selected {
     border-color: var(--color-accent);
-    box-shadow: inset 0 0 0 1px var(--color-accent), var(--shadow-md);
+    background: var(--color-accent-weak);
+    box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.35), var(--shadow-md);
+}
+.map-card.is-selected .map-card-label {
+    color: var(--color-accent);
+    font-weight: 700;
 }
 .map-card.is-selected .map-card-check {
     opacity: 1;
+    transform: scale(1);
 }
 .map-card.disabled {
     opacity: 0.6;
@@ -1249,6 +1265,7 @@ font-size: 0.8rem;
 }
 .map-card.disabled .map-card-check {
     opacity: 1;
+    transform: scale(1);
     background: var(--color-success);
 }
 

@@ -218,16 +218,9 @@ h5, h6 { color: var(--color-text); font-weight: 600; }
 .gcm-toast.error   { border-left-color: var(--color-danger); }
 .gcm-toast.warning { border-left-color: var(--color-warning); }
 
-/* --- Boutons custom GCMap conservés --- */
-.changeMap {
-    background-color: var(--color-accent);
-    color: #fff;
-}
-.changeMap:hover { background-color: var(--color-accent-strong); }
-.changeMap.is-selected {
-    background-color: var(--color-accent-deep) !important;
-    box-shadow: inset 0 0 0 2px #ffffff33, var(--shadow-md);
-}
+/* Boutons de choix de carte : rendu géré par .map-card (ui_improvements.css).
+   Anciens aplats bleus .changeMap retirés (ils masquaient les miniatures et
+   rendaient l'état sélectionné peu lisible). */
 
 /* --- Boutons de reset de dates (filtres + animation) --- */
 .date-reset-btn {

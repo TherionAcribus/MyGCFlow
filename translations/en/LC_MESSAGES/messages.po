@@ -373,8 +373,8 @@ msgid "Dans"
 msgstr "In"
 
 #: templates/guide.html:156 templates/menu_style.html:98
-msgid "Informations et Overlays"
-msgstr "Information and Overlays"
+msgid "Titre et informations"
+msgstr "Title and information"
 
 #: templates/guide.html:156
 msgid "activez"
@@ -1578,8 +1578,8 @@ msgid "Style Vector"
 msgstr "Vector Style"
 
 #: templates/menu_style.html:60
-msgid "Définit la couleur des bordures des géocaches"
-msgstr "Sets the border color of geocaches"
+msgid "Définit la couleur des contours de la carte"
+msgstr "Sets the color of the map outlines"
 
 #: templates/menu_style.html:60
 msgid "Couleur contour"
@@ -1590,8 +1590,8 @@ msgid "Cliquez pour choisir la couleur des contours"
 msgstr "Click to choose the border color"
 
 #: templates/menu_style.html:64
-msgid "Définit la couleur intérieure des géocaches"
-msgstr "Sets the fill color of geocaches"
+msgid "Définit la couleur de remplissage de la carte"
+msgstr "Sets the map fill color"
 
 #: templates/menu_style.html:64
 msgid "Couleur remplissage"
@@ -1614,8 +1614,8 @@ msgid "Cliquez pour choisir la couleur de fond"
 msgstr "Click to choose the background color"
 
 #: templates/menu_style.html:72
-msgid "Définit l'épaisseur des bordures des géocaches"
-msgstr "Sets the thickness of geocache borders"
+msgid "Définit l'épaisseur des contours de la carte"
+msgstr "Sets the thickness of the map outlines"
 
 #: templates/menu_style.html:72
 msgid "Largeur contour"
