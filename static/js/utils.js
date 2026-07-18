@@ -1,4 +1,5 @@
 import * as pkg from './index.js';
+import { buildImageTimingPlan } from './video_timing.mjs';
 
 // Fonction pour convertir Hex en composantes RGB
 export function hexToRgb(hex) {
@@ -30,31 +31,29 @@ export function getCookie(name) {
 }
 
 
-// Mets à jour le nombre de frames par jour, le nombre d'images, et le nombre de chiffres
+// Calcule un total de frames global puis répartit les fractions entre les jours.
+// L'ancien calcul arrondissait chaque jour séparément et accumulait la dérive.
 export function updateInfosForPictures(){
-    // frames par jour
-    const fps = pkg.options.record.fps || 24;
-    const framesPerDay = calculFramePerDay(pkg.options.animation.timePerDay, fps);
-    pkg.options.record.framesPerDay = framesPerDay;
-    // nombres d'images
-    const nbImages = pkg.options.date.deltaDays * framesPerDay;
-    pkg.options.record.nbOfImages = nbImages;
-    // nombres de chiffres dans la partie entière.
-    pkg.options.record.numberOfDigits = Math.round(nbImages).toString().length;
+    const plan = buildImageTimingPlan({
+        dayCount: pkg.options.date.deltaDays,
+        timePerDayMs: pkg.options.animation.timePerDay,
+        fps: pkg.options.record.fps,
+        extraEndSeconds: pkg.options.animation.extraEndSeconds,
+        tailFreezeMs: pkg.options.record?.mediaRecorder?.tailFreezeMs,
+        flashMode: pkg.options.flash.mode,
+        flashDurationMs: pkg.options.flash.duration,
+    });
 
-    const baseTimeMs = pkg.options.date.deltaDays * pkg.options.animation.timePerDay;
-    // valeur corrigée du nombre de Frames par seconde
-    const framesPerSec = baseTimeMs > 0 ? (nbImages / baseTimeMs * 1000) : 0;
-    pkg.options.record.framesPerSec = framesPerSec;
-
-    // nombre de frames d'un flash
-    const flashFrames = pkg.options.flash.duration * framesPerSec / 1000;
-    pkg.options.record.flashFrames = flashFrames;
-    const extraSeconds = Math.max(0, Number(pkg.options.animation?.extraEndSeconds) || 0);
-    const extraEndFrames = extraSeconds * framesPerSec;
-    // nombre de frames d'un flash + un temps additionnel en fin d'animation
-    pkg.options.record.extraFrames = Math.round(flashFrames + extraEndFrames);
-    console.log(pkg.options.record)
+    pkg.options.record.framesPerDay = plan.framesPerDayAverage;
+    pkg.options.record.baseFrameCount = plan.baseFrameCount;
+    pkg.options.record.nbOfImages = plan.totalFrameCount;
+    pkg.options.record.numberOfDigits = Math.max(1, String(plan.totalFrameCount).length);
+    pkg.options.record.framesPerSec = plan.fps;
+    pkg.options.record.flashFrames = Math.max(1, Math.round(
+        Math.max(0, Number(pkg.options.flash.duration) || 0) * plan.fps / 1000
+    ));
+    pkg.options.record.extraFrames = plan.tailFrameCount;
+    pkg.options.record.automaticEndHoldMs = plan.endHoldMs;
 }
 
 
@@ -95,12 +94,6 @@ export function formatDateInput(date){
     const mm = String(date.getMonth()+1).padStart(2,'0');
     const yy = date.getFullYear();
     return `${dd}/${mm}/${yy}`;
-}
-
-
-// calcul le nombre de Frame pour 1 jour
-function calculFramePerDay(timePerDay, fps) {
-    return Math.round(timePerDay / (1000 / fps));
 }
 
 

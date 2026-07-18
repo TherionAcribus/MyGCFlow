@@ -1,5 +1,6 @@
 import * as pkg from './index.js';
 import { showBsTab, getBsTab, initTomSelect, getTomSelect, refreshTomSelect, initTempusDominus, getTempusDominus, setTdDate, getTdDate } from './ui_bootstrap.js';
+import { automaticEndHoldMs } from './video_timing.mjs';
 
 // Flag de debug pour les filtres (COUNTRY/FILTER).
 // Mettre à true pour réactiver les logs en console.
@@ -691,7 +692,9 @@ function initOptionsElements() {
                     if (audioDurationSec && audioDurationSec > 0) {
                         // Convertir en minutes pour le champ inputTotalTime
                         const audioDurationMin = audioDurationSec / 60;
-                        inputTotalTime.value = audioDurationMin.toFixed(2);
+                        // Garder une précision suffisante pour ne pas perdre plusieurs
+                        // dixièmes de seconde avant même de calculer les frames.
+                        inputTotalTime.value = audioDurationMin.toFixed(4);
 
                         // Marquer que la durée est maintenant lockée à la musique
                         isDurationLockedToAudio = true;
@@ -1694,7 +1697,10 @@ function changeRecordValues() {
         // Sauvegarder automatiquement les paramètres d'enregistrement
         saveRecordSettings();
 
-        // Pas de recalcul forcé ici; les valeurs seront lues à l'enregistrement
+        // Le FPS peut modifier la durée minimale réalisable (une frame par date).
+        // Si la durée vient de la musique, conserver cette cible autant que possible.
+        if (isDurationLockedToAudio) updateTimePerDay();
+        pkg.updateInfosForPictures();
     } catch(e) {
         console.warn('changeRecordValues error:', e);
     }
@@ -3193,35 +3199,48 @@ function getExtraEndMs(){
     return Math.max(0, extraSeconds) * 1000;
 }
 
+function getAutomaticEndHoldMs(){
+    return automaticEndHoldMs({
+        tailFreezeMs: pkg.options.record?.mediaRecorder?.tailFreezeMs,
+        flashMode: pkg.options.flash?.mode,
+        flashDurationMs: pkg.options.flash?.duration,
+    });
+}
+
 function updateTotalTime(){
     const baseTimeMs = pkg.metadata.deltaDays * inputTimePerDay.value;
     const extraMs = getExtraEndMs();
-    const totalTimeInMilliSec = baseTimeMs + extraMs;
+    const automaticHoldMs = getAutomaticEndHoldMs();
+    const totalTimeInMilliSec = baseTimeMs + extraMs + automaticHoldMs;
     dbgUi("totalTimeInMilliSec", totalTimeInMilliSec);
     // mise à jour du temps en ms pour futurs calculs
     pkg.options.record.totalTimeInMilliSec = totalTimeInMilliSec;
 
     // Ne pas modifier le temps total si la durée est lockée à la musique
     if (!isDurationLockedToAudio) {
-        inputTotalTime.value = (totalTimeInMilliSec / 60 / 1000).toFixed(2);
+        inputTotalTime.value = (totalTimeInMilliSec / 60 / 1000).toFixed(4);
     }
-    updateTimeBreakdown(baseTimeMs, extraMs, totalTimeInMilliSec);
+    updateTimeBreakdown(baseTimeMs, extraMs, automaticHoldMs, totalTimeInMilliSec);
 }
 
 function updateTimePerDay(){
     const totalTimeMs = inputTotalTime.value * 60 * 1000;
     const extraMs = getExtraEndMs();
-    const baseTimeMs = Math.max(1, totalTimeMs - extraMs);
-    const timePerDay = Math.floor(baseTimeMs / pkg.metadata.deltaDays);
+    const automaticHoldMs = getAutomaticEndHoldMs();
+    const fps = Math.max(1, Number(pkg.options.record?.fps) || 24);
+    const dayCount = Math.max(1, Number(pkg.metadata.deltaDays) || 1);
+    const minimumBaseMs = dayCount * 1000 / fps;
+    const baseTimeMs = Math.max(minimumBaseMs, totalTimeMs - extraMs - automaticHoldMs);
+    const timePerDay = baseTimeMs / dayCount;
     pkg.options.animation.timePerDay = timePerDay;
-    inputTimePerDay.value = timePerDay;
+    inputTimePerDay.value = Number(timePerDay.toFixed(3));
     // Mettre à jour le temps total en millisecondes pour les calculs futurs
-    pkg.options.record.totalTimeInMilliSec = baseTimeMs + extraMs;
+    pkg.options.record.totalTimeInMilliSec = baseTimeMs + extraMs + automaticHoldMs;
     // Mettre à jour l'affichage des minutes/secondes et du détail
-    updateTimeBreakdown(baseTimeMs, extraMs, pkg.options.record.totalTimeInMilliSec);
+    updateTimeBreakdown(baseTimeMs, extraMs, automaticHoldMs, pkg.options.record.totalTimeInMilliSec);
 }
 
-function updateTimeBreakdown(baseMs, extraMs, totalMs){
+function updateTimeBreakdown(baseMs, extraMs, automaticHoldMs, totalMs){
     const toMinSec = (ms) => {
         const minutesFraction = ms / 60000;
         const { minutes, seconds } = pkg.convertToMinutesAndSeconds(minutesFraction);
@@ -3231,6 +3250,7 @@ function updateTimeBreakdown(baseMs, extraMs, totalMs){
     const total = toMinSec(totalMs);
     const base = toMinSec(baseMs);
     const extra = toMinSec(extraMs);
+    const automaticHold = toMinSec(automaticHoldMs);
 
     spanTotalTimeMinutes.innerText = total.minutes;
     spanTotalTimeSeconds.innerText = total.seconds;
@@ -3238,10 +3258,14 @@ function updateTimeBreakdown(baseMs, extraMs, totalMs){
     const baseSecondsEl = document.getElementById('spanBaseTimeSeconds');
     const extraMinutesEl = document.getElementById('spanExtraTimeMinutes');
     const extraSecondsEl = document.getElementById('spanExtraTimeSeconds');
+    const automaticHoldMinutesEl = document.getElementById('spanAutomaticHoldMinutes');
+    const automaticHoldSecondsEl = document.getElementById('spanAutomaticHoldSeconds');
     if (baseMinutesEl) baseMinutesEl.innerText = base.minutes;
     if (baseSecondsEl) baseSecondsEl.innerText = base.seconds;
     if (extraMinutesEl) extraMinutesEl.innerText = extra.minutes;
     if (extraSecondsEl) extraSecondsEl.innerText = extra.seconds;
+    if (automaticHoldMinutesEl) automaticHoldMinutesEl.innerText = automaticHold.minutes;
+    if (automaticHoldSecondsEl) automaticHoldSecondsEl.innerText = automaticHold.seconds;
 }
 
 
@@ -3372,6 +3396,12 @@ function changeFlashValues(event){
     }
     // colorpickers
     if (cpFlashColor) pkg.options.flash.color = cpFlashColor.value;
+
+    // Un flash plus long que le gel final étend automatiquement la fin de vidéo.
+    // Répercuter immédiatement ce changement dans le total affiché.
+    if (isDurationLockedToAudio) updateTimePerDay();
+    else updateTotalTime();
+    pkg.updateInfosForPictures();
 }
 
 // Gestion du type de couleur du flash (GC, fix, none)

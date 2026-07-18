@@ -69,6 +69,13 @@
 import * as pkg from './index.js';
 import { CONFIG } from './init.js';
 import fixWebmDuration from './fix-webm-duration.js';
+import {
+    automaticEndHoldMs,
+    buildImageTimingPlan,
+    framesForDay,
+    inclusiveDayCount,
+    serverNormalizationFactor,
+} from './video_timing.mjs';
 
 // Debug toasts/assemblage
 const TOAST_DEBUG = false;
@@ -358,6 +365,10 @@ let recordingPerformanceMonitor = {
 // TEMP
 export let framesPerDay = 30;  
 let imageCounter = 0;
+let recordingDayIndex = 0;
+let recordingDayCount = 1;
+let recordingBaseFrameCount = 1;
+let currentDayFrameTarget = 1;
 // FLASH
 let animationSource;
 let animationLayer;
@@ -1276,7 +1287,7 @@ function getFilteredPointsAtStart() {
 
         for (const [dateKey, points] of pkg.pointsByDate.entries()) {
             const date = new Date(dateKey);
-            if (date <= animationStartDate) {
+            if (date < animationStartDate) {
                 allPoints.push(...points);
             }
         }
@@ -1634,34 +1645,33 @@ function startRecordingProcess(){
 
     dbgMapgl('[RECORD] 🚀 Démarrage enregistrement avec date:', currentDate, '->', pkg.metadata.endDate);
 
-    // Calculer framesPerDay de façon autonome (ne pas dépendre d'un appel préalable à updateInfosForPictures)
-    {
-        const _fps       = pkg.options.record.fps || 24;
-        const _tpd       = pkg.options.animation.timePerDay || 50;
-        const _fpd       = Math.max(1, Math.round(_tpd * _fps / 1000));
-        framesPerDay     = Math.max(1, Number(pkg.options.record.framesPerDay) || _fpd);
-        // Recalculer framesPerSec et flashFrames si non définis ou issus d'un framesPerDay=0
-        const _fps2      = framesPerDay * 1000 / _tpd;
-        pkg.options.record.framesPerSec  = _fps2;
-        pkg.options.record.framesPerDay  = framesPerDay;
-        const _flashMs   = pkg.options.flash.duration || 2000;
-        pkg.options.record.flashFrames   = _flashMs * _fps2 / 1000;
-    }
-
-    // Calculer le nombre de jours d'animation (basé sur la plage sélectionnée, pas toute la BDD)
+    // Calculer le total global puis répartir ses fractions entre les jours. Arrondir
+    // chaque jour séparément faisait dériver fortement les vidéos longues.
     try {
-        const start = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
-        const end = new Date(pkg.metadata.endDate.getFullYear(), pkg.metadata.endDate.getMonth(), pkg.metadata.endDate.getDate());
-        const MS_PER_DAY = 24 * 60 * 60 * 1000;
-        const rawDays = Math.floor((end - start) / MS_PER_DAY) + 1; // inclusif
-        const animationDays = Math.max(1, rawDays);
+        recordingDayCount = inclusiveDayCount(currentDate, pkg.metadata.endDate);
+        const timingPlan = buildImageTimingPlan({
+            dayCount: recordingDayCount,
+            timePerDayMs: pkg.options.animation.timePerDay,
+            fps: pkg.options.record.fps,
+            extraEndSeconds: pkg.options.animation.extraEndSeconds,
+            tailFreezeMs: pkg.options.record?.mediaRecorder?.tailFreezeMs,
+            flashMode: pkg.options.flash.mode,
+            flashDurationMs: pkg.options.flash.duration,
+        });
 
-        // Mettre à jour le total d'images attendu pour la progression
-        const framesPerDayLocal = Number(pkg.options.record?.framesPerDay) || framesPerDay || 1;
-        const extra = Math.max(0, Math.round(Number(pkg.options.record?.extraFrames) || 0));
-        pkg.options.record.nbOfImages = animationDays * framesPerDayLocal + extra;
-        pkg.options.record.numberOfDigits = Math.max(4, Math.round(pkg.options.record.nbOfImages).toString().length);
-        dbgMapgl('[RECORD] Jours animation:', animationDays, 'frames/jour:', framesPerDayLocal, 'total images:', pkg.options.record.nbOfImages);
+        recordingDayIndex = 0;
+        recordingBaseFrameCount = timingPlan.baseFrameCount;
+        currentDayFrameTarget = framesForDay(0, recordingDayCount, recordingBaseFrameCount);
+        framesPerDay = timingPlan.framesPerDayAverage;
+        pkg.options.record.framesPerDay = framesPerDay;
+        pkg.options.record.framesPerSec = timingPlan.fps;
+        pkg.options.record.flashFrames = Math.max(1, Math.round(
+            Math.max(0, Number(pkg.options.flash.duration) || 0) * timingPlan.fps / 1000
+        ));
+        pkg.options.record.extraFrames = timingPlan.tailFrameCount;
+        pkg.options.record.nbOfImages = timingPlan.totalFrameCount;
+        pkg.options.record.numberOfDigits = Math.max(4, String(timingPlan.totalFrameCount).length);
+        dbgMapgl('[RECORD] Jours animation:', recordingDayCount, 'frames animation:', recordingBaseFrameCount, 'total images:', timingPlan.totalFrameCount);
     } catch(e) { console.warn('Calcul jours animation échoué:', e); }
 
     // Remise à zéro de l'affichage des informations
@@ -1908,6 +1918,7 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
 
     if (currentDate > pkg.metadata.endDate) {
         for (let extraFrames = 0; extraFrames < pkg.options.record.extraFrames; extraFrames++) {
+            globalRecordFrame++;
             updateAnimationStyles();
             if (capture == true) {
                 await captureElementWithRetry();
@@ -2095,7 +2106,7 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
         return;
     }
 
-    if (currentFrame < framesPerDay) {
+    if (currentFrame < currentDayFrameTarget) {
         // Capturez la frame actuelle
         if (capture == true) {
             await captureElementWithRetry();
@@ -2113,7 +2124,15 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
         updateProgress();
 
         currentDate.setDate(currentDate.getDate() + 1);
-        displayFeaturesForDate(currentDate, pointOptions, flashOptions, true, infos);
+        if (currentDate <= pkg.metadata.endDate) {
+            recordingDayIndex++;
+            currentDayFrameTarget = framesForDay(
+                recordingDayIndex,
+                recordingDayCount,
+                recordingBaseFrameCount,
+            );
+            displayFeaturesForDate(currentDate, pointOptions, flashOptions, true, infos);
+        }
         currentFrame = 0;  // Réinitialisez le compteur de frames pour le nouveau jour
         scheduleCaptureFrame(pointOptions, flashOptions, infos);
     }
@@ -2204,6 +2223,7 @@ function recordAnimationMediaRecorder(){
     // Appliquer un éventuel ralentissement utilisateur sur la timeline
     const originalTimePerDay = pkg.options.animation.timePerDay;
     const originalFlashDuration = pkg.options.flash.duration;
+    const originalExtraEndSeconds = pkg.options.animation.extraEndSeconds;
     let appliedSlowdown = 1;
     try {
         const sd = Math.max(1, parseInt(pkg.options?.record?.mediaRecorder?.slowdownFactor) || 1);
@@ -2212,6 +2232,9 @@ function recordAnimationMediaRecorder(){
             pkg.options.animation.timePerDay = originalTimePerDay * sd;
             // Ralentir aussi l'animation des flashs pour compenser la normalisation
             pkg.options.flash.duration = originalFlashDuration * sd;
+            // Toute la timeline doit être ralentie, y compris la fin demandée.
+            // Sinon ffmpeg raccourcit cette partie lors de la normalisation.
+            pkg.options.animation.extraEndSeconds = originalExtraEndSeconds * sd;
             dbgMapgl('[RECORD] Slowdown x' + sd + ' appliqué: timePerDay=' + pkg.options.animation.timePerDay + ', flash.duration=' + pkg.options.flash.duration);
         }
     } catch(_) {}
@@ -2220,7 +2243,7 @@ function recordAnimationMediaRecorder(){
     try { startAnimation(true); } catch(_) { startAnimation(); }
 
     // Démarrer capture MediaRecorder
-    startMediaRecorderPipeline(totalMs * appliedSlowdown).catch(e => {
+    startMediaRecorderPipeline(totalMs * appliedSlowdown, appliedSlowdown).catch(e => {
         console.error('MediaRecorder pipeline error:', e);
         pkg.showToast && pkg.showToast('Erreur MediaRecorder, bascule en mode images.', 'error', 'Enregistrement');
         // Stopper proprement la boucle animation (rAF) déjà lancée par startAnimation()
@@ -2237,39 +2260,26 @@ function recordAnimationMediaRecorder(){
     mrOnFinalizeRestoreTimePerDay = () => {
         try { pkg.options.animation.timePerDay = originalTimePerDay; } catch(_) {}
         try { pkg.options.flash.duration = originalFlashDuration; } catch(_) {}
+        try { pkg.options.animation.extraEndSeconds = originalExtraEndSeconds; } catch(_) {}
     };
 }
 
 function computeTotalAnimationMs(){
     try {
-        const start = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
-        const end = new Date(pkg.metadata.endDate.getFullYear(), pkg.metadata.endDate.getMonth(), pkg.metadata.endDate.getDate());
-        const MS_PER_DAY = 24 * 60 * 60 * 1000;
-        const rawDays = Math.floor((end - start) / MS_PER_DAY) + 1; // inclusif
-        const animationDays = Math.max(1, rawDays);
+        const animationDays = inclusiveDayCount(currentDate, pkg.metadata.endDate);
         const perDay = Number(pkg.options.animation?.timePerDay) || 50;
         const base = animationDays * perDay;
-        const fps = Number(pkg.options.record?.fps) || 24;
-        const extraFrames = Math.max(0, Math.round(Number(pkg.options.record?.extraFrames) || 0));
         const extraEndMs = Math.max(0, Number(pkg.options?.animation?.extraEndSeconds) || 0) * 1000;
-
-        // Pour MediaRecorder, utiliser une durée fixe pour extraFrames (indépendante du FPS)
-        // Pour éviter que la durée totale change avec le FPS
-        const isMediaRecorder = pkg.options.record?.mode === 'mediarecorder';
-        let tail;
-        if (isMediaRecorder) {
-            // Duree fixe de 3 secondes + temps additionnel pour la fin d'animation
-            tail = 3000 + extraEndMs;
-        } else {
-            // Pour l'enregistrement par images, utiliser la logique existante
-            tail = Math.round((extraFrames / fps) * 1000);
-        }
-
-        return base + tail;
+        const endHoldMs = automaticEndHoldMs({
+            tailFreezeMs: pkg.options.record?.mediaRecorder?.tailFreezeMs,
+            flashMode: pkg.options.flash?.mode,
+            flashDurationMs: pkg.options.flash?.duration,
+        });
+        return base + endHoldMs + extraEndMs;
     } catch(_) { return 3000; }
 }
 
-async function startMediaRecorderPipeline(totalDurationMs){
+async function startMediaRecorderPipeline(totalDurationMs, timelineScale = 1){
     const fps = Number(pkg.options.record?.fps) || 24;
     const mime = pkg.options?.record?.mediaRecorder?.mimeType || 'video/webm;codecs=vp9';
     const vbps = Number(pkg.options?.record?.mediaRecorder?.videoBitsPerSecond) || 6000000;
@@ -2278,7 +2288,12 @@ async function startMediaRecorderPipeline(totalDurationMs){
     // Durée du gel de la dernière frame après la fin réelle de l'animation.
     // L'arrêt du recorder est piloté par finalizeAnimationEnd (fin réelle), pas
     // par un setTimeout théorique qui tronque la vidéo si le rendu prend du retard.
-    mrTailMs = Math.max(0, Number(pkg.options?.record?.mediaRecorder?.tailFreezeMs ?? 3000));
+    mrTailMs = automaticEndHoldMs({
+        tailFreezeMs: Math.max(0, Number(pkg.options?.record?.mediaRecorder?.tailFreezeMs ?? 3000)) * timelineScale,
+        flashMode: pkg.options.flash?.mode,
+        // La durée du flash a déjà été multipliée avant le démarrage de l'animation.
+        flashDurationMs: pkg.options.flash?.duration,
+    });
 
     // devicePixelRatio : les canvas de la carte sont rendus par OpenLayers en pixels
     // device (rect.width * dpr). Ignorer le dpr sous-échantillonnait la sortie → vidéo
@@ -2518,7 +2533,10 @@ function finalizeMediaRecorderVideo(){
                 const toSend = fixedBlob || blob;
                 const fd = new FormData();
                 fd.append('video', toSend, 'recording.webm');
-                fd.append('slowdown', String(slowdown));
+                // Le serveur ne doit accélérer la vidéo que si l'utilisateur a
+                // explicitement demandé la normalisation. Auparavant, décocher
+                // l'option n'avait aucun effet dans le chemin ffmpeg.
+                fd.append('slowdown', String(serverNormalizationFactor(slowdown, doNormalize)));
                 fd.append('fps', String(Number(pkg.options?.record?.fps) || 24));
                 fd.append('fileName', fileName);
                 if (audioEnabled && audioFile) {

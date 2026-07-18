@@ -893,6 +893,10 @@ msgstr ""
 msgid "sec (animation)"
 msgstr ""
 
+#: templates/menu_animation.html:79
+msgid "sec (fin automatique)"
+msgstr ""
+
 #: templates/menu_animation.html:60
 msgid "sec (temps additionnel)"
 msgstr ""

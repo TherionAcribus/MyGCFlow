@@ -406,6 +406,10 @@ def _process_recorded_video(input_path, output_path, slowdown=1.0, audio_path=No
             if len(tail_lines) > 60:
                 tail_lines.pop(0)
 
+    # Fermer explicitement le pipe : les traitements répétés ne doivent pas
+    # accumuler de descripteurs jusqu'au prochain passage du ramasse-miettes.
+    if proc.stdout is not None:
+        proc.stdout.close()
     proc.wait()
     if proc.returncode != 0:
         msg = "\n".join(tail_lines[-8:]) or f"ffmpeg a échoué (code {proc.returncode})"
