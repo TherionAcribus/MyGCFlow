@@ -1184,7 +1184,11 @@ function displayWebGLPoints(features, pointOptions) {
 
     // Vérifier que le layer existe toujours sur la carte (il peut avoir été supprimé)
     const layerOnMap = map.getLayers().getArray().includes(vectorLayer);
-    dbgMapgl('[displayWebGLPoints] vectorLayer sur carte:', layerOnMap, '| vectorSource features avant add:', window.vectorSource.getFeatures().length);
+    // getFeatures() reconstruit un tableau de TOUTES les features de la source : sur une
+    // grosse BDD c'est un parcours O(n) exécuté à chaque frame d'animation. Comme les
+    // arguments d'un appel sont évalués avant d'entrer dans dbgMapgl(), le passer en
+    // argument le calculerait même flag éteint. On gate donc l'appel entier.
+    if (DEBUG_MAPGL) dbgMapgl('[displayWebGLPoints] vectorLayer sur carte:', layerOnMap, '| vectorSource features avant add:', window.vectorSource.getFeatures().length);
     if (vectorLayer && !layerOnMap) {
         dbgMapgl('[displayWebGLPoints] Re-ajout du layer sur la carte');
         map.addLayer(vectorLayer);
@@ -1208,7 +1212,8 @@ function displayWebGLPoints(features, pointOptions) {
         }
 
         window.vectorSource.addFeatures(toAdd);
-        dbgMapgl('[displayWebGLPoints] Après addFeatures:', window.vectorSource.getFeatures().length, 'features dans source');
+        // Même précaution : getFeatures().length ne doit pas s'exécuter quand le debug est éteint.
+        if (DEBUG_MAPGL) dbgMapgl('[displayWebGLPoints] Après addFeatures:', window.vectorSource.getFeatures().length, 'features dans source');
     } else {
         console.warn('[displayWebGLPoints] featureList vide, rien à afficher');
     }
