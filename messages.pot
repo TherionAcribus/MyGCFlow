@@ -1740,6 +1740,37 @@ msgstr ""
 msgid "Différence"
 msgstr ""
 
+#: templates/app.html:118 templates/guide.html:50 templates/guide.html:81
+#: templates/guide.html:93 templates/guide.html:194 templates/guide.html:196
+#: templates/menu_animation.html:7
+msgid "Animation & vidéo"
+msgstr ""
+
+#: templates/menu_animation.html:18 templates/guide.html:218
+msgid "Enregistrement vidéo"
+msgstr ""
+
+#: templates/app.html:119 templates/guide.html:53 templates/guide.html:86
+#: templates/guide.html:93 templates/guide.html:255 templates/guide.html:257
+msgid "Préférences"
+msgstr ""
+
+#: templates/menu_options.html:3
+msgid "Préférences de l'application"
+msgstr ""
+
+#: templates/menu_recording.html:78
+msgid "Fichiers vidéo"
+msgstr ""
+
+#: templates/guide.html:87
+msgid "Réglez la langue et les valeurs par défaut"
+msgstr ""
+
+#: templates/guide.html:257
+msgid "Réglez une fois pour toutes le comportement de l'application dans l'onglet"
+msgstr ""
+
 #: templates/menu_animation.html:28 templates/menu_animation.html:42
 msgid "Filtre"
 msgstr ""

@@ -1957,6 +1957,37 @@ msgstr "Resume"
 msgid "Différence"
 msgstr "Difference"
 
+#: templates/app.html:118 templates/guide.html:50 templates/guide.html:81
+#: templates/guide.html:93 templates/guide.html:194 templates/guide.html:196
+#: templates/menu_animation.html:7
+msgid "Animation & vidéo"
+msgstr "Animation & video"
+
+#: templates/menu_animation.html:18 templates/guide.html:218
+msgid "Enregistrement vidéo"
+msgstr "Video recording"
+
+#: templates/app.html:119 templates/guide.html:53 templates/guide.html:86
+#: templates/guide.html:93 templates/guide.html:255 templates/guide.html:257
+msgid "Préférences"
+msgstr "Preferences"
+
+#: templates/menu_options.html:3
+msgid "Préférences de l'application"
+msgstr "Application preferences"
+
+#: templates/menu_recording.html:78
+msgid "Fichiers vidéo"
+msgstr "Video files"
+
+#: templates/guide.html:87
+msgid "Réglez la langue et les valeurs par défaut"
+msgstr "Configure language and default values"
+
+#: templates/guide.html:257
+msgid "Réglez une fois pour toutes le comportement de l'application dans l'onglet"
+msgstr "Configure the application's behavior once and for all in the"
+
 #: templates/menu_animation.html:28 templates/menu_animation.html:42
 msgid "Filtre"
 msgstr "Filter"

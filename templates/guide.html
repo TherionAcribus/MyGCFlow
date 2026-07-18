@@ -47,10 +47,10 @@
                     <span class="nav-num">2</span>{{ _("Style") }}
                 </a>
                 <a href="#animation" class="guide-nav-link">
-                    <span class="nav-num">3</span>{{ _("Animation") }}
+                    <span class="nav-num">3</span>{{ _("Animation & vidéo") }}
                 </a>
                 <a href="#settings" class="guide-nav-link">
-                    <span class="nav-num">4</span>{{ _("Paramètres") }}
+                    <span class="nav-num">4</span>{{ _("Préférences") }}
                 </a>
             </nav>
         </aside>
@@ -78,19 +78,19 @@
                     </div>
                     <div class="guide-quickstep">
                         <div class="qs-num">3</div>
-                        <strong>{{ _("Animation") }}</strong>
+                        <strong>{{ _("Animation & vidéo") }}</strong>
                         <span>{{ _("Lancez et enregistrez votre vidéo") }}</span>
                     </div>
                     <div class="guide-quickstep">
                         <div class="qs-num">4</div>
-                        <strong>{{ _("Paramètres") }}</strong>
-                        <span>{{ _("Réglez la langue, la qualité et les valeurs par défaut") }}</span>
+                        <strong>{{ _("Préférences") }}</strong>
+                        <span>{{ _("Réglez la langue et les valeurs par défaut") }}</span>
                     </div>
                 </div>
 
                 <div class="guide-callout info">
                     <i class="ti ti-info-circle"></i>
-                    <div>{{ _("Astuce : en haut de l'application, des onglets") }} <span class="ui-chip">{{ _("Données") }}</span>, <span class="ui-chip">{{ _("Style") }}</span>, <span class="ui-chip">{{ _("Animation") }}</span> {{ _("et") }} <span class="ui-chip">{{ _("Paramètres") }}</span> {{ _("correspondent aux 4 sections de ce guide.") }}</div>
+                    <div>{{ _("Astuce : en haut de l'application, des onglets") }} <span class="ui-chip">{{ _("Données") }}</span>, <span class="ui-chip">{{ _("Style") }}</span>, <span class="ui-chip">{{ _("Animation & vidéo") }}</span> {{ _("et") }} <span class="ui-chip">{{ _("Préférences") }}</span> {{ _("correspondent aux 4 sections de ce guide.") }}</div>
                 </div>
             </section>
 
@@ -191,9 +191,9 @@
             <section id="animation" class="guide-section">
                 <div class="guide-section-head">
                     <span class="sec-badge"><i class="ti ti-movie"></i></span>
-                    <h2>3. {{ _("Animation") }}</h2>
+                    <h2>3. {{ _("Animation & vidéo") }}</h2>
                 </div>
-                <p class="guide-section-intro">{{ _("C'est le moment de donner vie à votre carte et, si vous le souhaitez, de l'enregistrer en vidéo. Tout se passe dans l'onglet") }} <span class="ui-chip">{{ _("Animation") }}</span>.</p>
+                <p class="guide-section-intro">{{ _("C'est le moment de donner vie à votre carte et, si vous le souhaitez, de l'enregistrer en vidéo. Tout se passe dans l'onglet") }} <span class="ui-chip">{{ _("Animation & vidéo") }}</span>.</p>
 
                 <ol class="guide-steps">
                     <li>
@@ -211,6 +211,19 @@
                     <li>
                         <h3>{{ _("Ajoutez une musique (optionnel)") }}</h3>
                         <p>{{ _("Cochez") }} <span class="ui-chip">{{ _("Inclure la musique") }}</span>, {{ _("sélectionnez un fichier audio et ajustez le volume. Le bouton") }} <span class="ui-chip"><i class="ti ti-clock"></i> {{ _("Définir la durée de l'animation à partir de la musique") }}</span> {{ _("cale la durée totale sur celle du morceau.") }}</p>
+                    </li>
+                    <li>
+                        <h3>{{ _("Qualité d'enregistrement") }}</h3>
+                        <p>{{ _("Dans") }} <strong>{{ _("Enregistrement vidéo") }}</strong>, {{ _("choisissez le") }} <strong>{{ _("Mode d'enregistrement") }}</strong> :</p>
+                        <ul class="sub">
+                            <li><strong>MediaRecorder (.webm)</strong> — {{ _("rapide et léger, directement dans le navigateur.") }}</li>
+                            <li><strong>Images + MoviePy</strong> — {{ _("plus lent mais plus flexible, assemblage côté serveur.") }}</li>
+                        </ul>
+                        <p>{{ _("Vous pouvez ensuite ajuster les FPS, le bitrate, le format vidéo et l'échelle de qualité.") }}</p>
+                        <div class="guide-callout info">
+                            <i class="ti ti-help"></i>
+                            <div>{{ _("Chaque réglage dispose d'une icône d'aide") }} <i class="ti ti-help" style="font-size:16px;vertical-align:middle;"></i> {{ _("dans l'application : survolez-la pour en savoir plus.") }}</div>
+                        </div>
                     </li>
                     <li>
                         <h3>{{ _("Lancez l'aperçu puis enregistrez") }}</h3>
@@ -236,13 +249,13 @@
                 </ol>
             </section>
 
-            <!-- ===================== 4. PARAMÈTRES ===================== -->
+            <!-- ===================== 4. PRÉFÉRENCES ===================== -->
             <section id="settings" class="guide-section">
                 <div class="guide-section-head">
                     <span class="sec-badge"><i class="ti ti-settings"></i></span>
-                    <h2>4. {{ _("Paramètres") }}</h2>
+                    <h2>4. {{ _("Préférences") }}</h2>
                 </div>
-                <p class="guide-section-intro">{{ _("Réglez une fois pour toutes le comportement de l'application et la qualité des enregistrements dans l'onglet") }} <span class="ui-chip">{{ _("Paramètres") }}</span>.</p>
+                <p class="guide-section-intro">{{ _("Réglez une fois pour toutes le comportement de l'application dans l'onglet") }} <span class="ui-chip">{{ _("Préférences") }}</span>.</p>
 
                 <ol class="guide-steps">
                     <li>
@@ -260,19 +273,6 @@
                             <li><span class="ui-chip"><i class="ti ti-current-location"></i> {{ _("Utiliser la vue actuelle de la carte") }}</span> — {{ _("reprend la position affichée.") }}</li>
                             <li><span class="ui-chip"><i class="ti ti-map-pin"></i> {{ _("Choisir sur la carte") }}</span> — {{ _("cliquez directement le point souhaité.") }}</li>
                         </ul>
-                    </li>
-                    <li>
-                        <h3>{{ _("Qualité d'enregistrement") }}</h3>
-                        <p>{{ _("Dans") }} <strong>{{ _("Paramètres d'enregistrement") }}</strong>, {{ _("choisissez le") }} <strong>{{ _("Mode d'enregistrement") }}</strong> :</p>
-                        <ul class="sub">
-                            <li><strong>MediaRecorder (.webm)</strong> — {{ _("rapide et léger, directement dans le navigateur.") }}</li>
-                            <li><strong>Images + MoviePy</strong> — {{ _("plus lent mais plus flexible, assemblage côté serveur.") }}</li>
-                        </ul>
-                        <p>{{ _("Vous pouvez ensuite ajuster les FPS, le bitrate, le format vidéo et l'échelle de qualité.") }}</p>
-                        <div class="guide-callout info">
-                            <i class="ti ti-help"></i>
-                            <div>{{ _("Chaque réglage dispose d'une icône d'aide") }} <i class="ti ti-help" style="font-size:16px;vertical-align:middle;"></i> {{ _("dans l'application : survolez-la pour en savoir plus.") }}</div>
-                        </div>
                     </li>
                 </ol>
 

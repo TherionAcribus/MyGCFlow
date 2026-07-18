@@ -1,13 +1,24 @@
 <div id="animation" class="col-12 tab-pane fade">
     <div class="row g-3">
 
-        <!-- Section Animation -->
+        <!-- Section Animation et vidéo -->
         <div class="col-12">
             <h5 class="mb-2">
-                <i class="ti ti-movie text-muted me-1"></i>{{ _("Contrôles d'animation") }}
+                <i class="ti ti-movie text-muted me-1"></i>{{ _("Animation & vidéo") }}
             </h5>
             <div class="card">
                 <div class="card-body">
+                    <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="animationConfigTab" data-bs-toggle="tab" data-bs-target="#animationConfigPane" type="button" role="tab" aria-controls="animationConfigPane" aria-selected="true">{{ _("Animation") }}</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="recordingConfigTab" data-bs-toggle="tab" data-bs-target="#recordingConfigPane" type="button" role="tab" aria-controls="recordingConfigPane" aria-selected="false">{{ _("Enregistrement vidéo") }}</button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content pt-3">
+                    <div class="tab-pane fade show active" id="animationConfigPane" role="tabpanel" aria-labelledby="animationConfigTab" tabindex="0">
                     <div class="mb-3">
                         <button type="button" class="btn btn-secondary" id="btnFullscreenMode" title="{{ _('Passer en plein écran') }}">
                             <i class="ti ti-maximize me-1" aria-hidden="true"></i><span class="fullscreen-label" data-enter-text="{{ _('Plein écran') }}" data-exit-text="{{ _('Quitter le plein écran') }}">{{ _("Plein écran") }}</span>
@@ -108,6 +119,13 @@
                         </div>
                     </div>
 
+                    </div>
+
+                    <div class="tab-pane fade" id="recordingConfigPane" role="tabpanel" aria-labelledby="recordingConfigTab" tabindex="0">
+                        {% include 'menu_recording.html' %}
+                    </div>
+                    </div>
+
                     <div class="anim-section-divider mt-3">
                         <span class="anim-section-label">{{ _("Contrôles") }}</span>
                     </div>
@@ -126,20 +144,6 @@
                         </button>
                     </div>
 
-                    <div class="anim-section-divider mt-3">
-                        <span class="anim-section-label">{{ _("Vidéo") }}</span>
-                    </div>
-                    <div class="anim-btn-group">
-                        <button type="button" class="btn btn-secondary" id="btnCleanMoviePictures">
-                            <i class="ti ti-trash-x me-1"></i>{{ _("Nettoyer images") }}
-                        </button>
-                        <button type="button" class="btn btn-secondary" id="btnAssembleMoviePictures">
-                            <i class="ti ti-movie me-1"></i>{{ _("Assembler film") }}
-                        </button>
-                        <button type="button" class="btn btn-secondary" id="btnOpenVideoFolder">
-                            <i class="ti ti-folder-open me-1"></i>{{ _("Ouvrir le dossier vidéo") }}
-                        </button>
-                    </div>
                 </div>
             </div>
         </div>
