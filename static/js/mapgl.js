@@ -601,32 +601,35 @@ export function addMaps() {
             'https://ahocevar.com/geoserver/gwc/service/tms/1.0.0/' +
             'ne:ne_10m_admin_0_countries@EPSG%3A900913@pbf/{z}/{x}/{-y}.pbf',
         }),
-        style: new ol.style.Style({
-            stroke: new ol.style.Stroke({
-                width: defaultSettings.vectorMap.strokeWidth,
-                color: defaultSettings.vectorMap.strokeColor
-            }),
-            fill: new ol.style.Fill({
-                color: defaultSettings.vectorMap.fillColor
-            })
-        })
+        style: buildVectorMapStyle(defaultSettings.vectorMap)
     });
 
     map.addLayer(vectorTileLayer);
-    vectorTileLayer.setVisible(false);  
+    vectorTileLayer.setVisible(false);
+}
+
+// Construit le style de la carte vectorielle.
+// Largeur de contour <= 0 = « pas de contour ». On ne peut pas simplement omettre
+// le Stroke : les polygones VectorTile remplis laissent alors apparaître un fin
+// liseré (anti-aliasing sur les bords de tuiles et entre pays adjacents). On trace
+// donc un contour de la MÊME couleur que le remplissage : invisible en tant que
+// bordure, mais il recouvre ces coutures pour un aplat uniforme.
+function buildVectorMapStyle(values){
+    const w = parseFloat(values.strokeWidth);
+    const strokeWidth = Number.isFinite(w) ? w : 0;
+    const hasContour = strokeWidth > 0;
+    return new ol.style.Style({
+        fill: new ol.style.Fill({ color: values.fillColor }),
+        stroke: new ol.style.Stroke({
+            color: hasContour ? values.strokeColor : values.fillColor,
+            width: hasContour ? strokeWidth : 1
+        })
+    });
 }
 
 // rafraîchit la carte VectorMap quand on change ses proprietés
 export function refreshVectorMap(newValues){
-    vectorTileLayer.setStyle(new ol.style.Style({
-        stroke: new ol.style.Stroke({
-            color: newValues.strokeColor,
-            width: newValues.strokeWidth
-        }),
-        fill: new ol.style.Fill({
-            color: newValues.fillColor
-        }),
-    }));
+    vectorTileLayer.setStyle(buildVectorMapStyle(newValues));
     // bizarrement la variable est background avec un _
     vectorTileLayer.background_ = newValues.background;
     vectorTileLayer.getSource().refresh();

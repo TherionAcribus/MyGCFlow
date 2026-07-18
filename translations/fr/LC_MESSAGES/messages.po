@@ -1614,12 +1614,12 @@ msgid "Cliquez pour choisir la couleur de fond"
 msgstr "Cliquez pour choisir la couleur de fond"
 
 #: templates/menu_style.html:72
-msgid "Définit l'épaisseur des contours de la carte"
-msgstr "Définit l'épaisseur des contours de la carte"
+msgid "Définit l'épaisseur des contours de la carte (0 = aucun contour)"
+msgstr "Définit l'épaisseur des contours de la carte (0 = aucun contour)"
 
 #: templates/menu_style.html:72
-msgid "Largeur contour"
-msgstr "Largeur contour"
+msgid "Largeur contour (0 = aucun)"
+msgstr "Largeur contour (0 = aucun)"
 
 #: templates/menu_style.html:74
 msgid "Faites glisser pour ajuster l'épaisseur"
