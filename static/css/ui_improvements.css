@@ -1723,6 +1723,27 @@ font-size: 0.8rem;
     font-weight: 600;
 }
 
+/* --- Titres de section harmonisés --------------------------------------- */
+/* Un style unique pour TOUS les en-têtes de section principaux (onglets
+   Données, Style, Animation, Préférences). Avant : certaines sections étaient
+   en <h5>, d'autres en <h6>, avec des marges variables (mb-2 / mb-3) → tailles
+   et espacements hétérogènes pour des sections de même rang. La classe fixe la
+   police, la taille (légèrement agrandie), la graisse, la couleur, la marge et
+   le rendu de l'icône, indépendamment de la balise Hn utilisée. */
+.gc-section-title {
+    margin: 0 0 0.75rem;
+    font-family: inherit;      /* neutralise tout héritage de police divergent */
+    font-size: 1.15rem;        /* un cran au-dessus du h5 Tabler (~1.06rem) */
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--color-text);
+}
+.gc-section-title .ti {
+    font-size: 1.1em;              /* icône proportionnelle au texte agrandi */
+    vertical-align: -0.08em;      /* recale l'icône sur la ligne de base du texte */
+    color: var(--color-text-muted);
+}
+
 /* Dark mode (Tabler : data-bs-theme="dark" sur <html>) */
 [data-bs-theme="dark"] .gpx-drop-overlay {
     background: rgba(32, 107, 196, 0.22);
