@@ -3872,13 +3872,18 @@ function initCssAssistant() {
     }
 
     function refreshTargetButtons() {
-        btnTargetTitle.classList.toggle('is-selected', activeTarget === 'title');
-        btnTargetInfos.classList.toggle('is-selected', activeTarget === 'infos');
+        const titleActive = activeTarget === 'title';
+        btnTargetTitle.classList.toggle('active', titleActive);
+        btnTargetTitle.setAttribute('aria-selected', titleActive ? 'true' : 'false');
+        btnTargetTitle.tabIndex = titleActive ? 0 : -1;
+        btnTargetInfos.classList.toggle('active', !titleActive);
+        btnTargetInfos.setAttribute('aria-selected', titleActive ? 'false' : 'true');
+        btnTargetInfos.tabIndex = titleActive ? -1 : 0;
     }
 
     function refreshInfosPanels() {
-        if (infosPanelTitle) infosPanelTitle.style.display = activeTarget === 'title' ? 'block' : 'none';
-        if (infosPanelInfos) infosPanelInfos.style.display = activeTarget === 'infos' ? 'block' : 'none';
+        if (infosPanelTitle) infosPanelTitle.hidden = activeTarget !== 'title';
+        if (infosPanelInfos) infosPanelInfos.hidden = activeTarget !== 'infos';
     }
 
     function updateAdvancedVisibility() {
@@ -3921,6 +3926,19 @@ function initCssAssistant() {
 
     btnTargetTitle.addEventListener('click', () => switchTarget('title'));
     btnTargetInfos.addEventListener('click', () => switchTarget('infos'));
+    [btnTargetTitle, btnTargetInfos].forEach((tab, index, tabs) => {
+        tab.addEventListener('keydown', (event) => {
+            let nextIndex = null;
+            if (event.key === 'ArrowRight' || event.key === 'ArrowDown') nextIndex = (index + 1) % tabs.length;
+            if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') nextIndex = (index - 1 + tabs.length) % tabs.length;
+            if (event.key === 'Home') nextIndex = 0;
+            if (event.key === 'End') nextIndex = tabs.length - 1;
+            if (nextIndex === null) return;
+            event.preventDefault();
+            tabs[nextIndex].focus();
+            tabs[nextIndex].click();
+        });
+    });
     btnCopyToOther.addEventListener('click', () => {
         const from = activeTarget;
         const to = from === 'title' ? 'infos' : 'title';

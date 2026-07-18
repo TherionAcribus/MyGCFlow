@@ -160,7 +160,7 @@
 /* Boutons de cartes : voir .map-card dans la section composants post-migration */
 /* (les anciens overrides .changeMap avec transform/colors hardcoded ont été supprimés) */
 
-/* Boutons de sélection Titre/Infos : voir .gc-css-target-btn dans la section composants */
+/* La sélection Titre/Infos utilise les mêmes onglets Bootstrap que le reste de l'interface. */
 
 /* Style des boutons d'animation */
 .btn-large {
@@ -1075,10 +1075,14 @@ justify-content: space-between;
 gap: 8px;
 }
 
-.gc-css-target {
-display: inline-flex;
-gap: 6px;
-align-items: center;
+.gc-css-target-header {
+border-bottom: 1px solid var(--color-border);
+}
+
+.gc-css-target-tabs {
+flex: 1 1 12rem;
+margin-bottom: -1px;
+border-bottom: 0;
 }
 
 .gc-css-status {
@@ -1566,23 +1570,6 @@ font-size: 0.8rem;
 }
 .gc-css-pane.active {
     display: block;
-}
-
-/* Boutons cible Titre/Infos */
-.gc-css-target-btn {
-    border: 1px solid var(--color-border);
-    background: var(--color-surface);
-    color: var(--color-text-muted);
-    transition: all 0.15s ease;
-}
-.gc-css-target-btn:hover {
-    border-color: var(--color-accent);
-    color: var(--color-accent);
-}
-.gc-css-target-btn.is-selected {
-    background: var(--color-accent);
-    border-color: var(--color-accent);
-    color: #fff;
 }
 
 /* Badge non géré */

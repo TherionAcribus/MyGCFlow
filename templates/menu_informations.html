@@ -1,13 +1,17 @@
 <!-- Informations à afficher -->
 <div id="infos">
     <div id="gcCssAssistant" class="gc-css-assistant">
-        <!-- En-tête : cible Titre/Infos + toggle CSS avancé -->
+        <!-- Onglets de cible Titre/Infos + toggle CSS avancé -->
         <div class="gc-css-assistant-header mb-2">
-            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
-                <div class="gc-css-target" role="group" aria-label="{{ _('Cible du style') }}">
-                    <button type="button" id="gcCssTargetTitle" class="btn btn-sm gc-css-target-btn is-selected">{{ _("Titre") }}</button>
-                    <button type="button" id="gcCssTargetInfos" class="btn btn-sm gc-css-target-btn">{{ _("Infos") }}</button>
-                </div>
+            <div class="gc-css-target-header d-flex flex-wrap align-items-end justify-content-between gap-2">
+                <ul class="nav nav-tabs nav-tabs-sm gc-css-target-tabs" role="tablist" aria-label="{{ _('Cible du style') }}">
+                    <li class="nav-item" role="presentation">
+                        <button type="button" id="gcCssTargetTitle" class="nav-link active" role="tab" aria-selected="true" aria-controls="gcInfosPanelTitle">{{ _("Titre") }}</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button type="button" id="gcCssTargetInfos" class="nav-link" role="tab" aria-selected="false" aria-controls="gcInfosPanelInfos" tabindex="-1">{{ _("Infos") }}</button>
+                    </li>
+                </ul>
                 <div class="gc-css-status d-flex align-items-center gap-2">
                     <span id="gcCssUnmanagedBadge" class="gc-css-unmanaged badge bg-warning" style="display:none" data-bs-toggle="tooltip" data-bs-title="{{ _('Certaines propriétés CSS du fichier ne sont pas gérées par les champs ci-dessous. Utilisez le mode CSS avancé pour les éditer manuellement.') }}"></span>
                     <div class="form-check form-switch m-0">
@@ -19,7 +23,7 @@
         </div>
 
         <!-- Panneau Titre -->
-        <div id="gcInfosPanelTitle" class="gc-infos-panel mb-2">
+        <div id="gcInfosPanelTitle" class="gc-infos-panel mb-2" role="tabpanel" aria-labelledby="gcCssTargetTitle">
             <div class="form-check mb-2">
                 <input class="form-check-input" type="checkbox" id="cbDisplayTitle">
                 <label class="form-check-label" for="cbDisplayTitle">{{ _("Afficher un titre") }}</label>
@@ -31,7 +35,7 @@
         </div>
 
         <!-- Panneau Infos -->
-        <div id="gcInfosPanelInfos" class="gc-infos-panel mb-2" style="display:none;">
+        <div id="gcInfosPanelInfos" class="gc-infos-panel mb-2" role="tabpanel" aria-labelledby="gcCssTargetInfos" hidden>
             <div class="form-check">
                 <input class="form-check-input" type="checkbox" id="cbDisplayNumberofCaches">
                 <label class="form-check-label" for="cbDisplayNumberofCaches">{{ _("Afficher le nombre de caches trouvées") }}</label>
