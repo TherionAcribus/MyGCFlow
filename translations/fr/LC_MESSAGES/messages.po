@@ -637,7 +637,7 @@ msgstr "Cochez"
 
 #: templates/guide.html:213 templates/menu_animation.html:80
 msgid "Inclure la musique"
-msgstr "Couleur unique"
+msgstr "Inclure la musique"
 
 #: templates/guide.html:213
 msgid "sélectionnez un fichier audio et ajustez le volume. Le bouton"
@@ -859,7 +859,7 @@ msgstr "Date par défaut (BDD)"
 
 #: templates/menu_animation.html:25 templates/menu_animation.html:35
 msgid "Date issue du filtre"
-msgstr "Date de début"
+msgstr "Date issue du filtre"
 
 #: templates/menu_animation.html:45
 msgid "Temps en ms par jour"
@@ -867,7 +867,7 @@ msgstr "Temps en ms par jour"
 
 #: templates/menu_animation.html:50
 msgid "Temps total (minutes) - défini par musique"
-msgstr "Temps total (minutes)"
+msgstr "Temps total (minutes) - défini par musique"
 
 #: templates/menu_animation.html:51
 msgid "Temps total"
@@ -888,15 +888,15 @@ msgstr "jours"
 
 #: templates/menu_animation.html:57
 msgid "Calcul"
-msgstr "Annuler"
+msgstr "Calcul"
 
 #: templates/menu_animation.html:58
 msgid "sec (animation)"
-msgstr "Animation"
+msgstr "sec (animation)"
 
 #: templates/menu_animation.html:60
 msgid "sec (temps additionnel)"
-msgstr "Temps additionnel (sec)"
+msgstr "sec (temps additionnel)"
 
 #: templates/menu_animation.html:76
 msgid "Musique (optionnel)"
@@ -916,7 +916,7 @@ msgstr "Utiliser la durée de la musique comme temps total"
 
 #: templates/menu_animation.html:104
 msgid "Contrôles"
-msgstr "Contrôles d'animation"
+msgstr "Contrôles"
 
 #: templates/menu_bdd.html:6
 msgid "Chargement"
@@ -1764,6 +1764,22 @@ msgstr "Ignorer pour l'instant"
 
 #~ msgid "Dupliquer le CSS"
 #~ msgstr "Dupliquer"
+
+#: templates/menu_animation.html:12
+msgid "Passer en plein écran"
+msgstr "Passer en plein écran"
+
+#: templates/menu_animation.html:13
+msgid "Quitter le plein écran"
+msgstr "Quitter le plein écran"
+
+#: templates/menu_animation.html:121
+msgid "Continuer"
+msgstr "Continuer"
+
+#: templates/menu_animation.html:99
+msgid "Différence"
+msgstr "Différence"
 
 #: templates/menu_animation.html:28 templates/menu_animation.html:42
 msgid "Filtre"

@@ -66,7 +66,7 @@ function updateDurationLockIndicator() {
     if (label) {
         if (isDurationLockedToAudio) {
             const lockedText = label.getAttribute('data-locked-text') || 'Temps total (minutes) - défini par musique';
-            label.innerHTML = '<i class="material-icons" style="font-size:14px; vertical-align:middle;">music_note</i> ' + lockedText;
+            label.innerHTML = '<i class="ti ti-music me-1" aria-hidden="true"></i>' + lockedText;
             label.style.color = '#2196F3'; // Bleu Material Design
         } else {
             const normalText = label.getAttribute('data-normal-text') || 'Temps total (minutes)';
@@ -107,7 +107,8 @@ async function updateDurationMatchIndicator() {
             // Afficher la différence seulement si les durées ne coïncident pas
             const diff = audioDurationMin - currentTotalTime;
             const diffText = diff > 0 ? `+${diff.toFixed(2)} min` : `${diff.toFixed(2)} min`;
-            indicator.innerHTML = '<i class="material-icons" style="font-size:14px; vertical-align:middle; color:#FF9800;">warning</i> Différence: ' + diffText;
+            const differenceText = indicator.dataset.differenceText || 'Différence';
+            indicator.innerHTML = '<i class="ti ti-alert-triangle me-1" style="color:#FF9800;" aria-hidden="true"></i>' + differenceText + ': ' + diffText;
             indicator.style.color = '#FF9800';
             indicator.style.display = 'inline';
         }
@@ -3080,24 +3081,33 @@ export function resetControlsToInitialState(){
 // on change le texte du bouton et une class qui sert d'indicateur
 // si réinitialisation = true, c'est que l'on veut remettre le bouton dans son état d'origine 
 // sans lancer startAnimation. Utilisé quand on clique sur Start ou Annuler
-function toggleButtonAnimationPauseAndRestart(reinitialisation = false){ {
+function toggleButtonAnimationPauseAndRestart(reinitialisation = false){
     const btnPauseAnimation = document.getElementById('btnPauseAnimation');
-    const icon = btnPauseAnimation.querySelector('i.material-icons');
+    if (!btnPauseAnimation) return;
+    const icon = btnPauseAnimation.querySelector('i');
+    const label = btnPauseAnimation.querySelector('.animation-pause-label');
+    const pauseText = btnPauseAnimation.dataset.pauseText || 'Pause';
+    const continueText = btnPauseAnimation.dataset.continueText || 'Continuer';
 
     if (btnPauseAnimation.classList.contains('pause') && !reinitialisation) {
         btnPauseAnimation.classList.remove('pause');
         btnPauseAnimation.classList.add('restart');
-        btnPauseAnimation.childNodes[2].nodeValue = "Continue";  // Mettre à jour le texte
-        icon.textContent = 'chevron_right';  // Mettre à jour l'icône
+        if (label) label.textContent = continueText;
+        if (icon) {
+            icon.classList.remove('ti-player-pause');
+            icon.classList.add('ti-player-play');
+        }
         pkg.pauseAnimation(); // pause douce : stoppe l'interval sans vider la carte
     } else if (btnPauseAnimation.classList.contains('restart') || reinitialisation) {
         btnPauseAnimation.classList.remove('restart');
         btnPauseAnimation.classList.add('pause');
-        btnPauseAnimation.childNodes[2].nodeValue = "Pause";  // Mettre à jour le texte
-        icon.textContent = 'pause';  // Mettre à jour l'icône
+        if (label) label.textContent = pauseText;
+        if (icon) {
+            icon.classList.remove('ti-player-play');
+            icon.classList.add('ti-player-pause');
+        }
         if (!reinitialisation) {
             pkg.startAnimation("restart");
-            }
         }
     }
 
@@ -4073,18 +4083,29 @@ function updateFullscreenButtonAppearance() {
     if (!btnFullscreenMode) return;
 
     const icon = btnFullscreenMode.querySelector('i');
+    const label = btnFullscreenMode.querySelector('.fullscreen-label');
+    const enterText = label?.dataset.enterText || 'Plein écran';
+    const exitText = label?.dataset.exitText || 'Quitter le plein écran';
     if (fullscreenButtonActive) {
         // Mode plein écran actif
-        btnFullscreenMode.classList.remove('grey');
-        btnFullscreenMode.classList.add('blue');
-        if (icon) icon.textContent = 'fullscreen_exit';
-        btnFullscreenMode.title = 'Quitter le plein écran';
+        btnFullscreenMode.classList.remove('btn-secondary');
+        btnFullscreenMode.classList.add('btn-primary');
+        if (icon) {
+            icon.classList.remove('ti-maximize');
+            icon.classList.add('ti-minimize');
+        }
+        if (label) label.textContent = exitText;
+        btnFullscreenMode.title = exitText;
     } else {
         // Mode normal
-        btnFullscreenMode.classList.remove('blue');
-        btnFullscreenMode.classList.add('grey');
-        if (icon) icon.textContent = 'fullscreen';
-        btnFullscreenMode.title = 'Passer en plein écran';
+        btnFullscreenMode.classList.remove('btn-primary');
+        btnFullscreenMode.classList.add('btn-secondary');
+        if (icon) {
+            icon.classList.remove('ti-minimize');
+            icon.classList.add('ti-maximize');
+        }
+        if (label) label.textContent = enterText;
+        btnFullscreenMode.title = enterText;
     }
 }
 

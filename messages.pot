@@ -1724,6 +1724,22 @@ msgstr ""
 msgid "Ignorer pour l'instant"
 msgstr ""
 
+#: templates/menu_animation.html:12
+msgid "Passer en plein écran"
+msgstr ""
+
+#: templates/menu_animation.html:13
+msgid "Quitter le plein écran"
+msgstr ""
+
+#: templates/menu_animation.html:121
+msgid "Continuer"
+msgstr ""
+
+#: templates/menu_animation.html:99
+msgid "Différence"
+msgstr ""
+
 #: templates/menu_animation.html:28 templates/menu_animation.html:42
 msgid "Filtre"
 msgstr ""

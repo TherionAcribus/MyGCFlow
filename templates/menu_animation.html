@@ -9,8 +9,8 @@
             <div class="card">
                 <div class="card-body">
                     <div class="mb-3">
-                        <button type="button" class="btn btn-secondary" id="btnFullscreenMode">
-                            <i class="ti ti-maximize me-1"></i>{{ _("Plein écran") }}
+                        <button type="button" class="btn btn-secondary" id="btnFullscreenMode" title="{{ _('Passer en plein écran') }}">
+                            <i class="ti ti-maximize me-1" aria-hidden="true"></i><span class="fullscreen-label" data-enter-text="{{ _('Plein écran') }}" data-exit-text="{{ _('Quitter le plein écran') }}">{{ _("Plein écran") }}</span>
                         </button>
                     </div>
 
@@ -103,7 +103,7 @@
                                 <button type="button" class="btn btn-sm btn-secondary disabled" id="btnSetDurationFromAudio" title="{{ _('Utiliser la durée de la musique comme temps total') }}">
                                     <i class="ti ti-clock me-1"></i>{{ _("Définir la durée de l'animation à partir de la musique") }}
                                 </button>
-                                <span id="durationMatchIndicator" class="ms-2" style="display:none;"></span>
+                                <span id="durationMatchIndicator" class="ms-2" style="display:none;" data-difference-text="{{ _('Différence') }}"></span>
                             </div>
                         </div>
                     </div>
@@ -118,8 +118,8 @@
                         <button type="button" class="btn btn-lg btn-primary" id="btnRecordAnimation">
                             <i class="ti ti-video me-1"></i>{{ _("Enregistrer") }}
                         </button>
-                        <button type="button" class="btn btn-lg btn-secondary" id="btnPauseAnimation">
-                            <i class="ti ti-player-pause me-1"></i>{{ _("Pause") }}
+                        <button type="button" class="btn btn-lg btn-secondary pause" id="btnPauseAnimation" data-pause-text="{{ _('Pause') }}" data-continue-text="{{ _('Continuer') }}">
+                            <i class="ti ti-player-pause me-1" aria-hidden="true"></i><span class="animation-pause-label">{{ _("Pause") }}</span>
                         </button>
                         <button type="button" class="btn btn-lg btn-secondary" id="btnStopAnimation">
                             <i class="ti ti-player-stop me-1"></i>{{ _("Arrêter") }}

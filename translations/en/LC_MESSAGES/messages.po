@@ -1941,6 +1941,22 @@ msgstr "Skip for now"
 #~ msgid "Dupliquer le CSS"
 #~ msgstr "Duplicate"
 
+#: templates/menu_animation.html:12
+msgid "Passer en plein écran"
+msgstr "Enter fullscreen"
+
+#: templates/menu_animation.html:13
+msgid "Quitter le plein écran"
+msgstr "Exit fullscreen"
+
+#: templates/menu_animation.html:121
+msgid "Continuer"
+msgstr "Resume"
+
+#: templates/menu_animation.html:99
+msgid "Différence"
+msgstr "Difference"
+
 #: templates/menu_animation.html:28 templates/menu_animation.html:42
 msgid "Filtre"
 msgstr "Filter"
