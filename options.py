@@ -56,7 +56,7 @@ def fetch_version_info(current_version, user_language='fr'):
         return check_version_error("Réponse invalide ou vide", current_version)
 
 def create_release_notes(new_versions, current_version, user_language='fr'):
-    print(f"DEBUG: create_release_notes appelée avec langue: {user_language}")
+    logging.debug("create_release_notes appelée avec langue: %s", user_language)
 
     if not new_versions:  # Aucune nouvelle version
         # Traductions pour le message "à jour"
