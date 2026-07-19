@@ -50,10 +50,10 @@ def fetch_version_info(current_version, user_language='fr'):
         return create_release_notes(new_versions, current_version, user_language)
     except requests.RequestException as error:
         logging.exception("Erreur réseau lors de la vérification des mises à jour.")
-        return check_version_error(str(error))
+        return check_version_error(str(error), current_version)
     except (json.JSONDecodeError, ValueError):
         logging.exception("Réponse JSON invalide.")
-        return check_version_error("Réponse invalide ou vide")
+        return check_version_error("Réponse invalide ou vide", current_version)
 
 def create_release_notes(new_versions, current_version, user_language='fr'):
     print(f"DEBUG: create_release_notes appelée avec langue: {user_language}")
@@ -70,6 +70,7 @@ def create_release_notes(new_versions, current_version, user_language='fr'):
         return {
             "error": False,
             "update_available": False,
+            "current_version": current_version,
             "latest_version": None,
             "release_notes": release_notes,
             "versions": []
@@ -118,6 +119,7 @@ def create_release_notes(new_versions, current_version, user_language='fr'):
     return {
         "error": False,
         "update_available": True,
+        "current_version": current_version,
         "latest_version": {
             "version": latest_version['version'],
             "date": latest_version.get('release_date', 'Non spécifiée'),
@@ -128,7 +130,7 @@ def create_release_notes(new_versions, current_version, user_language='fr'):
     }
 
 
-def check_version_error(error):
+def check_version_error(error, current_version=None):
     release_notes = f"""Oups, une erreur est survenue lors de la vérification de la dernière version. 
                     Merci de me contacter à l'adresse <a href='mailto:at_mop@gmail.com'>mailto:at_mop@gmail.com</a>.
                     <br> Erreur : {error}
@@ -137,6 +139,7 @@ def check_version_error(error):
     return {
         "error": True,
         "update_available": False,
+        "current_version": current_version,
         "latest_version": None,
         "release_notes": release_notes
     }

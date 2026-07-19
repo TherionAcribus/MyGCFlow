@@ -31,7 +31,8 @@ const updateModalTranslations = {
 };
 
 export function checkVersionInit(){
-    if (pkg.options.options.checkVersion == true) {
+    const enabled = pkg.options.options.checkVersion;
+    if (enabled === true || enabled === 'true') {
         checkVersion("init");
     }
 }
@@ -78,6 +79,7 @@ export function testModal() {
     const testData = {
         "error": false,
         "update_available": true,
+        "current_version": "1.0",
         "latest_version": {
             "version": "2.0",
             "date": "2024-04-10",
@@ -225,7 +227,7 @@ async function openUpdateDetailsModal(data) {
     console.log("=== DEBUG openUpdateDetailsModal ===");
     console.log("Data reçue dans modale:", data);
 
-    const currentVersion = "1.0"; // Version actuelle de l'application
+    const currentVersion = data.current_version || "?";
     const currentLang = await getCurrentLanguage();
     const translations = updateModalTranslations[currentLang] || updateModalTranslations.fr;
 

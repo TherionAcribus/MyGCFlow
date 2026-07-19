@@ -550,7 +550,7 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
 
     // boutons
     buttonCheckVersion = document.getElementById('buttonCheckVersion');
-    if (buttonCheckVersion) buttonCheckVersion.addEventListener('click', pkg.checkVersion);
+    if (buttonCheckVersion) buttonCheckVersion.addEventListener('click', () => pkg.checkVersion("manual"));
 
     buttonHome = document.getElementById('buttonHome');
     if (buttonHome) buttonHome.addEventListener('click', pkg.openHomePage);
@@ -1590,7 +1590,7 @@ async function changeOptionsValues() {
     // Sauvegarder la nouvelle langue dans les options
     pkg.options.options.language = newLanguage;
     if (selectCheckVersionOnline) {
-        pkg.options.options.checkVersion = selectCheckVersionOnline.value;
+        pkg.options.options.checkVersion = selectCheckVersionOnline.value === 'true' || selectCheckVersionOnline.value === true;
     }
 
     // Sauvegarder dans localStorage + cookie pour le backend
