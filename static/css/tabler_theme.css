@@ -128,11 +128,22 @@ h5, h6 { color: var(--color-text); font-weight: 600; }
 /* --- Tom Select : aligner sur l'accent --- */
 .ts-control {
     border-color: var(--color-border);
+    background-color: var(--color-surface);
 }
 .ts-control:focus,
 .ts-wrapper.focus .ts-control {
     border-color: var(--color-accent);
     box-shadow: 0 0 0 0.25rem rgba(30, 136, 229, 0.25);
+}
+/* Tom Select calque son fond sur --bs-body-bg, jamais défini dans ce thème :
+   sans ce repli, le panneau déroulant est transparent et illisible par-dessus
+   la carte ou le contenu situé derrière. */
+.ts-dropdown,
+.ts-dropdown .ts-dropdown-content,
+.ts-dropdown .optgroup,
+.ts-dropdown .optgroup-header {
+    background-color: var(--color-surface);
+    opacity: 1;
 }
 .ts-wrapper.plugin-checkbox_options .option.active,
 .ts-dropdown .active {

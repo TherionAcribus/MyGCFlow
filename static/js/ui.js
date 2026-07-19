@@ -355,7 +355,8 @@ const inputSizeBorder = document.getElementById('inputSizeBorder');
     selectShape = document.getElementById('selectShape');
     if (selectShape) {
         selectShape.addEventListener('change', changePointStyleUI);
-        initTomSelect(selectShape, {});
+        // Pas de remove_button : ce champ doit toujours avoir une valeur.
+        initTomSelect(selectShape, { maxItems: 1, plugins: [] });
     }
 
 // ANIMATION DE LA CARTE
@@ -458,7 +459,9 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     if (selectFlashMode) {
         selectFlashMode.addEventListener('change', () => changeFlashValues(selectFlashMode));
         // Initialiser Tom Select (remplace Materialize)
-        initTomSelect(selectFlashMode, {});
+        // Pas de remove_button : ce champ doit toujours avoir une valeur
+        // (comme un <select> natif), "Pas de flash" étant déjà une option explicite.
+        initTomSelect(selectFlashMode, { maxItems: 1, plugins: [] });
     }
     // inputs
     inputTimeFlash = document.getElementById('inputTimeFlash');
@@ -2503,7 +2506,8 @@ function initializeIconOptions() {
     const selectIconSet = document.getElementById('selectIconSet');
     if (selectIconSet) {
         selectIconSet.addEventListener('change', updateIconSet);
-        initTomSelect(selectIconSet, { maxItems: 1 });
+        // Pas de remove_button : ce champ doit toujours avoir une valeur.
+        initTomSelect(selectIconSet, { maxItems: 1, plugins: [] });
         // Initialiser avec le premier jeu d'icônes
         updateIconSet();
     }
