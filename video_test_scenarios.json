@@ -1,0 +1,117 @@
+{
+  "schema_version": 1,
+  "scenarios": [
+    {
+      "id": "images_24_sans_audio",
+      "pipeline": "images",
+      "fps": 24,
+      "source_duration_seconds": 1.0,
+      "audio_duration_seconds": null,
+      "expected": {
+        "duration_seconds": 1.0,
+        "duration_tolerance_seconds": 0.12,
+        "fps": 24,
+        "width": 160,
+        "height": 90,
+        "has_audio": false,
+        "video_codec": "h264",
+        "min_size_bytes": 1000
+      }
+    },
+    {
+      "id": "images_30_avec_audio_court",
+      "pipeline": "images",
+      "fps": 30,
+      "source_duration_seconds": 1.0,
+      "audio_duration_seconds": 0.4,
+      "audio_volume": 0.5,
+      "expected": {
+        "duration_seconds": 1.0,
+        "duration_tolerance_seconds": 0.12,
+        "fps": 30,
+        "width": 160,
+        "height": 90,
+        "has_audio": true,
+        "video_codec": "h264",
+        "audio_codec": "aac",
+        "min_size_bytes": 1000
+      }
+    },
+    {
+      "id": "images_24_avec_audio_long",
+      "pipeline": "images",
+      "fps": 24,
+      "source_duration_seconds": 1.0,
+      "audio_duration_seconds": 2.0,
+      "audio_volume": 1.0,
+      "expected": {
+        "duration_seconds": 1.0,
+        "duration_tolerance_seconds": 0.12,
+        "fps": 24,
+        "width": 160,
+        "height": 90,
+        "has_audio": true,
+        "video_codec": "h264",
+        "audio_codec": "aac",
+        "min_size_bytes": 1000
+      }
+    },
+    {
+      "id": "mediarecorder_24_sans_audio",
+      "pipeline": "mediarecorder",
+      "fps": 24,
+      "source_duration_seconds": 1.2,
+      "slowdown": 1,
+      "audio_duration_seconds": null,
+      "expected": {
+        "duration_seconds": 1.2,
+        "duration_tolerance_seconds": 0.12,
+        "fps": 24,
+        "width": 160,
+        "height": 90,
+        "has_audio": false,
+        "video_codec": "h264",
+        "min_size_bytes": 1000
+      }
+    },
+    {
+      "id": "mediarecorder_30_normalise_x2_audio_court",
+      "pipeline": "mediarecorder",
+      "fps": 30,
+      "source_duration_seconds": 2.0,
+      "slowdown": 2,
+      "audio_duration_seconds": 0.4,
+      "audio_volume": 0.5,
+      "expected": {
+        "duration_seconds": 1.0,
+        "duration_tolerance_seconds": 0.12,
+        "fps": 30,
+        "width": 160,
+        "height": 90,
+        "has_audio": true,
+        "video_codec": "h264",
+        "audio_codec": "aac",
+        "min_size_bytes": 1000
+      }
+    },
+    {
+      "id": "mediarecorder_24_non_normalise_x2",
+      "pipeline": "mediarecorder",
+      "fps": 24,
+      "source_duration_seconds": 2.0,
+      "slowdown": 1,
+      "capture_slowdown": 2,
+      "audio_duration_seconds": null,
+      "expected": {
+        "duration_seconds": 2.0,
+        "duration_tolerance_seconds": 0.12,
+        "fps": 24,
+        "width": 160,
+        "height": 90,
+        "has_audio": false,
+        "video_codec": "h264",
+        "min_size_bytes": 1000
+      }
+    }
+  ]
+}

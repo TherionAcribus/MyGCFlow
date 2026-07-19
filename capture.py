@@ -176,6 +176,7 @@ def _assemble_pictures(image_folder, output_video, fps=24, audio_path=None, audi
     # Créez un clip vidéo à partir des images
     clip = ImageSequenceClip(image_files, fps=fps)
     audio_clip = None
+    source_audio_clip = None
 
     # Option: ajouter l'audio si fourni (audio_path est un nom de fichier dans 'audio/')
     print(f"[assemble] audio_path={audio_path!r} audio_volume={audio_volume!r}")
@@ -191,7 +192,10 @@ def _assemble_pictures(image_folder, output_video, fps=24, audio_path=None, audi
                     vol = max(0.0, float(audio_volume))
                 except Exception:
                     vol = 1.0
-                audio_clip = AudioFileClip(audio_file).with_volume_scaled(vol)
+                # Conserver la référence du clip source : les transformations MoviePy
+                # renvoient des copies et perdre la source laisse son lecteur ffmpeg ouvert.
+                source_audio_clip = AudioFileClip(audio_file)
+                audio_clip = source_audio_clip.with_volume_scaled(vol)
                 if audio_clip.duration >= clip.duration:
                     audio_clip = audio_clip.subclipped(0, clip.duration)
                 clip = clip.with_audio(audio_clip)
@@ -222,6 +226,23 @@ def _assemble_pictures(image_folder, output_video, fps=24, audio_path=None, audi
             clip.close()
         except Exception:
             pass
+        if source_audio_clip is not None and source_audio_clip is not audio_clip:
+            # MoviePy 2.1 ne ferme les pipes du lecteur que si ffmpeg tourne encore.
+            # Avec une piste plus courte que la vidéo, le processus est déjà terminé
+            # et ses deux pipes restent ouverts : conserver puis fermer ces handles.
+            reader = getattr(source_audio_clip, 'reader', None)
+            process = getattr(reader, 'proc', None)
+            try:
+                source_audio_clip.close()
+            except Exception:
+                pass
+            if process is not None:
+                for stream in (getattr(process, 'stdout', None), getattr(process, 'stderr', None)):
+                    try:
+                        if stream is not None and not stream.closed:
+                            stream.close()
+                    except Exception:
+                        pass
         if audio_clip is not None:
             try:
                 audio_clip.close()

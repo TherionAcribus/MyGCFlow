@@ -1,0 +1,48 @@
+name: Tests vidéo
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  video-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v6
+
+      - name: Installer Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-test-video.txt
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          package-manager-cache: false
+
+      - name: Installer ffmpeg et ffprobe
+        run: sudo apt-get update && sudo apt-get install --yes ffmpeg
+
+      - name: Installer les dépendances Python
+        run: python -m pip install --upgrade pip -r requirements-test-video.txt
+
+      - name: Exécuter la matrice vidéo
+        run: python run_video_tests.py
+
+      - name: Installer Playwright
+        run: |
+          npm install
+          npx playwright install --with-deps chromium
+
+      - name: Tester l'interface et l'export navigateur
+        run: npm run test:e2e

@@ -1543,7 +1543,8 @@ function initOptionsUI() {
         if (cbRecordNormalize && inputRecordSlowdown) {
             const sd = Math.max(1, parseInt(inputRecordSlowdown.value) || 1);
             cbRecordNormalize.disabled = sd === 1;
-            if (sd === 1) cbRecordNormalize.closest('label').style.opacity = '0.4';
+            const normalizeLabel = cbRecordNormalize.labels?.[0];
+            if (normalizeLabel) normalizeLabel.style.opacity = sd === 1 ? '0.4' : '';
         }
 
         // ------- AUDIO UTILISATEUR -------
@@ -1648,8 +1649,8 @@ function changeRecordValues() {
             pkg.options.record.mediaRecorder.slowdownFactor = sd;
             if (cbRecordNormalize) {
                 cbRecordNormalize.disabled = sd === 1;
-                if (sd === 1) cbRecordNormalize.closest('label').style.opacity = '0.4';
-                else cbRecordNormalize.closest('label').style.opacity = '';
+                const normalizeLabel = cbRecordNormalize.labels?.[0];
+                if (normalizeLabel) normalizeLabel.style.opacity = sd === 1 ? '0.4' : '';
             }
         }
         if (inputRecordScaleFactor && inputRecordScaleFactor.value !== '') {

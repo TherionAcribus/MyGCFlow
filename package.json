@@ -1,0 +1,12 @@
+{
+  "name": "gcmap-video-e2e-tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:e2e": "node tests/e2e/run-tests.mjs",
+    "test:e2e:headed": "node tests/e2e/run-tests.mjs --headed"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.52.0"
+  }
+}

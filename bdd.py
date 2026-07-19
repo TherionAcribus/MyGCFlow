@@ -612,8 +612,9 @@ def create_geojson(query, Geocache, status: Optional[TaskStatus] = None, persist
     }
 
     if persist:
-        file_path = os.path.join(current_app.root_path, 'static', 'geojson_data.json')
-        with open(file_path, 'w') as f:
+        file_path = geojson_cache.base_geojson_path
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        with open(file_path, 'w', encoding='utf-8') as f:
             json.dump(geojson, f)
 
     return geojson
@@ -764,7 +765,8 @@ def build_country_state_tree(db, Geocache):
         tree_sorted = { c: sorted(list(states)) for c, states in sorted(tree.items(), key=lambda x: x[0].lower()) }
 
         # Écriture JSON
-        out_dir = os.path.join(current_app.root_path, 'static', 'json')
+        runtime_root = os.getenv('GCMAP_RUNTIME_DIR') or current_app.root_path
+        out_dir = os.path.join(runtime_root, 'static', 'json')
         os.makedirs(out_dir, exist_ok=True)
         out_path = os.path.join(out_dir, 'country_state.json')
         with open(out_path, 'w', encoding='utf-8') as f:

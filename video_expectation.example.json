@@ -1,0 +1,12 @@
+{
+  "duration_seconds": 60.0,
+  "duration_tolerance_seconds": 0.5,
+  "fps": 24,
+  "fps_tolerance": 0.05,
+  "width": 1920,
+  "height": 1080,
+  "has_audio": true,
+  "video_codec": "h264",
+  "audio_codec": "aac",
+  "min_size_bytes": 10000
+}

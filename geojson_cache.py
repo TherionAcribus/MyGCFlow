@@ -121,7 +121,13 @@ class GeojsonIndexCache:
         persist_path: Optional[str] = None,
         base_geojson_path: Optional[str] = None,
     ):
-        root_dir = os.path.dirname(__file__)
+        # Les tests navigateur lancent une instance complète de GCMap. Leur
+        # base, leur GeoJSON et leurs index doivent rester totalement séparés
+        # des données locales de l'utilisateur. En production, l'absence de
+        # GCMAP_RUNTIME_DIR conserve strictement les chemins historiques.
+        root_dir = os.path.abspath(
+            os.getenv("GCMAP_RUNTIME_DIR") or os.path.dirname(__file__)
+        )
         self.db_path = db_path or os.path.join(root_dir, "instance", "geocaching.db")
         self.persist_path = persist_path or os.path.join(
             root_dir, "instance", "geojson_indexes.json"

@@ -78,7 +78,8 @@ def clear_database():
         num_deleted = Geocache.query.delete()
         db.session.commit()
         try:
-            path = os.path.join(current_app.root_path, 'static', 'json', 'country_state.json')
+            runtime_root = os.getenv('GCMAP_RUNTIME_DIR') or current_app.root_path
+            path = os.path.join(runtime_root, 'static', 'json', 'country_state.json')
             if os.path.exists(path):
                 os.remove(path)
         except Exception as e:

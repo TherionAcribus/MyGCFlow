@@ -156,6 +156,14 @@ document.addEventListener('DOMContentLoaded', async function() {
     pkg.displayFrames();
 
     pkg.readBdd();  // creation du geojson et des metadatas
+
+    // Signal stable pour les intégrations et les tests navigateur : à ce
+    // stade les valeurs par défaut, les préférences, l'UI et l'éventuel
+    // profil de démarrage ont tous fini de s'appliquer. Sans ce jalon, un test
+    // (ou un script d'intégration) peut modifier les champs pendant que le
+    // profil les réinitialise encore.
+    window.gcmapReady = true;
+    window.dispatchEvent(new CustomEvent('gcmap:ready'));
 });
 
 
