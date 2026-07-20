@@ -1,6 +1,5 @@
 {
     "options": {
-        "engine": "webgl",
         "language": "fr",
         "checkVersion": true
     },

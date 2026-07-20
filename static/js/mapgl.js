@@ -14,8 +14,6 @@
 // TODO BDD:
 // Tester les fichiers GPX issus d'autres sources (GSAK, ProjectGC...)
 
-// TODO Virer tout ce qui concerne Non WebGL
-
 // TODO Ajouter les autres filtres (Pays, Region, Poseur, Attributs)
 // TODO COloration selon autre critères que le type (T, D, size) (v2)
 // TODO Permettre afficher images à la place des cercles (icones officielles) (V2)
@@ -94,13 +92,16 @@ const dbgMapgl = (...args) => { if (DEBUG_MAPGL) console.log(...args); };
 // qui n'en ont jamais besoin. On l'injecte donc à la demande, en tâche de fond, dès
 // le début d'un enregistrement (le temps de téléchargement se recouvre alors avec le
 // début de la capture plutôt que de bloquer la première frame qui en aurait besoin).
+// Servi en local (static/js/vendor/) plutôt que depuis cdnjs : ce repli d'enregistrement
+// ne doit pas dépendre de la disponibilité d'un tiers externe au moment précis où on
+// en a besoin.
 let html2canvasLoadPromise = null;
 function loadHtml2Canvas() {
     if (typeof html2canvas !== 'undefined') return Promise.resolve();
     if (html2canvasLoadPromise) return html2canvasLoadPromise;
     html2canvasLoadPromise = new Promise((resolve, reject) => {
         const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+        script.src = `${CONFIG.BASE_URL}/static/js/vendor/html2canvas.min.js`;
         script.onload = () => resolve();
         script.onerror = () => {
             // Échec de chargement : on remet à null pour permettre un nouvel essai
@@ -114,12 +115,16 @@ function loadHtml2Canvas() {
 }
 
 let map;  // carte de l'app
-let engine;  // quel moteur graphique est utilisé
 // les couches de cartographie
 let OSMLayer;
 let stamenWatercolorLayer;
 let stamenTonerLayer;
 let vectorTileLayer;
+// Registre des fonds de carte : { id: { layer, selectMenu } }. Peuplé dans
+// addMaps(). switchLayer() n'a plus besoin d'un branchement manuel par fond :
+// ajouter un fond de carte se fait en ajoutant une entrée ici (+ le bouton
+// correspondant dans menu_style.html), sans toucher switchLayer().
+const basemaps = {};
 // couche de points
 let vectorLayer;
 let features;
@@ -373,8 +378,6 @@ let currentDayFrameTarget = 1;
 let animationSource;
 let animationLayer;
 
-let vectorSource;
-
 // Boucle de prévisualisation (startAnimation/pauseAnimation/stopAnimation) pilotée
 // par requestAnimationFrame + accumulateur de temps plutôt que setInterval : un
 // setInterval dont le délai est plus court que le temps de rendu d'un jour (frame
@@ -485,6 +488,59 @@ export function getMap() {
     return map;
 }
 
+// --- Suivi des erreurs de chargement de tuiles ---
+// Signale les échecs réseau/CDN plutôt que de laisser des zones de carte
+// silencieusement vides. Particulièrement utile pendant un enregistrement vidéo,
+// où une tuile manquante produit un artefact qu'on ne remarque qu'à la relecture :
+// on n'interrompt pas la capture avec un toast, mais le compte est intégré au
+// message de fin d'enregistrement (cf. recordAnimation / stopMediaRecorderPipeline).
+let tileErrorCount = 0;
+let lastTileErrorToastAt = 0;
+const TILE_ERROR_TOAST_THROTTLE_MS = 15000;
+
+function handleTileLoadError() {
+    tileErrorCount++;
+    if (isRecording || isMediaRecording) return;
+
+    const now = performance.now();
+    if (now - lastTileErrorToastAt < TILE_ERROR_TOAST_THROTTLE_MS) return;
+    lastTileErrorToastAt = now;
+    try {
+        const msg = pkg.t
+            ? pkg.t('Certaines tuiles de la carte n\'ont pas pu être chargées (connexion instable ?).')
+            : 'Certaines tuiles de la carte n\'ont pas pu être chargées (connexion instable ?).';
+        pkg.showToast && pkg.showToast(msg, 'warning', pkg.t ? pkg.t('Carte') : 'Carte', 6000);
+    } catch(_) {}
+}
+
+// À appeler sur chaque source de tuiles (OSM, Stadia...). Ne rien faire pour les
+// sources qui n'émettent pas cet évènement (ex. ol.source.Vector).
+function watchTileErrors(source) {
+    if (source && typeof source.on === 'function') {
+        source.on('tileloaderror', handleTileLoadError);
+    }
+}
+
+export function getTileErrorCount() {
+    return tileErrorCount;
+}
+
+// À appeler en fin d'enregistrement (mode images et mode MediaRecorder) : signale
+// après coup les tuiles manquantes accumulées pendant la capture, puisqu'aucun
+// toast n'a été affiché à chaud pour ne pas perturber l'enregistrement.
+function warnIfTileErrors() {
+    if (tileErrorCount > 0) {
+        const count = tileErrorCount;
+        try {
+            const msg = pkg.t
+                ? pkg.t("${count} tuile(s) de carte n'ont pas pu être chargées pendant l'enregistrement : la vidéo peut comporter des zones vides.", { count })
+                : `${count} tuile(s) de carte n'ont pas pu être chargées pendant l'enregistrement : la vidéo peut comporter des zones vides.`;
+            pkg.showToast && pkg.showToast(msg, 'warning', pkg.t ? pkg.t('Carte') : 'Carte', 8000);
+        } catch(_) {}
+    }
+    tileErrorCount = 0;
+}
+
 function startBackgroundMusicIfAny(){
     try {
         // Ne pas jouer pendant l'enregistrement ni si bloqué explicitement
@@ -578,7 +634,10 @@ export function createMap(){
             // Point de repli avant que centerMap() ne recadre selon les préférences
             // utilisateur ; doit être en EPSG:3857 (la vue), pas en lon/lat brut.
             center: ol.proj.fromLonLat([2.2137, 46.2276]),
-            zoom: 3
+            zoom: 3,
+            // Au-delà de 19, les fonds de carte (Watercolor en particulier) n'ont
+            // plus de tuiles et affichent un agrandissement flou du dernier niveau.
+            maxZoom: 19
         }),
         // Attribution non-repliable : les CGU d'OpenStreetMap et de Stadia Maps
         // (Toner/Watercolor) imposent une attribution visible, y compris dans les
@@ -600,12 +659,16 @@ export function addMaps() {
         source: new ol.source.OSM()
     });
     map.addLayer(OSMLayer);
+    watchTileErrors(OSMLayer.getSource());
+    basemaps.OSM = { layer: OSMLayer, selectMenu: pkg.selectOSMMapMenu };
 
     stamenWatercolorLayer = new ol.layer.Tile({
         source: new ol.source.StadiaMaps({layer: 'stamen_watercolor'})
     });
     map.addLayer(stamenWatercolorLayer);
     stamenWatercolorLayer.setVisible(false);
+    watchTileErrors(stamenWatercolorLayer.getSource());
+    basemaps.watercolor = { layer: stamenWatercolorLayer, selectMenu: pkg.selectWatercolorMapMenu };
 
     // Layer créé avec une source provisoire ; refreshStamenTonerMap() ci-dessous
     // pose la vraie source selon le type par défaut (light/dark), pour n'avoir
@@ -616,24 +679,26 @@ export function addMaps() {
     map.addLayer(stamenTonerLayer);
     stamenTonerLayer.setVisible(false);
     refreshStamenTonerMap(defaultSettings.stamenToner);
+    basemaps.stamenToner = { layer: stamenTonerLayer, selectMenu: pkg.selectStamenTonerMapMenu };
 
-    vectorTileLayer = new ol.layer.VectorTile({
-        declutter: true,
+    // Frontières mondiales servies en local (fichier statique, cf. static/json/) au
+    // lieu du serveur de démonstration OpenLayers (ahocevar.com) : ce dernier n'offre
+    // aucune garantie de disponibilité et faisait dépendre ce fond de carte d'un
+    // tiers hors de notre contrôle. Résolution 1:50m (world-atlas / Natural Earth) :
+    // largement suffisante pour un aplat de couleur uni par pays, pas une carte
+    // politique détaillée.
+    vectorTileLayer = new ol.layer.Vector({
         background: defaultSettings.vectorMap.background,
-        source: new ol.source.VectorTile({
-          maxZoom: 15,
-          format: new ol.format.MVT({
-            idProperty: 'iso_a3',
-          }),
-          url:
-            'https://ahocevar.com/geoserver/gwc/service/tms/1.0.0/' +
-            'ne:ne_10m_admin_0_countries@EPSG%3A900913@pbf/{z}/{x}/{-y}.pbf',
+        source: new ol.source.Vector({
+            url: `${CONFIG.BASE_URL}/static/json/world-countries-50m.topo.json`,
+            format: new ol.format.TopoJSON({ layers: ['countries'] }),
         }),
         style: buildVectorMapStyle(defaultSettings.vectorMap)
     });
 
     map.addLayer(vectorTileLayer);
     vectorTileLayer.setVisible(false);
+    basemaps.vectorMap = { layer: vectorTileLayer, selectMenu: pkg.selectVectorMapMenu };
 }
 
 // Construit le style de la carte vectorielle.
@@ -657,9 +722,10 @@ function buildVectorMapStyle(values){
 
 // rafraîchit la carte VectorMap quand on change ses proprietés
 export function refreshVectorMap(newValues){
+    // setStyle()/setBackground() redéclenchent seuls le rendu : la géométrie des
+    // pays ne change pas, inutile de refaire une requête sur le fichier local.
     vectorTileLayer.setStyle(buildVectorMapStyle(newValues));
     vectorTileLayer.setBackground(newValues.background);
-    vectorTileLayer.getSource().refresh();
 }
 
 
@@ -671,7 +737,9 @@ export function refreshStamenTonerMap(newValues){
     } else if (newValues.type == "dark") {
         layerName = 'stamen_toner';
     }
-    stamenTonerLayer.setSource(new ol.source.StadiaMaps({layer: layerName}));
+    const newSource = new ol.source.StadiaMaps({layer: layerName});
+    watchTileErrors(newSource); // setSource() ci-dessous perd les écouteurs de l'ancienne source
+    stamenTonerLayer.setSource(newSource);
 }
 
 
@@ -681,12 +749,16 @@ export function selectDefaultCarto(){
     switchLayer(layerName);
 }
 
-// centrer la carte
-export function centerMap(){
-    // Coordonnées du centre de la France en longitude et latitude
-    const franceCenterLonLat = [2.2137, 46.2276];
-    let lonLat = franceCenterLonLat;
-    let zoom = 6;
+// Applique à la vue le centre/zoom des préférences utilisateur
+// (window.userSettings.map_default_center / map_default_zoom), chacun avec son
+// propre repli optionnel s'il est absent des préférences. Centre et zoom sont
+// indépendants l'un de l'autre (on peut n'avoir défini que l'un des deux).
+// Centralise une logique auparavant dupliquée entre centerMap() (repli France) et
+// applyUserMapDefaults() dans init.js (aucun repli, ne touche que ce qui est défini).
+// Retourne true si au moins une valeur a été appliquée à la vue.
+export function applyMapDefaults(fallbackLonLat, fallbackZoom){
+    let lonLat = null;
+    let zoom = null;
 
     try {
         const s = window.userSettings;
@@ -704,12 +776,29 @@ export function centerMap(){
             }
         }
     } catch(e) {
+        console.warn('applyMapDefaults error:', e);
     }
 
-    // Conversion des coordonnées en EPSG:3857 pour OpenLayers
-    const webMercator = ol.proj.fromLonLat(lonLat);
-    map.getView().setCenter(webMercator);
-    map.getView().setZoom(zoom); // Ajustez le niveau de zoom selon vos besoins
+    if (lonLat == null && fallbackLonLat) lonLat = fallbackLonLat;
+    if (zoom == null && Number.isFinite(fallbackZoom)) zoom = fallbackZoom;
+
+    const view = map.getView();
+    let applied = false;
+    if (lonLat) {
+        view.setCenter(ol.proj.fromLonLat(lonLat));
+        applied = true;
+    }
+    if (Number.isFinite(zoom)) {
+        view.setZoom(zoom);
+        applied = true;
+    }
+    return applied;
+}
+
+// centrer la carte (repli sur le centre de la France si aucune préférence utilisateur)
+export function centerMap(){
+    const franceCenterLonLat = [2.2137, 46.2276];
+    applyMapDefaults(franceCenterLonLat, 6);
 }
 
 
@@ -730,42 +819,18 @@ function buttonSwitchLayer(e) {
 
 // permet de switcher sur la bonne cartographie en fonction du choix fait
 export function switchLayer(layerName) {
-    // Masquez toutes les couches
-    OSMLayer.setVisible(false);
-    vectorTileLayer.setVisible(false);
-    stamenWatercolorLayer.setVisible(false);
-    stamenTonerLayer.setVisible(false);
-
-    // Affichez la couche sélectionnée
-    switch (layerName) {
-        case 'OSM':
-            // on rend visible la bonne carte
-            OSMLayer.setVisible(true);
-            // on affiche le bon sous menu
-            pkg.selectOSMMapMenu();
-            break;
-        case 'vectorMap':
-            vectorTileLayer.setVisible(true);
-            pkg.selectVectorMapMenu();
-            break;
-        case 'watercolor':
-            stamenWatercolorLayer.setVisible(true);
-            pkg.selectWatercolorMapMenu();
-            break;
-        case 'stamenToner':
-            stamenTonerLayer.setVisible(true);
-            pkg.selectStamenTonerMapMenu();
-            break;
-        default:
-            // Nom de couche inconnu (profil corrompu, valeur obsolète en
-            // localStorage...) : replier sur OSM plutôt que de laisser la
-            // carte entièrement vide sans aucun message.
-            console.warn(`switchLayer: nom de couche inconnu "${layerName}", repli sur OSM`);
-            layerName = 'OSM';
-            OSMLayer.setVisible(true);
-            pkg.selectOSMMapMenu();
-            break;
+    if (!basemaps[layerName]) {
+        // Nom de couche inconnu (profil corrompu, valeur obsolète en
+        // localStorage...) : replier sur OSM plutôt que de laisser la carte
+        // entièrement vide sans aucun message.
+        console.warn(`switchLayer: nom de couche inconnu "${layerName}", repli sur OSM`);
+        layerName = 'OSM';
     }
+
+    for (const id in basemaps) {
+        basemaps[id].layer.setVisible(id === layerName);
+    }
+    basemaps[layerName].selectMenu();
 
     // Mettre à jour l'état visuel des boutons de cartes
     try {
@@ -810,7 +875,7 @@ export function addVector(data) {
         window.vectorSource.clear();
     }
 
-    selectEngineAndRefresh();
+    displayWebGLPoints(features || [], pkg.options.point);
 }
 
 // fonction appelée au changement d'options graphique
@@ -826,7 +891,7 @@ export function refreshPoints(){
     }, 1500);
 
     clearMap();
-    selectEngineAndRefresh();
+    displayWebGLPoints(features || [], pkg.options.point);
 }
 
 
@@ -834,19 +899,6 @@ export function refreshPoints(){
 function isLayerOnMap(map, layerToFind) {
     const layers = map.getLayers().getArray();
     return layers.includes(layerToFind);
-}
-
-
-// Envoie l'affichage des points de features dans le bon vecteur
-function selectEngineAndRefresh(){
-    engine = pkg.options.options.engine;
-    const currentFeatures = features || [];
-    dbgMapgl('[selectEngineAndRefresh] engine:', engine, '| features count:', currentFeatures.length, '| point.mode:', pkg.options?.point?.mode);
-    if (engine == "webgl"){
-        displayWebGLPoints(currentFeatures, pkg.options.point);
-    } else {
-        displayAllPoints2D(currentFeatures, pkg.options.point);
-    }
 }
 
 // Détermine si l'application est au repos (ni animation, ni enregistrement en cours)
@@ -919,17 +971,22 @@ function initPopupOverlay(){
         const gcRaw = props.gc_code ? String(props.gc_code) : '';
         const gcEsc = sanitize(gcRaw);
         const linkHref = gcRaw ? `https://coord.info/${encodeURIComponent(gcRaw)}` : null;
-        const foundText = props.found ? 'Oui' : 'Non';
         const owner = sanitize(props.owner);
         const dateFind = sanitize(props.date_find);
         const publishedDate = sanitize(props.published_date);
 
+        const t = pkg.t || ((s) => s);
+        const nameLabel = name || t('Sans nom');
+        const foundLabel = props.found ? t('Trouvé') : t('DNF');
+        const publishedLabel = publishedDate ? t('Publié le ${date}', { date: publishedDate }) : '';
+        const dateFindLabel = dateFind ? t('le ${date}', { date: dateFind }) : '';
+
         const html = `
-            <div class="gc-popup-title">${linkHref ? `<a href=\"${linkHref}\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"gc-popup-link\">` : ''}${gcEsc}${linkHref ? '</a>' : ''} - ${name || 'Sans nom'}</div>
+            <div class="gc-popup-title">${linkHref ? `<a href=\"${linkHref}\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"gc-popup-link\">` : ''}${gcEsc}${linkHref ? '</a>' : ''} - ${nameLabel}</div>
             <div>${type || '-'}, ${cont || '-'}, ${dif||'-'}/${ter||'-'}</div>
             ${owner ? `<div>${owner}</div>` : ''}
-            ${publishedDate ? `<div>Publié le ${publishedDate}</div>` : ''}
-            <div>${foundText === 'Oui' ? 'Trouvé' : 'DNF'} ${dateFind ? `le ${dateFind}` : ''}</div>`;
+            ${publishedLabel ? `<div>${publishedLabel}</div>` : ''}
+            <div>${foundLabel} ${dateFindLabel}</div>`;
         const contentEl = popupEl.querySelector('.gc-popup-content') || popupEl;
         contentEl.innerHTML = html;
         popupEl.classList.add('is-visible');
@@ -957,66 +1014,6 @@ function hidePopup(){
 function sanitize(v){
     if (v == null) return '';
     return String(v).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-}
-
-// affichage des points 2D
-function displayAllPoints2D(features, pointOptions){
-    // Créer une source vectorielle avec les entités
-    vectorSource = new ol.source.Vector({
-        features: features // Ajouter les entités lues
-    });
-
-    vectorLayer = new ol.layer.Vector({
-        source: vectorSource,
-        style: function(feature) {
-            return getStyle2D(feature, pointOptions);
-        }
-    });
-    
-    map.addLayer(vectorLayer);
-}
-
-
-function getStyle2D(feature, pointOptions) {
-    // Type de la cache
-    var cacheType = feature.get('cache_type');
-
-    
-    // Couleur du centre du point
-    let fillColor;
-    if (pointOptions.center.mode == "gc") {
-        fillColor = defaultGcColors[cacheType] || 'gray'; // couleur par défaut
-    } else if (pointOptions.center.mode == "fix") {
-        fillColor = pointOptions.center.color
-    }
-
-    // Veut on une bordure ?
-    let stroke = null;
-    let borderSizeValue = Math.max(0, parseInt(pointOptions.border.size) || 0);
-    if (pointOptions.border.mode != "none" && borderSizeValue > 0) {
-
-        let borderSize = borderSizeValue / 5;
-
-        let borderColor;
-        if (pointOptions.border.mode == "gc") {
-            borderColor = defaultGcColors[cacheType] || 'gray'; // couleur par défaut
-        } else if (pointOptions.border.mode == "fix") {
-            borderColor = pointOptions.border.color;
-        }
-
-        stroke = new ol.style.Stroke({color: borderColor, width: borderSize})
-    }
-
-    let pointSize = Math.max(1, parseInt(pointOptions.center.size) || 3);
-
-    // Retournez le style OpenLayers pour cette entité
-    return new ol.style.Style({
-        image: new ol.style.Circle({
-            radius: pointSize,
-            fill: new ol.style.Fill({color: fillColor}),
-            stroke: stroke
-        })
-    });
 }
 
 // Construit l'objet de style WebGLPoints (icône sprite ou cercle/triangle uni)
@@ -1586,6 +1583,8 @@ export function pauseAnimation() {
 }
 
 export function recordAnimation(){
+    tileErrorCount = 0; // repartir d'un compte propre pour cette session d'enregistrement
+
     // Branche MediaRecorder si demandé et supporté
     try {
         const mode = pkg.options?.record?.mode;
@@ -2134,6 +2133,7 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
               try { pkg.updateProgressBar({progress: 100, message: 'Nettoyage terminé'}); } catch(e) {}
               setTimeout(() => { try { pkg.closeModalLoading(); } catch(e) {} }, 400);
               pkg.showToast && pkg.showToast('Traitement automatique terminé avec succès !', 'success', 'Vidéo prête', 5000);
+              warnIfTileErrors();
             } else {
               if (cleanData) console.warn('[RECORD END] Échec du nettoyage:', cleanData.message);
               try { pkg.closeModalLoading(); } catch(e) {}
@@ -2542,6 +2542,7 @@ function finalizeMediaRecorderVideo(){
             try { pkg.updateProgressBar({ progress: 100, message: 'Terminé' }); } catch(_) {}
             setTimeout(() => { try { pkg.closeModalLoading(); } catch(_) {} }, 400);
             pkg.showToast && pkg.showToast('Vidéo prête', 'success', 'Enregistrement');
+            warnIfTileErrors();
             // Débloquer la lecture de fond après enregistrement MR
             try { blockBackgroundAudioPlayback = false; } catch(_) {}
         };

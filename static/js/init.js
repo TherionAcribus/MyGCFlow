@@ -209,37 +209,18 @@ function initPickers() {
     M.Datepicker.init(elems, options);
 }
 
-// Applique centre/zoom depuis les préférences utilisateur (settings)
+// Applique centre/zoom depuis les préférences utilisateur (settings).
+// Logique effective centralisée dans pkg.applyMapDefaults (mapgl.js), partagée
+// avec centerMap() ; ici sans repli, puisqu'un repli (profil ou centre France)
+// a déjà pu être appliqué avant cet appel.
 function applyUserMapDefaults() {
     try {
-        const s = window.userSettings;
-        const map = pkg.getMap && pkg.getMap();
-        if (!s || !map || !map.getView) return;
-        const view = map.getView();
-        let applied = false;
-
-        if (Array.isArray(s.map_default_center) && s.map_default_center.length === 2) {
-            const lat = parseFloat(s.map_default_center[0]);
-            const lon = parseFloat(s.map_default_center[1]);
-            if (Number.isFinite(lat) && Number.isFinite(lon)) {
-                const webMercator = ol.proj.fromLonLat([lon, lat]);
-                view.setCenter(webMercator);
-                applied = true;
-            }
-        }
-
-        if (typeof s.map_default_zoom === 'number' || typeof s.map_default_zoom === 'string') {
-            const z = parseInt(s.map_default_zoom);
-            if (Number.isFinite(z)) {
-                view.setZoom(z);
-                applied = true;
-            }
-        }
-
+        if (!window.userSettings || !pkg.getMap || !pkg.getMap()) return;
+        const applied = pkg.applyMapDefaults(null, undefined);
         if (applied) {
             console.log('[INIT] Carte centrée selon préférences utilisateur', {
-                center: s.map_default_center,
-                zoom: s.map_default_zoom
+                center: window.userSettings.map_default_center,
+                zoom: window.userSettings.map_default_zoom
             });
         }
     } catch(e) {
