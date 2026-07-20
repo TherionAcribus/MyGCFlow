@@ -212,6 +212,16 @@ export function initTomSelect(el, options = {}) {
     }
 
     const merged = { ...defaults, ...options };
+
+    // Tom Select lève une exception si on l'instancie deux fois sur le même
+    // <select> (ex: initializeIconOptions() ré-appelé à chaque bascule vers
+    // le mode icône, ou un profil rechargé plusieurs fois). Détruire toute
+    // instance existante avant de recréer rend l'appel idempotent, quel que
+    // soit l'appelant.
+    if (node.tomselect) {
+        try { node.tomselect.destroy(); } catch (e) { /* noop */ }
+    }
+
     try {
         return new TS(node, merged);
     } catch (e) {
