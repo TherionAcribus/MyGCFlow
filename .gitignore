@@ -9,6 +9,7 @@ instance/
 
 # Données générées
 *.gpx
+!tests/e2e/fixtures/my-finds.gpx
 captured/
 static/geojson_data.json
 video/
