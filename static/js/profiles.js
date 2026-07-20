@@ -182,7 +182,7 @@ class ProfileManager {
             });
 
             this.currentProfile = profile;
-            this.applyProfile(profile);
+            await this.applyProfile(profile);
             this._markSaved();
             this.loadProfilesList(); // Rafraîchir pour montrer le profil actif
             this.showToast(pkg.t('Profil "${name}" chargé', { name }), 'green');
@@ -347,7 +347,7 @@ class ProfileManager {
 
             // Appliquer immédiatement le profil
             this.currentProfile = profile;
-            this.applyProfile(profile);
+            await this.applyProfile(profile);
             this._markSaved();
 
             // Sauvegarder l'UUID comme profil par défaut
@@ -611,7 +611,7 @@ class ProfileManager {
             });
 
             this.currentProfile = profile;
-            this.applyProfile(profile);
+            await this.applyProfile(profile);
             this._markSaved();
 
             dbgProfiles('🔄 [LOAD_PROFILE] État après application du profil:', {
@@ -796,7 +796,7 @@ class ProfileManager {
                                 animation: {},
                                 infos: {}
                             };
-                            this.applyProfile(this.currentProfile);
+                            await this.applyProfile(this.currentProfile);
                             this._markSaved();
                             this.showToast('Profil temporaire chargé (profil par défaut manquant)', 'orange');
                         } catch (createError) {
@@ -834,6 +834,13 @@ class ProfileManager {
         try {
             // Paramètres de la carte - détecter le fournisseur actif
             let currentTileProvider = 'OSM'; // Valeur par défaut
+            // Distingue "OSM trouvé actif" de "rien trouvé, repli sur OSM" : comparer
+            // currentTileProvider === 'OSM' ne peut pas faire cette distinction (bug
+            // vécu : ça déclenchait le repli par visibilité même quand OSM était
+            // correctement détecté, et ce repli pouvait le remplacer à tort par
+            // 'stamenToner' tant que le panneau d'options Toner de l'écran précédent
+            // n'avait pas fini sa transition CSS de fermeture).
+            let foundActiveButton = false;
 
             // Vérifier quel bouton de carte est actif (celui qui a la classe 'disabled' - logique de l'app)
             const mapButtons = ['OSM', 'stamenToner', 'vectorMap', 'watercolor'];
@@ -858,17 +865,15 @@ class ProfileManager {
                         'watercolor': 'watercolor'
                     };
                     currentTileProvider = idToProvider[buttonId] || 'OSM';
+                    foundActiveButton = true;
                     break;
                 }
             }
 
-            // Log si aucun bouton n'a été trouvé
-            if (currentTileProvider === 'OSM') {
-                dbgProfiles('Aucun bouton carte trouvé disabled, utilisation valeur par défaut OSM');
-            }
-
             // Essayer aussi de détecter via d'autres indices (classes CSS, etc.)
-            if (currentTileProvider === 'OSM') {
+            // uniquement si aucun bouton actif n'a été trouvé.
+            if (!foundActiveButton) {
+                dbgProfiles('Aucun bouton carte trouvé disabled, utilisation valeur par défaut OSM');
                 dbgProfiles('🔍 Recherche par visibilité des options...');
 
                 // Vérifier si une option spécifique est visible
@@ -1104,7 +1109,12 @@ class ProfileManager {
         }
     }
 
-    applyProfile(profile) {
+    // Async : attend que la carte ait fini de s'appliquer (clic + options
+    // spécifiques après leur délai) avant de considérer le profil comme
+    // pleinement appliqué. Les appelants qui prennent un instantané "état
+    // sauvegardé" juste après (ex: loadProfile -> _markSaved) doivent
+    // `await` cet appel pour ne pas capturer un état carte encore transitoire.
+    async applyProfile(profile) {
         dbgProfiles('🎯 APPLICATION PROFIL - Profil complet chargé:', {
             profile_name: profile.name,
             uid: profile.uid,
@@ -1122,7 +1132,7 @@ class ProfileManager {
             dbgProfiles('Application paramètres carte:', profile.map);
             // Appliquer les paramètres de carte
             if (typeof applyMapSettings === 'function') {
-                applyMapSettings(profile.map);
+                await applyMapSettings(profile.map);
             }
         }
 
@@ -1432,52 +1442,64 @@ class ProfileManager {
 // indéfiniment, pour toujours.
 const MAP_READY_MAX_RETRIES = 10;
 
+// Retourne une Promise résolue une fois la carte effectivement mise à jour
+// (y compris le clic + les options spécifiques appliquées après leur délai
+// de 100ms). Sans ça, l'appelant (applyProfile) ne peut pas savoir quand
+// l'application est réellement terminée, et un instantané "profil sauvegardé"
+// pris trop tôt (avant ce délai) capture un état carte encore incomplet —
+// c'est ce qui provoquait un profil marqué "modifié" juste après son chargement.
 function applyMapSettings(mapOptions, attempt = 0) {
-    try {
-        dbgProfiles('🎯 Application carte - Provider demandé:', mapOptions.tile_provider);
+    return new Promise((resolve) => {
+        try {
+            dbgProfiles('🎯 Application carte - Provider demandé:', mapOptions.tile_provider);
 
-        // Vérifier si la carte est initialisée
-        if (!window.map) {
-            if (attempt >= MAP_READY_MAX_RETRIES) {
-                console.error('❌ Carte toujours non initialisée après', MAP_READY_MAX_RETRIES, 'tentatives, abandon de l\'application des paramètres carte');
+            // Vérifier si la carte est initialisée
+            if (!window.map) {
+                if (attempt >= MAP_READY_MAX_RETRIES) {
+                    console.error('❌ Carte toujours non initialisée après', MAP_READY_MAX_RETRIES, 'tentatives, abandon de l\'application des paramètres carte');
+                    resolve();
+                    return;
+                }
+                console.warn('⚠️ Carte non initialisée, report de l\'application des paramètres carte');
+                // Reporter l'application dans 500ms
+                setTimeout(() => { applyMapSettings(mapOptions, attempt + 1).then(resolve); }, 500);
                 return;
             }
-            console.warn('⚠️ Carte non initialisée, report de l\'application des paramètres carte');
-            // Reporter l'application dans 500ms
-            setTimeout(() => applyMapSettings(mapOptions, attempt + 1), 500);
-            return;
+
+            // Changer le fournisseur de carte
+            // Les boutons de choix de carte sont des <button id="OSM|stamenToner|vectorMap|watercolor">
+            // (migration Materialize -> Bootstrap 5) : cibler par id plutôt que par tag pour ne pas
+            // dépendre d'un élément <a> qui n'existe plus dans le DOM actuel.
+            const mapButton = document.getElementById(mapOptions.tile_provider);
+            dbgProfiles('🎯 Bouton carte trouvé:', !!mapButton, 'ID:', mapOptions.tile_provider);
+
+            if (mapButton) {
+                dbgProfiles('🎯 Clic sur le bouton carte:', mapOptions.tile_provider);
+                mapButton.click();
+
+                // Attendre un peu puis appliquer les options spécifiques
+                setTimeout(() => {
+                    applyMapSpecificOptions(mapOptions.tile_provider, mapOptions);
+                    resolve();
+                }, 100);
+            } else {
+                console.error('❌ Bouton carte non trouvé pour provider:', mapOptions.tile_provider);
+                resolve();
+            }
+
+            // Changer la vue (centre et zoom) - si la carte est initialisée
+            if (window.map && typeof window.map.getView === 'function') {
+                const view = window.map.getView();
+                view.setCenter(ol.proj.fromLonLat([mapOptions.default_center[0], mapOptions.default_center[1]]));
+                view.setZoom(mapOptions.default_zoom);
+            }
+
+            dbgProfiles('✅ Paramètres de carte appliqués:', mapOptions);
+        } catch (error) {
+            console.error('❌ Erreur lors de l\'application des paramètres de carte:', error);
+            resolve();
         }
-
-        // Changer le fournisseur de carte
-        // Les boutons de choix de carte sont des <button id="OSM|stamenToner|vectorMap|watercolor">
-        // (migration Materialize -> Bootstrap 5) : cibler par id plutôt que par tag pour ne pas
-        // dépendre d'un élément <a> qui n'existe plus dans le DOM actuel.
-        const mapButton = document.getElementById(mapOptions.tile_provider);
-        dbgProfiles('🎯 Bouton carte trouvé:', !!mapButton, 'ID:', mapOptions.tile_provider);
-
-        if (mapButton) {
-            dbgProfiles('🎯 Clic sur le bouton carte:', mapOptions.tile_provider);
-            mapButton.click();
-
-            // Attendre un peu puis appliquer les options spécifiques
-            setTimeout(() => {
-                applyMapSpecificOptions(mapOptions.tile_provider, mapOptions);
-            }, 100);
-        } else {
-            console.error('❌ Bouton carte non trouvé pour provider:', mapOptions.tile_provider);
-        }
-
-        // Changer la vue (centre et zoom) - si la carte est initialisée
-        if (window.map && typeof window.map.getView === 'function') {
-            const view = window.map.getView();
-            view.setCenter(ol.proj.fromLonLat([mapOptions.default_center[0], mapOptions.default_center[1]]));
-            view.setZoom(mapOptions.default_zoom);
-        }
-
-        dbgProfiles('✅ Paramètres de carte appliqués:', mapOptions);
-    } catch (error) {
-        console.error('❌ Erreur lors de l\'application des paramètres de carte:', error);
-    }
+    });
 }
 
 function applyMapSpecificOptions(tileProvider, mapOptions) {
