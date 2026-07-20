@@ -404,6 +404,14 @@ let mrTailMs = 3000;             // durée du gel de la dernière frame après l
 let isMediaRecording = false;
 let mrIsFinalizing = false;
 let mrOnFinalizeRestoreTimePerDay = null;
+// Paramètres du compositing MR conservés au niveau module pour pouvoir relancer
+// la boucle de dessin après une mise en pause (onglet masqué, cf. C8).
+let mrDrawParams = null;
+// Garde « onglet masqué » (C8) : handlers visibilitychange + toast d'avertissement.
+let mrVisibilityHandler = null;
+let mrVisibilityToast = null;
+let captureVisibilityHandler = null;
+let captureVisibilityToast = null;
 
 // Audio lecture seule (hors enregistrement) et audio pour MediaRecorder
 let bgAudioCtx = null, bgAudioEl = null, bgAudioSource = null, bgAudioGain = null, bgAudioActive = false;
@@ -1436,6 +1444,7 @@ export function startAnimation(restart=false) {
 export function stopAnimation(){
     // Arrêter l'enregistrement si en cours
     isRecording = false;
+    removeCaptureVisibilityGuard();
 
     if (animationRafId) {
         cancelAnimationFrame(animationRafId);
@@ -1707,6 +1716,25 @@ function startRecordingProcess(){
     // Marquer le début de l'enregistrement
     isRecording = true;
 
+    // C8 — Onglet masqué : requestAnimationFrame est gelé, donc la capture se met
+    // silencieusement en pause. La capture étant déterministe (indexée sur
+    // globalRecordFrame, pas sur le temps réel), il n'y a pas de corruption : elle
+    // reprend exactement où elle en était au retour au premier plan. On informe
+    // simplement l'utilisateur pour ne pas laisser croire à un plantage.
+    removeCaptureVisibilityGuard();
+    captureVisibilityHandler = () => {
+        if (!isRecording) return;
+        if (document.hidden) {
+            if (!captureVisibilityToast) {
+                try { captureVisibilityToast = pkg.showToast && pkg.showToast('Capture en pause : revenez sur cet onglet pour la poursuivre.', 'warning', 'Onglet masqué', 0); } catch(_) {}
+            }
+        } else if (captureVisibilityToast) {
+            try { pkg.hideToast && pkg.hideToast(captureVisibilityToast); } catch(_) {}
+            captureVisibilityToast = null;
+        }
+    };
+    document.addEventListener('visibilitychange', captureVisibilityHandler);
+
     // mise à jour des options RGB (MEttre ailleurs ? + idem lecture seule)
     pkg.options.flash.rgb = pkg.hexToRgb(pkg.options.flash.color);
 
@@ -1785,6 +1813,13 @@ function scheduleCaptureFrame(pointOptions, flashOptions, infos) {
     });
 }
 
+// Retire la garde « onglet masqué » du mode images (C8) et ferme son toast.
+// Idempotent : sûr à appeler même si aucune garde n'est active.
+function removeCaptureVisibilityGuard() {
+    try { if (captureVisibilityHandler) { document.removeEventListener('visibilitychange', captureVisibilityHandler); captureVisibilityHandler = null; } } catch(_) {}
+    try { if (captureVisibilityToast) { pkg.hideToast && pkg.hideToast(captureVisibilityToast); captureVisibilityToast = null; } } catch(_) {}
+}
+
 // Termine proprement l'enregistrement en cas d'erreur irrécupérable :
 // ferme la modale/les toasts, nettoie les animations, restaure la carte et
 // les contrôles, puis affiche un message d'erreur explicite à l'utilisateur.
@@ -1792,6 +1827,7 @@ function abortRecordingOnError(error) {
     console.error('[CAPTURE] Abandon de l\'enregistrement suite à une erreur:', error);
 
     isRecording = false;
+    removeCaptureVisibilityGuard();
     try { recordingPerformanceMonitor.stopMonitoring(); } catch(_) {}
     try { blockBackgroundAudioPlayback = false; } catch(_) {}
 
@@ -1869,6 +1905,7 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
     // Vérifier si l'enregistrement a été arrêté
     if (!isRecording) {
         dbgMapgl('[CAPTURE] Enregistrement arrêté par l\'utilisateur');
+        removeCaptureVisibilityGuard();
 
         // Fermer le toast de chargement
         // IMPORTANT: ne pas utiliser de sélecteur large type [class*="toast"] qui peut matcher le conteneur (.gcm-toast-container)
@@ -1938,7 +1975,8 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
 
         // Traitement de fin
         isRecording = false; // Marquer la fin de l'enregistrement
-        
+        removeCaptureVisibilityGuard();
+
         // Arrêter la surveillance des performances
         recordingPerformanceMonitor.stopMonitoring();
         
@@ -2279,6 +2317,37 @@ function computeTotalAnimationMs(){
     } catch(_) { return 3000; }
 }
 
+// (Re)démarre la boucle de compositing MediaRecorder à partir des paramètres
+// mémorisés dans mrDrawParams. Idempotent : ne fait rien si une boucle tourne déjà
+// ou si les paramètres ne sont pas encore initialisés. Extrait pour permettre la
+// pause/reprise sur changement de visibilité de l'onglet (C8).
+function startMrDrawLoop() {
+    if (mrDrawIntervalId || !mrDrawParams) return;
+    const { viewport, effScale, intervalMs } = mrDrawParams;
+    let drawing = false;
+    mrDrawIntervalId = setInterval(() => {
+        if (!isMediaRecording || drawing) return;
+        drawing = true;
+
+        const frameStart = performance.now();
+        try {
+            map.renderSync();
+            const canvasList = viewport.querySelectorAll('canvas');
+            const w = mrOutCanvas.width;
+            const h = mrOutCanvas.height;
+            mrOutCtx.clearRect(0, 0, w, h);
+            canvasList.forEach(c => { if (c.width > 0 && c.height > 0) mrOutCtx.drawImage(c, 0, 0, w, h); });
+            addOverlaysToCanvas(mrOutCtx, w, h, effScale);
+        } catch(e) {
+            console.warn('Composite frame error:', e);
+        } finally {
+            const frameTime = performance.now() - frameStart;
+            recordingPerformanceMonitor.checkPerformance(frameTime, intervalMs, 'mediarecorder');
+            drawing = false;
+        }
+    }, intervalMs);
+}
+
 async function startMediaRecorderPipeline(totalDurationMs, timelineScale = 1){
     const fps = Number(pkg.options.record?.fps) || 24;
     const mime = pkg.options?.record?.mediaRecorder?.mimeType || 'video/webm;codecs=vp9';
@@ -2329,38 +2398,39 @@ async function startMediaRecorderPipeline(totalDurationMs, timelineScale = 1){
     // Précalculer les propriétés statiques des overlays pour éviter les reflows par frame
     buildOverlayCache(effScale);
 
-    // Dessin périodique (compositing)
-    let drawing = false;
-    const intervalMs = Math.max(4, Math.floor(1000 / fps));
-    
     // Démarrer la surveillance des performances
     recordingPerformanceMonitor.startMonitoring();
-    
-    mrDrawIntervalId = setInterval(() => {
-        if (!isMediaRecording || drawing) return;
-        drawing = true;
-        
-        const frameStart = performance.now();
-        try {
-            map.renderSync();
-            const canvasList = viewport.querySelectorAll('canvas');
-            const w = mrOutCanvas.width;
-            const h = mrOutCanvas.height;
-            mrOutCtx.clearRect(0, 0, w, h);
-            canvasList.forEach(c => { if (c.width > 0 && c.height > 0) mrOutCtx.drawImage(c, 0, 0, w, h); });
-            addOverlaysToCanvas(mrOutCtx, w, h, effScale);
-        } catch(e) {
-            console.warn('Composite frame error:', e);
-        } finally {
-            const frameEnd = performance.now();
-            const frameTime = frameEnd - frameStart;
-            
-            // Utiliser le système global de surveillance
-            recordingPerformanceMonitor.checkPerformance(frameTime, intervalMs, 'mediarecorder');
-            
-            drawing = false;
+
+    // Dessin périodique (compositing) — factorisé au niveau module (startMrDrawLoop)
+    // pour pouvoir être suspendu puis relancé lors d'un changement de visibilité de
+    // l'onglet (cf. mrVisibilityHandler / C8).
+    mrDrawParams = { viewport, effScale, intervalMs: Math.max(4, Math.floor(1000 / fps)) };
+    startMrDrawLoop();
+
+    // C8 — Onglet/fenêtre masqué : rAF (avancement des jours) est gelé par le
+    // navigateur et le setInterval de compositing est bridé à ~1 Hz, alors que le
+    // MediaRecorder continue d'accumuler du temps réel → long segment figé et
+    // désynchronisé dans la vidéo. On met donc tout en pause de façon cohérente :
+    // pause du recorder (le temps mis en pause est exclu de la vidéo) + arrêt du
+    // compositing, ce qui reste synchrone avec l'animation gelée.
+    mrVisibilityHandler = () => {
+        if (!isMediaRecording) return;
+        if (document.hidden) {
+            try { if (mrDrawIntervalId) { clearInterval(mrDrawIntervalId); mrDrawIntervalId = null; } } catch(_) {}
+            try { if (mrRecorder && mrRecorder.state === 'recording') mrRecorder.pause(); } catch(_) {}
+            // rAF est déjà gelé ; remettre la référence temporelle à null évite tout
+            // rattrapage de jours au retour (la 1re frame repart d'un delta nul).
+            animationLastTs = null;
+            if (!mrVisibilityToast) {
+                try { mrVisibilityToast = pkg.showToast && pkg.showToast('Enregistrement en pause : revenez sur cet onglet pour reprendre la capture.', 'warning', 'Onglet masqué', 0); } catch(_) {}
+            }
+        } else {
+            try { if (mrRecorder && mrRecorder.state === 'paused') mrRecorder.resume(); } catch(_) {}
+            startMrDrawLoop();
+            if (mrVisibilityToast) { try { pkg.hideToast && pkg.hideToast(mrVisibilityToast); } catch(_) {} mrVisibilityToast = null; }
         }
-    }, intervalMs);
+    };
+    document.addEventListener('visibilitychange', mrVisibilityHandler);
 
     // Progression
     const t0 = performance.now();
@@ -2392,7 +2462,12 @@ function stopMediaRecorderPipeline(finalize){
     try { if (mrProgressIntervalId) { clearInterval(mrProgressIntervalId); mrProgressIntervalId = null; } } catch(_) {}
     try { if (mrStopTimeoutId) { clearTimeout(mrStopTimeoutId); mrStopTimeoutId = null; } } catch(_) {}
     try { if (mrTailStopTimeoutId) { clearTimeout(mrTailStopTimeoutId); mrTailStopTimeoutId = null; } } catch(_) {}
-    
+
+    // Retirer la garde « onglet masqué » (C8) et fermer son toast éventuel.
+    try { if (mrVisibilityHandler) { document.removeEventListener('visibilitychange', mrVisibilityHandler); mrVisibilityHandler = null; } } catch(_) {}
+    try { if (mrVisibilityToast) { pkg.hideToast && pkg.hideToast(mrVisibilityToast); mrVisibilityToast = null; } } catch(_) {}
+    mrDrawParams = null;
+
     // Arrêter la surveillance des performances
     recordingPerformanceMonitor.stopMonitoring();
     
