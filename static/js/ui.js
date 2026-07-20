@@ -3544,6 +3544,9 @@ function updateOverlayElementsVisibility() {
             }
         }
 
+        // Synchroniser les spans internes + le séparateur "-" (masqué si une seule info)
+        pkg.updateInfosSpansVisibility();
+
         dbgUi('[OVERLAY] Visibilité mise à jour:', {
             title: pkg.options.infos?.title?.display,
             date: pkg.options.infos?.currentDate?.display,

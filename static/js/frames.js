@@ -12,6 +12,21 @@ export function displayFrames(){
     if (optionsInfos.numberOfCaches.display || optionsInfos.currentDate.display) {
         createInfosFrame();
     }
+    updateInfosSpansVisibility();
+}
+
+// Affiche/masque nombre de caches, date et le séparateur "-" selon les options.
+// Le "-" n'est visible que si les deux infos sont affichées.
+export function updateInfosSpansVisibility(){
+    const opts = pkg.options.infos;
+    const showCaches = opts.numberOfCaches.display === true;
+    const showDate = opts.currentDate.display === true;
+    const spanCaches = document.getElementById("spanNbCaches");
+    const spanDate = document.getElementById("spanCurrentDate");
+    const spanSep = document.getElementById("spanInfosSep");
+    if (spanCaches) spanCaches.style.display = showCaches ? "inline" : "none";
+    if (spanDate) spanDate.style.display = showDate ? "inline" : "none";
+    if (spanSep) spanSep.style.display = (showCaches && showDate) ? "inline" : "none";
 }
 
 
