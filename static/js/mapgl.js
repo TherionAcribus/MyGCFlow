@@ -2391,6 +2391,15 @@ async function startMediaRecorderPipeline(totalDurationMs, timelineScale = 1){
 
     mrRecorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) mrRecordedChunks.push(e.data); };
     mrRecorder.onstop = () => finalizeMediaRecorderVideo();
+    // C9 — Échec de l'encodeur (mémoire, reset GPU...) : sans ce handler, ni onstop
+    // ni finalize ne sont appelés, la modale « Enregistrement » reste ouverte à
+    // jamais. On arrête proprement le pipeline (stopMediaRecorderPipeline route vers
+    // finalize, qui tente de récupérer les chunks déjà capturés et ferme la modale).
+    mrRecorder.onerror = (e) => {
+        console.error('[MediaRecorder] Erreur encodeur:', e?.error || e);
+        try { pkg.showToast && pkg.showToast('Erreur de l\'encodeur vidéo. Arrêt de l\'enregistrement et récupération de la séquence déjà capturée.', 'error', 'Enregistrement', 8000); } catch(_) {}
+        try { stopMediaRecorderPipeline(true); } catch(_) {}
+    };
     // Utiliser un timeslice plus grand pour réduire le nombre de chunks et la pression GC
     const timesliceMs = Math.max(200, Number(pkg.options?.record?.mediaRecorder?.timesliceMs) || 1000);
     mrRecorder.start(timesliceMs);
@@ -2717,6 +2726,13 @@ function normalizeRecordedVideoSpeed(sourceBlob, factor){
                     cleanup();
                     try { resolve(new Blob(chunks, { type: mime })); } catch(e) { resolve(new Blob(chunks)); }
                 };
+                // C9 — Échec de l'encodeur pendant la normalisation : rejeter pour que
+                // l'appelant poursuive sans normaliser (dégradation propre) au lieu de
+                // rester bloqué sur une Promise jamais résolue.
+                rec.onerror = (e) => {
+                    cleanup();
+                    reject(new Error('Erreur encodeur lors de la normalisation : ' + (e?.error?.message || e?.message || 'inconnue')));
+                };
                 rec.start(Math.max(1000 / fps, 50));
 
                 progressTimer = setInterval(() => {
@@ -2855,6 +2871,13 @@ function muxRecordedVideoWithAudio(sourceBlob, audioFile){
                                 cleanup();
                                 const outType = muxMime || 'video/webm';
                                 try { resolve(new Blob(chunks, { type: outType })); } catch(e) { resolve(new Blob(chunks)); }
+                            };
+                            // C9 — Échec de l'encodeur pendant le mux audio : rejeter pour
+                            // que l'appelant livre la vidéo sans audio (dégradation propre)
+                            // au lieu de rester bloqué sur une Promise jamais résolue.
+                            rec.onerror = (e) => {
+                                cleanup();
+                                reject(new Error('Erreur encodeur lors du mux audio : ' + (e?.error?.message || e?.message || 'inconnue')));
                             };
                             rec.start(Math.max(1000 / fps, 50));
 
