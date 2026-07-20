@@ -144,8 +144,12 @@ class ProfileManager {
         }
     }
 
+    // Retourne true si le profil a bien été chargé, false s'il a été annulé
+    // (modifications non sauvegardées refusées par l'utilisateur) ou en erreur.
+    // Les appelants qui répercutent ce chargement sur un autre état persistant
+    // (ex: profil par défaut) doivent vérifier cette valeur avant de continuer.
     async loadProfile(name) {
-        if (!this._confirmDiscardChangesIfNeeded()) return;
+        if (!this._confirmDiscardChangesIfNeeded()) return false;
         try {
             dbgProfiles('Chargement profil depuis API:', name);
             const profile = await this.apiCall(`/api/profiles/${encodeURIComponent(name)}`);
@@ -166,8 +170,10 @@ class ProfileManager {
             this._markSaved();
             this.loadProfilesList(); // Rafraîchir pour montrer le profil actif
             this.showToast(pkg.t('Profil "${name}" chargé', { name }), 'green');
+            return true;
         } catch (error) {
             console.error('❌ Erreur chargement profil:', error);
+            return false;
         }
     }
 
@@ -360,39 +366,97 @@ class ProfileManager {
             return;
         }
 
+        const gt = (key) => (window.gettext ? window.gettext(key) : key);
+
+        // Construit un <li><a class="dropdown-item"> avec icône + libellé texte
+        // (jamais de HTML injecté depuis des données utilisateur) et son handler.
+        const buildMenuItem = (iconClass, label, onClick, danger = false) => {
+            const li = document.createElement('li');
+            const a = document.createElement('a');
+            a.className = 'dropdown-item' + (danger ? ' text-danger' : '');
+            a.href = '#!';
+            const icon = document.createElement('i');
+            icon.className = `ti ${iconClass} me-1`;
+            a.appendChild(icon);
+            a.appendChild(document.createTextNode(label));
+            a.addEventListener('click', (e) => { e.preventDefault(); onClick(); });
+            li.appendChild(a);
+            return li;
+        };
+
         this.profilesList.forEach(profileName => {
             const item = document.createElement('div');
             item.className = 'list-group-item';
 
             const isActive = this.currentProfile && this.currentProfile.name === profileName;
 
-            item.innerHTML = `
-                <div class="row" style="margin-bottom: 0;">
-                    <div class="col-8">
-                        <div class="${isActive ? 'active-profile' : ''}" style="cursor: pointer; position: relative;" onclick="profileManager.loadProfile('${profileName.replace(/'/g, "\\'")}')">
-                            <i class="ti ti-color-swatch me-1"></i>
-                            <span class="profile-name">${profileName}</span>
-                            ${isActive ? '<i class="ti ti-circle-check ms-1"></i><span class="active-badge">ACTIF</span>' : ''}
-                        </div>
-                    </div>
-                    <div class="col-4 text-end">
-                        <div class="dropdown">
-                            <button class="btn btn-link btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="ti ti-dots-vertical"></i>
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="#!" onclick="profileManager.duplicateProfile('${profileName.replace(/'/g, "\\'")}', '${profileName.replace(/'/g, "\\'")}_copy')"><i class="ti ti-copy me-1"></i>${window.gettext ? window.gettext('Dupliquer') : 'Dupliquer'}</a></li>
-                                <li><a class="dropdown-item" href="#!" onclick="profileManager.renameProfile('${profileName.replace(/'/g, "\\'")}')"><i class="ti ti-edit me-1"></i>${window.gettext ? window.gettext('Renommer') : 'Renommer'}</a></li>
-                                <li><a class="dropdown-item" href="#!" onclick="profileManager.exportProfile('${profileName.replace(/'/g, "\\'")}')"><i class="ti ti-download me-1"></i>${window.gettext ? window.gettext('Exporter') : 'Exporter'}</a></li>
-                                <li><a class="dropdown-item text-danger" href="#!" onclick="profileManager.confirmReset('${profileName.replace(/'/g, "\\'")}')"><i class="ti ti-refresh me-1"></i>${window.gettext ? window.gettext('Réinitialiser') : 'Réinitialiser'}</a></li>
-                                <li><a class="dropdown-item text-danger" href="#!" onclick="profileManager.confirmDelete('${profileName.replace(/'/g, "\\'")}')"><i class="ti ti-trash me-1"></i>${window.gettext ? window.gettext('Supprimer') : 'Supprimer'}</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="#!" onclick="profileManager.setProfileAsDefault('${profileName.replace(/'/g, "\\'")}')"><i class="ti ti-star me-1"></i>${window.gettext ? window.gettext('Définir comme par défaut') : 'Définir comme par défaut'}</a></li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            `;
+            const row = document.createElement('div');
+            row.className = 'row';
+            row.style.marginBottom = '0';
+
+            // Colonne nom (cliquable pour charger le profil)
+            const colName = document.createElement('div');
+            colName.className = 'col-8';
+            const nameWrap = document.createElement('div');
+            nameWrap.className = isActive ? 'active-profile' : '';
+            nameWrap.style.cursor = 'pointer';
+            nameWrap.style.position = 'relative';
+            nameWrap.addEventListener('click', () => this.loadProfile(profileName));
+
+            const swatchIcon = document.createElement('i');
+            swatchIcon.className = 'ti ti-color-swatch me-1';
+            nameWrap.appendChild(swatchIcon);
+
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'profile-name';
+            nameSpan.textContent = profileName;
+            nameWrap.appendChild(nameSpan);
+
+            if (isActive) {
+                const checkIcon = document.createElement('i');
+                checkIcon.className = 'ti ti-circle-check ms-1';
+                nameWrap.appendChild(checkIcon);
+                const badge = document.createElement('span');
+                badge.className = 'active-badge';
+                badge.textContent = 'ACTIF';
+                nameWrap.appendChild(badge);
+            }
+            colName.appendChild(nameWrap);
+
+            // Colonne actions (menu déroulant)
+            const colActions = document.createElement('div');
+            colActions.className = 'col-4 text-end';
+            const dropdown = document.createElement('div');
+            dropdown.className = 'dropdown';
+
+            const toggleBtn = document.createElement('button');
+            toggleBtn.className = 'btn btn-link btn-sm dropdown-toggle';
+            toggleBtn.type = 'button';
+            toggleBtn.setAttribute('data-bs-toggle', 'dropdown');
+            toggleBtn.setAttribute('aria-expanded', 'false');
+            const dotsIcon = document.createElement('i');
+            dotsIcon.className = 'ti ti-dots-vertical';
+            toggleBtn.appendChild(dotsIcon);
+
+            const menu = document.createElement('ul');
+            menu.className = 'dropdown-menu dropdown-menu-end';
+            menu.appendChild(buildMenuItem('ti-copy', gt('Dupliquer'), () => this.duplicateProfile(profileName, `${profileName}_copy`)));
+            menu.appendChild(buildMenuItem('ti-edit', gt('Renommer'), () => this.renameProfile(profileName)));
+            menu.appendChild(buildMenuItem('ti-download', gt('Exporter'), () => this.exportProfile(profileName)));
+            menu.appendChild(buildMenuItem('ti-refresh', gt('Réinitialiser'), () => this.confirmReset(profileName), true));
+            menu.appendChild(buildMenuItem('ti-trash', gt('Supprimer'), () => this.confirmDelete(profileName), true));
+            const divider = document.createElement('li');
+            divider.innerHTML = '<hr class="dropdown-divider">';
+            menu.appendChild(divider);
+            menu.appendChild(buildMenuItem('ti-star', gt('Définir comme par défaut'), () => this.setProfileAsDefault(profileName)));
+
+            dropdown.appendChild(toggleBtn);
+            dropdown.appendChild(menu);
+            colActions.appendChild(dropdown);
+
+            row.appendChild(colName);
+            row.appendChild(colActions);
+            item.appendChild(row);
 
             container.appendChild(item);
         });
@@ -470,7 +534,7 @@ class ProfileManager {
             return settings;
         } catch (error) {
             console.error('❌ Erreur chargement paramètres app:', error);
-            return { default_profile: 'Default' };
+            return { default_profile_uid: null, default_profile_name: null };
         }
     }
 
@@ -490,8 +554,9 @@ class ProfileManager {
         }
     }
 
+    // Voir loadProfile() pour la convention de retour (true = chargé, false = annulé/erreur).
     async loadProfileByUid(uid) {
-        if (!this._confirmDiscardChangesIfNeeded()) return;
+        if (!this._confirmDiscardChangesIfNeeded()) return false;
         try {
             dbgProfiles('🔄 [LOAD_PROFILE] Chargement profil par UUID:', uid);
             dbgProfiles('🔄 [LOAD_PROFILE] État avant chargement:', {
@@ -533,9 +598,11 @@ class ProfileManager {
 
             this.loadProfilesList(); // Rafraîchir pour montrer le profil actif
             this.showToast(pkg.t('Profil "${name}" chargé', { name: profile.name }), 'green');
+            return true;
         } catch (error) {
             console.error('❌ [LOAD_PROFILE] Erreur chargement profil par UUID:', error);
             this.showToast('Erreur lors du chargement du profil par défaut', 'red');
+            return false;
         }
     }
 
@@ -588,28 +655,35 @@ class ProfileManager {
         const selectedProfileName = selector.value;
         dbgProfiles('Changement profil par défaut:', selectedProfileName);
 
+        // Nécessaire pour pouvoir restaurer le sélecteur si le chargement est
+        // annulé par l'utilisateur (modifications non enregistrées) ou échoue :
+        // sans ça, le profil par défaut serait effacé côté serveur alors que
+        // rien n'a réellement changé.
+        const previousSettings = await this.loadAppSettings();
+
         let selectedProfileUid = null;
         let appliedProfileName = null;
 
         // Appliquer immédiatement le profil si un profil est sélectionné
         if (selectedProfileName && selectedProfileName !== '') {
             dbgProfiles('🎯 Application immédiate du profil:', selectedProfileName);
-            try {
-                await this.loadProfile(selectedProfileName);
-                // Récupérer l'UUID du profil chargé
-                if (this.currentProfile && this.currentProfile.uid) {
-                    selectedProfileUid = this.currentProfile.uid;
-                    appliedProfileName = this.currentProfile.name;
-                }
-            } catch (error) {
-                console.error('❌ Erreur lors du chargement du profil:', error);
+            const loaded = await this.loadProfile(selectedProfileName);
+            if (!loaded) {
+                dbgProfiles('🚫 Chargement annulé ou en échec - profil par défaut inchangé');
+                selector.value = previousSettings.default_profile_name || '';
+                return;
+            }
+            // Récupérer l'UUID du profil chargé
+            if (this.currentProfile && this.currentProfile.uid) {
+                selectedProfileUid = this.currentProfile.uid;
+                appliedProfileName = this.currentProfile.name;
             }
         } else {
             dbgProfiles('🚫 Aucun profil sélectionné - pas d\'application');
         }
 
         // Sauvegarder le nouveau profil par défaut avec UUID
-        const currentSettings = await this.loadAppSettings();
+        const currentSettings = previousSettings;
         dbgProfiles('💾 Sauvegarde profil par défaut:', {
             ancien_uuid: currentSettings.default_profile_uid,
             nouveau_uuid: selectedProfileUid,
@@ -626,7 +700,7 @@ class ProfileManager {
                 appliedProfileName ?
                     pkg.t('Profil "${selectedProfile}" appliqué et défini comme profil par défaut', { selectedProfile: appliedProfileName }) :
                     'Aucun profil par défaut défini',
-                appliedProfileName ? 'success' : 'info'
+                appliedProfileName ? 'green' : 'blue'
             );
         } else {
             console.error('❌ Échec de la sauvegarde du profil par défaut');
@@ -934,20 +1008,6 @@ class ProfileManager {
             const displayCurrentDateCheckbox = document.getElementById('cbDisplayCurrentDate');
             const titleCssTextarea = document.getElementById('inputTitleCss');
             const infosCssTextarea = document.getElementById('inputInfosCss');
-
-            // Nettoyage du CSS (extrait seulement les déclarations)
-            function extractCssDeclarations(css) {
-                if (!css || typeof css !== 'string') return '';
-                let text = css.trim();
-                const first = text.indexOf('{');
-                const last = text.lastIndexOf('}');
-                if (first !== -1 && last !== -1 && last > first) {
-                    text = text.substring(first + 1, last);
-                }
-                // Nettoyage des espaces superflus en début de ligne
-                text = text.replace(/^\s+/gm, '');
-                return text.trim();
-            }
 
             const infosSettings = {
                 title: {
@@ -1272,7 +1332,7 @@ class ProfileManager {
 
                 this.populateDefaultProfileSelector();
 
-                this.showToast(pkg.t('Profil renommé en "${name}"', { name: result.name }), 'success');
+                this.showToast(pkg.t('Profil renommé en "${name}"', { name: result.name }), 'green');
             }
         } catch (error) {
             // apiCall affiche déjà un toast d'erreur avec le message du serveur

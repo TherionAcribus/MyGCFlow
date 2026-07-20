@@ -2,11 +2,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 import json
+import logging
 import os
 import shutil
 import uuid
 from typing import Tuple, Optional, List
-from dataclasses import field
 
 
 APP_NAME = "GCMap"
@@ -139,6 +139,20 @@ class MapProfile:
     infos: InfosOptions = field(default_factory=InfosOptions)
 
 
+def _to_int(value, default: int) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _to_float(value, default: float) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
 def coerce_settings(d: dict) -> AppSettings:
     s = AppSettings()
     if isinstance(d, dict):
@@ -196,7 +210,7 @@ def coerce_profile(d: dict) -> MapProfile:
             stroke_color=vm.get("stroke_color", p.map.vector_options.stroke_color),
             fill_color=vm.get("fill_color", p.map.vector_options.fill_color),
             background_color=vm.get("background_color", p.map.vector_options.background_color),
-            stroke_width=float(vm.get("stroke_width", p.map.vector_options.stroke_width)),
+            stroke_width=_to_float(vm.get("stroke_width"), p.map.vector_options.stroke_width),
         )
 
         # Options Toner
@@ -209,7 +223,7 @@ def coerce_profile(d: dict) -> MapProfile:
         p.map = MapOptions(
             tile_provider=m.get("tile_provider", p.map.tile_provider),
             default_center=default_center_tuple,
-            default_zoom=int(m.get("default_zoom", p.map.default_zoom)),
+            default_zoom=_to_int(m.get("default_zoom"), p.map.default_zoom),
             vector_options=vector_options,
             toner_options=toner_options,
         )
@@ -218,31 +232,31 @@ def coerce_profile(d: dict) -> MapProfile:
         a = d.get("animation", {}) if isinstance(d.get("animation", {}), dict) else {}
         p.animation = AnimationOptions(
             enabled=bool(a.get("enabled", p.animation.enabled)),
-            speed=float(a.get("speed", p.animation.speed)),
+            speed=_to_float(a.get("speed"), p.animation.speed),
         )
 
         # Options des points
         pt = d.get("points", {}) if isinstance(d.get("points", {}), dict) else {}
         p.points = PointStyle(
-            size=int(pt.get("size", p.points.size)),
+            size=_to_int(pt.get("size"), p.points.size),
             color=pt.get("color", p.points.color),
             shape=pt.get("shape", p.points.shape),
             halo=bool(pt.get("halo", p.points.halo)),
             border_color=pt.get("border_color", p.points.border_color),
-            border_size=int(pt.get("border_size", p.points.border_size)),
+            border_size=_to_int(pt.get("border_size"), p.points.border_size),
             fill_color_type=pt.get("fill_color_type", p.points.fill_color_type),
             border_color_type=pt.get("border_color_type", p.points.border_color_type),
             mode=pt.get("mode", p.points.mode),
             icon_set=pt.get("icon_set", p.points.icon_set) or p.points.icon_set,
-            icon_size=int(pt.get("icon_size", p.points.icon_size) or p.points.icon_size),
+            icon_size=_to_int(pt.get("icon_size") or None, p.points.icon_size),
         )
 
         # Options flash
         f = d.get("flash", {}) if isinstance(d.get("flash", {}), dict) else {}
         p.flash = FlashOptions(
             mode=f.get("mode", p.flash.mode),
-            duration=int(f.get("duration", p.flash.duration)),
-            size=int(f.get("size", p.flash.size)),
+            duration=_to_int(f.get("duration"), p.flash.duration),
+            size=_to_int(f.get("size"), p.flash.size),
             color=f.get("color", p.flash.color),
             color_type=f.get("color_type", p.flash.color_type),
         )
@@ -943,7 +957,7 @@ class SettingsManager:
         # Si le profil par défaut pointé n'existe plus (ex: après suppression des fichiers de profils),
         # on nettoie la référence pour éviter des erreurs 404 récurrentes au démarrage.
         if settings.default_profile_uid and not self.get_profile_name_by_uid(settings.default_profile_uid):
-            print(f"[SETTINGS] Profil par défaut introuvable (uid={settings.default_profile_uid}), réinitialisation.")
+            logging.warning("Profil par défaut introuvable (uid=%s), réinitialisation.", settings.default_profile_uid)
             settings.default_profile_uid = None
             self.save_app_settings(settings)
 
@@ -978,6 +992,8 @@ class SettingsManager:
 
     def load_profile(self, name: str) -> MapProfile:
         path = self._profile_path(name)
+        if not path.exists():
+            raise FileNotFoundError(f"Profil '{name}' introuvable")
         return coerce_profile(read_json(path))
 
     def load_profile_by_uid(self, uid: str) -> MapProfile:
@@ -989,7 +1005,7 @@ class SettingsManager:
                 profile_data = json.loads(profile_path.read_text(encoding="utf-8"))
                 return coerce_profile(profile_data)
             except Exception as e:
-                print(f"Erreur lors de la lecture du profil {profile_path}: {e}")
+                logging.warning("Erreur lors de la lecture du profil %s: %s", profile_path, e)
                 # Fallback: reconstruire le cache et réessayer une fois
                 self._build_uid_cache()
                 profile_path = self._uid_to_path_cache.get(uid)
@@ -1089,7 +1105,7 @@ class SettingsManager:
                 if "points" in profile_data and "mode" not in profile_data["points"]:
                     profile_data["points"]["mode"] = "vectoriel"  # valeur par défaut
                     needs_update = True
-                    print(f"Mise à jour du profil {profile_path.name}: ajout du paramètre mode='vectoriel'")
+                    logging.info("Mise à jour du profil %s: ajout du paramètre mode='vectoriel'", profile_path.name)
 
                 if needs_update:
                     # Sauvegarder avec atomic_write
@@ -1097,12 +1113,12 @@ class SettingsManager:
                     updated_count += 1
 
             except Exception as e:
-                print(f"Erreur lors de la mise à jour du profil {profile_path}: {e}")
+                logging.warning("Erreur lors de la mise à jour du profil %s: %s", profile_path, e)
 
         if updated_count > 0:
-            print(f"{updated_count} profil(s) mis à jour avec le paramètre mode")
+            logging.info("%s profil(s) mis à jour avec le paramètre mode", updated_count)
         else:
-            print("Tous les profils sont déjà à jour")
+            logging.info("Tous les profils sont déjà à jour")
 
     def _atomic_write_profile(self, profile_path: Path, data: dict) -> None:
         """Écriture atomique d'un profil"""
@@ -1245,4 +1261,21 @@ class SettingsManager:
 
         self.save_profile(prof)
         return prof
+
+
+_settings_manager_singleton: Optional["SettingsManager"] = None
+
+
+def get_settings_manager() -> "SettingsManager":
+    """Retourne l'instance partagée de SettingsManager.
+
+    Instancier plusieurs SettingsManager fait vivre plusieurs caches
+    uid->path indépendants : une modification via l'un ne se répercute pas
+    sur les autres, ce qui peut faire échouer un load_profile_by_uid juste
+    après une écriture faite ailleurs. Un singleton évite cette désynchro.
+    """
+    global _settings_manager_singleton
+    if _settings_manager_singleton is None:
+        _settings_manager_singleton = SettingsManager()
+    return _settings_manager_singleton
 

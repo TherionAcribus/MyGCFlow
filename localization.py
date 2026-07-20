@@ -1,9 +1,9 @@
 from flask import current_app, has_request_context, request
 from flask_babel import gettext as _
 
-from settings_manager import SettingsManager
+from settings_manager import get_settings_manager
 
-_settings_manager = SettingsManager()
+_settings_manager = get_settings_manager()
 
 
 def _normalize_locale(locale: str, supported_locales):

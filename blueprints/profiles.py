@@ -1,9 +1,11 @@
+import logging
+
 from flask import Blueprint, jsonify, request, current_app
 
-from settings_manager import AppSettings, SettingsManager
+from settings_manager import AppSettings, get_settings_manager
 
 profiles_bp = Blueprint('profiles', __name__)
-settings_manager = SettingsManager()
+settings_manager = get_settings_manager()
 
 
 @profiles_bp.route('/api/settings', methods=['GET'])
@@ -101,7 +103,10 @@ def api_list_profiles():
 
 @profiles_bp.route('/api/profiles/<name>', methods=['GET'])
 def api_get_profile(name: str):
-    prof = settings_manager.load_profile(name)
+    try:
+        prof = settings_manager.load_profile(name)
+    except FileNotFoundError as e:
+        return jsonify({'error': 'Profile not found', 'message': str(e)}), 404
     return jsonify(settings_manager._profile_to_dict(prof))
 
 
@@ -129,16 +134,24 @@ def api_create_profile():
 @profiles_bp.route('/api/profiles/<name>', methods=['PUT'])
 def api_save_profile(name: str):
     data = request.get_json(silent=True) or {}
-    print(f"SERVEUR - Sauvegarde profil '{name}': {data}")
-    prof = settings_manager.load_profile(name)
+    logging.debug("Sauvegarde profil '%s': %s", name, data)
+    try:
+        prof = settings_manager.load_profile(name)
+    except FileNotFoundError as e:
+        return jsonify({'success': False, 'message': str(e)}), 404
 
+    # Le renommage n'est pas géré ici (il déplacerait le fichier sous le nom
+    # d'un profil potentiellement inexistant côté serveur) : passer par
+    # POST /api/profiles/<name>/rename, qui gère la logique de façon atomique.
     new_name = data.get('name', prof.name)
-    if new_name != prof.name and not settings_manager.is_name_available(new_name, exclude_uid=prof.uid):
-        return jsonify({'success': False, 'message': f"Un profil nommé '{new_name}' existe déjà"}), 409
-    prof.name = new_name
+    if new_name != prof.name:
+        return jsonify({
+            'success': False,
+            'message': "Le renommage n'est pas autorisé via cet endpoint, utilisez /api/profiles/<name>/rename"
+        }), 400
 
-    if data.get('uid'):
-        prof.uid = data.get('uid')
+    # L'uid identifie le profil de façon stable : on ignore toute valeur
+    # envoyée par le client pour éviter des collisions entre profils.
     m = data.get('map', {})
     prof.map.tile_provider = m.get('tile_provider', prof.map.tile_provider)
     if 'default_center' in m:
@@ -247,7 +260,15 @@ def api_save_profile(name: str):
         if 'infos_css' in i:
             prof.infos.infos_css = i['infos_css'] or ''
 
-    print(f"ÐY'ó SERVEUR - Profil sauvegardÇ¸ avec flash: mode={prof.flash.mode}, duration={prof.flash.duration}, size={prof.flash.size}, color={prof.flash.color}, color_type={getattr(prof.flash, 'color_type', 'fix')} | infos: title.display={prof.infos.title.display}, title.text={prof.infos.title.text}, number_of_caches={prof.infos.number_of_caches}, current_date={prof.infos.current_date}, title_css_len={len(prof.infos.title_css or '')}, infos_css_len={len(prof.infos.infos_css or '')}")
+    logging.debug(
+        "Profil sauvegardé avec flash: mode=%s, duration=%s, size=%s, color=%s, color_type=%s | "
+        "infos: title.display=%s, title.text=%s, number_of_caches=%s, current_date=%s, "
+        "title_css_len=%s, infos_css_len=%s",
+        prof.flash.mode, prof.flash.duration, prof.flash.size, prof.flash.color,
+        getattr(prof.flash, 'color_type', 'fix'), prof.infos.title.display, prof.infos.title.text,
+        prof.infos.number_of_caches, prof.infos.current_date,
+        len(prof.infos.title_css or ''), len(prof.infos.infos_css or ''),
+    )
     settings_manager.save_profile(prof)
     return jsonify({'success': True})
 
