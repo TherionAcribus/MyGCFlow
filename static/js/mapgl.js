@@ -1468,11 +1468,12 @@ export function stopAnimation(){
     try { stopBackgroundMusic(); } catch(e) { console.warn('stopBackgroundMusic error:', e); }
 
     // Fermer le toast de chargement s'il est ouvert
+    // IMPORTANT: ne pas utiliser de sélecteur large type [class*="toast"] qui peut matcher
+    // le conteneur (.gcm-toast-container) et casser l'affichage des loaders suivants.
     try {
-        // Essayer différents sélecteurs pour le toast
         const loadingToast = document.querySelector('.toast-loading') ||
-                           document.querySelector('.toast') ||
-                           document.querySelector('[class*="toast"]');
+                           document.querySelector('.gcm-toast') ||
+                           document.querySelector('.toast');
         if (loadingToast) {
             dbgMapgl('[STOP] Toast trouvé, tentative de fermeture:', loadingToast);
             pkg.hideToast && pkg.hideToast(loadingToast);
@@ -1480,8 +1481,8 @@ export function stopAnimation(){
             dbgMapgl('[STOP] Aucun toast trouvé avec les sélecteurs testés');
         }
 
-        // Essayer aussi de fermer tous les toasts visibles
-        const allToasts = document.querySelectorAll('.toast, [class*="toast"]');
+        // Fermer aussi tous les toasts visibles (sans toucher au conteneur)
+        const allToasts = document.querySelectorAll('.gcm-toast, .toast, .toast-loading');
         allToasts.forEach((toast, index) => {
             dbgMapgl(`[STOP] Fermeture toast ${index}:`, toast.textContent);
             pkg.hideToast && pkg.hideToast(toast);
@@ -1525,8 +1526,8 @@ export function stopAnimation(){
         dbgMapgl('[STOP] Window animation layer nettoyé');
     }
 
-    // Remettre les styles par défaut
-    updateAnimationStyles();
+    // Redéclencher un rendu pour appliquer le nettoyage ci-dessus
+    map.render();
     dbgMapgl('[STOP] Styles d\'animation remis à zéro');
 
     const allFilteredPoints = getAllFilteredPoints();
@@ -1955,8 +1956,11 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
 
     if (currentDate > pkg.metadata.endDate) {
         for (let extraFrames = 0; extraFrames < pkg.options.record.extraFrames; extraFrames++) {
+            // Avancer l'animation d'un cran et redéclencher un rendu : les listeners
+            // postrender de flashRecord (indexés sur globalRecordFrame) terminent
+            // ainsi le fondu des flashs encore actifs sur les frames de fin.
             globalRecordFrame++;
-            updateAnimationStyles();
+            map.render();
             if (capture == true) {
                 await captureElementWithRetry();
                 currentFrame++;
@@ -3458,55 +3462,6 @@ function flashRecord(features) {
             }
         });
     });
-}
-
-
-function updateAnimationStyles() {
-    animationSource.getFeatures().forEach(feature => {
-        const animationFrame = feature.get('animationFrame');
-        const maxAnimationFrames = pkg.options.record.flashFrames; // Durée de l'animation pour chaque point
-
-        if (animationFrame > maxAnimationFrames) {
-            // Retirer l'entité de animationSource une fois l'animation terminée
-            animationSource.removeFeature(feature);
-        } else {
-            // Mettre à jour le style pour l'animation
-            const animationRatio = animationFrame / maxAnimationFrames;
-            const radius = ol.easing.easeOut(animationRatio) * (pkg.options.flash.size / 2) + (pkg.options.flash.size / 10);
-            const opacity = ol.easing.easeOut(1 - animationRatio);
-
-            let style;
-            const cacheType = feature.get('type'); // Récupérer le type de cache depuis la feature
-            switch (pkg.options.flash.mode) {
-                case "star":
-                    style = starStyle(radius, opacity, pkg.options.flash, cacheType);
-                    break;
-                case "sparkle":
-                    style = sparkleStyle(radius, opacity, pkg.options.flash, cacheType);
-                    break;
-                case "circle":
-                    style = circleStyle(radius, opacity, pkg.options.flash, cacheType);
-                    break;
-                case "square":
-                    style = squareStyle(radius, opacity, pkg.options.flash, cacheType);
-                    break;
-                case "triangle":
-                    style = triangleStyle(radius, opacity, pkg.options.flash, cacheType);
-                    break;
-                case "diamond":
-                    style = diamondStyle(radius, opacity, pkg.options.flash, cacheType);
-                    break;
-                default:
-                    style = circleStyle(radius, opacity, pkg.options.flash, cacheType);
-                    break;
-            }
-            
-            feature.setStyle(style);
-            feature.set('animationFrame', animationFrame + 1); // Incrémenter le compteur de frames
-        }
-    });
-
-    map.render(); // Redéclenchez l'animation
 }
 
 
