@@ -41,6 +41,8 @@ var cpStrokeColor, cpFillColor, cpBackgroundColor, strokeWidth;
 var cbDisplayTitle, cbDisplayNumberofCaches, cbDisplayCurrentDate, inputTitle;
 var inputTitleCss, inputInfosCss, btnTitleCss, btnInfosCss;
 var spanNbCaches, spanCurrentDate;
+let overlayCssDefaultsReady = Promise.resolve();
+let overlayCssDefaultsStarted = false;
 var selectLanguage, selectCheckVersionOnline, buttonCheckVersion, buttonHome;
 var inputMapCenterLat, inputMapCenterLon, inputMapCenterCombined, inputMapDefaultZoom;
 var btnUseCurrentMapCenter, btnPickMapCenter, btnClearMapCenter;
@@ -504,6 +506,7 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     // textareas
     inputTitleCss = document.getElementById('inputTitleCss');
     inputInfosCss = document.getElementById('inputInfosCss');
+    beginOverlayCssDefaultsLoad();
 
     // boutons
     btnTitleCss = document.getElementById('btnTitleCss');
@@ -3470,118 +3473,65 @@ function changeInfosValues(event){
     pkg.options.infos.currentDate.display = cbDisplayCurrentDate.checked;
     pkg.options.infos.numberOfCaches.display = cbDisplayNumberofCaches.checked;
 
-    // Mettre à jour immédiatement l'état des éléments DOM selon les paramètres
+    if (event?.target?.id === "inputTitle") {
+        const title = String(event.target.value || '').slice(0, 500);
+        pkg.options.infos.title.text = title;
+        pkg.updateTitleFrame(title);
+    }
     updateOverlayElementsVisibility();
-
-    dbgUi(event.target)
-
-    // ----- TITRE -----
-
-    // création / destruction du la Frame Titre
-    if (event.target.id == "cbDisplayTitle" && event.target.checked) {
-        dbgUi("cbDisplayTitle")
-        pkg.createTitleFrame();
-    } else if (event.target.id == "cbDisplayTitle" && !event.target.checked) {
-        pkg.destroyTitleFrame();
-    }
-
-    // changement texte titre
-    if (event.target.id == "inputTitle") {
-        dbgUi("inputTitle")
-        pkg.updateTitleFrame(event.target.value);
-    }
-
-    // ------- INFOS -----
-    // Nombre caches
-    if (event.target.id == "cbDisplayNumberofCaches" && event.target.checked) {
-        // réaffiche span Caches
-        spanNbCaches.style.display = "inline";
-        pkg.createInfosFrame("number");
-    } else if (event.target.id == "cbDisplayCurrentDate" && event.target.checked) {
-        // Date
-        // reaffiche span Date
-        spanCurrentDate.style.display = "inline";
-        pkg.createInfosFrame("date");
-    } else if ((event.target.id == "cbDisplayNumberofCaches" || event.target.id == "cbDisplayCurrentDate" )
-        && (!cbDisplayNumberofCaches.checked && !cbDisplayCurrentDate.checked)) {
-        // fermeture si les deux sont desactivés
-        pkg.destroyInfosFrame();
-    }
-
-    // efface span Date ou Nombre de Caches si demandé indifférement de la Frame global
-    if (event.target.id == "cbDisplayNumberofCaches" && !event.target.checked) {
-        spanNbCaches.style.display = "none";
-    } else if (event.target.id == "cbDisplayCurrentDate" && !event.target.checked) {
-        dbgUi("cbDisplayCurrentDate")
-        spanCurrentDate.style.display = "none";
-    }
-
+    dbgUi(event?.target);
 }
 
 // Fonction pour synchroniser la visibilité des éléments DOM avec les paramètres utilisateur
 function updateOverlayElementsVisibility() {
     try {
-        // Gérer le titre
-        const titleFrame = document.getElementById('titleFrame');
-        if (titleFrame) {
-            if (pkg.options.infos?.title?.display === true) {
-                titleFrame.style.display = 'block';
-            } else {
-                titleFrame.style.display = 'none';
-            }
-        }
-
-        // Gérer les infos (date + nombre de caches)
-        const infosFrame = document.getElementById('infosFrame');
-        const shouldShowInfos = pkg.options.infos?.currentDate?.display === true ||
-                               pkg.options.infos?.numberOfCaches?.display === true;
-
-        if (infosFrame) {
-            if (shouldShowInfos) {
-                infosFrame.style.display = 'block';
-            } else {
-                infosFrame.style.display = 'none';
-            }
-        }
-
-        // Synchroniser les spans internes + le séparateur "-" (masqué si une seule info)
-        pkg.updateInfosSpansVisibility();
+        pkg.syncOverlayVisibility();
 
         dbgUi('[OVERLAY] Visibilité mise à jour:', {
             title: pkg.options.infos?.title?.display,
             date: pkg.options.infos?.currentDate?.display,
             caches: pkg.options.infos?.numberOfCaches?.display,
-            titleFrame: titleFrame?.style.display,
-            infosFrame: infosFrame?.style.display
+            titleFrame: document.getElementById('titleFrame')?.style.display,
+            infosFrame: document.getElementById('infosFrame')?.style.display
         });
     } catch(e) {
         console.warn('Erreur updateOverlayElementsVisibility:', e);
     }
 }
 
-// fenetre css pour le titre. Le htmx charge tout le css avec également le #inputTitleCss {...} il faut donc le supprimer.
-// Comme changement impossible directement dans htmx (sauf à ajouter une adresse qui gère le chargement du css) on intercepte le changement
-// fait par le htmx et on le met à jour dans le textarea
-// Suppression des accolades et des espace en débuts de ligne
-document.addEventListener('htmx:afterSwap', function(event) {
-    if (event.target.id === 'inputTitleCss' || event.target.id === 'inputInfosCss') {
-        const cssContent = event.target.value;
-        // Utiliser une expression régulière pour extraire le contenu entre les premières accolades trouvées
-        const match = cssContent.match(/\{([\s\S]*?)\}/);
-        if (match && match[1]) {
-            // Supprimer les espaces en début de chaque ligne
-            const cleanedCss = match[1].replace(/^\s*/gm, '');
-            // Mettre à jour le contenu du textarea avec le CSS nettoyé
-            event.target.value = cleanedCss.trim();
-        }
+function extractCssDeclarationsFromFile(cssContent) {
+    if (!cssContent || typeof cssContent !== 'string') return '';
+    const match = cssContent.match(/\{([\s\S]*?)\}/);
+    return (match?.[1] || cssContent).replace(/^\s*/gm, '').trim();
+}
 
+function beginOverlayCssDefaultsLoad() {
+    if (overlayCssDefaultsStarted) return overlayCssDefaultsReady;
+    overlayCssDefaultsStarted = true;
+    const editors = [inputTitleCss, inputInfosCss].filter(Boolean);
+    overlayCssDefaultsReady = Promise.all(editors.map(async (textarea) => {
+        const url = textarea.dataset.cssUrl;
+        if (!url || textarea.value.trim()) return;
         try {
-            if (typeof window.gcCssAssistantSyncFromTextareas === 'function') {
-                window.gcCssAssistantSyncFromTextareas();
+            const response = await fetch(new URL(url, window.location.href));
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const cssText = await response.text();
+            // Ne jamais écraser une valeur posée entre-temps par l'utilisateur.
+            if (!textarea.value.trim()) {
+                textarea.value = extractCssDeclarationsFromFile(cssText);
             }
-        } catch(e) {}
-    }
-});
+        } catch (error) {
+            console.warn(`Chargement du CSS Overlay par défaut impossible (${url}):`, error);
+        }
+    })).then(() => {
+        try { window.gcCssAssistantSyncFromTextareas?.(); } catch(_) {}
+    });
+    return overlayCssDefaultsReady;
+}
+
+export function waitForOverlayCssDefaults() {
+    return beginOverlayCssDefaultsLoad();
+}
 
 function initCssAssistant() {
     const root = document.getElementById('gcCssAssistant');
@@ -3728,12 +3678,14 @@ function initCssAssistant() {
 
     function applyCssToTarget(t, css) {
         const textarea = getTextareaForTarget(t);
-        if (textarea) textarea.value = css;
+        let appliedCss = css;
         if (t === 'infos') {
-            if (typeof pkg.changeInfosCssValues === 'function') pkg.changeInfosCssValues(css);
+            if (typeof pkg.changeInfosCssValues === 'function') appliedCss = pkg.changeInfosCssValues(css) ?? css;
         } else {
-            if (typeof pkg.changeTitleCssValues === 'function') pkg.changeTitleCssValues(css);
+            if (typeof pkg.changeTitleCssValues === 'function') appliedCss = pkg.changeTitleCssValues(css) ?? css;
         }
+        if (textarea) textarea.value = appliedCss;
+        return appliedCss;
     }
 
     function syncFormFromCss(target) {
@@ -3919,6 +3871,62 @@ function initCssAssistant() {
         return lines.join('\n');
     }
 
+    // Modifie uniquement la propriété associée au champ touché. Cette approche
+    // conserve les déclarations avancées (gradient, letter-spacing, border-left,
+    // etc.) au lieu de reconstruire et d'écraser toute la feuille.
+    function patchCssFromField(changedField) {
+        const textarea = getTextareaForTarget(activeTarget);
+        const probe = document.createElement('div');
+        probe.style.cssText = textarea ? (textarea.value || '') : '';
+        const set = (prop, value) => {
+            const normalized = value == null ? '' : String(value).trim();
+            if (normalized) probe.style.setProperty(prop, normalized);
+            else probe.style.removeProperty(prop);
+        };
+        const px = (field) => field?.value === '' ? '' : `${field.value}px`;
+
+        switch (changedField) {
+            case fields.textColor: set('color', fields.textColor.value); break;
+            case fields.fontSize: set('font-size', px(fields.fontSize)); break;
+            case fields.fontFamily: set('font-family', fields.fontFamily.value); break;
+            case fields.fontWeight: set('font-weight', fields.fontWeight.value); break;
+            case fields.textAlign: set('text-align', fields.textAlign.value); break;
+            case fields.backgroundColor: set('background-color', fields.backgroundColor.value); break;
+            case fields.padding: set('padding', px(fields.padding)); break;
+            case fields.borderRadius: set('border-radius', px(fields.borderRadius)); break;
+            case fields.borderWidth:
+            case fields.borderStyle:
+            case fields.borderColor: {
+                const width = fields.borderWidth?.value !== '' ? `${fields.borderWidth.value}px` : '1px';
+                const style = fields.borderStyle?.value || 'solid';
+                const color = fields.borderColor?.value || '#000000';
+                set('border', `${width} ${style} ${color}`);
+                break;
+            }
+            case fields.boxShadowEnable:
+            case fields.shadowX:
+            case fields.shadowY:
+            case fields.shadowBlur:
+            case fields.shadowSpread:
+            case fields.shadowColor:
+                if (!fields.boxShadowEnable?.checked) {
+                    set('box-shadow', 'none');
+                } else {
+                    set('box-shadow', `${fields.shadowX?.value || 0}px ${fields.shadowY?.value || 0}px ${fields.shadowBlur?.value || 0}px ${fields.shadowSpread?.value || 0}px ${fields.shadowColor?.value || '#000000'}`);
+                }
+                break;
+            case fields.position: set('position', fields.position.value); break;
+            case fields.zIndex: set('z-index', fields.zIndex.value); break;
+            case fields.top: set('top', px(fields.top)); break;
+            case fields.right: set('right', px(fields.right)); break;
+            case fields.bottom: set('bottom', px(fields.bottom)); break;
+            case fields.left: set('left', px(fields.left)); break;
+            case fields.opacity: set('opacity', fields.opacity.value); break;
+            default: return textarea ? (textarea.value || '') : '';
+        }
+        return probe.style.cssText;
+    }
+
     function refreshTargetButtons() {
         const titleActive = activeTarget === 'title';
         btnTargetTitle.classList.toggle('active', titleActive);
@@ -3946,9 +3954,12 @@ function initCssAssistant() {
     }
 
     function applyCurrentCss() {
-        const css = cbAdvanced.checked ? (rawEditor.value || '') : buildCssFromForm();
-        rawEditor.value = css;
-        applyCssToTarget(activeTarget, css);
+        const textarea = getTextareaForTarget(activeTarget);
+        const css = cbAdvanced.checked
+            ? (rawEditor.value || '')
+            : ((textarea?.value || '').trim() ? textarea.value : buildCssFromForm());
+        const appliedCss = applyCssToTarget(activeTarget, css);
+        rawEditor.value = appliedCss;
         syncFormFromCss(activeTarget);
     }
 
@@ -3990,7 +4001,8 @@ function initCssAssistant() {
     btnCopyToOther.addEventListener('click', () => {
         const from = activeTarget;
         const to = from === 'title' ? 'infos' : 'title';
-        const css = cbAdvanced.checked ? (rawEditor.value || '') : buildCssFromForm();
+        const sourceTextarea = getTextareaForTarget(from);
+        const css = cbAdvanced.checked ? (rawEditor.value || '') : (sourceTextarea?.value || '');
         applyCssToTarget(to, css);
         if (to === activeTarget) syncFormFromCss(activeTarget);
     });
@@ -4005,12 +4017,10 @@ function initCssAssistant() {
         applyCurrentCss();
     });
 
-    const onFieldChange = () => {
-        // Même en mode avancé, si l'utilisateur modifie un champ du formulaire,
-        // on reconstruit et applique le CSS pour garder la prévisualisation active.
-        const css = buildCssFromForm();
-        rawEditor.value = css;
-        applyCssToTarget(activeTarget, css);
+    const onFieldChange = (event) => {
+        const css = patchCssFromField(event.currentTarget);
+        const appliedCss = applyCssToTarget(activeTarget, css);
+        rawEditor.value = appliedCss;
         syncFormFromCss(activeTarget);
     };
 
@@ -4026,10 +4036,18 @@ function initCssAssistant() {
         }
     });
 
+    let rawPreviewRaf = null;
     rawEditor.addEventListener('input', () => {
         if (!cbAdvanced.checked) return;
-        const css = rawEditor.value || '';
-        applyCssToTarget(activeTarget, css);
+        if (rawPreviewRaf !== null) cancelAnimationFrame(rawPreviewRaf);
+        rawPreviewRaf = requestAnimationFrame(() => {
+            rawPreviewRaf = null;
+            applyCssToTarget(activeTarget, rawEditor.value || '');
+        });
+    });
+    rawEditor.addEventListener('change', () => {
+        if (!cbAdvanced.checked) return;
+        applyCssToTarget(activeTarget, rawEditor.value || '');
         syncFormFromCss(activeTarget);
     });
 

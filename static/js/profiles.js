@@ -1203,16 +1203,16 @@ class ProfileManager {
                 if (typeof pkg.changeTitleCssValues === 'function' && typeof profile.infos.title_css === 'string') {
                     // Nettoyer le CSS avant application
                     const cleanedTitleCss = extractCssDeclarations(profile.infos.title_css);
-                    pkg.changeTitleCssValues(cleanedTitleCss);
+                    const appliedTitleCss = pkg.changeTitleCssValues(cleanedTitleCss) ?? cleanedTitleCss;
                     const titleCssTextarea = document.getElementById('inputTitleCss');
-                    if (titleCssTextarea) titleCssTextarea.value = cleanedTitleCss;
+                    if (titleCssTextarea) titleCssTextarea.value = appliedTitleCss;
                 }
                 if (typeof pkg.changeInfosCssValues === 'function' && typeof profile.infos.infos_css === 'string') {
                     // Nettoyer le CSS avant application
                     const cleanedInfosCss = extractCssDeclarations(profile.infos.infos_css);
-                    pkg.changeInfosCssValues(cleanedInfosCss);
+                    const appliedInfosCss = pkg.changeInfosCssValues(cleanedInfosCss) ?? cleanedInfosCss;
                     const infosCssTextarea = document.getElementById('inputInfosCss');
-                    if (infosCssTextarea) infosCssTextarea.value = cleanedInfosCss;
+                    if (infosCssTextarea) infosCssTextarea.value = appliedInfosCss;
                 }
 
                 try {

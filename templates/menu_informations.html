@@ -30,7 +30,7 @@
             </div>
             <div class="mb-2">
                 <label class="form-label" for="inputTitle">{{ _("Titre") }}</label>
-                <input id="inputTitle" type="text" class="form-control" placeholder="{{ _('Titre') }}">
+                <input id="inputTitle" type="text" class="form-control" maxlength="500" placeholder="{{ _('Titre') }}">
             </div>
         </div>
 
@@ -243,11 +243,12 @@
         </div>
     </div>
 
-    <!-- Éditeurs CSS bruts cachés (chargés via HTMX) -->
+    <!-- Éditeurs CSS bruts cachés. Les valeurs par défaut sont chargées par ui.js
+         avant l'application d'un profil afin d'éviter toute course asynchrone. -->
     <div style="display:none;">
-        <textarea hx-get="../static/css/titre.css" hx-trigger="load" id="inputTitleCss" class="cssEditor" rows="30" cols="50"></textarea>
+        <textarea data-css-url="../static/css/titre.css" id="inputTitleCss" class="cssEditor" rows="30" cols="50"></textarea>
         <button id="btnTitleCss">{{ _("Appliquer les Modifications") }}</button>
-        <textarea hx-get="../static/css/infos.css" hx-trigger="load" id="inputInfosCss" class="cssEditor" rows="30" cols="50"></textarea>
+        <textarea data-css-url="../static/css/infos.css" id="inputInfosCss" class="cssEditor" rows="30" cols="50"></textarea>
         <button id="btnInfosCss">{{ _("Appliquer les Modifications") }}</button>
     </div>
 </div>

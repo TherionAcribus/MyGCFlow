@@ -143,6 +143,29 @@ let currentDate;
 // Cache des overlays (titre, infos) : calculé une seule fois au démarrage de chaque session
 // pour éviter getElementById / getBoundingClientRect / getComputedStyle à chaque frame
 let overlayCache = null;
+let overlayCacheRevision = 0;
+let overlayLayerCanvas = null;
+
+export function invalidateOverlayCache() {
+    overlayCache = null;
+    overlayCacheRevision += 1;
+}
+
+if (typeof window !== 'undefined') {
+    window.addEventListener('resize', invalidateOverlayCache, { passive: true });
+    try { document.fonts?.ready?.then(invalidateOverlayCache); } catch(_) {}
+}
+
+function acquireOverlayLayerCanvas(width, height) {
+    if (!overlayLayerCanvas) overlayLayerCanvas = document.createElement('canvas');
+    if (overlayLayerCanvas.width !== width || overlayLayerCanvas.height !== height) {
+        overlayLayerCanvas.width = width;
+        overlayLayerCanvas.height = height;
+    } else {
+        overlayLayerCanvas.getContext('2d')?.clearRect(0, 0, width, height);
+    }
+    return overlayLayerCanvas;
+}
 // Compteur de frames pour le jour en cours
 let currentFrame = 0;
 let globalRecordFrame = 0;  // avance d'1 par capture (pas par rendu)
@@ -3195,14 +3218,15 @@ function buildOverlayCache(scaleFactor) {
         const textAlignCss = style.textAlign || 'left';
 
         const shadowRaw = style.boxShadow && style.boxShadow !== 'none' ? style.boxShadow : null;
-        let shColor = 'rgba(0,0,0,0)', shBlur = 0, shOffX = 0, shOffY = 0;
+        let shColor = 'rgba(0,0,0,0)', shBlur = 0, shSpread = 0, shOffX = 0, shOffY = 0;
         if (shadowRaw) {
-            const parts = shadowRaw.match(/(rgba?\([^\)]+\))\s+([-0-9.]+)px\s+([-0-9.]+)px\s+([-0-9.]+)px/);
+            const parts = shadowRaw.match(/(rgba?\([^\)]+\))\s+([-0-9.]+)px\s+([-0-9.]+)px\s+([-0-9.]+)px(?:\s+([-0-9.]+)px)?/);
             if (parts) {
                 shColor = parts[1];
                 shOffX = parseFloat(parts[2]) * scaleFactor;
                 shOffY = parseFloat(parts[3]) * scaleFactor;
                 shBlur = parseFloat(parts[4]) * scaleFactor;
+                shSpread = (parseFloat(parts[5]) || 0) * scaleFactor;
             }
         }
 
@@ -3210,24 +3234,40 @@ function buildOverlayCache(scaleFactor) {
         const fontPx = Math.round(fontSizePx * scaleFactor);
         const lineHeightCss = parseFloat(style.lineHeight);
 
-        // Bordure (uniforme : on se base sur le côté haut)
-        const borderW = (parseFloat(style.borderTopWidth) || 0) * scaleFactor;
-        const borderStyle = style.borderTopStyle || 'none';
-        const borderColor = style.borderTopColor || 'rgba(0,0,0,0)';
-        const hasBorder = borderW > 0 && borderStyle !== 'none';
+        const borderFor = (side) => ({
+            width: (parseFloat(style[`border${side}Width`]) || 0) * scaleFactor,
+            style: style[`border${side}Style`] || 'none',
+            color: style[`border${side}Color`] || 'rgba(0,0,0,0)',
+        });
+        const borders = {
+            top: borderFor('Top'), right: borderFor('Right'),
+            bottom: borderFor('Bottom'), left: borderFor('Left'),
+        };
+        const parseInset = (value) => {
+            const parsed = parseFloat(value);
+            return Number.isFinite(parsed) ? parsed * scaleFactor : null;
+        };
 
+        const parsedOpacity = parseFloat(style.opacity);
         return {
             el, x, y, w, h, bg, color, radius, padL, padR: (parseFloat(style.paddingRight) || 0) * scaleFactor,
             padT, padB, font, fontPx, textAlignCss, hasShadow: !!shadowRaw,
-            shColor, shBlur, shOffX, shOffY,
-            hasBorder, borderW, borderColor,
+            shColor, shBlur, shSpread, shOffX, shOffY,
+            borders,
+            opacity: Number.isFinite(parsedOpacity) ? Math.max(0, Math.min(1, parsedOpacity)) : 1,
+            letterSpacing: (parseFloat(style.letterSpacing) || 0) * scaleFactor,
+            textTransform: style.textTransform || 'none',
+            backgroundImage: style.backgroundImage || 'none',
+            zIndex: Number.isFinite(parseInt(style.zIndex, 10)) ? parseInt(style.zIndex, 10) : 0,
+            leftInset: parseInset(style.left), rightInset: parseInset(style.right),
+            topInset: parseInset(style.top), bottomInset: parseInset(style.bottom),
             lineGap: Math.round((Number.isFinite(lineHeightCss) ? lineHeightCss : fontSizePx * 1.2) * scaleFactor),
         };
     };
 
     overlayCache = {
+        revision: overlayCacheRevision,
         scaleFactor,
-        titleOn: !!(pkg.options?.infos?.title?.display),
         title: cacheElement('titleFrame'),
         infos: cacheElement('infosFrame'),
     };
@@ -3235,30 +3275,56 @@ function buildOverlayCache(scaleFactor) {
 
 // Ajoute les overlays (titre, date, nb caches) au canvas d'enregistrement.
 // Les propriétés statiques (styles CSS, positions) sont lues depuis overlayCache
-// pour éviter des reflows à chaque frame. Seuls display et textContent sont lus en direct.
-function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor = 1) {
-    if (!overlayCache || overlayCache.scaleFactor !== scaleFactor) {
+// pour éviter des reflows à chaque frame. Seul le contenu textuel dynamique est relu.
+export function getOverlayTextContent() {
+    const opts = pkg.options?.infos;
+    const title = opts?.title?.display === true
+        ? (document.getElementById('titleFrame')?.textContent || '')
+        : '';
+    const infoParts = [];
+    if (opts?.numberOfCaches?.display === true) {
+        infoParts.push(document.getElementById('spanNbCaches')?.textContent || '0');
+    }
+    if (opts?.currentDate?.display === true) {
+        infoParts.push(document.getElementById('spanCurrentDate')?.textContent || '--/--/----');
+    }
+    return { title, infos: infoParts.join(' - ') };
+}
+
+export function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor = 1) {
+    if (!overlayCache || overlayCache.scaleFactor !== scaleFactor || overlayCache.revision !== overlayCacheRevision) {
         buildOverlayCache(scaleFactor);
     }
     if (!overlayCache) return;
 
     try {
-        const renderFromCache = (cached, getText) => {
-            if (!cached || !cached.el || cached.el.style.display === 'none') return;
-            const text = getText();
+        const renderFromCache = (cached, text) => {
+            if (!cached || !cached.el) return;
             if (!text || !text.trim()) return;
 
             const { x, y, w, h, bg, color, radius, padL, padR, padT, padB, font, fontPx, textAlignCss,
-                    hasShadow, shColor, shBlur, shOffX, shOffY, lineGap,
-                    hasBorder, borderW, borderColor } = cached;
+                    hasShadow, shColor, shBlur, shSpread, shOffX, shOffY, lineGap,
+                    borders, opacity, letterSpacing, textTransform, backgroundImage,
+                    leftInset, rightInset, topInset, bottomInset } = cached;
 
-            ctx.save();
-            ctx.imageSmoothingEnabled = true;
-            ctx.imageSmoothingQuality = 'high';
-            ctx.font = font;
-            ctx.textBaseline = 'alphabetic';
+            // CSS applique opacity au groupe complet. Dessiner directement chaque primitive
+            // avec globalAlpha cumulerait l'alpha aux intersections texte/fond/bordure.
+            const layer = opacity < 1 ? acquireOverlayLayerCanvas(canvasWidth, canvasHeight) : null;
+            const paintCtx = layer?.getContext('2d') || ctx;
+            paintCtx.save();
+            paintCtx.imageSmoothingEnabled = true;
+            paintCtx.imageSmoothingQuality = 'high';
+            paintCtx.font = font;
+            paintCtx.textBaseline = 'alphabetic';
 
-            const lines = Array.isArray(text) ? text : [String(text)];
+            const transformedText = transformOverlayText(String(text), textTransform);
+            const leftMargin = leftInset !== null ? Math.max(0, leftInset) : Math.max(0, x);
+            const rightMargin = rightInset !== null ? Math.max(0, rightInset) : 0;
+            const availableBoxWidth = Math.max(1, canvasWidth - leftMargin - rightMargin);
+            const availableTextWidth = Math.max(1, availableBoxWidth - padL - padR);
+            const lines = transformedText
+                .split(/\r?\n/)
+                .flatMap(line => wrapOverlayText(paintCtx, line, availableTextWidth, letterSpacing));
 
             // Mesurer le texte pour adapter la boîte (le contenu grandit pendant l'animation :
             // compteur de caches, dates plus longues...). La largeur cachée du DOM correspond
@@ -3266,51 +3332,225 @@ function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor = 1) {
             let maxTextW = 0;
             for (const line of lines) {
                 if (!line) continue;
-                const m = ctx.measureText(line);
-                if (m.width > maxTextW) maxTextW = m.width;
+                const measured = measureOverlayText(paintCtx, line, letterSpacing);
+                if (measured > maxTextW) maxTextW = measured;
             }
             // Métriques verticales (fallback si actualBoundingBox non disponible)
-            const fm = ctx.measureText('Mg');
+            const fm = paintCtx.measureText('Mg');
             const ascent = fm.actualBoundingBoxAscent || (fontPx * 0.8);
             const descent = fm.actualBoundingBoxDescent || (fontPx * 0.2);
             const lh = Math.max(lineGap, ascent + descent);
             const textBlockH = ascent + descent + (lines.length - 1) * lh;
 
             // La boîte ne rétrécit jamais sous la taille CSS, mais grandit pour contenir le texte
-            const drawW = Math.max(w, Math.ceil(padL + maxTextW + padR));
-            const drawH = Math.max(h, Math.ceil(padT + textBlockH + padB));
+            const drawW = Math.min(availableBoxWidth, Math.max(w, Math.ceil(padL + maxTextW + padR)));
+            const drawH = Math.min(canvasHeight, Math.max(h, Math.ceil(padT + textBlockH + padB)));
+            let drawX = x;
+            let drawY = y;
+            if (rightInset !== null && leftInset === null) drawX = canvasWidth - rightInset - drawW;
+            if (bottomInset !== null && topInset === null) drawY = canvasHeight - bottomInset - drawH;
+            drawX = Math.max(0, Math.min(canvasWidth - drawW, drawX));
+            drawY = Math.max(0, Math.min(canvasHeight - drawH, drawY));
 
-            if (hasShadow) { ctx.shadowColor = shColor; ctx.shadowBlur = shBlur; ctx.shadowOffsetX = shOffX; ctx.shadowOffsetY = shOffY; }
-            drawRoundedRect(ctx, x, y, drawW, drawH, radius, bg,
-                            hasBorder ? borderColor : null, hasBorder ? borderW : 0);
-            ctx.shadowColor = 'rgba(0,0,0,0)';
+            if (hasShadow) {
+                paintCtx.shadowColor = shColor;
+                paintCtx.shadowBlur = shBlur + Math.max(0, shSpread * 2);
+                paintCtx.shadowOffsetX = shOffX;
+                paintCtx.shadowOffsetY = shOffY;
+            }
+            const fillStyle = createOverlayFillStyle(paintCtx, backgroundImage, bg, drawX, drawY, drawW, drawH);
+            drawRoundedRect(paintCtx, drawX, drawY, drawW, drawH, radius, fillStyle);
+            paintCtx.shadowColor = 'rgba(0,0,0,0)';
+            drawOverlayBorders(paintCtx, drawX, drawY, drawW, drawH, radius, borders);
 
-            ctx.fillStyle = color;
-            if (textAlignCss === 'center') ctx.textAlign = 'center';
-            else if (textAlignCss === 'right' || textAlignCss === 'end') ctx.textAlign = 'right';
-            else ctx.textAlign = 'left';
+            paintCtx.fillStyle = color;
+            if (textAlignCss === 'center') paintCtx.textAlign = 'center';
+            else if (textAlignCss === 'right' || textAlignCss === 'end') paintCtx.textAlign = 'right';
+            else paintCtx.textAlign = 'left';
 
             // Centrer verticalement le bloc de texte dans la boîte
-            let curY = y + (drawH - textBlockH) / 2 + ascent;
+            let curY = drawY + (drawH - textBlockH) / 2 + ascent;
             lines.forEach(line => {
                 if (!line) { curY += lh; return; }
-                let xText = x + padL;
-                if (ctx.textAlign === 'center') xText = x + (drawW / 2);
-                else if (ctx.textAlign === 'right') xText = x + drawW - padR;
-                ctx.fillText(line, xText, curY);
+                let xText = drawX + padL;
+                if (paintCtx.textAlign === 'center') xText = drawX + (drawW / 2);
+                else if (paintCtx.textAlign === 'right') xText = drawX + drawW - padR;
+                drawOverlayText(paintCtx, line, xText, curY, letterSpacing);
                 curY += lh;
             });
-            ctx.restore();
+            paintCtx.restore();
+            if (layer) {
+                ctx.save();
+                ctx.globalAlpha = opacity;
+                ctx.drawImage(layer, 0, 0);
+                ctx.restore();
+            }
         };
 
-        if (overlayCache.titleOn) {
-            renderFromCache(overlayCache.title, () => overlayCache.title?.el?.textContent || '');
-        }
-        renderFromCache(overlayCache.infos, () => (overlayCache.infos?.el?.textContent || overlayCache.infos?.el?.innerText || '').trim());
+        const content = getOverlayTextContent();
+        const overlays = [];
+        if (content.title) overlays.push({ cached: overlayCache.title, text: content.title });
+        if (content.infos) overlays.push({ cached: overlayCache.infos, text: content.infos });
+
+        overlays
+            .filter(item => item.cached)
+            .sort((a, b) => a.cached.zIndex - b.cached.zIndex)
+            .forEach(item => renderFromCache(item.cached, item.text));
 
     } catch (error) {
         console.warn('Erreur lors du rendu des overlays:', error);
     }
+}
+
+function wrapOverlayText(ctx, text, maxWidth, letterSpacing = 0) {
+    if (!text || measureOverlayText(ctx, text, letterSpacing) <= maxWidth) return [text];
+    const words = text.split(/\s+/).filter(Boolean);
+    const lines = [];
+    let current = '';
+    const pushLongToken = (token) => {
+        let chunk = '';
+        for (const glyph of Array.from(token)) {
+            const candidate = chunk + glyph;
+            if (chunk && measureOverlayText(ctx, candidate, letterSpacing) > maxWidth) {
+                lines.push(chunk);
+                chunk = glyph;
+            } else {
+                chunk = candidate;
+            }
+        }
+        return chunk;
+    };
+    for (const word of words) {
+        const candidate = current ? `${current} ${word}` : word;
+        if (measureOverlayText(ctx, candidate, letterSpacing) <= maxWidth) {
+            current = candidate;
+        } else {
+            if (current) lines.push(current);
+            current = measureOverlayText(ctx, word, letterSpacing) <= maxWidth
+                ? word
+                : pushLongToken(word);
+        }
+    }
+    if (current || !lines.length) lines.push(current);
+    return lines;
+}
+
+function transformOverlayText(text, transform) {
+    if (transform === 'uppercase') return text.toLocaleUpperCase();
+    if (transform === 'lowercase') return text.toLocaleLowerCase();
+    if (transform === 'capitalize') return text.replace(/(^|\s)\S/g, value => value.toLocaleUpperCase());
+    return text;
+}
+
+function measureOverlayText(ctx, text, letterSpacing = 0) {
+    const glyphs = Array.from(text || '');
+    return ctx.measureText(text || '').width + Math.max(0, glyphs.length - 1) * letterSpacing;
+}
+
+function drawOverlayText(ctx, text, x, y, letterSpacing = 0) {
+    if (!letterSpacing) {
+        ctx.fillText(text, x, y);
+        return;
+    }
+    const glyphs = Array.from(text);
+    const totalWidth = measureOverlayText(ctx, text, letterSpacing);
+    let cursor = x;
+    if (ctx.textAlign === 'center') cursor -= totalWidth / 2;
+    else if (ctx.textAlign === 'right') cursor -= totalWidth;
+    ctx.save();
+    ctx.textAlign = 'left';
+    for (const glyph of glyphs) {
+        ctx.fillText(glyph, cursor, y);
+        cursor += ctx.measureText(glyph).width + letterSpacing;
+    }
+    ctx.restore();
+}
+
+function splitCssArguments(value) {
+    const parts = [];
+    let depth = 0;
+    let start = 0;
+    for (let i = 0; i < value.length; i++) {
+        if (value[i] === '(') depth += 1;
+        else if (value[i] === ')') depth -= 1;
+        else if (value[i] === ',' && depth === 0) {
+            parts.push(value.slice(start, i).trim());
+            start = i + 1;
+        }
+    }
+    parts.push(value.slice(start).trim());
+    return parts;
+}
+
+function createOverlayFillStyle(ctx, backgroundImage, fallback, x, y, width, height) {
+    const match = String(backgroundImage || '').match(/^linear-gradient\((.*)\)$/i);
+    if (!match) return fallback;
+    const args = splitCssArguments(match[1]);
+    let degrees = 180;
+    if (/^-?[\d.]+deg$/i.test(args[0])) degrees = parseFloat(args.shift());
+    const radians = degrees * Math.PI / 180;
+    const dx = Math.sin(radians);
+    const dy = -Math.cos(radians);
+    const extent = Math.abs(width * dx) + Math.abs(height * dy);
+    const cx = x + width / 2;
+    const cy = y + height / 2;
+    const gradient = ctx.createLinearGradient(
+        cx - dx * extent / 2, cy - dy * extent / 2,
+        cx + dx * extent / 2, cy + dy * extent / 2,
+    );
+    args.forEach((stop, index) => {
+        const positioned = stop.match(/^(.*)\s+(-?[\d.]+)%$/);
+        const color = (positioned?.[1] || stop).trim();
+        if (!color) return;
+        const offset = positioned?.[2] == null
+            ? (args.length <= 1 ? 0 : index / (args.length - 1))
+            : Math.max(0, Math.min(1, parseFloat(positioned[2]) / 100));
+        try { gradient.addColorStop(offset, color); } catch(_) {}
+    });
+    return gradient;
+}
+
+function setOverlayLineDash(ctx, style, width) {
+    if (style === 'dashed') ctx.setLineDash([Math.max(2, width * 3), Math.max(2, width * 2)]);
+    else if (style === 'dotted') { ctx.setLineDash([Math.max(1, width), Math.max(2, width * 2)]); ctx.lineCap = 'round'; }
+    else ctx.setLineDash([]);
+}
+
+function drawOverlayBorders(ctx, x, y, width, height, radius, borders) {
+    if (!borders) return;
+    const sides = Object.values(borders);
+    const active = sides.filter(border => border.width > 0 && border.style !== 'none');
+    if (!active.length) return;
+    const uniform = active.length === 4 && sides.every(border =>
+        border.width === sides[0].width && border.style === sides[0].style && border.color === sides[0].color
+    );
+    ctx.save();
+    if (uniform) {
+        const border = sides[0];
+        const inset = border.width / 2;
+        setOverlayLineDash(ctx, border.style, border.width);
+        roundedRectPath(ctx, x + inset, y + inset, width - border.width, height - border.width, Math.max(0, radius - inset));
+        ctx.lineWidth = border.width;
+        ctx.strokeStyle = border.color;
+        ctx.stroke();
+    } else {
+        const definitions = [
+            ['top', x, y, x + width, y], ['right', x + width, y, x + width, y + height],
+            ['bottom', x + width, y + height, x, y + height], ['left', x, y + height, x, y],
+        ];
+        definitions.forEach(([side, x1, y1, x2, y2]) => {
+            const border = borders[side];
+            if (!border || border.width <= 0 || border.style === 'none') return;
+            ctx.beginPath();
+            setOverlayLineDash(ctx, border.style, border.width);
+            ctx.lineWidth = border.width;
+            ctx.strokeStyle = border.color;
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+        });
+    }
+    ctx.restore();
 }
 
 function roundedRectPath(ctx, x, y, width, height, radius) {

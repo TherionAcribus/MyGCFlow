@@ -1,0 +1,1 @@
+"""Tests automatisés de GCMap."""

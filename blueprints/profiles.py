@@ -2,7 +2,12 @@ import logging
 
 from flask import Blueprint, jsonify, request, current_app
 
-from settings_manager import AppSettings, get_settings_manager
+from settings_manager import (
+    AppSettings,
+    coerce_overlay_title,
+    get_settings_manager,
+    sanitize_overlay_css,
+)
 
 profiles_bp = Blueprint('profiles', __name__)
 settings_manager = get_settings_manager()
@@ -250,15 +255,15 @@ def api_save_profile(name: str):
             if 'display' in t:
                 prof.infos.title.display = bool(t['display'])
             if 'text' in t:
-                prof.infos.title.text = t['text']
+                prof.infos.title.text = coerce_overlay_title(t['text'], prof.infos.title.text)
         if 'number_of_caches' in i:
             prof.infos.number_of_caches = bool(i['number_of_caches'])
         if 'current_date' in i:
             prof.infos.current_date = bool(i['current_date'])
         if 'title_css' in i:
-            prof.infos.title_css = i['title_css'] or ''
+            prof.infos.title_css = sanitize_overlay_css(i['title_css'])
         if 'infos_css' in i:
-            prof.infos.infos_css = i['infos_css'] or ''
+            prof.infos.infos_css = sanitize_overlay_css(i['infos_css'])
 
     logging.debug(
         "Profil sauvegardé avec flash: mode=%s, duration=%s, size=%s, color=%s, color_type=%s | "

@@ -10,6 +10,33 @@ from typing import Tuple, Optional, List
 
 
 APP_NAME = "GCMap"
+MAX_OVERLAY_TITLE_LENGTH = 500
+MAX_OVERLAY_CSS_LENGTH = 20_000
+
+
+def sanitize_overlay_css(value) -> str:
+    """Conserve des déclarations locales sûres pour un profil importable."""
+    if not isinstance(value, str):
+        return ""
+    safe = []
+    for declaration in value[:MAX_OVERLAY_CSS_LENGTH].split(";"):
+        if ":" not in declaration:
+            continue
+        prop, raw_value = declaration.split(":", 1)
+        prop = prop.strip()
+        raw_value = raw_value.strip()
+        if not prop or not raw_value:
+            continue
+        if prop.lower() == "display" or "url(" in raw_value.lower():
+            continue
+        safe.append(f"{prop}: {raw_value}")
+    return ";\n".join(safe) + (";" if safe else "")
+
+
+def coerce_overlay_title(value, default: str = "My Geocaching Map") -> str:
+    if not isinstance(value, str):
+        return default
+    return value[:MAX_OVERLAY_TITLE_LENGTH]
 
 
 def app_config_dir() -> Path:
@@ -267,12 +294,12 @@ def coerce_profile(d: dict) -> MapProfile:
         p.infos = InfosOptions(
             title=InfosTitle(
                 display=bool(t.get("display", p.infos.title.display)),
-                text=t.get("text", p.infos.title.text),
+                text=coerce_overlay_title(t.get("text", p.infos.title.text), p.infos.title.text),
             ),
             number_of_caches=bool(i.get("number_of_caches", p.infos.number_of_caches)),
             current_date=bool(i.get("current_date", p.infos.current_date)),
-            title_css=i.get("title_css", p.infos.title_css) or "",
-            infos_css=i.get("infos_css", p.infos.infos_css) or "",
+            title_css=sanitize_overlay_css(i.get("title_css", p.infos.title_css)),
+            infos_css=sanitize_overlay_css(i.get("infos_css", p.infos.infos_css)),
         )
 
     return p

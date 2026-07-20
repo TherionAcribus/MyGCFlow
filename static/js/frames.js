@@ -2,17 +2,32 @@
 import * as pkg from './index.js';
 
 export function displayFrames(){
-    // titre
     const optionsTitre = pkg.options.infos.title;
-    if (optionsTitre.display) {
-        createTitleFrame();
-        updateTitleFrame(optionsTitre.text);
+    updateTitleFrame(optionsTitre.text);
+    syncOverlayVisibility();
+}
+
+// Source de vérité unique pour la visibilité des overlays. Le CSS utilisateur
+// ne doit jamais pouvoir contredire les cases à cocher / options du profil.
+export function syncOverlayVisibility(){
+    const opts = pkg.options?.infos;
+    if (!opts) return;
+
+    const titleFrame = document.getElementById("titleFrame");
+    const infosFrame = document.getElementById("infosFrame");
+    const showTitle = opts.title?.display === true;
+    const showInfos = opts.numberOfCaches?.display === true || opts.currentDate?.display === true;
+
+    if (titleFrame) {
+        titleFrame.style.display = showTitle ? "block" : "none";
+        titleFrame.setAttribute('aria-hidden', showTitle ? 'false' : 'true');
     }
-    const optionsInfos = pkg.options.infos;
-    if (optionsInfos.numberOfCaches.display || optionsInfos.currentDate.display) {
-        createInfosFrame();
+    if (infosFrame) {
+        infosFrame.style.display = showInfos ? "block" : "none";
+        infosFrame.setAttribute('aria-hidden', showInfos ? 'false' : 'true');
     }
     updateInfosSpansVisibility();
+    try { pkg.invalidateOverlayCache?.(); } catch(_) {}
 }
 
 // Affiche/masque nombre de caches, date et le séparateur "-" selon les options.
@@ -24,9 +39,19 @@ export function updateInfosSpansVisibility(){
     const spanCaches = document.getElementById("spanNbCaches");
     const spanDate = document.getElementById("spanCurrentDate");
     const spanSep = document.getElementById("spanInfosSep");
-    if (spanCaches) spanCaches.style.display = showCaches ? "inline" : "none";
-    if (spanDate) spanDate.style.display = showDate ? "inline" : "none";
-    if (spanSep) spanSep.style.display = (showCaches && showDate) ? "inline" : "none";
+    if (spanCaches) {
+        spanCaches.hidden = !showCaches;
+        spanCaches.style.display = showCaches ? "inline" : "none";
+    }
+    if (spanDate) {
+        spanDate.hidden = !showDate;
+        spanDate.style.display = showDate ? "inline" : "none";
+    }
+    if (spanSep) {
+        const showSeparator = showCaches && showDate;
+        spanSep.hidden = !showSeparator;
+        spanSep.style.display = showSeparator ? "inline" : "none";
+    }
 }
 
 
@@ -40,31 +65,27 @@ export function updateInfosFrameAfterReadBdd(metadata){
 
 // creation Frame Infos. Peut importe qui envoie la demande de création, on l'affiche si pas affiché
 export function createInfosFrame(){
-    const infosFrame = document.getElementById("infosFrame");
-    if (infosFrame.style.display == "none") {
-        infosFrame.style.display = "block";
-    }
+    syncOverlayVisibility();
 }
 
 // destruction Frame Infos. La demande est gérée par l'ui si toutes les checkbox sont desactivees
 export function destroyInfosFrame(){
     const infosFrame = document.getElementById("infosFrame");
-    if (infosFrame.style.display == "block") {
-        infosFrame.style.display = "none";
-    }
+    if (infosFrame) infosFrame.style.display = "none";
+    try { pkg.invalidateOverlayCache?.(); } catch(_) {}
 }
 
 // mise à jour du nombre de caches
 export function updateNbCaches(nbCaches){
     const spanNbCaches = document.getElementById("spanNbCaches");
-    spanNbCaches.innerHTML = nbCaches;
+    if (spanNbCaches) spanNbCaches.textContent = nbCaches ?? 0;
 }
 
 // mise à jour de la date
 export function updateCurrentDate(currentDate){
     currentDate = formatDate(currentDate);
     const spanCurrentDate = document.getElementById("spanCurrentDate");
-    spanCurrentDate.innerHTML = currentDate;
+    if (spanCurrentDate) spanCurrentDate.textContent = currentDate;
 }
 
 // formatage date au format jour/mois/annee (optimisé car pas de manipulation d'objets)
@@ -84,13 +105,12 @@ function formatDate(date) {
 export function changeInfosCssValues(userCss){
     const infosFrame = document.getElementById("infosFrame"); 
     if (!infosFrame) return;
-    const cleaned = extractCssDeclarations(userCss);
+    const cleaned = sanitizeOverlayCss(userCss);
     // Appliquer le CSS
     infosFrame.style.cssText = cleaned;
-    // S'assurer que la frame est visible si l'utilisateur n'a pas spécifié display
-    if (!/\bdisplay\s*:/i.test(cleaned)) {
-        infosFrame.style.display = 'block';
-    }
+    syncCssTextarea('inputInfosCss', cleaned);
+    syncOverlayVisibility();
+    return cleaned;
 }
 
 
@@ -98,33 +118,55 @@ export function changeInfosCssValues(userCss){
 
 // creation Titre
 export function createTitleFrame(){
-    const titleFrame = document.getElementById("titleFrame"); 
-    titleFrame.style.display = "block";
+    syncOverlayVisibility();
 }
 
 // destruction Titre
 export function destroyTitleFrame(){
     const titleFrame = document.getElementById("titleFrame"); 
-    titleFrame.style.display = "none";    
+    if (titleFrame) titleFrame.style.display = "none";
+    try { pkg.invalidateOverlayCache?.(); } catch(_) {}
 }
 
 // mise à jour du titre
 export function updateTitleFrame(title){
     const titleFrame = document.getElementById("titleFrame"); 
-    titleFrame.innerHTML = title;
+    if (titleFrame) titleFrame.textContent = title == null ? '' : String(title).slice(0, 500);
+    try { pkg.invalidateOverlayCache?.(); } catch(_) {}
 }
 
 // Changement css via formulaire
 export function changeTitleCssValues(userCss){
     const titleFrame = document.getElementById("titleFrame"); 
     if (!titleFrame) return;
-    const cleaned = extractCssDeclarations(userCss);
+    const cleaned = sanitizeOverlayCss(userCss);
     // Appliquer le CSS
     titleFrame.style.cssText = cleaned;
-    // S'assurer que la frame est visible si l'utilisateur n'a pas spécifié display
-    if (!/\bdisplay\s*:/i.test(cleaned)) {
-        titleFrame.style.display = 'block';
+    syncCssTextarea('inputTitleCss', cleaned);
+    syncOverlayVisibility();
+    return cleaned;
+}
+
+// Les profils sont importables : on limite le CSS à des déclarations locales.
+// display reste réservé au contrôleur et url() éviterait des requêtes externes
+// invisibles lors du chargement d'un profil tiers.
+export function sanitizeOverlayCss(css) {
+    const declarations = extractCssDeclarations(css);
+    if (!declarations || typeof document === 'undefined') return declarations;
+    const probe = document.createElement('div');
+    probe.style.cssText = declarations;
+    for (const prop of Array.from(probe.style)) {
+        const value = probe.style.getPropertyValue(prop);
+        if (prop.toLowerCase() === 'display' || /url\s*\(/i.test(value)) {
+            probe.style.removeProperty(prop);
+        }
     }
+    return probe.style.cssText.trim();
+}
+
+function syncCssTextarea(id, css) {
+    const textarea = document.getElementById(id);
+    if (textarea && textarea.value !== css) textarea.value = css;
 }
 
 // Utilitaire: extrait uniquement les déclarations CSS (retire sélecteurs et accolades)

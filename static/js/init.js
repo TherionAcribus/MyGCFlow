@@ -124,6 +124,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     // mets les valeurs par défaut dans les formulaire
     //(optionsValues);
     pkg.init_ui();
+    // Les CSS Overlay par défaut doivent être présents avant le profil : sinon
+    // une réponse tardive peut écraser le style du profil dans les textareas.
+    await pkg.waitForOverlayCssDefaults?.();
 
     console.log('🚀 [INIT] Après init_ui() - état du switch:', {
         switch_checked: document.getElementById('switchIconeVectoriel')?.checked,

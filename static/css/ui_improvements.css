@@ -544,10 +544,6 @@ main.fullscreen-mode #tabsPanel {
     display: none !important;
 }
 
-main.fullscreen-mode #mapWithFrames * {
-    display: block !important;
-}
-
 /* Nouvelle approche : barre verticale à droite - plus besoin des règles d'horizontalité */
 
 /* Masquer aussi les modals en mode plein écran */
@@ -603,7 +599,6 @@ main.fullscreen-mode .modal-overlay {
 
 /* Corriger la fenêtre de titre en mode plein écran */
 main.fullscreen-mode #titleFrame {
-    display: block !important;
     flex-direction: row !important;
     text-align: center !important;
     white-space: nowrap !important;
@@ -611,35 +606,16 @@ main.fullscreen-mode #titleFrame {
 
 /* Corriger la barre d'infos en mode plein écran */
 main.fullscreen-mode #infosFrame {
-    display: block !important;
     flex-direction: row !important;
     white-space: nowrap !important;
     text-align: left !important;
 }
 
-/* Forcer l'horizontalité des spans dans la barre d'infos */
-main.fullscreen-mode #infosFrame,
-main.fullscreen-mode #infosFrame span,
-main.fullscreen-mode #infosFrame #spanNbCaches,
-main.fullscreen-mode #infosFrame #spanCurrentDate {
-    display: inline !important;
+/* Conserver la disposition horizontale sans écraser la visibilité pilotée par JS. */
+main.fullscreen-mode #infosFrame span:not([hidden]) {
     float: none !important;
     clear: none !important;
     vertical-align: baseline !important;
-    flex-direction: row !important;
-}
-
-/* Surcharge maximale pour la barre d'infos */
-main.fullscreen-mode #mapWithFrames #infosFrame {
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: center !important;
-    white-space: nowrap !important;
-}
-
-main.fullscreen-mode #mapWithFrames #infosFrame span {
-    display: inline !important;
-    float: none !important;
 }
 
 /* Valeur par défaut : boites titre/infos sur fond blanc lisible */
