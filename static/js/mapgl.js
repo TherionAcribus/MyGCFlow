@@ -575,11 +575,15 @@ export function createMap(){
         target: 'map',
         layers: [],
         view: new ol.View({
-            center: [49, 6],
+            // Point de repli avant que centerMap() ne recadre selon les préférences
+            // utilisateur ; doit être en EPSG:3857 (la vue), pas en lon/lat brut.
+            center: ol.proj.fromLonLat([2.2137, 46.2276]),
             zoom: 3
         }),
-        renderer: "webgl",
-        controls: [] 
+        // Attribution non-repliable : les CGU d'OpenStreetMap et de Stadia Maps
+        // (Toner/Watercolor) imposent une attribution visible, y compris dans les
+        // vidéos exportées par l'app.
+        controls: [new ol.control.Attribution({ collapsible: false })]
     });
 
     // Initialiser l'overlay de popup et les écouteurs de clics
@@ -603,22 +607,19 @@ export function addMaps() {
     map.addLayer(stamenWatercolorLayer);
     stamenWatercolorLayer.setVisible(false);
 
-    // Choix du type de Toner par défaut
-    let stamenLayer;
-    if (defaultSettings.stamenToner.type == "light") {
-        stamenLayer = 'toner-lite'
-    } else if (defaultSettings.stamenToner.type == "dark") {
-        stamenLayer = 'toner'
-    }
-
+    // Layer créé avec une source provisoire ; refreshStamenTonerMap() ci-dessous
+    // pose la vraie source selon le type par défaut (light/dark), pour n'avoir
+    // qu'une seule table de correspondance type -> nom de layer Stadia.
     stamenTonerLayer = new ol.layer.Tile({
         source: new ol.source.StadiaMaps({layer: "stamen_toner_lite"})
     });
     map.addLayer(stamenTonerLayer);
     stamenTonerLayer.setVisible(false);
+    refreshStamenTonerMap(defaultSettings.stamenToner);
 
     vectorTileLayer = new ol.layer.VectorTile({
         declutter: true,
+        background: defaultSettings.vectorMap.background,
         source: new ol.source.VectorTile({
           maxZoom: 15,
           format: new ol.format.MVT({
@@ -657,8 +658,7 @@ function buildVectorMapStyle(values){
 // rafraîchit la carte VectorMap quand on change ses proprietés
 export function refreshVectorMap(newValues){
     vectorTileLayer.setStyle(buildVectorMapStyle(newValues));
-    // bizarrement la variable est background avec un _
-    vectorTileLayer.background_ = newValues.background;
+    vectorTileLayer.setBackground(newValues.background);
     vectorTileLayer.getSource().refresh();
 }
 
@@ -755,6 +755,15 @@ export function switchLayer(layerName) {
         case 'stamenToner':
             stamenTonerLayer.setVisible(true);
             pkg.selectStamenTonerMapMenu();
+            break;
+        default:
+            // Nom de couche inconnu (profil corrompu, valeur obsolète en
+            // localStorage...) : replier sur OSM plutôt que de laisser la
+            // carte entièrement vide sans aucun message.
+            console.warn(`switchLayer: nom de couche inconnu "${layerName}", repli sur OSM`);
+            layerName = 'OSM';
+            OSMLayer.setVisible(true);
+            pkg.selectOSMMapMenu();
             break;
     }
 
