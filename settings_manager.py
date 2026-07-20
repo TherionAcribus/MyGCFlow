@@ -1093,55 +1093,6 @@ class SettingsManager:
     def reset_profile(self, name: str) -> None:
         self.save_profile(MapProfile(name=name))
 
-    def update_existing_profiles_with_mode(self) -> None:
-        """Met à jour tous les profils existants pour ajouter le paramètre mode s'il manque"""
-        updated_count = 0
-        for profile_path in self._iter_profile_files():
-            try:
-                profile_data = json.loads(profile_path.read_text(encoding="utf-8"))
-                needs_update = False
-
-                # Vérifier si le paramètre mode manque dans les points
-                if "points" in profile_data and "mode" not in profile_data["points"]:
-                    profile_data["points"]["mode"] = "vectoriel"  # valeur par défaut
-                    needs_update = True
-                    logging.info("Mise à jour du profil %s: ajout du paramètre mode='vectoriel'", profile_path.name)
-
-                if needs_update:
-                    # Sauvegarder avec atomic_write
-                    self._atomic_write_profile(profile_path, profile_data)
-                    updated_count += 1
-
-            except Exception as e:
-                logging.warning("Erreur lors de la mise à jour du profil %s: %s", profile_path, e)
-
-        if updated_count > 0:
-            logging.info("%s profil(s) mis à jour avec le paramètre mode", updated_count)
-        else:
-            logging.info("Tous les profils sont déjà à jour")
-
-    def _atomic_write_profile(self, profile_path: Path, data: dict) -> None:
-        """Écriture atomique d'un profil"""
-        import tempfile
-        import os
-
-        # Créer un fichier temporaire
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False, dir=profile_path.parent, encoding='utf-8') as tmp_file:
-            json.dump(data, tmp_file, ensure_ascii=False, indent=2)
-            tmp_path = tmp_file.name
-
-        # Sauvegarder l'ancien fichier
-        bak_path = profile_path.with_suffix(profile_path.suffix + '.bak')
-        if profile_path.exists():
-            try:
-                import shutil
-                shutil.copy2(profile_path, bak_path)
-            except Exception:
-                pass
-
-        # Remplacer atomiquement
-        os.replace(tmp_path, profile_path)
-
     # ---------- Import/Export utilitaires ----------
     def _iter_profile_files(self):
         for p in PROFILES_DIR.glob("*.json"):

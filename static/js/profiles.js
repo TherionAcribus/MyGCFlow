@@ -39,8 +39,24 @@ class ProfileManager {
         this.bindEvents();
         this.loadProfilesList();
         this.loadCurrentSettings();
-        this._lastSavedSnapshot = JSON.stringify(this.currentSettings);
+        this._lastSavedSnapshot = this._dirtySnapshot(this.currentSettings);
         this._bindDirtyTracking();
+    }
+
+    // Sérialise les réglages pour la comparaison "modifications non enregistrées",
+    // en excluant le centre/zoom courants de la carte : ce sont des valeurs qui
+    // suivent en permanence la vue (déplacement, zoom molette...) et non des
+    // réglages de style. Sans cette exclusion, se contenter de déplacer la carte
+    // puis de toucher un champ de style sans rapport fait apparaître le profil
+    // comme "modifié" alors que rien de pertinent n'a changé. `saveCurrentAsProfile`
+    // capture néanmoins bien la vue courante : seule la détection "dirty" l'ignore.
+    _dirtySnapshot(settings) {
+        const clone = JSON.parse(JSON.stringify(settings || {}));
+        if (clone.map) {
+            delete clone.map.default_center;
+            delete clone.map.default_zoom;
+        }
+        return JSON.stringify(clone);
     }
 
     bindEvents() {
@@ -491,21 +507,29 @@ class ProfileManager {
     // Snapshot des réglages actuels comme référence "sauvegardée" (après chargement/sauvegarde d'un profil)
     _markSaved() {
         this.loadCurrentSettings();
-        this._lastSavedSnapshot = JSON.stringify(this.currentSettings);
+        this._lastSavedSnapshot = this._dirtySnapshot(this.currentSettings);
         this.hasUnsavedChanges = false;
         this.updateCurrentProfileIndicator();
     }
 
     // Écoute les changements des contrôles de style pour détecter les modifications non sauvegardées
     _bindDirtyTracking() {
-        const container = document.getElementById('style') || document;
+        const container = document.getElementById('style');
+        if (!container) {
+            // #style est le conteneur de l'onglet Style (menu_style.html), censé
+            // toujours être présent. On échoue de façon visible plutôt que de se
+            // rabattre silencieusement sur tout le document (qui déclencherait le
+            // suivi "dirty" sur des changements sans rapport avec le profil).
+            console.warn('ProfileManager: conteneur #style introuvable, suivi des modifications désactivé');
+            return;
+        }
         let debounceTimer = null;
         const recompute = () => {
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(() => {
                 if (!this.currentProfile) return;
                 this.loadCurrentSettings();
-                const dirty = JSON.stringify(this.currentSettings) !== this._lastSavedSnapshot;
+                const dirty = this._dirtySnapshot(this.currentSettings) !== this._lastSavedSnapshot;
                 if (dirty !== this.hasUnsavedChanges) {
                     this.hasUnsavedChanges = dirty;
                     this.updateCurrentProfileIndicator();
@@ -1244,7 +1268,7 @@ class ProfileManager {
 
         const result = await this.saveProfile(profileData);
         if (result && result.success) {
-            this._lastSavedSnapshot = JSON.stringify(this.currentSettings);
+            this._lastSavedSnapshot = this._dirtySnapshot(this.currentSettings);
             this.hasUnsavedChanges = false;
         }
         this.updateCurrentProfileIndicator();
@@ -1402,20 +1426,33 @@ class ProfileManager {
 }
 
 // Fonctions d'application des paramètres (appelées depuis applyProfile)
-function applyMapSettings(mapOptions) {
+// Nombre maximal de tentatives d'attente de l'initialisation de la carte
+// (10 x 500ms = 5s). Sans cette borne, un profil chargé avant que la carte
+// ne soit prête (ou si son initialisation échoue) relance ce setTimeout
+// indéfiniment, pour toujours.
+const MAP_READY_MAX_RETRIES = 10;
+
+function applyMapSettings(mapOptions, attempt = 0) {
     try {
         dbgProfiles('🎯 Application carte - Provider demandé:', mapOptions.tile_provider);
 
         // Vérifier si la carte est initialisée
         if (!window.map) {
+            if (attempt >= MAP_READY_MAX_RETRIES) {
+                console.error('❌ Carte toujours non initialisée après', MAP_READY_MAX_RETRIES, 'tentatives, abandon de l\'application des paramètres carte');
+                return;
+            }
             console.warn('⚠️ Carte non initialisée, report de l\'application des paramètres carte');
             // Reporter l'application dans 500ms
-            setTimeout(() => applyMapSettings(mapOptions), 500);
+            setTimeout(() => applyMapSettings(mapOptions, attempt + 1), 500);
             return;
         }
 
         // Changer le fournisseur de carte
-        const mapButton = document.querySelector(`a[id="${mapOptions.tile_provider}"]`);
+        // Les boutons de choix de carte sont des <button id="OSM|stamenToner|vectorMap|watercolor">
+        // (migration Materialize -> Bootstrap 5) : cibler par id plutôt que par tag pour ne pas
+        // dépendre d'un élément <a> qui n'existe plus dans le DOM actuel.
+        const mapButton = document.getElementById(mapOptions.tile_provider);
         dbgProfiles('🎯 Bouton carte trouvé:', !!mapButton, 'ID:', mapOptions.tile_provider);
 
         if (mapButton) {
