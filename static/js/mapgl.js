@@ -407,6 +407,11 @@ let mrOnFinalizeRestoreTimePerDay = null;
 // Paramètres du compositing MR conservés au niveau module pour pouvoir relancer
 // la boucle de dessin après une mise en pause (onglet masqué, cf. C8).
 let mrDrawParams = null;
+// Canvas de sortie du mode images, réutilisé entre frames (P4) : le recréer à
+// chaque frame générait une pression GC inutile. Réutilisation sûre car la capture
+// est strictement séquentielle (toBlob résout avant la frame suivante).
+let imgOutCanvas = null;
+let imgOutCtx = null;
 // Garde « onglet masqué » (C8) : handlers visibilitychange + toast d'avertissement.
 let mrVisibilityHandler = null;
 let mrVisibilityToast = null;
@@ -417,7 +422,10 @@ let captureVisibilityToast = null;
 let bgAudioCtx = null, bgAudioEl = null, bgAudioSource = null, bgAudioGain = null, bgAudioActive = false;
 let mrAudioCtx = null, mrAudioSource = null, mrAudioDest = null, mrAudioGain = null, mrAudioEl = null, mrHadAudio = false;
 let blockBackgroundAudioPlayback = false;
-let mrMuxAudioCtx = null; // Contexte audio "déverrouillé" par un geste utilisateur pour le mux post-enregistrement
+// Le contexte audio "déverrouillé" par un geste utilisateur pour le mux
+// post-enregistrement est stocké sur window.mrMuxAudioCtx (voie unique, partagée
+// avec ui.js qui l'initialise au clic). Pas de variable module dédiée : elle
+// n'était jamais lue et divergeait de la voie window réellement utilisée (B9).
 
 // --- File d'upload bornée (mode images) ---
 // Découple la capture de l'upload : on n'attend plus la fin du POST avant de capturer
@@ -1814,6 +1822,17 @@ function scheduleCaptureFrame(pointOptions, flashOptions, infos) {
     });
 }
 
+// Bascule l'état « occupé » des boutons assembler/nettoyer/enregistrer (B6 : la
+// même séquence enable/disable était dupliquée dans plusieurs branches).
+function setAssembleUiBusy(busy) {
+    const assembleBtn = document.getElementById('btnAssembleMoviePictures');
+    const cleanBtn = document.getElementById('btnCleanMoviePictures');
+    const recordBtn = document.getElementById('btnRecordAnimation');
+    if (assembleBtn) { assembleBtn.disabled = busy; assembleBtn.textContent = busy ? 'Assemblage en cours...' : 'Assembler film'; }
+    if (cleanBtn) { cleanBtn.disabled = busy; cleanBtn.textContent = busy ? 'Nettoyage en cours...' : 'Nettoyer images'; }
+    if (recordBtn) { recordBtn.disabled = busy; }
+}
+
 // Retire la garde « onglet masqué » du mode images (C8) et ferme son toast.
 // Idempotent : sûr à appeler même si aucune garde n'est active.
 function removeCaptureVisibilityGuard() {
@@ -1829,6 +1848,7 @@ function abortRecordingOnError(error) {
 
     isRecording = false;
     removeCaptureVisibilityGuard();
+    imgOutCanvas = imgOutCtx = null; // libérer le canvas réutilisé (P4)
     try { recordingPerformanceMonitor.stopMonitoring(); } catch(_) {}
     try { blockBackgroundAudioPlayback = false; } catch(_) {}
 
@@ -1853,14 +1873,7 @@ function abortRecordingOnError(error) {
     } catch(_) {}
 
     // Réactiver les boutons et restaurer les contrôles
-    try {
-        const assembleBtn = document.getElementById('btnAssembleMoviePictures');
-        const cleanBtn = document.getElementById('btnCleanMoviePictures');
-        const recordBtn = document.getElementById('btnRecordAnimation');
-        if (assembleBtn) { assembleBtn.disabled = false; assembleBtn.textContent = 'Assembler film'; }
-        if (cleanBtn) { cleanBtn.disabled = false; cleanBtn.textContent = 'Nettoyer images'; }
-        if (recordBtn) { recordBtn.disabled = false; }
-    } catch(_) {}
+    try { setAssembleUiBusy(false); } catch(_) {}
     try { pkg.resetControlsToInitialState && pkg.resetControlsToInitialState(); } catch(_) {}
 
     // Informer l'utilisateur
@@ -1907,6 +1920,7 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
     if (!isRecording) {
         dbgMapgl('[CAPTURE] Enregistrement arrêté par l\'utilisateur');
         removeCaptureVisibilityGuard();
+        imgOutCanvas = imgOutCtx = null; // libérer le canvas réutilisé (P4)
 
         // Fermer le toast de chargement
         // IMPORTANT: ne pas utiliser de sélecteur large type [class*="toast"] qui peut matcher le conteneur (.gcm-toast-container)
@@ -1980,6 +1994,7 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
         // Traitement de fin
         isRecording = false; // Marquer la fin de l'enregistrement
         removeCaptureVisibilityGuard();
+        imgOutCanvas = imgOutCtx = null; // libérer le canvas réutilisé (P4)
 
         // Arrêter la surveillance des performances
         recordingPerformanceMonitor.stopMonitoring();
@@ -2030,21 +2045,7 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
         dbgMapgl('[RECORD END] Démarrage de l\'assemblage automatique...');
 
         // Désactiver temporairement les boutons pour éviter les clics multiples
-        const assembleBtn = document.getElementById('btnAssembleMoviePictures');
-        const cleanBtn = document.getElementById('btnCleanMoviePictures');
-        const recordBtn = document.getElementById('btnRecordAnimation');
-
-        if (assembleBtn) {
-          assembleBtn.disabled = true;
-          assembleBtn.textContent = 'Assemblage en cours...';
-        }
-        if (cleanBtn) {
-          cleanBtn.disabled = true;
-          cleanBtn.textContent = 'Nettoyage en cours...';
-        }
-        if (recordBtn) {
-          recordBtn.disabled = true;
-        }
+        setAssembleUiBusy(true);
 
         // Réutiliser la modal/loader existante pour garantir l'affichage (système qui marche déjà chez toi)
         try { pkg.openModalLoading('Assemblage en cours', 'Création de la vidéo à partir des images...'); } catch(e) { console.warn('openModalLoading erreur:', e); }
@@ -2083,12 +2084,8 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
             }
         };
 
-        // Réactive les boutons de l'UI (factorisé, utilisé dans plusieurs branches)
-        const reEnableRecordButtons = () => {
-          if (assembleBtn) { assembleBtn.disabled = false; assembleBtn.textContent = 'Assembler film'; }
-          if (cleanBtn) { cleanBtn.disabled = false; cleanBtn.textContent = 'Nettoyer images'; }
-          if (recordBtn) { recordBtn.disabled = false; }
-        };
+        // Réactive les boutons de l'UI (utilisé dans plusieurs branches)
+        const reEnableRecordButtons = () => setAssembleUiBusy(false);
 
         tryAssembleWithAudio()
           .then(response => { logToast('Réponse assemblage reçue, status:', response?.status); return response.json(); })
@@ -3038,15 +3035,26 @@ async function captureElement() {
                     const canvasWidth = Math.max(1, Math.floor(rect.width * dpr));
                     const canvasHeight = Math.max(1, Math.floor(rect.height * dpr));
 
-                    // Créer un canvas de sortie
-                    // Pas de willReadFrequently : canvas jamais relu (uniquement composité puis toBlob).
-                    // willReadFrequently:true forçait un backing store CPU → compositing lent.
-                    const outCanvas = document.createElement('canvas');
-                    outCanvas.width = canvasWidth;
-                    outCanvas.height = canvasHeight;
-                    const ctx = outCanvas.getContext('2d');
+                    // Canvas de sortie réutilisé entre frames (P4). Pas de
+                    // willReadFrequently : canvas jamais relu (uniquement composité puis
+                    // toBlob) ; willReadFrequently:true forçait un backing store CPU.
+                    if (!imgOutCanvas) {
+                        imgOutCanvas = document.createElement('canvas');
+                        imgOutCtx = imgOutCanvas.getContext('2d');
+                    }
+                    // Ne redimensionner (ce qui réinitialise le bitmap) que si nécessaire.
+                    if (imgOutCanvas.width !== canvasWidth || imgOutCanvas.height !== canvasHeight) {
+                        imgOutCanvas.width = canvasWidth;
+                        imgOutCanvas.height = canvasHeight;
+                    }
+                    const outCanvas = imgOutCanvas;
+                    const ctx = imgOutCtx;
+                    // Effacer la frame précédente (canvas réutilisé) avant de recomposer.
+                    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
-                    // Composer tous les canvas (carte + points WebGL + animations)
+                    // Composer tous les canvas (carte + points WebGL + animations).
+                    // Chaque canvas OL couvre le même viewport : l'étirer vers la taille de
+                    // sortie mappe correctement les sources de résolution différente (P6).
                     allCanvases.forEach(canvas => {
                         if (canvas.width > 0 && canvas.height > 0) {
                             ctx.drawImage(canvas, 0, 0, canvasWidth, canvasHeight);
@@ -3079,12 +3087,9 @@ async function captureElement() {
                         // Upload en tâche de fond (ne bloque pas la frame suivante)
                         enqueueImageUpload(blob, imageCounter++);
 
-                        // Surveillance des performances (temps de capture seul, upload désormais async)
-                        try {
-                            const totalCaptureTime = performance.now() - captureStart;
-                            const expectedFrameTime = pkg.options?.animation?.timePerDay || 100;
-                            recordingPerformanceMonitor.checkPerformance(totalCaptureTime, expectedFrameTime, 'images');
-                        } catch(e) {}
+                        // NB : recordingPerformanceMonitor.checkPerformance ignore le mode
+                        // images (return anticipé) ; on ne l'appelle donc plus ici. Le suivi
+                        // du temps de capture se fait via perfMetrics (bilan de fin).
 
                         try { updateProgress(); } catch(e) {}
                         resolve();
@@ -3419,8 +3424,7 @@ function displayInfosForDate(infos, date, featuresForDate) {
 
 // -------------- FLASH ---------------------------------------
 
-function flashRecord(features) {
-    const flashOptions = pkg.options.flash;
+function flashRecord(features, flashOptions = pkg.options.flash) {
     const maxFrames = Math.max(1, pkg.options.record.flashFrames || 1);
     // Capturer la valeur de globalRecordFrame au moment de l'appel (frame de départ du flash)
     const startFrame = globalRecordFrame;
