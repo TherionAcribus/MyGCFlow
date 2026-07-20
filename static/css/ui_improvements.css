@@ -1141,20 +1141,6 @@ border-radius: 8px;
 background: rgba(33, 150, 243, 0.04);
 }
 
-.gc-css-unmanaged {
-display: inline-flex;
-align-items: center;
-border: 1px solid #ffb74d;
-color: #e65100;
-background-color: #fff3e0;
-border-radius: 6px;
-padding: 0 10px;
-line-height: 26px;
-height: 26px;
-font-weight: 600;
-font-size: 0.8rem;
-}
-
 /* =====================================================================
    Composants post-migration Tabler
    ===================================================================== */
@@ -1569,15 +1555,19 @@ font-size: 0.8rem;
 .gc-css-unmanaged {
     display: inline-flex;
     align-items: center;
-    border: 1px solid var(--color-warning);
-    color: var(--color-warning);
-    background-color: rgba(239, 108, 0, 0.1);
-    border-radius: 6px;
-    padding: 0 10px;
-    line-height: 26px;
-    height: 26px;
-    font-weight: 600;
-    font-size: 0.8rem;
+    justify-content: center;
+    flex: 0 0 1.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 1px solid var(--color-accent);
+    color: var(--color-accent);
+    background-color: var(--color-accent-weak);
+    border-radius: 50%;
+    padding: 0;
+    line-height: 1;
+    font-weight: 700;
+    font-size: 0.875rem;
+    cursor: help;
 }
 
 /* Panneau d'infos (Titre/Infos) */

@@ -3662,13 +3662,12 @@ function initCssAssistant() {
 
     function setBadgeCount(count) {
         if (!badgeUnmanaged) return;
-        if (count && count > 0) {
-            badgeUnmanaged.textContent = `Non pris en compte: ${count}`;
-            badgeUnmanaged.style.display = 'inline-flex';
-        } else {
-            badgeUnmanaged.textContent = '';
-            badgeUnmanaged.style.display = 'none';
-        }
+        // Cette icône est une aide permanente, pas un voyant d'état du profil.
+        // Le comptage reste disponible pour le diagnostic interne du formulaire,
+        // mais ne doit jamais afficher ou masquer le point d'interrogation.
+        void count;
+        badgeUnmanaged.textContent = '?';
+        badgeUnmanaged.style.display = 'inline-flex';
     }
 
     function getTextareaForTarget(t) {
@@ -4054,6 +4053,16 @@ function initCssAssistant() {
     window.gcCssAssistantSyncFromTextareas = function() {
         syncFormFromCss(activeTarget);
     };
+
+    // Le profil par défaut est appliqué de façon asynchrone après
+    // l'initialisation de ce panneau. Recalculer une dernière fois l'état
+    // sur le CSS effectivement actif lorsque toute l'application est prête.
+    const syncWhenAppIsReady = () => syncFormFromCss(activeTarget);
+    if (window.gcmapReady) {
+        syncWhenAppIsReady();
+    } else {
+        window.addEventListener('gcmap:ready', syncWhenAppIsReady, { once: true });
+    }
 
     // Forcer la sélection initiale sur Titre
     switchTarget('title');
