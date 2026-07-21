@@ -3216,6 +3216,8 @@ function buildOverlayCache(scaleFactor) {
         const y = Math.round((rect.top - containerRect.top) * scaleFactor);
         const w = Math.round(rect.width * scaleFactor);
         const h = Math.round(rect.height * scaleFactor);
+        const rightGap = Math.max(0, Math.round((containerRect.right - rect.right) * scaleFactor));
+        const bottomGap = Math.max(0, Math.round((containerRect.bottom - rect.bottom) * scaleFactor));
 
         const bg = style.backgroundColor || 'rgba(255,255,255,1)';
         const color = style.color || '#000';
@@ -3253,10 +3255,18 @@ function buildOverlayCache(scaleFactor) {
             top: borderFor('Top'), right: borderFor('Right'),
             bottom: borderFor('Bottom'), left: borderFor('Left'),
         };
-        const parseInset = (value) => {
-            const parsed = parseFloat(value);
-            return Number.isFinite(parsed) ? parsed * scaleFactor : null;
-        };
+        const inlineLeft = el.style.left && el.style.left !== 'auto';
+        const inlineRight = el.style.right && el.style.right !== 'auto';
+        const inlineTop = el.style.top && el.style.top !== 'auto';
+        const inlineBottom = el.style.bottom && el.style.bottom !== 'auto';
+        const horizontalAnchor = inlineLeft && inlineRight ? 'both'
+            : inlineRight ? 'right'
+            : inlineLeft ? 'left'
+            : (rightGap < x ? 'right' : 'left');
+        const verticalAnchor = inlineTop && inlineBottom ? 'both'
+            : inlineBottom ? 'bottom'
+            : inlineTop ? 'top'
+            : (bottomGap < y ? 'bottom' : 'top');
 
         const parsedOpacity = parseFloat(style.opacity);
         return {
@@ -3269,8 +3279,9 @@ function buildOverlayCache(scaleFactor) {
             textTransform: style.textTransform || 'none',
             backgroundImage: style.backgroundImage || 'none',
             zIndex: Number.isFinite(parseInt(style.zIndex, 10)) ? parseInt(style.zIndex, 10) : 0,
-            leftInset: parseInset(style.left), rightInset: parseInset(style.right),
-            topInset: parseInset(style.top), bottomInset: parseInset(style.bottom),
+            leftGap: Math.max(0, x), rightGap,
+            topGap: Math.max(0, y), bottomGap,
+            horizontalAnchor, verticalAnchor,
             lineGap: Math.round((Number.isFinite(lineHeightCss) ? lineHeightCss : fontSizePx * 1.2) * scaleFactor),
         };
     };
@@ -3301,6 +3312,22 @@ export function getOverlayTextContent() {
     return { title, infos: infoParts.join(' - ') };
 }
 
+function getReservedInfosText() {
+    const opts = pkg.options?.infos;
+    const parts = [];
+    if (opts?.numberOfCaches?.display === true) {
+        const currentValue = Number.parseInt(document.getElementById('spanNbCaches')?.textContent || '0', 10) || 0;
+        const finalValue = Number(pkg.metadata?.numberOfCaches) || 0;
+        parts.push(String(Math.max(0, currentValue, finalValue)));
+    }
+    if (opts?.currentDate?.display === true) {
+        // Avec une police proportionnelle, 8 est généralement le chiffre le plus large.
+        // Cette valeur réserve donc une largeur sûre pour toutes les dates jj/mm/aaaa.
+        parts.push('88/88/8888');
+    }
+    return parts.join(' - ');
+}
+
 export function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor = 1) {
     if (!overlayCache || overlayCache.scaleFactor !== scaleFactor || overlayCache.revision !== overlayCacheRevision) {
         buildOverlayCache(scaleFactor);
@@ -3315,7 +3342,8 @@ export function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor 
             const { x, y, w, h, bg, color, radius, padL, padR, padT, padB, font, fontPx, textAlignCss,
                     hasShadow, shColor, shBlur, shSpread, shOffX, shOffY, lineGap,
                     borders, opacity, letterSpacing, textTransform, backgroundImage,
-                    leftInset, rightInset, topInset, bottomInset } = cached;
+                    leftGap, rightGap, topGap, bottomGap,
+                    horizontalAnchor, verticalAnchor } = cached;
 
             // CSS applique opacity au groupe complet. Dessiner directement chaque primitive
             // avec globalAlpha cumulerait l'alpha aux intersections texte/fond/bordure.
@@ -3328,8 +3356,8 @@ export function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor 
             paintCtx.textBaseline = 'alphabetic';
 
             const transformedText = transformOverlayText(String(text), textTransform);
-            const leftMargin = leftInset !== null ? Math.max(0, leftInset) : Math.max(0, x);
-            const rightMargin = rightInset !== null ? Math.max(0, rightInset) : 0;
+            const leftMargin = horizontalAnchor === 'right' ? 0 : leftGap;
+            const rightMargin = horizontalAnchor === 'left' ? 0 : rightGap;
             const availableBoxWidth = Math.max(1, canvasWidth - leftMargin - rightMargin);
             const availableTextWidth = Math.max(1, availableBoxWidth - padL - padR);
             const lines = transformedText
@@ -3345,6 +3373,13 @@ export function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor 
                 const measured = measureOverlayText(paintCtx, line, letterSpacing);
                 if (measured > maxTextW) maxTextW = measured;
             }
+            if (cached.el.id === 'infosFrame') {
+                const reservedText = transformOverlayText(getReservedInfosText(), textTransform);
+                maxTextW = Math.max(
+                    maxTextW,
+                    Math.min(availableTextWidth, measureOverlayText(paintCtx, reservedText, letterSpacing)),
+                );
+            }
             // Métriques verticales (fallback si actualBoundingBox non disponible)
             const fm = paintCtx.measureText('Mg');
             const ascent = fm.actualBoundingBoxAscent || (fontPx * 0.8);
@@ -3357,8 +3392,10 @@ export function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor 
             const drawH = Math.min(canvasHeight, Math.max(h, Math.ceil(padT + textBlockH + padB)));
             let drawX = x;
             let drawY = y;
-            if (rightInset !== null && leftInset === null) drawX = canvasWidth - rightInset - drawW;
-            if (bottomInset !== null && topInset === null) drawY = canvasHeight - bottomInset - drawH;
+            if (horizontalAnchor === 'right') drawX = canvasWidth - rightGap - drawW;
+            else if (horizontalAnchor === 'both') drawX = leftGap;
+            if (verticalAnchor === 'bottom') drawY = canvasHeight - bottomGap - drawH;
+            else if (verticalAnchor === 'both') drawY = topGap;
             drawX = Math.max(0, Math.min(canvasWidth - drawW, drawX));
             drawY = Math.max(0, Math.min(canvasHeight - drawH, drawY));
 

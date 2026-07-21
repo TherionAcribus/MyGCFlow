@@ -99,6 +99,57 @@ test('le contenu exporté respecte séparément compteur et date', async ({ page
 });
 
 
+test('l’Overlay Infos réserve dès le départ la largeur du compteur final', async ({ page }) => {
+  const boxes = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    app.options.infos.title.display = false;
+    app.options.infos.numberOfCaches.display = true;
+    app.options.infos.currentDate.display = true;
+    app.metadata.numberOfCaches = 123456;
+    app.updateCurrentDate(new Date(2026, 6, 21));
+    app.changeInfosCssValues([
+      'padding: 8px',
+      'font: 20px Arial',
+      'color: #ff0000',
+      'background: #ff0000',
+      'border: 0',
+      'box-shadow: none',
+    ].join(';'));
+
+    const renderBox = (count) => {
+      app.updateNbCaches(count);
+      const canvas = document.createElement('canvas');
+      canvas.width = 420;
+      canvas.height = 120;
+      app.addOverlaysToCanvas(canvas.getContext('2d'), canvas.width, canvas.height, 1);
+      const pixels = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
+      let minX = canvas.width;
+      let maxX = -1;
+      let minY = canvas.height;
+      let maxY = -1;
+      for (let y = 0; y < canvas.height; y += 1) {
+        for (let x = 0; x < canvas.width; x += 1) {
+          if (!pixels[(y * canvas.width + x) * 4 + 3]) continue;
+          minX = Math.min(minX, x);
+          maxX = Math.max(maxX, x);
+          minY = Math.min(minY, y);
+          maxY = Math.max(maxY, y);
+        }
+      }
+      return { minX, maxX, minY, maxY, width: maxX - minX + 1, height: maxY - minY + 1 };
+    };
+
+    return { initial: renderBox(0), final: renderBox(123456) };
+  });
+
+  expect(boxes.initial.width).toBe(boxes.final.width);
+  expect(boxes.initial.height).toBe(boxes.final.height);
+  expect(boxes.initial.height).toBeLessThan(50);
+  expect(boxes.initial.maxX).toBe(boxes.final.maxX);
+  expect(boxes.initial.maxX).toBeLessThan(420);
+});
+
+
 test('l’assistant simple conserve les propriétés CSS avancées', async ({ page }) => {
   await page.locator('a[href="#style"]').click();
   await page.evaluate(async () => {
