@@ -1717,10 +1717,31 @@ async function changeOptionsValues() {
         console.warn('Paramètres sauvegardés localement seulement');
     }
 
-    // Si la langue a changé, afficher la modale de confirmation
+    // Si la langue a changé, l'appliquer immédiatement : le backend rend les
+    // templates traduits selon le cookie/localStorage, un rechargement suffit.
     if (newLanguage !== currentLanguage) {
-        openLanguageChangeModal(newLanguage, currentLanguage);
+        reloadWithLanguage(newLanguage);
     }
+}
+
+// Recharge la page pour appliquer la nouvelle langue, en conservant l'onglet
+// actif. La préférence a déjà été persistée (navigateur + backend) par l'appelant.
+function reloadWithLanguage(newLanguage) {
+    persistLanguagePreference(newLanguage);
+
+    // Conserver l'onglet actif sans dépendre du paramètre ?lang
+    const url = new URL(window.location);
+    url.searchParams.delete('lang');
+
+    const activeTab = localStorage.getItem('activeTab');
+    if (activeTab && activeTab !== 'data') { // 'data' est l'onglet par défaut
+        url.hash = activeTab;
+    }
+
+    // Recharger avec la nouvelle langue (détectée via cookie/localStorage)
+    window.location.replace(url.toString());
+    // Sécurité : forcer un reload même si l'URL est identique
+    setTimeout(() => window.location.reload(), 100);
 }
 
 // ----------- ENREGISTREMENT (UI -> options.record) ------------
@@ -4537,196 +4558,4 @@ async function getAudioDuration(file) {
             reject(e);
         }
     });
-}
-
-// Fonction pour ouvrir une modale de confirmation de changement de langue
-function openLanguageChangeModal(newLanguage, currentLanguage) {
-    // Créer l'ID unique pour la modal
-    const modalId = 'language-change-modal-' + Date.now();
-
-    // Déterminer les noms des langues
-    const languageNames = {
-        'fr': { fr: 'Français', en: 'French' },
-        'en': { fr: 'Anglais', en: 'English' }
-    };
-
-    // Déterminer les textes selon la langue actuelle et cible
-    let title, message, confirmText, cancelText;
-
-    if (window.TRANSLATIONS) {
-        // Titre dans la langue actuelle
-        if (currentLanguage === 'en') {
-            title = window.TRANSLATIONS.language_change_title_en || 'Language Change';
-        } else {
-            title = window.TRANSLATIONS.language_change_title || 'Changement de langue';
-        }
-
-        // Question bilingue : langue actuelle + langue cible
-        const targetLangNameCurrent = languageNames[newLanguage][currentLanguage] || newLanguage.toUpperCase();
-        const targetLangNameTarget = languageNames[newLanguage][newLanguage] || newLanguage.toUpperCase();
-
-        const switchTextCurrent = currentLanguage === 'en' ?
-            `Switch to ${targetLangNameCurrent}?` :
-            `Passer en ${targetLangNameCurrent} ?`;
-
-        const switchTextTarget = newLanguage === 'en' ?
-            `Switch to ${targetLangNameTarget}?` :
-            `Passer en ${targetLangNameTarget} ?`;
-
-        const messageCurrent = currentLanguage === 'en' ?
-            'The language will be changed. The application will restart to apply the changes.' :
-            'La langue va être changée. L\'application va redémarrer pour appliquer les modifications.';
-
-        const messageTarget = newLanguage === 'en' ?
-            'The language will be changed. The application will restart to apply the changes.' :
-            'La langue va être changée. L\'application va redémarrer pour appliquer les modifications.';
-
-        message = `<div class="language-change-message">
-            <div class="bilingual-question">
-                <div class="lang-current"><strong>${switchTextCurrent}</strong></div>
-                <div class="lang-target"><strong>${switchTextTarget}</strong></div>
-            </div>
-            <div class="bilingual-message">
-                <div class="lang-current">${messageCurrent}</div>
-                <div class="lang-target">${messageTarget}</div>
-            </div>
-        </div>`;
-
-        // Boutons dans la langue actuelle
-        if (currentLanguage === 'en') {
-            confirmText = window.TRANSLATIONS.confirm_en || 'Confirm';
-            cancelText = window.TRANSLATIONS.cancel_en || 'Cancel';
-        } else {
-            confirmText = window.TRANSLATIONS.confirm || 'Confirmer';
-            cancelText = window.TRANSLATIONS.cancel || 'Annuler';
-        }
-    } else {
-        // Fallback si les traductions ne sont pas chargées
-        const targetLangNameCurrent = languageNames[newLanguage][currentLanguage] || newLanguage.toUpperCase();
-        const targetLangNameTarget = languageNames[newLanguage][newLanguage] || newLanguage.toUpperCase();
-
-        const switchTextCurrent = currentLanguage === 'en' ?
-            `Switch to ${targetLangNameCurrent}?` :
-            `Passer en ${targetLangNameCurrent} ?`;
-
-        const switchTextTarget = newLanguage === 'en' ?
-            `Switch to ${targetLangNameTarget}?` :
-            `Passer en ${targetLangNameTarget} ?`;
-
-        if (currentLanguage === 'en') {
-            title = 'Language Change';
-            message = `<div class="language-change-message">
-                <div class="bilingual-question">
-                    <div class="lang-current"><strong>${switchTextCurrent}</strong></div>
-                    <div class="lang-target"><strong>${switchTextTarget}</strong></div>
-                </div>
-                <div class="bilingual-message">
-                    <div class="lang-current">The language will be changed. The application will restart to apply the changes.</div>
-                    <div class="lang-target">La langue va être changée. L'application va redémarrer pour appliquer les modifications.</div>
-                </div>
-            </div>`;
-            confirmText = 'Confirm';
-            cancelText = 'Cancel';
-        } else {
-            title = 'Changement de langue';
-            message = `<div class="language-change-message">
-                <div class="bilingual-question">
-                    <div class="lang-current"><strong>${switchTextCurrent}</strong></div>
-                    <div class="lang-target"><strong>${switchTextTarget}</strong></div>
-                </div>
-                <div class="bilingual-message">
-                    <div class="lang-current">La langue va être changée. L'application va redémarrer pour appliquer les modifications.</div>
-                    <div class="lang-target">The language will be changed. The application will restart to apply the changes.</div>
-                </div>
-            </div>`;
-            confirmText = 'Confirmer';
-            cancelText = 'Annuler';
-        }
-    }
-
-    // Créer le contenu HTML de la modal Bootstrap 5
-    const modalHTML = `
-        <div id="${modalId}" class="modal bs-modal" tabindex="-1">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title text-center">${title}</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        ${message}
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary modal-close" data-bs-dismiss="modal">${cancelText}</button>
-                        <button type="button" id="confirm-language-change" class="btn btn-primary">${confirmText}</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <style>
-            #${modalId} .language-change-message {
-                text-align: center;
-                margin: 20px 0;
-            }
-            #${modalId} .bilingual-question {
-                margin-bottom: 15px;
-                padding-bottom: 10px;
-                border-bottom: 1px solid #e0e0e0;
-            }
-            #${modalId} .bilingual-message {
-                padding-top: 15px;
-                margin-top: 15px;
-            }
-            #${modalId} .lang-current {
-                margin-bottom: 8px;
-                font-weight: 500;
-                color: #424242;
-            }
-            #${modalId} .lang-target {
-                font-style: italic;
-                color: #666;
-                font-size: 0.9em;
-            }
-        </style>
-    `;
-
-    // Ajouter la modal au DOM
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-
-    // Initialiser et ouvrir la modal Bootstrap 5
-    const modalElement = document.getElementById(modalId);
-    const bsModal = new bootstrap.Modal(modalElement, {
-        backdrop: 'static', // Empêcher la fermeture en cliquant à l'extérieur
-        keyboard: false
-    });
-    // Nettoyer la modal du DOM après fermeture
-    modalElement.addEventListener('hidden.bs.modal', function() {
-        modalElement.remove();
-    });
-    bsModal.show();
-
-    // Gérer le clic sur le bouton de confirmation
-    document.getElementById('confirm-language-change').addEventListener('click', function() {
-        bsModal.hide();
-        // Persister la langue côté navigateur + backend
-        persistLanguagePreference(newLanguage);
-
-        // Recharger la page en conservant l'onglet actif (sans dépendre du paramètre lang)
-        const url = new URL(window.location);
-        url.searchParams.delete('lang');
-
-        // Récupérer l'onglet actif actuel et l'ajouter à l'URL
-        const activeTab = localStorage.getItem('activeTab');
-        if (activeTab && activeTab !== 'data') { // 'data' est l'onglet par défaut
-            url.hash = activeTab;
-        }
-
-        // Recharger la page avec la nouvelle langue (détectée via cookie/localStorage)
-        window.location.replace(url.toString());
-        // Sécurité : forcer un reload même si l'URL est identique
-        setTimeout(() => window.location.reload(), 100);
-    });
-
-    // Ouvrir la modal
-    modalInstance.open();
 }
