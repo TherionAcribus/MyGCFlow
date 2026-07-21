@@ -44,21 +44,3 @@ export function recordingQualityProfileFor(fps, bitrateMbps) {
     ));
     return match ? match[0] : 'custom';
 }
-
-export function estimateRecordingSizeBytes({ bitrateMbps, durationMs }) {
-    const safeBitrate = normalizeRecordingBitrateMbps(bitrateMbps);
-    const safeDurationMs = Math.max(0, finiteNumber(durationMs, 0));
-    return safeBitrate * 1_000_000 * (safeDurationMs / 1000) / 8;
-}
-
-export function formatEstimatedFileSize(bytes) {
-    const safeBytes = Math.max(0, finiteNumber(bytes, 0));
-    const megabytes = safeBytes / 1_000_000;
-    if (megabytes >= 1000) {
-        return `${(megabytes / 1000).toFixed(1)} Go`;
-    }
-    if (megabytes >= 100) {
-        return `${Math.round(megabytes)} Mo`;
-    }
-    return `${megabytes.toFixed(1)} Mo`;
-}

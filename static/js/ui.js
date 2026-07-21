@@ -4,8 +4,6 @@ import { automaticEndHoldMs } from './video_timing.mjs';
 import {
     RECORDING_LIMITS,
     RECORDING_QUALITY_PROFILES,
-    estimateRecordingSizeBytes,
-    formatEstimatedFileSize,
     isValidRecordingInteger,
     normalizeRecordingBitrateMbps,
     normalizeRecordingFps,
@@ -132,41 +130,6 @@ function applyRecordingQualityProfile() {
     setRecordingInputValidity(inputRecordBitrate, RECORDING_LIMITS.bitrateMbps);
     if (recordAdvancedSettings) recordAdvancedSettings.open = false;
     changeRecordValues();
-}
-
-function recordingOutputDurationMs() {
-    const calculatedDuration = Number(pkg.options.record?.totalTimeInMilliSec);
-    const fallbackDuration = (
-        Math.max(1, Number(pkg.metadata?.deltaDays) || 1)
-        * Math.max(0, Number(pkg.options.animation?.timePerDay) || 0)
-    ) + getExtraEndMs() + getAutomaticEndHoldMs();
-    const baseDuration = Number.isFinite(calculatedDuration) && calculatedDuration > 0
-        ? calculatedDuration
-        : fallbackDuration;
-    const slowdown = Math.max(1, Number(pkg.options.record?.mediaRecorder?.slowdownFactor) || 1);
-    const normalize = pkg.options.record?.mediaRecorder?.offlineNormalization ?? true;
-    return baseDuration * (normalize ? 1 : slowdown);
-}
-
-function formatEstimatedDuration(durationMs) {
-    const totalSeconds = Math.max(0, Math.round(Number(durationMs) / 1000));
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return minutes > 0 ? `${minutes} min ${seconds} s` : `${seconds} s`;
-}
-
-function updateRecordingSizeEstimate() {
-    const sizeElement = document.getElementById('recordEstimatedSize');
-    const durationElement = document.getElementById('recordEstimatedDuration');
-    if (!sizeElement || !durationElement) return;
-    const durationMs = recordingOutputDurationMs();
-    const bitrateMbps = normalizeRecordingBitrateMbps(
-        Number(pkg.options.record?.mediaRecorder?.videoBitsPerSecond) / 1_000_000
-    );
-    sizeElement.textContent = formatEstimatedFileSize(
-        estimateRecordingSizeBytes({ bitrateMbps, durationMs })
-    );
-    durationElement.textContent = formatEstimatedDuration(durationMs);
 }
 
 // Fonction pour mettre à jour l'apparence du label selon si la durée est lockée
@@ -1710,7 +1673,6 @@ function initOptionsUI() {
         updateAudioDurationButton();
         // Initialiser l'indicateur de durée lockée
         updateDurationLockIndicator();
-        updateRecordingSizeEstimate();
     } catch(e) { console.warn('Init enregistrement UI error:', e); }
 }
 
@@ -1836,7 +1798,6 @@ function changeRecordValues() {
         // Si la durée vient de la musique, conserver cette cible autant que possible.
         if (isDurationLockedToAudio) updateTimePerDay();
         pkg.updateInfosForPictures();
-        updateRecordingSizeEstimate();
     } catch(e) {
         console.warn('changeRecordValues error:', e);
     }
@@ -3362,7 +3323,6 @@ function updateTotalTime(){
         inputTotalTime.value = (totalTimeInMilliSec / 60 / 1000).toFixed(4);
     }
     updateTimeBreakdown(baseTimeMs, extraMs, automaticHoldMs, totalTimeInMilliSec);
-    updateRecordingSizeEstimate();
 }
 
 function updateTimePerDay(){
@@ -3380,7 +3340,6 @@ function updateTimePerDay(){
     pkg.options.record.totalTimeInMilliSec = baseTimeMs + extraMs + automaticHoldMs;
     // Mettre à jour l'affichage des minutes/secondes et du détail
     updateTimeBreakdown(baseTimeMs, extraMs, automaticHoldMs, pkg.options.record.totalTimeInMilliSec);
-    updateRecordingSizeEstimate();
 }
 
 function updateTimeBreakdown(baseMs, extraMs, automaticHoldMs, totalMs){

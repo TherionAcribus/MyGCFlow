@@ -3,8 +3,6 @@ import assert from 'node:assert/strict';
 
 import {
     RECORDING_LIMITS,
-    estimateRecordingSizeBytes,
-    formatEstimatedFileSize,
     isValidRecordingInteger,
     normalizeRecordingBitrateMbps,
     normalizeRecordingFps,
@@ -37,11 +35,4 @@ test('les profils sont détectés uniquement sur une correspondance exacte', () 
     assert.equal(recordingQualityProfileFor(30, 6), 'standard');
     assert.equal(recordingQualityProfileFor(60, 12), 'fluid');
     assert.equal(recordingQualityProfileFor(30, 8), 'custom');
-});
-
-test('la taille estimée dépend du bitrate et de la durée', () => {
-    const bytes = estimateRecordingSizeBytes({ bitrateMbps: 6, durationMs: 60_000 });
-    assert.equal(bytes, 45_000_000);
-    assert.equal(formatEstimatedFileSize(bytes), '45.0 Mo');
-    assert.equal(formatEstimatedFileSize(1_250_000_000), '1.3 Go');
 });

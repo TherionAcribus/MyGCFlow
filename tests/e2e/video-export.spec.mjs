@@ -137,7 +137,6 @@ test('les profils vidéo et les bornes corrigent les valeurs excessives', async 
   await expect(fps).toHaveValue('30');
   await expect(bitrate).toHaveValue('6');
   await expect(advanced).not.toHaveAttribute('open', '');
-  await expect(page.locator('#recordEstimatedSize')).not.toHaveText('—');
 });
 
 
