@@ -1381,35 +1381,83 @@ msgid ""
 "plus flexible mais plus lent"
 msgstr "MediaRecorder : enregistrement direct en WebM côté navigateur, rapide et léger. Images + MoviePy : capture d'images puis assemblage côté serveur, plus flexible mais plus lent"
 
-#: templates/menu_options.html:105
+#: templates/menu_recording.html:8
 msgid "MediaRecorder .webm (client)"
 msgstr "MediaRecorder .webm (client)"
 
-#: templates/menu_options.html:106
+#: templates/menu_recording.html:9
 msgid "Images + MoviePy (serveur)"
 msgstr "Images + MoviePy (serveur)"
 
-#: templates/menu_options.html:111
+#: templates/menu_recording.html:13
+msgid "Qualité vidéo"
+msgstr "Qualité vidéo"
+
+#: templates/menu_recording.html:15
+msgid "Économique — 24 FPS / 4 Mbps"
+msgstr "Économique — 24 FPS / 4 Mbps"
+
+#: templates/menu_recording.html:16
+msgid "Standard — 30 FPS / 6 Mbps"
+msgstr "Standard — 30 FPS / 6 Mbps"
+
+#: templates/menu_recording.html:17
+msgid "Fluide — 60 FPS / 12 Mbps"
+msgstr "Fluide — 60 FPS / 12 Mbps"
+
+#: templates/menu_recording.html:18
+msgid "Personnalisée"
+msgstr "Personnalisée"
+
+#: templates/menu_recording.html:25
+msgid "Taille estimée"
+msgstr "Taille estimée"
+
+#: templates/menu_recording.html:27
+msgid "pour environ"
+msgstr "pour environ"
+
+#: templates/menu_recording.html:32
+msgid "Réglages avancés"
+msgstr "Réglages avancés"
+
+#: templates/menu_recording.html:36
 msgid "FPS"
 msgstr "FPS"
 
-#: templates/menu_options.html:112
+#: templates/menu_recording.html:37
 msgid ""
-"Nombre d'images capturées par seconde. 30 FPS = vidéo fluide, 60 FPS = "
-"ultra-fluide mais fichier 2x plus lourd. Adapté à votre débit internet et"
-" puissance machine"
-msgstr "Nombre d'images capturées par seconde. 30 FPS = vidéo fluide, 60 FPS = ultra-fluide mais fichier 2x plus lourd. Adapté à votre débit internet et puissance machine"
+"Nombre d'images capturées par seconde. Les valeurs élevées demandent "
+"davantage de puissance ; à bitrate constant, elles ne doublent pas "
+"automatiquement la taille du fichier."
+msgstr "Nombre d'images capturées par seconde. Les valeurs élevées demandent davantage de puissance ; à bitrate constant, elles ne doublent pas automatiquement la taille du fichier."
 
-#: templates/menu_options.html:118
+#: templates/menu_recording.html:40
+msgid "Valeur autorisée : de 1 à 60 FPS."
+msgstr "Valeur autorisée : de 1 à 60 FPS."
+
+#: templates/menu_recording.html:41
+msgid "24 ou 30 FPS conviennent à la plupart des vidéos."
+msgstr "24 ou 30 FPS conviennent à la plupart des vidéos."
+
+#: templates/menu_recording.html:45
 msgid "Bitrate vidéo (Mbps)"
 msgstr "Bitrate vidéo (Mbps)"
 
-#: templates/menu_options.html:119
+#: templates/menu_recording.html:46
 msgid ""
-"Débit de données vidéo en mégabits/seconde. 1Mbps = bonne qualité, 5Mbps "
-"= haute qualité, 10Mbps = excellente qualité. Fichier plus lourd avec "
-"débit élevé"
-msgstr "Débit de données vidéo en mégabits/seconde. 1Mbps = bonne qualité, 5Mbps = haute qualité, 10Mbps = excellente qualité. Fichier plus lourd avec débit élevé"
+"Débit vidéo cible. Une valeur élevée améliore la netteté mais augmente "
+"directement la taille du fichier. La valeur réellement utilisée peut "
+"dépendre du navigateur et du codec."
+msgstr "Débit vidéo cible. Une valeur élevée améliore la netteté mais augmente directement la taille du fichier. La valeur réellement utilisée peut dépendre du navigateur et du codec."
+
+#: templates/menu_recording.html:49
+msgid "Valeur autorisée : de 1 à 30 Mbps."
+msgstr "Valeur autorisée : de 1 à 30 Mbps."
+
+#: templates/menu_recording.html:50
+msgid "6 Mbps offrent un bon équilibre pour un usage courant."
+msgstr "6 Mbps offrent un bon équilibre pour un usage courant."
 
 #: templates/menu_options.html:125
 msgid "Ralentir par (x)"

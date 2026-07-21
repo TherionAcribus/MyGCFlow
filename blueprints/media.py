@@ -20,16 +20,16 @@ from task_manager import task_manager
 media_bp = Blueprint('media', __name__)
 
 # FPS d'assemblage par défaut (utilisé si le client n'en fournit pas)
-DEFAULT_FPS = 24
+DEFAULT_FPS = 30
 
 
 def _parse_fps(raw, default=DEFAULT_FPS):
-    """Convertit une valeur FPS reçue du client en entier valide (borné 1..240)."""
+    """Convertit une valeur FPS reçue du client en entier valide (borné 1..60)."""
     try:
         fps = int(round(float(raw)))
     except (TypeError, ValueError):
         return default
-    return max(1, min(240, fps))
+    return max(1, min(60, fps))
 
 
 @media_bp.route('/upload_image', methods=['POST'])

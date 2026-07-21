@@ -1,4 +1,4 @@
-const DEFAULT_FPS = 24;
+const DEFAULT_FPS = 30;
 const DEFAULT_END_HOLD_MS = 3000;
 
 function finiteNumber(value, fallback = 0) {
@@ -7,7 +7,7 @@ function finiteNumber(value, fallback = 0) {
 }
 
 export function normalizeVideoFps(value, fallback = DEFAULT_FPS) {
-    return Math.max(1, Math.min(240, Math.round(finiteNumber(value, fallback))));
+    return Math.max(1, Math.min(60, Math.round(finiteNumber(value, fallback))));
 }
 
 export function serverNormalizationFactor(slowdown, normalizeEnabled) {

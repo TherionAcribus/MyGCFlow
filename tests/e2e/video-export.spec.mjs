@@ -96,6 +96,51 @@ test('l\'import GPX et le filtre Type alimentent la vraie timeline', async ({ pa
 });
 
 
+test('les profils vidéo et les bornes corrigent les valeurs excessives', async ({ page }) => {
+  await page.locator('a[href="#animation"]').click();
+  await page.locator('#recordingConfigTab').click();
+  await expect(page.locator('#recordingConfigPane')).toBeVisible();
+  await page.evaluate(() => {
+    document.querySelector('#selectRecordMode').tomselect.setValue('mediarecorder');
+  });
+
+  const advanced = page.locator('#recordAdvancedSettings');
+  if (!(await advanced.evaluate((element) => element.open))) {
+    await advanced.locator('summary').click();
+  }
+
+  const fps = page.locator('#inputRecordFps');
+  await fps.fill('300');
+  await expect(fps).toHaveClass(/is-invalid/);
+  await expect(page.locator('#recordFpsError')).toBeVisible();
+  await fps.blur();
+  await expect(fps).toHaveValue('60');
+  await expect(fps).not.toHaveClass(/is-invalid/);
+
+  const bitrate = page.locator('#inputRecordBitrate');
+  await bitrate.fill('6000');
+  await expect(bitrate).toHaveClass(/is-invalid/);
+  await expect(page.locator('#recordBitrateError')).toBeVisible();
+  await bitrate.blur();
+  await expect(bitrate).toHaveValue('30');
+
+  const bounded = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    return {
+      fps: app.options.record.fps,
+      bitrate: app.options.record.mediaRecorder.videoBitsPerSecond,
+    };
+  });
+  expect(bounded).toEqual({ fps: 60, bitrate: 30_000_000 });
+
+  await page.locator('#selectRecordQualityProfile').selectOption('standard');
+  await expect(fps).toHaveValue('30');
+  await expect(bitrate).toHaveValue('6');
+  await expect(advanced).not.toHaveAttribute('open', '');
+  await expect(page.locator('#recordEstimatedSize')).not.toHaveText('—');
+});
+
+
 test('les options MediaRecorder de l\'interface produisent un MP4 validé par ffprobe', async ({ page }, testInfo) => {
   await selectTraditionalCaches(page);
 
@@ -111,6 +156,10 @@ test('les options MediaRecorder de l\'interface produisent un MP4 validé par ff
     document.querySelector('#selectRecordMode').tomselect.setValue('mediarecorder');
     document.querySelector('#selectRecordMime').tomselect.setValue('video/webm;codecs=vp8');
   });
+  const advanced = page.locator('#recordAdvancedSettings');
+  if (!(await advanced.evaluate((element) => element.open))) {
+    await advanced.locator('summary').click();
+  }
   await page.locator('#inputRecordFps').fill('12');
   await page.locator('#inputRecordBitrate').fill('1');
   await page.locator('#inputRecordSlowdown').fill('2');

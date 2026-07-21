@@ -31,7 +31,7 @@
         "extraEndSeconds": 0
     },
     "record": {
-        "fps": 24,
+        "fps": 30,
         "mode": "images",
         "uploadRetries": 3,
         "frameRetries": 2, 

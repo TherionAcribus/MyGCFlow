@@ -1,6 +1,16 @@
 import * as pkg from './index.js';
 import { showBsTab, getBsTab, initTomSelect, getTomSelect, refreshTomSelect, initTempusDominus, getTempusDominus, setTdDate, getTdDate } from './ui_bootstrap.js';
 import { automaticEndHoldMs } from './video_timing.mjs';
+import {
+    RECORDING_LIMITS,
+    RECORDING_QUALITY_PROFILES,
+    estimateRecordingSizeBytes,
+    formatEstimatedFileSize,
+    isValidRecordingInteger,
+    normalizeRecordingBitrateMbps,
+    normalizeRecordingFps,
+    recordingQualityProfileFor,
+} from './recording_settings.mjs';
 
 // Flag de debug pour les filtres (COUNTRY/FILTER).
 // Mettre à true pour réactiver les logs en console.
@@ -49,7 +59,7 @@ var btnUseCurrentMapCenter, btnPickMapCenter, btnClearMapCenter;
 var btnToggleLatLonMode, fieldLat, fieldLon, fieldCombined, rowLatLon;
 let isCombinedLatLonMode = true;
 // Enregistrement
-var selectRecordMode, inputRecordFps, inputRecordBitrate, selectRecordMime, inputRecordSlowdown, inputRecordScaleFactor, cbRecordUpload, cbRecordDownload, cbRecordNormalize;
+var selectRecordMode, selectRecordQualityProfile, recordAdvancedSettings, inputRecordFps, inputRecordBitrate, selectRecordMime, inputRecordSlowdown, inputRecordScaleFactor, cbRecordUpload, cbRecordDownload, cbRecordNormalize;
 var cbRecordAudioEnable, inputAudioFile, inputAudioVolume;
 // Flag pour savoir si la durée totale est définie depuis la musique
 var isDurationLockedToAudio = false;
@@ -61,6 +71,102 @@ function persistLanguagePreference(language) {
     localStorage.setItem('selectedLanguage', language);
     // Cookie lisible côté serveur pour Flask-Babel
     document.cookie = `${LANGUAGE_COOKIE_NAME}=${language}; path=/; max-age=31536000; samesite=Lax`;
+}
+
+function setRecordingInputValidity(input, limits) {
+    if (!input) return false;
+    const isValid = isValidRecordingInteger(input.value, limits);
+    input.classList.toggle('is-invalid', !isValid);
+    input.setAttribute('aria-invalid', isValid ? 'false' : 'true');
+    return isValid;
+}
+
+function normalizeRecordOptionsInPlace() {
+    pkg.options.record = pkg.options.record || {};
+    pkg.options.record.mediaRecorder = pkg.options.record.mediaRecorder || {};
+    pkg.options.record.fps = normalizeRecordingFps(pkg.options.record.fps);
+    const bitrateMbps = normalizeRecordingBitrateMbps(
+        Number(pkg.options.record.mediaRecorder.videoBitsPerSecond) / 1_000_000
+    );
+    pkg.options.record.mediaRecorder.videoBitsPerSecond = bitrateMbps * 1_000_000;
+}
+
+function syncRecordingQualityProfile({ revealCustom = false } = {}) {
+    if (!selectRecordQualityProfile || !inputRecordFps || !inputRecordBitrate) return;
+    const valuesAreValid = isValidRecordingInteger(inputRecordFps.value, RECORDING_LIMITS.fps)
+        && isValidRecordingInteger(inputRecordBitrate.value, RECORDING_LIMITS.bitrateMbps);
+    const profileName = valuesAreValid
+        ? recordingQualityProfileFor(inputRecordFps.value, inputRecordBitrate.value)
+        : 'custom';
+    selectRecordQualityProfile.value = profileName;
+    if (recordAdvancedSettings && profileName === 'custom' && revealCustom) {
+        recordAdvancedSettings.open = true;
+    }
+}
+
+function finalizeRecordingNumberInput(input, normalizer, limits) {
+    if (!input) return;
+    input.value = String(normalizer(input.value));
+    setRecordingInputValidity(input, limits);
+    syncRecordingQualityProfile();
+    changeRecordValues();
+}
+
+function onRecordingQualityInput() {
+    setRecordingInputValidity(inputRecordFps, RECORDING_LIMITS.fps);
+    setRecordingInputValidity(inputRecordBitrate, RECORDING_LIMITS.bitrateMbps);
+    syncRecordingQualityProfile({ revealCustom: true });
+    changeRecordValues();
+}
+
+function applyRecordingQualityProfile() {
+    if (!selectRecordQualityProfile) return;
+    const profile = RECORDING_QUALITY_PROFILES[selectRecordQualityProfile.value];
+    if (!profile) {
+        if (recordAdvancedSettings) recordAdvancedSettings.open = true;
+        return;
+    }
+    if (inputRecordFps) inputRecordFps.value = String(profile.fps);
+    if (inputRecordBitrate) inputRecordBitrate.value = String(profile.bitrateMbps);
+    setRecordingInputValidity(inputRecordFps, RECORDING_LIMITS.fps);
+    setRecordingInputValidity(inputRecordBitrate, RECORDING_LIMITS.bitrateMbps);
+    if (recordAdvancedSettings) recordAdvancedSettings.open = false;
+    changeRecordValues();
+}
+
+function recordingOutputDurationMs() {
+    const calculatedDuration = Number(pkg.options.record?.totalTimeInMilliSec);
+    const fallbackDuration = (
+        Math.max(1, Number(pkg.metadata?.deltaDays) || 1)
+        * Math.max(0, Number(pkg.options.animation?.timePerDay) || 0)
+    ) + getExtraEndMs() + getAutomaticEndHoldMs();
+    const baseDuration = Number.isFinite(calculatedDuration) && calculatedDuration > 0
+        ? calculatedDuration
+        : fallbackDuration;
+    const slowdown = Math.max(1, Number(pkg.options.record?.mediaRecorder?.slowdownFactor) || 1);
+    const normalize = pkg.options.record?.mediaRecorder?.offlineNormalization ?? true;
+    return baseDuration * (normalize ? 1 : slowdown);
+}
+
+function formatEstimatedDuration(durationMs) {
+    const totalSeconds = Math.max(0, Math.round(Number(durationMs) / 1000));
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return minutes > 0 ? `${minutes} min ${seconds} s` : `${seconds} s`;
+}
+
+function updateRecordingSizeEstimate() {
+    const sizeElement = document.getElementById('recordEstimatedSize');
+    const durationElement = document.getElementById('recordEstimatedDuration');
+    if (!sizeElement || !durationElement) return;
+    const durationMs = recordingOutputDurationMs();
+    const bitrateMbps = normalizeRecordingBitrateMbps(
+        Number(pkg.options.record?.mediaRecorder?.videoBitsPerSecond) / 1_000_000
+    );
+    sizeElement.textContent = formatEstimatedFileSize(
+        estimateRecordingSizeBytes({ bitrateMbps, durationMs })
+    );
+    durationElement.textContent = formatEstimatedDuration(durationMs);
 }
 
 // Fonction pour mettre à jour l'apparence du label selon si la durée est lockée
@@ -612,10 +718,25 @@ function initOptionsElements() {
         selectRecordMode.addEventListener('change', onRecordModeChange);
         initTomSelect(selectRecordMode, {});
     }
+    selectRecordQualityProfile = document.getElementById('selectRecordQualityProfile');
+    if (selectRecordQualityProfile) {
+        selectRecordQualityProfile.addEventListener('change', applyRecordingQualityProfile);
+    }
+    recordAdvancedSettings = document.getElementById('recordAdvancedSettings');
     inputRecordFps = document.getElementById('inputRecordFps');
-    if (inputRecordFps) inputRecordFps.addEventListener('input', changeRecordValues);
+    if (inputRecordFps) {
+        inputRecordFps.addEventListener('input', onRecordingQualityInput);
+        inputRecordFps.addEventListener('blur', () => finalizeRecordingNumberInput(
+            inputRecordFps, normalizeRecordingFps, RECORDING_LIMITS.fps
+        ));
+    }
     inputRecordBitrate = document.getElementById('inputRecordBitrate');
-    if (inputRecordBitrate) inputRecordBitrate.addEventListener('input', changeRecordValues);
+    if (inputRecordBitrate) {
+        inputRecordBitrate.addEventListener('input', onRecordingQualityInput);
+        inputRecordBitrate.addEventListener('blur', () => finalizeRecordingNumberInput(
+            inputRecordBitrate, normalizeRecordingBitrateMbps, RECORDING_LIMITS.bitrateMbps
+        ));
+    }
     selectRecordMime = document.getElementById('selectRecordMime');
     if (selectRecordMime) {
         selectRecordMime.addEventListener('change', () => {
@@ -1517,12 +1638,13 @@ function initOptionsUI() {
     try {
         // Restaurer les paramètres sauvegardés
         loadRecordSettings();
+        normalizeRecordOptionsInPlace();
 
         if (selectRecordMode) {
             selectRecordMode.value = (pkg.options.record?.mode) || 'mediarecorder'; // MediaRecorder par défaut
             refreshTomSelect(selectRecordMode);
         }
-        if (inputRecordFps) inputRecordFps.value = (pkg.options.record?.fps) || 24;
+        if (inputRecordFps) inputRecordFps.value = pkg.options.record.fps;
         if (inputRecordBitrate) inputRecordBitrate.value = ((pkg.options.record?.mediaRecorder?.videoBitsPerSecond) || 6000000) / 1000000;
         if (selectRecordMime) {
             selectRecordMime.value = (pkg.options.record?.mediaRecorder?.mimeType) || 'video/webm;codecs=vp9';
@@ -1551,6 +1673,12 @@ function initOptionsUI() {
             cbRecordNormalize.disabled = sd === 1;
             const normalizeLabel = cbRecordNormalize.labels?.[0];
             if (normalizeLabel) normalizeLabel.style.opacity = sd === 1 ? '0.4' : '';
+        }
+        setRecordingInputValidity(inputRecordFps, RECORDING_LIMITS.fps);
+        setRecordingInputValidity(inputRecordBitrate, RECORDING_LIMITS.bitrateMbps);
+        syncRecordingQualityProfile();
+        if (recordAdvancedSettings) {
+            recordAdvancedSettings.open = selectRecordQualityProfile?.value === 'custom';
         }
 
         // ------- AUDIO UTILISATEUR -------
@@ -1582,6 +1710,7 @@ function initOptionsUI() {
         updateAudioDurationButton();
         // Initialiser l'indicateur de durée lockée
         updateDurationLockIndicator();
+        updateRecordingSizeEstimate();
     } catch(e) { console.warn('Init enregistrement UI error:', e); }
 }
 
@@ -1640,12 +1769,11 @@ function changeRecordValues() {
         pkg.options.record.mediaRecorder = pkg.options.record.mediaRecorder || {};
 
         if (inputRecordFps && inputRecordFps.value !== '') {
-            const fps = Math.max(1, Math.min(60, parseInt(inputRecordFps.value)) || 24);
-            pkg.options.record.fps = fps;
+            pkg.options.record.fps = normalizeRecordingFps(inputRecordFps.value);
         }
         if (inputRecordBitrate && inputRecordBitrate.value !== '') {
-            const vbps = Math.max(1000000, parseInt(inputRecordBitrate.value) * 1000000 || 6000000);
-            pkg.options.record.mediaRecorder.videoBitsPerSecond = vbps;
+            const bitrateMbps = normalizeRecordingBitrateMbps(inputRecordBitrate.value);
+            pkg.options.record.mediaRecorder.videoBitsPerSecond = bitrateMbps * 1_000_000;
         }
         if (selectRecordMime && selectRecordMime.value !== '') {
             pkg.options.record.mediaRecorder.mimeType = selectRecordMime.value;
@@ -1708,6 +1836,7 @@ function changeRecordValues() {
         // Si la durée vient de la musique, conserver cette cible autant que possible.
         if (isDurationLockedToAudio) updateTimePerDay();
         pkg.updateInfosForPictures();
+        updateRecordingSizeEstimate();
     } catch(e) {
         console.warn('changeRecordValues error:', e);
     }
@@ -1718,10 +1847,12 @@ function saveRecordSettings() {
     try {
         const recordSettings = {
             mode: pkg.options.record?.mode || 'mediarecorder',
-            fps: pkg.options.record?.fps || 24,
+            fps: normalizeRecordingFps(pkg.options.record?.fps),
             mediaRecorder: {
                 mimeType: pkg.options.record?.mediaRecorder?.mimeType || 'video/webm;codecs=vp9',
-                videoBitsPerSecond: pkg.options.record?.mediaRecorder?.videoBitsPerSecond || 6000000,
+                videoBitsPerSecond: normalizeRecordingBitrateMbps(
+                    Number(pkg.options.record?.mediaRecorder?.videoBitsPerSecond) / 1_000_000
+                ) * 1_000_000,
                 slowdownFactor: pkg.options.record?.mediaRecorder?.slowdownFactor || 1,
                 uploadToServer: pkg.options.record?.mediaRecorder?.uploadToServer ?? true,
                 downloadLocal: pkg.options.record?.mediaRecorder?.downloadLocal ?? true,
@@ -1749,10 +1880,12 @@ function loadRecordSettings() {
             if (recordSettings.mode) {
                 pkg.options.record = pkg.options.record || {};
                 pkg.options.record.mode = recordSettings.mode;
-                pkg.options.record.fps = recordSettings.fps || 24;
+                pkg.options.record.fps = normalizeRecordingFps(recordSettings.fps);
                 pkg.options.record.mediaRecorder = pkg.options.record.mediaRecorder || {};
                 pkg.options.record.mediaRecorder.mimeType = recordSettings.mediaRecorder?.mimeType || 'video/webm;codecs=vp9';
-                pkg.options.record.mediaRecorder.videoBitsPerSecond = recordSettings.mediaRecorder?.videoBitsPerSecond || 6000000;
+                pkg.options.record.mediaRecorder.videoBitsPerSecond = normalizeRecordingBitrateMbps(
+                    Number(recordSettings.mediaRecorder?.videoBitsPerSecond) / 1_000_000
+                ) * 1_000_000;
                 pkg.options.record.mediaRecorder.slowdownFactor = recordSettings.mediaRecorder?.slowdownFactor || 1;
                 pkg.options.record.mediaRecorder.uploadToServer = recordSettings.mediaRecorder?.uploadToServer ?? true;
                 pkg.options.record.mediaRecorder.downloadLocal = recordSettings.mediaRecorder?.downloadLocal ?? true;
@@ -3229,13 +3362,14 @@ function updateTotalTime(){
         inputTotalTime.value = (totalTimeInMilliSec / 60 / 1000).toFixed(4);
     }
     updateTimeBreakdown(baseTimeMs, extraMs, automaticHoldMs, totalTimeInMilliSec);
+    updateRecordingSizeEstimate();
 }
 
 function updateTimePerDay(){
     const totalTimeMs = inputTotalTime.value * 60 * 1000;
     const extraMs = getExtraEndMs();
     const automaticHoldMs = getAutomaticEndHoldMs();
-    const fps = Math.max(1, Number(pkg.options.record?.fps) || 24);
+    const fps = normalizeRecordingFps(pkg.options.record?.fps);
     const dayCount = Math.max(1, Number(pkg.metadata.deltaDays) || 1);
     const minimumBaseMs = dayCount * 1000 / fps;
     const baseTimeMs = Math.max(minimumBaseMs, totalTimeMs - extraMs - automaticHoldMs);
@@ -3246,6 +3380,7 @@ function updateTimePerDay(){
     pkg.options.record.totalTimeInMilliSec = baseTimeMs + extraMs + automaticHoldMs;
     // Mettre à jour l'affichage des minutes/secondes et du détail
     updateTimeBreakdown(baseTimeMs, extraMs, automaticHoldMs, pkg.options.record.totalTimeInMilliSec);
+    updateRecordingSizeEstimate();
 }
 
 function updateTimeBreakdown(baseMs, extraMs, automaticHoldMs, totalMs){
@@ -3345,7 +3480,7 @@ function pollAssembleTask(taskId, { intervalMs = 700, timeoutMs = 1800000, onPro
 function assemble_pictures_directory(){
     // FPS configurable : doit correspondre à celui utilisé pour calculer les frames,
     // sinon la vitesse de lecture de la vidéo assemblée est faussée.
-    const fps = Number(pkg.options?.record?.fps) || 24;
+    const fps = normalizeRecordingFps(pkg.options?.record?.fps);
     const tr = (s) => (pkg.t ? pkg.t(s) : s);
     const assembleToast = pkg.showLoadingToast ? pkg.showLoadingToast(tr("Assemblage de la vidéo en cours..."), tr("Assemblage")) : null;
     fetch('/assemble_pictures_directory', {

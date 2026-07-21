@@ -74,6 +74,10 @@ import {
     inclusiveDayCount,
     serverNormalizationFactor,
 } from './video_timing.mjs';
+import {
+    normalizeRecordingBitrateMbps,
+    normalizeRecordingFps,
+} from './recording_settings.mjs';
 
 // Debug toasts/assemblage
 const TOAST_DEBUG = false;
@@ -2098,7 +2102,7 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
                 }
                 // FPS configurable : doit correspondre à celui utilisé pour calculer
                 // les frames, sinon la vitesse de lecture est faussée côté serveur.
-                const fps = Number(pkg.options?.record?.fps) || 24;
+                const fps = normalizeRecordingFps(pkg.options?.record?.fps);
                 const url = new URL(`${CONFIG.BASE_URL}/start_create_video`, window.location.origin);
                 url.searchParams.set('fps', String(fps));
                 if (audioFileName) {
@@ -2108,7 +2112,7 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
                 return fetch(url.toString());
             } catch(e) {
                 console.warn('Assemblage avec audio: fallback sans audio', e);
-                const fps = Number(pkg.options?.record?.fps) || 24;
+                const fps = normalizeRecordingFps(pkg.options?.record?.fps);
                 const fallbackUrl = new URL(`${CONFIG.BASE_URL}/start_create_video`, window.location.origin);
                 fallbackUrl.searchParams.set('fps', String(fps));
                 return fetch(fallbackUrl.toString());
@@ -2382,9 +2386,11 @@ function startMrDrawLoop() {
 }
 
 async function startMediaRecorderPipeline(totalDurationMs, timelineScale = 1){
-    const fps = Number(pkg.options.record?.fps) || 24;
+    const fps = normalizeRecordingFps(pkg.options.record?.fps);
     const mime = pkg.options?.record?.mediaRecorder?.mimeType || 'video/webm;codecs=vp9';
-    const vbps = Number(pkg.options?.record?.mediaRecorder?.videoBitsPerSecond) || 6000000;
+    const vbps = normalizeRecordingBitrateMbps(
+        Number(pkg.options?.record?.mediaRecorder?.videoBitsPerSecond) / 1_000_000
+    ) * 1_000_000;
     const scaleFactor = Math.max(1, Math.min(3, Number(pkg.options?.record?.mediaRecorder?.scaleFactor) || 1));
 
     // Durée du gel de la dernière frame après la fin réelle de l'animation.
@@ -2655,7 +2661,7 @@ function finalizeMediaRecorderVideo(){
                 // explicitement demandé la normalisation. Auparavant, décocher
                 // l'option n'avait aucun effet dans le chemin ffmpeg.
                 fd.append('slowdown', String(serverNormalizationFactor(slowdown, doNormalize)));
-                fd.append('fps', String(Number(pkg.options?.record?.fps) || 24));
+                fd.append('fps', String(normalizeRecordingFps(pkg.options?.record?.fps)));
                 fd.append('fileName', fileName);
                 if (audioEnabled && audioFile) {
                     fd.append('audio', audioFile, audioFile.name || 'music');
@@ -2721,9 +2727,11 @@ function normalizeRecordedVideoSpeed(sourceBlob, factor){
             const url = URL.createObjectURL(sourceBlob);
             video.src = url;
 
-            const fps = Number(pkg.options?.record?.fps) || 24;
+            const fps = normalizeRecordingFps(pkg.options?.record?.fps);
             const mime = pkg.options?.record?.mediaRecorder?.mimeType || 'video/webm;codecs=vp9';
-            const vbps = Number(pkg.options?.record?.mediaRecorder?.videoBitsPerSecond) || 6000000;
+            const vbps = normalizeRecordingBitrateMbps(
+                Number(pkg.options?.record?.mediaRecorder?.videoBitsPerSecond) / 1_000_000
+            ) * 1_000_000;
 
             let rec = null; let chunks = [];
             let progressTimer = null;
@@ -2824,8 +2832,10 @@ function muxRecordedVideoWithAudio(sourceBlob, audioFile){
                 audioNode.connect(audioGain);
             };
 
-            const fps = Number(pkg.options?.record?.fps) || 24;
-            const vbps = Number(pkg.options?.record?.mediaRecorder?.videoBitsPerSecond) || 6000000;
+            const fps = normalizeRecordingFps(pkg.options?.record?.fps);
+            const vbps = normalizeRecordingBitrateMbps(
+                Number(pkg.options?.record?.mediaRecorder?.videoBitsPerSecond) / 1_000_000
+            ) * 1_000_000;
             const abps = Number(pkg.options?.record?.mediaRecorder?.audioBitsPerSecond) || 128000;
 
             // Choisir un mime compatible audio (opus)

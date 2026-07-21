@@ -50,6 +50,13 @@ def _preflight() -> list[str]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    # Playwright et les outils vidéo peuvent produire des caractères Unicode
+    # que la console Windows cp1252 ne sait pas réafficher.
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    if hasattr(sys.stderr, "reconfigure"):
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
     parser = argparse.ArgumentParser(description="Exécute les tests vidéo automatisés de GCMap.")
     parser.add_argument(
         "--quick",
@@ -72,8 +79,12 @@ def main(argv: list[str] | None = None) -> int:
     started = time.perf_counter()
     stages = [
         (
-            "Calculs de timing JavaScript",
-            ["node", "--test", "test_video_timing.mjs"],
+            "Calculs vidéo JavaScript",
+            ["node", "--test", "test_video_timing.mjs", "test_recording_settings.mjs"],
+        ),
+        (
+            "Bornes des réglages vidéo côté serveur",
+            [sys.executable, "-m", "unittest", "-v", "tests.test_media_settings"],
         ),
     ]
     if args.quick:
