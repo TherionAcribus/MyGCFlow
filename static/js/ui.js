@@ -607,16 +607,16 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     spanCurrentDate = document.getElementById('spanCurrentDate');
 
     // OPTIONS
+    // Sélecteurs simples natifs (comme #selectTheme) : pas de Tom Select,
+    // sinon maxItems:null + plugin remove_button les affichent en multi-sélection.
     selectLanguage = document.getElementById('selectLanguage');
     if (selectLanguage) {
         selectLanguage.addEventListener('change', changeOptionsValues);
-        initTomSelect(selectLanguage, {});
     }
 
     selectCheckVersionOnline = document.getElementById('selectCheckVersionOnline');
     if (selectCheckVersionOnline) {
         selectCheckVersionOnline.addEventListener('change', changeOptionsValues);
-        initTomSelect(selectCheckVersionOnline, {});
     }
 
     // Select profil par défaut (Tom Select)
@@ -676,10 +676,10 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
 // Initialisation des éléments du menu paramètres
 function initOptionsElements() {
     // ENREGISTREMENT
+    // Sélecteur simple natif (comme #selectTheme) : pas de Tom Select.
     selectRecordMode = document.getElementById('selectRecordMode');
     if (selectRecordMode) {
         selectRecordMode.addEventListener('change', onRecordModeChange);
-        initTomSelect(selectRecordMode, {});
     }
     selectRecordQualityProfile = document.getElementById('selectRecordQualityProfile');
     if (selectRecordQualityProfile) {
@@ -712,7 +712,7 @@ function initOptionsElements() {
             }
             changeRecordValues();
         });
-        initTomSelect(selectRecordMime, {});
+        // Sélecteur simple natif (comme #selectTheme) : pas de Tom Select.
     }
     inputRecordSlowdown = document.getElementById('inputRecordSlowdown');
     if (inputRecordSlowdown) inputRecordSlowdown.addEventListener('input', changeRecordValues);
