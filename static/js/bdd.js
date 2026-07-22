@@ -395,6 +395,15 @@ function normIsoDate(value) {
     return /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso : null;
 }
 
+// Vrai si le <select multiple> possède au moins une option réelle (hors
+// placeholder disabled à valeur vide). Sert à distinguer "l'utilisateur a
+// désélectionné toutes les options (Aucun)" de "la dimension n'a aucune option".
+function selectHasRealOptions(selectId) {
+    const el = document.getElementById(selectId);
+    if (!el) return false;
+    return Array.from(el.options).some(o => !o.disabled && o.value !== '');
+}
+
 function filterFeaturesClientSide(features, sel) {
     const types = new Set(sel.type || []);
     // Aucun type sélectionné => aucun résultat (comportement identique au serveur).
@@ -405,6 +414,17 @@ function filterFeaturesClientSide(features, sel) {
     const containers = toStrSet(sel.container);
     const countries = toStrSet(sel.countries);
     const states = toStrSet(sel.states);
+
+    // "Aucun" (aucune option sélectionnée) => aucun résultat, comme pour le type.
+    // terrain / difficulté / taille ont toujours des options fixes : un ensemble
+    // vide y signifie donc sans ambiguïté "Aucun" et non "pas de filtre".
+    if (terrains.size === 0 || difficulties.size === 0 || containers.size === 0) return [];
+
+    // Pays / régions sont peuplés dynamiquement. Un ensemble vide veut dire "Aucun"
+    // seulement si le <select> possède réellement des options ; sinon (aucune donnée
+    // géographique disponible) la dimension est inactive et ne doit pas filtrer.
+    if (selectHasRealOptions('selectCountry') && countries.size === 0) return [];
+    if (selectHasRealOptions('selectState') && states.size === 0) return [];
 
     const dStart = normIsoDate(sel.dates?.startDate);
     const dEnd = normIsoDate(sel.dates?.endDate);
