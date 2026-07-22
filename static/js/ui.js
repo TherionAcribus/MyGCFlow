@@ -3694,12 +3694,8 @@ function initCssAssistant() {
         opacity: document.getElementById('gcCssOpacity'),
     };
 
-    // Initialiser Tom Select sur les selects du panneau d'informations
-    ['fontFamily', 'fontWeight', 'textAlign', 'borderStyle', 'position'].forEach(key => {
-        if (fields[key] && fields[key].tagName === 'SELECT') {
-            initTomSelect(fields[key], {});
-        }
-    });
+    // Sélecteurs simples natifs (comme #selectTheme) : pas de Tom Select,
+    // sinon maxItems:null + plugin remove_button les affichent en multi-sélection.
 
     // Valeurs par défaut pour éviter le fond noir au démarrage
     if (fields.backgroundColor && !fields.backgroundColor.value) {
