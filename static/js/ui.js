@@ -273,7 +273,14 @@ const publishedDatePickerEnd = document.getElementById('publishedDatePickerEnd')
     const btnNoneState = document.getElementById('btnNoneState');
     const selectCountryEl = document.getElementById('selectCountry');
     const selectStateEl = document.getElementById('selectState');
-    if (btnAllCountry) btnAllCountry.addEventListener('click', () => selectAllOptions(selectCountryEl));
+    if (btnAllCountry) btnAllCountry.addEventListener('click', () => {
+        selectAllOptions(selectCountryEl);
+        // selectAllOptions coche les options mais ne déclenche pas l'événement
+        // 'change' natif : on le dispatche pour que le handler de selectCountry
+        // reconstruise la liste des régions à partir de TOUS les pays (sinon la
+        // liste reste figée sur la sélection précédente, ex. régions françaises).
+        if (selectCountryEl) selectCountryEl.dispatchEvent(new Event('change'));
+    });
     if (btnNoneCountry) btnNoneCountry.addEventListener('click', () => {
         deselectAllOptions(selectCountryEl);
         // si aucun pays, vider aussi les états
@@ -2432,7 +2439,13 @@ function resetAllFilters(){
         selectAllOptions(selectContainer);
         const selCountry = document.getElementById('selectCountry');
         const selState = document.getElementById('selectState');
-        if (selCountry) selectAllOptions(selCountry);
+        if (selCountry) {
+            selectAllOptions(selCountry);
+            // Reconstruire la liste des régions à partir de TOUS les pays : sinon
+            // elle reste figée sur une sélection précédente (ex. régions françaises)
+            // et le reset n'afficherait que les caches de ces régions.
+            selCountry.dispatchEvent(new Event('change'));
+        }
         if (selState) selectAllOptions(selState);
         // Dates : reset aux valeurs par défaut
         resetStartDateToDefault();
