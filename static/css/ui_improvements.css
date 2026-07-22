@@ -765,8 +765,8 @@ main.fullscreen-mode #infosFrame span:not([hidden]) {
 
 /* Styles pour le formulaire flash */
 #flash {
-    padding: 20px;
-    margin: 10px 0;
+    /* Pas de padding/margin vertical : le titre "Animation du Flash" doit
+       s'aligner sur celui de "Graphisme des points" dans la colonne voisine. */
 }
 
 #flash .input-field {
@@ -799,10 +799,6 @@ main.fullscreen-mode #infosFrame span:not([hidden]) {
 
 /* Responsive pour le flash */
 @media only screen and (max-width: 600px) {
-    #flash {
-        padding: 15px;
-    }
-
     #selectFlashMode {
         font-size: 0.9rem;
     }

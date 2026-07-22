@@ -24,13 +24,23 @@
    le bundle tabler.min.js qui inclut Bootstrap 5).
    ===================================================================== */
 
-/* --- Helper pour récupérer l'objet bootstrap (chargé via CDN) --- */
+/* --- Helper pour récupérer l'objet bootstrap (chargé via CDN) ---
+   Tabler Core 1.4.0 embarque le bundle Bootstrap 5 mais ne l'expose PAS
+   sous window.bootstrap : il le publie sous window.tabler (dont les clés
+   sont directement Modal/Tooltip/Dropdown/Tab...) et window.tabler.bootstrap.
+   Sans ce repli, tous les appels programmatiques (showBsModal, initBsTabs...)
+   tombaient sur null et ne faisaient rien — d'où les modales (ex: "Nouveau
+   profil") qui ne s'ouvraient pas alors que les composants déclaratifs
+   (data-bs-toggle) fonctionnaient via la data-api interne de Tabler. */
 function bs() {
-    if (typeof window.bootstrap === 'undefined') {
-        console.warn('[ui_bootstrap] window.bootstrap indisponible — tabler.min.js est-il chargé ?');
+    const candidate = window.bootstrap
+        || (window.tabler && window.tabler.bootstrap)
+        || (window.tabler && window.tabler.Modal ? window.tabler : null);
+    if (!candidate) {
+        console.warn('[ui_bootstrap] Bootstrap indisponible — tabler.min.js est-il chargé ?');
         return null;
     }
-    return window.bootstrap;
+    return candidate;
 }
 
 /* --- Helper pour récupérer Tom Select (chargé via CDN) --- */
@@ -122,6 +132,16 @@ export function getBsModal(el) {
         ? (el.startsWith('#') ? document.querySelector(el) : document.getElementById(el))
         : el;
     if (!node) return null;
+    // Une modale doit être au niveau <body>. Si elle est imbriquée dans un
+    // ancêtre qui crée un contexte d'empilement (position:sticky/fixed,
+    // transform, filter, opacity<1...), la modale (z-index ~1055) se retrouve
+    // peinte SOUS le backdrop (z-index 1050) : elle apparaît alors "grisée
+    // comme le fond". C'est le cas des modales de profil, imbriquées dans
+    // .sticky-panel. On les déplace donc en enfant direct de <body> avant de
+    // créer l'instance (idempotent : ne fait rien si déjà rattachée au body).
+    if (node.parentElement !== document.body) {
+        document.body.appendChild(node);
+    }
     return b.Modal.getOrCreateInstance(node);
 }
 

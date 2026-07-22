@@ -4523,8 +4523,11 @@ async function addAudioMetadataTooltip(file, element) {
         element.setAttribute('data-bs-toggle', 'tooltip');
         element.setAttribute('data-bs-html', 'true');
         element.setAttribute('data-bs-title', tooltipContent);
-        if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
-            new bootstrap.Tooltip(element, { html: true, placement: 'top' });
+        // Tabler 1.4.0 n'expose pas window.bootstrap : l'API est publiée sous
+        // window.tabler. On résout l'une ou l'autre avant d'instancier la tooltip.
+        const BS = window.bootstrap || window.tabler;
+        if (BS && BS.Tooltip) {
+            new BS.Tooltip(element, { html: true, placement: 'top' });
         }
 
     } catch(e) {

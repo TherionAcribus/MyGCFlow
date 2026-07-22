@@ -1,6 +1,7 @@
 import * as pkg from './index.js';
 import { CONFIG } from './init.js';
 import { showLoadingToast, showSuccess, showError, showInfo, showWarning } from './notifications.js';
+import { getBsModal } from './ui_bootstrap.js';
 
 // Traductions pour la modale et les toasts de mise à jour
 const updateModalTranslations = {
@@ -458,12 +459,16 @@ async function openUpdateDetailsModal(data) {
     // Ajouter la modal au DOM
     document.body.insertAdjacentHTML('beforeend', fullModalHTML);
 
-    // Initialiser et ouvrir la modal Bootstrap 5
+    // Initialiser et ouvrir la modal Bootstrap 5.
+    // getBsModal() résout l'API Bootstrap via window.tabler (Tabler 1.4.0
+    // n'expose pas window.bootstrap) — un appel direct à `new bootstrap.Modal`
+    // lèverait une ReferenceError.
     const modalElement = document.getElementById(modalId);
-    const bsModal = new bootstrap.Modal(modalElement, {
-        backdrop: true,
-        keyboard: true
-    });
+    const bsModal = getBsModal(modalElement);
+    if (!bsModal) {
+        console.error("Impossible d'ouvrir la modal de mise à jour : API Bootstrap indisponible");
+        return;
+    }
     // Nettoyer la modal du DOM après fermeture
     modalElement.addEventListener('hidden.bs.modal', function() {
         modalElement.remove();
