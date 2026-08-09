@@ -31,7 +31,7 @@ Objectif: implémenter une gestion simple, fiable et robuste des paramètres uti
   - `check_updates: bool = True`
 - [x] `MapOptions`:
   - `tile_provider: str = "OpenStreetMap"`
-  - `default_center: tuple[float, float] = (48.8566, 2.3522)`
+  - `default_center: tuple[float, float] = (2.3522, 48.8566)` (`longitude, latitude`)
   - `default_zoom: int = 6`
 - [x] `AnimationOptions`:
   - `enabled: bool = True`
@@ -147,7 +147,7 @@ Objectif: implémenter une gestion simple, fiable et robuste des paramètres uti
 - `settings.json`:
 ```json
 {
-  "version": 1,
+  "version": 2,
   "language": "fr",
   "check_updates": true
 }
@@ -161,7 +161,7 @@ Objectif: implémenter une gestion simple, fiable et robuste des paramètres uti
   "uid": "<uuid>",
   "map": {
     "tile_provider": "OpenStreetMap",
-    "default_center": [48.8566, 2.3522],
+    "default_center": [2.3522, 48.8566],
     "default_zoom": 6
   },
   "animation": { "enabled": true, "speed": 1.0 },

@@ -113,6 +113,28 @@ test('loadCurrentSettings lit les options et ignore l\'état des boutons', async
 });
 
 
+test('applyMapDefaults applique les préférences au format longitude latitude', async ({ page }) => {
+  const applied = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    window.userSettings = {
+      map_default_center: [-4.4860, 48.3905],
+      map_default_zoom: 8,
+    };
+
+    app.applyMapDefaults(null, undefined);
+    const view = app.getMap().getView();
+    return {
+      center: ol.proj.toLonLat(view.getCenter()),
+      zoom: view.getZoom(),
+    };
+  });
+
+  expect(applied.center[0]).toBeCloseTo(-4.4860, 3);
+  expect(applied.center[1]).toBeCloseTo(48.3905, 3);
+  expect(applied.zoom).toBe(8);
+});
+
+
 test('appliquer un profil met à jour carte, options et interface sans délai', async ({ page }) => {
   await page.locator('#OSM').click();
 
@@ -120,11 +142,16 @@ test('appliquer un profil met à jour carte, options et interface sans délai', 
   // est synchrone (plus de .click() ni de setTimeout de 100 ms), donc l'état
   // doit être complet immédiatement.
   const applied = await page.evaluate(async () => {
+    // Une préférence globale distincte ne doit pas écraser la vue explicite du profil.
+    window.userSettings = {
+      map_default_center: [-4.4860, 48.3905],
+      map_default_zoom: 3,
+    };
     await window.profileManager.applyProfile({
       name: 'Test',
       map: {
         tile_provider: 'stamenToner',
-        default_center: [45.7640, 4.8357],
+        default_center: [4.8357, 45.7640],
         default_zoom: 9,
         vector_options: {
           stroke_color: '#123456',
@@ -166,7 +193,7 @@ test('appliquer un profil met à jour carte, options et interface sans délai', 
   expect(applied.strokeColorField).toBe('#123456');
   expect(applied.strokeWidthField).toBe('1.5');
 
-  // Le centre est stocké en [latitude, longitude].
+  // Le centre est stocké en [longitude, latitude].
   expect(applied.lat).toBeCloseTo(45.7640, 3);
   expect(applied.lon).toBeCloseTo(4.8357, 3);
   expect(applied.zoom).toBe(9);

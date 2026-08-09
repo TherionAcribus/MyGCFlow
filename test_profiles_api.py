@@ -64,7 +64,7 @@ def test_api():
         "name": "Test_Profile",
         "map": {
             "tile_provider": "OpenStreetMap",
-            "default_center": [45.0, 2.0],
+            "default_center": [2.0, 45.0],  # [longitude, latitude]
             "default_zoom": 8
         },
         "animation": {

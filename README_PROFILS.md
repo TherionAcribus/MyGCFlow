@@ -74,7 +74,7 @@ fetch('/api/profiles/Mon Profil', {
         name: 'Mon Profil',
         map: {
             tile_provider: 'OpenStreetMap',
-            default_center: [48.8566, 2.3522],
+            default_center: [2.3522, 48.8566], // [longitude, latitude]
             default_zoom: 6
         },
         animation: { enabled: true, speed: 1.0 },
@@ -87,12 +87,12 @@ fetch('/api/profiles/Mon Profil', {
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "name": "Default",
   "uid": "uuid-unique",
   "map": {
     "tile_provider": "OpenStreetMap",
-    "default_center": [48.8566, 2.3522],
+    "default_center": [2.3522, 48.8566],
     "default_zoom": 6
   },
   "animation": {

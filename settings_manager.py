@@ -10,6 +10,7 @@ from typing import Tuple, Optional, List
 
 
 APP_NAME = "GCMap"
+COORDINATE_ORDER_VERSION = 2
 MAX_OVERLAY_TITLE_LENGTH = 500
 MAX_OVERLAY_CSS_LENGTH = 20_000
 
@@ -78,10 +79,11 @@ def write_json(path: Path, obj: dict) -> None:
 
 @dataclass
 class AppSettings:
-    version: int = 1
+    version: int = COORDINATE_ORDER_VERSION
     language: str = "fr"
     check_updates: bool = True
     default_profile_uid: Optional[str] = None  # UUID du profil par défaut (None = aucun)
+    # Convention persistée/API : (longitude, latitude).
     map_default_center: Optional[Tuple[float, float]] = None
     map_default_zoom: Optional[int] = None
     examples_seeded: bool = False  # True une fois les profils d'exemple créés (premier lancement)
@@ -101,7 +103,8 @@ class TonerMapOptions:
 @dataclass
 class MapOptions:
     tile_provider: str = "OpenStreetMap"
-    default_center: Tuple[float, float] = (48.8566, 2.3522)
+    # Convention persistée/API : (longitude, latitude).
+    default_center: Tuple[float, float] = (2.3522, 48.8566)
     default_zoom: int = 6
     vector_options: VectorMapOptions = field(default_factory=VectorMapOptions)
     toner_options: TonerMapOptions = field(default_factory=TonerMapOptions)
@@ -156,7 +159,7 @@ class InfosOptions:
 
 @dataclass
 class MapProfile:
-    version: int = 1
+    version: int = COORDINATE_ORDER_VERSION
     name: str = "Default"
     uid: str = field(default_factory=lambda: uuid.uuid4().hex)
     map: MapOptions = field(default_factory=MapOptions)
@@ -183,13 +186,21 @@ def _to_float(value, default: float) -> float:
 def coerce_settings(d: dict) -> AppSettings:
     s = AppSettings()
     if isinstance(d, dict):
+        try:
+            source_version = int(float(d.get("version", 1)))
+        except (TypeError, ValueError):
+            source_version = 1
         s.language = d.get("language", s.language)
         s.check_updates = bool(d.get("check_updates", s.check_updates))
 
         raw_center = d.get("map_default_center")
         if isinstance(raw_center, (list, tuple)) and len(raw_center) == 2:
             try:
-                s.map_default_center = (float(raw_center[0]), float(raw_center[1]))
+                center = (float(raw_center[0]), float(raw_center[1]))
+                # Les versions 1 stockaient [latitude, longitude]. La conversion
+                # en mémoire rend les anciennes préférences compatibles sans
+                # ambiguïté pour tout le reste de l'application.
+                s.map_default_center = center[::-1] if source_version < 2 else center
             except Exception:
                 pass
 
@@ -205,10 +216,7 @@ def coerce_settings(d: dict) -> AppSettings:
 
         s.examples_seeded = bool(d.get("examples_seeded", s.examples_seeded))
 
-        try:
-            s.version = int(d.get("version", s.version))
-        except Exception:
-            s.version = s.version
+        s.version = max(source_version, COORDINATE_ORDER_VERSION)
     return s
 
 
@@ -217,9 +225,10 @@ def coerce_profile(d: dict) -> MapProfile:
     if isinstance(d, dict):
         p.name = d.get("name", p.name)
         try:
-            p.version = int(d.get("version", p.version))
-        except Exception:
-            p.version = p.version
+            source_version = int(float(d.get("version", 1)))
+        except (TypeError, ValueError):
+            source_version = 1
+        p.version = max(source_version, COORDINATE_ORDER_VERSION)
         p.uid = d.get("uid", p.uid)
 
         # Options de carte
@@ -227,6 +236,8 @@ def coerce_profile(d: dict) -> MapProfile:
         default_center = m.get("default_center", p.map.default_center)
         try:
             default_center_tuple = (float(default_center[0]), float(default_center[1]))
+            if "default_center" in m and source_version < 2:
+                default_center_tuple = default_center_tuple[::-1]
         except Exception:
             default_center_tuple = p.map.default_center
 
@@ -357,7 +368,7 @@ class SettingsManager:
                 name="Default",
                 map=MapOptions(
                     tile_provider="OSM",
-                    default_center=(48.8566, 2.3522),  # Paris
+                    default_center=(2.3522, 48.8566),  # Paris [lon, lat]
                     default_zoom=6,
                     vector_options=VectorMapOptions(
                         stroke_color="#1f2937",
@@ -412,7 +423,7 @@ class SettingsManager:
                 name="Nocturne Neon",
                 map=MapOptions(
                     tile_provider="stamenToner",
-                    default_center=(48.8566, 2.3522),
+                    default_center=(2.3522, 48.8566),
                     default_zoom=7,
                     vector_options=VectorMapOptions(
                         stroke_color="#6ef2ff",
@@ -469,7 +480,7 @@ class SettingsManager:
                 name="Carnet Aquarelle",
                 map=MapOptions(
                     tile_provider="watercolor",
-                    default_center=(46.603354, 1.888334),  # Centre de la France
+                    default_center=(1.888334, 46.603354),  # Centre de la France
                     default_zoom=6,
                     vector_options=VectorMapOptions(
                         stroke_color="#b08968",
@@ -527,7 +538,7 @@ class SettingsManager:
                 name="Atlas Vintage",
                 map=MapOptions(
                     tile_provider="vectorMap",
-                    default_center=(45.7640, 4.8357),  # Lyon
+                    default_center=(4.8357, 45.7640),  # Lyon
                     default_zoom=6,
                     vector_options=VectorMapOptions(
                         stroke_color="#6b5b4d",
@@ -582,7 +593,7 @@ class SettingsManager:
                 name="Présentation Impact",
                 map=MapOptions(
                     tile_provider="OSM",
-                    default_center=(46.0, 2.0),  # Vue large sur la France
+                    default_center=(2.0, 46.0),  # Vue large sur la France
                     default_zoom=5,
                     vector_options=VectorMapOptions(
                         stroke_color="#111827",
@@ -638,7 +649,7 @@ class SettingsManager:
                 name="Bonbon Pop",
                 map=MapOptions(
                     tile_provider="OSM",
-                    default_center=(46.603354, 1.888334),  # France
+                    default_center=(1.888334, 46.603354),  # France
                     default_zoom=6,
                     vector_options=VectorMapOptions(
                         stroke_color="#ff4d9d",
@@ -693,7 +704,7 @@ class SettingsManager:
                 name="Coucher Tropical",
                 map=MapOptions(
                     tile_provider="watercolor",
-                    default_center=(43.7102, 7.2620),  # Méditerranée (Nice)
+                    default_center=(7.2620, 43.7102),  # Méditerranée (Nice)
                     default_zoom=6,
                     vector_options=VectorMapOptions(
                         stroke_color="#ff6b6b",
@@ -748,7 +759,7 @@ class SettingsManager:
                 name="Forêt Émeraude",
                 map=MapOptions(
                     tile_provider="vectorMap",
-                    default_center=(45.8992, 6.1294),  # Alpes (Annecy)
+                    default_center=(6.1294, 45.8992),  # Alpes (Annecy)
                     default_zoom=6,
                     vector_options=VectorMapOptions(
                         stroke_color="#1b4332",
@@ -804,7 +815,7 @@ class SettingsManager:
                 name="Océan Bubble",
                 map=MapOptions(
                     tile_provider="OSM",
-                    default_center=(48.3905, -4.4860),  # Côte (Brest)
+                    default_center=(-4.4860, 48.3905),  # Côte (Brest)
                     default_zoom=6,
                     vector_options=VectorMapOptions(
                         stroke_color="#0077b6",
@@ -859,7 +870,7 @@ class SettingsManager:
                 name="Arcade 80",
                 map=MapOptions(
                     tile_provider="stamenToner",
-                    default_center=(48.8566, 2.3522),  # Paris
+                    default_center=(2.3522, 48.8566),  # Paris
                     default_zoom=7,
                     vector_options=VectorMapOptions(
                         stroke_color="#2effc7",
@@ -918,7 +929,7 @@ class SettingsManager:
                 name="Fête Confetti",
                 map=MapOptions(
                     tile_provider="OSM",
-                    default_center=(46.0, 2.0),  # Vue large sur la France
+                    default_center=(2.0, 46.0),  # Vue large sur la France
                     default_zoom=5,
                     vector_options=VectorMapOptions(
                         stroke_color="#7b2ff7",

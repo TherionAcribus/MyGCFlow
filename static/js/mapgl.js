@@ -701,6 +701,11 @@ export async function requetedefaultGcColors(){
 
 
 // Initialisation de la carte
+// Convention unique pour tous les centres persistés et échangés par l'app :
+// [longitude, latitude], identique à GeoJSON et à ol.proj.fromLonLat().
+export const DEFAULT_MAP_CENTER_LON_LAT = Object.freeze([2.2137, 46.2276]);
+export const DEFAULT_MAP_ZOOM = 6;
+
 export function createMap(){
     map = new ol.Map({
         target: 'map',
@@ -708,8 +713,8 @@ export function createMap(){
         view: new ol.View({
             // Point de repli avant que centerMap() ne recadre selon les préférences
             // utilisateur ; doit être en EPSG:3857 (la vue), pas en lon/lat brut.
-            center: ol.proj.fromLonLat([2.2137, 46.2276]),
-            zoom: 3,
+            center: ol.proj.fromLonLat([...DEFAULT_MAP_CENTER_LON_LAT]),
+            zoom: DEFAULT_MAP_ZOOM,
             // Au-delà de 19, les fonds de carte (Watercolor en particulier) n'ont
             // plus de tuiles et affichent un agrandissement flou du dernier niveau.
             maxZoom: 19
@@ -847,23 +852,22 @@ export function selectDefaultCarto(){
     switchLayer(layerName);
 }
 
-// Applique à la vue le centre/zoom des préférences utilisateur
-// (window.userSettings.map_default_center / map_default_zoom), chacun avec son
-// propre repli optionnel s'il est absent des préférences. Centre et zoom sont
-// indépendants l'un de l'autre (on peut n'avoir défini que l'un des deux).
-// Centralise une logique auparavant dupliquée entre centerMap() (repli France) et
-// applyUserMapDefaults() dans init.js (aucun repli, ne touche que ce qui est défini).
+// Unique point d'écriture du centre/zoom dans la vue. Tous les centres reçus sont
+// au format [longitude, latitude]. Les préférences utilisateur peuvent remplacer
+// les valeurs fournies ; un profil passe preferUserSettings=false pour appliquer
+// explicitement sa propre vue. Centre et zoom restent indépendants.
 // Retourne true si au moins une valeur a été appliquée à la vue.
-export function applyMapDefaults(fallbackLonLat, fallbackZoom){
+export function applyMapDefaults(fallbackLonLat, fallbackZoom, preferUserSettings = true){
     let lonLat = null;
     let zoom = null;
 
     try {
-        const s = window.userSettings;
+        const s = preferUserSettings ? window.userSettings : null;
         if (s && Array.isArray(s.map_default_center) && s.map_default_center.length === 2) {
-            const lat = parseFloat(s.map_default_center[0]);
-            const lon = parseFloat(s.map_default_center[1]);
-            if (Number.isFinite(lat) && Number.isFinite(lon)) {
+            const lon = parseFloat(s.map_default_center[0]);
+            const lat = parseFloat(s.map_default_center[1]);
+            if (Number.isFinite(lon) && Number.isFinite(lat) &&
+                lon >= -180 && lon <= 180 && lat >= -90 && lat <= 90) {
                 lonLat = [lon, lat];
             }
         }
@@ -877,8 +881,16 @@ export function applyMapDefaults(fallbackLonLat, fallbackZoom){
         console.warn('applyMapDefaults error:', e);
     }
 
-    if (lonLat == null && fallbackLonLat) lonLat = fallbackLonLat;
-    if (zoom == null && Number.isFinite(fallbackZoom)) zoom = fallbackZoom;
+    if (lonLat == null && Array.isArray(fallbackLonLat) && fallbackLonLat.length === 2) {
+        const lon = parseFloat(fallbackLonLat[0]);
+        const lat = parseFloat(fallbackLonLat[1]);
+        if (Number.isFinite(lon) && Number.isFinite(lat) &&
+            lon >= -180 && lon <= 180 && lat >= -90 && lat <= 90) {
+            lonLat = [lon, lat];
+        }
+    }
+    const parsedFallbackZoom = parseFloat(fallbackZoom);
+    if (zoom == null && Number.isFinite(parsedFallbackZoom)) zoom = parsedFallbackZoom;
 
     const view = map.getView();
     let applied = false;
@@ -895,8 +907,7 @@ export function applyMapDefaults(fallbackLonLat, fallbackZoom){
 
 // centrer la carte (repli sur le centre de la France si aucune préférence utilisateur)
 export function centerMap(){
-    const franceCenterLonLat = [2.2137, 46.2276];
-    applyMapDefaults(franceCenterLonLat, 6);
+    applyMapDefaults(DEFAULT_MAP_CENTER_LON_LAT, DEFAULT_MAP_ZOOM);
 }
 
 

@@ -1076,10 +1076,11 @@ export function init_ui() {
     try {
         const s = window.userSettings;
         if (s && Array.isArray(s.map_default_center) && s.map_default_center.length === 2) {
-            const latVal = String(s.map_default_center[0] ?? '');
-            const lonVal = String(s.map_default_center[1] ?? '');
+            // Stockage/API : [longitude, latitude] ; champs : latitude puis longitude.
+            const lonVal = String(s.map_default_center[0] ?? '');
+            const latVal = String(s.map_default_center[1] ?? '');
             setLatLonInputs(latVal, lonVal);
-            lastSavedCenterKey = centerKey([latVal, lonVal]);
+            lastSavedCenterKey = centerKey([lonVal, latVal]);
         }
         if (s && (typeof s.map_default_zoom === 'number' || typeof s.map_default_zoom === 'string')) {
             if (inputMapDefaultZoom) inputMapDefaultZoom.value = String(s.map_default_zoom ?? '');
@@ -1424,7 +1425,7 @@ async function saveMapCenterSettings() {
                     pkg.showToast && pkg.showToast('Coordonnées invalides. Ex: 48.85, 2.35 ou N 49° 16.029 E 006° 07.512', 'warning', 'Carte', 5000);
                     return false;
                 }
-                patch.map_default_center = [lat, lon];
+                patch.map_default_center = [lon, lat];
                 inputMapCenterLat.value = lat;
                 inputMapCenterLon.value = lon;
                 newCenterKey = centerKey(patch.map_default_center);
@@ -1446,7 +1447,7 @@ async function saveMapCenterSettings() {
                     pkg.showToast && pkg.showToast('Coordonnées invalides. Ex: N 49° 16.029 / E 006° 07.512', 'warning', 'Carte', 5000);
                     return false;
                 }
-                patch.map_default_center = [lat, lon];
+                patch.map_default_center = [lon, lat];
                 newCenterKey = centerKey(patch.map_default_center);
             }
         }
@@ -1470,8 +1471,8 @@ async function saveMapCenterSettings() {
             pkg.showToast && pkg.showToast('Échec sauvegarde paramètres carte', 'warning', 'Paramètres', 3000);
         }
         if (patch.map_default_center && inputMapCenterCombined) {
-            const latStr = `${patch.map_default_center[0]}`;
-            const lonStr = `${patch.map_default_center[1]}`;
+            const lonStr = `${patch.map_default_center[0]}`;
+            const latStr = `${patch.map_default_center[1]}`;
             inputMapCenterCombined.value = `${latStr}, ${lonStr}`;
             setCoordinateValidity({ latValid: true, lonValid: true, combinedValid: true });
             try {

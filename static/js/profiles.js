@@ -842,8 +842,10 @@ class ProfileManager {
 
             const mapSettings = {
                 tile_provider: mapOptions.default || 'OSM',
-                default_center: [46.603354, 1.888334], // Centre de la France
-                default_zoom: 6
+                // Convention persistée : [longitude, latitude]. Ces valeurs ne
+                // servent que si la carte n'est exceptionnellement pas disponible.
+                default_center: [...pkg.DEFAULT_MAP_CENTER_LON_LAT],
+                default_zoom: pkg.DEFAULT_MAP_ZOOM
             };
 
             const vectorMap = mapOptions.vectorMap;
@@ -876,9 +878,9 @@ class ProfileManager {
             if (olMap && typeof olMap.getView === 'function') {
                 const view = olMap.getView();
                 const lonLat = ol.proj.toLonLat(view.getCenter());
-                // Convention de l'app pour un centre stocké : [latitude, longitude]
-                // (cf. applyMapDefaults() et les profils fournis côté serveur).
-                mapSettings.default_center = [lonLat[1], lonLat[0]];
+                // ol.proj.toLonLat() respecte directement la convention persistée
+                // de l'app : [longitude, latitude].
+                mapSettings.default_center = lonLat;
                 mapSettings.default_zoom = view.getZoom();
             }
 
@@ -1024,8 +1026,8 @@ class ProfileManager {
             this.currentSettings = {
                 map: {
                     tile_provider: 'OpenStreetMap',
-                    default_center: [48.8566, 2.3522],
-                    default_zoom: 6
+                    default_center: [...pkg.DEFAULT_MAP_CENTER_LON_LAT],
+                    default_zoom: pkg.DEFAULT_MAP_ZOOM
                 },
                 animation: {
                     enabled: true,
@@ -1416,19 +1418,13 @@ function applyMapSettings(mapOptions) {
                 pkg.refreshStamenTonerMap(pkg.options.map.stamenToner);
             }
 
-            // Vue (centre et zoom). Le centre est stocké en [latitude, longitude]
-            // (convention de l'app), fromLonLat() attend l'ordre inverse.
-            const center = mapOptions.default_center;
-            if (typeof olMap.getView === 'function' && Array.isArray(center) && center.length === 2) {
-                const lat = parseFloat(center[0]);
-                const lon = parseFloat(center[1]);
-                const view = olMap.getView();
-                if (Number.isFinite(lat) && Number.isFinite(lon)) {
-                    view.setCenter(ol.proj.fromLonLat([lon, lat]));
-                }
-                const zoom = parseFloat(mapOptions.default_zoom);
-                if (Number.isFinite(zoom)) view.setZoom(zoom);
-            }
+            // Vue (centre et zoom) : l'unique écriture dans OpenLayers est
+            // centralisée dans mapgl.js. Un profil doit primer sur les préférences.
+            pkg.applyMapDefaults(
+                mapOptions.default_center,
+                mapOptions.default_zoom,
+                false
+            );
         } else {
             console.warn('⚠️ Carte non initialisée : options carte enregistrées, elles seront appliquées à sa création');
         }
