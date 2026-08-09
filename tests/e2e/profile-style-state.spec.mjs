@@ -201,6 +201,61 @@ test('l\'indicateur "modifications non enregistrées" suit l\'état, pas les év
 });
 
 
+test('l\'étoile marque le profil par défaut, indépendamment du profil actif', async ({ page }) => {
+  // Liste et profil par défaut posés en mémoire : les profils et le réglage
+  // "profil par défaut" vivent dans %APPDATA%\GCMap, que le runtime isolé des
+  // tests ne couvre PAS. Créer un profil ou appeler setProfileAsDefault ici
+  // écrirait dans la configuration réelle de l'utilisateur.
+  const render = (defaultName, activeName) => page.evaluate(({ defaultName, activeName }) => {
+    const pm = window.profileManager;
+    pm.profilesList = ['Alpha', 'Beta'];
+    pm._defaultProfileName = defaultName;
+    pm.currentProfile = activeName ? { name: activeName, uid: activeName } : null;
+    pm.renderProfilesList();
+  }, { defaultName, activeName });
+
+  const marker = (name, cls) => page.locator(`#profiles-list [data-profile-name="${name}"] ${cls}`);
+
+  // Défaut et actif distincts : c'est le cas que l'étoile rend lisible.
+  await render('Alpha', 'Beta');
+  await expect(marker('Alpha', '.profile-default-star')).toHaveCount(1);
+  await expect(marker('Alpha', '.active-badge')).toHaveCount(0);
+  await expect(marker('Beta', '.active-badge')).toHaveCount(1);
+  await expect(marker('Beta', '.profile-default-star')).toHaveCount(0);
+
+  // Même profil : l'étoile doit coexister avec le badge ACTIF.
+  await render('Beta', 'Beta');
+  await expect(marker('Beta', '.profile-default-star')).toHaveCount(1);
+  await expect(marker('Beta', '.active-badge')).toHaveCount(1);
+  await expect(marker('Alpha', '.profile-default-star')).toHaveCount(0);
+
+  // Aucun profil par défaut ('' côté serveur) : aucune étoile.
+  await render('', 'Beta');
+  await expect(page.locator('#profiles-list .profile-default-star')).toHaveCount(0);
+
+  // Réglages pas encore lus au rendu (null) : l'étoile est posée après coup sur
+  // la liste déjà affichée, sans reconstruction.
+  await render(null, 'Beta');
+  await expect(page.locator('#profiles-list .profile-default-star')).toHaveCount(0);
+  await page.evaluate(() => {
+    const pm = window.profileManager;
+    pm._defaultProfileName = 'Alpha';
+    pm._updateDefaultProfileHighlight();
+  });
+  await expect(marker('Alpha', '.profile-default-star')).toHaveCount(1);
+
+  // Déplacer le badge ACTIF ne doit pas emporter l'étoile : les deux marquages
+  // sont indépendants et rafraîchis séparément.
+  await page.evaluate(() => {
+    const pm = window.profileManager;
+    pm.currentProfile = { name: 'Alpha', uid: 'Alpha' };
+    pm._updateActiveProfileHighlight();
+  });
+  await expect(marker('Alpha', '.active-badge')).toHaveCount(1);
+  await expect(marker('Alpha', '.profile-default-star')).toHaveCount(1);
+});
+
+
 test('basculer manuellement en mode icône garde la méta sprite et un seul redraw', async ({ page }) => {
   const toggled = await page.evaluate(async () => {
     const app = await import('/static/js/index.js');

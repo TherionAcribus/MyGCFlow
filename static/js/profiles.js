@@ -35,6 +35,8 @@ class ProfileManager {
         // Nom du profil par défaut connu (null = pas encore lu du serveur,
         // '' = aucun profil par défaut). Voir _getDefaultProfileName().
         this._defaultProfileName = null;
+        // Requête de lecture en cours, partagée par les appels concurrents.
+        this._defaultProfileNamePromise = null;
         this.init();
     }
 
@@ -378,10 +380,11 @@ class ProfileManager {
             this.showToast(pkg.t('Profil "${name}" défini comme profil par défaut', { name: profile.name }), 'green');
 
             // Rafraîchir les éléments UI dépendants : la liste des profils n'a
-            // pas changé, seules la valeur du sélecteur et la position du badge
-            // "ACTIF" doivent suivre.
+            // pas changé, seules la valeur du sélecteur et la position des
+            // marquages "ACTIF" / étoile "par défaut" doivent suivre.
             this._syncDefaultProfileSelectorValue();
             this._updateActiveProfileHighlight();
+            this._updateDefaultProfileHighlight();
         } catch (error) {
             console.error('❌ Erreur définition profil par défaut:', error);
             this.showToast(pkg.t('Erreur lors de la définition du profil par défaut'), 'red');
@@ -449,6 +452,10 @@ class ProfileManager {
             nameWrap.appendChild(nameSpan);
 
             this._setProfileItemActive(nameWrap, this.currentProfile?.name === profileName);
+            // `_defaultProfileName` vaut null tant que les réglages n'ont pas été
+            // lus : aucune étoile n'est posée, la comparaison échoue pour tous les
+            // profils. Le rattrapage est fait en fin de rendu.
+            this._setProfileItemDefault(nameWrap, this._defaultProfileName === profileName);
             colName.appendChild(nameWrap);
 
             // Colonne actions (menu déroulant)
@@ -494,6 +501,13 @@ class ProfileManager {
 
         // Mettre à jour l'indicateur du profil actif (nécessaire pour le rendu initial)
         this.updateCurrentProfileIndicator();
+
+        // Premier rendu avant que les réglages aient été lus (init() rend la liste
+        // sans attendre) : on récupère le profil par défaut, puis on pose l'étoile
+        // sur la liste déjà affichée plutôt que de la reconstruire.
+        if (this._defaultProfileName === null) {
+            this._getDefaultProfileName().then(() => this._updateDefaultProfileHighlight());
+        }
     }
 
     // Pose ou retire les marqueurs "profil actif" (classe CSS, icône, badge) sur
@@ -515,6 +529,37 @@ class ProfileManager {
         badge.className = 'active-badge';
         badge.textContent = pkg.t('ACTIF');
         nameWrap.appendChild(badge);
+    }
+
+    // Pose ou retire l'étoile "profil par défaut" sur un élément de liste déjà
+    // construit. Profil par défaut et profil actif sont deux états indépendants
+    // (on peut travailler sur un profil sans en faire son défaut) : l'étoile est
+    // insérée juste après le nom plutôt qu'ajoutée en fin de conteneur, pour que
+    // sa position ne dépende pas de l'ordre dans lequel les deux marquages sont
+    // rafraîchis.
+    _setProfileItemDefault(nameWrap, isDefault) {
+        nameWrap.querySelector('.profile-default-star')?.remove();
+        if (!isDefault) return;
+
+        const star = document.createElement('i');
+        star.className = 'ti ti-star-filled ms-1 profile-default-star';
+        star.title = pkg.t('Profil par défaut');
+        nameWrap.querySelector('.profile-name')?.after(star);
+    }
+
+    // Déplace l'étoile "par défaut" sur la liste déjà rendue (même principe que
+    // _updateActiveProfileHighlight : ni requête ni reconstruction du DOM).
+    _updateDefaultProfileHighlight() {
+        const container = document.getElementById('profiles-list');
+        if (!container) return;
+        // '' (aucun profil par défaut) ne doit correspondre à aucun nom.
+        const defaultName = this._defaultProfileName || null;
+        container.querySelectorAll('[data-profile-name]').forEach(item => {
+            const nameWrap = item.querySelector('.profile-name-wrap');
+            if (nameWrap) {
+                this._setProfileItemDefault(nameWrap, item.dataset.profileName === defaultName);
+            }
+        });
     }
 
     // Déplace le marquage "ACTIF" sur la liste déjà rendue. Alternative à
@@ -625,11 +670,21 @@ class ProfileManager {
     // qu'il vient de lire), l'état en mémoire reste donc fidèle et évite un
     // GET /api/settings à chaque action sur le profil par défaut.
     async _getDefaultProfileName() {
-        if (this._defaultProfileName === null) {
-            const settings = await this.loadAppSettings();
-            this._defaultProfileName = settings.default_profile_name || '';
+        if (this._defaultProfileName !== null) return this._defaultProfileName;
+        // Plusieurs appels peuvent se croiser au démarrage (rendu de la liste des
+        // profils, sélecteur des réglages) : ils partagent la même requête.
+        if (!this._defaultProfileNamePromise) {
+            this._defaultProfileNamePromise = this.loadAppSettings().then(settings => {
+                // Une écriture entre-temps (setProfileAsDefault) fait autorité :
+                // elle connaît une valeur plus récente que celle relue ici.
+                if (this._defaultProfileName === null) {
+                    this._defaultProfileName = settings.default_profile_name || '';
+                }
+                this._defaultProfileNamePromise = null;
+                return this._defaultProfileName;
+            });
         }
-        return this._defaultProfileName;
+        return this._defaultProfileNamePromise;
     }
 
     // Positionne la valeur du sélecteur "profil par défaut" sans reconstruire
@@ -808,6 +863,7 @@ class ProfileManager {
         if (result.success) {
             dbgProfiles('Profil par défaut sauvegardé avec succès, UUID:', selectedProfileUid);
             this._defaultProfileName = appliedProfileName || '';
+            this._updateDefaultProfileHighlight();
             this.showToast(
                 appliedProfileName ?
                     pkg.t('Profil "${selectedProfile}" appliqué et défini comme profil par défaut', { selectedProfile: appliedProfileName }) :
@@ -836,6 +892,8 @@ class ProfileManager {
             // Les réglages viennent d'être lus : en profiter pour amorcer le cache
             // et éviter un second GET /api/settings côté sélecteur.
             this._defaultProfileName = settings.default_profile_name || '';
+            // La liste peut déjà avoir été rendue (init) sans connaître le défaut.
+            this._updateDefaultProfileHighlight();
 
             const defaultProfileUid = settings.default_profile_uid;
 

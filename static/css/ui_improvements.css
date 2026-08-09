@@ -1595,6 +1595,16 @@ background: rgba(33, 150, 243, 0.04);
     align-items: center;
     gap: 8px;
 }
+/* Étoile du profil par défaut : indépendante du profil actif (les deux
+   marquages peuvent être posés sur le même élément ou sur deux différents).
+   Couleur explicite pour rester lisible aussi sur le fond accentué de
+   .active-profile, qui impose sa propre couleur de texte. */
+.profile-default-star {
+    color: var(--color-warning);
+    font-size: 0.9em;
+    vertical-align: baseline;
+}
+
 .active-profile .active-badge {
     background: var(--color-success);
     color: #fff;
