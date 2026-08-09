@@ -1123,101 +1123,27 @@ export function init_ui() {
         console.warn('[COUNTRY] Outer try/catch error:', e);
     }
 
+    // Les contrôles de style sont remplis depuis pkg.options (valeurs par défaut
+    // ici, valeurs du profil lors d'un chargement de profil) : mêmes fonctions
+    // dans les deux cas, aucune valeur n'est écrite deux fois.
+
     // ---------- POINTS ------------------
-    // colorpickers
-    cpPointBorderColor.value = pkg.options.point.border.color;
-    cpPointCenterColor.value = pkg.options.point.center.color;
-    // radio buttons
-    for (let radio of radioFillColorPoint) {
-        if (radio.value === pkg.options.point.center.mode) {
-            radio.checked = true;
-            break;
-        }
-    }
-    for (let radio of radioborderColorPoint) {
-        dbgUi(radio)
-        if (radio.value === pkg.options.point.border.mode) {
-            radio.checked = true;
-            break;
-        }
-    }
-    // synchronise sliders et input associés
-    synchronizeSliderAndInputCenter();
-    synchronizeSliderAndInputBorder();
+    normalizePointOptions();
+    bindSliderAndInput('sliderSizePoint', 'inputSizePoint');
+    bindSliderAndInput('sliderSizeBorder', 'inputSizeBorder');
+    syncPointOptionsUI();
 
-    // Initialiser l'affichage des sous-menus de points
-    updatePointOptionsDisplay();
-    // switch Icone/Vectoriel
-    dbgUi('🎨 [INIT_UI] Application du mode des points:', {
-        mode_dans_options: pkg.options.point.mode,
-        switch_actuel: switchIconeVectoriel.checked
-    });
-
-    if (pkg.options.point.mode === "vectoriel") {
-        switchIconeVectoriel.checked = true;
-        dbgUi('🎨 [INIT_UI] Mode vectoriel appliqué - switch coché');
-    } else if (pkg.options.point.mode === "icone") {
-        switchIconeVectoriel.checked = false;
-        dbgUi('🎨 [INIT_UI] Mode icone appliqué - switch décoché');
-    } else {
-        console.warn('🎨 [INIT_UI] Mode inconnu:', pkg.options.point.mode, '- utilisation de la valeur par défaut (vectoriel)');
-        switchIconeVectoriel.checked = true; // valeur par défaut
-    }
-
-    dbgUi('🎨 [INIT_UI] État final du switch:', switchIconeVectoriel.checked);
-    selectShape.value = pkg.options.point.shape
-    // Rafraîchir Tom Select pour refléter la nouvelle valeur sélectionnée
-    refreshTomSelect(document.getElementById('selectShape'));
-
-    
     // ------- ANIMATION DE LA CARTE -------
-    // Inputs
-    inputTimePerDay.value = pkg.options.animation.timePerDay;
-    if (inputExtraEndTime) {
-        const extraSeconds = Number(pkg.options.animation.extraEndSeconds) || 0;
-        pkg.options.animation.extraEndSeconds = Math.max(0, extraSeconds);
-        inputExtraEndTime.value = pkg.options.animation.extraEndSeconds;
-    }
+    normalizeAnimationOptions();
+    syncAnimationOptionsUI();
 
     // ------- FLASH -------
-    // colorpicker
-    if (cpFlashColor) cpFlashColor.value = pkg.options.flash.color;
-    // inputs
-    if (inputTimeFlash) inputTimeFlash.value = pkg.options.flash.duration;
-    if (inputSizeFlash) inputSizeFlash.value = pkg.options.flash.size;
-    // select pour le mode de flash
-    if (selectFlashMode) {
-        selectFlashMode.value = pkg.options.flash.mode;
-        // Rafraîchir Tom Select après avoir changé la valeur
-        refreshTomSelect(selectFlashMode);
-    }
-    // radio buttons pour le type de couleur du flash
-    const flashColorRadios = document.getElementsByName('flashColor');
-    for (let radio of flashColorRadios) {
-        if (radio.value === pkg.options.flash.color_type) {
-            radio.checked = true;
-            // Déclencher l'événement pour mettre à jour l'affichage
-            radio.dispatchEvent(new Event('change'));
-            break;
-        }
-    }
+    syncFlashOptionsUI();
+
     // ------- INFOS -------
-    // checkboxes
-    cbDisplayTitle.checked = pkg.options.infos.title.display;
-    cbDisplayNumberofCaches.checked = pkg.options.infos.numberOfCaches.display;
-    cbDisplayCurrentDate.checked = pkg.options.infos.currentDate.display;
-    // inputs
-    inputTitle.value = pkg.options.infos.title.text;
-    if (inputTitle.value != "My Geocaching Map") {
-        // enlève le placeholder si un texte est enregistré
-        /* M.updateTextFields() — removed (Bootstrap 5 handles labels) */
-    }
-    // textAreas
-    
+    syncInfosOptionsUI();
 
     // ------- CARTES VECTORIELLE ET TONER -------
-    // Les contrôles sont remplis depuis pkg.options.map (valeurs par défaut ici,
-    // valeurs du profil lors d'un chargement de profil).
     syncMapOptionsUI();
 
     // Initialiser l'interface des paramètres (enregistrement)
@@ -2589,137 +2515,158 @@ function updatePointOptionsDisplay() {
     }
 }
 
-// Initialisation des options d'icônes
-function initializeIconOptions() {
-    // Synchroniser les sliders de taille d'icône
-    const sliderSizeIcon = document.getElementById('sliderSizeIcon');
-    const inputSizeIcon = document.getElementById('inputSizeIcon');
+// Jeux d'icônes disponibles (sprite atlas). Données pures : ni DOM, ni options,
+// ni rendu — partagées par l'écriture de l'état (setPointIconSet) et par
+// l'aperçu de l'onglet Style (renderIconPreview).
+const ICON_SETS = {
+    geocaching: {
+        url: '/static/img/geocaching-sprite.png',
+        url2x: '/static/img/geocaching-sprite@2x.png',
+        // Feuille paddée en puissance de 2 (2048x256) pour autoriser les mipmaps GPU (WebGL1).
+        // Les icônes restent ancrées en haut-gauche, le padding est en bas-droite : les offsets ne changent pas.
+        sheetWidth: 2048,
+        sheetHeight: 256,
+        items: [
+            { key: 'trad',    x:   0, y:  0, w:50, h:50, label: 'Traditional' },
+            { key: 'ape',   x:  100, y:  0, w:50, h:50, label: 'APE' },
 
-    if (sliderSizeIcon && inputSizeIcon) {
-        // Synchronisation des contrôles
-        sliderSizeIcon.oninput = function() {
-            inputSizeIcon.value = this.value;
-            updateIconSize();
-        };
-        inputSizeIcon.oninput = function() {
-            sliderSizeIcon.value = this.value;
-            updateIconSize();
-        };
-
-        // Valeurs par défaut
-        if (!sliderSizeIcon.value) sliderSizeIcon.value = 24;
-        if (!inputSizeIcon.value) inputSizeIcon.value = 24;
+            { key: 'hq',    x:  200, y:  0, w:50, h:50, label: 'HQ' },
+            { key: 'multi',  x:  300, y:  0, w:50, h:50, label: 'Multi' },
+            { key: 'event',   x: 400, y:  0, w:50, h:50, label: 'Event' },
+            { key: 'cito',    x: 500, y:  0, w:50, h:50, label: 'CITO' },
+            { key: 'mega',    x: 600, y:  0, w:50, h:50, label: 'Mega' },
+            { key: 'giga',   x: 700, y:  0, w:50, h:50, label: 'Giga' },
+            { key: 'maze',    x: 800, y:  0, w:50, h:50, label: 'GPS Adventures Exhibit' },
+            { key: 'earth',     x: 900, y:  0, w:50, h:50, label: 'Earthcache' },
+            { key: 'virtual', x: 1000, y:  0, w:50, h:50, label: 'Virtual' },
+            { key: 'webcam', x: 1100, y:  0, w:50, h:50, label: 'Webcam' },
+            { key: 'locationless', x: 1200, y:  0, w:50, h:50, label: 'Locationless' },
+            { key: 'unknown',     x: 1300, y:  0, w:50, h:50, label: 'Unknown' },
+            { key: 'letterbox',      x: 1400, y:  0, w:50, h:50, label: 'Letterbox' },
+            { key: 'wherigo',   x: 1500, y:  0, w:50, h:50, label: 'Wherigo' },
+            // Autres à ajouter éventuellement)
+        ]
+    },
+    // Sprite Smiley: seulement l'icône "found it" du geocaching
+    smiley: {
+        url: '/static/img/geocaching-sprite.png',
+        url2x: '/static/img/geocaching-sprite@2x.png',
+        // Feuille paddée en puissance de 2 (2048x256) — voir 'geocaching'.
+        sheetWidth: 2048,
+        sheetHeight: 256,
+        items: [
+            { key: 'found', x: 1700, y: 0, w: 50, h: 50, label: 'Found It' }
+        ]
     }
+};
+const DEFAULT_ICON_SET = 'geocaching';
+const DEFAULT_ICON_SIZE = 24;
 
-    // Gestion du select d'icônes
-    const selectIconSet = document.getElementById('selectIconSet');
-    if (selectIconSet) {
-        selectIconSet.addEventListener('change', updateIconSet);
-        // Pas de remove_button : ce champ doit toujours avoir une valeur.
-        initTomSelect(selectIconSet, { maxItems: 1, plugins: [] });
-        // Initialiser avec le premier jeu d'icônes
-        updateIconSet();
-    }
+// Les écouteurs des contrôles d'icônes ne doivent être posés qu'une fois :
+// initializeIconOptions() est rappelée à chaque affichage du sous-menu.
+let iconOptionsBound = false;
+
+// Écrit le jeu d'icônes et sa méta sprite dans pkg.options.point. N'écrit ni le
+// DOM ni la carte : syncPointOptionsUI() reflète le choix dans les contrôles et
+// refreshPoints() se charge du rendu. Renvoie le nom du jeu réellement retenu.
+export function setPointIconSet(setName) {
+    const point = pkg.options?.point;
+    if (!point) return null;
+
+    const name = ICON_SETS[setName] ? setName : DEFAULT_ICON_SET;
+    const meta = ICON_SETS[name];
+    point.iconSet = name;
+    point.sprite = {
+        url: meta.url,
+        url2x: meta.url2x,
+        sheetWidth: meta.sheetWidth,
+        sheetHeight: meta.sheetHeight,
+        map: Object.fromEntries(meta.items.map(it => [it.key, {x:it.x, y:it.y, w:it.w, h:it.h}]))
+    };
+    return name;
 }
 
-// Mise à jour du jeu d'icônes affiché
+// Complète pkg.options.point des valeurs absentes de defaultValues.json (jeu
+// d'icônes, sa méta sprite et la taille d'icône). Sans cet appel, un démarrage
+// en mode icône n'aurait pas de sprite tant que le sous-menu n'a pas été ouvert.
+function normalizePointOptions() {
+    const point = pkg.options?.point;
+    if (!point) return;
+    const iconSize = parseInt(point.iconSize);
+    point.iconSize = Number.isFinite(iconSize) && iconSize > 0 ? iconSize : DEFAULT_ICON_SIZE;
+    setPointIconSet(point.iconSet);
+}
+
+// Initialisation des options d'icônes (écouteurs posés une seule fois)
+function initializeIconOptions() {
+    if (!iconOptionsBound) {
+        // Synchroniser les sliders de taille d'icône
+        const sliderSizeIcon = document.getElementById('sliderSizeIcon');
+        const inputSizeIcon = document.getElementById('inputSizeIcon');
+
+        if (sliderSizeIcon && inputSizeIcon) {
+            sliderSizeIcon.oninput = function() {
+                inputSizeIcon.value = this.value;
+                updateIconSize();
+            };
+            inputSizeIcon.oninput = function() {
+                sliderSizeIcon.value = this.value;
+                updateIconSize();
+            };
+        }
+
+        // Gestion du select d'icônes
+        const selectIconSet = document.getElementById('selectIconSet');
+        if (selectIconSet) {
+            selectIconSet.addEventListener('change', updateIconSet);
+            // Pas de remove_button : ce champ doit toujours avoir une valeur.
+            initTomSelect(selectIconSet, { maxItems: 1, plugins: [] });
+        }
+
+        iconOptionsBound = true;
+    }
+
+    // L'aperçu suit l'état, pas l'inverse : aucun rafraîchissement de carte ici,
+    // sans quoi ouvrir le sous-menu redessinerait les points sans changement.
+    renderIconPreview();
+}
+
+// Aperçu des icônes du jeu actif. N'écrit QUE le DOM.
+function renderIconPreview() {
+    const iconPreview = document.getElementById('iconPreview');
+    if (!iconPreview) return;
+
+    const meta = ICON_SETS[pkg.options?.point?.iconSet] || ICON_SETS[DEFAULT_ICON_SET];
+    const sheetW = meta.sheetWidth;
+    const sheetH = meta.sheetHeight;
+    const url1x = meta.url;
+    const url2x = meta.url2x;
+
+    iconPreview.innerHTML = meta.items.map((it) => `
+        <div class="icon-item" data-icon="${it.key}">
+            <div class="icon-sprite" style="
+                background-image:url('${url1x}');
+                ${url2x ? `background-image: image-set(
+                    url('${url1x}') 1x,
+                    url('${url2x}') 2x
+                );` : ''}
+                background-position:-${it.x}px -${it.y}px;
+                width:${it.w}px; height:${it.h}px;
+                background-size:${sheetW}px ${sheetH}px;
+            "></div>
+            <div class="icon-label">${it.label}</div>
+        </div>
+    `).join('');
+}
+
+// Changement de jeu d'icônes par l'utilisateur : état, puis aperçu, puis rendu.
 function updateIconSet() {
     const selectIconSet = document.getElementById('selectIconSet');
-    const iconPreview = document.getElementById('iconPreview');
+    if (!selectIconSet) return;
 
-    if (!selectIconSet || !iconPreview) return;
-
-    const selectedSet = selectIconSet.value;
-    let icons = [];
-    let useSprite = false;
-    let spriteMeta = null; // {url, sheetWidth, sheetHeight, items: [{key,x,y,w,h}]}
-
-    // Définir les icônes selon le jeu sélectionné
-    switch (selectedSet) {
-        case 'geocaching':
-            // Sprite Geocaching: définir la meta (à adapter à votre sprite)
-            useSprite = true;
-            spriteMeta = {
-                url: '/static/img/geocaching-sprite.png',
-                url2x: '/static/img/geocaching-sprite@2x.png',
-                // Feuille paddée en puissance de 2 (2048x256) pour autoriser les mipmaps GPU (WebGL1).
-                // Les icônes restent ancrées en haut-gauche, le padding est en bas-droite : les offsets ne changent pas.
-                sheetWidth: 2048,
-                sheetHeight: 256,
-                items: [
-                    { key: 'trad',    x:   0, y:  0, w:50, h:50, label: 'Traditional' },
-                    { key: 'ape',   x:  100, y:  0, w:50, h:50, label: 'APE' },
-
-                    { key: 'hq',    x:  200, y:  0, w:50, h:50, label: 'HQ' },
-                    { key: 'multi',  x:  300, y:  0, w:50, h:50, label: 'Multi' },
-                    { key: 'event',   x: 400, y:  0, w:50, h:50, label: 'Event' },
-                    { key: 'cito',    x: 500, y:  0, w:50, h:50, label: 'CITO' },
-                    { key: 'mega',    x: 600, y:  0, w:50, h:50, label: 'Mega' },
-                    { key: 'giga',   x: 700, y:  0, w:50, h:50, label: 'Giga' },
-                    { key: 'maze',    x: 800, y:  0, w:50, h:50, label: 'GPS Adventures Exhibit' },
-                    { key: 'earth',     x: 900, y:  0, w:50, h:50, label: 'Earthcache' },
-                    { key: 'virtual', x: 1000, y:  0, w:50, h:50, label: 'Virtual' },
-                    { key: 'webcam', x: 1100, y:  0, w:50, h:50, label: 'Webcam' },
-                    { key: 'locationless', x: 1200, y:  0, w:50, h:50, label: 'Locationless' },
-                    { key: 'unknown',     x: 1300, y:  0, w:50, h:50, label: 'Unknown' },
-                    { key: 'letterbox',      x: 1400, y:  0, w:50, h:50, label: 'Letterbox' },
-                    { key: 'wherigo',   x: 1500, y:  0, w:50, h:50, label: 'Wherigo' },
-                    // Autres à ajouter éventuellement)
-                ]
-            };
-            break;
-        case 'smiley':
-            // Sprite Smiley: seulement l'icône "found it" du geocaching
-            useSprite = true;
-            spriteMeta = {
-                url: '/static/img/geocaching-sprite.png',
-                url2x: '/static/img/geocaching-sprite@2x.png',
-                // Feuille paddée en puissance de 2 (2048x256) — voir cas 'geocaching'.
-                sheetWidth: 2048,
-                sheetHeight: 256,
-                items: [
-                    { key: 'found', x: 1700, y: 0, w: 50, h: 50, label: 'Found It' }
-                ]
-            };
-            break;
-    }
-
-    if (useSprite && spriteMeta) {
-        // Rendu via sprite atlas
-        const sheetW = spriteMeta.sheetWidth;
-        const sheetH = spriteMeta.sheetHeight;
-        const url1x = spriteMeta.url;
-        const url2x = spriteMeta.url2x;
-
-        iconPreview.innerHTML = spriteMeta.items.map((it) => `
-            <div class="icon-item" data-icon="${it.key}">
-                <div class="icon-sprite" style="
-                    background-image:url('${url1x}');
-                    ${url2x ? `background-image: image-set(
-                        url('${url1x}') 1x,
-                        url('${url2x}') 2x
-                    );` : ''}
-                    background-position:-${it.x}px -${it.y}px;
-                    width:${it.w}px; height:${it.h}px;
-                    background-size:${sheetW}px ${sheetH}px;
-                "></div>
-                <div class="icon-label">${it.label}</div>
-            </div>
-        `).join('');
-
-        // Sauvegarder la meta pour le rendu carte
-        pkg.options.point.mode = 'icone';
-        pkg.options.point.iconSet = selectedSet;
-        pkg.options.point.sprite = {
-            url: spriteMeta.url,
-            url2x: spriteMeta.url2x,
-            sheetWidth: spriteMeta.sheetWidth,
-            sheetHeight: spriteMeta.sheetHeight,
-            map: Object.fromEntries(spriteMeta.items.map(it => [it.key, {x:it.x,y:it.y,w:it.w,h:it.h}]))
-        };
-
-        pkg.refreshPoints(pkg.options);
-    }
+    setPointIconSet(selectIconSet.value);
+    renderIconPreview();
+    pkg.refreshPoints(pkg.options);
 }
 
 // ... (rest of the code remains the same)
@@ -2751,35 +2698,70 @@ function updateIconSize() {
 window.selectSpriteIcon = selectSpriteIcon;
 window.updateIconSize = updateIconSize;
 
-function synchronizeSliderAndInputCenter() {
-    sliderSizePoint.oninput = function() {
-        inputSizePoint.value = this.value;
-    };
-
-    // Mise à jour du slider lors de la modification de l'input number
-    inputSizePoint.oninput = function() {
-        sliderSizePoint.value = this.value;
-    };
-
-    // reglage des compteurs
-    sliderSizePoint.value = pkg.options.point.center.size
-    inputSizePoint.value = pkg.options.point.center.size
+// Maintient slider et champ numérique en miroir pendant la saisie. Ne pose que
+// les écouteurs : les valeurs viennent de syncPointOptionsUI().
+function bindSliderAndInput(sliderId, inputId) {
+    const slider = document.getElementById(sliderId);
+    const input = document.getElementById(inputId);
+    if (!slider || !input) return;
+    slider.oninput = function() { input.value = this.value; };
+    input.oninput = function() { slider.value = this.value; };
 }
 
+// Écrit la même valeur dans un couple slider / champ numérique.
+function setSliderAndInput(sliderId, inputId, value) {
+    if (value == null) return;
+    const slider = document.getElementById(sliderId);
+    const input = document.getElementById(inputId);
+    if (slider) slider.value = value;
+    if (input) input.value = value;
+}
 
-function synchronizeSliderAndInputBorder() {
-    sliderSizeBorder.oninput = function() {
-        inputSizeBorder.value = this.value;
-    };
+// Coche le bouton radio correspondant à `value` et décoche les autres du groupe.
+function setRadioGroupValue(radios, value) {
+    if (!radios) return;
+    for (const radio of radios) {
+        radio.checked = radio.value === value;
+    }
+}
 
-    // Mise à jour du slider lors de la modification de l'input number
-    inputSizeBorder.oninput = function() {
-        sliderSizeBorder.value = this.value;
-    };
+// Reflète pkg.options.point (la source de vérité de l'état des points) dans les
+// contrôles de l'onglet Style. N'écrit QUE le DOM : ne modifie aucune option et
+// ne rafraîchit pas la carte — même contrat que syncMapOptionsUI(), pour rester
+// utilisable au démarrage (init_ui) comme au chargement d'un profil.
+export function syncPointOptionsUI() {
+    const point = pkg.options?.point;
+    if (!point) return;
 
-    // reglage des compteurs
-    sliderSizeBorder.value = pkg.options.point.border.size
-    inputSizeBorder.value = pkg.options.point.border.size
+    // Switch icône/vectoriel : tout mode inconnu est traité comme vectoriel,
+    // comme le repli historique de init_ui.
+    if (switchIconeVectoriel) switchIconeVectoriel.checked = point.mode !== 'icone';
+
+    // Colorpickers et types de couleur
+    if (cpPointCenterColor && point.center?.color) cpPointCenterColor.value = point.center.color;
+    if (cpPointBorderColor && point.border?.color) cpPointBorderColor.value = point.border.color;
+    setRadioGroupValue(radioFillColorPoint, point.center?.mode);
+    setRadioGroupValue(radioborderColorPoint, point.border?.mode);
+
+    // Tailles (slider + champ numérique)
+    setSliderAndInput('sliderSizePoint', 'inputSizePoint', point.center?.size);
+    setSliderAndInput('sliderSizeBorder', 'inputSizeBorder', point.border?.size);
+    setSliderAndInput('sliderSizeIcon', 'inputSizeIcon', point.iconSize);
+
+    // Selects
+    if (selectShape && point.shape) {
+        selectShape.value = point.shape;
+        refreshTomSelect(selectShape);
+    }
+    const selectIconSet = document.getElementById('selectIconSet');
+    if (selectIconSet && point.iconSet) {
+        selectIconSet.value = point.iconSet;
+        refreshTomSelect(selectIconSet);
+    }
+
+    // Sous-menu visible (vectoriel / icône) + aperçu des icônes. Appelé APRÈS le
+    // switch : cette fonction se base sur son état.
+    updatePointOptionsDisplay();
 }
 
 
@@ -3264,6 +3246,41 @@ function changeAnimationValues(event){
     pkg.updateInfosForPictures();
 }
 
+// Borne les options d'animation venues des valeurs par défaut ou d'un profil.
+function normalizeAnimationOptions() {
+    const animation = pkg.options?.animation;
+    if (!animation) return;
+    animation.extraEndSeconds = Math.max(0, Number(animation.extraEndSeconds) || 0);
+}
+
+// Reflète pkg.options.animation dans les contrôles de l'onglet Animation, puis
+// recalcule les durées dérivées. N'écrit QUE le DOM côté options (cf.
+// syncMapOptionsUI) ; seules les durées calculées (totalTimeInMilliSec, nombre
+// d'images) sont mises à jour, comme après une saisie manuelle.
+export function syncAnimationOptionsUI() {
+    const animation = pkg.options?.animation;
+    if (!animation) return;
+
+    if (inputTimePerDay && animation.timePerDay != null) inputTimePerDay.value = animation.timePerDay;
+    if (inputExtraEndTime) inputExtraEndTime.value = animation.extraEndSeconds ?? 0;
+
+    // Une durée par jour imposée (profil) délie la durée totale de la musique,
+    // exactement comme une saisie manuelle dans le champ.
+    if (isDurationLockedToAudio) {
+        isDurationLockedToAudio = false;
+        updateDurationLockIndicator();
+    }
+
+    // Les durées dérivées n'ont de sens qu'une fois le nombre de jours connu
+    // (lecture de la BDD) : au démarrage, updateAnimationMenuAfterReadBdd() les
+    // calculera. pkg.metadata.deltaDays est vide avant.
+    if (Number.isFinite(Number(pkg.metadata?.deltaDays))) {
+        updateTotalTime();
+        updateDurationMatchIndicator();
+    }
+    pkg.updateInfosForPictures();
+}
+
 export function updateAnimationMenuAfterReadBdd(metadata){
     spanDeltaDays.innerText = metadata.deltaDays;
     updateTotalTime();
@@ -3521,21 +3538,37 @@ function changeFlashValues(event){
 function changeFlashColorType(event) {
     // Mettre à jour le mode de couleur dans les options
     pkg.options.flash.color_type = event.value;
+    updateFlashColorPickerVisibility();
+}
 
-    // Gestion de l'affichage du color picker
-    const flashColorPickerContainer = document.querySelector('#flashColor').closest('.input-field');
+// Le choix d'une couleur n'a de sens qu'en mode "couleur unique". Le conteneur
+// est cherché à partir du champ lui-même : la classe .input-field de Materialize
+// a disparu à la migration Bootstrap, le sélecteur en dur ne trouvait plus rien
+// et le picker restait affiché en mode GC/transparent.
+function updateFlashColorPickerVisibility() {
+    if (!cpFlashColor) return;
+    const container = cpFlashColor.closest('.input-field') || cpFlashColor.parentElement;
+    if (!container) return;
+    container.style.display = pkg.options?.flash?.color_type === 'fix' ? 'block' : 'none';
+}
 
-    if (event.value === 'fix') {
-        // Afficher le color picker pour couleur fixe
-        if (flashColorPickerContainer) {
-            flashColorPickerContainer.style.display = 'block';
-        }
-    } else {
-        // Masquer le color picker pour GC ou transparent
-        if (flashColorPickerContainer) {
-            flashColorPickerContainer.style.display = 'none';
-        }
+// Reflète pkg.options.flash dans les contrôles de l'onglet Flash.
+// N'écrit QUE le DOM (cf. syncMapOptionsUI).
+export function syncFlashOptionsUI() {
+    const flash = pkg.options?.flash;
+    if (!flash) return;
+
+    if (selectFlashMode && flash.mode) {
+        selectFlashMode.value = flash.mode;
+        // Rafraîchir Tom Select après avoir changé la valeur
+        refreshTomSelect(selectFlashMode);
     }
+    if (inputTimeFlash && flash.duration != null) inputTimeFlash.value = flash.duration;
+    if (inputSizeFlash && flash.size != null) inputSizeFlash.value = flash.size;
+    if (cpFlashColor && flash.color) cpFlashColor.value = flash.color;
+
+    setRadioGroupValue(document.getElementsByName('flashColor'), flash.color_type);
+    updateFlashColorPickerVisibility();
 }
 
 // Fonction de validation à la perte de focus pour la durée du flash
@@ -3602,6 +3635,23 @@ function updateOverlayElementsVisibility() {
     } catch(e) {
         console.warn('Erreur updateOverlayElementsVisibility:', e);
     }
+}
+
+// Reflète pkg.options.infos dans les cases à cocher / le champ titre, puis dans
+// les overlays de la carte (titre affiché et visibilité des blocs).
+// N'écrit QUE le DOM (cf. syncMapOptionsUI).
+export function syncInfosOptionsUI() {
+    const infos = pkg.options?.infos;
+    if (!infos) return;
+
+    if (cbDisplayTitle) cbDisplayTitle.checked = infos.title?.display === true;
+    if (cbDisplayNumberofCaches) cbDisplayNumberofCaches.checked = infos.numberOfCaches?.display === true;
+    if (cbDisplayCurrentDate) cbDisplayCurrentDate.checked = infos.currentDate?.display === true;
+    if (inputTitle) inputTitle.value = infos.title?.text ?? '';
+
+    // displayFrames() écrit le texte du titre et applique la visibilité des
+    // overlays à partir des mêmes options.
+    pkg.displayFrames();
 }
 
 function extractCssDeclarationsFromFile(cssContent) {

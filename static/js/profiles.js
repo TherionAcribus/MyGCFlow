@@ -966,122 +966,71 @@ class ProfileManager {
                 mapSettings.default_zoom = view.getZoom();
             }
 
-            // Paramètres des points
-            const sizeInput = document.getElementById('sliderSizePoint');
-            const colorInput = document.getElementById('pointCenterColor');
-            const shapeSelect = document.getElementById('selectShape');
-            const borderInput = document.getElementById('sliderSizeBorder');
-            const borderColorInput = document.getElementById('pointBorderColor');
-            const modeSwitch = document.getElementById('switchIconeVectoriel');
-
-            // Options spécifiques au mode icône
-            const selectIconSet = document.getElementById('selectIconSet');
-            const inputSizeIcon = document.getElementById('inputSizeIcon');
-
-            // Récupération des types de couleur
-            const fillColorType = document.querySelector('input[name="fillColorPoint"]:checked');
-            const borderColorType = document.querySelector('input[name="borderColorPoint"]:checked');
+            // Paramètres des points : lus dans pkg.options.point, pour les mêmes
+            // raisons que la carte ci-dessus. Les contrôles n'en sont qu'un
+            // reflet (syncPointOptionsUI) et certains réglages, comme la méta
+            // sprite du jeu d'icônes, n'existent que dans les options.
+            const point = pkg.options?.point || {};
+            const center = point.center || {};
+            const border = point.border || {};
+            const borderSize = parseInt(border.size) || 0;
 
             const pointSettings = {
-                size: sizeInput ? parseInt(sizeInput.value) || 8 : 8,
-                color: colorInput ? colorInput.value || '#ff5722' : '#ff5722',
-                shape: shapeSelect ? shapeSelect.value || 'circle' : 'circle',
-                halo: borderInput ? (parseInt(borderInput.value) > 0) : false,
-                border_color: borderColorInput ? borderColorInput.value || '#000000' : '#000000',
-                border_size: borderInput ? parseInt(borderInput.value) || 0 : 0,
-                fill_color_type: fillColorType ? fillColorType.value || 'fix' : 'fix',
-                border_color_type: borderColorType ? borderColorType.value || 'fix' : 'fix',
-                mode: modeSwitch ? (modeSwitch.checked ? 'vectoriel' : 'icone') : 'vectoriel',
-                icon_set: selectIconSet ? (selectIconSet.value || 'geocaching') : (pkg?.options?.point?.iconSet || 'geocaching'),
-                icon_size: inputSizeIcon ? (parseInt(inputSizeIcon.value) || 24) : (parseInt(pkg?.options?.point?.iconSize) || 24)
+                size: parseInt(center.size) || 8,
+                color: center.color || '#ff5722',
+                shape: point.shape || 'circle',
+                halo: borderSize > 0,
+                border_color: border.color || '#000000',
+                border_size: borderSize,
+                fill_color_type: center.mode || 'fix',
+                border_color_type: border.mode || 'fix',
+                mode: point.mode === 'icone' ? 'icone' : 'vectoriel',
+                icon_set: point.iconSet || 'geocaching',
+                icon_size: parseInt(point.iconSize) || 24
             };
 
-            dbgProfiles('Paramètres points récupérés:', {
-                size: pointSettings.size,
-                color: pointSettings.color,
-                shape: pointSettings.shape,
-                halo: pointSettings.halo,
-                border_color: pointSettings.border_color,
-                border_size: pointSettings.border_size,
-                fill_color_type: pointSettings.fill_color_type,
-                border_color_type: pointSettings.border_color_type,
-                mode: pointSettings.mode
-            });
-
-            dbgProfiles('🔍 État des éléments HTML:', {
-                sizeInput_value: sizeInput ? sizeInput.value : 'null',
-                colorInput_value: colorInput ? colorInput.value : 'null',
-                borderInput_value: borderInput ? borderInput.value : 'null',
-                borderColorInput_value: borderColorInput ? borderColorInput.value : 'null'
-            });
+            dbgProfiles('Paramètres points récupérés:', pointSettings);
 
             // Paramètres d'animation
-            const timeInput = document.getElementById('inputTimePerDay');
+            const timePerDay = parseInt(pkg.options?.animation?.timePerDay) || 1000;
             const animationSettings = {
                 enabled: true, // Par défaut activé
-                speed: timeInput ? Math.max(0.1, Math.min(5.0, 1000 / (parseInt(timeInput.value) || 1000))) : 1.0
+                speed: Math.max(0.1, Math.min(5.0, 1000 / timePerDay))
             };
 
-            // Paramètres flash - récupération précise depuis les éléments HTML
-            const flashModeSelect = document.getElementById('selectFlashMode');
-            const flashDurationInput = document.getElementById('inputTimeFlash');
-            const flashSizeInput = document.getElementById('inputSizeFlash');
-            const flashColorInput = document.getElementById('flashColor');
-            const flashColorTypeRadio = document.querySelector('input[name="flashColor"]:checked');
-
-            // Récupération avec vérification des valeurs
-            const flashMode = flashModeSelect && flashModeSelect.value ? flashModeSelect.value : 'circle';
-            const flashDuration = flashDurationInput && flashDurationInput.value ?
-                parseInt(flashDurationInput.value) : 1000;
-            const flashSize = flashSizeInput && flashSizeInput.value ?
-                parseInt(flashSizeInput.value) : 50;
-            const flashColor = flashColorInput && flashColorInput.value ?
-                flashColorInput.value : '#FF00FF';
-            const flashColorType = flashColorTypeRadio ? flashColorTypeRadio.value : 'fix';
-
+            // Paramètres flash
+            const flash = pkg.options?.flash || {};
             const flashSettings = {
-                mode: flashMode,
-                duration: flashDuration,
-                size: flashSize,
-                color: flashColor,
-                color_type: flashColorType
+                mode: flash.mode || 'circle',
+                duration: parseInt(flash.duration) || 1000,
+                size: parseInt(flash.size) || 50,
+                color: flash.color || '#FF00FF',
+                color_type: flash.color_type || 'fix'
             };
 
-            dbgProfiles('🔍 Paramètres flash récupérés:', {
-                element_mode: flashModeSelect ? flashModeSelect.value : 'null',
-                element_duration: flashDurationInput ? flashDurationInput.value : 'null',
-                element_size: flashSizeInput ? flashSizeInput.value : 'null',
-                element_color: flashColorInput ? flashColorInput.value : 'null',
-                element_color_type: flashColorTypeRadio ? flashColorTypeRadio.value : 'null',
-                final_flash: flashSettings
-            });
+            dbgProfiles('🔍 Paramètres flash récupérés:', flashSettings);
 
-            // Paramètres infos - récupération depuis menu_informations.html
-            const displayTitleCheckbox = document.getElementById('cbDisplayTitle');
-            const titleInput = document.getElementById('inputTitle');
-            const displayNumberofCachesCheckbox = document.getElementById('cbDisplayNumberofCaches');
-            const displayCurrentDateCheckbox = document.getElementById('cbDisplayCurrentDate');
+            // Paramètres infos. Le CSS des overlays fait exception : il n'est pas
+            // stocké dans les options, les textareas en sont la source (elles
+            // sont resynchronisées par changeTitleCssValues/changeInfosCssValues).
+            const infos = pkg.options?.infos || {};
             const titleCssTextarea = document.getElementById('inputTitleCss');
             const infosCssTextarea = document.getElementById('inputInfosCss');
 
             const infosSettings = {
                 title: {
-                    display: displayTitleCheckbox ? !!displayTitleCheckbox.checked : true,
-                    text: titleInput && titleInput.value !== undefined ? titleInput.value : 'My Geocaching Map'
+                    display: infos.title?.display !== false,
+                    text: infos.title?.text ?? 'My Geocaching Map'
                 },
-                number_of_caches: displayNumberofCachesCheckbox ? !!displayNumberofCachesCheckbox.checked : true,
-                current_date: displayCurrentDateCheckbox ? !!displayCurrentDateCheckbox.checked : true,
+                number_of_caches: infos.numberOfCaches?.display !== false,
+                current_date: infos.currentDate?.display !== false,
                 title_css: extractCssDeclarations(titleCssTextarea ? titleCssTextarea.value : ''),
                 infos_css: extractCssDeclarations(infosCssTextarea ? infosCssTextarea.value : ''),
             };
 
             dbgProfiles('📄 Paramètres infos récupérés:', {
-                element_title_display: displayTitleCheckbox ? displayTitleCheckbox.checked : 'null',
-                element_title_text: titleInput ? titleInput.value : 'null',
-                element_title_css_length: titleCssTextarea ? (titleCssTextarea.value || '').length : 'null',
-                element_infos_css_length: infosCssTextarea ? (infosCssTextarea.value || '').length : 'null',
-                element_caches_display: displayNumberofCachesCheckbox ? displayNumberofCachesCheckbox.checked : 'null',
-                element_date_display: displayCurrentDateCheckbox ? displayCurrentDateCheckbox.checked : 'null',
+                title_css_length: (infosSettings.title_css || '').length,
+                infos_css_length: (infosSettings.infos_css || '').length,
                 final_infos: infosSettings
             });
 
@@ -1135,10 +1084,22 @@ class ProfileManager {
         }
     }
 
-    // Reste async pour ses appelants, mais l'application de la carte est
-    // désormais synchrone (pkg.options.map écrit directement, sans clic ni
-    // délai) : un instantané "état sauvegardé" pris juste après (ex:
-    // loadProfile -> _markSaved) ne peut plus capturer un état transitoire.
+    // Applique un profil. Entièrement synchrone (reste async pour ses appelants)
+    // et déterministe : aucun événement DOM simulé, donc rien à attendre. Un
+    // instantané "état sauvegardé" pris juste après (ex: loadProfile ->
+    // _markSaved) ne peut pas capturer un état transitoire.
+    //
+    // Trois phases strictement séparées :
+    //   1. ÉTAT  : les valeurs du profil sont écrites dans pkg.options, seule
+    //              source de vérité. Aucune écriture DOM, aucun rendu.
+    //   2. UI    : les contrôles reflètent cet état via pkg.sync*OptionsUI().
+    //              Ces fonctions n'écrivent que le DOM.
+    //   3. RENDU : une seule passe de rafraîchissement.
+    //
+    // L'ancienne version pilotait l'interface par .click()/dispatchEvent : le
+    // handler de chaque champ redessinait les points (un redraw complet par
+    // champ appliqué), et l'ordre dépendait des écouteurs réellement posés — un
+    // 'change' dispatché sur un champ écouté en 'input' n'appliquait rien.
     async applyProfile(profile) {
         dbgProfiles('🎯 APPLICATION PROFIL - Profil complet chargé:', {
             profile_name: profile.name,
@@ -1152,103 +1113,33 @@ class ProfileManager {
             timestamp: new Date().toISOString()
         });
 
-        // Appliquer les paramètres du profil à l'interface
-        if (profile.map) {
-            dbgProfiles('Application paramètres carte:', profile.map);
-            // Appliquer les paramètres de carte
-            applyMapSettings(profile.map);
-        }
+        // ---- 1. État ----
+        if (profile.points) applyPointState(profile.points);
+        if (profile.animation) applyAnimationState(profile.animation);
+        if (profile.flash) applyFlashState(profile.flash);
+        if (profile.infos) applyInfosState(profile.infos);
 
-        if (profile.points) {
-            dbgProfiles('Application paramètres points:', profile.points);
-            // Appliquer les paramètres des points
-            if (typeof applyPointSettings === 'function') {
-                applyPointSettings(profile.points);
-                // Forcer le reflet sur le switch vectoriel/icône si présent
-                try {
-                    const switchVector = document.getElementById('switchIconeVectoriel');
-                    if (switchVector) {
-                        const isVector = profile.points.mode === 'vectoriel';
-                        switchVector.checked = isVector;
-                        switchVector.dispatchEvent(new Event('change'));
-                    }
-                } catch (e) {
-                    console.warn('Switch vectoriel/icône non mis à jour:', e);
-                }
-            }
-        }
-
-        if (profile.animation) {
-            dbgProfiles('Application paramètres animation:', profile.animation);
-            // Appliquer les paramètres d'animation
-            if (typeof applyAnimationSettings === 'function') {
-                applyAnimationSettings(profile.animation);
-            }
-        }
-
-        if (profile.flash) {
-            dbgProfiles('Application paramètres flash:', profile.flash);
-            // Appliquer les paramètres flash
-            if (typeof applyFlashSettings === 'function') {
-                applyFlashSettings(profile.flash);
-            }
-        }
-
-        // Appliquer les paramètres infos (titre / infosFrame / CSS)
+        // ---- 2. Interface ----
+        // La carte fait exception : switchLayer() écrit lui-même son option et
+        // met à jour couches et boutons (cf. applyMapSettings).
+        if (profile.map) applyMapSettings(profile.map);
+        if (profile.points) pkg.syncPointOptionsUI();
+        if (profile.animation) pkg.syncAnimationOptionsUI();
+        if (profile.flash) pkg.syncFlashOptionsUI();
         if (profile.infos) {
-            dbgProfiles('📄 Application paramètres infos:', profile.infos);
-            try {
-                // Titre (affichage + texte)
-                const displayTitleCheckbox = document.getElementById('cbDisplayTitle');
-                const titleInput = document.getElementById('inputTitle');
-                if (displayTitleCheckbox) {
-                    displayTitleCheckbox.checked = !!(profile.infos.title && profile.infos.title.display);
-                    displayTitleCheckbox.dispatchEvent(new Event('change'));
-                }
-                if (titleInput && profile.infos.title && typeof profile.infos.title.text === 'string') {
-                    titleInput.value = profile.infos.title.text;
-                    titleInput.dispatchEvent(new Event('input'));
-                }
-
-                // Cases à cocher infos (nombre de caches, date)
-                const cbCaches = document.getElementById('cbDisplayNumberofCaches');
-                const cbDate = document.getElementById('cbDisplayCurrentDate');
-                if (cbCaches) {
-                    cbCaches.checked = !!profile.infos.number_of_caches;
-                    cbCaches.dispatchEvent(new Event('change'));
-                }
-                if (cbDate) {
-                    cbDate.checked = !!profile.infos.current_date;
-                    cbDate.dispatchEvent(new Event('change'));
-                }
-
-                // CSS titre / infos (via fonctions existantes)
-                if (typeof pkg.changeTitleCssValues === 'function' && typeof profile.infos.title_css === 'string') {
-                    // Nettoyer le CSS avant application
-                    const cleanedTitleCss = extractCssDeclarations(profile.infos.title_css);
-                    const appliedTitleCss = pkg.changeTitleCssValues(cleanedTitleCss) ?? cleanedTitleCss;
-                    const titleCssTextarea = document.getElementById('inputTitleCss');
-                    if (titleCssTextarea) titleCssTextarea.value = appliedTitleCss;
-                }
-                if (typeof pkg.changeInfosCssValues === 'function' && typeof profile.infos.infos_css === 'string') {
-                    // Nettoyer le CSS avant application
-                    const cleanedInfosCss = extractCssDeclarations(profile.infos.infos_css);
-                    const appliedInfosCss = pkg.changeInfosCssValues(cleanedInfosCss) ?? cleanedInfosCss;
-                    const infosCssTextarea = document.getElementById('inputInfosCss');
-                    if (infosCssTextarea) infosCssTextarea.value = appliedInfosCss;
-                }
-
-                try {
-                    if (typeof window.gcCssAssistantSyncFromTextareas === 'function') {
-                        window.gcCssAssistantSyncFromTextareas();
-                    }
-                } catch (e) {
-                    // non bloquant
-                }
-            } catch (e) {
-                console.warn('Application des paramètres infos: erreur non bloquante', e);
-            }
+            pkg.syncInfosOptionsUI();
+            applyInfosCss(profile.infos);
         }
+
+        // ---- 3. Rendu ----
+        // Un seul redraw des points, quel que soit le nombre de champs appliqués.
+        if (profile.points) {
+            const olMap = typeof pkg.getMap === 'function' ? pkg.getMap() : null;
+            if (olMap) pkg.refreshPoints(pkg.options);
+        }
+        // Les compteurs d'images dépendent de l'animation ET du flash : un profil
+        // sans bloc animation doit quand même les recalculer.
+        pkg.updateInfosForPictures();
 
         dbgProfiles('Profil appliqué avec succès:', profile.name);
     }
@@ -1558,217 +1449,150 @@ function applyMapSpecificOptions(mapOptions) {
     }
 }
 
-function applyPointSettings(pointOptions) {
+// Recopie les paramètres de points du profil (snake_case) dans pkg.options.point
+// (camelCase). N'écrit ni le DOM ni la carte : pkg.syncPointOptionsUI() reflète
+// l'état dans les contrôles et pkg.refreshPoints() redessine, une seule fois.
+function applyPointState(pointOptions) {
     try {
         dbgProfiles('🎯 APPLICATION PARAMÈTRES POINTS - Données reçues:', pointOptions);
 
-        // Appliquer le mode (icone/vectoriel) + options icône (set/taille)
-        const modeSwitch = document.getElementById('switchIconeVectoriel');
-        const selectIconSet = document.getElementById('selectIconSet');
-        const sliderSizeIcon = document.getElementById('sliderSizeIcon');
-        const inputSizeIcon = document.getElementById('inputSizeIcon');
-
-        // Si mode icône: préparer d'abord les champs, puis déclencher le switch (qui appelle initializeIconOptions/updateIconSet)
-        if (pointOptions.mode === 'icone') {
-            if (selectIconSet && pointOptions.icon_set) {
-                selectIconSet.value = pointOptions.icon_set;
-                try { refreshTomSelect(selectIconSet); } catch (_) {}
-            }
-            const size = parseInt(pointOptions.icon_size);
-            if (Number.isFinite(size) && size > 0) {
-                if (sliderSizeIcon) sliderSizeIcon.value = size;
-                if (inputSizeIcon) inputSizeIcon.value = size;
-            }
+        const point = pkg.options?.point;
+        if (!point) {
+            console.warn('⚠️ pkg.options.point indisponible, paramètres des points ignorés');
+            return;
         }
 
-        if (modeSwitch && pointOptions.mode) {
-            modeSwitch.checked = pointOptions.mode === 'vectoriel';
-            modeSwitch.dispatchEvent(new Event('change'));
-            dbgProfiles('🎯 Application mode des points:', pointOptions.mode, '-> switch checked:', modeSwitch.checked);
+        if (pointOptions.mode === 'icone' || pointOptions.mode === 'vectoriel') {
+            point.mode = pointOptions.mode;
         }
+        if (pointOptions.shape) point.shape = pointOptions.shape;
 
-        // Après initialisation en mode icône, appliquer set/taille au rendu
-        if (pointOptions.mode === 'icone') {
-            if (selectIconSet) {
-                // updateIconSet() est globale (ui.js)
-                try { window.updateIconSet?.(); } catch (_) {}
-            }
-            if (inputSizeIcon) {
-                try { window.updateIconSize?.(); } catch (_) {}
-            }
-        }
+        const center = point.center || (point.center = {});
+        const border = point.border || (point.border = {});
 
-        // Appliquer la taille des points
-        const sizeInput = document.getElementById('sliderSizePoint');
-        if (sizeInput) {
-            sizeInput.value = pointOptions.size;
-            // Synchroniser avec l'input numérique si présent
-            const numberInput = document.getElementById('inputSizePoint');
-            if (numberInput) {
-                numberInput.value = pointOptions.size;
-            }
-            // Déclencher l'événement change si nécessaire
-            sizeInput.dispatchEvent(new Event('input'));
-        }
+        const size = parseInt(pointOptions.size);
+        if (Number.isFinite(size)) center.size = Math.max(1, size);
+        if (pointOptions.color) center.color = pointOptions.color;
+        if (pointOptions.fill_color_type) center.mode = pointOptions.fill_color_type;
 
-        // Appliquer le type de couleur des points
-        dbgProfiles('Application type de couleur des points:', pointOptions.fill_color_type);
-        const fillColorRadio = document.querySelector(`input[name="fillColorPoint"][value="${pointOptions.fill_color_type}"]`);
-        if (fillColorRadio) {
-            fillColorRadio.checked = true;
-            fillColorRadio.dispatchEvent(new Event('change'));
-        }
+        // halo à false = pas de bordure, quelle que soit border_size.
+        // Bornage identique à celui du slider (0 à 10).
+        const borderSize = pointOptions.halo ? (parseInt(pointOptions.border_size) || 0) : 0;
+        border.size = Math.max(0, Math.min(10, borderSize));
+        if (pointOptions.border_color) border.color = pointOptions.border_color;
+        if (pointOptions.border_color_type) border.mode = pointOptions.border_color_type;
 
-        const colorInput = document.getElementById('pointCenterColor');
-        if (colorInput) {
-            colorInput.value = pointOptions.color;
-            colorInput.dispatchEvent(new Event('change'));
-        }
+        // Options du mode icône : écrites même en mode vectoriel (comme les
+        // options vectorMap/Toner de la carte), pour rester correctes si
+        // l'utilisateur bascule ensuite de mode ou resauvegarde le profil.
+        // setPointIconSet() dérive aussi la méta sprite utilisée par le rendu.
+        pkg.setPointIconSet(pointOptions.icon_set ?? point.iconSet);
+        const iconSize = parseInt(pointOptions.icon_size);
+        if (Number.isFinite(iconSize) && iconSize > 0) point.iconSize = iconSize;
 
-        // Appliquer la forme des points
-        const shapeSelect = document.getElementById('selectShape');
-        if (shapeSelect) {
-            shapeSelect.value = pointOptions.shape;
-            shapeSelect.dispatchEvent(new Event('change'));
-        }
-
-        // Appliquer le halo (bordure)
-        const borderSizeInput = document.getElementById('sliderSizeBorder');
-        const borderColorInput = document.getElementById('pointBorderColor');
-        const borderNumberInput = document.getElementById('inputSizeBorder');
-
-        dbgProfiles('🔍 État avant application bordure:', {
-            borderSizeInput_exists: !!borderSizeInput,
-            borderColorInput_exists: !!borderColorInput,
-            current_border_size: borderSizeInput ? borderSizeInput.value : 'null',
-            current_border_color: borderColorInput ? borderColorInput.value : 'null'
-        });
-
-        if (pointOptions.halo) {
-            // Activer le type de couleur approprié pour la bordure
-            dbgProfiles('Application type de couleur des bordures:', pointOptions.border_color_type);
-            const borderColorRadio = document.querySelector(`input[name="borderColorPoint"][value="${pointOptions.border_color_type}"]`);
-            if (borderColorRadio) {
-                borderColorRadio.checked = true;
-                borderColorRadio.dispatchEvent(new Event('change'));
-            }
-
-            // Appliquer la taille de bordure sauvegardée
-            if (borderSizeInput) {
-                borderSizeInput.value = Math.max(0, Math.min(10, pointOptions.border_size || 0));
-                if (borderNumberInput) {
-                    borderNumberInput.value = borderSizeInput.value;
-                }
-                borderSizeInput.dispatchEvent(new Event('input'));
-                dbgProfiles('🔵 Application taille bordure:', pointOptions.border_size, '->', borderSizeInput.value);
-            }
-
-            // Appliquer la couleur de bordure sauvegardée
-            if (borderColorInput) {
-                borderColorInput.value = pointOptions.border_color || '#000000';
-                borderColorInput.dispatchEvent(new Event('change'));
-                dbgProfiles('🟥 Application couleur bordure:', pointOptions.border_color, '->', borderColorInput.value);
-            }
-        } else {
-            // Désactiver la bordure
-            if (borderSizeInput) {
-                borderSizeInput.value = 0;
-                if (borderNumberInput) {
-                    borderNumberInput.value = 0;
-                }
-                borderSizeInput.dispatchEvent(new Event('input'));
-            }
-        }
-
-        dbgProfiles('🔍 État après application bordure:', {
-            new_border_size: borderSizeInput ? borderSizeInput.value : 'null',
-            new_border_color: borderColorInput ? borderColorInput.value : 'null'
-        });
-
-        dbgProfiles('Paramètres des points appliqués avec succès:', pointOptions);
+        dbgProfiles('Paramètres des points appliqués:', point);
     } catch (error) {
         console.error('❌ Erreur lors de l\'application des paramètres des points:', error);
     }
 }
 
-function applyAnimationSettings(animationOptions) {
+// Écrit la vitesse d'animation du profil dans pkg.options.animation.
+function applyAnimationState(animationOptions) {
     try {
-        // Appliquer la vitesse d'animation (convertir la vitesse en ms par jour)
-        // speed 1.0 = 1000ms, speed 2.0 = 500ms, etc.
-        const timePerDay = Math.max(100, Math.round(1000 / animationOptions.speed));
-        const timeInput = document.getElementById('inputTimePerDay');
-        if (timeInput) {
-            timeInput.value = timePerDay;
-            timeInput.dispatchEvent(new Event('change'));
+        const animation = pkg.options?.animation;
+        if (!animation) {
+            console.warn('⚠️ pkg.options.animation indisponible, paramètres d\'animation ignorés');
+            return;
         }
 
-        dbgProfiles('Paramètres d\'animation appliqués:', animationOptions, 'timePerDay:', timePerDay);
+        // Conversion vitesse -> ms par jour : speed 1.0 = 1000 ms, 2.0 = 500 ms...
+        const speed = Number(animationOptions.speed);
+        if (Number.isFinite(speed) && speed > 0) {
+            animation.timePerDay = Math.max(100, Math.round(1000 / speed));
+        }
+
+        dbgProfiles('Paramètres d\'animation appliqués:', animationOptions, 'timePerDay:', animation.timePerDay);
     } catch (error) {
         console.error('Erreur lors de l\'application des paramètres d\'animation:', error);
     }
 }
 
-function applyFlashSettings(flashOptions) {
+// Écrit les paramètres de flash du profil dans pkg.options.flash.
+function applyFlashState(flashOptions) {
     try {
-        // Définir color_type par défaut si non défini (compatibilité profils anciens)
-        if (!flashOptions.color_type) {
-            flashOptions.color_type = 'fix';
-        }
-        // Appliquer la forme du flash
-        if (flashOptions.mode) {
-            const flashModeSelect = document.getElementById('selectFlashMode');
-            if (flashModeSelect) {
-                flashModeSelect.value = flashOptions.mode;
-                flashModeSelect.dispatchEvent(new Event('change'));
-            }
+        const flash = pkg.options?.flash;
+        if (!flash) {
+            console.warn('⚠️ pkg.options.flash indisponible, paramètres flash ignorés');
+            return;
         }
 
-        // Appliquer la durée du flash
-        if (flashOptions.duration) {
-            const durationInput = document.getElementById('inputTimeFlash');
-            if (durationInput) {
-                durationInput.value = flashOptions.duration;
-                durationInput.dispatchEvent(new Event('change'));
-            }
-        }
+        if (flashOptions.mode) flash.mode = flashOptions.mode;
+        const duration = parseInt(flashOptions.duration);
+        if (Number.isFinite(duration)) flash.duration = duration;
+        const size = parseInt(flashOptions.size);
+        if (Number.isFinite(size)) flash.size = size;
+        if (flashOptions.color) flash.color = flashOptions.color;
+        // Profils antérieurs au type de couleur : couleur fixe.
+        flash.color_type = flashOptions.color_type || 'fix';
 
-        // Appliquer la taille du flash
-        if (flashOptions.size) {
-            const sizeInput = document.getElementById('inputSizeFlash');
-            if (sizeInput) {
-                sizeInput.value = flashOptions.size;
-                sizeInput.dispatchEvent(new Event('change'));
-            }
-        }
-
-        // Appliquer la couleur du flash
-        if (flashOptions.color) {
-            const colorInput = document.getElementById('flashColor');
-            if (colorInput) {
-                colorInput.value = flashOptions.color;
-                colorInput.dispatchEvent(new Event('change'));
-            }
-        }
-
-        // Appliquer le type de couleur du flash
-        if (flashOptions.color_type) {
-            const colorTypeRadio = document.querySelector(`input[name="flashColor"][value="${flashOptions.color_type}"]`);
-            if (colorTypeRadio) {
-                colorTypeRadio.checked = true;
-                // Déclencher l'événement pour mettre à jour l'interface
-                colorTypeRadio.dispatchEvent(new Event('change'));
-            }
-
-            // Mettre à jour l'affichage du color picker selon le type
-            const flashColorPickerContainer = document.querySelector('#flashColor').closest('.input-field');
-            if (flashColorPickerContainer) {
-                flashColorPickerContainer.style.display = (flashOptions.color_type === 'fix') ? 'block' : 'none';
-            }
-        }
-
-        dbgProfiles('Paramètres flash appliqués:', flashOptions);
+        dbgProfiles('Paramètres flash appliqués:', flash);
     } catch (error) {
         console.error('Erreur lors de l\'application des paramètres flash:', error);
+    }
+}
+
+// Écrit les paramètres d'informations du profil dans pkg.options.infos.
+// Le CSS des overlays n'y figure pas : il est appliqué par applyInfosCss().
+function applyInfosState(infosOptions) {
+    try {
+        const infos = pkg.options?.infos;
+        if (!infos) {
+            console.warn('⚠️ pkg.options.infos indisponible, paramètres infos ignorés');
+            return;
+        }
+
+        const title = infos.title || (infos.title = {});
+        if (infosOptions.title) {
+            title.display = !!infosOptions.title.display;
+            if (typeof infosOptions.title.text === 'string') title.text = infosOptions.title.text;
+        } else {
+            title.display = false;
+        }
+
+        (infos.numberOfCaches || (infos.numberOfCaches = {})).display = !!infosOptions.number_of_caches;
+        (infos.currentDate || (infos.currentDate = {})).display = !!infosOptions.current_date;
+
+        dbgProfiles('📄 Paramètres infos appliqués:', infos);
+    } catch (error) {
+        console.error('Erreur lors de l\'application des paramètres infos:', error);
+    }
+}
+
+// CSS des overlays titre / infos. Il n'est pas stocké dans pkg.options : la
+// source de vérité est le style appliqué aux frames, que changeTitleCssValues()
+// et changeInfosCssValues() nettoient avant de resynchroniser les textareas.
+function applyInfosCss(infosOptions) {
+    try {
+        if (typeof pkg.changeTitleCssValues === 'function' && typeof infosOptions.title_css === 'string') {
+            const cleanedTitleCss = extractCssDeclarations(infosOptions.title_css);
+            // Repli sur le CSS du profil si la frame n'existe pas encore : le
+            // textarea reste la valeur de référence pour la prochaine application.
+            const appliedTitleCss = pkg.changeTitleCssValues(cleanedTitleCss) ?? cleanedTitleCss;
+            const titleCssTextarea = document.getElementById('inputTitleCss');
+            if (titleCssTextarea) titleCssTextarea.value = appliedTitleCss;
+        }
+        if (typeof pkg.changeInfosCssValues === 'function' && typeof infosOptions.infos_css === 'string') {
+            const cleanedInfosCss = extractCssDeclarations(infosOptions.infos_css);
+            const appliedInfosCss = pkg.changeInfosCssValues(cleanedInfosCss) ?? cleanedInfosCss;
+            const infosCssTextarea = document.getElementById('inputInfosCss');
+            if (infosCssTextarea) infosCssTextarea.value = appliedInfosCss;
+        }
+
+        if (typeof window.gcCssAssistantSyncFromTextareas === 'function') {
+            window.gcCssAssistantSyncFromTextareas();
+        }
+    } catch (e) {
+        console.warn('Application du CSS des overlays: erreur non bloquante', e);
     }
 }
 
