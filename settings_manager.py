@@ -323,9 +323,13 @@ class SettingsManager:
         if not SETTINGS_PATH.exists():
             self.save_app_settings(AppSettings())
 
-        # Cache uid→path pour éviter les scans disque répétés
+        # Caches construits en un seul scan pour éviter de reparser tous les
+        # profils à chaque appel (list_profiles est re-demandé après chaque action).
         self._uid_to_path_cache: dict[str, Path] = {}
-        self._build_uid_cache()
+        self._uid_to_name_cache: dict[str, str] = {}
+        self._name_to_path_cache: dict[str, Path] = {}
+        self._cache_signature: tuple = ()
+        self._build_profile_cache()
 
         # Créer les profils d'exemple une seule fois, au tout premier lancement.
         # Une fois ce flag posé, un utilisateur qui supprime un exemple ne le voit
@@ -336,21 +340,52 @@ class SettingsManager:
             app_settings.examples_seeded = True
             self.save_app_settings(app_settings)
 
-    def _build_uid_cache(self) -> None:
-        """Construit le cache uid→path en scannant une fois les profils."""
+    def _profiles_dir_signature(self) -> tuple:
+        """Empreinte du dossier profils : une énumération, aucun parse JSON.
+
+        Permet de détecter une modification faite hors de l'application (fichier
+        ajouté, supprimé ou édité à la main) sans relire tous les profils.
+        """
+        entries = []
+        try:
+            with os.scandir(PROFILES_DIR) as it:
+                for entry in it:
+                    if not entry.name.endswith(".json") or not entry.is_file():
+                        continue
+                    st = entry.stat()
+                    entries.append((entry.name, st.st_mtime_ns, st.st_size))
+        except OSError:
+            return ()
+        entries.sort()
+        return tuple(entries)
+
+    def _build_profile_cache(self) -> None:
+        """Construit les caches uid→path, uid→nom et nom→path en un seul scan."""
         self._uid_to_path_cache.clear()
+        self._uid_to_name_cache.clear()
+        self._name_to_path_cache.clear()
         for profile_file in PROFILES_DIR.glob("*.json"):
             try:
                 data = read_json(profile_file)
+                name = data.get("name") or profile_file.stem
                 uid = data.get("uid")
                 if uid:
                     self._uid_to_path_cache[uid] = profile_file
+                    self._uid_to_name_cache[uid] = name
+                self._name_to_path_cache[name] = profile_file
             except Exception:
-                continue
+                # Fichier illisible : on garde au moins le nom de fichier comme nom
+                self._name_to_path_cache[profile_file.stem] = profile_file
+        self._cache_signature = self._profiles_dir_signature()
 
-    def _invalidate_uid_cache(self) -> None:
-        """Invalide et reconstruit le cache uid→path."""
-        self._build_uid_cache()
+    def _invalidate_profile_cache(self) -> None:
+        """Invalide et reconstruit les caches profils (après écriture/suppression)."""
+        self._build_profile_cache()
+
+    def _ensure_profile_cache(self) -> None:
+        """Reconstruit les caches uniquement si le dossier a changé hors application."""
+        if self._profiles_dir_signature() != self._cache_signature:
+            self._build_profile_cache()
 
     def _create_example_profiles(self) -> None:
         """Crée des profils d'exemple au premier lancement"""
@@ -1017,16 +1052,8 @@ class SettingsManager:
 
     def list_profiles(self) -> List[str]:
         """Retourne la liste des noms de profils (pas les noms de fichiers)"""
-        profiles = []
-        for p in PROFILES_DIR.glob("*.json"):
-            try:
-                data = read_json(p)
-                name = data.get("name", p.stem)
-                profiles.append(name)
-            except Exception:
-                # En cas d'erreur, utiliser le nom du fichier comme fallback
-                profiles.append(p.stem)
-        return sorted(profiles)
+        self._ensure_profile_cache()
+        return sorted(self._name_to_path_cache)
 
     def load_profile(self, name: str) -> MapProfile:
         path = self._profile_path(name)
@@ -1037,6 +1064,7 @@ class SettingsManager:
     def load_profile_by_uid(self, uid: str) -> MapProfile:
         """Charge un profil par son UUID"""
         # Utiliser le cache uid→path
+        self._ensure_profile_cache()
         profile_path = self._uid_to_path_cache.get(uid)
         if profile_path and profile_path.exists():
             try:
@@ -1045,7 +1073,7 @@ class SettingsManager:
             except Exception as e:
                 logging.warning("Erreur lors de la lecture du profil %s: %s", profile_path, e)
                 # Fallback: reconstruire le cache et réessayer une fois
-                self._build_uid_cache()
+                self._build_profile_cache()
                 profile_path = self._uid_to_path_cache.get(uid)
                 if profile_path and profile_path.exists():
                     profile_data = json.loads(profile_path.read_text(encoding="utf-8"))
@@ -1054,16 +1082,13 @@ class SettingsManager:
         raise FileNotFoundError(f"Aucun profil trouvé avec l'UUID: {uid}")
 
     def get_profile_name_by_uid(self, uid: str) -> Optional[str]:
-        """Retourne le nom d'un profil par son UUID"""
-        try:
-            profile = self.load_profile_by_uid(uid)
-            return profile.name
-        except FileNotFoundError:
-            return None
+        """Retourne le nom d'un profil par son UUID (sans relire le fichier)"""
+        self._ensure_profile_cache()
+        return self._uid_to_name_cache.get(uid)
 
     def save_profile(self, profile: MapProfile) -> None:
         write_json(self._profile_path(profile.name), asdict(profile))
-        self._invalidate_uid_cache()
+        self._invalidate_profile_cache()
 
     def is_name_available(self, name: str, exclude_uid: Optional[str] = None) -> bool:
         """Vérifie si un nom de profil est libre.
@@ -1110,7 +1135,7 @@ class SettingsManager:
         self.save_profile(prof)
         if new_path != old_path and old_path.exists():
             old_path.unlink()
-            self._invalidate_uid_cache()
+            self._invalidate_profile_cache()
         return prof
 
     def duplicate_profile(self, name: str, new_name: str) -> MapProfile:
@@ -1126,28 +1151,18 @@ class SettingsManager:
         path = self._profile_path(name)
         if path.exists():
             path.unlink()
-            self._invalidate_uid_cache()
+            self._invalidate_profile_cache()
 
     def reset_profile(self, name: str) -> None:
         self.save_profile(MapProfile(name=name))
 
     # ---------- Import/Export utilitaires ----------
-    def _iter_profile_files(self):
-        for p in PROFILES_DIR.glob("*.json"):
-            yield p
-
     def _name_exists(self, name: str) -> bool:
         return self._profile_path(name).exists()
 
     def _uid_exists(self, uid: str) -> bool:
-        for p in self._iter_profile_files():
-            try:
-                data = read_json(p)
-                if data.get("uid") == uid:
-                    return True
-            except Exception:
-                continue
-        return False
+        self._ensure_profile_cache()
+        return uid in self._uid_to_path_cache
 
     def _generate_unique_name(self, base_name: str) -> str:
         if not self._name_exists(base_name):
