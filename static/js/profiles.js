@@ -32,6 +32,9 @@ class ProfileManager {
         this.profilesList = [];
         this.hasUnsavedChanges = false;
         this._lastSavedSnapshot = null;
+        // Nom du profil par défaut connu (null = pas encore lu du serveur,
+        // '' = aucun profil par défaut). Voir _getDefaultProfileName().
+        this._defaultProfileName = null;
         this.init();
     }
 
@@ -184,7 +187,9 @@ class ProfileManager {
             this.currentProfile = profile;
             await this.applyProfile(profile);
             this._markSaved();
-            this.loadProfilesList(); // Rafraîchir pour montrer le profil actif
+            // La liste des profils est inchangée : déplacer le marquage "ACTIF"
+            // suffit, inutile de refetcher /api/profiles et de reconstruire le DOM.
+            this._updateActiveProfileHighlight();
             this.showToast(pkg.t('Profil "${name}" chargé', { name }), 'green');
             return true;
         } catch (error) {
@@ -252,6 +257,11 @@ class ProfileManager {
             const result = await this.apiCall(`/api/profiles/${encodeURIComponent(name)}`, 'DELETE');
             if (result.success) {
                 this.showToast(pkg.t('Profil "${name}" supprimé', { name }), 'orange');
+                // Le profil par défaut mémorisé n'existe plus : le serveur ne
+                // saura plus résoudre son UID en nom.
+                if (this._defaultProfileName === name) {
+                    this._defaultProfileName = '';
+                }
                 // Rafraîchir la liste des profils avant de choisir un fallback
                 await this.loadProfilesList();
 
@@ -336,6 +346,10 @@ class ProfileManager {
      * - Applique le profil immédiatement
      * - Sauvegarde l'UUID comme profil par défaut
      * - Met à jour le sélecteur et l'indicateur d'actif
+     *
+     * Deux requêtes au total : ni les réglages ni la liste des profils n'ont
+     * besoin d'être relus (cf. saveAppSettings pour le PUT partiel et
+     * _syncDefaultProfileSelectorValue pour le sélecteur).
      */
     async setProfileAsDefault(profileName) {
         if (!this._confirmDiscardChangesIfNeeded()) return;
@@ -351,19 +365,21 @@ class ProfileManager {
             this._markSaved();
 
             // Sauvegarder l'UUID comme profil par défaut
-            const settings = await this.loadAppSettings();
-            settings.default_profile_uid = profile.uid;
-            const result = await this.saveAppSettings(settings);
+            const result = await this.saveAppSettings({ default_profile_uid: profile.uid });
 
             if (!result.success) {
                 throw new Error('Échec de la sauvegarde du profil par défaut');
             }
 
+            this._defaultProfileName = profile.name;
+
             this.showToast(`Profil "${profile.name}" défini comme par défaut`, 'green');
 
-            // Rafraîchir les éléments UI dépendants
-            this.populateDefaultProfileSelector();
-            this.updateCurrentProfileIndicator();
+            // Rafraîchir les éléments UI dépendants : la liste des profils n'a
+            // pas changé, seules la valeur du sélecteur et la position du badge
+            // "ACTIF" doivent suivre.
+            this._syncDefaultProfileSelectorValue();
+            this._updateActiveProfileHighlight();
         } catch (error) {
             console.error('❌ Erreur définition profil par défaut:', error);
             this.showToast('Erreur lors de la définition du profil par défaut', 'red');
@@ -403,8 +419,9 @@ class ProfileManager {
         this.profilesList.forEach(profileName => {
             const item = document.createElement('div');
             item.className = 'list-group-item';
-
-            const isActive = this.currentProfile && this.currentProfile.name === profileName;
+            // Permet de retrouver l'élément d'un profil donné sans reconstruire
+            // la liste (cf. _updateActiveProfileHighlight).
+            item.dataset.profileName = profileName;
 
             const row = document.createElement('div');
             row.className = 'row';
@@ -414,7 +431,7 @@ class ProfileManager {
             const colName = document.createElement('div');
             colName.className = 'col-8';
             const nameWrap = document.createElement('div');
-            nameWrap.className = isActive ? 'active-profile' : '';
+            nameWrap.className = 'profile-name-wrap';
             nameWrap.style.cursor = 'pointer';
             nameWrap.style.position = 'relative';
             nameWrap.addEventListener('click', () => this.loadProfile(profileName));
@@ -428,15 +445,7 @@ class ProfileManager {
             nameSpan.textContent = profileName;
             nameWrap.appendChild(nameSpan);
 
-            if (isActive) {
-                const checkIcon = document.createElement('i');
-                checkIcon.className = 'ti ti-circle-check ms-1';
-                nameWrap.appendChild(checkIcon);
-                const badge = document.createElement('span');
-                badge.className = 'active-badge';
-                badge.textContent = 'ACTIF';
-                nameWrap.appendChild(badge);
-            }
+            this._setProfileItemActive(nameWrap, this.currentProfile?.name === profileName);
             colName.appendChild(nameWrap);
 
             // Colonne actions (menu déroulant)
@@ -481,6 +490,45 @@ class ProfileManager {
         // (plus besoin d'initialisation manuelle comme avec Materialize)
 
         // Mettre à jour l'indicateur du profil actif (nécessaire pour le rendu initial)
+        this.updateCurrentProfileIndicator();
+    }
+
+    // Pose ou retire les marqueurs "profil actif" (classe CSS, icône, badge) sur
+    // un élément de liste déjà construit. Utilisé au rendu initial et lors d'un
+    // simple déplacement du badge, pour que les deux chemins produisent
+    // exactement le même DOM.
+    _setProfileItemActive(nameWrap, isActive) {
+        nameWrap.classList.toggle('active-profile', !!isActive);
+        // Les marqueurs ne sont stylés que sous .active-profile : on les retire
+        // plutôt que de les masquer, pour ne pas laisser un "ACTIF" brut visible.
+        nameWrap.querySelector('.profile-active-check')?.remove();
+        nameWrap.querySelector('.active-badge')?.remove();
+        if (!isActive) return;
+
+        const checkIcon = document.createElement('i');
+        checkIcon.className = 'ti ti-circle-check ms-1 profile-active-check';
+        nameWrap.appendChild(checkIcon);
+        const badge = document.createElement('span');
+        badge.className = 'active-badge';
+        badge.textContent = 'ACTIF';
+        nameWrap.appendChild(badge);
+    }
+
+    // Déplace le marquage "ACTIF" sur la liste déjà rendue. Alternative à
+    // loadProfilesList() quand seul le profil courant change : pas de requête
+    // /api/profiles ni de reconstruction du DOM (donc pas de perte des
+    // dropdowns Bootstrap ouverts ni de scroll réinitialisé).
+    _updateActiveProfileHighlight() {
+        const container = document.getElementById('profiles-list');
+        if (container) {
+            const activeName = this.currentProfile?.name ?? null;
+            container.querySelectorAll('[data-profile-name]').forEach(item => {
+                const nameWrap = item.querySelector('.profile-name-wrap');
+                if (nameWrap) {
+                    this._setProfileItemActive(nameWrap, item.dataset.profileName === activeName);
+                }
+            });
+        }
         this.updateCurrentProfileIndicator();
     }
 
@@ -562,6 +610,32 @@ class ProfileManager {
         }
     }
 
+    // Nom du profil par défaut, lu une seule fois du serveur puis mémorisé.
+    // Seul ce module modifie `default_profile_uid` (ui.js réécrit la valeur
+    // qu'il vient de lire), l'état en mémoire reste donc fidèle et évite un
+    // GET /api/settings à chaque action sur le profil par défaut.
+    async _getDefaultProfileName() {
+        if (this._defaultProfileName === null) {
+            const settings = await this.loadAppSettings();
+            this._defaultProfileName = settings.default_profile_name || '';
+        }
+        return this._defaultProfileName;
+    }
+
+    // Positionne la valeur du sélecteur "profil par défaut" sans reconstruire
+    // ses options : la liste des profils n'a pas changé, et un rebuild impose
+    // de détruire puis recréer l'instance Tom Select.
+    _syncDefaultProfileSelectorValue() {
+        const selector = document.getElementById('selectDefaultProfile');
+        if (!selector) return;
+        const value = this._defaultProfileName || '';
+        if (selector.value === value) return;
+        selector.value = value;
+        try { refreshTomSelect(selector); } catch (_) {}
+    }
+
+    // `settings` peut être un patch partiel : PUT /api/settings ne modifie que
+    // les clés effectivement présentes dans le corps de la requête.
     async saveAppSettings(settings) {
         try {
             const response = await fetch('/api/settings', {
@@ -620,7 +694,8 @@ class ProfileManager {
                 profile_applied: profile.name
             });
 
-            this.loadProfilesList(); // Rafraîchir pour montrer le profil actif
+            // Cf. loadProfile() : seul le marquage "ACTIF" change ici.
+            this._updateActiveProfileHighlight();
             this.showToast(pkg.t('Profil "${name}" chargé', { name: profile.name }), 'green');
             return true;
         } catch (error) {
@@ -635,9 +710,12 @@ class ProfileManager {
             const selector = document.getElementById('selectDefaultProfile');
             if (!selector) return;
 
-            // Charger la liste des profils
-            const profiles = await this.apiCall('/api/profiles');
-            const settings = await this.loadAppSettings();
+            // Liste des profils déjà en mémoire (loadProfilesList) : on ne
+            // refetche que si elle n'a pas encore été chargée.
+            const profiles = Array.isArray(this.profilesList) && this.profilesList.length
+                ? this.profilesList
+                : await this.apiCall('/api/profiles');
+            const defaultProfileName = await this._getDefaultProfileName();
 
             // Détruire l'instance Tom Select AVANT de modifier le DOM,
             // pour éviter les références orphelines qui causent un crash async.
@@ -661,12 +739,12 @@ class ProfileManager {
             });
 
             // Sélectionner le profil par défaut actuel (par nom si disponible)
-            selector.value = settings.default_profile_name || '';
+            selector.value = defaultProfileName;
 
             try { initTomSelect(selector, {}); } catch(_) {}
 
             dbgProfiles('Sélecteur profil par défaut rempli avec:', profiles);
-            dbgProfiles('🎯 Profil par défaut actuel:', settings.default_profile_name || 'aucun');
+            dbgProfiles('🎯 Profil par défaut actuel:', defaultProfileName || 'aucun');
         } catch (error) {
             console.error('❌ Erreur remplissage sélecteur profil par défaut:', error);
         }
@@ -683,7 +761,7 @@ class ProfileManager {
         // annulé par l'utilisateur (modifications non enregistrées) ou échoue :
         // sans ça, le profil par défaut serait effacé côté serveur alors que
         // rien n'a réellement changé.
-        const previousSettings = await this.loadAppSettings();
+        const previousName = await this._getDefaultProfileName();
 
         let selectedProfileUid = null;
         let appliedProfileName = null;
@@ -694,7 +772,7 @@ class ProfileManager {
             const loaded = await this.loadProfile(selectedProfileName);
             if (!loaded) {
                 dbgProfiles('🚫 Chargement annulé ou en échec - profil par défaut inchangé');
-                selector.value = previousSettings.default_profile_name || '';
+                this._syncDefaultProfileSelectorValue();
                 return;
             }
             // Récupérer l'UUID du profil chargé
@@ -706,20 +784,20 @@ class ProfileManager {
             dbgProfiles('🚫 Aucun profil sélectionné - pas d\'application');
         }
 
-        // Sauvegarder le nouveau profil par défaut avec UUID
-        const currentSettings = previousSettings;
+        // Sauvegarder le nouveau profil par défaut avec UUID. PUT partiel : les
+        // autres réglages (langue, vue par défaut...) sont préservés côté
+        // serveur sans avoir eu à les relire.
         dbgProfiles('💾 Sauvegarde profil par défaut:', {
-            ancien_uuid: currentSettings.default_profile_uid,
+            ancien_nom: previousName,
             nouveau_uuid: selectedProfileUid,
             nom_profil: appliedProfileName,
             nom_selectionne: selectedProfileName
         });
 
-        currentSettings.default_profile_uid = selectedProfileUid;
-
-        const result = await this.saveAppSettings(currentSettings);
+        const result = await this.saveAppSettings({ default_profile_uid: selectedProfileUid });
         if (result.success) {
             dbgProfiles('Profil par défaut sauvegardé avec succès, UUID:', selectedProfileUid);
+            this._defaultProfileName = appliedProfileName || '';
             this.showToast(
                 appliedProfileName ?
                     pkg.t('Profil "${selectedProfile}" appliqué et défini comme profil par défaut', { selectedProfile: appliedProfileName }) :
@@ -744,6 +822,10 @@ class ProfileManager {
                 default_profile_name: settings.default_profile_name,
                 all_settings: settings
             });
+
+            // Les réglages viennent d'être lus : en profiter pour amorcer le cache
+            // et éviter un second GET /api/settings côté sélecteur.
+            this._defaultProfileName = settings.default_profile_name || '';
 
             const defaultProfileUid = settings.default_profile_uid;
 
@@ -1297,6 +1379,12 @@ class ProfileManager {
             if (result.success) {
                 if (wasCurrentProfile && this.currentProfile) {
                     this.currentProfile.name = result.name;
+                }
+
+                // L'UID est conservé : le profil par défaut est toujours le même,
+                // mais le sélecteur l'identifie par son nom.
+                if (this._defaultProfileName === oldName) {
+                    this._defaultProfileName = result.name;
                 }
 
                 await this.loadProfilesList();
