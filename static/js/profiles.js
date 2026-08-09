@@ -32,6 +32,9 @@ class ProfileManager {
         this.profilesList = [];
         this.hasUnsavedChanges = false;
         this._lastSavedSnapshot = null;
+        // Recalcul "dirty" débouncé en attente (cf. _bindDirtyTracking) : la
+        // garde de fermeture doit pouvoir le forcer avant de décider.
+        this._dirtyDebounceTimer = null;
         // Nom du profil par défaut connu (null = pas encore lu du serveur,
         // '' = aucun profil par défaut). Voir _getDefaultProfileName().
         this._defaultProfileName = null;
@@ -49,6 +52,7 @@ class ProfileManager {
         this.loadCurrentSettings();
         this._lastSavedSnapshot = this._dirtySnapshot(this.currentSettings);
         this._bindDirtyTracking();
+        this._bindUnloadGuard();
     }
 
     // Sérialise les réglages pour la comparaison "modifications non enregistrées",
@@ -630,23 +634,60 @@ class ProfileManager {
             console.warn('ProfileManager: conteneur #style introuvable, suivi des modifications désactivé');
             return;
         }
-        let debounceTimer = null;
         const recompute = () => {
             // Sans profil courant, l'indicateur n'affiche rien : inutile de
             // programmer un recalcul dont le résultat ne serait pas utilisé.
             if (!this.currentProfile) return;
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(() => {
-                this.loadCurrentSettings();
-                const dirty = this._dirtySnapshot(this.currentSettings) !== this._lastSavedSnapshot;
-                if (dirty !== this.hasUnsavedChanges) {
-                    this.hasUnsavedChanges = dirty;
-                    this.updateCurrentProfileIndicator();
-                }
+            clearTimeout(this._dirtyDebounceTimer);
+            this._dirtyDebounceTimer = setTimeout(() => {
+                this._dirtyDebounceTimer = null;
+                this._recomputeDirtyState();
             }, 300);
         };
         container.addEventListener('input', recompute, true);
         container.addEventListener('change', recompute, true);
+    }
+
+    // Compare l'état courant à la référence enregistrée et met l'indicateur à
+    // jour. Appelé par le suivi débouncé et, sans attendre, par la garde de
+    // fermeture (_flushDirtyTracking).
+    _recomputeDirtyState() {
+        if (!this.currentProfile) return;
+        this.loadCurrentSettings();
+        const dirty = this._dirtySnapshot(this.currentSettings) !== this._lastSavedSnapshot;
+        if (dirty !== this.hasUnsavedChanges) {
+            this.hasUnsavedChanges = dirty;
+            this.updateCurrentProfileIndicator();
+        }
+    }
+
+    // Exécute tout de suite un recalcul encore en attente dans le debounce.
+    _flushDirtyTracking() {
+        if (this._dirtyDebounceTimer === null) return;
+        clearTimeout(this._dirtyDebounceTimer);
+        this._dirtyDebounceTimer = null;
+        this._recomputeDirtyState();
+    }
+
+    // Avertit avant la fermeture ou le rafraîchissement de l'onglet quand le
+    // profil courant a des modifications non enregistrées : sans cela,
+    // l'indicateur « • » signale la perte à venir mais rien ne l'empêche.
+    //
+    // Le texte n'est pas personnalisable (les navigateurs affichent leur propre
+    // message générique depuis longtemps) et la boîte ne s'affiche que si
+    // l'utilisateur a interagi avec la page — toujours vrai ici, puisqu'il a
+    // fallu modifier un réglage pour rendre le profil "dirty".
+    _bindUnloadGuard() {
+        window.addEventListener('beforeunload', (event) => {
+            // Une modification faite dans les 300 ms qui précèdent la fermeture
+            // n'a pas encore été vue par le suivi débouncé : sans ce flush, la
+            // garde laisserait partir des modifications bien réelles.
+            this._flushDirtyTracking();
+            if (!this.hasUnsavedChanges) return;
+            event.preventDefault();
+            // Navigateurs anciens : seul returnValue déclenche la boîte.
+            event.returnValue = '';
+        });
     }
 
     // Avertit avant d'abandonner des modifications non sauvegardées (chargement

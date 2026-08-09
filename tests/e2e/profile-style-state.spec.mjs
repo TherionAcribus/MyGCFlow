@@ -274,6 +274,44 @@ test('les modifications non enregistrées passent par une modale à trois issues
 });
 
 
+test('fermer l\'onglet avec des modifications non enregistrées déclenche la garde', async ({ page }) => {
+  // On dispatche un 'beforeunload' synthétique : la vraie boîte du navigateur
+  // n'apparaît que sur fermeture réelle, mais c'est bien preventDefault() qui la
+  // déclenche, donc `defaultPrevented` mesure exactement la garde.
+  const guard = () => page.evaluate(() => {
+    const event = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(event);
+    return event.defaultPrevented;
+  });
+
+  // Profil courant sans modification : la fermeture ne doit rien demander.
+  await page.evaluate(() => {
+    const pm = window.profileManager;
+    pm.currentProfile = { name: 'Test', uid: 'test' };
+    pm._markSaved();
+  });
+  expect(await guard()).toBe(false);
+
+  // Modification de dernière seconde : le recalcul débouncé (300 ms) n'a pas
+  // encore eu lieu au moment où l'onglet se ferme, la garde doit le forcer.
+  const lastSecond = await page.evaluate(() => {
+    const input = document.getElementById('inputSizePoint');
+    input.value = String((parseInt(input.value, 10) || 3) + 3);
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+
+    const beforeFlush = window.profileManager.hasUnsavedChanges;
+    const event = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(event);
+    return { beforeFlush, prevented: event.defaultPrevented, dirty: window.profileManager.hasUnsavedChanges };
+  });
+  expect(lastSecond).toEqual({ beforeFlush: false, prevented: true, dirty: true });
+
+  // Une fois enregistré, plus rien à protéger.
+  await page.evaluate(() => window.profileManager._markSaved());
+  expect(await guard()).toBe(false);
+});
+
+
 test('l\'étoile marque le profil par défaut, indépendamment du profil actif', async ({ page }) => {
   // Liste et profil par défaut posés en mémoire : les profils et le réglage
   // "profil par défaut" vivent dans %APPDATA%\GCMap, que le runtime isolé des
