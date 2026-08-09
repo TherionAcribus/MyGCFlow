@@ -1946,6 +1946,16 @@ function abortRecordingOnError(error) {
     } catch(_) {}
 }
 
+// Lancement de l'assemblage vidéo. En POST : la route déclenche un encodage, et
+// un GET pouvait être rejoué par un préchargement de lien ou un scanner d'URL.
+function postStartCreateVideo(body) {
+    return fetch(`${CONFIG.BASE_URL}/start_create_video`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body || {}),
+    });
+}
+
 // Poll générique d'une tâche de fond serveur (/tasks/<id>) jusqu'à ce qu'elle
 // soit terminée. Résout avec le résultat, rejette en cas d'échec ou de timeout.
 // Utilisé pour l'assemblage vidéo, lancé en tâche de fond côté serveur pour
@@ -2144,19 +2154,16 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
                 // FPS configurable : doit correspondre à celui utilisé pour calculer
                 // les frames, sinon la vitesse de lecture est faussée côté serveur.
                 const fps = normalizeRecordingFps(pkg.options?.record?.fps);
-                const url = new URL(`${CONFIG.BASE_URL}/start_create_video`, window.location.origin);
-                url.searchParams.set('fps', String(fps));
+                const body = { fps };
                 if (audioFileName) {
-                    url.searchParams.set('audio', audioFileName);
-                    url.searchParams.set('audio_volume', String(audioVol));
+                    body.audio = audioFileName;
+                    body.audio_volume = audioVol;
                 }
-                return fetch(url.toString());
+                return postStartCreateVideo(body);
             } catch(e) {
                 console.warn('Assemblage avec audio: fallback sans audio', e);
                 const fps = normalizeRecordingFps(pkg.options?.record?.fps);
-                const fallbackUrl = new URL(`${CONFIG.BASE_URL}/start_create_video`, window.location.origin);
-                fallbackUrl.searchParams.set('fps', String(fps));
-                return fetch(fallbackUrl.toString());
+                return postStartCreateVideo({ fps });
             }
         };
 

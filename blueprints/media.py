@@ -62,19 +62,33 @@ def get_upload_image():
     return upload_image(request)
 
 
-@media_bp.route('/start_create_video', methods=['GET'])
+# POST et non GET : la route déclenche un encodage (effet de bord durable). En
+# GET, un préchargement de lien, un scanner d'URL ou une simple réouverture
+# d'historique suffisait à lancer un assemblage.
+@media_bp.route('/start_create_video', methods=['POST'])
 @cross_origin()
 def start_create_video():
     try:
-        audio = request.args.get('audio')
-        audio_volume = request.args.get('audio_volume', default='1.0')
+        # Paramètres en JSON, avec repli sur la query string (idem
+        # /assemble_pictures_directory) pour rester tolérant côté client.
+        payload = request.get_json(silent=True)
+        if not isinstance(payload, dict):
+            payload = {}
+
+        def _param(key, default=None):
+            value = payload.get(key)
+            if value is None:
+                value = request.args.get(key)
+            return default if value is None else value
+
+        audio = _param('audio')
         try:
-            vol = float(audio_volume)
-        except Exception:
+            vol = float(_param('audio_volume', 1.0))
+        except (TypeError, ValueError):
             vol = 1.0
         # FPS configurable côté client : sans cela la vitesse de lecture est
         # fausse dès qu'on change le FPS (le client calcule les frames avec son FPS).
-        fps = _parse_fps(request.args.get('fps'))
+        fps = _parse_fps(_param('fps'))
         # Assemblage lancé en tâche de fond : évite l'expiration du fetch HTTP
         # sur les vidéos longues. Le client suit l'avancement via /tasks/<id>.
         output_video = default_video_output("mp4")
