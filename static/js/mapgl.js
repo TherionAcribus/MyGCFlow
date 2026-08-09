@@ -1643,6 +1643,17 @@ export function recordAnimation(){
     .then(r => r.json())
     .then(d => {
         if (prepToast) { pkg.hideToast && pkg.hideToast(prepToast); }
+        // Assemblage en cours côté serveur : le dossier n'a pas pu être vidé.
+        // On annule la capture au lieu de poursuivre : les nouvelles images se
+        // mélangeraient aux anciennes et la vidéo finale contiendrait les deux.
+        if (d && d.busy) {
+            try { recordingPerformanceMonitor.stopMonitoring(); } catch(_) {}
+            pkg.showToast && pkg.showToast(
+                d.message || 'Un assemblage vidéo est en cours. Réessayez à la fin du traitement.',
+                'warning', 'Enregistrement annulé', 6000
+            );
+            return;
+        }
         if (d && d.success) {
             pkg.showToast && pkg.showToast('Répertoire d’images nettoyé.', 'success', 'Préparation', 2000);
         } else {

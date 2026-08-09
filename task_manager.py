@@ -5,6 +5,18 @@ from datetime import datetime
 from typing import Dict, Optional, Union
 
 
+# États d'une tâche encore susceptible de toucher à ses fichiers de travail.
+ACTIVE_STATES = ("pending", "running")
+
+
+class TaskAlreadyRunning(Exception):
+    """Levée par submit(exclusive=True) quand une tâche du même type est déjà active."""
+
+    def __init__(self, status: "TaskStatus"):
+        super().__init__(f"Une tâche '{status.type}' est déjà en cours")
+        self.status = status
+
+
 class TaskStatus:
     """Thread-safe container used to track background task progress."""
 
@@ -69,9 +81,21 @@ class TaskManager:
         self._lock = threading.Lock()
         self.task_ttl_seconds = task_ttl_seconds  # 15 minutes par défaut
 
-    def submit(self, task_type: str, fn, *args, **kwargs) -> TaskStatus:
+    def submit(self, task_type: str, fn, *args, exclusive: bool = False, **kwargs) -> TaskStatus:
+        """Soumet une tâche de fond.
+
+        `exclusive=True` refuse la soumission (TaskAlreadyRunning) si une tâche du
+        même type est encore active. Le contrôle est fait sous le verrou, en même
+        temps que l'enregistrement : deux requêtes simultanées ne peuvent pas
+        passer toutes les deux le test avant que l'une ne s'enregistre.
+        Note : `exclusive` est réservé (keyword-only) et n'est pas transmis à `fn`.
+        """
         status = TaskStatus(task_type)
         with self._lock:
+            if exclusive:
+                running = self._active_locked(task_type)
+                if running is not None:
+                    raise TaskAlreadyRunning(running)
             self.tasks[status.id] = status
             self.last_by_type[task_type] = status.id
 
@@ -101,6 +125,23 @@ class TaskManager:
         if last_id:
             return self.tasks.get(last_id)
         return None
+
+    def _active_locked(self, task_type: str) -> Optional[TaskStatus]:
+        """Tâche active de ce type, ou None. À appeler avec self._lock déjà tenu."""
+        last_id = self.last_by_type.get(task_type)
+        status = self.tasks.get(last_id) if last_id else None
+        if status is not None and status.state in ACTIVE_STATES:
+            return status
+        return None
+
+    def get_active(self, task_type: str) -> Optional[TaskStatus]:
+        """Tâche de ce type encore en attente ou en cours d'exécution, sinon None.
+
+        Sert aux routes qui doivent refuser une opération conflictuelle (ex. vider
+        `captured/` pendant qu'un assemblage y lit les images).
+        """
+        with self._lock:
+            return self._active_locked(task_type)
 
     def purge_old_tasks(self) -> int:
         """Supprime les tâches terminées/échouées au-delà du TTL. Retourne le nombre de tâches purgées."""

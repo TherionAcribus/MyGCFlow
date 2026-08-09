@@ -3421,6 +3421,9 @@ function clear_pictures_directory(){
         if(data.success) {
             // Mettre à jour l'interface utilisateur en conséquence
             dbgUi(data)
+        } else if (data && data.busy) {
+            // Refus serveur : un assemblage lit encore les images de captured/
+            pkg.showToast && pkg.showToast(data.message, 'warning', pkg.t ? pkg.t('Assemblage en cours') : 'Assemblage en cours', 6000);
         }
     })
     .catch(error => console.error('Erreur:', error));
@@ -3488,7 +3491,10 @@ function assemble_pictures_directory(){
     .then(data => {
         // Assemblage en tâche de fond : on suit la progression via /tasks/<id>
         if (!data || !data.task_id) {
-            throw new Error(data && data.message ? data.message : "Impossible de lancer l'assemblage");
+            const err = new Error(data && data.message ? data.message : "Impossible de lancer l'assemblage");
+            // 409 : un assemblage tourne déjà, on affiche le message du serveur tel quel
+            err.busy = !!(data && data.busy);
+            throw err;
         }
         return pollAssembleTask(data.task_id, {
             onProgress: (p) => { try { if (assembleToast) pkg.updateToastProgress(assembleToast, p); } catch(_) {} }
@@ -3501,6 +3507,10 @@ function assemble_pictures_directory(){
     .catch(error => {
         console.error('Erreur:', error);
         try { if (assembleToast) pkg.hideToast(assembleToast); } catch(_) {}
+        if (error && error.busy) {
+            pkg.showToast && pkg.showToast(error.message, "warning", tr("Assemblage en cours"), 6000);
+            return;
+        }
         pkg.showToast && pkg.showToast(tr("Erreur lors de l'assemblage de la vidéo"), "error", tr("Erreur"));
     });
 }

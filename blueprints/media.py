@@ -15,7 +15,7 @@ from capture import (
     upload_image,
     upload_video,
 )
-from task_manager import task_manager
+from task_manager import TaskAlreadyRunning, task_manager
 
 media_bp = Blueprint('media', __name__)
 
@@ -30,6 +30,30 @@ def _parse_fps(raw, default=DEFAULT_FPS):
     except (TypeError, ValueError):
         return default
     return max(1, min(60, fps))
+
+
+def _busy_response(running, message):
+    """Réponse 409 pour une opération en conflit avec un assemblage en cours.
+
+    Volontairement sans champ `task_id` : les clients l'utilisent pour suivre
+    *leur* tâche, et le renvoyer ici les ferait suivre celle d'un autre puis
+    conclure à tort que leur propre demande a abouti. L'identifiant est exposé
+    sous `running_task_id` à titre informatif.
+    """
+    return jsonify({
+        'success': False,
+        'busy': True,
+        'message': message,
+        'running_task_id': running.id if running else None,
+        'progress': running.progress if running else None,
+    }), 409
+
+
+# Message unique pour les deux points d'entrée d'assemblage
+_BUSY_MESSAGE = (
+    "Un assemblage vidéo est déjà en cours. Attendez sa fin avant d'en lancer "
+    "un autre ou de relancer une capture (les deux utilisent le dossier captured/)."
+)
 
 
 @media_bp.route('/upload_image', methods=['POST'])
@@ -54,10 +78,15 @@ def start_create_video():
         # Assemblage lancé en tâche de fond : évite l'expiration du fetch HTTP
         # sur les vidéos longues. Le client suit l'avancement via /tasks/<id>.
         output_video = default_video_output("mp4")
-        status = task_manager.submit(
-            TASK_TYPE_VIDEO, run_assemble_video_task,
-            "captured", output_video, fps, audio, vol,
-        )
+        # exclusive : deux assemblages simultanés liraient le même dossier captured/
+        try:
+            status = task_manager.submit(
+                TASK_TYPE_VIDEO, run_assemble_video_task,
+                "captured", output_video, fps, audio, vol,
+                exclusive=True,
+            )
+        except TaskAlreadyRunning as exc:
+            return _busy_response(exc.status, _BUSY_MESSAGE)
         return jsonify({
             'success': True,
             'message': 'Assemblage vidéo lancé en tâche de fond',
@@ -71,6 +100,16 @@ def start_create_video():
 @media_bp.route('/clear_pictures_directory', methods=['POST'])
 @cross_origin()
 def clear_pictures():
+    # Vider captured/ pendant un assemblage supprimerait les images sous les pieds
+    # de MoviePy (la liste est figée au démarrage, mais les fichiers sont lus au
+    # fil de l'encodage) → échec en plein encodage.
+    running = task_manager.get_active(TASK_TYPE_VIDEO)
+    if running is not None:
+        return _busy_response(
+            running,
+            "Un assemblage vidéo est en cours : le dossier captured/ ne peut pas "
+            "être vidé maintenant.",
+        )
     return clear_pictures_directory()
 
 
@@ -87,10 +126,14 @@ def assemble_pictures():
     fps = _parse_fps(raw_fps)
     # Tâche de fond + suivi via /tasks/<id> (idem start_create_video)
     output_video = default_video_output("mp4")
-    status = task_manager.submit(
-        TASK_TYPE_VIDEO, run_assemble_video_task,
-        "captured", output_video, fps,
-    )
+    try:
+        status = task_manager.submit(
+            TASK_TYPE_VIDEO, run_assemble_video_task,
+            "captured", output_video, fps,
+            exclusive=True,
+        )
+    except TaskAlreadyRunning as exc:
+        return _busy_response(exc.status, _BUSY_MESSAGE)
     return jsonify({
         'success': True,
         'message': 'Assemblage vidéo lancé en tâche de fond',
