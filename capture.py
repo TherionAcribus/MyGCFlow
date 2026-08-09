@@ -5,6 +5,8 @@ import base64
 from datetime import datetime
 import platform
 import subprocess
+import threading
+import time
 from moviepy import ImageSequenceClip, AudioFileClip
 from werkzeug.utils import secure_filename
 
@@ -282,6 +284,15 @@ TASK_TYPE_VIDEO_PROCESS = "video_processing"
 
 _FFMPEG_DURATION_RE = re.compile(r"Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)")
 
+# Watchdog du traitement ffmpeg : avec '-progress pipe:1', ffmpeg écrit un bloc de
+# progression toutes les ~0,5 s. Une absence totale de sortie pendant ce délai signale
+# un processus figé (entrée corrompue) : sans watchdog, `for line in proc.stdout` bloque
+# indéfiniment et le worker qui exécute la tâche est perdu pour toujours.
+FFMPEG_STALL_TIMEOUT_S = 300      # 5 min sans la moindre ligne → on tue ffmpeg
+FFMPEG_WATCHDOG_INTERVAL_S = 5    # période de vérification du watchdog
+# Garde-fou sur la lecture d'en-tête (ffmpeg -i) : même entrée corrompue, même risque.
+FFMPEG_PROBE_TIMEOUT_S = 60
+
 
 def _get_ffmpeg_exe():
     """Chemin de l'exécutable ffmpeg fourni par imageio-ffmpeg (dépendance de moviepy)."""
@@ -299,6 +310,7 @@ def _probe_duration_seconds(input_path):
             [_get_ffmpeg_exe(), '-i', input_path],
             stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
             universal_newlines=True, encoding='utf-8', errors='replace',
+            timeout=FFMPEG_PROBE_TIMEOUT_S,
         )
         m = _FFMPEG_DURATION_RE.search(proc.stderr or '')
         if m:
@@ -405,34 +417,78 @@ def _process_recorded_video(input_path, output_path, slowdown=1.0, audio_path=No
         universal_newlines=True, encoding='utf-8', errors='replace',
     )
 
-    tail_lines = []  # dernières lignes non-progress (pour message d'erreur)
-    for line in proc.stdout:
-        line = line.strip()
-        if not line:
-            continue
-        if line.startswith('out_time_us=') or line.startswith('out_time_ms='):
-            try:
-                micros = float(line.split('=', 1)[1])
-                cur = micros / 1_000_000.0
-                if out_dur and out_dur > 0:
-                    frac = max(0.0, min(1.0, cur / out_dur))
-                    _progress(2 + frac * 96, f"Traitement vidéo... {int(frac * 100)}%")
-                else:
-                    _progress(50, "Traitement vidéo en cours...")
-            except Exception:
-                pass
-        elif not line.startswith(('frame=', 'fps=', 'bitrate=', 'total_size=',
-                                  'out_time=', 'dup_frames=', 'drop_frames=',
-                                  'speed=', 'progress=', 'stream_')):
-            tail_lines.append(line)
-            if len(tail_lines) > 60:
-                tail_lines.pop(0)
+    # Watchdog : tue ffmpeg s'il n'émet plus rien pendant FFMPEG_STALL_TIMEOUT_S.
+    # Le pipe se ferme alors et la boucle de lecture ci-dessous se termine d'elle-même,
+    # ce qui libère le worker au lieu de le bloquer indéfiniment.
+    last_output = time.monotonic()
+    stalled = threading.Event()
+    finished = threading.Event()
 
-    # Fermer explicitement le pipe : les traitements répétés ne doivent pas
-    # accumuler de descripteurs jusqu'au prochain passage du ramasse-miettes.
-    if proc.stdout is not None:
-        proc.stdout.close()
-    proc.wait()
+    def _watchdog():
+        while not finished.wait(FFMPEG_WATCHDOG_INTERVAL_S):
+            if time.monotonic() - last_output > FFMPEG_STALL_TIMEOUT_S:
+                stalled.set()
+                try:
+                    proc.kill()
+                except Exception:
+                    pass
+                return
+
+    threading.Thread(target=_watchdog, daemon=True).start()
+
+    tail_lines = []  # dernières lignes non-progress (pour message d'erreur)
+    try:
+        for line in proc.stdout:
+            last_output = time.monotonic()
+            line = line.strip()
+            if not line:
+                continue
+            if line.startswith('out_time_us=') or line.startswith('out_time_ms='):
+                try:
+                    micros = float(line.split('=', 1)[1])
+                    cur = micros / 1_000_000.0
+                    if out_dur and out_dur > 0:
+                        frac = max(0.0, min(1.0, cur / out_dur))
+                        _progress(2 + frac * 96, f"Traitement vidéo... {int(frac * 100)}%")
+                    else:
+                        _progress(50, "Traitement vidéo en cours...")
+                except Exception:
+                    pass
+            elif not line.startswith(('frame=', 'fps=', 'bitrate=', 'total_size=',
+                                      'out_time=', 'dup_frames=', 'drop_frames=',
+                                      'speed=', 'progress=', 'stream_')):
+                tail_lines.append(line)
+                if len(tail_lines) > 60:
+                    tail_lines.pop(0)
+    finally:
+        # Arrêter le watchdog même si la lecture lève, puis fermer explicitement le pipe :
+        # les traitements répétés ne doivent pas accumuler de descripteurs jusqu'au
+        # prochain passage du ramasse-miettes.
+        finished.set()
+        if proc.stdout is not None:
+            proc.stdout.close()
+
+    try:
+        proc.wait(timeout=FFMPEG_WATCHDOG_INTERVAL_S * 4)
+    except subprocess.TimeoutExpired:
+        # Flux fermé mais ffmpeg toujours vivant : le watchdog est arrêté, on ne laisse
+        # pas wait() bloquer le worker à son tour.
+        print("[process] ffmpeg ne se termine pas après fermeture du flux → processus tué")
+        try:
+            proc.kill()
+            proc.wait(timeout=10)
+        except Exception:
+            pass
+        return {'success': False, 'message': "Traitement ffmpeg interrompu : le processus ne s'est pas terminé."}
+
+    if stalled.is_set():
+        minutes = max(1, int(FFMPEG_STALL_TIMEOUT_S // 60))
+        print(f"[process] ffmpeg figé (aucune progression pendant {minutes} min) → processus tué")
+        return {
+            'success': False,
+            'message': (f"Traitement ffmpeg interrompu : aucune progression pendant {minutes} min. "
+                        "Le fichier source est probablement corrompu."),
+        }
     if proc.returncode != 0:
         msg = "\n".join(tail_lines[-8:]) or f"ffmpeg a échoué (code {proc.returncode})"
         return {'success': False, 'message': f"Traitement ffmpeg échoué: {msg}"}
