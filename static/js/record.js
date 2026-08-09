@@ -26,7 +26,7 @@ function dataUrlToBlob(dataUrl) {
                 } else {
                     reject(new Error('Échec conversion en Blob'));
                 }
-            }, 'image/webp', 0.9); // WebP avec qualité 95%
+            }, 'image/webp', 0.9); // WebP avec qualité 0%
         };
         img.onerror = () => reject(new Error('Échec chargement image'));
         img.src = dataUrl;
