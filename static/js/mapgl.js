@@ -1314,12 +1314,23 @@ export function clearMap(){
 
 
 // ----------- ANIMATION DE LA CARTE  ------------
+// Concatène points dans target sans spread : push(...points) passe chaque point
+// en argument et dépasse la taille de pile au-delà de ~65k éléments (limite
+// variable selon le navigateur), ce qui casse les très grosses journées.
+function appendPoints(target, points) {
+    if (!points) return target;
+    for (let i = 0; i < points.length; i++) {
+        target.push(points[i]);
+    }
+    return target;
+}
+
 // Fonction helper pour récupérer tous les points filtrés
 function getAllFilteredPoints() {
     const allPoints = [];
     if (pkg.pointsByDate) {
         for (const points of pkg.pointsByDate.values()) {
-            allPoints.push(...points);
+            appendPoints(allPoints, points);
         }
     }
     return allPoints;
@@ -1337,7 +1348,7 @@ function getFilteredPointsAtStart() {
         for (const [dateKey, points] of pkg.pointsByDate.entries()) {
             const date = new Date(dateKey);
             if (date < animationStartDate) {
-                allPoints.push(...points);
+                appendPoints(allPoints, points);
             }
         }
     }
@@ -1351,7 +1362,7 @@ function getPointsUpToDate(targetDate) {
         for (const [dateKey, points] of pkg.pointsByDate.entries()) {
             const date = new Date(dateKey);
             if (date <= targetDate) {
-                allPoints.push(...points);
+                appendPoints(allPoints, points);
             }
         }
     }
@@ -1937,15 +1948,23 @@ function abortRecordingOnError(error) {
 // soit terminée. Résout avec le résultat, rejette en cas d'échec ou de timeout.
 // Utilisé pour l'assemblage vidéo, lancé en tâche de fond côté serveur pour
 // éviter l'expiration du fetch HTTP sur les vidéos longues.
-function pollTaskStatus(taskId, { intervalMs = 700, timeoutMs = 1800000, onProgress } = {}) {
+// maxConsecutiveErrors : la tâche continue côté serveur pendant une micro-coupure
+// réseau ou un pic de charge ; on ne renonce au suivi qu'après plusieurs échecs
+// d'affilée, un seul fetch raté ne doit pas faire échouer tout l'assemblage.
+function pollTaskStatus(taskId, { intervalMs = 700, timeoutMs = 1800000, maxConsecutiveErrors = 5, onProgress } = {}) {
     return new Promise((resolve, reject) => {
         const startedAt = Date.now();
+        let consecutiveErrors = 0;
         const tick = () => {
             if (!taskId) { reject(new Error('task_id manquant')); return; }
             if (Date.now() - startedAt > timeoutMs) { reject(new Error('Délai d\'assemblage dépassé')); return; }
             fetch(`${CONFIG.BASE_URL}/tasks/${encodeURIComponent(taskId)}?include_result=true`, { method: 'GET' })
-                .then(r => r.json())
+                .then(r => {
+                    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                    return r.json();
+                })
                 .then(status => {
+                    consecutiveErrors = 0;
                     const state = status?.state;
                     if (typeof onProgress === 'function' && typeof status?.progress === 'number') {
                         onProgress(status.progress, status.message);
@@ -1954,7 +1973,16 @@ function pollTaskStatus(taskId, { intervalMs = 700, timeoutMs = 1800000, onProgr
                     if (state === 'failed') { reject(new Error(status?.error || status?.message || 'Tâche échouée')); return; }
                     setTimeout(tick, intervalMs);
                 })
-                .catch(err => reject(err));
+                .catch(err => {
+                    consecutiveErrors++;
+                    if (consecutiveErrors >= maxConsecutiveErrors) {
+                        reject(new Error(`Suivi de la tâche interrompu après ${consecutiveErrors} erreurs consécutives : ${err?.message || err}`));
+                        return;
+                    }
+                    dbgMapgl(`[TASK] Erreur de suivi ${consecutiveErrors}/${maxConsecutiveErrors} : ${err?.message || err}`);
+                    // Back-off progressif pour laisser le serveur/réseau se rétablir
+                    setTimeout(tick, intervalMs * (consecutiveErrors + 1));
+                });
         };
         tick();
     });
