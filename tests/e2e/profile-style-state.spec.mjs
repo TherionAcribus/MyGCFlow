@@ -201,6 +201,79 @@ test('l\'indicateur "modifications non enregistrées" suit l\'état, pas les év
 });
 
 
+test('les modifications non enregistrées passent par une modale à trois issues', async ({ page }) => {
+  // Un window.confirm() natif serait rejeté par Playwright (aucun handler de
+  // dialogue) : ce test échouerait sur l'attente de la modale. On surveille tout
+  // de même l'apparition d'un dialogue natif pour que la régression soit lisible.
+  const nativeDialogs = [];
+  page.on('dialog', (dialog) => { nativeDialogs.push(dialog.message()); dialog.dismiss(); });
+
+  const modal = page.locator('#unsaved-changes-modal');
+
+  // La sauvegarde est remplacée par un espion : les profils vivent dans
+  // %APPDATA%\GCMap, que le runtime isolé des tests ne couvre pas (un vrai
+  // PUT /api/profiles écrirait dans la configuration réelle de l'utilisateur).
+  const ask = () => page.evaluate(() => {
+    const pm = window.profileManager;
+    pm.currentProfile = { name: 'Suivi', uid: 'suivi', version: '1.0' };
+    pm.hasUnsavedChanges = true;
+    window.__saveCalls = 0;
+    pm.saveCurrentAsProfile = async () => { window.__saveCalls += 1; return true; };
+    // La promesse n'est résolue qu'à la fermeture de la modale : on la garde
+    // pour la relire après le clic.
+    window.__choice = pm._confirmDiscardChangesIfNeeded();
+  });
+  const outcome = () => page.evaluate(async () => ({
+    canContinue: await window.__choice,
+    saveCalls: window.__saveCalls,
+  }));
+
+  // 1. Annuler : l'action appelante ne doit pas continuer, rien n'est enregistré.
+  await ask();
+  await expect(modal).toBeVisible();
+  // Le nom du profil concerné est repris dans le message (impossible avec confirm()).
+  await expect(page.locator('#unsaved-changes-message')).toContainText('Suivi');
+  await modal.locator('.modal-footer [data-bs-dismiss="modal"]').click();
+  await expect(modal).toBeHidden();
+  expect(await outcome()).toEqual({ canContinue: false, saveCalls: 0 });
+
+  // 2. Abandonner : on continue sans enregistrer.
+  await ask();
+  await expect(modal).toBeVisible();
+  await modal.locator('#btn-unsaved-discard').click();
+  await expect(modal).toBeHidden();
+  expect(await outcome()).toEqual({ canContinue: true, saveCalls: 0 });
+
+  // 3. Enregistrer et charger : on enregistre, puis on continue.
+  await ask();
+  await expect(modal).toBeVisible();
+  await modal.locator('#btn-unsaved-save').click();
+  await expect(modal).toBeHidden();
+  expect(await outcome()).toEqual({ canContinue: true, saveCalls: 1 });
+
+  // 4. Échec de la sauvegarde : les modifications ne doivent pas être perdues.
+  await page.evaluate(() => {
+    const pm = window.profileManager;
+    pm.saveCurrentAsProfile = async () => false;
+    window.__choice = pm._confirmDiscardChangesIfNeeded();
+  });
+  await expect(modal).toBeVisible();
+  await modal.locator('#btn-unsaved-save').click();
+  await expect(modal).toBeHidden();
+  expect(await page.evaluate(() => window.__choice)).toBe(false);
+
+  // 5. Sans modification en attente, aucune modale : l'action part directement.
+  const direct = await page.evaluate(() => {
+    window.profileManager.hasUnsavedChanges = false;
+    return window.profileManager._confirmDiscardChangesIfNeeded();
+  });
+  expect(direct).toBe(true);
+  await expect(modal).toBeHidden();
+
+  expect(nativeDialogs).toEqual([]);
+});
+
+
 test('l\'étoile marque le profil par défaut, indépendamment du profil actif', async ({ page }) => {
   // Liste et profil par défaut posés en mémoire : les profils et le réglage
   // "profil par défaut" vivent dans %APPDATA%\GCMap, que le runtime isolé des

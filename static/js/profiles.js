@@ -37,6 +37,9 @@ class ProfileManager {
         this._defaultProfileName = null;
         // Requête de lecture en cours, partagée par les appels concurrents.
         this._defaultProfileNamePromise = null;
+        // Modale "modifications non enregistrées" en cours d'affichage : elle
+        // n'accepte qu'une question à la fois (cf. _askUnsavedChangesChoice).
+        this._unsavedChoicePending = false;
         this.init();
     }
 
@@ -172,7 +175,7 @@ class ProfileManager {
     // Les appelants qui répercutent ce chargement sur un autre état persistant
     // (ex: profil par défaut) doivent vérifier cette valeur avant de continuer.
     async loadProfile(name) {
-        if (!this._confirmDiscardChangesIfNeeded()) return false;
+        if (!await this._confirmDiscardChangesIfNeeded()) return false;
         try {
             dbgProfiles('Chargement profil depuis API:', name);
             const profile = await this.apiCall(`/api/profiles/${encodeURIComponent(name)}`);
@@ -356,7 +359,7 @@ class ProfileManager {
      * _syncDefaultProfileSelectorValue pour le sélecteur).
      */
     async setProfileAsDefault(profileName) {
-        if (!this._confirmDiscardChangesIfNeeded()) return;
+        if (!await this._confirmDiscardChangesIfNeeded()) return;
         try {
             const profile = await this.apiCall(`/api/profiles/${encodeURIComponent(profileName)}`);
             if (!profile || !profile.uid) {
@@ -646,10 +649,74 @@ class ProfileManager {
         container.addEventListener('change', recompute, true);
     }
 
-    // Avertit avant d'abandonner des modifications non sauvegardées (chargement d'un autre profil, etc.)
-    _confirmDiscardChangesIfNeeded() {
+    // Avertit avant d'abandonner des modifications non sauvegardées (chargement
+    // d'un autre profil, etc.). Retourne true si l'action appelante peut
+    // continuer : soit il n'y avait rien à perdre, soit l'utilisateur a
+    // enregistré, soit il a explicitement abandonné ses modifications.
+    async _confirmDiscardChangesIfNeeded() {
         if (!this.hasUnsavedChanges) return true;
-        return window.confirm(pkg.t('Vous avez des modifications non enregistrées. Les abandonner ?'));
+
+        const choice = await this._askUnsavedChangesChoice();
+        if (choice === 'discard') return true;
+        // Une sauvegarde en échec (erreur réseau/serveur, déjà signalée par un
+        // toast) ne doit pas emporter les modifications : on annule l'action.
+        if (choice === 'save') return await this.saveCurrentAsProfile();
+        return false;
+    }
+
+    // Ouvre la modale à trois issues et résout avec 'save' | 'discard' | 'cancel'.
+    // Remplace window.confirm() : même look que les autres modales de l'app et
+    // libellés traduisibles, au prix d'une attente asynchrone (d'où les `await`
+    // chez les appelants de _confirmDiscardChangesIfNeeded).
+    _askUnsavedChangesChoice() {
+        const modal = document.getElementById('unsaved-changes-modal');
+        // Sans modale utilisable (Bootstrap absent, onglet Style pas rendu), on
+        // ne peut pas demander : on annule plutôt que de perdre le travail en
+        // cours en silence.
+        if (!modal || !getBsModal(modal)) {
+            console.warn('ProfileManager: modale "modifications non enregistrées" indisponible, action annulée');
+            return Promise.resolve('cancel');
+        }
+        // Un second appel pendant que la modale est ouverte (clic sur un autre
+        // profil) serait ignoré par Bootstrap mais résolu par le MÊME
+        // 'hidden.bs.modal' : les deux actions s'exécuteraient sur un seul clic.
+        if (this._unsavedChoicePending) return Promise.resolve('cancel');
+        this._unsavedChoicePending = true;
+
+        const message = document.getElementById('unsaved-changes-message');
+        if (message) {
+            message.textContent = this.currentProfile?.name
+                ? pkg.t('Le profil "${name}" contient des modifications non enregistrées. Que voulez-vous faire ?', { name: this.currentProfile.name })
+                : pkg.t('Vous avez des modifications non enregistrées. Que voulez-vous faire ?');
+        }
+
+        return new Promise(resolve => {
+            let choice = 'cancel';
+            const cleanups = [];
+            const on = (el, type, handler) => {
+                if (!el) return;
+                el.addEventListener(type, handler);
+                cleanups.push(() => el.removeEventListener(type, handler));
+            };
+            // 'hidden.bs.modal' est le seul point de sortie : il couvre aussi
+            // Échap, le clic sur le fond et la croix, et garantit que l'action
+            // suivante (qui peut ouvrir sa propre modale) ne démarre pas avant
+            // la fin de l'animation de fermeture.
+            on(modal, 'hidden.bs.modal', () => {
+                cleanups.forEach(fn => fn());
+                this._unsavedChoicePending = false;
+                resolve(choice);
+            });
+            on(document.getElementById('btn-unsaved-save'), 'click', () => {
+                choice = 'save';
+                hideBsModal(modal);
+            });
+            on(document.getElementById('btn-unsaved-discard'), 'click', () => {
+                choice = 'discard';
+                hideBsModal(modal);
+            });
+            showBsModal(modal);
+        });
     }
 
     // Gestion du profil par défaut
@@ -719,7 +786,7 @@ class ProfileManager {
 
     // Voir loadProfile() pour la convention de retour (true = chargé, false = annulé/erreur).
     async loadProfileByUid(uid) {
-        if (!this._confirmDiscardChangesIfNeeded()) return false;
+        if (!await this._confirmDiscardChangesIfNeeded()) return false;
         try {
             dbgProfiles('🔄 [LOAD_PROFILE] Chargement profil par UUID:', uid);
             dbgProfiles('🔄 [LOAD_PROFILE] État avant chargement:', {
@@ -1212,10 +1279,13 @@ class ProfileManager {
         dbgProfiles('Profil appliqué avec succès:', profile.name);
     }
 
+    // Retourne true si le profil a bien été écrit côté serveur. La valeur sert à
+    // _confirmDiscardChangesIfNeeded ("Enregistrer et charger") : une sauvegarde
+    // en échec doit interrompre l'action qui allait écraser les modifications.
     async saveCurrentAsProfile() {
         if (!this.currentProfile) {
             this.showNewProfileModal();
-            return;
+            return false;
         }
 
         // Récupérer les paramètres actuels
@@ -1259,11 +1329,13 @@ class ProfileManager {
         });
 
         const result = await this.saveProfile(profileData);
-        if (result && result.success) {
+        const saved = !!(result && result.success);
+        if (saved) {
             this._lastSavedSnapshot = this._dirtySnapshot(this.currentSettings);
             this.hasUnsavedChanges = false;
         }
         this.updateCurrentProfileIndicator();
+        return saved;
     }
 
     showNewProfileModal() {

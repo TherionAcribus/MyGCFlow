@@ -223,6 +223,35 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Modal "modifications non enregistrées" (Bootstrap 5).
+                                 Trois issues, contrairement aux modales de confirmation
+                                 ci-dessus : enregistrer avant de continuer, abandonner
+                                 les modifications, ou renoncer à l'action en cours. -->
+                            <div id="unsaved-changes-modal" class="modal bs-modal" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <div class="modal-header-row d-flex align-items-center gap-2">
+                                                <span class="modal-icon warning"><i class="ti ti-alert-triangle"></i></span>
+                                                <div>
+                                                    <h5 class="modal-title">{{ _("Modifications non enregistrées") }}</h5>
+                                                    <p class="modal-subtitle text-muted">{{ _("Le profil actif a été modifié") }}</p>
+                                                </div>
+                                            </div>
+                                            <button type="button" class="btn-close modal-close" data-bs-dismiss="modal" aria-label="{{ _('Fermer') }}"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p id="unsaved-changes-message" class="modal-body-text">{{ _("Vous avez des modifications non enregistrées.") }}</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary modal-close" data-bs-dismiss="modal">{{ _("Annuler") }}</button>
+                                            <button type="button" id="btn-unsaved-discard" class="btn btn-danger">{{ _("Abandonner") }}</button>
+                                            <button type="button" id="btn-unsaved-save" class="btn btn-primary">{{ _("Enregistrer et charger") }}</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

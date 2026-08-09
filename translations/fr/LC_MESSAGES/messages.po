@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-09 18:55+0200\n"
+"POT-Creation-Date: 2026-08-09 21:33+0200\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -126,7 +126,8 @@ msgstr "Confirmer"
 
 #: blueprints/core.py:95 static/js/notifications.js:311
 #: templates/menu_style.html:170 templates/menu_style.html:195
-#: templates/menu_style.html:220 templates/modal_loading.html:14
+#: templates/menu_style.html:220 templates/menu_style.html:248
+#: templates/modal_loading.html:14
 msgid "Annuler"
 msgstr "Annuler"
 
@@ -154,11 +155,11 @@ msgstr "Erreur lors du vidage de la base de données: %(error)s"
 
 #: static/js/basemaps.js:90
 msgid ""
-"Certaines tuiles de la carte n'ont pas pu être chargées (connexion instable "
-"?)."
+"Certaines tuiles de la carte n'ont pas pu être chargées (connexion "
+"instable ?)."
 msgstr ""
-"Certaines tuiles de la carte n'ont pas pu être chargées (connexion instable "
-"?)."
+"Certaines tuiles de la carte n'ont pas pu être chargées (connexion "
+"instable ?)."
 
 #: static/js/basemaps.js:92 static/js/basemaps.js:129 static/js/ui.js:1598
 msgid "Carte"
@@ -403,198 +404,213 @@ msgstr "Information"
 msgid "Confirmation"
 msgstr "Confirmation"
 
-#: static/js/profiles.js:142
+#: static/js/profiles.js:150
 msgid "Import échoué"
 msgstr "Import échoué"
 
-#: static/js/profiles.js:144
+#: static/js/profiles.js:152
 #, python-brace-format
 msgid "Profil \"${name}\" importé"
 msgstr "Profil \"${name}\" importé"
 
-#: static/js/profiles.js:148
+#: static/js/profiles.js:156
 msgid "Erreur import du profil"
 msgstr "Erreur import du profil"
 
-#: static/js/profiles.js:174
+#: static/js/profiles.js:182
 msgid "Erreur API"
 msgstr "Erreur API"
 
-#: static/js/profiles.js:180
+#: static/js/profiles.js:188
 #, python-brace-format
 msgid "Erreur: ${message}"
 msgstr "Erreur: ${message}"
 
-#: static/js/profiles.js:228 static/js/profiles.js:810
+#: static/js/profiles.js:236 static/js/profiles.js:973
 #, python-brace-format
 msgid "Profil \"${name}\" chargé"
 msgstr "Profil \"${name}\" chargé"
 
-#: static/js/profiles.js:249
+#: static/js/profiles.js:257
 #, python-brace-format
 msgid "Profil \"${name}\" sauvegardé"
 msgstr "Profil \"${name}\" sauvegardé"
 
-#: static/js/profiles.js:267
+#: static/js/profiles.js:275
 #, python-brace-format
 msgid "Profil \"${name}\" créé"
 msgstr "Profil \"${name}\" créé"
 
-#: static/js/profiles.js:284
+#: static/js/profiles.js:292
 #, python-brace-format
 msgid "Profil dupliqué: \"${name}\""
 msgstr "Profil dupliqué: \"${name}\""
 
-#: static/js/profiles.js:296
+#: static/js/profiles.js:304
 #, python-brace-format
 msgid "Profil \"${name}\" supprimé"
 msgstr "Profil \"${name}\" supprimé"
 
-#: static/js/profiles.js:357
+#: static/js/profiles.js:365
 #, python-brace-format
 msgid "Profil \"${name}\" réinitialisé"
 msgstr "Profil \"${name}\" réinitialisé"
 
-#: static/js/profiles.js:372
+#: static/js/profiles.js:380
 msgid "Export échoué"
 msgstr "Export échoué"
 
-#: static/js/profiles.js:383
+#: static/js/profiles.js:391
 #, python-brace-format
 msgid "Profil \"${name}\" exporté"
 msgstr "Profil \"${name}\" exporté"
 
-#: static/js/profiles.js:386
+#: static/js/profiles.js:394
 msgid "Erreur export du profil"
 msgstr "Erreur export du profil"
 
-#: static/js/profiles.js:406
+#: static/js/profiles.js:414
 msgid "Profil introuvable ou UID manquant"
 msgstr "Profil introuvable ou UID manquant"
 
-#: static/js/profiles.js:420
+#: static/js/profiles.js:428
 msgid "Échec de la sauvegarde du profil par défaut"
 msgstr "Échec de la sauvegarde du profil par défaut"
 
-#: static/js/profiles.js:425
+#: static/js/profiles.js:433
 #, python-brace-format
 msgid "Profil \"${name}\" défini comme profil par défaut"
 msgstr "Profil \"${name}\" défini comme profil par défaut"
 
-#: static/js/profiles.js:437
+#: static/js/profiles.js:446
 msgid "Erreur lors de la définition du profil par défaut"
 msgstr "Erreur lors de la définition du profil par défaut"
 
-#: static/js/profiles.js:452
+#: static/js/profiles.js:461
 msgid "Aucun profil"
 msgstr "Aucun profil"
 
-#: static/js/profiles.js:528
+#: static/js/profiles.js:544
 msgid "Dupliquer"
 msgstr "Dupliquer"
 
-#: static/js/profiles.js:529 static/js/profiles.js:1418
+#: static/js/profiles.js:545 static/js/profiles.js:1593
 msgid "Renommer"
 msgstr "Renommer"
 
-#: static/js/profiles.js:530
+#: static/js/profiles.js:546
 msgid "Exporter"
 msgstr "Exporter"
 
-#: static/js/profiles.js:531 templates/menu_options.html:79
+#: static/js/profiles.js:547 templates/menu_options.html:79
 #: templates/menu_style.html:221
 msgid "Réinitialiser"
 msgstr "Réinitialiser"
 
-#: static/js/profiles.js:532 templates/menu_style.html:196
+#: static/js/profiles.js:548 templates/menu_style.html:196
 msgid "Supprimer"
 msgstr "Supprimer"
 
-#: static/js/profiles.js:536
+#: static/js/profiles.js:552
 msgid "Définir comme par défaut"
 msgstr "Définir comme par défaut"
 
-#: static/js/profiles.js:582
+#: static/js/profiles.js:608
 msgid "ACTIF"
 msgstr "ACTIF"
 
-#: static/js/profiles.js:616
+#: static/js/profiles.js:630 templates/menu_options.html:35
+msgid "Profil par défaut"
+msgstr "Profil par défaut"
+
+#: static/js/profiles.js:682 templates/menu_style.html:238
 msgid "Modifications non enregistrées"
 msgstr "Modifications non enregistrées"
 
-#: static/js/profiles.js:696
-msgid "Vous avez des modifications non enregistrées. Les abandonner ?"
-msgstr "Vous avez des modifications non enregistrées. Les abandonner ?"
+#: static/js/profiles.js:811
+#, python-brace-format
+msgid ""
+"Le profil \"${name}\" contient des modifications non enregistrées. Que "
+"voulez-vous faire ?"
+msgstr ""
+"Le profil \"${name}\" contient des modifications non enregistrées. Que "
+"voulez-vous faire ?"
 
-#: static/js/profiles.js:814 static/js/profiles.js:1018
+#: static/js/profiles.js:812
+msgid "Vous avez des modifications non enregistrées. Que voulez-vous faire ?"
+msgstr "Vous avez des modifications non enregistrées. Que voulez-vous faire ?"
+
+#: static/js/profiles.js:977 static/js/profiles.js:1185
 msgid "Erreur lors du chargement du profil par défaut"
 msgstr "Erreur lors du chargement du profil par défaut"
 
-#: static/js/profiles.js:847
+#: static/js/profiles.js:1010
 msgid "Aucun profil par défaut"
 msgstr "Aucun profil par défaut"
 
-#: static/js/profiles.js:931
+#: static/js/profiles.js:1095
 #, python-brace-format
 msgid "Profil \"${selectedProfile}\" appliqué et défini comme profil par défaut"
 msgstr "Profil \"${selectedProfile}\" appliqué et défini comme profil par défaut"
 
-#: static/js/profiles.js:932
+#: static/js/profiles.js:1096
 msgid "Aucun profil par défaut défini"
 msgstr "Aucun profil par défaut défini"
 
-#: static/js/profiles.js:996
+#: static/js/profiles.js:1163
 msgid "Profil temporaire"
 msgstr "Profil temporaire"
 
-#: static/js/profiles.js:1015
+#: static/js/profiles.js:1182
 msgid "Profil temporaire chargé (profil par défaut manquant)"
 msgstr "Profil temporaire chargé (profil par défaut manquant)"
 
-#: static/js/profiles.js:1398 templates/menu_style.html:138
+#: static/js/profiles.js:1573 templates/menu_style.html:138
 #: templates/menu_style.html:160
 msgid "Nouveau profil"
 msgstr "Nouveau profil"
 
-#: static/js/profiles.js:1400 templates/menu_style.html:171
+#: static/js/profiles.js:1575 templates/menu_style.html:171
 msgid "Créer"
 msgstr "Créer"
 
-#: static/js/profiles.js:1416
+#: static/js/profiles.js:1591
 msgid "Renommer le profil"
 msgstr "Renommer le profil"
 
-#: static/js/profiles.js:1435
+#: static/js/profiles.js:1610
 msgid "Veuillez saisir un nom de profil"
 msgstr "Veuillez saisir un nom de profil"
 
-#: static/js/profiles.js:1488
+#: static/js/profiles.js:1663
 #, python-brace-format
 msgid "Profil renommé en \"${name}\""
 msgstr "Profil renommé en \"${name}\""
 
-#: static/js/profiles.js:1502
+#: static/js/profiles.js:1677
 #, python-brace-format
 msgid "Êtes-vous sûr de vouloir supprimer le profil \"${name}\" ?"
 msgstr "Êtes-vous sûr de vouloir supprimer le profil \"${name}\" ?"
 
-#: static/js/profiles.js:1521
+#: static/js/profiles.js:1696
 #, python-brace-format
 msgid ""
-"Êtes-vous sûr de vouloir réinitialiser le profil \"${name}\" aux valeurs par"
-" défaut ?"
+"Êtes-vous sûr de vouloir réinitialiser le profil \"${name}\" aux valeurs "
+"par défaut ?"
 msgstr ""
-"Êtes-vous sûr de vouloir réinitialiser le profil \"${name}\" aux valeurs par"
-" défaut ?"
+"Êtes-vous sûr de vouloir réinitialiser le profil \"${name}\" aux valeurs "
+"par défaut ?"
 
 #: static/js/recording_perf.js:139
 #, python-brace-format, python-format
 msgid ""
-"Performance d'enregistrement instable (${pct}% de frames lentes). Souhaitez-"
-"vous augmenter le ralentissement à x${slowdown} automatiquement ?"
+"Performance d'enregistrement instable (${pct}% de frames lentes). "
+"Souhaitez-vous augmenter le ralentissement à x${slowdown} automatiquement"
+" ?"
 msgstr ""
-"Performance d'enregistrement instable (${pct}% de frames lentes). Souhaitez-"
-"vous augmenter le ralentissement à x${slowdown} automatiquement ?"
+"Performance d'enregistrement instable (${pct}% de frames lentes). "
+"Souhaitez-vous augmenter le ralentissement à x${slowdown} automatiquement"
+" ?"
 
 #: static/js/recording_perf.js:171
 #, python-brace-format
@@ -608,29 +624,29 @@ msgstr ""
 #: static/js/recording_perf.js:185
 #, python-brace-format
 msgid ""
-"Vous pouvez manuellement augmenter le ralentissement à x${slowdown} dans les"
-" paramètres d'enregistrement."
+"Vous pouvez manuellement augmenter le ralentissement à x${slowdown} dans "
+"les paramètres d'enregistrement."
 msgstr ""
-"Vous pouvez manuellement augmenter le ralentissement à x${slowdown} dans les"
-" paramètres d'enregistrement."
+"Vous pouvez manuellement augmenter le ralentissement à x${slowdown} dans "
+"les paramètres d'enregistrement."
 
 #: static/js/recording_perf.js:200
 #, python-brace-format, python-format
 msgid ""
-"Performance instable (${pct}% de frames lentes). Augmentez le ralentissement"
-" à x${slowdown} dans les paramètres."
+"Performance instable (${pct}% de frames lentes). Augmentez le "
+"ralentissement à x${slowdown} dans les paramètres."
 msgstr ""
-"Performance instable (${pct}% de frames lentes). Augmentez le ralentissement"
-" à x${slowdown} dans les paramètres."
+"Performance instable (${pct}% de frames lentes). Augmentez le "
+"ralentissement à x${slowdown} dans les paramètres."
 
 #: static/js/recording_perf.js:214
 #, python-brace-format
 msgid ""
-"Le ralentissement est déjà au maximum (x${slowdown}). Réduisez le nombre de "
-"points affichés ou la résolution."
+"Le ralentissement est déjà au maximum (x${slowdown}). Réduisez le nombre "
+"de points affichés ou la résolution."
 msgstr ""
-"Le ralentissement est déjà au maximum (x${slowdown}). Réduisez le nombre de "
-"points affichés ou la résolution."
+"Le ralentissement est déjà au maximum (x${slowdown}). Réduisez le nombre "
+"de points affichés ou la résolution."
 
 #: static/js/recording_perf.js:224
 #, python-brace-format, python-format
@@ -643,11 +659,11 @@ msgstr ""
 
 #: static/js/ui.js:805
 msgid ""
-"Ce format vidéo n'est pas supporté par votre navigateur et sera ignoré au "
-"démarrage de l'enregistrement."
+"Ce format vidéo n'est pas supporté par votre navigateur et sera ignoré au"
+" démarrage de l'enregistrement."
 msgstr ""
-"Ce format vidéo n'est pas supporté par votre navigateur et sera ignoré au "
-"démarrage de l'enregistrement."
+"Ce format vidéo n'est pas supporté par votre navigateur et sera ignoré au"
+" démarrage de l'enregistrement."
 
 #: static/js/ui.js:1599
 msgid "Centre par défaut mis à jour depuis la vue actuelle"
@@ -716,7 +732,8 @@ msgstr "Animation & vidéo"
 msgid "Préférences"
 msgstr "Préférences"
 
-#: templates/guide.html:6 templates/guide.html:21 templates/menu_options.html:95
+#: templates/guide.html:6 templates/guide.html:21
+#: templates/menu_options.html:95
 msgid "Mode d'emploi"
 msgstr "Mode d'emploi"
 
@@ -742,15 +759,15 @@ msgstr "Bienvenue dans GCMap !"
 
 #: templates/guide.html:65
 msgid ""
-"GCMap transforme vos trouvailles de géocaching en une carte animée que vous "
-"pouvez personnaliser et enregistrer en vidéo. Suivez ce guide en 4 étapes : "
-"chargez vos données, choisissez un style, lancez l'animation, puis ajustez "
-"les paramètres."
+"GCMap transforme vos trouvailles de géocaching en une carte animée que "
+"vous pouvez personnaliser et enregistrer en vidéo. Suivez ce guide en 4 "
+"étapes : chargez vos données, choisissez un style, lancez l'animation, "
+"puis ajustez les paramètres."
 msgstr ""
-"GCMap transforme vos trouvailles de géocaching en une carte animée que vous "
-"pouvez personnaliser et enregistrer en vidéo. Suivez ce guide en 4 étapes : "
-"chargez vos données, choisissez un style, lancez l'animation, puis ajustez "
-"les paramètres."
+"GCMap transforme vos trouvailles de géocaching en une carte animée que "
+"vous pouvez personnaliser et enregistrer en vidéo. Suivez ce guide en 4 "
+"étapes : chargez vos données, choisissez un style, lancez l'animation, "
+"puis ajustez les paramètres."
 
 #: templates/guide.html:72
 msgid "Chargez votre fichier .gpx et filtrez vos caches"
@@ -782,11 +799,11 @@ msgstr "correspondent aux 4 sections de ce guide."
 
 #: templates/guide.html:103
 msgid ""
-"Tout commence ici : importez vos trouvailles puis sélectionnez celles que "
-"vous voulez afficher."
+"Tout commence ici : importez vos trouvailles puis sélectionnez celles que"
+" vous voulez afficher."
 msgstr ""
-"Tout commence ici : importez vos trouvailles puis sélectionnez celles que "
-"vous voulez afficher."
+"Tout commence ici : importez vos trouvailles puis sélectionnez celles que"
+" vous voulez afficher."
 
 #: templates/guide.html:107
 msgid "Récupérez votre fichier .gpx"
@@ -806,11 +823,11 @@ msgstr "pour générer le fichier, puis téléchargez-le une fois prêt."
 
 #: templates/guide.html:111
 msgid ""
-"Le fichier .gpx contient toutes vos caches trouvées avec leur date et leurs "
-"coordonnées : c'est le carburant de l'animation."
+"Le fichier .gpx contient toutes vos caches trouvées avec leur date et "
+"leurs coordonnées : c'est le carburant de l'animation."
 msgstr ""
-"Le fichier .gpx contient toutes vos caches trouvées avec leur date et leurs "
-"coordonnées : c'est le carburant de l'animation."
+"Le fichier .gpx contient toutes vos caches trouvées avec leur date et "
+"leurs coordonnées : c'est le carburant de l'animation."
 
 #: templates/guide.html:115
 msgid "Chargez le fichier dans GCMap"
@@ -895,11 +912,11 @@ msgstr "supprime les données chargées si vous voulez importer un autre fichier
 
 #: templates/guide.html:141
 msgid ""
-"Donnez à votre carte l'apparence que vous souhaitez : fond de carte, points,"
-" titres et effets. Tout se règle dans l'onglet"
+"Donnez à votre carte l'apparence que vous souhaitez : fond de carte, "
+"points, titres et effets. Tout se règle dans l'onglet"
 msgstr ""
-"Donnez à votre carte l'apparence que vous souhaitez : fond de carte, points,"
-" titres et effets. Tout se règle dans l'onglet"
+"Donnez à votre carte l'apparence que vous souhaitez : fond de carte, "
+"points, titres et effets. Tout se règle dans l'onglet"
 
 #: templates/guide.html:145
 msgid "Choisissez un fond de carte"
@@ -927,11 +944,11 @@ msgstr "noir et blanc, version claire ou sombre"
 
 #: templates/guide.html:150
 msgid ""
-"carte vectorielle dont vous réglez les couleurs (contour, remplissage, fond)"
-" et l'épaisseur des traits"
+"carte vectorielle dont vous réglez les couleurs (contour, remplissage, "
+"fond) et l'épaisseur des traits"
 msgstr ""
-"carte vectorielle dont vous réglez les couleurs (contour, remplissage, fond)"
-" et l'épaisseur des traits"
+"carte vectorielle dont vous réglez les couleurs (contour, remplissage, "
+"fond) et l'épaisseur des traits"
 
 #: templates/guide.html:151
 msgid "rendu aquarelle artistique"
@@ -1043,7 +1060,8 @@ msgstr "pour valider vos modifications."
 msgid "Personnalisez les points"
 msgstr "Personnalisez les points"
 
-#: templates/guide.html:169 templates/guide.html:177 templates/menu_style.html:11
+#: templates/guide.html:169 templates/guide.html:177
+#: templates/menu_style.html:11
 msgid "Points & Flash"
 msgstr "Points & Flash"
 
@@ -1065,13 +1083,13 @@ msgstr "Vectoriel"
 
 #: templates/guide.html:171
 msgid ""
-"réglez la forme (cercle, triangle), la taille, la couleur du centre et de la"
-" bordure. Les couleurs peuvent suivre le type de cache (Couleurs GC), être "
-"transparentes ou uniques."
+"réglez la forme (cercle, triangle), la taille, la couleur du centre et de"
+" la bordure. Les couleurs peuvent suivre le type de cache (Couleurs GC), "
+"être transparentes ou uniques."
 msgstr ""
-"réglez la forme (cercle, triangle), la taille, la couleur du centre et de la"
-" bordure. Les couleurs peuvent suivre le type de cache (Couleurs GC), être "
-"transparentes ou uniques."
+"réglez la forme (cercle, triangle), la taille, la couleur du centre et de"
+" la bordure. Les couleurs peuvent suivre le type de cache (Couleurs GC), "
+"être transparentes ou uniques."
 
 #: templates/guide.html:172
 msgid "Icône"
@@ -1392,8 +1410,12 @@ msgid "Vue de carte par défaut"
 msgstr "Vue de carte par défaut"
 
 #: templates/guide.html:271
-msgid "Définissez le centre (latitude, longitude) et le zoom utilisés au démarrage."
-msgstr "Définissez le centre (latitude, longitude) et le zoom utilisés au démarrage."
+msgid ""
+"Définissez le centre (latitude, longitude) et le zoom utilisés au "
+"démarrage."
+msgstr ""
+"Définissez le centre (latitude, longitude) et le zoom utilisés au "
+"démarrage."
 
 #: templates/guide.html:273 templates/menu_options.html:73
 msgid "Utiliser la vue actuelle de la carte"
@@ -1417,11 +1439,11 @@ msgstr "Vous êtes prêt !"
 
 #: templates/guide.html:281
 msgid ""
-"Chargez vos données, composez votre style, lancez l'animation et partagez "
-"votre carte de géocaching."
+"Chargez vos données, composez votre style, lancez l'animation et partagez"
+" votre carte de géocaching."
 msgstr ""
-"Chargez vos données, composez votre style, lancez l'animation et partagez "
-"votre carte de géocaching."
+"Chargez vos données, composez votre style, lancez l'animation et partagez"
+" votre carte de géocaching."
 
 #: templates/menu_animation.html:23
 msgid "Passer en plein écran"
@@ -1845,11 +1867,11 @@ msgstr "Activer"
 
 #: templates/menu_informations.html:237
 msgid ""
-"Copier le style de la cible actuelle vers l'autre cible (Titre → Infos ou "
-"inversement)"
+"Copier le style de la cible actuelle vers l'autre cible (Titre → Infos ou"
+" inversement)"
 msgstr ""
-"Copier le style de la cible actuelle vers l'autre cible (Titre → Infos ou "
-"inversement)"
+"Copier le style de la cible actuelle vers l'autre cible (Titre → Infos ou"
+" inversement)"
 
 #: templates/menu_informations.html:238
 msgid "Copier vers l'autre"
@@ -1914,10 +1936,6 @@ msgstr "Non"
 #: templates/menu_options.html:34
 msgid "Default profile at startup"
 msgstr "Profil par défaut au démarrage"
-
-#: templates/menu_options.html:35
-msgid "Profil par défaut"
-msgstr "Profil par défaut"
 
 #: templates/menu_options.html:45
 msgid "Basculer le mode de saisie"
@@ -2019,12 +2037,12 @@ msgstr "Aperçu des icônes"
 #: templates/menu_recording.html:5
 msgid ""
 "MediaRecorder : enregistrement direct en WebM côté navigateur, rapide et "
-"léger. Images + ffmpeg : capture d'images puis assemblage côté serveur, plus"
-" flexible mais plus lent"
+"léger. Images + ffmpeg : capture d'images puis assemblage côté serveur, "
+"plus flexible mais plus lent"
 msgstr ""
 "MediaRecorder : enregistrement direct en WebM côté navigateur, rapide et "
-"léger. Images + ffmpeg : capture d'images puis assemblage côté serveur, plus"
-" flexible mais plus lent"
+"léger. Images + ffmpeg : capture d'images puis assemblage côté serveur, "
+"plus flexible mais plus lent"
 
 #: templates/menu_recording.html:8
 msgid "MediaRecorder .webm (client)"
@@ -2109,12 +2127,12 @@ msgstr "Ralentir par (x)"
 #: templates/menu_recording.html:46
 msgid ""
 "Ralentit la capture pour améliorer la qualité. 2 = capture 2x plus lente "
-"(plus de frames par seconde d'animation). La vidéo finale reste à vitesse "
-"normale si \"Normaliser la vitesse\" est activé."
+"(plus de frames par seconde d'animation). La vidéo finale reste à vitesse"
+" normale si \"Normaliser la vitesse\" est activé."
 msgstr ""
 "Ralentit la capture pour améliorer la qualité. 2 = capture 2x plus lente "
-"(plus de frames par seconde d'animation). La vidéo finale reste à vitesse "
-"normale si \"Normaliser la vitesse\" est activé."
+"(plus de frames par seconde d'animation). La vidéo finale reste à vitesse"
+" normale si \"Normaliser la vitesse\" est activé."
 
 #: templates/menu_recording.html:52
 msgid "Facteur d'échelle (qualité)"
@@ -2123,12 +2141,12 @@ msgstr "Facteur d'échelle (qualité)"
 #: templates/menu_recording.html:53
 msgid ""
 "Multiplicateur de résolution temporaire. 1.5 = 50% plus grande pendant "
-"l'enregistrement puis réduction. Améliore la netteté des détails fins sans "
-"changer la taille finale du fichier"
+"l'enregistrement puis réduction. Améliore la netteté des détails fins "
+"sans changer la taille finale du fichier"
 msgstr ""
 "Multiplicateur de résolution temporaire. 1.5 = 50% plus grande pendant "
-"l'enregistrement puis réduction. Améliore la netteté des détails fins sans "
-"changer la taille finale du fichier"
+"l'enregistrement puis réduction. Améliore la netteté des détails fins "
+"sans changer la taille finale du fichier"
 
 #: templates/menu_recording.html:59
 msgid "Format vidéo"
@@ -2137,12 +2155,12 @@ msgstr "Format vidéo"
 #: templates/menu_recording.html:60
 msgid ""
 "Codec de compression WebM. VP9 = meilleure qualité/compression, VP8 = "
-"compatible avec tous navigateurs, H.264 = format MP4 universel, WebM simple "
-"= fallback basique"
+"compatible avec tous navigateurs, H.264 = format MP4 universel, WebM "
+"simple = fallback basique"
 msgstr ""
 "Codec de compression WebM. VP9 = meilleure qualité/compression, VP8 = "
-"compatible avec tous navigateurs, H.264 = format MP4 universel, WebM simple "
-"= fallback basique"
+"compatible avec tous navigateurs, H.264 = format MP4 universel, WebM "
+"simple = fallback basique"
 
 #: templates/menu_recording.html:63
 msgid "VP9 (recommandé - haute qualité)"
@@ -2166,13 +2184,13 @@ msgstr "Uploader vers serveur"
 
 #: templates/menu_recording.html:76
 msgid ""
-"Transfère automatiquement la vidéo vers le serveur une fois l'enregistrement"
-" terminé. Utile pour archivage centralisé ou partage avec d'autres "
-"utilisateurs via l'interface web"
+"Transfère automatiquement la vidéo vers le serveur une fois "
+"l'enregistrement terminé. Utile pour archivage centralisé ou partage avec"
+" d'autres utilisateurs via l'interface web"
 msgstr ""
-"Transfère automatiquement la vidéo vers le serveur une fois l'enregistrement"
-" terminé. Utile pour archivage centralisé ou partage avec d'autres "
-"utilisateurs via l'interface web"
+"Transfère automatiquement la vidéo vers le serveur une fois "
+"l'enregistrement terminé. Utile pour archivage centralisé ou partage avec"
+" d'autres utilisateurs via l'interface web"
 
 #: templates/menu_recording.html:82
 msgid "Télécharger local"
@@ -2180,13 +2198,13 @@ msgstr "Télécharger local"
 
 #: templates/menu_recording.html:83
 msgid ""
-"Sauvegarde automatiquement la vidéo dans le dossier de téléchargements de "
-"votre navigateur une fois l'enregistrement terminé. Pratique pour archivage "
-"local immédiat"
+"Sauvegarde automatiquement la vidéo dans le dossier de téléchargements de"
+" votre navigateur une fois l'enregistrement terminé. Pratique pour "
+"archivage local immédiat"
 msgstr ""
-"Sauvegarde automatiquement la vidéo dans le dossier de téléchargements de "
-"votre navigateur une fois l'enregistrement terminé. Pratique pour archivage "
-"local immédiat"
+"Sauvegarde automatiquement la vidéo dans le dossier de téléchargements de"
+" votre navigateur une fois l'enregistrement terminé. Pratique pour "
+"archivage local immédiat"
 
 #: templates/menu_recording.html:89
 msgid "Normaliser la vitesse"
@@ -2194,11 +2212,11 @@ msgstr "Normaliser la vitesse"
 
 #: templates/menu_recording.html:90
 msgid ""
-"Si le ralentissement est > 1, ré-accélère la vidéo finale pour la ramener à "
-"vitesse normale. Désactiver pour conserver la vidéo au ralenti."
+"Si le ralentissement est > 1, ré-accélère la vidéo finale pour la ramener"
+" à vitesse normale. Désactiver pour conserver la vidéo au ralenti."
 msgstr ""
-"Si le ralentissement est > 1, ré-accélère la vidéo finale pour la ramener à "
-"vitesse normale. Désactiver pour conserver la vidéo au ralenti."
+"Si le ralentissement est > 1, ré-accélère la vidéo finale pour la ramener"
+" à vitesse normale. Désactiver pour conserver la vidéo au ralenti."
 
 #: templates/menu_recording.html:97
 msgid "Fichiers vidéo"
@@ -2285,7 +2303,8 @@ msgid "Importer un profil JSON"
 msgstr "Importer un profil JSON"
 
 #: templates/menu_style.html:161 templates/menu_style.html:189
-#: templates/menu_style.html:214 templates/modal_infos.html:11
+#: templates/menu_style.html:214 templates/menu_style.html:242
+#: templates/modal_infos.html:11
 msgid "Fermer"
 msgstr "Fermer"
 
@@ -2313,13 +2332,29 @@ msgstr "Confirmer la réinitialisation"
 msgid "Êtes-vous sûr de vouloir réinitialiser ce profil aux valeurs par défaut ?"
 msgstr "Êtes-vous sûr de vouloir réinitialiser ce profil aux valeurs par défaut ?"
 
+#: templates/menu_style.html:239
+msgid "Le profil actif a été modifié"
+msgstr "Le profil actif a été modifié"
+
+#: templates/menu_style.html:245
+msgid "Vous avez des modifications non enregistrées."
+msgstr "Vous avez des modifications non enregistrées."
+
+#: templates/menu_style.html:249
+msgid "Abandonner"
+msgstr "Abandonner"
+
+#: templates/menu_style.html:250
+msgid "Enregistrer et charger"
+msgstr "Enregistrer et charger"
+
 #: templates/modal_first_use.html:7
 msgid ""
-"Pour commencer à utiliser l'application, vous devez charger un fichier .gpx "
-"contenant vos trouvailles de géocaching."
+"Pour commencer à utiliser l'application, vous devez charger un fichier "
+".gpx contenant vos trouvailles de géocaching."
 msgstr ""
-"Pour commencer à utiliser l'application, vous devez charger un fichier .gpx "
-"contenant vos trouvailles de géocaching."
+"Pour commencer à utiliser l'application, vous devez charger un fichier "
+".gpx contenant vos trouvailles de géocaching."
 
 #: templates/modal_first_use.html:13
 msgid "Comment obtenir votre fichier .gpx ?"
@@ -2335,13 +2370,13 @@ msgstr ""
 
 #: templates/modal_first_use.html:16
 msgid ""
-"Ce fichier est disponible sur le site de géocaching.com dans Profil > Pocket"
-" Query > My Finds (en bas de la page). Puis récupérer le fichier en cliquant"
-" sur \"Add to Queue\"."
+"Ce fichier est disponible sur le site de géocaching.com dans Profil > "
+"Pocket Query > My Finds (en bas de la page). Puis récupérer le fichier en"
+" cliquant sur \"Add to Queue\"."
 msgstr ""
-"Ce fichier est disponible sur le site de géocaching.com dans Profil > Pocket"
-" Query > My Finds (en bas de la page). Puis récupérer le fichier en cliquant"
-" sur \"Add to Queue\"."
+"Ce fichier est disponible sur le site de géocaching.com dans Profil > "
+"Pocket Query > My Finds (en bas de la page). Puis récupérer le fichier en"
+" cliquant sur \"Add to Queue\"."
 
 #: templates/modal_first_use.html:22
 msgid "Chargement de vos données"
@@ -2362,8 +2397,14 @@ msgstr "Ignorer pour l'instant"
 #~ msgid "Difficulté"
 #~ msgstr "Difficulté"
 
-#~ msgid "The language has been changed. The page will reload to apply the changes."
-#~ msgstr "The language has been changed. The page will reload to apply the changes."
+#~ msgid ""
+#~ "The language has been changed. The "
+#~ "page will reload to apply the "
+#~ "changes."
+#~ msgstr ""
+#~ "The language has been changed. The "
+#~ "page will reload to apply the "
+#~ "changes."
 
 #~ msgid "Les modifications sont appliquées en temps réel sur la carte"
 #~ msgstr "Les modifications sont appliquées en temps réel sur la carte"
@@ -2379,12 +2420,12 @@ msgstr "Ignorer pour l'instant"
 
 #~ msgid ""
 #~ "Réglez une fois pour toutes le "
-#~ "comportement de l'application et la qualité"
-#~ " des enregistrements dans l'onglet"
+#~ "comportement de l'application et la "
+#~ "qualité des enregistrements dans l'onglet"
 #~ msgstr ""
 #~ "Réglez une fois pour toutes le "
-#~ "comportement de l'application et la qualité"
-#~ " des enregistrements dans l'onglet"
+#~ "comportement de l'application et la "
+#~ "qualité des enregistrements dans l'onglet"
 
 #~ msgid "Paramètres d'enregistrement"
 #~ msgstr "Paramètres d'enregistrement"

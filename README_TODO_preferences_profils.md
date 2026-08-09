@@ -99,6 +99,7 @@ Objectif: implémenter une gestion simple, fiable et robuste des paramètres uti
   - [ ] Import / Export: bouton import (file input) → `POST /api/profiles/import`, bouton export → téléchargement JSON
   - [x] Bouton "Nouveau profil" (à partir de rien ou d'un profil de base)
   - [x] Confirmation de suppression (modale)
+  - [x] Modifications non enregistrées: modale à trois issues (Enregistrer et charger / Abandonner / Annuler) au lieu de `window.confirm()`
 - [x] Persistance côté client (JS): rafraîchir la carte et l'UI lors du chargement/apply d'un profil
 
 ### 6) Connexion avec la carte (JS)
