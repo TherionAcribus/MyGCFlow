@@ -42,7 +42,7 @@ def _preflight() -> list[str]:
     if not shutil.which("ffprobe"):
         errors.append("ffprobe est introuvable dans le PATH")
     try:
-        import moviepy  # noqa: F401
+        import imageio_ffmpeg  # noqa: F401  (fournit le binaire ffmpeg d'encodage)
         import PIL  # noqa: F401
     except ImportError as exc:
         errors.append(f"dépendance Python manquante : {exc.name}")

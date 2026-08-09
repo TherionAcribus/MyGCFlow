@@ -115,7 +115,7 @@ def start_create_video():
 @cross_origin()
 def clear_pictures():
     # Vider captured/ pendant un assemblage supprimerait les images sous les pieds
-    # de MoviePy (la liste est figée au démarrage, mais les fichiers sont lus au
+    # de ffmpeg (la liste est figée au démarrage, mais les fichiers sont lus au
     # fil de l'encodage) → échec en plein encodage.
     running = task_manager.get_active(TASK_TYPE_VIDEO)
     if running is not None:

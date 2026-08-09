@@ -48,32 +48,37 @@ class VideoProcessingTests(unittest.TestCase):
             str(path),
         ])
 
-    def _create_raw_video(self, path, duration_seconds, fps):
+    def _create_raw_video(self, path, duration_seconds, fps, width=160, height=90):
         frame_count = max(1, round(duration_seconds * fps))
         self._run_quiet([
             self.ffmpeg,
             "-y",
             "-f", "lavfi",
-            "-i", f"color=c=blue:s=160x90:r={fps}",
+            "-i", f"color=c=blue:s={width}x{height}:r={fps}",
             "-frames:v", str(frame_count),
             "-c:v", "libvpx-vp9",
             "-b:v", "500k",
             str(path),
         ])
 
-    def _create_image_sequence(self, folder, duration_seconds, fps):
+    def _create_image_sequence(self, folder, duration_seconds, fps, width=160, height=90):
         folder.mkdir(parents=True, exist_ok=True)
         frame_count = max(1, round(duration_seconds * fps))
         digits = len(str(frame_count))
         for index in range(frame_count):
             ratio = index / max(1, frame_count - 1)
-            image = Image.new("RGB", (160, 90), (round(255 * ratio), 40, round(255 * (1 - ratio))))
+            image = Image.new("RGB", (width, height), (round(255 * ratio), 40, round(255 * (1 - ratio))))
             draw = ImageDraw.Draw(image)
             draw.text((8, 8), f"frame {index + 1}/{frame_count}", fill=(255, 255, 255))
             image.save(folder / f"image_{index + 1:0{digits}d}.png")
 
     def _run_scenario(self, scenario, tmp_path):
         fps = int(scenario["fps"])
+        # Dimensions de la source : un scénario peut les rendre impaires pour
+        # vérifier le rognage automatique (libx264 en yuv420p exige des dimensions
+        # paires) ; par défaut on garde la taille standard de la matrice.
+        source_width = int(scenario.get("source_width", 160))
+        source_height = int(scenario.get("source_height", 90))
         audio_duration = scenario.get("audio_duration_seconds")
         audio_name = None
         if audio_duration is not None:
@@ -89,6 +94,8 @@ class VideoProcessingTests(unittest.TestCase):
                 images_dir,
                 scenario["source_duration_seconds"],
                 fps,
+                source_width,
+                source_height,
             )
             result = _assemble_pictures(
                 str(images_dir),
@@ -105,6 +112,8 @@ class VideoProcessingTests(unittest.TestCase):
                 raw_video,
                 scenario["source_duration_seconds"],
                 fps,
+                source_width,
+                source_height,
             )
             result = _process_recorded_video(
                 str(raw_video),

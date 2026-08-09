@@ -1377,17 +1377,17 @@ msgstr "Home"
 #: templates/menu_options.html:102
 msgid ""
 "MediaRecorder : enregistrement direct en WebM côté navigateur, rapide et "
-"léger. Images + MoviePy : capture d'images puis assemblage côté serveur, "
+"léger. Images + ffmpeg : capture d'images puis assemblage côté serveur, "
 "plus flexible mais plus lent"
-msgstr "MediaRecorder: direct WebM recording in the browser, fast and lightweight. Images + MoviePy: image capture then server-side assembly, more flexible but slower"
+msgstr "MediaRecorder: direct WebM recording in the browser, fast and lightweight. Images + ffmpeg: image capture then server-side assembly, more flexible but slower"
 
 #: templates/menu_recording.html:8
 msgid "MediaRecorder .webm (client)"
 msgstr "MediaRecorder .webm (client)"
 
 #: templates/menu_recording.html:9
-msgid "Images + MoviePy (serveur)"
-msgstr "Images + MoviePy (server)"
+msgid "Images + ffmpeg (serveur)"
+msgstr "Images + ffmpeg (server)"
 
 #: templates/menu_recording.html:13
 msgid "Qualité vidéo"

@@ -2,11 +2,11 @@
     <div class="mb-3 col-12 col-md-6">
         <label for="selectRecordMode" class="form-label">
             {{ _("Mode d'enregistrement") }}
-            <i class="ti ti-help ms-1" data-bs-toggle="tooltip" data-bs-title="{{ _('MediaRecorder : enregistrement direct en WebM côté navigateur, rapide et léger. Images + MoviePy : capture d\'images puis assemblage côté serveur, plus flexible mais plus lent') }}"></i>
+            <i class="ti ti-help ms-1" data-bs-toggle="tooltip" data-bs-title="{{ _('MediaRecorder : enregistrement direct en WebM côté navigateur, rapide et léger. Images + ffmpeg : capture d\'images puis assemblage côté serveur, plus flexible mais plus lent') }}"></i>
         </label>
         <select id="selectRecordMode" class="form-select">
             <option value="mediarecorder">{{ _("MediaRecorder .webm (client)") }}</option>
-            <option value="images">{{ _("Images + MoviePy (serveur)") }}</option>
+            <option value="images">{{ _("Images + ffmpeg (serveur)") }}</option>
         </select>
     </div>
     <div class="mb-3 col-12 col-md-6 mediarecorder-only">

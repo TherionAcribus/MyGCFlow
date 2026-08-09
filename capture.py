@@ -5,9 +5,9 @@ import base64
 from datetime import datetime
 import platform
 import subprocess
+import tempfile
 import threading
 import time
-from moviepy import ImageSequenceClip, AudioFileClip
 from werkzeug.utils import secure_filename
 
 
@@ -115,39 +115,239 @@ def default_video_output(ext: str = "mp4"):
     return os.path.join("video", _timestamped_name(base, ext))
 
 
+# --------- Socle ffmpeg commun aux deux pipelines vidéo ---------
+# Les deux pipelines (assemblage d'images et post-traitement MediaRecorder) lancent
+# un ffmpeg en une passe : ils partagent ici le lancement, le watchdog anti-blocage,
+# le relais de progression et la remontée d'erreur.
+
+_FFMPEG_DURATION_RE = re.compile(r"Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)")
+
+# Watchdog : avec '-progress pipe:1', ffmpeg écrit un bloc de progression toutes les
+# ~0,5 s. Une absence totale de sortie pendant ce délai signale un processus figé
+# (entrée corrompue) : sans watchdog, `for line in proc.stdout` bloque indéfiniment
+# et le worker qui exécute la tâche est perdu pour toujours.
+FFMPEG_STALL_TIMEOUT_S = 300      # 5 min sans la moindre ligne → on tue ffmpeg
+FFMPEG_WATCHDOG_INTERVAL_S = 5    # période de vérification du watchdog
+# Garde-fou sur la lecture d'en-tête (ffmpeg -i) : même entrée corrompue, même risque.
+FFMPEG_PROBE_TIMEOUT_S = 60
+
+# Réglages d'encodage partagés : une seule définition pour que les deux pipelines
+# produisent des fichiers comparables (qualité, compatibilité, lecture en streaming).
+_H264_OUTPUT_ARGS = [
+    '-c:v', 'libx264', '-preset', 'medium', '-crf', '20', '-pix_fmt', 'yuv420p',
+    '-movflags', '+faststart',
+]
+_AAC_OUTPUT_ARGS = ['-c:a', 'aac', '-b:a', '192k']
+
+# libx264 en yuv420p exige des dimensions paires : le sous-échantillonnage de la
+# chrominance travaille par blocs de 2x2 pixels. Une capture en largeur ou hauteur
+# impaire (fenêtre navigateur quelconque, canvas non arrondi) fait échouer l'encodeur
+# avec « Could not open encoder before EOF / Invalid argument », sans que le message
+# ne mentionne les dimensions. On rogne donc au multiple de 2 inférieur.
+# `crop` plutôt que `scale` : on perd au pire une ligne et une colonne de bordure,
+# là où une mise à l'échelle rééchantillonnerait toute l'image (texte et traits de
+# carte adoucis) pour un seul pixel de trop.
+_EVEN_DIMENSIONS_FILTER = "crop=trunc(iw/2)*2:trunc(ih/2)*2"
+
+# Lignes de '-progress pipe:1' à ignorer dans la collecte des messages d'erreur.
+_FFMPEG_PROGRESS_KEYS = (
+    'frame=', 'fps=', 'bitrate=', 'total_size=', 'out_time=', 'dup_frames=',
+    'drop_frames=', 'speed=', 'progress=', 'stream_',
+)
+
+
+def _get_ffmpeg_exe():
+    """Chemin de l'exécutable ffmpeg fourni par imageio-ffmpeg."""
+    try:
+        import imageio_ffmpeg
+        return imageio_ffmpeg.get_ffmpeg_exe()
+    except Exception:
+        return "ffmpeg"  # repli sur un ffmpeg système éventuel
+
+
+def _probe_duration_seconds(input_path):
+    """Durée du média en secondes, lue depuis l'en-tête via ffmpeg. None si inconnue."""
+    try:
+        proc = subprocess.run(
+            [_get_ffmpeg_exe(), '-i', input_path],
+            stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
+            universal_newlines=True, encoding='utf-8', errors='replace',
+            timeout=FFMPEG_PROBE_TIMEOUT_S,
+        )
+        m = _FFMPEG_DURATION_RE.search(proc.stderr or '')
+        if m:
+            h, mn, s = m.groups()
+            return int(h) * 3600 + int(mn) * 60 + float(s)
+    except Exception as e:
+        print(f"[ffmpeg] probe durée échoué: {e}")
+    return None
+
+
+def _safe_volume(audio_volume):
+    """Volume audio normalisé (float >= 0), 1.0 si la valeur est inexploitable."""
+    try:
+        return max(0.0, float(audio_volume))
+    except (TypeError, ValueError):
+        return 1.0
+
+
+def _resolve_audio_file(audio_path, log_prefix='ffmpeg'):
+    """Chemin de la piste audio dans audio/, ou None si absente/non demandée.
+
+    `audio_path` est un nom de fichier fourni par le client : `secure_filename`
+    neutralise toute traversée de chemin avant la lecture.
+    """
+    if not audio_path:
+        return None
+    safe_name = secure_filename(os.path.basename(audio_path))
+    candidate = os.path.join('audio', safe_name)
+    if os.path.exists(candidate):
+        return candidate
+    print(f"[{log_prefix}] audio introuvable, vidéo seule: {candidate}")
+    return None
+
+
+def _run_ffmpeg(cmd, out_dur=None, status=None, progress_start=2.0, progress_end=98.0,
+                progress_label="Traitement vidéo", error_label="Traitement ffmpeg",
+                log_prefix="ffmpeg"):
+    """Exécute ffmpeg en relayant sa progression, avec watchdog anti-blocage.
+
+    `cmd` doit se terminer par '-progress pipe:1 -nostats <sortie>'. La progression
+    est bornée à [progress_start, progress_end] et n'est calculable que si `out_dur`
+    (durée attendue de la sortie, en secondes) est connue.
+
+    Retourne {'success': bool, 'message': str}.
+    """
+    def _progress(p, msg):
+        if status is not None:
+            try:
+                status.set_progress(p, msg)
+            except Exception:
+                pass
+
+    try:
+        print(f"[{log_prefix}] ffmpeg:", " ".join(cmd))
+    except Exception:
+        pass
+
+    proc = subprocess.Popen(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        universal_newlines=True, encoding='utf-8', errors='replace',
+    )
+
+    # Watchdog : tue ffmpeg s'il n'émet plus rien pendant FFMPEG_STALL_TIMEOUT_S.
+    # Le pipe se ferme alors et la boucle de lecture ci-dessous se termine d'elle-même,
+    # ce qui libère le worker au lieu de le bloquer indéfiniment.
+    last_output = time.monotonic()
+    stalled = threading.Event()
+    finished = threading.Event()
+
+    def _watchdog():
+        while not finished.wait(FFMPEG_WATCHDOG_INTERVAL_S):
+            if time.monotonic() - last_output > FFMPEG_STALL_TIMEOUT_S:
+                stalled.set()
+                try:
+                    proc.kill()
+                except Exception:
+                    pass
+                return
+
+    threading.Thread(target=_watchdog, daemon=True).start()
+
+    span = max(0.0, progress_end - progress_start)
+    tail_lines = []  # dernières lignes non-progress (pour message d'erreur)
+    try:
+        for line in proc.stdout:
+            last_output = time.monotonic()
+            line = line.strip()
+            if not line:
+                continue
+            if line.startswith('out_time_us=') or line.startswith('out_time_ms='):
+                try:
+                    micros = float(line.split('=', 1)[1])
+                    cur = micros / 1_000_000.0
+                    if out_dur and out_dur > 0:
+                        frac = max(0.0, min(1.0, cur / out_dur))
+                        _progress(progress_start + frac * span, f"{progress_label}... {int(frac * 100)}%")
+                    else:
+                        _progress(progress_start + span / 2, f"{progress_label} en cours...")
+                except Exception:
+                    pass
+            elif not line.startswith(_FFMPEG_PROGRESS_KEYS):
+                tail_lines.append(line)
+                if len(tail_lines) > 60:
+                    tail_lines.pop(0)
+    finally:
+        # Arrêter le watchdog même si la lecture lève, puis fermer explicitement le pipe :
+        # les traitements répétés ne doivent pas accumuler de descripteurs jusqu'au
+        # prochain passage du ramasse-miettes.
+        finished.set()
+        if proc.stdout is not None:
+            proc.stdout.close()
+
+    try:
+        proc.wait(timeout=FFMPEG_WATCHDOG_INTERVAL_S * 4)
+    except subprocess.TimeoutExpired:
+        # Flux fermé mais ffmpeg toujours vivant : le watchdog est arrêté, on ne laisse
+        # pas wait() bloquer le worker à son tour.
+        print(f"[{log_prefix}] ffmpeg ne se termine pas après fermeture du flux → processus tué")
+        try:
+            proc.kill()
+            proc.wait(timeout=10)
+        except Exception:
+            pass
+        return {'success': False, 'message': f"{error_label} interrompu : le processus ne s'est pas terminé."}
+
+    if stalled.is_set():
+        minutes = max(1, int(FFMPEG_STALL_TIMEOUT_S // 60))
+        print(f"[{log_prefix}] ffmpeg figé (aucune progression pendant {minutes} min) → processus tué")
+        return {
+            'success': False,
+            'message': (f"{error_label} interrompu : aucune progression pendant {minutes} min. "
+                        "Le fichier source est probablement corrompu."),
+        }
+    if proc.returncode != 0:
+        msg = "\n".join(tail_lines[-8:]) or f"ffmpeg a échoué (code {proc.returncode})"
+        return {'success': False, 'message': f"{error_label} échoué: {msg}"}
+
+    return {'success': True, 'message': 'ok'}
+
+
+# --------- Assemblage d'une séquence d'images (pipeline « images ») ---------
 # Type de tâche de fond pour l'assemblage vidéo (utilisé par le TaskManager)
 TASK_TYPE_VIDEO = "video_assembly"
 
 
-# Logger optionnel qui relaie la progression d'encodage de MoviePy vers un TaskStatus.
-# MoviePy s'appuie sur proglog ; on reste défensif si le module est absent.
-try:
-    from proglog import ProgressBarLogger
+def _concat_quote(path):
+    """Chemin absolu échappé pour une entrée `file` d'un script ffconcat.
 
-    class _StatusProgressLogger(ProgressBarLogger):
-        """Relaie la progression d'encodage MoviePy vers un TaskStatus (bornée start..end)."""
+    Les séparateurs Windows sont convertis en '/' : dans un script concat, la
+    contre-oblique est un caractère d'échappement.
+    """
+    absolute = os.path.abspath(path).replace('\\', '/')
+    return "'" + absolute.replace("'", "'\\''") + "'"
 
-        def __init__(self, status, start=10, end=99):
-            super().__init__()
-            self._status = status
-            self._start = start
-            self._end = end
 
-        def bars_callback(self, bar, attr, value, old_value=None):
-            if attr != 'index':
-                return
-            try:
-                total = self.bars[bar].get('total') or 0
-                if total <= 0:
-                    return
-                frac = max(0.0, min(1.0, value / total))
-                pct = self._start + (self._end - self._start) * frac
-                self._status.set_progress(pct, f"Encodage vidéo... {int(frac * 100)}%")
-            except Exception:
-                pass
-except Exception:  # pragma: no cover - proglog devrait être fourni par moviepy
-    ProgressBarLogger = None
-    _StatusProgressLogger = None
+def _write_concat_list(image_files, fps, list_path):
+    """Écrit le script ffconcat décrivant la séquence d'images.
+
+    On passe par une liste explicite plutôt que par un motif `image_%04d` (démuxeur
+    image2) parce que le contenu de captured/ n'est pas assez régulier : les noms
+    viennent du client, la largeur de numérotation est un paramètre client, et le
+    dossier peut mélanger .webp/.png/.jpg. Surtout, image2 s'arrête au premier index
+    manquant *sans code d'erreur* : un seul upload perdu produirait une vidéo
+    tronquée silencieusement.
+    """
+    frame_duration = 1.0 / fps
+    with open(list_path, 'w', encoding='utf-8') as handle:
+        handle.write("ffconcat version 1.0\n")
+        for path in image_files:
+            handle.write(f"file {_concat_quote(path)}\n")
+            handle.write(f"duration {frame_duration:.9f}\n")
+        # Le démuxeur concat ignore la durée déclarée de la dernière entrée : on la
+        # répète pour que l'image finale dure elle aussi une frame. L'option -t borne
+        # ensuite la sortie, ce qui rend cette répétition sans effet sur la durée.
+        handle.write(f"file {_concat_quote(image_files[-1])}\n")
 
 
 def _assemble_pictures(image_folder, output_video, fps=24, audio_path=None, audio_volume=1.0, status=None):
@@ -176,81 +376,63 @@ def _assemble_pictures(image_folder, output_video, fps=24, audio_path=None, audi
 
     _progress(5, "Préparation des images...")
 
-    # Créez un clip vidéo à partir des images
-    clip = ImageSequenceClip(image_files, fps=fps)
-    audio_clip = None
-    source_audio_clip = None
-
-    # Option: ajouter l'audio si fourni (audio_path est un nom de fichier dans 'audio/')
-    print(f"[assemble] audio_path={audio_path!r} audio_volume={audio_volume!r}")
-    if audio_path:
-        try:
-            os.makedirs('audio', exist_ok=True)
-            safe_name = secure_filename(os.path.basename(audio_path))
-            audio_file = os.path.join('audio', safe_name)
-            print(f"[assemble] recherche audio: {audio_file} existe={os.path.exists(audio_file)}")
-            if os.path.exists(audio_file):
-                vol = 1.0
-                try:
-                    vol = max(0.0, float(audio_volume))
-                except Exception:
-                    vol = 1.0
-                # Conserver la référence du clip source : les transformations MoviePy
-                # renvoient des copies et perdre la source laisse son lecteur ffmpeg ouvert.
-                source_audio_clip = AudioFileClip(audio_file)
-                audio_clip = source_audio_clip.with_volume_scaled(vol)
-                if audio_clip.duration >= clip.duration:
-                    audio_clip = audio_clip.subclipped(0, clip.duration)
-                clip = clip.with_audio(audio_clip)
-                print(f"[assemble] Audio attaché OK (vol={vol}, durée audio={audio_clip.duration:.1f}s, durée vidéo={clip.duration:.1f}s)")
-            else:
-                print(f"[assemble] FICHIER AUDIO INTROUVABLE: {audio_file}")
-        except Exception as e:
-            # En cas d'erreur audio, on continue avec la vidéo seule
-            import traceback
-            print(f"[assemble] Audio ignoré (ERREUR): {e}")
-            traceback.print_exc()
-    else:
-        print("[assemble] Aucun audio demandé (audio_path vide)")
-
-    _progress(10, "Encodage de la vidéo...")
-
-    # Logger de progression si on suit une tâche de fond, sinon barre console MoviePy
-    logger = 'bar'
-    if status is not None and _StatusProgressLogger is not None:
-        logger = _StatusProgressLogger(status)
-
-    # Écrivez le clip vidéo dans un fichier
-    # Codec 'libx264' + 'aac' pour compatibilité (nécessite ffmpeg)
     try:
-        clip.write_videofile(output_video, fps=fps, codec='libx264', audio_codec='aac', logger=logger)
+        fps_value = int(round(float(fps)))
+    except (TypeError, ValueError):
+        fps_value = 24
+    fps_value = max(1, min(120, fps_value))
+
+    # Durée exacte de la sortie : contrairement au pipeline MediaRecorder, elle est
+    # déterminée par le nombre d'images, aucun sondage du média n'est nécessaire.
+    out_dur = len(image_files) / fps_value
+
+    # Option : ajouter l'audio si fourni (audio_path est un nom de fichier dans 'audio/')
+    print(f"[assemble] audio_path={audio_path!r} audio_volume={audio_volume!r}")
+    audio_file = _resolve_audio_file(audio_path, log_prefix='assemble')
+    vol = _safe_volume(audio_volume)
+
+    ffmpeg = _get_ffmpeg_exe()
+    # Le script ffconcat est temporaire et propre à cet encodage : il ne doit pas
+    # atterrir dans captured/, que le client vide dès l'assemblage terminé.
+    handle, list_path = tempfile.mkstemp(prefix='gcmap_concat_', suffix='.ffconcat', text=True)
+    os.close(handle)
+
+    try:
+        _write_concat_list(image_files, fps_value, list_path)
+
+        # -safe 0 : le script contient des chemins absolus, refusés par défaut.
+        cmd = [ffmpeg, '-y', '-f', 'concat', '-safe', '0', '-i', list_path]
+        if audio_file:
+            # apad complète l'audio par du silence s'il est plus court que la vidéo ;
+            # -t borne la sortie à la durée vidéo, ce qui coupe aussi un audio plus long.
+            # On n'utilise PAS -shortest avec apad (l'audio paddé devient infini).
+            cmd += [
+                '-i', audio_file,
+                '-filter_complex', f"[0:v]{_EVEN_DIMENSIONS_FILTER}[v];[1:a]volume={vol},apad[a]",
+                '-map', '[v]', '-map', '[a]',
+            ] + _AAC_OUTPUT_ARGS
+            print(f"[assemble] Audio attaché (vol={vol}, durée vidéo={out_dur:.1f}s)")
+        else:
+            cmd += ['-filter:v', _EVEN_DIMENSIONS_FILTER, '-an']
+        cmd += ['-t', f"{out_dur:.6f}", '-r', str(fps_value)]
+        cmd += _H264_OUTPUT_ARGS
+        cmd += ['-progress', 'pipe:1', '-nostats', output_video]
+
+        _progress(10, "Encodage de la vidéo...")
+        result = _run_ffmpeg(
+            cmd, out_dur=out_dur, status=status,
+            progress_start=10, progress_end=99,
+            progress_label="Encodage vidéo", error_label="Assemblage ffmpeg",
+            log_prefix="assemble",
+        )
     finally:
         try:
-            clip.close()
-        except Exception:
+            os.remove(list_path)
+        except OSError:
             pass
-        if source_audio_clip is not None and source_audio_clip is not audio_clip:
-            # MoviePy 2.1 ne ferme les pipes du lecteur que si ffmpeg tourne encore.
-            # Avec une piste plus courte que la vidéo, le processus est déjà terminé
-            # et ses deux pipes restent ouverts : conserver puis fermer ces handles.
-            reader = getattr(source_audio_clip, 'reader', None)
-            process = getattr(reader, 'proc', None)
-            try:
-                source_audio_clip.close()
-            except Exception:
-                pass
-            if process is not None:
-                for stream in (getattr(process, 'stdout', None), getattr(process, 'stderr', None)):
-                    try:
-                        if stream is not None and not stream.closed:
-                            stream.close()
-                    except Exception:
-                        pass
-        if audio_clip is not None:
-            try:
-                audio_clip.close()
-            except Exception:
-                pass
+
+    if not result.get('success'):
+        return result
 
     _progress(100, "Vidéo créée avec succès")
     return {'success': True, 'message': 'Vidéo créée avec succès', 'output': output_video}
@@ -282,44 +464,6 @@ def run_assemble_video_task(status, image_folder, output_video, fps=24, audio_pa
 # Type de tâche de fond pour le post-traitement d'un enregistrement MediaRecorder
 TASK_TYPE_VIDEO_PROCESS = "video_processing"
 
-_FFMPEG_DURATION_RE = re.compile(r"Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)")
-
-# Watchdog du traitement ffmpeg : avec '-progress pipe:1', ffmpeg écrit un bloc de
-# progression toutes les ~0,5 s. Une absence totale de sortie pendant ce délai signale
-# un processus figé (entrée corrompue) : sans watchdog, `for line in proc.stdout` bloque
-# indéfiniment et le worker qui exécute la tâche est perdu pour toujours.
-FFMPEG_STALL_TIMEOUT_S = 300      # 5 min sans la moindre ligne → on tue ffmpeg
-FFMPEG_WATCHDOG_INTERVAL_S = 5    # période de vérification du watchdog
-# Garde-fou sur la lecture d'en-tête (ffmpeg -i) : même entrée corrompue, même risque.
-FFMPEG_PROBE_TIMEOUT_S = 60
-
-
-def _get_ffmpeg_exe():
-    """Chemin de l'exécutable ffmpeg fourni par imageio-ffmpeg (dépendance de moviepy)."""
-    try:
-        import imageio_ffmpeg
-        return imageio_ffmpeg.get_ffmpeg_exe()
-    except Exception:
-        return "ffmpeg"  # repli sur un ffmpeg système éventuel
-
-
-def _probe_duration_seconds(input_path):
-    """Durée du média en secondes, lue depuis l'en-tête via ffmpeg. None si inconnue."""
-    try:
-        proc = subprocess.run(
-            [_get_ffmpeg_exe(), '-i', input_path],
-            stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
-            universal_newlines=True, encoding='utf-8', errors='replace',
-            timeout=FFMPEG_PROBE_TIMEOUT_S,
-        )
-        m = _FFMPEG_DURATION_RE.search(proc.stderr or '')
-        if m:
-            h, mn, s = m.groups()
-            return int(h) * 3600 + int(mn) * 60 + float(s)
-    except Exception as e:
-        print(f"[process] probe durée échoué: {e}")
-    return None
-
 
 def _process_recorded_video(input_path, output_path, slowdown=1.0, audio_path=None, audio_volume=1.0, fps=None, status=None):
     """Normalise la vitesse (setpts) et mux l'audio en UNE passe ffmpeg → MP4 H.264/AAC.
@@ -341,10 +485,7 @@ def _process_recorded_video(input_path, output_path, slowdown=1.0, audio_path=No
         sd = max(1.0, float(slowdown))
     except Exception:
         sd = 1.0
-    try:
-        vol = max(0.0, float(audio_volume))
-    except Exception:
-        vol = 1.0
+    vol = _safe_volume(audio_volume)
     # fps de sortie : setpts accélère la vidéo sans redécimer (le framerate serait
     # multiplié par sd). On force le fps cible pour un résultat propre et compact.
     try:
@@ -358,14 +499,7 @@ def _process_recorded_video(input_path, output_path, slowdown=1.0, audio_path=No
     ffmpeg = _get_ffmpeg_exe()
 
     # Résoudre le fichier audio (nom de fichier attendu dans audio/)
-    audio_file = None
-    if audio_path:
-        safe_name = secure_filename(os.path.basename(audio_path))
-        candidate = os.path.join('audio', safe_name)
-        if os.path.exists(candidate):
-            audio_file = candidate
-        else:
-            print(f"[process] audio introuvable, vidéo seule: {candidate}")
+    audio_file = _resolve_audio_file(audio_path, log_prefix='process')
 
     # Durée de sortie attendue (pour la progression) = durée brute / facteur de ralentissement
     in_dur = _probe_duration_seconds(input_path)
@@ -382,116 +516,34 @@ def _process_recorded_video(input_path, output_path, slowdown=1.0, audio_path=No
             # (l'audio paddé devient infini et -shortest ne le coupe pas de façon fiable
             # en filter_complex → encodage sans fin).
             cmd += [
-                '-filter_complex', f"[0:v]setpts=PTS/{sd}[v];[1:a]volume={vol},apad[a]",
+                '-filter_complex',
+                f"[0:v]setpts=PTS/{sd},{_EVEN_DIMENSIONS_FILTER}[v];[1:a]volume={vol},apad[a]",
                 '-map', '[v]', '-map', '[a]',
                 '-t', f"{out_dur:.3f}",
-                '-c:a', 'aac', '-b:a', '192k',
-            ]
+            ] + _AAC_OUTPUT_ARGS
         else:
             # Durée inconnue : pas d'apad (sinon infini) ; -shortest coupe au flux le plus court.
             cmd += [
-                '-filter_complex', f"[0:v]setpts=PTS/{sd}[v];[1:a]volume={vol}[a]",
+                '-filter_complex',
+                f"[0:v]setpts=PTS/{sd},{_EVEN_DIMENSIONS_FILTER}[v];[1:a]volume={vol}[a]",
                 '-map', '[v]', '-map', '[a]',
-                '-c:a', 'aac', '-b:a', '192k',
-                '-shortest',
-            ]
+            ] + _AAC_OUTPUT_ARGS + ['-shortest']
     else:
-        cmd += ['-filter:v', f"setpts=PTS/{sd}", '-an']
+        cmd += ['-filter:v', f"setpts=PTS/{sd},{_EVEN_DIMENSIONS_FILTER}", '-an']
     if out_fps:
         cmd += ['-r', str(out_fps)]
-    cmd += [
-        '-c:v', 'libx264', '-preset', 'medium', '-crf', '20', '-pix_fmt', 'yuv420p',
-        '-movflags', '+faststart',
-        '-progress', 'pipe:1', '-nostats',
-        output_path,
-    ]
+    cmd += _H264_OUTPUT_ARGS
+    cmd += ['-progress', 'pipe:1', '-nostats', output_path]
 
     _progress(2, "Démarrage du traitement vidéo...")
-    try:
-        print("[process] ffmpeg:", " ".join(cmd))
-    except Exception:
-        pass
-
-    proc = subprocess.Popen(
-        cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-        universal_newlines=True, encoding='utf-8', errors='replace',
+    result = _run_ffmpeg(
+        cmd, out_dur=out_dur, status=status,
+        progress_start=2, progress_end=98,
+        progress_label="Traitement vidéo", error_label="Traitement ffmpeg",
+        log_prefix="process",
     )
-
-    # Watchdog : tue ffmpeg s'il n'émet plus rien pendant FFMPEG_STALL_TIMEOUT_S.
-    # Le pipe se ferme alors et la boucle de lecture ci-dessous se termine d'elle-même,
-    # ce qui libère le worker au lieu de le bloquer indéfiniment.
-    last_output = time.monotonic()
-    stalled = threading.Event()
-    finished = threading.Event()
-
-    def _watchdog():
-        while not finished.wait(FFMPEG_WATCHDOG_INTERVAL_S):
-            if time.monotonic() - last_output > FFMPEG_STALL_TIMEOUT_S:
-                stalled.set()
-                try:
-                    proc.kill()
-                except Exception:
-                    pass
-                return
-
-    threading.Thread(target=_watchdog, daemon=True).start()
-
-    tail_lines = []  # dernières lignes non-progress (pour message d'erreur)
-    try:
-        for line in proc.stdout:
-            last_output = time.monotonic()
-            line = line.strip()
-            if not line:
-                continue
-            if line.startswith('out_time_us=') or line.startswith('out_time_ms='):
-                try:
-                    micros = float(line.split('=', 1)[1])
-                    cur = micros / 1_000_000.0
-                    if out_dur and out_dur > 0:
-                        frac = max(0.0, min(1.0, cur / out_dur))
-                        _progress(2 + frac * 96, f"Traitement vidéo... {int(frac * 100)}%")
-                    else:
-                        _progress(50, "Traitement vidéo en cours...")
-                except Exception:
-                    pass
-            elif not line.startswith(('frame=', 'fps=', 'bitrate=', 'total_size=',
-                                      'out_time=', 'dup_frames=', 'drop_frames=',
-                                      'speed=', 'progress=', 'stream_')):
-                tail_lines.append(line)
-                if len(tail_lines) > 60:
-                    tail_lines.pop(0)
-    finally:
-        # Arrêter le watchdog même si la lecture lève, puis fermer explicitement le pipe :
-        # les traitements répétés ne doivent pas accumuler de descripteurs jusqu'au
-        # prochain passage du ramasse-miettes.
-        finished.set()
-        if proc.stdout is not None:
-            proc.stdout.close()
-
-    try:
-        proc.wait(timeout=FFMPEG_WATCHDOG_INTERVAL_S * 4)
-    except subprocess.TimeoutExpired:
-        # Flux fermé mais ffmpeg toujours vivant : le watchdog est arrêté, on ne laisse
-        # pas wait() bloquer le worker à son tour.
-        print("[process] ffmpeg ne se termine pas après fermeture du flux → processus tué")
-        try:
-            proc.kill()
-            proc.wait(timeout=10)
-        except Exception:
-            pass
-        return {'success': False, 'message': "Traitement ffmpeg interrompu : le processus ne s'est pas terminé."}
-
-    if stalled.is_set():
-        minutes = max(1, int(FFMPEG_STALL_TIMEOUT_S // 60))
-        print(f"[process] ffmpeg figé (aucune progression pendant {minutes} min) → processus tué")
-        return {
-            'success': False,
-            'message': (f"Traitement ffmpeg interrompu : aucune progression pendant {minutes} min. "
-                        "Le fichier source est probablement corrompu."),
-        }
-    if proc.returncode != 0:
-        msg = "\n".join(tail_lines[-8:]) or f"ffmpeg a échoué (code {proc.returncode})"
-        return {'success': False, 'message': f"Traitement ffmpeg échoué: {msg}"}
+    if not result.get('success'):
+        return result
 
     # Nettoyer le .webm brut temporaire une fois le MP4 produit
     try:

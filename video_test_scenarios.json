@@ -95,6 +95,47 @@
       }
     },
     {
+      "id": "images_24_dimensions_impaires",
+      "pipeline": "images",
+      "fps": 24,
+      "source_duration_seconds": 1.0,
+      "source_width": 161,
+      "source_height": 91,
+      "audio_duration_seconds": null,
+      "expected": {
+        "duration_seconds": 1.0,
+        "duration_tolerance_seconds": 0.12,
+        "fps": 24,
+        "width": 160,
+        "height": 90,
+        "has_audio": false,
+        "video_codec": "h264",
+        "min_size_bytes": 1000
+      }
+    },
+    {
+      "id": "mediarecorder_24_dimensions_impaires_audio",
+      "pipeline": "mediarecorder",
+      "fps": 24,
+      "source_duration_seconds": 1.2,
+      "source_width": 161,
+      "source_height": 91,
+      "slowdown": 1,
+      "audio_duration_seconds": 0.4,
+      "audio_volume": 1.0,
+      "expected": {
+        "duration_seconds": 1.2,
+        "duration_tolerance_seconds": 0.12,
+        "fps": 24,
+        "width": 160,
+        "height": 90,
+        "has_audio": true,
+        "video_codec": "h264",
+        "audio_codec": "aac",
+        "min_size_bytes": 1000
+      }
+    },
+    {
       "id": "mediarecorder_24_non_normalise_x2",
       "pipeline": "mediarecorder",
       "fps": 24,

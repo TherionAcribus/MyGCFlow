@@ -30,14 +30,18 @@ Les médias de test sont créés dans des répertoires temporaires et supprimés
 
 | Scénario | Pipeline | FPS | Audio | Ralentissement | Durée attendue |
 |---|---|---:|---|---:|---:|
-| `images_24_sans_audio` | Images + MoviePy | 24 | non | — | 1,0 s |
-| `images_30_avec_audio_court` | Images + MoviePy | 30 | oui, plus court | — | 1,0 s |
-| `images_24_avec_audio_long` | Images + MoviePy | 24 | oui, plus long | — | 1,0 s |
+| `images_24_sans_audio` | Images + ffmpeg | 24 | non | — | 1,0 s |
+| `images_30_avec_audio_court` | Images + ffmpeg | 30 | oui, plus court | — | 1,0 s |
+| `images_24_avec_audio_long` | Images + ffmpeg | 24 | oui, plus long | — | 1,0 s |
+| `images_24_dimensions_impaires` | Images + ffmpeg | 24 | non | — | 1,0 s |
 | `mediarecorder_24_sans_audio` | Post-traitement MediaRecorder | 24 | non | ×1 | 1,2 s |
 | `mediarecorder_30_normalise_x2_audio_court` | Post-traitement MediaRecorder | 30 | oui, plus court | ×2 normalisé | 1,0 s |
+| `mediarecorder_24_dimensions_impaires_audio` | Post-traitement MediaRecorder | 24 | oui, plus court | ×1 | 1,2 s |
 | `mediarecorder_24_non_normalise_x2` | Post-traitement MediaRecorder | 24 | non | ×2 conservé | 2,0 s |
 
 La matrice se trouve dans `video_test_scenarios.json`. Pour ajouter un cas, copier un scénario et modifier ses options ainsi que le bloc `expected`.
+
+Les deux scénarios `dimensions_impaires` produisent une source en 161×91 et attendent une sortie en 160×90 : `libx264` en `yuv420p` exige des dimensions paires, et les deux pipelines rognent donc au multiple de 2 inférieur. Les dimensions de la source se règlent par `source_width` / `source_height` (160×90 par défaut).
 
 ## Valider manuellement un export GCMap
 
