@@ -40,6 +40,22 @@ test('le fond actif est écrit dans les options, pas seulement dans le DOM', asy
 });
 
 
+test('le menu délègue les clics aux boutons remplacés après le chargement', async ({ page }) => {
+  const activeLayer = await page.evaluate(async () => {
+    const original = document.getElementById('watercolor');
+    original.replaceWith(original.cloneNode(true));
+    document.querySelector('#watercolor .map-card-label').dispatchEvent(
+      new MouseEvent('click', { bubbles: true }),
+    );
+
+    const app = await import('/static/js/index.js');
+    return app.options.map.default;
+  });
+
+  expect(activeLayer).toBe('watercolor');
+});
+
+
 test('le menu générique synchronise les quatre boutons et leurs panneaux d\'options', async ({ page }) => {
   const cases = [
     { layerName: 'vectorMap', optionsPanelId: 'vectorMapOptions' },

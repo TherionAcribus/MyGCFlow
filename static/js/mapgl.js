@@ -900,21 +900,6 @@ export function centerMap(){
 }
 
 
-// permet de récupérer l'id du bouton. 
-// Comme il y a une image dans le bouton, il faut éventuellement regarder dans le parent selon le lieu du clic.
-function buttonSwitchLayer(e) {
-    let targetElement = e.target;
-        while (targetElement != null && !targetElement.classList.contains('changeMap')) {
-            targetElement = targetElement.parentElement;
-        }
-            // Si un élément avec 'changeMap' a été trouvé, récupérer son ID
-        if (targetElement) {
-            let layerName = targetElement.id;
-            switchLayer(layerName);
-        }
-}
-
-
 // permet de switcher sur la bonne cartographie en fonction du choix fait
 export function switchLayer(layerName) {
     const basemapsReady = Object.keys(basemaps).length > 0;
@@ -949,10 +934,24 @@ export function switchLayer(layerName) {
     pkg.selectMapMenu(layerName);
 }
 
-// Événement pour changer la couche de fond de carte
-const mapChoices = document.getElementsByClassName('changeMap')
-for (let mapLayer of mapChoices){
-    mapLayer.addEventListener('click', buttonSwitchLayer);
+// Délègue les clics depuis le conteneur : les boutons peuvent être rendus ou
+// remplacés après le chargement du module sans devoir rattacher des écouteurs.
+function initMapMenuDelegation() {
+    const container = document.getElementById('tabMapOverlay');
+    if (!container) return;
+
+    container.addEventListener('click', event => {
+        const mapChoice = event.target.closest?.('.changeMap');
+        if (mapChoice && container.contains(mapChoice)) {
+            switchLayer(mapChoice.id);
+        }
+    });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initMapMenuDelegation, { once: true });
+} else {
+    initMapMenuDelegation();
 }
 
 
