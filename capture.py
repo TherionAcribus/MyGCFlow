@@ -17,10 +17,11 @@ def upload_image(request):
             counter = int(request.form.get('counter', 0))
             numberSize = int(request.form.get('numberSize', 4))
 
-            # Utiliser le nom de fichier fourni ou en générer un
-            if image_file.filename:
-                image_filename = image_file.filename
-            else:
+            # Utiliser le nom de fichier fourni (sécurisé : il vient du client) ou en générer un.
+            # secure_filename neutralise les traversées de chemin (..\..\x.webp) et peut
+            # renvoyer une chaîne vide sur un nom entièrement invalide → on retombe sur le compteur.
+            image_filename = secure_filename(image_file.filename or '')
+            if not image_filename:
                 image_filename = f'image_{str(counter).zfill(numberSize)}.webp'
 
             # Sauvegarder directement le fichier binaire
