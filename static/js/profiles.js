@@ -835,7 +835,7 @@ class ProfileManager {
             // Paramètres de la carte : lus directement dans pkg.options.map, seule
             // source de vérité de l'état carte. switchLayer() y écrit le fond actif
             // et les gestionnaires de ui.js les options vectorMap/Toner. On ne
-            // déduit plus rien du DOM (classe 'disabled' des boutons, visibilité des
+            // déduit plus rien du DOM (classe d'état des boutons, visibilité des
             // panneaux d'options) : ces indices n'étaient pas fiables tant qu'une
             // transition CSS n'était pas terminée.
             const mapOptions = pkg.options?.map || {};

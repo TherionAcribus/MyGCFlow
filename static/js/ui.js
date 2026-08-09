@@ -2913,7 +2913,6 @@ export function selectMapMenu(layerName) {
     for (const [id, { button }] of Object.entries(mapMenus)) {
         if (!button) continue;
         const isSelected = id === layerName;
-        button.classList.toggle('disabled', isSelected);
         button.classList.toggle('is-selected', isSelected);
     }
 

@@ -33,7 +33,7 @@ test.beforeEach(async ({ page }) => {
 test('le fond actif est écrit dans les options, pas seulement dans le DOM', async ({ page }) => {
   await page.locator('#vectorMap').click();
   expect((await readMapOptions(page)).default).toBe('vectorMap');
-  await expect(page.locator('#vectorMap')).toHaveClass(/disabled/);
+  await expect(page.locator('#vectorMap')).toHaveClass(/is-selected/);
 
   await page.locator('#OSM').click();
   expect((await readMapOptions(page)).default).toBe('OSM');
@@ -54,12 +54,14 @@ test('le menu générique synchronise les quatre boutons et leurs panneaux d\'op
     for (const candidate of cases) {
       const button = page.locator(`#${candidate.layerName}`);
       if (candidate.layerName === selected.layerName) {
-        await expect(button).toHaveClass(/disabled/);
         await expect(button).toHaveClass(/is-selected/);
       } else {
-        await expect(button).not.toHaveClass(/disabled/);
         await expect(button).not.toHaveClass(/is-selected/);
       }
+
+      // L'état actif des fonds de carte n'a qu'une convention. L'ancienne
+      // classe `disabled` ne doit plus être réintroduite en parallèle.
+      await expect(button).not.toHaveClass(/disabled/);
     }
 
     for (const panelId of ['vectorMapOptions', 'tonerMapOptions']) {
@@ -80,11 +82,11 @@ test('loadCurrentSettings lit les options et ignore l\'état des boutons', async
   await page.locator('#stamenToner').click();
 
   // On désynchronise volontairement le DOM des options : l'ancienne détection
-  // (classe 'disabled' des boutons, visibilité des panneaux) aurait renvoyé
+  // (classe 'is-selected' des boutons, visibilité des panneaux) aurait renvoyé
   // 'watercolor' ici. La source de vérité doit rester pkg.options.map.
   const detected = await page.evaluate(() => {
-    document.getElementById('stamenToner').classList.remove('disabled');
-    document.getElementById('watercolor').classList.add('disabled');
+    document.getElementById('stamenToner').classList.remove('is-selected');
+    document.getElementById('watercolor').classList.add('is-selected');
     document.getElementById('vectorMapOptions').style.display = 'block';
 
     window.profileManager.loadCurrentSettings();
@@ -124,7 +126,7 @@ test('appliquer un profil met à jour carte, options et interface sans délai', 
     return {
       options: JSON.parse(JSON.stringify(app.options.map)),
       tonerButtonDark: document.getElementById('stamenTonerDark').classList.contains('disabled'),
-      mapButton: document.getElementById('stamenToner').classList.contains('disabled'),
+      mapButton: document.getElementById('stamenToner').classList.contains('is-selected'),
       strokeColorField: document.getElementById('fieldVectorMapStrokeColor').value,
       strokeWidthField: document.getElementById('fieldVectorMapStrokeWidth').value,
       lat: lonLat[1],

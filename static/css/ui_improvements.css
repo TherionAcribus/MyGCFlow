@@ -1216,16 +1216,6 @@ background: rgba(33, 150, 243, 0.04);
     opacity: 1;
     transform: scale(1);
 }
-.map-card.disabled {
-    opacity: 0.6;
-    cursor: default;
-    border-color: var(--color-success);
-}
-.map-card.disabled .map-card-check {
-    opacity: 1;
-    transform: scale(1);
-    background: var(--color-success);
-}
 
 /* Panneau d'options de carte (Vector / Toner) */
 .map-options {

@@ -1,5 +1,5 @@
 // Script de test manuel : vérifie l'état carte tel que le lisent les profils.
-// L'état carte n'est plus déduit du DOM (classe 'disabled' des boutons,
+// L'état carte n'est plus déduit du DOM (classe 'is-selected' des boutons,
 // visibilité des panneaux d'options) : sa source de vérité est pkg.options.map,
 // écrite par switchLayer() et par les gestionnaires d'options de ui.js.
 // Le DOM n'en est qu'un reflet — d'où la vérification de cohérence ci-dessous.
@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('❌ profileManager.loadCurrentSettings non disponible');
         }
 
-        // 3. Cohérence du reflet DOM : un seul bouton doit être 'disabled',
+        // 3. Cohérence du reflet DOM : un seul bouton doit être 'is-selected',
         //    celui du fond actif.
         const expected = app.options.map.default;
         ['OSM', 'stamenToner', 'vectorMap', 'watercolor'].forEach(btnId => {
@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log(`  ${btnId}: NON TROUVÉ`);
                 return;
             }
-            const selected = btn.classList.contains('disabled');
+            const selected = btn.classList.contains('is-selected');
             const ok = selected === (btnId === expected);
             console.log(`  ${btnId}: ${selected ? 'sélectionné' : 'inactif'} ${ok ? '✅' : '❌ incohérent avec les options'}`);
         });
