@@ -412,8 +412,15 @@ let animationLayer;
 // setInterval dont le délai est plus court que le temps de rendu d'un jour (frame
 // dense, onglet en arrière-plan, etc.) empile ses callbacks et les décharge en
 // rafale dès que le thread se libère, ce qui saccade l'animation. rAF ne peut pas
-// s'empiler (un seul callback par frame de rendu) et l'accumulateur ne rattrape
-// jamais plus d'un jour à la fois, donc jamais de rafale.
+// s'empiler (un seul callback par frame de rendu) et l'accumulateur rattrape au
+// plus MAX_DAYS_PER_FRAME jours à la fois, donc jamais de rafale.
+//
+// Ce plafond ne peut pas valoir 1 : à 60 Hz l'animation serait bloquée à 60
+// jours/s, alors qu'un timePerDay court en demande davantage (10 ms/jour = 100
+// jours/s). L'animation dériverait et durerait plus longtemps que configuré.
+// 4 jours/frame couvre jusqu'à ~240 jours/s tout en bornant le travail d'une
+// frame ; les jours rattrapés sont agrégés en un seul addFeatures.
+const MAX_DAYS_PER_FRAME = 4;
 let animationRafId = null;
 let animationLastTs = null;
 let animationAccMs = 0;
@@ -1467,28 +1474,44 @@ export function startAnimation(restart=false) {
         // Borner le delta évite qu'un onglet remis au premier plan après une
         // longue mise en arrière-plan ne fasse défiler des dizaines de jours
         // d'un coup (rAF est suspendu en arrière-plan, contrairement à setInterval).
-        animationAccMs += Math.min(ts - animationLastTs, dayDuration * 5);
+        // Le plafond vaut exactement ce qu'une frame sait consommer : l'accumulateur
+        // ne peut donc pas gonfler indéfiniment quand le rendu ne suit pas.
+        animationAccMs += Math.min(ts - animationLastTs, dayDuration * MAX_DAYS_PER_FRAME);
         animationLastTs = ts;
 
-        // Rattrape au plus un jour par frame : jamais de rafale, contrairement à
-        // un setInterval dont les callbacks en retard se déchargeraient d'un coup.
-        if (animationAccMs >= dayDuration) {
+        // Rattrape jusqu'à MAX_DAYS_PER_FRAME jours par frame — nécessaire dès que
+        // timePerDay descend sous la durée d'une frame — mais jamais plus : pas de
+        // rafale, contrairement à un setInterval dont les callbacks en retard se
+        // déchargeraient d'un coup. Les jours du lot sont affichés ensemble.
+        const daysThisFrame = [];
+        let reachedEnd = false;
+        while (animationAccMs >= dayDuration && daysThisFrame.length < MAX_DAYS_PER_FRAME) {
             animationAccMs -= dayDuration;
-            displayFeaturesForDate(currentDate, pkg.options.point, flashOptions, false, infos);
+            // currentDate est muté juste après : le lot doit garder une copie.
+            daysThisFrame.push(new Date(currentDate));
             currentDate.setDate(currentDate.getDate() + 1);
             if (currentDate > pkg.metadata.endDate) {
-                animationRafId = null;
-                const extraMs = getExtraEndMs();
-                if (extraMs > 0) {
-                    if (endTimeout) {
-                        clearTimeout(endTimeout);
-                    }
-                    endTimeout = setTimeout(() => finalizeAnimationEnd(), extraMs);
-                } else {
-                    finalizeAnimationEnd();
-                }
-                return;
+                reachedEnd = true;
+                break;
             }
+        }
+
+        if (daysThisFrame.length > 0) {
+            displayFeaturesForDates(daysThisFrame, pkg.options.point, flashOptions, false, infos);
+        }
+
+        if (reachedEnd) {
+            animationRafId = null;
+            const extraMs = getExtraEndMs();
+            if (extraMs > 0) {
+                if (endTimeout) {
+                    clearTimeout(endTimeout);
+                }
+                endTimeout = setTimeout(() => finalizeAnimationEnd(), extraMs);
+            } else {
+                finalizeAnimationEnd();
+            }
+            return;
         }
         animationRafId = requestAnimationFrame(animationStep);
     };
@@ -3760,34 +3783,50 @@ function drawManualOverlay(ctx, type, infos = null) {
 
 
 function displayFeaturesForDate(date, pointOptions, flashOptions, record, infos) {
+    displayFeaturesForDates([date], pointOptions, flashOptions, record, infos);
+}
+
+// Traite un lot de jours consécutifs en une passe : un seul addFeatures et une
+// seule mise à jour des infos, quel que soit le nombre de jours rattrapés par la
+// frame rAF. Les enregistrements (frame par frame) passent toujours un jour unique.
+function displayFeaturesForDates(dates, pointOptions, flashOptions, record, infos) {
+    if (!dates || dates.length === 0) return;
 
     // OPTIMISATION PERFORMANCE : Utilise l'index pré-calculé au lieu du filter coûteux
     // Avant : filter() sur tous les points à chaque frame (très lent)
     // Après : lookup instantanée dans Map pré-calculé (très rapide)
 
-    // IMPORTANT: n'ajouter que les nouveaux points du jour pour éviter l'accumulation de doublons
+    // IMPORTANT: n'ajouter que les nouveaux points du lot pour éviter l'accumulation de doublons
     // Les points des jours précédents restent déjà visibles car ajoutés aux itérations antérieures
 
-    // Pour l'effet flash, utiliser seulement les points de la date courante
-    const dateKey = date.toDateString();
-    const featuresForDate = pkg.pointsByDate.get(dateKey) || [];
-
-    // Afficher seulement les points du jour courant
-    if (featuresForDate.length > 0) {
-        displayWebGLPoints(featuresForDate, pointOptions);
-    }
-
-    if (flashOptions.mode != "none") {
-        // Animation de flash seulement pour les nouvelles features (date courante)
-        if (record) {
-            flashRecord(featuresForDate, flashOptions);
-        } else {
-            flashFeatures(featuresForDate, flashOptions);
+    // Pour l'effet flash, utiliser seulement les points des dates du lot
+    let newFeatures = [];
+    if (dates.length === 1) {
+        // Cas courant : réutiliser directement le tableau indexé, sans recopie.
+        newFeatures = pkg.pointsByDate.get(dates[0].toDateString()) || [];
+    } else {
+        for (const date of dates) {
+            appendPoints(newFeatures, pkg.pointsByDate.get(date.toDateString()));
         }
     }
 
-    // affiche éventuellement les infos demandées
-    displayInfosForDate(infos, date, featuresForDate);
+    // Afficher seulement les points des jours du lot
+    if (newFeatures.length > 0) {
+        displayWebGLPoints(newFeatures, pointOptions);
+    }
+
+    if (flashOptions.mode != "none") {
+        // Animation de flash seulement pour les nouvelles features (dates du lot)
+        if (record) {
+            flashRecord(newFeatures, flashOptions);
+        } else {
+            flashFeatures(newFeatures, flashOptions);
+        }
+    }
+
+    // affiche éventuellement les infos demandées : la date affichée est celle du
+    // dernier jour du lot, le compteur reçoit le total des points ajoutés.
+    displayInfosForDate(infos, dates[dates.length - 1], newFeatures);
 }
 
 // affiche les infos (date, nb de caches) en fonction des jours
