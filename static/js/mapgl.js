@@ -80,6 +80,7 @@ import {
     normalizeRecordingBitrateMbps,
     normalizeRecordingFps,
 } from './recording_settings.mjs';
+import { createMapDirtyTracker } from './map_dirty.mjs';
 
 // Debug toasts/assemblage
 const TOAST_DEBUG = false;
@@ -446,6 +447,13 @@ let mrOnFinalizeRestoreTimePerDay = null;
 // Paramètres du compositing MR conservés au niveau module pour pouvoir relancer
 // la boucle de dessin après une mise en pause (onglet masqué, cf. C8).
 let mrDrawParams = null;
+// Suivi « carte sale » : évite un renderSync() + une recomposition complète pour
+// des frames strictement identiques (cas courant dès que timePerDay > 1/fps).
+// Alimenté par displayFeaturesForDates, les flashs et les rendus naturels d'OL.
+const mapDirtyTracker = createMapDirtyTracker();
+// Garde : true pendant nos propres renderSync de compositing (cf. mrPostrenderKey).
+let mrOwnRender = false;
+let mrPostrenderKey = null;
 // Canvas de sortie du mode images, réutilisé entre frames (P4) : le recréer à
 // chaque frame générait une pression GC inutile. Réutilisation sûre car la capture
 // est strictement séquentielle (toBlob résout avant la frame suivante).
@@ -2432,28 +2440,57 @@ function computeTotalAnimationMs(){
 function startMrDrawLoop() {
     if (mrDrawIntervalId || !mrDrawParams) return;
     const { viewport, effScale, intervalMs } = mrDrawParams;
+    // Reprise après pause (onglet masqué) : l'état de la carte a pu changer sans
+    // que nous en soyons informés, la première frame est donc toujours dessinée.
+    mapDirtyTracker.markDirty();
     let drawing = false;
     mrDrawIntervalId = setInterval(() => {
         if (!isMediaRecording || drawing) return;
-        drawing = true;
 
+        // Rien n'a bougé depuis la frame précédente : le canvas de sortie garde
+        // déjà le bon contenu, on économise le rendu complet de la carte.
         const frameStart = performance.now();
+        const signature = overlayContentSignature();
+        if (!mapDirtyTracker.shouldDraw(frameStart, signature)) return;
+
+        drawing = true;
         try {
-            map.renderSync();
+            // renderSync() émet un postrender : la garde évite que notre propre
+            // rendu remarque la carte comme sale.
+            mrOwnRender = true;
+            try { map.renderSync(); } finally { mrOwnRender = false; }
             const canvasList = viewport.querySelectorAll('canvas');
             const w = mrOutCanvas.width;
             const h = mrOutCanvas.height;
             mrOutCtx.clearRect(0, 0, w, h);
             canvasList.forEach(c => { if (c.width > 0 && c.height > 0) mrOutCtx.drawImage(c, 0, 0, w, h); });
             addOverlaysToCanvas(mrOutCtx, w, h, effScale);
+            mapDirtyTracker.noteDraw(frameStart, signature);
         } catch(e) {
             console.warn('Composite frame error:', e);
         } finally {
+            // Seules les frames réellement composées alimentent le moniteur : les
+            // ticks sautés coûtent ~0 et masqueraient les vraies chutes de perf.
             const frameTime = performance.now() - frameStart;
             recordingPerformanceMonitor.checkPerformance(frameTime, intervalMs, 'mediarecorder');
             drawing = false;
         }
     }, intervalMs);
+}
+
+// Signature du contenu redessiné à chaque frame par addOverlaysToCanvas : le
+// texte peut changer (date, compteur de caches, titre édité en direct) sans que
+// la carte, elle, soit modifiée. La révision du cache couvre les changements de
+// style/police/dimension. Lecture de textContent uniquement : pas de reflow.
+function overlayContentSignature() {
+    try {
+        const { title, infos } = getOverlayTextContent();
+        return `${overlayCacheRevision} ${title} ${infos}`;
+    } catch(_) {
+        // Contenu illisible : on ne prend pas le risque d'une frame périmée.
+        mapDirtyTracker.markDirty();
+        return null;
+    }
 }
 
 async function startMediaRecorderPipeline(totalDurationMs, timelineScale = 1){
@@ -2520,6 +2557,19 @@ async function startMediaRecorderPipeline(totalDurationMs, timelineScale = 1){
     // Démarrer la surveillance des performances
     recordingPerformanceMonitor.startMonitoring();
 
+    // Suivi « carte sale ». Remise à zéro sûre ici : cette fonction s'exécute de
+    // façon synchrone juste après startAnimation(), aucune frame rAF n'a encore pu
+    // créer de flash. Un compteur non nul serait donc un reliquat d'une lecture
+    // précédente interrompue (listeners jamais expirés faute de rendu), qui
+    // désactiverait l'optimisation pour tout l'enregistrement.
+    mapDirtyTracker.reset();
+    // Filet générique : tout rendu déclenché par OpenLayers lui-même (tuile de fond
+    // chargée, animation de vue, source modifiée hors animation) passe par un
+    // postrender. Nos propres renderSync de compositing en sont exclus par la
+    // garde mrOwnRender, sans quoi aucune frame ne serait jamais considérée
+    // comme propre.
+    mrPostrenderKey = map.on('postrender', () => { if (!mrOwnRender) mapDirtyTracker.markDirty(); });
+
     // Dessin périodique (compositing) — factorisé au niveau module (startMrDrawLoop)
     // pour pouvoir être suspendu puis relancé lors d'un changement de visibilité de
     // l'onglet (cf. mrVisibilityHandler / C8).
@@ -2585,6 +2635,8 @@ function stopMediaRecorderPipeline(finalize){
     // Retirer la garde « onglet masqué » (C8) et fermer son toast éventuel.
     try { if (mrVisibilityHandler) { document.removeEventListener('visibilitychange', mrVisibilityHandler); mrVisibilityHandler = null; } } catch(_) {}
     try { if (mrVisibilityToast) { pkg.hideToast && pkg.hideToast(mrVisibilityToast); mrVisibilityToast = null; } } catch(_) {}
+    try { if (mrPostrenderKey) { ol.Observable.unByKey(mrPostrenderKey); mrPostrenderKey = null; } } catch(_) {}
+    mrOwnRender = false;
     mrDrawParams = null;
 
     // Arrêter la surveillance des performances
@@ -3827,6 +3879,11 @@ function displayFeaturesForDates(dates, pointOptions, flashOptions, record, info
     // affiche éventuellement les infos demandées : la date affichée est celle du
     // dernier jour du lot, le compteur reçoit le total des points ajoutés.
     displayInfosForDate(infos, dates[dates.length - 1], newFeatures);
+
+    // Source de changement principale de l'animation : signalée explicitement pour
+    // que la frame suivante du compositing MR soit composée sans attendre le
+    // postrender naturel d'OpenLayers (qui arriverait une frame plus tard).
+    mapDirtyTracker.markDirty();
 }
 
 // affiche les infos (date, nb de caches) en fonction des jours
@@ -3857,12 +3914,16 @@ function flashRecord(features, flashOptions = pkg.options.flash) {
         const flashGeom = new ol.geom.Point(coords);
         const cacheType = featureData.properties?.cache_type;
 
+        // Un flash en cours redessine la carte à chaque rendu : le compositing MR
+        // ne peut donc rien sauter tant qu'il n'est pas terminé.
+        mapDirtyTracker.beginAnimation();
         const listenerKey = animationLayer.on('postrender', function(event) {
             // elapsed = nombre de captures depuis le début de ce flash
             const elapsed = globalRecordFrame - startFrame;
 
             if (elapsed >= maxFrames) {
                 ol.Observable.unByKey(listenerKey);
+                mapDirtyTracker.endAnimation();
                 return;
             }
             const animationRatio = elapsed / maxFrames;
@@ -3912,14 +3973,18 @@ function flashFeatures(features, flashOptions) {
 function flash(feature, flashOptions) {
     const start = Date.now();
     const flashGeom = feature.getGeometry().clone();
+    // Voir flashRecord : tant que ce flash s'anime, chaque frame diffère de la
+    // précédente et le compositing MR doit rendre la carte.
+    mapDirtyTracker.beginAnimation();
     const listenerKey = animationLayer.on('postrender', animate);
-    const duration = flashOptions.duration; 
+    const duration = flashOptions.duration;
 
     function animate(event) {
         const frameState = event.frameState;
         const elapsed = frameState.time - start;
         if (elapsed >= duration) {
             ol.Observable.unByKey(listenerKey);
+            mapDirtyTracker.endAnimation();
             return;
         }
 
@@ -3975,6 +4040,9 @@ function flash(feature, flashOptions) {
 function createFlashElements(){
     if (animationLayer) {
         map.removeLayer(animationLayer);
+        // Les listeners de flash encore actifs disparaissent avec la couche : ils
+        // ne pourront plus décrémenter le compteur d'animations eux-mêmes.
+        mapDirtyTracker.resetAnimations();
     }
     animationSource = new ol.source.Vector();
     animationLayer = new ol.layer.Vector({
