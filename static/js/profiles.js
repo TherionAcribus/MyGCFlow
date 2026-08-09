@@ -844,8 +844,8 @@ class ProfileManager {
                 tile_provider: mapOptions.default || 'OSM',
                 // Convention persistée : [longitude, latitude]. Ces valeurs ne
                 // servent que si la carte n'est exceptionnellement pas disponible.
-                default_center: [...pkg.DEFAULT_MAP_CENTER_LON_LAT],
-                default_zoom: pkg.DEFAULT_MAP_ZOOM
+                default_center: pkg.getDefaultMapCenter(),
+                default_zoom: pkg.getDefaultMapZoom()
             };
 
             const vectorMap = mapOptions.vectorMap;
@@ -1026,8 +1026,8 @@ class ProfileManager {
             this.currentSettings = {
                 map: {
                     tile_provider: 'OpenStreetMap',
-                    default_center: [...pkg.DEFAULT_MAP_CENTER_LON_LAT],
-                    default_zoom: pkg.DEFAULT_MAP_ZOOM
+                    default_center: pkg.getDefaultMapCenter(),
+                    default_zoom: pkg.getDefaultMapZoom()
                 },
                 animation: {
                     enabled: true,

@@ -305,7 +305,10 @@ async function requeteDefaultValues(){
         console.error('Erreur lors du chargement des valeurs par défaut:', error);
         // Retourner des valeurs par défaut en cas d'erreur
         return {
-            map: { center: [48.8566, 2.3522], zoom: 10 },
+            // Mêmes clés que static/json/defaultValues.json : center/zoom y sont
+            // nommés default_center/default_zoom et le centre suit la convention
+            // [longitude, latitude] de toute l'app.
+            map: { default: 'OSM', default_center: [2.2137, 46.2276], default_zoom: 6 },
             point: { size: 8, color: '#ff0000' },
             animation: { speed: 1, timePerDay: 50, extraEndSeconds: 0 },
             infos: { show: true },

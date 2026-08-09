@@ -103,8 +103,37 @@ export function warnIfTileErrors() {
 // Initialisation de la carte
 // Convention unique pour tous les centres persistés et échangés par l'app :
 // [longitude, latitude], identique à GeoJSON et à ol.proj.fromLonLat().
-export const DEFAULT_MAP_CENTER_LON_LAT = Object.freeze([2.2137, 46.2276]);
-export const DEFAULT_MAP_ZOOM = 6;
+// Le centre et le zoom par défaut sont déclarés dans defaultValues.json
+// (map.default_center / map.default_zoom), comme le reste des valeurs par
+// défaut. Les constantes ci-dessous ne sont qu'un dernier repli : fichier
+// injoignable ou illisible (cf. le repli de requeteDefaultValues() dans
+// init.js), clés absentes, ou module utilisé avant options.init().
+const FALLBACK_MAP_CENTER_LON_LAT = Object.freeze([2.2137, 46.2276]);
+const FALLBACK_MAP_ZOOM = 6;
+
+// Valide un couple [longitude, latitude] et le normalise en nombres.
+// Retourne null si la valeur est inexploitable (mauvaise forme, non numérique
+// ou hors des bornes géographiques).
+export function parseLonLat(value){
+    if (!Array.isArray(value) || value.length !== 2) return null;
+    const lon = parseFloat(value[0]);
+    const lat = parseFloat(value[1]);
+    if (!Number.isFinite(lon) || !Number.isFinite(lat)) return null;
+    if (lon < -180 || lon > 180 || lat < -90 || lat > 90) return null;
+    return [lon, lat];
+}
+
+// Centre/zoom par défaut de l'application. Fonctions et non constantes : les
+// options ne sont chargées qu'au démarrage (options.init()), donc bien après
+// l'évaluation de ce module.
+export function getDefaultMapCenter(){
+    return parseLonLat(pkg.options?.map?.default_center) || [...FALLBACK_MAP_CENTER_LON_LAT];
+}
+
+export function getDefaultMapZoom(){
+    const zoom = parseFloat(pkg.options?.map?.default_zoom);
+    return Number.isFinite(zoom) ? zoom : FALLBACK_MAP_ZOOM;
+}
 
 export function createMap(){
     olMap = new ol.Map({
@@ -113,8 +142,8 @@ export function createMap(){
         view: new ol.View({
             // Point de repli avant que centerMap() ne recadre selon les préférences
             // utilisateur ; doit être en EPSG:3857 (la vue), pas en lon/lat brut.
-            center: ol.proj.fromLonLat([...DEFAULT_MAP_CENTER_LON_LAT]),
-            zoom: DEFAULT_MAP_ZOOM,
+            center: ol.proj.fromLonLat(getDefaultMapCenter()),
+            zoom: getDefaultMapZoom(),
             // Au-delà de 19, les fonds de carte (Watercolor en particulier) n'ont
             // plus de tuiles et affichent un agrandissement flou du dernier niveau.
             maxZoom: 19
@@ -263,14 +292,7 @@ export function applyMapDefaults(fallbackLonLat, fallbackZoom, preferUserSetting
 
     try {
         const s = preferUserSettings ? window.userSettings : null;
-        if (s && Array.isArray(s.map_default_center) && s.map_default_center.length === 2) {
-            const lon = parseFloat(s.map_default_center[0]);
-            const lat = parseFloat(s.map_default_center[1]);
-            if (Number.isFinite(lon) && Number.isFinite(lat) &&
-                lon >= -180 && lon <= 180 && lat >= -90 && lat <= 90) {
-                lonLat = [lon, lat];
-            }
-        }
+        if (s) lonLat = parseLonLat(s.map_default_center);
         if (s && (typeof s.map_default_zoom === 'number' || typeof s.map_default_zoom === 'string')) {
             const z = parseInt(s.map_default_zoom);
             if (Number.isFinite(z)) {
@@ -281,14 +303,7 @@ export function applyMapDefaults(fallbackLonLat, fallbackZoom, preferUserSetting
         console.warn('applyMapDefaults error:', e);
     }
 
-    if (lonLat == null && Array.isArray(fallbackLonLat) && fallbackLonLat.length === 2) {
-        const lon = parseFloat(fallbackLonLat[0]);
-        const lat = parseFloat(fallbackLonLat[1]);
-        if (Number.isFinite(lon) && Number.isFinite(lat) &&
-            lon >= -180 && lon <= 180 && lat >= -90 && lat <= 90) {
-            lonLat = [lon, lat];
-        }
-    }
+    if (lonLat == null) lonLat = parseLonLat(fallbackLonLat);
     const parsedFallbackZoom = parseFloat(fallbackZoom);
     if (zoom == null && Number.isFinite(parsedFallbackZoom)) zoom = parsedFallbackZoom;
 
@@ -305,9 +320,10 @@ export function applyMapDefaults(fallbackLonLat, fallbackZoom, preferUserSetting
     return applied;
 }
 
-// centrer la carte (repli sur le centre de la France si aucune préférence utilisateur)
+// centrer la carte (repli sur le centre par défaut de defaultValues.json si
+// aucune préférence utilisateur)
 export function centerMap(){
-    applyMapDefaults(DEFAULT_MAP_CENTER_LON_LAT, DEFAULT_MAP_ZOOM);
+    applyMapDefaults(getDefaultMapCenter(), getDefaultMapZoom());
 }
 
 

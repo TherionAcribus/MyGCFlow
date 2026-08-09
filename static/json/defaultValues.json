@@ -5,6 +5,8 @@
     },
     "map": {
         "default": "stamenToner",
+        "default_center": [2.2137, 46.2276],
+        "default_zoom": 6,
         "vectorMap": {"strokeWidth": 0.6,
                     "strokeColor": "#ffffff",
                     "fillColor": "#000000",
