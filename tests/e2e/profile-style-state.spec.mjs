@@ -155,6 +155,52 @@ test('le profil relu juste après application est identique (aucun état transit
 });
 
 
+test('l\'indicateur "modifications non enregistrées" suit l\'état, pas les événements', async ({ page }) => {
+  const indicator = page.locator('#current-profile-indicator');
+
+  // Les contrôles de points vivent dans le sous-onglet "Points & Flash".
+  await page.locator('a[href="#tabPointsFlash"]').click();
+  await expect(page.locator('#inputSizePoint')).toBeVisible();
+
+  // Un profil courant est nécessaire : sans lui l'indicateur reste vide et le
+  // suivi ne calcule rien.
+  const initialSize = await page.evaluate(async () => {
+    const pm = window.profileManager;
+    pm.currentProfile = { name: 'Suivi', uid: 'suivi', version: '1.0' };
+    pm._markSaved();
+    return document.getElementById('inputSizePoint').value;
+  });
+
+  await expect(indicator).not.toHaveClass(/unsaved/);
+
+  // La taille du point n'est appliquée qu'à l'événement 'change' : fill() seul
+  // ne produit qu'un 'input', il faut quitter le champ comme le ferait un
+  // utilisateur.
+  const setSize = async (value) => {
+    await page.locator('#inputSizePoint').fill(String(value));
+    await page.locator('#inputSizePoint').blur();
+  };
+
+  await setSize(Number(initialSize) + 1);
+  await expect(indicator).toHaveClass(/unsaved/);
+
+  // Revenir à la valeur enregistrée doit éteindre l'indicateur : c'est ce qu'un
+  // simple drapeau `dirty = true` posé sur chaque événement ne saurait pas faire.
+  await setSize(initialSize);
+  await expect(indicator).not.toHaveClass(/unsaved/);
+
+  // Déplacer la carte n'est pas un réglage de style : le centre et le zoom
+  // courants sont exclus de la comparaison.
+  await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    app.getMap().getView().setCenter(ol.proj.fromLonLat([-4.4860, 48.3905]));
+  });
+  await setSize(initialSize);
+  await page.waitForTimeout(600); // au-delà du debounce de 300 ms
+  await expect(indicator).not.toHaveClass(/unsaved/);
+});
+
+
 test('basculer manuellement en mode icône garde la méta sprite et un seul redraw', async ({ page }) => {
   const toggled = await page.evaluate(async () => {
     const app = await import('/static/js/index.js');

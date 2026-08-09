@@ -53,13 +53,15 @@ class ProfileManager {
     // puis de toucher un champ de style sans rapport fait apparaître le profil
     // comme "modifié" alors que rien de pertinent n'a changé. `saveCurrentAsProfile`
     // capture néanmoins bien la vue courante : seule la détection "dirty" l'ignore.
+    //
+    // L'exclusion passe par le `replacer` de JSON.stringify : une seule passe de
+    // sérialisation, là où un clone profond (parse(stringify(...))) suivi d'une
+    // seconde sérialisation en faisait trois pour le même résultat. Ces deux
+    // clés n'existent que sous `map`, aucune autre valeur n'est concernée.
     _dirtySnapshot(settings) {
-        const clone = JSON.parse(JSON.stringify(settings || {}));
-        if (clone.map) {
-            delete clone.map.default_center;
-            delete clone.map.default_zoom;
-        }
-        return JSON.stringify(clone);
+        return JSON.stringify(settings || {}, (key, value) => (
+            key === 'default_center' || key === 'default_zoom' ? undefined : value
+        ));
     }
 
     bindEvents() {
@@ -560,7 +562,17 @@ class ProfileManager {
         this.updateCurrentProfileIndicator();
     }
 
-    // Écoute les changements des contrôles de style pour détecter les modifications non sauvegardées
+    // Écoute les changements des contrôles de style pour détecter les modifications
+    // non sauvegardées.
+    //
+    // Les événements DOM ne servent qu'à savoir QUAND recalculer : l'état comparé
+    // est lu dans pkg.options (cf. loadCurrentSettings). On compare au lieu de
+    // poser un simple `dirty = true` parce que la comparaison sait aussi ÉTEINDRE
+    // l'indicateur quand l'utilisateur revient à la valeur enregistrée, et parce
+    // qu'un contrôle touché ne signifie pas une valeur changée (réouverture d'un
+    // select, saisie annulée). Le recalcul est débouncé et ne fait plus, depuis
+    // que l'état est centralisé, que quelques lectures d'options et une
+    // sérialisation — plus les ~30 lectures DOM d'avant.
     _bindDirtyTracking() {
         const container = document.getElementById('style');
         if (!container) {
@@ -573,9 +585,11 @@ class ProfileManager {
         }
         let debounceTimer = null;
         const recompute = () => {
+            // Sans profil courant, l'indicateur n'affiche rien : inutile de
+            // programmer un recalcul dont le résultat ne serait pas utilisé.
+            if (!this.currentProfile) return;
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(() => {
-                if (!this.currentProfile) return;
                 this.loadCurrentSettings();
                 const dirty = this._dirtySnapshot(this.currentSettings) !== this._lastSavedSnapshot;
                 if (dirty !== this.hasUnsavedChanges) {
