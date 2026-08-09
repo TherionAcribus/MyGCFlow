@@ -748,6 +748,7 @@ export function addMaps() {
     });
     map.addLayer(stamenTonerLayer);
     stamenTonerLayer.setVisible(false);
+    stamenTonerLayerName = null; // source provisoire : toujours remplacée ci-dessous
     refreshStamenTonerMap(defaultSettings.stamenToner);
     basemaps.stamenToner = { layer: stamenTonerLayer, selectMenu: pkg.selectStamenTonerMapMenu };
 
@@ -799,17 +800,39 @@ export function refreshVectorMap(newValues){
 }
 
 
+// Nom de layer Stadia actuellement posé sur stamenTonerLayer, pour éviter de
+// recréer une source identique. Reste null tant que refreshStamenTonerMap()
+// n'a pas remplacé la source provisoire créée par addMaps().
+let stamenTonerLayerName = null;
+
 // rafraichit la carte StamenToner quand on change ses proprietés
 export function refreshStamenTonerMap(newValues){
     let layerName;
-    if (newValues.type == "light") {
-        layerName = 'stamen_toner_lite';
-    } else if (newValues.type == "dark") {
+    if (newValues && newValues.type == "dark") {
         layerName = 'stamen_toner';
+    } else if (newValues && newValues.type == "light") {
+        layerName = 'stamen_toner_lite';
+    } else {
+        // Variante inconnue (profil corrompu, valeur obsolète...) : replier sur
+        // le clair, comme switchLayer() replie sur OSM. Sans ce repli, layerName
+        // restait undefined et la source Stadia produite était invalide (aucune
+        // tuile, aucun message). On normalise aussi l'option elle-même : c'est
+        // pkg.options.map.stamenToner qui nous est passé, donc la source de
+        // vérité cesse de porter la valeur invalide (boutons du menu compris).
+        console.warn(`refreshStamenTonerMap: variante Toner inconnue "${newValues && newValues.type}", repli sur light`);
+        layerName = 'stamen_toner_lite';
+        if (newValues) newValues.type = 'light';
     }
+
+    // Une source Stadia identique n'apporterait rien et jetterait le cache de
+    // tuiles déjà chargées (rechargement complet à chaque appel, alors que
+    // refreshStamenTonerMap() est aussi appelée à l'application d'un profil).
+    if (layerName === stamenTonerLayerName) return;
+
     const newSource = new ol.source.StadiaMaps({layer: layerName});
     watchTileErrors(newSource); // setSource() ci-dessous perd les écouteurs de l'ancienne source
     stamenTonerLayer.setSource(newSource);
+    stamenTonerLayerName = layerName;
 }
 
 

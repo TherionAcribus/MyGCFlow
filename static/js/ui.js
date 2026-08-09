@@ -2871,7 +2871,10 @@ function changeButtonsStamenToner(style){
     if (style == "dark"){
         btnStamenTonerLight.classList.remove('disabled');
         btnStamenTonerDark.classList.add('disabled');
-    } else if (style == "light"){
+    } else {
+        // Tout ce qui n'est pas "dark" est traité comme clair, comme le repli de
+        // refreshStamenTonerMap() : une variante inconnue laissait sinon les deux
+        // boutons dans l'état précédent, en contradiction avec la carte affichée.
         btnStamenTonerLight.classList.add('disabled');
         btnStamenTonerDark.classList.remove('disabled');
     }
