@@ -1225,22 +1225,10 @@ export function init_ui() {
     // textAreas
     
 
-    // ------- CARTE VECTORIELLE -------
-
-    // couleur de trait par défaut
-    if (cpStrokeColor) cpStrokeColor.value = pkg.options.map.vectorMap.strokeColor;
-    // couleur de remplissage par défaut
-    if (cpFillColor) cpFillColor.value = pkg.options.map.vectorMap.fillColor;
-    // couleur de fond par défaut
-    if (cpBackgroundColor) cpBackgroundColor.value = pkg.options.map.vectorMap.background;
-    // largeur de trait par défaut
-    if (strokeWidth) strokeWidth.value = pkg.options.map.vectorMap.strokeWidth;
-
-    // Mettre à jour l'affichage de la valeur du slider
-    updateStrokeWidthValue();
-    // ------- CARTE TONER -------
-    // deselectionne le bouton par défaut
-    changeButtonsStamenToner(pkg.options.map.stamenToner.type);
+    // ------- CARTES VECTORIELLE ET TONER -------
+    // Les contrôles sont remplis depuis pkg.options.map (valeurs par défaut ici,
+    // valeurs du profil lors d'un chargement de profil).
+    syncMapOptionsUI();
 
     // Initialiser l'interface des paramètres (enregistrement)
     initOptionsUI();
@@ -2828,7 +2816,12 @@ function changecpBackgroundColor() {
 
 // changement de largeur de trait
 function changestrokeWidth() {
-    pkg.options.map.vectorMap.strokeWidth = strokeWidth.value;
+    // parseFloat : la valeur d'un <input range> est une chaîne. Stocker un nombre
+    // garde le même type que les valeurs par défaut (defaultValues.json) et que
+    // les profils, sinon la comparaison "modifications non enregistrées" (qui
+    // sérialise pkg.options.map) voit "0.6" ≠ 0.6 et signale un faux changement.
+    const width = parseFloat(strokeWidth.value);
+    pkg.options.map.vectorMap.strokeWidth = Number.isFinite(width) ? width : 0;
     pkg.refreshVectorMap(pkg.options.map.vectorMap);
 }
 
@@ -2874,6 +2867,7 @@ function changeStamenTonerStyle(){
 
 // selectionne/deselectionne les boutons pour le Sous menu Stamen Toner au démarrage et au clic sur un des boutons
 function changeButtonsStamenToner(style){
+    if (!btnStamenTonerLight || !btnStamenTonerDark) return;
     if (style == "dark"){
         btnStamenTonerLight.classList.remove('disabled');
         btnStamenTonerDark.classList.add('disabled');
@@ -2881,7 +2875,25 @@ function changeButtonsStamenToner(style){
         btnStamenTonerLight.classList.add('disabled');
         btnStamenTonerDark.classList.remove('disabled');
     }
-}   
+}
+
+// Reflète pkg.options.map (la source de vérité de l'état carte) dans les
+// contrôles de l'onglet Style. N'écrit QUE le DOM : ne modifie aucune option et
+// ne rafraîchit pas la carte, pour rester utilisable aussi bien au démarrage
+// (init_ui) qu'à l'application d'un profil, sans dupliquer les affectations.
+export function syncMapOptionsUI(){
+    const vectorMap = pkg.options?.map?.vectorMap;
+    if (vectorMap) {
+        if (cpStrokeColor) cpStrokeColor.value = vectorMap.strokeColor;
+        if (cpFillColor) cpFillColor.value = vectorMap.fillColor;
+        if (cpBackgroundColor) cpBackgroundColor.value = vectorMap.background;
+        if (strokeWidth) strokeWidth.value = vectorMap.strokeWidth;
+        updateStrokeWidthValue();
+    }
+
+    const stamenToner = pkg.options?.map?.stamenToner;
+    if (stamenToner && stamenToner.type) changeButtonsStamenToner(stamenToner.type);
+}
 
 
 // -------------CHANGEMENT DES CARTES ----------------

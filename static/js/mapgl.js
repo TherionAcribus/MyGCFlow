@@ -889,12 +889,30 @@ function buttonSwitchLayer(e) {
 
 // permet de switcher sur la bonne cartographie en fonction du choix fait
 export function switchLayer(layerName) {
-    if (!basemaps[layerName]) {
+    const basemapsReady = Object.keys(basemaps).length > 0;
+
+    if (basemapsReady && !basemaps[layerName]) {
         // Nom de couche inconnu (profil corrompu, valeur obsolète en
         // localStorage...) : replier sur OSM plutôt que de laisser la carte
         // entièrement vide sans aucun message.
         console.warn(`switchLayer: nom de couche inconnu "${layerName}", repli sur OSM`);
         layerName = 'OSM';
+    }
+
+    // pkg.options.map.default est LA source de vérité du fond actif : c'est ici
+    // qu'elle est écrite, et nulle part ailleurs. Les lecteurs (profils,
+    // selectDefaultCarto()) n'ont donc jamais à déduire l'état de la carte des
+    // classes CSS des boutons ou de la visibilité des panneaux d'options — une
+    // heuristique qui pouvait se tromper tant qu'une transition CSS n'était pas
+    // terminée. L'écriture a lieu avant le rendu pour que l'état reste correct
+    // même si les couches ne sont pas encore créées.
+    if (pkg.options && pkg.options.map) pkg.options.map.default = layerName;
+
+    if (!basemapsReady) {
+        // addMaps() pas encore appelé : l'option écrite ci-dessus suffit, c'est
+        // elle que liront addMaps() puis selectDefaultCarto() au démarrage.
+        console.warn('switchLayer: fonds de carte pas encore créés, affichage différé au démarrage de la carte');
+        return;
     }
 
     for (const id in basemaps) {

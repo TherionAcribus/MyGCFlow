@@ -1,50 +1,41 @@
-// Script de test pour vérifier la détection des providers de carte
-console.log('🗺️ Test détection provider de carte - VERSION AMÉLIORÉE');
+// Script de test manuel : vérifie l'état carte tel que le lisent les profils.
+// L'état carte n'est plus déduit du DOM (classe 'disabled' des boutons,
+// visibilité des panneaux d'options) : sa source de vérité est pkg.options.map,
+// écrite par switchLayer() et par les gestionnaires d'options de ui.js.
+// Le DOM n'en est qu'un reflet — d'où la vérification de cohérence ci-dessous.
+// Couverture automatisée équivalente : tests/e2e/map-source-of-truth.spec.mjs
+console.log('🗺️ Test état carte (source de vérité : pkg.options.map)');
 
-// Attendre que le DOM soit chargé
 document.addEventListener('DOMContentLoaded', function() {
     console.log('📋 DOM chargé');
 
-    setTimeout(function() {
-        // Tester la fonction loadCurrentSettings du profileManager
+    setTimeout(async function() {
+        const app = await import('/static/js/index.js');
+
+        // 1. La source de vérité
+        console.log('🔍 pkg.options.map:', JSON.parse(JSON.stringify(app.options.map)));
+
+        // 2. Ce qu'en lit le gestionnaire de profils
         if (window.profileManager && window.profileManager.loadCurrentSettings) {
-            console.log('✅ Fonction loadCurrentSettings disponible');
-
-            console.log('🔍 Test récupération paramètres actuels (incluant carte)...');
             window.profileManager.loadCurrentSettings();
-
-            // Attendre un peu pour voir les logs
-            setTimeout(() => {
-                console.log('🎯 Test terminé - Vérifiez les logs pour voir le provider détecté');
-            }, 500);
-
+            console.log('🎯 Profil - paramètres carte:', window.profileManager.currentSettings.map);
         } else {
-            console.log('❌ Fonction loadCurrentSettings non disponible');
+            console.log('❌ profileManager.loadCurrentSettings non disponible');
         }
 
-        // Vérifier aussi manuellement l'état des boutons avec la bonne classe 'disabled'
-        console.log('🔍 Vérification manuelle des boutons carte (classe "disabled"):');
-        const mapButtons = ['OSM', 'stamenToner', 'vectorMap', 'watercolor'];
-
-        mapButtons.forEach(btnId => {
+        // 3. Cohérence du reflet DOM : un seul bouton doit être 'disabled',
+        //    celui du fond actif.
+        const expected = app.options.map.default;
+        ['OSM', 'stamenToner', 'vectorMap', 'watercolor'].forEach(btnId => {
             const btn = document.getElementById(btnId);
-            if (btn) {
-                const classes = Array.from(btn.classList);
-                const hasDisabled = classes.includes('disabled');
-                console.log(`  ${btnId}: ${hasDisabled ? 'ACTIF (disabled)' : 'inactif'} (classes: ${classes.join(', ')})`);
-            } else {
+            if (!btn) {
                 console.log(`  ${btnId}: NON TROUVÉ`);
+                return;
             }
+            const selected = btn.classList.contains('disabled');
+            const ok = selected === (btnId === expected);
+            console.log(`  ${btnId}: ${selected ? 'sélectionné' : 'inactif'} ${ok ? '✅' : '❌ incohérent avec les options'}`);
         });
-
-        // Vérifier aussi les options de carte
-        console.log('🔍 Vérification des options de carte:');
-        const vectorOptions = document.getElementById('vectorMapOptions');
-        const tonerOptions = document.getElementById('tonerMapOptions');
-
-        console.log(`  vectorMapOptions: ${vectorOptions ? vectorOptions.style.display : 'non trouvé'}`);
-        console.log(`  tonerMapOptions: ${tonerOptions ? tonerOptions.style.display : 'non trouvé'}`);
-
     }, 1000); // Attendre que tout soit initialisé
 });
 

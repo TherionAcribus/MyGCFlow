@@ -832,111 +832,53 @@ class ProfileManager {
     loadCurrentSettings() {
         // Charger les paramètres actuels depuis l'interface
         try {
-            // Paramètres de la carte - détecter le fournisseur actif
-            let currentTileProvider = 'OSM'; // Valeur par défaut
-            // Distingue "OSM trouvé actif" de "rien trouvé, repli sur OSM" : comparer
-            // currentTileProvider === 'OSM' ne peut pas faire cette distinction (bug
-            // vécu : ça déclenchait le repli par visibilité même quand OSM était
-            // correctement détecté, et ce repli pouvait le remplacer à tort par
-            // 'stamenToner' tant que le panneau d'options Toner de l'écran précédent
-            // n'avait pas fini sa transition CSS de fermeture).
-            let foundActiveButton = false;
-
-            // Vérifier quel bouton de carte est actif (celui qui a la classe 'disabled' - logique de l'app)
-            const mapButtons = ['OSM', 'stamenToner', 'vectorMap', 'watercolor'];
-
-            // Log de l'état de tous les boutons
-            dbgProfiles('🔍 État des boutons carte:');
-            mapButtons.forEach(btnId => {
-                const btn = document.getElementById(btnId);
-                const isDisabled = btn && btn.classList.contains('disabled');
-                dbgProfiles(`  ${btnId}: ${isDisabled ? 'ACTIF (disabled)' : 'inactif'}`);
-            });
-
-            for (const buttonId of mapButtons) {
-                const button = document.getElementById(buttonId);
-                if (button && button.classList.contains('disabled')) {
-                    dbgProfiles('🎯 Bouton actif trouvé:', buttonId);
-                    // Les vrais noms des providers correspondent aux IDs des boutons
-                    const idToProvider = {
-                        'OSM': 'OSM',
-                        'stamenToner': 'stamenToner',
-                        'vectorMap': 'vectorMap',
-                        'watercolor': 'watercolor'
-                    };
-                    currentTileProvider = idToProvider[buttonId] || 'OSM';
-                    foundActiveButton = true;
-                    break;
-                }
-            }
-
-            // Essayer aussi de détecter via d'autres indices (classes CSS, etc.)
-            // uniquement si aucun bouton actif n'a été trouvé.
-            if (!foundActiveButton) {
-                dbgProfiles('Aucun bouton carte trouvé disabled, utilisation valeur par défaut OSM');
-                dbgProfiles('🔍 Recherche par visibilité des options...');
-
-                // Vérifier si une option spécifique est visible
-                const vectorOptions = document.getElementById('vectorMapOptions');
-                const tonerOptions = document.getElementById('tonerMapOptions');
-
-                dbgProfiles('  vectorMapOptions:', vectorOptions ? vectorOptions.style.display : 'non trouvé');
-                dbgProfiles('  tonerMapOptions:', tonerOptions ? tonerOptions.style.display : 'non trouvé');
-
-                // Détection par visibilité des options
-                if (vectorOptions && vectorOptions.style.display !== 'none') {
-                    dbgProfiles('🎯 Options vectorMap visibles, changement vers vectorMap');
-                    currentTileProvider = 'vectorMap';
-                } else if (tonerOptions && tonerOptions.style.display !== 'none') {
-                    dbgProfiles('🎯 Options toner visibles, changement vers stamenToner');
-                    currentTileProvider = 'stamenToner';
-                } else {
-                    dbgProfiles('Aucune option visible trouvée');
-                }
-            }
+            // Paramètres de la carte : lus directement dans pkg.options.map, seule
+            // source de vérité de l'état carte. switchLayer() y écrit le fond actif
+            // et les gestionnaires de ui.js les options vectorMap/Toner. On ne
+            // déduit plus rien du DOM (classe 'disabled' des boutons, visibilité des
+            // panneaux d'options) : ces indices n'étaient pas fiables tant qu'une
+            // transition CSS n'était pas terminée.
+            const mapOptions = pkg.options?.map || {};
 
             const mapSettings = {
-                tile_provider: currentTileProvider,
+                tile_provider: mapOptions.default || 'OSM',
                 default_center: [46.603354, 1.888334], // Centre de la France
                 default_zoom: 6
             };
 
-            // Options spécifiques par carte (souple)
-            try {
-                // Vector map options (si UI présente)
-                const strokeColorEl = document.getElementById('fieldVectorMapStrokeColor');
-                const fillColorEl = document.getElementById('fieldVectorMapFillColor');
-                const backgroundColorEl = document.getElementById('fieldVectorMapBackgroundColor');
-                const strokeWidthEl = document.getElementById('fieldVectorMapStrokeWidth');
-                if (strokeColorEl || fillColorEl || backgroundColorEl || strokeWidthEl) {
-                    mapSettings.vectorOptions = {
-                        strokeColor: strokeColorEl ? strokeColorEl.value : undefined,
-                        fillColor: fillColorEl ? fillColorEl.value : undefined,
-                        backgroundColor: backgroundColorEl ? backgroundColorEl.value : undefined,
-                        strokeWidth: strokeWidthEl ? parseFloat(strokeWidthEl.value) : undefined,
-                    };
-                }
-
-                // Toner options: déterminer le variant via les boutons actifs
-                const lightBtn = document.getElementById('stamenTonerLight');
-                const darkBtn = document.getElementById('stamenTonerDark');
-                let variant = undefined;
-                if (lightBtn && lightBtn.classList.contains('disabled')) variant = 'light';
-                if (darkBtn && darkBtn.classList.contains('disabled')) variant = 'dark';
-                if (variant) {
-                    mapSettings.tonerOptions = { variant };
-                }
-            } catch (e) {
-                console.warn('Lecture options spécifiques carte: non bloquant', e);
+            const vectorMap = mapOptions.vectorMap;
+            if (vectorMap) {
+                // Le profil sérialise la couleur de fond sous 'backgroundColor' là
+                // où les options la nomment 'background'.
+                const width = parseFloat(vectorMap.strokeWidth);
+                mapSettings.vectorOptions = {
+                    strokeColor: vectorMap.strokeColor,
+                    fillColor: vectorMap.fillColor,
+                    backgroundColor: vectorMap.background,
+                    strokeWidth: Number.isFinite(width) ? width : undefined,
+                };
             }
 
-            dbgProfiles('Carte détectée - Provider:', currentTileProvider, 'Settings:', mapSettings);
+            const stamenToner = mapOptions.stamenToner;
+            if (stamenToner && stamenToner.type) {
+                mapSettings.tonerOptions = { variant: stamenToner.type };
+            }
 
-            // Si la carte est disponible, récupérer la vue actuelle
-            if (window.map && typeof window.map.getView === 'function') {
-                const view = window.map.getView();
-                const center = ol.proj.toLonLat(view.getCenter());
-                mapSettings.default_center = [center[0], center[1]];
+            dbgProfiles('Carte lue depuis pkg.options.map - Provider:', mapSettings.tile_provider, 'Settings:', mapSettings);
+
+            // Si la carte est disponible, récupérer la vue actuelle.
+            // pkg.getMap() et non window.map : `window.map` est le <div id="map">
+            // (accès nommé du navigateur sur les id), pas la carte OpenLayers. Il
+            // est donc toujours "vrai" mais n'a pas de getView() — la vue courante
+            // n'était en réalité jamais capturée et tous les profils enregistraient
+            // le centre de repli ci-dessus.
+            const olMap = typeof pkg.getMap === 'function' ? pkg.getMap() : null;
+            if (olMap && typeof olMap.getView === 'function') {
+                const view = olMap.getView();
+                const lonLat = ol.proj.toLonLat(view.getCenter());
+                // Convention de l'app pour un centre stocké : [latitude, longitude]
+                // (cf. applyMapDefaults() et les profils fournis côté serveur).
+                mapSettings.default_center = [lonLat[1], lonLat[0]];
                 mapSettings.default_zoom = view.getZoom();
             }
 
@@ -1109,11 +1051,10 @@ class ProfileManager {
         }
     }
 
-    // Async : attend que la carte ait fini de s'appliquer (clic + options
-    // spécifiques après leur délai) avant de considérer le profil comme
-    // pleinement appliqué. Les appelants qui prennent un instantané "état
-    // sauvegardé" juste après (ex: loadProfile -> _markSaved) doivent
-    // `await` cet appel pour ne pas capturer un état carte encore transitoire.
+    // Reste async pour ses appelants, mais l'application de la carte est
+    // désormais synchrone (pkg.options.map écrit directement, sans clic ni
+    // délai) : un instantané "état sauvegardé" pris juste après (ex:
+    // loadProfile -> _markSaved) ne peut plus capturer un état transitoire.
     async applyProfile(profile) {
         dbgProfiles('🎯 APPLICATION PROFIL - Profil complet chargé:', {
             profile_name: profile.name,
@@ -1131,9 +1072,7 @@ class ProfileManager {
         if (profile.map) {
             dbgProfiles('Application paramètres carte:', profile.map);
             // Appliquer les paramètres de carte
-            if (typeof applyMapSettings === 'function') {
-                await applyMapSettings(profile.map);
-            }
+            applyMapSettings(profile.map);
         }
 
         if (profile.points) {
@@ -1436,167 +1375,100 @@ class ProfileManager {
 }
 
 // Fonctions d'application des paramètres (appelées depuis applyProfile)
-// Nombre maximal de tentatives d'attente de l'initialisation de la carte
-// (10 x 500ms = 5s). Sans cette borne, un profil chargé avant que la carte
-// ne soit prête (ou si son initialisation échoue) relance ce setTimeout
-// indéfiniment, pour toujours.
-const MAP_READY_MAX_RETRIES = 10;
 
-// Retourne une Promise résolue une fois la carte effectivement mise à jour
-// (y compris le clic + les options spécifiques appliquées après leur délai
-// de 100ms). Sans ça, l'appelant (applyProfile) ne peut pas savoir quand
-// l'application est réellement terminée, et un instantané "profil sauvegardé"
-// pris trop tôt (avant ce délai) capture un état carte encore incomplet —
-// c'est ce qui provoquait un profil marqué "modifié" juste après son chargement.
-function applyMapSettings(mapOptions, attempt = 0) {
-    return new Promise((resolve) => {
-        try {
-            dbgProfiles('🎯 Application carte - Provider demandé:', mapOptions.tile_provider);
+// Applique un profil à la carte. Synchrone : on écrit d'abord pkg.options.map
+// (la source de vérité), puis on appelle directement switchLayer() et les
+// fonctions de rafraîchissement. Plus de .click() sur les boutons ni de
+// setTimeout d'attente : l'état ne transite plus par le DOM, il n'y a donc plus
+// rien à attendre, et l'instantané "profil sauvegardé" pris juste après ne peut
+// plus capturer un état carte encore incomplet.
+function applyMapSettings(mapOptions) {
+    try {
+        dbgProfiles('🎯 Application carte - Provider demandé:', mapOptions.tile_provider);
 
-            // Vérifier si la carte est initialisée
-            if (!window.map) {
-                if (attempt >= MAP_READY_MAX_RETRIES) {
-                    console.error('❌ Carte toujours non initialisée après', MAP_READY_MAX_RETRIES, 'tentatives, abandon de l\'application des paramètres carte');
-                    resolve();
-                    return;
-                }
-                console.warn('⚠️ Carte non initialisée, report de l\'application des paramètres carte');
-                // Reporter l'application dans 500ms
-                setTimeout(() => { applyMapSettings(mapOptions, attempt + 1).then(resolve); }, 500);
-                return;
-            }
+        // 1. Options spécifiques (vectorMap / Toner) écrites dans pkg.options.map.
+        //    Toujours les deux, quel que soit le fond actif : elles font partie du
+        //    profil et doivent être correctes si l'utilisateur bascule ensuite sur
+        //    l'autre fond, ou s'il resauvegarde le profil.
+        applyMapSpecificOptions(mapOptions);
 
-            // Changer le fournisseur de carte
-            // Les boutons de choix de carte sont des <button id="OSM|stamenToner|vectorMap|watercolor">
-            // (migration Materialize -> Bootstrap 5) : cibler par id plutôt que par tag pour ne pas
-            // dépendre d'un élément <a> qui n'existe plus dans le DOM actuel.
-            const mapButton = document.getElementById(mapOptions.tile_provider);
-            dbgProfiles('🎯 Bouton carte trouvé:', !!mapButton, 'ID:', mapOptions.tile_provider);
-
-            if (mapButton) {
-                dbgProfiles('🎯 Clic sur le bouton carte:', mapOptions.tile_provider);
-                mapButton.click();
-
-                // Attendre un peu puis appliquer les options spécifiques
-                setTimeout(() => {
-                    applyMapSpecificOptions(mapOptions.tile_provider, mapOptions);
-                    resolve();
-                }, 100);
-            } else {
-                console.error('❌ Bouton carte non trouvé pour provider:', mapOptions.tile_provider);
-                resolve();
-            }
-
-            // Changer la vue (centre et zoom) - si la carte est initialisée
-            if (window.map && typeof window.map.getView === 'function') {
-                const view = window.map.getView();
-                view.setCenter(ol.proj.fromLonLat([mapOptions.default_center[0], mapOptions.default_center[1]]));
-                view.setZoom(mapOptions.default_zoom);
-            }
-
-            dbgProfiles('✅ Paramètres de carte appliqués:', mapOptions);
-        } catch (error) {
-            console.error('❌ Erreur lors de l\'application des paramètres de carte:', error);
-            resolve();
+        // 2. Fond de carte. switchLayer() écrit pkg.options.map.default et met à
+        //    jour couches + boutons ; il reste sans effet visuel tant que les
+        //    couches n'existent pas, l'option écrite étant alors relue au démarrage.
+        if (typeof pkg.switchLayer === 'function') {
+            pkg.switchLayer(mapOptions.tile_provider);
         }
-    });
+
+        // 3. Reflet des options dans les contrôles de l'onglet Style.
+        if (typeof pkg.syncMapOptionsUI === 'function') {
+            pkg.syncMapOptionsUI();
+        }
+
+        // 4. Rendu des couches concernées (nécessite une carte initialisée).
+        //    pkg.getMap() et non window.map : ce dernier est le <div id="map">,
+        //    pas la carte OpenLayers (cf. loadCurrentSettings).
+        const olMap = typeof pkg.getMap === 'function' ? pkg.getMap() : null;
+        if (olMap) {
+            if (typeof pkg.refreshVectorMap === 'function' && pkg.options?.map?.vectorMap) {
+                pkg.refreshVectorMap(pkg.options.map.vectorMap);
+            }
+            if (typeof pkg.refreshStamenTonerMap === 'function' && pkg.options?.map?.stamenToner?.type) {
+                pkg.refreshStamenTonerMap(pkg.options.map.stamenToner);
+            }
+
+            // Vue (centre et zoom). Le centre est stocké en [latitude, longitude]
+            // (convention de l'app), fromLonLat() attend l'ordre inverse.
+            const center = mapOptions.default_center;
+            if (typeof olMap.getView === 'function' && Array.isArray(center) && center.length === 2) {
+                const lat = parseFloat(center[0]);
+                const lon = parseFloat(center[1]);
+                const view = olMap.getView();
+                if (Number.isFinite(lat) && Number.isFinite(lon)) {
+                    view.setCenter(ol.proj.fromLonLat([lon, lat]));
+                }
+                const zoom = parseFloat(mapOptions.default_zoom);
+                if (Number.isFinite(zoom)) view.setZoom(zoom);
+            }
+        } else {
+            console.warn('⚠️ Carte non initialisée : options carte enregistrées, elles seront appliquées à sa création');
+        }
+
+        dbgProfiles('✅ Paramètres de carte appliqués:', mapOptions);
+    } catch (error) {
+        console.error('❌ Erreur lors de l\'application des paramètres de carte:', error);
+    }
 }
 
-function applyMapSpecificOptions(tileProvider, mapOptions) {
+// Recopie les options spécifiques du profil (snake_case) dans pkg.options.map
+// (camelCase). N'écrit ni le DOM ni les couches : syncMapOptionsUI() et les
+// fonctions refresh* s'en chargent ensuite à partir de ces mêmes options.
+function applyMapSpecificOptions(mapOptions) {
     try {
-        dbgProfiles('🎯 Application options spécifiques pour:', tileProvider);
-
-        if (tileProvider === 'vectorMap') {
-            // Options pour la carte vectorielle
-            const vectorOptions = document.getElementById('vectorMapOptions');
-            const v = mapOptions.vector_options || null;
-            dbgProfiles('🎯 Options vectorMap - element trouvé:', !!vectorOptions, 'options:', !!v);
-
-            if (vectorOptions && v) {
-                // Couleurs
-                const strokeColor = v.stroke_color;
-                if (strokeColor) {
-                    const strokeColorInput = document.getElementById('fieldVectorMapStrokeColor');
-                    if (strokeColorInput) {
-                        strokeColorInput.value = strokeColor;
-                        strokeColorInput.dispatchEvent(new Event('change'));
-                    }
-                }
-
-                const fillColor = v.fill_color;
-                if (fillColor) {
-                    const fillColorInput = document.getElementById('fieldVectorMapFillColor');
-                    if (fillColorInput) {
-                        fillColorInput.value = fillColor;
-                        fillColorInput.dispatchEvent(new Event('change'));
-                    }
-                }
-
-                const backgroundColor = v.background_color;
-                if (backgroundColor) {
-                    const bgColorInput = document.getElementById('fieldVectorMapBackgroundColor');
-                    if (bgColorInput) {
-                        bgColorInput.value = backgroundColor;
-                        bgColorInput.dispatchEvent(new Event('change'));
-                    }
-                }
-
-                const strokeWidth = v.stroke_width;
-                if (strokeWidth != null) {
-                    const strokeWidthInput = document.getElementById('fieldVectorMapStrokeWidth');
-                    if (strokeWidthInput) {
-                        const numWidth = typeof strokeWidth === 'string' ? parseFloat(strokeWidth) : strokeWidth;
-                        strokeWidthInput.value = numWidth;
-                        strokeWidthInput.dispatchEvent(new Event('input'));
-                    }
-                }
-
-                // Rafraîchir explicitement la carte vectorielle avec les nouvelles valeurs
-                const finalStrokeWidth = typeof strokeWidth === 'string' ? parseFloat(strokeWidth) : strokeWidth;
-
-                const vectorValues = {
-                    strokeColor: strokeColor,
-                    fillColor: fillColor,
-                    background: backgroundColor,
-                    strokeWidth: finalStrokeWidth
-                };
-                if (typeof pkg.refreshVectorMap === 'function') {
-                    dbgProfiles('🎯 Rafraîchissement carte vectorielle avec:', vectorValues);
-                    pkg.refreshVectorMap(vectorValues);
-                } else {
-                    console.warn('⚠️ Fonction refreshVectorMap non disponible');
-                }
-            }
-        } else if (tileProvider === 'stamenToner') {
-            // Options pour Stamen Toner
-            const tonerOptions = document.getElementById('tonerMapOptions');
-            const t = mapOptions.toner_options || null;
-            if (tonerOptions && t) {
-                const variant = t.variant;
-                if (variant === 'light') {
-                    const lightBtn = document.getElementById('stamenTonerLight');
-                    if (lightBtn) {
-                        lightBtn.click();
-                    }
-                } else if (variant === 'dark') {
-                    const darkBtn = document.getElementById('stamenTonerDark');
-                    if (darkBtn) {
-                        darkBtn.click();
-                    }
-                }
-
-                // Rafraîchir explicitement la carte toner avec les nouvelles valeurs
-                const tonerValues = { type: variant };
-                if (typeof pkg.refreshStamenTonerMap === 'function') {
-                    dbgProfiles('🎯 Rafraîchissement carte Stamen Toner avec:', tonerValues);
-                    pkg.refreshStamenTonerMap(tonerValues);
-                } else {
-                    console.warn('⚠️ Fonction refreshStamenTonerMap non disponible');
-                }
-            }
+        const target = pkg.options?.map;
+        if (!target) {
+            console.warn('⚠️ pkg.options.map indisponible, options spécifiques de carte ignorées');
+            return;
         }
 
-        dbgProfiles('Options spécifiques de carte appliquées pour:', tileProvider);
+        const v = mapOptions.vector_options;
+        if (v) {
+            const vectorMap = target.vectorMap || (target.vectorMap = {});
+            if (v.stroke_color) vectorMap.strokeColor = v.stroke_color;
+            if (v.fill_color) vectorMap.fillColor = v.fill_color;
+            if (v.background_color) vectorMap.background = v.background_color;
+            if (v.stroke_width != null) {
+                const width = parseFloat(v.stroke_width);
+                if (Number.isFinite(width)) vectorMap.strokeWidth = width;
+            }
+            dbgProfiles('🎯 Options vectorMap appliquées:', vectorMap);
+        }
+
+        const t = mapOptions.toner_options;
+        if (t && (t.variant === 'light' || t.variant === 'dark')) {
+            const stamenToner = target.stamenToner || (target.stamenToner = {});
+            stamenToner.type = t.variant;
+            dbgProfiles('🎯 Options Toner appliquées:', stamenToner);
+        }
     } catch (error) {
         console.error('Erreur lors de l\'application des options spécifiques de carte:', error);
     }
