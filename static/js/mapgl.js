@@ -127,11 +127,16 @@ let OSMLayer;
 let stamenWatercolorLayer;
 let stamenTonerLayer;
 let vectorTileLayer;
-// Registre des fonds de carte : { id: { layer, selectMenu } }. Peuplé dans
+// Registre des fonds de carte : { id: { layer, optionsPanelId } }. Peuplé dans
 // addMaps(). switchLayer() n'a plus besoin d'un branchement manuel par fond :
 // ajouter un fond de carte se fait en ajoutant une entrée ici (+ le bouton
 // correspondant dans menu_style.html), sans toucher switchLayer().
 const basemaps = {};
+
+function registerBasemap(id, layer, optionsPanelId = null) {
+    basemaps[id] = { layer, optionsPanelId };
+    pkg.registerMapMenu(id, optionsPanelId);
+}
 // couche de points
 let vectorLayer;
 let features;
@@ -730,7 +735,7 @@ export function addMaps() {
     });
     map.addLayer(OSMLayer);
     watchTileErrors(OSMLayer.getSource());
-    basemaps.OSM = { layer: OSMLayer, selectMenu: pkg.selectOSMMapMenu };
+    registerBasemap('OSM', OSMLayer);
 
     stamenWatercolorLayer = new ol.layer.Tile({
         source: new ol.source.StadiaMaps({layer: 'stamen_watercolor'})
@@ -738,7 +743,7 @@ export function addMaps() {
     map.addLayer(stamenWatercolorLayer);
     stamenWatercolorLayer.setVisible(false);
     watchTileErrors(stamenWatercolorLayer.getSource());
-    basemaps.watercolor = { layer: stamenWatercolorLayer, selectMenu: pkg.selectWatercolorMapMenu };
+    registerBasemap('watercolor', stamenWatercolorLayer);
 
     // Layer créé avec une source provisoire ; refreshStamenTonerMap() ci-dessous
     // pose la vraie source selon le type par défaut (light/dark), pour n'avoir
@@ -750,7 +755,7 @@ export function addMaps() {
     stamenTonerLayer.setVisible(false);
     stamenTonerLayerName = null; // source provisoire : toujours remplacée ci-dessous
     refreshStamenTonerMap(defaultSettings.stamenToner);
-    basemaps.stamenToner = { layer: stamenTonerLayer, selectMenu: pkg.selectStamenTonerMapMenu };
+    registerBasemap('stamenToner', stamenTonerLayer, 'tonerMapOptions');
 
     // Frontières mondiales servies en local (fichier statique, cf. static/json/) au
     // lieu du serveur de démonstration OpenLayers (ahocevar.com) : ce dernier n'offre
@@ -769,7 +774,7 @@ export function addMaps() {
 
     map.addLayer(vectorTileLayer);
     vectorTileLayer.setVisible(false);
-    basemaps.vectorMap = { layer: vectorTileLayer, selectMenu: pkg.selectVectorMapMenu };
+    registerBasemap('vectorMap', vectorTileLayer, 'vectorMapOptions');
 }
 
 // Construit le style de la carte vectorielle.
@@ -941,23 +946,7 @@ export function switchLayer(layerName) {
     for (const id in basemaps) {
         basemaps[id].layer.setVisible(id === layerName);
     }
-    basemaps[layerName].selectMenu();
-
-    // Mettre à jour l'état visuel des boutons de cartes
-    try {
-        const buttons = document.getElementsByClassName('changeMap');
-        for (let btn of buttons) {
-            if (btn && btn.classList) {
-                btn.classList.remove('is-selected');
-            }
-        }
-        const active = document.getElementById(layerName);
-        if (active && active.classList) {
-            active.classList.add('is-selected');
-        }
-    } catch (e) {
-        // fail safe : ne casse pas l'app si DOM non présent
-    }
+    pkg.selectMapMenu(layerName);
 }
 
 // Événement pour changer la couche de fond de carte

@@ -40,6 +40,42 @@ test('le fond actif est écrit dans les options, pas seulement dans le DOM', asy
 });
 
 
+test('le menu générique synchronise les quatre boutons et leurs panneaux d\'options', async ({ page }) => {
+  const cases = [
+    { layerName: 'vectorMap', optionsPanelId: 'vectorMapOptions' },
+    { layerName: 'stamenToner', optionsPanelId: 'tonerMapOptions' },
+    { layerName: 'watercolor', optionsPanelId: null },
+    { layerName: 'OSM', optionsPanelId: null },
+  ];
+
+  for (const selected of cases) {
+    await page.locator(`#${selected.layerName}`).click();
+
+    for (const candidate of cases) {
+      const button = page.locator(`#${candidate.layerName}`);
+      if (candidate.layerName === selected.layerName) {
+        await expect(button).toHaveClass(/disabled/);
+        await expect(button).toHaveClass(/is-selected/);
+      } else {
+        await expect(button).not.toHaveClass(/disabled/);
+        await expect(button).not.toHaveClass(/is-selected/);
+      }
+    }
+
+    for (const panelId of ['vectorMapOptions', 'tonerMapOptions']) {
+      const panel = page.locator(`#${panelId}`);
+      if (panelId === selected.optionsPanelId) {
+        await expect(panel).toBeVisible();
+        await expect(panel).toHaveClass(/show/);
+      } else {
+        await expect(panel).toBeHidden();
+        await expect(panel).not.toHaveClass(/show/);
+      }
+    }
+  }
+});
+
+
 test('loadCurrentSettings lit les options et ignore l\'état des boutons', async ({ page }) => {
   await page.locator('#stamenToner').click();
 

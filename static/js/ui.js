@@ -22,8 +22,6 @@ const DEBUG_UI = false;
 const dbgUi = (...args) => { if (DEBUG_UI) console.log(...args); };
 
 // Variables globales pour les éléments UI
-var btnOSM, btnWatercolor, btnStamenToner, btnVectorMap;
-var divVectorMapOptions, divTonerMapOptions;
 var btnStamenTonerLight, btnStamenTonerDark;
 var cpPointCenterColor, cpPointBorderColor;
 var radioFillColorPoint, radioborderColorPoint;
@@ -335,15 +333,6 @@ const publishedDatePickerEnd = document.getElementById('publishedDatePickerEnd')
 
 // MENU CARTES
 
-// boutons pour le choix des cartes
-    btnOSM = document.getElementById('OSM');
-    btnWatercolor = document.getElementById('watercolor');
-    btnStamenToner = document.getElementById('stamenToner');
-    btnVectorMap = document.getElementById('vectorMap');
-
-    // sous menu pour le choix des cartes
-    divVectorMapOptions = document.getElementById('vectorMapOptions');
-    divTonerMapOptions = document.getElementById('tonerMapOptions');
     btnStamenTonerLight = document.getElementById('stamenTonerLight');
     if (btnStamenTonerLight) {
         btnStamenTonerLight.addEventListener('click', function() {
@@ -2901,95 +2890,58 @@ export function syncMapOptionsUI(){
 
 // -------------CHANGEMENT DES CARTES ----------------
 
-export function selectVectorMapMenu(){
-    // Animation fluide avec classes CSS
-    if (divVectorMapOptions) {
-        divVectorMapOptions.style.display = 'block';
-        divVectorMapOptions.classList.add('show');
-    }
-    if (divTonerMapOptions) {
-        divTonerMapOptions.classList.remove('show');
-        // Délai pour l'animation avant de masquer complètement
-        setTimeout(() => {
-            if (divTonerMapOptions) divTonerMapOptions.style.display = 'none';
-        }, 300);
-    }
+// Registre DOM associé au registre des fonds de carte de mapgl.js.
+// Chaque entrée contient uniquement ce dont l'interface a besoin pour refléter
+// la sélection ; aucune nouvelle fonction n'est nécessaire pour un nouveau fond.
+const mapMenus = {};
+const mapOptionsHideTimers = new WeakMap();
 
-    // on reaffiche tous les boutons
-    unSelectAllMapsButtons();
-    // on selectionne (disables) le bouton de la carte en question
-    if (btnVectorMap) btnVectorMap.classList.add('disabled');
+export function registerMapMenu(layerName, optionsPanelId = null) {
+    mapMenus[layerName] = {
+        button: document.getElementById(layerName),
+        optionsPanel: optionsPanelId ? document.getElementById(optionsPanelId) : null,
+    };
 }
 
-export function selectOSMMapMenu(){
-    // Masquer toutes les options avec animation
-    if (divVectorMapOptions) {
-        divVectorMapOptions.classList.remove('show');
-        setTimeout(() => {
-            if (divVectorMapOptions) divVectorMapOptions.style.display = 'none';
+export function selectMapMenu(layerName) {
+    const selectedMenu = mapMenus[layerName];
+    if (!selectedMenu) {
+        console.warn(`selectMapMenu: fond de carte non enregistré "${layerName}"`);
+        return;
+    }
+
+    for (const [id, { button }] of Object.entries(mapMenus)) {
+        if (!button) continue;
+        const isSelected = id === layerName;
+        button.classList.toggle('disabled', isSelected);
+        button.classList.toggle('is-selected', isSelected);
+    }
+
+    const selectedPanel = selectedMenu.optionsPanel;
+    const optionsPanels = new Set(
+        Object.values(mapMenus)
+            .map(({ optionsPanel }) => optionsPanel)
+            .filter(Boolean)
+    );
+
+    for (const panel of optionsPanels) {
+        const pendingHide = mapOptionsHideTimers.get(panel);
+        if (pendingHide) clearTimeout(pendingHide);
+
+        if (panel === selectedPanel) {
+            panel.style.display = 'block';
+            panel.classList.add('show');
+            mapOptionsHideTimers.delete(panel);
+            continue;
+        }
+
+        panel.classList.remove('show');
+        const hideTimer = setTimeout(() => {
+            if (!panel.classList.contains('show')) panel.style.display = 'none';
+            mapOptionsHideTimers.delete(panel);
         }, 300);
+        mapOptionsHideTimers.set(panel, hideTimer);
     }
-    if (divTonerMapOptions) {
-        divTonerMapOptions.classList.remove('show');
-        setTimeout(() => {
-            if (divTonerMapOptions) divTonerMapOptions.style.display = 'none';
-        }, 300);
-    }
-
-    unSelectAllMapsButtons();
-    if (btnOSM) btnOSM.classList.add('disabled');
-}
-
-export function selectWatercolorMapMenu(){
-    // Masquer toutes les options avec animation
-    if (divVectorMapOptions) {
-        divVectorMapOptions.classList.remove('show');
-        setTimeout(() => {
-            if (divVectorMapOptions) divVectorMapOptions.style.display = 'none';
-        }, 300);
-    }
-    if (divTonerMapOptions) {
-        divTonerMapOptions.classList.remove('show');
-        setTimeout(() => {
-            if (divTonerMapOptions) divTonerMapOptions.style.display = 'none';
-        }, 300);
-    }
-
-    unSelectAllMapsButtons();
-    if (btnWatercolor) btnWatercolor.classList.add('disabled');
-}
-
-export function selectStamenTonerMapMenu(){
-    dbgUi('Affichage des options Toner avec animation');
-
-    if (divTonerMapOptions) {
-        divTonerMapOptions.style.display = 'block';
-        divTonerMapOptions.classList.add('show');
-        dbgUi('Options Toner affichées avec animation');
-    } else {
-        console.warn('divTonerMapOptions non trouvé');
-    }
-
-    if (divVectorMapOptions) {
-        divVectorMapOptions.classList.remove('show');
-        // Délai pour l'animation avant de masquer complètement
-        setTimeout(() => {
-            if (divVectorMapOptions) divVectorMapOptions.style.display = 'none';
-        }, 300);
-    }
-
-    unSelectAllMapsButtons();
-    if (btnStamenToner) {
-        btnStamenToner.classList.add('disabled');
-    }
-}
-
-// permet de deselectionner tous les boutons de cartes avant de reselectionner le bon
-function unSelectAllMapsButtons(){
-    btnOSM.classList.remove('disabled');
-    btnWatercolor.classList.remove('disabled');
-    btnStamenToner.classList.remove('disabled');
-    btnVectorMap.classList.remove('disabled');
 }
 
 
