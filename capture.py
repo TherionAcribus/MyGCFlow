@@ -11,24 +11,70 @@ import time
 from werkzeug.utils import secure_filename
 
 
+CAPTURED_DIR = 'captured'
+
+
+def _to_int(value, default=0):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _save_uploaded_image(image_file, counter, number_size):
+    """Écrit une image reçue en multipart dans captured/ et renvoie son nom de fichier.
+
+    Le nom vient du client : `secure_filename` neutralise les traversées de chemin
+    (..\\..\\x.webp) et peut renvoyer une chaîne vide sur un nom entièrement
+    invalide → on retombe alors sur le compteur.
+    """
+    image_filename = secure_filename(image_file.filename or '')
+    if not image_filename:
+        image_filename = f'image_{str(counter).zfill(number_size)}.webp'
+
+    os.makedirs(CAPTURED_DIR, exist_ok=True)
+    image_file.save(os.path.join(CAPTURED_DIR, image_filename))
+    return image_filename
+
+
+def upload_images(request):
+    """Réception groupée : plusieurs images dans un seul multipart.
+
+    Le mode « images » produit une frame par capture (potentiellement des milliers) :
+    une requête par image sature le serveur de dev Flask (mono-thread) en overhead
+    HTTP pur. Un lot de N images ne coûte plus qu'un aller-retour.
+
+    L'écriture étant nommée par compteur, un nouvel essai du même lot est idempotent :
+    en cas d'erreur en cours de lot, le client peut le renvoyer entièrement.
+    """
+    try:
+        image_files = request.files.getlist('images') if request.files else []
+        if not image_files:
+            return jsonify({'success': False, 'message': 'Aucune image dans la requête'}), 400
+
+        counters = request.form.getlist('counters')
+        number_size = _to_int(request.form.get('numberSize', 4), 4)
+
+        saved = []
+        for index, image_file in enumerate(image_files):
+            counter = _to_int(counters[index], index) if index < len(counters) else index
+            saved.append(_save_uploaded_image(image_file, counter, number_size))
+
+        return jsonify({'success': True, 'count': len(saved), 'files': saved})
+
+    except Exception as e:
+        # Le client retentera le lot complet (écritures idempotentes).
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
 def upload_image(request):
     try:
         # Vérifier si c'est du multipart/form-data (nouvelle méthode optimisée)
         if request.files and 'image' in request.files:
             image_file = request.files['image']
-            counter = int(request.form.get('counter', 0))
-            numberSize = int(request.form.get('numberSize', 4))
-
-            # Utiliser le nom de fichier fourni (sécurisé : il vient du client) ou en générer un.
-            # secure_filename neutralise les traversées de chemin (..\..\x.webp) et peut
-            # renvoyer une chaîne vide sur un nom entièrement invalide → on retombe sur le compteur.
-            image_filename = secure_filename(image_file.filename or '')
-            if not image_filename:
-                image_filename = f'image_{str(counter).zfill(numberSize)}.webp'
-
-            # Sauvegarder directement le fichier binaire
-            os.makedirs('captured', exist_ok=True)
-            image_file.save(os.path.join('captured', image_filename))
+            counter = _to_int(request.form.get('counter', 0))
+            numberSize = _to_int(request.form.get('numberSize', 4), 4)
+            _save_uploaded_image(image_file, counter, numberSize)
 
         # Fallback pour l'ancienne méthode JSON/Base64 (compatibilité)
         elif request.is_json:

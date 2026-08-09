@@ -27,7 +27,7 @@ Objectif: réduire drastiquement le temps de capture et le poids des images/vid�
 - Simplifier temporairement le style des points (moins d’effets, tailles réduites).
 - Pré-calculer l’index des features par date pour des mises à jour incrémentales.
 
-6) Upload/batching (moyen → moyen)
+6) Upload/batching (moyen → moyen) ✅ fait (cf. section « Upload groupé des frames » en fin de document)
 - Option: bufferiser et envoyer par lots (ex: 10 images) si acceptable.
 - Backoff/retry réseau léger pour robustesse.
 
@@ -182,3 +182,53 @@ Le toast affiche maintenant en temps réel :
 - Stabilité UI: Plus fluide (throttling toasts)
 
 
+
+---
+
+## Upload groupé des frames (point 6 « Upload/batching ») ✅ IMPLÉMENTÉ
+
+**Problème** : le mode « images » envoyait **une requête POST par frame** — plusieurs
+milliers pour un enregistrement long. La concurrence bornée (4 uploads en vol) évitait
+la saturation mémoire mais pas l'overhead : chaque frame payait un aller-retour HTTP
+complet + un passage dans Flask, coût qui domine largement l'écriture du fichier avec
+le serveur de développement (mono-thread par défaut).
+
+**Solution** : accumuler les frames et les envoyer par lots dans un seul `multipart`.
+
+### Côté client
+- `static/js/upload_batcher.mjs` : accumulateur générique (module pur, testable sous
+  node). Un lot part **dès qu'il est plein** (`uploadBatchSize`, défaut 12) ou **au bout
+  de `uploadBatchMaxWaitMs`** (défaut 500 ms) s'il reste incomplet — sans ce délai, une
+  capture lente laisserait des images en tampon et casserait le recouvrement
+  capture/upload.
+- `static/js/record.js` : construit le `FormData` (`images` répété + `counters`),
+  retry/backoff **sur le lot entier** (les écritures sont nommées par compteur, donc
+  idempotentes), et repli automatique image par image si le serveur répond 404 sur
+  `/upload_images`. `queueImageUpload()` renvoie une promesse **par frame** : le suivi
+  d'échec reste au niveau de l'image.
+- `static/js/mapgl.js` : la backpressure s'exprime désormais en lots
+  (`MAX_UPLOAD_BATCHES_IN_FLIGHT = 4`, soit ~48 frames en mémoire avec le lot par défaut).
+  Quand le plafond est atteint, le lot partiel est **flushé immédiatement** au lieu
+  d'attendre son délai. La fin d'enregistrement draine le tampon avant l'assemblage.
+
+### Côté serveur
+- `capture.upload_images()` + route `POST /upload_images` (`blueprints/media.py`) :
+  itère sur `request.files.getlist('images')`, réutilise le même helper d'écriture que
+  la route unitaire (`secure_filename`, repli sur le compteur). `/upload_image` reste
+  disponible (compatibilité + repli client).
+
+### Réglages (`static/json/defaultValues.json` → `record`)
+| Clé | Défaut | Effet |
+| --- | --- | --- |
+| `uploadBatchSize` | 12 | Images par requête (1 = comportement historique, max 50) |
+| `uploadBatchMaxWaitMs` | 500 | Envoi d'un lot incomplet passé ce délai (0 = jamais) |
+
+**Effet attendu** : ~12 fois moins de requêtes HTTP. La métrique `up:` du toast mesure
+maintenant la latence de bout en bout d'une frame (attente du lot incluse), pas le seul
+temps réseau : elle augmente alors que le débit global s'améliore.
+
+### Tests
+- `node --test test_upload_batcher.mjs` (lot plein, flush par délai, échec propagé à
+  chaque image, drain, reset, taille 1)
+- `python -m unittest tests.test_upload_images` (lot enregistré, repli sur compteur,
+  traversée de chemin neutralisée, lot vide rejeté, renvoi idempotent)

@@ -13,6 +13,7 @@ from capture import (
     run_assemble_video_task,
     upload_audio,
     upload_image,
+    upload_images,
     upload_video,
 )
 from task_manager import TaskAlreadyRunning, task_manager
@@ -60,6 +61,15 @@ _BUSY_MESSAGE = (
 @cross_origin()
 def get_upload_image():
     return upload_image(request)
+
+
+# Envoi groupé (lot de frames dans un seul multipart) : divise d'autant le nombre
+# de requêtes du mode « images ». La route unitaire reste disponible (repli client
+# et compatibilité).
+@media_bp.route('/upload_images', methods=['POST'])
+@cross_origin()
+def get_upload_images():
+    return upload_images(request)
 
 
 # POST et non GET : la route déclenche un encodage (effet de bord durable). En

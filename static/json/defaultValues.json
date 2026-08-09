@@ -34,7 +34,9 @@
         "fps": 30,
         "mode": "images",
         "uploadRetries": 3,
-        "frameRetries": 2, 
+        "uploadBatchSize": 12,
+        "uploadBatchMaxWaitMs": 500,
+        "frameRetries": 2,
         "mediaRecorder": {
             "enabled": true,
             "mimeType": "video/webm;codecs=vp9",
