@@ -1,6 +1,11 @@
 const DEFAULT_FPS = 30;
 const DEFAULT_END_HOLD_MS = 3000;
 
+// Les navigateurs (Chromium, Firefox, WebKit) plafonnent le taux de lecture d'un
+// <video> à 16x. Au-delà, la valeur est ignorée silencieusement : aucune erreur,
+// mais la vidéo est lue — donc ré-encodée — au mauvais rythme.
+export const MAX_BROWSER_PLAYBACK_RATE = 16;
+
 function finiteNumber(value, fallback = 0) {
     const number = Number(value);
     return Number.isFinite(number) ? number : fallback;
@@ -13,6 +18,15 @@ export function normalizeVideoFps(value, fallback = DEFAULT_FPS) {
 export function serverNormalizationFactor(slowdown, normalizeEnabled) {
     const safeSlowdown = Math.max(1, finiteNumber(slowdown, 1));
     return normalizeEnabled && safeSlowdown > 1 ? safeSlowdown : 1;
+}
+
+// Borne le facteur d'accélération demandé au maximum réellement applicable par
+// un <video>, et signale à l'appelant que la demande n'a pas pu être honorée.
+export function clampPlaybackRate(factor, max = MAX_BROWSER_PLAYBACK_RATE) {
+    const safeMax = Math.max(1, finiteNumber(max, MAX_BROWSER_PLAYBACK_RATE));
+    const requested = Math.max(1, finiteNumber(factor, 1));
+    const rate = Math.min(requested, safeMax);
+    return { requested, rate, clamped: rate < requested };
 }
 
 export function inclusiveDayCount(startDate, endDate) {

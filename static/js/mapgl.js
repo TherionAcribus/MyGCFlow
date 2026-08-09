@@ -70,8 +70,10 @@ import fixWebmDuration from './fix-webm-duration.js';
 import {
     automaticEndHoldMs,
     buildImageTimingPlan,
+    clampPlaybackRate,
     framesForDay,
     inclusiveDayCount,
+    MAX_BROWSER_PLAYBACK_RATE,
     serverNormalizationFactor,
 } from './video_timing.mjs';
 import {
@@ -2675,7 +2677,9 @@ function finalizeMediaRecorderVideo(){
         };
         const runClientFallback = () => {
             if (doNormalize) {
-                try { pkg.updateTextsModal('Normalisation', `Accélération x${slowdown} pour lecture à vitesse normale...`); } catch(_) {}
+                // Annoncer le facteur réellement applicable : le navigateur plafonne playbackRate.
+                const applicable = clampPlaybackRate(slowdown).rate;
+                try { pkg.updateTextsModal('Normalisation', `Accélération x${applicable} pour lecture à vitesse normale...`); } catch(_) {}
                 normalizeRecordedVideoSpeed(blob, slowdown).then((normBlob) => {
                     doMux(normBlob || blob);
                 }).catch((e) => {
@@ -2756,9 +2760,31 @@ function finalizeMediaRecorderVideo(){
     }
 }
 
+// Le repli navigateur accélère la vidéo via playbackRate, plafonné à 16x par les
+// navigateurs : au-delà, la valeur est ignorée en silence et le résultat sort au
+// mauvais rythme sans la moindre erreur. On borne donc explicitement la demande,
+// on relit le taux réellement retenu par l'élément, et on prévient l'utilisateur
+// quand l'accélération obtenue est inférieure à celle demandée.
+function warnPlaybackRateClamped(requested, effective){
+    const ratio = effective > 0 ? (requested / effective) : requested;
+    console.warn(
+        `Normalisation : accélération x${requested} impossible, le navigateur applique x${effective} `
+        + `(plafond ${MAX_BROWSER_PLAYBACK_RATE}x). La vidéo restera ~${ratio.toFixed(1)}x plus lente que prévu.`
+    );
+    try {
+        pkg.showToast && pkg.showToast(
+            `Le navigateur limite l'accélération à x${effective} (x${requested} demandé) : `
+            + `la vidéo restera environ ${ratio.toFixed(1)}x plus lente que prévu. `
+            + `Utilisez le traitement serveur pour un rythme exact.`,
+            'warning', 'Normalisation', 8000
+        );
+    } catch(_) {}
+}
+
 function normalizeRecordedVideoSpeed(sourceBlob, factor){
     return new Promise((resolve, reject) => {
         try {
+            const { requested: requestedRate, rate: targetRate } = clampPlaybackRate(factor);
             const video = document.createElement('video');
             video.muted = true;
             video.playsInline = true;
@@ -2784,7 +2810,17 @@ function normalizeRecordedVideoSpeed(sourceBlob, factor){
             };
 
             video.addEventListener('loadedmetadata', () => {
-                try { video.playbackRate = factor; } catch(_) {}
+                // Certains navigateurs rabaissent la valeur affectée au lieu de la
+                // refuser : relire playbackRate donne le taux réellement appliqué.
+                let effectiveRate = 1;
+                try {
+                    video.playbackRate = targetRate;
+                    const applied = Number(video.playbackRate);
+                    effectiveRate = (Number.isFinite(applied) && applied > 0) ? applied : targetRate;
+                } catch(_) { effectiveRate = 1; }
+                if (effectiveRate < requestedRate - 0.01) {
+                    warnPlaybackRateClamped(requestedRate, effectiveRate);
+                }
                 // Les .webm de MediaRecorder rapportent souvent duration === Infinity :
                 // ne pas le laisser fuiter dans setTimeout (Infinity → 0 → déclenchement immédiat).
                 const rawDur = video.duration;
@@ -2793,7 +2829,8 @@ function normalizeRecordedVideoSpeed(sourceBlob, factor){
                 const stream = (typeof video.captureStream === 'function') ? video.captureStream(fps) : null;
                 if (!stream) { cleanup(); reject(new Error('captureStream non supporté pour la normalisation')); return; }
 
-                // Timeout basé sur la durée à 1x + 60s : couvre le cas où playbackRate échoue silencieusement
+                // Timeout basé sur la durée à 1x + 60s : filet de sécurité si playbackRate
+                // est appliqué plus bas que ce que l'élément rapporte (relecture mensongère).
                 const maxMs = duration > 0 ? (duration * 1000 + 60000) : 1800000; // 30 min de garde si durée inconnue
                 safetyTimeout = setTimeout(() => {
                     safetyTimeout = null;

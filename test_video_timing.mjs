@@ -4,8 +4,10 @@ import assert from 'node:assert/strict';
 import {
     automaticEndHoldMs,
     buildImageTimingPlan,
+    clampPlaybackRate,
     framesForDay,
     inclusiveDayCount,
+    MAX_BROWSER_PLAYBACK_RATE,
     serverNormalizationFactor,
 } from './static/js/video_timing.mjs';
 
@@ -63,4 +65,18 @@ test('le serveur ne normalise que lorsque l option est activée', () => {
     assert.equal(serverNormalizationFactor(4, true), 4);
     assert.equal(serverNormalizationFactor(4, false), 1);
     assert.equal(serverNormalizationFactor(1, true), 1);
+});
+
+test('le taux de lecture est borné au plafond navigateur', () => {
+    assert.equal(MAX_BROWSER_PLAYBACK_RATE, 16);
+    assert.deepEqual(clampPlaybackRate(4), { requested: 4, rate: 4, clamped: false });
+    assert.deepEqual(clampPlaybackRate(16), { requested: 16, rate: 16, clamped: false });
+    assert.deepEqual(clampPlaybackRate(20), { requested: 20, rate: 16, clamped: true });
+});
+
+test('un facteur invalide ou inférieur à 1 retombe sur une lecture normale', () => {
+    assert.deepEqual(clampPlaybackRate(0), { requested: 1, rate: 1, clamped: false });
+    assert.deepEqual(clampPlaybackRate(-5), { requested: 1, rate: 1, clamped: false });
+    assert.deepEqual(clampPlaybackRate(undefined), { requested: 1, rate: 1, clamped: false });
+    assert.deepEqual(clampPlaybackRate(NaN), { requested: 1, rate: 1, clamped: false });
 });
