@@ -113,13 +113,13 @@ class ProfileManager {
                     body: JSON.stringify(json)
                 });
                 const data = await resp.json();
-                if (!resp.ok || !data.success) throw new Error(data.message || 'Import échoué');
+                if (!resp.ok || !data.success) throw new Error(data.message || pkg.t('Import échoué'));
 
                 this.showToast(pkg.t('Profil "${name}" importé', { name: data.name }), 'green');
                 await this.loadProfilesList();
             } catch (e) {
                 console.error('Import error', e);
-                this.showToast('Erreur import du profil', 'red');
+                this.showToast(pkg.t('Erreur import du profil'), 'red');
             } finally {
                 if (inputImport) inputImport.value = '';
             }
@@ -144,7 +144,7 @@ class ProfileManager {
             const result = await response.json();
 
             if (!response.ok) {
-                throw new Error(result.message || 'Erreur API');
+                throw new Error(result.message || pkg.t('Erreur API'));
             }
 
             return result;
@@ -324,7 +324,7 @@ class ProfileManager {
             dbgProfiles('📤 Export profil:', name);
             const resp = await fetch(`/api/profiles/${encodeURIComponent(name)}/export`);
             const data = await resp.json();
-            if (!resp.ok) throw new Error(data.message || 'Export échoué');
+            if (!resp.ok) throw new Error(data.message || pkg.t('Export échoué'));
 
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
@@ -338,7 +338,7 @@ class ProfileManager {
             this.showToast(pkg.t('Profil "${name}" exporté', { name }), 'green');
         } catch (e) {
             console.error('Export error', e);
-            this.showToast('Erreur export du profil', 'red');
+            this.showToast(pkg.t('Erreur export du profil'), 'red');
         }
     }
 
@@ -358,7 +358,7 @@ class ProfileManager {
         try {
             const profile = await this.apiCall(`/api/profiles/${encodeURIComponent(profileName)}`);
             if (!profile || !profile.uid) {
-                throw new Error('Profil introuvable ou UID manquant');
+                throw new Error(pkg.t('Profil introuvable ou UID manquant'));
             }
 
             // Appliquer immédiatement le profil
@@ -370,12 +370,12 @@ class ProfileManager {
             const result = await this.saveAppSettings({ default_profile_uid: profile.uid });
 
             if (!result.success) {
-                throw new Error('Échec de la sauvegarde du profil par défaut');
+                throw new Error(pkg.t('Échec de la sauvegarde du profil par défaut'));
             }
 
             this._defaultProfileName = profile.name;
 
-            this.showToast(`Profil "${profile.name}" défini comme par défaut`, 'green');
+            this.showToast(pkg.t('Profil "${name}" défini comme profil par défaut', { name: profile.name }), 'green');
 
             // Rafraîchir les éléments UI dépendants : la liste des profils n'a
             // pas changé, seules la valeur du sélecteur et la position du badge
@@ -384,7 +384,7 @@ class ProfileManager {
             this._updateActiveProfileHighlight();
         } catch (error) {
             console.error('❌ Erreur définition profil par défaut:', error);
-            this.showToast('Erreur lors de la définition du profil par défaut', 'red');
+            this.showToast(pkg.t('Erreur lors de la définition du profil par défaut'), 'red');
         }
     }
 
@@ -396,11 +396,12 @@ class ProfileManager {
         container.innerHTML = '';
 
         if (this.profilesList.length === 0) {
-            container.innerHTML = '<div class="list-group-item text-center">Aucun profil</div>';
+            const empty = document.createElement('div');
+            empty.className = 'list-group-item text-center';
+            empty.textContent = pkg.t('Aucun profil');
+            container.appendChild(empty);
             return;
         }
-
-        const gt = (key) => (window.gettext ? window.gettext(key) : key);
 
         // Construit un <li><a class="dropdown-item"> avec icône + libellé texte
         // (jamais de HTML injecté depuis des données utilisateur) et son handler.
@@ -467,15 +468,15 @@ class ProfileManager {
 
             const menu = document.createElement('ul');
             menu.className = 'dropdown-menu dropdown-menu-end';
-            menu.appendChild(buildMenuItem('ti-copy', gt('Dupliquer'), () => this.duplicateProfile(profileName, `${profileName}_copy`)));
-            menu.appendChild(buildMenuItem('ti-edit', gt('Renommer'), () => this.renameProfile(profileName)));
-            menu.appendChild(buildMenuItem('ti-download', gt('Exporter'), () => this.exportProfile(profileName)));
-            menu.appendChild(buildMenuItem('ti-refresh', gt('Réinitialiser'), () => this.confirmReset(profileName), true));
-            menu.appendChild(buildMenuItem('ti-trash', gt('Supprimer'), () => this.confirmDelete(profileName), true));
+            menu.appendChild(buildMenuItem('ti-copy', pkg.t('Dupliquer'), () => this.duplicateProfile(profileName, `${profileName}_copy`)));
+            menu.appendChild(buildMenuItem('ti-edit', pkg.t('Renommer'), () => this.renameProfile(profileName)));
+            menu.appendChild(buildMenuItem('ti-download', pkg.t('Exporter'), () => this.exportProfile(profileName)));
+            menu.appendChild(buildMenuItem('ti-refresh', pkg.t('Réinitialiser'), () => this.confirmReset(profileName), true));
+            menu.appendChild(buildMenuItem('ti-trash', pkg.t('Supprimer'), () => this.confirmDelete(profileName), true));
             const divider = document.createElement('li');
             divider.innerHTML = '<hr class="dropdown-divider">';
             menu.appendChild(divider);
-            menu.appendChild(buildMenuItem('ti-star', gt('Définir comme par défaut'), () => this.setProfileAsDefault(profileName)));
+            menu.appendChild(buildMenuItem('ti-star', pkg.t('Définir comme par défaut'), () => this.setProfileAsDefault(profileName)));
 
             dropdown.appendChild(toggleBtn);
             dropdown.appendChild(menu);
@@ -512,7 +513,7 @@ class ProfileManager {
         nameWrap.appendChild(checkIcon);
         const badge = document.createElement('span');
         badge.className = 'active-badge';
-        badge.textContent = 'ACTIF';
+        badge.textContent = pkg.t('ACTIF');
         nameWrap.appendChild(badge);
     }
 
@@ -542,9 +543,7 @@ class ProfileManager {
                 indicator.textContent = this.currentProfile.name + suffix;
                 indicator.classList.add('active');
                 indicator.classList.toggle('unsaved', !!this.hasUnsavedChanges);
-                indicator.title = this.hasUnsavedChanges
-                    ? (window.gettext ? window.gettext('Modifications non enregistrées') : 'Modifications non enregistrées')
-                    : '';
+                indicator.title = this.hasUnsavedChanges ? pkg.t('Modifications non enregistrées') : '';
             } else {
                 indicator.textContent = '';
                 indicator.classList.remove('active');
@@ -605,10 +604,7 @@ class ProfileManager {
     // Avertit avant d'abandonner des modifications non sauvegardées (chargement d'un autre profil, etc.)
     _confirmDiscardChangesIfNeeded() {
         if (!this.hasUnsavedChanges) return true;
-        const message = window.gettext
-            ? window.gettext('Vous avez des modifications non enregistrées. Les abandonner ?')
-            : 'Vous avez des modifications non enregistrées. Les abandonner ?';
-        return window.confirm(message);
+        return window.confirm(pkg.t('Vous avez des modifications non enregistrées. Les abandonner ?'));
     }
 
     // Gestion du profil par défaut
@@ -714,7 +710,7 @@ class ProfileManager {
             return true;
         } catch (error) {
             console.error('❌ [LOAD_PROFILE] Erreur chargement profil par UUID:', error);
-            this.showToast('Erreur lors du chargement du profil par défaut', 'red');
+            this.showToast(pkg.t('Erreur lors du chargement du profil par défaut'), 'red');
             return false;
         }
     }
@@ -741,7 +737,7 @@ class ProfileManager {
             // Ajouter l'option "Aucun" (pas de profil par défaut)
             const noneOption = document.createElement('option');
             noneOption.value = '';
-            noneOption.textContent = 'Aucun profil par défaut';
+            noneOption.textContent = pkg.t('Aucun profil par défaut');
             selector.appendChild(noneOption);
 
             // Ajouter tous les profils disponibles
@@ -815,7 +811,7 @@ class ProfileManager {
             this.showToast(
                 appliedProfileName ?
                     pkg.t('Profil "${selectedProfile}" appliqué et défini comme profil par défaut', { selectedProfile: appliedProfileName }) :
-                    'Aucun profil par défaut défini',
+                    pkg.t('Aucun profil par défaut défini'),
                 appliedProfileName ? 'green' : 'blue'
             );
         } else {
@@ -875,7 +871,7 @@ class ProfileManager {
                         dbgProfiles('🎯 [DEFAULT_PROFILE] Création d\'un profil temporaire basique...');
                         try {
                             this.currentProfile = {
-                                name: 'Profil Temporaire',
+                                name: pkg.t('Profil temporaire'),
                                 uid: 'temp-' + Date.now(),
                                 version: '1.0',
                                 map: {
@@ -894,10 +890,10 @@ class ProfileManager {
                             };
                             await this.applyProfile(this.currentProfile);
                             this._markSaved();
-                            this.showToast('Profil temporaire chargé (profil par défaut manquant)', 'orange');
+                            this.showToast(pkg.t('Profil temporaire chargé (profil par défaut manquant)'), 'orange');
                         } catch (createError) {
                             console.error('❌ [DEFAULT_PROFILE] Impossible de créer un profil temporaire:', createError.message);
-                            this.showToast('Erreur lors du chargement du profil par défaut', 'red');
+                            this.showToast(pkg.t('Erreur lors du chargement du profil par défaut'), 'red');
                         }
                     }
                 }
@@ -1218,9 +1214,9 @@ class ProfileManager {
         const input = document.getElementById('profile-name-input');
         const confirmBtn = document.getElementById('btn-confirm-profile');
 
-        title.textContent = 'Nouveau profil';
+        title.textContent = pkg.t('Nouveau profil');
         input.value = '';
-        confirmBtn.textContent = 'Créer';
+        confirmBtn.textContent = pkg.t('Créer');
 
         // Stocker l'action
         confirmBtn.dataset.action = 'create';
@@ -1235,9 +1231,9 @@ class ProfileManager {
         const input = document.getElementById('profile-name-input');
         const confirmBtn = document.getElementById('btn-confirm-profile');
 
-        title.textContent = 'Renommer le profil';
+        title.textContent = pkg.t('Renommer le profil');
         input.value = profileName;
-        confirmBtn.textContent = 'Renommer';
+        confirmBtn.textContent = pkg.t('Renommer');
 
         // Stocker l'action et le nom original
         confirmBtn.dataset.action = 'rename';
@@ -1253,7 +1249,7 @@ class ProfileManager {
         const name = input.value.trim();
 
         if (!name) {
-            this.showToast('Veuillez saisir un nom de profil', 'orange');
+            this.showToast(pkg.t('Veuillez saisir un nom de profil'), 'orange');
             return;
         }
 
@@ -1313,7 +1309,7 @@ class ProfileManager {
         const message = document.getElementById('delete-profile-message');
         const confirmBtn = document.getElementById('btn-confirm-delete');
 
-        message.textContent = `Êtes-vous sûr de vouloir supprimer le profil "${profileName}" ?`;
+        message.textContent = pkg.t('Êtes-vous sûr de vouloir supprimer le profil "${name}" ?', { name: profileName });
         confirmBtn.dataset.profileName = profileName;
 
         showBsModal(modal);
@@ -1332,7 +1328,7 @@ class ProfileManager {
         const message = document.getElementById('reset-profile-message');
         const confirmBtn = document.getElementById('btn-confirm-reset');
 
-        message.textContent = `Êtes-vous sûr de vouloir réinitialiser le profil "${profileName}" aux valeurs par défaut ?`;
+        message.textContent = pkg.t('Êtes-vous sûr de vouloir réinitialiser le profil "${name}" aux valeurs par défaut ?', { name: profileName });
         confirmBtn.dataset.profileName = profileName;
 
         showBsModal(modal);
