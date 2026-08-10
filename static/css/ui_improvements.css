@@ -1083,15 +1083,7 @@ display: block;
 font-size: 0.85rem;
 }
 
-.gc-css-color {
-width: 52px;
-height: 34px;
-padding: 0;
-border: 2px solid #ddd;
-border-radius: 8px;
-cursor: pointer;
-background: none;
-}
+/* .gc-css-color : voir la déclaration unique plus bas ("Color picker compact"). */
 
 .gc-css-actions {
 display: flex;
@@ -1548,15 +1540,35 @@ background: rgba(33, 150, 243, 0.04);
     gap: 8px;
 }
 
-/* Color picker compact */
+/* Color picker compact. Largeur volontairement réduite (comme les sélecteurs de
+   `#flash`) : en pleine largeur, une pastille claire dans un champ clair est
+   indiscernable d'un input texte vide, au point de faire croire que le réglage
+   n'existe pas. */
 .gc-css-color {
-    width: 100%;
+    width: 52px;
     height: 38px;
     padding: 2px;
     border: 1px solid var(--color-border);
     border-radius: 6px;
     cursor: pointer;
     background: none;
+}
+
+/* Cerne la pastille de couleur : sans cela, une valeur claire (le blanc par
+   défaut du fond de la boîte Titre/Infos) se confond avec la carte blanche du
+   formulaire et le champ ressemble à un input texte vide — on croit le réglage
+   absent. `!important` obligatoire : Tabler pose `border:0!important` sur
+   `.form-control-color::-webkit-color-swatch`. */
+.gc-css-color::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+.gc-css-color::-webkit-color-swatch {
+    border: 1px solid rgba(0, 0, 0, 0.25) !important;
+    border-radius: 4px;
+}
+.gc-css-color::-moz-color-swatch {
+    border: 1px solid rgba(0, 0, 0, 0.25) !important;
+    border-radius: 4px;
 }
 
 /* Profil actif dans la liste */

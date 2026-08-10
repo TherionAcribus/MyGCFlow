@@ -3970,6 +3970,7 @@ function initCssAssistant() {
         'font-family',
         'font-weight',
         'text-align',
+        'background',
         'background-color',
         'padding',
         'border-radius',
@@ -4003,6 +4004,18 @@ function initCssAssistant() {
             return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
         }
         return '';
+    }
+
+    // Les profils livrés (settings_manager._create_example_profiles) écrivent
+    // `background: rgba(...)` et non `background-color`, et le raccourci survit
+    // au nettoyage de sanitizeOverlayCss. Sans cette extraction, le champ Fond
+    // ignorait la couleur du profil et retombait sur le blanc par défaut.
+    // Le CSSOM fait l'analyse : un dégradé ou une image ne rend aucune couleur.
+    function backgroundColorFromShorthand(value) {
+        if (!value || typeof value !== 'string') return '';
+        const probe = document.createElement('div');
+        probe.style.background = value;
+        return probe.style.backgroundColor || '';
     }
 
     function parseDeclarations(css) {
@@ -4086,9 +4099,14 @@ function initCssAssistant() {
             ensureSelectRefresh(fields.textAlign);
         }
         if (fields.backgroundColor) {
-            const v = normalizeColorToHex(declarations['background-color']);
+            const shorthand = declarations['background'];
+            const raw = declarations['background-color'] || backgroundColorFromShorthand(shorthand);
+            const v = normalizeColorToHex(raw);
             if (v) fields.backgroundColor.value = v;
-            else if (declarations['background-color']) unmanagedExtra.push('background-color');
+            // Un fond sans couleur exploitable (dégradé, image) reste éditable en
+            // CSS avancé : on laisse la pastille telle quelle plutôt que de la
+            // repeindre en blanc, ce qui laisserait croire à un fond blanc.
+            else if (declarations['background-color'] || shorthand) unmanagedExtra.push('background-color');
             else fields.backgroundColor.value = '#ffffff';
         }
         if (fields.padding) {
