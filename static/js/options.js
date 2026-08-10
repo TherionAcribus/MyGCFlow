@@ -3,6 +3,11 @@ import { CONFIG } from './init.js';
 import { showLoadingToast, showSuccess, showError, showInfo, showWarning } from './notifications.js';
 import { getBsModal } from './ui_bootstrap.js';
 
+// Flag de debug local (cf. DEBUG_MAPGL dans mapgl.js).
+// Passer à true pour tracer la vérification de version et l'ouverture de la modale.
+const DEBUG_OPTIONS = false;
+const dbgOptions = (...args) => { if (DEBUG_OPTIONS) console.log(...args); };
+
 // Traductions pour la modale et les toasts de mise à jour
 const updateModalTranslations = {
     fr: {
@@ -61,9 +66,7 @@ export function checkVersion(mode="manual"){
         return response.json();
     })
     .then(data => {
-        console.log("=== DEBUG checkVersion - réponse API ===");
-        console.log("Langue utilisée pour la requête:", currentLang);
-        console.log("Données brutes de l'API:", data);
+        dbgOptions("[checkVersion] langue:", currentLang, "| données API:", data);
         displayCheckVersion(data, mode);
     })
     .catch(error => {
@@ -75,97 +78,22 @@ export function checkVersion(mode="manual"){
     });
 }
 
-// Fonction de test pour forcer l'affichage de la modale
-export function testModal() {
-    const testData = {
-        "error": false,
-        "update_available": true,
-        "current_version": "1.0",
-        "latest_version": {
-            "version": "2.0",
-            "date": "2024-04-10",
-            "download_url": "https://example.com/download"
-        },
-        "versions": [
-            {
-                "version": "2.0",
-                "release_date": "2024-04-10",
-                "changelog": ["Refonte majeure", "Optimisations"]
-            }
-        ]
-    };
-    console.log("=== TEST MODAL ===");
-    displayCheckVersion(testData, "manual");
-}
-
-// Fonction de test pour vérifier les traductions
-export async function testTranslations() {
-    const currentLang = await getCurrentLanguage();
-    console.log("=== TEST TRADUCTIONS ===");
-    console.log("Langue actuelle:", currentLang);
-    console.log("Traductions utilisées:", updateModalTranslations[currentLang] || updateModalTranslations.fr);
-
-    // Test de la modale avec les traductions
-    testModal();
-}
-
-// Fonction de test pour vérifier les données du serveur
-export async function testServerData() {
-    console.log("=== TEST DONNÉES SERVEUR ===");
-    try {
-        // Test avec la langue détectée automatiquement
-        console.log("--- Test langue détectée automatiquement ---");
-        const responseDefault = await fetch(`${CONFIG.BASE_URL}/check_version`);
-        const dataDefault = await responseDefault.json();
-        console.log("Données détectées:", dataDefault);
-        console.log("Changelog première version:", dataDefault.versions?.[0]?.changelog?.slice(0, 2));
-
-        // Test en forçant français via paramètre URL
-        console.log("--- Test paramètre URL français (?lang=fr) ---");
-        const responseFr = await fetch(`${CONFIG.BASE_URL}/check_version?lang=fr`);
-        const dataFr = await responseFr.json();
-        console.log("Données avec ?lang=fr:", dataFr);
-        console.log("Changelog première version FR:", dataFr.versions?.[0]?.changelog?.slice(0, 2));
-
-        // Test en forçant anglais via paramètre URL
-        console.log("--- Test paramètre URL anglais (?lang=en) ---");
-        const responseEn = await fetch(`${CONFIG.BASE_URL}/check_version?lang=en`);
-        const dataEn = await responseEn.json();
-        console.log("Données avec ?lang=en:", dataEn);
-        console.log("Changelog première version EN:", dataEn.versions?.[0]?.changelog?.slice(0, 2));
-
-        // Vérifier la langue actuelle détectée
-        console.log("--- Vérification langue détectée ---");
-        const localeResponse = await fetch(`${CONFIG.BASE_URL}/api/locale`);
-        const localeData = await localeResponse.json();
-        console.log("Langue détectée:", localeData);
-
-    } catch (error) {
-        console.error("Erreur lors du test des données serveur:", error);
-    }
-}
-
-
 // le mode permet de savoir si checkversion depuis initialisation ou demande user
 // car on n'affiche la reponse si négative que si demande user
 async function displayCheckVersion(data, mode){
-    console.log("=== DEBUG displayCheckVersion ===");
-    console.log("Data reçue:", data);
-    console.log("Mode:", mode);
-    console.log("update_available:", data.update_available);
-    console.log("error:", data.error);
+    dbgOptions("[displayCheckVersion] mode:", mode, "| update_available:", data.update_available, "| error:", data.error, "| data:", data);
 
     const currentLang = await getCurrentLanguage();
     const translations = updateModalTranslations[currentLang] || updateModalTranslations.fr;
 
     if (data.error == true) {
-        console.log("Cas ERREUR");
+        dbgOptions("[displayCheckVersion] cas ERREUR");
         // Erreur - toujours afficher en mode manuel, jamais en mode init
         if (mode === "manual") {
             showError("Une erreur est survenue lors de la vérification des mises à jour", translations.verificationError);
         }
     } else if (data.update_available) {
-        console.log("Cas MISE À JOUR DISPONIBLE - ouverture modale");
+        dbgOptions("[displayCheckVersion] cas MISE À JOUR DISPONIBLE - ouverture modale");
         // Mise à jour disponible - toujours afficher
         const version = data.latest_version.version;
         const date = data.latest_version.date || "Date inconnue";
@@ -175,10 +103,9 @@ async function displayCheckVersion(data, mode){
 
         showWarning(message, translations.updateTitle);
         // Ouvrir la modale détaillée immédiatement après le toast
-        console.log("Appel de openUpdateDetailsModal");
         openUpdateDetailsModal(data);
     } else {
-        console.log("Cas AUCUNE MISE À JOUR");
+        dbgOptions("[displayCheckVersion] cas AUCUNE MISE À JOUR");
         // Aucune mise à jour - seulement en mode manuel
         if (mode === "manual") {
             showSuccess("Votre application est à jour", translations.upToDate);
@@ -225,8 +152,7 @@ function getCurrentLanguage() {
 
 // Fonction pour ouvrir une vraie modale Materialize avec les détails de mise à jour
 async function openUpdateDetailsModal(data) {
-    console.log("=== DEBUG openUpdateDetailsModal ===");
-    console.log("Data reçue dans modale:", data);
+    dbgOptions("[openUpdateDetailsModal] data:", data);
 
     const currentVersion = data.current_version || "?";
     const currentLang = await getCurrentLanguage();
@@ -454,7 +380,7 @@ async function openUpdateDetailsModal(data) {
         </style>
     `;
 
-    console.log("Création de la modal Bootstrap 5 avec ID:", modalId);
+    dbgOptions("[openUpdateDetailsModal] création de la modal Bootstrap 5, ID:", modalId);
 
     // Ajouter la modal au DOM
     document.body.insertAdjacentHTML('beforeend', fullModalHTML);
@@ -476,5 +402,5 @@ async function openUpdateDetailsModal(data) {
 
     // Ouvrir la modal
     bsModal.show();
-    console.log("Modal Bootstrap 5 ouverte avec succès");
+    dbgOptions("[openUpdateDetailsModal] modal ouverte");
 }
