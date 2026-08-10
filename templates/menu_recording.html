@@ -1,3 +1,8 @@
+{% from '_scope_badges.html' import global_scope_badge with context %}
+<p class="form-hint text-muted mb-2">
+    <i class="ti ti-device-floppy me-1" aria-hidden="true"></i>{{ _("Réglages d'enregistrement") }}{{ global_scope_badge() }}
+    <span class="d-block mt-1">{{ _("Enregistrés automatiquement avec les préférences de l'application, pas dans le profil.") }}</span>
+</p>
 <div class="row g-2">
     <div class="mb-3 col-12 col-md-6">
         <label for="selectRecordMode" class="form-label">

@@ -1,3 +1,4 @@
+{% from '_scope_badges.html' import profile_scope_badge with context %}
 <!-- Onglet Style : Cartes, Points et Flash -->
 <div id="style" class="col-12 tab-pane fade">
     <div class="row g-3">
@@ -17,7 +18,7 @@
                         <div class="row g-3">
                             <div class="col-12 col-md-6">
                                 <h6 class="gc-section-title">
-                                    <i class="ti ti-map text-muted me-1"></i>{{ _("Cartes") }}
+                                    <i class="ti ti-map text-muted me-1"></i>{{ _("Cartes") }}{{ profile_scope_badge() }}
                                 </h6>
                                 <div class="row g-2">
                                     <div class="col-6">
@@ -95,7 +96,7 @@
                             </div>
                             <div class="col-12 col-md-6">
                                 <h6 class="gc-section-title">
-                                    <i class="ti ti-info-circle text-muted me-1"></i>{{ _("Titre et informations") }}
+                                    <i class="ti ti-info-circle text-muted me-1"></i>{{ _("Titre et informations") }}{{ profile_scope_badge() }}
                                 </h6>
                                 <div class="card">
                                     <div class="card-body">
@@ -127,9 +128,12 @@
         <div class="col-12 col-lg-4">
             <div class="sticky-panel">
                 <h5 class="gc-section-title">
-                    <i class="ti ti-users text-muted me-1"></i>{{ _("Profils") }}
+                    <i class="ti ti-users text-muted me-1"></i>{{ _("Profils") }}{{ profile_scope_badge() }}
                 </h5>
                 <div id="current-profile-indicator" class="profile-active-indicator"></div>
+                <p class="form-hint text-muted mb-2">
+                    {{ _("Les réglages marqués « Profil » ne sont conservés qu'après un clic sur « Sauvegarder ». Un « • » à côté du nom du profil signale des modifications en attente.") }}
+                </p>
                 <div class="card">
                     <div class="card-body">
                         <div id="profiles-section">

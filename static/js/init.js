@@ -283,6 +283,14 @@ function applyUserSettings(userSettings) {
         console.log('📥 [USER_SETTINGS] Option checkVersion appliquée:', userSettings.check_updates);
     }
 
+    // Le thème a déjà été appliqué depuis le miroir localStorage par le script
+    // anti-FOUC ; ici on réaligne sur la préférence serveur, qui fait référence.
+    try {
+        pkg.syncThemeFromSettings(userSettings);
+    } catch (e) {
+        console.warn('📥 [USER_SETTINGS] Synchronisation du thème ignorée:', e?.message || e);
+    }
+
     console.log('📥 [USER_SETTINGS] État après application:', {
         language: pkg.options.options.language,
         checkVersion: pkg.options.options.checkVersion,

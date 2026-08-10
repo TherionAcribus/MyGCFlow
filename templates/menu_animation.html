@@ -1,3 +1,4 @@
+{% from '_scope_badges.html' import global_scope_badge with context %}
 <div id="animation" class="col-12 tab-pane fade">
     <div class="row g-3">
 
@@ -94,7 +95,7 @@
                     <!-- Audio utilisateur (lecture/record) -->
                     <div class="row g-2">
                         <div class="col-12 col-md-6">
-                            <label class="form-label d-block mb-2">{{ _("Musique (optionnel)") }}</label>
+                            <label class="form-label d-block mb-2">{{ _("Musique (optionnel)") }}{{ global_scope_badge() }}</label>
                             <div class="d-flex gap-3 align-items-center flex-wrap">
                                 <div class="form-check">
                                     <input id="cbRecordAudioEnable" class="form-check-input" type="checkbox">

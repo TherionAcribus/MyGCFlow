@@ -384,6 +384,16 @@ h5, h6 { color: var(--color-text); font-weight: 600; }
     color: #ffb74d;
     border-color: rgba(239, 108, 0, 0.4);
 }
+[data-bs-theme="dark"] .gc-scope-profile {
+    background: rgba(126, 87, 194, 0.18);
+    color: #b39ddb;
+    border-color: rgba(126, 87, 194, 0.45);
+}
+[data-bs-theme="dark"] .gc-scope-global {
+    background: rgba(33, 150, 243, 0.15);
+    color: #90caf9;
+    border-color: rgba(33, 150, 243, 0.4);
+}
 [data-bs-theme="dark"] #delete-profile-modal .modal-icon.warning {
     background: rgba(239, 108, 0, 0.15);
     color: #ffb74d;

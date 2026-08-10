@@ -1,7 +1,11 @@
+{% from '_scope_badges.html' import global_scope_badge with context %}
 <div id="settings" class="col-12 tab-pane fade">
     <h5 class="gc-section-title">
-        <i class="ti ti-settings text-muted me-1"></i>{{ _("Préférences de l'application") }}
+        <i class="ti ti-settings text-muted me-1"></i>{{ _("Préférences de l'application") }}{{ global_scope_badge() }}
     </h5>
+    <p class="form-hint text-muted mb-2">
+        {{ _("Ces réglages sont enregistrés automatiquement et s'appliquent quel que soit le profil chargé.") }}
+    </p>
     <div class="card mb-3">
         <div class="card-body">
             <div class="row g-2">

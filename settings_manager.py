@@ -41,6 +41,13 @@ def coerce_overlay_title(value, default: str = "My Geocaching Map") -> str:
 
 
 def app_config_dir() -> Path:
+    # GCMAP_CONFIG_DIR redirige la configuration entière (préférences + profils)
+    # vers un dossier choisi par l'appelant. Utilisé par le harnais Playwright :
+    # sans lui, un test qui change le thème ou un réglage vidéo écrirait dans la
+    # configuration réelle de l'utilisateur.
+    override = os.getenv("GCMAP_CONFIG_DIR")
+    if override:
+        return Path(override)
     # Windows: %APPDATA%\GCMap ; fallback vers home si non défini
     base = os.getenv("APPDATA") or os.path.expanduser("~")
     return Path(base) / APP_NAME
@@ -78,14 +85,45 @@ def write_json(path: Path, obj: dict) -> None:
 
 
 @dataclass
+class RecordingSettings:
+    """Réglages d'enregistrement vidéo.
+
+    Préférence globale (comme la langue), pas un réglage de profil : ils
+    décrivent la machine et le navigateur de l'utilisateur, pas le style de la
+    carte. Stockés côté serveur pour survivre à un changement de navigateur ou
+    à un vidage du cache (l'ancien stockage était localStorage seul).
+    """
+    mode: str = "mediarecorder"  # "mediarecorder" | "images"
+    fps: int = 30
+    mime_type: str = "video/webm;codecs=vp9"
+    bitrate_mbps: int = 6
+    slowdown_factor: int = 1
+    scale_factor: float = 1.0
+    upload_to_server: bool = True
+    download_local: bool = True
+    offline_normalization: bool = True
+    audio_enabled: bool = False
+    audio_volume: float = 1.0
+
+
+@dataclass
 class AppSettings:
     version: int = COORDINATE_ORDER_VERSION
     language: str = "fr"
     check_updates: bool = True
+    theme: str = "system"  # "system" | "light" | "dark"
     default_profile_uid: Optional[str] = None  # UUID du profil par défaut (None = aucun)
     # Convention persistée/API : (longitude, latitude).
     map_default_center: Optional[Tuple[float, float]] = None
     map_default_zoom: Optional[int] = None
+    recording: RecordingSettings = field(default_factory=RecordingSettings)
+    # True dès que l'utilisateur a enregistré des réglages vidéo côté serveur.
+    # Sert uniquement à la reprise des anciens réglages : tant qu'il est False,
+    # le client sait qu'il peut pousser ceux restés dans son localStorage (voir
+    # migrateLegacyRecordSettings dans static/js/ui.js). Sans ce drapeau,
+    # `recording` renvoyant toujours des valeurs par défaut, « jamais configuré »
+    # serait indiscernable de « configuré avec les valeurs par défaut ».
+    recording_configured: bool = False
     examples_seeded: bool = False  # True une fois les profils d'exemple créés (premier lancement)
 
 
@@ -191,6 +229,48 @@ def _to_float(value, default: float) -> float:
         return default
 
 
+def _clamp_int(value, default: int, minimum: int, maximum: int) -> int:
+    return max(minimum, min(maximum, _to_int(value, default)))
+
+
+def _clamp_float(value, default: float, minimum: float, maximum: float) -> float:
+    return max(minimum, min(maximum, _to_float(value, default)))
+
+
+THEMES = ("system", "light", "dark")
+RECORDING_MODES = ("mediarecorder", "images")
+
+
+def coerce_theme(value, default: str = "system") -> str:
+    return value if value in THEMES else default
+
+
+def coerce_recording_settings(d: dict) -> RecordingSettings:
+    """Borne les réglages d'enregistrement aux plages acceptées par l'UI.
+
+    Les mêmes bornes sont appliquées côté client (static/js/recording_settings.mjs) :
+    on les répète ici parce qu'un settings.json édité à la main, ou écrit par une
+    version antérieure, ne doit pas pouvoir produire un enregistrement impossible.
+    """
+    r = RecordingSettings()
+    if not isinstance(d, dict):
+        return r
+    mode = d.get("mode", r.mode)
+    r.mode = mode if mode in RECORDING_MODES else r.mode
+    r.fps = _clamp_int(d.get("fps"), r.fps, 1, 60)
+    if isinstance(d.get("mime_type"), str) and d.get("mime_type"):
+        r.mime_type = d["mime_type"]
+    r.bitrate_mbps = _clamp_int(d.get("bitrate_mbps"), r.bitrate_mbps, 1, 30)
+    r.slowdown_factor = _clamp_int(d.get("slowdown_factor"), r.slowdown_factor, 1, 20)
+    r.scale_factor = _clamp_float(d.get("scale_factor"), r.scale_factor, 1.0, 3.0)
+    r.upload_to_server = bool(d.get("upload_to_server", r.upload_to_server))
+    r.download_local = bool(d.get("download_local", r.download_local))
+    r.offline_normalization = bool(d.get("offline_normalization", r.offline_normalization))
+    r.audio_enabled = bool(d.get("audio_enabled", r.audio_enabled))
+    r.audio_volume = _clamp_float(d.get("audio_volume"), r.audio_volume, 0.0, 1.0)
+    return r
+
+
 def coerce_settings(d: dict) -> AppSettings:
     s = AppSettings()
     if isinstance(d, dict):
@@ -200,6 +280,11 @@ def coerce_settings(d: dict) -> AppSettings:
             source_version = 1
         s.language = d.get("language", s.language)
         s.check_updates = bool(d.get("check_updates", s.check_updates))
+        s.theme = coerce_theme(d.get("theme"), s.theme)
+        s.recording = coerce_recording_settings(d.get("recording"))
+        # Un settings.json antérieur à la migration n'a pas de bloc `recording` :
+        # il compte comme « jamais configuré ».
+        s.recording_configured = bool(d.get("recording_configured", "recording" in d))
 
         raw_center = d.get("map_default_center")
         if isinstance(raw_center, (list, tuple)) and len(raw_center) == 2:

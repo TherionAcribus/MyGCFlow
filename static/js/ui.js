@@ -9,6 +9,8 @@ import {
     normalizeRecordingFps,
     recordingQualityProfileFor,
 } from './recording_settings.mjs';
+import { saveSettingsPatch, makeDebouncedSettingsSaver } from './settings_api.mjs';
+import { reportSave } from './saved_indicator.mjs';
 
 // Flag de debug pour les filtres (COUNTRY/FILTER).
 // Mettre à true pour réactiver les logs en console.
@@ -98,6 +100,35 @@ function syncRecordingQualityProfile({ revealCustom = false } = {}) {
     if (recordAdvancedSettings && profileName === 'custom' && revealCustom) {
         recordAdvancedSettings.open = true;
     }
+}
+
+// Tous les champs d'enregistrement passent par changeRecordValues() puis par la
+// même requête : on retient celui que l'utilisateur vient de manipuler pour
+// n'allumer QUE son indicateur. Sans cela, modifier le FPS ferait clignoter
+// « Enregistré » sur les douze champs de l'onglet.
+//
+// Déclaré ici, en tête de module : initUIElements() — qui appelle
+// trackRecordFieldTouches() — s'exécute pendant l'évaluation du module quand le
+// DOM est déjà chargé (cf. bas de ce fichier), donc avant toute déclaration
+// placée plus bas.
+const RECORD_SETTINGS_FIELDS = [
+    'selectRecordMode', 'selectRecordQualityProfile', 'inputRecordFps', 'inputRecordBitrate',
+    'inputRecordSlowdown', 'inputRecordScaleFactor', 'selectRecordMime',
+    'cbRecordUpload', 'cbRecordDownload', 'cbRecordNormalize',
+    'cbRecordAudioEnable', 'inputAudioVolume',
+];
+let lastTouchedRecordField = null;
+
+function trackRecordFieldTouches() {
+    RECORD_SETTINGS_FIELDS.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const remember = () => { lastTouchedRecordField = el; };
+        // Capture : s'exécute avant les handlers métier, donc avant l'appel à
+        // saveRecordSettings() qu'ils déclenchent.
+        el.addEventListener('input', remember, true);
+        el.addEventListener('change', remember, true);
+    });
 }
 
 function finalizeRecordingNumberInput(input, normalizer, limits) {
@@ -731,6 +762,10 @@ function initOptionsElements() {
             changeRecordValues();
         });
     }
+    // Après la déclaration de tous les champs : mémorise le dernier manipulé
+    // pour cibler l'indicateur « Enregistré ✓ ».
+    trackRecordFieldTouches();
+
     inputAudioFile = document.getElementById('inputAudioFile');
     if (inputAudioFile) {
         // Gérer la sélection/désélection d'un fichier audio
@@ -1155,7 +1190,6 @@ export function init_ui() {
 
 let isPickingMapCenter = false;
 let pickMapCenterHandler = null;
-let lastMapCenterToast = null;
 let lastSavedCenterKey = null;
 let lastSavedZoom = null;
 
@@ -1305,25 +1339,17 @@ function onMapCenterKeyDown(e) {
     saveMapCenterSettings();
 }
 
-async function saveAppSettingsPatch(patch) {
-    try {
-        const currentSettings = await (await fetch('/api/settings')).json();
-        const merged = Object.assign({}, currentSettings, patch || {});
-        const saveResponse = await fetch('/api/settings', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(merged)
-        });
-        if (!saveResponse.ok) {
-            return false;
-        }
-        try {
-            window.userSettings = merged;
-        } catch(_) {}
-        return true;
-    } catch(e) {
-        return false;
+// Champs du centre/zoom par défaut concernés par la sauvegarde courante :
+// seuls les champs visibles reçoivent l'indicateur « Enregistré ✓ » (le mode
+// combiné et le mode Lat/Lon séparés ne sont jamais affichés en même temps).
+function mapCenterIndicatorFields({ centerChanged, zoomChanged }) {
+    const fields = [];
+    if (centerChanged) {
+        if (isCombinedLatLonMode) fields.push(inputMapCenterCombined);
+        else fields.push(inputMapCenterLat, inputMapCenterLon);
     }
+    if (zoomChanged) fields.push(inputMapDefaultZoom);
+    return fields.filter(Boolean);
 }
 
 async function saveMapCenterSettings() {
@@ -1392,21 +1418,16 @@ async function saveMapCenterSettings() {
             return true;
         }
 
-        const ok = await saveAppSettingsPatch(patch);
-        if (!ok) {
-            pkg.showToast && pkg.showToast('Échec sauvegarde paramètres carte', 'warning', 'Paramètres', 3000);
-        }
+        // Retour de sauvegarde : indicateur inline à côté des champs concernés,
+        // comme pour toutes les préférences globales. Un toast serait ici plus
+        // bruyant (il masque la carte) et ne dirait pas QUEL champ est parti.
+        const indicatorFields = mapCenterIndicatorFields({ centerChanged, zoomChanged });
+        const ok = await reportSave(indicatorFields, saveSettingsPatch(patch));
         if (patch.map_default_center && inputMapCenterCombined) {
             const lonStr = `${patch.map_default_center[0]}`;
             const latStr = `${patch.map_default_center[1]}`;
             inputMapCenterCombined.value = `${latStr}, ${lonStr}`;
             setCoordinateValidity({ latValid: true, lonValid: true, combinedValid: true });
-            try {
-                if (lastMapCenterToast) pkg.hideToast(lastMapCenterToast);
-            } catch(_) {}
-            if (centerChanged) {
-                lastMapCenterToast = pkg.showToast && pkg.showToast('Coordonnées enregistrées', 'success', 'Carte', 2500);
-            }
         }
         lastSavedCenterKey = newCenterKey;
         if (patch.map_default_zoom !== undefined) {
@@ -1432,24 +1453,27 @@ async function applyCurrentMapViewAsDefault() {
         if (inputMapCenterLon) inputMapCenterLon.value = lon.toFixed(6);
         if (inputMapDefaultZoom) inputMapDefaultZoom.value = String(view.getZoom());
         /* M.updateTextFields() — removed (Bootstrap 5 handles labels) */
-        const ok = await saveMapCenterSettings();
-        if (ok !== false && pkg.showToast) {
-            const title = pkg.t ? pkg.t('Carte') : 'Carte';
-            const message = pkg.t ? pkg.t('Centre par défaut mis à jour depuis la vue actuelle') : 'Centre par défaut mis à jour depuis la vue actuelle';
-            pkg.showToast(message, 'success', title, 3000);
-        }
+        // saveMapCenterSettings() pose déjà l'indicateur « Enregistré ✓ » sur les
+        // champs remplis : pas de toast en plus pour la même information.
+        await saveMapCenterSettings();
     } catch(e) {
     }
 }
 
-function clearMapCenterSettings() {
+async function clearMapCenterSettings() {
     try {
         if (inputMapCenterLat) inputMapCenterLat.value = '';
         if (inputMapCenterLon) inputMapCenterLon.value = '';
         if (inputMapCenterCombined) inputMapCenterCombined.value = '';
         if (inputMapDefaultZoom) inputMapDefaultZoom.value = '';
         /* M.updateTextFields() — removed (Bootstrap 5 handles labels) */
-        saveAppSettingsPatch({ map_default_center: null, map_default_zoom: null });
+        const fields = mapCenterIndicatorFields({ centerChanged: true, zoomChanged: true });
+        await reportSave(fields, saveSettingsPatch({ map_default_center: null, map_default_zoom: null }));
+        // Le suivi "déjà enregistré" doit refléter la remise à zéro, sinon une
+        // ressaisie identique à l'ancienne valeur serait considérée inchangée
+        // et ne repartirait pas vers le serveur.
+        lastSavedCenterKey = 'null';
+        lastSavedZoom = null;
     } catch(e) {
     }
 }
@@ -1591,45 +1615,39 @@ function initOptionsUI() {
 // ----------- OPTIONS DE L'APP ------------
 
 //
-async function changeOptionsValues() {
+// Handler partagé par le sélecteur de langue et celui de vérification de mise à
+// jour. `event` sert seulement à savoir quel champ signaler comme enregistré.
+async function changeOptionsValues(event) {
     const newLanguage = selectLanguage.value;
     const currentLanguage = pkg.options.options.language;
+    const checkUpdates = selectCheckVersionOnline
+        ? (selectCheckVersionOnline.value === 'true' || selectCheckVersionOnline.value === true)
+        : undefined;
 
     // Sauvegarder la nouvelle langue dans les options
     pkg.options.options.language = newLanguage;
-    if (selectCheckVersionOnline) {
-        pkg.options.options.checkVersion = selectCheckVersionOnline.value === 'true' || selectCheckVersionOnline.value === true;
+    if (checkUpdates !== undefined) {
+        pkg.options.options.checkVersion = checkUpdates;
     }
 
     // Sauvegarder dans localStorage + cookie pour le backend
     persistLanguagePreference(newLanguage);
 
     // Sauvegarder côté serveur via l'API settings (comme les profils)
-    try {
-        const currentSettings = await (await fetch('/api/settings')).json();
-        currentSettings.language = newLanguage;
-        if (selectCheckVersionOnline) {
-            currentSettings.check_updates = selectCheckVersionOnline.value === 'true' || selectCheckVersionOnline.value === true;
-        }
-
-        const saveResponse = await fetch('/api/settings', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(currentSettings)
-        });
-
-        if (saveResponse.ok) {
-            dbgUi('Paramètres sauvegardés côté serveur:', { language: newLanguage, check_updates: currentSettings.check_updates });
-        } else {
-            console.warn('Échec sauvegarde côté serveur, paramètres locaux seulement');
-        }
-    } catch (error) {
-        console.error('❌ Erreur sauvegarde paramètres côté serveur:', error);
-        console.warn('Paramètres sauvegardés localement seulement');
+    const patch = { language: newLanguage };
+    if (checkUpdates !== undefined) patch.check_updates = checkUpdates;
+    const touchedField = event?.target || selectLanguage;
+    const ok = await reportSave(touchedField, saveSettingsPatch(patch));
+    if (ok) {
+        dbgUi('Paramètres sauvegardés côté serveur:', patch);
+    } else {
+        console.warn('Échec sauvegarde côté serveur, paramètres locaux seulement');
     }
 
     // Si la langue a changé, l'appliquer immédiatement : le backend rend les
     // templates traduits selon le cookie/localStorage, un rechargement suffit.
+    // (Le rechargement emporte l'indicateur : ici c'est la page traduite qui
+    // fait office de confirmation.)
     if (newLanguage !== currentLanguage) {
         reloadWithLanguage(newLanguage);
     }
@@ -1735,61 +1753,126 @@ function changeRecordValues() {
     }
 }
 
-// Sauvegarde les paramètres d'enregistrement dans localStorage
+// ----- Persistance des paramètres d'enregistrement -----
+//
+// Ces réglages sont une PRÉFÉRENCE GLOBALE, enregistrée dans settings.json côté
+// serveur (comme la langue) et non dans le profil : ils décrivent la machine et
+// le navigateur, pas le style de la carte. Ils vivaient auparavant dans le seul
+// localStorage, donc étaient perdus au changement de navigateur ou au vidage du
+// cache — d'où la migration ci-dessous.
+
+const LEGACY_RECORD_SETTINGS_KEY = 'recordSettings';
+
+const saveRecordSettingsDebounced = makeDebouncedSettingsSaver(500);
+
+// Traduit pkg.options.record vers la forme plate attendue par l'API
+// (snake_case, bitrate en Mbps comme dans l'UI plutôt qu'en bits/s).
+function recordSettingsPayload() {
+    const record = pkg.options.record || {};
+    const mr = record.mediaRecorder || {};
+    const audio = record.audio || {};
+    return {
+        mode: record.mode || 'mediarecorder',
+        fps: normalizeRecordingFps(record.fps),
+        mime_type: mr.mimeType || 'video/webm;codecs=vp9',
+        bitrate_mbps: normalizeRecordingBitrateMbps(Number(mr.videoBitsPerSecond) / 1_000_000),
+        slowdown_factor: mr.slowdownFactor || 1,
+        scale_factor: mr.scaleFactor || 1,
+        upload_to_server: mr.uploadToServer ?? true,
+        download_local: mr.downloadLocal ?? true,
+        offline_normalization: mr.offlineNormalization ?? true,
+        audio_enabled: audio.enabled || false,
+        audio_volume: (typeof audio.volume === 'number') ? audio.volume : 1,
+    };
+}
+
+// Applique une réponse `recording` de l'API sur pkg.options.record.
+function applyRecordSettingsPayload(recording) {
+    if (!recording || typeof recording !== 'object') return false;
+    pkg.options.record = pkg.options.record || {};
+    pkg.options.record.mode = recording.mode || 'mediarecorder';
+    pkg.options.record.fps = normalizeRecordingFps(recording.fps);
+    pkg.options.record.mediaRecorder = pkg.options.record.mediaRecorder || {};
+    pkg.options.record.mediaRecorder.mimeType = recording.mime_type || 'video/webm;codecs=vp9';
+    pkg.options.record.mediaRecorder.videoBitsPerSecond =
+        normalizeRecordingBitrateMbps(recording.bitrate_mbps) * 1_000_000;
+    pkg.options.record.mediaRecorder.slowdownFactor = recording.slowdown_factor || 1;
+    pkg.options.record.mediaRecorder.scaleFactor = recording.scale_factor || 1;
+    pkg.options.record.mediaRecorder.uploadToServer = recording.upload_to_server ?? true;
+    pkg.options.record.mediaRecorder.downloadLocal = recording.download_local ?? true;
+    pkg.options.record.mediaRecorder.offlineNormalization = recording.offline_normalization ?? true;
+    pkg.options.record.audio = pkg.options.record.audio || {};
+    pkg.options.record.audio.enabled = recording.audio_enabled || false;
+    pkg.options.record.audio.volume =
+        (typeof recording.audio_volume === 'number') ? recording.audio_volume : 1;
+    return true;
+}
+
+// Reprise unique des réglages restés dans localStorage (ancien stockage).
+// Ne s'applique que si le serveur n'a jamais reçu de réglages vidéo
+// (recording_configured=false) : passé ce point, le serveur fait référence et
+// un localStorage périmé d'un autre navigateur ne peut plus l'écraser. La clé
+// locale est supprimée dans tous les cas pour ne pas rejouer la migration.
+function migrateLegacyRecordSettings(userSettings) {
+    let legacy = null;
+    try {
+        const raw = localStorage.getItem(LEGACY_RECORD_SETTINGS_KEY);
+        if (raw) legacy = JSON.parse(raw);
+    } catch (_) {}
+    if (!legacy || !legacy.mode) return false;
+
+    try { localStorage.removeItem(LEGACY_RECORD_SETTINGS_KEY); } catch (_) {}
+
+    if (userSettings && userSettings.recording_configured) return false;
+
+    pkg.options.record = pkg.options.record || {};
+    pkg.options.record.mode = legacy.mode;
+    pkg.options.record.fps = normalizeRecordingFps(legacy.fps);
+    pkg.options.record.mediaRecorder = pkg.options.record.mediaRecorder || {};
+    pkg.options.record.mediaRecorder.mimeType = legacy.mediaRecorder?.mimeType || 'video/webm;codecs=vp9';
+    pkg.options.record.mediaRecorder.videoBitsPerSecond = normalizeRecordingBitrateMbps(
+        Number(legacy.mediaRecorder?.videoBitsPerSecond) / 1_000_000
+    ) * 1_000_000;
+    pkg.options.record.mediaRecorder.slowdownFactor = legacy.mediaRecorder?.slowdownFactor || 1;
+    pkg.options.record.mediaRecorder.scaleFactor = legacy.mediaRecorder?.scaleFactor || 1;
+    pkg.options.record.mediaRecorder.uploadToServer = legacy.mediaRecorder?.uploadToServer ?? true;
+    pkg.options.record.mediaRecorder.downloadLocal = legacy.mediaRecorder?.downloadLocal ?? true;
+    pkg.options.record.mediaRecorder.offlineNormalization = legacy.mediaRecorder?.offlineNormalization ?? true;
+    pkg.options.record.audio = pkg.options.record.audio || {};
+    pkg.options.record.audio.enabled = legacy.audio?.enabled || false;
+    pkg.options.record.audio.volume = (typeof legacy.audio?.volume === 'number') ? legacy.audio.volume : 1;
+
+    // Sans attendre : la valeur reprise doit être sur le disque même si
+    // l'utilisateur ne touche plus à l'onglet Enregistrement.
+    saveSettingsPatch({ recording: recordSettingsPayload() });
+    console.log('🎬 [RECORD] Réglages d\'enregistrement repris depuis localStorage vers le serveur');
+    return true;
+}
+
+// Sauvegarde les paramètres d'enregistrement côté serveur (débouncé : les
+// champs numériques émettent un événement par frappe).
 function saveRecordSettings() {
     try {
-        const recordSettings = {
-            mode: pkg.options.record?.mode || 'mediarecorder',
-            fps: normalizeRecordingFps(pkg.options.record?.fps),
-            mediaRecorder: {
-                mimeType: pkg.options.record?.mediaRecorder?.mimeType || 'video/webm;codecs=vp9',
-                videoBitsPerSecond: normalizeRecordingBitrateMbps(
-                    Number(pkg.options.record?.mediaRecorder?.videoBitsPerSecond) / 1_000_000
-                ) * 1_000_000,
-                slowdownFactor: pkg.options.record?.mediaRecorder?.slowdownFactor || 1,
-                uploadToServer: pkg.options.record?.mediaRecorder?.uploadToServer ?? true,
-                downloadLocal: pkg.options.record?.mediaRecorder?.downloadLocal ?? true,
-                offlineNormalization: pkg.options.record?.mediaRecorder?.offlineNormalization ?? true,
-                scaleFactor: pkg.options.record?.mediaRecorder?.scaleFactor || 1
-            },
-            audio: {
-                enabled: pkg.options.record?.audio?.enabled || false,
-                volume: (typeof pkg.options.record?.audio?.volume === 'number') ? pkg.options.record.audio.volume : 1
-            }
-        };
-        localStorage.setItem('recordSettings', JSON.stringify(recordSettings));
+        const field = lastTouchedRecordField;
+        const promise = saveRecordSettingsDebounced({ recording: recordSettingsPayload() });
+        // Sans champ identifié (appel programmatique : reprise d'un profil de
+        // qualité, initialisation), la sauvegarde a bien lieu mais sans retour
+        // visuel : il n'y a alors aucune action utilisateur à confirmer.
+        if (field) reportSave(field, promise);
     } catch(e) {
         console.warn('Save record settings error:', e);
     }
 }
 
-// Restaure les paramètres d'enregistrement depuis localStorage
+// Restaure les paramètres d'enregistrement depuis les préférences serveur déjà
+// chargées par init.js (window.userSettings), avec reprise de l'ancien
+// localStorage au premier démarrage suivant la migration.
 function loadRecordSettings() {
     try {
-        const saved = localStorage.getItem('recordSettings');
-        if (saved) {
-            const recordSettings = JSON.parse(saved);
-            // Appliquer les paramètres sauvegardés
-            if (recordSettings.mode) {
-                pkg.options.record = pkg.options.record || {};
-                pkg.options.record.mode = recordSettings.mode;
-                pkg.options.record.fps = normalizeRecordingFps(recordSettings.fps);
-                pkg.options.record.mediaRecorder = pkg.options.record.mediaRecorder || {};
-                pkg.options.record.mediaRecorder.mimeType = recordSettings.mediaRecorder?.mimeType || 'video/webm;codecs=vp9';
-                pkg.options.record.mediaRecorder.videoBitsPerSecond = normalizeRecordingBitrateMbps(
-                    Number(recordSettings.mediaRecorder?.videoBitsPerSecond) / 1_000_000
-                ) * 1_000_000;
-                pkg.options.record.mediaRecorder.slowdownFactor = recordSettings.mediaRecorder?.slowdownFactor || 1;
-                pkg.options.record.mediaRecorder.uploadToServer = recordSettings.mediaRecorder?.uploadToServer ?? true;
-                pkg.options.record.mediaRecorder.downloadLocal = recordSettings.mediaRecorder?.downloadLocal ?? true;
-                pkg.options.record.mediaRecorder.offlineNormalization = recordSettings.mediaRecorder?.offlineNormalization ?? true;
-                pkg.options.record.mediaRecorder.scaleFactor = recordSettings.mediaRecorder?.scaleFactor || 1;
-                // Audio utilisateur
-                pkg.options.record.audio = pkg.options.record.audio || {};
-                pkg.options.record.audio.enabled = recordSettings.audio?.enabled || false;
-                pkg.options.record.audio.volume = (typeof recordSettings.audio?.volume === 'number') ? recordSettings.audio.volume : 1;
-            }
-            return true;
+        const userSettings = window.userSettings || null;
+        if (migrateLegacyRecordSettings(userSettings)) return true;
+        if (userSettings && userSettings.recording_configured) {
+            return applyRecordSettingsPayload(userSettings.recording);
         }
     } catch(e) {
         console.warn('Load record settings error:', e);

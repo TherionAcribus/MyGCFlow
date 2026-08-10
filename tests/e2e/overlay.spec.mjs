@@ -4,6 +4,19 @@ import { expect, test } from '@playwright/test';
 async function openReadyApp(page) {
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.gcmapReady === true);
+
+  // La base du runtime de test est vide tant qu'aucune autre spec n'a chargé de
+  // GPX : la modale de première utilisation s'ouvre alors (de façon asynchrone)
+  // et son backdrop intercepte les clics sur les onglets. Sans ce renvoi, ces
+  // tests ne passaient que dans l'ordre où une spec antérieure avait peuplé la
+  // base — cf. le même traitement dans profile-style-state.spec.mjs.
+  const firstUse = page.locator('#modal_first_use');
+  await firstUse.waitFor({ state: 'visible', timeout: 5_000 }).catch(() => {});
+  if (await firstUse.isVisible()) {
+    await firstUse.locator('[data-bs-dismiss="modal"]').click();
+    await firstUse.waitFor({ state: 'hidden' });
+  }
+
   await page.evaluate(async () => {
     const app = await import('/static/js/index.js');
     await app.waitForOverlayCssDefaults?.();

@@ -2,10 +2,14 @@ import logging
 
 from flask import Blueprint, jsonify, request, current_app
 
+from dataclasses import asdict
+
 from settings_manager import (
     AppSettings,
     InvalidProfileNameError,
     coerce_overlay_title,
+    coerce_recording_settings,
+    coerce_theme,
     get_settings_manager,
     sanitize_overlay_css,
 )
@@ -25,10 +29,13 @@ def api_get_settings():
         'version': s.version,
         'language': s.language,
         'check_updates': s.check_updates,
+        'theme': s.theme,
         'default_profile_uid': s.default_profile_uid,
         'default_profile_name': default_profile_name,
         'map_default_center': list(s.map_default_center) if s.map_default_center else None,
         'map_default_zoom': s.map_default_zoom,
+        'recording': asdict(s.recording),
+        'recording_configured': s.recording_configured,
     })
     response.set_cookie(
         'gcmap_lang',
@@ -46,6 +53,17 @@ def api_put_settings():
     current = settings_manager.get_app_settings()
     language = data.get('language', current.language)
     check_updates = bool(data.get('check_updates', current.check_updates))
+    theme = coerce_theme(data.get('theme'), current.theme) if 'theme' in data else current.theme
+
+    # Les réglages d'enregistrement acceptent un patch partiel : l'UI n'envoie
+    # que le champ modifié, les autres doivent survivre.
+    recording = current.recording
+    recording_configured = current.recording_configured
+    if 'recording' in data and isinstance(data.get('recording'), dict):
+        merged_recording = asdict(current.recording)
+        merged_recording.update(data['recording'])
+        recording = coerce_recording_settings(merged_recording)
+        recording_configured = True
 
     # Ne modifier default_profile_uid que si le client l'a explicitement envoyé
     # (sinon un PUT partiel effacerait silencieusement le profil par défaut).
@@ -79,9 +97,12 @@ def api_put_settings():
         version=current.version,
         language=language,
         check_updates=check_updates,
+        theme=theme,
         default_profile_uid=default_profile_uid,
         map_default_center=map_default_center,
         map_default_zoom=map_default_zoom,
+        recording=recording,
+        recording_configured=recording_configured,
         examples_seeded=current.examples_seeded,
     )
     settings_manager.save_app_settings(updated)

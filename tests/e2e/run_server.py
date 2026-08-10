@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import sys
 from pathlib import Path
@@ -17,6 +18,21 @@ INSTANCE.mkdir(parents=True, exist_ok=True)
 # captured/). Le cwd temporaire isole donc aussi tous les exports navigateur.
 os.chdir(RUNTIME)
 os.environ["GCMAP_RUNTIME_DIR"] = str(RUNTIME)
+# Préférences et profils dans le runtime jetable : sans cette redirection, un
+# test qui change le thème, un réglage vidéo ou le profil par défaut écrirait
+# dans %APPDATA%\GCMap, c'est-à-dire dans la configuration réelle.
+CONFIG_DIR = RUNTIME / "config"
+os.environ["GCMAP_CONFIG_DIR"] = str(CONFIG_DIR)
+
+# Préférences de départ du runtime. `check_updates` est désactivé : la
+# vérification de version interroge le réseau au démarrage et ouvre une modale
+# de changelog par-dessus l'interface, qui intercepte les clics des tests.
+CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+(CONFIG_DIR / "settings.json").write_text(
+    json.dumps({"version": 2, "language": "fr", "check_updates": False}, ensure_ascii=False),
+    encoding="utf-8",
+)
+
 database_path = (INSTANCE / "geocaching.db").as_posix()
 os.environ["DATABASE_URI"] = f"sqlite:///{database_path}"
 

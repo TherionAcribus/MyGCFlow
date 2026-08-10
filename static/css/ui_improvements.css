@@ -1031,6 +1031,84 @@ top: 20px;
     background-color: #ff9800;
 }
 
+/* Indicateur inline « Enregistré ✓ » des préférences à sauvegarde automatique.
+   Posé dans le <label> du champ par static/js/saved_indicator.mjs : il occupe
+   toujours sa place (visibility plutôt que display) pour qu'apparition et
+   disparition ne fassent pas sauter la mise en page du formulaire. */
+.gc-saved-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    margin-left: 8px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.18s ease;
+}
+
+.gc-saved-indicator.is-visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.gc-saved-indicator.is-saved {
+    color: var(--tblr-success, #2fb344);
+}
+
+.gc-saved-indicator.is-saving {
+    color: var(--tblr-secondary, #6c757d);
+}
+
+.gc-saved-indicator.is-error {
+    color: var(--tblr-danger, #d63939);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .gc-saved-indicator {
+        transition: none;
+    }
+}
+
+/* Badges de portée : indiquent OÙ un réglage est enregistré.
+   .gc-scope-profile = appartient au profil actif (nécessite « Sauvegarder »)
+   .gc-scope-global  = préférence de l'application (enregistrée automatiquement) */
+.gc-scope-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 8px;
+    padding: 1px 8px;
+    border-radius: 12px;
+    border: 1px solid transparent;
+    font-size: 0.7rem;
+    font-weight: 600;
+    line-height: 1.5;
+    text-transform: none;
+    letter-spacing: 0;
+    vertical-align: middle;
+    cursor: help;
+}
+
+.gc-scope-badge i {
+    font-size: 0.85em;
+}
+
+.gc-scope-profile {
+    background: #ede7f6;
+    color: #5e35b1;
+    border-color: #d1c4e9;
+}
+
+.gc-scope-global {
+    background: #e3f2fd;
+    color: #1565c0;
+    border-color: #bbdefb;
+}
+
 /* Marges pour les contenus d'onglets internes */
 #tabMapOverlay, #tabPointsFlash {
 margin-top: 10px;

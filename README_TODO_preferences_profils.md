@@ -88,11 +88,17 @@ Objectif: implémenter une gestion simple, fiable et robuste des paramètres uti
 - [x] Tests manuels rapides via `curl`/`httpie`/Postman
 
 ### 5) Intégration UI (templates + JS)
-- [ ] Page Préférences (ex: `templates/menu_options.html` ou nouvelle modale):
-  - [ ] Sélecteur de langue (`fr`/`en`) → `PUT /api/settings`
-  - [ ] Case à cocher "Vérifier les mises à jour au démarrage" → `PUT /api/settings`
-  - [ ] Bouton "Réinitialiser" → `POST /api/settings/reset`
-  - [ ] Rechargement i18n au besoin (forcer refresh ou re-render)
+- [x] Page Préférences (`templates/menu_options.html`):
+  - [x] Sélecteur de langue (`fr`/`en`) → `PUT /api/settings`
+  - [x] Case à cocher "Vérifier les mises à jour au démarrage" → `PUT /api/settings`
+  - [ ] Bouton "Réinitialiser" → `POST /api/settings/reset` (endpoint prêt, pas de bouton dans l'UI)
+  - [x] Rechargement i18n au besoin (forcer refresh ou re-render)
+- [x] Lisibilité de la persistance (cf. `docs/preferences-et-profils.md`):
+  - [x] Thème et réglages d'enregistrement migrés de `localStorage` vers `settings.json`
+        (le thème garde un miroir `localStorage` pour l'anti-FOUC)
+  - [x] Indicateur inline uniforme « Enregistré ✓ » sur les préférences globales,
+        en remplacement des toasts partiels
+  - [x] Badges « Profil » / « Global » sur les titres de section
 - [x] Page Bibliothèque de profils (intégrée dans `menu_style.html`):
   - [x] Liste des profils via `GET /api/profiles`
   - [x] Actions par profil: Appliquer, Enregistrer, Dupliquer, Renommer, Supprimer, Réinitialiser
@@ -145,12 +151,15 @@ Objectif: implémenter une gestion simple, fiable et robuste des paramètres uti
 - Profils: `%APPDATA%/GCMap/profiles/`
 
 ### Schémas JSON
-- `settings.json`:
+- `settings.json` (voir `docs/preferences-et-profils.md` pour le détail):
 ```json
 {
   "version": 2,
   "language": "fr",
-  "check_updates": true
+  "check_updates": true,
+  "theme": "system",
+  "recording": { "mode": "mediarecorder", "fps": 30, "bitrate_mbps": 6 },
+  "recording_configured": false
 }
 ```
 

@@ -5,6 +5,7 @@
 
 import * as pkg from './index.js';
 import { refreshTomSelect, initTomSelect, getTomSelect, showBsModal, hideBsModal, getBsModal } from './ui_bootstrap.js';
+import { markSaved, markSaveError } from './saved_indicator.mjs';
 
 // Flag de debug pour ce fichier. Mettre à true pour réactiver les logs en
 // console (désactivés par défaut : sérialiser des objets/chaînes à chaque
@@ -1026,6 +1027,12 @@ class ProfileManager {
         });
 
         const result = await this.saveAppSettings({ default_profile_uid: selectedProfileUid });
+        // Le sélecteur "profil par défaut" est une préférence globale : il reçoit
+        // le même indicateur inline que ses voisins de l'onglet Préférences. Le
+        // toast ci-dessous reste, car il rapporte une autre information — le
+        // profil a aussi été APPLIQUÉ à la carte.
+        if (result.success) markSaved('selectDefaultProfile');
+        else markSaveError('selectDefaultProfile');
         if (result.success) {
             dbgProfiles('Profil par défaut sauvegardé avec succès, UUID:', selectedProfileUid);
             this._defaultProfileName = appliedProfileName || '';
