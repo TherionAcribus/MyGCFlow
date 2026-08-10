@@ -32,17 +32,18 @@
 
         <!-- Couleur du flash -->
         <label class="form-label">{{ _("Couleur du flash") }}</label>
+        <!-- Libellés en <span> (et non <label for>) : seul le clic sur le bouton radio change la valeur, pas le clic sur toute la ligne -->
         <div class="form-check">
-            <input class="form-check-input" type="radio" name="flashColor" id="flashColorGc" value="gc">
-            <label class="form-check-label" for="flashColorGc">{{ _("Couleurs GC (par type)") }}</label>
+            <input class="form-check-input" type="radio" name="flashColor" id="flashColorGc" value="gc" aria-labelledby="flashColorGcLabel">
+            <span class="form-check-label" id="flashColorGcLabel">{{ _("Couleurs GC (par type)") }}</span>
         </div>
         <div class="form-check">
-            <input class="form-check-input" type="radio" name="flashColor" id="flashColorNone" value="none">
-            <label class="form-check-label" for="flashColorNone">{{ _("Transparent") }}</label>
+            <input class="form-check-input" type="radio" name="flashColor" id="flashColorNone" value="none" aria-labelledby="flashColorNoneLabel">
+            <span class="form-check-label" id="flashColorNoneLabel">{{ _("Transparent") }}</span>
         </div>
         <div class="form-check">
-            <input class="form-check-input" type="radio" name="flashColor" id="flashColorFix" value="fix" checked>
-            <label class="form-check-label" for="flashColorFix">{{ _("Couleur unique") }}</label>
+            <input class="form-check-input" type="radio" name="flashColor" id="flashColorFix" value="fix" checked aria-labelledby="flashColorFixLabel">
+            <span class="form-check-label" id="flashColorFixLabel">{{ _("Couleur unique") }}</span>
         </div>
 
         <!-- Color Picker Flash -->

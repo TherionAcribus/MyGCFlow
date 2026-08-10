@@ -304,6 +304,61 @@ class SettingsApiTests(unittest.TestCase):
         self.assertEqual(payload['theme'], 'dark')
         self.assertEqual(payload['language'], 'en')
 
+    def test_creating_a_profile_returns_its_uid(self):
+        # Le client fait immédiatement du profil créé le profil actif puis lui
+        # écrit les réglages affichés : sans uid, il ne peut ni le mémoriser
+        # comme dernier profil actif ni le retrouver par la suite.
+        created = self.client.post('/api/profiles', json={'name': 'Alpha'}).get_json()
+
+        self.assertTrue(created['success'])
+        self.assertTrue(created['uid'])
+        self.assertEqual(
+            self.client.get(f"/api/profiles/uid/{created['uid']}").get_json()['name'], 'Alpha'
+        )
+
+    def test_the_last_active_profile_is_exposed_with_its_name(self):
+        uid = self.client.post('/api/profiles', json={'name': 'Alpha'}).get_json()['uid']
+
+        self.client.put('/api/settings', json={'last_profile_uid': uid})
+
+        payload = self.client.get('/api/settings').get_json()
+        self.assertEqual(payload['last_profile_uid'], uid)
+        self.assertEqual(payload['last_profile_name'], 'Alpha')
+
+    def test_a_patch_without_the_last_active_profile_preserves_it(self):
+        # Le cas réel : le profil actif est mémorisé, puis l'utilisateur change
+        # la langue — une requête qui ne porte que `language` ne doit pas faire
+        # oublier quel profil restaurer au prochain démarrage.
+        uid = self.client.post('/api/profiles', json={'name': 'Alpha'}).get_json()['uid']
+        self.client.put('/api/settings', json={'last_profile_uid': uid})
+
+        self.client.put('/api/settings', json={'language': 'en'})
+
+        self.assertEqual(self.client.get('/api/settings').get_json()['last_profile_uid'], uid)
+
+    def test_a_deleted_last_active_profile_is_forgotten(self):
+        uid = self.client.post('/api/profiles', json={'name': 'Alpha'}).get_json()['uid']
+        self.client.put('/api/settings', json={'last_profile_uid': uid})
+
+        self.assertEqual(self.client.delete('/api/profiles/Alpha').status_code, 200)
+
+        payload = self.client.get('/api/settings').get_json()
+        self.assertIsNone(payload['last_profile_uid'])
+        self.assertIsNone(payload['last_profile_name'])
+
+    def test_the_default_profile_is_forgotten_without_touching_the_last_active_one(self):
+        # Les deux références sont nettoyées par la même relecture : celle qui
+        # pointe encore sur un profil vivant doit y survivre.
+        alpha = self.client.post('/api/profiles', json={'name': 'Alpha'}).get_json()['uid']
+        beta = self.client.post('/api/profiles', json={'name': 'Beta'}).get_json()['uid']
+        self.client.put('/api/settings', json={'default_profile_uid': alpha, 'last_profile_uid': beta})
+
+        self.assertEqual(self.client.delete('/api/profiles/Alpha').status_code, 200)
+
+        payload = self.client.get('/api/settings').get_json()
+        self.assertIsNone(payload['default_profile_uid'])
+        self.assertEqual(payload['last_profile_uid'], beta)
+
     def test_reset_returns_the_defaults_of_the_new_preferences(self):
         self.client.put('/api/settings', json={'theme': 'dark', 'recording': {'fps': 60}})
         self.assertEqual(self.client.post('/api/settings/reset').status_code, 200)

@@ -201,6 +201,48 @@ test('l\'indicateur "modifications non enregistrées" suit l\'état, pas les év
 });
 
 
+test('les réglages pilotés par un bouton signalent aussi des modifications', async ({ page }) => {
+  // Le fond de carte et la variante Toner se choisissent au clic sur un bouton,
+  // pas dans un champ de formulaire : ils n'émettent ni 'input' ni 'change'.
+  // Le suivi n'écoutait que ces deux événements, si bien qu'un changement de
+  // carte partait bien dans le profil enregistré mais n'était jamais signalé
+  // comme en attente — l'utilisateur pouvait le perdre sans avertissement.
+  const indicator = page.locator('#current-profile-indicator');
+
+  const initialProvider = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    const pm = window.profileManager;
+    pm.currentProfile = { name: 'Suivi', uid: 'suivi', version: '1.0' };
+    pm._markSaved();
+    return app.options.map.default;
+  });
+
+  await expect(indicator).not.toHaveClass(/unsaved/);
+
+  const other = initialProvider === 'OSM' ? 'watercolor' : 'OSM';
+  await page.locator(`#tabMapOverlay #${other}`).click();
+  await expect(indicator).toHaveClass(/unsaved/);
+
+  // Comme pour les champs, revenir au fond enregistré doit éteindre l'indicateur.
+  await page.locator(`#tabMapOverlay #${initialProvider}`).click();
+  await expect(indicator).not.toHaveClass(/unsaved/);
+
+  // Les clics du panneau Profils sont ignorés : ils ne touchent aucun réglage de
+  // style et ne doivent pas programmer de recalcul concurrent d'une sauvegarde.
+  await page.evaluate(() => {
+    const pm = window.profileManager;
+    window.__recomputes = 0;
+    pm._recomputeDirtyState = () => { window.__recomputes += 1; };
+    // La sauvegarde réelle écrirait un profil sur le disque : seul le clic nous
+    // intéresse ici.
+    pm.saveCurrentAsProfile = async () => true;
+    document.getElementById('btn-save-profile').click();
+  });
+  await page.waitForTimeout(600); // au-delà du debounce de 300 ms
+  expect(await page.evaluate(() => window.__recomputes)).toBe(0);
+});
+
+
 test('les modifications non enregistrées passent par une modale à trois issues', async ({ page }) => {
   // Un window.confirm() natif serait rejeté par Playwright (aucun handler de
   // dialogue) : ce test échouerait sur l'attente de la modale. On surveille tout
@@ -367,7 +409,143 @@ test('l\'étoile marque le profil par défaut, indépendamment du profil actif',
 });
 
 
-test('un profil par défaut illisible laisse l\'application sans profil actif', async ({ page }) => {
+test('créer un profil y enregistre les réglages affichés', async ({ page }) => {
+  // Le bug d'origine : POST /api/profiles écrit un profil aux VALEURS PAR
+  // DÉFAUT. Sans le PUT qui suit, le profil créé était vide alors que l'écran
+  // affichait toujours les réglages de l'utilisateur, présentés comme
+  // enregistrés — le travail était perdu au rechargement suivant.
+  // Serveur simulé : les profils vivent dans %APPDATA%\GCMap, hors du runtime
+  // isolé des tests.
+  let savedBody = null;
+  const settingsPatches = [];
+  await page.route('**/api/profiles', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: route.request().method() === 'POST'
+      ? JSON.stringify({ success: true, name: 'Nouveau', uid: 'uid-nouveau', version: 2 })
+      : JSON.stringify(['Nouveau']),
+  }));
+  await page.route('**/api/profiles/Nouveau', route => {
+    savedBody = route.request().postDataJSON();
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true }) });
+  });
+  await page.route('**/api/settings', route => {
+    if (route.request().method() === 'PUT') settingsPatches.push(route.request().postDataJSON());
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true }) });
+  });
+
+  const state = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    // Deux réglages reconnaissables, l'un de points l'autre de flash, pour que
+    // le contenu envoyé ne puisse pas être confondu avec des valeurs par défaut.
+    app.options.point.center.size = 9;
+    app.options.flash.color = '#123456';
+
+    const pm = window.profileManager;
+    pm.profilesList = [];
+    pm.currentProfile = null;
+
+    const created = await pm.createProfile('Nouveau');
+    return { created, currentProfile: pm.currentProfile, dirty: pm.hasUnsavedChanges };
+  });
+
+  expect(state.created).toBe(true);
+  // L'uid vient du serveur : sans lui, le profil créé ne peut ni être mémorisé
+  // comme dernier profil actif ni être rechargé.
+  expect(state.currentProfile).toMatchObject({ name: 'Nouveau', uid: 'uid-nouveau', version: 2 });
+
+  expect(savedBody).not.toBeNull();
+  expect(savedBody.points.size).toBe(9);
+  expect(savedBody.flash.color).toBe('#123456');
+
+  // Le profil est à jour : aucune modification en attente ne doit être signalée.
+  expect(state.dirty).toBe(false);
+
+  // ...et c'est lui que le prochain démarrage restaurera.
+  expect(settingsPatches).toContainEqual({ last_profile_uid: 'uid-nouveau' });
+
+  await expect(page.locator('.gcm-toast-message', { hasText: 'Profil "Nouveau" créé' })).toHaveCount(1);
+});
+
+
+test('le démarrage restaure le dernier profil actif', async ({ page }) => {
+  // Réponses serveur simulées (cf. ci-dessus). Le profil par défaut est un AUTRE
+  // profil : c'est le dernier profil utilisé qui doit revenir, sans quoi le
+  // travail enregistré juste avant la fermeture réapparaît sous les réglages
+  // d'un profil sans rapport.
+  await page.route('**/api/settings', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      last_profile_uid: 'uid-dernier',
+      last_profile_name: 'Dernier',
+      default_profile_uid: 'uid-defaut',
+      default_profile_name: 'Défaut',
+    }),
+  }));
+  await page.route('**/api/profiles/uid/*', route => {
+    const name = route.request().url().endsWith('uid-dernier') ? 'Dernier' : 'Défaut';
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ...STYLE_PROFILE, name, uid: `uid-${name === 'Dernier' ? 'dernier' : 'defaut'}` }),
+    });
+  });
+
+  const active = await page.evaluate(async () => {
+    await window.profileManager.restoreStartupProfile();
+    return window.profileManager.currentProfile?.name;
+  });
+
+  expect(active).toBe('Dernier');
+});
+
+
+test('le profil par défaut sert de repli quand le dernier profil actif est illisible', async ({ page }) => {
+  const settingsPatches = [];
+  await page.route('**/api/settings', route => {
+    if (route.request().method() === 'PUT') {
+      settingsPatches.push(route.request().postDataJSON());
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true }) });
+    }
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        last_profile_uid: 'uid-fantome',
+        default_profile_uid: 'uid-defaut',
+        default_profile_name: 'Défaut',
+      }),
+    });
+  });
+  await page.route('**/api/profiles/uid/*', route => {
+    if (route.request().url().endsWith('uid-fantome')) {
+      return route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Profile not found' }),
+      });
+    }
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ...STYLE_PROFILE, name: 'Défaut', uid: 'uid-defaut' }),
+    });
+  });
+
+  const active = await page.evaluate(async () => {
+    await window.profileManager.restoreStartupProfile();
+    return window.profileManager.currentProfile?.name;
+  });
+
+  expect(active).toBe('Défaut');
+  // Le repli est mémorisé : sans cela, chaque démarrage repasserait par la
+  // lecture ratée du profil disparu.
+  expect(settingsPatches).toContainEqual({ last_profile_uid: 'uid-defaut' });
+});
+
+
+test('un profil de démarrage illisible laisse l\'application sans profil actif', async ({ page }) => {
   // Réponses serveur simulées : les profils et le réglage "profil par défaut"
   // vivent dans %APPDATA%\GCMap, hors du runtime isolé des tests.
   await page.route('**/api/settings', route => route.fulfill({
@@ -393,7 +571,7 @@ test('un profil par défaut illisible laisse l\'application sans profil actif', 
     const indicator = document.getElementById('current-profile-indicator');
     const before = { indicator: indicator.textContent, badges: document.querySelectorAll('#profiles-list .active-badge').length };
 
-    await pm.loadDefaultProfileAtStartup();
+    await pm.restoreStartupProfile();
 
     return {
       before,
@@ -417,7 +595,7 @@ test('un profil par défaut illisible laisse l\'application sans profil actif', 
   // ...et l'utilisateur le sait, par un seul message (le toast d'erreur générique
   // de loadProfileByUid est tu au profit de celui qui décrit l'état).
   await expect(page.locator('.gcm-toast-message', { hasText: 'aucun profil n\'est actif' })).toHaveCount(1);
-  await expect(page.locator('.gcm-toast-message', { hasText: 'Erreur lors du chargement du profil par défaut' })).toHaveCount(0);
+  await expect(page.locator('.gcm-toast-message', { hasText: 'Erreur lors du chargement du profil' })).toHaveCount(0);
 });
 
 

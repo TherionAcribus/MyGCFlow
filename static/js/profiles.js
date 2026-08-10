@@ -73,6 +73,10 @@ class ProfileManager {
         // Nom du profil par défaut connu (null = pas encore lu du serveur,
         // '' = aucun profil par défaut). Voir _getDefaultProfileName().
         this._defaultProfileName = null;
+        // UID du dernier profil actif tel qu'enregistré côté serveur (undefined
+        // = jamais lu ni écrit). Évite de réécrire la même valeur à chaque
+        // chargement de profil. Voir _rememberActiveProfile().
+        this._lastProfileUid = undefined;
         // Requête de lecture en cours, partagée par les appels concurrents.
         this._defaultProfileNamePromise = null;
         // Modale "modifications non enregistrées" en cours d'affichage : elle
@@ -239,6 +243,7 @@ class ProfileManager {
             this.currentProfile = profile;
             await this.applyProfile(profile);
             this._markSaved();
+            await this._rememberActiveProfile(profile.uid);
             // La liste des profils est inchangée : déplacer le marquage "ACTIF"
             // suffit, inutile de refetcher /api/profiles et de reconstruire le DOM.
             this._updateActiveProfileHighlight();
@@ -250,7 +255,11 @@ class ProfileManager {
         }
     }
 
-    async saveProfile(profileData) {
+    // `quiet` : ni toast de succès ni rafraîchissement de la liste. Pour les
+    // appelants qui annoncent eux-mêmes le résultat et viennent déjà de relire
+    // la liste (création d'un profil), sans quoi l'utilisateur voit deux toasts
+    // d'affilée pour une seule action.
+    async saveProfile(profileData, { quiet = false } = {}) {
         try {
             dbgProfiles('📤 ENVOI PROFIL AU SERVEUR:', {
                 endpoint: `/api/profiles/${encodeURIComponent(profileData.name)}`,
@@ -261,7 +270,7 @@ class ProfileManager {
 
             const result = await this.apiCall(`/api/profiles/${encodeURIComponent(profileData.name)}`, 'PUT', profileData);
 
-            if (result.success) {
+            if (result.success && !quiet) {
                 dbgProfiles('Profil sauvegardé avec succès:', profileData.name);
                 this.showToast(pkg.t('Profil "${name}" sauvegardé', { name: profileData.name }), 'green');
                 this.loadProfilesList(); // Rafraîchir la liste
@@ -273,19 +282,49 @@ class ProfileManager {
         }
     }
 
+    // Crée un profil et y enregistre les réglages affichés.
+    //
+    // POST /api/profiles écrit un profil aux VALEURS PAR DÉFAUT : c'est le rôle
+    // du PUT qui suit d'y déposer l'état courant. Sans lui, le profil créé était
+    // vide alors que l'écran continuait d'afficher les réglages de
+    // l'utilisateur, présentés comme enregistrés — le travail était perdu au
+    // rechargement suivant, sans le moindre message.
+    //
+    // Retourne true si le profil existe ET contient les réglages affichés.
     async createProfile(name, baseProfile = null) {
         try {
             const result = await this.apiCall('/api/profiles', 'POST', {
                 name: name,
                 base: baseProfile
             });
-            if (result.success) {
-                this.showToast(pkg.t('Profil "${name}" créé', { name }), 'green');
-                this.loadProfilesList();
-                this.currentProfile = { name: name };
+            if (!result.success) return false;
+
+            // Profil actif avant le PUT : _buildProfilePayload() s'appuie dessus,
+            // et un échec d'écriture doit laisser l'utilisateur devant un profil
+            // actif qu'il peut re-sauvegarder.
+            this.currentProfile = { name: result.name, uid: result.uid, version: result.version };
+            await this.loadProfilesList();
+
+            const saved = await this.saveProfile(this._buildProfilePayload(), { quiet: true });
+            if (!saved || !saved.success) {
+                // Le profil existe mais est resté aux valeurs par défaut : le
+                // dire, sinon l'écran (inchangé) laisse croire au succès.
+                this.showToast(
+                    pkg.t('Profil "${name}" créé, mais l\'enregistrement des réglages a échoué', { name: result.name }),
+                    'red'
+                );
+                this._updateActiveProfileHighlight();
+                return false;
             }
+
+            this._markSaved();
+            await this._rememberActiveProfile(this.currentProfile.uid);
+            this._updateActiveProfileHighlight();
+            this.showToast(pkg.t('Profil "${name}" créé', { name: result.name }), 'green');
+            return true;
         } catch (error) {
             console.error('Erreur création profil:', error);
+            return false;
         }
     }
 
@@ -419,6 +458,7 @@ class ProfileManager {
             this.currentProfile = profile;
             await this.applyProfile(profile);
             this._markSaved();
+            await this._rememberActiveProfile(profile.uid);
 
             // Sauvegarder l'UUID comme profil par défaut
             const result = await this.saveAppSettings({ default_profile_uid: profile.uid });
@@ -689,10 +729,17 @@ class ProfileManager {
             console.warn('ProfileManager: conteneur #style introuvable, suivi des modifications désactivé');
             return;
         }
-        const recompute = () => {
+        const recompute = (event) => {
             // Sans profil courant, l'indicateur n'affiche rien : inutile de
             // programmer un recalcul dont le résultat ne serait pas utilisé.
             if (!this.currentProfile) return;
+            // Le panneau Profils est lui aussi dans #style, mais aucun de ses
+            // contrôles n'est un réglage de style (Sauvegarder, Nouveau, liste
+            // des profils, modales). Les ignorer évite de programmer un recalcul
+            // concurrent d'une sauvegarde en cours, qui rafraîchirait
+            // currentSettings juste avant que saveCurrentAsProfile n'en fasse la
+            // nouvelle référence enregistrée.
+            if (event?.target?.closest?.('#profiles-section')) return;
             clearTimeout(this._dirtyDebounceTimer);
             this._dirtyDebounceTimer = setTimeout(() => {
                 this._dirtyDebounceTimer = null;
@@ -701,6 +748,19 @@ class ProfileManager {
         };
         container.addEventListener('input', recompute, true);
         container.addEventListener('change', recompute, true);
+        // 'click' en plus des événements de formulaire : plusieurs réglages de
+        // profil ne passent par aucun champ mais par un bouton — choix du fond
+        // de carte (.changeMap), variante Toner clair/sombre, « Appliquer » du
+        // style Titre/Infos. Ces boutons n'émettent ni 'input' ni 'change', et
+        // leurs modifications restaient donc invisibles pour l'indicateur « • »
+        // alors qu'elles sont bien enregistrées dans le profil.
+        //
+        // L'écoute en capture voit le clic AVANT le gestionnaire métier qui écrit
+        // pkg.options, mais le recalcul est débouncé de 300 ms : il lit l'état
+        // une fois ces écritures (synchrones) faites. Et comme le suivi compare
+        // au lieu de poser un drapeau, un clic sans effet sur les réglages (un
+        // onglet, un bouton d'action) ne rend pas le profil « modifié ».
+        container.addEventListener('click', recompute, true);
     }
 
     // Compare l'état courant à la référence enregistrée et met l'indicateur à
@@ -862,6 +922,25 @@ class ProfileManager {
         try { refreshTomSelect(selector); } catch (_) {}
     }
 
+    // Mémorise le profil que le prochain démarrage devra restaurer. Appelé à
+    // chaque fois que le profil actif change du fait de l'utilisateur, jamais
+    // pendant la restauration elle-même (la valeur y est déjà à jour).
+    //
+    // L'échec n'est pas signalé : l'utilisateur ne perd que la restauration
+    // automatique, pas son profil, et le signaler brouillerait le message de
+    // l'action qu'il vient réellement de demander. On oublie en revanche la
+    // valeur mémorisée pour que le chargement suivant retente l'écriture.
+    async _rememberActiveProfile(uid) {
+        const value = uid || null;
+        if (value === this._lastProfileUid) return;
+        this._lastProfileUid = value;
+        const result = await this.saveAppSettings({ last_profile_uid: value });
+        if (!result || !result.success) {
+            console.warn('⚠️ Mémorisation du dernier profil actif impossible (uid=%s)', value);
+            this._lastProfileUid = undefined;
+        }
+    }
+
     // `settings` peut être un patch partiel : PUT /api/settings ne modifie que
     // les clés effectivement présentes dans le corps de la requête.
     async saveAppSettings(settings) {
@@ -884,7 +963,10 @@ class ProfileManager {
     // `quiet` supprime le toast d'erreur pour les appelants qui affichent leur
     // propre message (démarrage : « aucun profil actif »), sans quoi l'échec en
     // produirait deux d'affilée.
-    async loadProfileByUid(uid, { quiet = false } = {}) {
+    // `remember` est mis à false par la restauration au démarrage : elle charge
+    // précisément le profil déjà mémorisé, le réécrire ne ferait qu'ajouter une
+    // requête à chaque lancement.
+    async loadProfileByUid(uid, { quiet = false, remember = true } = {}) {
         if (!await this._confirmDiscardChangesIfNeeded()) return false;
         try {
             dbgProfiles('🔄 [LOAD_PROFILE] Chargement profil par UUID:', uid);
@@ -918,6 +1000,7 @@ class ProfileManager {
             this.currentProfile = profile;
             await this.applyProfile(profile);
             this._markSaved();
+            if (remember) await this._rememberActiveProfile(profile.uid);
 
             dbgProfiles('🔄 [LOAD_PROFILE] État après application du profil:', {
                 point_mode: pkg?.options?.point?.mode,
@@ -1047,65 +1130,78 @@ class ProfileManager {
         }
     }
 
-    async loadDefaultProfileAtStartup() {
+    // Restaure le profil du démarrage : le DERNIER PROFIL ACTIF d'abord, le
+    // profil par défaut seulement en repli.
+    //
+    // L'application ne repartait auparavant que du profil par défaut : un profil
+    // créé ou sélectionné puis enregistré revenait au lancement suivant sous les
+    // réglages d'un autre profil, tant que l'utilisateur n'avait pas pensé à
+    // « Définir comme par défaut ». Le réglage « par défaut » garde son rôle,
+    // mais pour le seul cas où aucun profil n'a encore été utilisé (première
+    // ouverture) ou quand le dernier actif a disparu.
+    async restoreStartupProfile() {
         try {
-            dbgProfiles('🎯 [DEFAULT_PROFILE] Vérification du profil par défaut - État actuel:', {
+            dbgProfiles('🎯 [STARTUP_PROFILE] Restauration du profil - État actuel:', {
                 point_mode: pkg?.options?.point?.mode,
                 switch_checked: document.getElementById('switchIconeVectoriel')?.checked
             });
 
             const settings = await this.loadAppSettings();
-            dbgProfiles('🎯 [DEFAULT_PROFILE] Paramètres chargés au démarrage:', {
+            dbgProfiles('🎯 [STARTUP_PROFILE] Paramètres chargés au démarrage:', {
+                last_profile_uid: settings.last_profile_uid,
+                last_profile_name: settings.last_profile_name,
                 default_profile_uid: settings.default_profile_uid,
                 default_profile_name: settings.default_profile_name,
                 all_settings: settings
             });
 
-            // Les réglages viennent d'être lus : en profiter pour amorcer le cache
-            // et éviter un second GET /api/settings côté sélecteur.
+            // Les réglages viennent d'être lus : en profiter pour amorcer les
+            // caches et éviter un second GET /api/settings côté sélecteur, ainsi
+            // qu'une réécriture inutile du dernier profil actif.
             this._defaultProfileName = settings.default_profile_name || '';
+            this._lastProfileUid = settings.last_profile_uid || null;
             // La liste peut déjà avoir été rendue (init) sans connaître le défaut.
             this._updateDefaultProfileHighlight();
 
-            const defaultProfileUid = settings.default_profile_uid;
+            // Un UID orphelin est déjà traité en amont (get_app_settings() efface
+            // la référence morte et renvoie null) : ne restent ici que des UID
+            // censés être lisibles.
+            const candidates = [];
+            if (settings.last_profile_uid) candidates.push(settings.last_profile_uid);
+            if (settings.default_profile_uid && settings.default_profile_uid !== settings.last_profile_uid) {
+                candidates.push(settings.default_profile_uid);
+            }
 
-            if (defaultProfileUid) {
-                dbgProfiles('🎯 [DEFAULT_PROFILE] Chargement profil par défaut au démarrage (UUID):', defaultProfileUid);
-                dbgProfiles('🎯 [DEFAULT_PROFILE] Nom du profil par défaut:', settings.default_profile_name);
+            if (!candidates.length) {
+                dbgProfiles('🎯 [STARTUP_PROFILE] Ni dernier profil actif ni profil par défaut : démarrage sans profil');
+                return;
+            }
 
-                dbgProfiles('🎯 [DEFAULT_PROFILE] État avant chargement du profil:', {
-                    point_mode: pkg?.options?.point?.mode,
-                    switch_checked: document.getElementById('switchIconeVectoriel')?.checked
-                });
+            for (const uid of candidates) {
+                dbgProfiles('🎯 [STARTUP_PROFILE] Tentative de chargement (UUID):', uid);
 
                 // loadProfileByUid() ne lève pas : il journalise, prévient par un
                 // toast et retourne false. C'est cette valeur qui décide de la
                 // suite, pas un catch (qui ne se déclencherait jamais).
-                const loaded = await this.loadProfileByUid(defaultProfileUid, { quiet: true });
+                // `remember: false` : on charge précisément la valeur mémorisée,
+                // la réécrire n'apporterait qu'une requête de plus au démarrage.
+                const loaded = await this.loadProfileByUid(uid, { quiet: true, remember: false });
 
-                dbgProfiles('🎯 [DEFAULT_PROFILE] État après chargement du profil:', {
+                dbgProfiles('🎯 [STARTUP_PROFILE] État après tentative:', {
                     point_mode: pkg?.options?.point?.mode,
                     switch_checked: document.getElementById('switchIconeVectoriel')?.checked,
                     profile_name: this.currentProfile?.name || 'aucun'
                 });
 
                 if (!loaded) {
-                    // Pas de repli sur un profil "Default" ni sur un pseudo-profil
-                    // temporaire : l'un comme l'autre affichaient un profil actif
-                    // que l'utilisateur ne pouvait ni retrouver dans la liste ni
-                    // enregistrer. Le cas "UID orphelin" est d'ailleurs déjà traité
-                    // en amont (get_app_settings() efface la référence morte et
-                    // renvoie default_profile_uid = null), il ne reste donc ici que
-                    // les vraies pannes de lecture, où deviner un profil de secours
-                    // n'apporte rien. On reste sans profil, en le disant.
-                    console.warn('⚠️ [DEFAULT_PROFILE] Profil par défaut non chargé, démarrage sans profil actif');
-                    this._setNoActiveProfile();
-                    this.showToast(
-                        pkg.t('Le profil par défaut n\'a pas pu être chargé : aucun profil n\'est actif.'),
-                        'orange'
-                    );
-                    return;
+                    console.warn('⚠️ [STARTUP_PROFILE] Profil non chargé (uid=%s)', uid);
+                    continue;
                 }
+
+                // Le repli sur le profil par défaut a servi : c'est lui qu'il faut
+                // restaurer la prochaine fois, sans quoi chaque démarrage
+                // repasserait par un échec de lecture du profil disparu.
+                if (uid !== this._lastProfileUid) await this._rememberActiveProfile(uid);
 
                 // Vérification finale de cohérence
                 const finalSwitchState = document.getElementById('switchIconeVectoriel')?.checked;
@@ -1114,19 +1210,30 @@ class ProfileManager {
                                    (finalPointMode === 'icone' && !finalSwitchState);
 
                 if (isConsistent) {
-                    dbgProfiles('✅ [DEFAULT_PROFILE] Mode des points cohérent:', finalPointMode);
+                    dbgProfiles('✅ [STARTUP_PROFILE] Mode des points cohérent:', finalPointMode);
                 } else {
-                    console.warn('⚠️ [DEFAULT_PROFILE] Incohérence détectée - Mode:', finalPointMode, 'Switch:', finalSwitchState);
+                    console.warn('⚠️ [STARTUP_PROFILE] Incohérence détectée - Mode:', finalPointMode, 'Switch:', finalSwitchState);
                 }
 
                 // Le toast est déjà affiché dans loadProfileByUid
-            } else {
-                dbgProfiles('🎯 [DEFAULT_PROFILE] Aucun profil par défaut défini (default_profile_uid est null/undefined)');
-                dbgProfiles('🎯 [DEFAULT_PROFILE] Vérifiez que le profil a bien été défini comme par défaut');
+                return;
             }
+
+            // Aucun candidat lisible. Pas de repli sur un profil "Default" ni sur
+            // un pseudo-profil temporaire : l'un comme l'autre affichaient un
+            // profil actif que l'utilisateur ne pouvait ni retrouver dans la liste
+            // ni enregistrer. Il ne reste ici que de vraies pannes de lecture, où
+            // deviner un profil de secours n'apporte rien. On reste sans profil,
+            // en le disant.
+            console.warn('⚠️ [STARTUP_PROFILE] Aucun profil chargé, démarrage sans profil actif');
+            this._setNoActiveProfile();
+            this.showToast(
+                pkg.t('Le profil n\'a pas pu être chargé : aucun profil n\'est actif.'),
+                'orange'
+            );
         } catch (error) {
-            console.error('❌ [DEFAULT_PROFILE] Erreur chargement profil par défaut au démarrage:', error);
-            console.error('❌ [DEFAULT_PROFILE] Détails de l\'erreur:', error.message);
+            console.error('❌ [STARTUP_PROFILE] Erreur restauration du profil au démarrage:', error);
+            console.error('❌ [STARTUP_PROFILE] Détails de l\'erreur:', error.message);
         }
     }
 
@@ -1363,15 +1470,11 @@ class ProfileManager {
         dbgProfiles('Profil appliqué avec succès:', profile.name);
     }
 
-    // Retourne true si le profil a bien été écrit côté serveur. La valeur sert à
-    // _confirmDiscardChangesIfNeeded ("Enregistrer et charger") : une sauvegarde
-    // en échec doit interrompre l'action qui allait écraser les modifications.
-    async saveCurrentAsProfile() {
-        if (!this.currentProfile) {
-            this.showNewProfileModal();
-            return false;
-        }
-
+    // Corps du PUT décrivant les réglages affichés, sous le nom du profil actif.
+    // Extrait de saveCurrentAsProfile() pour que la création d'un profil écrive
+    // exactement la même chose (cf. createProfile) : un profil créé et un profil
+    // sauvegardé ne doivent pas pouvoir diverger.
+    _buildProfilePayload() {
         // Récupérer les paramètres actuels
         this.loadCurrentSettings();
 
@@ -1390,8 +1493,7 @@ class ProfileManager {
             mapNormalized.toner_options = { variant: m.tonerOptions.variant };
         }
 
-        // Créer l'objet profil complet
-        const profileData = {
+        return {
             name: this.currentProfile.name,
             uid: this.currentProfile.uid,
             version: this.currentProfile.version,
@@ -1401,6 +1503,20 @@ class ProfileManager {
             flash: this.currentSettings.flash,
             infos: this.currentSettings.infos,
         };
+    }
+
+    // Retourne true si le profil a bien été écrit côté serveur. La valeur sert à
+    // _confirmDiscardChangesIfNeeded ("Enregistrer et charger") : une sauvegarde
+    // en échec doit interrompre l'action qui allait écraser les modifications.
+    async saveCurrentAsProfile() {
+        if (!this.currentProfile) {
+            // Aucun profil actif : l'enregistrement passe par la création d'un
+            // profil, qui reprend les réglages affichés (cf. createProfile).
+            this.showNewProfileModal({ saveAs: true });
+            return false;
+        }
+
+        const profileData = this._buildProfilePayload();
 
         dbgProfiles('💾 SAUVEGARDE PROFIL - Données complètes:', {
             profile_name: profileData.name,
@@ -1452,11 +1568,17 @@ class ProfileManager {
         setTimeout(() => (value ? input.select() : input.focus()), 100);
     }
 
-    showNewProfileModal() {
+    // `saveAs` : ouverture depuis le bouton « Sauvegarder » sans profil actif.
+    // Même action (la création enregistre les réglages affichés), mais l'intitulé
+    // doit dire ce qui va se passer — « Nouveau profil » laissait croire qu'on
+    // repartait de zéro et que le travail en cours n'était pas concerné.
+    showNewProfileModal({ saveAs = false } = {}) {
         this._showProfileNameModal({
-            title: pkg.t('Nouveau profil'),
+            title: saveAs ? pkg.t('Enregistrer dans un nouveau profil') : pkg.t('Nouveau profil'),
             value: '',
-            confirmLabel: pkg.t('Créer'),
+            // Pas de simple « Enregistrer » : cette chaîne est déjà celle du
+            // bouton d'enregistrement vidéo (« Record » en anglais).
+            confirmLabel: saveAs ? pkg.t('Enregistrer le profil') : pkg.t('Créer'),
             action: 'create',
         });
     }

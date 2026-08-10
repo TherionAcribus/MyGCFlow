@@ -17,14 +17,21 @@ La section **Profils** est accessible dans l'onglet **Style** de l'application.
 #### Créer un profil
 1. Cliquez sur **Nouveau**
 2. Saisissez un nom pour votre profil
-3. Cliquez sur **Créer**
+3. Cliquez sur **Créer** — le profil est créé **avec les réglages actuellement affichés** et devient le profil actif
 
 #### Sauvegarder un profil
 1. Modifiez les paramètres de votre carte (points, animations, etc.)
 2. Cliquez sur **Sauvegarder** pour enregistrer les changements dans le profil actif
 
+Sans profil actif, **Sauvegarder** propose d'enregistrer les réglages dans un nouveau profil.
+
 #### Charger un profil
 - Cliquez sur le nom du profil dans la liste pour l'activer
+
+#### Au redémarrage
+GCMap rouvre le **dernier profil utilisé**. Le profil marqué d'une étoile
+(**Définir comme par défaut**) ne sert qu'à la première ouverture, ou si le
+dernier profil utilisé a été supprimé.
 
 #### Actions sur les profils
 Chaque profil dispose d'un menu (⋮) avec les options :

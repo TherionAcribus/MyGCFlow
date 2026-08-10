@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-10 14:28+0200\n"
+"POT-Creation-Date: 2026-08-10 17:39+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -63,13 +63,13 @@ msgstr ""
 msgid "Paramètres"
 msgstr ""
 
-#: templates/app.html:122 templates/guide.html:45 templates/guide.html:72
+#: templates/app.html:119 templates/guide.html:45 templates/guide.html:72
 #: templates/guide.html:94 templates/guide.html:102 templates/guide.html:117
 #: test_translations.py:30
 msgid "Données"
 msgstr ""
 
-#: templates/app.html:123 templates/guide.html:48 templates/guide.html:77
+#: templates/app.html:120 templates/guide.html:48 templates/guide.html:77
 #: templates/guide.html:94 templates/guide.html:140 templates/guide.html:142
 #: templates/menu_informations.html:139 test_translations.py:31
 msgid "Style"
@@ -154,9 +154,9 @@ msgid ""
 "instable ?)."
 msgstr ""
 
-#: static/js/basemaps.js:92 static/js/basemaps.js:129 static/js/ui.js:1649
-#: static/js/ui.js:1679 static/js/ui.js:1701 static/js/ui.js:1826
-#: static/js/ui.js:1841
+#: static/js/basemaps.js:92 static/js/basemaps.js:129 static/js/ui.js:1656
+#: static/js/ui.js:1687 static/js/ui.js:1709 static/js/ui.js:1831
+#: static/js/ui.js:1845
 msgid "Carte"
 msgstr ""
 
@@ -257,7 +257,7 @@ msgstr ""
 
 #: static/js/bdd.js:842 static/js/bdd.js:849 static/js/bdd.js:916
 #: static/js/bdd.js:923 static/js/bdd.js:1099 static/js/bdd.js:1170
-#: static/js/bdd.js:1177 static/js/notifications.js:274 static/js/ui.js:1011
+#: static/js/bdd.js:1177 static/js/notifications.js:274 static/js/ui.js:1020
 #: static/js/ui.js:4248
 msgid "Erreur"
 msgstr ""
@@ -400,221 +400,233 @@ msgstr ""
 msgid "espace"
 msgstr ""
 
-#: static/js/profiles.js:214
+#: static/js/profiles.js:221
 msgid "Import échoué"
 msgstr ""
 
-#: static/js/profiles.js:216
+#: static/js/profiles.js:223
 #, python-brace-format
 msgid "Profil \"${name}\" importé"
 msgstr ""
 
-#: static/js/profiles.js:220
+#: static/js/profiles.js:227
 msgid "Erreur import du profil"
 msgstr ""
 
-#: static/js/profiles.js:246
+#: static/js/profiles.js:253
 msgid "Erreur API"
 msgstr ""
 
-#: static/js/profiles.js:252
+#: static/js/profiles.js:259
 #, python-brace-format
 msgid "Erreur: ${message}"
 msgstr ""
 
-#: static/js/profiles.js:300 static/js/profiles.js:1121
+#: static/js/profiles.js:308 static/js/profiles.js:1214
 #, python-brace-format
 msgid "Profil \"${name}\" chargé"
 msgstr ""
 
-#: static/js/profiles.js:321
+#: static/js/profiles.js:337
 #, python-brace-format
 msgid "Profil \"${name}\" sauvegardé"
 msgstr ""
 
-#: static/js/profiles.js:339
+#: static/js/profiles.js:390
+#, python-brace-format
+msgid "Profil \"${name}\" créé, mais l'enregistrement des réglages a échoué"
+msgstr ""
+
+#: static/js/profiles.js:400
 #, python-brace-format
 msgid "Profil \"${name}\" créé"
 msgstr ""
 
-#: static/js/profiles.js:356
+#: static/js/profiles.js:416
 #, python-brace-format
 msgid "Profil dupliqué: \"${name}\""
 msgstr ""
 
-#: static/js/profiles.js:368
+#: static/js/profiles.js:428
 #, python-brace-format
 msgid "Profil \"${name}\" supprimé"
 msgstr ""
 
-#: static/js/profiles.js:438
+#: static/js/profiles.js:498
 #, python-brace-format
 msgid "Profil \"${name}\" réinitialisé"
 msgstr ""
 
-#: static/js/profiles.js:453
+#: static/js/profiles.js:513
 msgid "Export échoué"
 msgstr ""
 
-#: static/js/profiles.js:464
+#: static/js/profiles.js:524
 #, python-brace-format
 msgid "Profil \"${name}\" exporté"
 msgstr ""
 
-#: static/js/profiles.js:467
+#: static/js/profiles.js:527
 msgid "Erreur export du profil"
 msgstr ""
 
-#: static/js/profiles.js:487
+#: static/js/profiles.js:547
 msgid "Profil introuvable ou UID manquant"
 msgstr ""
 
-#: static/js/profiles.js:501
+#: static/js/profiles.js:562
 msgid "Échec de la sauvegarde du profil par défaut"
 msgstr ""
 
-#: static/js/profiles.js:506
+#: static/js/profiles.js:567
 #, python-brace-format
 msgid "Profil \"${name}\" défini comme profil par défaut"
 msgstr ""
 
-#: static/js/profiles.js:519
+#: static/js/profiles.js:580
 msgid "Erreur lors de la définition du profil par défaut"
 msgstr ""
 
-#: static/js/profiles.js:534
+#: static/js/profiles.js:595
 msgid "Aucun profil"
 msgstr ""
 
-#: static/js/profiles.js:617 static/js/profiles.js:1788
+#: static/js/profiles.js:678 static/js/profiles.js:1947
 msgid "Dupliquer"
 msgstr ""
 
-#: static/js/profiles.js:618 static/js/profiles.js:1768
+#: static/js/profiles.js:679 static/js/profiles.js:1927
 msgid "Renommer"
 msgstr ""
 
-#: static/js/profiles.js:619
+#: static/js/profiles.js:680
 msgid "Exporter"
 msgstr ""
 
-#: static/js/profiles.js:620 templates/menu_options.html:87
+#: static/js/profiles.js:681 templates/menu_options.html:90
 #: templates/menu_style.html:229
 msgid "Réinitialiser"
 msgstr ""
 
-#: static/js/profiles.js:621 templates/menu_style.html:204
+#: static/js/profiles.js:682 templates/menu_style.html:204
 msgid "Supprimer"
 msgstr ""
 
-#: static/js/profiles.js:625
+#: static/js/profiles.js:686
 msgid "Définir comme par défaut"
 msgstr ""
 
-#: static/js/profiles.js:681
+#: static/js/profiles.js:740
 msgid "ACTIF"
 msgstr ""
 
-#: static/js/profiles.js:703 templates/menu_options.html:42
+#: static/js/profiles.js:762 templates/menu_options.html:42
 msgid "Profil par défaut"
 msgstr ""
 
-#: static/js/profiles.js:755 templates/menu_style.html:246
+#: static/js/profiles.js:814 templates/menu_style.html:246
 msgid "Modifications non enregistrées"
 msgstr ""
 
-#: static/js/profiles.js:953
+#: static/js/profiles.js:1012
 #, python-brace-format
 msgid ""
 "Le profil \"${name}\" contient des modifications non enregistrées. Que "
 "voulez-vous faire ?"
 msgstr ""
 
-#: static/js/profiles.js:954
+#: static/js/profiles.js:1013
 msgid "Vous avez des modifications non enregistrées. Que voulez-vous faire ?"
 msgstr ""
 
-#: static/js/profiles.js:1125
+#: static/js/profiles.js:1218
 msgid "Erreur lors du chargement du profil par défaut"
 msgstr ""
 
-#: static/js/profiles.js:1158
+#: static/js/profiles.js:1251
 msgid "Aucun profil par défaut"
 msgstr ""
 
-#: static/js/profiles.js:1253
+#: static/js/profiles.js:1346
 #, python-brace-format
 msgid "Profil \"${selectedProfile}\" appliqué et défini comme profil par défaut"
 msgstr ""
 
-#: static/js/profiles.js:1254
+#: static/js/profiles.js:1347
 msgid "Aucun profil par défaut défini"
 msgstr ""
 
-#: static/js/profiles.js:1330
-msgid "Le profil par défaut n'a pas pu être chargé : aucun profil n'est actif."
+#: static/js/profiles.js:1485
+msgid "Le profil n'a pas pu être chargé : aucun profil n'est actif."
 msgstr ""
 
-#: static/js/profiles.js:1757 templates/menu_style.html:142
-#: templates/menu_style.html:164
+#: static/js/profiles.js:1912
+msgid "Enregistrer dans un nouveau profil"
+msgstr ""
+
+#: static/js/profiles.js:1912 templates/menu_style.html:164
 msgid "Nouveau profil"
 msgstr ""
 
-#: static/js/profiles.js:1759 templates/menu_style.html:179
+#: static/js/profiles.js:1918
+msgid "Enregistrer le profil"
+msgstr ""
+
+#: static/js/profiles.js:1918 templates/menu_style.html:179
 msgid "Créer"
 msgstr ""
 
-#: static/js/profiles.js:1766
+#: static/js/profiles.js:1925
 msgid "Renommer le profil"
 msgstr ""
 
-#: static/js/profiles.js:1786
+#: static/js/profiles.js:1945
 msgid "Dupliquer le profil"
 msgstr ""
 
-#: static/js/profiles.js:1842
+#: static/js/profiles.js:2001
 msgid "Le nom doit contenir au moins une lettre ou un chiffre"
 msgstr ""
 
-#: static/js/profiles.js:1864
+#: static/js/profiles.js:2023
 #, python-brace-format
 msgid "« ${conflict} » existe déjà : la copie sera nommée « ${suggested} »"
 msgstr ""
 
-#: static/js/profiles.js:1871
+#: static/js/profiles.js:2030
 #, python-brace-format
 msgid "Un profil nommé « ${name} » existe déjà"
 msgstr ""
 
-#: static/js/profiles.js:1872
+#: static/js/profiles.js:2031
 #, python-brace-format
 msgid ""
 "Ce nom est déjà pris par « ${conflict} » : les deux se réduisent au "
 "fichier « ${key} »"
 msgstr ""
 
-#: static/js/profiles.js:1881
+#: static/js/profiles.js:2040
 #, python-brace-format
 msgid ""
 "Caractères ignorés (${dropped}) : le profil sera enregistré sous « ${key}"
 " »"
 msgstr ""
 
-#: static/js/profiles.js:1939
+#: static/js/profiles.js:2098
 msgid "Veuillez saisir un nom de profil"
 msgstr ""
 
-#: static/js/profiles.js:1998
+#: static/js/profiles.js:2157
 #, python-brace-format
 msgid "Profil renommé en \"${name}\""
 msgstr ""
 
-#: static/js/profiles.js:2012
+#: static/js/profiles.js:2171
 #, python-brace-format
 msgid "Êtes-vous sûr de vouloir supprimer le profil \"${name}\" ?"
 msgstr ""
 
-#: static/js/profiles.js:2031
+#: static/js/profiles.js:2190
 #, python-brace-format
 msgid ""
 "Êtes-vous sûr de vouloir réinitialiser le profil \"${name}\" aux valeurs "
@@ -676,60 +688,60 @@ msgstr ""
 msgid "Non enregistré"
 msgstr ""
 
-#: static/js/ui.js:863
+#: static/js/ui.js:872
 msgid ""
 "Ce format vidéo n'est pas supporté par votre navigateur et sera ignoré au"
 " démarrage de l'enregistrement."
 msgstr ""
 
-#: static/js/ui.js:864 static/js/ui.js:1900
+#: static/js/ui.js:873 static/js/ui.js:1904
 msgid "Format non supporté"
 msgstr ""
 
-#: static/js/ui.js:1007
+#: static/js/ui.js:1016
 msgid "Durée de l'animation ajustée selon la musique"
 msgstr ""
 
-#: static/js/ui.js:1007
+#: static/js/ui.js:1016
 msgid "Musique"
 msgstr ""
 
-#: static/js/ui.js:1011
+#: static/js/ui.js:1020
 msgid "Erreur lors de la lecture du fichier audio"
 msgstr ""
 
-#: static/js/ui.js:1649
+#: static/js/ui.js:1656
 msgid "Enregistrement du centre par défaut impossible"
 msgstr ""
 
-#: static/js/ui.js:1679
+#: static/js/ui.js:1687
 msgid "Coordonnées invalides. Ex: 48.85, 2.35 ou N 49° 16.029 E 006° 07.512"
 msgstr ""
 
-#: static/js/ui.js:1701
+#: static/js/ui.js:1709
 msgid "Coordonnées invalides. Ex: N 49° 16.029 / E 006° 07.512"
 msgstr ""
 
-#: static/js/ui.js:1826
+#: static/js/ui.js:1831
 msgid "Cliquez sur la carte pour choisir le centre"
 msgstr ""
 
-#: static/js/ui.js:1841
+#: static/js/ui.js:1845
 msgid "Centre par défaut mis à jour depuis la carte"
 msgstr ""
 
-#: static/js/ui.js:1899
+#: static/js/ui.js:1903
 #, python-brace-format
 msgid "Le format vidéo sauvegardé (${mime}) n'est pas supporté par ce navigateur."
 msgstr ""
 
-#: static/js/ui.js:2107
+#: static/js/ui.js:2111
 msgid ""
 "La vidéo ne sera ni téléchargée ni uploadée : elle sera perdue après "
 "l'enregistrement."
 msgstr ""
 
-#: static/js/ui.js:2108
+#: static/js/ui.js:2112
 msgid "Aucune destination"
 msgstr ""
 
@@ -809,43 +821,43 @@ msgstr ""
 msgid "Global"
 msgstr ""
 
-#: templates/app.html:52
+#: templates/app.html:49
 msgid "My Geocaching Map"
 msgstr ""
 
-#: templates/app.html:75 templates/app.html:76
+#: templates/app.html:72 templates/app.html:73
 msgid "Lancer l'animation"
 msgstr ""
 
-#: templates/app.html:80 templates/app.html:81
+#: templates/app.html:77 templates/app.html:78
 msgid "Enregistrer la vidéo"
 msgstr ""
 
-#: templates/app.html:85 templates/app.html:86
+#: templates/app.html:82 templates/app.html:83
 msgid "Pause / Reprendre"
 msgstr ""
 
-#: templates/app.html:90 templates/app.html:91
+#: templates/app.html:87 templates/app.html:88
 msgid "Arrêter l'animation"
 msgstr ""
 
-#: templates/app.html:95 templates/app.html:96
+#: templates/app.html:92 templates/app.html:93
 msgid "Basculer le plein écran"
 msgstr ""
 
-#: templates/app.html:124 templates/guide.html:51 templates/guide.html:82
+#: templates/app.html:121 templates/guide.html:51 templates/guide.html:82
 #: templates/guide.html:94 templates/guide.html:195 templates/guide.html:197
 #: templates/menu_animation.html:8
 msgid "Animation & vidéo"
 msgstr ""
 
-#: templates/app.html:125 templates/guide.html:54 templates/guide.html:87
+#: templates/app.html:122 templates/guide.html:54 templates/guide.html:87
 #: templates/guide.html:94 templates/guide.html:257 templates/guide.html:259
 msgid "Préférences"
 msgstr ""
 
 #: templates/guide.html:6 templates/guide.html:22
-#: templates/menu_options.html:103
+#: templates/menu_options.html:106
 msgid "Mode d'emploi"
 msgstr ""
 
@@ -1489,7 +1501,9 @@ msgid "Profil par défaut au démarrage"
 msgstr ""
 
 #: templates/guide.html:267
-msgid "le profil de style chargé automatiquement à l'ouverture."
+msgid ""
+"le profil de style chargé à la première ouverture. Ensuite, GCMap rouvre "
+"le dernier profil que vous avez utilisé."
 msgstr ""
 
 #: templates/guide.html:271
@@ -1502,7 +1516,7 @@ msgid ""
 "démarrage."
 msgstr ""
 
-#: templates/guide.html:274 templates/menu_options.html:81
+#: templates/guide.html:274 templates/menu_options.html:84
 msgid "Utiliser la vue actuelle de la carte"
 msgstr ""
 
@@ -1510,7 +1524,7 @@ msgstr ""
 msgid "reprend la position affichée."
 msgstr ""
 
-#: templates/guide.html:275 templates/menu_options.html:84
+#: templates/guide.html:275 templates/menu_options.html:87
 msgid "Choisir sur la carte"
 msgstr ""
 
@@ -1801,7 +1815,7 @@ msgstr ""
 msgid "Pas de flash"
 msgstr ""
 
-#: templates/menu_flash.html:12 templates/menu_points.html:80
+#: templates/menu_flash.html:12 templates/menu_points.html:81
 msgid "Cercle"
 msgstr ""
 
@@ -1817,7 +1831,7 @@ msgstr ""
 msgid "Carré"
 msgstr ""
 
-#: templates/menu_flash.html:16 templates/menu_points.html:81
+#: templates/menu_flash.html:16 templates/menu_points.html:82
 msgid "Triangle"
 msgstr ""
 
@@ -1853,27 +1867,27 @@ msgstr ""
 msgid "Couleur du flash"
 msgstr ""
 
-#: templates/menu_flash.html:37 templates/menu_points.html:49
-#: templates/menu_points.html:114
+#: templates/menu_flash.html:38 templates/menu_points.html:50
+#: templates/menu_points.html:116
 msgid "Couleurs GC (par type)"
 msgstr ""
 
-#: templates/menu_flash.html:41 templates/menu_points.html:53
-#: templates/menu_points.html:118
+#: templates/menu_flash.html:42 templates/menu_points.html:54
+#: templates/menu_points.html:120
 msgid "Transparent"
 msgstr ""
 
-#: templates/menu_flash.html:45 templates/menu_points.html:57
-#: templates/menu_points.html:122
+#: templates/menu_flash.html:46 templates/menu_points.html:58
+#: templates/menu_points.html:124
 msgid "Couleur unique"
 msgstr ""
 
-#: templates/menu_flash.html:50 templates/menu_points.html:62
-#: templates/menu_points.html:127
+#: templates/menu_flash.html:51 templates/menu_points.html:63
+#: templates/menu_points.html:129
 msgid "Choisir la couleur"
 msgstr ""
 
-#: templates/menu_flash.html:51
+#: templates/menu_flash.html:52
 msgid "Choisir la couleur du flash"
 msgstr ""
 
@@ -2006,43 +2020,49 @@ msgstr ""
 msgid "Vérifier les nouvelles versions au démarrage"
 msgstr ""
 
-#: templates/menu_options.html:53
+#: templates/menu_options.html:46
+msgid ""
+"Utilisé à la première ouverture. Ensuite, GCMap rouvre le dernier profil "
+"utilisé."
+msgstr ""
+
+#: templates/menu_options.html:56
 msgid "Mode de saisie du centre de carte"
 msgstr ""
 
-#: templates/menu_options.html:55
+#: templates/menu_options.html:58
 msgid "Lat, Lon"
 msgstr ""
 
-#: templates/menu_options.html:57
+#: templates/menu_options.html:60
 msgid "Séparés"
 msgstr ""
 
-#: templates/menu_options.html:61
+#: templates/menu_options.html:64
 msgid "Centre de carte par défaut - Lat, Lon"
 msgstr ""
 
-#: templates/menu_options.html:65
+#: templates/menu_options.html:68
 msgid "Centre de carte par défaut - Latitude"
 msgstr ""
 
-#: templates/menu_options.html:69
+#: templates/menu_options.html:72
 msgid "Centre de carte par défaut - Longitude"
 msgstr ""
 
-#: templates/menu_options.html:75
+#: templates/menu_options.html:78
 msgid "Zoom de carte par défaut"
 msgstr ""
 
-#: templates/menu_options.html:77
+#: templates/menu_options.html:80
 msgid "Valeur autorisée : de 0 à 22."
 msgstr ""
 
-#: templates/menu_options.html:97
+#: templates/menu_options.html:100
 msgid "Vérifier les mises à jour"
 msgstr ""
 
-#: templates/menu_options.html:100
+#: templates/menu_options.html:103
 msgid "Accueil"
 msgstr ""
 
@@ -2050,12 +2070,12 @@ msgstr ""
 msgid "Taille du centre"
 msgstr ""
 
-#: templates/menu_points.html:39 templates/menu_points.html:160
+#: templates/menu_points.html:39 templates/menu_points.html:162
 msgid "Taille en pixels"
 msgstr ""
 
-#: templates/menu_points.html:40 templates/menu_points.html:105
-#: templates/menu_points.html:161
+#: templates/menu_points.html:40 templates/menu_points.html:106
+#: templates/menu_points.html:163
 msgid "px"
 msgstr ""
 
@@ -2063,55 +2083,55 @@ msgstr ""
 msgid "Couleur du centre"
 msgstr ""
 
-#: templates/menu_points.html:63
+#: templates/menu_points.html:64
 msgid "Choisir la couleur du centre"
 msgstr ""
 
-#: templates/menu_points.html:74
+#: templates/menu_points.html:75
 msgid "Forme du point"
 msgstr ""
 
-#: templates/menu_points.html:78 templates/menu_points.html:79
+#: templates/menu_points.html:79 templates/menu_points.html:80
 msgid "Forme des points"
 msgstr ""
 
-#: templates/menu_points.html:92
+#: templates/menu_points.html:93
 msgid "Bordure du point"
 msgstr ""
 
-#: templates/menu_points.html:97
+#: templates/menu_points.html:98
 msgid "Épaisseur de la bordure (0 = aucune)"
 msgstr ""
 
-#: templates/menu_points.html:100
+#: templates/menu_points.html:101
 msgid "Épaisseur de la bordure"
 msgstr ""
 
-#: templates/menu_points.html:104
+#: templates/menu_points.html:105
 msgid "Épaisseur en pixels"
 msgstr ""
 
-#: templates/menu_points.html:111
+#: templates/menu_points.html:112
 msgid "Couleur de la bordure"
 msgstr ""
 
-#: templates/menu_points.html:128
+#: templates/menu_points.html:130
 msgid "Choisir la couleur de la bordure"
 msgstr ""
 
-#: templates/menu_points.html:141
+#: templates/menu_points.html:143
 msgid "Configuration des icônes"
 msgstr ""
 
-#: templates/menu_points.html:146 templates/menu_points.html:147
+#: templates/menu_points.html:148 templates/menu_points.html:149
 msgid "Jeu d'icônes"
 msgstr ""
 
-#: templates/menu_points.html:153 templates/menu_points.html:156
+#: templates/menu_points.html:155 templates/menu_points.html:158
 msgid "Taille des icônes"
 msgstr ""
 
-#: templates/menu_points.html:167
+#: templates/menu_points.html:169
 msgid "Aperçu des icônes"
 msgstr ""
 
@@ -2382,6 +2402,10 @@ msgid ""
 "Les réglages marqués « Profil » ne sont conservés qu'après un clic sur « "
 "Sauvegarder ». Un « • » à côté du nom du profil signale des modifications"
 " en attente."
+msgstr ""
+
+#: templates/menu_style.html:142
+msgid "Créer un profil avec les réglages actuels"
 msgstr ""
 
 #: templates/menu_style.html:145

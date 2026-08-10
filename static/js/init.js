@@ -125,18 +125,19 @@ document.addEventListener('DOMContentLoaded', async function() {
         point_mode: pkg.options.point?.mode
     });
 
-    // Charger le profil par défaut APRÈS l'initialisation complète de l'interface
-    console.log('🚀 [INIT] Interface initialisée, chargement du profil par défaut...');
-    let defaultProfileApplied = false;
+    // Restaurer le profil de démarrage (dernier profil actif, à défaut le profil
+    // par défaut) APRÈS l'initialisation complète de l'interface
+    console.log('🚀 [INIT] Interface initialisée, restauration du profil de démarrage...');
+    let startupProfileApplied = false;
     try {
         const pm = await waitForProfileManager();
-        await pm.loadDefaultProfileAtStartup();
-        defaultProfileApplied = !!(pm && pm.currentProfile && pm.currentProfile.uid);
+        await pm.restoreStartupProfile();
+        startupProfileApplied = !!(pm && pm.currentProfile && pm.currentProfile.uid);
     } catch (e) {
-        console.warn('⚠️ [INIT] Chargement profil par défaut ignoré:', e?.message || e);
+        console.warn('⚠️ [INIT] Restauration du profil de démarrage ignorée:', e?.message || e);
     }
 
-    if (!defaultProfileApplied) {
+    if (!startupProfileApplied) {
         // affiche la bonne carte
         pkg.selectDefaultCarto();
         // centrer la carte
@@ -147,7 +148,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     applyUserMapDefaults();
 
     // affiche les frames (infos, titre) si elles existent
-    // (après le profil par défaut, pour éviter un "saut" visuel)
+    // (après le profil de démarrage, pour éviter un "saut" visuel)
     pkg.displayFrames();
 
     pkg.readBdd();  // creation du geojson et des metadatas

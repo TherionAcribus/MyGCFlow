@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-10 14:28+0200\n"
+"POT-Creation-Date: 2026-08-10 17:00+0200\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -64,13 +64,13 @@ msgstr "Filters"
 msgid "Paramètres"
 msgstr "Settings"
 
-#: templates/app.html:122 templates/guide.html:45 templates/guide.html:72
+#: templates/app.html:119 templates/guide.html:45 templates/guide.html:72
 #: templates/guide.html:94 templates/guide.html:102 templates/guide.html:117
 #: test_translations.py:30
 msgid "Données"
 msgstr "Data"
 
-#: templates/app.html:123 templates/guide.html:48 templates/guide.html:77
+#: templates/app.html:120 templates/guide.html:48 templates/guide.html:77
 #: templates/guide.html:94 templates/guide.html:140 templates/guide.html:142
 #: templates/menu_informations.html:139 test_translations.py:31
 msgid "Style"
@@ -157,9 +157,9 @@ msgid ""
 "instable ?)."
 msgstr "Some map tiles could not be loaded (unstable connection?)."
 
-#: static/js/basemaps.js:92 static/js/basemaps.js:129 static/js/ui.js:1649
-#: static/js/ui.js:1679 static/js/ui.js:1701 static/js/ui.js:1826
-#: static/js/ui.js:1841
+#: static/js/basemaps.js:92 static/js/basemaps.js:129 static/js/ui.js:1656
+#: static/js/ui.js:1687 static/js/ui.js:1709 static/js/ui.js:1831
+#: static/js/ui.js:1845
 msgid "Carte"
 msgstr "Map"
 
@@ -262,7 +262,7 @@ msgstr "Error while uploading the file"
 
 #: static/js/bdd.js:842 static/js/bdd.js:849 static/js/bdd.js:916
 #: static/js/bdd.js:923 static/js/bdd.js:1099 static/js/bdd.js:1170
-#: static/js/bdd.js:1177 static/js/notifications.js:274 static/js/ui.js:1011
+#: static/js/bdd.js:1177 static/js/notifications.js:274 static/js/ui.js:1020
 #: static/js/ui.js:4248
 msgid "Erreur"
 msgstr "Error"
@@ -407,193 +407,205 @@ msgstr "Confirmation"
 msgid "espace"
 msgstr "space"
 
-#: static/js/profiles.js:214
+#: static/js/profiles.js:221
 msgid "Import échoué"
 msgstr "Import failed"
 
-#: static/js/profiles.js:216
+#: static/js/profiles.js:223
 #, python-brace-format
 msgid "Profil \"${name}\" importé"
 msgstr "Profile \"${name}\" imported"
 
-#: static/js/profiles.js:220
+#: static/js/profiles.js:227
 msgid "Erreur import du profil"
 msgstr "Profile import error"
 
-#: static/js/profiles.js:246
+#: static/js/profiles.js:253
 msgid "Erreur API"
 msgstr "API error"
 
-#: static/js/profiles.js:252
+#: static/js/profiles.js:259
 #, python-brace-format
 msgid "Erreur: ${message}"
 msgstr "Error: ${message}"
 
-#: static/js/profiles.js:300 static/js/profiles.js:1121
+#: static/js/profiles.js:308 static/js/profiles.js:1214
 #, python-brace-format
 msgid "Profil \"${name}\" chargé"
 msgstr "Profile \"${name}\" loaded"
 
-#: static/js/profiles.js:321
+#: static/js/profiles.js:337
 #, python-brace-format
 msgid "Profil \"${name}\" sauvegardé"
 msgstr "Profile \"${name}\" saved"
 
-#: static/js/profiles.js:339
+#: static/js/profiles.js:390
+#, python-brace-format
+msgid "Profil \"${name}\" créé, mais l'enregistrement des réglages a échoué"
+msgstr "Profile \"${name}\" created, but its settings could not be saved"
+
+#: static/js/profiles.js:400
 #, python-brace-format
 msgid "Profil \"${name}\" créé"
 msgstr "Profile \"${name}\" created"
 
-#: static/js/profiles.js:356
+#: static/js/profiles.js:416
 #, python-brace-format
 msgid "Profil dupliqué: \"${name}\""
 msgstr "Profile duplicated: \"${name}\""
 
-#: static/js/profiles.js:368
+#: static/js/profiles.js:428
 #, python-brace-format
 msgid "Profil \"${name}\" supprimé"
 msgstr "Profile \"${name}\" deleted"
 
-#: static/js/profiles.js:438
+#: static/js/profiles.js:498
 #, python-brace-format
 msgid "Profil \"${name}\" réinitialisé"
 msgstr "Profile \"${name}\" reset"
 
-#: static/js/profiles.js:453
+#: static/js/profiles.js:513
 msgid "Export échoué"
 msgstr "Export failed"
 
-#: static/js/profiles.js:464
+#: static/js/profiles.js:524
 #, python-brace-format
 msgid "Profil \"${name}\" exporté"
 msgstr "Profile \"${name}\" exported"
 
-#: static/js/profiles.js:467
+#: static/js/profiles.js:527
 msgid "Erreur export du profil"
 msgstr "Profile export error"
 
-#: static/js/profiles.js:487
+#: static/js/profiles.js:547
 msgid "Profil introuvable ou UID manquant"
 msgstr "Profile not found or missing UID"
 
-#: static/js/profiles.js:501
+#: static/js/profiles.js:562
 msgid "Échec de la sauvegarde du profil par défaut"
 msgstr "Failed to save the default profile"
 
-#: static/js/profiles.js:506
+#: static/js/profiles.js:567
 #, python-brace-format
 msgid "Profil \"${name}\" défini comme profil par défaut"
 msgstr "Profile \"${name}\" set as the default profile"
 
-#: static/js/profiles.js:519
+#: static/js/profiles.js:580
 msgid "Erreur lors de la définition du profil par défaut"
 msgstr "Error while setting the default profile"
 
-#: static/js/profiles.js:534
+#: static/js/profiles.js:595
 msgid "Aucun profil"
 msgstr "No profile"
 
-#: static/js/profiles.js:617 static/js/profiles.js:1788
+#: static/js/profiles.js:678 static/js/profiles.js:1947
 msgid "Dupliquer"
 msgstr "Duplicate"
 
-#: static/js/profiles.js:618 static/js/profiles.js:1768
+#: static/js/profiles.js:679 static/js/profiles.js:1927
 msgid "Renommer"
 msgstr "Rename"
 
-#: static/js/profiles.js:619
+#: static/js/profiles.js:680
 msgid "Exporter"
 msgstr "Export"
 
-#: static/js/profiles.js:620 templates/menu_options.html:87
+#: static/js/profiles.js:681 templates/menu_options.html:90
 #: templates/menu_style.html:229
 msgid "Réinitialiser"
 msgstr "Reset"
 
-#: static/js/profiles.js:621 templates/menu_style.html:204
+#: static/js/profiles.js:682 templates/menu_style.html:204
 msgid "Supprimer"
 msgstr "Delete"
 
-#: static/js/profiles.js:625
+#: static/js/profiles.js:686
 msgid "Définir comme par défaut"
 msgstr "Set as default"
 
-#: static/js/profiles.js:681
+#: static/js/profiles.js:740
 msgid "ACTIF"
 msgstr "ACTIVE"
 
-#: static/js/profiles.js:703 templates/menu_options.html:42
+#: static/js/profiles.js:762 templates/menu_options.html:42
 msgid "Profil par défaut"
 msgstr "Default profile"
 
-#: static/js/profiles.js:755 templates/menu_style.html:246
+#: static/js/profiles.js:814 templates/menu_style.html:246
 msgid "Modifications non enregistrées"
 msgstr "Unsaved changes"
 
-#: static/js/profiles.js:953
+#: static/js/profiles.js:1012
 #, python-brace-format
 msgid ""
 "Le profil \"${name}\" contient des modifications non enregistrées. Que "
 "voulez-vous faire ?"
 msgstr "Profile \"${name}\" has unsaved changes. What do you want to do?"
 
-#: static/js/profiles.js:954
+#: static/js/profiles.js:1013
 msgid "Vous avez des modifications non enregistrées. Que voulez-vous faire ?"
 msgstr "You have unsaved changes. What do you want to do?"
 
-#: static/js/profiles.js:1125
+#: static/js/profiles.js:1218
 msgid "Erreur lors du chargement du profil par défaut"
 msgstr "Error while loading the default profile"
 
-#: static/js/profiles.js:1158
+#: static/js/profiles.js:1251
 msgid "Aucun profil par défaut"
 msgstr "No default profile"
 
-#: static/js/profiles.js:1253
+#: static/js/profiles.js:1346
 #, python-brace-format
 msgid "Profil \"${selectedProfile}\" appliqué et défini comme profil par défaut"
 msgstr "Profile \"${selectedProfile}\" applied and set as default profile"
 
-#: static/js/profiles.js:1254
+#: static/js/profiles.js:1347
 msgid "Aucun profil par défaut défini"
 msgstr "No default profile set"
 
-#: static/js/profiles.js:1330
-msgid "Le profil par défaut n'a pas pu être chargé : aucun profil n'est actif."
-msgstr "The default profile could not be loaded: no profile is active."
+#: static/js/profiles.js:1485
+msgid "Le profil n'a pas pu être chargé : aucun profil n'est actif."
+msgstr "The profile could not be loaded: no profile is active."
 
-#: static/js/profiles.js:1757 templates/menu_style.html:142
-#: templates/menu_style.html:164
+#: static/js/profiles.js:1912
+msgid "Enregistrer dans un nouveau profil"
+msgstr "Save to a new profile"
+
+#: static/js/profiles.js:1912 templates/menu_style.html:164
 msgid "Nouveau profil"
 msgstr "New profile"
 
-#: static/js/profiles.js:1759 templates/menu_style.html:179
+#: static/js/profiles.js:1918
+msgid "Enregistrer le profil"
+msgstr "Save profile"
+
+#: static/js/profiles.js:1918 templates/menu_style.html:179
 msgid "Créer"
 msgstr "Create"
 
-#: static/js/profiles.js:1766
+#: static/js/profiles.js:1925
 msgid "Renommer le profil"
 msgstr "Rename profile"
 
-#: static/js/profiles.js:1786
+#: static/js/profiles.js:1945
 msgid "Dupliquer le profil"
 msgstr "Duplicate profile"
 
-#: static/js/profiles.js:1842
+#: static/js/profiles.js:2001
 msgid "Le nom doit contenir au moins une lettre ou un chiffre"
 msgstr "The name must contain at least one letter or digit"
 
-#: static/js/profiles.js:1864
+#: static/js/profiles.js:2023
 #, python-brace-format
 msgid "« ${conflict} » existe déjà : la copie sera nommée « ${suggested} »"
 msgstr "“${conflict}” already exists: the copy will be named “${suggested}”"
 
-#: static/js/profiles.js:1871
+#: static/js/profiles.js:2030
 #, python-brace-format
 msgid "Un profil nommé « ${name} » existe déjà"
 msgstr "Profile renamed to \"${name}\""
 
-#: static/js/profiles.js:1872
+#: static/js/profiles.js:2031
 #, python-brace-format
 msgid ""
 "Ce nom est déjà pris par « ${conflict} » : les deux se réduisent au "
@@ -602,28 +614,28 @@ msgstr ""
 "This name is already taken by “${conflict}”: both reduce to the file "
 "“${key}”"
 
-#: static/js/profiles.js:1881
+#: static/js/profiles.js:2040
 #, python-brace-format
 msgid ""
 "Caractères ignorés (${dropped}) : le profil sera enregistré sous « ${key}"
 " »"
 msgstr "Ignored characters (${dropped}): the profile will be saved as “${key}”"
 
-#: static/js/profiles.js:1939
+#: static/js/profiles.js:2098
 msgid "Veuillez saisir un nom de profil"
 msgstr "Please enter a profile name"
 
-#: static/js/profiles.js:1998
+#: static/js/profiles.js:2157
 #, python-brace-format
 msgid "Profil renommé en \"${name}\""
 msgstr "Profile renamed to \"${name}\""
 
-#: static/js/profiles.js:2012
+#: static/js/profiles.js:2171
 #, python-brace-format
 msgid "Êtes-vous sûr de vouloir supprimer le profil \"${name}\" ?"
 msgstr "Are you sure you want to delete the profile \"${name}\"?"
 
-#: static/js/profiles.js:2031
+#: static/js/profiles.js:2190
 #, python-brace-format
 msgid ""
 "Êtes-vous sûr de vouloir réinitialiser le profil \"${name}\" aux valeurs "
@@ -697,7 +709,7 @@ msgstr "Saved"
 msgid "Non enregistré"
 msgstr "Not saved"
 
-#: static/js/ui.js:863
+#: static/js/ui.js:872
 msgid ""
 "Ce format vidéo n'est pas supporté par votre navigateur et sera ignoré au"
 " démarrage de l'enregistrement."
@@ -705,48 +717,48 @@ msgstr ""
 "This video format is not supported by your browser and will be ignored "
 "when recording starts."
 
-#: static/js/ui.js:864 static/js/ui.js:1900
+#: static/js/ui.js:873 static/js/ui.js:1904
 msgid "Format non supporté"
 msgstr "Unsupported format"
 
-#: static/js/ui.js:1007
+#: static/js/ui.js:1016
 msgid "Durée de l'animation ajustée selon la musique"
 msgstr "Animation duration adjusted to match the music"
 
-#: static/js/ui.js:1007
+#: static/js/ui.js:1016
 msgid "Musique"
 msgstr "Music"
 
-#: static/js/ui.js:1011
+#: static/js/ui.js:1020
 msgid "Erreur lors de la lecture du fichier audio"
 msgstr "Error reading the audio file"
 
-#: static/js/ui.js:1649
+#: static/js/ui.js:1656
 msgid "Enregistrement du centre par défaut impossible"
 msgstr "Could not save the default map center"
 
-#: static/js/ui.js:1679
+#: static/js/ui.js:1687
 msgid "Coordonnées invalides. Ex: 48.85, 2.35 ou N 49° 16.029 E 006° 07.512"
 msgstr "Invalid coordinates. E.g. 48.85, 2.35 or N 49° 16.029 E 006° 07.512"
 
-#: static/js/ui.js:1701
+#: static/js/ui.js:1709
 msgid "Coordonnées invalides. Ex: N 49° 16.029 / E 006° 07.512"
 msgstr "Invalid coordinates. E.g. N 49° 16.029 / E 006° 07.512"
 
-#: static/js/ui.js:1826
+#: static/js/ui.js:1831
 msgid "Cliquez sur la carte pour choisir le centre"
 msgstr "Click the map to choose the center"
 
-#: static/js/ui.js:1841
+#: static/js/ui.js:1845
 msgid "Centre par défaut mis à jour depuis la carte"
 msgstr "Default center updated from the map"
 
-#: static/js/ui.js:1899
+#: static/js/ui.js:1903
 #, python-brace-format
 msgid "Le format vidéo sauvegardé (${mime}) n'est pas supporté par ce navigateur."
 msgstr "The saved video format (${mime}) is not supported by this browser."
 
-#: static/js/ui.js:2107
+#: static/js/ui.js:2111
 msgid ""
 "La vidéo ne sera ni téléchargée ni uploadée : elle sera perdue après "
 "l'enregistrement."
@@ -754,7 +766,7 @@ msgstr ""
 "The video will be neither downloaded nor uploaded: it will be lost after "
 "recording."
 
-#: static/js/ui.js:2108
+#: static/js/ui.js:2112
 msgid "Aucune destination"
 msgstr "No destination"
 
@@ -838,43 +850,43 @@ msgstr ""
 msgid "Global"
 msgstr "Global"
 
-#: templates/app.html:52
+#: templates/app.html:49
 msgid "My Geocaching Map"
 msgstr "My Geocaching Map"
 
-#: templates/app.html:75 templates/app.html:76
+#: templates/app.html:72 templates/app.html:73
 msgid "Lancer l'animation"
 msgstr "Start the animation"
 
-#: templates/app.html:80 templates/app.html:81
+#: templates/app.html:77 templates/app.html:78
 msgid "Enregistrer la vidéo"
 msgstr "Record the video"
 
-#: templates/app.html:85 templates/app.html:86
+#: templates/app.html:82 templates/app.html:83
 msgid "Pause / Reprendre"
 msgstr "Pause / Resume"
 
-#: templates/app.html:90 templates/app.html:91
+#: templates/app.html:87 templates/app.html:88
 msgid "Arrêter l'animation"
 msgstr "Stop the animation"
 
-#: templates/app.html:95 templates/app.html:96
+#: templates/app.html:92 templates/app.html:93
 msgid "Basculer le plein écran"
 msgstr "Toggle fullscreen"
 
-#: templates/app.html:124 templates/guide.html:51 templates/guide.html:82
+#: templates/app.html:121 templates/guide.html:51 templates/guide.html:82
 #: templates/guide.html:94 templates/guide.html:195 templates/guide.html:197
 #: templates/menu_animation.html:8
 msgid "Animation & vidéo"
 msgstr "Animation & video"
 
-#: templates/app.html:125 templates/guide.html:54 templates/guide.html:87
+#: templates/app.html:122 templates/guide.html:54 templates/guide.html:87
 #: templates/guide.html:94 templates/guide.html:257 templates/guide.html:259
 msgid "Préférences"
 msgstr "Preferences"
 
 #: templates/guide.html:6 templates/guide.html:22
-#: templates/menu_options.html:103
+#: templates/menu_options.html:106
 msgid "Mode d'emploi"
 msgstr "User guide"
 
@@ -1542,8 +1554,12 @@ msgid "Profil par défaut au démarrage"
 msgstr "Default profile at startup"
 
 #: templates/guide.html:267
-msgid "le profil de style chargé automatiquement à l'ouverture."
-msgstr "the style profile loaded automatically on startup."
+msgid ""
+"le profil de style chargé à la première ouverture. Ensuite, GCMap rouvre "
+"le dernier profil que vous avez utilisé."
+msgstr ""
+"the style profile loaded the first time you open GCMap. After that, GCMap "
+"reopens the last profile you used."
 
 #: templates/guide.html:271
 msgid "Vue de carte par défaut"
@@ -1555,7 +1571,7 @@ msgid ""
 "démarrage."
 msgstr "Set the center (latitude, longitude) and zoom used at startup."
 
-#: templates/guide.html:274 templates/menu_options.html:81
+#: templates/guide.html:274 templates/menu_options.html:84
 msgid "Utiliser la vue actuelle de la carte"
 msgstr "Use current map view"
 
@@ -1563,7 +1579,7 @@ msgstr "Use current map view"
 msgid "reprend la position affichée."
 msgstr "reuses the currently displayed position."
 
-#: templates/guide.html:275 templates/menu_options.html:84
+#: templates/guide.html:275 templates/menu_options.html:87
 msgid "Choisir sur la carte"
 msgstr "Pick on map"
 
@@ -2067,43 +2083,51 @@ msgstr "Dark"
 msgid "Vérifier les nouvelles versions au démarrage"
 msgstr "Check for new versions at startup"
 
-#: templates/menu_options.html:53
+#: templates/menu_options.html:46
+msgid ""
+"Utilisé à la première ouverture. Ensuite, GCMap rouvre le dernier profil "
+"utilisé."
+msgstr ""
+"Used the first time you open GCMap. After that, GCMap reopens the last "
+"profile you used."
+
+#: templates/menu_options.html:56
 msgid "Mode de saisie du centre de carte"
 msgstr "Map center input mode"
 
-#: templates/menu_options.html:55
+#: templates/menu_options.html:58
 msgid "Lat, Lon"
 msgstr "Lat, Lon"
 
-#: templates/menu_options.html:57
+#: templates/menu_options.html:60
 msgid "Séparés"
 msgstr "Separate"
 
-#: templates/menu_options.html:61
+#: templates/menu_options.html:64
 msgid "Centre de carte par défaut - Lat, Lon"
 msgstr "Default map center - Lat, Lon"
 
-#: templates/menu_options.html:65
+#: templates/menu_options.html:68
 msgid "Centre de carte par défaut - Latitude"
 msgstr "Default map center - Latitude"
 
-#: templates/menu_options.html:69
+#: templates/menu_options.html:72
 msgid "Centre de carte par défaut - Longitude"
 msgstr "Default map center - Longitude"
 
-#: templates/menu_options.html:75
+#: templates/menu_options.html:78
 msgid "Zoom de carte par défaut"
 msgstr "Default map zoom"
 
-#: templates/menu_options.html:77
+#: templates/menu_options.html:80
 msgid "Valeur autorisée : de 0 à 22."
 msgstr "Allowed value: 0 to 22."
 
-#: templates/menu_options.html:97
+#: templates/menu_options.html:100
 msgid "Vérifier les mises à jour"
 msgstr "Check for updates"
 
-#: templates/menu_options.html:100
+#: templates/menu_options.html:103
 msgid "Accueil"
 msgstr "Home"
 
@@ -2471,6 +2495,10 @@ msgstr ""
 "Settings marked \"Profile\" are kept only after clicking \"Save\". A "
 "\"•\" next to the profile name means changes are pending."
 
+#: templates/menu_style.html:142
+msgid "Créer un profil avec les réglages actuels"
+msgstr "Create a profile with the current settings"
+
 #: templates/menu_style.html:145
 msgid "Sauvegarder le profil actif"
 msgstr "Save the active profile"
@@ -2717,4 +2745,10 @@ msgstr "Skip for now"
 
 #~ msgid "Home"
 #~ msgstr "Home"
+
+#~ msgid "Le profil par défaut n'a pas pu être chargé : aucun profil n'est actif."
+#~ msgstr "The default profile could not be loaded: no profile is active."
+
+#~ msgid "le profil de style chargé automatiquement à l'ouverture."
+#~ msgstr "the style profile loaded automatically on startup."
 

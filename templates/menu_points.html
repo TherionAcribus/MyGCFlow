@@ -44,17 +44,18 @@
 
                         <!-- Couleur du centre -->
                         <label class="form-label mt-3">{{ _("Couleur du centre") }}</label>
+                        <!-- Libellés en <span> (et non <label for>) : seul le clic sur le bouton radio change la valeur, pas le clic sur toute la ligne -->
                         <div class="form-check">
-                            <input class="form-check-input" type="radio" name="fillColorPoint" id="fillColorPointGc" value="gc">
-                            <label class="form-check-label" for="fillColorPointGc">{{ _("Couleurs GC (par type)") }}</label>
+                            <input class="form-check-input" type="radio" name="fillColorPoint" id="fillColorPointGc" value="gc" aria-labelledby="fillColorPointGcLabel">
+                            <span class="form-check-label" id="fillColorPointGcLabel">{{ _("Couleurs GC (par type)") }}</span>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="radio" name="fillColorPoint" id="fillColorPointNone" value="none">
-                            <label class="form-check-label" for="fillColorPointNone">{{ _("Transparent") }}</label>
+                            <input class="form-check-input" type="radio" name="fillColorPoint" id="fillColorPointNone" value="none" aria-labelledby="fillColorPointNoneLabel">
+                            <span class="form-check-label" id="fillColorPointNoneLabel">{{ _("Transparent") }}</span>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="radio" name="fillColorPoint" id="fillColorPointFix" value="fix">
-                            <label class="form-check-label" for="fillColorPointFix">{{ _("Couleur unique") }}</label>
+                            <input class="form-check-input" type="radio" name="fillColorPoint" id="fillColorPointFix" value="fix" aria-labelledby="fillColorPointFixLabel">
+                            <span class="form-check-label" id="fillColorPointFixLabel">{{ _("Couleur unique") }}</span>
                         </div>
 
                         <!-- Color Picker Centre -->
@@ -109,17 +110,18 @@
 
                         <!-- Couleur de la bordure -->
                         <label class="form-label mt-3">{{ _("Couleur de la bordure") }}</label>
+                        <!-- Libellés en <span> (et non <label for>) : seul le clic sur le bouton radio change la valeur, pas le clic sur toute la ligne -->
                         <div class="form-check">
-                            <input class="form-check-input" type="radio" name="borderColorPoint" id="borderColorPointGc" value="gc">
-                            <label class="form-check-label" for="borderColorPointGc">{{ _("Couleurs GC (par type)") }}</label>
+                            <input class="form-check-input" type="radio" name="borderColorPoint" id="borderColorPointGc" value="gc" aria-labelledby="borderColorPointGcLabel">
+                            <span class="form-check-label" id="borderColorPointGcLabel">{{ _("Couleurs GC (par type)") }}</span>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="radio" name="borderColorPoint" id="borderColorPointNone" value="none">
-                            <label class="form-check-label" for="borderColorPointNone">{{ _("Transparent") }}</label>
+                            <input class="form-check-input" type="radio" name="borderColorPoint" id="borderColorPointNone" value="none" aria-labelledby="borderColorPointNoneLabel">
+                            <span class="form-check-label" id="borderColorPointNoneLabel">{{ _("Transparent") }}</span>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="radio" name="borderColorPoint" id="borderColorPointFix" value="fix">
-                            <label class="form-check-label" for="borderColorPointFix">{{ _("Couleur unique") }}</label>
+                            <input class="form-check-input" type="radio" name="borderColorPoint" id="borderColorPointFix" value="fix" aria-labelledby="borderColorPointFixLabel">
+                            <span class="form-check-label" id="borderColorPointFixLabel">{{ _("Couleur unique") }}</span>
                         </div>
 
                         <!-- Color Picker Bordure -->

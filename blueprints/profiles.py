@@ -26,6 +26,9 @@ def api_get_settings():
     default_profile_name = None
     if s.default_profile_uid:
         default_profile_name = settings_manager.get_profile_name_by_uid(s.default_profile_uid)
+    last_profile_name = None
+    if s.last_profile_uid:
+        last_profile_name = settings_manager.get_profile_name_by_uid(s.last_profile_uid)
 
     response = jsonify({
         'version': s.version,
@@ -34,6 +37,8 @@ def api_get_settings():
         'theme': s.theme,
         'default_profile_uid': s.default_profile_uid,
         'default_profile_name': default_profile_name,
+        'last_profile_uid': s.last_profile_uid,
+        'last_profile_name': last_profile_name,
         'map_default_center': list(s.map_default_center) if s.map_default_center else None,
         'map_default_zoom': s.map_default_zoom,
         'recording': asdict(s.recording),
@@ -74,6 +79,13 @@ def api_put_settings():
         if 'default_profile_uid' in data:
             default_profile_uid = data.get('default_profile_uid')
 
+        # Même règle pour le dernier profil actif : il n'est réécrit que si le
+        # client l'envoie, sinon la moindre écriture d'une autre préférence
+        # ferait oublier quel profil restaurer au prochain démarrage.
+        last_profile_uid = current.last_profile_uid
+        if 'last_profile_uid' in data:
+            last_profile_uid = data.get('last_profile_uid')
+
         # Centre et zoom passent par les mêmes contrôles qu'à la relecture du
         # fichier : sans cela, l'écriture déposerait la valeur brute dans
         # settings.json et seul le chargement suivant la corrigerait. Une valeur
@@ -96,6 +108,7 @@ def api_put_settings():
             check_updates=check_updates,
             theme=theme,
             default_profile_uid=default_profile_uid,
+            last_profile_uid=last_profile_uid,
             map_default_center=map_default_center,
             map_default_zoom=map_default_zoom,
             recording=recording,
@@ -160,7 +173,10 @@ def api_create_profile():
         return jsonify({'success': False, 'message': str(e)}), 400
     except ValueError as e:
         return jsonify({'success': False, 'message': str(e)}), 409
-    return jsonify({'success': True, 'name': prof.name})
+    # L'uid et la version sont renvoyés : le client en fait immédiatement le
+    # profil actif et lui écrit les réglages affichés (PUT), ce qu'il ne peut
+    # pas faire à partir du seul nom.
+    return jsonify({'success': True, 'name': prof.name, 'uid': prof.uid, 'version': prof.version})
 
 
 @profiles_bp.route('/api/profiles/<name>', methods=['PUT'])

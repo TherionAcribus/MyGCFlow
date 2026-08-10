@@ -8,7 +8,7 @@ mécanisme sous-jacent.
 
 | Portée | Contenu | Stockage | Sauvegarde |
 | --- | --- | --- | --- |
-| **Globale** | langue, thème, vérification des mises à jour, profil par défaut, centre/zoom par défaut, réglages d'enregistrement vidéo (mode, FPS, bitrate, codec, ralentissement, échelle, destinations, musique) | `%APPDATA%\GCMap\settings.json` (serveur) | automatique, à chaque modification |
+| **Globale** | langue, thème, vérification des mises à jour, profil par défaut, dernier profil actif, centre/zoom par défaut, réglages d'enregistrement vidéo (mode, FPS, bitrate, codec, ralentissement, échelle, destinations, musique) | `%APPDATA%\GCMap\settings.json` (serveur) | automatique, à chaque modification |
 | **Profil** | fond de carte et ses options, style des points, flash, titre et bloc d'infos (+ CSS) | `%APPDATA%\GCMap\profiles\<nom>.json` (serveur) | manuelle, bouton **Sauvegarder** de la section Profils |
 
 Un réglage global suit l'utilisateur quel que soit le profil chargé. Un réglage
@@ -33,6 +33,53 @@ qu'après un clic sur **Sauvegarder**.
   jamais vers le serveur (cf. `lastSavedCenterKey` dans `ui.js`).
 - **Indicateur de profil** (`#current-profile-indicator`) : nom du profil actif,
   suivi d'un « • » tant que des modifications de style ne sont pas enregistrées.
+  Le suivi (`_bindDirtyTracking()`) écoute `input`, `change` **et `click`** sur
+  le conteneur `#style`, puis compare l'état lu dans `pkg.options` à la dernière
+  référence enregistrée. `click` est indispensable : plusieurs réglages de profil
+  ne passent par aucun champ de formulaire mais par un bouton — choix du fond de
+  carte (`.changeMap`), variante Toner clair/sombre, « Appliquer » du style
+  Titre/Infos. Ils n'émettent ni `input` ni `change` : leurs modifications
+  partaient bien dans le profil enregistré, mais n'étaient jamais signalées comme
+  en attente. Les clics du panneau Profils (`#profiles-section`) sont ignorés :
+  ils ne touchent aucun réglage de style. Comme le suivi **compare** au lieu de
+  poser un drapeau, un clic sans effet (un onglet, un bouton d'action) ne rend
+  pas le profil « modifié », et revenir à la valeur enregistrée éteint le « • ».
+
+## Cycle de vie d'un profil
+
+**Création.** « Nouveau profil » (et « Sauvegarder » quand aucun profil n'est
+actif, qui ouvre la même modale sous l'intitulé « Enregistrer dans un nouveau
+profil ») enregistre **les réglages affichés**. Deux requêtes :
+`POST /api/profiles` écrit un profil aux valeurs par défaut et renvoie son
+`uid`, puis `PUT /api/profiles/<nom>` y dépose l'état courant — le même corps
+que le bouton « Sauvegarder », construit par `_buildProfilePayload()`. Sans ce
+second appel, le profil créé restait vide alors que l'écran continuait
+d'afficher les réglages de l'utilisateur, présentés comme enregistrés : le
+travail était perdu au rechargement suivant, sans message. Si le `PUT` échoue,
+le profil existe mais est vide, et le toast le dit.
+
+**Restauration au démarrage.** `restoreStartupProfile()` (appelée par `init.js`
+après `init_ui()`) charge le **dernier profil actif** — `last_profile_uid` dans
+`settings.json` — et n'utilise `default_profile_uid` qu'en repli : première
+ouverture, ou dernier profil devenu illisible. Le repli qui aboutit est
+aussitôt mémorisé comme dernier profil actif, sinon chaque démarrage repasserait
+par la même lecture ratée. Si aucun candidat n'est lisible, l'application
+démarre **sans profil actif** et le dit : pas de repli sur un profil « Default »
+ni sur un pseudo-profil temporaire, que l'utilisateur ne pourrait ni retrouver
+dans la liste ni enregistrer.
+
+`last_profile_uid` est écrit par `_rememberActiveProfile()` à chaque changement
+de profil actif décidé par l'utilisateur (chargement depuis la liste ou le
+sélecteur, création, « définir comme par défaut ») — jamais pendant la
+restauration elle-même, qui recharge précisément la valeur mémorisée. Son
+échec n'est pas signalé à l'utilisateur : il ne perd que la restauration
+automatique, pas son profil.
+
+Auparavant seul `default_profile_uid` décidait du démarrage : un profil créé ou
+sélectionné puis enregistré revenait au lancement suivant sous les réglages d'un
+autre profil, tant que l'utilisateur n'avait pas pensé à « Définir comme par
+défaut ». L'étoile garde son sens — c'est le profil des débuts —, elle ne décide
+plus de chaque démarrage.
 
 ## Côté client
 
@@ -100,9 +147,18 @@ pourrait écraser un réglage plus récent.
     "audio_enabled": false,
     "audio_volume": 1.0
   },
-  "recording_configured": false
+  "recording_configured": false,
+  "default_profile_uid": null,
+  "default_profile_name": null,
+  "last_profile_uid": null,
+  "last_profile_name": null
 }
 ```
+
+Les deux `*_name` sont résolus à la lecture depuis l'`uid` : le nom d'un profil
+peut changer (renommage), l'`uid` non. Une référence dont l'`uid` ne correspond
+plus à aucun profil est effacée par `get_app_settings()`, pour éviter un 404
+récurrent à chaque démarrage.
 
 `PUT /api/settings` accepte ces deux clés en patch partiel ; `recording` est
 fusionné avec la valeur enregistrée, donc `{"recording": {"fps": 24}}` ne touche

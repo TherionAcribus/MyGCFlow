@@ -122,6 +122,11 @@ class AppSettings:
     check_updates: bool = True
     theme: str = "system"  # "system" | "light" | "dark"
     default_profile_uid: Optional[str] = None  # UUID du profil par défaut (None = aucun)
+    # UUID du dernier profil rendu actif par l'utilisateur (None = aucun). C'est
+    # lui que le démarrage restaure ; `default_profile_uid` ne sert plus que de
+    # repli, pour qu'un profil enregistré puis retrouvé au lancement suivant ne
+    # dépende pas d'un passage par « Définir comme par défaut ».
+    last_profile_uid: Optional[str] = None
     # Convention persistée/API : (longitude, latitude).
     map_default_center: Optional[Tuple[float, float]] = None
     map_default_zoom: Optional[int] = None
@@ -363,6 +368,9 @@ def coerce_settings(d: dict) -> AppSettings:
 
         if d.get("default_profile_uid"):
             s.default_profile_uid = d.get("default_profile_uid")
+
+        if d.get("last_profile_uid"):
+            s.last_profile_uid = d.get("last_profile_uid")
 
         s.examples_seeded = bool(d.get("examples_seeded", s.examples_seeded))
 
@@ -1191,11 +1199,20 @@ class SettingsManager:
             data = read_json(SETTINGS_PATH)
             settings = coerce_settings(data)
 
-            # Si le profil par défaut pointé n'existe plus (ex: après suppression des fichiers de profils),
+            # Si un profil pointé n'existe plus (ex: après suppression des fichiers de profils),
             # on nettoie la référence pour éviter des erreurs 404 récurrentes au démarrage.
+            # Les deux références sont examinées avant l'écriture : une seule
+            # sauvegarde, même si les deux pointent sur le profil supprimé.
+            stale = False
             if settings.default_profile_uid and not self.get_profile_name_by_uid(settings.default_profile_uid):
                 logging.warning("Profil par défaut introuvable (uid=%s), réinitialisation.", settings.default_profile_uid)
                 settings.default_profile_uid = None
+                stale = True
+            if settings.last_profile_uid and not self.get_profile_name_by_uid(settings.last_profile_uid):
+                logging.warning("Dernier profil actif introuvable (uid=%s), réinitialisation.", settings.last_profile_uid)
+                settings.last_profile_uid = None
+                stale = True
+            if stale:
                 self.save_app_settings(settings)
 
             return settings
