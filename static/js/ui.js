@@ -51,7 +51,7 @@ var inputTitleCss, inputInfosCss, btnTitleCss, btnInfosCss;
 var spanNbCaches, spanCurrentDate;
 let overlayCssDefaultsReady = Promise.resolve();
 let overlayCssDefaultsStarted = false;
-var selectLanguage, selectCheckVersionOnline, buttonCheckVersion, buttonHome;
+var selectLanguage, switchCheckVersionOnline, buttonCheckVersion, buttonHome;
 var inputMapCenterLat, inputMapCenterLon, inputMapCenterCombined, inputMapDefaultZoom;
 var btnUseCurrentMapCenter, btnPickMapCenter, btnClearMapCenter;
 var btnToggleLatLonMode, fieldLat, fieldLon, fieldCombined, rowLatLon;
@@ -641,9 +641,9 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
         selectLanguage.addEventListener('change', changeOptionsValues);
     }
 
-    selectCheckVersionOnline = document.getElementById('selectCheckVersionOnline');
-    if (selectCheckVersionOnline) {
-        selectCheckVersionOnline.addEventListener('change', changeOptionsValues);
+    switchCheckVersionOnline = document.getElementById('switchCheckVersionOnline');
+    if (switchCheckVersionOnline) {
+        switchCheckVersionOnline.addEventListener('change', changeOptionsValues);
     }
 
     // Select profil par défaut (Tom Select)
@@ -1112,8 +1112,10 @@ export function init_ui() {
 
     selectLanguage.value = pkg.options.options.language;
     refreshTomSelect(document.getElementById('selectLanguage'));
-    selectCheckVersionOnline.value = pkg.options.options.checkVersion;
-    refreshTomSelect(document.getElementById('selectCheckVersionOnline'));
+    // La valeur arrive soit des settings serveur (booléen), soit d'un ancien
+    // stockage où elle a pu être sérialisée en chaîne.
+    const checkVersionPref = pkg.options.options.checkVersion;
+    switchCheckVersionOnline.checked = (checkVersionPref === true || checkVersionPref === 'true');
 
     try {
         const s = window.userSettings;
@@ -1622,14 +1624,13 @@ function initOptionsUI() {
 // ----------- OPTIONS DE L'APP ------------
 
 //
-// Handler partagé par le sélecteur de langue et celui de vérification de mise à
-// jour. `event` sert seulement à savoir quel champ signaler comme enregistré.
+// Handler partagé par le sélecteur de langue et l'interrupteur de vérification
+// de mise à jour. `event` sert seulement à savoir quel champ signaler comme
+// enregistré.
 async function changeOptionsValues(event) {
     const newLanguage = selectLanguage.value;
     const currentLanguage = pkg.options.options.language;
-    const checkUpdates = selectCheckVersionOnline
-        ? (selectCheckVersionOnline.value === 'true' || selectCheckVersionOnline.value === true)
-        : undefined;
+    const checkUpdates = switchCheckVersionOnline ? switchCheckVersionOnline.checked : undefined;
 
     // Sauvegarder la nouvelle langue dans les options
     pkg.options.options.language = newLanguage;

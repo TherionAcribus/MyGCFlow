@@ -75,6 +75,30 @@ test('un navigateur sans miroir local reprend le thème enregistré au démarrag
 });
 
 
+test('la vérification des mises à jour se règle par interrupteur, dans les deux sens', async ({ page }) => {
+  // Réglage booléen passé du select Oui/Non à un form-switch : c'est
+  // désormais `checked` — et non plus `value` — qui porte la préférence, des
+  // deux côtés (lecture au démarrage et écriture sur `change`).
+  await openReadyApp(page);
+  await page.locator('a[href="#settings"]').click();
+
+  // Le runtime démarre avec check_updates à false : l'interrupteur doit le refléter.
+  const toggle = page.locator('#switchCheckVersionOnline');
+  await expect(toggle).not.toBeChecked();
+
+  await toggle.check();
+  await expect.poll(async () => (await readServerSettings(page)).check_updates).toBe(true);
+  await expect(page.locator('label[for="switchCheckVersionOnline"] .gc-saved-indicator.is-saved.is-visible')).toBeVisible();
+
+  // Le retour à false doit partir aussi : un décochage qui n'écrit rien
+  // laisserait la préférence bloquée sur true.
+  // (Pas de rechargement de page ici : avec check_updates à true, la
+  // vérification au démarrage ouvre une modale qui intercepte les clics.)
+  await toggle.uncheck();
+  await expect.poll(async () => (await readServerSettings(page)).check_updates).toBe(false);
+});
+
+
 test('les réglages d\'enregistrement partent vers le serveur et confirment le champ modifié', async ({ page }) => {
   await openReadyApp(page);
   await page.locator('a[href="#animation"]').click();

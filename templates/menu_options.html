@@ -26,12 +26,15 @@
                     </select>
                 </div>
 
-                <div class="mb-3 col-12 col-md-6">
-                    <label class="form-label" for="selectCheckVersionOnline">{{ _("Check for a new version at startup") }}</label>
-                    <select id="selectCheckVersionOnline" class="form-select" aria-label="{{ _('Vérifier version au démarrage') }}">
-                        <option value="true">{{ _("Yes") }}</option>
-                        <option value="false">{{ _("No") }}</option>
-                    </select>
+                <!-- Réglage booléen : un interrupteur se lit et se bascule d'un coup,
+                     là où un select Oui/Non demandait deux clics pour la même chose.
+                     `align-items-end` pose l'interrupteur au niveau du contrôle voisin
+                     (qui, lui, a un libellé au-dessus). -->
+                <div class="mb-3 col-12 col-md-6 d-flex align-items-end">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="switchCheckVersionOnline" role="switch">
+                        <label class="form-check-label" for="switchCheckVersionOnline">{{ _("Check for a new version at startup") }}</label>
+                    </div>
                 </div>
 
                 <div class="mb-3 col-12 col-md-6">
