@@ -54,7 +54,7 @@ let overlayCssDefaultsStarted = false;
 var selectLanguage, switchCheckVersionOnline, buttonCheckVersion, buttonHome;
 var inputMapCenterLat, inputMapCenterLon, inputMapCenterCombined, inputMapDefaultZoom;
 var btnUseCurrentMapCenter, btnPickMapCenter, btnClearMapCenter;
-var btnToggleLatLonMode, fieldLat, fieldLon, fieldCombined, rowLatLon;
+var latLonModeCombined, latLonModeSplit, fieldLat, fieldLon, fieldCombined;
 let isCombinedLatLonMode = true;
 // Enregistrement
 var selectRecordMode, selectRecordQualityProfile, recordAdvancedSettings, inputRecordFps, inputRecordBitrate, selectRecordMime, inputRecordSlowdown, inputRecordScaleFactor, cbRecordUpload, cbRecordDownload, cbRecordNormalize;
@@ -664,7 +664,6 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     fieldLat = document.getElementById('fieldLat');
     fieldLon = document.getElementById('fieldLon');
     fieldCombined = document.getElementById('fieldCombined');
-    rowLatLon = document.getElementById('rowLatLon');
     if (inputMapCenterLat) {
         inputMapCenterLat.addEventListener('blur', saveMapCenterSettings);
         inputMapCenterLat.addEventListener('keydown', onMapCenterKeyDown);
@@ -678,6 +677,7 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
         inputMapCenterCombined.addEventListener('keydown', onMapCenterKeyDown);
     }
     if (inputMapDefaultZoom) {
+        inputMapDefaultZoom.addEventListener('input', setMapZoomValidity);
         inputMapDefaultZoom.addEventListener('blur', saveMapCenterSettings);
         inputMapDefaultZoom.addEventListener('keydown', onMapCenterKeyDown);
     }
@@ -691,8 +691,12 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     btnClearMapCenter = document.getElementById('btnClearMapCenter');
     if (btnClearMapCenter) btnClearMapCenter.addEventListener('click', clearMapCenterSettings);
 
-    btnToggleLatLonMode = document.getElementById('btnToggleLatLonMode');
-    if (btnToggleLatLonMode) btnToggleLatLonMode.addEventListener('click', toggleLatLonMode);
+    // Segmented control : chaque radio porte le mode qu'il active, plutôt qu'un
+    // unique bouton dont l'effet dépendait de l'état courant.
+    latLonModeCombined = document.getElementById('latLonModeCombined');
+    latLonModeSplit = document.getElementById('latLonModeSplit');
+    if (latLonModeCombined) latLonModeCombined.addEventListener('change', () => setLatLonMode(true));
+    if (latLonModeSplit) latLonModeSplit.addEventListener('change', () => setLatLonMode(false));
     // Mode combiné par défaut
     setLatLonMode(true);
 
@@ -1315,17 +1319,49 @@ function setCoordinateValidity({ latValid = true, lonValid = true, combinedValid
     }
 }
 
-function setLatLonMode(useCombined) {
-    isCombinedLatLonMode = !!useCombined;
-    if (fieldCombined) fieldCombined.classList.toggle('hide', !useCombined);
-    if (rowLatLon) rowLatLon.classList.toggle('hide', useCombined);
-    if (fieldLat) fieldLat.classList.toggle('hide', useCombined);
-    if (fieldLon) fieldLon.classList.toggle('hide', useCombined);
-    /* M.updateTextFields() — removed (Bootstrap 5 handles labels) */
+// Bornes du zoom OpenLayers, en miroir des attributs min/max de
+// #inputMapDefaultZoom. Les répéter ici n'est pas redondant : sur un
+// <input type="number">, `min`/`max` colorent le champ mais n'empêchent pas de
+// taper -5 ou 99, et la valeur partait telle quelle vers le serveur.
+// Les mêmes bornes sont appliquées à la lecture de settings.json
+// (cf. coerce_settings dans settings_manager.py).
+const MAP_ZOOM_LIMITS = Object.freeze({ min: 0, max: 22 });
+
+// Signale la valeur hors bornes pendant la frappe ; c'est le blur qui la
+// corrige, comme pour les champs FPS/bitrate de l'enregistrement.
+function setMapZoomValidity() {
+    if (!inputMapDefaultZoom) return;
+    const raw = (inputMapDefaultZoom.value || '').trim();
+    const z = Number(raw);
+    const invalid = raw !== ''
+        && (!Number.isFinite(z) || z < MAP_ZOOM_LIMITS.min || z > MAP_ZOOM_LIMITS.max);
+    inputMapDefaultZoom.classList.toggle('is-invalid', invalid);
+    inputMapDefaultZoom.setAttribute('aria-invalid', invalid ? 'true' : 'false');
 }
 
-function toggleLatLonMode() {
-    setLatLonMode(!isCombinedLatLonMode);
+// Trois issues distinctes, d'où l'objet plutôt qu'un nombre :
+//   { zoom: null }        champ vide = pas de zoom par défaut, à effacer ;
+//   { zoom: undefined }   saisie illisible, à ignorer plutôt qu'à écraser ;
+//   { zoom: n, corrected} valeur bornée à la plage acceptée par la carte.
+function readMapZoomInput() {
+    const raw = (inputMapDefaultZoom.value || '').trim();
+    if (!raw) return { zoom: null };
+    const z = Number(raw);
+    if (!Number.isFinite(z)) return { zoom: undefined };
+    const clamped = Math.max(MAP_ZOOM_LIMITS.min, Math.min(MAP_ZOOM_LIMITS.max, Math.round(z)));
+    return { zoom: clamped, corrected: clamped !== z };
+}
+
+// `d-none` et pas `hide` : c'est la classe que Bootstrap 5 stylise (`hide`
+// venait de Bootstrap 3 et n'existe plus, si bien que basculer de mode
+// n'affichait rien — les champs Lat/Lon restaient masqués par le `d-none` posé
+// dans le gabarit, que rien ne retirait).
+function setLatLonMode(useCombined) {
+    isCombinedLatLonMode = !!useCombined;
+    if (fieldCombined) fieldCombined.classList.toggle('d-none', !useCombined);
+    if (fieldLat) fieldLat.classList.toggle('d-none', useCombined);
+    if (fieldLon) fieldLon.classList.toggle('d-none', useCombined);
+    /* M.updateTextFields() — removed (Bootstrap 5 handles labels) */
 }
 
 function onCombinedCenterBlur() {
@@ -1413,13 +1449,14 @@ async function saveMapCenterSettings() {
             }
         }
 
-        const zoomRaw = (inputMapDefaultZoom.value || '').trim();
-        if (!zoomRaw) {
-            patch.map_default_zoom = null;
-        } else {
-            const z = parseInt(zoomRaw);
-            if (Number.isFinite(z)) patch.map_default_zoom = z;
+        const { zoom, corrected } = readMapZoomInput();
+        if (zoom !== undefined) {
+            patch.map_default_zoom = zoom;
+            // La valeur bornée revient dans le champ : sans cela l'utilisateur
+            // garderait son 99 sous les yeux alors que 22 a été enregistré.
+            if (corrected) inputMapDefaultZoom.value = String(zoom);
         }
+        setMapZoomValidity();
 
         const zoomChanged = (patch.map_default_zoom !== undefined) && (patch.map_default_zoom !== lastSavedZoom);
         const centerChanged = newCenterKey !== lastSavedCenterKey;

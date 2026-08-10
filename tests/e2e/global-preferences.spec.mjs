@@ -225,6 +225,84 @@ test('le centre de carte par défaut confirme dans le champ au lieu d\'un toast'
 });
 
 
+test('un zoom par défaut hors plage est signalé puis ramené dans les bornes', async ({ page }) => {
+  // min/max sur un <input type="number"> colorent le champ sans rien empêcher :
+  // au clavier, 99 partait tel quel vers settings.json.
+  await openReadyApp(page);
+  await page.locator('a[href="#settings"]').click();
+
+  const zoom = page.locator('#inputMapDefaultZoom');
+  await zoom.fill('99');
+  // Pendant la frappe, la valeur est signalée mais pas encore corrigée.
+  await expect(zoom).toHaveAttribute('aria-invalid', 'true');
+  await expect(zoom).toHaveValue('99');
+
+  await zoom.blur();
+  // Au blur, c'est la valeur bornée qui est enregistrée ET affichée.
+  await expect(zoom).toHaveValue('22');
+  await expect(zoom).toHaveAttribute('aria-invalid', 'false');
+  await expect.poll(async () => (await readServerSettings(page)).map_default_zoom).toBe(22);
+
+  await zoom.fill('-5');
+  await zoom.blur();
+  await expect(zoom).toHaveValue('0');
+  await expect.poll(async () => (await readServerSettings(page)).map_default_zoom).toBe(0);
+
+  // Champ vidé = plus de zoom par défaut, ce qui reste une valeur légitime.
+  await zoom.fill('');
+  await zoom.blur();
+  await expect.poll(async () => (await readServerSettings(page)).map_default_zoom).toBeNull();
+
+  await page.evaluate(() => fetch('/api/settings', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ map_default_center: null, map_default_zoom: null }),
+  }));
+});
+
+
+test('le centre de carte se saisit en un champ ou en deux, au choix', async ({ page }) => {
+  // Le basculement était piloté par un bouton-icône qui ajoutait une classe
+  // `hide` sans style : rien ne se passait à l'écran. Ce test verrouille
+  // l'échange effectif des champs dans les deux sens.
+  await openReadyApp(page);
+  await page.locator('a[href="#settings"]').click();
+
+  const combined = page.locator('#inputMapCenterCombined');
+  const lat = page.locator('#inputMapCenterLat');
+  const lon = page.locator('#inputMapCenterLon');
+
+  await expect(combined).toBeVisible();
+  await expect(lat).toBeHidden();
+
+  await page.locator('label[for="latLonModeSplit"]').click();
+  await expect(combined).toBeHidden();
+  await expect(lat).toBeVisible();
+  await expect(lon).toBeVisible();
+
+  // Le mode affiché est celui qui compte à la sauvegarde : ici ce sont les
+  // deux champs séparés qui doivent partir vers le serveur.
+  await lat.fill('45.5');
+  await lon.fill('4.5');
+  await lon.blur();
+  await expect.poll(async () => (await readServerSettings(page)).map_default_center)
+    .toEqual([4.5, 45.5]);
+  await expect(page.locator('label[for="inputMapCenterLat"] .gc-saved-indicator.is-saved.is-visible')).toBeVisible();
+
+  // Retour au champ unique : il reprend la valeur enregistrée.
+  await page.locator('label[for="latLonModeCombined"]').click();
+  await expect(lat).toBeHidden();
+  await expect(combined).toBeVisible();
+  await expect(combined).toHaveValue('45.5, 4.5');
+
+  await page.evaluate(() => fetch('/api/settings', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ map_default_center: null, map_default_zoom: null }),
+  }));
+});
+
+
 test('chaque section indique où son réglage est enregistré', async ({ page }) => {
   await openReadyApp(page);
 

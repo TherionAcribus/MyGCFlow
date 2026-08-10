@@ -240,6 +240,13 @@ def _clamp_float(value, default: float, minimum: float, maximum: float) -> float
 THEMES = ("system", "light", "dark")
 RECORDING_MODES = ("mediarecorder", "images")
 
+# Plage de zoom acceptée par la carte, en miroir des attributs min/max de
+# #inputMapDefaultZoom et de MAP_ZOOM_LIMITS (static/js/ui.js). Comme pour les
+# réglages vidéo, la borne posée dans l'interface ne garantit rien : settings.json
+# s'édite à la main et PUT /api/settings accepte le JSON qu'on lui envoie.
+MAP_ZOOM_MIN = 0
+MAP_ZOOM_MAX = 22
+
 
 def coerce_theme(value, default: str = "system") -> str:
     return value if value in THEMES else default
@@ -300,7 +307,9 @@ def coerce_settings(d: dict) -> AppSettings:
         raw_zoom = d.get("map_default_zoom")
         if raw_zoom is not None:
             try:
-                s.map_default_zoom = int(raw_zoom)
+                # Une valeur illisible laisse le zoom à None (aucun zoom par
+                # défaut) plutôt que de lui inventer une valeur de repli.
+                s.map_default_zoom = max(MAP_ZOOM_MIN, min(MAP_ZOOM_MAX, int(raw_zoom)))
             except Exception:
                 pass
 

@@ -51,6 +51,26 @@ class ThemeCoercionTests(unittest.TestCase):
         self.assertEqual(coerce_settings({}).theme, "system")
 
 
+class MapZoomCoercionTests(unittest.TestCase):
+    """Bornes du zoom par défaut.
+
+    L'interface pose min=0/max=22 sur le champ, mais ni un settings.json édité à
+    la main ni un PUT /api/settings ne passent par elle.
+    """
+
+    def test_out_of_range_zoom_is_clamped(self):
+        self.assertEqual(coerce_settings({"map_default_zoom": 99}).map_default_zoom, 22)
+        self.assertEqual(coerce_settings({"map_default_zoom": -5}).map_default_zoom, 0)
+
+    def test_zoom_inside_the_range_is_kept(self):
+        self.assertEqual(coerce_settings({"map_default_zoom": 12}).map_default_zoom, 12)
+
+    def test_absent_or_unreadable_zoom_stays_none(self):
+        self.assertIsNone(coerce_settings({}).map_default_zoom)
+        self.assertIsNone(coerce_settings({"map_default_zoom": None}).map_default_zoom)
+        self.assertIsNone(coerce_settings({"map_default_zoom": "loin"}).map_default_zoom)
+
+
 class RecordingConfiguredFlagTests(unittest.TestCase):
     """Drapeau qui pilote la reprise des anciens réglages du localStorage.
 
@@ -136,6 +156,11 @@ class SettingsApiTests(unittest.TestCase):
         self.assertEqual(payload['language'], 'en')
         self.assertEqual(payload['theme'], 'light')
         self.assertEqual(payload['recording']['fps'], 24)
+
+    def test_a_zoom_sent_out_of_range_is_stored_clamped(self):
+        self.client.put('/api/settings', json={'map_default_zoom': 99})
+
+        self.assertEqual(self.client.get('/api/settings').get_json()['map_default_zoom'], 22)
 
     def test_reset_returns_the_defaults_of_the_new_preferences(self):
         self.client.put('/api/settings', json={'theme': 'dark', 'recording': {'fps': 60}})

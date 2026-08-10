@@ -47,33 +47,34 @@
                 <div class="col-12">
                     <div class="card mt-2">
                         <div class="card-body">
+                            <!-- Les deux modes de saisie du centre nommés en toutes lettres :
+                                 l'icône ti-link seule qui les basculait auparavant n'annonçait
+                                 ni qu'il y avait deux modes, ni lequel était actif. -->
+                            <div class="btn-group btn-group-sm mb-2" role="group" aria-label="{{ _('Mode de saisie du centre de carte') }}">
+                                <input type="radio" class="btn-check" name="latLonMode" id="latLonModeCombined" autocomplete="off" checked>
+                                <label class="btn btn-outline-secondary" for="latLonModeCombined">{{ _("Lat, Lon") }}</label>
+                                <input type="radio" class="btn-check" name="latLonMode" id="latLonModeSplit" autocomplete="off">
+                                <label class="btn btn-outline-secondary" for="latLonModeSplit">{{ _("Séparés") }}</label>
+                            </div>
                             <div class="row g-2 mb-0">
-                                <div class="col-12 col-md-1 d-flex justify-content-start align-items-center mt-2">
-                                    <button type="button" id="btnToggleLatLonMode" class="btn btn-link p-0" data-bs-toggle="tooltip" data-bs-title="{{ _('Basculer le mode de saisie') }}" aria-label="{{ _('Basculer le mode de saisie') }}">
-                                        <i class="ti ti-link"></i>
-                                    </button>
+                                <div class="mb-3 col-12" id="fieldCombined">
+                                    <label for="inputMapCenterCombined" class="form-label">{{ _("Centre de carte par défaut - Lat, Lon") }}</label>
+                                    <input id="inputMapCenterCombined" type="text" class="form-control" placeholder="48.85, 2.35">
                                 </div>
-                                <div class="col-12 col-md-11">
-                                    <div class="row g-2 mb-0">
-                                        <div class="mb-3 col-12" id="fieldCombined">
-                                            <label for="inputMapCenterCombined" class="form-label">{{ _("Centre de carte par défaut - Lat, Lon") }}</label>
-                                            <input id="inputMapCenterCombined" type="text" class="form-control" placeholder="48.85, 2.35">
-                                        </div>
-                                        <div class="mb-3 col-12 col-md-6 d-none" id="fieldLat">
-                                            <label for="inputMapCenterLat" class="form-label">{{ _("Centre de carte par défaut - Latitude") }}</label>
-                                            <input id="inputMapCenterLat" type="text" class="form-control">
-                                        </div>
-                                        <div class="mb-3 col-12 col-md-6 d-none" id="fieldLon">
-                                            <label for="inputMapCenterLon" class="form-label">{{ _("Centre de carte par défaut - Longitude") }}</label>
-                                            <input id="inputMapCenterLon" type="text" class="form-control">
-                                        </div>
-                                    </div>
+                                <div class="mb-3 col-12 col-md-6 d-none" id="fieldLat">
+                                    <label for="inputMapCenterLat" class="form-label">{{ _("Centre de carte par défaut - Latitude") }}</label>
+                                    <input id="inputMapCenterLat" type="text" class="form-control">
+                                </div>
+                                <div class="mb-3 col-12 col-md-6 d-none" id="fieldLon">
+                                    <label for="inputMapCenterLon" class="form-label">{{ _("Centre de carte par défaut - Longitude") }}</label>
+                                    <input id="inputMapCenterLon" type="text" class="form-control">
                                 </div>
                             </div>
                             <div class="row g-2 mb-0">
                                 <div class="mb-3 col-12 col-md-6">
                                     <label for="inputMapDefaultZoom" class="form-label">{{ _("Zoom de carte par défaut") }}</label>
-                                    <input id="inputMapDefaultZoom" type="number" min="0" max="22" class="form-control">
+                                    <input id="inputMapDefaultZoom" type="number" min="0" max="22" step="1" inputmode="numeric" class="form-control" aria-describedby="mapZoomError">
+                                    <div id="mapZoomError" class="invalid-feedback">{{ _("Valeur autorisée : de 0 à 22.") }}</div>
                                 </div>
                                 <div class="col-12 col-md-6 d-flex gap-2 align-items-center flex-wrap mt-md-3">
                                     <button type="button" id="btnUseCurrentMapCenter" class="btn btn-primary">

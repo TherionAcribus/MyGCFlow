@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-10 09:49+0200\n"
+"POT-Creation-Date: 2026-08-10 11:19+0200\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -502,7 +502,7 @@ msgstr "Rename"
 msgid "Exporter"
 msgstr "Export"
 
-#: static/js/profiles.js:620 templates/menu_options.html:83
+#: static/js/profiles.js:620 templates/menu_options.html:87
 #: templates/menu_style.html:229
 msgid "Réinitialiser"
 msgstr "Reset"
@@ -519,7 +519,7 @@ msgstr "Set as default"
 msgid "ACTIF"
 msgstr "ACTIVE"
 
-#: static/js/profiles.js:703 templates/menu_options.html:39
+#: static/js/profiles.js:703 templates/menu_options.html:42
 msgid "Profil par défaut"
 msgstr "Default profile"
 
@@ -639,7 +639,7 @@ msgstr ""
 "Recording performance is unstable (${pct}% de slow frames). Would you "
 "like to automatically increase slowdown to x${slowdown}?"
 
-#: static/js/recording_perf.js:171
+#: static/js/recording_perf.js:175
 #, python-brace-format
 msgid ""
 "Ralentissement augmenté à x${slowdown}. Redémarrez l'enregistrement pour "
@@ -648,7 +648,7 @@ msgstr ""
 "Slowdown increased to x${slowdown}. Restart the recording to apply the "
 "change."
 
-#: static/js/recording_perf.js:185
+#: static/js/recording_perf.js:189
 #, python-brace-format
 msgid ""
 "Vous pouvez manuellement augmenter le ralentissement à x${slowdown} dans "
@@ -657,7 +657,7 @@ msgstr ""
 "You can manually increase slowdown to x${slowdown} in the recording "
 "settings."
 
-#: static/js/recording_perf.js:200
+#: static/js/recording_perf.js:204
 #, python-brace-format, python-format
 msgid ""
 "Performance instable (${pct}% de frames lentes). Augmentez le "
@@ -666,7 +666,7 @@ msgstr ""
 "Unstable performance (${pct}% de slow frames). Increase slowdown to "
 "x${slowdown} in the settings."
 
-#: static/js/recording_perf.js:214
+#: static/js/recording_perf.js:218
 #, python-brace-format
 msgid ""
 "Le ralentissement est déjà au maximum (x${slowdown}). Réduisez le nombre "
@@ -675,26 +675,26 @@ msgstr ""
 "Slowdown is already at the maximum (x${slowdown}). Reduce the number of "
 "displayed points or the resolution."
 
-#: static/js/recording_perf.js:224
+#: static/js/recording_perf.js:228
 #, python-brace-format, python-format
 msgid ""
 "Performance d'enregistrement instable (${pct}% de frames lentes). "
 "${suggestion}"
 msgstr "Recording performance is unstable (${pct}% de slow frames). ${suggestion}"
 
-#: static/js/saved_indicator.mjs:90
+#: static/js/saved_indicator.mjs:110
 msgid "Enregistrement…"
 msgstr "Saving…"
 
-#: static/js/saved_indicator.mjs:94
+#: static/js/saved_indicator.mjs:114
 msgid "Enregistré"
 msgstr "Saved"
 
-#: static/js/saved_indicator.mjs:100
+#: static/js/saved_indicator.mjs:122
 msgid "Non enregistré"
 msgstr "Not saved"
 
-#: static/js/ui.js:847
+#: static/js/ui.js:853
 msgid ""
 "Ce format vidéo n'est pas supporté par votre navigateur et sera ignoré au"
 " démarrage de l'enregistrement."
@@ -702,12 +702,12 @@ msgstr ""
 "This video format is not supported by your browser and will be ignored "
 "when recording starts."
 
-#: static/js/ui.js:1753
+#: static/js/ui.js:1828
 #, python-brace-format
 msgid "Le format vidéo sauvegardé (${mime}) n'est pas supporté par ce navigateur."
 msgstr "The saved video format (${mime}) is not supported by this browser."
 
-#: static/js/ui.js:1935
+#: static/js/ui.js:2014
 msgid ""
 "La vidéo ne sera ni téléchargée ni uploadée : elle sera perdue après "
 "l'enregistrement."
@@ -715,18 +715,18 @@ msgstr ""
 "The video will be neither downloaded nor uploaded: it will be lost after "
 "recording."
 
-#: static/js/ui.js:2483 templates/menu_filtre.html:38
+#: static/js/ui.js:2573 templates/menu_filtre.html:38
 #: templates/menu_filtre.html:56 templates/menu_filtre.html:81
 #: templates/menu_filtre.html:103 templates/menu_filtre.html:168
 #: templates/menu_filtre.html:179
 msgid "Aucun"
 msgstr "None"
 
-#: static/js/ui.js:2510 templates/menu_filtre.html:164
+#: static/js/ui.js:2600 templates/menu_filtre.html:164
 msgid "Filtrer par pays"
 msgstr "Filter by country"
 
-#: static/js/ui.js:2539 static/js/ui.js:2577 templates/menu_filtre.html:175
+#: static/js/ui.js:2629 static/js/ui.js:2667 templates/menu_filtre.html:175
 msgid "Filtrer par région/état"
 msgstr "Filter by region/state"
 
@@ -790,7 +790,7 @@ msgid "Préférences"
 msgstr "Preferences"
 
 #: templates/guide.html:6 templates/guide.html:21
-#: templates/menu_options.html:99
+#: templates/menu_options.html:103
 msgid "Mode d'emploi"
 msgstr "User guide"
 
@@ -1471,7 +1471,7 @@ msgid ""
 "démarrage."
 msgstr "Set the center (latitude, longitude) and zoom used at startup."
 
-#: templates/guide.html:273 templates/menu_options.html:77
+#: templates/guide.html:273 templates/menu_options.html:81
 msgid "Utiliser la vue actuelle de la carte"
 msgstr "Use current map view"
 
@@ -1479,7 +1479,7 @@ msgstr "Use current map view"
 msgid "reprend la position affichée."
 msgstr "reuses the currently displayed position."
 
-#: templates/guide.html:274 templates/menu_options.html:80
+#: templates/guide.html:274 templates/menu_options.html:84
 msgid "Choisir sur la carte"
 msgstr "Pick on map"
 
@@ -1979,51 +1979,51 @@ msgstr "Light"
 msgid "Sombre"
 msgstr "Dark"
 
-#: templates/menu_options.html:30
+#: templates/menu_options.html:36
 msgid "Check for a new version at startup"
 msgstr "Check for a new version at startup"
 
-#: templates/menu_options.html:31
-msgid "Vérifier version au démarrage"
-msgstr "Check version at startup"
-
-#: templates/menu_options.html:32
-msgid "Yes"
-msgstr "Yes"
-
-#: templates/menu_options.html:33
-msgid "No"
-msgstr "No"
-
-#: templates/menu_options.html:38
+#: templates/menu_options.html:41
 msgid "Default profile at startup"
 msgstr "Default profile at startup"
 
-#: templates/menu_options.html:49
-msgid "Basculer le mode de saisie"
-msgstr "Switch input mode"
+#: templates/menu_options.html:53
+msgid "Mode de saisie du centre de carte"
+msgstr "Map center input mode"
 
-#: templates/menu_options.html:56
+#: templates/menu_options.html:55
+msgid "Lat, Lon"
+msgstr "Lat, Lon"
+
+#: templates/menu_options.html:57
+msgid "Séparés"
+msgstr "Separate"
+
+#: templates/menu_options.html:61
 msgid "Centre de carte par défaut - Lat, Lon"
 msgstr "Default map center - Lat, Lon"
 
-#: templates/menu_options.html:60
+#: templates/menu_options.html:65
 msgid "Centre de carte par défaut - Latitude"
 msgstr "Default map center - Latitude"
 
-#: templates/menu_options.html:64
+#: templates/menu_options.html:69
 msgid "Centre de carte par défaut - Longitude"
 msgstr "Default map center - Longitude"
 
-#: templates/menu_options.html:72
+#: templates/menu_options.html:75
 msgid "Zoom de carte par défaut"
 msgstr "Default map zoom"
 
-#: templates/menu_options.html:93
+#: templates/menu_options.html:77
+msgid "Valeur autorisée : de 0 à 22."
+msgstr "Allowed value: 0 to 22."
+
+#: templates/menu_options.html:97
 msgid "Check for a new version"
 msgstr "Check for a new version"
 
-#: templates/menu_options.html:96
+#: templates/menu_options.html:100
 msgid "Home"
 msgstr "Home"
 
@@ -2104,8 +2104,7 @@ msgstr "Recording settings"
 msgid ""
 "Enregistrés automatiquement avec les préférences de l'application, pas "
 "dans le profil."
-msgstr ""
-"Saved automatically with the application preferences, not in the profile."
+msgstr "Saved automatically with the application preferences, not in the profile."
 
 #: templates/menu_recording.html:10
 msgid ""
@@ -2593,4 +2592,16 @@ msgstr "Skip for now"
 
 #~ msgid "Centre par défaut mis à jour depuis la vue actuelle"
 #~ msgstr "Default center updated from the current view"
+
+#~ msgid "Vérifier version au démarrage"
+#~ msgstr "Check version at startup"
+
+#~ msgid "Yes"
+#~ msgstr "Yes"
+
+#~ msgid "No"
+#~ msgstr "No"
+
+#~ msgid "Basculer le mode de saisie"
+#~ msgstr "Switch input mode"
 

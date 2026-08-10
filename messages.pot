@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-10 10:41+0200\n"
+"POT-Creation-Date: 2026-08-10 11:19+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -495,7 +495,7 @@ msgstr ""
 msgid "Exporter"
 msgstr ""
 
-#: static/js/profiles.js:620 templates/menu_options.html:86
+#: static/js/profiles.js:620 templates/menu_options.html:87
 #: templates/menu_style.html:229
 msgid "Réinitialiser"
 msgstr ""
@@ -673,35 +673,35 @@ msgstr ""
 msgid "Non enregistré"
 msgstr ""
 
-#: static/js/ui.js:847
+#: static/js/ui.js:853
 msgid ""
 "Ce format vidéo n'est pas supporté par votre navigateur et sera ignoré au"
 " démarrage de l'enregistrement."
 msgstr ""
 
-#: static/js/ui.js:1771
+#: static/js/ui.js:1828
 #, python-brace-format
 msgid "Le format vidéo sauvegardé (${mime}) n'est pas supporté par ce navigateur."
 msgstr ""
 
-#: static/js/ui.js:1957
+#: static/js/ui.js:2014
 msgid ""
 "La vidéo ne sera ni téléchargée ni uploadée : elle sera perdue après "
 "l'enregistrement."
 msgstr ""
 
-#: static/js/ui.js:2516 templates/menu_filtre.html:38
+#: static/js/ui.js:2573 templates/menu_filtre.html:38
 #: templates/menu_filtre.html:56 templates/menu_filtre.html:81
 #: templates/menu_filtre.html:103 templates/menu_filtre.html:168
 #: templates/menu_filtre.html:179
 msgid "Aucun"
 msgstr ""
 
-#: static/js/ui.js:2543 templates/menu_filtre.html:164
+#: static/js/ui.js:2600 templates/menu_filtre.html:164
 msgid "Filtrer par pays"
 msgstr ""
 
-#: static/js/ui.js:2572 static/js/ui.js:2610 templates/menu_filtre.html:175
+#: static/js/ui.js:2629 static/js/ui.js:2667 templates/menu_filtre.html:175
 msgid "Filtrer par région/état"
 msgstr ""
 
@@ -761,7 +761,7 @@ msgid "Préférences"
 msgstr ""
 
 #: templates/guide.html:6 templates/guide.html:21
-#: templates/menu_options.html:102
+#: templates/menu_options.html:103
 msgid "Mode d'emploi"
 msgstr ""
 
@@ -1418,7 +1418,7 @@ msgid ""
 "démarrage."
 msgstr ""
 
-#: templates/guide.html:273 templates/menu_options.html:80
+#: templates/guide.html:273 templates/menu_options.html:81
 msgid "Utiliser la vue actuelle de la carte"
 msgstr ""
 
@@ -1426,7 +1426,7 @@ msgstr ""
 msgid "reprend la position affichée."
 msgstr ""
 
-#: templates/guide.html:274 templates/menu_options.html:83
+#: templates/guide.html:274 templates/menu_options.html:84
 msgid "Choisir sur la carte"
 msgstr ""
 
@@ -1926,19 +1926,27 @@ msgstr ""
 msgid "Default profile at startup"
 msgstr ""
 
-#: templates/menu_options.html:52
-msgid "Basculer le mode de saisie"
+#: templates/menu_options.html:53
+msgid "Mode de saisie du centre de carte"
 msgstr ""
 
-#: templates/menu_options.html:59
+#: templates/menu_options.html:55
+msgid "Lat, Lon"
+msgstr ""
+
+#: templates/menu_options.html:57
+msgid "Séparés"
+msgstr ""
+
+#: templates/menu_options.html:61
 msgid "Centre de carte par défaut - Lat, Lon"
 msgstr ""
 
-#: templates/menu_options.html:63
+#: templates/menu_options.html:65
 msgid "Centre de carte par défaut - Latitude"
 msgstr ""
 
-#: templates/menu_options.html:67
+#: templates/menu_options.html:69
 msgid "Centre de carte par défaut - Longitude"
 msgstr ""
 
@@ -1946,11 +1954,15 @@ msgstr ""
 msgid "Zoom de carte par défaut"
 msgstr ""
 
-#: templates/menu_options.html:96
+#: templates/menu_options.html:77
+msgid "Valeur autorisée : de 0 à 22."
+msgstr ""
+
+#: templates/menu_options.html:97
 msgid "Check for a new version"
 msgstr ""
 
-#: templates/menu_options.html:99
+#: templates/menu_options.html:100
 msgid "Home"
 msgstr ""
 
