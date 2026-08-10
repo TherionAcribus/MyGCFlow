@@ -3,6 +3,11 @@
 // Extrait de mapgl.js. Fonction pure options -> objet de style ; sa seule
 // dependance externe est la table plate des couleurs GC.
 import { gcColorsFlat } from './gc_colors.js';
+
+// Couleur totalement transparente, au format tableau [r, g, b, a] attendu par
+// les expressions de style WebGL (le mot-clé CSS 'transparent' n'est pas
+// reconnu par le parseur de couleurs d'OpenLayers).
+const TRANSPARENT = [0, 0, 0, 0];
 // Construit l'objet de style WebGLPoints (icône sprite ou cercle/triangle uni)
 // à partir des options de points courantes. Le style WebGL est figé à la
 // création du layer (il compile des shaders) : cette fonction n'est donc à
@@ -24,7 +29,7 @@ export function buildPointStyle(pointOptions) {
     } else if (pointOptions.border.mode == "fix") {
         borderColor = pointOptions.border.color
     } else if (pointOptions.border.mode == "none") {
-        borderColor = 'transparent' // Pas utilisé mais défini pour cohérence
+        borderColor = TRANSPARENT // Pas utilisé mais défini pour cohérence
     }
 
 
@@ -38,6 +43,8 @@ export function buildPointStyle(pointOptions) {
         ]
     } else if (pointOptions.center.mode == "fix") {
         fillColor = pointOptions.center.color
+    } else if (pointOptions.center.mode == "none") {
+        fillColor = TRANSPARENT
     }
 
     let pointStyle;
@@ -157,7 +164,7 @@ export function buildPointStyle(pointOptions) {
         pointStyle = {
             'shape-points': 3,
             'shape-radius': pointSize,
-            'shape-fill-color': fillColor,
+            'shape-fill-color': fillColor || '#FF0000',
             'shape-rotate-with-view': true,
             }
         } else {
@@ -165,7 +172,7 @@ export function buildPointStyle(pointOptions) {
             pointStyle = {
             'shape-points': 3,
                 'shape-radius': pointSize,
-                'shape-fill-color': fillColor,
+                'shape-fill-color': fillColor || '#FF0000',
                 'shape-stroke-color': borderColor || '#000000',
                 'shape-stroke-width': borderWidth,
             'shape-rotate-with-view': true,
