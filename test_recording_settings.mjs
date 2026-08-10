@@ -4,8 +4,11 @@ import assert from 'node:assert/strict';
 import {
     RECORDING_LIMITS,
     isValidRecordingInteger,
+    isValidRecordingNumber,
     normalizeRecordingBitrateMbps,
     normalizeRecordingFps,
+    normalizeRecordingScaleFactor,
+    normalizeRecordingSlowdownFactor,
     recordingQualityProfileFor,
 } from './static/js/recording_settings.mjs';
 
@@ -28,6 +31,22 @@ test('la validation refuse les valeurs hors plage et les décimales', () => {
     assert.equal(isValidRecordingInteger('300', RECORDING_LIMITS.fps), false);
     assert.equal(isValidRecordingInteger('29.5', RECORDING_LIMITS.fps), false);
     assert.equal(isValidRecordingInteger('', RECORDING_LIMITS.fps), false);
+});
+
+test('le ralentissement est un entier borné entre 1 et 20', () => {
+    assert.equal(normalizeRecordingSlowdownFactor(0), 1);
+    assert.equal(normalizeRecordingSlowdownFactor(30), 20);
+    assert.equal(normalizeRecordingSlowdownFactor('2.6'), 3);
+    assert.equal(isValidRecordingNumber('2', RECORDING_LIMITS.slowdownFactor), true);
+    assert.equal(isValidRecordingNumber('2.5', RECORDING_LIMITS.slowdownFactor), false);
+});
+
+test("le facteur d'échelle est borné et aligné sur des pas de 0,25", () => {
+    assert.equal(normalizeRecordingScaleFactor(0), 1);
+    assert.equal(normalizeRecordingScaleFactor(4), 3);
+    assert.equal(normalizeRecordingScaleFactor('1.62'), 1.5);
+    assert.equal(isValidRecordingNumber('1.5', RECORDING_LIMITS.scaleFactor), true);
+    assert.equal(isValidRecordingNumber('1.6', RECORDING_LIMITS.scaleFactor), false);
 });
 
 test('les profils sont détectés uniquement sur une correspondance exacte', () => {

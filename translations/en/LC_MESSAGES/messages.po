@@ -2605,3 +2605,19 @@ msgstr "Skip for now"
 #~ msgid "Basculer le mode de saisie"
 #~ msgstr "Switch input mode"
 
+#: templates/menu_recording.html:62
+msgid "Valeur autorisée : un nombre entier de 1 à 20."
+msgstr "Allowed value: an integer from 1 to 20."
+
+#: templates/menu_recording.html:63
+msgid "x1 : aucun ralentissement ; x2 : capture deux fois plus lente."
+msgstr "x1: no slowdown; x2: capture is twice as slow."
+
+#: templates/menu_recording.html:71
+msgid "Valeur autorisée : de 1 à 3, par pas de 0,25."
+msgstr "Allowed value: 1 to 3, in increments of 0.25."
+
+#: templates/menu_recording.html:72
+msgid "1 : résolution normale ; 1,5 : suréchantillonnage à 150 % pour améliorer la netteté."
+msgstr "1: normal resolution; 1.5: 150% supersampling for improved sharpness."
+

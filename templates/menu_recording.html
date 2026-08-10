@@ -58,14 +58,18 @@
                     {{ _("Ralentir par (x)") }}
                     <i class="ti ti-help ms-1" tabindex="0" data-bs-toggle="tooltip" data-bs-title="{{ _('Ralentit la capture pour améliorer la qualité. 2 = capture 2x plus lente (plus de frames par seconde d\'animation). La vidéo finale reste à vitesse normale si "Normaliser la vitesse" est activé.') }}"></i>
                 </label>
-                <input id="inputRecordSlowdown" type="number" min="1" step="1" class="form-control" value="1">
+                <input id="inputRecordSlowdown" type="number" min="1" max="20" step="1" inputmode="numeric" required class="form-control" value="1" aria-describedby="recordSlowdownHelp recordSlowdownError">
+                <div id="recordSlowdownError" class="invalid-feedback">{{ _("Valeur autorisée : un nombre entier de 1 à 20.") }}</div>
+                <small id="recordSlowdownHelp" class="form-hint text-muted">{{ _("x1 : aucun ralentissement ; x2 : capture deux fois plus lente.") }}</small>
             </div>
             <div class="mb-3 col-6 col-md-3">
                 <label for="inputRecordScaleFactor" class="form-label">
                     {{ _("Facteur d'échelle (qualité)") }}
                     <i class="ti ti-help ms-1" tabindex="0" data-bs-toggle="tooltip" data-bs-title="{{ _('Multiplicateur de résolution temporaire. 1.5 = 50% plus grande pendant l\'enregistrement puis réduction. Améliore la netteté des détails fins sans changer la taille finale du fichier') }}"></i>
                 </label>
-                <input id="inputRecordScaleFactor" type="number" min="1" max="3" step="0.25" class="form-control">
+                <input id="inputRecordScaleFactor" type="number" min="1" max="3" step="0.25" inputmode="decimal" required class="form-control" aria-describedby="recordScaleHelp recordScaleError">
+                <div id="recordScaleError" class="invalid-feedback">{{ _("Valeur autorisée : de 1 à 3, par pas de 0,25.") }}</div>
+                <small id="recordScaleHelp" class="form-hint text-muted">{{ _("1 : résolution normale ; 1,5 : suréchantillonnage à 150 % pour améliorer la netteté.") }}</small>
             </div>
             <div class="mb-3 col-12 col-md-6">
                 <label for="selectRecordMime" class="form-label">

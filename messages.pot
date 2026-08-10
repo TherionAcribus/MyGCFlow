@@ -2379,3 +2379,19 @@ msgstr ""
 msgid "Ignorer pour l'instant"
 msgstr ""
 
+#: templates/menu_recording.html:62
+msgid "Valeur autorisée : un nombre entier de 1 à 20."
+msgstr ""
+
+#: templates/menu_recording.html:63
+msgid "x1 : aucun ralentissement ; x2 : capture deux fois plus lente."
+msgstr ""
+
+#: templates/menu_recording.html:71
+msgid "Valeur autorisée : de 1 à 3, par pas de 0,25."
+msgstr ""
+
+#: templates/menu_recording.html:72
+msgid "1 : résolution normale ; 1,5 : suréchantillonnage à 150 % pour améliorer la netteté."
+msgstr ""
+

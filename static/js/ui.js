@@ -5,8 +5,11 @@ import {
     RECORDING_LIMITS,
     RECORDING_QUALITY_PROFILES,
     isValidRecordingInteger,
+    isValidRecordingNumber,
     normalizeRecordingBitrateMbps,
     normalizeRecordingFps,
+    normalizeRecordingScaleFactor,
+    normalizeRecordingSlowdownFactor,
     recordingQualityProfileFor,
 } from './recording_settings.mjs';
 import { saveSettingsPatch, makeDebouncedSettingsSaver } from './settings_api.mjs';
@@ -73,7 +76,7 @@ function persistLanguagePreference(language) {
 
 function setRecordingInputValidity(input, limits) {
     if (!input) return false;
-    const isValid = isValidRecordingInteger(input.value, limits);
+    const isValid = isValidRecordingNumber(input.value, limits);
     input.classList.toggle('is-invalid', !isValid);
     input.setAttribute('aria-invalid', isValid ? 'false' : 'true');
     return isValid;
@@ -87,6 +90,12 @@ function normalizeRecordOptionsInPlace() {
         Number(pkg.options.record.mediaRecorder.videoBitsPerSecond) / 1_000_000
     );
     pkg.options.record.mediaRecorder.videoBitsPerSecond = bitrateMbps * 1_000_000;
+    pkg.options.record.mediaRecorder.slowdownFactor = normalizeRecordingSlowdownFactor(
+        pkg.options.record.mediaRecorder.slowdownFactor
+    );
+    pkg.options.record.mediaRecorder.scaleFactor = normalizeRecordingScaleFactor(
+        pkg.options.record.mediaRecorder.scaleFactor
+    );
 }
 
 function syncRecordingQualityProfile({ revealCustom = false } = {}) {
@@ -749,9 +758,25 @@ function initOptionsElements() {
     // directement, elle recevrait l'objet Event dans son paramètre `field`, qui
     // attend un champ de formulaire.
     inputRecordSlowdown = document.getElementById('inputRecordSlowdown');
-    if (inputRecordSlowdown) inputRecordSlowdown.addEventListener('input', () => changeRecordValues());
+    if (inputRecordSlowdown) {
+        inputRecordSlowdown.addEventListener('input', () => {
+            setRecordingInputValidity(inputRecordSlowdown, RECORDING_LIMITS.slowdownFactor);
+            changeRecordValues();
+        });
+        inputRecordSlowdown.addEventListener('blur', () => finalizeRecordingNumberInput(
+            inputRecordSlowdown, normalizeRecordingSlowdownFactor, RECORDING_LIMITS.slowdownFactor
+        ));
+    }
     inputRecordScaleFactor = document.getElementById('inputRecordScaleFactor');
-    if (inputRecordScaleFactor) inputRecordScaleFactor.addEventListener('input', () => changeRecordValues());
+    if (inputRecordScaleFactor) {
+        inputRecordScaleFactor.addEventListener('input', () => {
+            setRecordingInputValidity(inputRecordScaleFactor, RECORDING_LIMITS.scaleFactor);
+            changeRecordValues();
+        });
+        inputRecordScaleFactor.addEventListener('blur', () => finalizeRecordingNumberInput(
+            inputRecordScaleFactor, normalizeRecordingScaleFactor, RECORDING_LIMITS.scaleFactor
+        ));
+    }
     cbRecordUpload = document.getElementById('cbRecordUpload');
     if (cbRecordUpload) cbRecordUpload.addEventListener('change', () => changeRecordValues());
     cbRecordDownload = document.getElementById('cbRecordDownload');
@@ -1620,6 +1645,8 @@ function initOptionsUI() {
         }
         setRecordingInputValidity(inputRecordFps, RECORDING_LIMITS.fps);
         setRecordingInputValidity(inputRecordBitrate, RECORDING_LIMITS.bitrateMbps);
+        setRecordingInputValidity(inputRecordSlowdown, RECORDING_LIMITS.slowdownFactor);
+        setRecordingInputValidity(inputRecordScaleFactor, RECORDING_LIMITS.scaleFactor);
         syncRecordingQualityProfile();
         if (recordAdvancedSettings) {
             recordAdvancedSettings.open = selectRecordQualityProfile?.value === 'custom';
@@ -1738,7 +1765,7 @@ function changeRecordValues(field = undefined) {
             pkg.options.record.mediaRecorder.mimeType = selectRecordMime.value;
         }
         if (inputRecordSlowdown && inputRecordSlowdown.value !== '') {
-            const sd = Math.max(1, parseInt(inputRecordSlowdown.value) || 1);
+            const sd = normalizeRecordingSlowdownFactor(inputRecordSlowdown.value);
             pkg.options.record.mediaRecorder.slowdownFactor = sd;
             if (cbRecordNormalize) {
                 cbRecordNormalize.disabled = sd === 1;
@@ -1747,7 +1774,7 @@ function changeRecordValues(field = undefined) {
             }
         }
         if (inputRecordScaleFactor && inputRecordScaleFactor.value !== '') {
-            const sc = Math.max(1, Math.min(3, parseFloat(inputRecordScaleFactor.value) || 1));
+            const sc = normalizeRecordingScaleFactor(inputRecordScaleFactor.value);
             pkg.options.record.mediaRecorder.scaleFactor = sc;
         }
         if (cbRecordUpload) {

@@ -122,14 +122,34 @@ test('les profils vidéo et les bornes corrigent les valeurs excessives', async 
   await bitrate.blur();
   await expect(bitrate).toHaveValue('30');
 
+  const slowdown = page.locator('#inputRecordSlowdown');
+  await expect(page.locator('#recordSlowdownHelp')).toBeVisible();
+  await slowdown.fill('0');
+  await expect(slowdown).toHaveClass(/is-invalid/);
+  await expect(page.locator('#recordSlowdownError')).toBeVisible();
+  await slowdown.blur();
+  await expect(slowdown).toHaveValue('1');
+  await expect(slowdown).not.toHaveClass(/is-invalid/);
+
+  const scaleFactor = page.locator('#inputRecordScaleFactor');
+  await expect(page.locator('#recordScaleHelp')).toBeVisible();
+  await scaleFactor.fill('4');
+  await expect(scaleFactor).toHaveClass(/is-invalid/);
+  await expect(page.locator('#recordScaleError')).toBeVisible();
+  await scaleFactor.blur();
+  await expect(scaleFactor).toHaveValue('3');
+  await expect(scaleFactor).not.toHaveClass(/is-invalid/);
+
   const bounded = await page.evaluate(async () => {
     const app = await import('/static/js/index.js');
     return {
       fps: app.options.record.fps,
       bitrate: app.options.record.mediaRecorder.videoBitsPerSecond,
+      slowdown: app.options.record.mediaRecorder.slowdownFactor,
+      scaleFactor: app.options.record.mediaRecorder.scaleFactor,
     };
   });
-  expect(bounded).toEqual({ fps: 60, bitrate: 30_000_000 });
+  expect(bounded).toEqual({ fps: 60, bitrate: 30_000_000, slowdown: 1, scaleFactor: 3 });
 
   await page.locator('#selectRecordQualityProfile').selectOption('standard');
   await expect(fps).toHaveValue('30');
