@@ -367,6 +367,70 @@ test('l\'étoile marque le profil par défaut, indépendamment du profil actif',
 });
 
 
+test('dupliquer passe par la modale de nom pré-remplie', async ({ page }) => {
+  // Liste posée en mémoire et duplication espionnée : les profils vivent dans
+  // %APPDATA%\GCMap, hors du runtime isolé des tests (cf. l'étoile "par défaut").
+  await page.evaluate(() => {
+    const pm = window.profileManager;
+    pm.profilesList = ['Alpha', 'Alpha_copy', 'Beta'];
+    pm.currentProfile = null;
+    window.__duplicated = [];
+    pm.duplicateProfile = async (original, newName) => { window.__duplicated.push([original, newName]); };
+    pm.renderProfilesList();
+  });
+
+  const modal = page.locator('#profile-modal');
+  const input = page.locator('#profile-name-input');
+  const duplicateItem = (name) => page.locator(
+    `#profiles-list [data-profile-name="${name}"] .dropdown-menu .dropdown-item`,
+    { hasText: 'Dupliquer' },
+  );
+  const openMenu = (name) => page.locator(`#profiles-list [data-profile-name="${name}"] .dropdown-toggle`).click();
+
+  // 1. "Dupliquer" ouvre la modale au lieu de créer directement : rien n'est
+  // dupliqué tant que l'utilisateur n'a pas validé.
+  await openMenu('Alpha');
+  await duplicateItem('Alpha').click();
+  await expect(modal).toBeVisible();
+  expect(await page.evaluate(() => window.__duplicated)).toEqual([]);
+
+  // Le nom suggéré évite les noms déjà pris, comme le ferait le serveur.
+  await expect(input).toHaveValue('Alpha_copy (1)');
+  await expect(page.locator('#btn-confirm-profile')).toHaveText('Dupliquer');
+
+  // 2. Annuler ne duplique rien.
+  await modal.locator('.modal-footer [data-bs-dismiss="modal"]').click();
+  await expect(modal).toBeHidden();
+  expect(await page.evaluate(() => window.__duplicated)).toEqual([]);
+
+  // 3. Un nom saisi remplace la suggestion, le profil source reste l'original.
+  await openMenu('Beta');
+  await duplicateItem('Beta').click();
+  await expect(modal).toBeVisible();
+  await expect(input).toHaveValue('Beta_copy');
+  await input.fill('  Gamma  ');
+  await page.locator('#btn-confirm-profile').click();
+  await expect(modal).toBeHidden();
+  expect(await page.evaluate(() => window.__duplicated)).toEqual([['Beta', 'Gamma']]);
+
+  // 4. La modale est partagée avec "Nouveau profil" : le profil source de la
+  // duplication précédente ne doit pas rester attaché au bouton.
+  await page.evaluate(() => {
+    window.__created = [];
+    window.profileManager.createProfile = async (name) => { window.__created.push(name); };
+    window.profileManager.showNewProfileModal();
+  });
+  await expect(modal).toBeVisible();
+  await expect(input).toHaveValue('');
+  expect(await page.locator('#btn-confirm-profile').getAttribute('data-original-name')).toBe('');
+  await input.fill('Delta');
+  await page.locator('#btn-confirm-profile').click();
+  await expect(modal).toBeHidden();
+  expect(await page.evaluate(() => ({ created: window.__created, duplicated: window.__duplicated })))
+    .toEqual({ created: ['Delta'], duplicated: [['Beta', 'Gamma']] });
+});
+
+
 test('basculer manuellement en mode icône garde la méta sprite et un seul redraw', async ({ page }) => {
   const toggled = await page.evaluate(async () => {
     const app = await import('/static/js/index.js');

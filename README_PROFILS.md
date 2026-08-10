@@ -28,7 +28,7 @@ La section **Profils** est accessible dans l'onglet **Style** de l'application.
 
 #### Actions sur les profils
 Chaque profil dispose d'un menu (⋮) avec les options :
-- **Dupliquer** : créer une copie du profil
+- **Dupliquer** : créer une copie du profil ; une modale propose un nom (`<profil>_copy`, complété d'un `(n)` s'il est déjà pris) que l'on peut remplacer avant de valider
 - **Renommer** : changer le nom du profil
 - **Réinitialiser** : remettre le profil à ses valeurs par défaut
 - **Supprimer** : supprimer définitivement le profil

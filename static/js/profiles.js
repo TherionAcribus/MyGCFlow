@@ -482,7 +482,7 @@ class ProfileManager {
 
             const menu = document.createElement('ul');
             menu.className = 'dropdown-menu dropdown-menu-end';
-            menu.appendChild(buildMenuItem('ti-copy', pkg.t('Dupliquer'), () => this.duplicateProfile(profileName, `${profileName}_copy`)));
+            menu.appendChild(buildMenuItem('ti-copy', pkg.t('Dupliquer'), () => this.showDuplicateProfileModal(profileName)));
             menu.appendChild(buildMenuItem('ti-edit', pkg.t('Renommer'), () => this.renameProfile(profileName)));
             menu.appendChild(buildMenuItem('ti-download', pkg.t('Exporter'), () => this.exportProfile(profileName)));
             menu.appendChild(buildMenuItem('ti-refresh', pkg.t('Réinitialiser'), () => this.confirmReset(profileName), true));
@@ -1379,39 +1379,77 @@ class ProfileManager {
         return saved;
     }
 
-    showNewProfileModal() {
+    // Modale de nom partagée par "Nouveau profil", "Renommer" et "Dupliquer" :
+    // seuls le titre, la valeur pré-remplie, le libellé du bouton et l'action
+    // mémorisée changent. C'est confirmProfileAction() qui relit ces données au
+    // moment du clic pour savoir quoi faire du nom saisi.
+    _showProfileNameModal({ title, value, confirmLabel, action, originalName = '' }) {
         const modal = document.getElementById('profile-modal');
-        const title = document.getElementById('profile-modal-title');
+        const titleEl = document.getElementById('profile-modal-title');
         const input = document.getElementById('profile-name-input');
         const confirmBtn = document.getElementById('btn-confirm-profile');
 
-        title.textContent = pkg.t('Nouveau profil');
-        input.value = '';
-        confirmBtn.textContent = pkg.t('Créer');
-
-        // Stocker l'action
-        confirmBtn.dataset.action = 'create';
+        titleEl.textContent = title;
+        input.value = value;
+        confirmBtn.textContent = confirmLabel;
+        confirmBtn.dataset.action = action;
+        // Toujours réécrit, y compris à vide : un reste de l'ouverture
+        // précédente ferait porter un renommage ou une duplication sur le
+        // mauvais profil.
+        confirmBtn.dataset.originalName = originalName;
 
         showBsModal(modal);
-        setTimeout(() => input.focus(), 100);
+        // Un nom pré-rempli est sélectionné plutôt que simplement focalisé :
+        // il vaut proposition, une frappe doit suffire à le remplacer.
+        setTimeout(() => (value ? input.select() : input.focus()), 100);
+    }
+
+    showNewProfileModal() {
+        this._showProfileNameModal({
+            title: pkg.t('Nouveau profil'),
+            value: '',
+            confirmLabel: pkg.t('Créer'),
+            action: 'create',
+        });
     }
 
     renameProfile(profileName) {
-        const modal = document.getElementById('profile-modal');
-        const title = document.getElementById('profile-modal-title');
-        const input = document.getElementById('profile-name-input');
-        const confirmBtn = document.getElementById('btn-confirm-profile');
+        this._showProfileNameModal({
+            title: pkg.t('Renommer le profil'),
+            value: profileName,
+            confirmLabel: pkg.t('Renommer'),
+            action: 'rename',
+            originalName: profileName,
+        });
+    }
 
-        title.textContent = pkg.t('Renommer le profil');
-        input.value = profileName;
-        confirmBtn.textContent = pkg.t('Renommer');
+    // Dupliquer passe par la modale de nom plutôt que de créer directement
+    // "X_copy" : on duplique en général pour partir d'un profil existant et en
+    // faire un autre, qui mérite son propre nom. Le nom suggéré reste celui
+    // qu'aurait produit l'ancien comportement, une validation immédiate donne
+    // donc exactement le même résultat qu'avant.
+    showDuplicateProfileModal(profileName) {
+        this._showProfileNameModal({
+            title: pkg.t('Dupliquer le profil'),
+            value: this._suggestDuplicateName(profileName),
+            confirmLabel: pkg.t('Dupliquer'),
+            action: 'duplicate',
+            originalName: profileName,
+        });
+    }
 
-        // Stocker l'action et le nom original
-        confirmBtn.dataset.action = 'rename';
-        confirmBtn.dataset.originalName = profileName;
-
-        showBsModal(modal);
-        setTimeout(() => input.select(), 100);
+    // Nom pré-rempli pour une duplication : "X_copy", puis "X_copy (1)"... tant
+    // que le nom est déjà pris. Même convention de suffixe que la résolution de
+    // collision du serveur (_generate_unique_name), pour que la suggestion
+    // corresponde au nom qui sera réellement créé.
+    _suggestDuplicateName(profileName) {
+        const taken = new Set(this.profilesList || []);
+        const base = `${profileName}_copy`;
+        if (!taken.has(base)) return base;
+        for (let idx = 1; ; idx++) {
+            const candidate = `${base} (${idx})`;
+            if (!taken.has(candidate)) return candidate;
+        }
     }
 
     confirmProfileAction() {
@@ -1424,14 +1462,18 @@ class ProfileManager {
             return;
         }
 
+        const originalName = confirmBtn.dataset.originalName;
         if (confirmBtn.dataset.action === 'create') {
             this.createProfile(name);
         } else if (confirmBtn.dataset.action === 'rename') {
-            const originalName = confirmBtn.dataset.originalName;
             if (originalName !== name) {
                 // Pour renommer, on charge l'ancien profil et on le sauvegarde avec le nouveau nom (même UUID)
                 this.renameProfileProperly(originalName, name);
             }
+        } else if (confirmBtn.dataset.action === 'duplicate') {
+            // Un nom déjà pris (saisi tel quel ou liste rafraîchie entre-temps)
+            // reste géré par le serveur, qui répond avec le nom retenu.
+            this.duplicateProfile(originalName, name);
         }
 
         hideBsModal(document.getElementById('profile-modal'));
