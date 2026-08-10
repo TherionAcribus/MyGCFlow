@@ -14,6 +14,7 @@ import {
 } from './recording_settings.mjs';
 import { saveSettingsPatch, makeDebouncedSettingsSaver } from './settings_api.mjs';
 import { reportSave } from './saved_indicator.mjs';
+import { t } from './notifications.js';
 
 // Flag de debug pour les filtres (COUNTRY/FILTER).
 // Mettre à true pour réactiver les logs en console.
@@ -746,8 +747,8 @@ function initOptionsElements() {
             const mime = selectRecordMime.value;
             if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported && !MediaRecorder.isTypeSupported(mime)) {
                 pkg.showToast && pkg.showToast(
-                    pkg.t ? pkg.t('Ce format vidéo n\'est pas supporté par votre navigateur et sera ignoré au démarrage de l\'enregistrement.') : 'Format non supporté par ce navigateur.',
-                    'warning', 'Format non supporté', 6000
+                    t('Ce format vidéo n\'est pas supporté par votre navigateur et sera ignoré au démarrage de l\'enregistrement.'),
+                    'warning', t('Format non supporté'), 6000
                 );
             }
             changeRecordValues();
@@ -864,11 +865,11 @@ function initOptionsElements() {
                         updateDurationMatchIndicator();
 
                         dbgUi(`Durée audio appliquée: ${audioDurationSec.toFixed(2)}s (${audioDurationMin.toFixed(2)}min) - Durée lockée`);
-                        pkg.showToast && pkg.showToast('Durée de l\'animation ajustée selon la musique', 'info', 'Musique', 3000);
+                        pkg.showToast && pkg.showToast(t('Durée de l\'animation ajustée selon la musique'), 'info', t('Musique'), 3000);
                     }
                 } catch(e) {
                     console.warn('Erreur lors de la récupération de la durée audio:', e);
-                    pkg.showToast && pkg.showToast('Erreur lors de la lecture du fichier audio', 'error', 'Erreur', 3000);
+                    pkg.showToast && pkg.showToast(t('Erreur lors de la lecture du fichier audio'), 'error', t('Erreur'), 3000);
                 }
             }
         });
@@ -1444,7 +1445,7 @@ async function saveMapCenterSettings() {
                 const inRange = lat !== null && lon !== null && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
                 if (!inRange) {
                     setCoordinateValidity({ latValid: true, lonValid: true, combinedValid: false });
-                    pkg.showToast && pkg.showToast('Coordonnées invalides. Ex: 48.85, 2.35 ou N 49° 16.029 E 006° 07.512', 'warning', 'Carte', 5000);
+                    pkg.showToast && pkg.showToast(t('Coordonnées invalides. Ex: 48.85, 2.35 ou N 49° 16.029 E 006° 07.512'), 'warning', t('Carte'), 5000);
                     return false;
                 }
                 patch.map_default_center = [lon, lat];
@@ -1466,7 +1467,7 @@ async function saveMapCenterSettings() {
                     const latValid = lat !== null && lat >= -90 && lat <= 90;
                     const lonValid = lon !== null && lon >= -180 && lon <= 180;
                     setCoordinateValidity({ latValid, lonValid, combinedValid: true });
-                    pkg.showToast && pkg.showToast('Coordonnées invalides. Ex: N 49° 16.029 / E 006° 07.512', 'warning', 'Carte', 5000);
+                    pkg.showToast && pkg.showToast(t('Coordonnées invalides. Ex: N 49° 16.029 / E 006° 07.512'), 'warning', t('Carte'), 5000);
                     return false;
                 }
                 patch.map_default_center = [lon, lat];
@@ -1563,7 +1564,7 @@ function togglePickMapCenter() {
 
         isPickingMapCenter = true;
         try { map.getTargetElement().style.cursor = 'crosshair'; } catch(_) {}
-        pkg.showToast && pkg.showToast('Cliquez sur la carte pour choisir le centre', 'info', 'Carte', 4000);
+        pkg.showToast && pkg.showToast(t('Cliquez sur la carte pour choisir le centre'), 'info', t('Carte'), 4000);
 
         pickMapCenterHandler = async function(evt) {
             try {
@@ -1578,7 +1579,7 @@ function togglePickMapCenter() {
                 /* M.updateTextFields() — removed (Bootstrap 5 handles labels) */
                 const ok = await saveMapCenterSettings();
                 if (ok !== false && pkg.showToast) {
-                    pkg.showToast('Centre par défaut mis à jour depuis la carte', 'success', 'Carte', 3000);
+                    pkg.showToast(t('Centre par défaut mis à jour depuis la carte'), 'success', t('Carte'), 3000);
                 }
             } finally {
                 disablePickMapCenter(map);
@@ -1631,8 +1632,8 @@ function initOptionsUI() {
             if (savedMime && !MediaRecorder.isTypeSupported(savedMime)) {
                 setTimeout(() => {
                     pkg.showToast && pkg.showToast(
-                        pkg.t ? pkg.t('Le format vidéo sauvegardé (${mime}) n\'est pas supporté par ce navigateur.', { mime: savedMime }) : `Format ${savedMime} non supporté.`,
-                        'warning', 'Format non supporté', 7000
+                        t('Le format vidéo sauvegardé (${mime}) n\'est pas supporté par ce navigateur.', { mime: savedMime }),
+                        'warning', t('Format non supporté'), 7000
                     );
                 }, 1500);
             }
@@ -1789,8 +1790,8 @@ function changeRecordValues(field = undefined) {
 
         if (cbRecordUpload && cbRecordDownload && !cbRecordUpload.checked && !cbRecordDownload.checked) {
             pkg.showToast && pkg.showToast(
-                pkg.t ? pkg.t('La vidéo ne sera ni téléchargée ni uploadée : elle sera perdue après l\'enregistrement.') : 'La vidéo sera perdue si aucune destination n\'est sélectionnée.',
-                'warning', 'Aucune destination', 5000
+                t('La vidéo ne sera ni téléchargée ni uploadée : elle sera perdue après l\'enregistrement.'),
+                'warning', t('Aucune destination'), 5000
             );
         }
 
@@ -2804,21 +2805,30 @@ function renderIconPreview() {
     const url1x = meta.url;
     const url2x = meta.url2x;
 
-    iconPreview.innerHTML = meta.items.map((it) => `
-        <div class="icon-item" data-icon="${it.key}">
-            <div class="icon-sprite" style="
-                background-image:url('${url1x}');
-                ${url2x ? `background-image: image-set(
+    iconPreview.innerHTML = meta.items.map((it) => {
+        // Babel's JavaScript extractor cannot resume reliably after a template
+        // literal nested inside another one. Keep this fragment separate so
+        // every translation-helper call later in ui.js remains visible to
+        // catalog extraction.
+        const responsiveBackground = url2x
+            ? `background-image: image-set(
                     url('${url1x}') 1x,
                     url('${url2x}') 2x
-                );` : ''}
-                background-position:-${it.x}px -${it.y}px;
-                width:${it.w}px; height:${it.h}px;
-                background-size:${sheetW}px ${sheetH}px;
-            "></div>
-            <div class="icon-label">${it.label}</div>
-        </div>
-    `).join('');
+                );`
+            : '';
+        return `
+            <div class="icon-item" data-icon="${it.key}">
+                <div class="icon-sprite" style="
+                    background-image:url('${url1x}');
+                    ${responsiveBackground}
+                    background-position:-${it.x}px -${it.y}px;
+                    width:${it.w}px; height:${it.h}px;
+                    background-size:${sheetW}px ${sheetH}px;
+                "></div>
+                <div class="icon-label">${it.label}</div>
+            </div>
+        `;
+    }).join('');
 }
 
 // Changement de jeu d'icônes par l'utilisateur : état, puis aperçu, puis rendu.
@@ -3136,10 +3146,11 @@ export function openModalLoading(title, description){
         })();
         const toast = document.createElement('div');
         toast.className = 'gcm-toast info show';
+        const titleMarkup = title ? `<div class="gcm-toast-title">${title}</div>` : '';
         toast.innerHTML = `
             <div class="gcm-toast-icon">ℹ️</div>
             <div class="gcm-toast-content">
-                ${title ? `<div class=\"gcm-toast-title\">${title}</div>` : ''}
+                ${titleMarkup}
                 <div class="gcm-toast-message">${description || ''}</div>
                 <div class="gcm-toast-progress">
                     <div class="gcm-progress-bar"><div class="gcm-progress-fill indeterminate" style="width:30%"></div></div>
@@ -3569,7 +3580,7 @@ function clear_pictures_directory(){
             dbgUi(data)
         } else if (data && data.busy) {
             // Refus serveur : un assemblage lit encore les images de captured/
-            pkg.showToast && pkg.showToast(data.message, 'warning', pkg.t ? pkg.t('Assemblage en cours') : 'Assemblage en cours', 6000);
+            pkg.showToast && pkg.showToast(data.message, 'warning', t('Assemblage en cours'), 6000);
         }
     })
     .catch(error => console.error('Erreur:', error));
@@ -3587,14 +3598,14 @@ function open_video_folder(){
     .then(data => {
         dbgUi(data);
         if (data?.success && data.folder) {
-            pkg.showToast && pkg.showToast(pkg.t('Dossier vidéo: ${folder}', { folder: data.folder }), 'info', 'Ouverture');
+            pkg.showToast && pkg.showToast(t('Dossier vidéo: ${folder}', { folder: data.folder }), 'info', t('Ouverture'));
         } else {
-            pkg.showToast && pkg.showToast(data?.message || 'Impossible d’ouvrir le dossier vidéo', 'error', 'Ouverture');
+            pkg.showToast && pkg.showToast(data?.message || t('Impossible d’ouvrir le dossier vidéo'), 'error', t('Ouverture'));
         }
     })
     .catch(error => {
         console.error('Erreur:', error);
-        pkg.showToast && pkg.showToast('Erreur lors de l’ouverture du dossier vidéo', 'error', 'Ouverture');
+        pkg.showToast && pkg.showToast(t('Erreur lors de l’ouverture du dossier vidéo'), 'error', t('Ouverture'));
     });
 }
 
@@ -3623,8 +3634,7 @@ function assemble_pictures_directory(){
     // FPS configurable : doit correspondre à celui utilisé pour calculer les frames,
     // sinon la vitesse de lecture de la vidéo assemblée est faussée.
     const fps = normalizeRecordingFps(pkg.options?.record?.fps);
-    const tr = (s) => (pkg.t ? pkg.t(s) : s);
-    const assembleToast = pkg.showLoadingToast ? pkg.showLoadingToast(tr("Assemblage de la vidéo en cours..."), tr("Assemblage")) : null;
+    const assembleToast = pkg.showLoadingToast ? pkg.showLoadingToast(t("Assemblage de la vidéo en cours..."), t("Assemblage")) : null;
     fetch('/assemble_pictures_directory', {
         method: 'POST', 
         headers: {
@@ -3648,16 +3658,16 @@ function assemble_pictures_directory(){
     })
     .then(() => {
         try { if (assembleToast) pkg.hideToast(assembleToast); } catch(_) {}
-        pkg.showToast && pkg.showToast(tr("Vidéo créée avec succès !"), "success", tr("Vidéo prête"));
+        pkg.showToast && pkg.showToast(t("Vidéo créée avec succès !"), "success", t("Vidéo prête"));
     })
     .catch(error => {
         console.error('Erreur:', error);
         try { if (assembleToast) pkg.hideToast(assembleToast); } catch(_) {}
         if (error && error.busy) {
-            pkg.showToast && pkg.showToast(error.message, "warning", tr("Assemblage en cours"), 6000);
+            pkg.showToast && pkg.showToast(error.message, "warning", t("Assemblage en cours"), 6000);
             return;
         }
-        pkg.showToast && pkg.showToast(tr("Erreur lors de l'assemblage de la vidéo"), "error", tr("Erreur"));
+        pkg.showToast && pkg.showToast(t("Erreur lors de l'assemblage de la vidéo"), "error", t("Erreur"));
     });
 }
 
@@ -4321,8 +4331,8 @@ function initCssAssistant() {
 
     cbAdvanced.addEventListener('change', () => {
         updateAdvancedVisibility();
-        const t = getTextareaForTarget(activeTarget);
-        rawEditor.value = t ? (t.value || '') : '';
+        const textarea = getTextareaForTarget(activeTarget);
+        rawEditor.value = textarea ? (textarea.value || '') : '';
     });
 
     btnApply.addEventListener('click', () => {

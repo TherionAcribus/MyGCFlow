@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-10 11:19+0200\n"
+"POT-Creation-Date: 2026-08-10 13:19+0200\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -161,7 +161,8 @@ msgstr ""
 "Certaines tuiles de la carte n'ont pas pu être chargées (connexion "
 "instable ?)."
 
-#: static/js/basemaps.js:92 static/js/basemaps.js:129
+#: static/js/basemaps.js:92 static/js/basemaps.js:129 static/js/ui.js:1652
+#: static/js/ui.js:1674 static/js/ui.js:1784 static/js/ui.js:1799
 msgid "Carte"
 msgstr "Carte"
 
@@ -264,7 +265,8 @@ msgstr "Erreur lors du chargement du fichier"
 
 #: static/js/bdd.js:842 static/js/bdd.js:849 static/js/bdd.js:916
 #: static/js/bdd.js:923 static/js/bdd.js:1099 static/js/bdd.js:1170
-#: static/js/bdd.js:1177 static/js/notifications.js:274
+#: static/js/bdd.js:1177 static/js/notifications.js:274 static/js/ui.js:1011
+#: static/js/ui.js:4180
 msgid "Erreur"
 msgstr "Erreur"
 
@@ -695,17 +697,17 @@ msgstr ""
 
 #: static/js/saved_indicator.mjs:110
 msgid "Enregistrement…"
-msgstr ""
+msgstr "Enregistrement…"
 
 #: static/js/saved_indicator.mjs:114
 msgid "Enregistré"
-msgstr ""
+msgstr "Enregistré"
 
 #: static/js/saved_indicator.mjs:122
 msgid "Non enregistré"
-msgstr ""
+msgstr "Non enregistré"
 
-#: static/js/ui.js:853
+#: static/js/ui.js:863
 msgid ""
 "Ce format vidéo n'est pas supporté par votre navigateur et sera ignoré au"
 " démarrage de l'enregistrement."
@@ -713,12 +715,44 @@ msgstr ""
 "Ce format vidéo n'est pas supporté par votre navigateur et sera ignoré au"
 " démarrage de l'enregistrement."
 
-#: static/js/ui.js:1828
+#: static/js/ui.js:864 static/js/ui.js:1858
+msgid "Format non supporté"
+msgstr "Format non supporté"
+
+#: static/js/ui.js:1007
+msgid "Durée de l'animation ajustée selon la musique"
+msgstr "Durée de l'animation ajustée selon la musique"
+
+#: static/js/ui.js:1007
+msgid "Musique"
+msgstr "Musique"
+
+#: static/js/ui.js:1011
+msgid "Erreur lors de la lecture du fichier audio"
+msgstr "Erreur lors de la lecture du fichier audio"
+
+#: static/js/ui.js:1652
+msgid "Coordonnées invalides. Ex: 48.85, 2.35 ou N 49° 16.029 E 006° 07.512"
+msgstr "Coordonnées invalides. Ex: 48.85, 2.35 ou N 49° 16.029 E 006° 07.512"
+
+#: static/js/ui.js:1674
+msgid "Coordonnées invalides. Ex: N 49° 16.029 / E 006° 07.512"
+msgstr "Coordonnées invalides. Ex: N 49° 16.029 / E 006° 07.512"
+
+#: static/js/ui.js:1784
+msgid "Cliquez sur la carte pour choisir le centre"
+msgstr "Cliquez sur la carte pour choisir le centre"
+
+#: static/js/ui.js:1799
+msgid "Centre par défaut mis à jour depuis la carte"
+msgstr "Centre par défaut mis à jour depuis la carte"
+
+#: static/js/ui.js:1857
 #, python-brace-format
 msgid "Le format vidéo sauvegardé (${mime}) n'est pas supporté par ce navigateur."
 msgstr "Le format vidéo sauvegardé (${mime}) n'est pas supporté par ce navigateur."
 
-#: static/js/ui.js:2014
+#: static/js/ui.js:2045
 msgid ""
 "La vidéo ne sera ni téléchargée ni uploadée : elle sera perdue après "
 "l'enregistrement."
@@ -726,40 +760,89 @@ msgstr ""
 "La vidéo ne sera ni téléchargée ni uploadée : elle sera perdue après "
 "l'enregistrement."
 
-#: static/js/ui.js:2573 templates/menu_filtre.html:38
+#: static/js/ui.js:2046
+msgid "Aucune destination"
+msgstr "Aucune destination"
+
+#: static/js/ui.js:2604 templates/menu_filtre.html:38
 #: templates/menu_filtre.html:56 templates/menu_filtre.html:81
 #: templates/menu_filtre.html:103 templates/menu_filtre.html:168
 #: templates/menu_filtre.html:179
 msgid "Aucun"
 msgstr "Aucun"
 
-#: static/js/ui.js:2600 templates/menu_filtre.html:164
+#: static/js/ui.js:2631 templates/menu_filtre.html:164
 msgid "Filtrer par pays"
 msgstr "Filtrer par pays"
 
-#: static/js/ui.js:2629 static/js/ui.js:2667 templates/menu_filtre.html:175
+#: static/js/ui.js:2660 static/js/ui.js:2698 templates/menu_filtre.html:175
 msgid "Filtrer par région/état"
 msgstr "Filtrer par région/état"
 
-#: templates/_scope_badges.html:20
+#: static/js/ui.js:4090 static/js/ui.js:4177
+msgid "Assemblage en cours"
+msgstr "Assemblage en cours"
+
+#: static/js/ui.js:4108
+#, python-brace-format
+msgid "Dossier vidéo: ${folder}"
+msgstr "Dossier vidéo: ${folder}"
+
+#: static/js/ui.js:4108 static/js/ui.js:4110 static/js/ui.js:4115
+msgid "Ouverture"
+msgstr "Ouverture"
+
+#: static/js/ui.js:4110
+msgid "Impossible d’ouvrir le dossier vidéo"
+msgstr "Impossible d’ouvrir le dossier vidéo"
+
+#: static/js/ui.js:4115
+msgid "Erreur lors de l’ouverture du dossier vidéo"
+msgstr "Erreur lors de l’ouverture du dossier vidéo"
+
+#: static/js/ui.js:4145
+msgid "Assemblage de la vidéo en cours..."
+msgstr "Assemblage de la vidéo en cours..."
+
+#: static/js/ui.js:4145
+msgid "Assemblage"
+msgstr "Assemblage"
+
+#: static/js/ui.js:4171
+msgid "Vidéo créée avec succès !"
+msgstr "Vidéo créée avec succès !"
+
+#: static/js/ui.js:4171
+msgid "Vidéo prête"
+msgstr "Vidéo prête"
+
+#: static/js/ui.js:4180
+msgid "Erreur lors de l'assemblage de la vidéo"
+msgstr "Erreur lors de l'assemblage de la vidéo"
+
+#: templates/_scope_badges.html:23
 msgid ""
 "Réglage du profil actif : appliqué immédiatement, mais conservé seulement"
 " après un clic sur « Sauvegarder » dans la section Profils."
 msgstr ""
+"Réglage du profil actif : appliqué immédiatement, mais conservé seulement"
+" après un clic sur « Sauvegarder » dans la section Profils."
 
-#: templates/_scope_badges.html:21
+#: templates/_scope_badges.html:24
 msgid "Profil"
-msgstr ""
+msgstr "Profil"
 
-#: templates/_scope_badges.html:27
+#: templates/_scope_badges.html:30
 msgid ""
 "Préférence de l'application : enregistrée automatiquement, indépendamment"
 " du profil chargé."
 msgstr ""
+"Préférence de l'application : enregistrée automatiquement, indépendamment"
+" du profil chargé."
 
-#: templates/_scope_badges.html:28
+#: templates/_scope_badges.html:31
 msgid "Global"
-msgstr ""
+msgstr "Global"
 
 #: templates/app.html:46
 msgid "My Geocaching Map"
@@ -1326,7 +1409,7 @@ msgstr "Enregistrement vidéo"
 msgid "choisissez le"
 msgstr "choisissez le"
 
-#: templates/guide.html:217 templates/menu_recording.html:9
+#: templates/guide.html:217 templates/menu_recording.html:17
 msgid "Mode d'enregistrement"
 msgstr "Mode d'enregistrement"
 
@@ -1413,7 +1496,7 @@ msgstr "Selon le mode d'enregistrement, utilisez les boutons de la section"
 msgid "Vidéo"
 msgstr "Vidéo"
 
-#: templates/guide.html:244 templates/menu_recording.html:109
+#: templates/guide.html:244 templates/menu_recording.html:121
 msgid "Assembler film"
 msgstr "Assembler film"
 
@@ -1421,7 +1504,7 @@ msgstr "Assembler film"
 msgid "génère la vidéo à partir des images capturées."
 msgstr "génère la vidéo à partir des images capturées."
 
-#: templates/guide.html:245 templates/menu_recording.html:112
+#: templates/guide.html:245 templates/menu_recording.html:124
 msgid "Ouvrir le dossier vidéo"
 msgstr "Ouvrir le dossier vidéo"
 
@@ -1429,7 +1512,7 @@ msgstr "Ouvrir le dossier vidéo"
 msgid "accède au dossier contenant vos vidéos."
 msgstr "accède au dossier contenant vos vidéos."
 
-#: templates/guide.html:246 templates/menu_recording.html:106
+#: templates/guide.html:246 templates/menu_recording.html:118
 msgid "Nettoyer images"
 msgstr "Nettoyer images"
 
@@ -1461,7 +1544,7 @@ msgstr "Vérifier les mises à jour au démarrage"
 msgid "soyez prévenu d'une nouvelle version."
 msgstr "soyez prévenu d'une nouvelle version."
 
-#: templates/guide.html:266
+#: templates/guide.html:266 templates/menu_options.html:41
 msgid "Profil par défaut au démarrage"
 msgstr "Profil par défaut au démarrage"
 
@@ -1954,13 +2037,15 @@ msgid ""
 "Ces réglages sont enregistrés automatiquement et s'appliquent quel que "
 "soit le profil chargé."
 msgstr ""
+"Ces réglages sont enregistrés automatiquement et s'appliquent quel que "
+"soit le profil chargé."
 
 #: templates/menu_options.html:13
-msgid "Language Choice"
+msgid "Choix de la langue"
 msgstr "Choix de la langue"
 
 #: templates/menu_options.html:15
-msgid "English"
+msgid "Anglais"
 msgstr "Anglais"
 
 #: templates/menu_options.html:16
@@ -1988,12 +2073,8 @@ msgid "Sombre"
 msgstr "Sombre"
 
 #: templates/menu_options.html:36
-msgid "Check for a new version at startup"
+msgid "Vérifier les nouvelles versions au démarrage"
 msgstr "Vérifier les nouvelles versions au démarrage"
-
-#: templates/menu_options.html:41
-msgid "Default profile at startup"
-msgstr "Profil par défaut au démarrage"
 
 #: templates/menu_options.html:53
 msgid "Mode de saisie du centre de carte"
@@ -2028,11 +2109,11 @@ msgid "Valeur autorisée : de 0 à 22."
 msgstr "Valeur autorisée : de 0 à 22."
 
 #: templates/menu_options.html:97
-msgid "Check for a new version"
-msgstr "Vérifier les nouvelles versions"
+msgid "Vérifier les mises à jour"
+msgstr "Vérifier les mises à jour"
 
 #: templates/menu_options.html:100
-msgid "Home"
+msgid "Accueil"
 msgstr "Accueil"
 
 #: templates/menu_points.html:32 templates/menu_points.html:35
@@ -2106,15 +2187,17 @@ msgstr "Aperçu des icônes"
 
 #: templates/menu_recording.html:3
 msgid "Réglages d'enregistrement"
-msgstr ""
+msgstr "Réglages d'enregistrement"
 
 #: templates/menu_recording.html:4
 msgid ""
 "Enregistrés automatiquement avec les préférences de l'application, pas "
 "dans le profil."
 msgstr ""
+"Enregistrés automatiquement avec les préférences de l'application, pas "
+"dans le profil."
 
-#: templates/menu_recording.html:10
+#: templates/menu_recording.html:18
 msgid ""
 "MediaRecorder : enregistrement direct en WebM côté navigateur, rapide et "
 "léger. Images + ffmpeg : capture d'images puis assemblage côté serveur, "
@@ -2124,43 +2207,43 @@ msgstr ""
 "léger. Images + ffmpeg : capture d'images puis assemblage côté serveur, "
 "plus flexible mais plus lent"
 
-#: templates/menu_recording.html:13
+#: templates/menu_recording.html:21
 msgid "MediaRecorder .webm (client)"
 msgstr "MediaRecorder .webm (client)"
 
-#: templates/menu_recording.html:14
+#: templates/menu_recording.html:22
 msgid "Images + ffmpeg (serveur)"
 msgstr "Images + ffmpeg (serveur)"
 
-#: templates/menu_recording.html:18
+#: templates/menu_recording.html:26
 msgid "Qualité vidéo"
 msgstr "Qualité vidéo"
 
-#: templates/menu_recording.html:20
+#: templates/menu_recording.html:28
 msgid "Économique — 24 FPS / 4 Mbps"
 msgstr "Économique — 24 FPS / 4 Mbps"
 
-#: templates/menu_recording.html:21
+#: templates/menu_recording.html:29
 msgid "Standard — 30 FPS / 6 Mbps"
 msgstr "Standard — 30 FPS / 6 Mbps"
 
-#: templates/menu_recording.html:22
+#: templates/menu_recording.html:30
 msgid "Fluide — 60 FPS / 12 Mbps"
 msgstr "Fluide — 60 FPS / 12 Mbps"
 
-#: templates/menu_recording.html:23
+#: templates/menu_recording.html:31
 msgid "Personnalisée"
 msgstr "Personnalisée"
 
-#: templates/menu_recording.html:28
+#: templates/menu_recording.html:36
 msgid "Réglages avancés"
 msgstr "Réglages avancés"
 
-#: templates/menu_recording.html:32
+#: templates/menu_recording.html:40
 msgid "FPS"
 msgstr "FPS"
 
-#: templates/menu_recording.html:33
+#: templates/menu_recording.html:41
 msgid ""
 "Nombre d'images capturées par seconde. Les valeurs élevées demandent "
 "davantage de puissance ; à bitrate constant, elles ne doublent pas "
@@ -2170,19 +2253,19 @@ msgstr ""
 "davantage de puissance ; à bitrate constant, elles ne doublent pas "
 "automatiquement la taille du fichier."
 
-#: templates/menu_recording.html:36
+#: templates/menu_recording.html:44
 msgid "Valeur autorisée : de 1 à 60 FPS."
 msgstr "Valeur autorisée : de 1 à 60 FPS."
 
-#: templates/menu_recording.html:37
+#: templates/menu_recording.html:45
 msgid "24 ou 30 FPS conviennent à la plupart des vidéos."
 msgstr "24 ou 30 FPS conviennent à la plupart des vidéos."
 
-#: templates/menu_recording.html:41
+#: templates/menu_recording.html:49
 msgid "Bitrate vidéo (Mbps)"
 msgstr "Bitrate vidéo (Mbps)"
 
-#: templates/menu_recording.html:42
+#: templates/menu_recording.html:50
 msgid ""
 "Débit vidéo cible. Une valeur élevée améliore la netteté mais augmente "
 "directement la taille du fichier. La valeur réellement utilisée peut "
@@ -2192,19 +2275,19 @@ msgstr ""
 "directement la taille du fichier. La valeur réellement utilisée peut "
 "dépendre du navigateur et du codec."
 
-#: templates/menu_recording.html:45
+#: templates/menu_recording.html:53
 msgid "Valeur autorisée : de 1 à 30 Mbps."
 msgstr "Valeur autorisée : de 1 à 30 Mbps."
 
-#: templates/menu_recording.html:46
+#: templates/menu_recording.html:54
 msgid "6 Mbps offrent un bon équilibre pour un usage courant."
 msgstr "6 Mbps offrent un bon équilibre pour un usage courant."
 
-#: templates/menu_recording.html:50
+#: templates/menu_recording.html:58
 msgid "Ralentir par (x)"
 msgstr "Ralentir par (x)"
 
-#: templates/menu_recording.html:51
+#: templates/menu_recording.html:59
 msgid ""
 "Ralentit la capture pour améliorer la qualité. 2 = capture 2x plus lente "
 "(plus de frames par seconde d'animation). La vidéo finale reste à vitesse"
@@ -2214,11 +2297,19 @@ msgstr ""
 "(plus de frames par seconde d'animation). La vidéo finale reste à vitesse"
 " normale si \"Normaliser la vitesse\" est activé."
 
-#: templates/menu_recording.html:57
+#: templates/menu_recording.html:62
+msgid "Valeur autorisée : un nombre entier de 1 à 20."
+msgstr "Valeur autorisée : un nombre entier de 1 à 20."
+
+#: templates/menu_recording.html:63
+msgid "x1 : aucun ralentissement ; x2 : capture deux fois plus lente."
+msgstr "x1 : aucun ralentissement ; x2 : capture deux fois plus lente."
+
+#: templates/menu_recording.html:67
 msgid "Facteur d'échelle (qualité)"
 msgstr "Facteur d'échelle (qualité)"
 
-#: templates/menu_recording.html:58
+#: templates/menu_recording.html:68
 msgid ""
 "Multiplicateur de résolution temporaire. 1.5 = 50% plus grande pendant "
 "l'enregistrement puis réduction. Améliore la netteté des détails fins "
@@ -2228,11 +2319,23 @@ msgstr ""
 "l'enregistrement puis réduction. Améliore la netteté des détails fins "
 "sans changer la taille finale du fichier"
 
-#: templates/menu_recording.html:64
+#: templates/menu_recording.html:71
+msgid "Valeur autorisée : de 1 à 3, par pas de 0,25."
+msgstr "Valeur autorisée : de 1 à 3, par pas de 0,25."
+
+#: templates/menu_recording.html:72
+msgid ""
+"1 : résolution normale ; 1,5 : suréchantillonnage à 150 % pour améliorer "
+"la netteté."
+msgstr ""
+"1 : résolution normale ; 1,5 : suréchantillonnage à 150 % pour améliorer "
+"la netteté."
+
+#: templates/menu_recording.html:76
 msgid "Format vidéo"
 msgstr "Format vidéo"
 
-#: templates/menu_recording.html:65
+#: templates/menu_recording.html:77
 msgid ""
 "Codec de compression WebM. VP9 = meilleure qualité/compression, VP8 = "
 "compatible avec tous navigateurs, H.264 = format MP4 universel, WebM "
@@ -2242,27 +2345,27 @@ msgstr ""
 "compatible avec tous navigateurs, H.264 = format MP4 universel, WebM "
 "simple = fallback basique"
 
-#: templates/menu_recording.html:68
+#: templates/menu_recording.html:80
 msgid "VP9 (recommandé - haute qualité)"
 msgstr "VP9 (recommandé - haute qualité)"
 
-#: templates/menu_recording.html:69
+#: templates/menu_recording.html:81
 msgid "VP8 (compatible partout)"
 msgstr "VP8 (compatible partout)"
 
-#: templates/menu_recording.html:70
+#: templates/menu_recording.html:82
 msgid "H.264 (format MP4)"
 msgstr "H.264 (format MP4)"
 
-#: templates/menu_recording.html:71
+#: templates/menu_recording.html:83
 msgid "WebM simple (fallback)"
 msgstr "WebM simple (fallback)"
 
-#: templates/menu_recording.html:80
+#: templates/menu_recording.html:92
 msgid "Uploader vers serveur"
 msgstr "Uploader vers serveur"
 
-#: templates/menu_recording.html:81
+#: templates/menu_recording.html:93
 msgid ""
 "Transfère automatiquement la vidéo vers le serveur une fois "
 "l'enregistrement terminé. Utile pour archivage centralisé ou partage avec"
@@ -2272,11 +2375,11 @@ msgstr ""
 "l'enregistrement terminé. Utile pour archivage centralisé ou partage avec"
 " d'autres utilisateurs via l'interface web"
 
-#: templates/menu_recording.html:87
+#: templates/menu_recording.html:99
 msgid "Télécharger local"
 msgstr "Télécharger local"
 
-#: templates/menu_recording.html:88
+#: templates/menu_recording.html:100
 msgid ""
 "Sauvegarde automatiquement la vidéo dans le dossier de téléchargements de"
 " votre navigateur une fois l'enregistrement terminé. Pratique pour "
@@ -2286,11 +2389,11 @@ msgstr ""
 " votre navigateur une fois l'enregistrement terminé. Pratique pour "
 "archivage local immédiat"
 
-#: templates/menu_recording.html:94
+#: templates/menu_recording.html:106
 msgid "Normaliser la vitesse"
 msgstr "Normaliser la vitesse"
 
-#: templates/menu_recording.html:95
+#: templates/menu_recording.html:107
 msgid ""
 "Si le ralentissement est > 1, ré-accélère la vidéo finale pour la ramener"
 " à vitesse normale. Désactiver pour conserver la vidéo au ralenti."
@@ -2298,7 +2401,7 @@ msgstr ""
 "Si le ralentissement est > 1, ré-accélère la vidéo finale pour la ramener"
 " à vitesse normale. Désactiver pour conserver la vidéo au ralenti."
 
-#: templates/menu_recording.html:102
+#: templates/menu_recording.html:114
 msgid "Fichiers vidéo"
 msgstr "Fichiers vidéo"
 
@@ -2380,6 +2483,9 @@ msgid ""
 "Sauvegarder ». Un « • » à côté du nom du profil signale des modifications"
 " en attente."
 msgstr ""
+"Les réglages marqués « Profil » ne sont conservés qu'après un clic sur « "
+"Sauvegarder ». Un « • » à côté du nom du profil signale des modifications"
+" en attente."
 
 #: templates/menu_style.html:145
 msgid "Sauvegarder le profil actif"
@@ -2565,19 +2671,18 @@ msgstr "Ignorer pour l'instant"
 #~ msgid "Basculer le mode de saisie"
 #~ msgstr "Basculer le mode de saisie"
 
-#: templates/menu_recording.html:62
-msgid "Valeur autorisée : un nombre entier de 1 à 20."
-msgstr "Valeur autorisée : un nombre entier de 1 à 20."
+#~ msgid "Language Choice"
+#~ msgstr "Choix de la langue"
 
-#: templates/menu_recording.html:63
-msgid "x1 : aucun ralentissement ; x2 : capture deux fois plus lente."
-msgstr "x1 : aucun ralentissement ; x2 : capture deux fois plus lente."
+#~ msgid "Check for a new version at startup"
+#~ msgstr "Vérifier les nouvelles versions au démarrage"
 
-#: templates/menu_recording.html:71
-msgid "Valeur autorisée : de 1 à 3, par pas de 0,25."
-msgstr "Valeur autorisée : de 1 à 3, par pas de 0,25."
+#~ msgid "Default profile at startup"
+#~ msgstr "Profil par défaut au démarrage"
 
-#: templates/menu_recording.html:72
-msgid "1 : résolution normale ; 1,5 : suréchantillonnage à 150 % pour améliorer la netteté."
-msgstr "1 : résolution normale ; 1,5 : suréchantillonnage à 150 % pour améliorer la netteté."
+#~ msgid "Check for a new version"
+#~ msgstr "Vérifier les nouvelles versions"
+
+#~ msgid "Home"
+#~ msgstr "Accueil"
 

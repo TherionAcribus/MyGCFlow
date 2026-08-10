@@ -5,6 +5,8 @@
 ## Translating JavaScript strings
 
 - In JS, the only supported helper is `t()` — imported from `notifications.js`, so usually called as `pkg.t('…')`. It reads `window.TRANSLATIONS.messages`, the full gettext catalog served by `/js_translations.js`.
+- French is the canonical source language for `msgid` values. English UI text belongs in the English `msgstr`, not directly in templates alongside French `msgid` values.
+- `showToast()` translates its arguments at runtime, but Babel cannot extract arbitrary string arguments passed to it. Wrap every user-visible literal message and title in `t()` so it is added to the catalogs.
 - There is **no** `window.gettext`: `window.gettext ? window.gettext(x) : x` always fell through to the raw French. Do not reintroduce that pattern.
 - Interpolate with the `${var}` placeholder syntax inside a **plain quoted string**, never a template literal — the placeholder has to survive into the `msgid` so translators can move it:
 
