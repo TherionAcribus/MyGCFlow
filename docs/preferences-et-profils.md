@@ -47,6 +47,12 @@ qu'après un clic sur **Sauvegarder**.
 - `static/js/ui.js` — `recordSettingsPayload()` / `applyRecordSettingsPayload()`
   traduisent entre `pkg.options.record` (camelCase, bitrate en bits/s) et la
   forme de l'API (snake_case, bitrate en Mbps comme dans l'UI).
+- `saveRecordSettings(field)` est **exportée** : `recording_perf.js` l'appelle
+  quand l'utilisateur accepte le ralentissement suggéré depuis un toast. Son
+  argument nomme le champ à confirmer visuellement — indispensable hors d'une
+  saisie, où le « dernier champ manipulé » désignerait un champ sans rapport.
+  Corollaire : `changeRecordValues` ne doit jamais être passée nue à
+  `addEventListener`, l'objet `Event` atterrirait dans ce paramètre.
 
 ## Reprise des anciens réglages vidéo
 

@@ -38,7 +38,7 @@ test.afterEach(async ({ page }) => {
     body: JSON.stringify({
       theme: 'system',
       check_updates: false,
-      recording: { fps: 30, bitrate_mbps: 6 },
+      recording: { fps: 30, bitrate_mbps: 6, slowdown_factor: 1, download_local: true },
     }),
   })).catch(() => {});
 });
@@ -91,6 +91,17 @@ test('les réglages d\'enregistrement partent vers le serveur et confirment le c
   // L'indicateur se pose dans le <label> du champ modifié, et seulement celui-là.
   await expect(page.locator('label[for="inputRecordFps"] .gc-saved-indicator.is-saved.is-visible')).toBeVisible();
   await expect(page.locator('label[for="inputRecordBitrate"] .gc-saved-indicator.is-visible')).toHaveCount(0);
+
+  // Cases à cocher et champs numériques annexes : leurs écouteurs enveloppent
+  // changeRecordValues() au lieu de la passer nue, sinon l'objet Event
+  // atterrirait dans le paramètre `field` et l'indicateur ne s'afficherait pas.
+  await page.locator('#cbRecordDownload').uncheck();
+  await expect(page.locator('label[for="cbRecordDownload"] .gc-saved-indicator.is-saved.is-visible')).toBeVisible();
+  await expect.poll(async () => (await readServerSettings(page)).recording.download_local).toBe(false);
+
+  await page.locator('#inputRecordSlowdown').fill('2');
+  await expect(page.locator('label[for="inputRecordSlowdown"] .gc-saved-indicator.is-saved.is-visible')).toBeVisible();
+  await expect.poll(async () => (await readServerSettings(page)).recording.slowdown_factor).toBe(2);
 });
 
 
@@ -141,6 +152,32 @@ test('les anciens réglages restés en localStorage sont repris une seule fois',
   // La clé locale disparaît : la reprise ne doit pas se rejouer à chaque
   // démarrage et écraser une valeur choisie depuis un autre navigateur.
   expect(await page.evaluate(() => localStorage.getItem('recordSettings'))).toBeNull();
+});
+
+
+test('le ralentissement suggéré par le suivi de performance est persisté', async ({ page }) => {
+  // recording_perf.js applique ce réglage depuis un toast, hors de tout
+  // événement de formulaire, via pkg.saveRecordSettings(). Tant que cette
+  // fonction n'était pas exportée, l'appel était un no-op silencieux et le
+  // ralentissement disparaissait au rechargement.
+  await openReadyApp(page);
+
+  const exported = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    if (typeof app.saveRecordSettings !== 'function') return false;
+    app.options.record.mediaRecorder.slowdownFactor = 3;
+    app.saveRecordSettings('inputRecordSlowdown');
+    return true;
+  });
+  expect(exported).toBe(true);
+
+  await expect.poll(async () => (await readServerSettings(page)).recording.slowdown_factor).toBe(3);
+
+  await page.evaluate(() => fetch('/api/settings', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ recording: { slowdown_factor: 1 } }),
+  }));
 });
 
 

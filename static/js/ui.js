@@ -741,19 +741,22 @@ function initOptionsElements() {
         });
         // Sélecteur simple natif (comme #selectTheme) : pas de Tom Select.
     }
+    // Enveloppes `() => changeRecordValues()` et non la fonction nue : passée
+    // directement, elle recevrait l'objet Event dans son paramètre `field`, qui
+    // attend un champ de formulaire.
     inputRecordSlowdown = document.getElementById('inputRecordSlowdown');
-    if (inputRecordSlowdown) inputRecordSlowdown.addEventListener('input', changeRecordValues);
+    if (inputRecordSlowdown) inputRecordSlowdown.addEventListener('input', () => changeRecordValues());
     inputRecordScaleFactor = document.getElementById('inputRecordScaleFactor');
-    if (inputRecordScaleFactor) inputRecordScaleFactor.addEventListener('input', changeRecordValues);
+    if (inputRecordScaleFactor) inputRecordScaleFactor.addEventListener('input', () => changeRecordValues());
     cbRecordUpload = document.getElementById('cbRecordUpload');
-    if (cbRecordUpload) cbRecordUpload.addEventListener('change', changeRecordValues);
+    if (cbRecordUpload) cbRecordUpload.addEventListener('change', () => changeRecordValues());
     cbRecordDownload = document.getElementById('cbRecordDownload');
-    if (cbRecordDownload) cbRecordDownload.addEventListener('change', changeRecordValues);
+    if (cbRecordDownload) cbRecordDownload.addEventListener('change', () => changeRecordValues());
     cbRecordNormalize = document.getElementById('cbRecordNormalize');
-    if (cbRecordNormalize) cbRecordNormalize.addEventListener('change', changeRecordValues);
+    if (cbRecordNormalize) cbRecordNormalize.addEventListener('change', () => changeRecordValues());
     // Audio utilisateur
     cbRecordAudioEnable = document.getElementById('cbRecordAudioEnable');
-    if (cbRecordAudioEnable) cbRecordAudioEnable.addEventListener('change', changeRecordValues);
+    if (cbRecordAudioEnable) cbRecordAudioEnable.addEventListener('change', () => changeRecordValues());
     inputAudioVolume = document.getElementById('inputAudioVolume');
     if (inputAudioVolume) {
         inputAudioVolume.addEventListener('input', () => {
@@ -777,7 +780,11 @@ function initOptionsElements() {
                 }
                 // Afficher les informations du fichier audio
                 displayAudioFileInfo(this.files[0]);
-                changeRecordValues(); // Met à jour les options
+                // Le réglage qui change ici est « Inclure la musique », coché
+                // juste au-dessus : c'est lui que l'indicateur doit confirmer.
+                // Le champ fichier n'est pas suivi, sans quoi l'indicateur
+                // s'allumerait sur le dernier champ manipulé, sans rapport.
+                changeRecordValues(cbRecordAudioEnable); // Met à jour les options
             } else {
                 // Aucun fichier - masquer les infos, délocker la durée audio et décocher/désactiver la checkbox
                 hideAudioFileInfo();
@@ -1674,7 +1681,9 @@ function reloadWithLanguage(newLanguage) {
 }
 
 // ----------- ENREGISTREMENT (UI -> options.record) ------------
-function changeRecordValues() {
+// `field` : cible de l'indicateur « Enregistré ✓ », à nommer quand l'appel ne
+// vient pas d'une saisie dans un champ suivi (cf. saveRecordSettings).
+function changeRecordValues(field = undefined) {
     try {
         // S'assurer que la structure existe
         pkg.options.record = pkg.options.record || {};
@@ -1742,7 +1751,7 @@ function changeRecordValues() {
         } catch(e) { console.warn('changeRecordValues audio error:', e); }
 
         // Sauvegarder automatiquement les paramètres d'enregistrement
-        saveRecordSettings();
+        saveRecordSettings(field === undefined ? lastTouchedRecordField : field);
 
         // Le FPS peut modifier la durée minimale réalisable (une frame par date).
         // Si la durée vient de la musique, conserver cette cible autant que possible.
@@ -1851,13 +1860,18 @@ function migrateLegacyRecordSettings(userSettings) {
 
 // Sauvegarde les paramètres d'enregistrement côté serveur (débouncé : les
 // champs numériques émettent un événement par frappe).
-function saveRecordSettings() {
+//
+// Exportée parce que le suivi de performance (recording_perf.js) modifie le
+// ralentissement depuis un toast, donc hors de tout événement de formulaire.
+// `field` désigne le champ sur lequel afficher « Enregistré ✓ » : par défaut le
+// dernier manipulé, mais les appelants qui ne partent pas d'une saisie doivent
+// le nommer, sinon l'indicateur s'allumerait sur un champ sans rapport.
+export function saveRecordSettings(field = lastTouchedRecordField) {
     try {
-        const field = lastTouchedRecordField;
         const promise = saveRecordSettingsDebounced({ recording: recordSettingsPayload() });
-        // Sans champ identifié (appel programmatique : reprise d'un profil de
-        // qualité, initialisation), la sauvegarde a bien lieu mais sans retour
-        // visuel : il n'y a alors aucune action utilisateur à confirmer.
+        // Sans champ identifié (initialisation, reprise programmatique), la
+        // sauvegarde a bien lieu mais sans retour visuel : il n'y a alors aucune
+        // action utilisateur à confirmer.
         if (field) reportSave(field, promise);
     } catch(e) {
         console.warn('Save record settings error:', e);

@@ -161,11 +161,15 @@ export const recordingPerformanceMonitor = {
                                     // Confirmation : augmenter le ralentissement
                                     try {
                                         pkg.options.record.mediaRecorder.slowdownFactor = suggestedSlowdown;
-                                        // Sauvegarder dans les paramètres persistants si possible
-                                        try { pkg.saveRecordSettings && pkg.saveRecordSettings(); } catch(_) {}
-                                        // Mettre à jour l'interface
+                                        // Refléter la nouvelle valeur dans le champ AVANT d'enregistrer :
+                                        // c'est lui que l'indicateur « Enregistré ✓ » vient confirmer.
                                         const slowdownInput = document.getElementById('inputRecordSlowdown');
                                         if (slowdownInput) slowdownInput.value = suggestedSlowdown;
+                                        // Le ralentissement est une préférence globale : il doit survivre
+                                        // au rechargement, comme s'il avait été saisi dans le formulaire.
+                                        // Champ nommé explicitement — on ne vient pas d'une saisie, donc
+                                        // le « dernier champ manipulé » ne désignerait pas celui-ci.
+                                        pkg.saveRecordSettings('inputRecordSlowdown');
 
                                         pkg.showToast && pkg.showToast(
                                             pkg.t("Ralentissement augmenté à x${slowdown}. Redémarrez l'enregistrement pour appliquer le changement.", { slowdown: suggestedSlowdown }),
