@@ -1,6 +1,8 @@
 import json
 import shutil
 import tempfile
+import threading
+import time
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -196,9 +198,9 @@ class SettingsApiTests(unittest.TestCase):
         patcher.start()
         self.addCleanup(patcher.stop)
 
-        app = Flask(__name__)
-        app.register_blueprint(profiles_bp_module.profiles_bp)
-        self.client = app.test_client()
+        self.app = Flask(__name__)
+        self.app.register_blueprint(profiles_bp_module.profiles_bp)
+        self.client = self.app.test_client()
 
     def test_get_exposes_theme_and_recording(self):
         payload = self.client.get('/api/settings').get_json()
@@ -265,6 +267,42 @@ class SettingsApiTests(unittest.TestCase):
         self.client.put('/api/settings', json={'map_default_center': None})
 
         self.assertIsNone(self.client.get('/api/settings').get_json()['map_default_center'])
+
+    def test_two_simultaneous_patches_do_not_erase_each_other(self):
+        """Deux écritures qui se croisent doivent toutes deux survivre.
+
+        Le serveur de développement Flask traite les requêtes en parallèle. Un
+        PUT partiel relit les champs absents de son corps : si deux requêtes
+        lisent le même état de départ, la seconde réécrit l'ancienne valeur du
+        champ modifié par la première (« lost update »). C'était observable en
+        changeant la langue pendant qu'un blur enregistrait le centre de carte.
+
+        L'écriture est ralentie pour élargir la fenêtre entre lecture et
+        écriture : sans le verrou, ce test échoue de façon reproductible.
+        """
+        real_write_json = settings_manager.write_json
+
+        def slow_write_json(path, obj):
+            time.sleep(0.15)
+            real_write_json(path, obj)
+
+        # Un client par thread : ils partagent l'application, donc le même
+        # gestionnaire de préférences, comme deux onglets du navigateur.
+        def put(payload):
+            self.app.test_client().put('/api/settings', json=payload)
+
+        with mock.patch.object(settings_manager, 'write_json', slow_write_json):
+            first = threading.Thread(target=put, args=({'theme': 'dark'},))
+            second = threading.Thread(target=put, args=({'language': 'en'},))
+            first.start()
+            time.sleep(0.05)  # la seconde requête arrive pendant l'écriture de la première
+            second.start()
+            first.join()
+            second.join()
+
+        payload = self.client.get('/api/settings').get_json()
+        self.assertEqual(payload['theme'], 'dark')
+        self.assertEqual(payload['language'], 'en')
 
     def test_reset_returns_the_defaults_of_the_new_preferences(self):
         self.client.put('/api/settings', json={'theme': 'dark', 'recording': {'fps': 60}})

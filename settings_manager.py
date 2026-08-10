@@ -5,8 +5,9 @@ import json
 import logging
 import os
 import shutil
+import threading
 import uuid
-from typing import Tuple, Optional, List
+from typing import Callable, Tuple, Optional, List
 
 
 APP_NAME = "GCMap"
@@ -467,6 +468,16 @@ def coerce_profile(d: dict) -> MapProfile:
 
 class SettingsManager:
     def __init__(self) -> None:
+        # Sérialise les cycles lire-modifier-écrire de settings.json. Le serveur
+        # de développement Flask est multithread : deux requêtes rapprochées
+        # (changer la langue pendant qu'un blur enregistre le centre de carte)
+        # lisent sinon le même état de départ, et la seconde écriture efface la
+        # première (« lost update »). Réentrant car get_app_settings() peut
+        # réécrire le fichier (nettoyage d'un profil par défaut disparu) alors
+        # que le verrou est déjà tenu par update_app_settings().
+        # Posé avant tout accès au fichier : la suite du constructeur écrit déjà.
+        self._app_settings_lock = threading.RLock()
+
         CONFIG_DIR.mkdir(parents=True, exist_ok=True)
         PROFILES_DIR.mkdir(parents=True, exist_ok=True)
         if not SETTINGS_PATH.exists():
@@ -483,11 +494,14 @@ class SettingsManager:
         # Créer les profils d'exemple une seule fois, au tout premier lancement.
         # Une fois ce flag posé, un utilisateur qui supprime un exemple ne le voit
         # pas revenir au redémarrage suivant.
-        app_settings = self.get_app_settings()
-        if not app_settings.examples_seeded:
+        if not self.get_app_settings().examples_seeded:
             self._create_example_profiles()
-            app_settings.examples_seeded = True
-            self.save_app_settings(app_settings)
+
+            def mark_seeded(current: AppSettings) -> AppSettings:
+                current.examples_seeded = True
+                return current
+
+            self.update_app_settings(mark_seeded)
 
     def _profiles_dir_signature(self) -> tuple:
         """Empreinte du dossier profils : une énumération, aucun parse JSON.
@@ -1173,26 +1187,43 @@ class SettingsManager:
 
     # App settings
     def get_app_settings(self) -> AppSettings:
-        data = read_json(SETTINGS_PATH)
-        settings = coerce_settings(data)
+        with self._app_settings_lock:
+            data = read_json(SETTINGS_PATH)
+            settings = coerce_settings(data)
 
-        # Si le profil par défaut pointé n'existe plus (ex: après suppression des fichiers de profils),
-        # on nettoie la référence pour éviter des erreurs 404 récurrentes au démarrage.
-        if settings.default_profile_uid and not self.get_profile_name_by_uid(settings.default_profile_uid):
-            logging.warning("Profil par défaut introuvable (uid=%s), réinitialisation.", settings.default_profile_uid)
-            settings.default_profile_uid = None
-            self.save_app_settings(settings)
+            # Si le profil par défaut pointé n'existe plus (ex: après suppression des fichiers de profils),
+            # on nettoie la référence pour éviter des erreurs 404 récurrentes au démarrage.
+            if settings.default_profile_uid and not self.get_profile_name_by_uid(settings.default_profile_uid):
+                logging.warning("Profil par défaut introuvable (uid=%s), réinitialisation.", settings.default_profile_uid)
+                settings.default_profile_uid = None
+                self.save_app_settings(settings)
 
-        return settings
+            return settings
 
     def save_app_settings(self, settings: AppSettings) -> None:
-        write_json(SETTINGS_PATH, asdict(settings))
+        with self._app_settings_lock:
+            write_json(SETTINGS_PATH, asdict(settings))
+
+    def update_app_settings(self, mutate: Callable[[AppSettings], AppSettings]) -> AppSettings:
+        """Lit, transforme et réécrit les préférences globales sans interruption.
+
+        À utiliser dès qu'une écriture dépend de l'état déjà enregistré — soit
+        toute écriture partielle, puisque les champs absents de la requête sont
+        repris de l'existant. `mutate` reçoit les préférences courantes et
+        renvoie celles à écrire ; elle est appelée verrou tenu, donc courte et
+        sans entrée/sortie autre que celles du gestionnaire.
+        """
+        with self._app_settings_lock:
+            updated = mutate(self.get_app_settings())
+            self.save_app_settings(updated)
+            return updated
 
     def reset_app_settings(self) -> None:
         # examples_seeded est un flag interne de migration, pas une préférence utilisateur:
         # un reset des paramètres ne doit pas faire revenir les profils d'exemple supprimés.
-        current = self.get_app_settings()
-        self.save_app_settings(AppSettings(examples_seeded=current.examples_seeded))
+        self.update_app_settings(
+            lambda current: AppSettings(examples_seeded=current.examples_seeded)
+        )
 
     # Profiles
     @staticmethod

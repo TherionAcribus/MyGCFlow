@@ -37,7 +37,11 @@ qu'après un clic sur **Sauvegarder**.
   partiel via `PUT /api/settings`. Le serveur conserve tout champ absent du
   corps de la requête, donc **aucun `GET` préalable n'est nécessaire**.
   `makeDebouncedSettingsSaver()` regroupe les écritures des champs numériques,
-  qui émettent un événement par frappe.
+  qui émettent un événement par frappe. Les requêtes sont **mises en file** :
+  une seule est en vol à la fois, dans l'ordre des appels. Deux `fetch` lancés
+  ensemble peuvent arriver au serveur dans le désordre, et deux enregistrements
+  rapprochés du même champ (blur puis Entrée sur le centre de carte) laisseraient
+  alors l'ancienne valeur en dernier.
 - `static/js/theme.js` — le thème est enregistré côté serveur, avec un
   **miroir `localStorage`** (`gcmap_theme`). Le miroir n'existe que pour le
   script anti-FOUC du `<head>` d'`app.html`, qui doit connaître la préférence
@@ -96,9 +100,21 @@ pas au bitrate. Les valeurs sont bornées côté serveur
 (`coerce_recording_settings`) : `settings.json` est éditable à la main et ne doit
 pas pouvoir produire un enregistrement impossible.
 
+Un patch partiel relit forcément les champs absents de la requête. Cette lecture
+et l'écriture qui suit passent par `SettingsManager.update_app_settings()`, qui
+les exécute d'un seul tenant sous verrou : le serveur de développement Flask est
+multithread, et deux requêtes qui liraient le même état de départ perdraient
+chacune la modification de l'autre. **Toute écriture des préférences globales
+doit passer par `update_app_settings()`**, jamais par `get_app_settings()` suivi
+de `save_app_settings()`.
+
 ## Tests
 
-- `tests/test_global_preferences.py` — coercition, bornes, patch partiel, reset.
+- `tests/test_global_preferences.py` — coercition, bornes, patch partiel, reset,
+  et deux PUT concurrents qui doivent tous deux survivre.
+- `test_settings_api.mjs` (`node --test`) — file d'attente des écritures :
+  une requête en vol à la fois, dans l'ordre des appels, et un échec qui ne
+  bloque pas la suite.
 - `tests/e2e/global-preferences.spec.mjs` — persistance serveur du thème et de
   l'enregistrement, reprise du `localStorage`, indicateur inline, badges.
 

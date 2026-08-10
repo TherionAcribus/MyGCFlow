@@ -52,56 +52,63 @@ def api_get_settings():
 @profiles_bp.route('/api/settings', methods=['PUT'])
 def api_put_settings():
     data = request.get_json(silent=True) or {}
-    current = settings_manager.get_app_settings()
-    language = data.get('language', current.language)
-    check_updates = bool(data.get('check_updates', current.check_updates))
-    theme = coerce_theme(data.get('theme'), current.theme) if 'theme' in data else current.theme
 
-    # Les réglages d'enregistrement acceptent un patch partiel : l'UI n'envoie
-    # que le champ modifié, les autres doivent survivre.
-    recording = current.recording
-    recording_configured = current.recording_configured
-    if 'recording' in data and isinstance(data.get('recording'), dict):
-        merged_recording = asdict(current.recording)
-        merged_recording.update(data['recording'])
-        recording = coerce_recording_settings(merged_recording)
-        recording_configured = True
+    def merge(current: AppSettings) -> AppSettings:
+        language = data.get('language', current.language)
+        check_updates = bool(data.get('check_updates', current.check_updates))
+        theme = coerce_theme(data.get('theme'), current.theme) if 'theme' in data else current.theme
 
-    # Ne modifier default_profile_uid que si le client l'a explicitement envoyé
-    # (sinon un PUT partiel effacerait silencieusement le profil par défaut).
-    default_profile_uid = current.default_profile_uid
-    if 'default_profile_uid' in data:
-        default_profile_uid = data.get('default_profile_uid')
+        # Les réglages d'enregistrement acceptent un patch partiel : l'UI n'envoie
+        # que le champ modifié, les autres doivent survivre.
+        recording = current.recording
+        recording_configured = current.recording_configured
+        if 'recording' in data and isinstance(data.get('recording'), dict):
+            merged_recording = asdict(current.recording)
+            merged_recording.update(data['recording'])
+            recording = coerce_recording_settings(merged_recording)
+            recording_configured = True
 
-    # Centre et zoom passent par les mêmes contrôles qu'à la relecture du
-    # fichier : sans cela, l'écriture déposerait la valeur brute dans
-    # settings.json et seul le chargement suivant la corrigerait. Une valeur
-    # illisible ou hors plage laisse en place celle déjà enregistrée.
-    map_default_center = current.map_default_center
-    if 'map_default_center' in data:
-        map_default_center = coerce_map_center(
-            data.get('map_default_center'), current.map_default_center
+        # Ne modifier default_profile_uid que si le client l'a explicitement envoyé
+        # (sinon un PUT partiel effacerait silencieusement le profil par défaut).
+        default_profile_uid = current.default_profile_uid
+        if 'default_profile_uid' in data:
+            default_profile_uid = data.get('default_profile_uid')
+
+        # Centre et zoom passent par les mêmes contrôles qu'à la relecture du
+        # fichier : sans cela, l'écriture déposerait la valeur brute dans
+        # settings.json et seul le chargement suivant la corrigerait. Une valeur
+        # illisible ou hors plage laisse en place celle déjà enregistrée.
+        map_default_center = current.map_default_center
+        if 'map_default_center' in data:
+            map_default_center = coerce_map_center(
+                data.get('map_default_center'), current.map_default_center
+            )
+
+        map_default_zoom = current.map_default_zoom
+        if 'map_default_zoom' in data:
+            map_default_zoom = coerce_map_zoom(
+                data.get('map_default_zoom'), current.map_default_zoom
+            )
+
+        return AppSettings(
+            version=current.version,
+            language=language,
+            check_updates=check_updates,
+            theme=theme,
+            default_profile_uid=default_profile_uid,
+            map_default_center=map_default_center,
+            map_default_zoom=map_default_zoom,
+            recording=recording,
+            recording_configured=recording_configured,
+            examples_seeded=current.examples_seeded,
         )
 
-    map_default_zoom = current.map_default_zoom
-    if 'map_default_zoom' in data:
-        map_default_zoom = coerce_map_zoom(
-            data.get('map_default_zoom'), current.map_default_zoom
-        )
-
-    updated = AppSettings(
-        version=current.version,
-        language=language,
-        check_updates=check_updates,
-        theme=theme,
-        default_profile_uid=default_profile_uid,
-        map_default_center=map_default_center,
-        map_default_zoom=map_default_zoom,
-        recording=recording,
-        recording_configured=recording_configured,
-        examples_seeded=current.examples_seeded,
-    )
-    settings_manager.save_app_settings(updated)
+    # Fusion et écriture d'un seul tenant : le corps de la requête ne décrit que
+    # les champs modifiés, tous les autres sont relus de l'existant. Un simple
+    # get puis save laisserait une requête concurrente s'intercaler entre les
+    # deux et perdre sa modification.
+    updated = settings_manager.update_app_settings(merge)
+    language = updated.language
     response = jsonify({'success': True, 'language': language})
     response.set_cookie(
         'gcmap_lang',

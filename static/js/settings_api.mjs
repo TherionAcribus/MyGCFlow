@@ -20,9 +20,7 @@ function updateLocalCache(patch) {
     } catch (_) {}
 }
 
-// Enregistre un patch de préférences. Renvoie true si le serveur a accepté.
-export async function saveSettingsPatch(patch) {
-    if (!patch || typeof patch !== 'object') return true;
+async function sendPatch(patch) {
     try {
         const response = await fetch('/api/settings', {
             method: 'PUT',
@@ -35,6 +33,26 @@ export async function saveSettingsPatch(patch) {
     } catch (_) {
         return false;
     }
+}
+
+// Écritures en file d'attente : une seule requête en vol à la fois, dans
+// l'ordre des appels. Deux `fetch` lancés ensemble peuvent arriver au serveur
+// dans le désordre — deux enregistrements rapprochés du même champ (blur puis
+// Entrée sur le centre de carte) écriraient alors l'ancienne valeur en dernier.
+// La sérialisation garantit aussi que `window.userSettings` reflète la dernière
+// valeur réellement envoyée.
+let writeQueue = Promise.resolve();
+
+// Enregistre un patch de préférences. Renvoie true si le serveur a accepté.
+export function saveSettingsPatch(patch) {
+    if (!patch || typeof patch !== 'object') return Promise.resolve(true);
+    // `.then` est enregistré ici, de façon synchrone : c'est l'ordre des appels
+    // à saveSettingsPatch() qui fixe l'ordre des requêtes.
+    const result = writeQueue.then(() => sendPatch(patch));
+    // La file avance sur un maillon qui n'échoue jamais : un rejet inattendu
+    // bloquerait sinon définitivement toutes les écritures suivantes.
+    writeQueue = result.catch(() => {});
+    return result;
 }
 
 // Variante débouncée : les champs numériques (FPS, bitrate…) émettent un
