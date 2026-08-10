@@ -24,10 +24,7 @@
              casserait toute l'interface (Bootstrap, sélecteurs, carte, datepickers).
              Versions et procédure de mise à jour : static/vendor/README.md. -->
 
-        <!-- Tabler 1.4.0 (inclut Bootstrap 5) — chargé AVANT Materialize
-             pour permettre la coexistence pendant la migration template par template.
-             Les templates migrés utilisent les classes Tabler/Bootstrap ;
-             les templates non migrés conservent Materialize. -->
+        <!-- Tabler 1.4.0 (inclut Bootstrap 5) — socle CSS de toute l'interface. -->
         <link rel="stylesheet" href="../static/vendor/tabler/tabler.min.css">
         <!-- Tabler Icons (webfont) — remplace progressivement Material Icons -->
         <link rel="stylesheet" href="../static/vendor/tabler-icons/tabler-icons.min.css">
@@ -36,7 +33,7 @@
         <!-- Tempus Dominus 6.x — datepickers Bootstrap 5 natif -->
         <link rel="stylesheet" href="../static/vendor/tempus-dominus/tempus-dominus.min.css">
 
-        <!-- CSS custom GCMap (avant Materialize pour override) -->
+        <!-- CSS custom GCMap (après les CSS tiers, pour pouvoir les surcharger) -->
         <link rel="stylesheet" href="../static/css/style.css" />
         <link rel="stylesheet" href="../static/css/titre.css" />
         <link rel="stylesheet" href="../static/css/infos.css" />

@@ -150,7 +150,7 @@ function getCurrentLanguage() {
     return browserLang || 'fr';
 }
 
-// Fonction pour ouvrir une vraie modale Materialize avec les détails de mise à jour
+// Ouvre la modale (Bootstrap 5) présentant les détails de la mise à jour
 async function openUpdateDetailsModal(data) {
     dbgOptions("[openUpdateDetailsModal] data:", data);
 

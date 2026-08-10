@@ -68,8 +68,7 @@ body {
 }
 
 /* --- Cartes / surfaces --- */
-.card,
-.card-panel {
+.card {
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     box-shadow: var(--shadow-sm);
@@ -208,7 +207,7 @@ h5, h6 { color: var(--color-text); font-weight: 600; }
 .alert-danger  { background-color: rgba(198, 40, 40, 0.1); border-color: rgba(198, 40, 40, 0.25); color: var(--color-danger); }
 .alert-info    { background-color: var(--color-accent-weak); border-color: rgba(30, 136, 229, 0.25); color: var(--color-accent-strong); }
 
-/* --- List-group (équivalent collection Materialize) --- */
+/* --- List-group --- */
 .list-group-item.active {
     background-color: var(--color-accent-weak);
     border-color: var(--color-accent);
@@ -355,8 +354,7 @@ h5, h6 { color: var(--color-text); font-weight: 600; }
 [data-bs-theme="dark"] .filter-sync-label,
 [data-bs-theme="dark"] .gc-css-tab,
 [data-bs-theme="dark"] .filter-info { color: var(--color-text-muted); }
-[data-bs-theme="dark"] .filter-sync-value,
-[data-bs-theme="dark"] .card-panel h5 { color: var(--color-text); }
+[data-bs-theme="dark"] .filter-sync-value { color: var(--color-text); }
 [data-bs-theme="dark"] #delete-profile-modal .modal-subtitle { color: var(--color-text-muted); }
 [data-bs-theme="dark"] #delete-profile-modal .modal-body-text { color: var(--color-text); }
 
@@ -366,12 +364,8 @@ h5, h6 { color: var(--color-text); font-weight: 600; }
 [data-bs-theme="dark"] #flash input[type="color"] { border-color: var(--color-border); }
 [data-bs-theme="dark"] .vector-slider { background: #3a4250; }
 [data-bs-theme="dark"] .vector-slider:hover { background: #454e5c; }
-[data-bs-theme="dark"] .collection-item { border-bottom-color: var(--color-border); }
-[data-bs-theme="dark"] .collection-item:hover { background-color: rgba(255, 255, 255, 0.04); }
 [data-bs-theme="dark"] #profile-modal .modal-footer,
 [data-bs-theme="dark"] #delete-profile-modal .modal-footer { border-top-color: var(--color-border); }
-/* Checkbox custom Materialize legacy (bordure grise) — au cas où encore présent. */
-[data-bs-theme="dark"] input[type="checkbox"] + span:not(.lever):before { border-color: #6b7480; }
 
 /* --- Badges / pastilles à fond pastel clair → variantes sombres --- */
 [data-bs-theme="dark"] .profile-active-indicator.active {
@@ -399,7 +393,4 @@ h5, h6 { color: var(--color-text); font-weight: 600; }
     color: #ffb74d;
     box-shadow: inset 0 0 0 1px rgba(239, 108, 0, 0.4);
 }
-/* Dropdown profils Materialize legacy : survol clair → sombre. */
-[data-bs-theme="dark"] .dropdown-content li > a:hover { background-color: rgba(255, 255, 255, 0.06); }
-
 /* --- Fin thème Tabler --- */

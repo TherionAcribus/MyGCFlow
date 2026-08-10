@@ -1,8 +1,7 @@
 /* =====================================================================
    ui_bootstrap.js — Couche d'abstraction pour les APIs Bootstrap/Tabler
    ---------------------------------------------------------------------
-   Centralise l'initialisation des composants UI Tabler/Bootstrap pour
-   remplacer progressivement les appels M.* (Materialize) dans le code.
+   Centralise l'initialisation des composants UI Tabler/Bootstrap.
 
    Exporte des fonctions prêtes à l'emploi :
      - initBsTabs(selector?)
@@ -113,8 +112,6 @@ export function showBsTab(el) {
 export function initBsModals(selector = '.modal.bs-modal') {
     const b = bs();
     if (!b) return;
-    // On ne cible que les modals migrées (avec la classe .bs-modal) pour
-    // éviter d'initialiser les modals Materialize encore présentes.
     document.querySelectorAll(selector).forEach(node => {
         try { b.Modal.getOrCreateInstance(node); } catch (e) { /* déjà init */ }
     });
@@ -282,7 +279,6 @@ export function refreshTomSelect(el) {
     if (ts) {
         try { ts.sync(); } catch (e) { /* noop */ }
     }
-    // Materialize n'est plus chargé — plus de fallback M.FormSelect
 }
 
 /* =====================================================================

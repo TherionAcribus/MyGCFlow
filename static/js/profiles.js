@@ -549,7 +549,6 @@ class ProfileManager {
         });
 
         // Les dropdowns Bootstrap 5 sont auto-initialisés via data-bs-toggle="dropdown"
-        // (plus besoin d'initialisation manuelle comme avec Materialize)
 
         // Mettre à jour l'indicateur du profil actif (nécessaire pour le rendu initial)
         this.updateCurrentProfileIndicator();
@@ -1704,7 +1703,8 @@ class ProfileManager {
     }
 
     showToast(message, color = 'blue') {
-        // Adapter les couleurs Materialize vers les types du système GCM
+        // Adapter les noms de couleur historiques (paramètre `color`) vers les
+        // types du système de toasts GCM
         const typeMap = {
             'green': 'success',
             'red': 'error',

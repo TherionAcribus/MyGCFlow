@@ -127,46 +127,10 @@
     background-color: #bbdefb !important;
 }
 
-/* Style des onglets principaux */
-.tabs .tab a {
-    font-size: 1.1rem;
-    font-weight: 500;
-}
-
-.tabs .tab a.active {
-    background-color: rgba(33, 150, 243, 0.1);
-    color: #2196F3 !important;
-}
-
-/* Amélioration des card-panels */
-.card-panel {
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    transition: box-shadow 0.3s ease;
-}
-
-.card-panel:hover {
-    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-}
-
-/* Style des sections dans les onglets */
-.card-panel h5 {
-    margin-top: 0;
-    margin-bottom: 1rem;
-    color: #424242;
-    font-weight: 500;
-}
-
 /* Boutons de cartes : voir .map-card dans la section composants post-migration */
 /* (les anciens overrides .changeMap avec transform/colors hardcoded ont été supprimés) */
 
 /* La sélection Titre/Infos utilise les mêmes onglets Bootstrap que le reste de l'interface. */
-
-/* Style des boutons d'animation */
-.btn-large {
-    margin: 0;
-    min-width: 120px;
-}
 
 /* Groupes de boutons d'animation avec retour à la ligne */
 .anim-btn-group {
@@ -325,24 +289,6 @@
     outline: none;
     border-color: #2196F3;
     box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.3);
-}
-
-/* Amélioration des inputs */
-.input-field input:focus + label,
-.input-field input.valid + label {
-    color: #2196F3 !important;
-}
-
-.input-field input:focus,
-.input-field input.valid {
-    border-bottom: 2px solid #2196F3 !important;
-    box-shadow: 0 1px 0 0 #2196F3 !important;
-}
-
-/* Style des informations */
-.grey-text {
-    font-size: 0.9rem;
-    margin-top: 0.5rem;
 }
 
 /* Système de notifications toast */
@@ -641,20 +587,6 @@ main.fullscreen-mode #infosFrame span:not([hidden]) {
 
 /* Responsive design */
 @media only screen and (max-width: 600px) {
-    .tabs .tab {
-        width: 25%;
-    }
-
-    .btn-large {
-        width: 100%;
-        margin: 0.25rem 0;
-        min-width: auto;
-    }
-
-    .card-panel .row .col {
-        margin-bottom: 1rem;
-    }
-
     .toast-container {
         left: 10px;
         right: 10px;
@@ -769,10 +701,6 @@ main.fullscreen-mode #infosFrame span:not([hidden]) {
        s'aligner sur celui de "Graphisme des points" dans la colonne voisine. */
 }
 
-#flash .input-field {
-    margin: 15px 0;
-}
-
 #flash input[type="color"] {
     width: 60px;
     height: 40px;
@@ -804,21 +732,6 @@ main.fullscreen-mode #infosFrame span:not([hidden]) {
     }
 }
 
-
-/* Style personnalisé pour les checkboxes - couleur bleue comme les boutons */
-input[type="checkbox"]:checked + span:not(.lever):before {
-    border-right: 2px solid #1e88e5 !important;
-    border-bottom: 2px solid #1e88e5 !important;
-}
-
-input[type="checkbox"] + span:not(.lever):before {
-    border: 2px solid #5a5a5a;
-    transition: border-color 0.3s ease;
-}
-
-input[type="checkbox"]:not(:checked) + span:not(.lever):hover:before {
-    border-color: #1e88e5;
-}
 
 /* Couleurs distinctes pour les boutons de la barre latérale de contrôle */
 /* Bouton Démarrer - Vert (action positive) */
@@ -924,11 +837,6 @@ input[type="checkbox"]:not(:checked) + span:not(.lever):hover:before {
     background-color: #009688 !important;
 }
 
-input[type="checkbox"]:checked + span:not(.lever):after {
-    background-color: #1e88e5 !important;
-    border: 2px solid #1e88e5 !important;
-}
-
 /* (Styles des chips retirés) */
 /* Infos filtres — voir .filter-info-badge dans la section composants post-migration */
 /* (les anciens styles .filter-info et .btn-flat.* ont été remplacés par .filter-info-badge et .btn-link.*) */
@@ -983,13 +891,6 @@ top: 20px;
     flex-wrap: wrap;
     gap: 6px;
     margin-bottom: 12px;
-}
-
-.profile-actions .btn-small {
-    flex: 1 1 auto;
-    min-width: 90px;
-    text-align: center;
-    white-space: nowrap;
 }
 
 /* Badge profil actif sous le titre */
@@ -1176,10 +1077,6 @@ display: none;
 
 .gc-css-pane.active {
 display: block;
-}
-
-.gc-css-assistant .input-field {
-margin: 0;
 }
 
 .gc-css-assistant label {

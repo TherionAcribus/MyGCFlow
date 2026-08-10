@@ -48,19 +48,11 @@ export const CONFIG = {
  }
 
 document.addEventListener('DOMContentLoaded', async function() {
-    // initialisation des elements de Materialize
-    initTabs();
-    initModals();
-    initTooltips();
-    // Note: initSelect() supprimé — l'init globale sur des <select> cachés schedule
-    // des RAF (requestAnimationFrame) en Materialize qui crashent quand le destroy()
-    // ultérieur vide _inputEl. Chaque select est initialisé individuellement par
-    // la fonction qui le gère (populateCountryStateSelects, init_ui, etc.)
-    initPickers();
-
-    // initialisation des elements Bootstrap/Tabler (coexistence pendant la migration)
-    // Les sélecteurs ciblent uniquement les composants migrés (classes .bs-* / data-bs-*)
-    // pour éviter les conflits avec les composants Materialize encore présents.
+    // initialisation des elements Bootstrap/Tabler.
+    // Les selects (Tom Select) et les datepickers (Tempus Dominus) ne sont PAS
+    // initialisés globalement ici : chaque champ est pris en charge par la
+    // fonction qui le gère (populateCountryStateSelects, init_ui, etc.), ce qui
+    // évite d'instancier des composants sur des champs cachés ou recréés.
     initBsTabs();
     initBsModals();
     initBsTooltips();
@@ -169,48 +161,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     window.dispatchEvent(new CustomEvent('gcmap:ready'));
 });
 
-
-// initialisation des Tabs de Materialize (exclut les tabs migrées .nav-tabs)
-// Materialize n'est plus chargé — ces fonctions sont des no-ops de sécurité
-function initTabs() {
-    var elemsTabs = document.querySelectorAll('.tabs:not(.nav-tabs)');
-    if (elemsTabs.length === 0 || typeof M === 'undefined') return;
-    M.Tabs.init(elemsTabs, {});
-}
-
-
-// initialisation des Modals de Materialize (exclut les modals migrées .bs-modal)
-function initModals() {
-    var elemsModals = document.querySelectorAll('.modal:not(.bs-modal)');
-    if (elemsModals.length === 0 || typeof M === 'undefined') return;
-    M.Modal.init(elemsModals, {});
-}
-
-// initialisation des Tooltips de Materialize (exclut les tooltips migrés vers Bootstrap 5)
-function initTooltips() {
-    var elemsTooltips = document.querySelectorAll('.tooltipped:not([data-bs-toggle="tooltip"])');
-    if (elemsTooltips.length === 0 || typeof M === 'undefined') return;
-    M.Tooltip.init(elemsTooltips, {});
-}
-
-// initialisation des Selects de Materialize (exclut les selects migrés vers Tom Select)
-function initSelect() {
-    var elems = document.querySelectorAll('select:not(.tomselected)');
-    if (elems.length === 0 || typeof M === 'undefined') return;
-    var options = {}; // Options par défaut pour les selects Materialize
-    M.FormSelect.init(elems, options);
-}
-
-
-// initialisation des Pickers de Materialize (exclut les datepickers migrés .td-input)
-function initPickers() {
-    console.log("initPickers")
-    var elems = document.querySelectorAll('.datepicker:not(.td-input)');
-    if (elems.length === 0 || typeof M === 'undefined') return;
-    // Format de date du PIcker. TODO permettre de choisir pour tout le programme, le format de la date
-    const options = {format: 'yyyy-mm-dd'}
-    M.Datepicker.init(elems, options);
-}
 
 // Applique centre/zoom depuis les préférences utilisateur (settings).
 // Logique effective centralisée dans pkg.applyMapDefaults (mapgl.js), partagée

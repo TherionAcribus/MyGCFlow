@@ -347,13 +347,13 @@ const publishedDatePickerEnd = document.getElementById('publishedDatePickerEnd')
     infoTerrain = document.getElementById('infoTerrain');
     infoContainer = document.getElementById('infoContainer');
 
-    // Initialiser Tom Select (remplace Materialize FormSelect)
+    // Initialiser Tom Select
     if (selectType) initFilterTomSelect(selectType);
     if (selectDifficulty) initFilterTomSelect(selectDifficulty);
     if (selectTerrain) initFilterTomSelect(selectTerrain);
     if (selectContainer) initFilterTomSelect(selectContainer);
 
-    // Initialiser Tempus Dominus sur les datepickers de filtre (remplace Materialize Datepicker)
+    // Initialiser Tempus Dominus sur les datepickers de filtre
     const tdOptions = {
         display: { components: { clock: false } },
         localization: { format: 'yyyy-MM-dd' },
@@ -520,7 +520,7 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     const btnToggleFullscreen = document.getElementById('btnToggleFullscreen');
     if (btnToggleFullscreen) btnToggleFullscreen.addEventListener('click', toggleFullscreenFromButton);
 
-    // Datepickers Animation (Tempus Dominus — remplace Materialize Datepicker)
+    // Datepickers Animation (Tempus Dominus)
     const animDateStart = document.getElementById('animDateStart');
     const animDateEnd = document.getElementById('animDateEnd');
     if (animDateStart) {
@@ -549,7 +549,7 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     const btnResetAnimEndDate = document.getElementById('btnResetAnimEndDate');
     if (btnResetAnimStartDate) btnResetAnimStartDate.addEventListener('click', resetAnimStartDateToDefault);
     if (btnResetAnimEndDate) btnResetAnimEndDate.addEventListener('click', resetAnimEndDateToDefault);
-    // Initialiser tooltips Bootstrap 5 (remplace Materialize Tooltips)
+    // Initialiser les tooltips Bootstrap 5
     pkg.initBsTooltips();
 
     // Initialiser l'état des contrôles (boutons principaux et barre latérale)
@@ -566,7 +566,7 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     selectFlashMode = document.getElementById('selectFlashMode');
     if (selectFlashMode) {
         selectFlashMode.addEventListener('change', () => changeFlashValues(selectFlashMode));
-        // Initialiser Tom Select (remplace Materialize)
+        // Initialiser Tom Select
         // Pas de remove_button : ce champ doit toujours avoir une valeur
         // (comme un <select> natif), "Pas de flash" étant déjà une option explicite.
         initTomSelect(selectFlashMode, { maxItems: 1, plugins: [] });
@@ -923,7 +923,7 @@ function initTabMemory() {
     // Vérifier que l'onglet existe
     const tabElement = document.querySelector(`a[href="#${activeTab}"]`);
     if (tabElement) {
-        // Activer l'onglet via Bootstrap 5 (remplace M.Tabs.select)
+        // Activer l'onglet via Bootstrap 5
         showBsTab(tabElement);
 
         // Sauvegarder dans localStorage si ce n'était pas déjà fait
@@ -932,8 +932,8 @@ function initTabMemory() {
         }
     }
 
-    // Gérer le changement d'onglet (tabs Bootstrap 5 + tabs Materialize restantes)
-    document.querySelectorAll('#mainTabs .nav-link, .tabs .tab a').forEach(tab => {
+    // Gérer le changement d'onglet (tabs Bootstrap 5)
+    document.querySelectorAll('#mainTabs .nav-link').forEach(tab => {
         tab.addEventListener('click', function() {
             const tabId = this.getAttribute('href').substring(1); // Enlever le #
             localStorage.setItem('activeTab', tabId);
@@ -1222,9 +1222,6 @@ export function init_ui() {
 
     // Initialiser l'interface des paramètres (enregistrement)
     initOptionsUI();
-
-    // Mettre à jour tous les champs Materialize pour repositionner les labels
-    /* M.updateTextFields() — removed (Bootstrap 5 handles labels) */
 }
 
 let isPickingMapCenter = false;
@@ -1319,7 +1316,6 @@ function setLatLonInputs(latVal, lonVal) {
     if (inputMapCenterLat) inputMapCenterLat.value = latVal;
     if (inputMapCenterLon) inputMapCenterLon.value = lonVal;
     if (inputMapCenterCombined) inputMapCenterCombined.value = `${latVal}, ${lonVal}`;
-    /* M.updateTextFields() — removed (Bootstrap 5 handles labels) */
 }
 
 function centerKey(center) {
@@ -1387,7 +1383,6 @@ function setLatLonMode(useCombined) {
     if (fieldCombined) fieldCombined.classList.toggle('d-none', !useCombined);
     if (fieldLat) fieldLat.classList.toggle('d-none', useCombined);
     if (fieldLon) fieldLon.classList.toggle('d-none', useCombined);
-    /* M.updateTextFields() — removed (Bootstrap 5 handles labels) */
 }
 
 function onCombinedCenterBlur() {
@@ -1395,7 +1390,6 @@ function onCombinedCenterBlur() {
     const { lat, lon } = parseCombinedLatLon(inputMapCenterCombined.value);
     if (lat !== null) inputMapCenterLat.value = lat;
     if (lon !== null) inputMapCenterLon.value = lon;
-    /* M.updateTextFields() — removed (Bootstrap 5 handles labels) */
     saveMapCenterSettings();
 }
 
@@ -1532,7 +1526,6 @@ async function saveMapCenterSettings() {
                 lastSavedZoom = patch.map_default_zoom;
             }
         }
-        /* M.updateTextFields() — removed (Bootstrap 5 handles labels) */
         return ok;
     } catch(e) {
         return reportMapCenterFailure(e);
@@ -1554,7 +1547,6 @@ async function applyCurrentMapViewAsDefault() {
         // il restait vide et le bouton effaçait le centre au lieu de le poser.
         setLatLonInputs(lat.toFixed(6), lon.toFixed(6));
         if (inputMapDefaultZoom) inputMapDefaultZoom.value = String(view.getZoom());
-        /* M.updateTextFields() — removed (Bootstrap 5 handles labels) */
         // saveMapCenterSettings() pose déjà l'indicateur « Enregistré ✓ » sur les
         // champs remplis : pas de toast en plus pour la même information.
         await saveMapCenterSettings();
@@ -1568,7 +1560,6 @@ async function clearMapCenterSettings() {
         if (inputMapCenterLon) inputMapCenterLon.value = '';
         if (inputMapCenterCombined) inputMapCenterCombined.value = '';
         if (inputMapDefaultZoom) inputMapDefaultZoom.value = '';
-        /* M.updateTextFields() — removed (Bootstrap 5 handles labels) */
         const fields = mapCenterIndicatorFields({ centerChanged: true, zoomChanged: true });
         const ok = await reportSave(fields, saveSettingsPatch({ map_default_center: null, map_default_zoom: null }));
         // Le suivi "déjà enregistré" doit refléter la remise à zéro, sinon une
@@ -1609,7 +1600,6 @@ function togglePickMapCenter() {
                     const view = map.getView();
                     if (view && inputMapDefaultZoom) inputMapDefaultZoom.value = String(view.getZoom());
                 } catch(_) {}
-                /* M.updateTextFields() — removed (Bootstrap 5 handles labels) */
                 const ok = await saveMapCenterSettings();
                 if (ok !== false && pkg.showToast) {
                     pkg.showToast(t('Centre par défaut mis à jour depuis la carte'), 'success', t('Carte'), 3000);
@@ -2075,9 +2065,6 @@ export function setPickerDates(metadata) {
 
     // Mettre à jour les boutons reset Animation aussi
     updateResetAnimButtonsHighlight();
-
-    // Mettre à jour les labels Materialize après avoir défini les valeurs des datepickers
-    /* M.updateTextFields() — removed (Bootstrap 5 handles labels) */
 }
 
 function formatDateForPickers(date) {
@@ -2629,7 +2616,7 @@ function setBtnDisabled(btnEl, disabled){
 function setupFilterButtonAccessibility(){
     const panel = document.getElementById('filterPanel');
     if (!panel) return;
-    const buttons = panel.querySelectorAll('a.btn-link, a.btn-flat');
+    const buttons = panel.querySelectorAll('a.btn-link');
     buttons.forEach(btn => {
         btn.setAttribute('role', 'button');
         btn.setAttribute('tabindex', '0');
@@ -3759,12 +3746,12 @@ function changeFlashColorType(event) {
 }
 
 // Le choix d'une couleur n'a de sens qu'en mode "couleur unique". Le conteneur
-// est cherché à partir du champ lui-même : la classe .input-field de Materialize
-// a disparu à la migration Bootstrap, le sélecteur en dur ne trouvait plus rien
-// et le picker restait affiché en mode GC/transparent.
+// est cherché à partir du champ lui-même (parentElement) et non par un sélecteur
+// en dur : celui-ci visait un wrapper disparu à la migration Bootstrap, ne
+// trouvait plus rien, et le picker restait affiché en mode GC/transparent.
 function updateFlashColorPickerVisibility() {
     if (!cpFlashColor) return;
-    const container = cpFlashColor.closest('.input-field') || cpFlashColor.parentElement;
+    const container = cpFlashColor.parentElement;
     if (!container) return;
     container.style.display = pkg.options?.flash?.color_type === 'fix' ? 'block' : 'none';
 }
@@ -4179,7 +4166,6 @@ function initCssAssistant() {
             }
         }
 
-        try { /* M.updateTextFields() — removed (Bootstrap 5 handles labels) */ } catch(_) {}
         setBadgeCount(new Set(unmanaged.concat(unmanagedExtra)).size);
     }
 
@@ -4655,13 +4641,14 @@ function updateControlBar() {
         // Icône Tabler selon l'état (même correctif que le bouton plein écran :
         // l'ancien textContent Material 'play_arrow'/'pause' s'affichait en toutes
         // lettres sur l'élément .ti).
+        // .green est stylé dans theme.css ; l'état « en cours » garde le fond
+        // d'accent par défaut des boutons (les anciennes classes 'yellow' /
+        // 'darken-2' venaient de Materialize et ne stylaient plus rien).
         if (isPaused) {
             btnPauseBar.classList.add('green');
-            btnPauseBar.classList.remove('yellow', 'darken-2');
             if (icon) { icon.classList.add('ti-player-play'); icon.classList.remove('ti-player-pause'); }
         } else {
             btnPauseBar.classList.remove('green');
-            btnPauseBar.classList.add('yellow', 'darken-2');
             if (icon) { icon.classList.add('ti-player-pause'); icon.classList.remove('ti-player-play'); }
         }
     }
