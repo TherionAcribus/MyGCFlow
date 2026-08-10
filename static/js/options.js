@@ -1,6 +1,6 @@
 import * as pkg from './index.js';
 import { CONFIG } from './init.js';
-import { showLoadingToast, showSuccess, showError, showInfo, showWarning } from './notifications.js';
+import { showSuccess, showError, showWarning } from './notifications.js';
 import { getBsModal } from './ui_bootstrap.js';
 
 // Flag de debug local (cf. DEBUG_MAPGL dans mapgl.js).
