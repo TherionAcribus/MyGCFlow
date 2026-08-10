@@ -3,11 +3,19 @@
     <i class="ti ti-device-floppy me-1" aria-hidden="true"></i>{{ _("Réglages d'enregistrement") }}{{ global_scope_badge() }}
     <span class="d-block mt-1">{{ _("Enregistrés automatiquement avec les préférences de l'application, pas dans le profil.") }}</span>
 </p>
+{# Les icônes d'aide portent `tabindex="0"` : sans lui, leur infobulle n'existait
+   qu'au survol de la souris, donc pas pour qui navigue au clavier. Le déclencheur
+   par défaut de Bootstrap étant « hover focus », la tabulation suffit à l'afficher,
+   et Bootstrap pose alors `aria-describedby` pour l'annoncer.
+
+   Pas d'`aria-label` sur ces icônes : elles sont à l'intérieur du <label for=…>
+   du champ, et un nom accessible sur un descendant entrerait dans le calcul du
+   nom du champ lui-même (« FPS » deviendrait « FPS Aide »). #}
 <div class="row g-2">
     <div class="mb-3 col-12 col-md-6">
         <label for="selectRecordMode" class="form-label">
             {{ _("Mode d'enregistrement") }}
-            <i class="ti ti-help ms-1" data-bs-toggle="tooltip" data-bs-title="{{ _('MediaRecorder : enregistrement direct en WebM côté navigateur, rapide et léger. Images + ffmpeg : capture d\'images puis assemblage côté serveur, plus flexible mais plus lent') }}"></i>
+            <i class="ti ti-help ms-1" tabindex="0" data-bs-toggle="tooltip" data-bs-title="{{ _('MediaRecorder : enregistrement direct en WebM côté navigateur, rapide et léger. Images + ffmpeg : capture d\'images puis assemblage côté serveur, plus flexible mais plus lent') }}"></i>
         </label>
         <select id="selectRecordMode" class="form-select">
             <option value="mediarecorder">{{ _("MediaRecorder .webm (client)") }}</option>
@@ -30,7 +38,7 @@
             <div class="mb-3 col-6 col-md-3">
                 <label for="inputRecordFps" class="form-label">
                     {{ _("FPS") }}
-                    <i class="ti ti-help ms-1" data-bs-toggle="tooltip" data-bs-title="{{ _('Nombre d\'images capturées par seconde. Les valeurs élevées demandent davantage de puissance ; à bitrate constant, elles ne doublent pas automatiquement la taille du fichier.') }}"></i>
+                    <i class="ti ti-help ms-1" tabindex="0" data-bs-toggle="tooltip" data-bs-title="{{ _('Nombre d\'images capturées par seconde. Les valeurs élevées demandent davantage de puissance ; à bitrate constant, elles ne doublent pas automatiquement la taille du fichier.') }}"></i>
                 </label>
                 <input id="inputRecordFps" type="number" min="1" max="60" step="1" inputmode="numeric" required class="form-control" aria-describedby="recordFpsHelp recordFpsError">
                 <div id="recordFpsError" class="invalid-feedback">{{ _("Valeur autorisée : de 1 à 60 FPS.") }}</div>
@@ -39,7 +47,7 @@
             <div class="mb-3 col-6 col-md-3">
                 <label for="inputRecordBitrate" class="form-label">
                     {{ _("Bitrate vidéo (Mbps)") }}
-                    <i class="ti ti-help ms-1" data-bs-toggle="tooltip" data-bs-title="{{ _('Débit vidéo cible. Une valeur élevée améliore la netteté mais augmente directement la taille du fichier. La valeur réellement utilisée peut dépendre du navigateur et du codec.') }}"></i>
+                    <i class="ti ti-help ms-1" tabindex="0" data-bs-toggle="tooltip" data-bs-title="{{ _('Débit vidéo cible. Une valeur élevée améliore la netteté mais augmente directement la taille du fichier. La valeur réellement utilisée peut dépendre du navigateur et du codec.') }}"></i>
                 </label>
                 <input id="inputRecordBitrate" type="number" min="1" max="30" step="1" inputmode="numeric" required class="form-control" aria-describedby="recordBitrateHelp recordBitrateError">
                 <div id="recordBitrateError" class="invalid-feedback">{{ _("Valeur autorisée : de 1 à 30 Mbps.") }}</div>
@@ -48,21 +56,21 @@
             <div class="mb-3 col-6 col-md-3">
                 <label for="inputRecordSlowdown" class="form-label">
                     {{ _("Ralentir par (x)") }}
-                    <i class="ti ti-help ms-1" data-bs-toggle="tooltip" data-bs-title="{{ _('Ralentit la capture pour améliorer la qualité. 2 = capture 2x plus lente (plus de frames par seconde d\'animation). La vidéo finale reste à vitesse normale si "Normaliser la vitesse" est activé.') }}"></i>
+                    <i class="ti ti-help ms-1" tabindex="0" data-bs-toggle="tooltip" data-bs-title="{{ _('Ralentit la capture pour améliorer la qualité. 2 = capture 2x plus lente (plus de frames par seconde d\'animation). La vidéo finale reste à vitesse normale si "Normaliser la vitesse" est activé.') }}"></i>
                 </label>
                 <input id="inputRecordSlowdown" type="number" min="1" step="1" class="form-control" value="1">
             </div>
             <div class="mb-3 col-6 col-md-3">
                 <label for="inputRecordScaleFactor" class="form-label">
                     {{ _("Facteur d'échelle (qualité)") }}
-                    <i class="ti ti-help ms-1" data-bs-toggle="tooltip" data-bs-title="{{ _('Multiplicateur de résolution temporaire. 1.5 = 50% plus grande pendant l\'enregistrement puis réduction. Améliore la netteté des détails fins sans changer la taille finale du fichier') }}"></i>
+                    <i class="ti ti-help ms-1" tabindex="0" data-bs-toggle="tooltip" data-bs-title="{{ _('Multiplicateur de résolution temporaire. 1.5 = 50% plus grande pendant l\'enregistrement puis réduction. Améliore la netteté des détails fins sans changer la taille finale du fichier') }}"></i>
                 </label>
                 <input id="inputRecordScaleFactor" type="number" min="1" max="3" step="0.25" class="form-control">
             </div>
             <div class="mb-3 col-12 col-md-6">
                 <label for="selectRecordMime" class="form-label">
                     {{ _("Format vidéo") }}
-                    <i class="ti ti-help ms-1" data-bs-toggle="tooltip" data-bs-title="{{ _('Codec de compression WebM. VP9 = meilleure qualité/compression, VP8 = compatible avec tous navigateurs, H.264 = format MP4 universel, WebM simple = fallback basique') }}"></i>
+                    <i class="ti ti-help ms-1" tabindex="0" data-bs-toggle="tooltip" data-bs-title="{{ _('Codec de compression WebM. VP9 = meilleure qualité/compression, VP8 = compatible avec tous navigateurs, H.264 = format MP4 universel, WebM simple = fallback basique') }}"></i>
                 </label>
                 <select id="selectRecordMime" class="form-select">
                     <option value="video/webm;codecs=vp9">{{ _("VP9 (recommandé - haute qualité)") }}</option>
@@ -78,21 +86,21 @@
             <input id="cbRecordUpload" class="form-check-input" type="checkbox">
             <label class="form-check-label" for="cbRecordUpload">
                 {{ _("Uploader vers serveur") }}
-                <i class="ti ti-help ms-1" data-bs-toggle="tooltip" data-bs-title="{{ _('Transfère automatiquement la vidéo vers le serveur une fois l\'enregistrement terminé. Utile pour archivage centralisé ou partage avec d\'autres utilisateurs via l\'interface web') }}"></i>
+                <i class="ti ti-help ms-1" tabindex="0" data-bs-toggle="tooltip" data-bs-title="{{ _('Transfère automatiquement la vidéo vers le serveur une fois l\'enregistrement terminé. Utile pour archivage centralisé ou partage avec d\'autres utilisateurs via l\'interface web') }}"></i>
             </label>
         </div>
         <div class="form-check mb-2">
             <input id="cbRecordDownload" class="form-check-input" type="checkbox">
             <label class="form-check-label" for="cbRecordDownload">
                 {{ _("Télécharger local") }}
-                <i class="ti ti-help ms-1" data-bs-toggle="tooltip" data-bs-title="{{ _('Sauvegarde automatiquement la vidéo dans le dossier de téléchargements de votre navigateur une fois l\'enregistrement terminé. Pratique pour archivage local immédiat') }}"></i>
+                <i class="ti ti-help ms-1" tabindex="0" data-bs-toggle="tooltip" data-bs-title="{{ _('Sauvegarde automatiquement la vidéo dans le dossier de téléchargements de votre navigateur une fois l\'enregistrement terminé. Pratique pour archivage local immédiat') }}"></i>
             </label>
         </div>
         <div class="form-check mb-2">
             <input id="cbRecordNormalize" class="form-check-input" type="checkbox">
             <label class="form-check-label" for="cbRecordNormalize">
                 {{ _("Normaliser la vitesse") }}
-                <i class="ti ti-help ms-1" data-bs-toggle="tooltip" data-bs-title="{{ _('Si le ralentissement est > 1, ré-accélère la vidéo finale pour la ramener à vitesse normale. Désactiver pour conserver la vidéo au ralenti.') }}"></i>
+                <i class="ti ti-help ms-1" tabindex="0" data-bs-toggle="tooltip" data-bs-title="{{ _('Si le ralentissement est > 1, ré-accélère la vidéo finale pour la ramener à vitesse normale. Désactiver pour conserver la vidéo au ralenti.') }}"></i>
             </label>
         </div>
     </div>

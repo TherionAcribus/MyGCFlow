@@ -15,15 +15,18 @@
    globaux (static/js/saved_indicator.mjs) et du « • » de l'indicateur de profil
    pour les réglages de profil. #}
 
+{# `tabindex="0"` : l'explication de la pastille n'était accessible qu'au survol.
+   Le texte de la pastille (« Profil » / « Global ») lui sert de nom accessible,
+   et Bootstrap ajoute l'infobulle en description au moment de l'affichage. #}
 {% macro profile_scope_badge() %}
-<span class="gc-scope-badge gc-scope-profile" data-bs-toggle="tooltip"
+<span class="gc-scope-badge gc-scope-profile" tabindex="0" data-bs-toggle="tooltip"
       data-bs-title="{{ _('Réglage du profil actif : appliqué immédiatement, mais conservé seulement après un clic sur « Sauvegarder » dans la section Profils.') }}">
     <i class="ti ti-users" aria-hidden="true"></i>{{ _("Profil") }}
 </span>
 {% endmacro %}
 
 {% macro global_scope_badge() %}
-<span class="gc-scope-badge gc-scope-global" data-bs-toggle="tooltip"
+<span class="gc-scope-badge gc-scope-global" tabindex="0" data-bs-toggle="tooltip"
       data-bs-title="{{ _('Préférence de l\'application : enregistrée automatiquement, indépendamment du profil chargé.') }}">
     <i class="ti ti-world-cog" aria-hidden="true"></i>{{ _("Global") }}
 </span>
