@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-10 17:39+0200\n"
+"POT-Creation-Date: 2026-08-10 19:21+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -324,7 +324,7 @@ msgstr ""
 msgid "Chargement et affichage des points..."
 msgstr ""
 
-#: static/js/bdd.js:1184 static/js/mapgl.js:275 static/js/notifications.js:232
+#: static/js/bdd.js:1184 static/js/mapgl.js:280 static/js/notifications.js:232
 msgid "Affichage des points"
 msgstr ""
 
@@ -336,38 +336,38 @@ msgstr ""
 msgid "Erreur d'affichage"
 msgstr ""
 
-#: static/js/mapgl.js:276
+#: static/js/mapgl.js:281
 msgid "Mise à jour de l'affichage des points..."
 msgstr ""
 
-#: static/js/mapgl.js:371
+#: static/js/mapgl.js:396
 msgid "Sans nom"
 msgstr ""
 
-#: static/js/mapgl.js:372
+#: static/js/mapgl.js:397
 msgid "Trouvé"
 msgstr ""
 
-#: static/js/mapgl.js:372
+#: static/js/mapgl.js:397
 msgid "DNF"
 msgstr ""
 
-#: static/js/mapgl.js:373
+#: static/js/mapgl.js:398
 #, python-brace-format
 msgid "Publié le ${date}"
 msgstr ""
 
-#: static/js/mapgl.js:374
+#: static/js/mapgl.js:399
 #, python-brace-format
 msgid "le ${date}"
 msgstr ""
 
-#: static/js/mapgl.js:1146
+#: static/js/mapgl.js:1176
 #, python-brace-format
 msgid "La capture a été interrompue suite à une erreur : ${message}"
 msgstr ""
 
-#: static/js/mapgl.js:1427
+#: static/js/mapgl.js:1457
 #, python-brace-format
 msgid "Erreur lors du traitement automatique: ${message}"
 msgstr ""
@@ -422,7 +422,7 @@ msgstr ""
 msgid "Erreur: ${message}"
 msgstr ""
 
-#: static/js/profiles.js:308 static/js/profiles.js:1214
+#: static/js/profiles.js:308 static/js/profiles.js:1252
 #, python-brace-format
 msgid "Profil \"${name}\" chargé"
 msgstr ""
@@ -491,11 +491,11 @@ msgstr ""
 msgid "Aucun profil"
 msgstr ""
 
-#: static/js/profiles.js:678 static/js/profiles.js:1947
+#: static/js/profiles.js:678 static/js/profiles.js:1985
 msgid "Dupliquer"
 msgstr ""
 
-#: static/js/profiles.js:679 static/js/profiles.js:1927
+#: static/js/profiles.js:679 static/js/profiles.js:1965
 msgid "Renommer"
 msgstr ""
 
@@ -528,105 +528,105 @@ msgstr ""
 msgid "Modifications non enregistrées"
 msgstr ""
 
-#: static/js/profiles.js:1012
+#: static/js/profiles.js:1050
 #, python-brace-format
 msgid ""
 "Le profil \"${name}\" contient des modifications non enregistrées. Que "
 "voulez-vous faire ?"
 msgstr ""
 
-#: static/js/profiles.js:1013
+#: static/js/profiles.js:1051
 msgid "Vous avez des modifications non enregistrées. Que voulez-vous faire ?"
 msgstr ""
 
-#: static/js/profiles.js:1218
+#: static/js/profiles.js:1256
 msgid "Erreur lors du chargement du profil par défaut"
 msgstr ""
 
-#: static/js/profiles.js:1251
+#: static/js/profiles.js:1289
 msgid "Aucun profil par défaut"
 msgstr ""
 
-#: static/js/profiles.js:1346
+#: static/js/profiles.js:1384
 #, python-brace-format
 msgid "Profil \"${selectedProfile}\" appliqué et défini comme profil par défaut"
 msgstr ""
 
-#: static/js/profiles.js:1347
+#: static/js/profiles.js:1385
 msgid "Aucun profil par défaut défini"
 msgstr ""
 
-#: static/js/profiles.js:1485
+#: static/js/profiles.js:1523
 msgid "Le profil n'a pas pu être chargé : aucun profil n'est actif."
 msgstr ""
 
-#: static/js/profiles.js:1912
+#: static/js/profiles.js:1950
 msgid "Enregistrer dans un nouveau profil"
 msgstr ""
 
-#: static/js/profiles.js:1912 templates/menu_style.html:164
+#: static/js/profiles.js:1950 templates/menu_style.html:164
 msgid "Nouveau profil"
 msgstr ""
 
-#: static/js/profiles.js:1918
+#: static/js/profiles.js:1956
 msgid "Enregistrer le profil"
 msgstr ""
 
-#: static/js/profiles.js:1918 templates/menu_style.html:179
+#: static/js/profiles.js:1956 templates/menu_style.html:179
 msgid "Créer"
 msgstr ""
 
-#: static/js/profiles.js:1925
+#: static/js/profiles.js:1963
 msgid "Renommer le profil"
 msgstr ""
 
-#: static/js/profiles.js:1945
+#: static/js/profiles.js:1983
 msgid "Dupliquer le profil"
 msgstr ""
 
-#: static/js/profiles.js:2001
+#: static/js/profiles.js:2039
 msgid "Le nom doit contenir au moins une lettre ou un chiffre"
 msgstr ""
 
-#: static/js/profiles.js:2023
+#: static/js/profiles.js:2061
 #, python-brace-format
 msgid "« ${conflict} » existe déjà : la copie sera nommée « ${suggested} »"
 msgstr ""
 
-#: static/js/profiles.js:2030
+#: static/js/profiles.js:2068
 #, python-brace-format
 msgid "Un profil nommé « ${name} » existe déjà"
 msgstr ""
 
-#: static/js/profiles.js:2031
+#: static/js/profiles.js:2069
 #, python-brace-format
 msgid ""
 "Ce nom est déjà pris par « ${conflict} » : les deux se réduisent au "
 "fichier « ${key} »"
 msgstr ""
 
-#: static/js/profiles.js:2040
+#: static/js/profiles.js:2078
 #, python-brace-format
 msgid ""
 "Caractères ignorés (${dropped}) : le profil sera enregistré sous « ${key}"
 " »"
 msgstr ""
 
-#: static/js/profiles.js:2098
+#: static/js/profiles.js:2136
 msgid "Veuillez saisir un nom de profil"
 msgstr ""
 
-#: static/js/profiles.js:2157
+#: static/js/profiles.js:2195
 #, python-brace-format
 msgid "Profil renommé en \"${name}\""
 msgstr ""
 
-#: static/js/profiles.js:2171
+#: static/js/profiles.js:2209
 #, python-brace-format
 msgid "Êtes-vous sûr de vouloir supprimer le profil \"${name}\" ?"
 msgstr ""
 
-#: static/js/profiles.js:2190
+#: static/js/profiles.js:2228
 #, python-brace-format
 msgid ""
 "Êtes-vous sûr de vouloir réinitialiser le profil \"${name}\" aux valeurs "
@@ -1136,7 +1136,7 @@ msgid "et la"
 msgstr ""
 
 #: templates/guide.html:160 templates/menu_informations.html:54
-#: templates/menu_informations.html:191
+#: templates/menu_informations.html:194
 msgid "Position"
 msgstr ""
 
@@ -1156,7 +1156,7 @@ msgstr ""
 msgid "N'oubliez pas de cliquer sur"
 msgstr ""
 
-#: templates/guide.html:165 templates/menu_informations.html:241
+#: templates/guide.html:165 templates/menu_informations.html:244
 msgid "Appliquer"
 msgstr ""
 
@@ -1914,7 +1914,7 @@ msgid "Afficher la date"
 msgstr ""
 
 #: templates/menu_informations.html:61 templates/menu_informations.html:149
-#: templates/menu_informations.html:181
+#: templates/menu_informations.html:184
 msgid "Couleur"
 msgstr ""
 
@@ -1928,7 +1928,7 @@ msgstr ""
 
 #: templates/menu_informations.html:73 templates/menu_informations.html:87
 #: templates/menu_informations.html:106 templates/menu_informations.html:141
-#: templates/menu_informations.html:193
+#: templates/menu_informations.html:196
 msgid "Défaut"
 msgstr ""
 
@@ -1956,21 +1956,21 @@ msgstr ""
 msgid "Bordure (px)"
 msgstr ""
 
-#: templates/menu_informations.html:159
+#: templates/menu_informations.html:162
 msgid "Activer"
 msgstr ""
 
-#: templates/menu_informations.html:237
+#: templates/menu_informations.html:240
 msgid ""
 "Copier le style de la cible actuelle vers l'autre cible (Titre → Infos ou"
 " inversement)"
 msgstr ""
 
-#: templates/menu_informations.html:238
+#: templates/menu_informations.html:241
 msgid "Copier vers l'autre"
 msgstr ""
 
-#: templates/menu_informations.html:250 templates/menu_informations.html:252
+#: templates/menu_informations.html:253 templates/menu_informations.html:255
 msgid "Appliquer les Modifications"
 msgstr ""
 

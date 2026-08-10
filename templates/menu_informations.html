@@ -154,9 +154,12 @@
 
         <!-- Panneau Ombre -->
         <div id="gcCssPaneShadow" class="gc-css-pane pt-2">
+            <!-- Libellé en <span> (et non <label for>) : seul le clic sur la case
+                 coche/décoche, pas le clic sur toute la ligne (cf. les radios de
+                 couleur dans menu_points.html / menu_flash.html). -->
             <div class="form-check mb-2">
-                <input class="form-check-input" type="checkbox" id="gcCssBoxShadowEnable">
-                <label class="form-check-label" for="gcCssBoxShadowEnable">{{ _("Activer") }}</label>
+                <input class="form-check-input" type="checkbox" id="gcCssBoxShadowEnable" aria-labelledby="gcCssBoxShadowEnableLabel">
+                <span class="form-check-label" id="gcCssBoxShadowEnableLabel">{{ _("Activer") }}</span>
             </div>
             <div class="row g-2">
                 <div class="col-3">
