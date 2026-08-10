@@ -318,11 +318,12 @@ class ProfileManager {
 
                 // Si on vient de supprimer le profil actif, on bascule sur un profil valide
                 if (this.currentProfile && this.currentProfile.name === name) {
-                    this.currentProfile = null;
-                    // Le profil vient d'être supprimé: les éventuelles modifications non
-                    // sauvegardées le concernant n'ont plus de sens, et ne doivent pas
-                    // redemander une confirmation lors du basculement vers un profil de secours.
-                    this.hasUnsavedChanges = false;
+                    // On repasse tout de suite "sans profil actif" : le profil
+                    // vient d'être supprimé, ses éventuelles modifications non
+                    // sauvegardées n'ont plus de sens (et ne doivent pas faire
+                    // redemander une confirmation au basculement), et l'état est
+                    // celui qui reste affiché si aucun repli n'aboutit.
+                    this._setNoActiveProfile();
 
                     // 1) Tenter le profil par défaut (UUID)
                     try {
@@ -345,8 +346,7 @@ class ProfileManager {
                         }
                     }
 
-                    // 3) Plus aucun profil : rester sans profil actif
-                    this.updateCurrentProfileIndicator();
+                    // 3) Plus aucun profil : on en reste à l'état posé plus haut.
                 }
             }
         } catch (error) {
@@ -645,6 +645,17 @@ class ProfileManager {
         }
     }
 
+    // Repasse dans l'état "aucun profil actif" : indicateur vide, badge ACTIF
+    // retiré de la liste, suivi des modifications éteint (il n'a plus de
+    // référence à comparer). Les réglages en place ne sont pas touchés : ils
+    // restent utilisables, simplement rattachés à aucun profil, et l'utilisateur
+    // peut les enregistrer dans un nouveau profil.
+    _setNoActiveProfile() {
+        this.currentProfile = null;
+        this.hasUnsavedChanges = false;
+        this._updateActiveProfileHighlight();
+    }
+
     // Snapshot des réglages actuels comme référence "sauvegardée" (après chargement/sauvegarde d'un profil)
     _markSaved() {
         this.loadCurrentSettings();
@@ -866,7 +877,10 @@ class ProfileManager {
     }
 
     // Voir loadProfile() pour la convention de retour (true = chargé, false = annulé/erreur).
-    async loadProfileByUid(uid) {
+    // `quiet` supprime le toast d'erreur pour les appelants qui affichent leur
+    // propre message (démarrage : « aucun profil actif »), sans quoi l'échec en
+    // produirait deux d'affilée.
+    async loadProfileByUid(uid, { quiet = false } = {}) {
         if (!await this._confirmDiscardChangesIfNeeded()) return false;
         try {
             dbgProfiles('🔄 [LOAD_PROFILE] Chargement profil par UUID:', uid);
@@ -913,7 +927,7 @@ class ProfileManager {
             return true;
         } catch (error) {
             console.error('❌ [LOAD_PROFILE] Erreur chargement profil par UUID:', error);
-            this.showToast(pkg.t('Erreur lors du chargement du profil par défaut'), 'red');
+            if (!quiet) this.showToast(pkg.t('Erreur lors du chargement du profil par défaut'), 'red');
             return false;
         }
     }
@@ -1054,54 +1068,33 @@ class ProfileManager {
                     switch_checked: document.getElementById('switchIconeVectoriel')?.checked
                 });
 
-                try {
-                    await this.loadProfileByUid(defaultProfileUid);
+                // loadProfileByUid() ne lève pas : il journalise, prévient par un
+                // toast et retourne false. C'est cette valeur qui décide de la
+                // suite, pas un catch (qui ne se déclencherait jamais).
+                const loaded = await this.loadProfileByUid(defaultProfileUid, { quiet: true });
 
-                    dbgProfiles('🎯 [DEFAULT_PROFILE] État après chargement du profil:', {
-                        point_mode: pkg?.options?.point?.mode,
-                        switch_checked: document.getElementById('switchIconeVectoriel')?.checked,
-                        profile_name: this.currentProfile?.name || 'aucun'
-                    });
-                } catch (error) {
-                    console.warn('⚠️ [DEFAULT_PROFILE] Impossible de charger le profil par défaut:', error.message);
-                    dbgProfiles('🎯 [DEFAULT_PROFILE] Tentative de chargement du profil par défaut du système...');
+                dbgProfiles('🎯 [DEFAULT_PROFILE] État après chargement du profil:', {
+                    point_mode: pkg?.options?.point?.mode,
+                    switch_checked: document.getElementById('switchIconeVectoriel')?.checked,
+                    profile_name: this.currentProfile?.name || 'aucun'
+                });
 
-                    // Essayer de charger un profil par défaut du système
-                    try {
-                        await this.loadProfile('Default');
-                        dbgProfiles('✅ [DEFAULT_PROFILE] Profil "Default" chargé comme fallback');
-                    } catch (fallbackError) {
-                        console.error('❌ [DEFAULT_PROFILE] Échec du chargement du profil "Default":', fallbackError.message);
-
-                        // Si même le profil Default n'existe pas, créer un profil temporaire basique
-                        dbgProfiles('🎯 [DEFAULT_PROFILE] Création d\'un profil temporaire basique...');
-                        try {
-                            this.currentProfile = {
-                                name: pkg.t('Profil temporaire'),
-                                uid: 'temp-' + Date.now(),
-                                version: '1.0',
-                                map: {
-                                    tile_provider: 'osm',
-                                    default_center: [0, 0],
-                                    default_zoom: 2
-                                },
-                                points: {
-                                    mode: 'icone'
-                                },
-                                flash: {
-                                    color_type: 'fix'
-                                },
-                                animation: {},
-                                infos: {}
-                            };
-                            await this.applyProfile(this.currentProfile);
-                            this._markSaved();
-                            this.showToast(pkg.t('Profil temporaire chargé (profil par défaut manquant)'), 'orange');
-                        } catch (createError) {
-                            console.error('❌ [DEFAULT_PROFILE] Impossible de créer un profil temporaire:', createError.message);
-                            this.showToast(pkg.t('Erreur lors du chargement du profil par défaut'), 'red');
-                        }
-                    }
+                if (!loaded) {
+                    // Pas de repli sur un profil "Default" ni sur un pseudo-profil
+                    // temporaire : l'un comme l'autre affichaient un profil actif
+                    // que l'utilisateur ne pouvait ni retrouver dans la liste ni
+                    // enregistrer. Le cas "UID orphelin" est d'ailleurs déjà traité
+                    // en amont (get_app_settings() efface la référence morte et
+                    // renvoie default_profile_uid = null), il ne reste donc ici que
+                    // les vraies pannes de lecture, où deviner un profil de secours
+                    // n'apporte rien. On reste sans profil, en le disant.
+                    console.warn('⚠️ [DEFAULT_PROFILE] Profil par défaut non chargé, démarrage sans profil actif');
+                    this._setNoActiveProfile();
+                    this.showToast(
+                        pkg.t('Le profil par défaut n\'a pas pu être chargé : aucun profil n\'est actif.'),
+                        'orange'
+                    );
+                    return;
                 }
 
                 // Vérification finale de cohérence

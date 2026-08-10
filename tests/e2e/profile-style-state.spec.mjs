@@ -367,6 +367,60 @@ test('l\'étoile marque le profil par défaut, indépendamment du profil actif',
 });
 
 
+test('un profil par défaut illisible laisse l\'application sans profil actif', async ({ page }) => {
+  // Réponses serveur simulées : les profils et le réglage "profil par défaut"
+  // vivent dans %APPDATA%\GCMap, hors du runtime isolé des tests.
+  await page.route('**/api/settings', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ default_profile_uid: 'uid-fantome', default_profile_name: 'Fantôme' }),
+  }));
+  // Le profil pointé par le réglage ne répond pas : c'est l'échec de démarrage
+  // qui produisait auparavant un pseudo-profil "temp-<timestamp>", actif à
+  // l'écran mais absent de la liste et impossible à enregistrer.
+  await page.route('**/api/profiles/uid/*', route => route.fulfill({
+    status: 404,
+    contentType: 'application/json',
+    body: JSON.stringify({ error: 'Profile not found' }),
+  }));
+
+  const state = await page.evaluate(async () => {
+    const pm = window.profileManager;
+    pm.profilesList = ['Alpha'];
+    pm.currentProfile = { name: 'Alpha', uid: 'Alpha' };
+    pm.renderProfilesList();
+
+    const indicator = document.getElementById('current-profile-indicator');
+    const before = { indicator: indicator.textContent, badges: document.querySelectorAll('#profiles-list .active-badge').length };
+
+    await pm.loadDefaultProfileAtStartup();
+
+    return {
+      before,
+      currentProfile: pm.currentProfile,
+      hasUnsavedChanges: pm.hasUnsavedChanges,
+      indicator: indicator.textContent,
+      badges: document.querySelectorAll('#profiles-list .active-badge').length,
+    };
+  });
+
+  // Le point de départ : un profil bien actif, pour que l'état d'arrivée ne
+  // puisse pas être confondu avec "rien n'a jamais été affiché".
+  expect(state.before).toEqual({ indicator: 'Alpha', badges: 1 });
+
+  // L'arrivée : aucun profil actif, ni réel ni inventé.
+  expect(state.currentProfile).toBeNull();
+  expect(state.hasUnsavedChanges).toBe(false);
+  expect(state.indicator).toBe('');
+  expect(state.badges).toBe(0);
+
+  // ...et l'utilisateur le sait, par un seul message (le toast d'erreur générique
+  // de loadProfileByUid est tu au profit de celui qui décrit l'état).
+  await expect(page.locator('.gcm-toast-message', { hasText: 'aucun profil n\'est actif' })).toHaveCount(1);
+  await expect(page.locator('.gcm-toast-message', { hasText: 'Erreur lors du chargement du profil par défaut' })).toHaveCount(0);
+});
+
+
 test('dupliquer passe par la modale de nom pré-remplie', async ({ page }) => {
   // Liste posée en mémoire et duplication espionnée : les profils vivent dans
   // %APPDATA%\GCMap, hors du runtime isolé des tests (cf. l'étoile "par défaut").
