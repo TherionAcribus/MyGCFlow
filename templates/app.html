@@ -18,17 +18,23 @@
             })();
         </script>
 
+        <!-- Bibliothèques tierces : servies en local depuis static/vendor/ et non
+             depuis un CDN. GCMap est une application de bureau (Flask lancé en
+             local) qui doit rester utilisable sans connexion : un CDN injoignable
+             casserait toute l'interface (Bootstrap, sélecteurs, carte, datepickers).
+             Versions et procédure de mise à jour : static/vendor/README.md. -->
+
         <!-- Tabler 1.4.0 (inclut Bootstrap 5) — chargé AVANT Materialize
              pour permettre la coexistence pendant la migration template par template.
              Les templates migrés utilisent les classes Tabler/Bootstrap ;
              les templates non migrés conservent Materialize. -->
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.4.0/dist/css/tabler.min.css">
+        <link rel="stylesheet" href="../static/vendor/tabler/tabler.min.css">
         <!-- Tabler Icons (webfont) — remplace progressivement Material Icons -->
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.34.1/dist/tabler-icons.min.css">
+        <link rel="stylesheet" href="../static/vendor/tabler-icons/tabler-icons.min.css">
         <!-- Tom Select 2.x — multi-selects avec checkboxes/recherche/tags -->
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/css/tom-select.bootstrap5.css">
+        <link rel="stylesheet" href="../static/vendor/tom-select/tom-select.bootstrap5.css">
         <!-- Tempus Dominus 6.x — datepickers Bootstrap 5 natif -->
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@eonasdan/tempus-dominus@6.10.4/dist/css/tempus-dominus.min.css">
+        <link rel="stylesheet" href="../static/vendor/tempus-dominus/tempus-dominus.min.css">
 
         <!-- CSS custom GCMap (avant Materialize pour override) -->
         <link rel="stylesheet" href="../static/css/style.css" />
@@ -40,7 +46,7 @@
         <link rel="stylesheet" href="../static/css/theme.css" />
         <link rel="stylesheet" href="../static/css/tabler_theme.css" />
 
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v10.6.0/ol.css">
+        <link rel="stylesheet" href="../static/vendor/ol/ol.css">
         <!--<link rel="stylesheet" href="../static/css/ol.css">-->
 
         <title>{{ _("My Geocaching Map") }}</title>
@@ -152,24 +158,23 @@
         </main>
 
       
-        <!-- HTMX (version épinglée : évite une redirection à chaque chargement de page
-             et une future mise à jour majeure silencieuse et potentiellement cassante) -->
-        <script src="https://unpkg.com/htmx.org@2.0.10/dist/htmx.min.js"></script>
+        <!-- HTMX -->
+        <script src="../static/vendor/htmx/htmx.min.js"></script>
 
         <!-- Tabler JS (inclut Bootstrap 5 bundle — ne pas charger un second bundle Bootstrap) -->
-        <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.4.0/dist/js/tabler.min.js"></script>
+        <script src="../static/vendor/tabler/tabler.min.js"></script>
 
         <!-- Tom Select 2.x (multi-selects) -->
-        <script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/js/tom-select.complete.min.js"></script>
+        <script src="../static/vendor/tom-select/tom-select.complete.min.js"></script>
 
         <!-- Popper.js (requis par Tempus Dominus — doit être chargé avant) -->
-        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+        <script src="../static/vendor/popperjs/popper.min.js"></script>
 
         <!-- Tempus Dominus 6.x (datepickers) -->
-        <script src="https://cdn.jsdelivr.net/npm/@eonasdan/tempus-dominus@6.10.4/dist/js/tempus-dominus.min.js"></script>
+        <script src="../static/vendor/tempus-dominus/tempus-dominus.min.js"></script>
 
         <!-- OpenLayers -->
-        <script src="https://cdn.jsdelivr.net/npm/ol@v10.6.0/dist/ol.js"></script>
+        <script src="../static/vendor/ol/ol.js"></script>
 
         <!-- html2canvas est chargé à la demande (voir loadHtml2Canvas() dans mapgl.js) :
              il ne sert que de repli rare pour la capture d'images pendant l'enregistrement,

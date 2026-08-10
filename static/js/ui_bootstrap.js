@@ -24,7 +24,7 @@
    le bundle tabler.min.js qui inclut Bootstrap 5).
    ===================================================================== */
 
-/* --- Helper pour récupérer l'objet bootstrap (chargé via CDN) ---
+/* --- Helper pour récupérer l'objet bootstrap (servi depuis static/vendor/) ---
    Tabler Core 1.4.0 embarque le bundle Bootstrap 5 mais ne l'expose PAS
    sous window.bootstrap : il le publie sous window.tabler (dont les clés
    sont directement Modal/Tooltip/Dropdown/Tab...) et window.tabler.bootstrap.
@@ -43,7 +43,7 @@ function bs() {
     return candidate;
 }
 
-/* --- Helper pour récupérer Tom Select (chargé via CDN) --- */
+/* --- Helper pour récupérer Tom Select (servi depuis static/vendor/) --- */
 function tsLib() {
     if (typeof window.TomSelect === 'undefined') {
         console.warn('[ui_bootstrap] window.TomSelect indisponible — tom-select.complete.min.js est-il chargé ?');
@@ -52,7 +52,7 @@ function tsLib() {
     return window.TomSelect;
 }
 
-/* --- Helper pour récupérer Tempus Dominus (chargé via CDN) --- */
+/* --- Helper pour récupérer Tempus Dominus (servi depuis static/vendor/) --- */
 function tdLib() {
     // Tempus Dominus expose tempusDominus sur window
     if (typeof window.tempusDominus === 'undefined') {
