@@ -197,6 +197,11 @@ const MAX_DAYS_PER_FRAME = 4;
 let animationRafId = null;
 let animationLastTs = null;
 let animationAccMs = 0;
+// Vrai entre le démarrage d'une animation de prévisualisation et sa fin réelle
+// (arrêt manuel ou dernier jour atteint). Reste vrai pendant une pause, où
+// animationRafId est remis à null alors que la carte n'affiche toujours qu'une
+// partie des points : c'est ce que animationRafId seul ne permet pas de savoir.
+let animationInProgress = false;
 let endTimeout = null;
 // element qui stocke les infos à afficher dans les frames. Sortie de la fonction pour pouvoir les garder en mémoire
 let infos;
@@ -281,8 +286,21 @@ export function refreshPoints(){
         pkg.hidePointsToast();
     }, 1500);
 
+    // Un changement de style ne doit jamais changer QUELS points sont visibles.
+    // Pendant une animation (en cours, en pause ou en enregistrement), la carte
+    // n'affiche que les points déjà « sortis » : repartir de `features` ferait
+    // surgir d'un coup toute la base. On reprend donc le contenu courant de la
+    // source, capturé avant clearMap() — lequel reste indispensable car un layer
+    // WebGLPoints ignore tout nouveau style tant qu'il n'est pas recréé.
+    // Hors animation, la source contient déjà tous les points affichés ; on garde
+    // `features` en repli si elle est vide (source pas encore alimentée).
+    let toDisplay = features || [];
+    if (isAnimationInProgress() && window.vectorSource) {
+        toDisplay = window.vectorSource.getFeatures();
+    }
+
     clearMap();
-    displayWebGLPoints(features || [], pkg.options.point);
+    displayWebGLPoints(toDisplay, pkg.options.point);
 }
 
 
@@ -290,6 +308,13 @@ export function refreshPoints(){
 function isLayerOnMap(map, layerToFind) {
     const layers = map.getLayers().getArray();
     return layers.includes(layerToFind);
+}
+
+// Vrai tant qu'une animation n'a pas déroulé toutes ses dates : lecture en cours,
+// lecture en pause, ou enregistrement (images ou MediaRecorder). Dans ces états,
+// la carte n'affiche qu'un sous-ensemble des points.
+function isAnimationInProgress(){
+    return !!animationInProgress || !!isRecording || !!isMediaRecording;
 }
 
 // Détermine si l'application est au repos (ni animation, ni enregistrement en cours)
@@ -573,6 +598,9 @@ function getCaptureDpr() {
 
 function finalizeAnimationEnd() {
     endTimeout = null;
+    // Toutes les dates ont été déroulées : la carte affiche de nouveau la totalité
+    // des points filtrés, un changement de style peut repartir de `features`.
+    animationInProgress = false;
 
     // Fin RÉELLE de l'animation atteinte. En mode MediaRecorder, c'est ici qu'il
     // faut arrêter le recorder : le setTimeout théorique se désynchronise dès que
@@ -600,6 +628,7 @@ function finalizeAnimationEnd() {
 }
 
 export function startAnimation(restart=false) {
+    animationInProgress = true;
     if (endTimeout) {
         clearTimeout(endTimeout);
         endTimeout = null;
@@ -703,6 +732,7 @@ export function startAnimation(restart=false) {
 export function stopAnimation(){
     // Arrêter l'enregistrement si en cours
     isRecording = false;
+    animationInProgress = false;
     removeCaptureVisibilityGuard();
 
     if (animationRafId) {
