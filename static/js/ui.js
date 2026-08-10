@@ -586,7 +586,13 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
 
     // colorpickers
     cpFlashColor = document.getElementById('flashColor');
-    if (cpFlashColor) cpFlashColor.addEventListener('change', changeFlashValues);
+    if (cpFlashColor) {
+        // 'input' en plus de 'change' : la couleur suit le sélecteur pendant qu'on
+        // le déplace, comme la taille et la durée du flash (elles aussi sur
+        // 'input'), sans attendre la validation de la boîte de dialogue.
+        cpFlashColor.addEventListener('input', changeFlashValues);
+        cpFlashColor.addEventListener('change', changeFlashValues);
+    }
 
     // radio buttons pour les couleurs du flash
     const radioFlashColor = document.getElementsByName('flashColor');
@@ -3729,7 +3735,14 @@ function changeFlashValues(event){
         }
     }
     // colorpickers
-    if (cpFlashColor) pkg.options.flash.color = cpFlashColor.value;
+    // Les styles de flash (flash_styles.js) lisent `rgb`, pas `color` : sans cette
+    // conversion ici, la nouvelle couleur n'était prise en compte qu'au prochain
+    // calcul de `rgb` (démarrage d'animation ou d'enregistrement), contrairement à
+    // la forme, la taille ou la durée qui sont lues telles quelles à chaque frame.
+    if (cpFlashColor) {
+        pkg.options.flash.color = cpFlashColor.value;
+        pkg.options.flash.rgb = pkg.hexToRgb(cpFlashColor.value);
+    }
 
     // Un flash plus long que le gel final étend automatiquement la fin de vidéo.
     // Répercuter immédiatement ce changement dans le total affiché.

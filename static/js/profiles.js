@@ -1902,7 +1902,12 @@ function applyFlashState(flashOptions) {
         if (Number.isFinite(duration)) flash.duration = duration;
         const size = parseInt(flashOptions.size);
         if (Number.isFinite(size)) flash.size = size;
-        if (flashOptions.color) flash.color = flashOptions.color;
+        if (flashOptions.color) {
+            flash.color = flashOptions.color;
+            // Voir changeFlashValues : `rgb` est la forme réellement lue par les
+            // styles de flash, elle doit suivre `color` à chaque écriture.
+            flash.rgb = pkg.hexToRgb(flashOptions.color);
+        }
         // Profils antérieurs au type de couleur : couleur fixe.
         flash.color_type = flashOptions.color_type || 'fix';
 
