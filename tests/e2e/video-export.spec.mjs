@@ -100,9 +100,7 @@ test('les profils vidéo et les bornes corrigent les valeurs excessives', async 
   await page.locator('a[href="#animation"]').click();
   await page.locator('#recordingConfigTab').click();
   await expect(page.locator('#recordingConfigPane')).toBeVisible();
-  await page.evaluate(() => {
-    document.querySelector('#selectRecordMode').tomselect.setValue('mediarecorder');
-  });
+  await page.locator('#selectRecordMode').selectOption('mediarecorder');
 
   const advanced = page.locator('#recordAdvancedSettings');
   if (!(await advanced.evaluate((element) => element.open))) {
@@ -143,22 +141,24 @@ test('les profils vidéo et les bornes corrigent les valeurs excessives', async 
 test('les options MediaRecorder de l\'interface produisent un MP4 validé par ffprobe', async ({ page }, testInfo) => {
   await selectTraditionalCaches(page);
 
-  // Piloter les contrôles visibles comme un utilisateur. Les deux selects sont
-  // gérés par Tom Select, les autres champs par Playwright directement.
+  // Piloter les contrôles visibles comme un utilisateur. Le filtre Type reste un
+  // Tom Select (multi-sélection), mais les selects d'enregistrement sont des
+  // <select> natifs depuis b724def : Playwright les pilote directement.
   await page.locator('a[href="#animation"]').click();
   await page.locator('#inputTimePerDay').fill('80');
   await page.locator('#inputExtraEndTime').fill('0');
   await page.locator('#recordingConfigTab').click();
   await expect(page.locator('#recordingConfigPane')).toBeVisible();
 
-  await page.evaluate(() => {
-    document.querySelector('#selectRecordMode').tomselect.setValue('mediarecorder');
-    document.querySelector('#selectRecordMime').tomselect.setValue('video/webm;codecs=vp8');
-  });
+  await page.locator('#selectRecordMode').selectOption('mediarecorder');
+
+  // Le format vidéo vit dans « Réglages avancés », replié par défaut : il faut
+  // déplier avant de le piloter, un <select> masqué n'étant pas actionnable.
   const advanced = page.locator('#recordAdvancedSettings');
   if (!(await advanced.evaluate((element) => element.open))) {
     await advanced.locator('summary').click();
   }
+  await page.locator('#selectRecordMime').selectOption('video/webm;codecs=vp8');
   await page.locator('#inputRecordFps').fill('12');
   await page.locator('#inputRecordBitrate').fill('1');
   await page.locator('#inputRecordSlowdown').fill('2');
