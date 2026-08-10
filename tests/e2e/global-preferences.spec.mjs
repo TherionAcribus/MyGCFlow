@@ -10,8 +10,8 @@ import { expect, test } from '@playwright/test';
 // (GCMAP_CONFIG_DIR, cf. tests/e2e/run_server.py) : rien ne touche
 // %APPDATA%\GCMap.
 
-async function openReadyApp(page) {
-  await page.goto('/', { waitUntil: 'domcontentloaded' });
+async function openReadyApp(page, url = '/') {
+  await page.goto(url, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.gcmapReady === true);
 
   const firstUse = page.locator('#modal_first_use');
@@ -96,6 +96,89 @@ test('la vérification des mises à jour se règle par interrupteur, dans les de
   // vérification au démarrage ouvre une modale qui intercepte les clics.)
   await toggle.uncheck();
   await expect.poll(async () => (await readServerSettings(page)).check_updates).toBe(false);
+});
+
+
+test('changer de langue recharge la page une fois, sur l\'onglet courant', async ({ page }) => {
+  // Cas courant : l'URL cible ne diffère que par son fragment (#settings). Un
+  // `location.replace()` seul n'y déclencherait aucun rechargement — la page
+  // resterait en français. C'est ce que garantit ce test, en plus du compte de
+  // chargements.
+  await openReadyApp(page);
+  await page.locator('a[href="#settings"]').click();
+
+  let loads = 0;
+  page.on('load', () => { loads += 1; });
+
+  await page.locator('#selectLanguage').selectOption('en');
+
+  // Assertion auto-réessayée : elle ne passe qu'une fois le document retraduit
+  // par le serveur rendu, donc après le rechargement.
+  await expect(page.locator('label[for="selectLanguage"]')).toHaveText('Language choice');
+  // L'onglet ouvert avant le changement est retrouvé après.
+  expect(new URL(page.url()).hash).toBe('#settings');
+  await expect(page.locator('#settings')).toHaveClass(/active/);
+  await expect.poll(async () => (await readServerSettings(page)).language).toBe('en');
+
+  // Laisser largement passer le délai de l'ancien reload de secours avant de
+  // conclure qu'il n'y a bien eu qu'un chargement.
+  await page.waitForTimeout(600);
+  expect(loads).toBe(1);
+
+  // La langue est partagée par toute la série de tests (settings.json du
+  // runtime) : la remettre au français attendu par les autres.
+  await page.evaluate(() => fetch('/api/settings', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ language: 'fr' }),
+  }));
+});
+
+
+test('depuis une URL ?lang=, le rechargement n\'est pas doublé ni annulé', async ({ page }) => {
+  // Le cas que l'ancien code ratait : quand l'URL cible diffère vraiment de
+  // l'URL courante (ici le paramètre ?lang est retiré), `location.replace()`
+  // navigue pour de bon — mais le `location.reload()` de secours programmé
+  // 100 ms plus tard partait quand même. Selon la vitesse du serveur, cela
+  // donnait un second chargement, ou pire : le reload annulait la navigation en
+  // cours et rechargeait l'URL courante, ?lang compris, donc dans l'ancienne
+  // langue. Le rendu est ralenti ci-dessous pour rendre cette course
+  // reproductible.
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await page.evaluate(async () => {
+    localStorage.setItem('selectedLanguage', 'en');
+    localStorage.setItem('activeTab', 'settings');
+    await fetch('/api/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ language: 'en' }),
+    });
+  });
+  await openReadyApp(page, '/?lang=en');
+  await expect(page.locator('label[for="selectLanguage"]')).toHaveText('Language choice');
+
+  await page.route(
+    (url) => url.pathname === '/',
+    async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      await route.continue();
+    },
+  );
+
+  let loads = 0;
+  page.on('load', () => { loads += 1; });
+
+  await page.locator('#selectLanguage').selectOption('fr');
+
+  // La page revient bien en français : c'est la navigation vers l'URL nettoyée
+  // qui aboutit, pas un rechargement de l'URL courante.
+  await expect(page.locator('label[for="selectLanguage"]')).toHaveText('Choix de la langue');
+  const reloaded = new URL(page.url());
+  expect(reloaded.search).toBe('');
+  expect(reloaded.hash).toBe('#settings');
+
+  await page.waitForTimeout(600);
+  expect(loads).toBe(1);
 });
 
 

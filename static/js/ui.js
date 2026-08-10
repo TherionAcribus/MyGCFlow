@@ -1740,10 +1740,22 @@ function reloadWithLanguage(newLanguage) {
         url.hash = activeTab;
     }
 
-    // Recharger avec la nouvelle langue (détectée via cookie/localStorage)
-    window.location.replace(url.toString());
-    // Sécurité : forcer un reload même si l'URL est identique
-    setTimeout(() => window.location.reload(), 100);
+    // Recharger avec la nouvelle langue (détectée via cookie/localStorage).
+    // `location.replace()` seul ne suffit pas : quand seul le fragment change
+    // (cas courant, on ne fait qu'ajouter #onglet), le navigateur se contente
+    // d'une navigation de fragment, sans recharger. D'où l'ancien
+    // `setTimeout(reload, 100)` de secours — qui partait aussi quand la
+    // navigation avait bien eu lieu, et chargeait alors la page deux fois.
+    // On réécrit donc l'URL sans naviguer, puis on recharge : un seul
+    // chargement, quel que soit l'écart entre l'URL courante et la cible.
+    try {
+        window.history.replaceState(null, '', url.toString());
+    } catch (e) {
+        // Réécriture refusée : on recharge quand même, la langue vient du
+        // cookie. Seuls l'onglet mémorisé et le nettoyage de ?lang sont perdus.
+        console.warn('Réécriture de l\'URL impossible avant rechargement:', e);
+    }
+    window.location.reload();
 }
 
 // ----------- ENREGISTREMENT (UI -> options.record) ------------

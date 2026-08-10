@@ -48,6 +48,13 @@ qu'après un clic sur **Sauvegarder**.
   avant le premier octet de CSS, donc avant tout aller-retour réseau.
   `syncThemeFromSettings()` réaligne le miroir sur le serveur au démarrage : sur
   un navigateur neuf, c'est ce qui rend le thème choisi ailleurs.
+- `static/js/ui.js` — `reloadWithLanguage()` : la langue est appliquée par les
+  templates rendus côté serveur, donc son changement impose un rechargement.
+  L'URL cible (paramètre `?lang` retiré, fragment de l'onglet courant ajouté)
+  est posée par `history.replaceState()`, **puis** `location.reload()` recharge.
+  Un `location.replace()` ne conviendrait pas : quand seul le fragment change —
+  le cas courant — le navigateur se contente d'une navigation de fragment et la
+  page reste dans l'ancienne langue.
 - `static/js/ui.js` — `recordSettingsPayload()` / `applyRecordSettingsPayload()`
   traduisent entre `pkg.options.record` (camelCase, bitrate en bits/s) et la
   forme de l'API (snake_case, bitrate en Mbps comme dans l'UI).
