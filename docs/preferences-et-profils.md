@@ -27,7 +27,10 @@ qu'après un clic sur **Sauvegarder**.
   remplace les toasts qui ne couvraient qu'une partie des champs (le centre de
   carte en avait un, la langue et le thème rien du tout). En cas d'échec, il
   affiche « Non enregistré » et **reste affiché** : la valeur n'est pas sur le
-  disque, l'utilisateur doit pouvoir le constater après coup.
+  disque, l'utilisateur doit pouvoir le constater après coup. Un échec ne doit
+  pas non plus mettre à jour le suivi « déjà enregistré » d'un champ : sinon
+  ressaisir la même valeur passerait pour un non-changement et ne repartirait
+  jamais vers le serveur (cf. `lastSavedCenterKey` dans `ui.js`).
 - **Indicateur de profil** (`#current-profile-indicator`) : nom du profil actif,
   suivi d'un « • » tant que des modifications de style ne sont pas enregistrées.
 

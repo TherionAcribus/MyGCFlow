@@ -13,7 +13,7 @@ import {
     recordingQualityProfileFor,
 } from './recording_settings.mjs';
 import { saveSettingsPatch, makeDebouncedSettingsSaver } from './settings_api.mjs';
-import { reportSave } from './saved_indicator.mjs';
+import { reportSave, markSaveError } from './saved_indicator.mjs';
 import { t } from './notifications.js';
 
 // Flag de debug pour les filtres (COUNTRY/FILTER).
@@ -1423,9 +1423,31 @@ function mapCenterIndicatorFields({ centerChanged, zoomChanged }) {
     return fields.filter(Boolean);
 }
 
+// Panne imprévue pendant l'enregistrement du centre/zoom par défaut (DOM
+// incomplet, coordonnée exotique, réseau coupé). Sans ce traitement, le
+// `catch` muet renvoyait `undefined` : l'appelant lisait `ok !== false` comme
+// une réussite et affichait sa confirmation alors que rien n'était parti sur
+// le disque, sans la moindre trace en console pour comprendre après coup.
+function reportMapCenterFailure(e) {
+    console.warn('Erreur sauvegarde du centre/zoom par défaut:', e);
+    // L'indicateur inline désigne les champs concernés ; s'il échoue à son
+    // tour (c'est bien souvent le DOM qui manque), le toast part quand même.
+    // Et si l'affichage entier est hors service, la trace en console reste,
+    // sans relancer d'exception depuis ce qui est déjà un traitement d'erreur.
+    try {
+        mapCenterIndicatorFields({ centerChanged: true, zoomChanged: true }).forEach(f => markSaveError(f));
+    } catch (_) {}
+    try {
+        pkg.showToast && pkg.showToast(t('Enregistrement du centre par défaut impossible'), 'error', t('Carte'), 5000);
+    } catch (_) {}
+    return false;
+}
+
 async function saveMapCenterSettings() {
     try {
-        if (!inputMapCenterLat || !inputMapCenterLon || !inputMapDefaultZoom || !inputMapCenterCombined) return;
+        // `false` et non `undefined` : les appelants distinguent l'échec de la
+        // réussite sur cette seule valeur.
+        if (!inputMapCenterLat || !inputMapCenterLon || !inputMapDefaultZoom || !inputMapCenterCombined) return false;
 
         const patch = {};
         setCoordinateValidity({ latValid: true, lonValid: true, combinedValid: true });
@@ -1501,13 +1523,19 @@ async function saveMapCenterSettings() {
             inputMapCenterCombined.value = `${latStr}, ${lonStr}`;
             setCoordinateValidity({ latValid: true, lonValid: true, combinedValid: true });
         }
-        lastSavedCenterKey = newCenterKey;
-        if (patch.map_default_zoom !== undefined) {
-            lastSavedZoom = patch.map_default_zoom;
+        // Le suivi « déjà enregistré » n'avance que si le serveur a pris la
+        // valeur : sinon un nouvel essai avec les mêmes chiffres passerait pour
+        // inchangé et ne repartirait jamais.
+        if (ok) {
+            lastSavedCenterKey = newCenterKey;
+            if (patch.map_default_zoom !== undefined) {
+                lastSavedZoom = patch.map_default_zoom;
+            }
         }
         /* M.updateTextFields() — removed (Bootstrap 5 handles labels) */
         return ok;
     } catch(e) {
+        return reportMapCenterFailure(e);
     }
 }
 
@@ -1542,13 +1570,18 @@ async function clearMapCenterSettings() {
         if (inputMapDefaultZoom) inputMapDefaultZoom.value = '';
         /* M.updateTextFields() — removed (Bootstrap 5 handles labels) */
         const fields = mapCenterIndicatorFields({ centerChanged: true, zoomChanged: true });
-        await reportSave(fields, saveSettingsPatch({ map_default_center: null, map_default_zoom: null }));
+        const ok = await reportSave(fields, saveSettingsPatch({ map_default_center: null, map_default_zoom: null }));
         // Le suivi "déjà enregistré" doit refléter la remise à zéro, sinon une
         // ressaisie identique à l'ancienne valeur serait considérée inchangée
-        // et ne repartirait pas vers le serveur.
-        lastSavedCenterKey = 'null';
-        lastSavedZoom = null;
+        // et ne repartirait pas vers le serveur. Un effacement refusé par le
+        // serveur ne le met pas à jour : le centre est toujours en place là-bas.
+        if (ok) {
+            lastSavedCenterKey = 'null';
+            lastSavedZoom = null;
+        }
+        return ok;
     } catch(e) {
+        return reportMapCenterFailure(e);
     }
 }
 

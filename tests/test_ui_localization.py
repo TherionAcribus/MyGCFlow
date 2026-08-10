@@ -52,6 +52,7 @@ class UiLocalizationTests(unittest.TestCase):
             "Coordonnées invalides. Ex: N 49° 16.029 / E 006° 07.512",
             "Cliquez sur la carte pour choisir le centre",
             "Centre par défaut mis à jour depuis la carte",
+            "Enregistrement du centre par défaut impossible",
             "Aucune destination",
             "Impossible d’ouvrir le dossier vidéo",
             "Erreur lors de l’ouverture du dossier vidéo",

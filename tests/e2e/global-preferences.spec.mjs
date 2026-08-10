@@ -341,6 +341,54 @@ test('le centre de carte par défaut confirme dans le champ au lieu d\'un toast'
 });
 
 
+test('un centre refusé par le serveur est signalé, et la même valeur repart au deuxième essai', async ({ page }) => {
+  // La sauvegarde notait la valeur comme « déjà enregistrée » sans regarder le
+  // résultat : après un refus du serveur, ressaisir les mêmes chiffres passait
+  // pour un non-changement et ne repartait jamais. Le centre restait absent de
+  // settings.json alors que l'utilisateur venait de le retaper.
+  await openReadyApp(page);
+  await page.evaluate(() => fetch('/api/settings', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ map_default_center: null, map_default_zoom: null }),
+  }));
+  await page.locator('a[href="#settings"]').click();
+
+  let refuseWrites = true;
+  await page.route('**/api/settings', async (route) => {
+    if (refuseWrites && route.request().method() === 'PUT') {
+      await route.fulfill({ status: 500, contentType: 'application/json', body: '{"error": "refus simulé"}' });
+      return;
+    }
+    await route.continue();
+  });
+
+  const combined = page.locator('#inputMapCenterCombined');
+  const indicator = page.locator('label[for="inputMapCenterCombined"] .gc-saved-indicator');
+  await combined.fill('45.5, 4.5');
+  await combined.blur();
+
+  // L'échec reste affiché : la valeur n'est PAS sur le disque.
+  await expect(indicator).toHaveClass(/is-error/);
+  expect((await readServerSettings(page)).map_default_center).toBeNull();
+
+  refuseWrites = false;
+  await combined.fill('45.5, 4.5');
+  await combined.blur();
+
+  await expect(indicator).toHaveClass(/is-saved/);
+  await expect.poll(async () => (await readServerSettings(page)).map_default_center)
+    .toEqual([4.5, 45.5]);
+
+  await page.unroute('**/api/settings');
+  await page.evaluate(() => fetch('/api/settings', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ map_default_center: null, map_default_zoom: null }),
+  }));
+});
+
+
 test('« Utiliser la vue actuelle » enregistre le centre dans les deux modes de saisie', async ({ page }) => {
   // Le bouton ne remplissait que les champs Latitude/Longitude. Dans le mode
   // par défaut (champ combiné), la sauvegarde lit le champ combiné resté vide :
