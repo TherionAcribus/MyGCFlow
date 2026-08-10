@@ -313,7 +313,10 @@ def api_duplicate_profile(name: str):
 
 @profiles_bp.route('/api/profiles/<name>', methods=['DELETE'])
 def api_delete_profile(name: str):
-    settings_manager.delete_profile(name)
+    try:
+        settings_manager.delete_profile(name)
+    except FileNotFoundError as e:
+        return jsonify({'success': False, 'message': str(e)}), 404
     return jsonify({'success': True})
 
 

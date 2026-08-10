@@ -50,7 +50,7 @@ L'application expose une API REST pour la gestion des profils :
 - `POST /api/profiles` : crée un nouveau profil
 - `PUT /api/profiles/<nom>` : sauvegarde un profil
 - `POST /api/profiles/<nom>/duplicate` : duplique un profil
-- `DELETE /api/profiles/<nom>` : supprime un profil
+- `DELETE /api/profiles/<nom>` : supprime un profil (404 si le profil n'existe pas)
 - `POST /api/profiles/<nom>/reset` : réinitialise un profil
 
 #### Exemple d'utilisation

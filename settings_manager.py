@@ -1183,10 +1183,15 @@ class SettingsManager:
         return prof
 
     def delete_profile(self, name: str) -> None:
+        # Une suppression sur un profil absent est signalée (comme load_profile
+        # et rename_profile) : sans cela l'appelant croit avoir supprimé un
+        # profil qui n'a jamais existé, ce qui masque une désynchronisation
+        # entre la liste affichée et le disque.
         path = self._profile_path(name)
-        if path.exists():
-            path.unlink()
-            self._invalidate_profile_cache()
+        if not path.exists():
+            raise FileNotFoundError(f"Profil '{name}' introuvable")
+        path.unlink()
+        self._invalidate_profile_cache()
 
     def reset_profile(self, name: str) -> None:
         self.save_profile(MapProfile(name=name))

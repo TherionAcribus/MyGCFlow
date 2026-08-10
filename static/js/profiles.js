@@ -350,7 +350,11 @@ class ProfileManager {
                 }
             }
         } catch (error) {
+            // Le serveur répond 404 si le profil n'existe plus : la liste
+            // affichée est désynchronisée du disque, on la refetch pour que
+            // l'entrée fantôme disparaisse au lieu de rester cliquable.
             console.error('Erreur suppression profil:', error);
+            await this.loadProfilesList();
         }
     }
 
