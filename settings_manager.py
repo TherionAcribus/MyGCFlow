@@ -92,6 +92,14 @@ class RecordingSettings:
     décrivent la machine et le navigateur de l'utilisateur, pas le style de la
     carte. Stockés côté serveur pour survivre à un changement de navigateur ou
     à un vidage du cache (l'ancien stockage était localStorage seul).
+
+    Ces valeurs par défaut doivent rester identiques à celles de
+    static/json/defaultValues.json : tant que `recording_configured` est faux,
+    c'est le fichier JSON que le client applique, sans lire celles-ci. Une
+    divergence est donc invisible côté serveur mais visible à l'écran — c'est ce
+    qui laissait un nouvel utilisateur sur le mode « images » avec tous les
+    réglages MediaRecorder masqués. Un test verrouille l'égalité
+    (RecordingDefaultsMatchTheClientTests).
     """
     mode: str = "mediarecorder"  # "mediarecorder" | "images"
     fps: int = 30

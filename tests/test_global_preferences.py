@@ -1,3 +1,4 @@
+import json
 import shutil
 import tempfile
 import unittest
@@ -8,6 +9,7 @@ from flask import Flask
 
 import settings_manager
 from settings_manager import (
+    RecordingSettings,
     SettingsManager,
     coerce_map_center,
     coerce_recording_settings,
@@ -46,6 +48,41 @@ class RecordingCoercionTests(unittest.TestCase):
 
     def test_garbage_payload_yields_defaults(self):
         self.assertEqual(coerce_recording_settings(None), coerce_recording_settings({}))
+
+
+class RecordingDefaultsMatchTheClientTests(unittest.TestCase):
+    """Défauts vidéo du serveur et du client, qui doivent coïncider.
+
+    Tant que `recording_configured` est faux, le client n'applique pas les
+    réglages du serveur : il garde ceux de static/json/defaultValues.json. Une
+    divergence ne se voit donc que dans l'interface. C'est ainsi que le mode
+    d'enregistrement s'affichait « Images + ffmpeg » chez tout nouvel
+    utilisateur — le JSON disait "images", le serveur "mediarecorder" — et que
+    les blocs `.mediarecorder-only` (qualité, réglages avancés, cases à cocher)
+    restaient masqués.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        path = Path(__file__).resolve().parents[1] / "static" / "json" / "defaultValues.json"
+        cls.client_record = json.loads(path.read_text(encoding="utf-8"))["record"]
+
+    def test_the_recording_mode_is_the_same_on_both_sides(self):
+        self.assertEqual(self.client_record["mode"], RecordingSettings().mode)
+
+    def test_the_shared_recording_defaults_are_the_same_on_both_sides(self):
+        # Seuls les champs décrits des deux côtés : scale_factor et les réglages
+        # audio n'ont pas d'équivalent dans le JSON client.
+        server = RecordingSettings()
+        media = self.client_record["mediaRecorder"]
+
+        self.assertEqual(self.client_record["fps"], server.fps)
+        self.assertEqual(media["mimeType"], server.mime_type)
+        self.assertEqual(media["videoBitsPerSecond"] / 1_000_000, server.bitrate_mbps)
+        self.assertEqual(media["slowdownFactor"], server.slowdown_factor)
+        self.assertEqual(media["uploadToServer"], server.upload_to_server)
+        self.assertEqual(media["downloadLocal"], server.download_local)
+        self.assertEqual(media["offlineNormalization"], server.offline_normalization)
 
 
 class ThemeCoercionTests(unittest.TestCase):

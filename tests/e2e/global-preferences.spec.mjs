@@ -99,6 +99,39 @@ test('la vérification des mises à jour se règle par interrupteur, dans les de
 });
 
 
+test('sans réglages vidéo enregistrés, l\'onglet ouvre quand même sur le mode MediaRecorder', async ({ page }) => {
+  // L'état d'une installation neuve. Le client n'applique les réglages du
+  // serveur qu'une fois `recording_configured` vrai : avant cela il garde ceux
+  // de defaultValues.json, qui annonçait "images". Le mode affiché était donc
+  // faux et tous les blocs `.mediarecorder-only` restaient masqués.
+  await openReadyApp(page);
+  await page.evaluate(async () => {
+    await fetch('/api/settings/reset', { method: 'POST' });
+    // Le reset remet check_updates à true, dont la modale de changelog
+    // intercepterait les clics au rechargement.
+    await fetch('/api/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ check_updates: false }),
+    });
+  });
+  // Sans cela, d'anciens réglages en localStorage seraient repris et
+  // marqueraient les préférences comme configurées.
+  await page.evaluate(() => localStorage.clear());
+  await openReadyApp(page);
+
+  expect((await readServerSettings(page)).recording_configured).toBe(false);
+
+  await page.locator('a[href="#animation"]').click();
+  await page.locator('#recordingConfigTab').click();
+
+  await expect(page.locator('#selectRecordMode')).toHaveValue('mediarecorder');
+  // Les réglages MediaRecorder doivent être atteignables, pas masqués.
+  await expect(page.locator('#recordAdvancedSettings summary')).toBeVisible();
+  await expect(page.locator('#selectRecordQualityProfile')).toBeVisible();
+});
+
+
 test('les réglages d\'enregistrement partent vers le serveur et confirment le champ modifié', async ({ page }) => {
   await openReadyApp(page);
   await page.locator('a[href="#animation"]').click();
