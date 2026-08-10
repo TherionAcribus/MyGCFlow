@@ -26,6 +26,40 @@ function extractCssDeclarations(css) {
     return text.trim();
 }
 
+// Miroir de `SettingsManager._profile_path` côté serveur : le fichier d'un
+// profil ne conserve du nom que les caractères alphanumériques, '-' et '_'.
+// Deux noms qui se réduisent à la même clé partagent donc le même fichier
+// (« Mon Profil » et « MonProfil » se marchent dessus), collision que la modale
+// doit rendre visible avant l'envoi plutôt que de la laisser remonter en 409.
+//
+// `\p{L}\p{N}` reproduit `str.isalnum()` de Python : lettres et nombres Unicode,
+// accents compris (ceux-ci sont conservés, seuls ponctuation, espaces et
+// symboles tombent). L'itération porte sur les code points, comme côté serveur.
+const PROFILE_NAME_KEPT_CHAR = /[\p{L}\p{N}]/u;
+
+function isProfileNameCharKept(ch) {
+    return ch === '-' || ch === '_' || PROFILE_NAME_KEPT_CHAR.test(ch);
+}
+
+// Clé de fichier d'un nom de profil. Contrairement au serveur, pas de repli sur
+// « Default » : une clé vide est une saisie à refuser, pas un nom par défaut à
+// écrire par-dessus un profil existant.
+function profileNameKey(name) {
+    return [...String(name ?? '')].filter(isProfileNameCharKept).join('');
+}
+
+// Caractères que la sanitization laissera tomber, dédupliqués et dans l'ordre de
+// saisie, pour pouvoir les citer à l'utilisateur. L'espace est rendu par un
+// libellé : affiché tel quel dans le message, il serait invisible.
+function droppedProfileNameChars(name) {
+    const dropped = [];
+    for (const ch of String(name ?? '')) {
+        if (isProfileNameCharKept(ch) || dropped.includes(ch)) continue;
+        dropped.push(ch);
+    }
+    return dropped.map(ch => (/\s/.test(ch) ? pkg.t('espace') : ch)).join(' ');
+}
+
 class ProfileManager {
     constructor() {
         this.currentProfile = null;
@@ -87,6 +121,12 @@ class ProfileManager {
         // Modal de création/renommage
         document.getElementById('btn-confirm-profile')?.addEventListener('click', () => {
             this.confirmProfileAction();
+        });
+
+        // Validation à la frappe : nom déjà pris ou caractères que la sanitization
+        // du nom de fichier laissera tomber, signalés avant l'envoi au serveur.
+        document.getElementById('profile-name-input')?.addEventListener('input', () => {
+            this._updateProfileNameFeedback();
         });
 
         // Modal de suppression
@@ -1398,6 +1438,11 @@ class ProfileManager {
         // mauvais profil.
         confirmBtn.dataset.originalName = originalName;
 
+        // Diagnostic posé dès l'ouverture : il désactive le bouton sur un champ
+        // vide (« Nouveau profil ») et signale d'emblée une suggestion de
+        // duplication qui contiendrait des caractères ignorés.
+        this._updateProfileNameFeedback();
+
         showBsModal(modal);
         // Un nom pré-rempli est sélectionné plutôt que simplement focalisé :
         // il vaut proposition, une frappe doit suffire à le remplacer.
@@ -1439,17 +1484,112 @@ class ProfileManager {
     }
 
     // Nom pré-rempli pour une duplication : "X_copy", puis "X_copy (1)"... tant
-    // que le nom est déjà pris. Même convention de suffixe que la résolution de
-    // collision du serveur (_generate_unique_name), pour que la suggestion
-    // corresponde au nom qui sera réellement créé.
+    // que le nom est déjà pris.
     _suggestDuplicateName(profileName) {
-        const taken = new Set(this.profilesList || []);
-        const base = `${profileName}_copy`;
-        if (!taken.has(base)) return base;
+        return this._generateUniqueName(`${profileName}_copy`);
+    }
+
+    // Miroir de `_generate_unique_name` côté serveur : suffixe " (n)" tant que le
+    // nom est pris, pour que la suggestion et l'annonce faite à l'utilisateur
+    // correspondent au nom qui sera réellement créé. La comparaison porte sur la
+    // clé de fichier, comme `_name_exists` : "Mon Profil" occupe aussi "MonProfil".
+    _generateUniqueName(baseName) {
+        const taken = new Set((this.profilesList || []).map(profileNameKey));
+        if (!taken.has(profileNameKey(baseName))) return baseName;
         for (let idx = 1; ; idx++) {
-            const candidate = `${base} (${idx})`;
-            if (!taken.has(candidate)) return candidate;
+            const candidate = `${baseName} (${idx})`;
+            if (!taken.has(profileNameKey(candidate))) return candidate;
         }
+    }
+
+    // Diagnostic du nom saisi dans la modale, indépendant du DOM pour rester
+    // testable. Retourne { valid, level, message } :
+    //   - level 'error'   : le serveur refuserait (ou écraserait) — on bloque ;
+    //   - level 'warning' : l'action aboutira mais pas sous le nom saisi tel quel ;
+    //   - level 'none'    : rien à signaler.
+    // `valid` pilote l'activation du bouton de confirmation.
+    _validateProfileName(rawValue, action = 'create', originalName = '') {
+        const name = String(rawValue ?? '').trim();
+        // Champ vide : pas encore une erreur à afficher, mais rien à valider non plus.
+        if (!name) return { valid: false, level: 'none', message: '' };
+
+        const key = profileNameKey(name);
+        if (!key) {
+            return {
+                valid: false,
+                level: 'error',
+                message: pkg.t('Le nom doit contenir au moins une lettre ou un chiffre'),
+            };
+        }
+
+        // Renommer vers un nom qui retombe sur le fichier du profil lui-même est
+        // permis (renommage cosmétique), comme `is_name_available(exclude_uid=)`.
+        const conflict = (this.profilesList || []).find(existing => (
+            !(action === 'rename' && existing === originalName) && profileNameKey(existing) === key
+        ));
+
+        if (conflict) {
+            if (action === 'duplicate') {
+                // Le serveur résout lui-même la collision en suffixant : inutile de
+                // bloquer, mais l'utilisateur doit savoir sous quel nom il atterrit.
+                const suggested = this._generateUniqueName(name);
+                return {
+                    valid: true,
+                    level: 'warning',
+                    message: pkg.t('« ${conflict} » existe déjà : la copie sera nommée « ${suggested} »', { conflict, suggested }),
+                };
+            }
+            return {
+                valid: false,
+                level: 'error',
+                message: conflict === name
+                    ? pkg.t('Un profil nommé « ${name} » existe déjà', { name })
+                    : pkg.t('Ce nom est déjà pris par « ${conflict} » : les deux se réduisent au fichier « ${key} »', { conflict, key }),
+            };
+        }
+
+        const dropped = droppedProfileNameChars(name);
+        if (dropped) {
+            return {
+                valid: true,
+                level: 'warning',
+                message: pkg.t('Caractères ignorés (${dropped}) : le profil sera enregistré sous « ${key} »', { dropped, key }),
+            };
+        }
+
+        return { valid: true, level: 'none', message: '' };
+    }
+
+    // Applique le diagnostic au DOM de la modale et retourne le résultat, pour que
+    // l'appelant (saisie ou confirmation) puisse décider sur la même base.
+    _updateProfileNameFeedback() {
+        const input = document.getElementById('profile-name-input');
+        const confirmBtn = document.getElementById('btn-confirm-profile');
+        const feedback = document.getElementById('profile-name-feedback');
+        if (!input || !confirmBtn) return null;
+
+        const result = this._validateProfileName(
+            input.value,
+            confirmBtn.dataset.action,
+            confirmBtn.dataset.originalName || '',
+        );
+
+        const isError = result.level === 'error';
+        input.classList.toggle('is-invalid', isError);
+        input.setAttribute('aria-invalid', isError ? 'true' : 'false');
+        confirmBtn.disabled = !result.valid;
+
+        if (feedback) {
+            feedback.textContent = result.message;
+            // `invalid-feedback` seul reste masqué tant que Bootstrap ne voit pas
+            // l'input en `.is-invalid` au moment du rendu : `d-block` force son
+            // affichage. Sans message, la ligne est retirée du flux pour éviter
+            // que la modale ne saute d'une hauteur de ligne à chaque frappe.
+            feedback.className = isError ? 'invalid-feedback d-block'
+                : result.message ? 'form-text text-warning'
+                : 'form-text d-none';
+        }
+        return result;
     }
 
     confirmProfileAction() {
@@ -1457,8 +1597,12 @@ class ProfileManager {
         const confirmBtn = document.getElementById('btn-confirm-profile');
         const name = input.value.trim();
 
-        if (!name) {
-            this.showToast(pkg.t('Veuillez saisir un nom de profil'), 'orange');
+        // Re-validation au moment du clic : le bouton est déjà désactivé dans ce
+        // cas, mais la liste des profils a pu être rafraîchie depuis la dernière
+        // frappe (import, création dans un autre onglet).
+        const check = this._updateProfileNameFeedback();
+        if (check && !check.valid) {
+            if (!name) this.showToast(pkg.t('Veuillez saisir un nom de profil'), 'orange');
             return;
         }
 

@@ -169,6 +169,14 @@ class MapProfile:
     infos: InfosOptions = field(default_factory=InfosOptions)
 
 
+class InvalidProfileNameError(ValueError):
+    """Nom de profil inutilisable (vide une fois réduit au nom de fichier).
+
+    Sous-classe de ValueError pour rester attrapée par le code existant, mais
+    distincte pour que l'API réponde 400 (saisie invalide) plutôt que 404/409.
+    """
+
+
 def _to_int(value, default: int) -> int:
     try:
         return int(value)
@@ -1046,9 +1054,33 @@ class SettingsManager:
         self.save_app_settings(AppSettings(examples_seeded=current.examples_seeded))
 
     # Profiles
+    @staticmethod
+    def _profile_file_key(name: str) -> str:
+        """Nom de fichier (sans extension) correspondant à un nom de profil.
+
+        Ne conserve que les caractères alphanumériques, '-' et '_' : deux noms qui
+        se réduisent à la même clé partagent le même fichier ("Mon Profil" et
+        "MonProfil"). La modale de nom reproduit cette règle pour montrer la
+        collision à la saisie (cf. profileNameKey() dans static/js/profiles.js).
+
+        Peut être vide : c'est à l'appelant de refuser un tel nom (voir
+        _require_valid_profile_name) plutôt que de le laisser retomber sur un
+        fichier générique qui écraserait un profil existant.
+        """
+        return "".join(c for c in name if c.isalnum() or c in ("-", "_"))
+
+    def _require_valid_profile_name(self, name: str) -> str:
+        """Valide un nom fourni par l'utilisateur et retourne sa forme nettoyée."""
+        name = (name or "").strip()
+        if not self._profile_file_key(name):
+            raise InvalidProfileNameError(
+                f"Le nom '{name}' ne contient aucun caractère utilisable "
+                "(au moins une lettre ou un chiffre est nécessaire)"
+            )
+        return name
+
     def _profile_path(self, name: str) -> Path:
-        safe = "".join(c for c in name if c.isalnum() or c in ("-", "_")) or "Default"
-        return PROFILES_DIR / f"{safe}.json"
+        return PROFILES_DIR / f"{self._profile_file_key(name) or 'Default'}.json"
 
     def list_profiles(self) -> List[str]:
         """Retourne la liste des noms de profils (pas les noms de fichiers)"""
@@ -1105,6 +1137,7 @@ class SettingsManager:
         return read_json(path).get("uid") == exclude_uid
 
     def create_profile(self, name: str, base: Optional[str] = None) -> MapProfile:
+        name = self._require_valid_profile_name(name)
         if not self.is_name_available(name):
             raise ValueError(f"Un profil nommé '{name}' existe déjà")
         if base and self._profile_path(base).exists():
@@ -1126,6 +1159,7 @@ class SettingsManager:
         if not old_path.exists():
             raise FileNotFoundError(f"Profil '{old_name}' introuvable")
 
+        new_name = self._require_valid_profile_name(new_name)
         prof = coerce_profile(read_json(old_path))
         if new_name != prof.name and not self.is_name_available(new_name, exclude_uid=prof.uid):
             raise ValueError(f"Un profil nommé '{new_name}' existe déjà")
@@ -1141,6 +1175,7 @@ class SettingsManager:
     def duplicate_profile(self, name: str, new_name: str) -> MapProfile:
         if not self._profile_path(name).exists():
             raise ValueError(f"Profil source '{name}' introuvable")
+        new_name = self._require_valid_profile_name(new_name)
         prof = self.load_profile(name)
         prof.name = self._generate_unique_name(new_name)
         prof.uid = uuid.uuid4().hex

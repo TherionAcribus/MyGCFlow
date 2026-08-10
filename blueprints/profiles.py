@@ -4,6 +4,7 @@ from flask import Blueprint, jsonify, request, current_app
 
 from settings_manager import (
     AppSettings,
+    InvalidProfileNameError,
     coerce_overlay_title,
     get_settings_manager,
     sanitize_overlay_css,
@@ -131,6 +132,8 @@ def api_create_profile():
     base = data.get('base')
     try:
         prof = settings_manager.create_profile(name, base)
+    except InvalidProfileNameError as e:
+        return jsonify({'success': False, 'message': str(e)}), 400
     except ValueError as e:
         return jsonify({'success': False, 'message': str(e)}), 409
     return jsonify({'success': True, 'name': prof.name})
@@ -288,6 +291,8 @@ def api_rename_profile(name: str):
         prof = settings_manager.rename_profile(name, new_name)
     except FileNotFoundError as e:
         return jsonify({'success': False, 'message': str(e)}), 404
+    except InvalidProfileNameError as e:
+        return jsonify({'success': False, 'message': str(e)}), 400
     except ValueError as e:
         return jsonify({'success': False, 'message': str(e)}), 409
     return jsonify({'success': True, 'name': prof.name, 'uid': prof.uid})
@@ -299,6 +304,8 @@ def api_duplicate_profile(name: str):
     new_name = data.get('new_name') or f"{name}_copy"
     try:
         prof = settings_manager.duplicate_profile(name, new_name)
+    except InvalidProfileNameError as e:
+        return jsonify({'success': False, 'message': str(e)}), 400
     except ValueError as e:
         return jsonify({'success': False, 'message': str(e)}), 404
     return jsonify({'success': True, 'name': prof.name})

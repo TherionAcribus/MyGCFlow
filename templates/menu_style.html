@@ -163,7 +163,11 @@
                                         <div class="modal-body">
                                             <div class="mb-3">
                                                 <label for="profile-name-input" class="form-label">{{ _("Nom du profil") }}</label>
-                                                <input type="text" id="profile-name-input" maxlength="50" class="form-control" placeholder="{{ _('Nom du profil') }}">
+                                                <input type="text" id="profile-name-input" maxlength="50" class="form-control" placeholder="{{ _('Nom du profil') }}" aria-describedby="profile-name-feedback" autocomplete="off">
+                                                <!-- Diagnostic live du nom saisi (nom déjà pris, caractères
+                                                     ignorés par la sanitization du fichier). Le texte et les
+                                                     classes sont posés par _updateProfileNameFeedback(). -->
+                                                <div id="profile-name-feedback" class="form-text d-none" aria-live="polite"></div>
                                             </div>
                                         </div>
                                         <div class="modal-footer">

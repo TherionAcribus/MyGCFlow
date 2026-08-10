@@ -431,6 +431,84 @@ test('dupliquer passe par la modale de nom pré-remplie', async ({ page }) => {
 });
 
 
+test('la modale de nom valide la saisie avant l\'envoi au serveur', async ({ page }) => {
+  // Liste posée en mémoire et actions espionnées : les profils vivent dans
+  // %APPDATA%\GCMap, hors du runtime isolé des tests.
+  await page.evaluate(() => {
+    const pm = window.profileManager;
+    pm.profilesList = ['Mon Profil', 'Beta'];
+    pm.currentProfile = null;
+    window.__created = [];
+    pm.createProfile = async (name) => { window.__created.push(name); };
+    pm.duplicateProfile = async () => {};
+    pm.renameProfileProperly = async () => {};
+  });
+
+  const modal = page.locator('#profile-modal');
+  const input = page.locator('#profile-name-input');
+  const feedback = page.locator('#profile-name-feedback');
+  const confirmBtn = page.locator('#btn-confirm-profile');
+
+  await page.evaluate(() => window.profileManager.showNewProfileModal());
+  await expect(modal).toBeVisible();
+
+  // Champ vide : rien à reprocher, mais rien à créer non plus.
+  await expect(confirmBtn).toBeDisabled();
+  await expect(feedback).toBeHidden();
+
+  // 1. Collision invisible : "MonProfil" et "Mon Profil" partagent le fichier
+  // "MonProfil.json". C'est le cas que le serveur ne signalait qu'en 409.
+  await input.fill('MonProfil');
+  await expect(confirmBtn).toBeDisabled();
+  await expect(input).toHaveClass(/is-invalid/);
+  await expect(feedback).toContainText('Mon Profil');
+
+  // 2. Collision franche : le message nomme simplement le doublon.
+  await input.fill('Beta');
+  await expect(confirmBtn).toBeDisabled();
+  await expect(feedback).toContainText('Beta');
+
+  // 3. Nom qui ne laisse aucun caractère utilisable : refusé côté client aussi,
+  // sinon il retomberait sur le fichier générique du serveur.
+  await input.fill('!!! ???');
+  await expect(confirmBtn).toBeDisabled();
+  await expect(feedback).toContainText('lettre');
+
+  // 4. Caractères ignorés sans collision : simple avertissement, la création
+  // reste possible et le nom de fichier retenu est annoncé.
+  await input.fill('Été 2026 !');
+  await expect(confirmBtn).toBeEnabled();
+  await expect(input).not.toHaveClass(/is-invalid/);
+  await expect(feedback).toContainText('Été2026');
+
+  // 5. Nom sain : aucun message, création transmise telle quelle.
+  await input.fill('Gamma');
+  await expect(confirmBtn).toBeEnabled();
+  await expect(feedback).toBeHidden();
+  await confirmBtn.click();
+  await expect(modal).toBeHidden();
+  expect(await page.evaluate(() => window.__created)).toEqual(['Gamma']);
+
+  // 6. Renommer vers un nom qui retombe sur le fichier du profil lui-même est un
+  // renommage cosmétique légitime : la collision ne doit pas être signalée.
+  await page.evaluate(() => window.profileManager.renameProfile('Mon Profil'));
+  await expect(modal).toBeVisible();
+  await input.fill('MonProfil');
+  await expect(confirmBtn).toBeEnabled();
+  await expect(feedback).toBeHidden();
+  await modal.locator('.modal-footer [data-bs-dismiss="modal"]').click();
+  await expect(modal).toBeHidden();
+
+  // 7. Dupliquer : le serveur résout seul la collision en suffixant, on annonce
+  // le nom retenu plutôt que de bloquer la saisie.
+  await page.evaluate(() => window.profileManager.showDuplicateProfileModal('Beta'));
+  await expect(modal).toBeVisible();
+  await input.fill('Mon Profil');
+  await expect(confirmBtn).toBeEnabled();
+  await expect(feedback).toContainText('Mon Profil (1)');
+});
+
+
 test('basculer manuellement en mode icône garde la méta sprite et un seul redraw', async ({ page }) => {
   const toggled = await page.evaluate(async () => {
     const app = await import('/static/js/index.js');

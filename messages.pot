@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-09 21:47+0200\n"
+"POT-Creation-Date: 2026-08-10 08:20+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -120,8 +120,8 @@ msgid "Confirmer"
 msgstr ""
 
 #: blueprints/core.py:95 static/js/notifications.js:311
-#: templates/menu_style.html:170 templates/menu_style.html:195
-#: templates/menu_style.html:220 templates/menu_style.html:248
+#: templates/menu_style.html:174 templates/menu_style.html:199
+#: templates/menu_style.html:224 templates/menu_style.html:252
 #: templates/modal_loading.html:14
 msgid "Annuler"
 msgstr ""
@@ -393,197 +393,229 @@ msgstr ""
 msgid "Confirmation"
 msgstr ""
 
-#: static/js/profiles.js:156
+#: static/js/profiles.js:80
+msgid "espace"
+msgstr ""
+
+#: static/js/profiles.js:213
 msgid "Import échoué"
 msgstr ""
 
-#: static/js/profiles.js:158
+#: static/js/profiles.js:215
 #, python-brace-format
 msgid "Profil \"${name}\" importé"
 msgstr ""
 
-#: static/js/profiles.js:162
+#: static/js/profiles.js:219
 msgid "Erreur import du profil"
 msgstr ""
 
-#: static/js/profiles.js:188
+#: static/js/profiles.js:245
 msgid "Erreur API"
 msgstr ""
 
-#: static/js/profiles.js:194
+#: static/js/profiles.js:251
 #, python-brace-format
 msgid "Erreur: ${message}"
 msgstr ""
 
-#: static/js/profiles.js:242 static/js/profiles.js:1032
+#: static/js/profiles.js:299 static/js/profiles.js:1089
 #, python-brace-format
 msgid "Profil \"${name}\" chargé"
 msgstr ""
 
-#: static/js/profiles.js:263
+#: static/js/profiles.js:320
 #, python-brace-format
 msgid "Profil \"${name}\" sauvegardé"
 msgstr ""
 
-#: static/js/profiles.js:281
+#: static/js/profiles.js:338
 #, python-brace-format
 msgid "Profil \"${name}\" créé"
 msgstr ""
 
-#: static/js/profiles.js:298
+#: static/js/profiles.js:355
 #, python-brace-format
 msgid "Profil dupliqué: \"${name}\""
 msgstr ""
 
-#: static/js/profiles.js:310
+#: static/js/profiles.js:367
 #, python-brace-format
 msgid "Profil \"${name}\" supprimé"
 msgstr ""
 
-#: static/js/profiles.js:371
+#: static/js/profiles.js:428
 #, python-brace-format
 msgid "Profil \"${name}\" réinitialisé"
 msgstr ""
 
-#: static/js/profiles.js:386
+#: static/js/profiles.js:443
 msgid "Export échoué"
 msgstr ""
 
-#: static/js/profiles.js:397
+#: static/js/profiles.js:454
 #, python-brace-format
 msgid "Profil \"${name}\" exporté"
 msgstr ""
 
-#: static/js/profiles.js:400
+#: static/js/profiles.js:457
 msgid "Erreur export du profil"
 msgstr ""
 
-#: static/js/profiles.js:420
+#: static/js/profiles.js:477
 msgid "Profil introuvable ou UID manquant"
 msgstr ""
 
-#: static/js/profiles.js:434
+#: static/js/profiles.js:491
 msgid "Échec de la sauvegarde du profil par défaut"
 msgstr ""
 
-#: static/js/profiles.js:439
+#: static/js/profiles.js:496
 #, python-brace-format
 msgid "Profil \"${name}\" défini comme profil par défaut"
 msgstr ""
 
-#: static/js/profiles.js:452
+#: static/js/profiles.js:509
 msgid "Erreur lors de la définition du profil par défaut"
 msgstr ""
 
-#: static/js/profiles.js:467
+#: static/js/profiles.js:524
 msgid "Aucun profil"
 msgstr ""
 
-#: static/js/profiles.js:550 static/js/profiles.js:1693
+#: static/js/profiles.js:607 static/js/profiles.js:1758
 msgid "Dupliquer"
 msgstr ""
 
-#: static/js/profiles.js:551 static/js/profiles.js:1673
+#: static/js/profiles.js:608 static/js/profiles.js:1738
 msgid "Renommer"
 msgstr ""
 
-#: static/js/profiles.js:552
+#: static/js/profiles.js:609
 msgid "Exporter"
 msgstr ""
 
-#: static/js/profiles.js:553 templates/menu_options.html:79
-#: templates/menu_style.html:221
+#: static/js/profiles.js:610 templates/menu_options.html:79
+#: templates/menu_style.html:225
 msgid "Réinitialiser"
 msgstr ""
 
-#: static/js/profiles.js:554 templates/menu_style.html:196
+#: static/js/profiles.js:611 templates/menu_style.html:200
 msgid "Supprimer"
 msgstr ""
 
-#: static/js/profiles.js:558
+#: static/js/profiles.js:615
 msgid "Définir comme par défaut"
 msgstr ""
 
-#: static/js/profiles.js:614
+#: static/js/profiles.js:671
 msgid "ACTIF"
 msgstr ""
 
-#: static/js/profiles.js:636 templates/menu_options.html:35
+#: static/js/profiles.js:693 templates/menu_options.html:35
 msgid "Profil par défaut"
 msgstr ""
 
-#: static/js/profiles.js:688 templates/menu_style.html:238
+#: static/js/profiles.js:745 templates/menu_style.html:242
 msgid "Modifications non enregistrées"
 msgstr ""
 
-#: static/js/profiles.js:870
+#: static/js/profiles.js:927
 #, python-brace-format
 msgid ""
 "Le profil \"${name}\" contient des modifications non enregistrées. Que "
 "voulez-vous faire ?"
 msgstr ""
 
-#: static/js/profiles.js:871
+#: static/js/profiles.js:928
 msgid "Vous avez des modifications non enregistrées. Que voulez-vous faire ?"
 msgstr ""
 
-#: static/js/profiles.js:1036 static/js/profiles.js:1244
+#: static/js/profiles.js:1093 static/js/profiles.js:1301
 msgid "Erreur lors du chargement du profil par défaut"
 msgstr ""
 
-#: static/js/profiles.js:1069
+#: static/js/profiles.js:1126
 msgid "Aucun profil par défaut"
 msgstr ""
 
-#: static/js/profiles.js:1154
+#: static/js/profiles.js:1211
 #, python-brace-format
 msgid "Profil \"${selectedProfile}\" appliqué et défini comme profil par défaut"
 msgstr ""
 
-#: static/js/profiles.js:1155
+#: static/js/profiles.js:1212
 msgid "Aucun profil par défaut défini"
 msgstr ""
 
-#: static/js/profiles.js:1222
+#: static/js/profiles.js:1279
 msgid "Profil temporaire"
 msgstr ""
 
-#: static/js/profiles.js:1241
+#: static/js/profiles.js:1298
 msgid "Profil temporaire chargé (profil par défaut manquant)"
 msgstr ""
 
-#: static/js/profiles.js:1662 templates/menu_style.html:138
+#: static/js/profiles.js:1727 templates/menu_style.html:138
 #: templates/menu_style.html:160
 msgid "Nouveau profil"
 msgstr ""
 
-#: static/js/profiles.js:1664 templates/menu_style.html:171
+#: static/js/profiles.js:1729 templates/menu_style.html:175
 msgid "Créer"
 msgstr ""
 
-#: static/js/profiles.js:1671
+#: static/js/profiles.js:1736
 msgid "Renommer le profil"
 msgstr ""
 
-#: static/js/profiles.js:1691
+#: static/js/profiles.js:1756
 msgid "Dupliquer le profil"
 msgstr ""
 
-#: static/js/profiles.js:1723
+#: static/js/profiles.js:1812
+msgid "Le nom doit contenir au moins une lettre ou un chiffre"
+msgstr ""
+
+#: static/js/profiles.js:1834
+#, python-brace-format
+msgid "« ${conflict} » existe déjà : la copie sera nommée « ${suggested} »"
+msgstr ""
+
+#: static/js/profiles.js:1841
+#, python-brace-format
+msgid "Un profil nommé « ${name} » existe déjà"
+msgstr ""
+
+#: static/js/profiles.js:1842
+#, python-brace-format
+msgid ""
+"Ce nom est déjà pris par « ${conflict} » : les deux se réduisent au "
+"fichier « ${key} »"
+msgstr ""
+
+#: static/js/profiles.js:1851
+#, python-brace-format
+msgid ""
+"Caractères ignorés (${dropped}) : le profil sera enregistré sous « ${key}"
+" »"
+msgstr ""
+
+#: static/js/profiles.js:1909
 msgid "Veuillez saisir un nom de profil"
 msgstr ""
 
-#: static/js/profiles.js:1782
+#: static/js/profiles.js:1968
 #, python-brace-format
 msgid "Profil renommé en \"${name}\""
 msgstr ""
 
-#: static/js/profiles.js:1796
+#: static/js/profiles.js:1982
 #, python-brace-format
 msgid "Êtes-vous sûr de vouloir supprimer le profil \"${name}\" ?"
 msgstr ""
 
-#: static/js/profiles.js:1815
+#: static/js/profiles.js:2001
 #, python-brace-format
 msgid ""
 "Êtes-vous sûr de vouloir réinitialiser le profil \"${name}\" aux valeurs "
@@ -2215,8 +2247,8 @@ msgstr ""
 msgid "Importer un profil JSON"
 msgstr ""
 
-#: templates/menu_style.html:161 templates/menu_style.html:189
-#: templates/menu_style.html:214 templates/menu_style.html:242
+#: templates/menu_style.html:161 templates/menu_style.html:193
+#: templates/menu_style.html:218 templates/menu_style.html:246
 #: templates/modal_infos.html:11
 msgid "Fermer"
 msgstr ""
@@ -2225,39 +2257,39 @@ msgstr ""
 msgid "Nom du profil"
 msgstr ""
 
-#: templates/menu_style.html:185
+#: templates/menu_style.html:189
 msgid "Confirmer la suppression"
 msgstr ""
 
-#: templates/menu_style.html:186 templates/menu_style.html:211
+#: templates/menu_style.html:190 templates/menu_style.html:215
 msgid "Cette action est définitive"
 msgstr ""
 
-#: templates/menu_style.html:192
+#: templates/menu_style.html:196
 msgid "Êtes-vous sûr de vouloir supprimer ce profil ?"
 msgstr ""
 
-#: templates/menu_style.html:210
+#: templates/menu_style.html:214
 msgid "Confirmer la réinitialisation"
 msgstr ""
 
-#: templates/menu_style.html:217
+#: templates/menu_style.html:221
 msgid "Êtes-vous sûr de vouloir réinitialiser ce profil aux valeurs par défaut ?"
 msgstr ""
 
-#: templates/menu_style.html:239
+#: templates/menu_style.html:243
 msgid "Le profil actif a été modifié"
 msgstr ""
 
-#: templates/menu_style.html:245
+#: templates/menu_style.html:249
 msgid "Vous avez des modifications non enregistrées."
 msgstr ""
 
-#: templates/menu_style.html:249
+#: templates/menu_style.html:253
 msgid "Abandonner"
 msgstr ""
 
-#: templates/menu_style.html:250
+#: templates/menu_style.html:254
 msgid "Enregistrer et charger"
 msgstr ""
 
