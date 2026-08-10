@@ -247,6 +247,53 @@ RECORDING_MODES = ("mediarecorder", "images")
 MAP_ZOOM_MIN = 0
 MAP_ZOOM_MAX = 22
 
+# Plages du centre par défaut, en miroir de la validation faite dans l'interface
+# (saveMapCenterSettings, static/js/ui.js).
+MAP_LONGITUDE_MAX = 180.0
+MAP_LATITUDE_MAX = 90.0
+
+
+def coerce_map_zoom(value, default: Optional[int] = None) -> Optional[int]:
+    """Zoom ramené dans la plage de la carte ; `default` si la valeur est illisible.
+
+    None reste None : « aucun zoom par défaut » est un choix, pas une absence de
+    réglage à combler.
+    """
+    if value is None:
+        return None
+    try:
+        return max(MAP_ZOOM_MIN, min(MAP_ZOOM_MAX, int(value)))
+    except (TypeError, ValueError):
+        return default
+
+
+def coerce_map_center(value, default: Optional[Tuple[float, float]] = None) -> Optional[Tuple[float, float]]:
+    """Couple (longitude, latitude) lisible et situé sur le globe, sinon `default`.
+
+    Contrairement au zoom, une valeur hors plage n'est pas ramenée dans les
+    bornes : une latitude de 200 ne « voulait » pas dire 90, et ramener une
+    longitude de 400 à 180 désignerait un endroit que personne n'a choisi. Le
+    client refuse déjà d'enregistrer un tel couple ; ici on conserve ce qui était
+    en place plutôt que d'inventer un centre.
+
+    Un couple absent ou de forme inattendue vaut « pas de centre » (None) : c'est
+    ainsi que l'interface efface le réglage.
+    """
+    if not isinstance(value, (list, tuple)) or len(value) != 2:
+        return None
+    try:
+        lon, lat = float(value[0]), float(value[1])
+    except (TypeError, ValueError):
+        return default
+    # Toute comparaison est fausse pour NaN, donc les valeurs non finies sortent
+    # ici — et n'atteignent jamais settings.json, où `NaN` produirait un JSON
+    # que les analyseurs stricts refusent.
+    if not (-MAP_LONGITUDE_MAX <= lon <= MAP_LONGITUDE_MAX):
+        return default
+    if not (-MAP_LATITUDE_MAX <= lat <= MAP_LATITUDE_MAX):
+        return default
+    return (lon, lat)
+
 
 def coerce_theme(value, default: str = "system") -> str:
     return value if value in THEMES else default
@@ -295,23 +342,15 @@ def coerce_settings(d: dict) -> AppSettings:
 
         raw_center = d.get("map_default_center")
         if isinstance(raw_center, (list, tuple)) and len(raw_center) == 2:
-            try:
-                center = (float(raw_center[0]), float(raw_center[1]))
-                # Les versions 1 stockaient [latitude, longitude]. La conversion
-                # en mémoire rend les anciennes préférences compatibles sans
-                # ambiguïté pour tout le reste de l'application.
-                s.map_default_center = center[::-1] if source_version < 2 else center
-            except Exception:
-                pass
+            # Les versions 1 stockaient [latitude, longitude]. La conversion en
+            # mémoire rend les anciennes préférences compatibles sans ambiguïté
+            # pour tout le reste de l'application. Elle précède le contrôle des
+            # plages, sinon une longitude légitime de 150 serait jugée comme une
+            # latitude hors bornes.
+            ordered = tuple(raw_center)[::-1] if source_version < 2 else tuple(raw_center)
+            s.map_default_center = coerce_map_center(ordered)
 
-        raw_zoom = d.get("map_default_zoom")
-        if raw_zoom is not None:
-            try:
-                # Une valeur illisible laisse le zoom à None (aucun zoom par
-                # défaut) plutôt que de lui inventer une valeur de repli.
-                s.map_default_zoom = max(MAP_ZOOM_MIN, min(MAP_ZOOM_MAX, int(raw_zoom)))
-            except Exception:
-                pass
+        s.map_default_zoom = coerce_map_zoom(d.get("map_default_zoom"))
 
         if d.get("default_profile_uid"):
             s.default_profile_uid = d.get("default_profile_uid")

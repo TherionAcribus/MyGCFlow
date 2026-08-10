@@ -1495,8 +1495,10 @@ async function applyCurrentMapViewAsDefault() {
         const lonLat = ol.proj.toLonLat(center3857);
         const lon = lonLat[0];
         const lat = lonLat[1];
-        if (inputMapCenterLat) inputMapCenterLat.value = lat.toFixed(6);
-        if (inputMapCenterLon) inputMapCenterLon.value = lon.toFixed(6);
+        // Les trois champs d'un coup, y compris le champ combiné : c'est lui que
+        // saveMapCenterSettings() lit dans le mode par défaut. Rempli à la main,
+        // il restait vide et le bouton effaçait le centre au lieu de le poser.
+        setLatLonInputs(lat.toFixed(6), lon.toFixed(6));
         if (inputMapDefaultZoom) inputMapDefaultZoom.value = String(view.getZoom());
         /* M.updateTextFields() — removed (Bootstrap 5 handles labels) */
         // saveMapCenterSettings() pose déjà l'indicateur « Enregistré ✓ » sur les
@@ -1543,9 +1545,7 @@ function togglePickMapCenter() {
                 const lonLat = ol.proj.toLonLat(evt.coordinate);
                 const lon = lonLat[0];
                 const lat = lonLat[1];
-                if (inputMapCenterLat) inputMapCenterLat.value = lat.toFixed(6);
-                if (inputMapCenterLon) inputMapCenterLon.value = lon.toFixed(6);
-                if (inputMapCenterCombined) inputMapCenterCombined.value = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+                setLatLonInputs(lat.toFixed(6), lon.toFixed(6));
                 try {
                     const view = map.getView();
                     if (view && inputMapDefaultZoom) inputMapDefaultZoom.value = String(view.getZoom());

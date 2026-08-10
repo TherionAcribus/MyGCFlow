@@ -7,7 +7,12 @@ from unittest import mock
 from flask import Flask
 
 import settings_manager
-from settings_manager import SettingsManager, coerce_recording_settings, coerce_settings
+from settings_manager import (
+    SettingsManager,
+    coerce_map_center,
+    coerce_recording_settings,
+    coerce_settings,
+)
 
 
 class RecordingCoercionTests(unittest.TestCase):
@@ -69,6 +74,50 @@ class MapZoomCoercionTests(unittest.TestCase):
         self.assertIsNone(coerce_settings({}).map_default_zoom)
         self.assertIsNone(coerce_settings({"map_default_zoom": None}).map_default_zoom)
         self.assertIsNone(coerce_settings({"map_default_zoom": "loin"}).map_default_zoom)
+
+
+class MapCenterCoercionTests(unittest.TestCase):
+    """Plages du centre par défaut.
+
+    Le client refuse déjà lat hors [-90, 90] et lon hors [-180, 180], mais ni un
+    settings.json édité à la main ni un PUT /api/settings ne passent par lui.
+    """
+
+    def test_a_center_on_the_globe_is_kept(self):
+        self.assertEqual(coerce_map_center([2.35, 48.85]), (2.35, 48.85))
+
+    def test_out_of_range_values_are_refused_rather_than_clamped(self):
+        # Ramener 400 à 180 désignerait un endroit que l'utilisateur n'a pas
+        # choisi : on garde ce qui était en place.
+        previous = (2.35, 48.85)
+        self.assertEqual(coerce_map_center([400.0, 48.85], previous), previous)
+        self.assertEqual(coerce_map_center([2.35, 200.0], previous), previous)
+        self.assertIsNone(coerce_map_center([400.0, 48.85]))
+
+    def test_non_finite_values_never_reach_the_settings_file(self):
+        # json.dumps écrirait `NaN`, que les analyseurs stricts refusent.
+        self.assertIsNone(coerce_map_center([float("nan"), 48.85]))
+        self.assertIsNone(coerce_map_center([2.35, float("inf")]))
+
+    def test_an_unusable_shape_clears_the_center(self):
+        self.assertIsNone(coerce_map_center(None, (2.35, 48.85)))
+        self.assertIsNone(coerce_map_center([1.0], (2.35, 48.85)))
+
+    def test_unreadable_numbers_keep_the_previous_center(self):
+        previous = (2.35, 48.85)
+        self.assertEqual(coerce_map_center(["ici", "là"], previous), previous)
+
+    def test_settings_on_disk_are_checked_after_the_v1_reordering(self):
+        # v1 stockait [latitude, longitude] : une longitude de 150 est légitime,
+        # elle ne doit pas être lue comme une latitude hors bornes.
+        s = coerce_settings({"version": 1, "map_default_center": [45.0, 150.0]})
+        self.assertEqual(s.map_default_center, (150.0, 45.0))
+
+        s = coerce_settings({"version": 2, "map_default_center": [150.0, 45.0]})
+        self.assertEqual(s.map_default_center, (150.0, 45.0))
+
+    def test_an_out_of_range_center_on_disk_is_dropped(self):
+        self.assertIsNone(coerce_settings({"map_default_center": [2.35, 200.0]}).map_default_center)
 
 
 class RecordingConfiguredFlagTests(unittest.TestCase):
@@ -161,6 +210,24 @@ class SettingsApiTests(unittest.TestCase):
         self.client.put('/api/settings', json={'map_default_zoom': 99})
 
         self.assertEqual(self.client.get('/api/settings').get_json()['map_default_zoom'], 22)
+        # Borné à l'écriture, pas seulement à la relecture : le fichier lui-même
+        # ne doit pas contenir 99.
+        stored = settings_manager.read_json(settings_manager.SETTINGS_PATH)
+        self.assertEqual(stored['map_default_zoom'], 22)
+
+    def test_a_center_sent_off_the_globe_leaves_the_stored_one_untouched(self):
+        self.client.put('/api/settings', json={'map_default_center': [2.35, 48.85]})
+        self.client.put('/api/settings', json={'map_default_center': [2.35, 200.0]})
+
+        self.assertEqual(
+            self.client.get('/api/settings').get_json()['map_default_center'], [2.35, 48.85]
+        )
+
+    def test_a_null_center_clears_the_setting(self):
+        self.client.put('/api/settings', json={'map_default_center': [2.35, 48.85]})
+        self.client.put('/api/settings', json={'map_default_center': None})
+
+        self.assertIsNone(self.client.get('/api/settings').get_json()['map_default_center'])
 
     def test_reset_returns_the_defaults_of_the_new_preferences(self):
         self.client.put('/api/settings', json={'theme': 'dark', 'recording': {'fps': 60}})

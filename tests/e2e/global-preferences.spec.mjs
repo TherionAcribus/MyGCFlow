@@ -225,6 +225,32 @@ test('le centre de carte par défaut confirme dans le champ au lieu d\'un toast'
 });
 
 
+test('« Utiliser la vue actuelle » enregistre le centre dans les deux modes de saisie', async ({ page }) => {
+  // Le bouton ne remplissait que les champs Latitude/Longitude. Dans le mode
+  // par défaut (champ combiné), la sauvegarde lit le champ combiné resté vide :
+  // le bouton effaçait donc le centre au lieu de l'enregistrer.
+  await openReadyApp(page);
+  await page.locator('a[href="#settings"]').click();
+
+  const readCenter = async () => (await readServerSettings(page)).map_default_center;
+
+  await page.locator('#btnUseCurrentMapCenter').click();
+  await expect(page.locator('#inputMapCenterCombined')).not.toHaveValue('');
+  await expect.poll(readCenter).not.toBeNull();
+  const fromCombined = await readCenter();
+
+  await page.locator('label[for="latLonModeSplit"]').click();
+  await page.locator('#btnUseCurrentMapCenter').click();
+  await expect.poll(readCenter).toEqual(fromCombined);
+
+  await page.evaluate(() => fetch('/api/settings', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ map_default_center: null, map_default_zoom: null }),
+  }));
+});
+
+
 test('un zoom par défaut hors plage est signalé puis ramené dans les bornes', async ({ page }) => {
   // min/max sur un <input type="number"> colorent le champ sans rien empêcher :
   // au clavier, 99 partait tel quel vers settings.json.

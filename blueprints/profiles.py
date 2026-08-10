@@ -7,6 +7,8 @@ from dataclasses import asdict
 from settings_manager import (
     AppSettings,
     InvalidProfileNameError,
+    coerce_map_center,
+    coerce_map_zoom,
     coerce_overlay_title,
     coerce_recording_settings,
     coerce_theme,
@@ -71,27 +73,21 @@ def api_put_settings():
     if 'default_profile_uid' in data:
         default_profile_uid = data.get('default_profile_uid')
 
+    # Centre et zoom passent par les mêmes contrôles qu'à la relecture du
+    # fichier : sans cela, l'écriture déposerait la valeur brute dans
+    # settings.json et seul le chargement suivant la corrigerait. Une valeur
+    # illisible ou hors plage laisse en place celle déjà enregistrée.
     map_default_center = current.map_default_center
     if 'map_default_center' in data:
-        raw_center = data.get('map_default_center')
-        if isinstance(raw_center, (list, tuple)) and len(raw_center) == 2:
-            try:
-                map_default_center = (float(raw_center[0]), float(raw_center[1]))
-            except Exception:
-                map_default_center = current.map_default_center
-        else:
-            map_default_center = None
+        map_default_center = coerce_map_center(
+            data.get('map_default_center'), current.map_default_center
+        )
 
     map_default_zoom = current.map_default_zoom
     if 'map_default_zoom' in data:
-        raw_zoom = data.get('map_default_zoom')
-        if raw_zoom is None:
-            map_default_zoom = None
-        else:
-            try:
-                map_default_zoom = int(raw_zoom)
-            except Exception:
-                map_default_zoom = current.map_default_zoom
+        map_default_zoom = coerce_map_zoom(
+            data.get('map_default_zoom'), current.map_default_zoom
+        )
 
     updated = AppSettings(
         version=current.version,
