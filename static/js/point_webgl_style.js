@@ -69,6 +69,7 @@ export function buildPointStyle(pointOptions) {
                 'Lab Cache': 'lab',
                 'Cache In Trash Out Event': 'cito',
                 'Community Celebration Event': 'event',
+                'Geocaching HQ Block Party': 'hq',
                 'GPS Adventures Exhibit': 'maze',
                 'Locationless (Reverse) Cache': 'locationless',
                 'Webcam Cache': 'webcam'

@@ -40,7 +40,9 @@ export async function requetedefaultGcColors(){
             'Traditional Cache': '#008000',
             'Multi-cache': '#FFA500',
             'Mystery Cache': '#0000FF',
-            'EarthCache': '#87CEEB',
+            // 'Earthcache' avec un c minuscule : c'est la valeur exacte de
+            // `cache_type` dans les GPX, et le lookup se fait sur cette clé.
+            'Earthcache': '#87CEEB',
             'Letterbox Hybrid': '#0000FF',
             'Event Cache': '#FF0000',
             'Unknown Cache': '#0000FF',
@@ -51,6 +53,7 @@ export async function requetedefaultGcColors(){
             'Mega-Event Cache': '#FF0000',
             'Cache In Trash Out Event': '#FF0000',
             'Community Celebration Event': '#FF0000',
+            'Geocaching HQ Block Party': '#FF0000',
             'GPS Adventures Exhibit': '#FF0000',
             'Locationless (Reverse) Cache': '#FFFFFF'
         };
