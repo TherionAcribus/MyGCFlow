@@ -249,13 +249,7 @@ h5, h6 { color: var(--color-text); font-weight: 600; }
     font-weight: 600;
 }
 
-/* --- Profil actif --- */
-.active-profile {
-    color: var(--color-accent);
-    background: var(--color-accent-weak);
-    border-color: var(--color-accent);
-}
-.active-profile .active-badge { background: var(--color-success); }
+/* --- Profil actif : voir ui_improvements.css --- */
 
 /* --- Popup d'information OpenLayers (clic sur un point de la carte) ---
    Gabarit HTML : <template id="gcPopupTemplate"> dans app.html.
@@ -368,15 +362,17 @@ h5, h6 { color: var(--color-text); font-weight: 600; }
 [data-bs-theme="dark"] #delete-profile-modal .modal-footer { border-top-color: var(--color-border); }
 
 /* --- Badges / pastilles à fond pastel clair → variantes sombres --- */
-[data-bs-theme="dark"] .profile-active-indicator.active {
-    background: rgba(76, 175, 80, 0.15);
-    color: #81c784;
-    border-color: rgba(76, 175, 80, 0.4);
+/* Rappel du profil actif : le libellé suit --color-text-muted (déjà éclairci en
+   sombre), seuls le vert et l'orange doivent être remontés pour rester lisibles
+   sur fond sombre. */
+[data-bs-theme="dark"] .profile-active-indicator.active::before {
+    background-color: #81c784;
 }
 [data-bs-theme="dark"] .profile-active-indicator.active.unsaved {
-    background: rgba(239, 108, 0, 0.15);
     color: #ffb74d;
-    border-color: rgba(239, 108, 0, 0.4);
+}
+[data-bs-theme="dark"] .profile-active-indicator.active.unsaved::before {
+    background-color: #ffb74d;
 }
 [data-bs-theme="dark"] .gc-scope-profile {
     background: rgba(126, 87, 194, 0.18);

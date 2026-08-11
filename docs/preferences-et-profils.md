@@ -44,6 +44,17 @@ qu'après un clic sur **Sauvegarder**.
   ils ne touchent aucun réglage de style. Comme le suivi **compare** au lieu de
   poser un drapeau, un clic sans effet (un onglet, un bouton d'action) ne rend
   pas le profil « modifié », et revenir à la valeur enregistrée éteint le « • ».
+  Le rappel lui-même est discret (texte gris, pastille verte) et ne passe en
+  orange que dans l'état « modifications en attente », le seul qui mérite
+  d'attirer l'œil.
+- **Profil actif dans la liste** (`_setProfileItemActive()`) : liseré d'accent
+  sur la ligne (`.active-profile-item`) et nom en accent (`.active-profile`).
+  Volontairement sobre : l'encadré, le badge « ACTIF » et la coche cumulaient
+  trois marquages pour une seule information. Le texte du badge ayant disparu,
+  l'état est exposé aux lecteurs d'écran par `aria-current` sur la ligne. À ne
+  pas confondre avec l'**étoile** (`.profile-default-star`), qui marque le
+  profil *par défaut* : les deux états sont indépendants et rafraîchis
+  séparément (cf. `profile-style-state.spec.mjs`).
 
 ## Cycle de vie d'un profil
 

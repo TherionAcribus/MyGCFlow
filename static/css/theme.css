@@ -99,13 +99,8 @@ h5, h6 { color: var(--color-text); font-weight: 600; }
 /* Réduction de l’impact visuel des emojis dans les titres (si présents) */
 h5 .ti, h6 .ti { color: var(--color-text-muted); }
 
-/* Profil actif plus subtil */
-.active-profile {
-    color: var(--color-accent);
-    background: var(--color-accent-weak);
-    border-color: var(--color-accent);
-}
-.active-profile .active-badge { background: var(--color-success); }
+/* Profil actif : voir ui_improvements.css (marquage discret, en variables de
+   thème, donc valable en clair comme en sombre). */
 
 /* Inputs couleur plus sobres */
 input[type="color"] {

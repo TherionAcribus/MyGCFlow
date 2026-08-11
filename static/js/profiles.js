@@ -531,7 +531,6 @@ class ProfileManager {
             const nameWrap = document.createElement('div');
             nameWrap.className = 'profile-name-wrap';
             nameWrap.style.cursor = 'pointer';
-            nameWrap.style.position = 'relative';
             nameWrap.addEventListener('click', () => this.loadProfile(profileName));
 
             const swatchIcon = document.createElement('i');
@@ -543,7 +542,6 @@ class ProfileManager {
             nameSpan.textContent = profileName;
             nameWrap.appendChild(nameSpan);
 
-            this._setProfileItemActive(nameWrap, this.currentProfile?.name === profileName);
             // `_defaultProfileName` vaut null tant que les réglages n'ont pas été
             // lus : aucune étoile n'est posée, la comparaison échoue pour tous les
             // profils. Le rattrapage est fait en fin de rendu.
@@ -585,6 +583,11 @@ class ProfileManager {
             row.appendChild(colActions);
             item.appendChild(row);
 
+            // Après assemblage seulement : le marquage "actif" pose aussi une
+            // classe sur `item` via closest(), qui exige que nameWrap soit déjà
+            // rattaché à sa ligne.
+            this._setProfileItemActive(nameWrap, this.currentProfile?.name === profileName);
+
             container.appendChild(item);
         });
 
@@ -601,25 +604,18 @@ class ProfileManager {
         }
     }
 
-    // Pose ou retire les marqueurs "profil actif" (classe CSS, icône, badge) sur
-    // un élément de liste déjà construit. Utilisé au rendu initial et lors d'un
-    // simple déplacement du badge, pour que les deux chemins produisent
-    // exactement le même DOM.
+    // Pose ou retire le marquage "profil actif" sur un élément de liste déjà
+    // construit. Marquage volontairement discret : nom en accent + liseré sur
+    // la ligne (CSS), sans badge « ACTIF » ni coche. L'information reste
+    // accessible aux lecteurs d'écran via aria-current, qui remplace le texte
+    // du badge retiré.
     _setProfileItemActive(nameWrap, isActive) {
         nameWrap.classList.toggle('active-profile', !!isActive);
-        // Les marqueurs ne sont stylés que sous .active-profile : on les retire
-        // plutôt que de les masquer, pour ne pas laisser un "ACTIF" brut visible.
-        nameWrap.querySelector('.profile-active-check')?.remove();
-        nameWrap.querySelector('.active-badge')?.remove();
-        if (!isActive) return;
-
-        const checkIcon = document.createElement('i');
-        checkIcon.className = 'ti ti-circle-check ms-1 profile-active-check';
-        nameWrap.appendChild(checkIcon);
-        const badge = document.createElement('span');
-        badge.className = 'active-badge';
-        badge.textContent = pkg.t('ACTIF');
-        nameWrap.appendChild(badge);
+        // Le liseré porte sur toute la ligne (menu « … » compris), donc sur
+        // l'élément de liste et non sur le seul bloc du nom.
+        nameWrap.closest('.list-group-item')?.classList.toggle('active-profile-item', !!isActive);
+        if (isActive) nameWrap.setAttribute('aria-current', 'true');
+        else nameWrap.removeAttribute('aria-current');
     }
 
     // Pose ou retire l'étoile "profil par défaut" sur un élément de liste déjà

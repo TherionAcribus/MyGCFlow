@@ -372,14 +372,18 @@ test('l\'étoile marque le profil par défaut, indépendamment du profil actif',
   // Défaut et actif distincts : c'est le cas que l'étoile rend lisible.
   await render('Alpha', 'Beta');
   await expect(marker('Alpha', '.profile-default-star')).toHaveCount(1);
-  await expect(marker('Alpha', '.active-badge')).toHaveCount(0);
-  await expect(marker('Beta', '.active-badge')).toHaveCount(1);
+  await expect(marker('Alpha', '.active-profile')).toHaveCount(0);
+  await expect(marker('Beta', '.active-profile')).toHaveCount(1);
   await expect(marker('Beta', '.profile-default-star')).toHaveCount(0);
+  // Le liseré de ligne est porté par l'élément de liste lui-même, posé dès le
+  // rendu initial (et pas seulement lors d'un changement de profil actif).
+  await expect(page.locator('#profiles-list .active-profile-item')).toHaveCount(1);
+  await expect(page.locator('#profiles-list [data-profile-name="Beta"].active-profile-item')).toHaveCount(1);
 
-  // Même profil : l'étoile doit coexister avec le badge ACTIF.
+  // Même profil : l'étoile doit coexister avec le marquage "actif".
   await render('Beta', 'Beta');
   await expect(marker('Beta', '.profile-default-star')).toHaveCount(1);
-  await expect(marker('Beta', '.active-badge')).toHaveCount(1);
+  await expect(marker('Beta', '.active-profile')).toHaveCount(1);
   await expect(marker('Alpha', '.profile-default-star')).toHaveCount(0);
 
   // Aucun profil par défaut ('' côté serveur) : aucune étoile.
@@ -397,15 +401,18 @@ test('l\'étoile marque le profil par défaut, indépendamment du profil actif',
   });
   await expect(marker('Alpha', '.profile-default-star')).toHaveCount(1);
 
-  // Déplacer le badge ACTIF ne doit pas emporter l'étoile : les deux marquages
-  // sont indépendants et rafraîchis séparément.
+  // Déplacer le marquage "actif" ne doit pas emporter l'étoile : les deux
+  // marquages sont indépendants et rafraîchis séparément.
   await page.evaluate(() => {
     const pm = window.profileManager;
     pm.currentProfile = { name: 'Alpha', uid: 'Alpha' };
     pm._updateActiveProfileHighlight();
   });
-  await expect(marker('Alpha', '.active-badge')).toHaveCount(1);
+  await expect(marker('Alpha', '.active-profile')).toHaveCount(1);
   await expect(marker('Alpha', '.profile-default-star')).toHaveCount(1);
+  // Le liseré suit : une seule ligne marquée, et c'est la bonne.
+  await expect(page.locator('#profiles-list [data-profile-name="Alpha"].active-profile-item')).toHaveCount(1);
+  await expect(page.locator('#profiles-list .active-profile-item')).toHaveCount(1);
 });
 
 
@@ -569,7 +576,7 @@ test('un profil de démarrage illisible laisse l\'application sans profil actif'
     pm.renderProfilesList();
 
     const indicator = document.getElementById('current-profile-indicator');
-    const before = { indicator: indicator.textContent, badges: document.querySelectorAll('#profiles-list .active-badge').length };
+    const before = { indicator: indicator.textContent, marked: document.querySelectorAll('#profiles-list .active-profile').length };
 
     await pm.restoreStartupProfile();
 
@@ -578,19 +585,19 @@ test('un profil de démarrage illisible laisse l\'application sans profil actif'
       currentProfile: pm.currentProfile,
       hasUnsavedChanges: pm.hasUnsavedChanges,
       indicator: indicator.textContent,
-      badges: document.querySelectorAll('#profiles-list .active-badge').length,
+      marked: document.querySelectorAll('#profiles-list .active-profile').length,
     };
   });
 
   // Le point de départ : un profil bien actif, pour que l'état d'arrivée ne
   // puisse pas être confondu avec "rien n'a jamais été affiché".
-  expect(state.before).toEqual({ indicator: 'Alpha', badges: 1 });
+  expect(state.before).toEqual({ indicator: 'Alpha', marked: 1 });
 
   // L'arrivée : aucun profil actif, ni réel ni inventé.
   expect(state.currentProfile).toBeNull();
   expect(state.hasUnsavedChanges).toBe(false);
   expect(state.indicator).toBe('');
-  expect(state.badges).toBe(0);
+  expect(state.marked).toBe(0);
 
   // ...et l'utilisateur le sait, par un seul message (le toast d'erreur générique
   // de loadProfileByUid est tu au profit de celui qui décrit l'état).

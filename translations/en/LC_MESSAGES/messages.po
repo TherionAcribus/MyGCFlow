@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-10 17:00+0200\n"
+"POT-Creation-Date: 2026-08-10 21:06+0200\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -331,7 +331,7 @@ msgstr "Loading complete"
 msgid "Chargement et affichage des points..."
 msgstr "Loading and displaying points..."
 
-#: static/js/bdd.js:1184 static/js/mapgl.js:275 static/js/notifications.js:232
+#: static/js/bdd.js:1184 static/js/mapgl.js:280 static/js/notifications.js:232
 msgid "Affichage des points"
 msgstr "Points display"
 
@@ -343,38 +343,38 @@ msgstr "Error while displaying the points on the map"
 msgid "Erreur d'affichage"
 msgstr "Display error"
 
-#: static/js/mapgl.js:276
+#: static/js/mapgl.js:281
 msgid "Mise à jour de l'affichage des points..."
 msgstr "Updating point display..."
 
-#: static/js/mapgl.js:371
+#: static/js/mapgl.js:396
 msgid "Sans nom"
 msgstr "Unnamed"
 
-#: static/js/mapgl.js:372
+#: static/js/mapgl.js:397
 msgid "Trouvé"
 msgstr "Found"
 
-#: static/js/mapgl.js:372
+#: static/js/mapgl.js:397
 msgid "DNF"
 msgstr "DNF"
 
-#: static/js/mapgl.js:373
+#: static/js/mapgl.js:398
 #, python-brace-format
 msgid "Publié le ${date}"
 msgstr "Published on ${date}"
 
-#: static/js/mapgl.js:374
+#: static/js/mapgl.js:399
 #, python-brace-format
 msgid "le ${date}"
 msgstr "on ${date}"
 
-#: static/js/mapgl.js:1146
+#: static/js/mapgl.js:1176
 #, python-brace-format
 msgid "La capture a été interrompue suite à une erreur : ${message}"
 msgstr "The capture was interrupted by an error: ${message}"
 
-#: static/js/mapgl.js:1427
+#: static/js/mapgl.js:1457
 #, python-brace-format
 msgid "Erreur lors du traitement automatique: ${message}"
 msgstr "Error during automatic processing: ${message}"
@@ -429,7 +429,7 @@ msgstr "API error"
 msgid "Erreur: ${message}"
 msgstr "Error: ${message}"
 
-#: static/js/profiles.js:308 static/js/profiles.js:1214
+#: static/js/profiles.js:308 static/js/profiles.js:1252
 #, python-brace-format
 msgid "Profil \"${name}\" chargé"
 msgstr "Profile \"${name}\" loaded"
@@ -498,34 +498,30 @@ msgstr "Error while setting the default profile"
 msgid "Aucun profil"
 msgstr "No profile"
 
-#: static/js/profiles.js:678 static/js/profiles.js:1947
+#: static/js/profiles.js:676 static/js/profiles.js:1985
 msgid "Dupliquer"
 msgstr "Duplicate"
 
-#: static/js/profiles.js:679 static/js/profiles.js:1927
+#: static/js/profiles.js:677 static/js/profiles.js:1965
 msgid "Renommer"
 msgstr "Rename"
 
-#: static/js/profiles.js:680
+#: static/js/profiles.js:678
 msgid "Exporter"
 msgstr "Export"
 
-#: static/js/profiles.js:681 templates/menu_options.html:90
+#: static/js/profiles.js:679 templates/menu_options.html:90
 #: templates/menu_style.html:229
 msgid "Réinitialiser"
 msgstr "Reset"
 
-#: static/js/profiles.js:682 templates/menu_style.html:204
+#: static/js/profiles.js:680 templates/menu_style.html:204
 msgid "Supprimer"
 msgstr "Delete"
 
-#: static/js/profiles.js:686
+#: static/js/profiles.js:684
 msgid "Définir comme par défaut"
 msgstr "Set as default"
-
-#: static/js/profiles.js:740
-msgid "ACTIF"
-msgstr "ACTIVE"
 
 #: static/js/profiles.js:762 templates/menu_options.html:42
 msgid "Profil par défaut"
@@ -535,77 +531,77 @@ msgstr "Default profile"
 msgid "Modifications non enregistrées"
 msgstr "Unsaved changes"
 
-#: static/js/profiles.js:1012
+#: static/js/profiles.js:1050
 #, python-brace-format
 msgid ""
 "Le profil \"${name}\" contient des modifications non enregistrées. Que "
 "voulez-vous faire ?"
 msgstr "Profile \"${name}\" has unsaved changes. What do you want to do?"
 
-#: static/js/profiles.js:1013
+#: static/js/profiles.js:1051
 msgid "Vous avez des modifications non enregistrées. Que voulez-vous faire ?"
 msgstr "You have unsaved changes. What do you want to do?"
 
-#: static/js/profiles.js:1218
+#: static/js/profiles.js:1256
 msgid "Erreur lors du chargement du profil par défaut"
 msgstr "Error while loading the default profile"
 
-#: static/js/profiles.js:1251
+#: static/js/profiles.js:1289
 msgid "Aucun profil par défaut"
 msgstr "No default profile"
 
-#: static/js/profiles.js:1346
+#: static/js/profiles.js:1384
 #, python-brace-format
 msgid "Profil \"${selectedProfile}\" appliqué et défini comme profil par défaut"
 msgstr "Profile \"${selectedProfile}\" applied and set as default profile"
 
-#: static/js/profiles.js:1347
+#: static/js/profiles.js:1385
 msgid "Aucun profil par défaut défini"
 msgstr "No default profile set"
 
-#: static/js/profiles.js:1485
+#: static/js/profiles.js:1523
 msgid "Le profil n'a pas pu être chargé : aucun profil n'est actif."
 msgstr "The profile could not be loaded: no profile is active."
 
-#: static/js/profiles.js:1912
+#: static/js/profiles.js:1950
 msgid "Enregistrer dans un nouveau profil"
 msgstr "Save to a new profile"
 
-#: static/js/profiles.js:1912 templates/menu_style.html:164
+#: static/js/profiles.js:1950 templates/menu_style.html:164
 msgid "Nouveau profil"
 msgstr "New profile"
 
-#: static/js/profiles.js:1918
+#: static/js/profiles.js:1956
 msgid "Enregistrer le profil"
 msgstr "Save profile"
 
-#: static/js/profiles.js:1918 templates/menu_style.html:179
+#: static/js/profiles.js:1956 templates/menu_style.html:179
 msgid "Créer"
 msgstr "Create"
 
-#: static/js/profiles.js:1925
+#: static/js/profiles.js:1963
 msgid "Renommer le profil"
 msgstr "Rename profile"
 
-#: static/js/profiles.js:1945
+#: static/js/profiles.js:1983
 msgid "Dupliquer le profil"
 msgstr "Duplicate profile"
 
-#: static/js/profiles.js:2001
+#: static/js/profiles.js:2039
 msgid "Le nom doit contenir au moins une lettre ou un chiffre"
 msgstr "The name must contain at least one letter or digit"
 
-#: static/js/profiles.js:2023
+#: static/js/profiles.js:2061
 #, python-brace-format
 msgid "« ${conflict} » existe déjà : la copie sera nommée « ${suggested} »"
 msgstr "“${conflict}” already exists: the copy will be named “${suggested}”"
 
-#: static/js/profiles.js:2030
+#: static/js/profiles.js:2068
 #, python-brace-format
 msgid "Un profil nommé « ${name} » existe déjà"
 msgstr "Profile renamed to \"${name}\""
 
-#: static/js/profiles.js:2031
+#: static/js/profiles.js:2069
 #, python-brace-format
 msgid ""
 "Ce nom est déjà pris par « ${conflict} » : les deux se réduisent au "
@@ -614,28 +610,28 @@ msgstr ""
 "This name is already taken by “${conflict}”: both reduce to the file "
 "“${key}”"
 
-#: static/js/profiles.js:2040
+#: static/js/profiles.js:2078
 #, python-brace-format
 msgid ""
 "Caractères ignorés (${dropped}) : le profil sera enregistré sous « ${key}"
 " »"
 msgstr "Ignored characters (${dropped}): the profile will be saved as “${key}”"
 
-#: static/js/profiles.js:2098
+#: static/js/profiles.js:2136
 msgid "Veuillez saisir un nom de profil"
 msgstr "Please enter a profile name"
 
-#: static/js/profiles.js:2157
+#: static/js/profiles.js:2195
 #, python-brace-format
 msgid "Profil renommé en \"${name}\""
 msgstr "Profile renamed to \"${name}\""
 
-#: static/js/profiles.js:2171
+#: static/js/profiles.js:2209
 #, python-brace-format
 msgid "Êtes-vous sûr de vouloir supprimer le profil \"${name}\" ?"
 msgstr "Are you sure you want to delete the profile \"${name}\"?"
 
-#: static/js/profiles.js:2190
+#: static/js/profiles.js:2228
 #, python-brace-format
 msgid ""
 "Êtes-vous sûr de vouloir réinitialiser le profil \"${name}\" aux valeurs "
@@ -770,18 +766,18 @@ msgstr ""
 msgid "Aucune destination"
 msgstr "No destination"
 
-#: static/js/ui.js:2666 templates/menu_filtre.html:38
-#: templates/menu_filtre.html:56 templates/menu_filtre.html:81
-#: templates/menu_filtre.html:103 templates/menu_filtre.html:168
-#: templates/menu_filtre.html:179
+#: static/js/ui.js:2666 templates/menu_filtre.html:40
+#: templates/menu_filtre.html:59 templates/menu_filtre.html:84
+#: templates/menu_filtre.html:106 templates/menu_filtre.html:171
+#: templates/menu_filtre.html:182
 msgid "Aucun"
 msgstr "None"
 
-#: static/js/ui.js:2693 templates/menu_filtre.html:164
+#: static/js/ui.js:2693 templates/menu_filtre.html:167
 msgid "Filtrer par pays"
 msgstr "Filter by country"
 
-#: static/js/ui.js:2722 static/js/ui.js:2760 templates/menu_filtre.html:175
+#: static/js/ui.js:2722 static/js/ui.js:2760 templates/menu_filtre.html:178
 msgid "Filtrer par région/état"
 msgstr "Filter by region/state"
 
@@ -1180,7 +1176,7 @@ msgid "et la"
 msgstr "and the"
 
 #: templates/guide.html:160 templates/menu_informations.html:54
-#: templates/menu_informations.html:191
+#: templates/menu_informations.html:194
 msgid "Position"
 msgstr "Position"
 
@@ -1200,7 +1196,7 @@ msgstr "and edit the style by hand."
 msgid "N'oubliez pas de cliquer sur"
 msgstr "Don't forget to click"
 
-#: templates/guide.html:165 templates/menu_informations.html:241
+#: templates/guide.html:165 templates/menu_informations.html:244
 msgid "Appliquer"
 msgstr "Apply"
 
@@ -1330,16 +1326,16 @@ msgid "Renseignez la"
 msgstr "Fill in the"
 
 #: templates/guide.html:202 templates/menu_animation.html:32
-#: templates/menu_animation.html:33 templates/menu_filtre.html:115
-#: templates/menu_filtre.html:116 templates/menu_filtre.html:140
-#: templates/menu_filtre.html:141
+#: templates/menu_animation.html:33 templates/menu_filtre.html:118
+#: templates/menu_filtre.html:119 templates/menu_filtre.html:143
+#: templates/menu_filtre.html:144
 msgid "Date de début"
 msgstr "Start date"
 
 #: templates/guide.html:202 templates/menu_animation.html:46
-#: templates/menu_animation.html:47 templates/menu_filtre.html:124
-#: templates/menu_filtre.html:125 templates/menu_filtre.html:149
-#: templates/menu_filtre.html:150
+#: templates/menu_animation.html:47 templates/menu_filtre.html:127
+#: templates/menu_filtre.html:128 templates/menu_filtre.html:152
+#: templates/menu_filtre.html:153
 msgid "Date de fin"
 msgstr "End date"
 
@@ -1558,8 +1554,8 @@ msgid ""
 "le profil de style chargé à la première ouverture. Ensuite, GCMap rouvre "
 "le dernier profil que vous avez utilisé."
 msgstr ""
-"the style profile loaded the first time you open GCMap. After that, GCMap "
-"reopens the last profile you used."
+"the style profile loaded the first time you open GCMap. After that, GCMap"
+" reopens the last profile you used."
 
 #: templates/guide.html:271
 msgid "Vue de carte par défaut"
@@ -1616,8 +1612,8 @@ msgid "Plage de dates de l'animation"
 msgstr "Animation date range"
 
 #: templates/menu_animation.html:35 templates/menu_animation.html:49
-#: templates/menu_filtre.html:118 templates/menu_filtre.html:127
-#: templates/menu_filtre.html:143 templates/menu_filtre.html:152
+#: templates/menu_filtre.html:121 templates/menu_filtre.html:130
+#: templates/menu_filtre.html:146 templates/menu_filtre.html:155
 msgid "Date par défaut (BDD)"
 msgstr "Default date (database)"
 
@@ -1731,132 +1727,144 @@ msgid "Traditional Cache"
 msgstr "Traditional Cache"
 
 #: templates/menu_filtre.html:17
+msgid "Multi-cache"
+msgstr "Multi-cache"
+
+#: templates/menu_filtre.html:18
 msgid "Unknown Cache"
 msgstr "Unknown Cache"
 
-#: templates/menu_filtre.html:18
+#: templates/menu_filtre.html:19
 msgid "Wherigo Cache"
 msgstr "Wherigo Cache"
 
-#: templates/menu_filtre.html:19
+#: templates/menu_filtre.html:20
 msgid "Letterbox Hybrid"
 msgstr "Letterbox Hybrid"
 
-#: templates/menu_filtre.html:20
+#: templates/menu_filtre.html:21
 msgid "Earthcache"
 msgstr "Earthcache"
 
-#: templates/menu_filtre.html:21
+#: templates/menu_filtre.html:22
 msgid "Virtual Cache"
 msgstr "Virtual Cache"
 
-#: templates/menu_filtre.html:22
+#: templates/menu_filtre.html:23
 msgid "Webcam Cache"
 msgstr "Webcam Cache"
 
-#: templates/menu_filtre.html:24
+#: templates/menu_filtre.html:25
 msgid "Events"
 msgstr "Events"
 
-#: templates/menu_filtre.html:25
+#: templates/menu_filtre.html:26
 msgid "Event Cache"
 msgstr "Event Cache"
 
-#: templates/menu_filtre.html:26
+#: templates/menu_filtre.html:27
 msgid "Giga-Event Cache"
 msgstr "Giga-Event Cache"
 
-#: templates/menu_filtre.html:27
+#: templates/menu_filtre.html:28
 msgid "Mega-Event Cache"
 msgstr "Mega-Event Cache"
 
-#: templates/menu_filtre.html:28
+#: templates/menu_filtre.html:29
 msgid "Cache In Trash Out Event"
 msgstr "Cache In Trash Out Event"
 
-#: templates/menu_filtre.html:29
+#: templates/menu_filtre.html:30
 msgid "Community Celebration Event"
 msgstr "Community Celebration Event"
 
 #: templates/menu_filtre.html:31
+msgid "Geocaching HQ Block Party"
+msgstr "Geocaching HQ Block Party"
+
+#: templates/menu_filtre.html:33
 msgid "Autres"
 msgstr "Others"
 
-#: templates/menu_filtre.html:32
+#: templates/menu_filtre.html:34
 msgid "GPS Adventures Exhibit"
 msgstr "GPS Adventures Exhibit"
 
-#: templates/menu_filtre.html:33
+#: templates/menu_filtre.html:35
 msgid "Locationless (Reverse) Cache"
 msgstr "Locationless (Reverse) Cache"
 
-#: templates/menu_filtre.html:37 templates/menu_filtre.html:55
-#: templates/menu_filtre.html:80 templates/menu_filtre.html:102
-#: templates/menu_filtre.html:167 templates/menu_filtre.html:178
+#: templates/menu_filtre.html:39 templates/menu_filtre.html:58
+#: templates/menu_filtre.html:83 templates/menu_filtre.html:105
+#: templates/menu_filtre.html:170 templates/menu_filtre.html:181
 msgid "Tout"
 msgstr "All"
 
-#: templates/menu_filtre.html:44 templates/menu_filtre.html:45
+#: templates/menu_filtre.html:46 templates/menu_filtre.html:47
 msgid "Taille"
 msgstr "Size"
 
-#: templates/menu_filtre.html:46
+#: templates/menu_filtre.html:48
 msgid "Filtrer par taille"
 msgstr "Filter by size"
 
-#: templates/menu_filtre.html:47
+#: templates/menu_filtre.html:49
 msgid "Small"
 msgstr "Small"
 
-#: templates/menu_filtre.html:48
+#: templates/menu_filtre.html:50
 msgid "Micro"
 msgstr "Micro"
 
-#: templates/menu_filtre.html:49
+#: templates/menu_filtre.html:51
 msgid "Regular"
 msgstr "Regular"
 
-#: templates/menu_filtre.html:50
+#: templates/menu_filtre.html:52
 msgid "Large"
 msgstr "Large"
 
-#: templates/menu_filtre.html:51
+#: templates/menu_filtre.html:53
 msgid "Other"
 msgstr "Other"
 
-#: templates/menu_filtre.html:52
+#: templates/menu_filtre.html:54
 msgid "Virtual"
 msgstr "Virtual"
 
-#: templates/menu_filtre.html:66 templates/menu_filtre.html:67
+#: templates/menu_filtre.html:55
+msgid "Not chosen"
+msgstr "Not chosen"
+
+#: templates/menu_filtre.html:69 templates/menu_filtre.html:70
 msgid "Difficultés"
 msgstr "Difficulties"
 
-#: templates/menu_filtre.html:68
+#: templates/menu_filtre.html:71
 msgid "Filtrer par difficulté"
 msgstr "Filter by difficulty"
 
-#: templates/menu_filtre.html:88 templates/menu_filtre.html:89
+#: templates/menu_filtre.html:91 templates/menu_filtre.html:92
 msgid "Terrain"
 msgstr "Terrain"
 
-#: templates/menu_filtre.html:90
+#: templates/menu_filtre.html:93
 msgid "Filtrer par terrain"
 msgstr "Filter by terrain"
 
-#: templates/menu_filtre.html:112
+#: templates/menu_filtre.html:115
 msgid "Période de découverte"
 msgstr "Found period"
 
-#: templates/menu_filtre.html:137
+#: templates/menu_filtre.html:140
 msgid "Période de pose"
 msgstr "Published period"
 
-#: templates/menu_filtre.html:162 templates/menu_filtre.html:163
+#: templates/menu_filtre.html:165 templates/menu_filtre.html:166
 msgid "Pays"
 msgstr "Country"
 
-#: templates/menu_filtre.html:173 templates/menu_filtre.html:174
+#: templates/menu_filtre.html:176 templates/menu_filtre.html:177
 msgid "Région / État"
 msgstr "Region / State"
 
@@ -1872,7 +1880,7 @@ msgstr "Flash shape"
 msgid "Pas de flash"
 msgstr "No flash"
 
-#: templates/menu_flash.html:12 templates/menu_points.html:80
+#: templates/menu_flash.html:12 templates/menu_points.html:81
 msgid "Cercle"
 msgstr "Circle"
 
@@ -1888,7 +1896,7 @@ msgstr "Sparkle"
 msgid "Carré"
 msgstr "Square"
 
-#: templates/menu_flash.html:16 templates/menu_points.html:81
+#: templates/menu_flash.html:16 templates/menu_points.html:82
 msgid "Triangle"
 msgstr "Triangle"
 
@@ -1924,27 +1932,27 @@ msgstr "5 to 200 px"
 msgid "Couleur du flash"
 msgstr "Flash color"
 
-#: templates/menu_flash.html:37 templates/menu_points.html:49
-#: templates/menu_points.html:114
+#: templates/menu_flash.html:38 templates/menu_points.html:50
+#: templates/menu_points.html:116
 msgid "Couleurs GC (par type)"
 msgstr "GC colors (by type)"
 
-#: templates/menu_flash.html:41 templates/menu_points.html:53
-#: templates/menu_points.html:118
+#: templates/menu_flash.html:42 templates/menu_points.html:54
+#: templates/menu_points.html:120
 msgid "Transparent"
 msgstr "Transparent"
 
-#: templates/menu_flash.html:45 templates/menu_points.html:57
-#: templates/menu_points.html:122
+#: templates/menu_flash.html:46 templates/menu_points.html:58
+#: templates/menu_points.html:124
 msgid "Couleur unique"
 msgstr "Single color"
 
-#: templates/menu_flash.html:50 templates/menu_points.html:62
-#: templates/menu_points.html:127
+#: templates/menu_flash.html:51 templates/menu_points.html:63
+#: templates/menu_points.html:129
 msgid "Choisir la couleur"
 msgstr "Choose color"
 
-#: templates/menu_flash.html:51
+#: templates/menu_flash.html:52
 msgid "Choisir la couleur du flash"
 msgstr "Choose the flash color"
 
@@ -1973,7 +1981,7 @@ msgid "Afficher la date"
 msgstr "Display date"
 
 #: templates/menu_informations.html:61 templates/menu_informations.html:149
-#: templates/menu_informations.html:181
+#: templates/menu_informations.html:184
 msgid "Couleur"
 msgstr "Color"
 
@@ -1987,7 +1995,7 @@ msgstr "Font"
 
 #: templates/menu_informations.html:73 templates/menu_informations.html:87
 #: templates/menu_informations.html:106 templates/menu_informations.html:141
-#: templates/menu_informations.html:193
+#: templates/menu_informations.html:196
 msgid "Défaut"
 msgstr "Default"
 
@@ -2015,11 +2023,11 @@ msgstr "Corner radius (px)"
 msgid "Bordure (px)"
 msgstr "Border (px)"
 
-#: templates/menu_informations.html:159
+#: templates/menu_informations.html:162
 msgid "Activer"
 msgstr "Enable"
 
-#: templates/menu_informations.html:237
+#: templates/menu_informations.html:240
 msgid ""
 "Copier le style de la cible actuelle vers l'autre cible (Titre → Infos ou"
 " inversement)"
@@ -2027,11 +2035,11 @@ msgstr ""
 "Copy the style from the current target to the other target (Title → Info "
 "or vice versa)"
 
-#: templates/menu_informations.html:238
+#: templates/menu_informations.html:241
 msgid "Copier vers l'autre"
 msgstr "Copy to the other"
 
-#: templates/menu_informations.html:250 templates/menu_informations.html:252
+#: templates/menu_informations.html:253 templates/menu_informations.html:255
 msgid "Appliquer les Modifications"
 msgstr "Apply Changes"
 
@@ -2135,12 +2143,12 @@ msgstr "Home"
 msgid "Taille du centre"
 msgstr "Center size"
 
-#: templates/menu_points.html:39 templates/menu_points.html:160
+#: templates/menu_points.html:39 templates/menu_points.html:162
 msgid "Taille en pixels"
 msgstr "Size in pixels"
 
-#: templates/menu_points.html:40 templates/menu_points.html:105
-#: templates/menu_points.html:161
+#: templates/menu_points.html:40 templates/menu_points.html:106
+#: templates/menu_points.html:163
 msgid "px"
 msgstr "px"
 
@@ -2148,55 +2156,55 @@ msgstr "px"
 msgid "Couleur du centre"
 msgstr "Center color"
 
-#: templates/menu_points.html:63
+#: templates/menu_points.html:64
 msgid "Choisir la couleur du centre"
 msgstr "Choose the center color"
 
-#: templates/menu_points.html:74
+#: templates/menu_points.html:75
 msgid "Forme du point"
 msgstr "Point shape"
 
-#: templates/menu_points.html:78 templates/menu_points.html:79
+#: templates/menu_points.html:79 templates/menu_points.html:80
 msgid "Forme des points"
 msgstr "Point shape"
 
-#: templates/menu_points.html:92
+#: templates/menu_points.html:93
 msgid "Bordure du point"
 msgstr "Point border"
 
-#: templates/menu_points.html:97
+#: templates/menu_points.html:98
 msgid "Épaisseur de la bordure (0 = aucune)"
 msgstr "Border thickness (0 = none)"
 
-#: templates/menu_points.html:100
+#: templates/menu_points.html:101
 msgid "Épaisseur de la bordure"
 msgstr "Border thickness"
 
-#: templates/menu_points.html:104
+#: templates/menu_points.html:105
 msgid "Épaisseur en pixels"
 msgstr "Thickness in pixels"
 
-#: templates/menu_points.html:111
+#: templates/menu_points.html:112
 msgid "Couleur de la bordure"
 msgstr "Border color"
 
-#: templates/menu_points.html:128
+#: templates/menu_points.html:130
 msgid "Choisir la couleur de la bordure"
 msgstr "Choose the border color"
 
-#: templates/menu_points.html:141
+#: templates/menu_points.html:143
 msgid "Configuration des icônes"
 msgstr "Icon configuration"
 
-#: templates/menu_points.html:146 templates/menu_points.html:147
+#: templates/menu_points.html:148 templates/menu_points.html:149
 msgid "Jeu d'icônes"
 msgstr "Icon set"
 
-#: templates/menu_points.html:153 templates/menu_points.html:156
+#: templates/menu_points.html:155 templates/menu_points.html:158
 msgid "Taille des icônes"
 msgstr "Icon size"
 
-#: templates/menu_points.html:167
+#: templates/menu_points.html:169
 msgid "Aperçu des icônes"
 msgstr "Icon preview"
 
@@ -2751,4 +2759,7 @@ msgstr "Skip for now"
 
 #~ msgid "le profil de style chargé automatiquement à l'ouverture."
 #~ msgstr "the style profile loaded automatically on startup."
+
+#~ msgid "ACTIF"
+#~ msgstr "ACTIVE"
 

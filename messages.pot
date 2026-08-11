@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-10 19:21+0200\n"
+"POT-Creation-Date: 2026-08-10 21:06+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -491,33 +491,29 @@ msgstr ""
 msgid "Aucun profil"
 msgstr ""
 
-#: static/js/profiles.js:678 static/js/profiles.js:1985
+#: static/js/profiles.js:676 static/js/profiles.js:1985
 msgid "Dupliquer"
 msgstr ""
 
-#: static/js/profiles.js:679 static/js/profiles.js:1965
+#: static/js/profiles.js:677 static/js/profiles.js:1965
 msgid "Renommer"
 msgstr ""
 
-#: static/js/profiles.js:680
+#: static/js/profiles.js:678
 msgid "Exporter"
 msgstr ""
 
-#: static/js/profiles.js:681 templates/menu_options.html:90
+#: static/js/profiles.js:679 templates/menu_options.html:90
 #: templates/menu_style.html:229
 msgid "Réinitialiser"
 msgstr ""
 
-#: static/js/profiles.js:682 templates/menu_style.html:204
+#: static/js/profiles.js:680 templates/menu_style.html:204
 msgid "Supprimer"
 msgstr ""
 
-#: static/js/profiles.js:686
+#: static/js/profiles.js:684
 msgid "Définir comme par défaut"
-msgstr ""
-
-#: static/js/profiles.js:740
-msgid "ACTIF"
 msgstr ""
 
 #: static/js/profiles.js:762 templates/menu_options.html:42
@@ -745,18 +741,18 @@ msgstr ""
 msgid "Aucune destination"
 msgstr ""
 
-#: static/js/ui.js:2666 templates/menu_filtre.html:38
-#: templates/menu_filtre.html:56 templates/menu_filtre.html:81
-#: templates/menu_filtre.html:103 templates/menu_filtre.html:168
-#: templates/menu_filtre.html:179
+#: static/js/ui.js:2666 templates/menu_filtre.html:40
+#: templates/menu_filtre.html:59 templates/menu_filtre.html:84
+#: templates/menu_filtre.html:106 templates/menu_filtre.html:171
+#: templates/menu_filtre.html:182
 msgid "Aucun"
 msgstr ""
 
-#: static/js/ui.js:2693 templates/menu_filtre.html:164
+#: static/js/ui.js:2693 templates/menu_filtre.html:167
 msgid "Filtrer par pays"
 msgstr ""
 
-#: static/js/ui.js:2722 static/js/ui.js:2760 templates/menu_filtre.html:175
+#: static/js/ui.js:2722 static/js/ui.js:2760 templates/menu_filtre.html:178
 msgid "Filtrer par région/état"
 msgstr ""
 
@@ -1279,16 +1275,16 @@ msgid "Renseignez la"
 msgstr ""
 
 #: templates/guide.html:202 templates/menu_animation.html:32
-#: templates/menu_animation.html:33 templates/menu_filtre.html:115
-#: templates/menu_filtre.html:116 templates/menu_filtre.html:140
-#: templates/menu_filtre.html:141
+#: templates/menu_animation.html:33 templates/menu_filtre.html:118
+#: templates/menu_filtre.html:119 templates/menu_filtre.html:143
+#: templates/menu_filtre.html:144
 msgid "Date de début"
 msgstr ""
 
 #: templates/guide.html:202 templates/menu_animation.html:46
-#: templates/menu_animation.html:47 templates/menu_filtre.html:124
-#: templates/menu_filtre.html:125 templates/menu_filtre.html:149
-#: templates/menu_filtre.html:150
+#: templates/menu_animation.html:47 templates/menu_filtre.html:127
+#: templates/menu_filtre.html:128 templates/menu_filtre.html:152
+#: templates/menu_filtre.html:153
 msgid "Date de fin"
 msgstr ""
 
@@ -1559,8 +1555,8 @@ msgid "Plage de dates de l'animation"
 msgstr ""
 
 #: templates/menu_animation.html:35 templates/menu_animation.html:49
-#: templates/menu_filtre.html:118 templates/menu_filtre.html:127
-#: templates/menu_filtre.html:143 templates/menu_filtre.html:152
+#: templates/menu_filtre.html:121 templates/menu_filtre.html:130
+#: templates/menu_filtre.html:146 templates/menu_filtre.html:155
 msgid "Date par défaut (BDD)"
 msgstr ""
 
@@ -1674,132 +1670,144 @@ msgid "Traditional Cache"
 msgstr ""
 
 #: templates/menu_filtre.html:17
-msgid "Unknown Cache"
+msgid "Multi-cache"
 msgstr ""
 
 #: templates/menu_filtre.html:18
-msgid "Wherigo Cache"
+msgid "Unknown Cache"
 msgstr ""
 
 #: templates/menu_filtre.html:19
-msgid "Letterbox Hybrid"
+msgid "Wherigo Cache"
 msgstr ""
 
 #: templates/menu_filtre.html:20
-msgid "Earthcache"
+msgid "Letterbox Hybrid"
 msgstr ""
 
 #: templates/menu_filtre.html:21
-msgid "Virtual Cache"
+msgid "Earthcache"
 msgstr ""
 
 #: templates/menu_filtre.html:22
+msgid "Virtual Cache"
+msgstr ""
+
+#: templates/menu_filtre.html:23
 msgid "Webcam Cache"
 msgstr ""
 
-#: templates/menu_filtre.html:24
+#: templates/menu_filtre.html:25
 msgid "Events"
 msgstr ""
 
-#: templates/menu_filtre.html:25
+#: templates/menu_filtre.html:26
 msgid "Event Cache"
 msgstr ""
 
-#: templates/menu_filtre.html:26
+#: templates/menu_filtre.html:27
 msgid "Giga-Event Cache"
 msgstr ""
 
-#: templates/menu_filtre.html:27
+#: templates/menu_filtre.html:28
 msgid "Mega-Event Cache"
 msgstr ""
 
-#: templates/menu_filtre.html:28
+#: templates/menu_filtre.html:29
 msgid "Cache In Trash Out Event"
 msgstr ""
 
-#: templates/menu_filtre.html:29
+#: templates/menu_filtre.html:30
 msgid "Community Celebration Event"
 msgstr ""
 
 #: templates/menu_filtre.html:31
-msgid "Autres"
-msgstr ""
-
-#: templates/menu_filtre.html:32
-msgid "GPS Adventures Exhibit"
+msgid "Geocaching HQ Block Party"
 msgstr ""
 
 #: templates/menu_filtre.html:33
+msgid "Autres"
+msgstr ""
+
+#: templates/menu_filtre.html:34
+msgid "GPS Adventures Exhibit"
+msgstr ""
+
+#: templates/menu_filtre.html:35
 msgid "Locationless (Reverse) Cache"
 msgstr ""
 
-#: templates/menu_filtre.html:37 templates/menu_filtre.html:55
-#: templates/menu_filtre.html:80 templates/menu_filtre.html:102
-#: templates/menu_filtre.html:167 templates/menu_filtre.html:178
+#: templates/menu_filtre.html:39 templates/menu_filtre.html:58
+#: templates/menu_filtre.html:83 templates/menu_filtre.html:105
+#: templates/menu_filtre.html:170 templates/menu_filtre.html:181
 msgid "Tout"
 msgstr ""
 
-#: templates/menu_filtre.html:44 templates/menu_filtre.html:45
+#: templates/menu_filtre.html:46 templates/menu_filtre.html:47
 msgid "Taille"
 msgstr ""
 
-#: templates/menu_filtre.html:46
+#: templates/menu_filtre.html:48
 msgid "Filtrer par taille"
 msgstr ""
 
-#: templates/menu_filtre.html:47
+#: templates/menu_filtre.html:49
 msgid "Small"
 msgstr ""
 
-#: templates/menu_filtre.html:48
+#: templates/menu_filtre.html:50
 msgid "Micro"
 msgstr ""
 
-#: templates/menu_filtre.html:49
+#: templates/menu_filtre.html:51
 msgid "Regular"
 msgstr ""
 
-#: templates/menu_filtre.html:50
+#: templates/menu_filtre.html:52
 msgid "Large"
 msgstr ""
 
-#: templates/menu_filtre.html:51
+#: templates/menu_filtre.html:53
 msgid "Other"
 msgstr ""
 
-#: templates/menu_filtre.html:52
+#: templates/menu_filtre.html:54
 msgid "Virtual"
 msgstr ""
 
-#: templates/menu_filtre.html:66 templates/menu_filtre.html:67
+#: templates/menu_filtre.html:55
+msgid "Not chosen"
+msgstr ""
+
+#: templates/menu_filtre.html:69 templates/menu_filtre.html:70
 msgid "Difficultés"
 msgstr ""
 
-#: templates/menu_filtre.html:68
+#: templates/menu_filtre.html:71
 msgid "Filtrer par difficulté"
 msgstr ""
 
-#: templates/menu_filtre.html:88 templates/menu_filtre.html:89
+#: templates/menu_filtre.html:91 templates/menu_filtre.html:92
 msgid "Terrain"
 msgstr ""
 
-#: templates/menu_filtre.html:90
+#: templates/menu_filtre.html:93
 msgid "Filtrer par terrain"
 msgstr ""
 
-#: templates/menu_filtre.html:112
+#: templates/menu_filtre.html:115
 msgid "Période de découverte"
 msgstr ""
 
-#: templates/menu_filtre.html:137
+#: templates/menu_filtre.html:140
 msgid "Période de pose"
 msgstr ""
 
-#: templates/menu_filtre.html:162 templates/menu_filtre.html:163
+#: templates/menu_filtre.html:165 templates/menu_filtre.html:166
 msgid "Pays"
 msgstr ""
 
-#: templates/menu_filtre.html:173 templates/menu_filtre.html:174
+#: templates/menu_filtre.html:176 templates/menu_filtre.html:177
 msgid "Région / État"
 msgstr ""
 

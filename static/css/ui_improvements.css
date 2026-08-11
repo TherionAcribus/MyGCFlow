@@ -893,7 +893,11 @@ top: 20px;
     margin-bottom: 12px;
 }
 
-/* Badge profil actif sous le titre */
+/* Rappel du profil actif sous le titre : simple ligne de texte discrète, la
+   liste porte déjà le marquage principal. Seule la pastille change de couleur
+   selon l'état d'enregistrement (verte = à jour, orange = modifications en
+   attente), et le libellé passe en orange dans ce dernier cas — le seul état
+   qui mérite d'attirer l'œil. */
 .profile-active-indicator {
     display: none;
     margin-top: -8px;
@@ -903,14 +907,10 @@ top: 20px;
 .profile-active-indicator.active {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    background: #e8f5e9;
-    color: #2e7d32;
-    border: 1px solid #a5d6a7;
-    border-radius: 12px;
-    padding: 2px 10px;
+    gap: 6px;
+    color: var(--color-text-muted);
     font-size: 0.82rem;
-    font-weight: 600;
+    font-weight: 500;
 }
 
 .profile-active-indicator.active::before {
@@ -918,18 +918,17 @@ top: 20px;
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background-color: #4caf50;
+    background-color: var(--color-success);
     flex-shrink: 0;
 }
 
 .profile-active-indicator.active.unsaved {
-    background: #fff3e0;
-    color: #e65100;
-    border-color: #ffcc80;
+    color: var(--color-warning);
+    font-weight: 600;
 }
 
 .profile-active-indicator.active.unsaved::before {
-    background-color: #ff9800;
+    background-color: var(--color-warning);
 }
 
 /* Indicateur inline « Enregistré ✓ » des préférences à sauvegarde automatique.
@@ -1571,36 +1570,44 @@ background: rgba(33, 150, 243, 0.04);
     border-radius: 4px;
 }
 
-/* Profil actif dans la liste */
-.active-profile {
-    color: var(--color-accent);
-    background: var(--color-accent-weak);
-    border: 1px solid var(--color-accent);
-    border-radius: 6px;
-    padding: 6px 10px;
+/* Ligne de profil : mise en page identique quel que soit l'état (actif ou non),
+   pour qu'activer un profil ne décale rien. Le nom tronque plutôt que de
+   pousser le menu « … » hors de la ligne. */
+.profile-name-wrap {
     display: flex;
     align-items: center;
-    gap: 8px;
+    min-width: 0;
 }
+.profile-name-wrap > .ti {
+    flex-shrink: 0;
+}
+.profile-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Profil actif dans la liste : marquage volontairement discret — un liseré
+   d'accent sur la ligne et le nom en accent, sans encadré, badge « ACTIF » ni
+   coche. L'état est exposé aux lecteurs d'écran par l'attribut aria-current
+   posé dans _setProfileItemActive(). */
+.list-group-item.active-profile-item {
+    box-shadow: inset 2px 0 0 var(--color-accent);
+}
+
+.active-profile {
+    color: var(--color-accent);
+    font-weight: 600;
+}
+
 /* Étoile du profil par défaut : indépendante du profil actif (les deux
    marquages peuvent être posés sur le même élément ou sur deux différents).
-   Couleur explicite pour rester lisible aussi sur le fond accentué de
-   .active-profile, qui impose sa propre couleur de texte. */
+   Couleur explicite pour rester lisible aussi sur le nom accentué du profil
+   actif, qui impose sa propre couleur de texte. */
 .profile-default-star {
     color: var(--color-warning);
     font-size: 0.9em;
     vertical-align: baseline;
-}
-
-.active-profile .active-badge {
-    background: var(--color-success);
-    color: #fff;
-    font-size: 10px;
-    font-weight: bold;
-    padding: 2px 6px;
-    border-radius: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
 }
 
 /* Barre de contrôle latérale (plein écran) */
