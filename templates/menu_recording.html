@@ -114,11 +114,16 @@
     <span class="anim-section-label">{{ _("Fichiers vidéo") }}</span>
 </div>
 <div class="anim-btn-group">
-    <button type="button" class="btn btn-secondary" id="btnCleanMoviePictures">
-        <i class="ti ti-trash-x me-1"></i>{{ _("Nettoyer images") }}
-    </button>
-    <button type="button" class="btn btn-secondary" id="btnAssembleMoviePictures">
-        <i class="ti ti-movie me-1"></i>{{ _("Assembler film") }}
+    {# Masqué par défaut : en fonctionnement normal le dossier temporaire est vidé
+       automatiquement en fin d'enregistrement, il n'y a donc rien à supprimer. Le
+       bouton n'apparaît (via `hidden`, piloté par ui.js) que s'il reste des images,
+       typiquement après une capture interrompue. Le libellé est dans un <span>
+       dédié : mapgl.js le remplace pendant l'opération sans effacer l'icône. #}
+    <button type="button" class="btn btn-secondary" id="btnCleanMoviePictures" hidden
+            data-bs-toggle="tooltip"
+            data-bs-title="{{ _('Supprime les images de capture restées dans le dossier temporaire, en général après un enregistrement interrompu. Sans effet sur les vidéos déjà créées.') }}">
+        <i class="ti ti-trash-x me-1"></i><span class="btn-label">{{ _("Supprimer les images de capture inutilisées") }}</span>
+        <span id="spanCleanMoviePicturesCount" class="badge text-bg-light ms-1"></span>
     </button>
     <button type="button" class="btn btn-secondary" id="btnOpenVideoFolder">
         <i class="ti ti-folder-open me-1"></i>{{ _("Ouvrir le dossier vidéo") }}

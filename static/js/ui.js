@@ -1118,13 +1118,17 @@ const spanTotalTimeSeconds = document.getElementById('spanTotalTimeSeconds');
 // nombre de jours
 const spanDeltaDays = document.getElementById('spanDeltaDays');
 
-// TMP
 const btnCleanMoviePictures = document.getElementById('btnCleanMoviePictures');
 if (btnCleanMoviePictures) btnCleanMoviePictures.addEventListener('click', clear_pictures_directory);
-const btnAssembleMoviePictures = document.getElementById('btnAssembleMoviePictures');
-if (btnAssembleMoviePictures) btnAssembleMoviePictures.addEventListener('click', assemble_pictures_directory);
 const btnOpenVideoFolder = document.getElementById('btnOpenVideoFolder');
 if (btnOpenVideoFolder) btnOpenVideoFolder.addEventListener('click', open_video_folder);
+
+// Le bouton de suppression des images de capture n'a de sens qu'après une capture
+// interrompue : on interroge le serveur à l'ouverture de l'onglet Enregistrement
+// (et une fois au démarrage) pour ne l'afficher que dans ce cas.
+const recordingConfigTab = document.getElementById('recordingConfigTab');
+if (recordingConfigTab) recordingConfigTab.addEventListener('shown.bs.tab', () => refreshCapturedPicturesUi());
+if (btnCleanMoviePictures) refreshCapturedPicturesUi();
 
 
 // FLASH - éléments déplacés dans initUIElements()
@@ -3600,25 +3604,54 @@ function updateTimeBreakdown(baseMs, extraMs, automaticHoldMs, totalMs){
 }
 
 
+// Affiche ou masque le bouton de suppression des images de capture selon le
+// contenu réel du dossier temporaire, et rappelle le nombre d'images concernées.
+// `count` évite un aller-retour quand l'appelant connaît déjà la valeur (réponse
+// de /clear_pictures_directory) ; sinon on interroge le serveur.
+export function refreshCapturedPicturesUi(count = null) {
+    const btn = document.getElementById('btnCleanMoviePictures');
+    if (!btn) return Promise.resolve(0);
+
+    const apply = (value) => {
+        const n = Number.isFinite(value) && value > 0 ? value : 0;
+        btn.hidden = n === 0;
+        const badge = document.getElementById('spanCleanMoviePicturesCount');
+        // `hidden` en plus du texte vide : une pastille vide garde son fond et son
+        // rembourrage, elle se verrait quand même à côté du libellé.
+        if (badge) { badge.textContent = n > 0 ? String(n) : ''; badge.hidden = n === 0; }
+        return n;
+    };
+
+    if (typeof count === 'number') return Promise.resolve(apply(count));
+
+    return fetch('/captured_pictures_count', { method: 'GET' })
+        .then(response => response.json())
+        .then(data => apply(data?.count))
+        // Serveur injoignable : on ne masque pas un bouton peut-être utile, on
+        // laisse simplement l'état courant.
+        .catch(error => { console.error('Erreur:', error); return null; });
+}
+
 function clear_pictures_directory(){
-// TMP : Pour l'instant on vider le repertoire via un bouton. Devra par la suite être automatique après assemblage.
     fetch('/clear_pictures_directory', {
-        method: 'POST', 
+        method: 'POST',
         headers: {
-            'X-CSRFToken': pkg.getCookie('csrftoken'), 
+            'X-CSRFToken': pkg.getCookie('csrftoken'),
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({ action: 'vider_repertoire' }),
     })
     .then(response => response.json())
     .then(data => {
-        dbgUi(data); // Traiter la réponse de Django
+        dbgUi(data);
         if(data.success) {
-            // Mettre à jour l'interface utilisateur en conséquence
-            dbgUi(data)
+            refreshCapturedPicturesUi(typeof data.count === 'number' ? data.count : 0);
+            pkg.showToast && pkg.showToast(t('Images de capture supprimées'), 'success', t('Nettoyage'), 4000);
         } else if (data && data.busy) {
             // Refus serveur : un assemblage lit encore les images de captured/
             pkg.showToast && pkg.showToast(data.message, 'warning', t('Assemblage en cours'), 6000);
+        } else {
+            refreshCapturedPicturesUi();
         }
     })
     .catch(error => console.error('Erreur:', error));
@@ -3646,70 +3679,6 @@ function open_video_folder(){
         pkg.showToast && pkg.showToast(t('Erreur lors de l’ouverture du dossier vidéo'), 'error', t('Ouverture'));
     });
 }
-
-// Poll d'une tâche de fond serveur (/tasks/<id>) jusqu'à sa fin.
-function pollAssembleTask(taskId, { intervalMs = 700, timeoutMs = 1800000, onProgress } = {}){
-    return new Promise((resolve, reject) => {
-        const startedAt = Date.now();
-        const tick = () => {
-            if (!taskId) { reject(new Error('task_id manquant')); return; }
-            if (Date.now() - startedAt > timeoutMs) { reject(new Error('Délai d\'assemblage dépassé')); return; }
-            fetch(`/tasks/${encodeURIComponent(taskId)}?include_result=true`, { method: 'GET' })
-                .then(r => r.json())
-                .then(status => {
-                    if (typeof onProgress === 'function' && typeof status?.progress === 'number') onProgress(status.progress, status.message);
-                    if (status?.state === 'finished') { resolve(status?.result || {}); return; }
-                    if (status?.state === 'failed') { reject(new Error(status?.error || status?.message || 'Tâche échouée')); return; }
-                    setTimeout(tick, intervalMs);
-                })
-                .catch(reject);
-        };
-        tick();
-    });
-}
-
-function assemble_pictures_directory(){
-    // FPS configurable : doit correspondre à celui utilisé pour calculer les frames,
-    // sinon la vitesse de lecture de la vidéo assemblée est faussée.
-    const fps = normalizeRecordingFps(pkg.options?.record?.fps);
-    const assembleToast = pkg.showLoadingToast ? pkg.showLoadingToast(t("Assemblage de la vidéo en cours..."), t("Assemblage")) : null;
-    fetch('/assemble_pictures_directory', {
-        method: 'POST', 
-        headers: {
-            'X-CSRFToken': pkg.getCookie('csrftoken'), 
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ action: 'assembler', fps: fps }),
-    })
-    .then(response => response.json())
-    .then(data => {
-        // Assemblage en tâche de fond : on suit la progression via /tasks/<id>
-        if (!data || !data.task_id) {
-            const err = new Error(data && data.message ? data.message : "Impossible de lancer l'assemblage");
-            // 409 : un assemblage tourne déjà, on affiche le message du serveur tel quel
-            err.busy = !!(data && data.busy);
-            throw err;
-        }
-        return pollAssembleTask(data.task_id, {
-            onProgress: (p) => { try { if (assembleToast) pkg.updateToastProgress(assembleToast, p); } catch(_) {} }
-        });
-    })
-    .then(() => {
-        try { if (assembleToast) pkg.hideToast(assembleToast); } catch(_) {}
-        pkg.showToast && pkg.showToast(t("Vidéo créée avec succès !"), "success", t("Vidéo prête"));
-    })
-    .catch(error => {
-        console.error('Erreur:', error);
-        try { if (assembleToast) pkg.hideToast(assembleToast); } catch(_) {}
-        if (error && error.busy) {
-            pkg.showToast && pkg.showToast(error.message, "warning", t("Assemblage en cours"), 6000);
-            return;
-        }
-        pkg.showToast && pkg.showToast(t("Erreur lors de l'assemblage de la vidéo"), "error", t("Erreur"));
-    });
-}
-
-
 
 // ----------------- FLASH ----------------
 // recupère tous les changements liés aux flashs

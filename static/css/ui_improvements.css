@@ -821,20 +821,12 @@ main.fullscreen-mode #infosFrame span:not([hidden]) {
     background-color: #1976d2 !important;
 }
 
-/* Bouton Nettoyer images - Rouge pâle (action de nettoyage) */
+/* Bouton de suppression des images de capture - Rouge pâle (action de nettoyage) */
 #btnCleanMoviePictures {
     background-color: #ffab91 !important;
 }
 #btnCleanMoviePictures:hover {
     background-color: #ff8a65 !important;
-}
-
-/* Bouton Assembler film - Bleu-vert (action constructive) */
-#btnAssembleMoviePictures {
-    background-color: #26a69a !important;
-}
-#btnAssembleMoviePictures:hover {
-    background-color: #009688 !important;
 }
 
 /* (Styles des chips retirés) */

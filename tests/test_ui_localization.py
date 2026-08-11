@@ -56,10 +56,9 @@ class UiLocalizationTests(unittest.TestCase):
             "Aucune destination",
             "Impossible d’ouvrir le dossier vidéo",
             "Erreur lors de l’ouverture du dossier vidéo",
-            "Assemblage de la vidéo en cours...",
-            "Vidéo créée avec succès !",
-            "Vidéo prête",
-            "Erreur lors de l'assemblage de la vidéo",
+            "Images de capture supprimées",
+            "Nettoyage",
+            "Assemblage en cours",
         ):
             self.assertIn(msgid, msgids)
 
@@ -80,7 +79,8 @@ class UiLocalizationTests(unittest.TestCase):
             "Centre par défaut mis à jour depuis la carte": "Default center updated from the map",
             "Aucune destination": "No destination",
             "Impossible d’ouvrir le dossier vidéo": "Unable to open the video folder",
-            "Erreur lors de l'assemblage de la vidéo": "Error assembling the video",
+            "Images de capture supprimées": "Capture images deleted",
+            "Supprimer les images de capture inutilisées": "Delete unused capture images",
         }
         for msgid, translated in expected.items():
             self.assertEqual(catalog.gettext(msgid), translated)

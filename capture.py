@@ -13,6 +13,10 @@ from werkzeug.utils import secure_filename
 
 CAPTURED_DIR = 'captured'
 
+# Formats écrits dans captured/ : webp par défaut côté client, png pour l'ancien
+# envoi base64. Sert autant à l'assemblage qu'au comptage des images restantes.
+CAPTURED_IMAGE_EXTENSIONS = ('.webp', '.png', '.jpg', '.jpeg')
+
 
 def _to_int(value, default=0):
     try:
@@ -120,6 +124,24 @@ def open_video_folder():
         return jsonify({'success': False, 'message': str(e)}), 500
 
 
+def count_captured_pictures():
+    """Nombre d'images restées dans captured/ (0 si le dossier est absent).
+
+    Ne compte que les fichiers image : un `.gitkeep` ou un fichier système ne doit
+    pas faire croire à l'utilisateur qu'il reste des captures à supprimer.
+    """
+    try:
+        if not os.path.isdir(CAPTURED_DIR):
+            return 0
+        return sum(
+            1 for name in os.listdir(CAPTURED_DIR)
+            if name.lower().endswith(CAPTURED_IMAGE_EXTENSIONS)
+            and os.path.isfile(os.path.join(CAPTURED_DIR, name))
+        )
+    except OSError:
+        return 0
+
+
 def clear_pictures_directory():
     directory_path = 'captured/'  # Chemin vers le répertoire à vider
     try:
@@ -139,8 +161,13 @@ def clear_pictures_directory():
                 except Exception as e:
                     # En cas d'erreur lors de la suppression, renvoyer un message d'erreur
                     return jsonify({'success': False, 'message': str(e)})
-        # Si tout s'est bien passé, renvoyer un succès
-        return jsonify({'success': True, 'message': 'Le répertoire a été vidé avec succès'})
+        # `count` évite au client une requête de plus pour rafraîchir l'affichage
+        # du bouton de suppression (masqué dès qu'il ne reste plus d'image).
+        return jsonify({
+            'success': True,
+            'message': 'Le répertoire a été vidé avec succès',
+            'count': count_captured_pictures(),
+        })
     except Exception as e:
         # Gérer les exceptions imprévues
         return jsonify({'success': False, 'message': str(e)})
@@ -410,7 +437,7 @@ def _assemble_pictures(image_folder, output_video, fps=24, audio_path=None, audi
                 pass
 
     # Inclure plusieurs formats d'images (webp par défaut côté client, mais aussi png et autres)
-    exts = (".webp", ".png", ".jpg", ".jpeg")
+    exts = CAPTURED_IMAGE_EXTENSIONS
     # Obtenez la liste des fichiers d'image dans le dossier
     image_files = [os.path.join(image_folder, img) for img in sorted(os.listdir(image_folder)) if img.lower().endswith(exts)]
 

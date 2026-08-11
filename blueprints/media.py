@@ -7,6 +7,7 @@ from werkzeug.utils import secure_filename
 from capture import (
     TASK_TYPE_VIDEO,
     clear_pictures_directory,
+    count_captured_pictures,
     default_video_output,
     open_video_folder,
     process_recorded_video,
@@ -50,7 +51,6 @@ def _busy_response(running, message):
     }), 409
 
 
-# Message unique pour les deux points d'entrée d'assemblage
 _BUSY_MESSAGE = (
     "Un assemblage vidéo est déjà en cours. Attendez sa fin avant d'en lancer "
     "un autre ou de relancer une capture (les deux utilisent le dossier captured/)."
@@ -79,8 +79,8 @@ def get_upload_images():
 @cross_origin()
 def start_create_video():
     try:
-        # Paramètres en JSON, avec repli sur la query string (idem
-        # /assemble_pictures_directory) pour rester tolérant côté client.
+        # Paramètres en JSON, avec repli sur la query string pour rester
+        # tolérant côté client.
         payload = request.get_json(silent=True)
         if not isinstance(payload, dict):
             payload = {}
@@ -121,6 +121,19 @@ def start_create_video():
         return jsonify({'success': False, 'message': str(e)})
 
 
+@media_bp.route('/captured_pictures_count', methods=['GET'])
+@cross_origin()
+def captured_pictures_count():
+    """Nombre d'images en attente dans captured/.
+
+    Le client s'en sert pour n'afficher le bouton de suppression que lorsqu'il y a
+    réellement quelque chose à supprimer : en fonctionnement normal le dossier est
+    vidé automatiquement en fin d'enregistrement, et un bouton toujours visible
+    laissait croire à une étape manuelle obligatoire.
+    """
+    return jsonify({'success': True, 'count': count_captured_pictures()})
+
+
 @media_bp.route('/clear_pictures_directory', methods=['POST'])
 @cross_origin()
 def clear_pictures():
@@ -137,33 +150,9 @@ def clear_pictures():
     return clear_pictures_directory()
 
 
-@media_bp.route('/assemble_pictures_directory', methods=['POST'])
-@cross_origin()
-def assemble_pictures():
-    # FPS envoyé par le client (JSON ou query), sinon valeur par défaut
-    raw_fps = None
-    payload = request.get_json(silent=True) or {}
-    if isinstance(payload, dict):
-        raw_fps = payload.get('fps')
-    if raw_fps is None:
-        raw_fps = request.args.get('fps')
-    fps = _parse_fps(raw_fps)
-    # Tâche de fond + suivi via /tasks/<id> (idem start_create_video)
-    output_video = default_video_output("mp4")
-    try:
-        status = task_manager.submit(
-            TASK_TYPE_VIDEO, run_assemble_video_task,
-            "captured", output_video, fps,
-            exclusive=True,
-        )
-    except TaskAlreadyRunning as exc:
-        return _busy_response(exc.status, _BUSY_MESSAGE)
-    return jsonify({
-        'success': True,
-        'message': 'Assemblage vidéo lancé en tâche de fond',
-        'task_id': status.id,
-        'state': status.state,
-    }), 202
+# Note : la route /assemble_pictures_directory a été retirée avec le bouton
+# « Assembler film » (outil de mise au point). L'assemblage en mode images est
+# déclenché automatiquement en fin de capture via /start_create_video.
 
 
 @media_bp.route('/open_video_folder', methods=['POST'])

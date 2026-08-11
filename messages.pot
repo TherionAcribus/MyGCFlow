@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-10 21:06+0200\n"
+"POT-Creation-Date: 2026-08-11 07:47+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -154,9 +154,9 @@ msgid ""
 "instable ?)."
 msgstr ""
 
-#: static/js/basemaps.js:92 static/js/basemaps.js:129 static/js/ui.js:1656
-#: static/js/ui.js:1687 static/js/ui.js:1709 static/js/ui.js:1831
-#: static/js/ui.js:1845
+#: static/js/basemaps.js:92 static/js/basemaps.js:129 static/js/ui.js:1662
+#: static/js/ui.js:1693 static/js/ui.js:1715 static/js/ui.js:1837
+#: static/js/ui.js:1851
 msgid "Carte"
 msgstr ""
 
@@ -258,7 +258,6 @@ msgstr ""
 #: static/js/bdd.js:842 static/js/bdd.js:849 static/js/bdd.js:916
 #: static/js/bdd.js:923 static/js/bdd.js:1099 static/js/bdd.js:1170
 #: static/js/bdd.js:1177 static/js/notifications.js:274 static/js/ui.js:1020
-#: static/js/ui.js:4248
 msgid "Erreur"
 msgstr ""
 
@@ -362,12 +361,20 @@ msgstr ""
 msgid "le ${date}"
 msgstr ""
 
-#: static/js/mapgl.js:1176
+#: static/js/mapgl.js:1139
+msgid "Nettoyage en cours..."
+msgstr ""
+
+#: static/js/mapgl.js:1197
 #, python-brace-format
 msgid "La capture a été interrompue suite à une erreur : ${message}"
 msgstr ""
 
-#: static/js/mapgl.js:1457
+#: static/js/mapgl.js:1468
+msgid "Vidéo prête"
+msgstr ""
+
+#: static/js/mapgl.js:1480
 #, python-brace-format
 msgid "Erreur lors du traitement automatique: ${message}"
 msgstr ""
@@ -690,7 +697,7 @@ msgid ""
 " démarrage de l'enregistrement."
 msgstr ""
 
-#: static/js/ui.js:873 static/js/ui.js:1904
+#: static/js/ui.js:873 static/js/ui.js:1910
 msgid "Format non supporté"
 msgstr ""
 
@@ -706,95 +713,83 @@ msgstr ""
 msgid "Erreur lors de la lecture du fichier audio"
 msgstr ""
 
-#: static/js/ui.js:1656
+#: static/js/ui.js:1662
 msgid "Enregistrement du centre par défaut impossible"
 msgstr ""
 
-#: static/js/ui.js:1687
+#: static/js/ui.js:1693
 msgid "Coordonnées invalides. Ex: 48.85, 2.35 ou N 49° 16.029 E 006° 07.512"
 msgstr ""
 
-#: static/js/ui.js:1709
+#: static/js/ui.js:1715
 msgid "Coordonnées invalides. Ex: N 49° 16.029 / E 006° 07.512"
 msgstr ""
 
-#: static/js/ui.js:1831
+#: static/js/ui.js:1837
 msgid "Cliquez sur la carte pour choisir le centre"
 msgstr ""
 
-#: static/js/ui.js:1845
+#: static/js/ui.js:1851
 msgid "Centre par défaut mis à jour depuis la carte"
 msgstr ""
 
-#: static/js/ui.js:1903
+#: static/js/ui.js:1909
 #, python-brace-format
 msgid "Le format vidéo sauvegardé (${mime}) n'est pas supporté par ce navigateur."
 msgstr ""
 
-#: static/js/ui.js:2111
+#: static/js/ui.js:2117
 msgid ""
 "La vidéo ne sera ni téléchargée ni uploadée : elle sera perdue après "
 "l'enregistrement."
 msgstr ""
 
-#: static/js/ui.js:2112
+#: static/js/ui.js:2118
 msgid "Aucune destination"
 msgstr ""
 
-#: static/js/ui.js:2666 templates/menu_filtre.html:40
+#: static/js/ui.js:2672 templates/menu_filtre.html:40
 #: templates/menu_filtre.html:59 templates/menu_filtre.html:84
 #: templates/menu_filtre.html:106 templates/menu_filtre.html:171
 #: templates/menu_filtre.html:182
 msgid "Aucun"
 msgstr ""
 
-#: static/js/ui.js:2693 templates/menu_filtre.html:167
+#: static/js/ui.js:2699 templates/menu_filtre.html:167
 msgid "Filtrer par pays"
 msgstr ""
 
-#: static/js/ui.js:2722 static/js/ui.js:2760 templates/menu_filtre.html:178
+#: static/js/ui.js:2728 static/js/ui.js:2766 templates/menu_filtre.html:178
 msgid "Filtrer par région/état"
 msgstr ""
 
-#: static/js/ui.js:4156 static/js/ui.js:4245
+#: static/js/ui.js:4186
+msgid "Images de capture supprimées"
+msgstr ""
+
+#: static/js/ui.js:4186
+msgid "Nettoyage"
+msgstr ""
+
+#: static/js/ui.js:4190
 msgid "Assemblage en cours"
 msgstr ""
 
-#: static/js/ui.js:4174
+#: static/js/ui.js:4210
 #, python-brace-format
 msgid "Dossier vidéo: ${folder}"
 msgstr ""
 
-#: static/js/ui.js:4174 static/js/ui.js:4176 static/js/ui.js:4181
+#: static/js/ui.js:4210 static/js/ui.js:4212 static/js/ui.js:4217
 msgid "Ouverture"
 msgstr ""
 
-#: static/js/ui.js:4176
+#: static/js/ui.js:4212
 msgid "Impossible d’ouvrir le dossier vidéo"
 msgstr ""
 
-#: static/js/ui.js:4181
+#: static/js/ui.js:4217
 msgid "Erreur lors de l’ouverture du dossier vidéo"
-msgstr ""
-
-#: static/js/ui.js:4213
-msgid "Assemblage de la vidéo en cours..."
-msgstr ""
-
-#: static/js/ui.js:4213
-msgid "Assemblage"
-msgstr ""
-
-#: static/js/ui.js:4239
-msgid "Vidéo créée avec succès !"
-msgstr ""
-
-#: static/js/ui.js:4239
-msgid "Vidéo prête"
-msgstr ""
-
-#: static/js/ui.js:4248
-msgid "Erreur lors de l'assemblage de la vidéo"
 msgstr ""
 
 #: templates/_scope_badges.html:23
@@ -848,7 +843,7 @@ msgid "Animation & vidéo"
 msgstr ""
 
 #: templates/app.html:122 templates/guide.html:54 templates/guide.html:87
-#: templates/guide.html:94 templates/guide.html:257 templates/guide.html:259
+#: templates/guide.html:94 templates/guide.html:256 templates/guide.html:258
 msgid "Préférences"
 msgstr ""
 
@@ -857,7 +852,7 @@ msgstr ""
 msgid "Mode d'emploi"
 msgstr ""
 
-#: templates/guide.html:27 templates/guide.html:287
+#: templates/guide.html:27 templates/guide.html:286
 msgid "Retour à l'application"
 msgstr ""
 
@@ -1437,102 +1432,98 @@ msgid "Récupérez votre vidéo"
 msgstr ""
 
 #: templates/guide.html:243
-msgid "Selon le mode d'enregistrement, utilisez les boutons de la section"
+msgid ""
+"La vidéo est créée automatiquement à la fin de l'enregistrement. Utilisez"
+" ensuite les boutons de la section"
 msgstr ""
 
-#: templates/guide.html:243
-msgid "Vidéo"
+#: templates/guide.html:243 templates/menu_recording.html:114
+msgid "Fichiers vidéo"
 msgstr ""
 
-#: templates/guide.html:245 templates/menu_recording.html:121
-msgid "Assembler film"
-msgstr ""
-
-#: templates/guide.html:245
-msgid "génère la vidéo à partir des images capturées."
-msgstr ""
-
-#: templates/guide.html:246 templates/menu_recording.html:124
+#: templates/guide.html:245 templates/menu_recording.html:129
 msgid "Ouvrir le dossier vidéo"
 msgstr ""
 
-#: templates/guide.html:246
+#: templates/guide.html:245
 msgid "accède au dossier contenant vos vidéos."
 msgstr ""
 
-#: templates/guide.html:247 templates/menu_recording.html:118
-msgid "Nettoyer images"
+#: templates/guide.html:246 templates/menu_recording.html:125
+msgid "Supprimer les images de capture inutilisées"
 msgstr ""
 
-#: templates/guide.html:247
-msgid "vide les images temporaires avant un nouvel enregistrement."
+#: templates/guide.html:246
+msgid ""
+"n'apparaît qu'après un enregistrement interrompu, quand des images "
+"temporaires sont restées sur le disque."
 msgstr ""
 
-#: templates/guide.html:259
+#: templates/guide.html:258
 msgid "Réglez une fois pour toutes le comportement de l'application dans l'onglet"
 msgstr ""
 
-#: templates/guide.html:263
+#: templates/guide.html:262
 msgid "Préférences générales"
 msgstr ""
 
-#: templates/guide.html:265 templates/menu_options.html:14
+#: templates/guide.html:264 templates/menu_options.html:14
 msgid "Langue"
 msgstr ""
 
-#: templates/guide.html:265
+#: templates/guide.html:264
 msgid "basculez entre français et anglais."
 msgstr ""
 
-#: templates/guide.html:266
+#: templates/guide.html:265
 msgid "Vérifier les mises à jour au démarrage"
 msgstr ""
 
-#: templates/guide.html:266
+#: templates/guide.html:265
 msgid "soyez prévenu d'une nouvelle version."
 msgstr ""
 
-#: templates/guide.html:267 templates/menu_options.html:41
+#: templates/guide.html:266 templates/menu_options.html:41
 msgid "Profil par défaut au démarrage"
 msgstr ""
 
-#: templates/guide.html:267
+#: templates/guide.html:266
 msgid ""
 "le profil de style chargé à la première ouverture. Ensuite, GCMap rouvre "
 "le dernier profil que vous avez utilisé."
 msgstr ""
 
-#: templates/guide.html:271
+#: templates/guide.html:270
 msgid "Vue de carte par défaut"
 msgstr ""
 
-#: templates/guide.html:272
+#: templates/guide.html:271
 msgid ""
 "Définissez le centre (latitude, longitude) et le zoom utilisés au "
 "démarrage."
 msgstr ""
 
-#: templates/guide.html:274 templates/menu_options.html:84
+#: templates/guide.html:273 templates/menu_options.html:84
 msgid "Utiliser la vue actuelle de la carte"
 msgstr ""
 
-#: templates/guide.html:274
+#: templates/guide.html:273
 msgid "reprend la position affichée."
 msgstr ""
 
-#: templates/guide.html:275 templates/menu_options.html:87
+#: templates/guide.html:274 templates/menu_options.html:87
 msgid "Choisir sur la carte"
 msgstr ""
 
-#: templates/guide.html:275
+#: templates/guide.html:274
 msgid "cliquez directement le point souhaité."
 msgstr ""
 
-#: templates/guide.html:282
+#: templates/guide.html:281
 msgid "Vous êtes prêt !"
 msgstr ""
 
-#: templates/guide.html:282
+#: templates/guide.html:281
 msgid ""
 "Chargez vos données, composez votre style, lancez l'animation et partagez"
 " votre carte de géocaching."
@@ -2329,8 +2320,11 @@ msgid ""
 " à vitesse normale. Désactiver pour conserver la vidéo au ralenti."
 msgstr ""
 
-#: templates/menu_recording.html:114
-msgid "Fichiers vidéo"
+#: templates/menu_recording.html:124
+msgid ""
+"Supprime les images de capture restées dans le dossier temporaire, en "
+"général après un enregistrement interrompu. Sans effet sur les vidéos "
+"déjà créées."
 msgstr ""
 
 #: templates/menu_style.html:25

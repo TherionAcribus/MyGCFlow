@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-10 21:06+0200\n"
+"POT-Creation-Date: 2026-08-11 07:47+0200\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -157,9 +157,9 @@ msgid ""
 "instable ?)."
 msgstr "Some map tiles could not be loaded (unstable connection?)."
 
-#: static/js/basemaps.js:92 static/js/basemaps.js:129 static/js/ui.js:1656
-#: static/js/ui.js:1687 static/js/ui.js:1709 static/js/ui.js:1831
-#: static/js/ui.js:1845
+#: static/js/basemaps.js:92 static/js/basemaps.js:129 static/js/ui.js:1662
+#: static/js/ui.js:1693 static/js/ui.js:1715 static/js/ui.js:1837
+#: static/js/ui.js:1851
 msgid "Carte"
 msgstr "Map"
 
@@ -263,7 +263,6 @@ msgstr "Error while uploading the file"
 #: static/js/bdd.js:842 static/js/bdd.js:849 static/js/bdd.js:916
 #: static/js/bdd.js:923 static/js/bdd.js:1099 static/js/bdd.js:1170
 #: static/js/bdd.js:1177 static/js/notifications.js:274 static/js/ui.js:1020
-#: static/js/ui.js:4248
 msgid "Erreur"
 msgstr "Error"
 
@@ -369,12 +368,20 @@ msgstr "Published on ${date}"
 msgid "le ${date}"
 msgstr "on ${date}"
 
-#: static/js/mapgl.js:1176
+#: static/js/mapgl.js:1139
+msgid "Nettoyage en cours..."
+msgstr "Cleaning up..."
+
+#: static/js/mapgl.js:1197
 #, python-brace-format
 msgid "La capture a été interrompue suite à une erreur : ${message}"
 msgstr "The capture was interrupted by an error: ${message}"
 
-#: static/js/mapgl.js:1457
+#: static/js/mapgl.js:1468
+msgid "Vidéo prête"
+msgstr "Video ready"
+
+#: static/js/mapgl.js:1480
 #, python-brace-format
 msgid "Erreur lors du traitement automatique: ${message}"
 msgstr "Error during automatic processing: ${message}"
@@ -713,7 +720,7 @@ msgstr ""
 "This video format is not supported by your browser and will be ignored "
 "when recording starts."
 
-#: static/js/ui.js:873 static/js/ui.js:1904
+#: static/js/ui.js:873 static/js/ui.js:1910
 msgid "Format non supporté"
 msgstr "Unsupported format"
 
@@ -729,32 +736,32 @@ msgstr "Music"
 msgid "Erreur lors de la lecture du fichier audio"
 msgstr "Error reading the audio file"
 
-#: static/js/ui.js:1656
+#: static/js/ui.js:1662
 msgid "Enregistrement du centre par défaut impossible"
 msgstr "Could not save the default map center"
 
-#: static/js/ui.js:1687
+#: static/js/ui.js:1693
 msgid "Coordonnées invalides. Ex: 48.85, 2.35 ou N 49° 16.029 E 006° 07.512"
 msgstr "Invalid coordinates. E.g. 48.85, 2.35 or N 49° 16.029 E 006° 07.512"
 
-#: static/js/ui.js:1709
+#: static/js/ui.js:1715
 msgid "Coordonnées invalides. Ex: N 49° 16.029 / E 006° 07.512"
 msgstr "Invalid coordinates. E.g. N 49° 16.029 / E 006° 07.512"
 
-#: static/js/ui.js:1831
+#: static/js/ui.js:1837
 msgid "Cliquez sur la carte pour choisir le centre"
 msgstr "Click the map to choose the center"
 
-#: static/js/ui.js:1845
+#: static/js/ui.js:1851
 msgid "Centre par défaut mis à jour depuis la carte"
 msgstr "Default center updated from the map"
 
-#: static/js/ui.js:1903
+#: static/js/ui.js:1909
 #, python-brace-format
 msgid "Le format vidéo sauvegardé (${mime}) n'est pas supporté par ce navigateur."
 msgstr "The saved video format (${mime}) is not supported by this browser."
 
-#: static/js/ui.js:2111
+#: static/js/ui.js:2117
 msgid ""
 "La vidéo ne sera ni téléchargée ni uploadée : elle sera perdue après "
 "l'enregistrement."
@@ -762,65 +769,53 @@ msgstr ""
 "The video will be neither downloaded nor uploaded: it will be lost after "
 "recording."
 
-#: static/js/ui.js:2112
+#: static/js/ui.js:2118
 msgid "Aucune destination"
 msgstr "No destination"
 
-#: static/js/ui.js:2666 templates/menu_filtre.html:40
+#: static/js/ui.js:2672 templates/menu_filtre.html:40
 #: templates/menu_filtre.html:59 templates/menu_filtre.html:84
 #: templates/menu_filtre.html:106 templates/menu_filtre.html:171
 #: templates/menu_filtre.html:182
 msgid "Aucun"
 msgstr "None"
 
-#: static/js/ui.js:2693 templates/menu_filtre.html:167
+#: static/js/ui.js:2699 templates/menu_filtre.html:167
 msgid "Filtrer par pays"
 msgstr "Filter by country"
 
-#: static/js/ui.js:2722 static/js/ui.js:2760 templates/menu_filtre.html:178
+#: static/js/ui.js:2728 static/js/ui.js:2766 templates/menu_filtre.html:178
 msgid "Filtrer par région/état"
 msgstr "Filter by region/state"
 
-#: static/js/ui.js:4156 static/js/ui.js:4245
+#: static/js/ui.js:4186
+msgid "Images de capture supprimées"
+msgstr "Capture images deleted"
+
+#: static/js/ui.js:4186
+msgid "Nettoyage"
+msgstr "Cleanup"
+
+#: static/js/ui.js:4190
 msgid "Assemblage en cours"
 msgstr "Assembly in progress"
 
-#: static/js/ui.js:4174
+#: static/js/ui.js:4210
 #, python-brace-format
 msgid "Dossier vidéo: ${folder}"
 msgstr "Video folder: ${folder}"
 
-#: static/js/ui.js:4174 static/js/ui.js:4176 static/js/ui.js:4181
+#: static/js/ui.js:4210 static/js/ui.js:4212 static/js/ui.js:4217
 msgid "Ouverture"
 msgstr "Opening"
 
-#: static/js/ui.js:4176
+#: static/js/ui.js:4212
 msgid "Impossible d’ouvrir le dossier vidéo"
 msgstr "Unable to open the video folder"
 
-#: static/js/ui.js:4181
+#: static/js/ui.js:4217
 msgid "Erreur lors de l’ouverture du dossier vidéo"
 msgstr "Error opening the video folder"
-
-#: static/js/ui.js:4213
-msgid "Assemblage de la vidéo en cours..."
-msgstr "Video assembly in progress..."
-
-#: static/js/ui.js:4213
-msgid "Assemblage"
-msgstr "Assembly"
-
-#: static/js/ui.js:4239
-msgid "Vidéo créée avec succès !"
-msgstr "Video created successfully!"
-
-#: static/js/ui.js:4239
-msgid "Vidéo prête"
-msgstr "Video ready"
-
-#: static/js/ui.js:4248
-msgid "Erreur lors de l'assemblage de la vidéo"
-msgstr "Error assembling the video"
 
 #: templates/_scope_badges.html:23
 msgid ""
@@ -877,7 +872,7 @@ msgid "Animation & vidéo"
 msgstr "Animation & video"
 
 #: templates/app.html:122 templates/guide.html:54 templates/guide.html:87
-#: templates/guide.html:94 templates/guide.html:257 templates/guide.html:259
+#: templates/guide.html:94 templates/guide.html:256 templates/guide.html:258
 msgid "Préférences"
 msgstr "Preferences"
 
@@ -886,7 +881,7 @@ msgstr "Preferences"
 msgid "Mode d'emploi"
 msgstr "User guide"
 
-#: templates/guide.html:27 templates/guide.html:287
+#: templates/guide.html:27 templates/guide.html:286
 msgid "Retour à l'application"
 msgstr "Back to the application"
 
@@ -1490,66 +1485,66 @@ msgid "Récupérez votre vidéo"
 msgstr "Get your video"
 
 #: templates/guide.html:243
-msgid "Selon le mode d'enregistrement, utilisez les boutons de la section"
-msgstr "Depending on the recording mode, use the buttons in the"
+msgid ""
+"La vidéo est créée automatiquement à la fin de l'enregistrement. Utilisez"
+" ensuite les boutons de la section"
+msgstr ""
+"The video is created automatically at the end of the recording. Then use "
+"the buttons in the"
 
-#: templates/guide.html:243
-msgid "Vidéo"
-msgstr "Video"
+#: templates/guide.html:243 templates/menu_recording.html:114
+msgid "Fichiers vidéo"
+msgstr "Video files"
 
-#: templates/guide.html:245 templates/menu_recording.html:121
-msgid "Assembler film"
-msgstr "Assemble movie"
-
-#: templates/guide.html:245
-msgid "génère la vidéo à partir des images capturées."
-msgstr "generates the video from the captured images."
-
-#: templates/guide.html:246 templates/menu_recording.html:124
+#: templates/guide.html:245 templates/menu_recording.html:129
 msgid "Ouvrir le dossier vidéo"
 msgstr "Open the video folder"
 
-#: templates/guide.html:246
+#: templates/guide.html:245
 msgid "accède au dossier contenant vos vidéos."
 msgstr "opens the folder containing your videos."
 
-#: templates/guide.html:247 templates/menu_recording.html:118
-msgid "Nettoyer images"
-msgstr "Clean images"
+#: templates/guide.html:246 templates/menu_recording.html:125
+msgid "Supprimer les images de capture inutilisées"
+msgstr "Delete unused capture images"
 
-#: templates/guide.html:247
-msgid "vide les images temporaires avant un nouvel enregistrement."
-msgstr "clears the temporary images before a new recording."
+#: templates/guide.html:246
+msgid ""
+"n'apparaît qu'après un enregistrement interrompu, quand des images "
+"temporaires sont restées sur le disque."
+msgstr ""
+"only appears after an interrupted recording, when temporary images are "
+"still on disk."
 
-#: templates/guide.html:259
+#: templates/guide.html:258
 msgid "Réglez une fois pour toutes le comportement de l'application dans l'onglet"
 msgstr "Configure the application's behavior once and for all in the"
 
-#: templates/guide.html:263
+#: templates/guide.html:262
 msgid "Préférences générales"
 msgstr "General preferences"
 
-#: templates/guide.html:265 templates/menu_options.html:14
+#: templates/guide.html:264 templates/menu_options.html:14
 msgid "Langue"
 msgstr "Language"
 
-#: templates/guide.html:265
+#: templates/guide.html:264
 msgid "basculez entre français et anglais."
 msgstr "switch between French and English."
 
-#: templates/guide.html:266
+#: templates/guide.html:265
 msgid "Vérifier les mises à jour au démarrage"
 msgstr "Check for updates at startup"
 
-#: templates/guide.html:266
+#: templates/guide.html:265
 msgid "soyez prévenu d'une nouvelle version."
 msgstr "be notified of a new version."
 
-#: templates/guide.html:267 templates/menu_options.html:41
+#: templates/guide.html:266 templates/menu_options.html:41
 msgid "Profil par défaut au démarrage"
 msgstr "Default profile at startup"
 
-#: templates/guide.html:267
+#: templates/guide.html:266
 msgid ""
 "le profil de style chargé à la première ouverture. Ensuite, GCMap rouvre "
 "le dernier profil que vous avez utilisé."
@@ -1557,37 +1552,37 @@ msgstr ""
 "the style profile loaded the first time you open GCMap. After that, GCMap"
 " reopens the last profile you used."
 
-#: templates/guide.html:271
+#: templates/guide.html:270
 msgid "Vue de carte par défaut"
 msgstr "Default map view"
 
-#: templates/guide.html:272
+#: templates/guide.html:271
 msgid ""
 "Définissez le centre (latitude, longitude) et le zoom utilisés au "
 "démarrage."
 msgstr "Set the center (latitude, longitude) and zoom used at startup."
 
-#: templates/guide.html:274 templates/menu_options.html:84
+#: templates/guide.html:273 templates/menu_options.html:84
 msgid "Utiliser la vue actuelle de la carte"
 msgstr "Use current map view"
 
-#: templates/guide.html:274
+#: templates/guide.html:273
 msgid "reprend la position affichée."
 msgstr "reuses the currently displayed position."
 
-#: templates/guide.html:275 templates/menu_options.html:87
+#: templates/guide.html:274 templates/menu_options.html:87
 msgid "Choisir sur la carte"
 msgstr "Pick on map"
 
-#: templates/guide.html:275
+#: templates/guide.html:274
 msgid "cliquez directement le point souhaité."
 msgstr "click directly on the desired point."
 
-#: templates/guide.html:282
+#: templates/guide.html:281
 msgid "Vous êtes prêt !"
 msgstr "You're all set!"
 
-#: templates/guide.html:282
+#: templates/guide.html:281
 msgid ""
 "Chargez vos données, composez votre style, lancez l'animation et partagez"
 " votre carte de géocaching."
@@ -2418,9 +2413,15 @@ msgstr ""
 "If the slowdown is > 1, speeds the final video back up to normal speed. "
 "Disable to keep the video in slow motion."
 
-#: templates/menu_recording.html:114
-msgid "Fichiers vidéo"
-msgstr "Video files"
+#: templates/menu_recording.html:124
+msgid ""
+"Supprime les images de capture restées dans le dossier temporaire, en "
+"général après un enregistrement interrompu. Sans effet sur les vidéos "
+"déjà créées."
+msgstr ""
+"Deletes the capture images left in the temporary folder, usually after an "
+"interrupted recording. Does not affect videos that have already been "
+"created."
 
 #: templates/menu_style.html:25
 msgid "OpenStreetMap"
@@ -2762,4 +2763,28 @@ msgstr "Skip for now"
 
 #~ msgid "ACTIF"
 #~ msgstr "ACTIVE"
+
+#~ msgid "Assemblage de la vidéo en cours..."
+#~ msgstr "Video assembly in progress..."
+
+#~ msgid "Assemblage"
+#~ msgstr "Assembly"
+
+#~ msgid "Vidéo créée avec succès !"
+#~ msgstr "Video created successfully!"
+
+#~ msgid "Erreur lors de l'assemblage de la vidéo"
+#~ msgstr "Error assembling the video"
+
+#~ msgid "Vidéo"
+#~ msgstr "Video"
+
+#~ msgid "Assembler film"
+#~ msgstr "Assemble movie"
+
+#~ msgid "génère la vidéo à partir des images capturées."
+#~ msgstr "generates the video from the captured images."
+
+#~ msgid "vide les images temporaires avant un nouvel enregistrement."
+#~ msgstr "clears the temporary images before a new recording."
 

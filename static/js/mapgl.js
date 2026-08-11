@@ -1123,15 +1123,29 @@ function scheduleCaptureFrame(pointOptions, flashOptions, infos) {
     });
 }
 
-// Bascule l'état « occupé » des boutons assembler/nettoyer/enregistrer (B6 : la
-// même séquence enable/disable était dupliquée dans plusieurs branches).
+// Bascule l'état « occupé » des boutons nettoyer/enregistrer (B6 : la même
+// séquence enable/disable était dupliquée dans plusieurs branches).
 function setAssembleUiBusy(busy) {
-    const assembleBtn = document.getElementById('btnAssembleMoviePictures');
     const cleanBtn = document.getElementById('btnCleanMoviePictures');
     const recordBtn = document.getElementById('btnRecordAnimation');
-    if (assembleBtn) { assembleBtn.disabled = busy; assembleBtn.textContent = busy ? 'Assemblage en cours...' : 'Assembler film'; }
-    if (cleanBtn) { cleanBtn.disabled = busy; cleanBtn.textContent = busy ? 'Nettoyage en cours...' : 'Nettoyer images'; }
+    if (cleanBtn) {
+        cleanBtn.disabled = busy;
+        // Seul le libellé change : écrire dans le bouton lui-même effacerait son
+        // icône et le compteur d'images.
+        const label = cleanBtn.querySelector('.btn-label');
+        if (label) {
+            if (busy) {
+                if (!cleanBtn.dataset.idleLabel) cleanBtn.dataset.idleLabel = label.textContent;
+                label.textContent = pkg.t('Nettoyage en cours...');
+            } else if (cleanBtn.dataset.idleLabel) {
+                label.textContent = cleanBtn.dataset.idleLabel;
+            }
+        }
+    }
     if (recordBtn) { recordBtn.disabled = busy; }
+    // Fin d'opération : le dossier temporaire a pu être vidé (ou pas, en cas
+    // d'échec) → réaligner l'affichage du bouton sur son contenu réel.
+    if (!busy) { try { pkg.refreshCapturedPicturesUi && pkg.refreshCapturedPicturesUi(); } catch(_) {} }
 }
 
 // Retire la garde « onglet masqué » du mode images (C8) et ferme son toast.
@@ -1449,7 +1463,9 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
               dbgMapgl('[RECORD END] Nettoyage automatique terminé');
               try { pkg.updateProgressBar({progress: 100, message: 'Nettoyage terminé'}); } catch(e) {}
               setTimeout(() => { try { pkg.closeModalLoading(); } catch(e) {} }, 400);
-              pkg.showToast && pkg.showToast('Traitement automatique terminé avec succès !', 'success', 'Vidéo prête', 5000);
+              // Titre passé par pkg.t() pour rester extrait dans le catalogue :
+              // showToast traduit à l'exécution, mais l'extraction est statique.
+              pkg.showToast && pkg.showToast('Traitement automatique terminé avec succès !', 'success', pkg.t('Vidéo prête'), 5000);
               warnIfTileErrors();
             } else {
               if (cleanData) console.warn('[RECORD END] Échec du nettoyage:', cleanData.message);
