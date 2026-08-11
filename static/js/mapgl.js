@@ -933,11 +933,9 @@ function startRecordingProcess(){
     globalRecordFrame = 0;
     infosProgressBar = {};
 
-    // Afficher les caches filtrés jusqu'à la date de début d'animation (sans effet flash)
-    const filteredPointsAtStart = getFilteredPointsAtStart();
-    if (filteredPointsAtStart.length > 0) {
-        displayWebGLPoints(filteredPointsAtStart, pkg.options.point);
-    }
+    // NB : l'affichage des caches antérieures à la date de début est fait plus bas,
+    // APRÈS le window.vectorSource.clear() de préparation — sinon ce clear les efface
+    // et l'enregistrement démarre sur une carte vide (contrairement à la lecture).
 
     // Déterminer plage de dates d'animation si définie
     if (pkg.options.animation.dateStart instanceof Date) {
@@ -1049,6 +1047,15 @@ function startRecordingProcess(){
     }
     
     window.vectorSource.clear();
+
+    // Afficher les caches filtrées jusqu'à la date de début d'animation (sans effet flash).
+    // L'état de départ dépend du FILTRE, pas de la date de début : restreindre la période
+    // d'animation ne doit pas masquer les caches déjà présentes avant cette date.
+    const filteredPointsAtStart = getFilteredPointsAtStart();
+    if (filteredPointsAtStart.length > 0) {
+        displayWebGLPoints(filteredPointsAtStart, pkg.options.point);
+    }
+
     createFlashElements();
     // creation objet pour stocker les infos liées aux Frames (dt nombre de caches)
     let infos = createObjectInfos();
@@ -1541,12 +1548,9 @@ function recordAnimationMediaRecorder(){
     } catch(_) {}
 
     // Préparation carte: points initiaux, animations, etc.
+    // NB : les points initiaux sont affichés plus bas, APRÈS le window.vectorSource.clear()
+    // de préparation — sinon ce clear les efface et la vidéo démarre sur une carte vide.
     try { clearMap(); } catch(_) {}
-
-    const filteredPointsAtStart = getFilteredPointsAtStart();
-    if (filteredPointsAtStart.length > 0) {
-        displayWebGLPoints(filteredPointsAtStart, pkg.options.point);
-    }
 
     // Déterminer plage de dates
     if (pkg.options.animation.dateStart instanceof Date) {
@@ -1562,6 +1566,15 @@ function recordAnimationMediaRecorder(){
     // Frames/informations
     window.vectorSource = window.vectorSource || new ol.source.Vector({ wrapX: true });
     window.vectorSource.clear();
+
+    // Afficher les caches filtrées jusqu'à la date de début d'animation (sans effet flash).
+    // L'état de départ dépend du FILTRE, pas de la date de début : restreindre la période
+    // d'animation ne doit pas masquer les caches déjà présentes avant cette date.
+    const filteredPointsAtStart = getFilteredPointsAtStart();
+    if (filteredPointsAtStart.length > 0) {
+        displayWebGLPoints(filteredPointsAtStart, pkg.options.point);
+    }
+
     createFlashElements();
     // IMPORTANT : réinitialiser la variable module 'infos' (compteur de caches).
     // startAnimation(true) réutilise ce même objet ; sans reset, cacheNumber
