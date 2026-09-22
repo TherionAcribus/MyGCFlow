@@ -11,10 +11,15 @@
                     <i class="ti ti-info-circle fs-2 mt-1"></i>
                     <div>
                         <h6 class="alert-heading">{{ _("Comment obtenir votre fichier .gpx ?") }}</h6>
-                        <p class="mb-0 text-muted">
-                            {{ _("Pour fonctionner cette application à besoin que vous chargiez un fichier .gpx contenant vos trouvailles de géocaching.") }}
-                            {{ _("Ce fichier est disponible sur le site de géocaching.com dans Profil > Pocket Query > My Finds (en bas de la page). Puis récupérer le fichier en cliquant sur \"Add to Queue\".") }}
-                        </p>
+                        <ol class="mb-2 ps-3 text-muted">
+                            <li>{{ _("Ouvrez la page des Pocket Queries de geocaching.com (connexion requise).") }}</li>
+                            <li>{{ _("Tout en bas, dans la section \"My Finds\", cliquez sur \"Add to Queue\".") }}</li>
+                            <li>{{ _("Le fichier est généré en quelques minutes : vous le recevez par e-mail et il apparaît dans l'onglet \"Pocket Queries Ready for Download\". Décompressez le .zip pour obtenir le .gpx.") }}</li>
+                        </ol>
+                        <p class="mb-2 small text-muted">{{ _("La Pocket Query \"My Finds\" ne peut être générée qu'une fois tous les 3 jours.") }}</p>
+                        <a href="https://www.geocaching.com/pocket/default.aspx" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary">
+                            <i class="ti ti-external-link me-1"></i>{{ _("Ouvrir mes Pocket Queries sur geocaching.com") }}
+                        </a>
                     </div>
                 </div>
 
