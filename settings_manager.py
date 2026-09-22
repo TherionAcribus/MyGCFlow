@@ -201,6 +201,9 @@ class PointStyle:
     icon_set: str = "geocaching"
     icon_size: int = 24
     appear_animation: bool = False  # apparition animée (agrandissement + rebond)
+    # Fenêtre de persistance des points récents, en jours (0 = désactivée) :
+    # les caches des derniers jours restent plus claires et un peu plus grosses.
+    recent_glow_days: int = 0
 
 
 @dataclass
@@ -456,6 +459,7 @@ def coerce_profile(d: dict) -> MapProfile:
             icon_set=pt.get("icon_set", p.points.icon_set) or p.points.icon_set,
             icon_size=_to_int(pt.get("icon_size") or None, p.points.icon_size),
             appear_animation=bool(pt.get("appear_animation", p.points.appear_animation)),
+            recent_glow_days=max(0, _to_int(pt.get("recent_glow_days"), p.points.recent_glow_days)),
         )
 
         # Options flash
@@ -1299,7 +1303,8 @@ class SettingsManager:
                     fill_color_type="gc",
                     border_color_type="fix",
                     mode="vectoriel",
-                    appear_animation=True
+                    appear_animation=True,
+                    recent_glow_days=30
                 ),
                 flash=FlashOptions(
                     mode="impulse",
@@ -1593,6 +1598,7 @@ class SettingsManager:
                 'icon_set': prof.points.icon_set,
                 'icon_size': prof.points.icon_size,
                 'appear_animation': prof.points.appear_animation,
+                'recent_glow_days': prof.points.recent_glow_days,
             },
             'flash': {
                 'mode': prof.flash.mode,

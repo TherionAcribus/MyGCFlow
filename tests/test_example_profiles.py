@@ -85,6 +85,9 @@ class ExampleProfileSeedingTests(unittest.TestCase):
         # « Équilibré » vise les grosses bases : pas d'apparition animée.
         self.assertFalse(balanced.points.appear_animation)
         self.assertTrue(cinematic.points.appear_animation)
+        # « Cinématique » met aussi en avant les caches des 30 derniers jours.
+        self.assertEqual(balanced.points.recent_glow_days, 0)
+        self.assertEqual(cinematic.points.recent_glow_days, 30)
         # Un flash bien plus court que les 2000 ms par défaut.
         self.assertLess(balanced.flash.duration, 1000)
         self.assertLess(cinematic.flash.duration, 1000)

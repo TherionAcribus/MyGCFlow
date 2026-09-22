@@ -66,3 +66,45 @@ export function appearOpacityExpression(durationMs = POINT_APPEAR_MS) {
 export function withAppearScale(value, durationMs = POINT_APPEAR_MS) {
     return ['*', value, appearScaleExpression(durationMs)];
 }
+
+// --- Persistance des points récents ------------------------------------------
+//
+// Les caches des derniers jours restent plus claires et légèrement plus grosses,
+// puis rejoignent progressivement le style normal : on lit ainsi d'un coup d'œil
+// où l'activité se déplace. La fenêtre est exprimée en jours dans l'interface,
+// convertie en durée d'animation (variable de style 'glowMs') par l'appelant,
+// car un jour ne dure pas le même temps en lecture et en enregistrement.
+
+// Fenêtres proposées, en jours.
+export const RECENT_GLOW_DAYS = [7, 30, 90];
+
+// Part de blanc mélangée à la couleur d'un point qui vient d'apparaître.
+export const RECENT_GLOW_WHITE_MIX = 0.55;
+// Grossissement d'un point qui vient d'apparaître, en plus de sa taille normale.
+export const RECENT_GLOW_EXTRA_SCALE = 0.3;
+
+// 1 juste après l'apparition, 0 une fois la fenêtre écoulée. La décroissance est
+// accélérée (puissance 1,5) : l'éclat retombe vite, la queue s'étire doucement.
+export function recentGlowFactorExpression(durationMs = POINT_APPEAR_MS) {
+    // 'glowMs' est toujours >= 1 (garanti par l'appelant) : les expressions de
+    // style n'ont pas d'opérateur max pour s'en prémunir elles-mêmes.
+    const progress = ['clamp',
+        ['/', ['-', AGE, durationMs], ['var', 'glowMs']],
+        0, 1];
+    return ['^', ['-', 1, progress], 1.5];
+}
+
+// Éclaircit une couleur (constante ou expression 'match' par type de cache) en
+// fonction de l'ancienneté du point.
+export function withRecentGlowColor(color, durationMs = POINT_APPEAR_MS) {
+    return ['interpolate', ['linear'],
+        ['*', recentGlowFactorExpression(durationMs), RECENT_GLOW_WHITE_MIX],
+        0, color,
+        1, [255, 255, 255, 1]];
+}
+
+// Grossit légèrement un point récent.
+export function withRecentGlowScale(value, durationMs = POINT_APPEAR_MS) {
+    return ['*', value,
+        ['+', 1, ['*', recentGlowFactorExpression(durationMs), RECENT_GLOW_EXTRA_SCALE]]];
+}

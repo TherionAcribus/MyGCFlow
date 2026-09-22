@@ -459,6 +459,7 @@ const inputSizeBorder = document.getElementById('inputSizeBorder');
     switchIconeVectoriel = document.getElementById('switchIconeVectoriel');
     if (switchIconeVectoriel) switchIconeVectoriel.addEventListener('change', changePointStyleUI);
     document.getElementById('switchPointAppear')?.addEventListener('change', changePointStyleUI);
+    document.getElementById('selectPointRecentGlow')?.addEventListener('change', changePointStyleUI);
 
 // select
     selectShape = document.getElementById('selectShape');
@@ -2675,6 +2676,8 @@ function changePointStyleUI(event){
     updatePointOptionsDisplay();
     const switchPointAppear = document.getElementById('switchPointAppear');
     if (switchPointAppear) pkg.options.point.appearAnimation = switchPointAppear.checked;
+    const selectPointRecentGlow = document.getElementById('selectPointRecentGlow');
+    if (selectPointRecentGlow) pkg.options.point.recentGlowDays = parseInt(selectPointRecentGlow.value) || 0;
     // colorpickers
     pkg.options.point.border.color = cpPointBorderColor.value;
     pkg.options.point.center.color = cpPointCenterColor.value;
@@ -2948,6 +2951,8 @@ export function syncPointOptionsUI() {
     if (switchIconeVectoriel) switchIconeVectoriel.checked = point.mode !== 'icone';
     const switchPointAppear = document.getElementById('switchPointAppear');
     if (switchPointAppear) switchPointAppear.checked = point.appearAnimation === true;
+    const selectPointRecentGlow = document.getElementById('selectPointRecentGlow');
+    if (selectPointRecentGlow) selectPointRecentGlow.value = String(Math.max(0, parseInt(point.recentGlowDays) || 0));
 
     // Colorpickers et types de couleur
     if (cpPointCenterColor && point.center?.color) cpPointCenterColor.value = point.center.color;

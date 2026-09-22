@@ -3,7 +3,12 @@
 // Extrait de mapgl.js. Fonction pure options -> objet de style ; sa seule
 // dependance externe est la table plate des couleurs GC.
 import { gcColorsFlat } from './gc_colors.js';
-import { appearOpacityExpression, withAppearScale } from './point_appear.mjs';
+import {
+    appearOpacityExpression,
+    withAppearScale,
+    withRecentGlowColor,
+    withRecentGlowScale,
+} from './point_appear.mjs';
 
 // Couleur totalement transparente, au format tableau [r, g, b, a] attendu par
 // les expressions de style WebGL (le mot-clé CSS 'transparent' n'est pas
@@ -187,9 +192,16 @@ export function buildPointStyle(pointOptions) {
     if (pointOptions.appearAnimation) {
         applyAppearAnimation(pointStyle);
     }
+    if (Number(pointOptions.recentGlowDays) > 0) {
+        applyRecentGlow(pointStyle);
+    }
 
     return pointStyle;
 }
+
+// Couleurs éclaircies par la persistance des points récents. La bordure est
+// laissée telle quelle : c'est le point lui-même qui doit s'éclairer.
+const GLOW_COLOR_KEYS = ['circle-fill-color', 'shape-fill-color'];
 
 // Propriétés de taille (multipliées par l'échelle d'apparition) et d'opacité,
 // selon le type de symbole du style.
@@ -205,4 +217,17 @@ function applyAppearAnimation(pointStyle) {
     }
     const symbol = Object.keys(APPEAR_OPACITY_KEY).find((prefix) => `${prefix}-radius` in pointStyle || `${prefix}-src` in pointStyle);
     if (symbol) pointStyle[APPEAR_OPACITY_KEY[symbol]] = appearOpacityExpression();
+}
+
+// Ajoute la persistance des points récents (voir point_appear.mjs) : les points
+// des derniers jours restent plus clairs et un peu plus gros. Repose sur les
+// mêmes prérequis que l'apparition animée, plus la variable de style 'glowMs'
+// (durée de la fenêtre en temps d'animation).
+function applyRecentGlow(pointStyle) {
+    for (const key of GLOW_COLOR_KEYS) {
+        if (key in pointStyle) pointStyle[key] = withRecentGlowColor(pointStyle[key]);
+    }
+    for (const key of APPEAR_SIZE_KEYS) {
+        if (key in pointStyle) pointStyle[key] = withRecentGlowScale(pointStyle[key]);
+    }
 }

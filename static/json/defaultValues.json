@@ -17,6 +17,7 @@
     "point": {
         "mode": "vectoriel",
         "appearAnimation": false,
+        "recentGlowDays": 0,
         "shape": "circle",
         "center" : {
             "color": "#ff00ff",

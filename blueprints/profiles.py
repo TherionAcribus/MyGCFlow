@@ -274,6 +274,11 @@ def api_save_profile(name: str):
             pass
     if 'appear_animation' in pt:
         prof.points.appear_animation = bool(pt['appear_animation'])
+    if 'recent_glow_days' in pt:
+        try:
+            prof.points.recent_glow_days = max(0, int(pt['recent_glow_days']))
+        except Exception:
+            pass
 
     f = data.get('flash', {})
     if 'mode' in f:

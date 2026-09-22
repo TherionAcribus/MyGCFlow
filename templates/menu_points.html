@@ -18,6 +18,15 @@
                 <label class="form-check-label" for="switchPointAppear">{{ _("Apparition animée des points") }}</label>
             </div>
             <small id="helpPointAppear" class="form-hint text-muted">{{ _("Chaque nouveau point surgit avec un léger rebond pendant l'animation.") }}</small>
+
+            <label class="form-label mt-3" for="selectPointRecentGlow">{{ _("Persistance des points récents") }}</label>
+            <select id="selectPointRecentGlow" class="form-select" aria-describedby="helpPointRecentGlow">
+                <option value="0">{{ _("Aucune") }}</option>
+                <option value="7">{{ _("7 derniers jours") }}</option>
+                <option value="30">{{ _("30 derniers jours") }}</option>
+                <option value="90">{{ _("90 derniers jours") }}</option>
+            </select>
+            <small id="helpPointRecentGlow" class="form-hint text-muted">{{ _("Les caches trouvées récemment restent plus claires, puis rejoignent le style normal : on suit ainsi le déplacement de l'activité.") }}</small>
         </div>
     </div>
 

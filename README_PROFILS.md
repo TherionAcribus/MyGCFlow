@@ -209,6 +209,7 @@ faire revenir ceux qui ont été supprimés (voir `EXAMPLES_VERSION` dans
   fond réellement sombre ; il ne montre que les contours des pays, donc il est
   fait pour une vue à l'échelle d'un pays, pas pour un zoom sur une ville.
 - **Points** : Couleurs GC avec apparition animée (léger rebond à chaque arrivée)
+  et persistance des 30 derniers jours (les caches récentes restent plus claires)
 - **Flash** : Impulsion (750 ms, 60 px) — halo et onde ressortent sur le fond sombre
 - **Usage** : Vidéos et présentations
 

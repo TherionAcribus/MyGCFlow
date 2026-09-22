@@ -231,9 +231,12 @@ const mapDirtyTracker = createMapDirtyTracker();
 // style est partagé par référence avec le layer WebGLPoints, qui relit 'now' à
 // chaque rendu : le mettre à jour ne demande ni changed() ni nouveau style.
 const pointAppearClock = createAppearClock();
-const pointStyleVariables = { now: 0 };
+// glowMs : durée de la fenêtre de persistance des points récents, en temps
+// d'animation. Toujours >= 1, les expressions de style divisant par elle.
+const pointStyleVariables = { now: 0, glowMs: 1 };
 let pointsAppearUntil = 0;       // fin de la dernière apparition en cours (horloge)
 let pointsAppearing = false;     // compte comme une animation pour mapDirtyTracker
+let pointsGlowing = false;       // persistance active : la carte change à chaque frame
 let pointAppearListenerKey = null;
 // Garde : true pendant nos propres renderSync de compositing (cf. mrPostrenderKey).
 let mrOwnRender = false;
@@ -562,19 +565,48 @@ function setAppearAttributes(olFeatures, featureList, isOlFeature, pointOptions,
 function updatePointAppearClock() {
     const now = sampleAppearClock();
     pointStyleVariables.now = now;
-    if (!pointsAppearing) return;
-    if (now >= pointsAppearUntil) {
-        pointsAppearing = false;
-        mapDirtyTracker.endAnimation();
-        return;
+
+    const glowDays = Math.max(0, Number(pkg.options.point?.recentGlowDays) || 0);
+    if (glowDays > 0) pointStyleVariables.glowMs = Math.max(1, glowDays * animationMsPerDay());
+    // La persistance s'estompe en continu : chaque frame diffère de la précédente
+    // tant qu'une animation tourne, même sans nouveau point ni flash.
+    setPointsGlowing(glowDays > 0 && isAnimationInProgress());
+
+    let pending = pointsGlowing;
+    if (pointsAppearing) {
+        if (now >= pointsAppearUntil) {
+            pointsAppearing = false;
+            mapDirtyTracker.endAnimation();
+        } else {
+            pending = true;
+        }
     }
     // Capture image par image et MediaRecorder pilotent eux-mêmes leurs rendus.
-    if (!isRecording && !isMediaRecording) map.render();
+    if (pending && !isRecording && !isMediaRecording) map.render();
+}
+
+// Durée d'un jour d'animation, dans l'unité de l'horloge des points : temps vidéo
+// pendant une capture image par image, temps réel sinon.
+function animationMsPerDay() {
+    if (isRecording) {
+        const fps = Number(pkg.options.record.framesPerSec) || 30;
+        const framesPerDay = Number(pkg.options.record.framesPerDay) || fps;
+        return framesPerDay * 1000 / fps;
+    }
+    return Number(pkg.options.animation.timePerDay) || 1000;
+}
+
+function setPointsGlowing(active) {
+    if (active === pointsGlowing) return;
+    pointsGlowing = active;
+    if (active) mapDirtyTracker.beginAnimation();
+    else mapDirtyTracker.endAnimation();
 }
 
 // À appeler quand le compteur d'animations de mapDirtyTracker est remis à zéro.
 function resetPointAppearAnimation() {
     pointsAppearing = false;
+    pointsGlowing = false;
 }
 
 // supprime les points de la carte (centre et bordures si existantes)
