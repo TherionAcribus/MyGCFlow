@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-22 17:46+0200\n"
+"POT-Creation-Date: 2026-09-22 18:08+0200\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -108,7 +108,7 @@ msgstr "Cancel"
 msgid "Graphisme des points"
 msgstr "Point graphics"
 
-#: blueprints/core.py:71 templates/menu_points.html:27
+#: blueprints/core.py:71 templates/menu_points.html:32
 msgid "Centre du point"
 msgstr "Point center"
 
@@ -169,9 +169,9 @@ msgid ""
 "instable ?)."
 msgstr "Some map tiles could not be loaded (unstable connection?)."
 
-#: static/js/basemaps.js:92 static/js/basemaps.js:129 static/js/ui.js:1656
-#: static/js/ui.js:1687 static/js/ui.js:1709 static/js/ui.js:1831
-#: static/js/ui.js:1845
+#: static/js/basemaps.js:92 static/js/basemaps.js:129 static/js/ui.js:1657
+#: static/js/ui.js:1688 static/js/ui.js:1710 static/js/ui.js:1832
+#: static/js/ui.js:1846
 msgid "Carte"
 msgstr "Map"
 
@@ -274,7 +274,7 @@ msgstr "Error while uploading the file"
 
 #: static/js/bdd.js:857 static/js/bdd.js:864 static/js/bdd.js:931
 #: static/js/bdd.js:938 static/js/bdd.js:1114 static/js/bdd.js:1185
-#: static/js/bdd.js:1192 static/js/notifications.js:274 static/js/ui.js:1020
+#: static/js/bdd.js:1192 static/js/notifications.js:274 static/js/ui.js:1021
 msgid "Erreur"
 msgstr "Error"
 
@@ -342,7 +342,7 @@ msgstr "Loading complete"
 msgid "Chargement et affichage des points..."
 msgstr "Loading and displaying points..."
 
-#: static/js/bdd.js:1199 static/js/mapgl.js:278 static/js/notifications.js:232
+#: static/js/bdd.js:1199 static/js/mapgl.js:287 static/js/notifications.js:232
 msgid "Affichage des points"
 msgstr "Points display"
 
@@ -354,46 +354,46 @@ msgstr "Error while displaying the points on the map"
 msgid "Erreur d'affichage"
 msgstr "Display error"
 
-#: static/js/mapgl.js:279
+#: static/js/mapgl.js:288
 msgid "Mise à jour de l'affichage des points..."
 msgstr "Updating point display..."
 
-#: static/js/mapgl.js:394
+#: static/js/mapgl.js:403
 msgid "Sans nom"
 msgstr "Unnamed"
 
-#: static/js/mapgl.js:395
+#: static/js/mapgl.js:404
 msgid "Trouvé"
 msgstr "Found"
 
-#: static/js/mapgl.js:395
+#: static/js/mapgl.js:404
 msgid "DNF"
 msgstr "DNF"
 
-#: static/js/mapgl.js:396
+#: static/js/mapgl.js:405
 #, python-brace-format
 msgid "Publié le ${date}"
 msgstr "Published on ${date}"
 
-#: static/js/mapgl.js:397
+#: static/js/mapgl.js:406
 #, python-brace-format
 msgid "le ${date}"
 msgstr "on ${date}"
 
-#: static/js/mapgl.js:1137
+#: static/js/mapgl.js:1218
 msgid "Nettoyage en cours..."
 msgstr "Cleaning up..."
 
-#: static/js/mapgl.js:1195
+#: static/js/mapgl.js:1276
 #, python-brace-format
 msgid "La capture a été interrompue suite à une erreur : ${message}"
 msgstr "The capture was interrupted by an error: ${message}"
 
-#: static/js/mapgl.js:1466
+#: static/js/mapgl.js:1547
 msgid "Vidéo prête"
 msgstr "Video ready"
 
-#: static/js/mapgl.js:1478
+#: static/js/mapgl.js:1559
 #, python-brace-format
 msgid "Erreur lors du traitement automatique: ${message}"
 msgstr "Error during automatic processing: ${message}"
@@ -517,11 +517,11 @@ msgstr "Error while setting the default profile"
 msgid "Aucun profil"
 msgstr "No profile"
 
-#: static/js/profiles.js:676 static/js/profiles.js:1985
+#: static/js/profiles.js:676 static/js/profiles.js:1986
 msgid "Dupliquer"
 msgstr "Duplicate"
 
-#: static/js/profiles.js:677 static/js/profiles.js:1965
+#: static/js/profiles.js:677 static/js/profiles.js:1966
 msgid "Renommer"
 msgstr "Rename"
 
@@ -582,45 +582,45 @@ msgstr "No default profile set"
 msgid "Le profil n'a pas pu être chargé : aucun profil n'est actif."
 msgstr "The profile could not be loaded: no profile is active."
 
-#: static/js/profiles.js:1950
+#: static/js/profiles.js:1951
 msgid "Enregistrer dans un nouveau profil"
 msgstr "Save to a new profile"
 
-#: static/js/profiles.js:1950 templates/menu_style.html:164
+#: static/js/profiles.js:1951 templates/menu_style.html:164
 msgid "Nouveau profil"
 msgstr "New profile"
 
-#: static/js/profiles.js:1956
+#: static/js/profiles.js:1957
 msgid "Enregistrer le profil"
 msgstr "Save profile"
 
-#: static/js/profiles.js:1956 templates/menu_style.html:179
+#: static/js/profiles.js:1957 templates/menu_style.html:179
 msgid "Créer"
 msgstr "Create"
 
-#: static/js/profiles.js:1963
+#: static/js/profiles.js:1964
 msgid "Renommer le profil"
 msgstr "Rename profile"
 
-#: static/js/profiles.js:1983
+#: static/js/profiles.js:1984
 msgid "Dupliquer le profil"
 msgstr "Duplicate profile"
 
-#: static/js/profiles.js:2039
+#: static/js/profiles.js:2040
 msgid "Le nom doit contenir au moins une lettre ou un chiffre"
 msgstr "The name must contain at least one letter or digit"
 
-#: static/js/profiles.js:2061
+#: static/js/profiles.js:2062
 #, python-brace-format
 msgid "« ${conflict} » existe déjà : la copie sera nommée « ${suggested} »"
 msgstr "“${conflict}” already exists: the copy will be named “${suggested}”"
 
-#: static/js/profiles.js:2068
+#: static/js/profiles.js:2069
 #, python-brace-format
 msgid "Un profil nommé « ${name} » existe déjà"
 msgstr "Profile renamed to \"${name}\""
 
-#: static/js/profiles.js:2069
+#: static/js/profiles.js:2070
 #, python-brace-format
 msgid ""
 "Ce nom est déjà pris par « ${conflict} » : les deux se réduisent au "
@@ -629,28 +629,28 @@ msgstr ""
 "This name is already taken by “${conflict}”: both reduce to the file "
 "“${key}”"
 
-#: static/js/profiles.js:2078
+#: static/js/profiles.js:2079
 #, python-brace-format
 msgid ""
 "Caractères ignorés (${dropped}) : le profil sera enregistré sous « ${key}"
 " »"
 msgstr "Ignored characters (${dropped}): the profile will be saved as “${key}”"
 
-#: static/js/profiles.js:2136
+#: static/js/profiles.js:2137
 msgid "Veuillez saisir un nom de profil"
 msgstr "Please enter a profile name"
 
-#: static/js/profiles.js:2195
+#: static/js/profiles.js:2196
 #, python-brace-format
 msgid "Profil renommé en \"${name}\""
 msgstr "Profile renamed to \"${name}\""
 
-#: static/js/profiles.js:2209
+#: static/js/profiles.js:2210
 #, python-brace-format
 msgid "Êtes-vous sûr de vouloir supprimer le profil \"${name}\" ?"
 msgstr "Are you sure you want to delete the profile \"${name}\"?"
 
-#: static/js/profiles.js:2228
+#: static/js/profiles.js:2229
 #, python-brace-format
 msgid ""
 "Êtes-vous sûr de vouloir réinitialiser le profil \"${name}\" aux valeurs "
@@ -724,7 +724,7 @@ msgstr "Saved"
 msgid "Non enregistré"
 msgstr "Not saved"
 
-#: static/js/ui.js:872
+#: static/js/ui.js:873
 msgid ""
 "Ce format vidéo n'est pas supporté par votre navigateur et sera ignoré au"
 " démarrage de l'enregistrement."
@@ -732,48 +732,48 @@ msgstr ""
 "This video format is not supported by your browser and will be ignored "
 "when recording starts."
 
-#: static/js/ui.js:873 static/js/ui.js:1904
+#: static/js/ui.js:874 static/js/ui.js:1905
 msgid "Format non supporté"
 msgstr "Unsupported format"
 
-#: static/js/ui.js:1016
+#: static/js/ui.js:1017
 msgid "Durée de l'animation ajustée selon la musique"
 msgstr "Animation duration adjusted to match the music"
 
-#: static/js/ui.js:1016
+#: static/js/ui.js:1017
 msgid "Musique"
 msgstr "Music"
 
-#: static/js/ui.js:1020
+#: static/js/ui.js:1021
 msgid "Erreur lors de la lecture du fichier audio"
 msgstr "Error reading the audio file"
 
-#: static/js/ui.js:1656
+#: static/js/ui.js:1657
 msgid "Enregistrement du centre par défaut impossible"
 msgstr "Could not save the default map center"
 
-#: static/js/ui.js:1687
+#: static/js/ui.js:1688
 msgid "Coordonnées invalides. Ex: 48.85, 2.35 ou N 49° 16.029 E 006° 07.512"
 msgstr "Invalid coordinates. E.g. 48.85, 2.35 or N 49° 16.029 E 006° 07.512"
 
-#: static/js/ui.js:1709
+#: static/js/ui.js:1710
 msgid "Coordonnées invalides. Ex: N 49° 16.029 / E 006° 07.512"
 msgstr "Invalid coordinates. E.g. N 49° 16.029 / E 006° 07.512"
 
-#: static/js/ui.js:1831
+#: static/js/ui.js:1832
 msgid "Cliquez sur la carte pour choisir le centre"
 msgstr "Click the map to choose the center"
 
-#: static/js/ui.js:1845
+#: static/js/ui.js:1846
 msgid "Centre par défaut mis à jour depuis la carte"
 msgstr "Default center updated from the map"
 
-#: static/js/ui.js:1903
+#: static/js/ui.js:1904
 #, python-brace-format
 msgid "Le format vidéo sauvegardé (${mime}) n'est pas supporté par ce navigateur."
 msgstr "The saved video format (${mime}) is not supported by this browser."
 
-#: static/js/ui.js:2111
+#: static/js/ui.js:2112
 msgid ""
 "La vidéo ne sera ni téléchargée ni uploadée : elle sera perdue après "
 "l'enregistrement."
@@ -781,51 +781,51 @@ msgstr ""
 "The video will be neither downloaded nor uploaded: it will be lost after "
 "recording."
 
-#: static/js/ui.js:2112
+#: static/js/ui.js:2113
 msgid "Aucune destination"
 msgstr "No destination"
 
-#: static/js/ui.js:2666 templates/menu_filtre.html:40
+#: static/js/ui.js:2667 templates/menu_filtre.html:40
 #: templates/menu_filtre.html:59 templates/menu_filtre.html:84
 #: templates/menu_filtre.html:106 templates/menu_filtre.html:171
 #: templates/menu_filtre.html:182
 msgid "Aucun"
 msgstr "None"
 
-#: static/js/ui.js:2693 templates/menu_filtre.html:167
+#: static/js/ui.js:2694 templates/menu_filtre.html:167
 msgid "Filtrer par pays"
 msgstr "Filter by country"
 
-#: static/js/ui.js:2722 static/js/ui.js:2760 templates/menu_filtre.html:178
+#: static/js/ui.js:2723 static/js/ui.js:2761 templates/menu_filtre.html:178
 msgid "Filtrer par région/état"
 msgstr "Filter by region/state"
 
-#: static/js/ui.js:4184
+#: static/js/ui.js:4189
 msgid "Images de capture supprimées"
 msgstr "Capture images deleted"
 
-#: static/js/ui.js:4184
+#: static/js/ui.js:4189
 msgid "Nettoyage"
 msgstr "Cleanup"
 
-#: static/js/ui.js:4188
+#: static/js/ui.js:4193
 msgid "Assemblage en cours"
 msgstr "Assembly in progress"
 
-#: static/js/ui.js:4208
+#: static/js/ui.js:4213
 #, python-brace-format
 msgid "Dossier vidéo: ${folder}"
 msgstr "Video folder: ${folder}"
 
-#: static/js/ui.js:4208 static/js/ui.js:4210 static/js/ui.js:4215
+#: static/js/ui.js:4213 static/js/ui.js:4215 static/js/ui.js:4220
 msgid "Ouverture"
 msgstr "Opening"
 
-#: static/js/ui.js:4210
+#: static/js/ui.js:4215
 msgid "Impossible d’ouvrir le dossier vidéo"
 msgstr "Unable to open the video folder"
 
-#: static/js/ui.js:4215
+#: static/js/ui.js:4220
 msgid "Erreur lors de l’ouverture du dossier vidéo"
 msgstr "Error opening the video folder"
 
@@ -1903,7 +1903,7 @@ msgstr "Flash shape"
 msgid "Pas de flash"
 msgstr "No flash"
 
-#: templates/menu_flash.html:12 templates/menu_points.html:81
+#: templates/menu_flash.html:12 templates/menu_points.html:86
 msgid "Cercle"
 msgstr "Circle"
 
@@ -1923,7 +1923,7 @@ msgstr "Sparkle"
 msgid "Carré"
 msgstr "Square"
 
-#: templates/menu_flash.html:17 templates/menu_points.html:82
+#: templates/menu_flash.html:17 templates/menu_points.html:87
 msgid "Triangle"
 msgstr "Triangle"
 
@@ -1959,23 +1959,23 @@ msgstr "5 to 200 px"
 msgid "Couleur du flash"
 msgstr "Flash color"
 
-#: templates/menu_flash.html:39 templates/menu_points.html:50
-#: templates/menu_points.html:116
+#: templates/menu_flash.html:39 templates/menu_points.html:55
+#: templates/menu_points.html:121
 msgid "Couleurs GC (par type)"
 msgstr "GC colors (by type)"
 
-#: templates/menu_flash.html:43 templates/menu_points.html:54
-#: templates/menu_points.html:120
+#: templates/menu_flash.html:43 templates/menu_points.html:59
+#: templates/menu_points.html:125
 msgid "Transparent"
 msgstr "Transparent"
 
-#: templates/menu_flash.html:47 templates/menu_points.html:58
-#: templates/menu_points.html:124
+#: templates/menu_flash.html:47 templates/menu_points.html:63
+#: templates/menu_points.html:129
 msgid "Couleur unique"
 msgstr "Single color"
 
-#: templates/menu_flash.html:52 templates/menu_points.html:63
-#: templates/menu_points.html:129
+#: templates/menu_flash.html:52 templates/menu_points.html:68
+#: templates/menu_points.html:134
 msgid "Choisir la couleur"
 msgstr "Choose color"
 
@@ -2166,72 +2166,80 @@ msgstr "Check for updates"
 msgid "Accueil"
 msgstr "Home"
 
-#: templates/menu_points.html:32 templates/menu_points.html:35
+#: templates/menu_points.html:18
+msgid "Apparition animée des points"
+msgstr "Animated point appearance"
+
+#: templates/menu_points.html:20
+msgid "Chaque nouveau point surgit avec un léger rebond pendant l'animation."
+msgstr "Each new point pops in with a slight bounce during the animation."
+
+#: templates/menu_points.html:37 templates/menu_points.html:40
 msgid "Taille du centre"
 msgstr "Center size"
 
-#: templates/menu_points.html:39 templates/menu_points.html:162
+#: templates/menu_points.html:44 templates/menu_points.html:167
 msgid "Taille en pixels"
 msgstr "Size in pixels"
 
-#: templates/menu_points.html:40 templates/menu_points.html:106
-#: templates/menu_points.html:163
+#: templates/menu_points.html:45 templates/menu_points.html:111
+#: templates/menu_points.html:168
 msgid "px"
 msgstr "px"
 
-#: templates/menu_points.html:46
+#: templates/menu_points.html:51
 msgid "Couleur du centre"
 msgstr "Center color"
 
-#: templates/menu_points.html:64
+#: templates/menu_points.html:69
 msgid "Choisir la couleur du centre"
 msgstr "Choose the center color"
 
-#: templates/menu_points.html:75
+#: templates/menu_points.html:80
 msgid "Forme du point"
 msgstr "Point shape"
 
-#: templates/menu_points.html:79 templates/menu_points.html:80
+#: templates/menu_points.html:84 templates/menu_points.html:85
 msgid "Forme des points"
 msgstr "Point shape"
 
-#: templates/menu_points.html:93
+#: templates/menu_points.html:98
 msgid "Bordure du point"
 msgstr "Point border"
 
-#: templates/menu_points.html:98
+#: templates/menu_points.html:103
 msgid "Épaisseur de la bordure (0 = aucune)"
 msgstr "Border thickness (0 = none)"
 
-#: templates/menu_points.html:101
+#: templates/menu_points.html:106
 msgid "Épaisseur de la bordure"
 msgstr "Border thickness"
 
-#: templates/menu_points.html:105
+#: templates/menu_points.html:110
 msgid "Épaisseur en pixels"
 msgstr "Thickness in pixels"
 
-#: templates/menu_points.html:112
+#: templates/menu_points.html:117
 msgid "Couleur de la bordure"
 msgstr "Border color"
 
-#: templates/menu_points.html:130
+#: templates/menu_points.html:135
 msgid "Choisir la couleur de la bordure"
 msgstr "Choose the border color"
 
-#: templates/menu_points.html:143
+#: templates/menu_points.html:148
 msgid "Configuration des icônes"
 msgstr "Icon configuration"
 
-#: templates/menu_points.html:148 templates/menu_points.html:149
+#: templates/menu_points.html:153 templates/menu_points.html:154
 msgid "Jeu d'icônes"
 msgstr "Icon set"
 
-#: templates/menu_points.html:155 templates/menu_points.html:158
+#: templates/menu_points.html:160 templates/menu_points.html:163
 msgid "Taille des icônes"
 msgstr "Icon size"
 
-#: templates/menu_points.html:169
+#: templates/menu_points.html:174
 msgid "Aperçu des icônes"
 msgstr "Icon preview"
 

@@ -458,6 +458,7 @@ const inputSizeBorder = document.getElementById('inputSizeBorder');
 // switch
     switchIconeVectoriel = document.getElementById('switchIconeVectoriel');
     if (switchIconeVectoriel) switchIconeVectoriel.addEventListener('change', changePointStyleUI);
+    document.getElementById('switchPointAppear')?.addEventListener('change', changePointStyleUI);
 
 // select
     selectShape = document.getElementById('selectShape');
@@ -2672,6 +2673,8 @@ function changePointStyleUI(event){
 
     // Gestion de l'affichage des sous-menus
     updatePointOptionsDisplay();
+    const switchPointAppear = document.getElementById('switchPointAppear');
+    if (switchPointAppear) pkg.options.point.appearAnimation = switchPointAppear.checked;
     // colorpickers
     pkg.options.point.border.color = cpPointBorderColor.value;
     pkg.options.point.center.color = cpPointCenterColor.value;
@@ -2943,6 +2946,8 @@ export function syncPointOptionsUI() {
     // Switch icône/vectoriel : tout mode inconnu est traité comme vectoriel,
     // comme le repli historique de init_ui.
     if (switchIconeVectoriel) switchIconeVectoriel.checked = point.mode !== 'icone';
+    const switchPointAppear = document.getElementById('switchPointAppear');
+    if (switchPointAppear) switchPointAppear.checked = point.appearAnimation === true;
 
     // Colorpickers et types de couleur
     if (cpPointCenterColor && point.center?.color) cpPointCenterColor.value = point.center.color;

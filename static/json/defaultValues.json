@@ -16,6 +16,7 @@
     },
     "point": {
         "mode": "vectoriel",
+        "appearAnimation": false,
         "shape": "circle",
         "center" : {
             "color": "#ff00ff",

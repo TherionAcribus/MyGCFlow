@@ -3,6 +3,7 @@
 // Extrait de mapgl.js. Fonction pure options -> objet de style ; sa seule
 // dependance externe est la table plate des couleurs GC.
 import { gcColorsFlat } from './gc_colors.js';
+import { appearOpacityExpression, withAppearScale } from './point_appear.mjs';
 
 // Couleur totalement transparente, au format tableau [r, g, b, a] attendu par
 // les expressions de style WebGL (le mot-clé CSS 'transparent' n'est pas
@@ -183,5 +184,25 @@ export function buildPointStyle(pointOptions) {
 
     }
 
+    if (pointOptions.appearAnimation) {
+        applyAppearAnimation(pointStyle);
+    }
+
     return pointStyle;
+}
+
+// Propriétés de taille (multipliées par l'échelle d'apparition) et d'opacité,
+// selon le type de symbole du style.
+const APPEAR_SIZE_KEYS = ['circle-radius', 'circle-stroke-width', 'shape-radius', 'shape-stroke-width', 'icon-scale'];
+const APPEAR_OPACITY_KEY = { circle: 'circle-opacity', shape: 'shape-opacity', icon: 'icon-opacity' };
+
+// Ajoute l'apparition animée (voir point_appear.mjs) à un style de points. Les
+// features doivent porter l'attribut numérique 'appear' et le layer la variable
+// 'now' : c'est displayWebGLPoints() qui s'en charge.
+function applyAppearAnimation(pointStyle) {
+    for (const key of APPEAR_SIZE_KEYS) {
+        if (key in pointStyle) pointStyle[key] = withAppearScale(pointStyle[key]);
+    }
+    const symbol = Object.keys(APPEAR_OPACITY_KEY).find((prefix) => `${prefix}-radius` in pointStyle || `${prefix}-src` in pointStyle);
+    if (symbol) pointStyle[APPEAR_OPACITY_KEY[symbol]] = appearOpacityExpression();
 }

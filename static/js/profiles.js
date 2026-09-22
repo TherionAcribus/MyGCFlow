@@ -1308,7 +1308,8 @@ class ProfileManager {
                 border_color_type: border.mode || 'fix',
                 mode: point.mode === 'icone' ? 'icone' : 'vectoriel',
                 icon_set: point.iconSet || 'geocaching',
-                icon_size: parseInt(point.iconSize) || 24
+                icon_size: parseInt(point.iconSize) || 24,
+                appear_animation: point.appearAnimation === true
             };
 
             dbgProfiles('Paramètres points récupérés:', pointSettings);
@@ -1978,6 +1979,8 @@ function applyPointState(pointOptions) {
         pkg.setPointIconSet(pointOptions.icon_set ?? point.iconSet);
         const iconSize = parseInt(pointOptions.icon_size);
         if (Number.isFinite(iconSize) && iconSize > 0) point.iconSize = iconSize;
+        // Profils antérieurs à ce réglage : pas d'apparition animée.
+        point.appearAnimation = pointOptions.appear_animation === true;
 
         dbgProfiles('Paramètres des points appliqués:', point);
     } catch (error) {

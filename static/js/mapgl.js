@@ -107,6 +107,7 @@ import {
     getOverlayTextContent,
 } from './overlay_canvas.js';
 import { buildPointStyle } from './point_webgl_style.js';
+import { createAppearClock, POINT_APPEAR_MS, STATIC_APPEAR } from './point_appear.mjs';
 import { flashStyleAt } from './flash_styles.js';
 import { liveFlashStep } from './flash_style_cache.mjs';
 import { staggerDelayFrames, staggerDelayMs } from './flash_impulse.mjs';
@@ -226,6 +227,14 @@ let mrDrawParams = null;
 // des frames strictement identiques (cas courant dès que timePerDay > 1/fps).
 // Alimenté par displayFeaturesForDates, les flashs et les rendus naturels d'OL.
 const mapDirtyTracker = createMapDirtyTracker();
+// Apparition animée des points (voir point_appear.mjs). L'objet des variables de
+// style est partagé par référence avec le layer WebGLPoints, qui relit 'now' à
+// chaque rendu : le mettre à jour ne demande ni changed() ni nouveau style.
+const pointAppearClock = createAppearClock();
+const pointStyleVariables = { now: 0 };
+let pointsAppearUntil = 0;       // fin de la dernière apparition en cours (horloge)
+let pointsAppearing = false;     // compte comme une animation pour mapDirtyTracker
+let pointAppearListenerKey = null;
 // Garde : true pendant nos propres renderSync de compositing (cf. mrPostrenderKey).
 let mrOwnRender = false;
 let mrPostrenderKey = null;
@@ -432,7 +441,9 @@ function sanitize(v){
 }
 
 
-function displayWebGLPoints(features, pointOptions) {
+// appear (facultatif) : { at, delayMs(lon, lat) } pour animer l'apparition des
+// points ajoutés. Sans lui, les points sont affichés d'emblée à leur taille.
+function displayWebGLPoints(features, pointOptions, appear = null) {
     dbgMapgl('[displayWebGLPoints] featureList count:', (Array.isArray(features) ? features.length : 'not-array'), '| mode:', pointOptions?.mode, '| shape:', pointOptions?.shape, '| sprite:', !!pointOptions?.sprite);
 
     const featureList = Array.isArray(features) ? features : [];
@@ -454,9 +465,13 @@ function displayWebGLPoints(features, pointOptions) {
         vectorLayer = new ol.layer.WebGLPoints({
             source: window.vectorSource,
             style: buildPointStyle(pointOptions),
+            variables: pointStyleVariables,
             zIndex: 1001,
         });
         map.addLayer(vectorLayer);
+    }
+    if (!pointAppearListenerKey) {
+        pointAppearListenerKey = map.on('precompose', updatePointAppearClock);
     }
 
     // Vérifier que le layer existe toujours sur la carte (il peut avoir été supprimé)
@@ -488,12 +503,78 @@ function displayWebGLPoints(features, pointOptions) {
             });
         }
 
+        setAppearAttributes(toAdd, featureList, isOlFeature, pointOptions, appear);
         window.vectorSource.addFeatures(toAdd);
         // Même précaution : getFeatures().length ne doit pas s'exécuter quand le debug est éteint.
         if (DEBUG_MAPGL) dbgMapgl('[displayWebGLPoints] Après addFeatures:', window.vectorSource.getFeatures().length, 'features dans source');
     } else {
         console.warn('[displayWebGLPoints] featureList vide, rien à afficher');
     }
+}
+
+// Horloge de l'apparition des points : temps vidéo pendant une capture image par
+// image (déterministe, comme les flashs), temps réel sinon.
+function sampleAppearClock() {
+    if (isRecording) {
+        const fps = Number(pkg.options.record.framesPerSec) || 30;
+        return pointAppearClock.sample('frames', globalRecordFrame * 1000 / fps);
+    }
+    return pointAppearClock.sample('live', performance.now());
+}
+
+// Écrit l'attribut 'appear' lu par le style WebGL. Il est posé silencieusement
+// AVANT l'ajout à la source : le layer lit les attributs à l'insertion. Une
+// feature qui en a déjà un (réaffichage après un changement de style) le garde,
+// pour qu'une apparition en cours se poursuive.
+function setAppearAttributes(olFeatures, featureList, isOlFeature, pointOptions, appear) {
+    const animate = Boolean(appear && pointOptions?.appearAnimation);
+    let latest = -Infinity;
+    for (let i = 0; i < olFeatures.length; i++) {
+        const feature = olFeatures[i];
+        if (!animate) {
+            if (feature.get('appear') === undefined) feature.set('appear', STATIC_APPEAR, true);
+            continue;
+        }
+        let delay = 0;
+        if (appear.delayMs) {
+            const lonLat = isOlFeature
+                ? ol.proj.toLonLat(feature.getGeometry().getCoordinates())
+                : featureList[i].geometry.coordinates;
+            delay = appear.delayMs(lonLat[0], lonLat[1]);
+        }
+        feature.set('appear', appear.at + delay, true);
+        latest = Math.max(latest, appear.at + delay);
+    }
+    if (animate && olFeatures.length > 0) {
+        pointsAppearUntil = Math.max(pointsAppearUntil, latest + POINT_APPEAR_MS);
+        if (!pointsAppearing) {
+            pointsAppearing = true;
+            // Tant qu'un point apparaît, chaque frame diffère : le compositing
+            // MediaRecorder ne doit rien sauter.
+            mapDirtyTracker.beginAnimation();
+        }
+    }
+}
+
+// Avant chaque rendu : avance l'horloge des points, et entretient le rendu tant
+// qu'une apparition est en cours (en lecture live, rien d'autre ne redemande de
+// rendu si le flash est désactivé).
+function updatePointAppearClock() {
+    const now = sampleAppearClock();
+    pointStyleVariables.now = now;
+    if (!pointsAppearing) return;
+    if (now >= pointsAppearUntil) {
+        pointsAppearing = false;
+        mapDirtyTracker.endAnimation();
+        return;
+    }
+    // Capture image par image et MediaRecorder pilotent eux-mêmes leurs rendus.
+    if (!isRecording && !isMediaRecording) map.render();
+}
+
+// À appeler quand le compteur d'animations de mapDirtyTracker est remis à zéro.
+function resetPointAppearAnimation() {
+    pointsAppearing = false;
 }
 
 // supprime les points de la carte (centre et bordures si existantes)
@@ -1793,6 +1874,7 @@ async function startMediaRecorderPipeline(totalDurationMs, timelineScale = 1){
     // précédente interrompue (listeners jamais expirés faute de rendu), qui
     // désactiverait l'optimisation pour tout l'enregistrement.
     mapDirtyTracker.reset();
+    resetPointAppearAnimation();
     // Filet générique : tout rendu déclenché par OpenLayers lui-même (tuile de fond
     // chargée, animation de vue, source modifiée hors animation) passe par un
     // postrender. Nos propres renderSync de compositing en sont exclus par la
@@ -2339,7 +2421,12 @@ function displayFeaturesForDates(dates, pointOptions, flashOptions, record, info
 
     // Afficher seulement les points des jours du lot
     if (newFeatures.length > 0) {
-        displayWebGLPoints(newFeatures, pointOptions);
+        displayWebGLPoints(newFeatures, pointOptions, {
+            at: sampleAppearClock(),
+            // En mode impulsion, chaque point apparaît avec le même décalage que son
+            // flash : la vague touche le point et son flash ensemble.
+            delayMs: flashOptions.mode === 'impulse' ? staggerDelayMs : null,
+        });
     }
 
     if (flashOptions.mode != "none") {
@@ -2486,6 +2573,7 @@ function createFlashElements(){
         // Les flashs encore actifs sont abandonnés avec la couche (voir plus bas) :
         // ils ne décrémenteront plus le compteur d'animations eux-mêmes.
         mapDirtyTracker.resetAnimations();
+        resetPointAppearAnimation();
     }
     animationSource = new ol.source.Vector();
     animationLayer = new ol.layer.Vector({

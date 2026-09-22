@@ -272,6 +272,8 @@ def api_save_profile(name: str):
             prof.points.icon_size = int(pt.get('icon_size'))
         except Exception:
             pass
+    if 'appear_animation' in pt:
+        prof.points.appear_animation = bool(pt['appear_animation'])
 
     f = data.get('flash', {})
     if 'mode' in f:

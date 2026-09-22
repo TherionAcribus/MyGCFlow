@@ -192,6 +192,7 @@ class PointStyle:
     mode: str = "vectoriel"  # "icone", "vectoriel"
     icon_set: str = "geocaching"
     icon_size: int = 24
+    appear_animation: bool = False  # apparition animée (agrandissement + rebond)
 
 
 @dataclass
@@ -445,6 +446,7 @@ def coerce_profile(d: dict) -> MapProfile:
             mode=pt.get("mode", p.points.mode),
             icon_set=pt.get("icon_set", p.points.icon_set) or p.points.icon_set,
             icon_size=_to_int(pt.get("icon_size") or None, p.points.icon_size),
+            appear_animation=bool(pt.get("appear_animation", p.points.appear_animation)),
         )
 
         # Options flash
@@ -1439,6 +1441,7 @@ class SettingsManager:
                 'mode': prof.points.mode,
                 'icon_set': prof.points.icon_set,
                 'icon_size': prof.points.icon_size,
+                'appear_animation': prof.points.appear_animation,
             },
             'flash': {
                 'mode': prof.flash.mode,
