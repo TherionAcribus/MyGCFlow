@@ -18,6 +18,8 @@ test('inclusiveDayCount compte les deux bornes', () => {
 test('la fin automatique laisse terminer le flash le plus long', () => {
     assert.equal(automaticEndHoldMs({ tailFreezeMs: 3000, flashMode: 'circle', flashDurationMs: 5000 }), 5000);
     assert.equal(automaticEndHoldMs({ tailFreezeMs: 3000, flashMode: 'none', flashDurationMs: 5000 }), 3000);
+    // Le flash impulsion peut partir jusqu'à 120 ms après le dernier jour.
+    assert.equal(automaticEndHoldMs({ tailFreezeMs: 3000, flashMode: 'impulse', flashDurationMs: 5000 }), 5120);
 });
 
 test('les fractions de frame sont réparties sans dérive cumulée', () => {

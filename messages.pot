@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-22 16:53+0200\n"
+"POT-Creation-Date: 2026-09-22 17:46+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -335,7 +335,7 @@ msgstr ""
 msgid "Chargement et affichage des points..."
 msgstr ""
 
-#: static/js/bdd.js:1199 static/js/mapgl.js:280 static/js/notifications.js:232
+#: static/js/bdd.js:1199 static/js/mapgl.js:278 static/js/notifications.js:232
 msgid "Affichage des points"
 msgstr ""
 
@@ -347,46 +347,46 @@ msgstr ""
 msgid "Erreur d'affichage"
 msgstr ""
 
-#: static/js/mapgl.js:281
+#: static/js/mapgl.js:279
 msgid "Mise à jour de l'affichage des points..."
 msgstr ""
 
-#: static/js/mapgl.js:396
+#: static/js/mapgl.js:394
 msgid "Sans nom"
 msgstr ""
 
-#: static/js/mapgl.js:397
+#: static/js/mapgl.js:395
 msgid "Trouvé"
 msgstr ""
 
-#: static/js/mapgl.js:397
+#: static/js/mapgl.js:395
 msgid "DNF"
 msgstr ""
 
-#: static/js/mapgl.js:398
+#: static/js/mapgl.js:396
 #, python-brace-format
 msgid "Publié le ${date}"
 msgstr ""
 
-#: static/js/mapgl.js:399
+#: static/js/mapgl.js:397
 #, python-brace-format
 msgid "le ${date}"
 msgstr ""
 
-#: static/js/mapgl.js:1139
+#: static/js/mapgl.js:1137
 msgid "Nettoyage en cours..."
 msgstr ""
 
-#: static/js/mapgl.js:1197
+#: static/js/mapgl.js:1195
 #, python-brace-format
 msgid "La capture a été interrompue suite à une erreur : ${message}"
 msgstr ""
 
-#: static/js/mapgl.js:1468
+#: static/js/mapgl.js:1466
 msgid "Vidéo prête"
 msgstr ""
 
-#: static/js/mapgl.js:1480
+#: static/js/mapgl.js:1478
 #, python-brace-format
 msgid "Erreur lors du traitement automatique: ${message}"
 msgstr ""
@@ -1843,74 +1843,78 @@ msgid "Cercle"
 msgstr ""
 
 #: templates/menu_flash.html:13
-msgid "Étoile"
+msgid "Impulsion (halo + onde)"
 msgstr ""
 
 #: templates/menu_flash.html:14
-msgid "Scintillement"
+msgid "Étoile"
 msgstr ""
 
 #: templates/menu_flash.html:15
+msgid "Scintillement"
+msgstr ""
+
+#: templates/menu_flash.html:16
 msgid "Carré"
 msgstr ""
 
-#: templates/menu_flash.html:16 templates/menu_points.html:82
+#: templates/menu_flash.html:17 templates/menu_points.html:82
 msgid "Triangle"
 msgstr ""
 
-#: templates/menu_flash.html:17
+#: templates/menu_flash.html:18
 msgid "Losange"
 msgstr ""
 
-#: templates/menu_flash.html:22
+#: templates/menu_flash.html:23
 msgid "Durée du flash en ms"
 msgstr ""
 
-#: templates/menu_flash.html:23
+#: templates/menu_flash.html:24
 msgid "Durée du flash"
 msgstr ""
 
-#: templates/menu_flash.html:24
+#: templates/menu_flash.html:25
 msgid "100 à 10000 ms"
 msgstr ""
 
-#: templates/menu_flash.html:28
+#: templates/menu_flash.html:29
 msgid "Taille du flash en px"
 msgstr ""
 
-#: templates/menu_flash.html:29
+#: templates/menu_flash.html:30
 msgid "Taille du Flash"
 msgstr ""
 
-#: templates/menu_flash.html:30
+#: templates/menu_flash.html:31
 msgid "5 à 200 px"
 msgstr ""
 
-#: templates/menu_flash.html:34
+#: templates/menu_flash.html:35
 msgid "Couleur du flash"
 msgstr ""
 
-#: templates/menu_flash.html:38 templates/menu_points.html:50
+#: templates/menu_flash.html:39 templates/menu_points.html:50
 #: templates/menu_points.html:116
 msgid "Couleurs GC (par type)"
 msgstr ""
 
-#: templates/menu_flash.html:42 templates/menu_points.html:54
+#: templates/menu_flash.html:43 templates/menu_points.html:54
 #: templates/menu_points.html:120
 msgid "Transparent"
 msgstr ""
 
-#: templates/menu_flash.html:46 templates/menu_points.html:58
+#: templates/menu_flash.html:47 templates/menu_points.html:58
 #: templates/menu_points.html:124
 msgid "Couleur unique"
 msgstr ""
 
-#: templates/menu_flash.html:51 templates/menu_points.html:63
+#: templates/menu_flash.html:52 templates/menu_points.html:63
 #: templates/menu_points.html:129
 msgid "Choisir la couleur"
 msgstr ""
 
-#: templates/menu_flash.html:52
+#: templates/menu_flash.html:53
 msgid "Choisir la couleur du flash"
 msgstr ""
 

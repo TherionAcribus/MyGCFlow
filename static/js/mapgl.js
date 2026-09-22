@@ -109,6 +109,7 @@ import {
 import { buildPointStyle } from './point_webgl_style.js';
 import { flashStyleAt } from './flash_styles.js';
 import { liveFlashStep } from './flash_style_cache.mjs';
+import { staggerDelayFrames, staggerDelayMs } from './flash_impulse.mjs';
 
 // Debug toasts/assemblage
 const TOAST_DEBUG = false;
@@ -2388,7 +2389,10 @@ function flashRecord(features, flashOptions = pkg.options.flash) {
     // Capturer la valeur de globalRecordFrame au moment de l'appel (frame de départ du flash)
     const startFrame = globalRecordFrame;
 
+    const stagger = flashOptions.mode === 'impulse';
+
     features.forEach(featureData => {
+        const [lon, lat] = featureData.geometry.coordinates;
         // Un flash en cours redessine la carte à chaque rendu : le compositing MR
         // ne peut donc rien sauter tant qu'il n'est pas terminé.
         mapDirtyTracker.beginAnimation();
@@ -2396,7 +2400,7 @@ function flashRecord(features, flashOptions = pkg.options.flash) {
             geometry: flashGeometry(featureData),
             cacheType: featureData.properties?.cache_type,
             flashOptions,
-            startFrame,
+            startFrame: startFrame + (stagger ? staggerDelayFrames(lon, lat, maxFrames, flashOptions.duration) : 0),
             maxFrames,
         });
     });
@@ -2408,21 +2412,24 @@ function flashFeatures(features, flashOptions) {
     // Durée figée au lancement du flash ; forme, taille et couleur restent relues
     // à chaque frame (voir flashStyleAt).
     const duration = flashOptions.duration;
+    const stagger = flashOptions.mode === 'impulse';
 
     features.forEach(featureData => {
+        const [lon, lat] = featureData.geometry.coordinates;
         mapDirtyTracker.beginAnimation();
         activeFlashes.push({
             geometry: flashGeometry(featureData),
             cacheType: featureData.properties?.cache_type,
             flashOptions,
-            start,
+            start: start + (stagger ? staggerDelayMs(lon, lat) : 0),
             duration,
         });
     });
 }
 
 // Unique listener postrender de animationLayer : dessine tous les flashs actifs
-// et retire ceux qui sont terminés.
+// et retire ceux qui sont terminés. Un flash dont le départ est décalé (mode
+// impulsion) reste en attente, sans être dessiné, jusqu'à son tour.
 function drawActiveFlashes(event) {
     if (activeFlashes.length === 0) return;
 
@@ -2447,16 +2454,19 @@ function drawActiveFlashes(event) {
                 mapDirtyTracker.endAnimation();
                 continue;
             }
-            ({ step, steps } = liveFlashStep(elapsed, flash.duration));
             liveFlashPending = true;
+            if (elapsed >= 0) ({ step, steps } = liveFlashStep(elapsed, flash.duration));
         }
         activeFlashes[kept++] = flash;
+        if (!(step >= 0)) continue; // départ décalé pas encore atteint
 
         const style = flashStyleAt(step, steps, flash.flashOptions, flash.cacheType);
         if (style) {
             vectorContext ??= ol.render.getVectorContext(event);
-            vectorContext.setStyle(style);
-            vectorContext.drawGeometry(flash.geometry);
+            for (const layerStyle of (Array.isArray(style) ? style : [style])) {
+                vectorContext.setStyle(layerStyle);
+                vectorContext.drawGeometry(flash.geometry);
+            }
         }
     }
     activeFlashes.length = kept;

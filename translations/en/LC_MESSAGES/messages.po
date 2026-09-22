@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-22 16:53+0200\n"
+"POT-Creation-Date: 2026-09-22 17:46+0200\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -342,7 +342,7 @@ msgstr "Loading complete"
 msgid "Chargement et affichage des points..."
 msgstr "Loading and displaying points..."
 
-#: static/js/bdd.js:1199 static/js/mapgl.js:280 static/js/notifications.js:232
+#: static/js/bdd.js:1199 static/js/mapgl.js:278 static/js/notifications.js:232
 msgid "Affichage des points"
 msgstr "Points display"
 
@@ -354,46 +354,46 @@ msgstr "Error while displaying the points on the map"
 msgid "Erreur d'affichage"
 msgstr "Display error"
 
-#: static/js/mapgl.js:281
+#: static/js/mapgl.js:279
 msgid "Mise à jour de l'affichage des points..."
 msgstr "Updating point display..."
 
-#: static/js/mapgl.js:396
+#: static/js/mapgl.js:394
 msgid "Sans nom"
 msgstr "Unnamed"
 
-#: static/js/mapgl.js:397
+#: static/js/mapgl.js:395
 msgid "Trouvé"
 msgstr "Found"
 
-#: static/js/mapgl.js:397
+#: static/js/mapgl.js:395
 msgid "DNF"
 msgstr "DNF"
 
-#: static/js/mapgl.js:398
+#: static/js/mapgl.js:396
 #, python-brace-format
 msgid "Publié le ${date}"
 msgstr "Published on ${date}"
 
-#: static/js/mapgl.js:399
+#: static/js/mapgl.js:397
 #, python-brace-format
 msgid "le ${date}"
 msgstr "on ${date}"
 
-#: static/js/mapgl.js:1139
+#: static/js/mapgl.js:1137
 msgid "Nettoyage en cours..."
 msgstr "Cleaning up..."
 
-#: static/js/mapgl.js:1197
+#: static/js/mapgl.js:1195
 #, python-brace-format
 msgid "La capture a été interrompue suite à une erreur : ${message}"
 msgstr "The capture was interrupted by an error: ${message}"
 
-#: static/js/mapgl.js:1468
+#: static/js/mapgl.js:1466
 msgid "Vidéo prête"
 msgstr "Video ready"
 
-#: static/js/mapgl.js:1480
+#: static/js/mapgl.js:1478
 #, python-brace-format
 msgid "Erreur lors du traitement automatique: ${message}"
 msgstr "Error during automatic processing: ${message}"
@@ -1908,74 +1908,78 @@ msgid "Cercle"
 msgstr "Circle"
 
 #: templates/menu_flash.html:13
+msgid "Impulsion (halo + onde)"
+msgstr "Pulse (glow + wave)"
+
+#: templates/menu_flash.html:14
 msgid "Étoile"
 msgstr "Star"
 
-#: templates/menu_flash.html:14
+#: templates/menu_flash.html:15
 msgid "Scintillement"
 msgstr "Sparkle"
 
-#: templates/menu_flash.html:15
+#: templates/menu_flash.html:16
 msgid "Carré"
 msgstr "Square"
 
-#: templates/menu_flash.html:16 templates/menu_points.html:82
+#: templates/menu_flash.html:17 templates/menu_points.html:82
 msgid "Triangle"
 msgstr "Triangle"
 
-#: templates/menu_flash.html:17
+#: templates/menu_flash.html:18
 msgid "Losange"
 msgstr "Diamond"
 
-#: templates/menu_flash.html:22
+#: templates/menu_flash.html:23
 msgid "Durée du flash en ms"
 msgstr "Flash duration in ms"
 
-#: templates/menu_flash.html:23
+#: templates/menu_flash.html:24
 msgid "Durée du flash"
 msgstr "Flash duration"
 
-#: templates/menu_flash.html:24
+#: templates/menu_flash.html:25
 msgid "100 à 10000 ms"
 msgstr "100 to 10000 ms"
 
-#: templates/menu_flash.html:28
+#: templates/menu_flash.html:29
 msgid "Taille du flash en px"
 msgstr "Flash size in px"
 
-#: templates/menu_flash.html:29
+#: templates/menu_flash.html:30
 msgid "Taille du Flash"
 msgstr "Flash size"
 
-#: templates/menu_flash.html:30
+#: templates/menu_flash.html:31
 msgid "5 à 200 px"
 msgstr "5 to 200 px"
 
-#: templates/menu_flash.html:34
+#: templates/menu_flash.html:35
 msgid "Couleur du flash"
 msgstr "Flash color"
 
-#: templates/menu_flash.html:38 templates/menu_points.html:50
+#: templates/menu_flash.html:39 templates/menu_points.html:50
 #: templates/menu_points.html:116
 msgid "Couleurs GC (par type)"
 msgstr "GC colors (by type)"
 
-#: templates/menu_flash.html:42 templates/menu_points.html:54
+#: templates/menu_flash.html:43 templates/menu_points.html:54
 #: templates/menu_points.html:120
 msgid "Transparent"
 msgstr "Transparent"
 
-#: templates/menu_flash.html:46 templates/menu_points.html:58
+#: templates/menu_flash.html:47 templates/menu_points.html:58
 #: templates/menu_points.html:124
 msgid "Couleur unique"
 msgstr "Single color"
 
-#: templates/menu_flash.html:51 templates/menu_points.html:63
+#: templates/menu_flash.html:52 templates/menu_points.html:63
 #: templates/menu_points.html:129
 msgid "Choisir la couleur"
 msgstr "Choose color"
 
-#: templates/menu_flash.html:52
+#: templates/menu_flash.html:53
 msgid "Choisir la couleur du flash"
 msgstr "Choose the flash color"
 

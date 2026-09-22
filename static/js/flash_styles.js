@@ -11,8 +11,68 @@
 import * as pkg from './index.js';
 import { defaultGcColors } from './gc_colors.js';
 import { createFlashStyleCache } from './flash_style_cache.mjs';
+import { impulseFrame } from './flash_impulse.mjs';
 
 const flashStyleCache = createFlashStyleCache();
+
+// Composantes RGB de la couleur d'un flash impulsion. 'none' (transparent)
+// garde une impulsion blanche : sans couleur, l'effet n'aurait plus rien à montrer.
+function impulseRgb(flashOptions, cacheType) {
+    if (flashOptions.color_type === 'gc' && cacheType && defaultGcColors) {
+        const gcColor = defaultGcColors[cacheType];
+        const rgb = gcColor && gcColor.startsWith('#') ? pkg.hexToRgb(gcColor) : null;
+        return rgb || { r: 128, g: 128, b: 128 };
+    }
+    if (flashOptions.color_type === 'none') return { r: 255, g: 255, b: 255 };
+    return flashOptions.rgb;
+}
+
+// Sprite du halo, dessiné une seule fois par couleur : un cœur blanc qui vire à
+// la couleur du flash puis s'évanouit. Chaque frame n'en change que l'échelle et
+// l'opacité, sans le redessiner.
+const HALO_SPRITE_SIZE = 128;
+const haloSprites = new Map();
+
+function haloSprite({ r, g, b }) {
+    const key = `${r},${g},${b}`;
+    let canvas = haloSprites.get(key);
+    if (canvas) return canvas;
+    canvas = document.createElement('canvas');
+    canvas.width = canvas.height = HALO_SPRITE_SIZE;
+    const ctx = canvas.getContext('2d');
+    const c = HALO_SPRITE_SIZE / 2;
+    const gradient = ctx.createRadialGradient(c, c, 0, c, c, c);
+    gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    gradient.addColorStop(0.18, `rgba(${r}, ${g}, ${b}, 0.95)`);
+    gradient.addColorStop(0.5, `rgba(${r}, ${g}, ${b}, 0.4)`);
+    gradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, HALO_SPRITE_SIZE, HALO_SPRITE_SIZE);
+    haloSprites.set(key, canvas);
+    return canvas;
+}
+
+function impulseStyles(frame, flashOptions, cacheType) {
+    const rgb = impulseRgb(flashOptions, cacheType);
+    return [
+        new ol.style.Style({
+            image: new ol.style.Icon({
+                img: haloSprite(rgb),
+                scale: (2 * frame.haloRadius) / HALO_SPRITE_SIZE,
+                opacity: frame.haloOpacity,
+            }),
+        }),
+        new ol.style.Style({
+            image: new ol.style.Circle({
+                radius: frame.ringRadius,
+                stroke: new ol.style.Stroke({
+                    color: `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${frame.ringOpacity})`,
+                    width: frame.ringWidth,
+                }),
+            }),
+        }),
+    ];
+}
 
 // Base de couleur effectivement utilisée par les fonctions de style ci-dessous,
 // en reprenant exactement leur ordre de décision (un mode 'gc' sans type de cache
@@ -39,12 +99,21 @@ function estimateFlashStyleBytes(radius) {
 // (forme, taille, couleur) sont relus à chaque appel, comme avant : un changement
 // en cours d'animation s'applique aux flashs déjà lancés. Seule la rastérisation
 // est mise en cache.
+// Pour le mode 'impulse', renvoie un tableau de styles (halo puis anneau) à
+// dessiner dans cet ordre.
 export function flashStyleAt(step, steps, flashOptions, cacheType = null) {
     const ratio = step / steps;
     const mode = flashOptions.mode;
     const size = flashOptions.size;
     const key = `${mode}|${size}|${flashColorKey(flashOptions, cacheType)}|${ratio}`;
     return flashStyleCache.get(key, () => {
+        if (mode === 'impulse') {
+            const frame = impulseFrame(ratio, size);
+            return {
+                value: impulseStyles(frame, flashOptions, cacheType),
+                bytes: estimateFlashStyleBytes(frame.ringRadius),
+            };
+        }
         const radius = ol.easing.easeOut(ratio) * (size / 2) + (size / 10);
         const opacity = ol.easing.easeOut(1 - ratio);
         const build = FLASH_STYLE_BUILDERS[mode] || circleStyle;

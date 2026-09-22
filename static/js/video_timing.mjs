@@ -1,3 +1,5 @@
+import { IMPULSE_MAX_STAGGER_MS } from './flash_impulse.mjs';
+
 const DEFAULT_FPS = 30;
 const DEFAULT_END_HOLD_MS = 3000;
 
@@ -43,8 +45,11 @@ export function automaticEndHoldMs({
     flashDurationMs = 0,
 } = {}) {
     const configuredHold = Math.max(0, finiteNumber(tailFreezeMs, DEFAULT_END_HOLD_MS));
+    // Le flash impulsion peut démarrer jusqu'à IMPULSE_MAX_STAGGER_MS après le
+    // dernier jour : la pause finale doit aussi couvrir ce décalage.
     const flashHold = flashMode && flashMode !== 'none'
         ? Math.max(0, finiteNumber(flashDurationMs, 0))
+            + (flashMode === 'impulse' ? IMPULSE_MAX_STAGGER_MS : 0)
         : 0;
     return Math.max(configuredHold, flashHold);
 }
