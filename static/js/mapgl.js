@@ -111,6 +111,7 @@ import { createAppearClock, POINT_APPEAR_MS, STATIC_APPEAR } from './point_appea
 import { flashStyleAt } from './flash_styles.js';
 import { liveFlashStep } from './flash_style_cache.mjs';
 import { staggerDelayFrames, staggerDelayMs } from './flash_impulse.mjs';
+import { COUNTER_ANIMATION_MS, createCountAnimator } from './overlay_counter.mjs';
 
 // Debug toasts/assemblage
 const TOAST_DEBUG = false;
@@ -237,6 +238,11 @@ const pointStyleVariables = { now: 0, glowMs: 1 };
 let pointsAppearUntil = 0;       // fin de la dernière apparition en cours (horloge)
 let pointsAppearing = false;     // compte comme une animation pour mapDirtyTracker
 let pointsGlowing = false;       // persistance active : la carte change à chaque frame
+// Compteur de caches animé : la valeur affichée rejoint le total du jour au lieu
+// de sauter. Piloté par la même horloge que les points, donc déterministe en
+// enregistrement image par image.
+const cacheCountAnimator = createCountAnimator();
+let displayedCacheCount = null;
 let pointAppearListenerKey = null;
 // Garde : true pendant nos propres renderSync de compositing (cf. mrPostrenderKey).
 let mrOwnRender = false;
@@ -572,7 +578,7 @@ function updatePointAppearClock() {
     // tant qu'une animation tourne, même sans nouveau point ni flash.
     setPointsGlowing(glowDays > 0 && isAnimationInProgress());
 
-    let pending = pointsGlowing;
+    let pending = pointsGlowing || updateAnimatedCacheCount(now);
     if (pointsAppearing) {
         if (now >= pointsAppearUntil) {
             pointsAppearing = false;
@@ -583,6 +589,24 @@ function updatePointAppearClock() {
     }
     // Capture image par image et MediaRecorder pilotent eux-mêmes leurs rendus.
     if (pending && !isRecording && !isMediaRecording) map.render();
+}
+
+// Écrit la valeur courante du compteur dans l'overlay. Retourne true tant que
+// l'animation du compteur n'est pas terminée (il faut continuer à redessiner).
+function updateAnimatedCacheCount(now) {
+    const value = cacheCountAnimator.valueAt(now);
+    if (value !== displayedCacheCount) {
+        displayedCacheCount = value;
+        pkg.updateNbCaches(value);
+    }
+    return cacheCountAnimator.isAnimating(now);
+}
+
+// Remet le compteur à une valeur exacte, sans animation.
+function resetCacheCount(value = 0) {
+    cacheCountAnimator.set(value);
+    displayedCacheCount = value;
+    pkg.updateNbCaches(value);
 }
 
 // Durée d'un jour d'animation, dans l'unité de l'horloge des points : temps vidéo
@@ -1096,7 +1120,7 @@ function startRecordingProcess(){
     } catch(e) { console.warn('Calcul jours animation échoué:', e); }
 
     // Remise à zéro de l'affichage des informations
-    pkg.updateNbCaches(0); // Remet le compteur de géocaches à zéro
+    resetCacheCount(0); // Remet le compteur de géocaches à zéro
     pkg.updateCurrentDate(currentDate); // Remet la date au début effectif
     try { pkg.updateProgressBar({ progress: 0, message: '0% | préparation...' }); } catch(_) {}
 
@@ -1198,6 +1222,9 @@ function createObjectInfos(){
     infos.displayDate = pkg.options.infos.currentDate.display
     infos.displayNumberofCaches = pkg.options.infos.numberOfCaches.display
     infos.cacheNumber = 0;
+    // Le compteur affiché repart de zéro avec le décompte, sans animer depuis
+    // le total de la base affiché hors animation.
+    resetCacheCount(0);
     return infos
 }
 
@@ -1708,7 +1735,7 @@ function recordAnimationMediaRecorder(){
     // repart de l'ancien total accumulé → compteur faux. (Avant : un 'infosLocal'
     // local était créé puis jamais utilisé.)
     infos = createObjectInfos();
-    pkg.updateNbCaches(0);
+    resetCacheCount(0);
     pkg.updateCurrentDate(currentDate);
 
     // UI loader
@@ -2488,7 +2515,13 @@ function displayInfosForDate(infos, date, featuresForDate) {
     if (infos.displayNumberofCaches) {
         const newCaches = featuresForDate.length;
         infos.cacheNumber += newCaches
-        pkg.updateNbCaches(infos.cacheNumber);
+        // L'animation du compteur ne dure jamais plus d'un jour d'animation : la
+        // valeur exacte du jour est toujours atteinte avant le jour suivant.
+        cacheCountAnimator.setTarget(
+            infos.cacheNumber,
+            sampleAppearClock(),
+            Math.min(COUNTER_ANIMATION_MS, animationMsPerDay()),
+        );
     }    
 }
 

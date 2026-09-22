@@ -7,4 +7,8 @@
     border-radius: 5px;
     box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.2);
     z-index: 100;
+    /* Chiffres à largeur fixe : le compteur défile et la date change de jour
+       sans faire danser le texte. Repris à l'identique pour la vidéo par
+       overlay_canvas.js (Canvas 2D ignore font-variant-numeric). */
+    font-variant-numeric: tabular-nums;
 }

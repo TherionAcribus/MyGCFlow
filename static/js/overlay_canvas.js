@@ -9,6 +9,19 @@
 // Le cache est invalidé au redimensionnement, au chargement des polices et par
 // frames.js à chaque modification de style (via pkg.invalidateOverlayCache).
 import * as pkg from './index.js';
+import { digitAdvance, isTabularNums, layoutTabularText } from './tabular_text.mjs';
+
+// Largeur commune des chiffres par police (font-variant-numeric: tabular-nums).
+// Mesurer les dix chiffres à chaque frame serait inutile : la police ne change
+// qu'avec le cache d'overlays.
+const digitWidthByFont = new Map();
+
+function tabularDigitWidth(ctx, font) {
+    if (digitWidthByFont.has(font)) return digitWidthByFont.get(font);
+    const width = digitAdvance((glyph) => ctx.measureText(glyph).width);
+    digitWidthByFont.set(font, width);
+    return width;
+}
 
 // Cache des overlays : calculé une seule fois au démarrage de chaque session
 // pour éviter getElementById / getBoundingClientRect / getComputedStyle à chaque frame
@@ -19,6 +32,7 @@ let overlayLayerCanvas = null;
 export function invalidateOverlayCache() {
     overlayCache = null;
     overlayCacheRevision += 1;
+    digitWidthByFont.clear();
 }
 
 // Exposé pour la signature de contenu du pipeline MediaRecorder : une
@@ -118,6 +132,9 @@ export function buildOverlayCache(scaleFactor) {
             borders,
             opacity: Number.isFinite(parsedOpacity) ? Math.max(0, Math.min(1, parsedOpacity)) : 1,
             letterSpacing: (parseFloat(style.letterSpacing) || 0) * scaleFactor,
+            // Chiffres à largeur fixe : le navigateur l'applique au texte HTML,
+            // pas à fillText() — c'est à nous de le refaire (cf. tabular_text.mjs).
+            tabularNums: isTabularNums(style.fontVariantNumeric),
             textTransform: style.textTransform || 'none',
             backgroundImage: style.backgroundImage || 'none',
             zIndex: Number.isFinite(parseInt(style.zIndex, 10)) ? parseInt(style.zIndex, 10) : 0,
@@ -181,7 +198,7 @@ export function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor 
             if (!cached || !cached.el) return;
             if (!text || !text.trim()) return;
 
-            const { x, y, w, h, bg, color, radius, padL, padR, padT, padB, font, fontPx, textAlignCss,
+            const { x, y, w, h, bg, color, radius, padL, padR, padT, padB, font, fontPx, textAlignCss, tabularNums,
                     hasShadow, shColor, shBlur, shSpread, shOffX, shOffY, lineGap,
                     borders, opacity, letterSpacing, textTransform, backgroundImage,
                     leftGap, rightGap, topGap, bottomGap,
@@ -196,6 +213,7 @@ export function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor 
             paintCtx.imageSmoothingQuality = 'high';
             paintCtx.font = font;
             paintCtx.textBaseline = 'alphabetic';
+            const digitWidth = tabularNums ? tabularDigitWidth(paintCtx, font) : 0;
 
             const transformedText = transformOverlayText(String(text), textTransform);
             const leftMargin = horizontalAnchor === 'right' ? 0 : leftGap;
@@ -204,7 +222,7 @@ export function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor 
             const availableTextWidth = Math.max(1, availableBoxWidth - padL - padR);
             const lines = transformedText
                 .split(/\r?\n/)
-                .flatMap(line => wrapOverlayText(paintCtx, line, availableTextWidth, letterSpacing));
+                .flatMap(line => wrapOverlayText(paintCtx, line, availableTextWidth, letterSpacing, digitWidth));
 
             // Mesurer le texte pour adapter la boîte (le contenu grandit pendant l'animation :
             // compteur de caches, dates plus longues...). La largeur cachée du DOM correspond
@@ -212,14 +230,14 @@ export function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor 
             let maxTextW = 0;
             for (const line of lines) {
                 if (!line) continue;
-                const measured = measureOverlayText(paintCtx, line, letterSpacing);
+                const measured = measureOverlayText(paintCtx, line, letterSpacing, digitWidth);
                 if (measured > maxTextW) maxTextW = measured;
             }
             if (cached.el.id === 'infosFrame') {
                 const reservedText = transformOverlayText(getReservedInfosText(), textTransform);
                 maxTextW = Math.max(
                     maxTextW,
-                    Math.min(availableTextWidth, measureOverlayText(paintCtx, reservedText, letterSpacing)),
+                    Math.min(availableTextWidth, measureOverlayText(paintCtx, reservedText, letterSpacing, digitWidth)),
                 );
             }
             // Métriques verticales (fallback si actualBoundingBox non disponible)
@@ -264,7 +282,7 @@ export function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor 
                 let xText = drawX + padL;
                 if (paintCtx.textAlign === 'center') xText = drawX + (drawW / 2);
                 else if (paintCtx.textAlign === 'right') xText = drawX + drawW - padR;
-                drawOverlayText(paintCtx, line, xText, curY, letterSpacing);
+                drawOverlayText(paintCtx, line, xText, curY, letterSpacing, digitWidth);
                 curY += lh;
             });
             paintCtx.restore();
@@ -291,8 +309,8 @@ export function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor 
     }
 }
 
-function wrapOverlayText(ctx, text, maxWidth, letterSpacing = 0) {
-    if (!text || measureOverlayText(ctx, text, letterSpacing) <= maxWidth) return [text];
+function wrapOverlayText(ctx, text, maxWidth, letterSpacing = 0, digitWidth = 0) {
+    if (!text || measureOverlayText(ctx, text, letterSpacing, digitWidth) <= maxWidth) return [text];
     const words = text.split(/\s+/).filter(Boolean);
     const lines = [];
     let current = '';
@@ -300,7 +318,7 @@ function wrapOverlayText(ctx, text, maxWidth, letterSpacing = 0) {
         let chunk = '';
         for (const glyph of Array.from(token)) {
             const candidate = chunk + glyph;
-            if (chunk && measureOverlayText(ctx, candidate, letterSpacing) > maxWidth) {
+            if (chunk && measureOverlayText(ctx, candidate, letterSpacing, digitWidth) > maxWidth) {
                 lines.push(chunk);
                 chunk = glyph;
             } else {
@@ -311,11 +329,11 @@ function wrapOverlayText(ctx, text, maxWidth, letterSpacing = 0) {
     };
     for (const word of words) {
         const candidate = current ? `${current} ${word}` : word;
-        if (measureOverlayText(ctx, candidate, letterSpacing) <= maxWidth) {
+        if (measureOverlayText(ctx, candidate, letterSpacing, digitWidth) <= maxWidth) {
             current = candidate;
         } else {
             if (current) lines.push(current);
-            current = measureOverlayText(ctx, word, letterSpacing) <= maxWidth
+            current = measureOverlayText(ctx, word, letterSpacing, digitWidth) <= maxWidth
                 ? word
                 : pushLongToken(word);
         }
@@ -331,26 +349,26 @@ function transformOverlayText(text, transform) {
     return text;
 }
 
-function measureOverlayText(ctx, text, letterSpacing = 0) {
-    const glyphs = Array.from(text || '');
-    return ctx.measureText(text || '').width + Math.max(0, glyphs.length - 1) * letterSpacing;
+function measureOverlayText(ctx, text, letterSpacing = 0, digitWidth = 0) {
+    if (!letterSpacing && !digitWidth) return ctx.measureText(text || '').width;
+    return layoutTabularText(text, (glyph) => ctx.measureText(glyph).width,
+        { letterSpacing, digitWidth }).width;
 }
 
-function drawOverlayText(ctx, text, x, y, letterSpacing = 0) {
-    if (!letterSpacing) {
+function drawOverlayText(ctx, text, x, y, letterSpacing = 0, digitWidth = 0) {
+    if (!letterSpacing && !digitWidth) {
         ctx.fillText(text, x, y);
         return;
     }
-    const glyphs = Array.from(text);
-    const totalWidth = measureOverlayText(ctx, text, letterSpacing);
-    let cursor = x;
-    if (ctx.textAlign === 'center') cursor -= totalWidth / 2;
-    else if (ctx.textAlign === 'right') cursor -= totalWidth;
+    const { positions, width } = layoutTabularText(text, (glyph) => ctx.measureText(glyph).width,
+        { letterSpacing, digitWidth });
+    let origin = x;
+    if (ctx.textAlign === 'center') origin -= width / 2;
+    else if (ctx.textAlign === 'right') origin -= width;
     ctx.save();
     ctx.textAlign = 'left';
-    for (const glyph of glyphs) {
-        ctx.fillText(glyph, cursor, y);
-        cursor += ctx.measureText(glyph).width + letterSpacing;
+    for (const { glyph, x: offset } of positions) {
+        ctx.fillText(glyph, origin + offset, y);
     }
     ctx.restore();
 }
