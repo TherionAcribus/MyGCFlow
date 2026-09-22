@@ -107,14 +107,8 @@ import {
     getOverlayTextContent,
 } from './overlay_canvas.js';
 import { buildPointStyle } from './point_webgl_style.js';
-import {
-    circleStyle,
-    diamondStyle,
-    sparkleStyle,
-    squareStyle,
-    starStyle,
-    triangleStyle,
-} from './flash_styles.js';
+import { flashStyleAt } from './flash_styles.js';
+import { liveFlashStep } from './flash_style_cache.mjs';
 
 // Debug toasts/assemblage
 const TOAST_DEBUG = false;
@@ -179,6 +173,9 @@ let currentDayFrameTarget = 1;
 // FLASH
 let animationSource;
 let animationLayer;
+// Flashs en cours, tous dessinés par l'unique listener postrender de
+// animationLayer (drawActiveFlashes) plutôt que par un listener chacun.
+let activeFlashes = [];
 
 // Boucle de prévisualisation (startAnimation/pauseAnimation/stopAnimation) pilotée
 // par requestAnimationFrame + accumulateur de temps plutôt que setInterval : un
@@ -1312,8 +1309,8 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
 
     if (currentDate > pkg.metadata.endDate) {
         for (let extraFrames = 0; extraFrames < pkg.options.record.extraFrames; extraFrames++) {
-            // Avancer l'animation d'un cran et redéclencher un rendu : les listeners
-            // postrender de flashRecord (indexés sur globalRecordFrame) terminent
+            // Avancer l'animation d'un cran et redéclencher un rendu : drawActiveFlashes
+            // (flashs indexés sur globalRecordFrame) termine
             // ainsi le fondu des flashs encore actifs sur les frames de fin.
             globalRecordFrame++;
             map.render();
@@ -2377,139 +2374,98 @@ function displayInfosForDate(infos, date, featuresForDate) {
 
 // -------------- FLASH ---------------------------------------
 
+function flashGeometry(featureData) {
+    return new ol.geom.Point(ol.proj.fromLonLat([
+        featureData.geometry.coordinates[0],
+        featureData.geometry.coordinates[1]
+    ]));
+}
+
+// Enregistrement : l'avancement d'un flash se compte en captures
+// (globalRecordFrame), pas en temps réel, pour rester déterministe.
 function flashRecord(features, flashOptions = pkg.options.flash) {
     const maxFrames = Math.max(1, pkg.options.record.flashFrames || 1);
     // Capturer la valeur de globalRecordFrame au moment de l'appel (frame de départ du flash)
     const startFrame = globalRecordFrame;
 
-
     features.forEach(featureData => {
-        const coords = ol.proj.fromLonLat([
-            featureData.geometry.coordinates[0],
-            featureData.geometry.coordinates[1]
-        ]);
-        const flashGeom = new ol.geom.Point(coords);
-        const cacheType = featureData.properties?.cache_type;
-
         // Un flash en cours redessine la carte à chaque rendu : le compositing MR
         // ne peut donc rien sauter tant qu'il n'est pas terminé.
         mapDirtyTracker.beginAnimation();
-        const listenerKey = animationLayer.on('postrender', function(event) {
-            // elapsed = nombre de captures depuis le début de ce flash
-            const elapsed = globalRecordFrame - startFrame;
-
-            if (elapsed >= maxFrames) {
-                ol.Observable.unByKey(listenerKey);
-                mapDirtyTracker.endAnimation();
-                return;
-            }
-            const animationRatio = elapsed / maxFrames;
-            const radius = ol.easing.easeOut(animationRatio) * (flashOptions.size / 2) + (flashOptions.size / 10);
-            const opacity = ol.easing.easeOut(1 - animationRatio);
-            let style;
-            switch (flashOptions.mode) {
-                case "star":     style = starStyle(radius, opacity, flashOptions, cacheType);     break;
-                case "sparkle":  style = sparkleStyle(radius, opacity, flashOptions, cacheType);  break;
-                case "circle":   style = circleStyle(radius, opacity, flashOptions, cacheType);   break;
-                case "square":   style = squareStyle(radius, opacity, flashOptions, cacheType);   break;
-                case "triangle": style = triangleStyle(radius, opacity, flashOptions, cacheType); break;
-                case "diamond":  style = diamondStyle(radius, opacity, flashOptions, cacheType);  break;
-                default:         style = circleStyle(radius, opacity, flashOptions, cacheType);   break;
-            }
-            if (style) {
-                const vectorContext = ol.render.getVectorContext(event);
-                vectorContext.setStyle(style);
-                vectorContext.drawGeometry(flashGeom);
-            }
+        activeFlashes.push({
+            geometry: flashGeometry(featureData),
+            cacheType: featureData.properties?.cache_type,
+            flashOptions,
+            startFrame,
+            maxFrames,
         });
     });
 }
 
-
+// Lecture live : l'avancement se mesure en temps (frameState.time).
 function flashFeatures(features, flashOptions) {
-    features.forEach(featureData => {
-        // Assumons que featureData.geometry.coordinates contient les coordonnées en format [longitude, latitude]
-        const coords = ol.proj.fromLonLat([
-            featureData.geometry.coordinates[0],
-            featureData.geometry.coordinates[1]
-        ], 'EPSG:3857'); // Assurez-vous que la projection est correcte pour votre carte
-
-        // Création de la géométrie de point pour la feature
-        const featureGeometry = new ol.geom.Point(coords);
-        const feature = new ol.Feature({
-            geometry: featureGeometry,
-            type: featureData.properties.cache_type // Définir le type de cache pour les couleurs GC
-        });
-
-        // Ajoutez ici la feature à une source/vector layer dédiée à l'animation si ce n'est pas déjà fait dans flash()
-        flash(feature, flashOptions); // Utilisez votre fonction flash existante
-    });
-}
-
-
-function flash(feature, flashOptions) {
     const start = Date.now();
-    const flashGeom = feature.getGeometry().clone();
-    // Voir flashRecord : tant que ce flash s'anime, chaque frame diffère de la
-    // précédente et le compositing MR doit rendre la carte.
-    mapDirtyTracker.beginAnimation();
-    const listenerKey = animationLayer.on('postrender', animate);
+    // Durée figée au lancement du flash ; forme, taille et couleur restent relues
+    // à chaque frame (voir flashStyleAt).
     const duration = flashOptions.duration;
 
-    function animate(event) {
-        const frameState = event.frameState;
-        const elapsed = frameState.time - start;
-        if (elapsed >= duration) {
-            ol.Observable.unByKey(listenerKey);
-            mapDirtyTracker.endAnimation();
-            return;
-        }
+    features.forEach(featureData => {
+        mapDirtyTracker.beginAnimation();
+        activeFlashes.push({
+            geometry: flashGeometry(featureData),
+            cacheType: featureData.properties?.cache_type,
+            flashOptions,
+            start,
+            duration,
+        });
+    });
+}
 
-        const elapsedRatio = elapsed / duration;
-        // Définissez la taille et l'opacité de l'étoile
-        const radius = ol.easing.easeOut(elapsedRatio) * (flashOptions.size / 2) + (flashOptions.size / 10); // Taille de l'élément basée sur les options utilisateur
-        const opacity = ol.easing.easeOut(1 - elapsedRatio); // Opacité de l'élément 
+// Unique listener postrender de animationLayer : dessine tous les flashs actifs
+// et retire ceux qui sont terminés.
+function drawActiveFlashes(event) {
+    if (activeFlashes.length === 0) return;
 
-        // Style pour l'animation de flash
-        let style;
-        const cacheType = feature.get('type'); // Récupérer le type de cache depuis la feature
-        switch (flashOptions.mode) {
-            case "star":
-                style = starStyle(radius, opacity, flashOptions, cacheType);
-                break;
-            case "sparkle":
-                style = sparkleStyle(radius, opacity, flashOptions, cacheType);
-                break;
-            case "circle":
-                style = circleStyle(radius, opacity, flashOptions, cacheType);
-                break;
-            case "square":
-                style = squareStyle(radius, opacity, flashOptions, cacheType);
-                break;
-            case "triangle":
-                style = triangleStyle(radius, opacity, flashOptions, cacheType);
-                break;
-            case "diamond":
-                style = diamondStyle(radius, opacity, flashOptions, cacheType);
-                break;
-            default:
-                // Style par défaut (cercle) si le mode n'est pas reconnu
-                style = circleStyle(radius, opacity, flashOptions, cacheType);
-                break;
-        }
+    const now = event.frameState.time;
+    let vectorContext = null;
+    let liveFlashPending = false;
+    let kept = 0;
 
-        // Vérifier que le style est valide avant de l'appliquer
-        if (style) {
-            const vectorContext = ol.render.getVectorContext(event);
-            vectorContext.setStyle(style);
-            vectorContext.drawGeometry(flashGeom);
-            // En capture MediaRecorder, la boucle de dessin (renderSync @fps) pilote déjà
-            // les rendus : se re-planifier ici via map.render() doublerait (voire pire, en
-            // rafale rAF) le rendu par frame → saccades. On ne le fait qu'en lecture live.
-            if (!isMediaRecording) {
-                map.render();
+    for (const flash of activeFlashes) {
+        let step, steps;
+        if (flash.maxFrames !== undefined) {
+            // elapsed = nombre de captures depuis le début de ce flash
+            step = globalRecordFrame - flash.startFrame;
+            steps = flash.maxFrames;
+            if (step >= steps) {
+                mapDirtyTracker.endAnimation();
+                continue;
             }
+        } else {
+            const elapsed = now - flash.start;
+            if (elapsed >= flash.duration) {
+                mapDirtyTracker.endAnimation();
+                continue;
+            }
+            ({ step, steps } = liveFlashStep(elapsed, flash.duration));
+            liveFlashPending = true;
         }
+        activeFlashes[kept++] = flash;
+
+        const style = flashStyleAt(step, steps, flash.flashOptions, flash.cacheType);
+        if (style) {
+            vectorContext ??= ol.render.getVectorContext(event);
+            vectorContext.setStyle(style);
+            vectorContext.drawGeometry(flash.geometry);
+        }
+    }
+    activeFlashes.length = kept;
+
+    // En capture MediaRecorder, la boucle de dessin (renderSync @fps) pilote déjà
+    // les rendus : se re-planifier ici via map.render() doublerait (voire pire, en
+    // rafale rAF) le rendu par frame → saccades. On ne le fait qu'en lecture live.
+    if (liveFlashPending && !isMediaRecording) {
+        map.render();
     }
 }
 
@@ -2517,8 +2473,8 @@ function flash(feature, flashOptions) {
 function createFlashElements(){
     if (animationLayer) {
         map.removeLayer(animationLayer);
-        // Les listeners de flash encore actifs disparaissent avec la couche : ils
-        // ne pourront plus décrémenter le compteur d'animations eux-mêmes.
+        // Les flashs encore actifs sont abandonnés avec la couche (voir plus bas) :
+        // ils ne décrémenteront plus le compteur d'animations eux-mêmes.
         mapDirtyTracker.resetAnimations();
     }
     animationSource = new ol.source.Vector();
@@ -2528,6 +2484,9 @@ function createFlashElements(){
         zIndex: 1100
     });
     map.addLayer(animationLayer);
+    // Les flashs de l'ancienne couche ne seront plus dessinés : on repart à vide.
+    activeFlashes = [];
+    animationLayer.on('postrender', drawActiveFlashes);
 }
 
 
