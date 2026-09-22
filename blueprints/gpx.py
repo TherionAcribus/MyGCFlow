@@ -1,10 +1,15 @@
+import os
 import tempfile
+import zipfile
 
 from flask import Blueprint, current_app, jsonify, request
 from flask_babel import gettext as _
 
 import paths
-from bdd import TASK_TYPE_IMPORT, analyse, db_infos, get_progress_step, run_import_task, geojson_cache
+from bdd import (
+    TASK_TYPE_IMPORT, analyse, db_infos, extract_gpx_from_zip, get_progress_step,
+    run_import_task, geojson_cache,
+)
 from extensions import db
 from localization import get_locale
 from models import Geocache
@@ -39,6 +44,22 @@ def handle_upload():
     uploaded_file.save(tmp_file)
     tmp_file_path = tmp_file.name
     tmp_file.close()
+
+    # Pocket Query téléchargée telle quelle (.zip) : détectée sur le contenu
+    # plutôt que sur l'extension, puis remplacée par le GPX qu'elle contient.
+    # Fait ici, en synchrone : une archive invalide est signalée tout de suite
+    # (400) au lieu d'échouer dans la tâche de fond.
+    if zipfile.is_zipfile(tmp_file_path):
+        zip_path = tmp_file_path
+        fd, tmp_file_path = tempfile.mkstemp(suffix=".gpx")
+        os.close(fd)
+        try:
+            extract_gpx_from_zip(zip_path, tmp_file_path)
+        except ValueError as e:
+            os.remove(tmp_file_path)
+            return jsonify({'success': False, 'message': str(e)}), 400
+        finally:
+            os.remove(zip_path)
 
     app_obj = current_app._get_current_object()
     # Capturée ici (dans la requête, seul endroit où cookies/headers sont

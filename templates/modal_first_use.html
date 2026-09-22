@@ -14,7 +14,7 @@
                         <ol class="mb-2 ps-3 text-muted">
                             <li>{{ _("Ouvrez la page des Pocket Queries de geocaching.com (connexion requise).") }}</li>
                             <li>{{ _("Tout en bas, dans la section \"My Finds\", cliquez sur \"Add to Queue\".") }}</li>
-                            <li>{{ _("Le fichier est généré en quelques minutes : vous le recevez par e-mail et il apparaît dans l'onglet \"Pocket Queries Ready for Download\". Décompressez le .zip pour obtenir le .gpx.") }}</li>
+                            <li>{{ _("Le fichier est généré en quelques minutes : vous le recevez par e-mail et il apparaît dans l'onglet \"Pocket Queries Ready for Download\". Chargez-le ci-dessous tel quel (.zip) ou décompressé (.gpx).") }}</li>
                         </ol>
                         <p class="mb-2 small text-muted">{{ _("La Pocket Query \"My Finds\" ne peut être générée qu'une fois tous les 3 jours.") }}</p>
                         <a href="https://www.geocaching.com/pocket/default.aspx" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary">
@@ -31,7 +31,7 @@
                             <div class="mb-3">
                                 <label for="file-input-modal" class="form-label">{{ _("Sélectionner et charger un fichier .gpx") }}</label>
                                 <div class="gpx-dropzone">
-                                    <input type="file" class="form-control" id="file-input-modal" name="file" accept=".gpx" />
+                                    <input type="file" class="form-control" id="file-input-modal" name="file" accept=".gpx,.zip" />
                                     <div class="gpx-dropzone__hint">
                                         <i class="ti ti-drag-drop me-1"></i>{{ _("ou glissez-déposez votre fichier ici") }}
                                     </div>

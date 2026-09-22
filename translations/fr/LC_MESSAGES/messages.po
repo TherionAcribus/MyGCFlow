@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-22 16:45+0200\n"
+"POT-Creation-Date: 2026-09-22 16:53+0200\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -18,35 +18,47 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
-#: bdd.py:113
+#: bdd.py:114
 msgid "Aucun fichier envoyé"
 msgstr "Aucun fichier envoyé"
 
-#: bdd.py:117 templates/modal_first_use.html:42
+#: bdd.py:118 templates/modal_first_use.html:42
 msgid "Aucun fichier sélectionné"
 msgstr "Aucun fichier sélectionné"
 
-#: bdd.py:135
+#: bdd.py:136
 msgid "Le fichier fourni n'est pas un fichier GPX valide"
 msgstr "Le fichier fourni n'est pas un fichier GPX valide"
 
-#: bdd.py:152 static/js/bdd.js:171
+#: bdd.py:153 static/js/bdd.js:179
 msgid "Le fichier GPX n'est pas un fichier produit par Groundspeak."
 msgstr "Le fichier GPX n'est pas un fichier produit par Groundspeak."
 
-#: bdd.py:156 static/js/bdd.js:175
+#: bdd.py:157 static/js/bdd.js:183
 msgid "Le fichier GPX est une Pocket Query et non un fichier My Finds."
 msgstr "Le fichier GPX est une Pocket Query et non un fichier My Finds."
 
-#: bdd.py:158
+#: bdd.py:159
 msgid "Fichier reçu avec succès"
 msgstr "Fichier reçu avec succès"
 
-#: bdd.py:258
+#: bdd.py:192
+msgid "L'archive .zip ne contient aucun fichier .gpx."
+msgstr "L'archive .zip ne contient aucun fichier .gpx."
+
+#: bdd.py:207 bdd.py:218 static/js/bdd.js:202
+msgid "Le fichier est trop volumineux (200 Mo max)"
+msgstr "Le fichier est trop volumineux (200 Mo max)"
+
+#: bdd.py:222
+msgid "L'archive .zip est illisible ou corrompue."
+msgstr "L'archive .zip est illisible ou corrompue."
+
+#: bdd.py:322
 msgid "Fichier GPX invalide"
 msgstr "Fichier GPX invalide"
 
-#: bdd.py:265
+#: bdd.py:329
 msgid "Aucun waypoint trouvé dans le fichier GPX"
 msgstr "Aucun waypoint trouvé dans le fichier GPX"
 
@@ -131,24 +143,24 @@ msgstr "Confirmer"
 msgid "Annuler"
 msgstr "Annuler"
 
-#: blueprints/gpx.py:32
+#: blueprints/gpx.py:37
 msgid "Aucun fichier fourni"
 msgstr "Aucun fichier fourni"
 
-#: blueprints/gpx.py:36
+#: blueprints/gpx.py:41
 msgid "Nom de fichier vide"
 msgstr "Nom de fichier vide"
 
-#: blueprints/gpx.py:55
+#: blueprints/gpx.py:76
 msgid "Import GPX lancé en tâche de fond"
 msgstr "Import GPX lancé en tâche de fond"
 
-#: blueprints/gpx.py:92
+#: blueprints/gpx.py:113
 #, python-format
 msgid "Base de données vidée avec succès. %(count)s entrées supprimées."
 msgstr "Base de données vidée avec succès. %(count)s entrées supprimées."
 
-#: blueprints/gpx.py:99
+#: blueprints/gpx.py:120
 #, python-format
 msgid "Erreur lors du vidage de la base de données: %(error)s"
 msgstr "Erreur lors du vidage de la base de données: %(error)s"
@@ -176,121 +188,121 @@ msgstr ""
 "${count} tuile(s) de carte n'ont pas pu être chargées pendant "
 "l'enregistrement : la vidéo peut comporter des zones vides."
 
-#: static/js/bdd.js:187 static/js/bdd.js:783 static/js/bdd.js:1110
-msgid "Veuillez sélectionner un fichier .gpx"
-msgstr "Veuillez sélectionner un fichier .gpx"
+#: static/js/bdd.js:196
+msgid "Veuillez sélectionner un fichier .gpx ou .zip"
+msgstr "Veuillez sélectionner un fichier .gpx ou .zip"
 
-#: static/js/bdd.js:190
+#: static/js/bdd.js:199
 msgid "Le fichier sélectionné est vide"
 msgstr "Le fichier sélectionné est vide"
 
-#: static/js/bdd.js:193
-msgid "Le fichier est trop volumineux (200 Mo max)"
-msgstr "Le fichier est trop volumineux (200 Mo max)"
-
-#: static/js/bdd.js:219
+#: static/js/bdd.js:234
 msgid "Un import est déjà en cours, veuillez patienter."
 msgstr "Un import est déjà en cours, veuillez patienter."
 
-#: static/js/bdd.js:219 static/js/bdd.js:1022
+#: static/js/bdd.js:234 static/js/bdd.js:1037
 msgid "Import en cours"
 msgstr "Import en cours"
 
-#: static/js/bdd.js:224
+#: static/js/bdd.js:239
 msgid "Fichier invalide"
 msgstr "Fichier invalide"
 
-#: static/js/bdd.js:259
+#: static/js/bdd.js:274
 msgid "Déposez votre fichier .gpx pour le charger"
 msgstr "Déposez votre fichier .gpx pour le charger"
 
-#: static/js/bdd.js:339 static/js/bdd.js:403 static/js/bdd.js:404
+#: static/js/bdd.js:354 static/js/bdd.js:418 static/js/bdd.js:419
 #: templates/menu_data.html:31
 msgid "Aucune base de données chargée"
 msgstr "Aucune base de données chargée"
 
-#: static/js/bdd.js:406 templates/menu_data.html:51
+#: static/js/bdd.js:421 templates/menu_data.html:51
 msgid "Sélection: 0 / 0"
 msgstr "Sélection: 0 / 0"
 
-#: static/js/bdd.js:739
+#: static/js/bdd.js:754
 #, python-brace-format
 msgid "Envoi du fichier : ${pct}%"
 msgstr "Envoi du fichier : ${pct}%"
 
-#: static/js/bdd.js:748
+#: static/js/bdd.js:763
 msgid "Réponse invalide du serveur"
 msgstr "Réponse invalide du serveur"
 
-#: static/js/bdd.js:752
+#: static/js/bdd.js:767
 msgid "Impossible de lancer l'import GPX"
 msgstr "Impossible de lancer l'import GPX"
 
-#: static/js/bdd.js:762
+#: static/js/bdd.js:777
 msgid "Traitement du fichier en cours..."
 msgstr "Traitement du fichier en cours..."
 
-#: static/js/bdd.js:768
+#: static/js/bdd.js:783
 msgid "Erreur réseau lors de l'envoi du fichier"
 msgstr "Erreur réseau lors de l'envoi du fichier"
 
-#: static/js/bdd.js:769
+#: static/js/bdd.js:784
 msgid "Envoi du fichier annulé"
 msgstr "Envoi du fichier annulé"
 
-#: static/js/bdd.js:783 static/js/bdd.js:1110
+#: static/js/bdd.js:798 static/js/bdd.js:1125
+msgid "Veuillez sélectionner un fichier .gpx"
+msgstr "Veuillez sélectionner un fichier .gpx"
+
+#: static/js/bdd.js:798 static/js/bdd.js:1125
 msgid "Aucun fichier"
 msgstr "Aucun fichier"
 
-#: static/js/bdd.js:821 static/js/bdd.js:1140
+#: static/js/bdd.js:836 static/js/bdd.js:1155
 msgid "Préparation de l'envoi..."
 msgstr "Préparation de l'envoi..."
 
-#: static/js/bdd.js:821 static/js/bdd.js:854 static/js/bdd.js:1140
+#: static/js/bdd.js:836 static/js/bdd.js:869 static/js/bdd.js:1155
 #: static/js/notifications.js:206
 msgid "Chargement"
 msgstr "Chargement"
 
-#: static/js/bdd.js:829 static/js/bdd.js:1147
+#: static/js/bdd.js:844 static/js/bdd.js:1162
 msgid "Fichier chargé avec succès !"
 msgstr "Fichier chargé avec succès !"
 
-#: static/js/bdd.js:829
+#: static/js/bdd.js:844
 msgid "Terminé"
 msgstr "Terminé"
 
-#: static/js/bdd.js:842 static/js/bdd.js:849 static/js/bdd.js:1170
-#: static/js/bdd.js:1177
+#: static/js/bdd.js:857 static/js/bdd.js:864 static/js/bdd.js:1185
+#: static/js/bdd.js:1192
 msgid "Erreur lors du chargement du fichier"
 msgstr "Erreur lors du chargement du fichier"
 
-#: static/js/bdd.js:842 static/js/bdd.js:849 static/js/bdd.js:916
-#: static/js/bdd.js:923 static/js/bdd.js:1099 static/js/bdd.js:1170
-#: static/js/bdd.js:1177 static/js/notifications.js:274 static/js/ui.js:1020
+#: static/js/bdd.js:857 static/js/bdd.js:864 static/js/bdd.js:931
+#: static/js/bdd.js:938 static/js/bdd.js:1114 static/js/bdd.js:1185
+#: static/js/bdd.js:1192 static/js/notifications.js:274 static/js/ui.js:1020
 msgid "Erreur"
 msgstr "Erreur"
 
-#: static/js/bdd.js:854
+#: static/js/bdd.js:869
 msgid "Chargement de l'application..."
 msgstr "Chargement de l'application..."
 
-#: static/js/bdd.js:916 static/js/bdd.js:923
+#: static/js/bdd.js:931 static/js/bdd.js:938
 msgid "Erreur lors du chargement des données"
 msgstr "Erreur lors du chargement des données"
 
-#: static/js/bdd.js:996
+#: static/js/bdd.js:1011
 msgid "Aucune cache ne correspond aux critères sélectionnés par les filtres."
 msgstr "Aucune cache ne correspond aux critères sélectionnés par les filtres."
 
-#: static/js/bdd.js:996
+#: static/js/bdd.js:1011
 msgid "Aucune cache visible"
 msgstr "Aucune cache visible"
 
-#: static/js/bdd.js:1022
+#: static/js/bdd.js:1037
 msgid "Un import est en cours, veuillez patienter avant de vider la base."
 msgstr "Un import est en cours, veuillez patienter avant de vider la base."
 
-#: static/js/bdd.js:1035
+#: static/js/bdd.js:1050
 msgid ""
 "Êtes-vous sûr de vouloir vider la base de données ? Cette action est "
 "irréversible et supprimera toutes vos trouvailles."
@@ -298,51 +310,51 @@ msgstr ""
 "Êtes-vous sûr de vouloir vider la base de données ? Cette action est "
 "irréversible et supprimera toutes vos trouvailles."
 
-#: static/js/bdd.js:1036
+#: static/js/bdd.js:1051
 msgid "Confirmation de suppression"
 msgstr "Confirmation de suppression"
 
-#: static/js/bdd.js:1045
+#: static/js/bdd.js:1060
 msgid "Confirmation non disponible, action annulée."
 msgstr "Confirmation non disponible, action annulée."
 
-#: static/js/bdd.js:1045 static/js/bdd.js:1057
+#: static/js/bdd.js:1060 static/js/bdd.js:1072
 msgid "Suppression"
 msgstr "Suppression"
 
-#: static/js/bdd.js:1057
+#: static/js/bdd.js:1072
 msgid "Vidage de la base de données..."
 msgstr "Vidage de la base de données..."
 
-#: static/js/bdd.js:1088
+#: static/js/bdd.js:1103
 msgid "Base de données vidée avec succès"
 msgstr "Base de données vidée avec succès"
 
-#: static/js/bdd.js:1088
+#: static/js/bdd.js:1103
 msgid "Suppression réussie"
 msgstr "Suppression réussie"
 
-#: static/js/bdd.js:1099
+#: static/js/bdd.js:1114
 msgid "Erreur lors du vidage de la base de données: "
 msgstr "Erreur lors du vidage de la base de données: "
 
-#: static/js/bdd.js:1147
+#: static/js/bdd.js:1162
 msgid "Chargement terminé"
 msgstr "Chargement terminé"
 
-#: static/js/bdd.js:1184
+#: static/js/bdd.js:1199
 msgid "Chargement et affichage des points..."
 msgstr "Chargement et affichage des points..."
 
-#: static/js/bdd.js:1184 static/js/mapgl.js:280 static/js/notifications.js:232
+#: static/js/bdd.js:1199 static/js/mapgl.js:280 static/js/notifications.js:232
 msgid "Affichage des points"
 msgstr "Affichage des points"
 
-#: static/js/bdd.js:1201 static/js/bdd.js:1255 static/js/bdd.js:1262
+#: static/js/bdd.js:1216 static/js/bdd.js:1270 static/js/bdd.js:1277
 msgid "Erreur lors de l'affichage des points sur la carte"
 msgstr "Erreur lors de l'affichage des points sur la carte"
 
-#: static/js/bdd.js:1201 static/js/bdd.js:1255 static/js/bdd.js:1262
+#: static/js/bdd.js:1216 static/js/bdd.js:1270 static/js/bdd.js:1277
 msgid "Erreur d'affichage"
 msgstr "Erreur d'affichage"
 
@@ -983,14 +995,14 @@ msgstr "Ouvrir mes Pocket Queries sur geocaching.com"
 #: templates/guide.html:114
 msgid ""
 "Le fichier arrive par e-mail et reste téléchargeable dans l'onglet "
-"\"Pocket Queries Ready for Download\" (au format .zip, à décompresser). "
-"La Pocket Query \"My Finds\" ne peut être générée qu'une fois tous les 3 "
-"jours."
+"\"Pocket Queries Ready for Download\" (au format .zip, que GCMap accepte "
+"directement : inutile de le décompresser). La Pocket Query \"My Finds\" "
+"ne peut être générée qu'une fois tous les 3 jours."
 msgstr ""
 "Le fichier arrive par e-mail et reste téléchargeable dans l'onglet "
-"\"Pocket Queries Ready for Download\" (au format .zip, à décompresser). "
-"La Pocket Query \"My Finds\" ne peut être générée qu'une fois tous les 3 "
-"jours."
+"\"Pocket Queries Ready for Download\" (au format .zip, que GCMap accepte "
+"directement : inutile de le décompresser). La Pocket Query \"My Finds\" "
+"ne peut être générée qu'une fois tous les 3 jours."
 
 #: templates/guide.html:118
 msgid ""
@@ -2623,11 +2635,11 @@ msgstr "Tout en bas, dans la section \"My Finds\", cliquez sur \"Add to Queue\".
 msgid ""
 "Le fichier est généré en quelques minutes : vous le recevez par e-mail et"
 " il apparaît dans l'onglet \"Pocket Queries Ready for Download\". "
-"Décompressez le .zip pour obtenir le .gpx."
+"Chargez-le ci-dessous tel quel (.zip) ou décompressé (.gpx)."
 msgstr ""
 "Le fichier est généré en quelques minutes : vous le recevez par e-mail et"
 " il apparaît dans l'onglet \"Pocket Queries Ready for Download\". "
-"Décompressez le .zip pour obtenir le .gpx."
+"Chargez-le ci-dessous tel quel (.zip) ou décompressé (.gpx)."
 
 #: templates/modal_first_use.html:19
 msgid ""

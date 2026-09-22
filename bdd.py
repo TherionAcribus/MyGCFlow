@@ -6,6 +6,7 @@ from datetime import datetime
 import logging
 import os
 import json
+import zipfile
 from typing import Optional
 
 import paths
@@ -156,6 +157,69 @@ def validate_gpx_header(name_text, desc_text, author_text):
         return {'success': False, 'message': _("Le fichier GPX est une Pocket Query et non un fichier My Finds.")}
 
     return {'success': True, 'message': _('Fichier reçu avec succès')}
+
+
+# Même plafond que GPX_MAX_SIZE_BYTES côté client (bdd.js). Appliqué ici à la
+# taille DÉCOMPRESSÉE : le client ne voit que le .zip, plus petit.
+GPX_MAX_SIZE_BYTES = 200 * 1024 * 1024
+
+
+def extract_gpx_from_zip(zip_path, dest_path):
+    """Extrait le GPX d'une archive Pocket Query (.zip) vers dest_path.
+
+    geocaching.com livre la Pocket Query "My Finds" en .zip (par e-mail ou
+    dans l'onglet "Pocket Queries Ready for Download") : l'accepter tel quel
+    évite à l'utilisateur de le décompresser lui-même.
+
+    Une Pocket Query classique contient aussi un "<id>-wpts.gpx" (waypoints
+    additionnels) : on essaie d'abord les autres fichiers, et on retient le
+    premier dont l'en-tête est un "My Finds". À défaut, le premier candidat
+    est extrait quand même : uploadBdd le rejettera avec le message habituel
+    (ex. « Pocket Query et non My Finds »), plus parlant qu'une erreur d'archive.
+
+    Raises:
+        ValueError: message traduit, archive illisible / sans GPX / trop grosse.
+    """
+    try:
+        with zipfile.ZipFile(zip_path) as zf:
+            candidates = [
+                info for info in zf.infolist()
+                if not info.is_dir()
+                and info.filename.lower().endswith('.gpx')
+                and not info.filename.startswith('__MACOSX/')
+            ]
+            if not candidates:
+                raise ValueError(_("L'archive .zip ne contient aucun fichier .gpx."))
+            candidates.sort(key=lambda i: i.filename.lower().endswith('-wpts.gpx'))
+
+            chosen = candidates[0]
+            for info in candidates:
+                try:
+                    with zf.open(info) as member:
+                        header = _read_gpx_header(member)
+                except ET.ParseError:
+                    continue
+                if validate_gpx_header(*header)['success']:
+                    chosen = info
+                    break
+
+            if chosen.file_size > GPX_MAX_SIZE_BYTES:
+                raise ValueError(_('Le fichier est trop volumineux (200 Mo max)'))
+            # file_size vient de l'archive elle-même : on recompte pendant la
+            # copie pour ne pas se fier à une taille annoncée falsifiée.
+            written = 0
+            with zf.open(chosen) as member, open(dest_path, 'wb') as out:
+                while True:
+                    chunk = member.read(1024 * 1024)
+                    if not chunk:
+                        break
+                    written += len(chunk)
+                    if written > GPX_MAX_SIZE_BYTES:
+                        raise ValueError(_('Le fichier est trop volumineux (200 Mo max)'))
+                    out.write(chunk)
+    except (zipfile.BadZipFile, NotImplementedError, RuntimeError):
+        # RuntimeError : archive chiffrée ; NotImplementedError : compression non gérée.
+        raise ValueError(_("L'archive .zip est illisible ou corrompue."))
 
 
 def _read_gpx_header(source):

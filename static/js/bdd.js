@@ -79,6 +79,12 @@ function isGpxFile(file) {
     return !!file && /\.gpx$/i.test(file.name || '');
 }
 
+// Pocket Query telle que téléchargée sur geocaching.com : le serveur en
+// extrait le GPX (bdd.py:extract_gpx_from_zip).
+function isZipFile(file) {
+    return !!file && /\.zip$/i.test(file.name || '');
+}
+
 // Un vrai GPX "My Finds" ne dépasse jamais quelques dizaines de Mo ; au-delà,
 // il s'agit presque certainement du mauvais fichier. On bloque tôt plutôt que
 // de laisser l'utilisateur attendre un upload voué à l'échec.
@@ -142,14 +148,20 @@ async function sniffGpxHeader(file) {
 // Validation cliente avant tout envoi réseau : extension, taille, puis
 // contenu de l'en-tête (lu localement, sans upload).
 async function validateGpxFile(file) {
-    if (!isGpxFile(file)) {
-        return { ok: false, message: t('Veuillez sélectionner un fichier .gpx') };
+    const isZip = isZipFile(file);
+    if (!isGpxFile(file) && !isZip) {
+        return { ok: false, message: t('Veuillez sélectionner un fichier .gpx ou .zip') };
     }
     if (file.size === 0) {
         return { ok: false, message: t('Le fichier sélectionné est vide') };
     }
     if (file.size > GPX_MAX_SIZE_BYTES) {
         return { ok: false, message: t('Le fichier est trop volumineux (200 Mo max)') };
+    }
+
+    // Contenu compressé : pas de sniff d'en-tête possible, le serveur valide.
+    if (isZip) {
+        return { ok: true };
     }
 
     const header = await sniffGpxHeader(file);
