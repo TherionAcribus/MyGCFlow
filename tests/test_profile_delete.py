@@ -33,7 +33,12 @@ class ProfileDeleteTests(unittest.TestCase):
             self.addCleanup(patcher.stop)
         # Flag de seeding posé d'avance : chaque test part d'un dossier vide, sans
         # la dizaine de profils d'exemple que le premier lancement installerait.
-        settings_manager.write_json(settings_manager.SETTINGS_PATH, {"examples_seeded": True})
+        settings_manager.write_json(settings_manager.SETTINGS_PATH, {
+            "examples_seeded": True,
+            # Lot d'exemples à jour : sinon la migration installerait les
+            # exemples ajoutés depuis (cf. EXAMPLES_VERSION).
+            "examples_version": settings_manager.EXAMPLES_VERSION,
+        })
         self.manager = SettingsManager()
 
         # Import tardif, sous les constantes redirigées : le blueprint construit

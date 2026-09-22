@@ -126,7 +126,11 @@ fetch('/api/profiles/Mon Profil', {
 
 ## Profils d'exemple inclus
 
-Au premier lancement, GCMap crée automatiquement 11 profils d'exemple :
+Au premier lancement, GCMap crée automatiquement 13 profils d'exemple. Les deux
+derniers (« Équilibré » et « Cinématique ») ont été ajoutés après coup : une
+installation existante les reçoit une seule fois, sans réinstaller les autres ni
+faire revenir ceux qui ont été supprimés (voir `EXAMPLES_VERSION` dans
+`settings_manager.py`).
 
 ### 🏠 **Default** (Par défaut)
 - **Carte** : OpenStreetMap centrée sur Paris (zoom 6)
@@ -194,7 +198,26 @@ Au premier lancement, GCMap crée automatiquement 11 profils d'exemple :
 - **Animation** : Activée, enjouée
 - **Usage** : Le plus multicolore, esprit festif
 
+### ⚖️ **Équilibré**
+- **Carte** : Stamen Toner clair centrée sur Paris (zoom 6)
+- **Points** : Petits cercles aux couleurs GC, bordure blanche fine
+- **Flash** : Impulsion courte (600 ms, 40 px) aux couleurs GC
+- **Usage** : Grosses bases — la carte reste lisible quand les points se densifient
+
+### 🎬 **Cinématique**
+- **Carte** : Carte vectorielle sombre centrée sur Paris (zoom 6). C'est le seul
+  fond réellement sombre ; il ne montre que les contours des pays, donc il est
+  fait pour une vue à l'échelle d'un pays, pas pour un zoom sur une ville.
+- **Points** : Couleurs GC avec apparition animée (léger rebond à chaque arrivée)
+- **Flash** : Impulsion (750 ms, 60 px) — halo et onde ressortent sur le fond sombre
+- **Usage** : Vidéos et présentations
+
 ### Extension
+
+Pour ajouter un profil d'exemple à une version existante :
+1. L'ajouter au dictionnaire de `_create_example_profiles()`
+2. Incrémenter `EXAMPLES_VERSION` et lister son nom dans `EXAMPLES_ADDED_AFTER_V1`
+3. Le documenter ici (voir `tests/test_example_profiles.py`)
 
 Pour ajouter de nouveaux paramètres aux profils :
 1. Étendre les dataclasses dans `settings_manager.py`

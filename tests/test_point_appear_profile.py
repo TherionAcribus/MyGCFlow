@@ -24,7 +24,12 @@ class PointAppearProfileTests(unittest.TestCase):
             patcher = mock.patch.object(settings_manager, name, value)
             patcher.start()
             self.addCleanup(patcher.stop)
-        settings_manager.write_json(settings_manager.SETTINGS_PATH, {"examples_seeded": True})
+        settings_manager.write_json(settings_manager.SETTINGS_PATH, {
+            "examples_seeded": True,
+            # Lot d'exemples à jour : sinon la migration installerait les
+            # exemples ajoutés depuis (cf. EXAMPLES_VERSION).
+            "examples_version": settings_manager.EXAMPLES_VERSION,
+        })
         self.manager = SettingsManager()
 
     def test_disabled_by_default(self):

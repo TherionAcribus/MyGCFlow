@@ -12,6 +12,10 @@ from typing import Callable, Tuple, Optional, List
 
 APP_NAME = "GCMap"
 COORDINATE_ORDER_VERSION = 2
+# Lot courant de profils d'exemple. À incrémenter en ajoutant les nouveaux noms
+# à EXAMPLES_ADDED_AFTER_V1 : les installations existantes les reçoivent une fois.
+EXAMPLES_VERSION = 2
+EXAMPLES_ADDED_AFTER_V1 = {"Équilibré", "Cinématique"}
 MAX_OVERLAY_TITLE_LENGTH = 500
 MAX_OVERLAY_CSS_LENGTH = 20_000
 
@@ -139,6 +143,10 @@ class AppSettings:
     # serait indiscernable de « configuré avec les valeurs par défaut ».
     recording_configured: bool = False
     examples_seeded: bool = False  # True une fois les profils d'exemple créés (premier lancement)
+    # Lot de profils d'exemple déjà installé. Permet d'ajouter des exemples dans
+    # une version ultérieure sans les réinstaller à chaque démarrage, ni faire
+    # revenir ceux que l'utilisateur a supprimés (voir EXAMPLES_VERSION).
+    examples_version: int = 0
 
 
 @dataclass
@@ -374,6 +382,7 @@ def coerce_settings(d: dict) -> AppSettings:
             s.last_profile_uid = d.get("last_profile_uid")
 
         s.examples_seeded = bool(d.get("examples_seeded", s.examples_seeded))
+        s.examples_version = _to_int(d.get("examples_version"), s.examples_version)
 
         s.version = max(source_version, COORDINATE_ORDER_VERSION)
     return s
@@ -503,15 +512,24 @@ class SettingsManager:
 
         # Créer les profils d'exemple une seule fois, au tout premier lancement.
         # Une fois ce flag posé, un utilisateur qui supprime un exemple ne le voit
-        # pas revenir au redémarrage suivant.
-        if not self.get_app_settings().examples_seeded:
+        # pas revenir au redémarrage suivant. Les exemples ajoutés par une version
+        # ultérieure (EXAMPLES_VERSION) sont installés une fois eux aussi, sans
+        # toucher aux profils existants.
+        settings = self.get_app_settings()
+        if not settings.examples_seeded:
             self._create_example_profiles()
+            self._mark_examples_seeded()
+        elif settings.examples_version < EXAMPLES_VERSION:
+            self._create_example_profiles(only=EXAMPLES_ADDED_AFTER_V1)
+            self._mark_examples_seeded()
 
-            def mark_seeded(current: AppSettings) -> AppSettings:
-                current.examples_seeded = True
-                return current
+    def _mark_examples_seeded(self) -> None:
+        def mark(current: AppSettings) -> AppSettings:
+            current.examples_seeded = True
+            current.examples_version = EXAMPLES_VERSION
+            return current
 
-            self.update_app_settings(mark_seeded)
+        self.update_app_settings(mark)
 
     def _profiles_dir_signature(self) -> tuple:
         """Empreinte du dossier profils : une énumération, aucun parse JSON.
@@ -560,8 +578,8 @@ class SettingsManager:
         if self._profiles_dir_signature() != self._cache_signature:
             self._build_profile_cache()
 
-    def _create_example_profiles(self) -> None:
-        """Crée des profils d'exemple au premier lancement"""
+    def _create_example_profiles(self, only: Optional[set] = None) -> None:
+        """Crée des profils d'exemple (tous, ou seulement ceux nommés dans `only`)"""
         def build_infos(title_text: str, title_css: str, infos_css: str) -> InfosOptions:
             return InfosOptions(
                 title=InfosTitle(display=True, text=title_text),
@@ -1186,11 +1204,140 @@ class SettingsManager:
                     box-shadow: 0 8px 20px rgba(123, 47, 247, 0.16);
                     """
                 )
-            )
+            ),
+
+            # Les deux profils ci-dessous sont des styles d'animation (EXAMPLES_VERSION 2) :
+            # ils mettent en scène le flash « impulsion » et l'apparition animée des
+            # points, éteints par défaut ailleurs.
+            "Équilibré": MapProfile(
+                name="Équilibré",
+                map=MapOptions(
+                    tile_provider="stamenToner",
+                    default_center=(2.3522, 48.8566),
+                    default_zoom=6,
+                    vector_options=VectorMapOptions(
+                        stroke_color="#94a3b8",
+                        fill_color="#e2e8f0",
+                        background_color="#f8fafc",
+                        stroke_width=1.2
+                    ),
+                    toner_options=TonerMapOptions(variant="light")
+                ),
+                animation=AnimationOptions(enabled=True, speed=1.0),
+                # Bordure fine et points un peu plus petits : sur une grosse base,
+                # la carte reste lisible quand les points se densifient.
+                points=PointStyle(
+                    size=7,
+                    color="#0ea5e9",
+                    shape="circle",
+                    halo=True,
+                    border_color="#ffffff",
+                    border_size=1,
+                    fill_color_type="gc",
+                    border_color_type="fix",
+                    mode="vectoriel",
+                    appear_animation=False
+                ),
+                # Flash court et net : l'animation reste nerveuse même quand
+                # beaucoup de caches tombent le même jour.
+                flash=FlashOptions(
+                    mode="impulse",
+                    duration=600,
+                    size=40,
+                    color="#0ea5e9",
+                    color_type="gc"
+                ),
+                infos=build_infos(
+                    "My Geocaching Map",
+                    """
+                    color: #0f172a;
+                    background: rgba(255, 255, 255, 0.9);
+                    padding: 10px 18px;
+                    border-radius: 12px;
+                    border: 1px solid rgba(148, 163, 184, 0.45);
+                    font-weight: 600;
+                    letter-spacing: 0.3px;
+                    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.1);
+                    """,
+                    """
+                    color: #0f172a;
+                    background: rgba(255, 255, 255, 0.9);
+                    padding: 8px 14px;
+                    border-radius: 10px;
+                    border: 1px solid rgba(148, 163, 184, 0.45);
+                    font-variant-numeric: tabular-nums;
+                    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.1);
+                    """
+                )
+            ),
+
+            "Cinématique": MapProfile(
+                name="Cinématique",
+                map=MapOptions(
+                    # Carte vectorielle : c'est le seul fond réellement sombre
+                    # (la variante « dark » de Toner reste noir sur blanc). Les
+                    # halos des flashs et les couleurs GC y ressortent bien mieux.
+                    tile_provider="vectorMap",
+                    default_center=(2.3522, 48.8566),
+                    default_zoom=6,
+                    vector_options=VectorMapOptions(
+                        stroke_color="#475569",
+                        fill_color="#0f172a",
+                        background_color="#020617",
+                        stroke_width=1.4
+                    ),
+                    toner_options=TonerMapOptions(variant="dark")
+                ),
+                animation=AnimationOptions(enabled=True, speed=1.2),
+                points=PointStyle(
+                    size=8,
+                    color="#f8fafc",
+                    shape="circle",
+                    halo=True,
+                    border_color="#0b1020",
+                    border_size=1,
+                    fill_color_type="gc",
+                    border_color_type="fix",
+                    mode="vectoriel",
+                    appear_animation=True
+                ),
+                flash=FlashOptions(
+                    mode="impulse",
+                    duration=750,
+                    size=60,
+                    color="#f8fafc",
+                    color_type="gc"
+                ),
+                infos=build_infos(
+                    "My Geocaching Map",
+                    """
+                    color: #f8fafc;
+                    background: rgba(2, 6, 23, 0.72);
+                    padding: 12px 20px;
+                    border-radius: 4px;
+                    border-left: 3px solid #38bdf8;
+                    font-weight: 700;
+                    letter-spacing: 1.5px;
+                    text-transform: uppercase;
+                    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+                    """,
+                    """
+                    color: #e2e8f0;
+                    background: rgba(2, 6, 23, 0.66);
+                    padding: 8px 14px;
+                    border-radius: 4px;
+                    font-variant-numeric: tabular-nums;
+                    letter-spacing: 0.5px;
+                    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.32);
+                    """
+                )
+            ),
         }
 
         # Créer chaque profil s'il n'existe pas déjà
         for profile_name, profile_data in example_profiles.items():
+            if only is not None and profile_name not in only:
+                continue
             profile_path = self._profile_path(profile_name)
             if not profile_path.exists():
                 self.save_profile(profile_data)
@@ -1238,10 +1385,14 @@ class SettingsManager:
             return updated
 
     def reset_app_settings(self) -> None:
-        # examples_seeded est un flag interne de migration, pas une préférence utilisateur:
-        # un reset des paramètres ne doit pas faire revenir les profils d'exemple supprimés.
+        # examples_seeded et examples_version sont des flags internes de migration,
+        # pas des préférences utilisateur : un reset des paramètres ne doit pas
+        # faire revenir les profils d'exemple supprimés.
         self.update_app_settings(
-            lambda current: AppSettings(examples_seeded=current.examples_seeded)
+            lambda current: AppSettings(
+                examples_seeded=current.examples_seeded,
+                examples_version=current.examples_version,
+            )
         )
 
     # Profiles
