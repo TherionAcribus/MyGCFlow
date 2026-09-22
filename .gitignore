@@ -5,6 +5,7 @@ build
 .parcel-cache/
 __pycache__/
 virtual/
+.venv-build/
 instance/
 
 # Données générées
@@ -12,5 +13,7 @@ instance/
 !tests/e2e/fixtures/my-finds.gpx
 captured/
 static/geojson_data.json
+static/json/country_state.json
 video/
+logs/
 gcmap_versions.json

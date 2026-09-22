@@ -1,0 +1,102 @@
+name: Release Windows
+
+# Publier une version :
+#   1. mettre à jour __version__ dans version.py, committer ;
+#   2. git tag v1.2.0 && git push origin v1.2.0
+# Le workflow construit l'installeur et la version portable, puis crée la
+# Release GitHub correspondante. Lancé à la main (workflow_dispatch), il
+# construit seulement, sans publier : les fichiers sont dans les artefacts.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v6
+
+      - name: Installer Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-build.txt
+
+      - name: Lire la version
+        id: version
+        shell: pwsh
+        run: |
+          $version = [regex]::Match((Get-Content -Raw version.py), '__version__\s*=\s*"([^"]+)"').Groups[1].Value
+          "version=$version" >> $env:GITHUB_OUTPUT
+          if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -ne "v$version") {
+            throw "Le tag $env:GITHUB_REF_NAME ne correspond pas à version.py ($version)"
+          }
+
+      - name: Tests unitaires
+        shell: pwsh
+        env:
+          PYTHONUTF8: "1"
+        run: |
+          python -m pip install -r requirements.txt
+          python -m unittest discover -s tests -t .
+
+      - name: Installer Inno Setup
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) {
+            choco install innosetup --yes --no-progress
+          }
+
+      - name: Construire l'exécutable et l'installeur
+        shell: pwsh
+        run: ./installer/build.ps1
+
+      - name: Archive portable
+        shell: pwsh
+        run: Compress-Archive -Path dist/GCMap -DestinationPath "dist/GCMap-${{ steps.version.outputs.version }}-portable.zip"
+
+      - name: Vérifier que l'exécutable démarre
+        shell: pwsh
+        run: |
+          $env:GCMAP_DATA_DIR = "$env:RUNNER_TEMP\gcmap-data"
+          $env:GCMAP_CONFIG_DIR = "$env:RUNNER_TEMP\gcmap-config"
+          $process = Start-Process -FilePath dist/GCMap/GCMap.exe -ArgumentList '--no-browser', '--no-tray' -PassThru
+          $ok = $false
+          foreach ($i in 1..60) {
+            try { $ping = Invoke-RestMethod http://127.0.0.1:51730/api/ping -TimeoutSec 2; $ok = $true; break }
+            catch { Start-Sleep -Milliseconds 500 }
+          }
+          Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+          if (-not $ok) { Get-Content "$env:GCMAP_DATA_DIR\logs\gcmap.log" -ErrorAction SilentlyContinue; throw 'GCMap.exe ne répond pas' }
+          "GCMap $($ping.version) a démarré"
+
+      - name: Conserver les fichiers construits
+        uses: actions/upload-artifact@v4
+        with:
+          name: GCMap-${{ steps.version.outputs.version }}-windows
+          path: |
+            dist/GCMap-Setup-*.exe
+            dist/GCMap-*-portable.zip
+
+      - name: Publier la Release
+        if: github.ref_type == 'tag'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$env:GITHUB_REF_NAME" `
+            (Get-ChildItem dist/GCMap-Setup-*.exe).FullName `
+            (Get-ChildItem dist/GCMap-*-portable.zip).FullName `
+            --title "GCMap ${{ steps.version.outputs.version }}" `
+            --generate-notes

@@ -1,8 +1,11 @@
 from flask import Flask
 from flask_babel import gettext as _
 
+import migrations
+import paths
 from config import Config
-from extensions import babel, compress, cors, db
+import security
+from extensions import babel, compress, db
 from localization import get_locale
 from blueprints import register_blueprints
 
@@ -10,7 +13,14 @@ gettext = _
 
 
 def create_app(config_object=None):
-    app = Flask(__name__)
+    # Racines explicites : les ressources (templates, static, translations) sont
+    # lues à côté du code, l'instance (base SQLite) vit dans le dossier de
+    # données de l'utilisateur — cf. paths.py.
+    app = Flask(
+        __name__,
+        root_path=str(paths.resource_dir()),
+        instance_path=str(paths.ensure_dir(paths.instance_dir())),
+    )
     app.config.from_object(Config)
     if config_object:
         if isinstance(config_object, dict):
@@ -18,7 +28,7 @@ def create_app(config_object=None):
         else:
             app.config.from_object(config_object)
 
-    cors.init_app(app)
+    security.init_app(app)
     babel.init_app(app, locale_selector=get_locale)
     db.init_app(app)
     # Compression HTTP (gzip/deflate/brotli) pour toutes les réponses — le
@@ -30,6 +40,7 @@ def create_app(config_object=None):
     app.jinja_env.globals['_'] = _
     with app.app_context():
         db.create_all()
+        migrations.upgrade(db)
 
     return app
 

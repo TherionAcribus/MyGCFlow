@@ -1,10 +1,9 @@
-import os
 import tempfile
 
 from flask import Blueprint, current_app, jsonify, request
 from flask_babel import gettext as _
-from flask_cors import cross_origin
 
+import paths
 from bdd import TASK_TYPE_IMPORT, analyse, db_infos, get_progress_step, run_import_task, geojson_cache
 from extensions import db
 from localization import get_locale
@@ -28,7 +27,6 @@ def get_progress():
 
 
 @gpx_bp.route('/upload', methods=['POST'])
-@cross_origin()
 def handle_upload():
     if 'file' not in request.files:
         return jsonify({'success': False, 'message': _('Aucun fichier fourni')}), 400
@@ -61,7 +59,6 @@ def handle_upload():
 
 
 @gpx_bp.route('/analyse_file', methods=['POST'])
-@cross_origin()
 def analyse_file():
     return analyse(request)
 
@@ -72,16 +69,14 @@ def db_status():
 
 
 @gpx_bp.route('/clear_database', methods=['POST'])
-@cross_origin()
 def clear_database():
     try:
         num_deleted = Geocache.query.delete()
         db.session.commit()
         try:
-            runtime_root = os.getenv('GCMAP_RUNTIME_DIR') or current_app.root_path
-            path = os.path.join(runtime_root, 'static', 'json', 'country_state.json')
-            if os.path.exists(path):
-                os.remove(path)
+            path = paths.country_state_path()
+            if path.exists():
+                path.unlink()
         except Exception as e:
             print(f"[CLEAR_DB] Could not remove country_state.json: {e}")
 

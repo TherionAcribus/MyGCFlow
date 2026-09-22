@@ -8,6 +8,8 @@ import os
 import json
 from typing import Optional
 
+import paths
+from extensions import db
 from geojson_cache import GeojsonIndexCache, build_metadata_from_features
 from task_manager import TaskStatus, task_manager
 
@@ -504,7 +506,8 @@ def get_progress_step(task_id: Optional[str] = None):
 
 def db_infos(Geocache):
     """Utilisé pour voir si une BDD existe et obtenir ses informations détaillées"""
-    db_path = 'instance/geocaching.db'  # Chemin de la base de données
+    # Fichier réellement ouvert par SQLAlchemy (DATABASE_URI compris).
+    db_path = db.engine.url.database or ''
     exists = database_exists(db_path)
     size = get_database_size(db_path)
     
@@ -650,6 +653,9 @@ def ensure_geocache_columns(db):
                 try:
                     logger.info("Adding missing column: %s", col)
                     conn.execute(text(stmt))
+                    # SQLAlchemy 2 : sans commit, la fermeture de la connexion
+                    # annule la transaction et l'ALTER TABLE est perdu.
+                    conn.commit()
                 except Exception as e:
                     logger.warning("Could not add column %s: %s", col, e)
     finally:
@@ -748,7 +754,7 @@ def convert_str_to_date(date_str):
 
 
 def build_country_state_tree(db, Geocache):
-    """Construit un dictionnaire Country -> [States] depuis la BDD et l'écrit dans static/json/country_state.json"""
+    """Construit un dictionnaire Country -> [States] depuis la BDD et l'écrit dans paths.country_state_path()"""
     try:
         rows = db.session.query(Geocache.country, Geocache.state).distinct().all()
         tree = {}
@@ -765,10 +771,8 @@ def build_country_state_tree(db, Geocache):
         tree_sorted = { c: sorted(list(states)) for c, states in sorted(tree.items(), key=lambda x: x[0].lower()) }
 
         # Écriture JSON
-        runtime_root = os.getenv('GCMAP_RUNTIME_DIR') or current_app.root_path
-        out_dir = os.path.join(runtime_root, 'static', 'json')
-        os.makedirs(out_dir, exist_ok=True)
-        out_path = os.path.join(out_dir, 'country_state.json')
+        out_path = paths.country_state_path()
+        paths.ensure_dir(out_path.parent)
         with open(out_path, 'w', encoding='utf-8') as f:
             json.dump(tree_sorted, f, ensure_ascii=False, indent=2)
         logger.info("Country/State tree generated: %s (%d countries)", out_path, len(tree_sorted))

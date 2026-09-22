@@ -1181,21 +1181,14 @@ export function init_ui() {
                 dbgFilters('[COUNTRY] Response ok=', r.ok, 'status=', r.status);
                 const txt = await r.text();
                 dbgFilters('[COUNTRY] Response length=', txt?.length);
+                // Pas de repli sur un fichier statique : l'arbre pays/régions est
+                // une donnée de l'utilisateur, rangée hors de static/ (paths.py).
                 let data;
                 try {
                     data = txt ? JSON.parse(txt) : {};
                 } catch(err) {
-                    console.warn('[COUNTRY] JSON parse failed for API. Falling back to static file.', err);
-                    // Fallback vers le JSON statique
-                const staticUrl = `${window.location.origin}/static/json/country_state.json`;
-                    return fetch(staticUrl)
-                        .then(rr => rr.json())
-                        .then(dd => {
-                            countryToStates = dd || {};
-                            dbgFilters('[COUNTRY] Fallback static JSON loaded. Countries:', Object.keys(countryToStates).length);
-                            populateCountryStateSelects(countryToStates);
-                        })
-                        .catch(e => console.warn('[COUNTRY] Fallback fetch error:', e));
+                    console.warn('[COUNTRY] JSON parse failed for API.', err);
+                    data = {};
                 }
                 countryToStates = data || {};
                 dbgFilters('[COUNTRY] Data received. Countries:', Object.keys(countryToStates).length);

@@ -10,8 +10,8 @@ import threading
 import time
 from werkzeug.utils import secure_filename
 
+import paths
 
-CAPTURED_DIR = 'captured'
 
 # Formats écrits dans captured/ : webp par défaut côté client, png pour l'ancien
 # envoi base64. Sert autant à l'assemblage qu'au comptage des images restantes.
@@ -36,8 +36,7 @@ def _save_uploaded_image(image_file, counter, number_size):
     if not image_filename:
         image_filename = f'image_{str(counter).zfill(number_size)}.webp'
 
-    os.makedirs(CAPTURED_DIR, exist_ok=True)
-    image_file.save(os.path.join(CAPTURED_DIR, image_filename))
+    image_file.save(os.path.join(paths.ensure_dir(paths.captured_dir()), image_filename))
     return image_filename
 
 
@@ -88,9 +87,7 @@ def upload_image(request):
             counter = int(data['counter'])
 
             image_filename = f'image_{str(counter).zfill(numberSize)}.png'
-            os.makedirs('captured', exist_ok=True)
-
-            with open(os.path.join('captured/', image_filename), 'wb') as file:
+            with open(os.path.join(paths.ensure_dir(paths.captured_dir()), image_filename), 'wb') as file:
                 file.write(image_data)
         else:
             return jsonify({'success': False, 'message': 'Format de données non supporté'}), 400
@@ -104,8 +101,7 @@ def upload_image(request):
 def open_video_folder():
     """Ouvre le dossier vidéo côté serveur (utile en déploiement local/desktop)."""
     try:
-        folder = os.path.abspath('video')
-        os.makedirs(folder, exist_ok=True)
+        folder = str(paths.ensure_dir(paths.video_dir()))
 
         system = platform.system().lower()
         try:
@@ -130,20 +126,21 @@ def count_captured_pictures():
     Ne compte que les fichiers image : un `.gitkeep` ou un fichier système ne doit
     pas faire croire à l'utilisateur qu'il reste des captures à supprimer.
     """
+    captured = paths.captured_dir()
     try:
-        if not os.path.isdir(CAPTURED_DIR):
+        if not captured.is_dir():
             return 0
         return sum(
-            1 for name in os.listdir(CAPTURED_DIR)
+            1 for name in os.listdir(captured)
             if name.lower().endswith(CAPTURED_IMAGE_EXTENSIONS)
-            and os.path.isfile(os.path.join(CAPTURED_DIR, name))
+            and os.path.isfile(os.path.join(captured, name))
         )
     except OSError:
         return 0
 
 
 def clear_pictures_directory():
-    directory_path = 'captured/'  # Chemin vers le répertoire à vider
+    directory_path = paths.captured_dir()  # Chemin vers le répertoire à vider
     try:
         # Vérifiez si le répertoire existe pour éviter des erreurs
         if os.path.exists(directory_path):
@@ -183,9 +180,9 @@ def _timestamped_name(base: str, ext_fallback: str):
 
 
 def default_video_output(ext: str = "mp4"):
-    """Return a default output path under video/ with timestamp."""
+    """Return a default output path under the video folder with timestamp."""
     base = f"gcmap.{ext}"
-    return os.path.join("video", _timestamped_name(base, ext))
+    return os.path.join(paths.video_dir(), _timestamped_name(base, ext))
 
 
 # --------- Socle ffmpeg commun aux deux pipelines vidéo ---------
@@ -229,6 +226,26 @@ _FFMPEG_PROGRESS_KEYS = (
 )
 
 
+# Application fenêtrée (sans console) sous Windows : chaque lancement de ffmpeg
+# ouvrirait sinon une fenêtre de console noire le temps de l'encodage.
+_SUBPROCESS_FLAGS = getattr(subprocess, 'CREATE_NO_WINDOW', 0)
+
+# Processus ffmpeg en cours : à la fermeture de l'application, le lanceur les
+# arrête (sinon ils survivraient au serveur et continueraient d'écrire).
+_running_procs = set()
+_running_procs_lock = threading.Lock()
+
+
+def kill_running_ffmpeg():
+    with _running_procs_lock:
+        procs = list(_running_procs)
+    for proc in procs:
+        try:
+            proc.kill()
+        except Exception:
+            pass
+
+
 def _get_ffmpeg_exe():
     """Chemin de l'exécutable ffmpeg fourni par imageio-ffmpeg."""
     try:
@@ -245,7 +262,7 @@ def _probe_duration_seconds(input_path):
             [_get_ffmpeg_exe(), '-i', input_path],
             stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
             universal_newlines=True, encoding='utf-8', errors='replace',
-            timeout=FFMPEG_PROBE_TIMEOUT_S,
+            timeout=FFMPEG_PROBE_TIMEOUT_S, creationflags=_SUBPROCESS_FLAGS,
         )
         m = _FFMPEG_DURATION_RE.search(proc.stderr or '')
         if m:
@@ -273,7 +290,7 @@ def _resolve_audio_file(audio_path, log_prefix='ffmpeg'):
     if not audio_path:
         return None
     safe_name = secure_filename(os.path.basename(audio_path))
-    candidate = os.path.join('audio', safe_name)
+    candidate = os.path.join(paths.audio_dir(), safe_name)
     if os.path.exists(candidate):
         return candidate
     print(f"[{log_prefix}] audio introuvable, vidéo seule: {candidate}")
@@ -306,7 +323,10 @@ def _run_ffmpeg(cmd, out_dur=None, status=None, progress_start=2.0, progress_end
     proc = subprocess.Popen(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
         universal_newlines=True, encoding='utf-8', errors='replace',
+        creationflags=_SUBPROCESS_FLAGS,
     )
+    with _running_procs_lock:
+        _running_procs.add(proc)
 
     # Watchdog : tue ffmpeg s'il n'émet plus rien pendant FFMPEG_STALL_TIMEOUT_S.
     # Le pipe se ferme alors et la boucle de lecture ci-dessous se termine d'elle-même,
@@ -357,6 +377,8 @@ def _run_ffmpeg(cmd, out_dur=None, status=None, progress_start=2.0, progress_end
         finished.set()
         if proc.stdout is not None:
             proc.stdout.close()
+        with _running_procs_lock:
+            _running_procs.discard(proc)
 
     try:
         proc.wait(timeout=FFMPEG_WATCHDOG_INTERVAL_S * 4)
@@ -655,18 +677,17 @@ def process_recorded_video(request):
     if not request.files or 'video' not in request.files:
         return jsonify({'success': False, 'message': 'Aucun fichier vidéo fourni'}), 400
 
-    os.makedirs('video', exist_ok=True)
+    video_dir = paths.ensure_dir(paths.video_dir())
     raw_name = _timestamped_name("gcmap_raw.webm", "webm")
-    raw_path = os.path.join('video', raw_name)
+    raw_path = os.path.join(video_dir, raw_name)
     request.files['video'].save(raw_path)
 
     # Audio : soit un fichier uploadé ici, soit un nom déjà présent dans audio/
     audio_path = None
     if 'audio' in request.files and request.files['audio'].filename:
         af = request.files['audio']
-        os.makedirs('audio', exist_ok=True)
         aname = secure_filename(af.filename or 'music.mp3')
-        af.save(os.path.join('audio', aname))
+        af.save(os.path.join(paths.ensure_dir(paths.audio_dir()), aname))
         audio_path = aname
     else:
         audio_path = request.form.get('audio') or None
@@ -685,7 +706,7 @@ def process_recorded_video(request):
     suggested = request.form.get('fileName')
     if suggested:
         base = os.path.splitext(secure_filename(suggested))[0] + '.mp4'
-        out_path = os.path.join('video', _timestamped_name(base, 'mp4'))
+        out_path = os.path.join(video_dir, _timestamped_name(base, 'mp4'))
     else:
         out_path = default_video_output('mp4')
 
@@ -720,13 +741,13 @@ def upload_video(request):
         base = safe_suggested or _timestamped_name("gcmap.webm", "webm")
         ext = os.path.splitext(base)[1].lstrip(".") or "webm"
 
-        os.makedirs('video', exist_ok=True)
-        save_path = os.path.join('video', base)
+        video_dir = paths.ensure_dir(paths.video_dir())
+        save_path = os.path.join(video_dir, base)
 
         # Si le fichier existe déjà, suffixer avec un horodatage pour éviter l'écrasement
         if os.path.exists(save_path):
             file_name = _timestamped_name(base, ext)
-            save_path = os.path.join('video', file_name)
+            save_path = os.path.join(video_dir, file_name)
         else:
             file_name = base
         video_file.save(save_path)
@@ -750,8 +771,7 @@ def upload_audio(request):
 
         audio_file = request.files['audio']
         file_name = secure_filename(audio_file.filename or 'music.mp3')
-        os.makedirs('audio', exist_ok=True)
-        save_path = os.path.join('audio', file_name)
+        save_path = os.path.join(paths.ensure_dir(paths.audio_dir()), file_name)
         audio_file.save(save_path)
         return jsonify({'success': True, 'file': file_name, 'path': save_path})
     except Exception as e:

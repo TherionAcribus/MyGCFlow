@@ -4,7 +4,6 @@ import os
 
 from flask import Blueprint, current_app, jsonify, make_response, render_template, request
 from flask_babel import gettext as _
-from flask_cors import cross_origin
 
 from localization import get_locale
 from options import check_version_online
@@ -43,8 +42,14 @@ def guide():
     return response
 
 
+@core_bp.route('/api/ping', methods=['GET'])
+def ping():
+    # Le lanceur interroge cette route pour savoir si une instance de GCMap
+    # occupe déjà le port (instance unique) et si le serveur est prêt.
+    return jsonify({'app': 'GCMap', 'version': current_app.config.get('APP_VERSION')})
+
+
 @core_bp.route('/check_version', methods=['GET'])
-@cross_origin()
 def check_version():
     user_language = (get_locale() or 'fr').split('_')[0]
     current_version = current_app.config.get('APP_VERSION', '1.0')
@@ -69,7 +74,6 @@ def test_translations():
 
 
 @core_bp.route('/api/locale')
-@cross_origin()
 def get_current_locale():
     locale = get_locale()
     return jsonify({

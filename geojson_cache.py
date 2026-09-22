@@ -5,6 +5,8 @@ from collections import OrderedDict, defaultdict
 from datetime import date, datetime
 from typing import Dict, List, Optional, Tuple
 
+import paths
+
 
 # Taille max du cache LRU des résultats filtrés (combinaisons de filtres).
 # Chaque entrée stocke un GeoJSON complet potentiellement lourd ; on borne la
@@ -121,20 +123,12 @@ class GeojsonIndexCache:
         persist_path: Optional[str] = None,
         base_geojson_path: Optional[str] = None,
     ):
-        # Les tests navigateur lancent une instance complète de GCMap. Leur
-        # base, leur GeoJSON et leurs index doivent rester totalement séparés
-        # des données locales de l'utilisateur. En production, l'absence de
-        # GCMAP_RUNTIME_DIR conserve strictement les chemins historiques.
-        root_dir = os.path.abspath(
-            os.getenv("GCMAP_RUNTIME_DIR") or os.path.dirname(__file__)
-        )
-        self.db_path = db_path or os.path.join(root_dir, "instance", "geocaching.db")
-        self.persist_path = persist_path or os.path.join(
-            root_dir, "instance", "geojson_indexes.json"
-        )
-        self.base_geojson_path = base_geojson_path or os.path.join(
-            root_dir, "static", "geojson_data.json"
-        )
+        # Emplacements centralisés dans paths.py : les tests navigateur les
+        # redirigent vers un dossier jetable, l'application installée vers
+        # %LOCALAPPDATA%\GCMap.
+        self.db_path = db_path or str(paths.database_path())
+        self.persist_path = persist_path or str(paths.geojson_indexes_path())
+        self.base_geojson_path = base_geojson_path or str(paths.geojson_data_path())
         self._lock = threading.Lock()
         self._reset(self._get_db_mtime())
         self._load_from_disk()

@@ -1,6 +1,7 @@
 import os
 import tempfile
 import unittest
+from unittest import mock
 
 from flask import Flask
 
@@ -18,7 +19,11 @@ class CapturedPicturesCountTests(unittest.TestCase):
         self.app = Flask(__name__)
         self.tmpdir = tempfile.TemporaryDirectory()
         self.previous_cwd = os.getcwd()
-        # capture.py travaille sur « captured/ » relatif au cwd du serveur.
+        # capture.py écrit dans paths.captured_dir() : on redirige les données
+        # vers le dossier temporaire, où les assertions lisent « captured/ ».
+        env = mock.patch.dict(os.environ, {'GCMAP_DATA_DIR': self.tmpdir.name})
+        env.start()
+        self.addCleanup(env.stop)
         os.chdir(self.tmpdir.name)
         self.addCleanup(self.tmpdir.cleanup)
         self.addCleanup(os.chdir, self.previous_cwd)

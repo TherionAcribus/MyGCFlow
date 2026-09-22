@@ -14,10 +14,11 @@ INSTANCE = RUNTIME / "instance"
 INSTANCE.mkdir(parents=True, exist_ok=True)
 (RUNTIME / ".gcmap-e2e-runtime").write_text("isolated test runtime\n", encoding="utf-8")
 
-# capture.py utilise volontairement des chemins relatifs (video/, audio/,
-# captured/). Le cwd temporaire isole donc aussi tous les exports navigateur.
+# Toutes les données (base, caches, video/, audio/, captured/) sont rangées
+# sous GCMAP_DATA_DIR (cf. paths.py) : le runtime jetable isole aussi les
+# exports navigateur.
 os.chdir(RUNTIME)
-os.environ["GCMAP_RUNTIME_DIR"] = str(RUNTIME)
+os.environ["GCMAP_DATA_DIR"] = str(RUNTIME)
 # Préférences et profils dans le runtime jetable : sans cette redirection, un
 # test qui change le thème, un réglage vidéo ou le profil par défaut écrirait
 # dans %APPDATA%\GCMap, c'est-à-dire dans la configuration réelle.

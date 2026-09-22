@@ -4,6 +4,7 @@ import shutil
 import subprocess
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 from PIL import Image, ImageDraw
@@ -145,7 +146,9 @@ class VideoProcessingTests(unittest.TestCase):
                 previous_cwd = os.getcwd()
                 try:
                     os.chdir(tmp)
-                    self._run_scenario(scenario, Path(tmp))
+                    # Les pistes audio sont cherchées dans paths.audio_dir().
+                    with mock.patch.dict(os.environ, {"GCMAP_DATA_DIR": tmp}):
+                        self._run_scenario(scenario, Path(tmp))
                 finally:
                     os.chdir(previous_cwd)
 

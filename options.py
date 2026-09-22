@@ -1,4 +1,5 @@
 import requests
+import html
 import json
 import logging
 from flask import jsonify
@@ -55,6 +56,20 @@ def fetch_version_info(current_version, user_language='fr'):
         logging.exception("Réponse JSON invalide.")
         return check_version_error("Réponse invalide ou vide", current_version)
 
+def _text(value):
+    """Texte distant échappé avant insertion dans le HTML des notes de version.
+
+    Le fichier des versions est lu en HTTP : un réseau hostile (ou un serveur
+    compromis) pourrait sinon injecter du script dans l'interface.
+    """
+    return html.escape(str(value if value is not None else ''))
+
+
+def _safe_url(value):
+    url = str(value or '')
+    return url if url.startswith(('https://', 'http://')) else ''
+
+
 def create_release_notes(new_versions, current_version, user_language='fr'):
     logging.debug("create_release_notes appelée avec langue: %s", user_language)
 
@@ -87,8 +102,16 @@ def create_release_notes(new_versions, current_version, user_language='fr'):
         # Appliquer les traductions du changelog
         changelog_translations = version.get('changelog_translations', {})
         translated_changelog = changelog_translations.get(user_language, version.get('changelog', []))
-        translated_version['changelog'] = translated_changelog
+        if not isinstance(translated_changelog, list):
+            translated_changelog = []
+        translated_version['changelog'] = [_text(entry) for entry in translated_changelog]
+        translated_version['version'] = _text(version['version'])
+        translated_version['release_date'] = _text(version.get('release_date', ''))
+        # Échappée aussi : le client l'insère dans un attribut href.
+        translated_version['download_url'] = html.escape(_safe_url(version.get('download_url')))
         translated_versions.append(translated_version)
+    latest_version = translated_versions[0]
+    download_url = latest_version['download_url']
 
     notes = []
     for version in translated_versions:
@@ -104,12 +127,12 @@ def create_release_notes(new_versions, current_version, user_language='fr'):
         'fr': f"""<div>
                         Vous possédez actuellement la version {current_version}.
                         Une nouvelle version {latest_version["version"]} est disponible.
-                        Vous pouvez la télécharger à l'adresse : <a href="{latest_version.get("download_url","")}">{latest_version.get("download_url","")}</a>
+                        Vous pouvez la télécharger à l'adresse : <a href="{download_url}">{download_url}</a>
                         </div>""",
         'en': f"""<div>
                         You currently have version {current_version}.
                         A new version {latest_version["version"]} is available.
-                        You can download it at: <a href="{latest_version.get("download_url","")}">{latest_version.get("download_url","")}</a>
+                        You can download it at: <a href="{download_url}">{download_url}</a>
                         </div>"""
     }
 
@@ -133,7 +156,7 @@ def create_release_notes(new_versions, current_version, user_language='fr'):
 def check_version_error(error, current_version=None):
     release_notes = f"""Oups, une erreur est survenue lors de la vérification de la dernière version. 
                     Merci de me contacter à l'adresse <a href='mailto:at_mop@gmail.com'>mailto:at_mop@gmail.com</a>.
-                    <br> Erreur : {error}
+                    <br> Erreur : {_text(error)}
                     <br> Vous pouvez accéder à la page des dernières versions pour voir si une version corrige cette erreur."""
     logging.error(release_notes)
     return {

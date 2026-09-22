@@ -1,0 +1,45 @@
+GCMap — composants tiers
+========================
+
+GCMap redistribue les composants suivants. Chacun reste soumis à sa propre
+licence.
+
+FFmpeg (ffmpeg.exe)
+-------------------
+Build « essentials » 7.1 de gyan.dev, fourni par le paquet Python
+imageio-ffmpeg. Ce build est configuré avec --enable-gpl --enable-version3 :
+il est distribué sous licence GNU GPL version 3 (texte complet :
+ffmpeg/COPYING.GPLv3.txt).
+
+GCMap appelle ffmpeg comme un programme séparé (ligne de commande), sans le
+modifier.
+
+Code source correspondant :
+  - FFmpeg : https://ffmpeg.org/download.html (version 7.1)
+  - Build et dépendances : https://www.gyan.dev/ffmpeg/builds/
+  - imageio-ffmpeg : https://github.com/imageio/imageio-ffmpeg
+
+Bibliothèques de l'interface (dossier static/vendor)
+----------------------------------------------------
+  - OpenLayers 10.6.0 ............ BSD 2-Clause   https://openlayers.org
+  - Tabler 1.4.0 (inclut Bootstrap 5) .. MIT      https://tabler.io
+  - Tabler Icons 3.34.1 .......... MIT            https://tabler.io/icons
+  - Tom Select 2.4.3 ............. Apache 2.0     https://tom-select.js.org
+  - Tempus Dominus 6.10.4 ........ MIT            https://getdatepicker.com
+  - Popper 2.11.8 ................ MIT            https://popper.js.org
+  - htmx 2.0.10 .................. 0BSD           https://htmx.org
+  - html2canvas .................. MIT            https://html2canvas.hertzen.com
+  - fix-webm-duration ............ MIT            https://github.com/yusitnikov/fix-webm-duration
+  - Material Icons (police) ...... Apache 2.0     https://fonts.google.com/icons
+
+Bibliothèques Python
+--------------------
+Les licences des paquets Python embarqués (Flask, SQLAlchemy, Pillow,
+waitress, pystray…) sont copiées dans le dossier python/ lors de la
+construction de l'exécutable.
+
+Fonds de carte
+--------------
+Les tuiles cartographiques sont téléchargées à l'utilisation depuis les
+serveurs de leurs fournisseurs et restent soumises à leurs conditions
+d'utilisation (© OpenStreetMap contributors, etc.).

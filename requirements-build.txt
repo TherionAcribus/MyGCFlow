@@ -1,0 +1,3 @@
+# Construction de l'exécutable Windows (installer/build.ps1).
+-r requirements.txt
+pyinstaller==6.22.3

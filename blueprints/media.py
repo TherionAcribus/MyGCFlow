@@ -1,9 +1,9 @@
 import os
 
 from flask import Blueprint, abort, jsonify, request, send_from_directory
-from flask_cors import cross_origin
 from werkzeug.utils import secure_filename
 
+import paths
 from capture import (
     TASK_TYPE_VIDEO,
     clear_pictures_directory,
@@ -58,7 +58,6 @@ _BUSY_MESSAGE = (
 
 
 @media_bp.route('/upload_image', methods=['POST'])
-@cross_origin()
 def get_upload_image():
     return upload_image(request)
 
@@ -67,7 +66,6 @@ def get_upload_image():
 # de requêtes du mode « images ». La route unitaire reste disponible (repli client
 # et compatibilité).
 @media_bp.route('/upload_images', methods=['POST'])
-@cross_origin()
 def get_upload_images():
     return upload_images(request)
 
@@ -76,7 +74,6 @@ def get_upload_images():
 # GET, un préchargement de lien, un scanner d'URL ou une simple réouverture
 # d'historique suffisait à lancer un assemblage.
 @media_bp.route('/start_create_video', methods=['POST'])
-@cross_origin()
 def start_create_video():
     try:
         # Paramètres en JSON, avec repli sur la query string pour rester
@@ -106,7 +103,7 @@ def start_create_video():
         try:
             status = task_manager.submit(
                 TASK_TYPE_VIDEO, run_assemble_video_task,
-                "captured", output_video, fps, audio, vol,
+                str(paths.captured_dir()), output_video, fps, audio, vol,
                 exclusive=True,
             )
         except TaskAlreadyRunning as exc:
@@ -122,7 +119,6 @@ def start_create_video():
 
 
 @media_bp.route('/captured_pictures_count', methods=['GET'])
-@cross_origin()
 def captured_pictures_count():
     """Nombre d'images en attente dans captured/.
 
@@ -135,7 +131,6 @@ def captured_pictures_count():
 
 
 @media_bp.route('/clear_pictures_directory', methods=['POST'])
-@cross_origin()
 def clear_pictures():
     # Vider captured/ pendant un assemblage supprimerait les images sous les pieds
     # de ffmpeg (la liste est figée au démarrage, mais les fichiers sont lus au
@@ -156,25 +151,21 @@ def clear_pictures():
 
 
 @media_bp.route('/open_video_folder', methods=['POST'])
-@cross_origin()
 def route_open_video_folder():
     return open_video_folder()
 
 
 @media_bp.route('/upload_video', methods=['POST'])
-@cross_origin()
 def route_upload_video():
     return upload_video(request)
 
 
 @media_bp.route('/upload_audio', methods=['POST'])
-@cross_origin()
 def route_upload_audio():
     return upload_audio(request)
 
 
 @media_bp.route('/process_recorded_video', methods=['POST'])
-@cross_origin()
 def route_process_recorded_video():
     # Post-traitement serveur (ffmpeg) d'un enregistrement MediaRecorder :
     # normalisation de la vitesse + mux audio en une passe, en tâche de fond.
@@ -182,13 +173,12 @@ def route_process_recorded_video():
 
 
 @media_bp.route('/download_video/<path:filename>', methods=['GET'])
-@cross_origin()
 def route_download_video(filename):
-    # Sert un fichier du dossier video/ pour téléchargement navigateur.
+    # Sert un fichier du dossier des vidéos pour téléchargement navigateur.
     safe_name = secure_filename(os.path.basename(filename))
     if not safe_name:
         abort(404)
-    video_dir = os.path.abspath('video')
+    video_dir = str(paths.video_dir())
     if not os.path.exists(os.path.join(video_dir, safe_name)):
         abort(404)
     return send_from_directory(video_dir, safe_name, as_attachment=True)

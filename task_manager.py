@@ -143,6 +143,15 @@ class TaskManager:
         with self._lock:
             return self._active_locked(task_type)
 
+    def active_tasks(self) -> list:
+        """Toutes les tâches encore en attente ou en cours (tous types confondus).
+
+        Le lanceur s'en sert pour avertir avant de quitter pendant un import ou
+        un encodage vidéo.
+        """
+        with self._lock:
+            return [s for s in self.tasks.values() if s.state in ACTIVE_STATES]
+
     def purge_old_tasks(self) -> int:
         """Supprime les tâches terminées/échouées au-delà du TTL. Retourne le nombre de tâches purgées."""
         now = datetime.utcnow()

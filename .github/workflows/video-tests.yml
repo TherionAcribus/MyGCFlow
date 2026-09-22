@@ -22,7 +22,9 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-          cache-dependency-path: requirements-test-video.txt
+          cache-dependency-path: |
+            requirements.txt
+            requirements-test-video.txt
 
       - name: Installer Node.js
         uses: actions/setup-node@v6
