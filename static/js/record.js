@@ -1,5 +1,6 @@
 import * as pkg from './index.js';
 import { CONFIG } from './init.js';
+import { CAPTURE_IMAGE_QUALITY, CAPTURE_IMAGE_TYPE } from './capture_image_format.mjs';
 import {
     createUploadBatcher,
     normalizeBatchSize,
@@ -26,7 +27,7 @@ function dataUrlToBlob(dataUrl) {
                 } else {
                     reject(new Error('Échec conversion en Blob'));
                 }
-            }, 'image/webp', 0.9); // WebP avec qualité 0%
+            }, CAPTURE_IMAGE_TYPE, CAPTURE_IMAGE_QUALITY);
         };
         img.onerror = () => reject(new Error('Échec chargement image'));
         img.src = dataUrl;

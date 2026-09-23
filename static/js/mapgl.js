@@ -108,6 +108,7 @@ import {
 } from './overlay_canvas.js';
 import { buildPointStyle } from './point_webgl_style.js';
 import { createAppearClock, POINT_APPEAR_MS, STATIC_APPEAR } from './point_appear.mjs';
+import { CAPTURE_IMAGE_QUALITY, CAPTURE_IMAGE_TYPE } from './capture_image_format.mjs';
 import { flashStyleAt } from './flash_styles.js';
 import { liveFlashStep } from './flash_style_cache.mjs';
 import { staggerDelayFrames, staggerDelayMs } from './flash_impulse.mjs';
@@ -2341,7 +2342,7 @@ async function captureElement() {
 
                         try { updateProgress(); } catch(e) {}
                         resolve();
-                    }, 'image/webp', 0.9);
+                    }, CAPTURE_IMAGE_TYPE, CAPTURE_IMAGE_QUALITY);
                 } catch (error) {
                     reject(error);
                 }
@@ -2384,7 +2385,7 @@ async function captureElement() {
                             enqueueImageUpload(blob, imageCounter++);
                             try { updateProgress(); } catch(e) {}
                             resBlob();
-                        }, 'image/webp', 0.9);
+                        }, CAPTURE_IMAGE_TYPE, CAPTURE_IMAGE_QUALITY);
                     });
                 })
                 .then(() => resolve())
