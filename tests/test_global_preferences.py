@@ -48,6 +48,13 @@ class RecordingCoercionTests(unittest.TestCase):
         self.assertEqual(r.mode, "mediarecorder")
         self.assertEqual(r.mime_type, "video/webm;codecs=vp9")
 
+    def test_unknown_capture_resolution_falls_back_to_the_window_size(self):
+        # La résolution pilote le facteur de rendu de la carte : une valeur
+        # inventée doit ramener au comportement historique, pas à un rendu 8K.
+        self.assertEqual(coerce_recording_settings({"capture_resolution": "8k"}).capture_resolution, "window")
+        self.assertEqual(coerce_recording_settings({"capture_resolution": None}).capture_resolution, "window")
+        self.assertEqual(coerce_recording_settings({"capture_resolution": "1440p"}).capture_resolution, "1440p")
+
     def test_garbage_payload_yields_defaults(self):
         self.assertEqual(coerce_recording_settings(None), coerce_recording_settings({}))
 
@@ -79,6 +86,7 @@ class RecordingDefaultsMatchTheClientTests(unittest.TestCase):
         media = self.client_record["mediaRecorder"]
 
         self.assertEqual(self.client_record["fps"], server.fps)
+        self.assertEqual(self.client_record["captureResolution"], server.capture_resolution)
         self.assertEqual(media["mimeType"], server.mime_type)
         self.assertEqual(media["videoBitsPerSecond"] / 1_000_000, server.bitrate_mbps)
         self.assertEqual(media["slowdownFactor"], server.slowdown_factor)

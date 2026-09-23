@@ -107,6 +107,10 @@ class RecordingSettings:
     (RecordingDefaultsMatchTheClientTests).
     """
     mode: str = "mediarecorder"  # "mediarecorder" | "images"
+    # Résolution de sortie du mode images : "window" (taille de la fenêtre,
+    # comportement historique) ou une hauteur cible. La carte est alors rendue
+    # plus finement pendant la capture (cf. static/js/capture_resolution.mjs).
+    capture_resolution: str = "window"
     fps: int = 30
     mime_type: str = "video/webm;codecs=vp9"
     bitrate_mbps: int = 6
@@ -265,6 +269,9 @@ def _clamp_float(value, default: float, minimum: float, maximum: float) -> float
 
 THEMES = ("system", "light", "dark")
 RECORDING_MODES = ("mediarecorder", "images")
+# Résolutions de sortie du mode images. Miroir de CAPTURE_RESOLUTIONS dans
+# static/js/capture_resolution.mjs, qui fait le calcul côté client.
+CAPTURE_RESOLUTIONS = ("window", "1080p", "1440p", "2160p")
 
 # Plage de zoom acceptée par la carte, en miroir des attributs min/max de
 # #inputMapDefaultZoom et de MAP_ZOOM_LIMITS (static/js/ui.js). Comme pour les
@@ -337,6 +344,10 @@ def coerce_recording_settings(d: dict) -> RecordingSettings:
         return r
     mode = d.get("mode", r.mode)
     r.mode = mode if mode in RECORDING_MODES else r.mode
+    capture_resolution = d.get("capture_resolution", r.capture_resolution)
+    r.capture_resolution = (
+        capture_resolution if capture_resolution in CAPTURE_RESOLUTIONS else r.capture_resolution
+    )
     r.fps = _clamp_int(d.get("fps"), r.fps, 1, 60)
     if isinstance(d.get("mime_type"), str) and d.get("mime_type"):
         r.mime_type = d["mime_type"]

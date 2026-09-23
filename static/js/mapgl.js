@@ -109,6 +109,7 @@ import {
 import { buildPointStyle } from './point_webgl_style.js';
 import { createAppearClock, POINT_APPEAR_MS, STATIC_APPEAR } from './point_appear.mjs';
 import { CAPTURE_IMAGE_QUALITY, CAPTURE_IMAGE_TYPE } from './capture_image_format.mjs';
+import { captureRatioFor } from './capture_resolution.mjs';
 import { flashStyleAt } from './flash_styles.js';
 import { liveFlashStep } from './flash_style_cache.mjs';
 import { staggerDelayFrames, staggerDelayMs } from './flash_impulse.mjs';
@@ -732,6 +733,72 @@ function getCaptureDpr() {
     return Math.max(1, Math.min(3, window.devicePixelRatio || 1));
 }
 
+// Rendu haute résolution du pipeline « images » (voir capture_resolution.mjs).
+// Tant qu'il est actif, la carte est rendue à cette densité : c'est elle qui
+// dimensionne les frames et les overlays, à la place de celle de l'écran.
+let highResRatio = null;
+let highResPreviousPixelRatio = null;
+
+// Densité à laquelle la frame courante est composée.
+function getCaptureRatio() {
+    return highResRatio || getCaptureDpr();
+}
+
+// Fait rendre la carte à la densité demandée. OpenLayers relit `pixelRatio_` à
+// chaque frame : lui donner une valeur plus élevée revient à brancher un écran
+// plus fin — tuiles d'un zoom plus fin, vecteurs et textes redessinés, tailles
+// de points mises à l'échelle — sans toucher à la mise en page ni au cadrage.
+//
+// `pixelRatio_` est interne à OpenLayers (10.6 vendoré ici, donc figé) : on
+// vérifie qu'il existe et que les canvas ont bien grandi, faute de quoi on
+// repart à la densité de l'écran plutôt que de produire une vidéo étirée.
+function beginHighResCapture() {
+    endHighResCapture();
+    const viewport = map.getViewport();
+    const rect = viewport.getBoundingClientRect();
+    const plan = captureRatioFor({
+        cssWidth: rect.width,
+        cssHeight: rect.height,
+        devicePixelRatio: getCaptureDpr(),
+        resolution: pkg.options.record?.captureResolution,
+    });
+    if (plan.ratio <= getCaptureDpr() + 1e-9) return plan;
+    if (typeof map.pixelRatio_ !== 'number') {
+        console.warn('[RECORD] Rendu haute résolution indisponible (OpenLayers a changé) : capture à la densité de l\'écran.');
+        return null;
+    }
+
+    const before = viewport.querySelector('canvas')?.width || 0;
+    highResPreviousPixelRatio = map.pixelRatio_;
+    map.pixelRatio_ = plan.ratio;
+    map.updateSize();
+    map.renderSync();
+    const after = viewport.querySelector('canvas')?.width || 0;
+    if (after <= before) {
+        console.warn('[RECORD] Rendu haute résolution sans effet : retour à la densité de l\'écran.');
+        endHighResCapture();
+        return null;
+    }
+    highResRatio = plan.ratio;
+    dbgMapgl('[RECORD] Capture en', plan.width + 'x' + plan.height, '(densité', plan.ratio + ')');
+    return plan;
+}
+
+// Remet la carte à la densité de l'écran. Appelée à la fin de la capture comme
+// sur tous les chemins d'abandon : sans cela, l'aperçu resterait rendu en 4x.
+function endHighResCapture() {
+    if (highResPreviousPixelRatio === null) return;
+    try {
+        map.pixelRatio_ = highResPreviousPixelRatio;
+        map.updateSize();
+        map.renderSync();
+    } catch (e) {
+        console.warn('[RECORD] Restauration de la densité de rendu échouée:', e);
+    }
+    highResPreviousPixelRatio = null;
+    highResRatio = null;
+}
+
 function finalizeAnimationEnd() {
     endTimeout = null;
     // Toutes les dates ont été déroulées : la carte affiche de nouveau la totalité
@@ -868,6 +935,7 @@ export function startAnimation(restart=false) {
 export function stopAnimation(){
     // Arrêter l'enregistrement si en cours
     isRecording = false;
+    endHighResCapture();
     animationInProgress = false;
     removeCaptureVisibilityGuard();
 
@@ -1198,9 +1266,13 @@ function startRecordingProcess(){
 
     currentFrame = 0;  // Réinitialisez le compteur de frames
 
-    // Précalculer les propriétés statiques des overlays à l'échelle dpr (pixels device),
+    // Rendu haute résolution éventuel AVANT le cache d'overlays : c'est lui qui
+    // fixe l'échelle à laquelle les cartouches sont dessinées.
+    beginHighResCapture();
+
+    // Précalculer les propriétés statiques des overlays à l'échelle de capture,
     // cohérent avec le canvas de capture images dimensionné en pixels device.
-    buildOverlayCache(getCaptureDpr());
+    buildOverlayCache(getCaptureRatio());
 
     // Afficher les points initiaux pour la date de début
     displayFeaturesForDate(currentDate, pkg.options.point, pkg.options.flash, true, infos);
@@ -1301,6 +1373,7 @@ function abortRecordingOnError(error) {
     console.error('[CAPTURE] Abandon de l\'enregistrement suite à une erreur:', error);
 
     isRecording = false;
+    endHighResCapture();
     removeCaptureVisibilityGuard();
     imgOutCanvas = imgOutCtx = null; // libérer le canvas réutilisé (P4)
     try { recordingPerformanceMonitor.stopMonitoring(); } catch(_) {}
@@ -1474,6 +1547,7 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
 
         // Traitement de fin
         isRecording = false; // Marquer la fin de l'enregistrement
+        endHighResCapture();
         removeCaptureVisibilityGuard();
         imgOutCanvas = imgOutCtx = null; // libérer le canvas réutilisé (P4)
 
@@ -2280,7 +2354,7 @@ async function captureElement() {
                     // Dimensions en pixels device (dpr) pour éviter le flou HiDPI :
                     // les canvas de la carte sont rendus par OpenLayers en pixels device.
                     const rect = viewport.getBoundingClientRect();
-                    const dpr = getCaptureDpr();
+                    const dpr = getCaptureRatio();
                     const canvasWidth = Math.max(1, Math.floor(rect.width * dpr));
                     const canvasHeight = Math.max(1, Math.floor(rect.height * dpr));
 

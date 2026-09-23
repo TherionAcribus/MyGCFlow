@@ -1,6 +1,7 @@
 import * as pkg from './index.js';
 import { showBsTab, getBsTab, initTomSelect, getTomSelect, refreshTomSelect, initTempusDominus, getTempusDominus, setTdDate, getTdDate } from './ui_bootstrap.js';
 import { automaticEndHoldMs } from './video_timing.mjs';
+import { normalizeCaptureResolution } from './capture_resolution.mjs';
 import {
     RECORDING_LIMITS,
     RECORDING_QUALITY_PROFILES,
@@ -61,7 +62,7 @@ var btnUseCurrentMapCenter, btnPickMapCenter, btnClearMapCenter;
 var latLonModeCombined, latLonModeSplit, fieldLat, fieldLon, fieldCombined;
 let isCombinedLatLonMode = true;
 // Enregistrement
-var selectRecordMode, selectRecordQualityProfile, recordAdvancedSettings, inputRecordFps, inputRecordBitrate, selectRecordMime, inputRecordSlowdown, inputRecordScaleFactor, cbRecordUpload, cbRecordDownload, cbRecordNormalize;
+var selectRecordMode, selectRecordQualityProfile, recordAdvancedSettings, inputRecordFps, inputRecordBitrate, selectRecordMime, inputRecordSlowdown, inputRecordScaleFactor, cbRecordUpload, cbRecordDownload, cbRecordNormalize, selectRecordResolution;
 var cbRecordAudioEnable, inputAudioFile, inputAudioVolume;
 // Flag pour savoir si la durée totale est définie depuis la musique
 var isDurationLockedToAudio = false;
@@ -125,7 +126,7 @@ const RECORD_SETTINGS_FIELDS = [
     'selectRecordMode', 'selectRecordQualityProfile', 'inputRecordFps', 'inputRecordBitrate',
     'inputRecordSlowdown', 'inputRecordScaleFactor', 'selectRecordMime',
     'cbRecordUpload', 'cbRecordDownload', 'cbRecordNormalize',
-    'cbRecordAudioEnable', 'inputAudioVolume',
+    'cbRecordAudioEnable', 'inputAudioVolume', 'selectRecordResolution',
 ];
 let lastTouchedRecordField = null;
 
@@ -749,6 +750,8 @@ function initOptionsElements() {
             inputRecordBitrate, normalizeRecordingBitrateMbps, RECORDING_LIMITS.bitrateMbps
         ));
     }
+    selectRecordResolution = document.getElementById('selectRecordResolution');
+    if (selectRecordResolution) selectRecordResolution.addEventListener('change', changeRecordValues);
     selectRecordMime = document.getElementById('selectRecordMime');
     if (selectRecordMime) {
         selectRecordMime.addEventListener('change', () => {
@@ -907,6 +910,13 @@ function onRecordModeChange() {
 function updateMediaRecorderOptionsVisibility() {
     const isMediaRecorder = selectRecordMode && selectRecordMode.value === 'mediarecorder';
     const mediaRecorderOptions = document.querySelectorAll('.mediarecorder-only');
+
+    // Réglages propres au mode images (résolution de sortie) : l'inverse.
+    document.querySelectorAll('.images-only').forEach(element => {
+        element.style.display = isMediaRecorder ? 'none' : 'block';
+        const select = element.querySelector('select');
+        if (select && !isMediaRecorder) refreshTomSelect(select);
+    });
 
     mediaRecorderOptions.forEach(element => {
         if (isMediaRecorder) {
@@ -1648,6 +1658,10 @@ function initOptionsUI() {
             selectRecordMime.value = (pkg.options.record?.mediaRecorder?.mimeType) || 'video/webm;codecs=vp9';
             refreshTomSelect(selectRecordMime);
         }
+        if (selectRecordResolution) {
+            selectRecordResolution.value = normalizeCaptureResolution(pkg.options.record?.captureResolution);
+            refreshTomSelect(selectRecordResolution);
+        }
         if (inputRecordSlowdown) inputRecordSlowdown.value = (pkg.options.record?.mediaRecorder?.slowdownFactor) || 1;
         if (inputRecordScaleFactor) inputRecordScaleFactor.value = (pkg.options.record?.mediaRecorder?.scaleFactor) || 1;
         if (cbRecordUpload) cbRecordUpload.checked = !!(pkg.options.record?.mediaRecorder?.uploadToServer);
@@ -1805,6 +1819,9 @@ function changeRecordValues(field = undefined) {
         if (selectRecordMime && selectRecordMime.value !== '') {
             pkg.options.record.mediaRecorder.mimeType = selectRecordMime.value;
         }
+        if (selectRecordResolution) {
+            pkg.options.record.captureResolution = normalizeCaptureResolution(selectRecordResolution.value);
+        }
         if (inputRecordSlowdown && inputRecordSlowdown.value !== '') {
             const sd = normalizeRecordingSlowdownFactor(inputRecordSlowdown.value);
             pkg.options.record.mediaRecorder.slowdownFactor = sd;
@@ -1888,6 +1905,7 @@ function recordSettingsPayload() {
     const audio = record.audio || {};
     return {
         mode: record.mode || 'mediarecorder',
+        capture_resolution: normalizeCaptureResolution(record.captureResolution),
         fps: normalizeRecordingFps(record.fps),
         mime_type: mr.mimeType || 'video/webm;codecs=vp9',
         bitrate_mbps: normalizeRecordingBitrateMbps(Number(mr.videoBitsPerSecond) / 1_000_000),
@@ -1906,6 +1924,7 @@ function applyRecordSettingsPayload(recording) {
     if (!recording || typeof recording !== 'object') return false;
     pkg.options.record = pkg.options.record || {};
     pkg.options.record.mode = recording.mode || 'mediarecorder';
+    pkg.options.record.captureResolution = normalizeCaptureResolution(recording.capture_resolution);
     pkg.options.record.fps = normalizeRecordingFps(recording.fps);
     pkg.options.record.mediaRecorder = pkg.options.record.mediaRecorder || {};
     pkg.options.record.mediaRecorder.mimeType = recording.mime_type || 'video/webm;codecs=vp9';

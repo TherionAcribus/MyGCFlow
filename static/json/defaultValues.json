@@ -37,6 +37,7 @@
     "record": {
         "fps": 30,
         "mode": "mediarecorder",
+        "captureResolution": "window",
         "uploadRetries": 3,
         "uploadBatchSize": 12,
         "uploadBatchMaxWaitMs": 500,

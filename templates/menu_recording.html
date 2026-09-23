@@ -22,6 +22,20 @@
             <option value="images">{{ _("Images + ffmpeg (serveur)") }}</option>
         </select>
     </div>
+    <div class="mb-3 col-12 col-md-6 images-only">
+        <label for="selectRecordResolution" class="form-label">
+            {{ _("Résolution de sortie") }}
+            <i class="ti ti-help ms-1" tabindex="0" data-bs-toggle="tooltip" data-bs-title="{{ _('La carte est redessinée à cette finesse pendant la capture : tuiles plus détaillées, traits et textes plus nets. Le cadrage ne change pas. Plus la résolution est haute, plus la capture est lente.') }}"></i>
+        </label>
+        <select id="selectRecordResolution" class="form-select">
+            <option value="window">{{ _("Taille de la fenêtre") }}</option>
+            <option value="1080p">{{ _("1080p (Full HD)") }}</option>
+            <option value="1440p">{{ _("1440p (2K)") }}</option>
+            <option value="2160p">{{ _("2160p (4K)") }}</option>
+        </select>
+        <small id="recordResolutionHelp" class="form-hint text-muted">{{ _("Au-delà de la taille de la fenêtre, la capture demande plus de mémoire et de temps.") }}</small>
+    </div>
+
     <div class="mb-3 col-12 col-md-6 mediarecorder-only">
         <label for="selectRecordQualityProfile" class="form-label">{{ _("Qualité vidéo") }}</label>
         <select id="selectRecordQualityProfile" class="form-select">
