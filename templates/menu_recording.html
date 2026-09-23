@@ -38,6 +38,21 @@
         <div id="recordResolutionWarning" class="alert alert-warning py-2 px-3 mt-2 mb-0 small" role="status" hidden></div>
     </div>
 
+    <div class="mb-3 col-12 col-md-6">
+        <label for="selectRecordColorFidelity" class="form-label">
+            {{ _("Couleurs") }}
+            <i class="ti ti-help ms-1" tabindex="0" data-bs-toggle="tooltip" data-bs-title="{{ _('En 4:2:0, la résolution de couleur est divisée par deux : les points colorés bavent légèrement sur fond sombre. Le 4:4:4 corrige ce défaut pour environ 10 %% de fichier en plus, mais certains lecteurs et téléviseurs refusent de lire ces vidéos.') }}"></i>
+        </label>
+        <select id="selectRecordColorFidelity" class="form-select" aria-describedby="recordColorFidelityHelp">
+            <option value="compatible">{{ _("Compatibilité maximale (4:2:0)") }}</option>
+            <option value="fidele">{{ _("Fidélité des couleurs (4:4:4)") }}</option>
+        </select>
+        <small id="recordColorFidelityHelp" class="form-hint text-muted">{{ _("À changer seulement si les points colorés bavent sur fond sombre.") }}</small>
+        <div id="recordColorFidelityWarning" class="alert alert-warning py-2 px-3 mt-2 mb-0 small" role="status" hidden>
+            {{ _("Le 4:4:4 n'est pas lu par tous les appareils : certains téléviseurs, lecteurs matériels et Safari refuseront la vidéo. À réserver aux fichiers que vous gardez ou diffusez sur un ordinateur.") }}
+        </div>
+    </div>
+
     <div class="mb-3 col-12 col-md-6 mediarecorder-only">
         <label for="selectRecordQualityProfile" class="form-label">{{ _("Qualité vidéo") }}</label>
         <select id="selectRecordQualityProfile" class="form-select">

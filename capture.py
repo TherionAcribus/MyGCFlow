@@ -203,10 +203,46 @@ FFMPEG_PROBE_TIMEOUT_S = 60
 
 # Réglages d'encodage partagés : une seule définition pour que les deux pipelines
 # produisent des fichiers comparables (qualité, compatibilité, lecture en streaming).
-_H264_OUTPUT_ARGS = [
-    '-c:v', 'libx264', '-preset', 'medium', '-crf', '20', '-pix_fmt', 'yuv420p',
-    '-movflags', '+faststart',
-]
+# CRF 18 (et non 20) : mesuré sur 40 frames réelles d'une animation dense (fond
+# vectoriel sombre, points aux couleurs GC, cartouches), en comparant l'encodé
+# aux images d'origine :
+#
+#   crf 20  1834 Ko  luma 39,0 dB  chroma 33,3 dB  SSIM 0,9616
+#   crf 18  2172 Ko  luma 40,7 dB  chroma 33,6 dB  SSIM 0,9668   (+18 % de taille)
+#   crf 16  2547 Ko  luma 42,4 dB  chroma 33,9 dB  SSIM 0,9706   (+39 %)
+#
+# Les frames étant désormais capturées sans perte (cf. capture_image_format.mjs),
+# cet encodage est le dernier maillon qui dégrade l'image : +1,7 dB sur les
+# contours (traits de carte, texte) pour 18 % de fichier en plus vaut la peine.
+# CRF 16 coûte le double pour moitié moins de gain, et le preset « slow »
+# n'apporte rien ici (-1 % de taille mesuré).
+#
+# La chrominance, elle, plafonne quel que soit le CRF (33,3 → 34,1 dB au mieux) :
+# la perte vient du sous-échantillonnage de yuv420p (résolution de couleur
+# divisée par deux), pas de la quantification. Seul yuv444p la corrige
+# (chroma 38,2 dB pour +10 % de taille), mais il exige un profil H.264 que
+# beaucoup de lecteurs et de téléviseurs refusent : yuv420p reste donc le défaut.
+#
+# La fidélité de couleur est donc un choix laissé à l'utilisateur, par défaut
+# « compatible ». Miroir côté client : static/js/color_fidelity.mjs.
+COLOR_FIDELITIES = ('compatible', 'fidele')
+DEFAULT_COLOR_FIDELITY = 'compatible'
+_PIX_FMT_BY_FIDELITY = {'compatible': 'yuv420p', 'fidele': 'yuv444p'}
+
+
+def _h264_output_args(color_fidelity=DEFAULT_COLOR_FIDELITY):
+    pix_fmt = _PIX_FMT_BY_FIDELITY.get(color_fidelity, _PIX_FMT_BY_FIDELITY[DEFAULT_COLOR_FIDELITY])
+    return [
+        '-c:v', 'libx264', '-preset', 'medium', '-crf', '18', '-pix_fmt', pix_fmt,
+        '-movflags', '+faststart',
+    ]
+
+
+def coerce_color_fidelity(value):
+    """Valeur inconnue (settings.json édité à la main, client plus ancien) : on
+    retombe sur le format lisible partout plutôt que de produire un fichier que
+    le lecteur de l'utilisateur refusera d'ouvrir."""
+    return value if value in COLOR_FIDELITIES else DEFAULT_COLOR_FIDELITY
 _AAC_OUTPUT_ARGS = ['-c:a', 'aac', '-b:a', '192k']
 
 # libx264 en yuv420p exige des dimensions paires : le sous-échantillonnage de la
@@ -445,7 +481,8 @@ def _write_concat_list(image_files, fps, list_path):
         handle.write(f"file {_concat_quote(image_files[-1])}\n")
 
 
-def _assemble_pictures(image_folder, output_video, fps=24, audio_path=None, audio_volume=1.0, status=None):
+def _assemble_pictures(image_folder, output_video, fps=24, audio_path=None, audio_volume=1.0, status=None,
+                       color_fidelity=DEFAULT_COLOR_FIDELITY):
     """Coeur de l'assemblage vidéo. Retourne un dict {'success', 'message', ...}.
 
     Met à jour un TaskStatus optionnel (`status`) pour le suivi de progression,
@@ -510,7 +547,7 @@ def _assemble_pictures(image_folder, output_video, fps=24, audio_path=None, audi
         else:
             cmd += ['-filter:v', _EVEN_DIMENSIONS_FILTER, '-an']
         cmd += ['-t', f"{out_dur:.6f}", '-r', str(fps_value)]
-        cmd += _H264_OUTPUT_ARGS
+        cmd += _h264_output_args(color_fidelity)
         cmd += ['-progress', 'pipe:1', '-nostats', output_video]
 
         _progress(10, "Encodage de la vidéo...")
@@ -533,22 +570,26 @@ def _assemble_pictures(image_folder, output_video, fps=24, audio_path=None, audi
     return {'success': True, 'message': 'Vidéo créée avec succès', 'output': output_video}
 
 
-def assemble_pictures_directory(image_folder, output_video, fps=24, audio_path=None, audio_volume=1.0):
+def assemble_pictures_directory(image_folder, output_video, fps=24, audio_path=None, audio_volume=1.0,
+                                color_fidelity=DEFAULT_COLOR_FIDELITY):
     """Assemblage synchrone (conservé pour compatibilité). Retourne une réponse JSON Flask."""
     try:
-        result = _assemble_pictures(image_folder, output_video, fps, audio_path, audio_volume)
+        result = _assemble_pictures(image_folder, output_video, fps, audio_path, audio_volume,
+                                    color_fidelity=color_fidelity)
         return jsonify(result)
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
 
 
-def run_assemble_video_task(status, image_folder, output_video, fps=24, audio_path=None, audio_volume=1.0):
+def run_assemble_video_task(status, image_folder, output_video, fps=24, audio_path=None, audio_volume=1.0,
+                            color_fidelity=DEFAULT_COLOR_FIDELITY):
     """Tâche de fond : assemble la vidéo et met à jour la progression via TaskStatus.
 
     Exécutée par le TaskManager dans un thread, ce qui évite l'expiration du
     fetch HTTP côté client sur les assemblages longs (plusieurs minutes).
     """
-    result = _assemble_pictures(image_folder, output_video, fps, audio_path, audio_volume, status=status)
+    result = _assemble_pictures(image_folder, output_video, fps, audio_path, audio_volume, status=status,
+                                color_fidelity=color_fidelity)
     if not result.get('success'):
         status.fail(result.get('message', "Échec de l'assemblage"))
         return
@@ -560,7 +601,8 @@ def run_assemble_video_task(status, image_folder, output_video, fps=24, audio_pa
 TASK_TYPE_VIDEO_PROCESS = "video_processing"
 
 
-def _process_recorded_video(input_path, output_path, slowdown=1.0, audio_path=None, audio_volume=1.0, fps=None, status=None):
+def _process_recorded_video(input_path, output_path, slowdown=1.0, audio_path=None, audio_volume=1.0, fps=None,
+                            status=None, color_fidelity=DEFAULT_COLOR_FIDELITY):
     """Normalise la vitesse (setpts) et mux l'audio en UNE passe ffmpeg → MP4 H.264/AAC.
 
     Remplace l'ancien pipeline navigateur (jusqu'à 3 ré-encodages temps réel,
@@ -627,7 +669,7 @@ def _process_recorded_video(input_path, output_path, slowdown=1.0, audio_path=No
         cmd += ['-filter:v', f"setpts=PTS/{sd},{_EVEN_DIMENSIONS_FILTER}", '-an']
     if out_fps:
         cmd += ['-r', str(out_fps)]
-    cmd += _H264_OUTPUT_ARGS
+    cmd += _h264_output_args(color_fidelity)
     cmd += ['-progress', 'pipe:1', '-nostats', output_path]
 
     _progress(2, "Démarrage du traitement vidéo...")
@@ -655,9 +697,11 @@ def _process_recorded_video(input_path, output_path, slowdown=1.0, audio_path=No
     }
 
 
-def run_process_video_task(status, input_path, output_path, slowdown=1.0, audio_path=None, audio_volume=1.0, fps=None):
+def run_process_video_task(status, input_path, output_path, slowdown=1.0, audio_path=None, audio_volume=1.0, fps=None,
+                           color_fidelity=DEFAULT_COLOR_FIDELITY):
     """Tâche de fond : post-traite un enregistrement MediaRecorder via ffmpeg."""
-    result = _process_recorded_video(input_path, output_path, slowdown, audio_path, audio_volume, fps=fps, status=status)
+    result = _process_recorded_video(input_path, output_path, slowdown, audio_path, audio_volume, fps=fps,
+                                     status=status, color_fidelity=color_fidelity)
     if not result.get('success'):
         status.fail(result.get('message', "Échec du traitement vidéo"))
         return
@@ -670,7 +714,7 @@ def process_recorded_video(request):
     Champs multipart attendus:
       - 'video': le .webm brut du MediaRecorder (obligatoire)
       - 'audio' (fichier) OU 'audio' (nom déjà présent dans audio/) : piste audio optionnelle
-      - 'slowdown', 'audio_volume', 'fileName' : options
+      - 'slowdown', 'audio_volume', 'fileName', 'color_fidelity' : options
     """
     from task_manager import task_manager
 
@@ -701,6 +745,7 @@ def process_recorded_video(request):
     slowdown = _num('slowdown', 1.0)
     audio_volume = _num('audio_volume', 1.0)
     fps = _num('fps', 0) or None
+    color_fidelity = coerce_color_fidelity(request.form.get('color_fidelity'))
 
     # Nom de sortie basé sur fileName fourni, forcé en .mp4
     suggested = request.form.get('fileName')
@@ -712,7 +757,7 @@ def process_recorded_video(request):
 
     status = task_manager.submit(
         TASK_TYPE_VIDEO_PROCESS, run_process_video_task,
-        raw_path, out_path, slowdown, audio_path, audio_volume, fps,
+        raw_path, out_path, slowdown, audio_path, audio_volume, fps, color_fidelity,
     )
     return jsonify({
         'success': True,

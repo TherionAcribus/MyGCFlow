@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-23 18:46+0200\n"
+"POT-Creation-Date: 2026-09-23 19:27+0200\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -169,9 +169,9 @@ msgid ""
 "instable ?)."
 msgstr "Some map tiles could not be loaded (unstable connection?)."
 
-#: static/js/basemaps.js:92 static/js/basemaps.js:129 static/js/ui.js:1787
-#: static/js/ui.js:1818 static/js/ui.js:1840 static/js/ui.js:1962
-#: static/js/ui.js:1976
+#: static/js/basemaps.js:92 static/js/basemaps.js:129 static/js/ui.js:1804
+#: static/js/ui.js:1835 static/js/ui.js:1857 static/js/ui.js:1979
+#: static/js/ui.js:1993
 msgid "Carte"
 msgstr "Map"
 
@@ -274,7 +274,7 @@ msgstr "Error while uploading the file"
 
 #: static/js/bdd.js:857 static/js/bdd.js:864 static/js/bdd.js:931
 #: static/js/bdd.js:938 static/js/bdd.js:1114 static/js/bdd.js:1185
-#: static/js/bdd.js:1192 static/js/notifications.js:274 static/js/ui.js:1033
+#: static/js/bdd.js:1192 static/js/notifications.js:274 static/js/ui.js:1042
 msgid "Erreur"
 msgstr "Error"
 
@@ -342,7 +342,7 @@ msgstr "Loading complete"
 msgid "Chargement et affichage des points..."
 msgstr "Loading and displaying points..."
 
-#: static/js/bdd.js:1199 static/js/mapgl.js:298 static/js/notifications.js:232
+#: static/js/bdd.js:1199 static/js/mapgl.js:299 static/js/notifications.js:232
 msgid "Affichage des points"
 msgstr "Points display"
 
@@ -354,51 +354,51 @@ msgstr "Error while displaying the points on the map"
 msgid "Erreur d'affichage"
 msgstr "Display error"
 
-#: static/js/mapgl.js:299
+#: static/js/mapgl.js:300
 msgid "Mise à jour de l'affichage des points..."
 msgstr "Updating point display..."
 
-#: static/js/mapgl.js:414
+#: static/js/mapgl.js:415
 msgid "Sans nom"
 msgstr "Unnamed"
 
-#: static/js/mapgl.js:415
+#: static/js/mapgl.js:416
 msgid "Trouvé"
 msgstr "Found"
 
-#: static/js/mapgl.js:415
+#: static/js/mapgl.js:416
 msgid "DNF"
 msgstr "DNF"
 
-#: static/js/mapgl.js:416
+#: static/js/mapgl.js:417
 #, python-brace-format
 msgid "Publié le ${date}"
 msgstr "Published on ${date}"
 
-#: static/js/mapgl.js:417
+#: static/js/mapgl.js:418
 #, python-brace-format
 msgid "le ${date}"
 msgstr "on ${date}"
 
-#: static/js/mapgl.js:1353
+#: static/js/mapgl.js:1354
 msgid "Nettoyage en cours..."
 msgstr "Cleaning up..."
 
-#: static/js/mapgl.js:1412
+#: static/js/mapgl.js:1413
 #, python-brace-format
 msgid "La capture a été interrompue suite à une erreur : ${message}"
 msgstr "The capture was interrupted by an error: ${message}"
 
-#: static/js/mapgl.js:1684
+#: static/js/mapgl.js:1688
 msgid "Vidéo prête"
 msgstr "Video ready"
 
-#: static/js/mapgl.js:1696
+#: static/js/mapgl.js:1700
 #, python-brace-format
 msgid "Erreur lors du traitement automatique: ${message}"
 msgstr "Error during automatic processing: ${message}"
 
-#: static/js/mapgl.js:1988
+#: static/js/mapgl.js:1992
 msgid "Résolution réduite aux capacités du navigateur."
 msgstr "Resolution reduced to what the browser can handle."
 
@@ -728,7 +728,7 @@ msgstr "Saved"
 msgid "Non enregistré"
 msgstr "Not saved"
 
-#: static/js/ui.js:885
+#: static/js/ui.js:894
 msgid ""
 "Ce format vidéo n'est pas supporté par votre navigateur et sera ignoré au"
 " démarrage de l'enregistrement."
@@ -736,23 +736,23 @@ msgstr ""
 "This video format is not supported by your browser and will be ignored "
 "when recording starts."
 
-#: static/js/ui.js:886 static/js/ui.js:2040
+#: static/js/ui.js:895 static/js/ui.js:2062
 msgid "Format non supporté"
 msgstr "Unsupported format"
 
-#: static/js/ui.js:1029
+#: static/js/ui.js:1038
 msgid "Durée de l'animation ajustée selon la musique"
 msgstr "Animation duration adjusted to match the music"
 
-#: static/js/ui.js:1029
+#: static/js/ui.js:1038
 msgid "Musique"
 msgstr "Music"
 
-#: static/js/ui.js:1033
+#: static/js/ui.js:1042
 msgid "Erreur lors de la lecture du fichier audio"
 msgstr "Error reading the audio file"
 
-#: static/js/ui.js:1087
+#: static/js/ui.js:1096
 #, python-brace-format
 msgid ""
 "Sortie estimée : ${size}. MediaRecorder enregistre en temps réel : si la "
@@ -763,7 +763,7 @@ msgstr ""
 "video stutters, pick a lower resolution or switch to the “Images + "
 "ffmpeg” mode."
 
-#: static/js/ui.js:1088
+#: static/js/ui.js:1097
 #, python-brace-format
 msgid ""
 "Sortie estimée : ${size}. En mode images, l'enregistrement devient "
@@ -774,7 +774,7 @@ msgstr ""
 " every frame is captured, encoded and uploaded one by one. The video "
 "itself will not drop a single frame."
 
-#: static/js/ui.js:1097
+#: static/js/ui.js:1106
 #, python-brace-format
 msgid ""
 "Même au débit maximal (${max} Mbit/s), cette résolution restera "
@@ -785,37 +785,37 @@ msgstr ""
 "compressed: lowering the frame rate or the resolution will give a cleaner"
 " image."
 
-#: static/js/ui.js:1101
+#: static/js/ui.js:1110
 #, python-brace-format
 msgid "Débit ajusté à ${bitrate} Mbit/s pour cette résolution."
 msgstr "Bitrate raised to ${bitrate} Mbit/s for this resolution."
 
-#: static/js/ui.js:1787
+#: static/js/ui.js:1804
 msgid "Enregistrement du centre par défaut impossible"
 msgstr "Could not save the default map center"
 
-#: static/js/ui.js:1818
+#: static/js/ui.js:1835
 msgid "Coordonnées invalides. Ex: 48.85, 2.35 ou N 49° 16.029 E 006° 07.512"
 msgstr "Invalid coordinates. E.g. 48.85, 2.35 or N 49° 16.029 E 006° 07.512"
 
-#: static/js/ui.js:1840
+#: static/js/ui.js:1857
 msgid "Coordonnées invalides. Ex: N 49° 16.029 / E 006° 07.512"
 msgstr "Invalid coordinates. E.g. N 49° 16.029 / E 006° 07.512"
 
-#: static/js/ui.js:1962
+#: static/js/ui.js:1979
 msgid "Cliquez sur la carte pour choisir le centre"
 msgstr "Click the map to choose the center"
 
-#: static/js/ui.js:1976
+#: static/js/ui.js:1993
 msgid "Centre par défaut mis à jour depuis la carte"
 msgstr "Default center updated from the map"
 
-#: static/js/ui.js:2039
+#: static/js/ui.js:2061
 #, python-brace-format
 msgid "Le format vidéo sauvegardé (${mime}) n'est pas supporté par ce navigateur."
 msgstr "The saved video format (${mime}) is not supported by this browser."
 
-#: static/js/ui.js:2251
+#: static/js/ui.js:2276
 msgid ""
 "La vidéo ne sera ni téléchargée ni uploadée : elle sera perdue après "
 "l'enregistrement."
@@ -823,51 +823,51 @@ msgstr ""
 "The video will be neither downloaded nor uploaded: it will be lost after "
 "recording."
 
-#: static/js/ui.js:2252
+#: static/js/ui.js:2277
 msgid "Aucune destination"
 msgstr "No destination"
 
-#: static/js/ui.js:2808 templates/menu_filtre.html:40
+#: static/js/ui.js:2835 templates/menu_filtre.html:40
 #: templates/menu_filtre.html:59 templates/menu_filtre.html:84
 #: templates/menu_filtre.html:106 templates/menu_filtre.html:171
 #: templates/menu_filtre.html:182
 msgid "Aucun"
 msgstr "None"
 
-#: static/js/ui.js:2835 templates/menu_filtre.html:167
+#: static/js/ui.js:2862 templates/menu_filtre.html:167
 msgid "Filtrer par pays"
 msgstr "Filter by country"
 
-#: static/js/ui.js:2864 static/js/ui.js:2902 templates/menu_filtre.html:178
+#: static/js/ui.js:2891 static/js/ui.js:2929 templates/menu_filtre.html:178
 msgid "Filtrer par région/état"
 msgstr "Filter by region/state"
 
-#: static/js/ui.js:4334
+#: static/js/ui.js:4361
 msgid "Images de capture supprimées"
 msgstr "Capture images deleted"
 
-#: static/js/ui.js:4334
+#: static/js/ui.js:4361
 msgid "Nettoyage"
 msgstr "Cleanup"
 
-#: static/js/ui.js:4338
+#: static/js/ui.js:4365
 msgid "Assemblage en cours"
 msgstr "Assembly in progress"
 
-#: static/js/ui.js:4358
+#: static/js/ui.js:4385
 #, python-brace-format
 msgid "Dossier vidéo: ${folder}"
 msgstr "Video folder: ${folder}"
 
-#: static/js/ui.js:4358 static/js/ui.js:4360 static/js/ui.js:4365
+#: static/js/ui.js:4385 static/js/ui.js:4387 static/js/ui.js:4392
 msgid "Ouverture"
 msgstr "Opening"
 
-#: static/js/ui.js:4360
+#: static/js/ui.js:4387
 msgid "Impossible d’ouvrir le dossier vidéo"
 msgstr "Unable to open the video folder"
 
-#: static/js/ui.js:4365
+#: static/js/ui.js:4392
 msgid "Erreur lors de l’ouverture du dossier vidéo"
 msgstr "Error opening the video folder"
 
@@ -1562,11 +1562,11 @@ msgstr ""
 "The video is created automatically at the end of the recording. Then use "
 "the buttons in the"
 
-#: templates/guide.html:249 templates/menu_recording.html:130
+#: templates/guide.html:249 templates/menu_recording.html:145
 msgid "Fichiers vidéo"
 msgstr "Video files"
 
-#: templates/guide.html:251 templates/menu_recording.html:145
+#: templates/guide.html:251 templates/menu_recording.html:160
 msgid "Ouvrir le dossier vidéo"
 msgstr "Open the video folder"
 
@@ -1574,7 +1574,7 @@ msgstr "Open the video folder"
 msgid "accède au dossier contenant vos vidéos."
 msgstr "opens the folder containing your videos."
 
-#: templates/guide.html:252 templates/menu_recording.html:141
+#: templates/guide.html:252 templates/menu_recording.html:156
 msgid "Supprimer les images de capture inutilisées"
 msgstr "Delete unused capture images"
 
@@ -2379,35 +2379,73 @@ msgstr ""
 "Applies to both recording modes. The map is redrawn in finer detail; the "
 "framing stays the same."
 
-#: templates/menu_recording.html:42
+#: templates/menu_recording.html:43
+msgid "Couleurs"
+msgstr "Colours"
+
+#: templates/menu_recording.html:44
+#, python-format
+msgid ""
+"En 4:2:0, la résolution de couleur est divisée par deux : les points "
+"colorés bavent légèrement sur fond sombre. Le 4:4:4 corrige ce défaut "
+"pour environ 10 %% de fichier en plus, mais certains lecteurs et "
+"téléviseurs refusent de lire ces vidéos."
+msgstr ""
+"In 4:2:0, colour resolution is halved: coloured dots bleed slightly on a "
+"dark background. 4:4:4 fixes this for about 10 %% more file size, but "
+"some players and TVs refuse to play those videos."
+
+#: templates/menu_recording.html:47
+msgid "Compatibilité maximale (4:2:0)"
+msgstr "Maximum compatibility (4:2:0)"
+
+#: templates/menu_recording.html:48
+msgid "Fidélité des couleurs (4:4:4)"
+msgstr "Faithful colours (4:4:4)"
+
+#: templates/menu_recording.html:50
+msgid "À changer seulement si les points colorés bavent sur fond sombre."
+msgstr "Only change this if coloured dots bleed on a dark background."
+
+#: templates/menu_recording.html:52
+msgid ""
+"Le 4:4:4 n'est pas lu par tous les appareils : certains téléviseurs, "
+"lecteurs matériels et Safari refuseront la vidéo. À réserver aux fichiers"
+" que vous gardez ou diffusez sur un ordinateur."
+msgstr ""
+"4:4:4 is not played by every device: some TVs, hardware players and "
+"Safari will refuse the video. Keep it for files you watch or share on a "
+"computer."
+
+#: templates/menu_recording.html:57
 msgid "Qualité vidéo"
 msgstr "Video quality"
 
-#: templates/menu_recording.html:44
+#: templates/menu_recording.html:59
 msgid "Économique — 24 FPS / 4 Mbps"
 msgstr "Economy — 24 FPS / 4 Mbps"
 
-#: templates/menu_recording.html:45
+#: templates/menu_recording.html:60
 msgid "Standard — 30 FPS / 6 Mbps"
 msgstr "Standard — 30 FPS / 6 Mbps"
 
-#: templates/menu_recording.html:46
+#: templates/menu_recording.html:61
 msgid "Fluide — 60 FPS / 12 Mbps"
 msgstr "Smooth — 60 FPS / 12 Mbps"
 
-#: templates/menu_recording.html:47
+#: templates/menu_recording.html:62
 msgid "Personnalisée"
 msgstr "Custom"
 
-#: templates/menu_recording.html:52
+#: templates/menu_recording.html:67
 msgid "Réglages avancés"
 msgstr "Advanced settings"
 
-#: templates/menu_recording.html:56
+#: templates/menu_recording.html:71
 msgid "FPS"
 msgstr "FPS"
 
-#: templates/menu_recording.html:57
+#: templates/menu_recording.html:72
 msgid ""
 "Nombre d'images capturées par seconde. Les valeurs élevées demandent "
 "davantage de puissance ; à bitrate constant, elles ne doublent pas "
@@ -2416,19 +2454,19 @@ msgstr ""
 "Higher frame rates require more processing power. At a constant bitrate, "
 "they do not automatically double the file size."
 
-#: templates/menu_recording.html:60
+#: templates/menu_recording.html:75
 msgid "Valeur autorisée : de 1 à 60 FPS."
 msgstr "Allowed value: 1 to 60 FPS."
 
-#: templates/menu_recording.html:61
+#: templates/menu_recording.html:76
 msgid "24 ou 30 FPS conviennent à la plupart des vidéos."
 msgstr "24 or 30 FPS are suitable for most videos."
 
-#: templates/menu_recording.html:65
+#: templates/menu_recording.html:80
 msgid "Bitrate vidéo (Mbps)"
 msgstr "Video bitrate (Mbps)"
 
-#: templates/menu_recording.html:66
+#: templates/menu_recording.html:81
 msgid ""
 "Débit vidéo cible. Une valeur élevée améliore la netteté mais augmente "
 "directement la taille du fichier. La valeur réellement utilisée peut "
@@ -2438,19 +2476,19 @@ msgstr ""
 "increases file size. The actual value used may depend on the browser and "
 "codec."
 
-#: templates/menu_recording.html:69
+#: templates/menu_recording.html:84
 msgid "Valeur autorisée : de 1 à 30 Mbps."
 msgstr "Allowed value: 1 to 30 Mbps."
 
-#: templates/menu_recording.html:70
+#: templates/menu_recording.html:85
 msgid "6 Mbps offrent un bon équilibre pour un usage courant."
 msgstr "6 Mbps provides a good balance for everyday use."
 
-#: templates/menu_recording.html:74
+#: templates/menu_recording.html:89
 msgid "Ralentir par (x)"
 msgstr "Slow down by (x)"
 
-#: templates/menu_recording.html:75
+#: templates/menu_recording.html:90
 msgid ""
 "Ralentit la capture pour améliorer la qualité. 2 = capture 2x plus lente "
 "(plus de frames par seconde d'animation). La vidéo finale reste à vitesse"
@@ -2460,19 +2498,19 @@ msgstr ""
 "frames per second of animation). The final video stays at normal speed if"
 " \"Normalize speed\" is enabled."
 
-#: templates/menu_recording.html:78
+#: templates/menu_recording.html:93
 msgid "Valeur autorisée : un nombre entier de 1 à 20."
 msgstr "Allowed value: an integer from 1 to 20."
 
-#: templates/menu_recording.html:79
+#: templates/menu_recording.html:94
 msgid "x1 : aucun ralentissement ; x2 : capture deux fois plus lente."
 msgstr "x1: no slowdown; x2: capture is twice as slow."
 
-#: templates/menu_recording.html:83
+#: templates/menu_recording.html:98
 msgid "Facteur d'échelle (qualité)"
 msgstr "Scale factor (quality)"
 
-#: templates/menu_recording.html:84
+#: templates/menu_recording.html:99
 msgid ""
 "Multiplicateur de résolution temporaire. 1.5 = 50% plus grande pendant "
 "l'enregistrement puis réduction. Améliore la netteté des détails fins "
@@ -2482,21 +2520,21 @@ msgstr ""
 "downscaled. Improves fine-detail sharpness without changing the final "
 "file size"
 
-#: templates/menu_recording.html:87
+#: templates/menu_recording.html:102
 msgid "Valeur autorisée : de 1 à 3, par pas de 0,25."
 msgstr "Allowed value: 1 to 3, in increments of 0.25."
 
-#: templates/menu_recording.html:88
+#: templates/menu_recording.html:103
 msgid ""
 "1 : résolution normale ; 1,5 : suréchantillonnage à 150 % pour améliorer "
 "la netteté."
 msgstr "1: normal resolution; 1.5: 150% supersampling for improved sharpness."
 
-#: templates/menu_recording.html:92
+#: templates/menu_recording.html:107
 msgid "Format vidéo"
 msgstr "Video format"
 
-#: templates/menu_recording.html:93
+#: templates/menu_recording.html:108
 msgid ""
 "Codec de compression WebM. VP9 = meilleure qualité/compression, VP8 = "
 "compatible avec tous navigateurs, H.264 = format MP4 universel, WebM "
@@ -2506,27 +2544,27 @@ msgstr ""
 "with all browsers, H.264 = universal MP4 format, plain WebM = basic "
 "fallback"
 
-#: templates/menu_recording.html:96
+#: templates/menu_recording.html:111
 msgid "VP9 (recommandé - haute qualité)"
 msgstr "VP9 (recommended - high quality)"
 
-#: templates/menu_recording.html:97
+#: templates/menu_recording.html:112
 msgid "VP8 (compatible partout)"
 msgstr "VP8 (compatible everywhere)"
 
-#: templates/menu_recording.html:98
+#: templates/menu_recording.html:113
 msgid "H.264 (format MP4)"
 msgstr "H.264 (MP4 format)"
 
-#: templates/menu_recording.html:99
+#: templates/menu_recording.html:114
 msgid "WebM simple (fallback)"
 msgstr "Plain WebM (fallback)"
 
-#: templates/menu_recording.html:108
+#: templates/menu_recording.html:123
 msgid "Uploader vers serveur"
 msgstr "Upload to server"
 
-#: templates/menu_recording.html:109
+#: templates/menu_recording.html:124
 msgid ""
 "Transfère automatiquement la vidéo vers le serveur une fois "
 "l'enregistrement terminé. Utile pour archivage centralisé ou partage avec"
@@ -2536,11 +2574,11 @@ msgstr ""
 "finished. Useful for centralized archiving or sharing with other users "
 "via the web interface"
 
-#: templates/menu_recording.html:115
+#: templates/menu_recording.html:130
 msgid "Télécharger local"
 msgstr "Download locally"
 
-#: templates/menu_recording.html:116
+#: templates/menu_recording.html:131
 msgid ""
 "Sauvegarde automatiquement la vidéo dans le dossier de téléchargements de"
 " votre navigateur une fois l'enregistrement terminé. Pratique pour "
@@ -2549,11 +2587,11 @@ msgstr ""
 "Automatically saves the video to your browser's downloads folder once "
 "recording is finished. Handy for immediate local archiving"
 
-#: templates/menu_recording.html:122
+#: templates/menu_recording.html:137
 msgid "Normaliser la vitesse"
 msgstr "Normalize speed"
 
-#: templates/menu_recording.html:123
+#: templates/menu_recording.html:138
 msgid ""
 "Si le ralentissement est > 1, ré-accélère la vidéo finale pour la ramener"
 " à vitesse normale. Désactiver pour conserver la vidéo au ralenti."
@@ -2561,7 +2599,7 @@ msgstr ""
 "If the slowdown is > 1, speeds the final video back up to normal speed. "
 "Disable to keep the video in slow motion."
 
-#: templates/menu_recording.html:140
+#: templates/menu_recording.html:155
 msgid ""
 "Supprime les images de capture restées dans le dossier temporaire, en "
 "général après un enregistrement interrompu. Sans effet sur les vidéos "

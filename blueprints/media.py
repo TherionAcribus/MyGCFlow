@@ -10,6 +10,7 @@ from capture import (
     count_captured_pictures,
     default_video_output,
     open_video_folder,
+    coerce_color_fidelity,
     process_recorded_video,
     run_assemble_video_task,
     upload_audio,
@@ -96,6 +97,9 @@ def start_create_video():
         # FPS configurable côté client : sans cela la vitesse de lecture est
         # fausse dès qu'on change le FPS (le client calcule les frames avec son FPS).
         fps = _parse_fps(_param('fps'))
+        # Fidélité de couleur (yuv420p compatible / yuv444p fidèle) : choisie par
+        # l'utilisateur, validée côté serveur comme tous les paramètres reçus.
+        color_fidelity = coerce_color_fidelity(_param('color_fidelity'))
         # Assemblage lancé en tâche de fond : évite l'expiration du fetch HTTP
         # sur les vidéos longues. Le client suit l'avancement via /tasks/<id>.
         output_video = default_video_output("mp4")
@@ -103,7 +107,7 @@ def start_create_video():
         try:
             status = task_manager.submit(
                 TASK_TYPE_VIDEO, run_assemble_video_task,
-                str(paths.captured_dir()), output_video, fps, audio, vol,
+                str(paths.captured_dir()), output_video, fps, audio, vol, color_fidelity,
                 exclusive=True,
             )
         except TaskAlreadyRunning as exc:

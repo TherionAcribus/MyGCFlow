@@ -38,6 +38,7 @@
         "fps": 30,
         "mode": "mediarecorder",
         "captureResolution": "window",
+        "colorFidelity": "compatible",
         "uploadRetries": 3,
         "uploadBatchSize": 12,
         "uploadBatchMaxWaitMs": 500,

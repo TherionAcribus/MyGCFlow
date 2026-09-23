@@ -2,6 +2,7 @@ import * as pkg from './index.js';
 import { showBsTab, getBsTab, initTomSelect, getTomSelect, refreshTomSelect, initTempusDominus, getTempusDominus, setTdDate, getTdDate } from './ui_bootstrap.js';
 import { automaticEndHoldMs } from './video_timing.mjs';
 import { captureRatioFor, normalizeCaptureResolution } from './capture_resolution.mjs';
+import { normalizeColorFidelity } from './color_fidelity.mjs';
 import {
     bitrateIsCappedFor,
     RECORDING_LIMITS,
@@ -64,7 +65,7 @@ var btnUseCurrentMapCenter, btnPickMapCenter, btnClearMapCenter;
 var latLonModeCombined, latLonModeSplit, fieldLat, fieldLon, fieldCombined;
 let isCombinedLatLonMode = true;
 // Enregistrement
-var selectRecordMode, selectRecordQualityProfile, recordAdvancedSettings, inputRecordFps, inputRecordBitrate, selectRecordMime, inputRecordSlowdown, inputRecordScaleFactor, cbRecordUpload, cbRecordDownload, cbRecordNormalize, selectRecordResolution;
+var selectRecordMode, selectRecordQualityProfile, recordAdvancedSettings, inputRecordFps, inputRecordBitrate, selectRecordMime, inputRecordSlowdown, inputRecordScaleFactor, cbRecordUpload, cbRecordDownload, cbRecordNormalize, selectRecordResolution, selectRecordColorFidelity;
 var cbRecordAudioEnable, inputAudioFile, inputAudioVolume;
 // Flag pour savoir si la durée totale est définie depuis la musique
 var isDurationLockedToAudio = false;
@@ -129,6 +130,7 @@ const RECORD_SETTINGS_FIELDS = [
     'inputRecordSlowdown', 'inputRecordScaleFactor', 'selectRecordMime',
     'cbRecordUpload', 'cbRecordDownload', 'cbRecordNormalize',
     'cbRecordAudioEnable', 'inputAudioVolume', 'selectRecordResolution',
+    'selectRecordColorFidelity',
 ];
 let lastTouchedRecordField = null;
 
@@ -753,6 +755,13 @@ function initOptionsElements() {
         ));
     }
     selectRecordResolution = document.getElementById('selectRecordResolution');
+    selectRecordColorFidelity = document.getElementById('selectRecordColorFidelity');
+    if (selectRecordColorFidelity) {
+        selectRecordColorFidelity.addEventListener('change', () => {
+            changeRecordValues();
+            updateColorFidelityWarning();
+        });
+    }
     if (selectRecordResolution) {
         selectRecordResolution.addEventListener('change', () => {
             changeRecordValues();
@@ -952,6 +961,14 @@ function updateRecordResolutionWarning() {
 
     box.textContent = parts.join(' ');
     box.hidden = false;
+}
+
+// Le 4:4:4 produit un fichier que certains lecteurs refusent : on le dit, mais
+// seulement quand l'utilisateur l'a choisi.
+function updateColorFidelityWarning() {
+    const box = document.getElementById('recordColorFidelityWarning');
+    if (!box) return;
+    box.hidden = normalizeColorFidelity(pkg.options?.record?.colorFidelity) !== 'fidele';
 }
 
 // Taille de sortie que produira la capture, pour le mode et les réglages
@@ -1767,6 +1784,11 @@ function initOptionsUI() {
             selectRecordResolution.value = normalizeCaptureResolution(pkg.options.record?.captureResolution);
             refreshTomSelect(selectRecordResolution);
         }
+        if (selectRecordColorFidelity) {
+            selectRecordColorFidelity.value = normalizeColorFidelity(pkg.options.record?.colorFidelity);
+            refreshTomSelect(selectRecordColorFidelity);
+        }
+        updateColorFidelityWarning();
         updateRecordResolutionWarning();
         if (inputRecordSlowdown) inputRecordSlowdown.value = (pkg.options.record?.mediaRecorder?.slowdownFactor) || 1;
         if (inputRecordScaleFactor) inputRecordScaleFactor.value = (pkg.options.record?.mediaRecorder?.scaleFactor) || 1;
@@ -1928,6 +1950,9 @@ function changeRecordValues(field = undefined) {
         if (selectRecordResolution) {
             pkg.options.record.captureResolution = normalizeCaptureResolution(selectRecordResolution.value);
         }
+        if (selectRecordColorFidelity) {
+            pkg.options.record.colorFidelity = normalizeColorFidelity(selectRecordColorFidelity.value);
+        }
         if (inputRecordSlowdown && inputRecordSlowdown.value !== '') {
             const sd = normalizeRecordingSlowdownFactor(inputRecordSlowdown.value);
             pkg.options.record.mediaRecorder.slowdownFactor = sd;
@@ -2013,6 +2038,7 @@ function recordSettingsPayload() {
     return {
         mode: record.mode || 'mediarecorder',
         capture_resolution: normalizeCaptureResolution(record.captureResolution),
+        color_fidelity: normalizeColorFidelity(record.colorFidelity),
         fps: normalizeRecordingFps(record.fps),
         mime_type: mr.mimeType || 'video/webm;codecs=vp9',
         bitrate_mbps: normalizeRecordingBitrateMbps(Number(mr.videoBitsPerSecond) / 1_000_000),
@@ -2032,6 +2058,7 @@ function applyRecordSettingsPayload(recording) {
     pkg.options.record = pkg.options.record || {};
     pkg.options.record.mode = recording.mode || 'mediarecorder';
     pkg.options.record.captureResolution = normalizeCaptureResolution(recording.capture_resolution);
+    pkg.options.record.colorFidelity = normalizeColorFidelity(recording.color_fidelity);
     pkg.options.record.fps = normalizeRecordingFps(recording.fps);
     pkg.options.record.mediaRecorder = pkg.options.record.mediaRecorder || {};
     pkg.options.record.mediaRecorder.mimeType = recording.mime_type || 'video/webm;codecs=vp9';

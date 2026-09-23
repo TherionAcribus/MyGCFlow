@@ -110,6 +110,7 @@ import { buildPointStyle } from './point_webgl_style.js';
 import { createAppearClock, POINT_APPEAR_MS, STATIC_APPEAR } from './point_appear.mjs';
 import { CAPTURE_IMAGE_QUALITY, CAPTURE_IMAGE_TYPE } from './capture_image_format.mjs';
 import { captureRatioFor } from './capture_resolution.mjs';
+import { normalizeColorFidelity } from './color_fidelity.mjs';
 import { flashStyleAt } from './flash_styles.js';
 import { liveFlashStep } from './flash_style_cache.mjs';
 import { staggerDelayFrames, staggerDelayMs } from './flash_impulse.mjs';
@@ -1626,7 +1627,7 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
                 // FPS configurable : doit correspondre à celui utilisé pour calculer
                 // les frames, sinon la vitesse de lecture est faussée côté serveur.
                 const fps = normalizeRecordingFps(pkg.options?.record?.fps);
-                const body = { fps };
+                const body = { fps, color_fidelity: normalizeColorFidelity(pkg.options?.record?.colorFidelity) };
                 if (audioFileName) {
                     body.audio = audioFileName;
                     body.audio_volume = audioVol;
@@ -1635,7 +1636,10 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
             } catch(e) {
                 console.warn('Assemblage avec audio: fallback sans audio', e);
                 const fps = normalizeRecordingFps(pkg.options?.record?.fps);
-                return postStartCreateVideo({ fps });
+                return postStartCreateVideo({
+                    fps,
+                    color_fidelity: normalizeColorFidelity(pkg.options?.record?.colorFidelity),
+                });
             }
         };
 
@@ -2254,6 +2258,8 @@ function finalizeMediaRecorderVideo(){
                 // l'option n'avait aucun effet dans le chemin ffmpeg.
                 fd.append('slowdown', String(serverNormalizationFactor(slowdown, doNormalize)));
                 fd.append('fps', String(normalizeRecordingFps(pkg.options?.record?.fps)));
+                // Fidélité de couleur de l'encodage final (cf. color_fidelity.mjs).
+                fd.append('color_fidelity', normalizeColorFidelity(pkg.options?.record?.colorFidelity));
                 fd.append('fileName', fileName);
                 if (audioEnabled && audioFile) {
                     fd.append('audio', audioFile, audioFile.name || 'music');

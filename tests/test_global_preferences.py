@@ -48,6 +48,13 @@ class RecordingCoercionTests(unittest.TestCase):
         self.assertEqual(r.mode, "mediarecorder")
         self.assertEqual(r.mime_type, "video/webm;codecs=vp9")
 
+    def test_unknown_color_fidelity_falls_back_to_the_compatible_format(self):
+        # Le 4:4:4 n'est pas lu partout : il ne doit jamais s'appliquer par
+        # accident (settings.json édité à la main, client plus ancien).
+        self.assertEqual(coerce_recording_settings({}).color_fidelity, "compatible")
+        self.assertEqual(coerce_recording_settings({"color_fidelity": "yuv444p"}).color_fidelity, "compatible")
+        self.assertEqual(coerce_recording_settings({"color_fidelity": "fidele"}).color_fidelity, "fidele")
+
     def test_unknown_capture_resolution_falls_back_to_the_window_size(self):
         # La résolution pilote le facteur de rendu de la carte : une valeur
         # inventée doit ramener au comportement historique, pas à un rendu 8K.
@@ -87,6 +94,7 @@ class RecordingDefaultsMatchTheClientTests(unittest.TestCase):
 
         self.assertEqual(self.client_record["fps"], server.fps)
         self.assertEqual(self.client_record["captureResolution"], server.capture_resolution)
+        self.assertEqual(self.client_record["colorFidelity"], server.color_fidelity)
         self.assertEqual(media["mimeType"], server.mime_type)
         self.assertEqual(media["videoBitsPerSecond"] / 1_000_000, server.bitrate_mbps)
         self.assertEqual(media["slowdownFactor"], server.slowdown_factor)

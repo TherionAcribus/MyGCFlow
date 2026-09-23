@@ -111,6 +111,9 @@ class RecordingSettings:
     # comportement historique) ou une hauteur cible. La carte est alors rendue
     # plus finement pendant la capture (cf. static/js/capture_resolution.mjs).
     capture_resolution: str = "window"
+    # "compatible" (yuv420p, lisible partout) ou "fidele" (yuv444p, couleurs
+    # exactes mais refusé par certains lecteurs et téléviseurs).
+    color_fidelity: str = "compatible"
     fps: int = 30
     mime_type: str = "video/webm;codecs=vp9"
     bitrate_mbps: int = 6
@@ -269,6 +272,9 @@ def _clamp_float(value, default: float, minimum: float, maximum: float) -> float
 
 THEMES = ("system", "light", "dark")
 RECORDING_MODES = ("mediarecorder", "images")
+# Fidélité de couleur de l'encodage final. Miroir de COLOR_FIDELITIES dans
+# capture.py (qui fait la conversion en pix_fmt) et static/js/color_fidelity.mjs.
+COLOR_FIDELITIES = ("compatible", "fidele")
 # Résolutions de sortie du mode images. Miroir de CAPTURE_RESOLUTIONS dans
 # static/js/capture_resolution.mjs, qui fait le calcul côté client.
 CAPTURE_RESOLUTIONS = ("window", "1080p", "1440p", "2160p")
@@ -348,6 +354,8 @@ def coerce_recording_settings(d: dict) -> RecordingSettings:
     r.capture_resolution = (
         capture_resolution if capture_resolution in CAPTURE_RESOLUTIONS else r.capture_resolution
     )
+    color_fidelity = d.get("color_fidelity", r.color_fidelity)
+    r.color_fidelity = color_fidelity if color_fidelity in COLOR_FIDELITIES else r.color_fidelity
     r.fps = _clamp_int(d.get("fps"), r.fps, 1, 60)
     if isinstance(d.get("mime_type"), str) and d.get("mime_type"):
         r.mime_type = d["mime_type"]

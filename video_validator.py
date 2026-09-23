@@ -96,6 +96,8 @@ def probe_video(path: str, ffprobe: str | None = None) -> dict[str, Any]:
         "width": primary_video.get("width"),
         "height": primary_video.get("height"),
         "video_codec": primary_video.get("codec_name"),
+        # Format de pixels : distingue le 4:2:0 compatible du 4:4:4 fidèle.
+        "pix_fmt": primary_video.get("pix_fmt"),
         "audio_codec": audio_streams[0].get("codec_name") if audio_streams else None,
         "has_video": bool(video_streams),
         "has_audio": bool(audio_streams),
@@ -145,6 +147,10 @@ def validate_video(path: str, expected: dict[str, Any]) -> ValidationResult:
                 f"FPS {actual_fps:.3f}, attendu {expected_fps:.3f} "
                 f"(tolérance ±{fps_tolerance:.3f})"
             )
+
+    expected_pix_fmt = expected.get("pix_fmt")
+    if expected_pix_fmt is not None and probe.get("pix_fmt") != expected_pix_fmt:
+        errors.append(f"pix_fmt={probe.get('pix_fmt')}, attendu {expected_pix_fmt}")
 
     for dimension in ("width", "height"):
         expected_value = expected.get(dimension)

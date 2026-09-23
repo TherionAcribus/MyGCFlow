@@ -522,3 +522,62 @@ test('le débit MediaRecorder suit la résolution, sans jamais redescendre', asy
     await resolution.selectOption('window');
 });
 
+test('le réglage Couleurs choisit le format de pixels du fichier final', async ({ page }, testInfo) => {
+  // Le 4:2:0 divise par deux la résolution de couleur : c'est ce qui fait baver
+  // les points colorés sur fond sombre. Le 4:4:4 le corrige, au prix de la
+  // compatibilité — d'où un réglage, et ce test qui vérifie le fichier produit.
+  await selectTraditionalCaches(page);
+
+  await page.locator('a[href="#animation"]').click();
+  await page.locator('#inputTimePerDay').fill('80');
+  await page.locator('#inputExtraEndTime').fill('0');
+  await page.locator('#recordingConfigTab').click();
+  await expect(page.locator('#recordingConfigPane')).toBeVisible();
+  await page.locator('#selectRecordMode').selectOption('images');
+  await page.locator('#selectRecordResolution').selectOption('window');
+
+  // Avertissement de compatibilité : seulement quand le 4:4:4 est choisi.
+  const warning = page.locator('#recordColorFidelityWarning');
+  const fidelity = page.locator('#selectRecordColorFidelity');
+  await fidelity.selectOption('compatible');
+  await expect(warning).toBeHidden();
+  await fidelity.selectOption('fidele');
+  await expect(warning).toBeVisible();
+  await expect(warning).toContainText('pas lu par tous les appareils');
+
+  await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    app.options.record.fps = 12;
+  });
+
+  await page.locator('#btnRecordAnimation').click({ force: true });
+  await expect(page.locator('.gcm-toast').filter({ hasText: 'Vidéo prête' }).last()).toBeVisible({ timeout: 120_000 });
+  await expect.poll(latestCompletedMp4, { timeout: 30_000 }).not.toBeNull();
+
+  const videoPath = latestCompletedMp4();
+  const expectationPath = path.join(RUNTIME, 'color-fidelity-expectation.json');
+  writeFileSync(expectationPath, JSON.stringify({
+    pix_fmt: 'yuv444p',
+    video_codec: 'h264',
+    min_size_bytes: 1_000,
+  }, null, 2));
+
+  const python = process.env.GCMAP_E2E_PYTHON
+    || process.env.PYTHON
+    || (process.platform === 'win32' ? 'python' : 'python3');
+  const validation = spawnSync(
+    python,
+    [path.join(ROOT, 'video_validator.py'), videoPath, '--expect', expectationPath, '--json'],
+    { encoding: 'utf8' },
+  );
+  expect(validation.status, `${validation.stdout}\n${validation.stderr}`).toBe(0);
+  const report = JSON.parse(validation.stdout);
+  expect(report.success).toBe(true);
+  expect(report.pix_fmt).toBe('yuv444p');
+
+  await testInfo.attach('color-fidelity.mp4', { path: videoPath, contentType: 'video/mp4' });
+
+  // Le réglage est global : on le remet par défaut pour les tests suivants.
+  await page.locator('#selectRecordColorFidelity').selectOption('compatible');
+});
+
