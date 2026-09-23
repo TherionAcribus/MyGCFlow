@@ -1,14 +1,46 @@
+/* Cartouche d'infos (nombre de caches, date). Mêmes contraintes de rendu que
+   #titleFrame : voir static/css/titre.css.
+   Elle est volontairement plus petite et moins appuyée que le titre : c'est la
+   hiérarchie entre les deux boîtes qui la porte, car le rendu vidéo dessine
+   chaque boîte d'une seule police et d'une seule couleur. */
 #infosFrame {
     position: absolute;
     top: 10px;
     right: 10px;
-    background-color: #ffffff;
-    padding: 10px;
-    border-radius: 5px;
-    box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.2);
-    z-index: 100;
+    background-color: rgba(255, 255, 255, 0.92);
+    color: #0f172a;
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(15, 23, 42, 0.10);
+    box-shadow: 0px 6px 16px 0px rgba(15, 23, 42, 0.12);
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+    line-height: 1.3;
     /* Chiffres à largeur fixe : le compteur défile et la date change de jour
        sans faire danser le texte. Repris à l'identique pour la vidéo par
        overlay_canvas.js (Canvas 2D ignore font-variant-numeric). */
     font-variant-numeric: tabular-nums;
+    z-index: 100;
+
+    /* Largeur figée sur le plus grand contenu à venir : la ligne visible et un
+       doublon invisible (#spanInfosReserve, rempli par frames.js) occupent la
+       même case de grille, donc la boîte prend la largeur du plus large des
+       deux et ne bouge plus quand le compteur gagne un chiffre. */
+    display: grid;
+    /* Ligne calée à droite dans la largeur réservée : le compteur grandit vers
+       la gauche, comme un compteur kilométrique, et le séparateur comme la date
+       gardent exactement la même place. text-align est repris tel quel par le
+       rendu vidéo (overlay_canvas.js), les deux restent donc identiques. */
+    justify-items: end;
+    text-align: right;
+}
+
+#infosFrame > span {
+    grid-area: 1 / 1;
+}
+
+#spanInfosReserve {
+    visibility: hidden;
+    pointer-events: none;
 }

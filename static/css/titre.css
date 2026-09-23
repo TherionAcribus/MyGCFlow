@@ -1,10 +1,23 @@
+/* Cartouche de titre posée sur la carte.
+   Tout ce qui est utilisé ici doit être reproductible par le rendu Canvas des
+   overlays (static/js/overlay_canvas.js), sans quoi la vidéo ne ressemblerait
+   plus à l'aperçu : couleur de fond (transparence comprise), dégradé, rayon,
+   bordures, UNE ombre portée, opacité, interlettrage, casse, interligne.
+   À éviter : backdrop-filter, text-shadow, ombres multiples, et tout style
+   propre à une partie du texte (la boîte est dessinée d'une seule police). */
 #titleFrame {
     position: absolute;
     top: 10px;
     left: 10px;
-    background-color: #ffffff;
-    padding: 10px;
-    border-radius: 5px;
-    box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.2);
+    background-color: rgba(255, 255, 255, 0.92);
+    color: #0f172a;
+    padding: 12px 20px;
+    border-radius: 14px;
+    border: 1px solid rgba(15, 23, 42, 0.10);
+    box-shadow: 0px 10px 24px 0px rgba(15, 23, 42, 0.14);
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    line-height: 1.25;
     z-index: 100;
 }

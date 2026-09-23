@@ -564,12 +564,9 @@ main.fullscreen-mode #infosFrame span:not([hidden]) {
     vertical-align: baseline !important;
 }
 
-/* Valeur par défaut : boites titre/infos sur fond blanc lisible */
-#titleFrame,
-#infosFrame {
-    background-color: #fff;
-    color: #000;
-}
+/* Le fond et la couleur des cartouches titre/infos sont définis par
+   static/css/titre.css et static/css/infos.css (fond blanc translucide).
+   Ce bloc les figeait en blanc opaque et noir : il masquait la refonte. */
 
 .loading-spinner {
     width: 60px;

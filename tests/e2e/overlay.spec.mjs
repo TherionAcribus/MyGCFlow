@@ -107,7 +107,8 @@ test('le contenu exporté respecte séparément compteur et date', async ({ page
     { text: '', cacheHidden: true, separatorHidden: true, dateHidden: true },
     { text: '12', cacheHidden: false, separatorHidden: true, dateHidden: true },
     { text: '20/07/2026', cacheHidden: true, separatorHidden: true, dateHidden: false },
-    { text: '12 - 20/07/2026', cacheHidden: false, separatorHidden: false, dateHidden: false },
+    // Séparateur point médian, identique au DOM (#spanInfosSep).
+    { text: '12 · 20/07/2026', cacheHidden: false, separatorHidden: false, dateHidden: false },
   ]);
 });
 
@@ -160,6 +161,41 @@ test('l’Overlay Infos réserve dès le départ la largeur du compteur final', 
   expect(boxes.initial.height).toBeLessThan(50);
   expect(boxes.initial.maxX).toBe(boxes.final.maxX);
   expect(boxes.initial.maxX).toBeLessThan(420);
+});
+
+
+test('la cartouche Infos ne bouge pas quand le compteur grandit', async ({ page }) => {
+  // La boîte est ancrée à droite : sans largeur réservée, elle s'élargissait vers
+  // la gauche à chaque chiffre gagné, et la date se décalait avec elle.
+  const rects = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    app.options.infos.title.display = false;
+    app.options.infos.numberOfCaches.display = true;
+    app.options.infos.currentDate.display = true;
+    document.getElementById('infosFrame').style.cssText = '';
+    app.metadata.numberOfCaches = 123456;
+    app.syncOverlayVisibility();
+    app.updateCurrentDate(new Date(2026, 6, 21));
+
+    const measures = [];
+    for (const count of [0, 7, 88, 999, 11111, 123456]) {
+      app.updateNbCaches(count);
+      const box = document.getElementById('infosFrame').getBoundingClientRect();
+      const date = document.getElementById('spanCurrentDate').getBoundingClientRect();
+      measures.push({
+        count,
+        left: Math.round(box.left),
+        width: Math.round(box.width),
+        height: Math.round(box.height),
+        dateLeft: Math.round(date.left),
+      });
+    }
+    return measures;
+  });
+
+  for (const measure of rects) {
+    expect(measure, `compteur à ${measure.count}`).toEqual({ ...rects[0], count: measure.count });
+  }
 });
 
 

@@ -10,6 +10,7 @@
 // frames.js à chaque modification de style (via pkg.invalidateOverlayCache).
 import * as pkg from './index.js';
 import { digitAdvance, isTabularNums, layoutTabularText } from './tabular_text.mjs';
+import { INFOS_SEPARATOR, reservedInfosText } from './infos_reserve.mjs';
 
 // Largeur commune des chiffres par police (font-variant-numeric: tabular-nums).
 // Mesurer les dix chiffres à chaque frame serait inutile : la police ne change
@@ -168,23 +169,21 @@ export function getOverlayTextContent() {
     if (opts?.currentDate?.display === true) {
         infoParts.push(document.getElementById('spanCurrentDate')?.textContent || '--/--/----');
     }
-    return { title, infos: infoParts.join(' - ') };
+    // Même séparateur que le DOM (#spanInfosSep) : l'aperçu et la vidéo doivent
+    // afficher exactement la même ligne.
+    return { title, infos: infoParts.join(INFOS_SEPARATOR) };
 }
 
+// Réserve du tracé Canvas. La boîte HTML de l'aperçu réserve la même chose, par
+// un doublon invisible (cf. updateInfosReserve dans frames.js).
 function getReservedInfosText() {
     const opts = pkg.options?.infos;
-    const parts = [];
-    if (opts?.numberOfCaches?.display === true) {
-        const currentValue = Number.parseInt(document.getElementById('spanNbCaches')?.textContent || '0', 10) || 0;
-        const finalValue = Number(pkg.metadata?.numberOfCaches) || 0;
-        parts.push(String(Math.max(0, currentValue, finalValue)));
-    }
-    if (opts?.currentDate?.display === true) {
-        // Avec une police proportionnelle, 8 est généralement le chiffre le plus large.
-        // Cette valeur réserve donc une largeur sûre pour toutes les dates jj/mm/aaaa.
-        parts.push('88/88/8888');
-    }
-    return parts.join(' - ');
+    return reservedInfosText({
+        showCount: opts?.numberOfCaches?.display === true,
+        showDate: opts?.currentDate?.display === true,
+        currentValue: document.getElementById('spanNbCaches')?.textContent,
+        finalValue: pkg.metadata?.numberOfCaches,
+    });
 }
 
 export function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor = 1) {

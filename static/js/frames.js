@@ -1,5 +1,6 @@
 // GESTION DES FRAMES d'INFORMATIONS ET DE TITRE 
 import * as pkg from './index.js';
+import { reservedInfosText } from './infos_reserve.mjs';
 
 export function displayFrames(){
     const optionsTitre = pkg.options.infos.title;
@@ -23,7 +24,9 @@ export function syncOverlayVisibility(){
         titleFrame.setAttribute('aria-hidden', showTitle ? 'false' : 'true');
     }
     if (infosFrame) {
-        infosFrame.style.display = showInfos ? "block" : "none";
+        // grid (et non block) : la boîte superpose la ligne visible et le doublon
+        // de réserve, qui lui donne sa largeur (cf. updateInfosReserve).
+        infosFrame.style.display = showInfos ? "grid" : "none";
         infosFrame.setAttribute('aria-hidden', showInfos ? 'false' : 'true');
     }
     updateInfosSpansVisibility();
@@ -52,6 +55,29 @@ export function updateInfosSpansVisibility(){
         spanSep.hidden = !showSeparator;
         spanSep.style.display = showSeparator ? "inline" : "none";
     }
+    updateInfosReserve();
+}
+
+// Fige la largeur de la cartouche d'infos sur le plus grand contenu à venir.
+// Sans cela, la boîte — ancrée à droite — s'élargit vers la gauche dès que le
+// compteur gagne un chiffre, et son bord bouge pendant toute l'animation.
+// Le doublon est invisible mais occupe la même case de grille que la ligne
+// affichée : c'est lui qui impose la largeur (cf. static/css/infos.css).
+export function updateInfosReserve(){
+    const reserve = document.getElementById("spanInfosReserve");
+    if (!reserve) return;
+    const opts = pkg.options?.infos;
+    const text = reservedInfosText({
+        showCount: opts?.numberOfCaches?.display === true,
+        showDate: opts?.currentDate?.display === true,
+        currentValue: document.getElementById("spanNbCaches")?.textContent,
+        finalValue: pkg.metadata?.numberOfCaches,
+    });
+    if (reserve.textContent === text) return;
+    reserve.textContent = text;
+    // La largeur de la boîte vient de changer : la géométrie mise en cache pour
+    // le rendu vidéo n'est plus valable.
+    try { pkg.invalidateOverlayCache?.(); } catch(_) {}
 }
 
 
@@ -79,6 +105,7 @@ export function destroyInfosFrame(){
 export function updateNbCaches(nbCaches){
     const spanNbCaches = document.getElementById("spanNbCaches");
     if (spanNbCaches) spanNbCaches.textContent = nbCaches ?? 0;
+    updateInfosReserve();
 }
 
 // mise à jour de la date
@@ -86,6 +113,7 @@ export function updateCurrentDate(currentDate){
     currentDate = formatDate(currentDate);
     const spanCurrentDate = document.getElementById("spanCurrentDate");
     if (spanCurrentDate) spanCurrentDate.textContent = currentDate;
+    updateInfosReserve();
 }
 
 // formatage date au format jour/mois/annee (optimisé car pas de manipulation d'objets)
