@@ -33,7 +33,9 @@
             <option value="1440p">{{ _("1440p (2K)") }}</option>
             <option value="2160p">{{ _("2160p (4K)") }}</option>
         </select>
-        <small id="recordResolutionHelp" class="form-hint text-muted">{{ _("Vaut pour les deux modes d'enregistrement. Au-delà de la taille de la fenêtre, la capture demande plus de mémoire et de temps — et en MediaRecorder, qui enregistre en temps réel, elle peut faire tomber des images.") }}</small>
+        <small id="recordResolutionHelp" class="form-hint text-muted">{{ _("Vaut pour les deux modes d'enregistrement. La carte est redessinée plus finement, le cadrage ne change pas.") }}</small>
+        {# Averti selon le mode et la résolution choisis (updateRecordResolutionWarning dans ui.js). #}
+        <div id="recordResolutionWarning" class="alert alert-warning py-2 px-3 mt-2 mb-0 small" role="status" hidden></div>
     </div>
 
     <div class="mb-3 col-12 col-md-6 mediarecorder-only">

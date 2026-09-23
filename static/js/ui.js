@@ -1,7 +1,7 @@
 import * as pkg from './index.js';
 import { showBsTab, getBsTab, initTomSelect, getTomSelect, refreshTomSelect, initTempusDominus, getTempusDominus, setTdDate, getTdDate } from './ui_bootstrap.js';
 import { automaticEndHoldMs } from './video_timing.mjs';
-import { normalizeCaptureResolution } from './capture_resolution.mjs';
+import { captureRatioFor, normalizeCaptureResolution } from './capture_resolution.mjs';
 import {
     RECORDING_LIMITS,
     RECORDING_QUALITY_PROFILES,
@@ -751,7 +751,12 @@ function initOptionsElements() {
         ));
     }
     selectRecordResolution = document.getElementById('selectRecordResolution');
-    if (selectRecordResolution) selectRecordResolution.addEventListener('change', changeRecordValues);
+    if (selectRecordResolution) {
+        selectRecordResolution.addEventListener('change', () => {
+            changeRecordValues();
+            updateRecordResolutionWarning();
+        });
+    }
     selectRecordMime = document.getElementById('selectRecordMime');
     if (selectRecordMime) {
         selectRecordMime.addEventListener('change', () => {
@@ -906,6 +911,44 @@ function onRecordModeChange() {
     updateMediaRecorderOptionsVisibility(); // Met à jour la visibilité
 }
 
+// Avertit avant l'enregistrement quand la résolution demandée dépasse ce que la
+// fenêtre fournit : le rendu plus fin coûte cher, et pas de la même façon selon
+// le mode. Rien n'est affiché tant qu'on reste à la taille de la fenêtre.
+function updateRecordResolutionWarning() {
+    const box = document.getElementById('recordResolutionWarning');
+    if (!box) return;
+
+    const record = pkg.options?.record || {};
+    const isMediaRecorder = (record.mode || 'mediarecorder') === 'mediarecorder';
+    const screenRatio = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+
+    let plan = null;
+    try {
+        const rect = pkg.getMap?.()?.getViewport()?.getBoundingClientRect();
+        if (rect && rect.width > 0) {
+            plan = captureRatioFor({
+                cssWidth: rect.width,
+                cssHeight: rect.height,
+                devicePixelRatio: screenRatio,
+                resolution: record.captureResolution,
+                multiplier: isMediaRecorder ? record.mediaRecorder?.scaleFactor : 1,
+            });
+        }
+    } catch (_) {}
+
+    if (!plan || plan.ratio <= screenRatio + 1e-9) {
+        box.hidden = true;
+        box.textContent = '';
+        return;
+    }
+
+    const size = `${plan.width}×${plan.height}`;
+    box.textContent = isMediaRecorder
+        ? t('Sortie estimée : ${size}. MediaRecorder enregistre en temps réel : si la vidéo saccade, choisissez une résolution plus basse ou passez en mode « Images + ffmpeg ».', { size })
+        : t('Sortie estimée : ${size}. En mode images, l\'enregistrement devient beaucoup plus lent : chaque image est capturée, encodée et envoyée une par une. La vidéo, elle, ne perdra aucune image.', { size });
+    box.hidden = false;
+}
+
 // Met à jour la visibilité des options MediaRecorder
 function updateMediaRecorderOptionsVisibility() {
     const isMediaRecorder = selectRecordMode && selectRecordMode.value === 'mediarecorder';
@@ -918,6 +961,8 @@ function updateMediaRecorderOptionsVisibility() {
         const select = element.querySelector('select');
         if (select && !isMediaRecorder) refreshTomSelect(select);
     });
+
+    updateRecordResolutionWarning();
 
     mediaRecorderOptions.forEach(element => {
         if (isMediaRecorder) {
@@ -1663,6 +1708,7 @@ function initOptionsUI() {
             selectRecordResolution.value = normalizeCaptureResolution(pkg.options.record?.captureResolution);
             refreshTomSelect(selectRecordResolution);
         }
+        updateRecordResolutionWarning();
         if (inputRecordSlowdown) inputRecordSlowdown.value = (pkg.options.record?.mediaRecorder?.slowdownFactor) || 1;
         if (inputRecordScaleFactor) inputRecordScaleFactor.value = (pkg.options.record?.mediaRecorder?.scaleFactor) || 1;
         if (cbRecordUpload) cbRecordUpload.checked = !!(pkg.options.record?.mediaRecorder?.uploadToServer);
@@ -1836,6 +1882,7 @@ function changeRecordValues(field = undefined) {
             const sc = normalizeRecordingScaleFactor(inputRecordScaleFactor.value);
             pkg.options.record.mediaRecorder.scaleFactor = sc;
         }
+        updateRecordResolutionWarning();
         if (cbRecordUpload) {
             pkg.options.record.mediaRecorder.uploadToServer = !!cbRecordUpload.checked;
         }

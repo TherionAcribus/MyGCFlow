@@ -415,3 +415,47 @@ ${validation.stderr}`).toBe(0);
   await testInfo.attach('mediarecorder-hires.mp4', { path: videoPath, contentType: 'video/mp4' });
 });
 
+test('la résolution élevée prévient de son coût, selon le mode', async ({ page }) => {
+  await page.locator('a[href="#animation"]').click();
+  await page.locator('#recordingConfigTab').click();
+  await expect(page.locator('#recordingConfigPane')).toBeVisible();
+
+  const warning = page.locator('#recordResolutionWarning');
+  const resolution = page.locator('#selectRecordResolution');
+
+  // À la taille de la fenêtre, rien à signaler.
+  await page.locator('#selectRecordMode').selectOption('mediarecorder');
+  await resolution.selectOption('window');
+  await expect(warning).toBeHidden();
+
+  // MediaRecorder enregistre en temps réel : saccades possibles.
+  await resolution.selectOption('1440p');
+  await expect(warning).toBeVisible();
+  await expect(warning).toContainText('temps réel');
+  await expect(warning).toContainText('Images + ffmpeg');
+  // La taille de sortie annoncée est celle que produira la capture.
+  const expected = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    const { captureRatioFor } = await import('/static/js/capture_resolution.mjs');
+    const rect = app.getMap().getViewport().getBoundingClientRect();
+    const plan = captureRatioFor({
+      cssWidth: rect.width,
+      cssHeight: rect.height,
+      devicePixelRatio: Math.max(1, Math.min(3, window.devicePixelRatio || 1)),
+      resolution: '1440p',
+      multiplier: app.options.record.mediaRecorder.scaleFactor,
+    });
+    return `${plan.width}×${plan.height}`;
+  });
+  await expect(warning).toContainText(expected);
+
+  // Mode images : c'est la lenteur de la capture qu'il faut annoncer.
+  await page.locator('#selectRecordMode').selectOption('images');
+  await expect(warning).toBeVisible();
+  await expect(warning).toContainText('plus lent');
+  await expect(warning).not.toContainText('saccade');
+
+  await resolution.selectOption('window');
+  await expect(warning).toBeHidden();
+});
+
