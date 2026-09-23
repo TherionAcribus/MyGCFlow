@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-23 18:28+0200\n"
+"POT-Creation-Date: 2026-09-23 18:46+0200\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -173,9 +173,9 @@ msgstr ""
 "Certaines tuiles de la carte n'ont pas pu être chargées (connexion "
 "instable ?)."
 
-#: static/js/basemaps.js:92 static/js/basemaps.js:129 static/js/ui.js:1719
-#: static/js/ui.js:1750 static/js/ui.js:1772 static/js/ui.js:1894
-#: static/js/ui.js:1908
+#: static/js/basemaps.js:92 static/js/basemaps.js:129 static/js/ui.js:1787
+#: static/js/ui.js:1818 static/js/ui.js:1840 static/js/ui.js:1962
+#: static/js/ui.js:1976
 msgid "Carte"
 msgstr "Carte"
 
@@ -278,7 +278,7 @@ msgstr "Erreur lors du chargement du fichier"
 
 #: static/js/bdd.js:857 static/js/bdd.js:864 static/js/bdd.js:931
 #: static/js/bdd.js:938 static/js/bdd.js:1114 static/js/bdd.js:1185
-#: static/js/bdd.js:1192 static/js/notifications.js:274 static/js/ui.js:1030
+#: static/js/bdd.js:1192 static/js/notifications.js:274 static/js/ui.js:1033
 msgid "Erreur"
 msgstr "Erreur"
 
@@ -739,7 +739,7 @@ msgstr "Enregistré"
 msgid "Non enregistré"
 msgstr "Non enregistré"
 
-#: static/js/ui.js:882
+#: static/js/ui.js:885
 msgid ""
 "Ce format vidéo n'est pas supporté par votre navigateur et sera ignoré au"
 " démarrage de l'enregistrement."
@@ -747,70 +747,86 @@ msgstr ""
 "Ce format vidéo n'est pas supporté par votre navigateur et sera ignoré au"
 " démarrage de l'enregistrement."
 
-#: static/js/ui.js:883 static/js/ui.js:1972
+#: static/js/ui.js:886 static/js/ui.js:2040
 msgid "Format non supporté"
 msgstr "Format non supporté"
 
-#: static/js/ui.js:1026
+#: static/js/ui.js:1029
 msgid "Durée de l'animation ajustée selon la musique"
 msgstr "Durée de l'animation ajustée selon la musique"
 
-#: static/js/ui.js:1026
+#: static/js/ui.js:1029
 msgid "Musique"
 msgstr "Musique"
 
-#: static/js/ui.js:1030
+#: static/js/ui.js:1033
 msgid "Erreur lors de la lecture du fichier audio"
 msgstr "Erreur lors de la lecture du fichier audio"
+
+#: static/js/ui.js:1087
+#, python-brace-format
+msgid ""
+"Sortie estimée : ${size}. MediaRecorder enregistre en temps réel : si la "
+"vidéo saccade, choisissez une résolution plus basse ou passez en mode « "
+"Images + ffmpeg »."
+msgstr ""
+"Sortie estimée : ${size}. MediaRecorder enregistre en temps réel : si la "
+"vidéo saccade, choisissez une résolution plus basse ou passez en mode « "
+"Images + ffmpeg »."
+
+#: static/js/ui.js:1088
+#, python-brace-format
+msgid ""
+"Sortie estimée : ${size}. En mode images, l'enregistrement devient "
+"beaucoup plus lent : chaque image est capturée, encodée et envoyée une "
+"par une. La vidéo, elle, ne perdra aucune image."
+msgstr ""
+"Sortie estimée : ${size}. En mode images, l'enregistrement devient "
+"beaucoup plus lent : chaque image est capturée, encodée et envoyée une "
+"par une. La vidéo, elle, ne perdra aucune image."
 
 #: static/js/ui.js:1097
 #, python-brace-format
 msgid ""
-"Sortie estimée : ${size}. MediaRecorder enregistre en temps réel : si la "
-"vidéo saccade, choisissez une résolution plus basse ou passez en mode « "
-"Images + ffmpeg »."
+"Même au débit maximal (${max} Mbit/s), cette résolution restera "
+"compressée : baisser les images par seconde ou la résolution donnera une "
+"image plus propre."
 msgstr ""
-"Sortie estimée : ${size}. MediaRecorder enregistre en temps réel : si la "
-"vidéo saccade, choisissez une résolution plus basse ou passez en mode « "
-"Images + ffmpeg »."
+"Même au débit maximal (${max} Mbit/s), cette résolution restera "
+"compressée : baisser les images par seconde ou la résolution donnera une "
+"image plus propre."
 
-#: static/js/ui.js:1098
+#: static/js/ui.js:1101
 #, python-brace-format
-msgid ""
-"Sortie estimée : ${size}. En mode images, l'enregistrement devient "
-"beaucoup plus lent : chaque image est capturée, encodée et envoyée une "
-"par une. La vidéo, elle, ne perdra aucune image."
-msgstr ""
-"Sortie estimée : ${size}. En mode images, l'enregistrement devient "
-"beaucoup plus lent : chaque image est capturée, encodée et envoyée une "
-"par une. La vidéo, elle, ne perdra aucune image."
+msgid "Débit ajusté à ${bitrate} Mbit/s pour cette résolution."
+msgstr "Débit ajusté à ${bitrate} Mbit/s pour cette résolution."
 
-#: static/js/ui.js:1719
+#: static/js/ui.js:1787
 msgid "Enregistrement du centre par défaut impossible"
 msgstr "Enregistrement du centre par défaut impossible"
 
-#: static/js/ui.js:1750
+#: static/js/ui.js:1818
 msgid "Coordonnées invalides. Ex: 48.85, 2.35 ou N 49° 16.029 E 006° 07.512"
 msgstr "Coordonnées invalides. Ex: 48.85, 2.35 ou N 49° 16.029 E 006° 07.512"
 
-#: static/js/ui.js:1772
+#: static/js/ui.js:1840
 msgid "Coordonnées invalides. Ex: N 49° 16.029 / E 006° 07.512"
 msgstr "Coordonnées invalides. Ex: N 49° 16.029 / E 006° 07.512"
 
-#: static/js/ui.js:1894
+#: static/js/ui.js:1962
 msgid "Cliquez sur la carte pour choisir le centre"
 msgstr "Cliquez sur la carte pour choisir le centre"
 
-#: static/js/ui.js:1908
+#: static/js/ui.js:1976
 msgid "Centre par défaut mis à jour depuis la carte"
 msgstr "Centre par défaut mis à jour depuis la carte"
 
-#: static/js/ui.js:1971
+#: static/js/ui.js:2039
 #, python-brace-format
 msgid "Le format vidéo sauvegardé (${mime}) n'est pas supporté par ce navigateur."
 msgstr "Le format vidéo sauvegardé (${mime}) n'est pas supporté par ce navigateur."
 
-#: static/js/ui.js:2183
+#: static/js/ui.js:2251
 msgid ""
 "La vidéo ne sera ni téléchargée ni uploadée : elle sera perdue après "
 "l'enregistrement."
@@ -818,51 +834,51 @@ msgstr ""
 "La vidéo ne sera ni téléchargée ni uploadée : elle sera perdue après "
 "l'enregistrement."
 
-#: static/js/ui.js:2184
+#: static/js/ui.js:2252
 msgid "Aucune destination"
 msgstr "Aucune destination"
 
-#: static/js/ui.js:2740 templates/menu_filtre.html:40
+#: static/js/ui.js:2808 templates/menu_filtre.html:40
 #: templates/menu_filtre.html:59 templates/menu_filtre.html:84
 #: templates/menu_filtre.html:106 templates/menu_filtre.html:171
 #: templates/menu_filtre.html:182
 msgid "Aucun"
 msgstr "Aucun"
 
-#: static/js/ui.js:2767 templates/menu_filtre.html:167
+#: static/js/ui.js:2835 templates/menu_filtre.html:167
 msgid "Filtrer par pays"
 msgstr "Filtrer par pays"
 
-#: static/js/ui.js:2796 static/js/ui.js:2834 templates/menu_filtre.html:178
+#: static/js/ui.js:2864 static/js/ui.js:2902 templates/menu_filtre.html:178
 msgid "Filtrer par région/état"
 msgstr "Filtrer par région/état"
 
-#: static/js/ui.js:4266
+#: static/js/ui.js:4334
 msgid "Images de capture supprimées"
 msgstr "Images de capture supprimées"
 
-#: static/js/ui.js:4266
+#: static/js/ui.js:4334
 msgid "Nettoyage"
 msgstr "Nettoyage"
 
-#: static/js/ui.js:4270
+#: static/js/ui.js:4338
 msgid "Assemblage en cours"
 msgstr "Assemblage en cours"
 
-#: static/js/ui.js:4290
+#: static/js/ui.js:4358
 #, python-brace-format
 msgid "Dossier vidéo: ${folder}"
 msgstr "Dossier vidéo: ${folder}"
 
-#: static/js/ui.js:4290 static/js/ui.js:4292 static/js/ui.js:4297
+#: static/js/ui.js:4358 static/js/ui.js:4360 static/js/ui.js:4365
 msgid "Ouverture"
 msgstr "Ouverture"
 
-#: static/js/ui.js:4292
+#: static/js/ui.js:4360
 msgid "Impossible d’ouvrir le dossier vidéo"
 msgstr "Impossible d’ouvrir le dossier vidéo"
 
-#: static/js/ui.js:4297
+#: static/js/ui.js:4365
 msgid "Erreur lors de l’ouverture du dossier vidéo"
 msgstr "Erreur lors de l’ouverture du dossier vidéo"
 

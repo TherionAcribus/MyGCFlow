@@ -10,6 +10,8 @@ import {
     normalizeRecordingScaleFactor,
     normalizeRecordingSlowdownFactor,
     recordingQualityProfileFor,
+    bitrateIsCappedFor,
+    recommendedBitrateMbps,
 } from './static/js/recording_settings.mjs';
 
 test('les FPS sont arrondis et bornés entre 1 et 60', () => {
@@ -55,3 +57,37 @@ test('les profils sont détectés uniquement sur une correspondance exacte', () 
     assert.equal(recordingQualityProfileFor(60, 12), 'fluid');
     assert.equal(recordingQualityProfileFor(30, 8), 'custom');
 });
+
+test('le débit conseillé en 1080p reste celui d\'aujourd\'hui', () => {
+    // 6 Mbit/s : exactement la valeur du profil « Standard ». Changer la
+    // résolution ne doit pas changer ce que reçoit un utilisateur en 1080p.
+    assert.equal(recommendedBitrateMbps({ width: 1920, height: 1080, fps: 30 }), 6);
+});
+
+test('le débit conseillé suit le nombre de pixels et les images par seconde', () => {
+    assert.equal(recommendedBitrateMbps({ width: 2560, height: 1440, fps: 30 }), 11);
+    assert.equal(recommendedBitrateMbps({ width: 3840, height: 2160, fps: 30 }), 25);
+    // Deux fois plus d'images par seconde : deux fois plus de débit.
+    assert.equal(recommendedBitrateMbps({ width: 1920, height: 1080, fps: 60 }), 12);
+});
+
+test('le débit conseillé reste dans les bornes réglables', () => {
+    const tiny = recommendedBitrateMbps({ width: 320, height: 180, fps: 24 });
+    assert.equal(tiny, RECORDING_LIMITS.bitrateMbps.min);
+    const huge = recommendedBitrateMbps({ width: 3840, height: 2160, fps: 60 });
+    assert.equal(huge, RECORDING_LIMITS.bitrateMbps.max);
+});
+
+test('le plafond de débit est signalé quand il devient limitant', () => {
+    assert.equal(bitrateIsCappedFor({ width: 3840, height: 2160, fps: 60 }), true);
+    assert.equal(bitrateIsCappedFor({ width: 3840, height: 2160, fps: 30 }), false);
+    assert.equal(bitrateIsCappedFor({ width: 1920, height: 1080, fps: 30 }), false);
+});
+
+test('des dimensions absentes ou absurdes donnent le débit minimal', () => {
+    for (const args of [{}, { width: 0, height: 0, fps: 30 }, { width: NaN, height: NaN }]) {
+        assert.equal(recommendedBitrateMbps(args), RECORDING_LIMITS.bitrateMbps.min);
+        assert.equal(bitrateIsCappedFor(args), false);
+    }
+});
+

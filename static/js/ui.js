@@ -3,8 +3,10 @@ import { showBsTab, getBsTab, initTomSelect, getTomSelect, refreshTomSelect, ini
 import { automaticEndHoldMs } from './video_timing.mjs';
 import { captureRatioFor, normalizeCaptureResolution } from './capture_resolution.mjs';
 import {
+    bitrateIsCappedFor,
     RECORDING_LIMITS,
     RECORDING_QUALITY_PROFILES,
+    recommendedBitrateMbps,
     isValidRecordingInteger,
     isValidRecordingNumber,
     normalizeRecordingBitrateMbps,
@@ -754,6 +756,7 @@ function initOptionsElements() {
     if (selectRecordResolution) {
         selectRecordResolution.addEventListener('change', () => {
             changeRecordValues();
+            raiseRecordBitrateForResolution();
             updateRecordResolutionWarning();
         });
     }
@@ -921,20 +924,7 @@ function updateRecordResolutionWarning() {
     const record = pkg.options?.record || {};
     const isMediaRecorder = (record.mode || 'mediarecorder') === 'mediarecorder';
     const screenRatio = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
-
-    let plan = null;
-    try {
-        const rect = pkg.getMap?.()?.getViewport()?.getBoundingClientRect();
-        if (rect && rect.width > 0) {
-            plan = captureRatioFor({
-                cssWidth: rect.width,
-                cssHeight: rect.height,
-                devicePixelRatio: screenRatio,
-                resolution: record.captureResolution,
-                multiplier: isMediaRecorder ? record.mediaRecorder?.scaleFactor : 1,
-            });
-        }
-    } catch (_) {}
+    const plan = plannedCaptureOutput();
 
     if (!plan || plan.ratio <= screenRatio + 1e-9) {
         box.hidden = true;
@@ -943,10 +933,78 @@ function updateRecordResolutionWarning() {
     }
 
     const size = `${plan.width}×${plan.height}`;
-    box.textContent = isMediaRecorder
+    const parts = [isMediaRecorder
         ? t('Sortie estimée : ${size}. MediaRecorder enregistre en temps réel : si la vidéo saccade, choisissez une résolution plus basse ou passez en mode « Images + ffmpeg ».', { size })
-        : t('Sortie estimée : ${size}. En mode images, l\'enregistrement devient beaucoup plus lent : chaque image est capturée, encodée et envoyée une par une. La vidéo, elle, ne perdra aucune image.', { size });
+        : t('Sortie estimée : ${size}. En mode images, l\'enregistrement devient beaucoup plus lent : chaque image est capturée, encodée et envoyée une par une. La vidéo, elle, ne perdra aucune image.', { size })];
+
+    // Le débit ne concerne que MediaRecorder : en mode images, ffmpeg réencode
+    // à qualité constante, sans débit cible.
+    if (isMediaRecorder) {
+        const fps = record.fps;
+        if (bitrateIsCappedFor({ width: plan.width, height: plan.height, fps })) {
+            parts.push(t('Même au débit maximal (${max} Mbit/s), cette résolution restera compressée : baisser les images par seconde ou la résolution donnera une image plus propre.',
+                { max: RECORDING_LIMITS.bitrateMbps.max }));
+        } else {
+            const bitrate = Math.round(Number(record.mediaRecorder?.videoBitsPerSecond || 0) / 1_000_000);
+            parts.push(t('Débit ajusté à ${bitrate} Mbit/s pour cette résolution.', { bitrate }));
+        }
+    }
+
+    box.textContent = parts.join(' ');
     box.hidden = false;
+}
+
+// Taille de sortie que produira la capture, pour le mode et les réglages
+// courants. Même calcul que les deux pipelines (capture_resolution.mjs).
+function plannedCaptureOutput() {
+    const record = pkg.options?.record || {};
+    const isMediaRecorder = (record.mode || 'mediarecorder') === 'mediarecorder';
+    try {
+        const rect = pkg.getMap?.()?.getViewport()?.getBoundingClientRect();
+        if (!rect || !(rect.width > 0)) return null;
+        return captureRatioFor({
+            cssWidth: rect.width,
+            cssHeight: rect.height,
+            devicePixelRatio: Math.max(1, Math.min(3, window.devicePixelRatio || 1)),
+            resolution: record.captureResolution,
+            multiplier: isMediaRecorder ? record.mediaRecorder?.scaleFactor : 1,
+        });
+    } catch (_) {
+        return null;
+    }
+}
+
+// Garde : relever le débit réécrit un champ, ce qui redéclenche la chaîne
+// « changement → sauvegarde → rafraîchissement ». On ne la parcourt qu'une fois.
+let adjustingRecordBitrate = false;
+
+// Relève le débit MediaRecorder quand la résolution en demande davantage. Jamais
+// à la baisse : un débit choisi généreusement est conservé, et revenir à une
+// petite fenêtre ne dégrade pas le réglage existant.
+function raiseRecordBitrateForResolution() {
+    if (adjustingRecordBitrate) return;
+    const record = pkg.options?.record || {};
+    if ((record.mode || 'mediarecorder') !== 'mediarecorder') return;
+    const plan = plannedCaptureOutput();
+    if (!plan) return;
+
+    const recommended = recommendedBitrateMbps({ width: plan.width, height: plan.height, fps: record.fps });
+    const current = Number(record.mediaRecorder?.videoBitsPerSecond || 0) / 1_000_000;
+    if (!(recommended > current + 1e-9)) return;
+
+    adjustingRecordBitrate = true;
+    try {
+        if (inputRecordBitrate) {
+            inputRecordBitrate.value = String(recommended);
+            setRecordingInputValidity(inputRecordBitrate, RECORDING_LIMITS.bitrateMbps);
+        }
+        pkg.options.record.mediaRecorder = pkg.options.record.mediaRecorder || {};
+        pkg.options.record.mediaRecorder.videoBitsPerSecond = recommended * 1_000_000;
+        syncRecordingQualityProfile();
+        changeRecordValues();
+    } finally {
+        adjustingRecordBitrate = false;
+    }
 }
 
 // Met à jour la visibilité des options MediaRecorder
@@ -962,6 +1020,7 @@ function updateMediaRecorderOptionsVisibility() {
         if (select && !isMediaRecorder) refreshTomSelect(select);
     });
 
+    raiseRecordBitrateForResolution();
     updateRecordResolutionWarning();
 
     mediaRecorderOptions.forEach(element => {

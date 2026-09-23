@@ -459,3 +459,66 @@ test('la résolution élevée prévient de son coût, selon le mode', async ({ p
   await expect(warning).toBeHidden();
 });
 
+test('le débit MediaRecorder suit la résolution, sans jamais redescendre', async ({ page }) => {
+    // Un débit de 6 Mbit/s convient en 1080p mais rendrait une image en blocs en
+    // 1440p : le détail gagné au rendu serait reperdu à l'encodage.
+    await page.locator('a[href="#animation"]').click();
+    await page.locator('#recordingConfigTab').click();
+    await expect(page.locator('#recordingConfigPane')).toBeVisible();
+    await page.locator('#selectRecordMode').selectOption('mediarecorder');
+
+    const advanced = page.locator('#recordAdvancedSettings');
+    if (!(await advanced.evaluate((element) => element.open))) {
+        await advanced.locator('summary').click();
+    }
+    const bitrate = page.locator('#inputRecordBitrate');
+    const resolution = page.locator('#selectRecordResolution');
+    const warning = page.locator('#recordResolutionWarning');
+
+    await resolution.selectOption('window');
+    // Le débit conseillé dépend aussi des images par seconde : on fixe les deux
+    // plutôt que d'hériter des réglages d'un test précédent.
+    await page.locator('#inputRecordFps').fill('30');
+    await page.locator('#inputRecordFps').blur();
+    await bitrate.fill('6');
+    await bitrate.blur();
+
+    // Le débit conseillé pour la sortie 1440p, calculé comme l'interface le fait.
+    const expected = await page.evaluate(async () => {
+        const app = await import('/static/js/index.js');
+        const { captureRatioFor } = await import('/static/js/capture_resolution.mjs');
+        const { recommendedBitrateMbps } = await import('/static/js/recording_settings.mjs');
+        const rect = app.getMap().getViewport().getBoundingClientRect();
+        const plan = captureRatioFor({
+            cssWidth: rect.width,
+            cssHeight: rect.height,
+            devicePixelRatio: Math.max(1, Math.min(3, window.devicePixelRatio || 1)),
+            resolution: '1440p',
+            multiplier: app.options.record.mediaRecorder.scaleFactor,
+        });
+        return recommendedBitrateMbps({ width: plan.width, height: plan.height, fps: app.options.record.fps });
+    });
+    expect(expected).toBeGreaterThan(6);
+
+    await resolution.selectOption('1440p');
+    await expect(bitrate).toHaveValue(String(expected));
+    await expect(warning).toContainText(`${expected} Mbit/s`);
+    const stored = await page.evaluate(async () => {
+        const app = await import('/static/js/index.js');
+        return app.options.record.mediaRecorder.videoBitsPerSecond;
+    });
+    expect(stored).toBe(expected * 1_000_000);
+
+    // Retour à la taille de la fenêtre : le débit relevé est conservé.
+    await resolution.selectOption('window');
+    await expect(bitrate).toHaveValue(String(expected));
+
+    // Un débit déjà généreux n'est pas touché non plus.
+    await bitrate.fill('30');
+    await bitrate.blur();
+    await resolution.selectOption('1440p');
+    await expect(bitrate).toHaveValue('30');
+
+    await resolution.selectOption('window');
+});
+

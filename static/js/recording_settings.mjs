@@ -45,6 +45,32 @@ export function normalizeRecordingScaleFactor(value) {
     return normalizeNumber(value, RECORDING_LIMITS.scaleFactor);
 }
 
+// Débit conseillé pour une sortie donnée.
+//
+// Le débit ne suivait pas la résolution : 6 Mbit/s convient en 1080p, mais la
+// même valeur en 1440p ou 2160p redonne une image en blocs — le détail gagné au
+// rendu serait reperdu à l'encodage.
+//
+// 0,1 bit par pixel et par image est exactement ce que valent les 6 Mbit/s du
+// profil « Standard » en 1920x1080 à 30 images/s : la référence actuelle est
+// donc conservée, et seule une sortie plus grande fait monter le débit.
+export const RECOMMENDED_BITS_PER_PIXEL = 0.1;
+
+export function recommendedBitrateMbps({ width, height, fps } = {}) {
+    const pixels = Math.max(0, Number(width) || 0) * Math.max(0, Number(height) || 0);
+    const frames = normalizeRecordingFps(fps);
+    const mbps = RECOMMENDED_BITS_PER_PIXEL * pixels * frames / 1_000_000;
+    return normalizeRecordingBitrateMbps(Math.round(mbps));
+}
+
+// True quand la résolution demande plus que le débit maximal réglable : le
+// plafond devient alors le facteur limitant, et cela mérite d'être dit.
+export function bitrateIsCappedFor({ width, height, fps } = {}) {
+    const pixels = Math.max(0, Number(width) || 0) * Math.max(0, Number(height) || 0);
+    const raw = RECOMMENDED_BITS_PER_PIXEL * pixels * normalizeRecordingFps(fps) / 1_000_000;
+    return Math.round(raw) > RECORDING_LIMITS.bitrateMbps.max;
+}
+
 export function isValidRecordingNumber(value, limits) {
     const number = Number(value);
     if (value === '' || !Number.isFinite(number) || number < limits.min || number > limits.max) {
