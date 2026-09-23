@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-23 09:50+0200\n"
+"POT-Creation-Date: 2026-09-23 10:13+0200\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -169,9 +169,9 @@ msgid ""
 "instable ?)."
 msgstr "Some map tiles could not be loaded (unstable connection?)."
 
-#: static/js/basemaps.js:92 static/js/basemaps.js:129 static/js/ui.js:1669
-#: static/js/ui.js:1700 static/js/ui.js:1722 static/js/ui.js:1844
-#: static/js/ui.js:1858
+#: static/js/basemaps.js:92 static/js/basemaps.js:129 static/js/ui.js:1671
+#: static/js/ui.js:1702 static/js/ui.js:1724 static/js/ui.js:1846
+#: static/js/ui.js:1860
 msgid "Carte"
 msgstr "Map"
 
@@ -380,23 +380,27 @@ msgstr "Published on ${date}"
 msgid "le ${date}"
 msgstr "on ${date}"
 
-#: static/js/mapgl.js:1350
+#: static/js/mapgl.js:1353
 msgid "Nettoyage en cours..."
 msgstr "Cleaning up..."
 
-#: static/js/mapgl.js:1409
+#: static/js/mapgl.js:1412
 #, python-brace-format
 msgid "La capture a été interrompue suite à une erreur : ${message}"
 msgstr "The capture was interrupted by an error: ${message}"
 
-#: static/js/mapgl.js:1681
+#: static/js/mapgl.js:1684
 msgid "Vidéo prête"
 msgstr "Video ready"
 
-#: static/js/mapgl.js:1693
+#: static/js/mapgl.js:1696
 #, python-brace-format
 msgid "Erreur lors du traitement automatique: ${message}"
 msgstr "Error during automatic processing: ${message}"
+
+#: static/js/mapgl.js:1988
+msgid "Résolution réduite aux capacités du navigateur."
+msgstr "Resolution reduced to what the browser can handle."
 
 #: static/js/notifications.js:206
 msgid "Chargement en cours..."
@@ -732,7 +736,7 @@ msgstr ""
 "This video format is not supported by your browser and will be ignored "
 "when recording starts."
 
-#: static/js/ui.js:878 static/js/ui.js:1921
+#: static/js/ui.js:878 static/js/ui.js:1923
 msgid "Format non supporté"
 msgstr "Unsupported format"
 
@@ -748,32 +752,32 @@ msgstr "Music"
 msgid "Erreur lors de la lecture du fichier audio"
 msgstr "Error reading the audio file"
 
-#: static/js/ui.js:1669
+#: static/js/ui.js:1671
 msgid "Enregistrement du centre par défaut impossible"
 msgstr "Could not save the default map center"
 
-#: static/js/ui.js:1700
+#: static/js/ui.js:1702
 msgid "Coordonnées invalides. Ex: 48.85, 2.35 ou N 49° 16.029 E 006° 07.512"
 msgstr "Invalid coordinates. E.g. 48.85, 2.35 or N 49° 16.029 E 006° 07.512"
 
-#: static/js/ui.js:1722
+#: static/js/ui.js:1724
 msgid "Coordonnées invalides. Ex: N 49° 16.029 / E 006° 07.512"
 msgstr "Invalid coordinates. E.g. N 49° 16.029 / E 006° 07.512"
 
-#: static/js/ui.js:1844
+#: static/js/ui.js:1846
 msgid "Cliquez sur la carte pour choisir le centre"
 msgstr "Click the map to choose the center"
 
-#: static/js/ui.js:1858
+#: static/js/ui.js:1860
 msgid "Centre par défaut mis à jour depuis la carte"
 msgstr "Default center updated from the map"
 
-#: static/js/ui.js:1920
+#: static/js/ui.js:1922
 #, python-brace-format
 msgid "Le format vidéo sauvegardé (${mime}) n'est pas supporté par ce navigateur."
 msgstr "The saved video format (${mime}) is not supported by this browser."
 
-#: static/js/ui.js:2131
+#: static/js/ui.js:2133
 msgid ""
 "La vidéo ne sera ni téléchargée ni uploadée : elle sera perdue après "
 "l'enregistrement."
@@ -781,51 +785,51 @@ msgstr ""
 "The video will be neither downloaded nor uploaded: it will be lost after "
 "recording."
 
-#: static/js/ui.js:2132
+#: static/js/ui.js:2134
 msgid "Aucune destination"
 msgstr "No destination"
 
-#: static/js/ui.js:2688 templates/menu_filtre.html:40
+#: static/js/ui.js:2690 templates/menu_filtre.html:40
 #: templates/menu_filtre.html:59 templates/menu_filtre.html:84
 #: templates/menu_filtre.html:106 templates/menu_filtre.html:171
 #: templates/menu_filtre.html:182
 msgid "Aucun"
 msgstr "None"
 
-#: static/js/ui.js:2715 templates/menu_filtre.html:167
+#: static/js/ui.js:2717 templates/menu_filtre.html:167
 msgid "Filtrer par pays"
 msgstr "Filter by country"
 
-#: static/js/ui.js:2744 static/js/ui.js:2782 templates/menu_filtre.html:178
+#: static/js/ui.js:2746 static/js/ui.js:2784 templates/menu_filtre.html:178
 msgid "Filtrer par région/état"
 msgstr "Filter by region/state"
 
-#: static/js/ui.js:4214
+#: static/js/ui.js:4216
 msgid "Images de capture supprimées"
 msgstr "Capture images deleted"
 
-#: static/js/ui.js:4214
+#: static/js/ui.js:4216
 msgid "Nettoyage"
 msgstr "Cleanup"
 
-#: static/js/ui.js:4218
+#: static/js/ui.js:4220
 msgid "Assemblage en cours"
 msgstr "Assembly in progress"
 
-#: static/js/ui.js:4238
+#: static/js/ui.js:4240
 #, python-brace-format
 msgid "Dossier vidéo: ${folder}"
 msgstr "Video folder: ${folder}"
 
-#: static/js/ui.js:4238 static/js/ui.js:4240 static/js/ui.js:4245
+#: static/js/ui.js:4240 static/js/ui.js:4242 static/js/ui.js:4247
 msgid "Ouverture"
 msgstr "Opening"
 
-#: static/js/ui.js:4240
+#: static/js/ui.js:4242
 msgid "Impossible d’ouvrir le dossier vidéo"
 msgstr "Unable to open the video folder"
 
-#: static/js/ui.js:4245
+#: static/js/ui.js:4247
 msgid "Erreur lors de l’ouverture du dossier vidéo"
 msgstr "Error opening the video folder"
 
@@ -2331,9 +2335,14 @@ msgstr "2160p (4K)"
 
 #: templates/menu_recording.html:36
 msgid ""
-"Au-delà de la taille de la fenêtre, la capture demande plus de mémoire et"
-" de temps."
-msgstr "Above the window size, capturing takes more memory and time."
+"Vaut pour les deux modes d'enregistrement. Au-delà de la taille de la "
+"fenêtre, la capture demande plus de mémoire et de temps — et en "
+"MediaRecorder, qui enregistre en temps réel, elle peut faire tomber des "
+"images."
+msgstr ""
+"Applies to both recording modes. Above the window size, capturing takes "
+"more memory and time — and in MediaRecorder, which records in real time, "
+"it can drop frames."
 
 #: templates/menu_recording.html:40
 msgid "Qualité vidéo"
@@ -2921,4 +2930,10 @@ msgstr "Skip for now"
 #~ "My Finds (at the bottom of the "
 #~ "page). Then get the file by "
 #~ "clicking \"Add to Queue\"."
+
+#~ msgid ""
+#~ "Au-delà de la taille de la "
+#~ "fenêtre, la capture demande plus de "
+#~ "mémoire et de temps."
+#~ msgstr "Above the window size, capturing takes more memory and time."
 

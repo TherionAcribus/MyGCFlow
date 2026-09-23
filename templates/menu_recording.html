@@ -22,7 +22,7 @@
             <option value="images">{{ _("Images + ffmpeg (serveur)") }}</option>
         </select>
     </div>
-    <div class="mb-3 col-12 col-md-6 images-only">
+    <div class="mb-3 col-12 col-md-6">
         <label for="selectRecordResolution" class="form-label">
             {{ _("Résolution de sortie") }}
             <i class="ti ti-help ms-1" tabindex="0" data-bs-toggle="tooltip" data-bs-title="{{ _('La carte est redessinée à cette finesse pendant la capture : tuiles plus détaillées, traits et textes plus nets. Le cadrage ne change pas. Plus la résolution est haute, plus la capture est lente.') }}"></i>
@@ -33,7 +33,7 @@
             <option value="1440p">{{ _("1440p (2K)") }}</option>
             <option value="2160p">{{ _("2160p (4K)") }}</option>
         </select>
-        <small id="recordResolutionHelp" class="form-hint text-muted">{{ _("Au-delà de la taille de la fenêtre, la capture demande plus de mémoire et de temps.") }}</small>
+        <small id="recordResolutionHelp" class="form-hint text-muted">{{ _("Vaut pour les deux modes d'enregistrement. Au-delà de la taille de la fenêtre, la capture demande plus de mémoire et de temps — et en MediaRecorder, qui enregistre en temps réel, elle peut faire tomber des images.") }}</small>
     </div>
 
     <div class="mb-3 col-12 col-md-6 mediarecorder-only">

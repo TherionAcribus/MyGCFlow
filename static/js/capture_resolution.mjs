@@ -37,6 +37,10 @@ export function normalizeCaptureResolution(value) {
 // Facteur de rendu et taille de sortie pour une carte de `cssWidth` x `cssHeight`
 // pixels CSS sur un écran de densité `devicePixelRatio`.
 //
+// `multiplier` est le « facteur d'échelle » du mode MediaRecorder : il agrandit
+// la sortie par rapport à la fenêtre, indépendamment de la hauteur visée. Les
+// deux pipelines passent donc par le même calcul.
+//
 // `limited` signale que la demande a dû être rabotée (plafond de facteur ou de
 // pixels) : l'appelant peut alors prévenir l'utilisateur plutôt que de laisser
 // croire à une sortie 4K qui n'en est pas une.
@@ -45,12 +49,14 @@ export function captureRatioFor({
     cssHeight = 0,
     devicePixelRatio = 1,
     resolution = DEFAULT_CAPTURE_RESOLUTION,
+    multiplier = 1,
 } = {}) {
     const width = Math.max(1, Math.floor(Number(cssWidth) || 0));
     const height = Math.max(1, Math.floor(Number(cssHeight) || 0));
     // Densité de l'écran : plancher, jamais un plafond. Descendre en dessous
     // dégraderait ce que l'utilisateur obtient déjà aujourd'hui.
-    const screenRatio = clampRatio(Number(devicePixelRatio) || 1);
+    const safeMultiplier = Math.max(1, Number(multiplier) || 1);
+    const screenRatio = clampRatio((Number(devicePixelRatio) || 1) * safeMultiplier);
     const targetHeight = CAPTURE_RESOLUTIONS[normalizeCaptureResolution(resolution)] || 0;
 
     let ratio = targetHeight > 0

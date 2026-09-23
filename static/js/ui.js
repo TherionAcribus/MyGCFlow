@@ -911,7 +911,8 @@ function updateMediaRecorderOptionsVisibility() {
     const isMediaRecorder = selectRecordMode && selectRecordMode.value === 'mediarecorder';
     const mediaRecorderOptions = document.querySelectorAll('.mediarecorder-only');
 
-    // Réglages propres au mode images (résolution de sortie) : l'inverse.
+    // Réglages propres au mode images : masqués en MediaRecorder. La résolution
+    // de sortie, elle, vaut pour les deux modes et reste toujours visible.
     document.querySelectorAll('.images-only').forEach(element => {
         element.style.display = isMediaRecorder ? 'none' : 'block';
         const select = element.querySelector('select');

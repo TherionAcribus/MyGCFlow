@@ -752,7 +752,7 @@ function getCaptureRatio() {
 // `pixelRatio_` est interne à OpenLayers (10.6 vendoré ici, donc figé) : on
 // vérifie qu'il existe et que les canvas ont bien grandi, faute de quoi on
 // repart à la densité de l'écran plutôt que de produire une vidéo étirée.
-function beginHighResCapture() {
+function beginHighResCapture({ multiplier = 1 } = {}) {
     endHighResCapture();
     const viewport = map.getViewport();
     const rect = viewport.getBoundingClientRect();
@@ -761,6 +761,9 @@ function beginHighResCapture() {
         cssHeight: rect.height,
         devicePixelRatio: getCaptureDpr(),
         resolution: pkg.options.record?.captureResolution,
+        // Facteur d'échelle du mode MediaRecorder : même calcul pour les deux
+        // pipelines, donc même définition de « résolution de sortie ».
+        multiplier,
     });
     if (plan.ratio <= getCaptureDpr() + 1e-9) return plan;
     if (typeof map.pixelRatio_ !== 'number') {
@@ -1957,17 +1960,35 @@ async function startMediaRecorderPipeline(totalDurationMs, timelineScale = 1){
         flashDurationMs: pkg.options.flash?.duration,
     });
 
-    // devicePixelRatio : les canvas de la carte sont rendus par OpenLayers en pixels
-    // device (rect.width * dpr). Ignorer le dpr sous-échantillonnait la sortie → vidéo
-    // floue sur écran HiDPI. On capture donc à scaleFactor * dpr.
-    const dpr = getCaptureDpr();
-    const effScale = scaleFactor * dpr;
+    // Résolution de sortie : même calcul que le mode images (facteur d'échelle et
+    // hauteur visée réunis). La carte est RENDUE à cette densité — tuiles plus
+    // fines, vecteurs et textes redessinés — au lieu d'être étirée vers un canvas
+    // plus grand, ce qui grossissait l'image sans ajouter le moindre détail.
+    //
+    // Contrairement au mode images, ce pipeline tourne en temps réel : le coût
+    // d'une frame composée croît avec le carré de la densité. Mesuré en rendu
+    // logiciel (le pire cas, celui des tests) depuis une fenêtre 1280x540 :
+    // 7,5 ms en 1x, 34 ms en 2x, 81 ms en 3x. Au-delà de 2x, 30 images/s n'est
+    // plus tenable sans carte graphique : le moniteur de performance prévient
+    // alors l'utilisateur des images perdues.
+    const plan = beginHighResCapture({ multiplier: scaleFactor }) || {};
+    // Repli : si le rendu haute résolution n'a pas pu être activé, on retrouve
+    // l'ancien comportement (étirement vers un canvas plus grand) plutôt que de
+    // rendre une sortie plus petite que celle demandée.
+    const effScale = highResRatio || scaleFactor * getCaptureDpr();
 
     const viewport = map.getViewport();
     const rect = viewport.getBoundingClientRect();
     mrOutCanvas = document.createElement('canvas');
     mrOutCanvas.width = Math.max(1, Math.floor(rect.width * effScale));
     mrOutCanvas.height = Math.max(1, Math.floor(rect.height * effScale));
+    if (plan.limited) {
+        try {
+            pkg.showToast && pkg.showToast(
+                pkg.t ? pkg.t('Résolution réduite aux capacités du navigateur.') : 'Résolution réduite aux capacités du navigateur.',
+                'warning', 'Enregistrement', 6000);
+        } catch(_) {}
+    }
     // Pas de willReadFrequently : ce canvas n'est jamais relu (getImageData) ; il est
     // uniquement composité puis exporté via captureStream. willReadFrequently:true
     // forçait un backing store CPU (pas d'accélération GPU) → compositing lent et saccades.
@@ -2087,7 +2108,10 @@ function stopMediaRecorderPipeline(finalize){
 
     // Arrêter la surveillance des performances
     recordingPerformanceMonitor.stopMonitoring();
-    
+    // La carte doit retrouver la densité de l'écran, sinon l'aperçu resterait
+    // rendu en haute résolution après l'enregistrement.
+    endHighResCapture();
+
     if (mrRecorder && mrRecorder.state !== 'inactive') {
         try { mrRecorder.stop(); } catch(_) {}
     } else if (finalize) {

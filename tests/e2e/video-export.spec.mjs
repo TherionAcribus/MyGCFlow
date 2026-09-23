@@ -334,3 +334,84 @@ ${validation.stderr}`).toBe(0);
   await testInfo.attach('images-export.mp4', { path: videoPath, contentType: 'video/mp4' });
 });
 
+test('le mode MediaRecorder rend aussi la carte à la résolution demandée', async ({ page }, testInfo) => {
+  // Harmonisation : le « facteur d'échelle » étirait la carte vers un canvas plus
+  // grand. Les deux pipelines passent désormais par le même calcul et font RENDRE
+  // la carte à la densité de sortie.
+  await selectTraditionalCaches(page);
+
+  await page.locator('a[href="#animation"]').click();
+  await page.locator('#inputTimePerDay').fill('80');
+  await page.locator('#inputExtraEndTime').fill('0');
+  await page.locator('#recordingConfigTab').click();
+  await expect(page.locator('#recordingConfigPane')).toBeVisible();
+  await page.locator('#selectRecordMode').selectOption('mediarecorder');
+
+  // Le sélecteur de résolution vaut pour les deux modes.
+  const resolution = page.locator('#selectRecordResolution');
+  await expect(resolution).toBeVisible();
+  await resolution.selectOption('1080p');
+
+  const advanced = page.locator('#recordAdvancedSettings');
+  if (!(await advanced.evaluate((element) => element.open))) {
+    await advanced.locator('summary').click();
+  }
+  await page.locator('#selectRecordMime').selectOption('video/webm;codecs=vp8');
+  await page.locator('#inputRecordFps').fill('12');
+  await page.locator('#inputRecordBitrate').fill('2');
+  await page.locator('#inputRecordSlowdown').fill('1');
+  await page.locator('#inputRecordScaleFactor').fill('1');
+  await page.locator('#cbRecordUpload').uncheck();
+  await page.locator('#cbRecordDownload').uncheck();
+
+  const plan = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    const { captureRatioFor } = await import('/static/js/capture_resolution.mjs');
+    app.options.record.mediaRecorder.tailFreezeMs = 250;
+    app.options.flash.mode = 'none';
+    const rect = app.getMap().getViewport().getBoundingClientRect();
+    return captureRatioFor({
+      cssWidth: rect.width,
+      cssHeight: rect.height,
+      devicePixelRatio: Math.max(1, Math.min(3, window.devicePixelRatio || 1)),
+      resolution: app.options.record.captureResolution,
+      multiplier: app.options.record.mediaRecorder.scaleFactor,
+    });
+  });
+  expect(plan.ratio).toBeGreaterThan(1);
+
+  await page.locator('#btnRecordAnimation').click({ force: true });
+  await expect(page.locator('.gcm-toast').filter({ hasText: 'Vidéo prête' }).last()).toBeVisible({ timeout: 120_000 });
+  await expect.poll(latestCompletedMp4, { timeout: 30_000 }).not.toBeNull();
+
+  const videoPath = latestCompletedMp4();
+  const expectationPath = path.join(RUNTIME, 'mr-resolution-expectation.json');
+  const even = (value) => Math.floor(value / 2) * 2;
+  writeFileSync(expectationPath, JSON.stringify({
+    width: even(plan.width),
+    height: even(plan.height),
+    video_codec: 'h264',
+    min_size_bytes: 1_000,
+  }, null, 2));
+
+  const python = process.env.GCMAP_E2E_PYTHON
+    || process.env.PYTHON
+    || (process.platform === 'win32' ? 'python' : 'python3');
+  const validation = spawnSync(
+    python,
+    [path.join(ROOT, 'video_validator.py'), videoPath, '--expect', expectationPath, '--json'],
+    { encoding: 'utf8' },
+  );
+  expect(validation.status, `${validation.stdout}
+${validation.stderr}`).toBe(0);
+  const report = JSON.parse(validation.stdout);
+  expect(report.success).toBe(true);
+  expect(report.height).toBe(even(plan.height));
+
+  // Densité de rendu restaurée après l'enregistrement.
+  const restored = await page.evaluate(async () => (await import('/static/js/index.js')).getMap().pixelRatio_);
+  expect(restored).toBeLessThan(plan.ratio);
+
+  await testInfo.attach('mediarecorder-hires.mp4', { path: videoPath, contentType: 'video/mp4' });
+});
+

@@ -60,3 +60,24 @@ test('des dimensions absurdes ne produisent ni zéro ni NaN', () => {
         assert.ok(r.width >= 1 && r.height >= 1);
     }
 });
+
+test('le facteur d\'échelle de MediaRecorder passe par le même calcul', () => {
+    // « x2 » sur une fenêtre 1280x540 : sortie 2560x1080, rendue à 2x.
+    const r = captureRatioFor({ ...WINDOW, devicePixelRatio: 1, multiplier: 2 });
+    assert.equal(r.ratio, 2);
+    assert.deepEqual([r.width, r.height], [2560, 1080]);
+});
+
+test('hauteur visée et facteur d\'échelle : le plus exigeant gagne', () => {
+    const higher = captureRatioFor({ ...WINDOW, devicePixelRatio: 1, multiplier: 3, resolution: '1080p' });
+    assert.equal(higher.ratio, 3);   // x3 demande plus que 1080p
+    const target = captureRatioFor({ ...WINDOW, devicePixelRatio: 1, multiplier: 1.5, resolution: '2160p' });
+    assert.equal(target.ratio, 4);   // 2160p demande 4x, pile le plafond
+    assert.equal(target.limited, false);
+});
+
+test('un facteur d\'échelle absurde ne dégrade pas la sortie', () => {
+    for (const multiplier of [0, -2, NaN, undefined]) {
+        assert.equal(captureRatioFor({ ...WINDOW, devicePixelRatio: 2, multiplier }).ratio, 2);
+    }
+});
