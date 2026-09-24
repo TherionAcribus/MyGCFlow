@@ -511,7 +511,7 @@ main.fullscreen-mode .modal-overlay {
     padding: 8px;
     backdrop-filter: blur(10px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    display: flex !important;
+    display: flex;
     flex-direction: column !important; /* Vertical */
     align-items: center;
     justify-content: center;
@@ -630,6 +630,10 @@ main.fullscreen-mode #infosFrame span:not([hidden]) {
 
 #mapTabsContainer > #mapWithFrames {
     flex: 0 0 auto;
+    /* Bloc de conteneur pour les overlays absolus posés sur la carte
+       (#titleFrame, #infosFrame, .control-bar) : sans positionnement ici, ils
+       se résolvaient contre le document plutôt que contre ce cadre. */
+    position: relative;
     /* Hauteur par défaut avant que initMapTabsSplitPane() (ui.js) ne restaure la
        valeur sauvegardée en localStorage ou n'ajuste au conteneur. Responsive
        (vh) plutôt qu'une valeur fixe, pour éviter qu'une hauteur figée ne

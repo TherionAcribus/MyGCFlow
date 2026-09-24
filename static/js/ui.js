@@ -499,7 +499,7 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     if (btnStopAnimation) btnStopAnimation.addEventListener('click', () => {
         pkg.stopAnimation();
         showStartRecordButtons();
-        updateFullscreenControls();
+        updateControlBar();
     });
 
     const btnPauseAnimation = document.getElementById('btnPauseAnimation');
@@ -3576,6 +3576,7 @@ function showPauseStopButtons(){
 }
 
 function clickStartAnimation(){
+    if (!hasAnimationData()) return;
     toggleButtonAnimationPauseAndRestart(true);
     // Vide la source vectorielle avant de démarrer l'animation
     pkg.startAnimation();
@@ -3584,6 +3585,7 @@ function clickStartAnimation(){
 }
 
 function clickRecordAnimation(){
+    if (!hasAnimationData()) return;
     // Vide la source vectorielle avant de démarrer l'animation
     pkg.recordAnimation();
     showPauseStopButtons();
@@ -4673,22 +4675,9 @@ function toggleFullscreenMode() {
         mainElement.classList.add('fullscreen-mode');
         controlBar.style.display = 'flex';
 
-        // Forcer l'état initial des boutons de la barre latérale selon l'état actuel
-        const btnStartAnimation = document.getElementById('btnStartAnimation');
-        const isIdle = btnStartAnimation && window.getComputedStyle(btnStartAnimation).display !== 'none';
-
-        if (isIdle) {
-            // État repos : afficher Start/Record, masquer Pause/Stop
-            const btnStartBar = document.getElementById('btnStartBar');
-            const btnRecordBar = document.getElementById('btnRecordBar');
-            const btnPauseBar = document.getElementById('btnPauseBar');
-            const btnStopBar = document.getElementById('btnStopBar');
-
-            if (btnStartBar) btnStartBar.style.setProperty('display', 'flex', 'important');
-            if (btnRecordBar) btnRecordBar.style.setProperty('display', 'flex', 'important');
-            if (btnPauseBar) btnPauseBar.style.setProperty('display', 'none', 'important');
-            if (btnStopBar) btnStopBar.style.setProperty('display', 'none', 'important');
-        }
+        // L'état des boutons de la barre latérale est posé par
+        // updateControlBar() en fin de fonction (il tient compte de la
+        // présence ou non de données chargées).
 
         // Redimensionner la carte pour prendre tout l'espace sans bande résiduelle
         mapElement.style.height = '100%';
@@ -4762,6 +4751,28 @@ function updateFullscreenButtonAppearance() {
     }
 }
 
+// Vrai quand la sélection courante contient au moins une cache affichable :
+// c'est metadata.numberOfCaches (mis à jour par bdd.js après chargement,
+// filtrage ou vidage) qui pilote l'activation de Lecture/Enregistrement.
+function hasAnimationData() {
+    // numberOfCaches reflète la sélection courante (0 possible après filtrage) ;
+    // s'il est absent, on retombe sur le nombre de features GeoJSON chargées.
+    const count = pkg.metadata?.numberOfCaches ?? pkg.json_data?.features?.length;
+    return (Number(count) || 0) > 0;
+}
+
+// Active/désactive les actions Lecture/Enregistrement selon la présence de
+// données. Les boutons principaux de l'onglet Animation sont désactivés ;
+// leurs équivalents de la barre latérale sont masqués via updateControlBar().
+export function updateAnimationControlsAvailability() {
+    const hasData = hasAnimationData();
+    const btnStart = document.getElementById('btnStartAnimation');
+    const btnRecord = document.getElementById('btnRecordAnimation');
+    if (btnStart) btnStart.disabled = !hasData;
+    if (btnRecord) btnRecord.disabled = !hasData;
+    updateControlBar();
+}
+
 function updateControlBar() {
     dbgUi("=== updateControlBar ===");
     const controlBar = document.getElementById('controlBar');
@@ -4795,8 +4806,11 @@ function updateControlBar() {
         isIdle = true;
     }
 
+    const hasData = hasAnimationData();
+
     dbgUi("État détecté:", {
         isIdle: isIdle,
+        hasData: hasData,
         btnStartAnimation_display: btnStartAnimation ? window.getComputedStyle(btnStartAnimation).display : 'null',
         btnPauseAnimation_display: btnPauseAnimation ? window.getComputedStyle(btnPauseAnimation).display : 'null',
         btnStopAnimation_display: btnStopAnimation ? window.getComputedStyle(btnStopAnimation).display : 'null'
@@ -4805,16 +4819,17 @@ function updateControlBar() {
     // Gestion des boutons selon l'état
     dbgUi("Configuration des boutons de la barre latérale:");
     if (isIdle) {
-        dbgUi("  Mode IDLE: afficher Start/Record, masquer Pause/Stop");
-        // État repos -> afficher Start/Record, masquer Pause/Stop
+        dbgUi("  Mode IDLE: afficher Start/Record si données, masquer Pause/Stop");
+        // État repos -> afficher Start/Record (uniquement si des caches sont
+        // chargées), masquer Pause/Stop
         if (btnStartBar) {
             dbgUi("    btnStartBar avant:", window.getComputedStyle(btnStartBar).display);
-            btnStartBar.style.setProperty('display', 'flex', 'important');
+            btnStartBar.style.setProperty('display', hasData ? 'flex' : 'none', 'important');
             dbgUi("    btnStartBar après:", window.getComputedStyle(btnStartBar).display);
         }
         if (btnRecordBar) {
             dbgUi("    btnRecordBar avant:", window.getComputedStyle(btnRecordBar).display);
-            btnRecordBar.style.setProperty('display', 'flex', 'important');
+            btnRecordBar.style.setProperty('display', hasData ? 'flex' : 'none', 'important');
             dbgUi("    btnRecordBar après:", window.getComputedStyle(btnRecordBar).display);
         }
         if (btnPauseBar) {

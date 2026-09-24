@@ -352,6 +352,9 @@ function updateUIAfterClear() {
     if (infosModal) infosModal.textContent = t('Aucune base de données chargée');
     if (btn) btn.style.display = 'none';
     if (counter) counter.textContent = t('Sélection: 0 / 0');
+
+    // Sans données, Lecture/Enregistrement n'ont plus rien à animer.
+    try { pkg.updateAnimationControlsAvailability?.(); } catch(e) {}
 }
 
 function buildPointsByDateIndex(features = []) {
@@ -845,6 +848,10 @@ function updateFiltersCounter(selected, total){
         if (el) {
             el.textContent = `Sélection: ${selected} / ${total}`;
         }
+
+        // Lecture/Enregistrement ne sont proposés que si la sélection
+        // courante contient au moins une cache à animer.
+        try { pkg.updateAnimationControlsAvailability?.(); } catch(e) {}
 
         const badge = document.getElementById('dataTabBadge');
         if (badge) {
