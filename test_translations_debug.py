@@ -57,10 +57,12 @@ def test_translations():
             if title_match:
                 title = title_match.group(1).strip()
                 print(f"   ✓ Titre trouvé: '{title}'")
-                if "My Geocaching Map" in title:
-                    print("   ✓ Le titre est correctement traduit en anglais !")
+                # Le titre est le nom du produit : pas traduit, identique
+                # dans toutes les langues.
+                if title == "MyGCFlow":
+                    print("   ✓ Titre attendu")
                 else:
-                    print("   ⚠ Le titre n'est pas en anglais")
+                    print("   ⚠ Titre inattendu (attendu : 'MyGCFlow')")
             else:
                 print("   ✗ Aucun titre trouvé")
 

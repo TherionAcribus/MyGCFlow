@@ -70,7 +70,7 @@ var cbRecordAudioEnable, inputAudioFile, inputAudioVolume;
 // Flag pour savoir si la durée totale est définie depuis la musique
 var isDurationLockedToAudio = false;
 
-const LANGUAGE_COOKIE_NAME = 'gcmap_lang';
+const LANGUAGE_COOKIE_NAME = 'mygcflow_lang';
 
 function persistLanguagePreference(language) {
     if (!language) return;
@@ -4578,10 +4578,10 @@ function initCssAssistant() {
     // l'initialisation de ce panneau. Recalculer une dernière fois l'état
     // sur le CSS effectivement actif lorsque toute l'application est prête.
     const syncWhenAppIsReady = () => syncFormFromCss(activeTarget);
-    if (window.gcmapReady) {
+    if (window.mygcflowReady) {
         syncWhenAppIsReady();
     } else {
-        window.addEventListener('gcmap:ready', syncWhenAppIsReady, { once: true });
+        window.addEventListener('mygcflow:ready', syncWhenAppIsReady, { once: true });
     }
 
     // Forcer la sélection initiale sur Titre

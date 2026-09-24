@@ -7,12 +7,12 @@ import { expect, test } from '@playwright/test';
 // à l'utilisateur le même retour visuel (« Enregistré ✓ » inline).
 //
 // Le serveur de test écrit sa configuration dans le runtime jetable
-// (GCMAP_CONFIG_DIR, cf. tests/e2e/run_server.py) : rien ne touche
-// %APPDATA%\GCMap.
+// (MYGCFLOW_CONFIG_DIR, cf. tests/e2e/run_server.py) : rien ne touche
+// %APPDATA%\MyGCFlow.
 
 async function openReadyApp(page, url = '/') {
   await page.goto(url, { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => window.gcmapReady === true);
+  await page.waitForFunction(() => window.mygcflowReady === true);
 
   const firstUse = page.locator('#modal_first_use');
   await firstUse.waitFor({ state: 'visible', timeout: 5_000 }).catch(() => {});
@@ -53,7 +53,7 @@ test('le thème choisi est enregistré côté serveur, pas seulement dans le nav
   await expect.poll(async () => (await readServerSettings(page)).theme).toBe('dark');
   // Le miroir local reste écrit : c'est lui que lit le script anti-FOUC du
   // <head>, avant tout aller-retour réseau.
-  expect(await page.evaluate(() => localStorage.getItem('gcmap_theme'))).toBe('dark');
+  expect(await page.evaluate(() => localStorage.getItem('mygcflow_theme'))).toBe('dark');
   await expect(page.locator('html')).toHaveAttribute('data-bs-theme', 'dark');
 });
 
@@ -67,11 +67,11 @@ test('un navigateur sans miroir local reprend le thème enregistré au démarrag
     body: JSON.stringify({ theme: 'dark' }),
   }));
 
-  await page.evaluate(() => localStorage.removeItem('gcmap_theme'));
+  await page.evaluate(() => localStorage.removeItem('mygcflow_theme'));
   await openReadyApp(page);
 
   await expect(page.locator('html')).toHaveAttribute('data-bs-theme', 'dark');
-  expect(await page.evaluate(() => localStorage.getItem('gcmap_theme'))).toBe('dark');
+  expect(await page.evaluate(() => localStorage.getItem('mygcflow_theme'))).toBe('dark');
 });
 
 

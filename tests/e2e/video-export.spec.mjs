@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..', '..');
 const FIXTURE = path.join(HERE, 'fixtures', 'my-finds.gpx');
-const RUNTIME = process.env.GCMAP_E2E_RUNTIME;
+const RUNTIME = process.env.MYGCFLOW_E2E_RUNTIME;
 
 
 async function openReadyApp(page) {
@@ -18,7 +18,7 @@ async function openReadyApp(page) {
       const app = await import('/static/js/index.js');
       const scaleInput = document.querySelector('#inputRecordScaleFactor');
       return Boolean(
-        window.gcmapReady === true
+        window.mygcflowReady === true
         &&
         app.options?.record?.mediaRecorder
         && app.getMap?.()
@@ -238,7 +238,7 @@ test('les options MediaRecorder de l\'interface produisent un MP4 validé par ff
     min_size_bytes: 1_000,
   }, null, 2));
 
-  const python = process.env.GCMAP_E2E_PYTHON
+  const python = process.env.MYGCFLOW_E2E_PYTHON
     || process.env.PYTHON
     || (process.platform === 'win32' ? 'python' : 'python3');
   const validation = spawnSync(
@@ -251,7 +251,7 @@ test('les options MediaRecorder de l\'interface produisent un MP4 validé par ff
   expect(report.success).toBe(true);
   expect(report.duration_seconds).toBeGreaterThan(0.1);
 
-  await testInfo.attach('gcmap-browser-export.mp4', { path: videoPath, contentType: 'video/mp4' });
+  await testInfo.attach('mygcflow-browser-export.mp4', { path: videoPath, contentType: 'video/mp4' });
   await testInfo.attach('ffprobe-report.json', {
     body: Buffer.from(JSON.stringify(report, null, 2)),
     contentType: 'application/json',
@@ -309,7 +309,7 @@ test('le mode images rend la carte à la résolution demandée', async ({ page }
     min_size_bytes: 1_000,
   }, null, 2));
 
-  const python = process.env.GCMAP_E2E_PYTHON
+  const python = process.env.MYGCFLOW_E2E_PYTHON
     || process.env.PYTHON
     || (process.platform === 'win32' ? 'python' : 'python3');
   const validation = spawnSync(
@@ -394,7 +394,7 @@ test('le mode MediaRecorder rend aussi la carte à la résolution demandée', as
     min_size_bytes: 1_000,
   }, null, 2));
 
-  const python = process.env.GCMAP_E2E_PYTHON
+  const python = process.env.MYGCFLOW_E2E_PYTHON
     || process.env.PYTHON
     || (process.platform === 'win32' ? 'python' : 'python3');
   const validation = spawnSync(
@@ -562,7 +562,7 @@ test('le réglage Couleurs choisit le format de pixels du fichier final', async 
     min_size_bytes: 1_000,
   }, null, 2));
 
-  const python = process.env.GCMAP_E2E_PYTHON
+  const python = process.env.MYGCFLOW_E2E_PYTHON
     || process.env.PYTHON
     || (process.platform === 'win32' ? 'python' : 'python3');
   const validation = spawnSync(

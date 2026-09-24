@@ -1,7 +1,7 @@
-GCMap — composants tiers
+MyGCFlow — composants tiers
 ========================
 
-GCMap redistribue les composants suivants. Chacun reste soumis à sa propre
+MyGCFlow redistribue les composants suivants. Chacun reste soumis à sa propre
 licence.
 
 FFmpeg (ffmpeg.exe)
@@ -11,7 +11,7 @@ imageio-ffmpeg. Ce build est configuré avec --enable-gpl --enable-version3 :
 il est distribué sous licence GNU GPL version 3 (texte complet :
 ffmpeg/COPYING.GPLv3.txt).
 
-GCMap appelle ffmpeg comme un programme séparé (ligne de commande), sans le
+MyGCFlow appelle ffmpeg comme un programme séparé (ligne de commande), sans le
 modifier.
 
 Code source correspondant :

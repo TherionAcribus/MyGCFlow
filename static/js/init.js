@@ -158,8 +158,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     // profil de démarrage ont tous fini de s'appliquer. Sans ce jalon, un test
     // (ou un script d'intégration) peut modifier les champs pendant que le
     // profil les réinitialise encore.
-    window.gcmapReady = true;
-    window.dispatchEvent(new CustomEvent('gcmap:ready'));
+    window.mygcflowReady = true;
+    window.dispatchEvent(new CustomEvent('mygcflow:ready'));
 });
 
 
@@ -224,7 +224,7 @@ function applyUserSettings(userSettings) {
     if (userSettings.language) {
         pkg.options.options.language = userSettings.language;
         console.log('📥 [USER_SETTINGS] Langue appliquée:', userSettings.language);
-        document.cookie = `gcmap_lang=${userSettings.language}; path=/; max-age=31536000; samesite=Lax`;
+        document.cookie = `mygcflow_lang=${userSettings.language}; path=/; max-age=31536000; samesite=Lax`;
         // Sauvegarder dans localStorage pour cohérence
         localStorage.setItem('selectedLanguage', userSettings.language);
     }

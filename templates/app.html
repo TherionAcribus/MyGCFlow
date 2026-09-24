@@ -9,7 +9,9 @@
         <script>
             (function () {
                 try {
-                    var pref = localStorage.getItem('gcmap_theme') || 'system';
+                    var pref = localStorage.getItem('mygcflow_theme')
+                        || localStorage.getItem('gcmap_theme')  // avant le changement de nom
+                        || 'system';
                     var dark = pref === 'dark'
                         || (pref !== 'light' && window.matchMedia
                             && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -19,7 +21,7 @@
         </script>
 
         <!-- Bibliothèques tierces : servies en local depuis static/vendor/ et non
-             depuis un CDN. GCMap est une application de bureau (Flask lancé en
+             depuis un CDN. MyGCFlow est une application de bureau (Flask lancé en
              local) qui doit rester utilisable sans connexion : un CDN injoignable
              casserait toute l'interface (Bootstrap, sélecteurs, carte, datepickers).
              Versions et procédure de mise à jour : static/vendor/README.md. -->
@@ -33,12 +35,12 @@
         <!-- Tempus Dominus 6.x — datepickers Bootstrap 5 natif -->
         <link rel="stylesheet" href="../static/vendor/tempus-dominus/tempus-dominus.min.css">
 
-        <!-- CSS custom GCMap (après les CSS tiers, pour pouvoir les surcharger) -->
+        <!-- CSS custom MyGCFlow (après les CSS tiers, pour pouvoir les surcharger) -->
         <link rel="stylesheet" href="../static/css/style.css" />
         <link rel="stylesheet" href="../static/css/titre.css" />
         <link rel="stylesheet" href="../static/css/infos.css" />
 
-        <!-- CSS custom GCMap -->
+        <!-- CSS custom MyGCFlow -->
         <link rel="stylesheet" href="../static/css/ui_improvements.css" />
         <link rel="stylesheet" href="../static/css/theme.css" />
         <link rel="stylesheet" href="../static/css/tabler_theme.css" />
@@ -46,8 +48,8 @@
         <link rel="stylesheet" href="../static/vendor/ol/ol.css">
         <!--<link rel="stylesheet" href="../static/css/ol.css">-->
 
-        <title>{{ _("My Geocaching Map") }}</title>
-        <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/gcmap-icon.png') }}">
+        <title>MyGCFlow</title>
+        <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/mygcflow-icon.png') }}">
     </head>
 
     <body>

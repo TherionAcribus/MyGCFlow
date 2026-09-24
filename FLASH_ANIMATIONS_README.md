@@ -1,8 +1,8 @@
-# ✨ Nouvelles Animations de Flash pour GCMap
+# ✨ Nouvelles Animations de Flash pour MyGCFlow
 
 ## 🎯 Vue d'ensemble
 
-Votre application GCMap dispose maintenant de **10 formes d'animation de flash** différentes pour mettre en valeur vos points de géocaching lors des animations !
+Votre application MyGCFlow dispose maintenant de **10 formes d'animation de flash** différentes pour mettre en valeur vos points de géocaching lors des animations !
 
 ## 🎨 Formes disponibles
 

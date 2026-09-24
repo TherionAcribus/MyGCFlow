@@ -1,8 +1,8 @@
-"""Génère l'icône provisoire de GCMap (exécutable, installeur, zone de notification).
+"""Génère l'icône provisoire de MyGCFlow (exécutable, installeur, zone de notification).
 
     python installer/make_icon.py
 
-Produit installer/gcmap.ico (multi-résolutions) et static/img/gcmap-icon.png.
+Produit installer/mygcflow.ico (multi-résolutions) et static/img/mygcflow-icon.png.
 À remplacer par un vrai logo : il suffit d'écraser ces deux fichiers.
 """
 
@@ -33,7 +33,7 @@ def draw_icon(size: int = SIZE) -> Image.Image:
 
 if __name__ == "__main__":
     icon = draw_icon()
-    icon.save(ROOT / "static" / "img" / "gcmap-icon.png")
-    icon.save(ROOT / "installer" / "gcmap.ico",
+    icon.save(ROOT / "static" / "img" / "mygcflow-icon.png")
+    icon.save(ROOT / "installer" / "mygcflow.ico",
               sizes=[(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)])
     print("Icônes générées.")

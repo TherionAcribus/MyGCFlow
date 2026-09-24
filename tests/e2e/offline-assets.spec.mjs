@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-// GCMap tourne en local et doit rester utilisable sans connexion. Tant que les
+// MyGCFlow tourne en local et doit rester utilisable sans connexion. Tant que les
 // bibliothèques venaient d'un CDN, une coupure réseau vidait l'interface de sa
 // substance : plus de Bootstrap, plus de Tom Select, plus de datepicker, plus de
 // carte. Elles sont désormais servies depuis static/vendor/ (voir son README).
@@ -9,7 +9,7 @@ import { expect, test } from '@playwright/test';
 // l'application démarre quand même. Le pendant statique — aucun template ne
 // référence un CDN — vit dans tests/test_offline_assets.py.
 
-/** Coupe le réseau sauf le serveur GCMap lui-même. */
+/** Coupe le réseau sauf le serveur MyGCFlow lui-même. */
 async function goOffline(page) {
   const blocked = [];
   await page.route('**/*', (route) => {
@@ -26,7 +26,7 @@ async function goOffline(page) {
 
 async function openReadyApp(page) {
   await page.goto('/', { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => window.gcmapReady === true);
+  await page.waitForFunction(() => window.mygcflowReady === true);
 
   // Même renvoi de la modale de première utilisation que dans les autres specs :
   // son backdrop intercepterait les clics sur les onglets.

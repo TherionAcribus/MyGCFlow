@@ -14,7 +14,7 @@ class PointAppearProfileTests(unittest.TestCase):
 
     def setUp(self):
         # Même isolation que test_profile_names : jamais le %APPDATA% réel.
-        tmp = Path(tempfile.mkdtemp(prefix="gcmap-point-appear-"))
+        tmp = Path(tempfile.mkdtemp(prefix="mygcflow-point-appear-"))
         self.addCleanup(shutil.rmtree, tmp, True)
         for name, value in {
             "CONFIG_DIR": tmp,

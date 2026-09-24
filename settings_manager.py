@@ -10,7 +10,11 @@ import uuid
 from typing import Callable, Tuple, Optional, List
 
 
-APP_NAME = "GCMap"
+APP_NAME = "MyGCFlow"
+# Nom historique (GCMap) : sert à reprendre la configuration d'une installation
+# antérieure au changement de nom. À retirer quand plus aucune installation
+# n'est concernée.
+LEGACY_APP_NAME = "GCMap"
 COORDINATE_ORDER_VERSION = 2
 # Lot courant de profils d'exemple. À incrémenter en ajoutant les nouveaux noms
 # à EXAMPLES_ADDED_AFTER_V1 : les installations existantes les reçoivent une fois.
@@ -45,17 +49,42 @@ def coerce_overlay_title(value, default: str = "My Geocaching Map") -> str:
     return value[:MAX_OVERLAY_TITLE_LENGTH]
 
 
+def adopt_legacy_dir(current: Path, legacy: Path) -> None:
+    """Reprend le dossier de l'ancien nom (GCMap) s'il est le seul présent.
+
+    Renommage atomique : les deux dossiers sont sur le même volume. Sans effet
+    si le dossier actuel existe déjà (l'utilisateur a déjà démarré la nouvelle
+    version) ou si l'ancien n'existe pas. Un échec n'est jamais bloquant :
+    l'application repart alors d'une configuration vierge.
+    """
+    if current == legacy or current.exists() or not legacy.is_dir():
+        return
+    try:
+        current.parent.mkdir(parents=True, exist_ok=True)
+        os.rename(legacy, current)
+        logging.getLogger(__name__).info(
+            "Configuration reprise depuis %s vers %s", legacy, current
+        )
+    except OSError as exc:
+        logging.getLogger(__name__).warning(
+            "Reprise de %s impossible : %s", legacy, exc
+        )
+
+
 def app_config_dir() -> Path:
-    # GCMAP_CONFIG_DIR redirige la configuration entière (préférences + profils)
+    # MYGCFLOW_CONFIG_DIR redirige la configuration entière (préférences + profils)
     # vers un dossier choisi par l'appelant. Utilisé par le harnais Playwright :
     # sans lui, un test qui change le thème ou un réglage vidéo écrirait dans la
     # configuration réelle de l'utilisateur.
-    override = os.getenv("GCMAP_CONFIG_DIR")
+    # GCMAP_CONFIG_DIR est l'ancien nom de cette variable, encore accepté.
+    override = os.getenv("MYGCFLOW_CONFIG_DIR") or os.getenv("GCMAP_CONFIG_DIR")
     if override:
         return Path(override)
-    # Windows: %APPDATA%\GCMap ; fallback vers home si non défini
-    base = os.getenv("APPDATA") or os.path.expanduser("~")
-    return Path(base) / APP_NAME
+    # Windows: %APPDATA%\MyGCFlow ; fallback vers home si non défini
+    base = Path(os.getenv("APPDATA") or os.path.expanduser("~"))
+    current = base / APP_NAME
+    adopt_legacy_dir(current, base / LEGACY_APP_NAME)
+    return current
 
 
 CONFIG_DIR = app_config_dir()
@@ -876,7 +905,7 @@ class SettingsManager:
                     color_type="fix"
                 ),
                 infos=build_infos(
-                    "GCMap Highlights",
+                    "MyGCFlow Highlights",
                     """
                     color: #ffffff;
                     background: rgba(17, 24, 39, 0.85);
@@ -1648,7 +1677,7 @@ class SettingsManager:
         profile_dict = self._profile_to_dict(prof)
         
         payload = {
-            "$schema": "gcmap.profile.v1",
+            "$schema": "mygcflow.profile.v1",
             "kind": "profile",
             "app": APP_NAME,
             "app_version": app_version,
@@ -1660,7 +1689,8 @@ class SettingsManager:
         """Importe un profil depuis un payload JSON validé. Retourne le profil sauvegardé."""
         if not isinstance(payload, dict):
             raise ValueError("Payload invalide")
-        if payload.get("$schema") != "gcmap.profile.v1" or payload.get("kind") != "profile":
+        # "gcmap.profile.v1" : profils exportés avant le changement de nom.
+        if payload.get("$schema") not in ("mygcflow.profile.v1", "gcmap.profile.v1")                 or payload.get("kind") != "profile":
             raise ValueError("Fichier de profil invalide (détrompeur manquant)")
 
         prof_dict = payload.get("profile")

@@ -1,4 +1,4 @@
-"""GCMap tourne en local : l'interface doit se charger sans connexion.
+"""MyGCFlow tourne en local : l'interface doit se charger sans connexion.
 
 Ces tests verrouillent le fait que les templates ne tirent aucune feuille de
 style ni aucun script depuis un CDN (cf. static/vendor/README.md), et que les

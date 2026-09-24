@@ -1,8 +1,8 @@
-# Améliorations pour GCMap - Application de Géocaching
+# Améliorations pour MyGCFlow - Application de Géocaching
 
 ## Vue d'ensemble
 
-GCMap est une application Flask permettant d'afficher des points de géocaching sur une carte interactive avec des fonctionnalités d'animation et de génération de vidéos.
+MyGCFlow est une application Flask permettant d'afficher des points de géocaching sur une carte interactive avec des fonctionnalités d'animation et de génération de vidéos.
 
 ## Améliorations identifiées
 

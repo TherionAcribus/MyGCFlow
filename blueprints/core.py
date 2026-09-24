@@ -17,7 +17,7 @@ def index():
     response = make_response(render_template('app.html'))
     if current_locale:
         response.set_cookie(
-            'gcmap_lang',
+            'mygcflow_lang',
             current_locale,
             max_age=60 * 60 * 24 * 365,
             samesite='Lax',
@@ -33,7 +33,7 @@ def guide():
     response = make_response(render_template('guide.html'))
     if current_locale:
         response.set_cookie(
-            'gcmap_lang',
+            'mygcflow_lang',
             current_locale,
             max_age=60 * 60 * 24 * 365,
             samesite='Lax',
@@ -44,9 +44,9 @@ def guide():
 
 @core_bp.route('/api/ping', methods=['GET'])
 def ping():
-    # Le lanceur interroge cette route pour savoir si une instance de GCMap
+    # Le lanceur interroge cette route pour savoir si une instance de MyGCFlow
     # occupe déjà le port (instance unique) et si le serveur est prêt.
-    return jsonify({'app': 'GCMap', 'version': current_app.config.get('APP_VERSION')})
+    return jsonify({'app': 'MyGCFlow', 'version': current_app.config.get('APP_VERSION')})
 
 
 @core_bp.route('/check_version', methods=['GET'])

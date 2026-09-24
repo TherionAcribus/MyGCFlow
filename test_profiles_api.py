@@ -136,7 +136,7 @@ def test_api():
     print("\n=== Tests terminés ===")
 
 if __name__ == "__main__":
-    print("Assurez-vous que l'application GCMap est démarrée sur http://127.0.0.1:5000")
+    print("Assurez-vous que l'application MyGCFlow est démarrée sur http://127.0.0.1:5000")
     print("Puis lancez ce script pour tester l'API des profils.\n")
 
     try:

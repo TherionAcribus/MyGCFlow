@@ -1,1 +1,1 @@
-"""Tests automatisés de GCMap."""
+"""Tests automatisés de MyGCFlow."""

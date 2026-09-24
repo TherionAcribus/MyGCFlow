@@ -75,10 +75,10 @@ def upgrade(db) -> int:
 
     current = get_schema_version(db)
     if current > LATEST_VERSION:
-        # Base ouverte par une version plus récente de GCMap puis revenue à une
+        # Base ouverte par une version plus récente de MyGCFlow puis revenue à une
         # version antérieure : on ne touche à rien.
         logger.warning(
-            "Schéma de base v%s plus récent que cette version de GCMap (v%s).",
+            "Schéma de base v%s plus récent que cette version de MyGCFlow (v%s).",
             current, LATEST_VERSION,
         )
         return current

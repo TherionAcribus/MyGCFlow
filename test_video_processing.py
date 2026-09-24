@@ -147,7 +147,7 @@ class VideoProcessingTests(unittest.TestCase):
                 try:
                     os.chdir(tmp)
                     # Les pistes audio sont cherchées dans paths.audio_dir().
-                    with mock.patch.dict(os.environ, {"GCMAP_DATA_DIR": tmp}):
+                    with mock.patch.dict(os.environ, {"MYGCFLOW_DATA_DIR": tmp}):
                         self._run_scenario(scenario, Path(tmp))
                 finally:
                     os.chdir(previous_cwd)

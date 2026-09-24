@@ -17,7 +17,7 @@ from settings_manager import EXAMPLES_ADDED_AFTER_V1, EXAMPLES_VERSION, Settings
 
 class ExampleProfileSeedingTests(unittest.TestCase):
     def setUp(self):
-        tmp = Path(tempfile.mkdtemp(prefix="gcmap-examples-"))
+        tmp = Path(tempfile.mkdtemp(prefix="mygcflow-examples-"))
         self.addCleanup(shutil.rmtree, tmp, True)
         self.settings_path = tmp / "settings.json"
         for name, value in {

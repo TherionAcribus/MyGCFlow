@@ -19,9 +19,9 @@ class ProfileDeleteTests(unittest.TestCase):
     """
 
     def setUp(self):
-        # Les profils réels vivent dans %APPDATA%\GCMap : sans redirection des
+        # Les profils réels vivent dans %APPDATA%\MyGCFlow : sans redirection des
         # constantes de module, ce test supprimerait des profils de l'utilisateur.
-        tmp = Path(tempfile.mkdtemp(prefix="gcmap-profile-delete-"))
+        tmp = Path(tempfile.mkdtemp(prefix="mygcflow-profile-delete-"))
         self.addCleanup(shutil.rmtree, tmp, True)
         for name, value in {
             "CONFIG_DIR": tmp,

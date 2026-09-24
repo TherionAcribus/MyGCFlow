@@ -4,7 +4,7 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 
 
-const runtime = mkdtempSync(path.join(tmpdir(), 'gcmap-e2e-'));
+const runtime = mkdtempSync(path.join(tmpdir(), 'mygcflow-e2e-'));
 const playwrightCli = path.resolve('node_modules', '@playwright', 'test', 'cli.js');
 const args = ['test', ...process.argv.slice(2)];
 
@@ -13,7 +13,7 @@ function runPlaywright() {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [playwrightCli, ...args], {
       cwd: process.cwd(),
-      env: { ...process.env, GCMAP_E2E_RUNTIME: runtime },
+      env: { ...process.env, MYGCFLOW_E2E_RUNTIME: runtime },
       stdio: 'inherit',
     });
     child.once('error', reject);
@@ -23,14 +23,14 @@ function runPlaywright() {
 
 
 function cleanupOwnedRuntime() {
-  if (process.env.GCMAP_E2E_KEEP_RUNTIME === '1' || !existsSync(runtime)) return;
+  if (process.env.MYGCFLOW_E2E_KEEP_RUNTIME === '1' || !existsSync(runtime)) return;
 
   const resolved = realpathSync(runtime);
   const tempRoot = realpathSync(tmpdir());
-  const marker = path.join(resolved, '.gcmap-e2e-runtime');
+  const marker = path.join(resolved, '.mygcflow-e2e-runtime');
   const isOwnedRuntime = existsSync(marker)
     && path.dirname(resolved) === tempRoot
-    && path.basename(resolved).startsWith('gcmap-e2e-');
+    && path.basename(resolved).startsWith('mygcflow-e2e-');
   if (!isOwnedRuntime) return;
 
   // Playwright a déjà arrêté son webServer à ce stade. Quelques

@@ -1,12 +1,12 @@
-"""Point d'entrée de l'application installée (GCMap.exe).
+"""Point d'entrée de l'application installée (MyGCFlow.exe).
 
     python launcher.py [--no-browser] [--no-tray] [--port N]
 
 - démarre le serveur (waitress) sur 127.0.0.1 uniquement ;
-- ouvre GCMap dans le navigateur par défaut ;
+- ouvre MyGCFlow dans le navigateur par défaut ;
 - place une icône dans la zone de notification (Ouvrir, dossiers, Quitter) :
   sans fenêtre ni console, c'est le seul moyen de fermer l'application ;
-- instance unique : relancer GCMap rouvre simplement l'onglet.
+- instance unique : relancer MyGCFlow rouvre simplement l'onglet.
 
 `python app.py` reste le serveur de développement (rechargement, débogueur).
 """
@@ -37,30 +37,30 @@ PORT_ATTEMPTS = 10
 # Vidéos MediaRecorder brutes : plusieurs Go possibles (défaut waitress : 1 Go).
 MAX_REQUEST_BODY = 16 * 1024 ** 3
 
-logger = logging.getLogger("gcmap.launcher")
+logger = logging.getLogger("mygcflow.launcher")
 
 _LABELS = {
     "fr": {
-        "open": "Ouvrir GCMap",
+        "open": "Ouvrir MyGCFlow",
         "videos": "Dossier des vidéos",
         "logs": "Journaux",
         "quit": "Quitter",
-        "busy_title": "GCMap",
+        "busy_title": "MyGCFlow",
         "busy": "Un import ou un traitement vidéo est en cours.\n"
                 "Il sera interrompu si vous quittez maintenant.\n\nQuitter quand même ?",
-        "no_port": "Impossible de démarrer GCMap : aucun port libre entre {first} et {last}.",
-        "crash": "GCMap n'a pas pu démarrer :\n{error}\n\nDétails dans le journal :\n{log}",
+        "no_port": "Impossible de démarrer MyGCFlow : aucun port libre entre {first} et {last}.",
+        "crash": "MyGCFlow n'a pas pu démarrer :\n{error}\n\nDétails dans le journal :\n{log}",
     },
     "en": {
-        "open": "Open GCMap",
+        "open": "Open MyGCFlow",
         "videos": "Videos folder",
         "logs": "Logs",
         "quit": "Quit",
-        "busy_title": "GCMap",
+        "busy_title": "MyGCFlow",
         "busy": "An import or a video processing task is running.\n"
                 "It will be interrupted if you quit now.\n\nQuit anyway?",
-        "no_port": "GCMap cannot start: no free port between {first} and {last}.",
-        "crash": "GCMap could not start:\n{error}\n\nDetails in the log file:\n{log}",
+        "no_port": "MyGCFlow cannot start: no free port between {first} and {last}.",
+        "crash": "MyGCFlow could not start:\n{error}\n\nDetails in the log file:\n{log}",
     },
 }
 
@@ -94,7 +94,7 @@ class _LogWriter:
 
 
 def log_file_path():
-    return paths.logs_dir() / "gcmap.log"
+    return paths.logs_dir() / "mygcflow.log"
 
 
 def setup_logging():
@@ -123,11 +123,11 @@ def _url(port):
     return f"http://{HOST}:{port}/"
 
 
-def is_gcmap(port, timeout=1.0):
-    """Vrai si une instance de GCMap répond sur ce port."""
+def is_mygcflow(port, timeout=1.0):
+    """Vrai si une instance de MyGCFlow répond sur ce port."""
     try:
         with urllib.request.urlopen(_url(port) + "api/ping", timeout=timeout) as response:
-            return json.load(response).get("app") == "GCMap"
+            return json.load(response).get("app") == "MyGCFlow"
     except Exception:
         return False
 
@@ -150,7 +150,7 @@ def find_port(preferred=PREFERRED_PORT, attempts=PORT_ATTEMPTS):
     # port fermé de 127.0.0.1 n'est pas refusée immédiatement (~1 s chacune).
     free = [port for port in candidates if is_port_free(port)]
     for port in candidates:
-        if port not in free and is_gcmap(port):
+        if port not in free and is_mygcflow(port):
             return port, True
     return (free[0], False) if free else (None, False)
 
@@ -168,7 +168,7 @@ def _language():
     return lang if lang in _LABELS else "fr"
 
 
-def _message_box(text, title="GCMap", question=False):
+def _message_box(text, title="MyGCFlow", question=False):
     """Boîte de dialogue native (Windows). Renvoie True pour « Oui » / OK."""
     if os.name == "nt":
         import ctypes
@@ -208,7 +208,7 @@ def create_server(port):
     return waitress_server(
         app, host=HOST, port=port, threads=8,
         max_request_body_size=MAX_REQUEST_BODY,
-        ident="GCMap",
+        ident="MyGCFlow",
     )
 
 
@@ -219,7 +219,7 @@ def _shutdown(server):
     encodage) tournent dans un pool de threads que l'interpréteur attendrait
     à la sortie.
     """
-    logger.info("Arrêt de GCMap")
+    logger.info("Arrêt de MyGCFlow")
     try:
         from capture import kill_running_ffmpeg
         kill_running_ffmpeg()
@@ -245,7 +245,7 @@ def run_tray(server, port, labels):
         icon.stop()
         _shutdown(server)
 
-    image = Image.open(paths.resource_dir() / "static" / "img" / "gcmap-icon.png")
+    image = Image.open(paths.resource_dir() / "static" / "img" / "mygcflow-icon.png")
     menu = pystray.Menu(
         pystray.MenuItem(labels["open"], lambda: open_browser(port), default=True),
         pystray.MenuItem(labels["videos"], lambda: _open_folder(paths.video_dir())),
@@ -253,24 +253,24 @@ def run_tray(server, port, labels):
         pystray.Menu.SEPARATOR,
         pystray.MenuItem(labels["quit"], on_quit),
     )
-    pystray.Icon("GCMap", image, f"GCMap {__version__}", menu).run()
+    pystray.Icon("MyGCFlow", image, f"MyGCFlow {__version__}", menu).run()
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description="GCMap")
+    parser = argparse.ArgumentParser(description="MyGCFlow")
     parser.add_argument("--no-browser", action="store_true", help="ne pas ouvrir le navigateur")
     parser.add_argument("--no-tray", action="store_true", help="pas d'icône de notification (Ctrl+C pour quitter)")
     parser.add_argument("--port", type=int, default=PREFERRED_PORT, help="port préféré")
     args = parser.parse_args(argv)
 
     setup_logging()
-    logger.info("GCMap %s — données : %s", __version__, paths.data_dir())
+    logger.info("MyGCFlow %s — données : %s", __version__, paths.data_dir())
     labels = _LABELS[_language()]
 
     try:
         port, running = find_port(args.port)
         if running:
-            logger.info("GCMap tourne déjà sur le port %s : ouverture de l'onglet", port)
+            logger.info("MyGCFlow tourne déjà sur le port %s : ouverture de l'onglet", port)
             if not args.no_browser:
                 open_browser(port)
             return 0

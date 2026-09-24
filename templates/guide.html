@@ -3,8 +3,8 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{{ _("Mode d'emploi") }} — GCMap</title>
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/gcmap-icon.png') }}">
+    <title>{{ _("Mode d'emploi") }} — MyGCFlow</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/mygcflow-icon.png') }}">
     <!-- Tabler Icons (webfont) — remplace Material Icons.
          Servi en local (static/vendor/) : le guide doit rester lisible hors ligne. -->
     <link rel="stylesheet" href="../static/vendor/tabler-icons/tabler-icons.min.css">
@@ -63,8 +63,8 @@
             <!-- ===================== INTRO ===================== -->
             <section id="intro" class="guide-section">
                 <div class="guide-hero">
-                    <h1>{{ _("Bienvenue dans GCMap !") }}</h1>
-                    <p>{{ _("GCMap transforme vos trouvailles de géocaching en une carte animée que vous pouvez personnaliser et enregistrer en vidéo. Suivez ce guide en 4 étapes : chargez vos données, choisissez un style, lancez l'animation, puis ajustez les paramètres.") }}</p>
+                    <h1>{{ _("Bienvenue dans MyGCFlow !") }}</h1>
+                    <p>{{ _("MyGCFlow transforme vos trouvailles de géocaching en une carte animée que vous pouvez personnaliser et enregistrer en vidéo. Suivez ce guide en 4 étapes : chargez vos données, choisissez un style, lancez l'animation, puis ajustez les paramètres.") }}</p>
                 </div>
 
                 <div class="guide-quicksteps">
@@ -111,7 +111,7 @@
                         <p><a href="https://www.geocaching.com/pocket/default.aspx" target="_blank" rel="noopener noreferrer"><i class="ti ti-external-link"></i> {{ _("Ouvrir mes Pocket Queries sur geocaching.com") }}</a></p>
                         <div class="guide-callout info">
                             <i class="ti ti-clock"></i>
-                            <div>{{ _("Le fichier arrive par e-mail et reste téléchargeable dans l'onglet \"Pocket Queries Ready for Download\" (au format .zip, que GCMap accepte directement : inutile de le décompresser). La Pocket Query \"My Finds\" ne peut être générée qu'une fois tous les 3 jours.") }}</div>
+                            <div>{{ _("Le fichier arrive par e-mail et reste téléchargeable dans l'onglet \"Pocket Queries Ready for Download\" (au format .zip, que MyGCFlow accepte directement : inutile de le décompresser). La Pocket Query \"My Finds\" ne peut être générée qu'une fois tous les 3 jours.") }}</div>
                         </div>
                         <div class="guide-callout tip">
                             <i class="ti ti-bulb"></i>
@@ -119,7 +119,7 @@
                         </div>
                     </li>
                     <li>
-                        <h3>{{ _("Chargez le fichier dans GCMap") }}</h3>
+                        <h3>{{ _("Chargez le fichier dans MyGCFlow") }}</h3>
                         <p>{{ _("Dans l'onglet") }} <span class="ui-chip">{{ _("Données") }}</span>, {{ _("section") }} <strong>{{ _("Base de données") }}</strong>, {{ _("cliquez sur") }} <span class="ui-chip"><i class="ti ti-cloud-upload"></i> {{ _("Sélectionner et charger un fichier .gpx") }}</span> {{ _("et choisissez votre fichier. Le nombre de caches importées s'affiche une fois le chargement terminé.") }}</p>
                     </li>
                     <li>
@@ -269,7 +269,7 @@
                         <ul class="sub">
                             <li><strong>{{ _("Langue") }}</strong> — {{ _("basculez entre français et anglais.") }}</li>
                             <li><strong>{{ _("Vérifier les mises à jour au démarrage") }}</strong> — {{ _("soyez prévenu d'une nouvelle version.") }}</li>
-                            <li><strong>{{ _("Profil par défaut au démarrage") }}</strong> — {{ _("le profil de style chargé à la première ouverture. Ensuite, GCMap rouvre le dernier profil que vous avez utilisé.") }}</li>
+                            <li><strong>{{ _("Profil par défaut au démarrage") }}</strong> — {{ _("le profil de style chargé à la première ouverture. Ensuite, MyGCFlow rouvre le dernier profil que vous avez utilisé.") }}</li>
                         </ul>
                     </li>
                     <li>

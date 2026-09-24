@@ -1,6 +1,6 @@
 # Translation Checks
 
-- The language switch stores the selection in `localStorage` and the `gcmap_lang` cookie so Flask-Babel stays on the chosen locale across reloads.
+- The language switch stores the selection in `localStorage` and the `mygcflow_lang` cookie so Flask-Babel stays on the chosen locale across reloads.
 
 ## Translating JavaScript strings
 

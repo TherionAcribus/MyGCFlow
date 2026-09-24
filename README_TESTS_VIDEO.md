@@ -1,6 +1,6 @@
 # Tests automatisés de génération vidéo
 
-Le socle actuel vérifie les calculs de timing et produit six vidéos synthétiques couvrant les deux pipelines de GCMap. Chaque fichier est ensuite contrôlé avec `ffprobe` : durée, FPS, résolution, codecs, piste audio et taille minimale.
+Le socle actuel vérifie les calculs de timing et produit six vidéos synthétiques couvrant les deux pipelines de MyGCFlow. Chaque fichier est ensuite contrôlé avec `ffprobe` : durée, FPS, résolution, codecs, piste audio et taille minimale.
 
 ## Lancer la suite
 
@@ -43,7 +43,7 @@ La matrice se trouve dans `video_test_scenarios.json`. Pour ajouter un cas, copi
 
 Les deux scénarios `dimensions_impaires` produisent une source en 161×91 et attendent une sortie en 160×90 : `libx264` en `yuv420p` exige des dimensions paires, et les deux pipelines rognent donc au multiple de 2 inférieur. Les dimensions de la source se règlent par `source_width` / `source_height` (160×90 par défaut).
 
-## Valider manuellement un export GCMap
+## Valider manuellement un export MyGCFlow
 
 Le validateur est également utilisable indépendamment des tests :
 
@@ -78,6 +78,6 @@ Le fichier `tests/e2e/fixtures/my-finds.gpx` contient six caches déterministes.
 - un enregistrement MediaRecorder court, post-traité en MP4 par le serveur ;
 - la durée, les FPS, le codec, l’absence d’audio et la taille via le même validateur `ffprobe`.
 
-Les traces, captures et vidéos conservées en cas d’échec sont placées dans `output/playwright`. Pour garder aussi le répertoire Flask temporaire après un test local, définir `GCMAP_E2E_KEEP_RUNTIME=1`.
+Les traces, captures et vidéos conservées en cas d’échec sont placées dans `output/playwright`. Pour garder aussi le répertoire Flask temporaire après un test local, définir `MYGCFLOW_E2E_KEEP_RUNTIME=1`.
 
 La prochaine extension logique sera la comparaison d’images-clés (date, compteur et position des points) afin de couvrir le contenu visuel, pas seulement la structure et les métadonnées de la vidéo.

@@ -192,10 +192,10 @@ class RecordingConfiguredFlagTests(unittest.TestCase):
 
 class SettingsApiTests(unittest.TestCase):
     def setUp(self):
-        # Les préférences réelles vivent dans %APPDATA%\GCMap : sans redirection
+        # Les préférences réelles vivent dans %APPDATA%\MyGCFlow : sans redirection
         # des constantes de module, ce test écraserait la configuration de
         # l'utilisateur (thème, langue, profil par défaut).
-        tmp = Path(tempfile.mkdtemp(prefix="gcmap-global-prefs-"))
+        tmp = Path(tempfile.mkdtemp(prefix="mygcflow-global-prefs-"))
         self.addCleanup(shutil.rmtree, tmp, True)
         for name, value in {
             "CONFIG_DIR": tmp,

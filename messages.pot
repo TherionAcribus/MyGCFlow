@@ -857,10 +857,6 @@ msgstr ""
 msgid "Global"
 msgstr ""
 
-#: templates/app.html:49
-msgid "My Geocaching Map"
-msgstr ""
-
 #: templates/app.html:73 templates/app.html:74
 msgid "Lancer l'animation"
 msgstr ""
@@ -914,12 +910,12 @@ msgid "Les 4 étapes"
 msgstr ""
 
 #: templates/guide.html:66 templates/modal_first_use.html:6
-msgid "Bienvenue dans GCMap !"
+msgid "Bienvenue dans MyGCFlow !"
 msgstr ""
 
 #: templates/guide.html:67
 msgid ""
-"GCMap transforme vos trouvailles de géocaching en une carte animée que "
+"MyGCFlow transforme vos trouvailles de géocaching en une carte animée que "
 "vous pouvez personnaliser et enregistrer en vidéo. Suivez ce guide en 4 "
 "étapes : chargez vos données, choisissez un style, lancez l'animation, "
 "puis ajustez les paramètres."
@@ -982,7 +978,7 @@ msgstr ""
 #: templates/guide.html:114
 msgid ""
 "Le fichier arrive par e-mail et reste téléchargeable dans l'onglet "
-"\"Pocket Queries Ready for Download\" (au format .zip, que GCMap accepte "
+"\"Pocket Queries Ready for Download\" (au format .zip, que MyGCFlow accepte "
 "directement : inutile de le décompresser). La Pocket Query \"My Finds\" "
 "ne peut être générée qu'une fois tous les 3 jours."
 msgstr ""
@@ -994,7 +990,7 @@ msgid ""
 msgstr ""
 
 #: templates/guide.html:122
-msgid "Chargez le fichier dans GCMap"
+msgid "Chargez le fichier dans MyGCFlow"
 msgstr ""
 
 #: templates/guide.html:123
@@ -1546,7 +1542,7 @@ msgstr ""
 
 #: templates/guide.html:272
 msgid ""
-"le profil de style chargé à la première ouverture. Ensuite, GCMap rouvre "
+"le profil de style chargé à la première ouverture. Ensuite, MyGCFlow rouvre "
 "le dernier profil que vous avez utilisé."
 msgstr ""
 
@@ -2093,7 +2089,7 @@ msgstr ""
 
 #: templates/menu_options.html:46
 msgid ""
-"Utilisé à la première ouverture. Ensuite, GCMap rouvre le dernier profil "
+"Utilisé à la première ouverture. Ensuite, MyGCFlow rouvre le dernier profil "
 "utilisé."
 msgstr ""
 

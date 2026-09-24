@@ -64,30 +64,30 @@ jobs:
 
       - name: Archive portable
         shell: pwsh
-        run: Compress-Archive -Path dist/GCMap -DestinationPath "dist/GCMap-${{ steps.version.outputs.version }}-portable.zip"
+        run: Compress-Archive -Path dist/MyGCFlow -DestinationPath "dist/MyGCFlow-${{ steps.version.outputs.version }}-portable.zip"
 
       - name: Vérifier que l'exécutable démarre
         shell: pwsh
         run: |
-          $env:GCMAP_DATA_DIR = "$env:RUNNER_TEMP\gcmap-data"
-          $env:GCMAP_CONFIG_DIR = "$env:RUNNER_TEMP\gcmap-config"
-          $process = Start-Process -FilePath dist/GCMap/GCMap.exe -ArgumentList '--no-browser', '--no-tray' -PassThru
+          $env:MYGCFLOW_DATA_DIR = "$env:RUNNER_TEMP\mygcflow-data"
+          $env:MYGCFLOW_CONFIG_DIR = "$env:RUNNER_TEMP\mygcflow-config"
+          $process = Start-Process -FilePath dist/MyGCFlow/MyGCFlow.exe -ArgumentList '--no-browser', '--no-tray' -PassThru
           $ok = $false
           foreach ($i in 1..60) {
             try { $ping = Invoke-RestMethod http://127.0.0.1:51730/api/ping -TimeoutSec 2; $ok = $true; break }
             catch { Start-Sleep -Milliseconds 500 }
           }
           Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
-          if (-not $ok) { Get-Content "$env:GCMAP_DATA_DIR\logs\gcmap.log" -ErrorAction SilentlyContinue; throw 'GCMap.exe ne répond pas' }
-          "GCMap $($ping.version) a démarré"
+          if (-not $ok) { Get-Content "$env:MYGCFLOW_DATA_DIR\logs\mygcflow.log" -ErrorAction SilentlyContinue; throw 'MyGCFlow.exe ne répond pas' }
+          "MyGCFlow $($ping.version) a démarré"
 
       - name: Conserver les fichiers construits
         uses: actions/upload-artifact@v4
         with:
-          name: GCMap-${{ steps.version.outputs.version }}-windows
+          name: MyGCFlow-${{ steps.version.outputs.version }}-windows
           path: |
-            dist/GCMap-Setup-*.exe
-            dist/GCMap-*-portable.zip
+            dist/MyGCFlow-Setup-*.exe
+            dist/MyGCFlow-*-portable.zip
 
       - name: Publier la Release
         if: github.ref_type == 'tag'
@@ -96,7 +96,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "$env:GITHUB_REF_NAME" `
-            (Get-ChildItem dist/GCMap-Setup-*.exe).FullName `
-            (Get-ChildItem dist/GCMap-*-portable.zip).FullName `
-            --title "GCMap ${{ steps.version.outputs.version }}" `
+            (Get-ChildItem dist/MyGCFlow-Setup-*.exe).FullName `
+            (Get-ChildItem dist/MyGCFlow-*-portable.zip).FullName `
+            --title "MyGCFlow ${{ steps.version.outputs.version }}" `
             --generate-notes

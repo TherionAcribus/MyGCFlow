@@ -2,7 +2,7 @@
 <gpx version="1.0" creator="Groundspeak Pocket Query"
      xmlns="http://www.topografix.com/GPX/1/0"
      xmlns:groundspeak="http://www.groundspeak.com/cache/1/0/1">
-  <name>My Finds Pocket Query - GCMap E2E</name>
+  <name>My Finds Pocket Query - MyGCFlow E2E</name>
   <desc>Groundspeak deterministic browser test fixture</desc>
   <author>Groundspeak</author>
   <wpt lat="48.8501" lon="2.3501"><time>2025-01-01T00:00:00Z</time><name>GCE2E001</name><urlname>Traditionnelle 1</urlname><groundspeak:cache><groundspeak:name>Traditionnelle 1</groundspeak:name><groundspeak:type>Traditional Cache</groundspeak:type><groundspeak:container>Micro</groundspeak:container><groundspeak:difficulty>1.5</groundspeak:difficulty><groundspeak:terrain>1.5</groundspeak:terrain><groundspeak:country>France</groundspeak:country><groundspeak:state>Île-de-France</groundspeak:state><groundspeak:logs><groundspeak:log><groundspeak:date>2026-01-01T10:00:00Z</groundspeak:date><groundspeak:type>Found it</groundspeak:type></groundspeak:log></groundspeak:logs></groundspeak:cache></wpt>

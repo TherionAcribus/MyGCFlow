@@ -21,7 +21,10 @@
 import { saveSettingsPatch } from './settings_api.mjs';
 import { reportSave } from './saved_indicator.mjs';
 
-const THEME_KEY = 'gcmap_theme';
+const THEME_KEY = 'mygcflow_theme';
+// Clé utilisée avant le changement de nom : lue seule fois au démarrage pour
+// ne pas repartir en clair chez un utilisateur qui avait choisi le sombre.
+const LEGACY_THEME_KEY = 'gcmap_theme';
 const VALID_PREFS = ['system', 'light', 'dark'];
 const mql = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
 
@@ -33,7 +36,7 @@ function isValidPref(pref) {
 // arrivées, et comme repli si le serveur est injoignable.
 function getPref() {
     try {
-        const stored = localStorage.getItem(THEME_KEY);
+        const stored = localStorage.getItem(THEME_KEY) || localStorage.getItem(LEGACY_THEME_KEY);
         return isValidPref(stored) ? stored : 'system';
     } catch (_) {
         return 'system';

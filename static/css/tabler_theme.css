@@ -1,12 +1,12 @@
 /* =====================================================================
-   tabler_theme.css — Mapping des variables GCMap vers Tabler (Bootstrap 5)
+   tabler_theme.css — Mapping des variables MyGCFlow vers Tabler (Bootstrap 5)
    ---------------------------------------------------------------------
-   Ce fichier centralise l'adaptation du thème GCMap au système Tabler.
-   Il surcharge les variables --tblr-* avec la palette GCMap existante
+   Ce fichier centralise l'adaptation du thème MyGCFlow au système Tabler.
+   Il surcharge les variables --tblr-* avec la palette MyGCFlow existante
    pour conserver l'identité visuelle pendant et après la migration.
    ===================================================================== */
 
-/* --- Palette GCMap (conservée depuis theme.css) --- */
+/* --- Palette MyGCFlow (conservée depuis theme.css) --- */
 :root {
     /* Neutres */
     --color-bg: #fafafa;
@@ -78,7 +78,7 @@ body {
 h5, h6 { color: var(--color-text); font-weight: 600; }
 .text-muted { color: var(--color-text-muted) !important; }
 
-/* --- Boutons : aligner sur l'accent GCMap --- */
+/* --- Boutons : aligner sur l'accent MyGCFlow --- */
 .btn-primary {
     --tblr-btn-color: #ffffff;
     --tblr-btn-bg: var(--color-accent);
@@ -214,7 +214,7 @@ h5, h6 { color: var(--color-text); font-weight: 600; }
     color: var(--color-accent);
 }
 
-/* --- Control-bar latérale (custom GCMap, conservée) --- */
+/* --- Control-bar latérale (custom MyGCFlow, conservée) --- */
 .control-bar {
     background: rgba(33, 33, 33, 0.85);
 }
@@ -222,7 +222,7 @@ h5, h6 { color: var(--color-text); font-weight: 600; }
     color: #fff;
 }
 
-/* --- Toasts custom GCMap (système existant, conservé) --- */
+/* --- Toasts custom MyGCFlow (système existant, conservé) --- */
 .gcm-toast { border-left-color: var(--color-accent); }
 .gcm-toast.success { border-left-color: var(--color-success); }
 .gcm-toast.error   { border-left-color: var(--color-danger); }
@@ -328,7 +328,7 @@ h5, h6 { color: var(--color-text); font-weight: 600; }
 /* Fond du mode plein écran (visible en bordure autour de la carte). */
 [data-bs-theme="dark"] .fullscreen-mode { background: var(--color-bg); }
 
-/* Toasts custom GCMap (fond blanc + textes gris codés en dur). */
+/* Toasts custom MyGCFlow (fond blanc + textes gris codés en dur). */
 [data-bs-theme="dark"] .gcm-toast { background: var(--color-surface); color: var(--color-text); }
 [data-bs-theme="dark"] .gcm-toast-message { color: var(--color-text-muted); }
 [data-bs-theme="dark"] .gcm-toast-close { color: var(--color-text-muted); }

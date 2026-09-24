@@ -1,4 +1,4 @@
-"""Emplacements des fichiers de GCMap.
+"""Emplacements des fichiers de MyGCFlow.
 
 Deux racines distinctes :
 
@@ -9,7 +9,7 @@ Deux racines distinctes :
 - les **données** (base, caches, captures, pistes audio, vidéos) : propres à
   l'utilisateur, conservées entre deux versions et à la désinstallation.
 
-Les préférences et profils ont leur propre emplacement (%APPDATA%\\GCMap),
+Les préférences et profils ont leur propre emplacement (%APPDATA%\\MyGCFlow),
 géré par settings_manager.app_config_dir().
 
 Toutes les fonctions sont évaluées à l'appel (pas de constantes de module) :
@@ -23,15 +23,23 @@ import os
 import sys
 from pathlib import Path
 
-APP_NAME = "GCMap"
+APP_NAME = "MyGCFlow"
+# Nom historique (GCMap) : sert à reprendre les données d'une installation
+# antérieure au changement de nom. À retirer quand plus aucune installation
+# n'est concernée.
+LEGACY_APP_NAME = "GCMap"
 
 # Dossier « Vidéos » de Windows (FOLDERID_Videos), qui suit une éventuelle
 # redirection OneDrive, contrairement à ~/Videos.
 _FOLDERID_VIDEOS = "{18989B1D-99B5-455B-841C-AB7C74E4DDFC}"
 
+# Vrai dès qu'une reprise du dossier de l'ancien nom a été tentée : data_dir()
+# est appelée à chaque accès aux fichiers, le test ne doit pas se répéter.
+_legacy_data_checked = False
+
 
 def is_frozen() -> bool:
-    """Vrai quand GCMap tourne depuis l'exécutable PyInstaller."""
+    """Vrai quand MyGCFlow tourne depuis l'exécutable PyInstaller."""
     return bool(getattr(sys, "frozen", False))
 
 
@@ -43,16 +51,22 @@ def resource_dir() -> Path:
 
 
 def _data_override() -> str | None:
-    # GCMAP_DATA_DIR redirige toutes les données (base, caches, médias).
-    # GCMAP_RUNTIME_DIR est l'ancien nom, encore posé par le harnais Playwright.
-    return os.getenv("GCMAP_DATA_DIR") or os.getenv("GCMAP_RUNTIME_DIR")
+    # MYGCFLOW_DATA_DIR redirige toutes les données (base, caches, médias).
+    # MYGCFLOW_RUNTIME_DIR est l'ancien nom, encore posé par le harnais Playwright.
+    # Les variantes GCMAP_* datent d'avant le changement de nom.
+    return (
+        os.getenv("MYGCFLOW_DATA_DIR")
+        or os.getenv("MYGCFLOW_RUNTIME_DIR")
+        or os.getenv("GCMAP_DATA_DIR")
+        or os.getenv("GCMAP_RUNTIME_DIR")
+    )
 
 
 def data_dir() -> Path:
     """Racine des données de l'utilisateur.
 
     - variable d'environnement si fournie (tests, installation portable) ;
-    - application installée : %LOCALAPPDATA%\\GCMap (données volumineuses et
+    - application installée : %LOCALAPPDATA%\\MyGCFlow (données volumineuses et
       propres à la machine, donc pas dans le profil itinérant %APPDATA%) ;
     - développement : le dossier du projet, où se trouvent les données
       historiques (instance/geocaching.db, video/, audio/, captured/).
@@ -61,9 +75,29 @@ def data_dir() -> Path:
     if override:
         return Path(override).resolve()
     if is_frozen():
-        base = os.getenv("LOCALAPPDATA") or os.path.expanduser("~")
-        return Path(base) / APP_NAME
+        base = Path(os.getenv("LOCALAPPDATA") or os.path.expanduser("~"))
+        current = base / APP_NAME
+        _adopt_legacy_data_dir(current, base / LEGACY_APP_NAME)
+        return current
     return resource_dir()
+
+
+def _adopt_legacy_data_dir(current: Path, legacy: Path) -> None:
+    """Reprend le dossier de données de l'ancien nom (GCMap), une seule fois.
+
+    Renommage atomique (même volume). Sans effet si le dossier actuel existe
+    déjà ou si l'ancien est absent ; un échec n'est pas bloquant, l'application
+    repart alors sur des données vierges.
+    """
+    global _legacy_data_checked
+    if _legacy_data_checked or current == legacy or current.exists() or not legacy.is_dir():
+        return
+    _legacy_data_checked = True
+    try:
+        current.parent.mkdir(parents=True, exist_ok=True)
+        os.rename(legacy, current)
+    except OSError:
+        pass
 
 
 def instance_dir() -> Path:
@@ -100,7 +134,7 @@ def audio_dir() -> Path:
 def video_dir() -> Path:
     """Dossier des vidéos produites.
 
-    Application installée : « Vidéos\\GCMap », là où l'utilisateur s'attend à
+    Application installée : « Vidéos\\MyGCFlow », là où l'utilisateur s'attend à
     retrouver ses films. Sinon (développement, tests), sous la racine des
     données, comme auparavant.
     """

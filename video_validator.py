@@ -1,4 +1,4 @@
-"""Validation automatique des fichiers vidéo produits par GCMap.
+"""Validation automatique des fichiers vidéo produits par MyGCFlow.
 
 Le module est utilisable depuis les tests et en ligne de commande :
     python video_validator.py video/fichier.mp4 --expect attente.json
@@ -192,7 +192,7 @@ def _format_summary(result: ValidationResult) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Valide un export vidéo GCMap avec ffprobe.")
+    parser = argparse.ArgumentParser(description="Valide un export vidéo MyGCFlow avec ffprobe.")
     parser.add_argument("video", help="Fichier vidéo à analyser")
     parser.add_argument("--expect", required=True, help="Fichier JSON contenant les attentes")
     parser.add_argument("--json", action="store_true", help="Affiche le rapport au format JSON")

@@ -1,6 +1,6 @@
 # Bibliothèques tierces servies en local
 
-GCMap est une application de bureau : Flask tourne en local et l'utilisateur peut
+MyGCFlow est une application de bureau : Flask tourne en local et l'utilisateur peut
 très bien travailler sans connexion (import d'un GPX, mise en forme, animation,
 enregistrement vidéo). Tant que ces bibliothèques venaient d'un CDN
 (jsdelivr / unpkg), une coupure réseau cassait **toute** l'interface : plus de

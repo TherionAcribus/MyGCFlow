@@ -1,10 +1,10 @@
-﻿# Construit GCMap pour Windows : exécutable (PyInstaller) puis installeur (Inno Setup).
+﻿# Construit MyGCFlow pour Windows : exécutable (PyInstaller) puis installeur (Inno Setup).
 #
 #   powershell -ExecutionPolicy Bypass -File installer\build.ps1 [-SkipInstaller]
 #
 # Résultats dans dist\ :
-#   dist\GCMap\GCMap.exe          version « portable » (dossier complet)
-#   dist\GCMap-Setup-<ver>.exe    installeur (si Inno Setup 6 est présent)
+#   dist\MyGCFlow\MyGCFlow.exe          version « portable » (dossier complet)
+#   dist\MyGCFlow-Setup-<ver>.exe    installeur (si Inno Setup 6 est présent)
 #
 # L'environnement de construction (.venv-build) est distinct de l'environnement
 # de développement : seules les dépendances de requirements.txt sont
@@ -24,7 +24,7 @@ function Invoke-Checked {
 
 $Version = [regex]::Match((Get-Content -Raw 'version.py'), '__version__\s*=\s*"([^"]+)"').Groups[1].Value
 if (-not $Version) { throw 'Version introuvable dans version.py' }
-Write-Host "== GCMap $Version"
+Write-Host "== MyGCFlow $Version"
 
 # --- Environnement de construction -------------------------------------------
 $VenvPython = Join-Path $Root '.venv-build\Scripts\python.exe'
@@ -40,9 +40,9 @@ if ($Uv) {
 
 # --- Exécutable ---------------------------------------------------------------
 Write-Host '== PyInstaller'
-Invoke-Checked $VenvPython @('-m', 'PyInstaller', 'installer\gcmap.spec', '--noconfirm', '--clean',
+Invoke-Checked $VenvPython @('-m', 'PyInstaller', 'installer\mygcflow.spec', '--noconfirm', '--clean',
                              '--distpath', 'dist', '--workpath', 'build')
-Invoke-Checked $VenvPython @('installer\collect_licenses.py', 'dist\GCMap\_internal\licenses\python')
+Invoke-Checked $VenvPython @('installer\collect_licenses.py', 'dist\MyGCFlow\_internal\licenses\python')
 
 # --- Installeur ---------------------------------------------------------------
 if ($SkipInstaller) { Write-Host '== Installeur ignoré (-SkipInstaller)'; exit 0 }
@@ -60,5 +60,5 @@ if (-not $Iscc) {
     exit 0
 }
 Write-Host '== Inno Setup'
-Invoke-Checked $Iscc @("/DAppVersion=$Version", 'installer\gcmap.iss')
-Write-Host "== Terminé : dist\GCMap-Setup-$Version.exe"
+Invoke-Checked $Iscc @("/DAppVersion=$Version", 'installer\mygcflow.iss')
+Write-Host "== Terminé : dist\MyGCFlow-Setup-$Version.exe"

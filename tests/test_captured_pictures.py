@@ -21,7 +21,7 @@ class CapturedPicturesCountTests(unittest.TestCase):
         self.previous_cwd = os.getcwd()
         # capture.py écrit dans paths.captured_dir() : on redirige les données
         # vers le dossier temporaire, où les assertions lisent « captured/ ».
-        env = mock.patch.dict(os.environ, {'GCMAP_DATA_DIR': self.tmpdir.name})
+        env = mock.patch.dict(os.environ, {'MYGCFLOW_DATA_DIR': self.tmpdir.name})
         env.start()
         self.addCleanup(env.stop)
         os.chdir(self.tmpdir.name)

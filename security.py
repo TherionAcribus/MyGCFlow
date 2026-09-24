@@ -1,15 +1,15 @@
 """Protection du serveur local contre les autres sites ouverts dans le navigateur.
 
-GCMap écoute sur 127.0.0.1 : n'importe quelle page web visitée par
+MyGCFlow écoute sur 127.0.0.1 : n'importe quelle page web visitée par
 l'utilisateur peut viser cette adresse. Deux attaques sont à bloquer :
 
 - **requête inter-sites** : une page malveillante soumet un formulaire ou un
   fetch « simple » (POST sans en-têtes exotiques) vers /clear_database. Le
   navigateur l'envoie sans demander de pré-vol CORS ; la politique CORS
   empêche seulement de lire la réponse, pas l'effet de bord. On refuse donc
-  toute requête modifiante dont l'Origin n'est pas GCMap lui-même ;
+  toute requête modifiante dont l'Origin n'est pas MyGCFlow lui-même ;
 - **DNS rebinding** : un domaine attaquant se résout vers 127.0.0.1 et sa page
-  devient alors « même origine » que GCMap. L'en-tête Host porte cependant
+  devient alors « même origine » que MyGCFlow. L'en-tête Host porte cependant
   toujours le nom de ce domaine : on n'accepte que localhost / 127.0.0.1.
 
 Le front étant servi par le même serveur, aucune en-tête CORS n'est émise.

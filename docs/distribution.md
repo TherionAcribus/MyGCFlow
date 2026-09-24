@@ -1,24 +1,24 @@
 # Distribution Windows
 
-GCMap est livré sous forme d'un installeur Windows (`GCMap-Setup-<version>.exe`)
+MyGCFlow est livré sous forme d'un installeur Windows (`MyGCFlow-Setup-<version>.exe`)
 et d'une version portable (dossier zippé). Les deux contiennent Python, les
 dépendances, ffmpeg et les ressources : l'utilisateur n'installe rien d'autre.
 
 ## Ce que fait l'application installée
 
-`GCMap.exe` (point d'entrée : `launcher.py`) :
+`MyGCFlow.exe` (point d'entrée : `launcher.py`) :
 
 - démarre le serveur **waitress** sur `127.0.0.1` uniquement, port **51730**
   (fixe : le `localStorage` du navigateur est rangé par port ; les ports
   51731–51739 ne servent que si 51730 est occupé par un autre programme) ;
-- ouvre GCMap dans le navigateur par défaut ;
-- affiche une icône dans la zone de notification : *Ouvrir GCMap*, *Dossier des
+- ouvre MyGCFlow dans le navigateur par défaut ;
+- affiche une icône dans la zone de notification : *Ouvrir MyGCFlow*, *Dossier des
   vidéos*, *Journaux*, *Quitter*. C'est le seul moyen de fermer l'application
   (pas de fenêtre ni de console). Quitter pendant un import ou un encodage
   demande confirmation, puis arrête ffmpeg ;
-- instance unique : relancer GCMap rouvre simplement un onglet.
+- instance unique : relancer MyGCFlow rouvre simplement un onglet.
 
-Options utiles au dépannage : `GCMap.exe --no-browser`, `--no-tray` (arrêt par
+Options utiles au dépannage : `MyGCFlow.exe --no-browser`, `--no-tray` (arrêt par
 Ctrl+C), `--port N`.
 
 `python app.py` reste le serveur de **développement** (Werkzeug, débogueur).
@@ -29,18 +29,32 @@ Tous les chemins sont centralisés dans `paths.py`.
 
 | Contenu | Application installée | Développement |
 | --- | --- | --- |
-| Programme et ressources (templates, static, translations) | `%LOCALAPPDATA%\Programs\GCMap` (lecture seule) | dossier du projet |
-| Base SQLite, caches GeoJSON, arbre pays/régions | `%LOCALAPPDATA%\GCMap\instance` | `instance/` |
-| Captures en cours (`captured/`), pistes audio (`audio/`) | `%LOCALAPPDATA%\GCMap\` | dossier du projet |
-| Vidéos produites | `Vidéos\GCMap` (dossier Vidéos de Windows) | `video/` |
-| Journaux | `%LOCALAPPDATA%\GCMap\logs\gcmap.log` | `logs/` |
-| Préférences et profils | `%APPDATA%\GCMap` | `%APPDATA%\GCMap` |
+| Programme et ressources (templates, static, translations) | `%LOCALAPPDATA%\Programs\MyGCFlow` (lecture seule) | dossier du projet |
+| Base SQLite, caches GeoJSON, arbre pays/régions | `%LOCALAPPDATA%\MyGCFlow\instance` | `instance/` |
+| Captures en cours (`captured/`), pistes audio (`audio/`) | `%LOCALAPPDATA%\MyGCFlow\` | dossier du projet |
+| Vidéos produites | `Vidéos\MyGCFlow` (dossier Vidéos de Windows) | `video/` |
+| Journaux | `%LOCALAPPDATA%\MyGCFlow\logs\mygcflow.log` | `logs/` |
+| Préférences et profils | `%APPDATA%\MyGCFlow` | `%APPDATA%\MyGCFlow` |
 
-`GCMAP_DATA_DIR` redirige toutes les données (base, caches, médias, journaux)
-et `GCMAP_CONFIG_DIR` les préférences : c'est ce qu'utilisent les tests.
+`MYGCFLOW_DATA_DIR` redirige toutes les données (base, caches, médias, journaux)
+et `MYGCFLOW_CONFIG_DIR` les préférences : c'est ce qu'utilisent les tests.
 
 La désinstallation supprime le programme mais **conserve** les données et les
 vidéos ; une mise à jour les reprend telles quelles.
+
+### Reprise des dossiers de l'ancien nom (GCMap)
+
+L'application s'est appelée GCMap jusqu'à la version 1.0.0. Au premier
+démarrage sous le nouveau nom, `%APPDATA%\GCMap` et `%LOCALAPPDATA%\GCMap`
+sont renommés vers `MyGCFlow` s'ils existent et que le dossier du nouveau nom
+n'existe pas encore (`settings_manager.adopt_legacy_dir()` et
+`paths._adopt_legacy_data_dir()`). Un échec n'est pas bloquant : l'application
+repart alors sur une configuration vierge, l'ancien dossier restant intact.
+
+Ne sont **pas** repris : les vidéos déjà produites, qui restent dans
+`Vidéos\GCMap` (déplacer des fichiers de l'utilisateur serait plus surprenant
+qu'utile). Les variables `GCMAP_DATA_DIR`, `GCMAP_RUNTIME_DIR` et
+`GCMAP_CONFIG_DIR` restent acceptées comme anciens noms.
 
 ## Construire
 
@@ -53,21 +67,21 @@ powershell -ExecutionPolicy Bypass -File installer\build.ps1
 
 Le script crée l'environnement `.venv-build` (dépendances de
 `requirements-build.txt` uniquement : rien de l'environnement de
-développement n'est embarqué), lance PyInstaller (`installer/gcmap.spec`),
-copie les licences des paquets Python, puis compile `installer/gcmap.iss`.
+développement n'est embarqué), lance PyInstaller (`installer/mygcflow.spec`),
+copie les licences des paquets Python, puis compile `installer/mygcflow.iss`.
 
 Résultats :
 
-- `dist\GCMap\GCMap.exe` : version portable, à lancer directement ;
-- `dist\GCMap-Setup-<version>.exe` : installeur (~50 Mo).
+- `dist\MyGCFlow\MyGCFlow.exe` : version portable, à lancer directement ;
+- `dist\MyGCFlow-Setup-<version>.exe` : installeur (~50 Mo).
 
 `-SkipInstaller` s'arrête après l'exécutable.
 
 Tester la version construite sans toucher à ses propres données :
 
 ```powershell
-$env:GCMAP_DATA_DIR = "$env:TEMP\gcmap-test"; $env:GCMAP_CONFIG_DIR = "$env:TEMP\gcmap-test-config"
-dist\GCMap\GCMap.exe
+$env:MYGCFLOW_DATA_DIR = "$env:TEMP\mygcflow-test"; $env:MYGCFLOW_CONFIG_DIR = "$env:TEMP\mygcflow-test-config"
+dist\MyGCFlow\MyGCFlow.exe
 ```
 
 ## Publier une version
@@ -128,7 +142,7 @@ Sa licence et les liens vers ses sources sont livrés dans
 
 ## Icône
 
-`installer/gcmap.ico` et `static/img/gcmap-icon.png` sont provisoires, générés
+`installer/mygcflow.ico` et `static/img/mygcflow-icon.png` sont provisoires, générés
 par `installer/make_icon.py`. Pour un vrai logo : remplacer ces deux fichiers.
 
 ## Reste à faire
@@ -138,4 +152,4 @@ par `installer/make_icon.py`. Pour un vrai logo : remplacer ces deux fichiers.
   (*Informations complémentaires* → *Exécuter quand même*). Options :
   Azure Trusted Signing, ou un certificat OV/EV.
 - **Serveur de mise à jour** : son certificat HTTPS est invalide, la
-  vérification passe donc en HTTP (contenu échappé côté serveur GCMap).
+  vérification passe donc en HTTP (contenu échappé côté serveur MyGCFlow).

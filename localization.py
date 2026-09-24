@@ -47,7 +47,9 @@ def get_locale():
         return locale
 
     # 2. Cookie (préférences utilisateur)
-    locale = _normalize_locale(request.cookies.get('gcmap_lang'), supported_locales)
+    # 'gcmap_lang' : cookie posé avant le changement de nom, encore lu.
+    cookie_lang = request.cookies.get('mygcflow_lang') or request.cookies.get('gcmap_lang')
+    locale = _normalize_locale(cookie_lang, supported_locales)
     if locale:
         return locale
 

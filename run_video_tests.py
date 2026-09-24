@@ -1,4 +1,4 @@
-"""Lance toute la suite automatisée consacrée à la génération vidéo GCMap."""
+"""Lance toute la suite automatisée consacrée à la génération vidéo MyGCFlow."""
 
 from __future__ import annotations
 
@@ -57,7 +57,7 @@ def main(argv: list[str] | None = None) -> int:
     if hasattr(sys.stderr, "reconfigure"):
         sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
-    parser = argparse.ArgumentParser(description="Exécute les tests vidéo automatisés de GCMap.")
+    parser = argparse.ArgumentParser(description="Exécute les tests vidéo automatisés de MyGCFlow.")
     parser.add_argument(
         "--quick",
         action="store_true",
@@ -113,7 +113,7 @@ def main(argv: list[str] | None = None) -> int:
                 file=sys.stderr,
             )
             return 2
-        os.environ["GCMAP_E2E_PYTHON"] = sys.executable
+        os.environ["MYGCFLOW_E2E_PYTHON"] = sys.executable
         stages.append((
             "Parcours navigateur et export réel",
             [npm, "run", "test:e2e"],

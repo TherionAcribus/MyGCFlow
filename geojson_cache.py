@@ -125,7 +125,7 @@ class GeojsonIndexCache:
     ):
         # Emplacements centralisés dans paths.py : les tests navigateur les
         # redirigent vers un dossier jetable, l'application installée vers
-        # %LOCALAPPDATA%\GCMap.
+        # %LOCALAPPDATA%\MyGCFlow.
         self.db_path = db_path or str(paths.database_path())
         self.persist_path = persist_path or str(paths.geojson_indexes_path())
         self.base_geojson_path = base_geojson_path or str(paths.geojson_data_path())

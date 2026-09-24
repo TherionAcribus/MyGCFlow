@@ -1,5 +1,5 @@
 {
-  "name": "gcmap-video-e2e-tests",
+  "name": "mygcflow-video-e2e-tests",
   "private": true,
   "type": "module",
   "scripts": {

@@ -1,6 +1,6 @@
 """Copie les licences des paquets Python installés dans le dossier de l'exécutable.
 
-    python installer/collect_licenses.py dist/GCMap/licenses/python
+    python installer/collect_licenses.py dist/MyGCFlow/licenses/python
 
 À lancer avec l'interpréteur de l'environnement de construction : ce sont ses
 paquets que PyInstaller a embarqués. Les outils de construction eux-mêmes

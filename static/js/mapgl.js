@@ -2202,7 +2202,7 @@ function finalizeMediaRecorderVideo(){
 
         // Construire un nom horodaté pour éviter l'écrasement
         const buildTimestampedName = (base) => {
-            const safeBase = (base || 'gcmap.webm').trim();
+            const safeBase = (base || 'mygcflow.webm').trim();
             const now = new Date();
             const pad = (n) => String(n).padStart(2, '0');
             const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;

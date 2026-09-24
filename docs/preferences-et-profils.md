@@ -1,6 +1,6 @@
 # Où les réglages sont enregistrés
 
-GCMap a **deux** endroits de persistance, avec deux moments de sauvegarde
+MyGCFlow a **deux** endroits de persistance, avec deux moments de sauvegarde
 différents. L'interface le dit désormais explicitement ; ce document décrit le
 mécanisme sous-jacent.
 
@@ -8,8 +8,8 @@ mécanisme sous-jacent.
 
 | Portée | Contenu | Stockage | Sauvegarde |
 | --- | --- | --- | --- |
-| **Globale** | langue, thème, vérification des mises à jour, profil par défaut, dernier profil actif, centre/zoom par défaut, réglages d'enregistrement vidéo (mode, FPS, bitrate, codec, ralentissement, échelle, destinations, musique) | `%APPDATA%\GCMap\settings.json` (serveur) | automatique, à chaque modification |
-| **Profil** | fond de carte et ses options, style des points, flash, titre et bloc d'infos (+ CSS) | `%APPDATA%\GCMap\profiles\<nom>.json` (serveur) | manuelle, bouton **Sauvegarder** de la section Profils |
+| **Globale** | langue, thème, vérification des mises à jour, profil par défaut, dernier profil actif, centre/zoom par défaut, réglages d'enregistrement vidéo (mode, FPS, bitrate, codec, ralentissement, échelle, destinations, musique) | `%APPDATA%\MyGCFlow\settings.json` (serveur) | automatique, à chaque modification |
+| **Profil** | fond de carte et ses options, style des points, flash, titre et bloc d'infos (+ CSS) | `%APPDATA%\MyGCFlow\profiles\<nom>.json` (serveur) | manuelle, bouton **Sauvegarder** de la section Profils |
 
 Un réglage global suit l'utilisateur quel que soit le profil chargé. Un réglage
 de profil est appliqué immédiatement à la carte mais n'existe sur disque
@@ -104,7 +104,7 @@ plus de chaque démarrage.
   rapprochés du même champ (blur puis Entrée sur le centre de carte) laisseraient
   alors l'ancienne valeur en dernier.
 - `static/js/theme.js` — le thème est enregistré côté serveur, avec un
-  **miroir `localStorage`** (`gcmap_theme`). Le miroir n'existe que pour le
+  **miroir `localStorage`** (`mygcflow_theme`). Le miroir n'existe que pour le
   script anti-FOUC du `<head>` d'`app.html`, qui doit connaître la préférence
   avant le premier octet de CSS, donc avant tout aller-retour réseau.
   `syncThemeFromSettings()` réaligne le miroir sur le serveur au démarrage : sur
@@ -196,6 +196,6 @@ de `save_app_settings()`.
   l'enregistrement, reprise du `localStorage`, indicateur inline, badges.
 
 Les tests e2e écrivent leur configuration dans le runtime jetable via
-`GCMAP_CONFIG_DIR` (posé par `tests/e2e/run_server.py`). Sans cette variable,
-`app_config_dir()` retombe sur `%APPDATA%\GCMap` — c'est-à-dire la configuration
+`MYGCFLOW_CONFIG_DIR` (posé par `tests/e2e/run_server.py`). Sans cette variable,
+`app_config_dir()` retombe sur `%APPDATA%\MyGCFlow` — c'est-à-dire la configuration
 réelle de l'utilisateur.

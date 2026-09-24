@@ -45,7 +45,7 @@ def api_get_settings():
         'recording_configured': s.recording_configured,
     })
     response.set_cookie(
-        'gcmap_lang',
+        'mygcflow_lang',
         s.language,
         max_age=60 * 60 * 24 * 365,
         samesite='Lax',
@@ -124,7 +124,7 @@ def api_put_settings():
     language = updated.language
     response = jsonify({'success': True, 'language': language})
     response.set_cookie(
-        'gcmap_lang',
+        'mygcflow_lang',
         language,
         max_age=60 * 60 * 24 * 365,
         samesite='Lax',

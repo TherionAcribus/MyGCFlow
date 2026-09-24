@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 
 async function openReadyApp(page) {
   await page.goto('/', { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => window.gcmapReady === true);
+  await page.waitForFunction(() => window.mygcflowReady === true);
 
   // La base du runtime de test est vide : la modale de première utilisation
   // s'ouvre (de façon asynchrone) et intercepterait les clics sur les onglets.

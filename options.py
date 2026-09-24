@@ -11,7 +11,7 @@ current_version_adress = "http://blfa1842.odns.fr/app/GCMap/gcmap_versions.json"
 HTTP_TIMEOUT = 5
 HTTP_HEADERS = {
     "Accept": "application/json",
-    "User-Agent": "GCMap/VersionCheck (+mailto:at_mop@gmail.com)"
+    "User-Agent": "MyGCFlow/VersionCheck (+mailto:at_mop@gmail.com)"
 }
 
 # Parsing sémantique des versions avec fallback

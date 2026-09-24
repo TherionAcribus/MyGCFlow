@@ -173,7 +173,7 @@ def clear_pictures_directory():
 def _timestamped_name(base: str, ext_fallback: str):
     """Return <base>_YYYYMMDD-HHMMSS.ext (ext from base or fallback)."""
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    base = base or "gcmap"
+    base = base or "mygcflow"
     name, ext = os.path.splitext(base)
     ext = ext.lstrip(".") or ext_fallback
     return f"{name}_{stamp}.{ext}"
@@ -181,7 +181,7 @@ def _timestamped_name(base: str, ext_fallback: str):
 
 def default_video_output(ext: str = "mp4"):
     """Return a default output path under the video folder with timestamp."""
-    base = f"gcmap.{ext}"
+    base = f"mygcflow.{ext}"
     return os.path.join(paths.video_dir(), _timestamped_name(base, ext))
 
 
@@ -526,7 +526,7 @@ def _assemble_pictures(image_folder, output_video, fps=24, audio_path=None, audi
     ffmpeg = _get_ffmpeg_exe()
     # Le script ffconcat est temporaire et propre à cet encodage : il ne doit pas
     # atterrir dans captured/, que le client vide dès l'assemblage terminé.
-    handle, list_path = tempfile.mkstemp(prefix='gcmap_concat_', suffix='.ffconcat', text=True)
+    handle, list_path = tempfile.mkstemp(prefix='mygcflow_concat_', suffix='.ffconcat', text=True)
     os.close(handle)
 
     try:
@@ -722,7 +722,7 @@ def process_recorded_video(request):
         return jsonify({'success': False, 'message': 'Aucun fichier vidéo fourni'}), 400
 
     video_dir = paths.ensure_dir(paths.video_dir())
-    raw_name = _timestamped_name("gcmap_raw.webm", "webm")
+    raw_name = _timestamped_name("mygcflow_raw.webm", "webm")
     raw_path = os.path.join(video_dir, raw_name)
     request.files['video'].save(raw_path)
 
@@ -783,7 +783,7 @@ def upload_video(request):
 
         # Sécuriser le nom fourni et horodater si absent
         safe_suggested = secure_filename(suggested) if suggested else None
-        base = safe_suggested or _timestamped_name("gcmap.webm", "webm")
+        base = safe_suggested or _timestamped_name("mygcflow.webm", "webm")
         ext = os.path.splitext(base)[1].lstrip(".") or "webm"
 
         video_dir = paths.ensure_dir(paths.video_dir())

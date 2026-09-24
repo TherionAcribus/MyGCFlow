@@ -3,18 +3,18 @@ import { existsSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-const port = Number(process.env.GCMAP_E2E_PORT || 5011);
-const runtimeDir = process.env.GCMAP_E2E_RUNTIME
-  || mkdtempSync(path.join(tmpdir(), 'gcmap-e2e-'));
+const port = Number(process.env.MYGCFLOW_E2E_PORT || 5011);
+const runtimeDir = process.env.MYGCFLOW_E2E_RUNTIME
+  || mkdtempSync(path.join(tmpdir(), 'mygcflow-e2e-'));
 const localVenvPython = process.platform === 'win32'
   ? path.resolve('.venv', 'Scripts', 'python.exe')
   : path.resolve('.venv', 'bin', 'python');
-const python = process.env.GCMAP_E2E_PYTHON
+const python = process.env.MYGCFLOW_E2E_PYTHON
   || (existsSync(localVenvPython) ? localVenvPython : 'python');
 
 // Rendu visible par les tests et par le script de nettoyage global.
-process.env.GCMAP_E2E_RUNTIME = runtimeDir;
-process.env.GCMAP_E2E_PYTHON = python;
+process.env.MYGCFLOW_E2E_RUNTIME = runtimeDir;
+process.env.MYGCFLOW_E2E_PYTHON = python;
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -50,8 +50,8 @@ export default defineConfig({
     reuseExistingServer: false,
     env: {
       ...process.env,
-      GCMAP_E2E_PORT: String(port),
-      GCMAP_E2E_RUNTIME: runtimeDir,
+      MYGCFLOW_E2E_PORT: String(port),
+      MYGCFLOW_E2E_RUNTIME: runtimeDir,
       PYTHONUTF8: '1',
       PYTHONUNBUFFERED: '1',
     },

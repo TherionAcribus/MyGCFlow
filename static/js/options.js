@@ -122,7 +122,7 @@ function normalizeLanguage(lang) {
 }
 
 function getLanguageFromCookie() {
-    const cookie = document.cookie.split(';').map(part => part.trim()).find(part => part.startsWith('gcmap_lang='));
+    const cookie = document.cookie.split(';').map(part => part.trim()).find(part => part.startsWith('mygcflow_lang='));
     if (!cookie) return null;
     return cookie.split('=')[1];
 }

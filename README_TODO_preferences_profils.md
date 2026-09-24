@@ -13,7 +13,7 @@ Objectif: implémenter une gestion simple, fiable et robuste des paramètres uti
 
 ### 1) Architecture de stockage et écriture atomique
 - [x] Créer utilitaire de chemins (stdlib):
-  - Dossier config utilisateur (Windows: `%APPDATA%/GCMap`)
+  - Dossier config utilisateur (Windows: `%APPDATA%/MyGCFlow`)
   - Sous-dossier `profiles/` pour les profils
 - [x] Fichiers cibles:
   - `settings.json` (paramètres d'app)
@@ -147,8 +147,8 @@ Objectif: implémenter une gestion simple, fiable et robuste des paramètres uti
 ## Détails techniques rapides (extraits)
 
 ### Chemins (Windows)
-- Config: `%APPDATA%/GCMap/`
-- Profils: `%APPDATA%/GCMap/profiles/`
+- Config: `%APPDATA%/MyGCFlow/`
+- Profils: `%APPDATA%/MyGCFlow/profiles/`
 
 ### Schémas JSON
 - `settings.json` (voir `docs/preferences-et-profils.md` pour le détail):

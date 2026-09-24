@@ -1,4 +1,4 @@
-# Gestion des Profils GCMap
+# Gestion des Profils MyGCFlow
 
 ## Vue d'ensemble
 
@@ -29,7 +29,7 @@ Sans profil actif, **Sauvegarder** propose d'enregistrer les réglages dans un n
 - Cliquez sur le nom du profil dans la liste pour l'activer
 
 #### Au redémarrage
-GCMap rouvre le **dernier profil utilisé**. Le profil marqué d'une étoile
+MyGCFlow rouvre le **dernier profil utilisé**. Le profil marqué d'une étoile
 (**Définir comme par défaut**) ne sert qu'à la première ouverture, ou si le
 dernier profil utilisé a été supprimé.
 
@@ -43,7 +43,7 @@ Chaque profil dispose d'un menu (⋮) avec les options :
 ### Stockage
 
 Les profils sont sauvegardés localement dans :
-- **Windows** : `%APPDATA%\GCMap\profiles\`
+- **Windows** : `%APPDATA%\MyGCFlow\profiles\`
 - Chaque profil est un fichier JSON nommé d'après son nom (caractères alphanumériques uniquement)
 
 ### API REST
@@ -126,7 +126,7 @@ fetch('/api/profiles/Mon Profil', {
 
 ## Profils d'exemple inclus
 
-Au premier lancement, GCMap crée automatiquement 13 profils d'exemple. Les deux
+Au premier lancement, MyGCFlow crée automatiquement 13 profils d'exemple. Les deux
 derniers (« Équilibré » et « Cinématique ») ont été ajoutés après coup : une
 installation existante les reçoit une seule fois, sans réinstaller les autres ni
 faire revenir ceux qui ont été supprimés (voir `EXAMPLES_VERSION` dans

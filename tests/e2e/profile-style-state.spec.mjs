@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 
 async function openReadyApp(page) {
   await page.goto('/', { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => window.gcmapReady === true);
+  await page.waitForFunction(() => window.mygcflowReady === true);
 
   // La base du runtime de test est vide : la modale de première utilisation
   // s'ouvre (de façon asynchrone) et intercepterait les clics sur les onglets.
@@ -253,7 +253,7 @@ test('les modifications non enregistrées passent par une modale à trois issues
   const modal = page.locator('#unsaved-changes-modal');
 
   // La sauvegarde est remplacée par un espion : les profils vivent dans
-  // %APPDATA%\GCMap, que le runtime isolé des tests ne couvre pas (un vrai
+  // %APPDATA%\MyGCFlow, que le runtime isolé des tests ne couvre pas (un vrai
   // PUT /api/profiles écrirait dans la configuration réelle de l'utilisateur).
   const ask = () => page.evaluate(() => {
     const pm = window.profileManager;
@@ -356,7 +356,7 @@ test('fermer l\'onglet avec des modifications non enregistrées déclenche la ga
 
 test('l\'étoile marque le profil par défaut, indépendamment du profil actif', async ({ page }) => {
   // Liste et profil par défaut posés en mémoire : les profils et le réglage
-  // "profil par défaut" vivent dans %APPDATA%\GCMap, que le runtime isolé des
+  // "profil par défaut" vivent dans %APPDATA%\MyGCFlow, que le runtime isolé des
   // tests ne couvre PAS. Créer un profil ou appeler setProfileAsDefault ici
   // écrirait dans la configuration réelle de l'utilisateur.
   const render = (defaultName, activeName) => page.evaluate(({ defaultName, activeName }) => {
@@ -421,7 +421,7 @@ test('créer un profil y enregistre les réglages affichés', async ({ page }) =
   // DÉFAUT. Sans le PUT qui suit, le profil créé était vide alors que l'écran
   // affichait toujours les réglages de l'utilisateur, présentés comme
   // enregistrés — le travail était perdu au rechargement suivant.
-  // Serveur simulé : les profils vivent dans %APPDATA%\GCMap, hors du runtime
+  // Serveur simulé : les profils vivent dans %APPDATA%\MyGCFlow, hors du runtime
   // isolé des tests.
   let savedBody = null;
   const settingsPatches = [];
@@ -554,7 +554,7 @@ test('le profil par défaut sert de repli quand le dernier profil actif est illi
 
 test('un profil de démarrage illisible laisse l\'application sans profil actif', async ({ page }) => {
   // Réponses serveur simulées : les profils et le réglage "profil par défaut"
-  // vivent dans %APPDATA%\GCMap, hors du runtime isolé des tests.
+  // vivent dans %APPDATA%\MyGCFlow, hors du runtime isolé des tests.
   await page.route('**/api/settings', route => route.fulfill({
     status: 200,
     contentType: 'application/json',
@@ -608,7 +608,7 @@ test('un profil de démarrage illisible laisse l\'application sans profil actif'
 
 test('dupliquer passe par la modale de nom pré-remplie', async ({ page }) => {
   // Liste posée en mémoire et duplication espionnée : les profils vivent dans
-  // %APPDATA%\GCMap, hors du runtime isolé des tests (cf. l'étoile "par défaut").
+  // %APPDATA%\MyGCFlow, hors du runtime isolé des tests (cf. l'étoile "par défaut").
   await page.evaluate(() => {
     const pm = window.profileManager;
     pm.profilesList = ['Alpha', 'Alpha_copy', 'Beta'];
@@ -672,7 +672,7 @@ test('dupliquer passe par la modale de nom pré-remplie', async ({ page }) => {
 
 test('la modale de nom valide la saisie avant l\'envoi au serveur', async ({ page }) => {
   // Liste posée en mémoire et actions espionnées : les profils vivent dans
-  // %APPDATA%\GCMap, hors du runtime isolé des tests.
+  // %APPDATA%\MyGCFlow, hors du runtime isolé des tests.
   await page.evaluate(() => {
     const pm = window.profileManager;
     pm.profilesList = ['Mon Profil', 'Beta'];

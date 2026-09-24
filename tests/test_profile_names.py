@@ -33,10 +33,10 @@ class ProfileFileKeyTests(unittest.TestCase):
 
 class ProfileNameValidationTests(unittest.TestCase):
     def setUp(self):
-        # Les profils réels vivent dans %APPDATA%\GCMap : sans redirection des
+        # Les profils réels vivent dans %APPDATA%\MyGCFlow : sans redirection des
         # constantes de module, ce test créerait et supprimerait des profils de
         # l'utilisateur. SettingsManager n'est instancié qu'une fois redirigé.
-        tmp = Path(tempfile.mkdtemp(prefix="gcmap-profile-names-"))
+        tmp = Path(tempfile.mkdtemp(prefix="mygcflow-profile-names-"))
         self.addCleanup(shutil.rmtree, tmp, True)
         for name, value in {
             "CONFIG_DIR": tmp,

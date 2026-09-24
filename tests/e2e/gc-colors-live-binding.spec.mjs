@@ -10,7 +10,7 @@ import { test, expect } from '@playwright/test';
 
 test('les couleurs GC traversent la frontière de module vers points et flashs', async ({ page }) => {
     await page.goto('/');
-    await page.waitForFunction(() => window.gcmapReady === true, null, { timeout: 60_000 });
+    await page.waitForFunction(() => window.mygcflowReady === true, null, { timeout: 60_000 });
 
     const result = await page.evaluate(async () => {
         const pkg = await import('/static/js/index.js');

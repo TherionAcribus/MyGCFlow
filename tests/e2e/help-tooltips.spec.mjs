@@ -10,7 +10,7 @@ import { expect, test } from '@playwright/test';
 
 async function openReadyApp(page) {
   await page.goto('/', { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => window.gcmapReady === true);
+  await page.waitForFunction(() => window.mygcflowReady === true);
 
   // Même renvoi de la modale de première utilisation que dans les autres specs :
   // son backdrop intercepterait les clics sur les onglets.

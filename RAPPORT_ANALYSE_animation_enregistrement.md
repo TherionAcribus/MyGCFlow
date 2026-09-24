@@ -1,4 +1,4 @@
-# Rapport d'analyse — Animation & Enregistrement (GCMap)
+# Rapport d'analyse — Animation & Enregistrement (MyGCFlow)
 
 > Rapport destiné à un LLM chargé d'implémenter les corrections.
 > Date d'analyse : 2026-07-06. Les numéros de lignes se réfèrent à l'état actuel du dépôt (commit `47f09f1`).

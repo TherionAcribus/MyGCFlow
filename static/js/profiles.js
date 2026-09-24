@@ -1,5 +1,5 @@
 /**
- * Gestion des profils de configuration pour GCMap
+ * Gestion des profils de configuration pour MyGCFlow
  * Permet de sauvegarder, charger, créer, dupliquer et supprimer des profils
  */
 
@@ -423,7 +423,7 @@ class ProfileManager {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `${name}.gcmap-profile.json`;
+            a.download = `${name}.mygcflow-profile.json`;
             document.body.appendChild(a);
             a.click();
             a.remove();

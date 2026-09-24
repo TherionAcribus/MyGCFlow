@@ -11,7 +11,7 @@ import { expect, test } from '@playwright/test';
 
 async function openFlashPanel(page) {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForFunction(() => window.gcmapReady === true, null, { timeout: 60_000 });
+    await page.waitForFunction(() => window.mygcflowReady === true, null, { timeout: 60_000 });
 
     // La base du runtime de test est vide : la modale de première utilisation
     // s'ouvre et intercepterait les clics sur les onglets.

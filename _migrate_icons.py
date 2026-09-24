@@ -51,7 +51,7 @@ pattern = re.compile(
     re.IGNORECASE
 )
 
-guide_path = Path(r'C:/Users/fabie/Documents/Projets/GCMap/templates/guide.html')
+guide_path = Path(r'C:/Users/fabie/Documents/Projets/MyGCFlow/templates/guide.html')
 content = guide_path.read_text(encoding='utf-8')
 
 def replacer(match):
