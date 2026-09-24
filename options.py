@@ -1,168 +1,264 @@
-import requests
+"""Vérification des mises à jour : lecture des Releases GitHub du dépôt.
+
+Source unique de vérité : les Releases créées par `.github/workflows/release.yml`
+sur un tag `v*`. Il n'y a donc plus de fichier de versions à tenir à jour à la
+main — ce que publie la CI est exactement ce que voit l'utilisateur.
+
+Le module est sans état : la périodicité des vérifications et la version que
+l'utilisateur a choisi d'ignorer vivent dans les préférences globales, et sont
+appliquées par la route `/check_version` (blueprints/core.py).
+"""
+
 import html
 import json
 import logging
-from flask import jsonify
+from datetime import datetime, timedelta, timezone
+from urllib.parse import urlparse
 
+import requests
+from packaging.version import InvalidVersion, Version
 
-current_version_adress = "http://blfa1842.odns.fr/app/GCMap/gcmap_versions.json"
+# Dépôt public de distribution. Le tag `v<version>` de chaque Release porte le
+# numéro de version, ses assets l'installeur et l'archive portable.
+GITHUB_OWNER = "TherionAcribus"
+GITHUB_REPO = "MyGCFlow"
+RELEASES_URL = f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}/releases"
 
-# Paramètres HTTP pour la robustesse réseau
+# Paramètres HTTP pour la robustesse réseau.
 HTTP_TIMEOUT = 5
+RELEASES_PER_PAGE = 30
 HTTP_HEADERS = {
-    "Accept": "application/json",
-    "User-Agent": "MyGCFlow/VersionCheck (+mailto:at_mop@gmail.com)"
+    "Accept": "application/vnd.github+json",
+    "X-GitHub-Api-Version": "2022-11-28",
+    "User-Agent": f"MyGCFlow/VersionCheck (+https://github.com/{GITHUB_OWNER}/{GITHUB_REPO})",
 }
 
-# Parsing sémantique des versions avec fallback
-try:
-    from packaging.version import parse as _parse_version  # type: ignore
-    def _v(version_string):
-        return _parse_version(version_string or "0")
-except Exception:
-    def _v(version_string):
-        parts = []
-        for part in (version_string or "0").split("."):
-            try:
-                parts.append(int(part))
-            except ValueError:
-                parts.append(part)
-        return tuple(parts)
+# Délai minimal entre deux vérifications automatiques. Une vérification demandée
+# par l'utilisateur (bouton « Vérifier ») l'ignore toujours.
+CHECK_INTERVAL = timedelta(hours=24)
 
-def check_version_online(current_version, user_language='fr'):
-    """Recherche une nouvelle version et retourne une réponse Flask (jsonify)."""
-    return jsonify(fetch_version_info(current_version, user_language))
+# Le lien de téléchargement est le seul élément de la réponse sur lequel
+# l'utilisateur va cliquer pour exécuter un binaire : il doit venir de GitHub et
+# de nulle part ailleurs, même si la réponse est un jour servie par autre chose
+# que l'API officielle.
+ALLOWED_DOWNLOAD_HOSTS = frozenset({
+    "github.com",
+    "www.github.com",
+    "objects.githubusercontent.com",
+    "release-assets.githubusercontent.com",
+})
 
+# Asset proposé en priorité : l'installeur. À défaut, on renvoie vers la page de
+# la Release, où l'utilisateur choisit entre installeur et version portable.
+INSTALLER_ASSET_PREFIX = "MyGCFlow-Setup"
 
-def fetch_version_info(current_version, user_language='fr'):
-    """Retourne un dict avec l'état des mises à jour (fonction pure, testable)."""
-    try:
-        response = requests.get(
-            current_version_adress,
-            headers=HTTP_HEADERS,
-            timeout=HTTP_TIMEOUT,
-        )
-        response.raise_for_status()
-        data = response.json()
-        updates = data.get('versions', [])
-        # S'assure que les entrées ont bien une clé 'version'
-        updates = [v for v in updates if isinstance(v, dict) and 'version' in v]
-        new_versions = [v for v in updates if _v(v['version']) > _v(current_version)]
-        return create_release_notes(new_versions, current_version, user_language)
-    except requests.RequestException as error:
-        logging.exception("Erreur réseau lors de la vérification des mises à jour.")
-        return check_version_error(str(error), current_version)
-    except (json.JSONDecodeError, ValueError):
-        logging.exception("Réponse JSON invalide.")
-        return check_version_error("Réponse invalide ou vide", current_version)
+# Les notes de Release générées par GitHub tiennent en quelques lignes ; la borne
+# évite qu'un corps de Release inhabituel remplisse la modale.
+MAX_CHANGELOG_LINES = 40
+
 
 def _text(value):
-    """Texte distant échappé avant insertion dans le HTML des notes de version.
+    """Texte distant échappé avant insertion dans le HTML de la modale.
 
-    Le fichier des versions est lu en HTTP : un réseau hostile (ou un serveur
-    compromis) pourrait sinon injecter du script dans l'interface.
+    Le client insère ces champs via `innerHTML` : les échapper ici garantit
+    qu'un corps de Release ne peut pas injecter de balise, quel que soit le
+    chemin qu'emprunte ensuite la donnée.
     """
     return html.escape(str(value if value is not None else ''))
 
 
 def _safe_url(value):
+    """Ne laisse passer qu'une URL HTTPS hébergée par GitHub."""
     url = str(value or '')
-    return url if url.startswith(('https://', 'http://')) else ''
+    try:
+        parsed = urlparse(url)
+    except ValueError:
+        return ''
+    if parsed.scheme != 'https':
+        return ''
+    hostname = parsed.hostname
+    if hostname is None or hostname.lower() not in ALLOWED_DOWNLOAD_HOSTS:
+        return ''
+    return url
 
 
-def create_release_notes(new_versions, current_version, user_language='fr'):
-    logging.debug("create_release_notes appelée avec langue: %s", user_language)
+def _version_of(tag_name):
+    """Numéro de version porté par un tag `v1.2.0`, ou None s'il est illisible."""
+    raw = str(tag_name or '').strip().lstrip('vV')
+    try:
+        return Version(raw)
+    except InvalidVersion:
+        return None
 
-    if not new_versions:  # Aucune nouvelle version
-        # Traductions pour le message "à jour"
-        up_to_date_messages = {
-            'fr': f"<h5>Votre version est actuellement à jour</h5><p> Vous possédez la version {current_version}.</p>",
-            'en': f"<h5>Your version is currently up to date</h5><p> You have version {current_version}.</p>"
-        }
 
-        release_notes = up_to_date_messages.get(user_language, up_to_date_messages['fr'])
+def _changelog_lines(body):
+    """Corps Markdown d'une Release ramené à une liste de puces échappées.
 
-        return {
-            "error": False,
-            "update_available": False,
-            "current_version": current_version,
-            "latest_version": None,
-            "release_notes": release_notes,
-            "versions": []
-        }
+    Les notes produites par `gh release create --generate-notes` sont une liste
+    à puces précédée d'un titre et suivie d'un lien de comparaison : ni l'un ni
+    l'autre n'apportent quelque chose dans la modale.
+    """
+    lines = []
+    for raw_line in str(body or '').splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith('#') or line.startswith('**Full Changelog**'):
+            continue
+        # Soulignement de titre (`-----`, `=====`) : un titre en notation
+        # reStructuredText passe sinon pour une puce de deux caractères.
+        if not line.strip('-=~^*_'):
+            continue
+        if line[:2] in ('- ', '* ', '+ '):
+            line = line[2:].strip()
+        if line:
+            lines.append(_text(line))
+        if len(lines) >= MAX_CHANGELOG_LINES:
+            break
+    return lines
 
-    # Tri des versions par ordre décroissant pour obtenir la dernière
-    new_versions.sort(key=lambda x: _v(x['version']), reverse=True)
-    latest_version = new_versions[0]
 
-    # Créer une copie des versions avec les traductions appliquées pour le frontend
-    translated_versions = []
-    for version in new_versions:
-        translated_version = version.copy()
-        # Appliquer les traductions du changelog
-        changelog_translations = version.get('changelog_translations', {})
-        translated_changelog = changelog_translations.get(user_language, version.get('changelog', []))
-        if not isinstance(translated_changelog, list):
-            translated_changelog = []
-        translated_version['changelog'] = [_text(entry) for entry in translated_changelog]
-        translated_version['version'] = _text(version['version'])
-        translated_version['release_date'] = _text(version.get('release_date', ''))
-        # Échappée aussi : le client l'insère dans un attribut href.
-        translated_version['download_url'] = html.escape(_safe_url(version.get('download_url')))
-        translated_versions.append(translated_version)
-    latest_version = translated_versions[0]
-    download_url = latest_version['download_url']
+def _release_entry(release):
+    """Release GitHub convertie en entrée exploitable, ou None si inutilisable."""
+    if not isinstance(release, dict) or release.get('draft'):
+        return None
+    version = _version_of(release.get('tag_name'))
+    if version is None:
+        logging.debug("Release ignorée : tag illisible (%r).", release.get('tag_name'))
+        return None
 
-    notes = []
-    for version in translated_versions:
-        note = f"<h5>Version {version['version']}</h5>"
-        note += f"{version.get('release_date', '')}"
+    download_url = ''
+    assets = release.get('assets')
+    if isinstance(assets, list):
+        for asset in assets:
+            if not isinstance(asset, dict):
+                continue
+            if str(asset.get('name') or '').startswith(INSTALLER_ASSET_PREFIX):
+                download_url = _safe_url(asset.get('browser_download_url'))
+                if download_url:
+                    break
+    release_url = _safe_url(release.get('html_url'))
 
-        if version.get('changelog'):
-            note += f"<p><ul><li>{'</li><li>'.join(version['changelog'])}</li></ul></p>"
-        notes.append(note)
-
-    # Traductions pour le message de mise à jour disponible
-    update_messages = {
-        'fr': f"""<div>
-                        Vous possédez actuellement la version {current_version}.
-                        Une nouvelle version {latest_version["version"]} est disponible.
-                        Vous pouvez la télécharger à l'adresse : <a href="{download_url}">{download_url}</a>
-                        </div>""",
-        'en': f"""<div>
-                        You currently have version {current_version}.
-                        A new version {latest_version["version"]} is available.
-                        You can download it at: <a href="{download_url}">{download_url}</a>
-                        </div>"""
+    # `published_at` est une date ISO-8601 en UTC : la partie date suffit.
+    published_at = str(release.get('published_at') or '')
+    return {
+        'parsed_version': version,
+        'version': _text(str(release.get('tag_name') or '').strip().lstrip('vV')),
+        'release_date': _text(published_at.split('T')[0]),
+        'changelog': _changelog_lines(release.get('body')),
+        'download_url': _text(download_url or release_url),
+        'release_url': _text(release_url),
+        'prerelease': bool(release.get('prerelease')),
     }
 
-    update_note = update_messages.get(user_language, update_messages['fr'])
-    release_notes = update_note + f'<div>{"</div><div>".join(notes)}</div>'
+
+def _empty_payload(current_version, checked, error=False):
+    """Réponse sans version à proposer : à jour, report, ou échec."""
+    return {
+        "error": error,
+        "checked": checked,
+        "update_available": False,
+        "skipped": False,
+        "current_version": current_version,
+        "latest_version": None,
+        "versions": [],
+    }
+
+
+def check_version_error(reason, current_version=None):
+    """Réponse d'échec. Le détail reste dans les journaux, pas dans l'interface.
+
+    L'ancienne version renvoyait le texte brut de l'exception (donc l'URL
+    interrogée) directement dans la modale : sans intérêt pour l'utilisateur,
+    et une fuite d'information gratuite.
+    """
+    logging.error("Vérification des mises à jour impossible : %s", reason)
+    return _empty_payload(current_version, checked=False, error=True)
+
+
+def throttled_payload(current_version):
+    """Réponse renvoyée quand la vérification est reportée : aucune donnée."""
+    return _empty_payload(current_version, checked=False)
+
+
+def fetch_version_info(current_version):
+    """État des mises à jour d'après les Releases GitHub (fonction testable)."""
+    try:
+        response = requests.get(
+            RELEASES_URL,
+            headers=HTTP_HEADERS,
+            params={"per_page": RELEASES_PER_PAGE},
+            timeout=HTTP_TIMEOUT,
+        )
+        response.raise_for_status()
+        releases = response.json()
+    except requests.RequestException as error:
+        return check_version_error(f"erreur réseau ({error})", current_version)
+    except (json.JSONDecodeError, ValueError) as error:
+        return check_version_error(f"réponse illisible ({error})", current_version)
+
+    if not isinstance(releases, list):
+        return check_version_error("réponse inattendue de l'API GitHub", current_version)
+
+    installed = _version_of(current_version)
+    if installed is None:
+        # Version locale illisible : mieux vaut ne rien proposer que tout
+        # proposer. Le cas signale un empaquetage fautif, d'où le journal.
+        return check_version_error(
+            f"version installée illisible ({current_version!r})", current_version
+        )
+
+    # Une Release malformée ne doit pas faire échouer toute la vérification :
+    # chaque entrée est validée pour elle-même et ignorée si elle ne tient pas.
+    newer = [
+        entry for entry in map(_release_entry, releases)
+        if entry is not None and entry['parsed_version'] > installed
+    ]
+    if not newer:
+        return _empty_payload(current_version, checked=True)
+
+    newer.sort(key=lambda entry: entry['parsed_version'], reverse=True)
+    versions = [
+        {key: value for key, value in entry.items() if key != 'parsed_version'}
+        for entry in newer
+    ]
+    latest = versions[0]
 
     return {
         "error": False,
+        "checked": True,
         "update_available": True,
+        "skipped": False,
         "current_version": current_version,
         "latest_version": {
-            "version": latest_version['version'],
-            "date": latest_version.get('release_date', 'Non spécifiée'),
-            "download_url": latest_version.get('download_url')
+            "version": latest['version'],
+            "date": latest['release_date'],
+            "download_url": latest['download_url'],
+            "release_url": latest['release_url'],
         },
-        "release_notes": release_notes,
-        "versions": translated_versions
+        "versions": versions,
     }
 
 
-def check_version_error(error, current_version=None):
-    release_notes = f"""Oups, une erreur est survenue lors de la vérification de la dernière version. 
-                    Merci de me contacter à l'adresse <a href='mailto:at_mop@gmail.com'>mailto:at_mop@gmail.com</a>.
-                    <br> Erreur : {_text(error)}
-                    <br> Vous pouvez accéder à la page des dernières versions pour voir si une version corrige cette erreur."""
-    logging.error(release_notes)
-    return {
-        "error": True,
-        "update_available": False,
-        "current_version": current_version,
-        "latest_version": None,
-        "release_notes": release_notes
-    }
+def should_check(last_check, force=False, now=None):
+    """Faut-il interroger GitHub, ou la dernière vérification est-elle récente ?
+
+    `last_check` est l'horodatage ISO-8601 de la dernière vérification aboutie.
+    Une valeur absente, illisible ou postérieure à maintenant (horloge reculée)
+    relance la vérification : le repli sûr est de vérifier, pas de se taire.
+    """
+    if force or not last_check:
+        return True
+    try:
+        last = datetime.fromisoformat(str(last_check))
+    except (TypeError, ValueError):
+        return True
+    if last.tzinfo is None:
+        last = last.replace(tzinfo=timezone.utc)
+    reference = now or datetime.now(timezone.utc)
+    if last > reference:
+        return True
+    return reference - last >= CHECK_INTERVAL
+
+
+def now_iso():
+    """Horodatage à enregistrer dans les préférences après une vérification."""
+    return datetime.now(timezone.utc).isoformat(timespec='seconds')

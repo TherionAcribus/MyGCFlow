@@ -2,13 +2,17 @@ import json
 import gettext
 import os
 
+from dataclasses import replace
+
 from flask import Blueprint, current_app, jsonify, make_response, render_template, request
 from flask_babel import gettext as _
 
+import options
 from localization import get_locale
-from options import check_version_online
+from settings_manager import get_settings_manager
 
 core_bp = Blueprint('core', __name__)
+settings_manager = get_settings_manager()
 
 
 @core_bp.route('/')
@@ -51,9 +55,36 @@ def ping():
 
 @core_bp.route('/check_version', methods=['GET'])
 def check_version():
-    user_language = (get_locale() or 'fr').split('_')[0]
+    """État des mises à jour.
+
+    `mode=init` est la vérification automatique du démarrage : espacée de
+    `CHECK_INTERVAL`, pour ne pas interroger GitHub à chaque lancement ni
+    rouvrir la même modale tous les jours. Tout autre mode vient d'un clic de
+    l'utilisateur et vérifie sans condition.
+    """
     current_version = current_app.config.get('APP_VERSION', '1.0')
-    return check_version_online(current_version, user_language)
+    forced = request.args.get('mode') != 'init'
+    settings = settings_manager.get_app_settings()
+
+    if not options.should_check(settings.last_update_check, force=forced):
+        return jsonify(options.throttled_payload(current_version))
+
+    info = options.fetch_version_info(current_version)
+    if info['error']:
+        # Échec réseau : pas d'horodatage enregistré, le prochain démarrage
+        # réessaiera au lieu d'attendre l'intervalle complet.
+        return jsonify(info)
+
+    if info['update_available']:
+        info['skipped'] = (
+            settings.skipped_update_version == info['latest_version']['version']
+        )
+
+    checked_at = options.now_iso()
+    settings_manager.update_app_settings(
+        lambda current: replace(current, last_update_check=checked_at)
+    )
+    return jsonify(info)
 
 
 @core_bp.route('/test_translations')

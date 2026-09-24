@@ -92,9 +92,17 @@ dist\MyGCFlow\MyGCFlow.exe
 3. Le workflow `.github/workflows/release.yml` lance les tests unitaires,
    construit l'installeur et la version portable, vérifie que l'exécutable
    démarre, puis crée la Release GitHub avec les deux fichiers.
-4. Ajouter l'entrée correspondante dans `gcmap_versions.json` sur le serveur
-   de mise à jour (`options.py`), avec le lien de la Release en `download_url` :
-   c'est ce fichier que consulte la vérification des mises à jour.
+   La Release créée est **la** source de la vérification des mises à jour
+   (`options.py` lit `api.github.com/repos/<owner>/<repo>/releases`) : rien
+   d'autre à publier, et rien qui puisse diverger de ce qu'a construit la CI.
+   Les notes de Release deviennent la liste des nouveautés affichée dans
+   l'application ; `--generate-notes` les produit à partir des commits, il est
+   donc utile de les relire dans l'onglet *Releases* avant de les laisser en
+   l'état.
+
+> **Le dépôt doit être public.** L'API Releases d'un dépôt privé répond 404 aux
+> utilisateurs, et ses assets ne sont pas téléchargeables : ni la vérification
+> ni le lien de téléchargement ne fonctionneraient.
 
 Le workflow peut aussi être lancé à la main (onglet *Actions*) : il construit
 sans publier, les fichiers sont dans les artefacts du run.
@@ -151,5 +159,12 @@ par `installer/make_icon.py`. Pour un vrai logo : remplacer ces deux fichiers.
   « Windows a protégé votre ordinateur » au premier lancement de l'installeur
   (*Informations complémentaires* → *Exécuter quand même*). Options :
   Azure Trusted Signing, ou un certificat OV/EV.
-- **Serveur de mise à jour** : son certificat HTTPS est invalide, la
-  vérification passe donc en HTTP (contenu échappé côté serveur MyGCFlow).
+- **Dépôt public** : la vérification des mises à jour interroge les Releases
+  GitHub, invisibles tant que le dépôt est privé (voir *Publier une version*).
+- **Somme de contrôle** : la Release ne publie pas encore de SHA-256 des
+  fichiers. Le lien de téléchargement est en HTTPS et restreint aux domaines
+  GitHub (`ALLOWED_DOWNLOAD_HOSTS` dans `options.py`), mais rien ne permet à
+  l'utilisateur de vérifier le binaire qu'il a récupéré.
+- **Préversions** : une Release marquée *pre-release* est annoncée comme les
+  autres. Pour ne pas pousser une RC à tout le monde, filtrer sur le champ
+  `prerelease` que `_release_entry()` renvoie déjà.

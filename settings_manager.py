@@ -160,6 +160,14 @@ class AppSettings:
     version: int = COORDINATE_ORDER_VERSION
     language: str = "fr"
     check_updates: bool = True
+    # Horodatage ISO-8601 (UTC) de la dernière vérification de mise à jour
+    # aboutie. Sert à espacer les vérifications automatiques : sans lui, chaque
+    # lancement interrogeait GitHub et rouvrait la modale déjà vue.
+    last_update_check: Optional[str] = None
+    # Version pour laquelle l'utilisateur a cliqué sur « Ignorer cette version ».
+    # Seule la vérification automatique en tient compte, et seulement tant que
+    # c'est encore la plus récente : une version ultérieure sera bien annoncée.
+    skipped_update_version: Optional[str] = None
     theme: str = "system"  # "system" | "light" | "dark"
     default_profile_uid: Optional[str] = None  # UUID du profil par défaut (None = aucun)
     # UUID du dernier profil rendu actif par l'utilisateur (None = aucun). C'est
@@ -302,6 +310,11 @@ def _clamp_float(value, default: float, minimum: float, maximum: float) -> float
     return max(minimum, min(maximum, _to_float(value, default)))
 
 
+def _coerce_optional_str(value) -> Optional[str]:
+    """Chaîne non vide, ou None. Tout autre type (nombre, objet) vaut None."""
+    return value if isinstance(value, str) and value.strip() else None
+
+
 THEMES = ("system", "light", "dark")
 RECORDING_MODES = ("mediarecorder", "images")
 # Fidélité de couleur de l'encodage final. Miroir de COLOR_FIDELITIES dans
@@ -411,6 +424,8 @@ def coerce_settings(d: dict) -> AppSettings:
             source_version = 1
         s.language = d.get("language", s.language)
         s.check_updates = bool(d.get("check_updates", s.check_updates))
+        s.last_update_check = _coerce_optional_str(d.get("last_update_check"))
+        s.skipped_update_version = _coerce_optional_str(d.get("skipped_update_version"))
         s.theme = coerce_theme(d.get("theme"), s.theme)
         s.recording = coerce_recording_settings(d.get("recording"))
         # Un settings.json antérieur à la migration n'a pas de bloc `recording` :

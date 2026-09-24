@@ -34,6 +34,7 @@ def api_get_settings():
         'version': s.version,
         'language': s.language,
         'check_updates': s.check_updates,
+        'skipped_update_version': s.skipped_update_version,
         'theme': s.theme,
         'default_profile_uid': s.default_profile_uid,
         'default_profile_name': default_profile_name,
@@ -62,6 +63,15 @@ def api_put_settings():
         language = data.get('language', current.language)
         check_updates = bool(data.get('check_updates', current.check_updates))
         theme = coerce_theme(data.get('theme'), current.theme) if 'theme' in data else current.theme
+
+        # Version ignorée : envoyée par le bouton « Ignorer cette version » de la
+        # modale de mise à jour, et remise à null quand l'utilisateur veut de
+        # nouveau être averti. `last_update_check` n'est pas repris du client :
+        # seul /check_version l'écrit, après une vérification aboutie.
+        skipped_update_version = current.skipped_update_version
+        if 'skipped_update_version' in data:
+            raw_skipped = data.get('skipped_update_version')
+            skipped_update_version = raw_skipped if isinstance(raw_skipped, str) and raw_skipped.strip() else None
 
         # Les réglages d'enregistrement acceptent un patch partiel : l'UI n'envoie
         # que le champ modifié, les autres doivent survivre.
@@ -106,6 +116,8 @@ def api_put_settings():
             version=current.version,
             language=language,
             check_updates=check_updates,
+            last_update_check=current.last_update_check,
+            skipped_update_version=skipped_update_version,
             theme=theme,
             default_profile_uid=default_profile_uid,
             last_profile_uid=last_profile_uid,
@@ -114,6 +126,10 @@ def api_put_settings():
             recording=recording,
             recording_configured=recording_configured,
             examples_seeded=current.examples_seeded,
+            # Sans cette reprise, toute écriture de préférence ramenait le lot
+            # d'exemples à 0 et réinstallait au démarrage suivant les profils
+            # d'exemple ajoutés depuis la v1, y compris ceux supprimés.
+            examples_version=current.examples_version,
         )
 
     # Fusion et écriture d'un seul tenant : le corps de la requête ne décrit que
