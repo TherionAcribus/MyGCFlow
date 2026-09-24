@@ -115,9 +115,10 @@ dist\MyGCFlow\MyGCFlow.exe
    (`options.py` lit `api.github.com/repos/<owner>/<repo>/releases`) : rien
    d'autre à publier, et rien qui puisse diverger de ce qu'a construit la CI.
    Les notes de Release deviennent la liste des nouveautés affichée dans
-   l'application ; `--generate-notes` les produit à partir des commits, il est
-   donc utile de les relire dans l'onglet *Releases* avant de les laisser en
-   l'état.
+   l'application. Écrire `docs/release_notes/<version>.md` **avant** de poser le
+   tag : le workflow le passe à `--notes-file`. Sans ce fichier, il retombe sur
+   `--generate-notes`, qui recopie les titres de commits — lisible pour un
+   développeur, pas pour un utilisateur.
 
 > **Le dépôt doit être public.** L'API Releases d'un dépôt privé répond 404 aux
 > utilisateurs, et ses assets ne sont pas téléchargeables : ni la vérification

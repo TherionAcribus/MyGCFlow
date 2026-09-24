@@ -95,8 +95,21 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # Le corps de la Release devient le changelog affiché dans
+          # l'application (options.py le lit) : il doit être lisible par un
+          # utilisateur. On préfère donc des notes écrites à la main quand
+          # docs/release_notes/<version>.md existe, et on ne retombe sur les
+          # titres de commits que par défaut.
+          $notes = "docs/release_notes/${{ steps.version.outputs.version }}.md"
+          if (Test-Path $notes) {
+            $notesArgs = @('--notes-file', $notes)
+            Write-Host "Notes de Release : $notes"
+          } else {
+            $notesArgs = @('--generate-notes')
+            Write-Warning "Aucune note écrite pour ${{ steps.version.outputs.version }} : repli sur les titres de commits."
+          }
           gh release create "$env:GITHUB_REF_NAME" `
             (Get-ChildItem dist/MyGCFlow-Setup-*.exe).FullName `
             (Get-ChildItem dist/MyGCFlow-*-portable.zip).FullName `
             --title "MyGCFlow ${{ steps.version.outputs.version }}" `
-            --generate-notes
+            @notesArgs
