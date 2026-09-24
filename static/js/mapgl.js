@@ -915,7 +915,7 @@ export function startAnimation(restart=false) {
 
         createFlashElements();
         resetCameraFollow();
-        infos = createObjectInfos();
+        infos = createObjectInfos(filteredPointsAtStart.length);
         // Démarrer la musique de fond si activée (lecture seule)
         try { startBackgroundMusicIfAny(); } catch(e) { console.warn('startBackgroundMusicIfAny error:', e); }
     } else {
@@ -1329,7 +1329,7 @@ function startRecordingProcess(){
     createFlashElements();
     resetCameraFollow();
     // creation objet pour stocker les infos liées aux Frames (dt nombre de caches)
-    let infos = createObjectInfos();
+    let infos = createObjectInfos(filteredPointsAtStart.length);
 
     currentFrame = 0;  // Réinitialisez le compteur de frames
 
@@ -1357,14 +1357,17 @@ function startRecordingProcess(){
 
 
 // créé un objet pour les infos pour permet de garder une consistance pour le nombre de caches
-function createObjectInfos(){
+// initialCount : caches déjà présentes sur la carte au démarrage (celles antérieures
+// à la date de début d'animation). Le compteur doit partir de ce nombre, sinon il
+// annonce 0 alors que ces points sont bien visibles.
+function createObjectInfos(initialCount = getFilteredPointsAtStart().length){
     let infos = new Object();
     infos.displayDate = pkg.options.infos.currentDate.display
     infos.displayNumberofCaches = pkg.options.infos.numberOfCaches.display
-    infos.cacheNumber = 0;
-    // Le compteur affiché repart de zéro avec le décompte, sans animer depuis
-    // le total de la base affiché hors animation.
-    resetCacheCount(0);
+    infos.cacheNumber = Math.max(0, Number(initialCount) || 0);
+    // Le compteur affiché repart du nombre de caches déjà affichées, sans animer
+    // depuis le total de la base affiché hors animation.
+    resetCacheCount(infos.cacheNumber);
     return infos
 }
 
@@ -1879,8 +1882,7 @@ function recordAnimationMediaRecorder(){
     // startAnimation(true) réutilise ce même objet ; sans reset, cacheNumber
     // repart de l'ancien total accumulé → compteur faux. (Avant : un 'infosLocal'
     // local était créé puis jamais utilisé.)
-    infos = createObjectInfos();
-    resetCacheCount(0);
+    infos = createObjectInfos(filteredPointsAtStart.length);
     pkg.updateCurrentDate(currentDate);
 
     // UI loader
