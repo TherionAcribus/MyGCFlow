@@ -10,6 +10,7 @@ from flask_babel import gettext as _
 import options
 from localization import get_locale
 from settings_manager import get_settings_manager
+from task_manager import task_manager
 
 core_bp = Blueprint('core', __name__)
 settings_manager = get_settings_manager()
@@ -18,7 +19,12 @@ settings_manager = get_settings_manager()
 @core_bp.route('/')
 def index():
     current_locale = get_locale()
-    response = make_response(render_template('app.html'))
+    # `can_quit` : le bouton « Quitter » n'a de sens que lancé par launcher.py.
+    # Sous `python app.py`, le serveur de développement se ferme par sa console.
+    response = make_response(render_template(
+        'app.html',
+        can_quit=bool(current_app.config.get('QUIT_HOOK')),
+    ))
     if current_locale:
         response.set_cookie(
             'mygcflow_lang',
@@ -51,6 +57,40 @@ def ping():
     # Le lanceur interroge cette route pour savoir si une instance de MyGCFlow
     # occupe déjà le port (instance unique) et si le serveur est prêt.
     return jsonify({'app': 'MyGCFlow', 'version': current_app.config.get('APP_VERSION')})
+
+
+@core_bp.route('/api/quit', methods=['POST'])
+def quit_app():
+    """Arrête MyGCFlow depuis l'interface.
+
+    L'icône de la zone de notification était jusqu'ici la seule sortie, et
+    Windows 11 range les nouvelles icônes dans le débordement masqué : un
+    utilisateur qui ne pense pas à déplier ce menu n'a aucun moyen de fermer
+    l'application. Cette route en donne un second, là où il se trouve déjà.
+
+    POST seulement, et `security.check_request` refuse déjà toute requête
+    modifiante venue d'une autre origine : une page web ouverte à côté ne peut
+    pas éteindre l'application.
+    """
+    quit_hook = current_app.config.get('QUIT_HOOK')
+    if quit_hook is None:
+        # Serveur de développement (`python app.py`) : pas de lanceur à arrêter.
+        return jsonify({'quitting': False, 'reason': 'unavailable'}), 501
+
+    forced = bool((request.get_json(silent=True) or {}).get('force'))
+    active = task_manager.active_tasks()
+    if active and not forced:
+        # L'interface demande confirmation puis renvoie force=true. La question
+        # est posée dans le navigateur plutôt que par une boîte de dialogue
+        # native : celle du lanceur bloque la boucle de messages de l'icône.
+        return jsonify({
+            'quitting': False,
+            'reason': 'busy',
+            'tasks': [{'id': s.id, 'type': s.type} for s in active],
+        }), 409
+
+    quit_hook()
+    return jsonify({'quitting': True})
 
 
 @core_bp.route('/check_version', methods=['GET'])

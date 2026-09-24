@@ -105,6 +105,15 @@
                     <a id="buttonGuide" class="btn btn-secondary" href="/guide" target="_blank">
                         <i class="ti ti-help me-1"></i>{{ _("Mode d'emploi") }}
                     </a>
+                    {% if can_quit %}
+                    {# Seconde sortie de l'application. L'icône de la zone de
+                       notification reste la première, mais Windows la masque
+                       par défaut : sans ce bouton, fermer MyGCFlow peut devenir
+                       introuvable. #}
+                    <button type="button" id="buttonQuitApp" class="btn btn-outline-danger ms-auto">
+                        <i class="ti ti-power me-1"></i>{{ _("Quitter MyGCFlow") }}
+                    </button>
+                    {% endif %}
                 </div>
             </div>
         </div>

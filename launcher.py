@@ -4,8 +4,11 @@
 
 - démarre le serveur (waitress) sur 127.0.0.1 uniquement ;
 - ouvre MyGCFlow dans le navigateur par défaut ;
-- place une icône dans la zone de notification (Ouvrir, dossiers, Quitter) :
-  sans fenêtre ni console, c'est le seul moyen de fermer l'application ;
+- place une icône dans la zone de notification (Ouvrir, dossiers, Quitter) ;
+  Windows 11 la range par défaut dans le débordement masqué, et une
+  application ne peut pas se rendre visible elle-même : l'arrêt passe donc
+  aussi par le bouton « Quitter » de l'interface (POST /api/quit), qui reste
+  disponible même si l'icône n'a pas pu être créée ;
 - instance unique : relancer MyGCFlow rouvre simplement l'onglet.
 
 `python app.py` reste le serveur de développement (rechargement, débogueur).
@@ -212,19 +215,46 @@ def create_server(port):
     )
 
 
+# Icône de la zone de notification, une fois créée. Un arrêt demandé depuis
+# l'interface doit la retirer lui aussi, sinon Windows en laisse le fantôme
+# jusqu'au prochain survol de la souris.
+_tray_icon = None
+
+# `server.close()` débloque le `server.run()` du fil principal, qui enchaîne
+# alors sur son propre `_shutdown` : sans ce verrou, la séquence d'arrêt se
+# déroulait deux fois de front (ffmpeg tué deux fois, deux `logging.shutdown()`
+# concurrents, course sur `os._exit`).
+_shutdown_lock = threading.Lock()
+_shutting_down = False
+
+
 def _shutdown(server):
     """Arrête tout, y compris un encodage en cours, puis termine le processus.
 
     os._exit plutôt qu'un retour normal : les tâches de fond (import GPX,
     encodage) tournent dans un pool de threads que l'interpréteur attendrait
     à la sortie.
+
+    Appelable depuis n'importe quel fil : le premier arrivé fait le travail,
+    les suivants repartent aussitôt.
     """
+    global _shutting_down
+    with _shutdown_lock:
+        if _shutting_down:
+            return
+        _shutting_down = True
+
     logger.info("Arrêt de MyGCFlow")
     try:
         from capture import kill_running_ffmpeg
         kill_running_ffmpeg()
     except Exception:
         logger.exception("Arrêt des processus ffmpeg")
+    if _tray_icon is not None:
+        try:
+            _tray_icon.stop()
+        except Exception:
+            logger.exception("Retrait de l'icône de notification")
     try:
         server.close()
     except Exception:
@@ -233,7 +263,25 @@ def _shutdown(server):
     os._exit(0)
 
 
+def _register_quit_hook(server):
+    """Permet à l'interface web d'arrêter l'application (POST /api/quit).
+
+    L'arrêt est différé de quelques centaines de millisecondes : `_shutdown`
+    termine le processus sur-le-champ, et la réponse HTTP doit d'abord partir,
+    sinon le navigateur n'affiche qu'une erreur réseau au lieu de la
+    confirmation.
+    """
+    from app import app
+
+    def request_shutdown():
+        threading.Timer(0.5, _shutdown, args=(server,)).start()
+
+    app.config['QUIT_HOOK'] = request_shutdown
+
+
 def run_tray(server, port, labels):
+    global _tray_icon
+
     import pystray
     from PIL import Image
 
@@ -253,7 +301,8 @@ def run_tray(server, port, labels):
         pystray.Menu.SEPARATOR,
         pystray.MenuItem(labels["quit"], on_quit),
     )
-    pystray.Icon("MyGCFlow", image, f"MyGCFlow {__version__}", menu).run()
+    _tray_icon = pystray.Icon("MyGCFlow", image, f"MyGCFlow {__version__}", menu)
+    _tray_icon.run()
 
 
 def main(argv=None):
@@ -279,6 +328,7 @@ def main(argv=None):
             return 1
 
         server = create_server(port)
+        _register_quit_hook(server)
     except Exception as exc:
         logger.exception("Échec du démarrage")
         _message_box(labels["crash"].format(error=exc, log=log_file_path()))
@@ -299,9 +349,11 @@ def main(argv=None):
     try:
         run_tray(server, port, labels)
     except Exception:
-        # Pas de zone de notification disponible (session sans bureau…) :
-        # le serveur continue, arrêt par Ctrl+C.
-        logger.exception("Icône de notification indisponible")
+        # Pas de zone de notification disponible (session sans bureau…) : le
+        # serveur continue. L'exécutable étant construit sans console, il n'y a
+        # ici ni Ctrl+C ni fenêtre — l'arrêt passe forcément par le bouton
+        # « Quitter » de l'interface (POST /api/quit).
+        logger.exception("Icône de notification indisponible — arrêt depuis l'interface uniquement")
         try:
             threading.Event().wait()
         except KeyboardInterrupt:

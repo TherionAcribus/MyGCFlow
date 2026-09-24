@@ -13,13 +13,32 @@ dépendances, ffmpeg et les ressources : l'utilisateur n'installe rien d'autre.
   51731–51739 ne servent que si 51730 est occupé par un autre programme) ;
 - ouvre MyGCFlow dans le navigateur par défaut ;
 - affiche une icône dans la zone de notification : *Ouvrir MyGCFlow*, *Dossier des
-  vidéos*, *Journaux*, *Quitter*. C'est le seul moyen de fermer l'application
-  (pas de fenêtre ni de console). Quitter pendant un import ou un encodage
-  demande confirmation, puis arrête ffmpeg ;
+  vidéos*, *Journaux*, *Quitter* ;
 - instance unique : relancer MyGCFlow rouvre simplement un onglet.
 
-Options utiles au dépannage : `MyGCFlow.exe --no-browser`, `--no-tray` (arrêt par
-Ctrl+C), `--port N`.
+### Fermer l'application
+
+Il n'y a ni fenêtre ni console : l'arrêt passe par l'un des deux chemins.
+
+1. **Bouton *Quitter MyGCFlow*** dans l'onglet *Préférences* de l'interface
+   (`POST /api/quit`). C'est le chemin principal, parce qu'il est sous les yeux
+   de l'utilisateur.
+2. **Menu de l'icône** dans la zone de notification.
+
+Le bouton existe parce que l'icône ne suffit pas : Windows 11 range les
+nouvelles icônes dans le débordement masqué (le chevron), et une application ne
+peut pas se rendre visible elle-même — Microsoft a retiré cette possibilité.
+Un utilisateur qui ne pense pas à déplier ce menu n'avait auparavant aucun moyen
+de fermer MyGCFlow autrement que par le Gestionnaire des tâches. Le bouton
+couvre aussi le cas où l'icône n'a pas pu être créée du tout.
+
+Quitter pendant un import ou un encodage demande confirmation (dans le
+navigateur pour le bouton, par boîte de dialogue native pour l'icône), puis
+arrête ffmpeg.
+
+Options utiles au dépannage : `MyGCFlow.exe --no-browser`, `--no-tray`,
+`--port N`. Sous `--no-tray`, seul le bouton de l'interface ferme l'application
+(l'exécutable est construit sans console : pas de Ctrl+C).
 
 `python app.py` reste le serveur de **développement** (Werkzeug, débogueur).
 
