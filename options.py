@@ -54,7 +54,7 @@ INSTALLER_ASSET_PREFIX = "MyGCFlow-Setup"
 
 # Les notes de Release générées par GitHub tiennent en quelques lignes ; la borne
 # évite qu'un corps de Release inhabituel remplisse la modale.
-MAX_CHANGELOG_LINES = 40
+MAX_CHANGELOG_ENTRIES = 40
 
 
 def _text(value):
@@ -92,28 +92,45 @@ def _version_of(tag_name):
 
 
 def _changelog_lines(body):
-    """Corps Markdown d'une Release ramené à une liste de puces échappées.
+    """Corps Markdown d'une Release ramené à une liste d'entrées échappées.
 
     Les notes produites par `gh release create --generate-notes` sont une liste
     à puces précédée d'un titre et suivie d'un lien de comparaison : ni l'un ni
     l'autre n'apportent quelque chose dans la modale.
+
+    Un texte Markdown est replié sur plusieurs lignes, mais une ligne n'est pas
+    une entrée : les lignes qui suivent appartiennent à la même puce ou au même
+    paragraphe, et sont donc recollées. Une entrée se termine sur une ligne
+    vide ou au début de la puce suivante. Sans ce recollage, un paragraphe de
+    trois lignes s'affichait en trois puces.
     """
-    lines = []
+    entries = []
+    current = []
+
+    def flush():
+        if current:
+            entries.append(' '.join(current))
+            current.clear()
+
     for raw_line in str(body or '').splitlines():
         line = raw_line.strip()
         if not line or line.startswith('#') or line.startswith('**Full Changelog**'):
+            flush()
             continue
         # Soulignement de titre (`-----`, `=====`) : un titre en notation
         # reStructuredText passe sinon pour une puce de deux caractères.
         if not line.strip('-=~^*_'):
+            flush()
             continue
         if line[:2] in ('- ', '* ', '+ '):
+            flush()
             line = line[2:].strip()
         if line:
-            lines.append(_text(line))
-        if len(lines) >= MAX_CHANGELOG_LINES:
+            current.append(line)
+        if len(entries) >= MAX_CHANGELOG_ENTRIES:
             break
-    return lines
+    flush()
+    return [_text(entry) for entry in entries[:MAX_CHANGELOG_ENTRIES]]
 
 
 def _release_entry(release):

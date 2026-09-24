@@ -107,6 +107,40 @@ class FetchVersionInfoTests(unittest.TestCase):
         self.assertEqual(changelog, ["Correction du compteur de caches", "Ajout du suivi de caméra"])
 
     @patch("options.requests.get")
+    def test_changelog_joins_wrapped_lines(self, mock_get):
+        """Le Markdown est replié : une ligne n'est pas une entrée.
+
+        Constaté sur la Release v0.0.1 réelle — un paragraphe de trois lignes
+        s'affichait en trois puces, et une puce repliée en deux.
+        """
+        body = (
+            "Première version de test. Elle sert à valider la chaîne de\n"
+            "publication complète : installeur Windows et version portable.\n"
+            "\n"
+            "- Vérification des mises à jour : l'application consulte les\n"
+            "  Releases de ce dépôt.\n"
+            "- Nouveau bouton « Quitter ».\n"
+        )
+        mock_get.return_value = _fake_response([_release("v1.1.0", body=body)])
+
+        changelog = fetch_version_info("1.0.0")["versions"][0]["changelog"]
+
+        self.assertEqual(len(changelog), 3)
+        self.assertTrue(changelog[0].startswith("Première version de test."))
+        self.assertTrue(changelog[0].endswith("et version portable."))
+        self.assertIn("l&#x27;application consulte les Releases de ce dépôt.", changelog[1])
+        self.assertIn("Nouveau bouton", changelog[2])
+
+    @patch("options.requests.get")
+    def test_changelog_entry_count_is_capped(self, mock_get):
+        body = "\n".join(f"- Entrée {n}" for n in range(options.MAX_CHANGELOG_ENTRIES + 10))
+        mock_get.return_value = _fake_response([_release("v1.1.0", body=body)])
+
+        changelog = fetch_version_info("1.0.0")["versions"][0]["changelog"]
+
+        self.assertEqual(len(changelog), options.MAX_CHANGELOG_ENTRIES)
+
+    @patch("options.requests.get")
     def test_changelog_drops_underline_rules(self, mock_get):
         """Notes en reStructuredText : le soulignement d'un titre n'est pas une puce."""
         mock_get.return_value = _fake_response([
