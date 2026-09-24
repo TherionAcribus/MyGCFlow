@@ -2709,3 +2709,7 @@ msgstr ""
 msgid "Ignorer pour l'instant"
 msgstr ""
 
+#: templates/app.html
+msgid "Chargez votre fichier .gpx pour commencer"
+msgstr ""
+

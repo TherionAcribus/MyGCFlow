@@ -353,8 +353,9 @@ function updateUIAfterClear() {
     if (btn) btn.style.display = 'none';
     if (counter) counter.textContent = t('Sélection: 0 / 0');
 
-    // Sans données, Lecture/Enregistrement n'ont plus rien à animer.
-    try { pkg.updateAnimationControlsAvailability?.(); } catch(e) {}
+    // Sans données, Lecture/Enregistrement n'ont plus rien à animer et
+    // l'état vide revient sur la carte.
+    try { pkg.updateDataAvailabilityUI?.({ dataResolved: true }); } catch(e) { console.warn('updateDataAvailabilityUI error:', e); }
 }
 
 function buildPointsByDateIndex(features = []) {
@@ -796,6 +797,9 @@ export function readBdd(){
             onError: (err) => {
                 console.error('Erreur lors du chargement de la BDD:', err);
                 try { if (readLoadingToast) { pkg.hideToast(readLoadingToast); readLoadingToast = null; } } catch(e) {}
+                // Le chargement a échoué : la question « des données ? » est
+                // quand même tranchée (réponse : non) — afficher l'état vide.
+                try { pkg.updateDataAvailabilityUI?.({ dataResolved: true }); } catch(e) {}
                 showError(t('Erreur lors du chargement des données'), t('Erreur'));
             }
         });
@@ -803,6 +807,7 @@ export function readBdd(){
     .catch(error => {
         console.error('Error:', error);
         try { if (readLoadingToast) { pkg.hideToast(readLoadingToast); readLoadingToast = null; } } catch(e) {}
+        try { pkg.updateDataAvailabilityUI?.({ dataResolved: true }); } catch(e) {}
         showError(t('Erreur lors du chargement des données'), t('Erreur'));
     });
 }
@@ -849,9 +854,9 @@ function updateFiltersCounter(selected, total){
             el.textContent = `Sélection: ${selected} / ${total}`;
         }
 
-        // Lecture/Enregistrement ne sont proposés que si la sélection
-        // courante contient au moins une cache à animer.
-        try { pkg.updateAnimationControlsAvailability?.(); } catch(e) {}
+        // État vide, filtres et actions Lecture/Enregistrement suivent la
+        // présence de données (base chargée et sélection non vide).
+        try { pkg.updateDataAvailabilityUI?.({ dataResolved: true }); } catch(e) { console.warn('updateDataAvailabilityUI error:', e); }
 
         const badge = document.getElementById('dataTabBadge');
         if (badge) {

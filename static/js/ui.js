@@ -67,6 +67,13 @@ let isCombinedLatLonMode = true;
 // Enregistrement
 var selectRecordMode, selectRecordQualityProfile, recordAdvancedSettings, inputRecordFps, inputRecordBitrate, selectRecordMime, inputRecordSlowdown, inputRecordScaleFactor, cbRecordUpload, cbRecordDownload, cbRecordNormalize, selectRecordResolution, selectRecordColorFidelity;
 var cbRecordAudioEnable, inputAudioFile, inputAudioVolume;
+// Passe à true à la première synchro déclenchée par une résolution de
+// données (chargement, filtrage, vidage). L'état vide de la carte ne se
+// révèle qu'à ce moment-là : l'afficher dès l'init le ferait flasher
+// « chargez votre GPX » chez les utilisateurs dont la base existe déjà.
+// var en tête de module : initUIElements() tourne pendant l'évaluation du
+// module, avant toute déclaration placée plus bas (cf. ligne ~125).
+var dataStateResolved = false;
 // Flag pour savoir si la durée totale est définie depuis la musique
 var isDurationLockedToAudio = false;
 
@@ -535,6 +542,15 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     const btnToggleFullscreen = document.getElementById('btnToggleFullscreen');
     if (btnToggleFullscreen) btnToggleFullscreen.addEventListener('click', toggleFullscreenFromButton);
 
+    // Bouton d'import de l'état vide : délègue à l'input fichier de l'onglet
+    // Données (son écouteur 'change' lance l'upload automatiquement).
+    const btnEmptyStateImport = document.getElementById('btnEmptyStateImport');
+    if (btnEmptyStateImport) {
+        btnEmptyStateImport.addEventListener('click', () => {
+            document.getElementById('file-input')?.click();
+        });
+    }
+
     // Datepickers Animation (Tempus Dominus)
     const animDateStart = document.getElementById('animDateStart');
     const animDateEnd = document.getElementById('animDateEnd');
@@ -570,8 +586,8 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     // Initialiser l'état des contrôles (boutons principaux et barre latérale)
     dbgUi("=== INITIALISATION DES CONTROLES ===");
     showStartRecordButtons();
-    dbgUi("Appel updateControlBar depuis initUIElements");
-    updateControlBar();
+    dbgUi("Appel updateDataAvailabilityUI depuis initUIElements");
+    updateDataAvailabilityUI();
 
     // Initialiser l'apparence du bouton fullscreen
     updateFullscreenButtonAppearance();
@@ -4755,17 +4771,60 @@ function updateFullscreenButtonAppearance() {
 // c'est metadata.numberOfCaches (mis à jour par bdd.js après chargement,
 // filtrage ou vidage) qui pilote l'activation de Lecture/Enregistrement.
 function hasAnimationData() {
-    // numberOfCaches reflète la sélection courante (0 possible après filtrage) ;
-    // s'il est absent, on retombe sur le nombre de features GeoJSON chargées.
-    const count = pkg.metadata?.numberOfCaches ?? pkg.json_data?.features?.length;
-    return (Number(count) || 0) > 0;
+    // try/catch : initUIElements() s'exécute pendant l'évaluation du module
+    // (DOM déjà chargé, cf. bas de fichier), avant que bdd.js ait fini de
+    // s'initialiser — l'accès à ces exports let/const lèverait alors un TDZ.
+    // À cet instant, « pas de données » est de toute façon la réalité.
+    try {
+        // numberOfCaches reflète la sélection courante (0 possible après
+        // filtrage) ; s'il est absent, on retombe sur le GeoJSON chargé.
+        const count = pkg.metadata?.numberOfCaches ?? pkg.json_data?.features?.length;
+        return (Number(count) || 0) > 0;
+    } catch (e) {
+        return false;
+    }
 }
 
-// Active/désactive les actions Lecture/Enregistrement selon la présence de
-// données. Les boutons principaux de l'onglet Animation sont désactivés ;
-// leurs équivalents de la barre latérale sont masqués via updateControlBar().
-export function updateAnimationControlsAvailability() {
+// Vrai quand une base de données est chargée, indépendamment du résultat des
+// filtres : totalCaches garde le total importé (0 aussi si le GPX était vide).
+// Pilote l'état vide de la carte et l'inertie des sections Filtres /
+// Animation / Enregistrement — qui doivent rester actives quand les filtres
+// ramènent la sélection à 0, sinon on ne pourrait plus corriger la sélection.
+function hasDatabase() {
+    // Même garde TDZ que hasAnimationData (appel pendant l'évaluation du
+    // module, avant l'initialisation de bdd.js).
+    try {
+        return (Number(pkg.totalCaches) || 0) > 0;
+    } catch (e) {
+        return false;
+    }
+}
+
+// Synchronise l'UI avec la présence de données :
+// - sans base chargée, la carte affiche l'état vide (message + bouton d'import)
+//   et le panneau de filtres est inerte ;
+// - les actions Lecture/Enregistrement exigent en plus une sélection non vide
+//   (boutons principaux désactivés, équivalents de la barre latérale masqués).
+// Les panes de configuration Animation/Enregistrement restent volontairement
+// actifs : ce sont des préférences globales persistées (recording_configured),
+// que l'utilisateur peut régler avant tout import.
+export function updateDataAvailabilityUI({ dataResolved = false } = {}) {
+    if (dataResolved) dataStateResolved = true;
+    const hasDb = hasDatabase();
     const hasData = hasAnimationData();
+
+    const emptyState = document.getElementById('emptyState');
+    if (emptyState) emptyState.style.display = (dataStateResolved && !hasDb) ? '' : 'none';
+
+    // inert bloque interactions, focus et lecture d'écran ; .data-disabled
+    // estompe visuellement la section.
+    for (const id of ['filterPanel']) {
+        const el = document.getElementById(id);
+        if (!el) continue;
+        el.inert = !hasDb;
+        el.classList.toggle('data-disabled', !hasDb);
+    }
+
     const btnStart = document.getElementById('btnStartAnimation');
     const btnRecord = document.getElementById('btnRecordAnimation');
     if (btnStart) btnStart.disabled = !hasData;

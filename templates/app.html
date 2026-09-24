@@ -98,6 +98,20 @@
                             </button>
                         </div>
                     </div>
+
+                    <!-- État vide : affiché tant qu'aucune base n'est chargée.
+                         La carte reste manipulable (l'overlay laisse passer les
+                         événements, seule la carte d'appel est cliquable). -->
+                    <div id="emptyState" class="empty-state" role="status" style="display:none">
+                        <div class="empty-state-card">
+                            <i class="ti ti-file-upload empty-state-icon" aria-hidden="true"></i>
+                            <p class="empty-state-text">{{ _("Chargez votre fichier .gpx pour commencer") }}</p>
+                            <button type="button" id="btnEmptyStateImport" class="btn btn-primary">
+                                <i class="ti ti-upload me-1" aria-hidden="true"></i>{{ _("Sélectionner et charger un fichier .gpx") }}
+                            </button>
+                            <p class="empty-state-hint">{{ _("ou glissez-déposez votre fichier n'importe où sur la page") }}</p>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Gabarit de la popup d'information OpenLayers (clic sur un point).

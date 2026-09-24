@@ -2824,6 +2824,10 @@ msgstr "View the user guide"
 msgid "Ignorer pour l'instant"
 msgstr "Skip for now"
 
+#: templates/app.html
+msgid "Chargez votre fichier .gpx pour commencer"
+msgstr "Upload your .gpx file to get started"
+
 #~ msgid "Informations"
 #~ msgstr "Information"
 

@@ -18,15 +18,18 @@
                         </li>
                     </ul>
 
-                    <div class="tab-content pt-3">
-                    <div class="tab-pane fade show active" id="animationConfigPane" role="tabpanel" aria-labelledby="animationConfigTab" tabindex="0">
-                    <div class="mb-3">
+                    <!-- Plein écran volontairement hors des panes : c'est une
+                         commande d'affichage, elle reste active même sans base
+                         chargée (les panes sont alors inertes). -->
+                    <div class="my-3">
                         <button type="button" class="btn btn-secondary" id="btnFullscreenMode" title="{{ _('Passer en plein écran') }}">
                             <i class="ti ti-maximize me-1" aria-hidden="true"></i><span class="fullscreen-label" data-enter-text="{{ _('Plein écran') }}" data-exit-text="{{ _('Quitter le plein écran') }}">{{ _("Plein écran") }}</span>
                         </button>
                     </div>
 
-                    <h6 class="mt-3">{{ _("Plage de dates de l'animation") }}</h6>
+                    <div class="tab-content pt-3">
+                    <div class="tab-pane fade show active" id="animationConfigPane" role="tabpanel" aria-labelledby="animationConfigTab" tabindex="0">
+                    <h6>{{ _("Plage de dates de l'animation") }}</h6>
                     <div class="row g-2">
                         <div class="mb-3 col-6">
                             <label for="animDateStart" class="form-label">{{ _("Date de début") }}</label>

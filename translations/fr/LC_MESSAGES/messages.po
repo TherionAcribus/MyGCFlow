@@ -828,30 +828,32 @@ msgstr "Le format vidéo sauvegardé (${mime}) n'est pas supporté par ce naviga
 
 #: static/js/ui.js:2161
 msgid "Fermer MyGCFlow ? Le serveur local sera arrêté."
-msgstr ""
+msgstr "Fermer MyGCFlow ? Le serveur local sera arrêté."
 
 #: static/js/ui.js:2162 static/js/ui.js:2183 static/js/ui.js:2190
 #: static/js/ui.js:2196
 msgid "Quitter"
-msgstr ""
+msgstr "Quitter"
 
 #: static/js/ui.js:2183 static/js/ui.js:2196
 msgid "MyGCFlow n'a pas pu être arrêté."
-msgstr ""
+msgstr "MyGCFlow n'a pas pu être arrêté."
 
 #: static/js/ui.js:2189
 msgid ""
 "Un import ou un traitement vidéo est en cours. Il sera interrompu. "
 "Quitter quand même ?"
 msgstr ""
+"Un import ou un traitement vidéo est en cours. Il sera interrompu. "
+"Quitter quand même ?"
 
 #: static/js/ui.js:2211
 msgid "MyGCFlow est fermé"
-msgstr ""
+msgstr "MyGCFlow est fermé"
 
 #: static/js/ui.js:2212
 msgid "Vous pouvez fermer cet onglet."
-msgstr ""
+msgstr "Vous pouvez fermer cet onglet."
 
 #: static/js/ui.js:2371
 msgid ""
@@ -2261,7 +2263,7 @@ msgstr "Accueil"
 
 #: templates/menu_options.html:114
 msgid "Quitter MyGCFlow"
-msgstr ""
+msgstr "Quitter MyGCFlow"
 
 #: templates/menu_points.html:18
 msgid "Apparition animée des points"
@@ -2864,6 +2866,10 @@ msgstr "Voir le mode d'emploi"
 #: templates/modal_first_use.html:51
 msgid "Ignorer pour l'instant"
 msgstr "Ignorer pour l'instant"
+
+#: templates/app.html
+msgid "Chargez votre fichier .gpx pour commencer"
+msgstr "Chargez votre fichier .gpx pour commencer"
 
 #~ msgid "Difficulté"
 #~ msgstr "Difficulté"
