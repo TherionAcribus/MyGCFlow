@@ -581,3 +581,117 @@ test('le réglage Couleurs choisit le format de pixels du fichier final', async 
   await page.locator('#selectRecordColorFidelity').selectOption('compatible');
 });
 
+test('le suivi de caméra glisse vers les caches, se stabilise et rend la main', async ({ page }) => {
+  await page.locator('a[href="#animation"]').click();
+  await page.locator('#switchCameraFollow').check();
+
+  const suivi = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    const map = app.getMap();
+    const view = map.getView();
+    // Toutes les caches au même endroit, à l'est : la cible est sans ambiguïté.
+    const cible = [-1.5, 47.4];
+    for (const day of [...app.pointsByDate.keys()]) {
+      for (const feature of app.pointsByDate.get(day)) feature.geometry.coordinates = [...cible];
+    }
+    view.setCenter(ol.proj.fromLonLat([-2.5, 47.4]));
+    view.setZoom(6);
+    const departX = view.getCenter()[0];
+    app.options.animation.timePerDay = 400;
+    app.startAnimation();
+
+    const positions = [];
+    for (let i = 0; i < 10; i++) {
+      await new Promise((r) => setTimeout(r, 300));
+      positions.push(view.getCenter()[0]);
+    }
+    app.stopAnimation();
+
+    // Elle finit son glissement après l'animation, puis s'arrête d'elle-même
+    // (zone morte) : sans cela elle se figerait en plein mouvement.
+    let stabilise = view.getCenter()[0];
+    let figee = false;
+    for (let i = 0; i < 40; i++) {
+      await new Promise((r) => setTimeout(r, 500));
+      const maintenant = view.getCenter()[0];
+      if (maintenant === stabilise) { figee = true; break; }
+      stabilise = maintenant;
+    }
+
+    // Une interaction rend la main : la vue déplacée ne doit pas revenir.
+    view.setCenter(ol.proj.fromLonLat([-4, 47.4]));
+    map.dispatchEvent({ type: 'pointerdown' });
+    const apresDeplacement = view.getCenter()[0];
+    await new Promise((r) => setTimeout(r, 1500));
+
+    return {
+      departX,
+      cibleX: ol.proj.fromLonLat(cible)[0],
+      positions,
+      stabilise,
+      figee,
+      resteOuLUtilisateurLAMise: view.getCenter()[0] === apresDeplacement,
+    };
+  });
+
+  // La caméra avance vers la cible, sans reculer ni la dépasser.
+  for (let i = 1; i < suivi.positions.length; i++) {
+    expect(suivi.positions[i]).toBeGreaterThanOrEqual(suivi.positions[i - 1] - 1);
+    expect(suivi.positions[i]).toBeLessThanOrEqual(suivi.cibleX + 1);
+  }
+  expect(suivi.positions.at(-1)).toBeGreaterThan(suivi.departX);
+  expect(suivi.figee, 'la caméra finit par s\'arrêter').toBe(true);
+  expect(Math.abs(suivi.stabilise - suivi.cibleX)).toBeLessThan(10_000);
+  expect(suivi.resteOuLUtilisateurLAMise).toBe(true);
+
+  await page.locator('#switchCameraFollow').uncheck();
+});
+
+
+test('un enregistrement avec suivi de caméra produit une vidéo et déplace la vue', async ({ page }) => {
+  // Le mode images attend le chargement des tuiles à chaque frame : c'est le mode
+  // recommandé avec le suivi, et celui qu'on vérifie de bout en bout.
+  await selectTraditionalCaches(page);
+
+  await page.locator('a[href="#animation"]').click();
+  await page.locator('#inputTimePerDay').fill('80');
+  await page.locator('#inputExtraEndTime').fill('0');
+  await page.locator('#switchCameraFollow').check();
+  await page.locator('#recordingConfigTab').click();
+  await expect(page.locator('#recordingConfigPane')).toBeVisible();
+  await page.locator('#selectRecordMode').selectOption('images');
+  await page.locator('#selectRecordResolution').selectOption('window');
+
+  const departX = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    const map = app.getMap();
+    // Caches groupées à l'est, vue placée à l'ouest : la caméra a de quoi bouger.
+    for (const day of [...app.pointsByDate.keys()]) {
+      for (const feature of app.pointsByDate.get(day)) feature.geometry.coordinates = [-1.5, 47.4];
+    }
+    map.getView().setCenter(ol.proj.fromLonLat([-3.5, 47.4]));
+    map.getView().setZoom(6);
+    app.options.record.fps = 12;
+    return map.getView().getCenter()[0];
+  });
+
+  await page.locator('#btnRecordAnimation').click({ force: true });
+  await expect(page.locator('.gcm-toast').filter({ hasText: 'Vidéo prête' }).last()).toBeVisible({ timeout: 120_000 });
+  await expect.poll(latestCompletedMp4, { timeout: 30_000 }).not.toBeNull();
+
+  const arriveeX = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    return app.getMap().getView().getCenter()[0];
+  });
+  expect(arriveeX).toBeGreaterThan(departX);
+
+  // Nettoyage sans passer par l'interface : la modale de fin d'enregistrement
+  // intercepte encore les clics à cet instant.
+  await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    app.options.animation.cameraFollow = false;
+    const switchCameraFollow = document.getElementById('switchCameraFollow');
+    if (switchCameraFollow) switchCameraFollow.checked = false;
+  });
+});
+

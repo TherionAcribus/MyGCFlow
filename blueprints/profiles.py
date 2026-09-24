@@ -233,6 +233,8 @@ def api_save_profile(name: str):
     a = data.get('animation', {})
     if 'enabled' in a:
         prof.animation.enabled = bool(a['enabled'])
+    if 'camera_follow' in a:
+        prof.animation.camera_follow = bool(a['camera_follow'])
     if 'speed' in a:
         try:
             prof.animation.speed = float(a['speed'])

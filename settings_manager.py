@@ -183,6 +183,9 @@ class MapOptions:
 class AnimationOptions:
     enabled: bool = True
     speed: float = 1.0
+    # La vue suit le barycentre des caches du jour (translation lente, sans
+    # zoom). Voir static/js/camera_follow.mjs.
+    camera_follow: bool = False
 
 
 @dataclass
@@ -461,6 +464,7 @@ def coerce_profile(d: dict) -> MapProfile:
         p.animation = AnimationOptions(
             enabled=bool(a.get("enabled", p.animation.enabled)),
             speed=_to_float(a.get("speed"), p.animation.speed),
+            camera_follow=bool(a.get("camera_follow", p.animation.camera_follow)),
         )
 
         # Options des points
@@ -1603,6 +1607,7 @@ class SettingsManager:
             'animation': {
                 'enabled': prof.animation.enabled,
                 'speed': prof.animation.speed,
+                'camera_follow': prof.animation.camera_follow,
             },
             'points': {
                 'size': prof.points.size,

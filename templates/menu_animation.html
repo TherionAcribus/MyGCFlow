@@ -64,6 +64,11 @@
                                 <label for="inputTimePerDay" class="form-label">{{ _("Durée par jour (ms)") }}</label>
                                 <input placeholder="{{ _('Temps en ms par jour') }}" id="inputTimePerDay" type="number" class="form-control">
                             </div>
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" id="switchCameraFollow" role="switch" aria-describedby="helpCameraFollow">
+                                <label class="form-check-label" for="switchCameraFollow">{{ _("Suivi de caméra") }}</label>
+                            </div>
+                            <small id="helpCameraFollow" class="form-hint text-muted">{{ _("La vue glisse lentement vers les caches du jour, sans changer de zoom. En MediaRecorder, qui enregistre en temps réel, les tuiles de la carte peuvent apparaître en retard : préférez le mode images.") }}</small>
                         </div>
                         <div class="col-12 col-md-6">
                             <div class="mb-3">

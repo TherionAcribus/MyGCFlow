@@ -1319,6 +1319,7 @@ class ProfileManager {
             const timePerDay = parseInt(pkg.options?.animation?.timePerDay) || 1000;
             const animationSettings = {
                 enabled: true, // Par défaut activé
+                camera_follow: pkg.options?.animation?.cameraFollow === true,
                 speed: Math.max(0.1, Math.min(5.0, 1000 / timePerDay))
             };
 
@@ -1998,6 +1999,9 @@ function applyAnimationState(animationOptions) {
             console.warn('⚠️ pkg.options.animation indisponible, paramètres d\'animation ignorés');
             return;
         }
+
+        // Profils antérieurs à ce réglage : pas de suivi de caméra.
+        animation.cameraFollow = animationOptions.camera_follow === true;
 
         // Conversion vitesse -> ms par jour : speed 1.0 = 1000 ms, 2.0 = 500 ms...
         const speed = Number(animationOptions.speed);

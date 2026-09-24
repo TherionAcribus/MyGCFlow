@@ -486,6 +486,14 @@ const btnRecordAnimation = document.getElementById('btnRecordAnimation');
     if (inputTimePerDay) inputTimePerDay.addEventListener('input', changeAnimationValues);
     inputExtraEndTime = document.getElementById('inputExtraEndTime');
     if (inputExtraEndTime) inputExtraEndTime.addEventListener('input', changeAnimationValues);
+    // Suivi de caméra : réglage de profil, appliqué à la prochaine lecture ou
+    // au prochain enregistrement (la caméra repart de la vue courante).
+    const switchCameraFollow = document.getElementById('switchCameraFollow');
+    if (switchCameraFollow) {
+        switchCameraFollow.addEventListener('change', () => {
+            pkg.options.animation.cameraFollow = switchCameraFollow.checked;
+        });
+    }
 
 const btnStopAnimation = document.getElementById('btnStopAnimation');
     if (btnStopAnimation) btnStopAnimation.addEventListener('click', () => {
@@ -3634,6 +3642,8 @@ export function syncAnimationOptionsUI() {
 
     if (inputTimePerDay && animation.timePerDay != null) inputTimePerDay.value = animation.timePerDay;
     if (inputExtraEndTime) inputExtraEndTime.value = animation.extraEndSeconds ?? 0;
+    const switchCameraFollow = document.getElementById('switchCameraFollow');
+    if (switchCameraFollow) switchCameraFollow.checked = animation.cameraFollow === true;
 
     // Une durée par jour imposée (profil) délie la durée totale de la musique,
     // exactement comme une saisie manuelle dans le champ.

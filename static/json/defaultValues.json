@@ -32,6 +32,7 @@
     },
     "animation":{
         "timePerDay":50,
+        "cameraFollow": false,
         "extraEndSeconds": 0
     },
     "record": {

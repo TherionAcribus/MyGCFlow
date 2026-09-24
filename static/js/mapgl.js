@@ -111,6 +111,7 @@ import { createAppearClock, POINT_APPEAR_MS, STATIC_APPEAR } from './point_appea
 import { CAPTURE_IMAGE_QUALITY, CAPTURE_IMAGE_TYPE } from './capture_image_format.mjs';
 import { captureRatioFor } from './capture_resolution.mjs';
 import { normalizeColorFidelity } from './color_fidelity.mjs';
+import { centroid, stepCenter } from './camera_follow.mjs';
 import { flashStyleAt } from './flash_styles.js';
 import { liveFlashStep } from './flash_style_cache.mjs';
 import { staggerDelayFrames, staggerDelayMs } from './flash_impulse.mjs';
@@ -241,6 +242,12 @@ const pointStyleVariables = { now: 0, glowMs: 1 };
 let pointsAppearUntil = 0;       // fin de la dernière apparition en cours (horloge)
 let pointsAppearing = false;     // compte comme une animation pour mapDirtyTracker
 let pointsGlowing = false;       // persistance active : la carte change à chaque frame
+// Suivi de caméra (voir camera_follow.mjs) : cible = barycentre des caches du
+// jour, étendue = celle de toutes les caches affichées, horloge = celle des points.
+let cameraTarget = null;
+let cameraExtent = null;
+let cameraLastClock = null;
+let cameraInteractionKey = null;
 // Compteur de caches animé : la valeur affichée rejoint le total du jour au lieu
 // de sauter. Piloté par la même horloge que les points, donc déterministe en
 // enregistrement image par image.
@@ -590,8 +597,62 @@ function updatePointAppearClock() {
             pending = true;
         }
     }
+    if (updateCameraFollow(now)) pending = true;
+
     // Capture image par image et MediaRecorder pilotent eux-mêmes leurs rendus.
     if (pending && !isRecording && !isMediaRecording) map.render();
+}
+
+// Fait glisser la vue vers la cible, une fois par frame rendue. Retourne true
+// tant que la caméra bouge, pour entretenir le rendu comme les autres animations.
+//
+// Le centre est posé pendant le pré-rendu : il s'applique donc à la frame
+// suivante. C'est voulu — modifier la vue au milieu du rendu courant
+// produirait une frame incohérente (tuiles et points décalés d'un cran).
+function updateCameraFollow(now) {
+    // Pas de condition « animation en cours » : la caméra doit finir son
+    // glissement après le dernier jour plutôt que de se figer en plein
+    // mouvement. Elle s'arrête d'elle-même en entrant dans la zone morte.
+    if (!pkg.options.animation?.cameraFollow || !cameraTarget) {
+        cameraLastClock = now;
+        return false;
+    }
+    const dtMs = cameraLastClock === null ? 0 : now - cameraLastClock;
+    cameraLastClock = now;
+    if (!(dtMs > 0)) return false;
+
+    const view = map.getView();
+    const step = stepCenter(view.getCenter(), cameraTarget, dtMs, {
+        resolution: view.getResolution(),
+        extent: cameraExtent,
+    });
+    if (!step.moved) return false;
+    view.setCenter(step.center);
+    return true;
+}
+
+// À appeler au début d'une lecture ou d'un enregistrement : la caméra repart de
+// la vue courante, et ne sortira pas de l'étendue des caches affichées.
+function resetCameraFollow() {
+    cameraTarget = null;
+    cameraLastClock = null;
+    cameraExtent = null;
+    if (!pkg.options.animation?.cameraFollow) return;
+    // L'utilisateur reprend la main dès qu'il touche la carte : sans cela, la
+    // vue glisserait de nouveau vers la cible juste après son déplacement.
+    if (!cameraInteractionKey) {
+        cameraInteractionKey = map.on('pointerdown', () => { cameraTarget = null; });
+    }
+    try {
+        const points = getAllFilteredPoints() || [];
+        const coordinates = points.map((feature) => ol.proj.fromLonLat([
+            feature.geometry.coordinates[0],
+            feature.geometry.coordinates[1],
+        ]));
+        if (coordinates.length > 0) cameraExtent = ol.extent.boundingExtent(coordinates);
+    } catch (e) {
+        console.warn('[CAMERA] Étendue des caches indisponible, suivi sans bornes:', e);
+    }
 }
 
 // Écrit la valeur courante du compteur dans l'overlay. Retourne true tant que
@@ -853,6 +914,7 @@ export function startAnimation(restart=false) {
         }
 
         createFlashElements();
+        resetCameraFollow();
         infos = createObjectInfos();
         // Démarrer la musique de fond si activée (lecture seule)
         try { startBackgroundMusicIfAny(); } catch(e) { console.warn('startBackgroundMusicIfAny error:', e); }
@@ -1265,6 +1327,7 @@ function startRecordingProcess(){
     }
 
     createFlashElements();
+    resetCameraFollow();
     // creation objet pour stocker les infos liées aux Frames (dt nombre de caches)
     let infos = createObjectInfos();
 
@@ -2605,6 +2668,16 @@ function displayFeaturesForDates(dates, pointOptions, flashOptions, record, info
     // affiche éventuellement les infos demandées : la date affichée est celle du
     // dernier jour du lot, le compteur reçoit le total des points ajoutés.
     displayInfosForDate(infos, dates[dates.length - 1], newFeatures);
+
+    if (pkg.options.animation?.cameraFollow) {
+        // La caméra vise le barycentre des caches du jour ; c'est le lissage qui
+        // fait le mouvement, pas ce saut de cible.
+        const target = centroid(newFeatures.map((feature) => ol.proj.fromLonLat([
+            feature.geometry.coordinates[0],
+            feature.geometry.coordinates[1],
+        ])));
+        if (target) cameraTarget = target;
+    }
 
     // Source de changement principale de l'animation : signalée explicitement pour
     // que la frame suivante du compositing MR soit composée sans attendre le
