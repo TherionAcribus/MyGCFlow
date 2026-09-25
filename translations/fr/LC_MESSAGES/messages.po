@@ -2879,6 +2879,34 @@ msgstr "Gérer les profils"
 msgid "Choisir un profil"
 msgstr "Choisir un profil"
 
+#: static/js/bdd.js
+msgid "cache"
+msgstr "cache"
+
+#: static/js/bdd.js
+msgid "caches"
+msgstr "caches"
+
+#: static/js/bdd.js
+msgid "le ${date}"
+msgstr "le ${date}"
+
+#: static/js/bdd.js
+msgid "du ${start} au ${end}"
+msgstr "du ${start} au ${end}"
+
+#: static/js/bdd.js
+msgid "aujourd'hui à ${time}"
+msgstr "aujourd'hui à ${time}"
+
+#: static/js/bdd.js
+msgid "hier à ${time}"
+msgstr "hier à ${time}"
+
+#: static/js/bdd.js
+msgid "importé ${when}"
+msgstr "importé ${when}"
+
 #~ msgid "Difficulté"
 #~ msgstr "Difficulté"
 

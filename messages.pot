@@ -2721,3 +2721,31 @@ msgstr ""
 #: static/js/profiles.js
 msgid "Choisir un profil"
 msgstr ""
+
+#: static/js/bdd.js
+msgid "cache"
+msgstr ""
+
+#: static/js/bdd.js
+msgid "caches"
+msgstr ""
+
+#: static/js/bdd.js
+msgid "le ${date}"
+msgstr ""
+
+#: static/js/bdd.js
+msgid "du ${start} au ${end}"
+msgstr ""
+
+#: static/js/bdd.js
+msgid "aujourd'hui à ${time}"
+msgstr ""
+
+#: static/js/bdd.js
+msgid "hier à ${time}"
+msgstr ""
+
+#: static/js/bdd.js
+msgid "importé ${when}"
+msgstr ""

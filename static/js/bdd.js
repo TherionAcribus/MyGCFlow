@@ -1,4 +1,4 @@
-import * as pkg from './index.js';
+﻿import * as pkg from './index.js';
 import { CONFIG } from './init.js';
 import { showSuccess, showError, showInfo, t } from './notifications.js';
 import { clearMap } from './mapgl.js';
@@ -265,6 +265,74 @@ setupGpxDragAndDrop();
 // donnée n'est présente (base absente ou vide) pour inviter à charger un GPX.
 // Ce flag n'est PAS activé sur les appels post-import (la base n'est alors pas
 // vide de toute façon) ni ailleurs, pour éviter que la modale ne resurgisse.
+// ---- Libellé des informations BDD ------------------------------------------
+// « 6 caches · du 1er au 6 janvier 2026 · importé aujourd'hui à 11:35 » :
+// les dates brutes renvoyées par /db_status (RFC GMT pour les bornes,
+// « YYYY-MM-DD HH:mm:ss » local pour l'import) sont reformattées dans la
+// langue de l'interface.
+
+function bddInfoLocale() {
+    return pkg.options?.options?.language === 'en' ? 'en-US' : 'fr-FR';
+}
+
+function parseBddInfoDate(value) {
+    if (!value) return null;
+    let d = new Date(value);
+    // « 2026-09-25 11:22:21 » n'est pas un format standard : Safari exige le « T ».
+    if (isNaN(d) && typeof value === 'string') d = new Date(value.replace(' ', 'T'));
+    return isNaN(d) ? null : d;
+}
+
+// « du 1er au 6 janvier 2026 » — compresse mois/année partagés en français ;
+// en anglais, seule l'année de début identique est omise.
+function formatBddDateRange(s, e, locale) {
+    const isFr = locale.startsWith('fr');
+    const monthName = (d) => d.toLocaleDateString(locale, { month: 'long' });
+    const full = (d) => d.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
+    const dayNum = (d) => (isFr && d.getDate() === 1 ? '1er' : String(d.getDate()));
+
+    if (s.toDateString() === e.toDateString()) {
+        return t('le ${date}', { date: full(s) });
+    }
+    const sameYear = s.getFullYear() === e.getFullYear();
+    const sameMonth = sameYear && s.getMonth() === e.getMonth();
+    let startPart, endPart;
+    if (isFr) {
+        if (sameMonth)     { startPart = dayNum(s); endPart = `${dayNum(e)} ${monthName(e)} ${e.getFullYear()}`; }
+        else if (sameYear) { startPart = `${dayNum(s)} ${monthName(s)}`; endPart = `${dayNum(e)} ${monthName(e)} ${e.getFullYear()}`; }
+        else               { startPart = `${dayNum(s)} ${monthName(s)} ${s.getFullYear()}`; endPart = `${dayNum(e)} ${monthName(e)} ${e.getFullYear()}`; }
+    } else {
+        if (sameYear) { startPart = s.toLocaleDateString(locale, { month: 'long', day: 'numeric' }); endPart = full(e); }
+        else          { startPart = full(s); endPart = full(e); }
+    }
+    return t('du ${start} au ${end}', { start: startPart, end: endPart });
+}
+
+// « aujourd'hui à 11:35 », « hier à 11:35 », « le 25 septembre 2026 »
+function formatBddLoadWhen(d, locale) {
+    const time = d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+    const now = new Date();
+    if (d.toDateString() === now.toDateString()) return t("aujourd'hui à ${time}", { time });
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    if (d.toDateString() === yesterday.toDateString()) return t('hier à ${time}', { time });
+    const date = d.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
+    return t('le ${date}', { date });
+}
+
+function formatBddInfos(data) {
+    const locale = bddInfoLocale();
+    const total = data.totalPoints ?? 0;
+    const start = parseBddInfoDate(data.startDate);
+    const end = parseBddInfoDate(data.endDate);
+    const load = parseBddInfoDate(data.loadDate);
+
+    const parts = [`${total} ${t(total > 1 ? 'caches' : 'cache')}`];
+    if (start && end) parts.push(formatBddDateRange(start, end, locale));
+    if (load) parts.push(t('importé ${when}', { when: formatBddLoadWhen(load, locale) }));
+    return parts.join(' · ');
+}
+
 export function readBddValues({ offerFirstUse = false } = {}){
     try {
         fetch(`${CONFIG.BASE_URL}/db_status`)
@@ -277,16 +345,9 @@ export function readBddValues({ offerFirstUse = false } = {}){
             // (vide, ou inexistante) sont traités de façon identique côté UI.
             const hasData = !!(data && data.exists && data.isEmpty === false);
 
-            let text = '';
-            if (hasData) {
-                const total = data.totalPoints ?? 0;
-                const start = data.startDate ?? '';
-                const end = data.endDate ?? '';
-                const load = data.loadDate ?? '';
-                text = `${total} caches | ${start} → ${end}${load ? ' | ' + load : ''}`;
-            } else {
-                text = t('Aucune base de données chargée');
-            }
+            const text = hasData
+                ? formatBddInfos(data)
+                : t('Aucune base de données chargée');
 
             if (infos) infos.textContent = text;
             if (infosModal) infosModal.textContent = text;
