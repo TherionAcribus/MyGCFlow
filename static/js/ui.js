@@ -69,7 +69,7 @@ var inputTitleCss, inputInfosCss, btnTitleCss, btnInfosCss;
 var spanNbCaches, spanCurrentDate;
 let overlayCssDefaultsReady = Promise.resolve();
 let overlayCssDefaultsStarted = false;
-var selectLanguage, switchCheckVersionOnline, buttonCheckVersion, buttonHome;
+var selectLanguage, selectDateFormat, switchCheckVersionOnline, buttonCheckVersion, buttonHome;
 var inputMapCenterLat, inputMapCenterLon, inputMapCenterCombined, inputMapDefaultZoom;
 var btnUseCurrentMapCenter, btnPickMapCenter, btnClearMapCenter;
 var latLonModeCombined, latLonModeSplit, fieldLat, fieldLon, fieldCombined;
@@ -369,10 +369,12 @@ const publishedDatePickerEnd = document.getElementById('publishedDatePickerEnd')
     if (selectTerrain) initFilterTomSelect(selectTerrain);
     if (selectContainer) initFilterTomSelect(selectContainer);
 
-    // Initialiser Tempus Dominus sur les datepickers de filtre
+    // Initialiser Tempus Dominus sur les datepickers de filtre. Le format
+    // affiché suit la préférence de format de date (utils.js) ; les valeurs
+    // envoyées au serveur restent en ISO (cf. collectSelectedValues).
     const tdOptions = {
         display: { components: { clock: false } },
-        localization: { format: 'yyyy-MM-dd' },
+        localization: { format: pkg.tdDatePickerFormat() },
     };
     if (datePickerStart) initTempusDominus(datePickerStart, tdOptions);
     if (datePickerEnd) initTempusDominus(datePickerEnd, tdOptions);
@@ -604,7 +606,7 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     const animDateStart = document.getElementById('animDateStart');
     const animDateEnd = document.getElementById('animDateEnd');
     if (animDateStart) {
-        initTempusDominus(animDateStart, { display: { components: { clock: false } }, localization: { format: 'yyyy-MM-dd' } });
+        initTempusDominus(animDateStart, { display: { components: { clock: false } }, localization: { format: pkg.tdDatePickerFormat() } });
         // Les dates seront pré-remplies dans setPickerDates() quand la BDD sera chargée
         animDateStart.addEventListener('change', () => {
             const parsedDate = pkg.parseDateInput(animDateStart.value);
@@ -614,7 +616,7 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
         });
     }
     if (animDateEnd) {
-        initTempusDominus(animDateEnd, { display: { components: { clock: false } }, localization: { format: 'yyyy-MM-dd' } });
+        initTempusDominus(animDateEnd, { display: { components: { clock: false } }, localization: { format: pkg.tdDatePickerFormat() } });
         // Les dates seront pré-remplies dans setPickerDates() quand la BDD sera chargée
         animDateEnd.addEventListener('change', () => {
             const parsedDate = pkg.parseDateInput(animDateEnd.value);
@@ -735,6 +737,12 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     selectLanguage = document.getElementById('selectLanguage');
     if (selectLanguage) {
         selectLanguage.addEventListener('change', changeOptionsValues);
+    }
+
+    // Sélecteur simple natif (comme #selectLanguage) : pas de Tom Select.
+    selectDateFormat = document.getElementById('selectDateFormat');
+    if (selectDateFormat) {
+        selectDateFormat.addEventListener('change', changeDateFormat);
     }
 
     switchCheckVersionOnline = document.getElementById('switchCheckVersionOnline');
@@ -1374,6 +1382,12 @@ export function init_ui() {
 
     selectLanguage.value = pkg.options.options.language;
     refreshTomSelect(document.getElementById('selectLanguage'));
+
+    // Format de date : « auto » par défaut (résolu depuis la langue), ou le
+    // choix explicite lu dans les préférences serveur (applyUserSettings).
+    if (selectDateFormat) {
+        selectDateFormat.value = pkg.options.options.dateFormat || 'auto';
+    }
     // La valeur arrive soit des settings serveur (booléen), soit d'un ancien
     // stockage où elle a pu être sérialisée en chaîne.
     const checkVersionPref = pkg.options.options.checkVersion;
@@ -2026,6 +2040,67 @@ async function changeOptionsValues(event) {
     }
 }
 
+// Identifiants de tous les champs-date Tempus Dominus.
+const DATE_PICKER_IDS = [
+    '#datePickerStart', '#datePickerEnd',
+    '#publishedDatePickerStart', '#publishedDatePickerEnd',
+    '#animDateStart', '#animDateEnd',
+];
+
+// Capture les dates affichées AVANT un changement de format : « 05/09/2026 »
+// est ambigu (jour/mois), sa relecture dépend du format actif. Sans cette
+// capture, le re-formatage changerait silencieusement la date filtrée.
+export function snapshotPickerDates() {
+    return DATE_PICKER_IDS.map(id => {
+        const el = document.querySelector(id);
+        return { el, date: el ? pkg.parseDateInput(el.value) : null };
+    });
+}
+
+// Changement du format de date : enregistré comme préférence globale puis
+// appliqué immédiatement — pas de rechargement, toutes les dates affichées
+// sont régénérées côté client.
+async function changeDateFormat() {
+    const value = selectDateFormat.value;
+    if (!['auto', 'eu', 'us'].includes(value)) return;
+    const snapshot = snapshotPickerDates();
+    pkg.options.options.dateFormat = value;
+    await reportSave(selectDateFormat, saveSettingsPatch({ date_format: value }));
+    refreshDateFormatDisplays(snapshot);
+}
+
+// Ré-applique le format de date partout où une date est affichée. Appelée après
+// un changement de préférence, et au démarrage quand les settings serveur
+// arrivent après l'initialisation des datepickers (init.js). `snapshot` porte
+// les dates capturées sous l'ANCIEN format ; absent, elles sont relues sous le
+// format courant (démarrage : les champs sont encore vides ou déjà à jour).
+export function refreshDateFormatDisplays(snapshot = null) {
+    const format = pkg.tdDatePickerFormat();
+    const entries = snapshot || snapshotPickerDates();
+    for (const { el, date } of entries) {
+        if (!el) continue;
+        if (getTempusDominus(el)) {
+            initTempusDominus(el, { display: { components: { clock: false } }, localization: { format } });
+        }
+        if (date) {
+            setTdDate(el, date);
+            el.value = formatDateForPickers(date);
+        }
+    }
+
+    // Les boutons « valeur par défaut » comparent le texte affiché au texte
+    // attendu : les reformater dans le nouveau format.
+    updateResetButtonsHighlight();
+    updatePublishedResetButtonsHighlight();
+    updateResetAnimButtonsHighlight();
+    updateAnimFilterInfo();
+
+    // Cartouche d'infos (date courante de l'animation) — seulement si des
+    // métadonnées existent déjà : sans elles, updateCurrentDate écrirait le
+    // texte de substitution '--/--/----'.
+    if (pkg.metadata?.endDate) pkg.updateCurrentDate?.(pkg.metadata.endDate);
+}
+
 // Recharge la page pour appliquer la nouvelle langue, en conservant l'onglet
 // actif. La préférence a déjà été persistée (navigateur + backend) par l'appelant.
 function reloadWithLanguage(newLanguage) {
@@ -2402,10 +2477,10 @@ export function setPickerDates(metadata) {
     if (publishedStartElement && publishedEndElement) {
         // S'assurer que Tempus Dominus est initialisé
         if (!getTempusDominus(publishedStartElement)) {
-            initTempusDominus(publishedStartElement, { display: { components: { clock: false } }, localization: { format: 'yyyy-MM-dd' } });
+            initTempusDominus(publishedStartElement, { display: { components: { clock: false } }, localization: { format: pkg.tdDatePickerFormat() } });
         }
         if (!getTempusDominus(publishedEndElement)) {
-            initTempusDominus(publishedEndElement, { display: { components: { clock: false } }, localization: { format: 'yyyy-MM-dd' } });
+            initTempusDominus(publishedEndElement, { display: { components: { clock: false } }, localization: { format: pkg.tdDatePickerFormat() } });
         }
 
         setTdDate(publishedStartElement, defaultPublishedStartDate);
@@ -2441,8 +2516,12 @@ export function setPickerDates(metadata) {
 }
 
 function formatDateForPickers(date) {
-    const options = { day: '2-digit', month: '2-digit', year: 'numeric', };
-    return new Date(date).toLocaleDateString('fr-CA', options);
+    // Le texte affiché dans les champs suit la préférence de format de date
+    // (jj/mm/aaaa ou mm/jj/aaaa) — jamais l'ISO, réservé aux échanges réseau.
+    // null/undefined → '' (BDD vide : pas de date par défaut) ; les chaînes
+    // passent par parseLocalDate pour éviter le décalage UTC de `new Date`.
+    const d = date instanceof Date ? date : pkg.parseLocalDate(date);
+    return pkg.formatDateDisplay(d);
 }
 function resetStartDateToDefault(){
     const el = document.querySelector('#datePickerStart');
@@ -2657,8 +2736,17 @@ function collectSelectedValues(){
     const selState = document.getElementById('selectState');
     if (selCountry) selectedValues["countries"] = Array.from(selCountry.selectedOptions).map(o => o.value).filter(v => v !== '');
     if (selState) selectedValues["states"] = Array.from(selState.selectedOptions).map(o => o.value).filter(v => v !== '');
-    selectedValues["dates"] = {startDate: document.querySelector('#datePickerStart')?.value, endDate: document.querySelector('#datePickerEnd')?.value};
-    selectedValues["published_dates"] = {startDate: document.querySelector('#publishedDatePickerStart')?.value, endDate: document.querySelector('#publishedDatePickerEnd')?.value};
+    // Les champs affichent le format choisi par l'utilisateur (jj/mm ou mm/jj) :
+    // tout ce qui part au serveur ou entre dans le filtrage local est ramené
+    // en ISO « yyyy-mm-dd », comparable lexicographiquement (bdd.js/normIsoDate).
+    const toIsoDate = (id) => {
+        const el = document.querySelector(id);
+        if (!el || !el.value) return null;
+        const parsed = pkg.parseDateInput(el.value);
+        return parsed ? pkg.formatDateIso(parsed) : null;
+    };
+    selectedValues["dates"] = {startDate: toIsoDate('#datePickerStart'), endDate: toIsoDate('#datePickerEnd')};
+    selectedValues["published_dates"] = {startDate: toIsoDate('#publishedDatePickerStart'), endDate: toIsoDate('#publishedDatePickerEnd')};
     return selectedValues;
 }
 
@@ -2903,11 +2991,16 @@ function restoreSelectedValues(){
         setSelectValues(selectDifficulty, values.difficulty);
         setSelectValues(selectTerrain, values.terrain);
         setSelectValues(selectContainer, values.container);
-        // dates
+        // dates : la sélection persistée est en ISO « yyyy-mm-dd », le champ
+        // affiche le format choisi (jj/mm ou mm/jj). parseDateInput lit les
+        // deux, ce qui rend aussi lisibles les sauvegardes écrites par les
+        // anciennes versions (champs à slashes déjà persistés).
         const start = document.querySelector('#datePickerStart');
         const end = document.querySelector('#datePickerEnd');
-        if (start && values.dates?.startDate) start.value = values.dates.startDate;
-        if (end && values.dates?.endDate) end.value = values.dates.endDate;
+        const startDate = pkg.parseDateInput(values.dates?.startDate);
+        const endDate = pkg.parseDateInput(values.dates?.endDate);
+        if (start && startDate) { setTdDate(start, startDate); start.value = formatDateForPickers(startDate); }
+        if (end && endDate) { setTdDate(end, endDate); end.value = formatDateForPickers(endDate); }
         // refresh UI (Tom Select)
         if (selectType) refreshTomSelect(selectType);
         if (selectDifficulty) refreshTomSelect(selectDifficulty);
@@ -5442,7 +5535,7 @@ async function addAudioMetadataTooltip(file, element) {
             name: file.name,
             size: `${sizeKB} KB (${sizeMB} MB)`,
             type: type,
-            lastModified: new Date(file.lastModified).toLocaleDateString()
+            lastModified: pkg.formatDateDisplay(new Date(file.lastModified))
         };
 
         // Essayer d'extraire la durée via Web Audio

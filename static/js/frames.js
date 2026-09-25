@@ -116,17 +116,12 @@ export function updateCurrentDate(currentDate){
     updateInfosReserve();
 }
 
-// formatage date au format jour/mois/annee (optimisé car pas de manipulation d'objets)
+// formatage date selon la préférence de format (jj/mm/aaaa ou mm/jj/aaaa)
 function formatDate(date) {
     if (!date) return '--/--/----';
     const d = date instanceof Date ? date : new Date(date);
     if (isNaN(d.getTime())) return '--/--/----';
-    let day = d.getDate();
-    let month = d.getMonth() + 1;
-    let year = d.getFullYear();
-    day = day < 10 ? '0' + day : day;
-    month = month < 10 ? '0' + month : month;
-    return `${day}/${month}/${year}`;
+    return pkg.formatDateDisplay(d) || '--/--/----';
 }
 
 // Changement css via formulaire

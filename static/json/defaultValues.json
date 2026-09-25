@@ -1,7 +1,8 @@
 {
     "options": {
         "language": "fr",
-        "checkVersion": true
+        "checkVersion": true,
+        "dateFormat": "auto"
     },
     "map": {
         "default": "stamenToner",

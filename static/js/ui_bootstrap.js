@@ -358,15 +358,20 @@ export function setTdDate(el, date) {
     const picker = getTempusDominus(el);
     if (!picker) return;
     try {
+        // dates.setValue attend un DateTime Tempus Dominus : un Date natif
+        // lève une TypeError (« undefined .clone ») et laisse le calendrier
+        // du popup désynchronisé du texte du champ.
+        const td = tdLib();
+        const toTdDateTime = (d) => td?.DateTime?.convert ? td.DateTime.convert(d) : d;
         if (typeof date === 'string' && date) {
             // Parser yyyy-MM-dd
             const parts = date.split('-');
             if (parts.length === 3) {
                 const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-                picker.dates.setValue(d);
+                picker.dates.setValue(toTdDateTime(d));
             }
         } else if (date instanceof Date) {
-            picker.dates.setValue(date);
+            picker.dates.setValue(toTdDateTime(date));
         }
     } catch (e) {
         console.warn('[ui_bootstrap] setTdDate error:', e);

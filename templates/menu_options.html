@@ -18,6 +18,15 @@
                 </div>
 
                 <div class="mb-3 col-12 col-md-6">
+                    <label class="form-label" for="selectDateFormat">{{ _("Format des dates") }}</label>
+                    <select id="selectDateFormat" class="form-select" aria-label="{{ _('Format des dates') }}">
+                        <option value="auto">{{ _("Automatique (selon la langue)") }}</option>
+                        <option value="eu">{{ _("Jour/Mois/Année (31/12/2026)") }}</option>
+                        <option value="us">{{ _("Mois/Jour/Année (12/31/2026)") }}</option>
+                    </select>
+                </div>
+
+                <div class="mb-3 col-12 col-md-6">
                     <label class="form-label" for="selectTheme">{{ _("Thème") }}</label>
                     <select id="selectTheme" class="form-select" aria-label="{{ _('Thème de l\'interface') }}">
                         <option value="system">{{ _("Système") }}</option>

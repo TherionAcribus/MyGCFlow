@@ -331,6 +331,30 @@ class SettingsApiTests(unittest.TestCase):
 
         self.assertEqual(self.client.get('/api/settings').get_json()['theme'], 'dark')
 
+    def test_get_exposes_the_date_format(self):
+        # « auto » : le format affiché suit la langue de l'interface tant que
+        # l'utilisateur n'a pas choisi explicitement « eu » ou « us ».
+        self.assertEqual(self.client.get('/api/settings').get_json()['date_format'], 'auto')
+
+    def test_date_format_survives_a_round_trip(self):
+        self.assertEqual(self.client.put('/api/settings', json={'date_format': 'us'}).status_code, 200)
+
+        self.assertEqual(self.client.get('/api/settings').get_json()['date_format'], 'us')
+
+    def test_an_invalid_date_format_leaves_the_stored_one_untouched(self):
+        self.client.put('/api/settings', json={'date_format': 'eu'})
+        self.client.put('/api/settings', json={'date_format': 'yyyy'})
+
+        self.assertEqual(self.client.get('/api/settings').get_json()['date_format'], 'eu')
+
+    def test_a_patch_without_date_format_preserves_it(self):
+        # Un patch partiel portant un autre champ ne doit pas effacer le
+        # format de date choisi.
+        self.client.put('/api/settings', json={'date_format': 'us'})
+        self.client.put('/api/settings', json={'language': 'en'})
+
+        self.assertEqual(self.client.get('/api/settings').get_json()['date_format'], 'us')
+
     def test_a_partial_recording_patch_keeps_the_other_video_settings(self):
         self.client.put('/api/settings', json={'recording': {'fps': 24, 'bitrate_mbps': 12}})
         self.client.put('/api/settings', json={'recording': {'download_local': False}})

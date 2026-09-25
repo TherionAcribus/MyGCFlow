@@ -182,6 +182,9 @@ class AppSettings:
     # c'est encore la plus récente : une version ultérieure sera bien annoncée.
     skipped_update_version: Optional[str] = None
     theme: str = "system"  # "system" | "light" | "dark"
+    # Format d'affichage des dates : "auto" suit la langue (fr → jj/mm/aaaa,
+    # en → mm/jj/aaaa) ; "eu" et "us" forcent le format quelle que soit la langue.
+    date_format: str = "auto"  # "auto" | "eu" | "us"
     default_profile_uid: Optional[str] = None  # UUID du profil par défaut (None = aucun)
     # UUID du dernier profil rendu actif par l'utilisateur (None = aucun). C'est
     # lui que le démarrage restaure ; `default_profile_uid` ne sert plus que de
@@ -422,6 +425,13 @@ def coerce_theme(value, default: str = "system") -> str:
     return value if value in THEMES else default
 
 
+DATE_FORMATS = ("auto", "eu", "us")
+
+
+def coerce_date_format(value, default: str = "auto") -> str:
+    return value if value in DATE_FORMATS else default
+
+
 def coerce_recording_settings(d: dict) -> RecordingSettings:
     """Borne les réglages d'enregistrement aux plages acceptées par l'UI.
 
@@ -489,6 +499,7 @@ def coerce_settings(d: dict) -> AppSettings:
         s.last_update_check = _coerce_optional_str(d.get("last_update_check"))
         s.skipped_update_version = _coerce_optional_str(d.get("skipped_update_version"))
         s.theme = coerce_theme(d.get("theme"), s.theme)
+        s.date_format = coerce_date_format(d.get("date_format"), s.date_format)
         s.recording = coerce_recording_settings(d.get("recording"))
         s.animation = coerce_animation_settings(d.get("animation"))
         s.show_control_bar = bool(d.get("show_control_bar", s.show_control_bar))

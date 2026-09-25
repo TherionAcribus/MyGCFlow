@@ -132,7 +132,7 @@ function displayCheckVersion(data, mode){
 
     const currentLang = getCurrentLanguage();
     const version = data.latest_version.version;
-    const date = data.latest_version.date || "";
+    const date = formatReleaseDate(data.latest_version.date);
     const message = currentLang === 'fr'
         ? `Nouvelle version ${version} ${date ? `du ${date} ` : ''}${translations.updateFound}`
         : `New version ${version} ${date ? `from ${date} ` : ''}${translations.updateFound}`;
@@ -182,14 +182,24 @@ function getCurrentLanguage() {
     return browserLang || 'fr';
 }
 
+// Les dates de release arrivent en ISO « yyyy-mm-dd » : on les affiche dans
+// le format choisi dans les préférences. Le texte reformaté ne contient que
+// des chiffres et des slashes — sûr pour l'insertion en HTML, comme l'ISO.
+function formatReleaseDate(isoDate) {
+    const d = pkg.parseLocalDate?.(isoDate);
+    const formatted = d ? pkg.formatDateDisplay?.(d) : '';
+    return formatted || (isoDate || '');
+}
+
 // Liste des nouveautés d'une version. Les champs viennent déjà échappés du
 // serveur (options.py : `_text`), l'insertion en HTML est donc sûre.
 function changelogSection(version) {
     const changelog = Array.isArray(version.changelog) ? version.changelog : [];
+    const releaseDate = formatReleaseDate(version.release_date);
     return `
         <div class="version-changelog">
             <h6>Version ${version.version || ''}</h6>
-            ${version.release_date ? `<div class="release-date">${version.release_date}</div>` : ''}
+            ${releaseDate ? `<div class="release-date">${releaseDate}</div>` : ''}
             ${changelog.length > 0 ? `
                 <ul class="changelog-list">
                     ${changelog.map(change => `<li>${change}</li>`).join('')}
@@ -231,7 +241,7 @@ function openUpdateDetailsModal(data) {
                                         <div class="version-card latest-version">
                                             <h6>${translations.latestVersion}</h6>
                                             <div class="version-number">${latest.version}</div>
-                                            ${latest.date ? `<div class="version-date">${latest.date}</div>` : ''}
+                                            ${latest.date ? `<div class="version-date">${formatReleaseDate(latest.date)}</div>` : ''}
                                         </div>
                                     </div>
                                 </div>

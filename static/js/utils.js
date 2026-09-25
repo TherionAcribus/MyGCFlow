@@ -67,23 +67,69 @@ export function parseLocalDate(value){
     return isNaN(d.getTime()) ? null : d;
 }
 
+// --- Format d'affichage des dates -----------------------------------------
+// Préférence `options.options.dateFormat` (miroir de `date_format` dans
+// settings.json) : « auto » suit la langue de l'interface (fr → jj/mm/aaaa,
+// en → mm/jj/aaaa), « eu » et « us » la forcent.
+
+export function getDateFormatPref(){
+    const pref = pkg.options?.options?.dateFormat;
+    if (pref === 'eu' || pref === 'us') return pref;
+    // « auto » : la langue de la page servie (TRANSLATIONS.current_lang) est
+    // connue avant même que les préférences ne soient chargées ; la langue des
+    // options sert de repli.
+    const lang = (typeof window !== 'undefined' && window.TRANSLATIONS?.current_lang)
+        || pkg.options?.options?.language;
+    return lang === 'en' ? 'us' : 'eu';
+}
+
+// Format attendu par les datepickers Tempus Dominus (tokens : dd jour,
+// MM mois, yyyy année).
+export function tdDatePickerFormat(){
+    return getDateFormatPref() === 'us' ? 'MM/dd/yyyy' : 'dd/MM/yyyy';
+}
+
+// Date ISO « yyyy-mm-dd » — le seul format échangé avec le serveur.
+export function formatDateIso(date){
+    if (!(date instanceof Date) || isNaN(date.getTime())) return '';
+    const dd = String(date.getDate()).padStart(2,'0');
+    const mm = String(date.getMonth()+1).padStart(2,'0');
+    return `${date.getFullYear()}-${mm}-${dd}`;
+}
+
+// Date courte dans le format choisi : jj/mm/aaaa (« eu ») ou mm/jj/aaaa (« us »).
+export function formatDateDisplay(date){
+    if (!(date instanceof Date) || isNaN(date.getTime())) return '';
+    const first = String(date.getDate()).padStart(2,'0');
+    const second = String(date.getMonth()+1).padStart(2,'0');
+    const parts = getDateFormatPref() === 'us' ? [second, first] : [first, second];
+    return `${parts[0]}/${parts[1]}/${date.getFullYear()}`;
+}
+
 // Utilitaires date pour UI Animation
 export function parseDateInput(value){
-    // Gère dd/mm/yyyy (format français) et yyyy-mm-dd (format datepicker)
+    // Gère jj/mm/aaaa, mm/jj/aaaa et yyyy-mm-dd. Pour les formats à slashes
+    // (ambiguïté jour/mois), la préférence de format décide de l'ordre ; si ce
+    // premier essai est invalide (mois > 12) on tente l'ordre inverse.
     if (!value || typeof value !== 'string') return null;
 
     const trimmedValue = value.trim();
-
-    // Essai format dd/mm/yyyy (français)
-    let m = trimmedValue.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
     let d, mo, y;
 
+    let m = trimmedValue.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
     if (m) {
-        d = parseInt(m[1],10);
-        mo = parseInt(m[2],10)-1;
+        const a = parseInt(m[1],10), b = parseInt(m[2],10);
         y = parseInt(m[3],10);
+        // Format choisi d'abord : « us » lit mois/jour, « eu » jour/mois.
+        if (getDateFormatPref() === 'us') {
+            mo = a - 1; d = b;
+            if (mo < 0 || mo > 11) { mo = b - 1; d = a; }
+        } else {
+            d = a; mo = b - 1;
+            if (mo < 0 || mo > 11) { mo = a - 1; d = b; }
+        }
     } else {
-        // Essai format yyyy-mm-dd (datepicker)
+        // Essai format yyyy-mm-dd (datepicker / ISO)
         m = trimmedValue.match(/^(\d{4})-(\d{2})-(\d{2})$/);
         if (m) {
             y = parseInt(m[1],10);
@@ -99,11 +145,7 @@ export function parseDateInput(value){
 }
 
 export function formatDateInput(date){
-    if (!(date instanceof Date)) return '';
-    const dd = String(date.getDate()).padStart(2,'0');
-    const mm = String(date.getMonth()+1).padStart(2,'0');
-    const yy = date.getFullYear();
-    return `${dd}/${mm}/${yy}`;
+    return formatDateDisplay(date);
 }
 
 

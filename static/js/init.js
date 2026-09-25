@@ -234,6 +234,25 @@ function applyUserSettings(userSettings) {
         console.log('📥 [USER_SETTINGS] Option checkVersion appliquée:', userSettings.check_updates);
     }
 
+    // Format de date : les datepickers sont initialisés dès DOMContentLoaded,
+    // avant cette réponse serveur. Une préférence explicite (« eu »/« us »)
+    // différente du défaut « auto » suppose donc un re-formatage immédiat.
+    // Les dates affichées sont capturées AVANT le changement : sous un format
+    // ambigu (« 05/09/2026 »), les relire après coup changerait leur valeur.
+    if (userSettings.date_format) {
+        const previousFormat = pkg.getDateFormatPref?.();
+        const snapshot = pkg.snapshotPickerDates?.();
+        pkg.options.options.dateFormat = userSettings.date_format;
+        if (previousFormat && previousFormat !== pkg.getDateFormatPref()) {
+            try {
+                pkg.refreshDateFormatDisplays?.(snapshot);
+            } catch (e) {
+                console.warn('📥 [USER_SETTINGS] Reformatage des dates ignoré:', e?.message || e);
+            }
+        }
+        console.log('📥 [USER_SETTINGS] Format de date appliqué:', userSettings.date_format);
+    }
+
     // Menu flottant de contrôle : affiché par défaut (absence de la clé =
     // true), le plein écran le force visible quelle que soit la préférence.
     // La fonction met aussi à jour l'apparence du bouton « Menu flottant ».

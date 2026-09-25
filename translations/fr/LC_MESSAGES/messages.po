@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-25 16:44+0200\n"
+"POT-Creation-Date: 2026-09-25 18:07+0200\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -173,9 +173,9 @@ msgstr ""
 "Certaines tuiles de la carte n'ont pas pu être chargées (connexion "
 "instable ?)."
 
-#: static/js/basemaps.js:92 static/js/basemaps.js:129 static/js/ui.js:1895
-#: static/js/ui.js:1926 static/js/ui.js:1948 static/js/ui.js:2070
-#: static/js/ui.js:2084
+#: static/js/basemaps.js:92 static/js/basemaps.js:129 static/js/ui.js:1920
+#: static/js/ui.js:1951 static/js/ui.js:1973 static/js/ui.js:2095
+#: static/js/ui.js:2109
 msgid "Carte"
 msgstr "Carte"
 
@@ -212,7 +212,7 @@ msgstr "Fichier invalide"
 msgid "Déposez votre fichier .gpx pour le charger"
 msgstr "Déposez votre fichier .gpx pour le charger"
 
-#: static/js/bdd.js:368 static/js/bdd.js:394 static/js/mapgl.js:425
+#: static/js/bdd.js:368 static/js/bdd.js:394 static/js/mapgl.js:433
 #, python-brace-format
 msgid "le ${date}"
 msgstr "le ${date}"
@@ -303,7 +303,7 @@ msgstr "Erreur lors du chargement du fichier"
 
 #: static/js/bdd.js:941 static/js/bdd.js:948 static/js/bdd.js:1020
 #: static/js/bdd.js:1028 static/js/bdd.js:1210 static/js/bdd.js:1281
-#: static/js/bdd.js:1288 static/js/notifications.js:274 static/js/ui.js:1126
+#: static/js/bdd.js:1288 static/js/notifications.js:274 static/js/ui.js:1143
 msgid "Erreur"
 msgstr "Erreur"
 
@@ -387,42 +387,42 @@ msgstr "Erreur d'affichage"
 msgid "Mise à jour de l'affichage des points..."
 msgstr "Mise à jour de l'affichage des points..."
 
-#: static/js/mapgl.js:422
+#: static/js/mapgl.js:430
 msgid "Sans nom"
 msgstr "Sans nom"
 
-#: static/js/mapgl.js:423
+#: static/js/mapgl.js:431
 msgid "Trouvé"
 msgstr "Trouvé"
 
-#: static/js/mapgl.js:423
+#: static/js/mapgl.js:431
 msgid "DNF"
 msgstr "DNF"
 
-#: static/js/mapgl.js:424
+#: static/js/mapgl.js:432
 #, python-brace-format
 msgid "Publié le ${date}"
 msgstr "Publié le ${date}"
 
-#: static/js/mapgl.js:1420
+#: static/js/mapgl.js:1428
 msgid "Nettoyage en cours..."
 msgstr "Nettoyage en cours..."
 
-#: static/js/mapgl.js:1479
+#: static/js/mapgl.js:1491
 #, python-brace-format
 msgid "La capture a été interrompue suite à une erreur : ${message}"
 msgstr "La capture a été interrompue suite à une erreur : ${message}"
 
-#: static/js/mapgl.js:1754
+#: static/js/mapgl.js:1766
 msgid "Vidéo prête"
 msgstr "Vidéo prête"
 
-#: static/js/mapgl.js:1766
+#: static/js/mapgl.js:1778
 #, python-brace-format
 msgid "Erreur lors du traitement automatique: ${message}"
 msgstr "Erreur lors du traitement automatique: ${message}"
 
-#: static/js/mapgl.js:2057
+#: static/js/mapgl.js:2069
 msgid "Résolution réduite aux capacités du navigateur."
 msgstr "Résolution réduite aux capacités du navigateur."
 
@@ -557,7 +557,7 @@ msgstr "Renommer"
 msgid "Exporter"
 msgstr "Exporter"
 
-#: static/js/profiles.js:725 templates/menu_options.html:90
+#: static/js/profiles.js:725 templates/menu_options.html:99
 #: templates/menu_style.html:255
 msgid "Réinitialiser"
 msgstr "Réinitialiser"
@@ -796,7 +796,7 @@ msgstr ""
 msgid "La musique (${m}) se termine avant la fin de la vidéo (${v})."
 msgstr "La musique (${m}) se termine avant la fin de la vidéo (${v})."
 
-#: static/js/ui.js:994
+#: static/js/ui.js:1011
 msgid ""
 "Ce format vidéo n'est pas supporté par votre navigateur et sera ignoré au"
 " démarrage de l'enregistrement."
@@ -804,23 +804,23 @@ msgstr ""
 "Ce format vidéo n'est pas supporté par votre navigateur et sera ignoré au"
 " démarrage de l'enregistrement."
 
-#: static/js/ui.js:995 static/js/ui.js:2153
+#: static/js/ui.js:1012 static/js/ui.js:2178
 msgid "Format non supporté"
 msgstr "Format non supporté"
 
-#: static/js/ui.js:1122
+#: static/js/ui.js:1139
 msgid "Durée de l'animation calée sur la musique"
 msgstr "Durée de l'animation calée sur la musique"
 
-#: static/js/ui.js:1122
+#: static/js/ui.js:1139
 msgid "Musique"
 msgstr "Musique"
 
-#: static/js/ui.js:1126
+#: static/js/ui.js:1143
 msgid "Erreur lors de la lecture du fichier audio"
 msgstr "Erreur lors de la lecture du fichier audio"
 
-#: static/js/ui.js:1180
+#: static/js/ui.js:1197
 #, python-brace-format
 msgid ""
 "Sortie estimée : ${size}. MediaRecorder enregistre en temps réel : si la "
@@ -831,7 +831,7 @@ msgstr ""
 "vidéo saccade, choisissez une résolution plus basse ou passez en mode « "
 "Images + ffmpeg »."
 
-#: static/js/ui.js:1181
+#: static/js/ui.js:1198
 #, python-brace-format
 msgid ""
 "Sortie estimée : ${size}. En mode images, l'enregistrement devient "
@@ -842,7 +842,7 @@ msgstr ""
 "beaucoup plus lent : chaque image est capturée, encodée et envoyée une "
 "par une. La vidéo, elle, ne perdra aucune image."
 
-#: static/js/ui.js:1190
+#: static/js/ui.js:1207
 #, python-brace-format
 msgid ""
 "Même au débit maximal (${max} Mbit/s), cette résolution restera "
@@ -853,50 +853,50 @@ msgstr ""
 "compressée : baisser les images par seconde ou la résolution donnera une "
 "image plus propre."
 
-#: static/js/ui.js:1194
+#: static/js/ui.js:1211
 #, python-brace-format
 msgid "Débit ajusté à ${bitrate} Mbit/s pour cette résolution."
 msgstr "Débit ajusté à ${bitrate} Mbit/s pour cette résolution."
 
-#: static/js/ui.js:1895
+#: static/js/ui.js:1920
 msgid "Enregistrement du centre par défaut impossible"
 msgstr "Enregistrement du centre par défaut impossible"
 
-#: static/js/ui.js:1926
+#: static/js/ui.js:1951
 msgid "Coordonnées invalides. Ex: 48.85, 2.35 ou N 49° 16.029 E 006° 07.512"
 msgstr "Coordonnées invalides. Ex: 48.85, 2.35 ou N 49° 16.029 E 006° 07.512"
 
-#: static/js/ui.js:1948
+#: static/js/ui.js:1973
 msgid "Coordonnées invalides. Ex: N 49° 16.029 / E 006° 07.512"
 msgstr "Coordonnées invalides. Ex: N 49° 16.029 / E 006° 07.512"
 
-#: static/js/ui.js:2070
+#: static/js/ui.js:2095
 msgid "Cliquez sur la carte pour choisir le centre"
 msgstr "Cliquez sur la carte pour choisir le centre"
 
-#: static/js/ui.js:2084
+#: static/js/ui.js:2109
 msgid "Centre par défaut mis à jour depuis la carte"
 msgstr "Centre par défaut mis à jour depuis la carte"
 
-#: static/js/ui.js:2152
+#: static/js/ui.js:2177
 #, python-brace-format
 msgid "Le format vidéo sauvegardé (${mime}) n'est pas supporté par ce navigateur."
 msgstr "Le format vidéo sauvegardé (${mime}) n'est pas supporté par ce navigateur."
 
-#: static/js/ui.js:2233
+#: static/js/ui.js:2258
 msgid "Fermer MyGCFlow ? Le serveur local sera arrêté."
 msgstr "Fermer MyGCFlow ? Le serveur local sera arrêté."
 
-#: static/js/ui.js:2234 static/js/ui.js:2255 static/js/ui.js:2262
-#: static/js/ui.js:2268
+#: static/js/ui.js:2259 static/js/ui.js:2280 static/js/ui.js:2287
+#: static/js/ui.js:2293
 msgid "Quitter"
 msgstr "Quitter"
 
-#: static/js/ui.js:2255 static/js/ui.js:2268
+#: static/js/ui.js:2280 static/js/ui.js:2293
 msgid "MyGCFlow n'a pas pu être arrêté."
 msgstr "MyGCFlow n'a pas pu être arrêté."
 
-#: static/js/ui.js:2261
+#: static/js/ui.js:2286
 msgid ""
 "Un import ou un traitement vidéo est en cours. Il sera interrompu. "
 "Quitter quand même ?"
@@ -904,15 +904,15 @@ msgstr ""
 "Un import ou un traitement vidéo est en cours. Il sera interrompu. "
 "Quitter quand même ?"
 
-#: static/js/ui.js:2283
+#: static/js/ui.js:2308
 msgid "MyGCFlow est fermé"
 msgstr "MyGCFlow est fermé"
 
-#: static/js/ui.js:2284
+#: static/js/ui.js:2309
 msgid "Vous pouvez fermer cet onglet."
 msgstr "Vous pouvez fermer cet onglet."
 
-#: static/js/ui.js:2443
+#: static/js/ui.js:2527
 msgid ""
 "La vidéo ne sera ni téléchargée ni uploadée : elle sera perdue après "
 "l'enregistrement."
@@ -920,116 +920,116 @@ msgstr ""
 "La vidéo ne sera ni téléchargée ni uploadée : elle sera perdue après "
 "l'enregistrement."
 
-#: static/js/ui.js:2444
+#: static/js/ui.js:2528
 msgid "Aucune destination"
 msgstr "Aucune destination"
 
-#: static/js/ui.js:3130 templates/menu_filtre.html:40
+#: static/js/ui.js:3229 templates/menu_filtre.html:40
 #: templates/menu_filtre.html:58 templates/menu_filtre.html:82
 #: templates/menu_filtre.html:103 templates/menu_filtre.html:167
 #: templates/menu_filtre.html:177
 msgid "Aucun"
 msgstr "Aucun"
 
-#: static/js/ui.js:3201 templates/menu_filtre.html:163
+#: static/js/ui.js:3300 templates/menu_filtre.html:163
 msgid "Filtrer par pays"
 msgstr "Filtrer par pays"
 
-#: static/js/ui.js:3230 static/js/ui.js:3281 templates/menu_filtre.html:173
+#: static/js/ui.js:3329 static/js/ui.js:3380 templates/menu_filtre.html:173
 msgid "Filtrer par région/état"
 msgstr "Filtrer par région/état"
 
-#: static/js/ui.js:4626
+#: static/js/ui.js:4733
 msgid "Valeur requise."
 msgstr "Valeur requise."
 
-#: static/js/ui.js:4628
+#: static/js/ui.js:4735
 msgid "Format attendu : mm:ss (ex. 4:55)."
 msgstr "Format attendu : mm:ss (ex. 4:55)."
 
-#: static/js/ui.js:4629
+#: static/js/ui.js:4736
 msgid "Nombre attendu."
 msgstr "Nombre attendu."
 
-#: static/js/ui.js:4630
+#: static/js/ui.js:4737
 msgid "La valeur doit être strictement positive."
 msgstr "La valeur doit être strictement positive."
 
-#: static/js/ui.js:4632
+#: static/js/ui.js:4739
 #, python-brace-format
 msgid "Entre ${min} et ${max} jours/s."
 msgstr "Entre ${min} et ${max} jours/s."
 
-#: static/js/ui.js:4633
+#: static/js/ui.js:4740
 #, python-brace-format
 msgid "Entre ${min} et ${max} s."
 msgstr "Entre ${min} et ${max} s."
 
-#: static/js/ui.js:4634
+#: static/js/ui.js:4741
 #, python-brace-format
 msgid "Maximum ${max} s."
 msgstr "Maximum ${max} s."
 
-#: static/js/ui.js:4635
+#: static/js/ui.js:4742
 msgid "Entre 100 et 10000 ms."
 msgstr "Entre 100 et 10000 ms."
 
-#: static/js/ui.js:4636
+#: static/js/ui.js:4743
 msgid "Hors limites."
 msgstr "Hors limites."
 
-#: static/js/ui.js:4637
+#: static/js/ui.js:4744
 msgid "Valeur invalide."
 msgstr "Valeur invalide."
 
-#: static/js/ui.js:4696
+#: static/js/ui.js:4803
 #, python-brace-format
 msgid "${n} jours"
 msgstr "${n} jours"
 
-#: static/js/ui.js:4697
+#: static/js/ui.js:4804
 #, python-brace-format
 msgid "${n} jours/s"
 msgstr "${n} jours/s"
 
-#: static/js/ui.js:4698
+#: static/js/ui.js:4805
 #, python-brace-format
 msgid "animation ${d}"
 msgstr "animation ${d}"
 
-#: static/js/ui.js:4699
+#: static/js/ui.js:4806
 #, python-brace-format
 msgid "fin ${d}"
 msgstr "fin ${d}"
 
-#: static/js/ui.js:4701
+#: static/js/ui.js:4808
 #, python-brace-format
 msgid "+ ${d} additionnel"
 msgstr "+ ${d} additionnel"
 
-#: static/js/ui.js:4702
+#: static/js/ui.js:4809
 #, python-brace-format
 msgid "vidéo ${d}"
 msgstr "vidéo ${d}"
 
-#: static/js/ui.js:4703
+#: static/js/ui.js:4810
 #, python-brace-format
 msgid "${n} images"
 msgstr "${n} images"
 
-#: static/js/ui.js:4722
+#: static/js/ui.js:4829
 msgid "La plage de dates est invalide ou vide."
 msgstr "La plage de dates est invalide ou vide."
 
-#: static/js/ui.js:4723
+#: static/js/ui.js:4830
 msgid "Sélectionnez un fichier audio pour le mode « Sur la musique »."
 msgstr "Sélectionnez un fichier audio pour le mode « Sur la musique »."
 
-#: static/js/ui.js:4730
+#: static/js/ui.js:4837
 msgid "En attente de la lecture de la durée de la musique."
 msgstr "En attente de la lecture de la durée de la musique."
 
-#: static/js/ui.js:4744
+#: static/js/ui.js:4851
 #, python-brace-format
 msgid ""
 "Durée demandée (${req}) trop courte pour afficher chaque jour (minimum "
@@ -1038,7 +1038,7 @@ msgstr ""
 "Durée demandée (${req}) trop courte pour afficher chaque jour (minimum "
 "${min}) : ${app} appliquée."
 
-#: static/js/ui.js:4784
+#: static/js/ui.js:4891
 #, python-brace-format
 msgid ""
 "Charge élevée : jusqu'à ~${n} flashs simultanés. Pistes : raccourcir la "
@@ -1047,7 +1047,7 @@ msgstr ""
 "Charge élevée : jusqu'à ~${n} flashs simultanés. Pistes : raccourcir la "
 "durée du flash, ralentir l'animation, ou utiliser le mode Images."
 
-#: static/js/ui.js:4788
+#: static/js/ui.js:4895
 #, python-brace-format
 msgid ""
 "${n} images à produire (~${d} en mode Images). Envisagez un fps plus bas "
@@ -1056,36 +1056,36 @@ msgstr ""
 "${n} images à produire (~${d} en mode Images). Envisagez un fps plus bas "
 "ou une animation plus courte."
 
-#: static/js/ui.js:4936
+#: static/js/ui.js:5043
 msgid "Images de capture supprimées"
 msgstr "Images de capture supprimées"
 
-#: static/js/ui.js:4936
+#: static/js/ui.js:5043
 msgid "Nettoyage"
 msgstr "Nettoyage"
 
-#: static/js/ui.js:4940
+#: static/js/ui.js:5047
 msgid "Assemblage en cours"
 msgstr "Assemblage en cours"
 
-#: static/js/ui.js:4960
+#: static/js/ui.js:5067
 #, python-brace-format
 msgid "Dossier vidéo: ${folder}"
 msgstr "Dossier vidéo: ${folder}"
 
-#: static/js/ui.js:4960 static/js/ui.js:4962 static/js/ui.js:4967
+#: static/js/ui.js:5067 static/js/ui.js:5069 static/js/ui.js:5074
 msgid "Ouverture"
 msgstr "Ouverture"
 
-#: static/js/ui.js:4962
+#: static/js/ui.js:5069
 msgid "Impossible d’ouvrir le dossier vidéo"
 msgstr "Impossible d’ouvrir le dossier vidéo"
 
-#: static/js/ui.js:4967
+#: static/js/ui.js:5074
 msgid "Erreur lors de l’ouverture du dossier vidéo"
 msgstr "Erreur lors de l’ouverture du dossier vidéo"
 
-#: static/js/ui.js:6188
+#: static/js/ui.js:6295
 msgid "Sélectionnez d'abord un fichier audio"
 msgstr "Sélectionnez d'abord un fichier audio"
 
@@ -1097,7 +1097,7 @@ msgstr ""
 "Réglage du thème actif : appliqué immédiatement, mais conservé seulement "
 "après un clic sur « Sauvegarder » dans la section Thèmes."
 
-#: templates/_scope_badges.html:25 templates/menu_options.html:21
+#: templates/_scope_badges.html:25 templates/menu_options.html:30
 #: templates/menu_style.html:16
 msgid "Thème"
 msgstr "Thème"
@@ -1163,7 +1163,7 @@ msgid "Préférences"
 msgstr "Préférences"
 
 #: templates/guide.html:6 templates/guide.html:23
-#: templates/menu_options.html:106
+#: templates/menu_options.html:115
 msgid "Mode d'emploi"
 msgstr "Mode d'emploi"
 
@@ -1841,7 +1841,7 @@ msgstr "Vérifier les mises à jour au démarrage"
 msgid "soyez prévenu d'une nouvelle version."
 msgstr "soyez prévenu d'une nouvelle version."
 
-#: templates/guide.html:272 templates/menu_options.html:41
+#: templates/guide.html:272 templates/menu_options.html:50
 msgid "Thème par défaut au démarrage"
 msgstr "Thème par défaut au démarrage"
 
@@ -1865,7 +1865,7 @@ msgstr ""
 "Définissez le centre (latitude, longitude) et le zoom utilisés au "
 "démarrage."
 
-#: templates/guide.html:279 templates/menu_options.html:84
+#: templates/guide.html:279 templates/menu_options.html:93
 msgid "Utiliser la vue actuelle de la carte"
 msgstr "Utiliser la vue actuelle de la carte"
 
@@ -1873,7 +1873,7 @@ msgstr "Utiliser la vue actuelle de la carte"
 msgid "reprend la position affichée."
 msgstr "reprend la position affichée."
 
-#: templates/guide.html:280 templates/menu_options.html:87
+#: templates/guide.html:280 templates/menu_options.html:96
 msgid "Choisir sur la carte"
 msgstr "Choisir sur la carte"
 
@@ -2431,31 +2431,47 @@ msgstr "Anglais"
 msgid "Français"
 msgstr "Français"
 
-#: templates/menu_options.html:22
+#: templates/menu_options.html:21 templates/menu_options.html:22
+msgid "Format des dates"
+msgstr "Format des dates"
+
+#: templates/menu_options.html:23
+msgid "Automatique (selon la langue)"
+msgstr "Automatique (selon la langue)"
+
+#: templates/menu_options.html:24
+msgid "Jour/Mois/Année (31/12/2026)"
+msgstr "Jour/Mois/Année (31/12/2026)"
+
+#: templates/menu_options.html:25
+msgid "Mois/Jour/Année (12/31/2026)"
+msgstr "Mois/Jour/Année (12/31/2026)"
+
+#: templates/menu_options.html:31
 msgid "Thème de l'interface"
 msgstr "Thème de l'interface"
 
-#: templates/menu_options.html:23
+#: templates/menu_options.html:32
 msgid "Système"
 msgstr "Système"
 
-#: templates/menu_options.html:24 templates/menu_style.html:106
+#: templates/menu_options.html:33 templates/menu_style.html:106
 msgid "Clair"
 msgstr "Clair"
 
-#: templates/menu_options.html:25 templates/menu_style.html:109
+#: templates/menu_options.html:34 templates/menu_style.html:109
 msgid "Sombre"
 msgstr "Sombre"
 
-#: templates/menu_options.html:36
+#: templates/menu_options.html:45
 msgid "Vérifier les nouvelles versions au démarrage"
 msgstr "Vérifier les nouvelles versions au démarrage"
 
-#: templates/menu_options.html:42
+#: templates/menu_options.html:51
 msgid "Thème par défaut"
 msgstr "Thème par défaut"
 
-#: templates/menu_options.html:46
+#: templates/menu_options.html:55
 msgid ""
 "Utilisé à la première ouverture. Ensuite, MyGCFlow rouvre le dernier "
 "profil utilisé."
@@ -2463,47 +2479,47 @@ msgstr ""
 "Utilisé à la première ouverture. Ensuite, MyGCFlow rouvre le dernier "
 "profil utilisé."
 
-#: templates/menu_options.html:56
+#: templates/menu_options.html:65
 msgid "Mode de saisie du centre de carte"
 msgstr "Mode de saisie du centre de carte"
 
-#: templates/menu_options.html:58
+#: templates/menu_options.html:67
 msgid "Lat, Lon"
 msgstr "Lat, Lon"
 
-#: templates/menu_options.html:60
+#: templates/menu_options.html:69
 msgid "Séparés"
 msgstr "Séparés"
 
-#: templates/menu_options.html:64
+#: templates/menu_options.html:73
 msgid "Centre de carte par défaut - Lat, Lon"
 msgstr "Centre de carte par défaut - Lat, Lon"
 
-#: templates/menu_options.html:68
+#: templates/menu_options.html:77
 msgid "Centre de carte par défaut - Latitude"
 msgstr "Centre de carte par défaut - Latitude"
 
-#: templates/menu_options.html:72
+#: templates/menu_options.html:81
 msgid "Centre de carte par défaut - Longitude"
 msgstr "Centre de carte par défaut - Longitude"
 
-#: templates/menu_options.html:78
+#: templates/menu_options.html:87
 msgid "Zoom de carte par défaut"
 msgstr "Zoom de carte par défaut"
 
-#: templates/menu_options.html:80
+#: templates/menu_options.html:89
 msgid "Valeur autorisée : de 0 à 22."
 msgstr "Valeur autorisée : de 0 à 22."
 
-#: templates/menu_options.html:100
+#: templates/menu_options.html:109
 msgid "Vérifier les mises à jour"
 msgstr "Vérifier les mises à jour"
 
-#: templates/menu_options.html:103
+#: templates/menu_options.html:112
 msgid "Accueil"
 msgstr "Accueil"
 
-#: templates/menu_options.html:114
+#: templates/menu_options.html:123
 msgid "Quitter MyGCFlow"
 msgstr "Quitter MyGCFlow"
 

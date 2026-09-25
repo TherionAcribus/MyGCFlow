@@ -1,4 +1,10 @@
 import { expect, test } from '@playwright/test';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const FIXTURE = path.join(HERE, 'fixtures', 'my-finds.gpx');
 
 // Préférences globales : thème et réglages d'enregistrement vivaient dans le
 // seul localStorage, donc étaient perdus au changement de navigateur ou au
@@ -38,6 +44,7 @@ test.afterEach(async ({ page }) => {
     body: JSON.stringify({
       theme: 'system',
       check_updates: false,
+      date_format: 'auto',
       recording: { fps: 30, bitrate_mbps: 6, slowdown_factor: 1, download_local: true },
     }),
   })).catch(() => {});
@@ -490,6 +497,40 @@ test('le centre de carte se saisit en un champ ou en deux, au choix', async ({ p
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ map_default_center: null, map_default_zoom: null }),
   }));
+});
+
+
+test('le format de date se règle dans les préférences et reformate les dates affichées', async ({ page }) => {
+  await openReadyApp(page);
+  // Les champs de date restent inaccessibles tant qu'aucune base n'est
+  // chargée : l'import peuple les datepickers avec les bornes de la BDD
+  // (fixture : 2026-01-01 → 2026-01-06).
+  await page.locator('#file-input').setInputFiles(FIXTURE);
+  await expect(page.locator('#filtersCounter')).toContainText('6 / 6', { timeout: 45_000 });
+
+  // « auto » + langue fr : jj/mm/aaaa → la fin de plage s'affiche 06/01/2026.
+  const endInput = page.locator('#datePickerEnd');
+  await expect(endInput).toHaveValue('06/01/2026');
+
+  await page.locator('a[href="#settings"]').click();
+  const select = page.locator('#selectDateFormat');
+  await expect(select).toHaveValue('auto');
+
+  await select.selectOption('us');
+  await expect.poll(async () => (await readServerSettings(page)).date_format).toBe('us');
+
+  // La date garde son sens — le 6 janvier — mais s'affiche en mm/jj/aaaa.
+  // Sans la capture préalable du changement de format, la relecture de
+  // « 06/01 » en mois/jour l'aurait silencieusement changée en 1er juin.
+  await page.locator('a[href="#data"]').click();
+  await expect(endInput).toHaveValue('01/06/2026');
+
+  // Retour à « auto » (fr) : jj/mm/aaaa.
+  await page.locator('a[href="#settings"]').click();
+  await select.selectOption('auto');
+  await expect.poll(async () => (await readServerSettings(page)).date_format).toBe('auto');
+  await page.locator('a[href="#data"]').click();
+  await expect(endInput).toHaveValue('06/01/2026');
 });
 
 

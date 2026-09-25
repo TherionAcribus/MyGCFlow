@@ -8,6 +8,7 @@ from settings_manager import (
     AppSettings,
     InvalidProfileNameError,
     coerce_animation_settings,
+    coerce_date_format,
     coerce_map_center,
     coerce_map_zoom,
     coerce_overlay_title,
@@ -37,6 +38,7 @@ def api_get_settings():
         'check_updates': s.check_updates,
         'skipped_update_version': s.skipped_update_version,
         'theme': s.theme,
+        'date_format': s.date_format,
         'default_profile_uid': s.default_profile_uid,
         'default_profile_name': default_profile_name,
         'last_profile_uid': s.last_profile_uid,
@@ -67,6 +69,10 @@ def api_put_settings():
         check_updates = bool(data.get('check_updates', current.check_updates))
         show_control_bar = bool(data.get('show_control_bar', current.show_control_bar))
         theme = coerce_theme(data.get('theme'), current.theme) if 'theme' in data else current.theme
+        date_format = (
+            coerce_date_format(data.get('date_format'), current.date_format)
+            if 'date_format' in data else current.date_format
+        )
 
         # Version ignorée : envoyée par le bouton « Ignorer cette version » de la
         # modale de mise à jour, et remise à null quand l'utilisateur veut de
@@ -131,6 +137,7 @@ def api_put_settings():
             last_update_check=current.last_update_check,
             skipped_update_version=skipped_update_version,
             theme=theme,
+            date_format=date_format,
             default_profile_uid=default_profile_uid,
             last_profile_uid=last_profile_uid,
             map_default_center=map_default_center,

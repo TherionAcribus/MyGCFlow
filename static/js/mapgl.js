@@ -415,8 +415,16 @@ export function initPopupOverlay(){
         const gcEsc = sanitize(gcRaw);
         const linkHref = gcRaw ? `https://coord.info/${encodeURIComponent(gcRaw)}` : null;
         const owner = sanitize(props.owner);
-        const dateFind = sanitize(props.date_find);
-        const publishedDate = sanitize(props.published_date);
+        // Les propriétés GeoJSON sont en ISO « yyyy-mm-dd » : affichage dans le
+        // format choisi dans les préférences (jj/mm ou mm/jj). Si la valeur
+        // n'est pas une date lisible, on retombe sur le texte brut échappé.
+        const fmtPopupDate = (v) => {
+            const d = pkg.parseLocalDate?.(v);
+            const formatted = d ? pkg.formatDateDisplay?.(d) : '';
+            return formatted || sanitize(v);
+        };
+        const dateFind = fmtPopupDate(props.date_find);
+        const publishedDate = fmtPopupDate(props.published_date);
 
         const t = pkg.t || ((s) => s);
         const nameLabel = name || t('Sans nom');
