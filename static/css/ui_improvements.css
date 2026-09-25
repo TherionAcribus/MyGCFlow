@@ -190,9 +190,8 @@
 
 /* Options de cartes Vector/Toner - gérées par JS via .show et style.display */
 /* Le styling de base est dans .map-options (section composants post-migration) */
-#vectorMapOptions.show, #tonerMapOptions.show {
-    /* JS gère display:block/none; .show est conservé pour compatibilité */
-}
+/* #vectorMapOptions.show / #tonerMapOptions.show : JS gère display:block/none ;
+   la classe .show est conservée pour compatibilité, sans règle CSS dédiée. */
 
 /* Nouveaux styles pour les contrôles Vector */
 .vector-control-group {
@@ -756,10 +755,8 @@ main.fullscreen-mode #infosFrame span:not([hidden]) {
 
 
 /* Styles pour le formulaire flash */
-#flash {
-    /* Pas de padding/margin vertical : le titre "Animation du Flash" doit
-       s'aligner sur celui de "Graphisme des points" dans la colonne voisine. */
-}
+/* #flash : pas de padding/margin vertical — le titre "Animation du Flash" doit
+   s'aligner sur celui de "Graphisme des points" dans la colonne voisine. */
 
 #flash input[type="color"] {
     width: 60px;
@@ -1334,9 +1331,8 @@ background: rgba(33, 150, 243, 0.04);
     pointer-events: none;
     user-select: none;
 }
-.filter-actions .btn-link.filter-all-active {
-    /* Même apparence que les autres boutons — pas de distinction visuelle */
-}
+/* .filter-all-active : marqueur d'état posé par updateFilterInfoFor (JS) quand
+   tout est sélectionné — même apparence que les autres boutons, sans règle. */
 
 /* Multi-sélections compactes : le choix se fait dans une liste recherchable
    à cases à cocher, le contrôle fermé n'affiche qu'un résumé. */
