@@ -1,0 +1,59 @@
+{
+  "version": 2,
+  "name": "Coucher Tropical",
+  "uid": "92fbbc0aac3145b1bef53a365ef7f6de",
+  "map": {
+    "tile_provider": "watercolor",
+    "default_center": [
+      7.262,
+      43.7102
+    ],
+    "default_zoom": 6,
+    "vector_options": {
+      "stroke_color": "#ff6b6b",
+      "fill_color": "#ffd29d",
+      "background_color": "#fff3e0",
+      "stroke_width": 1.6
+    },
+    "toner_options": {
+      "variant": "light"
+    }
+  },
+  "animation": {
+    "enabled": true,
+    "speed": 1.1,
+    "camera_follow": false
+  },
+  "points": {
+    "size": 9,
+    "color": "#ff6b6b",
+    "shape": "circle",
+    "halo": true,
+    "border_color": "#fff3e0",
+    "border_size": 2,
+    "fill_color_type": "gc",
+    "border_color_type": "fix",
+    "mode": "vectoriel",
+    "icon_set": "geocaching",
+    "icon_size": 24,
+    "appear_animation": false,
+    "recent_glow_days": 0
+  },
+  "flash": {
+    "mode": "diamond",
+    "duration": 1000,
+    "size": 60,
+    "color": "#ff9e2c",
+    "color_type": "gc"
+  },
+  "infos": {
+    "title": {
+      "display": true,
+      "text": "Sunset Cache Trail"
+    },
+    "number_of_caches": true,
+    "current_date": true,
+    "title_css": "color: #fff3e0;\n                    background: linear-gradient(135deg, #ff9e2c 0%, #ff6b6b 100%);\n                    padding: 12px 18px;\n                    border-radius: 14px;\n                    font-weight: 700;\n                    letter-spacing: 0.6px;\n                    box-shadow: 0 12px 26px rgba(255, 107, 107, 0.3);",
+    "infos_css": "color: #7a3b1d;\n                    background: rgba(255, 243, 224, 0.92);\n                    padding: 8px 14px;\n                    border-radius: 12px;\n                    border-left: 4px solid #ff9e2c;\n                    box-shadow: 0 8px 18px rgba(255, 107, 107, 0.16);"
+  }
+}

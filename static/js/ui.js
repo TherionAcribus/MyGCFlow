@@ -38,7 +38,7 @@ var radioFillColorPoint, radioborderColorPoint;
 var switchIconeVectoriel, selectShape;
 // Filtres BDD - boutons d'aide
 var btnAllType, btnNoneType, btnAllDifficulty, btnNoneDifficulty, btnAllTerrain, btnNoneTerrain, btnAllContainer, btnNoneContainer;
-var infoType, infoDifficulty, infoTerrain, infoContainer;
+
 var debounceTimer = null;
 const DEBOUNCE_DELAY = 200; // ms
 var isBatchReset = false; // court-circuite le debounce pendant un reset groupé
@@ -352,12 +352,6 @@ const publishedDatePickerEnd = document.getElementById('publishedDatePickerEnd')
     // Bouton "Réinitialiser tous les filtres"
     const btnResetAllFilters = document.getElementById('btnResetAllFilters');
     if (btnResetAllFilters) btnResetAllFilters.addEventListener('click', resetAllFilters);
-
-    // Zones d'information sous chaque filtre
-    infoType = document.getElementById('infoType');
-    infoDifficulty = document.getElementById('infoDifficulty');
-    infoTerrain = document.getElementById('infoTerrain');
-    infoContainer = document.getElementById('infoContainer');
 
     // Initialiser Tom Select
     if (selectType) initFilterTomSelect(selectType);
@@ -1336,32 +1330,7 @@ export function init_ui() {
     } catch(_) {}
 
     // Charger l'arbre Country/State et peupler selects
-    try {
-        dbgFilters('[COUNTRY] Fetching /api/country_state ...');
-        const apiUrl = `${window.location.origin}/api/country_state`;
-        fetch(apiUrl)
-            .then(async r => {
-                dbgFilters('[COUNTRY] Response ok=', r.ok, 'status=', r.status);
-                const txt = await r.text();
-                dbgFilters('[COUNTRY] Response length=', txt?.length);
-                // Pas de repli sur un fichier statique : l'arbre pays/régions est
-                // une donnée de l'utilisateur, rangée hors de static/ (paths.py).
-                let data;
-                try {
-                    data = txt ? JSON.parse(txt) : {};
-                } catch(err) {
-                    console.warn('[COUNTRY] JSON parse failed for API.', err);
-                    data = {};
-                }
-                countryToStates = data || {};
-                dbgFilters('[COUNTRY] Data received. Countries:', Object.keys(countryToStates).length);
-                populateCountryStateSelects(countryToStates);
-            })
-            .catch((e)=>{ console.warn('[COUNTRY] Fetch error:', e); })
-            .finally(()=>{ dbgFilters('[COUNTRY] Fetch chain completed'); });
-    } catch(e) {
-        console.warn('[COUNTRY] Outer try/catch error:', e);
-    }
+    refreshCountryStateFilters();
 
     // Les contrôles de style sont remplis depuis pkg.options (valeurs par défaut
     // ici, valeurs du profil lors d'un chargement de profil) : mêmes fonctions
@@ -2563,6 +2532,21 @@ function initFilterTomSelect(selectEl){
         searchInput.placeholder = searchPlaceholder;
         searchInput.setAttribute('aria-label', searchPlaceholder);
     }
+
+    // Les actions Tout/Aucun ne vivent plus en permanence sous le champ :
+    // elles rejoignent la zone de recherche du menu déroulant (sticky), visibles
+    // uniquement à l'ouverture. La référence est conservée sur le select car
+    // Pays/Région détruisent puis recréent leur Tom Select
+    // (populateCountryStateSelects, changement de pays) : le nœud survit au
+    // destroy() et rejoint le nouveau dropdown à la ré-init.
+    const actions = selectEl._filterActions
+        || selectEl.closest('.filter-field')?.querySelector('.filter-actions');
+    if (actions) {
+        selectEl._filterActions = actions;
+        const wrap = ts.dropdown?.querySelector('.dropdown-input-wrap');
+        (wrap || ts.dropdown)?.appendChild(actions);
+    }
+
     updateCompactFilterSummary(selectEl);
     return ts;
 }
@@ -2581,6 +2565,42 @@ function updateCompactFilterSummary(selectEl, all = null, none = null){
             : `${selectedCount} / ${options.length}`;
     ts.control.dataset.summary = summary;
     ts.control.setAttribute('aria-label', `${selectEl.getAttribute('aria-label') || ''}: ${summary}`);
+    // Sélection partielle : le résumé fermé n'affiche que le compte (n / total),
+    // la liste des noms reste accessible au survol via le tooltip natif.
+    ts.control.title = (!isAll && !isNone) ? getSelectedValuesText(selectEl) : '';
+}
+
+// Récupère l'arbre pays/régions depuis l'API et (re)peuple les selects. Appelé
+// à l'init et après chaque import : sur une base vide au démarrage l'arbre est
+// vide, il faut le recharger une fois les données importées pour que les
+// filtres Pays/Région existent.
+export function refreshCountryStateFilters() {
+    try {
+        dbgFilters('[COUNTRY] Fetching /api/country_state ...');
+        const apiUrl = `${window.location.origin}/api/country_state`;
+        fetch(apiUrl)
+            .then(async r => {
+                dbgFilters('[COUNTRY] Response ok=', r.ok, 'status=', r.status);
+                const txt = await r.text();
+                dbgFilters('[COUNTRY] Response length=', txt?.length);
+                // Pas de repli sur un fichier statique : l'arbre pays/régions est
+                // une donnée de l'utilisateur, rangée hors de static/ (paths.py).
+                let data;
+                try {
+                    data = txt ? JSON.parse(txt) : {};
+                } catch(err) {
+                    console.warn('[COUNTRY] JSON parse failed for API.', err);
+                    data = {};
+                }
+                countryToStates = data || {};
+                dbgFilters('[COUNTRY] Data received. Countries:', Object.keys(countryToStates).length);
+                populateCountryStateSelects(countryToStates);
+            })
+            .catch((e)=>{ console.warn('[COUNTRY] Fetch error:', e); })
+            .finally(()=>{ dbgFilters('[COUNTRY] Fetch chain completed'); });
+    } catch(e) {
+        console.warn('[COUNTRY] Outer try/catch error:', e);
+    }
 }
 
 function populateCountryStateSelects(tree){
@@ -2641,6 +2661,14 @@ function populateCountryStateSelects(tree){
         try { initFilterTomSelect(selState); } catch(_) {}
     }
 
+    // Les listeners ne doivent être posés qu'une fois : populate peut être
+    // rappelée après un import (refreshCountryStateFilters) alors qu'elle
+    // tournait déjà sur une base vide. Le handler lit countryToStates (variable
+    // module, mise à jour à chaque fetch) plutôt que le paramètre `tree`,
+    // pour rester valide quand l'arbre est rechargé.
+    if (selCountry.dataset.csBound) return;
+    selCountry.dataset.csBound = '1';
+
     selCountry.addEventListener('change', () => {
         // Si des vraies options sont sélectionnées, désélectionner le placeholder
         const realSelected = Array.from(selCountry.selectedOptions).filter(o => !o.disabled && o.value !== '');
@@ -2652,7 +2680,7 @@ function populateCountryStateSelects(tree){
         const selected = Array.from(selCountry.selectedOptions).map(o => o.value);
         dbgFilters('[COUNTRY] Country change selected=', selected);
         const sset = new Set();
-        selected.forEach(c => (tree[c]||[]).forEach(s => sset.add(s)));
+        selected.forEach(c => (countryToStates[c]||[]).forEach(s => sset.add(s)));
         // Détruire avant de modifier le <select> natif afin que Tom Select ne
         // conserve pas d'options obsolètes dans son DOM interne.
         try { const ts = getTomSelect(selState); if (ts) ts.destroy(); } catch(_) {}
@@ -2809,12 +2837,13 @@ function resetAllFilters(){
     onSelectionChangedDebounced();
 }
 
-// Mise à jour des informations sous chaque filtre et surbrillance "TOUT"
+// Mise à jour de l'état des actions de chaque filtre et du résumé compact
+// du contrôle fermé (« Tout (n) », « n / total », « Aucun »).
 function updateFilterInfos(){
-    updateFilterInfoFor(selectType, infoType, btnAllType, btnNoneType);
-    updateFilterInfoFor(selectDifficulty, infoDifficulty, btnAllDifficulty, btnNoneDifficulty);
-    updateFilterInfoFor(selectTerrain, infoTerrain, btnAllTerrain, btnNoneTerrain);
-    updateFilterInfoFor(selectContainer, infoContainer, btnAllContainer, btnNoneContainer);
+    updateFilterInfoFor(selectType, btnAllType, btnNoneType);
+    updateFilterInfoFor(selectDifficulty, btnAllDifficulty, btnNoneDifficulty);
+    updateFilterInfoFor(selectTerrain, btnAllTerrain, btnNoneTerrain);
+    updateFilterInfoFor(selectContainer, btnAllContainer, btnNoneContainer);
     // Country/State
     const selectCountryEl = document.getElementById('selectCountry');
     const selectStateEl = document.getElementById('selectState');
@@ -2822,26 +2851,17 @@ function updateFilterInfos(){
     const btnAllState = document.getElementById('btnAllState');
     const btnNoneCountry = document.getElementById('btnNoneCountry');
     const btnNoneState = document.getElementById('btnNoneState');
-    const infoCountry = document.getElementById('infoCountry');
-    const infoState = document.getElementById('infoState');
-    updateFilterInfoFor(selectCountryEl, infoCountry, btnAllCountry, btnNoneCountry);
-    updateFilterInfoFor(selectStateEl, infoState, btnAllState, btnNoneState);
+    updateFilterInfoFor(selectCountryEl, btnAllCountry, btnNoneCountry);
+    updateFilterInfoFor(selectStateEl, btnAllState, btnNoneState);
 }
 
-function updateFilterInfoFor(selectEl, infoEl, btnAllEl, btnNoneEl){
-    if (!selectEl || !infoEl) return;
+function updateFilterInfoFor(selectEl, btnAllEl, btnNoneEl){
+    if (!selectEl) return;
     const all = areAllSelected(selectEl);
     const none = areNoneSelected(selectEl);
-    if (all) {
-        infoEl.textContent = 'TOUT';
-        infoEl.classList.add('filter-info-all');
-        if (btnAllEl) btnAllEl.classList.add('filter-all-active');
-    } else {
-        const text = getSelectedValuesText(selectEl);
-        infoEl.textContent = text.length ? text : 'Aucun';
-        infoEl.classList.remove('filter-info-all');
-        if (btnAllEl) btnAllEl.classList.remove('filter-all-active');
-    }
+    // Marqueur d'état « tout sélectionné » (sans rendu propre) : l'information
+    // est portée par le résumé du contrôle fermé, plus par une pastille.
+    if (btnAllEl) btnAllEl.classList.toggle('filter-all-active', all);
     // Désactivation visuelle des boutons sans effet :
     // "Tout" grisé quand tout est déjà sélectionné,
     // "Aucun" grisé quand rien n'est sélectionné.

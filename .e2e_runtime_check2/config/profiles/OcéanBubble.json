@@ -1,0 +1,59 @@
+{
+  "version": 2,
+  "name": "Océan Bubble",
+  "uid": "350c0881dcf54366a9d0d3df4e8f9d46",
+  "map": {
+    "tile_provider": "OSM",
+    "default_center": [
+      -4.486,
+      48.3905
+    ],
+    "default_zoom": 6,
+    "vector_options": {
+      "stroke_color": "#0077b6",
+      "fill_color": "#90e0ef",
+      "background_color": "#f0fbff",
+      "stroke_width": 2.0
+    },
+    "toner_options": {
+      "variant": "light"
+    }
+  },
+  "animation": {
+    "enabled": true,
+    "speed": 1.0,
+    "camera_follow": false
+  },
+  "points": {
+    "size": 9,
+    "color": "#00b4d8",
+    "shape": "circle",
+    "halo": true,
+    "border_color": "#ffffff",
+    "border_size": 3,
+    "fill_color_type": "fix",
+    "border_color_type": "fix",
+    "mode": "vectoriel",
+    "icon_set": "geocaching",
+    "icon_size": 24,
+    "appear_animation": false,
+    "recent_glow_days": 0
+  },
+  "flash": {
+    "mode": "circle",
+    "duration": 1000,
+    "size": 80,
+    "color": "#90e0ef",
+    "color_type": "fix"
+  },
+  "infos": {
+    "title": {
+      "display": true,
+      "text": "Ocean Cache Map"
+    },
+    "number_of_caches": true,
+    "current_date": true,
+    "title_css": "color: #023e8a;\n                    background: rgba(240, 251, 255, 0.92);\n                    padding: 10px 18px;\n                    border-radius: 999px;\n                    font-weight: 700;\n                    letter-spacing: 0.5px;\n                    box-shadow: 0 10px 24px rgba(0, 180, 216, 0.26);",
+    "infos_css": "color: #023e8a;\n                    background: rgba(144, 224, 239, 0.32);\n                    padding: 8px 14px;\n                    border-radius: 999px;\n                    border: 1px solid rgba(0, 180, 216, 0.5);\n                    box-shadow: 0 8px 18px rgba(0, 180, 216, 0.16);"
+  }
+}

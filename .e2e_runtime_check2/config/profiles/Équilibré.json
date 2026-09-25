@@ -1,0 +1,59 @@
+{
+  "version": 2,
+  "name": "Équilibré",
+  "uid": "f1d3211fe94445c6a7849305878ebe67",
+  "map": {
+    "tile_provider": "stamenToner",
+    "default_center": [
+      2.3522,
+      48.8566
+    ],
+    "default_zoom": 6,
+    "vector_options": {
+      "stroke_color": "#94a3b8",
+      "fill_color": "#e2e8f0",
+      "background_color": "#f8fafc",
+      "stroke_width": 1.2
+    },
+    "toner_options": {
+      "variant": "light"
+    }
+  },
+  "animation": {
+    "enabled": true,
+    "speed": 1.0,
+    "camera_follow": false
+  },
+  "points": {
+    "size": 7,
+    "color": "#0ea5e9",
+    "shape": "circle",
+    "halo": true,
+    "border_color": "#ffffff",
+    "border_size": 1,
+    "fill_color_type": "gc",
+    "border_color_type": "fix",
+    "mode": "vectoriel",
+    "icon_set": "geocaching",
+    "icon_size": 24,
+    "appear_animation": false,
+    "recent_glow_days": 0
+  },
+  "flash": {
+    "mode": "impulse",
+    "duration": 600,
+    "size": 40,
+    "color": "#0ea5e9",
+    "color_type": "gc"
+  },
+  "infos": {
+    "title": {
+      "display": true,
+      "text": "My Geocaching Map"
+    },
+    "number_of_caches": true,
+    "current_date": true,
+    "title_css": "color: #0f172a;\n                    background: rgba(255, 255, 255, 0.9);\n                    padding: 10px 18px;\n                    border-radius: 12px;\n                    border: 1px solid rgba(148, 163, 184, 0.45);\n                    font-weight: 600;\n                    letter-spacing: 0.3px;\n                    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.1);",
+    "infos_css": "color: #0f172a;\n                    background: rgba(255, 255, 255, 0.9);\n                    padding: 8px 14px;\n                    border-radius: 10px;\n                    border: 1px solid rgba(148, 163, 184, 0.45);\n                    font-variant-numeric: tabular-nums;\n                    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.1);"
+  }
+}

@@ -1085,6 +1085,11 @@ function loadAndDisplayPoints() {
                     const btn = document.getElementById('clearDatabaseBtn');
                     if (btn) btn.style.display = '';
 
+                    // L'arbre pays/régions n'est chargé qu'à l'init : après un
+                    // premier import sur base vide il faut le recharger pour
+                    // que les filtres Pays/Région soient peuplés.
+                    try { pkg.refreshCountryStateFilters?.(); } catch(e) { console.warn('refreshCountryStateFilters error:', e); }
+
                     // Masquer le toast d'affichage initial
                     pkg.hidePointsToast();
                 },

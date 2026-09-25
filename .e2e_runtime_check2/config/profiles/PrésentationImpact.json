@@ -1,0 +1,59 @@
+{
+  "version": 2,
+  "name": "Présentation Impact",
+  "uid": "ba916a2bb7ae406598913bc754bf5150",
+  "map": {
+    "tile_provider": "OSM",
+    "default_center": [
+      2.0,
+      46.0
+    ],
+    "default_zoom": 5,
+    "vector_options": {
+      "stroke_color": "#111827",
+      "fill_color": "#ff6b35",
+      "background_color": "#ffffff",
+      "stroke_width": 2.8
+    },
+    "toner_options": {
+      "variant": "light"
+    }
+  },
+  "animation": {
+    "enabled": true,
+    "speed": 2.0,
+    "camera_follow": false
+  },
+  "points": {
+    "size": 10,
+    "color": "#ff6b35",
+    "shape": "circle",
+    "halo": true,
+    "border_color": "#ffffff",
+    "border_size": 3,
+    "fill_color_type": "fix",
+    "border_color_type": "fix",
+    "mode": "vectoriel",
+    "icon_set": "geocaching",
+    "icon_size": 24,
+    "appear_animation": false,
+    "recent_glow_days": 0
+  },
+  "flash": {
+    "mode": "square",
+    "duration": 700,
+    "size": 90,
+    "color": "#ffd166",
+    "color_type": "fix"
+  },
+  "infos": {
+    "title": {
+      "display": true,
+      "text": "MyGCFlow Highlights"
+    },
+    "number_of_caches": true,
+    "current_date": true,
+    "title_css": "color: #ffffff;\n                    background: rgba(17, 24, 39, 0.85);\n                    padding: 14px 18px;\n                    border-radius: 12px;\n                    font-size: 32px;\n                    font-weight: 800;\n                    letter-spacing: 1px;\n                    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);",
+    "infos_css": "color: #111827;\n                    background: rgba(255, 255, 255, 0.92);\n                    padding: 10px 14px;\n                    border-radius: 10px;\n                    border-left: 4px solid #ff6b35;\n                    box-shadow: 0 10px 24px rgba(17, 24, 39, 0.12);"
+  }
+}

@@ -70,9 +70,6 @@ h5, h6 { color: var(--color-text); font-weight: 600; }
 .btn.red, .btn.error { background-color: var(--color-danger) !important; }
 .btn.grey { background-color: #616161 !important; }
 
-/* Infos filtres */
-.filter-info { margin-top: 6px; font-size: 0.9rem; color: #424242; }
-.filter-info.filter-info-all { font-weight: 600; color: var(--color-accent); }
 /* filter-all-active maintenant géré par .btn-link.filter-all-active dans ui_improvements.css */
 
 /* Cartes d'options Vector/Toner: même style */

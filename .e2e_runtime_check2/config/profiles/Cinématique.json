@@ -1,0 +1,59 @@
+{
+  "version": 2,
+  "name": "Cinématique",
+  "uid": "4173bd2919dd422b9c93f476a813720d",
+  "map": {
+    "tile_provider": "vectorMap",
+    "default_center": [
+      2.3522,
+      48.8566
+    ],
+    "default_zoom": 6,
+    "vector_options": {
+      "stroke_color": "#475569",
+      "fill_color": "#0f172a",
+      "background_color": "#020617",
+      "stroke_width": 1.4
+    },
+    "toner_options": {
+      "variant": "dark"
+    }
+  },
+  "animation": {
+    "enabled": true,
+    "speed": 1.2,
+    "camera_follow": false
+  },
+  "points": {
+    "size": 8,
+    "color": "#f8fafc",
+    "shape": "circle",
+    "halo": true,
+    "border_color": "#0b1020",
+    "border_size": 1,
+    "fill_color_type": "gc",
+    "border_color_type": "fix",
+    "mode": "vectoriel",
+    "icon_set": "geocaching",
+    "icon_size": 24,
+    "appear_animation": true,
+    "recent_glow_days": 30
+  },
+  "flash": {
+    "mode": "impulse",
+    "duration": 750,
+    "size": 60,
+    "color": "#f8fafc",
+    "color_type": "gc"
+  },
+  "infos": {
+    "title": {
+      "display": true,
+      "text": "My Geocaching Map"
+    },
+    "number_of_caches": true,
+    "current_date": true,
+    "title_css": "color: #f8fafc;\n                    background: rgba(2, 6, 23, 0.72);\n                    padding: 12px 20px;\n                    border-radius: 4px;\n                    border-left: 3px solid #38bdf8;\n                    font-weight: 700;\n                    letter-spacing: 1.5px;\n                    text-transform: uppercase;\n                    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);",
+    "infos_css": "color: #e2e8f0;\n                    background: rgba(2, 6, 23, 0.66);\n                    padding: 8px 14px;\n                    border-radius: 4px;\n                    font-variant-numeric: tabular-nums;\n                    letter-spacing: 0.5px;\n                    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.32);"
+  }
+}

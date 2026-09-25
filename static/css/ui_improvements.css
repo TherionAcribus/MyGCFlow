@@ -885,8 +885,6 @@ main.fullscreen-mode #infosFrame span:not([hidden]) {
 }
 
 /* (Styles des chips retirés) */
-/* Infos filtres — voir .filter-info-badge dans la section composants post-migration */
-/* (les anciens styles .filter-info et .btn-flat.* ont été remplacés par .filter-info-badge et .btn-link.*) */
 
 /* Compteur de sélection */
 .filters-counter {
@@ -1298,7 +1296,17 @@ background: rgba(33, 150, 243, 0.04);
     border-radius: 8px;
 }
 
-/* Actions de filtre (boutons Tout/Aucun + badge info) */
+/* Actions de filtre (boutons Tout/Aucun). Elles ne vivent plus en permanence
+   sous le champ : le JS les déplace dans la zone de recherche (sticky) du menu
+   déroulant, visibles uniquement à l'ouverture. Tant qu'elles sont encore en
+   enfant direct du .filter-field (avant le déplacement), on les masque pour
+   éviter un flash à l'init. */
+.filter-field > .filter-actions {
+    display: none;
+}
+.dropdown-input-wrap .filter-actions {
+    margin-top: 6px;
+}
 .filter-actions {
     display: flex;
     align-items: center;
@@ -1392,33 +1400,6 @@ background: rgba(33, 150, 243, 0.04);
     .filter-field {
         margin-bottom: 0.75rem !important;
     }
-}
-
-/* Badge d'info filtre (non-interactif, à côté des boutons) */
-.filter-info-badge {
-    display: inline-flex;
-    align-items: center;
-    margin-left: 6px;
-    padding: 1px 8px;
-    font-size: 0.78rem;
-    font-weight: 500;
-    color: var(--color-text-muted);
-    background: var(--color-surface-alt, rgba(0,0,0,0.04));
-    border: 1px solid var(--color-border);
-    border-radius: 10px;
-    line-height: 1.6;
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    cursor: default;
-    user-select: none;
-}
-.filter-info-badge.filter-info-all {
-    /* Même apparence que le badge normal — pas de distinction visuelle */
-}
-.filter-info-badge:empty {
-    display: none;
 }
 
 /* Badge compteur de filtres */
@@ -1552,17 +1533,6 @@ background: rgba(33, 150, 243, 0.04);
 }
 .date-reset-btn.active-reset {
     font-weight: 600;
-}
-
-/* Info de filtre (compteur par section) */
-.filter-info {
-    margin-top: 4px;
-    font-size: 0.85rem;
-    color: var(--color-text-muted);
-}
-.filter-info.filter-info-all {
-    font-weight: 600;
-    color: var(--color-accent);
 }
 
 /* Onglets CSS assistant */

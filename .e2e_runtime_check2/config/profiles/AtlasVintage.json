@@ -1,0 +1,59 @@
+{
+  "version": 2,
+  "name": "Atlas Vintage",
+  "uid": "5af0a75ab5684038a30ab8e51bf9531a",
+  "map": {
+    "tile_provider": "vectorMap",
+    "default_center": [
+      4.8357,
+      45.764
+    ],
+    "default_zoom": 6,
+    "vector_options": {
+      "stroke_color": "#6b5b4d",
+      "fill_color": "#d8ccb4",
+      "background_color": "#efe6d2",
+      "stroke_width": 1.6
+    },
+    "toner_options": {
+      "variant": "light"
+    }
+  },
+  "animation": {
+    "enabled": true,
+    "speed": 0.85,
+    "camera_follow": false
+  },
+  "points": {
+    "size": 8,
+    "color": "#8b3a2e",
+    "shape": "triangle",
+    "halo": true,
+    "border_color": "#f6f0e3",
+    "border_size": 2,
+    "fill_color_type": "fix",
+    "border_color_type": "fix",
+    "mode": "vectoriel",
+    "icon_set": "geocaching",
+    "icon_size": 24,
+    "appear_animation": false,
+    "recent_glow_days": 0
+  },
+  "flash": {
+    "mode": "none",
+    "duration": 1000,
+    "size": 40,
+    "color": "#8b3a2e",
+    "color_type": "none"
+  },
+  "infos": {
+    "title": {
+      "display": true,
+      "text": "Atlas Geocaching"
+    },
+    "number_of_caches": true,
+    "current_date": true,
+    "title_css": "color: #4e342e;\n                    background: rgba(246, 240, 227, 0.92);\n                    padding: 10px 16px;\n                    border-radius: 4px;\n                    border: 1px solid #6b5b4d;\n                    font-family: Georgia;\n                    font-weight: 700;\n                    letter-spacing: 0.6px;",
+    "infos_css": "color: #5f4339;\n                    background: rgba(239, 230, 210, 0.9);\n                    padding: 8px 12px;\n                    border-radius: 4px;\n                    border-top: 2px solid #8b3a2e;"
+  }
+}

@@ -346,8 +346,7 @@ h5, h6 { color: var(--color-text); font-weight: 600; }
 /* --- Textes secondaires sombres codés en dur → éclaircis --- */
 [data-bs-theme="dark"] .vector-label,
 [data-bs-theme="dark"] .filter-sync-label,
-[data-bs-theme="dark"] .gc-css-tab,
-[data-bs-theme="dark"] .filter-info { color: var(--color-text-muted); }
+[data-bs-theme="dark"] .gc-css-tab { color: var(--color-text-muted); }
 [data-bs-theme="dark"] .filter-sync-value { color: var(--color-text); }
 [data-bs-theme="dark"] #delete-profile-modal .modal-subtitle { color: var(--color-text-muted); }
 [data-bs-theme="dark"] #delete-profile-modal .modal-body-text { color: var(--color-text); }
