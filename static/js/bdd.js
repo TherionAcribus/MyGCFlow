@@ -328,7 +328,10 @@ function formatBddInfos(data) {
     const end = parseBddInfoDate(data.endDate);
     const load = parseBddInfoDate(data.loadDate);
 
-    const parts = [`${total} ${t(total > 1 ? 'caches' : 'cache')}`];
+    // Libellé singulier/pluriel résolu hors du template literal pour que
+    // l'extracteur Babel voie les deux msgids.
+    const countLabel = total > 1 ? t('caches') : t('cache');
+    const parts = [`${total} ${countLabel}`];
     if (start && end) parts.push(formatBddDateRange(start, end, locale));
     if (load) parts.push(t('importé ${when}', { when: formatBddLoadWhen(load, locale) }));
     return parts.join(' · ');
@@ -814,7 +817,7 @@ export function readBdd(){
     .then(response => response.json())
     .then(data => {
         if (!data.task_id) {
-            throw new Error(data.message || 'Impossible de lancer le chargement de la BDD');
+            throw new Error(data.message || t('Impossible de lancer le chargement de la BDD'));
         }
         pollGeojsonTask(data.task_id, {
             onProgress: (p) => {
@@ -916,7 +919,7 @@ function updateFiltersCounter(selected, total){
     try {
         const el = document.getElementById('filtersCounter');
         if (el) {
-            el.textContent = `Sélection: ${selected} / ${total}`;
+            el.textContent = t('Sélection: ${selected} / ${total}', { selected, total });
         }
 
         // État vide, filtres et actions Lecture/Enregistrement suivent la
@@ -1102,7 +1105,7 @@ function loadAndDisplayPoints() {
         .then(response => response.json())
         .then(data => {
             if (!data.task_id) {
-                throw new Error(data.message || 'Impossible de lancer la génération du GeoJSON');
+                throw new Error(data.message || t('Impossible de lancer la génération du GeoJSON'));
             }
             pollGeojsonTask(data.task_id, {
                 onProgress: (p) => {

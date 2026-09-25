@@ -149,7 +149,7 @@ class NotificationManager {
      * @param {string} message - Message de chargement
      * @param {string} title - Titre optionnel
      */
-    showLoading(message = 'Chargement en cours...', title = 'Chargement') {
+    showLoading(message = t('Chargement en cours...'), title = t('Chargement')) {
         return this.show(message, 'info', title, 0, true, 0);
     }
 

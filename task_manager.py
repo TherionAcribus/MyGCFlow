@@ -9,11 +9,25 @@ from typing import Dict, Optional, Union
 ACTIVE_STATES = ("pending", "running")
 
 
+def _tr(msgid: str, **kwargs) -> str:
+    """Traduit via Flask-Babel si un contexte d'application existe, msgid brut sinon.
+
+    Ce module est aussi utilisé hors contexte Flask (tests, lanceur) : un appel
+    direct à gettext lèverait RuntimeError, et les apps de test sans extension
+    Babel provoqueraient un KeyError. Le repli renvoie le msgid français.
+    """
+    try:
+        from flask_babel import gettext
+        return gettext(msgid, **kwargs)
+    except Exception:
+        return msgid % kwargs if kwargs else msgid
+
+
 class TaskAlreadyRunning(Exception):
     """Levée par submit(exclusive=True) quand une tâche du même type est déjà active."""
 
     def __init__(self, status: "TaskStatus"):
-        super().__init__(f"Une tâche '{status.type}' est déjà en cours")
+        super().__init__(_tr("Une tâche '%(type)s' est déjà en cours", type=status.type))
         self.status = status
 
 

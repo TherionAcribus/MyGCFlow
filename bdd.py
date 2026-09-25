@@ -266,7 +266,7 @@ def _read_gpx_header(source):
 def uploadBdd(file_path, Geocache, db, status: Optional[TaskStatus] = None):
     # initialisation de l'état du chargement
     loading_state.reset()
-    _update_progress(status, 0, "Lecture du fichier GPX...")
+    _update_progress(status, 0, _("Lecture du fichier GPX..."))
 
     # Assurez-vous que la table existe
     db.create_all()
@@ -506,7 +506,8 @@ def uploadBdd(file_path, Geocache, db, status: Optional[TaskStatus] = None):
                 _update_progress(
                     status,
                     progress_value,
-                    f'Ajout du point {count} sur {total_waypoints} à la base de données'
+                    _('Ajout du point %(count)s sur %(total)s à la base de données',
+                      count=count, total=total_waypoints)
                 )
 
             # Libérer la mémoire de l'élément traité (avantage clé d'iterparse
@@ -526,7 +527,7 @@ def uploadBdd(file_path, Geocache, db, status: Optional[TaskStatus] = None):
     # On utilise bulk_insert_mappings (par lots de 1000) au lieu de add_all() :
     # cela bypass l'identity map de la session — pas d'objets ORM, pas de state
     # tracking, juste des INSERTs bruts. Typiquement 5–10× plus rapide sur SQLite.
-    _update_progress(status, 99, "Enregistrement en base de données...")
+    _update_progress(status, 99, _("Enregistrement en base de données..."))
     db.session.query(Geocache).delete()
 
     BATCH_SIZE = 1000
@@ -552,7 +553,7 @@ def uploadBdd(file_path, Geocache, db, status: Optional[TaskStatus] = None):
         logger.error("Post-import count error: %s", e)
     # On marque le chargement comme terminé
     loading_state.complete()
-    _update_progress(status, 100, "Import terminé")
+    _update_progress(status, 100, _("Import terminé"))
     geojson_cache.invalidate("gpx_import")
 
 
@@ -671,7 +672,8 @@ def create_geojson(query, Geocache, status: Optional[TaskStatus] = None, persist
 
         if status and total_points:
             progress_value = ((idx + 1) / total_points) * 100
-            _update_progress(status, progress_value, f"Génération du GeoJSON ({idx + 1}/{total_points})")
+            _update_progress(status, progress_value,
+                         _("Génération du GeoJSON (%(idx)s/%(total)s)", idx=idx + 1, total=total_points))
 
     geojson = {
         "type": "FeatureCollection",
@@ -876,52 +878,65 @@ def run_import_task(status: TaskStatus, app, file_path: str, Geocache, db, local
             pass
 
 
-def run_geojson_task(status: TaskStatus, app, Geocache, db, selected_values: Optional[dict] = None):
-    """Tâche de fond pour générer le GeoJSON complet ou filtré."""
+def run_geojson_task(status: TaskStatus, app, Geocache, db, selected_values: Optional[dict] = None,
+                     locale: Optional[str] = None):
+    """Tâche de fond pour générer le GeoJSON complet ou filtré.
+
+    `locale` est capturée dans la requête appelante (comme pour run_import_task) :
+    sans requête active, le thread de fond ne peut pas relire cookies/headers.
+    """
     with app.app_context():
-        status.set_progress(1, "Préparation des données GeoJSON...")
-        db_mtime = geojson_cache.get_database_mtime()
-        geojson_cache.invalidate_if_db_changed(db_mtime)
-
-        metadata = None
-
-        if selected_values is None:
-            cached_full = geojson_cache.get_base_dataset_if_current(db_mtime)
-            if cached_full:
-                _, metadata = cached_full
-                status.set_progress(30, "GeoJSON servi depuis le cache")
-            else:
-                status.set_progress(5, "Génération du GeoJSON complet...")
-                geojson = create_geojson(db.session.query(Geocache), Geocache, status)
-                metadata = get_metadata_from_geojson(geojson["features"])
-                geojson_cache.set_base_dataset(geojson, metadata, db_mtime)
+        if locale:
+            with force_locale(locale):
+                _generate_geojson_dataset(status, db, Geocache, selected_values)
         else:
-            cached_filtered = geojson_cache.get_filtered_if_current(selected_values, db_mtime)
-            if cached_filtered:
-                _, metadata = cached_filtered
-                status.set_progress(35, "Résultat filtré servi depuis le cache")
-            else:
-                if geojson_cache.get_base_dataset_if_current(db_mtime) is None:
-                    status.set_progress(5, "Pré-calcul du GeoJSON complet pour indexer les filtres...")
-                    base_geojson = create_geojson(db.session.query(Geocache), Geocache, status)
-                    base_metadata = get_metadata_from_geojson(base_geojson["features"])
-                    geojson_cache.set_base_dataset(base_geojson, base_metadata, db_mtime)
-                status.set_progress(45, "Application des index mémoire (date/type/région)...")
-                filtered = geojson_cache.filter_with_indexes(selected_values, db_mtime)
-                if filtered is None:
-                    status.set_progress(60, "Filtrage direct en base (fallback)...")
-                    geojson = filter_session(db, Geocache, selected_values, status)
-                    metadata = get_metadata_from_geojson(geojson["features"])
-                    geojson_cache.store_filtered_result(selected_values, geojson, metadata, db_mtime)
-                else:
-                    _, metadata = filtered
+            _generate_geojson_dataset(status, db, Geocache, selected_values)
 
-        # Stocker seulement une référence légère au lieu du GeoJSON complet
-        status.set_result({
-            "cache_ref": {
-                "type": "base" if selected_values is None else "filtered",
-                "selected_values": selected_values,
-                "db_mtime": db_mtime
-            },
-            "metadata": metadata
-        })
+
+def _generate_geojson_dataset(status: TaskStatus, db, Geocache, selected_values: Optional[dict]):
+    status.set_progress(1, _("Préparation des données GeoJSON..."))
+    db_mtime = geojson_cache.get_database_mtime()
+    geojson_cache.invalidate_if_db_changed(db_mtime)
+
+    metadata = None
+
+    if selected_values is None:
+        cached_full = geojson_cache.get_base_dataset_if_current(db_mtime)
+        if cached_full:
+            _, metadata = cached_full
+            status.set_progress(30, _("GeoJSON servi depuis le cache"))
+        else:
+            status.set_progress(5, _("Génération du GeoJSON complet..."))
+            geojson = create_geojson(db.session.query(Geocache), Geocache, status)
+            metadata = get_metadata_from_geojson(geojson["features"])
+            geojson_cache.set_base_dataset(geojson, metadata, db_mtime)
+    else:
+        cached_filtered = geojson_cache.get_filtered_if_current(selected_values, db_mtime)
+        if cached_filtered:
+            _, metadata = cached_filtered
+            status.set_progress(35, _("Résultat filtré servi depuis le cache"))
+        else:
+            if geojson_cache.get_base_dataset_if_current(db_mtime) is None:
+                status.set_progress(5, _("Pré-calcul du GeoJSON complet pour indexer les filtres..."))
+                base_geojson = create_geojson(db.session.query(Geocache), Geocache, status)
+                base_metadata = get_metadata_from_geojson(base_geojson["features"])
+                geojson_cache.set_base_dataset(base_geojson, base_metadata, db_mtime)
+            status.set_progress(45, _("Application des index mémoire (date/type/région)..."))
+            filtered = geojson_cache.filter_with_indexes(selected_values, db_mtime)
+            if filtered is None:
+                status.set_progress(60, _("Filtrage direct en base (fallback)..."))
+                geojson = filter_session(db, Geocache, selected_values, status)
+                metadata = get_metadata_from_geojson(geojson["features"])
+                geojson_cache.store_filtered_result(selected_values, geojson, metadata, db_mtime)
+            else:
+                _, metadata = filtered
+
+    # Stocker seulement une référence légère au lieu du GeoJSON complet
+    status.set_result({
+        "cache_ref": {
+            "type": "base" if selected_values is None else "filtered",
+            "selected_values": selected_values,
+            "db_mtime": db_mtime
+        },
+        "metadata": metadata
+    })

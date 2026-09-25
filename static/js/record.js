@@ -25,11 +25,11 @@ function dataUrlToBlob(dataUrl) {
                 if (blob) {
                     resolve(blob);
                 } else {
-                    reject(new Error('Échec conversion en Blob'));
+                    reject(new Error(pkg.t('Échec conversion en Blob')));
                 }
             }, CAPTURE_IMAGE_TYPE, CAPTURE_IMAGE_QUALITY);
         };
-        img.onerror = () => reject(new Error('Échec chargement image'));
+        img.onerror = () => reject(new Error(pkg.t('Échec chargement image')));
         img.src = dataUrl;
     });
 }
@@ -192,7 +192,7 @@ function toBlobPromise(imageData) {
     if (typeof imageData === 'string' && imageData.startsWith('data:')) {
         return dataUrlToBlob(imageData);
     }
-    return Promise.reject(new Error('Type de données image non supporté'));
+    return Promise.reject(new Error(pkg.t('Type de données image non supporté')));
 }
 
 /**
@@ -219,7 +219,7 @@ export function drainImageUploads() {
 /** Abandonne le tampon (nouvel enregistrement / annulation). */
 export function resetImageUploadQueue() {
     if (!batcher) return;
-    batcher.reset('Enregistrement réinitialisé');
+    batcher.reset(pkg.t('Enregistrement réinitialisé'));
     batcher = null; // relecture de la configuration au prochain enregistrement
 }
 

@@ -149,7 +149,7 @@ function loadHtml2Canvas() {
             // Échec de chargement : on remet à null pour permettre un nouvel essai
             // lors d'un prochain enregistrement, plutôt que de rester bloqué en échec.
             html2canvasLoadPromise = null;
-            reject(new Error('Impossible de charger html2canvas'));
+            reject(new Error(pkg.t('Impossible de charger html2canvas')));
         };
         document.head.appendChild(script);
     });
@@ -1145,14 +1145,14 @@ export function recordAnimation(){
             recordAnimationMediaRecorder();
             return;
         } else if (mode === 'mediarecorder' && !isMediaRecorderSupported()) {
-            pkg.showToast && pkg.showToast('MediaRecorder non supporté, bascule en mode images.', 'warning', 'Compatibilité');
+            pkg.showToast && pkg.showToast(pkg.t('MediaRecorder non supporté, bascule en mode images.'), 'warning', pkg.t('Compatibilité'));
         }
     } catch(e) { console.warn('Detection MediaRecorder error:', e); }
 
     // Vérifier que les données sont prêtes
     if (!pkg.pointsByDate || pkg.pointsByDate.size === 0) {
         console.error("Les données de géocaches ne sont pas encore chargées");
-        pkg.showToast("Données en cours de chargement. Veuillez réessayer.", "warning", "Attention");
+        pkg.showToast(pkg.t("Données en cours de chargement. Veuillez réessayer."), "warning", pkg.t("Attention"));
         return;
     }
 
@@ -1160,7 +1160,7 @@ export function recordAnimation(){
     recordingPerformanceMonitor.startMonitoring();
 
     // Nettoyage initial du répertoire d'images avant la capture
-    const prepToast = pkg.showToast && pkg.showToast('Préparation de l\'enregistrement...', 'info', 'Nettoyage initial', 0);
+    const prepToast = pkg.showToast && pkg.showToast(pkg.t('Préparation de l\'enregistrement...'), 'info', pkg.t('Nettoyage initial'), 0);
     fetch(`${CONFIG.BASE_URL}/clear_pictures_directory`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1175,21 +1175,21 @@ export function recordAnimation(){
         if (d && d.busy) {
             try { recordingPerformanceMonitor.stopMonitoring(); } catch(_) {}
             pkg.showToast && pkg.showToast(
-                d.message || 'Un assemblage vidéo est en cours. Réessayez à la fin du traitement.',
-                'warning', 'Enregistrement annulé', 6000
+                d.message || pkg.t('Un assemblage vidéo est en cours. Réessayez à la fin du traitement.'),
+                'warning', pkg.t('Enregistrement annulé'), 6000
             );
             return;
         }
         if (d && d.success) {
-            pkg.showToast && pkg.showToast('Répertoire d’images nettoyé.', 'success', 'Préparation', 2000);
+            pkg.showToast && pkg.showToast(pkg.t('Répertoire d’images nettoyé.'), 'success', pkg.t('Préparation'), 2000);
         } else {
-            pkg.showToast && pkg.showToast('Nettoyage initial impossible. Poursuite de l\'enregistrement.', 'warning', 'Attention', 3000);
+            pkg.showToast && pkg.showToast(pkg.t('Nettoyage initial impossible. Poursuite de l\'enregistrement.'), 'warning', pkg.t('Attention'), 3000);
         }
         startRecordingProcess();
     })
     .catch(err => {
         if (prepToast) { pkg.hideToast && pkg.hideToast(prepToast); }
-        pkg.showToast && pkg.showToast('Erreur nettoyage initial. Poursuite.', 'warning', 'Attention', 3000);
+        pkg.showToast && pkg.showToast(pkg.t('Erreur nettoyage initial. Poursuite.'), 'warning', pkg.t('Attention'), 3000);
         startRecordingProcess();
     });
     try { hidePopup(); } catch(_) {}
@@ -1265,7 +1265,7 @@ function startRecordingProcess(){
     // Remise à zéro de l'affichage des informations
     resetCacheCount(0); // Remet le compteur de géocaches à zéro
     pkg.updateCurrentDate(currentDate); // Remet la date au début effectif
-    try { pkg.updateProgressBar({ progress: 0, message: '0% | préparation...' }); } catch(_) {}
+    try { pkg.updateProgressBar({ progress: 0, message: pkg.t('0% | préparation...') }); } catch(_) {}
 
     // Bloquer la musique et détecter l'audio pour l'intégrer dans le toast
     let _captureAudioNote = '';
@@ -1276,14 +1276,14 @@ function startRecordingProcess(){
         const file = input?.files?.[0];
         const audioEnabled = !!(pkg.options?.record?.audio?.enabled);
         if (audioEnabled && file) {
-            _captureAudioNote = ` ♪ La musique sera intégrée automatiquement après la capture.`;
+            _captureAudioNote = pkg.t(' ♪ La musique sera intégrée automatiquement après la capture.');
         }
     } catch(_) {}
 
     // ouverture modale avec avertissement dans le titre et info audio dans le message
     pkg.openModalLoading(
-        "Capture en cours – Ne pas bouger la fenêtre",
-        "Préparation de la capture..." + _captureAudioNote
+        pkg.t("Capture en cours – Ne pas bouger la fenêtre"),
+        pkg.t("Préparation de la capture...") + _captureAudioNote
     );
 
     // Init métriques
@@ -1305,7 +1305,7 @@ function startRecordingProcess(){
         if (!isRecording) return;
         if (document.hidden) {
             if (!captureVisibilityToast) {
-                try { captureVisibilityToast = pkg.showToast && pkg.showToast('Capture en pause : revenez sur cet onglet pour la poursuivre.', 'warning', 'Onglet masqué', 0); } catch(_) {}
+                try { captureVisibilityToast = pkg.showToast && pkg.showToast(pkg.t('Capture en pause : revenez sur cet onglet pour la poursuivre.'), 'warning', pkg.t('Onglet masqué'), 0); } catch(_) {}
             }
         } else if (captureVisibilityToast) {
             try { pkg.hideToast && pkg.hideToast(captureVisibilityToast); } catch(_) {}
@@ -1487,10 +1487,11 @@ function abortRecordingOnError(error) {
 
     // Informer l'utilisateur
     try {
+        const errDetail = error?.message || pkg.t('erreur inconnue');
         pkg.showToast && pkg.showToast(
-            pkg.t('La capture a été interrompue suite à une erreur : ${message}', { message: (error?.message || 'erreur inconnue') }),
+            pkg.t('La capture a été interrompue suite à une erreur : ${message}', { message: errDetail }),
             'error',
-            'Capture interrompue',
+            pkg.t('Capture interrompue'),
             8000
         );
     } catch(_) {}
@@ -1518,8 +1519,8 @@ function pollTaskStatus(taskId, { intervalMs = 700, timeoutMs = 1800000, maxCons
         const startedAt = Date.now();
         let consecutiveErrors = 0;
         const tick = () => {
-            if (!taskId) { reject(new Error('task_id manquant')); return; }
-            if (Date.now() - startedAt > timeoutMs) { reject(new Error('Délai d\'assemblage dépassé')); return; }
+            if (!taskId) { reject(new Error(pkg.t('task_id manquant'))); return; }
+            if (Date.now() - startedAt > timeoutMs) { reject(new Error(pkg.t('Délai d\'assemblage dépassé'))); return; }
             fetch(`${CONFIG.BASE_URL}/tasks/${encodeURIComponent(taskId)}?include_result=true`, { method: 'GET' })
                 .then(r => {
                     if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -1532,13 +1533,13 @@ function pollTaskStatus(taskId, { intervalMs = 700, timeoutMs = 1800000, maxCons
                         onProgress(status.progress, status.message);
                     }
                     if (state === 'finished') { resolve(status?.result || {}); return; }
-                    if (state === 'failed') { reject(new Error(status?.error || status?.message || 'Tâche échouée')); return; }
+                    if (state === 'failed') { reject(new Error(status?.error || status?.message || pkg.t('Tâche échouée'))); return; }
                     setTimeout(tick, intervalMs);
                 })
                 .catch(err => {
                     consecutiveErrors++;
                     if (consecutiveErrors >= maxConsecutiveErrors) {
-                        reject(new Error(`Suivi de la tâche interrompu après ${consecutiveErrors} erreurs consécutives : ${err?.message || err}`));
+                        reject(new Error(pkg.t('Suivi de la tâche interrompu après ${count} erreurs consécutives : ${detail}', { count: consecutiveErrors, detail: err?.message || err })));
                         return;
                     }
                     dbgMapgl(`[TASK] Erreur de suivi ${consecutiveErrors}/${maxConsecutiveErrors} : ${err?.message || err}`);
@@ -1624,7 +1625,7 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
         // soient effectivement envoyées avant de lancer l'assemblage (sinon la vidéo
         // serait assemblée sur des images manquantes). Une erreur d'upload propage ici
         // et déclenche l'abandon propre via scheduleCaptureFrame().
-        try { pkg.updateProgressBar({ progress: 99, message: 'Envoi des dernières images...' }); } catch(_) {}
+        try { pkg.updateProgressBar({ progress: 99, message: pkg.t('Envoi des dernières images...') }); } catch(_) {}
         await awaitAllUploads();
 
         // Traitement de fin
@@ -1685,7 +1686,7 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
         setAssembleUiBusy(true);
 
         // Réutiliser la modal/loader existante pour garantir l'affichage (système qui marche déjà chez toi)
-        try { pkg.openModalLoading('Assemblage en cours', 'Création de la vidéo à partir des images...'); } catch(e) { console.warn('openModalLoading erreur:', e); }
+        try { pkg.openModalLoading(pkg.t('Assemblage en cours'), pkg.t('Création de la vidéo à partir des images...')); } catch(e) { console.warn('openModalLoading erreur:', e); }
 
         // Si un audio utilisateur est activé en mode images, l'uploader et passer son nom à l'assemblage
         const tryAssembleWithAudio = async () => {
@@ -1730,20 +1731,20 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
             // L'assemblage tourne désormais en tâche de fond : on récupère un task_id
             // et on suit sa progression via /tasks/<id> (fini l'expiration du fetch).
             if (!data || !data.task_id) {
-              throw new Error(data && data.message ? data.message : 'Impossible de lancer l\'assemblage vidéo');
+              throw new Error(data && data.message ? data.message : pkg.t('Impossible de lancer l\'assemblage vidéo'));
             }
             dbgMapgl('[RECORD END] Assemblage lancé en tâche de fond, task_id:', data.task_id);
             return pollTaskStatus(data.task_id, {
               onProgress: (p, msg) => {
                 // Encodage vidéo mappé sur 0→70% de la barre globale
-                try { pkg.updateProgressBar({ progress: Math.round(p * 0.7), message: msg || 'Création de la vidéo...' }); } catch(e) {}
+                try { pkg.updateProgressBar({ progress: Math.round(p * 0.7), message: msg || pkg.t('Création de la vidéo...') }); } catch(e) {}
               }
             });
           })
           .then(() => {
             dbgMapgl('[RECORD END] Assemblage réussi, nettoyage automatique...');
-            try { pkg.updateProgressBar({progress: 70, message: 'Vidéo créée. Nettoyage des images...'}); } catch(e) {}
-            try { pkg.updateTextsModal('Nettoyage en cours', 'Vidéo créée avec succès. Nettoyage des images...'); } catch(e) {}
+            try { pkg.updateProgressBar({progress: 70, message: pkg.t('Vidéo créée. Nettoyage des images...')}); } catch(e) {}
+            try { pkg.updateTextsModal(pkg.t('Nettoyage en cours'), pkg.t('Vidéo créée avec succès. Nettoyage des images...')); } catch(e) {}
 
             // Nettoyer automatiquement
             return fetch(`${CONFIG.BASE_URL}/clear_pictures_directory`, {
@@ -1759,11 +1760,11 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
             reEnableRecordButtons();
             if (cleanData && cleanData.success) {
               dbgMapgl('[RECORD END] Nettoyage automatique terminé');
-              try { pkg.updateProgressBar({progress: 100, message: 'Nettoyage terminé'}); } catch(e) {}
+              try { pkg.updateProgressBar({progress: 100, message: pkg.t('Nettoyage terminé')}); } catch(e) {}
               setTimeout(() => { try { pkg.closeModalLoading(); } catch(e) {} }, 400);
               // Titre passé par pkg.t() pour rester extrait dans le catalogue :
               // showToast traduit à l'exécution, mais l'extraction est statique.
-              pkg.showToast && pkg.showToast('Traitement automatique terminé avec succès !', 'success', pkg.t('Vidéo prête'), 5000);
+              pkg.showToast && pkg.showToast(pkg.t('Traitement automatique terminé avec succès !'), 'success', pkg.t('Vidéo prête'), 5000);
               warnIfTileErrors();
             } else {
               if (cleanData) console.warn('[RECORD END] Échec du nettoyage:', cleanData.message);
@@ -1777,7 +1778,7 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
             pkg.showToast && pkg.showToast(
               pkg.t('Erreur lors du traitement automatique: ${message}', { message: err.message }),
               'error',
-              'Erreur chaîne',
+              pkg.t('Erreur chaîne'),
               5000
             );
           });
@@ -1831,7 +1832,7 @@ function isMediaRecorderSupported() {
 function recordAnimationMediaRecorder(){
     // Vérifier données
     if (!pkg.pointsByDate || pkg.pointsByDate.size === 0) {
-        pkg.showToast && pkg.showToast('Données en cours de chargement. Réessayez.', 'warning', 'Attention');
+        pkg.showToast && pkg.showToast(pkg.t('Données en cours de chargement. Réessayez.'), 'warning', pkg.t('Attention'));
         return;
     }
 
@@ -1844,7 +1845,7 @@ function recordAnimationMediaRecorder(){
         const file = input?.files?.[0];
         const audioEnabled = !!(pkg.options?.record?.audio?.enabled);
         if (audioEnabled && file) {
-            _mrAudioNote = ` ♪ La musique sera intégrée automatiquement après la capture.`;
+            _mrAudioNote = pkg.t(' ♪ La musique sera intégrée automatiquement après la capture.');
             // Débloquer un AudioContext PENDANT le geste utilisateur (clic Enregistrer).
             // Le mux audio s'exécute après la capture, hors geste : un contexte créé à ce
             // moment-là resterait "suspended" et produirait une vidéo muette. On le pré-crée
@@ -1900,8 +1901,8 @@ function recordAnimationMediaRecorder(){
     // UI loader
     const totalMs = computeTotalAnimationMs();
     try { pkg.openModalLoading(
-        'Enregistrement en cours – Ne pas bouger la fenêtre',
-        'Démarrage de la capture...' + _mrAudioNote
+        pkg.t('Enregistrement en cours – Ne pas bouger la fenêtre'),
+        pkg.t('Démarrage de la capture...') + _mrAudioNote
     ); } catch(_) {}
 
     // Appliquer un éventuel ralentissement utilisateur sur la timeline
@@ -1929,7 +1930,7 @@ function recordAnimationMediaRecorder(){
     // Démarrer capture MediaRecorder
     startMediaRecorderPipeline(totalMs * appliedSlowdown, appliedSlowdown).catch(e => {
         console.error('MediaRecorder pipeline error:', e);
-        pkg.showToast && pkg.showToast('Erreur MediaRecorder, bascule en mode images.', 'error', 'Enregistrement');
+        pkg.showToast && pkg.showToast(pkg.t('Erreur MediaRecorder, bascule en mode images.'), 'error', pkg.t('Enregistrement'));
         // Stopper proprement la boucle animation (rAF) déjà lancée par startAnimation()
         // AVANT de relancer recordAnimation(), pour éviter deux boucles d'avancement de date en parallèle
         try { stopMediaRecorderPipeline(false); } catch(_) {}
@@ -2091,7 +2092,7 @@ async function startMediaRecorderPipeline(totalDurationMs, timelineScale = 1){
     // finalize, qui tente de récupérer les chunks déjà capturés et ferme la modale).
     mrRecorder.onerror = (e) => {
         console.error('[MediaRecorder] Erreur encodeur:', e?.error || e);
-        try { pkg.showToast && pkg.showToast('Erreur de l\'encodeur vidéo. Arrêt de l\'enregistrement et récupération de la séquence déjà capturée.', 'error', 'Enregistrement', 8000); } catch(_) {}
+        try { pkg.showToast && pkg.showToast(pkg.t('Erreur de l\'encodeur vidéo. Arrêt de l\'enregistrement et récupération de la séquence déjà capturée.'), 'error', pkg.t('Enregistrement'), 8000); } catch(_) {}
         try { stopMediaRecorderPipeline(true); } catch(_) {}
     };
     // Utiliser un timeslice plus grand pour réduire le nombre de chunks et la pression GC
@@ -2139,7 +2140,7 @@ async function startMediaRecorderPipeline(totalDurationMs, timelineScale = 1){
             // rattrapage de jours au retour (la 1re frame repart d'un delta nul).
             animationLastTs = null;
             if (!mrVisibilityToast) {
-                try { mrVisibilityToast = pkg.showToast && pkg.showToast('Enregistrement en pause : revenez sur cet onglet pour reprendre la capture.', 'warning', 'Onglet masqué', 0); } catch(_) {}
+                try { mrVisibilityToast = pkg.showToast && pkg.showToast(pkg.t('Enregistrement en pause : revenez sur cet onglet pour reprendre la capture.'), 'warning', pkg.t('Onglet masqué'), 0); } catch(_) {}
             }
         } else {
             try { if (mrRecorder && mrRecorder.state === 'paused') mrRecorder.resume(); } catch(_) {}
@@ -2239,9 +2240,9 @@ function finalizeMediaRecorderVideo(){
 
         const afterAll = () => {
             // Réactiver boutons et fermer loader
-            try { pkg.updateProgressBar({ progress: 100, message: 'Terminé' }); } catch(_) {}
+            try { pkg.updateProgressBar({ progress: 100, message: pkg.t('Terminé') }); } catch(_) {}
             setTimeout(() => { try { pkg.closeModalLoading(); } catch(_) {} }, 400);
-            pkg.showToast && pkg.showToast('Vidéo prête', 'success', 'Enregistrement');
+            pkg.showToast && pkg.showToast(pkg.t('Vidéo prête'), 'success', pkg.t('Enregistrement'));
             warnIfTileErrors();
             // Débloquer la lecture de fond après enregistrement MR
             try { setBackgroundAudioBlocked(false); } catch(_) {}
@@ -2266,7 +2267,7 @@ function finalizeMediaRecorderVideo(){
                     fd.append('video', finalBlob, fileName);
                     fd.append('fileName', fileName);
                     tasks.push(fetch(`${CONFIG.BASE_URL}/upload_video`, { method: 'POST', body: fd }).then(r => r.json()).catch(e => ({ success:false, message: e?.message || 'upload error'}))
-                        .then(res => { if (!res?.success) throw new Error(res?.message || 'Upload échoué'); }));
+                        .then(res => { if (!res?.success) throw new Error(res?.message || pkg.t('Upload échoué')); }));
                 } catch(e) { console.warn('Upload setup failed:', e); }
             }
 
@@ -2281,7 +2282,7 @@ function finalizeMediaRecorderVideo(){
         // Sans ça, MediaRecorder produit un .webm sans "Duration" : les lecteurs
         // n'affichent pas la durée et la barre de progression ne permet pas de chercher.
         const proceedWith = (finalBlob) => {
-            try { pkg.updateTextsModal('Finalisation', 'Écriture de la durée de la vidéo...'); } catch(_) {}
+            try { pkg.updateTextsModal(pkg.t('Finalisation'), pkg.t('Écriture de la durée de la vidéo...')); } catch(_) {}
             fixWebmFinalDuration(finalBlob).then((fixedBlob) => deliver(fixedBlob || finalBlob));
         };
 
@@ -2294,7 +2295,7 @@ function finalizeMediaRecorderVideo(){
         // Lent et doublement lossy, conservé uniquement en secours si le serveur échoue.
         const doMux = (videoBlob) => {
             if (audioEnabled && audioFile) {
-                try { pkg.updateTextsModal('Ajout audio', 'Fusion de la piste audio avec la vidéo en cours...'); } catch(_) {}
+                try { pkg.updateTextsModal(pkg.t('Ajout audio'), pkg.t('Fusion de la piste audio avec la vidéo en cours...')); } catch(_) {}
                 muxRecordedVideoWithAudio(videoBlob, audioFile).then((mixed) => {
                     proceedWith(mixed || videoBlob);
                 }).catch((e) => {
@@ -2309,7 +2310,7 @@ function finalizeMediaRecorderVideo(){
             if (doNormalize) {
                 // Annoncer le facteur réellement applicable : le navigateur plafonne playbackRate.
                 const applicable = clampPlaybackRate(slowdown).rate;
-                try { pkg.updateTextsModal('Normalisation', `Accélération x${applicable} pour lecture à vitesse normale...`); } catch(_) {}
+                try { pkg.updateTextsModal(pkg.t('Normalisation'), pkg.t('Accélération x${applicable} pour lecture à vitesse normale...', { applicable })); } catch(_) {}
                 normalizeRecordedVideoSpeed(blob, slowdown).then((normBlob) => {
                     doMux(normBlob || blob);
                 }).catch((e) => {
@@ -2324,7 +2325,7 @@ function finalizeMediaRecorderVideo(){
         // ---- Traitement serveur (ffmpeg, une seule passe) : normalisation + mux ----
         // Rapide, robuste, sans onglet actif obligatoire. Remplace jusqu'à 3 ré-encodages navigateur.
         const processOnServer = () => new Promise((resolve, reject) => {
-            try { pkg.updateTextsModal('Traitement serveur', 'Envoi de la vidéo au serveur...'); } catch(_) {}
+            try { pkg.updateTextsModal(pkg.t('Traitement serveur'), pkg.t('Envoi de la vidéo au serveur...')); } catch(_) {}
             // Réécrire la durée du .webm pour que ffmpeg la lise correctement (opération légère, pas de ré-encodage)
             fixWebmFinalDuration(blob).then((fixedBlob) => {
                 const toSend = fixedBlob || blob;
@@ -2343,13 +2344,13 @@ function finalizeMediaRecorderVideo(){
                     const vol = (typeof pkg.options?.record?.audio?.volume === 'number') ? pkg.options.record.audio.volume : 1;
                     fd.append('audio_volume', String(vol));
                 }
-                try { pkg.updateProgressBar({ progress: 0, message: 'Traitement serveur...' }); } catch(_) {}
+                try { pkg.updateProgressBar({ progress: 0, message: pkg.t('Traitement serveur...') }); } catch(_) {}
                 fetch(`${CONFIG.BASE_URL}/process_recorded_video`, { method: 'POST', body: fd })
                     .then(r => r.json())
                     .then(data => {
-                        if (!data || !data.task_id) throw new Error(data && data.message ? data.message : 'Traitement serveur non démarré');
+                        if (!data || !data.task_id) throw new Error(data && data.message ? data.message : pkg.t('Traitement serveur non démarré'));
                         return pollTaskStatus(data.task_id, {
-                            onProgress: (p, msg) => { try { pkg.updateProgressBar({ progress: p, message: msg || 'Traitement serveur...' }); } catch(_) {} }
+                            onProgress: (p, msg) => { try { pkg.updateProgressBar({ progress: p, message: msg || pkg.t('Traitement serveur...') }); } catch(_) {} }
                         });
                     })
                     .then(result => {
@@ -2374,7 +2375,7 @@ function finalizeMediaRecorderVideo(){
 
         processOnServer().catch((err) => {
             console.warn('Traitement serveur échoué, repli sur le pipeline navigateur:', err);
-            try { pkg.showToast && pkg.showToast('Traitement serveur indisponible, repli local...', 'warning', 'Enregistrement', 4000); } catch(_) {}
+            try { pkg.showToast && pkg.showToast(pkg.t('Traitement serveur indisponible, repli local...'), 'warning', pkg.t('Enregistrement'), 4000); } catch(_) {}
             runClientFallback();
         });
 
@@ -2421,7 +2422,7 @@ async function captureElement() {
     return new Promise((resolve, reject) => {
         const element = document.getElementById('mapWithFrames');
         if (!element) {
-            reject('Élément non trouvé');
+            reject(pkg.t('Élément non trouvé'));
             return;
         }
 
@@ -2438,7 +2439,7 @@ async function captureElement() {
                     ol.Observable.unByKey(renderCompleteListenerKey);
                     renderCompleteListenerKey = null;
                 }
-                reject(new Error('Timeout rendercomplete (5s) : rendu carte bloqué'));
+                reject(new Error(pkg.t('Timeout rendercomplete (5s) : rendu carte bloqué')));
             }, 5000);
 
             // IMPORTANT : enregistrer le listener AVANT map.renderSync() car renderSync()
@@ -2454,7 +2455,7 @@ async function captureElement() {
                     const allCanvases = viewport.querySelectorAll('canvas');
 
                     if (allCanvases.length === 0) {
-                        reject(new Error('Aucun canvas trouvé dans la carte'));
+                        reject(new Error(pkg.t('Aucun canvas trouvé dans la carte')));
                         return;
                     }
 
@@ -2499,7 +2500,7 @@ async function captureElement() {
                     // dès que la frame est prête → capture et upload se recouvrent (pipeline).
                     outCanvas.toBlob(async (blob) => {
                         if (!blob) {
-                            reject(new Error('Échec conversion canvas en blob'));
+                            reject(new Error(pkg.t('Échec conversion canvas en blob')));
                             return;
                         }
 

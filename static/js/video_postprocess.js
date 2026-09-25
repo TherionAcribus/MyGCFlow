@@ -22,10 +22,11 @@ function warnPlaybackRateClamped(requested, effective){
     );
     try {
         pkg.showToast && pkg.showToast(
-            `Le navigateur limite l'accélération à x${effective} (x${requested} demandé) : `
-            + `la vidéo restera environ ${ratio.toFixed(1)}x plus lente que prévu. `
-            + `Utilisez le traitement serveur pour un rythme exact.`,
-            'warning', 'Normalisation', 8000
+            pkg.t("Le navigateur limite l'accélération à x${effective} (x${requested} demandé) : "
+                + "la vidéo restera environ ${ratio}x plus lente que prévu. "
+                + "Utilisez le traitement serveur pour un rythme exact.",
+                { effective, requested, ratio: ratio.toFixed(1) }),
+            'warning', pkg.t('Normalisation'), 8000
         );
     } catch(_) {}
 }
@@ -76,7 +77,7 @@ export function normalizeRecordedVideoSpeed(sourceBlob, factor){
                 const duration = (Number.isFinite(rawDur) && rawDur > 0) ? rawDur : 0;
 
                 const stream = (typeof video.captureStream === 'function') ? video.captureStream(fps) : null;
-                if (!stream) { cleanup(); reject(new Error('captureStream non supporté pour la normalisation')); return; }
+                if (!stream) { cleanup(); reject(new Error(pkg.t('captureStream non supporté pour la normalisation'))); return; }
 
                 // Timeout basé sur la durée à 1x + 60s : filet de sécurité si playbackRate
                 // est appliqué plus bas que ce que l'élément rapporte (relecture mensongère).
@@ -84,7 +85,7 @@ export function normalizeRecordedVideoSpeed(sourceBlob, factor){
                 safetyTimeout = setTimeout(() => {
                     safetyTimeout = null;
                     cleanup();
-                    reject(new Error('Timeout normalisation vidéo (' + Math.round(maxMs / 1000) + 's) : lecture bloquée ?'));
+                    reject(new Error(pkg.t('Timeout normalisation vidéo (${timeout}s) : lecture bloquée ?', { timeout: Math.round(maxMs / 1000) })));
                 }, maxMs);
 
                 rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: vbps });
@@ -98,14 +99,15 @@ export function normalizeRecordedVideoSpeed(sourceBlob, factor){
                 // rester bloqué sur une Promise jamais résolue.
                 rec.onerror = (e) => {
                     cleanup();
-                    reject(new Error('Erreur encodeur lors de la normalisation : ' + (e?.error?.message || e?.message || 'inconnue')));
+                    const detail = e?.error?.message || e?.message || pkg.t('inconnue');
+                    reject(new Error(pkg.t('Erreur encodeur lors de la normalisation : ${detail}', { detail })));
                 };
                 rec.start(Math.max(1000 / fps, 50));
 
                 progressTimer = setInterval(() => {
                     try {
                         const p = duration > 0 ? Math.min(100, Math.max(0, (video.currentTime / duration) * 100)) : 0;
-                        const message = p > 0 ? `Normalisation ${p.toFixed(1)}%` : 'Normalisation en cours';
+                        const message = p > 0 ? pkg.t('Normalisation ${p}%', { p: p.toFixed(1) }) : pkg.t('Normalisation en cours');
                         pkg.updateProgressBar({ progress: p, message: message });
                     } catch(_) {}
                 }, 200);
@@ -122,7 +124,7 @@ export function normalizeRecordedVideoSpeed(sourceBlob, factor){
 
             video.addEventListener('error', (e) => {
                 cleanup();
-                reject(new Error('Erreur lecture vidéo pour normalisation'));
+                reject(new Error(pkg.t('Erreur lecture vidéo pour normalisation')));
             });
         } catch(e) {
             reject(e);
@@ -192,7 +194,7 @@ export function muxRecordedVideoWithAudio(sourceBlob, audioFile){
             video.addEventListener('loadedmetadata', () => {
                 try {
                     const vStream = (typeof video.captureStream === 'function') ? video.captureStream(fps) : null;
-                    if (!vStream) { cleanup(); reject(new Error('captureStream non supporté pour mux audio')); return; }
+                    if (!vStream) { cleanup(); reject(new Error(pkg.t('captureStream non supporté pour mux audio'))); return; }
 
                     // Timeout de sécurité : durée vidéo + 60s de marge.
                     // ATTENTION : les .webm issus de MediaRecorder rapportent souvent
@@ -206,7 +208,7 @@ export function muxRecordedVideoWithAudio(sourceBlob, audioFile){
                     muxSafetyTimeout = setTimeout(() => {
                         muxSafetyTimeout = null;
                         cleanup();
-                        reject(new Error('Timeout mux audio (' + Math.round(maxMs / 1000) + 's) : lecture bloquée ?'));
+                        reject(new Error(pkg.t('Timeout mux audio (${timeout}s) : lecture bloquée ?', { timeout: Math.round(maxMs / 1000) })));
                     }, maxMs);
 
                     // Charger et préparer le buffer audio
@@ -219,7 +221,7 @@ export function muxRecordedVideoWithAudio(sourceBlob, audioFile){
                             const videoTracks = vStream.getVideoTracks();
                             if (videoTracks.length === 0) {
                                 cleanup();
-                                reject(new Error('Aucune piste vidéo disponible pour le mux audio'));
+                                reject(new Error(pkg.t('Aucune piste vidéo disponible pour le mux audio')));
                                 return;
                             }
                             const composed = new MediaStream([
@@ -246,7 +248,8 @@ export function muxRecordedVideoWithAudio(sourceBlob, audioFile){
                             // au lieu de rester bloqué sur une Promise jamais résolue.
                             rec.onerror = (e) => {
                                 cleanup();
-                                reject(new Error('Erreur encodeur lors du mux audio : ' + (e?.error?.message || e?.message || 'inconnue')));
+                                const detail = e?.error?.message || e?.message || pkg.t('inconnue');
+                                reject(new Error(pkg.t('Erreur encodeur lors du mux audio : ${detail}', { detail })));
                             };
                             rec.start(Math.max(1000 / fps, 50));
 
@@ -262,7 +265,7 @@ export function muxRecordedVideoWithAudio(sourceBlob, audioFile){
                                 audioNode.start(0);
                             } catch(e) {
                                 cleanup();
-                                reject(new Error('Impossible de démarrer la piste audio : ' + e.message));
+                                reject(new Error(pkg.t('Impossible de démarrer la piste audio : ${detail}', { detail: e.message })));
                                 return;
                             }
                             video.play().catch(err => { cleanup(); reject(err); });
@@ -276,7 +279,7 @@ export function muxRecordedVideoWithAudio(sourceBlob, audioFile){
 
             video.addEventListener('error', (e) => {
                 cleanup();
-                reject(new Error('Erreur lecture vidéo pour mux audio'));
+                reject(new Error(pkg.t('Erreur lecture vidéo pour mux audio')));
             });
         } catch(e) {
             reject(e);

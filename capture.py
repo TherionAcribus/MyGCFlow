@@ -1,4 +1,14 @@
-from flask import jsonify, request
+from flask import current_app, jsonify, request
+from flask_babel import gettext as _babel_gettext, force_locale
+
+
+def _(msgid, **kwargs):
+    """gettext avec repli sur le msgid brut quand Babel n'est pas initialisé
+    (tests unitaires sur une app Flask nue)."""
+    try:
+        return _babel_gettext(msgid, **kwargs)
+    except Exception:
+        return msgid % kwargs if kwargs else msgid
 import os
 import re
 import base64
@@ -11,6 +21,7 @@ import time
 from werkzeug.utils import secure_filename
 
 import paths
+from localization import get_locale
 
 
 # Formats écrits dans captured/ : webp par défaut côté client, png pour l'ancien
@@ -53,7 +64,7 @@ def upload_images(request):
     try:
         image_files = request.files.getlist('images') if request.files else []
         if not image_files:
-            return jsonify({'success': False, 'message': 'Aucune image dans la requête'}), 400
+            return jsonify({'success': False, 'message': _('Aucune image dans la requête')}), 400
 
         counters = request.form.getlist('counters')
         number_size = _to_int(request.form.get('numberSize', 4), 4)
@@ -90,9 +101,9 @@ def upload_image(request):
             with open(os.path.join(paths.ensure_dir(paths.captured_dir()), image_filename), 'wb') as file:
                 file.write(image_data)
         else:
-            return jsonify({'success': False, 'message': 'Format de données non supporté'}), 400
+            return jsonify({'success': False, 'message': _('Format de données non supporté')}), 400
 
-        return jsonify({'success': True, 'message': 'Image reçue avec succès'})
+        return jsonify({'success': True, 'message': _('Image reçue avec succès')})
 
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
@@ -162,7 +173,7 @@ def clear_pictures_directory():
         # du bouton de suppression (masqué dès qu'il ne reste plus d'image).
         return jsonify({
             'success': True,
-            'message': 'Le répertoire a été vidé avec succès',
+            'message': _('Le répertoire a été vidé avec succès'),
             'count': count_captured_pictures(),
         })
     except Exception as e:
@@ -397,9 +408,10 @@ def _run_ffmpeg(cmd, out_dur=None, status=None, progress_start=2.0, progress_end
                     cur = micros / 1_000_000.0
                     if out_dur and out_dur > 0:
                         frac = max(0.0, min(1.0, cur / out_dur))
-                        _progress(progress_start + frac * span, f"{progress_label}... {int(frac * 100)}%")
+                        _progress(progress_start + frac * span,
+                                  _("%(label)s... %(pct)s%%", label=progress_label, pct=int(frac * 100)))
                     else:
-                        _progress(progress_start + span / 2, f"{progress_label} en cours...")
+                        _progress(progress_start + span / 2, _("%(label)s en cours...", label=progress_label))
                 except Exception:
                     pass
             elif not line.startswith(_FFMPEG_PROGRESS_KEYS):
@@ -427,19 +439,22 @@ def _run_ffmpeg(cmd, out_dur=None, status=None, progress_start=2.0, progress_end
             proc.wait(timeout=10)
         except Exception:
             pass
-        return {'success': False, 'message': f"{error_label} interrompu : le processus ne s'est pas terminé."}
+        return {'success': False,
+                'message': _("%(label)s interrompu : le processus ne s'est pas terminé.", label=error_label)}
 
     if stalled.is_set():
         minutes = max(1, int(FFMPEG_STALL_TIMEOUT_S // 60))
         print(f"[{log_prefix}] ffmpeg figé (aucune progression pendant {minutes} min) → processus tué")
         return {
             'success': False,
-            'message': (f"{error_label} interrompu : aucune progression pendant {minutes} min. "
-                        "Le fichier source est probablement corrompu."),
+            'message': _("%(label)s interrompu : aucune progression pendant %(minutes)s min. "
+                         "Le fichier source est probablement corrompu.",
+                         label=error_label, minutes=minutes),
         }
     if proc.returncode != 0:
-        msg = "\n".join(tail_lines[-8:]) or f"ffmpeg a échoué (code {proc.returncode})"
-        return {'success': False, 'message': f"{error_label} échoué: {msg}"}
+        msg = "\n".join(tail_lines[-8:]) or _("ffmpeg a échoué (code %(code)s)", code=proc.returncode)
+        return {'success': False,
+                'message': _("%(label)s échoué : %(detail)s", label=error_label, detail=msg)}
 
     return {'success': True, 'message': 'ok'}
 
@@ -501,12 +516,12 @@ def _assemble_pictures(image_folder, output_video, fps=24, audio_path=None, audi
     image_files = [os.path.join(image_folder, img) for img in sorted(os.listdir(image_folder)) if img.lower().endswith(exts)]
 
     if not image_files:
-        return {'success': False, 'message': 'Aucune image trouvée dans le dossier'}
+        return {'success': False, 'message': _('Aucune image trouvée dans le dossier')}
 
     # Assurez-vous que le répertoire de sortie existe
     os.makedirs(os.path.dirname(output_video), exist_ok=True)
 
-    _progress(5, "Préparation des images...")
+    _progress(5, _("Préparation des images..."))
 
     try:
         fps_value = int(round(float(fps)))
@@ -550,11 +565,11 @@ def _assemble_pictures(image_folder, output_video, fps=24, audio_path=None, audi
         cmd += _h264_output_args(color_fidelity)
         cmd += ['-progress', 'pipe:1', '-nostats', output_video]
 
-        _progress(10, "Encodage de la vidéo...")
+        _progress(10, _("Encodage de la vidéo..."))
         result = _run_ffmpeg(
             cmd, out_dur=out_dur, status=status,
             progress_start=10, progress_end=99,
-            progress_label="Encodage vidéo", error_label="Assemblage ffmpeg",
+            progress_label=_("Encodage vidéo"), error_label=_("Assemblage ffmpeg"),
             log_prefix="assemble",
         )
     finally:
@@ -566,8 +581,8 @@ def _assemble_pictures(image_folder, output_video, fps=24, audio_path=None, audi
     if not result.get('success'):
         return result
 
-    _progress(100, "Vidéo créée avec succès")
-    return {'success': True, 'message': 'Vidéo créée avec succès', 'output': output_video}
+    _progress(100, _("Vidéo créée avec succès"))
+    return {'success': True, 'message': _('Vidéo créée avec succès'), 'output': output_video}
 
 
 def assemble_pictures_directory(image_folder, output_video, fps=24, audio_path=None, audio_volume=1.0,
@@ -581,19 +596,29 @@ def assemble_pictures_directory(image_folder, output_video, fps=24, audio_path=N
         return jsonify({'success': False, 'message': str(e)})
 
 
-def run_assemble_video_task(status, image_folder, output_video, fps=24, audio_path=None, audio_volume=1.0,
-                            color_fidelity=DEFAULT_COLOR_FIDELITY):
+def run_assemble_video_task(status, app, image_folder, output_video, fps=24, audio_path=None,
+                            audio_volume=1.0, color_fidelity=DEFAULT_COLOR_FIDELITY, locale=None):
     """Tâche de fond : assemble la vidéo et met à jour la progression via TaskStatus.
 
     Exécutée par le TaskManager dans un thread, ce qui évite l'expiration du
     fetch HTTP côté client sur les assemblages longs (plusieurs minutes).
+    `app`/`locale` viennent de la requête appelante : gettext en a besoin ici
+    pour traduire les messages de progression dans la langue de l'utilisateur.
     """
-    result = _assemble_pictures(image_folder, output_video, fps, audio_path, audio_volume, status=status,
-                                color_fidelity=color_fidelity)
-    if not result.get('success'):
-        status.fail(result.get('message', "Échec de l'assemblage"))
-        return
-    status.set_result(result)
+    def _run():
+        result = _assemble_pictures(image_folder, output_video, fps, audio_path, audio_volume,
+                                    status=status, color_fidelity=color_fidelity)
+        if not result.get('success'):
+            status.fail(result.get('message', _("Échec de l'assemblage")))
+            return
+        status.set_result(result)
+
+    with app.app_context():
+        if locale:
+            with force_locale(locale):
+                _run()
+        else:
+            _run()
 
 
 # --------- Traitement vidéo MediaRecorder (normalisation vitesse + mux audio) ---------
@@ -616,7 +641,7 @@ def _process_recorded_video(input_path, output_path, slowdown=1.0, audio_path=No
                 pass
 
     if not input_path or not os.path.exists(input_path):
-        return {'success': False, 'message': 'Fichier vidéo introuvable'}
+        return {'success': False, 'message': _('Fichier vidéo introuvable')}
 
     try:
         sd = max(1.0, float(slowdown))
@@ -672,11 +697,11 @@ def _process_recorded_video(input_path, output_path, slowdown=1.0, audio_path=No
     cmd += _h264_output_args(color_fidelity)
     cmd += ['-progress', 'pipe:1', '-nostats', output_path]
 
-    _progress(2, "Démarrage du traitement vidéo...")
+    _progress(2, _("Démarrage du traitement vidéo..."))
     result = _run_ffmpeg(
         cmd, out_dur=out_dur, status=status,
         progress_start=2, progress_end=98,
-        progress_label="Traitement vidéo", error_label="Traitement ffmpeg",
+        progress_label=_("Traitement vidéo"), error_label=_("Traitement ffmpeg"),
         log_prefix="process",
     )
     if not result.get('success'):
@@ -688,24 +713,36 @@ def _process_recorded_video(input_path, output_path, slowdown=1.0, audio_path=No
     except Exception:
         pass
 
-    _progress(100, "Vidéo prête")
+    _progress(100, _("Vidéo prête"))
     return {
         'success': True,
-        'message': 'Vidéo traitée avec succès',
+        'message': _('Vidéo traitée avec succès'),
         'output': output_path,
         'file': os.path.basename(output_path),
     }
 
 
-def run_process_video_task(status, input_path, output_path, slowdown=1.0, audio_path=None, audio_volume=1.0, fps=None,
-                           color_fidelity=DEFAULT_COLOR_FIDELITY):
-    """Tâche de fond : post-traite un enregistrement MediaRecorder via ffmpeg."""
-    result = _process_recorded_video(input_path, output_path, slowdown, audio_path, audio_volume, fps=fps,
-                                     status=status, color_fidelity=color_fidelity)
-    if not result.get('success'):
-        status.fail(result.get('message', "Échec du traitement vidéo"))
-        return
-    status.set_result(result)
+def run_process_video_task(status, app, input_path, output_path, slowdown=1.0, audio_path=None,
+                           audio_volume=1.0, fps=None, color_fidelity=DEFAULT_COLOR_FIDELITY, locale=None):
+    """Tâche de fond : post-traite un enregistrement MediaRecorder via ffmpeg.
+
+    `app`/`locale` viennent de la requête appelante (même raison que
+    run_assemble_video_task).
+    """
+    def _run():
+        result = _process_recorded_video(input_path, output_path, slowdown, audio_path, audio_volume,
+                                         fps=fps, status=status, color_fidelity=color_fidelity)
+        if not result.get('success'):
+            status.fail(result.get('message', _("Échec du traitement vidéo")))
+            return
+        status.set_result(result)
+
+    with app.app_context():
+        if locale:
+            with force_locale(locale):
+                _run()
+        else:
+            _run()
 
 
 def process_recorded_video(request):
@@ -719,7 +756,7 @@ def process_recorded_video(request):
     from task_manager import task_manager
 
     if not request.files or 'video' not in request.files:
-        return jsonify({'success': False, 'message': 'Aucun fichier vidéo fourni'}), 400
+        return jsonify({'success': False, 'message': _('Aucun fichier vidéo fourni')}), 400
 
     video_dir = paths.ensure_dir(paths.video_dir())
     raw_name = _timestamped_name("mygcflow_raw.webm", "webm")
@@ -757,11 +794,12 @@ def process_recorded_video(request):
 
     status = task_manager.submit(
         TASK_TYPE_VIDEO_PROCESS, run_process_video_task,
-        raw_path, out_path, slowdown, audio_path, audio_volume, fps, color_fidelity,
+        current_app._get_current_object(),
+        raw_path, out_path, slowdown, audio_path, audio_volume, fps, color_fidelity, get_locale(),
     )
     return jsonify({
         'success': True,
-        'message': 'Traitement vidéo lancé en tâche de fond',
+        'message': _('Traitement vidéo lancé en tâche de fond'),
         'task_id': status.id,
         'state': status.state,
     }), 202
@@ -776,7 +814,7 @@ def upload_video(request):
     """
     try:
         if not request.files or 'video' not in request.files:
-            return jsonify({'success': False, 'message': 'Aucun fichier vidéo fourni'}), 400
+            return jsonify({'success': False, 'message': _('Aucun fichier vidéo fourni')}), 400
 
         video_file = request.files['video']
         suggested = request.form.get('fileName') or video_file.filename
@@ -797,7 +835,7 @@ def upload_video(request):
             file_name = base
         video_file.save(save_path)
 
-        return jsonify({'success': True, 'message': 'Vidéo reçue et sauvegardée', 'path': save_path})
+        return jsonify({'success': True, 'message': _('Vidéo reçue et sauvegardée'), 'path': save_path})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
@@ -812,7 +850,7 @@ def upload_audio(request):
     """
     try:
         if not request.files or 'audio' not in request.files:
-            return jsonify({'success': False, 'message': 'Aucun fichier audio fourni'}), 400
+            return jsonify({'success': False, 'message': _('Aucun fichier audio fourni')}), 400
 
         audio_file = request.files['audio']
         file_name = secure_filename(audio_file.filename or 'music.mp3')

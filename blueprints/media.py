@@ -1,6 +1,7 @@
 import os
 
-from flask import Blueprint, abort, jsonify, request, send_from_directory
+from flask import Blueprint, abort, current_app, jsonify, request, send_from_directory
+from flask_babel import gettext as _babel_gettext
 from werkzeug.utils import secure_filename
 
 import paths
@@ -18,9 +19,20 @@ from capture import (
     upload_images,
     upload_video,
 )
+from localization import get_locale
 from task_manager import TaskAlreadyRunning, task_manager
 
 media_bp = Blueprint('media', __name__)
+
+
+def _(msgid, **kwargs):
+    """gettext avec repli sur le msgid brut quand Babel n'est pas initialisé
+    (tests unitaires sur une app Flask nue)."""
+    try:
+        return _babel_gettext(msgid, **kwargs)
+    except Exception:
+        return msgid % kwargs if kwargs else msgid
+
 
 # FPS d'assemblage par défaut (utilisé si le client n'en fournit pas)
 DEFAULT_FPS = 30
@@ -52,10 +64,13 @@ def _busy_response(running, message):
     }), 409
 
 
-_BUSY_MESSAGE = (
-    "Un assemblage vidéo est déjà en cours. Attendez sa fin avant d'en lancer "
-    "un autre ou de relancer une capture (les deux utilisent le dossier captured/)."
-)
+def _busy_message():
+    # Traduite à l'appel (contexte requête requis par gettext) plutôt qu'à
+    # l'import du module.
+    return _(
+        "Un assemblage vidéo est déjà en cours. Attendez sa fin avant d'en lancer "
+        "un autre ou de relancer une capture (les deux utilisent le dossier captured/)."
+    )
 
 
 @media_bp.route('/upload_image', methods=['POST'])
@@ -107,14 +122,16 @@ def start_create_video():
         try:
             status = task_manager.submit(
                 TASK_TYPE_VIDEO, run_assemble_video_task,
+                current_app._get_current_object(),
                 str(paths.captured_dir()), output_video, fps, audio, vol, color_fidelity,
+                get_locale(),
                 exclusive=True,
             )
         except TaskAlreadyRunning as exc:
-            return _busy_response(exc.status, _BUSY_MESSAGE)
+            return _busy_response(exc.status, _busy_message())
         return jsonify({
             'success': True,
-            'message': 'Assemblage vidéo lancé en tâche de fond',
+            'message': _('Assemblage vidéo lancé en tâche de fond'),
             'task_id': status.id,
             'state': status.state,
         }), 202
@@ -143,8 +160,8 @@ def clear_pictures():
     if running is not None:
         return _busy_response(
             running,
-            "Un assemblage vidéo est en cours : le dossier captured/ ne peut pas "
-            "être vidé maintenant.",
+            _("Un assemblage vidéo est en cours : le dossier captured/ ne peut pas "
+              "être vidé maintenant."),
         )
     return clear_pictures_directory()
 

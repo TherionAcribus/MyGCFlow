@@ -37,6 +37,21 @@ MAX_OVERLAY_TITLE_LENGTH = 500
 MAX_OVERLAY_CSS_LENGTH = 20_000
 
 
+def _tr(msgid: str, **kwargs) -> str:
+    """Traduit via Flask-Babel si un contexte d'application existe, msgid brut sinon.
+
+    Ce module est aussi utilisé hors contexte Flask (tests unitaires, scripts) :
+    un appel direct à gettext lèverait RuntimeError, et les apps de test sans
+    extension Babel provoqueraient un KeyError. Le repli renvoie le msgid
+    français, qui reste la chaîne de référence du catalogue.
+    """
+    try:
+        from flask_babel import gettext
+        return gettext(msgid, **kwargs)
+    except Exception:
+        return msgid % kwargs if kwargs else msgid
+
+
 def sanitize_overlay_css(value) -> str:
     """Conserve des déclarations locales sûres pour un profil importable."""
     if not isinstance(value, str):
@@ -1829,8 +1844,8 @@ class SettingsManager:
         name = (name or "").strip()
         if not self._profile_file_key(name):
             raise InvalidProfileNameError(
-                f"Le nom '{name}' ne contient aucun caractère utilisable "
-                "(au moins une lettre ou un chiffre est nécessaire)"
+                _tr("Le nom '%(name)s' ne contient aucun caractère utilisable "
+                    "(au moins une lettre ou un chiffre est nécessaire)", name=name)
             )
         return name
 
@@ -1845,7 +1860,7 @@ class SettingsManager:
     def load_profile(self, name: str) -> MapProfile:
         path = self._profile_path(name)
         if not path.exists():
-            raise FileNotFoundError(f"Profil '{name}' introuvable")
+            raise FileNotFoundError(_tr("Profil '%(name)s' introuvable", name=name))
         return coerce_profile(read_json(path))
 
     def load_profile_by_uid(self, uid: str) -> MapProfile:
@@ -1866,7 +1881,7 @@ class SettingsManager:
                     profile_data = json.loads(profile_path.read_text(encoding="utf-8"))
                     return coerce_profile(profile_data)
         
-        raise FileNotFoundError(f"Aucun profil trouvé avec l'UUID: {uid}")
+        raise FileNotFoundError(_tr("Aucun profil trouvé avec l'UUID: %(uid)s", uid=uid))
 
     def get_profile_name_by_uid(self, uid: str) -> Optional[str]:
         """Retourne le nom d'un profil par son UUID (sans relire le fichier)"""
@@ -1894,7 +1909,7 @@ class SettingsManager:
     def create_profile(self, name: str, base: Optional[str] = None) -> MapProfile:
         name = self._require_valid_profile_name(name)
         if not self.is_name_available(name):
-            raise ValueError(f"Un profil nommé '{name}' existe déjà")
+            raise ValueError(_tr("Un profil nommé '%(name)s' existe déjà", name=name))
         if base and self._profile_path(base).exists():
             prof = self.load_profile(base)
             prof.name = name
@@ -1912,12 +1927,12 @@ class SettingsManager:
         """
         old_path = self._profile_path(old_name)
         if not old_path.exists():
-            raise FileNotFoundError(f"Profil '{old_name}' introuvable")
+            raise FileNotFoundError(_tr("Profil '%(name)s' introuvable", name=old_name))
 
         new_name = self._require_valid_profile_name(new_name)
         prof = coerce_profile(read_json(old_path))
         if new_name != prof.name and not self.is_name_available(new_name, exclude_uid=prof.uid):
-            raise ValueError(f"Un profil nommé '{new_name}' existe déjà")
+            raise ValueError(_tr("Un profil nommé '%(name)s' existe déjà", name=new_name))
 
         prof.name = new_name
         new_path = self._profile_path(new_name)
@@ -1929,7 +1944,7 @@ class SettingsManager:
 
     def duplicate_profile(self, name: str, new_name: str) -> MapProfile:
         if not self._profile_path(name).exists():
-            raise ValueError(f"Profil source '{name}' introuvable")
+            raise ValueError(_tr("Profil source '%(name)s' introuvable", name=name))
         new_name = self._require_valid_profile_name(new_name)
         prof = self.load_profile(name)
         prof.name = self._generate_unique_name(new_name)
@@ -1944,7 +1959,7 @@ class SettingsManager:
         # entre la liste affichée et le disque.
         path = self._profile_path(name)
         if not path.exists():
-            raise FileNotFoundError(f"Profil '{name}' introuvable")
+            raise FileNotFoundError(_tr("Profil '%(name)s' introuvable", name=name))
         path.unlink()
         self._invalidate_profile_cache()
 
@@ -2036,14 +2051,14 @@ class SettingsManager:
     def import_profile_payload(self, payload: dict) -> MapProfile:
         """Importe un profil depuis un payload JSON validé. Retourne le profil sauvegardé."""
         if not isinstance(payload, dict):
-            raise ValueError("Payload invalide")
+            raise ValueError(_tr("Payload invalide"))
         # "gcmap.profile.v1" : profils exportés avant le changement de nom.
         if payload.get("$schema") not in ("mygcflow.profile.v1", "gcmap.profile.v1")                 or payload.get("kind") != "profile":
-            raise ValueError("Fichier de profil invalide (détrompeur manquant)")
+            raise ValueError(_tr("Fichier de profil invalide (détrompeur manquant)"))
 
         prof_dict = payload.get("profile")
         if not isinstance(prof_dict, dict):
-            raise ValueError("Section 'profile' manquante")
+            raise ValueError(_tr("Section 'profile' manquante"))
 
         prof = coerce_profile(prof_dict)
 

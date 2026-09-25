@@ -5,6 +5,7 @@ from flask import Blueprint, current_app, jsonify, request
 import paths
 from bdd import TASK_TYPE_GEOJSON, build_country_state_tree, run_geojson_task
 from extensions import db
+from localization import get_locale
 from models import Geocache
 from task_manager import task_manager
 
@@ -21,7 +22,9 @@ def filter_caches():
     print(f"[FILTER] Type of selected_values: {type(selected_values)}")
 
     app_obj = current_app._get_current_object()
-    status = task_manager.submit(TASK_TYPE_GEOJSON, run_geojson_task, app_obj, Geocache, db, selected_values)
+    status = task_manager.submit(
+        TASK_TYPE_GEOJSON, run_geojson_task, app_obj, Geocache, db, selected_values, get_locale()
+    )
     return jsonify({
         'success': True,
         'task_id': status.id,
@@ -32,7 +35,9 @@ def filter_caches():
 @filters_bp.route('/get_geojson_points', methods=['POST', 'GET'])
 def get_geojson_points():
     app_obj = current_app._get_current_object()
-    status = task_manager.submit(TASK_TYPE_GEOJSON, run_geojson_task, app_obj, Geocache, db)
+    status = task_manager.submit(
+        TASK_TYPE_GEOJSON, run_geojson_task, app_obj, Geocache, db, None, get_locale()
+    )
     return jsonify({
         'success': True,
         'task_id': status.id,

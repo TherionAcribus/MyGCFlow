@@ -1,6 +1,16 @@
 import logging
 
 from flask import Blueprint, jsonify, request, current_app
+from flask_babel import gettext as _babel_gettext
+
+
+def _(msgid, **kwargs):
+    """gettext avec repli sur le msgid brut quand Babel n'est pas initialisé
+    (tests unitaires sur une app Flask nue)."""
+    try:
+        return _babel_gettext(msgid, **kwargs)
+    except Exception:
+        return msgid % kwargs if kwargs else msgid
 
 from dataclasses import asdict
 
@@ -232,7 +242,7 @@ def api_save_profile(name: str):
     if new_name != prof.name:
         return jsonify({
             'success': False,
-            'message': "Le renommage n'est pas autorisé via cet endpoint, utilisez /api/profiles/<name>/rename"
+            'message': _("Le renommage n'est pas autorisé via cet endpoint, utilisez /api/profiles/<name>/rename")
         }), 400
 
     # L'uid identifie le profil de façon stable : on ignore toute valeur
@@ -350,7 +360,7 @@ def api_rename_profile(name: str):
     data = request.get_json(silent=True) or {}
     new_name = (data.get('new_name') or '').strip()
     if not new_name:
-        return jsonify({'success': False, 'message': 'Nouveau nom manquant'}), 400
+        return jsonify({'success': False, 'message': _('Nouveau nom manquant')}), 400
     try:
         prof = settings_manager.rename_profile(name, new_name)
     except FileNotFoundError as e:
@@ -397,7 +407,7 @@ def api_export_profile(name: str):
         payload = settings_manager.export_profile_payload(name, current_version)
         return jsonify(payload)
     except FileNotFoundError:
-        return jsonify({'success': False, 'message': f"Profil '{name}' introuvable"}), 404
+        return jsonify({'success': False, 'message': _("Profil '%(name)s' introuvable", name=name)}), 404
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 400
 

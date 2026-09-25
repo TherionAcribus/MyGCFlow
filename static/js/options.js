@@ -9,47 +9,8 @@ import { getBsModal } from './ui_bootstrap.js';
 const DEBUG_OPTIONS = false;
 const dbgOptions = (...args) => { if (DEBUG_OPTIONS) console.log(...args); };
 
-// Traductions de la modale et des toasts de mise à jour.
-//
-// Ces chaînes sont arrivées ici parce qu'elles naissent côté client : les
-// modèles Jinja passent par flask-babel, mais `t()` (notifications.js) n'a pas
-// encore de catalogue JS et renvoie son argument tel quel. Tant que ce
-// catalogue n'existe pas, ce dictionnaire est le seul endroit où la modale
-// existe en deux langues.
-const updateModalTranslations = {
-    fr: {
-        modalTitle: "🚀 Mise à jour disponible !",
-        currentVersion: "Version actuelle",
-        latestVersion: "Dernière version",
-        newFeatures: "Nouveautés et améliorations",
-        downloadUpdate: "Télécharger la mise à jour",
-        skipVersion: "Ignorer cette version",
-        later: "Plus tard",
-        updateFound: "trouvée",
-        upToDate: "Version actuelle",
-        upToDateMessage: "Votre application est à jour",
-        updateTitle: "Mise à jour disponible",
-        verificationError: "Erreur de vérification",
-        verificationFailed: "Impossible de vérifier les mises à jour. Vérifiez votre connexion.",
-        skipped: "Vous ne serez plus averti pour cette version."
-    },
-    en: {
-        modalTitle: "🚀 Update available!",
-        currentVersion: "Current version",
-        latestVersion: "Latest version",
-        newFeatures: "New features and improvements",
-        downloadUpdate: "Download update",
-        skipVersion: "Skip this version",
-        later: "Later",
-        updateFound: "found",
-        upToDate: "Current version",
-        upToDateMessage: "Your application is up to date",
-        updateTitle: "Update available",
-        verificationError: "Verification error",
-        verificationFailed: "Could not check for updates. Check your connection.",
-        skipped: "You will no longer be notified about this version."
-    }
-};
+// Traductions de la modale et des toasts de mise à jour : chaînes françaises
+// passées par pkg.t() (catalogue gettext JS servi par /js_translations.js).
 
 export function checkVersionInit(){
     const enabled = pkg.options.options.checkVersion;
@@ -89,8 +50,10 @@ export function checkVersion(mode="manual"){
     .catch(error => {
         console.error('Erreur lors de la vérification de version:', error);
         if (mode === "manual") {
-            const translations = getTranslations();
-            showError(translations.verificationFailed, translations.verificationError);
+            showError(
+                pkg.t('Impossible de vérifier les mises à jour. Vérifiez votre connexion.'),
+                pkg.t('Erreur de vérification')
+            );
         }
     });
 }
@@ -98,14 +61,16 @@ export function checkVersion(mode="manual"){
 function displayCheckVersion(data, mode){
     dbgOptions("[displayCheckVersion] mode:", mode, "| data:", data);
 
-    const translations = getTranslations();
     const manual = mode !== "init";
 
     if (data.error === true) {
         // Erreur réseau ou serveur : visible seulement si l'utilisateur a demandé
         // la vérification. Au démarrage, elle reste dans les journaux serveur.
         if (manual) {
-            showError(translations.verificationFailed, translations.verificationError);
+            showError(
+                pkg.t('Impossible de vérifier les mises à jour. Vérifiez votre connexion.'),
+                pkg.t('Erreur de vérification')
+            );
         }
         return;
     }
@@ -119,7 +84,7 @@ function displayCheckVersion(data, mode){
 
     if (!data.update_available) {
         if (manual) {
-            showSuccess(translations.upToDateMessage, translations.upToDate);
+            showSuccess(pkg.t('Votre application est à jour'), pkg.t('Version actuelle'));
         }
         return;
     }
@@ -130,19 +95,14 @@ function displayCheckVersion(data, mode){
         return;
     }
 
-    const currentLang = getCurrentLanguage();
     const version = data.latest_version.version;
     const date = formatReleaseDate(data.latest_version.date);
-    const message = currentLang === 'fr'
-        ? `Nouvelle version ${version} ${date ? `du ${date} ` : ''}${translations.updateFound}`
-        : `New version ${version} ${date ? `from ${date} ` : ''}${translations.updateFound}`;
+    const message = date
+        ? pkg.t('Nouvelle version ${version} du ${date} trouvée', { version, date })
+        : pkg.t('Nouvelle version ${version} trouvée', { version });
 
-    showWarning(message, translations.updateTitle);
+    showWarning(message, pkg.t('Mise à jour disponible'));
     openUpdateDetailsModal(data);
-}
-
-function getTranslations() {
-    return updateModalTranslations[getCurrentLanguage()] || updateModalTranslations.fr;
 }
 
 function normalizeLanguage(lang) {
@@ -214,17 +174,26 @@ function openUpdateDetailsModal(data) {
     dbgOptions("[openUpdateDetailsModal] data:", data);
 
     const currentVersion = data.current_version || "?";
-    const translations = getTranslations();
     const latest = data.latest_version;
     const versions = Array.isArray(data.versions) ? data.versions : [];
     const modalId = 'update-details-modal-' + Date.now();
+
+    // Traductions hissées hors du template literal : l'extracteur Babel ne
+    // voit pas les pkg.t() imbriqués dans les interpolations ${...}.
+    const modalTitle = pkg.t('🚀 Mise à jour disponible !');
+    const currentVersionLabel = pkg.t('Version actuelle');
+    const latestVersionLabel = pkg.t('Dernière version');
+    const newFeaturesLabel = pkg.t('Nouveautés et améliorations');
+    const downloadUpdateLabel = pkg.t('Télécharger la mise à jour');
+    const skipVersionLabel = pkg.t('Ignorer cette version');
+    const laterLabel = pkg.t('Plus tard');
 
     const modalHTML = `
         <div id="${modalId}" class="modal bs-modal update-modal" tabindex="-1">
             <div class="modal-dialog modal-lg modal-dialog-centered">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title text-center w-100">${translations.modalTitle}</h5>
+                        <h5 class="modal-title text-center w-100">${modalTitle}</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
@@ -233,13 +202,13 @@ function openUpdateDetailsModal(data) {
                                 <div class="row">
                                     <div class="col-6 text-center">
                                         <div class="version-card current-version">
-                                            <h6>${translations.currentVersion}</h6>
+                                            <h6>${currentVersionLabel}</h6>
                                             <div class="version-number">${currentVersion}</div>
                                         </div>
                                     </div>
                                     <div class="col-6 text-center">
                                         <div class="version-card latest-version">
-                                            <h6>${translations.latestVersion}</h6>
+                                            <h6>${latestVersionLabel}</h6>
                                             <div class="version-number">${latest.version}</div>
                                             ${latest.date ? `<div class="version-date">${formatReleaseDate(latest.date)}</div>` : ''}
                                         </div>
@@ -248,7 +217,7 @@ function openUpdateDetailsModal(data) {
                             </div>
 
                             <div class="update-changelog">
-                                <h5>${translations.newFeatures}</h5>
+                                <h5>${newFeaturesLabel}</h5>
                                 <div class="changelog-content">
                                     ${versions.map(changelogSection).join('')}
                                 </div>
@@ -260,16 +229,16 @@ function openUpdateDetailsModal(data) {
                             ${latest.download_url ? `
                                 <a href="${latest.download_url}" target="_blank" rel="noopener noreferrer" class="btn btn-success">
                                     <i class="ti ti-download me-1"></i>
-                                    ${translations.downloadUpdate}
+                                    ${downloadUpdateLabel}
                                 </a>
                             ` : ''}
                             <button type="button" class="btn btn-outline-secondary update-skip" data-bs-dismiss="modal">
                                 <i class="ti ti-bell-off me-1"></i>
-                                ${translations.skipVersion}
+                                ${skipVersionLabel}
                             </button>
                             <button type="button" class="btn btn-secondary modal-close" data-bs-dismiss="modal">
                                 <i class="ti ti-x me-1"></i>
-                                ${translations.later}
+                                ${laterLabel}
                             </button>
                         </div>
                     </div>
@@ -297,7 +266,10 @@ function openUpdateDetailsModal(data) {
     // proposera toujours, et une version ultérieure passera outre.
     modalElement.querySelector('.update-skip').addEventListener('click', () => {
         saveSettingsPatch({ skipped_update_version: latest.version });
-        showSuccess(translations.skipped, translations.updateTitle);
+        showSuccess(
+            pkg.t('Vous ne serez plus averti pour cette version.'),
+            pkg.t('Mise à jour disponible')
+        );
     });
 
     modalElement.addEventListener('hidden.bs.modal', () => modalElement.remove());

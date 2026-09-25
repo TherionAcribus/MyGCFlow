@@ -156,7 +156,7 @@ export const recordingPerformanceMonitor = {
                         if (pkg && pkg.showConfirmation) {
                             this.currentPerformanceToast = pkg.showConfirmation(
                                 message,
-                                "Performance enregistrement",
+                                pkg.t("Performance enregistrement"),
                                 () => {
                                     // Confirmation : augmenter le ralentissement
                                     try {
@@ -174,12 +174,12 @@ export const recordingPerformanceMonitor = {
                                         pkg.showToast && pkg.showToast(
                                             pkg.t("Ralentissement augmenté à x${slowdown}. Redémarrez l'enregistrement pour appliquer le changement.", { slowdown: suggestedSlowdown }),
                                             'success',
-                                            'Paramètre mis à jour',
+                                            pkg.t('Paramètre mis à jour'),
                                             8000
                                         );
                                     } catch(err) {
                                         console.error('Erreur lors de l\'application du ralentissement:', err);
-                                        pkg.showToast && pkg.showToast('Erreur lors de la mise à jour du paramètre.', 'error', 'Erreur', 5000);
+                                        pkg.showToast && pkg.showToast(pkg.t('Erreur lors de la mise à jour du paramètre.'), 'error', pkg.t('Erreur'), 5000);
                                     }
                                     this.currentPerformanceToast = null; // Reset après confirmation
                                 },
@@ -188,7 +188,7 @@ export const recordingPerformanceMonitor = {
                                     pkg.showToast && pkg.showToast(
                                         pkg.t("Vous pouvez manuellement augmenter le ralentissement à x${slowdown} dans les paramètres d'enregistrement.", { slowdown: suggestedSlowdown }),
                                         'info',
-                                        'Conseil',
+                                        pkg.t('Conseil'),
                                         8000
                                     );
                                     this.currentPerformanceToast = null; // Reset après annulation
@@ -208,7 +208,7 @@ export const recordingPerformanceMonitor = {
                         if (this.isPerformanceToastVisible()) {
                             this.updatePerformanceToastContent(fallbackMessage);
                         } else if (pkg && pkg.showToast) {
-                            this.currentPerformanceToast = pkg.showToast(fallbackMessage, 'warning', 'Performance enregistrement', 10000);
+                            this.currentPerformanceToast = pkg.showToast(fallbackMessage, 'warning', pkg.t('Performance enregistrement'), 10000);
                         }
                     }
                 } else {
@@ -220,7 +220,7 @@ export const recordingPerformanceMonitor = {
                             { slowdown: currentSlowdown }
                         );
                     } else {
-                        suggestion = "Réduisez la vitesse d'animation (augmentez la durée par jour) ou le nombre de points affichés.";
+                        suggestion = pkg.t("Réduisez la vitesse d'animation (augmentez la durée par jour) ou le nombre de points affichés.");
                     }
 
                     const message = pkg.t(
@@ -234,7 +234,7 @@ export const recordingPerformanceMonitor = {
                     } else {
                         try {
                             if (pkg && pkg.showToast) {
-                                this.currentPerformanceToast = pkg.showToast(message, 'warning', 'Performance enregistrement', 10000);
+                                this.currentPerformanceToast = pkg.showToast(message, 'warning', pkg.t('Performance enregistrement'), 10000);
                             }
                         } catch(err) {
                             // Silencieux en cas d'erreur d'affichage toast

@@ -3877,7 +3877,7 @@ function clickRecordAnimation(){
     const btnPause = document.getElementById('btnPauseAnimation');
     if (btnPause) {
         btnPause.disabled = true;
-        btnPause.title = 'Pause non disponible pendant l\'enregistrement - utilisez Arrêter';
+        btnPause.title = pkg.t('Pause non disponible pendant l\'enregistrement - utilisez Arrêter');
     }
     updateControlBar();
 }
@@ -5220,8 +5220,8 @@ function updateFullscreenButtonAppearance() {
 
     const icon = btnFullscreenMode.querySelector('i');
     const label = btnFullscreenMode.querySelector('.fullscreen-label');
-    const enterText = label?.dataset.enterText || 'Plein écran';
-    const exitText = label?.dataset.exitText || 'Quitter le plein écran';
+    const enterText = label?.dataset.enterText || pkg.t('Plein écran');
+    const exitText = label?.dataset.exitText || pkg.t('Quitter le plein écran');
     if (fullscreenButtonActive) {
         // Mode plein écran actif
         btnFullscreenMode.classList.remove('btn-secondary');
@@ -5518,7 +5518,7 @@ async function displayAudioFileInfo(file) {
 function hideAudioFileInfo() {
     const infoDiv = document.getElementById('audioFileInfo');
     if (infoDiv) {
-        infoDiv.innerHTML = '<em>Aucune musique sélectionnée</em>';
+        infoDiv.innerHTML = '<em>' + pkg.t('Aucune musique sélectionnée') + '</em>';
     }
 }
 
@@ -5547,18 +5547,23 @@ async function addAudioMetadataTooltip(file, element) {
                 metadata.duration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
             }
         } catch(e) {
-            metadata.duration = 'Non disponible';
+            metadata.duration = t('Non disponible');
         }
 
-        // Créer le contenu de la tooltip
+        // Créer le contenu de la tooltip (les libellés sont traduits hors du
+        // template literal : l'extracteur Babel ne voit pas les t() imbriqués).
+        const lblSize = t('Taille');
+        const lblType = t('Type');
+        const lblDuration = t('Durée');
+        const lblModified = t('Modifié');
         const tooltipContent = `
             <div style="max-width:300px;">
                 <strong>${metadata.name}</strong><br>
                 <small>
-                    Taille: ${metadata.size}<br>
-                    Type: ${metadata.type}<br>
-                    Durée: ${metadata.duration}<br>
-                    Modifié: ${metadata.lastModified}
+                    ${lblSize}: ${metadata.size}<br>
+                    ${lblType}: ${metadata.type}<br>
+                    ${lblDuration}: ${metadata.duration}<br>
+                    ${lblModified}: ${metadata.lastModified}
                 </small>
             </div>
         `;
@@ -5598,7 +5603,7 @@ async function getAudioDuration(file) {
 
             audio.addEventListener('error', () => {
                 URL.revokeObjectURL(url);
-                reject(new Error('Erreur lors du chargement du fichier audio'));
+                reject(new Error(t('Erreur lors du chargement du fichier audio')));
             });
 
             audio.src = url;

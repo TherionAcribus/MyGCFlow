@@ -25,7 +25,7 @@ export async function requetedefaultGcColors(){
     try {
         const response = await fetch(`${CONFIG.BASE_URL}/static/json/defaultGcColors.json`);
         if (!response.ok) {
-            const errorMsg = `Erreur lors du chargement des couleurs GC (${response.status}): ${response.statusText}`;
+            const errorMsg = pkg.t('Erreur lors du chargement des couleurs GC (${status}): ${statusText}', { status: response.status, statusText: response.statusText });
             console.error(errorMsg);
             throw new Error(errorMsg);
         }
