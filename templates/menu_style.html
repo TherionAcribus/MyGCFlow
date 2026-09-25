@@ -10,7 +10,7 @@
                     <!-- Sélecteur de profil compact : la liste complète et ses
                          actions (créer, importer, dupliquer, renommer,
                          supprimer, réinitialiser, définir par défaut) vivent
-                         dans la modale ouverte par « Gérer les profils ». -->
+                         dans le tiroir déplié par « Gérer les thèmes ». -->
                     <div id="profile-bar" class="profile-bar">
                         <i class="ti ti-user-circle text-muted" aria-hidden="true"></i>
                         <label for="profile-select" class="form-label mb-0">{{ _("Thème") }}</label>
@@ -19,10 +19,47 @@
                         <button type="button" id="btn-save-profile" class="btn btn-sm btn-secondary" data-bs-toggle="tooltip" data-bs-title="{{ _('Sauvegarder le thème actif') }}">
                             <i class="ti ti-device-floppy me-1"></i>{{ _("Sauvegarder") }}
                         </button>
-                        <button type="button" id="btn-manage-profiles" class="btn btn-sm btn-outline-primary ms-auto">
+                        <button type="button" id="btn-manage-profiles" class="btn btn-sm btn-outline-primary ms-auto"
+                                aria-expanded="false" aria-controls="profiles-manager">
                             <i class="ti ti-palette me-1"></i>{{ _("Gérer les thèmes") }}
+                            <i class="ti ti-chevron-down profile-manager-chevron ms-1" aria-hidden="true"></i>
                         </button>
                     </div>
+
+                    <!-- Gestion des thèmes : tiroir déplié sous la barre, dans
+                         le panneau des onglets. Contrairement à l'ancienne
+                         modale centrée (qui masquait le milieu de la carte), il
+                         laisse la carte entièrement visible : on voit l'effet
+                         d'un thème dès qu'on le charge depuis la liste. -->
+                    <section id="profiles-manager" class="profile-manager-panel" hidden
+                             aria-labelledby="profiles-manager-title">
+                        <div class="profile-manager-header">
+                            <h6 id="profiles-manager-title" class="gc-section-title mb-0">
+                                <i class="ti ti-palette text-muted me-1"></i>{{ _("Gérer les thèmes") }}{{ profile_scope_badge() }}
+                            </h6>
+                            <button type="button" id="btn-close-profiles-manager" class="btn-close" aria-label="{{ _('Fermer') }}"></button>
+                        </div>
+                        <p class="form-hint text-muted mb-2">
+                            {{ _("Un thème ne contient que des réglages visuels : il ne touche ni aux dates, ni au rythme, ni à la musique. Les réglages marqués « Thème » ne sont conservés qu'après un clic sur « Sauvegarder ». Un « • » à côté du nom du thème signale des modifications en attente.") }}
+                        </p>
+                        <div id="profiles-section">
+                            <!-- Boutons d'action -->
+                            <div class="profile-actions d-flex flex-wrap gap-1 mb-2">
+                                <button type="button" id="btn-new-profile" class="btn btn-sm btn-primary" data-bs-toggle="tooltip" data-bs-title="{{ _('Créer un thème avec les réglages actuels') }}">
+                                    <i class="ti ti-plus me-1"></i>{{ _("Nouveau") }}
+                                </button>
+                                <button type="button" id="btn-import-profile" class="btn btn-sm btn-secondary" data-bs-toggle="tooltip" data-bs-title="{{ _('Importer un thème JSON') }}">
+                                    <i class="ti ti-file-upload me-1"></i>{{ _("Importer") }}
+                                </button>
+                                <input id="input-import-profile" type="file" accept="application/json" style="display:none">
+                            </div>
+
+                            <!-- Liste des profils - zone scrollable -->
+                            <div id="profiles-list" class="list-group profiles-list-scrollable">
+                                <!-- Les profils seront chargés dynamiquement -->
+                            </div>
+                        </div>
+                    </section>
 
                     <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
                         <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tabMapOverlay" role="tab" aria-selected="true">{{ _("Cartes & Overlays") }}</a></li>
@@ -142,45 +179,9 @@
         </div>
     </div>
 
-        <!-- Gestion des profils : la liste complète ne monopolise plus un
-             tiers de l'onglet — elle vit dans cette modale, ouverte depuis
-             la barre compacte en tête de la carte. Les sous-modales sont
-             déclarées en frères (elles sont de toute façon rattachées à
-             <body> à l'initialisation, cf. getBsModal). -->
-        <div id="profiles-manager-modal" class="modal bs-modal" tabindex="-1" aria-labelledby="profiles-manager-modal-title" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 id="profiles-manager-modal-title" class="modal-title">
-                            <i class="ti ti-palette text-muted me-1"></i>{{ _("Gérer les thèmes") }}{{ profile_scope_badge() }}
-                        </h5>
-                        <button type="button" class="btn-close modal-close" data-bs-dismiss="modal" aria-label="{{ _('Fermer') }}"></button>
-                    </div>
-                    <div class="modal-body">
-                        <p class="form-hint text-muted mb-2">
-                            {{ _("Un thème ne contient que des réglages visuels : il ne touche ni aux dates, ni au rythme, ni à la musique. Les réglages marqués « Thème » ne sont conservés qu'après un clic sur « Sauvegarder ». Un « • » à côté du nom du thème signale des modifications en attente.") }}
-                        </p>
-                        <div id="profiles-section">
-                            <!-- Boutons d'action -->
-                            <div class="profile-actions d-flex flex-wrap gap-1 mb-2">
-                                <button type="button" id="btn-new-profile" class="btn btn-sm btn-primary" data-bs-toggle="tooltip" data-bs-title="{{ _('Créer un thème avec les réglages actuels') }}">
-                                    <i class="ti ti-plus me-1"></i>{{ _("Nouveau") }}
-                                </button>
-                                <button type="button" id="btn-import-profile" class="btn btn-sm btn-secondary" data-bs-toggle="tooltip" data-bs-title="{{ _('Importer un thème JSON') }}">
-                                    <i class="ti ti-file-upload me-1"></i>{{ _("Importer") }}
-                                </button>
-                                <input id="input-import-profile" type="file" accept="application/json" style="display:none">
-                            </div>
-
-                            <!-- Liste des profils - zone scrollable -->
-                            <div id="profiles-list" class="list-group profiles-list-scrollable" style="max-height: 300px; overflow-y: auto;">
-                                <!-- Les profils seront chargés dynamiquement -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <!-- Sous-modales des thèmes (créer/renommer, supprimer,
+             réinitialiser). Elles sont rattachées à <body> à
+             l'initialisation, cf. getBsModal. -->
 
         <!-- Modal pour créer/renommer profil (Bootstrap 5) -->
         <div id="profile-modal" class="modal bs-modal" tabindex="-1" aria-labelledby="profile-modal-title" aria-hidden="true">

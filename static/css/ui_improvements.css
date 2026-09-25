@@ -963,6 +963,69 @@ top: 20px;
     min-width: 150px;
     max-width: 260px;
 }
+/* Tiroir « Gérer les thèmes » : déplié sous la barre, auquel il se soude
+   visuellement (coins et bordure partagés), pour qu'on lise « la barre s'est
+   agrandie » plutôt que « un nouveau bloc est apparu ». Il vit dans le panneau
+   des onglets et laisse donc la carte entièrement visible. */
+.profile-bar:has(+ .profile-manager-panel:not([hidden])) {
+    margin-bottom: 0;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+.profile-manager-panel {
+    padding: 10px 12px 12px;
+    margin-bottom: 14px;
+    border: 1px solid var(--color-border);
+    border-top: 0;
+    border-radius: 0 0 10px 10px;
+    background: var(--color-surface);
+    animation: profile-manager-open 0.18s ease-out;
+}
+@keyframes profile-manager-open {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: none; }
+}
+.profile-manager-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+.profile-manager-chevron {
+    transition: transform 0.18s ease;
+}
+#btn-manage-profiles[aria-expanded="true"] .profile-manager-chevron {
+    transform: rotate(180deg);
+}
+/* Les thèmes en grille : le panneau des onglets est large, une colonne unique
+   y laisserait des lignes étirées et obligerait à défiler bien plus tôt. */
+.profile-manager-panel #profiles-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 6px;
+    max-height: 240px;
+    overflow-y: auto;
+    border: 0;
+    border-radius: 0;
+}
+.profile-manager-panel #profiles-list > .list-group-item {
+    border-width: 1px;
+    border-radius: 8px;
+    margin: 0;
+    padding: 6px 10px;
+}
+.profile-manager-panel #profiles-list .row {
+    align-items: center;
+}
+@media (prefers-reduced-motion: reduce) {
+    .profile-manager-panel,
+    .profile-manager-chevron {
+        animation: none;
+        transition: none;
+    }
+}
+
 /* L'indicateur a des marges pensées pour un empilement vertical ; dans la
    barre (flex, aligné) elles décentreraient la pastille. */
 .profile-bar .profile-active-indicator {

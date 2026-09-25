@@ -689,16 +689,31 @@ test('le sélecteur compact charge le profil choisi et « Gérer » ouvre la lis
   await expect(unsaved).toBeHidden();
   await expect(select).toHaveValue('Alpha');
 
-  // « Gérer les profils » ouvre la modale qui héberge la liste complète.
-  await page.locator('#btn-manage-profiles').click();
-  await expect(page.locator('#profiles-manager-modal')).toBeVisible();
-  await expect(page.locator('#profiles-manager-modal #profiles-list [data-profile-name="Beta"]')).toBeVisible();
+  // « Gérer les thèmes » déplie le tiroir qui héberge la liste complète, et
+  // le replie au second clic.
+  const toggle = page.locator('#btn-manage-profiles');
+  const manager = page.locator('#profiles-manager');
+  await toggle.click();
+  await expect(manager).toBeVisible();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.locator('#profiles-manager #profiles-list [data-profile-name="Beta"]')).toBeVisible();
+  await toggle.click();
+  await expect(manager).toBeHidden();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+
+  // Échap et la croix le replient aussi.
+  await toggle.click();
+  await page.locator('#btn-close-profiles-manager').press('Escape');
+  await expect(manager).toBeHidden();
+  await toggle.click();
+  await page.locator('#btn-close-profiles-manager').click();
+  await expect(manager).toBeHidden();
 });
 
 
-test('une sous-modale ouverte depuis la gestion la masque puis la rouvre', async ({ page }) => {
-  // Bootstrap ne gère pas l'empilement de modales (deux pièges à focus
-  // concurrents) : la modale de gestion s'efface le temps de la sous-modale.
+test('une sous-modale ouverte depuis la gestion laisse le tiroir ouvert', async ({ page }) => {
+  // Le tiroir n'est pas une modale : les sous-modales s'ouvrent par-dessus
+  // et, refermées, l'utilisateur retrouve la liste là où il l'avait laissée.
   await page.evaluate(() => {
     const pm = window.profileManager;
     pm.profilesList = ['Alpha', 'Beta'];
@@ -709,18 +724,17 @@ test('une sous-modale ouverte depuis la gestion la masque puis la rouvre', async
     pm.updateCurrentProfileIndicator();
   });
 
-  const manager = page.locator('#profiles-manager-modal');
+  const manager = page.locator('#profiles-manager');
   await page.locator('#btn-manage-profiles').click();
   await expect(manager).toBeVisible();
 
   // Charger « Beta » depuis la liste avec des modifications en attente : la
-  // modale à trois issues prend le premier plan, la gestion s'efface.
+  // modale à trois issues prend le premier plan.
   const unsaved = page.locator('#unsaved-changes-modal');
   await page.locator('#profiles-list [data-profile-name="Beta"] .profile-name-wrap').click();
   await expect(unsaved).toBeVisible();
-  await expect(manager).toBeHidden();
 
-  // Annuler ramène sur la modale de gestion, là où l'utilisateur était.
+  // Annuler ramène sur le tiroir, toujours ouvert.
   await unsaved.locator('.modal-footer [data-bs-dismiss="modal"]').click();
   await expect(unsaved).toBeHidden();
   await expect(manager).toBeVisible();
@@ -739,11 +753,10 @@ test('dupliquer passe par la modale de nom pré-remplie', async ({ page }) => {
     pm.renderProfilesList();
   });
 
-  // La liste vit désormais dans la modale de gestion : elle doit être ouverte
-  // pour que les menus « … » de ses lignes soient cliquables. Les sous-modales
-  // (ici celle du nom de la copie) la masquent puis la rouvrent — Bootstrap ne
-  // gère pas les modales empilées.
-  const manager = page.locator('#profiles-manager-modal');
+  // La liste vit dans le tiroir de gestion : il doit être déplié pour que les
+  // menus « … » de ses lignes soient cliquables. Les sous-modales (ici celle
+  // du nom de la copie) s'ouvrent par-dessus sans le refermer.
+  const manager = page.locator('#profiles-manager');
   await page.locator('#btn-manage-profiles').click();
   await expect(manager).toBeVisible();
 

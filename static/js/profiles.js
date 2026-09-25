@@ -82,10 +82,6 @@ class ProfileManager {
         // Modale "modifications non enregistrées" en cours d'affichage : elle
         // n'accepte qu'une question à la fois (cf. _askUnsavedChangesChoice).
         this._unsavedChoicePending = false;
-        // La modale de gestion des profils s'efface quand une sous-modale
-        // s'ouvre par-dessus (Bootstrap ne gère pas l'empilement) ; ce drapeau
-        // marque les fermetures de sous-modale qui doivent la faire revenir.
-        this._reopenManagerModal = false;
         this.init();
     }
 
@@ -128,34 +124,34 @@ class ProfileManager {
             if (!loaded) this._syncProfileSelect();
         });
 
-        // « Gérer les profils » ouvre la modale qui héberge la liste complète
-        // et ses actions (créer, importer, dupliquer, renommer, supprimer,
-        // réinitialiser, définir par défaut).
-        document.getElementById('btn-manage-profiles')?.addEventListener('click', () => {
-            showBsModal('profiles-manager-modal');
-        });
-
-        // Bootstrap ne supporte pas les modales empilées (deux pièges à focus
-        // concurrents) : une sous-modale de profil ouverte depuis la liste fait
-        // effacer la modale de gestion, qui revient à la fermeture de la
-        // sous-modale — l'utilisateur retombe où il était.
-        const managerModal = document.getElementById('profiles-manager-modal');
-        if (managerModal) {
-            ['profile-modal', 'delete-profile-modal', 'reset-profile-modal', 'unsaved-changes-modal']
-                .forEach(id => {
-                    const sub = document.getElementById(id);
-                    if (!sub) return;
-                    sub.addEventListener('show.bs.modal', () => {
-                        if (!managerModal.classList.contains('show')) return;
-                        this._reopenManagerModal = true;
-                        hideBsModal(managerModal);
-                    });
-                    sub.addEventListener('hidden.bs.modal', () => {
-                        if (!this._reopenManagerModal) return;
-                        this._reopenManagerModal = false;
-                        showBsModal(managerModal);
-                    });
-                });
+        // « Gérer les thèmes » déplie/replie le tiroir qui héberge la liste
+        // complète et ses actions (créer, importer, dupliquer, renommer,
+        // supprimer, réinitialiser, définir par défaut). Un tiroir plutôt
+        // qu'une modale : la carte reste visible et manipulable pendant qu'on
+        // essaie les thèmes, et les sous-modales s'ouvrent par-dessus sans
+        // avoir à le masquer puis le rouvrir.
+        const managerToggle = document.getElementById('btn-manage-profiles');
+        const managerPanel = document.getElementById('profiles-manager');
+        if (managerToggle && managerPanel) {
+            const setManagerOpen = (open) => {
+                managerPanel.hidden = !open;
+                managerToggle.setAttribute('aria-expanded', String(open));
+                managerToggle.classList.toggle('active', open);
+                if (open) managerPanel.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            };
+            managerToggle.addEventListener('click', () => setManagerOpen(managerPanel.hidden));
+            document.getElementById('btn-close-profiles-manager')?.addEventListener('click', () => {
+                setManagerOpen(false);
+                managerToggle.focus();
+            });
+            // Échap replie le tiroir, sauf si un menu « … » de ligne est
+            // ouvert : c'est alors à lui seul que revient la touche.
+            managerPanel.addEventListener('keydown', (event) => {
+                if (event.key !== 'Escape') return;
+                if (managerPanel.querySelector('.dropdown-menu.show')) return;
+                setManagerOpen(false);
+                managerToggle.focus();
+            });
         }
 
         // Modal de création/renommage
@@ -814,16 +810,15 @@ class ProfileManager {
             // Sans profil courant, l'indicateur n'affiche rien : inutile de
             // programmer un recalcul dont le résultat ne serait pas utilisé.
             if (!this.currentProfile) return;
-            // La barre de profil (#profile-bar) est dans #style, mais aucun de
-            // ses contrôles n'est un réglage de style (sélecteur, Sauvegarder,
-            // Gérer les profils) ; la liste et ses actions sont dans la modale
-            // de gestion, rattachée à <body> donc déjà hors de portée — le
-            // test sur #profiles-section ne sert que si la modale n'a pas
-            // encore été déplacée. Les ignorer évite de programmer un recalcul
+            // La barre de profil (#profile-bar) et le tiroir de gestion
+            // (#profiles-manager) sont dans #style, mais aucun de leurs
+            // contrôles n'est un réglage de style (sélecteur, Sauvegarder,
+            // Gérer les thèmes, liste et actions des thèmes). Les ignorer
+            // évite de programmer un recalcul
             // concurrent d'une sauvegarde en cours, qui rafraîchirait
             // currentSettings juste avant que saveCurrentAsProfile n'en fasse la
             // nouvelle référence enregistrée.
-            if (event?.target?.closest?.('#profiles-section, #profile-bar')) return;
+            if (event?.target?.closest?.('#profiles-manager, #profile-bar')) return;
             clearTimeout(this._dirtyDebounceTimer);
             this._dirtyDebounceTimer = setTimeout(() => {
                 this._dirtyDebounceTimer = null;

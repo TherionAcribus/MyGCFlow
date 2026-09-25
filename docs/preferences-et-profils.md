@@ -77,8 +77,8 @@ résultat calculé en lecture seule.
   carte (`.changeMap`), variante Toner clair/sombre, « Appliquer » du style
   Titre/Infos. Ils n'émettent ni `input` ni `change` : leurs modifications
   partaient bien dans le thème enregistré, mais n'étaient jamais signalées comme
-  en attente. Les clics du panneau Thèmes (`#profiles-section`) sont ignorés :
-  ils ne touchent aucun réglage de style. Comme le suivi **compare** au lieu de
+  en attente. Les clics de la barre et du tiroir Thèmes (`#profile-bar`,
+  `#profiles-manager`) sont ignorés : ils ne touchent aucun réglage de style. Comme le suivi **compare** au lieu de
   poser un drapeau, un clic sans effet (un onglet, un bouton d'action) ne rend
   pas le thème « modifié », et revenir à la valeur enregistrée éteint le « • ».
   Le rappel lui-même est discret (texte gris, pastille verte) et ne passe en

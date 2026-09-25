@@ -23,12 +23,6 @@
     /* Autres styles de texte si nécessaire */
 }
 
-/* Styles pour la section Profils */
-#profiles-section {
-    max-height: 400px;
-    overflow-y: auto;
-}
-
 /* Le marquage du profil actif (.active-profile, .active-profile-item) est
    entièrement défini dans ui_improvements.css : une seule source, en variables
    de thème. */
