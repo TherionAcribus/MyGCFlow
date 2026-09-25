@@ -710,6 +710,11 @@ main.fullscreen-mode #infosFrame span:not([hidden]) {
     background: rgba(0, 0, 0, 0.14);
 }
 
+#mapTabsResizer:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: -2px;
+}
+
 #mapTabsContainer.is-resizing #mapTabsResizer {
     background: rgba(33, 150, 243, 0.25);
 }

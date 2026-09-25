@@ -2871,6 +2871,10 @@ msgstr "Ignorer pour l'instant"
 msgid "Chargez votre fichier .gpx pour commencer"
 msgstr "Chargez votre fichier .gpx pour commencer"
 
+#: templates/app.html
+msgid "Redimensionner la carte"
+msgstr "Redimensionner la carte"
+
 #: templates/menu_style.html
 msgid "Gérer les profils"
 msgstr "Gérer les profils"

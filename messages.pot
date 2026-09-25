@@ -2713,6 +2713,10 @@ msgstr ""
 msgid "Chargez votre fichier .gpx pour commencer"
 msgstr ""
 
+#: templates/app.html
+msgid "Redimensionner la carte"
+msgstr ""
+
 
 #: templates/menu_style.html
 msgid "Gérer les profils"

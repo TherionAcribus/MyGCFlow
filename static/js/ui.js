@@ -1154,6 +1154,12 @@ function initMapTabsSplitPane() {
         const { clamped, containerHeight } = clampMapHeightPx(mapHeightPx);
         mapWithFrames.style.height = `${clamped}px`;
 
+        // Le séparateur est focusable (role="separator") : son aria-valuenow
+        // reflète la part de hauteur occupée par la carte, en %.
+        if (containerHeight > 0) {
+            resizer.setAttribute('aria-valuenow', String(Math.round(clamped / containerHeight * 100)));
+        }
+
         if (persist) {
             localStorage.setItem(STORAGE_KEY, String(Math.round(clamped)));
         }
@@ -1234,6 +1240,30 @@ function initMapTabsSplitPane() {
 
     resizer.addEventListener('pointerup', stopPointerResize);
     resizer.addEventListener('pointercancel', stopPointerResize);
+
+    // Clavier (pattern ARIA « window splitter ») : ↑/↓ déplacent la barre,
+    // PageUp/PageDown en pas plus grand, Home/End aux extrêmes. Contrairement
+    // au drag (persisté au relâchement), chaque frappe persiste directement.
+    const KEY_STEP_PX = 24;
+    const KEY_PAGE_PX = 160;
+
+    resizer.addEventListener('keydown', (e) => {
+        if (isFullscreenMode()) return;
+
+        const current = mapWithFrames.getBoundingClientRect().height;
+        let next = null;
+        switch (e.key) {
+            case 'ArrowUp':   next = current - KEY_STEP_PX; break;
+            case 'ArrowDown': next = current + KEY_STEP_PX; break;
+            case 'PageUp':    next = current - KEY_PAGE_PX; break;
+            case 'PageDown':  next = current + KEY_PAGE_PX; break;
+            case 'Home':      next = MIN_MAP_PX; break;
+            case 'End':       next = container.clientHeight - MIN_TABS_PX - getResizerHeight(); break;
+            default: return;
+        }
+        applyMapHeightPx(next, true);
+        e.preventDefault();
+    });
 
     window.addEventListener('resize', () => {
         if (isFullscreenMode()) return;

@@ -2828,6 +2828,10 @@ msgstr "Skip for now"
 msgid "Chargez votre fichier .gpx pour commencer"
 msgstr "Upload your .gpx file to get started"
 
+#: templates/app.html
+msgid "Redimensionner la carte"
+msgstr "Resize the map"
+
 #: templates/menu_style.html
 msgid "Gérer les profils"
 msgstr "Manage profiles"
