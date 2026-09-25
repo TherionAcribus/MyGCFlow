@@ -57,6 +57,16 @@ export function updateInfosForPictures(){
 }
 
 
+// Parse une date "YYYY-MM-DD" (ou Date) en Date calendaire locale à minuit.
+// `new Date("2026-03-28")` parserait en UTC minuit — getDate() rendrait alors
+// le jour précédent dans les fuseaux à l'ouest de Greenwich.
+export function parseLocalDate(value){
+    if (value instanceof Date) return isNaN(value.getTime()) ? null : value;
+    if (typeof value !== 'string' || !value) return null;
+    const d = new Date(`${value.slice(0, 10)}T00:00:00`);
+    return isNaN(d.getTime()) ? null : d;
+}
+
 // Utilitaires date pour UI Animation
 export function parseDateInput(value){
     // Gère dd/mm/yyyy (format français) et yyyy-mm-dd (format datepicker)

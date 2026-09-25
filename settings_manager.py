@@ -203,6 +203,11 @@ class AppSettings:
     # globale (le plein écran le force visible quelle que soit la valeur :
     # il y porte le seul bouton de sortie du mode).
     show_control_bar: bool = True
+    # Rythme et déroulement temporel de l'animation : préférences GLOBALES,
+    # persistées dans settings.json comme `recording`. Elles ne vivent jamais
+    # dans un thème (MapProfile) : changer de thème ne doit pas modifier le
+    # timing, le rythme ni le suivi de caméra.
+    animation: "AnimationPrefs" = field(default_factory=lambda: AnimationPrefs())
     examples_seeded: bool = False  # True une fois les profils d'exemple créés (premier lancement)
     # Lot de profils d'exemple déjà installé. Permet d'ajouter des exemples dans
     # une version ultérieure sans les réinstaller à chaque démarrage, ni faire
@@ -224,28 +229,39 @@ class TonerMapOptions:
 @dataclass
 class MapOptions:
     tile_provider: str = "OpenStreetMap"
-    # Convention persistée/API : (longitude, latitude).
-    default_center: Tuple[float, float] = (2.3522, 48.8566)
-    default_zoom: int = 6
     vector_options: VectorMapOptions = field(default_factory=VectorMapOptions)
     toner_options: TonerMapOptions = field(default_factory=TonerMapOptions)
     # Réservé à l'avenir: support d'options spécifiques providers (souples)
     # extra: dict = field(default_factory=dict)
+    # Le centre et le zoom par défaut ne font PAS partie du thème : ce sont un
+    # état de vue (session) / des préférences globales (AppSettings
+    # map_default_center / map_default_zoom). Les anciens fichiers de profil
+    # peuvent encore contenir ces clés : elles sont ignorées à la lecture.
 
 
 @dataclass
-class AnimationOptions:
-    enabled: bool = True
-    speed: float = 1.0
+class AnimationPrefs:
+    """Préférences globales de rythme/timing (hors thème et hors enregistrement).
+
+    Persistées sous la clé `animation` de settings.json. Les bornes reflètent
+    TIMING_LIMITS de static/js/video_timing.mjs : un settings.json édité à la
+    main ne doit pas pouvoir produire une animation impossible.
+    """
+    rhythm_mode: str = "rate"  # "rate" | "duration" | "music"
+    days_per_second: float = 20.0
+    total_duration_seconds: float = 60.0
+    extra_end_seconds: float = 0.0
     # La vue suit le barycentre des caches du jour (translation lente, sans
     # zoom). Voir static/js/camera_follow.mjs.
     camera_follow: bool = False
+    # Durée du flash : réglage d'animation (temporel), alors que forme, taille
+    # et couleur du flash restent dans le thème.
+    flash_duration_ms: int = 1000
 
 
 @dataclass
 class FlashOptions:
     mode: str = "circle"  # "none", "circle", "impulse", "star", "sparkle", "square", "triangle", "diamond"
-    duration: int = 1000  # en ms
     size: int = 50  # en px
     color: str = "#FF00FF"
     color_type: str = "fix"  # "gc", "none", "fix"
@@ -287,11 +303,17 @@ class InfosOptions:
 
 @dataclass
 class MapProfile:
+    """Un thème : réglages VISUELS uniquement.
+
+    Ni le rythme/timing (animation), ni la durée du flash, ni le centre et le
+    zoom de la carte n'y figurent : les anciens fichiers contenant ces blocs
+    restent lisibles (les clés inconnues sont ignorées par coerce_profile) mais
+    elles ne sont plus écrites ni appliquées.
+    """
     version: int = COORDINATE_ORDER_VERSION
     name: str = "Default"
     uid: str = field(default_factory=lambda: uuid.uuid4().hex)
     map: MapOptions = field(default_factory=MapOptions)
-    animation: AnimationOptions = field(default_factory=AnimationOptions)
     points: PointStyle = field(default_factory=PointStyle)
     flash: FlashOptions = field(default_factory=FlashOptions)
     infos: InfosOptions = field(default_factory=InfosOptions)
@@ -432,6 +454,29 @@ def coerce_recording_settings(d: dict) -> RecordingSettings:
     return r
 
 
+ANIMATION_RHYTHM_MODES = ("rate", "duration", "music")
+
+
+def coerce_animation_settings(d: dict) -> AnimationPrefs:
+    """Borne les préférences d'animation aux plages acceptées par l'UI.
+
+    Même motif que coerce_recording_settings : settings.json peut être édité à
+    la main, les bornes de TIMING_LIMITS (static/js/video_timing.mjs) sont donc
+    répétées ici plutôt que faisant confiance au fichier.
+    """
+    a = AnimationPrefs()
+    if not isinstance(d, dict):
+        return a
+    mode = d.get("rhythm_mode", a.rhythm_mode)
+    a.rhythm_mode = mode if mode in ANIMATION_RHYTHM_MODES else a.rhythm_mode
+    a.days_per_second = _clamp_float(d.get("days_per_second"), a.days_per_second, 0.01, 1000.0)
+    a.total_duration_seconds = _clamp_float(d.get("total_duration_seconds"), a.total_duration_seconds, 1.0, 21600.0)
+    a.extra_end_seconds = _clamp_float(d.get("extra_end_seconds"), a.extra_end_seconds, 0.0, 3600.0)
+    a.camera_follow = bool(d.get("camera_follow", a.camera_follow))
+    a.flash_duration_ms = _clamp_int(d.get("flash_duration_ms"), a.flash_duration_ms, 100, 10000)
+    return a
+
+
 def coerce_settings(d: dict) -> AppSettings:
     s = AppSettings()
     if isinstance(d, dict):
@@ -445,6 +490,7 @@ def coerce_settings(d: dict) -> AppSettings:
         s.skipped_update_version = _coerce_optional_str(d.get("skipped_update_version"))
         s.theme = coerce_theme(d.get("theme"), s.theme)
         s.recording = coerce_recording_settings(d.get("recording"))
+        s.animation = coerce_animation_settings(d.get("animation"))
         s.show_control_bar = bool(d.get("show_control_bar", s.show_control_bar))
         # Un settings.json antérieur à la migration n'a pas de bloc `recording` :
         # il compte comme « jamais configuré ».
@@ -486,15 +532,10 @@ def coerce_profile(d: dict) -> MapProfile:
         p.version = max(source_version, COORDINATE_ORDER_VERSION)
         p.uid = d.get("uid", p.uid)
 
-        # Options de carte
+        # Options de carte. `default_center` et `default_zoom`, présents dans
+        # les anciens fichiers, ne sont plus lus : le centre et le zoom sont un
+        # état de vue / une préférence globale, pas un réglage de thème.
         m = d.get("map", {}) if isinstance(d.get("map", {}), dict) else {}
-        default_center = m.get("default_center", p.map.default_center)
-        try:
-            default_center_tuple = (float(default_center[0]), float(default_center[1]))
-            if "default_center" in m and source_version < 2:
-                default_center_tuple = default_center_tuple[::-1]
-        except Exception:
-            default_center_tuple = p.map.default_center
 
         # Options vectorielles
         raw_vm = m.get("vector_options") or {}
@@ -515,19 +556,15 @@ def coerce_profile(d: dict) -> MapProfile:
 
         p.map = MapOptions(
             tile_provider=m.get("tile_provider", p.map.tile_provider),
-            default_center=default_center_tuple,
-            default_zoom=_to_int(m.get("default_zoom"), p.map.default_zoom),
             vector_options=vector_options,
             toner_options=toner_options,
         )
 
-        # Options d'animation
-        a = d.get("animation", {}) if isinstance(d.get("animation", {}), dict) else {}
-        p.animation = AnimationOptions(
-            enabled=bool(a.get("enabled", p.animation.enabled)),
-            speed=_to_float(a.get("speed"), p.animation.speed),
-            camera_follow=bool(a.get("camera_follow", p.animation.camera_follow)),
-        )
+        # Le bloc `animation` des anciens fichiers (speed, camera_follow…) est
+        # volontairement ignoré : le timing est une préférence globale
+        # (AppSettings.animation), jamais un attribut de thème. Aucune migration
+        # automatique vers les préférences : deux anciens thèmes pouvaient
+        # contenir des vitesses différentes, choisir au hasard serait faux.
 
         # Options des points
         pt = d.get("points", {}) if isinstance(d.get("points", {}), dict) else {}
@@ -551,7 +588,6 @@ def coerce_profile(d: dict) -> MapProfile:
         f = d.get("flash", {}) if isinstance(d.get("flash", {}), dict) else {}
         p.flash = FlashOptions(
             mode=f.get("mode", p.flash.mode),
-            duration=_to_int(f.get("duration"), p.flash.duration),
             size=_to_int(f.get("size"), p.flash.size),
             color=f.get("color", p.flash.color),
             color_type=f.get("color_type", p.flash.color_type),
@@ -688,8 +724,6 @@ class SettingsManager:
                 name="Default",
                 map=MapOptions(
                     tile_provider="OSM",
-                    default_center=(2.3522, 48.8566),  # Paris [lon, lat]
-                    default_zoom=6,
                     vector_options=VectorMapOptions(
                         stroke_color="#1f2937",
                         fill_color="#f97316",
@@ -698,7 +732,6 @@ class SettingsManager:
                     ),
                     toner_options=TonerMapOptions(variant="light")
                 ),
-                animation=AnimationOptions(enabled=True, speed=1.0),
                 points=PointStyle(
                     size=8,
                     color="#f97316",
@@ -712,7 +745,6 @@ class SettingsManager:
                 ),
                 flash=FlashOptions(
                     mode="circle",
-                    duration=900,
                     size=42,
                     color="#f59e0b",
                     color_type="gc"
@@ -743,8 +775,6 @@ class SettingsManager:
                 name="Nocturne Neon",
                 map=MapOptions(
                     tile_provider="stamenToner",
-                    default_center=(2.3522, 48.8566),
-                    default_zoom=7,
                     vector_options=VectorMapOptions(
                         stroke_color="#6ef2ff",
                         fill_color="#111827",
@@ -753,7 +783,6 @@ class SettingsManager:
                     ),
                     toner_options=TonerMapOptions(variant="dark")
                 ),
-                animation=AnimationOptions(enabled=True, speed=1.4),
                 points=PointStyle(
                     size=7,
                     color="#6ef2ff",
@@ -767,7 +796,6 @@ class SettingsManager:
                 ),
                 flash=FlashOptions(
                     mode="diamond",
-                    duration=1200,
                     size=65,
                     color="#ff4fd8",
                     color_type="fix"
@@ -800,8 +828,6 @@ class SettingsManager:
                 name="Carnet Aquarelle",
                 map=MapOptions(
                     tile_provider="watercolor",
-                    default_center=(1.888334, 46.603354),  # Centre de la France
-                    default_zoom=6,
                     vector_options=VectorMapOptions(
                         stroke_color="#b08968",
                         fill_color="#e6ccb2",
@@ -810,7 +836,6 @@ class SettingsManager:
                     ),
                     toner_options=TonerMapOptions(variant="light")
                 ),
-                animation=AnimationOptions(enabled=True, speed=0.95),
                 points=PointStyle(
                     size=7,
                     color="#7c5a43",
@@ -826,7 +851,6 @@ class SettingsManager:
                 ),
                 flash=FlashOptions(
                     mode="none",
-                    duration=900,
                     size=35,
                     color="#d7c1a2",
                     color_type="none"
@@ -858,8 +882,6 @@ class SettingsManager:
                 name="Atlas Vintage",
                 map=MapOptions(
                     tile_provider="vectorMap",
-                    default_center=(4.8357, 45.7640),  # Lyon
-                    default_zoom=6,
                     vector_options=VectorMapOptions(
                         stroke_color="#6b5b4d",
                         fill_color="#d8ccb4",
@@ -868,7 +890,6 @@ class SettingsManager:
                     ),
                     toner_options=TonerMapOptions(variant="light")
                 ),
-                animation=AnimationOptions(enabled=True, speed=0.85),
                 points=PointStyle(
                     size=8,
                     color="#8b3a2e",
@@ -882,7 +903,6 @@ class SettingsManager:
                 ),
                 flash=FlashOptions(
                     mode="none",
-                    duration=1000,
                     size=40,
                     color="#8b3a2e",
                     color_type="none"
@@ -913,8 +933,6 @@ class SettingsManager:
                 name="Présentation Impact",
                 map=MapOptions(
                     tile_provider="OSM",
-                    default_center=(2.0, 46.0),  # Vue large sur la France
-                    default_zoom=5,
                     vector_options=VectorMapOptions(
                         stroke_color="#111827",
                         fill_color="#ff6b35",
@@ -923,7 +941,6 @@ class SettingsManager:
                     ),
                     toner_options=TonerMapOptions(variant="light")
                 ),
-                animation=AnimationOptions(enabled=True, speed=2.0),
                 points=PointStyle(
                     size=10,
                     color="#ff6b35",
@@ -937,7 +954,6 @@ class SettingsManager:
                 ),
                 flash=FlashOptions(
                     mode="square",
-                    duration=700,
                     size=90,
                     color="#ffd166",
                     color_type="fix"
@@ -969,8 +985,6 @@ class SettingsManager:
                 name="Bonbon Pop",
                 map=MapOptions(
                     tile_provider="OSM",
-                    default_center=(1.888334, 46.603354),  # France
-                    default_zoom=6,
                     vector_options=VectorMapOptions(
                         stroke_color="#ff4d9d",
                         fill_color="#ffe14d",
@@ -979,7 +993,6 @@ class SettingsManager:
                     ),
                     toner_options=TonerMapOptions(variant="light")
                 ),
-                animation=AnimationOptions(enabled=True, speed=1.6),
                 points=PointStyle(
                     size=10,
                     color="#ff4d9d",
@@ -993,7 +1006,6 @@ class SettingsManager:
                 ),
                 flash=FlashOptions(
                     mode="sparkle",
-                    duration=800,
                     size=70,
                     color="#ffe14d",
                     color_type="fix"
@@ -1024,8 +1036,6 @@ class SettingsManager:
                 name="Coucher Tropical",
                 map=MapOptions(
                     tile_provider="watercolor",
-                    default_center=(7.2620, 43.7102),  # Méditerranée (Nice)
-                    default_zoom=6,
                     vector_options=VectorMapOptions(
                         stroke_color="#ff6b6b",
                         fill_color="#ffd29d",
@@ -1034,7 +1044,6 @@ class SettingsManager:
                     ),
                     toner_options=TonerMapOptions(variant="light")
                 ),
-                animation=AnimationOptions(enabled=True, speed=1.1),
                 points=PointStyle(
                     size=9,
                     color="#ff6b6b",
@@ -1048,7 +1057,6 @@ class SettingsManager:
                 ),
                 flash=FlashOptions(
                     mode="diamond",
-                    duration=1000,
                     size=60,
                     color="#ff9e2c",
                     color_type="gc"
@@ -1079,8 +1087,6 @@ class SettingsManager:
                 name="Forêt Émeraude",
                 map=MapOptions(
                     tile_provider="vectorMap",
-                    default_center=(6.1294, 45.8992),  # Alpes (Annecy)
-                    default_zoom=6,
                     vector_options=VectorMapOptions(
                         stroke_color="#1b4332",
                         fill_color="#95d5b2",
@@ -1089,7 +1095,6 @@ class SettingsManager:
                     ),
                     toner_options=TonerMapOptions(variant="light")
                 ),
-                animation=AnimationOptions(enabled=True, speed=0.9),
                 points=PointStyle(
                     size=8,
                     color="#2d6a4f",
@@ -1103,7 +1108,6 @@ class SettingsManager:
                 ),
                 flash=FlashOptions(
                     mode="triangle",
-                    duration=1000,
                     size=50,
                     color="#74c69d",
                     color_type="fix"
@@ -1135,8 +1139,6 @@ class SettingsManager:
                 name="Océan Bubble",
                 map=MapOptions(
                     tile_provider="OSM",
-                    default_center=(-4.4860, 48.3905),  # Côte (Brest)
-                    default_zoom=6,
                     vector_options=VectorMapOptions(
                         stroke_color="#0077b6",
                         fill_color="#90e0ef",
@@ -1145,7 +1147,6 @@ class SettingsManager:
                     ),
                     toner_options=TonerMapOptions(variant="light")
                 ),
-                animation=AnimationOptions(enabled=True, speed=1.0),
                 points=PointStyle(
                     size=9,
                     color="#00b4d8",
@@ -1159,7 +1160,6 @@ class SettingsManager:
                 ),
                 flash=FlashOptions(
                     mode="circle",
-                    duration=1000,
                     size=80,
                     color="#90e0ef",
                     color_type="fix"
@@ -1190,8 +1190,6 @@ class SettingsManager:
                 name="Arcade 80",
                 map=MapOptions(
                     tile_provider="stamenToner",
-                    default_center=(2.3522, 48.8566),  # Paris
-                    default_zoom=7,
                     vector_options=VectorMapOptions(
                         stroke_color="#2effc7",
                         fill_color="#1a1a2e",
@@ -1200,7 +1198,6 @@ class SettingsManager:
                     ),
                     toner_options=TonerMapOptions(variant="dark")
                 ),
-                animation=AnimationOptions(enabled=True, speed=1.8),
                 points=PointStyle(
                     size=9,
                     color="#ffe14d",
@@ -1214,7 +1211,6 @@ class SettingsManager:
                 ),
                 flash=FlashOptions(
                     mode="square",
-                    duration=500,
                     size=50,
                     color="#2effc7",
                     color_type="fix"
@@ -1249,8 +1245,6 @@ class SettingsManager:
                 name="Fête Confetti",
                 map=MapOptions(
                     tile_provider="OSM",
-                    default_center=(2.0, 46.0),  # Vue large sur la France
-                    default_zoom=5,
                     vector_options=VectorMapOptions(
                         stroke_color="#7b2ff7",
                         fill_color="#ffd166",
@@ -1259,7 +1253,6 @@ class SettingsManager:
                     ),
                     toner_options=TonerMapOptions(variant="light")
                 ),
-                animation=AnimationOptions(enabled=True, speed=1.5),
                 points=PointStyle(
                     size=9,
                     color="#7b2ff7",
@@ -1273,7 +1266,6 @@ class SettingsManager:
                 ),
                 flash=FlashOptions(
                     mode="sparkle",
-                    duration=800,
                     size=65,
                     color="#ff4fd8",
                     color_type="gc"
@@ -1307,8 +1299,6 @@ class SettingsManager:
                 name="Équilibré",
                 map=MapOptions(
                     tile_provider="stamenToner",
-                    default_center=(2.3522, 48.8566),
-                    default_zoom=6,
                     vector_options=VectorMapOptions(
                         stroke_color="#94a3b8",
                         fill_color="#e2e8f0",
@@ -1317,7 +1307,6 @@ class SettingsManager:
                     ),
                     toner_options=TonerMapOptions(variant="light")
                 ),
-                animation=AnimationOptions(enabled=True, speed=1.0),
                 # Bordure fine et points un peu plus petits : sur une grosse base,
                 # la carte reste lisible quand les points se densifient.
                 points=PointStyle(
@@ -1336,7 +1325,6 @@ class SettingsManager:
                 # beaucoup de caches tombent le même jour.
                 flash=FlashOptions(
                     mode="impulse",
-                    duration=600,
                     size=40,
                     color="#0ea5e9",
                     color_type="gc"
@@ -1372,8 +1360,6 @@ class SettingsManager:
                     # (la variante « dark » de Toner reste noir sur blanc). Les
                     # halos des flashs et les couleurs GC y ressortent bien mieux.
                     tile_provider="vectorMap",
-                    default_center=(2.3522, 48.8566),
-                    default_zoom=6,
                     vector_options=VectorMapOptions(
                         stroke_color="#475569",
                         fill_color="#0f172a",
@@ -1382,7 +1368,6 @@ class SettingsManager:
                     ),
                     toner_options=TonerMapOptions(variant="dark")
                 ),
-                animation=AnimationOptions(enabled=True, speed=1.2),
                 points=PointStyle(
                     size=8,
                     color="#f8fafc",
@@ -1398,7 +1383,6 @@ class SettingsManager:
                 ),
                 flash=FlashOptions(
                     mode="impulse",
-                    duration=750,
                     size=60,
                     color="#f8fafc",
                     color_type="gc"
@@ -1435,8 +1419,6 @@ class SettingsManager:
                 name="Encre & Papier",
                 map=MapOptions(
                     tile_provider="stamenToner",
-                    default_center=(1.888334, 46.603354),
-                    default_zoom=5,
                     vector_options=VectorMapOptions(
                         stroke_color="#292524",
                         fill_color="#e7e5e4",
@@ -1445,7 +1427,6 @@ class SettingsManager:
                     ),
                     toner_options=TonerMapOptions(variant="light")
                 ),
-                animation=AnimationOptions(enabled=False, speed=1.0),
                 points=PointStyle(
                     size=5,
                     color="#1c1917",
@@ -1459,7 +1440,6 @@ class SettingsManager:
                 ),
                 flash=FlashOptions(
                     mode="none",
-                    duration=500,
                     size=30,
                     color="#1c1917",
                     color_type="none"
@@ -1491,8 +1471,6 @@ class SettingsManager:
                 name="Aurore Polaire",
                 map=MapOptions(
                     tile_provider="vectorMap",
-                    default_center=(-18.6, 64.9),
-                    default_zoom=5,
                     vector_options=VectorMapOptions(
                         stroke_color="#334155",
                         fill_color="#111827",
@@ -1501,7 +1479,6 @@ class SettingsManager:
                     ),
                     toner_options=TonerMapOptions(variant="dark")
                 ),
-                animation=AnimationOptions(enabled=True, speed=1.15, camera_follow=True),
                 points=PointStyle(
                     size=7,
                     color="#5eead4",
@@ -1517,7 +1494,6 @@ class SettingsManager:
                 ),
                 flash=FlashOptions(
                     mode="impulse",
-                    duration=850,
                     size=55,
                     color="#67e8f9",
                     color_type="fix"
@@ -1549,8 +1525,6 @@ class SettingsManager:
                 name="Sakura Pastel",
                 map=MapOptions(
                     tile_provider="watercolor",
-                    default_center=(135.7681, 35.0116),
-                    default_zoom=6,
                     vector_options=VectorMapOptions(
                         stroke_color="#9f7aea",
                         fill_color="#fce7f3",
@@ -1559,7 +1533,6 @@ class SettingsManager:
                     ),
                     toner_options=TonerMapOptions(variant="light")
                 ),
-                animation=AnimationOptions(enabled=True, speed=0.8),
                 points=PointStyle(
                     size=6,
                     color="#f472b6",
@@ -1575,7 +1548,6 @@ class SettingsManager:
                 ),
                 flash=FlashOptions(
                     mode="star",
-                    duration=1100,
                     size=45,
                     color="#c084fc",
                     color_type="fix"
@@ -1606,8 +1578,6 @@ class SettingsManager:
                 name="Signal Technique",
                 map=MapOptions(
                     tile_provider="stamenToner",
-                    default_center=(10.0, 50.0),
-                    default_zoom=5,
                     vector_options=VectorMapOptions(
                         stroke_color="#334155",
                         fill_color="#cbd5e1",
@@ -1616,7 +1586,6 @@ class SettingsManager:
                     ),
                     toner_options=TonerMapOptions(variant="light")
                 ),
-                animation=AnimationOptions(enabled=True, speed=1.8),
                 points=PointStyle(
                     size=5,
                     color="#ffffff",
@@ -1630,7 +1599,6 @@ class SettingsManager:
                 ),
                 flash=FlashOptions(
                     mode="square",
-                    duration=450,
                     size=36,
                     color="#2563eb",
                     color_type="gc"
@@ -1663,8 +1631,6 @@ class SettingsManager:
                 name="Randonnée Topo",
                 map=MapOptions(
                     tile_provider="OSM",
-                    default_center=(6.1294, 45.8992),
-                    default_zoom=7,
                     vector_options=VectorMapOptions(
                         stroke_color="#3f6212",
                         fill_color="#d9f99d",
@@ -1673,7 +1639,6 @@ class SettingsManager:
                     ),
                     toner_options=TonerMapOptions(variant="light")
                 ),
-                animation=AnimationOptions(enabled=True, speed=0.9, camera_follow=True),
                 points=PointStyle(
                     size=6,
                     color="#3f6212",
@@ -1690,7 +1655,6 @@ class SettingsManager:
                 ),
                 flash=FlashOptions(
                     mode="triangle",
-                    duration=900,
                     size=42,
                     color="#65a30d",
                     color_type="gc"
@@ -1721,8 +1685,6 @@ class SettingsManager:
                 name="Cuivre & Ardoise",
                 map=MapOptions(
                     tile_provider="vectorMap",
-                    default_center=(4.8357, 45.7640),
-                    default_zoom=6,
                     vector_options=VectorMapOptions(
                         stroke_color="#64748b",
                         fill_color="#1e293b",
@@ -1731,7 +1693,6 @@ class SettingsManager:
                     ),
                     toner_options=TonerMapOptions(variant="dark")
                 ),
-                animation=AnimationOptions(enabled=True, speed=1.05),
                 points=PointStyle(
                     size=6,
                     color="#d97745",
@@ -1747,7 +1708,6 @@ class SettingsManager:
                 ),
                 flash=FlashOptions(
                     mode="diamond",
-                    duration=950,
                     size=50,
                     color="#fb923c",
                     color_type="fix"
@@ -2006,8 +1966,6 @@ class SettingsManager:
             'uid': prof.uid,
             'map': {
                 'tile_provider': prof.map.tile_provider,
-                'default_center': list(prof.map.default_center),
-                'default_zoom': prof.map.default_zoom,
                 'vector_options': {
                     'stroke_color': prof.map.vector_options.stroke_color,
                     'fill_color': prof.map.vector_options.fill_color,
@@ -2017,11 +1975,6 @@ class SettingsManager:
                 'toner_options': {
                     'variant': prof.map.toner_options.variant,
                 },
-            },
-            'animation': {
-                'enabled': prof.animation.enabled,
-                'speed': prof.animation.speed,
-                'camera_follow': prof.animation.camera_follow,
             },
             'points': {
                 'size': prof.points.size,
@@ -2040,7 +1993,6 @@ class SettingsManager:
             },
             'flash': {
                 'mode': prof.flash.mode,
-                'duration': prof.flash.duration,
                 'size': prof.flash.size,
                 'color': prof.flash.color,
                 'color_type': prof.flash.color_type,

@@ -84,42 +84,90 @@
                         </div>
                     </div>
 
+                    <!-- Trois façons exclusives de définir le tempo : une seule
+                         valeur est éditable, les deux autres sont des résultats
+                         calculés en lecture seule (voir ui.js, refreshTimingPlan). -->
                     <div class="row g-2 mt-1">
-                        <div class="col-12 col-md-6">
-                            <div class="mb-3">
-                                <label for="inputTimePerDay" class="form-label">{{ _("Durée par jour (ms)") }}</label>
-                                <input placeholder="{{ _('Temps en ms par jour') }}" id="inputTimePerDay" type="number" class="form-control">
+                        <div class="col-12">
+                            <label class="form-label" id="labelRhythmMode">{{ _("Rythme de l'animation") }}{{ global_scope_badge() }}</label>
+                            <div class="form-selectgroup" role="radiogroup" aria-labelledby="labelRhythmMode">
+                                <label class="form-selectgroup-item">
+                                    <input type="radio" name="rhythmMode" id="rhythmModeRate" value="rate" class="form-selectgroup-input" checked>
+                                    <span class="form-selectgroup-label">{{ _("Par rythme") }}</span>
+                                </label>
+                                <label class="form-selectgroup-item">
+                                    <input type="radio" name="rhythmMode" id="rhythmModeDuration" value="duration" class="form-selectgroup-input">
+                                    <span class="form-selectgroup-label">{{ _("Par durée") }}</span>
+                                </label>
+                                <label class="form-selectgroup-item">
+                                    <input type="radio" name="rhythmMode" id="rhythmModeMusic" value="music" class="form-selectgroup-input">
+                                    <span class="form-selectgroup-label">{{ _("Sur la musique") }}</span>
+                                </label>
                             </div>
-                            <div class="form-check form-switch mb-2">
-                                <input class="form-check-input" type="checkbox" id="switchCameraFollow" role="switch" aria-describedby="helpCameraFollow">
-                                <label class="form-check-label" for="switchCameraFollow">{{ _("Suivi de caméra") }}</label>
-                            </div>
-                            <small id="helpCameraFollow" class="form-hint text-muted">{{ _("La vue glisse lentement vers les caches du jour, sans changer de zoom. En MediaRecorder, qui enregistre en temps réel, les tuiles de la carte peuvent apparaître en retard : préférez le mode images.") }}</small>
-                        </div>
-                        <div class="col-12 col-md-6">
-                            <div class="mb-3">
-                                <label for="inputTotalTime" id="labelTotalTime" class="form-label" data-locked-text="{{ _('Temps total (minutes) - défini par musique') }}" data-normal-text="{{ _('Temps total (minutes)') }}">{{ _("Temps total (minutes)") }}</label>
-                                <input placeholder="{{ _('Temps total') }}" id="inputTotalTime" type="number" step="0.0001" class="form-control">
-                            </div>
-                            <p class="form-hint text-muted mb-1">
-                                <span id="spanTotalTimeMinutes"></span> {{ _("min") }} <span id="spanTotalTimeSeconds"></span> {{ _("sec pour") }} <span id="spanDeltaDays"></span> {{ _("jours") }}
-                            </p>
-                            <p class="form-hint text-muted">
-                                {{ _("Calcul") }} :
-                                <span id="spanBaseTimeMinutes"></span> {{ _("min") }} <span id="spanBaseTimeSeconds"></span> {{ _("sec (animation)") }}
-                                +
-                                <span id="spanAutomaticHoldMinutes"></span> {{ _("min") }} <span id="spanAutomaticHoldSeconds"></span> {{ _("sec (fin automatique)") }}
-                                +
-                                <span id="spanExtraTimeMinutes"></span> {{ _("min") }} <span id="spanExtraTimeSeconds"></span> {{ _("sec (temps additionnel)") }}
-                            </p>
                         </div>
                     </div>
+                    <div class="row g-2 align-items-start">
+                        <div class="col-12 col-md-4">
+                            <div class="mb-3">
+                                <label for="inputDaysPerSecond" class="form-label">{{ _("Rythme (jours par seconde)") }}</label>
+                                <input id="inputDaysPerSecond" type="number" class="form-control" min="0.01" max="1000" step="0.01" placeholder="20" aria-describedby="feedbackDaysPerSecond">
+                                <div class="invalid-feedback" id="feedbackDaysPerSecond"></div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <div class="mb-3">
+                                <label for="inputTotalDuration" id="labelTotalDuration" class="form-label">{{ _("Durée finale de la vidéo (mm:ss)") }}</label>
+                                <input id="inputTotalDuration" type="text" class="form-control" inputmode="numeric" placeholder="4:55" aria-describedby="feedbackTotalDuration">
+                                <div class="invalid-feedback" id="feedbackTotalDuration"></div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <div class="mb-3">
+                                <label for="selectRhythmPreset" class="form-label">{{ _("Préréglage") }}</label>
+                                <select id="selectRhythmPreset" class="form-select">
+                                    <option value="slow">{{ _("Lent") }} (10 {{ _("jours/s") }})</option>
+                                    <option value="normal" selected>{{ _("Normal") }} (20 {{ _("jours/s") }})</option>
+                                    <option value="fast">{{ _("Rapide") }} (50 {{ _("jours/s") }})</option>
+                                    <option value="custom">{{ _("Personnalisé") }}</option>
+                                </select>
+                                <small class="form-hint text-muted">{{ _("Préréglage global, indépendant du thème.") }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Synthèse lisible : « 5 841 jours · 20 jours/s · animation 4:52 · fin 3 s · vidéo 4:55 · 8 852 images » -->
+                    <p class="form-hint text-muted mb-1" id="timingSummary"></p>
+                    <p class="form-hint text-muted">
+                        {{ _("Détail") }} :
+                        <span id="spanBaseTime"></span> {{ _("(animation)") }}
+                        + <span id="spanAutomaticHold"></span> {{ _("(pause automatique de fin)") }}
+                        + <span id="spanExtraTime"></span> {{ _("(temps additionnel)") }}
+                        = <strong><span id="spanTotalTime"></span></strong>
+                    </p>
+                    <div id="timingErrors" class="alert alert-danger py-2 px-3" role="alert" style="display:none;"></div>
+                    <div id="timingWarnings" class="alert alert-warning py-2 px-3" role="status" aria-live="polite" style="display:none;"></div>
                     <div class="row g-2">
                         <div class="col-12 col-md-6">
                             <div class="mb-3">
-                                <label for="inputExtraEndTime" class="form-label">{{ _("Temps additionnel (sec)") }}</label>
-                                <input placeholder="{{ _('Temps additionnel (sec)') }}" id="inputExtraEndTime" type="number" min="0" step="1" class="form-control">
+                                <label for="inputExtraEndTime" class="form-label">{{ _("Temps additionnel en fin (sec)") }}</label>
+                                <input placeholder="{{ _('Temps additionnel (sec)') }}" id="inputExtraEndTime" type="number" min="0" max="3600" step="1" class="form-control" aria-describedby="feedbackExtraEndTime">
+                                <div class="invalid-feedback" id="feedbackExtraEndTime"></div>
                             </div>
+                            <div class="mb-3">
+                                <!-- La durée du flash est un réglage TEMPOREL : elle
+                                     vit ici (préférence globale), tandis que la forme,
+                                     la taille et la couleur restent dans le thème. -->
+                                <label for="inputTimeFlash" class="form-label">{{ _("Durée du flash (ms)") }}{{ global_scope_badge() }}</label>
+                                <input id="inputTimeFlash" type="number" class="form-control" min="100" max="10000" step="100" placeholder="{{ _('Durée du flash') }}" aria-describedby="feedbackTimeFlash">
+                                <small class="form-hint text-muted">{{ _("Forme, taille et couleur du flash : onglet Style (thème).") }}</small>
+                                <div class="invalid-feedback" id="feedbackTimeFlash"></div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="form-check form-switch mb-2 mt-md-4">
+                                <input class="form-check-input" type="checkbox" id="switchCameraFollow" role="switch" aria-describedby="helpCameraFollow">
+                                <label class="form-check-label" for="switchCameraFollow">{{ _("Suivi de caméra") }}{{ global_scope_badge() }}</label>
+                            </div>
+                            <small id="helpCameraFollow" class="form-hint text-muted">{{ _("La vue glisse lentement vers les caches du jour, sans changer de zoom. En MediaRecorder, qui enregistre en temps réel, les tuiles de la carte peuvent apparaître en retard : préférez le mode images.") }}</small>
                         </div>
                     </div>
 
@@ -144,12 +192,19 @@
                                     <span id="spanAudioVolumeDisplay" class="vector-slider-value">100%</span>
                                 </div>
                             </div>
-                            <div class="mt-2">
-                                <button type="button" class="btn btn-sm btn-secondary disabled" id="btnSetDurationFromAudio" title="{{ _('Utiliser la durée de la musique comme temps total') }}">
-                                    <i class="ti ti-clock me-1"></i>{{ _("Définir la durée de l'animation à partir de la musique") }}
+                            <div class="mt-2 d-flex align-items-center gap-2 flex-wrap">
+                                <button type="button" class="btn btn-sm btn-secondary disabled" id="btnSetDurationFromAudio" title="{{ _('Caler la durée de la vidéo sur celle de la musique') }}">
+                                    <i class="ti ti-music me-1"></i>{{ _("Caler sur la musique") }}
                                 </button>
-                                <span id="durationMatchIndicator" class="ms-2" style="display:none;" data-difference-text="{{ _('Différence') }}"></span>
+                                <span id="musicSyncBadge" class="badge bg-azure-lt" style="display:none;">
+                                    <i class="ti ti-music me-1" aria-hidden="true"></i>{{ _("Calé sur la musique") }}
+                                </span>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="btnUnlinkAudio" style="display:none;">{{ _("Dissocier") }}</button>
+                                <span id="durationMatchIndicator" class="small" style="display:none;" data-difference-text="{{ _('Différence') }}"></span>
                             </div>
+                            <!-- État textuel de la synchronisation, annoncé aux
+                                 lecteurs d'écran (le badge seul ne suffit pas). -->
+                            <div id="musicSyncStatus" class="form-hint text-muted mt-1" aria-live="polite"></div>
                         </div>
                     </div>
 

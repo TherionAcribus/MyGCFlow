@@ -13,14 +13,14 @@
                          dans la modale ouverte par « Gérer les profils ». -->
                     <div id="profile-bar" class="profile-bar">
                         <i class="ti ti-user-circle text-muted" aria-hidden="true"></i>
-                        <label for="profile-select" class="form-label mb-0">{{ _("Profil") }}</label>
+                        <label for="profile-select" class="form-label mb-0">{{ _("Thème") }}</label>
                         <select id="profile-select" class="form-select form-select-sm" disabled></select>
                         <span id="current-profile-indicator" class="profile-active-indicator"></span>
-                        <button type="button" id="btn-save-profile" class="btn btn-sm btn-secondary" data-bs-toggle="tooltip" data-bs-title="{{ _('Sauvegarder le profil actif') }}">
+                        <button type="button" id="btn-save-profile" class="btn btn-sm btn-secondary" data-bs-toggle="tooltip" data-bs-title="{{ _('Sauvegarder le thème actif') }}">
                             <i class="ti ti-device-floppy me-1"></i>{{ _("Sauvegarder") }}
                         </button>
                         <button type="button" id="btn-manage-profiles" class="btn btn-sm btn-outline-primary ms-auto">
-                            <i class="ti ti-users me-1"></i>{{ _("Gérer les profils") }}
+                            <i class="ti ti-palette me-1"></i>{{ _("Gérer les thèmes") }}
                         </button>
                     </div>
 
@@ -152,21 +152,21 @@
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 id="profiles-manager-modal-title" class="modal-title">
-                            <i class="ti ti-users text-muted me-1"></i>{{ _("Gérer les profils") }}{{ profile_scope_badge() }}
+                            <i class="ti ti-palette text-muted me-1"></i>{{ _("Gérer les thèmes") }}{{ profile_scope_badge() }}
                         </h5>
                         <button type="button" class="btn-close modal-close" data-bs-dismiss="modal" aria-label="{{ _('Fermer') }}"></button>
                     </div>
                     <div class="modal-body">
                         <p class="form-hint text-muted mb-2">
-                            {{ _("Les réglages marqués « Profil » ne sont conservés qu'après un clic sur « Sauvegarder ». Un « • » à côté du nom du profil signale des modifications en attente.") }}
+                            {{ _("Un thème ne contient que des réglages visuels : il ne touche ni aux dates, ni au rythme, ni à la musique. Les réglages marqués « Thème » ne sont conservés qu'après un clic sur « Sauvegarder ». Un « • » à côté du nom du thème signale des modifications en attente.") }}
                         </p>
                         <div id="profiles-section">
                             <!-- Boutons d'action -->
                             <div class="profile-actions d-flex flex-wrap gap-1 mb-2">
-                                <button type="button" id="btn-new-profile" class="btn btn-sm btn-primary" data-bs-toggle="tooltip" data-bs-title="{{ _('Créer un profil avec les réglages actuels') }}">
+                                <button type="button" id="btn-new-profile" class="btn btn-sm btn-primary" data-bs-toggle="tooltip" data-bs-title="{{ _('Créer un thème avec les réglages actuels') }}">
                                     <i class="ti ti-plus me-1"></i>{{ _("Nouveau") }}
                                 </button>
-                                <button type="button" id="btn-import-profile" class="btn btn-sm btn-secondary" data-bs-toggle="tooltip" data-bs-title="{{ _('Importer un profil JSON') }}">
+                                <button type="button" id="btn-import-profile" class="btn btn-sm btn-secondary" data-bs-toggle="tooltip" data-bs-title="{{ _('Importer un thème JSON') }}">
                                     <i class="ti ti-file-upload me-1"></i>{{ _("Importer") }}
                                 </button>
                                 <input id="input-import-profile" type="file" accept="application/json" style="display:none">
@@ -187,13 +187,13 @@
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 id="profile-modal-title" class="modal-title">{{ _("Nouveau profil") }}</h5>
+                        <h5 id="profile-modal-title" class="modal-title">{{ _("Nouveau thème") }}</h5>
                         <button type="button" class="btn-close modal-close" data-bs-dismiss="modal" aria-label="{{ _('Fermer') }}"></button>
                     </div>
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label for="profile-name-input" class="form-label">{{ _("Nom du profil") }}</label>
-                            <input type="text" id="profile-name-input" maxlength="50" class="form-control" placeholder="{{ _('Nom du profil') }}" aria-describedby="profile-name-feedback" autocomplete="off">
+                            <label for="profile-name-input" class="form-label">{{ _("Nom du thème") }}</label>
+                            <input type="text" id="profile-name-input" maxlength="50" class="form-control" placeholder="{{ _('Nom du thème') }}" aria-describedby="profile-name-feedback" autocomplete="off">
                             <!-- Diagnostic live du nom saisi (nom déjà pris, caractères
                                  ignorés par la sanitization du fichier). Le texte et les
                                  classes sont posés par _updateProfileNameFeedback(). -->

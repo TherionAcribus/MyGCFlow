@@ -3,31 +3,32 @@
    L'application persiste ses réglages à deux endroits, avec deux moments de
    sauvegarde différents, ce que rien n'indiquait dans l'interface :
 
-   - PROFIL  : style de la carte, des points, du flash et des infos. Enregistré
-               dans le profil actif, et seulement au clic sur « Sauvegarder »
-               (section Profils de l'onglet Style).
-   - GLOBAL  : langue, thème, mises à jour, vue par défaut, enregistrement
-               vidéo. Enregistré automatiquement dans les préférences de
-               l'application, et conservé quel que soit le profil chargé.
+   - THÈME   : style de la carte, des points, du flash (forme, taille, couleur)
+               et des infos. Enregistré dans le thème actif, et seulement au
+               clic sur « Sauvegarder » (section Thèmes de l'onglet Style).
+   - GLOBAL  : langue, thème de l'app, mises à jour, vue par défaut,
+               enregistrement vidéo, rythme et durées de l'animation. Enregistré
+               automatiquement dans les préférences de l'application, et
+               conservé quel que soit le thème chargé.
 
    Ces deux macros posent la même pastille partout, à côté du titre de section.
    Elles se doublent de l'indicateur inline « Enregistré ✓ » pour les réglages
-   globaux (static/js/saved_indicator.mjs) et du « • » de l'indicateur de profil
-   pour les réglages de profil. #}
+   globaux (static/js/saved_indicator.mjs) et du « • » de l'indicateur de thème
+   pour les réglages de thème. #}
 
 {# `tabindex="0"` : l'explication de la pastille n'était accessible qu'au survol.
-   Le texte de la pastille (« Profil » / « Global ») lui sert de nom accessible,
+   Le texte de la pastille (« Thème » / « Global ») lui sert de nom accessible,
    et Bootstrap ajoute l'infobulle en description au moment de l'affichage. #}
 {% macro profile_scope_badge() %}
 <span class="gc-scope-badge gc-scope-profile" tabindex="0" data-bs-toggle="tooltip"
-      data-bs-title="{{ _('Réglage du profil actif : appliqué immédiatement, mais conservé seulement après un clic sur « Sauvegarder » dans la section Profils.') }}">
-    <i class="ti ti-users" aria-hidden="true"></i>{{ _("Profil") }}
+      data-bs-title="{{ _('Réglage du thème actif : appliqué immédiatement, mais conservé seulement après un clic sur « Sauvegarder » dans la section Thèmes.') }}">
+    <i class="ti ti-palette" aria-hidden="true"></i>{{ _("Thème") }}
 </span>
 {% endmacro %}
 
 {% macro global_scope_badge() %}
 <span class="gc-scope-badge gc-scope-global" tabindex="0" data-bs-toggle="tooltip"
-      data-bs-title="{{ _('Préférence de l\'application : enregistrée automatiquement, indépendamment du profil chargé.') }}">
+      data-bs-title="{{ _('Préférence de l\'application : enregistrée automatiquement, indépendamment du thème chargé.') }}">
     <i class="ti ti-world-cog" aria-hidden="true"></i>{{ _("Global") }}
 </span>
 {% endmacro %}

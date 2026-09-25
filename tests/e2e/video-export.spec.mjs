@@ -77,12 +77,17 @@ test('l\'import GPX et le filtre Type alimentent la vraie timeline', async ({ pa
 
   const state = await page.evaluate(async () => {
     const app = await import('/static/js/index.js');
+    // Les dates de métadonnées sont des minuits LOCAUX (même convention que
+    // pointsByDate/toDateString et l'itération setDate de l'animation) :
+    // toISOString() décalerait d'un jour dans les fuseaux UTC+.
+    const localIso = (d) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     return {
       selectedCaches: app.metadata.numberOfCaches,
       timelineDays: app.pointsByDate.size,
       timelineCaches: [...app.pointsByDate.values()].reduce((total, points) => total + points.length, 0),
-      startDate: app.metadata.startDate.toISOString().slice(0, 10),
-      endDate: app.metadata.endDate.toISOString().slice(0, 10),
+      startDate: localIso(app.metadata.startDate),
+      endDate: localIso(app.metadata.endDate),
     };
   });
 
@@ -165,7 +170,7 @@ test('les options MediaRecorder de l\'interface produisent un MP4 validé par ff
   // Tom Select (multi-sélection), mais les selects d'enregistrement sont des
   // <select> natifs depuis b724def : Playwright les pilote directement.
   await page.locator('a[href="#animation"]').click();
-  await page.locator('#inputTimePerDay').fill('80');
+  await page.locator('#inputDaysPerSecond').fill('12.5');
   await page.locator('#inputExtraEndTime').fill('0');
   await page.locator('#recordingConfigTab').click();
   await expect(page.locator('#recordingConfigPane')).toBeVisible();
@@ -265,7 +270,7 @@ test('le mode images rend la carte à la résolution demandée', async ({ page }
   await selectTraditionalCaches(page);
 
   await page.locator('a[href="#animation"]').click();
-  await page.locator('#inputTimePerDay').fill('80');
+  await page.locator('#inputDaysPerSecond').fill('12.5');
   await page.locator('#inputExtraEndTime').fill('0');
   await page.locator('#recordingConfigTab').click();
   await expect(page.locator('#recordingConfigPane')).toBeVisible();
@@ -341,7 +346,7 @@ test('le mode MediaRecorder rend aussi la carte à la résolution demandée', as
   await selectTraditionalCaches(page);
 
   await page.locator('a[href="#animation"]').click();
-  await page.locator('#inputTimePerDay').fill('80');
+  await page.locator('#inputDaysPerSecond').fill('12.5');
   await page.locator('#inputExtraEndTime').fill('0');
   await page.locator('#recordingConfigTab').click();
   await expect(page.locator('#recordingConfigPane')).toBeVisible();
@@ -529,7 +534,7 @@ test('le réglage Couleurs choisit le format de pixels du fichier final', async 
   await selectTraditionalCaches(page);
 
   await page.locator('a[href="#animation"]').click();
-  await page.locator('#inputTimePerDay').fill('80');
+  await page.locator('#inputDaysPerSecond').fill('12.5');
   await page.locator('#inputExtraEndTime').fill('0');
   await page.locator('#recordingConfigTab').click();
   await expect(page.locator('#recordingConfigPane')).toBeVisible();
@@ -654,7 +659,7 @@ test('un enregistrement avec suivi de caméra produit une vidéo et déplace la 
   await selectTraditionalCaches(page);
 
   await page.locator('a[href="#animation"]').click();
-  await page.locator('#inputTimePerDay').fill('80');
+  await page.locator('#inputDaysPerSecond').fill('12.5');
   await page.locator('#inputExtraEndTime').fill('0');
   await page.locator('#switchCameraFollow').check();
   await page.locator('#recordingConfigTab').click();

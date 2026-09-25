@@ -142,7 +142,13 @@ test('appliquer un profil met à jour carte, options et interface sans délai', 
   // est synchrone (plus de .click() ni de setTimeout de 100 ms), donc l'état
   // doit être complet immédiatement.
   const applied = await page.evaluate(async () => {
-    // Une préférence globale distincte ne doit pas écraser la vue explicite du profil.
+    const app0 = await import('/static/js/index.js');
+    const view0 = app0.getMap().getView();
+    const before = {
+      lonLat: ol.proj.toLonLat(view0.getCenter()),
+      zoom: view0.getZoom(),
+    };
+    // Une préférence globale distincte ne doit pas écraser la vue courante.
     window.userSettings = {
       map_default_center: [-4.4860, 48.3905],
       map_default_zoom: 3,
@@ -151,6 +157,8 @@ test('appliquer un profil met à jour carte, options et interface sans délai', 
       name: 'Test',
       map: {
         tile_provider: 'stamenToner',
+        // Centre/zoom d'un éventuel ancien profil : ignorés, ils relèvent de
+        // la session (vue courante), pas du thème.
         default_center: [4.8357, 45.7640],
         default_zoom: 9,
         vector_options: {
@@ -172,6 +180,7 @@ test('appliquer un profil met à jour carte, options et interface sans délai', 
       mapButton: document.getElementById('stamenToner').classList.contains('is-selected'),
       strokeColorField: document.getElementById('fieldVectorMapStrokeColor').value,
       strokeWidthField: document.getElementById('fieldVectorMapStrokeWidth').value,
+      before,
       lat: lonLat[1],
       lon: lonLat[0],
       zoom: view.getZoom(),
@@ -193,10 +202,10 @@ test('appliquer un profil met à jour carte, options et interface sans délai', 
   expect(applied.strokeColorField).toBe('#123456');
   expect(applied.strokeWidthField).toBe('1.5');
 
-  // Le centre est stocké en [longitude, latitude].
-  expect(applied.lat).toBeCloseTo(45.7640, 3);
-  expect(applied.lon).toBeCloseTo(4.8357, 3);
-  expect(applied.zoom).toBe(9);
+  // La vue est un état de session : appliquer un thème ne la déplace pas.
+  expect(applied.lat).toBeCloseTo(applied.before.lonLat[1], 3);
+  expect(applied.lon).toBeCloseTo(applied.before.lonLat[0], 3);
+  expect(applied.zoom).toBe(applied.before.zoom);
 });
 
 

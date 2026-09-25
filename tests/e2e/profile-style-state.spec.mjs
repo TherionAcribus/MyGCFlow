@@ -16,8 +16,11 @@ async function openReadyApp(page) {
 }
 
 
-// Profil complet côté style (points, animation, flash, infos), sans bloc carte :
+// Profil complet côté style (points, flash, infos), sans bloc carte :
 // les tests de fond de carte vivent dans map-source-of-truth.spec.mjs.
+// Les clés legacy `animation` et `flash.duration` restent volontairement dans
+// la fixture : un ancien thème doit rester chargeable, mais ces valeurs sont
+// ignorées à l'application (le timing est une préférence globale).
 const STYLE_PROFILE = {
   name: 'Style',
   points: {
@@ -54,14 +57,41 @@ test('appliquer un profil écrit les options puis synchronise l\'interface', asy
   // synchrone (plus de .click() ni de dispatchEvent), l'état doit être complet
   // immédiatement.
   const applied = await page.evaluate(async (profile) => {
+    const app = await import('/static/js/index.js');
+    // État temporel distinctif AVANT l'application : un thème ne doit jamais
+    // modifier rythme, mode, dates, temps additionnel, suivi de caméra ou
+    // durée de flash — ce sont des préférences globales, pas du style.
+    app.options.animation.daysPerSecond = 7;
+    app.options.animation.timePerDay = 1000 / 7;
+    app.options.animation.rhythmMode = 'duration';
+    app.options.animation.totalDurationSeconds = 42;
+    app.options.animation.extraEndSeconds = 6;
+    app.options.animation.cameraFollow = true;
+    app.options.animation.dateStart = new Date(2026, 0, 5);
+    app.options.animation.dateEnd = new Date(2026, 0, 20);
+    app.options.flash.duration = 2600;
+
+    const beforeTiming = {
+      animation: JSON.parse(JSON.stringify(app.options.animation)),
+      flashDuration: app.options.flash.duration,
+      view: {
+        center: app.getMap().getView().getCenter(),
+        zoom: app.getMap().getView().getZoom(),
+      },
+    };
+
     await window.profileManager.applyProfile(profile);
 
-    const app = await import('/static/js/index.js');
     return {
+      beforeTiming,
       point: JSON.parse(JSON.stringify(app.options.point)),
       animation: JSON.parse(JSON.stringify(app.options.animation)),
       flash: JSON.parse(JSON.stringify(app.options.flash)),
       infos: JSON.parse(JSON.stringify(app.options.infos)),
+      view: {
+        center: app.getMap().getView().getCenter(),
+        zoom: app.getMap().getView().getZoom(),
+      },
       dom: {
         modeSwitch: document.getElementById('switchIconeVectoriel').checked,
         size: document.getElementById('inputSizePoint').value,
@@ -75,8 +105,8 @@ test('appliquer un profil écrit les options puis synchronise l\'interface', asy
         iconSet: document.getElementById('selectIconSet').value,
         iconSize: document.getElementById('inputSizeIcon').value,
         iconeOptionsVisible: document.getElementById('iconeOptions').style.display !== 'none',
-        timePerDay: document.getElementById('inputTimePerDay').value,
         flashMode: document.getElementById('selectFlashMode').value,
+        // inputTimeFlash reflète la préférence globale, pas le 1500 du thème.
         flashDuration: document.getElementById('inputTimeFlash').value,
         flashSize: document.getElementById('inputSizeFlash').value,
         flashColorType: document.querySelector('input[name="flashColor"]:checked').value,
@@ -88,6 +118,12 @@ test('appliquer un profil écrit les options puis synchronise l\'interface', asy
       },
     };
   }, STYLE_PROFILE);
+
+  // 0. Isolation : ni le timing ni la vue n'ont bougé, malgré les clés
+  // legacy animation/flash.duration présentes dans le fichier.
+  expect(applied.animation).toEqual(applied.beforeTiming.animation);
+  expect(applied.flash.duration).toBe(2600);
+  expect(applied.view).toEqual(applied.beforeTiming.view);
 
   // 1. L'état : pkg.options est la source de vérité.
   expect(applied.point).toMatchObject({
@@ -101,10 +137,8 @@ test('appliquer un profil écrit les options puis synchronise l\'interface', asy
   // La méta sprite du jeu d'icônes n'existe que dans les options : elle doit
   // être dérivée à l'application, sans passer par le sous-menu.
   expect(applied.point.sprite.map).toHaveProperty('found');
-  // speed 2.0 => 500 ms par jour
-  expect(Number(applied.animation.timePerDay)).toBe(500);
   expect(applied.flash).toMatchObject({
-    mode: 'star', duration: 1500, size: 60, color: '#00ff00', color_type: 'gc',
+    mode: 'star', size: 60, color: '#00ff00', color_type: 'gc',
   });
   expect(applied.infos.title).toMatchObject({ display: true, text: 'Ma carte de test' });
   expect(applied.infos.numberOfCaches.display).toBe(false);
@@ -124,9 +158,8 @@ test('appliquer un profil écrit les options puis synchronise l\'interface', asy
     iconSet: 'smiley',
     iconSize: '32',
     iconeOptionsVisible: true,
-    timePerDay: '500',
     flashMode: 'star',
-    flashDuration: '1500',
+    flashDuration: '2600',
     flashSize: '60',
     flashColorType: 'gc',
     title: 'Ma carte de test',
@@ -147,8 +180,13 @@ test('le profil relu juste après application est identique (aucun état transit
   }, STYLE_PROFILE);
 
   expect(reread.points).toMatchObject(STYLE_PROFILE.points);
-  expect(reread.flash).toMatchObject(STYLE_PROFILE.flash);
-  expect(reread.animation.speed).toBeCloseTo(2, 5);
+  // Le flash relu ne porte plus de `duration` : c'est un réglage temporel,
+  // sauvegardé dans les préférences globales et pas dans le thème.
+  const { duration: _dropped, ...flashSansDuree } = STYLE_PROFILE.flash;
+  expect(reread.flash).toMatchObject(flashSansDuree);
+  expect(reread.flash).not.toHaveProperty('duration');
+  // Aucun bloc `animation` dans un thème sauvegardé : le timing est global.
+  expect(reread).not.toHaveProperty('animation');
   expect(reread.infos.title).toMatchObject(STYLE_PROFILE.infos.title);
   expect(reread.infos.number_of_caches).toBe(false);
   expect(reread.infos.current_date).toBe(true);

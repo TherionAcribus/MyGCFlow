@@ -11,9 +11,12 @@ from flask import Flask
 
 import settings_manager
 from settings_manager import (
+    AnimationPrefs,
     RecordingSettings,
     SettingsManager,
+    coerce_animation_settings,
     coerce_map_center,
+    coerce_profile,
     coerce_recording_settings,
     coerce_settings,
 )
@@ -109,6 +112,93 @@ class ThemeCoercionTests(unittest.TestCase):
         self.assertEqual(coerce_settings({"theme": "light"}).theme, "light")
         self.assertEqual(coerce_settings({"theme": "neon"}).theme, "system")
         self.assertEqual(coerce_settings({}).theme, "system")
+
+
+class AnimationCoercionTests(unittest.TestCase):
+    """Bornes des préférences d'animation lues depuis le disque.
+
+    La clé `animation` de settings.json est une préférence GLOBALE (rythme,
+    tempo, suivi de caméra, durée du flash) — jamais un réglage de thème.
+    Les bornes répètent TIMING_LIMITS de static/js/video_timing.mjs : un
+    fichier édité à la main ne doit pas produire une animation impossible.
+    """
+
+    def test_out_of_range_values_are_clamped_to_the_ui_limits(self):
+        a = coerce_animation_settings({
+            "days_per_second": 99999,
+            "total_duration_seconds": 0,
+            "extra_end_seconds": -5,
+            "flash_duration_ms": 99999,
+        })
+
+        self.assertEqual(a.days_per_second, 1000.0)
+        self.assertEqual(a.total_duration_seconds, 1.0)
+        self.assertEqual(a.extra_end_seconds, 0.0)
+        self.assertEqual(a.flash_duration_ms, 10000)
+
+    def test_unknown_rhythm_mode_falls_back_to_rate(self):
+        self.assertEqual(coerce_animation_settings({"rhythm_mode": "waltz"}).rhythm_mode, "rate")
+        self.assertEqual(coerce_animation_settings({"rhythm_mode": "music"}).rhythm_mode, "music")
+        self.assertEqual(coerce_animation_settings({"rhythm_mode": "duration"}).rhythm_mode, "duration")
+
+    def test_garbage_payload_yields_defaults(self):
+        self.assertEqual(coerce_animation_settings(None), AnimationPrefs())
+
+    def test_animation_block_survives_a_settings_round_trip(self):
+        s = coerce_settings({"animation": {"days_per_second": 5.5, "camera_follow": True}})
+
+        self.assertEqual(s.animation.days_per_second, 5.5)
+        self.assertTrue(s.animation.camera_follow)
+
+
+class ThemeTimingIsolationTests(unittest.TestCase):
+    """Un thème ne contient que des réglages visuels.
+
+    Les anciens fichiers peuvent encore embarquer un bloc `animation`, un
+    centre/zoom de carte ou une durée de flash : ils restent chargeables,
+    mais ces valeurs sont ignorées — jamais recopiées dans le profil ni dans
+    les préférences globales.
+    """
+
+    LEGACY_PROFILE = {
+        "version": 2,
+        "name": "Ancien",
+        "uid": "legacy-uid",
+        "map": {
+            "tile_provider": "OSM",
+            "default_center": [2.35, 48.85],
+            "default_zoom": 9,
+        },
+        "animation": {"enabled": True, "speed": 2, "camera_follow": True},
+        "flash": {"mode": "circle", "size": 30, "color": "#00FF00", "duration": 4500},
+    }
+
+    def test_a_legacy_profile_loads_without_its_timing_block(self):
+        profile = coerce_profile(self.LEGACY_PROFILE)
+
+        self.assertEqual(profile.name, "Ancien")
+        self.assertFalse(hasattr(profile, "animation"))
+        self.assertFalse(hasattr(profile.map, "center"))
+        self.assertFalse(hasattr(profile.map, "zoom"))
+        self.assertFalse(hasattr(profile.flash, "duration"))
+        # Le reste du fichier est bien lu.
+        self.assertEqual(profile.flash.size, 30)
+
+    def test_a_serialized_theme_carries_no_timing_or_view_state(self):
+        manager = SettingsManager.__new__(SettingsManager)
+        payload = manager._profile_to_dict(coerce_profile(self.LEGACY_PROFILE))
+
+        serialized = json.dumps(payload)
+        for forbidden in ("animation", "duration", "default_center", "default_zoom", "speed"):
+            self.assertNotIn(f'"{forbidden}"', serialized)
+
+    def test_legacy_animation_does_not_leak_into_global_preferences(self):
+        # Charger un ancien thème ne doit pas modifier les préférences
+        # globales : deux thèmes pouvaient contenir des vitesses différentes.
+        settings = coerce_settings({})
+        coerce_profile(self.LEGACY_PROFILE)
+
+        self.assertEqual(settings.animation, AnimationPrefs())
 
 
 class MapZoomCoercionTests(unittest.TestCase):
@@ -265,6 +355,28 @@ class SettingsApiTests(unittest.TestCase):
         self.assertEqual(payload['language'], 'en')
         self.assertEqual(payload['theme'], 'light')
         self.assertEqual(payload['recording']['fps'], 24)
+
+    def test_an_animation_patch_survives_a_round_trip_and_merges(self):
+        self.client.put('/api/settings', json={'animation': {
+            'rhythm_mode': 'music', 'days_per_second': 7.5, 'camera_follow': True,
+        }})
+        # Patch partiel : une écriture ultérieure d'un autre champ ne doit pas
+        # effacer le mode ni le rythme enregistrés.
+        self.client.put('/api/settings', json={'animation': {'extra_end_seconds': 4}})
+
+        animation = self.client.get('/api/settings').get_json()['animation']
+        self.assertEqual(animation['rhythm_mode'], 'music')
+        self.assertEqual(animation['days_per_second'], 7.5)
+        self.assertTrue(animation['camera_follow'])
+        self.assertEqual(animation['extra_end_seconds'], 4)
+
+    def test_an_animation_value_out_of_range_is_stored_clamped(self):
+        self.client.put('/api/settings', json={'animation': {'days_per_second': -3}})
+
+        animation = self.client.get('/api/settings').get_json()['animation']
+        self.assertEqual(animation['days_per_second'], 0.01)
+        stored = settings_manager.read_json(settings_manager.SETTINGS_PATH)
+        self.assertEqual(stored['animation']['days_per_second'], 0.01)
 
     def test_a_zoom_sent_out_of_range_is_stored_clamped(self):
         self.client.put('/api/settings', json={'map_default_zoom': 99})

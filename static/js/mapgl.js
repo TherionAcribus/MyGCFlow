@@ -1423,7 +1423,11 @@ function setAssembleUiBusy(busy) {
             }
         }
     }
-    if (recordBtn) { recordBtn.disabled = busy; }
+    if (busy && recordBtn) { recordBtn.disabled = true; }
+    // En fin d'opération, ne pas réactiver aveuglément : sans données ou avec
+    // un timing invalide, le bouton doit rester désactivé — c'est
+    // updateDataAvailabilityUI qui arbitre (hasData && timingInputsValid).
+    if (!busy) { try { pkg.updateDataAvailabilityUI?.(); } catch(_) {} }
     // Fin d'opération : le dossier temporaire a pu être vidé (ou pas, en cas
     // d'échec) → réaligner l'affichage du bouton sur son contenu réel.
     if (!busy) { try { pkg.refreshCapturedPicturesUi && pkg.refreshCapturedPicturesUi(); } catch(_) {} }

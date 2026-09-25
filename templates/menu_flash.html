@@ -19,11 +19,9 @@
             </select>
         </div>
 
-        <div class="mb-3">
-            <label class="form-label" for="inputTimeFlash">{{ _("Durée du flash en ms") }}</label>
-            <input id="inputTimeFlash" type="number" class="form-control" min="100" max="10000" step="100" placeholder="{{ _('Durée du flash') }}" aria-describedby="helpTimeFlash">
-            <small id="helpTimeFlash" class="form-hint text-muted">{{ _("100 à 10000 ms") }}</small>
-        </div>
+        <!-- La durée du flash est un réglage temporel : elle a été déplacée
+             dans le menu Animation (inputTimeFlash). Ce menu ne garde que les
+             réglages visuels du thème : forme, taille, couleur, effets. -->
 
         <div class="mb-3">
             <label class="form-label" for="inputSizeFlash">{{ _("Taille du flash en px") }}</label>

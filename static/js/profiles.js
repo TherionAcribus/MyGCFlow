@@ -98,22 +98,13 @@ class ProfileManager {
         this._bindUnloadGuard();
     }
 
-    // Sérialise les réglages pour la comparaison "modifications non enregistrées",
-    // en excluant le centre/zoom courants de la carte : ce sont des valeurs qui
-    // suivent en permanence la vue (déplacement, zoom molette...) et non des
-    // réglages de style. Sans cette exclusion, se contenter de déplacer la carte
-    // puis de toucher un champ de style sans rapport fait apparaître le profil
-    // comme "modifié" alors que rien de pertinent n'a changé. `saveCurrentAsProfile`
-    // capture néanmoins bien la vue courante : seule la détection "dirty" l'ignore.
-    //
-    // L'exclusion passe par le `replacer` de JSON.stringify : une seule passe de
-    // sérialisation, là où un clone profond (parse(stringify(...))) suivi d'une
-    // seconde sérialisation en faisait trois pour le même résultat. Ces deux
-    // clés n'existent que sous `map`, aucune autre valeur n'est concernée.
+    // Sérialise les réglages pour la comparaison "modifications non enregistrées".
+    // Le snapshot ne contient que des réglages de thème : ni timing (préférences
+    // globales), ni centre/zoom (état de vue), qui ne sont plus capturés par
+    // loadCurrentSettings — déplacer la carte ne peut donc plus marquer le
+    // profil comme modifié.
     _dirtySnapshot(settings) {
-        return JSON.stringify(settings || {}, (key, value) => (
-            key === 'default_center' || key === 'default_zoom' ? undefined : value
-        ));
+        return JSON.stringify(settings || {});
     }
 
     bindEvents() {
@@ -278,7 +269,6 @@ class ProfileManager {
                 uid: profile.uid,
                 version: profile.version,
                 map: profile.map,
-                animation: profile.animation,
                 points: profile.points,
                 flash: profile.flash,
                 raw_response: profile
@@ -1084,7 +1074,6 @@ class ProfileManager {
                 version: profile.version,
                 points_mode: profile.points?.mode,
                 map: profile.map,
-                animation: profile.animation,
                 points: profile.points,
                 flash: profile.flash,
                 infos: profile.infos,
@@ -1342,12 +1331,11 @@ class ProfileManager {
             // transition CSS n'était pas terminée.
             const mapOptions = pkg.options?.map || {};
 
+            // Le centre et le zoom ne font PAS partie du thème : ce sont un
+            // état de session/préférence globale (map_default_center,
+            // map_default_zoom dans settings.json), jamais sauvegardés ici.
             const mapSettings = {
                 tile_provider: mapOptions.default || 'OSM',
-                // Convention persistée : [longitude, latitude]. Ces valeurs ne
-                // servent que si la carte n'est exceptionnellement pas disponible.
-                default_center: pkg.getDefaultMapCenter(),
-                default_zoom: pkg.getDefaultMapZoom()
             };
 
             const vectorMap = mapOptions.vectorMap;
@@ -1369,22 +1357,6 @@ class ProfileManager {
             }
 
             dbgProfiles('Carte lue depuis pkg.options.map - Provider:', mapSettings.tile_provider, 'Settings:', mapSettings);
-
-            // Si la carte est disponible, récupérer la vue actuelle.
-            // pkg.getMap() et non window.map : `window.map` est le <div id="map">
-            // (accès nommé du navigateur sur les id), pas la carte OpenLayers. Il
-            // est donc toujours "vrai" mais n'a pas de getView() — la vue courante
-            // n'était en réalité jamais capturée et tous les profils enregistraient
-            // le centre de repli ci-dessus.
-            const olMap = typeof pkg.getMap === 'function' ? pkg.getMap() : null;
-            if (olMap && typeof olMap.getView === 'function') {
-                const view = olMap.getView();
-                const lonLat = ol.proj.toLonLat(view.getCenter());
-                // ol.proj.toLonLat() respecte directement la convention persistée
-                // de l'app : [longitude, latitude].
-                mapSettings.default_center = lonLat;
-                mapSettings.default_zoom = view.getZoom();
-            }
 
             // Paramètres des points : lus dans pkg.options.point, pour les mêmes
             // raisons que la carte ci-dessus. Les contrôles n'en sont qu'un
@@ -1413,19 +1385,16 @@ class ProfileManager {
 
             dbgProfiles('Paramètres points récupérés:', pointSettings);
 
-            // Paramètres d'animation
-            const timePerDay = parseInt(pkg.options?.animation?.timePerDay) || 1000;
-            const animationSettings = {
-                enabled: true, // Par défaut activé
-                camera_follow: pkg.options?.animation?.cameraFollow === true,
-                speed: Math.max(0.1, Math.min(5.0, 1000 / timePerDay))
-            };
+            // Le rythme et le timing (durée/jour, durée totale, plage de dates,
+            // temps additionnel, suivi de caméra, durée du flash) ne sont PAS
+            // sérialisés dans le thème : ils vivent dans les préférences
+            // globales (settings.json, bloc `animation`).
 
-            // Paramètres flash
+            // Paramètres flash — la durée en fait exception : réglage temporel,
+            // il appartient aux préférences d'animation, pas au thème.
             const flash = pkg.options?.flash || {};
             const flashSettings = {
                 mode: flash.mode || 'circle',
-                duration: parseInt(flash.duration) || 1000,
                 size: parseInt(flash.size) || 50,
                 color: flash.color || '#FF00FF',
                 color_type: flash.color_type || 'fix'
@@ -1459,7 +1428,6 @@ class ProfileManager {
 
             this.currentSettings = {
                 map: mapSettings,
-                animation: animationSettings,
                 points: pointSettings,
                 flash: flashSettings,
                 infos: infosSettings,
@@ -1467,7 +1435,6 @@ class ProfileManager {
 
             dbgProfiles('PARAMÈTRES ACTUELS COMPLÈTS - Récupérés depuis l\'interface:', {
                 map: mapSettings,
-                animation: animationSettings,
                 points: pointSettings,
                 flash: flashSettings,
                 infos: infosSettings,
@@ -1479,13 +1446,7 @@ class ProfileManager {
             // Valeurs par défaut en cas d'erreur
             this.currentSettings = {
                 map: {
-                    tile_provider: 'OpenStreetMap',
-                    default_center: pkg.getDefaultMapCenter(),
-                    default_zoom: pkg.getDefaultMapZoom()
-                },
-                animation: {
-                    enabled: true,
-                    speed: 1.0
+                    tile_provider: 'OpenStreetMap'
                 },
                 points: {
                     size: 8,
@@ -1499,7 +1460,6 @@ class ProfileManager {
                 },
                 flash: {
                     mode: 'circle',
-                    duration: 1000,
                     size: 50,
                     color: '#FF00FF'
                 }
@@ -1529,7 +1489,6 @@ class ProfileManager {
             uid: profile.uid,
             version: profile.version,
             map: profile.map,
-            animation: profile.animation,
             points: profile.points,
             flash: profile.flash,
             infos: profile.infos,
@@ -1537,8 +1496,12 @@ class ProfileManager {
         });
 
         // ---- 1. État ----
+        // `profile.animation` (vitesse, suivi de caméra des anciens thèmes) est
+        // volontairement ignoré : le timing est une préférence globale, un
+        // changement de thème ne doit jamais le modifier. Idem pour
+        // `flash.duration` (dans applyFlashState) et pour le centre/zoom de la
+        // carte (dans applyMapSettings).
         if (profile.points) applyPointState(profile.points);
-        if (profile.animation) applyAnimationState(profile.animation);
         if (profile.flash) applyFlashState(profile.flash);
         if (profile.infos) applyInfosState(profile.infos);
 
@@ -1547,7 +1510,6 @@ class ProfileManager {
         // met à jour couches et boutons (cf. applyMapSettings).
         if (profile.map) applyMapSettings(profile.map);
         if (profile.points) pkg.syncPointOptionsUI();
-        if (profile.animation) pkg.syncAnimationOptionsUI();
         if (profile.flash) pkg.syncFlashOptionsUI();
         if (profile.infos) {
             pkg.syncInfosOptionsUI();
@@ -1595,7 +1557,6 @@ class ProfileManager {
             uid: this.currentProfile.uid,
             version: this.currentProfile.version,
             map: mapNormalized,
-            animation: this.currentSettings.animation,
             points: this.currentSettings.points,
             flash: this.currentSettings.flash,
             infos: this.currentSettings.infos,
@@ -1618,7 +1579,6 @@ class ProfileManager {
         dbgProfiles('💾 SAUVEGARDE PROFIL - Données complètes:', {
             profile_name: profileData.name,
             map: profileData.map,
-            animation: profileData.animation,
             points: profileData.points,
             flash: profileData.flash,
             infos: profileData.infos,
@@ -1987,13 +1947,10 @@ function applyMapSettings(mapOptions) {
                 pkg.refreshStamenTonerMap(pkg.options.map.stamenToner);
             }
 
-            // Vue (centre et zoom) : l'unique écriture dans OpenLayers est
-            // centralisée dans mapgl.js. Un profil doit primer sur les préférences.
-            pkg.applyMapDefaults(
-                mapOptions.default_center,
-                mapOptions.default_zoom,
-                false
-            );
+            // Centre et zoom : volontairement pas touchés. C'est un état de
+            // session (la vue courante) ou une préférence globale
+            // (map_default_center/zoom de settings.json, appliquée au
+            // démarrage) — un thème ne déplace plus la carte.
         } else {
             console.warn('⚠️ Carte non initialisée : options carte enregistrées, elles seront appliquées à sa création');
         }
@@ -2089,30 +2046,6 @@ function applyPointState(pointOptions) {
     }
 }
 
-// Écrit la vitesse d'animation du profil dans pkg.options.animation.
-function applyAnimationState(animationOptions) {
-    try {
-        const animation = pkg.options?.animation;
-        if (!animation) {
-            console.warn('⚠️ pkg.options.animation indisponible, paramètres d\'animation ignorés');
-            return;
-        }
-
-        // Profils antérieurs à ce réglage : pas de suivi de caméra.
-        animation.cameraFollow = animationOptions.camera_follow === true;
-
-        // Conversion vitesse -> ms par jour : speed 1.0 = 1000 ms, 2.0 = 500 ms...
-        const speed = Number(animationOptions.speed);
-        if (Number.isFinite(speed) && speed > 0) {
-            animation.timePerDay = Math.max(100, Math.round(1000 / speed));
-        }
-
-        dbgProfiles('Paramètres d\'animation appliqués:', animationOptions, 'timePerDay:', animation.timePerDay);
-    } catch (error) {
-        console.error('Erreur lors de l\'application des paramètres d\'animation:', error);
-    }
-}
-
 // Écrit les paramètres de flash du profil dans pkg.options.flash.
 function applyFlashState(flashOptions) {
     try {
@@ -2123,8 +2056,8 @@ function applyFlashState(flashOptions) {
         }
 
         if (flashOptions.mode) flash.mode = flashOptions.mode;
-        const duration = parseInt(flashOptions.duration);
-        if (Number.isFinite(duration)) flash.duration = duration;
+        // `duration` des anciens fichiers est ignorée : la durée du flash est un
+        // réglage d'animation (préférence globale), pas un réglage de thème.
         const size = parseInt(flashOptions.size);
         if (Number.isFinite(size)) flash.size = size;
         if (flashOptions.color) {

@@ -1,6 +1,16 @@
 import * as pkg from './index.js';
 import { showBsTab, getBsTab, initTomSelect, getTomSelect, refreshTomSelect, initTempusDominus, getTempusDominus, setTdDate, getTdDate } from './ui_bootstrap.js';
-import { automaticEndHoldMs } from './video_timing.mjs';
+import {
+    automaticEndHoldMs,
+    inclusiveDayCount,
+    buildTimingPlan,
+    buildLoadEstimate,
+    parseBoundedNumber,
+    parseDurationText,
+    formatMmSs,
+    formatDurationHuman,
+    TIMING_LIMITS,
+} from './video_timing.mjs';
 import { captureRatioFor, normalizeCaptureResolution } from './capture_resolution.mjs';
 import { normalizeColorFidelity } from './color_fidelity.mjs';
 import {
@@ -50,7 +60,7 @@ var defaultPublishedStartDate = null;
 var defaultPublishedEndDate = null;
 // Pays/Etats
 let countryToStates = {};
-var inputTimePerDay;
+var inputDaysPerSecond, inputTotalDuration, selectRhythmPreset;
 var inputExtraEndTime;
 var selectFlashMode, inputTimeFlash, inputSizeFlash, cpFlashColor;
 var cpStrokeColor, cpFillColor, cpBackgroundColor, strokeWidth;
@@ -74,8 +84,21 @@ var cbRecordAudioEnable, inputAudioFile, inputAudioVolume;
 // var en tête de module : initUIElements() tourne pendant l'évaluation du
 // module, avant toute déclaration placée plus bas (cf. ligne ~125).
 var dataStateResolved = false;
-// Flag pour savoir si la durée totale est définie depuis la musique
-var isDurationLockedToAudio = false;
+// Mode « calé sur la musique » : stocké dans options.animation.rhythmMode
+// ('rate' | 'duration' | 'music'), plus dans un flag à part — une seule
+// source de vérité pour le mode de rythme.
+const isMusicLocked = () => pkg.options?.animation?.rhythmMode === 'music';
+// Dernier plan de timing calculé et validité courante des entrées : les
+// boutons Démarrer/Enregistrer restent désactivés tant qu'un champ est
+// invalide (cf. updateDataAvailabilityUI).
+var timingInputsValid = false;
+var lastTimingPlan = null;
+// Cache des durées audio lues (clé = identité du fichier) et jeton anti-course :
+// une lecture de métadonnées démarrée pour le fichier A ne doit pas écraser
+// l'état quand l'utilisateur a depuis choisi le fichier B.
+const audioDurationCache = new Map();
+let audioReadToken = 0;
+var musicDurationMs = null;
 
 const LANGUAGE_COOKIE_NAME = 'mygcflow_lang';
 
@@ -183,62 +206,49 @@ function applyRecordingQualityProfile() {
     changeRecordValues();
 }
 
-// Fonction pour mettre à jour l'apparence du label selon si la durée est lockée
-function updateDurationLockIndicator() {
-    const label = document.getElementById('labelTotalTime');
-    if (label) {
-        if (isDurationLockedToAudio) {
-            const lockedText = label.getAttribute('data-locked-text') || 'Temps total (minutes) - défini par musique';
-            label.innerHTML = '<i class="ti ti-music me-1" aria-hidden="true"></i>' + lockedText;
-            label.style.color = '#2196F3'; // Bleu Material Design
-        } else {
-            const normalText = label.getAttribute('data-normal-text') || 'Temps total (minutes)';
-            label.innerHTML = normalText;
-            label.style.color = ''; // Couleur par défaut
-        }
-    }
-}
-
-// Fonction pour mettre à jour l'indicateur de correspondance des durées
-async function updateDurationMatchIndicator() {
+// Badge « Calé sur la musique » + bouton Dissocier + zone d'état aria-live.
+// Le mode n'est plus signalé par une couleur de label seule : le badge et le
+// statut textuel portent l'information, accessible aux lecteurs d'écran.
+function updateMusicSyncUi(plan = lastTimingPlan) {
+    const badge = document.getElementById('musicSyncBadge');
+    const btnUnlink = document.getElementById('btnUnlinkAudio');
+    const status = document.getElementById('musicSyncStatus');
     const indicator = document.getElementById('durationMatchIndicator');
-    const btnSetDuration = document.getElementById('btnSetDurationFromAudio');
+    const locked = isMusicLocked();
+    const hasFile = !!(inputAudioFile?.files?.length);
 
-    if (!indicator || !btnSetDuration) return;
+    if (badge) badge.style.display = locked ? '' : 'none';
+    if (btnUnlink) btnUnlink.style.display = locked ? '' : 'none';
+    if (indicator) indicator.style.display = 'none';
 
-    // Vérifier si l'audio est activé et si une musique est sélectionnée
-    const audioEnabled = cbRecordAudioEnable && cbRecordAudioEnable.checked;
-    const hasFile = inputAudioFile && inputAudioFile.files && inputAudioFile.files.length > 0;
-
-    if (!audioEnabled || !hasFile) {
-        indicator.style.display = 'none';
-        return;
+    if (!status) return;
+    const lines = [];
+    if (hasFile && Number.isFinite(musicDurationMs) && musicDurationMs > 0) {
+        lines.push(t('Musique : ${d}', { d: formatDurationHuman(musicDurationMs) }));
     }
-
-    try {
-        const audioDurationSec = await getAudioDuration(inputAudioFile.files[0]);
-        const audioDurationMin = audioDurationSec / 60;
-        const currentTotalTime = parseFloat(inputTotalTime.value) || 0;
-
-        const tolerance = 0.01; // Tolérance de 0.01 minute (~0.6 seconde)
-        const matches = Math.abs(audioDurationMin - currentTotalTime) <= tolerance;
-
-        if (matches) {
-            // Ne rien afficher si les durées coïncident
-            indicator.style.display = 'none';
+    if (locked && plan?.valid) {
+        if (plan.clampedToMinimum) {
+            // Musique plus courte que la durée minimale réalisable : la vidéo
+            // sera PLUS LONGUE que la musique — ne pas prétendre au calage.
+            lines.push(t('Musique plus courte que la durée minimale (${min}) : durée ${d} appliquée, la musique s\'arrêtera avant la fin.', {
+                min: formatDurationHuman(plan.minimumTotalDurationMs),
+                d: formatDurationHuman(plan.totalDurationMs),
+            }));
         } else {
-            // Afficher la différence seulement si les durées ne coïncident pas
-            const diff = audioDurationMin - currentTotalTime;
-            const diffText = diff > 0 ? `+${diff.toFixed(2)} min` : `${diff.toFixed(2)} min`;
-            const differenceText = indicator.dataset.differenceText || 'Différence';
-            indicator.innerHTML = '<i class="ti ti-alert-triangle me-1" style="color:#FF9800;" aria-hidden="true"></i>' + differenceText + ': ' + diffText;
-            indicator.style.color = '#FF9800';
-            indicator.style.display = 'inline';
+            lines.push(t('Durée calée sur la musique (${d}).', { d: formatDurationHuman(plan.totalDurationMs) }));
         }
-    } catch(e) {
-        console.warn('Erreur lors de la vérification de la durée audio:', e);
-        indicator.style.display = 'none';
+    } else if (hasFile && plan?.valid && Number.isFinite(musicDurationMs)) {
+        if (musicDurationMs > plan.totalDurationMs + 1000) {
+            lines.push(t('La musique (${m}) est plus longue que la vidéo (${v}) : elle sera coupée en fin de vidéo.', {
+                m: formatDurationHuman(musicDurationMs), v: formatDurationHuman(plan.totalDurationMs),
+            }));
+        } else if (musicDurationMs < plan.totalDurationMs - 1000) {
+            lines.push(t('La musique (${m}) se termine avant la fin de la vidéo (${v}).', {
+                m: formatDurationHuman(musicDurationMs), v: formatDurationHuman(plan.totalDurationMs),
+            }));
+        }
     }
+    status.textContent = lines.join(' ');
 }
 
 // États de l'application
@@ -483,16 +493,40 @@ const btnStartAnimation = document.getElementById('btnStartAnimation');
 const btnRecordAnimation = document.getElementById('btnRecordAnimation');
     if (btnRecordAnimation) btnRecordAnimation.addEventListener('click', clickRecordAnimation);
 
-    inputTimePerDay = document.getElementById('inputTimePerDay');
-    if (inputTimePerDay) inputTimePerDay.addEventListener('input', changeAnimationValues);
+    inputDaysPerSecond = document.getElementById('inputDaysPerSecond');
+    if (inputDaysPerSecond) inputDaysPerSecond.addEventListener('input', changeAnimationValues);
+    inputTotalDuration = document.getElementById('inputTotalDuration');
+    if (inputTotalDuration) inputTotalDuration.addEventListener('input', changeAnimationValues);
     inputExtraEndTime = document.getElementById('inputExtraEndTime');
     if (inputExtraEndTime) inputExtraEndTime.addEventListener('input', changeAnimationValues);
-    // Suivi de caméra : réglage de profil, appliqué à la prochaine lecture ou
-    // au prochain enregistrement (la caméra repart de la vue courante).
+    selectRhythmPreset = document.getElementById('selectRhythmPreset');
+    if (selectRhythmPreset) {
+        selectRhythmPreset.addEventListener('change', () => {
+            const preset = RHYTHM_PRESETS[selectRhythmPreset.value];
+            if (preset === undefined) return;
+            pkg.options.animation.daysPerSecond = preset;
+            if (inputDaysPerSecond) inputDaysPerSecond.value = String(preset);
+            // Un préréglage définit un rythme : sortir des modes durée/musique.
+            setRhythmMode('rate');
+            refreshTimingPlan();
+        });
+    }
+    // Modes de rythme exclusifs : rate / duration / music.
+    for (const [id, mode] of [['rhythmModeRate', 'rate'], ['rhythmModeDuration', 'duration'], ['rhythmModeMusic', 'music']]) {
+        const radio = document.getElementById(id);
+        if (radio) radio.addEventListener('change', () => { if (radio.checked) setRhythmMode(mode); });
+    }
+    const btnUnlinkAudio = document.getElementById('btnUnlinkAudio');
+    if (btnUnlinkAudio) {
+        btnUnlinkAudio.addEventListener('click', () => setRhythmMode('rate'));
+    }
+    // Suivi de caméra : préférence globale d'animation (pas un réglage de
+    // thème), appliquée à la prochaine lecture ou au prochain enregistrement.
     const switchCameraFollow = document.getElementById('switchCameraFollow');
     if (switchCameraFollow) {
         switchCameraFollow.addEventListener('change', () => {
             pkg.options.animation.cameraFollow = switchCameraFollow.checked;
+            saveAnimationSettings();
         });
     }
 
@@ -504,7 +538,10 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     });
 
     const btnPauseAnimation = document.getElementById('btnPauseAnimation');
-    if (btnPauseAnimation) btnPauseAnimation.addEventListener('click', toggleButtonAnimationPauseAndRestart);
+    // Pas la fonction nue : l'Event du clic atterrirait dans le paramètre
+    // `reinitialisation` (truthy) et basculerait le bouton sans jamais pauser —
+    // même raison que le wrapper de btnPauseBar ci-dessous.
+    if (btnPauseAnimation) btnPauseAnimation.addEventListener('click', () => toggleButtonAnimationPauseAndRestart());
 
     // Contrôles plein écran
     const btnFullscreenMode = document.getElementById('btnFullscreenMode');
@@ -885,23 +922,25 @@ function initOptionsElements() {
                 // s'allumerait sur le dernier champ manipulé, sans rapport.
                 changeRecordValues(cbRecordAudioEnable); // Met à jour les options
             } else {
-                // Aucun fichier - masquer les infos, délocker la durée audio et décocher/désactiver la checkbox
+                // Aucun fichier - masquer les infos et revenir au mode rythme
+                // si la durée était calée sur cette musique.
                 hideAudioFileInfo();
-                isDurationLockedToAudio = false;
-                updateDurationLockIndicator();
+                if (isMusicLocked()) setRhythmMode('rate');
                 if (cbRecordAudioEnable) {
                     cbRecordAudioEnable.checked = false;
                     cbRecordAudioEnable.disabled = true;
                 }
             }
-            // Activer/désactiver le bouton de durée et la checkbox selon si un fichier est chargé
+            // Relire la durée (mise en cache, anti-course) puis tout le plan.
+            refreshMusicDuration();
+            // Activer/désactiver le bouton de calage et la checkbox selon si un fichier est chargé
             updateAudioDurationButton();
-            // Mettre à jour l'indicateur de correspondance des durées
-            updateDurationMatchIndicator();
         });
     }
 
-    // Bouton pour définir la durée depuis la musique
+    // Bouton « Caler sur la musique » : bascule le rythme en mode musique. La
+    // durée réellement utilisée vient du plan de timing (et des bornes), pas
+    // d'une copie de la durée dans un champ texte.
     const btnSetDurationFromAudio = document.getElementById('btnSetDurationFromAudio');
     if (btnSetDurationFromAudio) {
         btnSetDurationFromAudio.addEventListener('click', async function() {
@@ -915,26 +954,11 @@ function initOptionsElements() {
             } catch(_) {}
             if (inputAudioFile && inputAudioFile.files && inputAudioFile.files.length > 0) {
                 try {
-                    const audioDurationSec = await getAudioDuration(inputAudioFile.files[0]);
-                    if (audioDurationSec && audioDurationSec > 0) {
-                        // Convertir en minutes pour le champ inputTotalTime
-                        const audioDurationMin = audioDurationSec / 60;
-                        // Garder une précision suffisante pour ne pas perdre plusieurs
-                        // dixièmes de seconde avant même de calculer les frames.
-                        inputTotalTime.value = audioDurationMin.toFixed(4);
-
-                        // Marquer que la durée est maintenant lockée à la musique
-                        isDurationLockedToAudio = true;
-                        updateDurationLockIndicator();
-
-                        // Recalculer le temps par jour basé sur cette nouvelle durée totale
-                        updateTimePerDay();
-
-                        // Mettre à jour l'indicateur de correspondance des durées
-                        updateDurationMatchIndicator();
-
-                        dbgUi(`Durée audio appliquée: ${audioDurationSec.toFixed(2)}s (${audioDurationMin.toFixed(2)}min) - Durée lockée`);
-                        pkg.showToast && pkg.showToast(t('Durée de l\'animation ajustée selon la musique'), 'info', t('Musique'), 3000);
+                    await refreshMusicDuration();
+                    if (Number.isFinite(musicDurationMs) && musicDurationMs > 0) {
+                        setRhythmMode('music');
+                        dbgUi(`Durée audio appliquée: ${(musicDurationMs / 1000).toFixed(2)}s - mode musique`);
+                        pkg.showToast && pkg.showToast(t('Durée de l\'animation calée sur la musique'), 'info', t('Musique'), 3000);
                     }
                 } catch(e) {
                     console.warn('Erreur lors de la récupération de la durée audio:', e);
@@ -1312,16 +1336,9 @@ if (document.readyState === 'loading') {
 
 
 // ANIMATION DE LA CARTE
-// Boutons (Ces éléments sont maintenant gérés dans initUIElements pour éviter les erreurs)
-// jours sans caches - déplacé dans initUIElements()
-// temps total
-const inputTotalTime = document.getElementById('inputTotalTime');
-inputTotalTime.addEventListener('input', changeAnimationValues);
-// temps par jour en minutes 
-const spanTotalTimeMinutes = document.getElementById('spanTotalTimeMinutes');
-const spanTotalTimeSeconds = document.getElementById('spanTotalTimeSeconds');
-// nombre de jours
-const spanDeltaDays = document.getElementById('spanDeltaDays');
+// Les champs de rythme (inputDaysPerSecond, inputTotalDuration, radios,
+// préréglages) et leurs écouteurs sont déclarés dans initUIElements().
+const spanTotalTime = () => document.getElementById('spanTotalTime');
 
 const btnCleanMoviePictures = document.getElementById('btnCleanMoviePictures');
 if (btnCleanMoviePictures) btnCleanMoviePictures.addEventListener('click', clear_pictures_directory);
@@ -1391,6 +1408,10 @@ export function init_ui() {
     syncPointOptionsUI();
 
     // ------- ANIMATION DE LA CARTE -------
+    // Préférences globales (settings.json, clé `animation`) AVANT la
+    // normalisation : elles priment sur les valeurs par défaut du client, et
+    // aucun thème ne les touche ensuite.
+    loadAnimationSettings();
     normalizeAnimationOptions();
     syncAnimationOptionsUI();
 
@@ -1896,8 +1917,8 @@ function initOptionsUI() {
 
         // Mettre à jour l'état du bouton durée audio
         updateAudioDurationButton();
-        // Initialiser l'indicateur de durée lockée
-        updateDurationLockIndicator();
+        // Initialiser l'état de synchronisation musique (badge + statut)
+        updateMusicSyncUi();
     } catch(e) { console.warn('Init enregistrement UI error:', e); }
 }
 
@@ -2099,14 +2120,13 @@ function changeRecordValues(field = undefined) {
             if (cbRecordAudioEnable) {
                 const wasEnabled = pkg.options.record.audio.enabled;
                 pkg.options.record.audio.enabled = !!cbRecordAudioEnable.checked;
-                // Si l'utilisateur désactive l'audio, délocker la durée
-                if (wasEnabled && !pkg.options.record.audio.enabled && isDurationLockedToAudio) {
-                    isDurationLockedToAudio = false;
-                    updateDurationLockIndicator();
-                    dbgUi('Durée délockée - audio désactivé');
+                // Audio désactivé alors que la durée était calée dessus :
+                // revenir au mode rythme, en conservant le rythme calculé.
+                if (wasEnabled && !pkg.options.record.audio.enabled && isMusicLocked()) {
+                    dbgUi('Mode musique quitté - audio désactivé');
+                    setRhythmMode('rate');
                 }
-                // Mettre à jour l'indicateur de correspondance des durées
-                updateDurationMatchIndicator();
+                updateMusicSyncUi();
             }
             if (inputAudioVolume && inputAudioVolume.value !== '') {
                 const vol = Math.max(0, Math.min(1, parseFloat(inputAudioVolume.value) || 1));
@@ -2117,10 +2137,9 @@ function changeRecordValues(field = undefined) {
         // Sauvegarder automatiquement les paramètres d'enregistrement
         saveRecordSettings(field === undefined ? lastTouchedRecordField : field);
 
-        // Le FPS peut modifier la durée minimale réalisable (une frame par date).
-        // Si la durée vient de la musique, conserver cette cible autant que possible.
-        if (isDurationLockedToAudio) updateTimePerDay();
-        pkg.updateInfosForPictures();
+        // Le FPS peut modifier la durée minimale réalisable (une frame par
+        // date) et le nombre d'images : recalculer le plan partagé.
+        refreshTimingPlan({ save: false });
     } catch(e) {
         console.warn('changeRecordValues error:', e);
     }
@@ -2258,6 +2277,93 @@ function loadRecordSettings() {
         }
     } catch(e) {
         console.warn('Load record settings error:', e);
+    }
+    return false;
+}
+
+// ----- Persistance des réglages d'animation (rythme/timing) -----
+//
+// Comme `recording`, ce sont des PRÉFÉRENCES GLOBALES persistées dans
+// settings.json (clé `animation`) : jamais dans un thème. Changer de thème ne
+// doit modifier ni le tempo, ni les dates, ni le calage musique, ni le suivi
+// de caméra.
+
+const saveAnimationSettingsDebounced = makeDebouncedSettingsSaver(500);
+
+// Traduit pkg.options.animation/flash vers la forme snake_case de l'API.
+function animationSettingsPayload() {
+    const a = pkg.options.animation || {};
+    const dps = Number(a.daysPerSecond);
+    const total = Number(a.totalDurationSeconds);
+    return {
+        rhythm_mode: ['rate', 'duration', 'music'].includes(a.rhythmMode) ? a.rhythmMode : 'rate',
+        days_per_second: Number.isFinite(dps) && dps > 0 ? dps : TIMING_LIMITS.daysPerSecond.fallback,
+        total_duration_seconds: Number.isFinite(total) && total > 0 ? total : TIMING_LIMITS.totalDurationSeconds.fallback,
+        extra_end_seconds: Math.max(0, Number(a.extraEndSeconds) || 0),
+        camera_follow: a.cameraFollow === true,
+        // La durée du flash vit ici (temporel) même si son aspect est un
+        // réglage de thème.
+        flash_duration_ms: Math.round(Number(pkg.options.flash?.duration) || 1000),
+    };
+}
+
+// Sauvegarde débouncée : les champs numériques émettent un événement par
+// frappe. Pas d'indicateur « Enregistré » par champ : ces réglages n'en ont
+// jamais eu (la confirmation visuelle porte sur l'onglet Enregistrement).
+export function saveAnimationSettings() {
+    try {
+        saveAnimationSettingsDebounced({ animation: animationSettingsPayload() });
+    } catch(e) {
+        console.warn('Save animation settings error:', e);
+    }
+}
+
+// Applique la clé `animation` des préférences serveur sur pkg.options.
+// Un mode 'music' persisté ne peut pas être restauré au démarrage (aucun
+// fichier n'est encore sélectionné) : on retombe sur 'rate' avec le dernier
+// rythme, sans perdre la valeur.
+function applyAnimationSettingsPayload(anim) {
+    if (!anim || typeof anim !== 'object') return false;
+    pkg.options.animation = pkg.options.animation || {};
+    const a = pkg.options.animation;
+    const dps = Number(anim.days_per_second);
+    if (Number.isFinite(dps) && dps > 0) {
+        a.daysPerSecond = Math.min(TIMING_LIMITS.daysPerSecond.max, Math.max(TIMING_LIMITS.daysPerSecond.min, dps));
+    }
+    const total = Number(anim.total_duration_seconds);
+    if (Number.isFinite(total) && total > 0) {
+        a.totalDurationSeconds = Math.min(TIMING_LIMITS.totalDurationSeconds.max, total);
+    }
+    const extra = Number(anim.extra_end_seconds);
+    if (Number.isFinite(extra) && extra >= 0) {
+        a.extraEndSeconds = Math.min(TIMING_LIMITS.extraEndSeconds.max, extra);
+    }
+    if (typeof anim.camera_follow === 'boolean') a.cameraFollow = anim.camera_follow;
+    const flash = Number(anim.flash_duration_ms);
+    if (Number.isFinite(flash) && flash > 0) {
+        pkg.options.flash = pkg.options.flash || {};
+        pkg.options.flash.duration = Math.round(Math.min(10000, Math.max(100, flash)));
+    }
+    const mode = anim.rhythm_mode;
+    a.rhythmMode = (mode === 'duration') ? 'duration' : 'rate';
+    // timePerDay : valeur canonique dérivée du rythme ; recalée sur le plan
+    // dès que le nombre de jours est connu.
+    a.timePerDay = 1000 / (a.daysPerSecond || TIMING_LIMITS.daysPerSecond.fallback);
+    return true;
+}
+
+// Restaure les préférences d'animation depuis window.userSettings (déjà
+// chargé par init.js). Les anciens settings sans clé `animation` gardent les
+// valeurs par défaut du client — pas de migration depuis les anciens thèmes
+// (plusieurs profils pouvaient contenir des vitesses différentes).
+function loadAnimationSettings() {
+    try {
+        const anim = window.userSettings?.animation;
+        if (anim && typeof anim === 'object') {
+            return applyAnimationSettingsPayload(anim);
+        }
+    } catch(e) {
+        console.warn('Load animation settings error:', e);
     }
     return false;
 }
@@ -3740,187 +3846,386 @@ function toggleButtonAnimationPauseAndRestart(reinitialisation = false){
 }
 
 
-// recupère tous les changements liés aux points
-function changeAnimationValues(event){
-    // mise à jour du temps de l'autre champs
-    if (event.target.id == 'inputTimePerDay'){
-        pkg.options.animation.timePerDay = inputTimePerDay.value;
-        // Si l'utilisateur change la durée par jour manuellement, délocker la durée audio
-        if (isDurationLockedToAudio) {
-            isDurationLockedToAudio = false;
-            updateDurationLockIndicator();
-            dbgUi('Durée délockée - utilisateur a modifié la durée par jour');
-        }
-        updateTotalTime();
-        // Mettre à jour l'indicateur de correspondance des durées
-        updateDurationMatchIndicator();
-    } else if (event.target.id == 'inputTotalTime'){
-        // Si l'utilisateur change le temps total manuellement, délocker la durée audio
-        if (isDurationLockedToAudio) {
-            isDurationLockedToAudio = false;
-            updateDurationLockIndicator();
-            dbgUi('Durée délockée - utilisateur a modifié le temps total');
-        }
-        updateTimePerDay();
-        // Mettre à jour l'indicateur de correspondance des durées
-        updateDurationMatchIndicator();
-    } else if (event.target.id == 'inputExtraEndTime'){
-        const extraSeconds = Math.max(0, parseFloat(inputExtraEndTime.value) || 0);
-        pkg.options.animation.extraEndSeconds = extraSeconds;
-        if (isDurationLockedToAudio) {
-            updateTimePerDay();
-        } else {
-            updateTotalTime();
-        }
-        updateDurationMatchIndicator();
-    }
+// ---------------- TIMING DE L'ANIMATION ----------------
+//
+// Une seule source de vérité : buildTimingPlan (video_timing.mjs). L'UI, la
+// prévisualisation, MediaRecorder et le mode Images partagent le même plan ;
+// aucune durée n'est recalculée par une formule parallèle.
+//
+// Trois modes de rythme EXCLUSIFS (options.animation.rhythmMode) :
+//   'rate'     — jours par seconde (champ éditable) ;
+//   'duration' — durée finale de la vidéo en mm:ss (champ éditable) ;
+//   'music'    — calé sur la durée du fichier audio sélectionné.
+// Dans chaque mode, les deux autres valeurs sont des résultats calculés
+// affichés en lecture seule.
 
-    // mise à jour du nombre de chiffre pour l'enregistrement des images
-    pkg.updateInfosForPictures();
+const RHYTHM_PRESETS = Object.freeze({ slow: 10, normal: 20, fast: 50 });
+
+function rhythmMode() {
+    return pkg.options?.animation?.rhythmMode || 'rate';
 }
 
-// Borne les options d'animation venues des valeurs par défaut ou d'un profil.
+// Nombre de jours courant : dates d'animation si valides, sinon la valeur
+// fournie par la dernière lecture de métadonnées BDD. Une plage inversée
+// (fin < début) retourne NaN : rejetée par le plan, jamais masquée par un
+// repli sur les métadonnées.
+function currentDayCount() {
+    const anim = pkg.options?.animation || {};
+    if (anim.dateStart instanceof Date && anim.dateEnd instanceof Date) {
+        if (anim.dateEnd < anim.dateStart) return NaN;
+        return inclusiveDayCount(anim.dateStart, anim.dateEnd);
+    }
+    const meta = Math.floor(Number(pkg.metadata?.deltaDays));
+    return Number.isFinite(meta) && meta > 0 ? meta : null;
+}
+
+function setTimingFieldValidity(input, feedbackId, ok, message) {
+    if (input) {
+        input.classList.toggle('is-invalid', !ok);
+        input.setAttribute('aria-invalid', ok ? 'false' : 'true');
+    }
+    const fb = feedbackId ? document.getElementById(feedbackId) : null;
+    if (fb) fb.textContent = ok ? '' : (message || '');
+    return ok;
+}
+
+// Recalcule le plan depuis l'état courant, répercute les valeurs dérivées
+// (options.animation.timePerDay, record.totalTimeInMilliSec) et rafraîchit
+// l'affichage (champs en lecture seule, synthèse, erreurs, avertissements,
+// estimation de charge, état des boutons).
+function refreshTimingPlan({ save = true } = {}) {
+    const animation = pkg.options?.animation;
+    if (!animation) return;
+    const mode = rhythmMode();
+    const dayCount = currentDayCount();
+
+    // 1. Valider les entrées du mode actif — jamais de correction silencieuse :
+    // une valeur refusée laisse le champ affiché tel quel avec une explication.
+    let rhythm = null;
+    let fieldsValid = true;
+    if (mode === 'rate') {
+        const p = parseBoundedNumber(inputDaysPerSecond?.value, TIMING_LIMITS.daysPerSecond);
+        fieldsValid = setTimingFieldValidity(
+            inputDaysPerSecond, 'feedbackDaysPerSecond', p.ok,
+            timingErrorText('daysPerSecond', p));
+        if (p.ok) {
+            animation.daysPerSecond = p.value;
+            rhythm = { mode: 'rate', daysPerSecond: p.value };
+        }
+        setTimingFieldValidity(inputTotalDuration, 'feedbackTotalDuration', true);
+    } else if (mode === 'duration') {
+        const p = parseDurationText(inputTotalDuration?.value ?? '');
+        const bounded = p.ok
+            ? (p.value <= TIMING_LIMITS.totalDurationSeconds.max * 1000
+                ? p : { ok: false, reason: 'out-of-range', value: p.value })
+            : p;
+        fieldsValid = setTimingFieldValidity(
+            inputTotalDuration, 'feedbackTotalDuration', bounded.ok,
+            timingErrorText('totalDuration', bounded));
+        if (bounded.ok) {
+            animation.totalDurationSeconds = bounded.value / 1000;
+            rhythm = { mode: 'duration', totalDurationMs: bounded.value };
+        }
+        setTimingFieldValidity(inputDaysPerSecond, 'feedbackDaysPerSecond', true);
+    } else { // music
+        if (Number.isFinite(musicDurationMs) && musicDurationMs > 0) {
+            rhythm = { mode: 'music', musicDurationMs };
+        } else {
+            // Le mode exige un fichier lu : plan construit quand même (le
+            // module retourne l'erreur 'musicDuration' affichée plus bas).
+            rhythm = { mode: 'music', musicDurationMs: NaN };
+            fieldsValid = false;
+        }
+        setTimingFieldValidity(inputDaysPerSecond, 'feedbackDaysPerSecond', true);
+        setTimingFieldValidity(inputTotalDuration, 'feedbackTotalDuration', true);
+    }
+
+    // Temps additionnel : commun aux trois modes.
+    const extraP = parseBoundedNumber(inputExtraEndTime?.value, TIMING_LIMITS.extraEndSeconds, { allowZero: true });
+    fieldsValid = setTimingFieldValidity(
+        inputExtraEndTime, 'feedbackExtraEndTime', extraP.ok,
+        timingErrorText('extraEnd', extraP)) && fieldsValid;
+    if (extraP.ok) animation.extraEndSeconds = extraP.value;
+
+    // Durée du flash (réglage temporel global, déplacé hors du thème).
+    const flashP = parseBoundedNumber(inputTimeFlash?.value, { min: 100, max: 10000 });
+    fieldsValid = setTimingFieldValidity(
+        inputTimeFlash, 'feedbackTimeFlash', flashP.ok || inputTimeFlash === null,
+        timingErrorText('flashDuration', flashP)) && fieldsValid;
+    if (flashP.ok) pkg.options.flash.duration = flashP.value;
+
+    // 2. Plan de timing partagé (aperçu, MediaRecorder, Images).
+    const plan = buildTimingPlan({
+        dayCount: dayCount ?? undefined,
+        startDate: animation.dateStart,
+        endDate: animation.dateEnd,
+        rhythm: rhythm || { mode: 'rate', daysPerSecond: animation.daysPerSecond || TIMING_LIMITS.daysPerSecond.fallback },
+        fps: pkg.options.record?.fps,
+        flashMode: pkg.options.flash?.mode,
+        flashDurationMs: Number(pkg.options.flash?.duration) || 0,
+        tailFreezeMs: pkg.options.record?.mediaRecorder?.tailFreezeMs,
+        extraEndSeconds: extraP.ok ? extraP.value : (Number(animation.extraEndSeconds) || 0),
+    });
+    lastTimingPlan = plan;
+
+    if (plan.valid && Number.isFinite(plan.timePerDayMs)) {
+        // Valeur canonique consommée par le moteur d'animation et les deux
+        // pipelines d'enregistrement : toujours issue du plan.
+        animation.timePerDay = plan.timePerDayMs;
+        pkg.options.record.totalTimeInMilliSec = plan.totalDurationMs;
+        pkg.options.record.automaticEndHoldMs = plan.endHoldMs;
+    }
+
+    // 3. Rendu : champs en lecture seule + synthèse + messages.
+    syncRhythmControls(plan);
+    renderTimingSummary(plan);
+    renderTimingMessages(plan, fieldsValid);
+    updateMusicSyncUi(plan);
+    renderLoadEstimate(plan);
+
+    timingInputsValid = fieldsValid && plan.valid;
+    updateDataAvailabilityUI();
+    pkg.updateInfosForPictures();
+    if (save) saveAnimationSettings();
+}
+
+function timingErrorText(kind, parsed) {
+    if (!parsed || parsed.ok) return '';
+    switch (parsed.reason) {
+        case 'empty': return t('Valeur requise.');
+        case 'not-a-number': case 'format': return kind === 'totalDuration'
+            ? t('Format attendu : mm:ss (ex. 4:55).')
+            : t('Nombre attendu.');
+        case 'non-positive': return t('La valeur doit être strictement positive.');
+        case 'out-of-range':
+            if (kind === 'daysPerSecond') return t('Entre ${min} et ${max} jours/s.', TIMING_LIMITS.daysPerSecond);
+            if (kind === 'extraEnd') return t('Entre ${min} et ${max} s.', TIMING_LIMITS.extraEndSeconds);
+            if (kind === 'totalDuration') return t('Maximum ${max} s.', { max: TIMING_LIMITS.totalDurationSeconds.max });
+            if (kind === 'flashDuration') return t('Entre 100 et 10000 ms.');
+            return t('Hors limites.');
+        default: return t('Valeur invalide.');
+    }
+}
+
+// Rend les deux champs de tempo exclusifs : le champ du mode actif reste
+// éditable, les autres affichent le résultat calculé en lecture seule.
+function syncRhythmControls(plan) {
+    const mode = rhythmMode();
+    for (const [id, m] of [['rhythmModeRate', 'rate'], ['rhythmModeDuration', 'duration'], ['rhythmModeMusic', 'music']]) {
+        const radio = document.getElementById(id);
+        if (radio) radio.checked = (m === mode);
+    }
+    if (inputDaysPerSecond) {
+        inputDaysPerSecond.readOnly = mode !== 'rate';
+        if (mode !== 'rate' && plan?.valid && Number.isFinite(plan.daysPerSecond)) {
+            inputDaysPerSecond.value = String(Number(plan.daysPerSecond.toFixed(2)));
+        } else if (mode === 'rate' && document.activeElement !== inputDaysPerSecond) {
+            const v = Number(pkg.options.animation.daysPerSecond);
+            if (Number.isFinite(v)) inputDaysPerSecond.value = String(v);
+        }
+    }
+    if (inputTotalDuration) {
+        inputTotalDuration.readOnly = mode !== 'duration';
+        if (mode !== 'duration' && plan?.valid) {
+            inputTotalDuration.value = formatMmSs(plan.totalDurationMs);
+        } else if (mode === 'duration' && document.activeElement !== inputTotalDuration) {
+            const v = Number(pkg.options.animation.totalDurationSeconds);
+            if (Number.isFinite(v)) inputTotalDuration.value = formatMmSs(v * 1000);
+        }
+    }
+    if (selectRhythmPreset) {
+        const dps = Number(pkg.options.animation.daysPerSecond);
+        const match = Object.entries(RHYTHM_PRESETS).find(([, v]) => Math.abs(v - dps) < 1e-9);
+        selectRhythmPreset.value = match ? match[0] : 'custom';
+    }
+}
+
+// Synthèse lisible : « 5 841 jours · 20 jours/s · animation 4:52 · fin 3 s ·
+// vidéo 4:55 · 8 852 images » + décomposition en 3 parties distinctes.
+function renderTimingSummary(plan) {
+    const summary = document.getElementById('timingSummary');
+    const baseEl = document.getElementById('spanBaseTime');
+    const holdEl = document.getElementById('spanAutomaticHold');
+    const extraEl = document.getElementById('spanExtraTime');
+    const totalEl = document.getElementById('spanTotalTime');
+    if (!plan?.valid) {
+        if (summary) summary.textContent = '';
+        if (baseEl) baseEl.textContent = '—';
+        if (holdEl) holdEl.textContent = '—';
+        if (extraEl) extraEl.textContent = '—';
+        if (totalEl) totalEl.textContent = '—';
+        return;
+    }
+    if (summary) {
+        const parts = [
+            t('${n} jours', { n: plan.dayCount }),
+            t('${n} jours/s', { n: Number(plan.daysPerSecond.toFixed(2)) }),
+            t('animation ${d}', { d: formatMmSs(plan.animationMs) }),
+            t('fin ${d}', { d: formatDurationHuman(plan.endHoldMs) }),
+        ];
+        if (plan.extraEndMs > 0) parts.push(t('+ ${d} additionnel', { d: formatDurationHuman(plan.extraEndMs) }));
+        parts.push(t('vidéo ${d}', { d: formatMmSs(plan.totalDurationMs) }));
+        parts.push(t('${n} images', { n: plan.totalFrameCount }));
+        summary.textContent = parts.join(' · ');
+    }
+    if (baseEl) baseEl.textContent = formatDurationHuman(plan.animationMs);
+    if (holdEl) holdEl.textContent = formatDurationHuman(plan.endHoldMs);
+    if (extraEl) extraEl.textContent = formatDurationHuman(plan.extraEndMs);
+    if (totalEl) totalEl.textContent = formatDurationHuman(plan.totalDurationMs);
+}
+
+// Erreurs bloquantes (boutons désactivés) et avertissements (plan appliqué
+// mais limité) : deux zones séparées pour ne pas les confondre.
+function renderTimingMessages(plan, fieldsValid) {
+    const errBox = document.getElementById('timingErrors');
+    const warnBox = document.getElementById('timingWarnings');
+    const errors = [];
+    if (plan) {
+        for (const e of plan.errors) {
+            if (e === 'range') errors.push(t('La plage de dates est invalide ou vide.'));
+            else if (e === 'musicDuration') errors.push(t('Sélectionnez un fichier audio pour le mode « Sur la musique ».'));
+            // Les erreurs de champs (daysPerSecond/totalDuration/extraEnd) sont
+            // déjà affichées sous le champ concerné — pas de doublon ici.
+        }
+        if (!plan.errors.length && !fieldsValid && isMusicLocked()) {
+            errors.push(t('En attente de la lecture de la durée de la musique.'));
+        }
+    }
+    if (errBox) {
+        errBox.style.display = errors.length ? '' : 'none';
+        errBox.textContent = errors.join(' ');
+    }
+    const warnings = [];
+    if (plan?.warnings) {
+        for (const w of plan.warnings) {
+            if (w.type === 'minimum-total') {
+                warnings.push(t('Durée demandée (${req}) trop courte pour afficher chaque jour (minimum ${min}) : ${app} appliquée.', {
+                    req: formatDurationHuman(w.requestedMs),
+                    min: formatDurationHuman(w.minimumMs),
+                    app: formatDurationHuman(w.appliedMs),
+                }));
+            }
+            // 'music-shorter-than-minimum' est rendu dans la zone d'état
+            // musicSyncStatus (plus précise) — pas de doublon.
+        }
+    }
+    if (warnBox) {
+        warnBox.style.display = warnings.length ? '' : 'none';
+        warnBox.textContent = warnings.join(' ');
+    }
+}
+
+// Estimation de charge : pics de flashs simultanés et nombre d'images. Un
+// avertissement propose des pistes — jamais de suppression silencieuse de
+// flashs pour tenir la cadence.
+function renderLoadEstimate(plan) {
+    const warnBox = document.getElementById('timingWarnings');
+    if (!plan?.valid || !warnBox) return;
+    let maxPointsPerDay = 0;
+    try {
+        if (pkg.pointsByDate) {
+            for (const pts of pkg.pointsByDate.values()) {
+                if (pts && pts.length > maxPointsPerDay) maxPointsPerDay = pts.length;
+            }
+        }
+    } catch(_) {}
+    const estimate = buildLoadEstimate({
+        plan,
+        maxPointsPerDay,
+        flashDurationMs: Number(pkg.options.flash?.duration) || 0,
+    });
+    if (!estimate || !estimate.warnings.length) return;
+    const lines = warnBox.textContent ? [warnBox.textContent] : [];
+    if (estimate.warnings.includes('flashes')) {
+        lines.push(t('Charge élevée : jusqu\'à ~${n} flashs simultanés. Pistes : raccourcir la durée du flash, ralentir l\'animation, ou utiliser le mode Images.', { n: estimate.maxSimultaneousFlashes }));
+    }
+    if (estimate.warnings.includes('frames')) {
+        lines.push(t('${n} images à produire (~${d} en mode Images). Envisagez un fps plus bas ou une animation plus courte.', {
+            n: estimate.totalFrames, d: formatDurationHuman(estimate.imageCaptureEstimateMs),
+        }));
+    }
+    warnBox.style.display = '';
+    warnBox.textContent = lines.join(' ');
+}
+
+function setRhythmMode(mode) {
+    const animation = pkg.options?.animation;
+    if (!animation || !['rate', 'duration', 'music'].includes(mode)) return;
+    animation.rhythmMode = mode;
+    refreshTimingPlan();
+}
+
+// recupère tous les changements liés aux champs de timing
+function changeAnimationValues(event){
+    const id = event?.target?.id;
+    if (id === 'inputDaysPerSecond' || id === 'inputTotalDuration' || id === 'inputExtraEndTime') {
+        refreshTimingPlan();
+    }
+}
+
+// Borne les options d'animation venues des valeurs par défaut ou des réglages
+// persistés. Le schéma courant : rhythmMode/daysPerSecond/totalDurationSeconds
+// + timePerDay (ms, valeur canonique lue par le moteur) + extraEndSeconds +
+// cameraFollow. Les anciennes clés (speed) sont converties une fois.
 function normalizeAnimationOptions() {
     const animation = pkg.options?.animation;
     if (!animation) return;
+    if (!['rate', 'duration', 'music'].includes(animation.rhythmMode)) {
+        animation.rhythmMode = 'rate';
+    }
+    const dps = Number(animation.daysPerSecond);
+    if (Number.isFinite(dps) && dps > 0) {
+        animation.daysPerSecond = Math.min(TIMING_LIMITS.daysPerSecond.max, Math.max(TIMING_LIMITS.daysPerSecond.min, dps));
+    } else {
+        // Compat : l'ancien modèle stockait une durée par jour en ms.
+        const tpd = Number(animation.timePerDay);
+        animation.daysPerSecond = Number.isFinite(tpd) && tpd > 0 ? 1000 / tpd : TIMING_LIMITS.daysPerSecond.fallback;
+    }
+    if (!Number.isFinite(Number(animation.timePerDay)) || animation.timePerDay <= 0) {
+        animation.timePerDay = 1000 / animation.daysPerSecond;
+    }
+    const total = Number(animation.totalDurationSeconds);
+    animation.totalDurationSeconds = Number.isFinite(total) && total > 0
+        ? Math.min(TIMING_LIMITS.totalDurationSeconds.max, total)
+        : TIMING_LIMITS.totalDurationSeconds.fallback;
     animation.extraEndSeconds = Math.max(0, Number(animation.extraEndSeconds) || 0);
+    animation.cameraFollow = animation.cameraFollow === true;
 }
 
 // Reflète pkg.options.animation dans les contrôles de l'onglet Animation, puis
-// recalcule les durées dérivées. N'écrit QUE le DOM côté options (cf.
-// syncMapOptionsUI) ; seules les durées calculées (totalTimeInMilliSec, nombre
-// d'images) sont mises à jour, comme après une saisie manuelle.
+// recalcule le plan. N'écrit QUE le DOM côté options.
 export function syncAnimationOptionsUI() {
     const animation = pkg.options?.animation;
     if (!animation) return;
 
-    if (inputTimePerDay && animation.timePerDay != null) inputTimePerDay.value = animation.timePerDay;
+    if (inputDaysPerSecond) inputDaysPerSecond.value = String(Number(animation.daysPerSecond) || TIMING_LIMITS.daysPerSecond.fallback);
+    if (inputTotalDuration) inputTotalDuration.value = formatMmSs((Number(animation.totalDurationSeconds) || TIMING_LIMITS.totalDurationSeconds.fallback) * 1000);
     if (inputExtraEndTime) inputExtraEndTime.value = animation.extraEndSeconds ?? 0;
+    if (inputTimeFlash) inputTimeFlash.value = Number(pkg.options.flash?.duration) || 1000;
     const switchCameraFollow = document.getElementById('switchCameraFollow');
     if (switchCameraFollow) switchCameraFollow.checked = animation.cameraFollow === true;
 
-    // Une durée par jour imposée (profil) délie la durée totale de la musique,
-    // exactement comme une saisie manuelle dans le champ.
-    if (isDurationLockedToAudio) {
-        isDurationLockedToAudio = false;
-        updateDurationLockIndicator();
-    }
-
-    // Les durées dérivées n'ont de sens qu'une fois le nombre de jours connu
-    // (lecture de la BDD) : au démarrage, updateAnimationMenuAfterReadBdd() les
-    // calculera. pkg.metadata.deltaDays est vide avant.
-    if (Number.isFinite(Number(pkg.metadata?.deltaDays))) {
-        updateTotalTime();
-        updateDurationMatchIndicator();
-    }
-    pkg.updateInfosForPictures();
+    refreshTimingPlan({ save: false });
 }
 
 export function updateAnimationMenuAfterReadBdd(metadata){
-    spanDeltaDays.innerText = metadata.deltaDays;
-    updateTotalTime();
-    // Mettre à jour l'indicateur de correspondance des durées
-    updateDurationMatchIndicator();
+    if (Number.isFinite(Number(metadata?.deltaDays))) {
+        const days = Math.floor(Number(metadata.deltaDays));
+        pkg.metadata.deltaDays = days;
+        pkg.options.date.deltaDays = days;
+    }
+    refreshTimingPlan({ save: false });
 }
 
 function updateDeltaDaysAndTimes(){
-    // Calculer le nouveau deltaDays basé sur les dates d'animation sélectionnées
+    // Recalcule deltaDays depuis les dates d'animation (inclusif, DST-safe via
+    // inclusiveDayCount) puis le plan complet.
     if (pkg.options.animation.dateStart && pkg.options.animation.dateEnd) {
-        const deltaTime = pkg.options.animation.dateEnd.getTime() - pkg.options.animation.dateStart.getTime();
-        const deltaDays = Math.ceil(deltaTime / (1000 * 60 * 60 * 24)) + 1; // +1 pour inclure le dernier jour
-
-        // Mettre à jour le metadata et les options
+        const deltaDays = inclusiveDayCount(pkg.options.animation.dateStart, pkg.options.animation.dateEnd);
         pkg.metadata.deltaDays = deltaDays;
         pkg.options.date.deltaDays = deltaDays;
-        spanDeltaDays.innerText = deltaDays;
-
-        // Si la durée est lockée à la musique, recalculer la durée par jour
-        if (isDurationLockedToAudio) {
-            updateTimePerDay();
-        } else {
-            // Recalculer les temps normalement (durée par jour constante)
-            updateTotalTime();
-            // Mettre à jour l'indicateur de correspondance des durées
-            updateDurationMatchIndicator();
-        }
-
-        // Mettre à jour les informations pour les images
-        pkg.updateInfosForPictures();
     }
-}
-
-function getExtraEndMs(){
-    const extraSeconds = Number(pkg.options.animation.extraEndSeconds) || 0;
-    return Math.max(0, extraSeconds) * 1000;
-}
-
-function getAutomaticEndHoldMs(){
-    return automaticEndHoldMs({
-        tailFreezeMs: pkg.options.record?.mediaRecorder?.tailFreezeMs,
-        flashMode: pkg.options.flash?.mode,
-        flashDurationMs: pkg.options.flash?.duration,
-    });
-}
-
-function updateTotalTime(){
-    const baseTimeMs = pkg.metadata.deltaDays * inputTimePerDay.value;
-    const extraMs = getExtraEndMs();
-    const automaticHoldMs = getAutomaticEndHoldMs();
-    const totalTimeInMilliSec = baseTimeMs + extraMs + automaticHoldMs;
-    dbgUi("totalTimeInMilliSec", totalTimeInMilliSec);
-    // mise à jour du temps en ms pour futurs calculs
-    pkg.options.record.totalTimeInMilliSec = totalTimeInMilliSec;
-
-    // Ne pas modifier le temps total si la durée est lockée à la musique
-    if (!isDurationLockedToAudio) {
-        inputTotalTime.value = (totalTimeInMilliSec / 60 / 1000).toFixed(4);
-    }
-    updateTimeBreakdown(baseTimeMs, extraMs, automaticHoldMs, totalTimeInMilliSec);
-}
-
-function updateTimePerDay(){
-    const totalTimeMs = inputTotalTime.value * 60 * 1000;
-    const extraMs = getExtraEndMs();
-    const automaticHoldMs = getAutomaticEndHoldMs();
-    const fps = normalizeRecordingFps(pkg.options.record?.fps);
-    const dayCount = Math.max(1, Number(pkg.metadata.deltaDays) || 1);
-    const minimumBaseMs = dayCount * 1000 / fps;
-    const baseTimeMs = Math.max(minimumBaseMs, totalTimeMs - extraMs - automaticHoldMs);
-    const timePerDay = baseTimeMs / dayCount;
-    pkg.options.animation.timePerDay = timePerDay;
-    inputTimePerDay.value = Number(timePerDay.toFixed(3));
-    // Mettre à jour le temps total en millisecondes pour les calculs futurs
-    pkg.options.record.totalTimeInMilliSec = baseTimeMs + extraMs + automaticHoldMs;
-    // Mettre à jour l'affichage des minutes/secondes et du détail
-    updateTimeBreakdown(baseTimeMs, extraMs, automaticHoldMs, pkg.options.record.totalTimeInMilliSec);
-}
-
-function updateTimeBreakdown(baseMs, extraMs, automaticHoldMs, totalMs){
-    const toMinSec = (ms) => {
-        const minutesFraction = ms / 60000;
-        const { minutes, seconds } = pkg.convertToMinutesAndSeconds(minutesFraction);
-        return { minutes, seconds };
-    };
-
-    const total = toMinSec(totalMs);
-    const base = toMinSec(baseMs);
-    const extra = toMinSec(extraMs);
-    const automaticHold = toMinSec(automaticHoldMs);
-
-    spanTotalTimeMinutes.innerText = total.minutes;
-    spanTotalTimeSeconds.innerText = total.seconds;
-    const baseMinutesEl = document.getElementById('spanBaseTimeMinutes');
-    const baseSecondsEl = document.getElementById('spanBaseTimeSeconds');
-    const extraMinutesEl = document.getElementById('spanExtraTimeMinutes');
-    const extraSecondsEl = document.getElementById('spanExtraTimeSeconds');
-    const automaticHoldMinutesEl = document.getElementById('spanAutomaticHoldMinutes');
-    const automaticHoldSecondsEl = document.getElementById('spanAutomaticHoldSeconds');
-    if (baseMinutesEl) baseMinutesEl.innerText = base.minutes;
-    if (baseSecondsEl) baseSecondsEl.innerText = base.seconds;
-    if (extraMinutesEl) extraMinutesEl.innerText = extra.minutes;
-    if (extraSecondsEl) extraSecondsEl.innerText = extra.seconds;
-    if (automaticHoldMinutesEl) automaticHoldMinutesEl.innerText = automaticHold.minutes;
-    if (automaticHoldSecondsEl) automaticHoldSecondsEl.innerText = automaticHold.seconds;
+    refreshTimingPlan();
 }
 
 
@@ -4008,14 +4313,9 @@ function changeFlashValues(event){
     if (event.id === "selectFlashMode") {
         pkg.options.flash.mode = event.value;
     }
-    // inputs avec validation légère (pendant la saisie)
-    if (inputTimeFlash) {
-        let duration = parseInt(inputTimeFlash.value);
-        // Ne valide que si c'est un nombre valide
-        if (!isNaN(duration)) {
-            pkg.options.flash.duration = duration;
-        }
-    }
+    // La durée du flash est validée strictement dans refreshTimingPlan
+    // (bornes 100..10000 ms, champ invalide expliqué plutôt que corrigé en
+    // silence) — elle est lue depuis inputTimeFlash là-bas.
     if (inputSizeFlash) {
         let size = parseInt(inputSizeFlash.value);
         // Ne valide que si c'est un nombre valide
@@ -4033,11 +4333,10 @@ function changeFlashValues(event){
         pkg.options.flash.rgb = pkg.hexToRgb(cpFlashColor.value);
     }
 
-    // Un flash plus long que le gel final étend automatiquement la fin de vidéo.
-    // Répercuter immédiatement ce changement dans le total affiché.
-    if (isDurationLockedToAudio) updateTimePerDay();
-    else updateTotalTime();
-    pkg.updateInfosForPictures();
+    // Un flash plus long que le gel final étend automatiquement la fin de
+    // vidéo : répercuter dans le plan de timing (durées affichées = produites).
+    refreshTimingPlan({ save: false });
+    saveAnimationSettings();
 }
 
 // Gestion du type de couleur du flash (GC, fix, none)
@@ -4077,20 +4376,10 @@ export function syncFlashOptionsUI() {
     updateFlashColorPickerVisibility();
 }
 
-// Fonction de validation à la perte de focus pour la durée du flash
+// Validation à la perte de focus : plus de correction silencieuse, on
+// réévalue le plan qui marque le champ invalide et explique la borne.
 function validateTimeFlash() {
-    if (inputTimeFlash) {
-        let duration = parseInt(inputTimeFlash.value);
-        // Validation de la durée (100ms à 10000ms) seulement à la perte de focus
-        if (isNaN(duration) || duration < 100) {
-            duration = 100;
-            inputTimeFlash.value = duration;
-        } else if (duration > 10000) {
-            duration = 10000;
-            inputTimeFlash.value = duration;
-        }
-        pkg.options.flash.duration = duration;
-    }
+    refreshTimingPlan();
 }
 
 // Fonction de validation à la perte de focus pour la taille du flash
@@ -4923,8 +5212,12 @@ export function updateDataAvailabilityUI({ dataResolved = false } = {}) {
 
     const btnStart = document.getElementById('btnStartAnimation');
     const btnRecord = document.getElementById('btnRecordAnimation');
-    if (btnStart) btnStart.disabled = !hasData;
-    if (btnRecord) btnRecord.disabled = !hasData;
+    // Un timing invalide (champ vide, hors bornes, plage de dates incohérente,
+    // mode musique sans fichier) bloque le lancement tant qu'il n'est pas
+    // expliqué et corrigé — on ne démarre jamais sur un plan invalide.
+    const canRun = hasData && timingInputsValid;
+    if (btnStart) btnStart.disabled = !canRun;
+    if (btnRecord) btnRecord.disabled = !canRun;
     updateControlBar();
 }
 
@@ -5069,12 +5362,16 @@ function toggleFullscreenFromButton(){
     toggleFullscreenMode();
 }
 
-// Fonction pour activer/désactiver le bouton de durée audio et la checkbox selon si un fichier est chargé
+// Fonction pour activer/désactiver le bouton de calage musique et la checkbox
+// selon si un fichier est chargé. Le mode « Sur la musique » est également
+// impossible sans fichier : son radio est désactivé plutôt que de produire
+// une erreur obscure au clic.
 function updateAudioDurationButton() {
     const btn = document.getElementById('btnSetDurationFromAudio');
     const inputAudio = document.getElementById('inputAudioFile');
     const cbAudio = document.getElementById('cbRecordAudioEnable');
-    const hasFile = inputAudio && inputAudio.files && inputAudio.files.length > 0;
+    const radioMusic = document.getElementById('rhythmModeMusic');
+    const hasFile = !!(inputAudio && inputAudio.files && inputAudio.files.length > 0);
 
     // Bouton de durée
     if (btn) {
@@ -5083,6 +5380,12 @@ function updateAudioDurationButton() {
         } else {
             btn.classList.add('disabled');
         }
+    }
+
+    if (radioMusic) {
+        radioMusic.disabled = !hasFile;
+        const wrapper = radioMusic.closest('.form-selectgroup-item');
+        if (wrapper) wrapper.title = hasFile ? '' : t('Sélectionnez d\'abord un fichier audio');
     }
 
     // Checkbox
@@ -5183,9 +5486,14 @@ async function addAudioMetadataTooltip(file, element) {
     }
 }
 
-// Fonction pour extraire la durée d'un fichier audio
+// Fonction pour extraire la durée d'un fichier audio.
+// Mise en cache par identité de fichier (nom + taille + mtime) : relire les
+// métadonnées à chaque frappe d'un champ de timing recréait un objet Audio et
+// un blob URL à chaque fois, sans aucun changement de durée à la clé.
 async function getAudioDuration(file) {
-    return new Promise((resolve, reject) => {
+    const key = `${file.name}|${file.size}|${file.lastModified}`;
+    if (audioDurationCache.has(key)) return audioDurationCache.get(key);
+    const promise = new Promise((resolve, reject) => {
         try {
             const audio = new Audio();
             const url = URL.createObjectURL(file);
@@ -5195,7 +5503,7 @@ async function getAudioDuration(file) {
                 resolve(audio.duration);
             });
 
-            audio.addEventListener('error', (e) => {
+            audio.addEventListener('error', () => {
                 URL.revokeObjectURL(url);
                 reject(new Error('Erreur lors du chargement du fichier audio'));
             });
@@ -5205,4 +5513,33 @@ async function getAudioDuration(file) {
             reject(e);
         }
     });
+    audioDurationCache.set(key, promise);
+    // Un échec ne doit pas être mémorisé : retirer la promesse rejetée pour
+    // permettre une nouvelle tentative.
+    promise.catch(() => audioDurationCache.delete(key));
+    return promise;
+}
+
+// Relit la durée du fichier sélectionné et recalcule le plan. Le jeton
+// audioReadToken garantit qu'une lecture périmée (fichier changé entre-temps)
+// ne peut pas écraser l'état courant.
+async function refreshMusicDuration() {
+    const file = inputAudioFile?.files?.[0];
+    const token = ++audioReadToken;
+    if (!file) {
+        musicDurationMs = null;
+        refreshTimingPlan();
+        return null;
+    }
+    try {
+        const seconds = await getAudioDuration(file);
+        if (token !== audioReadToken) return null; // lecture périmée
+        musicDurationMs = Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : null;
+    } catch (e) {
+        if (token !== audioReadToken) return null;
+        musicDurationMs = null;
+        console.warn('Durée audio illisible:', e);
+    }
+    refreshTimingPlan();
+    return musicDurationMs;
 }

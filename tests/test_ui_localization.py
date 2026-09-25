@@ -26,7 +26,7 @@ class UiLocalizationTests(unittest.TestCase):
             "Choix de la langue",
             "Anglais",
             "Vérifier les nouvelles versions au démarrage",
-            "Profil par défaut au démarrage",
+            "Thème par défaut au démarrage",
             "Vérifier les mises à jour",
             "Accueil",
         ):
@@ -46,7 +46,7 @@ class UiLocalizationTests(unittest.TestCase):
         }
 
         for msgid in (
-            "Durée de l'animation ajustée selon la musique",
+            "Durée de l'animation calée sur la musique",
             "Erreur lors de la lecture du fichier audio",
             "Coordonnées invalides. Ex: 48.85, 2.35 ou N 49° 16.029 E 006° 07.512",
             "Coordonnées invalides. Ex: N 49° 16.029 / E 006° 07.512",
@@ -72,7 +72,7 @@ class UiLocalizationTests(unittest.TestCase):
         expected = {
             "Choix de la langue": "Language choice",
             "Vérifier les nouvelles versions au démarrage": "Check for new versions at startup",
-            "Profil par défaut au démarrage": "Default profile at startup",
+            "Thème par défaut au démarrage": "Default theme at startup",
             "Accueil": "Home",
             "Format non supporté": "Unsupported format",
             "Erreur lors de la lecture du fichier audio": "Error reading the audio file",

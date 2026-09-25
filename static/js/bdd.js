@@ -3,6 +3,7 @@ import { CONFIG } from './init.js';
 import { showSuccess, showError, showInfo, t } from './notifications.js';
 import { clearMap } from './mapgl.js';
 import { showBsModal, hideBsModal } from './ui_bootstrap.js';
+import { inclusiveDayCount } from './video_timing.mjs';
 
 export let json_data = null;
 export const metadata = {};
@@ -378,17 +379,19 @@ function setMetadata(meta) {
         if (meta && typeof meta === 'object') {
             Object.assign(metadata, meta);
         }
+        // parseLocalDate évite le décalage de jour des chaînes "YYYY-MM-DD"
+        // parsées en UTC par new Date() dans les fuseaux à l'ouest de Greenwich.
         if (metadata.startDate) {
-            metadata.startDate = new Date(metadata.startDate);
+            metadata.startDate = pkg.parseLocalDate(metadata.startDate);
         }
         if (metadata.endDate) {
-            metadata.endDate = new Date(metadata.endDate);
+            metadata.endDate = pkg.parseLocalDate(metadata.endDate);
         }
         if (metadata.publishedStartDate) {
-            metadata.publishedStartDate = new Date(metadata.publishedStartDate);
+            metadata.publishedStartDate = pkg.parseLocalDate(metadata.publishedStartDate);
         }
         if (metadata.publishedEndDate) {
-            metadata.publishedEndDate = new Date(metadata.publishedEndDate);
+            metadata.publishedEndDate = pkg.parseLocalDate(metadata.publishedEndDate);
         }
     } catch (e) {
         console.warn('setMetadata error:', e);
@@ -563,11 +566,12 @@ function buildMetadataClientSide(features) {
     }
     let deltaDays = null;
     if (minFind && maxFind) {
+        // Comptage inclusif normalisé UTC (identique au serveur et à
+        // video_timing.mjs) : l'animation joue le premier et le dernier jour.
         const a = new Date(`${minFind}T00:00:00`);
         const b = new Date(`${maxFind}T00:00:00`);
-        if (!Number.isNaN(a.getTime()) && !Number.isNaN(b.getTime())) {
-            deltaDays = Math.round((b - a) / 86400000);
-        }
+        deltaDays = inclusiveDayCount(a, b);
+        if (!Number.isFinite(deltaDays) || deltaDays < 1) deltaDays = null;
     }
     return {
         startDate: minFind, endDate: maxFind, deltaDays,
@@ -583,16 +587,16 @@ function updateOptionsValues(meta) {
             pkg.options.date.deltaDays = meta.deltaDays;
         }
         if (meta.startDate) {
-            pkg.options.date.startDate = new Date(meta.startDate);
+            pkg.options.date.startDate = pkg.parseLocalDate(meta.startDate);
         }
         if (meta.endDate) {
-            pkg.options.date.endDate = new Date(meta.endDate);
+            pkg.options.date.endDate = pkg.parseLocalDate(meta.endDate);
         }
         if (!(pkg.options.animation.dateStart instanceof Date) && meta.startDate) {
-            pkg.options.animation.dateStart = new Date(meta.startDate);
+            pkg.options.animation.dateStart = pkg.parseLocalDate(meta.startDate);
         }
         if (!(pkg.options.animation.dateEnd instanceof Date) && meta.endDate) {
-            pkg.options.animation.dateEnd = new Date(meta.endDate);
+            pkg.options.animation.dateEnd = pkg.parseLocalDate(meta.endDate);
         }
     } catch (e) {
         console.warn('updateOptionsValues error:', e);

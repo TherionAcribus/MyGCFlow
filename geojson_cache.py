@@ -58,7 +58,9 @@ def build_metadata_from_features(features: List[Dict]) -> Dict:
     end_date_str = _safe_date(valid_find_dates, max)
     start_date = _parse_date(start_date_str) if start_date_str else None
     end_date = _parse_date(end_date_str) if end_date_str else None
-    delta_days = (end_date - start_date).days if start_date and end_date else None
+    # Comptage inclusif : le premier et le dernier jour sont tous deux animés.
+    # C'est la même convention que static/js/video_timing.mjs::inclusiveDayCount.
+    delta_days = (end_date - start_date).days + 1 if start_date and end_date else None
 
     valid_published_dates = [
         f.get("properties", {}).get("published_date")

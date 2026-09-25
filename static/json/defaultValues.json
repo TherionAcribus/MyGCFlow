@@ -31,6 +31,9 @@
         }
     },
     "animation":{
+        "rhythmMode": "rate",
+        "daysPerSecond": 20,
+        "totalDurationSeconds": 60,
         "timePerDay":50,
         "cameraFollow": false,
         "extraEndSeconds": 0

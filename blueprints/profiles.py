@@ -7,6 +7,7 @@ from dataclasses import asdict
 from settings_manager import (
     AppSettings,
     InvalidProfileNameError,
+    coerce_animation_settings,
     coerce_map_center,
     coerce_map_zoom,
     coerce_overlay_title,
@@ -44,6 +45,7 @@ def api_get_settings():
         'map_default_zoom': s.map_default_zoom,
         'recording': asdict(s.recording),
         'recording_configured': s.recording_configured,
+        'animation': asdict(s.animation),
         'show_control_bar': s.show_control_bar,
     })
     response.set_cookie(
@@ -84,6 +86,14 @@ def api_put_settings():
             merged_recording.update(data['recording'])
             recording = coerce_recording_settings(merged_recording)
             recording_configured = True
+
+        # Préférences d'animation (rythme, temps additionnel, suivi de caméra,
+        # durée de flash) : préférences globales, patch partiel comme recording.
+        animation = current.animation
+        if 'animation' in data and isinstance(data.get('animation'), dict):
+            merged_animation = asdict(current.animation)
+            merged_animation.update(data['animation'])
+            animation = coerce_animation_settings(merged_animation)
 
         # Ne modifier default_profile_uid que si le client l'a explicitement envoyé
         # (sinon un PUT partiel effacerait silencieusement le profil par défaut).
@@ -127,6 +137,7 @@ def api_put_settings():
             map_default_zoom=map_default_zoom,
             recording=recording,
             recording_configured=recording_configured,
+            animation=animation,
             show_control_bar=show_control_bar,
             examples_seeded=current.examples_seeded,
             # Sans cette reprise, toute écriture de préférence ramenait le lot
@@ -219,19 +230,12 @@ def api_save_profile(name: str):
 
     # L'uid identifie le profil de façon stable : on ignore toute valeur
     # envoyée par le client pour éviter des collisions entre profils.
+    # Les clés legacy `map.default_center`/`default_zoom`, le bloc `animation`
+    # et `flash.duration` ne sont volontairement pas traités : le centre et le
+    # zoom sont un état de session, et le timing (rythme, suivi de caméra,
+    # durée de flash) vit dans les préférences globales — jamais dans un thème.
     m = data.get('map', {})
     prof.map.tile_provider = m.get('tile_provider', prof.map.tile_provider)
-    if 'default_center' in m:
-        try:
-            dc = m['default_center']
-            prof.map.default_center = (float(dc[0]), float(dc[1]))
-        except Exception:
-            pass
-    if 'default_zoom' in m:
-        try:
-            prof.map.default_zoom = int(m['default_zoom'])
-        except Exception:
-            pass
     vm = m.get('vector_options') or {}
     if isinstance(vm, dict):
         if 'stroke_color' in vm:
@@ -249,16 +253,6 @@ def api_save_profile(name: str):
     if isinstance(tm, dict):
         if 'variant' in tm:
             prof.map.toner_options.variant = tm['variant']
-    a = data.get('animation', {})
-    if 'enabled' in a:
-        prof.animation.enabled = bool(a['enabled'])
-    if 'camera_follow' in a:
-        prof.animation.camera_follow = bool(a['camera_follow'])
-    if 'speed' in a:
-        try:
-            prof.animation.speed = float(a['speed'])
-        except Exception:
-            pass
     pt = data.get('points', {})
     if 'size' in pt:
         try:
@@ -304,11 +298,6 @@ def api_save_profile(name: str):
     f = data.get('flash', {})
     if 'mode' in f:
         prof.flash.mode = f['mode']
-    if 'duration' in f:
-        try:
-            prof.flash.duration = int(f['duration'])
-        except Exception:
-            pass
     if 'size' in f:
         try:
             prof.flash.size = int(f['size'])
@@ -337,10 +326,10 @@ def api_save_profile(name: str):
             prof.infos.infos_css = sanitize_overlay_css(i['infos_css'])
 
     logging.debug(
-        "Profil sauvegardé avec flash: mode=%s, duration=%s, size=%s, color=%s, color_type=%s | "
+        "Profil sauvegardé avec flash: mode=%s, size=%s, color=%s, color_type=%s | "
         "infos: title.display=%s, title.text=%s, number_of_caches=%s, current_date=%s, "
         "title_css_len=%s, infos_css_len=%s",
-        prof.flash.mode, prof.flash.duration, prof.flash.size, prof.flash.color,
+        prof.flash.mode, prof.flash.size, prof.flash.color,
         getattr(prof.flash, 'color_type', 'fix'), prof.infos.title.display, prof.infos.title.text,
         prof.infos.number_of_caches, prof.infos.current_date,
         len(prof.infos.title_css or ''), len(prof.infos.infos_css or ''),

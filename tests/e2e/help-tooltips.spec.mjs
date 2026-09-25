@@ -67,10 +67,12 @@ test('l\'icône d\'aide vient bien dans l\'ordre de tabulation, avant son champ'
   await openRecordingSettings(page);
 
   // Tabulation réelle, pas un focus() programmatique : c'est l'ordre du clavier
-  // qui était en cause.
+  // qui était en cause. Les pastilles de portée (focusables elles aussi pour
+  // leur propre infobulle) précèdent le panneau : 8 tabulations couvrent tout
+  // le chemin jusqu'au champ.
   await page.locator('#recordingConfigTab').focus();
   const reached = [];
-  for (let i = 0; i < 4; i += 1) {
+  for (let i = 0; i < 8; i += 1) {
     await page.keyboard.press('Tab');
     reached.push(await page.evaluate(() => {
       const el = document.activeElement;

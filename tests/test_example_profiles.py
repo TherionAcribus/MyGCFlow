@@ -105,9 +105,9 @@ class ExampleProfileSeedingTests(unittest.TestCase):
         # « Cinématique » met aussi en avant les caches des 30 derniers jours.
         self.assertEqual(balanced.points.recent_glow_days, 0)
         self.assertEqual(cinematic.points.recent_glow_days, 30)
-        # Un flash bien plus court que les 2000 ms par défaut.
-        self.assertLess(balanced.flash.duration, 1000)
-        self.assertLess(cinematic.flash.duration, 1000)
+        # La durée du flash n'est plus un réglage de thème (temporel →
+        # préférences d'animation) : elle n'existe pas sur FlashOptions.
+        self.assertFalse(hasattr(balanced.flash, "duration"))
 
     def test_the_aesthetic_collection_stays_compact_and_explores_distinct_settings(self):
         manager = SettingsManager()
@@ -127,8 +127,11 @@ class ExampleProfileSeedingTests(unittest.TestCase):
             {profile.flash.mode for profile in collection},
             {"none", "impulse", "star", "square", "triangle", "diamond"},
         )
-        self.assertTrue(any(profile.animation.camera_follow for profile in collection))
-        self.assertTrue(any(not profile.animation.enabled for profile in collection))
+        # Aucun réglage temporel dans un thème : rythme, suivi de caméra et
+        # dates vivent dans les préférences globales (AppSettings.animation).
+        self.assertTrue(all(not hasattr(profile, "animation") for profile in collection))
+        self.assertTrue(all(not hasattr(profile.map, "center") for profile in collection))
+        self.assertTrue(all(not hasattr(profile.map, "zoom") for profile in collection))
         self.assertTrue(any(profile.points.fill_color_type == "none" for profile in collection))
         self.assertTrue(any(profile.points.mode == "icone" for profile in collection))
 
