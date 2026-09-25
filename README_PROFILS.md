@@ -126,10 +126,10 @@ fetch('/api/profiles/Mon Profil', {
 
 ## Profils d'exemple inclus
 
-Au premier lancement, MyGCFlow crée automatiquement 13 profils d'exemple. Les deux
-derniers (« Équilibré » et « Cinématique ») ont été ajoutés après coup : une
-installation existante les reçoit une seule fois, sans réinstaller les autres ni
-faire revenir ceux qui ont été supprimés (voir `EXAMPLES_VERSION` dans
+Au premier lancement, MyGCFlow crée automatiquement 19 profils d'exemple. Les
+collections ajoutées après coup sont versionnées : une installation existante ne
+reçoit que les collections qu'elle n'a pas encore vues, sans faire revenir les
+anciens exemples qu'elle a supprimés (voir `EXAMPLE_PROFILE_BATCHES` dans
 `settings_manager.py`).
 
 ### 🏠 **Default** (Par défaut)
@@ -213,11 +213,47 @@ faire revenir ceux qui ont été supprimés (voir `EXAMPLES_VERSION` dans
 - **Flash** : Impulsion (750 ms, 60 px) — halo et onde ressortent sur le fond sombre
 - **Usage** : Vidéos et présentations
 
+### 🖋️ **Encre & Papier**
+- **Carte** : Stamen Toner clair, vue large sur la France
+- **Points** : Cercles noirs minimalistes de 5 px, sans halo ni flash
+- **Animation** : Désactivée pour privilégier la composition statique
+- **Usage** : Exports sobres, impressions et présentations éditoriales
+
+### 🌌 **Aurore Polaire**
+- **Carte** : Fond vectoriel bleu nuit centré sur l'Islande
+- **Points** : Triangles turquoise de 7 px, aura et persistance sur 7 jours
+- **Animation** : Apparition animée, impulsion cyan et suivi de caméra
+- **Usage** : Démonstration nocturne fluide et immersive
+
+### 🌸 **Sakura Pastel**
+- **Carte** : Watercolor centrée sur Kyoto
+- **Points** : Cercles roses de 6 px avec apparition douce et persistance sur 30 jours
+- **Animation** : Ralentie, avec un flash étoile violet
+- **Usage** : Carnet de voyage délicat et illustré
+
+### 📡 **Signal Technique**
+- **Carte** : Stamen Toner clair, cadrage européen
+- **Points** : Cercles ajourés de 5 px, bordures colorées par type de cache
+- **Animation** : Rapide, avec de petits flashs carrés aux couleurs GC
+- **Usage** : Visualisation dense, précise et contemporaine
+
+### 🥾 **Randonnée Topo**
+- **Carte** : OpenStreetMap centrée sur les Alpes
+- **Points** : Icônes geocaching compactes de 18 px, persistance sur 90 jours
+- **Animation** : Calme, flash triangulaire et suivi de caméra
+- **Usage** : Parcours régionaux et récits d'itinérance
+
+### 🔶 **Cuivre & Ardoise**
+- **Carte** : Fond vectoriel ardoise sombre centré sur Lyon
+- **Points** : Triangles cuivre de 6 px, aura claire et persistance sur 7 jours
+- **Animation** : Apparition animée et flash losange orange
+- **Usage** : Rendu premium, chaleureux et très lisible en vidéo
+
 ### Extension
 
 Pour ajouter un profil d'exemple à une version existante :
 1. L'ajouter au dictionnaire de `_create_example_profiles()`
-2. Incrémenter `EXAMPLES_VERSION` et lister son nom dans `EXAMPLES_ADDED_AFTER_V1`
+2. Ajouter son nom dans un nouveau lot de `EXAMPLE_PROFILE_BATCHES`
 3. Le documenter ici (voir `tests/test_example_profiles.py`)
 
 Pour ajouter de nouveaux paramètres aux profils :

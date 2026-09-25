@@ -510,6 +510,24 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     const btnFullscreenMode = document.getElementById('btnFullscreenMode');
     if (btnFullscreenMode) btnFullscreenMode.addEventListener('click', toggleFullscreenMode);
 
+    // Barre flottante : préférence globale (affichée par défaut). En plein
+    // écran elle reste visible quoi qu'il arrive : c'est elle qui porte le
+    // seul bouton de sortie du mode (le panneau y est masqué).
+    const switchControlBar = document.getElementById('switchControlBar');
+    if (switchControlBar) {
+        switchControlBar.addEventListener('change', () => {
+            const show = switchControlBar.checked;
+            // Mise à jour optimiste du cache : saveSettingsPatch ne l'écrit
+            // qu'après la réponse du serveur, trop tard pour la visibilité.
+            window.userSettings = Object.assign({}, window.userSettings, { show_control_bar: show });
+            reportSave(switchControlBar, saveSettingsPatch({ show_control_bar: show }));
+            applyControlBarVisibility();
+        });
+    }
+    // userSettings n'est pas encore arrivé à ce stade : défaut = affichée ;
+    // applyUserSettings la corrigera ensuite si la préférence dit masquée.
+    applyControlBarVisibility();
+
     const btnStartBar = document.getElementById('btnStartBar');
     if (btnStartBar) btnStartBar.addEventListener('click', () => {
         clickStartAnimation();
@@ -4726,11 +4744,21 @@ function initCssAssistant() {
     syncFormFromCss(activeTarget);
 }
 
+// Visibilité de la barre flottante : pilotée par la préférence globale
+// `show_control_bar` (affichée par défaut), sauf en plein écran où elle
+// reste toujours visible — c'est le seul bouton de sortie du mode.
+export function applyControlBarVisibility() {
+    const controlBar = document.getElementById('controlBar');
+    if (!controlBar) return;
+    const prefOn = window.userSettings?.show_control_bar !== false;
+    const inFullscreen = document.querySelector('main')?.classList.contains('fullscreen-mode') === true;
+    controlBar.style.display = (prefOn || inFullscreen) ? 'flex' : 'none';
+}
+
 // Gestion du mode plein écran
 function toggleFullscreenMode() {
     const btnFullscreenMode = document.getElementById('btnFullscreenMode');
     const mainElement = document.querySelector('main');
-    const controlBar = document.getElementById('controlBar');
     const mapElement = document.getElementById('map');
 
     // Basculer l'état
@@ -4739,7 +4767,7 @@ function toggleFullscreenMode() {
     if (fullscreenButtonActive) {
         // Activer le mode plein écran
         mainElement.classList.add('fullscreen-mode');
-        controlBar.style.display = 'flex';
+        applyControlBarVisibility();
 
         // L'état des boutons de la barre latérale est posé par
         // updateControlBar() en fin de fonction (il tient compte de la
@@ -4768,12 +4796,11 @@ function toggleFullscreenMode() {
 
 function exitFullscreenMode() {
     const mainElement = document.querySelector('main');
-    const controlBar = document.getElementById('controlBar');
     const mapElement = document.getElementById('map');
 
     // Désactiver le mode plein écran
     mainElement.classList.remove('fullscreen-mode');
-    controlBar.style.display = 'none';
+    applyControlBarVisibility();
 
     // Restaurer la taille normale de la carte (gérée par le split-pane)
     mapElement.style.height = '100%';

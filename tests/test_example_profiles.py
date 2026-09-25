@@ -12,7 +12,12 @@ from pathlib import Path
 from unittest import mock
 
 import settings_manager
-from settings_manager import EXAMPLES_ADDED_AFTER_V1, EXAMPLES_VERSION, SettingsManager
+from settings_manager import (
+    EXAMPLE_PROFILE_BATCHES,
+    EXAMPLES_ADDED_AFTER_V1,
+    EXAMPLES_VERSION,
+    SettingsManager,
+)
 
 
 class ExampleProfileSeedingTests(unittest.TestCase):
@@ -56,6 +61,18 @@ class ExampleProfileSeedingTests(unittest.TestCase):
         # Le profil de l'utilisateur est intact (même uid, pas réécrit).
         self.assertEqual(SettingsManager().load_profile("Mon Profil").uid, kept.uid)
 
+    def test_a_version_two_installation_receives_only_the_version_three_collection(self):
+        settings_manager.write_json(
+            self.settings_path,
+            {"examples_seeded": True, "examples_version": 2},
+        )
+
+        profiles = SettingsManager().list_profiles()
+
+        self.assertEqual(set(profiles), EXAMPLE_PROFILE_BATCHES[3])
+        self.assertNotIn("Équilibré", profiles)
+        self.assertNotIn("Cinématique", profiles)
+
     def test_a_new_example_deleted_by_the_user_does_not_come_back(self):
         settings_manager.write_json(self.settings_path, {"examples_seeded": True})
         manager = SettingsManager()
@@ -91,6 +108,29 @@ class ExampleProfileSeedingTests(unittest.TestCase):
         # Un flash bien plus court que les 2000 ms par défaut.
         self.assertLess(balanced.flash.duration, 1000)
         self.assertLess(cinematic.flash.duration, 1000)
+
+    def test_the_aesthetic_collection_stays_compact_and_explores_distinct_settings(self):
+        manager = SettingsManager()
+        collection = [manager.load_profile(name) for name in EXAMPLE_PROFILE_BATCHES[3]]
+
+        self.assertEqual(len(collection), 6)
+        self.assertTrue(all(profile.points.size <= 7 for profile in collection))
+        self.assertTrue(all(
+            profile.points.mode != "icone" or profile.points.icon_size <= 18
+            for profile in collection
+        ))
+        self.assertEqual(
+            {profile.map.tile_provider for profile in collection},
+            {"OSM", "stamenToner", "vectorMap", "watercolor"},
+        )
+        self.assertEqual(
+            {profile.flash.mode for profile in collection},
+            {"none", "impulse", "star", "square", "triangle", "diamond"},
+        )
+        self.assertTrue(any(profile.animation.camera_follow for profile in collection))
+        self.assertTrue(any(not profile.animation.enabled for profile in collection))
+        self.assertTrue(any(profile.points.fill_color_type == "none" for profile in collection))
+        self.assertTrue(any(profile.points.mode == "icone" for profile in collection))
 
 
 if __name__ == "__main__":

@@ -2911,6 +2911,10 @@ msgstr "hier à ${time}"
 msgid "importé ${when}"
 msgstr "importé ${when}"
 
+#: templates/menu_animation.html
+msgid "Barre de contrôle flottante"
+msgstr "Barre de contrôle flottante"
+
 #~ msgid "Difficulté"
 #~ msgstr "Difficulté"
 

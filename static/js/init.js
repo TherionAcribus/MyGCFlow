@@ -234,6 +234,18 @@ function applyUserSettings(userSettings) {
         console.log('📥 [USER_SETTINGS] Option checkVersion appliquée:', userSettings.check_updates);
     }
 
+    // Barre de contrôle flottante : affichée par défaut (absence de la clé =
+    // true), le plein écran la force visible quelle que soit la préférence.
+    const switchControlBar = document.getElementById('switchControlBar');
+    if (switchControlBar) {
+        switchControlBar.checked = userSettings.show_control_bar !== false;
+    }
+    try {
+        pkg.applyControlBarVisibility();
+    } catch (e) {
+        console.warn('📥 [USER_SETTINGS] Barre de contrôle ignorée:', e?.message || e);
+    }
+
     // Le thème a déjà été appliqué depuis le miroir localStorage par le script
     // anti-FOUC ; ici on réaligne sur la préférence serveur, qui fait référence.
     try {

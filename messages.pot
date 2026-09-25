@@ -2753,3 +2753,8 @@ msgstr ""
 #: static/js/bdd.js
 msgid "importé ${when}"
 msgstr ""
+
+#: templates/menu_animation.html
+msgid "Barre de contrôle flottante"
+msgstr ""
+

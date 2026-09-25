@@ -16,10 +16,23 @@ APP_NAME = "MyGCFlow"
 # n'est concernée.
 LEGACY_APP_NAME = "GCMap"
 COORDINATE_ORDER_VERSION = 2
-# Lot courant de profils d'exemple. À incrémenter en ajoutant les nouveaux noms
-# à EXAMPLES_ADDED_AFTER_V1 : les installations existantes les reçoivent une fois.
-EXAMPLES_VERSION = 2
-EXAMPLES_ADDED_AFTER_V1 = {"Équilibré", "Cinématique"}
+# Lots de profils d'exemple. Une installation ne reçoit que les lots plus récents
+# que celui qu'elle a déjà vu : supprimer volontairement un ancien exemple ne le
+# fait donc pas revenir lors de l'ajout d'une nouvelle collection.
+EXAMPLE_PROFILE_BATCHES = {
+    2: {"Équilibré", "Cinématique"},
+    3: {
+        "Encre & Papier",
+        "Aurore Polaire",
+        "Sakura Pastel",
+        "Signal Technique",
+        "Randonnée Topo",
+        "Cuivre & Ardoise",
+    },
+}
+EXAMPLES_VERSION = max(EXAMPLE_PROFILE_BATCHES)
+# Compatibilité avec les tests et extensions qui importent encore ce nom.
+EXAMPLES_ADDED_AFTER_V1 = set().union(*EXAMPLE_PROFILE_BATCHES.values())
 MAX_OVERLAY_TITLE_LENGTH = 500
 MAX_OVERLAY_CSS_LENGTH = 20_000
 
@@ -186,6 +199,10 @@ class AppSettings:
     # `recording` renvoyant toujours des valeurs par défaut, « jamais configuré »
     # serait indiscernable de « configuré avec les valeurs par défaut ».
     recording_configured: bool = False
+    # Barre flottante de lecture/enregistrement sur la carte. Préférence
+    # globale (le plein écran la force visible quelle que soit la valeur :
+    # elle y porte le seul bouton de sortie du mode).
+    show_control_bar: bool = True
     examples_seeded: bool = False  # True une fois les profils d'exemple créés (premier lancement)
     # Lot de profils d'exemple déjà installé. Permet d'ajouter des exemples dans
     # une version ultérieure sans les réinstaller à chaque démarrage, ni faire
@@ -428,6 +445,7 @@ def coerce_settings(d: dict) -> AppSettings:
         s.skipped_update_version = _coerce_optional_str(d.get("skipped_update_version"))
         s.theme = coerce_theme(d.get("theme"), s.theme)
         s.recording = coerce_recording_settings(d.get("recording"))
+        s.show_control_bar = bool(d.get("show_control_bar", s.show_control_bar))
         # Un settings.json antérieur à la migration n'a pas de bloc `recording` :
         # il compte comme « jamais configuré ».
         s.recording_configured = bool(d.get("recording_configured", "recording" in d))
@@ -591,7 +609,12 @@ class SettingsManager:
             self._create_example_profiles()
             self._mark_examples_seeded()
         elif settings.examples_version < EXAMPLES_VERSION:
-            self._create_example_profiles(only=EXAMPLES_ADDED_AFTER_V1)
+            missing_examples = set().union(*(
+                names
+                for version, names in EXAMPLE_PROFILE_BATCHES.items()
+                if version > settings.examples_version
+            ))
+            self._create_example_profiles(only=missing_examples)
             self._mark_examples_seeded()
 
     def _mark_examples_seeded(self) -> None:
@@ -1401,6 +1424,353 @@ class SettingsManager:
                     font-variant-numeric: tabular-nums;
                     letter-spacing: 0.5px;
                     box-shadow: 0 10px 26px rgba(0, 0, 0, 0.32);
+                    """
+                )
+            ),
+
+            # Collection esthétique EXAMPLES_VERSION 3. Elle explore des
+            # combinaisons très différentes sans dépasser 7 px pour les points
+            # vectoriels (18 px pour l'unique profil à icônes).
+            "Encre & Papier": MapProfile(
+                name="Encre & Papier",
+                map=MapOptions(
+                    tile_provider="stamenToner",
+                    default_center=(1.888334, 46.603354),
+                    default_zoom=5,
+                    vector_options=VectorMapOptions(
+                        stroke_color="#292524",
+                        fill_color="#e7e5e4",
+                        background_color="#fafaf9",
+                        stroke_width=1.0
+                    ),
+                    toner_options=TonerMapOptions(variant="light")
+                ),
+                animation=AnimationOptions(enabled=False, speed=1.0),
+                points=PointStyle(
+                    size=5,
+                    color="#1c1917",
+                    shape="circle",
+                    halo=False,
+                    border_color="#ffffff",
+                    border_size=1,
+                    fill_color_type="fix",
+                    border_color_type="fix",
+                    mode="vectoriel"
+                ),
+                flash=FlashOptions(
+                    mode="none",
+                    duration=500,
+                    size=30,
+                    color="#1c1917",
+                    color_type="none"
+                ),
+                infos=build_infos(
+                    "CARNET DE TROUVAILLES",
+                    """
+                    color: #1c1917;
+                    background: rgba(250, 250, 249, 0.94);
+                    padding: 9px 14px;
+                    border-radius: 2px;
+                    border: 1px solid #292524;
+                    font-family: Georgia;
+                    font-weight: 700;
+                    letter-spacing: 1.4px;
+                    """,
+                    """
+                    color: #292524;
+                    background: rgba(250, 250, 249, 0.92);
+                    padding: 7px 11px;
+                    border-radius: 2px;
+                    border-bottom: 2px solid #292524;
+                    font-variant-numeric: tabular-nums;
+                    """
+                )
+            ),
+
+            "Aurore Polaire": MapProfile(
+                name="Aurore Polaire",
+                map=MapOptions(
+                    tile_provider="vectorMap",
+                    default_center=(-18.6, 64.9),
+                    default_zoom=5,
+                    vector_options=VectorMapOptions(
+                        stroke_color="#334155",
+                        fill_color="#111827",
+                        background_color="#030712",
+                        stroke_width=1.2
+                    ),
+                    toner_options=TonerMapOptions(variant="dark")
+                ),
+                animation=AnimationOptions(enabled=True, speed=1.15, camera_follow=True),
+                points=PointStyle(
+                    size=7,
+                    color="#5eead4",
+                    shape="triangle",
+                    halo=True,
+                    border_color="#082f49",
+                    border_size=1,
+                    fill_color_type="fix",
+                    border_color_type="fix",
+                    mode="vectoriel",
+                    appear_animation=True,
+                    recent_glow_days=7
+                ),
+                flash=FlashOptions(
+                    mode="impulse",
+                    duration=850,
+                    size=55,
+                    color="#67e8f9",
+                    color_type="fix"
+                ),
+                infos=build_infos(
+                    "AURORA CACHE FLOW",
+                    """
+                    color: #ecfeff;
+                    background: linear-gradient(135deg, rgba(8, 47, 73, 0.88), rgba(76, 29, 149, 0.78));
+                    padding: 11px 18px;
+                    border-radius: 999px;
+                    border: 1px solid rgba(94, 234, 212, 0.7);
+                    font-weight: 700;
+                    letter-spacing: 1.8px;
+                    box-shadow: 0 0 26px rgba(94, 234, 212, 0.2);
+                    """,
+                    """
+                    color: #cffafe;
+                    background: rgba(3, 7, 18, 0.76);
+                    padding: 8px 13px;
+                    border-radius: 999px;
+                    border: 1px solid rgba(103, 232, 249, 0.38);
+                    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+                    """
+                )
+            ),
+
+            "Sakura Pastel": MapProfile(
+                name="Sakura Pastel",
+                map=MapOptions(
+                    tile_provider="watercolor",
+                    default_center=(135.7681, 35.0116),
+                    default_zoom=6,
+                    vector_options=VectorMapOptions(
+                        stroke_color="#9f7aea",
+                        fill_color="#fce7f3",
+                        background_color="#fff7fb",
+                        stroke_width=1.2
+                    ),
+                    toner_options=TonerMapOptions(variant="light")
+                ),
+                animation=AnimationOptions(enabled=True, speed=0.8),
+                points=PointStyle(
+                    size=6,
+                    color="#f472b6",
+                    shape="circle",
+                    halo=True,
+                    border_color="#fff7fb",
+                    border_size=1,
+                    fill_color_type="fix",
+                    border_color_type="fix",
+                    mode="vectoriel",
+                    appear_animation=True,
+                    recent_glow_days=30
+                ),
+                flash=FlashOptions(
+                    mode="star",
+                    duration=1100,
+                    size=45,
+                    color="#c084fc",
+                    color_type="fix"
+                ),
+                infos=build_infos(
+                    "Sakura Cache Diary",
+                    """
+                    color: #831843;
+                    background: rgba(255, 247, 251, 0.9);
+                    padding: 10px 17px;
+                    border-radius: 16px 4px 16px 4px;
+                    border: 1px solid #f9a8d4;
+                    font-family: Georgia;
+                    font-weight: 700;
+                    box-shadow: 0 10px 24px rgba(244, 114, 182, 0.18);
+                    """,
+                    """
+                    color: #701a75;
+                    background: rgba(253, 242, 248, 0.9);
+                    padding: 8px 12px;
+                    border-radius: 12px 3px 12px 3px;
+                    border-left: 3px solid #c084fc;
+                    """
+                )
+            ),
+
+            "Signal Technique": MapProfile(
+                name="Signal Technique",
+                map=MapOptions(
+                    tile_provider="stamenToner",
+                    default_center=(10.0, 50.0),
+                    default_zoom=5,
+                    vector_options=VectorMapOptions(
+                        stroke_color="#334155",
+                        fill_color="#cbd5e1",
+                        background_color="#f8fafc",
+                        stroke_width=1.0
+                    ),
+                    toner_options=TonerMapOptions(variant="light")
+                ),
+                animation=AnimationOptions(enabled=True, speed=1.8),
+                points=PointStyle(
+                    size=5,
+                    color="#ffffff",
+                    shape="circle",
+                    halo=False,
+                    border_color="#2563eb",
+                    border_size=2,
+                    fill_color_type="none",
+                    border_color_type="gc",
+                    mode="vectoriel"
+                ),
+                flash=FlashOptions(
+                    mode="square",
+                    duration=450,
+                    size=36,
+                    color="#2563eb",
+                    color_type="gc"
+                ),
+                infos=build_infos(
+                    "CACHE // SIGNAL",
+                    """
+                    color: #f8fafc;
+                    background: rgba(15, 23, 42, 0.9);
+                    padding: 9px 14px;
+                    border-radius: 0px;
+                    border-left: 4px solid #22d3ee;
+                    font-family: monospace;
+                    font-weight: 700;
+                    letter-spacing: 2px;
+                    """,
+                    """
+                    color: #0f172a;
+                    background: rgba(248, 250, 252, 0.94);
+                    padding: 7px 11px;
+                    border-radius: 0px;
+                    border: 1px solid #64748b;
+                    font-family: monospace;
+                    font-variant-numeric: tabular-nums;
+                    """
+                )
+            ),
+
+            "Randonnée Topo": MapProfile(
+                name="Randonnée Topo",
+                map=MapOptions(
+                    tile_provider="OSM",
+                    default_center=(6.1294, 45.8992),
+                    default_zoom=7,
+                    vector_options=VectorMapOptions(
+                        stroke_color="#3f6212",
+                        fill_color="#d9f99d",
+                        background_color="#f7fee7",
+                        stroke_width=1.4
+                    ),
+                    toner_options=TonerMapOptions(variant="light")
+                ),
+                animation=AnimationOptions(enabled=True, speed=0.9, camera_follow=True),
+                points=PointStyle(
+                    size=6,
+                    color="#3f6212",
+                    shape="circle",
+                    halo=False,
+                    border_color="#ffffff",
+                    border_size=1,
+                    fill_color_type="gc",
+                    border_color_type="fix",
+                    mode="icone",
+                    icon_set="geocaching",
+                    icon_size=18,
+                    recent_glow_days=90
+                ),
+                flash=FlashOptions(
+                    mode="triangle",
+                    duration=900,
+                    size=42,
+                    color="#65a30d",
+                    color_type="gc"
+                ),
+                infos=build_infos(
+                    "Carnet des sentiers",
+                    """
+                    color: #365314;
+                    background: rgba(247, 254, 231, 0.92);
+                    padding: 10px 15px;
+                    border-radius: 8px;
+                    border: 1px solid #84cc16;
+                    font-family: Georgia;
+                    font-weight: 700;
+                    box-shadow: 0 8px 18px rgba(63, 98, 18, 0.16);
+                    """,
+                    """
+                    color: #365314;
+                    background: rgba(247, 254, 231, 0.9);
+                    padding: 8px 12px;
+                    border-radius: 8px;
+                    border-left: 4px solid #65a30d;
+                    """
+                )
+            ),
+
+            "Cuivre & Ardoise": MapProfile(
+                name="Cuivre & Ardoise",
+                map=MapOptions(
+                    tile_provider="vectorMap",
+                    default_center=(4.8357, 45.7640),
+                    default_zoom=6,
+                    vector_options=VectorMapOptions(
+                        stroke_color="#64748b",
+                        fill_color="#1e293b",
+                        background_color="#0f172a",
+                        stroke_width=1.5
+                    ),
+                    toner_options=TonerMapOptions(variant="dark")
+                ),
+                animation=AnimationOptions(enabled=True, speed=1.05),
+                points=PointStyle(
+                    size=6,
+                    color="#d97745",
+                    shape="triangle",
+                    halo=True,
+                    border_color="#ffedd5",
+                    border_size=1,
+                    fill_color_type="fix",
+                    border_color_type="fix",
+                    mode="vectoriel",
+                    appear_animation=True,
+                    recent_glow_days=7
+                ),
+                flash=FlashOptions(
+                    mode="diamond",
+                    duration=950,
+                    size=50,
+                    color="#fb923c",
+                    color_type="fix"
+                ),
+                infos=build_infos(
+                    "CUIVRE / ARDOISE",
+                    """
+                    color: #ffedd5;
+                    background: rgba(15, 23, 42, 0.84);
+                    padding: 11px 17px;
+                    border-radius: 6px;
+                    border: 1px solid #d97745;
+                    font-weight: 800;
+                    letter-spacing: 1.6px;
+                    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.3);
+                    """,
+                    """
+                    color: #fed7aa;
+                    background: rgba(30, 41, 59, 0.82);
+                    padding: 8px 12px;
+                    border-radius: 6px;
+                    border-left: 3px solid #fb923c;
+                    font-variant-numeric: tabular-nums;
                     """
                 )
             ),

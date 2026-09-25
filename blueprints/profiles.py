@@ -44,6 +44,7 @@ def api_get_settings():
         'map_default_zoom': s.map_default_zoom,
         'recording': asdict(s.recording),
         'recording_configured': s.recording_configured,
+        'show_control_bar': s.show_control_bar,
     })
     response.set_cookie(
         'mygcflow_lang',
@@ -62,6 +63,7 @@ def api_put_settings():
     def merge(current: AppSettings) -> AppSettings:
         language = data.get('language', current.language)
         check_updates = bool(data.get('check_updates', current.check_updates))
+        show_control_bar = bool(data.get('show_control_bar', current.show_control_bar))
         theme = coerce_theme(data.get('theme'), current.theme) if 'theme' in data else current.theme
 
         # Version ignorée : envoyée par le bouton « Ignorer cette version » de la
@@ -125,6 +127,7 @@ def api_put_settings():
             map_default_zoom=map_default_zoom,
             recording=recording,
             recording_configured=recording_configured,
+            show_control_bar=show_control_bar,
             examples_seeded=current.examples_seeded,
             # Sans cette reprise, toute écriture de préférence ramenait le lot
             # d'exemples à 0 et réinstallait au démarrage suivant les profils
