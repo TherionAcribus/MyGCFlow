@@ -82,6 +82,10 @@ class ProfileManager {
         // Modale "modifications non enregistrées" en cours d'affichage : elle
         // n'accepte qu'une question à la fois (cf. _askUnsavedChangesChoice).
         this._unsavedChoicePending = false;
+        // La modale de gestion des profils s'efface quand une sous-modale
+        // s'ouvre par-dessus (Bootstrap ne gère pas l'empilement) ; ce drapeau
+        // marque les fermetures de sous-modale qui doivent la faire revenir.
+        this._reopenManagerModal = false;
         this.init();
     }
 
@@ -122,6 +126,46 @@ class ProfileManager {
         document.getElementById('btn-save-profile')?.addEventListener('click', () => {
             this.saveCurrentAsProfile();
         });
+
+        // Sélecteur compact de la barre de profil : changer la valeur charge le
+        // profil par le chemin habituel — la garde « modifications non
+        // enregistrées » incluse. Si le chargement est refusé ou échoue, on
+        // rétablit l'option correspondant au profil réellement actif.
+        const profileSelect = document.getElementById('profile-select');
+        profileSelect?.addEventListener('change', async () => {
+            const loaded = await this.loadProfile(profileSelect.value);
+            if (!loaded) this._syncProfileSelect();
+        });
+
+        // « Gérer les profils » ouvre la modale qui héberge la liste complète
+        // et ses actions (créer, importer, dupliquer, renommer, supprimer,
+        // réinitialiser, définir par défaut).
+        document.getElementById('btn-manage-profiles')?.addEventListener('click', () => {
+            showBsModal('profiles-manager-modal');
+        });
+
+        // Bootstrap ne supporte pas les modales empilées (deux pièges à focus
+        // concurrents) : une sous-modale de profil ouverte depuis la liste fait
+        // effacer la modale de gestion, qui revient à la fermeture de la
+        // sous-modale — l'utilisateur retombe où il était.
+        const managerModal = document.getElementById('profiles-manager-modal');
+        if (managerModal) {
+            ['profile-modal', 'delete-profile-modal', 'reset-profile-modal', 'unsaved-changes-modal']
+                .forEach(id => {
+                    const sub = document.getElementById(id);
+                    if (!sub) return;
+                    sub.addEventListener('show.bs.modal', () => {
+                        if (!managerModal.classList.contains('show')) return;
+                        this._reopenManagerModal = true;
+                        hideBsModal(managerModal);
+                    });
+                    sub.addEventListener('hidden.bs.modal', () => {
+                        if (!this._reopenManagerModal) return;
+                        this._reopenManagerModal = false;
+                        showBsModal(managerModal);
+                    });
+                });
+        }
 
         // Modal de création/renommage
         document.getElementById('btn-confirm-profile')?.addEventListener('click', () => {
@@ -495,6 +539,9 @@ class ProfileManager {
             empty.className = 'list-group-item text-center';
             empty.textContent = pkg.t('Aucun profil');
             container.appendChild(empty);
+            // Le sélecteur compact doit aussi refléter la liste vide (option
+            // « Aucun profil », contrôle désactivé) — voir le rendu normal.
+            this.updateCurrentProfileIndicator();
             return;
         }
 
@@ -647,6 +694,7 @@ class ProfileManager {
                 this._setProfileItemDefault(nameWrap, item.dataset.profileName === defaultName);
             }
         });
+        this._syncProfileSelect();
     }
 
     // Déplace le marquage "ACTIF" sur la liste déjà rendue. Alternative à
@@ -682,6 +730,53 @@ class ProfileManager {
                 indicator.classList.remove('unsaved');
                 indicator.title = '';
             }
+        }
+        this._syncProfileSelect();
+    }
+
+    // Maintient le sélecteur compact de la barre de profil aligné sur l'état
+    // réel : options = liste des profils (★ pour le profil par défaut, « • »
+    // accolé au nom du profil actif quand des modifications attendent d'être
+    // enregistrées), sélection = profil actif. Sans profil actif, un
+    // placeholder non sélectionnable l'indique ; sans aucun profil, le
+    // contrôle est désactivé.
+    _syncProfileSelect() {
+        const select = document.getElementById('profile-select');
+        if (!select) return;
+
+        const current = this.currentProfile?.name ?? null;
+        // '' (aucun profil par défaut) ne doit correspondre à aucun nom.
+        const defaultName = this._defaultProfileName || null;
+        select.innerHTML = '';
+
+        if (this.profilesList.length === 0) {
+            const opt = document.createElement('option');
+            opt.value = '';
+            opt.textContent = pkg.t('Aucun profil');
+            opt.selected = true;
+            select.appendChild(opt);
+            select.disabled = true;
+            return;
+        }
+        select.disabled = false;
+
+        if (!current) {
+            const opt = document.createElement('option');
+            opt.value = '';
+            opt.textContent = pkg.t('Choisir un profil');
+            opt.selected = true;
+            opt.disabled = true;
+            select.appendChild(opt);
+        }
+
+        for (const name of this.profilesList) {
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = (name === defaultName ? '★ ' : '')
+                + name
+                + (name === current && this.hasUnsavedChanges ? ' •' : '');
+            opt.selected = name === current;
+            select.appendChild(opt);
         }
     }
 
@@ -729,13 +824,16 @@ class ProfileManager {
             // Sans profil courant, l'indicateur n'affiche rien : inutile de
             // programmer un recalcul dont le résultat ne serait pas utilisé.
             if (!this.currentProfile) return;
-            // Le panneau Profils est lui aussi dans #style, mais aucun de ses
-            // contrôles n'est un réglage de style (Sauvegarder, Nouveau, liste
-            // des profils, modales). Les ignorer évite de programmer un recalcul
+            // La barre de profil (#profile-bar) est dans #style, mais aucun de
+            // ses contrôles n'est un réglage de style (sélecteur, Sauvegarder,
+            // Gérer les profils) ; la liste et ses actions sont dans la modale
+            // de gestion, rattachée à <body> donc déjà hors de portée — le
+            // test sur #profiles-section ne sert que si la modale n'a pas
+            // encore été déplacée. Les ignorer évite de programmer un recalcul
             // concurrent d'une sauvegarde en cours, qui rafraîchirait
             // currentSettings juste avant que saveCurrentAsProfile n'en fasse la
             // nouvelle référence enregistrée.
-            if (event?.target?.closest?.('#profiles-section')) return;
+            if (event?.target?.closest?.('#profiles-section, #profile-bar')) return;
             clearTimeout(this._dirtyDebounceTimer);
             this._dirtyDebounceTimer = setTimeout(() => {
                 this._dirtyDebounceTimer = null;

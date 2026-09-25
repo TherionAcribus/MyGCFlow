@@ -2713,3 +2713,11 @@ msgstr ""
 msgid "Chargez votre fichier .gpx pour commencer"
 msgstr ""
 
+
+#: templates/menu_style.html
+msgid "Gérer les profils"
+msgstr ""
+
+#: static/js/profiles.js
+msgid "Choisir un profil"
+msgstr ""

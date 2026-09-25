@@ -2871,6 +2871,14 @@ msgstr "Ignorer pour l'instant"
 msgid "Chargez votre fichier .gpx pour commencer"
 msgstr "Chargez votre fichier .gpx pour commencer"
 
+#: templates/menu_style.html
+msgid "Gérer les profils"
+msgstr "Gérer les profils"
+
+#: static/js/profiles.js
+msgid "Choisir un profil"
+msgstr "Choisir un profil"
+
 #~ msgid "Difficulté"
 #~ msgstr "Difficulté"
 

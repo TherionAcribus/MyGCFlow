@@ -606,6 +606,89 @@ test('un profil de démarrage illisible laisse l\'application sans profil actif'
 });
 
 
+test('le sélecteur compact charge le profil choisi et « Gérer » ouvre la liste', async ({ page }) => {
+  // La barre de profil remplace l'ancien panneau latéral : sélecteur compact,
+  // Sauvegarder et « Gérer les profils » — la liste complète vit dans la modale.
+  await page.evaluate(() => {
+    const pm = window.profileManager;
+    pm.profilesList = ['Alpha', 'Beta'];
+    pm.currentProfile = { name: 'Alpha', uid: 'a', version: '1.0' };
+    pm._defaultProfileName = 'Beta';
+    pm.renderProfilesList();
+    pm.updateCurrentProfileIndicator();
+  });
+
+  const select = page.locator('#profile-select');
+  await expect(select).toBeEnabled();
+  await expect(select).toHaveValue('Alpha');
+  // L'étoile du profil par défaut figure dans les options du sélecteur.
+  await expect(select.locator('option[value="Beta"]')).toHaveText('★ Beta');
+
+  // Choisir un profil dans le sélecteur passe par loadProfile() — la garde
+  // « modifications non enregistrées » s'applique donc aussi ici.
+  await page.evaluate(() => {
+    window.__loads = [];
+    window.profileManager.loadProfile = async (name) => { window.__loads.push(name); return true; };
+  });
+  await select.selectOption('Beta');
+  expect(await page.evaluate(() => window.__loads)).toEqual(['Beta']);
+
+  // « • » accolé au nom du profil actif quand des modifications attendent,
+  // et un chargement refusé (choix « Annuler » sur la modale) rétablit
+  // l'option du profil toujours actif.
+  await page.evaluate(() => {
+    const pm = window.profileManager;
+    delete pm.loadProfile;  // l'espion rend la place à la méthode réelle
+    pm.hasUnsavedChanges = true;
+    pm.updateCurrentProfileIndicator();
+  });
+  await expect(select.locator('option[value="Alpha"]')).toHaveText('Alpha •');
+
+  await select.selectOption('Beta');
+  const unsaved = page.locator('#unsaved-changes-modal');
+  await expect(unsaved).toBeVisible();
+  await unsaved.locator('.modal-footer [data-bs-dismiss="modal"]').click();
+  await expect(unsaved).toBeHidden();
+  await expect(select).toHaveValue('Alpha');
+
+  // « Gérer les profils » ouvre la modale qui héberge la liste complète.
+  await page.locator('#btn-manage-profiles').click();
+  await expect(page.locator('#profiles-manager-modal')).toBeVisible();
+  await expect(page.locator('#profiles-manager-modal #profiles-list [data-profile-name="Beta"]')).toBeVisible();
+});
+
+
+test('une sous-modale ouverte depuis la gestion la masque puis la rouvre', async ({ page }) => {
+  // Bootstrap ne gère pas l'empilement de modales (deux pièges à focus
+  // concurrents) : la modale de gestion s'efface le temps de la sous-modale.
+  await page.evaluate(() => {
+    const pm = window.profileManager;
+    pm.profilesList = ['Alpha', 'Beta'];
+    pm.currentProfile = { name: 'Alpha', uid: 'a', version: '1.0' };
+    pm.hasUnsavedChanges = true;
+    pm.saveCurrentAsProfile = async () => true;
+    pm.renderProfilesList();
+    pm.updateCurrentProfileIndicator();
+  });
+
+  const manager = page.locator('#profiles-manager-modal');
+  await page.locator('#btn-manage-profiles').click();
+  await expect(manager).toBeVisible();
+
+  // Charger « Beta » depuis la liste avec des modifications en attente : la
+  // modale à trois issues prend le premier plan, la gestion s'efface.
+  const unsaved = page.locator('#unsaved-changes-modal');
+  await page.locator('#profiles-list [data-profile-name="Beta"] .profile-name-wrap').click();
+  await expect(unsaved).toBeVisible();
+  await expect(manager).toBeHidden();
+
+  // Annuler ramène sur la modale de gestion, là où l'utilisateur était.
+  await unsaved.locator('.modal-footer [data-bs-dismiss="modal"]').click();
+  await expect(unsaved).toBeHidden();
+  await expect(manager).toBeVisible();
+});
+
+
 test('dupliquer passe par la modale de nom pré-remplie', async ({ page }) => {
   // Liste posée en mémoire et duplication espionnée : les profils vivent dans
   // %APPDATA%\MyGCFlow, hors du runtime isolé des tests (cf. l'étoile "par défaut").
@@ -617,6 +700,14 @@ test('dupliquer passe par la modale de nom pré-remplie', async ({ page }) => {
     pm.duplicateProfile = async (original, newName) => { window.__duplicated.push([original, newName]); };
     pm.renderProfilesList();
   });
+
+  // La liste vit désormais dans la modale de gestion : elle doit être ouverte
+  // pour que les menus « … » de ses lignes soient cliquables. Les sous-modales
+  // (ici celle du nom de la copie) la masquent puis la rouvrent — Bootstrap ne
+  // gère pas les modales empilées.
+  const manager = page.locator('#profiles-manager-modal');
+  await page.locator('#btn-manage-profiles').click();
+  await expect(manager).toBeVisible();
 
   const modal = page.locator('#profile-modal');
   const input = page.locator('#profile-name-input');
@@ -637,9 +728,10 @@ test('dupliquer passe par la modale de nom pré-remplie', async ({ page }) => {
   await expect(input).toHaveValue('Alpha_copy (1)');
   await expect(page.locator('#btn-confirm-profile')).toHaveText('Dupliquer');
 
-  // 2. Annuler ne duplique rien.
+  // 2. Annuler ne duplique rien. La sous-modale refermée, la gestion revient.
   await modal.locator('.modal-footer [data-bs-dismiss="modal"]').click();
   await expect(modal).toBeHidden();
+  await expect(manager).toBeVisible();
   expect(await page.evaluate(() => window.__duplicated)).toEqual([]);
 
   // 3. Un nom saisi remplace la suggestion, le profil source reste l'original.
@@ -654,6 +746,7 @@ test('dupliquer passe par la modale de nom pré-remplie', async ({ page }) => {
 
   // 4. La modale est partagée avec "Nouveau profil" : le profil source de la
   // duplication précédente ne doit pas rester attaché au bouton.
+  await expect(manager).toBeVisible();
   await page.evaluate(() => {
     window.__created = [];
     window.profileManager.createProfile = async (name) => { window.__created.push(name); };

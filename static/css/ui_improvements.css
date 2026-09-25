@@ -940,6 +940,35 @@ top: 20px;
     margin-bottom: 12px;
 }
 
+/* Barre de profil compacte en tête de l'onglet Style : sélecteur + Sauvegarder
+   + « Gérer les profils ». Elle remplace l'ancien panneau latéral qui occupait
+   un tiers de l'onglet ; la liste complète vit désormais dans la modale de
+   gestion. */
+.profile-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 10px;
+    margin-bottom: 14px;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    background: var(--color-surface);
+}
+.profile-bar .form-label {
+    font-weight: 600;
+}
+.profile-bar select {
+    width: auto;
+    min-width: 150px;
+    max-width: 260px;
+}
+/* L'indicateur a des marges pensées pour un empilement vertical ; dans la
+   barre (flex, aligné) elles décentreraient la pastille. */
+.profile-bar .profile-active-indicator {
+    margin: 0;
+}
+
 /* Rappel du profil actif sous le titre : simple ligne de texte discrète, la
    liste porte déjà le marquage principal. Seule la pastille change de couleur
    selon l'état d'enregistrement (verte = à jour, orange = modifications en
