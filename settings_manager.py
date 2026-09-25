@@ -199,9 +199,9 @@ class AppSettings:
     # `recording` renvoyant toujours des valeurs par défaut, « jamais configuré »
     # serait indiscernable de « configuré avec les valeurs par défaut ».
     recording_configured: bool = False
-    # Barre flottante de lecture/enregistrement sur la carte. Préférence
-    # globale (le plein écran la force visible quelle que soit la valeur :
-    # elle y porte le seul bouton de sortie du mode).
+    # Menu flottant de lecture/enregistrement sur la carte. Préférence
+    # globale (le plein écran le force visible quelle que soit la valeur :
+    # il y porte le seul bouton de sortie du mode).
     show_control_bar: bool = True
     examples_seeded: bool = False  # True une fois les profils d'exemple créés (premier lancement)
     # Lot de profils d'exemple déjà installé. Permet d'ajouter des exemples dans

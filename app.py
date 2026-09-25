@@ -1,3 +1,5 @@
+import os
+
 from flask import Flask
 from flask_babel import gettext as _
 
@@ -49,4 +51,8 @@ app = create_app()
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Port 5001 : 5000 est souvent pris par un autre serveur local, et le
+    # navigateur range le localStorage par origine, donc par port — garder le
+    # même port préserve les préférences entre dev et launcher (--port 5001).
+    # GCMAP_PORT permet d'en prendre un autre au besoin.
+    app.run(debug=True, port=int(os.environ.get('GCMAP_PORT', 5001)))

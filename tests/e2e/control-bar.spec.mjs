@@ -1,4 +1,4 @@
-// Barre de contrôle flottante : visible par défaut, masquable via la
+// Menu flottant de contrôle : visible par défaut, masquable via la
 // préférence globale « show_control_bar » (Animation & vidéo), persistée
 // entre rechargements — mais forcée en plein écran, où elle porte le seul
 // bouton de sortie du mode.
@@ -30,7 +30,7 @@ async function resetPref(request, value = true) {
   expect(res.ok()).toBeTruthy();
 }
 
-test('barre flottante : préférence visible par défaut, masquage persisté, forcée en plein écran', async ({ page, request }) => {
+test('menu flottant : préférence visible par défaut, masquage persisté, forcée en plein écran', async ({ page, request }) => {
   await resetPref(request, true);
   await request.post('/clear_database');
 
@@ -45,24 +45,25 @@ test('barre flottante : préférence visible par défaut, masquage persisté, fo
   await expect(page.locator('#btnRecordBar')).toBeHidden();
   await expect(page.locator('#btnToggleFullscreen')).toBeVisible();
 
-  // Le switch reflète la préférence (coché par défaut).
+  // Le bouton reflète la préférence (pressé par défaut).
   await page.locator('a[href="#animation"]').click();
-  const switchCb = page.locator('#switchControlBar');
-  await expect(switchCb).toBeChecked();
+  const toggle = page.locator('#btnToggleControlBar');
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
 
-  // Décocher masque la barre immédiatement.
-  await switchCb.click();
-  await expect(switchCb).not.toBeChecked();
+  // Désactiver masque la barre immédiatement.
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
   await expect(bar).toBeHidden();
 
   // La préférence survit au rechargement.
   await openReadyApp(page);
   await dismissFirstUseModal(page);
   await expect(bar).toBeHidden();
+  await page.locator('a[href="#animation"]').click();
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
 
   // …mais le plein écran la force : sans elle, aucun bouton de sortie
   // n'est accessible (le panneau est masqué).
-  await page.locator('a[href="#animation"]').click();
   await page.locator('#btnFullscreenMode').click();
   await expect(page.locator('main')).toHaveClass(/fullscreen-mode/);
   await expect(bar).toBeVisible();
@@ -70,12 +71,12 @@ test('barre flottante : préférence visible par défaut, masquage persisté, fo
   await expect(page.locator('main')).not.toHaveClass(/fullscreen-mode/);
   await expect(bar).toBeHidden();
 
-  // Recocher la réaffiche.
-  await page.locator('#switchControlBar').click();
+  // Réactiver la réaffiche.
+  await toggle.click();
   await expect(bar).toBeVisible();
 });
 
-test('barre flottante : boutons Lecture/Enregistrement activés par les données', async ({ page, request }) => {
+test('menu flottant : boutons Lecture/Enregistrement activés par les données', async ({ page, request }) => {
   await resetPref(request, true);
   const res = await request.post('/clear_database');
   expect(res.ok()).toBeTruthy();

@@ -510,17 +510,17 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     const btnFullscreenMode = document.getElementById('btnFullscreenMode');
     if (btnFullscreenMode) btnFullscreenMode.addEventListener('click', toggleFullscreenMode);
 
-    // Barre flottante : préférence globale (affichée par défaut). En plein
-    // écran elle reste visible quoi qu'il arrive : c'est elle qui porte le
+    // Menu flottant : préférence globale (affiché par défaut). En plein
+    // écran il reste visible quoi qu'il arrive : c'est lui qui porte le
     // seul bouton de sortie du mode (le panneau y est masqué).
-    const switchControlBar = document.getElementById('switchControlBar');
-    if (switchControlBar) {
-        switchControlBar.addEventListener('change', () => {
-            const show = switchControlBar.checked;
+    const btnToggleControlBar = document.getElementById('btnToggleControlBar');
+    if (btnToggleControlBar) {
+        btnToggleControlBar.addEventListener('click', () => {
+            const show = !(window.userSettings?.show_control_bar !== false);
             // Mise à jour optimiste du cache : saveSettingsPatch ne l'écrit
             // qu'après la réponse du serveur, trop tard pour la visibilité.
             window.userSettings = Object.assign({}, window.userSettings, { show_control_bar: show });
-            reportSave(switchControlBar, saveSettingsPatch({ show_control_bar: show }));
+            reportSave(btnToggleControlBar, saveSettingsPatch({ show_control_bar: show }));
             applyControlBarVisibility();
         });
     }
@@ -4744,8 +4744,8 @@ function initCssAssistant() {
     syncFormFromCss(activeTarget);
 }
 
-// Visibilité de la barre flottante : pilotée par la préférence globale
-// `show_control_bar` (affichée par défaut), sauf en plein écran où elle
+// Visibilité du menu flottant : pilotée par la préférence globale
+// `show_control_bar` (affiché par défaut), sauf en plein écran où il
 // reste toujours visible — c'est le seul bouton de sortie du mode.
 export function applyControlBarVisibility() {
     const controlBar = document.getElementById('controlBar');
@@ -4753,6 +4753,25 @@ export function applyControlBarVisibility() {
     const prefOn = window.userSettings?.show_control_bar !== false;
     const inFullscreen = document.querySelector('main')?.classList.contains('fullscreen-mode') === true;
     controlBar.style.display = (prefOn || inFullscreen) ? 'flex' : 'none';
+    updateControlBarToggleButton();
+}
+
+// Apparence du bouton « Menu flottant » : état pressé + icône œil
+// reflètent la préférence, pas la visibilité effective (en plein écran le
+// menu est visible même si la préférence est à masquée — aria-pressed
+// décrit donc le choix, pas le rendu du moment).
+function updateControlBarToggleButton() {
+    const btn = document.getElementById('btnToggleControlBar');
+    if (!btn) return;
+    const prefOn = window.userSettings?.show_control_bar !== false;
+    btn.setAttribute('aria-pressed', String(prefOn));
+    btn.classList.toggle('btn-primary', prefOn);
+    btn.classList.toggle('btn-secondary', !prefOn);
+    const icon = btn.querySelector('i');
+    if (icon) {
+        icon.classList.toggle('ti-eye', prefOn);
+        icon.classList.toggle('ti-eye-off', !prefOn);
+    }
 }
 
 // Gestion du mode plein écran

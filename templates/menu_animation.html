@@ -18,20 +18,36 @@
                         </li>
                     </ul>
 
-                    <!-- Plein écran et barre flottante volontairement hors des
-                         panes : ce sont des commandes d'affichage, elles restent
-                         actives même sans base chargée (les panes sont alors
-                         inertes). La barre porte le seul bouton de sortie du
-                         plein écran : elle y reste donc visible même si la
-                         préférence la masque en mode normal. -->
-                    <div class="my-3 d-flex align-items-center gap-3 flex-wrap">
+                    <!-- Commandes d'affichage et de lecture volontairement hors
+                         des panes : elles restent actives même sans base
+                         chargée (les panes sont alors inertes). Le menu
+                         flottant porte le seul bouton de sortie du plein
+                         écran : il y reste donc visible même si la
+                         préférence le masque en mode normal. -->
+                    <div class="my-3 d-flex align-items-center gap-2 flex-wrap">
                         <button type="button" class="btn btn-secondary" id="btnFullscreenMode" title="{{ _('Passer en plein écran') }}">
                             <i class="ti ti-maximize me-1" aria-hidden="true"></i><span class="fullscreen-label" data-enter-text="{{ _('Plein écran') }}" data-exit-text="{{ _('Quitter le plein écran') }}">{{ _("Plein écran") }}</span>
                         </button>
-                        <div class="form-check form-switch mb-0">
-                            <input class="form-check-input" type="checkbox" id="switchControlBar" role="switch" checked>
-                            <label class="form-check-label" for="switchControlBar">{{ _("Barre de contrôle flottante") }}{{ global_scope_badge() }}</label>
-                        </div>
+                        <button type="button" class="btn btn-primary" id="btnStartAnimation" disabled>
+                            <i class="ti ti-player-play me-1"></i>{{ _("Démarrer") }}
+                        </button>
+                        <button type="button" class="btn btn-primary" id="btnRecordAnimation" disabled>
+                            <i class="ti ti-video me-1"></i>{{ _("Enregistrer") }}
+                        </button>
+                        <!-- Pause/Arrêter occupent les emplacements de
+                             Démarrer/Enregistrer pendant la lecture : même
+                             bascule en place que dans le menu flottant, sans
+                             saut de mise en page. -->
+                        <button type="button" class="btn btn-secondary pause" id="btnPauseAnimation" style="display: none;" data-pause-text="{{ _('Pause') }}" data-continue-text="{{ _('Continuer') }}">
+                            <i class="ti ti-player-pause me-1" aria-hidden="true"></i><span class="animation-pause-label">{{ _("Pause") }}</span>
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="btnStopAnimation" style="display: none;">
+                            <i class="ti ti-player-stop me-1"></i>{{ _("Arrêter") }}
+                        </button>
+                        <button type="button" class="btn btn-primary" id="btnToggleControlBar" aria-pressed="true"
+                                data-bs-toggle="tooltip" data-bs-title="{{ _('Afficher ou masquer le menu flottant — il n\'apparaît pas dans les vidéos enregistrées') }}">
+                            <i class="ti ti-eye me-1" aria-hidden="true"></i><span>{{ _("Menu flottant") }}</span>
+                        </button>{{ global_scope_badge() }}
                     </div>
 
                     <div class="tab-content pt-3">
@@ -142,24 +158,6 @@
                     <div class="tab-pane fade" id="recordingConfigPane" role="tabpanel" aria-labelledby="recordingConfigTab" tabindex="0">
                         {% include 'menu_recording.html' %}
                     </div>
-                    </div>
-
-                    <div class="anim-section-divider mt-3">
-                        <span class="anim-section-label">{{ _("Contrôles") }}</span>
-                    </div>
-                    <div class="anim-btn-group">
-                        <button type="button" class="btn btn-lg btn-primary" id="btnStartAnimation" disabled>
-                            <i class="ti ti-player-play me-1"></i>{{ _("Démarrer") }}
-                        </button>
-                        <button type="button" class="btn btn-lg btn-primary" id="btnRecordAnimation" disabled>
-                            <i class="ti ti-video me-1"></i>{{ _("Enregistrer") }}
-                        </button>
-                        <button type="button" class="btn btn-lg btn-secondary pause" id="btnPauseAnimation" data-pause-text="{{ _('Pause') }}" data-continue-text="{{ _('Continuer') }}">
-                            <i class="ti ti-player-pause me-1" aria-hidden="true"></i><span class="animation-pause-label">{{ _("Pause") }}</span>
-                        </button>
-                        <button type="button" class="btn btn-lg btn-secondary" id="btnStopAnimation">
-                            <i class="ti ti-player-stop me-1"></i>{{ _("Arrêter") }}
-                        </button>
                     </div>
 
                 </div>

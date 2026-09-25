@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-24 10:49+0200\n"
+"POT-Creation-Date: 2026-09-25 14:04+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -75,13 +75,13 @@ msgstr ""
 msgid "Paramètres"
 msgstr ""
 
-#: templates/app.html:122 templates/guide.html:46 templates/guide.html:73
+#: templates/app.html:138 templates/guide.html:46 templates/guide.html:73
 #: templates/guide.html:95 templates/guide.html:103 templates/guide.html:123
 #: test_translations.py:30
 msgid "Données"
 msgstr ""
 
-#: templates/app.html:123 templates/guide.html:49 templates/guide.html:78
+#: templates/app.html:139 templates/guide.html:49 templates/guide.html:78
 #: templates/guide.html:95 templates/guide.html:146 templates/guide.html:148
 #: templates/menu_informations.html:139 test_translations.py:31
 msgid "Style"
@@ -95,7 +95,7 @@ msgstr ""
 msgid "Choisir fichier"
 msgstr ""
 
-#: blueprints/core.py:138 templates/menu_style.html:21
+#: blueprints/core.py:138 templates/menu_style.html:38
 msgid "Cartes"
 msgstr ""
 
@@ -132,8 +132,8 @@ msgid "Confirmer"
 msgstr ""
 
 #: blueprints/core.py:170 static/js/notifications.js:311
-#: templates/menu_style.html:178 templates/menu_style.html:203
-#: templates/menu_style.html:228 templates/menu_style.html:256
+#: templates/menu_style.html:204 templates/menu_style.html:229
+#: templates/menu_style.html:254 templates/menu_style.html:282
 #: templates/modal_loading.html:14
 msgid "Annuler"
 msgstr ""
@@ -166,9 +166,9 @@ msgid ""
 "instable ?)."
 msgstr ""
 
-#: static/js/basemaps.js:92 static/js/basemaps.js:129 static/js/ui.js:1823
-#: static/js/ui.js:1854 static/js/ui.js:1876 static/js/ui.js:1998
-#: static/js/ui.js:2012
+#: static/js/basemaps.js:92 static/js/basemaps.js:129 static/js/ui.js:1873
+#: static/js/ui.js:1904 static/js/ui.js:1926 static/js/ui.js:2048
+#: static/js/ui.js:2062
 msgid "Carte"
 msgstr ""
 
@@ -191,7 +191,7 @@ msgstr ""
 msgid "Un import est déjà en cours, veuillez patienter."
 msgstr ""
 
-#: static/js/bdd.js:234 static/js/bdd.js:1037
+#: static/js/bdd.js:234 static/js/bdd.js:1125
 msgid "Import en cours"
 msgstr ""
 
@@ -203,147 +203,172 @@ msgstr ""
 msgid "Déposez votre fichier .gpx pour le charger"
 msgstr ""
 
-#: static/js/bdd.js:354 static/js/bdd.js:418 static/js/bdd.js:419
+#: static/js/bdd.js:367 static/js/bdd.js:393 static/js/mapgl.js:425
+#, python-brace-format
+msgid "le ${date}"
+msgstr ""
+
+#: static/js/bdd.js:380
+#, python-brace-format
+msgid "du ${start} au ${end}"
+msgstr ""
+
+#: static/js/bdd.js:388
+#, python-brace-format
+msgid "aujourd'hui à ${time}"
+msgstr ""
+
+#: static/js/bdd.js:391
+#, python-brace-format
+msgid "hier à ${time}"
+msgstr ""
+
+#: static/js/bdd.js:405
+#, python-brace-format
+msgid "importé ${when}"
+msgstr ""
+
+#: static/js/bdd.js:425 static/js/bdd.js:488 static/js/bdd.js:489
 #: templates/menu_data.html:31
 msgid "Aucune base de données chargée"
 msgstr ""
 
-#: static/js/bdd.js:421 templates/menu_data.html:51
+#: static/js/bdd.js:491 templates/menu_data.html:51
 msgid "Sélection: 0 / 0"
 msgstr ""
 
-#: static/js/bdd.js:754
+#: static/js/bdd.js:830
 #, python-brace-format
 msgid "Envoi du fichier : ${pct}%"
 msgstr ""
 
-#: static/js/bdd.js:763
+#: static/js/bdd.js:839
 msgid "Réponse invalide du serveur"
 msgstr ""
 
-#: static/js/bdd.js:767
+#: static/js/bdd.js:843
 msgid "Impossible de lancer l'import GPX"
 msgstr ""
 
-#: static/js/bdd.js:777
+#: static/js/bdd.js:853
 msgid "Traitement du fichier en cours..."
 msgstr ""
 
-#: static/js/bdd.js:783
+#: static/js/bdd.js:859
 msgid "Erreur réseau lors de l'envoi du fichier"
 msgstr ""
 
-#: static/js/bdd.js:784
+#: static/js/bdd.js:860
 msgid "Envoi du fichier annulé"
 msgstr ""
 
-#: static/js/bdd.js:798 static/js/bdd.js:1125
+#: static/js/bdd.js:874 static/js/bdd.js:1213
 msgid "Veuillez sélectionner un fichier .gpx"
 msgstr ""
 
-#: static/js/bdd.js:798 static/js/bdd.js:1125
+#: static/js/bdd.js:874 static/js/bdd.js:1213
 msgid "Aucun fichier"
 msgstr ""
 
-#: static/js/bdd.js:836 static/js/bdd.js:1155
+#: static/js/bdd.js:912 static/js/bdd.js:1243
 msgid "Préparation de l'envoi..."
 msgstr ""
 
-#: static/js/bdd.js:836 static/js/bdd.js:869 static/js/bdd.js:1155
+#: static/js/bdd.js:912 static/js/bdd.js:945 static/js/bdd.js:1243
 #: static/js/notifications.js:206
 msgid "Chargement"
 msgstr ""
 
-#: static/js/bdd.js:844 static/js/bdd.js:1162
+#: static/js/bdd.js:920 static/js/bdd.js:1250
 msgid "Fichier chargé avec succès !"
 msgstr ""
 
-#: static/js/bdd.js:844
+#: static/js/bdd.js:920
 msgid "Terminé"
 msgstr ""
 
-#: static/js/bdd.js:857 static/js/bdd.js:864 static/js/bdd.js:1185
-#: static/js/bdd.js:1192
+#: static/js/bdd.js:933 static/js/bdd.js:940 static/js/bdd.js:1273
+#: static/js/bdd.js:1280
 msgid "Erreur lors du chargement du fichier"
 msgstr ""
 
-#: static/js/bdd.js:857 static/js/bdd.js:864 static/js/bdd.js:931
-#: static/js/bdd.js:938 static/js/bdd.js:1114 static/js/bdd.js:1185
-#: static/js/bdd.js:1192 static/js/notifications.js:274 static/js/ui.js:1059
+#: static/js/bdd.js:933 static/js/bdd.js:940 static/js/bdd.js:1012
+#: static/js/bdd.js:1020 static/js/bdd.js:1202 static/js/bdd.js:1273
+#: static/js/bdd.js:1280 static/js/notifications.js:274 static/js/ui.js:1101
 msgid "Erreur"
 msgstr ""
 
-#: static/js/bdd.js:869
+#: static/js/bdd.js:945
 msgid "Chargement de l'application..."
 msgstr ""
 
-#: static/js/bdd.js:931 static/js/bdd.js:938
+#: static/js/bdd.js:1012 static/js/bdd.js:1020
 msgid "Erreur lors du chargement des données"
 msgstr ""
 
-#: static/js/bdd.js:1011
+#: static/js/bdd.js:1099
 msgid "Aucune cache ne correspond aux critères sélectionnés par les filtres."
 msgstr ""
 
-#: static/js/bdd.js:1011
+#: static/js/bdd.js:1099
 msgid "Aucune cache visible"
 msgstr ""
 
-#: static/js/bdd.js:1037
+#: static/js/bdd.js:1125
 msgid "Un import est en cours, veuillez patienter avant de vider la base."
 msgstr ""
 
-#: static/js/bdd.js:1050
+#: static/js/bdd.js:1138
 msgid ""
 "Êtes-vous sûr de vouloir vider la base de données ? Cette action est "
 "irréversible et supprimera toutes vos trouvailles."
 msgstr ""
 
-#: static/js/bdd.js:1051
+#: static/js/bdd.js:1139
 msgid "Confirmation de suppression"
 msgstr ""
 
-#: static/js/bdd.js:1060
+#: static/js/bdd.js:1148
 msgid "Confirmation non disponible, action annulée."
 msgstr ""
 
-#: static/js/bdd.js:1060 static/js/bdd.js:1072
+#: static/js/bdd.js:1148 static/js/bdd.js:1160
 msgid "Suppression"
 msgstr ""
 
-#: static/js/bdd.js:1072
+#: static/js/bdd.js:1160
 msgid "Vidage de la base de données..."
 msgstr ""
 
-#: static/js/bdd.js:1103
+#: static/js/bdd.js:1191
 msgid "Base de données vidée avec succès"
 msgstr ""
 
-#: static/js/bdd.js:1103
+#: static/js/bdd.js:1191
 msgid "Suppression réussie"
 msgstr ""
 
-#: static/js/bdd.js:1114
+#: static/js/bdd.js:1202
 msgid "Erreur lors du vidage de la base de données: "
 msgstr ""
 
-#: static/js/bdd.js:1162
+#: static/js/bdd.js:1250
 msgid "Chargement terminé"
 msgstr ""
 
-#: static/js/bdd.js:1199
+#: static/js/bdd.js:1287
 msgid "Chargement et affichage des points..."
 msgstr ""
 
-#: static/js/bdd.js:1199 static/js/mapgl.js:306 static/js/notifications.js:232
+#: static/js/bdd.js:1287 static/js/mapgl.js:306 static/js/notifications.js:232
 msgid "Affichage des points"
 msgstr ""
 
-#: static/js/bdd.js:1216 static/js/bdd.js:1270 static/js/bdd.js:1277
+#: static/js/bdd.js:1304 static/js/bdd.js:1366 static/js/bdd.js:1373
 msgid "Erreur lors de l'affichage des points sur la carte"
 msgstr ""
 
-#: static/js/bdd.js:1216 static/js/bdd.js:1270 static/js/bdd.js:1277
+#: static/js/bdd.js:1304 static/js/bdd.js:1366 static/js/bdd.js:1373
 msgid "Erreur d'affichage"
 msgstr ""
 
@@ -366,11 +391,6 @@ msgstr ""
 #: static/js/mapgl.js:424
 #, python-brace-format
 msgid "Publié le ${date}"
-msgstr ""
-
-#: static/js/mapgl.js:425
-#, python-brace-format
-msgid "le ${date}"
 msgstr ""
 
 #: static/js/mapgl.js:1420
@@ -423,229 +443,233 @@ msgstr ""
 msgid "espace"
 msgstr ""
 
-#: static/js/profiles.js:221
+#: static/js/profiles.js:279
 msgid "Import échoué"
 msgstr ""
 
-#: static/js/profiles.js:223
+#: static/js/profiles.js:281
 #, python-brace-format
 msgid "Profil \"${name}\" importé"
 msgstr ""
 
-#: static/js/profiles.js:227
+#: static/js/profiles.js:285
 msgid "Erreur import du profil"
 msgstr ""
 
-#: static/js/profiles.js:253
+#: static/js/profiles.js:311
 msgid "Erreur API"
 msgstr ""
 
-#: static/js/profiles.js:259
+#: static/js/profiles.js:317
 #, python-brace-format
 msgid "Erreur: ${message}"
 msgstr ""
 
-#: static/js/profiles.js:308 static/js/profiles.js:1252
+#: static/js/profiles.js:366 static/js/profiles.js:1376
 #, python-brace-format
 msgid "Profil \"${name}\" chargé"
 msgstr ""
 
-#: static/js/profiles.js:337
+#: static/js/profiles.js:395
 #, python-brace-format
 msgid "Profil \"${name}\" sauvegardé"
 msgstr ""
 
-#: static/js/profiles.js:390
+#: static/js/profiles.js:448
 #, python-brace-format
 msgid "Profil \"${name}\" créé, mais l'enregistrement des réglages a échoué"
 msgstr ""
 
-#: static/js/profiles.js:400
+#: static/js/profiles.js:458
 #, python-brace-format
 msgid "Profil \"${name}\" créé"
 msgstr ""
 
-#: static/js/profiles.js:416
+#: static/js/profiles.js:474
 #, python-brace-format
 msgid "Profil dupliqué: \"${name}\""
 msgstr ""
 
-#: static/js/profiles.js:428
+#: static/js/profiles.js:486
 #, python-brace-format
 msgid "Profil \"${name}\" supprimé"
 msgstr ""
 
-#: static/js/profiles.js:498
+#: static/js/profiles.js:556
 #, python-brace-format
 msgid "Profil \"${name}\" réinitialisé"
 msgstr ""
 
-#: static/js/profiles.js:513
+#: static/js/profiles.js:571
 msgid "Export échoué"
 msgstr ""
 
-#: static/js/profiles.js:524
+#: static/js/profiles.js:582
 #, python-brace-format
 msgid "Profil \"${name}\" exporté"
 msgstr ""
 
-#: static/js/profiles.js:527
+#: static/js/profiles.js:585
 msgid "Erreur export du profil"
 msgstr ""
 
-#: static/js/profiles.js:547
+#: static/js/profiles.js:605
 msgid "Profil introuvable ou UID manquant"
 msgstr ""
 
-#: static/js/profiles.js:562
+#: static/js/profiles.js:620
 msgid "Échec de la sauvegarde du profil par défaut"
 msgstr ""
 
-#: static/js/profiles.js:567
+#: static/js/profiles.js:625
 #, python-brace-format
 msgid "Profil \"${name}\" défini comme profil par défaut"
 msgstr ""
 
-#: static/js/profiles.js:580
+#: static/js/profiles.js:638
 msgid "Erreur lors de la définition du profil par défaut"
 msgstr ""
 
-#: static/js/profiles.js:595
+#: static/js/profiles.js:653 static/js/profiles.js:914
 msgid "Aucun profil"
 msgstr ""
 
-#: static/js/profiles.js:676 static/js/profiles.js:1988
+#: static/js/profiles.js:739 static/js/profiles.js:2112
 msgid "Dupliquer"
 msgstr ""
 
-#: static/js/profiles.js:677 static/js/profiles.js:1968
+#: static/js/profiles.js:740 static/js/profiles.js:2092
 msgid "Renommer"
 msgstr ""
 
-#: static/js/profiles.js:678
+#: static/js/profiles.js:741
 msgid "Exporter"
 msgstr ""
 
-#: static/js/profiles.js:679 templates/menu_options.html:90
-#: templates/menu_style.html:229
+#: static/js/profiles.js:742 templates/menu_options.html:90
+#: templates/menu_style.html:255
 msgid "Réinitialiser"
 msgstr ""
 
-#: static/js/profiles.js:680 templates/menu_style.html:204
+#: static/js/profiles.js:743 templates/menu_style.html:230
 msgid "Supprimer"
 msgstr ""
 
-#: static/js/profiles.js:684
+#: static/js/profiles.js:747
 msgid "Définir comme par défaut"
 msgstr ""
 
-#: static/js/profiles.js:762 templates/menu_options.html:42
+#: static/js/profiles.js:825 templates/menu_options.html:42
 msgid "Profil par défaut"
 msgstr ""
 
-#: static/js/profiles.js:814 templates/menu_style.html:246
+#: static/js/profiles.js:878 templates/menu_style.html:272
 msgid "Modifications non enregistrées"
 msgstr ""
 
-#: static/js/profiles.js:1050
+#: static/js/profiles.js:925
+msgid "Choisir un profil"
+msgstr ""
+
+#: static/js/profiles.js:1174
 #, python-brace-format
 msgid ""
 "Le profil \"${name}\" contient des modifications non enregistrées. Que "
 "voulez-vous faire ?"
 msgstr ""
 
-#: static/js/profiles.js:1051
+#: static/js/profiles.js:1175
 msgid "Vous avez des modifications non enregistrées. Que voulez-vous faire ?"
 msgstr ""
 
-#: static/js/profiles.js:1256
+#: static/js/profiles.js:1380
 msgid "Erreur lors du chargement du profil par défaut"
 msgstr ""
 
-#: static/js/profiles.js:1289
+#: static/js/profiles.js:1413
 msgid "Aucun profil par défaut"
 msgstr ""
 
-#: static/js/profiles.js:1384
+#: static/js/profiles.js:1508
 #, python-brace-format
 msgid "Profil \"${selectedProfile}\" appliqué et défini comme profil par défaut"
 msgstr ""
 
-#: static/js/profiles.js:1385
+#: static/js/profiles.js:1509
 msgid "Aucun profil par défaut défini"
 msgstr ""
 
-#: static/js/profiles.js:1523
+#: static/js/profiles.js:1647
 msgid "Le profil n'a pas pu être chargé : aucun profil n'est actif."
 msgstr ""
 
-#: static/js/profiles.js:1953
+#: static/js/profiles.js:2077
 msgid "Enregistrer dans un nouveau profil"
 msgstr ""
 
-#: static/js/profiles.js:1953 templates/menu_style.html:164
+#: static/js/profiles.js:2077 templates/menu_style.html:190
 msgid "Nouveau profil"
 msgstr ""
 
-#: static/js/profiles.js:1959
+#: static/js/profiles.js:2083
 msgid "Enregistrer le profil"
 msgstr ""
 
-#: static/js/profiles.js:1959 templates/menu_style.html:179
+#: static/js/profiles.js:2083 templates/menu_style.html:205
 msgid "Créer"
 msgstr ""
 
-#: static/js/profiles.js:1966
+#: static/js/profiles.js:2090
 msgid "Renommer le profil"
 msgstr ""
 
-#: static/js/profiles.js:1986
+#: static/js/profiles.js:2110
 msgid "Dupliquer le profil"
 msgstr ""
 
-#: static/js/profiles.js:2042
+#: static/js/profiles.js:2166
 msgid "Le nom doit contenir au moins une lettre ou un chiffre"
 msgstr ""
 
-#: static/js/profiles.js:2064
+#: static/js/profiles.js:2188
 #, python-brace-format
 msgid "« ${conflict} » existe déjà : la copie sera nommée « ${suggested} »"
 msgstr ""
 
-#: static/js/profiles.js:2071
+#: static/js/profiles.js:2195
 #, python-brace-format
 msgid "Un profil nommé « ${name} » existe déjà"
 msgstr ""
 
-#: static/js/profiles.js:2072
+#: static/js/profiles.js:2196
 #, python-brace-format
 msgid ""
 "Ce nom est déjà pris par « ${conflict} » : les deux se réduisent au "
 "fichier « ${key} »"
 msgstr ""
 
-#: static/js/profiles.js:2081
+#: static/js/profiles.js:2205
 #, python-brace-format
 msgid ""
 "Caractères ignorés (${dropped}) : le profil sera enregistré sous « ${key}"
 " »"
 msgstr ""
 
-#: static/js/profiles.js:2139
+#: static/js/profiles.js:2263
 msgid "Veuillez saisir un nom de profil"
 msgstr ""
 
-#: static/js/profiles.js:2198
+#: static/js/profiles.js:2322
 #, python-brace-format
 msgid "Profil renommé en \"${name}\""
 msgstr ""
 
-#: static/js/profiles.js:2212
+#: static/js/profiles.js:2336
 #, python-brace-format
 msgid "Êtes-vous sûr de vouloir supprimer le profil \"${name}\" ?"
 msgstr ""
 
-#: static/js/profiles.js:2231
+#: static/js/profiles.js:2355
 #, python-brace-format
 msgid ""
 "Êtes-vous sûr de vouloir réinitialiser le profil \"${name}\" aux valeurs "
@@ -707,29 +731,29 @@ msgstr ""
 msgid "Non enregistré"
 msgstr ""
 
-#: static/js/ui.js:911
+#: static/js/ui.js:953
 msgid ""
 "Ce format vidéo n'est pas supporté par votre navigateur et sera ignoré au"
 " démarrage de l'enregistrement."
 msgstr ""
 
-#: static/js/ui.js:912 static/js/ui.js:2081
+#: static/js/ui.js:954 static/js/ui.js:2131
 msgid "Format non supporté"
 msgstr ""
 
-#: static/js/ui.js:1055
+#: static/js/ui.js:1097
 msgid "Durée de l'animation ajustée selon la musique"
 msgstr ""
 
-#: static/js/ui.js:1055
+#: static/js/ui.js:1097
 msgid "Musique"
 msgstr ""
 
-#: static/js/ui.js:1059
+#: static/js/ui.js:1101
 msgid "Erreur lors de la lecture du fichier audio"
 msgstr ""
 
-#: static/js/ui.js:1113
+#: static/js/ui.js:1155
 #, python-brace-format
 msgid ""
 "Sortie estimée : ${size}. MediaRecorder enregistre en temps réel : si la "
@@ -737,7 +761,7 @@ msgid ""
 "Images + ffmpeg »."
 msgstr ""
 
-#: static/js/ui.js:1114
+#: static/js/ui.js:1156
 #, python-brace-format
 msgid ""
 "Sortie estimée : ${size}. En mode images, l'enregistrement devient "
@@ -745,7 +769,7 @@ msgid ""
 "par une. La vidéo, elle, ne perdra aucune image."
 msgstr ""
 
-#: static/js/ui.js:1123
+#: static/js/ui.js:1165
 #, python-brace-format
 msgid ""
 "Même au débit maximal (${max} Mbit/s), cette résolution restera "
@@ -753,114 +777,114 @@ msgid ""
 "image plus propre."
 msgstr ""
 
-#: static/js/ui.js:1127
+#: static/js/ui.js:1169
 #, python-brace-format
 msgid "Débit ajusté à ${bitrate} Mbit/s pour cette résolution."
 msgstr ""
 
-#: static/js/ui.js:1823
+#: static/js/ui.js:1873
 msgid "Enregistrement du centre par défaut impossible"
 msgstr ""
 
-#: static/js/ui.js:1854
+#: static/js/ui.js:1904
 msgid "Coordonnées invalides. Ex: 48.85, 2.35 ou N 49° 16.029 E 006° 07.512"
 msgstr ""
 
-#: static/js/ui.js:1876
+#: static/js/ui.js:1926
 msgid "Coordonnées invalides. Ex: N 49° 16.029 / E 006° 07.512"
 msgstr ""
 
-#: static/js/ui.js:1998
+#: static/js/ui.js:2048
 msgid "Cliquez sur la carte pour choisir le centre"
 msgstr ""
 
-#: static/js/ui.js:2012
+#: static/js/ui.js:2062
 msgid "Centre par défaut mis à jour depuis la carte"
 msgstr ""
 
-#: static/js/ui.js:2080
+#: static/js/ui.js:2130
 #, python-brace-format
 msgid "Le format vidéo sauvegardé (${mime}) n'est pas supporté par ce navigateur."
 msgstr ""
 
-#: static/js/ui.js:2161
+#: static/js/ui.js:2211
 msgid "Fermer MyGCFlow ? Le serveur local sera arrêté."
 msgstr ""
 
-#: static/js/ui.js:2162 static/js/ui.js:2183 static/js/ui.js:2190
-#: static/js/ui.js:2196
+#: static/js/ui.js:2212 static/js/ui.js:2233 static/js/ui.js:2240
+#: static/js/ui.js:2246
 msgid "Quitter"
 msgstr ""
 
-#: static/js/ui.js:2183 static/js/ui.js:2196
+#: static/js/ui.js:2233 static/js/ui.js:2246
 msgid "MyGCFlow n'a pas pu être arrêté."
 msgstr ""
 
-#: static/js/ui.js:2189
+#: static/js/ui.js:2239
 msgid ""
 "Un import ou un traitement vidéo est en cours. Il sera interrompu. "
 "Quitter quand même ?"
 msgstr ""
 
-#: static/js/ui.js:2211
+#: static/js/ui.js:2261
 msgid "MyGCFlow est fermé"
 msgstr ""
 
-#: static/js/ui.js:2212
+#: static/js/ui.js:2262
 msgid "Vous pouvez fermer cet onglet."
 msgstr ""
 
-#: static/js/ui.js:2371
+#: static/js/ui.js:2421
 msgid ""
 "La vidéo ne sera ni téléchargée ni uploadée : elle sera perdue après "
 "l'enregistrement."
 msgstr ""
 
-#: static/js/ui.js:2372
+#: static/js/ui.js:2422
 msgid "Aucune destination"
 msgstr ""
 
-#: static/js/ui.js:2930 templates/menu_filtre.html:40
-#: templates/menu_filtre.html:59 templates/menu_filtre.html:84
-#: templates/menu_filtre.html:106 templates/menu_filtre.html:171
-#: templates/menu_filtre.html:182
+#: static/js/ui.js:3001 templates/menu_filtre.html:40
+#: templates/menu_filtre.html:58 templates/menu_filtre.html:82
+#: templates/menu_filtre.html:103 templates/menu_filtre.html:167
+#: templates/menu_filtre.html:177
 msgid "Aucun"
 msgstr ""
 
-#: static/js/ui.js:2957 templates/menu_filtre.html:167
+#: static/js/ui.js:3072 templates/menu_filtre.html:163
 msgid "Filtrer par pays"
 msgstr ""
 
-#: static/js/ui.js:2986 static/js/ui.js:3024 templates/menu_filtre.html:178
+#: static/js/ui.js:3101 static/js/ui.js:3152 templates/menu_filtre.html:173
 msgid "Filtrer par région/état"
 msgstr ""
 
-#: static/js/ui.js:4458
+#: static/js/ui.js:4583
 msgid "Images de capture supprimées"
 msgstr ""
 
-#: static/js/ui.js:4458
+#: static/js/ui.js:4583
 msgid "Nettoyage"
 msgstr ""
 
-#: static/js/ui.js:4462
+#: static/js/ui.js:4587
 msgid "Assemblage en cours"
 msgstr ""
 
-#: static/js/ui.js:4482
+#: static/js/ui.js:4607
 #, python-brace-format
 msgid "Dossier vidéo: ${folder}"
 msgstr ""
 
-#: static/js/ui.js:4482 static/js/ui.js:4484 static/js/ui.js:4489
+#: static/js/ui.js:4607 static/js/ui.js:4609 static/js/ui.js:4614
 msgid "Ouverture"
 msgstr ""
 
-#: static/js/ui.js:4484
+#: static/js/ui.js:4609
 msgid "Impossible d’ouvrir le dossier vidéo"
 msgstr ""
 
-#: static/js/ui.js:4489
+#: static/js/ui.js:4614
 msgid "Erreur lors de l’ouverture du dossier vidéo"
 msgstr ""
 
@@ -870,7 +894,7 @@ msgid ""
 " après un clic sur « Sauvegarder » dans la section Profils."
 msgstr ""
 
-#: templates/_scope_badges.html:24
+#: templates/_scope_badges.html:24 templates/menu_style.html:16
 msgid "Profil"
 msgstr ""
 
@@ -904,13 +928,30 @@ msgstr ""
 msgid "Basculer le plein écran"
 msgstr ""
 
-#: templates/app.html:124 templates/guide.html:52 templates/guide.html:83
+#: templates/app.html:108
+msgid "Chargez votre fichier .gpx pour commencer"
+msgstr ""
+
+#: templates/app.html:110 templates/guide.html:123 templates/menu_data.html:13
+#: templates/modal_first_use.html:32
+msgid "Sélectionner et charger un fichier .gpx"
+msgstr ""
+
+#: templates/app.html:112 templates/menu_data.html:17
+msgid "ou glissez-déposez votre fichier n'importe où sur la page"
+msgstr ""
+
+#: templates/app.html:130
+msgid "Redimensionner la carte"
+msgstr ""
+
+#: templates/app.html:140 templates/guide.html:52 templates/guide.html:83
 #: templates/guide.html:95 templates/guide.html:201 templates/guide.html:203
 #: templates/menu_animation.html:8
 msgid "Animation & vidéo"
 msgstr ""
 
-#: templates/app.html:125 templates/guide.html:55 templates/guide.html:88
+#: templates/app.html:141 templates/guide.html:55 templates/guide.html:88
 #: templates/guide.html:95 templates/guide.html:262 templates/guide.html:264
 msgid "Préférences"
 msgstr ""
@@ -1032,11 +1073,6 @@ msgstr ""
 msgid "cliquez sur"
 msgstr ""
 
-#: templates/guide.html:123 templates/menu_data.html:13
-#: templates/modal_first_use.html:32
-msgid "Sélectionner et charger un fichier .gpx"
-msgstr ""
-
 #: templates/guide.html:123
 msgid ""
 "et choisissez votre fichier. Le nombre de caches importées s'affiche une "
@@ -1109,7 +1145,7 @@ msgstr ""
 msgid "Dans le sous-onglet"
 msgstr ""
 
-#: templates/guide.html:153 templates/menu_style.html:11
+#: templates/guide.html:153 templates/menu_style.html:28
 msgid "Cartes & Overlays"
 msgstr ""
 
@@ -1143,7 +1179,7 @@ msgstr ""
 msgid "Dans"
 msgstr ""
 
-#: templates/guide.html:163 templates/menu_style.html:99
+#: templates/guide.html:163 templates/menu_style.html:116
 msgid "Titre et informations"
 msgstr ""
 
@@ -1240,7 +1276,7 @@ msgid "Personnalisez les points"
 msgstr ""
 
 #: templates/guide.html:176 templates/guide.html:184
-#: templates/menu_style.html:12
+#: templates/menu_style.html:29
 msgid "Points & Flash"
 msgstr ""
 
@@ -1303,7 +1339,7 @@ msgstr ""
 msgid "Le panneau"
 msgstr ""
 
-#: templates/guide.html:188 templates/menu_style.html:131
+#: templates/guide.html:188
 msgid "Profils"
 msgstr ""
 
@@ -1311,7 +1347,7 @@ msgstr ""
 msgid "(à droite) mémorise toute votre configuration de style."
 msgstr ""
 
-#: templates/guide.html:190 templates/menu_style.html:143
+#: templates/guide.html:190 templates/menu_style.html:167
 msgid "Nouveau"
 msgstr ""
 
@@ -1319,7 +1355,7 @@ msgstr ""
 msgid "crée un profil ;"
 msgstr ""
 
-#: templates/guide.html:190 templates/menu_style.html:146
+#: templates/guide.html:190 templates/menu_style.html:20
 msgid "Sauvegarder"
 msgstr ""
 
@@ -1327,7 +1363,7 @@ msgstr ""
 msgid "enregistre le profil actif."
 msgstr ""
 
-#: templates/guide.html:191 templates/menu_style.html:149
+#: templates/guide.html:191 templates/menu_style.html:170
 msgid "Importer"
 msgstr ""
 
@@ -1349,17 +1385,17 @@ msgstr ""
 msgid "Renseignez la"
 msgstr ""
 
-#: templates/guide.html:208 templates/menu_animation.html:32
-#: templates/menu_animation.html:33 templates/menu_filtre.html:118
-#: templates/menu_filtre.html:119 templates/menu_filtre.html:143
-#: templates/menu_filtre.html:144
+#: templates/guide.html:208 templates/menu_animation.html:58
+#: templates/menu_animation.html:59 templates/menu_filtre.html:114
+#: templates/menu_filtre.html:115 templates/menu_filtre.html:139
+#: templates/menu_filtre.html:140
 msgid "Date de début"
 msgstr ""
 
-#: templates/guide.html:208 templates/menu_animation.html:46
-#: templates/menu_animation.html:47 templates/menu_filtre.html:127
-#: templates/menu_filtre.html:128 templates/menu_filtre.html:152
-#: templates/menu_filtre.html:153
+#: templates/guide.html:208 templates/menu_animation.html:72
+#: templates/menu_animation.html:73 templates/menu_filtre.html:123
+#: templates/menu_filtre.html:124 templates/menu_filtre.html:148
+#: templates/menu_filtre.html:149
 msgid "Date de fin"
 msgstr ""
 
@@ -1373,7 +1409,7 @@ msgstr ""
 msgid "Réglez la vitesse"
 msgstr ""
 
-#: templates/guide.html:213 templates/menu_animation.html:64
+#: templates/guide.html:213 templates/menu_animation.html:90
 msgid "Durée par jour (ms)"
 msgstr ""
 
@@ -1381,7 +1417,7 @@ msgstr ""
 msgid "temps passé à l'écran pour chaque journée de géocaching."
 msgstr ""
 
-#: templates/guide.html:214 templates/menu_animation.html:75
+#: templates/guide.html:214 templates/menu_animation.html:101
 msgid "Temps total (minutes)"
 msgstr ""
 
@@ -1389,8 +1425,8 @@ msgstr ""
 msgid "durée globale visée ; l'app affiche le détail du calcul."
 msgstr ""
 
-#: templates/guide.html:215 templates/menu_animation.html:94
-#: templates/menu_animation.html:95
+#: templates/guide.html:215 templates/menu_animation.html:120
+#: templates/menu_animation.html:121
 msgid "Temps additionnel (sec)"
 msgstr ""
 
@@ -1406,7 +1442,7 @@ msgstr ""
 msgid "Cochez"
 msgstr ""
 
-#: templates/guide.html:220 templates/menu_animation.html:107
+#: templates/guide.html:220 templates/menu_animation.html:133
 msgid "Inclure la musique"
 msgstr ""
 
@@ -1414,7 +1450,7 @@ msgstr ""
 msgid "sélectionnez un fichier audio et ajustez le volume. Le bouton"
 msgstr ""
 
-#: templates/guide.html:220 templates/menu_animation.html:123
+#: templates/guide.html:220 templates/menu_animation.html:149
 msgid "Définir la durée de l'animation à partir de la musique"
 msgstr ""
 
@@ -1465,7 +1501,7 @@ msgid "Lancez l'aperçu puis enregistrez"
 msgstr ""
 
 #: templates/guide.html:238 templates/guide.html:244
-#: templates/menu_animation.html:142
+#: templates/menu_animation.html:32
 msgid "Démarrer"
 msgstr ""
 
@@ -1474,7 +1510,7 @@ msgid "joue l'animation à l'écran pour vérifier le rendu."
 msgstr ""
 
 #: templates/guide.html:239 templates/guide.html:244
-#: templates/menu_animation.html:145
+#: templates/menu_animation.html:35
 msgid "Enregistrer"
 msgstr ""
 
@@ -1482,12 +1518,12 @@ msgstr ""
 msgid "lance l'animation en capturant la vidéo."
 msgstr ""
 
-#: templates/guide.html:240 templates/menu_animation.html:147
-#: templates/menu_animation.html:148
+#: templates/guide.html:240 templates/menu_animation.html:41
+#: templates/menu_animation.html:42
 msgid "Pause"
 msgstr ""
 
-#: templates/guide.html:240 templates/menu_animation.html:151
+#: templates/guide.html:240 templates/menu_animation.html:45
 msgid "Arrêter"
 msgstr ""
 
@@ -1609,122 +1645,124 @@ msgid ""
 " votre carte de géocaching."
 msgstr ""
 
-#: templates/menu_animation.html:24
+#: templates/menu_animation.html:28
 msgid "Passer en plein écran"
 msgstr ""
 
-#: templates/menu_animation.html:25
+#: templates/menu_animation.html:29
 msgid "Plein écran"
 msgstr ""
 
-#: templates/menu_animation.html:25
+#: templates/menu_animation.html:29
 msgid "Quitter le plein écran"
 msgstr ""
 
-#: templates/menu_animation.html:29
+#: templates/menu_animation.html:41
+msgid "Continuer"
+msgstr ""
+
+#: templates/menu_animation.html:48
+msgid ""
+"Afficher ou masquer le menu flottant — il n'apparaît pas dans les vidéos "
+"enregistrées"
+msgstr ""
+
+#: templates/menu_animation.html:49
+msgid "Menu flottant"
+msgstr ""
+
+#: templates/menu_animation.html:55
 msgid "Plage de dates de l'animation"
 msgstr ""
 
-#: templates/menu_animation.html:35 templates/menu_animation.html:49
-#: templates/menu_filtre.html:121 templates/menu_filtre.html:130
-#: templates/menu_filtre.html:146 templates/menu_filtre.html:155
+#: templates/menu_animation.html:61 templates/menu_animation.html:75
+#: templates/menu_filtre.html:117 templates/menu_filtre.html:126
+#: templates/menu_filtre.html:142 templates/menu_filtre.html:151
 msgid "Date par défaut (BDD)"
 msgstr ""
 
-#: templates/menu_animation.html:39 templates/menu_animation.html:53
+#: templates/menu_animation.html:65 templates/menu_animation.html:79
 msgid "Date issue du filtre"
 msgstr ""
 
-#: templates/menu_animation.html:40 templates/menu_animation.html:54
+#: templates/menu_animation.html:66 templates/menu_animation.html:80
 msgid "Filtre"
 msgstr ""
 
-#: templates/menu_animation.html:65
+#: templates/menu_animation.html:91
 msgid "Temps en ms par jour"
 msgstr ""
 
-#: templates/menu_animation.html:69
+#: templates/menu_animation.html:95
 msgid "Suivi de caméra"
 msgstr ""
 
-#: templates/menu_animation.html:71
+#: templates/menu_animation.html:97
 msgid ""
 "La vue glisse lentement vers les caches du jour, sans changer de zoom. En"
 " MediaRecorder, qui enregistre en temps réel, les tuiles de la carte "
 "peuvent apparaître en retard : préférez le mode images."
 msgstr ""
 
-#: templates/menu_animation.html:75
+#: templates/menu_animation.html:101
 msgid "Temps total (minutes) - défini par musique"
 msgstr ""
 
-#: templates/menu_animation.html:76
+#: templates/menu_animation.html:102
 msgid "Temps total"
 msgstr ""
 
-#: templates/menu_animation.html:79 templates/menu_animation.html:83
-#: templates/menu_animation.html:85 templates/menu_animation.html:87
+#: templates/menu_animation.html:105 templates/menu_animation.html:109
+#: templates/menu_animation.html:111 templates/menu_animation.html:113
 msgid "min"
 msgstr ""
 
-#: templates/menu_animation.html:79
+#: templates/menu_animation.html:105
 msgid "sec pour"
 msgstr ""
 
-#: templates/menu_animation.html:79
+#: templates/menu_animation.html:105
 msgid "jours"
 msgstr ""
 
-#: templates/menu_animation.html:82
+#: templates/menu_animation.html:108
 msgid "Calcul"
 msgstr ""
 
-#: templates/menu_animation.html:83
+#: templates/menu_animation.html:109
 msgid "sec (animation)"
 msgstr ""
 
-#: templates/menu_animation.html:85
+#: templates/menu_animation.html:111
 msgid "sec (fin automatique)"
 msgstr ""
 
-#: templates/menu_animation.html:87
+#: templates/menu_animation.html:113
 msgid "sec (temps additionnel)"
 msgstr ""
 
-#: templates/menu_animation.html:103
+#: templates/menu_animation.html:129
 msgid "Musique (optionnel)"
 msgstr ""
 
-#: templates/menu_animation.html:112
+#: templates/menu_animation.html:138
 msgid "Aucune musique sélectionnée"
 msgstr ""
 
-#: templates/menu_animation.html:115
+#: templates/menu_animation.html:141
 msgid "Volume musique"
 msgstr ""
 
-#: templates/menu_animation.html:122
+#: templates/menu_animation.html:148
 msgid "Utiliser la durée de la musique comme temps total"
 msgstr ""
 
-#: templates/menu_animation.html:125
+#: templates/menu_animation.html:151
 msgid "Différence"
-msgstr ""
-
-#: templates/menu_animation.html:138
-msgid "Contrôles"
-msgstr ""
-
-#: templates/menu_animation.html:147
-msgid "Continuer"
 msgstr ""
 
 #: templates/menu_data.html:15
 msgid "Fichier .gpx"
-msgstr ""
-
-#: templates/menu_data.html:17
-msgid "ou glissez-déposez votre fichier n'importe où sur la page"
 msgstr ""
 
 #: templates/menu_data.html:26
@@ -1819,77 +1857,77 @@ msgstr ""
 msgid "Locationless (Reverse) Cache"
 msgstr ""
 
-#: templates/menu_filtre.html:39 templates/menu_filtre.html:58
-#: templates/menu_filtre.html:83 templates/menu_filtre.html:105
-#: templates/menu_filtre.html:170 templates/menu_filtre.html:181
+#: templates/menu_filtre.html:39 templates/menu_filtre.html:57
+#: templates/menu_filtre.html:81 templates/menu_filtre.html:102
+#: templates/menu_filtre.html:166 templates/menu_filtre.html:176
 msgid "Tout"
 msgstr ""
 
-#: templates/menu_filtre.html:46 templates/menu_filtre.html:47
+#: templates/menu_filtre.html:45 templates/menu_filtre.html:46
 msgid "Taille"
 msgstr ""
 
-#: templates/menu_filtre.html:48
+#: templates/menu_filtre.html:47
 msgid "Filtrer par taille"
 msgstr ""
 
-#: templates/menu_filtre.html:49
+#: templates/menu_filtre.html:48
 msgid "Small"
 msgstr ""
 
-#: templates/menu_filtre.html:50
+#: templates/menu_filtre.html:49
 msgid "Micro"
 msgstr ""
 
-#: templates/menu_filtre.html:51
+#: templates/menu_filtre.html:50
 msgid "Regular"
 msgstr ""
 
-#: templates/menu_filtre.html:52
+#: templates/menu_filtre.html:51
 msgid "Large"
 msgstr ""
 
-#: templates/menu_filtre.html:53
+#: templates/menu_filtre.html:52
 msgid "Other"
 msgstr ""
 
-#: templates/menu_filtre.html:54
+#: templates/menu_filtre.html:53
 msgid "Virtual"
 msgstr ""
 
-#: templates/menu_filtre.html:55
+#: templates/menu_filtre.html:54
 msgid "Not chosen"
 msgstr ""
 
-#: templates/menu_filtre.html:69 templates/menu_filtre.html:70
+#: templates/menu_filtre.html:67 templates/menu_filtre.html:68
 msgid "Difficultés"
 msgstr ""
 
-#: templates/menu_filtre.html:71
+#: templates/menu_filtre.html:69
 msgid "Filtrer par difficulté"
 msgstr ""
 
-#: templates/menu_filtre.html:91 templates/menu_filtre.html:92
+#: templates/menu_filtre.html:88 templates/menu_filtre.html:89
 msgid "Terrain"
 msgstr ""
 
-#: templates/menu_filtre.html:93
+#: templates/menu_filtre.html:90
 msgid "Filtrer par terrain"
 msgstr ""
 
-#: templates/menu_filtre.html:115
+#: templates/menu_filtre.html:111
 msgid "Période de découverte"
 msgstr ""
 
-#: templates/menu_filtre.html:140
+#: templates/menu_filtre.html:136
 msgid "Période de pose"
 msgstr ""
 
-#: templates/menu_filtre.html:165 templates/menu_filtre.html:166
+#: templates/menu_filtre.html:161 templates/menu_filtre.html:162
 msgid "Pays"
 msgstr ""
 
-#: templates/menu_filtre.html:176 templates/menu_filtre.html:177
+#: templates/menu_filtre.html:171 templates/menu_filtre.html:172
 msgid "Région / État"
 msgstr ""
 
@@ -2102,11 +2140,11 @@ msgstr ""
 msgid "Système"
 msgstr ""
 
-#: templates/menu_options.html:24 templates/menu_style.html:89
+#: templates/menu_options.html:24 templates/menu_style.html:106
 msgid "Clair"
 msgstr ""
 
-#: templates/menu_options.html:25 templates/menu_style.html:92
+#: templates/menu_options.html:25 templates/menu_style.html:109
 msgid "Sombre"
 msgstr ""
 
@@ -2525,140 +2563,144 @@ msgid ""
 "déjà créées."
 msgstr ""
 
-#: templates/menu_style.html:25
+#: templates/menu_style.html:19
+msgid "Sauvegarder le profil actif"
+msgstr ""
+
+#: templates/menu_style.html:23 templates/menu_style.html:155
+msgid "Gérer les profils"
+msgstr ""
+
+#: templates/menu_style.html:42
 msgid "OpenStreetMap"
 msgstr ""
 
-#: templates/menu_style.html:32
+#: templates/menu_style.html:49
 msgid "Stamen Toner"
 msgstr ""
 
-#: templates/menu_style.html:39
+#: templates/menu_style.html:56
 msgid "Carte vectorielle"
 msgstr ""
 
-#: templates/menu_style.html:46
+#: templates/menu_style.html:63
 msgid "Watercolor"
 msgstr ""
 
-#: templates/menu_style.html:57
+#: templates/menu_style.html:74
 msgid "Style Vector"
 msgstr ""
 
-#: templates/menu_style.html:61
+#: templates/menu_style.html:78
 msgid "Définit la couleur des contours de la carte"
 msgstr ""
 
-#: templates/menu_style.html:61
+#: templates/menu_style.html:78
 msgid "Couleur contour"
 msgstr ""
 
-#: templates/menu_style.html:62
+#: templates/menu_style.html:79
 msgid "Cliquez pour choisir la couleur des contours"
 msgstr ""
 
-#: templates/menu_style.html:65
+#: templates/menu_style.html:82
 msgid "Définit la couleur de remplissage de la carte"
 msgstr ""
 
-#: templates/menu_style.html:65
+#: templates/menu_style.html:82
 msgid "Couleur remplissage"
 msgstr ""
 
-#: templates/menu_style.html:66
+#: templates/menu_style.html:83
 msgid "Cliquez pour choisir la couleur de remplissage"
 msgstr ""
 
-#: templates/menu_style.html:69
+#: templates/menu_style.html:86
 msgid "Définit la couleur de fond de la carte"
 msgstr ""
 
-#: templates/menu_style.html:69
+#: templates/menu_style.html:86
 msgid "Couleur fond"
 msgstr ""
 
-#: templates/menu_style.html:70
+#: templates/menu_style.html:87
 msgid "Cliquez pour choisir la couleur de fond"
 msgstr ""
 
-#: templates/menu_style.html:73
+#: templates/menu_style.html:90
 msgid "Définit l'épaisseur des contours de la carte (0 = aucun contour)"
 msgstr ""
 
-#: templates/menu_style.html:73
+#: templates/menu_style.html:90
 msgid "Largeur contour (0 = aucun)"
 msgstr ""
 
-#: templates/menu_style.html:75
+#: templates/menu_style.html:92
 msgid "Faites glisser pour ajuster l'épaisseur"
 msgstr ""
 
-#: templates/menu_style.html:85 templates/menu_style.html:87
+#: templates/menu_style.html:102 templates/menu_style.html:104
 msgid "Style Toner"
 msgstr ""
 
-#: templates/menu_style.html:135
+#: templates/menu_style.html:157 templates/menu_style.html:191
+#: templates/menu_style.html:223 templates/menu_style.html:248
+#: templates/menu_style.html:276 templates/modal_infos.html:11
+msgid "Fermer"
+msgstr ""
+
+#: templates/menu_style.html:161
 msgid ""
 "Les réglages marqués « Profil » ne sont conservés qu'après un clic sur « "
 "Sauvegarder ». Un « • » à côté du nom du profil signale des modifications"
 " en attente."
 msgstr ""
 
-#: templates/menu_style.html:142
+#: templates/menu_style.html:166
 msgid "Créer un profil avec les réglages actuels"
 msgstr ""
 
-#: templates/menu_style.html:145
-msgid "Sauvegarder le profil actif"
-msgstr ""
-
-#: templates/menu_style.html:148
+#: templates/menu_style.html:169
 msgid "Importer un profil JSON"
 msgstr ""
 
-#: templates/menu_style.html:165 templates/menu_style.html:197
-#: templates/menu_style.html:222 templates/menu_style.html:250
-#: templates/modal_infos.html:11
-msgid "Fermer"
-msgstr ""
-
-#: templates/menu_style.html:169 templates/menu_style.html:170
+#: templates/menu_style.html:195 templates/menu_style.html:196
 msgid "Nom du profil"
 msgstr ""
 
-#: templates/menu_style.html:193
+#: templates/menu_style.html:219
 msgid "Confirmer la suppression"
 msgstr ""
 
-#: templates/menu_style.html:194 templates/menu_style.html:219
+#: templates/menu_style.html:220 templates/menu_style.html:245
 msgid "Cette action est définitive"
 msgstr ""
 
-#: templates/menu_style.html:200
+#: templates/menu_style.html:226
 msgid "Êtes-vous sûr de vouloir supprimer ce profil ?"
 msgstr ""
 
-#: templates/menu_style.html:218
+#: templates/menu_style.html:244
 msgid "Confirmer la réinitialisation"
 msgstr ""
 
-#: templates/menu_style.html:225
+#: templates/menu_style.html:251
 msgid "Êtes-vous sûr de vouloir réinitialiser ce profil aux valeurs par défaut ?"
 msgstr ""
 
-#: templates/menu_style.html:247
+#: templates/menu_style.html:273
 msgid "Le profil actif a été modifié"
 msgstr ""
 
-#: templates/menu_style.html:253
+#: templates/menu_style.html:279
 msgid "Vous avez des modifications non enregistrées."
 msgstr ""
 
-#: templates/menu_style.html:257
+#: templates/menu_style.html:283
 msgid "Abandonner"
 msgstr ""
 
-#: templates/menu_style.html:258
+#: templates/menu_style.html:284
 msgid "Enregistrer et charger"
 msgstr ""
 
@@ -2707,54 +2749,5 @@ msgstr ""
 
 #: templates/modal_first_use.html:51
 msgid "Ignorer pour l'instant"
-msgstr ""
-
-#: templates/app.html
-msgid "Chargez votre fichier .gpx pour commencer"
-msgstr ""
-
-#: templates/app.html
-msgid "Redimensionner la carte"
-msgstr ""
-
-
-#: templates/menu_style.html
-msgid "Gérer les profils"
-msgstr ""
-
-#: static/js/profiles.js
-msgid "Choisir un profil"
-msgstr ""
-
-#: static/js/bdd.js
-msgid "cache"
-msgstr ""
-
-#: static/js/bdd.js
-msgid "caches"
-msgstr ""
-
-#: static/js/bdd.js
-msgid "le ${date}"
-msgstr ""
-
-#: static/js/bdd.js
-msgid "du ${start} au ${end}"
-msgstr ""
-
-#: static/js/bdd.js
-msgid "aujourd'hui à ${time}"
-msgstr ""
-
-#: static/js/bdd.js
-msgid "hier à ${time}"
-msgstr ""
-
-#: static/js/bdd.js
-msgid "importé ${when}"
-msgstr ""
-
-#: templates/menu_animation.html
-msgid "Barre de contrôle flottante"
 msgstr ""
 
