@@ -25,6 +25,10 @@ export function startBackgroundMusicIfAny(){
         if (isRecordingActive()) return;
         if (blockBackgroundAudioPlayback) return;
 
+        // Nettoyer une éventuelle instance précédente (ex. relance après pause
+        // sans passage par resumeBackgroundMusic) pour ne pas fuiter de contexte.
+        stopBackgroundMusic();
+
         const enabled = !!(pkg.options?.record?.audio?.enabled);
         if (!enabled) return;
 
@@ -50,6 +54,38 @@ export function startBackgroundMusicIfAny(){
         bgAudioEl.play().then(()=>{ bgAudioActive = true; }).catch(e => console.warn('Lecture audio bloquée:', e));
     } catch(e) {
         console.warn('startBackgroundMusicIfAny error:', e);
+    }
+}
+
+// Pause douce : conserve l'élément, le contexte et la position de lecture pour
+// que resumeBackgroundMusic reprenne exactement où la musique s'était arrêtée.
+export function pauseBackgroundMusic(){
+    try { if (bgAudioEl) bgAudioEl.pause(); } catch(_) {}
+    try { if (bgAudioCtx) bgAudioCtx.suspend().catch(()=>{}); } catch(_) {}
+    bgAudioActive = false;
+}
+
+// Reprend la piste en pause à sa position courante. Si rien n'était en pause
+// (ex. reprise sans musique démarrée), tente un démarrage normal.
+export function resumeBackgroundMusic(){
+    try {
+        if (isRecordingActive() || blockBackgroundAudioPlayback) {
+            stopBackgroundMusic();
+            return;
+        }
+        if (!bgAudioEl || !bgAudioCtx) {
+            startBackgroundMusicIfAny();
+            return;
+        }
+        // Piste déjà finie au moment de la pause : ne pas la relancer depuis zéro
+        if (bgAudioEl.ended) {
+            stopBackgroundMusic();
+            return;
+        }
+        try { bgAudioCtx.resume().catch(()=>{}); } catch(_) {}
+        bgAudioEl.play().then(()=>{ bgAudioActive = true; }).catch(e => console.warn('Reprise audio bloquée:', e));
+    } catch(e) {
+        console.warn('resumeBackgroundMusic error:', e);
     }
 }
 

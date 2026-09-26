@@ -93,6 +93,8 @@ import {
 import {
     setBackgroundAudioBlocked,
     startBackgroundMusicIfAny,
+    pauseBackgroundMusic,
+    resumeBackgroundMusic,
     stopBackgroundMusic,
 } from './background_audio.js';
 import {
@@ -934,6 +936,8 @@ export function startAnimation(restart=false) {
         if (!infos) {
             infos = createObjectInfos();
         }
+        // Reprendre la musique de fond là où la pause l'avait laissée
+        try { resumeBackgroundMusic(); } catch(e) { console.warn('resumeBackgroundMusic error:', e); }
     }
 
     let flashOptions = pkg.options.flash
@@ -1134,7 +1138,7 @@ export function pauseAnimation() {
         endTimeout = null;
     }
     // Mettre la musique de fond en pause (elle reprendra à la reprise)
-    try { stopBackgroundMusic(); } catch(e) { console.warn('pauseAnimation stopBackgroundMusic error:', e); }
+    try { pauseBackgroundMusic(); } catch(e) { console.warn('pauseAnimation pauseBackgroundMusic error:', e); }
     // La carte, vectorSource, les points et currentDate sont conservés tels quels
 }
 
