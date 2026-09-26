@@ -120,6 +120,25 @@ dist\MyGCFlow\MyGCFlow.exe
    `--generate-notes`, qui recopie les titres de commits — lisible pour un
    développeur, pas pour un utilisateur.
 
+### Comment écrire ces notes
+
+La modale de mise à jour n'affiche pas du Markdown : elle en extrait une liste
+de puces. D'où trois règles, tant que des versions ≤ 0.0.1 sont installées
+quelque part :
+
+- **une puce par ligne, sans repli.** La 0.0.1 traite chaque ligne du corps
+  comme une puce : un paragraphe replié sur trois lignes y apparaît en trois
+  fragments. Les versions suivantes recollent les lignes, mais écrire des
+  lignes longues donne le même rendu partout ;
+- **les intertitres en `##`.** Les deux versions ignorent les lignes commençant
+  par `#` : GitHub affiche les sections, la modale n'affiche que les puces. Un
+  `**Titre**` s'afficherait au contraire avec ses astérisques ;
+- **pas de balisage dans le texte** (accents graves, italiques) : il ressort
+  littéralement dans la modale.
+
+Pour prévisualiser ce que verra l'utilisateur :
+`python -c "import html, pathlib, options; [print('•', html.unescape(e)) for e in options._changelog_lines(pathlib.Path('docs/release_notes/0.0.2.md').read_text(encoding='utf-8'))]"`
+
 > **Le dépôt doit être public.** L'API Releases d'un dépôt privé répond 404 aux
 > utilisateurs, et ses assets ne sont pas téléchargeables : ni la vérification
 > ni le lien de téléchargement ne fonctionneraient.
