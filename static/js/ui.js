@@ -916,19 +916,34 @@ function initOptionsElements() {
     inputAudioFile = document.getElementById('inputAudioFile');
     if (inputAudioFile) {
         // Gérer la sélection/désélection d'un fichier audio
-        inputAudioFile.addEventListener('change', function() {
+        inputAudioFile.addEventListener('change', async function() {
             if (this.files && this.files.length > 0) {
+                const file = this.files[0];
+                // Indicateur de chargement : le fichier n'est utilisable qu'une
+                // fois ses métadonnées lues (durée via refreshMusicDuration).
+                const infoDiv = document.getElementById('audioFileInfo');
+                if (infoDiv) {
+                    infoDiv.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>' + t('Chargement de la musique...');
+                }
+                const btnDuration = document.getElementById('btnSetDurationFromAudio');
+                if (btnDuration) btnDuration.classList.add('disabled');
                 // Fichier sélectionné - cocher automatiquement la checkbox
                 if (cbRecordAudioEnable) {
                     cbRecordAudioEnable.checked = true;
                 }
-                // Afficher les informations du fichier audio
-                displayAudioFileInfo(this.files[0]);
                 // Le réglage qui change ici est « Inclure la musique », coché
                 // juste au-dessus : c'est lui que l'indicateur doit confirmer.
                 // Le champ fichier n'est pas suivi, sans quoi l'indicateur
                 // s'allumerait sur le dernier champ manipulé, sans rapport.
                 changeRecordValues(cbRecordAudioEnable); // Met à jour les options
+                // Attendre la lecture des métadonnées (mise en cache,
+                // anti-course) : le fichier est alors utilisable.
+                await refreshMusicDuration();
+                // Un autre fichier a pu être choisi entre-temps : n'afficher
+                // les infos que si c'est toujours celui-ci.
+                if (inputAudioFile.files && inputAudioFile.files[0] === file) {
+                    await displayAudioFileInfo(file);
+                }
             } else {
                 // Aucun fichier - masquer les infos et revenir au mode rythme
                 // si la durée était calée sur cette musique.
@@ -938,9 +953,8 @@ function initOptionsElements() {
                     cbRecordAudioEnable.checked = false;
                     cbRecordAudioEnable.disabled = true;
                 }
+                refreshMusicDuration();
             }
-            // Relire la durée (mise en cache, anti-course) puis tout le plan.
-            refreshMusicDuration();
             // Activer/désactiver le bouton de calage et la checkbox selon si un fichier est chargé
             updateAudioDurationButton();
         });
