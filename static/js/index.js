@@ -22,8 +22,11 @@ export * from './flash_animations.js';
 export * from './profiles.js';
 export * from './theme.js';
 
-// Import des fichiers de démonstration uniquement en développement
-if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+// Scripts de démonstration (fonctions window.demo*/test* à appeler depuis la
+// console), réservés au développement. Le drapeau vient de Flask : tester
+// l'adresse ne servait à rien puisque l'application installée sert elle aussi
+// sur 127.0.0.1, et ces fichiers ne sont pas dans le paquet distribué.
+if (document.body?.dataset.dev === '1') {
     import('./demo_toasts.js');
     import('./demo_flash.js');
 }

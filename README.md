@@ -177,7 +177,7 @@ GitHub Release.
 - [docs/preferences-et-profils.md](docs/preferences-et-profils.md) — global settings vs. profiles
 - [docs/async-tasks.md](docs/async-tasks.md) — background tasks API
 - [docs/translations.md](docs/translations.md) — i18n rules
-- [README_TESTS_VIDEO.md](README_TESTS_VIDEO.md) — video test matrix
+- [docs/notes/README_TESTS_VIDEO.md](docs/notes/README_TESTS_VIDEO.md) — video test matrix
 
 ## Credits
 

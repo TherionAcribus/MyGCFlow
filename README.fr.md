@@ -184,7 +184,7 @@ Release GitHub.
 - [docs/preferences-et-profils.md](docs/preferences-et-profils.md) — réglages globaux vs profils
 - [docs/async-tasks.md](docs/async-tasks.md) — API des tâches de fond
 - [docs/translations.md](docs/translations.md) — règles d'internationalisation
-- [README_TESTS_VIDEO.md](README_TESTS_VIDEO.md) — matrice des tests vidéo
+- [docs/notes/README_TESTS_VIDEO.md](docs/notes/README_TESTS_VIDEO.md) — matrice des tests vidéo
 
 ## Crédits
 

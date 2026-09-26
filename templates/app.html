@@ -52,7 +52,7 @@
         <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/mygcflow-icon.png') }}">
     </head>
 
-    <body>
+    <body data-dev="{{ 1 if config.DEBUG else 0 }}">
         <main>
             <div id="mapTabsContainer">
                 <div id="mapWithFrames">
@@ -198,6 +198,7 @@
 
         <!-- Traductions JavaScript -->
         <script src="/js_translations.js"></script>
+
 
         <!-- Barrel de mes scripts -->
         <script type="module" src="../static/js/index.js"></script>

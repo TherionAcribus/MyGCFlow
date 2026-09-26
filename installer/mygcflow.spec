@@ -28,6 +28,10 @@ VERSION_TUPLE = tuple(_numbers + [0] * (4 - len(_numbers)))
 EXCLUDED_RESOURCES = {
     Path("static/geojson_data.json"),
     Path("static/json/country_state.json"),
+    # Scripts de démonstration : outils de développement (fonctions à appeler
+    # depuis la console), chargés seulement quand <body data-dev="1">.
+    Path("static/js/demo_flash.js"),
+    Path("static/js/demo_toasts.js"),
 }
 
 
