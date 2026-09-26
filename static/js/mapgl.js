@@ -596,7 +596,10 @@ function updatePointAppearClock() {
     // tant qu'une animation tourne, même sans nouveau point ni flash.
     setPointsGlowing(glowDays > 0 && isAnimationInProgress());
 
-    let pending = pointsGlowing || updateAnimatedCacheCount(now);
+    // updateAnimatedCacheCount écrit le compteur dans le DOM : il doit
+    // s'évaluer même quand la persistance est active, sinon le compteur reste
+    // figé à sa valeur de départ pendant toute l'animation.
+    let pending = updateAnimatedCacheCount(now) || pointsGlowing;
     if (pointsAppearing) {
         if (now >= pointsAppearUntil) {
             pointsAppearing = false;
