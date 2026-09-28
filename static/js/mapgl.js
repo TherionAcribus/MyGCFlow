@@ -119,6 +119,7 @@ import { liveFlashStep } from './flash_style_cache.mjs';
 import { staggerDelayFrames, staggerDelayMs } from './flash_impulse.mjs';
 import { COUNTER_ANIMATION_MS, createCountAnimator } from './overlay_counter.mjs';
 import { fetchWithTimeout, FETCH_TIMEOUTS } from './fetch_with_timeout.mjs';
+import { createPausableTimeout } from './pausable_timer.mjs';
 
 // Debug toasts/assemblage
 const TOAST_DEBUG = false;
@@ -209,7 +210,11 @@ let animationAccMs = 0;
 // animationRafId est remis à null alors que la carte n'affiche toujours qu'une
 // partie des points : c'est ce que animationRafId seul ne permet pas de savoir.
 let animationInProgress = false;
-let endTimeout = null;
+// Maintien de fin d'animation (extraEndSeconds). Suspendable : pendant une pause
+// « onglet masqué » de l'enregistrement MediaRecorder, un setTimeout ordinaire
+// finirait par se déclencher (les timers d'arrière-plan restent bridés mais non
+// bloqués) et arrêterait la capture au milieu de la pause.
+const endHoldTimer = createPausableTimeout(() => finalizeAnimationEnd());
 // element qui stocke les infos à afficher dans les frames. Sortie de la fonction pour pouvoir les garder en mémoire
 let infos;
 // flag pour indiquer si un enregistrement est en cours
@@ -222,9 +227,31 @@ let mrOutCanvas = null;
 let mrOutCtx = null;
 let mrDrawIntervalId = null;
 let mrProgressIntervalId = null;
-let mrStopTimeoutId = null;      // filet de sécurité (durée théorique très généreuse)
-let mrTailStopTimeoutId = null;  // arrêt réel piloté par la fin d'animation + tail freeze
+// Filet de sécurité (durée théorique très généreuse) : suspendable, sinon il
+// finirait par se déclencher pendant une pause « onglet masqué » et arrêterait
+// l'enregistrement alors que tout va bien.
+const mrSafetyTimer = createPausableTimeout(() => {
+    if (isMediaRecording) {
+        console.warn('[MediaRecorder] Arrêt par filet de sécurité (fin d\'animation non détectée)');
+        stopMediaRecorderPipeline(true);
+    }
+});
+// Arrêt réel piloté par la fin d'animation + tail freeze : suspendable pour la
+// même raison (le gel ne doit pas s'écouler pendant que rien n'est enregistré).
+const mrTailTimer = createPausableTimeout(() => {
+    if (isMediaRecording) stopMediaRecorderPipeline(true);
+});
 let mrTailMs = 3000;             // durée du gel de la dernière frame après la fin d'animation
+// Horloge « temps actif » du pipeline MediaRecorder : exclut les pauses d'onglet
+// masqué. mrStartedAtTs = performance.now() au démarrage ; mrPausedSince borne
+// la pause en cours ; mrPausedTotalMs cumule les pauses terminées.
+let mrStartedAtTs = 0;
+let mrPausedSince = null;
+let mrPausedTotalMs = 0;
+// Facteur de ralentissement réellement appliqué à la timeline au démarrage. La
+// préférence peut être modifiée en cours de route (moniteur de performance) :
+// la normalisation finale doit utiliser le facteur qui a gouverné la capture.
+let mrAppliedSlowdown = 1;
 let isMediaRecording = false;
 let mrIsFinalizing = false;
 let mrOnFinalizeRestoreTimePerDay = null;
@@ -549,7 +576,22 @@ function sampleAppearClock() {
         const fps = Number(pkg.options.record.framesPerSec) || 30;
         return pointAppearClock.sample('frames', globalRecordFrame * 1000 / fps);
     }
+    // En capture MediaRecorder, l'horloge live exclut les pauses « onglet
+    // masqué » : sans cela le temps de pause serait compté au retour et toutes
+    // les apparitions en cours sauteraient à leur état final dans la vidéo.
+    if (isMediaRecording) {
+        return pointAppearClock.sample('live', mrActiveElapsedMs());
+    }
     return pointAppearClock.sample('live', performance.now());
+}
+
+// Temps écoulé depuis le démarrage du pipeline MediaRecorder, pauses « onglet
+// masqué » exclues. Progression affichée, filet de sécurité et horloge
+// d'apparition des points partagent cette mesure.
+function mrActiveElapsedMs() {
+    let paused = mrPausedTotalMs;
+    if (mrPausedSince !== null) paused += performance.now() - mrPausedSince;
+    return Math.max(0, performance.now() - mrStartedAtTs - paused);
 }
 
 // Écrit l'attribut 'appear' lu par le style WebGL. Il est posé silencieusement
@@ -879,7 +921,6 @@ function endHighResCapture() {
 }
 
 function finalizeAnimationEnd() {
-    endTimeout = null;
     // Toutes les dates ont été déroulées : la carte affiche de nouveau la totalité
     // des points filtrés, un changement de style peut repartir de `features`.
     animationInProgress = false;
@@ -890,14 +931,12 @@ function finalizeAnimationEnd() {
     // depuis la fin réelle, après un court "tail" pour figer la dernière frame.
     if (isMediaRecording) {
         // Annuler le filet de sécurité théorique
-        try { if (mrStopTimeoutId) { clearTimeout(mrStopTimeoutId); mrStopTimeoutId = null; } } catch(_) {}
+        mrSafetyTimer.clear();
         const tailMs = Math.max(0, Number(mrTailMs) || 0);
         if (tailMs > 0) {
-            try { if (mrTailStopTimeoutId) clearTimeout(mrTailStopTimeoutId); } catch(_) {}
-            mrTailStopTimeoutId = setTimeout(() => {
-                mrTailStopTimeoutId = null;
-                if (isMediaRecording) stopMediaRecorderPipeline(true);
-            }, tailMs);
+            // Suspendable : une pause « onglet masqué » pendant le gel ne doit
+            // pas écouler le tail sans rien enregistrer.
+            mrTailTimer.arm(tailMs);
         } else if (isMediaRecording) {
             stopMediaRecorderPipeline(true);
         }
@@ -911,10 +950,7 @@ function finalizeAnimationEnd() {
 
 export function startAnimation(restart=false) {
     animationInProgress = true;
-    if (endTimeout) {
-        clearTimeout(endTimeout);
-        endTimeout = null;
-    }
+    endHoldTimer.clear();
     if (!restart) {
         // Vérification que vectorSource existe avant de l'utiliser
         if (window.vectorSource) {
@@ -1000,10 +1036,7 @@ export function startAnimation(restart=false) {
             animationRafId = null;
             const extraMs = getExtraEndMs();
             if (extraMs > 0) {
-                if (endTimeout) {
-                    clearTimeout(endTimeout);
-                }
-                endTimeout = setTimeout(() => finalizeAnimationEnd(), extraMs);
+                endHoldTimer.arm(extraMs);
             } else {
                 finalizeAnimationEnd();
             }
@@ -1027,10 +1060,7 @@ export function stopAnimation(){
     }
     animationLastTs = null;
 
-    if (endTimeout) {
-        clearTimeout(endTimeout);
-        endTimeout = null;
-    }
+    endHoldTimer.clear();
 
     // Arrêter le pipeline MediaRecorder si actif
     try {
@@ -1133,11 +1163,8 @@ export function pauseAnimation() {
         animationRafId = null;
     }
     animationLastTs = null;
-    // Stopper le timeout de fin éventuel
-    if (endTimeout) {
-        clearTimeout(endTimeout);
-        endTimeout = null;
-    }
+    // Stopper le maintien de fin éventuel
+    endHoldTimer.clear();
     // Mettre la musique de fond en pause (elle reprendra à la reprise)
     try { pauseBackgroundMusic(); } catch(e) { console.warn('pauseAnimation pauseBackgroundMusic error:', e); }
     // La carte, vectorSource, les points et currentDate sont conservés tels quels
@@ -2122,6 +2149,15 @@ async function startMediaRecorderPipeline(totalDurationMs, timelineScale = 1){
     mrRecordedChunks = [];
     mrRecorder = new MediaRecorder(mixedStream, { mimeType: mime, videoBitsPerSecond: vbps });
     isMediaRecording = true;
+    // Horloge « temps actif » : repart de zéro pour cette session. Les pauses
+    // « onglet masqué » seront déduites par mrActiveElapsedMs().
+    mrStartedAtTs = performance.now();
+    mrPausedSince = null;
+    mrPausedTotalMs = 0;
+    // Instantané du ralentissement réellement appliqué : la préférence peut être
+    // modifiée pendant la capture (moniteur de performance), la normalisation
+    // finale doit utiliser le facteur en vigueur ici.
+    mrAppliedSlowdown = Math.max(1, Number(timelineScale) || 1);
 
     mrRecorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) mrRecordedChunks.push(e.data); };
     mrRecorder.onstop = () => finalizeMediaRecorderVideo();
@@ -2173,6 +2209,12 @@ async function startMediaRecorderPipeline(totalDurationMs, timelineScale = 1){
     mrVisibilityHandler = () => {
         if (!isMediaRecording) return;
         if (document.hidden) {
+            // Figer les horloges : temps actif, minuteurs de fin et filet de
+            // sécurité cessent de s'écouler tant que la pause dure.
+            if (mrPausedSince === null) mrPausedSince = performance.now();
+            mrSafetyTimer.pause();
+            mrTailTimer.pause();
+            endHoldTimer.pause();
             try { if (mrDrawIntervalId) { clearInterval(mrDrawIntervalId); mrDrawIntervalId = null; } } catch(_) {}
             try { if (mrRecorder && mrRecorder.state === 'recording') mrRecorder.pause(); } catch(_) {}
             // rAF est déjà gelé ; remettre la référence temporelle à null évite tout
@@ -2182,6 +2224,24 @@ async function startMediaRecorderPipeline(totalDurationMs, timelineScale = 1){
                 try { mrVisibilityToast = pkg.showToast && pkg.showToast(pkg.t('Enregistrement en pause : revenez sur cet onglet pour reprendre la capture.'), 'warning', pkg.t('Onglet masqué'), 0); } catch(_) {}
             }
         } else {
+            // Déplier la pause : cumuler son temps et décaler les flashs « live »
+            // (horloge Date.now) pour qu'ils reprennent là où ils en étaient
+            // au lieu de sauter à leur état final dans la vidéo.
+            if (mrPausedSince !== null) {
+                const pausedMs = performance.now() - mrPausedSince;
+                mrPausedTotalMs += pausedMs;
+                mrPausedSince = null;
+                if (pausedMs > 0) {
+                    for (const flash of activeFlashes) {
+                        if (flash.maxFrames === undefined && typeof flash.start === 'number') {
+                            flash.start += pausedMs;
+                        }
+                    }
+                }
+            }
+            mrSafetyTimer.resume();
+            mrTailTimer.resume();
+            endHoldTimer.resume();
             try { if (mrRecorder && mrRecorder.state === 'paused') mrRecorder.resume(); } catch(_) {}
             startMrDrawLoop();
             if (mrVisibilityToast) { try { pkg.hideToast && pkg.hideToast(mrVisibilityToast); } catch(_) {} mrVisibilityToast = null; }
@@ -2189,10 +2249,10 @@ async function startMediaRecorderPipeline(totalDurationMs, timelineScale = 1){
     };
     document.addEventListener('visibilitychange', mrVisibilityHandler);
 
-    // Progression
-    const t0 = performance.now();
+    // Progression : temps actif, pauses « onglet masqué » exclues — sinon le
+    // pourcentage continuerait de grimper pendant que rien n'est enregistré.
     mrProgressIntervalId = setInterval(() => {
-        const elapsed = performance.now() - t0;
+        const elapsed = mrActiveElapsedMs();
         const progress = Math.min(100, Math.max(0, (elapsed / totalDurationMs) * 100));
         const _hasAudio = !!(pkg.options?.record?.audio?.enabled) && !!document.getElementById('inputAudioFile')?.files?.[0];
         const msg = `${progress.toFixed(1)}% | capture .webm${_hasAudio ? ' ♪' : ''}`;
@@ -2204,21 +2264,19 @@ async function startMediaRecorderPipeline(totalDurationMs, timelineScale = 1){
     // très généreux, ne sert qu'à éviter un enregistrement infini si la fin
     // d'animation n'était jamais atteinte (cas anormal). Il ne doit surtout PAS
     // se déclencher avant la fin réelle, même quand le rendu rame fortement.
-    const safetyMs = Math.max(0, totalDurationMs) * 4 + 60000;
-    mrStopTimeoutId = setTimeout(() => {
-        mrStopTimeoutId = null;
-        if (isMediaRecording) {
-            console.warn('[MediaRecorder] Arrêt par filet de sécurité (fin d\'animation non détectée)');
-            stopMediaRecorderPipeline(true);
-        }
-    }, safetyMs);
+    // Suspendable : il s'écoule en temps actif, jamais pendant une pause.
+    mrSafetyTimer.arm(Math.max(0, totalDurationMs) * 4 + 60000);
 }
 
 function stopMediaRecorderPipeline(finalize){
     try { if (mrDrawIntervalId) { clearInterval(mrDrawIntervalId); mrDrawIntervalId = null; } } catch(_) {}
     try { if (mrProgressIntervalId) { clearInterval(mrProgressIntervalId); mrProgressIntervalId = null; } } catch(_) {}
-    try { if (mrStopTimeoutId) { clearTimeout(mrStopTimeoutId); mrStopTimeoutId = null; } } catch(_) {}
-    try { if (mrTailStopTimeoutId) { clearTimeout(mrTailStopTimeoutId); mrTailStopTimeoutId = null; } } catch(_) {}
+    mrSafetyTimer.clear();
+    mrTailTimer.clear();
+    // Toute pause en cours s'arrête avec le pipeline : l'horloge active repartira
+    // de zéro à la prochaine session.
+    mrPausedSince = null;
+    mrPausedTotalMs = 0;
 
     // Retirer la garde « onglet masqué » (C8) et fermer son toast éventuel.
     try { if (mrVisibilityHandler) { document.removeEventListener('visibilitychange', mrVisibilityHandler); mrVisibilityHandler = null; } } catch(_) {}
@@ -2273,7 +2331,11 @@ function finalizeMediaRecorderVideo(){
 
         const wantsDownload = !!pkg.options?.record?.mediaRecorder?.downloadLocal;
         const wantsUpload = !!pkg.options?.record?.mediaRecorder?.uploadToServer;
-        const slowdown = Math.max(1, parseInt(pkg.options?.record?.mediaRecorder?.slowdownFactor) || 1);
+        // Facteur réellement appliqué à la timeline (instantané du démarrage) :
+        // la préférence a pu être modifiée pendant la capture par le moniteur
+        // de performance, et normaliser avec une autre valeur désynchroniserait
+        // la vidéo (vitesse, audio, tail freeze).
+        const slowdown = mrAppliedSlowdown;
         const wantsNorm = !!pkg.options?.record?.mediaRecorder?.offlineNormalization;
         const doNormalize = wantsNorm && slowdown > 1;
 
