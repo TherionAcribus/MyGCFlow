@@ -24,6 +24,7 @@ def index():
     response = make_response(render_template(
         'app.html',
         can_quit=bool(current_app.config.get('QUIT_HOOK')),
+        lang=(current_locale or 'fr').split('_')[0],
     ))
     if current_locale:
         response.set_cookie(
@@ -40,7 +41,8 @@ def index():
 def guide():
     """Mode d'emploi pas-à-pas, ouvert dans une page séparée."""
     current_locale = get_locale()
-    response = make_response(render_template('guide.html'))
+    response = make_response(render_template(
+        'guide.html', lang=(current_locale or 'fr').split('_')[0]))
     if current_locale:
         response.set_cookie(
             'mygcflow_lang',

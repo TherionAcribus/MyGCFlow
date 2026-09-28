@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 
-<html>
+<html lang="{{ lang or 'fr' }}">
     <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
         <!-- Thème (clair/sombre) appliqué AVANT tout CSS pour éviter le flash
              (FOUC) : on lit la préférence enregistrée (ou le réglage système) et
              on pose data-bs-theme sur <html> dès le parsing du <head>. La suite

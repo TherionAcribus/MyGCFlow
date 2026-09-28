@@ -790,97 +790,110 @@ main.fullscreen-mode #infosFrame span:not([hidden]) {
 }
 
 
-/* Couleurs distinctes pour les boutons de la barre latérale de contrôle */
+/* Couleurs distinctes pour les boutons de la barre latérale de contrôle.
+   Palette assombrie pour un contraste ≥ 4,5:1 (texte) / 3:1 (icônes) avec le
+   texte blanc ; les fonds clairs (ambre, pêche) utilisent un texte sombre. */
 /* Bouton Démarrer - Vert (action positive) */
 #btnStartBar {
-    background-color: #4caf50 !important;
+    background-color: #2e7d32 !important;
 }
 #btnStartBar:hover {
-    background-color: #45a049 !important;
+    background-color: #1b5e20 !important;
 }
 
-/* Bouton Enregistrer - Rouge/Orange (action d'enregistrement) */
+/* Bouton Exporter - Orange soutenu (action d'enregistrement) */
 #btnRecordBar {
-    background-color: #ff9800 !important;
+    background-color: #bf360c !important;
 }
 #btnRecordBar:hover {
-    background-color: #e68900 !important;
+    background-color: #a62f0a !important;
 }
 
-/* Bouton Pause - Jaune (déjà géré dans JS, mais on assure la cohérence) */
-#btnPauseBar.yellow.darken-2 {
+/* Bouton Pause - Ambre à texte sombre ; vert à l'état « Continuer » */
+#btnPauseBar {
     background-color: #f57c00 !important;
+    color: #212529 !important;
 }
-#btnPauseBar.yellow.darken-2:hover {
+#btnPauseBar:hover {
     background-color: #ef6c00 !important;
 }
 #btnPauseBar.green {
-    background-color: #4caf50 !important;
+    background-color: #2e7d32 !important;
+    color: #fff !important;
 }
 #btnPauseBar.green:hover {
-    background-color: #45a049 !important;
+    background-color: #1b5e20 !important;
 }
 
 /* Bouton Arrêter - Rouge foncé (action destructive) */
 #btnStopBar {
-    background-color: #f44336 !important;
+    background-color: #c62828 !important;
 }
 #btnStopBar:hover {
-    background-color: #d32f2f !important;
+    background-color: #b71c1c !important;
 }
 
 /* Bouton Plein écran - Bleu (action neutre/interface) */
 #btnToggleFullscreen {
-    background-color: #2196f3 !important;
+    background-color: #1565c0 !important;
 }
 #btnToggleFullscreen:hover {
-    background-color: #1976d2 !important;
+    background-color: #0d47a1 !important;
 }
 
 /* Couleurs des boutons du menu Animation (même schéma que la barre latérale) */
-/* Bouton Démarrer - Vert (action positive) */
+/* Bouton Prévisualiser - Vert (action positive) */
 #btnStartAnimation {
-    background-color: #4caf50 !important;
+    background-color: #2e7d32 !important;
 }
 #btnStartAnimation:hover {
-    background-color: #45a049 !important;
+    background-color: #1b5e20 !important;
 }
 
-/* Bouton Enregistrer - Orange (action d'enregistrement) */
+/* Bouton Exporter - Orange soutenu (action d'enregistrement) */
 #btnRecordAnimation {
-    background-color: #ff9800 !important;
+    background-color: #bf360c !important;
 }
 #btnRecordAnimation:hover {
-    background-color: #e68900 !important;
+    background-color: #a62f0a !important;
 }
 
-/* Bouton Pause - Jaune (état de pause) */
+/* Bouton Pause - Ambre à texte sombre ; vert à l'état « Continuer » */
 #btnPauseAnimation {
     background-color: #f57c00 !important;
+    color: #212529 !important;
 }
 #btnPauseAnimation:hover {
     background-color: #ef6c00 !important;
 }
+#btnPauseAnimation.restart {
+    background-color: #2e7d32 !important;
+    color: #fff !important;
+}
+#btnPauseAnimation.restart:hover {
+    background-color: #1b5e20 !important;
+}
 
 /* Bouton Arrêter - Rouge foncé (action destructive) */
 #btnStopAnimation {
-    background-color: #f44336 !important;
+    background-color: #c62828 !important;
 }
 #btnStopAnimation:hover {
-    background-color: #d32f2f !important;
+    background-color: #b71c1c !important;
 }
 
 /* Bouton Plein écran du menu - Bleu (action neutre/interface) */
 #btnFullscreenMode {
-    background-color: #2196f3 !important;
+    background-color: #1565c0 !important;
 }
 #btnFullscreenMode:hover {
-    background-color: #1976d2 !important;
+    background-color: #0d47a1 !important;
 }
 
-/* Bouton de suppression des images de capture - Rouge pâle (action de nettoyage) */
+/* Bouton de suppression des images de capture - Pêche à texte sombre */
 #btnCleanMoviePictures {
     background-color: #ffab91 !important;
+    color: #212529 !important;
 }
 #btnCleanMoviePictures:hover {
     background-color: #ff8a65 !important;
