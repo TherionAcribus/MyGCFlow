@@ -548,7 +548,12 @@ def _assemble_pictures(image_folder, output_video, fps=24, audio_path=None, audi
         _write_concat_list(image_files, fps_value, list_path)
 
         # -safe 0 : le script contient des chemins absolus, refusés par défaut.
-        cmd = [ffmpeg, '-y', '-f', 'concat', '-safe', '0', '-i', list_path]
+        # -r en ENTRÉE : le démuxeur concat a par défaut une base temporelle de
+        # 25 fps, quelles que soient les durées déclarées. Sans cadence explicite,
+        # l'échantillonnage vers une sortie à 30/60 fps dupliquait une image et
+        # en omettait une autre (vérifié en décodant les frames), alors que le
+        # fps et la durée du fichier restaient corrects.
+        cmd = [ffmpeg, '-y', '-f', 'concat', '-safe', '0', '-r', str(fps_value), '-i', list_path]
         if audio_file:
             # apad complète l'audio par du silence s'il est plus court que la vidéo ;
             # -t borne la sortie à la durée vidéo, ce qui coupe aussi un audio plus long.

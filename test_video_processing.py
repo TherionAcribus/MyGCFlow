@@ -73,6 +73,42 @@ class VideoProcessingTests(unittest.TestCase):
             draw.text((8, 8), f"frame {index + 1}/{frame_count}", fill=(255, 255, 255))
             image.save(folder / f"image_{index + 1:0{digits}d}.png")
 
+    def _create_solid_image_sequence(self, folder, count, width=64, height=36):
+        """Frames de couleur unie identifiables après encodage.
+
+        Les couleurs sont espacées d'au moins 32 niveaux par canal : la
+        classification par couleur la plus proche reste fiable malgré le bruit
+        de quantification et le sous-échantillonnage 4:2:0.
+        """
+        folder.mkdir(parents=True, exist_ok=True)
+        colors = [((index % 8) * 32, ((index // 8) % 8) * 32, 64) for index in range(count)]
+        digits = len(str(count))
+        for index, color in enumerate(colors):
+            Image.new("RGB", (width, height), color).save(folder / f"image_{index + 1:0{digits}d}.png")
+        return colors, width * height * 3
+
+    def _decode_frame_color_ids(self, video_path, colors, frame_size):
+        """Indice de la couleur source la plus proche pour chaque frame décodée."""
+        raw = subprocess.run(
+            [self.ffmpeg, '-v', 'error', '-i', str(video_path),
+             '-f', 'rawvideo', '-pix_fmt', 'rgb24', 'pipe:1'],
+            check=True, capture_output=True,
+        ).stdout
+        sequence = []
+        for offset in range(0, len(raw), frame_size):
+            frame = raw[offset:offset + frame_size]
+            pixels = len(frame) // 3
+            mean = (
+                sum(frame[0::3]) / pixels,
+                sum(frame[1::3]) / pixels,
+                sum(frame[2::3]) / pixels,
+            )
+            sequence.append(min(
+                range(len(colors)),
+                key=lambda i: sum((mean[c] - colors[i][c]) ** 2 for c in range(3)),
+            ))
+        return sequence
+
     def _run_scenario(self, scenario, tmp_path):
         fps = int(scenario["fps"])
         # Dimensions de la source : un scénario peut les rendre impaires pour
@@ -151,6 +187,27 @@ class VideoProcessingTests(unittest.TestCase):
                         self._run_scenario(scenario, Path(tmp))
                 finally:
                     os.chdir(previous_cwd)
+
+    def test_assembly_keeps_each_image_once_and_in_order(self):
+        """Une image source doit produire exactement une frame, dans l'ordre.
+
+        Le démuxeur concat travaillait par défaut sur une base de 25 fps : sans
+        cadence d'entrée explicite, une sortie à 30 ou 60 fps dupliquait une
+        image et en omettait une autre, alors que le fps et la durée du fichier
+        étaient corrects (reproduit en décodant les frames). Ce test couvre un
+        fps inférieur, égal et supérieur à cette base historique.
+        """
+        for fps in (24, 25, 30, 60):
+            with self.subTest(fps=fps), tempfile.TemporaryDirectory() as tmp:
+                folder = Path(tmp) / "captured"
+                colors, frame_size = self._create_solid_image_sequence(folder, fps)
+                output = Path(tmp) / "sequence.mp4"
+
+                result = _assemble_pictures(str(folder), str(output), fps=fps)
+
+                self.assertTrue(result["success"], result)
+                sequence = self._decode_frame_color_ids(output, colors, frame_size)
+                self.assertEqual(sequence, list(range(fps)))
 
     def test_rate_parser(self):
         self.assertEqual(_parse_rate("30000/1001"), 30000 / 1001)
