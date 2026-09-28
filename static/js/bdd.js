@@ -351,7 +351,7 @@ export function readBddValues({ offerFirstUse = false } = {}){
 
             const text = hasData
                 ? formatBddInfos(data)
-                : t('Aucune base de données chargée');
+                : t('Aucune trouvaille chargée');
 
             if (infos) infos.textContent = text;
             if (infosModal) infosModal.textContent = text;
@@ -415,8 +415,8 @@ function updateUIAfterClear() {
     const btn = document.getElementById('clearDatabaseBtn');
     const counter = document.getElementById('filtersCounter');
 
-    if (infos) infos.textContent = t('Aucune base de données chargée');
-    if (infosModal) infosModal.textContent = t('Aucune base de données chargée');
+    if (infos) infos.textContent = t('Aucune trouvaille chargée');
+    if (infosModal) infosModal.textContent = t('Aucune trouvaille chargée');
     if (btn) btn.style.display = 'none';
     if (counter) counter.textContent = t('Sélection: 0 / 0');
 
@@ -817,7 +817,7 @@ export function readBdd(){
     .then(response => response.json())
     .then(data => {
         if (!data.task_id) {
-            throw new Error(data.message || t('Impossible de lancer le chargement de la BDD'));
+            throw new Error(data.message || t('Impossible de lancer le chargement des données'));
         }
         pollGeojsonTask(data.task_id, {
             onProgress: (p) => {
@@ -962,7 +962,7 @@ async function clearDatabase() {
     // mais un clic en file d'attente juste avant la désactivation reste
     // possible : cette garde couvre ce cas limite.
     if (importInProgress) {
-        showError(t('Un import est en cours, veuillez patienter avant de vider la base.'), t('Import en cours'));
+        showError(t('Un import est en cours, veuillez patienter avant de supprimer les données.'), t('Import en cours'));
         return;
     }
 
@@ -972,7 +972,7 @@ async function clearDatabase() {
     const confirmed = await new Promise(resolve => {
         if (pkg && pkg.showConfirmation) {
             pkg.showConfirmation(
-                t("Êtes-vous sûr de vouloir vider la base de données ? Cette action est irréversible et supprimera toutes vos trouvailles."),
+                t("Êtes-vous sûr de vouloir supprimer toutes vos trouvailles ? Cette action est irréversible."),
                 t("Confirmation de suppression"),
                 () => resolve(true),
                 () => resolve(false)
@@ -991,7 +991,7 @@ async function clearDatabase() {
     
     try {
         // Afficher un toast de chargement
-        clearingToast = pkg.showLoadingToast(t("Vidage de la base de données..."), t("Suppression"));
+        clearingToast = pkg.showLoadingToast(t("Suppression des trouvailles..."), t("Suppression"));
 
         // Appel à l'endpoint pour vider la base de données
         const response = await fetch(`${CONFIG.BASE_URL}/clear_database`, {
@@ -1017,7 +1017,7 @@ async function clearDatabase() {
             if (clearingToast) {
                 pkg.hideToast(clearingToast);
             }
-            showSuccess(t("Base de données vidée avec succès"), t("Suppression réussie"));
+            showSuccess(t("Trouvailles supprimées avec succès"), t("Suppression réussie"));
             
         } else {
             throw new Error(result.message || 'Erreur inconnue');
@@ -1028,7 +1028,7 @@ async function clearDatabase() {
         if (clearingToast) {
             pkg.hideToast(clearingToast);
         }
-        showError(t("Erreur lors du vidage de la base de données: ") + error.message, t("Erreur"));
+        showError(t("Erreur lors de la suppression des trouvailles: ") + error.message, t("Erreur"));
     }
 }
 

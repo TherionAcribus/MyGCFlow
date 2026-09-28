@@ -120,7 +120,7 @@
                     </li>
                     <li>
                         <h3>{{ _("Chargez le fichier dans MyGCFlow") }}</h3>
-                        <p>{{ _("Dans l'onglet") }} <span class="ui-chip">{{ _("Données") }}</span>, {{ _("section") }} <strong>{{ _("Base de données") }}</strong>, {{ _("cliquez sur") }} <span class="ui-chip"><i class="ti ti-cloud-upload"></i> {{ _("Sélectionner et charger un fichier .gpx") }}</span> {{ _("et choisissez votre fichier. Le nombre de caches importées s'affiche une fois le chargement terminé.") }}</p>
+                        <p>{{ _("Dans l'onglet") }} <span class="ui-chip">{{ _("Données") }}</span>, {{ _("section") }} <strong>{{ _("Mes trouvailles") }}</strong>, {{ _("cliquez sur") }} <span class="ui-chip"><i class="ti ti-cloud-upload"></i> {{ _("Sélectionner et charger un fichier .gpx") }}</span> {{ _("et choisissez votre fichier. Le nombre de caches importées s'affiche une fois le chargement terminé.") }}</p>
                     </li>
                     <li>
                         <h3>{{ _("Filtrez vos caches") }}</h3>
@@ -134,7 +134,7 @@
                     </li>
                     <li>
                         <h3>{{ _("Repartir de zéro (optionnel)") }}</h3>
-                        <p>{{ _("Le bouton") }} <span class="ui-chip"><i class="ti ti-trash"></i> {{ _("Vider la base de données") }}</span> {{ _("supprime les données chargées si vous voulez importer un autre fichier.") }}</p>
+                        <p>{{ _("Le bouton") }} <span class="ui-chip"><i class="ti ti-trash"></i> {{ _("Supprimer mes trouvailles") }}</span> {{ _("supprime les données chargées si vous voulez importer un autre fichier.") }}</p>
                     </li>
                 </ol>
             </section>
@@ -150,7 +150,7 @@
                 <ol class="guide-steps">
                     <li>
                         <h3>{{ _("Choisissez un fond de carte") }}</h3>
-                        <p>{{ _("Dans le sous-onglet") }} <span class="ui-chip">{{ _("Cartes & Overlays") }}</span>, {{ _("sélectionnez un style :") }}</p>
+                        <p>{{ _("Dans le sous-onglet") }} <span class="ui-chip">{{ _("Carte, titre et informations") }}</span>, {{ _("sélectionnez un style :") }}</p>
                         <ul class="sub">
                             <li><strong>OSM</strong> — {{ _("OpenStreetMap, carte classique colorée") }}</li>
                             <li><strong>Toner</strong> — {{ _("noir et blanc, version claire ou sombre") }}</li>
@@ -205,7 +205,7 @@
                 <ol class="guide-steps">
                     <li>
                         <h3>{{ _("Définissez la période") }}</h3>
-                        <p>{{ _("Renseignez la") }} <span class="ui-chip">{{ _("Date de début") }}</span> {{ _("et la") }} <span class="ui-chip">{{ _("Date de fin") }}</span> {{ _("de l'animation. Par défaut elles couvrent toute votre base ; vous pouvez aussi reprendre les dates issues du filtre.") }}</p>
+                        <p>{{ _("Renseignez la") }} <span class="ui-chip">{{ _("Date de début") }}</span> {{ _("et la") }} <span class="ui-chip">{{ _("Date de fin") }}</span> {{ _("de l'animation. Par défaut elles couvrent toutes vos données ; vous pouvez aussi reprendre les dates issues du filtre.") }}</p>
                     </li>
                     <li>
                         <h3>{{ _("Réglez la vitesse") }}</h3>
@@ -220,11 +220,11 @@
                         <p>{{ _("Cochez") }} <span class="ui-chip">{{ _("Inclure la musique") }}</span>, {{ _("sélectionnez un fichier audio et ajustez le volume. Le bouton") }} <span class="ui-chip"><i class="ti ti-clock"></i> {{ _("Définir la durée de l'animation à partir de la musique") }}</span> {{ _("cale la durée totale sur celle du morceau.") }}</p>
                     </li>
                     <li>
-                        <h3>{{ _("Qualité d'enregistrement") }}</h3>
-                        <p>{{ _("Dans") }} <strong>{{ _("Enregistrement vidéo") }}</strong>, {{ _("choisissez le") }} <strong>{{ _("Mode d'enregistrement") }}</strong> :</p>
+                        <h3>{{ _("Qualité d'export") }}</h3>
+                        <p>{{ _("Dans") }} <strong>{{ _("Export vidéo") }}</strong>, {{ _("choisissez le") }} <strong>{{ _("Mode d'export") }}</strong> :</p>
                         <ul class="sub">
-                            <li><strong>MediaRecorder (.webm)</strong> — {{ _("rapide et léger, directement dans le navigateur.") }}</li>
-                            <li><strong>Images + ffmpeg</strong> — {{ _("plus lent mais plus flexible, assemblage côté serveur.") }}</li>
+                            <li><strong>{{ _("Capture rapide (.webm)") }}</strong> — {{ _("rapide et léger, directement dans le navigateur.") }}</li>
+                            <li><strong>{{ _("Rendu image par image") }}</strong> — {{ _("plus lent mais plus régulier, assemblage par l'application.") }}</li>
                         </ul>
                         <p>{{ _("Vous pouvez ensuite ajuster les FPS, le bitrate, le format vidéo et l'échelle de qualité.") }}</p>
                         <div class="guide-callout info">
@@ -235,13 +235,13 @@
                     <li>
                         <h3>{{ _("Lancez l'aperçu puis enregistrez") }}</h3>
                         <ul class="sub">
-                            <li><span class="ui-chip"><i class="ti ti-player-play"></i> {{ _("Démarrer") }}</span> — {{ _("joue l'animation à l'écran pour vérifier le rendu.") }}</li>
-                            <li><span class="ui-chip"><i class="ti ti-video"></i> {{ _("Enregistrer") }}</span> — {{ _("lance l'animation en capturant la vidéo.") }}</li>
+                            <li><span class="ui-chip"><i class="ti ti-player-play"></i> {{ _("Prévisualiser") }}</span> — {{ _("joue l'animation à l'écran pour vérifier le rendu.") }}</li>
+                            <li><span class="ui-chip"><i class="ti ti-video"></i> {{ _("Exporter") }}</span> — {{ _("lance l'animation en capturant la vidéo.") }}</li>
                             <li><span class="ui-chip"><i class="ti ti-player-pause"></i> {{ _("Pause") }}</span> {{ _("et") }} <span class="ui-chip"><i class="ti ti-player-stop"></i> {{ _("Arrêter") }}</span> {{ _("contrôlent la lecture.") }}</li>
                         </ul>
                         <div class="guide-callout tip">
                             <i class="ti ti-bulb"></i>
-                            <div>{{ _("Lancez d'abord un") }} <strong>{{ _("Démarrer") }}</strong> {{ _("pour valider le style et la vitesse, puis seulement") }} <strong>{{ _("Enregistrer") }}</strong> {{ _("pour la version finale.") }}</div>
+                            <div>{{ _("Lancez d'abord un") }} <strong>{{ _("Prévisualiser") }}</strong> {{ _("pour valider le style et la vitesse, puis seulement") }} <strong>{{ _("Exporter") }}</strong> {{ _("pour la version finale.") }}</div>
                         </div>
                     </li>
                     <li>

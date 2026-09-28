@@ -1299,7 +1299,7 @@ export function recordAnimation(){
             recordAnimationMediaRecorder();
             return;
         } else if (mode === 'mediarecorder' && !isMediaRecorderSupported()) {
-            pkg.showToast && pkg.showToast(pkg.t('MediaRecorder non supporté, bascule en mode images.'), 'warning', pkg.t('Compatibilité'));
+            pkg.showToast && pkg.showToast(pkg.t('Capture rapide non supportée, bascule en mode image par image.'), 'warning', pkg.t('Compatibilité'));
         }
     } catch(e) { console.warn('Detection MediaRecorder error:', e); }
 
@@ -2147,7 +2147,7 @@ function recordAnimationMediaRecorder(){
     // Démarrer capture MediaRecorder
     startMediaRecorderPipeline(totalMs * appliedSlowdown, appliedSlowdown).catch(e => {
         console.error('MediaRecorder pipeline error:', e);
-        pkg.showToast && pkg.showToast(pkg.t('Erreur MediaRecorder, bascule en mode images.'), 'error', pkg.t('Enregistrement'));
+        pkg.showToast && pkg.showToast(pkg.t('Erreur de la capture rapide, bascule en mode image par image.'), 'error', pkg.t('Enregistrement'));
         // Stopper proprement la boucle animation (rAF) déjà lancée par startAnimation()
         // AVANT de relancer recordAnimation(), pour éviter deux boucles d'avancement de date en parallèle
         try { stopMediaRecorderPipeline(false); } catch(_) {}
@@ -2318,7 +2318,7 @@ async function startMediaRecorderPipeline(totalDurationMs, timelineScale = 1){
             // plutôt que de poursuivre une capture irrécupérable.
             if (mrVideoStream.error) {
                 console.error('[MediaRecorder] Échec d\'envoi d\'un fragment:', mrVideoStream.error);
-                try { pkg.showToast && pkg.showToast(pkg.t('L\'envoi de la vidéo au serveur a échoué. Arrêt de l\'enregistrement.'), 'error', pkg.t('Enregistrement'), 8000); } catch(_) {}
+                try { pkg.showToast && pkg.showToast(pkg.t('La copie de la vidéo a échoué. Arrêt de l\'enregistrement.'), 'error', pkg.t('Enregistrement'), 8000); } catch(_) {}
                 try { stopMediaRecorderPipeline(true); } catch(_) {}
             }
         } else {
@@ -2554,7 +2554,7 @@ function finalizeMediaRecorderVideo(){
                     fd.append('video', finalBlob, fileName);
                     fd.append('fileName', fileName);
                     tasks.push(fetchWithTimeout(`${CONFIG.BASE_URL}/upload_video`, { method: 'POST', body: fd }, { timeoutMs: FETCH_TIMEOUTS.videoUpload, t: pkg.t }).then(r => r.json()).catch(e => ({ success:false, message: e?.message || 'upload error'}))
-                        .then(res => { if (!res?.success) throw new Error(res?.message || pkg.t('Upload échoué')); }));
+                        .then(res => { if (!res?.success) throw new Error(res?.message || pkg.t('Copie vers le dossier vidéo échouée')); }));
                 } catch(e) { console.warn('Upload setup failed:', e); }
             }
 
@@ -2711,7 +2711,7 @@ function finalizeMediaRecorderVideo(){
                 try { stream.abort(); } catch(_) {}
                 try { pkg.closeModalLoading(); } catch(_) {}
                 try { setBackgroundAudioBlocked(false); } catch(_) {}
-                try { pkg.showToast && pkg.showToast(pkg.t('L\'enregistrement a été interrompu : l\'envoi des données au serveur a échoué.'), 'error', pkg.t('Enregistrement'), 8000); } catch(_) {}
+                try { pkg.showToast && pkg.showToast(pkg.t('L\'enregistrement a été interrompu : la copie des données a échoué.'), 'error', pkg.t('Enregistrement'), 8000); } catch(_) {}
                 return;
             }
             console.warn('Traitement serveur échoué, repli sur le pipeline navigateur:', err);

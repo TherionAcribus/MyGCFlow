@@ -1039,7 +1039,7 @@ function updateRecordResolutionWarning() {
 
     const size = `${plan.width}×${plan.height}`;
     const parts = [isMediaRecorder
-        ? t('Sortie estimée : ${size}. MediaRecorder enregistre en temps réel : si la vidéo saccade, choisissez une résolution plus basse ou passez en mode « Images + ffmpeg ».', { size })
+        ? t('Sortie estimée : ${size}. La capture rapide enregistre en temps réel : si la vidéo saccade, choisissez une résolution plus basse ou passez en « Rendu image par image ».', { size })
         : t('Sortie estimée : ${size}. En mode images, l\'enregistrement devient beaucoup plus lent : chaque image est capturée, encodée et envoyée une par une. La vidéo, elle, ne perdra aucune image.', { size })];
 
     // Le débit ne concerne que MediaRecorder : en mode images, ffmpeg réencode
