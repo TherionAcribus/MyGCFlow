@@ -66,6 +66,8 @@
 .ti-home:before { content: "\eac1"; }
 .ti-icons:before { content: "\f1d4"; }
 .ti-info-circle:before { content: "\eac5"; }
+.ti-layout-board-split:before { content: "\ef94"; }
+.ti-layout-bottombar:before { content: "\ead3"; }
 .ti-link:before { content: "\eade"; }
 .ti-lock:before { content: "\eae2"; }
 .ti-lock-open:before { content: "\eae1"; }

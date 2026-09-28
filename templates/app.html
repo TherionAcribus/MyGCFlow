@@ -166,6 +166,27 @@
                         <i class="ti ti-player-stop me-1" aria-hidden="true"></i><span class="btn-label">{{ _("Arrêter") }}</span>
                     </button>
                 </div>
+                <!-- Préréglages de disposition : réglent la hauteur carte/réglages
+                     via le même mécanisme que le séparateur (ui.js,
+                     initMapTabsSplitPane) — découvrable sans trouver la poignée. -->
+                <div id="layoutPresets" class="btn-group" role="group"
+                     aria-label="{{ _('Disposition carte / réglages') }}">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-layout="map" aria-pressed="false"
+                            aria-label="{{ _('Grande carte') }}"
+                            data-bs-toggle="tooltip" data-bs-title="{{ _('Grande carte') }}">
+                        <i class="ti ti-map" aria-hidden="true"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-layout="balanced" aria-pressed="true"
+                            aria-label="{{ _('Disposition équilibrée') }}"
+                            data-bs-toggle="tooltip" data-bs-title="{{ _('Disposition équilibrée') }}">
+                        <i class="ti ti-layout-board-split" aria-hidden="true"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-layout="tabs" aria-pressed="false"
+                            aria-label="{{ _('Grands réglages') }}"
+                            data-bs-toggle="tooltip" data-bs-title="{{ _('Grands réglages') }}">
+                        <i class="ti ti-layout-bottombar" aria-hidden="true"></i>
+                    </button>
+                </div>
             </div>
 
             <!-- Tabs (Bootstrap 5) -->

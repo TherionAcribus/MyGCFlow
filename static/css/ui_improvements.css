@@ -752,6 +752,16 @@ main.fullscreen-mode #infosFrame span:not([hidden]) {
     margin-left: auto;
     align-items: center;
 }
+#layoutPresets {
+    margin-left: 6px;
+}
+/* L'état actif des préréglages reste visible aussi au clavier/lecteur
+   d'écran (aria-pressed synchronisé par syncLayoutPresets dans ui.js). */
+#layoutPresets .btn[aria-pressed="true"] {
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+    background-color: rgba(33, 150, 243, 0.12);
+}
 /* Sur petit écran, les actions rapides passent en icône seule pour que la
    barre collante reste compacte ; les aria-label portent le nom accessible. */
 @media (max-width: 575.98px) {

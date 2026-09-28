@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-28 20:23+0200\n"
+"POT-Creation-Date: 2026-09-28 20:54+0200\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -30,11 +30,11 @@ msgstr "Aucun fichier sélectionné"
 msgid "Le fichier fourni n'est pas un fichier GPX valide"
 msgstr "Le fichier fourni n'est pas un fichier GPX valide"
 
-#: bdd.py:153 static/js/bdd.js:180
+#: bdd.py:153
 msgid "Le fichier GPX n'est pas un fichier produit par Groundspeak."
 msgstr "Le fichier GPX n'est pas un fichier produit par Groundspeak."
 
-#: bdd.py:157 static/js/bdd.js:184
+#: bdd.py:157
 msgid "Le fichier GPX est une Pocket Query et non un fichier My Finds."
 msgstr "Le fichier GPX est une Pocket Query et non un fichier My Finds."
 
@@ -46,7 +46,7 @@ msgstr "Fichier reçu avec succès"
 msgid "L'archive .zip ne contient aucun fichier .gpx."
 msgstr "L'archive .zip ne contient aucun fichier .gpx."
 
-#: bdd.py:207 bdd.py:218 static/js/bdd.js:203
+#: bdd.py:207 bdd.py:218
 msgid "Le fichier est trop volumineux (200 Mo max)"
 msgstr "Le fichier est trop volumineux (200 Mo max)"
 
@@ -239,7 +239,7 @@ msgstr "Enregistrement vidéo"
 msgid "Traitement ffmpeg"
 msgstr "Traitement ffmpeg"
 
-#: capture.py:784 static/js/mapgl.js:1982 static/js/mapgl.js:2532
+#: capture.py:784
 msgid "Vidéo prête"
 msgstr "Vidéo prête"
 
@@ -297,7 +297,7 @@ msgstr "Filtres"
 msgid "Paramètres"
 msgstr "Paramètres"
 
-#: templates/app.html:143 templates/guide.html:46 templates/guide.html:73
+#: templates/app.html:145 templates/guide.html:46 templates/guide.html:73
 #: templates/guide.html:95 templates/guide.html:103 templates/guide.html:123
 #: templates/menu_animation.html:63 templates/menu_animation.html:77
 #: templates/menu_filtre.html:118 templates/menu_filtre.html:127
@@ -306,7 +306,7 @@ msgstr "Paramètres"
 msgid "Données"
 msgstr "Données"
 
-#: templates/app.html:144 templates/guide.html:49 templates/guide.html:78
+#: templates/app.html:146 templates/guide.html:49 templates/guide.html:78
 #: templates/guide.html:95 templates/guide.html:146 templates/guide.html:148
 #: templates/menu_informations.html:139 test_translations.py:31
 msgid "Style"
@@ -356,14 +356,13 @@ msgstr ""
 "La langue a été changée. L'application va redémarrer pour appliquer les "
 "modifications."
 
-#: blueprints/core.py:170 static/js/notifications.js:336
+#: blueprints/core.py:170
 msgid "Confirmer"
 msgstr "Confirmer"
 
-#: blueprints/core.py:172 static/js/notifications.js:337
-#: templates/menu_style.html:205 templates/menu_style.html:230
-#: templates/menu_style.html:255 templates/menu_style.html:283
-#: templates/modal_loading.html:14
+#: blueprints/core.py:172 templates/menu_style.html:205
+#: templates/menu_style.html:230 templates/menu_style.html:255
+#: templates/menu_style.html:283 templates/modal_loading.html:14
 msgid "Annuler"
 msgstr "Annuler"
 
@@ -428,1566 +427,6 @@ msgstr "Nouveau nom manquant"
 #, python-format
 msgid "Profil '%(name)s' introuvable"
 msgstr "Profil '%(name)s' introuvable"
-
-#: static/js/basemaps.js:100
-msgid ""
-"Certaines tuiles de la carte n'ont pas pu être chargées (connexion "
-"instable ?)."
-msgstr ""
-"Certaines tuiles de la carte n'ont pas pu être chargées (connexion "
-"instable ?)."
-
-#: static/js/basemaps.js:102 static/js/basemaps.js:139 static/js/ui.js:1966
-#: static/js/ui.js:1997 static/js/ui.js:2019 static/js/ui.js:2141
-#: static/js/ui.js:2155
-msgid "Carte"
-msgstr "Carte"
-
-#: static/js/basemaps.js:137
-#, python-brace-format
-msgid ""
-"${count} tuile(s) de carte n'ont pas pu être chargées pendant "
-"l'enregistrement : la vidéo peut comporter des zones vides."
-msgstr ""
-"${count} tuile(s) de carte n'ont pas pu être chargées pendant "
-"l'enregistrement : la vidéo peut comporter des zones vides."
-
-#: static/js/bdd.js:197
-msgid "Veuillez sélectionner un fichier .gpx ou .zip"
-msgstr "Veuillez sélectionner un fichier .gpx ou .zip"
-
-#: static/js/bdd.js:200
-msgid "Le fichier sélectionné est vide"
-msgstr "Le fichier sélectionné est vide"
-
-#: static/js/bdd.js:235
-msgid "Un import est déjà en cours, veuillez patienter."
-msgstr "Un import est déjà en cours, veuillez patienter."
-
-#: static/js/bdd.js:235 static/js/bdd.js:1138
-msgid "Import en cours"
-msgstr "Import en cours"
-
-#: static/js/bdd.js:240
-msgid "Fichier invalide"
-msgstr "Fichier invalide"
-
-#: static/js/bdd.js:275
-msgid "Déposez votre fichier .gpx pour le charger"
-msgstr "Déposez votre fichier .gpx pour le charger"
-
-#: static/js/bdd.js:368 static/js/bdd.js:394 static/js/mapgl.js:488
-#, python-brace-format
-msgid "le ${date}"
-msgstr "le ${date}"
-
-#: static/js/bdd.js:381
-#, python-brace-format
-msgid "du ${start} au ${end}"
-msgstr "du ${start} au ${end}"
-
-#: static/js/bdd.js:389
-#, python-brace-format
-msgid "aujourd'hui à ${time}"
-msgstr "aujourd'hui à ${time}"
-
-#: static/js/bdd.js:392
-#, python-brace-format
-msgid "hier à ${time}"
-msgstr "hier à ${time}"
-
-#: static/js/bdd.js:408
-#, fuzzy
-msgid "caches"
-msgstr "Cochez"
-
-#: static/js/bdd.js:408
-#, fuzzy
-msgid "cache"
-msgstr "Cochez"
-
-#: static/js/bdd.js:411
-#, python-brace-format
-msgid "importé ${when}"
-msgstr "importé ${when}"
-
-#: static/js/bdd.js:431 static/js/bdd.js:498 static/js/bdd.js:499
-#: templates/menu_data.html:31
-msgid "Aucune trouvaille chargée"
-msgstr "Aucune trouvaille chargée"
-
-#: static/js/bdd.js:501 templates/menu_data.html:65
-msgid "Sélection: 0 / 0"
-msgstr "Sélection: 0 / 0"
-
-#: static/js/bdd.js:843
-#, python-brace-format
-msgid "Envoi du fichier : ${pct}%"
-msgstr "Envoi du fichier : ${pct}%"
-
-#: static/js/bdd.js:852
-msgid "Réponse invalide du serveur"
-msgstr "Réponse invalide du serveur"
-
-#: static/js/bdd.js:856
-msgid "Impossible de lancer l'import GPX"
-msgstr "Impossible de lancer l'import GPX"
-
-#: static/js/bdd.js:866
-msgid "Traitement du fichier en cours..."
-msgstr "Traitement du fichier en cours..."
-
-#: static/js/bdd.js:872
-msgid "Erreur réseau lors de l'envoi du fichier"
-msgstr "Erreur réseau lors de l'envoi du fichier"
-
-#: static/js/bdd.js:873
-msgid "Envoi du fichier annulé"
-msgstr "Envoi du fichier annulé"
-
-#: static/js/bdd.js:887 static/js/bdd.js:1227
-msgid "Veuillez sélectionner un fichier .gpx"
-msgstr "Veuillez sélectionner un fichier .gpx"
-
-#: static/js/bdd.js:887 static/js/bdd.js:1227
-msgid "Aucun fichier"
-msgstr "Aucun fichier"
-
-#: static/js/bdd.js:925 static/js/bdd.js:1257
-msgid "Préparation de l'envoi..."
-msgstr "Préparation de l'envoi..."
-
-#: static/js/bdd.js:925 static/js/bdd.js:958 static/js/bdd.js:1257
-#: static/js/notifications.js:197 static/js/notifications.js:242
-msgid "Chargement"
-msgstr "Chargement"
-
-#: static/js/bdd.js:933 static/js/bdd.js:1264
-msgid "Fichier chargé avec succès !"
-msgstr "Fichier chargé avec succès !"
-
-#: static/js/bdd.js:933 static/js/mapgl.js:2530
-msgid "Terminé"
-msgstr "Terminé"
-
-#: static/js/bdd.js:946 static/js/bdd.js:953 static/js/bdd.js:1287
-#: static/js/bdd.js:1294
-msgid "Erreur lors du chargement du fichier"
-msgstr "Erreur lors du chargement du fichier"
-
-#: static/js/bdd.js:946 static/js/bdd.js:953 static/js/bdd.js:1025
-#: static/js/bdd.js:1033 static/js/bdd.js:1216 static/js/bdd.js:1287
-#: static/js/bdd.js:1294 static/js/notifications.js:310
-#: static/js/recording_perf.js:187 static/js/ui.js:1189
-msgid "Erreur"
-msgstr "Erreur"
-
-#: static/js/bdd.js:958
-msgid "Chargement de l'application..."
-msgstr "Chargement de l'application..."
-
-#: static/js/bdd.js:963
-msgid "Impossible de lancer le chargement des données"
-msgstr "Impossible de lancer le chargement des données"
-
-#: static/js/bdd.js:1025 static/js/bdd.js:1033
-msgid "Erreur lors du chargement des données"
-msgstr "Erreur lors du chargement des données"
-
-#: static/js/bdd.js:1087
-#, python-brace-format
-msgid "Sélection: ${selected} / ${total}"
-msgstr "Sélection: ${selected} / ${total}"
-
-#: static/js/bdd.js:1112
-msgid "Aucune cache ne correspond aux critères sélectionnés par les filtres."
-msgstr "Aucune cache ne correspond aux critères sélectionnés par les filtres."
-
-#: static/js/bdd.js:1112
-msgid "Aucune cache visible"
-msgstr "Aucune cache visible"
-
-#: static/js/bdd.js:1138
-msgid "Un import est en cours, veuillez patienter avant de supprimer les données."
-msgstr "Un import est en cours, veuillez patienter avant de supprimer les données."
-
-#: static/js/bdd.js:1151
-msgid ""
-"Êtes-vous sûr de vouloir supprimer toutes vos trouvailles ? Cette action "
-"est irréversible."
-msgstr ""
-"Êtes-vous sûr de vouloir supprimer toutes vos trouvailles ? Cette action "
-"est irréversible."
-
-#: static/js/bdd.js:1152
-msgid "Confirmation de suppression"
-msgstr "Confirmation de suppression"
-
-#: static/js/bdd.js:1155 templates/guide.html:137 templates/menu_data.html:26
-msgid "Supprimer mes trouvailles"
-msgstr "Supprimer mes trouvailles"
-
-#: static/js/bdd.js:1162
-msgid "Confirmation non disponible, action annulée."
-msgstr "Confirmation non disponible, action annulée."
-
-#: static/js/bdd.js:1162 static/js/bdd.js:1174
-msgid "Suppression"
-msgstr "Suppression"
-
-#: static/js/bdd.js:1174
-msgid "Suppression des trouvailles..."
-msgstr "Suppression des trouvailles..."
-
-#: static/js/bdd.js:1205
-msgid "Trouvailles supprimées avec succès"
-msgstr "Trouvailles supprimées avec succès"
-
-#: static/js/bdd.js:1205
-msgid "Suppression réussie"
-msgstr "Suppression réussie"
-
-#: static/js/bdd.js:1216
-msgid "Erreur lors de la suppression des trouvailles: "
-msgstr "Erreur lors de la suppression des trouvailles: "
-
-#: static/js/bdd.js:1264
-msgid "Chargement terminé"
-msgstr "Chargement terminé"
-
-#: static/js/bdd.js:1301
-msgid "Chargement et affichage des points..."
-msgstr "Chargement et affichage des points..."
-
-#: static/js/bdd.js:1301 static/js/mapgl.js:361 static/js/notifications.js:268
-msgid "Affichage des points"
-msgstr "Affichage des points"
-
-#: static/js/bdd.js:1307
-#, fuzzy
-msgid "Impossible de lancer la génération du GeoJSON"
-msgstr "Impossible de lancer l'import GPX"
-
-#: static/js/bdd.js:1318 static/js/bdd.js:1380 static/js/bdd.js:1387
-msgid "Erreur lors de l'affichage des points sur la carte"
-msgstr "Erreur lors de l'affichage des points sur la carte"
-
-#: static/js/bdd.js:1318 static/js/bdd.js:1380 static/js/bdd.js:1387
-msgid "Erreur d'affichage"
-msgstr "Erreur d'affichage"
-
-#: static/js/fetch_with_timeout.mjs:41
-msgid "Le serveur local ne répond pas (délai dépassé)"
-msgstr "Le serveur local ne répond pas (délai dépassé)"
-
-#: static/js/gc_colors.js:28
-#, fuzzy, python-brace-format
-msgid "Erreur lors du chargement des couleurs GC (${status}): ${statusText}"
-msgstr "Erreur lors du chargement des données"
-
-#: static/js/mapgl.js:164
-msgid "Impossible de charger html2canvas"
-msgstr "Impossible de charger html2canvas"
-
-#: static/js/mapgl.js:362
-msgid "Mise à jour de l'affichage des points..."
-msgstr "Mise à jour de l'affichage des points..."
-
-#: static/js/mapgl.js:485
-msgid "Sans nom"
-msgstr "Sans nom"
-
-#: static/js/mapgl.js:486
-msgid "Trouvé"
-msgstr "Trouvé"
-
-#: static/js/mapgl.js:486
-msgid "DNF"
-msgstr "DNF"
-
-#: static/js/mapgl.js:487
-#, python-brace-format
-msgid "Publié le ${date}"
-msgstr "Publié le ${date}"
-
-#: static/js/mapgl.js:1302
-msgid "Capture rapide non supportée, bascule en mode image par image."
-msgstr "Capture rapide non supportée, bascule en mode image par image."
-
-#: static/js/mapgl.js:1302
-#, fuzzy
-msgid "Compatibilité"
-msgstr "Compatibilité maximale (4:2:0)"
-
-#: static/js/mapgl.js:1309
-msgid "Données en cours de chargement. Veuillez réessayer."
-msgstr "Données en cours de chargement. Veuillez réessayer."
-
-#: static/js/mapgl.js:1309 static/js/mapgl.js:1345 static/js/mapgl.js:1351
-#: static/js/mapgl.js:2050 static/js/notifications.js:314
-msgid "Attention"
-msgstr "Attention"
-
-#: static/js/mapgl.js:1322
-#, fuzzy
-msgid "Préparation de l'enregistrement..."
-msgstr "Préparation de l'envoi..."
-
-#: static/js/mapgl.js:1322
-#, fuzzy
-msgid "Nettoyage initial"
-msgstr "Nettoyage"
-
-#: static/js/mapgl.js:1337
-msgid "Un assemblage vidéo est en cours. Réessayez à la fin du traitement."
-msgstr "Un assemblage vidéo est en cours. Réessayez à la fin du traitement."
-
-#: static/js/mapgl.js:1338
-#, fuzzy
-msgid "Enregistrement annulé"
-msgstr "Enregistrement vidéo"
-
-#: static/js/mapgl.js:1343
-msgid "Répertoire d’images nettoyé."
-msgstr "Répertoire d’images nettoyé."
-
-#: static/js/mapgl.js:1343
-#, fuzzy
-msgid "Préparation"
-msgstr "Préparation de l'envoi..."
-
-#: static/js/mapgl.js:1345
-msgid "Nettoyage initial impossible. Poursuite de l'enregistrement."
-msgstr "Nettoyage initial impossible. Poursuite de l'enregistrement."
-
-#: static/js/mapgl.js:1351
-msgid "Erreur nettoyage initial. Poursuite."
-msgstr "Erreur nettoyage initial. Poursuite."
-
-#: static/js/mapgl.js:1427
-#, fuzzy
-msgid "0% | préparation..."
-msgstr "Préparation de l'envoi..."
-
-#: static/js/mapgl.js:1438 static/js/mapgl.js:2063
-msgid " ♪ La musique sera intégrée automatiquement après la capture."
-msgstr " ♪ La musique sera intégrée automatiquement après la capture."
-
-#: static/js/mapgl.js:1444
-msgid "Capture en cours – Ne pas bouger la fenêtre"
-msgstr "Capture en cours – Ne pas bouger la fenêtre"
-
-#: static/js/mapgl.js:1445
-#, fuzzy
-msgid "Préparation de la capture..."
-msgstr "Préparation de l'envoi..."
-
-#: static/js/mapgl.js:1468
-msgid "Capture en pause : revenez sur cet onglet pour la poursuivre."
-msgstr "Capture en pause : revenez sur cet onglet pour la poursuivre."
-
-#: static/js/mapgl.js:1468 static/js/mapgl.js:2401
-msgid "Onglet masqué"
-msgstr "Onglet masqué"
-
-#: static/js/mapgl.js:1531
-msgid "Le rendu initial de la carte n'a pas abouti (timeout)"
-msgstr "Le rendu initial de la carte n'a pas abouti (timeout)"
-
-#: static/js/mapgl.js:1608
-msgid "Nettoyage en cours..."
-msgstr "Nettoyage en cours..."
-
-#: static/js/mapgl.js:1670
-#, fuzzy
-msgid "erreur inconnue"
-msgstr "Erreur API"
-
-#: static/js/mapgl.js:1672
-#, python-brace-format
-msgid "La capture a été interrompue suite à une erreur : ${message}"
-msgstr "La capture a été interrompue suite à une erreur : ${message}"
-
-#: static/js/mapgl.js:1674
-msgid "Capture interrompue"
-msgstr "Capture interrompue"
-
-#: static/js/mapgl.js:1702
-msgid "task_id manquant"
-msgstr "task_id manquant"
-
-#: static/js/mapgl.js:1703
-msgid "Délai d'assemblage dépassé"
-msgstr "Délai d'assemblage dépassé"
-
-#: static/js/mapgl.js:1712
-msgid "Tâche introuvable sur le serveur (purgée ou serveur redémarré)"
-msgstr "Tâche introuvable sur le serveur (purgée ou serveur redémarré)"
-
-#: static/js/mapgl.js:1726
-#, fuzzy
-msgid "Tâche échouée"
-msgstr "Import échoué"
-
-#: static/js/mapgl.js:1733
-#, python-brace-format
-msgid ""
-"Suivi de la tâche interrompu après ${count} erreurs consécutives : "
-"${detail}"
-msgstr ""
-"Suivi de la tâche interrompu après ${count} erreurs consécutives : "
-"${detail}"
-
-#: static/js/mapgl.js:1834
-msgid "Envoi des dernières images..."
-msgstr "Envoi des dernières images..."
-
-#: static/js/mapgl.js:1895 static/js/ui.js:5194
-msgid "Assemblage en cours"
-msgstr "Assemblage en cours"
-
-#: static/js/mapgl.js:1895
-msgid "Création de la vidéo à partir des images..."
-msgstr "Création de la vidéo à partir des images..."
-
-#: static/js/mapgl.js:1949
-#, fuzzy
-msgid "Impossible de lancer l'assemblage vidéo"
-msgstr "Impossible de lancer l'import GPX"
-
-#: static/js/mapgl.js:1955
-#, fuzzy
-msgid "Création de la vidéo..."
-msgstr "Préparation de l'envoi..."
-
-#: static/js/mapgl.js:1961
-msgid "Vidéo créée. Nettoyage des images..."
-msgstr "Vidéo créée. Nettoyage des images..."
-
-#: static/js/mapgl.js:1962
-#, fuzzy
-msgid "Nettoyage en cours"
-msgstr "Nettoyage en cours..."
-
-#: static/js/mapgl.js:1962
-msgid "Vidéo créée avec succès. Nettoyage des images..."
-msgstr "Vidéo créée avec succès. Nettoyage des images..."
-
-#: static/js/mapgl.js:1978
-#, fuzzy
-msgid "Nettoyage terminé"
-msgstr "Nettoyage"
-
-#: static/js/mapgl.js:1982
-msgid "Traitement automatique terminé avec succès !"
-msgstr "Traitement automatique terminé avec succès !"
-
-#: static/js/mapgl.js:1994
-#, python-brace-format
-msgid "Erreur lors du traitement automatique: ${message}"
-msgstr "Erreur lors du traitement automatique: ${message}"
-
-#: static/js/mapgl.js:1996
-#, fuzzy
-msgid "Erreur chaîne"
-msgstr "Erreur d'affichage"
-
-#: static/js/mapgl.js:2050
-msgid "Données en cours de chargement. Réessayez."
-msgstr "Données en cours de chargement. Réessayez."
-
-#: static/js/mapgl.js:2121
-msgid "Enregistrement en cours – Ne pas bouger la fenêtre"
-msgstr "Enregistrement en cours – Ne pas bouger la fenêtre"
-
-#: static/js/mapgl.js:2122
-msgid "Démarrage de la capture..."
-msgstr "Démarrage de la capture..."
-
-#: static/js/mapgl.js:2150
-msgid "Erreur de la capture rapide, bascule en mode image par image."
-msgstr "Erreur de la capture rapide, bascule en mode image par image."
-
-#: static/js/mapgl.js:2150 static/js/mapgl.js:2321 static/js/mapgl.js:2335
-#: static/js/mapgl.js:2532 static/js/mapgl.js:2630 static/js/mapgl.js:2714
-#: static/js/mapgl.js:2718
-#, fuzzy
-msgid "Enregistrement"
-msgstr "Enregistrement…"
-
-#: static/js/mapgl.js:2287
-msgid "Résolution réduite aux capacités du navigateur."
-msgstr "Résolution réduite aux capacités du navigateur."
-
-#: static/js/mapgl.js:2321
-msgid "La copie de la vidéo a échoué. Arrêt de l'enregistrement."
-msgstr "La copie de la vidéo a échoué. Arrêt de l'enregistrement."
-
-#: static/js/mapgl.js:2335
-msgid ""
-"Erreur de l'encodeur vidéo. Arrêt de l'enregistrement et récupération de "
-"la séquence déjà capturée."
-msgstr ""
-"Erreur de l'encodeur vidéo. Arrêt de l'enregistrement et récupération de "
-"la séquence déjà capturée."
-
-#: static/js/mapgl.js:2401
-msgid ""
-"Enregistrement en pause : revenez sur cet onglet pour reprendre la "
-"capture."
-msgstr ""
-"Enregistrement en pause : revenez sur cet onglet pour reprendre la "
-"capture."
-
-#: static/js/mapgl.js:2557
-msgid "Copie vers le dossier vidéo échouée"
-msgstr "Copie vers le dossier vidéo échouée"
-
-#: static/js/mapgl.js:2572
-#, fuzzy
-msgid "Finalisation"
-msgstr "Animation"
-
-#: static/js/mapgl.js:2572
-#, fuzzy
-msgid "Écriture de la durée de la vidéo..."
-msgstr "En attente de la lecture de la durée de la musique."
-
-#: static/js/mapgl.js:2585
-msgid "Ajout audio"
-msgstr "Ajout audio"
-
-#: static/js/mapgl.js:2585
-msgid "Fusion de la piste audio avec la vidéo en cours..."
-msgstr "Fusion de la piste audio avec la vidéo en cours..."
-
-#: static/js/mapgl.js:2616 static/js/video_postprocess.js:29
-#, fuzzy
-msgid "Normalisation"
-msgstr "Information"
-
-#: static/js/mapgl.js:2616
-#, python-brace-format
-msgid "Accélération x${applicable} pour lecture à vitesse normale..."
-msgstr "Accélération x${applicable} pour lecture à vitesse normale..."
-
-#: static/js/mapgl.js:2630
-msgid "La vidéo n'a pas pu être assemblée."
-msgstr "La vidéo n'a pas pu être assemblée."
-
-#: static/js/mapgl.js:2637
-#, fuzzy
-msgid "Traitement serveur"
-msgstr "Traitement du fichier en cours..."
-
-#: static/js/mapgl.js:2637
-msgid "Envoi de la vidéo au serveur..."
-msgstr "Envoi de la vidéo au serveur..."
-
-#: static/js/mapgl.js:2660 static/js/mapgl.js:2666
-#, fuzzy
-msgid "Traitement serveur..."
-msgstr "Traitement du fichier en cours..."
-
-#: static/js/mapgl.js:2664
-msgid "Traitement serveur non démarré"
-msgstr "Traitement serveur non démarré"
-
-#: static/js/mapgl.js:2714
-msgid "L'enregistrement a été interrompu : la copie des données a échoué."
-msgstr "L'enregistrement a été interrompu : la copie des données a échoué."
-
-#: static/js/mapgl.js:2718
-msgid "Traitement serveur indisponible, repli local..."
-msgstr "Traitement serveur indisponible, repli local..."
-
-#: static/js/mapgl.js:2765
-msgid "Élément non trouvé"
-msgstr "Élément non trouvé"
-
-#: static/js/mapgl.js:2782
-msgid "Timeout rendercomplete (5s) : rendu carte bloqué"
-msgstr "Timeout rendercomplete (5s) : rendu carte bloqué"
-
-#: static/js/mapgl.js:2798
-#, fuzzy
-msgid "Aucun canvas trouvé dans la carte"
-msgstr "Aucun waypoint trouvé dans le fichier GPX"
-
-#: static/js/mapgl.js:2843
-msgid "Échec conversion canvas en blob"
-msgstr "Échec conversion canvas en blob"
-
-#: static/js/notifications.js:91 static/js/notifications.js:373
-#: templates/menu_style.html:40 templates/menu_style.html:192
-#: templates/menu_style.html:224 templates/menu_style.html:249
-#: templates/menu_style.html:277 templates/modal_infos.html:11
-msgid "Fermer"
-msgstr "Fermer"
-
-#: static/js/notifications.js:197 static/js/notifications.js:242
-msgid "Chargement en cours..."
-msgstr "Chargement en cours..."
-
-#: static/js/notifications.js:268
-msgid "Affichage des points..."
-msgstr "Affichage des points..."
-
-#: static/js/notifications.js:306
-msgid "Succès"
-msgstr "Succès"
-
-#: static/js/notifications.js:318
-msgid "Information"
-msgstr "Information"
-
-#: static/js/notifications.js:334
-msgid "Confirmation"
-msgstr "Confirmation"
-
-#: static/js/options.js:63 static/js/options.js:82
-msgid "Impossible de vérifier les mises à jour. Vérifiez votre connexion."
-msgstr "Impossible de vérifier les mises à jour. Vérifiez votre connexion."
-
-#: static/js/options.js:64 static/js/options.js:83
-#, fuzzy
-msgid "Erreur de vérification"
-msgstr "pour valider vos modifications."
-
-#: static/js/options.js:100
-msgid "Votre application est à jour"
-msgstr "Votre application est à jour"
-
-#: static/js/options.js:100 static/js/options.js:207
-msgid "Version actuelle"
-msgstr "Version actuelle"
-
-#: static/js/options.js:115
-#, python-brace-format
-msgid "Nouvelle version ${version} du ${date} trouvée"
-msgstr "Nouvelle version ${version} du ${date} trouvée"
-
-#: static/js/options.js:116
-#, python-brace-format
-msgid "Nouvelle version ${version} trouvée"
-msgstr "Nouvelle version ${version} trouvée"
-
-#: static/js/options.js:118 static/js/options.js:301
-msgid "Mise à jour disponible"
-msgstr "Mise à jour disponible"
-
-#: static/js/options.js:206
-msgid "🚀 Mise à jour disponible !"
-msgstr "🚀 Mise à jour disponible !"
-
-#: static/js/options.js:208
-msgid "Dernière version"
-msgstr "Dernière version"
-
-#: static/js/options.js:209
-msgid "Nouveautés et améliorations"
-msgstr "Nouveautés et améliorations"
-
-#: static/js/options.js:210
-#, fuzzy
-msgid "Télécharger la mise à jour"
-msgstr "Vérifier les mises à jour"
-
-#: static/js/options.js:211
-msgid "Ignorer cette version"
-msgstr "Ignorer cette version"
-
-#: static/js/options.js:212
-msgid "Plus tard"
-msgstr "Plus tard"
-
-#: static/js/options.js:300
-msgid "Vous ne serez plus averti pour cette version."
-msgstr "Vous ne serez plus averti pour cette version."
-
-#: static/js/profiles.js:81
-msgid "espace"
-msgstr "espace"
-
-#: static/js/profiles.js:257
-msgid "Import échoué"
-msgstr "Import échoué"
-
-#: static/js/profiles.js:259
-#, python-brace-format
-msgid "Profil \"${name}\" importé"
-msgstr "Profil \"${name}\" importé"
-
-#: static/js/profiles.js:263
-msgid "Erreur import du profil"
-msgstr "Erreur import du profil"
-
-#: static/js/profiles.js:289
-msgid "Erreur API"
-msgstr "Erreur API"
-
-#: static/js/profiles.js:295
-#, python-brace-format
-msgid "Erreur: ${message}"
-msgstr "Erreur: ${message}"
-
-#: static/js/profiles.js:343 static/js/profiles.js:1350
-#, python-brace-format
-msgid "Profil \"${name}\" chargé"
-msgstr "Profil \"${name}\" chargé"
-
-#: static/js/profiles.js:372
-#, python-brace-format
-msgid "Profil \"${name}\" sauvegardé"
-msgstr "Profil \"${name}\" sauvegardé"
-
-#: static/js/profiles.js:425
-#, python-brace-format
-msgid "Profil \"${name}\" créé, mais l'enregistrement des réglages a échoué"
-msgstr "Profil \"${name}\" créé, mais l'enregistrement des réglages a échoué"
-
-#: static/js/profiles.js:435
-#, python-brace-format
-msgid "Profil \"${name}\" créé"
-msgstr "Profil \"${name}\" créé"
-
-#: static/js/profiles.js:451
-#, python-brace-format
-msgid "Profil dupliqué: \"${name}\""
-msgstr "Profil dupliqué: \"${name}\""
-
-#: static/js/profiles.js:463
-#, python-brace-format
-msgid "Profil \"${name}\" supprimé"
-msgstr "Profil \"${name}\" supprimé"
-
-#: static/js/profiles.js:533
-#, python-brace-format
-msgid "Profil \"${name}\" réinitialisé"
-msgstr "Profil \"${name}\" réinitialisé"
-
-#: static/js/profiles.js:548
-msgid "Export échoué"
-msgstr "Export échoué"
-
-#: static/js/profiles.js:559
-#, python-brace-format
-msgid "Profil \"${name}\" exporté"
-msgstr "Profil \"${name}\" exporté"
-
-#: static/js/profiles.js:562
-msgid "Erreur export du profil"
-msgstr "Erreur export du profil"
-
-#: static/js/profiles.js:582
-msgid "Profil introuvable ou UID manquant"
-msgstr "Profil introuvable ou UID manquant"
-
-#: static/js/profiles.js:597
-msgid "Échec de la sauvegarde du profil par défaut"
-msgstr "Échec de la sauvegarde du profil par défaut"
-
-#: static/js/profiles.js:602
-#, python-brace-format
-msgid "Profil \"${name}\" défini comme profil par défaut"
-msgstr "Profil \"${name}\" défini comme profil par défaut"
-
-#: static/js/profiles.js:615
-msgid "Erreur lors de la définition du profil par défaut"
-msgstr "Erreur lors de la définition du profil par défaut"
-
-#: static/js/profiles.js:630 static/js/profiles.js:891
-msgid "Aucun profil"
-msgstr "Aucun profil"
-
-#: static/js/profiles.js:716 static/js/profiles.js:2058
-msgid "Dupliquer"
-msgstr "Dupliquer"
-
-#: static/js/profiles.js:717 static/js/profiles.js:2038
-msgid "Renommer"
-msgstr "Renommer"
-
-#: static/js/profiles.js:718 templates/guide.html:239 templates/guide.html:244
-#: templates/menu_animation.html:35
-msgid "Exporter"
-msgstr "Exporter"
-
-#: static/js/profiles.js:719 templates/menu_options.html:99
-#: templates/menu_style.html:256
-msgid "Réinitialiser"
-msgstr "Réinitialiser"
-
-#: static/js/profiles.js:720 templates/menu_style.html:231
-msgid "Supprimer"
-msgstr "Supprimer"
-
-#: static/js/profiles.js:724
-msgid "Définir comme par défaut"
-msgstr "Définir comme par défaut"
-
-#: static/js/profiles.js:802
-msgid "Profil par défaut"
-msgstr "Profil par défaut"
-
-#: static/js/profiles.js:855 templates/menu_style.html:273
-msgid "Modifications non enregistrées"
-msgstr "Modifications non enregistrées"
-
-#: static/js/profiles.js:902
-msgid "Choisir un profil"
-msgstr "Choisir un profil"
-
-#: static/js/profiles.js:1149
-#, python-brace-format
-msgid ""
-"Le profil \"${name}\" contient des modifications non enregistrées. Que "
-"voulez-vous faire ?"
-msgstr ""
-"Le profil \"${name}\" contient des modifications non enregistrées. Que "
-"voulez-vous faire ?"
-
-#: static/js/profiles.js:1150
-msgid "Vous avez des modifications non enregistrées. Que voulez-vous faire ?"
-msgstr "Vous avez des modifications non enregistrées. Que voulez-vous faire ?"
-
-#: static/js/profiles.js:1354
-msgid "Erreur lors du chargement du profil par défaut"
-msgstr "Erreur lors du chargement du profil par défaut"
-
-#: static/js/profiles.js:1387
-msgid "Aucun profil par défaut"
-msgstr "Aucun profil par défaut"
-
-#: static/js/profiles.js:1482
-#, python-brace-format
-msgid "Profil \"${selectedProfile}\" appliqué et défini comme profil par défaut"
-msgstr "Profil \"${selectedProfile}\" appliqué et défini comme profil par défaut"
-
-#: static/js/profiles.js:1483
-msgid "Aucun profil par défaut défini"
-msgstr "Aucun profil par défaut défini"
-
-#: static/js/profiles.js:1621
-msgid "Le profil n'a pas pu être chargé : aucun profil n'est actif."
-msgstr "Le profil n'a pas pu être chargé : aucun profil n'est actif."
-
-#: static/js/profiles.js:2023
-msgid "Enregistrer dans un nouveau profil"
-msgstr "Enregistrer dans un nouveau profil"
-
-#: static/js/profiles.js:2023
-msgid "Nouveau profil"
-msgstr "Nouveau profil"
-
-#: static/js/profiles.js:2029
-msgid "Enregistrer le profil"
-msgstr "Enregistrer le profil"
-
-#: static/js/profiles.js:2029 templates/menu_style.html:206
-msgid "Créer"
-msgstr "Créer"
-
-#: static/js/profiles.js:2036
-msgid "Renommer le profil"
-msgstr "Renommer le profil"
-
-#: static/js/profiles.js:2056
-msgid "Dupliquer le profil"
-msgstr "Dupliquer le profil"
-
-#: static/js/profiles.js:2112
-msgid "Le nom doit contenir au moins une lettre ou un chiffre"
-msgstr "Le nom doit contenir au moins une lettre ou un chiffre"
-
-#: static/js/profiles.js:2134
-#, python-brace-format
-msgid "« ${conflict} » existe déjà : la copie sera nommée « ${suggested} »"
-msgstr "« ${conflict} » existe déjà : la copie sera nommée « ${suggested} »"
-
-#: static/js/profiles.js:2141
-#, python-brace-format
-msgid "Un profil nommé « ${name} » existe déjà"
-msgstr "Un profil nommé « ${name} » existe déjà"
-
-#: static/js/profiles.js:2142
-#, python-brace-format
-msgid ""
-"Ce nom est déjà pris par « ${conflict} » : les deux se réduisent au "
-"fichier « ${key} »"
-msgstr ""
-"Ce nom est déjà pris par « ${conflict} » : les deux se réduisent au "
-"fichier « ${key} »"
-
-#: static/js/profiles.js:2151
-#, python-brace-format
-msgid ""
-"Caractères ignorés (${dropped}) : le profil sera enregistré sous « ${key}"
-" »"
-msgstr ""
-"Caractères ignorés (${dropped}) : le profil sera enregistré sous « ${key}"
-" »"
-
-#: static/js/profiles.js:2209
-msgid "Veuillez saisir un nom de profil"
-msgstr "Veuillez saisir un nom de profil"
-
-#: static/js/profiles.js:2268
-#, python-brace-format
-msgid "Profil renommé en \"${name}\""
-msgstr "Profil renommé en \"${name}\""
-
-#: static/js/profiles.js:2282
-#, python-brace-format
-msgid "Êtes-vous sûr de vouloir supprimer le profil \"${name}\" ?"
-msgstr "Êtes-vous sûr de vouloir supprimer le profil \"${name}\" ?"
-
-#: static/js/profiles.js:2301
-#, python-brace-format
-msgid ""
-"Êtes-vous sûr de vouloir réinitialiser le profil \"${name}\" aux valeurs "
-"par défaut ?"
-msgstr ""
-"Êtes-vous sûr de vouloir réinitialiser le profil \"${name}\" aux valeurs "
-"par défaut ?"
-
-#: static/js/record.js:29
-msgid "Échec conversion en Blob"
-msgstr "Échec conversion en Blob"
-
-#: static/js/record.js:33
-#, fuzzy
-msgid "Échec chargement image"
-msgstr "Chargement"
-
-#: static/js/record.js:203
-#, fuzzy
-msgid "Type de données image non supporté"
-msgstr "Format non supporté"
-
-#: static/js/record.js:230
-#, fuzzy
-msgid "Enregistrement réinitialisé"
-msgstr "Enregistrement vidéo"
-
-#: static/js/recording_perf.js:144
-#, python-brace-format, python-format
-msgid ""
-"Performance d'enregistrement instable (${pct}% de frames lentes). "
-"Souhaitez-vous augmenter le ralentissement à x${slowdown} automatiquement"
-" ?"
-msgstr ""
-"Performance d'enregistrement instable (${pct}% de frames lentes). "
-"Souhaitez-vous augmenter le ralentissement à x${slowdown} automatiquement"
-" ?"
-
-#: static/js/recording_perf.js:164 static/js/recording_perf.js:217
-#: static/js/recording_perf.js:243
-#, fuzzy
-msgid "Performance enregistrement"
-msgstr "Mode d'enregistrement"
-
-#: static/js/recording_perf.js:180
-#, python-brace-format
-msgid ""
-"Ralentissement augmenté à x${slowdown}. Redémarrez l'enregistrement pour "
-"appliquer le changement."
-msgstr ""
-"Ralentissement augmenté à x${slowdown}. Redémarrez l'enregistrement pour "
-"appliquer le changement."
-
-#: static/js/recording_perf.js:182
-#, fuzzy
-msgid "Paramètre mis à jour"
-msgstr "Paramètres"
-
-#: static/js/recording_perf.js:187
-#, fuzzy
-msgid "Erreur lors de la mise à jour du paramètre."
-msgstr "Erreur lors de l'affichage des points sur la carte"
-
-#: static/js/recording_perf.js:194
-#, python-brace-format
-msgid ""
-"Vous pouvez manuellement augmenter le ralentissement à x${slowdown} dans "
-"les paramètres d'enregistrement."
-msgstr ""
-"Vous pouvez manuellement augmenter le ralentissement à x${slowdown} dans "
-"les paramètres d'enregistrement."
-
-#: static/js/recording_perf.js:196
-#, fuzzy
-msgid "Conseil"
-msgstr "Annuler"
-
-#: static/js/recording_perf.js:201 templates/guide.html:171
-#: templates/menu_informations.html:244
-msgid "Appliquer"
-msgstr "Appliquer"
-
-#: static/js/recording_perf.js:201
-msgid "Ignorer"
-msgstr "Ignorer"
-
-#: static/js/recording_perf.js:210
-#, python-brace-format, python-format
-msgid ""
-"Performance instable (${pct}% de frames lentes). Augmentez le "
-"ralentissement à x${slowdown} dans les paramètres."
-msgstr ""
-"Performance instable (${pct}% de frames lentes). Augmentez le "
-"ralentissement à x${slowdown} dans les paramètres."
-
-#: static/js/recording_perf.js:224
-#, python-brace-format
-msgid ""
-"Le ralentissement est déjà au maximum (x${slowdown}). Réduisez le nombre "
-"de points affichés ou la résolution."
-msgstr ""
-"Le ralentissement est déjà au maximum (x${slowdown}). Réduisez le nombre "
-"de points affichés ou la résolution."
-
-#: static/js/recording_perf.js:229
-msgid ""
-"Réduisez la vitesse d'animation (augmentez la durée par jour) ou le "
-"nombre de points affichés."
-msgstr ""
-"Réduisez la vitesse d'animation (augmentez la durée par jour) ou le "
-"nombre de points affichés."
-
-#: static/js/recording_perf.js:234
-#, python-brace-format, python-format
-msgid ""
-"Performance d'enregistrement instable (${pct}% de frames lentes). "
-"${suggestion}"
-msgstr ""
-"Performance d'enregistrement instable (${pct}% de frames lentes). "
-"${suggestion}"
-
-#: static/js/saved_indicator.mjs:110
-msgid "Enregistrement…"
-msgstr "Enregistrement…"
-
-#: static/js/saved_indicator.mjs:114
-msgid "Enregistré"
-msgstr "Enregistré"
-
-#: static/js/saved_indicator.mjs:122
-msgid "Non enregistré"
-msgstr "Non enregistré"
-
-#: static/js/ui.js:270
-#, python-brace-format
-msgid "Musique : ${d}"
-msgstr "Musique : ${d}"
-
-#: static/js/ui.js:280
-#, python-brace-format
-msgid ""
-"Musique plus courte que la durée minimale (${min}) : durée ${d} "
-"appliquée, la musique s'arrêtera avant la fin."
-msgstr ""
-"Musique plus courte que la durée minimale (${min}) : durée ${d} "
-"appliquée, la musique s'arrêtera avant la fin."
-
-#: static/js/ui.js:283
-#, python-brace-format
-msgid "Durée calée sur la musique (${d})."
-msgstr "Durée calée sur la musique (${d})."
-
-#: static/js/ui.js:288
-#, python-brace-format
-msgid ""
-"La musique (${m}) est plus longue que la vidéo (${v}) : elle sera coupée "
-"en fin de vidéo."
-msgstr ""
-"La musique (${m}) est plus longue que la vidéo (${v}) : elle sera coupée "
-"en fin de vidéo."
-
-#: static/js/ui.js:292
-#, python-brace-format
-msgid "La musique (${m}) se termine avant la fin de la vidéo (${v})."
-msgstr "La musique (${m}) se termine avant la fin de la vidéo (${v})."
-
-#: static/js/ui.js:1039
-msgid ""
-"Ce format vidéo n'est pas supporté par votre navigateur et sera ignoré au"
-" démarrage de l'enregistrement."
-msgstr ""
-"Ce format vidéo n'est pas supporté par votre navigateur et sera ignoré au"
-" démarrage de l'enregistrement."
-
-#: static/js/ui.js:1040 static/js/ui.js:2224
-msgid "Format non supporté"
-msgstr "Format non supporté"
-
-#: static/js/ui.js:1111
-msgid "Chargement de la musique..."
-msgstr "Chargement de la musique..."
-
-#: static/js/ui.js:1185
-msgid "Durée de l'animation calée sur la musique"
-msgstr "Durée de l'animation calée sur la musique"
-
-#: static/js/ui.js:1185
-msgid "Musique"
-msgstr "Musique"
-
-#: static/js/ui.js:1189
-msgid "Erreur lors de la lecture du fichier audio"
-msgstr "Erreur lors de la lecture du fichier audio"
-
-#: static/js/ui.js:1243
-#, python-brace-format
-msgid ""
-"Sortie estimée : ${size}. La capture rapide enregistre en temps réel : si"
-" la vidéo saccade, choisissez une résolution plus basse ou passez en « "
-"Rendu image par image »."
-msgstr ""
-"Sortie estimée : ${size}. La capture rapide enregistre en temps réel : si"
-" la vidéo saccade, choisissez une résolution plus basse ou passez en « "
-"Rendu image par image »."
-
-#: static/js/ui.js:1244
-#, python-brace-format
-msgid ""
-"Sortie estimée : ${size}. En mode images, l'enregistrement devient "
-"beaucoup plus lent : chaque image est capturée, encodée et envoyée une "
-"par une. La vidéo, elle, ne perdra aucune image."
-msgstr ""
-"Sortie estimée : ${size}. En mode images, l'enregistrement devient "
-"beaucoup plus lent : chaque image est capturée, encodée et envoyée une "
-"par une. La vidéo, elle, ne perdra aucune image."
-
-#: static/js/ui.js:1253
-#, python-brace-format
-msgid ""
-"Même au débit maximal (${max} Mbit/s), cette résolution restera "
-"compressée : baisser les images par seconde ou la résolution donnera une "
-"image plus propre."
-msgstr ""
-"Même au débit maximal (${max} Mbit/s), cette résolution restera "
-"compressée : baisser les images par seconde ou la résolution donnera une "
-"image plus propre."
-
-#: static/js/ui.js:1257
-#, python-brace-format
-msgid "Débit ajusté à ${bitrate} Mbit/s pour cette résolution."
-msgstr "Débit ajusté à ${bitrate} Mbit/s pour cette résolution."
-
-#: static/js/ui.js:1966
-msgid "Enregistrement du centre par défaut impossible"
-msgstr "Enregistrement du centre par défaut impossible"
-
-#: static/js/ui.js:1997
-msgid "Coordonnées invalides. Ex: 48.85, 2.35 ou N 49° 16.029 E 006° 07.512"
-msgstr "Coordonnées invalides. Ex: 48.85, 2.35 ou N 49° 16.029 E 006° 07.512"
-
-#: static/js/ui.js:2019
-msgid "Coordonnées invalides. Ex: N 49° 16.029 / E 006° 07.512"
-msgstr "Coordonnées invalides. Ex: N 49° 16.029 / E 006° 07.512"
-
-#: static/js/ui.js:2141
-msgid "Cliquez sur la carte pour choisir le centre"
-msgstr "Cliquez sur la carte pour choisir le centre"
-
-#: static/js/ui.js:2155
-msgid "Centre par défaut mis à jour depuis la carte"
-msgstr "Centre par défaut mis à jour depuis la carte"
-
-#: static/js/ui.js:2223
-#, python-brace-format
-msgid "Le format vidéo sauvegardé (${mime}) n'est pas supporté par ce navigateur."
-msgstr "Le format vidéo sauvegardé (${mime}) n'est pas supporté par ce navigateur."
-
-#: static/js/ui.js:2304
-msgid "Fermer MyGCFlow ? Le serveur local sera arrêté."
-msgstr "Fermer MyGCFlow ? Le serveur local sera arrêté."
-
-#: static/js/ui.js:2305 static/js/ui.js:2308 static/js/ui.js:2328
-#: static/js/ui.js:2335 static/js/ui.js:2343
-msgid "Quitter"
-msgstr "Quitter"
-
-#: static/js/ui.js:2328 static/js/ui.js:2343
-msgid "MyGCFlow n'a pas pu être arrêté."
-msgstr "MyGCFlow n'a pas pu être arrêté."
-
-#: static/js/ui.js:2334
-msgid ""
-"Un import ou un traitement vidéo est en cours. Il sera interrompu. "
-"Quitter quand même ?"
-msgstr ""
-"Un import ou un traitement vidéo est en cours. Il sera interrompu. "
-"Quitter quand même ?"
-
-#: static/js/ui.js:2338
-msgid "Quitter quand même"
-msgstr "Quitter quand même"
-
-#: static/js/ui.js:2358
-msgid "MyGCFlow est fermé"
-msgstr "MyGCFlow est fermé"
-
-#: static/js/ui.js:2359
-msgid "Vous pouvez fermer cet onglet."
-msgstr "Vous pouvez fermer cet onglet."
-
-#: static/js/ui.js:2596
-msgid ""
-"La vidéo ne sera ni téléchargée ni uploadée : elle sera perdue après "
-"l'enregistrement."
-msgstr ""
-"La vidéo ne sera ni téléchargée ni uploadée : elle sera perdue après "
-"l'enregistrement."
-
-#: static/js/ui.js:2597
-msgid "Aucune destination"
-msgstr "Aucune destination"
-
-#: static/js/ui.js:3306 templates/menu_filtre.html:40
-#: templates/menu_filtre.html:58 templates/menu_filtre.html:82
-#: templates/menu_filtre.html:103 templates/menu_filtre.html:167
-#: templates/menu_filtre.html:177
-msgid "Aucun"
-msgstr "Aucun"
-
-#: static/js/ui.js:3377 templates/menu_filtre.html:163
-msgid "Filtrer par pays"
-msgstr "Filtrer par pays"
-
-#: static/js/ui.js:3406 static/js/ui.js:3457 templates/menu_filtre.html:173
-msgid "Filtrer par région/état"
-msgstr "Filtrer par région/état"
-
-#: static/js/ui.js:4565
-msgid "Pause non disponible pendant l'enregistrement - utilisez Arrêter"
-msgstr "Pause non disponible pendant l'enregistrement - utilisez Arrêter"
-
-#: static/js/ui.js:4816
-msgid "Valeur requise."
-msgstr "Valeur requise."
-
-#: static/js/ui.js:4818
-msgid "Format attendu : mm:ss (ex. 4:55)."
-msgstr "Format attendu : mm:ss (ex. 4:55)."
-
-#: static/js/ui.js:4819
-msgid "Nombre attendu."
-msgstr "Nombre attendu."
-
-#: static/js/ui.js:4820
-msgid "La valeur doit être strictement positive."
-msgstr "La valeur doit être strictement positive."
-
-#: static/js/ui.js:4822
-#, python-brace-format
-msgid "Entre ${min} et ${max} jours/s."
-msgstr "Entre ${min} et ${max} jours/s."
-
-#: static/js/ui.js:4823
-#, python-brace-format
-msgid "Entre ${min} et ${max} s."
-msgstr "Entre ${min} et ${max} s."
-
-#: static/js/ui.js:4824
-#, python-brace-format
-msgid "Maximum ${max} s."
-msgstr "Maximum ${max} s."
-
-#: static/js/ui.js:4825
-msgid "Entre 100 et 10000 ms."
-msgstr "Entre 100 et 10000 ms."
-
-#: static/js/ui.js:4826
-msgid "Hors limites."
-msgstr "Hors limites."
-
-#: static/js/ui.js:4827
-msgid "Valeur invalide."
-msgstr "Valeur invalide."
-
-#: static/js/ui.js:4887
-#, python-brace-format
-msgid "${n} jours"
-msgstr "${n} jours"
-
-#: static/js/ui.js:4888
-#, python-brace-format
-msgid "${n} jours/s"
-msgstr "${n} jours/s"
-
-#: static/js/ui.js:4890
-#, python-brace-format
-msgid "animation minimale ${d}"
-msgstr "animation minimale ${d}"
-
-#: static/js/ui.js:4891
-#, python-brace-format
-msgid "animation ${d}"
-msgstr "animation ${d}"
-
-#: static/js/ui.js:4892
-#, python-brace-format
-msgid "fin ${d}"
-msgstr "fin ${d}"
-
-#: static/js/ui.js:4894
-#, python-brace-format
-msgid "+ ${d} additionnel"
-msgstr "+ ${d} additionnel"
-
-#: static/js/ui.js:4896
-#, python-brace-format
-msgid "vidéo minimale ${d}"
-msgstr "vidéo minimale ${d}"
-
-#: static/js/ui.js:4897
-#, python-brace-format
-msgid "vidéo ${d}"
-msgstr "vidéo ${d}"
-
-#: static/js/ui.js:4899
-#, python-brace-format
-msgid "${n} images minimum"
-msgstr "${n} images minimum"
-
-#: static/js/ui.js:4900
-#, python-brace-format
-msgid "${n} images"
-msgstr "${n} images"
-
-#: static/js/ui.js:4925
-#, python-brace-format
-msgid "Vidéo ~${d}"
-msgstr "Vidéo ~${d}"
-
-#: static/js/ui.js:4933
-msgid "musique incluse"
-msgstr "musique incluse"
-
-#: static/js/ui.js:4934
-msgid "sans musique"
-msgstr "sans musique"
-
-#: static/js/ui.js:4942 static/js/ui.js:4947
-msgid "dossier Vidéos"
-msgstr "dossier Vidéos"
-
-#: static/js/ui.js:4946
-msgid "dossier Vidéos + téléchargement"
-msgstr "dossier Vidéos + téléchargement"
-
-#: static/js/ui.js:4948
-msgid "téléchargement navigateur"
-msgstr "téléchargement navigateur"
-
-#: static/js/ui.js:4949
-msgid "aucune copie conservée"
-msgstr "aucune copie conservée"
-
-#: static/js/ui.js:4951
-#, python-brace-format
-msgid "destination : ${d}"
-msgstr "destination : ${d}"
-
-#: static/js/ui.js:4966
-msgid "La plage de dates est invalide ou vide."
-msgstr "La plage de dates est invalide ou vide."
-
-#: static/js/ui.js:4967
-msgid "Sélectionnez un fichier audio pour le mode « Sur la musique »."
-msgstr "Sélectionnez un fichier audio pour le mode « Sur la musique »."
-
-#: static/js/ui.js:4974
-msgid "En attente de la lecture de la durée de la musique."
-msgstr "En attente de la lecture de la durée de la musique."
-
-#: static/js/ui.js:4988
-#, python-brace-format
-msgid ""
-"Durée demandée (${req}) trop courte pour afficher chaque jour (minimum "
-"${min}) : ${app} appliquée."
-msgstr ""
-"Durée demandée (${req}) trop courte pour afficher chaque jour (minimum "
-"${min}) : ${app} appliquée."
-
-#: static/js/ui.js:4998
-msgid ""
-"Le suivi de caméra met les dates en pause pendant chaque déplacement. La "
-"durée et le nombre d'images affichés sont des minimums ; le résultat sera"
-" plus long et peut dépasser la durée de la musique."
-msgstr ""
-"Le suivi de caméra met les dates en pause pendant chaque déplacement. La "
-"durée et le nombre d'images affichés sont des minimums ; le résultat sera"
-" plus long et peut dépasser la durée de la musique."
-
-#: static/js/ui.js:5031
-#, python-brace-format
-msgid ""
-"Charge élevée : jusqu'à ~${n} flashs simultanés. Pistes : raccourcir la "
-"durée du flash, ralentir l'animation, ou utiliser le mode Images."
-msgstr ""
-"Charge élevée : jusqu'à ~${n} flashs simultanés. Pistes : raccourcir la "
-"durée du flash, ralentir l'animation, ou utiliser le mode Images."
-
-#: static/js/ui.js:5035
-#, python-brace-format
-msgid ""
-"${n} images à produire (~${d} en mode Images). Envisagez un fps plus bas "
-"ou une animation plus courte."
-msgstr ""
-"${n} images à produire (~${d} en mode Images). Envisagez un fps plus bas "
-"ou une animation plus courte."
-
-#: static/js/ui.js:5190
-msgid "Images de capture supprimées"
-msgstr "Images de capture supprimées"
-
-#: static/js/ui.js:5190
-msgid "Nettoyage"
-msgstr "Nettoyage"
-
-#: static/js/ui.js:5214
-#, python-brace-format
-msgid "Dossier vidéo: ${folder}"
-msgstr "Dossier vidéo: ${folder}"
-
-#: static/js/ui.js:5214 static/js/ui.js:5216 static/js/ui.js:5221
-msgid "Ouverture"
-msgstr "Ouverture"
-
-#: static/js/ui.js:5216
-msgid "Impossible d’ouvrir le dossier vidéo"
-msgstr "Impossible d’ouvrir le dossier vidéo"
-
-#: static/js/ui.js:5221
-msgid "Erreur lors de l’ouverture du dossier vidéo"
-msgstr "Erreur lors de l’ouverture du dossier vidéo"
-
-#: static/js/ui.js:6127 templates/menu_animation.html:29
-msgid "Plein écran"
-msgstr "Plein écran"
-
-#: static/js/ui.js:6128 templates/menu_animation.html:29
-msgid "Quitter le plein écran"
-msgstr "Quitter le plein écran"
-
-#: static/js/ui.js:6449
-msgid "Sélectionnez d'abord un fichier audio"
-msgstr "Sélectionnez d'abord un fichier audio"
-
-#: static/js/ui.js:6496 templates/menu_animation.html:194
-msgid "Aucune musique sélectionnée"
-msgstr "Aucune musique sélectionnée"
-
-#: static/js/ui.js:6529
-msgid "Non disponible"
-msgstr "Non disponible"
-
-#: static/js/ui.js:6536 templates/menu_filtre.html:45
-#: templates/menu_filtre.html:46
-msgid "Taille"
-msgstr "Taille"
-
-#: static/js/ui.js:6537
-#, fuzzy
-msgid "Type"
-msgstr "Style"
-
-#: static/js/ui.js:6538
-#, fuzzy
-msgid "Durée"
-msgstr "Par durée"
-
-#: static/js/ui.js:6539
-msgid "Modifié"
-msgstr "Modifié"
-
-#: static/js/ui.js:6594
-#, fuzzy
-msgid "Erreur lors du chargement du fichier audio"
-msgstr "Erreur lors du chargement du fichier"
-
-#: static/js/video_postprocess.js:28
-#, python-brace-format
-msgid ""
-"Le navigateur limite l'accélération à x${effective} (x${requested} "
-"demandé) : la vidéo restera environ ${ratio}x plus lente que prévu. "
-"Utilisez le traitement serveur pour un rythme exact."
-msgstr ""
-"Le navigateur limite l'accélération à x${effective} (x${requested} "
-"demandé) : la vidéo restera environ ${ratio}x plus lente que prévu. "
-"Utilisez le traitement serveur pour un rythme exact."
-
-#: static/js/video_postprocess.js:80
-msgid "captureStream non supporté pour la normalisation"
-msgstr "captureStream non supporté pour la normalisation"
-
-#: static/js/video_postprocess.js:88
-#, python-brace-format
-msgid "Timeout normalisation vidéo (${timeout}s) : lecture bloquée ?"
-msgstr "Timeout normalisation vidéo (${timeout}s) : lecture bloquée ?"
-
-#: static/js/video_postprocess.js:102 static/js/video_postprocess.js:251
-#, fuzzy
-msgid "inconnue"
-msgstr "Continuer"
-
-#: static/js/video_postprocess.js:103
-#, python-brace-format
-msgid "Erreur encodeur lors de la normalisation : ${detail}"
-msgstr "Erreur encodeur lors de la normalisation : ${detail}"
-
-#: static/js/video_postprocess.js:110
-#, fuzzy, python-brace-format
-msgid "Normalisation ${p}%"
-msgstr "animation ${d}"
-
-#: static/js/video_postprocess.js:110
-#, fuzzy
-msgid "Normalisation en cours"
-msgstr "Import en cours"
-
-#: static/js/video_postprocess.js:127
-msgid "Erreur lecture vidéo pour normalisation"
-msgstr "Erreur lecture vidéo pour normalisation"
-
-#: static/js/video_postprocess.js:197
-msgid "captureStream non supporté pour mux audio"
-msgstr "captureStream non supporté pour mux audio"
-
-#: static/js/video_postprocess.js:211
-#, python-brace-format
-msgid "Timeout mux audio (${timeout}s) : lecture bloquée ?"
-msgstr "Timeout mux audio (${timeout}s) : lecture bloquée ?"
-
-#: static/js/video_postprocess.js:224
-msgid "Aucune piste vidéo disponible pour le mux audio"
-msgstr "Aucune piste vidéo disponible pour le mux audio"
-
-#: static/js/video_postprocess.js:252
-#, python-brace-format
-msgid "Erreur encodeur lors du mux audio : ${detail}"
-msgstr "Erreur encodeur lors du mux audio : ${detail}"
-
-#: static/js/video_postprocess.js:268
-#, python-brace-format
-msgid "Impossible de démarrer la piste audio : ${detail}"
-msgstr "Impossible de démarrer la piste audio : ${detail}"
-
-#: static/js/video_postprocess.js:282
-#, fuzzy
-msgid "Erreur lecture vidéo pour mux audio"
-msgstr "Erreur lors de la lecture du fichier audio"
-
-#: static/js/video_stream.mjs:44
-msgid "Ouverture du flux vidéo impossible"
-msgstr "Ouverture du flux vidéo impossible"
-
-#: static/js/video_stream.mjs:73
-msgid "Aucun flux vidéo ouvert"
-msgstr "Aucun flux vidéo ouvert"
 
 #: templates/_scope_badges.html:25
 msgid ""
@@ -2062,16 +501,57 @@ msgstr "ou glissez-déposez votre fichier n'importe où sur la page"
 msgid "Redimensionner la carte"
 msgstr "Redimensionner la carte"
 
-#: templates/app.html:145 templates/guide.html:52 templates/guide.html:83
+#: templates/app.html:147 templates/guide.html:52 templates/guide.html:83
 #: templates/guide.html:95 templates/guide.html:201 templates/guide.html:203
 #: templates/menu_animation.html:8
 msgid "Animation & vidéo"
 msgstr "Animation & vidéo"
 
-#: templates/app.html:146 templates/guide.html:55 templates/guide.html:88
+#: templates/app.html:148 templates/guide.html:55 templates/guide.html:88
 #: templates/guide.html:95 templates/guide.html:262 templates/guide.html:264
 msgid "Préférences"
 msgstr "Préférences"
+
+#: templates/app.html:152 templates/app.html:153 templates/guide.html:238
+#: templates/guide.html:244 templates/menu_animation.html:32
+msgid "Prévisualiser"
+msgstr "Prévisualiser"
+
+#: templates/app.html:156 templates/app.html:157 templates/guide.html:239
+#: templates/guide.html:244 templates/menu_animation.html:35
+msgid "Exporter"
+msgstr "Exporter"
+
+#: templates/app.html:160 templates/app.html:161 templates/app.html:162
+#: templates/guide.html:240 templates/menu_animation.html:41
+#: templates/menu_animation.html:42
+msgid "Pause"
+msgstr "Pause"
+
+#: templates/app.html:161 templates/menu_animation.html:41
+msgid "Continuer"
+msgstr "Continuer"
+
+#: templates/app.html:165 templates/app.html:166 templates/guide.html:240
+#: templates/menu_animation.html:45
+msgid "Arrêter"
+msgstr "Arrêter"
+
+#: templates/app.html:173
+msgid "Disposition carte / réglages"
+msgstr "Disposition carte / réglages"
+
+#: templates/app.html:175 templates/app.html:176
+msgid "Grande carte"
+msgstr "Grande carte"
+
+#: templates/app.html:180 templates/app.html:181
+msgid "Disposition équilibrée"
+msgstr "Disposition équilibrée"
+
+#: templates/app.html:185 templates/app.html:186
+msgid "Grands réglages"
+msgstr "Grands réglages"
 
 #: templates/guide.html:6 templates/guide.html:23
 #: templates/menu_options.html:115
@@ -2258,6 +738,10 @@ msgstr "Repartir de zéro (optionnel)"
 msgid "Le bouton"
 msgstr "Le bouton"
 
+#: templates/guide.html:137 templates/menu_data.html:26
+msgid "Supprimer mes trouvailles"
+msgstr "Supprimer mes trouvailles"
+
 #: templates/guide.html:137
 msgid "supprime les données chargées si vous voulez importer un autre fichier."
 msgstr "supprime les données chargées si vous voulez importer un autre fichier."
@@ -2399,6 +883,10 @@ msgstr "et éditez le style à la main."
 #: templates/guide.html:171
 msgid "N'oubliez pas de cliquer sur"
 msgstr "N'oubliez pas de cliquer sur"
+
+#: templates/guide.html:171 templates/menu_informations.html:244
+msgid "Appliquer"
+msgstr "Appliquer"
 
 #: templates/guide.html:171
 msgid "pour valider vos modifications."
@@ -2653,11 +1141,6 @@ msgstr "dans l'application : survolez-la pour en savoir plus."
 msgid "Lancez l'aperçu puis enregistrez"
 msgstr "Lancez l'aperçu puis enregistrez"
 
-#: templates/guide.html:238 templates/guide.html:244
-#: templates/menu_animation.html:32
-msgid "Prévisualiser"
-msgstr "Prévisualiser"
-
 #: templates/guide.html:238
 msgid "joue l'animation à l'écran pour vérifier le rendu."
 msgstr "joue l'animation à l'écran pour vérifier le rendu."
@@ -2665,15 +1148,6 @@ msgstr "joue l'animation à l'écran pour vérifier le rendu."
 #: templates/guide.html:239
 msgid "lance l'animation en capturant la vidéo."
 msgstr "lance l'animation en capturant la vidéo."
-
-#: templates/guide.html:240 templates/menu_animation.html:41
-#: templates/menu_animation.html:42
-msgid "Pause"
-msgstr "Pause"
-
-#: templates/guide.html:240 templates/menu_animation.html:45
-msgid "Arrêter"
-msgstr "Arrêter"
 
 #: templates/guide.html:240
 msgid "contrôlent la lecture."
@@ -2807,9 +1281,13 @@ msgstr ""
 msgid "Passer en plein écran"
 msgstr "Passer en plein écran"
 
-#: templates/menu_animation.html:41
-msgid "Continuer"
-msgstr "Continuer"
+#: templates/menu_animation.html:29
+msgid "Plein écran"
+msgstr "Plein écran"
+
+#: templates/menu_animation.html:29
+msgid "Quitter le plein écran"
+msgstr "Quitter le plein écran"
 
 #: templates/menu_animation.html:48
 msgid ""
@@ -2831,7 +1309,9 @@ msgstr "Plage de dates de l'animation"
 msgid ""
 "Période parcourue par la vidéo — indépendante des filtres de l'onglet "
 "Données."
-msgstr "Période parcourue par la vidéo — indépendante des filtres de l'onglet Données."
+msgstr ""
+"Période parcourue par la vidéo — indépendante des filtres de l'onglet "
+"Données."
 
 #: templates/menu_animation.html:62 templates/menu_animation.html:76
 #: templates/menu_filtre.html:117 templates/menu_filtre.html:126
@@ -2976,6 +1456,10 @@ msgstr "Musique (optionnel)"
 msgid "Fichier de musique"
 msgstr "Fichier de musique"
 
+#: templates/menu_animation.html:194
+msgid "Aucune musique sélectionnée"
+msgstr "Aucune musique sélectionnée"
+
 #: templates/menu_animation.html:197
 msgid "Volume musique"
 msgstr "Volume musique"
@@ -3004,6 +1488,10 @@ msgstr "Différence"
 msgid "Fichier .gpx"
 msgstr "Fichier .gpx"
 
+#: templates/menu_data.html:31
+msgid "Aucune trouvaille chargée"
+msgstr "Aucune trouvaille chargée"
+
 #: templates/menu_data.html:37
 msgid "Vos trouvailles sont prêtes."
 msgstr "Vos trouvailles sont prêtes."
@@ -3011,6 +1499,10 @@ msgstr "Vos trouvailles sont prêtes."
 #: templates/menu_data.html:40
 msgid "Choisir un style"
 msgstr "Choisir un style"
+
+#: templates/menu_data.html:65
+msgid "Sélection: 0 / 0"
+msgstr "Sélection: 0 / 0"
 
 #: templates/menu_filtre.html:5
 msgid "Réinitialiser tous les filtres"
@@ -3106,6 +1598,16 @@ msgstr "Locationless (Reverse) Cache"
 msgid "Tout"
 msgstr "Tout"
 
+#: templates/menu_filtre.html:40 templates/menu_filtre.html:58
+#: templates/menu_filtre.html:82 templates/menu_filtre.html:103
+#: templates/menu_filtre.html:167 templates/menu_filtre.html:177
+msgid "Aucun"
+msgstr "Aucun"
+
+#: templates/menu_filtre.html:45 templates/menu_filtre.html:46
+msgid "Taille"
+msgstr "Taille"
+
 #: templates/menu_filtre.html:47
 msgid "Filtrer par taille"
 msgstr "Filtrer par taille"
@@ -3166,9 +1668,17 @@ msgstr "Période de pose"
 msgid "Pays"
 msgstr "Pays"
 
+#: templates/menu_filtre.html:163
+msgid "Filtrer par pays"
+msgstr "Filtrer par pays"
+
 #: templates/menu_filtre.html:171 templates/menu_filtre.html:172
 msgid "Région / État"
 msgstr "Région / État"
+
+#: templates/menu_filtre.html:173
+msgid "Filtrer par région/état"
+msgstr "Filtrer par région/état"
 
 #: templates/menu_flash.html:4
 msgid "Animation du Flash"
@@ -3444,6 +1954,10 @@ msgstr "Zoom de carte par défaut"
 #: templates/menu_options.html:89
 msgid "Valeur autorisée : de 0 à 22."
 msgstr "Valeur autorisée : de 0 à 22."
+
+#: templates/menu_options.html:99 templates/menu_style.html:256
+msgid "Réinitialiser"
+msgstr "Réinitialiser"
 
 #: templates/menu_options.html:109
 msgid "Vérifier les mises à jour"
@@ -3865,6 +2379,12 @@ msgstr "Sauvegarder le thème actif"
 msgid "Gérer les thèmes"
 msgstr "Gérer les thèmes"
 
+#: templates/menu_style.html:40 templates/menu_style.html:192
+#: templates/menu_style.html:224 templates/menu_style.html:249
+#: templates/menu_style.html:277 templates/modal_infos.html:11
+msgid "Fermer"
+msgstr "Fermer"
+
 #: templates/menu_style.html:43
 msgid ""
 "Un thème ne contient que des réglages visuels : il ne touche ni aux "
@@ -3965,6 +2485,10 @@ msgstr "Nouveau thème"
 msgid "Nom du thème"
 msgstr "Nom du thème"
 
+#: templates/menu_style.html:206
+msgid "Créer"
+msgstr "Créer"
+
 #: templates/menu_style.html:220
 msgid "Confirmer la suppression"
 msgstr "Confirmer la suppression"
@@ -3977,6 +2501,10 @@ msgstr "Cette action est définitive"
 msgid "Êtes-vous sûr de vouloir supprimer ce profil ?"
 msgstr "Êtes-vous sûr de vouloir supprimer ce profil ?"
 
+#: templates/menu_style.html:231
+msgid "Supprimer"
+msgstr "Supprimer"
+
 #: templates/menu_style.html:245
 msgid "Confirmer la réinitialisation"
 msgstr "Confirmer la réinitialisation"
@@ -3984,6 +2512,10 @@ msgstr "Confirmer la réinitialisation"
 #: templates/menu_style.html:252
 msgid "Êtes-vous sûr de vouloir réinitialiser ce profil aux valeurs par défaut ?"
 msgstr "Êtes-vous sûr de vouloir réinitialiser ce profil aux valeurs par défaut ?"
+
+#: templates/menu_style.html:273
+msgid "Modifications non enregistrées"
+msgstr "Modifications non enregistrées"
 
 #: templates/menu_style.html:274
 msgid "Le profil actif a été modifié"
@@ -4243,10 +2775,10 @@ msgstr "Ignorer pour l'instant"
 #~ msgstr "Contrôles"
 
 #~ msgid "cache"
-#~ msgstr "cache"
+#~ msgstr "Cochez"
 
 #~ msgid "caches"
-#~ msgstr "caches"
+#~ msgstr "Cochez"
 
 #~ msgid "Barre de contrôle flottante"
 #~ msgstr "Barre de contrôle flottante"
@@ -4374,4 +2906,1135 @@ msgstr "Ignorer pour l'instant"
 #~ "terminé. Utile pour archivage centralisé "
 #~ "ou partage avec d'autres utilisateurs "
 #~ "via l'interface web"
+
+#~ msgid ""
+#~ "Certaines tuiles de la carte n'ont "
+#~ "pas pu être chargées (connexion instable"
+#~ " ?)."
+#~ msgstr ""
+#~ "Certaines tuiles de la carte n'ont "
+#~ "pas pu être chargées (connexion instable"
+#~ " ?)."
+
+#~ msgid "Carte"
+#~ msgstr "Carte"
+
+#~ msgid ""
+#~ "${count} tuile(s) de carte n'ont pas "
+#~ "pu être chargées pendant l'enregistrement "
+#~ ": la vidéo peut comporter des "
+#~ "zones vides."
+#~ msgstr ""
+#~ "${count} tuile(s) de carte n'ont pas "
+#~ "pu être chargées pendant l'enregistrement "
+#~ ": la vidéo peut comporter des "
+#~ "zones vides."
+
+#~ msgid "Veuillez sélectionner un fichier .gpx ou .zip"
+#~ msgstr "Veuillez sélectionner un fichier .gpx ou .zip"
+
+#~ msgid "Le fichier sélectionné est vide"
+#~ msgstr "Le fichier sélectionné est vide"
+
+#~ msgid "Un import est déjà en cours, veuillez patienter."
+#~ msgstr "Un import est déjà en cours, veuillez patienter."
+
+#~ msgid "Import en cours"
+#~ msgstr "Import en cours"
+
+#~ msgid "Fichier invalide"
+#~ msgstr "Fichier invalide"
+
+#~ msgid "Déposez votre fichier .gpx pour le charger"
+#~ msgstr "Déposez votre fichier .gpx pour le charger"
+
+#~ msgid "le ${date}"
+#~ msgstr "le ${date}"
+
+#~ msgid "du ${start} au ${end}"
+#~ msgstr "du ${start} au ${end}"
+
+#~ msgid "aujourd'hui à ${time}"
+#~ msgstr "aujourd'hui à ${time}"
+
+#~ msgid "hier à ${time}"
+#~ msgstr "hier à ${time}"
+
+#~ msgid "importé ${when}"
+#~ msgstr "importé ${when}"
+
+#~ msgid "Envoi du fichier : ${pct}%"
+#~ msgstr "Envoi du fichier : ${pct}%"
+
+#~ msgid "Réponse invalide du serveur"
+#~ msgstr "Réponse invalide du serveur"
+
+#~ msgid "Impossible de lancer l'import GPX"
+#~ msgstr "Impossible de lancer l'import GPX"
+
+#~ msgid "Traitement du fichier en cours..."
+#~ msgstr "Traitement du fichier en cours..."
+
+#~ msgid "Erreur réseau lors de l'envoi du fichier"
+#~ msgstr "Erreur réseau lors de l'envoi du fichier"
+
+#~ msgid "Envoi du fichier annulé"
+#~ msgstr "Envoi du fichier annulé"
+
+#~ msgid "Veuillez sélectionner un fichier .gpx"
+#~ msgstr "Veuillez sélectionner un fichier .gpx"
+
+#~ msgid "Aucun fichier"
+#~ msgstr "Aucun fichier"
+
+#~ msgid "Préparation de l'envoi..."
+#~ msgstr "Préparation de l'envoi..."
+
+#~ msgid "Chargement"
+#~ msgstr "Chargement"
+
+#~ msgid "Fichier chargé avec succès !"
+#~ msgstr "Fichier chargé avec succès !"
+
+#~ msgid "Terminé"
+#~ msgstr "Terminé"
+
+#~ msgid "Erreur lors du chargement du fichier"
+#~ msgstr "Erreur lors du chargement du fichier"
+
+#~ msgid "Erreur"
+#~ msgstr "Erreur"
+
+#~ msgid "Chargement de l'application..."
+#~ msgstr "Chargement de l'application..."
+
+#~ msgid "Impossible de lancer le chargement des données"
+#~ msgstr "Impossible de lancer le chargement des données"
+
+#~ msgid "Erreur lors du chargement des données"
+#~ msgstr "Erreur lors du chargement des données"
+
+#~ msgid "Sélection: ${selected} / ${total}"
+#~ msgstr "Sélection: ${selected} / ${total}"
+
+#~ msgid "Aucune cache ne correspond aux critères sélectionnés par les filtres."
+#~ msgstr "Aucune cache ne correspond aux critères sélectionnés par les filtres."
+
+#~ msgid "Aucune cache visible"
+#~ msgstr "Aucune cache visible"
+
+#~ msgid ""
+#~ "Un import est en cours, veuillez "
+#~ "patienter avant de supprimer les "
+#~ "données."
+#~ msgstr ""
+#~ "Un import est en cours, veuillez "
+#~ "patienter avant de supprimer les "
+#~ "données."
+
+#~ msgid ""
+#~ "Êtes-vous sûr de vouloir supprimer "
+#~ "toutes vos trouvailles ? Cette action"
+#~ " est irréversible."
+#~ msgstr ""
+#~ "Êtes-vous sûr de vouloir supprimer "
+#~ "toutes vos trouvailles ? Cette action"
+#~ " est irréversible."
+
+#~ msgid "Confirmation de suppression"
+#~ msgstr "Confirmation de suppression"
+
+#~ msgid "Confirmation non disponible, action annulée."
+#~ msgstr "Confirmation non disponible, action annulée."
+
+#~ msgid "Suppression"
+#~ msgstr "Suppression"
+
+#~ msgid "Suppression des trouvailles..."
+#~ msgstr "Suppression des trouvailles..."
+
+#~ msgid "Trouvailles supprimées avec succès"
+#~ msgstr "Trouvailles supprimées avec succès"
+
+#~ msgid "Suppression réussie"
+#~ msgstr "Suppression réussie"
+
+#~ msgid "Erreur lors de la suppression des trouvailles: "
+#~ msgstr "Erreur lors de la suppression des trouvailles: "
+
+#~ msgid "Chargement terminé"
+#~ msgstr "Chargement terminé"
+
+#~ msgid "Chargement et affichage des points..."
+#~ msgstr "Chargement et affichage des points..."
+
+#~ msgid "Affichage des points"
+#~ msgstr "Affichage des points"
+
+#~ msgid "Impossible de lancer la génération du GeoJSON"
+#~ msgstr "Impossible de lancer l'import GPX"
+
+#~ msgid "Erreur lors de l'affichage des points sur la carte"
+#~ msgstr "Erreur lors de l'affichage des points sur la carte"
+
+#~ msgid "Erreur d'affichage"
+#~ msgstr "Erreur d'affichage"
+
+#~ msgid "Le serveur local ne répond pas (délai dépassé)"
+#~ msgstr "Le serveur local ne répond pas (délai dépassé)"
+
+#~ msgid "Erreur lors du chargement des couleurs GC (${status}): ${statusText}"
+#~ msgstr "Erreur lors du chargement des données"
+
+#~ msgid "Impossible de charger html2canvas"
+#~ msgstr "Impossible de charger html2canvas"
+
+#~ msgid "Mise à jour de l'affichage des points..."
+#~ msgstr "Mise à jour de l'affichage des points..."
+
+#~ msgid "Sans nom"
+#~ msgstr "Sans nom"
+
+#~ msgid "Trouvé"
+#~ msgstr "Trouvé"
+
+#~ msgid "DNF"
+#~ msgstr "DNF"
+
+#~ msgid "Publié le ${date}"
+#~ msgstr "Publié le ${date}"
+
+#~ msgid "Capture rapide non supportée, bascule en mode image par image."
+#~ msgstr "Capture rapide non supportée, bascule en mode image par image."
+
+#~ msgid "Compatibilité"
+#~ msgstr "Compatibilité maximale (4:2:0)"
+
+#~ msgid "Données en cours de chargement. Veuillez réessayer."
+#~ msgstr "Données en cours de chargement. Veuillez réessayer."
+
+#~ msgid "Attention"
+#~ msgstr "Attention"
+
+#~ msgid "Préparation de l'enregistrement..."
+#~ msgstr "Préparation de l'envoi..."
+
+#~ msgid "Nettoyage initial"
+#~ msgstr "Nettoyage"
+
+#~ msgid "Un assemblage vidéo est en cours. Réessayez à la fin du traitement."
+#~ msgstr "Un assemblage vidéo est en cours. Réessayez à la fin du traitement."
+
+#~ msgid "Enregistrement annulé"
+#~ msgstr "Enregistrement vidéo"
+
+#~ msgid "Répertoire d’images nettoyé."
+#~ msgstr "Répertoire d’images nettoyé."
+
+#~ msgid "Préparation"
+#~ msgstr "Préparation de l'envoi..."
+
+#~ msgid "Nettoyage initial impossible. Poursuite de l'enregistrement."
+#~ msgstr "Nettoyage initial impossible. Poursuite de l'enregistrement."
+
+#~ msgid "Erreur nettoyage initial. Poursuite."
+#~ msgstr "Erreur nettoyage initial. Poursuite."
+
+#~ msgid "0% | préparation..."
+#~ msgstr "Préparation de l'envoi..."
+
+#~ msgid " ♪ La musique sera intégrée automatiquement après la capture."
+#~ msgstr " ♪ La musique sera intégrée automatiquement après la capture."
+
+#~ msgid "Capture en cours – Ne pas bouger la fenêtre"
+#~ msgstr "Capture en cours – Ne pas bouger la fenêtre"
+
+#~ msgid "Préparation de la capture..."
+#~ msgstr "Préparation de l'envoi..."
+
+#~ msgid "Capture en pause : revenez sur cet onglet pour la poursuivre."
+#~ msgstr "Capture en pause : revenez sur cet onglet pour la poursuivre."
+
+#~ msgid "Onglet masqué"
+#~ msgstr "Onglet masqué"
+
+#~ msgid "Le rendu initial de la carte n'a pas abouti (timeout)"
+#~ msgstr "Le rendu initial de la carte n'a pas abouti (timeout)"
+
+#~ msgid "Nettoyage en cours..."
+#~ msgstr "Nettoyage en cours..."
+
+#~ msgid "erreur inconnue"
+#~ msgstr "Erreur API"
+
+#~ msgid "La capture a été interrompue suite à une erreur : ${message}"
+#~ msgstr "La capture a été interrompue suite à une erreur : ${message}"
+
+#~ msgid "Capture interrompue"
+#~ msgstr "Capture interrompue"
+
+#~ msgid "task_id manquant"
+#~ msgstr "task_id manquant"
+
+#~ msgid "Délai d'assemblage dépassé"
+#~ msgstr "Délai d'assemblage dépassé"
+
+#~ msgid "Tâche introuvable sur le serveur (purgée ou serveur redémarré)"
+#~ msgstr "Tâche introuvable sur le serveur (purgée ou serveur redémarré)"
+
+#~ msgid "Tâche échouée"
+#~ msgstr "Import échoué"
+
+#~ msgid ""
+#~ "Suivi de la tâche interrompu après "
+#~ "${count} erreurs consécutives : ${detail}"
+#~ msgstr ""
+#~ "Suivi de la tâche interrompu après "
+#~ "${count} erreurs consécutives : ${detail}"
+
+#~ msgid "Envoi des dernières images..."
+#~ msgstr "Envoi des dernières images..."
+
+#~ msgid "Assemblage en cours"
+#~ msgstr "Assemblage en cours"
+
+#~ msgid "Création de la vidéo à partir des images..."
+#~ msgstr "Création de la vidéo à partir des images..."
+
+#~ msgid "Impossible de lancer l'assemblage vidéo"
+#~ msgstr "Impossible de lancer l'import GPX"
+
+#~ msgid "Création de la vidéo..."
+#~ msgstr "Préparation de l'envoi..."
+
+#~ msgid "Vidéo créée. Nettoyage des images..."
+#~ msgstr "Vidéo créée. Nettoyage des images..."
+
+#~ msgid "Nettoyage en cours"
+#~ msgstr "Nettoyage en cours..."
+
+#~ msgid "Vidéo créée avec succès. Nettoyage des images..."
+#~ msgstr "Vidéo créée avec succès. Nettoyage des images..."
+
+#~ msgid "Nettoyage terminé"
+#~ msgstr "Nettoyage"
+
+#~ msgid "Traitement automatique terminé avec succès !"
+#~ msgstr "Traitement automatique terminé avec succès !"
+
+#~ msgid "Erreur lors du traitement automatique: ${message}"
+#~ msgstr "Erreur lors du traitement automatique: ${message}"
+
+#~ msgid "Erreur chaîne"
+#~ msgstr "Erreur d'affichage"
+
+#~ msgid "Données en cours de chargement. Réessayez."
+#~ msgstr "Données en cours de chargement. Réessayez."
+
+#~ msgid "Enregistrement en cours – Ne pas bouger la fenêtre"
+#~ msgstr "Enregistrement en cours – Ne pas bouger la fenêtre"
+
+#~ msgid "Démarrage de la capture..."
+#~ msgstr "Démarrage de la capture..."
+
+#~ msgid "Erreur de la capture rapide, bascule en mode image par image."
+#~ msgstr "Erreur de la capture rapide, bascule en mode image par image."
+
+#~ msgid "Enregistrement"
+#~ msgstr "Enregistrement…"
+
+#~ msgid "Résolution réduite aux capacités du navigateur."
+#~ msgstr "Résolution réduite aux capacités du navigateur."
+
+#~ msgid "La copie de la vidéo a échoué. Arrêt de l'enregistrement."
+#~ msgstr "La copie de la vidéo a échoué. Arrêt de l'enregistrement."
+
+#~ msgid ""
+#~ "Erreur de l'encodeur vidéo. Arrêt de "
+#~ "l'enregistrement et récupération de la "
+#~ "séquence déjà capturée."
+#~ msgstr ""
+#~ "Erreur de l'encodeur vidéo. Arrêt de "
+#~ "l'enregistrement et récupération de la "
+#~ "séquence déjà capturée."
+
+#~ msgid ""
+#~ "Enregistrement en pause : revenez sur"
+#~ " cet onglet pour reprendre la "
+#~ "capture."
+#~ msgstr ""
+#~ "Enregistrement en pause : revenez sur"
+#~ " cet onglet pour reprendre la "
+#~ "capture."
+
+#~ msgid "Copie vers le dossier vidéo échouée"
+#~ msgstr "Copie vers le dossier vidéo échouée"
+
+#~ msgid "Finalisation"
+#~ msgstr "Animation"
+
+#~ msgid "Écriture de la durée de la vidéo..."
+#~ msgstr "En attente de la lecture de la durée de la musique."
+
+#~ msgid "Ajout audio"
+#~ msgstr "Ajout audio"
+
+#~ msgid "Fusion de la piste audio avec la vidéo en cours..."
+#~ msgstr "Fusion de la piste audio avec la vidéo en cours..."
+
+#~ msgid "Normalisation"
+#~ msgstr "Information"
+
+#~ msgid "Accélération x${applicable} pour lecture à vitesse normale..."
+#~ msgstr "Accélération x${applicable} pour lecture à vitesse normale..."
+
+#~ msgid "La vidéo n'a pas pu être assemblée."
+#~ msgstr "La vidéo n'a pas pu être assemblée."
+
+#~ msgid "Traitement serveur"
+#~ msgstr "Traitement du fichier en cours..."
+
+#~ msgid "Envoi de la vidéo au serveur..."
+#~ msgstr "Envoi de la vidéo au serveur..."
+
+#~ msgid "Traitement serveur..."
+#~ msgstr "Traitement du fichier en cours..."
+
+#~ msgid "Traitement serveur non démarré"
+#~ msgstr "Traitement serveur non démarré"
+
+#~ msgid "L'enregistrement a été interrompu : la copie des données a échoué."
+#~ msgstr "L'enregistrement a été interrompu : la copie des données a échoué."
+
+#~ msgid "Traitement serveur indisponible, repli local..."
+#~ msgstr "Traitement serveur indisponible, repli local..."
+
+#~ msgid "Élément non trouvé"
+#~ msgstr "Élément non trouvé"
+
+#~ msgid "Timeout rendercomplete (5s) : rendu carte bloqué"
+#~ msgstr "Timeout rendercomplete (5s) : rendu carte bloqué"
+
+#~ msgid "Aucun canvas trouvé dans la carte"
+#~ msgstr "Aucun waypoint trouvé dans le fichier GPX"
+
+#~ msgid "Échec conversion canvas en blob"
+#~ msgstr "Échec conversion canvas en blob"
+
+#~ msgid "Chargement en cours..."
+#~ msgstr "Chargement en cours..."
+
+#~ msgid "Affichage des points..."
+#~ msgstr "Affichage des points..."
+
+#~ msgid "Succès"
+#~ msgstr "Succès"
+
+#~ msgid "Information"
+#~ msgstr "Information"
+
+#~ msgid "Confirmation"
+#~ msgstr "Confirmation"
+
+#~ msgid "Impossible de vérifier les mises à jour. Vérifiez votre connexion."
+#~ msgstr "Impossible de vérifier les mises à jour. Vérifiez votre connexion."
+
+#~ msgid "Erreur de vérification"
+#~ msgstr "pour valider vos modifications."
+
+#~ msgid "Votre application est à jour"
+#~ msgstr "Votre application est à jour"
+
+#~ msgid "Version actuelle"
+#~ msgstr "Version actuelle"
+
+#~ msgid "Nouvelle version ${version} du ${date} trouvée"
+#~ msgstr "Nouvelle version ${version} du ${date} trouvée"
+
+#~ msgid "Nouvelle version ${version} trouvée"
+#~ msgstr "Nouvelle version ${version} trouvée"
+
+#~ msgid "Mise à jour disponible"
+#~ msgstr "Mise à jour disponible"
+
+#~ msgid "🚀 Mise à jour disponible !"
+#~ msgstr "🚀 Mise à jour disponible !"
+
+#~ msgid "Dernière version"
+#~ msgstr "Dernière version"
+
+#~ msgid "Nouveautés et améliorations"
+#~ msgstr "Nouveautés et améliorations"
+
+#~ msgid "Télécharger la mise à jour"
+#~ msgstr "Vérifier les mises à jour"
+
+#~ msgid "Ignorer cette version"
+#~ msgstr "Ignorer cette version"
+
+#~ msgid "Plus tard"
+#~ msgstr "Plus tard"
+
+#~ msgid "Vous ne serez plus averti pour cette version."
+#~ msgstr "Vous ne serez plus averti pour cette version."
+
+#~ msgid "espace"
+#~ msgstr "espace"
+
+#~ msgid "Import échoué"
+#~ msgstr "Import échoué"
+
+#~ msgid "Profil \"${name}\" importé"
+#~ msgstr "Profil \"${name}\" importé"
+
+#~ msgid "Erreur import du profil"
+#~ msgstr "Erreur import du profil"
+
+#~ msgid "Erreur API"
+#~ msgstr "Erreur API"
+
+#~ msgid "Erreur: ${message}"
+#~ msgstr "Erreur: ${message}"
+
+#~ msgid "Profil \"${name}\" chargé"
+#~ msgstr "Profil \"${name}\" chargé"
+
+#~ msgid "Profil \"${name}\" sauvegardé"
+#~ msgstr "Profil \"${name}\" sauvegardé"
+
+#~ msgid "Profil \"${name}\" créé, mais l'enregistrement des réglages a échoué"
+#~ msgstr "Profil \"${name}\" créé, mais l'enregistrement des réglages a échoué"
+
+#~ msgid "Profil \"${name}\" créé"
+#~ msgstr "Profil \"${name}\" créé"
+
+#~ msgid "Profil dupliqué: \"${name}\""
+#~ msgstr "Profil dupliqué: \"${name}\""
+
+#~ msgid "Profil \"${name}\" supprimé"
+#~ msgstr "Profil \"${name}\" supprimé"
+
+#~ msgid "Profil \"${name}\" réinitialisé"
+#~ msgstr "Profil \"${name}\" réinitialisé"
+
+#~ msgid "Export échoué"
+#~ msgstr "Export échoué"
+
+#~ msgid "Profil \"${name}\" exporté"
+#~ msgstr "Profil \"${name}\" exporté"
+
+#~ msgid "Erreur export du profil"
+#~ msgstr "Erreur export du profil"
+
+#~ msgid "Profil introuvable ou UID manquant"
+#~ msgstr "Profil introuvable ou UID manquant"
+
+#~ msgid "Échec de la sauvegarde du profil par défaut"
+#~ msgstr "Échec de la sauvegarde du profil par défaut"
+
+#~ msgid "Profil \"${name}\" défini comme profil par défaut"
+#~ msgstr "Profil \"${name}\" défini comme profil par défaut"
+
+#~ msgid "Erreur lors de la définition du profil par défaut"
+#~ msgstr "Erreur lors de la définition du profil par défaut"
+
+#~ msgid "Aucun profil"
+#~ msgstr "Aucun profil"
+
+#~ msgid "Dupliquer"
+#~ msgstr "Dupliquer"
+
+#~ msgid "Renommer"
+#~ msgstr "Renommer"
+
+#~ msgid "Définir comme par défaut"
+#~ msgstr "Définir comme par défaut"
+
+#~ msgid "Profil par défaut"
+#~ msgstr "Profil par défaut"
+
+#~ msgid "Choisir un profil"
+#~ msgstr "Choisir un profil"
+
+#~ msgid ""
+#~ "Le profil \"${name}\" contient des "
+#~ "modifications non enregistrées. Que voulez-"
+#~ "vous faire ?"
+#~ msgstr ""
+#~ "Le profil \"${name}\" contient des "
+#~ "modifications non enregistrées. Que voulez-"
+#~ "vous faire ?"
+
+#~ msgid "Vous avez des modifications non enregistrées. Que voulez-vous faire ?"
+#~ msgstr "Vous avez des modifications non enregistrées. Que voulez-vous faire ?"
+
+#~ msgid "Erreur lors du chargement du profil par défaut"
+#~ msgstr "Erreur lors du chargement du profil par défaut"
+
+#~ msgid "Aucun profil par défaut"
+#~ msgstr "Aucun profil par défaut"
+
+#~ msgid ""
+#~ "Profil \"${selectedProfile}\" appliqué et "
+#~ "défini comme profil par défaut"
+#~ msgstr ""
+#~ "Profil \"${selectedProfile}\" appliqué et "
+#~ "défini comme profil par défaut"
+
+#~ msgid "Aucun profil par défaut défini"
+#~ msgstr "Aucun profil par défaut défini"
+
+#~ msgid "Le profil n'a pas pu être chargé : aucun profil n'est actif."
+#~ msgstr "Le profil n'a pas pu être chargé : aucun profil n'est actif."
+
+#~ msgid "Enregistrer dans un nouveau profil"
+#~ msgstr "Enregistrer dans un nouveau profil"
+
+#~ msgid "Nouveau profil"
+#~ msgstr "Nouveau profil"
+
+#~ msgid "Enregistrer le profil"
+#~ msgstr "Enregistrer le profil"
+
+#~ msgid "Renommer le profil"
+#~ msgstr "Renommer le profil"
+
+#~ msgid "Dupliquer le profil"
+#~ msgstr "Dupliquer le profil"
+
+#~ msgid "Le nom doit contenir au moins une lettre ou un chiffre"
+#~ msgstr "Le nom doit contenir au moins une lettre ou un chiffre"
+
+#~ msgid "« ${conflict} » existe déjà : la copie sera nommée « ${suggested} »"
+#~ msgstr "« ${conflict} » existe déjà : la copie sera nommée « ${suggested} »"
+
+#~ msgid "Un profil nommé « ${name} » existe déjà"
+#~ msgstr "Un profil nommé « ${name} » existe déjà"
+
+#~ msgid ""
+#~ "Ce nom est déjà pris par « "
+#~ "${conflict} » : les deux se "
+#~ "réduisent au fichier « ${key} »"
+#~ msgstr ""
+#~ "Ce nom est déjà pris par « "
+#~ "${conflict} » : les deux se "
+#~ "réduisent au fichier « ${key} »"
+
+#~ msgid ""
+#~ "Caractères ignorés (${dropped}) : le "
+#~ "profil sera enregistré sous « ${key} "
+#~ "»"
+#~ msgstr ""
+#~ "Caractères ignorés (${dropped}) : le "
+#~ "profil sera enregistré sous « ${key} "
+#~ "»"
+
+#~ msgid "Veuillez saisir un nom de profil"
+#~ msgstr "Veuillez saisir un nom de profil"
+
+#~ msgid "Profil renommé en \"${name}\""
+#~ msgstr "Profil renommé en \"${name}\""
+
+#~ msgid "Êtes-vous sûr de vouloir supprimer le profil \"${name}\" ?"
+#~ msgstr "Êtes-vous sûr de vouloir supprimer le profil \"${name}\" ?"
+
+#~ msgid ""
+#~ "Êtes-vous sûr de vouloir réinitialiser"
+#~ " le profil \"${name}\" aux valeurs "
+#~ "par défaut ?"
+#~ msgstr ""
+#~ "Êtes-vous sûr de vouloir réinitialiser"
+#~ " le profil \"${name}\" aux valeurs "
+#~ "par défaut ?"
+
+#~ msgid "Échec conversion en Blob"
+#~ msgstr "Échec conversion en Blob"
+
+#~ msgid "Échec chargement image"
+#~ msgstr "Chargement"
+
+#~ msgid "Type de données image non supporté"
+#~ msgstr "Format non supporté"
+
+#~ msgid "Enregistrement réinitialisé"
+#~ msgstr "Enregistrement vidéo"
+
+#~ msgid ""
+#~ "Performance d'enregistrement instable (${pct}% "
+#~ "de frames lentes). Souhaitez-vous "
+#~ "augmenter le ralentissement à x${slowdown} "
+#~ "automatiquement ?"
+#~ msgstr ""
+#~ "Performance d'enregistrement instable (${pct}% "
+#~ "de frames lentes). Souhaitez-vous "
+#~ "augmenter le ralentissement à x${slowdown} "
+#~ "automatiquement ?"
+
+#~ msgid "Performance enregistrement"
+#~ msgstr "Mode d'enregistrement"
+
+#~ msgid ""
+#~ "Ralentissement augmenté à x${slowdown}. "
+#~ "Redémarrez l'enregistrement pour appliquer le"
+#~ " changement."
+#~ msgstr ""
+#~ "Ralentissement augmenté à x${slowdown}. "
+#~ "Redémarrez l'enregistrement pour appliquer le"
+#~ " changement."
+
+#~ msgid "Paramètre mis à jour"
+#~ msgstr "Paramètres"
+
+#~ msgid "Erreur lors de la mise à jour du paramètre."
+#~ msgstr "Erreur lors de l'affichage des points sur la carte"
+
+#~ msgid ""
+#~ "Vous pouvez manuellement augmenter le "
+#~ "ralentissement à x${slowdown} dans les "
+#~ "paramètres d'enregistrement."
+#~ msgstr ""
+#~ "Vous pouvez manuellement augmenter le "
+#~ "ralentissement à x${slowdown} dans les "
+#~ "paramètres d'enregistrement."
+
+#~ msgid "Conseil"
+#~ msgstr "Annuler"
+
+#~ msgid "Ignorer"
+#~ msgstr "Ignorer"
+
+#~ msgid ""
+#~ "Performance instable (${pct}% de frames "
+#~ "lentes). Augmentez le ralentissement à "
+#~ "x${slowdown} dans les paramètres."
+#~ msgstr ""
+#~ "Performance instable (${pct}% de frames "
+#~ "lentes). Augmentez le ralentissement à "
+#~ "x${slowdown} dans les paramètres."
+
+#~ msgid ""
+#~ "Le ralentissement est déjà au maximum"
+#~ " (x${slowdown}). Réduisez le nombre de "
+#~ "points affichés ou la résolution."
+#~ msgstr ""
+#~ "Le ralentissement est déjà au maximum"
+#~ " (x${slowdown}). Réduisez le nombre de "
+#~ "points affichés ou la résolution."
+
+#~ msgid ""
+#~ "Réduisez la vitesse d'animation (augmentez "
+#~ "la durée par jour) ou le nombre"
+#~ " de points affichés."
+#~ msgstr ""
+#~ "Réduisez la vitesse d'animation (augmentez "
+#~ "la durée par jour) ou le nombre"
+#~ " de points affichés."
+
+#~ msgid ""
+#~ "Performance d'enregistrement instable (${pct}% "
+#~ "de frames lentes). ${suggestion}"
+#~ msgstr ""
+#~ "Performance d'enregistrement instable (${pct}% "
+#~ "de frames lentes). ${suggestion}"
+
+#~ msgid "Enregistrement…"
+#~ msgstr "Enregistrement…"
+
+#~ msgid "Enregistré"
+#~ msgstr "Enregistré"
+
+#~ msgid "Non enregistré"
+#~ msgstr "Non enregistré"
+
+#~ msgid "Musique : ${d}"
+#~ msgstr "Musique : ${d}"
+
+#~ msgid ""
+#~ "Musique plus courte que la durée "
+#~ "minimale (${min}) : durée ${d} "
+#~ "appliquée, la musique s'arrêtera avant "
+#~ "la fin."
+#~ msgstr ""
+#~ "Musique plus courte que la durée "
+#~ "minimale (${min}) : durée ${d} "
+#~ "appliquée, la musique s'arrêtera avant "
+#~ "la fin."
+
+#~ msgid "Durée calée sur la musique (${d})."
+#~ msgstr "Durée calée sur la musique (${d})."
+
+#~ msgid ""
+#~ "La musique (${m}) est plus longue "
+#~ "que la vidéo (${v}) : elle sera"
+#~ " coupée en fin de vidéo."
+#~ msgstr ""
+#~ "La musique (${m}) est plus longue "
+#~ "que la vidéo (${v}) : elle sera"
+#~ " coupée en fin de vidéo."
+
+#~ msgid "La musique (${m}) se termine avant la fin de la vidéo (${v})."
+#~ msgstr "La musique (${m}) se termine avant la fin de la vidéo (${v})."
+
+#~ msgid ""
+#~ "Ce format vidéo n'est pas supporté "
+#~ "par votre navigateur et sera ignoré "
+#~ "au démarrage de l'enregistrement."
+#~ msgstr ""
+#~ "Ce format vidéo n'est pas supporté "
+#~ "par votre navigateur et sera ignoré "
+#~ "au démarrage de l'enregistrement."
+
+#~ msgid "Format non supporté"
+#~ msgstr "Format non supporté"
+
+#~ msgid "Chargement de la musique..."
+#~ msgstr "Chargement de la musique..."
+
+#~ msgid "Durée de l'animation calée sur la musique"
+#~ msgstr "Durée de l'animation calée sur la musique"
+
+#~ msgid "Musique"
+#~ msgstr "Musique"
+
+#~ msgid "Erreur lors de la lecture du fichier audio"
+#~ msgstr "Erreur lors de la lecture du fichier audio"
+
+#~ msgid ""
+#~ "Sortie estimée : ${size}. La capture "
+#~ "rapide enregistre en temps réel : "
+#~ "si la vidéo saccade, choisissez une "
+#~ "résolution plus basse ou passez en "
+#~ "« Rendu image par image »."
+#~ msgstr ""
+#~ "Sortie estimée : ${size}. La capture "
+#~ "rapide enregistre en temps réel : "
+#~ "si la vidéo saccade, choisissez une "
+#~ "résolution plus basse ou passez en "
+#~ "« Rendu image par image »."
+
+#~ msgid ""
+#~ "Sortie estimée : ${size}. En mode "
+#~ "images, l'enregistrement devient beaucoup plus"
+#~ " lent : chaque image est capturée,"
+#~ " encodée et envoyée une par une. "
+#~ "La vidéo, elle, ne perdra aucune "
+#~ "image."
+#~ msgstr ""
+#~ "Sortie estimée : ${size}. En mode "
+#~ "images, l'enregistrement devient beaucoup plus"
+#~ " lent : chaque image est capturée,"
+#~ " encodée et envoyée une par une. "
+#~ "La vidéo, elle, ne perdra aucune "
+#~ "image."
+
+#~ msgid ""
+#~ "Même au débit maximal (${max} Mbit/s),"
+#~ " cette résolution restera compressée : "
+#~ "baisser les images par seconde ou "
+#~ "la résolution donnera une image plus "
+#~ "propre."
+#~ msgstr ""
+#~ "Même au débit maximal (${max} Mbit/s),"
+#~ " cette résolution restera compressée : "
+#~ "baisser les images par seconde ou "
+#~ "la résolution donnera une image plus "
+#~ "propre."
+
+#~ msgid "Débit ajusté à ${bitrate} Mbit/s pour cette résolution."
+#~ msgstr "Débit ajusté à ${bitrate} Mbit/s pour cette résolution."
+
+#~ msgid "Enregistrement du centre par défaut impossible"
+#~ msgstr "Enregistrement du centre par défaut impossible"
+
+#~ msgid "Coordonnées invalides. Ex: 48.85, 2.35 ou N 49° 16.029 E 006° 07.512"
+#~ msgstr "Coordonnées invalides. Ex: 48.85, 2.35 ou N 49° 16.029 E 006° 07.512"
+
+#~ msgid "Coordonnées invalides. Ex: N 49° 16.029 / E 006° 07.512"
+#~ msgstr "Coordonnées invalides. Ex: N 49° 16.029 / E 006° 07.512"
+
+#~ msgid "Cliquez sur la carte pour choisir le centre"
+#~ msgstr "Cliquez sur la carte pour choisir le centre"
+
+#~ msgid "Centre par défaut mis à jour depuis la carte"
+#~ msgstr "Centre par défaut mis à jour depuis la carte"
+
+#~ msgid ""
+#~ "Le format vidéo sauvegardé (${mime}) "
+#~ "n'est pas supporté par ce navigateur."
+#~ msgstr ""
+#~ "Le format vidéo sauvegardé (${mime}) "
+#~ "n'est pas supporté par ce navigateur."
+
+#~ msgid "Fermer MyGCFlow ? Le serveur local sera arrêté."
+#~ msgstr "Fermer MyGCFlow ? Le serveur local sera arrêté."
+
+#~ msgid "Quitter"
+#~ msgstr "Quitter"
+
+#~ msgid "MyGCFlow n'a pas pu être arrêté."
+#~ msgstr "MyGCFlow n'a pas pu être arrêté."
+
+#~ msgid ""
+#~ "Un import ou un traitement vidéo "
+#~ "est en cours. Il sera interrompu. "
+#~ "Quitter quand même ?"
+#~ msgstr ""
+#~ "Un import ou un traitement vidéo "
+#~ "est en cours. Il sera interrompu. "
+#~ "Quitter quand même ?"
+
+#~ msgid "Quitter quand même"
+#~ msgstr "Quitter quand même"
+
+#~ msgid "MyGCFlow est fermé"
+#~ msgstr "MyGCFlow est fermé"
+
+#~ msgid "Vous pouvez fermer cet onglet."
+#~ msgstr "Vous pouvez fermer cet onglet."
+
+#~ msgid ""
+#~ "La vidéo ne sera ni téléchargée ni"
+#~ " uploadée : elle sera perdue après"
+#~ " l'enregistrement."
+#~ msgstr ""
+#~ "La vidéo ne sera ni téléchargée ni"
+#~ " uploadée : elle sera perdue après"
+#~ " l'enregistrement."
+
+#~ msgid "Aucune destination"
+#~ msgstr "Aucune destination"
+
+#~ msgid "Pause non disponible pendant l'enregistrement - utilisez Arrêter"
+#~ msgstr "Pause non disponible pendant l'enregistrement - utilisez Arrêter"
+
+#~ msgid "Valeur requise."
+#~ msgstr "Valeur requise."
+
+#~ msgid "Format attendu : mm:ss (ex. 4:55)."
+#~ msgstr "Format attendu : mm:ss (ex. 4:55)."
+
+#~ msgid "Nombre attendu."
+#~ msgstr "Nombre attendu."
+
+#~ msgid "La valeur doit être strictement positive."
+#~ msgstr "La valeur doit être strictement positive."
+
+#~ msgid "Entre ${min} et ${max} jours/s."
+#~ msgstr "Entre ${min} et ${max} jours/s."
+
+#~ msgid "Entre ${min} et ${max} s."
+#~ msgstr "Entre ${min} et ${max} s."
+
+#~ msgid "Maximum ${max} s."
+#~ msgstr "Maximum ${max} s."
+
+#~ msgid "Entre 100 et 10000 ms."
+#~ msgstr "Entre 100 et 10000 ms."
+
+#~ msgid "Hors limites."
+#~ msgstr "Hors limites."
+
+#~ msgid "Valeur invalide."
+#~ msgstr "Valeur invalide."
+
+#~ msgid "${n} jours"
+#~ msgstr "${n} jours"
+
+#~ msgid "${n} jours/s"
+#~ msgstr "${n} jours/s"
+
+#~ msgid "animation minimale ${d}"
+#~ msgstr "animation minimale ${d}"
+
+#~ msgid "animation ${d}"
+#~ msgstr "animation ${d}"
+
+#~ msgid "fin ${d}"
+#~ msgstr "fin ${d}"
+
+#~ msgid "+ ${d} additionnel"
+#~ msgstr "+ ${d} additionnel"
+
+#~ msgid "vidéo minimale ${d}"
+#~ msgstr "vidéo minimale ${d}"
+
+#~ msgid "vidéo ${d}"
+#~ msgstr "vidéo ${d}"
+
+#~ msgid "${n} images minimum"
+#~ msgstr "${n} images minimum"
+
+#~ msgid "${n} images"
+#~ msgstr "${n} images"
+
+#~ msgid "Vidéo ~${d}"
+#~ msgstr "Vidéo ~${d}"
+
+#~ msgid "musique incluse"
+#~ msgstr "musique incluse"
+
+#~ msgid "sans musique"
+#~ msgstr "sans musique"
+
+#~ msgid "dossier Vidéos"
+#~ msgstr "dossier Vidéos"
+
+#~ msgid "dossier Vidéos + téléchargement"
+#~ msgstr "dossier Vidéos + téléchargement"
+
+#~ msgid "téléchargement navigateur"
+#~ msgstr "téléchargement navigateur"
+
+#~ msgid "aucune copie conservée"
+#~ msgstr "aucune copie conservée"
+
+#~ msgid "destination : ${d}"
+#~ msgstr "destination : ${d}"
+
+#~ msgid "La plage de dates est invalide ou vide."
+#~ msgstr "La plage de dates est invalide ou vide."
+
+#~ msgid "Sélectionnez un fichier audio pour le mode « Sur la musique »."
+#~ msgstr "Sélectionnez un fichier audio pour le mode « Sur la musique »."
+
+#~ msgid "En attente de la lecture de la durée de la musique."
+#~ msgstr "En attente de la lecture de la durée de la musique."
+
+#~ msgid ""
+#~ "Durée demandée (${req}) trop courte pour"
+#~ " afficher chaque jour (minimum ${min}) "
+#~ ": ${app} appliquée."
+#~ msgstr ""
+#~ "Durée demandée (${req}) trop courte pour"
+#~ " afficher chaque jour (minimum ${min}) "
+#~ ": ${app} appliquée."
+
+#~ msgid ""
+#~ "Le suivi de caméra met les dates"
+#~ " en pause pendant chaque déplacement. "
+#~ "La durée et le nombre d'images "
+#~ "affichés sont des minimums ; le "
+#~ "résultat sera plus long et peut "
+#~ "dépasser la durée de la musique."
+#~ msgstr ""
+#~ "Le suivi de caméra met les dates"
+#~ " en pause pendant chaque déplacement. "
+#~ "La durée et le nombre d'images "
+#~ "affichés sont des minimums ; le "
+#~ "résultat sera plus long et peut "
+#~ "dépasser la durée de la musique."
+
+#~ msgid ""
+#~ "Charge élevée : jusqu'à ~${n} flashs "
+#~ "simultanés. Pistes : raccourcir la durée"
+#~ " du flash, ralentir l'animation, ou "
+#~ "utiliser le mode Images."
+#~ msgstr ""
+#~ "Charge élevée : jusqu'à ~${n} flashs "
+#~ "simultanés. Pistes : raccourcir la durée"
+#~ " du flash, ralentir l'animation, ou "
+#~ "utiliser le mode Images."
+
+#~ msgid ""
+#~ "${n} images à produire (~${d} en "
+#~ "mode Images). Envisagez un fps plus "
+#~ "bas ou une animation plus courte."
+#~ msgstr ""
+#~ "${n} images à produire (~${d} en "
+#~ "mode Images). Envisagez un fps plus "
+#~ "bas ou une animation plus courte."
+
+#~ msgid "Images de capture supprimées"
+#~ msgstr "Images de capture supprimées"
+
+#~ msgid "Nettoyage"
+#~ msgstr "Nettoyage"
+
+#~ msgid "Dossier vidéo: ${folder}"
+#~ msgstr "Dossier vidéo: ${folder}"
+
+#~ msgid "Ouverture"
+#~ msgstr "Ouverture"
+
+#~ msgid "Impossible d’ouvrir le dossier vidéo"
+#~ msgstr "Impossible d’ouvrir le dossier vidéo"
+
+#~ msgid "Erreur lors de l’ouverture du dossier vidéo"
+#~ msgstr "Erreur lors de l’ouverture du dossier vidéo"
+
+#~ msgid "Sélectionnez d'abord un fichier audio"
+#~ msgstr "Sélectionnez d'abord un fichier audio"
+
+#~ msgid "Non disponible"
+#~ msgstr "Non disponible"
+
+#~ msgid "Type"
+#~ msgstr "Style"
+
+#~ msgid "Durée"
+#~ msgstr "Par durée"
+
+#~ msgid "Modifié"
+#~ msgstr "Modifié"
+
+#~ msgid "Erreur lors du chargement du fichier audio"
+#~ msgstr "Erreur lors du chargement du fichier"
+
+#~ msgid ""
+#~ "Le navigateur limite l'accélération à "
+#~ "x${effective} (x${requested} demandé) : la "
+#~ "vidéo restera environ ${ratio}x plus "
+#~ "lente que prévu. Utilisez le traitement"
+#~ " serveur pour un rythme exact."
+#~ msgstr ""
+#~ "Le navigateur limite l'accélération à "
+#~ "x${effective} (x${requested} demandé) : la "
+#~ "vidéo restera environ ${ratio}x plus "
+#~ "lente que prévu. Utilisez le traitement"
+#~ " serveur pour un rythme exact."
+
+#~ msgid "captureStream non supporté pour la normalisation"
+#~ msgstr "captureStream non supporté pour la normalisation"
+
+#~ msgid "Timeout normalisation vidéo (${timeout}s) : lecture bloquée ?"
+#~ msgstr "Timeout normalisation vidéo (${timeout}s) : lecture bloquée ?"
+
+#~ msgid "inconnue"
+#~ msgstr "Continuer"
+
+#~ msgid "Erreur encodeur lors de la normalisation : ${detail}"
+#~ msgstr "Erreur encodeur lors de la normalisation : ${detail}"
+
+#~ msgid "Normalisation ${p}%"
+#~ msgstr "animation ${d}"
+
+#~ msgid "Normalisation en cours"
+#~ msgstr "Import en cours"
+
+#~ msgid "Erreur lecture vidéo pour normalisation"
+#~ msgstr "Erreur lecture vidéo pour normalisation"
+
+#~ msgid "captureStream non supporté pour mux audio"
+#~ msgstr "captureStream non supporté pour mux audio"
+
+#~ msgid "Timeout mux audio (${timeout}s) : lecture bloquée ?"
+#~ msgstr "Timeout mux audio (${timeout}s) : lecture bloquée ?"
+
+#~ msgid "Aucune piste vidéo disponible pour le mux audio"
+#~ msgstr "Aucune piste vidéo disponible pour le mux audio"
+
+#~ msgid "Erreur encodeur lors du mux audio : ${detail}"
+#~ msgstr "Erreur encodeur lors du mux audio : ${detail}"
+
+#~ msgid "Impossible de démarrer la piste audio : ${detail}"
+#~ msgstr "Impossible de démarrer la piste audio : ${detail}"
+
+#~ msgid "Erreur lecture vidéo pour mux audio"
+#~ msgstr "Erreur lors de la lecture du fichier audio"
+
+#~ msgid "Ouverture du flux vidéo impossible"
+#~ msgstr "Ouverture du flux vidéo impossible"
+
+#~ msgid "Aucun flux vidéo ouvert"
+#~ msgstr "Aucun flux vidéo ouvert"
 

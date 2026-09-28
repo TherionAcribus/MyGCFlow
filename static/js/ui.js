@@ -1254,6 +1254,37 @@ function initMapTabsSplitPane() {
         return { clamped, containerHeight };
     }
 
+    // Préréglages de disposition : la part de hauteur visée pour la carte.
+    // Le réglage résultant est persisté comme un déplacement manuel du
+    // séparateur (STORAGE_KEY en px), le preset n'est pas mémorisé en soi.
+    const LAYOUT_PRESETS = { map: 0.8, balanced: 0.6, tabs: 0.25 };
+    const LAYOUT_PRESET_TOLERANCE = 0.08;
+    const presetButtons = document.querySelectorAll('#layoutPresets [data-layout]');
+
+    function syncLayoutPresets() {
+        const containerHeight = container.clientHeight;
+        if (!containerHeight || !presetButtons.length) return;
+        const ratio = mapWithFrames.getBoundingClientRect().height / containerHeight;
+        let best = null;
+        let bestDist = Infinity;
+        for (const [name, r] of Object.entries(LAYOUT_PRESETS)) {
+            const d = Math.abs(ratio - r);
+            if (d < bestDist) { bestDist = d; best = name; }
+        }
+        presetButtons.forEach((b) => {
+            const active = b.dataset.layout === best && bestDist <= LAYOUT_PRESET_TOLERANCE;
+            b.setAttribute('aria-pressed', String(active));
+            b.classList.toggle('active', active);
+        });
+    }
+
+    presetButtons.forEach((b) => b.addEventListener('click', () => {
+        if (isFullscreenMode()) return;
+        const ratio = LAYOUT_PRESETS[b.dataset.layout];
+        if (!ratio) return;
+        applyMapHeightPx(container.clientHeight * ratio, true);
+    }));
+
     function applyMapHeightPx(mapHeightPx, persist) {
         const { clamped, containerHeight } = clampMapHeightPx(mapHeightPx);
         mapWithFrames.style.height = `${clamped}px`;
@@ -1267,6 +1298,8 @@ function initMapTabsSplitPane() {
         if (persist) {
             localStorage.setItem(STORAGE_KEY, String(Math.round(clamped)));
         }
+
+        syncLayoutPresets();
 
         if (!isResizing) {
             dispatchMapResize();
