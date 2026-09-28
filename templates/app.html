@@ -30,8 +30,11 @@
 
         <!-- Tabler 1.4.0 (inclut Bootstrap 5) — socle CSS de toute l'interface. -->
         <link rel="stylesheet" href="../static/vendor/tabler/tabler.min.css">
-        <!-- Tabler Icons (webfont) — remplace progressivement Material Icons -->
-        <link rel="stylesheet" href="../static/vendor/tabler-icons/tabler-icons.min.css">
+        <!-- Tabler Icons (webfont) — remplace progressivement Material Icons.
+             Sous-ensemble généré par generate_icons_subset.py (~4 Ko de CSS +
+             ~17 Ko de woff2 au lieu de ~1 Mo) ; la fonte complète reste
+             disponible en tabler-icons.min.css si besoin. -->
+        <link rel="stylesheet" href="../static/vendor/tabler-icons/tabler-icons-subset.css">
         <!-- Tom Select 2.x — multi-selects avec checkboxes/recherche/tags -->
         <link rel="stylesheet" href="../static/vendor/tom-select/tom-select.bootstrap5.css">
         <!-- Tempus Dominus 6.x — datepickers Bootstrap 5 natif -->

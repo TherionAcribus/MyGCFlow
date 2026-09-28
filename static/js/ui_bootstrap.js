@@ -460,7 +460,7 @@ export const ICON_MAP = {
     'filter_list': 'filter',
     'sort': 'sort-ascending',
     'more_vert': 'dots-vertical',
-    'more_horiz': 'dots-horizontal',
+    'more_horiz': 'dots',
     'person': 'user',
     'people': 'users',
     'share': 'share',

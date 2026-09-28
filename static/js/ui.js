@@ -3656,6 +3656,9 @@ export function selectMapMenu(layerName) {
         if (!button) continue;
         const isSelected = id === layerName;
         button.classList.toggle('is-selected', isSelected);
+        // La coche .map-card-check est purement visuelle : l'état sélectionné
+        // doit être exposé aux lecteurs d'écran.
+        button.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
     }
 
     const selectedPanel = selectedMenu.optionsPanel;

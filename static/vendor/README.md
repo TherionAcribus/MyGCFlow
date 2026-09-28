@@ -16,7 +16,7 @@ templates. Aucun fichier n'est modifié par rapport à l'original publié sur np
 | Dossier | Paquet npm | Version | Fichiers |
 | --- | --- | --- | --- |
 | `tabler/` | `@tabler/core` | 1.4.0 | `tabler.min.css`, `tabler.min.js` (inclut le bundle Bootstrap 5) |
-| `tabler-icons/` | `@tabler/icons-webfont` | 3.34.1 | `tabler-icons.min.css` + `fonts/` (woff2, woff, ttf) |
+| `tabler-icons/` | `@tabler/icons-webfont` | 3.34.1 | `tabler-icons.min.css` + `fonts/` (woff2, woff, ttf). Les templates chargent `tabler-icons-subset.css` + `fonts/tabler-icons-subset.woff2`, **générés** par `generate_icons_subset.py` (~21 Ko au lieu de ~1 Mo) — à relancer après une mise à jour du paquet ou l'ajout d'une icône `ti-*`. |
 | `tom-select/` | `tom-select` | 2.4.3 | `tom-select.bootstrap5.css`, `tom-select.complete.min.js` |
 | `tempus-dominus/` | `@eonasdan/tempus-dominus` | 6.10.4 | `tempus-dominus.min.css`, `tempus-dominus.min.js` |
 | `popperjs/` | `@popperjs/core` | 2.11.8 | `popper.min.js` (requis par Tempus Dominus) |

@@ -1,3 +1,6 @@
 # Construction de l'exécutable Windows (installer/build.ps1).
 -r requirements.txt
 pyinstaller==6.22.3
+# Subset de la fonte Tabler Icons (generate_icons_subset.py) : extra woff
+# pour la sortie woff2 (brotli/zopfli).
+fontTools[woff]==4.66.0
