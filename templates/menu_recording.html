@@ -1,4 +1,7 @@
 {% from '_scope_badges.html' import global_scope_badge with context %}
+{# Récapitulatif avant export : durée, mode, définition, musique, destination.
+   Rempli par updateExportSummary (ui.js) à chaque changement de réglage. #}
+<p class="export-summary form-hint text-muted border rounded px-3 py-2 mb-3" id="exportSummary" aria-live="polite"></p>
 <p class="form-hint text-muted mb-2">
     <i class="ti ti-device-floppy me-1" aria-hidden="true"></i>{{ _("Réglages d'export") }}{{ global_scope_badge() }}
     <span class="d-block mt-1">{{ _("Enregistrés automatiquement avec les préférences de l'application, pas dans le profil.") }}</span>

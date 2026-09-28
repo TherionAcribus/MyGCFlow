@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-28 19:51+0200\n"
+"POT-Creation-Date: 2026-09-28 20:23+0200\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -288,7 +288,7 @@ msgstr "Missing video fragment"
 msgid "Base de données"
 msgstr "Database"
 
-#: blueprints/core.py:139 templates/guide.html:127 templates/menu_data.html:40
+#: blueprints/core.py:139 templates/guide.html:127 templates/menu_data.html:54
 #: test_translations.py:28
 msgid "Filtres"
 msgstr "Filters"
@@ -297,16 +297,16 @@ msgstr "Filters"
 msgid "Paramètres"
 msgstr "Settings"
 
-#: templates/app.html:140 templates/guide.html:46 templates/guide.html:73
+#: templates/app.html:143 templates/guide.html:46 templates/guide.html:73
 #: templates/guide.html:95 templates/guide.html:103 templates/guide.html:123
-#: templates/menu_animation.html:62 templates/menu_animation.html:76
+#: templates/menu_animation.html:63 templates/menu_animation.html:77
 #: templates/menu_filtre.html:118 templates/menu_filtre.html:127
 #: templates/menu_filtre.html:143 templates/menu_filtre.html:152
 #: test_translations.py:30
 msgid "Données"
 msgstr "Data"
 
-#: templates/app.html:141 templates/guide.html:49 templates/guide.html:78
+#: templates/app.html:144 templates/guide.html:49 templates/guide.html:78
 #: templates/guide.html:95 templates/guide.html:146 templates/guide.html:148
 #: templates/menu_informations.html:139 test_translations.py:31
 msgid "Style"
@@ -430,9 +430,9 @@ msgid ""
 "instable ?)."
 msgstr "Some map tiles could not be loaded (unstable connection?)."
 
-#: static/js/basemaps.js:102 static/js/basemaps.js:139 static/js/ui.js:1947
-#: static/js/ui.js:1978 static/js/ui.js:2000 static/js/ui.js:2122
-#: static/js/ui.js:2136
+#: static/js/basemaps.js:102 static/js/basemaps.js:139 static/js/ui.js:1966
+#: static/js/ui.js:1997 static/js/ui.js:2019 static/js/ui.js:2141
+#: static/js/ui.js:2155
 msgid "Carte"
 msgstr "Map"
 
@@ -509,7 +509,7 @@ msgstr "imported ${when}"
 msgid "Aucune trouvaille chargée"
 msgstr "No finds loaded"
 
-#: static/js/bdd.js:501 templates/menu_data.html:51
+#: static/js/bdd.js:501 templates/menu_data.html:65
 msgid "Sélection: 0 / 0"
 msgstr "Selection: 0 / 0"
 
@@ -571,7 +571,7 @@ msgstr "Error while uploading the file"
 #: static/js/bdd.js:946 static/js/bdd.js:953 static/js/bdd.js:1025
 #: static/js/bdd.js:1033 static/js/bdd.js:1216 static/js/bdd.js:1287
 #: static/js/bdd.js:1294 static/js/notifications.js:310
-#: static/js/recording_perf.js:187 static/js/ui.js:1170
+#: static/js/recording_perf.js:187 static/js/ui.js:1189
 msgid "Erreur"
 msgstr "Error"
 
@@ -833,7 +833,7 @@ msgstr "Task monitoring stopped after ${count} consecutive errors: ${detail}"
 msgid "Envoi des dernières images..."
 msgstr "Sending last images..."
 
-#: static/js/mapgl.js:1895 static/js/ui.js:5122
+#: static/js/mapgl.js:1895 static/js/ui.js:5194
 msgid "Assemblage en cours"
 msgstr "Assembly in progress"
 
@@ -1491,7 +1491,7 @@ msgstr ""
 msgid "La musique (${m}) se termine avant la fin de la vidéo (${v})."
 msgstr "The music (${m}) ends before the end of the video (${v})."
 
-#: static/js/ui.js:1020
+#: static/js/ui.js:1039
 msgid ""
 "Ce format vidéo n'est pas supporté par votre navigateur et sera ignoré au"
 " démarrage de l'enregistrement."
@@ -1499,27 +1499,27 @@ msgstr ""
 "This video format is not supported by your browser and will be ignored "
 "when recording starts."
 
-#: static/js/ui.js:1021 static/js/ui.js:2205
+#: static/js/ui.js:1040 static/js/ui.js:2224
 msgid "Format non supporté"
 msgstr "Unsupported format"
 
-#: static/js/ui.js:1092
+#: static/js/ui.js:1111
 msgid "Chargement de la musique..."
 msgstr "Loading music..."
 
-#: static/js/ui.js:1166
+#: static/js/ui.js:1185
 msgid "Durée de l'animation calée sur la musique"
 msgstr "Animation duration synced to the music"
 
-#: static/js/ui.js:1166
+#: static/js/ui.js:1185
 msgid "Musique"
 msgstr "Music"
 
-#: static/js/ui.js:1170
+#: static/js/ui.js:1189
 msgid "Erreur lors de la lecture du fichier audio"
 msgstr "Error reading the audio file"
 
-#: static/js/ui.js:1224
+#: static/js/ui.js:1243
 #, python-brace-format
 msgid ""
 "Sortie estimée : ${size}. La capture rapide enregistre en temps réel : si"
@@ -1530,7 +1530,7 @@ msgstr ""
 "video stutters, choose a lower resolution or switch to frame-by-frame "
 "rendering."
 
-#: static/js/ui.js:1225
+#: static/js/ui.js:1244
 #, python-brace-format
 msgid ""
 "Sortie estimée : ${size}. En mode images, l'enregistrement devient "
@@ -1541,7 +1541,7 @@ msgstr ""
 " every frame is captured, encoded and uploaded one by one. The video "
 "itself will not drop a single frame."
 
-#: static/js/ui.js:1234
+#: static/js/ui.js:1253
 #, python-brace-format
 msgid ""
 "Même au débit maximal (${max} Mbit/s), cette résolution restera "
@@ -1552,50 +1552,50 @@ msgstr ""
 "compressed: lowering the frame rate or the resolution will give a cleaner"
 " image."
 
-#: static/js/ui.js:1238
+#: static/js/ui.js:1257
 #, python-brace-format
 msgid "Débit ajusté à ${bitrate} Mbit/s pour cette résolution."
 msgstr "Bitrate raised to ${bitrate} Mbit/s for this resolution."
 
-#: static/js/ui.js:1947
+#: static/js/ui.js:1966
 msgid "Enregistrement du centre par défaut impossible"
 msgstr "Could not save the default map center"
 
-#: static/js/ui.js:1978
+#: static/js/ui.js:1997
 msgid "Coordonnées invalides. Ex: 48.85, 2.35 ou N 49° 16.029 E 006° 07.512"
 msgstr "Invalid coordinates. E.g. 48.85, 2.35 or N 49° 16.029 E 006° 07.512"
 
-#: static/js/ui.js:2000
+#: static/js/ui.js:2019
 msgid "Coordonnées invalides. Ex: N 49° 16.029 / E 006° 07.512"
 msgstr "Invalid coordinates. E.g. N 49° 16.029 / E 006° 07.512"
 
-#: static/js/ui.js:2122
+#: static/js/ui.js:2141
 msgid "Cliquez sur la carte pour choisir le centre"
 msgstr "Click the map to choose the center"
 
-#: static/js/ui.js:2136
+#: static/js/ui.js:2155
 msgid "Centre par défaut mis à jour depuis la carte"
 msgstr "Default center updated from the map"
 
-#: static/js/ui.js:2204
+#: static/js/ui.js:2223
 #, python-brace-format
 msgid "Le format vidéo sauvegardé (${mime}) n'est pas supporté par ce navigateur."
 msgstr "The saved video format (${mime}) is not supported by this browser."
 
-#: static/js/ui.js:2285
+#: static/js/ui.js:2304
 msgid "Fermer MyGCFlow ? Le serveur local sera arrêté."
 msgstr "Close MyGCFlow? The local server will be stopped."
 
-#: static/js/ui.js:2286 static/js/ui.js:2289 static/js/ui.js:2309
-#: static/js/ui.js:2316 static/js/ui.js:2324
+#: static/js/ui.js:2305 static/js/ui.js:2308 static/js/ui.js:2328
+#: static/js/ui.js:2335 static/js/ui.js:2343
 msgid "Quitter"
 msgstr "Quit"
 
-#: static/js/ui.js:2309 static/js/ui.js:2324
+#: static/js/ui.js:2328 static/js/ui.js:2343
 msgid "MyGCFlow n'a pas pu être arrêté."
 msgstr "MyGCFlow could not be stopped."
 
-#: static/js/ui.js:2315
+#: static/js/ui.js:2334
 msgid ""
 "Un import ou un traitement vidéo est en cours. Il sera interrompu. "
 "Quitter quand même ?"
@@ -1603,19 +1603,19 @@ msgstr ""
 "An import or a video processing task is running. It will be interrupted. "
 "Quit anyway?"
 
-#: static/js/ui.js:2319
+#: static/js/ui.js:2338
 msgid "Quitter quand même"
 msgstr "Quit anyway"
 
-#: static/js/ui.js:2339
+#: static/js/ui.js:2358
 msgid "MyGCFlow est fermé"
 msgstr "MyGCFlow is closed"
 
-#: static/js/ui.js:2340
+#: static/js/ui.js:2359
 msgid "Vous pouvez fermer cet onglet."
 msgstr "You can close this tab."
 
-#: static/js/ui.js:2577
+#: static/js/ui.js:2596
 msgid ""
 "La vidéo ne sera ni téléchargée ni uploadée : elle sera perdue après "
 "l'enregistrement."
@@ -1623,135 +1623,169 @@ msgstr ""
 "The video will be neither downloaded nor uploaded: it will be lost after "
 "recording."
 
-#: static/js/ui.js:2578
+#: static/js/ui.js:2597
 msgid "Aucune destination"
 msgstr "No destination"
 
-#: static/js/ui.js:3287 templates/menu_filtre.html:40
+#: static/js/ui.js:3306 templates/menu_filtre.html:40
 #: templates/menu_filtre.html:58 templates/menu_filtre.html:82
 #: templates/menu_filtre.html:103 templates/menu_filtre.html:167
 #: templates/menu_filtre.html:177
 msgid "Aucun"
 msgstr "None"
 
-#: static/js/ui.js:3358 templates/menu_filtre.html:163
+#: static/js/ui.js:3377 templates/menu_filtre.html:163
 msgid "Filtrer par pays"
 msgstr "Filter by country"
 
-#: static/js/ui.js:3387 static/js/ui.js:3438 templates/menu_filtre.html:173
+#: static/js/ui.js:3406 static/js/ui.js:3457 templates/menu_filtre.html:173
 msgid "Filtrer par région/état"
 msgstr "Filter by region/state"
 
-#: static/js/ui.js:4541
+#: static/js/ui.js:4565
 msgid "Pause non disponible pendant l'enregistrement - utilisez Arrêter"
 msgstr "Pause unavailable while recording - use Stop"
 
-#: static/js/ui.js:4791
+#: static/js/ui.js:4816
 msgid "Valeur requise."
 msgstr "Value required."
 
-#: static/js/ui.js:4793
+#: static/js/ui.js:4818
 msgid "Format attendu : mm:ss (ex. 4:55)."
 msgstr "Expected format: mm:ss (e.g. 4:55)."
 
-#: static/js/ui.js:4794
+#: static/js/ui.js:4819
 msgid "Nombre attendu."
 msgstr "Number expected."
 
-#: static/js/ui.js:4795
+#: static/js/ui.js:4820
 msgid "La valeur doit être strictement positive."
 msgstr "The value must be strictly positive."
 
-#: static/js/ui.js:4797
+#: static/js/ui.js:4822
 #, python-brace-format
 msgid "Entre ${min} et ${max} jours/s."
 msgstr "Between ${min} and ${max} days/s."
 
-#: static/js/ui.js:4798
+#: static/js/ui.js:4823
 #, python-brace-format
 msgid "Entre ${min} et ${max} s."
 msgstr "Between ${min} and ${max} s."
 
-#: static/js/ui.js:4799
+#: static/js/ui.js:4824
 #, python-brace-format
 msgid "Maximum ${max} s."
 msgstr "Maximum ${max} s."
 
-#: static/js/ui.js:4800
+#: static/js/ui.js:4825
 msgid "Entre 100 et 10000 ms."
 msgstr "Between 100 and 10000 ms."
 
-#: static/js/ui.js:4801
+#: static/js/ui.js:4826
 msgid "Hors limites."
 msgstr "Out of bounds."
 
-#: static/js/ui.js:4802
+#: static/js/ui.js:4827
 msgid "Valeur invalide."
 msgstr "Invalid value."
 
-#: static/js/ui.js:4862
+#: static/js/ui.js:4887
 #, python-brace-format
 msgid "${n} jours"
 msgstr "${n} days"
 
-#: static/js/ui.js:4863
+#: static/js/ui.js:4888
 #, python-brace-format
 msgid "${n} jours/s"
 msgstr "${n} days/s"
 
-#: static/js/ui.js:4865
+#: static/js/ui.js:4890
 #, python-brace-format
 msgid "animation minimale ${d}"
 msgstr "minimum animation ${d}"
 
-#: static/js/ui.js:4866
+#: static/js/ui.js:4891
 #, python-brace-format
 msgid "animation ${d}"
 msgstr "animation ${d}"
 
-#: static/js/ui.js:4867
+#: static/js/ui.js:4892
 #, python-brace-format
 msgid "fin ${d}"
 msgstr "end ${d}"
 
-#: static/js/ui.js:4869
+#: static/js/ui.js:4894
 #, python-brace-format
 msgid "+ ${d} additionnel"
 msgstr "+ ${d} extra"
 
-#: static/js/ui.js:4871
+#: static/js/ui.js:4896
 #, python-brace-format
 msgid "vidéo minimale ${d}"
 msgstr "minimum video ${d}"
 
-#: static/js/ui.js:4872
+#: static/js/ui.js:4897
 #, python-brace-format
 msgid "vidéo ${d}"
 msgstr "video ${d}"
 
-#: static/js/ui.js:4874
+#: static/js/ui.js:4899
 #, python-brace-format
 msgid "${n} images minimum"
 msgstr "${n} frames minimum"
 
-#: static/js/ui.js:4875
+#: static/js/ui.js:4900
 #, python-brace-format
 msgid "${n} images"
 msgstr "${n} frames"
 
-#: static/js/ui.js:4894
+#: static/js/ui.js:4925
+#, python-brace-format
+msgid "Vidéo ~${d}"
+msgstr "Video ~${d}"
+
+#: static/js/ui.js:4933
+msgid "musique incluse"
+msgstr "music included"
+
+#: static/js/ui.js:4934
+msgid "sans musique"
+msgstr "no music"
+
+#: static/js/ui.js:4942 static/js/ui.js:4947
+msgid "dossier Vidéos"
+msgstr "Videos folder"
+
+#: static/js/ui.js:4946
+msgid "dossier Vidéos + téléchargement"
+msgstr "Videos folder + download"
+
+#: static/js/ui.js:4948
+msgid "téléchargement navigateur"
+msgstr "browser download"
+
+#: static/js/ui.js:4949
+msgid "aucune copie conservée"
+msgstr "no copy saved"
+
+#: static/js/ui.js:4951
+#, python-brace-format
+msgid "destination : ${d}"
+msgstr "destination: ${d}"
+
+#: static/js/ui.js:4966
 msgid "La plage de dates est invalide ou vide."
 msgstr "The date range is invalid or empty."
 
-#: static/js/ui.js:4895
+#: static/js/ui.js:4967
 msgid "Sélectionnez un fichier audio pour le mode « Sur la musique »."
 msgstr "Select an audio file for the \"Sync to music\" mode."
 
-#: static/js/ui.js:4902
+#: static/js/ui.js:4974
 msgid "En attente de la lecture de la durée de la musique."
 msgstr "Waiting for the music duration to be read."
 
-#: static/js/ui.js:4916
+#: static/js/ui.js:4988
 #, python-brace-format
 msgid ""
 "Durée demandée (${req}) trop courte pour afficher chaque jour (minimum "
@@ -1760,7 +1794,7 @@ msgstr ""
 "Requested duration (${req}) too short to show every day (minimum ${min}):"
 " ${app} applied."
 
-#: static/js/ui.js:4926
+#: static/js/ui.js:4998
 msgid ""
 "Le suivi de caméra met les dates en pause pendant chaque déplacement. La "
 "durée et le nombre d'images affichés sont des minimums ; le résultat sera"
@@ -1770,7 +1804,7 @@ msgstr ""
 "and frame count are minimums; the result will be longer and may exceed "
 "the music duration."
 
-#: static/js/ui.js:4959
+#: static/js/ui.js:5031
 #, python-brace-format
 msgid ""
 "Charge élevée : jusqu'à ~${n} flashs simultanés. Pistes : raccourcir la "
@@ -1779,7 +1813,7 @@ msgstr ""
 "High load: up to ~${n} simultaneous flashes. Suggestions: shorten the "
 "flash duration, slow down the animation, or use Images mode."
 
-#: static/js/ui.js:4963
+#: static/js/ui.js:5035
 #, python-brace-format
 msgid ""
 "${n} images à produire (~${d} en mode Images). Envisagez un fps plus bas "
@@ -1788,71 +1822,71 @@ msgstr ""
 "${n} frames to produce (~${d} in Images mode). Consider a lower fps or a "
 "shorter animation."
 
-#: static/js/ui.js:5118
+#: static/js/ui.js:5190
 msgid "Images de capture supprimées"
 msgstr "Capture images deleted"
 
-#: static/js/ui.js:5118
+#: static/js/ui.js:5190
 msgid "Nettoyage"
 msgstr "Cleanup"
 
-#: static/js/ui.js:5142
+#: static/js/ui.js:5214
 #, python-brace-format
 msgid "Dossier vidéo: ${folder}"
 msgstr "Video folder: ${folder}"
 
-#: static/js/ui.js:5142 static/js/ui.js:5144 static/js/ui.js:5149
+#: static/js/ui.js:5214 static/js/ui.js:5216 static/js/ui.js:5221
 msgid "Ouverture"
 msgstr "Opening"
 
-#: static/js/ui.js:5144
+#: static/js/ui.js:5216
 msgid "Impossible d’ouvrir le dossier vidéo"
 msgstr "Unable to open the video folder"
 
-#: static/js/ui.js:5149
+#: static/js/ui.js:5221
 msgid "Erreur lors de l’ouverture du dossier vidéo"
 msgstr "Error opening the video folder"
 
-#: static/js/ui.js:6055 templates/menu_animation.html:29
+#: static/js/ui.js:6127 templates/menu_animation.html:29
 msgid "Plein écran"
 msgstr "Fullscreen"
 
-#: static/js/ui.js:6056 templates/menu_animation.html:29
+#: static/js/ui.js:6128 templates/menu_animation.html:29
 msgid "Quitter le plein écran"
 msgstr "Exit fullscreen"
 
-#: static/js/ui.js:6370
+#: static/js/ui.js:6449
 msgid "Sélectionnez d'abord un fichier audio"
 msgstr "Select an audio file first"
 
-#: static/js/ui.js:6417 templates/menu_animation.html:193
+#: static/js/ui.js:6496 templates/menu_animation.html:194
 msgid "Aucune musique sélectionnée"
 msgstr "No music selected"
 
-#: static/js/ui.js:6450
+#: static/js/ui.js:6529
 msgid "Non disponible"
 msgstr "Not available"
 
-#: static/js/ui.js:6457 templates/menu_filtre.html:45
+#: static/js/ui.js:6536 templates/menu_filtre.html:45
 #: templates/menu_filtre.html:46
 msgid "Taille"
 msgstr "Size"
 
-#: static/js/ui.js:6458
+#: static/js/ui.js:6537
 #, fuzzy
 msgid "Type"
 msgstr "Type"
 
-#: static/js/ui.js:6459
+#: static/js/ui.js:6538
 #, fuzzy
 msgid "Durée"
 msgstr "Duration"
 
-#: static/js/ui.js:6460
+#: static/js/ui.js:6539
 msgid "Modifié"
 msgstr "Modified"
 
-#: static/js/ui.js:6515
+#: static/js/ui.js:6594
 #, fuzzy
 msgid "Erreur lors du chargement du fichier audio"
 msgstr "Error loading the audio file"
@@ -1971,50 +2005,50 @@ msgstr "Experimental feature: behavior still being validated, subject to change.
 msgid "Expérimental"
 msgstr "Experimental"
 
-#: templates/app.html:77 templates/app.html:78
+#: templates/app.html:80 templates/app.html:81 templates/menu_data.html:43
 msgid "Prévisualiser l'animation"
 msgstr "Preview the animation"
 
-#: templates/app.html:82 templates/app.html:83
+#: templates/app.html:85 templates/app.html:86
 msgid "Exporter la vidéo"
 msgstr "Export the video"
 
-#: templates/app.html:87 templates/app.html:88
+#: templates/app.html:90 templates/app.html:91
 msgid "Pause / Reprendre"
 msgstr "Pause / Resume"
 
-#: templates/app.html:92 templates/app.html:93
+#: templates/app.html:95 templates/app.html:96
 msgid "Arrêter l'animation"
 msgstr "Stop the animation"
 
-#: templates/app.html:97 templates/app.html:98
+#: templates/app.html:100 templates/app.html:101
 msgid "Basculer le plein écran"
 msgstr "Toggle fullscreen"
 
-#: templates/app.html:110
+#: templates/app.html:113
 msgid "Chargez votre fichier .gpx pour commencer"
 msgstr "Upload your .gpx file to get started"
 
-#: templates/app.html:112 templates/guide.html:123 templates/menu_data.html:13
+#: templates/app.html:115 templates/guide.html:123 templates/menu_data.html:13
 #: templates/modal_first_use.html:32
 msgid "Sélectionner et charger un fichier .gpx"
 msgstr "Select and upload a .gpx file"
 
-#: templates/app.html:114 templates/menu_data.html:17
+#: templates/app.html:117 templates/menu_data.html:17
 msgid "ou glissez-déposez votre fichier n'importe où sur la page"
 msgstr "or drag and drop your file anywhere on the page"
 
-#: templates/app.html:132
+#: templates/app.html:135
 msgid "Redimensionner la carte"
 msgstr "Resize the map"
 
-#: templates/app.html:142 templates/guide.html:52 templates/guide.html:83
+#: templates/app.html:145 templates/guide.html:52 templates/guide.html:83
 #: templates/guide.html:95 templates/guide.html:201 templates/guide.html:203
 #: templates/menu_animation.html:8
 msgid "Animation & vidéo"
 msgstr "Animation & video"
 
-#: templates/app.html:143 templates/guide.html:55 templates/guide.html:88
+#: templates/app.html:146 templates/guide.html:55 templates/guide.html:88
 #: templates/guide.html:95 templates/guide.html:262 templates/guide.html:264
 msgid "Préférences"
 msgstr "Preferences"
@@ -2474,15 +2508,15 @@ msgstr "Set the date range"
 msgid "Renseignez la"
 msgstr "Fill in the"
 
-#: templates/guide.html:208 templates/menu_animation.html:58
-#: templates/menu_animation.html:59 templates/menu_filtre.html:114
+#: templates/guide.html:208 templates/menu_animation.html:59
+#: templates/menu_animation.html:60 templates/menu_filtre.html:114
 #: templates/menu_filtre.html:115 templates/menu_filtre.html:139
 #: templates/menu_filtre.html:140
 msgid "Date de début"
 msgstr "Start date"
 
-#: templates/guide.html:208 templates/menu_animation.html:72
-#: templates/menu_animation.html:73 templates/menu_filtre.html:123
+#: templates/guide.html:208 templates/menu_animation.html:73
+#: templates/menu_animation.html:74 templates/menu_filtre.html:123
 #: templates/menu_filtre.html:124 templates/menu_filtre.html:148
 #: templates/menu_filtre.html:149
 msgid "Date de fin"
@@ -2516,7 +2550,7 @@ msgstr "Total time (minutes)"
 msgid "durée globale visée ; l'app affiche le détail du calcul."
 msgstr "targeted overall duration; the app shows the calculation details."
 
-#: templates/guide.html:215 templates/menu_animation.html:152
+#: templates/guide.html:215 templates/menu_animation.html:153
 msgid "Temps additionnel (sec)"
 msgstr "Extra time (sec)"
 
@@ -2532,7 +2566,7 @@ msgstr "Add music (optional)"
 msgid "Cochez"
 msgstr "Check"
 
-#: templates/guide.html:220 templates/menu_animation.html:188
+#: templates/guide.html:220 templates/menu_animation.html:189
 msgid "Inclure la musique"
 msgstr "Include music"
 
@@ -2560,11 +2594,11 @@ msgstr "Video export"
 msgid "choisissez le"
 msgstr "choose the"
 
-#: templates/guide.html:224 templates/menu_recording.html:17
+#: templates/guide.html:224 templates/menu_recording.html:20
 msgid "Mode d'export"
 msgstr "Export mode"
 
-#: templates/guide.html:226 templates/menu_recording.html:21
+#: templates/guide.html:226 templates/menu_recording.html:24
 msgid "Capture rapide (.webm)"
 msgstr "Fast capture (.webm)"
 
@@ -2648,11 +2682,11 @@ msgstr ""
 "The video is created automatically at the end of the recording. Then use "
 "the buttons in the"
 
-#: templates/guide.html:249 templates/menu_recording.html:145
+#: templates/guide.html:249 templates/menu_recording.html:148
 msgid "Fichiers vidéo"
 msgstr "Video files"
 
-#: templates/guide.html:251 templates/menu_recording.html:160
+#: templates/guide.html:251 templates/menu_recording.html:163
 msgid "Ouvrir le dossier vidéo"
 msgstr "Open the video folder"
 
@@ -2660,7 +2694,7 @@ msgstr "Open the video folder"
 msgid "accède au dossier contenant vos vidéos."
 msgstr "opens the folder containing your videos."
 
-#: templates/guide.html:252 templates/menu_recording.html:156
+#: templates/guide.html:252 templates/menu_recording.html:159
 msgid "Supprimer les images de capture inutilisées"
 msgstr "Delete unused capture images"
 
@@ -2768,130 +2802,136 @@ msgstr "Floating menu"
 msgid "Plage de dates de l'animation"
 msgstr "Animation date range"
 
-#: templates/menu_animation.html:61 templates/menu_animation.html:75
+#: templates/menu_animation.html:56
+msgid ""
+"Période parcourue par la vidéo — indépendante des filtres de l'onglet "
+"Données."
+msgstr "Period covered by the video — independent of the Data tab filters."
+
+#: templates/menu_animation.html:62 templates/menu_animation.html:76
 #: templates/menu_filtre.html:117 templates/menu_filtre.html:126
 #: templates/menu_filtre.html:142 templates/menu_filtre.html:151
 msgid "Date par défaut (toutes les données)"
 msgstr "Default date (all data)"
 
-#: templates/menu_animation.html:65 templates/menu_animation.html:79
+#: templates/menu_animation.html:66 templates/menu_animation.html:80
 msgid "Date issue du filtre"
 msgstr "Date from the filter"
 
-#: templates/menu_animation.html:66 templates/menu_animation.html:80
+#: templates/menu_animation.html:67 templates/menu_animation.html:81
 msgid "Filtre"
 msgstr "Filter"
 
-#: templates/menu_animation.html:92
+#: templates/menu_animation.html:93
 msgid "Rythme de l'animation"
 msgstr "Animation rhythm"
 
-#: templates/menu_animation.html:96
+#: templates/menu_animation.html:97
 msgid "Par rythme"
 msgstr "By rate"
 
-#: templates/menu_animation.html:100
+#: templates/menu_animation.html:101
 msgid "Par durée"
 msgstr "By duration"
 
-#: templates/menu_animation.html:104
+#: templates/menu_animation.html:105
 msgid "Sur la musique"
 msgstr "Sync to music"
 
-#: templates/menu_animation.html:112
+#: templates/menu_animation.html:113
 msgid "Rythme (jours par seconde)"
 msgstr "Rate (days per second)"
 
-#: templates/menu_animation.html:119
+#: templates/menu_animation.html:120
 msgid "Durée finale de la vidéo (mm:ss)"
 msgstr "Final video duration (mm:ss)"
 
-#: templates/menu_animation.html:126
+#: templates/menu_animation.html:127
 msgid "Préréglage"
 msgstr "Preset"
 
-#: templates/menu_animation.html:128
+#: templates/menu_animation.html:129
 msgid "Lent"
 msgstr "Slow"
 
-#: templates/menu_animation.html:128 templates/menu_animation.html:129
-#: templates/menu_animation.html:130
+#: templates/menu_animation.html:129 templates/menu_animation.html:130
+#: templates/menu_animation.html:131
 msgid "jours/s"
 msgstr "days/s"
 
-#: templates/menu_animation.html:129
+#: templates/menu_animation.html:130
 msgid "Normal"
 msgstr "Normal"
 
-#: templates/menu_animation.html:130
+#: templates/menu_animation.html:131
 msgid "Rapide"
 msgstr "Fast"
 
-#: templates/menu_animation.html:131
+#: templates/menu_animation.html:132
 msgid "Personnalisé"
 msgstr "Custom"
 
-#: templates/menu_animation.html:133
+#: templates/menu_animation.html:134
 msgid "Préréglage global, indépendant du thème."
 msgstr "Global preset, independent of the theme."
 
-#: templates/menu_animation.html:140
+#: templates/menu_animation.html:141
 msgid "Détail"
 msgstr "Details"
 
-#: templates/menu_animation.html:141
+#: templates/menu_animation.html:142
 msgid "(animation)"
 msgstr "(animation)"
 
-#: templates/menu_animation.html:142
+#: templates/menu_animation.html:143
 msgid "(pause automatique de fin)"
 msgstr "(automatic ending pause)"
 
-#: templates/menu_animation.html:143
+#: templates/menu_animation.html:144
 msgid "(temps additionnel)"
 msgstr "(extra time)"
 
-#: templates/menu_animation.html:151
+#: templates/menu_animation.html:152
 msgid "Temps additionnel en fin (sec)"
 msgstr "Extra time at the end (sec)"
 
-#: templates/menu_animation.html:159
+#: templates/menu_animation.html:160
 msgid "Durée du flash (ms)"
 msgstr "Flash duration (ms)"
 
-#: templates/menu_animation.html:160
+#: templates/menu_animation.html:161
 msgid "Durée du flash"
 msgstr "Flash duration"
 
-#: templates/menu_animation.html:161
+#: templates/menu_animation.html:162
 msgid "Forme, taille et couleur du flash : onglet Style (thème)."
 msgstr "Flash shape, size and color: Style tab (theme)."
 
-#: templates/menu_animation.html:168
+#: templates/menu_animation.html:169
 msgid "Suivi de caméra"
 msgstr "Camera follow"
 
-#: templates/menu_animation.html:170
+#: templates/menu_animation.html:171
 msgid "Dynamisme de la caméra"
 msgstr "Camera dynamism"
 
-#: templates/menu_animation.html:172
+#: templates/menu_animation.html:173
 msgid "1 — Minimal : hors champ uniquement"
 msgstr "1 — Minimal: off-screen only"
 
-#: templates/menu_animation.html:173
+#: templates/menu_animation.html:174
 msgid "2 — Discret : hors champ ou très périphérique"
 msgstr "2 — Subtle: off-screen or near the edge"
 
-#: templates/menu_animation.html:174
+#: templates/menu_animation.html:175
 msgid "3 — Dynamique : hors zone centrale"
 msgstr "3 — Dynamic: outside the central area"
 
-#: templates/menu_animation.html:175
+#: templates/menu_animation.html:176
 msgid "4 — Intense : recentrage et zoom systématiques"
 msgstr "4 — Intense: always recenter and zoom"
 
-#: templates/menu_animation.html:177
+#: templates/menu_animation.html:178
 msgid ""
 "La vue glisse vers les caches du jour. Pour un grand trajet, elle dézoome"
 " temporairement puis revient au niveau initial. Un niveau voisin de "
@@ -2903,37 +2943,49 @@ msgstr ""
 "tile level is preloaded, and the next date waits for the final render. "
 "The duration may therefore exceed the estimate and the music duration."
 
-#: templates/menu_animation.html:184
+#: templates/menu_animation.html:185
 msgid "Musique (optionnel)"
 msgstr "Music (optional)"
 
-#: templates/menu_animation.html:196
+#: templates/menu_animation.html:191
+msgid "Fichier de musique"
+msgstr "Music file"
+
+#: templates/menu_animation.html:197
 msgid "Volume musique"
 msgstr "Music volume"
 
-#: templates/menu_animation.html:203
+#: templates/menu_animation.html:204
 msgid "Caler la durée de la vidéo sur celle de la musique"
 msgstr "Sync the video duration to the music"
 
-#: templates/menu_animation.html:204
+#: templates/menu_animation.html:205
 msgid "Caler sur la musique"
 msgstr "Sync to music"
 
-#: templates/menu_animation.html:207
+#: templates/menu_animation.html:208
 msgid "Calé sur la musique"
 msgstr "Synced to music"
 
-#: templates/menu_animation.html:209
+#: templates/menu_animation.html:210
 msgid "Dissocier"
 msgstr "Unlink"
 
-#: templates/menu_animation.html:210
+#: templates/menu_animation.html:211
 msgid "Différence"
 msgstr "Difference"
 
 #: templates/menu_data.html:15
 msgid "Fichier .gpx"
 msgstr ".gpx file"
+
+#: templates/menu_data.html:37
+msgid "Vos trouvailles sont prêtes."
+msgstr "Your finds are ready."
+
+#: templates/menu_data.html:40
+msgid "Choisir un style"
+msgstr "Choose a style"
 
 #: templates/menu_filtre.html:5
 msgid "Réinitialiser tous les filtres"
@@ -3485,17 +3537,17 @@ msgstr "Icon size"
 msgid "Aperçu des icônes"
 msgstr "Icon preview"
 
-#: templates/menu_recording.html:3
+#: templates/menu_recording.html:6
 msgid "Réglages d'export"
 msgstr "Export settings"
 
-#: templates/menu_recording.html:4
+#: templates/menu_recording.html:7
 msgid ""
 "Enregistrés automatiquement avec les préférences de l'application, pas "
 "dans le profil."
 msgstr "Saved automatically with the application preferences, not in the profile."
 
-#: templates/menu_recording.html:18
+#: templates/menu_recording.html:21
 msgid ""
 "Capture rapide : enregistrement direct en WebM dans le navigateur, rapide"
 " et léger. Rendu image par image : capture d'images puis assemblage par "
@@ -3505,15 +3557,15 @@ msgstr ""
 "Frame-by-frame rendering: captures images then assembles them in the app "
 "— steadier but slower"
 
-#: templates/menu_recording.html:22
+#: templates/menu_recording.html:25
 msgid "Rendu image par image (ffmpeg)"
 msgstr "Frame-by-frame rendering (ffmpeg)"
 
-#: templates/menu_recording.html:27
+#: templates/menu_recording.html:30
 msgid "Résolution de sortie"
 msgstr "Output resolution"
 
-#: templates/menu_recording.html:28
+#: templates/menu_recording.html:31
 msgid ""
 "La carte est redessinée à cette finesse pendant la capture : tuiles plus "
 "détaillées, traits et textes plus nets. Le cadrage ne change pas. Plus la"
@@ -3523,23 +3575,23 @@ msgstr ""
 "crisper lines and text. The framing stays the same. The higher the "
 "resolution, the slower the capture."
 
-#: templates/menu_recording.html:31
+#: templates/menu_recording.html:34
 msgid "Taille de la fenêtre"
 msgstr "Window size"
 
-#: templates/menu_recording.html:32
+#: templates/menu_recording.html:35
 msgid "1080p (Full HD)"
 msgstr "1080p (Full HD)"
 
-#: templates/menu_recording.html:33
+#: templates/menu_recording.html:36
 msgid "1440p (2K)"
 msgstr "1440p (2K)"
 
-#: templates/menu_recording.html:34
+#: templates/menu_recording.html:37
 msgid "2160p (4K)"
 msgstr "2160p (4K)"
 
-#: templates/menu_recording.html:36
+#: templates/menu_recording.html:39
 msgid ""
 "Vaut pour les deux modes d'enregistrement. La carte est redessinée plus "
 "finement, le cadrage ne change pas."
@@ -3547,11 +3599,11 @@ msgstr ""
 "Applies to both recording modes. The map is redrawn in finer detail; the "
 "framing stays the same."
 
-#: templates/menu_recording.html:43
+#: templates/menu_recording.html:46
 msgid "Couleurs"
 msgstr "Colours"
 
-#: templates/menu_recording.html:44
+#: templates/menu_recording.html:47
 #, python-format
 msgid ""
 "En 4:2:0, la résolution de couleur est divisée par deux : les points "
@@ -3563,19 +3615,19 @@ msgstr ""
 "dark background. 4:4:4 fixes this for about 10 %% more file size, but "
 "some players and TVs refuse to play those videos."
 
-#: templates/menu_recording.html:47
+#: templates/menu_recording.html:50
 msgid "Compatibilité maximale (4:2:0)"
 msgstr "Maximum compatibility (4:2:0)"
 
-#: templates/menu_recording.html:48
+#: templates/menu_recording.html:51
 msgid "Fidélité des couleurs (4:4:4)"
 msgstr "Faithful colours (4:4:4)"
 
-#: templates/menu_recording.html:50
+#: templates/menu_recording.html:53
 msgid "À changer seulement si les points colorés bavent sur fond sombre."
 msgstr "Only change this if coloured dots bleed on a dark background."
 
-#: templates/menu_recording.html:52
+#: templates/menu_recording.html:55
 msgid ""
 "Le 4:4:4 n'est pas lu par tous les appareils : certains téléviseurs, "
 "lecteurs matériels et Safari refuseront la vidéo. À réserver aux fichiers"
@@ -3585,35 +3637,35 @@ msgstr ""
 "Safari will refuse the video. Keep it for files you watch or share on a "
 "computer."
 
-#: templates/menu_recording.html:57
+#: templates/menu_recording.html:60
 msgid "Qualité vidéo"
 msgstr "Video quality"
 
-#: templates/menu_recording.html:59
+#: templates/menu_recording.html:62
 msgid "Économique — 24 FPS / 4 Mbps"
 msgstr "Economy — 24 FPS / 4 Mbps"
 
-#: templates/menu_recording.html:60
+#: templates/menu_recording.html:63
 msgid "Standard — 30 FPS / 6 Mbps"
 msgstr "Standard — 30 FPS / 6 Mbps"
 
-#: templates/menu_recording.html:61
+#: templates/menu_recording.html:64
 msgid "Fluide — 60 FPS / 12 Mbps"
 msgstr "Smooth — 60 FPS / 12 Mbps"
 
-#: templates/menu_recording.html:62
+#: templates/menu_recording.html:65
 msgid "Personnalisée"
 msgstr "Custom"
 
-#: templates/menu_recording.html:67
+#: templates/menu_recording.html:70
 msgid "Réglages avancés"
 msgstr "Advanced settings"
 
-#: templates/menu_recording.html:71
+#: templates/menu_recording.html:74
 msgid "FPS"
 msgstr "FPS"
 
-#: templates/menu_recording.html:72
+#: templates/menu_recording.html:75
 msgid ""
 "Nombre d'images capturées par seconde. Les valeurs élevées demandent "
 "davantage de puissance ; à bitrate constant, elles ne doublent pas "
@@ -3622,19 +3674,19 @@ msgstr ""
 "Higher frame rates require more processing power. At a constant bitrate, "
 "they do not automatically double the file size."
 
-#: templates/menu_recording.html:75
+#: templates/menu_recording.html:78
 msgid "Valeur autorisée : de 1 à 60 FPS."
 msgstr "Allowed value: 1 to 60 FPS."
 
-#: templates/menu_recording.html:76
+#: templates/menu_recording.html:79
 msgid "24 ou 30 FPS conviennent à la plupart des vidéos."
 msgstr "24 or 30 FPS are suitable for most videos."
 
-#: templates/menu_recording.html:80
+#: templates/menu_recording.html:83
 msgid "Bitrate vidéo (Mbps)"
 msgstr "Video bitrate (Mbps)"
 
-#: templates/menu_recording.html:81
+#: templates/menu_recording.html:84
 msgid ""
 "Débit vidéo cible. Une valeur élevée améliore la netteté mais augmente "
 "directement la taille du fichier. La valeur réellement utilisée peut "
@@ -3644,19 +3696,19 @@ msgstr ""
 "increases file size. The actual value used may depend on the browser and "
 "codec."
 
-#: templates/menu_recording.html:84
+#: templates/menu_recording.html:87
 msgid "Valeur autorisée : de 1 à 30 Mbps."
 msgstr "Allowed value: 1 to 30 Mbps."
 
-#: templates/menu_recording.html:85
+#: templates/menu_recording.html:88
 msgid "6 Mbps offrent un bon équilibre pour un usage courant."
 msgstr "6 Mbps provides a good balance for everyday use."
 
-#: templates/menu_recording.html:89
+#: templates/menu_recording.html:92
 msgid "Ralentir par (x)"
 msgstr "Slow down by (x)"
 
-#: templates/menu_recording.html:90
+#: templates/menu_recording.html:93
 msgid ""
 "Ralentit la capture pour améliorer la qualité. 2 = capture 2x plus lente "
 "(plus de frames par seconde d'animation). La vidéo finale reste à vitesse"
@@ -3666,19 +3718,19 @@ msgstr ""
 "frames per second of animation). The final video stays at normal speed if"
 " \"Normalize speed\" is enabled."
 
-#: templates/menu_recording.html:93
+#: templates/menu_recording.html:96
 msgid "Valeur autorisée : un nombre entier de 1 à 20."
 msgstr "Allowed value: an integer from 1 to 20."
 
-#: templates/menu_recording.html:94
+#: templates/menu_recording.html:97
 msgid "x1 : aucun ralentissement ; x2 : capture deux fois plus lente."
 msgstr "x1: no slowdown; x2: capture is twice as slow."
 
-#: templates/menu_recording.html:98
+#: templates/menu_recording.html:101
 msgid "Facteur d'échelle (qualité)"
 msgstr "Scale factor (quality)"
 
-#: templates/menu_recording.html:99
+#: templates/menu_recording.html:102
 msgid ""
 "Multiplicateur de résolution temporaire. 1.5 = 50% plus grande pendant "
 "l'enregistrement puis réduction. Améliore la netteté des détails fins "
@@ -3688,21 +3740,21 @@ msgstr ""
 "downscaled. Improves fine-detail sharpness without changing the final "
 "file size"
 
-#: templates/menu_recording.html:102
+#: templates/menu_recording.html:105
 msgid "Valeur autorisée : de 1 à 3, par pas de 0,25."
 msgstr "Allowed value: 1 to 3, in increments of 0.25."
 
-#: templates/menu_recording.html:103
+#: templates/menu_recording.html:106
 msgid ""
 "1 : résolution normale ; 1,5 : suréchantillonnage à 150 % pour améliorer "
 "la netteté."
 msgstr "1: normal resolution; 1.5: 150% supersampling for improved sharpness."
 
-#: templates/menu_recording.html:107
+#: templates/menu_recording.html:110
 msgid "Format vidéo"
 msgstr "Video format"
 
-#: templates/menu_recording.html:108
+#: templates/menu_recording.html:111
 msgid ""
 "Codec de compression WebM. VP9 = meilleure qualité/compression, VP8 = "
 "compatible avec tous navigateurs, H.264 = format MP4 universel, WebM "
@@ -3712,27 +3764,27 @@ msgstr ""
 "with all browsers, H.264 = universal MP4 format, plain WebM = basic "
 "fallback"
 
-#: templates/menu_recording.html:111
+#: templates/menu_recording.html:114
 msgid "VP9 (recommandé - haute qualité)"
 msgstr "VP9 (recommended - high quality)"
 
-#: templates/menu_recording.html:112
+#: templates/menu_recording.html:115
 msgid "VP8 (compatible partout)"
 msgstr "VP8 (compatible everywhere)"
 
-#: templates/menu_recording.html:113
+#: templates/menu_recording.html:116
 msgid "H.264 (format MP4)"
 msgstr "H.264 (MP4 format)"
 
-#: templates/menu_recording.html:114
+#: templates/menu_recording.html:117
 msgid "WebM simple (fallback)"
 msgstr "Plain WebM (fallback)"
 
-#: templates/menu_recording.html:123
+#: templates/menu_recording.html:126
 msgid "Copier dans le dossier Vidéos"
 msgstr "Copy to Videos folder"
 
-#: templates/menu_recording.html:124
+#: templates/menu_recording.html:127
 msgid ""
 "Enregistre automatiquement la vidéo dans le dossier Vidéos de "
 "l'application une fois l'export terminé."
@@ -3740,11 +3792,11 @@ msgstr ""
 "Automatically saves the video to the app's Videos folder once the export "
 "is done."
 
-#: templates/menu_recording.html:130
+#: templates/menu_recording.html:133
 msgid "Télécharger une copie"
 msgstr "Download a copy"
 
-#: templates/menu_recording.html:131
+#: templates/menu_recording.html:134
 msgid ""
 "Télécharge aussi la vidéo dans le dossier de téléchargements de votre "
 "navigateur une fois l'export terminé."
@@ -3752,11 +3804,11 @@ msgstr ""
 "Also downloads the video to your browser's Downloads folder once the "
 "export is done."
 
-#: templates/menu_recording.html:137
+#: templates/menu_recording.html:140
 msgid "Normaliser la vitesse"
 msgstr "Normalize speed"
 
-#: templates/menu_recording.html:138
+#: templates/menu_recording.html:141
 msgid ""
 "Si le ralentissement est > 1, ré-accélère la vidéo finale pour la ramener"
 " à vitesse normale. Désactiver pour conserver la vidéo au ralenti."
@@ -3764,7 +3816,7 @@ msgstr ""
 "If the slowdown is > 1, speeds the final video back up to normal speed. "
 "Disable to keep the video in slow motion."
 
-#: templates/menu_recording.html:155
+#: templates/menu_recording.html:158
 msgid ""
 "Supprime les images de capture restées dans le dossier temporaire, en "
 "général après un enregistrement interrompu. Sans effet sur les vidéos "

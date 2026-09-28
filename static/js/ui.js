@@ -649,6 +649,21 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     dbgUi("Appel updateDataAvailabilityUI depuis initUIElements");
     updateDataAvailabilityUI();
 
+    // Suggestion « prochaine étape » de la carte Mes trouvailles : le bouton
+    // Style mène au thème ; Prévisualiser ouvre l'onglet Animation et lance la
+    // lecture si les réglages sont déjà valides (sinon la simple navigation
+    // laisse l'utilisateur corriger ce qui bloque).
+    const btnGoStyleTab = document.getElementById('btnGoStyleTab');
+    if (btnGoStyleTab) btnGoStyleTab.addEventListener('click', () => {
+        showBsTab(document.querySelector('#mainTabs a[href="#style"]'));
+    });
+    const btnGoPreview = document.getElementById('btnGoPreview');
+    if (btnGoPreview) btnGoPreview.addEventListener('click', () => {
+        showBsTab(document.querySelector('#mainTabs a[href="#animation"]'));
+        const btnStart = document.getElementById('btnStartAnimation');
+        if (btnStart && !btnStart.disabled) btnStart.click();
+    });
+
     // Initialiser l'apparence du bouton fullscreen
     updateFullscreenButtonAppearance();
 
@@ -4108,6 +4123,7 @@ function refreshTimingPlan({ save = true } = {}) {
     renderTimingMessages(plan, fieldsValid);
     updateMusicSyncUi(plan);
     renderLoadEstimate(plan);
+    updateExportSummary();
 
     timingInputsValid = fieldsValid && plan.valid;
     updateDataAvailabilityUI();
@@ -4205,6 +4221,47 @@ function renderTimingSummary(plan) {
     if (holdEl) holdEl.textContent = formatDurationHuman(plan.endHoldMs);
     if (extraEl) extraEl.textContent = formatDurationHuman(plan.extraEndMs);
     if (totalEl) totalEl.textContent = formatDurationHuman(plan.totalDurationMs);
+}
+
+// Récapitulatif affiché en tête de l'onglet « Export vidéo » : durée estimée,
+// mode, définition, musique et destination — ce que l'utilisateur relit avant
+// de cliquer Exporter. Mis à jour par refreshTimingPlan, donc à chaque
+// changement de réglage (tout passe par changeRecordValues → refreshTimingPlan).
+function updateExportSummary() {
+    const el = document.getElementById('exportSummary');
+    if (!el) return;
+
+    const record = pkg.options?.record || {};
+    const isMediaRecorder = (record.mode || 'mediarecorder') === 'mediarecorder';
+
+    const totalMs = lastTimingPlan?.valid ? lastTimingPlan.totalDurationMs : null;
+    const parts = [t('Vidéo ~${d}', { d: Number.isFinite(totalMs) ? formatMmSs(totalMs) : '—' })];
+
+    const modeText = selectRecordMode?.selectedOptions?.[0]?.textContent?.trim();
+    if (modeText) parts.push(modeText);
+    const resText = selectRecordResolution?.selectedOptions?.[0]?.textContent?.trim();
+    if (resText) parts.push(resText);
+    parts.push(
+        (cbRecordAudioEnable?.checked && inputAudioFile?.files?.length)
+            ? t('musique incluse')
+            : t('sans musique'));
+
+    // La destination n'est configurable qu'en capture rapide : en rendu image
+    // par image, la vidéo est toujours assemblée dans le dossier Vidéos.
+    let destination;
+    if (!isMediaRecorder) {
+        destination = t('dossier Vidéos');
+    } else {
+        const toVideos = !!cbRecordUpload?.checked;
+        const toDownload = !!cbRecordDownload?.checked;
+        destination = toVideos && toDownload ? t('dossier Vidéos + téléchargement')
+            : toVideos ? t('dossier Vidéos')
+            : toDownload ? t('téléchargement navigateur')
+            : t('aucune copie conservée');
+    }
+    parts.push(t('destination : ${d}', { d: destination }));
+
+    el.textContent = parts.join(' · ');
 }
 
 // Erreurs bloquantes (boutons désactivés) et avertissements (plan appliqué
@@ -5343,6 +5400,11 @@ export function updateDataAvailabilityUI({ dataResolved = false } = {}) {
 
     const emptyState = document.getElementById('emptyState');
     if (emptyState) emptyState.style.display = (dataStateResolved && !hasDb) ? '' : 'none';
+
+    // Suggestion « prochaine étape » dans la carte Mes trouvailles : visible
+    // uniquement quand une base est chargée.
+    const nextStep = document.getElementById('dataNextStep');
+    if (nextStep) nextStep.hidden = !hasDb;
 
     // inert bloque interactions, focus et lecture d'écran ; .data-disabled
     // estompe visuellement la section.
