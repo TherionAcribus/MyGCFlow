@@ -136,16 +136,41 @@
 
                 <div id="tabsPanel">
 
+            <!-- Barre collante : les onglets et les actions rapides restent
+                 visibles pendant le défilement du panneau. Les boutons rapides
+                 ne font que relayer le clic vers les boutons d'origine du
+                 panneau Animation (voir quickActionsMap dans ui.js). -->
+            <div id="panelToolbar">
+                <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+                    <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#data" role="tab" aria-selected="true">{{ _("Données") }}<span id="dataTabBadge" class="data-tab-badge" style="display:none;"></span></a></li>
+                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#style" role="tab" aria-selected="false">{{ _("Style") }}</a></li>
+                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#animation" role="tab" aria-selected="false">{{ _("Animation & vidéo") }}</a></li>
+                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#settings" role="tab" aria-selected="false">{{ _("Préférences") }}</a></li>
+                </ul>
+                <div id="quickActions">
+                    <button type="button" class="btn btn-sm" id="btnQuickPreview" disabled
+                            aria-label="{{ _('Prévisualiser') }}">
+                        <i class="ti ti-player-play me-1" aria-hidden="true"></i><span class="btn-label">{{ _("Prévisualiser") }}</span>
+                    </button>
+                    <button type="button" class="btn btn-sm" id="btnQuickExport" disabled
+                            aria-label="{{ _('Exporter') }}">
+                        <i class="ti ti-video me-1" aria-hidden="true"></i><span class="btn-label">{{ _("Exporter") }}</span>
+                    </button>
+                    <button type="button" class="btn btn-sm" id="btnQuickPause" hidden
+                            aria-label="{{ _('Pause') }}"
+                            data-pause-text="{{ _('Pause') }}" data-continue-text="{{ _('Continuer') }}">
+                        <i class="ti ti-player-pause me-1" aria-hidden="true"></i><span class="btn-label animation-pause-label">{{ _("Pause") }}</span>
+                    </button>
+                    <button type="button" class="btn btn-sm" id="btnQuickStop" hidden
+                            aria-label="{{ _('Arrêter') }}">
+                        <i class="ti ti-player-stop me-1" aria-hidden="true"></i><span class="btn-label">{{ _("Arrêter") }}</span>
+                    </button>
+                </div>
+            </div>
+
             <!-- Tabs (Bootstrap 5) -->
             <div class="row">
                 <div class="col-12">
-                    <ul class="nav nav-tabs mb-3" id="mainTabs" role="tablist">
-                        <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#data" role="tab" aria-selected="true">{{ _("Données") }}<span id="dataTabBadge" class="data-tab-badge" style="display:none;"></span></a></li>
-                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#style" role="tab" aria-selected="false">{{ _("Style") }}</a></li>
-                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#animation" role="tab" aria-selected="false">{{ _("Animation & vidéo") }}</a></li>
-                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#settings" role="tab" aria-selected="false">{{ _("Préférences") }}</a></li>
-                    </ul>
-
                     <div class="tab-content">
                         <!-- Onglet Données -->
                         {% include 'menu_data.html' %}

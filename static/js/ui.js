@@ -602,6 +602,22 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     const btnToggleFullscreen = document.getElementById('btnToggleFullscreen');
     if (btnToggleFullscreen) btnToggleFullscreen.addEventListener('click', toggleFullscreenFromButton);
 
+    // Actions rapides de la barre d'outils collante : simples relais vers les
+    // boutons d'origine du panneau Animation, qui portent toute la logique et
+    // leurs gardes (hasAnimationData, timing valide, ...).
+    const quickActionsMap = {
+        btnQuickPreview: 'btnStartAnimation',
+        btnQuickExport: 'btnRecordAnimation',
+        btnQuickPause: 'btnPauseAnimation',
+        btnQuickStop: 'btnStopAnimation',
+    };
+    for (const [quickId, sourceId] of Object.entries(quickActionsMap)) {
+        const quickBtn = document.getElementById(quickId);
+        if (quickBtn) quickBtn.addEventListener('click', () => {
+            document.getElementById(sourceId)?.click();
+        });
+    }
+
     // Bouton d'import de l'état vide : délègue à l'input fichier de l'onglet
     // Données (son écouteur 'change' lance l'upload automatiquement).
     const btnEmptyStateImport = document.getElementById('btnEmptyStateImport');
@@ -5435,6 +5451,7 @@ function updateControlBar() {
     const btnStopBar = document.getElementById('btnStopBar');
     const btnToggleFullscreen = document.getElementById('btnToggleFullscreen');
     const btnStartAnimation = document.getElementById('btnStartAnimation');
+    const btnRecordAnimation = document.getElementById('btnRecordAnimation');
     const btnPauseAnimation = document.getElementById('btnPauseAnimation');
     const btnStopAnimation = document.getElementById('btnStopAnimation');
 
@@ -5552,6 +5569,45 @@ function updateControlBar() {
         } else {
             btnPauseBar.classList.remove('green');
             if (icon) { icon.classList.add('ti-player-pause'); icon.classList.remove('ti-player-play'); }
+        }
+    }
+
+    // Actions rapides de la barre d'outils collante : mêmes bascules
+    // repos/lecture que la barre flottante. Le bouton Pause y reproduit
+    // aussi l'état « Continuer » (classe .restart + libellé) du bouton
+    // d'origine, qui est la source de vérité.
+    const qPreview = document.getElementById('btnQuickPreview');
+    const qExport = document.getElementById('btnQuickExport');
+    const qPause = document.getElementById('btnQuickPause');
+    const qStop = document.getElementById('btnQuickStop');
+    if (qPreview && qExport && qPause && qStop) {
+        if (isIdle) {
+            qPreview.hidden = false;
+            qExport.hidden = false;
+            qPause.hidden = true;
+            qStop.hidden = true;
+            qPreview.disabled = btnStartAnimation ? btnStartAnimation.disabled : true;
+            qExport.disabled = btnRecordAnimation ? btnRecordAnimation.disabled : true;
+        } else {
+            qPreview.hidden = true;
+            qExport.hidden = true;
+            qPause.hidden = false;
+            qStop.hidden = false;
+            if (btnPauseAnimation) {
+                const isPaused = btnPauseAnimation.classList.contains('restart');
+                qPause.disabled = btnPauseAnimation.disabled;
+                qPause.title = btnPauseAnimation.title;
+                qPause.classList.toggle('restart', isPaused);
+                const qIcon = qPause.querySelector('i');
+                const qLabel = qPause.querySelector('.animation-pause-label');
+                if (qLabel) qLabel.textContent = isPaused
+                    ? (btnPauseAnimation.dataset.continueText || 'Continuer')
+                    : (btnPauseAnimation.dataset.pauseText || 'Pause');
+                if (qIcon) {
+                    qIcon.classList.toggle('ti-player-play', isPaused);
+                    qIcon.classList.toggle('ti-player-pause', !isPaused);
+                }
+            }
         }
     }
 }

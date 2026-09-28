@@ -725,6 +725,59 @@ main.fullscreen-mode #infosFrame span:not([hidden]) {
     min-height: 0;
 }
 
+/* Barre d'outils collante : onglets principaux + actions rapides restent
+   visibles pendant le défilement du panneau. */
+#panelToolbar {
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    padding: 6px 12px;
+    margin-bottom: 12px;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+#panelToolbar .nav-tabs {
+    flex: 1 1 auto;
+    margin-bottom: 0;
+    border-bottom: none;
+}
+#quickActions {
+    display: flex;
+    gap: 6px;
+    margin-left: auto;
+    align-items: center;
+}
+/* Sur petit écran, les actions rapides passent en icône seule pour que la
+   barre collante reste compacte ; les aria-label portent le nom accessible. */
+@media (max-width: 575.98px) {
+    /* Les onglets défilent horizontalement plutôt que de passer sur deux
+       lignes : la barre collante reste sur une seule rangée. */
+    #panelToolbar {
+        flex-wrap: nowrap;
+    }
+    #panelToolbar .nav-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        min-width: 0;
+        scrollbar-width: none;
+    }
+    #quickActions .btn-label {
+        display: none;
+    }
+    #quickActions .btn i {
+        margin-right: 0 !important;
+    }
+    #quickActions .btn {
+        min-width: 36px;
+        justify-content: center;
+    }
+}
+
 /* Styles pour les animations de flash */
 .flash-animation {
     position: absolute;
@@ -841,44 +894,58 @@ main.fullscreen-mode #infosFrame span:not([hidden]) {
     background-color: #0d47a1 !important;
 }
 
-/* Couleurs des boutons du menu Animation (même schéma que la barre latérale) */
+/* Couleurs des boutons du menu Animation et de leurs doublures de la barre
+   d'outils (même schéma que la barre latérale) */
 /* Bouton Prévisualiser - Vert (action positive) */
-#btnStartAnimation {
+#btnStartAnimation,
+#btnQuickPreview {
     background-color: #2e7d32 !important;
+    color: #fff !important;
 }
-#btnStartAnimation:hover {
+#btnStartAnimation:hover,
+#btnQuickPreview:hover {
     background-color: #1b5e20 !important;
 }
 
 /* Bouton Exporter - Orange soutenu (action d'enregistrement) */
-#btnRecordAnimation {
+#btnRecordAnimation,
+#btnQuickExport {
     background-color: #bf360c !important;
+    color: #fff !important;
 }
-#btnRecordAnimation:hover {
+#btnRecordAnimation:hover,
+#btnQuickExport:hover {
     background-color: #a62f0a !important;
 }
 
 /* Bouton Pause - Ambre à texte sombre ; vert à l'état « Continuer » */
-#btnPauseAnimation {
+#btnPauseAnimation,
+#btnQuickPause {
     background-color: #f57c00 !important;
     color: #212529 !important;
 }
-#btnPauseAnimation:hover {
+#btnPauseAnimation:hover,
+#btnQuickPause:hover {
     background-color: #ef6c00 !important;
 }
-#btnPauseAnimation.restart {
+#btnPauseAnimation.restart,
+#btnQuickPause.restart {
     background-color: #2e7d32 !important;
     color: #fff !important;
 }
-#btnPauseAnimation.restart:hover {
+#btnPauseAnimation.restart:hover,
+#btnQuickPause.restart:hover {
     background-color: #1b5e20 !important;
 }
 
 /* Bouton Arrêter - Rouge foncé (action destructive) */
-#btnStopAnimation {
+#btnStopAnimation,
+#btnQuickStop {
     background-color: #c62828 !important;
+    color: #fff !important;
 }
-#btnStopAnimation:hover {
+#btnStopAnimation:hover,
+#btnQuickStop:hover {
     background-color: #b71c1c !important;
 }
 
