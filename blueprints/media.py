@@ -19,6 +19,10 @@ from capture import (
     upload_image,
     upload_images,
     upload_video,
+    video_stream_abort,
+    video_stream_append,
+    video_stream_begin,
+    video_stream_finish,
 )
 from localization import get_locale
 from task_manager import TaskAlreadyRunning, task_manager
@@ -195,6 +199,30 @@ def route_upload_video():
 @media_bp.route('/upload_audio', methods=['POST'])
 def route_upload_audio():
     return upload_audio(request)
+
+
+# ---- Flux vidéo MediaRecorder (délestage mémoire) ----
+# Le navigateur envoie chaque fragment .webm au fil de l'eau au lieu de tout
+# accumuler en mémoire ; finish remuxe sans ré-encodage dans video/.
+
+@media_bp.route('/video_stream_begin', methods=['POST'])
+def route_video_stream_begin():
+    return video_stream_begin()
+
+
+@media_bp.route('/video_stream_append', methods=['POST'])
+def route_video_stream_append():
+    return video_stream_append(request)
+
+
+@media_bp.route('/video_stream_finish', methods=['POST'])
+def route_video_stream_finish():
+    return video_stream_finish(request)
+
+
+@media_bp.route('/video_stream_abort', methods=['POST'])
+def route_video_stream_abort():
+    return video_stream_abort(request)
 
 
 @media_bp.route('/process_recorded_video', methods=['POST'])

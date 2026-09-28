@@ -46,6 +46,17 @@ test('le nombre de pixels est plafonné', () => {
     assert.ok(r.ratio <= MAX_CAPTURE_RATIO);
 });
 
+test('le plafond de pixels prime même sur la densité de l\'écran', () => {
+    // Reproduction d'un cas réel : fenêtre 4K CSS sur écran x4 → la densité seule
+    // demandait 132,7 mégapixels, au-delà de la limite de 35, sans que `limited`
+    // ne le signale. Le plafond dur doit raboter la sortie et l'annoncer.
+    const r = captureRatioFor({ cssWidth: 3840, cssHeight: 2160, devicePixelRatio: 4 });
+    assert.ok(r.width * r.height <= MAX_CAPTURE_PIXELS);
+    assert.equal(r.limited, true);
+    // Plancher écran violé volontairement : ratio ~2,05 < 4 requis par la densité.
+    assert.ok(r.ratio < 4 && r.ratio > 1);
+});
+
 test('une valeur inconnue retombe sur le comportement actuel', () => {
     assert.equal(normalizeCaptureResolution('4k'), DEFAULT_CAPTURE_RESOLUTION);
     assert.equal(normalizeCaptureResolution(undefined), DEFAULT_CAPTURE_RESOLUTION);

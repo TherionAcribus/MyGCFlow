@@ -120,6 +120,7 @@ import { staggerDelayFrames, staggerDelayMs } from './flash_impulse.mjs';
 import { COUNTER_ANIMATION_MS, createCountAnimator } from './overlay_counter.mjs';
 import { fetchWithTimeout, FETCH_TIMEOUTS } from './fetch_with_timeout.mjs';
 import { createPausableTimeout } from './pausable_timer.mjs';
+import { createVideoStream } from './video_stream.mjs';
 
 // Debug toasts/assemblage
 const TOAST_DEBUG = false;
@@ -259,6 +260,10 @@ let mrPausedTotalMs = 0;
 let mrAppliedSlowdown = 1;
 let isMediaRecording = false;
 let mrIsFinalizing = false;
+// Flux de délestage mémoire : les fragments .webm partent vers le serveur au
+// fil de l'eau au lieu de s'accumuler dans mrRecordedChunks. null si le flux
+// n'a pas pu s'ouvrir (repli : accumulation en mémoire comme avant).
+let mrVideoStream = null;
 let mrOnFinalizeRestoreTimePerDay = null;
 // Paramètres du compositing MR conservés au niveau module pour pouvoir relancer
 // la boucle de dessin après une mise en pause (onglet masqué, cf. C8).
@@ -2179,7 +2184,21 @@ async function startMediaRecorderPipeline(totalDurationMs, timelineScale = 1){
     // finale doit utiliser le facteur en vigueur ici.
     mrAppliedSlowdown = Math.max(1, Number(timelineScale) || 1);
 
-    mrRecorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) mrRecordedChunks.push(e.data); };
+    mrRecorder.ondataavailable = (e) => {
+        if (!e.data || e.data.size <= 0) return;
+        if (mrVideoStream) {
+            mrVideoStream.push(e.data);
+            // Un fragment perdu rend la vidéo incomplète : arrêter tout de suite
+            // plutôt que de poursuivre une capture irrécupérable.
+            if (mrVideoStream.error) {
+                console.error('[MediaRecorder] Échec d\'envoi d\'un fragment:', mrVideoStream.error);
+                try { pkg.showToast && pkg.showToast(pkg.t('L\'envoi de la vidéo au serveur a échoué. Arrêt de l\'enregistrement.'), 'error', pkg.t('Enregistrement'), 8000); } catch(_) {}
+                try { stopMediaRecorderPipeline(true); } catch(_) {}
+            }
+        } else {
+            mrRecordedChunks.push(e.data);
+        }
+    };
     mrRecorder.onstop = () => finalizeMediaRecorderVideo();
     // C9 — Échec de l'encodeur (mémoire, reset GPU...) : sans ce handler, ni onstop
     // ni finalize ne sont appelés, la modale « Enregistrement » reste ouverte à
@@ -2192,6 +2211,18 @@ async function startMediaRecorderPipeline(totalDurationMs, timelineScale = 1){
     };
     // Utiliser un timeslice plus grand pour réduire le nombre de chunks et la pression GC
     const timesliceMs = Math.max(200, Number(pkg.options?.record?.mediaRecorder?.timesliceMs) || 1000);
+    // Délestage mémoire : ouvrir le flux vers le serveur local avant le premier
+    // fragment. Sans lui, les chunks s'accumuleraient en RAM jusqu'à la fin
+    // (~225 Mo/min à 30 Mbit/s). Repli silencieux sur l'accumulation en mémoire.
+    mrVideoStream = createVideoStream({
+        baseUrl: CONFIG.BASE_URL,
+        fetchImpl: (url, opts) => fetchWithTimeout(url, opts, { timeoutMs: FETCH_TIMEOUTS.upload, t: pkg.t }),
+        t: pkg.t,
+    });
+    try { await mrVideoStream.begin(); } catch (e) {
+        console.warn('[MediaRecorder] Flux serveur indisponible, accumulation en mémoire:', e);
+        mrVideoStream = null;
+    }
     mrRecorder.start(timesliceMs);
 
     // Précalculer les propriétés statiques des overlays pour éviter les reflows par frame
@@ -2318,6 +2349,9 @@ function stopMediaRecorderPipeline(finalize){
     } else {
         // Annulation sans finalization : restaurer timePerDay immédiatement
         try { mrOnFinalizeRestoreTimePerDay?.(); mrOnFinalizeRestoreTimePerDay = null; } catch(_) {}
+        // Un flux ouvert sans finalisation : le purger côté serveur (le fichier
+        // partiel n'a plus de raison d'être).
+        try { if (mrVideoStream) { mrVideoStream.abort(); mrVideoStream = null; } } catch(_) {}
     }
     isMediaRecording = false;
     mrIsFinalizing = false;
@@ -2330,7 +2364,13 @@ function finalizeMediaRecorderVideo(){
     mrIsFinalizing = true;
     try {
         const mime = pkg.options?.record?.mediaRecorder?.mimeType || 'video/webm;codecs=vp9';
-        const blob = new Blob(mrRecordedChunks || [], { type: mime });
+        // Chemin « flux » : les fragments ont déjà été poussés au serveur au fil
+        // de l'eau — rien à assembler en mémoire, blob reste null.
+        const stream = mrVideoStream;
+        mrVideoStream = null;
+        let blob = stream ? null : new Blob(mrRecordedChunks || [], { type: mime });
+        // Nom du .webm remuxé dans video/ (renseigné par finish() du flux).
+        let streamedFile = null;
 
         // Construire un nom horodaté pour éviter l'écrasement
         const buildTimestampedName = (base) => {
@@ -2427,31 +2467,57 @@ function finalizeMediaRecorderVideo(){
                 proceedWith(videoBlob);
             }
         };
+        // Le repli navigateur travaille sur un Blob : en chemin « flux », on le
+        // re-télécharge depuis video/ — cas rare (serveur de traitement en
+        // échec alors que le flux a abouti), la mémoire n'est plus le souci ici.
+        const ensureBlob = () => {
+            if (blob) return Promise.resolve(blob);
+            if (!streamedFile) return Promise.reject(new Error('pas de données vidéo disponibles'));
+            return fetchWithTimeout(
+                `${CONFIG.BASE_URL}/download_video/${encodeURIComponent(streamedFile)}`,
+                {}, { timeoutMs: FETCH_TIMEOUTS.videoUpload, t: pkg.t },
+            ).then((r) => {
+                if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                return r.blob();
+            });
+        };
         const runClientFallback = () => {
-            if (doNormalize) {
-                // Annoncer le facteur réellement applicable : le navigateur plafonne playbackRate.
-                const applicable = clampPlaybackRate(slowdown).rate;
-                try { pkg.updateTextsModal(pkg.t('Normalisation'), pkg.t('Accélération x${applicable} pour lecture à vitesse normale...', { applicable })); } catch(_) {}
-                normalizeRecordedVideoSpeed(blob, slowdown).then((normBlob) => {
-                    doMux(normBlob || blob);
-                }).catch((e) => {
-                    console.warn('Normalization failed, continue without normalization:', e);
+            ensureBlob().then((b) => {
+                blob = b;
+                if (doNormalize) {
+                    // Annoncer le facteur réellement applicable : le navigateur plafonne playbackRate.
+                    const applicable = clampPlaybackRate(slowdown).rate;
+                    try { pkg.updateTextsModal(pkg.t('Normalisation'), pkg.t('Accélération x${applicable} pour lecture à vitesse normale...', { applicable })); } catch(_) {}
+                    normalizeRecordedVideoSpeed(blob, slowdown).then((normBlob) => {
+                        doMux(normBlob || blob);
+                    }).catch((e) => {
+                        console.warn('Normalization failed, continue without normalization:', e);
+                        doMux(blob);
+                    });
+                } else {
                     doMux(blob);
-                });
-            } else {
-                doMux(blob);
-            }
+                }
+            }).catch((e) => {
+                console.error('Flux indisponible pour le repli local:', e);
+                try { pkg.closeModalLoading(); } catch(_) {}
+                try { setBackgroundAudioBlocked(false); } catch(_) {}
+                try { pkg.showToast && pkg.showToast(pkg.t('La vidéo n\'a pas pu être assemblée.'), 'error', pkg.t('Enregistrement'), 8000); } catch(_) {}
+            });
         };
 
         // ---- Traitement serveur (ffmpeg, une seule passe) : normalisation + mux ----
         // Rapide, robuste, sans onglet actif obligatoire. Remplace jusqu'à 3 ré-encodages navigateur.
         const processOnServer = () => new Promise((resolve, reject) => {
             try { pkg.updateTextsModal(pkg.t('Traitement serveur'), pkg.t('Envoi de la vidéo au serveur...')); } catch(_) {}
-            // Réécrire la durée du .webm pour que ffmpeg la lise correctement (opération légère, pas de ré-encodage)
-            fixWebmFinalDuration(blob).then((fixedBlob) => {
-                const toSend = fixedBlob || blob;
+            const launchProcessing = () => {
                 const fd = new FormData();
-                fd.append('video', toSend, 'recording.webm');
+                if (streamedFile) {
+                    // Le .webm est déjà dans video/ (flux délesté) : on désigne
+                    // son nom au lieu de re-téléverser le fichier complet.
+                    fd.append('recorded_file', streamedFile);
+                } else {
+                    fd.append('video', blob, 'recording.webm');
+                }
                 // Le serveur ne doit accélérer la vidéo que si l'utilisateur a
                 // explicitement demandé la normalisation. Auparavant, décocher
                 // l'option n'avait aucun effet dans le chemin ffmpeg.
@@ -2491,10 +2557,37 @@ function finalizeMediaRecorderVideo(){
                         resolve();
                     })
                     .catch(reject);
-            }).catch(reject);
+            };
+            if (stream) {
+                // Les fragments ont été poussés au fil de l'eau : on attend la
+                // file d'envoi puis on demande le remux serveur, qui répare au
+                // passage l'élément « Duration » absent des flux MediaRecorder
+                // (remplace fixWebmFinalDuration sans charger le blob en mémoire).
+                stream.drain()
+                    .then(() => stream.finish(fileName))
+                    .then((fin) => { streamedFile = fin.file; launchProcessing(); })
+                    .catch(reject);
+            } else {
+                // Réécrire la durée du .webm pour que ffmpeg la lise correctement
+                // (opération légère, pas de ré-encodage)
+                fixWebmFinalDuration(blob).then((fixedBlob) => {
+                    blob = fixedBlob || blob;
+                    launchProcessing();
+                }).catch(reject);
+            }
         });
 
         processOnServer().catch((err) => {
+            if (stream && !streamedFile) {
+                // Le flux n'a pas abouti (fragment perdu ou remux impossible) :
+                // la vidéo est incomplète et rien n'est rattrapable côté client.
+                console.error('[MediaRecorder] Flux vidéo incomplet:', err);
+                try { stream.abort(); } catch(_) {}
+                try { pkg.closeModalLoading(); } catch(_) {}
+                try { setBackgroundAudioBlocked(false); } catch(_) {}
+                try { pkg.showToast && pkg.showToast(pkg.t('L\'enregistrement a été interrompu : l\'envoi des données au serveur a échoué.'), 'error', pkg.t('Enregistrement'), 8000); } catch(_) {}
+                return;
+            }
             console.warn('Traitement serveur échoué, repli sur le pipeline navigateur:', err);
             try { pkg.showToast && pkg.showToast(pkg.t('Traitement serveur indisponible, repli local...'), 'warning', pkg.t('Enregistrement'), 4000); } catch(_) {}
             runClientFallback();

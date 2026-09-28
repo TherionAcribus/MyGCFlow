@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-28 10:19+0200\n"
+"POT-Creation-Date: 2026-09-28 10:49+0200\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -116,41 +116,41 @@ msgstr "Application des index mémoire (date/type/région)..."
 msgid "Filtrage direct en base (fallback)..."
 msgstr "Filtrage direct en base (fallback)..."
 
-#: capture.py:89
+#: capture.py:91
 msgid "Aucune image dans la requête"
 msgstr "Aucune image dans la requête"
 
-#: capture.py:128
+#: capture.py:130
 #, fuzzy
 msgid "Format de données non supporté"
 msgstr "Format non supporté"
 
-#: capture.py:130
+#: capture.py:132
 #, fuzzy
 msgid "Image reçue avec succès"
 msgstr "Fichier reçu avec succès"
 
-#: capture.py:203
+#: capture.py:205
 #, fuzzy
 msgid "Le répertoire a été vidé avec succès"
 msgstr "Base de données vidée avec succès"
 
-#: capture.py:439
+#: capture.py:441
 #, python-format
 msgid "%(label)s... %(pct)s%%"
 msgstr "%(label)s... %(pct)s%%"
 
-#: capture.py:441
+#: capture.py:443
 #, fuzzy, python-format
 msgid "%(label)s en cours..."
 msgstr "Chargement en cours..."
 
-#: capture.py:470
+#: capture.py:472
 #, python-format
 msgid "%(label)s interrompu : le processus ne s'est pas terminé."
 msgstr "%(label)s interrompu : le processus ne s'est pas terminé."
 
-#: capture.py:477
+#: capture.py:479
 #, python-format
 msgid ""
 "%(label)s interrompu : aucune progression pendant %(minutes)s min. Le "
@@ -159,22 +159,22 @@ msgstr ""
 "%(label)s interrompu : aucune progression pendant %(minutes)s min. Le "
 "fichier source est probablement corrompu."
 
-#: capture.py:482
+#: capture.py:484
 #, python-format
 msgid "ffmpeg a échoué (code %(code)s)"
 msgstr "ffmpeg a échoué (code %(code)s)"
 
-#: capture.py:484
+#: capture.py:486
 #, python-format
 msgid "%(label)s échoué : %(detail)s"
 msgstr "%(label)s échoué : %(detail)s"
 
-#: capture.py:553
+#: capture.py:555
 #, fuzzy
 msgid "Aucune image trouvée dans le dossier"
 msgstr "Aucun waypoint trouvé dans le fichier GPX"
 
-#: capture.py:559
+#: capture.py:561
 #, python-format
 msgid ""
 "Assemblage refusé : %(expected)d images attendues, %(found)d trouvées "
@@ -183,7 +183,7 @@ msgstr ""
 "Assemblage refusé : %(expected)d images attendues, %(found)d trouvées "
 "dans la capture"
 
-#: capture.py:574
+#: capture.py:580
 msgid ""
 "Assemblage refusé : la séquence d'images n'est pas continue (frames "
 "manquantes ou dupliquées)"
@@ -191,86 +191,98 @@ msgstr ""
 "Assemblage refusé : la séquence d'images n'est pas continue (frames "
 "manquantes ou dupliquées)"
 
-#: capture.py:579
+#: capture.py:585
 #, fuzzy
 msgid "Préparation des images..."
 msgstr "Préparation de l'envoi..."
 
-#: capture.py:628
+#: capture.py:634
 #, fuzzy
 msgid "Encodage de la vidéo..."
 msgstr "Enregistrer la vidéo"
 
-#: capture.py:632
+#: capture.py:638
 #, fuzzy
 msgid "Encodage vidéo"
 msgstr "Format vidéo"
 
-#: capture.py:632
+#: capture.py:638
 #, fuzzy
 msgid "Assemblage ffmpeg"
 msgstr "Assemblage en cours"
 
-#: capture.py:644 capture.py:645
+#: capture.py:650 capture.py:651
 #, fuzzy
 msgid "Vidéo créée avec succès"
 msgstr "Fichier chargé avec succès !"
 
-#: capture.py:674
+#: capture.py:680
 #, fuzzy
 msgid "Échec de l'assemblage"
 msgstr "Choix de la langue"
 
-#: capture.py:706
+#: capture.py:712
 #, fuzzy
 msgid "Fichier vidéo introuvable"
 msgstr "Fichier invalide"
 
-#: capture.py:762
+#: capture.py:768
 msgid "Démarrage du traitement vidéo..."
 msgstr "Démarrage du traitement vidéo..."
 
-#: capture.py:766
+#: capture.py:772
 #, fuzzy
 msgid "Traitement vidéo"
 msgstr "Enregistrement vidéo"
 
-#: capture.py:766
+#: capture.py:772
 msgid "Traitement ffmpeg"
 msgstr "Traitement ffmpeg"
 
-#: capture.py:778 static/js/mapgl.js:1853 static/js/mapgl.js:2366
+#: capture.py:784 static/js/mapgl.js:1858 static/js/mapgl.js:2406
 msgid "Vidéo prête"
 msgstr "Vidéo prête"
 
-#: capture.py:781
+#: capture.py:787
 #, fuzzy
 msgid "Vidéo traitée avec succès"
 msgstr "Fichier reçu avec succès"
 
-#: capture.py:798
+#: capture.py:804
 #, fuzzy
 msgid "Échec du traitement vidéo"
 msgstr "Enregistrement vidéo"
 
-#: capture.py:821 capture.py:879
+#: capture.py:839 capture.py:892
 #, fuzzy
 msgid "Aucun fichier vidéo fourni"
 msgstr "Aucun fichier fourni"
 
-#: capture.py:864
+#: capture.py:877
 #, fuzzy
 msgid "Traitement vidéo lancé en tâche de fond"
 msgstr "Import GPX lancé en tâche de fond"
 
-#: capture.py:900
+#: capture.py:913
 msgid "Vidéo reçue et sauvegardée"
 msgstr "Vidéo reçue et sauvegardée"
 
-#: capture.py:915
+#: capture.py:928
 #, fuzzy
 msgid "Aucun fichier audio fourni"
 msgstr "Aucun fichier fourni"
+
+#: capture.py:993 capture.py:1027
+msgid "Flux vidéo inconnu"
+msgstr "Flux vidéo inconnu"
+
+#: capture.py:998
+msgid "Fragment vidéo hors séquence"
+msgstr "Fragment vidéo hors séquence"
+
+#: capture.py:1001
+msgid "Fragment vidéo absent"
+msgstr "Fragment vidéo absent"
 
 #: blueprints/core.py:135 blueprints/core.py:173 templates/guide.html:123
 #: templates/menu_data.html:7 test_translations.py:27
@@ -375,7 +387,7 @@ msgstr "Base de données vidée avec succès. %(count)s entrées supprimées."
 msgid "Erreur lors du vidage de la base de données: %(error)s"
 msgstr "Erreur lors du vidage de la base de données: %(error)s"
 
-#: blueprints/media.py:72
+#: blueprints/media.py:76
 msgid ""
 "Un assemblage vidéo est déjà en cours. Attendez sa fin avant d'en lancer "
 "un autre ou de relancer une capture (les deux utilisent le dossier "
@@ -385,12 +397,12 @@ msgstr ""
 "un autre ou de relancer une capture (les deux utilisent le dossier "
 "captured/)."
 
-#: blueprints/media.py:145
+#: blueprints/media.py:149
 #, fuzzy
 msgid "Assemblage vidéo lancé en tâche de fond"
 msgstr "Import GPX lancé en tâche de fond"
 
-#: blueprints/media.py:174
+#: blueprints/media.py:178
 msgid ""
 "Un assemblage vidéo est en cours : le dossier captured/ ne peut pas être "
 "vidé maintenant."
@@ -462,7 +474,7 @@ msgstr "Fichier invalide"
 msgid "Déposez votre fichier .gpx pour le charger"
 msgstr "Déposez votre fichier .gpx pour le charger"
 
-#: static/js/bdd.js:368 static/js/bdd.js:394 static/js/mapgl.js:468
+#: static/js/bdd.js:368 static/js/bdd.js:394 static/js/mapgl.js:473
 #, python-brace-format
 msgid "le ${date}"
 msgstr "le ${date}"
@@ -552,7 +564,7 @@ msgstr "Chargement"
 msgid "Fichier chargé avec succès !"
 msgstr "Fichier chargé avec succès !"
 
-#: static/js/bdd.js:933 static/js/mapgl.js:2364
+#: static/js/bdd.js:933 static/js/mapgl.js:2404
 msgid "Terminé"
 msgstr "Terminé"
 
@@ -642,7 +654,7 @@ msgstr "Chargement terminé"
 msgid "Chargement et affichage des points..."
 msgstr "Chargement et affichage des points..."
 
-#: static/js/bdd.js:1300 static/js/mapgl.js:341 static/js/notifications.js:232
+#: static/js/bdd.js:1300 static/js/mapgl.js:346 static/js/notifications.js:232
 msgid "Affichage des points"
 msgstr "Affichage des points"
 
@@ -668,151 +680,151 @@ msgstr "Le serveur local ne répond pas (délai dépassé)"
 msgid "Erreur lors du chargement des couleurs GC (${status}): ${statusText}"
 msgstr "Erreur lors du chargement des données"
 
-#: static/js/mapgl.js:156
+#: static/js/mapgl.js:157
 msgid "Impossible de charger html2canvas"
 msgstr "Impossible de charger html2canvas"
 
-#: static/js/mapgl.js:342
+#: static/js/mapgl.js:347
 msgid "Mise à jour de l'affichage des points..."
 msgstr "Mise à jour de l'affichage des points..."
 
-#: static/js/mapgl.js:465
+#: static/js/mapgl.js:470
 msgid "Sans nom"
 msgstr "Sans nom"
 
-#: static/js/mapgl.js:466
+#: static/js/mapgl.js:471
 msgid "Trouvé"
 msgstr "Trouvé"
 
-#: static/js/mapgl.js:466
+#: static/js/mapgl.js:471
 msgid "DNF"
 msgstr "DNF"
 
-#: static/js/mapgl.js:467
+#: static/js/mapgl.js:472
 #, python-brace-format
 msgid "Publié le ${date}"
 msgstr "Publié le ${date}"
 
-#: static/js/mapgl.js:1188
+#: static/js/mapgl.js:1193
 msgid "MediaRecorder non supporté, bascule en mode images."
 msgstr "MediaRecorder non supporté, bascule en mode images."
 
-#: static/js/mapgl.js:1188
+#: static/js/mapgl.js:1193
 #, fuzzy
 msgid "Compatibilité"
 msgstr "Compatibilité maximale (4:2:0)"
 
-#: static/js/mapgl.js:1195
+#: static/js/mapgl.js:1200
 msgid "Données en cours de chargement. Veuillez réessayer."
 msgstr "Données en cours de chargement. Veuillez réessayer."
 
-#: static/js/mapgl.js:1195 static/js/mapgl.js:1231 static/js/mapgl.js:1237
-#: static/js/mapgl.js:1921 static/js/notifications.js:278
+#: static/js/mapgl.js:1200 static/js/mapgl.js:1236 static/js/mapgl.js:1242
+#: static/js/mapgl.js:1926 static/js/notifications.js:278
 msgid "Attention"
 msgstr "Attention"
 
-#: static/js/mapgl.js:1208
+#: static/js/mapgl.js:1213
 #, fuzzy
 msgid "Préparation de l'enregistrement..."
 msgstr "Préparation de l'envoi..."
 
-#: static/js/mapgl.js:1208
+#: static/js/mapgl.js:1213
 #, fuzzy
 msgid "Nettoyage initial"
 msgstr "Nettoyage"
 
-#: static/js/mapgl.js:1223
+#: static/js/mapgl.js:1228
 msgid "Un assemblage vidéo est en cours. Réessayez à la fin du traitement."
 msgstr "Un assemblage vidéo est en cours. Réessayez à la fin du traitement."
 
-#: static/js/mapgl.js:1224
+#: static/js/mapgl.js:1229
 #, fuzzy
 msgid "Enregistrement annulé"
 msgstr "Enregistrement vidéo"
 
-#: static/js/mapgl.js:1229
+#: static/js/mapgl.js:1234
 msgid "Répertoire d’images nettoyé."
 msgstr "Répertoire d’images nettoyé."
 
-#: static/js/mapgl.js:1229
+#: static/js/mapgl.js:1234
 #, fuzzy
 msgid "Préparation"
 msgstr "Préparation de l'envoi..."
 
-#: static/js/mapgl.js:1231
+#: static/js/mapgl.js:1236
 msgid "Nettoyage initial impossible. Poursuite de l'enregistrement."
 msgstr "Nettoyage initial impossible. Poursuite de l'enregistrement."
 
-#: static/js/mapgl.js:1237
+#: static/js/mapgl.js:1242
 msgid "Erreur nettoyage initial. Poursuite."
 msgstr "Erreur nettoyage initial. Poursuite."
 
-#: static/js/mapgl.js:1313
+#: static/js/mapgl.js:1318
 #, fuzzy
 msgid "0% | préparation..."
 msgstr "Préparation de l'envoi..."
 
-#: static/js/mapgl.js:1324 static/js/mapgl.js:1934
+#: static/js/mapgl.js:1329 static/js/mapgl.js:1939
 msgid " ♪ La musique sera intégrée automatiquement après la capture."
 msgstr " ♪ La musique sera intégrée automatiquement après la capture."
 
-#: static/js/mapgl.js:1330
+#: static/js/mapgl.js:1335
 msgid "Capture en cours – Ne pas bouger la fenêtre"
 msgstr "Capture en cours – Ne pas bouger la fenêtre"
 
-#: static/js/mapgl.js:1331
+#: static/js/mapgl.js:1336
 #, fuzzy
 msgid "Préparation de la capture..."
 msgstr "Préparation de l'envoi..."
 
-#: static/js/mapgl.js:1354
+#: static/js/mapgl.js:1359
 msgid "Capture en pause : revenez sur cet onglet pour la poursuivre."
 msgstr "Capture en pause : revenez sur cet onglet pour la poursuivre."
 
-#: static/js/mapgl.js:1354 static/js/mapgl.js:2244
+#: static/js/mapgl.js:1359 static/js/mapgl.js:2275
 msgid "Onglet masqué"
 msgstr "Onglet masqué"
 
-#: static/js/mapgl.js:1417
+#: static/js/mapgl.js:1422
 msgid "Le rendu initial de la carte n'a pas abouti (timeout)"
 msgstr "Le rendu initial de la carte n'a pas abouti (timeout)"
 
-#: static/js/mapgl.js:1494
+#: static/js/mapgl.js:1499
 msgid "Nettoyage en cours..."
 msgstr "Nettoyage en cours..."
 
-#: static/js/mapgl.js:1556
+#: static/js/mapgl.js:1561
 #, fuzzy
 msgid "erreur inconnue"
 msgstr "Erreur API"
 
-#: static/js/mapgl.js:1558
+#: static/js/mapgl.js:1563
 #, python-brace-format
 msgid "La capture a été interrompue suite à une erreur : ${message}"
 msgstr "La capture a été interrompue suite à une erreur : ${message}"
 
-#: static/js/mapgl.js:1560
+#: static/js/mapgl.js:1565
 msgid "Capture interrompue"
 msgstr "Capture interrompue"
 
-#: static/js/mapgl.js:1588
+#: static/js/mapgl.js:1593
 msgid "task_id manquant"
 msgstr "task_id manquant"
 
-#: static/js/mapgl.js:1589
+#: static/js/mapgl.js:1594
 msgid "Délai d'assemblage dépassé"
 msgstr "Délai d'assemblage dépassé"
 
-#: static/js/mapgl.js:1598
+#: static/js/mapgl.js:1603
 msgid "Tâche introuvable sur le serveur (purgée ou serveur redémarré)"
 msgstr "Tâche introuvable sur le serveur (purgée ou serveur redémarré)"
 
-#: static/js/mapgl.js:1612
+#: static/js/mapgl.js:1617
 #, fuzzy
 msgid "Tâche échouée"
 msgstr "Import échoué"
 
-#: static/js/mapgl.js:1619
+#: static/js/mapgl.js:1624
 #, python-brace-format
 msgid ""
 "Suivi de la tâche interrompu après ${count} erreurs consécutives : "
@@ -821,87 +833,92 @@ msgstr ""
 "Suivi de la tâche interrompu après ${count} erreurs consécutives : "
 "${detail}"
 
-#: static/js/mapgl.js:1705
+#: static/js/mapgl.js:1710
 msgid "Envoi des dernières images..."
 msgstr "Envoi des dernières images..."
 
-#: static/js/mapgl.js:1766 static/js/ui.js:5089
+#: static/js/mapgl.js:1771 static/js/ui.js:5089
 msgid "Assemblage en cours"
 msgstr "Assemblage en cours"
 
-#: static/js/mapgl.js:1766
+#: static/js/mapgl.js:1771
 msgid "Création de la vidéo à partir des images..."
 msgstr "Création de la vidéo à partir des images..."
 
-#: static/js/mapgl.js:1820
+#: static/js/mapgl.js:1825
 #, fuzzy
 msgid "Impossible de lancer l'assemblage vidéo"
 msgstr "Impossible de lancer l'import GPX"
 
-#: static/js/mapgl.js:1826
+#: static/js/mapgl.js:1831
 #, fuzzy
 msgid "Création de la vidéo..."
 msgstr "Préparation de l'envoi..."
 
-#: static/js/mapgl.js:1832
+#: static/js/mapgl.js:1837
 msgid "Vidéo créée. Nettoyage des images..."
 msgstr "Vidéo créée. Nettoyage des images..."
 
-#: static/js/mapgl.js:1833
+#: static/js/mapgl.js:1838
 #, fuzzy
 msgid "Nettoyage en cours"
 msgstr "Nettoyage en cours..."
 
-#: static/js/mapgl.js:1833
+#: static/js/mapgl.js:1838
 msgid "Vidéo créée avec succès. Nettoyage des images..."
 msgstr "Vidéo créée avec succès. Nettoyage des images..."
 
-#: static/js/mapgl.js:1849
+#: static/js/mapgl.js:1854
 #, fuzzy
 msgid "Nettoyage terminé"
 msgstr "Nettoyage"
 
-#: static/js/mapgl.js:1853
+#: static/js/mapgl.js:1858
 msgid "Traitement automatique terminé avec succès !"
 msgstr "Traitement automatique terminé avec succès !"
 
-#: static/js/mapgl.js:1865
+#: static/js/mapgl.js:1870
 #, python-brace-format
 msgid "Erreur lors du traitement automatique: ${message}"
 msgstr "Erreur lors du traitement automatique: ${message}"
 
-#: static/js/mapgl.js:1867
+#: static/js/mapgl.js:1872
 #, fuzzy
 msgid "Erreur chaîne"
 msgstr "Erreur d'affichage"
 
-#: static/js/mapgl.js:1921
+#: static/js/mapgl.js:1926
 msgid "Données en cours de chargement. Réessayez."
 msgstr "Données en cours de chargement. Réessayez."
 
-#: static/js/mapgl.js:1990
+#: static/js/mapgl.js:1995
 msgid "Enregistrement en cours – Ne pas bouger la fenêtre"
 msgstr "Enregistrement en cours – Ne pas bouger la fenêtre"
 
-#: static/js/mapgl.js:1991
+#: static/js/mapgl.js:1996
 msgid "Démarrage de la capture..."
 msgstr "Démarrage de la capture..."
 
-#: static/js/mapgl.js:2019
+#: static/js/mapgl.js:2024
 msgid "Erreur MediaRecorder, bascule en mode images."
 msgstr "Erreur MediaRecorder, bascule en mode images."
 
-#: static/js/mapgl.js:2019 static/js/mapgl.js:2190 static/js/mapgl.js:2366
-#: static/js/mapgl.js:2499
+#: static/js/mapgl.js:2024 static/js/mapgl.js:2195 static/js/mapgl.js:2209
+#: static/js/mapgl.js:2406 static/js/mapgl.js:2504 static/js/mapgl.js:2588
+#: static/js/mapgl.js:2592
 #, fuzzy
 msgid "Enregistrement"
 msgstr "Enregistrement…"
 
-#: static/js/mapgl.js:2156
+#: static/js/mapgl.js:2161
 msgid "Résolution réduite aux capacités du navigateur."
 msgstr "Résolution réduite aux capacités du navigateur."
 
-#: static/js/mapgl.js:2190
+#: static/js/mapgl.js:2195
+msgid "L'envoi de la vidéo au serveur a échoué. Arrêt de l'enregistrement."
+msgstr "L'envoi de la vidéo au serveur a échoué. Arrêt de l'enregistrement."
+
+#: static/js/mapgl.js:2209
 msgid ""
 "Erreur de l'encodeur vidéo. Arrêt de l'enregistrement et récupération de "
 "la séquence déjà capturée."
@@ -909,7 +926,7 @@ msgstr ""
 "Erreur de l'encodeur vidéo. Arrêt de l'enregistrement et récupération de "
 "la séquence déjà capturée."
 
-#: static/js/mapgl.js:2244
+#: static/js/mapgl.js:2275
 msgid ""
 "Enregistrement en pause : revenez sur cet onglet pour reprendre la "
 "capture."
@@ -917,75 +934,87 @@ msgstr ""
 "Enregistrement en pause : revenez sur cet onglet pour reprendre la "
 "capture."
 
-#: static/js/mapgl.js:2391
+#: static/js/mapgl.js:2431
 #, fuzzy
 msgid "Upload échoué"
 msgstr "Import échoué"
 
-#: static/js/mapgl.js:2406
+#: static/js/mapgl.js:2446
 #, fuzzy
 msgid "Finalisation"
 msgstr "Animation"
 
-#: static/js/mapgl.js:2406
+#: static/js/mapgl.js:2446
 #, fuzzy
 msgid "Écriture de la durée de la vidéo..."
 msgstr "En attente de la lecture de la durée de la musique."
 
-#: static/js/mapgl.js:2419
+#: static/js/mapgl.js:2459
 msgid "Ajout audio"
 msgstr "Ajout audio"
 
-#: static/js/mapgl.js:2419
+#: static/js/mapgl.js:2459
 msgid "Fusion de la piste audio avec la vidéo en cours..."
 msgstr "Fusion de la piste audio avec la vidéo en cours..."
 
-#: static/js/mapgl.js:2434 static/js/video_postprocess.js:29
+#: static/js/mapgl.js:2490 static/js/video_postprocess.js:29
 #, fuzzy
 msgid "Normalisation"
 msgstr "Information"
 
-#: static/js/mapgl.js:2434
+#: static/js/mapgl.js:2490
 #, python-brace-format
 msgid "Accélération x${applicable} pour lecture à vitesse normale..."
 msgstr "Accélération x${applicable} pour lecture à vitesse normale..."
 
-#: static/js/mapgl.js:2449
+#: static/js/mapgl.js:2504
+msgid "La vidéo n'a pas pu être assemblée."
+msgstr "La vidéo n'a pas pu être assemblée."
+
+#: static/js/mapgl.js:2511
 #, fuzzy
 msgid "Traitement serveur"
 msgstr "Traitement du fichier en cours..."
 
-#: static/js/mapgl.js:2449
+#: static/js/mapgl.js:2511
 msgid "Envoi de la vidéo au serveur..."
 msgstr "Envoi de la vidéo au serveur..."
 
-#: static/js/mapgl.js:2468 static/js/mapgl.js:2474
+#: static/js/mapgl.js:2534 static/js/mapgl.js:2540
 #, fuzzy
 msgid "Traitement serveur..."
 msgstr "Traitement du fichier en cours..."
 
-#: static/js/mapgl.js:2472
+#: static/js/mapgl.js:2538
 msgid "Traitement serveur non démarré"
 msgstr "Traitement serveur non démarré"
 
-#: static/js/mapgl.js:2499
+#: static/js/mapgl.js:2588
+msgid ""
+"L'enregistrement a été interrompu : l'envoi des données au serveur a "
+"échoué."
+msgstr ""
+"L'enregistrement a été interrompu : l'envoi des données au serveur a "
+"échoué."
+
+#: static/js/mapgl.js:2592
 msgid "Traitement serveur indisponible, repli local..."
 msgstr "Traitement serveur indisponible, repli local..."
 
-#: static/js/mapgl.js:2546
+#: static/js/mapgl.js:2639
 msgid "Élément non trouvé"
 msgstr "Élément non trouvé"
 
-#: static/js/mapgl.js:2563
+#: static/js/mapgl.js:2656
 msgid "Timeout rendercomplete (5s) : rendu carte bloqué"
 msgstr "Timeout rendercomplete (5s) : rendu carte bloqué"
 
-#: static/js/mapgl.js:2579
+#: static/js/mapgl.js:2672
 #, fuzzy
 msgid "Aucun canvas trouvé dans la carte"
 msgstr "Aucun waypoint trouvé dans le fichier GPX"
 
-#: static/js/mapgl.js:2624
+#: static/js/mapgl.js:2717
 msgid "Échec conversion canvas en blob"
 msgstr "Échec conversion canvas en blob"
 
@@ -1871,6 +1900,14 @@ msgstr "Impossible de démarrer la piste audio : ${detail}"
 #, fuzzy
 msgid "Erreur lecture vidéo pour mux audio"
 msgstr "Erreur lors de la lecture du fichier audio"
+
+#: static/js/video_stream.mjs:44
+msgid "Ouverture du flux vidéo impossible"
+msgstr "Ouverture du flux vidéo impossible"
+
+#: static/js/video_stream.mjs:73
+msgid "Aucun flux vidéo ouvert"
+msgstr "Aucun flux vidéo ouvert"
 
 #: templates/_scope_badges.html:24
 msgid ""

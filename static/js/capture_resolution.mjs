@@ -53,8 +53,11 @@ export function captureRatioFor({
 } = {}) {
     const width = Math.max(1, Math.floor(Number(cssWidth) || 0));
     const height = Math.max(1, Math.floor(Number(cssHeight) || 0));
-    // Densité de l'écran : plancher, jamais un plafond. Descendre en dessous
-    // dégraderait ce que l'utilisateur obtient déjà aujourd'hui.
+    // Densité de l'écran : plancher tant que le budget de pixels le permet —
+    // mais MAX_CAPTURE_PIXELS reste un plafond dur : une fenêtre HiDPI géante
+    // dont la densité seule dépasserait la limite est rabotée quand même (et
+    // signalée via `limited`), sinon le canvas demandé excéderait la mémoire
+    // vidéo disponible et le navigateur refuserait l'allocation.
     const safeMultiplier = Math.max(1, Number(multiplier) || 1);
     const screenRatio = clampRatio((Number(devicePixelRatio) || 1) * safeMultiplier);
     const targetHeight = CAPTURE_RESOLUTIONS[normalizeCaptureResolution(resolution)] || 0;
@@ -66,7 +69,7 @@ export function captureRatioFor({
 
     ratio = clampRatio(ratio);
     const pixelLimitRatio = Math.sqrt(MAX_CAPTURE_PIXELS / (width * height));
-    if (ratio > pixelLimitRatio) ratio = Math.max(screenRatio, pixelLimitRatio);
+    if (ratio > pixelLimitRatio) ratio = pixelLimitRatio;
 
     return {
         ratio,

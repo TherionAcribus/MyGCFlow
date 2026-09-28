@@ -8,11 +8,17 @@ from flask import Flask, request
 
 from capture import (
     _assemble_pictures,
+    _video_streams,
     captured_session_dir,
     clear_pictures_directory,
     count_captured_pictures,
+    process_recorded_video,
     upload_image,
     upload_images,
+    video_stream_abort,
+    video_stream_append,
+    video_stream_begin,
+    video_stream_finish,
 )
 
 
@@ -210,6 +216,150 @@ class SessionIsolationTests(unittest.TestCase):
 
         self.assertFalse(result['success'])
         self.assertIn('continue', result['message'])
+
+
+class VideoStreamTests(unittest.TestCase):
+    """Flux de délestage MediaRecorder : les fragments .webm sont écrits sur
+    disque au fil de l'eau au lieu de s'accumuler en mémoire navigateur."""
+
+    def setUp(self):
+        self.app = Flask(__name__)
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.previous_cwd = os.getcwd()
+        env = mock.patch.dict(os.environ, {'MYGCFLOW_DATA_DIR': self.tmpdir.name})
+        env.start()
+        self.addCleanup(env.stop)
+        os.chdir(self.tmpdir.name)
+        self.addCleanup(self.tmpdir.cleanup)
+        self.addCleanup(os.chdir, self.previous_cwd)
+        self.addCleanup(_video_streams.clear)
+
+    def _begin(self):
+        with self.app.test_request_context('/video_stream_begin', method='POST'):
+            return video_stream_begin().get_json()['stream_id']
+
+    def _append(self, stream_id, index, content=b'x'):
+        data = {'stream_id': stream_id, 'index': str(index), 'chunk': _file('c.webm', content)}
+        with self.app.test_request_context('/video_stream_append', method='POST', data=data):
+            response, *rest = _unpack(video_stream_append(request))
+            return response.get_json(), (rest[0] if rest else 200)
+
+    def _finish(self, stream_id, file_name='out.webm'):
+        with self.app.test_request_context(
+            '/video_stream_finish', method='POST', json={'stream_id': stream_id, 'fileName': file_name},
+        ):
+            response, *rest = _unpack(video_stream_finish(request))
+            return response.get_json(), (rest[0] if rest else 200)
+
+    def test_begin_creates_stream_file(self):
+        stream_id = self._begin()
+        self.assertIn(stream_id, _video_streams)
+        self.assertTrue(os.path.isfile(_video_streams[stream_id]['path']))
+
+    def test_appends_concatenate_in_order(self):
+        stream_id = self._begin()
+        for i, chunk in enumerate((b'AAA', b'BBB', b'CCC')):
+            payload, status = self._append(stream_id, i, chunk)
+            self.assertEqual(status, 200)
+            self.assertTrue(payload['success'])
+
+        with open(_video_streams[stream_id]['path'], 'rb') as handle:
+            self.assertEqual(handle.read(), b'AAABBBCCC')
+        self.assertEqual(_video_streams[stream_id]['index'], 3)
+
+    def test_out_of_order_index_is_rejected(self):
+        """Un fragment hors séquence corromprait le conteneur EBML : refus 409."""
+        stream_id = self._begin()
+        self._append(stream_id, 0, b'AAA')
+
+        payload, status = self._append(stream_id, 5, b'XXX')
+
+        self.assertEqual(status, 409)
+        self.assertEqual(payload['expected'], 1)
+        with open(_video_streams[stream_id]['path'], 'rb') as handle:
+            self.assertEqual(handle.read(), b'AAA')
+
+    def test_append_on_unknown_stream_is_404(self):
+        payload, status = self._append('inconnu', 0)
+        self.assertEqual(status, 404)
+        self.assertFalse(payload['success'])
+
+    def test_append_without_chunk_is_400(self):
+        stream_id = self._begin()
+        with self.app.test_request_context(
+            '/video_stream_append', method='POST',
+            data={'stream_id': stream_id, 'index': '0'},
+        ):
+            response, *rest = _unpack(video_stream_append(request))
+            self.assertEqual(rest[0] if rest else 200, 400)
+
+    def test_finish_remuxes_into_video_dir_and_purges(self):
+        """finish remuxe (sans ré-encodage) vers video/, retire le flux du
+        registre et supprime le fichier brut. ffmpeg est simulé en échec pour
+        exercer le repli « copie brute » sans dépendre du binaire."""
+        stream_id = self._begin()
+        self._append(stream_id, 0, b'WEBMDATA')
+        raw_path = _video_streams[stream_id]['path']
+
+        fake_proc = mock.Mock(returncode=1, stderr=b'')
+        with mock.patch('capture.subprocess.run', return_value=fake_proc):
+            payload, status = self._finish(stream_id, 'capture.webm')
+
+        self.assertEqual(status, 200)
+        self.assertEqual(payload['file'], 'capture.webm')
+        out = os.path.join('video', 'capture.webm')
+        self.assertTrue(os.path.isfile(out))
+        with open(out, 'rb') as handle:
+            self.assertEqual(handle.read(), b'WEBMDATA')
+        self.assertNotIn(stream_id, _video_streams)
+        self.assertFalse(os.path.exists(raw_path))
+
+    def test_finish_on_unknown_stream_is_404(self):
+        _payload, status = self._finish('inconnu')
+        self.assertEqual(status, 404)
+
+    def test_abort_removes_stream_file(self):
+        stream_id = self._begin()
+        self._append(stream_id, 0, b'AAA')
+        raw_path = _video_streams[stream_id]['path']
+
+        with self.app.test_request_context(
+            '/video_stream_abort', method='POST', json={'stream_id': stream_id},
+        ):
+            payload = video_stream_abort(request).get_json()
+
+        self.assertTrue(payload['success'])
+        self.assertNotIn(stream_id, _video_streams)
+        self.assertFalse(os.path.exists(raw_path))
+
+    def test_process_recorded_video_accepts_recorded_file(self):
+        """Le flux remuxé dans video/ doit pouvoir être désigné par son nom —
+        sans re-téléversement du fichier complet."""
+        os.makedirs('video')
+        with open(os.path.join('video', 'capture.webm'), 'wb') as handle:
+            handle.write(b'WEBM')
+
+        with self.app.test_request_context(
+            '/process_recorded_video', method='POST',
+            data={'recorded_file': 'capture.webm', 'slowdown': '1', 'fps': '30'},
+        ):
+            with mock.patch('task_manager.task_manager') as tm:
+                tm.submit.return_value = mock.Mock(id='task-1', state='running')
+                response, *rest = _unpack(process_recorded_video(request))
+                payload = response.get_json()
+
+        self.assertEqual(rest[0] if rest else 200, 202)
+        self.assertTrue(payload['success'])
+        self.assertEqual(payload['task_id'], 'task-1')
+
+    def test_process_recorded_video_rejects_traversal_in_recorded_file(self):
+        """secure_filename réduit '../..' à un nom plat : pas de sortie de video/."""
+        with self.app.test_request_context(
+            '/process_recorded_video', method='POST',
+            data={'recorded_file': '../../etc/passwd'},
+        ):
+            response, *rest = _unpack(process_recorded_video(request))
+            self.assertEqual(rest[0] if rest else 200, 400)
 
 
 def _unpack(result):

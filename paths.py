@@ -127,6 +127,15 @@ def captured_dir() -> Path:
     return data_dir() / "captured"
 
 
+def video_streams_dir() -> Path:
+    """Fragments .webm délestés pendant un enregistrement MediaRecorder.
+
+    Chaque flux est un fichier stream_<id>.webm alimenté en append au fil de
+    l'eau ; il est remuxé dans video/ à la fin puis supprimé.
+    """
+    return data_dir() / "video_streams"
+
+
 def audio_dir() -> Path:
     return data_dir() / "audio"
 

@@ -13,7 +13,9 @@ import os
 import re
 import base64
 import shutil
+import uuid
 from datetime import datetime
+from pathlib import Path
 import platform
 import subprocess
 import tempfile
@@ -814,20 +816,27 @@ def run_process_video_task(status, app, input_path, output_path, slowdown=1.0, a
 def process_recorded_video(request):
     """Réceptionne le .webm brut (+ options) et lance le traitement ffmpeg en tâche de fond.
 
-    Champs multipart attendus:
-      - 'video': le .webm brut du MediaRecorder (obligatoire)
+    Source vidéo, au choix :
+      - 'video' (fichier multipart) : le .webm brut du MediaRecorder ;
+      - 'recorded_file' (champ) : nom d'un .webm déjà déposé dans video/ par un
+        flux délesté (video_stream_*), qui évite de re-téléverser le fichier.
+    Autres champs :
       - 'audio' (fichier) OU 'audio' (nom déjà présent dans audio/) : piste audio optionnelle
       - 'slowdown', 'audio_volume', 'fileName', 'color_fidelity' : options
     """
     from task_manager import task_manager
 
-    if not request.files or 'video' not in request.files:
-        return jsonify({'success': False, 'message': _('Aucun fichier vidéo fourni')}), 400
-
     video_dir = paths.ensure_dir(paths.video_dir())
-    raw_name = _timestamped_name("mygcflow_raw.webm", "webm")
-    raw_path = os.path.join(video_dir, raw_name)
-    request.files['video'].save(raw_path)
+    recorded = secure_filename(request.form.get('recorded_file') or '')
+    if request.files and 'video' in request.files:
+        raw_name = _timestamped_name("mygcflow_raw.webm", "webm")
+        raw_path = os.path.join(video_dir, raw_name)
+        request.files['video'].save(raw_path)
+    elif recorded and os.path.isfile(os.path.join(video_dir, recorded)):
+        # secure_filename garantit un nom simple : pas de traversée hors video/.
+        raw_path = os.path.join(video_dir, recorded)
+    else:
+        return jsonify({'success': False, 'message': _('Aucun fichier vidéo fourni')}), 400
 
     # Audio : soit un fichier uploadé ici, soit un nom déjà présent dans audio/
     audio_path = None
@@ -925,3 +934,140 @@ def upload_audio(request):
         return jsonify({'success': True, 'file': file_name, 'path': save_path})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+
+
+# --------- Flux vidéo MediaRecorder (délestage mémoire) ---------
+#
+# Sans flux, le navigateur accumule tous les fragments .webm en mémoire jusqu'à
+# la fin de l'enregistrement (~225 Mo/min à 30 Mbit/s). Le flux les envoie au
+# serveur au fil de l'eau : chaque fragment est ajouté au fichier dès réception,
+# en respectant l'ordre strict exigé par le conteneur EBML. À la fin, le fichier
+# est remuxé sans ré-encodage dans video/ — ce qui répare au passage l'élément
+# « Duration » que MediaRecorder n'écrit pas.
+#
+# Le registre est en mémoire : un redémarrage serveur abandonne les flux, dont
+# les fichiers orphelins sont balayés au prochain begin.
+
+_video_streams = {}
+_video_streams_lock = threading.Lock()
+VIDEO_STREAM_MAX_AGE_S = 6 * 3600
+
+
+def _sweep_video_streams(streams_dir):
+    """Supprime les fichiers de flux abandonnés (crash, onglet fermé)."""
+    try:
+        cutoff = time.time() - VIDEO_STREAM_MAX_AGE_S
+        for path in Path(streams_dir).glob('stream_*.webm'):
+            try:
+                if path.stat().st_mtime < cutoff:
+                    path.unlink()
+            except OSError:
+                pass
+    except OSError:
+        pass
+
+
+def video_stream_begin():
+    """Ouvre un flux d'écriture : crée le fichier vide et son entrée de registre."""
+    try:
+        streams_dir = paths.ensure_dir(paths.video_streams_dir())
+        _sweep_video_streams(streams_dir)
+        stream_id = uuid.uuid4().hex
+        path = os.path.join(str(streams_dir), f"stream_{stream_id}.webm")
+        open(path, 'wb').close()
+        with _video_streams_lock:
+            _video_streams[stream_id] = {'path': path, 'index': 0}
+        return jsonify({'success': True, 'stream_id': stream_id})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+def video_stream_append(request):
+    """Ajoute un fragment au flux. L'index impose l'ordre : un fragment hors
+    séquence est refusé (409) plutôt que de corrompre le conteneur."""
+    try:
+        stream_id = request.form.get('stream_id') or ''
+        with _video_streams_lock:
+            entry = _video_streams.get(stream_id)
+        if entry is None:
+            return jsonify({'success': False, 'message': _('Flux vidéo inconnu')}), 404
+
+        index = _to_int(request.form.get('index'), -1)
+        if index != entry['index']:
+            return jsonify({'success': False, 'expected': entry['index'],
+                            'message': _('Fragment vidéo hors séquence')}), 409
+
+        if not request.files or 'chunk' not in request.files:
+            return jsonify({'success': False, 'message': _('Fragment vidéo absent')}), 400
+
+        data = request.files['chunk'].read()
+        with open(entry['path'], 'ab') as handle:
+            handle.write(data)
+        entry['index'] += 1
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+def video_stream_finish(request):
+    """Referme le flux : remux sans ré-encodage vers video/ puis purge.
+
+    Le remux réécrit les timestamps et l'élément Duration que MediaRecorder
+    omet (sans lui, les lecteurs n'affichent ni durée ni seekbar utilisable).
+    """
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        data = {}
+    stream_id = data.get('stream_id') or request.form.get('stream_id') or ''
+    suggested = data.get('fileName') or request.form.get('fileName') or ''
+
+    with _video_streams_lock:
+        entry = _video_streams.pop(stream_id, None)
+    if entry is None:
+        return jsonify({'success': False, 'message': _('Flux vidéo inconnu')}), 404
+
+    raw_path = entry['path']
+    try:
+        base = secure_filename(suggested) if suggested else ''
+        if not base:
+            base = _timestamped_name('mygcflow.webm', 'webm')
+        if os.path.splitext(base)[1].lower() != '.webm':
+            base = os.path.splitext(base)[0] + '.webm'
+
+        video_dir = paths.ensure_dir(paths.video_dir())
+        name = base if not os.path.exists(os.path.join(video_dir, base)) \
+            else _timestamped_name(base, 'webm')
+        out_path = os.path.join(video_dir, name)
+
+        ffmpeg = _get_ffmpeg_exe()
+        proc = subprocess.run(
+            [ffmpeg, '-y', '-i', raw_path, '-c', 'copy', out_path],
+            capture_output=True, timeout=600,
+        )
+        if proc.returncode != 0:
+            # Repli : le flux brut reste lisible, seule la durée manquera.
+            print(f"[stream] Remux échoué (code {proc.returncode}), copie brute du flux")
+            shutil.copyfile(raw_path, out_path)
+
+        os.remove(raw_path)
+        return jsonify({'success': True, 'file': name, 'path': out_path})
+    except Exception as e:
+        # Le fichier brut reste sur disque (diagnostic) ; le balayage le purgera.
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+def video_stream_abort(request):
+    """Abandonne un flux (enregistrement annulé) : registre + fichier supprimés."""
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        data = {}
+    stream_id = data.get('stream_id') or request.form.get('stream_id') or ''
+
+    with _video_streams_lock:
+        entry = _video_streams.pop(stream_id, None)
+    if entry is not None:
+        try:
+            os.remove(entry['path'])
+        except OSError:
+            pass
+    return jsonify({'success': True})
