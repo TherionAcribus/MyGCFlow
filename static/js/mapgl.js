@@ -177,6 +177,11 @@ let infosProgressBar = new Object;
 // TEMP
 export let framesPerDay = 30;  
 let imageCounter = 0;
+// Identifiant de la session de capture en cours (mode images). Chaque
+// enregistrement écrit ses frames dans captured/<sessionId>/ : un upload tardif
+// de la session précédente atterrit dans son propre dossier au lieu de se
+// mélanger aux images de la nouvelle (les lots déjà partis ne s'annulent pas).
+let captureSessionId = null;
 let recordingDayIndex = 0;
 let recordingDayCount = 1;
 let recordingBaseFrameCount = 1;
@@ -1191,6 +1196,11 @@ export function recordAnimation(){
         return;
     }
 
+    // Nouvelle session de capture : identifiant propre à cet enregistrement.
+    // Généré avant le nettoyage : même si celui-ci échoue, les frames de cette
+    // session restent isolées des reliquats des enregistrements précédents.
+    captureSessionId = `cap-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+
     // Démarrer la surveillance des performances pour le mode images
     recordingPerformanceMonitor.startMonitoring();
 
@@ -1324,8 +1334,9 @@ function startRecordingProcess(){
     // Init métriques
     resetPerfMetrics();
 
-    // Réinitialiser la file d'upload (uploads découplés de la capture en mode images)
-    resetUploadQueue();
+    // Réinitialiser la file d'upload (uploads découplés de la capture en mode
+    // images) et lui attacher la session : chaque lot emportera cet identifiant.
+    resetUploadQueue(captureSessionId);
 
     // Marquer le début de l'enregistrement
     isRecording = true;
@@ -1772,7 +1783,14 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
                 // FPS configurable : doit correspondre à celui utilisé pour calculer
                 // les frames, sinon la vitesse de lecture est faussée côté serveur.
                 const fps = normalizeRecordingFps(pkg.options?.record?.fps);
-                const body = { fps, color_fidelity: normalizeColorFidelity(pkg.options?.record?.colorFidelity) };
+                const body = {
+                    fps,
+                    color_fidelity: normalizeColorFidelity(pkg.options?.record?.colorFidelity),
+                    // Session + nombre de frames : le serveur assemble le dossier
+                    // de CETTE capture et refuse un assemblage incomplet.
+                    session: captureSessionId,
+                    expected_frames: imageCounter,
+                };
                 if (audioFileName) {
                     body.audio = audioFileName;
                     body.audio_volume = audioVol;
@@ -1784,6 +1802,8 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
                 return postStartCreateVideo({
                     fps,
                     color_fidelity: normalizeColorFidelity(pkg.options?.record?.colorFidelity),
+                    session: captureSessionId,
+                    expected_frames: imageCounter,
                 });
             }
         };

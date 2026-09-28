@@ -18,6 +18,10 @@ let uploadQueueError = null;
 // Génération de la file : une erreur issue d'un enregistrement précédent (lot
 // abandonné au reset) ne doit pas faire échouer l'enregistrement en cours.
 let uploadSession = 0;
+// Identifiant de la session de capture côté serveur (sous-dossier de captured/).
+// Posé par resetUploadQueue() à chaque enregistrement : les lots en vol de la
+// session précédente écrivent dans leur dossier, sans contaminer la nouvelle.
+let captureSessionId = null;
 
 // Plafond d'images simultanément en tampon + en vol. Avec la taille de lot par
 // défaut (12) et 4 lots, ~48 frames WebP peuvent être retenues en mémoire.
@@ -27,8 +31,9 @@ function maxImagesInFlight() {
     return MAX_UPLOAD_BATCHES_IN_FLIGHT * Math.max(1, batchSize);
 }
 
-export function resetUploadQueue() {
+export function resetUploadQueue(sessionId = null) {
     uploadSession++;
+    captureSessionId = sessionId;
     try { pkg.resetImageUploadQueue(); } catch(_) {}
     uploadInFlight = 0;
     pendingUploads = [];
@@ -42,7 +47,7 @@ export function enqueueImageUpload(blob, counter) {
     const session = uploadSession;
     uploadInFlight++;
     const t0 = performance.now();
-    const p = pkg.queueImageUpload(blob, counter)
+    const p = pkg.queueImageUpload(blob, counter, captureSessionId)
         .then(() => {
             perfMetrics.uploadTimeMs += (performance.now() - t0);
             perfMetrics.uploadOk += 1;

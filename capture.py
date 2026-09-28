@@ -12,6 +12,7 @@ def _(msgid, **kwargs):
 import os
 import re
 import base64
+import shutil
 from datetime import datetime
 import platform
 import subprocess
@@ -36,8 +37,29 @@ def _to_int(value, default=0):
         return default
 
 
-def _save_uploaded_image(image_file, counter, number_size):
-    """Écrit une image reçue en multipart dans captured/ et renvoie son nom de fichier.
+def captured_session_dir(session=None):
+    """Dossier d'images d'une session de capture (Path, non créé).
+
+    Chaque enregistrement envoie un identifiant : ses frames vivent dans un
+    sous-dossier de captured/, ce qui isole les captures successives — un upload
+    tardif de la session précédente atterrit dans son propre dossier au lieu de
+    se mélanger à la capture en cours. `secure_filename` borne le nom à un
+    sous-dossier direct (pas de traversée de chemin), et la vérification du
+    chemin résolu couvre les cas exotiques. Sans session (ancien client, route
+    unitaire de compatibilité) : captured/ lui-même, comme avant.
+    """
+    root = paths.captured_dir()
+    safe = secure_filename(session or '')
+    if not safe or safe in ('.', '..'):
+        return root
+    candidate = (root / safe).resolve()
+    if candidate.parent != root.resolve():
+        return root
+    return candidate
+
+
+def _save_uploaded_image(image_file, counter, number_size, session=None):
+    """Écrit une image reçue en multipart dans la session de capture et renvoie son nom de fichier.
 
     Le nom vient du client : `secure_filename` neutralise les traversées de chemin
     (..\\..\\x.webp) et peut renvoyer une chaîne vide sur un nom entièrement
@@ -47,7 +69,7 @@ def _save_uploaded_image(image_file, counter, number_size):
     if not image_filename:
         image_filename = f'image_{str(counter).zfill(number_size)}.webp'
 
-    image_file.save(os.path.join(paths.ensure_dir(paths.captured_dir()), image_filename))
+    image_file.save(os.path.join(paths.ensure_dir(captured_session_dir(session)), image_filename))
     return image_filename
 
 
@@ -68,11 +90,12 @@ def upload_images(request):
 
         counters = request.form.getlist('counters')
         number_size = _to_int(request.form.get('numberSize', 4), 4)
+        session = request.form.get('session')
 
         saved = []
         for index, image_file in enumerate(image_files):
             counter = _to_int(counters[index], index) if index < len(counters) else index
-            saved.append(_save_uploaded_image(image_file, counter, number_size))
+            saved.append(_save_uploaded_image(image_file, counter, number_size, session))
 
         return jsonify({'success': True, 'count': len(saved), 'files': saved})
 
@@ -88,7 +111,7 @@ def upload_image(request):
             image_file = request.files['image']
             counter = _to_int(request.form.get('counter', 0))
             numberSize = _to_int(request.form.get('numberSize', 4), 4)
-            _save_uploaded_image(image_file, counter, numberSize)
+            _save_uploaded_image(image_file, counter, numberSize, request.form.get('session'))
 
         # Fallback pour l'ancienne méthode JSON/Base64 (compatibilité)
         elif request.is_json:
@@ -98,7 +121,8 @@ def upload_image(request):
             counter = int(data['counter'])
 
             image_filename = f'image_{str(counter).zfill(numberSize)}.png'
-            with open(os.path.join(paths.ensure_dir(paths.captured_dir()), image_filename), 'wb') as file:
+            session_dir = paths.ensure_dir(captured_session_dir(data.get('session')))
+            with open(os.path.join(session_dir, image_filename), 'wb') as file:
                 file.write(image_data)
         else:
             return jsonify({'success': False, 'message': _('Format de données non supporté')}), 400
@@ -141,10 +165,13 @@ def count_captured_pictures():
     try:
         if not captured.is_dir():
             return 0
+        # Récursif : chaque session de capture a son sous-dossier, et des frames
+        # restantes y comptent autant que celles laissées à la racine.
         return sum(
-            1 for name in os.listdir(captured)
+            1
+            for root, _dirs, files in os.walk(captured)
+            for name in files
             if name.lower().endswith(CAPTURED_IMAGE_EXTENSIONS)
-            and os.path.isfile(os.path.join(captured, name))
         )
     except OSError:
         return 0
@@ -163,9 +190,9 @@ def clear_pictures_directory():
                     if os.path.isfile(file_path) or os.path.islink(file_path):
                         os.unlink(file_path)
                     elif os.path.isdir(file_path):
-                        # Optionnel: Supprimer les sous-répertoires et leur contenu
-                        # shutil.rmtree(file_path)
-                        pass
+                        # Sous-dossiers de sessions de capture : frames isolées
+                        # d'un enregistrement précédent, à supprimer aussi.
+                        shutil.rmtree(file_path)
                 except Exception as e:
                     # En cas d'erreur lors de la suppression, renvoyer un message d'erreur
                     return jsonify({'success': False, 'message': str(e)})
@@ -497,11 +524,13 @@ def _write_concat_list(image_files, fps, list_path):
 
 
 def _assemble_pictures(image_folder, output_video, fps=24, audio_path=None, audio_volume=1.0, status=None,
-                       color_fidelity=DEFAULT_COLOR_FIDELITY):
+                       color_fidelity=DEFAULT_COLOR_FIDELITY, expected_frames=0):
     """Coeur de l'assemblage vidéo. Retourne un dict {'success', 'message', ...}.
 
     Met à jour un TaskStatus optionnel (`status`) pour le suivi de progression,
     ce qui permet de l'exécuter en tâche de fond sans bloquer la requête HTTP.
+    `expected_frames` (0 = inconnu) est le nombre de frames que le client a
+    capturées : un écart signifie qu'au moins un upload s'est perdu.
     """
     def _progress(p, msg):
         if status is not None:
@@ -512,11 +541,41 @@ def _assemble_pictures(image_folder, output_video, fps=24, audio_path=None, audi
 
     # Inclure plusieurs formats d'images (webp par défaut côté client, mais aussi png et autres)
     exts = CAPTURED_IMAGE_EXTENSIONS
-    # Obtenez la liste des fichiers d'image dans le dossier
-    image_files = [os.path.join(image_folder, img) for img in sorted(os.listdir(image_folder)) if img.lower().endswith(exts)]
+    # Obtenez la liste des fichiers d'image dans le dossier. Un dossier de
+    # session inexistant (aucune image n'a pu être enregistrée) se traduit en
+    # liste vide, pas en exception.
+    try:
+        image_files = [os.path.join(image_folder, img) for img in sorted(os.listdir(image_folder)) if img.lower().endswith(exts)]
+    except OSError:
+        image_files = []
 
     if not image_files:
         return {'success': False, 'message': _('Aucune image trouvée dans le dossier')}
+
+    # Complétude : sans cette vérification, un lot d'upload perdu (requête
+    # abandonnée, disque plein) produisait une vidéo silencieusement plus courte.
+    if expected_frames and len(image_files) != expected_frames:
+        return {'success': False, 'message': _(
+            "Assemblage refusé : %(expected)d images attendues, %(found)d trouvées dans la capture",
+            expected=expected_frames, found=len(image_files))}
+
+    # Continuité : quand tous les noms suivent le schéma image_<n>.<ext>, les
+    # indices doivent être uniques et contigus — peu importe la valeur de départ.
+    # Une frame manquante compensée par un doublon passerait sinon le contrôle
+    # de nombre ci-dessus.
+    indices = []
+    for path in image_files:
+        match = re.fullmatch(r'image_(\d+)\.[A-Za-z0-9]+', os.path.basename(path))
+        if not match:
+            indices = None
+            break
+        indices.append(int(match.group(1)))
+    if indices is not None:
+        unique = sorted(set(indices))
+        contiguous = unique == list(range(unique[0], unique[0] + len(unique)))
+        if len(unique) != len(image_files) or not contiguous:
+            return {'success': False, 'message': _(
+                "Assemblage refusé : la séquence d'images n'est pas continue (frames manquantes ou dupliquées)")}
 
     # Assurez-vous que le répertoire de sortie existe
     os.makedirs(os.path.dirname(output_video), exist_ok=True)
@@ -602,7 +661,8 @@ def assemble_pictures_directory(image_folder, output_video, fps=24, audio_path=N
 
 
 def run_assemble_video_task(status, app, image_folder, output_video, fps=24, audio_path=None,
-                            audio_volume=1.0, color_fidelity=DEFAULT_COLOR_FIDELITY, locale=None):
+                            audio_volume=1.0, color_fidelity=DEFAULT_COLOR_FIDELITY, locale=None,
+                            expected_frames=0):
     """Tâche de fond : assemble la vidéo et met à jour la progression via TaskStatus.
 
     Exécutée par le TaskManager dans un thread, ce qui évite l'expiration du
@@ -612,7 +672,8 @@ def run_assemble_video_task(status, app, image_folder, output_video, fps=24, aud
     """
     def _run():
         result = _assemble_pictures(image_folder, output_video, fps, audio_path, audio_volume,
-                                    status=status, color_fidelity=color_fidelity)
+                                    status=status, color_fidelity=color_fidelity,
+                                    expected_frames=expected_frames)
         if not result.get('success'):
             status.fail(result.get('message', _("Échec de l'assemblage")))
             return

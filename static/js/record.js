@@ -120,7 +120,7 @@ async function postForm(url, formData) {
 
 // Envoi d'une seule image (voie historique, conservée pour le repli et pour les
 // appels ponctuels hors file d'attente).
-async function uploadOne({ blob, counter, numberSize }, retries) {
+async function uploadOne({ blob, counter, numberSize, sessionId }, retries) {
     const fileName = imageFileName(counter, numberSize);
 
     return withRetry(async () => {
@@ -128,6 +128,7 @@ async function uploadOne({ blob, counter, numberSize }, retries) {
         fd.append('image', blob, fileName);
         fd.append('counter', counter.toString());
         fd.append('numberSize', numberSize.toString());
+        if (sessionId) fd.append('session', sessionId);
         return postForm(`${CONFIG.BASE_URL}/upload_image`, fd);
     }, retries, fileName);
 }
@@ -147,6 +148,8 @@ async function uploadBatch(items, retries) {
             fd.append('counters', item.counter.toString());
         }
         fd.append('numberSize', items[0].numberSize.toString());
+        // Session de capture : toutes les images d'un lot partagent la même.
+        if (items[0].sessionId) fd.append('session', items[0].sessionId);
 
         try {
             return await postForm(`${CONFIG.BASE_URL}/upload_images`, fd);
@@ -205,10 +208,10 @@ function toBlobPromise(imageData) {
  * lot contenant cette image a été accepté par le serveur (et rejette si le lot a
  * définitivement échoué). L'appelant garde donc un suivi par frame.
  */
-export function queueImageUpload(imageData, counter) {
+export function queueImageUpload(imageData, counter, sessionId = null) {
     const numberSize = currentNumberSize();
     return toBlobPromise(imageData)
-        .then(blob => getBatcher().add({ blob, counter, numberSize }));
+        .then(blob => getBatcher().add({ blob, counter, numberSize, sessionId }));
 }
 
 /** Force l'envoi immédiat du lot partiel en attente (fin de capture, backpressure). */

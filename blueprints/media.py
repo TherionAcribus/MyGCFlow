@@ -7,6 +7,7 @@ from werkzeug.utils import secure_filename
 import paths
 from capture import (
     TASK_TYPE_VIDEO,
+    captured_session_dir,
     clear_pictures_directory,
     count_captured_pictures,
     default_video_output,
@@ -115,6 +116,15 @@ def start_create_video():
         # Fidélité de couleur (yuv420p compatible / yuv444p fidèle) : choisie par
         # l'utilisateur, validée côté serveur comme tous les paramètres reçus.
         color_fidelity = coerce_color_fidelity(_param('color_fidelity'))
+        # Session de capture : les frames vivent dans captured/<session>/, ce qui
+        # empêche un upload tardif de l'enregistrement précédent de se mélanger à
+        # celui-ci. Sans session (compatibilité) : la racine captured/.
+        session = _param('session')
+        try:
+            expected_frames = int(_param('expected_frames', 0) or 0)
+        except (TypeError, ValueError):
+            expected_frames = 0
+        image_folder = str(captured_session_dir(session))
         # Assemblage lancé en tâche de fond : évite l'expiration du fetch HTTP
         # sur les vidéos longues. Le client suit l'avancement via /tasks/<id>.
         output_video = default_video_output("mp4")
@@ -123,8 +133,9 @@ def start_create_video():
             status = task_manager.submit(
                 TASK_TYPE_VIDEO, run_assemble_video_task,
                 current_app._get_current_object(),
-                str(paths.captured_dir()), output_video, fps, audio, vol, color_fidelity,
+                image_folder, output_video, fps, audio, vol, color_fidelity,
                 get_locale(),
+                expected_frames=expected_frames,
                 exclusive=True,
             )
         except TaskAlreadyRunning as exc:
