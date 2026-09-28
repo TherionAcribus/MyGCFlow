@@ -525,10 +525,18 @@ const btnRecordAnimation = document.getElementById('btnRecordAnimation');
     // Suivi de caméra : préférence globale d'animation (pas un réglage de
     // thème), appliquée à la prochaine lecture ou au prochain enregistrement.
     const switchCameraFollow = document.getElementById('switchCameraFollow');
+    const selectCameraDynamism = document.getElementById('selectCameraDynamism');
     if (switchCameraFollow) {
         switchCameraFollow.addEventListener('change', () => {
             pkg.options.animation.cameraFollow = switchCameraFollow.checked;
+            if (selectCameraDynamism) selectCameraDynamism.disabled = !switchCameraFollow.checked;
             pkg.setCameraTilePreload?.(switchCameraFollow.checked);
+            refreshTimingPlan();
+        });
+    }
+    if (selectCameraDynamism) {
+        selectCameraDynamism.addEventListener('change', () => {
+            pkg.options.animation.cameraDynamism = Math.min(4, Math.max(1, Number(selectCameraDynamism.value) || 2));
             refreshTimingPlan();
         });
     }
@@ -2391,6 +2399,7 @@ function animationSettingsPayload() {
         total_duration_seconds: Number.isFinite(total) && total > 0 ? total : TIMING_LIMITS.totalDurationSeconds.fallback,
         extra_end_seconds: Math.max(0, Number(a.extraEndSeconds) || 0),
         camera_follow: a.cameraFollow === true,
+        camera_dynamism: Math.min(4, Math.max(1, Math.round(Number(a.cameraDynamism) || 2))),
         // La durée du flash vit ici (temporel) même si son aspect est un
         // réglage de thème.
         flash_duration_ms: Math.round(Number(pkg.options.flash?.duration) || 1000),
@@ -2429,6 +2438,8 @@ function applyAnimationSettingsPayload(anim) {
         a.extraEndSeconds = Math.min(TIMING_LIMITS.extraEndSeconds.max, extra);
     }
     if (typeof anim.camera_follow === 'boolean') a.cameraFollow = anim.camera_follow;
+    const cameraDynamism = Math.round(Number(anim.camera_dynamism));
+    if (cameraDynamism >= 1 && cameraDynamism <= 4) a.cameraDynamism = cameraDynamism;
     const flash = Number(anim.flash_duration_ms);
     if (Number.isFinite(flash) && flash > 0) {
         pkg.options.flash = pkg.options.flash || {};
@@ -4284,7 +4295,7 @@ function changeAnimationValues(event){
 // Borne les options d'animation venues des valeurs par défaut ou des réglages
 // persistés. Le schéma courant : rhythmMode/daysPerSecond/totalDurationSeconds
 // + timePerDay (ms, valeur canonique lue par le moteur) + extraEndSeconds +
-// cameraFollow. Les anciennes clés (speed) sont converties une fois.
+// cameraFollow/cameraDynamism. Les anciennes clés (speed) sont converties une fois.
 function normalizeAnimationOptions() {
     const animation = pkg.options?.animation;
     if (!animation) return;
@@ -4308,6 +4319,8 @@ function normalizeAnimationOptions() {
         : TIMING_LIMITS.totalDurationSeconds.fallback;
     animation.extraEndSeconds = Math.max(0, Number(animation.extraEndSeconds) || 0);
     animation.cameraFollow = animation.cameraFollow === true;
+    const cameraDynamism = Math.round(Number(animation.cameraDynamism));
+    animation.cameraDynamism = cameraDynamism >= 1 && cameraDynamism <= 4 ? cameraDynamism : 2;
 }
 
 // Reflète pkg.options.animation dans les contrôles de l'onglet Animation, puis
@@ -4322,6 +4335,11 @@ export function syncAnimationOptionsUI() {
     if (inputTimeFlash) inputTimeFlash.value = Number(pkg.options.flash?.duration) || 1000;
     const switchCameraFollow = document.getElementById('switchCameraFollow');
     if (switchCameraFollow) switchCameraFollow.checked = animation.cameraFollow === true;
+    const selectCameraDynamism = document.getElementById('selectCameraDynamism');
+    if (selectCameraDynamism) {
+        selectCameraDynamism.value = String(animation.cameraDynamism);
+        selectCameraDynamism.disabled = animation.cameraFollow !== true;
+    }
 
     refreshTimingPlan({ save: false });
 }

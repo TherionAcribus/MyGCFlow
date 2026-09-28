@@ -1114,7 +1114,9 @@ top: 20px;
 
 /* Badges de portée : indiquent OÙ un réglage est enregistré.
    .gc-scope-profile = appartient au profil actif (nécessite « Sauvegarder »)
-   .gc-scope-global  = préférence de l'application (enregistrée automatiquement) */
+   .gc-scope-global  = préférence de l'application (enregistrée automatiquement)
+   .gc-scope-experimental = fonctionnalité en cours de validation (pas une
+   portée d'enregistrement, mais même pastille pour rester discret) */
 .gc-scope-badge {
     display: inline-flex;
     align-items: center;
@@ -1146,6 +1148,12 @@ top: 20px;
     background: #e3f2fd;
     color: #1565c0;
     border-color: #bbdefb;
+}
+
+.gc-scope-experimental {
+    background: #fff3e0;
+    color: #e65100;
+    border-color: #ffe0b2;
 }
 
 /* Marges pour les contenus d'onglets internes */

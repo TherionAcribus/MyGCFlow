@@ -128,12 +128,14 @@ class AnimationCoercionTests(unittest.TestCase):
             "days_per_second": 99999,
             "total_duration_seconds": 0,
             "extra_end_seconds": -5,
+            "camera_dynamism": 99,
             "flash_duration_ms": 99999,
         })
 
         self.assertEqual(a.days_per_second, 1000.0)
         self.assertEqual(a.total_duration_seconds, 1.0)
         self.assertEqual(a.extra_end_seconds, 0.0)
+        self.assertEqual(a.camera_dynamism, 4)
         self.assertEqual(a.flash_duration_ms, 10000)
 
     def test_unknown_rhythm_mode_falls_back_to_rate(self):
@@ -145,10 +147,15 @@ class AnimationCoercionTests(unittest.TestCase):
         self.assertEqual(coerce_animation_settings(None), AnimationPrefs())
 
     def test_animation_block_survives_a_settings_round_trip(self):
-        s = coerce_settings({"animation": {"days_per_second": 5.5, "camera_follow": True}})
+        s = coerce_settings({"animation": {
+            "days_per_second": 5.5,
+            "camera_follow": True,
+            "camera_dynamism": 3,
+        }})
 
         self.assertEqual(s.animation.days_per_second, 5.5)
         self.assertTrue(s.animation.camera_follow)
+        self.assertEqual(s.animation.camera_dynamism, 3)
 
 
 class ThemeTimingIsolationTests(unittest.TestCase):
@@ -382,7 +389,8 @@ class SettingsApiTests(unittest.TestCase):
 
     def test_an_animation_patch_survives_a_round_trip_and_merges(self):
         self.client.put('/api/settings', json={'animation': {
-            'rhythm_mode': 'music', 'days_per_second': 7.5, 'camera_follow': True,
+            'rhythm_mode': 'music', 'days_per_second': 7.5,
+            'camera_follow': True, 'camera_dynamism': 3,
         }})
         # Patch partiel : une écriture ultérieure d'un autre champ ne doit pas
         # effacer le mode ni le rythme enregistrés.
@@ -392,6 +400,7 @@ class SettingsApiTests(unittest.TestCase):
         self.assertEqual(animation['rhythm_mode'], 'music')
         self.assertEqual(animation['days_per_second'], 7.5)
         self.assertTrue(animation['camera_follow'])
+        self.assertEqual(animation['camera_dynamism'], 3)
         self.assertEqual(animation['extra_end_seconds'], 4)
 
     def test_an_animation_value_out_of_range_is_stored_clamped(self):

@@ -56,7 +56,9 @@ résultat calculé en lecture seule.
 
 - **Badge de portée** (`templates/_scope_badges.html`) à côté de chaque titre de
   section : pastille violette « Thème », pastille bleue « Global », avec une
-  infobulle qui rappelle la règle de sauvegarde. Les styles vivent dans
+  infobulle qui rappelle la règle de sauvegarde. Une pastille orange
+  « Expérimental » (même base de style) marque les fonctionnalités en cours de
+  validation. Les styles vivent dans
   `static/css/ui_improvements.css` (`.gc-scope-badge`) et leurs variantes sombres
   dans `static/css/tabler_theme.css`.
 - **Indicateur inline « Enregistré ✓ »** (`static/js/saved_indicator.mjs`) posé

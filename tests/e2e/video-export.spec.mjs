@@ -594,6 +594,7 @@ test('le suivi de caméra glisse vers les caches, se stabilise et rend la main',
   }
   await page.locator('a[href="#animation"]').click();
   await page.locator('#switchCameraFollow').check();
+  await page.locator('#selectCameraDynamism').selectOption('2');
   await expect(page.locator('#timingWarnings')).toContainText('dates en pause');
   await expect.poll(() => page.evaluate(async () => {
     const app = await import('/static/js/index.js');

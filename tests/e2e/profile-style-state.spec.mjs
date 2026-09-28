@@ -67,6 +67,7 @@ test('appliquer un profil écrit les options puis synchronise l\'interface', asy
     app.options.animation.totalDurationSeconds = 42;
     app.options.animation.extraEndSeconds = 6;
     app.options.animation.cameraFollow = true;
+    app.options.animation.cameraDynamism = 3;
     app.options.animation.dateStart = new Date(2026, 0, 5);
     app.options.animation.dateEnd = new Date(2026, 0, 20);
     app.options.flash.duration = 2600;

@@ -1,4 +1,4 @@
-{% from '_scope_badges.html' import global_scope_badge with context %}
+{% from '_scope_badges.html' import global_scope_badge, experimental_badge with context %}
 <div id="animation" class="col-12 tab-pane fade">
     <div class="row g-3">
 
@@ -165,8 +165,15 @@
                         <div class="col-12 col-md-6">
                             <div class="form-check form-switch mb-2 mt-md-4">
                                 <input class="form-check-input" type="checkbox" id="switchCameraFollow" role="switch" aria-describedby="helpCameraFollow">
-                                <label class="form-check-label" for="switchCameraFollow">{{ _("Suivi de caméra") }}{{ global_scope_badge() }}</label>
+                                <label class="form-check-label" for="switchCameraFollow">{{ _("Suivi de caméra") }}{{ experimental_badge() }}{{ global_scope_badge() }}</label>
                             </div>
+                            <label for="selectCameraDynamism" class="form-label mb-1">{{ _("Dynamisme de la caméra") }}</label>
+                            <select id="selectCameraDynamism" class="form-select form-select-sm mb-2" disabled>
+                                <option value="1">{{ _("1 — Minimal : hors champ uniquement") }}</option>
+                                <option value="2">{{ _("2 — Discret : hors champ ou très périphérique") }}</option>
+                                <option value="3">{{ _("3 — Dynamique : hors zone centrale") }}</option>
+                                <option value="4">{{ _("4 — Intense : recentrage et zoom systématiques") }}</option>
+                            </select>
                             <small id="helpCameraFollow" class="form-hint text-muted">{{ _("La vue glisse vers les caches du jour. Pour un grand trajet, elle dézoome temporairement puis revient au niveau initial. Un niveau voisin de tuiles est préchargé et la date suivante attend le rendu final. La durée peut donc dépasser l'estimation et celle de la musique.") }}</small>
                         </div>
                     </div>

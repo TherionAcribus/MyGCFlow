@@ -30,6 +30,41 @@ export const DEFAULT_DEAD_ZONE_PX = 2;
 export const LONG_TRAVEL_THRESHOLD_PX = 900;
 export const CRUISE_DISTANCE_PX = 640;
 export const MIN_CRUISE_ZOOM = 2;
+export const DEFAULT_CAMERA_DYNAMISM = 2;
+
+const CAMERA_COMFORT_RATIOS = Object.freeze({
+    1: 1,
+    2: 0.8,
+    3: 0.55,
+    4: 0,
+});
+
+export function normalizeCameraDynamism(value) {
+    const level = Math.round(Number(value));
+    return level >= 1 && level <= 4 ? level : DEFAULT_CAMERA_DYNAMISM;
+}
+
+// Une journée ne déclenche un mouvement que si au moins une de ses caches sort
+// de la zone de confort choisie. Le niveau 4 assume volontairement un mouvement
+// systématique, même si le barycentre est déjà centré.
+export function shouldMoveCamera(viewCenter, resolution, viewportSize, targetExtent, dynamism) {
+    const level = normalizeCameraDynamism(dynamism);
+    if (level === 4) return true;
+    if (!viewCenter || !Array.isArray(viewportSize) || viewportSize.length < 2) return true;
+    if (!Array.isArray(targetExtent) || targetExtent.length !== 4) return true;
+    const unitsPerPixel = Number(resolution);
+    const width = Number(viewportSize[0]);
+    const height = Number(viewportSize[1]);
+    if (!(unitsPerPixel > 0) || !(width > 0) || !(height > 0)) return true;
+
+    const ratio = CAMERA_COMFORT_RATIOS[level];
+    const halfWidth = width * unitsPerPixel * ratio / 2;
+    const halfHeight = height * unitsPerPixel * ratio / 2;
+    return targetExtent[0] < viewCenter[0] - halfWidth
+        || targetExtent[2] > viewCenter[0] + halfWidth
+        || targetExtent[1] < viewCenter[1] - halfHeight
+        || targetExtent[3] > viewCenter[1] + halfHeight;
+}
 
 // Part du chemin à parcourir pendant dtMs. Exponentielle : indépendante de la
 // cadence, donc un enregistrement à 12 ou 60 images/s donne le même mouvement.
@@ -109,6 +144,7 @@ export function createCameraJourney(current, target, startZoom, resolution, {
     longTravelThresholdPx = LONG_TRAVEL_THRESHOLD_PX,
     cruiseDistancePx = CRUISE_DISTANCE_PX,
     minCruiseZoom = MIN_CRUISE_ZOOM,
+    extraZoomOut = 0,
 } = {}) {
     if (!current || !target) return null;
     const zoom = Number(startZoom);
@@ -117,7 +153,8 @@ export function createCameraJourney(current, target, startZoom, resolution, {
 
     const distanceMapUnits = Math.hypot(target[0] - current[0], target[1] - current[1]);
     const distancePx = distanceMapUnits / unitsPerPixel;
-    if (!(distancePx > DEFAULT_DEAD_ZONE_PX)) return null;
+    const addedZoom = Math.max(0, Number(extraZoomOut) || 0);
+    if (!(distancePx > DEFAULT_DEAD_ZONE_PX) && addedZoom === 0) return null;
 
     let cruiseZoom = zoom;
     if (distancePx > longTravelThresholdPx) {
@@ -128,10 +165,13 @@ export function createCameraJourney(current, target, startZoom, resolution, {
         if (zoom - cruiseZoom < 0.25) cruiseZoom = zoom;
     }
 
+    cruiseZoom = Math.max(Number(minCruiseZoom) || 0, cruiseZoom - addedZoom);
     const zoomDelta = Math.max(0, zoom - cruiseZoom);
     const zoomDurationMs = zoomDelta > 0 ? Math.min(1200, 600 + zoomDelta * 150) : 0;
     const cruiseDistance = distancePx / Math.pow(2, zoomDelta);
-    const panDurationMs = Math.min(2800, 700 + cruiseDistance * 2.5);
+    const panDurationMs = distancePx > DEFAULT_DEAD_ZONE_PX
+        ? Math.min(2800, 700 + cruiseDistance * 2.5)
+        : 0;
 
     return {
         startCenter: [...current],

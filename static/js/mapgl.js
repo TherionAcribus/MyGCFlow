@@ -117,7 +117,9 @@ import {
     centroid,
     clampToExtent,
     createCameraJourney,
+    normalizeCameraDynamism,
     sampleCameraJourney,
+    shouldMoveCamera,
 } from './camera_follow.mjs';
 import { flashStyleAt } from './flash_styles.js';
 import { liveFlashStep } from './flash_style_cache.mjs';
@@ -299,6 +301,7 @@ let cameraJourneyStartedAt = null;
 let cameraRenderPending = false;
 let cameraRenderKey = null;
 let cameraRenderTimeout = null;
+let cameraDynamism = 2;
 const CAMERA_RENDER_TIMEOUT_MS = 6000;
 // Compteur de caches animé : la valeur affichée rejoint le total du jour au lieu
 // de sauter. Piloté par la même horloge que les points, donc déterministe en
@@ -709,6 +712,7 @@ function updateCameraFollow(now) {
             target,
             view.getZoom(),
             view.getResolution(),
+            { extraZoomOut: cameraDynamism === 4 ? 1.25 : 0 },
         );
         cameraJourneyStartedAt = now;
         if (!cameraJourney) {
@@ -3023,11 +3027,21 @@ function displayFeaturesForDates(dates, pointOptions, flashOptions, record, info
     if (pkg.options.animation?.cameraFollow) {
         // La caméra vise le barycentre des caches du jour ; c'est le lissage qui
         // fait le mouvement, pas ce saut de cible.
-        const target = centroid(newFeatures.map((feature) => ol.proj.fromLonLat([
+        const coordinates = newFeatures.map((feature) => ol.proj.fromLonLat([
             feature.geometry.coordinates[0],
             feature.geometry.coordinates[1],
-        ])));
-        if (target) {
+        ]));
+        const target = centroid(coordinates);
+        const targetExtent = coordinates.length > 0 ? ol.extent.boundingExtent(coordinates) : null;
+        cameraDynamism = normalizeCameraDynamism(pkg.options.animation?.cameraDynamism);
+        const view = map.getView();
+        if (target && shouldMoveCamera(
+            view.getCenter(),
+            view.getResolution(),
+            map.getSize(),
+            targetExtent,
+            cameraDynamism,
+        )) {
             cameraTarget = target;
             cameraJourney = null;
             cameraJourneyStartedAt = null;

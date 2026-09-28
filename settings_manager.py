@@ -269,9 +269,9 @@ class AnimationPrefs:
     days_per_second: float = 20.0
     total_duration_seconds: float = 60.0
     extra_end_seconds: float = 0.0
-    # La vue suit le barycentre des caches du jour (translation lente, sans
-    # zoom). Voir static/js/camera_follow.mjs.
+    # La vue suit les caches du jour selon une zone de confort réglable.
     camera_follow: bool = False
+    camera_dynamism: int = 2
     # Durée du flash : réglage d'animation (temporel), alors que forme, taille
     # et couleur du flash restent dans le thème.
     flash_duration_ms: int = 1000
@@ -498,6 +498,7 @@ def coerce_animation_settings(d: dict) -> AnimationPrefs:
     a.total_duration_seconds = _clamp_float(d.get("total_duration_seconds"), a.total_duration_seconds, 1.0, 21600.0)
     a.extra_end_seconds = _clamp_float(d.get("extra_end_seconds"), a.extra_end_seconds, 0.0, 3600.0)
     a.camera_follow = bool(d.get("camera_follow", a.camera_follow))
+    a.camera_dynamism = _clamp_int(d.get("camera_dynamism"), a.camera_dynamism, 1, 4)
     a.flash_duration_ms = _clamp_int(d.get("flash_duration_ms"), a.flash_duration_ms, 100, 10000)
     return a
 

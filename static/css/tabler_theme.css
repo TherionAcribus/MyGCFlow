@@ -383,6 +383,11 @@ h5, h6 { color: var(--color-text); font-weight: 600; }
     color: #90caf9;
     border-color: rgba(33, 150, 243, 0.4);
 }
+[data-bs-theme="dark"] .gc-scope-experimental {
+    background: rgba(255, 152, 0, 0.15);
+    color: #ffcc80;
+    border-color: rgba(255, 152, 0, 0.4);
+}
 [data-bs-theme="dark"] #delete-profile-modal .modal-icon.warning {
     background: rgba(239, 108, 0, 0.15);
     color: #ffb74d;

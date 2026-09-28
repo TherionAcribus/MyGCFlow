@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-28 12:49+0200\n"
+"POT-Creation-Date: 2026-09-28 13:58+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -216,7 +216,7 @@ msgstr ""
 msgid "Traitement ffmpeg"
 msgstr ""
 
-#: capture.py:784 static/js/mapgl.js:1907 static/js/mapgl.js:2457
+#: capture.py:784 static/js/mapgl.js:1978 static/js/mapgl.js:2528
 msgid "Vidéo prête"
 msgstr ""
 
@@ -387,19 +387,19 @@ msgstr ""
 msgid "Profil '%(name)s' introuvable"
 msgstr ""
 
-#: static/js/basemaps.js:90
+#: static/js/basemaps.js:100
 msgid ""
 "Certaines tuiles de la carte n'ont pas pu être chargées (connexion "
 "instable ?)."
 msgstr ""
 
-#: static/js/basemaps.js:92 static/js/basemaps.js:129 static/js/ui.js:1938
-#: static/js/ui.js:1969 static/js/ui.js:1991 static/js/ui.js:2113
-#: static/js/ui.js:2127
+#: static/js/basemaps.js:102 static/js/basemaps.js:139 static/js/ui.js:1939
+#: static/js/ui.js:1970 static/js/ui.js:1992 static/js/ui.js:2114
+#: static/js/ui.js:2128
 msgid "Carte"
 msgstr ""
 
-#: static/js/basemaps.js:127
+#: static/js/basemaps.js:137
 #, python-brace-format
 msgid ""
 "${count} tuile(s) de carte n'ont pas pu être chargées pendant "
@@ -430,7 +430,7 @@ msgstr ""
 msgid "Déposez votre fichier .gpx pour le charger"
 msgstr ""
 
-#: static/js/bdd.js:368 static/js/bdd.js:394 static/js/mapgl.js:475
+#: static/js/bdd.js:368 static/js/bdd.js:394 static/js/mapgl.js:485
 #, python-brace-format
 msgid "le ${date}"
 msgstr ""
@@ -518,7 +518,7 @@ msgstr ""
 msgid "Fichier chargé avec succès !"
 msgstr ""
 
-#: static/js/bdd.js:933 static/js/mapgl.js:2455
+#: static/js/bdd.js:933 static/js/mapgl.js:2526
 msgid "Terminé"
 msgstr ""
 
@@ -530,7 +530,7 @@ msgstr ""
 #: static/js/bdd.js:946 static/js/bdd.js:953 static/js/bdd.js:1025
 #: static/js/bdd.js:1033 static/js/bdd.js:1215 static/js/bdd.js:1286
 #: static/js/bdd.js:1293 static/js/notifications.js:274
-#: static/js/recording_perf.js:182 static/js/ui.js:1161
+#: static/js/recording_perf.js:182 static/js/ui.js:1162
 msgid "Erreur"
 msgstr ""
 
@@ -605,7 +605,7 @@ msgstr ""
 msgid "Chargement et affichage des points..."
 msgstr ""
 
-#: static/js/bdd.js:1300 static/js/mapgl.js:348 static/js/notifications.js:232
+#: static/js/bdd.js:1300 static/js/mapgl.js:358 static/js/notifications.js:232
 msgid "Affichage des points"
 msgstr ""
 
@@ -630,311 +630,311 @@ msgstr ""
 msgid "Erreur lors du chargement des couleurs GC (${status}): ${statusText}"
 msgstr ""
 
-#: static/js/mapgl.js:157
+#: static/js/mapgl.js:162
 msgid "Impossible de charger html2canvas"
 msgstr ""
 
-#: static/js/mapgl.js:349
+#: static/js/mapgl.js:359
 msgid "Mise à jour de l'affichage des points..."
 msgstr ""
 
-#: static/js/mapgl.js:472
+#: static/js/mapgl.js:482
 msgid "Sans nom"
 msgstr ""
 
-#: static/js/mapgl.js:473
+#: static/js/mapgl.js:483
 msgid "Trouvé"
 msgstr ""
 
-#: static/js/mapgl.js:473
+#: static/js/mapgl.js:483
 msgid "DNF"
 msgstr ""
 
-#: static/js/mapgl.js:474
+#: static/js/mapgl.js:484
 #, python-brace-format
 msgid "Publié le ${date}"
 msgstr ""
 
-#: static/js/mapgl.js:1227
+#: static/js/mapgl.js:1298
 msgid "MediaRecorder non supporté, bascule en mode images."
 msgstr ""
 
-#: static/js/mapgl.js:1227
+#: static/js/mapgl.js:1298
 msgid "Compatibilité"
 msgstr ""
 
-#: static/js/mapgl.js:1234
+#: static/js/mapgl.js:1305
 msgid "Données en cours de chargement. Veuillez réessayer."
 msgstr ""
 
-#: static/js/mapgl.js:1234 static/js/mapgl.js:1270 static/js/mapgl.js:1276
-#: static/js/mapgl.js:1975 static/js/notifications.js:278
+#: static/js/mapgl.js:1305 static/js/mapgl.js:1341 static/js/mapgl.js:1347
+#: static/js/mapgl.js:2046 static/js/notifications.js:278
 msgid "Attention"
 msgstr ""
 
-#: static/js/mapgl.js:1247
+#: static/js/mapgl.js:1318
 msgid "Préparation de l'enregistrement..."
 msgstr ""
 
-#: static/js/mapgl.js:1247
+#: static/js/mapgl.js:1318
 msgid "Nettoyage initial"
 msgstr ""
 
-#: static/js/mapgl.js:1262
+#: static/js/mapgl.js:1333
 msgid "Un assemblage vidéo est en cours. Réessayez à la fin du traitement."
 msgstr ""
 
-#: static/js/mapgl.js:1263
+#: static/js/mapgl.js:1334
 msgid "Enregistrement annulé"
 msgstr ""
 
-#: static/js/mapgl.js:1268
+#: static/js/mapgl.js:1339
 msgid "Répertoire d’images nettoyé."
 msgstr ""
 
-#: static/js/mapgl.js:1268
+#: static/js/mapgl.js:1339
 msgid "Préparation"
 msgstr ""
 
-#: static/js/mapgl.js:1270
+#: static/js/mapgl.js:1341
 msgid "Nettoyage initial impossible. Poursuite de l'enregistrement."
 msgstr ""
 
-#: static/js/mapgl.js:1276
+#: static/js/mapgl.js:1347
 msgid "Erreur nettoyage initial. Poursuite."
 msgstr ""
 
-#: static/js/mapgl.js:1352
+#: static/js/mapgl.js:1423
 msgid "0% | préparation..."
 msgstr ""
 
-#: static/js/mapgl.js:1363 static/js/mapgl.js:1988
+#: static/js/mapgl.js:1434 static/js/mapgl.js:2059
 msgid " ♪ La musique sera intégrée automatiquement après la capture."
 msgstr ""
 
-#: static/js/mapgl.js:1369
+#: static/js/mapgl.js:1440
 msgid "Capture en cours – Ne pas bouger la fenêtre"
 msgstr ""
 
-#: static/js/mapgl.js:1370
+#: static/js/mapgl.js:1441
 msgid "Préparation de la capture..."
 msgstr ""
 
-#: static/js/mapgl.js:1393
+#: static/js/mapgl.js:1464
 msgid "Capture en pause : revenez sur cet onglet pour la poursuivre."
 msgstr ""
 
-#: static/js/mapgl.js:1393 static/js/mapgl.js:2326
+#: static/js/mapgl.js:1464 static/js/mapgl.js:2397
 msgid "Onglet masqué"
 msgstr ""
 
-#: static/js/mapgl.js:1456
+#: static/js/mapgl.js:1527
 msgid "Le rendu initial de la carte n'a pas abouti (timeout)"
 msgstr ""
 
-#: static/js/mapgl.js:1533
+#: static/js/mapgl.js:1604
 msgid "Nettoyage en cours..."
 msgstr ""
 
-#: static/js/mapgl.js:1595
+#: static/js/mapgl.js:1666
 msgid "erreur inconnue"
 msgstr ""
 
-#: static/js/mapgl.js:1597
+#: static/js/mapgl.js:1668
 #, python-brace-format
 msgid "La capture a été interrompue suite à une erreur : ${message}"
 msgstr ""
 
-#: static/js/mapgl.js:1599
+#: static/js/mapgl.js:1670
 msgid "Capture interrompue"
 msgstr ""
 
-#: static/js/mapgl.js:1627
+#: static/js/mapgl.js:1698
 msgid "task_id manquant"
 msgstr ""
 
-#: static/js/mapgl.js:1628
+#: static/js/mapgl.js:1699
 msgid "Délai d'assemblage dépassé"
 msgstr ""
 
-#: static/js/mapgl.js:1637
+#: static/js/mapgl.js:1708
 msgid "Tâche introuvable sur le serveur (purgée ou serveur redémarré)"
 msgstr ""
 
-#: static/js/mapgl.js:1651
+#: static/js/mapgl.js:1722
 msgid "Tâche échouée"
 msgstr ""
 
-#: static/js/mapgl.js:1658
+#: static/js/mapgl.js:1729
 #, python-brace-format
 msgid ""
 "Suivi de la tâche interrompu après ${count} erreurs consécutives : "
 "${detail}"
 msgstr ""
 
-#: static/js/mapgl.js:1759
+#: static/js/mapgl.js:1830
 msgid "Envoi des dernières images..."
 msgstr ""
 
-#: static/js/mapgl.js:1820 static/js/ui.js:5099
+#: static/js/mapgl.js:1891 static/js/ui.js:5100
 msgid "Assemblage en cours"
 msgstr ""
 
-#: static/js/mapgl.js:1820
+#: static/js/mapgl.js:1891
 msgid "Création de la vidéo à partir des images..."
 msgstr ""
 
-#: static/js/mapgl.js:1874
+#: static/js/mapgl.js:1945
 msgid "Impossible de lancer l'assemblage vidéo"
 msgstr ""
 
-#: static/js/mapgl.js:1880
+#: static/js/mapgl.js:1951
 msgid "Création de la vidéo..."
 msgstr ""
 
-#: static/js/mapgl.js:1886
+#: static/js/mapgl.js:1957
 msgid "Vidéo créée. Nettoyage des images..."
 msgstr ""
 
-#: static/js/mapgl.js:1887
+#: static/js/mapgl.js:1958
 msgid "Nettoyage en cours"
 msgstr ""
 
-#: static/js/mapgl.js:1887
+#: static/js/mapgl.js:1958
 msgid "Vidéo créée avec succès. Nettoyage des images..."
 msgstr ""
 
-#: static/js/mapgl.js:1903
+#: static/js/mapgl.js:1974
 msgid "Nettoyage terminé"
 msgstr ""
 
-#: static/js/mapgl.js:1907
+#: static/js/mapgl.js:1978
 msgid "Traitement automatique terminé avec succès !"
 msgstr ""
 
-#: static/js/mapgl.js:1919
+#: static/js/mapgl.js:1990
 #, python-brace-format
 msgid "Erreur lors du traitement automatique: ${message}"
 msgstr ""
 
-#: static/js/mapgl.js:1921
+#: static/js/mapgl.js:1992
 msgid "Erreur chaîne"
 msgstr ""
 
-#: static/js/mapgl.js:1975
+#: static/js/mapgl.js:2046
 msgid "Données en cours de chargement. Réessayez."
 msgstr ""
 
-#: static/js/mapgl.js:2046
+#: static/js/mapgl.js:2117
 msgid "Enregistrement en cours – Ne pas bouger la fenêtre"
 msgstr ""
 
-#: static/js/mapgl.js:2047
+#: static/js/mapgl.js:2118
 msgid "Démarrage de la capture..."
 msgstr ""
 
-#: static/js/mapgl.js:2075
+#: static/js/mapgl.js:2146
 msgid "Erreur MediaRecorder, bascule en mode images."
 msgstr ""
 
-#: static/js/mapgl.js:2075 static/js/mapgl.js:2246 static/js/mapgl.js:2260
-#: static/js/mapgl.js:2457 static/js/mapgl.js:2555 static/js/mapgl.js:2639
-#: static/js/mapgl.js:2643
+#: static/js/mapgl.js:2146 static/js/mapgl.js:2317 static/js/mapgl.js:2331
+#: static/js/mapgl.js:2528 static/js/mapgl.js:2626 static/js/mapgl.js:2710
+#: static/js/mapgl.js:2714
 msgid "Enregistrement"
 msgstr ""
 
-#: static/js/mapgl.js:2212
+#: static/js/mapgl.js:2283
 msgid "Résolution réduite aux capacités du navigateur."
 msgstr ""
 
-#: static/js/mapgl.js:2246
+#: static/js/mapgl.js:2317
 msgid "L'envoi de la vidéo au serveur a échoué. Arrêt de l'enregistrement."
 msgstr ""
 
-#: static/js/mapgl.js:2260
+#: static/js/mapgl.js:2331
 msgid ""
 "Erreur de l'encodeur vidéo. Arrêt de l'enregistrement et récupération de "
 "la séquence déjà capturée."
 msgstr ""
 
-#: static/js/mapgl.js:2326
+#: static/js/mapgl.js:2397
 msgid ""
 "Enregistrement en pause : revenez sur cet onglet pour reprendre la "
 "capture."
 msgstr ""
 
-#: static/js/mapgl.js:2482
+#: static/js/mapgl.js:2553
 msgid "Upload échoué"
 msgstr ""
 
-#: static/js/mapgl.js:2497
+#: static/js/mapgl.js:2568
 msgid "Finalisation"
 msgstr ""
 
-#: static/js/mapgl.js:2497
+#: static/js/mapgl.js:2568
 msgid "Écriture de la durée de la vidéo..."
 msgstr ""
 
-#: static/js/mapgl.js:2510
+#: static/js/mapgl.js:2581
 msgid "Ajout audio"
 msgstr ""
 
-#: static/js/mapgl.js:2510
+#: static/js/mapgl.js:2581
 msgid "Fusion de la piste audio avec la vidéo en cours..."
 msgstr ""
 
-#: static/js/mapgl.js:2541 static/js/video_postprocess.js:29
+#: static/js/mapgl.js:2612 static/js/video_postprocess.js:29
 msgid "Normalisation"
 msgstr ""
 
-#: static/js/mapgl.js:2541
+#: static/js/mapgl.js:2612
 #, python-brace-format
 msgid "Accélération x${applicable} pour lecture à vitesse normale..."
 msgstr ""
 
-#: static/js/mapgl.js:2555
+#: static/js/mapgl.js:2626
 msgid "La vidéo n'a pas pu être assemblée."
 msgstr ""
 
-#: static/js/mapgl.js:2562
+#: static/js/mapgl.js:2633
 msgid "Traitement serveur"
 msgstr ""
 
-#: static/js/mapgl.js:2562
+#: static/js/mapgl.js:2633
 msgid "Envoi de la vidéo au serveur..."
 msgstr ""
 
-#: static/js/mapgl.js:2585 static/js/mapgl.js:2591
+#: static/js/mapgl.js:2656 static/js/mapgl.js:2662
 msgid "Traitement serveur..."
 msgstr ""
 
-#: static/js/mapgl.js:2589
+#: static/js/mapgl.js:2660
 msgid "Traitement serveur non démarré"
 msgstr ""
 
-#: static/js/mapgl.js:2639
+#: static/js/mapgl.js:2710
 msgid ""
 "L'enregistrement a été interrompu : l'envoi des données au serveur a "
 "échoué."
 msgstr ""
 
-#: static/js/mapgl.js:2643
+#: static/js/mapgl.js:2714
 msgid "Traitement serveur indisponible, repli local..."
 msgstr ""
 
-#: static/js/mapgl.js:2690
+#: static/js/mapgl.js:2761
 msgid "Élément non trouvé"
 msgstr ""
 
-#: static/js/mapgl.js:2707
+#: static/js/mapgl.js:2778
 msgid "Timeout rendercomplete (5s) : rendu carte bloqué"
 msgstr ""
 
-#: static/js/mapgl.js:2723
+#: static/js/mapgl.js:2794
 msgid "Aucun canvas trouvé dans la carte"
 msgstr ""
 
-#: static/js/mapgl.js:2768
+#: static/js/mapgl.js:2839
 msgid "Échec conversion canvas en blob"
 msgstr ""
 
@@ -1376,33 +1376,33 @@ msgstr ""
 msgid "La musique (${m}) se termine avant la fin de la vidéo (${v})."
 msgstr ""
 
-#: static/js/ui.js:1011
+#: static/js/ui.js:1012
 msgid ""
 "Ce format vidéo n'est pas supporté par votre navigateur et sera ignoré au"
 " démarrage de l'enregistrement."
 msgstr ""
 
-#: static/js/ui.js:1012 static/js/ui.js:2196
+#: static/js/ui.js:1013 static/js/ui.js:2197
 msgid "Format non supporté"
 msgstr ""
 
-#: static/js/ui.js:1083
+#: static/js/ui.js:1084
 msgid "Chargement de la musique..."
 msgstr ""
 
-#: static/js/ui.js:1157
+#: static/js/ui.js:1158
 msgid "Durée de l'animation calée sur la musique"
 msgstr ""
 
-#: static/js/ui.js:1157
+#: static/js/ui.js:1158
 msgid "Musique"
 msgstr ""
 
-#: static/js/ui.js:1161
+#: static/js/ui.js:1162
 msgid "Erreur lors de la lecture du fichier audio"
 msgstr ""
 
-#: static/js/ui.js:1215
+#: static/js/ui.js:1216
 #, python-brace-format
 msgid ""
 "Sortie estimée : ${size}. MediaRecorder enregistre en temps réel : si la "
@@ -1410,7 +1410,7 @@ msgid ""
 "Images + ffmpeg »."
 msgstr ""
 
-#: static/js/ui.js:1216
+#: static/js/ui.js:1217
 #, python-brace-format
 msgid ""
 "Sortie estimée : ${size}. En mode images, l'enregistrement devient "
@@ -1418,7 +1418,7 @@ msgid ""
 "par une. La vidéo, elle, ne perdra aucune image."
 msgstr ""
 
-#: static/js/ui.js:1225
+#: static/js/ui.js:1226
 #, python-brace-format
 msgid ""
 "Même au débit maximal (${max} Mbit/s), cette résolution restera "
@@ -1426,288 +1426,288 @@ msgid ""
 "image plus propre."
 msgstr ""
 
-#: static/js/ui.js:1229
+#: static/js/ui.js:1230
 #, python-brace-format
 msgid "Débit ajusté à ${bitrate} Mbit/s pour cette résolution."
 msgstr ""
 
-#: static/js/ui.js:1938
+#: static/js/ui.js:1939
 msgid "Enregistrement du centre par défaut impossible"
 msgstr ""
 
-#: static/js/ui.js:1969
+#: static/js/ui.js:1970
 msgid "Coordonnées invalides. Ex: 48.85, 2.35 ou N 49° 16.029 E 006° 07.512"
 msgstr ""
 
-#: static/js/ui.js:1991
+#: static/js/ui.js:1992
 msgid "Coordonnées invalides. Ex: N 49° 16.029 / E 006° 07.512"
 msgstr ""
 
-#: static/js/ui.js:2113
+#: static/js/ui.js:2114
 msgid "Cliquez sur la carte pour choisir le centre"
 msgstr ""
 
-#: static/js/ui.js:2127
+#: static/js/ui.js:2128
 msgid "Centre par défaut mis à jour depuis la carte"
 msgstr ""
 
-#: static/js/ui.js:2195
+#: static/js/ui.js:2196
 #, python-brace-format
 msgid "Le format vidéo sauvegardé (${mime}) n'est pas supporté par ce navigateur."
 msgstr ""
 
-#: static/js/ui.js:2276
+#: static/js/ui.js:2277
 msgid "Fermer MyGCFlow ? Le serveur local sera arrêté."
 msgstr ""
 
-#: static/js/ui.js:2277 static/js/ui.js:2298 static/js/ui.js:2305
-#: static/js/ui.js:2311
+#: static/js/ui.js:2278 static/js/ui.js:2299 static/js/ui.js:2306
+#: static/js/ui.js:2312
 msgid "Quitter"
 msgstr ""
 
-#: static/js/ui.js:2298 static/js/ui.js:2311
+#: static/js/ui.js:2299 static/js/ui.js:2312
 msgid "MyGCFlow n'a pas pu être arrêté."
 msgstr ""
 
-#: static/js/ui.js:2304
+#: static/js/ui.js:2305
 msgid ""
 "Un import ou un traitement vidéo est en cours. Il sera interrompu. "
 "Quitter quand même ?"
 msgstr ""
 
-#: static/js/ui.js:2326
+#: static/js/ui.js:2327
 msgid "MyGCFlow est fermé"
 msgstr ""
 
-#: static/js/ui.js:2327
+#: static/js/ui.js:2328
 msgid "Vous pouvez fermer cet onglet."
 msgstr ""
 
-#: static/js/ui.js:2564
+#: static/js/ui.js:2565
 msgid ""
 "La vidéo ne sera ni téléchargée ni uploadée : elle sera perdue après "
 "l'enregistrement."
 msgstr ""
 
-#: static/js/ui.js:2565
+#: static/js/ui.js:2566
 msgid "Aucune destination"
 msgstr ""
 
-#: static/js/ui.js:3271 templates/menu_filtre.html:40
+#: static/js/ui.js:3272 templates/menu_filtre.html:40
 #: templates/menu_filtre.html:58 templates/menu_filtre.html:82
 #: templates/menu_filtre.html:103 templates/menu_filtre.html:167
 #: templates/menu_filtre.html:177
 msgid "Aucun"
 msgstr ""
 
-#: static/js/ui.js:3342 templates/menu_filtre.html:163
+#: static/js/ui.js:3343 templates/menu_filtre.html:163
 msgid "Filtrer par pays"
 msgstr ""
 
-#: static/js/ui.js:3371 static/js/ui.js:3422 templates/menu_filtre.html:173
+#: static/js/ui.js:3372 static/js/ui.js:3423 templates/menu_filtre.html:173
 msgid "Filtrer par région/état"
 msgstr ""
 
-#: static/js/ui.js:4525
+#: static/js/ui.js:4526
 msgid "Pause non disponible pendant l'enregistrement - utilisez Arrêter"
 msgstr ""
 
-#: static/js/ui.js:4775
+#: static/js/ui.js:4776
 msgid "Valeur requise."
 msgstr ""
 
-#: static/js/ui.js:4777
+#: static/js/ui.js:4778
 msgid "Format attendu : mm:ss (ex. 4:55)."
 msgstr ""
 
-#: static/js/ui.js:4778
+#: static/js/ui.js:4779
 msgid "Nombre attendu."
 msgstr ""
 
-#: static/js/ui.js:4779
+#: static/js/ui.js:4780
 msgid "La valeur doit être strictement positive."
-msgstr ""
-
-#: static/js/ui.js:4781
-#, python-brace-format
-msgid "Entre ${min} et ${max} jours/s."
 msgstr ""
 
 #: static/js/ui.js:4782
 #, python-brace-format
-msgid "Entre ${min} et ${max} s."
+msgid "Entre ${min} et ${max} jours/s."
 msgstr ""
 
 #: static/js/ui.js:4783
 #, python-brace-format
-msgid "Maximum ${max} s."
+msgid "Entre ${min} et ${max} s."
 msgstr ""
 
 #: static/js/ui.js:4784
-msgid "Entre 100 et 10000 ms."
+#, python-brace-format
+msgid "Maximum ${max} s."
 msgstr ""
 
 #: static/js/ui.js:4785
-msgid "Hors limites."
+msgid "Entre 100 et 10000 ms."
 msgstr ""
 
 #: static/js/ui.js:4786
-msgid "Valeur invalide."
+msgid "Hors limites."
 msgstr ""
 
-#: static/js/ui.js:4846
-#, python-brace-format
-msgid "${n} jours"
+#: static/js/ui.js:4787
+msgid "Valeur invalide."
 msgstr ""
 
 #: static/js/ui.js:4847
 #, python-brace-format
-msgid "${n} jours/s"
+msgid "${n} jours"
 msgstr ""
 
-#: static/js/ui.js:4849
+#: static/js/ui.js:4848
 #, python-brace-format
-msgid "animation minimale ${d}"
+msgid "${n} jours/s"
 msgstr ""
 
 #: static/js/ui.js:4850
 #, python-brace-format
-msgid "animation ${d}"
+msgid "animation minimale ${d}"
 msgstr ""
 
 #: static/js/ui.js:4851
 #, python-brace-format
+msgid "animation ${d}"
+msgstr ""
+
+#: static/js/ui.js:4852
+#, python-brace-format
 msgid "fin ${d}"
 msgstr ""
 
-#: static/js/ui.js:4853
+#: static/js/ui.js:4854
 #, python-brace-format
 msgid "+ ${d} additionnel"
 msgstr ""
 
-#: static/js/ui.js:4855
+#: static/js/ui.js:4856
 #, python-brace-format
 msgid "vidéo minimale ${d}"
 msgstr ""
 
-#: static/js/ui.js:4856
+#: static/js/ui.js:4857
 #, python-brace-format
 msgid "vidéo ${d}"
 msgstr ""
 
-#: static/js/ui.js:4858
+#: static/js/ui.js:4859
 #, python-brace-format
 msgid "${n} images minimum"
 msgstr ""
 
-#: static/js/ui.js:4859
+#: static/js/ui.js:4860
 #, python-brace-format
 msgid "${n} images"
 msgstr ""
 
-#: static/js/ui.js:4878
+#: static/js/ui.js:4879
 msgid "La plage de dates est invalide ou vide."
 msgstr ""
 
-#: static/js/ui.js:4879
+#: static/js/ui.js:4880
 msgid "Sélectionnez un fichier audio pour le mode « Sur la musique »."
 msgstr ""
 
-#: static/js/ui.js:4886
+#: static/js/ui.js:4887
 msgid "En attente de la lecture de la durée de la musique."
 msgstr ""
 
-#: static/js/ui.js:4900
+#: static/js/ui.js:4901
 #, python-brace-format
 msgid ""
 "Durée demandée (${req}) trop courte pour afficher chaque jour (minimum "
 "${min}) : ${app} appliquée."
 msgstr ""
 
-#: static/js/ui.js:4910
+#: static/js/ui.js:4911
 msgid ""
 "Le suivi de caméra met les dates en pause pendant chaque déplacement. La "
 "durée et le nombre d'images affichés sont des minimums ; le résultat sera"
 " plus long et peut dépasser la durée de la musique."
 msgstr ""
 
-#: static/js/ui.js:4943
+#: static/js/ui.js:4944
 #, python-brace-format
 msgid ""
 "Charge élevée : jusqu'à ~${n} flashs simultanés. Pistes : raccourcir la "
 "durée du flash, ralentir l'animation, ou utiliser le mode Images."
 msgstr ""
 
-#: static/js/ui.js:4947
+#: static/js/ui.js:4948
 #, python-brace-format
 msgid ""
 "${n} images à produire (~${d} en mode Images). Envisagez un fps plus bas "
 "ou une animation plus courte."
 msgstr ""
 
-#: static/js/ui.js:5095
+#: static/js/ui.js:5096
 msgid "Images de capture supprimées"
 msgstr ""
 
-#: static/js/ui.js:5095
+#: static/js/ui.js:5096
 msgid "Nettoyage"
 msgstr ""
 
-#: static/js/ui.js:5119
+#: static/js/ui.js:5120
 #, python-brace-format
 msgid "Dossier vidéo: ${folder}"
 msgstr ""
 
-#: static/js/ui.js:5119 static/js/ui.js:5121 static/js/ui.js:5126
+#: static/js/ui.js:5120 static/js/ui.js:5122 static/js/ui.js:5127
 msgid "Ouverture"
 msgstr ""
 
-#: static/js/ui.js:5121
+#: static/js/ui.js:5122
 msgid "Impossible d’ouvrir le dossier vidéo"
 msgstr ""
 
-#: static/js/ui.js:5126
+#: static/js/ui.js:5127
 msgid "Erreur lors de l’ouverture du dossier vidéo"
 msgstr ""
 
-#: static/js/ui.js:6032 templates/menu_animation.html:29
+#: static/js/ui.js:6033 templates/menu_animation.html:29
 msgid "Plein écran"
 msgstr ""
 
-#: static/js/ui.js:6033 templates/menu_animation.html:29
+#: static/js/ui.js:6034 templates/menu_animation.html:29
 msgid "Quitter le plein écran"
 msgstr ""
 
-#: static/js/ui.js:6347
+#: static/js/ui.js:6348
 msgid "Sélectionnez d'abord un fichier audio"
 msgstr ""
 
-#: static/js/ui.js:6394 templates/menu_animation.html:186
+#: static/js/ui.js:6395 templates/menu_animation.html:186
 msgid "Aucune musique sélectionnée"
 msgstr ""
 
-#: static/js/ui.js:6427
+#: static/js/ui.js:6428
 msgid "Non disponible"
 msgstr ""
 
-#: static/js/ui.js:6434 templates/menu_filtre.html:45
+#: static/js/ui.js:6435 templates/menu_filtre.html:45
 #: templates/menu_filtre.html:46
 msgid "Taille"
 msgstr ""
 
-#: static/js/ui.js:6435
+#: static/js/ui.js:6436
 msgid "Type"
 msgstr ""
 
-#: static/js/ui.js:6436
+#: static/js/ui.js:6437
 msgid "Durée"
 msgstr ""
 
-#: static/js/ui.js:6437
+#: static/js/ui.js:6438
 msgid "Modifié"
 msgstr ""
 
-#: static/js/ui.js:6492
+#: static/js/ui.js:6493
 msgid "Erreur lors du chargement du fichier audio"
 msgstr ""
 
@@ -1804,6 +1804,16 @@ msgstr ""
 
 #: templates/_scope_badges.html:32
 msgid "Global"
+msgstr ""
+
+#: templates/_scope_badges.html:38
+msgid ""
+"Fonctionnalité expérimentale : comportement en cours de validation, "
+"susceptible d'évoluer."
+msgstr ""
+
+#: templates/_scope_badges.html:39
+msgid "Expérimental"
 msgstr ""
 
 #: templates/app.html:75 templates/app.html:76
@@ -2670,6 +2680,26 @@ msgid "Suivi de caméra"
 msgstr ""
 
 #: templates/menu_animation.html:170
+msgid "Dynamisme de la caméra"
+msgstr ""
+
+#: templates/menu_animation.html:172
+msgid "1 — Minimal : hors champ uniquement"
+msgstr ""
+
+#: templates/menu_animation.html:173
+msgid "2 — Discret : hors champ ou très périphérique"
+msgstr ""
+
+#: templates/menu_animation.html:174
+msgid "3 — Dynamique : hors zone centrale"
+msgstr ""
+
+#: templates/menu_animation.html:175
+msgid "4 — Intense : recentrage et zoom systématiques"
+msgstr ""
+
+#: templates/menu_animation.html:177
 msgid ""
 "La vue glisse vers les caches du jour. Pour un grand trajet, elle dézoome"
 " temporairement puis revient au niveau initial. Un niveau voisin de "
@@ -3699,4 +3729,3 @@ msgstr ""
 #: templates/modal_first_use.html:51
 msgid "Ignorer pour l'instant"
 msgstr ""
-

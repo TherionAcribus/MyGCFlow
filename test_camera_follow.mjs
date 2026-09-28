@@ -7,7 +7,9 @@ import {
     createCameraJourney,
     DEFAULT_RESPONSE_MS,
     easeInOutCubic,
+    normalizeCameraDynamism,
     sampleCameraJourney,
+    shouldMoveCamera,
     smoothingFactor,
     stepCenter,
 } from './static/js/camera_follow.mjs';
@@ -106,4 +108,40 @@ test('le trajet est continu et borné', () => {
     }
     assert.equal(easeInOutCubic(-1), 0);
     assert.equal(easeInOutCubic(2), 1);
+});
+
+test('les niveaux de dynamisme utilisent des zones de confort croissantes', () => {
+    const center = [0, 0];
+    const size = [1000, 800];
+    const resolution = 1;
+    const central = [-100, -100, 100, 100];
+    const peripheral = [350, -20, 380, 20];
+    const edge = [470, -20, 490, 20];
+    const outside = [520, -20, 540, 20];
+
+    assert.equal(shouldMoveCamera(center, resolution, size, central, 1), false);
+    assert.equal(shouldMoveCamera(center, resolution, size, peripheral, 1), false);
+    assert.equal(shouldMoveCamera(center, resolution, size, edge, 1), false);
+    assert.equal(shouldMoveCamera(center, resolution, size, outside, 1), true);
+
+    assert.equal(shouldMoveCamera(center, resolution, size, peripheral, 2), false);
+    assert.equal(shouldMoveCamera(center, resolution, size, edge, 2), true);
+    assert.equal(shouldMoveCamera(center, resolution, size, peripheral, 3), true);
+    assert.equal(shouldMoveCamera(center, resolution, size, central, 3), false);
+    assert.equal(shouldMoveCamera(center, resolution, size, central, 4), true);
+});
+
+test('le niveau agressif peut produire une respiration de zoom sans translation', () => {
+    const journey = createCameraJourney([0, 0], [0, 0], 8, 1, { extraZoomOut: 1.25 });
+    assert.ok(journey);
+    assert.equal(journey.panDurationMs, 0);
+    assert.equal(journey.cruiseZoom, 6.75);
+    assert.equal(sampleCameraJourney(journey, journey.totalDurationMs).zoom, 8);
+});
+
+test('un niveau de dynamisme invalide retombe sur le niveau discret', () => {
+    assert.equal(normalizeCameraDynamism(1), 1);
+    assert.equal(normalizeCameraDynamism(4), 4);
+    assert.equal(normalizeCameraDynamism(99), 2);
+    assert.equal(normalizeCameraDynamism('x'), 2);
 });
