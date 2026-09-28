@@ -118,6 +118,7 @@ import { flashStyleAt } from './flash_styles.js';
 import { liveFlashStep } from './flash_style_cache.mjs';
 import { staggerDelayFrames, staggerDelayMs } from './flash_impulse.mjs';
 import { COUNTER_ANIMATION_MS, createCountAnimator } from './overlay_counter.mjs';
+import { fetchWithTimeout, FETCH_TIMEOUTS } from './fetch_with_timeout.mjs';
 
 // Debug toasts/assemblage
 const TOAST_DEBUG = false;
@@ -1168,11 +1169,11 @@ export function recordAnimation(){
 
     // Nettoyage initial du répertoire d'images avant la capture
     const prepToast = pkg.showToast && pkg.showToast(pkg.t('Préparation de l\'enregistrement...'), 'info', pkg.t('Nettoyage initial'), 0);
-    fetch(`${CONFIG.BASE_URL}/clear_pictures_directory`, {
+    fetchWithTimeout(`${CONFIG.BASE_URL}/clear_pictures_directory`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'vider_repertoire' })
-    })
+    }, { timeoutMs: FETCH_TIMEOUTS.control, t: pkg.t })
     .then(r => r.json())
     .then(d => {
         if (prepToast) { pkg.hideToast && pkg.hideToast(prepToast); }
@@ -1359,15 +1360,35 @@ function startRecordingProcess(){
     // Afficher les points initiaux pour la date de début
     displayFeaturesForDate(currentDate, pkg.options.point, pkg.options.flash, true, infos);
 
-    // Attendre que le rendu soit complet avant de commencer la capture
+    // Attendre que le rendu soit complet avant de commencer la capture.
     // scheduleCaptureFrame attrape toute erreur de la boucle asynchrone pour
-    // éviter que la modale reste bloquée en cas d'échec (upload, timeout, etc.)
-    map.once('rendercomplete', () => {
+    // éviter que la modale reste bloquée en cas d'échec (upload, timeout, etc.).
+    // Contrairement aux frames suivantes (captureElement borne chaque attente à
+    // 5 s), cette première attente n'avait pas de limite : un rendu qui ne
+    // termine jamais laissait la modale « Capture en cours » ouverte sans explication.
+    let initialRenderKey = map.once('rendercomplete', () => {
+        clearTimeout(initialRenderTimeout);
+        initialRenderKey = null;
         scheduleCaptureFrame(pkg.options.point, pkg.options.flash, infos);
     });
-
-    // Forcer un rendu pour déclencher rendercomplete
-    map.renderSync();
+    const initialRenderTimeout = setTimeout(() => {
+        if (initialRenderKey) {
+            ol.Observable.unByKey(initialRenderKey);
+            initialRenderKey = null;
+        }
+        abortRecordingOnError(new Error(pkg.t('Le rendu initial de la carte n\'a pas abouti (timeout)')));
+    }, 10000);
+    try {
+        // Forcer un rendu pour déclencher rendercomplete
+        map.renderSync();
+    } catch (e) {
+        clearTimeout(initialRenderTimeout);
+        if (initialRenderKey) {
+            ol.Observable.unByKey(initialRenderKey);
+            initialRenderKey = null;
+        }
+        abortRecordingOnError(e);
+    }
 }
 
 
@@ -1507,11 +1528,11 @@ function abortRecordingOnError(error) {
 // Lancement de l'assemblage vidéo. En POST : la route déclenche un encodage, et
 // un GET pouvait être rejoué par un préchargement de lien ou un scanner d'URL.
 function postStartCreateVideo(body) {
-    return fetch(`${CONFIG.BASE_URL}/start_create_video`, {
+    return fetchWithTimeout(`${CONFIG.BASE_URL}/start_create_video`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body || {}),
-    });
+    }, { timeoutMs: FETCH_TIMEOUTS.control, t: pkg.t });
 }
 
 // Poll générique d'une tâche de fond serveur (/tasks/<id>) jusqu'à ce qu'elle
@@ -1528,8 +1549,18 @@ function pollTaskStatus(taskId, { intervalMs = 700, timeoutMs = 1800000, maxCons
         const tick = () => {
             if (!taskId) { reject(new Error(pkg.t('task_id manquant'))); return; }
             if (Date.now() - startedAt > timeoutMs) { reject(new Error(pkg.t('Délai d\'assemblage dépassé'))); return; }
-            fetch(`${CONFIG.BASE_URL}/tasks/${encodeURIComponent(taskId)}?include_result=true`, { method: 'GET' })
+            fetchWithTimeout(`${CONFIG.BASE_URL}/tasks/${encodeURIComponent(taskId)}?include_result=true`,
+                { method: 'GET' }, { timeoutMs: FETCH_TIMEOUTS.status, t: pkg.t })
                 .then(r => {
+                    // 404 : la tâche est définitivement perdue (purgée du
+                    // TaskManager, serveur redémarré). Aucun nouvel essai ne la
+                    // fera réapparaître : on échoue tout de suite au lieu de
+                    // laisser le compteur d'erreurs transitoires s'épuiser.
+                    if (r.status === 404) {
+                        const lost = new Error(pkg.t('Tâche introuvable sur le serveur (purgée ou serveur redémarré)'));
+                        lost.fatal = true;
+                        throw lost;
+                    }
                     if (!r.ok) throw new Error(`HTTP ${r.status}`);
                     return r.json();
                 })
@@ -1544,6 +1575,7 @@ function pollTaskStatus(taskId, { intervalMs = 700, timeoutMs = 1800000, maxCons
                     setTimeout(tick, intervalMs);
                 })
                 .catch(err => {
+                    if (err && err.fatal) { reject(err); return; }
                     consecutiveErrors++;
                     if (consecutiveErrors >= maxConsecutiveErrors) {
                         reject(new Error(pkg.t('Suivi de la tâche interrompu après ${count} erreurs consécutives : ${detail}', { count: consecutiveErrors, detail: err?.message || err })));
@@ -1706,7 +1738,7 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
                 if (audioEnabled && file) {
                     const fd = new FormData();
                     fd.append('audio', file);
-                    const up = await fetch(`${CONFIG.BASE_URL}/upload_audio`, { method: 'POST', body: fd });
+                    const up = await fetchWithTimeout(`${CONFIG.BASE_URL}/upload_audio`, { method: 'POST', body: fd }, { timeoutMs: FETCH_TIMEOUTS.upload, t: pkg.t });
                     const upRes = await up.json().catch(()=>({success:false}));
                     if (upRes?.success && upRes?.file) audioFileName = upRes.file;
                 }
@@ -1754,13 +1786,13 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
             try { pkg.updateTextsModal(pkg.t('Nettoyage en cours'), pkg.t('Vidéo créée avec succès. Nettoyage des images...')); } catch(e) {}
 
             // Nettoyer automatiquement
-            return fetch(`${CONFIG.BASE_URL}/clear_pictures_directory`, {
+            return fetchWithTimeout(`${CONFIG.BASE_URL}/clear_pictures_directory`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({ action: 'vider_repertoire' })
-            });
+            }, { timeoutMs: FETCH_TIMEOUTS.control, t: pkg.t });
           })
           .then(response => response ? response.json() : null)
           .then(cleanData => {
@@ -2023,7 +2055,7 @@ function startMrDrawLoop() {
 function overlayContentSignature() {
     try {
         const { title, infos } = getOverlayTextContent();
-        return `${getOverlayCacheRevision()} ${title} ${infos}`;
+        return `${getOverlayCacheRevision()}\u0000${title}\u0000${infos}`;
     } catch(_) {
         // Contenu illisible : on ne prend pas le risque d'une frame périmée.
         mapDirtyTracker.markDirty();
@@ -2273,7 +2305,7 @@ function finalizeMediaRecorderVideo(){
                     const fd = new FormData();
                     fd.append('video', finalBlob, fileName);
                     fd.append('fileName', fileName);
-                    tasks.push(fetch(`${CONFIG.BASE_URL}/upload_video`, { method: 'POST', body: fd }).then(r => r.json()).catch(e => ({ success:false, message: e?.message || 'upload error'}))
+                    tasks.push(fetchWithTimeout(`${CONFIG.BASE_URL}/upload_video`, { method: 'POST', body: fd }, { timeoutMs: FETCH_TIMEOUTS.videoUpload, t: pkg.t }).then(r => r.json()).catch(e => ({ success:false, message: e?.message || 'upload error'}))
                         .then(res => { if (!res?.success) throw new Error(res?.message || pkg.t('Upload échoué')); }));
                 } catch(e) { console.warn('Upload setup failed:', e); }
             }
@@ -2352,7 +2384,7 @@ function finalizeMediaRecorderVideo(){
                     fd.append('audio_volume', String(vol));
                 }
                 try { pkg.updateProgressBar({ progress: 0, message: pkg.t('Traitement serveur...') }); } catch(_) {}
-                fetch(`${CONFIG.BASE_URL}/process_recorded_video`, { method: 'POST', body: fd })
+                fetchWithTimeout(`${CONFIG.BASE_URL}/process_recorded_video`, { method: 'POST', body: fd }, { timeoutMs: FETCH_TIMEOUTS.videoUpload, t: pkg.t })
                     .then(r => r.json())
                     .then(data => {
                         if (!data || !data.task_id) throw new Error(data && data.message ? data.message : pkg.t('Traitement serveur non démarré'));

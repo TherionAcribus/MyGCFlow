@@ -7,6 +7,7 @@ import {
     DEFAULT_BATCH_SIZE,
     DEFAULT_BATCH_MAX_WAIT_MS,
 } from './upload_batcher.mjs';
+import { fetchWithTimeout, FETCH_TIMEOUTS } from './fetch_with_timeout.mjs';
 
 // Fonction utilitaire pour convertir dataUrl en Blob WebP
 function dataUrlToBlob(dataUrl) {
@@ -101,10 +102,14 @@ async function withRetry(attemptFn, retries, label) {
 }
 
 async function postForm(url, formData) {
-    const response = await fetch(url, {
+    // Délai borné : un POST suspendu (serveur local saturé) ne rejetait jamais
+    // et laissait awaitAllUploads() — donc l'enregistrement — en attente
+    // indéfinie. L'erreur de timeout n'est pas un HttpError : elle reste
+    // retentable par withRetry (le serveur peut se libérer entre deux essais).
+    const response = await fetchWithTimeout(url, {
         method: 'POST',
         body: formData // FormData, pas de headers Content-Type explicite
-    });
+    }, { timeoutMs: FETCH_TIMEOUTS.upload, t: pkg.t });
 
     if (!response.ok) {
         throw new HttpError(`Erreur lors de l’envoi de l’image (${response.status})`, response.status);
