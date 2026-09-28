@@ -1973,7 +1973,9 @@ function quitApp() {
     pkg.showConfirmation(
         t('Fermer MyGCFlow ? Le serveur local sera arrêté.'),
         t('Quitter'),
-        () => sendQuit(false)
+        () => sendQuit(false),
+        null,
+        { confirmText: t('Quitter') }
     );
 }
 
@@ -1998,7 +2000,9 @@ async function sendQuit(force) {
         pkg.showConfirmation(
             t('Un import ou un traitement vidéo est en cours. Il sera interrompu. Quitter quand même ?'),
             t('Quitter'),
-            () => sendQuit(true)
+            () => sendQuit(true),
+            null,
+            { danger: true, confirmText: t('Quitter quand même') }
         );
         return;
     }

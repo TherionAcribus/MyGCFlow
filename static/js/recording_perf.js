@@ -87,19 +87,24 @@ export const recordingPerformanceMonitor = {
         if (!this.isPerformanceToastVisible()) return false;
 
         try {
-            const titleElement = this.currentPerformanceToast.querySelector('.gcm-toast-title');
-            const messageElement = this.currentPerformanceToast.querySelector('.gcm-toast-message');
+            // Les confirmations sont désormais des modales (.gcm-confirm-*),
+            // les autres toasts gardent les classes historiques (.gcm-toast-*).
+            const titleElement = this.currentPerformanceToast.querySelector('.gcm-toast-title, .gcm-confirm-title');
+            const messageElement = this.currentPerformanceToast.querySelector('.gcm-toast-message, .gcm-confirm-message');
 
             if (titleElement) titleElement.textContent = newTitle;
             if (messageElement) messageElement.textContent = newMessage;
 
-            // Réanimer le toast pour attirer l'attention
-            this.currentPerformanceToast.classList.remove('show');
-            setTimeout(() => {
-                if (this.currentPerformanceToast) {
-                    this.currentPerformanceToast.classList.add('show');
-                }
-            }, 100);
+            // Réanimer le toast pour attirer l'attention (pas la modale :
+            // retirer .show la ferait clignoter).
+            if (this.currentPerformanceToast.classList.contains('gcm-toast')) {
+                this.currentPerformanceToast.classList.remove('show');
+                setTimeout(() => {
+                    if (this.currentPerformanceToast) {
+                        this.currentPerformanceToast.classList.add('show');
+                    }
+                }, 100);
+            }
 
             return true;
         } catch(err) {
@@ -192,7 +197,8 @@ export const recordingPerformanceMonitor = {
                                         8000
                                     );
                                     this.currentPerformanceToast = null; // Reset après annulation
-                                }
+                                },
+                                { confirmText: pkg.t('Appliquer'), cancelText: pkg.t('Ignorer') }
                             );
                         } else {
                             throw new Error('showConfirmation non disponible');

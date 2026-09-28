@@ -3,6 +3,8 @@
  * Remplace les modales bloquantes par des indicateurs non-intrusifs
  */
 
+import { getBsModal } from './ui_bootstrap.js';
+
 class NotificationManager {
     constructor() {
         this.container = null;
@@ -45,6 +47,17 @@ class NotificationManager {
         const toast = document.createElement('div');
         toast.className = `gcm-toast ${type}`;
 
+        // Annonce aux lecteurs d'écran : les erreurs interrompent (alert),
+        // les autres attendent la fin de la lecture courante (status/polite).
+        // aria-atomic pour que titre + message soient lus d'un bloc.
+        if (type === 'error') {
+            toast.setAttribute('role', 'alert');
+        } else {
+            toast.setAttribute('role', 'status');
+            toast.setAttribute('aria-live', 'polite');
+        }
+        toast.setAttribute('aria-atomic', 'true');
+
         const iconMap = {
             info: '',
             success: '',
@@ -68,6 +81,9 @@ class NotificationManager {
             <button class="gcm-toast-close" onclick="this.parentElement.remove()">×</button>
         `;
 
+        // Le × seul n'a pas de nom accessible pour les lecteurs d'écran.
+        toast.querySelector('.gcm-toast-close').setAttribute('aria-label', t('Fermer'));
+
         this.container.appendChild(toast);
 
         // Animation d'entrée
@@ -88,6 +104,19 @@ class NotificationManager {
      * @param {HTMLElement} toast - Élément toast à masquer
      */
     hide(toast) {
+        if (!toast) return;
+        // Les confirmations sont désormais de vraies modales Bootstrap :
+        // les fermer via l'API Bootstrap (backdrop, focus) plutôt qu'en
+        // retirant le nœud, ce qui laisserait le fond grisé.
+        if (toast.classList && toast.classList.contains('gcm-confirm-modal')) {
+            const modal = getBsModal(toast);
+            if (modal) {
+                modal.hide();
+            } else {
+                toast.remove();
+            }
+            return;
+        }
         toast.classList.remove('show');
         setTimeout(() => {
             if (toast.parentNode) {
@@ -269,52 +298,103 @@ export function showInfo(message, title = t('Information')) {
     return showToast(message, "info", title, 6000);
 }
 
-// Fonction pour afficher une confirmation
-export function showConfirmation(message, title = t('Confirmation'), onConfirm = null, onCancel = null) {
-    const toast = showToast((typeof message === 'string') ? t(message) : message, "warning", title, 0); // Ne se ferme pas automatiquement
+// Fonction pour afficher une confirmation — vraie modale Bootstrap
+// (role="dialog", aria-modal, focus piégé, Échap/backdrop = annulation),
+// contrairement à l'ancien toast dont les boutons n'étaient pas annoncés
+// et où Confirmer était en vert/Annuler en rouge alors que l'action
+// confirmée pouvait être destructive.
+let confirmSeq = 0;
 
-    // Ajouter des boutons personnalisés
-    const content = toast.querySelector('.gcm-toast-content');
-    if (content) {
-        const buttonContainer = document.createElement('div');
-        buttonContainer.style.marginTop = '12px';
-        buttonContainer.style.display = 'flex';
-        buttonContainer.style.gap = '8px';
+export function showConfirmation(message, title = t('Confirmation'), onConfirm = null, onCancel = null, options = {}) {
+    const {
+        confirmText = t('Confirmer'),
+        cancelText = t('Annuler'),
+        danger = false,
+    } = options;
 
-        const confirmBtn = document.createElement('button');
-        confirmBtn.textContent = t('Confirmer');
-        confirmBtn.style.padding = '4px 8px';
-        confirmBtn.style.background = '#4CAF50';
-        confirmBtn.style.color = 'white';
-        confirmBtn.style.border = 'none';
-        confirmBtn.style.borderRadius = '4px';
-        confirmBtn.style.cursor = 'pointer';
+    confirmSeq += 1;
+    const titleId = `gcm-confirm-title-${confirmSeq}`;
+    const descId = `gcm-confirm-desc-${confirmSeq}`;
 
-        const cancelBtn = document.createElement('button');
-        cancelBtn.textContent = t('Annuler');
-        cancelBtn.style.padding = '4px 8px';
-        cancelBtn.style.background = '#f44336';
-        cancelBtn.style.color = 'white';
-        cancelBtn.style.border = 'none';
-        cancelBtn.style.borderRadius = '4px';
-        cancelBtn.style.cursor = 'pointer';
+    const modalEl = document.createElement('div');
+    modalEl.className = 'modal bs-modal fade gcm-confirm-modal';
+    modalEl.tabIndex = -1;
+    modalEl.setAttribute('aria-labelledby', titleId);
+    modalEl.setAttribute('aria-describedby', descId);
+    // Seuls les intitulés passent par textContent : aucun HTML injecté,
+    // quelle que soit la chaîne traduite.
+    modalEl.innerHTML = `
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title gcm-confirm-title" id="${titleId}"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body"><p class="mb-0 gcm-confirm-message" id="${descId}"></p></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-gcm-role="cancel"></button>
+                    <button type="button" class="btn" data-gcm-role="confirm"></button>
+                </div>
+            </div>
+        </div>`;
+    modalEl.querySelector(`#${titleId}`).textContent = title;
+    modalEl.querySelector(`#${descId}`).textContent = message;
+    const closeBtn = modalEl.querySelector('.btn-close');
+    const cancelBtn = modalEl.querySelector('[data-gcm-role="cancel"]');
+    const confirmBtn = modalEl.querySelector('[data-gcm-role="confirm"]');
+    closeBtn.setAttribute('aria-label', t('Fermer'));
+    cancelBtn.textContent = cancelText;
+    confirmBtn.textContent = confirmText;
+    confirmBtn.classList.add(danger ? 'btn-danger' : 'btn-primary');
 
-        confirmBtn.onclick = () => {
-            hideToast(toast);
-            if (onConfirm) onConfirm();
-        };
+    document.body.appendChild(modalEl);
 
-        cancelBtn.onclick = () => {
-            hideToast(toast);
-            if (onCancel) onCancel();
-        };
+    // Bootstrap rend le focus à l'élément déclencheur, mais ici l'ouverture
+    // est programmatique : on le restaure nous-mêmes à la fermeture.
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
-        buttonContainer.appendChild(confirmBtn);
-        buttonContainer.appendChild(cancelBtn);
-        content.appendChild(buttonContainer);
+    const modal = getBsModal(modalEl);
+    if (!modal) {
+        // Bootstrap indisponible : ne pas exécuter une action potentiellement
+        // destructive sans confirmation réelle.
+        modalEl.remove();
+        if (onCancel) onCancel();
+        return null;
     }
 
-    return toast;
+    let settled = false;
+    confirmBtn.addEventListener('click', () => {
+        settled = true;
+        modal.hide();
+        if (onConfirm) onConfirm();
+    });
+    cancelBtn.addEventListener('click', () => {
+        settled = true;
+        modal.hide();
+        if (onCancel) onCancel();
+    });
+
+    // À l'ouverture, focus sur l'action la moins risquée (Annuler pour une
+    // action destructive, Confirmer sinon).
+    modalEl.addEventListener('shown.bs.modal', () => {
+        (danger ? cancelBtn : confirmBtn).focus();
+    });
+    // Échap, clic sur le backdrop ou croix = annulation.
+    modalEl.addEventListener('hidden.bs.modal', () => {
+        if (!settled) {
+            settled = true;
+            if (onCancel) onCancel();
+        }
+        modalEl.remove();
+        // Différé : le focus trap de Bootstrap se désactive dans son propre
+        // handler 'hidden' et pourrait reprendre le focus après nous.
+        if (previouslyFocused && document.contains(previouslyFocused)) {
+            setTimeout(() => previouslyFocused.focus({ preventScroll: true }), 0);
+        }
+    });
+
+    modal.show();
+    return modalEl;
 }
 
 // ==================== EXEMPLE D'UTILISATION ====================
