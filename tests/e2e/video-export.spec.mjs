@@ -587,8 +587,14 @@ test('le réglage Couleurs choisit le format de pixels du fichier final', async 
 });
 
 test('le suivi de caméra glisse vers les caches, se stabilise et rend la main', async ({ page }) => {
+  const firstUse = page.locator('#modal_first_use');
+  if (await firstUse.isVisible()) {
+    await firstUse.locator('[data-bs-dismiss="modal"]').click();
+    await firstUse.waitFor({ state: 'hidden' });
+  }
   await page.locator('a[href="#animation"]').click();
   await page.locator('#switchCameraFollow').check();
+  await expect(page.locator('#timingWarnings')).toContainText('dates en pause');
 
   const suivi = await page.evaluate(async () => {
     const app = await import('/static/js/index.js');
@@ -606,9 +612,11 @@ test('le suivi de caméra glisse vers les caches, se stabilise et rend la main',
     app.startAnimation();
 
     const positions = [];
+    const featureCounts = [];
     for (let i = 0; i < 10; i++) {
       await new Promise((r) => setTimeout(r, 300));
       positions.push(view.getCenter()[0]);
+      featureCounts.push(window.vectorSource?.getFeatures().length || 0);
     }
     app.stopAnimation();
 
@@ -633,6 +641,7 @@ test('le suivi de caméra glisse vers les caches, se stabilise et rend la main',
       departX,
       cibleX: ol.proj.fromLonLat(cible)[0],
       positions,
+      featureCounts,
       stabilise,
       figee,
       resteOuLUtilisateurLAMise: view.getCenter()[0] === apresDeplacement,
@@ -645,6 +654,8 @@ test('le suivi de caméra glisse vers les caches, se stabilise et rend la main',
     expect(suivi.positions[i]).toBeLessThanOrEqual(suivi.cibleX + 1);
   }
   expect(suivi.positions.at(-1)).toBeGreaterThan(suivi.departX);
+  expect(new Set(suivi.featureCounts.slice(2)).size,
+    'les dates suivantes restent bloquées pendant le déplacement').toBe(1);
   expect(suivi.figee, 'la caméra finit par s\'arrêter').toBe(true);
   expect(Math.abs(suivi.stabilise - suivi.cibleX)).toBeLessThan(10_000);
   expect(suivi.resteOuLUtilisateurLAMise).toBe(true);

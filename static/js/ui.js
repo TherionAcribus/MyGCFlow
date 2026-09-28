@@ -528,7 +528,7 @@ const btnRecordAnimation = document.getElementById('btnRecordAnimation');
     if (switchCameraFollow) {
         switchCameraFollow.addEventListener('change', () => {
             pkg.options.animation.cameraFollow = switchCameraFollow.checked;
-            saveAnimationSettings();
+            refreshTimingPlan();
         });
     }
 
@@ -4164,15 +4164,22 @@ function renderTimingSummary(plan) {
         return;
     }
     if (summary) {
+        const cameraAddsTravel = pkg.options.animation?.cameraFollow === true;
         const parts = [
             t('${n} jours', { n: plan.dayCount }),
             t('${n} jours/s', { n: Number(plan.daysPerSecond.toFixed(2)) }),
-            t('animation ${d}', { d: formatMmSs(plan.animationMs) }),
+            cameraAddsTravel
+                ? t('animation minimale ${d}', { d: formatMmSs(plan.animationMs) })
+                : t('animation ${d}', { d: formatMmSs(plan.animationMs) }),
             t('fin ${d}', { d: formatDurationHuman(plan.endHoldMs) }),
         ];
         if (plan.extraEndMs > 0) parts.push(t('+ ${d} additionnel', { d: formatDurationHuman(plan.extraEndMs) }));
-        parts.push(t('vidéo ${d}', { d: formatMmSs(plan.totalDurationMs) }));
-        parts.push(t('${n} images', { n: plan.totalFrameCount }));
+        parts.push(cameraAddsTravel
+            ? t('vidéo minimale ${d}', { d: formatMmSs(plan.totalDurationMs) })
+            : t('vidéo ${d}', { d: formatMmSs(plan.totalDurationMs) }));
+        parts.push(cameraAddsTravel
+            ? t('${n} images minimum', { n: plan.totalFrameCount })
+            : t('${n} images', { n: plan.totalFrameCount }));
         summary.textContent = parts.join(' · ');
     }
     if (baseEl) baseEl.textContent = formatDurationHuman(plan.animationMs);
@@ -4215,6 +4222,9 @@ function renderTimingMessages(plan, fieldsValid) {
             // 'music-shorter-than-minimum' est rendu dans la zone d'état
             // musicSyncStatus (plus précise) — pas de doublon.
         }
+    }
+    if (plan?.valid && pkg.options.animation?.cameraFollow === true) {
+        warnings.push(t('Le suivi de caméra met les dates en pause pendant chaque déplacement. La durée et le nombre d\'images affichés sont des minimums ; le résultat sera plus long et peut dépasser la durée de la musique.'));
     }
     if (warnBox) {
         warnBox.style.display = warnings.length ? '' : 'none';

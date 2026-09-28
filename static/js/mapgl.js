@@ -211,6 +211,7 @@ const MAX_DAYS_PER_FRAME = 4;
 let animationRafId = null;
 let animationLastTs = null;
 let animationAccMs = 0;
+let animationDatesComplete = false;
 // Vrai entre le démarrage d'une animation de prévisualisation et sa fin réelle
 // (arrêt manuel ou dernier jour atteint). Reste vrai pendant une pause, où
 // animationRafId est remis à null alors que la carte n'affiche toujours qu'une
@@ -288,6 +289,7 @@ let cameraTarget = null;
 let cameraExtent = null;
 let cameraLastClock = null;
 let cameraInteractionKey = null;
+let cameraTravelPending = false;
 // Compteur de caches animé : la valeur affichée rejoint le total du jour au lieu
 // de sauter. Piloté par la même horloge que les points, donc déterministe en
 // enregistrement image par image.
@@ -681,6 +683,7 @@ function updateCameraFollow(now) {
     // mouvement. Elle s'arrête d'elle-même en entrant dans la zone morte.
     if (!pkg.options.animation?.cameraFollow || !cameraTarget) {
         cameraLastClock = now;
+        cameraTravelPending = false;
         return false;
     }
     const dtMs = cameraLastClock === null ? 0 : now - cameraLastClock;
@@ -692,9 +695,19 @@ function updateCameraFollow(now) {
         resolution: view.getResolution(),
         extent: cameraExtent,
     });
-    if (!step.moved) return false;
+    if (!step.moved) {
+        cameraTravelPending = false;
+        return false;
+    }
+    cameraTravelPending = true;
     view.setCenter(step.center);
     return true;
+}
+
+function cameraFollowBlocksDates() {
+    return pkg.options.animation?.cameraFollow === true
+        && cameraTarget !== null
+        && cameraTravelPending;
 }
 
 // À appeler au début d'une lecture ou d'un enregistrement : la caméra repart de
@@ -703,11 +716,15 @@ function resetCameraFollow() {
     cameraTarget = null;
     cameraLastClock = null;
     cameraExtent = null;
+    cameraTravelPending = false;
     if (!pkg.options.animation?.cameraFollow) return;
     // L'utilisateur reprend la main dès qu'il touche la carte : sans cela, la
     // vue glisserait de nouveau vers la cible juste après son déplacement.
     if (!cameraInteractionKey) {
-        cameraInteractionKey = map.on('pointerdown', () => { cameraTarget = null; });
+        cameraInteractionKey = map.on('pointerdown', () => {
+            cameraTarget = null;
+            cameraTravelPending = false;
+        });
     }
     try {
         const points = getAllFilteredPoints() || [];
@@ -934,6 +951,7 @@ function finalizeAnimationEnd() {
     // Toutes les dates ont été déroulées : la carte affiche de nouveau la totalité
     // des points filtrés, un changement de style peut repartir de `features`.
     animationInProgress = false;
+    animationDatesComplete = false;
 
     // Fin RÉELLE de l'animation atteinte. En mode MediaRecorder, c'est ici qu'il
     // faut arrêter le recorder : le setTimeout théorique se désynchronise dès que
@@ -962,6 +980,7 @@ export function startAnimation(restart=false) {
     animationInProgress = true;
     endHoldTimer.clear();
     if (!restart) {
+        animationDatesComplete = false;
         // Vérification que vectorSource existe avant de l'utiliser
         if (window.vectorSource) {
         window.vectorSource.clear();
@@ -1013,6 +1032,25 @@ export function startAnimation(restart=false) {
 
     const animationStep = (ts) => {
         if (animationLastTs === null) animationLastTs = ts;
+        if (cameraFollowBlocksDates()) {
+            // Le rythme configuré décrit le temps d'affichage des dates. Le
+            // trajet de caméra s'y ajoute : on ne cumule donc aucun retard à
+            // rattraper pendant le déplacement.
+            animationLastTs = ts;
+            animationAccMs = 0;
+            animationRafId = requestAnimationFrame(animationStep);
+            return;
+        }
+        if (animationDatesComplete) {
+            animationRafId = null;
+            const extraMs = getExtraEndMs();
+            if (extraMs > 0) {
+                endHoldTimer.arm(extraMs);
+            } else {
+                finalizeAnimationEnd();
+            }
+            return;
+        }
         // Borner le delta évite qu'un onglet remis au premier plan après une
         // longue mise en arrière-plan ne fasse défiler des dizaines de jours
         // d'un coup (rAF est suspendu en arrière-plan, contrairement à setInterval).
@@ -1027,7 +1065,8 @@ export function startAnimation(restart=false) {
         // déchargeraient d'un coup. Les jours du lot sont affichés ensemble.
         const daysThisFrame = [];
         let reachedEnd = false;
-        while (animationAccMs >= dayDuration && daysThisFrame.length < MAX_DAYS_PER_FRAME) {
+        const maxDaysThisFrame = pkg.options.animation?.cameraFollow ? 1 : MAX_DAYS_PER_FRAME;
+        while (animationAccMs >= dayDuration && daysThisFrame.length < maxDaysThisFrame) {
             animationAccMs -= dayDuration;
             // currentDate est muté juste après : le lot doit garder une copie.
             daysThisFrame.push(new Date(currentDate));
@@ -1040,17 +1079,11 @@ export function startAnimation(restart=false) {
 
         if (daysThisFrame.length > 0) {
             displayFeaturesForDates(daysThisFrame, pkg.options.point, flashOptions, false, infos);
+            if (cameraFollowBlocksDates()) animationAccMs = 0;
         }
 
         if (reachedEnd) {
-            animationRafId = null;
-            const extraMs = getExtraEndMs();
-            if (extraMs > 0) {
-                endHoldTimer.arm(extraMs);
-            } else {
-                finalizeAnimationEnd();
-            }
-            return;
+            animationDatesComplete = true;
         }
         animationRafId = requestAnimationFrame(animationStep);
     };
@@ -1062,6 +1095,7 @@ export function stopAnimation(){
     isRecording = false;
     endHighResCapture();
     animationInProgress = false;
+    animationDatesComplete = false;
     removeCaptureVisibilityGuard();
 
     if (animationRafId) {
@@ -1687,6 +1721,21 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
         return;
     }
 
+    if (cameraFollowBlocksDates()) {
+        // En mode Images, chaque pas de caméra devient une vraie frame vidéo,
+        // mais ne consomme pas le temps d'affichage réservé à la date courante.
+        if (capture == true) {
+            pkg.options.record.nbOfImages = Math.max(
+                imageCounter + 1,
+                Number(pkg.options.record.nbOfImages) || 0
+            ) + 1;
+            await captureElementWithRetry();
+            globalRecordFrame++;
+        }
+        scheduleCaptureFrame(pointOptions, flashOptions, infos);
+        return;
+    }
+
     if (currentDate > pkg.metadata.endDate) {
         for (let extraFrames = 0; extraFrames < pkg.options.record.extraFrames; extraFrames++) {
             // Avancer l'animation d'un cran et redéclencher un rendu : drawActiveFlashes
@@ -1982,6 +2031,8 @@ function recordAnimationMediaRecorder(){
     }
 
     createFlashElements();
+    resetCameraFollow();
+    animationDatesComplete = false;
     // IMPORTANT : réinitialiser la variable module 'infos' (compteur de caches).
     // startAnimation(true) réutilise ce même objet ; sans reset, cacheNumber
     // repart de l'ancien total accumulé → compteur faux. (Avant : un 'infosLocal'
@@ -2905,7 +2956,10 @@ function displayFeaturesForDates(dates, pointOptions, flashOptions, record, info
             feature.geometry.coordinates[0],
             feature.geometry.coordinates[1],
         ])));
-        if (target) cameraTarget = target;
+        if (target) {
+            cameraTarget = target;
+            cameraTravelPending = true;
+        }
     }
 
     // Source de changement principale de l'animation : signalée explicitement pour
@@ -3058,5 +3112,4 @@ function createFlashElements(){
     activeFlashes = [];
     animationLayer.on('postrender', drawActiveFlashes);
 }
-
 
