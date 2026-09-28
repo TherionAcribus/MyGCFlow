@@ -4,7 +4,10 @@ import assert from 'node:assert/strict';
 import {
     centroid,
     clampToExtent,
+    createCameraJourney,
     DEFAULT_RESPONSE_MS,
+    easeInOutCubic,
+    sampleCameraJourney,
     smoothingFactor,
     stepCenter,
 } from './static/js/camera_follow.mjs';
@@ -69,4 +72,38 @@ test('le barycentre ignore les coordonnées invalides', () => {
     assert.equal(centroid([]), null);
     assert.equal(centroid(null), null);
     assert.equal(centroid([[NaN, NaN]]), null);
+});
+
+test('un saut intercontinental dézoome temporairement puis restaure le zoom', () => {
+    const journey = createCameraJourney([0, 0], [5000, 0], 8, 1);
+    assert.ok(journey.cruiseZoom < journey.startZoom);
+    assert.ok(journey.cruiseZoom >= 2);
+
+    const start = sampleCameraJourney(journey, 0);
+    const cruise = sampleCameraJourney(journey, journey.zoomOutDurationMs);
+    const arrival = sampleCameraJourney(journey, journey.totalDurationMs);
+    assert.deepEqual(start.center, [0, 0]);
+    assert.equal(cruise.zoom, journey.cruiseZoom);
+    assert.deepEqual(arrival.center, [5000, 0]);
+    assert.equal(arrival.zoom, 8);
+    assert.equal(arrival.done, true);
+});
+
+test('un déplacement local conserve le niveau de zoom', () => {
+    const journey = createCameraJourney([0, 0], [500, 0], 8, 1);
+    assert.equal(journey.cruiseZoom, 8);
+    assert.equal(journey.zoomOutDurationMs, 0);
+    assert.equal(journey.zoomInDurationMs, 0);
+});
+
+test('le trajet est continu et borné', () => {
+    const journey = createCameraJourney([10, 20], [5010, 1020], 9, 1);
+    for (let elapsed = 0; elapsed <= journey.totalDurationMs; elapsed += 50) {
+        const state = sampleCameraJourney(journey, elapsed);
+        assert.ok(state.center[0] >= 10 && state.center[0] <= 5010);
+        assert.ok(state.center[1] >= 20 && state.center[1] <= 1020);
+        assert.ok(state.zoom >= journey.cruiseZoom && state.zoom <= 9);
+    }
+    assert.equal(easeInOutCubic(-1), 0);
+    assert.equal(easeInOutCubic(2), 1);
 });

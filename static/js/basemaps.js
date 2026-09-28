@@ -40,6 +40,16 @@ function registerBasemap(id, layer, optionsPanelId = null) {
     pkg.registerMapMenu(id, optionsPanelId);
 }
 
+// Un seul niveau voisin est préchargé quand le suivi de caméra est actif. Cela
+// prépare la transition de zoom sans télécharger plusieurs pyramides de tuiles
+// ni conserver un cache disproportionné. Les couches vectorielles sont ignorées.
+export function setCameraTilePreload(enabled) {
+    const preload = enabled ? 1 : 0;
+    for (const { layer } of Object.values(basemaps)) {
+        if (layer && typeof layer.setPreload === 'function') layer.setPreload(preload);
+    }
+}
+
 
 // --- Suivi des erreurs de chargement de tuiles ---
 // Signale les échecs réseau/CDN plutôt que de laisser des zones de carte
@@ -209,6 +219,7 @@ export function addMaps() {
     olMap.addLayer(vectorTileLayer);
     vectorTileLayer.setVisible(false);
     registerBasemap('vectorMap', vectorTileLayer, 'vectorMapOptions');
+    setCameraTilePreload(pkg.options.animation?.cameraFollow === true);
 }
 
 // Construit le style de la carte vectorielle.

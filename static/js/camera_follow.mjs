@@ -3,11 +3,9 @@
 // Trois précautions qui font toute la différence entre « cinématographique » et
 // « donne le mal de mer » :
 //
-// 1. Translation seulement, jamais de zoom. Changer d'échelle en cours
-//    d'animation change le niveau de tuiles, la taille apparente des points et
-//    la lisibilité : c'est le mouvement le plus coûteux et le plus agressif.
-// 2. Un lissage exponentiel avec une longue constante de temps : la caméra
-//    n'atteint jamais sa cible d'un coup, elle dérive vers elle.
+// 1. Les déplacements locaux gardent le zoom courant. Les grands sauts prennent
+//    temporairement de la hauteur pour réduire la durée et le coût en tuiles.
+// 2. Chaque phase utilise une accélération/freinage doux et reproductible.
 // 3. Une zone morte : sous quelques pixels d'écart, on ne bouge pas du tout,
 //    sinon la vue tremblerait en permanence autour du barycentre.
 //
@@ -25,6 +23,13 @@ export const DEFAULT_RESPONSE_MS = 2500;
 // En deçà, on considère la caméra arrivée : évite le frémissement permanent et
 // les rendus inutiles.
 export const DEFAULT_DEAD_ZONE_PX = 2;
+
+// Au-delà d'environ une largeur d'écran, un simple panoramique à zoom constant
+// devient long et charge beaucoup de tuiles détaillées. La caméra prend alors
+// temporairement de la hauteur, sans descendre sous une vue continentale.
+export const LONG_TRAVEL_THRESHOLD_PX = 900;
+export const CRUISE_DISTANCE_PX = 640;
+export const MIN_CRUISE_ZOOM = 2;
 
 // Part du chemin à parcourir pendant dtMs. Exponentielle : indépendante de la
 // cadence, donc un enregistrement à 12 ou 60 images/s donne le même mouvement.
@@ -83,5 +88,101 @@ export function stepCenter(current, target, dtMs, {
     return {
         center: [current[0] + dx * factor, current[1] + dy * factor],
         moved: true,
+    };
+}
+
+function clamp01(value) {
+    return Math.max(0, Math.min(1, Number(value) || 0));
+}
+
+export function easeInOutCubic(progress) {
+    const value = clamp01(progress);
+    return value < 0.5
+        ? 4 * value * value * value
+        : 1 - Math.pow(-2 * value + 2, 3) / 2;
+}
+
+// Prépare un trajet déterministe en trois temps : dézoom éventuel, translation,
+// puis retour au zoom initial. La distance est mesurée dans le viewport courant,
+// ce qui rend le seuil stable quelle que soit la projection ou la latitude.
+export function createCameraJourney(current, target, startZoom, resolution, {
+    longTravelThresholdPx = LONG_TRAVEL_THRESHOLD_PX,
+    cruiseDistancePx = CRUISE_DISTANCE_PX,
+    minCruiseZoom = MIN_CRUISE_ZOOM,
+} = {}) {
+    if (!current || !target) return null;
+    const zoom = Number(startZoom);
+    const unitsPerPixel = Number(resolution);
+    if (!Number.isFinite(zoom) || !(unitsPerPixel > 0)) return null;
+
+    const distanceMapUnits = Math.hypot(target[0] - current[0], target[1] - current[1]);
+    const distancePx = distanceMapUnits / unitsPerPixel;
+    if (!(distancePx > DEFAULT_DEAD_ZONE_PX)) return null;
+
+    let cruiseZoom = zoom;
+    if (distancePx > longTravelThresholdPx) {
+        const zoomDelta = Math.max(0, Math.log2(distancePx / Math.max(1, cruiseDistancePx)));
+        cruiseZoom = Math.max(Number(minCruiseZoom) || 0, zoom - zoomDelta);
+        // Éviter un très léger changement d'échelle qui coûte un niveau de tuiles
+        // sans apporter de gain visuel perceptible.
+        if (zoom - cruiseZoom < 0.25) cruiseZoom = zoom;
+    }
+
+    const zoomDelta = Math.max(0, zoom - cruiseZoom);
+    const zoomDurationMs = zoomDelta > 0 ? Math.min(1200, 600 + zoomDelta * 150) : 0;
+    const cruiseDistance = distancePx / Math.pow(2, zoomDelta);
+    const panDurationMs = Math.min(2800, 700 + cruiseDistance * 2.5);
+
+    return {
+        startCenter: [...current],
+        targetCenter: [...target],
+        startZoom: zoom,
+        cruiseZoom,
+        zoomOutDurationMs: zoomDurationMs,
+        panDurationMs,
+        zoomInDurationMs: zoomDurationMs,
+        totalDurationMs: zoomDurationMs * 2 + panDurationMs,
+        distancePx,
+    };
+}
+
+export function sampleCameraJourney(journey, elapsedMs) {
+    if (!journey) return null;
+    const elapsed = Math.max(0, Number(elapsedMs) || 0);
+    const zoomOutEnd = journey.zoomOutDurationMs;
+    const panEnd = zoomOutEnd + journey.panDurationMs;
+    const total = Math.max(0, journey.totalDurationMs);
+
+    if (elapsed < zoomOutEnd) {
+        const progress = easeInOutCubic(elapsed / Math.max(1, journey.zoomOutDurationMs));
+        return {
+            center: [...journey.startCenter],
+            zoom: journey.startZoom + (journey.cruiseZoom - journey.startZoom) * progress,
+            done: false,
+        };
+    }
+    if (elapsed < panEnd) {
+        const progress = easeInOutCubic((elapsed - zoomOutEnd) / Math.max(1, journey.panDurationMs));
+        return {
+            center: [
+                journey.startCenter[0] + (journey.targetCenter[0] - journey.startCenter[0]) * progress,
+                journey.startCenter[1] + (journey.targetCenter[1] - journey.startCenter[1]) * progress,
+            ],
+            zoom: journey.cruiseZoom,
+            done: false,
+        };
+    }
+    if (elapsed < total) {
+        const progress = easeInOutCubic((elapsed - panEnd) / Math.max(1, journey.zoomInDurationMs));
+        return {
+            center: [...journey.targetCenter],
+            zoom: journey.cruiseZoom + (journey.startZoom - journey.cruiseZoom) * progress,
+            done: false,
+        };
+    }
+    return {
+        center: [...journey.targetCenter],
+        zoom: journey.startZoom,
+        done: true,
     };
 }

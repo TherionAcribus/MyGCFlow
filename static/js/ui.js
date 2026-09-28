@@ -528,6 +528,7 @@ const btnRecordAnimation = document.getElementById('btnRecordAnimation');
     if (switchCameraFollow) {
         switchCameraFollow.addEventListener('change', () => {
             pkg.options.animation.cameraFollow = switchCameraFollow.checked;
+            pkg.setCameraTilePreload?.(switchCameraFollow.checked);
             refreshTimingPlan();
         });
     }

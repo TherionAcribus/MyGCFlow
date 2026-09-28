@@ -595,28 +595,41 @@ test('le suivi de caméra glisse vers les caches, se stabilise et rend la main',
   await page.locator('a[href="#animation"]').click();
   await page.locator('#switchCameraFollow').check();
   await expect(page.locator('#timingWarnings')).toContainText('dates en pause');
+  await expect.poll(() => page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    const layer = app.getMap().getLayers().getArray().find((item) => (
+      item.getVisible?.() && typeof item.getPreload === 'function'
+    ));
+    return layer?.getPreload?.() ?? 0;
+  })).toBe(1);
 
   const suivi = await page.evaluate(async () => {
     const app = await import('/static/js/index.js');
     const map = app.getMap();
     const view = map.getView();
-    // Toutes les caches au même endroit, à l'est : la cible est sans ambiguïté.
-    const cible = [-1.5, 47.4];
+    // Toutes les caches à New York, vue initiale sur Paris : ce saut
+    // intercontinental doit déclencher le dézoom adaptatif.
+    const cible = [-74.006, 40.7128];
     for (const day of [...app.pointsByDate.keys()]) {
       for (const feature of app.pointsByDate.get(day)) feature.geometry.coordinates = [...cible];
     }
-    view.setCenter(ol.proj.fromLonLat([-2.5, 47.4]));
+    view.setCenter(ol.proj.fromLonLat([2.3522, 48.8566]));
     view.setZoom(6);
     const departX = view.getCenter()[0];
+    const zoomInitial = view.getZoom();
     app.options.animation.timePerDay = 400;
     app.startAnimation();
 
     const positions = [];
+    const zooms = [];
     const featureCounts = [];
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 24; i++) {
       await new Promise((r) => setTimeout(r, 300));
       positions.push(view.getCenter()[0]);
+      zooms.push(view.getZoom());
       featureCounts.push(window.vectorSource?.getFeatures().length || 0);
+      const proche = Math.abs(view.getCenter()[0] - ol.proj.fromLonLat(cible)[0]) < 10_000;
+      if (proche && Math.abs(view.getZoom() - zoomInitial) < 0.02 && i >= 6) break;
     }
     app.stopAnimation();
 
@@ -640,7 +653,9 @@ test('le suivi de caméra glisse vers les caches, se stabilise et rend la main',
     return {
       departX,
       cibleX: ol.proj.fromLonLat(cible)[0],
+      zoomInitial,
       positions,
+      zooms,
       featureCounts,
       stabilise,
       figee,
@@ -648,19 +663,34 @@ test('le suivi de caméra glisse vers les caches, se stabilise et rend la main',
     };
   });
 
-  // La caméra avance vers la cible, sans reculer ni la dépasser.
+  // La distance à la cible diminue sans repartir dans l'autre sens.
   for (let i = 1; i < suivi.positions.length; i++) {
-    expect(suivi.positions[i]).toBeGreaterThanOrEqual(suivi.positions[i - 1] - 1);
-    expect(suivi.positions[i]).toBeLessThanOrEqual(suivi.cibleX + 1);
+    expect(Math.abs(suivi.positions[i] - suivi.cibleX))
+      .toBeLessThanOrEqual(Math.abs(suivi.positions[i - 1] - suivi.cibleX) + 1);
   }
-  expect(suivi.positions.at(-1)).toBeGreaterThan(suivi.departX);
-  expect(new Set(suivi.featureCounts.slice(2)).size,
+  expect(suivi.positions.at(-1)).toBeLessThan(suivi.departX);
+  expect(Math.min(...suivi.zooms)).toBeLessThan(suivi.zoomInitial - 1);
+  expect(Math.abs(suivi.zooms.at(-1) - suivi.zoomInitial)).toBeLessThan(0.02);
+  const countsWhileMoving = suivi.featureCounts.filter((_, index) => (
+    Math.abs(suivi.positions[index] - suivi.cibleX) >= 10_000
+  ));
+  expect(countsWhileMoving.length).toBeGreaterThan(2);
+  const firstDisplayedCount = countsWhileMoving.find((count) => count > 0);
+  expect(firstDisplayedCount).toBeGreaterThan(0);
+  expect(new Set(countsWhileMoving.filter((count) => count >= firstDisplayedCount)).size,
     'les dates suivantes restent bloquées pendant le déplacement').toBe(1);
   expect(suivi.figee, 'la caméra finit par s\'arrêter').toBe(true);
   expect(Math.abs(suivi.stabilise - suivi.cibleX)).toBeLessThan(10_000);
   expect(suivi.resteOuLUtilisateurLAMise).toBe(true);
 
   await page.locator('#switchCameraFollow').uncheck();
+  await expect.poll(() => page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    const layer = app.getMap().getLayers().getArray().find((item) => (
+      item.getVisible?.() && typeof item.getPreload === 'function'
+    ));
+    return layer?.getPreload?.() ?? 0;
+  })).toBe(0);
 });
 
 

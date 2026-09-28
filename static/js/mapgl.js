@@ -113,7 +113,12 @@ import { createAppearClock, POINT_APPEAR_MS, STATIC_APPEAR } from './point_appea
 import { CAPTURE_IMAGE_QUALITY, CAPTURE_IMAGE_TYPE } from './capture_image_format.mjs';
 import { captureRatioFor } from './capture_resolution.mjs';
 import { normalizeColorFidelity } from './color_fidelity.mjs';
-import { centroid, stepCenter } from './camera_follow.mjs';
+import {
+    centroid,
+    clampToExtent,
+    createCameraJourney,
+    sampleCameraJourney,
+} from './camera_follow.mjs';
 import { flashStyleAt } from './flash_styles.js';
 import { liveFlashStep } from './flash_style_cache.mjs';
 import { staggerDelayFrames, staggerDelayMs } from './flash_impulse.mjs';
@@ -287,9 +292,14 @@ let pointsGlowing = false;       // persistance active : la carte change à chaq
 // jour, étendue = celle de toutes les caches affichées, horloge = celle des points.
 let cameraTarget = null;
 let cameraExtent = null;
-let cameraLastClock = null;
 let cameraInteractionKey = null;
 let cameraTravelPending = false;
+let cameraJourney = null;
+let cameraJourneyStartedAt = null;
+let cameraRenderPending = false;
+let cameraRenderKey = null;
+let cameraRenderTimeout = null;
+const CAMERA_RENDER_TIMEOUT_MS = 6000;
 // Compteur de caches animé : la valeur affichée rejoint le total du jour au lieu
 // de sauter. Piloté par la même horloge que les points, donc déterministe en
 // enregistrement image par image.
@@ -681,49 +691,110 @@ function updateCameraFollow(now) {
     // Pas de condition « animation en cours » : la caméra doit finir son
     // glissement après le dernier jour plutôt que de se figer en plein
     // mouvement. Elle s'arrête d'elle-même en entrant dans la zone morte.
-    if (!pkg.options.animation?.cameraFollow || !cameraTarget) {
-        cameraLastClock = now;
+    if (!pkg.options.animation?.cameraFollow) {
+        cancelCameraFollowMotion();
+        return false;
+    }
+    if (cameraRenderPending) return false;
+    if (!cameraTarget) {
         cameraTravelPending = false;
         return false;
     }
-    const dtMs = cameraLastClock === null ? 0 : now - cameraLastClock;
-    cameraLastClock = now;
-    if (!(dtMs > 0)) return false;
 
     const view = map.getView();
-    const step = stepCenter(view.getCenter(), cameraTarget, dtMs, {
-        resolution: view.getResolution(),
-        extent: cameraExtent,
-    });
-    if (!step.moved) {
-        cameraTravelPending = false;
+    if (!cameraJourney) {
+        const target = clampToExtent(cameraTarget, cameraExtent);
+        cameraJourney = createCameraJourney(
+            view.getCenter(),
+            target,
+            view.getZoom(),
+            view.getResolution(),
+        );
+        cameraJourneyStartedAt = now;
+        if (!cameraJourney) {
+            cameraTarget = null;
+            beginCameraRenderWait();
+            return false;
+        }
+    }
+
+    const state = sampleCameraJourney(cameraJourney, now - cameraJourneyStartedAt);
+    if (!state) {
+        cancelCameraFollowMotion();
         return false;
     }
     cameraTravelPending = true;
-    view.setCenter(step.center);
+    view.setCenter(state.center);
+    view.setZoom(state.zoom);
+    if (state.done) {
+        cameraTarget = null;
+        cameraJourney = null;
+        cameraJourneyStartedAt = null;
+        beginCameraRenderWait();
+        return false;
+    }
     return true;
 }
 
 function cameraFollowBlocksDates() {
     return pkg.options.animation?.cameraFollow === true
-        && cameraTarget !== null
         && cameraTravelPending;
+}
+
+function clearCameraRenderWait() {
+    if (cameraRenderKey) {
+        try { ol.Observable.unByKey(cameraRenderKey); } catch(_) {}
+        cameraRenderKey = null;
+    }
+    if (cameraRenderTimeout) {
+        clearTimeout(cameraRenderTimeout);
+        cameraRenderTimeout = null;
+    }
+    cameraRenderPending = false;
+}
+
+function finishCameraRenderWait(timedOut = false) {
+    clearCameraRenderWait();
+    cameraTravelPending = false;
+    mapDirtyTracker.markDirty();
+    if (timedOut) console.warn('[CAMERA] Rendu final libéré après le délai de sécurité.');
+    if (!isRecording && !isMediaRecording) map.render();
+}
+
+// `rendercomplete` n'est émis qu'une fois les sources et tuiles nécessaires au
+// viewport chargées. La date reste donc visible avant que la suivante puisse
+// déplacer la caméra. Le timeout évite un blocage infini hors connexion.
+function beginCameraRenderWait() {
+    clearCameraRenderWait();
+    cameraRenderPending = true;
+    cameraTravelPending = true;
+    cameraRenderKey = map.once('rendercomplete', () => finishCameraRenderWait(false));
+    cameraRenderTimeout = setTimeout(
+        () => finishCameraRenderWait(true),
+        CAMERA_RENDER_TIMEOUT_MS,
+    );
+    map.render();
+}
+
+function cancelCameraFollowMotion() {
+    clearCameraRenderWait();
+    cameraTarget = null;
+    cameraJourney = null;
+    cameraJourneyStartedAt = null;
+    cameraTravelPending = false;
 }
 
 // À appeler au début d'une lecture ou d'un enregistrement : la caméra repart de
 // la vue courante, et ne sortira pas de l'étendue des caches affichées.
 function resetCameraFollow() {
-    cameraTarget = null;
-    cameraLastClock = null;
+    cancelCameraFollowMotion();
     cameraExtent = null;
-    cameraTravelPending = false;
     if (!pkg.options.animation?.cameraFollow) return;
     // L'utilisateur reprend la main dès qu'il touche la carte : sans cela, la
     // vue glisserait de nouveau vers la cible juste après son déplacement.
     if (!cameraInteractionKey) {
         cameraInteractionKey = map.on('pointerdown', () => {
-            cameraTarget = null;
-            cameraTravelPending = false;
+            cancelCameraFollowMotion();
         });
     }
     try {
@@ -2958,6 +3029,8 @@ function displayFeaturesForDates(dates, pointOptions, flashOptions, record, info
         ])));
         if (target) {
             cameraTarget = target;
+            cameraJourney = null;
+            cameraJourneyStartedAt = null;
             cameraTravelPending = true;
         }
     }
@@ -3112,4 +3185,3 @@ function createFlashElements(){
     activeFlashes = [];
     animationLayer.on('postrender', drawActiveFlashes);
 }
-
