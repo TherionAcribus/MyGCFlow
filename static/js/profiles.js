@@ -434,7 +434,16 @@ class ProfileManager {
             if (result.success) {
                 this.showToast(pkg.t('Profil "${name}" réinitialisé', { name }), 'blue');
                 if (this.currentProfile && this.currentProfile.name === name) {
-                    this.loadProfile(name);
+                    // L'utilisateur vient de confirmer la réinitialisation : les
+                    // modifications en attente sur ce thème sont abandonnées.
+                    // Sans cela, loadProfile() reposait la question, et
+                    // « Enregistrer » réécrivait l'ancien état par-dessus la
+                    // réinitialisation tandis qu'« Annuler » laissait l'écran
+                    // sur des réglages qui ne sont plus ceux du fichier.
+                    clearTimeout(this._dirtyDebounceTimer);
+                    this._dirtyDebounceTimer = null;
+                    this.hasUnsavedChanges = false;
+                    await this.loadProfile(name);
                 }
             }
         } catch (error) {
@@ -1441,7 +1450,7 @@ class ProfileManager {
             // Valeurs par défaut en cas d'erreur
             this.currentSettings = {
                 map: {
-                    tile_provider: 'OpenStreetMap'
+                    tile_provider: 'OSM'
                 },
                 points: {
                     size: 8,

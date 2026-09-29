@@ -251,7 +251,7 @@ class TonerMapOptions:
 
 @dataclass
 class MapOptions:
-    tile_provider: str = "OpenStreetMap"
+    tile_provider: str = "OSM"
     vector_options: VectorMapOptions = field(default_factory=VectorMapOptions)
     toner_options: TonerMapOptions = field(default_factory=TonerMapOptions)
     # Réservé à l'avenir: support d'options spécifiques providers (souples)
@@ -752,8 +752,15 @@ class SettingsManager:
         if self._profiles_dir_signature() != self._cache_signature:
             self._build_profile_cache()
 
-    def _create_example_profiles(self, only: Optional[set] = None) -> None:
-        """Crée des profils d'exemple (tous, ou seulement ceux nommés dans `only`)"""
+    @staticmethod
+    def _example_profile_definitions() -> dict:
+        """Définitions des thèmes d'exemple, par nom.
+
+        Chaque appel construit des objets neufs (uid compris) : l'appelant peut
+        les modifier sans toucher aux suivants. Servent à l'installation
+        (_create_example_profiles) et à la réinitialisation d'un exemple
+        (reset_profile), qui retrouve ainsi son design d'origine.
+        """
         def build_infos(title_text: str, title_css: str, infos_css: str) -> InfosOptions:
             return InfosOptions(
                 title=InfosTitle(display=True, text=title_text),
@@ -1779,9 +1786,12 @@ class SettingsManager:
                 )
             ),
         }
+        return example_profiles
 
+    def _create_example_profiles(self, only: Optional[set] = None) -> None:
+        """Crée des profils d'exemple (tous, ou seulement ceux nommés dans `only`)"""
         # Créer chaque profil s'il n'existe pas déjà
-        for profile_name, profile_data in example_profiles.items():
+        for profile_name, profile_data in self._example_profile_definitions().items():
             if only is not None and profile_name not in only:
                 continue
             profile_path = self._profile_path(profile_name)
@@ -1981,8 +1991,20 @@ class SettingsManager:
         path.unlink()
         self._invalidate_profile_cache()
 
-    def reset_profile(self, name: str) -> None:
-        self.save_profile(MapProfile(name=name))
+    def reset_profile(self, name: str) -> MapProfile:
+        """Remet un thème à son état d'origine, sous le même nom et le même uid.
+
+        Un thème d'exemple retrouve sa définition d'origine, les autres les
+        valeurs par défaut. L'uid est conservé : un uid neuf rendait orphelines
+        les références de settings.json (thème par défaut, dernier thème
+        actif), que get_app_settings() effaçait alors sans rien dire.
+        """
+        current = self.load_profile(name)  # FileNotFoundError si absent
+        prof = self._example_profile_definitions().get(current.name) or MapProfile()
+        prof.name = current.name
+        prof.uid = current.uid
+        self.save_profile(prof)
+        return prof
 
     # ---------- Import/Export utilitaires ----------
     def _name_exists(self, name: str) -> bool:

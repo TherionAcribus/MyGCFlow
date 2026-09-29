@@ -396,8 +396,11 @@ def api_delete_profile(name: str):
 
 @profiles_bp.route('/api/profiles/<name>/reset', methods=['POST'])
 def api_reset_profile(name: str):
-    settings_manager.reset_profile(name)
-    return jsonify({'success': True})
+    try:
+        prof = settings_manager.reset_profile(name)
+    except FileNotFoundError as e:
+        return jsonify({'success': False, 'message': str(e)}), 404
+    return jsonify({'success': True, 'name': prof.name, 'uid': prof.uid})
 
 
 @profiles_bp.route('/api/profiles/<name>/export', methods=['GET'])
