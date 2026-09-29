@@ -11,9 +11,7 @@
         <script>
             (function () {
                 try {
-                    var pref = localStorage.getItem('mygcflow_theme')
-                        || localStorage.getItem('gcmap_theme')  // avant le changement de nom
-                        || 'system';
+                    var pref = localStorage.getItem('mygcflow_theme') || 'system';
                     var dark = pref === 'dark'
                         || (pref !== 'light' && window.matchMedia
                             && window.matchMedia('(prefers-color-scheme: dark)').matches);
