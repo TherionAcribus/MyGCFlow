@@ -34,6 +34,10 @@ if (clearDatabaseBtn) {
     clearDatabaseBtn.addEventListener('click', clearDatabase);
 }
 
+// Bouton d'import de l'état vide (app.html) : délègue au clic à #file-input,
+// mais reste cliquable si on ne le désactive pas explicitement pendant un import.
+const emptyStateImportBtn = document.getElementById('btnEmptyStateImport');
+
 // Gestionnaire pour le chargement depuis la modale de première utilisation.
 // Même logique que l'input principal, mais sur l'élément #file-input-modal
 // présent dans templates/modal_first_use.html.
@@ -59,6 +63,7 @@ function setImportControlsDisabled(disabled) {
     if (fileInput) fileInput.disabled = disabled;
     if (fileInputModal) fileInputModal.disabled = disabled;
     if (clearDatabaseBtn) clearDatabaseBtn.disabled = disabled;
+    if (emptyStateImportBtn) emptyStateImportBtn.disabled = disabled;
 }
 
 function beginImport() {
@@ -184,17 +189,34 @@ async function handleGpxFile(file) {
         showError(t('Un import est déjà en cours, veuillez patienter.'), t('Import en cours'));
         return;
     }
+
+    // Retour visuel immédiat : validateGpxFile lit l'en-tête du fichier sur
+    // disque, ce qui peut prendre plusieurs secondes sur un gros GPX. Sans
+    // toast dès le dépôt/la sélection, l'utilisateur n'a aucun signe que le
+    // chargement a démarré. La toast créée ici est réutilisée ensuite par
+    // uploadBdd/performUploadFromModal pour l'envoi et le suivi serveur.
+    const modalEl = document.getElementById('modal_first_use');
+    const modalOpen = !!(modalEl && modalEl.classList.contains('show'));
+    let earlyToast = null;
+    try { earlyToast = pkg.showLoadingToast(t('Analyse du fichier GPX en cours...'), t('Chargement')); } catch (_) {}
+    // Indicateur inline : dans la modale de bienvenue si elle est ouverte,
+    // sinon dans l'état vide de la carte (« Chargez votre fichier .gpx pour
+    // commencer »), visible justement quand aucune donnée n'est chargée.
+    showUploadIndicator(modalOpen ? 'modalUploadProgress' : 'emptyStateUploadProgress',
+        t('Analyse du fichier GPX en cours...'));
+
     const result = await validateGpxFile(file);
     if (!result.ok) {
+        try { pkg.hideToast(earlyToast); } catch (_) {}
+        hideUploadIndicator('modalUploadProgress');
+        hideUploadIndicator('emptyStateUploadProgress');
         showError(result.message, t('Fichier invalide'));
         return;
     }
-    const modalEl = document.getElementById('modal_first_use');
-    const modalOpen = !!(modalEl && modalEl.classList.contains('show'));
     if (modalOpen) {
-        performUploadFromModal(file);
+        performUploadFromModal(file, earlyToast);
     } else {
-        uploadBdd(file);
+        uploadBdd(file, earlyToast);
     }
 }
 
@@ -680,12 +702,15 @@ function pollGeojsonTask(taskId, { onSuccess, onError, onProgress, intervalMs = 
     tick();
 }
 
-function checkLoadingProgress(toast, taskId, onSuccess, onError, { intervalMs = 400, stallTimeoutMs = 120000 } = {}) {
+function checkLoadingProgress(toast, taskId, onSuccess, onError, { intervalMs = 400, stallTimeoutMs = 120000, onProgress: onServerProgress = null } = {}) {
     pollGeojsonTask(taskId, {
         intervalMs,
         stallTimeoutMs,
         onProgress: (p) => {
             try { if (toast) pkg.updateToastProgress(toast, p); } catch(_) {}
+            if (typeof onServerProgress === 'function') {
+                try { onServerProgress(p); } catch(_) {}
+            }
         },
         onSuccess: () => {
             if (typeof onSuccess === 'function') onSuccess();
@@ -697,6 +722,47 @@ function checkLoadingProgress(toast, taskId, onSuccess, onError, { intervalMs = 
     });
 }
 
+// --- Indicateurs de chargement inline -------------------------------------
+// En complément de la toast, un bloc « spinner + libellé + barre de
+// progression » existe dans la modale de première utilisation
+// (#modalUploadProgress) et dans l'état vide de la carte
+// (#emptyStateUploadProgress). Ils restent visibles pendant tout l'import et
+// reflètent les mêmes phases que la toast, pour qu'il soit évident que le
+// traitement est en cours là où l'utilisateur a déposé son fichier.
+
+function showUploadIndicator(containerId, text) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    el.hidden = false;
+    updateUploadIndicator(containerId, text, null);
+}
+
+// pct : nombre 0-100 pour une progression connue ; toute autre valeur (null,
+// 0, NaN) laisse la barre en mode indéterminé (animation continue).
+function updateUploadIndicator(containerId, text, pct) {
+    const el = document.getElementById(containerId);
+    if (!el || el.hidden) return;
+    const label = el.querySelector('.upload-progress-text');
+    const bar = el.querySelector('.upload-progress-bar');
+    if (label && text) label.textContent = text;
+    if (!bar) return;
+    if (typeof pct === 'number' && isFinite(pct) && pct > 0) {
+        const clamped = Math.min(100, Math.max(0, pct));
+        bar.classList.remove('progress-bar-indeterminate');
+        bar.style.width = `${clamped}%`;
+        bar.setAttribute('aria-valuenow', String(clamped));
+    } else {
+        bar.classList.add('progress-bar-indeterminate');
+        bar.style.width = '100%';
+        bar.setAttribute('aria-valuenow', '0');
+    }
+}
+
+function hideUploadIndicator(containerId) {
+    const el = document.getElementById(containerId);
+    if (el) el.hidden = true;
+}
+
 // Envoie le fichier GPX via XMLHttpRequest plutôt que fetch : fetch ne rapporte
 // aucune progression d'envoi, la toast resterait donc figée pendant tout le
 // transfert d'un gros fichier sur une connexion lente. xhr.upload.progress
@@ -704,7 +770,10 @@ function checkLoadingProgress(toast, taskId, onSuccess, onError, { intervalMs = 
 // Une fois le fichier reçu par le serveur, la promesse se résout et l'appelant
 // bascule sur checkLoadingProgress, qui pilote la barre pour la phase suivante
 // (parsing + import côté serveur — une échelle 0-100 distincte de l'upload).
-function uploadGpxWithProgress(file, toast) {
+// `hooks` (optionnel) permet de répercuter les phases sur un indicateur
+// inline : onProgress(pct) pendant l'envoi, onPhase(message) au passage au
+// traitement serveur.
+function uploadGpxWithProgress(file, toast, hooks = null) {
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         const formData = new FormData();
@@ -717,6 +786,9 @@ function uploadGpxWithProgress(file, toast) {
                 pkg.updateToastProgress(toast, pct);
                 pkg.updateToastMessage(toast, t('Envoi du fichier : ${pct}%', { pct }));
             } catch (_) {}
+            if (hooks && typeof hooks.onProgress === 'function') {
+                try { hooks.onProgress(pct); } catch (_) {}
+            }
         });
 
         xhr.addEventListener('load', () => {
@@ -738,6 +810,9 @@ function uploadGpxWithProgress(file, toast) {
                 pkg.updateToastMessage(toast, t('Traitement du fichier en cours...'));
                 pkg.setIndeterminateProgress(toast);
             } catch (_) {}
+            if (hooks && typeof hooks.onPhase === 'function') {
+                try { hooks.onPhase(t('Traitement du fichier en cours...')); } catch (_) {}
+            }
             resolve(data);
         });
 
@@ -772,23 +847,34 @@ function uploadBddRequest(e){
     handleGpxFile(selectedFile);
 }
 
-function uploadBdd (file){
+function uploadBdd (file, uploadToast){
     // Verrouiller les contrôles (inputs, bouton de suppression) pour toute la
     // durée de l'import : évite qu'un second import ou un vidage de base ne
     // s'entrelace avec celui-ci.
     beginImport();
 
-    // Afficher un toast de chargement avec progress bar : uploadGpxWithProgress
-    // pilote la barre pendant l'envoi réseau, puis checkLoadingProgress prend
-    // le relais pour la phase de traitement serveur.
-    const uploadToast = pkg.showLoadingToast(t("Préparation de l'envoi..."), t("Chargement"));
+    // La toast est créée dans handleGpxFile dès la sélection du fichier (elle
+    // couvre déjà la phase de validation locale) : on la réutilise pour
+    // l'envoi puis le suivi serveur plutôt que d'en empiler une seconde.
+    if (!uploadToast) uploadToast = pkg.showLoadingToast(t("Préparation de l'envoi..."), t("Chargement"));
+    else { try { pkg.updateToastMessage(uploadToast, t("Préparation de l'envoi...")); } catch (_) {} }
 
-    uploadGpxWithProgress(file, uploadToast)
+    // Indicateur inline de l'état vide (« Chargez votre fichier .gpx pour
+    // commencer »), mis à jour en miroir des phases de la toast.
+    const indicatorId = 'emptyStateUploadProgress';
+    showUploadIndicator(indicatorId, t("Préparation de l'envoi..."));
+    const indicatorHooks = {
+        onProgress: (pct) => updateUploadIndicator(indicatorId, t('Envoi du fichier : ${pct}%', { pct }), pct),
+        onPhase: (msg) => updateUploadIndicator(indicatorId, msg, null),
+    };
+
+    uploadGpxWithProgress(file, uploadToast, indicatorHooks)
     .then(data => {
         checkLoadingProgress(uploadToast, data.task_id, () => {
             endImport();
             console.log('[uploadBdd] Import terminé, lancement loadAndDisplayPoints');
             pkg.hideToast(uploadToast);
+            hideUploadIndicator(indicatorId);
             pkg.showToast(t("Fichier chargé avec succès !"), "success", t("Terminé"));
 
             // mets à jour les infos de la BDD
@@ -800,13 +886,15 @@ function uploadBdd (file){
             endImport();
             console.error('[uploadBdd] Erreur import:', message);
             pkg.hideToast(uploadToast);
+            hideUploadIndicator(indicatorId);
             pkg.showToast(message || t("Erreur lors du chargement du fichier"), "error", t("Erreur"));
-        });
+        }, { onProgress: (p) => updateUploadIndicator(indicatorId, t('Traitement du fichier en cours...'), p) });
     })
     .catch(error => {
         endImport();
         console.error('Error:', error);
         pkg.hideToast(uploadToast);
+        hideUploadIndicator(indicatorId);
         pkg.showToast(error?.message || t("Erreur lors du chargement du fichier"), "error", t("Erreur"));
     });
 }
@@ -1054,20 +1142,30 @@ function uploadBddRequestFromModal(e) {
     handleGpxFile(selectedFile);
 }
 
-function performUploadFromModal(file){
+function performUploadFromModal(file, uploadToast){
     // Verrouiller les contrôles pour toute la durée de l'import (cf. uploadBdd).
     beginImport();
 
-    // Afficher un toast de chargement avec progress bar : uploadGpxWithProgress
-    // pilote la barre pendant l'envoi réseau, puis checkLoadingProgress prend
-    // le relais pour la phase de traitement serveur.
-    const uploadToast = pkg.showLoadingToast(t("Préparation de l'envoi..."), t("Chargement"));
+    // Toast réutilisée depuis handleGpxFile (cf. uploadBdd) : le message
+    // reflète maintenant la phase d'envoi réseau.
+    if (!uploadToast) uploadToast = pkg.showLoadingToast(t("Préparation de l'envoi..."), t("Chargement"));
+    else { try { pkg.updateToastMessage(uploadToast, t("Préparation de l'envoi...")); } catch (_) {} }
 
-    uploadGpxWithProgress(file, uploadToast)
+    // Indicateur inline de la modale « première utilisation », mis à jour en
+    // miroir des phases de la toast.
+    const indicatorId = 'modalUploadProgress';
+    showUploadIndicator(indicatorId, t("Préparation de l'envoi..."));
+    const indicatorHooks = {
+        onProgress: (pct) => updateUploadIndicator(indicatorId, t('Envoi du fichier : ${pct}%', { pct }), pct),
+        onPhase: (msg) => updateUploadIndicator(indicatorId, msg, null),
+    };
+
+    uploadGpxWithProgress(file, uploadToast, indicatorHooks)
     .then(data => {
         checkLoadingProgress(uploadToast, data.task_id, () => {
             endImport();
             pkg.hideToast(uploadToast);
+            hideUploadIndicator(indicatorId);
             showSuccess(t("Fichier chargé avec succès !"), t("Chargement terminé"));
 
             // Fermer la modale de première utilisation (Bootstrap 5)
@@ -1087,13 +1185,15 @@ function performUploadFromModal(file){
         }, (message) => {
             endImport();
             pkg.hideToast(uploadToast);
+            hideUploadIndicator(indicatorId);
             showError(message || t("Erreur lors du chargement du fichier"), t("Erreur"));
-        });
+        }, { onProgress: (p) => updateUploadIndicator(indicatorId, t('Traitement du fichier en cours...'), p) });
     })
     .catch(error => {
         endImport();
         console.error('Erreur:', error);
         pkg.hideToast(uploadToast);
+        hideUploadIndicator(indicatorId);
         showError(error?.message || t("Erreur lors du chargement du fichier"), t("Erreur"));
     });
 }

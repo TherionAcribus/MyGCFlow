@@ -38,6 +38,15 @@
                                 </div>
                             </div>
                         </form>
+                        <div id="modalUploadProgress" class="mt-3" hidden aria-live="polite">
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <span class="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true"></span>
+                                <span class="upload-progress-text small">{{ _("Analyse du fichier GPX en cours...") }}</span>
+                            </div>
+                            <div class="progress progress-sm">
+                                <div class="progress-bar progress-bar-indeterminate upload-progress-bar" role="progressbar" style="width: 100%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                        </div>
                         <div id="infosBDDModal" class="form-hint text-muted mt-2">
                             {{ _("Aucun fichier sélectionné") }}
                         </div>
