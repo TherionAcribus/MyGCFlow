@@ -2,12 +2,14 @@ from __future__ import annotations
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 import copy
+import functools
 import json
 import logging
 import os
 import re
 import shutil
 import threading
+import time
 import uuid
 from typing import Callable, Tuple, Optional, List
 
@@ -127,17 +129,43 @@ PROFILES_DIR = CONFIG_DIR / "profiles"
 SETTINGS_PATH = CONFIG_DIR / "settings.json"
 
 
+def backup_path(path: Path) -> Path:
+    """Copie de sécurité laissée par atomic_write() à côté de `path`."""
+    return path.with_suffix(path.suffix + ".bak")
+
+
+# Sous Windows, os.replace() échoue (PermissionError) tant qu'un autre handle
+# tient le fichier cible ouvert : une lecture concurrente, un antivirus ou
+# l'indexeur de recherche. Ces ouvertures ne durent que quelques millisecondes,
+# quelques nouvelles tentatives suffisent.
+_REPLACE_ATTEMPTS = 5
+_REPLACE_RETRY_DELAY_S = 0.05
+
+
 def atomic_write(path: Path, data: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    bak = path.with_suffix(path.suffix + ".bak")
-    tmp.write_text(data, encoding="utf-8")
-    if path.exists():
-        try:
-            shutil.copy2(path, bak)
-        except Exception:
-            pass
-    os.replace(tmp, path)
+    # Temporaire propre à chaque écriture : un nom fixe (« x.json.tmp ») était
+    # partagé par deux écritures simultanées du même fichier, qui pouvaient
+    # alors s'écraser mutuellement ou déplacer le temporaire de l'autre.
+    tmp = path.with_name(f"{path.name}.{uuid.uuid4().hex}.tmp")
+    try:
+        tmp.write_text(data, encoding="utf-8")
+        if path.exists():
+            try:
+                shutil.copy2(path, backup_path(path))
+            except Exception:
+                pass
+        for attempt in range(_REPLACE_ATTEMPTS):
+            try:
+                os.replace(tmp, path)
+                break
+            except PermissionError:
+                if attempt == _REPLACE_ATTEMPTS - 1:
+                    raise
+                time.sleep(_REPLACE_RETRY_DELAY_S)
+    finally:
+        # Échec d'écriture ou de remplacement : ne pas laisser de temporaire.
+        tmp.unlink(missing_ok=True)
 
 
 def read_json(path: Path) -> dict:
@@ -686,6 +714,21 @@ def coerce_profile(d: dict, base: Optional[MapProfile] = None) -> MapProfile:
     return p
 
 
+def _profiles_locked(method):
+    """Exécute une opération sur les fichiers de thèmes verrou tenu.
+
+    Les opérations en plusieurs étapes (vérifier qu'un nom est libre puis
+    écrire, écrire le nouveau fichier puis supprimer l'ancien) ne doivent pas
+    s'entrelacer : le serveur Flask est multithread, et un double clic ou deux
+    onglets suffisent à envoyer deux requêtes simultanées.
+    """
+    @functools.wraps(method)
+    def wrapper(self, *args, **kwargs):
+        with self._profiles_lock:
+            return method(self, *args, **kwargs)
+    return wrapper
+
+
 class SettingsManager:
     def __init__(self) -> None:
         # Sérialise les cycles lire-modifier-écrire de settings.json. Le serveur
@@ -697,6 +740,9 @@ class SettingsManager:
         # que le verrou est déjà tenu par update_app_settings().
         # Posé avant tout accès au fichier : la suite du constructeur écrit déjà.
         self._app_settings_lock = threading.RLock()
+        # Même rôle pour les fichiers de thèmes (cf. _profiles_locked).
+        # Réentrant : create_profile() appelle save_profile(), par exemple.
+        self._profiles_lock = threading.RLock()
 
         CONFIG_DIR.mkdir(parents=True, exist_ok=True)
         PROFILES_DIR.mkdir(parents=True, exist_ok=True)
@@ -769,23 +815,34 @@ class SettingsManager:
         return tuple(entries)
 
     def _build_profile_cache(self) -> None:
-        """Construit les caches uid→path, uid→nom et nom→path en un seul scan."""
-        self._uid_to_path_cache.clear()
-        self._uid_to_name_cache.clear()
-        self._name_to_path_cache.clear()
+        """Construit les caches uid→path, uid→nom et nom→path en un seul scan.
+
+        Les dictionnaires sont remplis à part puis substitués d'un coup : vidés
+        puis remplis en place, ils paraissaient vides à une lecture faite au
+        même moment depuis une autre requête.
+        """
+        uid_to_path: dict[str, Path] = {}
+        uid_to_name: dict[str, str] = {}
+        name_to_path: dict[str, Path] = {}
+        signature = self._profiles_dir_signature()
         for profile_file in PROFILES_DIR.glob("*.json"):
             try:
                 data = read_json(profile_file)
                 name = data.get("name") or profile_file.stem
                 uid = data.get("uid")
                 if uid:
-                    self._uid_to_path_cache[uid] = profile_file
-                    self._uid_to_name_cache[uid] = name
-                self._name_to_path_cache[name] = profile_file
+                    uid_to_path[uid] = profile_file
+                    uid_to_name[uid] = name
+                name_to_path[name] = profile_file
             except Exception:
                 # Fichier illisible : on garde au moins le nom de fichier comme nom
-                self._name_to_path_cache[profile_file.stem] = profile_file
-        self._cache_signature = self._profiles_dir_signature()
+                name_to_path[profile_file.stem] = profile_file
+        self._uid_to_path_cache = uid_to_path
+        self._uid_to_name_cache = uid_to_name
+        self._name_to_path_cache = name_to_path
+        # Empreinte prise AVANT le scan : un fichier modifié pendant celui-ci
+        # rendra l'empreinte périmée, et le prochain accès reconstruira.
+        self._cache_signature = signature
 
     def _invalidate_profile_cache(self) -> None:
         """Invalide et reconstruit les caches profils (après écriture/suppression)."""
@@ -1960,6 +2017,7 @@ class SettingsManager:
         self._ensure_profile_cache()
         return self._uid_to_name_cache.get(uid)
 
+    @_profiles_locked
     def save_profile(self, profile: MapProfile) -> None:
         write_json(self._profile_path(profile.name), asdict(profile))
         self._invalidate_profile_cache()
@@ -1978,6 +2036,7 @@ class SettingsManager:
             return False
         return read_json(path).get("uid") == exclude_uid
 
+    @_profiles_locked
     def create_profile(self, name: str, base: Optional[str] = None) -> MapProfile:
         name = self._require_valid_profile_name(name)
         if not self.is_name_available(name):
@@ -1991,6 +2050,7 @@ class SettingsManager:
         self.save_profile(prof)
         return prof
 
+    @_profiles_locked
     def rename_profile(self, old_name: str, new_name: str) -> MapProfile:
         """Renomme un profil de façon atomique (conserve son UUID).
 
@@ -2010,10 +2070,10 @@ class SettingsManager:
         new_path = self._profile_path(new_name)
         self.save_profile(prof)
         if new_path != old_path and old_path.exists():
-            old_path.unlink()
-            self._invalidate_profile_cache()
+            self._remove_profile_file(old_path)
         return prof
 
+    @_profiles_locked
     def duplicate_profile(self, name: str, new_name: str) -> MapProfile:
         if not self._profile_path(name).exists():
             raise ValueError(_tr("Profil source '%(name)s' introuvable", name=name))
@@ -2024,6 +2084,7 @@ class SettingsManager:
         self.save_profile(prof)
         return prof
 
+    @_profiles_locked
     def delete_profile(self, name: str) -> None:
         # Une suppression sur un profil absent est signalée (comme load_profile
         # et rename_profile) : sans cela l'appelant croit avoir supprimé un
@@ -2032,9 +2093,17 @@ class SettingsManager:
         path = self._profile_path(name)
         if not path.exists():
             raise FileNotFoundError(_tr("Profil '%(name)s' introuvable", name=name))
+        self._remove_profile_file(path)
+
+    def _remove_profile_file(self, path: Path) -> None:
+        # Le .bak laissé par atomic_write() part avec son thème : sinon il
+        # reste indéfiniment dans le dossier, invisible (list_profiles ne lit
+        # que les *.json) et jamais réutilisé.
         path.unlink()
+        backup_path(path).unlink(missing_ok=True)
         self._invalidate_profile_cache()
 
+    @_profiles_locked
     def reset_profile(self, name: str) -> MapProfile:
         """Remet un thème à son état d'origine, sous le même nom et le même uid.
 
@@ -2132,6 +2201,7 @@ class SettingsManager:
         }
         return payload
 
+    @_profiles_locked
     def import_profile_payload(self, payload: dict) -> MapProfile:
         """Importe un profil depuis un payload JSON validé. Retourne le profil sauvegardé."""
         if not isinstance(payload, dict):
