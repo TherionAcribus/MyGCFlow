@@ -714,6 +714,49 @@ main.fullscreen-mode #infosFrame span:not([hidden]) {
     outline-offset: -2px;
 }
 
+/* Variante « Panneau latéral » : la carte passe à gauche, les réglages en
+   colonne à droite. Activée par le préréglage data-layout="sidebar"
+   (initMapTabsSplitPane pose la classe et pilote width au lieu de height). */
+#mapTabsContainer.layout-sidebar {
+    flex-direction: row;
+}
+#mapTabsContainer.layout-sidebar > #mapWithFrames {
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    min-width: 200px;
+}
+#mapTabsContainer.layout-sidebar > #mapTabsResizer {
+    width: 8px;
+    height: auto;
+    cursor: col-resize;
+}
+#mapTabsContainer.layout-sidebar > #tabsPanel {
+    min-width: 0;
+}
+/* Les colonnes Bootstrap répondent à la largeur du viewport, pas du panneau :
+   en latéral le viewport reste large alors que le panneau est étroit. On
+   force donc les colonnes lg à s'empiler (ex. « Mes trouvailles » au-dessus
+   de « Filtres ») pour éviter le débordement. */
+.layout-sidebar .tab-pane .row > [class*="col-lg-"] {
+    flex: 0 0 100%;
+    max-width: 100%;
+}
+/* Les .row de premier niveau des onglets dépassent de leurs marges négatives
+   (pas de padding parent pour les absorber) : en latéral le panneau étroit
+   rend ce dépassement visible sous forme de scroll horizontal. On absorbe
+   les marges avec un padding aligné sur celui de la barre d'outils (12px). */
+.layout-sidebar .tab-content {
+    padding-left: 12px;
+    padding-right: 12px;
+}
+/* Le .row englobant .tab-content déborde lui aussi de ses marges négatives
+   (zone vide, le contenu réel reste dans le padding de .col-12) : on le
+   masque plutôt que de déplacer la barre d'outils sticky. */
+#mapTabsContainer.layout-sidebar > #tabsPanel {
+    overflow-x: clip;
+}
+
 #mapTabsContainer.is-resizing #mapTabsResizer {
     background: rgba(33, 150, 243, 0.25);
 }

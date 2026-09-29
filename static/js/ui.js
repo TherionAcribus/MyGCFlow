@@ -1218,8 +1218,12 @@ function initMapTabsSplitPane() {
     if (!container || !mapWithFrames || !resizer || !tabsPanel) return;
 
     const STORAGE_KEY = 'mapTabsMapHeightPx';
+    const MODE_KEY = 'mapTabsLayoutMode';
     const MIN_MAP_PX = 200;
     const MIN_TABS_PX = 80;
+    // En panneau latéral, le panneau de réglages garde une largeur utile.
+    const MIN_TABS_SIDEBAR_PX = 280;
+    let sidebarMode = false;
 
     let isResizing = false;
     let suppressResizeHandler = false;
@@ -1241,38 +1245,64 @@ function initMapTabsSplitPane() {
         }, 0);
     }
 
-    function getResizerHeight() {
-        const h = resizer.getBoundingClientRect().height;
-        return Number.isFinite(h) && h > 0 ? h : 8;
+    function getResizerSize() {
+        const r = resizer.getBoundingClientRect();
+        const s = sidebarMode ? r.width : r.height;
+        return Number.isFinite(s) && s > 0 ? s : 8;
+    }
+
+    function containerSize() {
+        return sidebarMode ? container.clientWidth : container.clientHeight;
+    }
+
+    function minTabsSize() {
+        return sidebarMode ? MIN_TABS_SIDEBAR_PX : MIN_TABS_PX;
+    }
+
+    // Bascule entre le bandeau horizontal (carte au-dessus) et la colonne
+    // latérale (carte à gauche). Persistée dans MODE_KEY.
+    function setSidebarMode(on) {
+        sidebarMode = on;
+        container.classList.toggle('layout-sidebar', on);
+        resizer.setAttribute('aria-orientation', on ? 'vertical' : 'horizontal');
+        // Nettoie la dimension de l'autre axe pour repartir propre.
+        if (on) mapWithFrames.style.height = '';
+        else mapWithFrames.style.width = '';
+        localStorage.setItem(MODE_KEY, on ? 'sidebar' : 'rows');
     }
 
     function clampMapHeightPx(mapHeightPx) {
-        const containerHeight = container.clientHeight;
-        const resizerHeight = getResizerHeight();
-        const maxMapPx = Math.max(MIN_MAP_PX, containerHeight - MIN_TABS_PX - resizerHeight);
+        const size = containerSize();
+        const resizerSize = getResizerSize();
+        const maxMapPx = Math.max(MIN_MAP_PX, size - minTabsSize() - resizerSize);
         const clamped = Math.max(MIN_MAP_PX, Math.min(mapHeightPx, maxMapPx));
-        return { clamped, containerHeight };
+        return { clamped, containerHeight: size };
     }
 
-    // Préréglages de disposition : la part de hauteur visée pour la carte.
-    // Le réglage résultant est persisté comme un déplacement manuel du
-    // séparateur (STORAGE_KEY en px), le preset n'est pas mémorisé en soi.
-    const LAYOUT_PRESETS = { map: 0.8, balanced: 0.6, tabs: 0.25 };
+    // Préréglages de disposition : la part de l'axe visée pour la carte
+    // (hauteur en bandeau, largeur en latéral). Le réglage résultant est
+    // persisté comme un déplacement manuel du séparateur (STORAGE_KEY en px),
+    // le preset n'est pas mémorisé en soi.
+    const LAYOUT_PRESETS = { map: 0.8, balanced: 0.6, tabs: 0.25, sidebar: 0.7 };
     const LAYOUT_PRESET_TOLERANCE = 0.08;
     const presetButtons = document.querySelectorAll('#layoutPresets [data-layout]');
 
     function syncLayoutPresets() {
-        const containerHeight = container.clientHeight;
-        if (!containerHeight || !presetButtons.length) return;
-        const ratio = mapWithFrames.getBoundingClientRect().height / containerHeight;
-        let best = null;
+        const size = containerSize();
+        if (!size || !presetButtons.length) return;
+        const rect = mapWithFrames.getBoundingClientRect();
+        const ratio = (sidebarMode ? rect.width : rect.height) / size;
+        let best = sidebarMode ? 'sidebar' : null;
         let bestDist = Infinity;
-        for (const [name, r] of Object.entries(LAYOUT_PRESETS)) {
-            const d = Math.abs(ratio - r);
-            if (d < bestDist) { bestDist = d; best = name; }
+        if (!sidebarMode) {
+            for (const [name, r] of Object.entries(LAYOUT_PRESETS)) {
+                if (name === 'sidebar') continue;
+                const d = Math.abs(ratio - r);
+                if (d < bestDist) { bestDist = d; best = name; }
+            }
         }
         presetButtons.forEach((b) => {
-            const active = b.dataset.layout === best && bestDist <= LAYOUT_PRESET_TOLERANCE;
+            const active = b.dataset.layout === best && (sidebarMode || bestDist <= LAYOUT_PRESET_TOLERANCE);
             b.setAttribute('aria-pressed', String(active));
             b.classList.toggle('active', active);
         });
@@ -1280,14 +1310,23 @@ function initMapTabsSplitPane() {
 
     presetButtons.forEach((b) => b.addEventListener('click', () => {
         if (isFullscreenMode()) return;
-        const ratio = LAYOUT_PRESETS[b.dataset.layout];
+        const layout = b.dataset.layout;
+        const ratio = LAYOUT_PRESETS[layout];
         if (!ratio) return;
-        applyMapHeightPx(container.clientHeight * ratio, true);
+        const wantSidebar = layout === 'sidebar';
+        if (wantSidebar !== sidebarMode) setSidebarMode(wantSidebar);
+        applyMapHeightPx(containerSize() * ratio, true);
     }));
 
     function applyMapHeightPx(mapHeightPx, persist) {
         const { clamped, containerHeight } = clampMapHeightPx(mapHeightPx);
-        mapWithFrames.style.height = `${clamped}px`;
+        if (sidebarMode) {
+            mapWithFrames.style.width = `${clamped}px`;
+            mapWithFrames.style.height = '';
+        } else {
+            mapWithFrames.style.height = `${clamped}px`;
+            mapWithFrames.style.width = '';
+        }
 
         // Le séparateur est focusable (role="separator") : son aria-valuenow
         // reflète la part de hauteur occupée par la carte, en %.
@@ -1310,9 +1349,9 @@ function initMapTabsSplitPane() {
         const raw = localStorage.getItem(STORAGE_KEY);
         const savedPx = raw ? parseFloat(raw) : NaN;
         if (!Number.isFinite(savedPx) || savedPx <= 0) {
-            const currentHeight = mapWithFrames.getBoundingClientRect().height;
-            if (Number.isFinite(currentHeight) && currentHeight > 0) {
-                applyMapHeightPx(currentHeight, false);
+            const current = currentMapSize();
+            if (Number.isFinite(current) && current > 0) {
+                applyMapHeightPx(current, false);
             }
             return;
         }
@@ -1325,9 +1364,14 @@ function initMapTabsSplitPane() {
         prevCursor = document.body.style.cursor;
         prevUserSelect = document.body.style.userSelect;
         prevBodyOverflow = document.body.style.overflow;
-        document.body.style.cursor = 'row-resize';
+        document.body.style.cursor = sidebarMode ? 'col-resize' : 'row-resize';
         document.body.style.userSelect = 'none';
         document.body.style.overflow = 'hidden';
+    }
+
+    function currentMapSize() {
+        const r = mapWithFrames.getBoundingClientRect();
+        return sidebarMode ? r.width : r.height;
     }
 
     function endResize(persist) {
@@ -1337,9 +1381,9 @@ function initMapTabsSplitPane() {
         document.body.style.overflow = prevBodyOverflow;
 
         if (persist) {
-            const currentHeight = mapWithFrames.getBoundingClientRect().height;
-            if (Number.isFinite(currentHeight) && currentHeight > 0) {
-                applyMapHeightPx(currentHeight, true);
+            const current = currentMapSize();
+            if (Number.isFinite(current) && current > 0) {
+                applyMapHeightPx(current, true);
             }
         }
     }
@@ -1352,8 +1396,8 @@ function initMapTabsSplitPane() {
         isResizing = true;
         beginResize();
 
-        dragStartY = e.clientY;
-        dragStartMapHeight = mapWithFrames.getBoundingClientRect().height;
+        dragStartY = sidebarMode ? e.clientX : e.clientY;
+        dragStartMapHeight = currentMapSize();
         applyMapHeightPx(dragStartMapHeight, false);
         e.preventDefault();
     });
@@ -1362,7 +1406,7 @@ function initMapTabsSplitPane() {
         if (!isResizing) return;
         if (isFullscreenMode()) return;
 
-        const deltaY = e.clientY - dragStartY;
+        const deltaY = (sidebarMode ? e.clientX : e.clientY) - dragStartY;
         applyMapHeightPx(dragStartMapHeight + deltaY, false);
         e.preventDefault();
     });
@@ -1378,24 +1422,26 @@ function initMapTabsSplitPane() {
     resizer.addEventListener('pointerup', stopPointerResize);
     resizer.addEventListener('pointercancel', stopPointerResize);
 
-    // Clavier (pattern ARIA « window splitter ») : ↑/↓ déplacent la barre,
-    // PageUp/PageDown en pas plus grand, Home/End aux extrêmes. Contrairement
-    // au drag (persisté au relâchement), chaque frappe persiste directement.
+    // Clavier (pattern ARIA « window splitter ») : ↑/↓ en bandeau, ←/→ en
+    // latéral, PageUp/PageDown en pas plus grand, Home/End aux extrêmes.
+    // Contrairement au drag (persisté au relâchement), chaque frappe persiste.
     const KEY_STEP_PX = 24;
     const KEY_PAGE_PX = 160;
 
     resizer.addEventListener('keydown', (e) => {
         if (isFullscreenMode()) return;
 
-        const current = mapWithFrames.getBoundingClientRect().height;
+        const current = currentMapSize();
         let next = null;
         switch (e.key) {
-            case 'ArrowUp':   next = current - KEY_STEP_PX; break;
-            case 'ArrowDown': next = current + KEY_STEP_PX; break;
+            case 'ArrowUp':   if (!sidebarMode) next = current - KEY_STEP_PX; break;
+            case 'ArrowDown': if (!sidebarMode) next = current + KEY_STEP_PX; break;
+            case 'ArrowLeft':  if (sidebarMode) next = current - KEY_STEP_PX; break;
+            case 'ArrowRight': if (sidebarMode) next = current + KEY_STEP_PX; break;
             case 'PageUp':    next = current - KEY_PAGE_PX; break;
             case 'PageDown':  next = current + KEY_PAGE_PX; break;
             case 'Home':      next = MIN_MAP_PX; break;
-            case 'End':       next = container.clientHeight - MIN_TABS_PX - getResizerHeight(); break;
+            case 'End':       next = containerSize() - minTabsSize() - getResizerSize(); break;
             default: return;
         }
         applyMapHeightPx(next, true);
@@ -1411,6 +1457,9 @@ function initMapTabsSplitPane() {
 
     requestAnimationFrame(() => {
         if (isFullscreenMode()) return;
+        // Restaure le mode de disposition (bandeau / latéral) avant d'appliquer
+        // la taille sauvegardée, qui s'exprime sur l'axe de ce mode.
+        if (localStorage.getItem(MODE_KEY) === 'sidebar') setSidebarMode(true);
         applySavedRatioIfAny();
     });
 }
