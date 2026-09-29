@@ -125,6 +125,15 @@ démarre sur un vrai thème de la liste, et ses premiers réglages sont suivis
 (« • », avertissement avant fermeture). Les installations existantes ne
 sont pas concernées.
 
+**Validation.** Lecture d'un fichier, import et sauvegarde (`PUT`, patch
+partiel fusionné avec le thème enregistré) passent tous par `coerce_profile()`.
+Fonds, formes, modes et types de couleur y sont restreints aux listes de
+l'interface (`TILE_PROVIDERS`, `FLASH_MODES`…), les couleurs au format
+`#rgb`/`#rrggbb`, les tailles aux bornes des curseurs. Une valeur refusée garde
+la valeur enregistrée (à défaut, celle de `MapProfile`). Ajouter une option à
+l'onglet Style suppose donc de l'ajouter aussi à ces listes, sans quoi elle
+serait écartée à la sauvegarde.
+
 `last_profile_uid` est écrit par `_rememberActiveProfile()` à chaque changement
 de thème actif décidé par l'utilisateur (chargement depuis la liste ou le
 sélecteur, création, « définir comme par défaut ») — jamais pendant la

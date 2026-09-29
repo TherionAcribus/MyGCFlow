@@ -21,14 +21,30 @@ from settings_manager import (
     coerce_date_format,
     coerce_map_center,
     coerce_map_zoom,
-    coerce_overlay_title,
+    coerce_profile,
     coerce_recording_settings,
     coerce_theme,
     get_settings_manager,
-    sanitize_overlay_css,
 )
 
 profiles_bp = Blueprint('profiles', __name__)
+
+
+def _merge_known_keys(target: dict, patch) -> None:
+    """Recopie dans `target` les clés de `patch` qu'il connaît déjà.
+
+    Récursif sur les sous-dictionnaires (vector_options, title...). Les clés
+    absentes de `target` sont ignorées : ce ne sont pas des réglages de thème.
+    """
+    if not isinstance(patch, dict):
+        return
+    for key, value in patch.items():
+        if key not in target:
+            continue
+        if isinstance(target[key], dict):
+            _merge_known_keys(target[key], value)
+        else:
+            target[key] = value
 settings_manager = get_settings_manager()
 
 
@@ -245,112 +261,22 @@ def api_save_profile(name: str):
             'message': _("Le renommage n'est pas autorisé via cet endpoint, utilisez /api/profiles/<name>/rename")
         }), 400
 
-    # L'uid identifie le profil de façon stable : on ignore toute valeur
-    # envoyée par le client pour éviter des collisions entre profils.
-    # Les clés legacy `map.default_center`/`default_zoom`, le bloc `animation`
-    # et `flash.duration` ne sont volontairement pas traités : le centre et le
-    # zoom sont un état de session, et le timing (rythme, suivi de caméra,
-    # durée de flash) vit dans les préférences globales — jamais dans un thème.
-    m = data.get('map', {})
-    prof.map.tile_provider = m.get('tile_provider', prof.map.tile_provider)
-    vm = m.get('vector_options') or {}
-    if isinstance(vm, dict):
-        if 'stroke_color' in vm:
-            prof.map.vector_options.stroke_color = vm['stroke_color']
-        if 'fill_color' in vm:
-            prof.map.vector_options.fill_color = vm['fill_color']
-        if 'background_color' in vm:
-            prof.map.vector_options.background_color = vm['background_color']
-        if 'stroke_width' in vm:
-            try:
-                prof.map.vector_options.stroke_width = float(vm['stroke_width'])
-            except Exception:
-                pass
-    tm = m.get('toner_options') or {}
-    if isinstance(tm, dict):
-        if 'variant' in tm:
-            prof.map.toner_options.variant = tm['variant']
-    pt = data.get('points', {})
-    if 'size' in pt:
-        try:
-            prof.points.size = int(pt['size'])
-        except Exception:
-            pass
-    if 'color' in pt:
-        prof.points.color = pt['color']
-    if 'shape' in pt:
-        prof.points.shape = pt['shape']
-    if 'halo' in pt:
-        prof.points.halo = bool(pt['halo'])
-    if 'border_color' in pt:
-        prof.points.border_color = pt['border_color']
-    if 'border_size' in pt:
-        try:
-            prof.points.border_size = int(pt['border_size'])
-        except Exception:
-            pass
-    if 'fill_color_type' in pt:
-        prof.points.fill_color_type = pt['fill_color_type']
-    if 'border_color_type' in pt:
-        prof.points.border_color_type = pt['border_color_type']
+    # Patch partiel : les champs envoyés remplacent ceux du thème enregistré,
+    # les autres sont conservés. Tout passe ensuite par coerce_profile(), comme
+    # un fichier relu ou importé : une valeur hors des listes et bornes admises
+    # garde la valeur enregistrée au lieu d'atterrir telle quelle dans le JSON.
+    # Seules les sections du thème sont fusionnées : nom, uid et version ne
+    # viennent jamais du client (l'uid identifie le thème ; un uid choisi par le
+    # client pourrait entrer en collision avec un autre). Les clés inconnues,
+    # dont les legacy `map.default_center`/`default_zoom`, le bloc `animation`
+    # et `flash.duration`, sont ignorées : centre et zoom sont un état de
+    # session, le timing vit dans les préférences globales.
+    merged = settings_manager._profile_to_dict(prof)
+    for section in ('map', 'points', 'flash', 'infos'):
+        _merge_known_keys(merged[section], data.get(section))
+    prof = coerce_profile(merged, base=prof)
 
-    # Mode points + options icône
-    if 'mode' in pt:
-        prof.points.mode = pt['mode']
-    if 'icon_set' in pt:
-        prof.points.icon_set = pt.get('icon_set') or prof.points.icon_set
-    if 'icon_size' in pt:
-        try:
-            prof.points.icon_size = int(pt.get('icon_size'))
-        except Exception:
-            pass
-    if 'appear_animation' in pt:
-        prof.points.appear_animation = bool(pt['appear_animation'])
-    if 'recent_glow_days' in pt:
-        try:
-            prof.points.recent_glow_days = max(0, int(pt['recent_glow_days']))
-        except Exception:
-            pass
-
-    f = data.get('flash', {})
-    if 'mode' in f:
-        prof.flash.mode = f['mode']
-    if 'size' in f:
-        try:
-            prof.flash.size = int(f['size'])
-        except Exception:
-            pass
-    if 'color' in f:
-        prof.flash.color = f['color']
-    if 'color_type' in f:
-        prof.flash.color_type = f['color_type']
-
-    i = data.get('infos', {}) or {}
-    if isinstance(i, dict):
-        t = i.get('title', {}) or {}
-        if isinstance(t, dict):
-            if 'display' in t:
-                prof.infos.title.display = bool(t['display'])
-            if 'text' in t:
-                prof.infos.title.text = coerce_overlay_title(t['text'], prof.infos.title.text)
-        if 'number_of_caches' in i:
-            prof.infos.number_of_caches = bool(i['number_of_caches'])
-        if 'current_date' in i:
-            prof.infos.current_date = bool(i['current_date'])
-        if 'title_css' in i:
-            prof.infos.title_css = sanitize_overlay_css(i['title_css'])
-        if 'infos_css' in i:
-            prof.infos.infos_css = sanitize_overlay_css(i['infos_css'])
-
-    logging.debug(
-        "Profil sauvegardé avec flash: mode=%s, size=%s, color=%s, color_type=%s | "
-        "infos: title.display=%s, title.text=%s, number_of_caches=%s, current_date=%s, "
-        "title_css_len=%s, infos_css_len=%s",
-        prof.flash.mode, prof.flash.size, prof.flash.color,
-        getattr(prof.flash, 'color_type', 'fix'), prof.infos.title.display, prof.infos.title.text,
-        prof.infos.number_of_caches, prof.infos.current_date,
-        len(prof.infos.title_css or ''), len(prof.infos.infos_css or ''),
-    )
+    logging.debug("Profil '%s' sauvegardé : %s", prof.name, merged)
     settings_manager.save_profile(prof)
     return jsonify({'success': True})
 

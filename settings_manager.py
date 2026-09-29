@@ -1,9 +1,11 @@
 from __future__ import annotations
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
+import copy
 import json
 import logging
 import os
+import re
 import shutil
 import threading
 import uuid
@@ -377,6 +379,40 @@ def _coerce_optional_str(value) -> Optional[str]:
     return value if isinstance(value, str) and value.strip() else None
 
 
+def _coerce_choice(value, choices: tuple, default: str) -> str:
+    return value if value in choices else default
+
+
+_HEX_COLOR_RE = re.compile(r"^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$")
+
+
+def _coerce_hex_color(value, default: str) -> str:
+    # Les sélecteurs de couleur produisent du « #rrggbb », et hexToRgb()
+    # (static/js/utils.js) ne sait lire que cette forme : une autre valeur
+    # donnerait une couleur NaN, voire une exception sur un non-texte.
+    return value if isinstance(value, str) and _HEX_COLOR_RE.match(value) else default
+
+
+# Valeurs admises dans un thème. Miroir des contrôles de l'onglet Style
+# (templates/menu_points.html, menu_flash.html, menu_style.html) et des fonds
+# enregistrés par static/js/basemaps.js : un thème importé ou édité à la main
+# ne doit pas pouvoir porter une valeur que l'interface ne sait ni afficher ni
+# rendre. Hors de ces listes ou bornes, la valeur précédente est conservée.
+TILE_PROVIDERS = ("OSM", "watercolor", "stamenToner", "vectorMap")
+TONER_VARIANTS = ("light", "dark")
+POINT_MODES = ("vectoriel", "icone")
+POINT_SHAPES = ("circle", "triangle")
+ICON_SETS = ("geocaching", "smiley")  # ICON_SETS de static/js/ui.js
+COLOR_TYPES = ("gc", "none", "fix")
+FLASH_MODES = ("none", "circle", "impulse", "star", "sparkle", "square", "triangle", "diamond")
+POINT_SIZE_RANGE = (1, 10)
+BORDER_SIZE_RANGE = (0, 10)
+ICON_SIZE_RANGE = (12, 40)
+FLASH_SIZE_RANGE = (5, 200)
+STROKE_WIDTH_RANGE = (0.0, 5.0)
+RECENT_GLOW_DAYS_RANGE = (0, 365)
+
+
 THEMES = ("system", "light", "dark")
 RECORDING_MODES = ("mediarecorder", "images")
 # Fidélité de couleur de l'encodage final. Miroir de COLOR_FIDELITIES dans
@@ -553,8 +589,14 @@ def coerce_settings(d: dict) -> AppSettings:
     return s
 
 
-def coerce_profile(d: dict) -> MapProfile:
-    p = MapProfile()
+def coerce_profile(d: dict, base: Optional[MapProfile] = None) -> MapProfile:
+    """Construit un thème valide à partir d'un dict (fichier, import, PUT).
+
+    Les valeurs absentes, illisibles ou hors des listes/bornes admises sont
+    reprises de `base` (le thème existant lors d'une sauvegarde), à défaut des
+    valeurs par défaut de MapProfile.
+    """
+    p = copy.deepcopy(base) if base is not None else MapProfile()
     if isinstance(d, dict):
         p.name = d.get("name", p.name)
         try:
@@ -572,22 +614,23 @@ def coerce_profile(d: dict) -> MapProfile:
         # Options vectorielles
         raw_vm = m.get("vector_options") or {}
         vm = raw_vm if isinstance(raw_vm, dict) else {}
+        pvm = p.map.vector_options
         vector_options = VectorMapOptions(
-            stroke_color=vm.get("stroke_color", p.map.vector_options.stroke_color),
-            fill_color=vm.get("fill_color", p.map.vector_options.fill_color),
-            background_color=vm.get("background_color", p.map.vector_options.background_color),
-            stroke_width=_to_float(vm.get("stroke_width"), p.map.vector_options.stroke_width),
+            stroke_color=_coerce_hex_color(vm.get("stroke_color"), pvm.stroke_color),
+            fill_color=_coerce_hex_color(vm.get("fill_color"), pvm.fill_color),
+            background_color=_coerce_hex_color(vm.get("background_color"), pvm.background_color),
+            stroke_width=_clamp_float(vm.get("stroke_width"), pvm.stroke_width, *STROKE_WIDTH_RANGE),
         )
 
         # Options Toner
         raw_tm = m.get("toner_options") or {}
         tm = raw_tm if isinstance(raw_tm, dict) else {}
         toner_options = TonerMapOptions(
-            variant=tm.get("variant", p.map.toner_options.variant),
+            variant=_coerce_choice(tm.get("variant"), TONER_VARIANTS, p.map.toner_options.variant),
         )
 
         p.map = MapOptions(
-            tile_provider=m.get("tile_provider", p.map.tile_provider),
+            tile_provider=_coerce_choice(m.get("tile_provider"), TILE_PROVIDERS, p.map.tile_provider),
             vector_options=vector_options,
             toner_options=toner_options,
         )
@@ -600,29 +643,30 @@ def coerce_profile(d: dict) -> MapProfile:
 
         # Options des points
         pt = d.get("points", {}) if isinstance(d.get("points", {}), dict) else {}
+        pp = p.points
         p.points = PointStyle(
-            size=_to_int(pt.get("size"), p.points.size),
-            color=pt.get("color", p.points.color),
-            shape=pt.get("shape", p.points.shape),
-            halo=bool(pt.get("halo", p.points.halo)),
-            border_color=pt.get("border_color", p.points.border_color),
-            border_size=_to_int(pt.get("border_size"), p.points.border_size),
-            fill_color_type=pt.get("fill_color_type", p.points.fill_color_type),
-            border_color_type=pt.get("border_color_type", p.points.border_color_type),
-            mode=pt.get("mode", p.points.mode),
-            icon_set=pt.get("icon_set", p.points.icon_set) or p.points.icon_set,
-            icon_size=_to_int(pt.get("icon_size") or None, p.points.icon_size),
-            appear_animation=bool(pt.get("appear_animation", p.points.appear_animation)),
-            recent_glow_days=max(0, _to_int(pt.get("recent_glow_days"), p.points.recent_glow_days)),
+            size=_clamp_int(pt.get("size"), pp.size, *POINT_SIZE_RANGE),
+            color=_coerce_hex_color(pt.get("color"), pp.color),
+            shape=_coerce_choice(pt.get("shape"), POINT_SHAPES, pp.shape),
+            halo=bool(pt.get("halo", pp.halo)),
+            border_color=_coerce_hex_color(pt.get("border_color"), pp.border_color),
+            border_size=_clamp_int(pt.get("border_size"), pp.border_size, *BORDER_SIZE_RANGE),
+            fill_color_type=_coerce_choice(pt.get("fill_color_type"), COLOR_TYPES, pp.fill_color_type),
+            border_color_type=_coerce_choice(pt.get("border_color_type"), COLOR_TYPES, pp.border_color_type),
+            mode=_coerce_choice(pt.get("mode"), POINT_MODES, pp.mode),
+            icon_set=_coerce_choice(pt.get("icon_set"), ICON_SETS, pp.icon_set),
+            icon_size=_clamp_int(pt.get("icon_size"), pp.icon_size, *ICON_SIZE_RANGE),
+            appear_animation=bool(pt.get("appear_animation", pp.appear_animation)),
+            recent_glow_days=_clamp_int(pt.get("recent_glow_days"), pp.recent_glow_days, *RECENT_GLOW_DAYS_RANGE),
         )
 
         # Options flash
         f = d.get("flash", {}) if isinstance(d.get("flash", {}), dict) else {}
         p.flash = FlashOptions(
-            mode=f.get("mode", p.flash.mode),
-            size=_to_int(f.get("size"), p.flash.size),
-            color=f.get("color", p.flash.color),
-            color_type=f.get("color_type", p.flash.color_type),
+            mode=_coerce_choice(f.get("mode"), FLASH_MODES, p.flash.mode),
+            size=_clamp_int(f.get("size"), p.flash.size, *FLASH_SIZE_RANGE),
+            color=_coerce_hex_color(f.get("color"), p.flash.color),
+            color_type=_coerce_choice(f.get("color_type"), COLOR_TYPES, p.flash.color_type),
         )
 
         # Options infos (titre, cases à cocher, CSS)
@@ -2102,8 +2146,13 @@ class SettingsManager:
 
         prof = coerce_profile(prof_dict)
 
-        # Gérer conflits de nom
-        prof.name = self._generate_unique_name(prof.name or "Imported")
+        # Gérer conflits de nom. Un nom sans caractère utilisable (« !!! », ou
+        # autre chose qu'un texte) retomberait sur le fichier générique
+        # Default.json : on lui substitue un nom neutre.
+        raw_name = prof.name.strip() if isinstance(prof.name, str) else ""
+        if not self._profile_file_key(raw_name):
+            raw_name = "Imported"
+        prof.name = self._generate_unique_name(raw_name)
 
         # Gérer collisions d'UUID
         if not prof.uid or self._uid_exists(prof.uid):
