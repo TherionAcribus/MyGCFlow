@@ -31,6 +31,11 @@ EXAMPLE_PROFILE_BATCHES = {
     },
 }
 EXAMPLES_VERSION = max(EXAMPLE_PROFILE_BATCHES)
+# Thème chargé à la toute première ouverture. Sans lui, l'application démarrait
+# sans thème actif : l'écran affichait les valeurs de defaultValues.json, qui ne
+# correspondent à aucun thème de la liste, et les réglages faits alors n'étaient
+# rattachés à rien (ni indicateur « • », ni avertissement avant fermeture).
+FIRST_LAUNCH_PROFILE = "Default"
 # Compatibilité avec les tests et extensions qui importent encore ce nom.
 EXAMPLES_ADDED_AFTER_V1 = set().union(*EXAMPLE_PROFILE_BATCHES.values())
 MAX_OVERLAY_TITLE_LENGTH = 500
@@ -670,7 +675,7 @@ class SettingsManager:
         settings = self.get_app_settings()
         if not settings.examples_seeded:
             self._create_example_profiles()
-            self._mark_examples_seeded()
+            self._mark_examples_seeded(default_profile_name=FIRST_LAUNCH_PROFILE)
         elif settings.examples_version < EXAMPLES_VERSION:
             missing_examples = set().union(*(
                 names
@@ -680,10 +685,22 @@ class SettingsManager:
             self._create_example_profiles(only=missing_examples)
             self._mark_examples_seeded()
 
-    def _mark_examples_seeded(self) -> None:
+    def _mark_examples_seeded(self, default_profile_name: Optional[str] = None) -> None:
+        # Le thème par défaut n'est posé qu'au premier lancement, et seulement
+        # si aucun n'est déjà choisi : c'est lui que restoreStartupProfile()
+        # (static/js/profiles.js) charge faute de dernier thème actif.
+        default_uid = None
+        if default_profile_name:
+            try:
+                default_uid = self.load_profile(default_profile_name).uid
+            except FileNotFoundError:
+                logging.warning("Thème de premier lancement '%s' introuvable", default_profile_name)
+
         def mark(current: AppSettings) -> AppSettings:
             current.examples_seeded = True
             current.examples_version = EXAMPLES_VERSION
+            if default_uid and not current.default_profile_uid:
+                current.default_profile_uid = default_uid
             return current
 
         self.update_app_settings(mark)

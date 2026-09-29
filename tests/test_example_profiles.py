@@ -16,6 +16,7 @@ from settings_manager import (
     EXAMPLE_PROFILE_BATCHES,
     EXAMPLES_ADDED_AFTER_V1,
     EXAMPLES_VERSION,
+    FIRST_LAUNCH_PROFILE,
     SettingsManager,
 )
 
@@ -44,6 +45,21 @@ class ExampleProfileSeedingTests(unittest.TestCase):
         for name in EXAMPLES_ADDED_AFTER_V1:
             self.assertIn(name, profiles)
         self.assertEqual(self._settings().get("examples_version"), EXAMPLES_VERSION)
+
+    def test_first_launch_makes_the_default_theme_the_startup_theme(self):
+        manager = SettingsManager()
+        self.assertEqual(
+            manager.get_app_settings().default_profile_uid,
+            manager.load_profile(FIRST_LAUNCH_PROFILE).uid,
+        )
+
+    def test_an_existing_installation_keeps_its_startup_theme(self):
+        # Utilisateur existant sans thème par défaut : l'ajout d'exemples d'une
+        # nouvelle version ne doit pas lui en imposer un.
+        settings_manager.write_json(
+            self.settings_path, {"examples_seeded": True, "examples_version": 2}
+        )
+        self.assertIsNone(SettingsManager().get_app_settings().default_profile_uid)
 
     def test_an_existing_installation_receives_only_the_new_examples(self):
         # Installation d'avant ces exemples : le lot initial a été posé, puis

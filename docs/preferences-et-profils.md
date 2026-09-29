@@ -118,6 +118,13 @@ démarre **sans thème actif** et le dit : pas de repli sur un thème « Default
 ni sur un pseudo-thème temporaire, que l'utilisateur ne pourrait ni retrouver
 dans la liste ni enregistrer.
 
+**Première ouverture.** Au tout premier lancement, `SettingsManager` installe
+les thèmes d'exemple et fait du thème « Default » (`FIRST_LAUNCH_PROFILE`) le
+thème par défaut. C'est donc lui que la restauration charge : l'utilisateur
+démarre sur un vrai thème de la liste, et ses premiers réglages sont suivis
+(« • », avertissement avant fermeture). Les installations existantes ne
+sont pas concernées.
+
 `last_profile_uid` est écrit par `_rememberActiveProfile()` à chaque changement
 de thème actif décidé par l'utilisateur (chargement depuis la liste ou le
 sélecteur, création, « définir comme par défaut ») — jamais pendant la
