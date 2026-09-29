@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { dismissFirstUseModal } from './first-use.mjs';
 
 // MyGCFlow tourne en local et doit rester utilisable sans connexion. Tant que les
 // bibliothèques venaient d'un CDN, une coupure réseau vidait l'interface de sa
@@ -30,12 +31,7 @@ async function openReadyApp(page) {
 
   // Même renvoi de la modale de première utilisation que dans les autres specs :
   // son backdrop intercepterait les clics sur les onglets.
-  const firstUse = page.locator('#modal_first_use');
-  await firstUse.waitFor({ state: 'visible', timeout: 5_000 }).catch(() => {});
-  if (await firstUse.isVisible()) {
-    await firstUse.locator('[data-bs-dismiss="modal"]').click();
-    await firstUse.waitFor({ state: 'hidden' });
-  }
+  await dismissFirstUseModal(page);
 }
 
 

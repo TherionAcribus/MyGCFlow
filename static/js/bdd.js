@@ -359,6 +359,16 @@ function formatBddInfos(data) {
     return parts.join(' · ');
 }
 
+// Jalon du démarrage, pour les tests navigateur et les intégrations (même rôle
+// que window.mygcflowReady) : la modale de première utilisation a été soit
+// écartée (base non vide), soit ENTIÈREMENT ouverte. Elle s'ouvre après un
+// aller-retour réseau, indépendamment de mygcflowReady : sans ce signal, un
+// test ne peut savoir s'il doit encore l'attendre ni quand la fermer.
+function markFirstUseSettled() {
+    window.mygcflowFirstUseSettled = true;
+    window.dispatchEvent(new CustomEvent('mygcflow:first-use-settled'));
+}
+
 export function readBddValues({ offerFirstUse = false } = {}){
     try {
         fetch(`${CONFIG.BASE_URL}/db_status`)
@@ -383,13 +393,23 @@ export function readBddValues({ offerFirstUse = false } = {}){
 
             // Première utilisation : pas de données → inviter à charger un GPX.
             if (offerFirstUse && !hasData) {
+                const modalEl = document.getElementById('modal_first_use');
+                // Décision « réglée » seulement une fois l'animation d'ouverture
+                // finie : Bootstrap ignore une fermeture demandée pendant
+                // celle-ci, et la modale restait alors ouverte.
+                modalEl?.addEventListener('shown.bs.modal', markFirstUseSettled, { once: true });
                 try { showBsModal('modal_first_use'); } catch (e) {
                     console.warn('Affichage modale première utilisation impossible:', e);
+                    markFirstUseSettled();
                 }
+                if (!modalEl) markFirstUseSettled();
+            } else if (offerFirstUse) {
+                markFirstUseSettled();
             }
         })
         .catch(err => {
             console.error('Erreur lecture infos BDD:', err);
+            if (offerFirstUse) markFirstUseSettled();
         });
     } catch (e) {
         console.error('readBddValues error:', e);

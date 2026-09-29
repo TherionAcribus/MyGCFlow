@@ -6,6 +6,7 @@
 import { expect, test } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { dismissFirstUseModal } from './first-use.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE = path.join(HERE, 'fixtures', 'my-finds.gpx');
@@ -18,19 +19,15 @@ async function openReadyApp(page) {
   await page.waitForFunction(() => window.mygcflowReady === true);
 }
 
-async function dismissFirstUseModal(page) {
-  const firstUse = page.locator('#modal_first_use');
-  await firstUse.waitFor({ state: 'visible', timeout: 5_000 }).catch(() => {});
-  if (await firstUse.isVisible()) {
-    await firstUse.locator('[data-bs-dismiss="modal"]').click();
-    await firstUse.waitFor({ state: 'hidden' });
-  }
-}
-
 // La toast de chargement est créée dans handleGpxFile AVANT l'appel réseau :
 // elle doit déjà exister pendant l'upload/polling, pas seulement au succès.
+// Le toast de chargement initial (« Chargement de l'application... », posé par
+// readBdd au démarrage) porte lui aussi une barre de progression et peut être
+// encore affiché quand le fichier est déposé tôt : il est exclu, sinon le
+// locator désigne deux toasts.
 function loadingToast(page) {
-  return page.locator('.gcm-toast', { has: page.locator('.gcm-progress-fill') });
+  return page.locator('.gcm-toast', { has: page.locator('.gcm-progress-fill') })
+    .filter({ hasNotText: "Chargement de l'application" });
 }
 
 test('import via état vide : toast immédiate et indicateur inline pendant le traitement', async ({ page, request }) => {
@@ -64,8 +61,10 @@ test('import via modale première utilisation : indicateur interne visible penda
   await openReadyApp(page);
 
   // Base vide au démarrage : la modale s'ouvre automatiquement.
+  // Attendue ENTIÈREMENT ouverte (cf. tests/e2e/first-use.mjs).
   const modal = page.locator('#modal_first_use');
-  await modal.waitFor({ state: 'visible', timeout: 10_000 });
+  await page.waitForFunction(() => window.mygcflowFirstUseSettled === true);
+  await expect(modal).toBeVisible();
 
   const indicator = page.locator('#modalUploadProgress');
   await expect(indicator).toBeHidden();

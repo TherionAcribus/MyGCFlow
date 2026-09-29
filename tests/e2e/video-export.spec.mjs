@@ -3,6 +3,7 @@ import { readdirSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { dismissFirstUseModal } from './first-use.mjs';
 
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -30,6 +31,9 @@ async function openReadyApp(page) {
       return false;
     }
   });
+  // Sans ce renvoi, la spec ne passait qu'après une autre ayant peuplé la
+  // base : lancée seule, la modale interceptait le premier clic.
+  await dismissFirstUseModal(page);
 }
 
 
@@ -437,7 +441,7 @@ test('la résolution élevée prévient de son coût, selon le mode', async ({ p
   await resolution.selectOption('1440p');
   await expect(warning).toBeVisible();
   await expect(warning).toContainText('temps réel');
-  await expect(warning).toContainText('Images + ffmpeg');
+  await expect(warning).toContainText('Rendu image par image');
   // La taille de sortie annoncée est celle que produira la capture.
   const expected = await page.evaluate(async () => {
     const app = await import('/static/js/index.js');
@@ -587,11 +591,6 @@ test('le réglage Couleurs choisit le format de pixels du fichier final', async 
 });
 
 test('le suivi de caméra glisse vers les caches, se stabilise et rend la main', async ({ page }) => {
-  const firstUse = page.locator('#modal_first_use');
-  if (await firstUse.isVisible()) {
-    await firstUse.locator('[data-bs-dismiss="modal"]').click();
-    await firstUse.waitFor({ state: 'hidden' });
-  }
   await page.locator('a[href="#animation"]').click();
   await page.locator('#switchCameraFollow').check();
   await page.locator('#selectCameraDynamism').selectOption('2');
@@ -678,8 +677,13 @@ test('le suivi de caméra glisse vers les caches, se stabilise et rend la main',
   expect(countsWhileMoving.length).toBeGreaterThan(2);
   const firstDisplayedCount = countsWhileMoving.find((count) => count > 0);
   expect(firstDisplayedCount).toBeGreaterThan(0);
+  // Relevé joint au message : sans lui, un échec ne dit pas à quel moment du
+  // trajet une date est passée.
+  const releve = suivi.positions.map((x, i) => (
+    `${Math.round(Math.abs(x - suivi.cibleX) / 1000)}km z${suivi.zooms[i].toFixed(2)} n${suivi.featureCounts[i]}`
+  )).join(' | ');
   expect(new Set(countsWhileMoving.filter((count) => count >= firstDisplayedCount)).size,
-    'les dates suivantes restent bloquées pendant le déplacement').toBe(1);
+    `les dates suivantes restent bloquées pendant le déplacement — ${releve}`).toBe(1);
   expect(suivi.figee, 'la caméra finit par s\'arrêter').toBe(true);
   expect(Math.abs(suivi.stabilise - suivi.cibleX)).toBeLessThan(10_000);
   expect(suivi.resteOuLUtilisateurLAMise).toBe(true);
@@ -712,12 +716,20 @@ test('un enregistrement avec suivi de caméra produit une vidéo et déplace la 
   const departX = await page.evaluate(async () => {
     const app = await import('/static/js/index.js');
     const map = app.getMap();
-    // Caches groupées à l'est, vue placée à l'ouest : la caméra a de quoi bouger.
+    const view = map.getView();
+    view.setCenter(ol.proj.fromLonLat([-3.5, 47.4]));
+    view.setZoom(6);
+    // Caches groupées à l'est, HORS de la zone de confort : la caméra ne bouge
+    // que si une cache du jour en sort (shouldMoveCamera, camera_follow.mjs),
+    // et au dynamisme par défaut cette zone couvre 80 % de la vue. Un décalage
+    // fixe en degrés (2° à l'origine) retombait dedans : la vue restait
+    // immobile, comme prévu. Il est donc exprimé en largeurs de carte.
+    const [width] = map.getSize();
+    const [centerX, centerY] = view.getCenter();
+    const cible = ol.proj.toLonLat([centerX + width * 0.6 * view.getResolution(), centerY]);
     for (const day of [...app.pointsByDate.keys()]) {
-      for (const feature of app.pointsByDate.get(day)) feature.geometry.coordinates = [-1.5, 47.4];
+      for (const feature of app.pointsByDate.get(day)) feature.geometry.coordinates = [...cible];
     }
-    map.getView().setCenter(ol.proj.fromLonLat([-3.5, 47.4]));
-    map.getView().setZoom(6);
     app.options.record.fps = 12;
     return map.getView().getCenter()[0];
   });

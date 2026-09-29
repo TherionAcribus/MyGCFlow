@@ -4,6 +4,7 @@
 import { expect, test } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { dismissFirstUseModal } from './first-use.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE = path.join(HERE, 'fixtures', 'my-finds.gpx');
@@ -14,15 +15,6 @@ const FIXTURE = path.join(HERE, 'fixtures', 'my-finds.gpx');
 async function openReadyApp(page) {
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.mygcflowReady === true);
-}
-
-async function dismissFirstUseModal(page) {
-  const firstUse = page.locator('#modal_first_use');
-  await firstUse.waitFor({ state: 'visible', timeout: 5_000 }).catch(() => {});
-  if (await firstUse.isVisible()) {
-    await firstUse.locator('[data-bs-dismiss="modal"]').click();
-    await firstUse.waitFor({ state: 'hidden' });
-  }
 }
 
 test('état vide : verrouillage sans base, déblocage après import, retour après vidage', async ({ page, request }) => {
@@ -62,9 +54,12 @@ test('état vide : verrouillage sans base, déblocage après import, retour apr�
   await expect(btnStart).toBeEnabled();
   await expect(btnRecord).toBeEnabled();
 
-  // Vidage via le bouton réel (toast de confirmation) : retour à l'état vide.
+  // Vidage via le bouton réel (modale de confirmation, cf. showConfirmation) :
+  // retour à l'état vide.
   await page.locator('#clearDatabaseBtn').click();
-  await page.locator('.gcm-toast button', { hasText: 'Confirmer' }).click();
+  await page.getByRole('dialog', { name: 'Confirmation de suppression' })
+    .getByRole('button', { name: 'Supprimer mes trouvailles' })
+    .click();
   await expect(page.locator('#filtersCounter')).toContainText('0 / 0', { timeout: 30_000 });
   await expect(emptyState).toBeVisible();
   await expect(filterPanel).toHaveClass(/data-disabled/);

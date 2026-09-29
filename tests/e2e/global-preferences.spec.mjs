@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { dismissFirstUseModal } from './first-use.mjs';
 
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -20,12 +21,7 @@ async function openReadyApp(page, url = '/') {
   await page.goto(url, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.mygcflowReady === true);
 
-  const firstUse = page.locator('#modal_first_use');
-  await firstUse.waitFor({ state: 'visible', timeout: 5_000 }).catch(() => {});
-  if (await firstUse.isVisible()) {
-    await firstUse.locator('[data-bs-dismiss="modal"]').click();
-    await firstUse.waitFor({ state: 'hidden' });
-  }
+  await dismissFirstUseModal(page);
 }
 
 async function readServerSettings(page) {

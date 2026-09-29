@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { dismissFirstUseModal } from './first-use.mjs';
 
 
 async function openReadyApp(page) {
@@ -7,12 +8,7 @@ async function openReadyApp(page) {
 
   // La base du runtime de test est vide : la modale de première utilisation
   // s'ouvre (de façon asynchrone) et intercepterait les clics sur les onglets.
-  const firstUse = page.locator('#modal_first_use');
-  await firstUse.waitFor({ state: 'visible', timeout: 5_000 }).catch(() => {});
-  if (await firstUse.isVisible()) {
-    await firstUse.locator('[data-bs-dismiss="modal"]').click();
-    await firstUse.waitFor({ state: 'hidden' });
-  }
+  await dismissFirstUseModal(page);
 }
 
 

@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { dismissFirstUseModal } from './first-use.mjs';
 
 
 async function openReadyApp(page) {
@@ -10,12 +11,7 @@ async function openReadyApp(page) {
   // et son backdrop intercepte les clics sur les onglets. Sans ce renvoi, ces
   // tests ne passaient que dans l'ordre où une spec antérieure avait peuplé la
   // base — cf. le même traitement dans profile-style-state.spec.mjs.
-  const firstUse = page.locator('#modal_first_use');
-  await firstUse.waitFor({ state: 'visible', timeout: 5_000 }).catch(() => {});
-  if (await firstUse.isVisible()) {
-    await firstUse.locator('[data-bs-dismiss="modal"]').click();
-    await firstUse.waitFor({ state: 'hidden' });
-  }
+  await dismissFirstUseModal(page);
 
   await page.evaluate(async () => {
     const app = await import('/static/js/index.js');

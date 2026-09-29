@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { dismissFirstUseModal } from './first-use.mjs';
 
 // Accessibilité clavier des infobulles d'aide.
 //
@@ -14,12 +15,7 @@ async function openReadyApp(page) {
 
   // Même renvoi de la modale de première utilisation que dans les autres specs :
   // son backdrop intercepterait les clics sur les onglets.
-  const firstUse = page.locator('#modal_first_use');
-  await firstUse.waitFor({ state: 'visible', timeout: 5_000 }).catch(() => {});
-  if (await firstUse.isVisible()) {
-    await firstUse.locator('[data-bs-dismiss="modal"]').click();
-    await firstUse.waitFor({ state: 'hidden' });
-  }
+  await dismissFirstUseModal(page);
 }
 
 async function openRecordingSettings(page) {
@@ -55,7 +51,7 @@ test('le focus clavier révèle l\'aide d\'un réglage d\'enregistrement', async
   await help.focus();
 
   await expect(page.locator('.tooltip')).toBeVisible();
-  await expect(page.locator('.tooltip')).toContainText('MediaRecorder');
+  await expect(page.locator('.tooltip')).toContainText('Capture rapide');
   // Bootstrap relie l'infobulle à l'icône : sans cela, un lecteur d'écran
   // annoncerait un arrêt de tabulation muet.
   await expect(help).toHaveAttribute('aria-describedby', /.+/);
@@ -67,12 +63,13 @@ test('l\'icône d\'aide vient bien dans l\'ordre de tabulation, avant son champ'
   await openRecordingSettings(page);
 
   // Tabulation réelle, pas un focus() programmatique : c'est l'ordre du clavier
-  // qui était en cause. Les pastilles de portée (focusables elles aussi pour
-  // leur propre infobulle) précèdent le panneau : 8 tabulations couvrent tout
-  // le chemin jusqu'au champ.
+  // qui était en cause. On tabule jusqu'au champ plutôt qu'un nombre fixe de
+  // fois : entre l'onglet et le panneau se trouvent les pastilles de portée
+  // et, selon l'état laissé par les specs précédentes, les boutons du menu
+  // flottant — un compte figé (8) cassait dès que ce chemin changeait.
   await page.locator('#recordingConfigTab').focus();
   const reached = [];
-  for (let i = 0; i < 8; i += 1) {
+  for (let i = 0; i < 20 && !reached.includes('selectRecordMode'); i += 1) {
     await page.keyboard.press('Tab');
     reached.push(await page.evaluate(() => {
       const el = document.activeElement;
@@ -81,8 +78,11 @@ test('l\'icône d\'aide vient bien dans l\'ordre de tabulation, avant son champ'
   }
 
   const helpIndex = reached.findIndex((name) => name.includes('ti-help'));
-  expect(helpIndex).toBeGreaterThanOrEqual(0);
-  expect(reached.indexOf('selectRecordMode')).toBeGreaterThan(helpIndex);
+  // Le parcours est joint aux messages : un échec dit où la tabulation est
+  // passée au lieu d'un simple -1.
+  const path = reached.join(' → ');
+  expect(helpIndex, path).toBeGreaterThanOrEqual(0);
+  expect(reached.indexOf('selectRecordMode'), path).toBeGreaterThan(helpIndex);
 });
 
 

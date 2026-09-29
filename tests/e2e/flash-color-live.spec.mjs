@@ -7,6 +7,7 @@
 // cours d'animation, contrairement à la forme, la taille et la durée que les
 // styles relisent telles quelles à chaque frame.
 import { expect, test } from '@playwright/test';
+import { dismissFirstUseModal } from './first-use.mjs';
 
 
 async function openFlashPanel(page) {
@@ -15,12 +16,7 @@ async function openFlashPanel(page) {
 
     // La base du runtime de test est vide : la modale de première utilisation
     // s'ouvre et intercepterait les clics sur les onglets.
-    const firstUse = page.locator('#modal_first_use');
-    await firstUse.waitFor({ state: 'visible', timeout: 5_000 }).catch(() => {});
-    if (await firstUse.isVisible()) {
-        await firstUse.locator('[data-bs-dismiss="modal"]').click();
-        await firstUse.waitFor({ state: 'hidden' });
-    }
+    await dismissFirstUseModal(page);
 
     await page.locator('a[href="#style"]').click();
     await page.locator('a[href="#tabPointsFlash"]').click();
