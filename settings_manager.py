@@ -480,6 +480,13 @@ def _coerce_hex_color(value, default: str) -> str:
     return value if isinstance(value, str) and _HEX_COLOR_RE.match(value) else default
 
 
+def _expand_hex_color(value):
+    """« #abc » -> « #aabbcc » ; le sélecteur couleur HTML n'accepte que la forme longue."""
+    if isinstance(value, str) and re.fullmatch(r"#[0-9a-fA-F]{3}", value):
+        return "#" + "".join(c * 2 for c in value[1:])
+    return value
+
+
 # Valeurs admises dans un thème. Miroir des contrôles de l'onglet Style
 # (templates/menu_points.html, menu_flash.html, menu_style.html) et des fonds
 # enregistrés par static/js/basemaps.js : un thème importé ou édité à la main
@@ -826,16 +833,21 @@ def coerce_profile(d: dict, base: Optional[MapProfile] = None) -> MapProfile:
         # jours, alors que False vaudrait 0, « tout le parcours ».
         raw_persist = tr.get("persist_days", pt.persist_days)
         persist = None if isinstance(raw_persist, bool) else _to_int(raw_persist, None)
+        # Un booléen n'est pas une valeur numérique (int(True) vaudrait 1) :
+        # rejeté comme côté client (clampNumber), la valeur précédente reste.
+        def _tget(key, fallback):
+            v = tr.get(key, fallback)
+            return fallback if isinstance(v, bool) else v
         p.trail = TrailOptions(
-            enabled=bool(tr.get("enabled", pt.enabled)),
+            enabled=tr.get("enabled") if isinstance(tr.get("enabled"), bool) else pt.enabled,
             routing=_coerce_choice(tr.get("routing"), TRAIL_ROUTINGS, pt.routing),
-            cluster_km=_clamp_float(tr.get("cluster_km"), pt.cluster_km, *TRAIL_CLUSTER_KM_RANGE),
-            jump_km=_clamp_int(tr.get("jump_km"), pt.jump_km, *TRAIL_JUMP_KM_RANGE),
+            cluster_km=_clamp_float(_tget("cluster_km", pt.cluster_km), pt.cluster_km, *TRAIL_CLUSTER_KM_RANGE),
+            jump_km=_clamp_int(_tget("jump_km", pt.jump_km), pt.jump_km, *TRAIL_JUMP_KM_RANGE),
             jump_style=_coerce_choice(tr.get("jump_style"), TRAIL_JUMP_STYLES, pt.jump_style),
             curve=_coerce_choice(tr.get("curve"), TRAIL_CURVES, pt.curve),
-            color=_coerce_hex_color(tr.get("color"), pt.color),
-            width=_clamp_int(tr.get("width"), pt.width, *TRAIL_WIDTH_RANGE),
-            opacity=_clamp_int(tr.get("opacity"), pt.opacity, *TRAIL_OPACITY_RANGE),
+            color=_expand_hex_color(_coerce_hex_color(tr.get("color"), pt.color)),
+            width=_clamp_int(_tget("width", pt.width), pt.width, *TRAIL_WIDTH_RANGE),
+            opacity=_clamp_int(_tget("opacity", pt.opacity), pt.opacity, *TRAIL_OPACITY_RANGE),
             line_style=_coerce_choice(tr.get("line_style"), TRAIL_LINE_STYLES, pt.line_style),
             effect=_coerce_choice(tr.get("effect"), TRAIL_EFFECTS, pt.effect),
             head=_coerce_choice(tr.get("head"), TRAIL_HEADS, pt.head),

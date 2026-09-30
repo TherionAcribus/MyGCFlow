@@ -55,6 +55,33 @@ class TrailCoercionTests(unittest.TestCase):
         self.assertEqual(coerce_profile({"trail": {"persist_days": "365"}}).trail.persist_days, 365)
         # False vaudrait 0 (« tout le parcours ») : un booléen n'est pas une durée.
         self.assertEqual(coerce_profile({"trail": {"persist_days": False}}).trail.persist_days, 30)
+        # Chaîne vide : _to_int échoue (ValueError), la valeur précédente reste.
+        base = coerce_profile({"trail": {"persist_days": 90}})
+        self.assertEqual(coerce_profile({"trail": {"persist_days": ""}}, base=base).trail.persist_days, 90)
+
+    def test_enabled_requires_a_real_boolean(self):
+        base = coerce_profile({"trail": {"enabled": True}})
+        # "false" est une chaîne non vide : bool(...) vaudrait True à tort.
+        self.assertTrue(coerce_profile({"trail": {"enabled": "false"}}, base=base).trail.enabled)
+        self.assertTrue(coerce_profile({"trail": {"enabled": True}}).trail.enabled)
+        # Idem dans l'autre sens : "true" n'active pas un profil désactivé.
+        self.assertFalse(coerce_profile({"trail": {"enabled": "true"}}).trail.enabled)
+
+    def test_booleans_are_not_numeric_values(self):
+        base = coerce_profile({"trail": {"width": 7, "cluster_km": 4.5, "jump_km": 200}})
+        trail = coerce_profile({"trail": {
+            "width": True,       # int(True) vaudrait 1 sans le filtre
+            "cluster_km": False,  # float(False) vaudrait 0.0
+            "jump_km": True,
+        }}, base=base).trail
+        self.assertEqual(trail.width, 7)
+        self.assertEqual(trail.cluster_km, 4.5)
+        self.assertEqual(trail.jump_km, 200)
+
+    def test_short_hex_color_is_expanded(self):
+        # Le sélecteur <input type="color"> n'accepte que la forme longue.
+        self.assertEqual(coerce_profile({"trail": {"color": "#abc"}}).trail.color, "#aabbcc")
+        self.assertEqual(coerce_profile({"trail": {"color": "#ABCDEF"}}).trail.color, "#ABCDEF")
 
     def test_trail_duration_is_a_bounded_global_preference(self):
         self.assertEqual(AnimationPrefs().trail_duration_ms, 800)

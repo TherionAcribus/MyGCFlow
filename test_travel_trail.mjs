@@ -69,6 +69,24 @@ test('normalizeTrailOptions borne et complète', () => {
     assert.equal(normalizeTrailOptions({ enabled: 'true' }).enabled, false);
 });
 
+test('persistDays rejette les types inattendus (False ne vaut pas 0)', () => {
+    // Comme côté serveur : booléen, null, objet, chaîne vide ou non-entier
+    // reprennent le défaut — sinon « tout le parcours » s'activerait par accident.
+    for (const bad of [null, false, '', [], 30.7, undefined]) {
+        assert.equal(normalizeTrailOptions({ persistDays: bad }).persistDays,
+            TRAIL_DEFAULTS.persistDays, `persistDays=${JSON.stringify(bad)}`);
+    }
+    // Les chaînes numériques restent acceptées (cohérent avec _to_int Python).
+    assert.equal(normalizeTrailOptions({ persistDays: '0' }).persistDays, 0);
+    assert.equal(normalizeTrailOptions({ persistDays: '365' }).persistDays, 365);
+});
+
+test('la couleur courte est étendue en #rrggbb', () => {
+    assert.equal(normalizeTrailOptions({ color: '#abc' }).color, '#aabbcc');
+    assert.equal(normalizeTrailOptions({ color: '#ABCDEF' }).color, '#ABCDEF');
+    assert.equal(normalizeTrailOptions({ color: '#ab' }).color, TRAIL_DEFAULTS.color);
+});
+
 test('deux villes éloignées le même jour forment deux groupes', () => {
     const points = [PARIS, east(PARIS, 0.5), VERSAILLES, east(VERSAILLES, 0.8), north(PARIS, 0.3)];
     const groups = clusterPoints(points, 2);
@@ -158,6 +176,21 @@ test('mode « toutes les caches » : repli sur les groupes au-delà du plafond',
     assert.equal(route.lon.length, 1);
     const few = [PARIS, east(PARIS, 0.1), east(PARIS, 0.2)];
     assert.equal(buildTrailRoute([{ day: 1, points: few }], { routing: 'all' }).lon.length, 3);
+});
+
+test('fallbackDays rapporte les journées repliées sur les groupes', () => {
+    const many = Array.from({ length: ALL_MAX_PER_DAY + 1 }, (_, i) => east(PARIS, i * 0.001));
+    const few = [PARIS, east(PARIS, 0.1), east(PARIS, 0.2)];
+    // Jour au-delà du plafond : rapporté, afin d'avertir l'utilisateur.
+    const route = buildTrailRoute([
+        { day: 3, points: many },
+        { day: 1, points: [LYON] },
+    ], { routing: 'all' });
+    assert.deepEqual([...route.fallbackDays], [3]);
+    // Journée dans la limite : aucun repli.
+    assert.deepEqual([...buildTrailRoute([{ day: 1, points: few }], { routing: 'all' }).fallbackDays], []);
+    // Mode « groupes » : jamais de repli, c'est le comportement demandé.
+    assert.deepEqual([...buildTrailRoute([{ day: 1, points: many }], { routing: 'clusters' }).fallbackDays], []);
 });
 
 test('le trajet est déterministe', () => {

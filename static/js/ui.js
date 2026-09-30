@@ -4827,15 +4827,20 @@ function changeTrailValues() {
 }
 
 // Contrôles actifs seulement quand le trait est affiché ; rayon de
-// regroupement visible seulement pour le tracé par groupes.
+// regroupement masqué en mode « un point par jour » — en mode « toutes les
+// caches », il sert de repli quand une journée dépasse le plafond.
 function updateTrailControlsState() {
     const trail = normalizeTrailOptions(pkg.options?.trail);
     const fieldset = document.getElementById('trailOptions');
     if (fieldset) fieldset.disabled = !trail.enabled;
     const clusterRow = document.getElementById('trailClusterRow');
-    if (clusterRow) clusterRow.hidden = trail.routing !== 'clusters';
+    if (clusterRow) clusterRow.hidden = trail.routing === 'day';
     const opacityLabel = document.getElementById('spanTrailOpacity');
     if (opacityLabel) opacityLabel.textContent = `${trail.opacity}%`;
+    // Réglages de tracé modifiés alors qu'un trajet est déjà calculé : ils ne
+    // s'appliqueront qu'au prochain lancement.
+    const staleHint = document.getElementById('trailStaleHint');
+    if (staleHint) staleHint.hidden = pkg.isTrailGeometryStale?.() !== true;
 }
 
 // Reflète pkg.options.trail dans l'onglet Trajet. N'écrit QUE le DOM (cf.

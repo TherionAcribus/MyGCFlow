@@ -3523,16 +3523,23 @@ function setTrailLayersVisible(visible) {
     }
 }
 
+// Clé de mémoïsation du trajet : révision de l'index des jours, réglages de
+// tracé et borne de fin. Toute divergence invalide la géométrie calculée.
+function trailGeometryKey(opts) {
+    const endDay = dateToDayNumber(animationEndDate());
+    return [
+        pkg.pointsByDateRevision,
+        opts.routing, opts.clusterKm, opts.jumpKm, opts.jumpStyle, opts.curve,
+        Number.isFinite(endDay) ? endDay : 'all',
+    ].join('|');
+}
+
 // Trajet de la sélection courante. Recalculé seulement si les données
 // (révision de l'index des jours) ou les réglages de tracé ont changé :
 // relancer une lecture ou un enregistrement ne coûte rien de plus.
 function getTrailGeometry(opts) {
     const endDay = dateToDayNumber(animationEndDate());
-    const key = [
-        pkg.pointsByDateRevision,
-        opts.routing, opts.clusterKm, opts.jumpKm, opts.jumpStyle, opts.curve,
-        Number.isFinite(endDay) ? endDay : 'all',
-    ].join('|');
+    const key = trailGeometryKey(opts);
     if (trailGeometry?.key === key) return trailGeometry;
 
     const startedAt = performance.now();
@@ -3575,6 +3582,16 @@ function resetTravelTrail() {
         return;
     }
     const { route, path } = geometry;
+    // Le trait est activé mais sans effet visible : le dire, hors capture
+    // (en enregistrement, un toast n'apparaîtrait pas dans la vidéo mais
+    // dérangerait l'utilisateur qui la prépare).
+    if (!isRecording && !isMediaRecording) {
+        if (route.lon.length < 2) {
+            pkg.showToast?.(pkg.t('Aucun déplacement à tracer pour cette sélection.'), 'info', pkg.t('Trajet'));
+        } else if (route.fallbackDays.length > 0) {
+            pkg.showToast?.(pkg.t('Journées très chargées : regroupement automatique appliqué sur le rayon choisi.'), 'info', pkg.t('Trajet'));
+        }
+    }
     const startDay = dateToDayNumber(animationStartDate());
     if (route.days.length === 0 || !Number.isFinite(startDay)) return;
 
@@ -3831,6 +3848,12 @@ export function refreshTravelTrailStyle() {
     if (trailState && trailLayer?.getVisible()) map.render();
 }
 
+// Vrai si les réglages de tracé ont divergé de la géométrie mémoïsée : le trait
+// affiché (animation en cours ou terminée) ne reflète pas les derniers réglages.
+export function isTrailGeometryStale() {
+    return !!trailGeometry && trailGeometry.key !== trailGeometryKey(currentTrailOptions());
+}
+
 // État observable du trait, pour les tests navigateur et le diagnostic.
 export function getTravelTrailDebugState() {
     const state = trailState;
@@ -3840,6 +3863,7 @@ export function getTravelTrailDebugState() {
         layerVisible: !!trailLayer?.getVisible(),
         stops: trailGeometry?.route.lon.length ?? 0,
         vertices: trailGeometry?.path.cum.length ?? 0,
+        fallbackDays: trailGeometry?.route.fallbackDays?.length ?? 0,
         totalLength: trailGeometry?.path.length ?? 0,
         startLength: state?.startLen ?? 0,
         penLength: state ? penLengthAt(state.pen, now) : 0,

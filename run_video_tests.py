@@ -86,6 +86,8 @@ def main(argv: list[str] | None = None) -> int:
             "Bornes des réglages vidéo côté serveur",
             [sys.executable, "-m", "unittest", "-v", "tests.test_media_settings"],
         ),
+        ("Calculs du trajet JavaScript", ["node", "--test", "test_travel_trail.mjs"]),
+        ("Réglages du trajet côté serveur", [sys.executable, "-m", "unittest", "-v", "tests.test_trail_profile"]),
     ]
     if args.quick:
         stages.append((

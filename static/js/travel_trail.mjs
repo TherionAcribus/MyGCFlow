@@ -5,7 +5,8 @@
 // Le trajet relie donc des ÉTAPES : les caches d'un jour sont regroupées par
 // proximité, chaque groupe est représenté par sa cache la plus centrale (le
 // trait passe sur une vraie cache, jamais au milieu d'un lac), et les étapes du
-// jour sont enchaînées par le plus court chemin depuis la position précédente.
+// jour sont ordonnées automatiquement : plus proche voisin depuis la position
+// précédente, puis 2-opt sur les petites journées.
 //
 // Le trajet complet est précalculé au lancement : pour que le trait ARRIVE sur
 // les caches au moment où elles apparaissent, il faut connaître le prochain jour
@@ -103,7 +104,12 @@ function clampNumber(value, [min, max], fallback, integer = false) {
 }
 
 function hexColor(value, fallback) {
-    return typeof value === 'string' && /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(value) ? value : fallback;
+    const m = typeof value === 'string' ? /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(value) : null;
+    if (!m) return fallback;
+    // Expansion courte : les sélecteurs <input type="color"> et hexToRgb
+    // n'acceptent que la forme « #rrggbb ».
+    const hex = m[1];
+    return hex.length === 3 ? `#${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}` : value;
 }
 
 // Réglages du trait bornés et complétés. Toute valeur absente ou invalide
@@ -111,7 +117,13 @@ function hexColor(value, fallback) {
 export function normalizeTrailOptions(raw) {
     const o = raw && typeof raw === 'object' ? raw : {};
     const d = TRAIL_DEFAULTS;
-    const persist = Math.round(Number(o.persistDays));
+    // Liste fermée de jours ; 0 = « tout le parcours ». Les types inattendus
+    // (booléen, null, objet, chaîne vide, non-entier) reprennent le défaut —
+    // False vaudrait 0 et activerait le mode permanent par accident.
+    const rawPersist = o.persistDays;
+    const persist = (rawPersist === null || rawPersist === undefined || rawPersist === ''
+        || typeof rawPersist === 'boolean' || typeof rawPersist === 'object')
+        ? NaN : Number(rawPersist);
     return {
         enabled: o.enabled === true,
         routing: choice(o.routing, TRAIL_ROUTINGS, d.routing),
@@ -125,7 +137,7 @@ export function normalizeTrailOptions(raw) {
         lineStyle: choice(o.lineStyle, TRAIL_LINE_STYLES, d.lineStyle),
         effect: choice(o.effect, TRAIL_EFFECTS, d.effect),
         head: choice(o.head, TRAIL_HEADS, d.head),
-        persistDays: TRAIL_PERSIST_DAYS.includes(persist) ? persist : d.persistDays,
+        persistDays: Number.isInteger(persist) && TRAIL_PERSIST_DAYS.includes(persist) ? persist : d.persistDays,
         duration: clampNumber(o.duration, TRAIL_DURATION_RANGE, d.duration, true),
     };
 }
@@ -383,9 +395,13 @@ export function buildTrailRoute(days, rawOptions = {}) {
     const stopDay = [];
     const routeDays = [];
     const dayLastStop = [];
+    // Journées où « toutes les caches » a dépassé le plafond et a été replié
+    // sur le regroupement : rapportées pour informer l'utilisateur.
+    const fallbackDays = [];
     let previous = null;
 
     for (const { day, points } of sorted) {
+        const fallback = options.routing === 'all' && points.length > ALL_MAX_PER_DAY;
         const indices = dayStops(points, options);
         if (indices.length === 0) continue;
         const stops = indices.map((i) => points[i]);
@@ -398,6 +414,7 @@ export function buildTrailRoute(days, rawOptions = {}) {
         previous = stops[order[order.length - 1]];
         routeDays.push(day);
         dayLastStop.push(lon.length - 1);
+        if (fallback) fallbackDays.push(day);
     }
 
     return {
@@ -406,6 +423,7 @@ export function buildTrailRoute(days, rawOptions = {}) {
         day: Int32Array.from(stopDay),
         days: Int32Array.from(routeDays),
         dayLastStop: Int32Array.from(dayLastStop),
+        fallbackDays: Int32Array.from(fallbackDays),
     };
 }
 

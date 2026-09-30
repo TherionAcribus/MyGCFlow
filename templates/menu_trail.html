@@ -13,7 +13,7 @@
                 <input class="form-check-input" type="checkbox" id="switchTrail" role="switch" aria-describedby="helpTrail">
                 <label class="form-check-label" for="switchTrail">{{ _("Afficher le trajet pendant l'animation") }}</label>
             </div>
-            <small id="helpTrail" class="form-hint text-muted">{{ _("Un trait relie les caches trouvées d'un jour à l'autre et arrive sur les nouvelles caches au moment où elles apparaissent. Le trajet est calculé automatiquement au lancement de la lecture ou de l'enregistrement.") }}</small>
+            <small id="helpTrail" class="form-hint text-muted">{{ _("Un trait relie les caches trouvées d'un jour à l'autre et arrive sur les nouvelles caches au moment où elles apparaissent. Le trajet est calculé automatiquement au lancement de la lecture ou de l'enregistrement. Trajet indicatif reconstitué d'après les dates de trouvaille : l'ordre réel des visites n'est pas connu et le trait ne suit ni les routes ni le terrain.") }}</small>
         </div>
     </div>
 
@@ -34,15 +34,15 @@
                             <option value="clusters" selected>{{ _("Groupes de caches proches") }}</option>
                             <option value="all">{{ _("Toutes les caches") }}</option>
                         </select>
-                        <small id="helpTrailRouting" class="form-hint text-muted">{{ _("Chaque étape passe par une vraie cache (la plus centrale du groupe). Dans une journée, les étapes sont reliées par le plus court chemin.") }}</small>
+                        <small id="helpTrailRouting" class="form-hint text-muted">{{ _("Chaque étape passe par une vraie cache (la plus centrale du groupe). Les étapes d'une journée sont ordonnées automatiquement pour limiter les détours — ce n'est pas nécessairement le plus court chemin.") }}</small>
 
                         <div id="trailClusterRow" class="mt-3">
                             <label class="form-label" for="inputTrailClusterKm">{{ _("Rayon de regroupement") }}</label>
                             <div class="input-group">
-                                <input id="inputTrailClusterKm" type="number" class="form-control" min="0.1" max="100" step="0.5" aria-describedby="helpTrailClusterKm">
+                                <input id="inputTrailClusterKm" type="number" class="form-control" min="0.1" max="100" step="0.1" aria-describedby="helpTrailClusterKm">
                                 <span class="input-group-text">{{ _("km") }}</span>
                             </div>
-                            <small id="helpTrailClusterKm" class="form-hint text-muted">{{ _("Les caches d'un même jour à moins de cette distance les unes des autres forment une seule étape.") }}</small>
+                            <small id="helpTrailClusterKm" class="form-hint text-muted">{{ _("Les caches d'un même jour à moins de cette distance les unes des autres forment une seule étape, de proche en proche : un groupe peut s'étendre au-delà de cette distance. Sert aussi de repli quand « Toutes les caches » dépasse 300 caches dans une journée.") }}</small>
                         </div>
 
                         <label class="form-label mt-3" for="selectTrailCurve">{{ _("Forme du trait") }}</label>
@@ -64,6 +64,7 @@
                             <option value="hidden">{{ _("Masqué (téléportation)") }}</option>
                         </select>
                         <small id="helpTrailJump" class="form-hint text-muted">{{ _("Les réglages du tracé s'appliquent au prochain lancement de l'animation.") }}</small>
+                        <small id="trailStaleHint" class="form-hint text-warning mt-1" hidden>{{ _("Réglages modifiés : ils s'appliqueront au prochain lancement de l'animation.") }}</small>
                     </div>
                 </div>
             </div>

@@ -78,8 +78,11 @@ cours ; ceux du tracé (étapes, rayon, sauts, forme) au lancement suivant.
 | Durée max. du tracé d'une étape (800 ms par défaut, onglet Animation) | Globale | `animation.trail_duration_ms` de `settings.json` |
 
 Même partage que pour le flash : l'aspect appartient au thème, le temps aux
-préférences d'animation. Les valeurs par défaut sont définies trois fois
-(`TRAIL_DEFAULTS` de `static/js/travel_trail.mjs`, bloc `trail` de
+préférences d'animation. Le rayon de regroupement sert aussi de **repli** en
+mode « Toutes les caches » : au-delà de 300 caches dans une journée, celle-ci
+est regroupée comme en mode « Groupes » (et les journées repliées sont
+signalées). Les valeurs par défaut sont définies trois fois (`TRAIL_DEFAULTS`
+de `static/js/travel_trail.mjs`, bloc `trail` de
 `static/json/defaultValues.json`, dataclasses Python) ; des tests en verrouillent
 l'égalité.
 
@@ -137,5 +140,8 @@ partie du trajet qui ne change plus (à invalider à chaque mouvement de vue).
 
 - Node : `node --test test_travel_trail.mjs`.
 - Python : `tests/test_trail_profile.py`.
+- Les deux tournent dans `run_video_tests.py` (étapes « Calculs du trajet
+  JavaScript » et « Réglages du trajet côté serveur »), donc en CI via le
+  workflow `video-tests.yml`.
 - Playwright : `tests/e2e/travel-trail.spec.mjs` (lecture, arrêt, préférence
   globale, enregistrement images et MediaRecorder, absence en mode Évolution).
