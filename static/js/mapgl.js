@@ -138,6 +138,7 @@ import {
     SEGMENT_HIDDEN,
     SEGMENT_JUMP_DASHED,
     splitTrailRuns,
+    TRAIL_DEFAULTS,
     trailOpacity,
     visibleVertexRange,
 } from './travel_trail.mjs';
@@ -313,6 +314,13 @@ const mapDirtyTracker = createMapDirtyTracker();
 // style est partagé par référence avec le layer WebGLPoints, qui relit 'now' à
 // chaque rendu : le mettre à jour ne demande ni changed() ni nouveau style.
 const pointAppearClock = createAppearClock();
+// Pause de lecture (bouton Pause) : le temps « live » de l'horloge des points
+// est figé tant que livePausedAt est posé ; à la reprise, la pause écoulée est
+// accumulée dans livePauseOffsetMs pour que les animations reprennent sans
+// rattraper le temps passé en pause. Sans effet sur les sources 'frames' et
+// 'mediarecorder' (enregistrement, où la pause n'existe pas).
+let livePausedAt = null;
+let livePauseOffsetMs = 0;
 // glowMs : durée de la fenêtre de persistance des points récents, en temps
 // d'animation. Toujours >= 1, les expressions de style divisant par elle.
 // Les variables evo* pilotent le mode Évolution (voir evolution_style.mjs) :
@@ -356,6 +364,9 @@ let trailDrawnVertices = 0;     // sommets dessinés à la dernière frame (test
 // après l'arrêt, pour vérifier après coup un enregistrement image par image.
 let trailDrawnMax = { vertices: 0, length: 0 };
 let trailLastDrawMs = null;     // durée du dernier dessin du trait (mesure)
+// Durée appliquée au dernier tracé planifié : conservée après l'arrêt comme
+// trailDrawnMax, pour vérifier après coup un enregistrement image par image.
+let trailLastStrokeDurationMs = null;
 // Compteur de caches animé : la valeur affichée rejoint le total du jour au lieu
 // de sauter. Piloté par la même horloge que les points, donc déterministe en
 // enregistrement image par image.
@@ -686,7 +697,7 @@ function sampleAppearClock() {
     if (isMediaRecording) {
         return pointAppearClock.sample('mediarecorder', mrActiveElapsedMs());
     }
-    return pointAppearClock.sample('live', performance.now());
+    return pointAppearClock.sample('live', (livePausedAt ?? performance.now()) - livePauseOffsetMs);
 }
 
 // Temps écoulé depuis le démarrage du pipeline MediaRecorder, pauses « onglet
@@ -744,6 +755,9 @@ function extendPointsAnimation(until) {
 function updatePointAppearClock() {
     const now = sampleAppearClock();
     pointStyleVariables.now = now;
+    // Lecture en pause : horloge figée, aucune frame ne diffère — ne pas
+    // entretenir une boucle de rendu pendant toute la pause.
+    if (livePausedAt !== null) return false;
     if (isEvolutionPage()) {
         const vars = pkg.evolutionFrameVars?.(now, animationMsPerDay());
         if (vars) Object.assign(pointStyleVariables, vars);
@@ -1010,6 +1024,14 @@ function animationStartDate() {
         : pkg.metadata.startDate;
 }
 
+// Date de fin effective de l'animation : plage de l'onglet Animation, sinon
+// dernière trouvaille de la sélection.
+function animationEndDate() {
+    return pkg.options.animation.dateEnd instanceof Date
+        ? pkg.options.animation.dateEnd
+        : pkg.metadata.endDate;
+}
+
 // Fonction helper pour récupérer tous les points filtrés jusqu'à la date de début d'animation
 function getFilteredPointsAtStart() {
     // Mode Évolution : toutes les caches sont dans la source dès le départ.
@@ -1156,6 +1178,10 @@ function finalizeAnimationEnd() {
 
 export function startAnimation(restart=false) {
     animationInProgress = true;
+    // Reprise après pause : la pause écoulée ne fait plus partie du temps actif.
+    if (livePausedAt !== null) livePauseOffsetMs += performance.now() - livePausedAt;
+    livePausedAt = null;
+    if (!restart) livePauseOffsetMs = 0;
     endHoldTimer.clear();
     if (!restart && isEvolutionPage()) {
         animationDatesComplete = false;
@@ -1295,6 +1321,8 @@ export function stopAnimation(){
         animationRafId = null;
     }
     animationLastTs = null;
+    livePausedAt = null;
+    livePauseOffsetMs = 0;
 
     endHoldTimer.clear();
 
@@ -1404,6 +1432,14 @@ export function stopAnimation(){
  * NE PAS appeler en mode enregistrement (utiliser stopAnimation() à la place).
  */
 export function pauseAnimation() {
+    // Figer l'horloge « live » : le stylo du trail, les apparitions de points et
+    // la persistance s'arrêtent avec l'avancement des dates (reprise sans saut
+    // dans startAnimation, via livePauseOffsetMs).
+    if (livePausedAt === null) livePausedAt = performance.now();
+    // Régler l'horloge tout de suite sur l'instant de pause : sinon le prochain
+    // rendu rattraperait le cran entre la dernière frame et le clic, faisant
+    // avancer le stylo (et les apparitions) une dernière fois pendant la pause.
+    sampleAppearClock();
     // Stopper uniquement la boucle rAF d'avancement des dates
     if (animationRafId) {
         cancelAnimationFrame(animationRafId);
@@ -3450,6 +3486,14 @@ function currentTrailOptions() {
     return normalizeTrailOptions(pkg.options.trail);
 }
 
+// Durée max réellement appliquée à un tracé : la borne 100-10000 ms vaut pour la
+// saisie utilisateur, pas pour l'exécution — le ralentissement MediaRecorder
+// multiplie la préférence pendant la capture et peut légitimement la dépasser.
+function trailStrokeDurationMs() {
+    const d = Number(pkg.options.trail?.duration);
+    return Number.isFinite(d) && d > 0 ? d : TRAIL_DEFAULTS.duration;
+}
+
 // Deux couches : le trait SOUS les points (1001), pour mener aux caches sans
 // jamais les masquer, et la tête (le géocacheur) AU-DESSUS, sinon elle
 // disparaîtrait sous la cache sur laquelle elle vient de se poser. Les flashs
@@ -3483,9 +3527,11 @@ function setTrailLayersVisible(visible) {
 // (révision de l'index des jours) ou les réglages de tracé ont changé :
 // relancer une lecture ou un enregistrement ne coûte rien de plus.
 function getTrailGeometry(opts) {
+    const endDay = dateToDayNumber(animationEndDate());
     const key = [
         pkg.pointsByDateRevision,
         opts.routing, opts.clusterKm, opts.jumpKm, opts.jumpStyle, opts.curve,
+        Number.isFinite(endDay) ? endDay : 'all',
     ].join('|');
     if (trailGeometry?.key === key) return trailGeometry;
 
@@ -3494,6 +3540,10 @@ function getTrailGeometry(opts) {
     for (const [dateKey, points] of pkg.pointsByDate.entries()) {
         const day = dateToDayNumber(new Date(dateKey));
         if (!Number.isFinite(day) || !points?.length) continue;
+        // Les trouvailles postérieures à la date de fin ne font pas partie de
+        // l'animation (le passé avant la date de début reste inclus : il
+        // positionne le stylo).
+        if (Number.isFinite(endDay) && day > endDay) continue;
         days.push({ day, points: points.map((feature) => feature.geometry.coordinates) });
     }
     const route = buildTrailRoute(days, opts);
@@ -3547,6 +3597,7 @@ function resetTravelTrail() {
     };
     trailDrawnMax = { vertices: 0, length: 0 };
     trailLastDrawMs = null;
+    trailLastStrokeDurationMs = null;
     ensureTrailLayers();
     setTrailLayersVisible(true);
 }
@@ -3586,7 +3637,11 @@ function scheduleTravelTrail(lastDay, now) {
     if (nextIdx === state.scheduledIdx) return;
     state.scheduledIdx = nextIdx;
 
-    const maxDurationMs = currentTrailOptions().duration;
+    // Durée brute de la préférence (non bornée) : le ralentissement
+    // MediaRecorder la multiplie au-delà de la saisie maximale autorisée.
+    const maxDurationMs = trailStrokeDurationMs();
+    state.lastStrokeDurationMs = maxDurationMs;
+    trailLastStrokeDurationMs = maxDurationMs;
     const msPerDay = animationMsPerDay();
     // Étapes déjà affichées : le stylo doit les avoir atteintes, sinon il est en
     // retard et repart immédiatement.
@@ -3793,6 +3848,9 @@ export function getTravelTrailDebugState() {
         maxDrawnLength: trailDrawnMax.length,
         buildMs: trailGeometry?.buildMs ?? null,
         lastDrawMs: trailLastDrawMs,
+        // trailState disparaît à l'arrêt (clearTravelTrail) : repli sur la
+        // valeur conservée pour le diagnostic post-enregistrement.
+        strokeDurationMs: state?.lastStrokeDurationMs ?? trailLastStrokeDurationMs,
     };
 }
 

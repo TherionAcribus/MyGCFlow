@@ -95,6 +95,39 @@ test('le trait suit les caches pendant la lecture et reste affiché à la fin', 
   expect(state.layerVisible).toBe(true);
 });
 
+test("la date de fin de l'animation borne le trajet", async ({ page }) => {
+  await openWithFixture(page);
+  await enableTrail(page);
+  await setRhythm(page, 6);
+  await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    app.options.animation.dateStart = new Date(2026, 0, 1);
+    app.options.animation.dateEnd = new Date(2026, 0, 3);
+    app.options.animation.extraEndSeconds = 0;
+  });
+  await page.locator('#btnStartAnimation').click();
+  // Seuls les 3 premiers jours (01→03/01) font partie du trajet.
+  await expect.poll(async () => (await trailState(page)).stops).toBe(3);
+  await expect(page.locator('#btnStartAnimation')).toBeVisible({ timeout: 15_000 });
+  const state = await trailState(page);
+  expect(state.penLength).toBeCloseTo(state.totalLength, 3);
+});
+
+test('la pause fige le trait, la reprise le reprend sans saut', async ({ page }) => {
+  await openWithFixture(page);
+  await enableTrail(page);
+  await setRhythm(page, 1);
+  await page.locator('#btnStartAnimation').click();
+  await expect.poll(async () => (await trailState(page)).penLength, { timeout: 10_000 }).toBeGreaterThan(0);
+  await page.locator('#btnPauseAnimation').click();
+  const frozen = (await trailState(page)).penLength;
+  await page.waitForTimeout(1200);
+  expect((await trailState(page)).penLength).toBe(frozen);
+  await page.locator('#btnPauseAnimation').click(); // Continuer
+  await expect.poll(async () => (await trailState(page)).penLength, { timeout: 5_000 }).toBeGreaterThan(frozen);
+  await page.locator('#btnStopAnimation').click();
+});
+
 test("l'arrêt efface le trait ; désactivé, aucun trajet n'est tracé", async ({ page }) => {
   await openWithFixture(page);
   await enableTrail(page);
@@ -170,8 +203,11 @@ for (const mode of ['images', 'mediarecorder']) {
     }
 
     // Durée de tracé en vigueur pendant la capture (ralentie en MediaRecorder).
+    // 6000 ms × ralentissement 2 = 12000 ms : au-delà de la borne de saisie
+    // (10000), pour vérifier que la durée exécutée n'est pas écrêtée.
     await page.evaluate(async () => {
       const app = await import('/static/js/index.js');
+      app.options.trail.duration = 6000;
       app.options.record.fps = 12;
       if (app.options.record.mediaRecorder) app.options.record.mediaRecorder.tailFreezeMs = 250;
       window.__trailDurations = [];
@@ -193,15 +229,20 @@ for (const mode of ['images', 'mediarecorder']) {
     const state = await trailState(page);
     expect(state.maxDrawnVertices).toBeGreaterThan(0);
     expect(state.maxDrawnLength).toBeCloseTo(state.totalLength, 3);
-    expect(await page.evaluate(async () => (await import('/static/js/index.js')).options.trail.duration)).toBe(800);
+    expect(await page.evaluate(async () => (await import('/static/js/index.js')).options.trail.duration)).toBe(6000);
+    // Durée réellement appliquée au tracé : ralentie en MediaRecorder, sans
+    // écrêtage à la borne de saisie (10000 ms).
+    expect(state.strokeDurationMs).toBe(mode === 'mediarecorder' ? 12000 : 6000);
     const durations = await page.evaluate(() => window.__trailDurations);
-    expect(durations).toContain(mode === 'mediarecorder' ? 1600 : 800);
+    expect(durations).toContain(mode === 'mediarecorder' ? 12000 : 6000);
 
     await page.evaluate((recording) => fetch('/api/settings', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ recording }),
     }), savedRecording);
+    // Remettre la préférence en mémoire pour les specs suivantes (page partagée).
+    await page.evaluate(() => import('/static/js/index.js').then(a => { a.options.trail.duration = 800; }));
   });
 }
 
