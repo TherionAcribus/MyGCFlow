@@ -2329,7 +2329,10 @@ function recordAnimationMediaRecorder(){
 
         createFlashElements();
         resetCameraFollow();
-        resetTravelTrail();
+        // Silencieux : isMediaRecording n'est posé que dans
+        // startMediaRecorderPipeline, plus bas — sans `silent`, les toasts
+        // d'info apparaîtraient au lancement de l'enregistrement.
+        resetTravelTrail(true);
         initialCount = filteredPointsAtStart.length;
     }
     animationDatesComplete = false;
@@ -3567,8 +3570,10 @@ function getTrailGeometry(opts) {
 }
 
 // À appeler au début d'une lecture ou d'un enregistrement, une fois les points
-// antérieurs à la date de début affichés.
-function resetTravelTrail() {
+// antérieurs à la date de début affichés. `silent` supprime les toasts d'info :
+// sur le chemin MediaRecorder, `isMediaRecording` n'est posé qu'au démarrage
+// effectif du pipeline (il choisit la source de l'horloge), après cet appel.
+function resetTravelTrail(silent = false) {
     clearTravelTrail();
     if (isEvolutionPage()) return;
     const opts = currentTrailOptions();
@@ -3585,7 +3590,7 @@ function resetTravelTrail() {
     // Le trait est activé mais sans effet visible : le dire, hors capture
     // (en enregistrement, un toast n'apparaîtrait pas dans la vidéo mais
     // dérangerait l'utilisateur qui la prépare).
-    if (!isRecording && !isMediaRecording) {
+    if (!silent && !isRecording && !isMediaRecording) {
         if (route.lon.length < 2) {
             pkg.showToast?.(pkg.t('Aucun déplacement à tracer pour cette sélection.'), 'info', pkg.t('Trajet'));
         } else if (route.fallbackDays.length > 0) {

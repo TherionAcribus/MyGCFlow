@@ -392,3 +392,80 @@ test('précalcul sur un gros jeu de données (mesure)', () => {
     // Garde-fou très large : seul un emballement (quadratique global) échoue.
     assert.ok(t2 - t0 < 5000);
 });
+
+test('antiméridien : deux points à ±180 forment un seul groupe', () => {
+    // [179.999, 0] et [-179.999, 0] sont distants de ~222 m, pas de 360°.
+    assert.deepEqual(clusterPoints([[179.999, 0], [-179.999, 0]], 2), [[0, 1]]);
+});
+
+test('antiméridien : le chemin franchit la couture sans traverser la carte', () => {
+    const route = buildTrailRoute([
+        { day: 1, points: [[179.999, 0]] },
+        { day: 2, points: [[-179.999, 0]] },
+    ], { routing: 'day' });
+    const path = buildTrailPath(route, { project: (x, y) => [x, y], jumpStyle: 'straight', jumpKm: 5000 });
+    // Projection identité : avant le dépliage, le trait mesurait ~360 degrés.
+    assert.ok(path.length < 1, `longueur ${path.length}`);
+    // Dépliage effectif : -179.999 est projeté en 180.001, au-delà de 180.
+    assert.ok(path.xy[2 * path.stopVertex[1]] > 180);
+});
+
+test('dépliage cumulatif : chaque étape reste dans le monde de la précédente', () => {
+    const route = buildTrailRoute([
+        { day: 1, points: [[170, 0]] },
+        { day: 2, points: [[-170, 0]] },
+        { day: 3, points: [[175, 0]] },
+    ], { routing: 'day' });
+    const path = buildTrailPath(route, { project: (x, y) => [x, y], jumpStyle: 'straight', jumpKm: 5000 });
+    // -170 suit 170 -> 190 ; 175 est ensuite déjà « dans le bon monde ».
+    const xs = [...route.lon.keys()].map((i) => path.xy[2 * path.stopVertex[i]]);
+    assert.deepEqual(xs, [170, 190, 175]);
+});
+
+test('longitude hors plage ignorée', () => {
+    // 540 est une donnée invalide : ignorée, pas repliée silencieusement.
+    const route = buildTrailRoute([{ day: 1, points: [[540, 0], [2.35, 48.85]] }], { routing: 'all' });
+    assert.equal(route.lon.length, 1);
+    assert.equal(route.lon[0], 2.35);
+});
+
+test('précalcul d\'une journée dense regroupée (mesure)', () => {
+    // 2 000 caches dans ~1 km : un seul groupe, une seule étape.
+    let seed = 7;
+    const random = () => {
+        seed = (seed * 1664525 + 1013904223) % 4294967296;
+        return seed / 4294967296;
+    };
+    const points = Array.from({ length: 2000 }, () => [
+        PARIS[0] + (random() - 0.5) * 0.01,
+        PARIS[1] + (random() - 0.5) * 0.01,
+    ]);
+    const t0 = performance.now();
+    const route = buildTrailRoute([{ day: 1, points }], { routing: 'clusters', clusterKm: 2 });
+    const t1 = performance.now();
+    console.log(`[trail] journée dense : ${points.length} caches -> ${route.lon.length} étape `
+        + `en ${(t1 - t0).toFixed(1)} ms`);
+    assert.equal(route.lon.length, 1);
+    // Garde-fou anti-régression, pas un seuil serré.
+    assert.ok(t1 - t0 < 3000);
+});
+
+test('précalcul d\'une journée de 2000 étapes isolées (mesure)', () => {
+    // Caches espacées en grille (chacune son groupe) : le plus proche voisin
+    // compare ~2 millions de paires — en km locaux, pas en haversine.
+    const points = [];
+    for (let i = 0; i < 2000; i++) {
+        points.push([PARIS[0] + (i % 45) * 0.05, PARIS[1] + Math.floor(i / 45) * 0.05]);
+    }
+    // Mode « toutes les caches » : au-delà de 300, repli sur les groupes au
+    // rayon choisi (0,1 km < espacement -> une étape par cache).
+    const t0 = performance.now();
+    const route = buildTrailRoute([{ day: 1, points }], { routing: 'all', clusterKm: 0.1 });
+    const t1 = performance.now();
+    console.log(`[trail] journée dispersée : ${route.lon.length} étapes ordonnées `
+        + `en ${(t1 - t0).toFixed(1)} ms`);
+    assert.equal(route.lon.length, 2000);
+    assert.deepEqual([...route.fallbackDays], [1]);
+    // Garde-fou anti-régression quadratique, pas un seuil serré.
+    assert.ok(t1 - t0 < 3000);
+});

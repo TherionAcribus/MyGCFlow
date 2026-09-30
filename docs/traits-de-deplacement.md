@@ -33,6 +33,12 @@ trajet relie donc des **étapes** :
 4. **Forme** : lignes droites, ou courbes lissées (Catmull-Rom centripète, qui
    passent exactement par chaque étape).
 
+Les longitudes sont **dépliées** le long du trajet : le trait franchit la
+couture ±180 (antiméridien) au plus court au lieu de traverser la carte
+entière. Les regroupements et comparaisons de distances utilisent la même
+convention (projection locale dépliée), donc deux caches de part et d'autre
+de la couture forment bien une seule étape.
+
 Les trouvailles antérieures à la date de début de l'animation font partie du
 trajet : le géocacheur part de sa dernière étape connue, sans que ce passé soit
 dessiné.
@@ -99,6 +105,14 @@ segment), directement sur le canvas (aucune géométrie OpenLayers créée par
 frame), limité à la fenêtre de persistance, avec une décimation des sommets à
 moins de 1,5 px les uns des autres.
 
+Côté précalcul : les ancres des groupes d'une journée partagent une **projection
+locale unique** (kilomètres équirectangulaires, longitudes dépliées autour du
+premier point du jour), au lieu d'une allocation par groupe ; et
+l'ordonnancement des étapes compare des distances locales — ~50× moins cher
+qu'un haversine par paire pour le plus proche voisin, qui est quadratique. Le
+2-opt, borné aux petites journées, garde l'haversine pour l'exactitude des
+sauts.
+
 Mesures du 30/09/2026 (Chromium headless des tests e2e, rendu **logiciel**
 SwiftShader, vue France entière, lecture à 300 jours/s) sur 28 000 caches
 synthétiques en 8 ans, regroupées en ~10 700 étapes :
@@ -112,7 +126,9 @@ synthétiques en 8 ans, regroupées en ~10 700 étapes :
 | Tout le parcours, lissé + lueur | 41 ms | 0,9 / 1,9 ms | 49,1 ms |
 
 En Node, 48 500 caches (38 400 étapes) : trajet ~80 ms, géométrie lissée
-(252 000 sommets) ~40 ms.
+(252 000 sommets) ~40 ms. Journées extrêmes (tests Node) : 2 000 caches dans
+~1 km regroupées en 1 étape en ~14 ms ; 2 000 caches isolées ordonnées en
+~10 ms (~60 ms avant que le plus proche voisin ne passe en distances locales).
 
 Lecture : la traînée ne coûte presque rien. « Tout le parcours » sur des
 dizaines de milliers d'étapes alourdit nettement chaque frame alors que le code

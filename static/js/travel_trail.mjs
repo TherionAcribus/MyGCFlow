@@ -154,26 +154,44 @@ export function groundDistanceKm(a, b) {
     return 2 * EARTH_RADIUS_KM * Math.asin(Math.min(1, Math.sqrt(h)));
 }
 
+// Un point valide est dans les bornes du monde : une longitude hors
+// [-180, 180] (540, par exemple) est une donnée invalide, ignorée — pas de
+// repliement silencieux qui la téléporterait à l'autre bout de la carte.
 function isValidPoint(point) {
     return Array.isArray(point)
         && Number.isFinite(point[0]) && Number.isFinite(point[1])
+        && point[0] >= -180 && point[0] <= 180
         && point[1] >= -90 && point[1] <= 90;
 }
 
 // Projection équirectangulaire locale, en km : exacte à quelques pour mille
 // près à l'échelle d'une journée de géocaching, et bien plus rapide que
-// l'haversine pour comparer des milliers de paires.
+// l'haversine pour comparer des milliers de paires. Les longitudes sont
+// dépliées autour de celle du premier index (`lonRef`, déterministe) : deux
+// caches de part et d'autre de l'antiméridien (179.999 / -179.999) restent
+// contiguës au lieu d'être à 360° l'une de l'autre.
 function localKm(points, indices) {
     let latSum = 0;
     for (const i of indices) latSum += points[i][1];
     const cosLat = Math.max(0.01, Math.cos((latSum / Math.max(1, indices.length)) * DEG));
+    const lonRef = indices.length ? points[indices[0]][0] : 0;
     const xs = new Float64Array(points.length);
     const ys = new Float64Array(points.length);
     for (const i of indices) {
-        xs[i] = points[i][0] * KM_PER_DEGREE * cosLat;
+        const d = points[i][0] - lonRef;
+        const w = d - Math.round(d / 360) * 360; // [-180, 180] autour de la référence
+        xs[i] = w * KM_PER_DEGREE * cosLat;
         ys[i] = points[i][1] * KM_PER_DEGREE;
     }
-    return { xs, ys };
+    return { xs, ys, lonRef, cosLat };
+}
+
+// Point isolé ([lon, lat]) projeté dans le repère d'un localKm existant :
+// même dépliage de la longitude autour de `lonRef`.
+function localKmXY(p, lonRef, cosLat) {
+    const d = p[0] - lonRef;
+    const w = d - Math.round(d / 360) * 360;
+    return [w * KM_PER_DEGREE * cosLat, p[1] * KM_PER_DEGREE];
 }
 
 // --- Regroupement -------------------------------------------------------------
@@ -242,24 +260,24 @@ export function clusterPoints(points, radiusKm) {
     return [...groups.values()].sort((a, b) => a[0] - b[0]);
 }
 
-// Index de la cache la plus proche du barycentre du groupe (médoïde approché).
-// En cas d'égalité, le plus petit index : déterministe.
-export function groupAnchor(points, indices) {
-    const list = (indices || []).filter((i) => isValidPoint(points[i]));
-    if (list.length === 0) return -1;
-    if (list.length === 1) return list[0];
-    const { xs, ys } = localKm(points, list);
+// Index de la cache la plus proche du barycentre du groupe (médoïde approché),
+// calculé sur les coordonnées locales `xs`/`ys` d'une journée : une seule
+// projection par journée pour toutes les ancres, au lieu d'une allocation par
+// groupe. En cas d'égalité, le plus petit index : déterministe.
+function groupAnchorXY(xs, ys, indices) {
+    if (indices.length === 0) return -1;
+    if (indices.length === 1) return indices[0];
     let cx = 0;
     let cy = 0;
-    for (const i of list) {
+    for (const i of indices) {
         cx += xs[i];
         cy += ys[i];
     }
-    cx /= list.length;
-    cy /= list.length;
+    cx /= indices.length;
+    cy /= indices.length;
     let best = -1;
     let bestD = Infinity;
-    for (const i of list) {
+    for (const i of indices) {
         const d = (xs[i] - cx) ** 2 + (ys[i] - cy) ** 2;
         if (d < bestD || (d === bestD && i < best)) {
             best = i;
@@ -267,6 +285,14 @@ export function groupAnchor(points, indices) {
         }
     }
     return best;
+}
+
+export function groupAnchor(points, indices) {
+    const list = (indices || []).filter((i) => isValidPoint(points[i]));
+    if (list.length === 0) return -1;
+    if (list.length === 1) return list[0];
+    const { xs, ys } = localKm(points, list);
+    return groupAnchorXY(xs, ys, list);
 }
 
 // --- Ordre de passage ---------------------------------------------------------
@@ -280,23 +306,37 @@ export function orderStops(stops, start = null) {
     const n = stops?.length || 0;
     if (n <= 1) return n === 1 ? [0] : [];
 
+    // Le plus proche voisin compare ~n²/2 paires : en coordonnées locales km
+    // (une seule projection pour toute la journée) plutôt qu'en haversine,
+    // ~50× moins cher par comparaison pour la même précision de classe. Sans
+    // point de départ, l'ordre peut différer légèrement de l'haversine sur de
+    // grandes distances (projection locale) — déterministe.
+    const loc = localKm(stops, stops.map((_, i) => i));
+
     const remaining = new Set();
     for (let i = 0; i < n; i++) remaining.add(i);
     const order = [];
-    let current = isValidPoint(start) ? start : null;
+    let currentX;
+    let currentY;
 
-    if (!current) {
+    if (isValidPoint(start)) {
+        [currentX, currentY] = localKmXY(start, loc.lonRef, loc.cosLat);
+    } else {
+        // Extrémité du nuage : l'étape la plus éloignée du barycentre local.
         let cx = 0;
         let cy = 0;
-        for (const s of stops) {
-            cx += s[0];
-            cy += s[1];
+        for (let i = 0; i < n; i++) {
+            cx += loc.xs[i];
+            cy += loc.ys[i];
         }
-        const center = [cx / n, cy / n];
+        cx /= n;
+        cy /= n;
         let far = 0;
         let farD = -1;
         for (let i = 0; i < n; i++) {
-            const d = groundDistanceKm(center, stops[i]);
+            const dx = loc.xs[i] - cx;
+            const dy = loc.ys[i] - cy;
+            const d = dx * dx + dy * dy;
             if (d > farD) {
                 far = i;
                 farD = d;
@@ -304,14 +344,17 @@ export function orderStops(stops, start = null) {
         }
         order.push(far);
         remaining.delete(far);
-        current = stops[far];
+        currentX = loc.xs[far];
+        currentY = loc.ys[far];
     }
 
     while (remaining.size > 0) {
         let best = -1;
         let bestD = Infinity;
         for (const i of remaining) {
-            const d = groundDistanceKm(current, stops[i]);
+            const dx = loc.xs[i] - currentX;
+            const dy = loc.ys[i] - currentY;
+            const d = dx * dx + dy * dy;
             if (d < bestD || (d === bestD && i < best)) {
                 best = i;
                 bestD = d;
@@ -319,9 +362,12 @@ export function orderStops(stops, start = null) {
         }
         order.push(best);
         remaining.delete(best);
-        current = stops[best];
+        currentX = loc.xs[best];
+        currentY = loc.ys[best];
     }
 
+    // 2-opt en distances réelles (haversine) : borné aux petites journées, son
+    // coût est négligeable et l'exactitude des sauts est conservée.
     if (n > TWO_OPT_MAX_STOPS) return order;
     return twoOpt(order, stops, isValidPoint(start) ? start : null);
 }
@@ -377,7 +423,14 @@ function dayStops(points, options) {
     const groups = options.routing === 'day'
         ? [points.map((_, i) => i)]
         : clusterPoints(points, options.clusterKm);
-    return groups.map((group) => groupAnchor(points, group)).filter((i) => i >= 0);
+    // Une projection locale par journée, partagée par toutes les ancres :
+    // l'ancre (barycentre + médoïde) est invariante par translation du repère.
+    // clusterPoints garde sa propre projection interne — nécessaire avant de
+    // connaître les groupes.
+    const loc = localKm(points, points.map((_, i) => i).filter((i) => isValidPoint(points[i])));
+    return groups
+        .map((group) => groupAnchorXY(loc.xs, loc.ys, group.filter((i) => isValidPoint(points[i]))))
+        .filter((i) => i >= 0);
 }
 
 // Trajet complet à partir des jours de trouvailles, triés ou non :
@@ -484,8 +537,21 @@ export function buildTrailPath(route, {
         };
     }
 
+    // Dépliage cumulatif des longitudes avant projection : chaque étape reste
+    // dans le même « monde » que la précédente, donc [179.9, -179.9] devient
+    // [179.9, 180.1] et le trait franchit la couture ±180 au lieu de traverser
+    // la carte entière. lonLat garde les coordonnées BRUTES : l'haversine gère
+    // déjà le passage de l'antiméridien (sauts, distances au sol).
     const projected = [];
-    for (let i = 0; i < count; i++) projected.push(project(route.lon[i], route.lat[i]));
+    let prevLon = route.lon[0];
+    for (let i = 0; i < count; i++) {
+        let lon = route.lon[i];
+        if (i > 0) {
+            lon -= Math.round((lon - prevLon) / 360) * 360;
+        }
+        prevLon = lon;
+        projected.push(project(lon, route.lat[i]));
+    }
     const lonLat = (i) => [route.lon[i], route.lat[i]];
     const isJump = (i) => i > 0 && i < count && groundDistanceKm(lonLat(i - 1), lonLat(i)) > jumpKm;
 
