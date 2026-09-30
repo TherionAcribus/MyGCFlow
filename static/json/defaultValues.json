@@ -85,5 +85,21 @@
             "color_type": "fix",
             "size": 30
         }
+    },
+    "trail": {
+        "enabled": false,
+        "routing": "clusters",
+        "clusterKm": 2,
+        "jumpKm": 150,
+        "jumpStyle": "arc",
+        "curve": "straight",
+        "color": "#00B8D4",
+        "width": 3,
+        "opacity": 85,
+        "lineStyle": "solid",
+        "effect": "none",
+        "head": "dot",
+        "persistDays": 30,
+        "duration": 800
     }
 }

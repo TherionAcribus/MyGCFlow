@@ -28,6 +28,10 @@ exportez le résultat en vidéo (avec une musique si vous le souhaitez).
   suivre celles des types de cache.
 - **Effet « flash »** — animation jouée à l'apparition de chaque cache, dont un
   mode impulsion (halo + onde expansive, avec décalage géographique).
+- **Traits de déplacement** — trait optionnel qui suit le géocacheur d'une étape
+  à l'autre et arrive sur les nouvelles caches au moment où elles apparaissent
+  (rayon de regroupement, courbes, arcs pour les grands sauts, couleur,
+  épaisseur, motif, lueur, tête, traînée qui s'efface).
 - **Overlay** — titre et cartouche d'informations (nombre de caches, date en
   cours), stylés via les onglets texte / boîte / ombre / position ou en CSS.
 - **Animation** — dates de début et de fin, durée par jour ou durée totale
@@ -184,6 +188,7 @@ Release GitHub.
 - [docs/preferences-et-profils.md](docs/preferences-et-profils.md) — réglages globaux vs profils
 - [docs/async-tasks.md](docs/async-tasks.md) — API des tâches de fond
 - [docs/mode-evolution.md](docs/mode-evolution.md) — mode Évolution (apparition et disparition des caches d'une zone, imports CSV)
+- [docs/traits-de-deplacement.md](docs/traits-de-deplacement.md) — traits de déplacement (calcul du trajet, synchronisation, coût)
 - [docs/translations.md](docs/translations.md) — règles d'internationalisation
 - [docs/notes/README_TESTS_VIDEO.md](docs/notes/README_TESTS_VIDEO.md) — matrice des tests vidéo
 

@@ -290,7 +290,7 @@ def api_save_profile(name: str):
     # et `flash.duration`, sont ignorées : centre et zoom sont un état de
     # session, le timing vit dans les préférences globales.
     merged = settings_manager._profile_to_dict(prof)
-    for section in ('map', 'points', 'flash', 'infos'):
+    for section in ('map', 'points', 'flash', 'infos', 'trail'):
         _merge_known_keys(merged[section], data.get(section))
     prof = coerce_profile(merged, base=prof)
 

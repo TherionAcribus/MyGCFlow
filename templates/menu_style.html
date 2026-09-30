@@ -64,6 +64,10 @@
                     <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
                         <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tabMapOverlay" role="tab" aria-selected="true">{{ _("Carte, titre et informations") }}</a></li>
                         <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabPointsFlash" role="tab" aria-selected="false">{{ _("Points & Flash") }}</a></li>
+                        {# Traits de déplacement : un trajet n'a de sens que pour un seul géocacheur. #}
+                        {% if mode != 'evolution' %}
+                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabTrail" role="tab" aria-selected="false">{{ _("Trajet") }}</a></li>
+                        {% endif %}
                     </ul>
 
                     <div class="tab-content pt-3">
@@ -175,6 +179,13 @@
                             </div>
                         </div>
                     </div>
+
+                    {% if mode != 'evolution' %}
+                    <!-- Sous-onglet Trajet (traits de déplacement) -->
+                    <div id="tabTrail" class="tab-pane fade">
+                        {% include 'menu_trail.html' %}
+                    </div>
+                    {% endif %}
                     </div><!-- /.tab-content -->
 
                 </div>

@@ -30,6 +30,7 @@ import { saveSettingsPatch, makeDebouncedSettingsSaver } from './settings_api.mj
 import { reportSave, markSaveError } from './saved_indicator.mjs';
 import { t } from './notifications.js';
 import { isEvolutionPage } from './app_mode.mjs';
+import { normalizeTrailOptions, TRAIL_DURATION_RANGE } from './travel_trail.mjs';
 
 // Flag de debug pour les filtres (COUNTRY/FILTER).
 // Mettre à true pour réactiver les logs en console.
@@ -730,6 +731,9 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
 
     // Flash de disparition (page du mode Évolution uniquement)
     initDisappearFlashControls();
+
+    // Traits de déplacement (page principale uniquement)
+    initTrailControls();
 
     // INFOS
     // checkboxes
@@ -1576,6 +1580,9 @@ export function init_ui() {
 
     // ------- FLASH -------
     syncFlashOptionsUI();
+
+    // ------- TRAITS DE DÉPLACEMENT -------
+    syncTrailOptionsUI();
 
     // ------- INFOS -------
     syncInfosOptionsUI();
@@ -2535,6 +2542,9 @@ function animationSettingsPayload() {
         // La durée du flash vit ici (temporel) même si son aspect est un
         // réglage de thème.
         flash_duration_ms: Math.round(Number(pkg.options.flash?.duration) || 1000),
+        // Idem pour la durée du tracé des traits de déplacement (sans objet en
+        // mode Évolution, où les traits n'existent pas).
+        ...(isEvolutionPage() ? {} : { trail_duration_ms: normalizeTrailOptions(pkg.options.trail).duration }),
     };
 }
 
@@ -2578,6 +2588,12 @@ function applyAnimationSettingsPayload(anim) {
     if (Number.isFinite(flash) && flash > 0) {
         pkg.options.flash = pkg.options.flash || {};
         pkg.options.flash.duration = Math.round(Math.min(10000, Math.max(100, flash)));
+    }
+    const trail = Number(anim.trail_duration_ms);
+    if (Number.isFinite(trail) && trail > 0) {
+        pkg.options.trail = pkg.options.trail || {};
+        const [min, max] = TRAIL_DURATION_RANGE;
+        pkg.options.trail.duration = Math.round(Math.min(max, Math.max(min, trail)));
     }
     const mode = anim.rhythm_mode;
     a.rhythmMode = (mode === 'duration') ? 'duration' : 'rate';
@@ -4238,6 +4254,20 @@ function refreshTimingPlan({ save = true } = {}) {
         timingErrorText('flashDuration', flashP)) && fieldsValid;
     if (flashP.ok) pkg.options.flash.duration = flashP.value;
 
+    // Durée max. du tracé d'une étape des traits de déplacement (même logique).
+    const inputTimeTrail = document.getElementById('inputTimeTrail');
+    if (inputTimeTrail) {
+        const [min, max] = TRAIL_DURATION_RANGE;
+        const trailP = parseBoundedNumber(inputTimeTrail.value, { min, max });
+        fieldsValid = setTimingFieldValidity(
+            inputTimeTrail, 'feedbackTimeTrail', trailP.ok,
+            timingErrorText('trailDuration', trailP)) && fieldsValid;
+        if (trailP.ok) {
+            pkg.options.trail = pkg.options.trail || {};
+            pkg.options.trail.duration = trailP.value;
+        }
+    }
+
     // 2. Plan de timing partagé (aperçu, MediaRecorder, Images).
     const plan = buildTimingPlan({
         dayCount: dayCount ?? undefined,
@@ -4291,7 +4321,7 @@ function timingErrorText(kind, parsed) {
             if (kind === 'daysPerSecond') return t('Entre ${min} et ${max} jours/s.', TIMING_LIMITS.daysPerSecond);
             if (kind === 'extraEnd') return t('Entre ${min} et ${max} s.', TIMING_LIMITS.extraEndSeconds);
             if (kind === 'totalDuration') return t('Maximum ${max} s.', { max: TIMING_LIMITS.totalDurationSeconds.max });
-            if (kind === 'flashDuration') return t('Entre 100 et 10000 ms.');
+            if (kind === 'flashDuration' || kind === 'trailDuration') return t('Entre 100 et 10000 ms.');
             return t('Hors limites.');
         default: return t('Valeur invalide.');
     }
@@ -4557,6 +4587,8 @@ export function syncAnimationOptionsUI() {
     if (inputTotalDuration) inputTotalDuration.value = formatMmSs((Number(animation.totalDurationSeconds) || TIMING_LIMITS.totalDurationSeconds.fallback) * 1000);
     if (inputExtraEndTime) inputExtraEndTime.value = animation.extraEndSeconds ?? 0;
     if (inputTimeFlash) inputTimeFlash.value = Number(pkg.options.flash?.duration) || 1000;
+    const inputTimeTrail = document.getElementById('inputTimeTrail');
+    if (inputTimeTrail) inputTimeTrail.value = normalizeTrailOptions(pkg.options.trail).duration;
     const switchCameraFollow = document.getElementById('switchCameraFollow');
     if (switchCameraFollow) switchCameraFollow.checked = animation.cameraFollow === true;
     const selectCameraDynamism = document.getElementById('selectCameraDynamism');
@@ -4735,6 +4767,100 @@ export function syncFlashOptionsUI() {
     setRadioGroupValue(document.getElementsByName('flashColor'), flash.color_type);
     updateFlashColorPickerVisibility();
     syncDisappearFlashUI();
+}
+
+// --- Traits de déplacement ---------------------------------------------------
+// Réglages du thème (pkg.options.trail), onglet Style > Trajet, absent de la
+// page du mode Évolution. La durée du tracé est une préférence globale (onglet
+// Animation) validée par refreshTimingPlan, comme celle du flash.
+// Déclarations de fonctions : appelées depuis initUIElements, qui s'exécute
+// pendant l'évaluation du module.
+
+function initTrailControls() {
+    const root = document.getElementById('trail');
+    if (root) {
+        root.addEventListener('input', changeTrailValues);
+        // 'change' arrive à la validation d'un champ (perte de focus pour un
+        // nombre) : la valeur affichée est alors ramenée dans ses bornes.
+        root.addEventListener('change', () => {
+            changeTrailValues();
+            syncTrailOptionsUI();
+        });
+    }
+    document.getElementById('inputTimeTrail')?.addEventListener('input', () => refreshTimingPlan());
+}
+
+// Contrôles -> pkg.options.trail. La durée (préférence globale) est conservée.
+function changeTrailValues() {
+    const trail = pkg.options.trail = pkg.options.trail || {};
+    const field = (id) => document.getElementById(id);
+    const enabled = field('switchTrail');
+    if (enabled) trail.enabled = enabled.checked;
+    const texts = {
+        routing: 'selectTrailRouting',
+        curve: 'selectTrailCurve',
+        jumpStyle: 'selectTrailJumpStyle',
+        lineStyle: 'selectTrailLineStyle',
+        effect: 'selectTrailEffect',
+        head: 'selectTrailHead',
+        color: 'trailColor',
+    };
+    for (const [key, id] of Object.entries(texts)) {
+        const el = field(id);
+        if (el) trail[key] = el.value;
+    }
+    const numbers = {
+        clusterKm: 'inputTrailClusterKm',
+        jumpKm: 'inputTrailJumpKm',
+        width: 'inputTrailWidth',
+        opacity: 'inputTrailOpacity',
+        persistDays: 'selectTrailPersist',
+    };
+    for (const [key, id] of Object.entries(numbers)) {
+        const el = field(id);
+        // Champ en cours de saisie (vide) : la valeur précédente reste en vigueur.
+        if (el && el.value !== '' && Number.isFinite(Number(el.value))) trail[key] = Number(el.value);
+    }
+    Object.assign(trail, normalizeTrailOptions(trail));
+    updateTrailControlsState();
+    pkg.refreshTravelTrailStyle?.();
+}
+
+// Contrôles actifs seulement quand le trait est affiché ; rayon de
+// regroupement visible seulement pour le tracé par groupes.
+function updateTrailControlsState() {
+    const trail = normalizeTrailOptions(pkg.options?.trail);
+    const fieldset = document.getElementById('trailOptions');
+    if (fieldset) fieldset.disabled = !trail.enabled;
+    const clusterRow = document.getElementById('trailClusterRow');
+    if (clusterRow) clusterRow.hidden = trail.routing !== 'clusters';
+    const opacityLabel = document.getElementById('spanTrailOpacity');
+    if (opacityLabel) opacityLabel.textContent = `${trail.opacity}%`;
+}
+
+// Reflète pkg.options.trail dans l'onglet Trajet. N'écrit QUE le DOM (cf.
+// syncFlashOptionsUI).
+export function syncTrailOptionsUI() {
+    const trail = normalizeTrailOptions(pkg.options?.trail);
+    const set = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.value = String(value);
+    };
+    const enabled = document.getElementById('switchTrail');
+    if (enabled) enabled.checked = trail.enabled;
+    set('selectTrailRouting', trail.routing);
+    set('inputTrailClusterKm', trail.clusterKm);
+    set('selectTrailCurve', trail.curve);
+    set('inputTrailJumpKm', trail.jumpKm);
+    set('selectTrailJumpStyle', trail.jumpStyle);
+    set('trailColor', trail.color);
+    set('inputTrailWidth', trail.width);
+    set('inputTrailOpacity', trail.opacity);
+    set('selectTrailLineStyle', trail.lineStyle);
+    set('selectTrailEffect', trail.effect);
+    set('selectTrailHead', trail.head);
+    set('selectTrailPersist', trail.persistDays);
+    updateTrailControlsState();
 }
 
 // --- Flash de disparition (mode Évolution) ----------------------------------

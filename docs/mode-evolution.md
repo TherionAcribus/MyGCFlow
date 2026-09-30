@@ -170,6 +170,7 @@ celle du mode principal (`filtersSelection` du localStorage).
 
 ## Hors périmètre (v1)
 
-Traits de déplacement, filtres Type / Taille / D / T / Département, caches
+Traits de déplacement (disponibles en mode principal seulement : un trajet
+suppose un seul géocacheur), filtres Type / Taille / D / T / Département, caches
 désactivées (traitées comme actives), coordonnées corrigées, annulation d'un
 import, fusion de bases, thèmes propres à une base.

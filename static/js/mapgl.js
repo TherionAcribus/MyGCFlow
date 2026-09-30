@@ -123,6 +123,24 @@ import {
     sampleCameraJourney,
     shouldMoveCamera,
 } from './camera_follow.mjs';
+import { dateToDayNumber } from './evolution_timeline.mjs';
+import {
+    buildTrailPath,
+    buildTrailRoute,
+    composeTransform,
+    lengthAtDay,
+    nextDayIndex,
+    normalizeTrailOptions,
+    opacityBucket,
+    penLengthAt,
+    pointAtLength,
+    scheduleStroke,
+    SEGMENT_HIDDEN,
+    SEGMENT_JUMP_DASHED,
+    splitTrailRuns,
+    trailOpacity,
+    visibleVertexRange,
+} from './travel_trail.mjs';
 import { flashStyleAt } from './flash_styles.js';
 import { liveFlashStep } from './flash_style_cache.mjs';
 import { IMPULSE_MAX_STAGGER_MS, staggerDelayFrames, staggerDelayMs } from './flash_impulse.mjs';
@@ -325,6 +343,19 @@ let cameraRenderKey = null;
 let cameraRenderTimeout = null;
 let cameraDynamism = 2;
 const CAMERA_RENDER_TIMEOUT_MS = 6000;
+// Traits de déplacement (voir travel_trail.mjs) : couche sous les points,
+// trajet précalculé au lancement et mémoïsé, stylo piloté par l'horloge des
+// points (déterministe en capture image par image).
+let trailLayer = null;          // le trait, sous les points
+let trailHeadLayer = null;      // la tête du trait, au-dessus des points
+let trailGeometry = null;       // { key, route, path, buildMs } — trajet mémoïsé
+let trailState = null;          // animation en cours (voir resetTravelTrail)
+let trailAnimating = false;     // compte comme une animation pour mapDirtyTracker
+let trailDrawnVertices = 0;     // sommets dessinés à la dernière frame (tests)
+// Maximums dessinés depuis le dernier lancement (tests, diagnostic) : gardés
+// après l'arrêt, pour vérifier après coup un enregistrement image par image.
+let trailDrawnMax = { vertices: 0, length: 0 };
+let trailLastDrawMs = null;     // durée du dernier dessin du trait (mesure)
 // Compteur de caches animé : la valeur affichée rejoint le total du jour au lieu
 // de sauter. Piloté par la même horloge que les points, donc déterministe en
 // enregistrement image par image.
@@ -357,6 +388,8 @@ export function isRecordingActive() {
 
 // Fonction pour ajouter les données GeoJSON à la source vectorielle au chargement du GeoJSON
 export function addVector(data) {
+    // Le trajet affiché décrivait l'ancienne sélection.
+    clearTravelTrail();
     if (!data) {
         console.warn('[addVector] data is null/undefined, abort');
         features = [];
@@ -735,6 +768,7 @@ function updatePointAppearClock() {
         }
     }
     if (updateCameraFollow(now)) pending = true;
+    if (updateTravelTrail(now)) pending = true;
 
     // Capture image par image et MediaRecorder pilotent eux-mêmes leurs rendus.
     if (pending && !isRecording && !isMediaRecording) map.render();
@@ -909,6 +943,7 @@ function setPointsGlowing(active) {
 function resetPointAppearAnimation() {
     pointsAppearing = false;
     pointsGlowing = false;
+    trailAnimating = false;
 }
 
 // supprime les points de la carte (centre et bordures si existantes)
@@ -967,6 +1002,14 @@ function getAllFilteredPoints() {
     return allPoints;
 }
 
+// Date de début effective de l'animation : plage de l'onglet Animation, sinon
+// première trouvaille de la sélection.
+function animationStartDate() {
+    return pkg.options.animation.dateStart instanceof Date
+        ? pkg.options.animation.dateStart
+        : pkg.metadata.startDate;
+}
+
 // Fonction helper pour récupérer tous les points filtrés jusqu'à la date de début d'animation
 function getFilteredPointsAtStart() {
     // Mode Évolution : toutes les caches sont dans la source dès le départ.
@@ -974,13 +1017,11 @@ function getFilteredPointsAtStart() {
     const allPoints = [];
     if (pkg.pointsByDate) {
         // Utiliser la date de début d'animation comme limite supérieure
-        const animationStartDate = pkg.options.animation.dateStart instanceof Date
-            ? pkg.options.animation.dateStart
-            : pkg.metadata.startDate;
+        const startDate = animationStartDate();
 
         for (const [dateKey, points] of pkg.pointsByDate.entries()) {
             const date = new Date(dateKey);
-            if (date < animationStartDate) {
+            if (date < startDate) {
                 appendPoints(allPoints, points);
             }
         }
@@ -1139,6 +1180,7 @@ export function startAnimation(restart=false) {
 
         createFlashElements();
         resetCameraFollow();
+        resetTravelTrail();
         infos = createObjectInfos(filteredPointsAtStart.length);
         // Démarrer la musique de fond si activée (lecture seule)
         try { startBackgroundMusicIfAny(); } catch(e) { console.warn('startBackgroundMusicIfAny error:', e); }
@@ -1169,6 +1211,8 @@ export function startAnimation(restart=false) {
         currentDate = new Date(pkg.metadata.startDate);
         if (isEvolutionPage()) infos = createObjectInfos(beginEvolutionTimeline(currentDate));
     }
+    // Sans effet à la reprise d'une pause : l'approche n'est planifiée qu'une fois.
+    startTravelTrailApproach();
 
     // Repart avec un accumulateur neutre : la reprise (restart=true) ne rattrape
     // pas le temps écoulé pendant la pause, exactement comme l'ancien
@@ -1314,6 +1358,7 @@ export function stopAnimation(){
         animationLayer.setVisible(false);
         dbgMapgl('[STOP] Animation layer masqué');
     }
+    clearTravelTrail();
 
     // Nettoyer les références globales
     if (window.animationSource) {
@@ -1589,6 +1634,7 @@ function startRecordingProcess(){
 
         createFlashElements();
         resetCameraFollow();
+        resetTravelTrail();
         initialCount = filteredPointsAtStart.length;
     }
     // creation objet pour stocker les infos liées aux Frames (dt nombre de caches)
@@ -1746,6 +1792,7 @@ function abortRecordingOnError(error) {
     // Nettoyer les animations de flash
     try { if (animationSource) animationSource.clear(); } catch(_) {}
     try { if (animationLayer) animationLayer.setVisible(false); } catch(_) {}
+    try { clearTravelTrail(); } catch(_) {}
 
     // Remettre la carte avec tous les points filtrés
     try {
@@ -1883,6 +1930,7 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
             animationLayer.setVisible(false);
             dbgMapgl('[CAPTURE] Animation layer masqué');
         }
+        clearTravelTrail();
 
         // Remettre la carte avec tous les points filtrés
         if (isEvolutionPage()) {
@@ -1979,6 +2027,7 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
             animationLayer.setVisible(false);
             dbgMapgl('[RECORD END] Animation layer masqué');
         }
+        clearTravelTrail();
 
         // Remettre la carte avec tous les points filtrés
         if (isEvolutionPage()) {
@@ -2244,6 +2293,7 @@ function recordAnimationMediaRecorder(){
 
         createFlashElements();
         resetCameraFollow();
+        resetTravelTrail();
         initialCount = filteredPointsAtStart.length;
     }
     animationDatesComplete = false;
@@ -2264,6 +2314,7 @@ function recordAnimationMediaRecorder(){
     // Appliquer un éventuel ralentissement utilisateur sur la timeline
     const originalTimePerDay = pkg.options.animation.timePerDay;
     const originalFlashDuration = pkg.options.flash.duration;
+    const originalTrailDuration = pkg.options.trail?.duration;
     const originalExtraEndSeconds = pkg.options.animation.extraEndSeconds;
     let appliedSlowdown = 1;
     try {
@@ -2273,6 +2324,8 @@ function recordAnimationMediaRecorder(){
             pkg.options.animation.timePerDay = originalTimePerDay * sd;
             // Ralentir aussi l'animation des flashs pour compenser la normalisation
             pkg.options.flash.duration = originalFlashDuration * sd;
+            // Idem pour le tracé des traits de déplacement.
+            if (pkg.options.trail) pkg.options.trail.duration = normalizeTrailOptions(pkg.options.trail).duration * sd;
             // Toute la timeline doit être ralentie, y compris la fin demandée.
             // Sinon ffmpeg raccourcit cette partie lors de la normalisation.
             pkg.options.animation.extraEndSeconds = originalExtraEndSeconds * sd;
@@ -2301,6 +2354,7 @@ function recordAnimationMediaRecorder(){
     mrOnFinalizeRestoreTimePerDay = () => {
         try { pkg.options.animation.timePerDay = originalTimePerDay; } catch(_) {}
         try { pkg.options.flash.duration = originalFlashDuration; } catch(_) {}
+        try { if (pkg.options.trail) pkg.options.trail.duration = originalTrailDuration; } catch(_) {}
         try { pkg.options.animation.extraEndSeconds = originalExtraEndSeconds; } catch(_) {}
     };
 }
@@ -3011,6 +3065,8 @@ async function captureElement() {
 
             // Forcer un rendu complet (marquer animationLayer dirty pour que postrender fire)
             if (animationLayer) { animationLayer.changed(); }
+            if (trailLayer) { trailLayer.changed(); }
+            if (trailHeadLayer) { trailHeadLayer.changed(); }
             map.renderSync();
 
         } catch (error) {
@@ -3162,6 +3218,10 @@ function displayFeaturesForDates(dates, pointOptions, flashOptions, record, info
             flashFeatures(newFeatures, flashOptions);
         }
     }
+
+    // Traits de déplacement : le stylo atteint (ou rattrape) les caches du lot et
+    // part vers le prochain jour de trouvailles, pour y arriver à son apparition.
+    if (trailState) advanceTravelTrail(dateToDayNumber(dates[dates.length - 1]), sampleAppearClock());
 
     // affiche éventuellement les infos demandées : la date affichée est celle du
     // dernier jour du lot, le compteur reçoit le total des points ajoutés.
@@ -3368,6 +3428,372 @@ function pushFeatureFlashes(olFeatures, flashOptions, record, useStagger) {
             duration: durationMs,
         });
     }
+}
+
+// -------------- TRAITS DE DÉPLACEMENT -------------------------
+//
+// Le trajet (étapes et polyligne) est calculé par travel_trail.mjs au lancement
+// de la lecture ou de l'enregistrement, puis mémoïsé. Pendant l'animation, un
+// « stylo » avance le long de la polyligne : à chaque jour de trouvailles
+// affiché, il part vers le suivant pour y arriver quand ses caches apparaissent.
+// Le dessin se fait dans le postrender d'une couche dédiée, directement sur le
+// canvas : pas de géométrie OpenLayers créée à chaque frame.
+
+// Période de la tête « pulsante », en ms d'horloge des points.
+const TRAIL_PULSE_MS = 1200;
+// Deux sommets consécutifs plus proches que cela (px écran) ne sont pas tracés
+// séparément : moins de segments quand beaucoup d'étapes se superposent à
+// l'écran (vue très dézoomée). Le coût restant est surtout la rastérisation.
+const TRAIL_MIN_STEP_PX = 1.5;
+
+function currentTrailOptions() {
+    return normalizeTrailOptions(pkg.options.trail);
+}
+
+// Deux couches : le trait SOUS les points (1001), pour mener aux caches sans
+// jamais les masquer, et la tête (le géocacheur) AU-DESSUS, sinon elle
+// disparaîtrait sous la cache sur laquelle elle vient de se poser. Les flashs
+// (1100) restent au premier plan.
+function ensureTrailLayers() {
+    if (!trailLayer || !isLayerOnMap(map, trailLayer)) {
+        trailLayer = new ol.layer.Vector({
+            source: new ol.source.Vector(), style: null, zIndex: 1000, visible: false,
+        });
+        trailLayer.on('postrender', drawTravelTrail);
+        map.addLayer(trailLayer);
+    }
+    if (!trailHeadLayer || !isLayerOnMap(map, trailHeadLayer)) {
+        trailHeadLayer = new ol.layer.Vector({
+            source: new ol.source.Vector(), style: null, zIndex: 1050, visible: false,
+        });
+        trailHeadLayer.on('postrender', drawTravelTrailHead);
+        map.addLayer(trailHeadLayer);
+    }
+}
+
+function setTrailLayersVisible(visible) {
+    for (const layer of [trailLayer, trailHeadLayer]) {
+        if (!layer) continue;
+        layer.setVisible(visible);
+        if (visible) layer.changed();
+    }
+}
+
+// Trajet de la sélection courante. Recalculé seulement si les données
+// (révision de l'index des jours) ou les réglages de tracé ont changé :
+// relancer une lecture ou un enregistrement ne coûte rien de plus.
+function getTrailGeometry(opts) {
+    const key = [
+        pkg.pointsByDateRevision,
+        opts.routing, opts.clusterKm, opts.jumpKm, opts.jumpStyle, opts.curve,
+    ].join('|');
+    if (trailGeometry?.key === key) return trailGeometry;
+
+    const startedAt = performance.now();
+    const days = [];
+    for (const [dateKey, points] of pkg.pointsByDate.entries()) {
+        const day = dateToDayNumber(new Date(dateKey));
+        if (!Number.isFinite(day) || !points?.length) continue;
+        days.push({ day, points: points.map((feature) => feature.geometry.coordinates) });
+    }
+    const route = buildTrailRoute(days, opts);
+    const path = buildTrailPath(route, {
+        project: (lon, lat) => ol.proj.fromLonLat([lon, lat]),
+        curve: opts.curve,
+        jumpKm: opts.jumpKm,
+        jumpStyle: opts.jumpStyle,
+    });
+    trailGeometry = { key, route, path, buildMs: performance.now() - startedAt };
+    dbgMapgl('[TRAIL] Trajet calculé :', route.lon.length, 'étapes,', path.cum.length,
+        'sommets en', trailGeometry.buildMs.toFixed(1), 'ms');
+    return trailGeometry;
+}
+
+// À appeler au début d'une lecture ou d'un enregistrement, une fois les points
+// antérieurs à la date de début affichés.
+function resetTravelTrail() {
+    clearTravelTrail();
+    if (isEvolutionPage()) return;
+    const opts = currentTrailOptions();
+    if (!opts.enabled) return;
+
+    let geometry;
+    try {
+        geometry = getTrailGeometry(opts);
+    } catch (e) {
+        console.warn('[TRAIL] Trajet impossible à calculer, animation sans traits :', e);
+        return;
+    }
+    const { route, path } = geometry;
+    const startDay = dateToDayNumber(animationStartDate());
+    if (route.days.length === 0 || !Number.isFinite(startDay)) return;
+
+    // Trouvailles antérieures à la date de début : le stylo part de la dernière
+    // étape connue, sans que ce passé soit dessiné.
+    const firstIdx = nextDayIndex(route, startDay - 1);
+    const startLen = firstIdx > 0 ? lengthAtDay(route, path, firstIdx - 1) : 0;
+    trailState = {
+        route,
+        path,
+        startDay,
+        startLen,
+        hasHistory: firstIdx > 0,
+        firstDay: firstIdx < route.days.length ? route.days[firstIdx] : Infinity,
+        pen: { fromLen: startLen, toLen: startLen, startAt: -Infinity, endAt: -Infinity },
+        shownDay: startDay - 1,
+        shownAt: null,
+        scheduledIdx: -1,
+        approachPending: true,
+    };
+    trailDrawnMax = { vertices: 0, length: 0 };
+    trailLastDrawMs = null;
+    ensureTrailLayers();
+    setTrailLayersVisible(true);
+}
+
+// Retire le trait (arrêt, fin d'enregistrement, nouvelles données).
+function clearTravelTrail() {
+    setTrailAnimating(false);
+    trailState = null;
+    trailDrawnVertices = 0;
+    setTrailLayersVisible(false);
+}
+
+// Premier trajet : planifié comme si la veille de la date de début venait de
+// s'afficher. Appelé par startAnimation, donc APRÈS l'éventuel ralentissement
+// MediaRecorder : durées et rythme sont ceux de la capture. En image par image,
+// le premier jour s'affiche dès la frame 0 et c'est lui qui lance le stylo.
+function startTravelTrailApproach() {
+    if (!trailState?.approachPending) return;
+    scheduleTravelTrail(trailState.startDay - 1, sampleAppearClock());
+}
+
+// Un lot de jours vient de s'afficher ; `lastDay` est son dernier jour.
+function advanceTravelTrail(lastDay, now) {
+    if (!trailState || !Number.isFinite(lastDay)) return;
+    scheduleTravelTrail(lastDay, now);
+}
+
+function scheduleTravelTrail(lastDay, now) {
+    const state = trailState;
+    state.approachPending = false;
+    state.shownDay = lastDay;
+    state.shownAt = now;
+
+    const { route, path } = state;
+    const nextIdx = nextDayIndex(route, lastDay);
+    // Jour sans trouvaille : le trait déjà planifié poursuit sa route.
+    if (nextIdx === state.scheduledIdx) return;
+    state.scheduledIdx = nextIdx;
+
+    const maxDurationMs = currentTrailOptions().duration;
+    const msPerDay = animationMsPerDay();
+    // Étapes déjà affichées : le stylo doit les avoir atteintes, sinon il est en
+    // retard et repart immédiatement.
+    const behindLen = Math.max(state.startLen, nextIdx > 0 ? lengthAtDay(route, path, nextIdx - 1) : 0);
+    let targetLen;
+    let arrivalAt;
+    if (nextIdx < route.days.length) {
+        targetLen = lengthAtDay(route, path, nextIdx);
+        // Estimation : les jours défilent au rythme configuré. Si le suivi de
+        // caméra fait attendre une date, le stylo arrive en avance et patiente.
+        arrivalAt = now + (route.days[nextIdx] - lastDay) * msPerDay;
+    } else {
+        targetLen = behindLen;
+        arrivalAt = now + Math.min(maxDurationMs, msPerDay);
+    }
+    state.pen = scheduleStroke(state.pen, { now, targetLen, arrivalAt, maxDurationMs, behindLen });
+    mapDirtyTracker.markDirty();
+}
+
+// Avant chaque rendu : vrai tant que le trait change d'une frame à l'autre
+// (stylo en mouvement ou en attente de départ, fondu de la traînée pendant
+// l'animation), pour entretenir le rendu et le compositing MediaRecorder.
+function updateTravelTrail(now) {
+    const state = trailState;
+    let active = false;
+    if (state && pkg.options.trail?.enabled === true) {
+        active = now < state.pen.endAt
+            || (isAnimationInProgress() && state.shownAt !== null && now - state.shownAt < animationMsPerDay());
+    }
+    setTrailAnimating(active);
+    return active;
+}
+
+function setTrailAnimating(active) {
+    if (active === trailAnimating) return;
+    trailAnimating = active;
+    if (active) mapDirtyTracker.beginAnimation();
+    else mapDirtyTracker.endAnimation();
+}
+
+// État du trait pour la frame en cours, commun au trait et à sa tête. null si
+// rien n'est à dessiner.
+function trailFrame(event) {
+    const state = trailState;
+    if (!state) return null;
+    const opts = currentTrailOptions();
+    if (!opts.enabled) return null;
+    const now = sampleAppearClock();
+    const frameState = event.frameState;
+    // Jour courant en continu, pour un fondu sans à-coups : au plus un jour
+    // après le dernier affiché (pause, attente du suivi de caméra).
+    const msPerDay = Math.max(1, animationMsPerDay());
+    const elapsed = state.shownAt === null ? 0 : (now - state.shownAt) / msPerDay;
+    return {
+        state,
+        opts,
+        now,
+        penLen: penLengthAt(state.pen, now),
+        dayNow: state.shownDay + Math.min(1, Math.max(0, elapsed)),
+        ratio: frameState.pixelRatio || 1,
+        m: composeTransform(event.inversePixelTransform, frameState.coordinateToPixelTransform),
+    };
+}
+
+// Listener postrender de trailLayer : le trait lui-même.
+function drawTravelTrail(event) {
+    const startedAt = performance.now();
+    trailDrawnVertices = 0;
+    const frame = trailFrame(event);
+    if (!frame) return;
+    const { state, opts, penLen, dayNow, ratio, m } = frame;
+    const { path } = state;
+    const minDay = opts.persistDays > 0
+        ? Math.max(state.startDay, dayNow - opts.persistDays)
+        : state.startDay;
+    const range = visibleVertexRange(path, penLen, minDay);
+    if (!range) return;
+
+    const ctx = event.context;
+    const width = opts.width * ratio;
+    const alpha = opts.opacity / 100;
+    const bucketOf = (v) => opacityBucket(trailOpacity(dayNow - path.vday[v], opts.persistDays));
+    const runs = splitTrailRuns(path.kind, bucketOf, range.first, range.last);
+    // Longueur de carte -> pixels du canvas, pour caler les tirets sur la
+    // distance parcourue : le motif ne « glisse » pas quand la queue avance.
+    const pxPerUnit = ratio / event.frameState.viewState.resolution;
+    const dash = {
+        solid: [],
+        dashed: [width * 3, width * 2],
+        dotted: [0.01, width * 2.2],
+    }[opts.lineStyle];
+    const jumpDash = [width * 1.2, width * 2.4];
+
+    ctx.save();
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = opts.color;
+    for (const glow of opts.effect === 'glow' ? [true, false] : [false]) {
+        for (const run of runs) {
+            if (run.kind === SEGMENT_HIDDEN || run.bucket <= 0) continue;
+            if (glow) {
+                ctx.setLineDash([]);
+                ctx.lineWidth = width * 3;
+                ctx.globalAlpha = alpha * run.bucket * 0.22;
+            } else {
+                ctx.setLineDash(run.kind === SEGMENT_JUMP_DASHED ? jumpDash : dash);
+                ctx.lineDashOffset = path.cum[run.start - 1] * pxPerUnit;
+                ctx.lineWidth = width;
+                ctx.globalAlpha = alpha * run.bucket;
+            }
+            strokeTrailRun(ctx, path, run, range, m, TRAIL_MIN_STEP_PX * ratio);
+        }
+    }
+    ctx.restore();
+    trailDrawnMax.vertices = Math.max(trailDrawnMax.vertices, trailDrawnVertices);
+    trailDrawnMax.length = Math.max(trailDrawnMax.length, penLen);
+    trailLastDrawMs = performance.now() - startedAt;
+}
+
+// Listener postrender de trailHeadLayer : la tête, c'est-à-dire le géocacheur.
+// Masquée avant qu'il ait une position connue, et pendant un grand saut
+// « masqué » (il se téléporte).
+function drawTravelTrailHead(event) {
+    const frame = trailFrame(event);
+    if (!frame || frame.opts.head === 'none') return;
+    const { state, opts, now, penLen, ratio, m } = frame;
+    const { path } = state;
+    const started = state.hasHistory || penLen > state.startLen + 1e-6 || state.shownDay >= state.firstDay;
+    if (!started) return;
+    const head = pointAtLength(path, penLen);
+    if (!head) return;
+    if (path.kind[head.segment] === SEGMENT_HIDDEN && penLen < path.cum[head.segment] - 1e-6) return;
+
+    const ctx = event.context;
+    const hx = m[0] * head.x + m[2] * head.y + m[4];
+    const hy = m[1] * head.x + m[3] * head.y + m[5];
+    const radius = Math.max(2.5, opts.width * 1.4) * ratio;
+    ctx.save();
+    ctx.strokeStyle = opts.color;
+    ctx.fillStyle = opts.color;
+    if (opts.head === 'pulse') {
+        const phase = (((now % TRAIL_PULSE_MS) + TRAIL_PULSE_MS) % TRAIL_PULSE_MS) / TRAIL_PULSE_MS;
+        ctx.globalAlpha = (1 - phase) * 0.7;
+        ctx.lineWidth = 1.5 * ratio;
+        ctx.beginPath();
+        ctx.arc(hx, hy, radius * (1 + 1.8 * phase), 0, Math.PI * 2);
+        ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    ctx.beginPath();
+    ctx.arc(hx, hy, radius, 0, Math.PI * 2);
+    ctx.fill();
+    // Liseré clair : la tête reste lisible sur un fond de la même couleur.
+    ctx.lineWidth = 1.2 * ratio;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.stroke();
+    ctx.restore();
+}
+
+// Trace un tronçon (segments run.start..run.end) en un seul stroke. Le dernier
+// segment visible s'arrête au stylo s'il est en cours de tracé.
+function strokeTrailRun(ctx, path, run, range, m, minStep) {
+    const xy = path.xy;
+    const v0 = run.start - 1;
+    let lastX = m[0] * xy[2 * v0] + m[2] * xy[2 * v0 + 1] + m[4];
+    let lastY = m[1] * xy[2 * v0] + m[3] * xy[2 * v0 + 1] + m[5];
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
+    for (let v = run.start; v <= run.end; v++) {
+        let x = xy[2 * v];
+        let y = xy[2 * v + 1];
+        if (v === range.last && range.partial) [x, y] = range.point;
+        const px = m[0] * x + m[2] * y + m[4];
+        const py = m[1] * x + m[3] * y + m[5];
+        if (v < run.end && Math.abs(px - lastX) + Math.abs(py - lastY) < minStep) continue;
+        ctx.lineTo(px, py);
+        lastX = px;
+        lastY = py;
+        trailDrawnVertices++;
+    }
+    ctx.stroke();
+}
+
+// Un réglage d'apparence a changé : le trait affiché (animation en cours ou
+// terminée) est redessiné tout de suite, sans attendre la frame suivante.
+export function refreshTravelTrailStyle() {
+    if (trailState && trailLayer?.getVisible()) map.render();
+}
+
+// État observable du trait, pour les tests navigateur et le diagnostic.
+export function getTravelTrailDebugState() {
+    const state = trailState;
+    const now = pointAppearClock.last;
+    return {
+        active: !!state,
+        layerVisible: !!trailLayer?.getVisible(),
+        stops: trailGeometry?.route.lon.length ?? 0,
+        vertices: trailGeometry?.path.cum.length ?? 0,
+        totalLength: trailGeometry?.path.length ?? 0,
+        startLength: state?.startLen ?? 0,
+        penLength: state ? penLengthAt(state.pen, now) : 0,
+        drawnVertices: trailDrawnVertices,
+        maxDrawnVertices: trailDrawnMax.vertices,
+        maxDrawnLength: trailDrawnMax.length,
+        buildMs: trailGeometry?.buildMs ?? null,
+        lastDrawMs: trailLastDrawMs,
+    };
 }
 
 // -------------- FLASH ---------------------------------------

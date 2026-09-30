@@ -27,6 +27,9 @@ video (with a music track if you want one).
   colors.
 - **Flash effect** — animation played when each cache appears, including an
   impulse mode (halo + expanding wave, staggered geographically).
+- **Travel trail** — optional line that follows the geocacher from one stop to
+  the next and reaches the new caches just as they appear (grouping radius,
+  curves, long-jump arcs, color, width, pattern, glow, head, fading trail).
 - **Overlay** — title and info block (find count, current date), styled through
   text/box/shadow/position controls or raw CSS.
 - **Animation** — start/end dates, duration per day or total target duration,
@@ -177,6 +180,7 @@ GitHub Release.
 - [docs/preferences-et-profils.md](docs/preferences-et-profils.md) — global settings vs. profiles
 - [docs/async-tasks.md](docs/async-tasks.md) — background tasks API
 - [docs/mode-evolution.md](docs/mode-evolution.md) — Evolution mode (caches of an area appearing and disappearing, CSV imports)
+- [docs/traits-de-deplacement.md](docs/traits-de-deplacement.md) — travel trail (route computation, timing, cost)
 - [docs/translations.md](docs/translations.md) — i18n rules
 - [docs/notes/README_TESTS_VIDEO.md](docs/notes/README_TESTS_VIDEO.md) — video test matrix
 

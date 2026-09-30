@@ -1,0 +1,129 @@
+{% from '_scope_badges.html' import profile_scope_badge with context %}
+<!-- Traits de déplacement : le trajet du géocacheur d'une étape à l'autre.
+     Réglages visuels du thème ; la durée du tracé, réglage temporel, vit dans
+     le menu Animation (inputTimeTrail), comme la durée du flash. -->
+<div id="trail">
+    <h5 class="gc-section-title">
+        <i class="ti ti-route text-muted me-1"></i>{{ _("Trajet du géocacheur") }}{{ profile_scope_badge() }}
+    </h5>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="switchTrail" role="switch" aria-describedby="helpTrail">
+                <label class="form-check-label" for="switchTrail">{{ _("Afficher le trajet pendant l'animation") }}</label>
+            </div>
+            <small id="helpTrail" class="form-hint text-muted">{{ _("Un trait relie les caches trouvées d'un jour à l'autre et arrive sur les nouvelles caches au moment où elles apparaissent. Le trajet est calculé automatiquement au lancement de la lecture ou de l'enregistrement.") }}</small>
+        </div>
+    </div>
+
+    <fieldset id="trailOptions" disabled>
+        <div class="row g-3">
+            <!-- Tracé : comment relier les caches -->
+            <div class="col-12 col-md-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h6 class="card-title m-0">
+                            <i class="ti ti-map-route text-muted me-1"></i>{{ _("Tracé") }}
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <label class="form-label" for="selectTrailRouting">{{ _("Étapes du trajet") }}</label>
+                        <select id="selectTrailRouting" class="form-select" aria-describedby="helpTrailRouting">
+                            <option value="day">{{ _("Un point par jour") }}</option>
+                            <option value="clusters" selected>{{ _("Groupes de caches proches") }}</option>
+                            <option value="all">{{ _("Toutes les caches") }}</option>
+                        </select>
+                        <small id="helpTrailRouting" class="form-hint text-muted">{{ _("Chaque étape passe par une vraie cache (la plus centrale du groupe). Dans une journée, les étapes sont reliées par le plus court chemin.") }}</small>
+
+                        <div id="trailClusterRow" class="mt-3">
+                            <label class="form-label" for="inputTrailClusterKm">{{ _("Rayon de regroupement") }}</label>
+                            <div class="input-group">
+                                <input id="inputTrailClusterKm" type="number" class="form-control" min="0.1" max="100" step="0.5" aria-describedby="helpTrailClusterKm">
+                                <span class="input-group-text">{{ _("km") }}</span>
+                            </div>
+                            <small id="helpTrailClusterKm" class="form-hint text-muted">{{ _("Les caches d'un même jour à moins de cette distance les unes des autres forment une seule étape.") }}</small>
+                        </div>
+
+                        <label class="form-label mt-3" for="selectTrailCurve">{{ _("Forme du trait") }}</label>
+                        <select id="selectTrailCurve" class="form-select">
+                            <option value="straight" selected>{{ _("Lignes droites") }}</option>
+                            <option value="smooth">{{ _("Courbes lissées") }}</option>
+                        </select>
+
+                        <label class="form-label mt-3" for="inputTrailJumpKm">{{ _("Grands sauts au-delà de") }}</label>
+                        <div class="input-group">
+                            <input id="inputTrailJumpKm" type="number" class="form-control" min="10" max="5000" step="10">
+                            <span class="input-group-text">{{ _("km") }}</span>
+                        </div>
+                        <label class="form-label mt-2" for="selectTrailJumpStyle">{{ _("Affichage des grands sauts") }}</label>
+                        <select id="selectTrailJumpStyle" class="form-select" aria-describedby="helpTrailJump">
+                            <option value="arc" selected>{{ _("Arc (comme un vol)") }}</option>
+                            <option value="dashed">{{ _("Pointillés") }}</option>
+                            <option value="straight">{{ _("Trait normal") }}</option>
+                            <option value="hidden">{{ _("Masqué (téléportation)") }}</option>
+                        </select>
+                        <small id="helpTrailJump" class="form-hint text-muted">{{ _("Les réglages du tracé s'appliquent au prochain lancement de l'animation.") }}</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Apparence : style du trait -->
+            <div class="col-12 col-md-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h6 class="card-title m-0">
+                            <i class="ti ti-brush text-muted me-1"></i>{{ _("Apparence") }}
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <label class="form-label" for="trailColor">{{ _("Couleur du trait") }}</label>
+                        <input type="color" class="form-control form-control-color" id="trailColor" value="#00B8D4" aria-label="{{ _('Choisir la couleur du trait') }}">
+
+                        <label class="form-label mt-3" for="inputTrailWidth">{{ _("Épaisseur") }}</label>
+                        <div class="input-group">
+                            <input id="inputTrailWidth" type="number" class="form-control" min="1" max="20" step="1">
+                            <span class="input-group-text">{{ _("px") }}</span>
+                        </div>
+
+                        <label class="form-label mt-3" for="inputTrailOpacity">{{ _("Opacité") }}</label>
+                        <div class="vector-slider-container">
+                            <input id="inputTrailOpacity" type="range" min="10" max="100" step="5" value="85" class="form-range vector-slider">
+                            <span id="spanTrailOpacity" class="vector-slider-value">85%</span>
+                        </div>
+
+                        <label class="form-label mt-3" for="selectTrailLineStyle">{{ _("Motif") }}</label>
+                        <select id="selectTrailLineStyle" class="form-select">
+                            <option value="solid" selected>{{ _("Plein") }}</option>
+                            <option value="dashed">{{ _("Tirets") }}</option>
+                            <option value="dotted">{{ _("Points") }}</option>
+                        </select>
+
+                        <label class="form-label mt-3" for="selectTrailEffect">{{ _("Effet") }}</label>
+                        <select id="selectTrailEffect" class="form-select">
+                            <option value="none" selected>{{ _("Aucun") }}</option>
+                            <option value="glow">{{ _("Lueur") }}</option>
+                        </select>
+
+                        <label class="form-label mt-3" for="selectTrailHead">{{ _("Tête du trait (le géocacheur)") }}</label>
+                        <select id="selectTrailHead" class="form-select">
+                            <option value="none">{{ _("Aucune") }}</option>
+                            <option value="dot" selected>{{ _("Point") }}</option>
+                            <option value="pulse">{{ _("Point pulsant") }}</option>
+                        </select>
+
+                        <label class="form-label mt-3" for="selectTrailPersist">{{ _("Persistance du trait") }}</label>
+                        <select id="selectTrailPersist" class="form-select" aria-describedby="helpTrailPersist">
+                            <option value="7">{{ _("Traînée de 7 jours") }}</option>
+                            <option value="30" selected>{{ _("Traînée de 30 jours") }}</option>
+                            <option value="90">{{ _("Traînée de 90 jours") }}</option>
+                            <option value="365">{{ _("Traînée d'un an") }}</option>
+                            <option value="0">{{ _("Tout le parcours (atténué)") }}</option>
+                        </select>
+                        <small id="helpTrailPersist" class="form-hint text-muted">{{ _("La traînée s'efface au fil des jours ; « Tout le parcours » garde le trajet complet, atténué après 30 jours.") }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </fieldset>
+</div>

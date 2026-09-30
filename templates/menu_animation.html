@@ -164,6 +164,16 @@
                                 <small class="form-hint text-muted">{{ _("Forme, taille et couleur du flash : onglet Style (thème).") }}</small>
                                 <div class="invalid-feedback" id="feedbackTimeFlash"></div>
                             </div>
+                            {% if mode != 'evolution' %}
+                            <div class="mb-3">
+                                <!-- Même logique que la durée du flash : réglage temporel,
+                                     préférence globale ; le style du trait est dans le thème. -->
+                                <label for="inputTimeTrail" class="form-label">{{ _("Durée max. du tracé d'une étape (ms)") }}{{ global_scope_badge() }}</label>
+                                <input id="inputTimeTrail" type="number" class="form-control" min="100" max="10000" step="100" placeholder="{{ _('Durée du tracé') }}" aria-describedby="helpTimeTrail feedbackTimeTrail">
+                                <small id="helpTimeTrail" class="form-hint text-muted">{{ _("Raccourcie automatiquement quand les jours défilent plus vite. Style du trajet : onglet Style (thème).") }}</small>
+                                <div class="invalid-feedback" id="feedbackTimeTrail"></div>
+                            </div>
+                            {% endif %}
                         </div>
                         {# Suivi de caméra : sans objet en mode Évolution (des milliers de caches à la fois). #}
                         {% if mode != 'evolution' %}

@@ -9,6 +9,10 @@ import { isEvolutionPage } from './app_mode.mjs';
 export let json_data = null;
 export const metadata = {};
 export const pointsByDate = new Map();
+// Révision de l'index : change à chaque reconstruction (import, filtre, vidage).
+// Le trajet des traits de déplacement, précalculé à partir de l'index, s'en sert
+// comme clé de mémoïsation.
+export let pointsByDateRevision = 0;
 export let totalCaches = 0;
 
 let readLoadingToast = null;
@@ -450,6 +454,7 @@ function clearLocalData() {
     baseGeojson = null;
     for (const k of Object.keys(metadata)) delete metadata[k];
     pointsByDate.clear();
+    pointsByDateRevision++;
     totalCaches = 0;
 }
 
@@ -470,6 +475,7 @@ function updateUIAfterClear() {
 }
 
 function buildPointsByDateIndex(features = []) {
+    pointsByDateRevision++;
     try {
         pointsByDate.clear();
         if (!Array.isArray(features)) return;
@@ -1033,6 +1039,7 @@ export function setExternalDatasetState(meta, { selected = 0, total = 0 } = {}) 
     json_data = null;
     baseGeojson = null;
     pointsByDate.clear();
+    pointsByDateRevision++;
     setMetadata(meta || {});
     totalCaches = Math.max(0, Number(total) || 0);
     updateOptionsValues(metadata);

@@ -6,6 +6,7 @@
 import * as pkg from './index.js';
 import { refreshTomSelect, initTomSelect, getTomSelect, showBsModal, hideBsModal, getBsModal } from './ui_bootstrap.js';
 import { markSaved, markSaveError } from './saved_indicator.mjs';
+import { normalizeTrailOptions } from './travel_trail.mjs';
 
 // Flag de debug pour ce fichier. Mettre à true pour réactiver les logs en
 // console (désactivés par défaut : sérialiser des objets/chaînes à chaque
@@ -1434,11 +1435,17 @@ class ProfileManager {
                 final_infos: infosSettings
             });
 
+            // Traits de déplacement. Sérialisés sur les deux pages : l'onglet
+            // Trajet n'existe pas en mode Évolution, mais un thème enregistré
+            // depuis celui-ci ne doit pas perdre le réglage.
+            const trailSettings = trailSettingsForProfile(pkg.options?.trail);
+
             this.currentSettings = {
                 map: mapSettings,
                 points: pointSettings,
                 flash: flashSettings,
                 infos: infosSettings,
+                trail: trailSettings,
             };
 
             dbgProfiles('PARAMÈTRES ACTUELS COMPLÈTS - Récupérés depuis l\'interface:', {
@@ -1512,6 +1519,7 @@ class ProfileManager {
         if (profile.points) applyPointState(profile.points);
         if (profile.flash) applyFlashState(profile.flash);
         if (profile.infos) applyInfosState(profile.infos);
+        if (profile.trail) applyTrailState(profile.trail);
 
         // ---- 2. Interface ----
         // La carte fait exception : switchLayer() écrit lui-même son option et
@@ -1519,6 +1527,7 @@ class ProfileManager {
         if (profile.map) applyMapSettings(profile.map);
         if (profile.points) pkg.syncPointOptionsUI();
         if (profile.flash) pkg.syncFlashOptionsUI();
+        if (profile.trail) pkg.syncTrailOptionsUI();
         if (profile.infos) {
             pkg.syncInfosOptionsUI();
             applyInfosCss(profile.infos);
@@ -1530,6 +1539,9 @@ class ProfileManager {
             const olMap = typeof pkg.getMap === 'function' ? pkg.getMap() : null;
             if (olMap) pkg.refreshPoints(pkg.options);
         }
+        // Un trait déjà affiché (animation en cours ou terminée) prend le style
+        // du thème sans attendre la frame suivante.
+        if (profile.trail) pkg.refreshTravelTrailStyle?.();
         // Les compteurs d'images dépendent de l'animation ET du flash : un profil
         // sans bloc animation doit quand même les recalculer.
         pkg.updateInfosForPictures();
@@ -1568,6 +1580,7 @@ class ProfileManager {
             points: this.currentSettings.points,
             flash: this.currentSettings.flash,
             infos: this.currentSettings.infos,
+            trail: this.currentSettings.trail,
         };
     }
 
@@ -2070,6 +2083,50 @@ export function normalizeDisappearFlash(value) {
 }
 
 // Écrit les paramètres de flash du profil dans pkg.options.flash.
+// Traits de déplacement : pkg.options.trail (camelCase, voir travel_trail.mjs)
+// <-> section `trail` du thème (snake_case, TrailOptions côté serveur).
+function trailSettingsForProfile(trailOptions) {
+    const trail = normalizeTrailOptions(trailOptions);
+    return {
+        enabled: trail.enabled,
+        routing: trail.routing,
+        cluster_km: trail.clusterKm,
+        jump_km: trail.jumpKm,
+        jump_style: trail.jumpStyle,
+        curve: trail.curve,
+        color: trail.color,
+        width: trail.width,
+        opacity: trail.opacity,
+        line_style: trail.lineStyle,
+        effect: trail.effect,
+        head: trail.head,
+        persist_days: trail.persistDays,
+    };
+}
+
+function applyTrailState(trailOptions) {
+    // La durée du tracé n'est pas un réglage de thème (préférence globale
+    // d'animation) : celle en vigueur est conservée.
+    const duration = pkg.options?.trail?.duration;
+    pkg.options.trail = normalizeTrailOptions({
+        enabled: trailOptions.enabled === true,
+        routing: trailOptions.routing,
+        clusterKm: trailOptions.cluster_km,
+        jumpKm: trailOptions.jump_km,
+        jumpStyle: trailOptions.jump_style,
+        curve: trailOptions.curve,
+        color: trailOptions.color,
+        width: trailOptions.width,
+        opacity: trailOptions.opacity,
+        lineStyle: trailOptions.line_style,
+        effect: trailOptions.effect,
+        head: trailOptions.head,
+        persistDays: trailOptions.persist_days,
+        duration,
+    });
+    dbgProfiles('Paramètres des traits appliqués:', pkg.options.trail);
+}
+
 function applyFlashState(flashOptions) {
     try {
         const flash = pkg.options?.flash;

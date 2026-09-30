@@ -315,6 +315,9 @@ class AnimationPrefs:
     # Durée du flash : réglage d'animation (temporel), alors que forme, taille
     # et couleur du flash restent dans le thème.
     flash_duration_ms: int = 1000
+    # Durée maximale du tracé d'une étape du trajet (même logique que la durée
+    # du flash) ; raccourcie à l'exécution quand les jours défilent plus vite.
+    trail_duration_ms: int = 800
 
 
 def evolution_animation_defaults() -> AnimationPrefs:
@@ -350,6 +353,29 @@ class FlashOptions:
     color: str = "#FF00FF"
     color_type: str = "fix"  # "gc", "none", "fix"
     disappear: DisappearFlashOptions = field(default_factory=DisappearFlashOptions)
+
+
+@dataclass
+class TrailOptions:
+    """Traits de déplacement : le trajet du géocacheur d'une étape à l'autre.
+
+    Mêmes valeurs par défaut que TRAIL_DEFAULTS (static/js/travel_trail.mjs) et
+    le bloc `trail` de static/json/defaultValues.json. La durée du tracé n'en
+    fait pas partie : c'est un réglage temporel (AnimationPrefs).
+    """
+    enabled: bool = False
+    routing: str = "clusters"  # "day", "clusters", "all"
+    cluster_km: float = 2.0  # rayon de regroupement des caches d'un jour
+    jump_km: int = 150  # au-delà, le segment est un « grand saut »
+    jump_style: str = "arc"  # "arc", "dashed", "straight", "hidden"
+    curve: str = "straight"  # "straight", "smooth"
+    color: str = "#00B8D4"
+    width: int = 3  # en px
+    opacity: int = 85  # en %
+    line_style: str = "solid"  # "solid", "dashed", "dotted"
+    effect: str = "none"  # "none", "glow"
+    head: str = "dot"  # "none", "dot", "pulse"
+    persist_days: int = 30  # 0 = tout le parcours reste affiché
 
 
 @dataclass
@@ -402,6 +428,7 @@ class MapProfile:
     points: PointStyle = field(default_factory=PointStyle)
     flash: FlashOptions = field(default_factory=FlashOptions)
     infos: InfosOptions = field(default_factory=InfosOptions)
+    trail: TrailOptions = field(default_factory=TrailOptions)
 
 
 class InvalidProfileNameError(ValueError):
@@ -474,6 +501,18 @@ ICON_SIZE_RANGE = (12, 40)
 FLASH_SIZE_RANGE = (5, 200)
 STROKE_WIDTH_RANGE = (0.0, 5.0)
 RECENT_GLOW_DAYS_RANGE = (0, 365)
+# Traits de déplacement : miroir de static/js/travel_trail.mjs (TRAIL_*).
+TRAIL_ROUTINGS = ("day", "clusters", "all")
+TRAIL_JUMP_STYLES = ("arc", "dashed", "straight", "hidden")
+TRAIL_CURVES = ("straight", "smooth")
+TRAIL_LINE_STYLES = ("solid", "dashed", "dotted")
+TRAIL_EFFECTS = ("none", "glow")
+TRAIL_HEADS = ("none", "dot", "pulse")
+TRAIL_PERSIST_DAYS = (7, 30, 90, 365, 0)
+TRAIL_CLUSTER_KM_RANGE = (0.1, 100.0)
+TRAIL_JUMP_KM_RANGE = (10, 5000)
+TRAIL_WIDTH_RANGE = (1, 20)
+TRAIL_OPACITY_RANGE = (10, 100)
 
 
 THEMES = ("system", "light", "dark")
@@ -605,6 +644,7 @@ def coerce_animation_settings(d: dict, defaults: Optional[AnimationPrefs] = None
     a.camera_follow = bool(d.get("camera_follow", a.camera_follow))
     a.camera_dynamism = _clamp_int(d.get("camera_dynamism"), a.camera_dynamism, 1, 4)
     a.flash_duration_ms = _clamp_int(d.get("flash_duration_ms"), a.flash_duration_ms, 100, 10000)
+    a.trail_duration_ms = _clamp_int(d.get("trail_duration_ms"), a.trail_duration_ms, 100, 10000)
     return a
 
 
@@ -776,6 +816,30 @@ def coerce_profile(d: dict, base: Optional[MapProfile] = None) -> MapProfile:
             current_date=bool(i.get("current_date", p.infos.current_date)),
             title_css=sanitize_overlay_css(i.get("title_css", p.infos.title_css)),
             infos_css=sanitize_overlay_css(i.get("infos_css", p.infos.infos_css)),
+        )
+
+        # Traits de déplacement : absents des thèmes antérieurs, qui reçoivent
+        # alors les valeurs par défaut (trait désactivé).
+        tr = d.get("trail", {}) if isinstance(d.get("trail", {}), dict) else {}
+        pt = p.trail
+        # Liste fermée (comme le <select>) ; un booléen n'est pas un nombre de
+        # jours, alors que False vaudrait 0, « tout le parcours ».
+        raw_persist = tr.get("persist_days", pt.persist_days)
+        persist = None if isinstance(raw_persist, bool) else _to_int(raw_persist, None)
+        p.trail = TrailOptions(
+            enabled=bool(tr.get("enabled", pt.enabled)),
+            routing=_coerce_choice(tr.get("routing"), TRAIL_ROUTINGS, pt.routing),
+            cluster_km=_clamp_float(tr.get("cluster_km"), pt.cluster_km, *TRAIL_CLUSTER_KM_RANGE),
+            jump_km=_clamp_int(tr.get("jump_km"), pt.jump_km, *TRAIL_JUMP_KM_RANGE),
+            jump_style=_coerce_choice(tr.get("jump_style"), TRAIL_JUMP_STYLES, pt.jump_style),
+            curve=_coerce_choice(tr.get("curve"), TRAIL_CURVES, pt.curve),
+            color=_coerce_hex_color(tr.get("color"), pt.color),
+            width=_clamp_int(tr.get("width"), pt.width, *TRAIL_WIDTH_RANGE),
+            opacity=_clamp_int(tr.get("opacity"), pt.opacity, *TRAIL_OPACITY_RANGE),
+            line_style=_coerce_choice(tr.get("line_style"), TRAIL_LINE_STYLES, pt.line_style),
+            effect=_coerce_choice(tr.get("effect"), TRAIL_EFFECTS, pt.effect),
+            head=_coerce_choice(tr.get("head"), TRAIL_HEADS, pt.head),
+            persist_days=persist if persist in TRAIL_PERSIST_DAYS else pt.persist_days,
         )
 
     return p
@@ -2258,7 +2322,22 @@ class SettingsManager:
                 'current_date': prof.infos.current_date,
                 'title_css': prof.infos.title_css,
                 'infos_css': prof.infos.infos_css,
-            }
+            },
+            'trail': {
+                'enabled': prof.trail.enabled,
+                'routing': prof.trail.routing,
+                'cluster_km': prof.trail.cluster_km,
+                'jump_km': prof.trail.jump_km,
+                'jump_style': prof.trail.jump_style,
+                'curve': prof.trail.curve,
+                'color': prof.trail.color,
+                'width': prof.trail.width,
+                'opacity': prof.trail.opacity,
+                'line_style': prof.trail.line_style,
+                'effect': prof.trail.effect,
+                'head': prof.trail.head,
+                'persist_days': prof.trail.persist_days,
+            },
         }
 
     def export_profile_payload(self, name: str, app_version: str) -> dict:
