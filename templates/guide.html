@@ -54,6 +54,11 @@
                 <a href="#settings" class="guide-nav-link">
                     <span class="nav-num">4</span>{{ _("Préférences") }}
                 </a>
+
+                <div class="guide-nav-section-title">{{ _("Autre mode") }}</div>
+                <a href="#evolution" class="guide-nav-link">
+                    <i class="ti ti-stack"></i>{{ _("Évolution d'une zone") }}
+                </a>
             </nav>
         </aside>
 
@@ -313,6 +318,34 @@
                         <i class="ti ti-arrow-left"></i>{{ _("Retour à l'application") }}
                     </a>
                 </div>
+            </section>
+
+            <!-- ===================== AUTRE MODE : ÉVOLUTION ===================== -->
+            <section id="evolution" class="guide-section">
+                <div class="guide-section-head">
+                    <span class="sec-badge"><i class="ti ti-stack"></i></span>
+                    <h2>{{ _("Autre mode : évolution d'une zone") }}</h2>
+                </div>
+                <p class="guide-section-intro">{{ _("Au lieu de vos trouvailles, animez toutes les caches d'une zone : chacune apparaît à sa date de placement et disparaît à son archivage, et le compteur suit le nombre de caches actives.") }}</p>
+
+                <ol class="guide-steps">
+                    <li>
+                        <h3>{{ _("Ouvrez le mode Évolution") }}</h3>
+                        <p>{{ _("En haut de l'onglet") }} <span class="ui-chip">{{ _("Données") }}</span>, {{ _("le sélecteur") }} <span class="ui-chip"><i class="ti ti-database"></i> {{ _("Mes trouvailles") }}</span> <span class="ui-chip"><i class="ti ti-stack"></i> {{ _("Évolution d'une zone") }}</span> {{ _("passe d'un mode à l'autre. Chaque mode garde ses propres données.") }}</p>
+                    </li>
+                    <li>
+                        <h3>{{ _("Importez les exports CSV de la zone") }}</h3>
+                        <p>{{ _("Sélectionnez ou glissez-déposez un ou plusieurs fichiers CSV (code GC, latitude, longitude, date de placement et, si possible, date d'archivage). Ils sont fusionnés dans une base nommée, que vous pourrez compléter plus tard avec un export plus récent : les nouvelles caches et les archivages s'y ajoutent.") }}</p>
+                        <div class="guide-callout info">
+                            <i class="ti ti-info-circle"></i>
+                            <div>{{ _("Une cache archivée sans date d'archivage reste affichée jusqu'à la fin. Les coordonnées corrigées ne sont jamais utilisées.") }}</div>
+                        </div>
+                    </li>
+                    <li>
+                        <h3>{{ _("Réglez puis exportez") }}</h3>
+                        <p>{{ _("Filtrez par pays ou région, choisissez un thème (le flash de disparition se règle dans l'onglet Style) et une durée : par défaut, toute la période tient en une minute.") }}</p>
+                    </li>
+                </ol>
             </section>
 
         </main>

@@ -21,6 +21,7 @@ export * from './notifications.js';
 export * from './flash_animations.js';
 export * from './profiles.js';
 export * from './theme.js';
+export * from './evolution_data.js';
 
 // Scripts de démonstration (fonctions window.demo*/test* à appeler depuis la
 // console), réservés au développement. Le drapeau vient de Flask : tester

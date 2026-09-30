@@ -3,6 +3,7 @@
 // flask --app app.py --debug run
 
 import * as pkg from './index.js';
+import { isEvolutionPage } from './app_mode.mjs';
 
 // Import de la couche d'abstraction Bootstrap/Tabler (remplace progressivement M.*)
 import {
@@ -67,10 +68,21 @@ document.addEventListener('DOMContentLoaded', async function() {
     const defaultValuesPromise = pkg.getDefaultValues();
     const userSettingsPromise = fetchUserSettings();
 
-    // check la présence d'une BDD et les affiche (fire-and-forget, indépendant).
-    // offerFirstUse: sur base absente ou vide, affiche la modale de première
-    // utilisation invitant à charger un fichier GPX.
-    pkg.readBddValues({ offerFirstUse: true });
+    // Page du mode Évolution (/evolution) : ses données viennent de bases de
+    // caches importées depuis des CSV, pas de la base des trouvailles.
+    const evolutionPage = isEvolutionPage();
+
+    if (evolutionPage) {
+        // La modale de première utilisation invite à charger un GPX : sans objet
+        // ici. Le jalon est quand même publié pour les tests et intégrations.
+        window.mygcflowFirstUseSettled = true;
+        window.dispatchEvent(new CustomEvent('mygcflow:first-use-settled'));
+    } else {
+        // check la présence d'une BDD et les affiche (fire-and-forget, indépendant).
+        // offerFirstUse: sur base absente ou vide, affiche la modale de première
+        // utilisation invitant à charger un fichier GPX.
+        pkg.readBddValues({ offerFirstUse: true });
+    }
 
     // Les valeurs par défaut sont requises pour initialiser la classe "options".
     const optionsValues = await defaultValuesPromise;
@@ -151,7 +163,13 @@ document.addEventListener('DOMContentLoaded', async function() {
     // (après le profil de démarrage, pour éviter un "saut" visuel)
     pkg.displayFrames();
 
-    pkg.readBdd();  // creation du geojson et des metadatas
+    if (evolutionPage) {
+        // Liste des bases puis chargement de la dernière ouverte (asynchrone,
+        // comme readBdd ; fin signalée par l'événement mygcflow:evolution-loaded).
+        pkg.initEvolutionPage();
+    } else {
+        pkg.readBdd();  // creation du geojson et des metadatas
+    }
 
     // Signal stable pour les intégrations et les tests navigateur : à ce
     // stade les valeurs par défaut, les préférences, l'UI et l'éventuel

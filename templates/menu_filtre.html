@@ -156,26 +156,5 @@
     </div>
 
     <!-- Ligne 5 : Pays et Régions/États -->
-    <div class="row g-2">
-        <div class="mb-3 col-12 col-md-6 filter-field">
-        <label class="form-label" for="selectCountry">{{ _("Pays") }}</label>
-        <select multiple id="selectCountry" class="form-select filter-select" aria-label="{{ _('Pays') }}">
-            <option value="" disabled selected>{{ _("Filtrer par pays") }}</option>
-        </select>
-        <div class="filter-actions mt-1">
-            <button type="button" id="btnAllCountry" class="btn btn-link btn-sm p-0 me-2"><i class="ti ti-checks me-1"></i>{{ _("Tout") }}</button>
-            <button type="button" id="btnNoneCountry" class="btn btn-link btn-sm p-0"><i class="ti ti-x me-1"></i>{{ _("Aucun") }}</button>
-        </div>
-        </div>
-        <div class="mb-3 col-12 col-md-6 filter-field">
-            <label class="form-label" for="selectState">{{ _("Région / État") }}</label>
-            <select multiple id="selectState" class="form-select filter-select" aria-label="{{ _('Région / État') }}">
-                <option value="" disabled selected>{{ _("Filtrer par région/état") }}</option>
-            </select>
-        <div class="filter-actions mt-1">
-            <button type="button" id="btnAllState" class="btn btn-link btn-sm p-0 me-2"><i class="ti ti-checks me-1"></i>{{ _("Tout") }}</button>
-            <button type="button" id="btnNoneState" class="btn btn-link btn-sm p-0"><i class="ti ti-x me-1"></i>{{ _("Aucun") }}</button>
-        </div>
-        </div>
-    </div>
+    {% include '_filter_country_state.html' %}
 </section>

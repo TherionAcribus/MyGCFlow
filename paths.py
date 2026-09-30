@@ -108,6 +108,16 @@ def database_path() -> Path:
     return instance_dir() / "geocaching.db"
 
 
+def evolution_database_path() -> Path:
+    """Bases du mode Évolution (caches d'une zone importées depuis des CSV).
+
+    Fichier distinct de geocaching.db : le cache GeoJSON des trouvailles est
+    indexé sur la date de modification de celle-ci, et « Supprimer mes
+    trouvailles » ne doit pas toucher aux bases du mode Évolution.
+    """
+    return instance_dir() / "evolution.db"
+
+
 def geojson_data_path() -> Path:
     """GeoJSON complet persisté (cache reconstruit à partir de la base)."""
     return instance_dir() / "geojson_data.json"

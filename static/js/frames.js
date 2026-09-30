@@ -71,7 +71,9 @@ export function updateInfosReserve(){
         showCount: opts?.numberOfCaches?.display === true,
         showDate: opts?.currentDate?.display === true,
         currentValue: document.getElementById("spanNbCaches")?.textContent,
-        finalValue: pkg.metadata?.numberOfCaches,
+        // Mode Évolution : le compteur ne dépasse jamais le pic de caches
+        // actives, bien inférieur au total de la sélection.
+        finalValue: pkg.metadata?.counterMax ?? pkg.metadata?.numberOfCaches,
     });
     if (reserve.textContent === text) return;
     reserve.textContent = text;

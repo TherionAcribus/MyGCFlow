@@ -1,5 +1,6 @@
 import * as pkg from './index.js';
 import { buildImageTimingPlan } from './video_timing.mjs';
+import { isEvolutionPage } from './app_mode.mjs';
 
 // Fonction pour convertir Hex en composantes RGB
 export function hexToRgb(hex) {
@@ -40,8 +41,9 @@ export function updateInfosForPictures(){
         fps: pkg.options.record.fps,
         extraEndSeconds: pkg.options.animation.extraEndSeconds,
         tailFreezeMs: pkg.options.record?.mediaRecorder?.tailFreezeMs,
-        flashMode: pkg.options.flash.mode,
+        flashMode: pkg.effectiveFlashMode ? pkg.effectiveFlashMode() : pkg.options.flash.mode,
         flashDurationMs: pkg.options.flash.duration,
+        allowMultipleDaysPerFrame: isEvolutionPage(),
     });
 
     pkg.options.record.framesPerDay = plan.framesPerDayAverage;

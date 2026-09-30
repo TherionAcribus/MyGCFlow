@@ -51,11 +51,11 @@
         <link rel="stylesheet" href="../static/vendor/ol/ol.css">
         <!--<link rel="stylesheet" href="../static/css/ol.css">-->
 
-        <title>MyGCFlow</title>
+        <title>{% if mode == 'evolution' %}MyGCFlow – {{ _("Évolution") }}{% else %}MyGCFlow{% endif %}</title>
         <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/mygcflow-icon.png') }}">
     </head>
 
-    <body data-dev="{{ 1 if config.DEBUG else 0 }}">
+    <body data-dev="{{ 1 if config.DEBUG else 0 }}" data-mode="{{ mode|default('main') }}">
         <main>
             <div id="mapTabsContainer">
                 <div id="mapWithFrames">
@@ -106,6 +106,17 @@
                          La carte reste manipulable (l'overlay laisse passer les
                          événements, seule la carte d'appel est cliquable). -->
                     <div id="emptyState" class="empty-state" role="status" style="display:none">
+                        {% if mode == 'evolution' %}
+                        <div class="empty-state-card">
+                            <i class="ti ti-file-upload empty-state-icon" aria-hidden="true"></i>
+                            <p class="empty-state-text">{{ _("Importez un ou plusieurs exports CSV des caches d'une zone pour commencer") }}</p>
+                            <button type="button" id="btnEvolutionEmptyStateImport" class="btn btn-primary">
+                                <i class="ti ti-upload me-1" aria-hidden="true"></i>{{ _("Sélectionner des exports CSV") }}
+                            </button>
+                            <p class="empty-state-hint">{{ _("ou glissez-déposez vos fichiers n'importe où sur la page") }}</p>
+                            <p class="empty-state-hint"><a href="/">{{ _("Revenir au mode principal (mes trouvailles)") }}</a></p>
+                        </div>
+                        {% else %}
                         <div class="empty-state-card">
                             <i class="ti ti-file-upload empty-state-icon" aria-hidden="true"></i>
                             <p class="empty-state-text">{{ _("Chargez votre fichier .gpx pour commencer") }}</p>
@@ -123,6 +134,7 @@
                             </div>
                             <p class="empty-state-hint">{{ _("ou glissez-déposez votre fichier n'importe où sur la page") }}</p>
                         </div>
+                        {% endif %}
                     </div>
                 </div>
 
@@ -205,8 +217,12 @@
             <div class="row">
                 <div class="col-12">
                     <div class="tab-content">
-                        <!-- Onglet Données -->
+                        <!-- Onglet Données (propre à chaque mode) -->
+                        {% if mode == 'evolution' %}
+                        {% include 'menu_data_evolution.html' %}
+                        {% else %}
                         {% include 'menu_data.html' %}
+                        {% endif %}
 
                         <!-- Onglet Style -->
                         {% include 'menu_style.html' %}
@@ -231,8 +247,13 @@
             <!-- Modal d'infos / erreurs -->
             {% include 'modal_infos.html' %}
 
+            {% if mode == 'evolution' %}
+            <!-- Modales du mode Évolution (nom et suppression d'une base) -->
+            {% include 'modal_evolution.html' %}
+            {% else %}
             <!-- Modal de première utilisation -->
             {% include 'modal_first_use.html' %}
+            {% endif %}
 
         </main>
 

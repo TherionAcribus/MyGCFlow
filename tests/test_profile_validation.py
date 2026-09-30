@@ -173,6 +173,47 @@ class ProfileSaveAndImportValidationTests(unittest.TestCase):
         prof = self.manager.import_profile_payload(payload)
         self.assertEqual(prof.name, "Imported")
         self.assertFalse((settings_manager.PROFILES_DIR / "Default.json").exists())
+    def test_a_partial_patch_merges_into_the_disappear_flash(self):
+        self._put({"flash": {"disappear": {"mode": "star"}}})
+        self._put({"flash": {"disappear": {"color": "#112233"}}})
+        saved = settings_manager.read_json(settings_manager.PROFILES_DIR / "Alpha.json")
+        self.assertEqual(saved["flash"]["disappear"], {
+            "mode": "star", "size": 30, "color": "#112233", "color_type": "fix",
+        })
+        # Les réglages du flash d'apparition sont intacts.
+        self.assertEqual(saved["flash"]["color"], "#00ff00")
+
+    def test_export_and_import_keep_the_disappear_flash(self):
+        prof = self.manager.load_profile("Alpha")
+        prof.flash.disappear.mode = "circle"
+        self.manager.save_profile(prof)
+        payload = self.manager.export_profile_payload("Alpha", "test")
+        self.assertEqual(payload["profile"]["flash"]["disappear"]["mode"], "circle")
+        payload["profile"]["name"] = "Copie"
+        imported = self.manager.import_profile_payload(payload)
+        self.assertEqual(imported.flash.disappear.mode, "circle")
+
+
+class DisappearFlashTests(unittest.TestCase):
+    """Flash de disparition du mode Évolution, porté par le thème."""
+
+    def test_a_legacy_theme_gets_the_default_disappear_flash(self):
+        prof = coerce_profile({"flash": {"mode": "star", "size": 40}})
+        self.assertEqual(prof.flash.disappear, settings_manager.DisappearFlashOptions())
+        self.assertEqual(prof.flash.disappear.mode, "implode")
+
+    def test_disappear_values_are_validated(self):
+        prof = coerce_profile({"flash": {"disappear": {
+            "mode": "impulse", "size": 999, "color": "rouge", "color_type": "gc",
+        }}})
+        self.assertEqual(prof.flash.disappear.mode, "implode")
+        self.assertEqual(prof.flash.disappear.size, 200)
+        self.assertEqual(prof.flash.disappear.color, "#9E9E9E")
+        self.assertEqual(prof.flash.disappear.color_type, "gc")
+
+    def test_garbage_disappear_block_keeps_the_defaults(self):
+        prof = coerce_profile({"flash": {"disappear": "star"}})
+        self.assertEqual(prof.flash.disappear, settings_manager.DisappearFlashOptions())
 
 
 if __name__ == "__main__":

@@ -29,6 +29,7 @@ import {
 import { saveSettingsPatch, makeDebouncedSettingsSaver } from './settings_api.mjs';
 import { reportSave, markSaveError } from './saved_indicator.mjs';
 import { t } from './notifications.js';
+import { isEvolutionPage } from './app_mode.mjs';
 
 // Flag de debug pour les filtres (COUNTRY/FILTER).
 // Mettre à true pour réactiver les logs en console.
@@ -48,6 +49,11 @@ var radioFillColorPoint, radioborderColorPoint;
 var switchIconeVectoriel, selectShape;
 // Filtres BDD - boutons d'aide
 var btnAllType, btnNoneType, btnAllDifficulty, btnNoneDifficulty, btnAllTerrain, btnNoneTerrain, btnAllContainer, btnNoneContainer;
+// Filtres BDD - champs. Déclarés ici : les fonctions de filtre hors de
+// initUIElements s'appuyaient sinon sur les globales implicites créées par
+// les id HTML (window.selectType...), absentes de la page du mode Évolution
+// qui n'a que les filtres Pays / Région (ReferenceError au démarrage).
+var selectType, selectTerrain, selectDifficulty, selectContainer;
 
 var debounceTimer = null;
 const DEBOUNCE_DELAY = 200; // ms
@@ -264,16 +270,16 @@ function initUIElements() {
 // MENU BDD
 
 // select BDD
-const selectType = document.getElementById('selectType');
+selectType = document.getElementById('selectType');
     if (selectType) selectType.addEventListener('change', onSelectionChangedDebounced);
 
-const selectTerrain = document.getElementById('selectTerrain');
+selectTerrain = document.getElementById('selectTerrain');
     if (selectTerrain) selectTerrain.addEventListener('change', onSelectionChangedDebounced);
 
-const selectDifficulty = document.getElementById('selectDifficulty');
+selectDifficulty = document.getElementById('selectDifficulty');
     if (selectDifficulty) selectDifficulty.addEventListener('change', onSelectionChangedDebounced);
 
-const selectContainer = document.getElementById('selectContainer');
+selectContainer = document.getElementById('selectContainer');
     if (selectContainer) selectContainer.addEventListener('change', onSelectionChangedDebounced);
 
 // Country/State selects
@@ -721,6 +727,9 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     radioFlashColor.forEach(radio => {
         radio.addEventListener('change', () => changeFlashColorType(radio));
     });
+
+    // Flash de disparition (page du mode Évolution uniquement)
+    initDisappearFlashControls();
 
     // INFOS
     // checkboxes
@@ -2505,6 +2514,12 @@ function loadRecordSettings() {
 
 const saveAnimationSettingsDebounced = makeDebouncedSettingsSaver(500);
 
+// Le mode Évolution a son propre rythme (clé `evolution_animation`) : des
+// décennies de données ne se jouent pas au tempo des trouvailles.
+function animationSettingsKey() {
+    return isEvolutionPage() ? 'evolution_animation' : 'animation';
+}
+
 // Traduit pkg.options.animation/flash vers la forme snake_case de l'API.
 function animationSettingsPayload() {
     const a = pkg.options.animation || {};
@@ -2515,7 +2530,7 @@ function animationSettingsPayload() {
         days_per_second: Number.isFinite(dps) && dps > 0 ? dps : TIMING_LIMITS.daysPerSecond.fallback,
         total_duration_seconds: Number.isFinite(total) && total > 0 ? total : TIMING_LIMITS.totalDurationSeconds.fallback,
         extra_end_seconds: Math.max(0, Number(a.extraEndSeconds) || 0),
-        camera_follow: a.cameraFollow === true,
+        camera_follow: a.cameraFollow === true && !isEvolutionPage(),
         camera_dynamism: Math.min(4, Math.max(1, Math.round(Number(a.cameraDynamism) || 2))),
         // La durée du flash vit ici (temporel) même si son aspect est un
         // réglage de thème.
@@ -2528,7 +2543,7 @@ function animationSettingsPayload() {
 // jamais eu (la confirmation visuelle porte sur l'onglet Enregistrement).
 export function saveAnimationSettings() {
     try {
-        saveAnimationSettingsDebounced({ animation: animationSettingsPayload() });
+        saveAnimationSettingsDebounced({ [animationSettingsKey()]: animationSettingsPayload() });
     } catch(e) {
         console.warn('Save animation settings error:', e);
     }
@@ -2555,6 +2570,8 @@ function applyAnimationSettingsPayload(anim) {
         a.extraEndSeconds = Math.min(TIMING_LIMITS.extraEndSeconds.max, extra);
     }
     if (typeof anim.camera_follow === 'boolean') a.cameraFollow = anim.camera_follow;
+    // Suivi de caméra : sans objet quand des milliers de caches bougent à la fois.
+    if (isEvolutionPage()) a.cameraFollow = false;
     const cameraDynamism = Math.round(Number(anim.camera_dynamism));
     if (cameraDynamism >= 1 && cameraDynamism <= 4) a.cameraDynamism = cameraDynamism;
     const flash = Number(anim.flash_duration_ms);
@@ -2576,7 +2593,7 @@ function applyAnimationSettingsPayload(anim) {
 // (plusieurs profils pouvaient contenir des vitesses différentes).
 function loadAnimationSettings() {
     try {
-        const anim = window.userSettings?.animation;
+        const anim = window.userSettings?.[animationSettingsKey()];
         if (anim && typeof anim === 'object') {
             return applyAnimationSettingsPayload(anim);
         }
@@ -2606,11 +2623,17 @@ export function setPickerDates(metadata) {
     const formattedStartDate = formatDateForPickers(defaultStartDate);
     const formattedEndDate = formatDateForPickers(defaultEndDate);
 
-    // Tempus Dominus : définir la date via l'API + l'input texte
-    setTdDate(startDateElement, defaultStartDate);
-    setTdDate(endDateElement, defaultEndDate);
-    startDateElement.value = formattedStartDate;
-    endDateElement.value = formattedEndDate;
+    // Tempus Dominus : définir la date via l'API + l'input texte. Champs absents
+    // en mode Évolution (pas de période de découverte) : seules les dates
+    // d'animation sont alors réglées.
+    if (startDateElement) {
+        setTdDate(startDateElement, defaultStartDate);
+        startDateElement.value = formattedStartDate;
+    }
+    if (endDateElement) {
+        setTdDate(endDateElement, defaultEndDate);
+        endDateElement.value = formattedEndDate;
+    }
 
     updateResetButtonsHighlight();
 
@@ -2864,6 +2887,13 @@ function onSelectionChangedDebounced(){
 
 function applySelectionChange(){
     const selectedValues = collectSelectedValues();
+    if (isEvolutionPage()) {
+        // Sélection propre à la base ouverte : ne pas écraser celle du mode
+        // principal (localStorage 'filtersSelection', partagé par les deux pages).
+        updateFilterInfos();
+        pkg.evolutionApplySelection?.(selectedValues);
+        return;
+    }
     persistSelectedValues(selectedValues);
     updateFilterInfos();
     pkg.changeSelect(selectedValues, pkg.options);
@@ -2960,6 +2990,9 @@ function updateCompactFilterSummary(selectEl, all = null, none = null){
 // vide, il faut le recharger une fois les données importées pour que les
 // filtres Pays/Région existent.
 export function refreshCountryStateFilters() {
+    // Mode Évolution : l'arbre vient de la base ouverte (setCountryStateTree),
+    // pas de la base des trouvailles.
+    if (isEvolutionPage()) return;
     try {
         dbgFilters('[COUNTRY] Fetching /api/country_state ...');
         const apiUrl = `${window.location.origin}/api/country_state`;
@@ -2986,6 +3019,14 @@ export function refreshCountryStateFilters() {
     } catch(e) {
         console.warn('[COUNTRY] Outer try/catch error:', e);
     }
+}
+
+// Mode Évolution : arbre pays -> régions de la base ouverte, toutes les
+// options sélectionnées.
+export function setCountryStateTree(tree) {
+    countryToStates = tree && typeof tree === 'object' ? tree : {};
+    populateCountryStateSelects(countryToStates);
+    updateFilterInfos();
 }
 
 function populateCountryStateSelects(tree){
@@ -4098,7 +4139,11 @@ function toggleButtonAnimationPauseAndRestart(reinitialisation = false){
 // Dans chaque mode, les deux autres valeurs sont des résultats calculés
 // affichés en lecture seule.
 
-const RHYTHM_PRESETS = Object.freeze({ slow: 10, normal: 20, fast: 50 });
+// Mode Évolution : des décennies de données, donc des préréglages plus rapides
+// (libellés assortis dans menu_animation.html).
+const RHYTHM_PRESETS = isEvolutionPage()
+    ? Object.freeze({ slow: 50, normal: 150, fast: 400 })
+    : Object.freeze({ slow: 10, normal: 20, fast: 50 });
 
 function rhythmMode() {
     return pkg.options?.animation?.rhythmMode || 'rate';
@@ -4200,10 +4245,13 @@ function refreshTimingPlan({ save = true } = {}) {
         endDate: animation.dateEnd,
         rhythm: rhythm || { mode: 'rate', daysPerSecond: animation.daysPerSecond || TIMING_LIMITS.daysPerSecond.fallback },
         fps: pkg.options.record?.fps,
-        flashMode: pkg.options.flash?.mode,
+        flashMode: pkg.effectiveFlashMode ? pkg.effectiveFlashMode() : pkg.options.flash?.mode,
         flashDurationMs: Number(pkg.options.flash?.duration) || 0,
         tailFreezeMs: pkg.options.record?.mediaRecorder?.tailFreezeMs,
         extraEndSeconds: extraP.ok ? extraP.value : (Number(animation.extraEndSeconds) || 0),
+        // Mode Évolution : plusieurs jours peuvent partager une image, sinon
+        // vingt ans de données imposeraient cinq minutes de vidéo au minimum.
+        allowMultipleDaysPerFrame: isEvolutionPage(),
     });
     lastTimingPlan = plan;
 
@@ -4226,6 +4274,8 @@ function refreshTimingPlan({ save = true } = {}) {
     timingInputsValid = fieldsValid && plan.valid;
     updateDataAvailabilityUI();
     pkg.updateInfosForPictures();
+    // Mode Évolution : la carte au repos montre l'état à la date de fin.
+    if (isEvolutionPage()) pkg.evolutionRefreshRest?.();
     if (save) saveAnimationSettings();
 }
 
@@ -4313,6 +4363,9 @@ function renderTimingSummary(plan) {
         parts.push(cameraAddsTravel
             ? t('${n} images minimum', { n: plan.totalFrameCount })
             : t('${n} images', { n: plan.totalFrameCount }));
+        if (plan.framesPerDayAverage > 0 && plan.framesPerDayAverage < 1) {
+            parts.push(t('≈ ${n} jours par image', { n: Number((1 / plan.framesPerDayAverage).toFixed(1)) }));
+        }
         summary.textContent = parts.join(' · ');
     }
     if (baseEl) baseEl.textContent = formatDurationHuman(plan.animationMs);
@@ -4413,8 +4466,16 @@ function renderLoadEstimate(plan) {
     const warnBox = document.getElementById('timingWarnings');
     if (!plan?.valid || !warnBox) return;
     let maxPointsPerDay = 0;
+    let simultaneousFlashes = null;
+    const flashDurationMs = Number(pkg.options.flash?.duration) || 0;
     try {
-        if (pkg.pointsByDate) {
+        if (isEvolutionPage()) {
+            // Apparitions et disparitions réelles sur la durée d'un flash, plutôt
+            // que le pic d'une journée multiplié par le nombre de jours couverts
+            // (très pessimiste quand des centaines de jours défilent par seconde).
+            const windowDays = flashDurationMs / Math.max(1e-3, plan.timePerDayMs);
+            simultaneousFlashes = pkg.evolutionMaxEventsInWindow?.(windowDays) ?? null;
+        } else if (pkg.pointsByDate) {
             for (const pts of pkg.pointsByDate.values()) {
                 if (pts && pts.length > maxPointsPerDay) maxPointsPerDay = pts.length;
             }
@@ -4423,7 +4484,8 @@ function renderLoadEstimate(plan) {
     const estimate = buildLoadEstimate({
         plan,
         maxPointsPerDay,
-        flashDurationMs: Number(pkg.options.flash?.duration) || 0,
+        flashDurationMs,
+        simultaneousFlashes,
     });
     if (!estimate || !estimate.warnings.length) return;
     const lines = warnBox.textContent ? [warnBox.textContent] : [];
@@ -4672,6 +4734,79 @@ export function syncFlashOptionsUI() {
 
     setRadioGroupValue(document.getElementsByName('flashColor'), flash.color_type);
     updateFlashColorPickerVisibility();
+    syncDisappearFlashUI();
+}
+
+// --- Flash de disparition (mode Évolution) ----------------------------------
+// Réglage du thème (pkg.options.flash.disappear), présent seulement sur la page
+// /evolution (menu_flash_disappear.html). Déclarations de fonctions : appelées
+// depuis initUIElements, qui s'exécute pendant l'évaluation du module.
+
+function disappearFlashOptions() {
+    const flash = pkg.options.flash;
+    if (!flash.disappear || typeof flash.disappear !== 'object') {
+        flash.disappear = { mode: 'implode', size: 30, color: '#9E9E9E', color_type: 'fix' };
+    }
+    return flash.disappear;
+}
+
+function initDisappearFlashControls() {
+    const select = document.getElementById('selectDisappearFlashMode');
+    if (!select) return;
+    select.addEventListener('change', () => { disappearFlashOptions().mode = select.value; });
+    initTomSelect(select, { maxItems: 1, plugins: [] });
+
+    const size = document.getElementById('inputSizeDisappearFlash');
+    if (size) {
+        size.addEventListener('input', () => {
+            const value = parseInt(size.value);
+            if (!isNaN(value)) disappearFlashOptions().size = value;
+        });
+        size.addEventListener('blur', () => {
+            const value = Math.min(200, Math.max(5, parseInt(size.value) || 5));
+            size.value = value;
+            disappearFlashOptions().size = value;
+        });
+    }
+
+    const color = document.getElementById('disappearFlashColor');
+    if (color) {
+        const apply = () => {
+            const options = disappearFlashOptions();
+            options.color = color.value;
+            options.rgb = pkg.hexToRgb(color.value);
+        };
+        color.addEventListener('input', apply);
+        color.addEventListener('change', apply);
+    }
+
+    document.getElementsByName('disappearFlashColor').forEach((radio) => {
+        radio.addEventListener('change', () => {
+            disappearFlashOptions().color_type = radio.value;
+            updateDisappearColorPickerVisibility();
+        });
+    });
+}
+
+function updateDisappearColorPickerVisibility() {
+    const color = document.getElementById('disappearFlashColor');
+    if (color?.parentElement) {
+        color.parentElement.style.display = disappearFlashOptions().color_type === 'fix' ? 'block' : 'none';
+    }
+}
+
+function syncDisappearFlashUI() {
+    const select = document.getElementById('selectDisappearFlashMode');
+    if (!select) return;
+    const options = disappearFlashOptions();
+    select.value = options.mode;
+    refreshTomSelect(select);
+    const size = document.getElementById('inputSizeDisappearFlash');
+    if (size && options.size != null) size.value = options.size;
+    const color = document.getElementById('disappearFlashColor');
+    if (color && options.color) color.value = options.color;
+    setRadioGroupValue(document.getElementsByName('disappearFlashColor'), options.color_type);
+    updateDisappearColorPickerVisibility();
 }
 
 // Validation à la perte de focus : plus de correction silencieuse, on

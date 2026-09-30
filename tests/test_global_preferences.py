@@ -533,6 +533,42 @@ class SettingsApiTests(unittest.TestCase):
         self.assertEqual(payload['theme'], 'system')
         self.assertEqual(payload['recording']['fps'], 30)
         self.assertFalse(payload['recording_configured'])
+    def test_evolution_rhythm_is_separate_from_the_main_one(self):
+        self.client.put('/api/settings', json={'animation': {'days_per_second': 12}})
+        self.client.put('/api/settings', json={'evolution_animation': {'days_per_second': 300}})
+        self.client.put('/api/settings', json={'evolution_animation': {'extra_end_seconds': 2}})
+        payload = self.client.get('/api/settings').get_json()
+        self.assertEqual(payload['animation']['days_per_second'], 12)
+        self.assertEqual(payload['evolution_animation']['days_per_second'], 300)
+        self.assertEqual(payload['evolution_animation']['extra_end_seconds'], 2)
+        self.assertEqual(payload['evolution_animation']['rhythm_mode'], 'duration')
+
+    def test_last_dataset_survives_unrelated_writes(self):
+        self.client.put('/api/settings', json={'evolution_dataset_id': 4})
+        self.client.put('/api/settings', json={'theme': 'dark'})
+        self.assertEqual(self.client.get('/api/settings').get_json()['evolution_dataset_id'], 4)
+        self.client.put('/api/settings', json={'evolution_dataset_id': None})
+        self.assertIsNone(self.client.get('/api/settings').get_json()['evolution_dataset_id'])
+
+
+class EvolutionPreferencesTests(unittest.TestCase):
+    """Préférences du mode Évolution : rythme séparé et dernière base ouverte."""
+
+    def test_defaults_suit_decades_of_data(self):
+        s = coerce_settings({})
+        self.assertEqual(s.evolution_animation.rhythm_mode, "duration")
+        self.assertEqual(s.evolution_animation.total_duration_seconds, 60.0)
+        self.assertIsNone(s.evolution_dataset_id)
+
+    def test_camera_follow_is_never_enabled(self):
+        s = coerce_settings({"evolution_animation": {"camera_follow": True, "days_per_second": 400}})
+        self.assertFalse(s.evolution_animation.camera_follow)
+        self.assertEqual(s.evolution_animation.days_per_second, 400)
+
+    def test_dataset_id_must_be_a_positive_integer(self):
+        for value, expected in ((3, 3), ("7", 7), (0, None), (-2, None), ("x", None), (True, None)):
+            with self.subTest(value=value):
+                self.assertEqual(coerce_settings({"evolution_dataset_id": value}).evolution_dataset_id, expected)
 
 
 if __name__ == "__main__":

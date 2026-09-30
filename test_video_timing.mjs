@@ -266,3 +266,65 @@ test('l\'estimation de charge signale flashs denses et longue vidéo', () => {
     const light = buildLoadEstimate({ plan, maxPointsPerDay: 2, flashDurationMs: 1000 });
     assert.deepEqual(light.warnings, []);
 });
+
+// --- Plusieurs jours par image (mode Évolution) -----------------------------
+
+test('sans l\'option, framesForDay et les plans gardent une image par jour', () => {
+    // Valeurs par défaut inchangées : même résultat avec l'option explicitement à false.
+    const base = buildImageTimingPlan({ dayCount: 100, timePerDayMs: 1, fps: 24 });
+    const explicit = buildImageTimingPlan({ dayCount: 100, timePerDayMs: 1, fps: 24, allowMultipleDaysPerFrame: false });
+    assert.deepEqual(explicit, base);
+    assert.equal(framesForDay(5, 100, 10), framesForDay(5, 100, 10, { allowZero: false }));
+    assert.equal(framesForDay(5, 100, 10), 1);
+});
+
+test('plusieurs jours peuvent partager une image : 9 300 jours en 60 s à 30 fps', () => {
+    const plan = buildImageTimingPlan({
+        dayCount: 9300,
+        timePerDayMs: 60000 / 9300,
+        fps: 30,
+        tailFreezeMs: 0,
+        allowMultipleDaysPerFrame: true,
+    });
+    assert.equal(plan.baseFrameCount, 1800);
+    assert.ok(plan.framesPerDayAverage < 1);
+
+    const perDay = Array.from(
+        { length: plan.dayCount },
+        (_, index) => framesForDay(index, plan.dayCount, plan.baseFrameCount, { allowZero: true }),
+    );
+    // La somme télescope exactement au nombre d'images demandé.
+    assert.equal(perDay.reduce((sum, count) => sum + count, 0), 1800);
+    assert.ok(perDay.every((count) => count === 0 || count === 1));
+    assert.ok(perDay.includes(0));
+});
+
+test('avec allowZero, la répartition reste exacte quand il y a plus d\'images que de jours', () => {
+    const perDay = Array.from({ length: 10 }, (_, i) => framesForDay(i, 10, 25, { allowZero: true }));
+    assert.equal(perDay.reduce((sum, count) => sum + count, 0), 25);
+    assert.deepEqual(perDay, Array.from({ length: 10 }, (_, i) => framesForDay(i, 10, 25)));
+});
+
+test('buildTimingPlan : le minimum ne dépend plus du nombre de jours avec l\'option', () => {
+    const range = { startDate: new Date(2001, 0, 1), endDate: new Date(2026, 5, 30) };
+    const strict = buildTimingPlan({
+        ...range,
+        rhythm: { mode: 'duration', totalDurationMs: 30000 },
+        fps: 30,
+        tailFreezeMs: 0,
+    });
+    assert.equal(strict.clampedToMinimum, true);
+
+    const relaxed = buildTimingPlan({
+        ...range,
+        rhythm: { mode: 'duration', totalDurationMs: 30000 },
+        fps: 30,
+        tailFreezeMs: 0,
+        allowMultipleDaysPerFrame: true,
+    });
+    assert.equal(relaxed.valid, true);
+    assert.equal(relaxed.clampedToMinimum, false);
+    assert.deepEqual(relaxed.warnings, []);
+    assert.equal(relaxed.baseFrameCount, 900);
+    assert.equal(relaxed.totalDurationMs, 30000);
+});

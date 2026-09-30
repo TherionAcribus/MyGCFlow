@@ -1401,7 +1401,11 @@ class ProfileManager {
                 mode: flash.mode || 'circle',
                 size: parseInt(flash.size) || 50,
                 color: flash.color || '#FF00FF',
-                color_type: flash.color_type || 'fix'
+                color_type: flash.color_type || 'fix',
+                // Flash de disparition (mode Évolution) : sérialisé sur les deux
+                // pages, sans quoi un thème enregistré depuis le mode principal
+                // perdrait le réglage choisi en mode Évolution.
+                disappear: normalizeDisappearFlash(flash.disappear),
             };
 
             dbgProfiles('🔍 Paramètres flash récupérés:', flashSettings);
@@ -2050,6 +2054,21 @@ function applyPointState(pointOptions) {
     }
 }
 
+// Flash de disparition du mode Évolution, complété des valeurs par défaut
+// (celles de settings_manager.DisappearFlashOptions).
+const DISAPPEAR_FLASH_DEFAULTS = Object.freeze({ mode: 'implode', size: 30, color: '#9E9E9E', color_type: 'fix' });
+
+export function normalizeDisappearFlash(value) {
+    const d = value && typeof value === 'object' ? value : {};
+    const size = parseInt(d.size);
+    return {
+        mode: typeof d.mode === 'string' && d.mode ? d.mode : DISAPPEAR_FLASH_DEFAULTS.mode,
+        size: Number.isFinite(size) ? size : DISAPPEAR_FLASH_DEFAULTS.size,
+        color: typeof d.color === 'string' && d.color ? d.color : DISAPPEAR_FLASH_DEFAULTS.color,
+        color_type: typeof d.color_type === 'string' && d.color_type ? d.color_type : DISAPPEAR_FLASH_DEFAULTS.color_type,
+    };
+}
+
 // Écrit les paramètres de flash du profil dans pkg.options.flash.
 function applyFlashState(flashOptions) {
     try {
@@ -2072,6 +2091,9 @@ function applyFlashState(flashOptions) {
         }
         // Profils antérieurs au type de couleur : couleur fixe.
         flash.color_type = flashOptions.color_type || 'fix';
+        // Profils antérieurs au mode Évolution : flash de disparition par défaut.
+        const disappear = normalizeDisappearFlash(flashOptions.disappear);
+        flash.disappear = { ...disappear, rgb: pkg.hexToRgb(disappear.color) };
 
         dbgProfiles('Paramètres flash appliqués:', flash);
     } catch (error) {

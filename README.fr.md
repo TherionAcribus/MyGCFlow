@@ -183,6 +183,7 @@ Release GitHub.
 - [docs/distribution.md](docs/distribution.md) — empaquetage, emplacements, mises à jour
 - [docs/preferences-et-profils.md](docs/preferences-et-profils.md) — réglages globaux vs profils
 - [docs/async-tasks.md](docs/async-tasks.md) — API des tâches de fond
+- [docs/mode-evolution.md](docs/mode-evolution.md) — mode Évolution (apparition et disparition des caches d'une zone, imports CSV)
 - [docs/translations.md](docs/translations.md) — règles d'internationalisation
 - [docs/notes/README_TESTS_VIDEO.md](docs/notes/README_TESTS_VIDEO.md) — matrice des tests vidéo
 

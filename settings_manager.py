@@ -261,6 +261,11 @@ class AppSettings:
     # dans un thème (MapProfile) : changer de thème ne doit pas modifier le
     # timing, le rythme ni le suivi de caméra.
     animation: "AnimationPrefs" = field(default_factory=lambda: AnimationPrefs())
+    # Mode Évolution (page /evolution) : son propre rythme, pour qu'un réglage
+    # adapté à des décennies de données (150 jours/s) ne déborde pas sur le
+    # mode principal, et la dernière base ouverte, restaurée au retour.
+    evolution_animation: "AnimationPrefs" = field(default_factory=lambda: evolution_animation_defaults())
+    evolution_dataset_id: Optional[int] = None
     examples_seeded: bool = False  # True une fois les profils d'exemple créés (premier lancement)
     # Lot de profils d'exemple déjà installé. Permet d'ajouter des exemples dans
     # une version ultérieure sans les réinstaller à chaque démarrage, ni faire
@@ -312,12 +317,39 @@ class AnimationPrefs:
     flash_duration_ms: int = 1000
 
 
+def evolution_animation_defaults() -> AnimationPrefs:
+    """Rythme par défaut du mode Évolution : une minute pour tout le jeu.
+
+    Un export couvre souvent plus de vingt ans : au rythme du mode principal
+    (20 jours/s), l'animation durerait plusieurs minutes. Le suivi de caméra
+    n'y a pas de sens (des milliers de caches à la fois) et reste désactivé.
+    """
+    return AnimationPrefs(
+        rhythm_mode="duration",
+        days_per_second=150.0,
+        total_duration_seconds=60.0,
+        camera_follow=False,
+        flash_duration_ms=500,
+    )
+
+
+@dataclass
+class DisappearFlashOptions:
+    """Flash de disparition d'une cache (mode Évolution, à son archivage)."""
+    mode: str = "implode"  # "none", "implode", "circle", "star", "sparkle", "square", "triangle", "diamond"
+    size: int = 30  # en px
+    # Gris plutôt que rouge : le rouge est déjà la couleur des events.
+    color: str = "#9E9E9E"
+    color_type: str = "fix"  # "gc", "none", "fix"
+
+
 @dataclass
 class FlashOptions:
     mode: str = "circle"  # "none", "circle", "impulse", "star", "sparkle", "square", "triangle", "diamond"
     size: int = 50  # en px
     color: str = "#FF00FF"
     color_type: str = "fix"  # "gc", "none", "fix"
+    disappear: DisappearFlashOptions = field(default_factory=DisappearFlashOptions)
 
 
 @dataclass
@@ -433,6 +465,9 @@ POINT_SHAPES = ("circle", "triangle")
 ICON_SETS = ("geocaching", "smiley")  # ICON_SETS de static/js/ui.js
 COLOR_TYPES = ("gc", "none", "fix")
 FLASH_MODES = ("none", "circle", "impulse", "star", "sparkle", "square", "triangle", "diamond")
+# Flash de disparition (mode Évolution) : l'implosion lui est propre ; la vague
+# « impulse » n'a pas de sens pour une cache qui s'éteint.
+DISAPPEAR_FLASH_MODES = ("none", "implode", "circle", "star", "sparkle", "square", "triangle", "diamond")
 POINT_SIZE_RANGE = (1, 10)
 BORDER_SIZE_RANGE = (0, 10)
 ICON_SIZE_RANGE = (12, 40)
@@ -551,14 +586,15 @@ def coerce_recording_settings(d: dict) -> RecordingSettings:
 ANIMATION_RHYTHM_MODES = ("rate", "duration", "music")
 
 
-def coerce_animation_settings(d: dict) -> AnimationPrefs:
+def coerce_animation_settings(d: dict, defaults: Optional[AnimationPrefs] = None) -> AnimationPrefs:
     """Borne les préférences d'animation aux plages acceptées par l'UI.
 
     Même motif que coerce_recording_settings : settings.json peut être édité à
     la main, les bornes de TIMING_LIMITS (static/js/video_timing.mjs) sont donc
-    répétées ici plutôt que faisant confiance au fichier.
+    répétées ici plutôt que faisant confiance au fichier. `defaults` fournit
+    les valeurs de repli (celles du mode Évolution pour son propre bloc).
     """
-    a = AnimationPrefs()
+    a = copy.deepcopy(defaults) if defaults is not None else AnimationPrefs()
     if not isinstance(d, dict):
         return a
     mode = d.get("rhythm_mode", a.rhythm_mode)
@@ -570,6 +606,24 @@ def coerce_animation_settings(d: dict) -> AnimationPrefs:
     a.camera_dynamism = _clamp_int(d.get("camera_dynamism"), a.camera_dynamism, 1, 4)
     a.flash_duration_ms = _clamp_int(d.get("flash_duration_ms"), a.flash_duration_ms, 100, 10000)
     return a
+
+
+def coerce_evolution_animation(d: dict) -> AnimationPrefs:
+    """Rythme du mode Évolution : jamais de suivi de caméra."""
+    a = coerce_animation_settings(d, evolution_animation_defaults())
+    a.camera_follow = False
+    return a
+
+
+def coerce_dataset_id(value) -> Optional[int]:
+    """Identifiant de base du mode Évolution (entier positif), None sinon."""
+    if isinstance(value, bool):
+        return None
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        return None
+    return number if number > 0 else None
 
 
 def coerce_settings(d: dict) -> AppSettings:
@@ -587,6 +641,8 @@ def coerce_settings(d: dict) -> AppSettings:
         s.date_format = coerce_date_format(d.get("date_format"), s.date_format)
         s.recording = coerce_recording_settings(d.get("recording"))
         s.animation = coerce_animation_settings(d.get("animation"))
+        s.evolution_animation = coerce_evolution_animation(d.get("evolution_animation"))
+        s.evolution_dataset_id = coerce_dataset_id(d.get("evolution_dataset_id"))
         s.show_control_bar = bool(d.get("show_control_bar", s.show_control_bar))
         # Un settings.json antérieur à la migration n'a pas de bloc `recording` :
         # il compte comme « jamais configuré ».
@@ -690,11 +746,22 @@ def coerce_profile(d: dict, base: Optional[MapProfile] = None) -> MapProfile:
 
         # Options flash
         f = d.get("flash", {}) if isinstance(d.get("flash", {}), dict) else {}
+        # Flash de disparition (mode Évolution) : absent des thèmes antérieurs,
+        # qui reçoivent alors les valeurs par défaut.
+        raw_fd = f.get("disappear") or {}
+        fd = raw_fd if isinstance(raw_fd, dict) else {}
+        pfd = p.flash.disappear
         p.flash = FlashOptions(
             mode=_coerce_choice(f.get("mode"), FLASH_MODES, p.flash.mode),
             size=_clamp_int(f.get("size"), p.flash.size, *FLASH_SIZE_RANGE),
             color=_coerce_hex_color(f.get("color"), p.flash.color),
             color_type=_coerce_choice(f.get("color_type"), COLOR_TYPES, p.flash.color_type),
+            disappear=DisappearFlashOptions(
+                mode=_coerce_choice(fd.get("mode"), DISAPPEAR_FLASH_MODES, pfd.mode),
+                size=_clamp_int(fd.get("size"), pfd.size, *FLASH_SIZE_RANGE),
+                color=_coerce_hex_color(fd.get("color"), pfd.color),
+                color_type=_coerce_choice(fd.get("color_type"), COLOR_TYPES, pfd.color_type),
+            ),
         )
 
         # Options infos (titre, cases à cocher, CSS)
@@ -2175,6 +2242,12 @@ class SettingsManager:
                 'size': prof.flash.size,
                 'color': prof.flash.color,
                 'color_type': prof.flash.color_type,
+                'disappear': {
+                    'mode': prof.flash.disappear.mode,
+                    'size': prof.flash.disappear.size,
+                    'color': prof.flash.disappear.color,
+                    'color_type': prof.flash.disappear.color_type,
+                },
             },
             'infos': {
                 'title': {

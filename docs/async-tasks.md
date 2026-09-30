@@ -25,11 +25,17 @@ Ce projet exécute désormais les prétraitements lourds (import GPX et généra
   - Body: `{ types: <payload filtres> }` (inchangé côté frontend).  
   - Réponse: `202` + `{ success, task_id, state }` pour la génération filtrée.
 
+### Import CSV du mode Évolution
+- **POST** `/api/evolution/datasets/<id>/import`
+  - Body: formulaire multipart avec un ou plusieurs `files` (.csv, 500 Mo max chacun). L'en-tête de chaque fichier est vérifié avant la soumission (400 si des colonnes obligatoires manquent).
+  - Réponse: `202` + `{ success, task_id, state }` ; `409` si un import est déjà en cours (tâche exclusive).
+  - Résultat de tâche : `{ files: [compte rendu par fichier], dataset }`. Chaque fichier est importé dans sa propre transaction. Détails : `docs/mode-evolution.md`.
+
 ### Suivi générique de tâche
 - **GET** `/tasks/<task_id>?include_result=true`  
   - Réponse: `{ task_id, type, state, progress, message, error, result? }`.  
   - `result` est présent uniquement quand `state == "finished"` et `include_result` n'est pas `false`.  
-  - Types connus: `gpx_import`, `geojson_generation`.
+  - Types connus: `gpx_import`, `geojson_generation`, `evolution_import`.
 
 ## Comportement frontend (static/js/bdd.js)
 - Upload GPX (formulaire principal et modale) : envoie `/upload`, récupère `task_id`, puis sonde `/tasks/<id>` et n’affiche le succès qu’après `finished`.

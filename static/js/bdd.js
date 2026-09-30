@@ -4,6 +4,7 @@ import { showSuccess, showError, showInfo, t } from './notifications.js';
 import { clearMap } from './mapgl.js';
 import { showBsModal, hideBsModal } from './ui_bootstrap.js';
 import { inclusiveDayCount } from './video_timing.mjs';
+import { isEvolutionPage } from './app_mode.mjs';
 
 export let json_data = null;
 export const metadata = {};
@@ -280,7 +281,8 @@ function setupGpxDragAndDrop() {
     window.addEventListener('dragend', hide);
 }
 
-setupGpxDragAndDrop();
+// Page du mode Évolution : le glisser-déposer y importe des CSV (evolution_data.js).
+if (!isEvolutionPage()) setupGpxDragAndDrop();
 
 // Lit l'état de la BDD (/db_status) et le reflète dans l'UI (texte d'infos +
 // visibilité du bouton de vidage). Avec { offerFirstUse: true } (uniquement au
@@ -1021,6 +1023,20 @@ export function changeSelect(selectedValues, optionValues) {
 
     // Mettre à jour le compteur : sélection courante / total initial
     updateFiltersCounter(metadata.numberOfCaches || filteredFeatures.length, totalCaches);
+}
+
+// Mode Évolution : les données viennent d'une base de caches importée depuis
+// des CSV (evolution_data.js), pas de la base des trouvailles. On renseigne
+// l'état partagé dont dépendent l'interface (état vide, compteur de sélection,
+// activation de Lecture/Enregistrement) et le moteur (dates de l'animation).
+export function setExternalDatasetState(meta, { selected = 0, total = 0 } = {}) {
+    json_data = null;
+    baseGeojson = null;
+    pointsByDate.clear();
+    setMetadata(meta || {});
+    totalCaches = Math.max(0, Number(total) || 0);
+    updateOptionsValues(metadata);
+    updateFiltersCounter(selected, totalCaches);
 }
 
 function updateFiltersCounter(selected, total){

@@ -5,10 +5,17 @@
 import { gcColorsFlat } from './gc_colors.js';
 import {
     appearOpacityExpression,
+    appearScaleExpression,
+    POINT_APPEAR_MS,
     withAppearScale,
     withRecentGlowColor,
     withRecentGlowScale,
 } from './point_appear.mjs';
+import {
+    disappearOpacityExpression,
+    disappearScaleExpression,
+    EVO_AGE,
+} from './evolution_style.mjs';
 
 // Couleur totalement transparente, au format tableau [r, g, b, a] attendu par
 // les expressions de style WebGL (le mot-clé CSS 'transparent' n'est pas
@@ -18,7 +25,11 @@ const TRANSPARENT = [0, 0, 0, 0];
 // à partir des options de points courantes. Le style WebGL est figé à la
 // création du layer (il compile des shaders) : cette fonction n'est donc à
 // appeler qu'à la (re)création du layer, jamais à chaque frame d'animation.
-export function buildPointStyle(pointOptions) {
+//
+// `evolution` : style du mode Évolution, où tous les points sont présents dès
+// le départ et apparaissent / disparaissent selon le jour courant (voir
+// evolution_style.mjs ; le filtre de visibilité est posé sur le layer).
+export function buildPointStyle(pointOptions, { evolution = false } = {}) {
     // Validation et valeurs par défaut pour éviter NaN dans les shaders WebGL
     const pointSize = Math.max(1, parseInt(pointOptions.center.size) || 3);
     const borderSizeValue = Math.max(0, parseInt(pointOptions.border.size) || 0);
@@ -189,11 +200,15 @@ export function buildPointStyle(pointOptions) {
 
     }
 
-    if (pointOptions.appearAnimation) {
-        applyAppearAnimation(pointStyle);
-    }
-    if (Number(pointOptions.recentGlowDays) > 0) {
-        applyRecentGlow(pointStyle);
+    if (evolution) {
+        applyEvolutionTimeline(pointStyle, pointOptions);
+    } else {
+        if (pointOptions.appearAnimation) {
+            applyAppearAnimation(pointStyle);
+        }
+        if (Number(pointOptions.recentGlowDays) > 0) {
+            applyRecentGlow(pointStyle);
+        }
     }
 
     return pointStyle;
@@ -217,8 +232,42 @@ function applyAppearAnimation(pointStyle) {
     }
     const symbol = Object.keys(APPEAR_OPACITY_KEY).find((prefix) => `${prefix}-radius` in pointStyle || `${prefix}-src` in pointStyle);
     if (symbol) pointStyle[APPEAR_OPACITY_KEY[symbol]] = appearOpacityExpression();
-}
-
+}
+
+
+
+function opacityKeyOf(pointStyle) {
+    const symbol = Object.keys(APPEAR_OPACITY_KEY).find((prefix) => `${prefix}-radius` in pointStyle || `${prefix}-src` in pointStyle);
+    return symbol ? APPEAR_OPACITY_KEY[symbol] : null;
+}
+
+// Mode Évolution : chaque point rétrécit et s'estompe à sa disparition ;
+// l'apparition animée et la persistance des points récents, si elles sont
+// activées dans le thème, se calculent sur l'âge déduit du jour courant.
+function applyEvolutionTimeline(pointStyle, pointOptions) {
+    const appear = Boolean(pointOptions.appearAnimation);
+    if (Number(pointOptions.recentGlowDays) > 0) {
+        for (const key of GLOW_COLOR_KEYS) {
+            if (key in pointStyle) pointStyle[key] = withRecentGlowColor(pointStyle[key], POINT_APPEAR_MS, EVO_AGE);
+        }
+        for (const key of APPEAR_SIZE_KEYS) {
+            if (key in pointStyle) pointStyle[key] = withRecentGlowScale(pointStyle[key], POINT_APPEAR_MS, EVO_AGE);
+        }
+    }
+    const scale = appear
+        ? ['*', disappearScaleExpression(), appearScaleExpression(POINT_APPEAR_MS, EVO_AGE)]
+        : disappearScaleExpression();
+    for (const key of APPEAR_SIZE_KEYS) {
+        if (key in pointStyle) pointStyle[key] = ['*', pointStyle[key], scale];
+    }
+    const opacityKey = opacityKeyOf(pointStyle);
+    if (opacityKey) {
+        pointStyle[opacityKey] = appear
+            ? ['*', disappearOpacityExpression(), appearOpacityExpression(POINT_APPEAR_MS, EVO_AGE)]
+            : disappearOpacityExpression();
+    }
+}
+
 // Ajoute la persistance des points récents (voir point_appear.mjs) : les points
 // des derniers jours restent plus clairs et un peu plus gros. Repose sur les
 // mêmes prérequis que l'apparition animée, plus la variable de style 'glowMs'

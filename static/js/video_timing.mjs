@@ -174,6 +174,11 @@ export function formatDurationHuman(ms) {
 // vidéo (animation + pause auto + temps additionnel) : c'est le contrat que
 // "calé sur la musique" impose au fichier muxé.
 //
+// allowMultipleDaysPerFrame lève la garantie « au moins une image par jour » :
+// plusieurs jours peuvent alors partager une image. Réservé au mode Évolution,
+// qui couvre des décennies (≈ 9 000 jours : 5 min de vidéo minimum sinon) et
+// dont le coût d'un jour ne dépend pas du nombre de points affichés.
+//
 // Retourne un plan : compte de jours, décomposition des durées, frames,
 // minimum réalisable, `errors` (entrées invalides — ne pas lancer) et
 // `warnings` (limites appliquées, ex. pincement au minimum ou musique plus
@@ -188,6 +193,7 @@ export function buildTimingPlan({
     flashDurationMs = 0,
     tailFreezeMs = DEFAULT_END_HOLD_MS,
     extraEndSeconds = 0,
+    allowMultipleDaysPerFrame = false,
 } = {}) {
     const errors = [];
     const warnings = [];
@@ -209,7 +215,8 @@ export function buildTimingPlan({
     if (!extraParsed.ok) errors.push('extraEnd');
     const extraEndMs = extraParsed.ok ? Math.round(extraParsed.value * 1000) : 0;
 
-    const minAnimationMs = days > 0 ? Math.ceil(days / safeFps * 1000) : 0;
+    const minFrames = allowMultipleDaysPerFrame ? 1 : days;
+    const minAnimationMs = days > 0 ? Math.ceil(minFrames / safeFps * 1000) : 0;
     const minTotalMs = minAnimationMs + endHoldMs + extraEndMs;
 
     let timePerDayMs = NaN;
@@ -272,6 +279,7 @@ export function buildTimingPlan({
             tailFreezeMs,
             flashMode,
             flashDurationMs,
+            allowMultipleDaysPerFrame,
         })
         : { baseFrameCount: 0, tailFrameCount: 0, totalFrameCount: 0, framesPerDayAverage: 0 };
 
@@ -323,13 +331,18 @@ export const LOAD_WARNING_FRAME_THRESHOLD = 20000;
 // un ordre de grandeur du temps de capture avant de lancer.
 export const IMAGE_CAPTURE_MS_PER_FRAME = 40;
 
-export function buildLoadEstimate({ plan, maxPointsPerDay = 0, flashDurationMs = 0 } = {}) {
+// simultaneousFlashes : estimation déjà calculée par l'appelant (mode
+// Évolution, qui connaît les événements réels de chaque jour) ; sinon déduite
+// du pic de points d'une journée.
+export function buildLoadEstimate({ plan, maxPointsPerDay = 0, flashDurationMs = 0, simultaneousFlashes = null } = {}) {
     if (!plan || !plan.valid) return null;
-    const flashes = estimateMaxSimultaneousFlashes({
-        maxPointsPerDay,
-        flashDurationMs,
-        timePerDayMs: plan.timePerDayMs,
-    });
+    const flashes = Number.isFinite(simultaneousFlashes)
+        ? Math.max(0, Math.round(simultaneousFlashes))
+        : estimateMaxSimultaneousFlashes({
+            maxPointsPerDay,
+            flashDurationMs,
+            timePerDayMs: plan.timePerDayMs,
+        });
     const warnings = [];
     if (flashes > LOAD_WARNING_FLASH_THRESHOLD) warnings.push('flashes');
     if (plan.totalFrameCount > LOAD_WARNING_FRAME_THRESHOLD) warnings.push('frames');
@@ -345,7 +358,9 @@ export function buildLoadEstimate({ plan, maxPointsPerDay = 0, flashDurationMs =
 // Plan de timing du mode Images (capture frame par frame, donc vitesse libre).
 //
 // Garanties :
-//  - au moins une image par jour animé (sinon ce jour serait invisible en vidéo) ;
+//  - au moins une image par jour animé (sinon ce jour serait invisible en vidéo),
+//    sauf avec allowMultipleDaysPerFrame (mode Évolution) : au moins une image
+//    en tout, les jours se partageant alors les images ;
 //  - la pause de fin se prolonge assez pour que le dernier flash termine son
 //    animation (fixe : durée D ; duration/impulse : cf. automaticEndHoldMs) ;
 //  - la durée totale correspond exactement à totalFrameCount frames au fps
@@ -358,9 +373,11 @@ export function buildImageTimingPlan({
     tailFreezeMs = DEFAULT_END_HOLD_MS,
     flashMode = 'none',
     flashDurationMs = 0,
+    allowMultipleDaysPerFrame = false,
 } = {}) {
     const safeDays = Math.max(1, Math.round(finiteNumber(dayCount, 1)));
     const safeFps = normalizeVideoFps(fps);
+    const minFrames = allowMultipleDaysPerFrame ? 1 : safeDays;
     const safeTimePerDayMs = Math.max(0, finiteNumber(timePerDayMs, 0));
     const extraEndMs = Math.max(0, finiteNumber(extraEndSeconds, 0)) * 1000;
     const endHoldMs = automaticEndHoldMs({ tailFreezeMs, flashMode, flashDurationMs });
@@ -369,7 +386,7 @@ export function buildImageTimingPlan({
     // les fractions de frame sont réparties entre les jours au lieu d'arrondir
     // chaque jour séparément (ce qui créait une dérive cumulée importante).
     const requestedBaseFrames = Math.round(safeDays * safeTimePerDayMs * safeFps / 1000);
-    const baseFrameCount = Math.max(safeDays, requestedBaseFrames);
+    const baseFrameCount = Math.max(minFrames, requestedBaseFrames);
     const tailFrameCount = Math.max(0, Math.round((endHoldMs + extraEndMs) * safeFps / 1000));
     const totalFrameCount = baseFrameCount + tailFrameCount;
 
@@ -382,16 +399,22 @@ export function buildImageTimingPlan({
         framesPerDayAverage: baseFrameCount / safeDays,
         endHoldMs,
         extraEndMs,
-        minimumDurationMs: (safeDays / safeFps * 1000) + endHoldMs + extraEndMs,
+        minimumDurationMs: (minFrames / safeFps * 1000) + endHoldMs + extraEndMs,
         actualDurationMs: totalFrameCount / safeFps * 1000,
     };
 }
 
-export function framesForDay(dayIndex, dayCount, baseFrameCount) {
+// Nombre d'images du jour dayIndex, les baseFrameCount images étant réparties
+// entre les dayCount jours. Avec allowZero (mode Évolution), un jour peut n'en
+// recevoir aucune quand il y a moins d'images que de jours : il est alors
+// affiché dans l'image suivante, avec les autres jours de son lot. La somme sur
+// tous les jours vaut toujours exactement baseFrameCount.
+export function framesForDay(dayIndex, dayCount, baseFrameCount, { allowZero = false } = {}) {
     const safeDays = Math.max(1, Math.round(finiteNumber(dayCount, 1)));
-    const safeFrames = Math.max(safeDays, Math.round(finiteNumber(baseFrameCount, safeDays)));
+    const minFrames = allowZero ? 1 : safeDays;
+    const safeFrames = Math.max(minFrames, Math.round(finiteNumber(baseFrameCount, safeDays)));
     const index = Math.max(0, Math.min(safeDays - 1, Math.round(finiteNumber(dayIndex, 0))));
     const before = Math.round(index * safeFrames / safeDays);
     const after = Math.round((index + 1) * safeFrames / safeDays);
-    return Math.max(1, after - before);
+    return allowZero ? Math.max(0, after - before) : Math.max(1, after - before);
 }

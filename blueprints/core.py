@@ -18,11 +18,22 @@ settings_manager = get_settings_manager()
 
 @core_bp.route('/')
 def index():
+    return render_app_page('main')
+
+
+def render_app_page(mode: str):
+    """Page principale de l'application, dans le mode demandé.
+
+    `mode` vaut 'main' (trouvailles importées depuis un GPX) ou 'evolution'
+    (caches d'une zone importées depuis des CSV, cf. blueprints/evolution.py) :
+    les deux pages partagent la même interface, seul l'onglet Données change.
+    """
     current_locale = get_locale()
     # `can_quit` : le bouton « Quitter » n'a de sens que lancé par launcher.py.
     # Sous `python app.py`, le serveur de développement se ferme par sa console.
     response = make_response(render_template(
         'app.html',
+        mode=mode,
         can_quit=bool(current_app.config.get('QUIT_HOOK')),
         lang=(current_locale or 'fr').split('_')[0],
     ))

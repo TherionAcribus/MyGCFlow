@@ -1,0 +1,24 @@
+{# Sélecteur de mode, en tête de l'onglet Données des deux pages : mode
+   principal (trouvailles, « / ») et mode Évolution (caches d'une zone,
+   « /evolution »). Deux liens de navigation : chaque mode a sa propre page. #}
+<nav class="mode-switch d-flex align-items-center flex-wrap gap-2 mb-3" aria-label="{{ _('Mode') }}">
+    <div class="btn-group btn-group-sm" role="group">
+        <a href="/" id="linkMainMode"
+           class="btn {{ 'btn-primary' if mode != 'evolution' else 'btn-outline-primary' }}"
+           {% if mode != 'evolution' %}aria-current="page"{% endif %}>
+            <i class="ti ti-database me-1" aria-hidden="true"></i>{{ _("Mes trouvailles") }}
+        </a>
+        <a href="/evolution" id="linkEvolutionMode"
+           class="btn {{ 'btn-primary' if mode == 'evolution' else 'btn-outline-primary' }}"
+           {% if mode == 'evolution' %}aria-current="page"{% endif %}>
+            <i class="ti ti-stack me-1" aria-hidden="true"></i>{{ _("Évolution d'une zone") }}
+        </a>
+    </div>
+    <span class="text-muted small">
+        {% if mode == 'evolution' %}
+        {{ _("Apparition et disparition des caches d'une zone au fil du temps, à partir d'exports CSV.") }}
+        {% else %}
+        {{ _("Vos trouvailles, importées depuis votre fichier .gpx.") }}
+        {% endif %}
+    </span>
+</nav>

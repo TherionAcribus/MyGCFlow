@@ -1,0 +1,44 @@
+{% from '_scope_badges.html' import profile_scope_badge with context %}
+{# Flash de disparition d'une cache (mode Évolution) : réglage du thème, comme
+   le flash d'apparition. Piloté par ui.js (initDisappearFlashControls). #}
+<div id="flashDisappear" class="mt-4">
+    <h5 class="gc-section-title">
+        <i class="ti ti-bolt text-muted me-1"></i>{{ _("Flash de disparition") }}{{ profile_scope_badge() }}
+    </h5>
+    <p class="form-hint text-muted">{{ _("Joué quand une cache est archivée ; le point rétrécit et s'efface en même temps.") }}</p>
+    <form>
+        <div class="mb-3">
+            <label class="form-label" for="selectDisappearFlashMode">{{ _("Forme du flash de disparition") }}</label>
+            <select id="selectDisappearFlashMode" class="form-select" aria-label="{{ _('Forme du flash de disparition') }}">
+                <option value="none">{{ _("Pas de flash") }}</option>
+                <option value="implode" selected>{{ _("Implosion (anneau qui se referme)") }}</option>
+                <option value="circle">{{ _("Cercle") }}</option>
+                <option value="star">{{ _("Étoile") }}</option>
+                <option value="sparkle">{{ _("Scintillement") }}</option>
+                <option value="square">{{ _("Carré") }}</option>
+                <option value="triangle">{{ _("Triangle") }}</option>
+                <option value="diamond">{{ _("Losange") }}</option>
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="inputSizeDisappearFlash">{{ _("Taille du flash en px") }}</label>
+            <input id="inputSizeDisappearFlash" type="number" class="form-control" min="5" max="200" step="5" aria-describedby="helpSizeDisappearFlash">
+            <small id="helpSizeDisappearFlash" class="form-hint text-muted">{{ _("5 à 200 px") }}</small>
+        </div>
+
+        <label class="form-label">{{ _("Couleur du flash") }}</label>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="disappearFlashColor" id="disappearFlashColorGc" value="gc" aria-labelledby="disappearFlashColorGcLabel">
+            <span class="form-check-label" id="disappearFlashColorGcLabel">{{ _("Couleurs GC (par type)") }}</span>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="disappearFlashColor" id="disappearFlashColorFix" value="fix" checked aria-labelledby="disappearFlashColorFixLabel">
+            <span class="form-check-label" id="disappearFlashColorFixLabel">{{ _("Couleur unique") }}</span>
+        </div>
+        <div class="mt-2">
+            <label class="form-label" for="disappearFlashColor">{{ _("Choisir la couleur") }}</label>
+            <input type="color" class="form-control form-control-color" id="disappearFlashColor" value="#9E9E9E" aria-label="{{ _('Choisir la couleur du flash de disparition') }}">
+        </div>
+    </form>
+</div>

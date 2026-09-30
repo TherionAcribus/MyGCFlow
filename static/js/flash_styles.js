@@ -12,6 +12,7 @@ import * as pkg from './index.js';
 import { defaultGcColors } from './gc_colors.js';
 import { createFlashStyleCache } from './flash_style_cache.mjs';
 import { impulseFrame } from './flash_impulse.mjs';
+import { implodeFrame } from './flash_implode.mjs';
 
 const flashStyleCache = createFlashStyleCache();
 
@@ -74,6 +75,21 @@ function impulseStyles(frame, flashOptions, cacheType) {
     ];
 }
 
+// Flash de disparition du mode Évolution : un anneau qui se referme sur le
+// point (voir flash_implode.mjs). Mêmes couleurs que l'impulsion.
+function implodeStyle(frame, flashOptions, cacheType) {
+    const rgb = impulseRgb(flashOptions, cacheType);
+    return new ol.style.Style({
+        image: new ol.style.Circle({
+            radius: frame.ringRadius,
+            stroke: new ol.style.Stroke({
+                color: `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${frame.ringOpacity})`,
+                width: frame.ringWidth,
+            }),
+        }),
+    });
+}
+
 // Base de couleur effectivement utilisée par les fonctions de style ci-dessous,
 // en reprenant exactement leur ordre de décision (un mode 'gc' sans type de cache
 // ou sans table GC chargée retombe sur la couleur fixe). Elle entre dans la clé
@@ -111,6 +127,13 @@ export function flashStyleAt(step, steps, flashOptions, cacheType = null) {
             const frame = impulseFrame(ratio, size);
             return {
                 value: impulseStyles(frame, flashOptions, cacheType),
+                bytes: estimateFlashStyleBytes(frame.ringRadius),
+            };
+        }
+        if (mode === 'implode') {
+            const frame = implodeFrame(ratio, size);
+            return {
+                value: implodeStyle(frame, flashOptions, cacheType),
                 bytes: estimateFlashStyleBytes(frame.ringRadius),
             };
         }

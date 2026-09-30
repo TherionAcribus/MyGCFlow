@@ -42,12 +42,17 @@ export function createAppearClock() {
 }
 
 // Expressions de style WebGL (format « flat style » d'OpenLayers).
-const AGE = ['-', ['var', 'now'], ['get', 'appear']];
+//
+// AGE : temps écoulé depuis l'apparition du point, en ms. Les fonctions
+// ci-dessous acceptent un autre calcul d'âge en dernier paramètre : le mode
+// Évolution le déduit de l'index du jour courant (voir evolution_style.mjs)
+// au lieu d'un attribut 'appear' posé à l'ajout du point.
+export const AGE = ['-', ['var', 'now'], ['get', 'appear']];
 
 // Facteur d'échelle : le point surgit à 40 % de sa taille, dépasse jusqu'à 135 %
 // puis se pose à sa taille normale (effet d'atterrissage).
-export function appearScaleExpression(durationMs = POINT_APPEAR_MS) {
-    return ['interpolate', ['linear'], AGE,
+export function appearScaleExpression(durationMs = POINT_APPEAR_MS, age = AGE) {
+    return ['interpolate', ['linear'], age,
         0, 0.4,
         0.55 * durationMs, 1.35,
         durationMs, 1];
@@ -55,16 +60,16 @@ export function appearScaleExpression(durationMs = POINT_APPEAR_MS) {
 
 // Opacité : invisible tant que son tour n'est pas venu (départ décalé), puis
 // fondu d'entrée rapide.
-export function appearOpacityExpression(durationMs = POINT_APPEAR_MS) {
-    return ['interpolate', ['linear'], AGE,
+export function appearOpacityExpression(durationMs = POINT_APPEAR_MS, age = AGE) {
+    return ['interpolate', ['linear'], age,
         -1, 0,
         0, 0.6,
         0.3 * durationMs, 1];
 }
 
 // Multiplie une valeur de style (nombre ou expression) par l'échelle d'apparition.
-export function withAppearScale(value, durationMs = POINT_APPEAR_MS) {
-    return ['*', value, appearScaleExpression(durationMs)];
+export function withAppearScale(value, durationMs = POINT_APPEAR_MS, age = AGE) {
+    return ['*', value, appearScaleExpression(durationMs, age)];
 }
 
 // --- Persistance des points récents ------------------------------------------
@@ -85,26 +90,26 @@ export const RECENT_GLOW_EXTRA_SCALE = 0.3;
 
 // 1 juste après l'apparition, 0 une fois la fenêtre écoulée. La décroissance est
 // accélérée (puissance 1,5) : l'éclat retombe vite, la queue s'étire doucement.
-export function recentGlowFactorExpression(durationMs = POINT_APPEAR_MS) {
+export function recentGlowFactorExpression(durationMs = POINT_APPEAR_MS, age = AGE) {
     // 'glowMs' est toujours >= 1 (garanti par l'appelant) : les expressions de
     // style n'ont pas d'opérateur max pour s'en prémunir elles-mêmes.
     const progress = ['clamp',
-        ['/', ['-', AGE, durationMs], ['var', 'glowMs']],
+        ['/', ['-', age, durationMs], ['var', 'glowMs']],
         0, 1];
     return ['^', ['-', 1, progress], 1.5];
 }
 
 // Éclaircit une couleur (constante ou expression 'match' par type de cache) en
 // fonction de l'ancienneté du point.
-export function withRecentGlowColor(color, durationMs = POINT_APPEAR_MS) {
+export function withRecentGlowColor(color, durationMs = POINT_APPEAR_MS, age = AGE) {
     return ['interpolate', ['linear'],
-        ['*', recentGlowFactorExpression(durationMs), RECENT_GLOW_WHITE_MIX],
+        ['*', recentGlowFactorExpression(durationMs, age), RECENT_GLOW_WHITE_MIX],
         0, color,
         1, [255, 255, 255, 1]];
 }
 
 // Grossit légèrement un point récent.
-export function withRecentGlowScale(value, durationMs = POINT_APPEAR_MS) {
+export function withRecentGlowScale(value, durationMs = POINT_APPEAR_MS, age = AGE) {
     return ['*', value,
-        ['+', 1, ['*', recentGlowFactorExpression(durationMs), RECENT_GLOW_EXTRA_SCALE]]];
+        ['+', 1, ['*', recentGlowFactorExpression(durationMs, age), RECENT_GLOW_EXTRA_SCALE]]];
 }

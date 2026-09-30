@@ -126,9 +126,11 @@
                             <div class="mb-3">
                                 <label for="selectRhythmPreset" class="form-label">{{ _("Préréglage") }}</label>
                                 <select id="selectRhythmPreset" class="form-select">
-                                    <option value="slow">{{ _("Lent") }} (10 {{ _("jours/s") }})</option>
-                                    <option value="normal" selected>{{ _("Normal") }} (20 {{ _("jours/s") }})</option>
-                                    <option value="fast">{{ _("Rapide") }} (50 {{ _("jours/s") }})</option>
+                                    {# Valeurs : RHYTHM_PRESETS de static/js/ui.js (propres au mode Évolution) #}
+                                    {% set presets = (50, 150, 400) if mode == 'evolution' else (10, 20, 50) %}
+                                    <option value="slow">{{ _("Lent") }} ({{ presets[0] }} {{ _("jours/s") }})</option>
+                                    <option value="normal" selected>{{ _("Normal") }} ({{ presets[1] }} {{ _("jours/s") }})</option>
+                                    <option value="fast">{{ _("Rapide") }} ({{ presets[2] }} {{ _("jours/s") }})</option>
                                     <option value="custom">{{ _("Personnalisé") }}</option>
                                 </select>
                                 <small class="form-hint text-muted">{{ _("Préréglage global, indépendant du thème.") }}</small>
@@ -163,6 +165,8 @@
                                 <div class="invalid-feedback" id="feedbackTimeFlash"></div>
                             </div>
                         </div>
+                        {# Suivi de caméra : sans objet en mode Évolution (des milliers de caches à la fois). #}
+                        {% if mode != 'evolution' %}
                         <div class="col-12 col-md-6">
                             <div class="form-check form-switch mb-2 mt-md-4">
                                 <input class="form-check-input" type="checkbox" id="switchCameraFollow" role="switch" aria-describedby="helpCameraFollow">
@@ -177,6 +181,7 @@
                             </select>
                             <small id="helpCameraFollow" class="form-hint text-muted">{{ _("La vue glisse vers les caches du jour. Pour un grand trajet, elle dézoome temporairement puis revient au niveau initial. Un niveau voisin de tuiles est préchargé et la date suivante attend le rendu final. La durée peut donc dépasser l'estimation et celle de la musique.") }}</small>
                         </div>
+                        {% endif %}
                     </div>
 
                     <!-- Audio utilisateur (lecture/record) -->

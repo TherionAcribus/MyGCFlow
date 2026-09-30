@@ -78,6 +78,12 @@
         "color": "#FF00FF",
         "color_type": "fix",
         "duration": 2000,
-        "size": 10
+        "size": 10,
+        "disappear": {
+            "mode": "implode",
+            "color": "#9E9E9E",
+            "color_type": "fix",
+            "size": 30
+        }
     }
 }

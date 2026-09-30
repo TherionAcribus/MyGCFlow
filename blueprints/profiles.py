@@ -18,7 +18,9 @@ from settings_manager import (
     AppSettings,
     InvalidProfileNameError,
     coerce_animation_settings,
+    coerce_dataset_id,
     coerce_date_format,
+    coerce_evolution_animation,
     coerce_map_center,
     coerce_map_zoom,
     coerce_profile,
@@ -74,6 +76,8 @@ def api_get_settings():
         'recording': asdict(s.recording),
         'recording_configured': s.recording_configured,
         'animation': asdict(s.animation),
+        'evolution_animation': asdict(s.evolution_animation),
+        'evolution_dataset_id': s.evolution_dataset_id,
         'show_control_bar': s.show_control_bar,
     })
     response.set_cookie(
@@ -127,6 +131,18 @@ def api_put_settings():
             merged_animation.update(data['animation'])
             animation = coerce_animation_settings(merged_animation)
 
+        # Rythme du mode Évolution : même patch partiel, bloc séparé.
+        evolution_animation = current.evolution_animation
+        if 'evolution_animation' in data and isinstance(data.get('evolution_animation'), dict):
+            merged_evolution = asdict(current.evolution_animation)
+            merged_evolution.update(data['evolution_animation'])
+            evolution_animation = coerce_evolution_animation(merged_evolution)
+
+        # Dernière base ouverte en mode Évolution : réécrite seulement si envoyée.
+        evolution_dataset_id = current.evolution_dataset_id
+        if 'evolution_dataset_id' in data:
+            evolution_dataset_id = coerce_dataset_id(data.get('evolution_dataset_id'))
+
         # Ne modifier default_profile_uid que si le client l'a explicitement envoyé
         # (sinon un PUT partiel effacerait silencieusement le profil par défaut).
         default_profile_uid = current.default_profile_uid
@@ -171,6 +187,8 @@ def api_put_settings():
             recording=recording,
             recording_configured=recording_configured,
             animation=animation,
+            evolution_animation=evolution_animation,
+            evolution_dataset_id=evolution_dataset_id,
             show_control_bar=show_control_bar,
             examples_seeded=current.examples_seeded,
             # Sans cette reprise, toute écriture de préférence ramenait le lot

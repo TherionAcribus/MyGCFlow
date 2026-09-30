@@ -1,0 +1,112 @@
+<!-- Onglet Données du mode Évolution (page /evolution) : bases de caches
+     importées depuis des exports CSV, et filtre Pays / Région. Piloté par
+     static/js/evolution_data.js. Les identifiants partagés avec le mode
+     principal (filterPanel, filtersCounter, dataNextStep, selects pays/région)
+     sont ceux qu'attend ui.js. -->
+<div id="data" class="col-12 tab-pane fade show active">
+    {% include '_mode_switch.html' %}
+
+    <div class="row g-3">
+        <!-- Base de caches -->
+        <div class="col-12 col-lg-5">
+            <h5 class="gc-section-title">
+                <i class="ti ti-database text-muted me-1"></i>{{ _("Base de caches") }}
+            </h5>
+            <div class="card">
+                <div class="card-body">
+                    <label for="selectEvolutionDataset" class="form-label">{{ _("Base") }}</label>
+                    <div class="d-flex gap-2">
+                        <select id="selectEvolutionDataset" class="form-select" aria-label="{{ _('Base de caches') }}"></select>
+                        <button type="button" id="btnEvolutionCreate" class="btn btn-outline-primary btn-icon"
+                                title="{{ _('Nouvelle base') }}" aria-label="{{ _('Nouvelle base') }}">
+                            <i class="ti ti-plus" aria-hidden="true"></i>
+                        </button>
+                        <button type="button" id="btnEvolutionRename" class="btn btn-outline-secondary btn-icon"
+                                title="{{ _('Renommer la base') }}" aria-label="{{ _('Renommer la base') }}">
+                            <i class="ti ti-edit" aria-hidden="true"></i>
+                        </button>
+                        <button type="button" id="btnEvolutionDelete" class="btn btn-outline-danger btn-icon"
+                                title="{{ _('Supprimer la base') }}" aria-label="{{ _('Supprimer la base') }}">
+                            <i class="ti ti-trash" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                    <div id="evolutionNoDataset" class="form-hint text-muted mt-2" hidden>
+                        {{ _("Aucune base pour l'instant : importez un premier export, une base sera créée à son nom.") }}
+                    </div>
+
+                    <div class="mt-3">
+                        <label for="evolutionCsvInput" class="form-label">{{ _("Ajouter des exports CSV à la base") }}</label>
+                        <div class="gpx-dropzone">
+                            <input type="file" class="form-control" id="evolutionCsvInput" accept=".csv,text/csv" multiple
+                                   aria-label="{{ _('Exports CSV') }}" />
+                            <div class="gpx-dropzone__hint">
+                                <i class="ti ti-drag-drop me-1"></i>{{ _("ou glissez-déposez vos fichiers n'importe où sur la page") }}
+                            </div>
+                        </div>
+                        <div class="form-hint text-muted mt-1">
+                            {{ _("Une cache présente dans plusieurs exports prend les valeurs du plus récent : réimporter la zone plus tard ajoute les nouvelles caches et les archivages.") }}
+                        </div>
+                    </div>
+
+                    <div id="evolutionImportProgress" class="mt-3" hidden aria-live="polite">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="spinner-border spinner-border-sm text-primary" aria-hidden="true"></span>
+                            <span id="evolutionImportMessage" class="small"></span>
+                        </div>
+                        <div class="progress progress-sm">
+                            <div id="evolutionImportBar" class="progress-bar" role="progressbar" style="width: 0%"
+                                 aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+
+                    <div id="evolutionImportSummary" class="evolution-import-summary mt-3" hidden aria-live="polite"></div>
+
+                    <div id="evolutionStats" class="form-hint text-muted mt-3"></div>
+
+                    <details id="evolutionImportHistory" class="mt-2" hidden>
+                        <summary class="small">{{ _("Historique des imports") }}</summary>
+                        <ul id="evolutionImportHistoryList" class="list-unstyled small mt-2 mb-0"></ul>
+                    </details>
+
+                    <!-- Prochaine étape suggérée : affichée dès qu'une base est chargée
+                         (updateDataAvailabilityUI). -->
+                    <div id="dataNextStep" class="alert alert-success mt-3 mb-0 py-2 px-3" hidden>
+                        <div class="mb-2">{{ _("La base est prête.") }}</div>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <button type="button" id="btnGoStyleTab" class="btn btn-sm btn-success">
+                                <i class="ti ti-palette me-1" aria-hidden="true"></i>{{ _("Choisir un style") }}
+                            </button>
+                            <button type="button" id="btnGoPreview" class="btn btn-sm btn-outline-success">
+                                <i class="ti ti-player-play me-1" aria-hidden="true"></i>{{ _("Prévisualiser l'animation") }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtres -->
+        <div class="col-12 col-lg-7">
+            <h5 class="gc-section-title">
+                <i class="ti ti-filter text-muted me-1"></i>{{ _("Filtres") }}
+            </h5>
+            <div class="card">
+                <div class="card-body">
+                    <section id="filterPanel">
+                        <div class="d-flex justify-content-end mb-2">
+                            <button type="button" id="btnResetAllFilters" class="btn btn-sm btn-outline-danger">
+                                <i class="ti ti-refresh me-1"></i>{{ _("Réinitialiser tous les filtres") }}
+                            </button>
+                        </div>
+                        {% include '_filter_country_state.html' %}
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12 text-end">
+            <div id="filtersCounter" class="filters-counter text-muted">{{ _("Sélection: 0 / 0") }}</div>
+        </div>
+    </div>
+</div>

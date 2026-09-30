@@ -1,0 +1,46 @@
+<!-- Modales du mode Évolution : nom d'une base (création, renommage) et
+     confirmation de suppression. Pilotées par static/js/evolution_data.js. -->
+<div id="modalEvolutionName" class="modal bs-modal" tabindex="-1" aria-labelledby="modalEvolutionNameTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 id="modalEvolutionNameTitle" class="modal-title">{{ _("Nouvelle base") }}</h5>
+                <button type="button" class="btn-close modal-close" data-bs-dismiss="modal" aria-label="{{ _('Fermer') }}"></button>
+            </div>
+            <div class="modal-body">
+                <label for="inputEvolutionName" class="form-label">{{ _("Nom de la base") }}</label>
+                <input type="text" id="inputEvolutionName" maxlength="100" class="form-control" autocomplete="off"
+                       placeholder="{{ _('Ex. : Slovénie et Croatie') }}" aria-describedby="feedbackEvolutionName">
+                <div id="feedbackEvolutionName" class="invalid-feedback"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary modal-close" data-bs-dismiss="modal">{{ _("Annuler") }}</button>
+                <button type="button" id="btnEvolutionNameConfirm" class="btn btn-primary">{{ _("Valider") }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="modalEvolutionDelete" class="modal bs-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-header-row d-flex align-items-center gap-2">
+                    <span class="modal-icon warning"><i class="ti ti-alert-triangle"></i></span>
+                    <div>
+                        <h5 class="modal-title">{{ _("Supprimer la base") }}</h5>
+                        <p class="modal-subtitle text-muted">{{ _("Cette action est définitive") }}</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close modal-close" data-bs-dismiss="modal" aria-label="{{ _('Fermer') }}"></button>
+            </div>
+            <div class="modal-body">
+                <p id="evolutionDeleteMessage" class="modal-body-text"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary modal-close" data-bs-dismiss="modal">{{ _("Annuler") }}</button>
+                <button type="button" id="btnEvolutionDeleteConfirm" class="btn btn-danger">{{ _("Supprimer") }}</button>
+            </div>
+        </div>
+    </div>
+</div>

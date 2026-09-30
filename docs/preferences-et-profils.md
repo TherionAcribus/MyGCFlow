@@ -31,8 +31,8 @@ contenir des vitesses différentes, un choix automatique serait arbitraire.
 
 | Portée | Contenu | Stockage | Sauvegarde |
 | --- | --- | --- | --- |
-| **Globale** | langue, thème de l'app, vérification des mises à jour, thème par défaut, dernier thème actif, centre/zoom par défaut, réglages d'enregistrement vidéo (mode, FPS, bitrate, codec, ralentissement, échelle, destinations, musique), réglages d'animation (rythme, durées, suivi de caméra, durée du flash) | `%APPDATA%\MyGCFlow\settings.json` (serveur) | automatique, à chaque modification |
-| **Thème** | fond de carte et ses options, style des points, flash (forme/taille/couleur), titre et bloc d'infos (+ CSS) | `%APPDATA%\MyGCFlow\profiles\<nom>.json` (serveur) | manuelle, bouton **Sauvegarder** de la section Thèmes |
+| **Globale** | langue, thème de l'app, vérification des mises à jour, thème par défaut, dernier thème actif, centre/zoom par défaut, réglages d'enregistrement vidéo (mode, FPS, bitrate, codec, ralentissement, échelle, destinations, musique), réglages d'animation (rythme, durées, suivi de caméra, durée du flash), et pour le mode Évolution son propre rythme (`evolution_animation`) et la dernière base ouverte (`evolution_dataset_id`) | `%APPDATA%\MyGCFlow\settings.json` (serveur) | automatique, à chaque modification |
+| **Thème** | fond de carte et ses options, style des points, flash (forme/taille/couleur), flash de disparition du mode Évolution (`flash.disappear`), titre et bloc d'infos (+ CSS) | `%APPDATA%\MyGCFlow\profiles\<nom>.json` (serveur) | manuelle, bouton **Sauvegarder** de la section Thèmes |
 
 ## Le plan de timing partagé
 

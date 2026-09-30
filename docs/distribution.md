@@ -50,6 +50,7 @@ Tous les chemins sont centralisés dans `paths.py`.
 | --- | --- | --- |
 | Programme et ressources (templates, static, translations) | `%LOCALAPPDATA%\Programs\MyGCFlow` (lecture seule) | dossier du projet |
 | Base SQLite, caches GeoJSON, arbre pays/régions | `%LOCALAPPDATA%\MyGCFlow\instance` | `instance/` |
+| Bases du mode Évolution (`evolution.db`, voir `docs/mode-evolution.md`) | `%LOCALAPPDATA%\MyGCFlow\instance` | `instance/` |
 | Captures en cours (`captured/`), pistes audio (`audio/`) | `%LOCALAPPDATA%\MyGCFlow\` | dossier du projet |
 | Vidéos produites | `Vidéos\MyGCFlow` (dossier Vidéos de Windows) | `video/` |
 | Journaux | `%LOCALAPPDATA%\MyGCFlow\logs\mygcflow.log` | `logs/` |
