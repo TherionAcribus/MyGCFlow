@@ -246,6 +246,72 @@ for (const mode of ['images', 'mediarecorder']) {
   });
 }
 
+test("l'aperçu affiche le trajet calculé et l'inspecte au clic", async ({ page }) => {
+  await openWithFixture(page);
+  await enableTrail(page);
+
+  // Zoomer sur la zone des caches pour espacer les étapes à l'écran.
+  await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    const view = app.olMap.getView();
+    view.setCenter(ol.proj.fromLonLat([2.353, 48.853]));
+    view.setZoom(15);
+  });
+
+  const btn = page.locator('#btnTrailPreview');
+  await expect(btn).toBeEnabled();
+  await btn.click();
+  // Aperçu actif, aucune animation : le trajet est mémoïsé (6 étapes) et
+  // réellement dessiné par le postrender de la couche.
+  await expect.poll(async () => (await trailState(page)).preview).toBe(true);
+  await expect(btn).toHaveAttribute('aria-pressed', 'true');
+  await expect.poll(async () => (await trailState(page)).stops).toBe(6);
+  await expect.poll(async () => (await trailState(page)).drawnVertices).toBeGreaterThan(0);
+  expect((await trailState(page)).active).toBe(false);
+
+  // Clic à ~10 px d'une étape : hors du point de la cache (la popup cache
+  // primerait), dans le rayon de capture de l'étape.
+  const px = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    const key = [...app.pointsByDate.keys()].sort()[2];
+    const [lon, lat] = app.pointsByDate.get(key)[0].geometry.coordinates;
+    return app.olMap.getPixelFromCoordinate(ol.proj.fromLonLat([lon, lat]));
+  });
+  await page.mouse.click(px[0] + 10, px[1]);
+  await expect(page.locator('#gcPopup')).toHaveClass(/is-visible/);
+  await expect(page.locator('#gcPopup .gc-popup-content')).toContainText('Étape');
+  await expect(page.locator('#gcPopup .gc-popup-content')).toContainText('1 cache');
+  // Clic hors de toute étape : la popup se referme.
+  await page.mouse.click(px[0] + 150, px[1] + 100);
+  await expect(page.locator('#gcPopup')).not.toHaveClass(/is-visible/);
+
+  // Re-clic sur le bouton : l'aperçu se ferme.
+  await btn.click();
+  await expect.poll(async () => (await trailState(page)).preview).toBe(false);
+  await expect(btn).toHaveAttribute('aria-pressed', 'false');
+});
+
+test("les préréglages remplissent les réglages d'apparence", async ({ page }) => {
+  await openWithFixture(page);
+  await enableTrail(page);
+
+  // « Parcours complet » : tout le parcours, tête pulsante, lueur — sans
+  // toucher aux réglages de tracé.
+  await page.locator('#trailPresetFull').click();
+  await expect(page.locator('#selectTrailPersist')).toHaveValue('0');
+  await expect(page.locator('#selectTrailHead')).toHaveValue('pulse');
+  await expect(page.locator('#selectTrailEffect')).toHaveValue('glow');
+  await expect(page.locator('#inputTrailOpacity')).toHaveValue('60');
+  expect(await page.evaluate(async () => (await import('/static/js/index.js')).options.trail.persistDays)).toBe(0);
+  expect(await page.evaluate(async () => (await import('/static/js/index.js')).options.trail.routing)).toBe('clusters');
+
+  // « Voyage » restaure les défauts (runtime partagé entre les specs).
+  await page.locator('#trailPresetTravel').click();
+  await expect(page.locator('#selectTrailPersist')).toHaveValue('30');
+  await expect(page.locator('#selectTrailHead')).toHaveValue('dot');
+  await expect(page.locator('#selectTrailEffect')).toHaveValue('none');
+});
+
 test("le mode Évolution ne propose pas les traits", async ({ page }) => {
   await page.goto('/evolution', { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.mygcflowReady === true);

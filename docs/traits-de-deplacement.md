@@ -76,6 +76,46 @@ quand elle se pose sur une cache ; les flashs restent au premier plan (1100).
 Les réglages d'apparence s'appliquent immédiatement, y compris à un trait en
 cours ; ceux du tracé (étapes, rayon, sauts, forme) au lancement suivant.
 
+Trois **préréglages** (boutons sous le mini-aperçu de la carte « Apparence »)
+ajustent les réglages d'apparence sans toucher au tracé ni à la durée :
+
+- **Discret** : opacité 40 %, épaisseur 2, plein, sans effet ni tête,
+  traînée 30 jours — la couleur du thème est conservée ;
+- **Voyage** : les valeurs par défaut (opacité 85 %, épaisseur 3, lueur
+  désactivée, tête point, traînée 30 jours, grands sauts en arc) ;
+- **Parcours complet** : tout le parcours (persistance 0), opacité 60 %,
+  épaisseur 2,5, lueur et tête pulsante.
+
+Le **mini-aperçu** (canvas `#trailStylePreview`) redessine un trajet
+synthétique — étapes proches plus un grand saut — avec la couleur, l'épaisseur,
+le motif, l'effet et la tête choisis, à chaque changement de réglage. Statique
+(sans `requestAnimationFrame`) : la tête « pulsante » est figée à mi-période.
+
+## Aperçu du trajet et inspection des étapes
+
+Le bouton **Aperçu du trajet** (onglet Style › Trajet, à côté de
+l'interrupteur) affiche le trajet calculé tel quel sur la carte, sans lancer
+la lecture : tout le parcours, à pleine opacité (pas de fondu de
+persistance), avec le style courant et sans tête animée. Il réutilise la
+géométrie **mémoïsée** (`getTrailGeometry`), donc son ouverture ne coûte rien
+si les réglages n'ont pas changé — et un changement de tracé ou de style le
+recalcule/redessine à la volée (`refreshTrailPreview`).
+
+En aperçu, un **clic près d'une étape** (tolérance ~12 px) ouvre la popup
+habituelle avec le rang de l'étape, sa date et le nombre de caches qu'elle
+regroupe (`route.stopSize`) — chaque étape sait combien de caches elle
+représente (groupe, jour, ou 1 en mode « Toutes les caches »). Un clic sur
+une vraie cache garde la priorité (popup de la cache) ; un clic ailleurs
+referme la popup comme avant.
+
+L'aperçu se referme de lui-même quand le tracé n'est plus valable ou utile :
+nouvelles données ou filtre modifié (`addVector`), option désactivée, lancement
+de la lecture ou de l'enregistrement (`resetTravelTrail` — l'animation prend le
+relais). En revanche il **survit à l'arrêt** de la lecture : après un stop,
+l'utilisateur revoit sa route. Le bouton reflète l'état réel (`aria-pressed`)
+et est désactivé quand l'aperçu ne pourrait pas s'ouvrir (trajet désactivé,
+pas de données, animation ou enregistrement en cours).
+
 ## Réglages et portée
 
 | Réglage | Portée | Stockage |
@@ -146,18 +186,28 @@ partie du trajet qui ne change plus (à invalider à chaque mouvement de vue).
   stylo, opacité), sans DOM ni OpenLayers.
 - `static/js/mapgl.js`, section « TRAITS DE DÉPLACEMENT » : couches, calcul
   mémoïsé (`getTrailGeometry`), planification (`scheduleTravelTrail`), dessin
-  (`drawTravelTrail`, `drawTravelTrailHead`), diagnostic
-  (`getTravelTrailDebugState`).
+  (`drawTravelTrail`, `drawTravelTrailHead`), aperçu statique
+  (`toggleTrailPreview`, `refreshTrailPreview`, `isTrailPreviewActive`),
+  inspection au clic (`inspectTrailStopAt`), diagnostic
+  (`getTravelTrailDebugState` — dont `preview`).
 - Interface : `templates/menu_trail.html`, `initTrailControls` /
-  `syncTrailOptionsUI` dans `static/js/ui.js`, `applyTrailState` dans
-  `static/js/profiles.js`.
+  `syncTrailOptionsUI` / `drawTrailStylePreview` / `applyTrailPreset` dans
+  `static/js/ui.js`, `applyTrailState` dans `static/js/profiles.js`.
+
+Note : `trailGeometry` et `trailPreview` sont déclarés avec `var` dans
+`mapgl.js` — `initUIElements` (ui.js) s'exécute pendant l'évaluation des
+modules, avant la fin de celle de mapgl (import circulaire via `index.js`) ;
+un `let` serait encore en zone morte quand `syncTrailOptionsUI` appelle
+`pkg.isTrailGeometryStale`/`pkg.isTrailPreviewActive`.
 
 ## Tests
 
-- Node : `node --test test_travel_trail.mjs`.
+- Node : `node --test test_travel_trail.mjs` (dont `stopSize` : taille de
+  chaque étape en modes jour/groupes/toutes les caches, points invalides).
 - Python : `tests/test_trail_profile.py`.
 - Les deux tournent dans `run_video_tests.py` (étapes « Calculs du trajet
   JavaScript » et « Réglages du trajet côté serveur »), donc en CI via le
   workflow `video-tests.yml`.
 - Playwright : `tests/e2e/travel-trail.spec.mjs` (lecture, arrêt, préférence
-  globale, enregistrement images et MediaRecorder, absence en mode Évolution).
+  globale, enregistrement images et MediaRecorder, aperçu + inspection au
+  clic, préréglages, absence en mode Évolution).

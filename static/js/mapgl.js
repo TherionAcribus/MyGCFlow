@@ -123,7 +123,7 @@ import {
     sampleCameraJourney,
     shouldMoveCamera,
 } from './camera_follow.mjs';
-import { dateToDayNumber } from './evolution_timeline.mjs';
+import { dateToDayNumber, dayNumberToDate } from './evolution_timeline.mjs';
 import {
     buildTrailPath,
     buildTrailRoute,
@@ -356,8 +356,16 @@ const CAMERA_RENDER_TIMEOUT_MS = 6000;
 // points (déterministe en capture image par image).
 let trailLayer = null;          // le trait, sous les points
 let trailHeadLayer = null;      // la tête du trait, au-dessus des points
-let trailGeometry = null;       // { key, route, path, buildMs } — trajet mémoïsé
+// var et non let : initUIElements (ui.js) s'exécute pendant l'évaluation des
+// modules, alors que mapgl n'a pas encore fini la sienne (import circulaire
+// via index.js). Les fonctions exportées ci-dessous, déjà hissées, peuvent
+// donc être appelées avant cette ligne : var est initialisé à undefined dès
+// l'instanciation, ce qui évite la zone morte (TDZ) d'un let.
+var trailGeometry = null;       // { key, route, path, buildMs } — trajet mémoïsé
 let trailState = null;          // animation en cours (voir resetTravelTrail)
+// Aperçu statique du trajet calculé (bouton « Aperçu du trajet » de l'onglet
+// Trajet) : { route, path } mémoïsés, dessinés à pleine opacité hors animation.
+var trailPreview = null;
 let trailAnimating = false;     // compte comme une animation pour mapDirtyTracker
 let trailDrawnVertices = 0;     // sommets dessinés à la dernière frame (tests)
 // Maximums dessinés depuis le dernier lancement (tests, diagnostic) : gardés
@@ -399,8 +407,10 @@ export function isRecordingActive() {
 
 // Fonction pour ajouter les données GeoJSON à la source vectorielle au chargement du GeoJSON
 export function addVector(data) {
-    // Le trajet affiché décrivait l'ancienne sélection.
+    // Le trajet affiché (animation ou simple aperçu) décrivait l'ancienne
+    // sélection.
     clearTravelTrail();
+    clearTrailPreview();
     if (!data) {
         console.warn('[addVector] data is null/undefined, abort');
         features = [];
@@ -473,6 +483,53 @@ function isIdleState(){
     } catch(_) { return true; }
 }
 
+// Distance de capture d'une étape, en pixels écran, pour l'inspection au clic.
+const TRAIL_PICK_PX = 12;
+
+// En aperçu du trajet, ouvre la popup sur l'étape la plus proche du clic si
+// elle est à portée : date de l'étape et nombre de caches qu'elle regroupe.
+// Retourne vrai si une étape a été trouvée (popup affichée).
+// NOTE : concaténation plutôt que gabarit `${}` — le lexer Babel qui extrait
+// les chaînes t() se désynchronise sur les gabarits imbriqués (comme celui du
+// popup cache plus bas) ; rester en code simple garantit l'extraction.
+function inspectTrailStopAt(pixel, coordinate) {
+    // Le trailState anime déjà la carte : l'aperçu est alors masqué.
+    if (!trailPreview || trailState || !map) return false;
+    const { route, path } = trailPreview;
+    let best = -1;
+    let bestD2 = TRAIL_PICK_PX * TRAIL_PICK_PX;
+    for (let i = 0; i < route.lon.length; i++) {
+        const v = path.stopVertex[i];
+        const p = map.getPixelFromCoordinate([path.xy[2 * v], path.xy[2 * v + 1]]);
+        if (!p) continue;
+        const dx = p[0] - pixel[0];
+        const dy = p[1] - pixel[1];
+        const d2 = dx * dx + dy * dy;
+        if (d2 <= bestD2) {
+            bestD2 = d2;
+            best = i;
+        }
+    }
+    if (best < 0) return false;
+
+    const t = pkg.t || ((s) => s);
+    const count = route.stopSize?.[best] || 1;
+    const sizeLabel = count > 1
+        ? t('${count} caches regroupées', { count })
+        : t('1 cache');
+    const date = dayNumberToDate(route.day[best]);
+    const dateLabel = pkg.formatDateDisplay?.(date) || '';
+    const titleLabel = t('Étape ${index} sur ${total}', { index: best + 1, total: route.lon.length });
+    const html = '<div class="gc-popup-title">' + sanitize(titleLabel) + '</div>'
+        + (dateLabel ? '<div>' + sanitize(dateLabel) + '</div>' : '')
+        + '<div>' + sizeLabel + '</div>';
+    const contentEl = popupEl.querySelector('.gc-popup-content') || popupEl;
+    contentEl.innerHTML = html;
+    popupEl.classList.add('is-visible');
+    popupOverlay.setPosition(coordinate);
+    return true;
+}
+
 // Initialise l'overlay de popup et les interactions de clic
 // Exportée pour createMap() (basemaps.js), qui l'appelle une fois la carte créée.
 export function initPopupOverlay(){
@@ -521,6 +578,9 @@ export function initPopupOverlay(){
         });
 
         if (!feature) {
+            // Aperçu du trajet : un clic près d'une étape (sans cache touchée)
+            // décrit le groupe de caches qu'elle représente.
+            if (inspectTrailStopAt(pixel, evt.coordinate)) return;
             hidePopup();
             return;
         }
@@ -3574,6 +3634,10 @@ function getTrailGeometry(opts) {
 // sur le chemin MediaRecorder, `isMediaRecording` n'est posé qu'au démarrage
 // effectif du pipeline (il choisit la source de l'horloge), après cet appel.
 function resetTravelTrail(silent = false) {
+    // L'aperçu statique cède la place à l'animation ; l'arrêt de lecture, lui,
+    // ne l'efface pas (clearTravelTrail ne touche pas trailPreview) : après un
+    // stop, l'utilisateur revoit sa route.
+    clearTrailPreview();
     clearTravelTrail();
     if (isEvolutionPage()) return;
     const opts = currentTrailOptions();
@@ -3625,11 +3689,91 @@ function resetTravelTrail(silent = false) {
 }
 
 // Retire le trait (arrêt, fin d'enregistrement, nouvelles données).
+// Ne touche pas volontairement trailPreview : l'aperçu survit à l'arrêt de la
+// lecture (l'utilisateur revoit sa route). Il est effacé explicitement par
+// resetTravelTrail (l'animation prend le relais), addVector (les données
+// changent) et refreshTrailPreview (l'option est désactivée).
 function clearTravelTrail() {
     setTrailAnimating(false);
     trailState = null;
     trailDrawnVertices = 0;
     setTrailLayersVisible(false);
+}
+
+// --- Aperçu statique du trajet ------------------------------------------------
+//
+// Le trajet calculé (étapes + polyligne mémoïsée) affiché tel quel, sans
+// animation : tout le parcours à pleine opacité, style courant, pas de tête.
+// Utile pour vérifier les réglages de tracé sans lancer la lecture.
+
+export function isTrailPreviewActive() {
+    return !!trailPreview;
+}
+
+export function toggleTrailPreview() {
+    if (trailPreview) {
+        clearTrailPreview();
+        return false;
+    }
+    // Le trajet n'a pas de sens en mode Évolution (onglet absent) ; pendant
+    // une lecture ou un enregistrement, l'aperçu serait de toute façon masqué
+    // par l'animation — le bouton est alors désactivé côté UI. La pause garde
+    // animationInProgress vrai (isIdleState seul la laisserait passer).
+    if (isEvolutionPage() || !isIdleState() || isAnimationInProgress()) return !!trailPreview;
+    const opts = currentTrailOptions();
+    if (!opts.enabled) return false;
+
+    let geometry;
+    try {
+        geometry = getTrailGeometry(opts);
+    } catch (e) {
+        console.warn('[TRAIL] Aperçu impossible à calculer :', e);
+        return false;
+    }
+    if (geometry.route.lon.length < 2) {
+        pkg.showToast?.(pkg.t('Aucun déplacement à tracer pour cette sélection.'), 'info', pkg.t('Trajet'));
+        return false;
+    }
+    trailPreview = { route: geometry.route, path: geometry.path };
+    ensureTrailLayers();
+    // La couche de tête reste cachée : pas de géocacheur dans l'aperçu.
+    trailLayer.setVisible(true);
+    trailLayer.changed();
+    return true;
+}
+
+function clearTrailPreview() {
+    if (!trailPreview) return;
+    trailPreview = null;
+    // Sans animation en cours la couche n'a plus rien à dessiner ; sinon
+    // l'animation la garde visible (le reprendre n'arrive que via
+    // resetTravelTrail, qui réaffiche ensuite les deux couches).
+    if (trailLayer) {
+        if (!trailState) trailLayer.setVisible(false);
+        else trailLayer.changed();
+    }
+}
+
+// Réglages modifiés pendant l'aperçu : recalcul si la géométrie a divergé
+// (la clé mémoïsée couvre routing/clusterKm/jumpKm/jumpStyle/curve et la
+// borne de fin), redessin sinon. Ferme l'aperçu si le trajet est désactivé.
+export function refreshTrailPreview() {
+    if (!trailPreview) return;
+    const opts = currentTrailOptions();
+    if (!opts.enabled || isEvolutionPage()) {
+        clearTrailPreview();
+        return;
+    }
+    let geometry;
+    try {
+        geometry = getTrailGeometry(opts);
+    } catch (e) {
+        console.warn('[TRAIL] Aperçu impossible à recalculer :', e);
+        clearTrailPreview();
+        return;
+    }
+    trailPreview = { route: geometry.route, path: geometry.path };
+    trailLayer?.changed();
 }
 
 // Premier trajet : planifié comme si la veille de la date de début venait de
@@ -3708,11 +3852,33 @@ function setTrailAnimating(active) {
 // rien n'est à dessiner.
 function trailFrame(event) {
     const state = trailState;
-    if (!state) return null;
+    const frameState = event.frameState;
+    if (!state) {
+        // Aperçu statique : tout le trajet est déjà « tracé » (stylo en bout
+        // de chemin, jour courant infini). L'animation, si elle tourne,
+        // l'emporte sur l'aperçu.
+        if (!trailPreview) return null;
+        const opts = currentTrailOptions();
+        if (!opts.enabled) return null;
+        return {
+            state: {
+                path: trailPreview.path,
+                route: trailPreview.route,
+                startDay: -Infinity,
+                hasHistory: false,
+            },
+            preview: true,
+            opts,
+            now: sampleAppearClock(),
+            penLen: trailPreview.path.length,
+            dayNow: Infinity,
+            ratio: frameState.pixelRatio || 1,
+            m: composeTransform(event.inversePixelTransform, frameState.coordinateToPixelTransform),
+        };
+    }
     const opts = currentTrailOptions();
     if (!opts.enabled) return null;
     const now = sampleAppearClock();
-    const frameState = event.frameState;
     // Jour courant en continu, pour un fondu sans à-coups : au plus un jour
     // après le dernier affiché (pause, attente du suivi de caméra).
     const msPerDay = Math.max(1, animationMsPerDay());
@@ -3736,16 +3902,21 @@ function drawTravelTrail(event) {
     if (!frame) return;
     const { state, opts, penLen, dayNow, ratio, m } = frame;
     const { path } = state;
-    const minDay = opts.persistDays > 0
-        ? Math.max(state.startDay, dayNow - opts.persistDays)
-        : state.startDay;
+    // Aperçu : tout le trajet (minDay = -Infinity) à pleine opacité, sans le
+    // fondu de persistance — c'est le tracé calculé, pas la traînée animée.
+    const minDay = frame.preview ? -Infinity
+        : opts.persistDays > 0
+            ? Math.max(state.startDay, dayNow - opts.persistDays)
+            : state.startDay;
     const range = visibleVertexRange(path, penLen, minDay);
     if (!range) return;
 
     const ctx = event.context;
     const width = opts.width * ratio;
     const alpha = opts.opacity / 100;
-    const bucketOf = (v) => opacityBucket(trailOpacity(dayNow - path.vday[v], opts.persistDays));
+    const bucketOf = frame.preview
+        ? () => 1
+        : (v) => opacityBucket(trailOpacity(dayNow - path.vday[v], opts.persistDays));
     const runs = splitTrailRuns(path.kind, bucketOf, range.first, range.last);
     // Longueur de carte -> pixels du canvas, pour caler les tirets sur la
     // distance parcourue : le motif ne « glisse » pas quand la queue avance.
@@ -3788,7 +3959,9 @@ function drawTravelTrail(event) {
 // « masqué » (il se téléporte).
 function drawTravelTrailHead(event) {
     const frame = trailFrame(event);
-    if (!frame || frame.opts.head === 'none') return;
+    // Pas de tête dans l'aperçu : rien ne se déplace, un point fixe en bout de
+    // trajet ferait croire à une position courante.
+    if (!frame || frame.preview || frame.opts.head === 'none') return;
     const { state, opts, now, penLen, ratio, m } = frame;
     const { path } = state;
     const started = state.hasHistory || penLen > state.startLen + 1e-6 || state.shownDay >= state.firstDay;
@@ -3847,10 +4020,10 @@ function strokeTrailRun(ctx, path, run, range, m, minStep) {
     ctx.stroke();
 }
 
-// Un réglage d'apparence a changé : le trait affiché (animation en cours ou
-// terminée) est redessiné tout de suite, sans attendre la frame suivante.
+// Un réglage d'apparence a changé : le trait affiché (animation, aperçu ou
+// trait terminé) est redessiné tout de suite, sans attendre la frame suivante.
 export function refreshTravelTrailStyle() {
-    if (trailState && trailLayer?.getVisible()) map.render();
+    if ((trailState || trailPreview) && trailLayer?.getVisible()) map.render();
 }
 
 // Vrai si les réglages de tracé ont divergé de la géométrie mémoïsée : le trait
@@ -3865,6 +4038,7 @@ export function getTravelTrailDebugState() {
     const now = pointAppearClock.last;
     return {
         active: !!state,
+        preview: !!trailPreview,
         layerVisible: !!trailLayer?.getVisible(),
         stops: trailGeometry?.route.lon.length ?? 0,
         vertices: trailGeometry?.path.cum.length ?? 0,

@@ -14,6 +14,12 @@
                 <label class="form-check-label" for="switchTrail">{{ _("Afficher le trajet pendant l'animation") }}</label>
             </div>
             <small id="helpTrail" class="form-hint text-muted">{{ _("Un trait relie les caches trouvées d'un jour à l'autre et arrive sur les nouvelles caches au moment où elles apparaissent. Le trajet est calculé automatiquement au lancement de la lecture ou de l'enregistrement. Trajet indicatif reconstitué d'après les dates de trouvaille : l'ordre réel des visites n'est pas connu et le trait ne suit ni les routes ni le terrain.") }}</small>
+            <div class="mt-2">
+                <button type="button" id="btnTrailPreview" class="btn btn-sm" aria-pressed="false" aria-describedby="helpTrailPreview">
+                    <i class="ti ti-route me-1"></i>{{ _("Aperçu du trajet") }}
+                </button>
+                <small id="helpTrailPreview" class="form-hint text-muted d-block mt-1">{{ _("Affiche le trajet calculé sur la carte, sans lancer l'animation : pratique pour vérifier les réglages de tracé. Cliquez près d'une étape pour voir sa date et le nombre de caches qu'elle regroupe.") }}</small>
+            </div>
         </div>
     </div>
 
@@ -78,6 +84,13 @@
                         </h6>
                     </div>
                     <div class="card-body">
+                        <canvas id="trailStylePreview" class="trail-style-preview" role="img" aria-label="{{ _('Aperçu du style du trait') }}"></canvas>
+                        <div class="btn-group w-100 mt-2 mb-3" role="group" aria-label="{{ _('Préréglages d\'apparence du trait') }}">
+                            <button type="button" id="trailPresetSubtle" class="btn btn-sm">{{ _("Discret") }}</button>
+                            <button type="button" id="trailPresetTravel" class="btn btn-sm">{{ _("Voyage") }}</button>
+                            <button type="button" id="trailPresetFull" class="btn btn-sm">{{ _("Parcours complet") }}</button>
+                        </div>
+
                         <label class="form-label" for="trailColor">{{ _("Couleur du trait") }}</label>
                         <input type="color" class="form-control form-control-color" id="trailColor" value="#00B8D4" aria-label="{{ _('Choisir la couleur du trait') }}">
 

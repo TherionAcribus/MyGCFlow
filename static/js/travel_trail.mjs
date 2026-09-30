@@ -415,10 +415,14 @@ function twoOpt(order, stops, start) {
 
 // --- Trajet -------------------------------------------------------------------
 
-// Étapes d'une journée selon le mode de tracé : index des caches retenues.
+// Étapes d'une journée selon le mode de tracé : index des caches retenues et,
+// pour chacune, le nombre de points valides qu'elle représente (taille du
+// groupe ; 1 en mode « toutes les caches »). La taille alimente l'inspection
+// des étapes au clic (« N caches regroupées »).
 function dayStops(points, options) {
     if (options.routing === 'all' && points.length <= ALL_MAX_PER_DAY) {
-        return points.map((_, i) => i).filter((i) => isValidPoint(points[i]));
+        const indices = points.map((_, i) => i).filter((i) => isValidPoint(points[i]));
+        return { indices, sizes: indices.map(() => 1) };
     }
     const groups = options.routing === 'day'
         ? [points.map((_, i) => i)]
@@ -428,9 +432,16 @@ function dayStops(points, options) {
     // clusterPoints garde sa propre projection interne — nécessaire avant de
     // connaître les groupes.
     const loc = localKm(points, points.map((_, i) => i).filter((i) => isValidPoint(points[i])));
-    return groups
-        .map((group) => groupAnchorXY(loc.xs, loc.ys, group.filter((i) => isValidPoint(points[i]))))
-        .filter((i) => i >= 0);
+    const indices = [];
+    const sizes = [];
+    for (const group of groups) {
+        const valid = group.filter((i) => isValidPoint(points[i]));
+        const anchor = groupAnchorXY(loc.xs, loc.ys, valid);
+        if (anchor < 0) continue;
+        indices.push(anchor);
+        sizes.push(valid.length);
+    }
+    return { indices, sizes };
 }
 
 // Trajet complet à partir des jours de trouvailles, triés ou non :
@@ -446,6 +457,7 @@ export function buildTrailRoute(days, rawOptions = {}) {
     const lon = [];
     const lat = [];
     const stopDay = [];
+    const stopSize = [];
     const routeDays = [];
     const dayLastStop = [];
     // Journées où « toutes les caches » a dépassé le plafond et a été replié
@@ -455,7 +467,7 @@ export function buildTrailRoute(days, rawOptions = {}) {
 
     for (const { day, points } of sorted) {
         const fallback = options.routing === 'all' && points.length > ALL_MAX_PER_DAY;
-        const indices = dayStops(points, options);
+        const { indices, sizes } = dayStops(points, options);
         if (indices.length === 0) continue;
         const stops = indices.map((i) => points[i]);
         const order = orderStops(stops, previous);
@@ -463,6 +475,7 @@ export function buildTrailRoute(days, rawOptions = {}) {
             lon.push(stops[k][0]);
             lat.push(stops[k][1]);
             stopDay.push(day);
+            stopSize.push(sizes[k]);
         }
         previous = stops[order[order.length - 1]];
         routeDays.push(day);
@@ -474,6 +487,9 @@ export function buildTrailRoute(days, rawOptions = {}) {
         lon: Float64Array.from(lon),
         lat: Float64Array.from(lat),
         day: Int32Array.from(stopDay),
+        // Nombre de caches valides que chaque étape représente (inspection au
+        // clic en aperçu ; 1 en mode « toutes les caches »).
+        stopSize: Int32Array.from(stopSize),
         days: Int32Array.from(routeDays),
         dayLastStop: Int32Array.from(dayLastStop),
         fallbackDays: Int32Array.from(fallbackDays),

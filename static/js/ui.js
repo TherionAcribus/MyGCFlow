@@ -30,7 +30,16 @@ import { saveSettingsPatch, makeDebouncedSettingsSaver } from './settings_api.mj
 import { reportSave, markSaveError } from './saved_indicator.mjs';
 import { t } from './notifications.js';
 import { isEvolutionPage } from './app_mode.mjs';
-import { normalizeTrailOptions, TRAIL_DURATION_RANGE } from './travel_trail.mjs';
+import {
+    buildTrailPath,
+    buildTrailRoute,
+    normalizeTrailOptions,
+    SEGMENT_HIDDEN,
+    SEGMENT_JUMP_DASHED,
+    splitTrailRuns,
+    TRAIL_DEFAULTS,
+    TRAIL_DURATION_RANGE,
+} from './travel_trail.mjs';
 
 // Flag de debug pour les filtres (COUNTRY/FILTER).
 // Mettre à true pour réactiver les logs en console.
@@ -4788,6 +4797,27 @@ function initTrailControls() {
         });
     }
     document.getElementById('inputTimeTrail')?.addEventListener('input', () => refreshTimingPlan());
+
+    // Bouton « Aperçu du trajet » : l'état pressé reflète la réalité côté
+    // carte (le basculement peut être refusé : pas idle, option désactivée).
+    document.getElementById('btnTrailPreview')?.addEventListener('click', () => {
+        pkg.toggleTrailPreview?.();
+        syncTrailPreviewButton();
+    });
+
+    // Préréglages d'apparence : bundle de valeurs vers les inputs, puis le
+    // handler normal (contrôles -> options -> rafraîchissements).
+    const presets = { trailPresetSubtle: 'subtle', trailPresetTravel: 'travel', trailPresetFull: 'full' };
+    for (const [id, name] of Object.entries(presets)) {
+        document.getElementById(id)?.addEventListener('click', () => applyTrailPreset(name));
+    }
+
+    // Le mini-canvas de style : sa taille réelle n'est connue que quand le
+    // panneau est affiché — premier dessin à l'ouverture de l'onglet, puis à
+    // chaque redimensionnement (changement de disposition du panneau).
+    document.querySelector('a[href="#tabTrail"]')?.addEventListener('shown.bs.tab', drawTrailStylePreview);
+    window.addEventListener('resize', drawTrailStylePreview);
+    drawTrailStylePreview();
 }
 
 // Contrôles -> pkg.options.trail. La durée (préférence globale) est conservée.
@@ -4824,6 +4854,7 @@ function changeTrailValues() {
     Object.assign(trail, normalizeTrailOptions(trail));
     updateTrailControlsState();
     pkg.refreshTravelTrailStyle?.();
+    drawTrailStylePreview();
 }
 
 // Contrôles actifs seulement quand le trait est affiché ; rayon de
@@ -4837,10 +4868,182 @@ function updateTrailControlsState() {
     if (clusterRow) clusterRow.hidden = trail.routing === 'day';
     const opacityLabel = document.getElementById('spanTrailOpacity');
     if (opacityLabel) opacityLabel.textContent = `${trail.opacity}%`;
+    // Aperçu du trajet actif : les réglages de tracé s'y appliquent tout de
+    // suite (getTrailGeometry est mémoïsé — gratuit sans divergence), et un
+    // trajet désactivé ferme l'aperçu. À faire AVANT le hint ci-dessous :
+    // recalculé, le trajet n'est plus « en retard » sur les réglages.
+    pkg.refreshTrailPreview?.();
     // Réglages de tracé modifiés alors qu'un trajet est déjà calculé : ils ne
     // s'appliqueront qu'au prochain lancement.
     const staleHint = document.getElementById('trailStaleHint');
     if (staleHint) staleHint.hidden = pkg.isTrailGeometryStale?.() !== true;
+    syncTrailPreviewButton();
+}
+
+// Bouton « Aperçu du trajet » : pressé selon l'état réel (mapgl est la source
+// de vérité — l'aperçu peut se fermer sans clic, p. ex. au lancement de la
+// lecture ou au rechargement des données), désactivé quand il ne pourrait de
+// toute façon pas basculer (trajet désactivé, pas de données, non idle).
+function syncTrailPreviewButton() {
+    const btn = document.getElementById('btnTrailPreview');
+    if (!btn) return;
+    const active = pkg.isTrailPreviewActive?.() === true;
+    const btnStart = document.getElementById('btnStartAnimation');
+    // Même mesure d'état « repos » que updateControlBar : bouton Start visible.
+    const idle = !btnStart || window.getComputedStyle(btnStart).display !== 'none';
+    const enabled = normalizeTrailOptions(pkg.options?.trail).enabled;
+    btn.disabled = !enabled || !idle || !hasAnimationData();
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    btn.classList.toggle('active', active);
+}
+
+// Préréglages d'apparence : seuls les réglages visuels et la persistance —
+// jamais le tracé (étapes, rayon, distance de saut, forme) ni la durée. Le
+// style des grands sauts (« Voyage » le fixe en arc) est visuel mais entre
+// dans la clé de géométrie : l'aperçu carte, s'il est ouvert, se recalcule.
+const TRAIL_PRESETS = {
+    subtle: {
+        // La couleur du thème est conservée : « discret » porte sur la
+        // discrétion du rendu (fin, estompé, sans tête), pas sur la teinte.
+        opacity: 40, width: 2, lineStyle: 'solid', effect: 'none',
+        head: 'none', persistDays: 30,
+    },
+    travel: {
+        color: TRAIL_DEFAULTS.color, width: TRAIL_DEFAULTS.width,
+        opacity: TRAIL_DEFAULTS.opacity, lineStyle: TRAIL_DEFAULTS.lineStyle,
+        effect: TRAIL_DEFAULTS.effect, head: TRAIL_DEFAULTS.head,
+        persistDays: TRAIL_DEFAULTS.persistDays, jumpStyle: TRAIL_DEFAULTS.jumpStyle,
+    },
+    full: {
+        persistDays: 0, opacity: 60, width: 2.5, lineStyle: 'solid',
+        effect: 'glow', head: 'pulse',
+    },
+};
+
+function applyTrailPreset(name) {
+    const preset = TRAIL_PRESETS[name];
+    if (!preset) return;
+    const inputs = {
+        color: 'trailColor',
+        width: 'inputTrailWidth',
+        opacity: 'inputTrailOpacity',
+        lineStyle: 'selectTrailLineStyle',
+        effect: 'selectTrailEffect',
+        head: 'selectTrailHead',
+        persistDays: 'selectTrailPersist',
+        jumpStyle: 'selectTrailJumpStyle',
+    };
+    for (const [key, id] of Object.entries(inputs)) {
+        if (!(key in preset)) continue;
+        const el = document.getElementById(id);
+        if (el) el.value = String(preset[key]);
+    }
+    // Le handler normal relit les inputs vers pkg.options.trail, normalise,
+    // rafraîchit l'aperçu carte et le mini-canvas.
+    changeTrailValues();
+}
+
+// Mini-aperçu du style, dans la carte « Apparence » : un trajet synthétique
+// (étapes proches + un grand saut ~9 700 km, toujours au-delà du seuil réglable
+// borné à 5 000 km) projeté directement en pixels du canvas, dessiné avec la
+// même logique que drawTravelTrail (couleur, épaisseur, motif, lueur, tête).
+// Statique : « pulsant » est figé à mi-période (anneau à moitié déployé).
+function drawTrailStylePreview() {
+    const canvas = document.getElementById('trailStylePreview');
+    if (!canvas) return;
+    const ratio = window.devicePixelRatio || 1;
+    const cssW = Math.max(120, canvas.clientWidth || 300);
+    const cssH = Math.max(48, canvas.clientHeight || 72);
+    canvas.width = Math.round(cssW * ratio);
+    canvas.height = Math.round(cssH * ratio);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    // Tout est dessiné en pixels CSS : le transform applique le devicePixelRatio.
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    ctx.clearRect(0, 0, cssW, cssH);
+
+    const opts = normalizeTrailOptions(pkg.options?.trail);
+    // Positions (fractions du canvas) : zigzag puis retour en arc vers la
+    // gauche — les arcs de grand saut bombent à gauche du sens de parcours.
+    const stops = [
+        [2.20, 48.80], [2.24, 48.82], [2.21, 48.84],
+        [2.27, 48.86], [2.23, 48.81], [139.69, 35.68],
+    ];
+    const places = [
+        [0.08, 0.70], [0.24, 0.38], [0.40, 0.66],
+        [0.56, 0.34], [0.72, 0.72], [0.28, 0.30],
+    ];
+    const positions = new Map(stops.map(([lon, lat], i) => [
+        `${lon.toFixed(4)},${lat.toFixed(4)}`, [places[i][0] * cssW, places[i][1] * cssH],
+    ]));
+    const days = stops.map(([lon, lat], i) => ({ day: i + 1, points: [[lon, lat]] }));
+    const route = buildTrailRoute(days);
+    const path = buildTrailPath(route, {
+        project: (lon, lat) => positions.get(`${lon.toFixed(4)},${lat.toFixed(4)}`) || [lon, lat],
+        curve: opts.curve,
+        jumpKm: opts.jumpKm,
+        jumpStyle: opts.jumpStyle,
+    });
+    const n = path.cum.length;
+    if (n < 2) return;
+
+    const width = Math.max(1, opts.width);
+    const alpha = opts.opacity / 100;
+    const dash = { solid: [], dashed: [width * 3, width * 2], dotted: [0.01, width * 2.2] }[opts.lineStyle];
+    const jumpDash = [width * 1.2, width * 2.4];
+
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = opts.color;
+    // Même découpage que la carte : un tracé par type de segment ; le décalage
+    // de motif est ancré sur la distance parcourue pour ne pas « glisser ».
+    const runs = splitTrailRuns(path.kind, () => 1, 1, n - 1);
+    for (const glow of opts.effect === 'glow' ? [true, false] : [false]) {
+        for (const run of runs) {
+            if (run.kind === SEGMENT_HIDDEN) continue;
+            if (glow) {
+                ctx.setLineDash([]);
+                ctx.lineWidth = width * 3;
+                ctx.globalAlpha = alpha * 0.22;
+            } else {
+                ctx.setLineDash(run.kind === SEGMENT_JUMP_DASHED ? jumpDash : dash);
+                ctx.lineDashOffset = path.cum[run.start - 1];
+                ctx.lineWidth = width;
+                ctx.globalAlpha = alpha;
+            }
+            ctx.beginPath();
+            ctx.moveTo(path.xy[2 * (run.start - 1)], path.xy[2 * (run.start - 1) + 1]);
+            for (let v = run.start; v <= run.end; v++) {
+                ctx.lineTo(path.xy[2 * v], path.xy[2 * v + 1]);
+            }
+            ctx.stroke();
+        }
+    }
+
+    // Tête figée en fin de parcours, comme drawTravelTrailHead.
+    ctx.globalAlpha = 1;
+    if (opts.head !== 'none') {
+        const hx = path.xy[2 * (n - 1)];
+        const hy = path.xy[2 * (n - 1) + 1];
+        const radius = Math.max(2.5, opts.width * 1.4);
+        ctx.fillStyle = opts.color;
+        ctx.strokeStyle = opts.color;
+        if (opts.head === 'pulse') {
+            ctx.globalAlpha = 0.35;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(hx, hy, radius * 1.9, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+        ctx.beginPath();
+        ctx.arc(hx, hy, radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.lineWidth = 1.2;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
 }
 
 // Reflète pkg.options.trail dans l'onglet Trajet. N'écrit QUE le DOM (cf.
@@ -5958,6 +6161,11 @@ function updateControlBar() {
             }
         }
     }
+
+    // Bouton « Aperçu du trajet » : le toggle n'est permis qu'au repos ; un
+    // lancement a déjà fermé l'aperçu côté carte (resetTravelTrail), il reste
+    // à refléter l'état (pressed/disabled) dans l'onglet.
+    syncTrailPreviewButton();
 }
 
 // Bouton de bascule plein écran depuis la barre latérale

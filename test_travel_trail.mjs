@@ -178,6 +178,43 @@ test('mode « toutes les caches » : repli sur les groupes au-delà du plafond',
     assert.equal(buildTrailRoute([{ day: 1, points: few }], { routing: 'all' }).lon.length, 3);
 });
 
+test('stopSize : chaque étape sait combien de caches elle regroupe', () => {
+    // Mode « un point par jour » : l'étape compte les points valides du jour.
+    const day = buildTrailRoute([
+        { day: 1, points: [PARIS, VERSAILLES, [NaN, 0]] },
+        { day: 2, points: [LYON] },
+    ], { routing: 'day' });
+    assert.deepEqual([...day.stopSize], [2, 1]);
+
+    // Mode « groupes » : une taille par groupe (le point invalide ne compte pas).
+    const clustered = buildTrailRoute([
+        { day: 1, points: [PARIS, east(PARIS, 0.5), VERSAILLES, [540, 0]] },
+    ], { routing: 'clusters', clusterKm: 2 });
+    assert.equal(clustered.stopSize.length, 2);
+    assert.deepEqual([...clustered.stopSize].sort((a, b) => a - b), [1, 2]);
+
+    // Mode « toutes les caches » : chaque étape représente une seule cache.
+    const all = buildTrailRoute([
+        { day: 1, points: [PARIS, east(PARIS, 0.1), east(PARIS, 0.2)] },
+    ], { routing: 'all' });
+    assert.deepEqual([...all.stopSize], [1, 1, 1]);
+
+    // Repli « toutes les caches » → groupes : la taille est celle du groupe.
+    const many = Array.from({ length: ALL_MAX_PER_DAY + 1 }, (_, i) => east(PARIS, i * 0.001));
+    const folded = buildTrailRoute([{ day: 1, points: many }], { routing: 'all', clusterKm: 2 });
+    assert.deepEqual([...folded.stopSize], [ALL_MAX_PER_DAY + 1]);
+
+    // Toujours une taille par étape, alignée sur l'ordre de passage.
+    for (const r of [day, clustered, all, folded]) {
+        assert.equal(r.stopSize.length, r.lon.length);
+    }
+    // L'ordre de passage réordonne les tailles comme les coordonnées :
+    // groupe de 2 puis isolée, ou l'inverse — la somme est conservée.
+    let total = 0;
+    for (const s of clustered.stopSize) total += s;
+    assert.equal(total, 3);
+});
+
 test('fallbackDays rapporte les journées repliées sur les groupes', () => {
     const many = Array.from({ length: ALL_MAX_PER_DAY + 1 }, (_, i) => east(PARIS, i * 0.001));
     const few = [PARIS, east(PARIS, 0.1), east(PARIS, 0.2)];
