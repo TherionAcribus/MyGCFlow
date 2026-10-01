@@ -11,17 +11,23 @@ Le fichier est distinct de geocaching.db (voir paths.evolution_database_path)
 et géré avec le module sqlite3 standard, avec son propre numéro de schéma
 (PRAGMA user_version). Chaque appel ouvre sa propre connexion : les fonctions
 sont utilisables depuis les requêtes comme depuis la tâche d'import.
+
+`export_csv` produit en flux le CSV fusionné d'une base, dans le même format
+que les exports importés : le fichier sert de sauvegarde ou de portage et se
+ré-importe tel quel.
 """
 
 from __future__ import annotations
 
+import csv
+import io
 import json
 import sqlite3
 import threading
 from collections import OrderedDict
 from datetime import date, datetime
 from pathlib import Path
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, Iterator, List, Optional
 
 from evolution_csv import FileReport, ROW_FIELDS, iter_batches
 
@@ -523,6 +529,78 @@ def get_cache(db_path, dataset_id: int, gc_code: str) -> dict:
     if row is None:
         raise EvolutionStoreError("cache-not-found")
     return dict(row)
+
+
+# ---------------------------------------------------------------------------
+# Export
+# ---------------------------------------------------------------------------
+
+# En-tête produit : celui des exports réels, que evolution_csv.HEADER_ALIASES
+# reconnaît tel quel — le fichier est ré-importable (sauvegarde d'une base,
+# portage d'une zone vers une autre installation). Écrit en dur plutôt que
+# via csv.writer pour garder les guillemets exacts des exports réels.
+_EXPORT_HEADER = (
+    '"GC code","Nom de la géocache",Type,Taille,Difficulté,Terrain,'
+    'Propriétaire,"Placée par",Pays,Région,Département,Latitude,Longitude,'
+    '"Date de placement","Dernière date d\'archivage",Archivée,Ajouté'
+)
+# Lignes par morceau produit : les bases peuvent dépasser 100 000 caches, le
+# corps complet ne doit jamais être matérialisé en mémoire.
+_EXPORT_CHUNK = 5000
+
+
+def export_csv(db_path, dataset_id: int) -> Iterator[str]:
+    """CSV fusionné d'une base, produit en flux (morceaux de texte UTF-8).
+
+    Mêmes en-têtes et mêmes valeurs que les exports réels, dans l'ordre
+    (placement, code) de load_payload : le fichier se ré-importe tel quel par
+    le même parseur, dans cette base ou une autre. L'existence de la base est
+    vérifiée par l'appelant (la route renvoie 404 avant de streamer).
+    """
+    def text(value) -> str:
+        return value if value is not None else ""
+
+    def rating(value) -> str:
+        # « 1 », « 1.5 »…, « » pour NULL (format des options du filtre).
+        return "" if value is None else f"{value:g}"
+
+    with _closing(connect(db_path)) as conn:
+        # BOM UTF-8 en premier : Excel lit alors les accents ; read_header
+        # l'ignore sans peine via l'encodage utf-8-sig.
+        yield "\ufeff"
+        yield _EXPORT_HEADER + "\r\n"
+        buf = io.StringIO()
+        writer = csv.writer(buf)
+        pending = 0
+        # Le curseur est itéré ligne à ligne (pas de fetchall) : la lecture
+        # reste un simple scan même sur une très grosse base.
+        for r in conn.execute(
+            "SELECT gc_code, name, type, size, difficulty, terrain, owner, "
+            "placed_by, country, region, county, lat, lon, placed, "
+            "archived_on, is_archived, exported_at "
+            "FROM caches WHERE dataset_id = ? ORDER BY placed, gc_code",
+            (dataset_id,),
+        ):
+            writer.writerow((
+                r["gc_code"],
+                text(r["name"]), text(r["type"]), text(r["size"]),
+                rating(r["difficulty"]), rating(r["terrain"]),
+                text(r["owner"]), text(r["placed_by"]),
+                text(r["country"]), text(r["region"]), text(r["county"]),
+                # repr() : précision complète du float stocké.
+                repr(float(r["lat"])), repr(float(r["lon"])),
+                r["placed"], text(r["archived_on"]),
+                "true" if r["is_archived"] else "false",
+                text(r["exported_at"]),
+            ))
+            pending += 1
+            if pending >= _EXPORT_CHUNK:
+                yield buf.getvalue()
+                buf.seek(0)
+                buf.truncate()
+                pending = 0
+        if pending:
+            yield buf.getvalue()
 
 
 class _closing:

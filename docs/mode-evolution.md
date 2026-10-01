@@ -30,7 +30,10 @@ jamais leurs données.
 
 Plusieurs **bases nommées** peuvent coexister (une par zone). Réimporter une
 zone plus tard complète la base : nouvelles caches ajoutées, caches archivées
-entre-temps mises à jour.
+entre-temps mises à jour. Le bouton d'export produit le CSV fusionné de la
+base, au même format que les exports importés : il sert de sauvegarde avant
+une fusion délicate ou pour déplacer une zone vers une autre installation, et
+se ré-importe tel quel.
 
 ## Format CSV
 
@@ -90,6 +93,7 @@ aux bases du mode Évolution.
 | `GET /api/evolution/datasets/<id>` | base et historique des imports |
 | `PATCH /api/evolution/datasets/<id>` | renommage `{ name }` |
 | `DELETE /api/evolution/datasets/<id>` | suppression (409 pendant un import) |
+| `GET /api/evolution/datasets/<id>/export.csv` | CSV fusionné de la base (en flux, BOM UTF-8, ré-importable tel quel) |
 | `POST /api/evolution/datasets/<id>/import` | multipart `files` (plusieurs .csv, 500 Mo max chacun) → 202 `{ task_id }` |
 | `GET /api/evolution/datasets/<id>/data` | données en colonnes pour la carte (ETag par révision, 304) |
 | `GET /api/evolution/datasets/<id>/caches/<code>` | détails d'une cache (popup) |

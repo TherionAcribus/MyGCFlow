@@ -80,6 +80,7 @@ function bindControls() {
     });
     el('btnEvolutionCreate')?.addEventListener('click', () => openNameModal('create'));
     el('btnEvolutionRename')?.addEventListener('click', () => openNameModal('rename'));
+    el('btnEvolutionExport')?.addEventListener('click', exportCurrentDataset);
     el('btnEvolutionDelete')?.addEventListener('click', openDeleteModal);
     el('btnEvolutionNameConfirm')?.addEventListener('click', confirmNameModal);
     el('inputEvolutionName')?.addEventListener('keydown', (e) => {
@@ -142,7 +143,7 @@ function renderDatasetSelect(selectedId) {
     const hasDataset = datasets.length > 0;
     const noDataset = el('evolutionNoDataset');
     if (noDataset) noDataset.hidden = hasDataset;
-    for (const id of ['btnEvolutionRename', 'btnEvolutionDelete']) {
+    for (const id of ['btnEvolutionRename', 'btnEvolutionExport', 'btnEvolutionDelete']) {
         const btn = el(id);
         if (btn) btn.disabled = !hasDataset;
     }
@@ -602,6 +603,7 @@ function setImporting(active) {
         btnEvolutionCreate: active,
         selectEvolutionDataset: active || noDataset,
         btnEvolutionRename: active || noDataset,
+        btnEvolutionExport: active || noDataset,
         btnEvolutionDelete: active || noDataset,
     };
     for (const [id, disabled] of Object.entries(states)) {
@@ -821,6 +823,14 @@ async function confirmNameModal() {
     } catch (e) {
         pkg.showToast(t('Erreur : ${message}', { message: e.message }), 'error', t('Erreur'));
     }
+}
+
+// CSV fusionné de la base (sauvegarde, portage vers une autre installation :
+// le fichier produit est ré-importable tel quel). Un simple changement
+// d'adresse suffit : le navigateur télécharge le flux.
+function exportCurrentDataset() {
+    if (!current) return;
+    window.location.assign(`${CONFIG.BASE_URL}/api/evolution/datasets/${current.id}/export.csv`);
 }
 
 function openDeleteModal() {

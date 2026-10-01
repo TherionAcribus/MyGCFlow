@@ -4,6 +4,7 @@ import sqlite3
 import tempfile
 import unittest
 
+import evolution_csv as ec
 import evolution_store as store
 from evolution_csv import FileReport
 from tests.test_evolution_csv import HEADER, row
@@ -130,6 +131,41 @@ class MergeTests(StoreTestCase):
         })
         history = store.list_imports(self.db, self.dataset['id'])
         self.assertEqual(history[0]['report']['rows_new'], 3)
+
+
+class ExportTests(StoreTestCase):
+    def test_export_csv_streams_header_and_rows(self):
+        self.import_rows([
+            row('GC2', placed='2001-01-11', archived='true', archived_on='2001-02-01'),
+            row('GC1', placed='2001-01-01', type_='Cache Mystère', size='Micro', d='2.5'),
+        ])
+        chunks = list(store.export_csv(self.db, self.dataset['id']))
+        # BOM en premier (Excel), puis l'en-tête des exports réels, puis les
+        # lignes triées par (placement, code).
+        self.assertEqual(chunks[0], '﻿')
+        lines = ''.join(chunks[1:]).splitlines()
+        self.assertEqual(lines[0], store._EXPORT_HEADER)
+        self.assertEqual(len(lines), 3)
+        self.assertTrue(lines[1].startswith('GC1,'))
+        self.assertTrue(lines[2].startswith('GC2,'))
+        self.assertIn(',2.5,', lines[1])
+        self.assertIn(',true,', lines[2])
+
+        # L'en-tête émis (et le BOM) sont reconnus tels quels par le parseur
+        # d'import : le fichier est ré-importable sans retouche.
+        path = os.path.join(self.tmp.name, 'dump.csv')
+        with open(path, 'w', encoding='utf-8', newline='') as fh:
+            fh.write(''.join(chunks))
+        mapping, encoding, delimiter = ec.read_header(path)
+        self.assertEqual(encoding, 'utf-8-sig')
+        self.assertEqual(delimiter, ',')
+        for key in ('gc_code', 'latitude', 'longitude', 'placed', 'archived_on',
+                    'archived', 'exported_at'):
+            self.assertIn(key, mapping)
+
+    def test_export_csv_empty_dataset(self):
+        chunks = list(store.export_csv(self.db, self.dataset['id']))
+        self.assertEqual(''.join(chunks), '﻿' + store._EXPORT_HEADER + '\r\n')
 
 
 class PayloadTests(StoreTestCase):

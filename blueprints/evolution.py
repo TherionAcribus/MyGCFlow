@@ -6,9 +6,12 @@ en colonnes pour l'affichage, détails d'une cache pour la popup.
 """
 
 import os
+import re
 import tempfile
+import unicodedata
 
-from flask import Blueprint, current_app, jsonify, make_response, request
+from flask import (Blueprint, Response, current_app, jsonify, make_response,
+                   request, stream_with_context)
 from flask_babel import force_locale, gettext as _
 
 import evolution_store as store
@@ -111,6 +114,35 @@ def delete_dataset(dataset_id):
     except store.EvolutionStoreError as exc:
         return _store_error(exc)
     return jsonify({'success': True})
+
+
+@evolution_bp.route('/api/evolution/datasets/<int:dataset_id>/export.csv', methods=['GET'])
+def export_dataset(dataset_id):
+    # Sauvegarde / portage : le CSV fusionné est produit en flux (les bases
+    # peuvent dépasser 100 000 caches) et se ré-importe tel quel. Pas de
+    # blocage pendant un import : le journal WAL donne un instantané cohérent.
+    db_path = _db_path()
+    try:
+        dataset = store.get_dataset(db_path, dataset_id)
+    except store.EvolutionStoreError as exc:
+        return _store_error(exc)
+    return Response(
+        stream_with_context(store.export_csv(str(db_path), dataset_id)),
+        mimetype='text/csv',
+        headers={'Content-Disposition':
+                 f'attachment; filename="{_export_filename(dataset["name"])}"'},
+    )
+
+
+def _export_filename(name) -> str:
+    # Nom ASCII pour Content-Disposition : accents retirés (NFKD), caractères
+    # spéciaux remplacés — un filename ASCII dispense du paramètre filename*.
+    decomposed = unicodedata.normalize('NFKD', name or '')
+    base = ''.join(c for c in decomposed if not unicodedata.combining(c))
+    # \w accepte encore des caractères non ASCII (idéogrammes…) : ils sont
+    # éliminés par l'encodage pour garder un en-tête purement ASCII.
+    slug = re.sub(r'[^\w.-]+', '_', base).encode('ascii', 'ignore').decode('ascii')
+    return (slug.strip('_')[:80] or 'zone') + '.csv'
 
 
 @evolution_bp.route('/api/evolution/datasets/<int:dataset_id>/import', methods=['POST'])

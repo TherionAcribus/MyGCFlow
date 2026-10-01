@@ -1,10 +1,13 @@
 import io
 import os
+import sqlite3
 import tempfile
 import time
 import unittest
 
+import evolution_store as store
 from app import create_app
+from evolution_csv import FileReport
 from extensions import db
 from task_manager import task_manager
 from tests.test_evolution_csv import HEADER, row
@@ -108,6 +111,75 @@ class EvolutionApiTests(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn('Latitude', response.get_json()['message'])
         self.assertEqual(self.upload(999, ('a.csv', _csv(row()))).status_code, 404)
+
+    def test_export_csv(self):
+        dataset = self.create('Bretagne été')
+        response = self.client.get(f"/api/evolution/datasets/{dataset['id']}/export.csv")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('text/csv', response.content_type)
+        disposition = response.headers['Content-Disposition']
+        self.assertIn('attachment', disposition)
+        # Le nom est aplati en ASCII pour rester dans un en-tête simple.
+        self.assertIn('Bretagne_ete.csv', disposition)
+        # Base vide : l'en-tête seule, précédée du BOM UTF-8.
+        raw = response.get_data()
+        self.assertTrue(raw.startswith(b'\xef\xbb\xbf'))
+        body = raw.decode('utf-8-sig')
+        self.assertEqual(len(body.splitlines()), 1)
+        self.assertIn('"GC code"', body)
+        self.assertIn('Ajouté', body)
+        self.assertEqual(self.client.get('/api/evolution/datasets/999/export.csv').status_code, 404)
+
+    def test_export_csv_round_trip(self):
+        # Des lignes variées : virgules/guillemets/accents dans le nom, type
+        # Mystère, taille Micro, D/T absents, archivée datée ou sans date.
+        dataset = self.create()
+        response = self.upload(dataset['id'], ('a.csv', _csv(
+            row('GC1', name='Grotte ""Secrète"", Nord', type_='Cache Mystère',
+                size='Micro', d='', t='', placed='2001-01-07'),
+            row('GC2', placed='2001-01-05', archived='true', archived_on='2010-05-01'),
+            row('GC3', placed='2001-01-03', archived='true', archived_on=''),
+        )))
+        self.assertEqual(response.status_code, 202, response.get_json())
+        status = self.wait(response.get_json()['task_id'])
+        self.assertEqual(status.state, 'finished', status.error)
+
+        exported = self.client.get(f"/api/evolution/datasets/{dataset['id']}/export.csv")
+        self.assertEqual(exported.status_code, 200)
+        body = exported.get_data().decode('utf-8-sig')
+
+        # Le corps exporté est ré-importé tel quel dans une NOUVELLE base,
+        # par le même parseur (comme le ferait un fichier déposé).
+        other_db = os.path.join(self.tmp.name, 'autre.db')
+        other = store.create_dataset(other_db, 'Copie')
+        path = os.path.join(self.tmp.name, 'reimport.csv')
+        with open(path, 'w', encoding='utf-8', newline='') as fh:
+            fh.write(body)
+        report = FileReport(filename='reimport.csv')
+        store.import_file(other_db, other['id'], path, report)
+        self.assertEqual(report.rows_invalid, 0)
+        self.assertEqual(report.rows_new, 3)
+
+        def snapshot(db_path, dataset_id):
+            conn = sqlite3.connect(db_path)
+            try:
+                return {r[0]: r[1:] for r in conn.execute(
+                    'SELECT gc_code, name, type, size, placed, archived_on, '
+                    'is_archived, exported_at FROM caches WHERE dataset_id = ?',
+                    (dataset_id,))}
+            finally:
+                conn.close()
+
+        db_path = self.app.config['EVOLUTION_DB_PATH']
+        self.assertEqual(snapshot(other_db, other['id']), snapshot(db_path, dataset['id']))
+        stats = store.get_dataset(other_db, other['id'])['stats']
+        original = store.get_dataset(db_path, dataset['id'])['stats']
+        for key in ('total', 'active', 'archived'):
+            self.assertEqual(stats[key], original[key])
+        self.assertEqual(stats['archived_no_date'], 1)
+        # Le nom cité/virgulé survit au double passage par csv.writer/reader.
+        self.assertEqual(snapshot(other_db, other['id'])['GC1'][0],
+                         'Grotte "Secrète", Nord')
 
     def test_foreign_origin_is_rejected(self):
         response = self.client.post('/api/evolution/datasets', json={'name': 'x'},
