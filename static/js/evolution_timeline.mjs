@@ -270,6 +270,30 @@ export function activeAt(timeline, day) {
     return timeline.activeByDay[d];
 }
 
+// Valeur du compteur à la fin du jour `day` selon le mode choisi :
+// 'active' (défaut) caches présentes à cette date, 'placed' et 'archived'
+// cumuls des événements jusqu'à ce jour. Les cumuls se lisent directement
+// dans les sommes préfixées placedStart/archivedStart.
+export function counterAt(timeline, day, mode = 'active') {
+    if (!timeline || timeline.count === 0 || !Number.isFinite(day)) return 0;
+    if (mode !== 'placed' && mode !== 'archived') return activeAt(timeline, day);
+    const span = timeline.lastDay - timeline.firstDay + 1;
+    const offset = Math.max(0, Math.min(day - timeline.firstDay + 1, span));
+    return (mode === 'placed' ? timeline.placedStart : timeline.archivedStart)[offset];
+}
+
+// Plus grande valeur atteinte par le compteur pendant l'animation :
+// pic d'actives, ou total des événements pour les cumuls. Sert à réserver
+// la largeur de la ligne d'infos (frames.js / overlay_canvas.js).
+export function counterMaxFor(timeline, mode = 'active') {
+    if (!timeline || timeline.count === 0) return 0;
+    if (mode === 'placed' || mode === 'archived') {
+        const sums = mode === 'placed' ? timeline.placedStart : timeline.archivedStart;
+        return sums[timeline.lastDay - timeline.firstDay + 1];
+    }
+    return timeline.peakActive;
+}
+
 // Caches placées et archivées pendant les jours [fromDay, toDay] (bornes
 // comprises) : vues sur les tableaux de la chronologie, sans copie.
 export function eventsInRange(timeline, fromDay, toDay) {

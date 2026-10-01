@@ -18,12 +18,13 @@ import { isEvolutionPage } from './app_mode.mjs';
 import { staggerDelayMs } from './flash_impulse.mjs';
 import { inclusiveDayCount } from './video_timing.mjs';
 import {
-    activeAt,
     beginEvolution,
     buildCountryRegionTree,
     buildEvolutionBase,
     buildRegionCountyTree,
     buildTimeline,
+    counterAt,
+    counterMaxFor,
     createEvolutionClock,
     dateOfDayIndex,
     dayIndexOf,
@@ -57,6 +58,19 @@ let loadSeq = 0;             // seul le dernier chargement demandé s'applique
 let nameModalMode = 'create';
 let popupSeq = 0;
 const clock = createEvolutionClock();
+// Grandeur affichée par le compteur de caches : 'active' (présentes à la
+// date courante, comportement historique) ou cumuls 'placed' / 'archived'.
+// Préférence globale persistée (evolution_counter_mode de settings.json).
+let counterMode = normalizeCounterMode(window.userSettings?.evolution_counter_mode);
+// Dernières stats de sélection poussées au moteur avec les métadonnées :
+// repousser la méta après un changement de compteur les reprend telles quelles.
+let datasetScope = { selected: 0, total: 0 };
+
+// Borne le mode du compteur aux valeurs connues ; toute autre (settings
+// édités à la main, client plus ancien) retombe sur 'active'.
+function normalizeCounterMode(mode) {
+    return mode === 'placed' || mode === 'archived' ? mode : 'active';
+}
 
 // --- Démarrage ------------------------------------------------------------------
 
@@ -65,6 +79,11 @@ export async function initEvolutionPage() {
     bindControls();
     setupCsvDragAndDrop();
     const preferred = Number(window.userSettings?.evolution_dataset_id) || null;
+    // Les préférences arrivent après l'évaluation du module : le mode du
+    // compteur est (re)lu ici, à coup sûr, puis reflété dans le select.
+    counterMode = normalizeCounterMode(window.userSettings?.evolution_counter_mode);
+    const sel = document.getElementById('selectEvolutionCounter');
+    if (sel) sel.value = counterMode;
     // Au démarrage, le cadrage enregistré est respecté si la zone y est visible.
     await refreshDatasets({ selectId: preferred, fit: 'if-outside' });
 }
@@ -207,7 +226,8 @@ function clearDataset() {
     olFeatures = [];
     pkg.setCountryStateTree?.({});
     pkg.setEvolutionFilterOptions?.(null);
-    pkg.setExternalDatasetState?.({}, { selected: 0, total: 0 });
+    datasetScope = { selected: 0, total: 0 };
+    pkg.setExternalDatasetState?.({}, datasetScope);
     pkg.setEvolutionFeatures?.([]);
     renderStats();
     renderImportHistory([]);
@@ -257,7 +277,8 @@ function applySelection(selection, { resetDates = false } = {}) {
     timeline = buildTimeline(base, rows);
     olFeatures = buildFeatures(rows);
 
-    pkg.setExternalDatasetState(buildMeta(), { selected: rows.length, total: base.count });
+    datasetScope = { selected: rows.length, total: base.count };
+    pkg.setExternalDatasetState(buildMeta(), datasetScope);
     if (resetDates) pkg.setPickerDates?.(pkg.metadata);
     pkg.updateAnimationMenuAfterReadBdd?.(pkg.metadata);
     pkg.setEvolutionFeatures(olFeatures);
@@ -319,8 +340,9 @@ function buildMeta() {
         endDate: pkg.formatDateIso(end),
         deltaDays: inclusiveDayCount(start, end),
         numberOfCaches: timeline.count,
-        // Réserve de largeur du compteur (frames.js) : pic de caches actives.
-        counterMax: timeline.peakActive,
+        // Réserve de largeur du compteur (frames.js / overlay_canvas.js) :
+        // pic d'actives ou total des événements selon le mode choisi.
+        counterMax: counterMaxFor(timeline, counterMode),
     };
 }
 
@@ -330,17 +352,32 @@ export function evolutionHasData() {
     return !!(timeline && timeline.count > 0);
 }
 
-// Début d'animation : retourne les caches actives juste avant la date de début.
+// « Compteur affiché » de l'onglet Infos (ui.js). Hors animation, l'état au
+// repos est réaffiché dans la nouvelle grandeur ; pendant l'animation le
+// prochain evolutionStep applique le mode — rien d'autre à faire.
+export function setEvolutionCounterMode(mode) {
+    const next = normalizeCounterMode(mode);
+    if (next === counterMode) return;
+    counterMode = next;
+    // La réserve de largeur dépend du mode (counterMax) : les métadonnées
+    // sont repoussées avec les stats de la dernière sélection connue.
+    pkg.setExternalDatasetState?.(buildMeta(), datasetScope);
+    if (!clock.running) pkg.showEvolutionRestState?.();
+}
+
+// Début d'animation : retourne la valeur du compteur juste avant la date de
+// début, selon le mode choisi (actives présentes ou cumul des événements).
 export function evolutionBegin(startDate, endDate, at, stagger) {
     if (!base || !timeline) return 0;
     const startDay = dayIndexOf(base, startDate);
     endDay = dayIndexOf(base, endDate instanceof Date ? endDate : restEndDate());
     staggerOn = !!stagger;
     beginEvolution(clock, startDay, at);
-    return activeAt(timeline, startDay - 1);
+    return counterAt(timeline, startDay - 1, counterMode);
 }
 
-// Jours `dates` affichés : caches apparues et disparues, et caches actives.
+// Jours `dates` affichés : caches apparues et disparues, et valeur du
+// compteur à la fin du dernier jour.
 export function evolutionStep(dates, at) {
     if (!base || !timeline || !dates || dates.length === 0) return null;
     const first = dayIndexOf(base, dates[0]);
@@ -350,7 +387,7 @@ export function evolutionStep(dates, at) {
     return {
         placed: pickFeatures(ev.placed),
         archived: pickFeatures(ev.archived),
-        active: activeAt(timeline, last),
+        counter: counterAt(timeline, last, counterMode),
     };
 }
 
@@ -373,14 +410,14 @@ export function evolutionEnd() {
     }
 }
 
-// État au repos : caches actives à la date de fin de l'animation.
+// État au repos : valeur du compteur à la date de fin de l'animation.
 export function evolutionRestState() {
     if (!base || !timeline) return null;
     const date = restEndDate();
     if (!date) return null;
     const day = dayIndexOf(base, date);
     clock.restDay = day;
-    return { day, date, active: activeAt(timeline, day) };
+    return { day, date, counter: counterAt(timeline, day, counterMode) };
 }
 
 // La date de fin a changé (onglet Animation) : la carte au repos la suit.

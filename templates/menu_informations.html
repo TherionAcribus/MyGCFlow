@@ -38,8 +38,18 @@
         <div id="gcInfosPanelInfos" class="gc-infos-panel mb-2" role="tabpanel" aria-labelledby="gcCssTargetInfos" hidden>
             <div class="form-check">
                 <input class="form-check-input" type="checkbox" id="cbDisplayNumberofCaches">
-                <label class="form-check-label" for="cbDisplayNumberofCaches">{{ _("Afficher le nombre de caches trouvées") }}</label>
+                <label class="form-check-label" for="cbDisplayNumberofCaches">{% if mode == 'evolution' %}{{ _("Afficher le nombre de caches") }}{% else %}{{ _("Afficher le nombre de caches trouvées") }}{% endif %}</label>
             </div>
+            {% if mode == 'evolution' %}
+            <div class="mb-1">
+                <label class="form-label" for="selectEvolutionCounter">{{ _("Compteur affiché") }}</label>
+                <select id="selectEvolutionCounter" class="form-select">
+                    <option value="active">{{ _("Caches actives") }}</option>
+                    <option value="placed">{{ _("Caches placées (cumul)") }}</option>
+                    <option value="archived">{{ _("Caches archivées (cumul)") }}</option>
+                </select>
+            </div>
+            {% endif %}
             <div class="form-check">
                 <input class="form-check-input" type="checkbox" id="cbDisplayCurrentDate">
                 <label class="form-check-label" for="cbDisplayCurrentDate">{{ _("Afficher la date") }}</label>

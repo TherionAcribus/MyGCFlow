@@ -85,6 +85,7 @@ var inputExtraEndTime;
 var selectFlashMode, inputTimeFlash, inputSizeFlash, cpFlashColor;
 var cpStrokeColor, cpFillColor, cpBackgroundColor, strokeWidth;
 var cbDisplayTitle, cbDisplayNumberofCaches, cbDisplayCurrentDate, inputTitle;
+var selectEvolutionCounter;
 var inputTitleCss, inputInfosCss, btnTitleCss, btnInfosCss;
 var spanNbCaches, spanCurrentDate;
 let overlayCssDefaultsReady = Promise.resolve();
@@ -768,6 +769,11 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
 
     cbDisplayCurrentDate = document.getElementById('cbDisplayCurrentDate');
     if (cbDisplayCurrentDate) cbDisplayCurrentDate.addEventListener('change', changeInfosValues);
+
+    // Choix du compteur affiché (page du mode Évolution uniquement ; select
+    // natif, pas de Tom Select — comme les autres selects de ce panneau).
+    selectEvolutionCounter = document.getElementById('selectEvolutionCounter');
+    if (selectEvolutionCounter) selectEvolutionCounter.addEventListener('change', changeEvolutionCounterMode);
 
     // inputs
     inputTitle = document.getElementById('inputTitle');
@@ -5295,6 +5301,15 @@ function changeInfosValues(event){
     }
     updateOverlayElementsVisibility();
     dbgUi(event?.target);
+}
+
+// Mode Évolution : choix de la grandeur affichée par le compteur de caches
+// (actives / placées cumulées / archivées cumulées). Préférence globale.
+async function changeEvolutionCounterMode() {
+    const value = selectEvolutionCounter.value || 'active';
+    pkg.setEvolutionCounterMode?.(value);
+    if (window.userSettings) window.userSettings.evolution_counter_mode = value;
+    await reportSave(selectEvolutionCounter, saveSettingsPatch({ evolution_counter_mode: value }));
 }
 
 // Fonction pour synchroniser la visibilité des éléments DOM avec les paramètres utilisateur

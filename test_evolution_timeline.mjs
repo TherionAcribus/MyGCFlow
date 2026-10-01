@@ -8,6 +8,8 @@ import {
     buildEvolutionBase,
     buildRegionCountyTree,
     buildTimeline,
+    counterAt,
+    counterMaxFor,
     createEvolutionClock,
     dateToDayNumber,
     dayIndexOf,
@@ -138,6 +140,60 @@ test('chronologie : événements par jour et caches actives', () => {
     assert.deepEqual([...eventsInRange(tl, 5, 5).archived], [1]);
     assert.deepEqual([...eventsInRange(tl, 20, 30).placed], []);
     assert.equal(maxEventsInWindow(tl, 2), 4);
+});
+
+test('compteur configurable : cumuls placées/archivées jour par jour', () => {
+    const base = buildEvolutionBase(PAYLOAD);
+    const tl = buildTimeline(base, filterRows(base, {}));
+    // j0:A  j2:B,C  j3:D placée ET archivée  j5:B archivée  j7:E placée ET archivée
+    assert.equal(counterAt(tl, 0, 'placed'), 1);
+    assert.equal(counterAt(tl, 1, 'placed'), 1);
+    assert.equal(counterAt(tl, 2, 'placed'), 3);
+    assert.equal(counterAt(tl, 3, 'placed'), 4);
+    assert.equal(counterAt(tl, 7, 'placed'), 5);
+    assert.equal(counterAt(tl, 2, 'archived'), 0);
+    assert.equal(counterAt(tl, 3, 'archived'), 1);
+    assert.equal(counterAt(tl, 5, 'archived'), 2);
+    assert.equal(counterAt(tl, 7, 'archived'), 3);
+    // D et E, placées et archivées le même jour, comptent dans les deux
+    // cumuls mais ne changent pas les actives (net nul).
+    assert.equal(counterAt(tl, 3, 'placed') - counterAt(tl, 2, 'placed'), 1);
+    assert.equal(counterAt(tl, 3, 'archived') - counterAt(tl, 2, 'archived'), 1);
+    assert.equal(counterAt(tl, 3), counterAt(tl, 2));
+    assert.equal(counterAt(tl, 7, 'placed') - counterAt(tl, 6, 'placed'), 1);
+    assert.equal(counterAt(tl, 7, 'archived') - counterAt(tl, 6, 'archived'), 1);
+    assert.equal(counterAt(tl, 7), counterAt(tl, 6));
+});
+
+test('compteur configurable : hors bornes, jour non fini et mode inconnu', () => {
+    const base = buildEvolutionBase(PAYLOAD);
+    const tl = buildTimeline(base, filterRows(base, {}));
+    // Avant le premier jour : 0 ; après le dernier : le total cumulé.
+    assert.equal(counterAt(tl, -4, 'placed'), 0);
+    assert.equal(counterAt(tl, -4, 'archived'), 0);
+    assert.equal(counterAt(tl, 100, 'placed'), 5);
+    assert.equal(counterAt(tl, 100, 'archived'), 3);
+    // Un jour non fini indexerait hors des sommes préfixées : 0.
+    assert.equal(counterAt(tl, NaN, 'placed'), 0);
+    assert.equal(counterAt(tl, Infinity, 'archived'), 0);
+    assert.equal(counterAt(null, 3, 'placed'), 0);
+    // Mode absent ou inconnu : comportement historique (caches actives).
+    assert.equal(counterAt(tl, 4), 3);
+    assert.equal(counterAt(tl, 4, 'active'), 3);
+    assert.equal(counterAt(tl, 4, 'trouvailles'), activeAt(tl, 4));
+});
+
+test('compteur configurable : valeur maximale selon le mode', () => {
+    const base = buildEvolutionBase(PAYLOAD);
+    const tl = buildTimeline(base, filterRows(base, {}));
+    assert.equal(counterMaxFor(tl, 'active'), 3);    // pic d'actives
+    assert.equal(counterMaxFor(tl, 'placed'), 5);    // total des placements
+    assert.equal(counterMaxFor(tl, 'archived'), 3);  // total des archivages
+    assert.equal(counterMaxFor(tl, 'autre'), 3);     // repli sur le pic
+    assert.equal(counterMaxFor(null, 'placed'), 0);
+    const empty = buildTimeline(base, new Int32Array(0));
+    assert.equal(counterAt(empty, 3, 'placed'), 0);
+    assert.equal(counterMaxFor(empty, 'archived'), 0);
 });
 
 test('les index d\'événements désignent la position dans les lignes filtrées', () => {

@@ -3427,14 +3427,14 @@ function ensureEvolutionPoints() {
 export function showEvolutionRestState() {
     const rest = pkg.evolutionRestState?.();
     if (!rest) return;
-    resetCacheCount(rest.active);
+    resetCacheCount(rest.counter);
     if (rest.date) pkg.updateCurrentDate(rest.date);
     mapDirtyTracker.markDirty();
     try { map.render(); } catch (_) {}
 }
 
-// Début d'animation ou d'enregistrement ; retourne le nombre de caches actives
-// juste avant la date de début (valeur de départ du compteur).
+// Début d'animation ou d'enregistrement ; retourne la valeur du compteur
+// juste avant la date de début, selon le compteur choisi (actives ou cumul).
 function beginEvolutionTimeline(startDate) {
     const disappear = pkg.options.flash?.disappear;
     if (disappear?.color) disappear.rgb = pkg.hexToRgb(disappear.color);
@@ -3481,9 +3481,10 @@ function displayEvolutionDates(dates, flashOptions, record, infos) {
 
     if (infos.displayDate) pkg.updateCurrentDate(dates[dates.length - 1]);
     if (infos.displayNumberofCaches) {
-        // Valeur absolue : le compteur monte et descend.
-        infos.cacheNumber = ev.active;
-        cacheCountAnimator.setTarget(ev.active, at, Math.min(COUNTER_ANIMATION_MS, animationMsPerDay()));
+        // Valeur absolue, qui dépend du compteur choisi : actives présentes
+        // (monte et descend) ou cumul d'événements (ne fait que monter).
+        infos.cacheNumber = ev.counter;
+        cacheCountAnimator.setTarget(ev.counter, at, Math.min(COUNTER_ANIMATION_MS, animationMsPerDay()));
     }
 
     mapDirtyTracker.markDirty();

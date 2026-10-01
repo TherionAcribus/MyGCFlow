@@ -266,6 +266,9 @@ class AppSettings:
     # mode principal, et la dernière base ouverte, restaurée au retour.
     evolution_animation: "AnimationPrefs" = field(default_factory=lambda: evolution_animation_defaults())
     evolution_dataset_id: Optional[int] = None
+    # Compteur affiché en mode Évolution : 'active' (caches présentes à la
+    # date courante) ou cumuls 'placed' / 'archived'.
+    evolution_counter_mode: str = 'active'
     examples_seeded: bool = False  # True une fois les profils d'exemple créés (premier lancement)
     # Lot de profils d'exemple déjà installé. Permet d'ajouter des exemples dans
     # une version ultérieure sans les réinstaller à chaque démarrage, ni faire
@@ -673,6 +676,11 @@ def coerce_dataset_id(value) -> Optional[int]:
     return number if number > 0 else None
 
 
+def coerce_counter_mode(value, fallback: str = 'active') -> str:
+    """Grandeur du compteur du mode Évolution ; valeur inconnue → repli."""
+    return value if value in ('active', 'placed', 'archived') else fallback
+
+
 def coerce_settings(d: dict) -> AppSettings:
     s = AppSettings()
     if isinstance(d, dict):
@@ -690,6 +698,8 @@ def coerce_settings(d: dict) -> AppSettings:
         s.animation = coerce_animation_settings(d.get("animation"))
         s.evolution_animation = coerce_evolution_animation(d.get("evolution_animation"))
         s.evolution_dataset_id = coerce_dataset_id(d.get("evolution_dataset_id"))
+        s.evolution_counter_mode = coerce_counter_mode(
+            d.get("evolution_counter_mode"), s.evolution_counter_mode)
         s.show_control_bar = bool(d.get("show_control_bar", s.show_control_bar))
         # Un settings.json antérieur à la migration n'a pas de bloc `recording` :
         # il compte comme « jamais configuré ».

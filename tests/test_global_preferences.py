@@ -114,6 +114,30 @@ class ThemeCoercionTests(unittest.TestCase):
         self.assertEqual(coerce_settings({}).theme, "system")
 
 
+class EvolutionCounterModeTests(unittest.TestCase):
+    """Grandeur du compteur du mode Évolution, lue depuis le disque.
+
+    Trois valeurs admises ('active', 'placed', 'archived') ; toute autre —
+    settings.json édité à la main ou PUT d'un client inconnu — retombe sur
+    'active', le comportement historique.
+    """
+
+    def test_valid_modes_are_kept(self):
+        for mode in ("active", "placed", "archived"):
+            self.assertEqual(
+                coerce_settings({"evolution_counter_mode": mode}).evolution_counter_mode,
+                mode)
+
+    def test_an_unknown_or_missing_mode_falls_back_to_active(self):
+        self.assertEqual(
+            coerce_settings({"evolution_counter_mode": "trouvées"}).evolution_counter_mode,
+            "active")
+        self.assertEqual(
+            coerce_settings({"evolution_counter_mode": None}).evolution_counter_mode,
+            "active")
+        self.assertEqual(coerce_settings({}).evolution_counter_mode, "active")
+
+
 class AnimationCoercionTests(unittest.TestCase):
     """Bornes des préférences d'animation lues depuis le disque.
 

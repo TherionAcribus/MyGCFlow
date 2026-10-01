@@ -3,7 +3,9 @@
 Le mode Évolution anime **toutes les caches d'une zone** au fil du temps :
 chaque cache apparaît à sa date de placement et disparaît à sa date
 d'archivage, et le compteur affiche le nombre de caches **actives** (il monte
-et descend). C'est un mode secondaire, sur une page à part (`/evolution`),
+et descend) — ou, au choix dans l'onglet Infos (« Compteur affiché »), les
+caches **placées** ou **archivées** cumulées ; le choix est persisté. C'est
+un mode secondaire, sur une page à part (`/evolution`),
 atteinte par le sélecteur de mode en haut de l'onglet Données
 (`templates/_mode_switch.html`, présent sur les deux pages). Les
 deux pages partagent l'interface (carte, thèmes, animation, export vidéo) mais
@@ -158,6 +160,7 @@ recommandé (l'estimation de charge de l'onglet Animation le signale).
 | --- | --- | --- |
 | Rythme propre au mode (défaut : durée finale 1 min) | Globale | `evolution_animation` de `settings.json` |
 | Dernière base ouverte | Globale | `evolution_dataset_id` de `settings.json` |
+| Compteur affiché (actives / placées / archivées) | Globale | `evolution_counter_mode` de `settings.json` |
 | Flash de disparition (forme, taille, couleur) | Thème | `flash.disappear` du profil |
 
 Le rythme est séparé de celui du mode principal (`animation`) pour qu'un

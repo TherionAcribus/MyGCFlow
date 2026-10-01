@@ -182,8 +182,8 @@ function getReservedInfosText() {
         showCount: opts?.numberOfCaches?.display === true,
         showDate: opts?.currentDate?.display === true,
         currentValue: document.getElementById('spanNbCaches')?.textContent,
-        // Mode Évolution : le compteur ne dépasse jamais le pic de caches
-        // actives, bien inférieur au total de la sélection.
+        // Mode Évolution : le compteur ne dépasse jamais sa valeur finale —
+        // pic d'actives ou total des événements selon le compteur choisi.
         finalValue: pkg.metadata?.counterMax ?? pkg.metadata?.numberOfCaches,
     });
 }
