@@ -352,7 +352,7 @@ class DisappearFlashOptions:
 
 @dataclass
 class FlashOptions:
-    mode: str = "circle"  # "none", "circle", "impulse", "star", "sparkle", "square", "triangle", "diamond"
+    mode: str = "circle"  # "none", "circle", "impulse", "implode", "star", "sparkle", "square", "triangle", "diamond"
     size: int = 50  # en px
     color: str = "#FF00FF"
     color_type: str = "fix"  # "gc", "none", "fix"
@@ -502,9 +502,9 @@ POINT_MODES = ("vectoriel", "icone")
 POINT_SHAPES = ("circle", "triangle")
 ICON_SETS = ("geocaching", "smiley")  # ICON_SETS de static/js/ui.js
 COLOR_TYPES = ("gc", "none", "fix")
-FLASH_MODES = ("none", "circle", "impulse", "star", "sparkle", "square", "triangle", "diamond")
-# Flash de disparition (mode Évolution) : l'implosion lui est propre ; la vague
-# « impulse » n'a pas de sens pour une cache qui s'éteint.
+FLASH_MODES = ("none", "circle", "impulse", "implode", "star", "sparkle", "square", "triangle", "diamond")
+# Flash de disparition (mode Évolution) : la vague « impulse » n'a pas de sens
+# pour une cache qui s'éteint ; l'implosion, elle, sert aussi à l'apparition.
 DISAPPEAR_FLASH_MODES = ("none", "implode", "circle", "star", "sparkle", "square", "triangle", "diamond")
 POINT_SIZE_RANGE = (1, 10)
 BORDER_SIZE_RANGE = (0, 10)

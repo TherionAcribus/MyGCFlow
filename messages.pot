@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-01 13:42+0200\n"
+"POT-Creation-Date: 2026-10-01 20:25+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -260,7 +260,7 @@ msgstr ""
 msgid "Base de données"
 msgstr ""
 
-#: blueprints/core.py:150 static/js/evolution_data.js:277
+#: blueprints/core.py:150 static/js/evolution_data.js:280
 #: templates/guide.html:137 templates/menu_data.html:56
 #: templates/menu_data_evolution.html:96 test_translations.py:28
 msgid "Filtres"
@@ -403,7 +403,7 @@ msgstr ""
 msgid "%(name)s : colonnes obligatoires absentes (%(columns)s)"
 msgstr ""
 
-#: blueprints/evolution.py:207 static/js/evolution_data.js:531
+#: blueprints/evolution.py:207 static/js/evolution_data.js:534
 msgid "Un import est déjà en cours"
 msgstr ""
 
@@ -508,7 +508,7 @@ msgid "Analyse du fichier GPX en cours..."
 msgstr ""
 
 #: static/js/bdd.js:267 static/js/bdd.js:1062 static/js/bdd.js:1110
-#: static/js/bdd.js:1426 static/js/evolution_data.js:192
+#: static/js/bdd.js:1426 static/js/evolution_data.js:195
 #: static/js/notifications.js:197 static/js/notifications.js:242
 msgid "Chargement"
 msgstr ""
@@ -582,11 +582,11 @@ msgstr ""
 msgid "Traitement du fichier en cours..."
 msgstr ""
 
-#: static/js/bdd.js:1009 static/js/evolution_data.js:615
+#: static/js/bdd.js:1009 static/js/evolution_data.js:618
 msgid "Erreur réseau lors de l'envoi du fichier"
 msgstr ""
 
-#: static/js/bdd.js:1010 static/js/evolution_data.js:616
+#: static/js/bdd.js:1010 static/js/evolution_data.js:619
 msgid "Envoi du fichier annulé"
 msgstr ""
 
@@ -618,10 +618,10 @@ msgstr ""
 
 #: static/js/bdd.js:1097 static/js/bdd.js:1105 static/js/bdd.js:1177
 #: static/js/bdd.js:1185 static/js/bdd.js:1387 static/js/bdd.js:1470
-#: static/js/bdd.js:1478 static/js/evolution_data.js:137
-#: static/js/evolution_data.js:213 static/js/evolution_data.js:660
-#: static/js/evolution_data.js:664 static/js/evolution_data.js:896
-#: static/js/evolution_data.js:931 static/js/evolution_data.js:939
+#: static/js/bdd.js:1478 static/js/evolution_data.js:140
+#: static/js/evolution_data.js:216 static/js/evolution_data.js:663
+#: static/js/evolution_data.js:667 static/js/evolution_data.js:899
+#: static/js/evolution_data.js:934 static/js/evolution_data.js:942
 #: static/js/notifications.js:310 static/js/recording_perf.js:187
 #: static/js/ui.js:1267
 msgid "Erreur"
@@ -718,260 +718,260 @@ msgstr ""
 msgid "Erreur d'affichage"
 msgstr ""
 
-#: static/js/evolution_data.js:137
+#: static/js/evolution_data.js:140
 msgid "Impossible de lire la liste des bases"
 msgstr ""
 
-#: static/js/evolution_data.js:164
+#: static/js/evolution_data.js:167
 #, python-brace-format
 msgid "${name} (${n} caches)"
 msgstr ""
 
-#: static/js/evolution_data.js:184
+#: static/js/evolution_data.js:187
 msgid "Arrêtez l'animation avant de changer de base."
 msgstr ""
 
-#: static/js/evolution_data.js:184 static/js/evolution_data.js:923
+#: static/js/evolution_data.js:187 static/js/evolution_data.js:926
 #: static/js/mapgl.js:1994 static/js/mapgl.js:2038 static/js/mapgl.js:2044
 #: static/js/mapgl.js:2961 static/js/notifications.js:314
 msgid "Attention"
 msgstr ""
 
-#: static/js/evolution_data.js:192
+#: static/js/evolution_data.js:195
 msgid "Chargement de la base..."
 msgstr ""
 
-#: static/js/evolution_data.js:213
+#: static/js/evolution_data.js:216
 #, python-brace-format
 msgid "Impossible de charger la base : ${message}"
 msgstr ""
 
-#: static/js/evolution_data.js:277
+#: static/js/evolution_data.js:280
 msgid "Le filtre s'appliquera à la fin de l'animation."
 msgstr ""
 
-#: static/js/evolution_data.js:297
+#: static/js/evolution_data.js:300
 #, python-brace-format
 msgid ""
 "${n} caches affichées : la carte peut devenir lente. Filtrez par pays ou "
 "région pour alléger."
 msgstr ""
 
-#: static/js/evolution_data.js:298
+#: static/js/evolution_data.js:301
 msgid "Grosse sélection"
 msgstr ""
 
-#: static/js/evolution_data.js:487
+#: static/js/evolution_data.js:490
 #, python-brace-format
 msgid "Archivée le ${date}"
 msgstr ""
 
-#: static/js/evolution_data.js:488
+#: static/js/evolution_data.js:491
 msgid "Archivée (date inconnue)"
 msgstr ""
 
-#: static/js/evolution_data.js:488
+#: static/js/evolution_data.js:491
 msgid "Active"
 msgstr ""
 
-#: static/js/evolution_data.js:506
+#: static/js/evolution_data.js:509
 #, python-brace-format
 msgid "Placée le ${date}"
 msgstr ""
 
-#: static/js/evolution_data.js:531 static/js/evolution_data.js:535
-#: static/js/evolution_data.js:545
+#: static/js/evolution_data.js:534 static/js/evolution_data.js:538
+#: static/js/evolution_data.js:548
 msgid "Import"
 msgstr ""
 
-#: static/js/evolution_data.js:535
+#: static/js/evolution_data.js:538
 msgid "Arrêtez l'animation avant d'importer."
 msgstr ""
 
-#: static/js/evolution_data.js:540
+#: static/js/evolution_data.js:543
 #, python-brace-format
 msgid "${name} : seuls les fichiers .csv sont acceptés"
 msgstr ""
 
-#: static/js/evolution_data.js:541
+#: static/js/evolution_data.js:544
 #, python-brace-format
 msgid "${name} : fichier vide"
 msgstr ""
 
-#: static/js/evolution_data.js:542
+#: static/js/evolution_data.js:545
 #, python-brace-format
 msgid "${name} : fichier trop volumineux (500 Mo au plus)"
 msgstr ""
 
-#: static/js/evolution_data.js:557
+#: static/js/evolution_data.js:560
 msgid "Envoi des fichiers..."
 msgstr ""
 
-#: static/js/evolution_data.js:572 static/js/evolution_data.js:585
+#: static/js/evolution_data.js:575 static/js/evolution_data.js:588
 msgid "Import en cours..."
 msgstr ""
 
-#: static/js/evolution_data.js:590
+#: static/js/evolution_data.js:593
 msgid "L'import a échoué"
 msgstr ""
 
-#: static/js/evolution_data.js:604
+#: static/js/evolution_data.js:607
 #, python-brace-format
 msgid "Envoi des fichiers : ${pct}%"
 msgstr ""
 
-#: static/js/evolution_data.js:612
+#: static/js/evolution_data.js:615
 msgid "Impossible de lancer l'import"
 msgstr ""
 
-#: static/js/evolution_data.js:644
+#: static/js/evolution_data.js:647
 msgid "Ma zone"
 msgstr ""
 
-#: static/js/evolution_data.js:660 static/js/evolution_data.js:664
+#: static/js/evolution_data.js:663 static/js/evolution_data.js:667
 msgid "Impossible de créer la base"
 msgstr ""
 
-#: static/js/evolution_data.js:711
+#: static/js/evolution_data.js:714
 msgid "Erreur d'import"
 msgstr ""
 
-#: static/js/evolution_data.js:743
+#: static/js/evolution_data.js:746
 #, python-brace-format
 msgid ""
 "${read} lignes lues : ${added} nouvelles, ${updated} mises à jour, "
 "${unchanged} inchangées"
 msgstr ""
 
-#: static/js/evolution_data.js:747
+#: static/js/evolution_data.js:750
 #, python-brace-format
 msgid "${n} caches archivées depuis le précédent export"
 msgstr ""
 
-#: static/js/evolution_data.js:750
+#: static/js/evolution_data.js:753
 #, python-brace-format
 msgid "${n} lignes plus anciennes que la version déjà connue, ignorées"
 msgstr ""
 
-#: static/js/evolution_data.js:753
+#: static/js/evolution_data.js:756
 #, python-brace-format
 msgid "${n} doublons dans le fichier (version la plus récente retenue)"
 msgstr ""
 
-#: static/js/evolution_data.js:756
+#: static/js/evolution_data.js:759
 #, python-brace-format
 msgid ""
 "${n} caches archivées sans date d'archivage : elles restent affichées "
 "jusqu'à la fin"
 msgstr ""
 
-#: static/js/evolution_data.js:760
+#: static/js/evolution_data.js:763
 #, python-brace-format
 msgid "${n} lignes invalides ignorées (${reasons})"
 msgstr ""
 
-#: static/js/evolution_data.js:763
+#: static/js/evolution_data.js:766
 #, python-brace-format
 msgid ""
 "${n} dates d'archivage antérieures au placement (disparition le jour du "
 "placement)"
 msgstr ""
 
-#: static/js/evolution_data.js:766
+#: static/js/evolution_data.js:769
 #, python-brace-format
 msgid "${n} caches réactivées : leur ancienne date d'archivage est ignorée"
 msgstr ""
 
-#: static/js/evolution_data.js:770
+#: static/js/evolution_data.js:773
 #, python-brace-format
 msgid "Types non reconnus (couleur par défaut) : ${types}"
 msgstr ""
 
-#: static/js/evolution_data.js:777
+#: static/js/evolution_data.js:780
 msgid "code GC"
 msgstr ""
 
-#: static/js/evolution_data.js:778
+#: static/js/evolution_data.js:781
 msgid "coordonnées"
 msgstr ""
 
-#: static/js/evolution_data.js:779
+#: static/js/evolution_data.js:782
 msgid "date de placement"
 msgstr ""
 
-#: static/js/evolution_data.js:791
+#: static/js/evolution_data.js:794
 msgid "Base vide : importez un export CSV."
 msgstr ""
 
-#: static/js/evolution_data.js:795
+#: static/js/evolution_data.js:798
 #, python-brace-format
 msgid "${n} caches"
 msgstr ""
 
-#: static/js/evolution_data.js:796
+#: static/js/evolution_data.js:799
 #, python-brace-format
 msgid "${n} actives"
 msgstr ""
 
-#: static/js/evolution_data.js:797
+#: static/js/evolution_data.js:800
 #, python-brace-format
 msgid "${n} archivées"
 msgstr ""
 
-#: static/js/evolution_data.js:800
+#: static/js/evolution_data.js:803
 #, python-brace-format
 msgid "${n} archivées sans date"
 msgstr ""
 
-#: static/js/evolution_data.js:805
+#: static/js/evolution_data.js:808
 #, python-brace-format
 msgid "placements du ${from} au ${to}"
 msgstr ""
 
-#: static/js/evolution_data.js:809
+#: static/js/evolution_data.js:812
 #, python-brace-format
 msgid "export du ${date}"
 msgstr ""
 
-#: static/js/evolution_data.js:841
+#: static/js/evolution_data.js:844
 #, python-brace-format
 msgid "${date} · ${file} : ${added} nouvelles, ${updated} mises à jour"
 msgstr ""
 
-#: static/js/evolution_data.js:854 templates/menu_data_evolution.html:26
+#: static/js/evolution_data.js:857 templates/menu_data_evolution.html:26
 msgid "Renommer la base"
 msgstr ""
 
-#: static/js/evolution_data.js:854 templates/menu_data_evolution.html:22
+#: static/js/evolution_data.js:857 templates/menu_data_evolution.html:22
 #: templates/modal_evolution.html:7
 msgid "Nouvelle base"
 msgstr ""
 
-#: static/js/evolution_data.js:883
+#: static/js/evolution_data.js:886
 msgid "Nom refusé"
 msgstr ""
 
-#: static/js/evolution_data.js:896 static/js/evolution_data.js:939
+#: static/js/evolution_data.js:899 static/js/evolution_data.js:942
 #, python-brace-format
 msgid "Erreur : ${message}"
 msgstr ""
 
-#: static/js/evolution_data.js:914
+#: static/js/evolution_data.js:917
 #, python-brace-format
 msgid ""
 "Supprimer la base « ${name} » et ses ${n} caches ? Les fichiers CSV "
 "d'origine ne sont pas touchés."
 msgstr ""
 
-#: static/js/evolution_data.js:923
+#: static/js/evolution_data.js:926
 msgid "Arrêtez l'animation avant de supprimer la base."
 msgstr ""
 
-#: static/js/evolution_data.js:931
+#: static/js/evolution_data.js:934
 msgid "Suppression impossible"
 msgstr ""
 
-#: static/js/evolution_data.js:957
+#: static/js/evolution_data.js:960
 msgid "Déposez vos exports CSV pour les ajouter à la base"
 msgstr ""
 
@@ -3785,64 +3785,68 @@ msgstr ""
 msgid "Impulsion (halo + onde)"
 msgstr ""
 
-#: templates/menu_flash.html:14 templates/menu_flash_disappear.html:16
+#: templates/menu_flash.html:14 templates/menu_flash_disappear.html:14
+msgid "Implosion (anneau qui se referme)"
+msgstr ""
+
+#: templates/menu_flash.html:15 templates/menu_flash_disappear.html:16
 msgid "Étoile"
 msgstr ""
 
-#: templates/menu_flash.html:15 templates/menu_flash_disappear.html:17
+#: templates/menu_flash.html:16 templates/menu_flash_disappear.html:17
 msgid "Scintillement"
 msgstr ""
 
-#: templates/menu_flash.html:16 templates/menu_flash_disappear.html:18
+#: templates/menu_flash.html:17 templates/menu_flash_disappear.html:18
 msgid "Carré"
 msgstr ""
 
-#: templates/menu_flash.html:17 templates/menu_flash_disappear.html:19
+#: templates/menu_flash.html:18 templates/menu_flash_disappear.html:19
 #: templates/menu_points.html:96
 msgid "Triangle"
 msgstr ""
 
-#: templates/menu_flash.html:18 templates/menu_flash_disappear.html:20
+#: templates/menu_flash.html:19 templates/menu_flash_disappear.html:20
 msgid "Losange"
 msgstr ""
 
-#: templates/menu_flash.html:27 templates/menu_flash_disappear.html:25
+#: templates/menu_flash.html:28 templates/menu_flash_disappear.html:25
 msgid "Taille du flash en px"
 msgstr ""
 
-#: templates/menu_flash.html:28
+#: templates/menu_flash.html:29
 msgid "Taille du Flash"
 msgstr ""
 
-#: templates/menu_flash.html:29 templates/menu_flash_disappear.html:27
+#: templates/menu_flash.html:30 templates/menu_flash_disappear.html:27
 msgid "5 à 200 px"
 msgstr ""
 
-#: templates/menu_flash.html:33 templates/menu_flash_disappear.html:30
+#: templates/menu_flash.html:34 templates/menu_flash_disappear.html:30
 msgid "Couleur du flash"
 msgstr ""
 
-#: templates/menu_flash.html:37 templates/menu_flash_disappear.html:33
+#: templates/menu_flash.html:38 templates/menu_flash_disappear.html:33
 #: templates/menu_points.html:64 templates/menu_points.html:130
 msgid "Couleurs GC (par type)"
 msgstr ""
 
-#: templates/menu_flash.html:41 templates/menu_points.html:68
+#: templates/menu_flash.html:42 templates/menu_points.html:68
 #: templates/menu_points.html:134
 msgid "Transparent"
 msgstr ""
 
-#: templates/menu_flash.html:45 templates/menu_flash_disappear.html:37
+#: templates/menu_flash.html:46 templates/menu_flash_disappear.html:37
 #: templates/menu_points.html:72 templates/menu_points.html:138
 msgid "Couleur unique"
 msgstr ""
 
-#: templates/menu_flash.html:50 templates/menu_flash_disappear.html:40
+#: templates/menu_flash.html:51 templates/menu_flash_disappear.html:40
 #: templates/menu_points.html:77 templates/menu_points.html:143
 msgid "Choisir la couleur"
 msgstr ""
 
-#: templates/menu_flash.html:51
+#: templates/menu_flash.html:52
 msgid "Choisir la couleur du flash"
 msgstr ""
 
@@ -3859,10 +3863,6 @@ msgstr ""
 #: templates/menu_flash_disappear.html:11
 #: templates/menu_flash_disappear.html:12
 msgid "Forme du flash de disparition"
-msgstr ""
-
-#: templates/menu_flash_disappear.html:14
-msgid "Implosion (anneau qui se referme)"
 msgstr ""
 
 #: templates/menu_flash_disappear.html:41
