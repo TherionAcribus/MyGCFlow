@@ -343,7 +343,7 @@ def evolution_animation_defaults() -> AnimationPrefs:
 @dataclass
 class DisappearFlashOptions:
     """Flash de disparition d'une cache (mode Évolution, à son archivage)."""
-    mode: str = "implode"  # "none", "implode", "circle", "star", "sparkle", "square", "triangle", "diamond"
+    mode: str = "implode"  # "none", "implode", "target", "circle", "star", "sparkle", "square", "triangle", "diamond"
     size: int = 30  # en px
     # Gris plutôt que rouge : le rouge est déjà la couleur des events.
     color: str = "#9E9E9E"
@@ -352,7 +352,7 @@ class DisappearFlashOptions:
 
 @dataclass
 class FlashOptions:
-    mode: str = "circle"  # "none", "circle", "impulse", "implode", "star", "sparkle", "square", "triangle", "diamond"
+    mode: str = "circle"  # "none", "circle", "impulse", "implode", "echo", "target", "star", "sparkle", "square", "triangle", "diamond"
     size: int = 50  # en px
     color: str = "#FF00FF"
     color_type: str = "fix"  # "gc", "none", "fix"
@@ -502,10 +502,11 @@ POINT_MODES = ("vectoriel", "icone")
 POINT_SHAPES = ("circle", "triangle")
 ICON_SETS = ("geocaching", "smiley")  # ICON_SETS de static/js/ui.js
 COLOR_TYPES = ("gc", "none", "fix")
-FLASH_MODES = ("none", "circle", "impulse", "implode", "star", "sparkle", "square", "triangle", "diamond")
-# Flash de disparition (mode Évolution) : la vague « impulse » n'a pas de sens
-# pour une cache qui s'éteint ; l'implosion, elle, sert aussi à l'apparition.
-DISAPPEAR_FLASH_MODES = ("none", "implode", "circle", "star", "sparkle", "square", "triangle", "diamond")
+FLASH_MODES = ("none", "circle", "impulse", "implode", "echo", "target", "star", "sparkle", "square", "triangle", "diamond")
+# Flash de disparition (mode Évolution) : seuls les mouvements convergents ont
+# du sens pour une cache qui s'éteint — ni la vague « impulse » ni l'écho,
+# qui s'étendent depuis le point.
+DISAPPEAR_FLASH_MODES = ("none", "implode", "target", "circle", "star", "sparkle", "square", "triangle", "diamond")
 POINT_SIZE_RANGE = (1, 10)
 BORDER_SIZE_RANGE = (0, 10)
 ICON_SIZE_RANGE = (12, 40)

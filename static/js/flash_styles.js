@@ -13,6 +13,8 @@ import { defaultGcColors } from './gc_colors.js';
 import { createFlashStyleCache } from './flash_style_cache.mjs';
 import { impulseFrame } from './flash_impulse.mjs';
 import { implodeFrame } from './flash_implode.mjs';
+import { echoFrame } from './flash_echo.mjs';
+import { targetFrame } from './flash_target.mjs';
 
 const flashStyleCache = createFlashStyleCache();
 
@@ -90,6 +92,72 @@ function implodeStyle(frame, flashOptions, cacheType) {
     });
 }
 
+// Flash « écho » : l'anneau principal puis son écho déphasé (flash_echo.mjs).
+// Mêmes couleurs que l'impulsion ; les anneaux d'opacité nulle ne sont pas
+// dessinés (l'écho n'a pas encore démarré en début d'animation).
+function echoStyles(frame, flashOptions, cacheType) {
+    const rgb = impulseRgb(flashOptions, cacheType);
+    return frame.rings
+        .filter((ring) => ring.opacity > 0)
+        .map((ring) => new ol.style.Style({
+            image: new ol.style.Circle({
+                radius: ring.radius,
+                stroke: new ol.style.Stroke({
+                    color: `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${ring.opacity})`,
+                    width: ring.width,
+                }),
+            }),
+        }));
+}
+
+// Flash « cible » : le réticule (anneau, 4 traits de visée, point central) est
+// dessiné sur un canvas, faute de traits dans les styles image d'OpenLayers.
+// Le rendu est en double densité pour rester net sur écran Retina ; la clé du
+// cache de styles couvre forme, taille, couleur et pas, donc un canvas n'est
+// dessiné qu'une fois par pas d'animation.
+function targetStyle(frame, flashOptions, cacheType) {
+    const rgb = impulseRgb(flashOptions, cacheType);
+    const dpr = 2 * (window.devicePixelRatio || 1);
+    const side = Math.ceil(2 * (frame.tickOuter + frame.ringWidth)) + 4;
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = side * dpr;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    const c = side / 2;
+    const color = (opacity) => `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacity})`;
+
+    ctx.strokeStyle = color(frame.ringOpacity);
+    ctx.lineWidth = frame.ringWidth;
+    ctx.beginPath();
+    ctx.arc(c, c, frame.ringRadius, 0, 2 * Math.PI);
+    ctx.stroke();
+
+    ctx.strokeStyle = color(frame.tickOpacity);
+    ctx.lineWidth = Math.max(1, frame.ringWidth * 0.7);
+    ctx.lineCap = 'round';
+    for (const [dx, dy] of [[0, -1], [0, 1], [-1, 0], [1, 0]]) {
+        ctx.beginPath();
+        ctx.moveTo(c + dx * frame.tickInner, c + dy * frame.tickInner);
+        ctx.lineTo(c + dx * frame.tickOuter, c + dy * frame.tickOuter);
+        ctx.stroke();
+    }
+
+    if (frame.dotOpacity > 0) {
+        ctx.fillStyle = color(frame.dotOpacity);
+        ctx.beginPath();
+        ctx.arc(c, c, frame.dotRadius, 0, 2 * Math.PI);
+        ctx.fill();
+    }
+
+    return new ol.style.Style({
+        image: new ol.style.Icon({
+            img: canvas,
+            imgSize: [canvas.width, canvas.height],
+            scale: side / canvas.width,
+        }),
+    });
+}
+
 // Base de couleur effectivement utilisée par les fonctions de style ci-dessous,
 // en reprenant exactement leur ordre de décision (un mode 'gc' sans type de cache
 // ou sans table GC chargée retombe sur la couleur fixe). Elle entre dans la clé
@@ -135,6 +203,21 @@ export function flashStyleAt(step, steps, flashOptions, cacheType = null) {
             return {
                 value: implodeStyle(frame, flashOptions, cacheType),
                 bytes: estimateFlashStyleBytes(frame.ringRadius),
+            };
+        }
+        if (mode === 'echo') {
+            const frame = echoFrame(ratio, size);
+            return {
+                value: echoStyles(frame, flashOptions, cacheType),
+                bytes: estimateFlashStyleBytes(frame.rings[frame.rings.length - 1].radius),
+            };
+        }
+        if (mode === 'target') {
+            const frame = targetFrame(ratio, size);
+            return {
+                value: targetStyle(frame, flashOptions, cacheType),
+                // Le canvas du réticule est rastérisé en double densité.
+                bytes: 4 * estimateFlashStyleBytes(frame.tickOuter + frame.ringWidth),
             };
         }
         const radius = ol.easing.easeOut(ratio) * (size / 2) + (size / 10);

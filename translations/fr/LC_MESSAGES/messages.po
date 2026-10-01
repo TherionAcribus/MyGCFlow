@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-01 20:25+0200\n"
+"POT-Creation-Date: 2026-10-01 20:54+0200\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -3989,7 +3989,7 @@ msgstr "Forme du flash"
 msgid "Pas de flash"
 msgstr "Pas de flash"
 
-#: templates/menu_flash.html:12 templates/menu_flash_disappear.html:15
+#: templates/menu_flash.html:12 templates/menu_flash_disappear.html:16
 #: templates/menu_points.html:95
 msgid "Cercle"
 msgstr "Cercle"
@@ -4002,64 +4002,72 @@ msgstr "Impulsion (halo + onde)"
 msgid "Implosion (anneau qui se referme)"
 msgstr "Implosion (anneau qui se referme)"
 
-#: templates/menu_flash.html:15 templates/menu_flash_disappear.html:16
+#: templates/menu_flash.html:15
+msgid "Double onde (écho)"
+msgstr "Double onde (écho)"
+
+#: templates/menu_flash.html:16 templates/menu_flash_disappear.html:15
+msgid "Cible (réticule)"
+msgstr "Cible (réticule)"
+
+#: templates/menu_flash.html:17 templates/menu_flash_disappear.html:17
 msgid "Étoile"
 msgstr "Étoile"
 
-#: templates/menu_flash.html:16 templates/menu_flash_disappear.html:17
+#: templates/menu_flash.html:18 templates/menu_flash_disappear.html:18
 msgid "Scintillement"
 msgstr "Scintillement"
 
-#: templates/menu_flash.html:17 templates/menu_flash_disappear.html:18
+#: templates/menu_flash.html:19 templates/menu_flash_disappear.html:19
 msgid "Carré"
 msgstr "Carré"
 
-#: templates/menu_flash.html:18 templates/menu_flash_disappear.html:19
+#: templates/menu_flash.html:20 templates/menu_flash_disappear.html:20
 #: templates/menu_points.html:96
 msgid "Triangle"
 msgstr "Triangle"
 
-#: templates/menu_flash.html:19 templates/menu_flash_disappear.html:20
+#: templates/menu_flash.html:21 templates/menu_flash_disappear.html:21
 msgid "Losange"
 msgstr "Losange"
 
-#: templates/menu_flash.html:28 templates/menu_flash_disappear.html:25
+#: templates/menu_flash.html:30 templates/menu_flash_disappear.html:26
 msgid "Taille du flash en px"
 msgstr "Taille du flash en px"
 
-#: templates/menu_flash.html:29
+#: templates/menu_flash.html:31
 msgid "Taille du Flash"
 msgstr "Taille du Flash"
 
-#: templates/menu_flash.html:30 templates/menu_flash_disappear.html:27
+#: templates/menu_flash.html:32 templates/menu_flash_disappear.html:28
 msgid "5 à 200 px"
 msgstr "5 à 200 px"
 
-#: templates/menu_flash.html:34 templates/menu_flash_disappear.html:30
+#: templates/menu_flash.html:36 templates/menu_flash_disappear.html:31
 msgid "Couleur du flash"
 msgstr "Couleur du flash"
 
-#: templates/menu_flash.html:38 templates/menu_flash_disappear.html:33
+#: templates/menu_flash.html:40 templates/menu_flash_disappear.html:34
 #: templates/menu_points.html:64 templates/menu_points.html:130
 msgid "Couleurs GC (par type)"
 msgstr "Couleurs GC (par type)"
 
-#: templates/menu_flash.html:42 templates/menu_points.html:68
+#: templates/menu_flash.html:44 templates/menu_points.html:68
 #: templates/menu_points.html:134
 msgid "Transparent"
 msgstr "Transparent"
 
-#: templates/menu_flash.html:46 templates/menu_flash_disappear.html:37
+#: templates/menu_flash.html:48 templates/menu_flash_disappear.html:38
 #: templates/menu_points.html:72 templates/menu_points.html:138
 msgid "Couleur unique"
 msgstr "Couleur unique"
 
-#: templates/menu_flash.html:51 templates/menu_flash_disappear.html:40
+#: templates/menu_flash.html:53 templates/menu_flash_disappear.html:41
 #: templates/menu_points.html:77 templates/menu_points.html:143
 msgid "Choisir la couleur"
 msgstr "Choisir la couleur"
 
-#: templates/menu_flash.html:52
+#: templates/menu_flash.html:54
 msgid "Choisir la couleur du flash"
 msgstr "Choisir la couleur du flash"
 
@@ -4080,7 +4088,7 @@ msgstr ""
 msgid "Forme du flash de disparition"
 msgstr "Forme du flash de disparition"
 
-#: templates/menu_flash_disappear.html:41
+#: templates/menu_flash_disappear.html:42
 msgid "Choisir la couleur du flash de disparition"
 msgstr "Choisir la couleur du flash de disparition"
 
