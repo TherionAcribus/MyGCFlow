@@ -1,0 +1,17 @@
+{# Filtre Département : propre au mode Évolution (le mode principal n'a pas
+   de donnée départementale). Le select est vide au chargement : les options
+   sont peuplées à l'ouverture d'une base (setEvolutionFilterOptions, ui.js). #}
+<div class="row g-2">
+    {# offset-md-6 : la 2e moitié de la ligne, pour caler le champ sous le
+       select Région (2e colonne de la ligne Pays/Région juste au-dessus). #}
+    <div class="mb-3 col-12 col-md-6 offset-md-6 filter-field">
+        <label class="form-label" for="selectCounty">{{ _("Département") }}</label>
+        <select multiple id="selectCounty" class="form-select filter-select" aria-label="{{ _('Département') }}">
+            <option value="" disabled selected>{{ _("Filtrer par département") }}</option>
+        </select>
+        <div class="filter-actions mt-1">
+            <button type="button" id="btnAllCounty" class="btn btn-link btn-sm p-0 me-2"><i class="ti ti-checks me-1"></i>{{ _("Tout") }}</button>
+            <button type="button" id="btnNoneCounty" class="btn btn-link btn-sm p-0"><i class="ti ti-x me-1"></i>{{ _("Aucun") }}</button>
+        </div>
+    </div>
+</div>

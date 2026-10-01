@@ -27,6 +27,9 @@ from evolution_csv import FileReport, ROW_FIELDS, iter_batches
 
 SCHEMA_VERSION = 1
 NAME_MAX_LENGTH = 100
+# À incrémenter quand le format de load_payload change : entre dans l'ETag,
+# sinon le navigateur garderait un corps 304 périmé.
+PAYLOAD_VERSION = 2
 
 # Nombre maximal de paramètres par requête IN (...) : SQLite en accepte 999
 # dans les versions anciennes.
@@ -379,8 +382,10 @@ def _compute_stats(conn, dataset_id: int) -> dict:
 # Lecture
 # ---------------------------------------------------------------------------
 
-# Dernières charges utiles construites, par (fichier, base, révision) : un
-# rechargement de page ou un retour sur la même base ne relit pas la base.
+# Dernières charges utiles construites, par (fichier, base, révision, version
+# du format) : un rechargement de page ou un retour sur la même base ne relit
+# pas la base. La version du format est dans la clé pour qu'une mise à jour du
+# code ne serve pas une charge à l'ancien format.
 _PAYLOAD_CACHE: "OrderedDict[tuple, bytes]" = OrderedDict()
 _PAYLOAD_CACHE_SIZE = 3
 _payload_lock = threading.Lock()
@@ -402,9 +407,16 @@ def load_payload(db_path, dataset_id: int) -> tuple:
     jours depuis `origin` (le placement le plus ancien) ; archived vaut -1
     quand la cache ne disparaît pas (active, ou archivée sans date connue).
     status : 0 active, 1 archivée datée, 2 archivée sans date.
+
+    Les champs filtrables (type, taille, difficulté, terrain, pays, région,
+    département) sont des index dans des tables de libellés dédupliqués
+    (`types`, `sizes`, `difficulties`, `terrains`, `countries`, `regions`,
+    `counties`). Le libellé vide « » désigne une valeur inconnue : côté
+    filtre, une telle ligne passe toujours le critère. Difficulté et terrain
+    sont formatés comme les options HTML du filtre (« 1 », « 1.5 », …, « 5 »).
     """
     dataset = get_dataset(db_path, dataset_id)
-    key = (str(Path(db_path)), dataset_id, dataset["revision"])
+    key = (str(Path(db_path)), dataset_id, dataset["revision"], PAYLOAD_VERSION)
     with _payload_lock:
         cached = _PAYLOAD_CACHE.get(key)
         if cached is not None:
@@ -413,7 +425,8 @@ def load_payload(db_path, dataset_id: int) -> tuple:
 
     with _closing(connect(db_path)) as conn:
         rows = conn.execute(
-            "SELECT gc_code, lon, lat, placed, archived_on, is_archived, type, country, region "
+            "SELECT gc_code, lon, lat, placed, archived_on, is_archived, "
+            "type, size, difficulty, terrain, country, region, county "
             "FROM caches WHERE dataset_id = ? ORDER BY placed, gc_code",
             (dataset_id,),
         ).fetchall()
@@ -430,7 +443,8 @@ def load_payload(db_path, dataset_id: int) -> tuple:
             ordinals[iso] = value
         return value
 
-    tables = {"type": {}, "country": {}, "region": {}}
+    tables = {"type": {}, "size": {}, "difficulty": {}, "terrain": {},
+              "country": {}, "region": {}, "county": {}}
 
     def index_of(kind: str, value) -> int:
         table = tables[kind]
@@ -440,12 +454,18 @@ def load_payload(db_path, dataset_id: int) -> tuple:
             idx = table[label] = len(table)
         return idx
 
+    def index_of_rating(kind: str, value) -> int:
+        # Colonne REAL nullable : le libellé suit le format des options du
+        # filtre (« 1 », « 1.5 », …, « 5 ») ; NULL devient « » (inconnu).
+        return index_of(kind, "" if value is None else f"{value:g}")
+
     payload = {
         "dataset": {"id": dataset["id"], "name": dataset["name"], "revision": dataset["revision"]},
         "origin": origin,
         "count": len(rows),
         "code": [], "lon": [], "lat": [], "placed": [], "archived": [], "status": [],
-        "type": [], "country": [], "region": [],
+        "type": [], "size": [], "difficulty": [], "terrain": [],
+        "country": [], "region": [], "county": [],
     }
     for r in rows:
         payload["code"].append(r["gc_code"])
@@ -459,11 +479,19 @@ def load_payload(db_path, dataset_id: int) -> tuple:
             payload["archived"].append(-1)
             payload["status"].append(2 if r["is_archived"] else 0)
         payload["type"].append(index_of("type", r["type"]))
+        payload["size"].append(index_of("size", r["size"]))
+        payload["difficulty"].append(index_of_rating("difficulty", r["difficulty"]))
+        payload["terrain"].append(index_of_rating("terrain", r["terrain"]))
         payload["country"].append(index_of("country", r["country"]))
         payload["region"].append(index_of("region", r["region"]))
+        payload["county"].append(index_of("county", r["county"]))
     payload["types"] = list(tables["type"])
+    payload["sizes"] = list(tables["size"])
+    payload["difficulties"] = list(tables["difficulty"])
+    payload["terrains"] = list(tables["terrain"])
     payload["countries"] = list(tables["country"])
     payload["regions"] = list(tables["region"])
+    payload["counties"] = list(tables["county"])
     payload["meta"] = {
         "total": stats.get("total", len(rows)),
         "active": stats.get("active", 0),

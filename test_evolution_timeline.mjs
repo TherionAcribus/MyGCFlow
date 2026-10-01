@@ -6,6 +6,7 @@ import {
     beginEvolution,
     buildCountryRegionTree,
     buildEvolutionBase,
+    buildRegionCountyTree,
     buildTimeline,
     createEvolutionClock,
     dateToDayNumber,
@@ -22,11 +23,11 @@ import {
 import { EVO_NEVER_DAY, EVO_STATIC_FROM } from './static/js/evolution_style.mjs';
 
 // Jeu de données : placements triés, comme les renvoie le serveur.
-//   A placée j0, jamais archivée           (France / Alsace)
-//   B placée j2, archivée j5               (France / Bretagne)
-//   C placée j2, archivée sans date        (France / —)
-//   D placée j3, archivée j3               (Suisse / Vaud)
-//   E placée j7, archivage incohérent j1   (France / Alsace)
+//   A placée j0, jamais archivée           (France / Alsace / Bas-Rhin, Tradi Small 1.5/2)
+//   B placée j2, archivée j5               (France / Bretagne / Finistère, Mystery Micro 3/3.5)
+//   C placée j2, archivée sans date        (France / — / Bas-Rhin, Tradi Regular, D inconnue, T2)
+//   D placée j3, archivée j3               (Suisse / Vaud / —, Tradi Small 1.5/3.5)
+//   E placée j7, archivage incohérent j1   (France / Alsace / Bas-Rhin, Mystery, taille et D inconnues, T3.5)
 const PAYLOAD = {
     dataset: { id: 1, name: 'Test', revision: 3 },
     origin: '2024-03-30',
@@ -39,10 +40,18 @@ const PAYLOAD = {
     status: [0, 1, 2, 1, 1],
     type: [0, 1, 0, 0, 1],
     types: ['Traditional Cache', 'Unknown Cache'],
+    size: [0, 1, 2, 0, 3],
+    sizes: ['Small', 'Micro', 'Regular', ''],
+    difficulty: [0, 1, 2, 0, 2],
+    difficulties: ['1.5', '3', ''],
+    terrain: [0, 1, 0, 1, 1],
+    terrains: ['2', '3.5'],
     country: [0, 0, 0, 1, 0],
     countries: ['France', 'Suisse'],
     region: [0, 1, 2, 3, 0],
     regions: ['Alsace', 'Bretagne', '', 'Vaud'],
+    county: [0, 1, 0, 2, 0],
+    counties: ['Bas-Rhin', 'Finistère', ''],
     meta: { snapshotDate: '2024-04-20' },
 };
 
@@ -70,6 +79,15 @@ test('arbre pays -> régions sans libellés vides', () => {
     assert.deepEqual(tree, { France: ['Alsace', 'Bretagne'], Suisse: ['Vaud'] });
 });
 
+test('arbre région -> départements sans libellés vides', () => {
+    const tree = buildRegionCountyTree(buildEvolutionBase(PAYLOAD));
+    // C a un département (Bas-Rhin) mais pas de région : ignoré, une région
+    // vide n'est pas une clé. Vaud (D) n'a pas de département : la région
+    // reste une clé avec une liste vide, pour que le select Département
+    // n'affiche rien quand seule cette région est retenue.
+    assert.deepEqual(tree, { Alsace: ['Bas-Rhin'], Bretagne: ['Finistère'], Vaud: [] });
+});
+
 test('filtre Pays / Région : inactif, sélection, « Aucun », libellés vides toujours inclus', () => {
     const base = buildEvolutionBase(PAYLOAD);
     assert.deepEqual([...filterRows(base, {})], [0, 1, 2, 3, 4]);
@@ -78,6 +96,26 @@ test('filtre Pays / Région : inactif, sélection, « Aucun », libellés vides 
     assert.deepEqual([...filterRows(base, { countries: ['France'], regions: ['Alsace'] })], [0, 2, 4]);
     assert.deepEqual([...filterRows(base, { countries: [], regions: ['Alsace'] })], []);
     assert.deepEqual([...filterRows(base, { countries: ['France'], regions: [] })], []);
+});
+
+test('filtres Type / Taille / D / T / Département : combinés, « Aucun », libellés vides', () => {
+    const base = buildEvolutionBase(PAYLOAD);
+    // Type seul.
+    assert.deepEqual([...filterRows(base, { types: ['Unknown Cache'] })], [1, 4]);
+    // Taille + région combinés : E (taille inconnue) et C (région inconnue)
+    // passent leur critère vide mais C n'est pas Small.
+    assert.deepEqual(
+        [...filterRows(base, { sizes: ['Small'], regions: ['Alsace', 'Vaud'] })],
+        [0, 3, 4]);
+    // « Aucun » sur n'importe quel critère : rien ne passe.
+    assert.deepEqual([...filterRows(base, { types: [] })], []);
+    assert.deepEqual([...filterRows(base, { sizes: ['Small'], counties: [] })], []);
+    // C et E n'ont pas de difficulté : un filtre difficulté les conserve.
+    assert.deepEqual([...filterRows(base, { difficulties: ['1.5'] })], [0, 2, 3, 4]);
+    // D n'a pas de département : il passe aussi un filtre département actif.
+    assert.deepEqual([...filterRows(base, { counties: ['Bas-Rhin'] })], [0, 2, 3, 4]);
+    // Critère null : inactif ; seul le terrain filtre ici.
+    assert.deepEqual([...filterRows(base, { types: null, terrains: ['2'] })], [0, 2]);
 });
 
 test('chronologie : événements par jour et caches actives', () => {

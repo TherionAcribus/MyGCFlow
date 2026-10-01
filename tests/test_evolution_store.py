@@ -133,11 +133,17 @@ class MergeTests(StoreTestCase):
 
 
 class PayloadTests(StoreTestCase):
+    def test_payload_version_is_exposed(self):
+        # Entre dans l'ETag de /data (blueprints/evolution.py) : à incrémenter
+        # quand le format de load_payload change.
+        self.assertIsInstance(store.PAYLOAD_VERSION, int)
+
     def test_columnar_payload(self):
         self.import_rows([
-            row('GC2', placed='2001-01-11', archived='true', archived_on='2001-02-01', region='Bretagne'),
+            row('GC2', placed='2001-01-11', archived='true', archived_on='2001-02-01',
+                region='Bretagne', size='Micro', d='2.5', t='3'),
             row('GC1', placed='2001-01-01', type_='Cache Mystère'),
-            row('GC3', placed='2001-01-05', archived='true', archived_on=''),
+            row('GC3', placed='2001-01-05', archived='true', archived_on='', d=''),
         ])
         dataset, body = store.load_payload(self.db, self.dataset['id'])
         data = json.loads(body)
@@ -150,6 +156,16 @@ class PayloadTests(StoreTestCase):
                          ['Unknown Cache', 'Traditional Cache', 'Traditional Cache'])
         self.assertEqual([data['regions'][i] for i in data['region']],
                          ['Île-de-France', 'Île-de-France', 'Bretagne'])
+        # Taille et département : libellés texte ; difficulté/terrain : format
+        # des options du filtre (« 1 », « 1.5 »…) et « » pour une valeur NULL.
+        self.assertEqual([data['sizes'][i] for i in data['size']],
+                         ['Small', 'Small', 'Micro'])
+        self.assertEqual([data['difficulties'][i] for i in data['difficulty']],
+                         ['1', '', '2.5'])
+        self.assertEqual([data['terrains'][i] for i in data['terrain']],
+                         ['1.5', '1.5', '3'])
+        self.assertEqual([data['counties'][i] for i in data['county']],
+                         ['Essonne', 'Essonne', 'Essonne'])
         self.assertEqual(data['meta']['snapshotDate'], '2026-09-30')
         self.assertEqual(data['dataset']['revision'], dataset['revision'])
 

@@ -22,7 +22,9 @@ jamais leurs données.
 3. Carte au repos : état à la **date de fin** de l'animation (par défaut la
    date de l'export le plus récent, colonne « Ajouté »). Changer la date de fin
    dans l'onglet Animation met la carte au repos à jour.
-4. Filtre **Pays / Région** (les autres filtres ne sont pas proposés en v1).
+4. Filtres **Pays / Région / Type / Taille / Difficulté / Terrain /
+   Département** (même machinerie que le mode principal ; la sélection n'est
+   pas persistée).
 5. Lecture et export vidéo comme dans le mode principal. Le suivi de caméra
    n'existe pas dans ce mode.
 
@@ -95,9 +97,11 @@ aux bases du mode Évolution.
 `/data` renvoie des tableaux parallèles plutôt qu'une FeatureCollection :
 `code`, `lon`, `lat`, `placed` et `archived` (jours depuis `origin`, `-1` si
 la cache ne disparaît pas), `status` (0 active, 1 archivée datée, 2 archivée
-sans date), `type`/`country`/`region` (index dans `types`/`countries`/
-`regions`), `meta` (totaux, dates extrêmes, date de l'export). Nom et
-propriétaire n'y figurent pas : la popup les charge à la demande.
+sans date), `type`/`size`/`difficulty`/`terrain`/`country`/`region`/`county`
+(index dans les tables de libellés `types`/`sizes`/`difficulties`/`terrains`/
+`countries`/`regions`/`counties`, « » = valeur inconnue), `meta` (totaux,
+dates extrêmes, date de l'export). Nom et propriétaire n'y figurent pas : la
+popup les charge à la demande.
 
 ## Rendu : pourquoi rien n'est ajouté pendant l'animation
 
@@ -117,8 +121,8 @@ et laisse le shader décider de leur visibilité :
   une pause fige les effets au lieu de les rejouer), `evoFrom` (premier jour
   animé), `evoMsPerDay`, `evoStagger` ;
 - `static/js/evolution_timeline.mjs` : chronologie en tableaux typés
-  (événements par jour, caches actives par jour, pic), filtre Pays / Région,
-  horloge des variables ;
+  (événements par jour, caches actives par jour, pic), filtre multi-critères
+  (`filterRows`), horloge des variables ;
 - `static/js/evolution_data.js` : onglet Données, import, chargement d'une
   base, et interface avec le moteur (`evolutionBegin`, `evolutionStep`,
   `evolutionRestState`…).
@@ -154,7 +158,7 @@ recommandé (l'estimation de charge de l'onglet Animation le signale).
 
 Le rythme est séparé de celui du mode principal (`animation`) pour qu'un
 réglage adapté à des décennies ne déborde pas sur l'animation des
-trouvailles. La sélection Pays / Région n'est pas persistée et n'écrase pas
+trouvailles. La sélection des filtres n'est pas persistée et n'écrase pas
 celle du mode principal (`filtersSelection` du localStorage).
 
 ## Tests
@@ -171,6 +175,6 @@ celle du mode principal (`filtersSelection` du localStorage).
 ## Hors périmètre (v1)
 
 Traits de déplacement (disponibles en mode principal seulement : un trajet
-suppose un seul géocacheur), filtres Type / Taille / D / T / Département, caches
-désactivées (traitées comme actives), coordonnées corrigées, annulation d'un
-import, fusion de bases, thèmes propres à une base.
+suppose un seul géocacheur), caches désactivées (traitées comme actives),
+coordonnées corrigées, annulation d'un import, fusion de bases, thèmes propres
+à une base.

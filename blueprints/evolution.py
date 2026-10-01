@@ -241,7 +241,10 @@ def dataset_data(dataset_id):
     response = make_response(body)
     response.mimetype = 'application/json'
     # Faible : Flask-Compress le conserve tel quel sur la réponse compressée.
-    response.set_etag(f"evo-{dataset['id']}-{dataset['revision']}", weak=True)
+    # La version du format y figure : une mise à jour du code qui change la
+    # charge utile invalide le corps 304 gardé par le navigateur.
+    response.set_etag(
+        f"evo-{dataset['id']}-{dataset['revision']}-p{store.PAYLOAD_VERSION}", weak=True)
     response.headers['Cache-Control'] = 'no-cache'
     return response.make_conditional(request)
 

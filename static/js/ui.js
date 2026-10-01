@@ -62,8 +62,9 @@ var btnAllType, btnNoneType, btnAllDifficulty, btnNoneDifficulty, btnAllTerrain,
 // Filtres BDD - champs. Déclarés ici : les fonctions de filtre hors de
 // initUIElements s'appuyaient sinon sur les globales implicites créées par
 // les id HTML (window.selectType...), absentes de la page du mode Évolution
-// qui n'a que les filtres Pays / Région (ReferenceError au démarrage).
+// (ReferenceError au démarrage). selectCounty n'existe qu'en mode Évolution.
 var selectType, selectTerrain, selectDifficulty, selectContainer;
+var selectCounty, btnAllCounty, btnNoneCounty;
 
 var debounceTimer = null;
 const DEBOUNCE_DELAY = 200; // ms
@@ -76,6 +77,9 @@ var defaultPublishedStartDate = null;
 var defaultPublishedEndDate = null;
 // Pays/Etats
 let countryToStates = {};
+// Région -> départements (mode Évolution), alimenté par
+// setEvolutionFilterOptions comme countryToStates par setCountryStateTree.
+let regionToCounties = {};
 var inputDaysPerSecond, inputTotalDuration, selectRhythmPreset;
 var inputExtraEndTime;
 var selectFlashMode, inputTimeFlash, inputSizeFlash, cpFlashColor;
@@ -292,6 +296,11 @@ selectDifficulty = document.getElementById('selectDifficulty');
 selectContainer = document.getElementById('selectContainer');
     if (selectContainer) selectContainer.addEventListener('change', onSelectionChangedDebounced);
 
+// Département (mode Évolution uniquement) : options dynamiques, le Tom
+// Select est créé par setEvolutionFilterOptions à l'ouverture d'une base.
+selectCounty = document.getElementById('selectCounty');
+    if (selectCounty) selectCounty.addEventListener('change', onSelectionChangedDebounced);
+
 // Country/State selects
 const selectCountry = document.getElementById('selectCountry');
 const selectState = document.getElementById('selectState');
@@ -342,6 +351,11 @@ const publishedDatePickerEnd = document.getElementById('publishedDatePickerEnd')
     btnNoneContainer = document.getElementById('btnNoneContainer');
     if (btnAllContainer) btnAllContainer.addEventListener('click', () => selectAllOptions(selectContainer));
     if (btnNoneContainer) btnNoneContainer.addEventListener('click', () => deselectAllOptions(selectContainer));
+
+    btnAllCounty = document.getElementById('btnAllCounty');
+    btnNoneCounty = document.getElementById('btnNoneCounty');
+    if (btnAllCounty) btnAllCounty.addEventListener('click', () => selectAllOptions(selectCounty));
+    if (btnNoneCounty) btnNoneCounty.addEventListener('click', () => deselectAllOptions(selectCounty));
 
     // Pays / États - boutons Tout/Aucun et infos
     const btnAllCountry = document.getElementById('btnAllCountry');
@@ -2934,6 +2948,8 @@ function collectSelectedValues(){
     const selState = document.getElementById('selectState');
     if (selCountry) selectedValues["countries"] = Array.from(selCountry.selectedOptions).map(o => o.value).filter(v => v !== '');
     if (selState) selectedValues["states"] = Array.from(selState.selectedOptions).map(o => o.value).filter(v => v !== '');
+    // Département : présent seulement en mode Évolution (ignoré sinon).
+    if (selectCounty) selectedValues["counties"] = Array.from(selectCounty.selectedOptions).map(o => o.value).filter(v => v !== '');
     // Les champs affichent le format choisi par l'utilisateur (jj/mm ou mm/jj) :
     // tout ce qui part au serveur ou entre dans le filtrage local est ramené
     // en ISO « yyyy-mm-dd », comparable lexicographiquement (bdd.js/normIsoDate).
@@ -3054,6 +3070,88 @@ export function setCountryStateTree(tree) {
     updateFilterInfos();
 }
 
+// Mode Évolution : options des filtres propres à la base ouverte. `opts`
+// ({ countiesByRegion, types, sizes }) vient de la charge utile ; null/undefined
+// réinitialise (aucune base). Le département n'a pas d'options statiques :
+// sa liste entière est reconstruite à partir des régions retenues, comme
+// Région l'est à partir des pays (rebuildCountyOptions). Type et Taille ont
+// des options canoniques dans le HTML, mais un export peut contenir des
+// libellés inconnus (type non reconnu conservé tel quel) : ils sont ajoutés
+// en options marquées data-evolution-extra, retirées au changement de base.
+export function setEvolutionFilterOptions(opts) {
+    regionToCounties = (opts?.countiesByRegion && typeof opts.countiesByRegion === 'object')
+        ? opts.countiesByRegion : {};
+    rebuildCountyOptions();
+
+    // Type / Taille : les options statiques restent ; on ne gère que les
+    // extras propres à la base (retirés d'abord : reset entre deux bases).
+    const syncExtras = (selectEl, labels) => {
+        if (!selectEl) return;
+        selectEl.querySelectorAll('option[data-evolution-extra]').forEach(o => o.remove());
+        if (Array.isArray(labels)) {
+            const known = new Set(Array.from(selectEl.options).map(o => o.value));
+            for (const label of labels) {
+                if (!label || known.has(label)) continue;
+                known.add(label);
+                const opt = document.createElement('option');
+                opt.value = label; opt.textContent = label; opt.selected = true;
+                opt.dataset.evolutionExtra = '1';
+                selectEl.appendChild(opt);
+            }
+        }
+        refreshTomSelect(selectEl);
+    };
+    syncExtras(selectType, opts?.types);
+    syncExtras(selectContainer, opts?.sizes);
+
+    updateFilterInfos();
+}
+
+// Reconstruit les options du filtre Département d'après les régions
+// sélectionnées, comme le changement de pays reconstruit les régions :
+// union des départements des régions retenues, toutes cochées (pas de
+// préservation d'une sous-sélection — même UX que Région après Pays).
+// Sans région sélectionnée, le champ n'a que son placeholder et le critère
+// reste inactif (readFilterSelection renvoie null sur une liste vide).
+// Ne déclenche pas le filtrage : c'est l'appelant qui s'en charge.
+function rebuildCountyOptions() {
+    if (!selectCounty) return;
+    const selState = document.getElementById('selectState');
+    const stateOptions = selState
+        ? Array.from(selState.options).filter(o => !o.disabled && o.value !== '')
+        : [];
+    // Select Région absent ou pas encore peuplé : tous les départements
+    // connus de la base (le champ affiche alors la liste entière).
+    const regions = stateOptions.length === 0
+        ? Object.keys(regionToCounties)
+        : stateOptions.filter(o => o.selected).map(o => o.value);
+    const counties = new Set();
+    regions.forEach(r => (regionToCounties[r] || []).forEach(c => counties.add(c)));
+
+    // Détruire Tom Select avant de modifier le <select> natif, comme
+    // populateCountryStateSelects : le listener 'change' est sur le select
+    // lui-même et survit au destroy/recreate.
+    try { const ts = getTomSelect(selectCounty); if (ts) ts.destroy(); } catch(_) {}
+    selectCounty.innerHTML = '';
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.disabled = true;
+    placeholder.textContent = pkg.t ? pkg.t('Filtrer par département') : 'Filtrer par département';
+    selectCounty.appendChild(placeholder);
+    const frag = document.createDocumentFragment();
+    for (const label of [...counties].sort((a, b) => a.localeCompare(b))) {
+        const opt = document.createElement('option');
+        opt.value = label; opt.textContent = label; opt.selected = true;
+        frag.appendChild(opt);
+    }
+    selectCounty.appendChild(frag);
+    // Plus que le placeholder : pas de Tom Select, le critère reste inactif.
+    if (selectCounty.options.length > 1) {
+        try { initFilterTomSelect(selectCounty); } catch(_) {}
+    }
+    updateFilterInfos();
+}
+
 function populateCountryStateSelects(tree){
     const selCountry = document.getElementById('selectCountry');
     const selState = document.getElementById('selectState');
@@ -3154,6 +3252,9 @@ function populateCountryStateSelects(tree){
             try { initFilterTomSelect(selState); } catch(_) {}
         }
         dbgFilters('[COUNTRY] States populated for selection=', sset.size);
+        // Les régions viennent d'être recréées : les départements proposés
+        // suivent (mode Évolution ; selectCounty est null ailleurs → no-op).
+        if (selectCounty) rebuildCountyOptions();
         // Mise à jour des infos et déclenchement filtrage
         updateFilterInfos();
         onSelectionChangedDebounced();
@@ -3169,6 +3270,8 @@ function populateCountryStateSelects(tree){
             if (placeholder) placeholder.selected = false;
         }
         updateFilterInfos();
+        // Les départements proposés suivent les régions retenues.
+        if (selectCounty) rebuildCountyOptions();
         onSelectionChangedDebounced();
     });
 }
@@ -3180,6 +3283,16 @@ function persistSelectedValues(values){
 }
 
 function restoreSelectedValues(){
+    // La sélection du mode Évolution n'est pas persistée : ne pas la polluer
+    // avec 'filtersSelection' du mode principal (même clé localStorage).
+    if (isEvolutionPage()) {
+        if (selectType) refreshTomSelect(selectType);
+        if (selectDifficulty) refreshTomSelect(selectDifficulty);
+        if (selectTerrain) refreshTomSelect(selectTerrain);
+        if (selectContainer) refreshTomSelect(selectContainer);
+        updateFilterInfos();
+        return;
+    }
     try {
         const raw = localStorage.getItem('filtersSelection');
         if (!raw) {
@@ -3280,6 +3393,7 @@ function resetAllFilters(){
             selCountry.dispatchEvent(new Event('change'));
         }
         if (selState) selectAllOptions(selState);
+        selectAllOptions(selectCounty);
         // Dates : reset aux valeurs par défaut
         resetStartDateToDefault();
         resetEndDateToDefault();
@@ -3309,6 +3423,7 @@ function updateFilterInfos(){
     const btnNoneState = document.getElementById('btnNoneState');
     updateFilterInfoFor(selectCountryEl, btnAllCountry, btnNoneCountry);
     updateFilterInfoFor(selectStateEl, btnAllState, btnNoneState);
+    updateFilterInfoFor(selectCounty, btnAllCounty, btnNoneCounty);
 }
 
 function updateFilterInfoFor(selectEl, btnAllEl, btnNoneEl){

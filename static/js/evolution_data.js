@@ -1,6 +1,7 @@
 // Mode Évolution (page /evolution) : bases de caches importées depuis des
-// exports CSV, sélection Pays / Région, et chronologie consultée par le moteur
-// d'animation (mapgl.js) à chaque jour animé.
+// exports CSV, filtres Pays / Région / Type / Taille / D / T / Département,
+// et chronologie consultée par le moteur d'animation (mapgl.js) à chaque
+// jour animé.
 //
 // La base ouverte arrive en colonnes (voir evolution_store.load_payload) et
 // reste en tableaux typés (evolution_timeline.mjs). Les caches sélectionnées
@@ -21,6 +22,7 @@ import {
     beginEvolution,
     buildCountryRegionTree,
     buildEvolutionBase,
+    buildRegionCountyTree,
     buildTimeline,
     createEvolutionClock,
     dateOfDayIndex,
@@ -164,7 +166,14 @@ async function loadDataset(id, { fit = null } = {}) {
         if (seq !== loadSeq) return;
         base = buildEvolutionBase(payload);
         pkg.setCountryStateTree?.(buildCountryRegionTree(base));
-        applySelection(readCountryRegionSelection(), { resetDates: true });
+        // Départements proposés = ceux des régions retenues : l'arbre
+        // région -> départements vient des données, comme Pays -> Région.
+        pkg.setEvolutionFilterOptions?.({
+            countiesByRegion: buildRegionCountyTree(base),
+            types: base.types,
+            sizes: base.sizes,
+        });
+        applySelection(readFilterSelection(), { resetDates: true });
         if (fit) pkg.fitEvolutionView?.(selectionExtent(), { onlyIfOutside: fit === 'if-outside' });
         try { await saveSettingsPatch({ evolution_dataset_id: id }); } catch (_) {}
         if (window.userSettings) window.userSettings.evolution_dataset_id = id;
@@ -196,6 +205,7 @@ function clearDataset() {
     rows = new Int32Array(0);
     olFeatures = [];
     pkg.setCountryStateTree?.({});
+    pkg.setEvolutionFilterOptions?.(null);
     pkg.setExternalDatasetState?.({}, { selected: 0, total: 0 });
     pkg.setEvolutionFeatures?.([]);
     renderStats();
@@ -204,9 +214,10 @@ function clearDataset() {
     signalLoaded();
 }
 
-// Sélection Pays / Région lue sur les champs : null quand le critère n'a
-// aucune option (données sans pays ni région), pour ne rien filtrer.
-function readCountryRegionSelection() {
+// Sélection lue sur les champs de filtre : null quand le critère n'a aucune
+// option (champ absent ou liste vide — ex. base sans département), pour ne
+// rien filtrer ; [] quand l'utilisateur a tout décoché (« Aucun »).
+function readFilterSelection() {
     const read = (id) => {
         const select = el(id);
         if (!select) return null;
@@ -214,13 +225,21 @@ function readCountryRegionSelection() {
         if (options.length === 0) return null;
         return options.filter((o) => o.selected).map((o) => o.value);
     };
-    return { countries: read('selectCountry'), regions: read('selectState') };
+    return {
+        countries: read('selectCountry'),
+        regions: read('selectState'),
+        types: read('selectType'),
+        sizes: read('selectContainer'),
+        difficulties: read('selectDifficulty'),
+        terrains: read('selectTerrain'),
+        counties: read('selectCounty'),
+    };
 }
 
 // Appelé par ui.js à chaque changement de filtre.
 export function evolutionApplySelection() {
     if (!base) return;
-    const selection = readCountryRegionSelection();
+    const selection = readFilterSelection();
     if (clock.running) {
         // Changer les points en pleine animation fausserait la chronologie :
         // le filtre s'appliquera à l'arrêt.

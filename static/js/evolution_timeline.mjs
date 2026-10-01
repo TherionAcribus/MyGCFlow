@@ -79,10 +79,18 @@ export function buildEvolutionBase(payload) {
         status,
         type: Uint16Array.from(payload?.type || [], Number),
         types: Array.isArray(payload?.types) ? payload.types : [],
+        size: Uint16Array.from(payload?.size || [], Number),
+        sizes: Array.isArray(payload?.sizes) ? payload.sizes : [],
+        difficulty: Uint16Array.from(payload?.difficulty || [], Number),
+        difficulties: Array.isArray(payload?.difficulties) ? payload.difficulties : [],
+        terrain: Uint16Array.from(payload?.terrain || [], Number),
+        terrains: Array.isArray(payload?.terrains) ? payload.terrains : [],
         country: Uint16Array.from(payload?.country || [], Number),
         countries: Array.isArray(payload?.countries) ? payload.countries : [],
         region: Uint16Array.from(payload?.region || [], Number),
         regions: Array.isArray(payload?.regions) ? payload.regions : [],
+        county: Uint16Array.from(payload?.county || [], Number),
+        counties: Array.isArray(payload?.counties) ? payload.counties : [],
         meta: payload?.meta || {},
         clampedArchives,
     };
@@ -117,23 +125,63 @@ export function buildCountryRegionTree(base) {
     return out;
 }
 
-// Lignes retenues par le filtre Pays / Région, dans l'ordre du jeu (donc par
-// date de placement). `countries` / `regions` : libellés sélectionnés, ou null
-// quand le critère est inactif (aucune option proposée). Une liste vide
-// signifie « Aucun » et ne retient rien, comme dans le mode principal.
-export function filterRows(base, { countries = null, regions = null } = {}) {
-    if (Array.isArray(countries) && countries.length === 0) return new Int32Array(0);
-    if (Array.isArray(regions) && regions.length === 0) return new Int32Array(0);
-    const allowed = (labels, selection) => {
-        const set = Array.isArray(selection) ? new Set(selection.map(String)) : null;
-        return labels.map((label) => !set || !label || set.has(label));
-    };
-    const countryOk = allowed(base.countries, countries);
-    const regionOk = allowed(base.regions, regions);
+// Arbre région -> départements, miroir de buildCountryRegionTree : les
+// libellés vides n'y figurent ni en clé ni en valeur, mais une région connue
+// reste une clé même quand aucune de ses caches n'a de département (liste
+// vide — le select Département n'a alors rien à proposer pour elle).
+export function buildRegionCountyTree(base) {
+    const tree = new Map();
+    for (let i = 0; i < base.count; i++) {
+        const region = base.regions[base.region[i]] || '';
+        if (!region) continue;
+        let counties = tree.get(region);
+        if (!counties) tree.set(region, counties = new Set());
+        const county = base.counties[base.county[i]] || '';
+        if (county) counties.add(county);
+    }
+    const out = {};
+    for (const region of [...tree.keys()].sort((a, b) => a.localeCompare(b))) {
+        out[region] = [...tree.get(region)].sort((a, b) => a.localeCompare(b));
+    }
+    return out;
+}
+
+// Lignes retenues par les filtres (pays, région, type, taille, difficulté,
+// terrain, département), dans l'ordre du jeu — donc par date de placement.
+// Chaque critère est la liste des libellés sélectionnés, ou null/undefined
+// quand il est inactif (aucune option proposée). Une liste vide signifie
+// « Aucun » et ne retient rien ; une ligne dont le libellé est vide (valeur
+// inconnue, non filtrable) passe toujours le critère, comme les caches sans
+// région pour le filtre Pays / Région.
+export function filterRows(base, selection = {}) {
+    // (libellés choisis, colonne d'index, table de libellés) par critère.
+    const specs = [
+        [selection.countries, base.country, base.countries],
+        [selection.regions, base.region, base.regions],
+        [selection.types, base.type, base.types],
+        [selection.sizes, base.size, base.sizes],
+        [selection.difficulties, base.difficulty, base.difficulties],
+        [selection.terrains, base.terrain, base.terrains],
+        [selection.counties, base.county, base.counties],
+    ];
+    // Un critère actif devient [ok, column] : ok[idx] vaut false seulement si
+    // le libellé est connu et non choisi (index hors table = libellé vide).
+    const checks = [];
+    for (const [picked, column, labels] of specs) {
+        if (!Array.isArray(picked)) continue;
+        if (picked.length === 0) return new Int32Array(0);
+        if (!column) continue;
+        const set = new Set(picked.map(String));
+        checks.push([(labels || []).map((label) => !label || set.has(label)), column]);
+    }
     const rows = new Int32Array(base.count);
     let n = 0;
     for (let i = 0; i < base.count; i++) {
-        if (countryOk[base.country[i]] && regionOk[base.region[i]]) rows[n++] = i;
+        let pass = true;
+        for (const [ok, column] of checks) {
+            if (ok[column[i]] === false) { pass = false; break; }
+        }
+        if (pass) rows[n++] = i;
     }
     return rows.slice(0, n);
 }

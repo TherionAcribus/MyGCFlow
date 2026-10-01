@@ -1,7 +1,8 @@
 <!-- Onglet Données du mode Évolution (page /evolution) : bases de caches
-     importées depuis des exports CSV, et filtre Pays / Région. Piloté par
+     importées depuis des exports CSV, et filtres Type / Taille / Difficulté /
+     Terrain / Département / Pays / Région. Piloté par
      static/js/evolution_data.js. Les identifiants partagés avec le mode
-     principal (filterPanel, filtersCounter, dataNextStep, selects pays/région)
+     principal (filterPanel, filtersCounter, dataNextStep, selects des filtres)
      sont ceux qu'attend ui.js. -->
 <div id="data" class="col-12 tab-pane fade show active">
     {% include '_mode_switch.html' %}
@@ -98,7 +99,9 @@
                                 <i class="ti ti-refresh me-1"></i>{{ _("Réinitialiser tous les filtres") }}
                             </button>
                         </div>
+                        {% include '_filter_cache_attrs.html' %}
                         {% include '_filter_country_state.html' %}
+                        {% include '_filter_county.html' %}
                     </section>
                 </div>
             </div>
