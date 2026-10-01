@@ -53,5 +53,29 @@
             <label class="form-label" for="flashColor">{{ _("Choisir la couleur") }}</label>
             <input type="color" class="form-control form-control-color" id="flashColor" value="#FF00FF" aria-label="{{ _('Choisir la couleur du flash') }}">
         </div>
+
+        <!-- Contour des formes qui en ont un (étoile, scintillement, carré,
+             triangle, losange) : « auto » garde la couleur historique du mode. -->
+        <label class="form-label mt-3">{{ _("Couleur du contour") }}</label>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="flashBorderColor" id="flashBorderColorAuto" value="auto" checked aria-labelledby="flashBorderColorAutoLabel">
+            <span class="form-check-label" id="flashBorderColorAutoLabel">{{ _("Automatique") }}</span>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="flashBorderColor" id="flashBorderColorGc" value="gc" aria-labelledby="flashBorderColorGcLabel">
+            <span class="form-check-label" id="flashBorderColorGcLabel">{{ _("Couleurs GC (par type)") }}</span>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="flashBorderColor" id="flashBorderColorNone" value="none" aria-labelledby="flashBorderColorNoneLabel">
+            <span class="form-check-label" id="flashBorderColorNoneLabel">{{ _("Transparent") }}</span>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="flashBorderColor" id="flashBorderColorFix" value="fix" aria-labelledby="flashBorderColorFixLabel">
+            <span class="form-check-label" id="flashBorderColorFixLabel">{{ _("Couleur unique") }}</span>
+        </div>
+        <div class="mt-2">
+            <label class="form-label" for="flashBorderColor">{{ _("Choisir la couleur") }}</label>
+            <input type="color" class="form-control form-control-color" id="flashBorderColor" value="#000000" aria-label="{{ _('Choisir la couleur du contour') }}">
+        </div>
     </form>
 </div>

@@ -1331,6 +1331,7 @@ export function startAnimation(restart=false) {
     let flashOptions = pkg.options.flash
 
     flashOptions.rgb = pkg.hexToRgb(flashOptions.color);
+    if (flashOptions.border_color) flashOptions.border_rgb = pkg.hexToRgb(flashOptions.border_color);
     const dayDuration = pkg.options.animation.timePerDay;
 
     // Appliquer plage de dates définie dans l'onglet Animation si présente
@@ -1753,6 +1754,9 @@ function startRecordingProcess(){
 
     // mise à jour des options RGB (MEttre ailleurs ? + idem lecture seule)
     pkg.options.flash.rgb = pkg.hexToRgb(pkg.options.flash.color);
+    if (pkg.options.flash.border_color) {
+        pkg.options.flash.border_rgb = pkg.hexToRgb(pkg.options.flash.border_color);
+    }
 
     // Assurez-vous que vectorSource est initialisé
     if (!window.vectorSource) {
@@ -3502,6 +3506,7 @@ export function showEvolutionRestState() {
 function beginEvolutionTimeline(startDate) {
     const disappear = pkg.options.flash?.disappear;
     if (disappear?.color) disappear.rgb = pkg.hexToRgb(disappear.color);
+    if (disappear?.border_color) disappear.border_rgb = pkg.hexToRgb(disappear.border_color);
     return pkg.evolutionBegin?.(startDate, pkg.metadata.endDate, sampleAppearClock(),
         pkg.options.flash?.mode === 'impulse') || 0;
 }

@@ -179,6 +179,7 @@ class ProfileSaveAndImportValidationTests(unittest.TestCase):
         saved = settings_manager.read_json(settings_manager.PROFILES_DIR / "Alpha.json")
         self.assertEqual(saved["flash"]["disappear"], {
             "mode": "star", "size": 30, "color": "#112233", "color_type": "fix",
+            "border_color": "#000000", "border_color_type": "auto",
         })
         # Les réglages du flash d'apparition sont intacts.
         self.assertEqual(saved["flash"]["color"], "#00ff00")
@@ -205,11 +206,26 @@ class DisappearFlashTests(unittest.TestCase):
     def test_disappear_values_are_validated(self):
         prof = coerce_profile({"flash": {"disappear": {
             "mode": "impulse", "size": 999, "color": "rouge", "color_type": "gc",
+            "border_color": "rouge", "border_color_type": "arc-en-ciel",
         }}})
         self.assertEqual(prof.flash.disappear.mode, "implode")
         self.assertEqual(prof.flash.disappear.size, 200)
         self.assertEqual(prof.flash.disappear.color, "#9E9E9E")
         self.assertEqual(prof.flash.disappear.color_type, "gc")
+        self.assertEqual(prof.flash.disappear.border_color, "#000000")
+        self.assertEqual(prof.flash.disappear.border_color_type, "auto")
+
+    def test_flash_border_color_is_validated(self):
+        prof = coerce_profile({"flash": {
+            "border_color": "#123456", "border_color_type": "fix",
+        }})
+        self.assertEqual(prof.flash.border_color, "#123456")
+        self.assertEqual(prof.flash.border_color_type, "fix")
+        prof = coerce_profile({"flash": {
+            "border_color": "bleu", "border_color_type": "arc-en-ciel",
+        }})
+        self.assertEqual(prof.flash.border_color, "#000000")
+        self.assertEqual(prof.flash.border_color_type, "auto")
 
     def test_garbage_disappear_block_keeps_the_defaults(self):
         prof = coerce_profile({"flash": {"disappear": "star"}})

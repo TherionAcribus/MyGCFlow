@@ -77,12 +77,16 @@
         "mode": "circle",
         "color": "#FF00FF",
         "color_type": "fix",
+        "border_color": "#000000",
+        "border_color_type": "auto",
         "duration": 2000,
         "size": 10,
         "disappear": {
             "mode": "implode",
             "color": "#9E9E9E",
             "color_type": "fix",
+            "border_color": "#000000",
+            "border_color_type": "auto",
             "size": 30
         }
     },

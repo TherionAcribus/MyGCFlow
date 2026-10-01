@@ -1403,6 +1403,8 @@ class ProfileManager {
                 size: parseInt(flash.size) || 50,
                 color: flash.color || '#FF00FF',
                 color_type: flash.color_type || 'fix',
+                border_color: flash.border_color || '#000000',
+                border_color_type: flash.border_color_type || 'auto',
                 // Flash de disparition (mode Évolution) : sérialisé sur les deux
                 // pages, sans quoi un thème enregistré depuis le mode principal
                 // perdrait le réglage choisi en mode Évolution.
@@ -2069,7 +2071,7 @@ function applyPointState(pointOptions) {
 
 // Flash de disparition du mode Évolution, complété des valeurs par défaut
 // (celles de settings_manager.DisappearFlashOptions).
-const DISAPPEAR_FLASH_DEFAULTS = Object.freeze({ mode: 'implode', size: 30, color: '#9E9E9E', color_type: 'fix' });
+const DISAPPEAR_FLASH_DEFAULTS = Object.freeze({ mode: 'implode', size: 30, color: '#9E9E9E', color_type: 'fix', border_color: '#000000', border_color_type: 'auto' });
 
 export function normalizeDisappearFlash(value) {
     const d = value && typeof value === 'object' ? value : {};
@@ -2079,6 +2081,8 @@ export function normalizeDisappearFlash(value) {
         size: Number.isFinite(size) ? size : DISAPPEAR_FLASH_DEFAULTS.size,
         color: typeof d.color === 'string' && d.color ? d.color : DISAPPEAR_FLASH_DEFAULTS.color,
         color_type: typeof d.color_type === 'string' && d.color_type ? d.color_type : DISAPPEAR_FLASH_DEFAULTS.color_type,
+        border_color: typeof d.border_color === 'string' && d.border_color ? d.border_color : DISAPPEAR_FLASH_DEFAULTS.border_color,
+        border_color_type: typeof d.border_color_type === 'string' && d.border_color_type ? d.border_color_type : DISAPPEAR_FLASH_DEFAULTS.border_color_type,
     };
 }
 
@@ -2148,9 +2152,15 @@ function applyFlashState(flashOptions) {
         }
         // Profils antérieurs au type de couleur : couleur fixe.
         flash.color_type = flashOptions.color_type || 'fix';
+        if (flashOptions.border_color) {
+            flash.border_color = flashOptions.border_color;
+            flash.border_rgb = pkg.hexToRgb(flashOptions.border_color);
+        }
+        // Profils antérieurs à la couleur de contour : comportement historique.
+        flash.border_color_type = flashOptions.border_color_type || 'auto';
         // Profils antérieurs au mode Évolution : flash de disparition par défaut.
         const disappear = normalizeDisappearFlash(flashOptions.disappear);
-        flash.disappear = { ...disappear, rgb: pkg.hexToRgb(disappear.color) };
+        flash.disappear = { ...disappear, rgb: pkg.hexToRgb(disappear.color), border_rgb: pkg.hexToRgb(disappear.border_color) };
 
         dbgProfiles('Paramètres flash appliqués:', flash);
     } catch (error) {

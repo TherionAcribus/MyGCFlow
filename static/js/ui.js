@@ -82,7 +82,7 @@ let countryToStates = {};
 let regionToCounties = {};
 var inputDaysPerSecond, inputTotalDuration, selectRhythmPreset;
 var inputExtraEndTime;
-var selectFlashMode, inputTimeFlash, inputSizeFlash, cpFlashColor;
+var selectFlashMode, inputTimeFlash, inputSizeFlash, cpFlashColor, cpFlashBorderColor;
 var cpStrokeColor, cpFillColor, cpBackgroundColor, strokeWidth;
 var cbDisplayTitle, cbDisplayNumberofCaches, cbDisplayCurrentDate, inputTitle;
 var inputInfosTemplate;
@@ -747,10 +747,23 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
         cpFlashColor.addEventListener('change', changeFlashValues);
     }
 
+    // colorpicker du contour des formes qui en ont un
+    cpFlashBorderColor = document.getElementById('flashBorderColor');
+    if (cpFlashBorderColor) {
+        cpFlashBorderColor.addEventListener('input', changeFlashValues);
+        cpFlashBorderColor.addEventListener('change', changeFlashValues);
+    }
+
     // radio buttons pour les couleurs du flash
     const radioFlashColor = document.getElementsByName('flashColor');
     radioFlashColor.forEach(radio => {
         radio.addEventListener('change', () => changeFlashColorType(radio));
+    });
+
+    // radio buttons pour la couleur du contour
+    const radioFlashBorderColor = document.getElementsByName('flashBorderColor');
+    radioFlashBorderColor.forEach(radio => {
+        radio.addEventListener('change', () => changeFlashBorderColorType(radio));
     });
 
     // Flash de disparition (page du mode Évolution uniquement)
@@ -4858,6 +4871,12 @@ function changeFlashValues(event){
         pkg.options.flash.color = cpFlashColor.value;
         pkg.options.flash.rgb = pkg.hexToRgb(cpFlashColor.value);
     }
+    if (cpFlashBorderColor) {
+        pkg.options.flash.border_color = cpFlashBorderColor.value;
+        // Même convention que `rgb` : `border_rgb` est la forme lue par les
+        // styles de flash (flash_styles.js).
+        pkg.options.flash.border_rgb = pkg.hexToRgb(cpFlashBorderColor.value);
+    }
 
     // Un flash plus long que le gel final étend automatiquement la fin de
     // vidéo : répercuter dans le plan de timing (durées affichées = produites).
@@ -4872,6 +4891,12 @@ function changeFlashColorType(event) {
     updateFlashColorPickerVisibility();
 }
 
+// Gestion du type de couleur du contour (auto, GC, fix, none)
+function changeFlashBorderColorType(event) {
+    pkg.options.flash.border_color_type = event.value;
+    updateFlashBorderColorPickerVisibility();
+}
+
 // Le choix d'une couleur n'a de sens qu'en mode "couleur unique". Le conteneur
 // est cherché à partir du champ lui-même (parentElement) et non par un sélecteur
 // en dur : celui-ci visait un wrapper disparu à la migration Bootstrap, ne
@@ -4881,6 +4906,14 @@ function updateFlashColorPickerVisibility() {
     const container = cpFlashColor.parentElement;
     if (!container) return;
     container.style.display = pkg.options?.flash?.color_type === 'fix' ? 'block' : 'none';
+}
+
+// Idem pour le contour : le picker n'apparaît qu'en mode « couleur unique ».
+function updateFlashBorderColorPickerVisibility() {
+    if (!cpFlashBorderColor) return;
+    const container = cpFlashBorderColor.parentElement;
+    if (!container) return;
+    container.style.display = pkg.options?.flash?.border_color_type === 'fix' ? 'block' : 'none';
 }
 
 // Reflète pkg.options.flash dans les contrôles de l'onglet Flash.
@@ -4900,6 +4933,9 @@ export function syncFlashOptionsUI() {
 
     setRadioGroupValue(document.getElementsByName('flashColor'), flash.color_type);
     updateFlashColorPickerVisibility();
+    if (cpFlashBorderColor && flash.border_color) cpFlashBorderColor.value = flash.border_color;
+    setRadioGroupValue(document.getElementsByName('flashBorderColor'), flash.border_color_type || 'auto');
+    updateFlashBorderColorPickerVisibility();
     syncDisappearFlashUI();
 }
 
@@ -5204,7 +5240,7 @@ export function syncTrailOptionsUI() {
 function disappearFlashOptions() {
     const flash = pkg.options.flash;
     if (!flash.disappear || typeof flash.disappear !== 'object') {
-        flash.disappear = { mode: 'implode', size: 30, color: '#9E9E9E', color_type: 'fix' };
+        flash.disappear = { mode: 'implode', size: 30, color: '#9E9E9E', color_type: 'fix', border_color: '#000000', border_color_type: 'auto' };
     }
     return flash.disappear;
 }
@@ -5245,12 +5281,37 @@ function initDisappearFlashControls() {
             updateDisappearColorPickerVisibility();
         });
     });
+
+    const borderColor = document.getElementById('disappearFlashBorderColor');
+    if (borderColor) {
+        const apply = () => {
+            const options = disappearFlashOptions();
+            options.border_color = borderColor.value;
+            options.border_rgb = pkg.hexToRgb(borderColor.value);
+        };
+        borderColor.addEventListener('input', apply);
+        borderColor.addEventListener('change', apply);
+    }
+
+    document.getElementsByName('disappearFlashBorderColor').forEach((radio) => {
+        radio.addEventListener('change', () => {
+            disappearFlashOptions().border_color_type = radio.value;
+            updateDisappearBorderPickerVisibility();
+        });
+    });
 }
 
 function updateDisappearColorPickerVisibility() {
     const color = document.getElementById('disappearFlashColor');
     if (color?.parentElement) {
         color.parentElement.style.display = disappearFlashOptions().color_type === 'fix' ? 'block' : 'none';
+    }
+}
+
+function updateDisappearBorderPickerVisibility() {
+    const color = document.getElementById('disappearFlashBorderColor');
+    if (color?.parentElement) {
+        color.parentElement.style.display = disappearFlashOptions().border_color_type === 'fix' ? 'block' : 'none';
     }
 }
 
@@ -5266,6 +5327,10 @@ function syncDisappearFlashUI() {
     if (color && options.color) color.value = options.color;
     setRadioGroupValue(document.getElementsByName('disappearFlashColor'), options.color_type);
     updateDisappearColorPickerVisibility();
+    const borderColor = document.getElementById('disappearFlashBorderColor');
+    if (borderColor && options.border_color) borderColor.value = options.border_color;
+    setRadioGroupValue(document.getElementsByName('disappearFlashBorderColor'), options.border_color_type || 'auto');
+    updateDisappearBorderPickerVisibility();
 }
 
 // Validation à la perte de focus : plus de correction silencieuse, on

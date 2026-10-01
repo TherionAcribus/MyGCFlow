@@ -41,5 +41,28 @@
             <label class="form-label" for="disappearFlashColor">{{ _("Choisir la couleur") }}</label>
             <input type="color" class="form-control form-control-color" id="disappearFlashColor" value="#9E9E9E" aria-label="{{ _('Choisir la couleur du flash de disparition') }}">
         </div>
+
+        <!-- Contour des formes qui en ont un, comme pour le flash d'apparition. -->
+        <label class="form-label mt-3">{{ _("Couleur du contour") }}</label>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="disappearFlashBorderColor" id="disappearFlashBorderColorAuto" value="auto" checked aria-labelledby="disappearFlashBorderColorAutoLabel">
+            <span class="form-check-label" id="disappearFlashBorderColorAutoLabel">{{ _("Automatique") }}</span>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="disappearFlashBorderColor" id="disappearFlashBorderColorGc" value="gc" aria-labelledby="disappearFlashBorderColorGcLabel">
+            <span class="form-check-label" id="disappearFlashBorderColorGcLabel">{{ _("Couleurs GC (par type)") }}</span>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="disappearFlashBorderColor" id="disappearFlashBorderColorNone" value="none" aria-labelledby="disappearFlashBorderColorNoneLabel">
+            <span class="form-check-label" id="disappearFlashBorderColorNoneLabel">{{ _("Transparent") }}</span>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="disappearFlashBorderColor" id="disappearFlashBorderColorFix" value="fix" aria-labelledby="disappearFlashBorderColorFixLabel">
+            <span class="form-check-label" id="disappearFlashBorderColorFixLabel">{{ _("Couleur unique") }}</span>
+        </div>
+        <div class="mt-2">
+            <label class="form-label" for="disappearFlashBorderColor">{{ _("Choisir la couleur") }}</label>
+            <input type="color" class="form-control form-control-color" id="disappearFlashBorderColor" value="#000000" aria-label="{{ _('Choisir la couleur du contour de disparition') }}">
+        </div>
     </form>
 </div>

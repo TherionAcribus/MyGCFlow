@@ -30,6 +30,27 @@ function impulseRgb(flashOptions, cacheType) {
     return flashOptions.rgb;
 }
 
+// Couleur du contour des formes qui en ont un (étoile, scintillement, carré,
+// triangle, losange). 'auto' garde le contour historique du mode
+// (`fallbackRgb`) ; 'none' le rend invisible ; 'gc' et 'fix' suivent la même
+// décision que la couleur du flash (`border_rgb` est précalculé comme `rgb`).
+function flashStrokeColor(opacity, fallbackRgb, flashOptions, cacheType) {
+    const type = flashOptions.border_color_type || 'auto';
+    if (type === 'auto') {
+        return `rgba(${fallbackRgb.r}, ${fallbackRgb.g}, ${fallbackRgb.b}, ${opacity})`;
+    }
+    if (type === 'none') return `rgba(0, 0, 0, 0)`;
+    if (type === 'gc' && cacheType && defaultGcColors) {
+        const gcColor = defaultGcColors[cacheType];
+        const rgb = gcColor && gcColor.startsWith('#') ? pkg.hexToRgb(gcColor) : null;
+        return rgb
+            ? `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacity})`
+            : `rgba(128, 128, 128, ${opacity})`;
+    }
+    const rgb = flashOptions.border_rgb;
+    return `rgba(${rgb?.r ?? 0}, ${rgb?.g ?? 0}, ${rgb?.b ?? 0}, ${opacity})`;
+}
+
 // Sprite du halo, dessiné une seule fois par couleur : un cœur blanc qui vire à
 // la couleur du flash puis s'évanouit. Chaque frame n'en change que l'échelle et
 // l'opacité, sans le redessiner.
@@ -164,12 +185,27 @@ function targetStyle(frame, flashOptions, cacheType) {
 // du cache : changer la couleur en cours d'animation produit donc de nouveaux
 // styles au lieu de réutiliser les anciens.
 function flashColorKey(flashOptions, cacheType) {
+    let fillKey;
     if (flashOptions.color_type === 'gc' && cacheType && defaultGcColors) {
-        return 'gc:' + (defaultGcColors[cacheType] ?? '');
+        fillKey = 'gc:' + (defaultGcColors[cacheType] ?? '');
+    } else if (flashOptions.color_type === 'none') {
+        fillKey = 'none';
+    } else {
+        const rgb = flashOptions.rgb;
+        fillKey = `fix:${rgb?.r},${rgb?.g},${rgb?.b}`;
     }
-    if (flashOptions.color_type === 'none') return 'none';
-    const rgb = flashOptions.rgb;
-    return `fix:${rgb?.r},${rgb?.g},${rgb?.b}`;
+    // Le contour entre dans la clé : changer sa couleur en cours d'animation
+    // produit de nouveaux styles, comme pour la couleur principale.
+    const borderType = flashOptions.border_color_type || 'auto';
+    let borderKey = borderType;
+    if (borderType === 'gc' && cacheType && defaultGcColors) {
+        borderKey = 'gc:' + (defaultGcColors[cacheType] ?? '');
+    } else if (borderType === 'fix' || borderType === 'gc') {
+        // 'fix', ou 'gc' sans type de cache : le style lit alors border_rgb.
+        const rgb = flashOptions.border_rgb;
+        borderKey = `fix:${rgb?.r},${rgb?.g},${rgb?.b}`;
+    }
+    return `${fillKey}|${borderKey}`;
 }
 
 // Mémoire approximative du canvas rastérisé : carré englobant la forme et son
@@ -259,7 +295,7 @@ export function starStyle(radius, opacity, flashOptions, cacheType = null){
             radius2: radius / 2, // Rayon intérieur (pour la forme de l'étoile)
             angle: 0, // Angle initial de l'étoile
             stroke: new ol.style.Stroke({
-                color: `rgba(0, 0, 0, ${opacity})`, // Contour noir avec l'opacité calculée
+                color: flashStrokeColor(opacity, { r: 0, g: 0, b: 0 }, flashOptions, cacheType), // Contour noir par défaut
                 width: 2, // Largeur du contour
             }),
             fill: new ol.style.Fill({
@@ -305,7 +341,7 @@ export function sparkleStyle(radius, opacity, flashOptions, cacheType = null){
                 color: color,
             }),
             stroke: new ol.style.Stroke({
-                color: `rgba(255, 255, 255, ${opacity})`, // éclat blanc lumineux
+                color: flashStrokeColor(opacity, { r: 255, g: 255, b: 255 }, flashOptions, cacheType), // éclat blanc par défaut
                 width: 1.5,
             }),
         }),
@@ -391,7 +427,7 @@ export function squareStyle(radius, opacity, flashOptions, cacheType = null){
             radius: radius,
             angle: Math.PI / 4, // Rotation de 45° pour un carré aligné
             stroke: new ol.style.Stroke({
-                color: `rgba(0, 0, 0, ${opacity})`,
+                color: flashStrokeColor(opacity, { r: 0, g: 0, b: 0 }, flashOptions, cacheType),
                 width: 2,
             }),
             fill: new ol.style.Fill({
@@ -438,7 +474,7 @@ export function triangleStyle(radius, opacity, flashOptions, cacheType = null){
             radius: radius,
             angle: 0,
             stroke: new ol.style.Stroke({
-                color: `rgba(0, 0, 0, ${opacity})`,
+                color: flashStrokeColor(opacity, { r: 0, g: 0, b: 0 }, flashOptions, cacheType),
                 width: 2,
             }),
             fill: new ol.style.Fill({
@@ -485,7 +521,7 @@ export function diamondStyle(radius, opacity, flashOptions, cacheType = null){
             radius: radius,
             angle: 0, // Losange pointant vers le haut
             stroke: new ol.style.Stroke({
-                color: `rgba(0, 0, 0, ${opacity})`,
+                color: flashStrokeColor(opacity, { r: 0, g: 0, b: 0 }, flashOptions, cacheType),
                 width: 2,
             }),
             fill: new ol.style.Fill({

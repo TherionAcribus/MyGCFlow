@@ -348,6 +348,11 @@ class DisappearFlashOptions:
     # Gris plutôt que rouge : le rouge est déjà la couleur des events.
     color: str = "#9E9E9E"
     color_type: str = "fix"  # "gc", "none", "fix"
+    # Contour des formes qui en ont un (étoile, scintillement, carré, ...) :
+    # "auto" garde la couleur historique du mode (noir, blanc pour le
+    # scintillement).
+    border_color: str = "#000000"
+    border_color_type: str = "auto"  # "auto", "gc", "none", "fix"
 
 
 @dataclass
@@ -356,6 +361,10 @@ class FlashOptions:
     size: int = 50  # en px
     color: str = "#FF00FF"
     color_type: str = "fix"  # "gc", "none", "fix"
+    # Contour des formes qui en ont un : "auto" garde la couleur historique du
+    # mode ; en petit taille de scintillement, seul le contour reste visible.
+    border_color: str = "#000000"
+    border_color_type: str = "auto"  # "auto", "gc", "none", "fix"
     disappear: DisappearFlashOptions = field(default_factory=DisappearFlashOptions)
 
 
@@ -502,6 +511,10 @@ POINT_MODES = ("vectoriel", "icone")
 POINT_SHAPES = ("circle", "triangle")
 ICON_SETS = ("geocaching", "smiley")  # ICON_SETS de static/js/ui.js
 COLOR_TYPES = ("gc", "none", "fix")
+# Couleur du contour des formes de flash : « auto » garde le contour historique
+# du mode (noir, blanc pour le scintillement), les autres valeurs sont celles
+# de COLOR_TYPES.
+FLASH_BORDER_TYPES = ("auto", "gc", "none", "fix")
 FLASH_MODES = ("none", "circle", "impulse", "implode", "echo", "target", "star", "sparkle", "square", "triangle", "diamond")
 # Flash de disparition (mode Évolution) : seuls les mouvements convergents ont
 # du sens pour une cache qui s'éteint — ni la vague « impulse » ni l'écho,
@@ -822,11 +835,15 @@ def coerce_profile(d: dict, base: Optional[MapProfile] = None) -> MapProfile:
             size=_clamp_int(f.get("size"), p.flash.size, *FLASH_SIZE_RANGE),
             color=_coerce_hex_color(f.get("color"), p.flash.color),
             color_type=_coerce_choice(f.get("color_type"), COLOR_TYPES, p.flash.color_type),
+            border_color=_coerce_hex_color(f.get("border_color"), p.flash.border_color),
+            border_color_type=_coerce_choice(f.get("border_color_type"), FLASH_BORDER_TYPES, p.flash.border_color_type),
             disappear=DisappearFlashOptions(
                 mode=_coerce_choice(fd.get("mode"), DISAPPEAR_FLASH_MODES, pfd.mode),
                 size=_clamp_int(fd.get("size"), pfd.size, *FLASH_SIZE_RANGE),
                 color=_coerce_hex_color(fd.get("color"), pfd.color),
                 color_type=_coerce_choice(fd.get("color_type"), COLOR_TYPES, pfd.color_type),
+                border_color=_coerce_hex_color(fd.get("border_color"), pfd.border_color),
+                border_color_type=_coerce_choice(fd.get("border_color_type"), FLASH_BORDER_TYPES, pfd.border_color_type),
             ),
         )
 
