@@ -2,9 +2,11 @@
 
 Le mode Évolution anime **toutes les caches d'une zone** au fil du temps :
 chaque cache apparaît à sa date de placement et disparaît à sa date
-d'archivage, et le compteur affiche le nombre de caches **actives** (il monte
-et descend) — ou, au choix dans l'onglet Infos (« Compteur affiché »), les
-caches **placées** ou **archivées** cumulées ; le choix est persisté. C'est
+d'archivage. La ligne d'informations en bas de carte est un **modèle libre**
+(onglet Style, cible Infos, champ « Ligne d'informations ») : texte libre et
+balises `{date}`, `{actives}` (présentes à la date courante), `{placees}` et
+`{archivees}` (cumuls), `{total}` (taille de la sélection), persistées dans
+les préférences. C'est
 un mode secondaire, sur une page à part (`/evolution`),
 atteinte par le sélecteur de mode en haut de l'onglet Données
 (`templates/_mode_switch.html`, présent sur les deux pages). Les
@@ -160,7 +162,7 @@ recommandé (l'estimation de charge de l'onglet Animation le signale).
 | --- | --- | --- |
 | Rythme propre au mode (défaut : durée finale 1 min) | Globale | `evolution_animation` de `settings.json` |
 | Dernière base ouverte | Globale | `evolution_dataset_id` de `settings.json` |
-| Compteur affiché (actives / placées / archivées) | Globale | `evolution_counter_mode` de `settings.json` |
+| Ligne d'informations (modèle à balises) | Globale | `evolution_infos_template` de `settings.json` |
 | Flash de disparition (forme, taille, couleur) | Thème | `flash.disappear` du profil |
 
 Le rythme est séparé de celui du mode principal (`animation`) pour qu'un
@@ -174,7 +176,8 @@ celle du mode principal (`filtersSelection` du localStorage).
   `tests/test_evolution_api.py`, plus les cas `flash.disappear` et
   `evolution_*` de `test_profile_validation.py` et `test_global_preferences.py`.
 - Node : `test_evolution_timeline.mjs`, `test_evolution_style.mjs`,
-  `test_flash_implode.mjs`, et les cas « plusieurs jours par image » de
+  `test_flash_implode.mjs`, `test_infos_template.mjs` (modèle de la ligne
+  d'infos), et les cas « plusieurs jours par image » de
   `test_video_timing.mjs`.
 - Playwright : `tests/e2e/evolution.spec.mjs` (fixtures
   `tests/e2e/fixtures/evolution-a.csv` / `evolution-b.csv`).

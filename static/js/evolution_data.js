@@ -58,18 +58,27 @@ let loadSeq = 0;             // seul le dernier chargement demandé s'applique
 let nameModalMode = 'create';
 let popupSeq = 0;
 const clock = createEvolutionClock();
-// Grandeur affichée par le compteur de caches : 'active' (présentes à la
-// date courante, comportement historique) ou cumuls 'placed' / 'archived'.
-// Préférence globale persistée (evolution_counter_mode de settings.json).
-let counterMode = normalizeCounterMode(window.userSettings?.evolution_counter_mode);
+// Modèle de la ligne d'infos : texte libre avec balises {date}, {actives},
+// {placees}, {archivees}, {total} remplacées par les valeurs courantes.
+// Préférence globale persistée (evolution_infos_template de settings.json) ;
+// une chaîne vide masque la ligne.
+let infosTemplate = normalizeInfosTemplate(window.userSettings?.evolution_infos_template);
 // Dernières stats de sélection poussées au moteur avec les métadonnées :
-// repousser la méta après un changement de compteur les reprend telles quelles.
+// repousser la méta les reprend telles quelles.
 let datasetScope = { selected: 0, total: 0 };
 
-// Borne le mode du compteur aux valeurs connues ; toute autre (settings
-// édités à la main, client plus ancien) retombe sur 'active'.
-function normalizeCounterMode(mode) {
-    return mode === 'placed' || mode === 'archived' ? mode : 'active';
+// Borne le modèle à la taille du champ de saisie (200 caractères, comme le
+// maxlength de inputInfosTemplate et la coercion côté serveur). Pas de trim :
+// l'utilisateur peut vouloir des espaces ; une seule ligne — les sauts de
+// ligne deviennent des espaces. Vide autorisé (masque la ligne).
+function normalizeInfosTemplate(value) {
+    return String(value ?? '').replace(/\r\n|[\r\n]/g, ' ').slice(0, 200);
+}
+
+// Modèle courant de la ligne d'infos, lu par frames.js, mapgl.js et
+// overlay_canvas.js.
+export function evolutionInfosTemplate() {
+    return infosTemplate;
 }
 
 // --- Démarrage ------------------------------------------------------------------
@@ -79,11 +88,14 @@ export async function initEvolutionPage() {
     bindControls();
     setupCsvDragAndDrop();
     const preferred = Number(window.userSettings?.evolution_dataset_id) || null;
-    // Les préférences arrivent après l'évaluation du module : le mode du
-    // compteur est (re)lu ici, à coup sûr, puis reflété dans le select.
-    counterMode = normalizeCounterMode(window.userSettings?.evolution_counter_mode);
-    const sel = document.getElementById('selectEvolutionCounter');
-    if (sel) sel.value = counterMode;
+    // Les préférences arrivent après l'évaluation du module : le modèle de la
+    // ligne d'infos est (re)lu ici, à coup sûr, puis reflété dans le champ.
+    infosTemplate = normalizeInfosTemplate(window.userSettings?.evolution_infos_template);
+    const inp = document.getElementById('inputInfosTemplate');
+    if (inp) inp.value = infosTemplate;
+    // displayFrames() a tourné pendant que le modèle valait encore '' :
+    // la visibilité de la cartouche (vide = masquée) doit être recalculée.
+    pkg.syncOverlayVisibility?.();
     // Au démarrage, le cadrage enregistré est respecté si la zone y est visible.
     await refreshDatasets({ selectId: preferred, fit: 'if-outside' });
 }
@@ -330,7 +342,10 @@ function buildFeatures(rows) {
 // futurs restent hors de l'animation tant que la fin n'est pas repoussée).
 function buildMeta() {
     if (!timeline || timeline.count === 0) {
-        return { startDate: null, endDate: null, deltaDays: null, numberOfCaches: 0, counterMax: 0 };
+        return {
+            startDate: null, endDate: null, deltaDays: null, numberOfCaches: 0,
+            counterMaxes: { active: 0, placed: 0, archived: 0 },
+        };
     }
     const start = dateOfDayIndex(base, timeline.firstDay);
     let end = base.meta?.snapshotDate ? pkg.parseLocalDate(base.meta.snapshotDate) : null;
@@ -340,9 +355,13 @@ function buildMeta() {
         endDate: pkg.formatDateIso(end),
         deltaDays: inclusiveDayCount(start, end),
         numberOfCaches: timeline.count,
-        // Réserve de largeur du compteur (frames.js / overlay_canvas.js) :
-        // pic d'actives ou total des événements selon le mode choisi.
-        counterMax: counterMaxFor(timeline, counterMode),
+        // Réserve de largeur de la ligne d'infos (frames.js / overlay_canvas.js) :
+        // une valeur maximale par balise numérique du modèle.
+        counterMaxes: {
+            active: counterMaxFor(timeline, 'active'),
+            placed: counterMaxFor(timeline, 'placed'),
+            archived: counterMaxFor(timeline, 'archived'),
+        },
     };
 }
 
@@ -352,32 +371,39 @@ export function evolutionHasData() {
     return !!(timeline && timeline.count > 0);
 }
 
-// « Compteur affiché » de l'onglet Infos (ui.js). Hors animation, l'état au
-// repos est réaffiché dans la nouvelle grandeur ; pendant l'animation le
-// prochain evolutionStep applique le mode — rien d'autre à faire.
-export function setEvolutionCounterMode(mode) {
-    const next = normalizeCounterMode(mode);
-    if (next === counterMode) return;
-    counterMode = next;
-    // La réserve de largeur dépend du mode (counterMax) : les métadonnées
-    // sont repoussées avec les stats de la dernière sélection connue.
-    pkg.setExternalDatasetState?.(buildMeta(), datasetScope);
+// Champ « Ligne d'informations » de l'onglet Infos (ui.js). Hors animation,
+// l'état au repos est réaffiché avec le nouveau modèle ; pendant l'animation
+// le prochain rendu l'applique — rien d'autre à faire.
+export function setEvolutionInfosTemplate(value) {
+    const next = normalizeInfosTemplate(value);
+    if (next === infosTemplate) return;
+    infosTemplate = next;
+    // Le modèle pilote le contenu, la réserve de largeur et la visibilité de
+    // la cartouche (vide = ligne masquée).
+    pkg.updateInfosReserve?.();
+    pkg.invalidateOverlayCache?.();
+    pkg.syncOverlayVisibility?.();
     if (!clock.running) pkg.showEvolutionRestState?.();
 }
 
-// Début d'animation : retourne la valeur du compteur juste avant la date de
-// début, selon le mode choisi (actives présentes ou cumul des événements).
+// Début d'animation : retourne les trois compteurs juste avant la date de
+// début (actives présentes et cumuls placées/archivées), sources des balises
+// de la ligne d'infos.
 export function evolutionBegin(startDate, endDate, at, stagger) {
-    if (!base || !timeline) return 0;
+    if (!base || !timeline) return { actives: 0, placees: 0, archivees: 0 };
     const startDay = dayIndexOf(base, startDate);
     endDay = dayIndexOf(base, endDate instanceof Date ? endDate : restEndDate());
     staggerOn = !!stagger;
     beginEvolution(clock, startDay, at);
-    return counterAt(timeline, startDay - 1, counterMode);
+    return {
+        actives: counterAt(timeline, startDay - 1, 'active'),
+        placees: counterAt(timeline, startDay - 1, 'placed'),
+        archivees: counterAt(timeline, startDay - 1, 'archived'),
+    };
 }
 
-// Jours `dates` affichés : caches apparues et disparues, et valeur du
-// compteur à la fin du dernier jour.
+// Jours `dates` affichés : caches apparues et disparues, et valeurs des trois
+// compteurs à la fin du dernier jour.
 export function evolutionStep(dates, at) {
     if (!base || !timeline || !dates || dates.length === 0) return null;
     const first = dayIndexOf(base, dates[0]);
@@ -387,7 +413,11 @@ export function evolutionStep(dates, at) {
     return {
         placed: pickFeatures(ev.placed),
         archived: pickFeatures(ev.archived),
-        counter: counterAt(timeline, last, counterMode),
+        values: {
+            actives: counterAt(timeline, last, 'active'),
+            placees: counterAt(timeline, last, 'placed'),
+            archivees: counterAt(timeline, last, 'archived'),
+        },
     };
 }
 
@@ -410,14 +440,22 @@ export function evolutionEnd() {
     }
 }
 
-// État au repos : valeur du compteur à la date de fin de l'animation.
+// État au repos : valeurs des trois compteurs à la date de fin de l'animation.
 export function evolutionRestState() {
     if (!base || !timeline) return null;
     const date = restEndDate();
     if (!date) return null;
     const day = dayIndexOf(base, date);
     clock.restDay = day;
-    return { day, date, counter: counterAt(timeline, day, counterMode) };
+    return {
+        day,
+        date,
+        values: {
+            actives: counterAt(timeline, day, 'active'),
+            placees: counterAt(timeline, day, 'placed'),
+            archivees: counterAt(timeline, day, 'archived'),
+        },
+    };
 }
 
 // La date de fin a changé (onglet Animation) : la carte au repos la suit.

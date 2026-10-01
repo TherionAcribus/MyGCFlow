@@ -146,6 +146,7 @@ import { flashStyleAt } from './flash_styles.js';
 import { liveFlashStep } from './flash_style_cache.mjs';
 import { IMPULSE_MAX_STAGGER_MS, staggerDelayFrames, staggerDelayMs } from './flash_impulse.mjs';
 import { COUNTER_ANIMATION_MS, createCountAnimator } from './overlay_counter.mjs';
+import { renderInfosTemplate } from './infos_template.mjs';
 import { fetchWithTimeout, FETCH_TIMEOUTS } from './fetch_with_timeout.mjs';
 import { createPausableTimeout } from './pausable_timer.mjs';
 import { createVideoStream } from './video_stream.mjs';
@@ -379,6 +380,13 @@ let trailLastStrokeDurationMs = null;
 // de sauter. Piloté par la même horloge que les points, donc déterministe en
 // enregistrement image par image.
 const cacheCountAnimator = createCountAnimator();
+// Mode Évolution : les trois grandeurs de la ligne d'infos à balises
+// (actives présentes, cumuls placées/archivées) sont animées chacune.
+const evolutionCounters = {
+    actives: createCountAnimator(),
+    placees: createCountAnimator(),
+    archivees: createCountAnimator(),
+};
 let displayedCacheCount = null;
 let pointAppearListenerKey = null;
 // Garde : true pendant nos propres renderSync de compositing (cf. mrPostrenderKey).
@@ -980,6 +988,19 @@ function resetCameraFollow() {
 // Écrit la valeur courante du compteur dans l'overlay. Retourne true tant que
 // l'animation du compteur n'est pas terminée (il faut continuer à redessiner).
 function updateAnimatedCacheCount(now) {
+    if (isEvolutionPage()) {
+        // spanNbCaches reste alimenté en arrière-plan avec les actives : la
+        // valeur sert au dessin de débogage et à la réserve historique.
+        const actives = evolutionCounters.actives.valueAt(now);
+        if (actives !== displayedCacheCount) {
+            displayedCacheCount = actives;
+            pkg.updateNbCaches(actives);
+        }
+        renderEvolutionInfosLine(now);
+        return evolutionCounters.actives.isAnimating(now)
+            || evolutionCounters.placees.isAnimating(now)
+            || evolutionCounters.archivees.isAnimating(now);
+    }
     const value = cacheCountAnimator.valueAt(now);
     if (value !== displayedCacheCount) {
         displayedCacheCount = value;
@@ -988,11 +1009,39 @@ function updateAnimatedCacheCount(now) {
     return cacheCountAnimator.isAnimating(now);
 }
 
+// Compose la ligne d'infos du mode Évolution depuis le modèle à balises et
+// l'écrit dans son span si elle a changé. {date} lit #spanCurrentDate,
+// alimenté en arrière-plan comme les autres spans classiques.
+function renderEvolutionInfosLine(now) {
+    const span = document.getElementById('spanInfosTemplate');
+    if (!span) return;
+    const text = renderInfosTemplate(pkg.evolutionInfosTemplate?.() ?? '', {
+        date: document.getElementById('spanCurrentDate')?.textContent ?? '',
+        actives: evolutionCounters.actives.valueAt(now),
+        placees: evolutionCounters.placees.valueAt(now),
+        archivees: evolutionCounters.archivees.valueAt(now),
+        total: pkg.metadata?.numberOfCaches ?? 0,
+    });
+    if (span.textContent !== text) span.textContent = text;
+}
+
 // Remet le compteur à une valeur exacte, sans animation.
 function resetCacheCount(value = 0) {
     cacheCountAnimator.set(value);
     displayedCacheCount = value;
     pkg.updateNbCaches(value);
+}
+
+// Mode Évolution : pose les trois compteurs sans animation et réécrit la
+// ligne d'infos immédiatement (état au repos, début d'animation).
+function resetEvolutionCounters(values = {}) {
+    for (const key of ['actives', 'placees', 'archivees']) {
+        evolutionCounters[key].set(values?.[key]);
+    }
+    const actives = evolutionCounters.actives.valueAt(sampleAppearClock());
+    displayedCacheCount = actives;
+    pkg.updateNbCaches(actives);
+    renderEvolutionInfosLine(sampleAppearClock());
 }
 
 // Durée d'un jour d'animation, dans l'unité de l'horloge des points : temps vidéo
@@ -1785,10 +1834,24 @@ function startRecordingProcess(){
 // initialCount : caches déjà présentes sur la carte au démarrage (celles antérieures
 // à la date de début d'animation). Le compteur doit partir de ce nombre, sinon il
 // annonce 0 alors que ces points sont bien visibles.
+// En mode Évolution, beginEvolutionTimeline passe un objet { actives, placees,
+// archivees } qui initialise les trois compteurs de la ligne d'infos à balises.
 function createObjectInfos(initialCount = getFilteredPointsAtStart().length){
     let infos = new Object();
     infos.displayDate = pkg.options.infos.currentDate.display
     infos.displayNumberofCaches = pkg.options.infos.numberOfCaches.display
+    if (initialCount && typeof initialCount === 'object') {
+        infos.cacheNumber = Math.max(0, Number(initialCount.actives) || 0);
+        // Les balises puisent indifféremment dans la date et les compteurs :
+        // les deux grandeurs sont alimentées quelles que soient les cases du
+        // profil (ces cases ne sont pas proposées dans ce mode).
+        infos.displayDate = true;
+        infos.displayNumberofCaches = true;
+        // La ligne repart des valeurs d'avant la date de début, sans animer
+        // depuis le total de la base affiché hors animation.
+        resetEvolutionCounters(initialCount);
+        return infos
+    }
     infos.cacheNumber = Math.max(0, Number(initialCount) || 0);
     // Le compteur affiché repart du nombre de caches déjà affichées, sans animer
     // depuis le total de la base affiché hors animation.
@@ -3423,18 +3486,19 @@ function ensureEvolutionPoints() {
     if (features && features.length > 0) displayWebGLPoints(features, pkg.options.point);
 }
 
-// Carte au repos : état final à la date de fin, compteur et date à l'avenant.
+// Carte au repos : état final à la date de fin, ligne d'infos et date à
+// l'avenant (la date avant les compteurs : la balise {date} la lit).
 export function showEvolutionRestState() {
     const rest = pkg.evolutionRestState?.();
     if (!rest) return;
-    resetCacheCount(rest.counter);
     if (rest.date) pkg.updateCurrentDate(rest.date);
+    resetEvolutionCounters(rest.values);
     mapDirtyTracker.markDirty();
     try { map.render(); } catch (_) {}
 }
 
-// Début d'animation ou d'enregistrement ; retourne la valeur du compteur
-// juste avant la date de début, selon le compteur choisi (actives ou cumul).
+// Début d'animation ou d'enregistrement ; retourne les trois compteurs
+// ({ actives, placees, archivees }) juste avant la date de début.
 function beginEvolutionTimeline(startDate) {
     const disappear = pkg.options.flash?.disappear;
     if (disappear?.color) disappear.rgb = pkg.hexToRgb(disappear.color);
@@ -3481,10 +3545,14 @@ function displayEvolutionDates(dates, flashOptions, record, infos) {
 
     if (infos.displayDate) pkg.updateCurrentDate(dates[dates.length - 1]);
     if (infos.displayNumberofCaches) {
-        // Valeur absolue, qui dépend du compteur choisi : actives présentes
-        // (monte et descend) ou cumul d'événements (ne fait que monter).
-        infos.cacheNumber = ev.counter;
-        cacheCountAnimator.setTarget(ev.counter, at, Math.min(COUNTER_ANIMATION_MS, animationMsPerDay()));
+        // Valeurs absolues des trois compteurs de la ligne d'infos : actives
+        // présentes (monte et descend) et cumuls placées/archivées (ne font
+        // que monter).
+        const duration = Math.min(COUNTER_ANIMATION_MS, animationMsPerDay());
+        evolutionCounters.actives.setTarget(ev.values.actives, at, duration);
+        evolutionCounters.placees.setTarget(ev.values.placees, at, duration);
+        evolutionCounters.archivees.setTarget(ev.values.archivees, at, duration);
+        infos.cacheNumber = ev.values.actives;
     }
 
     mapDirtyTracker.markDirty();

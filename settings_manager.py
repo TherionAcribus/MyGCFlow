@@ -266,9 +266,10 @@ class AppSettings:
     # mode principal, et la dernière base ouverte, restaurée au retour.
     evolution_animation: "AnimationPrefs" = field(default_factory=lambda: evolution_animation_defaults())
     evolution_dataset_id: Optional[int] = None
-    # Compteur affiché en mode Évolution : 'active' (caches présentes à la
-    # date courante) ou cumuls 'placed' / 'archived'.
-    evolution_counter_mode: str = 'active'
+    # Ligne d'informations du mode Évolution : texte libre avec balises
+    # ({date}, {actives}, {placees}, {archivees}, {total}) remplacées par les
+    # valeurs courantes. Une chaîne vide masque la ligne.
+    evolution_infos_template: str = '{date} · {actives}'
     examples_seeded: bool = False  # True une fois les profils d'exemple créés (premier lancement)
     # Lot de profils d'exemple déjà installé. Permet d'ajouter des exemples dans
     # une version ultérieure sans les réinstaller à chaque démarrage, ni faire
@@ -676,9 +677,16 @@ def coerce_dataset_id(value) -> Optional[int]:
     return number if number > 0 else None
 
 
-def coerce_counter_mode(value, fallback: str = 'active') -> str:
-    """Grandeur du compteur du mode Évolution ; valeur inconnue → repli."""
-    return value if value in ('active', 'placed', 'archived') else fallback
+def coerce_infos_template(value, fallback: str = '{date} · {actives}') -> str:
+    """Modèle de la ligne d'infos du mode Évolution ; non-texte → repli.
+
+    Texte libre : pas de strip (les espaces peuvent être voulus) et la chaîne
+    vide est admise (elle masque la ligne). Une seule ligne d'infos : les sauts
+    de ligne sont aplanis en espaces. Plafonné à 200 caractères comme le champ
+    de saisie (inputInfosTemplate)."""
+    if not isinstance(value, str):
+        return fallback
+    return value.replace('\r\n', ' ').replace('\r', ' ').replace('\n', ' ')[:200]
 
 
 def coerce_settings(d: dict) -> AppSettings:
@@ -698,8 +706,8 @@ def coerce_settings(d: dict) -> AppSettings:
         s.animation = coerce_animation_settings(d.get("animation"))
         s.evolution_animation = coerce_evolution_animation(d.get("evolution_animation"))
         s.evolution_dataset_id = coerce_dataset_id(d.get("evolution_dataset_id"))
-        s.evolution_counter_mode = coerce_counter_mode(
-            d.get("evolution_counter_mode"), s.evolution_counter_mode)
+        s.evolution_infos_template = coerce_infos_template(
+            d.get("evolution_infos_template"), s.evolution_infos_template)
         s.show_control_bar = bool(d.get("show_control_bar", s.show_control_bar))
         # Un settings.json antérieur à la migration n'a pas de bloc `recording` :
         # il compte comme « jamais configuré ».

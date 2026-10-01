@@ -18,10 +18,10 @@ from settings_manager import (
     AppSettings,
     InvalidProfileNameError,
     coerce_animation_settings,
-    coerce_counter_mode,
     coerce_dataset_id,
     coerce_date_format,
     coerce_evolution_animation,
+    coerce_infos_template,
     coerce_map_center,
     coerce_map_zoom,
     coerce_profile,
@@ -79,7 +79,7 @@ def api_get_settings():
         'animation': asdict(s.animation),
         'evolution_animation': asdict(s.evolution_animation),
         'evolution_dataset_id': s.evolution_dataset_id,
-        'evolution_counter_mode': s.evolution_counter_mode,
+        'evolution_infos_template': s.evolution_infos_template,
         'show_control_bar': s.show_control_bar,
     })
     response.set_cookie(
@@ -145,12 +145,13 @@ def api_put_settings():
         if 'evolution_dataset_id' in data:
             evolution_dataset_id = coerce_dataset_id(data.get('evolution_dataset_id'))
 
-        # Grandeur du compteur du mode Évolution : même règle, avec repli sur
-        # la valeur enregistrée quand celle envoyée est inconnue.
-        evolution_counter_mode = current.evolution_counter_mode
-        if 'evolution_counter_mode' in data:
-            evolution_counter_mode = coerce_counter_mode(
-                data.get('evolution_counter_mode'), current.evolution_counter_mode)
+        # Modèle de la ligne d'infos du mode Évolution : même règle, avec
+        # repli sur la valeur enregistrée quand celle envoyée n'est pas du
+        # texte (une chaîne vide est admise : elle masque la ligne).
+        evolution_infos_template = current.evolution_infos_template
+        if 'evolution_infos_template' in data:
+            evolution_infos_template = coerce_infos_template(
+                data.get('evolution_infos_template'), current.evolution_infos_template)
 
         # Ne modifier default_profile_uid que si le client l'a explicitement envoyé
         # (sinon un PUT partiel effacerait silencieusement le profil par défaut).
@@ -198,7 +199,7 @@ def api_put_settings():
             animation=animation,
             evolution_animation=evolution_animation,
             evolution_dataset_id=evolution_dataset_id,
-            evolution_counter_mode=evolution_counter_mode,
+            evolution_infos_template=evolution_infos_template,
             show_control_bar=show_control_bar,
             examples_seeded=current.examples_seeded,
             # Sans cette reprise, toute écriture de préférence ramenait le lot

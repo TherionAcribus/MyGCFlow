@@ -1,6 +1,8 @@
 // GESTION DES FRAMES d'INFORMATIONS ET DE TITRE 
 import * as pkg from './index.js';
 import { reservedInfosText } from './infos_reserve.mjs';
+import { reservedInfosTemplateText } from './infos_template.mjs';
+import { isEvolutionPage } from './app_mode.mjs';
 
 export function displayFrames(){
     const optionsTitre = pkg.options.infos.title;
@@ -17,7 +19,12 @@ export function syncOverlayVisibility(){
     const titleFrame = document.getElementById("titleFrame");
     const infosFrame = document.getElementById("infosFrame");
     const showTitle = opts.title?.display === true;
-    const showInfos = opts.numberOfCaches?.display === true || opts.currentDate?.display === true;
+    // Mode Évolution : la ligne d'infos est un modèle libre — un modèle vide
+    // masque la cartouche quelles que soient les cases du profil (elles ne sont
+    // pas proposées dans ce mode).
+    const showInfos = isEvolutionPage()
+        ? (pkg.evolutionInfosTemplate?.() ?? '').trim() !== ''
+        : (opts.numberOfCaches?.display === true || opts.currentDate?.display === true);
 
     if (titleFrame) {
         titleFrame.style.display = showTitle ? "block" : "none";
@@ -35,13 +42,32 @@ export function syncOverlayVisibility(){
 
 // Affiche/masque nombre de caches, date et le séparateur "-" selon les options.
 // Le "-" n'est visible que si les deux infos sont affichées.
+// En mode Évolution, la ligne vient du modèle à balises (#spanInfosTemplate) ;
+// les trois spans classiques restent alimentés en arrière-plan (la date sert
+// de source à la balise {date}) mais jamais affichés.
 export function updateInfosSpansVisibility(){
     const opts = pkg.options.infos;
-    const showCaches = opts.numberOfCaches.display === true;
-    const showDate = opts.currentDate.display === true;
     const spanCaches = document.getElementById("spanNbCaches");
     const spanDate = document.getElementById("spanCurrentDate");
     const spanSep = document.getElementById("spanInfosSep");
+    const spanTemplate = document.getElementById("spanInfosTemplate");
+    if (isEvolutionPage()) {
+        for (const span of [spanCaches, spanSep, spanDate]) {
+            if (span) {
+                span.hidden = true;
+                span.style.display = "none";
+            }
+        }
+        if (spanTemplate) {
+            const showTemplate = (pkg.evolutionInfosTemplate?.() ?? '').trim() !== '';
+            spanTemplate.hidden = !showTemplate;
+            spanTemplate.style.display = showTemplate ? "inline" : "none";
+        }
+        updateInfosReserve();
+        return;
+    }
+    const showCaches = opts.numberOfCaches.display === true;
+    const showDate = opts.currentDate.display === true;
     if (spanCaches) {
         spanCaches.hidden = !showCaches;
         spanCaches.style.display = showCaches ? "inline" : "none";
@@ -55,6 +81,10 @@ export function updateInfosSpansVisibility(){
         spanSep.hidden = !showSeparator;
         spanSep.style.display = showSeparator ? "inline" : "none";
     }
+    if (spanTemplate) {
+        spanTemplate.hidden = true;
+        spanTemplate.style.display = "none";
+    }
     updateInfosReserve();
 }
 
@@ -67,14 +97,23 @@ export function updateInfosReserve(){
     const reserve = document.getElementById("spanInfosReserve");
     if (!reserve) return;
     const opts = pkg.options?.infos;
-    const text = reservedInfosText({
-        showCount: opts?.numberOfCaches?.display === true,
-        showDate: opts?.currentDate?.display === true,
-        currentValue: document.getElementById("spanNbCaches")?.textContent,
-        // Mode Évolution : le compteur ne dépasse jamais sa valeur finale —
-        // pic d'actives ou total des événements selon le compteur choisi.
-        finalValue: pkg.metadata?.counterMax ?? pkg.metadata?.numberOfCaches,
-    });
+    const meta = pkg.metadata;
+    // Mode Évolution : réserve par balise du modèle — chaque compteur prend sa
+    // valeur maximale (pic d'actives, totaux des cumuls), la date la plus large.
+    const text = isEvolutionPage()
+        ? reservedInfosTemplateText(pkg.evolutionInfosTemplate?.(), {
+            actives: meta?.counterMaxes?.active,
+            placees: meta?.counterMaxes?.placed,
+            archivees: meta?.counterMaxes?.archived,
+            total: meta?.numberOfCaches,
+        })
+        : reservedInfosText({
+            showCount: opts?.numberOfCaches?.display === true,
+            showDate: opts?.currentDate?.display === true,
+            currentValue: document.getElementById("spanNbCaches")?.textContent,
+            // Le compteur ne dépasse jamais le total de la sélection.
+            finalValue: meta?.numberOfCaches,
+        });
     if (reserve.textContent === text) return;
     reserve.textContent = text;
     // La largeur de la boîte vient de changer : la géométrie mise en cache pour

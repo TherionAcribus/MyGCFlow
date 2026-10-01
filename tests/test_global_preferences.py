@@ -114,28 +114,45 @@ class ThemeCoercionTests(unittest.TestCase):
         self.assertEqual(coerce_settings({}).theme, "system")
 
 
-class EvolutionCounterModeTests(unittest.TestCase):
-    """Grandeur du compteur du mode Évolution, lue depuis le disque.
+class EvolutionInfosTemplateTests(unittest.TestCase):
+    """Modèle de la ligne d'infos du mode Évolution, lu depuis le disque.
 
-    Trois valeurs admises ('active', 'placed', 'archived') ; toute autre —
-    settings.json édité à la main ou PUT d'un client inconnu — retombe sur
-    'active', le comportement historique.
+    Texte libre avec balises : settings.json édité à la main ou PUT d'un
+    client inconnu ne doivent pas produire autre chose qu'une chaîne, ni
+    dépasser la borne du champ de saisie (200 caractères).
     """
 
-    def test_valid_modes_are_kept(self):
-        for mode in ("active", "placed", "archived"):
-            self.assertEqual(
-                coerce_settings({"evolution_counter_mode": mode}).evolution_counter_mode,
-                mode)
+    def test_a_string_is_kept_as_is(self):
+        self.assertEqual(
+            coerce_settings({"evolution_infos_template": "{date} — {placees}/{total}"}).evolution_infos_template,
+            "{date} — {placees}/{total}")
 
-    def test_an_unknown_or_missing_mode_falls_back_to_active(self):
+    def test_a_template_longer_than_the_field_is_truncated(self):
         self.assertEqual(
-            coerce_settings({"evolution_counter_mode": "trouvées"}).evolution_counter_mode,
-            "active")
+            len(coerce_settings({"evolution_infos_template": "x" * 500}).evolution_infos_template),
+            200)
+
+    def test_a_non_string_or_missing_value_falls_back_to_default(self):
         self.assertEqual(
-            coerce_settings({"evolution_counter_mode": None}).evolution_counter_mode,
-            "active")
-        self.assertEqual(coerce_settings({}).evolution_counter_mode, "active")
+            coerce_settings({"evolution_infos_template": 42}).evolution_infos_template,
+            "{date} · {actives}")
+        self.assertEqual(
+            coerce_settings({"evolution_infos_template": None}).evolution_infos_template,
+            "{date} · {actives}")
+        self.assertEqual(coerce_settings({}).evolution_infos_template, "{date} · {actives}")
+
+    def test_an_empty_string_is_kept(self):
+        # Vide = ligne masquée : un choix de l'utilisateur, pas une erreur.
+        self.assertEqual(
+            coerce_settings({"evolution_infos_template": ""}).evolution_infos_template,
+            "")
+
+    def test_line_breaks_are_flattened_to_spaces(self):
+        # Une seule ligne d'infos : un saut de ligne ne peut pas casser la
+        # cartouche, il devient une espace.
+        self.assertEqual(
+            coerce_settings({"evolution_infos_template": "x\ny"}).evolution_infos_template,
+            "x y")
 
 
 class AnimationCoercionTests(unittest.TestCase):

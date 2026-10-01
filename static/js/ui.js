@@ -85,7 +85,7 @@ var inputExtraEndTime;
 var selectFlashMode, inputTimeFlash, inputSizeFlash, cpFlashColor;
 var cpStrokeColor, cpFillColor, cpBackgroundColor, strokeWidth;
 var cbDisplayTitle, cbDisplayNumberofCaches, cbDisplayCurrentDate, inputTitle;
-var selectEvolutionCounter;
+var inputInfosTemplate;
 var inputTitleCss, inputInfosCss, btnTitleCss, btnInfosCss;
 var spanNbCaches, spanCurrentDate;
 let overlayCssDefaultsReady = Promise.resolve();
@@ -770,10 +770,14 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     cbDisplayCurrentDate = document.getElementById('cbDisplayCurrentDate');
     if (cbDisplayCurrentDate) cbDisplayCurrentDate.addEventListener('change', changeInfosValues);
 
-    // Choix du compteur affiché (page du mode Évolution uniquement ; select
-    // natif, pas de Tom Select — comme les autres selects de ce panneau).
-    selectEvolutionCounter = document.getElementById('selectEvolutionCounter');
-    if (selectEvolutionCounter) selectEvolutionCounter.addEventListener('change', changeEvolutionCounterMode);
+    // Modèle de la ligne d'infos (page du mode Évolution uniquement) : texte
+    // libre avec balises {date}/{actives}/{placees}/{archivees}/{total}. Les
+    // boutons insèrent la balise à la position du curseur.
+    inputInfosTemplate = document.getElementById('inputInfosTemplate');
+    if (inputInfosTemplate) inputInfosTemplate.addEventListener('input', changeInfosTemplate);
+    document.querySelectorAll('[data-evolution-info-tag]').forEach(btn => {
+        btn.addEventListener('click', () => insertInfosTemplateTag(btn.dataset.evolutionInfoTag));
+    });
 
     // inputs
     inputTitle = document.getElementById('inputTitle');
@@ -5291,8 +5295,10 @@ function validateSizeFlash() {
 function changeInfosValues(event){
 
     pkg.options.infos.title.display = cbDisplayTitle.checked;
-    pkg.options.infos.currentDate.display = cbDisplayCurrentDate.checked;
-    pkg.options.infos.numberOfCaches.display = cbDisplayNumberofCaches.checked;
+    // Les cases nombre de caches / date n'existent pas en mode Évolution (la
+    // ligne d'infos y est un modèle libre) : ne pas les toucher alors.
+    if (cbDisplayCurrentDate) pkg.options.infos.currentDate.display = cbDisplayCurrentDate.checked;
+    if (cbDisplayNumberofCaches) pkg.options.infos.numberOfCaches.display = cbDisplayNumberofCaches.checked;
 
     if (event?.target?.id === "inputTitle") {
         const title = String(event.target.value || '').slice(0, 500);
@@ -5303,13 +5309,27 @@ function changeInfosValues(event){
     dbgUi(event?.target);
 }
 
-// Mode Évolution : choix de la grandeur affichée par le compteur de caches
-// (actives / placées cumulées / archivées cumulées). Préférence globale.
-async function changeEvolutionCounterMode() {
-    const value = selectEvolutionCounter.value || 'active';
-    pkg.setEvolutionCounterMode?.(value);
-    if (window.userSettings) window.userSettings.evolution_counter_mode = value;
-    await reportSave(selectEvolutionCounter, saveSettingsPatch({ evolution_counter_mode: value }));
+// Écriture débouncée : le champ émet un événement par frappe, une écriture
+// disque par caractère serait absurde (cf. les réglages d'enregistrement).
+const saveInfosTemplateDebounced = makeDebouncedSettingsSaver(500);
+
+// Mode Évolution : modèle libre de la ligne d'infos (texte + balises).
+// Préférence globale persistée (evolution_infos_template de settings.json) ;
+// l'aperçu suit la frappe sans attendre l'enregistrement.
+function changeInfosTemplate() {
+    const value = inputInfosTemplate ? inputInfosTemplate.value : '';
+    pkg.setEvolutionInfosTemplate?.(value);
+    if (window.userSettings) window.userSettings.evolution_infos_template = value;
+    reportSave(inputInfosTemplate, saveInfosTemplateDebounced({ evolution_infos_template: value }));
+}
+
+// Insère {tag} à la position du curseur dans le champ du modèle, comme une
+// saisie clavier : le même handler « input » applique et sauvegarde.
+function insertInfosTemplateTag(tag) {
+    if (!inputInfosTemplate || !tag) return;
+    inputInfosTemplate.focus();
+    inputInfosTemplate.setRangeText(`{${tag}}`, inputInfosTemplate.selectionStart, inputInfosTemplate.selectionEnd, 'end');
+    changeInfosTemplate();
 }
 
 // Fonction pour synchroniser la visibilité des éléments DOM avec les paramètres utilisateur

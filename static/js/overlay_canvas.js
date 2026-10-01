@@ -11,6 +11,8 @@
 import * as pkg from './index.js';
 import { digitAdvance, isTabularNums, layoutTabularText } from './tabular_text.mjs';
 import { INFOS_SEPARATOR, reservedInfosText } from './infos_reserve.mjs';
+import { reservedInfosTemplateText } from './infos_template.mjs';
+import { isEvolutionPage } from './app_mode.mjs';
 
 // Largeur commune des chiffres par police (font-variant-numeric: tabular-nums).
 // Mesurer les dix chiffres à chaque frame serait inutile : la police ne change
@@ -163,11 +165,17 @@ export function getOverlayTextContent() {
         ? (document.getElementById('titleFrame')?.textContent || '')
         : '';
     const infoParts = [];
-    if (opts?.numberOfCaches?.display === true) {
-        infoParts.push(document.getElementById('spanNbCaches')?.textContent || '0');
-    }
-    if (opts?.currentDate?.display === true) {
-        infoParts.push(document.getElementById('spanCurrentDate')?.textContent || '--/--/----');
+    if (isEvolutionPage()) {
+        // Ligne à balises : le span du modèle est tenu à jour par mapgl.js ;
+        // les spans classiques existent mais sont masqués dans ce mode.
+        infoParts.push(document.getElementById('spanInfosTemplate')?.textContent || '');
+    } else {
+        if (opts?.numberOfCaches?.display === true) {
+            infoParts.push(document.getElementById('spanNbCaches')?.textContent || '0');
+        }
+        if (opts?.currentDate?.display === true) {
+            infoParts.push(document.getElementById('spanCurrentDate')?.textContent || '--/--/----');
+        }
     }
     // Même séparateur que le DOM (#spanInfosSep) : l'aperçu et la vidéo doivent
     // afficher exactement la même ligne.
@@ -178,13 +186,23 @@ export function getOverlayTextContent() {
 // un doublon invisible (cf. updateInfosReserve dans frames.js).
 function getReservedInfosText() {
     const opts = pkg.options?.infos;
+    const meta = pkg.metadata;
+    // Mode Évolution : le contenu vient du modèle de la ligne d'infos ; la
+    // réserve remplace chaque balise par sa plus grande valeur à venir.
+    if (isEvolutionPage()) {
+        return reservedInfosTemplateText(pkg.evolutionInfosTemplate?.(), {
+            actives: meta?.counterMaxes?.active,
+            placees: meta?.counterMaxes?.placed,
+            archivees: meta?.counterMaxes?.archived,
+            total: meta?.numberOfCaches,
+        });
+    }
     return reservedInfosText({
         showCount: opts?.numberOfCaches?.display === true,
         showDate: opts?.currentDate?.display === true,
         currentValue: document.getElementById('spanNbCaches')?.textContent,
-        // Mode Évolution : le compteur ne dépasse jamais sa valeur finale —
-        // pic d'actives ou total des événements selon le compteur choisi.
-        finalValue: pkg.metadata?.counterMax ?? pkg.metadata?.numberOfCaches,
+        // Le compteur ne dépasse jamais le total de la sélection.
+        finalValue: meta?.numberOfCaches,
     });
 }
 

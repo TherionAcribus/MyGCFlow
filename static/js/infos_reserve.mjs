@@ -17,7 +17,9 @@ export const INFOS_SEPARATOR = ' · ';
 // Toutes les dates jj/mm/aaaa ont le même nombre de caractères ; avec des
 // chiffres à largeur fixe (cf. tabular_text.mjs) elles ont donc toutes la même
 // largeur. Le 8 reste le plus large des chiffres pour les autres polices.
-const WIDEST_DATE = '88/88/8888';
+// Exportée : la réserve de la ligne d'infos à balises du mode Évolution
+// (infos_template.mjs) prend la même plus large date pour la balise {date}.
+export const WIDEST_DATE = '88/88/8888';
 
 export function reservedInfosText({
     showCount = false,
