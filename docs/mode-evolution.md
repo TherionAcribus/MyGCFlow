@@ -28,7 +28,8 @@ jamais leurs données.
 2. Le compte rendu d'import détaille, par fichier : lignes lues, nouvelles,
    mises à jour, inchangées, plus anciennes ignorées, doublons, caches
    archivées depuis l'export précédent, archivées sans date, lignes invalides,
-   types non reconnus.
+   dates d'archivage illisibles, lignes sans date d'export (« Ajouté » : elles
+   ne remplacent jamais une version datée), types et tailles non reconnus.
 3. Carte au repos : état à la **date de fin** de l'animation (par défaut la
    date de l'export le plus récent, colonne « Ajouté »). Changer la date de fin
    dans l'onglet Animation met la carte au repos à jour.
@@ -186,7 +187,8 @@ celle du mode principal (`filtersSelection` du localStorage).
   d'infos), `test_evolution_import_target.mjs` (choix de la base d'un import), et les cas « plusieurs jours par image » de
   `test_video_timing.mjs`.
 - Playwright : `tests/e2e/evolution.spec.mjs` (fixtures
-  `tests/e2e/fixtures/evolution-a.csv` / `evolution-b.csv`).
+  `tests/e2e/fixtures/evolution-a.csv` / `evolution-b.csv`, et
+  `evolution-warnings.csv` pour les avertissements du compte rendu).
 
 ## Hors périmètre (v1)
 

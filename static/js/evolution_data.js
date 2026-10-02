@@ -870,9 +870,29 @@ function summaryLines(r) {
     if (r.reactivated > 0) {
         lines.push({ text: t('${n} caches réactivées : leur ancienne date d\'archivage est ignorée', { n: n(r.reactivated) }) });
     }
+    if (r.bad_archive_date > 0) {
+        // Date ignorée : la cache reste affichée jusqu'à la fin si elle est
+        // marquée archivée (comptée aussi dans « archivées sans date »).
+        lines.push({ text: t('${n} dates d\'archivage illisibles, ignorées (formats lus : AAAA-MM-JJ, JJ/MM/AAAA)', { n: n(r.bad_archive_date) }), warning: true });
+    }
+    if (r.missing_exported_at > 0) {
+        // Sans horodatage d'export, une ligne passe pour la plus ancienne
+        // version d'une cache : elle n'écrase jamais une version datée
+        // (evolution_store._merge_batch).
+        lines.push({
+            text: r.missing_exported_at >= r.rows_valid
+                ? t('Colonne « Ajouté » absente ou vide : les caches déjà connues par un export daté ne sont pas mises à jour')
+                : t('${n} lignes sans date d\'export (colonne « Ajouté ») : elles ne mettent pas à jour les caches déjà connues par un export daté', { n: n(r.missing_exported_at) }),
+            warning: true,
+        });
+    }
     const unknownTypes = Object.keys(r.unknown_types || {});
     if (unknownTypes.length > 0) {
         lines.push({ text: t('Types non reconnus (couleur par défaut) : ${types}', { types: unknownTypes.join(', ') }), warning: true });
+    }
+    const unknownSizes = Object.keys(r.unknown_sizes || {});
+    if (unknownSizes.length > 0) {
+        lines.push({ text: t('Tailles non reconnues (gardées telles quelles) : ${sizes}', { sizes: unknownSizes.join(', ') }), warning: true });
     }
     return lines;
 }

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-02 20:23+0200\n"
+"POT-Creation-Date: 2026-10-02 20:26+0200\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -642,8 +642,8 @@ msgstr "Erreur lors du chargement du fichier"
 #: static/js/bdd.js:1185 static/js/bdd.js:1387 static/js/bdd.js:1470
 #: static/js/bdd.js:1478 static/js/evolution_data.js:143
 #: static/js/evolution_data.js:220 static/js/evolution_data.js:683
-#: static/js/evolution_data.js:687 static/js/evolution_data.js:1002
-#: static/js/evolution_data.js:1037 static/js/evolution_data.js:1045
+#: static/js/evolution_data.js:687 static/js/evolution_data.js:1022
+#: static/js/evolution_data.js:1057 static/js/evolution_data.js:1065
 #: static/js/notifications.js:310 static/js/recording_perf.js:187
 #: static/js/ui.js:1282
 msgid "Erreur"
@@ -755,7 +755,7 @@ msgstr "${name} (${n} caches)"
 msgid "Arrêtez l'animation avant de changer de base."
 msgstr "Arrêtez l'animation avant de changer de base."
 
-#: static/js/evolution_data.js:190 static/js/evolution_data.js:1029
+#: static/js/evolution_data.js:190 static/js/evolution_data.js:1049
 #: static/js/mapgl.js:1995 static/js/mapgl.js:2039 static/js/mapgl.js:2045
 #: static/js/mapgl.js:2965 static/js/notifications.js:314
 msgid "Attention"
@@ -934,81 +934,106 @@ msgstr ""
 msgid "${n} caches réactivées : leur ancienne date d'archivage est ignorée"
 msgstr "${n} caches réactivées : leur ancienne date d'archivage est ignorée"
 
-#: static/js/evolution_data.js:875
+#: static/js/evolution_data.js:876
+#, python-brace-format
+msgid ""
+"${n} dates d'archivage illisibles, ignorées (formats lus : AAAA-MM-JJ, "
+"JJ/MM/AAAA)"
+msgstr "${n} dates d'archivage illisibles, ignorées (formats lus : AAAA-MM-JJ, JJ/MM/AAAA)"
+
+#: static/js/evolution_data.js:884
+msgid ""
+"Colonne « Ajouté » absente ou vide : les caches déjà connues par un "
+"export daté ne sont pas mises à jour"
+msgstr "Colonne « Ajouté » absente ou vide : les caches déjà connues par un export daté ne sont pas mises à jour"
+
+#: static/js/evolution_data.js:885
+#, python-brace-format
+msgid ""
+"${n} lignes sans date d'export (colonne « Ajouté ») : elles ne mettent "
+"pas à jour les caches déjà connues par un export daté"
+msgstr "${n} lignes sans date d'export (colonne « Ajouté ») : elles ne mettent pas à jour les caches déjà connues par un export daté"
+
+#: static/js/evolution_data.js:891
 #, python-brace-format
 msgid "Types non reconnus (couleur par défaut) : ${types}"
 msgstr "Types non reconnus (couleur par défaut) : ${types}"
 
-#: static/js/evolution_data.js:882
+#: static/js/evolution_data.js:895
+#, python-brace-format
+msgid "Tailles non reconnues (gardées telles quelles) : ${sizes}"
+msgstr "Tailles non reconnues (gardées telles quelles) : ${sizes}"
+
+#: static/js/evolution_data.js:902
 msgid "code GC"
 msgstr "code GC"
 
-#: static/js/evolution_data.js:883
+#: static/js/evolution_data.js:903
 msgid "coordonnées"
 msgstr "coordonnées"
 
-#: static/js/evolution_data.js:884
+#: static/js/evolution_data.js:904
 msgid "date de placement"
 msgstr "date de placement"
 
-#: static/js/evolution_data.js:896
+#: static/js/evolution_data.js:916
 msgid "Base vide : importez un export CSV."
 msgstr "Base vide : importez un export CSV."
 
-#: static/js/evolution_data.js:900
+#: static/js/evolution_data.js:920
 #, python-brace-format
 msgid "${n} caches"
 msgstr "${n} caches"
 
-#: static/js/evolution_data.js:901
+#: static/js/evolution_data.js:921
 #, python-brace-format
 msgid "${n} actives"
 msgstr "${n} actives"
 
-#: static/js/evolution_data.js:902
+#: static/js/evolution_data.js:922
 #, python-brace-format
 msgid "${n} archivées"
 msgstr "${n} archivées"
 
-#: static/js/evolution_data.js:905
+#: static/js/evolution_data.js:925
 #, python-brace-format
 msgid "${n} archivées sans date"
 msgstr "${n} archivées sans date"
 
-#: static/js/evolution_data.js:910
+#: static/js/evolution_data.js:930
 #, python-brace-format
 msgid "placements du ${from} au ${to}"
 msgstr "placements du ${from} au ${to}"
 
-#: static/js/evolution_data.js:914
+#: static/js/evolution_data.js:934
 #, python-brace-format
 msgid "export du ${date}"
 msgstr "export du ${date}"
 
-#: static/js/evolution_data.js:947
+#: static/js/evolution_data.js:967
 #, python-brace-format
 msgid "${date} · ${file} : ${added} nouvelles, ${updated} mises à jour"
 msgstr "${date} · ${file} : ${added} nouvelles, ${updated} mises à jour"
 
-#: static/js/evolution_data.js:960 templates/menu_data_evolution.html:26
+#: static/js/evolution_data.js:980 templates/menu_data_evolution.html:26
 msgid "Renommer la base"
 msgstr "Renommer la base"
 
-#: static/js/evolution_data.js:960 templates/menu_data_evolution.html:22
+#: static/js/evolution_data.js:980 templates/menu_data_evolution.html:22
 #: templates/modal_evolution.html:8
 msgid "Nouvelle base"
 msgstr "Nouvelle base"
 
-#: static/js/evolution_data.js:989
+#: static/js/evolution_data.js:1009
 msgid "Nom refusé"
 msgstr "Nom refusé"
 
-#: static/js/evolution_data.js:1002 static/js/evolution_data.js:1045
+#: static/js/evolution_data.js:1022 static/js/evolution_data.js:1065
 #, python-brace-format
 msgid "Erreur : ${message}"
 msgstr "Erreur : ${message}"
 
-#: static/js/evolution_data.js:1020
+#: static/js/evolution_data.js:1040
 #, python-brace-format
 msgid ""
 "Supprimer la base « ${name} » et ses ${n} caches ? Les fichiers CSV "
@@ -1017,15 +1042,15 @@ msgstr ""
 "Supprimer la base « ${name} » et ses ${n} caches ? Les fichiers CSV "
 "d'origine ne sont pas touchés."
 
-#: static/js/evolution_data.js:1029
+#: static/js/evolution_data.js:1049
 msgid "Arrêtez l'animation avant de supprimer la base."
 msgstr "Arrêtez l'animation avant de supprimer la base."
 
-#: static/js/evolution_data.js:1037
+#: static/js/evolution_data.js:1057
 msgid "Suppression impossible"
 msgstr "Suppression impossible"
 
-#: static/js/evolution_data.js:1063
+#: static/js/evolution_data.js:1083
 msgid "Déposez vos exports CSV pour les ajouter à la base"
 msgstr "Déposez vos exports CSV pour les ajouter à la base"
 

@@ -15,6 +15,8 @@ import { fileURLToPath } from 'node:url';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE_A = path.join(HERE, 'fixtures', 'evolution-a.csv');
 const FIXTURE_B = path.join(HERE, 'fixtures', 'evolution-b.csv');
+// Trois caches : taille inconnue, date d'archivage illisible, « Ajouté » vide.
+const FIXTURE_WARNINGS = path.join(HERE, 'fixtures', 'evolution-warnings.csv');
 
 // Le runtime est partagé entre les specs : on repart d'aucune base.
 async function deleteAllDatasets(request) {
@@ -172,6 +174,20 @@ test('un export d\'une autre zone demande où importer', async ({ page }) => {
   loaded = nextDatasetLoad(page);
   await page.locator('#btnEvolutionImportTargetConfirm').click();
   expect((await loaded).selected).toBe(9);
+});
+
+test('le compte rendu signale date d\'archivage illisible, « Ajouté » vide et taille inconnue', async ({ page }) => {
+  await openEvolution(page);
+  const loaded = nextDatasetLoad(page);
+  await page.locator('#evolutionCsvInput').setInputFiles([FIXTURE_WARNINGS]);
+  expect((await loaded).selected).toBe(3);
+
+  const summary = page.locator('#evolutionImportSummary');
+  await expect(summary).toContainText("1 dates d'archivage illisibles, ignorées");
+  // Marquée archivée, sa date illisible en fait une archivée sans date.
+  await expect(summary).toContainText("1 caches archivées sans date d'archivage");
+  await expect(summary).toContainText('Colonne « Ajouté » absente ou vide');
+  await expect(summary).toContainText('Tailles non reconnues (gardées telles quelles) : Géante');
 });
 
 test('filtre Région, « Aucun », et restauration de la base au rechargement', async ({ page }) => {

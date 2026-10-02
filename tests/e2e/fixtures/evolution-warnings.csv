@@ -1,0 +1,4 @@
+"GC code",Type,Taille,Latitude,Longitude,"Date de placement","Dernière date d'archivage",Archivée,Ajouté
+GC1C01,Traditionnelle,Géante,47.1,2.1,2021-03-01,,false,
+GC1C02,Traditionnelle,Petite,47.2,2.2,2021-03-02,32/13/2022,true,
+GC1C03,Traditionnelle,Petite,47.3,2.3,2021-03-03,,false,
