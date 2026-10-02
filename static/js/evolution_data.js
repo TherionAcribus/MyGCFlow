@@ -33,6 +33,7 @@ import {
     eventsInRange,
     evolutionFrameVariables,
     filterRows,
+    lonLatExtentOf,
     maxEventsInWindow,
     stepEvolution,
 } from './evolution_timeline.mjs';
@@ -56,6 +57,7 @@ let staggerOn = false;
 let pendingSelection = null; // filtre modifié pendant une animation
 let pendingReload = null;    // { id, fit } : base à (re)charger après l'animation
 let pendingTimer = null;     // attente de la fin d'un enregistrement
+let largeWarnedFor = null;   // base déjà signalée comme « grosse sélection »
 let importing = false;
 let loadSeq = 0;             // seul le dernier chargement demandé s'applique
 let nameModalMode = 'create';
@@ -317,7 +319,10 @@ function applySelection(selection, { resetDates = false } = {}) {
     pkg.updateAnimationMenuAfterReadBdd?.(pkg.metadata);
     pkg.setEvolutionFeatures(olFeatures);
 
-    if (rows.length > LARGE_SELECTION) {
+    // Une fois par base : le répéter à chaque changement de filtre lasse sans
+    // rien apprendre de plus.
+    if (rows.length > LARGE_SELECTION && largeWarnedFor !== current?.id) {
+        largeWarnedFor = current?.id ?? null;
         pkg.showToast(
             t('${n} caches affichées : la carte peut devenir lente. Filtrez par pays ou région pour alléger.', { n: formatNumber(rows.length) }),
             'warning', t('Grosse sélection'), 8000);
@@ -326,18 +331,7 @@ function applySelection(selection, { resetDates = false } = {}) {
 
 // Étendue [ouest, sud, est, nord] des caches sélectionnées, null si aucune.
 function selectionExtent() {
-    if (!base || rows.length === 0) return null;
-    let west = Infinity, south = Infinity, east = -Infinity, north = -Infinity;
-    for (let k = 0; k < rows.length; k++) {
-        const i = rows[k];
-        const lon = base.lon[i];
-        const lat = base.lat[i];
-        if (lon < west) west = lon;
-        if (lon > east) east = lon;
-        if (lat < south) south = lat;
-        if (lat > north) north = lat;
-    }
-    return [west, south, east, north];
+    return base ? lonLatExtentOf(base, rows) : null;
 }
 
 function buildFeatures(rows) {

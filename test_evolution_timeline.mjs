@@ -19,6 +19,7 @@ import {
     eventsInRange,
     filterRows,
     isoToDayNumber,
+    lonLatExtentOf,
     maxEventsInWindow,
     stepEvolution,
 } from './static/js/evolution_timeline.mjs';
@@ -203,6 +204,27 @@ test('les index d\'événements désignent la position dans les lignes filtrées
     assert.deepEqual([...rows], [3]);
     assert.deepEqual([...eventsInRange(tl, 3, 3).placed], [0]);
     assert.deepEqual([...tl.activeByDay], [0]);
+});
+
+test('étendue des caches : cas courant, aucune ligne, zone à cheval sur l\'antiméridien', () => {
+    const base = buildEvolutionBase(PAYLOAD);
+    assert.deepEqual(lonLatExtentOf(base, Int32Array.from([0, 1, 3])), [-3.2, 46.5, 7.1, 48.5]);
+    assert.equal(lonLatExtentOf(base, new Int32Array(0)), null);
+
+    // Fidji : de 177° E à 179° O. Mesurée telle quelle, l'étendue ferait le
+    // tour du globe ; ramenée dans [0, 360[, elle reste étroite.
+    const fiji = buildEvolutionBase({
+        origin: '2024-01-01', code: ['GC1', 'GC2', 'GC3'],
+        lon: [177.4, 179.9, -179.2], lat: [-18.1, -16.8, -16.5], placed: [0, 0, 0], archived: [-1, -1, -1],
+    });
+    assert.deepEqual(lonLatExtentOf(fiji, Int32Array.from([0, 1, 2])).map((v) => Math.round(v * 10) / 10),
+        [177.4, -18.1, 180.8, -16.5]);
+    // Toutes à l'ouest de Greenwich : rien à ramener.
+    const americas = buildEvolutionBase({
+        origin: '2024-01-01', code: ['GC1', 'GC2'],
+        lon: [-120, -70], lat: [40, 10], placed: [0, 0], archived: [-1, -1],
+    });
+    assert.deepEqual(lonLatExtentOf(americas, Int32Array.from([0, 1])), [-120, 10, -70, 40]);
 });
 
 test('chronologie vide', () => {

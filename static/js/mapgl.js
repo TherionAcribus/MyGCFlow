@@ -1326,6 +1326,9 @@ export function startAnimation(restart=false) {
         }
         // Reprendre la musique de fond là où la pause l'avait laissée
         try { resumeBackgroundMusic(); } catch(e) { console.warn('resumeBackgroundMusic error:', e); }
+        // Flashs et apparitions figés pendant la pause : rien d'autre ne
+        // redemande de rendu avant le prochain jour affiché.
+        map.render();
     }
 
     let flashOptions = pkg.options.flash
@@ -2760,20 +2763,12 @@ async function startMediaRecorderPipeline(totalDurationMs, timelineScale = 1){
                 try { mrVisibilityToast = pkg.showToast && pkg.showToast(pkg.t('Enregistrement en pause : revenez sur cet onglet pour reprendre la capture.'), 'warning', pkg.t('Onglet masqué'), 0); } catch(_) {}
             }
         } else {
-            // Déplier la pause : cumuler son temps et décaler les flashs « live »
-            // (horloge Date.now) pour qu'ils reprennent là où ils en étaient
-            // au lieu de sauter à leur état final dans la vidéo.
+            // Déplier la pause : cumuler son temps. Les flashs « live » suivent
+            // l'horloge des points, qui exclut ce temps (mrActiveElapsedMs) :
+            // ils reprennent là où ils en étaient, sans décalage à appliquer.
             if (mrPausedSince !== null) {
-                const pausedMs = performance.now() - mrPausedSince;
-                mrPausedTotalMs += pausedMs;
+                mrPausedTotalMs += performance.now() - mrPausedSince;
                 mrPausedSince = null;
-                if (pausedMs > 0) {
-                    for (const flash of activeFlashes) {
-                        if (flash.maxFrames === undefined && typeof flash.start === 'number') {
-                            flash.start += pausedMs;
-                        }
-                    }
-                }
             }
             mrSafetyTimer.resume();
             mrTailTimer.resume();
@@ -3589,7 +3584,7 @@ function pushFeatureFlashes(olFeatures, flashOptions, record, useStagger) {
         }
         return;
     }
-    const start = Date.now();
+    const start = sampleAppearClock(); // horloge des points, comme flashFeatures
     for (let i = 0; i < olFeatures.length; i++) {
         const feature = olFeatures[i];
         mapDirtyTracker.beginAnimation();
@@ -4164,9 +4159,11 @@ function flashRecord(features, flashOptions = pkg.options.flash) {
     });
 }
 
-// Lecture live : l'avancement se mesure en temps (frameState.time).
+// Lecture live : l'avancement se mesure sur l'horloge des points
+// (sampleAppearClock), qui exclut les pauses : un flash se fige avec les
+// points au lieu de se terminer pendant la pause.
 function flashFeatures(features, flashOptions) {
-    const start = Date.now();
+    const start = sampleAppearClock();
     // Durée figée au lancement du flash ; forme, taille et couleur restent relues
     // à chaque frame (voir flashStyleAt).
     const duration = flashOptions.duration;
@@ -4191,7 +4188,8 @@ function flashFeatures(features, flashOptions) {
 function drawActiveFlashes(event) {
     if (activeFlashes.length === 0) return;
 
-    const now = event.frameState.time;
+    // Même horloge que flashFeatures : figée pendant une pause.
+    const now = sampleAppearClock();
     let vectorContext = null;
     let liveFlashPending = false;
     let kept = 0;
@@ -4231,8 +4229,9 @@ function drawActiveFlashes(event) {
 
     // En capture MediaRecorder, la boucle de dessin (renderSync @fps) pilote déjà
     // les rendus : se re-planifier ici via map.render() doublerait (voire pire, en
-    // rafale rAF) le rendu par frame → saccades. On ne le fait qu'en lecture live.
-    if (liveFlashPending && !isMediaRecording) {
+    // rafale rAF) le rendu par frame → saccades. On ne le fait qu'en lecture live,
+    // et pas en pause : les flashs y sont figés, la reprise relance le rendu.
+    if (liveFlashPending && !isMediaRecording && livePausedAt === null) {
         map.render();
     }
 }

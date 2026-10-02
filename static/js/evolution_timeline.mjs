@@ -186,6 +186,35 @@ export function filterRows(base, selection = {}) {
     return rows.slice(0, n);
 }
 
+// Étendue [ouest, sud, est, nord] (degrés) des lignes `rows`, null si aucune.
+// Une zone à cheval sur l'antiméridien (Fidji, Aléoutiennes…) donnerait,
+// mesurée telle quelle, une étendue faisant presque le tour du globe : on
+// mesure aussi les longitudes ramenées dans [0, 360[ et on garde l'étendue la
+// plus étroite. L'est dépasse alors 180° (ex. [170, s, 190, n]), ce que la vue
+// OpenLayers (wrapX) cadre sans peine.
+export function lonLatExtentOf(base, rows) {
+    if (!base || !rows || rows.length === 0) return null;
+    let west = Infinity, east = -Infinity, south = Infinity, north = -Infinity;
+    let west360 = Infinity, east360 = -Infinity;
+    for (let k = 0; k < rows.length; k++) {
+        const i = rows[k];
+        const lon = base.lon[i];
+        const lat = base.lat[i];
+        const lon360 = lon < 0 ? lon + 360 : lon;
+        if (lon < west) west = lon;
+        if (lon > east) east = lon;
+        if (lon360 < west360) west360 = lon360;
+        if (lon360 > east360) east360 = lon360;
+        if (lat < south) south = lat;
+        if (lat > north) north = lat;
+    }
+    // Strictement plus étroite seulement si des longitudes des deux signes
+    // existent : l'ouest est alors une longitude positive, dans [0, 180[.
+    return east360 - west360 < east - west
+        ? [west360, south, east360, north]
+        : [west, south, east, north];
+}
+
 // --- Chronologie --------------------------------------------------------------
 
 // Événements par jour pour les lignes retenues. Les index produits (placed /
