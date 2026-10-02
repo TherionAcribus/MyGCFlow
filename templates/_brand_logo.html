@@ -1,0 +1,7 @@
+{# Logo horizontal MyGCFlow. Deux variantes : nom marine sur fond clair, nom
+   blanc sur fond sombre ; tabler_theme.css n'affiche que celle qui correspond
+   au thème (data-bs-theme). Variable facultative : logo_class. #}
+<span class="brand-logo {{ logo_class|default('') }}">
+    <img class="brand-logo-light" src="{{ url_for('static', filename='branding/mygcflow-logo-horizontal-couleur.svg') }}" alt="MyGCFlow">
+    <img class="brand-logo-dark" src="{{ url_for('static', filename='branding/mygcflow-logo-horizontal-fond-sombre.svg') }}" alt="MyGCFlow">
+</span>

@@ -3,15 +3,55 @@
    ========================================================================== */
 
 :root {
-    --g-bg: #f4f6f8;
+    /* Palette de l'identité MyGCFlow (même dérivation que tabler_theme.css) */
+    --g-marine: #082747;
+    --g-gradient: linear-gradient(90deg, #29d34e, #00c5a1 47%, #009dff);
+    --g-bg: #f6f8fa;
     --g-surface: #ffffff;
-    --g-border: #e5e8ec;
-    --g-text: #2b2b2b;
-    --g-muted: #6b7280;
-    --g-accent: #1e88e5;
-    --g-accent-weak: #e8f2fd;
+    --g-border: #e1e6ec;
+    --g-text: #1f2b38;
+    --g-muted: #5b6878;
+    --g-heading: var(--g-marine);
+    --g-accent: #0072c6;            /* fonds sous texte blanc (5,0:1) */
+    --g-accent-strong: #005fa3;
+    --g-accent-text: #005fa3;       /* texte d'accent, y compris sur --g-accent-weak */
+    --g-accent-weak: #e6f2fb;
+    --g-accent-line: rgba(0, 114, 198, 0.28);
+    --g-step-bg: var(--g-marine);   /* pastilles numérotées */
+    /* Trait reliant les étapes : le parcours de la carte du logo. */
+    --g-route: linear-gradient(180deg, #29d34e, #00c5a1 50%, #009dff);
+    --g-tip-bg: rgba(41, 211, 78, 0.10);
+    --g-tip-line: rgba(41, 211, 78, 0.38);
+    --g-tip-icon: #1e9e3c;
+    --g-warn-bg: rgba(245, 165, 36, 0.12);
+    --g-warn-line: rgba(245, 165, 36, 0.45);
+    --g-warn-icon: #c56a00;
+    --g-overlay: rgba(8, 39, 71, 0.45);
+    --g-font-titles: "Montserrat", system-ui, sans-serif;
     --g-sidebar-w: 280px;
     --g-header-h: 64px;
+    color-scheme: light;
+}
+
+/* Mode sombre : même thème que l'app (data-bs-theme posé par _theme_boot.html),
+   mêmes fonds teintés marine que tabler_theme.css. */
+[data-bs-theme="dark"] {
+    --g-bg: #141d29;
+    --g-surface: #1b2635;
+    --g-border: #2a3747;
+    --g-text: #d6dee8;
+    --g-muted: #8d9cb0;
+    --g-heading: #eef3f8;
+    --g-accent: #0a84d8;
+    --g-accent-strong: #0072c6;
+    --g-accent-text: #58c8ff;       /* 6,5:1 au minimum sur les fonds sombres */
+    --g-accent-weak: rgba(10, 132, 216, 0.18);
+    --g-accent-line: rgba(88, 200, 255, 0.30);
+    --g-step-bg: var(--g-accent);   /* le marine disparaîtrait sur fond sombre */
+    --g-tip-icon: #29d34e;
+    --g-warn-icon: #f5a524;
+    --g-overlay: rgba(0, 0, 0, 0.55);
+    color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -26,7 +66,7 @@ html, body {
     scroll-behavior: smooth;
 }
 
-a { color: var(--g-accent); text-decoration: none; }
+a { color: var(--g-accent-text); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
 /* ---------- En-tête ---------- */
@@ -55,9 +95,20 @@ a:hover { text-decoration: underline; }
     color: var(--g-text);
 }
 
-.guide-header .guide-logo .ti {
-    color: var(--g-accent);
-    font-size: 28px;
+/* Logo (templates/_brand_logo.html) : variante selon le thème. */
+.brand-logo { display: inline-flex; }
+.brand-logo img { display: block; height: 100%; width: auto; }
+.brand-logo .brand-logo-dark { display: none; }
+[data-bs-theme="dark"] .brand-logo .brand-logo-light { display: none; }
+[data-bs-theme="dark"] .brand-logo .brand-logo-dark { display: block; }
+.guide-brand { height: 40px; }
+
+.guide-header .guide-title {
+    padding-left: 12px;
+    border-left: 1px solid var(--g-border);
+    font-family: var(--g-font-titles);
+    color: var(--g-heading);
+    white-space: nowrap;
 }
 
 .guide-header .guide-spacer { flex: 1; }
@@ -72,8 +123,9 @@ a:hover { text-decoration: underline; }
     color: #fff !important;
     font-weight: 600;
     font-size: 0.9rem;
+    white-space: nowrap;
 }
-.guide-back-btn:hover { text-decoration: none; background: #1565c0; }
+.guide-back-btn:hover { text-decoration: none; background: var(--g-accent-strong); }
 .guide-back-btn .ti { font-size: 18px; }
 
 /* Bouton ouverture menu (mobile) */
@@ -134,17 +186,18 @@ a:hover { text-decoration: underline; }
 .guide-nav a.active {
     background: var(--g-accent-weak);
     border-left-color: var(--g-accent);
-    color: var(--g-accent);
+    color: var(--g-accent-text);
 }
 .guide-nav a .nav-num {
     flex: 0 0 26px;
     height: 26px;
     border-radius: 50%;
     background: var(--g-accent-weak);
-    color: var(--g-accent);
+    color: var(--g-accent-text);
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    font-family: var(--g-font-titles);
     font-size: 0.85rem;
     font-weight: 700;
 }
@@ -158,6 +211,7 @@ a:hover { text-decoration: underline; }
 .guide-content {
     margin-left: var(--g-sidebar-w);
     flex: 1;
+    min-width: 0;   /* enfant flex : sinon il s'élargit à son contenu sur mobile */
     padding: 36px clamp(20px, 5vw, 72px) 96px;
     max-width: 920px;
 }
@@ -176,7 +230,7 @@ a:hover { text-decoration: underline; }
     height: 48px;
     border-radius: 12px;
     background: var(--g-accent-weak);
-    color: var(--g-accent);
+    color: var(--g-accent-text);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -185,7 +239,9 @@ a:hover { text-decoration: underline; }
 .guide-section-head h2 {
     margin: 0;
     font-size: 1.65rem;
-    font-weight: 700;
+    font-family: var(--g-font-titles);
+    font-weight: 800;
+    color: var(--g-heading);
 }
 .guide-section-intro {
     color: var(--g-muted);
@@ -195,13 +251,18 @@ a:hover { text-decoration: underline; }
 
 /* Hero / intro */
 .guide-hero {
-    background: linear-gradient(135deg, #1e88e5 0%, #1565c0 100%);
+    /* Marine de la marque, souligné du dégradé de la carte. */
+    background: var(--g-gradient) bottom / 100% 5px no-repeat, var(--g-marine);
     color: #fff;
     border-radius: 16px;
     padding: 36px 40px;
     margin-bottom: 12px;
 }
-.guide-hero h1 { margin: 0 0 8px; font-size: 1.9rem; }
+[data-bs-theme="dark"] .guide-hero {
+    /* Le marine se confond avec le fond sombre : un filet le détache. */
+    box-shadow: inset 0 0 0 1px var(--g-border);
+}
+.guide-hero h1 { margin: 0 0 8px; font-size: 1.9rem; font-family: var(--g-font-titles); font-weight: 800; }
 .guide-hero p { margin: 0; opacity: 0.95; font-size: 1.05rem; max-width: 640px; }
 
 .guide-quicksteps {
@@ -221,12 +282,19 @@ a:hover { text-decoration: underline; }
     width: 32px; height: 32px;
     margin: 0 auto 8px;
     border-radius: 50%;
-    background: var(--g-accent);
+    background: var(--g-step-bg);
     color: #fff;
     display: flex; align-items: center; justify-content: center;
-    font-weight: 700;
+    font-family: var(--g-font-titles);
+    font-weight: 800;
 }
-.guide-quickstep strong { display: block; font-size: 0.98rem; }
+.guide-quickstep strong {
+    display: block;
+    font-family: var(--g-font-titles);
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: var(--g-heading);
+}
 .guide-quickstep span { font-size: 0.85rem; color: var(--g-muted); }
 
 /* Étapes numérotées */
@@ -250,12 +318,13 @@ a:hover { text-decoration: underline; }
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: var(--g-accent);
+    background: var(--g-step-bg);
     color: #fff;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 700;
+    font-family: var(--g-font-titles);
+    font-weight: 800;
     font-size: 1rem;
 }
 /* trait vertical reliant les étapes */
@@ -266,12 +335,15 @@ a:hover { text-decoration: underline; }
     top: 40px;
     bottom: 4px;
     width: 2px;
-    background: var(--g-border);
+    border-radius: 1px;
+    background: var(--g-route);
 }
 .guide-steps > li h3 {
     margin: 4px 0 6px;
+    font-family: var(--g-font-titles);
     font-size: 1.12rem;
-    font-weight: 600;
+    font-weight: 700;
+    color: var(--g-heading);
 }
 .guide-steps > li p { margin: 0 0 8px; color: var(--g-text); }
 .guide-steps ul.sub {
@@ -287,8 +359,8 @@ a:hover { text-decoration: underline; }
     align-items: center;
     gap: 5px;
     background: var(--g-accent-weak);
-    color: var(--g-accent);
-    border: 1px solid #cfe3f7;
+    color: var(--g-accent-text);
+    border: 1px solid var(--g-accent-line);
     border-radius: 6px;
     padding: 1px 8px;
     font-size: 0.88em;
@@ -309,27 +381,31 @@ a:hover { text-decoration: underline; }
     background: var(--g-surface);
 }
 .guide-callout .ti { flex: 0 0 auto; }
-.guide-callout.tip { background: #eefaf0; border-color: #c8eccf; }
-.guide-callout.tip .ti { color: var(--g-success, #2e7d32); }
-.guide-callout.info { background: var(--g-accent-weak); border-color: #cfe3f7; }
-.guide-callout.info .ti { color: var(--g-accent); }
-.guide-callout.warn { background: #fff5e6; border-color: #ffd9a8; }
-.guide-callout.warn .ti { color: #ef6c00; }
+.guide-callout.tip { background: var(--g-tip-bg); border-color: var(--g-tip-line); }
+.guide-callout.tip .ti { color: var(--g-tip-icon); }
+.guide-callout.info { background: var(--g-accent-weak); border-color: var(--g-accent-line); }
+.guide-callout.info .ti { color: var(--g-accent-text); }
+.guide-callout.warn { background: var(--g-warn-bg); border-color: var(--g-warn-line); }
+.guide-callout.warn .ti { color: var(--g-warn-icon); }
 .guide-callout strong { display: inline; }
 
 .guide-footer {
-    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
     color: var(--g-muted);
     font-size: 0.9rem;
     padding: 40px 0 0;
 }
+.guide-footer-symbol { display: block; }
 
 /* Voile (mobile) */
 .guide-overlay {
     display: none;
     position: fixed;
     inset: var(--g-header-h) 0 0 0;
-    background: rgba(0, 0, 0, 0.4);
+    background: var(--g-overlay);
     z-index: 15;
 }
 
@@ -344,4 +420,29 @@ a:hover { text-decoration: underline; }
     .guide-sidebar.open { transform: translateX(0); }
     .guide-content { margin-left: 0; }
     .guide-overlay.show { display: block; }
+}
+
+/* Téléphone : le bouton de retour passe en icône seule (libellé conservé
+   pour les lecteurs d'écran) pour que l'en-tête tienne sur une ligne. */
+@media (max-width: 600px) {
+    .guide-header { gap: 8px; padding: 0 12px; }
+    .guide-brand { height: 32px; }
+    .guide-header .guide-logo { gap: 8px; font-size: 1rem; }
+    .guide-header .guide-title { padding-left: 8px; }
+    .guide-header .guide-back-btn { padding: 8px 10px; }
+    .guide-back-label {
+        position: absolute;
+        width: 1px; height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+    }
+    .guide-hero { padding: 28px 22px; }
+    .guide-hero h1 { font-size: 1.55rem; }
+    /* Les libellés longs (« Sélectionner et charger… ») passent à la ligne. */
+    .ui-chip { white-space: normal; }
+}
+@media (max-width: 360px) {
+    /* Le titre de l'onglet suffit : place au logo et au bouton de retour. */
+    .guide-header .guide-title { display: none; }
 }

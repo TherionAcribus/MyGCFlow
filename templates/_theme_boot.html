@@ -1,0 +1,17 @@
+{# Thème (clair/sombre) appliqué AVANT tout CSS pour éviter le flash (FOUC) :
+   on lit la préférence enregistrée (ou le réglage système) et on pose
+   data-bs-theme sur <html> dès le parsing du <head>. À inclure en tête du
+   <head> de chaque page (app.html, guide.html). La suite de la logique
+   (toggle, réactivité) vit dans static/js/theme.js pour l'app ; le guide
+   n'a besoin que de suivre le thème système (script en bas de guide.html). #}
+<script>
+    (function () {
+        try {
+            var pref = localStorage.getItem('mygcflow_theme') || 'system';
+            var dark = pref === 'dark'
+                || (pref !== 'light' && window.matchMedia
+                    && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            document.documentElement.setAttribute('data-bs-theme', dark ? 'dark' : 'light');
+        } catch (e) {}
+    })();
+</script>

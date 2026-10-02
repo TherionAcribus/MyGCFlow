@@ -1,27 +1,6 @@
 /* Thème sobre et uniforme MyGCFlow */
-/* Palette: gris chauds + bleu discret pour l'accent, rouge/vert atténués */
-
-:root {
-    /* Neutres */
-    --color-bg: #fafafa;           /* fond général */
-    --color-surface: #ffffff;      /* cartes/panneaux */
-    --color-border: #e5e5e5;       /* bordures discrètes */
-    --color-text: #2b2b2b;         /* texte principal */
-    --color-text-muted: #6b6b6b;   /* texte secondaire */
-
-    /* Accent principal (sobre) */
-    --color-accent: #1e88e5;       /* bleu moyen */
-    --color-accent-weak: #e8f2fd;  /* fond léger pour états */
-
-    /* États sémantiques (atténués) */
-    --color-success: #2e7d32;
-    --color-warning: #ef6c00;
-    --color-danger:  #c62828;
-
-    /* Elevation / ombres */
-    --shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
-    --shadow-md: 0 2px 6px rgba(0,0,0,0.10);
-}
+/* Les variables --color-* (palette de l'identité, clair et sombre) sont
+   définies dans tabler_theme.css, chargé après ce fichier. */
 
 /* Base */
 body {
@@ -57,11 +36,11 @@ h5, h6 { color: var(--color-text); font-weight: 600; }
     transition: background-color 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
 }
 .btn:hover:not(.btn-link):not(.btn-outline-danger):not(.btn-outline-primary):not(.btn-outline-secondary):not(.btn-outline-success):not(.btn-outline-warning):not(.btn-outline-info):not(.btn-outline-light):not(.btn-outline-dark):not(.btn-ghost):not(.gc-css-target-btn) {
-    background-color: #1976d2; /* accent assombri, hover sobre et uniforme */
+    background-color: var(--color-accent-strong); /* accent assombri, hover sobre et uniforme */
     box-shadow: var(--shadow-md);
 }
 .btn:focus:not(.btn-link):not(.btn-outline-danger):not(.btn-outline-primary):not(.btn-outline-secondary):not(.btn-outline-success):not(.btn-outline-warning):not(.btn-outline-info):not(.btn-outline-light):not(.btn-outline-dark):not(.btn-ghost):not(.gc-css-target-btn) {
-    background-color: #1565c0;
+    background-color: var(--color-accent-deep);
 }
 
 /* Variantes sémantiques atténuées */
@@ -75,7 +54,7 @@ h5, h6 { color: var(--color-text); font-weight: 600; }
 /* Cartes d'options Vector/Toner: même style */
 #vectorMapOptions, #tonerMapOptions {
     background: var(--color-accent-weak);
-    border: 1px solid rgba(30,136,229,0.15);
+    border: 1px solid rgba(var(--color-accent-rgb), 0.15);
 }
 #vectorMapOptions h6, #tonerMapOptions h6 { color: var(--color-accent); }
 

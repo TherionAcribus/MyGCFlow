@@ -4,21 +4,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <!-- Thème (clair/sombre) appliqué AVANT tout CSS pour éviter le flash
-             (FOUC) : on lit la préférence enregistrée (ou le réglage système) et
-             on pose data-bs-theme sur <html> dès le parsing du <head>. La suite
-             de la logique (toggle, réactivité) vit dans static/js/theme.js. -->
-        <script>
-            (function () {
-                try {
-                    var pref = localStorage.getItem('mygcflow_theme') || 'system';
-                    var dark = pref === 'dark'
-                        || (pref !== 'light' && window.matchMedia
-                            && window.matchMedia('(prefers-color-scheme: dark)').matches);
-                    document.documentElement.setAttribute('data-bs-theme', dark ? 'dark' : 'light');
-                } catch (e) {}
-            })();
-        </script>
+        {% include '_theme_boot.html' %}
 
         <!-- Bibliothèques tierces : servies en local depuis static/vendor/ et non
              depuis un CDN. MyGCFlow est une application de bureau (Flask lancé en
@@ -52,7 +38,7 @@
         <!--<link rel="stylesheet" href="../static/css/ol.css">-->
 
         <title>{% if mode == 'evolution' %}MyGCFlow – {{ _("Évolution") }}{% else %}MyGCFlow{% endif %}</title>
-        <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/mygcflow-icon.png') }}">
+        {% include '_branding_head.html' %}
     </head>
 
     <body data-dev="{{ 1 if config.DEBUG else 0 }}" data-mode="{{ mode|default('main') }}">
@@ -108,7 +94,7 @@
                     <div id="emptyState" class="empty-state" role="status" style="display:none">
                         {% if mode == 'evolution' %}
                         <div class="empty-state-card">
-                            <i class="ti ti-file-upload empty-state-icon" aria-hidden="true"></i>
+                            {% with logo_class='empty-state-logo' %}{% include '_brand_logo.html' %}{% endwith %}
                             <p class="empty-state-text">{{ _("Importez un ou plusieurs exports CSV des caches d'une zone pour commencer") }}</p>
                             <button type="button" id="btnEvolutionEmptyStateImport" class="btn btn-primary">
                                 <i class="ti ti-upload me-1" aria-hidden="true"></i>{{ _("Sélectionner des exports CSV") }}
@@ -118,7 +104,7 @@
                         </div>
                         {% else %}
                         <div class="empty-state-card">
-                            <i class="ti ti-file-upload empty-state-icon" aria-hidden="true"></i>
+                            {% with logo_class='empty-state-logo' %}{% include '_brand_logo.html' %}{% endwith %}
                             <p class="empty-state-text">{{ _("Chargez votre fichier .gpx pour commencer") }}</p>
                             <button type="button" id="btnEmptyStateImport" class="btn btn-primary">
                                 <i class="ti ti-upload me-1" aria-hidden="true"></i>{{ _("Sélectionner et charger un fichier .gpx") }}

@@ -1,5 +1,16 @@
 /* Material Icons font-face removed — migrated to Tabler Icons */
 
+/* Police des titres de l'identité MyGCFlow : Montserrat, sous-ensemble latin
+   variable 600–800 (22 Ko, licence OFL dans static/fonts/). Servie en local,
+   comme le reste de l'interface. */
+@font-face {
+    font-family: "Montserrat";
+    src: url("../fonts/montserrat-600-800.woff2") format("woff2");
+    font-weight: 600 800;
+    font-style: normal;
+    font-display: swap;
+}
+
 
 .btn-image {
     position: relative; /* Position relative pour permettre le positionnement absolu du texte à l'intérieur */

@@ -1,7 +1,7 @@
 // Gestion du thème clair/sombre.
 //
-// L'application INITIALE du thème est faite très tôt par un script inline dans
-// le <head> d'app.html (pour éviter le flash au chargement). Ce module gère la
+// L'application INITIALE du thème est faite très tôt par un script inline (templates/_theme_boot.html,
+// inclus dans le <head> d'app.html) pour éviter le flash au chargement. Ce module gère la
 // suite : le toggle de l'onglet Paramètres (#selectTheme), la persistance, et la
 // réactivité au thème système quand la préférence est "system".
 //

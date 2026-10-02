@@ -6,20 +6,34 @@
    pour conserver l'identité visuelle pendant et après la migration.
    ===================================================================== */
 
-/* --- Palette MyGCFlow (conservée depuis theme.css) --- */
+/* --- Palette MyGCFlow ---
+   Dérivée du kit d'identité « Carte vivante » (voir docs/distribution.md,
+   section Icône) : marine #082747, vert #29D34E, turquoise #00C5A1,
+   bleu #009DFF. Le bleu de marque est trop clair pour porter du texte blanc
+   (2,9:1) : l'accent d'interface en garde la teinte (~205°) mais assombrie
+   pour atteindre 4,5:1 (#0072c6 : 5,0:1 avec du blanc). */
 :root {
-    /* Neutres */
-    --color-bg: #fafafa;
+    /* Couleurs de marque, telles quelles (logo, touches décoratives) */
+    --brand-marine: #082747;
+    --brand-vert: #29d34e;
+    --brand-turquoise: #00c5a1;
+    --brand-bleu: #009dff;
+    --brand-gradient: linear-gradient(90deg, var(--brand-vert), var(--brand-turquoise) 47%, var(--brand-bleu));
+
+    /* Neutres, légèrement teintés marine */
+    --color-bg: #f6f8fa;
     --color-surface: #ffffff;
-    --color-border: #e5e5e5;
-    --color-text: #2b2b2b;
-    --color-text-muted: #6b6b6b;
+    --color-border: #e1e6ec;
+    --color-text: #1f2b38;
+    --color-text-muted: #5b6878;
+    --color-heading: var(--brand-marine);
 
     /* Accent principal */
-    --color-accent: #1e88e5;
-    --color-accent-weak: #e8f2fd;
-    --color-accent-strong: #1976d2;
-    --color-accent-deep: #1565c0;
+    --color-accent: #0072c6;
+    --color-accent-rgb: 0, 114, 198;
+    --color-accent-weak: #e6f2fb;
+    --color-accent-strong: #005fa3;
+    --color-accent-deep: #00548f;
 
     /* États sémantiques */
     --color-success: #2e7d32;
@@ -32,6 +46,7 @@
 
     /* --- Mapping vers les variables Tabler --- */
     --tblr-primary: var(--color-accent);
+    --tblr-primary-rgb: var(--color-accent-rgb);
     --tblr-primary-fg: #ffffff;
     --tblr-primary-darken: var(--color-accent-strong);
     --tblr-bg-surface: var(--color-surface);
@@ -47,12 +62,20 @@
 
 /* --- Dark mode (data-bs-theme="dark" sur <html>) --- */
 [data-bs-theme="dark"] {
-    --color-bg: #1e2228;
-    --color-surface: #242a33;
-    --color-border: #2f3640;
-    --color-text: #d6dce5;
-    --color-text-muted: #8a94a3;
-    --color-accent-weak: rgba(30, 136, 229, 0.18);
+    --color-bg: #141d29;
+    --color-surface: #1b2635;
+    --color-border: #2a3747;
+    --color-text: #d6dee8;
+    --color-text-muted: #8d9cb0;
+    --color-heading: var(--color-text);
+
+    /* Un seul bleu ne peut pas porter du texte blanc ET se lire sur fond
+       sombre à 4,5:1 : #0a84d8 équilibre les deux (~3,9:1 chacun). */
+    --color-accent: #0a84d8;
+    --color-accent-rgb: 10, 132, 216;
+    --color-accent-weak: rgba(10, 132, 216, 0.18);
+    --color-accent-strong: #0072c6;
+    --color-accent-deep: #005fa3;
 
     --tblr-bg-surface: var(--color-surface);
     --tblr-bg-surface-secondary: var(--color-bg);
@@ -75,8 +98,24 @@ body {
 }
 
 /* --- Titres --- */
-h5, h6 { color: var(--color-text); font-weight: 600; }
+h5, h6 { color: var(--color-heading); font-weight: 600; }
 .text-muted { color: var(--color-text-muted) !important; }
+
+/* Titres de modale : Montserrat, comme .gc-section-title (ui_improvements.css). */
+.modal-title {
+    font-family: "Montserrat", system-ui, sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.005em;
+}
+
+/* --- Logo (templates/_brand_logo.html) : variante selon le thème --- */
+.brand-logo { display: inline-flex; }
+.brand-logo img { display: block; height: 100%; width: auto; }
+.brand-logo-dark { display: none !important; }
+[data-bs-theme="dark"] .brand-logo-light { display: none !important; }
+[data-bs-theme="dark"] .brand-logo-dark { display: block !important; }
+.empty-state-logo { height: 52px; }
+.first-use-logo { height: 56px; margin: -6px 0 6px -6px; }
 
 /* --- Boutons : aligner sur l'accent MyGCFlow --- */
 .btn-primary {
@@ -111,7 +150,7 @@ h5, h6 { color: var(--color-text); font-weight: 600; }
 .form-select:focus,
 .form-check-input:focus {
     border-color: var(--color-accent);
-    box-shadow: 0 0 0 0.25rem rgba(30, 136, 229, 0.25);
+    box-shadow: 0 0 0 0.25rem rgba(var(--color-accent-rgb), 0.25);
 }
 
 /* --- Form-floating : labels --- */
@@ -132,7 +171,7 @@ h5, h6 { color: var(--color-text); font-weight: 600; }
 .ts-control:focus,
 .ts-wrapper.focus .ts-control {
     border-color: var(--color-accent);
-    box-shadow: 0 0 0 0.25rem rgba(30, 136, 229, 0.25);
+    box-shadow: 0 0 0 0.25rem rgba(var(--color-accent-rgb), 0.25);
 }
 /* Tom Select calque son fond sur --bs-body-bg, jamais défini dans ce thème :
    sans ce repli, le panneau déroulant est transparent et illisible par-dessus
@@ -205,7 +244,7 @@ h5, h6 { color: var(--color-text); font-weight: 600; }
 .alert-success { background-color: rgba(46, 125, 50, 0.1); border-color: rgba(46, 125, 50, 0.25); color: var(--color-success); }
 .alert-warning { background-color: rgba(239, 108, 0, 0.1); border-color: rgba(239, 108, 0, 0.25); color: var(--color-warning); }
 .alert-danger  { background-color: rgba(198, 40, 40, 0.1); border-color: rgba(198, 40, 40, 0.25); color: var(--color-danger); }
-.alert-info    { background-color: var(--color-accent-weak); border-color: rgba(30, 136, 229, 0.25); color: var(--color-accent-strong); }
+.alert-info    { background-color: var(--color-accent-weak); border-color: rgba(var(--color-accent-rgb), 0.25); color: var(--color-accent-strong); }
 
 /* --- List-group --- */
 .list-group-item.active {
@@ -315,7 +354,7 @@ h5, h6 { color: var(--color-text); font-weight: 600; }
 [data-bs-theme="dark"] #mapTabsResizer { background: rgba(255, 255, 255, 0.10); }
 [data-bs-theme="dark"] #mapTabsResizer:hover { background: rgba(255, 255, 255, 0.18); }
 [data-bs-theme="dark"] #mapTabsContainer.is-resizing #mapTabsResizer {
-    background: rgba(30, 136, 229, 0.4);
+    background: rgba(var(--color-accent-rgb), 0.4);
 }
 
 /* Overlay de chargement plein écran (était blanc translucide). */

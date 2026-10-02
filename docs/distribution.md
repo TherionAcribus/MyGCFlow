@@ -190,8 +190,22 @@ Sa licence et les liens vers ses sources sont livrés dans
 
 ## Icône
 
-`installer/mygcflow.ico` et `static/img/mygcflow-icon.png` sont provisoires, générés
-par `installer/make_icon.py`. Pour un vrai logo : remplacer ces deux fichiers.
+Les icônes viennent du kit d'identité « Carte vivante », tenu dans le dépôt du
+site (`../Site_MyGCFlow/MyGCFlow-identite/`, voir son `LIRE-MOI.md`). Ce kit est
+la source : les fichiers de l'app en sont des copies, à remplacer depuis le kit
+plutôt qu'à retoucher ici.
+
+| Fichier de l'app | Rôle | Copie de (dans le kit) |
+| --- | --- | --- |
+| `installer/mygcflow.ico` | exécutable (`mygcflow.spec`) et installeur (`SetupIconFile`) | `windows/mygcflow.ico` |
+| `static/img/mygcflow-icon.png` | zone de notification (`launcher.py`), README | `png/mygcflow-icone-512.png` |
+| `static/branding/favicon.ico`, `favicon.svg` | onglet du navigateur (`templates/_branding_head.html`) | `web/` |
+| `static/branding/mygcflow-logo-horizontal-*.svg` | logo dans l'interface (clair / sombre) | `svg/` |
+| `static/branding/mygcflow-symbole.svg` | symbole seul | `svg/` |
+| `static/fonts/montserrat-600-800.woff2` | titres (sous-ensemble latin de Montserrat, OFL) | site, `assets/fonts/` |
+
+Après un changement d'ICO, reconstruire l'exécutable et l'installeur. Windows et
+le navigateur peuvent garder l'ancienne icône en cache quelque temps.
 
 ## Reste à faire
 

@@ -4,7 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{ _("Mode d'emploi") }} — MyGCFlow</title>
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/mygcflow-icon.png') }}">
+    {% include '_theme_boot.html' %}
+    {% include '_branding_head.html' %}
     <!-- Tabler Icons (webfont) — sous-ensemble généré par generate_icons_subset.py.
          Servi en local (static/vendor/) : le guide doit rester lisible hors ligne. -->
     <link rel="stylesheet" href="../static/vendor/tabler-icons/tabler-icons-subset.css">
@@ -19,13 +20,13 @@
             <i class="ti ti-menu-2"></i>
         </button>
         <div class="guide-logo">
-            <i class="ti ti-map"></i>
-            <span>{{ _("Mode d'emploi") }}</span>
+            {% with logo_class='guide-brand' %}{% include '_brand_logo.html' %}{% endwith %}
+            <span class="guide-title">{{ _("Mode d'emploi") }}</span>
         </div>
         <div class="guide-spacer"></div>
         <a href="/" class="guide-back-btn">
-            <i class="ti ti-arrow-left"></i>
-            {{ _("Retour à l'application") }}
+            <i class="ti ti-arrow-left" aria-hidden="true"></i>
+            <span class="guide-back-label">{{ _("Retour à l'application") }}</span>
         </a>
     </header>
 
@@ -314,7 +315,8 @@
                 </div>
 
                 <div class="guide-footer">
-                    <a href="/" class="guide-back-btn" style="margin-top:8px;">
+                    <img class="guide-footer-symbol" src="{{ url_for('static', filename='branding/mygcflow-symbole.svg') }}" alt="" width="48" height="48">
+                    <a href="/" class="guide-back-btn">
                         <i class="ti ti-arrow-left"></i>{{ _("Retour à l'application") }}
                     </a>
                 </div>
@@ -390,6 +392,19 @@
             }
             window.addEventListener('scroll', onScroll, { passive: true });
             onScroll();
+
+            // Préférence « système » : suivre en direct un changement de thème
+            // de l'OS (le thème initial est posé par _theme_boot.html).
+            var mql = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
+            if (mql && mql.addEventListener) {
+                mql.addEventListener('change', function (e) {
+                    var pref = 'system';
+                    try { pref = localStorage.getItem('mygcflow_theme') || 'system'; } catch (_) {}
+                    if (pref === 'system') {
+                        document.documentElement.setAttribute('data-bs-theme', e.matches ? 'dark' : 'light');
+                    }
+                });
+            }
         })();
     </script>
 </body>

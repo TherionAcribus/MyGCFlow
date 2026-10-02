@@ -31,6 +31,7 @@ Bibliothèques de l'interface (dossier static/vendor)
   - html2canvas .................. MIT            https://html2canvas.hertzen.com
   - fix-webm-duration ............ MIT            https://github.com/yusitnikov/fix-webm-duration
   - Material Icons (police) ...... Apache 2.0     https://fonts.google.com/icons
+  - Montserrat (police, static/fonts) .. SIL OFL 1.1  https://github.com/JulietaUla/Montserrat
 
 Bibliothèques Python
 --------------------
