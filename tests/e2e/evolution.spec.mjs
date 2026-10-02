@@ -127,6 +127,53 @@ test('la lecture fait monter puis descendre le compteur', async ({ page }) => {
   expect(decreased).toBe(true);
 });
 
+test('un export d\'une autre zone demande où importer', async ({ page }) => {
+  await openEvolution(page);
+  let loaded = nextDatasetLoad(page);
+  await page.locator('#evolutionCsvInput').setInputFiles([FIXTURE_A]);
+  expect((await loaded).selected).toBe(6);
+
+  // Réimport du même export : il correspond à la base, aucune question.
+  loaded = nextDatasetLoad(page);
+  await page.locator('#evolutionCsvInput').setInputFiles([FIXTURE_A]);
+  await loaded;
+  const modal = page.locator('#modalEvolutionImportTarget');
+  await expect(modal).toBeHidden();
+
+  // evolution-b ne ressemble pas à « evolution-a » : question, nouvelle base
+  // proposée par défaut ; Annuler n'importe rien.
+  await page.locator('#evolutionCsvInput').setInputFiles([FIXTURE_B]);
+  await expect(modal).toBeVisible();
+  await expect(modal).toContainText('« evolution-b.csv »');
+  await expect(page.locator('#radioEvolutionTargetNew')).toBeChecked();
+  await expect(page.locator('#evolutionTargetOtherRow')).toBeHidden();
+  await modal.locator('.modal-footer [data-bs-dismiss="modal"]').click();
+  await expect(modal).toBeHidden();
+  await expect(page.locator('#selectEvolutionDataset option')).toHaveText(['evolution-a (6 caches)']);
+
+  // Nouvelle base au nom du fichier : la base ouverte reste intacte.
+  await page.locator('#evolutionCsvInput').setInputFiles([FIXTURE_B]);
+  await expect(modal).toBeVisible();
+  loaded = nextDatasetLoad(page);
+  await page.locator('#btnEvolutionImportTargetConfirm').click();
+  expect((await loaded).selected).toBe(4);
+  await expect(page.locator('#selectEvolutionDataset option'))
+    .toHaveText(['evolution-a (6 caches)', 'evolution-b (4 caches)']);
+
+  // Retour sur evolution-a, puis fusion explicite dans la base ouverte.
+  loaded = nextDatasetLoad(page);
+  await page.locator('#selectEvolutionDataset').selectOption({ label: 'evolution-a (6 caches)' });
+  await loaded;
+  await page.locator('#evolutionCsvInput').setInputFiles([FIXTURE_B]);
+  await expect(modal).toBeVisible();
+  // Une base du même nom que le fichier existe : elle est proposée.
+  await expect(page.locator('#radioEvolutionTargetOther')).toBeChecked();
+  await page.locator('#radioEvolutionTargetCurrent').check();
+  loaded = nextDatasetLoad(page);
+  await page.locator('#btnEvolutionImportTargetConfirm').click();
+  expect((await loaded).selected).toBe(9);
+});
+
 test('filtre Région, « Aucun », et restauration de la base au rechargement', async ({ page }) => {
   await openEvolution(page);
   await importFixtures(page);

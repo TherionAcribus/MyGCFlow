@@ -18,7 +18,13 @@ jamais leurs données.
 1. Onglet **Données** de `/evolution` : sélectionner (ou glisser-déposer) un ou
    plusieurs exports CSV. Sans base existante, une base est créée au nom du
    premier fichier (horodatage final retiré) ; sinon les fichiers sont ajoutés
-   à la base ouverte.
+   à la base ouverte. Une fusion ne s'annule pas : si un fichier ne correspond
+   ni au nom de la base ouverte ni à un export qu'elle a déjà reçu (noms
+   comparés sans horodatage, accents, casse ni ponctuation), une modale demande
+   où importer — nouvelle base au nom du fichier (choix par défaut), base
+   ouverte, ou autre base (proposée d'office si son nom correspond au
+   fichier). Une base vide ne pose pas la question
+   (`static/js/evolution_import_target.mjs`).
 2. Le compte rendu d'import détaille, par fichier : lignes lues, nouvelles,
    mises à jour, inchangées, plus anciennes ignorées, doublons, caches
    archivées depuis l'export précédent, archivées sans date, lignes invalides,
@@ -177,7 +183,7 @@ celle du mode principal (`filtersSelection` du localStorage).
   `evolution_*` de `test_profile_validation.py` et `test_global_preferences.py`.
 - Node : `test_evolution_timeline.mjs`, `test_evolution_style.mjs`,
   `test_flash_implode.mjs`, `test_infos_template.mjs` (modèle de la ligne
-  d'infos), et les cas « plusieurs jours par image » de
+  d'infos), `test_evolution_import_target.mjs` (choix de la base d'un import), et les cas « plusieurs jours par image » de
   `test_video_timing.mjs`.
 - Playwright : `tests/e2e/evolution.spec.mjs` (fixtures
   `tests/e2e/fixtures/evolution-a.csv` / `evolution-b.csv`).

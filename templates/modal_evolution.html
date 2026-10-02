@@ -1,4 +1,5 @@
-<!-- Modales du mode Évolution : nom d'une base (création, renommage) et
+<!-- Modales du mode Évolution : nom d'une base (création, renommage), base
+     cible d'un import qui ne ressemble pas à la base ouverte, et
      confirmation de suppression. Pilotées par static/js/evolution_data.js. -->
 <div id="modalEvolutionName" class="modal bs-modal" tabindex="-1" aria-labelledby="modalEvolutionNameTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -21,7 +22,49 @@
     </div>
 </div>
 
-<div id="modalEvolutionDelete" class="modal bs-modal" tabindex="-1" aria-hidden="true">
+<!-- Base cible d'un import : une fusion ne s'annule pas. Affichée seulement
+     quand un fichier ne correspond ni au nom de la base ouverte ni à ses
+     exports précédents (evolution_import_target.mjs). -->
+<div id="modalEvolutionImportTarget" class="modal bs-modal" tabindex="-1" aria-labelledby="modalEvolutionImportTargetTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-header-row d-flex align-items-center gap-2">
+                    <span class="modal-icon warning"><i class="ti ti-database-import"></i></span>
+                    <div>
+                        <h5 id="modalEvolutionImportTargetTitle" class="modal-title">{{ _("Où importer ces exports ?") }}</h5>
+                        <p class="modal-subtitle text-muted">{{ _("Une fusion ne peut pas être annulée") }}</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close modal-close" data-bs-dismiss="modal" aria-label="{{ _('Fermer') }}"></button>
+            </div>
+            <div class="modal-body">
+                <p id="evolutionImportTargetMessage" class="modal-body-text"></p>
+                <div class="d-flex flex-column gap-1" role="radiogroup" aria-labelledby="modalEvolutionImportTargetTitle">
+                    <label class="form-check">
+                        <input class="form-check-input" type="radio" name="evolutionImportTarget" value="new" id="radioEvolutionTargetNew">
+                        <span id="labelEvolutionTargetNew" class="form-check-label"></span>
+                    </label>
+                    <label class="form-check">
+                        <input class="form-check-input" type="radio" name="evolutionImportTarget" value="current" id="radioEvolutionTargetCurrent">
+                        <span id="labelEvolutionTargetCurrent" class="form-check-label"></span>
+                    </label>
+                    <div id="evolutionTargetOtherRow" class="form-check">
+                        <input class="form-check-input" type="radio" name="evolutionImportTarget" value="other" id="radioEvolutionTargetOther">
+                        <label for="radioEvolutionTargetOther" class="form-check-label">{{ _("Ajouter à une autre base :") }}</label>
+                        <select id="selectEvolutionTargetOther" class="form-select form-select-sm mt-1" aria-label="{{ _('Autre base') }}"></select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary modal-close" data-bs-dismiss="modal">{{ _("Annuler") }}</button>
+                <button type="button" id="btnEvolutionImportTargetConfirm" class="btn btn-primary">{{ _("Importer") }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="modalEvolutionDelete"class="modal bs-modal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">

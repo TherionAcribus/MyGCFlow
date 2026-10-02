@@ -12,11 +12,12 @@
 import * as pkg from './index.js';
 import { CONFIG } from './init.js';
 import { t } from './notifications.js';
-import { showBsModal, hideBsModal } from './ui_bootstrap.js';
+import { getBsModal, showBsModal, hideBsModal } from './ui_bootstrap.js';
 import { saveSettingsPatch } from './settings_api.mjs';
 import { isEvolutionPage } from './app_mode.mjs';
 import { staggerDelayMs } from './flash_impulse.mjs';
 import { inclusiveDayCount } from './video_timing.mjs';
+import { fileStem, suggestedImportTarget, unmatchedFilenames } from './evolution_import_target.mjs';
 import {
     beginEvolution,
     buildCountryRegionTree,
@@ -56,6 +57,8 @@ let pendingSelection = null; // filtre modifié pendant une animation
 let importing = false;
 let loadSeq = 0;             // seul le dernier chargement demandé s'applique
 let nameModalMode = 'create';
+let targetChoicePending = false; // modale « Où importer ces exports ? » ouverte
+let importedFilenames = [];  // exports déjà reçus par la base ouverte (historique)
 let popupSeq = 0;
 const clock = createEvolutionClock();
 // Modèle de la ligne d'infos : texte libre avec balises {date}, {actives},
@@ -189,6 +192,7 @@ async function loadDataset(id, { fit = null } = {}) {
         return;
     }
     const seq = ++loadSeq;
+    if (current?.id !== id) importedFilenames = [];
     current = datasets.find((d) => d.id === id) || null;
     renderStats();
     let toast = null;
@@ -530,7 +534,7 @@ export function renderEvolutionPopup(feature, container) {
 
 async function handleCsvFiles(files) {
     if (!files || files.length === 0) return;
-    if (importing) {
+    if (importing || targetChoicePending) {
         pkg.showToast(t('Un import est déjà en cours'), 'warning', t('Import'));
         return;
     }
@@ -551,8 +555,25 @@ async function handleCsvFiles(files) {
     }
 
     let target = current;
+    const filenames = files.map((f) => f.name);
+    const unmatched = unmatchedFilenames({ dataset: current, importedFilenames, filenames });
+    if (unmatched.length > 0) {
+        // Fichier d'une autre zone vraisemblablement : la fusion serait
+        // définitive, on demande où importer.
+        const choice = await askImportTarget(filenames, unmatched);
+        if (!choice) return;
+        if (importing) return;
+        if (clock.running) {
+            pkg.showToast(t("Arrêtez l'animation avant d'importer."), 'warning', t('Import'));
+            return;
+        }
+        target = choice.kind === 'new' ? null : datasets.find((d) => d.id === choice.id) || null;
+        if (choice.kind !== 'new' && !target) return;
+    }
     if (!target) {
-        target = await createDatasetForFile(files[0].name);
+        // Nouvelle base au nom du premier fichier non reconnu : celui des
+        // fichiers reconnus est déjà le nom de la base ouverte.
+        target = await createDatasetForFile(unmatched[0] || files[0].name);
         if (!target) return;
     }
 
@@ -643,8 +664,7 @@ async function pollTask(taskId, onProgress) {
 // Aucune base : on en crée une au nom du premier fichier (sans l'horodatage
 // que les outils d'export y ajoutent), en évitant les noms déjà pris.
 async function createDatasetForFile(filename) {
-    const stem = String(filename || '').replace(/\.[^.]+$/, '').replace(/[-_ ]?\d{8,14}$/, '').trim();
-    const baseName = (stem || t('Ma zone')).slice(0, 90);
+    const baseName = (fileStem(filename) || t('Ma zone')).slice(0, 90);
     for (let n = 1; n <= 20; n++) {
         const name = n === 1 ? baseName : `${baseName} (${n})`;
         const response = await fetch(`${CONFIG.BASE_URL}/api/evolution/datasets`, {
@@ -666,6 +686,88 @@ async function createDatasetForFile(filename) {
     }
     pkg.showToast(t('Impossible de créer la base'), 'error', t('Erreur'));
     return null;
+}
+
+// Modale « Où importer ces exports ? » : résout avec { kind: 'new' } ou
+// { kind: 'existing', id }, ou null si l'utilisateur annule. Par défaut, une
+// autre base dont le nom correspond au fichier, sinon une nouvelle base :
+// jamais la base ouverte, puisque c'est elle qui ne correspond pas.
+function askImportTarget(filenames, unmatched) {
+    const modal = el('modalEvolutionImportTarget');
+    if (!modal || !getBsModal(modal) || !current) {
+        console.warn('[EVOLUTION] Modale de choix de la base indisponible : import annulé');
+        return Promise.resolve(null);
+    }
+    targetChoicePending = true;
+
+    const message = el('evolutionImportTargetMessage');
+    if (message) {
+        const quoted = unmatched.map((name) => `« ${name} »`).join(', ');
+        message.textContent = unmatched.length > 1
+            ? t('${files} ne correspondent pas aux exports déjà importés dans « ${name} ».', { files: quoted, name: current.name })
+            : t('${file} ne correspond pas aux exports déjà importés dans « ${name} ».', { file: quoted, name: current.name });
+    }
+    const labelNew = el('labelEvolutionTargetNew');
+    if (labelNew) {
+        labelNew.textContent = t('Créer une nouvelle base « ${name} »', {
+            name: fileStem(unmatched[0]) || t('Ma zone'),
+        });
+    }
+    const labelCurrent = el('labelEvolutionTargetCurrent');
+    if (labelCurrent) {
+        labelCurrent.textContent = t('Ajouter à la base ouverte « ${name} » (${n} caches)', {
+            name: current.name,
+            n: formatNumber(current.stats?.total ?? 0),
+        });
+    }
+    const others = datasets.filter((d) => d.id !== current.id);
+    const otherRow = el('evolutionTargetOtherRow');
+    if (otherRow) otherRow.hidden = others.length === 0;
+    const otherSelect = el('selectEvolutionTargetOther');
+    if (otherSelect) {
+        otherSelect.innerHTML = '';
+        for (const d of others) {
+            const opt = document.createElement('option');
+            opt.value = String(d.id);
+            opt.textContent = t('${name} (${n} caches)', { name: d.name, n: formatNumber(d.stats?.total ?? 0) });
+            otherSelect.appendChild(opt);
+        }
+    }
+
+    const suggestion = suggestedImportTarget({ datasets, currentId: current.id, filenames: unmatched });
+    const radio = (value) => modal.querySelector(`input[name="evolutionImportTarget"][value="${value}"]`);
+    if (suggestion.kind === 'existing' && otherSelect) {
+        otherSelect.value = String(suggestion.id);
+        radio('other').checked = true;
+    } else {
+        radio('new').checked = true;
+    }
+
+    return new Promise((resolve) => {
+        let choice = null;
+        const cleanups = [];
+        const on = (node, type, handler) => {
+            if (!node) return;
+            node.addEventListener(type, handler);
+            cleanups.push(() => node.removeEventListener(type, handler));
+        };
+        // Seul point de sortie : couvre aussi Échap, le fond et la croix.
+        on(modal, 'hidden.bs.modal', () => {
+            cleanups.forEach((fn) => fn());
+            targetChoicePending = false;
+            resolve(choice);
+        });
+        // Choisir une base dans la liste coche l'option correspondante.
+        on(otherSelect, 'change', () => { radio('other').checked = true; });
+        on(el('btnEvolutionImportTargetConfirm'), 'click', () => {
+            const picked = modal.querySelector('input[name="evolutionImportTarget"]:checked')?.value;
+            if (picked === 'new') choice = { kind: 'new' };
+            else if (picked === 'current') choice = { kind: 'existing', id: current.id };
+            else if (picked === 'other' && otherSelect?.value) choice = { kind: 'existing', id: Number(otherSelect.value) };
+            hideBsModal(modal);
+        });
+        showBsModal(modal);
+    });
 }
 
 // Pendant un import, ni second import, ni changement de base.
@@ -831,6 +933,7 @@ async function loadImportHistory(datasetId) {
 function renderImportHistory(imports) {
     const details = el('evolutionImportHistory');
     const list = el('evolutionImportHistoryList');
+    importedFilenames = imports.map((entry) => entry.filename || '');
     if (!details || !list) return;
     list.textContent = '';
     for (const entry of imports) {
