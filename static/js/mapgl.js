@@ -441,16 +441,6 @@ export function addVector(data) {
 
 // fonction appelée au changement d'options graphique
 export function refreshPoints(){
-    // Afficher un toast pour l'affichage des points
-    const title = pkg.t ? pkg.t('Affichage des points') : 'Affichage des points';
-    const message = pkg.t ? pkg.t('Mise à jour de l\'affichage des points...') : 'Mise à jour de l\'affichage des points...';
-    pkg.showPointsToast(message, title);
-
-    // Masquer automatiquement après 1.5 secondes
-    setTimeout(() => {
-        pkg.hidePointsToast();
-    }, 1500);
-
     // Un changement de style ne doit jamais changer QUELS points sont visibles.
     // Pendant une animation (en cours, en pause ou en enregistrement), la carte
     // n'affiche que les points déjà « sortis » : repartir de `features` ferait
@@ -462,6 +452,21 @@ export function refreshPoints(){
     let toDisplay = features || [];
     if (!isEvolutionPage() && isAnimationInProgress() && window.vectorSource) {
         toDisplay = window.vectorSource.getFeatures();
+    }
+
+    // Toast seulement s'il y a des points à redessiner : le thème appliqué au
+    // démarrage passe ici avant le chargement de la base, et le toast n'y
+    // annonçait rien (il se superposait en outre à celui d'un import lancé
+    // aussitôt).
+    if (toDisplay.length > 0) {
+        const title = pkg.t ? pkg.t('Affichage des points') : 'Affichage des points';
+        const message = pkg.t ? pkg.t('Mise à jour de l\'affichage des points...') : 'Mise à jour de l\'affichage des points...';
+        pkg.showPointsToast(message, title);
+
+        // Masquer automatiquement après 1.5 secondes
+        setTimeout(() => {
+            pkg.hidePointsToast();
+        }, 1500);
     }
 
     clearMap();
