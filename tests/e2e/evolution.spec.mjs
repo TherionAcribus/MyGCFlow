@@ -190,6 +190,37 @@ test('le compte rendu signale date d\'archivage illisible, « Ajouté » vide et
   await expect(summary).toContainText('Tailles non reconnues (gardées telles quelles) : Géante');
 });
 
+test('une base créée pendant la lecture s\'affiche à la fin de l\'animation', async ({ page }) => {
+  // Même report qu'un import qui se termine pendant une lecture : la base
+  // n'est pas chargée en pleine animation, mais à sa fin (plus de refus).
+  await openEvolution(page);
+  await importFixtures(page);
+  // Ouvre l'onglet Animation ; à 1 jour/s, la lecture dure bien plus que le test.
+  await setAnimationEnd(page, '31/12/2021');
+
+  await page.locator('#rhythmModeRate').check({ force: true });
+  const rate = page.locator('#inputDaysPerSecond');
+  await rate.fill('1');
+  await rate.dispatchEvent('input');
+  await page.locator('#btnStartAnimation').click();
+  await expect(page.locator('#btnStopAnimation')).toBeVisible();
+
+  await page.locator('a[href="#data"]').click();
+  await page.locator('#btnEvolutionCreate').click();
+  await page.locator('#inputEvolutionName').fill('Zone vide');
+  await page.locator('#btnEvolutionNameConfirm').click();
+  await expect(page.locator('.gcm-toast').filter({ hasText: "La base sera affichée à la fin de l'animation." }))
+    .toBeVisible();
+  // La base ouverte reste celle qui est animée.
+  await expect(page.locator('#selectEvolutionDataset option:checked')).toHaveText('evolution-a (9 caches)');
+
+  const loaded = nextDatasetLoad(page);
+  // Bouton Arrêter de la barre d'actions, visible depuis l'onglet Données.
+  await page.locator('#btnQuickStop').click();
+  expect((await loaded).selected).toBe(0);
+  await expect(page.locator('#selectEvolutionDataset option:checked')).toHaveText('Zone vide (0 caches)');
+});
+
 test('filtre Région, « Aucun », et restauration de la base au rechargement', async ({ page }) => {
   await openEvolution(page);
   await importFixtures(page);

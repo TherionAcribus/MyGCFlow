@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-02 20:26+0200\n"
+"POT-Creation-Date: 2026-10-02 20:37+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -260,7 +260,7 @@ msgstr ""
 msgid "Base de données"
 msgstr ""
 
-#: blueprints/core.py:150 static/js/evolution_data.js:284
+#: blueprints/core.py:150 static/js/evolution_data.js:302
 #: templates/guide.html:138 templates/menu_data.html:56
 #: templates/menu_data_evolution.html:96 test_translations.py:28
 msgid "Filtres"
@@ -403,7 +403,7 @@ msgstr ""
 msgid "%(name)s : colonnes obligatoires absentes (%(columns)s)"
 msgstr ""
 
-#: blueprints/evolution.py:207 static/js/evolution_data.js:538
+#: blueprints/evolution.py:207 static/js/evolution_data.js:582
 msgid "Un import est déjà en cours"
 msgstr ""
 
@@ -508,7 +508,7 @@ msgid "Analyse du fichier GPX en cours..."
 msgstr ""
 
 #: static/js/bdd.js:267 static/js/bdd.js:1062 static/js/bdd.js:1110
-#: static/js/bdd.js:1426 static/js/evolution_data.js:199
+#: static/js/bdd.js:1426 static/js/evolution_data.js:217
 #: static/js/notifications.js:197 static/js/notifications.js:242
 msgid "Chargement"
 msgstr ""
@@ -582,11 +582,11 @@ msgstr ""
 msgid "Traitement du fichier en cours..."
 msgstr ""
 
-#: static/js/bdd.js:1009 static/js/evolution_data.js:639
+#: static/js/bdd.js:1009 static/js/evolution_data.js:685
 msgid "Erreur réseau lors de l'envoi du fichier"
 msgstr ""
 
-#: static/js/bdd.js:1010 static/js/evolution_data.js:640
+#: static/js/bdd.js:1010 static/js/evolution_data.js:686
 msgid "Envoi du fichier annulé"
 msgstr ""
 
@@ -618,10 +618,10 @@ msgstr ""
 
 #: static/js/bdd.js:1097 static/js/bdd.js:1105 static/js/bdd.js:1177
 #: static/js/bdd.js:1185 static/js/bdd.js:1387 static/js/bdd.js:1470
-#: static/js/bdd.js:1478 static/js/evolution_data.js:143
-#: static/js/evolution_data.js:220 static/js/evolution_data.js:683
-#: static/js/evolution_data.js:687 static/js/evolution_data.js:1022
-#: static/js/evolution_data.js:1057 static/js/evolution_data.js:1065
+#: static/js/bdd.js:1478 static/js/evolution_data.js:146
+#: static/js/evolution_data.js:238 static/js/evolution_data.js:729
+#: static/js/evolution_data.js:733 static/js/evolution_data.js:1068
+#: static/js/evolution_data.js:1103 static/js/evolution_data.js:1111
 #: static/js/notifications.js:310 static/js/recording_perf.js:187
 #: static/js/ui.js:1282
 msgid "Erreur"
@@ -718,305 +718,314 @@ msgstr ""
 msgid "Erreur d'affichage"
 msgstr ""
 
-#: static/js/evolution_data.js:143
+#: static/js/evolution_data.js:146
 msgid "Impossible de lire la liste des bases"
 msgstr ""
 
-#: static/js/evolution_data.js:170 static/js/evolution_data.js:732
+#: static/js/evolution_data.js:173 static/js/evolution_data.js:778
 #, python-brace-format
 msgid "${name} (${n} caches)"
 msgstr ""
 
-#: static/js/evolution_data.js:190
+#: static/js/evolution_data.js:200
+msgid "La base sera affichée à la fin de l'animation."
+msgstr ""
+
+#: static/js/evolution_data.js:200 templates/menu_data_evolution.html:14
+#: templates/menu_data_evolution.html:20
+msgid "Base de caches"
+msgstr ""
+
+#: static/js/evolution_data.js:202
 msgid "Arrêtez l'animation avant de changer de base."
 msgstr ""
 
-#: static/js/evolution_data.js:190 static/js/evolution_data.js:1049
+#: static/js/evolution_data.js:202 static/js/evolution_data.js:1095
 #: static/js/mapgl.js:1995 static/js/mapgl.js:2039 static/js/mapgl.js:2045
 #: static/js/mapgl.js:2965 static/js/notifications.js:314
 msgid "Attention"
 msgstr ""
 
-#: static/js/evolution_data.js:199
+#: static/js/evolution_data.js:217
 msgid "Chargement de la base..."
 msgstr ""
 
-#: static/js/evolution_data.js:220
+#: static/js/evolution_data.js:238
 #, python-brace-format
 msgid "Impossible de charger la base : ${message}"
 msgstr ""
 
-#: static/js/evolution_data.js:284
+#: static/js/evolution_data.js:302
 msgid "Le filtre s'appliquera à la fin de l'animation."
 msgstr ""
 
-#: static/js/evolution_data.js:304
+#: static/js/evolution_data.js:322
 #, python-brace-format
 msgid ""
 "${n} caches affichées : la carte peut devenir lente. Filtrez par pays ou "
 "région pour alléger."
 msgstr ""
 
-#: static/js/evolution_data.js:305
+#: static/js/evolution_data.js:323
 msgid "Grosse sélection"
 msgstr ""
 
-#: static/js/evolution_data.js:494
+#: static/js/evolution_data.js:538
 #, python-brace-format
 msgid "Archivée le ${date}"
 msgstr ""
 
-#: static/js/evolution_data.js:495
+#: static/js/evolution_data.js:539
 msgid "Archivée (date inconnue)"
 msgstr ""
 
-#: static/js/evolution_data.js:495
+#: static/js/evolution_data.js:539
 msgid "Active"
 msgstr ""
 
-#: static/js/evolution_data.js:513
+#: static/js/evolution_data.js:557
 #, python-brace-format
 msgid "Placée le ${date}"
 msgstr ""
 
-#: static/js/evolution_data.js:538 static/js/evolution_data.js:542
-#: static/js/evolution_data.js:552 static/js/evolution_data.js:567
+#: static/js/evolution_data.js:582 static/js/evolution_data.js:586
+#: static/js/evolution_data.js:596 static/js/evolution_data.js:611
 msgid "Import"
 msgstr ""
 
-#: static/js/evolution_data.js:542 static/js/evolution_data.js:567
+#: static/js/evolution_data.js:586 static/js/evolution_data.js:611
 msgid "Arrêtez l'animation avant d'importer."
 msgstr ""
 
-#: static/js/evolution_data.js:547
+#: static/js/evolution_data.js:591
 #, python-brace-format
 msgid "${name} : seuls les fichiers .csv sont acceptés"
 msgstr ""
 
-#: static/js/evolution_data.js:548
+#: static/js/evolution_data.js:592
 #, python-brace-format
 msgid "${name} : fichier vide"
 msgstr ""
 
-#: static/js/evolution_data.js:549
+#: static/js/evolution_data.js:593
 #, python-brace-format
 msgid "${name} : fichier trop volumineux (500 Mo au plus)"
 msgstr ""
 
-#: static/js/evolution_data.js:581
+#: static/js/evolution_data.js:625
 msgid "Envoi des fichiers..."
 msgstr ""
 
-#: static/js/evolution_data.js:596 static/js/evolution_data.js:609
+#: static/js/evolution_data.js:640 static/js/evolution_data.js:653
 msgid "Import en cours..."
 msgstr ""
 
-#: static/js/evolution_data.js:614
+#: static/js/evolution_data.js:658
 msgid "L'import a échoué"
 msgstr ""
 
-#: static/js/evolution_data.js:628
+#: static/js/evolution_data.js:674
 #, python-brace-format
 msgid "Envoi des fichiers : ${pct}%"
 msgstr ""
 
-#: static/js/evolution_data.js:636
+#: static/js/evolution_data.js:682
 msgid "Impossible de lancer l'import"
 msgstr ""
 
-#: static/js/evolution_data.js:667
+#: static/js/evolution_data.js:713
 msgid "Ma zone"
 msgstr ""
 
-#: static/js/evolution_data.js:683 static/js/evolution_data.js:687
+#: static/js/evolution_data.js:729 static/js/evolution_data.js:733
 msgid "Impossible de créer la base"
 msgstr ""
 
-#: static/js/evolution_data.js:707
+#: static/js/evolution_data.js:753
 #, python-brace-format
 msgid "${files} ne correspondent pas aux exports déjà importés dans « ${name} »."
 msgstr ""
 
-#: static/js/evolution_data.js:708
+#: static/js/evolution_data.js:754
 #, python-brace-format
 msgid "${file} ne correspond pas aux exports déjà importés dans « ${name} »."
 msgstr ""
 
-#: static/js/evolution_data.js:713
+#: static/js/evolution_data.js:759
 #, python-brace-format
 msgid "Créer une nouvelle base « ${name} »"
 msgstr ""
 
-#: static/js/evolution_data.js:720
+#: static/js/evolution_data.js:766
 #, python-brace-format
 msgid "Ajouter à la base ouverte « ${name} » (${n} caches)"
 msgstr ""
 
-#: static/js/evolution_data.js:816
+#: static/js/evolution_data.js:862
 msgid "Erreur d'import"
 msgstr ""
 
-#: static/js/evolution_data.js:848
+#: static/js/evolution_data.js:894
 #, python-brace-format
 msgid ""
 "${read} lignes lues : ${added} nouvelles, ${updated} mises à jour, "
 "${unchanged} inchangées"
 msgstr ""
 
-#: static/js/evolution_data.js:852
+#: static/js/evolution_data.js:898
 #, python-brace-format
 msgid "${n} caches archivées depuis le précédent export"
 msgstr ""
 
-#: static/js/evolution_data.js:855
+#: static/js/evolution_data.js:901
 #, python-brace-format
 msgid "${n} lignes plus anciennes que la version déjà connue, ignorées"
 msgstr ""
 
-#: static/js/evolution_data.js:858
+#: static/js/evolution_data.js:904
 #, python-brace-format
 msgid "${n} doublons dans le fichier (version la plus récente retenue)"
 msgstr ""
 
-#: static/js/evolution_data.js:861
+#: static/js/evolution_data.js:907
 #, python-brace-format
 msgid ""
 "${n} caches archivées sans date d'archivage : elles restent affichées "
 "jusqu'à la fin"
 msgstr ""
 
-#: static/js/evolution_data.js:865
+#: static/js/evolution_data.js:911
 #, python-brace-format
 msgid "${n} lignes invalides ignorées (${reasons})"
 msgstr ""
 
-#: static/js/evolution_data.js:868
+#: static/js/evolution_data.js:914
 #, python-brace-format
 msgid ""
 "${n} dates d'archivage antérieures au placement (disparition le jour du "
 "placement)"
 msgstr ""
 
-#: static/js/evolution_data.js:871
+#: static/js/evolution_data.js:917
 #, python-brace-format
 msgid "${n} caches réactivées : leur ancienne date d'archivage est ignorée"
 msgstr ""
 
-#: static/js/evolution_data.js:876
+#: static/js/evolution_data.js:922
 #, python-brace-format
 msgid ""
 "${n} dates d'archivage illisibles, ignorées (formats lus : AAAA-MM-JJ, "
 "JJ/MM/AAAA)"
 msgstr ""
 
-#: static/js/evolution_data.js:884
+#: static/js/evolution_data.js:930
 msgid ""
 "Colonne « Ajouté » absente ou vide : les caches déjà connues par un "
 "export daté ne sont pas mises à jour"
 msgstr ""
 
-#: static/js/evolution_data.js:885
+#: static/js/evolution_data.js:931
 #, python-brace-format
 msgid ""
 "${n} lignes sans date d'export (colonne « Ajouté ») : elles ne mettent "
 "pas à jour les caches déjà connues par un export daté"
 msgstr ""
 
-#: static/js/evolution_data.js:891
+#: static/js/evolution_data.js:937
 #, python-brace-format
 msgid "Types non reconnus (couleur par défaut) : ${types}"
 msgstr ""
 
-#: static/js/evolution_data.js:895
+#: static/js/evolution_data.js:941
 #, python-brace-format
 msgid "Tailles non reconnues (gardées telles quelles) : ${sizes}"
 msgstr ""
 
-#: static/js/evolution_data.js:902
+#: static/js/evolution_data.js:948
 msgid "code GC"
 msgstr ""
 
-#: static/js/evolution_data.js:903
+#: static/js/evolution_data.js:949
 msgid "coordonnées"
 msgstr ""
 
-#: static/js/evolution_data.js:904
+#: static/js/evolution_data.js:950
 msgid "date de placement"
 msgstr ""
 
-#: static/js/evolution_data.js:916
+#: static/js/evolution_data.js:962
 msgid "Base vide : importez un export CSV."
 msgstr ""
 
-#: static/js/evolution_data.js:920
+#: static/js/evolution_data.js:966
 #, python-brace-format
 msgid "${n} caches"
 msgstr ""
 
-#: static/js/evolution_data.js:921
+#: static/js/evolution_data.js:967
 #, python-brace-format
 msgid "${n} actives"
 msgstr ""
 
-#: static/js/evolution_data.js:922
+#: static/js/evolution_data.js:968
 #, python-brace-format
 msgid "${n} archivées"
 msgstr ""
 
-#: static/js/evolution_data.js:925
+#: static/js/evolution_data.js:971
 #, python-brace-format
 msgid "${n} archivées sans date"
 msgstr ""
 
-#: static/js/evolution_data.js:930
+#: static/js/evolution_data.js:976
 #, python-brace-format
 msgid "placements du ${from} au ${to}"
 msgstr ""
 
-#: static/js/evolution_data.js:934
+#: static/js/evolution_data.js:980
 #, python-brace-format
 msgid "export du ${date}"
 msgstr ""
 
-#: static/js/evolution_data.js:967
+#: static/js/evolution_data.js:1013
 #, python-brace-format
 msgid "${date} · ${file} : ${added} nouvelles, ${updated} mises à jour"
 msgstr ""
 
-#: static/js/evolution_data.js:980 templates/menu_data_evolution.html:26
+#: static/js/evolution_data.js:1026 templates/menu_data_evolution.html:26
 msgid "Renommer la base"
 msgstr ""
 
-#: static/js/evolution_data.js:980 templates/menu_data_evolution.html:22
+#: static/js/evolution_data.js:1026 templates/menu_data_evolution.html:22
 #: templates/modal_evolution.html:8
 msgid "Nouvelle base"
 msgstr ""
 
-#: static/js/evolution_data.js:1009
+#: static/js/evolution_data.js:1055
 msgid "Nom refusé"
 msgstr ""
 
-#: static/js/evolution_data.js:1022 static/js/evolution_data.js:1065
+#: static/js/evolution_data.js:1068 static/js/evolution_data.js:1111
 #, python-brace-format
 msgid "Erreur : ${message}"
 msgstr ""
 
-#: static/js/evolution_data.js:1040
+#: static/js/evolution_data.js:1086
 #, python-brace-format
 msgid ""
 "Supprimer la base « ${name} » et ses ${n} caches ? Les fichiers CSV "
 "d'origine ne sont pas touchés."
 msgstr ""
 
-#: static/js/evolution_data.js:1049
+#: static/js/evolution_data.js:1095
 msgid "Arrêtez l'animation avant de supprimer la base."
 msgstr ""
 
-#: static/js/evolution_data.js:1057
+#: static/js/evolution_data.js:1103
 msgid "Suppression impossible"
 msgstr ""
 
-#: static/js/evolution_data.js:1083
+#: static/js/evolution_data.js:1129
 msgid "Déposez vos exports CSV pour les ajouter à la base"
 msgstr ""
 
@@ -3752,10 +3761,6 @@ msgstr ""
 
 #: templates/menu_data.html:41 templates/menu_data_evolution.html:82
 msgid "Choisir un style"
-msgstr ""
-
-#: templates/menu_data_evolution.html:14 templates/menu_data_evolution.html:20
-msgid "Base de caches"
 msgstr ""
 
 #: templates/menu_data_evolution.html:18

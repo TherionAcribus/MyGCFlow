@@ -54,6 +54,8 @@ let olFeatures = [];         // features de la sélection, dans l'ordre de timel
 let endDay = 0;              // dernier jour de l'animation en cours
 let staggerOn = false;
 let pendingSelection = null; // filtre modifié pendant une animation
+let pendingReload = null;    // { id, fit } : base à (re)charger après l'animation
+let pendingTimer = null;     // attente de la fin d'un enregistrement
 let importing = false;
 let loadSeq = 0;             // seul le dernier chargement demandé s'applique
 let nameModalMode = 'create';
@@ -134,7 +136,8 @@ function bindControls() {
 // --- Liste des bases ----------------------------------------------------------------
 
 // fit : cadrage de la carte sur la base chargée ('always', 'if-outside' ou null).
-async function refreshDatasets({ selectId = null, fit = 'always' } = {}) {
+// deferIfRunning : voir loadDataset.
+async function refreshDatasets({ selectId = null, fit = 'always', deferIfRunning = false } = {}) {
     let payload;
     try {
         payload = await fetchJson(`${CONFIG.BASE_URL}/api/evolution/datasets`);
@@ -152,7 +155,7 @@ async function refreshDatasets({ selectId = null, fit = 'always' } = {}) {
     if (payload.import_task_id && !importing) followRunningImport(payload.import_task_id, chosen?.id ?? null);
 
     if (chosen) {
-        await loadDataset(chosen.id, { fit });
+        await loadDataset(chosen.id, { fit, deferIfRunning });
     } else {
         clearDataset();
     }
@@ -185,15 +188,30 @@ function renderDatasetSelect(selectedId) {
 
 // --- Chargement d'une base ------------------------------------------------------------
 
-async function loadDataset(id, { fit = null } = {}) {
+// deferIfRunning : pendant une animation, le chargement est reporté à sa fin
+// au lieu d'être refusé. Pour les chargements que l'utilisateur n'a pas
+// demandés à cet instant (import terminé, base créée) : sans cela, la carte
+// garderait l'ancienne version de la base jusqu'à une nouvelle sélection.
+async function loadDataset(id, { fit = null, deferIfRunning = false } = {}) {
     if (clock.running) {
-        pkg.showToast(t("Arrêtez l'animation avant de changer de base."), 'warning', t('Attention'));
         renderDatasetSelect(current?.id ?? null);
+        if (deferIfRunning) {
+            pendingReload = { id, fit };
+            pkg.showToast(t("La base sera affichée à la fin de l'animation."), 'info', t('Base de caches'));
+        } else {
+            pkg.showToast(t("Arrêtez l'animation avant de changer de base."), 'warning', t('Attention'));
+        }
         return;
     }
+    // Un chargement plus récent remplace celui qui attendait la fin de
+    // l'animation (ex. base choisie pendant la fin d'un enregistrement).
+    pendingReload = null;
     const seq = ++loadSeq;
     if (current?.id !== id) importedFilenames = [];
     current = datasets.find((d) => d.id === id) || null;
+    // Un chargement reporté à la fin de l'animation n'est pas passé par la
+    // liste : elle désignait encore la base animée.
+    if (el('selectEvolutionDataset')?.value !== String(id)) renderDatasetSelect(id);
     renderStats();
     let toast = null;
     try { toast = pkg.showLoadingToast(t('Chargement de la base...'), t('Chargement')); } catch (_) {}
@@ -437,11 +455,37 @@ export function evolutionFrameVars(now, msPerDay) {
 
 export function evolutionEnd() {
     endEvolution(clock);
-    if (pendingSelection) {
-        const selection = pendingSelection;
-        pendingSelection = null;
-        applySelection(selection);
+    applyPendingChanges();
+}
+
+// Changements reportés pendant l'animation : base à recharger (import terminé,
+// base créée) ou filtre modifié. En capture MediaRecorder, la fin de
+// l'animation précède la « queue » encore filmée : on attend la fin de
+// l'enregistrement pour ne pas changer la carte dans les dernières images.
+function applyPendingChanges() {
+    if (pendingTimer) {
+        clearTimeout(pendingTimer);
+        pendingTimer = null;
     }
+    if (!pendingReload && !pendingSelection) return;
+    // Une nouvelle animation a démarré : sa propre fin reprendra la main.
+    if (clock.running) return;
+    if (pkg.isRecordingActive?.()) {
+        pendingTimer = setTimeout(applyPendingChanges, 250);
+        return;
+    }
+    if (pendingReload) {
+        // Le chargement relit les filtres : une sélection en attente y est
+        // appliquée d'elle-même.
+        const { id, fit } = pendingReload;
+        pendingReload = null;
+        pendingSelection = null;
+        loadDataset(id, { fit });
+        return;
+    }
+    const selection = pendingSelection;
+    pendingSelection = null;
+    applySelection(selection);
 }
 
 // État au repos : valeurs des trois compteurs à la date de fin de l'animation.
@@ -614,7 +658,9 @@ async function followImportTask(taskId, datasetId) {
         throw new Error(status.error || t("L'import a échoué"));
     }
     // Nouvel export d'une zone déjà ouverte : le cadrage en cours est gardé.
-    await refreshDatasets({ selectId: datasetId, fit: 'if-outside' });
+    // Une lecture lancée pendant l'import ne bloque pas le rechargement : il
+    // attend sa fin.
+    await refreshDatasets({ selectId: datasetId, fit: 'if-outside', deferIfRunning: true });
 }
 
 function uploadFiles(datasetId, files) {
@@ -1016,7 +1062,7 @@ async function confirmNameModal() {
             current = data.dataset;
             renderDatasetSelect(current.id);
         } else {
-            await refreshDatasets({ selectId: data.dataset.id });
+            await refreshDatasets({ selectId: data.dataset.id, deferIfRunning: true });
         }
     } catch (e) {
         pkg.showToast(t('Erreur : ${message}', { message: e.message }), 'error', t('Erreur'));

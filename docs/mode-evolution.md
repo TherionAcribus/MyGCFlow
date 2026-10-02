@@ -37,7 +37,11 @@ jamais leurs données.
    Département** (même machinerie que le mode principal ; la sélection n'est
    pas persistée).
 5. Lecture et export vidéo comme dans le mode principal. Le suivi de caméra
-   n'existe pas dans ce mode.
+   n'existe pas dans ce mode. Pendant une animation (pause comprise), la carte
+   ne change pas : un filtre modifié, un import terminé ou une base créée
+   s'appliquent à la fin — après la fin complète de l'enregistrement en
+   capture vidéo, pour ne pas toucher aux dernières images filmées. Changer
+   soi-même de base reste refusé tant que l'animation tourne.
 
 Plusieurs **bases nommées** peuvent coexister (une par zone). Réimporter une
 zone plus tard complète la base : nouvelles caches ajoutées, caches archivées
