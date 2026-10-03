@@ -15,8 +15,10 @@ rapport effet/effort décroissant. **Lire d'abord « Règles communes ».**
 >
 > **Environnement (important)** : `npm run test:e2e` gèle indéfiniment sous
 > **Node 24** (bug nodejs/node#63085 + Playwright 1.52). Lancer la suite sous
-> Node 22 : `"C:\nvm4w\nodejs\node.exe" tests/e2e/run-tests.mjs <specs>` ou
-> `nvm use 22`. Corriger en montant la version d'@playwright/test (fix PR
+> Node 22 : `"C:\Users\fabie\AppData\Local\nvm\v22.22.2\node.exe"
+> tests/e2e/run-tests.mjs <specs>` (attention : `C:\nvm4w\nodejs\node.exe` est
+> le lien nvm-for-windows vers la version *active*, actuellement Node 24 — ne
+> pas l'utiliser). Corriger en montant la version d'@playwright/test (fix PR
 > #35933) ou en épinglant Node ≤24.11.
 
 ## Règles communes à tous les lots
