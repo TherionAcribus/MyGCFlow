@@ -299,8 +299,11 @@
              il ne sert que de repli rare pour la capture d'images pendant l'enregistrement,
              inutile de le télécharger à chaque chargement de page. -->
 
-        <!-- Traductions JavaScript -->
-        <script src="/js_translations.js"></script>
+        <!-- Traductions JavaScript. Le paramètre ?lang= rend l'URL propre à
+             chaque langue : le catalogue est servi avec Cache-Control 1 h,
+             sans lui le navigateur garderait la version de la langue
+             précédente après un changement de langue. -->
+        <script src="/js_translations.js?lang={{ lang or 'fr' }}"></script>
 
 
         <!-- Barrel de mes scripts -->
