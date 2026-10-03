@@ -2163,10 +2163,13 @@ background: rgba(33, 150, 243, 0.04);
     padding: 0 12px;
     background: var(--tblr-bg-surface, var(--color-surface));
     border-bottom: 1px solid var(--tblr-border-color, var(--color-border));
-    /* Au-dessus des overlays internes de la carte (.empty-state z-index 90)
-       mais sous les modales Bootstrap (~1055) et les toasts (2147483000). */
+    /* Au-dessus de la barre collante des onglets (#panelToolbar, z-index
+       1020) : sans cela le chip « Enregistré » flottant sous le select
+       d'apparence passerait sous la barre. L'en-tête et la barre ne se
+       chevauchent jamais en layout, seul le chip déborde. Toujours sous
+       les modales Bootstrap (~1055) et les toasts (2147483000). */
     position: relative;
-    z-index: 100;
+    z-index: 1030;
 }
 
 .app-header-brand {
@@ -2231,22 +2234,54 @@ background: rgba(33, 150, 243, 0.04);
 /* Indicateur « Enregistré ✓ » du select d'apparence (saved_indicator.mjs) :
    dans un formulaire il réserve sa place (visibility) pour éviter les sauts,
    mais dans le bandeau cette réserve décalerait le select en permanence dès
-   la première sauvegarde — il est donc posé en chip flottant SOUS le select,
-   hors flux. Le stacking context de #appHeader (z-index:100) le fait passer
-   au-dessus de la carte pendant ses ~2 s d'affichage. */
+   la première sauvegarde — il est donc posé en pilule flottante SOUS le
+   select, hors flux. Le stacking context de #appHeader (z-index:100) le fait
+   passer au-dessus de la carte pendant ses ~2 s d'affichage. */
 #appHeader .gc-saved-indicator {
     position: absolute;
-    top: calc(100% + 3px);
-    right: 0;
+    top: calc(100% + 6px);
+    right: 4px;
     margin-left: 0;
+    gap: 4px;
     font-size: 0.7rem;
+    font-weight: 600;
     line-height: 1;
-    padding: 3px 7px;
+    letter-spacing: 0.01em;
+    padding: 4px 9px;
     white-space: nowrap;
+    border-radius: 999px;
     background: var(--tblr-bg-surface, var(--color-surface));
     border: 1px solid var(--tblr-border-color, var(--color-border));
-    border-radius: 4px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
+    /* Entrée : descente douce + fondu (le transform s'ajoute à la transition
+       opacity héritée du style générique). */
+    transform: translateY(-5px);
+    transition: opacity 0.22s ease, transform 0.22s ease;
+}
+#appHeader .gc-saved-indicator.is-visible {
+    transform: translateY(0);
+}
+/* Teinte par état : pilule pleine et contrastée — le retour doit se lire
+   d'un coup d'œil au-dessus de la carte, quel que soit le fond derrière. */
+#appHeader .gc-saved-indicator.is-saved {
+    color: #fff;
+    border-color: transparent;
+    background: var(--tblr-success, #2fb344);
+}
+#appHeader .gc-saved-indicator.is-error {
+    color: #fff;
+    border-color: transparent;
+    background: var(--tblr-danger, #d63939);
+}
+#appHeader .gc-saved-indicator.is-saving {
+    color: var(--tblr-bg-surface, #fff);
+    background: var(--tblr-secondary, #6c757d);
+}
+@media (prefers-reduced-motion: reduce) {
+    #appHeader .gc-saved-indicator {
+        transition: opacity 0.18s ease;
+        transform: none;
+    }
 }
 
 /* Le conteneur cède la hauteur de l'en-tête : sans cela (height:100vh)
