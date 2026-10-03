@@ -183,6 +183,16 @@ h5, h6 { color: var(--color-heading); font-weight: 600; }
     background-color: var(--color-surface);
     opacity: 1;
 }
+/* Le fond suit le thème mais les options héritaient de la couleur claire
+   de Tom Select (#343a40) : illisible en sombre — le texte suit aussi le
+   thème (ne change rien en clair, où --color-text est déjà foncé). */
+.ts-dropdown {
+    color: var(--color-text);
+}
+.ts-dropdown .option,
+.ts-dropdown .optgroup-header {
+    color: inherit;
+}
 .ts-wrapper.plugin-checkbox_options .option.active,
 .ts-dropdown .active {
     background-color: var(--color-accent-weak);
