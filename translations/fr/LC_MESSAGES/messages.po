@@ -565,11 +565,11 @@ msgstr "hier à ${time}"
 
 #: static/js/bdd.js:450
 msgid "caches"
-msgstr "Cochez"
+msgstr "Geocaches"
 
 #: static/js/bdd.js:450
 msgid "cache"
-msgstr "Cochez"
+msgstr "Geocache"
 
 #: static/js/bdd.js:453
 #, python-brace-format
