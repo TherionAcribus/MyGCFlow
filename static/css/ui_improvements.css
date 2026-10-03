@@ -2218,6 +2218,8 @@ background: rgba(33, 150, 243, 0.04);
     display: flex;
     align-items: center;
     gap: 6px;
+    /* Repère pour le chip « Enregistré » posé hors flux (règle suivante). */
+    position: relative;
 }
 .app-header-theme .form-select {
     width: auto;
@@ -2227,11 +2229,24 @@ background: rgba(33, 150, 243, 0.04);
 }
 
 /* Indicateur « Enregistré ✓ » du select d'apparence (saved_indicator.mjs) :
-   il est posé dans .app-header-theme — le garder discret pour ne pas
-   déformer le bandeau pendant ses 2 s d'affichage. */
+   dans un formulaire il réserve sa place (visibility) pour éviter les sauts,
+   mais dans le bandeau cette réserve décalerait le select en permanence dès
+   la première sauvegarde — il est donc posé en chip flottant SOUS le select,
+   hors flux. Le stacking context de #appHeader (z-index:100) le fait passer
+   au-dessus de la carte pendant ses ~2 s d'affichage. */
 #appHeader .gc-saved-indicator {
-    font-size: 0.75rem;
+    position: absolute;
+    top: calc(100% + 3px);
+    right: 0;
+    margin-left: 0;
+    font-size: 0.7rem;
+    line-height: 1;
+    padding: 3px 7px;
     white-space: nowrap;
+    background: var(--tblr-bg-surface, var(--color-surface));
+    border: 1px solid var(--tblr-border-color, var(--color-border));
+    border-radius: 4px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
 /* Le conteneur cède la hauteur de l'en-tête : sans cela (height:100vh)
