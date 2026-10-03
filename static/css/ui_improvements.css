@@ -830,6 +830,15 @@ main.fullscreen-mode #infosFrame span:not([hidden]) {
 #layoutPresets {
     margin-left: 6px;
 }
+/* L'ombre portée de chaque bouton (--tblr-btn-box-shadow) se superpose
+   aux colonnes de jointure (margin-left: -1px de .btn-group) et s'y
+   additionne : les séparateurs semblaient dépasser sous le groupe, comme
+   si les boutons du milieu étaient plus bas. Au survol, le fond opaque
+   masquait l'artefact. Le contour suffit à délimiter le groupe. */
+#layoutPresets,
+#layoutPresets .btn {
+    box-shadow: none;
+}
 /* L'état actif des préréglages reste visible aussi au clavier/lecteur
    d'écran (aria-pressed synchronisé par syncLayoutPresets dans ui.js). */
 #layoutPresets .btn[aria-pressed="true"] {
