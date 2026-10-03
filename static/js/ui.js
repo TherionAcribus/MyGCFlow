@@ -1518,6 +1518,22 @@ function initMapTabsSplitPane() {
         applySavedRatioIfAny();
     });
 
+    // Classes de largeur du panneau : les colonnes Bootstrap répondent à la
+    // largeur du viewport, pas à celle du panneau. En « panneau latéral »
+    // (~420 px), des contrôles débordent — sélecteur tronqué, pastilles de
+    // date qui se chevauchent, groupe de rythme sur deux lignes. Les classes
+    // panel-lt-md / panel-lt-sm, calquées sur les paliers Bootstrap, donnent
+    // au CSS des seuils mesurés sur la largeur réelle du panneau.
+    function syncPanelWidthClasses() {
+        const w = tabsPanel.clientWidth;
+        tabsPanel.classList.toggle('panel-lt-md', w > 0 && w < 768);
+        tabsPanel.classList.toggle('panel-lt-sm', w > 0 && w < 576);
+    }
+    if (typeof ResizeObserver === 'function') {
+        new ResizeObserver(syncPanelWidthClasses).observe(tabsPanel);
+    }
+    syncPanelWidthClasses();
+
     requestAnimationFrame(() => {
         if (isFullscreenMode()) return;
         // Restaure le mode de disposition (bandeau / latéral) avant d'appliquer

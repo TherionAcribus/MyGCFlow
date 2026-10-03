@@ -752,6 +752,43 @@ main.fullscreen-mode #infosFrame span:not([hidden]) {
     overflow-x: clip;
 }
 
+/* Panneau de réglages étroit — disposition « panneau latéral » (~420 px),
+   fenêtre réduite, ou repli forcé. Les colonnes Bootstrap répondent à la
+   largeur du viewport, pas à celle du panneau : le ResizeObserver de
+   initMapTabsSplitPane pose panel-lt-md / panel-lt-sm (paliers 768/576 px
+   mesurés sur le panneau) et l'on empile ici ce qui déborderait. */
+#tabsPanel.panel-lt-md .tab-pane .row > [class*="col-md-"] {
+    flex: 0 0 100%;
+    max-width: 100%;
+}
+/* Les colonnes de dates sont des .col-6 sans breakpoint : à ~200 px chacune,
+   les pastilles « Données/Filtre · date » (nowrap) débordent et se
+   chevauchent ; en pleine largeur elles ont la place de tenir. */
+#tabsPanel.panel-lt-sm .tab-pane .row > [class*="col-sm-"],
+#tabsPanel.panel-lt-sm .tab-pane .row > .col-6:has(.date-source-row) {
+    flex: 0 0 100%;
+    max-width: 100%;
+}
+/* Le groupe « Par rythme / Par durée / Sur la musique » demande ~390 px :
+   en colonne plutôt qu'un retour à la ligne qui casse l'affichage. */
+#tabsPanel.panel-lt-sm .tab-pane .form-selectgroup {
+    display: flex;
+    flex-direction: column;
+}
+/* Une pastille (nowrap) peut déborder de sa colonne et chevaucher la
+   voisine : les flex items débordent sinon de leur min-content, on autorise
+   donc la valeur à s'élider. */
+.date-source-btn,
+.filter-sync-row {
+    min-width: 0;
+    max-width: 100%;
+}
+.date-source-btn .date-source-value {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 #mapTabsContainer.is-resizing #mapTabsResizer {
     background: rgba(33, 150, 243, 0.25);
 }
