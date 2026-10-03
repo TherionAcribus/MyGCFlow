@@ -1260,11 +1260,31 @@ function updateMediaRecorderOptionsVisibility() {
     });
 }
 
+// Clé localStorage de mémorisation de l'onglet actif, propre à la page
+// (data-mode du <body>, posé dans app.html) : les modes principal et
+// Évolution partagent la même interface mais pas la même donnée — l'onglet
+// restauré sur l'une ne doit pas décider de l'arrivée sur l'autre.
+function activeTabStorageKey() {
+    return `activeTab:${document.body?.dataset?.mode === 'evolution' ? 'evolution' : 'main'}`;
+}
+
 // Gestion de la mémorisation des onglets
 function initTabMemory() {
+    const tabKey = activeTabStorageKey();
+
+    // Migration de l'ancienne clé globale : elle alimente la page courante —
+    // sauf si celle-ci mémorise déjà un choix plus récent — puis disparaît.
+    const legacyTab = localStorage.getItem('activeTab');
+    if (legacyTab !== null) {
+        if (localStorage.getItem(tabKey) === null) {
+            localStorage.setItem(tabKey, legacyTab);
+        }
+        localStorage.removeItem('activeTab');
+    }
+
     // Vérifier s'il y a un hash dans l'URL (priorité sur localStorage)
     const urlHash = window.location.hash.substring(1); // Enlever le #
-    let activeTab = urlHash || localStorage.getItem('activeTab') || 'data'; // Défaut sur 'data'
+    let activeTab = urlHash || localStorage.getItem(tabKey) || 'data'; // Défaut sur 'data'
 
     // Vérifier que l'onglet existe
     const tabElement = document.querySelector(`a[href="#${activeTab}"]`);
@@ -1274,7 +1294,7 @@ function initTabMemory() {
 
         // Sauvegarder dans localStorage si ce n'était pas déjà fait
         if (!urlHash) {
-            localStorage.setItem('activeTab', activeTab);
+            localStorage.setItem(tabKey, activeTab);
         }
     }
 
@@ -1282,7 +1302,7 @@ function initTabMemory() {
     document.querySelectorAll('#mainTabs .nav-link').forEach(tab => {
         tab.addEventListener('click', function() {
             const tabId = this.getAttribute('href').substring(1); // Enlever le #
-            localStorage.setItem('activeTab', tabId);
+            localStorage.setItem(tabKey, tabId);
         });
     });
 }
@@ -1339,15 +1359,17 @@ function initMapTabsSplitPane() {
     }
 
     // Bascule entre le bandeau horizontal (carte au-dessus) et la colonne
-    // latérale (carte à gauche). Persistée dans MODE_KEY.
-    function setSidebarMode(on) {
+    // latérale (carte à gauche). Persistée dans MODE_KEY, sauf si persist
+    // vaut false (repli initial : le défaut ne doit pas passer pour un choix
+    // utilisateur).
+    function setSidebarMode(on, persist = true) {
         sidebarMode = on;
         container.classList.toggle('layout-sidebar', on);
         resizer.setAttribute('aria-orientation', on ? 'vertical' : 'horizontal');
         // Nettoie la dimension de l'autre axe pour repartir propre.
         if (on) mapWithFrames.style.height = '';
         else mapWithFrames.style.width = '';
-        localStorage.setItem(MODE_KEY, on ? 'sidebar' : 'rows');
+        if (persist) localStorage.setItem(MODE_KEY, on ? 'sidebar' : 'rows');
     }
 
     function clampMapHeightPx(mapHeightPx) {
@@ -1362,7 +1384,10 @@ function initMapTabsSplitPane() {
     // (hauteur en bandeau, largeur en latéral). Le réglage résultant est
     // persisté comme un déplacement manuel du séparateur (STORAGE_KEY en px),
     // le preset n'est pas mémorisé en soi.
-    const LAYOUT_PRESETS = { map: 0.8, balanced: 0.6, tabs: 0.25, sidebar: 0.7 };
+    const LAYOUT_PRESETS = { map: 0.75, balanced: 0.45, tabs: 0.25, sidebar: 0.62 };
+    // Écart minimal entre deux préréglages voisins : 0.20 (tabs/balanced).
+    // La tolérance de 0.08 reste nettement en dessous : un ratio mesuré ne
+    // peut pas tomber sous deux préréglages à la fois.
     const LAYOUT_PRESET_TOLERANCE = 0.08;
     const presetButtons = document.querySelectorAll('#layoutPresets [data-layout]');
 
@@ -1387,14 +1412,21 @@ function initMapTabsSplitPane() {
         });
     }
 
-    presetButtons.forEach((b) => b.addEventListener('click', () => {
-        if (isFullscreenMode()) return;
-        const layout = b.dataset.layout;
+    // Applique un préréglage de disposition. persist=false sert au repli
+    // initial (aucune valeur en localStorage) : on n'écrit alors ni MODE_KEY
+    // ni STORAGE_KEY, sinon un défaut deviendrait indistinguable d'un choix
+    // explicite de l'utilisateur.
+    function applyLayoutPreset(layout, persist) {
         const ratio = LAYOUT_PRESETS[layout];
         if (!ratio) return;
         const wantSidebar = layout === 'sidebar';
-        if (wantSidebar !== sidebarMode) setSidebarMode(wantSidebar);
-        applyMapHeightPx(containerSize() * ratio, true);
+        if (wantSidebar !== sidebarMode) setSidebarMode(wantSidebar, persist);
+        applyMapHeightPx(containerSize() * ratio, persist);
+    }
+
+    presetButtons.forEach((b) => b.addEventListener('click', () => {
+        if (isFullscreenMode()) return;
+        applyLayoutPreset(b.dataset.layout, true);
     }));
 
     function applyMapHeightPx(mapHeightPx, persist) {
@@ -1415,6 +1447,9 @@ function initMapTabsSplitPane() {
 
         if (persist) {
             localStorage.setItem(STORAGE_KEY, String(Math.round(clamped)));
+            // Le mode fait partie de l'état choisi : sans lui, une taille
+            // réglée en latéral serait relue comme une hauteur en bandeau.
+            localStorage.setItem(MODE_KEY, sidebarMode ? 'sidebar' : 'rows');
         }
 
         syncLayoutPresets();
@@ -1428,6 +1463,14 @@ function initMapTabsSplitPane() {
         const raw = localStorage.getItem(STORAGE_KEY);
         const savedPx = raw ? parseFloat(raw) : NaN;
         if (!Number.isFinite(savedPx) || savedPx <= 0) {
+            // Rien de restauré (ni taille ni mode enregistré) : repli sur un
+            // préréglage selon la largeur de fenêtre — panneau latéral sur
+            // écran large, équilibré sinon. Non persisté pour que le choix
+            // explicite de l'utilisateur reste le seul état sauvegardé.
+            if (raw === null && localStorage.getItem(MODE_KEY) === null) {
+                applyLayoutPreset(window.innerWidth >= 1280 ? 'sidebar' : 'balanced', false);
+                return;
+            }
             const current = currentMapSize();
             if (Number.isFinite(current) && current > 0) {
                 applyMapHeightPx(current, false);
@@ -2353,7 +2396,8 @@ function reloadWithLanguage(newLanguage) {
     const url = new URL(window.location);
     url.searchParams.delete('lang');
 
-    const activeTab = localStorage.getItem('activeTab');
+    // Même clé par page que initTabMemory (mode principal / Évolution).
+    const activeTab = localStorage.getItem(activeTabStorageKey());
     if (activeTab && activeTab !== 'data') { // 'data' est l'onglet par défaut
         url.hash = activeTab;
     }
@@ -6223,6 +6267,21 @@ export function updateDataAvailabilityUI({ dataResolved = false } = {}) {
 
     const emptyState = document.getElementById('emptyState');
     if (emptyState) emptyState.style.display = (dataStateResolved && !hasDb) ? '' : 'none';
+
+    // Base vide : ramener sur l'onglet Données — c'est là que se fait
+    // l'import — quelle que soit la valeur mémorisée. Le basculement n'a lieu
+    // qu'aux instants où l'état « base chargée ou non » vient d'être tranché
+    // (dataResolved : arrivée sur la page, vidage, résolution Évolution) —
+    // initTabMemory a pu restaurer un autre onglet entre-temps. Pas sur les
+    // rafraîchissements ordinaires (recalcul de timing, fin d'animation…) :
+    // l'utilisateur resterait sinon prisonnier de l'onglet tant que la base
+    // est vide. Un hash explicite dans l'URL garde priorité, et le choix
+    // mémorisé n'est pas écrasé : il reste pour la prochaine visite avec
+    // des données.
+    if (dataResolved && !hasDb && !window.location.hash) {
+        const dataTab = document.querySelector('#mainTabs a[href="#data"]');
+        if (dataTab) showBsTab(dataTab);
+    }
 
     // Suggestion « prochaine étape » dans la carte Mes trouvailles : visible
     // uniquement quand une base est chargée.

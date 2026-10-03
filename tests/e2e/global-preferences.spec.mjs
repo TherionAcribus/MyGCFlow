@@ -159,6 +159,9 @@ test('depuis une URL ?lang=, le rechargement n\'est pas doublé ni annulé', asy
   });
   await openReadyApp(page, '/?lang=en');
   await expect(page.locator('label[for="selectLanguage"]')).toHaveText('Language choice');
+  // Base vide (runtime jetable) : l'onglet d'arrivée est forcé sur Données
+  // même quand 'settings' est mémorisé — l'utilisateur y retourne par un clic.
+  await page.locator('a[href="#settings"]').click();
 
   await page.route(
     (url) => url.pathname === '/',
