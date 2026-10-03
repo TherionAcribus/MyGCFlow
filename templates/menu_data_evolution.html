@@ -92,14 +92,20 @@
 
         <!-- Filtres -->
         <div class="col-12 col-lg-7">
+            <!-- Compteur de sélection en badge accolé au titre, comme dans
+                 l'onglet Données du mode principal (updateFiltersCounter). -->
             <h5 class="gc-section-title">
-                <i class="ti ti-filter text-muted me-1"></i>{{ _("Filtres") }}
+                <i class="ti ti-filter text-muted me-1"></i>{{ _("Filtres") }}<span id="filtersCounter" class="badge bg-secondary-lt ms-2">0 / 0</span>
             </h5>
             <div class="card">
                 <div class="card-body">
                     <section id="filterPanel">
                         <div class="d-flex justify-content-end mb-2">
-                            <button type="button" id="btnResetAllFilters" class="btn btn-sm btn-outline-danger">
+                            <!-- Secondaire au repos : data-filters-active (posé
+                                 par bdd.js) le repasse en rouge quand un filtre
+                                 sort de l'état « tout sélectionné / toutes
+                                 dates ». -->
+                            <button type="button" id="btnResetAllFilters" class="btn btn-sm btn-outline-secondary">
                                 <i class="ti ti-refresh me-1"></i>{{ _("Réinitialiser tous les filtres") }}
                             </button>
                         </div>
@@ -109,11 +115,6 @@
                     </section>
                 </div>
             </div>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-12 text-end">
-            <div id="filtersCounter" class="filters-counter text-muted">{{ _("Sélection: 0 / 0") }}</div>
         </div>
     </div>
 </div>

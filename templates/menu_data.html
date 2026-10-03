@@ -53,19 +53,17 @@
 
         <!-- Section Filtres -->
         <div class="col-12 col-lg-8">
+            <!-- Le compteur de sélection vit en badge accolé au titre : la
+                 ligne dédiée en bas d'onglet sortait de l'écran. Mis à jour
+                 par updateFiltersCounter (bdd.js). -->
             <h5 class="gc-section-title">
-                <i class="ti ti-filter text-muted me-1"></i>{{ _("Filtres") }}
+                <i class="ti ti-filter text-muted me-1"></i>{{ _("Filtres") }}<span id="filtersCounter" class="badge bg-secondary-lt ms-2">0 / 0</span>
             </h5>
             <div class="card">
                 <div class="card-body">
                     {% include 'menu_filtre.html' %}
                 </div>
             </div>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-12 text-end">
-            <div id="filtersCounter" class="filters-counter text-muted">{{ _("Sélection: 0 / 0") }}</div>
         </div>
     </div>
 </div>

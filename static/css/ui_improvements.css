@@ -1138,10 +1138,29 @@ main.fullscreen-mode #infosFrame span:not([hidden]) {
 
 /* (Styles des chips retirés) */
 
-/* Compteur de sélection */
-.filters-counter {
-    margin-top: 8px;
-    font-weight: 500;
+/* Compteur de sélection : désormais un badge Tabler (bg-secondary-lt)
+   accolé au titre « Filtres » ; les variables -lt assurent la lisibilité
+   en thème sombre, rien à surcharger ici. */
+
+/* « Réinitialiser tous les filtres » est un bouton secondaire au repos ;
+   quand bdd.js signale qu'un filtre sort de l'état neutre (« tout
+   sélectionné / toutes dates ») via data-filters-active sur #filterPanel,
+   il repasse en rouge — mêmes variables que .btn-outline-danger. */
+#filterPanel[data-filters-active] #btnResetAllFilters {
+    --tblr-btn-color: var(--color-danger);
+    --tblr-btn-border-color: var(--color-danger);
+    --tblr-btn-hover-color: var(--tblr-danger-fg, #fff);
+    --tblr-btn-hover-border-color: transparent;
+    --tblr-btn-hover-bg: var(--color-danger);
+    --tblr-btn-active-color: var(--tblr-danger-fg, #fff);
+    --tblr-btn-active-bg: var(--color-danger);
+    --tblr-btn-active-border-color: var(--color-danger);
+}
+/* En sombre, --color-danger est trop sombre en contour : même
+   éclaircissement que .btn-outline-danger (tabler_theme.css). */
+[data-bs-theme="dark"] #filterPanel[data-filters-active] #btnResetAllFilters {
+    --tblr-btn-color: #ef5350;
+    --tblr-btn-border-color: #ef5350;
 }
 
 /* Badge filtre actif sur l'onglet Données */
@@ -1722,12 +1741,6 @@ background: rgba(33, 150, 243, 0.04);
     .filter-field {
         margin-bottom: 0.75rem !important;
     }
-}
-
-/* Badge compteur de filtres */
-.filters-counter {
-    font-size: 0.85rem;
-    font-weight: 500;
 }
 
 /* Indicateur de profil actif */

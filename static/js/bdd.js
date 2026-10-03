@@ -2,7 +2,7 @@
 import { CONFIG } from './init.js';
 import { showSuccess, showError, showInfo, t } from './notifications.js';
 import { clearMap } from './mapgl.js';
-import { showBsModal, hideBsModal } from './ui_bootstrap.js';
+import { showBsModal } from './ui_bootstrap.js';
 import { inclusiveDayCount } from './video_timing.mjs';
 import { isEvolutionPage } from './app_mode.mjs';
 
@@ -49,14 +49,14 @@ if (clearDatabaseBtn) {
 // mais reste cliquable si on ne le désactive pas explicitement pendant un import.
 const emptyStateImportBtn = document.getElementById('btnEmptyStateImport');
 
-// Gestionnaire pour le chargement depuis la modale de première utilisation.
-// Même logique que l'input principal, mais sur l'élément #file-input-modal
-// présent dans templates/modal_first_use.html.
-const fileInputModal = document.getElementById('file-input-modal');
-if (fileInputModal) {
-    fileInputModal.addEventListener('change', function(e) {
-        if (e.target.files && e.target.files[0]) {
-            uploadBddRequestFromModal(e);
+// Lien d'aide de l'état vide : ouvre la modale #modal_first_use, désormais
+// purement informative (« Comment obtenir mon fichier .gpx ? ») depuis
+// qu'elle ne s'affiche plus automatiquement au premier lancement.
+const emptyStateGpxHelp = document.getElementById('btnEmptyStateGpxHelp');
+if (emptyStateGpxHelp) {
+    emptyStateGpxHelp.addEventListener('click', () => {
+        try { showBsModal('modal_first_use'); } catch (e) {
+            console.warn('Affichage de la modale d\'aide impossible:', e);
         }
     });
 }
@@ -72,7 +72,6 @@ let importInProgress = false;
 
 function setImportControlsDisabled(disabled) {
     if (fileInput) fileInput.disabled = disabled;
-    if (fileInputModal) fileInputModal.disabled = disabled;
     if (clearDatabaseBtn) clearDatabaseBtn.disabled = disabled;
     if (emptyStateImportBtn) emptyStateImportBtn.disabled = disabled;
 }
@@ -189,8 +188,7 @@ async function validateGpxFile(file) {
 }
 
 // Point d'entrée unique pour tout fichier GPX à charger (sélection via input
-// ou glisser-déposer) : valide, puis route vers le bon flux selon que la
-// modale de bienvenue est ouverte.
+// ou glisser-déposer) : valide localement, puis lance l'upload.
 async function handleGpxFile(file) {
     if (importInProgress) {
         // Les inputs/bouton sont désactivés pendant un import, mais le drag &
@@ -205,30 +203,23 @@ async function handleGpxFile(file) {
     // disque, ce qui peut prendre plusieurs secondes sur un gros GPX. Sans
     // toast dès le dépôt/la sélection, l'utilisateur n'a aucun signe que le
     // chargement a démarré. La toast créée ici est réutilisée ensuite par
-    // uploadBdd/performUploadFromModal pour l'envoi et le suivi serveur.
-    const modalEl = document.getElementById('modal_first_use');
-    const modalOpen = !!(modalEl && modalEl.classList.contains('show'));
+    // uploadBdd pour l'envoi et le suivi serveur.
     let earlyToast = null;
     try { earlyToast = pkg.showLoadingToast(t('Analyse du fichier GPX en cours...'), t('Chargement')); } catch (_) {}
-    // Indicateur inline : dans la modale de bienvenue si elle est ouverte,
-    // sinon dans l'état vide de la carte (« Chargez votre fichier .gpx pour
-    // commencer »), visible justement quand aucune donnée n'est chargée.
-    showUploadIndicator(modalOpen ? 'modalUploadProgress' : 'emptyStateUploadProgress',
+    // Indicateur inline de l'état vide de la carte (« Chargez votre fichier
+    // .gpx pour commencer »), visible justement quand aucune donnée n'est
+    // chargée.
+    showUploadIndicator('emptyStateUploadProgress',
         t('Analyse du fichier GPX en cours...'));
 
     const result = await validateGpxFile(file);
     if (!result.ok) {
         try { pkg.hideToast(earlyToast); } catch (_) {}
-        hideUploadIndicator('modalUploadProgress');
         hideUploadIndicator('emptyStateUploadProgress');
         showError(result.message, t('Fichier invalide'));
         return;
     }
-    if (modalOpen) {
-        performUploadFromModal(file, earlyToast);
-    } else {
-        uploadBdd(file, earlyToast);
-    }
+    uploadBdd(file, earlyToast);
 }
 
 // Vrai si le drag transporte des fichiers (et non du texte/HTML).
@@ -295,11 +286,11 @@ function setupGpxDragAndDrop() {
 if (!isEvolutionPage()) setupGpxDragAndDrop();
 
 // Lit l'état de la BDD (/db_status) et le reflète dans l'UI (texte d'infos +
-// visibilité du bouton de vidage). Avec { offerFirstUse: true } (uniquement au
-// démarrage), affiche en plus la modale de première utilisation quand aucune
-// donnée n'est présente (base absente ou vide) pour inviter à charger un GPX.
-// Ce flag n'est PAS activé sur les appels post-import (la base n'est alors pas
-// vide de toute façon) ni ailleurs, pour éviter que la modale ne resurgisse.
+// visibilité du bouton de vidage). Avec { settleFirstUse: true } (uniquement
+// au démarrage), publie en fin de requête le jalon « première utilisation
+// réglée » attendu par les tests/intégrations : sans données, c'est l'état
+// vide de la carte qui invite à charger un GPX (la modale, purement
+// informative, ne s'ouvre plus que via le lien d'aide de cet état vide).
 // ---- Libellé des informations BDD ------------------------------------------
 // « 6 caches · du 1er au 6 janvier 2026 · importé aujourd'hui à 11:35 » :
 // les dates brutes renvoyées par /db_status (RFC GMT pour les bornes,
@@ -372,22 +363,22 @@ function formatBddInfos(data) {
 }
 
 // Jalon du démarrage, pour les tests navigateur et les intégrations (même rôle
-// que window.mygcflowReady) : la modale de première utilisation a été soit
-// écartée (base non vide), soit ENTIÈREMENT ouverte. Elle s'ouvre après un
-// aller-retour réseau, indépendamment de mygcflowReady : sans ce signal, un
-// test ne peut savoir s'il doit encore l'attendre ni quand la fermer.
+// que window.mygcflowReady) : la vérification « première utilisation »
+// (/db_status, lancée en parallèle du démarrage) est terminée — base vide ou
+// non, l'écran d'accueil (état vide ou points) est tranché. Ce signal arrivant
+// après un aller-retour réseau, indépendamment de mygcflowReady, un test sait
+// ainsi quand l'accueil est stabilisé.
 function markFirstUseSettled() {
     window.mygcflowFirstUseSettled = true;
     window.dispatchEvent(new CustomEvent('mygcflow:first-use-settled'));
 }
 
-export function readBddValues({ offerFirstUse = false } = {}){
+export function readBddValues({ settleFirstUse = false } = {}){
     try {
         fetch(`${CONFIG.BASE_URL}/db_status`)
         .then(response => response.json())
         .then(data => {
             const infos = document.getElementById('infosBDD');
-            const infosModal = document.getElementById('infosBDDModal');
 
             // "A des données" = base présente ET non vide. Les deux autres cas
             // (vide, ou inexistante) sont traités de façon identique côté UI.
@@ -399,30 +390,17 @@ export function readBddValues({ offerFirstUse = false } = {}){
                 : t('Aucune trouvaille chargée');
 
             if (infos) infos.textContent = text;
-            if (infosModal) infosModal.textContent = text;
 
             const btn = document.getElementById('clearDatabaseBtn');
             if (btn) btn.style.display = hasData ? '' : 'none';
 
-            // Première utilisation : pas de données → inviter à charger un GPX.
-            if (offerFirstUse && !hasData) {
-                const modalEl = document.getElementById('modal_first_use');
-                // Décision « réglée » seulement une fois l'animation d'ouverture
-                // finie : Bootstrap ignore une fermeture demandée pendant
-                // celle-ci, et la modale restait alors ouverte.
-                modalEl?.addEventListener('shown.bs.modal', markFirstUseSettled, { once: true });
-                try { showBsModal('modal_first_use'); } catch (e) {
-                    console.warn('Affichage modale première utilisation impossible:', e);
-                    markFirstUseSettled();
-                }
-                if (!modalEl) markFirstUseSettled();
-            } else if (offerFirstUse) {
-                markFirstUseSettled();
-            }
+            // Appel du démarrage : la question « première utilisation » est
+            // tranchée, quel que soit le verdict.
+            if (settleFirstUse) markFirstUseSettled();
         })
         .catch(err => {
             console.error('Erreur lecture infos BDD:', err);
-            if (offerFirstUse) markFirstUseSettled();
+            if (settleFirstUse) markFirstUseSettled();
         });
     } catch (e) {
         console.error('readBddValues error:', e);
@@ -505,14 +483,13 @@ export function fitViewOnData({ force = false } = {}) {
 
 function updateUIAfterClear() {
     const infos = document.getElementById('infosBDD');
-    const infosModal = document.getElementById('infosBDDModal');
     const btn = document.getElementById('clearDatabaseBtn');
-    const counter = document.getElementById('filtersCounter');
 
     if (infos) infos.textContent = t('Aucune trouvaille chargée');
-    if (infosModal) infosModal.textContent = t('Aucune trouvaille chargée');
     if (btn) btn.style.display = 'none';
-    if (counter) counter.textContent = t('Sélection: 0 / 0');
+    // Compteur « 0 / 0 », badge d'onglet, toast « aucune cache » et état
+    // « filtre actif » du panneau passent tous par l'écrivain unique.
+    updateFiltersCounter(0, 0);
 
     // Sans données, Lecture/Enregistrement n'ont plus rien à animer et
     // l'état vide revient sur la carte.
@@ -795,12 +772,11 @@ function checkLoadingProgress(toast, taskId, onSuccess, onError, { intervalMs = 
     });
 }
 
-// --- Indicateurs de chargement inline -------------------------------------
+// --- Indicateur de chargement inline --------------------------------------
 // En complément de la toast, un bloc « spinner + libellé + barre de
-// progression » existe dans la modale de première utilisation
-// (#modalUploadProgress) et dans l'état vide de la carte
-// (#emptyStateUploadProgress). Ils restent visibles pendant tout l'import et
-// reflètent les mêmes phases que la toast, pour qu'il soit évident que le
+// progression » existe dans l'état vide de la carte
+// (#emptyStateUploadProgress). Il reste visible pendant tout l'import et
+// reflète les mêmes phases que la toast, pour qu'il soit évident que le
 // traitement est en cours là où l'utilisateur a déposé son fichier.
 
 function showUploadIndicator(containerId, text) {
@@ -1148,8 +1124,15 @@ function updateFiltersCounter(selected, total){
     try {
         const el = document.getElementById('filtersCounter');
         if (el) {
-            el.textContent = t('Sélection: ${selected} / ${total}', { selected, total });
+            // Badge accolé au titre « Filtres » : le préfixe « Sélection »
+            // serait redondant, le compteur reste au format compact « n / total ».
+            el.textContent = t('${selected} / ${total}', { selected, total });
         }
+
+        // Bouton « Réinitialiser tous les filtres » : rouge seulement quand
+        // un filtre sort de l'état neutre (marqueur data-filters-active lu
+        // par la CSS).
+        updateFilterPanelState(selected, total);
 
         // État vide, filtres et actions Lecture/Enregistrement suivent la
         // présence de données (base chargée et sélection non vide).
@@ -1184,6 +1167,21 @@ function updateFiltersCounter(selected, total){
             }
         }
     } catch(e) { console.warn('updateFiltersCounter error', e); }
+}
+
+// Pose data-filters-active sur #filterPanel quand au moins un filtre sort de
+// l'état neutre (« tout sélectionné / toutes dates ») ; la CSS repasse alors
+// « Réinitialiser tous les filtres » en rouge. L'état exact des contrôles
+// (selects Tom Select, datepickers) est connu de ui.js via filtersAreDefault ;
+// en son absence, une sélection partielle (compteur) suffit à signaler un
+// filtre actif.
+function updateFilterPanelState(selected, total){
+    const panel = document.getElementById('filterPanel');
+    if (!panel) return;
+    const atDefault = (typeof pkg.filtersAreDefault === 'function')
+        ? pkg.filtersAreDefault()
+        : !(total > 0 && selected < total);
+    panel.toggleAttribute('data-filters-active', !atDefault);
 }
 
 async function clearDatabase() {
@@ -1260,84 +1258,6 @@ async function clearDatabase() {
         }
         showError(t("Erreur lors de la suppression des trouvailles: ") + error.message, t("Erreur"));
     }
-}
-
-function uploadBddRequestFromModal(e) {
-    e.preventDefault();
-
-    var fileInput = document.getElementById('file-input-modal');
-    var selectedFile = fileInput.files[0];
-
-    if (!selectedFile) {
-        showError(t("Veuillez sélectionner un fichier .gpx"), t("Aucun fichier"));
-        return;
-    }
-
-    // Réinitialiser la valeur pour qu'une re-sélection du même fichier
-    // (typiquement après un échec) déclenche à nouveau l'événement change.
-    // Le fichier est capturé ci-dessus et passé explicitement à handleGpxFile.
-    fileInput.value = '';
-
-    // handleGpxFile valide localement puis route vers performUploadFromModal
-    // (la modale est ouverte, donc c'est bien ce flux qui sera choisi).
-    handleGpxFile(selectedFile);
-}
-
-function performUploadFromModal(file, uploadToast){
-    // Verrouiller les contrôles pour toute la durée de l'import (cf. uploadBdd).
-    beginImport();
-
-    // Toast réutilisée depuis handleGpxFile (cf. uploadBdd) : le message
-    // reflète maintenant la phase d'envoi réseau.
-    if (!uploadToast) uploadToast = pkg.showLoadingToast(t("Préparation de l'envoi..."), t("Chargement"));
-    else { try { pkg.updateToastMessage(uploadToast, t("Préparation de l'envoi...")); } catch (_) {} }
-
-    // Indicateur inline de la modale « première utilisation », mis à jour en
-    // miroir des phases de la toast.
-    const indicatorId = 'modalUploadProgress';
-    showUploadIndicator(indicatorId, t("Préparation de l'envoi..."));
-    const indicatorHooks = {
-        onProgress: (pct) => updateUploadIndicator(indicatorId, t('Envoi du fichier : ${pct}%', { pct }), pct),
-        onPhase: (msg) => updateUploadIndicator(indicatorId, msg, null),
-    };
-
-    uploadGpxWithProgress(file, uploadToast, indicatorHooks)
-    .then(data => {
-        checkLoadingProgress(uploadToast, data.task_id, () => {
-            endImport();
-            pkg.hideToast(uploadToast);
-            hideUploadIndicator(indicatorId);
-            // Même durée brève (4 s) que le succès d'import hors modale.
-            pkg.showToast(t("Fichier chargé avec succès !"), "success", t("Chargement terminé"), 4000);
-
-            // Fermer la modale de première utilisation (Bootstrap 5)
-            const modalElement = document.getElementById('modal_first_use');
-            if (modalElement) {
-                hideBsModal(modalElement);
-            }
-
-            // Mettre à jour les infos de la BDD
-            readBddValues();
-
-            // Charger et afficher les points sur la carte
-            loadAndDisplayPoints();
-
-            // Optionnel : rediriger vers l'onglet de données
-            switchToDataTab();
-        }, (message) => {
-            endImport();
-            pkg.hideToast(uploadToast);
-            hideUploadIndicator(indicatorId);
-            showError(message || t("Erreur lors du chargement du fichier"), t("Erreur"));
-        }, { onProgress: (p) => updateUploadIndicator(indicatorId, t('Traitement du fichier en cours...'), p) });
-    })
-    .catch(error => {
-        endImport();
-        console.error('Erreur:', error);
-        pkg.hideToast(uploadToast);
-        hideUploadIndicator(indicatorId);
-        showError(error?.message || t("Erreur lors du chargement du fichier"), t("Erreur"));
-    });
 }
 
 function loadAndDisplayPoints() {
@@ -1423,15 +1343,3 @@ function loadAndDisplayPoints() {
         });
 }
 
-// Fonction pour basculer vers l'onglet de données
-function switchToDataTab() {
-    try {
-        // Cliquer sur l'onglet "Données" pour l'activer
-        const dataTab = document.querySelector('a[href="#data"]');
-        if (dataTab) {
-            dataTab.click();
-        }
-    } catch (e) {
-        console.warn('Impossible de basculer vers l\'onglet de données:', e);
-    }
-}
