@@ -1,11 +1,13 @@
-<!-- Modal de première utilisation (Tabler/Bootstrap 5) -->
+<!-- Modale d'aide « première utilisation » (Tabler/Bootstrap 5) : purement
+     informative, elle n'accueille plus d'import — le chargement se fait
+     depuis l'état vide de la carte (bouton d'import ou glisser-déposer). -->
 <div id="modal_first_use" class="modal bs-modal fade" tabindex="-1" aria-labelledby="modalFirstUseTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-scrollable modal-lg">
         <div class="modal-content">
             <div class="modal-body">
                 {% with logo_class='first-use-logo' %}{% include '_brand_logo.html' %}{% endwith %}
                 <h5 class="modal-title mb-3" id="modalFirstUseTitle">{{ _("Bienvenue dans MyGCFlow !") }}</h5>
-                <p class="lead">{{ _("Pour commencer à utiliser l'application, vous devez charger un fichier .gpx contenant vos trouvailles de géocaching.") }}</p>
+                <p class="lead">{{ _("Pour commencer à utiliser l'application, chargez depuis la carte (bouton d'import ou glisser-déposer) un fichier .gpx contenant vos trouvailles de géocaching.") }}</p>
 
                 <!-- Section d'aide -->
                 <div class="alert alert-info d-flex gap-3 align-items-start mb-3">
@@ -15,7 +17,7 @@
                         <ol class="mb-2 ps-3 text-muted">
                             <li>{{ _("Ouvrez la page des Pocket Queries de geocaching.com (connexion requise).") }}</li>
                             <li>{{ _("Tout en bas, dans la section \"My Finds\", cliquez sur \"Add to Queue\".") }}</li>
-                            <li>{{ _("Le fichier est généré en quelques minutes : vous le recevez par e-mail et il apparaît dans l'onglet \"Pocket Queries Ready for Download\". Chargez-le ci-dessous tel quel (.zip) ou décompressé (.gpx).") }}</li>
+                            <li>{{ _("Le fichier est généré en quelques minutes : vous le recevez par e-mail et il apparaît dans l'onglet \"Pocket Queries Ready for Download\". Chargez-le ensuite dans l'application, tel quel (.zip) ou décompressé (.gpx).") }}</li>
                         </ol>
                         <p class="mb-2 small text-muted">{{ _("La Pocket Query \"My Finds\" ne peut être générée qu'une fois tous les 3 jours.") }}</p>
                         <a href="https://www.geocaching.com/pocket/default.aspx" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary">
@@ -23,42 +25,12 @@
                         </a>
                     </div>
                 </div>
-
-                <!-- Interface de chargement réutilisée -->
-                <h6 class="mt-3">{{ _("Chargement de vos données") }}</h6>
-                <div class="card">
-                    <div class="card-body">
-                        <form id="uploadBddFormModal">
-                            <div class="mb-3">
-                                <label for="file-input-modal" class="form-label">{{ _("Sélectionner et charger un fichier .gpx") }}</label>
-                                <div class="gpx-dropzone">
-                                    <input type="file" class="form-control" id="file-input-modal" name="file" accept=".gpx,.zip" />
-                                    <div class="gpx-dropzone__hint">
-                                        <i class="ti ti-drag-drop me-1"></i>{{ _("ou glissez-déposez votre fichier ici") }}
-                                    </div>
-                                </div>
-                            </div>
-                        </form>
-                        <div id="modalUploadProgress" class="mt-3" hidden aria-live="polite">
-                            <div class="d-flex align-items-center gap-2 mb-1">
-                                <span class="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true"></span>
-                                <span class="upload-progress-text small">{{ _("Analyse du fichier GPX en cours...") }}</span>
-                            </div>
-                            <div class="progress progress-sm">
-                                <div class="progress-bar progress-bar-indeterminate upload-progress-bar" role="progressbar" style="width: 100%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-                            </div>
-                        </div>
-                        <div id="infosBDDModal" class="form-hint text-muted mt-2">
-                            {{ _("Aucun fichier sélectionné") }}
-                        </div>
-                    </div>
-                </div>
             </div>
             <div class="modal-footer">
                 <a href="/guide" target="_blank" class="btn btn-link">
                     <i class="ti ti-help me-1"></i>{{ _("Voir le mode d'emploi") }}
                 </a>
-                <button type="button" class="btn btn-link" data-bs-dismiss="modal">{{ _("Ignorer pour l'instant") }}</button>
+                <button type="button" class="btn btn-link" data-bs-dismiss="modal">{{ _("Fermer") }}</button>
             </div>
         </div>
     </div>

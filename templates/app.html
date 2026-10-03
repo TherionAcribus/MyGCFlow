@@ -109,6 +109,11 @@
                             <button type="button" id="btnEmptyStateImport" class="btn btn-primary">
                                 <i class="ti ti-upload me-1" aria-hidden="true"></i>{{ _("Sélectionner et charger un fichier .gpx") }}
                             </button>
+                            <!-- Aide contextuelle : ouvre la modale d'explication
+                                 (écouteur dans bdd.js). -->
+                            <button type="button" id="btnEmptyStateGpxHelp" class="btn btn-link btn-sm">
+                                {{ _("Comment obtenir mon fichier .gpx ?") }}
+                            </button>
                             <div id="emptyStateUploadProgress" class="w-100" hidden aria-live="polite">
                                 <div class="d-flex align-items-center justify-content-center gap-2 mb-2">
                                     <span class="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true"></span>

@@ -1,8 +1,8 @@
 // Retour visuel à l'import GPX : une toast de chargement doit apparaître
 // immédiatement à la sélection/dépôt du fichier (la validation lit l'en-tête
-// sur disque, ce qui peut prendre plusieurs secondes), et un indicateur
-// inline reflète la progression là où l'utilisateur a déposé le fichier —
-// dans la carte « état vide » ou dans la modale de première utilisation.
+// sur disque, ce qui peut prendre plusieurs secondes), et l'indicateur
+// inline de la carte « état vide » reflète la progression là où
+// l'utilisateur a déposé le fichier.
 import { expect, test } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -54,28 +54,24 @@ test('import via état vide : toast immédiate et indicateur inline pendant le t
   await expect(indicator).toBeHidden();
 });
 
-test('import via modale première utilisation : indicateur interne visible pendant le traitement', async ({ page, request }) => {
+test('aide .gpx : la modale première utilisation s\'ouvre depuis l\'état vide, sans import interne', async ({ page, request }) => {
   const res = await request.post('/clear_database');
   expect(res.ok()).toBeTruthy();
 
   await openReadyApp(page);
+  await dismissFirstUseModal(page);
 
-  // Base vide au démarrage : la modale s'ouvre automatiquement.
-  // Attendue ENTIÈREMENT ouverte (cf. tests/e2e/first-use.mjs).
+  // La modale est désormais une aide contextuelle : fermée au démarrage,
+  // ouverte par le lien de l'état vide, et sans section d'import (le
+  // chargement passe par #file-input ou le glisser-déposer).
   const modal = page.locator('#modal_first_use');
-  await page.waitForFunction(() => window.mygcflowFirstUseSettled === true);
+  await expect(modal).toBeHidden();
+
+  await page.locator('#btnEmptyStateGpxHelp').click();
   await expect(modal).toBeVisible();
+  await expect(modal).toContainText('Comment obtenir votre fichier .gpx');
+  await expect(modal.locator('#file-input-modal')).toHaveCount(0);
 
-  const indicator = page.locator('#modalUploadProgress');
-  await expect(indicator).toBeHidden();
-
-  await page.locator('#file-input-modal').setInputFiles(FIXTURE);
-  await expect(loadingToast(page)).toBeVisible();
-  await expect(indicator).toBeVisible();
-  await expect(indicator.locator('.upload-progress-text')).not.toBeEmpty();
-
-  // Au succès la modale se ferme et l'indicateur est réinitialisé.
-  await expect(modal).toBeHidden({ timeout: 45_000 });
-  await expect(indicator).toBeHidden();
-  await expect(page.locator('#filtersCounter')).toContainText('6 / 6');
+  await modal.getByRole('button', { name: 'Fermer' }).click();
+  await expect(modal).toBeHidden();
 });

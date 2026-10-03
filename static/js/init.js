@@ -73,15 +73,16 @@ document.addEventListener('DOMContentLoaded', async function() {
     const evolutionPage = isEvolutionPage();
 
     if (evolutionPage) {
-        // La modale de première utilisation invite à charger un GPX : sans objet
-        // ici. Le jalon est quand même publié pour les tests et intégrations.
+        // Le parcours « première utilisation » (invitation à charger un GPX)
+        // est sans objet ici. Le jalon est quand même publié pour les tests
+        // et intégrations.
         window.mygcflowFirstUseSettled = true;
         window.dispatchEvent(new CustomEvent('mygcflow:first-use-settled'));
     } else {
         // check la présence d'une BDD et les affiche (fire-and-forget, indépendant).
-        // offerFirstUse: sur base absente ou vide, affiche la modale de première
-        // utilisation invitant à charger un fichier GPX.
-        pkg.readBddValues({ offerFirstUse: true });
+        // settleFirstUse : appel du démarrage — publie le jalon « première
+        // utilisation réglée » une fois /db_status répondu (cf. bdd.js).
+        pkg.readBddValues({ settleFirstUse: true });
     }
 
     // Les valeurs par défaut sont requises pour initialiser la classe "options".

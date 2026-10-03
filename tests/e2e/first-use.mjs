@@ -1,15 +1,13 @@
-// Renvoi de la modale de première utilisation, partagé par les specs.
+// Attente du jalon « première utilisation réglée », partagé par les specs.
 //
-// Sur une base vide, l'app ouvre #modal_first_use après un aller-retour
-// réseau ; son backdrop intercepte alors tous les clics. Chaque spec avait sa
-// copie d'un renvoi qui attendait la modale 5 s au plus puis cliquait
-// « Ignorer ». Deux défauts rendaient la suite instable :
-//   - une modale ouverte après ces 5 s n'était jamais fermée ;
-//   - un clic pendant l'animation d'ouverture était ignoré par Bootstrap, et
-//     l'attente de fermeture échouait au bout de 90 s.
-// L'app signale maintenant le moment où la décision est prise, modale
-// entièrement ouverte le cas échéant (window.mygcflowFirstUseSettled, cf.
-// markFirstUseSettled dans static/js/bdd.js) : on l'attend, puis on ferme.
+// La modale #modal_first_use ne s'ouvre plus automatiquement : sur base
+// vide, c'est l'état vide de la carte qui porte l'appel à l'action (la
+// modale n'est plus qu'une aide, ouverte via le lien « Comment obtenir mon
+// fichier .gpx ? » de l'état vide). Le jalon window.mygcflowFirstUseSettled
+// (cf. markFirstUseSettled dans static/js/bdd.js) signale que la
+// vérification /db_status du démarrage est terminée : on l'attend pour
+// stabiliser la page, puis on referme la modale par prudence si elle était
+// ouverte (ex. une spec qui l'a affichée via le lien d'aide).
 
 export async function dismissFirstUseModal(page) {
   await page.waitForFunction(() => window.mygcflowFirstUseSettled === true);
