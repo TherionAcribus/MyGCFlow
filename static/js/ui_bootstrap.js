@@ -164,6 +164,14 @@ export function hideBsModal(el) {
    Tooltips Bootstrap 5
    ===================================================================== */
 
+// Le déclencheur par défaut « hover focus » garde la tooltip ouverte tant que
+// l'élément a le focus : après un clic sur un bouton, elle reste affichée et
+// recouvre les contrôles voisins (ex: boutons de disposition). On la masque au
+// clic via un écouteur délégué, ce qui couvre aussi les tooltips créées après
+// le démarrage, tout en préservant l'affichage au focus clavier (icônes
+// d'aide et badges tabindex="0", sans autre moyen d'ouvrir la tooltip).
+let tooltipHideOnClickBound = false;
+
 /**
  * Initialise les tooltips Bootstrap 5.
  * @param {string} selector - sélecteur (défaut: '[data-bs-toggle="tooltip"]')
@@ -174,6 +182,13 @@ export function initBsTooltips(selector = '[data-bs-toggle="tooltip"]') {
     document.querySelectorAll(selector).forEach(node => {
         try { b.Tooltip.getOrCreateInstance(node); } catch (e) { /* déjà init */ }
     });
+    if (!tooltipHideOnClickBound) {
+        tooltipHideOnClickBound = true;
+        document.addEventListener('click', (e) => {
+            const el = e.target.closest?.('[data-bs-toggle="tooltip"]');
+            if (el) b.Tooltip.getInstance(el)?.hide();
+        });
+    }
 }
 
 /* =====================================================================
