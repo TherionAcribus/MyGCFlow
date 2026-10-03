@@ -10,8 +10,18 @@ rapport effet/effort décroissant. **Lire d'abord « Règles communes ».**
 
 ---
 
-> **Statut** — Lot 1 : fait (commit « UX > Boutons… »). Lot 3 : fait (commit
-> « UX > Toasts… »). Autres lots : à faire.
+> **Statut** — Tous les lots sont implémentés et commités :
+> Lot 1 `ab56ded` · Lot 3 `7604359` · Lot 2 `79df53c`/`8652c39` · Lot 7
+> `8652c39` · Lot 4 `38b2b87` + overlays `b6afe76` · Lot 5 `81f80d7` · Lot 9
+> `a6628b7` · Lot 8 `e810c8a` · Lot 11 `5bae41d` · Lot 10 `fe137ca` · Lot 6
+> `bcc4260`. Reste : suite e2e complète + recaptures de validation.
+>
+> Écarts notables par rapport au programme : les radios de couleur gardent
+> leurs `<span>` (choix volontaire documenté — le clic sur la ligne ne doit
+> pas basculer le mode) ; l'input d'import de profil était déjà stylé ;
+> `menu_animation.html` garde ses boutons source dans un div `hidden` source
+> de vérité ; l'en-tête s'appuie sur `_brand_logo.html` existant et les
+> valeurs d'apparence system/light/dark.
 >
 > **Environnement (important)** : `npm run test:e2e` gèle indéfiniment sous
 > **Node 24** (bug nodejs/node#63085 + Playwright 1.52). Lancer la suite sous
