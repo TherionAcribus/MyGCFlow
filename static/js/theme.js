@@ -58,15 +58,38 @@ export function applyTheme(pref) {
     document.documentElement.setAttribute('data-bs-theme', resolveEffective(pref));
 }
 
+// Ids de tous les contrôles qui pilotent la préférence de thème : le select
+// de l'onglet Préférences (#selectTheme) et celui de l'en-tête d'application
+// (#appHeaderTheme). Les deux restent synchronisés via l'événement
+// `theme:applied` (cf. initThemeControls).
+const THEME_SELECT_IDS = ['selectTheme', 'appHeaderTheme'];
+
+function themeSelects() {
+    return THEME_SELECT_IDS
+        .map((id) => document.getElementById(id))
+        .filter(Boolean);
+}
+
 // Enregistre une préférence (serveur + miroir local) et l'applique immédiatement.
 // Le miroir est écrit sans attendre le serveur : le thème doit être correct au
 // prochain chargement même si la requête échoue, et l'indicateur du champ dira
 // alors que la valeur n'a pas été enregistrée durablement.
+// Émet `theme:applied` (detail.pref) pour que les autres contrôles de thème
+// reflètent la nouvelle valeur — poser .value ne déclenche pas `change`, donc
+// pas de boucle.
 export function setThemePref(pref) {
     const safePref = isValidPref(pref) ? pref : 'system';
     writeMirror(safePref);
     applyTheme(safePref);
-    return reportSave('selectTheme', saveSettingsPatch({ theme: safePref }));
+    document.dispatchEvent(new CustomEvent('theme:applied', { detail: { pref: safePref } }));
+    return reportSave(THEME_SELECT_IDS, saveSettingsPatch({ theme: safePref }));
+}
+
+// Point d'entrée public pour un contrôle hors de l'onglet Préférences (ex. le
+// select de l'en-tête) : même persistance, même application immédiate et même
+// événement que le handler `change` de #selectTheme.
+export function applyThemeValue(value) {
+    return setThemePref(value);
 }
 
 // Réaligne le miroir local sur la préférence enregistrée côté serveur. Appelée
@@ -81,19 +104,25 @@ export function syncThemeFromSettings(userSettings) {
         writeMirror(serverPref);
         applyTheme(serverPref);
     }
-    const select = document.getElementById('selectTheme');
-    if (select) select.value = serverPref;
+    themeSelects().forEach((select) => { select.value = serverPref; });
 }
 
 function initThemeControls() {
     const pref = getPref();
 
-    // Synchroniser le <select> de l'onglet Paramètres avec la préférence courante.
-    const select = document.getElementById('selectTheme');
-    if (select) {
+    // Synchroniser les contrôles de thème (onglet Préférences + en-tête
+    // d'application) avec la préférence courante : chacun persiste via
+    // setThemePref, qui émet `theme:applied` pour réaligner l'autre select.
+    const selects = themeSelects();
+    selects.forEach((select) => {
         select.value = pref;
         select.addEventListener('change', () => setThemePref(select.value));
-    }
+    });
+    document.addEventListener('theme:applied', (e) => {
+        const p = e.detail && e.detail.pref;
+        if (!isValidPref(p)) return;
+        selects.forEach((select) => { if (select.value !== p) select.value = p; });
+    });
 
     // Re-synchroniser data-bs-theme (déjà posé par le script inline du <head>) :
     // sans effet visible, mais garantit la cohérence si le DOM a été manipulé.

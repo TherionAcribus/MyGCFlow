@@ -2119,3 +2119,168 @@ background: rgba(33, 150, 243, 0.04);
     border: 1px solid var(--tblr-border-color);
     border-radius: 6px;
 }
+
+/* ===== Input fichier stylé ===== */
+/* Les <input type="file"> natifs (visually-hidden) sont remplacés visuellement
+   par un bouton « Parcourir… » + une zone texte du fichier choisi : plus de
+   « Choose File / No file chosen » en anglais sur l'UI française. */
+.gcm-file-btn {
+    flex-shrink: 0;           /* le bouton garde sa taille, le nom tronque */
+    white-space: nowrap;
+}
+.gcm-file-name {
+    min-width: 0;             /* nécessaire pour tronquer dans un conteneur flex */
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.85rem;
+    color: var(--tblr-secondary, #6c757d);
+}
+
+/* ===== En-tête d'application ============================================ */
+/* Bandeau fin persistant en haut de <main> : ancrage de marque à gauche
+   (logo + badge « Évolution » en mode évolution), accès rapides à droite
+   (lien Guide, select d'apparence #appHeaderTheme synchronisé avec
+   #selectTheme des Préférences via theme.js::setThemePref / `theme:applied`).
+
+   Le conteneur carte/onglets (#mapTabsContainer, height:100vh défini plus
+   haut) lui cède la place : sa hauteur passe à
+   calc(100vh - var(--app-header-height)) pour que la page ne défile pas.
+   Le splitter mesure container.clientHeight (ui.js::initMapTabsSplitPane),
+   il suit donc la nouvelle hauteur sans changement JS. */
+:root {
+    --app-header-height: 44px;
+}
+
+#appHeader {
+    height: var(--app-header-height);
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 12px;
+    background: var(--tblr-bg-surface, var(--color-surface));
+    border-bottom: 1px solid var(--tblr-border-color, var(--color-border));
+    /* Au-dessus des overlays internes de la carte (.empty-state z-index 90)
+       mais sous les modales Bootstrap (~1055) et les toasts (2147483000). */
+    position: relative;
+    z-index: 100;
+}
+
+.app-header-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+/* Le logo horizontal se cale sur la hauteur du bandeau (comme
+   .empty-state-logo / .first-use-logo dans tabler_theme.css). */
+.app-header-logo {
+    height: 26px;
+}
+
+/* Pastille de mode (« Évolution ») : rappel discret du mode courant. */
+.app-header-badge {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+    color: var(--color-accent-strong);
+    background: var(--color-accent-weak);
+    border: 1px solid rgba(var(--color-accent-rgb), 0.3);
+    white-space: nowrap;
+}
+
+.app-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.app-header-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    text-decoration: none;
+    white-space: nowrap;
+}
+.app-header-link:hover {
+    color: var(--color-accent);
+}
+
+.app-header-theme {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.app-header-theme .form-select {
+    width: auto;
+    min-width: 6.5rem;
+    padding-top: 0.2rem;
+    padding-bottom: 0.2rem;
+}
+
+/* Indicateur « Enregistré ✓ » du select d'apparence (saved_indicator.mjs) :
+   il est posé dans .app-header-theme — le garder discret pour ne pas
+   déformer le bandeau pendant ses 2 s d'affichage. */
+#appHeader .gc-saved-indicator {
+    font-size: 0.75rem;
+    white-space: nowrap;
+}
+
+/* Le conteneur cède la hauteur de l'en-tête : sans cela (height:100vh)
+   le bas du panneau sortirait du viewport de la hauteur du bandeau. */
+#mapTabsContainer {
+    height: calc(100vh - var(--app-header-height));
+}
+/* Le plafond de repli de la carte (avant clamp par le JS) tient compte
+   lui aussi de l'en-tête. */
+#mapTabsContainer > #mapWithFrames {
+    max-height: calc(100vh - var(--app-header-height) - 88px);
+}
+
+/* Plein écran : l'en-tête est masqué par `main.fullscreen-mode > *` ;
+   le conteneur reprend tout le viewport, sinon la carte (forcée à 100vh)
+   serait rognée de la hauteur du bandeau par overflow:hidden. */
+main.fullscreen-mode #mapTabsContainer {
+    height: 100vh;
+}
+main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
+    max-height: none;
+}
+
+/* Écran étroit : le libellé du lien Guide cède, l'icône suffit — le
+   aria-label du lien conserve le nom accessible. */
+@media (max-width: 575.98px) {
+    .app-header-link-label {
+        display: none;
+    }
+}
+
+/* ===== Éditeur titre/infos simplifié ===== */
+/* Mode « Simple / Avancé » de l'assistant Titre et informations
+   (templates/menu_informations.html, static/js/infos_editor.js).
+   Les champs ne sont jamais retirés du DOM — les handlers de l'assistant
+   continuent de tous les lire — seulement masqués par la classe posée sur
+   #gcCssAssistant. */
+#gcCssAssistant.editor-simple .infos-advanced {
+    display: none !important;
+}
+#gcCssAssistant.editor-advanced .infos-simple-only {
+    display: none !important;
+}
+
+/* Le toggle Simple/Avancé reprend la discrétion des en-têtes de section. */
+.infos-editor-mode .form-label {
+    font-size: 0.85rem;
+    color: var(--tblr-muted, #546e7a);
+}
+.infos-editor-mode .btn-group .btn.active {
+    font-weight: 600;
+}

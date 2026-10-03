@@ -43,6 +43,34 @@
 
     <body data-dev="{{ 1 if config.DEBUG else 0 }}" data-mode="{{ mode|default('main') }}">
         <main>
+            <!-- En-tête persistant : ancrage de marque à gauche (logo, badge
+                 de mode), accès rapides à droite (guide, apparence). Hauteur
+                 fixe : le conteneur carte/onglets lui cède la place via
+                 calc(100vh - var(--app-header-height)) — voir la section
+                 « En-tête d'application » en fin de ui_improvements.css.
+                 En plein écran il est masqué par la règle
+                 `main.fullscreen-mode > *`. -->
+            <header id="appHeader">
+                <div class="app-header-brand">
+                    {% with logo_class='app-header-logo' %}{% include '_brand_logo.html' %}{% endwith %}
+                    {% if mode == 'evolution' %}
+                    <span class="app-header-badge">{{ _("Évolution") }}</span>
+                    {% endif %}
+                </div>
+                <div class="app-header-actions">
+                    <a class="app-header-link" href="/guide" target="_blank" rel="noopener" aria-label="{{ _('Guide') }}">
+                        <i class="ti ti-help" aria-hidden="true"></i><span class="app-header-link-label" aria-hidden="true">{{ _("Guide") }}</span>
+                    </a>
+                    <div class="app-header-theme">
+                        <select id="appHeaderTheme" class="form-select form-select-sm" aria-label="{{ _('Apparence') }}">
+                            <option value="system">{{ _("Système") }}</option>
+                            <option value="light">{{ _("Clair") }}</option>
+                            <option value="dark">{{ _("Sombre") }}</option>
+                        </select>
+                    </div>
+                </div>
+            </header>
+
             <div id="mapTabsContainer">
                 <div id="mapWithFrames">
                     <!-- Carte -->
