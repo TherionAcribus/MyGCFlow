@@ -790,6 +790,21 @@ main.fullscreen-mode #infosFrame span:not([hidden]) {
     text-overflow: ellipsis;
 }
 
+/* Interrupteur Icône / Vectoriel : les libellés de part et d'autre lèvent
+   l'ambiguïté du côté actif ; ils forcent l'état au clic (pas de simple
+   bascule qui inverserait en cliquant le côté déjà actif). */
+.point-mode-switch {
+    padding-left: 0;
+}
+.point-mode-switch .form-check-input {
+    float: none;
+    margin-left: 0;
+}
+.point-mode-label {
+    cursor: pointer;
+    user-select: none;
+}
+
 #mapTabsContainer.is-resizing #mapTabsResizer {
     background: rgba(33, 150, 243, 0.25);
 }

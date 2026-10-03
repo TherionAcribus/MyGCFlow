@@ -508,6 +508,22 @@ const inputSizeBorder = document.getElementById('inputSizeBorder');
 // switch
     switchIconeVectoriel = document.getElementById('switchIconeVectoriel');
     if (switchIconeVectoriel) switchIconeVectoriel.addEventListener('change', changePointStyleUI);
+    // Libellés latéraux du switch Icône/Vectoriel : chacun force son état
+    // (cliquer « Vectoriel » alors qu'il est actif ne doit pas repasser en
+    // icône), d'où un état explicite plutôt qu'une bascule.
+    document.getElementById('labelPointModeIcone')?.addEventListener('click', () => {
+        if (switchIconeVectoriel?.checked) {
+            switchIconeVectoriel.checked = false;
+            switchIconeVectoriel.dispatchEvent(new Event('change'));
+        }
+    });
+    document.getElementById('labelPointModeVectoriel')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (switchIconeVectoriel && !switchIconeVectoriel.checked) {
+            switchIconeVectoriel.checked = true;
+            switchIconeVectoriel.dispatchEvent(new Event('change'));
+        }
+    });
     document.getElementById('switchPointAppear')?.addEventListener('change', changePointStyleUI);
     document.getElementById('selectPointRecentGlow')?.addEventListener('change', changePointStyleUI);
 

@@ -9,9 +9,13 @@
     <!-- Section principale -->
     <div class="card mb-3">
         <div class="card-body">
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="switchIconeVectoriel" role="switch" aria-checked="false">
-                <label class="form-check-label" for="switchIconeVectoriel">{{ _("Icône / Vectoriel") }}</label>
+            <div class="d-flex align-items-center gap-2">
+                <span id="labelPointModeIcone" class="point-mode-label">{{ _("Icône") }}</span>
+                <div class="form-check form-switch point-mode-switch mb-0">
+                    <input class="form-check-input" type="checkbox" id="switchIconeVectoriel" role="switch"
+                           aria-labelledby="labelPointModeVectoriel">
+                </div>
+                <label class="form-check-label point-mode-label" for="switchIconeVectoriel" id="labelPointModeVectoriel">{{ _("Vectoriel") }}</label>
             </div>
             <div class="form-check form-switch mt-2">
                 <input class="form-check-input" type="checkbox" id="switchPointAppear" role="switch" aria-describedby="helpPointAppear">
