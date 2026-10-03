@@ -26,7 +26,11 @@
                 <option value="30">{{ _("30 derniers jours") }}</option>
                 <option value="90">{{ _("90 derniers jours") }}</option>
             </select>
+            {% if mode == 'evolution' %}
+            <small id="helpPointRecentGlow" class="form-hint text-muted">{{ _("Les Geocaches apparues récemment restent plus claires, puis rejoignent le style normal : on suit ainsi le déplacement de l'activité.") }}</small>
+            {% else %}
             <small id="helpPointRecentGlow" class="form-hint text-muted">{{ _("Les caches trouvées récemment restent plus claires, puis rejoignent le style normal : on suit ainsi le déplacement de l'activité.") }}</small>
+            {% endif %}
         </div>
     </div>
 

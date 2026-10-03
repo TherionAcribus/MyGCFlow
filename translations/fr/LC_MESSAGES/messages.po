@@ -4443,6 +4443,14 @@ msgstr ""
 "Les caches trouvées récemment restent plus claires, puis rejoignent le "
 "style normal : on suit ainsi le déplacement de l'activité."
 
+#: templates/menu_points.html:30
+msgid ""
+"Les Geocaches apparues récemment restent plus claires, puis rejoignent le "
+"style normal : on suit ainsi le déplacement de l'activité."
+msgstr ""
+"Les Geocaches apparues récemment restent plus claires, puis rejoignent le "
+"style normal : on suit ainsi le déplacement de l'activité."
+
 #: templates/menu_points.html:46 templates/menu_points.html:49
 msgid "Taille du centre"
 msgstr "Taille du centre"

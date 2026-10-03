@@ -4403,6 +4403,14 @@ msgstr ""
 "Recently found caches stay lighter, then fade back to the normal style, "
 "so you can follow where activity moves."
 
+#: templates/menu_points.html:30
+msgid ""
+"Les Geocaches apparues récemment restent plus claires, puis rejoignent le "
+"style normal : on suit ainsi le déplacement de l'activité."
+msgstr ""
+"Recently appeared geocaches stay lighter, then fade back to the normal "
+"style, so you can follow where activity moves."
+
 #: templates/menu_points.html:46 templates/menu_points.html:49
 msgid "Taille du centre"
 msgstr "Center size"
