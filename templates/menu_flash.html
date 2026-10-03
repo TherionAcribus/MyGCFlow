@@ -57,6 +57,7 @@
         <!-- Contour des formes qui en ont un (étoile, scintillement, carré,
              triangle, losange) : « auto » garde la couleur historique du mode. -->
         <label class="form-label mt-3">{{ _("Couleur du contour") }}</label>
+        <!-- Libellés en <span> (et non <label for>) : seul le clic sur le bouton radio change la valeur, pas le clic sur toute la ligne -->
         <div class="form-check">
             <input class="form-check-input" type="radio" name="flashBorderColor" id="flashBorderColorAuto" value="auto" checked aria-labelledby="flashBorderColorAutoLabel">
             <span class="form-check-label" id="flashBorderColorAutoLabel">{{ _("Automatique") }}</span>
