@@ -44,6 +44,25 @@ class NotificationManager {
      */
     show(message, type = 'info', title = '', duration = 5000, showProgress = false, progress = 0) {
         this.ensureContainer();
+
+        // Déduplication : un toast déjà affiché avec exactement le même
+        // titre et le même message n'est pas réempilé — sa durée est
+        // simplement relancée (évite les piles de notifications identiques
+        // sur des actions répétées).
+        const dedupKey = `${title}\n${message}`;
+        const existing = [...this.container.querySelectorAll('.gcm-toast')]
+            .find(el => !el._gcmHiding && el._gcmDedupKey === dedupKey);
+        if (existing) {
+            if (existing._gcmHideTimer) {
+                clearTimeout(existing._gcmHideTimer);
+                existing._gcmHideTimer = null;
+            }
+            if (existing._gcmDuration > 0) {
+                existing._gcmHideTimer = setTimeout(() => this.hide(existing), existing._gcmDuration);
+            }
+            return existing;
+        }
+
         const toast = document.createElement('div');
         toast.className = `gcm-toast ${type}`;
 
@@ -84,16 +103,40 @@ class NotificationManager {
         // Le × seul n'a pas de nom accessible pour les lecteurs d'écran.
         toast.querySelector('.gcm-toast-close').setAttribute('aria-label', t('Fermer'));
 
+        // Métadonnées internes : clé de déduplication (le titre est conservé
+        // à part pour que updateMessage puisse la recalculer), durée et
+        // caractère persistant (fermeture manuelle) pour le plafond de pile.
+        toast._gcmDedupKey = dedupKey;
+        toast._gcmDedupTitle = title;
+        toast._gcmDuration = duration;
+        toast._gcmPersistent = duration <= 0;
+
         this.container.appendChild(toast);
 
         // Animation d'entrée
         setTimeout(() => toast.classList.add('show'), 10);
 
-        // Auto-suppression si durée définie
+        // Auto-suppression si durée définie. Le minuteur est mémorisé pour
+        // pouvoir être relancé (déduplication) ou annulé (hide).
         if (duration > 0) {
-            setTimeout(() => {
+            toast._gcmHideTimer = setTimeout(() => {
                 this.hide(toast);
             }, duration);
+        }
+
+        // Plafond de pile : au-delà de 3 toasts affichés, le plus ancien est
+        // retiré. Un toast persistant (chargement, fermeture manuelle) n'est
+        // évincé que s'il n'y a pas d'alternative non-persistante — et le
+        // toast qui vient d'être créé n'est jamais sa propre victime.
+        const MAX_VISIBLE_TOASTS = 3;
+        const visibleToasts = [...this.container.querySelectorAll('.gcm-toast')]
+            .filter(el => !el._gcmHiding);
+        while (visibleToasts.length > MAX_VISIBLE_TOASTS) {
+            const victim = visibleToasts.find(el => el !== toast && !el._gcmPersistent)
+                || visibleToasts.find(el => el !== toast);
+            if (!victim) break;
+            visibleToasts.splice(visibleToasts.indexOf(victim), 1);
+            this.hide(victim);
         }
 
         return toast;
@@ -107,7 +150,7 @@ class NotificationManager {
         if (!toast) return;
         // Les confirmations sont désormais de vraies modales Bootstrap :
         // les fermer via l'API Bootstrap (backdrop, focus) plutôt qu'en
-        // retirant le nœud, ce qui laisserait le fond grisé.
+        // retirer le nœud, ce qui laisserait le fond grisé.
         if (toast.classList && toast.classList.contains('gcm-confirm-modal')) {
             const modal = getBsModal(toast);
             if (modal) {
@@ -116,6 +159,13 @@ class NotificationManager {
                 toast.remove();
             }
             return;
+        }
+        // Marqué « en cours de fermeture » : ni la déduplication ni le
+        // plafond de pile ne le comptent pendant la transition de sortie.
+        toast._gcmHiding = true;
+        if (toast._gcmHideTimer) {
+            clearTimeout(toast._gcmHideTimer);
+            toast._gcmHideTimer = null;
         }
         toast.classList.remove('show');
         setTimeout(() => {
@@ -158,6 +208,10 @@ class NotificationManager {
         const messageEl = toast && toast.querySelector('.gcm-toast-message');
         if (messageEl) {
             messageEl.textContent = message;
+            // La clé de déduplication suit le texte réellement affiché.
+            if (toast._gcmDedupKey !== undefined) {
+                toast._gcmDedupKey = `${toast._gcmDedupTitle}\n${message}`;
+            }
         }
     }
 

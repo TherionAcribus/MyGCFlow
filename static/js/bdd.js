@@ -18,6 +18,12 @@ export let totalCaches = 0;
 let readLoadingToast = null;
 let noCacheToast = null;
 
+// Dernier verdict connu de /db_status (renseigné par readBddValues, lancée
+// en parallèle du démarrage) : true = base non vide, false = vide ou absente,
+// null = pas encore tranché. readBdd s'en sert pour choisir son retour
+// visuel sans requête supplémentaire.
+let lastDbHasData = null;
+
 // Jeu de données complet (toutes les caches) conservé en mémoire pour permettre
 // un filtrage 100% côté client, sans aller-retour serveur. Alimenté à chaque
 // chargement complet (readBdd / loadAndDisplayPoints) et remis à null au vidage.
@@ -386,6 +392,7 @@ export function readBddValues({ offerFirstUse = false } = {}){
             // "A des données" = base présente ET non vide. Les deux autres cas
             // (vide, ou inexistante) sont traités de façon identique côté UI.
             const hasData = !!(data && data.exists && data.isEmpty === false);
+            lastDbHasData = hasData;
 
             const text = hasData
                 ? formatBddInfos(data)
@@ -456,6 +463,7 @@ function clearLocalData() {
     pointsByDate.clear();
     pointsByDateRevision++;
     totalCaches = 0;
+    lastDbHasData = false;
 }
 
 // Emprise [ouest, sud, est, nord] (EPSG:4326) des points chargés, null si
@@ -940,7 +948,9 @@ function uploadBdd (file, uploadToast){
             console.log('[uploadBdd] Import terminé, lancement loadAndDisplayPoints');
             pkg.hideToast(uploadToast);
             hideUploadIndicator(indicatorId);
-            pkg.showToast(t("Fichier chargé avec succès !"), "success", t("Terminé"));
+            // Succès d'import : toast brève (4 s), l'information durable est
+            // déjà portée par #infosBDD et #dataNextStep.
+            pkg.showToast(t("Fichier chargé avec succès !"), "success", t("Terminé"), 4000);
 
             // mets à jour les infos de la BDD
             readBddValues();
@@ -964,8 +974,49 @@ function uploadBdd (file, uploadToast){
     });
 }
 
+// Retour visuel du chargement des données : plus de toast globale au
+// démarrage (elle masquait les préréglages de disposition et n'offrait
+// aucune action).
+// - Base connue vide : l'état vide peut être affiché sans attendre la fin
+//   du chargement (le verdict /db_status fait déjà foi) et l'indicateur
+//   inline qu'il contient (#emptyStateUploadProgress) reflète la
+//   progression à la place de la toast ;
+// - base connue non vide (volume réel à relire) : la toast de chargement
+//   reste utilisée pour ce seul cas non trivial ;
+// - verdict /db_status pas encore connu : rien n'est montré, l'état vide
+//   ou les points apparaissent en fin de chargement.
+// aria-busy signale dans tous les cas la mise à jour du panneau de réglages.
 export function readBdd(){
-    try { readLoadingToast = pkg.showLoadingToast(t("Chargement de l'application..."), t('Chargement')); } catch(e) {}
+    const READ_INDICATOR_ID = 'emptyStateUploadProgress';
+    const tabsPanel = document.getElementById('tabsPanel');
+    const baseKnownLoaded = lastDbHasData === true || (Number(totalCaches) || 0) > 0;
+
+    if (!baseKnownLoaded && lastDbHasData === false) {
+        try { pkg.updateDataAvailabilityUI?.({ dataResolved: true }); } catch(e) {}
+    }
+
+    // L'indicateur inline ne sert que si l'état vide qui le contient est
+    // réellement affiché (et présent dans le DOM : absent en mode Évolution).
+    const emptyState = document.getElementById('emptyState');
+    const readIndicator = document.getElementById(READ_INDICATOR_ID);
+    const useInlineIndicator = !baseKnownLoaded && !!readIndicator
+        && !!emptyState && getComputedStyle(emptyState).display !== 'none';
+
+    if (tabsPanel) tabsPanel.setAttribute('aria-busy', 'true');
+    if (useInlineIndicator) {
+        showUploadIndicator(READ_INDICATOR_ID, t("Chargement de l'application..."));
+    } else if (baseKnownLoaded) {
+        try { readLoadingToast = pkg.showLoadingToast(t("Chargement de l'application..."), t('Chargement')); } catch(e) {}
+    }
+
+    // Tous les chemins de fin passent par ici : indicateur inline, toast
+    // éventuelle et aria-busy sont refermés quoi qu'il arrive.
+    const finishReadIndicators = () => {
+        try { if (readLoadingToast) { pkg.hideToast(readLoadingToast); readLoadingToast = null; } } catch(e) {}
+        hideUploadIndicator(READ_INDICATOR_ID);
+        if (tabsPanel) tabsPanel.removeAttribute('aria-busy');
+    };
+
     fetch(`${CONFIG.BASE_URL}/get_geojson_points`, { method: 'POST' })
     .then(response => response.json())
     .then(data => {
@@ -974,12 +1025,18 @@ export function readBdd(){
         }
         pollGeojsonTask(data.task_id, {
             onProgress: (p) => {
-                try { if (readLoadingToast) pkg.updateToastProgress(readLoadingToast, p); } catch(_) {}
+                if (useInlineIndicator) {
+                    // Texte inchangé : la progression est portée par la barre
+                    // (réécrire le libellé à chaque % spammerait aria-live).
+                    updateUploadIndicator(READ_INDICATOR_ID, null, p);
+                } else {
+                    try { if (readLoadingToast) pkg.updateToastProgress(readLoadingToast, p); } catch(_) {}
+                }
             },
             onSuccess: (result) => {
                 if (result.error || !result.geojson) {
                     console.error('Erreur tâche GeoJSON (readBdd):', result.error || 'geojson manquant');
-                    try { if (readLoadingToast) { pkg.hideToast(readLoadingToast); readLoadingToast = null; } } catch(e) {}
+                    finishReadIndicators();
                     return;
                 }
                 console.log('[readBdd] onSuccess - features:', result.geojson?.features?.length, 'metadata:', result.metadata);
@@ -990,6 +1047,7 @@ export function readBdd(){
 
                 // Mémoriser le total de caches initial
                 totalCaches = metadata.numberOfCaches || (result.geojson?.features?.length || 0);
+                lastDbHasData = totalCaches > 0;
 
                 // Pré-calcul de l'index des points par date pour optimiser l'animation
                 buildPointsByDateIndex(result.geojson?.features || []);
@@ -1016,11 +1074,11 @@ export function readBdd(){
                 const btn = document.getElementById('clearDatabaseBtn');
                 if (btn) btn.style.display = totalCaches > 0 ? '' : 'none';
 
-                try { if (readLoadingToast) { pkg.hideToast(readLoadingToast); readLoadingToast = null; } } catch(e) {}
+                finishReadIndicators();
             },
             onError: (err) => {
                 console.error('Erreur lors du chargement de la BDD:', err);
-                try { if (readLoadingToast) { pkg.hideToast(readLoadingToast); readLoadingToast = null; } } catch(e) {}
+                finishReadIndicators();
                 // Le chargement a échoué : la question « des données ? » est
                 // quand même tranchée (réponse : non) — afficher l'état vide.
                 try { pkg.updateDataAvailabilityUI?.({ dataResolved: true }); } catch(e) {}
@@ -1030,7 +1088,7 @@ export function readBdd(){
     })
     .catch(error => {
         console.error('Error:', error);
-        try { if (readLoadingToast) { pkg.hideToast(readLoadingToast); readLoadingToast = null; } } catch(e) {}
+        finishReadIndicators();
         try { pkg.updateDataAvailabilityUI?.({ dataResolved: true }); } catch(e) {}
         showError(t('Erreur lors du chargement des données'), t('Erreur'));
     });
@@ -1249,7 +1307,8 @@ function performUploadFromModal(file, uploadToast){
             endImport();
             pkg.hideToast(uploadToast);
             hideUploadIndicator(indicatorId);
-            showSuccess(t("Fichier chargé avec succès !"), t("Chargement terminé"));
+            // Même durée brève (4 s) que le succès d'import hors modale.
+            pkg.showToast(t("Fichier chargé avec succès !"), "success", t("Chargement terminé"), 4000);
 
             // Fermer la modale de première utilisation (Bootstrap 5)
             const modalElement = document.getElementById('modal_first_use');
@@ -1313,6 +1372,7 @@ function loadAndDisplayPoints() {
 
                     // Mémoriser le total de caches initial
                     totalCaches = metadata.numberOfCaches || (geojson?.features?.length || 0);
+                    lastDbHasData = totalCaches > 0;
 
                     // Pré-calcul de l'index des points par date pour optimiser l'animation
                     buildPointsByDateIndex(geojson?.features || []);

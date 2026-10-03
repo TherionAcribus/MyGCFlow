@@ -255,7 +255,10 @@ class ProfileManager {
     // (modifications non sauvegardées refusées par l'utilisateur) ou en erreur.
     // Les appelants qui répercutent ce chargement sur un autre état persistant
     // (ex: profil par défaut) doivent vérifier cette valeur avant de continuer.
-    async loadProfile(name) {
+    // `quiet` supprime le toast « Profil chargé » (même convention que
+    // saveProfile) : le chargement manuel le garde, un chargement de repli
+    // silencieux peut le couper.
+    async loadProfile(name, { quiet = false } = {}) {
         if (!await this._confirmDiscardChangesIfNeeded()) return false;
         try {
             dbgProfiles('Chargement profil depuis API:', name);
@@ -278,7 +281,7 @@ class ProfileManager {
             // La liste des profils est inchangée : déplacer le marquage "ACTIF"
             // suffit, inutile de refetcher /api/profiles et de reconstruire le DOM.
             this._updateActiveProfileHighlight();
-            this.showToast(pkg.t('Profil "${name}" chargé', { name }), 'green');
+            if (!quiet) this.showToast(pkg.t('Profil "${name}" chargé', { name }), 'green');
             return true;
         } catch (error) {
             console.error('❌ Erreur chargement profil:', error);
@@ -1049,9 +1052,11 @@ class ProfileManager {
     }
 
     // Voir loadProfile() pour la convention de retour (true = chargé, false = annulé/erreur).
-    // `quiet` supprime le toast d'erreur pour les appelants qui affichent leur
-    // propre message (démarrage : « aucun profil actif »), sans quoi l'échec en
-    // produirait deux d'affilée.
+    // `quiet` supprime les toasts (succès comme erreur) pour les appelants qui
+    // affichent leur propre message ou qui n'en veulent pas (restauration au
+    // démarrage : le nom du thème est déjà visible dans
+    // #current-profile-indicator, un toast n'apporterait qu'une notification
+    // sans action possible).
     // `remember` est mis à false par la restauration au démarrage : elle charge
     // précisément le profil déjà mémorisé, le réécrire ne ferait qu'ajouter une
     // requête à chaque lancement.
@@ -1098,7 +1103,7 @@ class ProfileManager {
 
             // Cf. loadProfile() : seul le marquage "ACTIF" change ici.
             this._updateActiveProfileHighlight();
-            this.showToast(pkg.t('Profil "${name}" chargé', { name: profile.name }), 'green');
+            if (!quiet) this.showToast(pkg.t('Profil "${name}" chargé', { name: profile.name }), 'green');
             return true;
         } catch (error) {
             console.error('❌ [LOAD_PROFILE] Erreur chargement profil par UUID:', error);
@@ -1268,9 +1273,11 @@ class ProfileManager {
             for (const uid of candidates) {
                 dbgProfiles('🎯 [STARTUP_PROFILE] Tentative de chargement (UUID):', uid);
 
-                // loadProfileByUid() ne lève pas : il journalise, prévient par un
-                // toast et retourne false. C'est cette valeur qui décide de la
-                // suite, pas un catch (qui ne se déclencherait jamais).
+                // loadProfileByUid() ne lève pas : il journalise et retourne
+                // false. C'est cette valeur qui décide de la suite, pas un
+                // catch (qui ne se déclencherait jamais).
+                // `quiet: true` : la restauration n'émet aucun toast — le
+                // profil restauré est déjà annoncé par #current-profile-indicator.
                 // `remember: false` : on charge précisément la valeur mémorisée,
                 // la réécrire n'apporterait qu'une requête de plus au démarrage.
                 const loaded = await this.loadProfileByUid(uid, { quiet: true, remember: false });
@@ -1303,7 +1310,8 @@ class ProfileManager {
                     console.warn('⚠️ [STARTUP_PROFILE] Incohérence détectée - Mode:', finalPointMode, 'Switch:', finalSwitchState);
                 }
 
-                // Le toast est déjà affiché dans loadProfileByUid
+                // Chargement silencieux (quiet) : aucun toast ici, le profil
+                // actif est signalé par #current-profile-indicator.
                 return;
             }
 

@@ -10,6 +10,15 @@ rapport effet/effort décroissant. **Lire d'abord « Règles communes ».**
 
 ---
 
+> **Statut** — Lot 1 : fait (commit « UX > Boutons… »). Lot 3 : fait (commit
+> « UX > Toasts… »). Autres lots : à faire.
+>
+> **Environnement (important)** : `npm run test:e2e` gèle indéfiniment sous
+> **Node 24** (bug nodejs/node#63085 + Playwright 1.52). Lancer la suite sous
+> Node 22 : `"C:\nvm4w\nodejs\node.exe" tests/e2e/run-tests.mjs <specs>` ou
+> `nvm use 22`. Corriger en montant la version d'@playwright/test (fix PR
+> #35933) ou en épinglant Node ≤24.11.
+
 ## Règles communes à tous les lots
 
 - Langue : contenu, commentaires et commits en français. Tout texte visible

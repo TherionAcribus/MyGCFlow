@@ -291,12 +291,17 @@
 }
 
 /* Système de notifications toast */
+/* Ancré en bas à droite (pas en haut) : en haut, les toasts recouvraient la
+   carte, le menu flottant #controlBar et les préréglages de disposition du
+   panneau. Les nouveaux toasts s'empilent vers le haut, au-dessus des anciens.
+   max-width borné par le viewport pour supprimer tout débordement latéral. */
 .gcm-toast-container {
     position: fixed;
-    top: 20px;
+    top: auto;
+    bottom: 20px;
     right: 20px;
     z-index: 2147483000; /* Max over everything */
-    max-width: 400px;
+    max-width: min(400px, calc(100vw - 40px));
 }
 
 .gcm-toast {
@@ -632,13 +637,17 @@ main.fullscreen-mode #infosFrame span:not([hidden]) {
 
 /* Responsive design */
 @media only screen and (max-width: 600px) {
-    .toast-container {
+    /* Toasts pleine largeur en bas d'écran (les classes .toast-container /
+       .toast visées avant n'existent plus : seuls les .gcm-toast subsistent). */
+    .gcm-toast-container {
         left: 10px;
         right: 10px;
-        top: 10px;
+        top: auto;
+        bottom: 10px;
+        max-width: none;
     }
 
-    .toast {
+    .gcm-toast {
         padding: 12px;
     }
 
@@ -1059,13 +1068,9 @@ main.fullscreen-mode #infosFrame span:not([hidden]) {
     background-color: #b71c1c !important;
 }
 
-/* Bouton Plein écran du menu - Bleu (action neutre/interface) */
-#btnFullscreenMode {
-    background-color: var(--color-accent-strong) !important;
-}
-#btnFullscreenMode:hover {
-    background-color: var(--color-accent-deep) !important;
-}
+/* Bouton Plein écran du menu : pas de surcharge de couleur — c'est une
+   action secondaire (btn-outline-secondary), son état actif est rendu par
+   la classe .active (fond rempli de la teinte du contour). */
 
 /* Bouton de suppression des images de capture - Pêche à texte sombre */
 #btnCleanMoviePictures {
