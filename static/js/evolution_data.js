@@ -127,6 +127,22 @@ function bindControls() {
     el('btnEvolutionDeleteConfirm')?.addEventListener('click', confirmDelete);
 
     const input = el('evolutionCsvInput');
+    const csvBtn = el('evolutionCsvBtn');
+    const csvName = el('evolutionCsvName');
+    // Input fichier stylé : le bouton « Parcourir… » ouvre le sélecteur natif
+    // (input masqué) et la zone adjacente affiche le nom du fichier, ou le
+    // nombre quand plusieurs exports sont choisis en une fois.
+    csvBtn?.addEventListener('click', () => input?.click());
+    // Enregistré AVANT le listener d'import : celui-ci vide input.value dans
+    // le même événement (re-sélection possible), un listener ajouté après
+    // lirait déjà une liste de fichiers vide.
+    input?.addEventListener('change', () => {
+        if (!csvName) return;
+        const n = input.files?.length || 0;
+        csvName.textContent = n === 0 ? t('Aucun fichier sélectionné')
+            : n === 1 ? input.files[0].name
+            : t('${n} fichiers sélectionnés', { n });
+    });
     input?.addEventListener('change', () => {
         const files = Array.from(input.files || []);
         input.value = '';

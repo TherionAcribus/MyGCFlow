@@ -13,7 +13,18 @@
                         <div class="mb-3">
                             <label for="file-input" class="form-label">{{ _("Sélectionner et charger un fichier .gpx") }}</label>
                             <div class="gpx-dropzone">
-                                <input type="file" class="form-control" id="file-input" name="file" accept=".gpx,.zip" aria-label="{{ _('Fichier .gpx') }}" />
+                                <!-- L'input natif (masqué) reste la cible des listeners de bdd.js ;
+                                     le bouton visible déclenche input.click() et le nom choisi
+                                     s'affiche dans #file-input-name : plus de « Choose File /
+                                     No file chosen » en anglais sur l'UI française. -->
+                                <input type="file" class="visually-hidden" id="file-input" name="file" accept=".gpx,.zip" aria-label="{{ _('Fichier .gpx') }}" />
+                                <div class="d-flex align-items-center gap-2">
+                                    <button type="button" id="file-input-btn" class="btn btn-outline-primary gcm-file-btn"
+                                            aria-label="{{ _('Choisir un fichier GPX') }}">
+                                        <i class="ti ti-folder-open me-1" aria-hidden="true"></i>{{ _('Parcourir…') }}
+                                    </button>
+                                    <span id="file-input-name" class="gcm-file-name" aria-live="polite">{{ _('Aucun fichier sélectionné') }}</span>
+                                </div>
                                 <div class="gpx-dropzone__hint">
                                     <i class="ti ti-drag-drop me-1"></i>{{ _("ou glissez-déposez votre fichier n'importe où sur la page") }}
                                 </div>

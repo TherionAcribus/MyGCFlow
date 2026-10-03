@@ -95,3 +95,13 @@ export function stopBackgroundMusic(){
     bgAudioEl = bgAudioCtx = bgAudioSource = bgAudioGain = null;
     bgAudioActive = false;
 }
+
+// Bouton « Parcourir… » de l'input musique (masqué visuellement) : le
+// sélecteur natif s'ouvre via click(). Le nom du fichier choisi et ses
+// métadonnées sont déjà rendus par #audioFileInfo au 'change' de l'input
+// (displayAudioFileInfo, ui.js) : rien d'autre à câbler ici.
+const audioFileInputEl = document.getElementById('inputAudioFile');
+const audioFileBrowseBtn = document.getElementById('btnAudioFileBrowse');
+if (audioFileInputEl && audioFileBrowseBtn) {
+    audioFileBrowseBtn.addEventListener('click', () => audioFileInputEl.click());
+}

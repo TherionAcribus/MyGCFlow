@@ -31,6 +31,26 @@ let baseGeojson = null;
 
 // Gestionnaire pour le chargement automatique lors de la sélection de fichier
 const fileInput = document.getElementById('file-input');
+
+// Input fichier stylé : l'input natif est visuellement masqué, un bouton
+// « Parcourir… » ouvre le sélecteur et une zone à côté affiche le nom du
+// dernier fichier choisi (l'input garde ses listeners métier ci-dessous).
+const fileInputBtn = document.getElementById('file-input-btn');
+const fileInputName = document.getElementById('file-input-name');
+if (fileInputBtn && fileInput) {
+    fileInputBtn.addEventListener('click', () => fileInput.click());
+}
+if (fileInput && fileInputName) {
+    // Enregistré AVANT le listener d'upload : uploadBddRequest vide
+    // input.value dans le même événement (pour permettre la re-sélection
+    // du même fichier), un listener ajouté après lirait déjà une liste vide.
+    fileInput.addEventListener('change', () => {
+        fileInputName.textContent = (fileInput.files && fileInput.files.length)
+            ? fileInput.files[0].name
+            : t('Aucun fichier sélectionné');
+    });
+}
+
 if (fileInput) {
     fileInput.addEventListener('change', function(e) {
         if (e.target.files && e.target.files[0]) {
@@ -72,6 +92,9 @@ let importInProgress = false;
 
 function setImportControlsDisabled(disabled) {
     if (fileInput) fileInput.disabled = disabled;
+    // Le bouton « Parcourir… » est le point d'entrée visible de l'input :
+    // il suit le même verrouillage pendant un import.
+    if (fileInputBtn) fileInputBtn.disabled = disabled;
     if (clearDatabaseBtn) clearDatabaseBtn.disabled = disabled;
     if (emptyStateImportBtn) emptyStateImportBtn.disabled = disabled;
 }

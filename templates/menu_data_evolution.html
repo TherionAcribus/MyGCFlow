@@ -42,8 +42,18 @@
                     <div class="mt-3">
                         <label for="evolutionCsvInput" class="form-label">{{ _("Ajouter des exports CSV à la base") }}</label>
                         <div class="gpx-dropzone">
-                            <input type="file" class="form-control" id="evolutionCsvInput" accept=".csv,text/csv" multiple
+                            <!-- Même motif que #file-input (menu_data.html) : l'input natif
+                                 masqué reste piloté par evolution_data.js, le bouton visible
+                                 ouvre le sélecteur et #evolutionCsvName affiche la sélection. -->
+                            <input type="file" class="visually-hidden" id="evolutionCsvInput" accept=".csv,text/csv" multiple
                                    aria-label="{{ _('Exports CSV') }}" />
+                            <div class="d-flex align-items-center gap-2">
+                                <button type="button" id="evolutionCsvBtn" class="btn btn-outline-primary gcm-file-btn"
+                                        aria-label="{{ _('Choisir des fichiers CSV') }}">
+                                    <i class="ti ti-folder-open me-1" aria-hidden="true"></i>{{ _('Parcourir…') }}
+                                </button>
+                                <span id="evolutionCsvName" class="gcm-file-name" aria-live="polite">{{ _('Aucun fichier sélectionné') }}</span>
+                            </div>
                             <div class="gpx-dropzone__hint">
                                 <i class="ti ti-drag-drop me-1"></i>{{ _("ou glissez-déposez vos fichiers n'importe où sur la page") }}
                             </div>

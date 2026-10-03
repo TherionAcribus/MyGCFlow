@@ -205,7 +205,7 @@
                                 <option value="3">{{ _("3 — Dynamique : hors zone centrale") }}</option>
                                 <option value="4">{{ _("4 — Intense : recentrage et zoom systématiques") }}</option>
                             </select>
-                            <small id="helpCameraFollow" class="form-hint text-muted">{{ _("La vue glisse vers les caches du jour. Pour un grand trajet, elle dézoome temporairement puis revient au niveau initial. Un niveau voisin de tuiles est préchargé et la date suivante attend le rendu final. La durée peut donc dépasser l'estimation et celle de la musique.") }}</small>
+                            <small id="helpCameraFollow" class="form-hint text-muted">{{ _("La vue glisse vers les caches du jour ; la durée réelle peut dépasser l'estimation et celle de la musique.") }} <a href="/guide#animation" target="_blank">{{ _("En savoir plus") }}</a></small>
                         </div>
                         {% endif %}
                     </div>
@@ -219,9 +219,16 @@
                                     <input id="cbRecordAudioEnable" class="form-check-input" type="checkbox">
                                     <label class="form-check-label" for="cbRecordAudioEnable">{{ _("Inclure la musique") }}</label>
                                 </div>
-                                <input id="inputAudioFile" type="file" accept="audio/*" class="form-control form-control-sm" style="max-width:200px;" aria-label="{{ _('Fichier de musique') }}">
+                                <!-- Input natif masqué (ses listeners vivent dans ui.js) :
+                                     le bouton ouvre le sélecteur et le nom du fichier est
+                                     déjà rendu par #audioFileInfo ci-dessous. -->
+                                <input id="inputAudioFile" type="file" accept="audio/*" class="visually-hidden" aria-label="{{ _('Fichier de musique') }}">
+                                <button type="button" id="btnAudioFileBrowse" class="btn btn-sm btn-outline-primary gcm-file-btn"
+                                        aria-label="{{ _('Choisir un fichier audio') }}">
+                                    <i class="ti ti-music me-1" aria-hidden="true"></i>{{ _('Parcourir…') }}
+                                </button>
                             </div>
-                            <div id="audioFileInfo" class="form-hint text-muted mt-2">
+                            <div id="audioFileInfo" class="form-hint text-muted mt-2" aria-live="polite">
                                 <em>{{ _("Aucune musique sélectionnée") }}</em>
                             </div>
                             <div class="mt-3">
