@@ -66,7 +66,7 @@ test('import de deux exports : fusion, compteur au repos et date de fin', async 
   await expect(page.locator('#modal_first_use')).toHaveCount(0);
   await expect(page.locator('#emptyState')).toBeVisible();
   await expect(page.locator('#btnEvolutionEmptyStateImport')).toBeVisible();
-  await expect(page.locator('#btnStartAnimation')).toBeDisabled();
+  await expect(page.locator('#btnQuickPreview')).toBeDisabled();
 
   await importFixtures(page);
 
@@ -83,7 +83,7 @@ test('import de deux exports : fusion, compteur au repos et date de fin', async 
   // Carte au repos : caches actives à la date de l'export le plus récent.
   await expect(page.locator('#spanNbCaches')).toHaveText('5');
   await expect(page.locator('#spanCurrentDate')).toHaveText('10/02/2026');
-  await expect(page.locator('#btnStartAnimation')).toBeEnabled();
+  await expect(page.locator('#btnQuickPreview')).toBeEnabled();
 
   // La carte au repos suit la date de fin choisie.
   await setAnimationEnd(page, '12/01/2020');
@@ -112,9 +112,9 @@ test('la lecture fait monter puis descendre le compteur', async ({ page }) => {
     };
     sample();
   });
-  await page.locator('#btnStartAnimation').click();
+  await page.locator('#btnQuickPreview').click();
   await expect(page.locator('#spanCurrentDate')).toHaveText('12/01/2020', { timeout: 20_000 });
-  await expect(page.locator('#btnStartAnimation')).toBeVisible({ timeout: 20_000 });
+  await expect(page.locator('#btnQuickPreview')).toBeVisible({ timeout: 20_000 });
   await expect(page.locator('#spanNbCaches')).toHaveText('6');
 
   const samples = await page.evaluate(() => {
@@ -202,8 +202,8 @@ test('une base créée pendant la lecture s\'affiche à la fin de l\'animation',
   const rate = page.locator('#inputDaysPerSecond');
   await rate.fill('1');
   await rate.dispatchEvent('input');
-  await page.locator('#btnStartAnimation').click();
-  await expect(page.locator('#btnStopAnimation')).toBeVisible();
+  await page.locator('#btnQuickPreview').click();
+  await expect(page.locator('#btnQuickStop')).toBeVisible();
 
   await page.locator('a[href="#data"]').click();
   await page.locator('#btnEvolutionCreate').click();
@@ -242,7 +242,7 @@ test('filtre Région, « Aucun », et restauration de la base au rechargement', 
 
   await selectRegions([]);
   await expect(page.locator('#filtersCounter')).toContainText('0 / 9');
-  await expect(page.locator('#btnStartAnimation')).toBeDisabled();
+  await expect(page.locator('#btnQuickPreview')).toBeDisabled();
 
   await page.reload();
   await page.waitForFunction(() => window.mygcflowReady === true && window.mygcflowEvolutionLoaded === true);

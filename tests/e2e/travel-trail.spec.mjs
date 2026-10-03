@@ -71,7 +71,7 @@ test('le trait suit les caches pendant la lecture et reste affiché à la fin', 
   expect(options.routing).toBe('clusters');
 
   await setRhythm(page, 4);
-  await page.locator('#btnStartAnimation').click();
+  await page.locator('#btnQuickPreview').click();
 
   // Le trajet est calculé au lancement : une étape par jour (caches isolées).
   await expect.poll(async () => (await trailState(page)).stops).toBe(6);
@@ -85,7 +85,7 @@ test('le trait suit les caches pendant la lecture et reste affiché à la fin', 
   await expect.poll(async () => (await trailState(page)).penLength, { timeout: 10_000 }).toBeGreaterThan(0);
 
   // Fin naturelle : le stylo a parcouru tout le trajet, qui reste affiché.
-  await expect(page.locator('#btnStartAnimation')).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator('#btnQuickPreview')).toBeVisible({ timeout: 15_000 });
   await expect.poll(async () => {
     const s = await trailState(page);
     return s.penLength >= s.totalLength - 1e-6;
@@ -105,10 +105,10 @@ test("la date de fin de l'animation borne le trajet", async ({ page }) => {
     app.options.animation.dateEnd = new Date(2026, 0, 3);
     app.options.animation.extraEndSeconds = 0;
   });
-  await page.locator('#btnStartAnimation').click();
+  await page.locator('#btnQuickPreview').click();
   // Seuls les 3 premiers jours (01→03/01) font partie du trajet.
   await expect.poll(async () => (await trailState(page)).stops).toBe(3);
-  await expect(page.locator('#btnStartAnimation')).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator('#btnQuickPreview')).toBeVisible({ timeout: 15_000 });
   const state = await trailState(page);
   expect(state.penLength).toBeCloseTo(state.totalLength, 3);
 });
@@ -117,15 +117,15 @@ test('la pause fige le trait, la reprise le reprend sans saut', async ({ page })
   await openWithFixture(page);
   await enableTrail(page);
   await setRhythm(page, 1);
-  await page.locator('#btnStartAnimation').click();
+  await page.locator('#btnQuickPreview').click();
   await expect.poll(async () => (await trailState(page)).penLength, { timeout: 10_000 }).toBeGreaterThan(0);
-  await page.locator('#btnPauseAnimation').click();
+  await page.locator('#btnQuickPause').click();
   const frozen = (await trailState(page)).penLength;
   await page.waitForTimeout(1200);
   expect((await trailState(page)).penLength).toBe(frozen);
-  await page.locator('#btnPauseAnimation').click(); // Continuer
+  await page.locator('#btnQuickPause').click(); // Continuer
   await expect.poll(async () => (await trailState(page)).penLength, { timeout: 5_000 }).toBeGreaterThan(frozen);
-  await page.locator('#btnStopAnimation').click();
+  await page.locator('#btnQuickStop').click();
 });
 
 test("l'arrêt efface le trait ; désactivé, aucun trajet n'est tracé", async ({ page }) => {
@@ -133,9 +133,9 @@ test("l'arrêt efface le trait ; désactivé, aucun trajet n'est tracé", async 
   await enableTrail(page);
   await setRhythm(page, 1);
 
-  await page.locator('#btnStartAnimation').click();
+  await page.locator('#btnQuickPreview').click();
   await expect.poll(async () => (await trailState(page)).active).toBe(true);
-  await page.locator('#btnStopAnimation').click();
+  await page.locator('#btnQuickStop').click();
   await expect.poll(async () => (await trailState(page)).active).toBe(false);
   expect((await trailState(page)).layerVisible).toBe(false);
 
@@ -145,11 +145,11 @@ test("l'arrêt efface le trait ; désactivé, aucun trajet n'est tracé", async 
   await page.locator('#switchTrail').uncheck();
   await expect(page.locator('#selectTrailRouting')).toBeDisabled();
   await page.locator('a[href="#animation"]').click();
-  await page.locator('#btnStartAnimation').click();
-  await expect(page.locator('#btnPauseAnimation')).toBeVisible();
+  await page.locator('#btnQuickPreview').click();
+  await expect(page.locator('#btnQuickPause')).toBeVisible();
   await page.waitForTimeout(500);
   expect((await trailState(page)).active).toBe(false);
-  await page.locator('#btnStopAnimation').click();
+  await page.locator('#btnQuickStop').click();
 });
 
 test('la durée du tracé est une préférence globale enregistrée', async ({ page }) => {
@@ -221,7 +221,7 @@ for (const mode of ['images', 'mediarecorder']) {
       requestAnimationFrame(tick);
     });
 
-    await page.locator('#btnRecordAnimation').click({ force: true });
+    await page.locator('#btnQuickExport').click({ force: true });
     await expect(page.locator('.gcm-toast').filter({ hasText: 'Vidéo prête' }).last()).toBeVisible({ timeout: 150_000 });
 
     // Relevé du moteur (conservé après l'arrêt) : le trajet a été tracé en

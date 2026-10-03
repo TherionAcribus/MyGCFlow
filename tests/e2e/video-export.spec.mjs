@@ -231,7 +231,7 @@ test('les options MediaRecorder de l\'interface produisent un MP4 validé par ff
     extraEndSeconds: 0,
   });
 
-  await page.locator('#btnRecordAnimation').click({ force: true });
+  await page.locator('#btnQuickExport').click({ force: true });
   await expect(page.locator('.gcm-toast').filter({ hasText: 'Vidéo prête' }).last()).toBeVisible({ timeout: 75_000 });
   await expect.poll(latestCompletedMp4, { timeout: 15_000 }).not.toBeNull();
 
@@ -303,7 +303,7 @@ test('le mode images rend la carte à la résolution demandée', async ({ page }
   expect(plan.setting).toBe('1080p');
   expect(plan.ratio).toBeGreaterThan(1);
 
-  await page.locator('#btnRecordAnimation').click({ force: true });
+  await page.locator('#btnQuickExport').click({ force: true });
   await expect(page.locator('.gcm-toast').filter({ hasText: 'Vidéo prête' }).last()).toBeVisible({ timeout: 120_000 });
   await expect.poll(latestCompletedMp4, { timeout: 30_000 }).not.toBeNull();
 
@@ -389,7 +389,7 @@ test('le mode MediaRecorder rend aussi la carte à la résolution demandée', as
   });
   expect(plan.ratio).toBeGreaterThan(1);
 
-  await page.locator('#btnRecordAnimation').click({ force: true });
+  await page.locator('#btnQuickExport').click({ force: true });
   await expect(page.locator('.gcm-toast').filter({ hasText: 'Vidéo prête' }).last()).toBeVisible({ timeout: 120_000 });
   await expect.poll(latestCompletedMp4, { timeout: 30_000 }).not.toBeNull();
 
@@ -559,7 +559,7 @@ test('le réglage Couleurs choisit le format de pixels du fichier final', async 
     app.options.record.fps = 12;
   });
 
-  await page.locator('#btnRecordAnimation').click({ force: true });
+  await page.locator('#btnQuickExport').click({ force: true });
   await expect(page.locator('.gcm-toast').filter({ hasText: 'Vidéo prête' }).last()).toBeVisible({ timeout: 120_000 });
   await expect.poll(latestCompletedMp4, { timeout: 30_000 }).not.toBeNull();
 
@@ -734,7 +734,7 @@ test('un enregistrement avec suivi de caméra produit une vidéo et déplace la 
     return map.getView().getCenter()[0];
   });
 
-  await page.locator('#btnRecordAnimation').click({ force: true });
+  await page.locator('#btnQuickExport').click({ force: true });
   await expect(page.locator('.gcm-toast').filter({ hasText: 'Vidéo prête' }).last()).toBeVisible({ timeout: 120_000 });
   await expect.poll(latestCompletedMp4, { timeout: 30_000 }).not.toBeNull();
 

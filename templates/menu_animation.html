@@ -16,16 +16,38 @@
                         </li>
                     </ul>
 
-                    <!-- Commandes d'affichage et de lecture volontairement hors
-                         des panes : elles restent actives même sans base
-                         chargée (les panes sont alors inertes). Le menu
-                         flottant porte le seul bouton de sortie du plein
-                         écran : il y reste donc visible même si la
-                         préférence le masque en mode normal. -->
+                    <!-- Commandes d'affichage volontairement hors des panes :
+                         elles restent actives même sans base chargée (les
+                         panes sont alors inertes). Le menu flottant porte le
+                         seul bouton de sortie du plein écran : il y reste
+                         donc visible même si la préférence le masque en mode
+                         normal. Prévisualiser / Exporter / Pause / Arrêter
+                         ne sont pas répétés ici : la barre collante
+                         #quickActions et le menu flottant portent déjà ces
+                         commandes. -->
                     <div class="my-3 d-flex align-items-center gap-2 flex-wrap">
                         <button type="button" class="btn btn-outline-secondary" id="btnFullscreenMode" title="{{ _('Passer en plein écran') }}">
                             <i class="ti ti-maximize me-1" aria-hidden="true"></i><span class="fullscreen-label" data-enter-text="{{ _('Plein écran') }}" data-exit-text="{{ _('Quitter le plein écran') }}">{{ _("Plein écran") }}</span>
                         </button>
+                        <!-- Le badge « Global » est rattaché au bouton Menu
+                             flottant : c'est la préférence show_control_bar
+                             qu'il concerne. -->
+                        <div class="d-inline-flex align-items-center gap-1">
+                            <button type="button" class="btn btn-outline-secondary active" id="btnToggleControlBar" aria-pressed="true"
+                                    data-bs-toggle="tooltip" data-bs-title="{{ _('Afficher ou masquer le menu flottant — il n\'apparaît pas dans les vidéos enregistrées') }}">
+                                <i class="ti ti-eye me-1" aria-hidden="true"></i><span>{{ _("Menu flottant") }}</span>
+                            </button>{{ global_scope_badge() }}
+                        </div>
+                    </div>
+
+                    <!-- Boutons d'origine des commandes de lecture : retirés du
+                         flux visible (les doublures de #quickActions et du
+                         menu flottant suffisent) mais conservés dans le DOM —
+                         ui.js s'en sert comme source de vérité (relais des
+                         clics, état disabled, bascule Pause/Continuer). Leur
+                         display calculé ne porte plus l'état repos/lecture :
+                         voir playbackUiState / data-playback-state dans ui.js. -->
+                    <div id="animationControlsSource" hidden>
                         <button type="button" class="btn btn-primary" id="btnStartAnimation" disabled>
                             <i class="ti ti-player-play me-1"></i>{{ _("Prévisualiser") }}
                         </button>
@@ -42,10 +64,6 @@
                         <button type="button" class="btn btn-secondary" id="btnStopAnimation" style="display: none;">
                             <i class="ti ti-player-stop me-1"></i>{{ _("Arrêter") }}
                         </button>
-                        <button type="button" class="btn btn-outline-secondary active" id="btnToggleControlBar" aria-pressed="true"
-                                data-bs-toggle="tooltip" data-bs-title="{{ _('Afficher ou masquer le menu flottant — il n\'apparaît pas dans les vidéos enregistrées') }}">
-                            <i class="ti ti-eye me-1" aria-hidden="true"></i><span>{{ _("Menu flottant") }}</span>
-                        </button>{{ global_scope_badge() }}
                     </div>
 
                     <div class="tab-content pt-3">

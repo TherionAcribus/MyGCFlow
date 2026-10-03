@@ -26,11 +26,18 @@ test('état vide : verrouillage sans base, déblocage après import, retour apr�
   await openReadyApp(page);
   await dismissFirstUseModal(page);
 
+  // La modale première utilisation ne s'ouvre plus automatiquement : l'état
+  // vide porte seul l'appel à l'action, avec un lien vers l'aide .gpx.
+  await expect(page.locator('#modal_first_use')).toBeHidden();
+  await expect(page.locator('#btnEmptyStateGpxHelp')).toBeVisible();
+
   // État vide sur la carte : message + bouton d'import, sections verrouillées.
   const emptyState = page.locator('#emptyState');
   const filterPanel = page.locator('#filterPanel');
-  const btnStart = page.locator('#btnStartAnimation');
-  const btnRecord = page.locator('#btnRecordAnimation');
+  // Les boutons Lecture/Enregistrement du panneau Animation sont masqués :
+  // les actions rapides de la barre collante sont les commandes visibles.
+  const btnStart = page.locator('#btnQuickPreview');
+  const btnRecord = page.locator('#btnQuickExport');
 
   await expect(emptyState).toBeVisible();
   await expect(emptyState.locator('.empty-state-text')).toContainText('.gpx');

@@ -46,9 +46,11 @@ test.beforeEach(async ({ page }) => {
 
 test('pause, reprise et arrêt ne provoquent aucun rattrapage brutal', async ({ page }) => {
   const currentDate = page.locator('#spanCurrentDate');
-  const btnStart = page.locator('#btnStartAnimation');
-  const btnPause = page.locator('#btnPauseAnimation');
-  const btnStop = page.locator('#btnStopAnimation');
+  // Les boutons du panneau Animation sont masqués (source de vérité interne) :
+  // les commandes visibles sont les actions rapides de la barre collante.
+  const btnStart = page.locator('#btnQuickPreview');
+  const btnPause = page.locator('#btnQuickPause');
+  const btnStop = page.locator('#btnQuickStop');
 
   await btnStart.click();
   await expect(btnPause).toBeVisible();
@@ -80,7 +82,7 @@ test('pause, reprise et arrêt ne provoquent aucun rattrapage brutal', async ({ 
   expect(resumed - paused).toBeGreaterThanOrEqual(0);
   expect(resumed - paused).toBeLessThanOrEqual(4);
 
-  // Arrêt : retour à l'état initial (boutons Lecture/Enregistrement visibles).
+  // Arrêt : retour à l'état initial (actions Prévisualiser/Exporter visibles).
   // Si l'animation s'est terminée entre-temps, cet état est déjà atteint.
   if (await btnStop.isVisible()) {
     await btnStop.click();

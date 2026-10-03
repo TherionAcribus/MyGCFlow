@@ -281,6 +281,16 @@ var isFullscreen = false;
 // État visuel du bouton fullscreen
 var fullscreenButtonActive = false;
 
+// État « repos / lecture » des commandes d'animation : les boutons d'origine
+// du panneau vivent désormais dans #animationControlsSource (masqué) — leur
+// display calculé ne dit donc plus rien. Cette variable, posée par
+// showStartRecordButtons/showPauseStopButtons et relayée en
+// data-playback-state sur #controlBar, est la source de vérité pour
+// updateControlBar() et syncTrailPreviewButton().
+// var en tête de module : initUIElements() tourne pendant l'évaluation du
+// module, avant toute déclaration placée plus bas.
+var playbackUiState = 'idle'; // 'idle' | 'running'
+
 // Initialisation des éléments UI avec vérification d'existence
 function initUIElements() {
 // MENU BDD
@@ -3596,6 +3606,39 @@ function areNoneSelected(selectEl){
     return selected.length === 0;
 }
 
+// Vrai quand tous les filtres sont à l'état neutre : chaque liste sur
+// « Tout » et les bornes de dates sur les valeurs par défaut de la base.
+// bdd.js s'en sert pour poser data-filters-active sur #filterPanel, ce qui
+// repasse « Réinitialiser tous les filtres » en rouge.
+export function filtersAreDefault(){
+    const selects = [
+        selectType, selectDifficulty, selectTerrain, selectContainer,
+        document.getElementById('selectCountry'),
+        document.getElementById('selectState'),
+        selectCounty,
+    ];
+    for (const sel of selects) {
+        if (!sel) continue;
+        // Une liste sans option réelle (base vide, pas de donnée
+        // géographique) n'est pas un filtre actif : critère ignoré.
+        const hasReal = Array.from(sel.options).some(o => !o.disabled && o.value !== '');
+        if (hasReal && !areAllSelected(sel)) return false;
+    }
+    return datePickerAtDefault('#datePickerStart', defaultStartDate)
+        && datePickerAtDefault('#datePickerEnd', defaultEndDate)
+        && datePickerAtDefault('#publishedDatePickerStart', defaultPublishedStartDate)
+        && datePickerAtDefault('#publishedDatePickerEnd', defaultPublishedEndDate);
+}
+
+// Le champ affiche le format choisi par l'utilisateur : la comparaison se
+// fait sur la même forme que updateResetButtonsHighlight (texte affiché).
+function datePickerAtDefault(selector, defaultDate){
+    const el = document.querySelector(selector);
+    if (!el) return true; // Champ absent (ex. mode Évolution) : critère inactif
+    const expected = defaultDate ? formatDateForPickers(defaultDate) : '';
+    return (el.value || '').trim() === expected;
+}
+
 function getSelectedValuesText(selectEl){
     const values = Array.from(selectEl.selectedOptions)
         .filter(o => !o.disabled && o.value !== '') // Exclure les placeholders
@@ -4250,9 +4293,24 @@ export function closeModalInfos(){
 
 // ----------------- ANIMATION DE LA CARTE ----------------
 
+// Pose l'état repos/lecture explicite (voir playbackUiState en tête de
+// module) et le reflète sur #controlBar pour l'inspection (dbg, tests).
+function setPlaybackUiState(state) {
+    playbackUiState = state;
+    document.getElementById('controlBar')?.setAttribute('data-playback-state', state);
+}
+
+function isPlaybackIdle() {
+    return playbackUiState === 'idle';
+}
+
 // Affichage boutons principaux
 function showStartRecordButtons(){
     dbgUi("=== showStartRecordButtons ===");
+    // Posé avant toute sortie anticipée : l'appel de resetControlsToInitialState
+    // (fin d'animation, arrêt) doit toujours ramener l'état « repos », même si
+    // un bouton source venait à manquer.
+    setPlaybackUiState('idle');
     const btnStart = document.getElementById('btnStartAnimation');
     const btnRecord = document.getElementById('btnRecordAnimation');
     const btnPause = document.getElementById('btnPauseAnimation');
@@ -4281,6 +4339,7 @@ function showStartRecordButtons(){
 
 function showPauseStopButtons(){
     dbgUi("showPauseStopButtons")
+    setPlaybackUiState('running');
     const btnStart = document.getElementById('btnStartAnimation');
     const btnRecord = document.getElementById('btnRecordAnimation');
     const btnPause = document.getElementById('btnPauseAnimation');
@@ -5134,9 +5193,10 @@ function syncTrailPreviewButton() {
     const btn = document.getElementById('btnTrailPreview');
     if (!btn) return;
     const active = pkg.isTrailPreviewActive?.() === true;
-    const btnStart = document.getElementById('btnStartAnimation');
-    // Même mesure d'état « repos » que updateControlBar : bouton Start visible.
-    const idle = !btnStart || window.getComputedStyle(btnStart).display !== 'none';
+    // Même mesure d'état « repos » que updateControlBar : l'état explicite
+    // (les boutons source, masqués dans #animationControlsSource, n'ont plus
+    // de display significatif).
+    const idle = isPlaybackIdle();
     const enabled = normalizeTrailOptions(pkg.options?.trail).enabled;
     btn.disabled = !enabled || !idle || !hasAnimationData();
     btn.setAttribute('aria-pressed', active ? 'true' : 'false');
@@ -6319,7 +6379,6 @@ function updateControlBar() {
     const btnStartAnimation = document.getElementById('btnStartAnimation');
     const btnRecordAnimation = document.getElementById('btnRecordAnimation');
     const btnPauseAnimation = document.getElementById('btnPauseAnimation');
-    const btnStopAnimation = document.getElementById('btnStopAnimation');
 
     dbgUi("Boutons trouvés:", {
         controlBar: !!controlBar,
@@ -6336,20 +6395,17 @@ function updateControlBar() {
         return;
     }
 
-    // Déterminer l'état courant : vérifier si Start est visible (état repos)
-    let isIdle = false;
-    if (btnStartAnimation && window.getComputedStyle(btnStartAnimation).display !== 'none') {
-        isIdle = true;
-    }
+    // État repos/lecture : l'état explicite fait foi — les boutons d'origine
+    // sont masqués dans #animationControlsSource, leur display calculé ne
+    // reflète plus rien.
+    const isIdle = isPlaybackIdle();
 
     const hasData = hasAnimationData();
 
     dbgUi("État détecté:", {
+        playbackUiState: playbackUiState,
         isIdle: isIdle,
-        hasData: hasData,
-        btnStartAnimation_display: btnStartAnimation ? window.getComputedStyle(btnStartAnimation).display : 'null',
-        btnPauseAnimation_display: btnPauseAnimation ? window.getComputedStyle(btnPauseAnimation).display : 'null',
-        btnStopAnimation_display: btnStopAnimation ? window.getComputedStyle(btnStopAnimation).display : 'null'
+        hasData: hasData
     });
 
     // Gestion des boutons selon l'état
