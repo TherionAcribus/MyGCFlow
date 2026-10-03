@@ -692,21 +692,39 @@ main.fullscreen-mode #infosFrame span:not([hidden]) {
        se résolvaient contre le document plutôt que contre ce cadre. */
     position: relative;
     /* Hauteur par défaut avant que initMapTabsSplitPane() (ui.js) ne restaure la
-       valeur sauvegardée en localStorage ou n'ajuste au conteneur. Responsive
-       (vh) plutôt qu'une valeur fixe, pour éviter qu'une hauteur figée ne
-       dépasse un viewport court avant l'exécution du JS. Les bornes reprennent
-       les constantes JS (MIN_MAP_PX=200, MIN_TABS_PX=80 + 8px de resizer). */
-    height: 60vh;
+       valeur sauvegardée en localStorage ou n'applique le repli (préréglage
+       « balanced » à 45 % sous 1280 px de large, « sidebar » au-delà).
+       Responsive (vh) plutôt qu'une valeur fixe, pour éviter qu'une hauteur
+       figée ne dépasse un viewport court avant l'exécution du JS. Les bornes
+       reprennent les constantes JS (MIN_MAP_PX=200, MIN_TABS_PX=80 + 8px de
+       resizer). */
+    height: 45vh;
     min-height: 200px;
     max-height: calc(100vh - 88px);
 }
 
 #mapTabsResizer {
+    position: relative;
     height: 8px;
     cursor: row-resize;
     background: rgba(0, 0, 0, 0.08);
     flex: 0 0 auto;
     touch-action: none;
+}
+
+/* Indicateur central : sans lui la poignée de 8 px n'était pas découvrable.
+   Horizontal en bandeau, vertical en mode latéral (règle dédiée plus bas). */
+#mapTabsResizer::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 36px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(0, 0, 0, 0.25);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
 }
 
 #mapTabsResizer:hover {
@@ -734,6 +752,11 @@ main.fullscreen-mode #infosFrame span:not([hidden]) {
     width: 8px;
     height: auto;
     cursor: col-resize;
+}
+/* Indicateur central tourné : la poignée est verticale en mode latéral. */
+#mapTabsContainer.layout-sidebar > #mapTabsResizer::before {
+    width: 4px;
+    height: 36px;
 }
 #mapTabsContainer.layout-sidebar > #tabsPanel {
     min-width: 0;
@@ -885,6 +908,9 @@ main.fullscreen-mode #infosFrame span:not([hidden]) {
         min-width: 0;
         scrollbar-width: none;
     }
+    #panelToolbar .nav-tabs .nav-link {
+        padding: 0.35rem 0.6rem;
+    }
     #quickActions .btn-label {
         display: none;
     }
@@ -895,6 +921,35 @@ main.fullscreen-mode #infosFrame span:not([hidden]) {
         min-width: 36px;
         justify-content: center;
     }
+}
+
+/* Même repli quand c'est le PANNEAU qui est étroit alors que le viewport
+   reste large (disposition latérale ~420 px, fenêtre réduite) : les classes
+   panel-lt-md / panel-lt-sm sont posées sur #tabsPanel par le ResizeObserver
+   de initMapTabsSplitPane (ui.js) — la media query ci-dessus ne voit que la
+   largeur du viewport. panel-lt-sm implique panel-lt-md, une seule classe
+   suffit à couvrir les deux seuils. */
+#tabsPanel.panel-lt-md #panelToolbar {
+    flex-wrap: nowrap;
+}
+#tabsPanel.panel-lt-md #panelToolbar .nav-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    min-width: 0;
+    scrollbar-width: none;
+}
+#tabsPanel.panel-lt-md #panelToolbar .nav-tabs .nav-link {
+    padding: 0.35rem 0.6rem;
+}
+#tabsPanel.panel-lt-md #quickActions .btn-label {
+    display: none;
+}
+#tabsPanel.panel-lt-md #quickActions .btn i {
+    margin-right: 0 !important;
+}
+#tabsPanel.panel-lt-md #quickActions .btn {
+    min-width: 36px;
+    justify-content: center;
 }
 
 /* Styles pour les animations de flash */

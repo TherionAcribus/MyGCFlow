@@ -6,6 +6,11 @@ const mapHeight = page => page.locator('#mapWithFrames').evaluate(el => el.getBo
 const ariaNow = page => page.locator('#mapTabsResizer').getAttribute('aria-valuenow');
 
 test('séparateur carte/panneau : navigation clavier', async ({ page }) => {
+  // Le viewport e2e fait 1280 px : le repli initial (aucune donnée en
+  // localStorage) y applique le préréglage « sidebar », où ↑/↓ sont sans
+  // effet (seuls ←/→ agissent). On épingle le mode bandeau pour tester la
+  // navigation verticale — le choix persisté simule un usage antérieur.
+  await page.addInitScript(() => localStorage.setItem('mapTabsLayoutMode', 'rows'));
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.mygcflowReady === true);
 

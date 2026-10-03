@@ -353,6 +353,8 @@ h5, h6 { color: var(--color-heading); font-weight: 600; }
    d'origine disparaît sur fond sombre → on passe en blanc-alpha. */
 [data-bs-theme="dark"] #mapTabsResizer { background: rgba(255, 255, 255, 0.10); }
 [data-bs-theme="dark"] #mapTabsResizer:hover { background: rgba(255, 255, 255, 0.18); }
+/* Indicateur central de la poignée : même bascule noir-alpha → blanc-alpha. */
+[data-bs-theme="dark"] #mapTabsResizer::before { background: rgba(255, 255, 255, 0.30); }
 [data-bs-theme="dark"] #mapTabsContainer.is-resizing #mapTabsResizer {
     background: rgba(var(--color-accent-rgb), 0.4);
 }
