@@ -489,7 +489,10 @@ test('le débit MediaRecorder suit la résolution, sans jamais redescendre', asy
     // plutôt que d'hériter des réglages d'un test précédent.
     await page.locator('#inputRecordFps').fill('30');
     await page.locator('#inputRecordFps').blur();
-    await bitrate.fill('6');
+    // 5 plutôt que 6 : l'en-tête d'application a raccourci la carte, le débit
+    // conseillé du plan 1440p retombe pile sur 6 — saisir en dessous garde la
+    // marge qui rend l'assertion suivante significative.
+    await bitrate.fill('5');
     await bitrate.blur();
 
     // Le débit conseillé pour la sortie 1440p, calculé comme l'interface le fait.
@@ -507,7 +510,7 @@ test('le débit MediaRecorder suit la résolution, sans jamais redescendre', asy
         });
         return recommendedBitrateMbps({ width: plan.width, height: plan.height, fps: app.options.record.fps });
     });
-    expect(expected).toBeGreaterThan(6);
+    expect(expected).toBeGreaterThan(5);
 
     await resolution.selectOption('1440p');
     await expect(bitrate).toHaveValue(String(expected));

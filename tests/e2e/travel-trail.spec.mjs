@@ -277,12 +277,16 @@ test("l'aperçu affiche le trajet calculé et l'inspecte au clic", async ({ page
     const [lon, lat] = app.pointsByDate.get(key)[0].geometry.coordinates;
     return app.olMap.getPixelFromCoordinate(ol.proj.fromLonLat([lon, lat]));
   });
-  await page.mouse.click(px[0] + 10, px[1]);
+  // getPixelFromCoordinate donne des pixels relatifs au viewport de la carte ;
+  // page.mouse attend des coordonnées de page — ajouter l'offset de la carte
+  // (l'en-tête d'application la décale sous le haut du document).
+  const mapBox = await page.locator('#map').boundingBox();
+  await page.mouse.click(mapBox.x + px[0] + 10, mapBox.y + px[1]);
   await expect(page.locator('#gcPopup')).toHaveClass(/is-visible/);
   await expect(page.locator('#gcPopup .gc-popup-content')).toContainText('Étape');
   await expect(page.locator('#gcPopup .gc-popup-content')).toContainText('1 cache');
   // Clic hors de toute étape : la popup se referme.
-  await page.mouse.click(px[0] + 150, px[1] + 100);
+  await page.mouse.click(mapBox.x + px[0] + 150, mapBox.y + px[1] + 100);
   await expect(page.locator('#gcPopup')).not.toHaveClass(/is-visible/);
 
   // Re-clic sur le bouton : l'aperçu se ferme.
