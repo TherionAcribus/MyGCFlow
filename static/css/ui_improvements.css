@@ -894,6 +894,15 @@ main.fullscreen-mode #infosFrame span:not([hidden]) {
     border-color: var(--color-accent);
     background-color: rgba(33, 150, 243, 0.12);
 }
+/* Sous ~1100 px de fenêtre le mode latéral est suspendu (ui.js,
+   SIDEBAR_MIN_VIEWPORT_PX) : masquer le préréglage plutôt que proposer
+   une disposition inutilisable. C'est la largeur du viewport qui compte,
+   pas celle du panneau — une vraie media query, pas panel-lt-*. */
+@media (max-width: 1099.98px) {
+    #layoutPresets [data-layout="sidebar"] {
+        display: none;
+    }
+}
 /* Sur petit écran, les actions rapides passent en icône seule pour que la
    barre collante reste compacte ; les aria-label portent le nom accessible. */
 @media (max-width: 575.98px) {
@@ -940,6 +949,30 @@ main.fullscreen-mode #infosFrame span:not([hidden]) {
 }
 #tabsPanel.panel-lt-md #panelToolbar .nav-tabs .nav-link {
     padding: 0.35rem 0.6rem;
+    white-space: nowrap;
+}
+/* Libellé abrégé des onglets en panneau étroit : « Animation & vidéo » et
+   « Préférences » débordaient / passaient sur deux lignes. Les variantes
+   courtes (tab-label-short) restent accessibles aux lecteurs d'écran. */
+#panelToolbar .tab-label-short { display: none; }
+#tabsPanel.panel-lt-md #panelToolbar .tab-label-full { display: none; }
+#tabsPanel.panel-lt-md #panelToolbar .tab-label-short { display: inline; }
+
+/* Les boutons longs (« Supprimer mes trouvailles », « Prévisualiser
+   l'animation ») enveloppent leur texte au lieu de déborder de la carte.
+   (Les colonnes col-lg-* sont déjà empilées par la règle .layout-sidebar
+   plus haut ; en bandeau étroit, le viewport < lg les empile aussi.) */
+#tabsPanel.panel-lt-md .btn { white-space: normal; }
+/* La ligne compteur + bouton de suppression peut passer sur deux lignes
+   (flex-wrap sur le conteneur, :has() évite d'ajouter un id au gabarit). */
+#tabsPanel.panel-lt-md .d-flex:has(> #infosBDD) {
+    flex-wrap: wrap;
+}
+#tabsPanel.panel-lt-md #infosBDD {
+    min-width: 0;
+}
+#tabsPanel.panel-lt-md #clearDatabaseBtn {
+    flex-shrink: 1;
 }
 #tabsPanel.panel-lt-md #quickActions .btn-label {
     display: none;

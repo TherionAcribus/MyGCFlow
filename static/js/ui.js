@@ -1332,7 +1332,16 @@ function initMapTabsSplitPane() {
     const MIN_TABS_PX = 80;
     // En panneau latéral, le panneau de réglages garde une largeur utile.
     const MIN_TABS_SIDEBAR_PX = 280;
+    // Sous cette largeur de fenêtre le mode latéral est inutilisable (la
+    // colonne tomberait vers MIN_TABS_SIDEBAR_PX et la barre d'onglets en
+    // bande de ~50 px). On retombe alors en bandeau — sans écraser le choix
+    // persisté, qui reprend le dessus au réélargissement.
+    const SIDEBAR_MIN_VIEWPORT_PX = 1100;
     let sidebarMode = false;
+
+    function sidebarAllowed() {
+        return window.innerWidth >= SIDEBAR_MIN_VIEWPORT_PX;
+    }
 
     let isResizing = false;
     let suppressResizeHandler = false;
@@ -1427,6 +1436,10 @@ function initMapTabsSplitPane() {
     // ni STORAGE_KEY, sinon un défaut deviendrait indistinguable d'un choix
     // explicite de l'utilisateur.
     function applyLayoutPreset(layout, persist) {
+        // « sidebar » est masqué sous le seuil : un appel arrivé malgré tout
+        // (viewport rétréci entre le clic et l'application) dégrade en
+        // équilibré plutôt que de rendre le panneau inutilisable.
+        if (layout === 'sidebar' && !sidebarAllowed()) layout = 'balanced';
         const ratio = LAYOUT_PRESETS[layout];
         if (!ratio) return;
         const wantSidebar = layout === 'sidebar';
@@ -1472,14 +1485,30 @@ function initMapTabsSplitPane() {
     function applySavedRatioIfAny() {
         const raw = localStorage.getItem(STORAGE_KEY);
         const savedPx = raw ? parseFloat(raw) : NaN;
+        // La taille mémorisée s'exprime sur l'axe du mode mémorisé : avec un
+        // latéral suspendu (fenêtre trop étroite), cette largeur lue comme
+        // hauteur donnerait une carte immense — repartir sur un ratio.
+        if (!sidebarMode && localStorage.getItem(MODE_KEY) === 'sidebar') {
+            applyLayoutPreset('balanced', false);
+            return;
+        }
         if (!Number.isFinite(savedPx) || savedPx <= 0) {
             // Rien de restauré (ni taille ni mode enregistré) : repli sur un
             // préréglage selon la largeur de fenêtre — panneau latéral sur
             // écran large, équilibré sinon. Non persisté pour que le choix
             // explicite de l'utilisateur reste le seul état sauvegardé.
-            if (raw === null && localStorage.getItem(MODE_KEY) === null) {
-                applyLayoutPreset(window.innerWidth >= 1280 ? 'sidebar' : 'balanced', false);
-                return;
+            if (raw === null) {
+                const savedMode = localStorage.getItem(MODE_KEY);
+                if (savedMode === null) {
+                    applyLayoutPreset(window.innerWidth >= 1280 ? 'sidebar' : 'balanced', false);
+                    return;
+                }
+                // Mode mémorisé sans taille (stockage partiellement effacé) :
+                // le préréglage du mode évite une carte écrasée au minimum.
+                if (savedMode === 'sidebar' && sidebarAllowed()) {
+                    applyLayoutPreset('sidebar', false);
+                    return;
+                }
             }
             const current = currentMapSize();
             if (Number.isFinite(current) && current > 0) {
@@ -1584,6 +1613,18 @@ function initMapTabsSplitPane() {
         if (isFullscreenMode()) return;
         if (isResizing) return;
         if (suppressResizeHandler) return;
+        // Franchissement du seuil d'utilisabilité du mode latéral : suspendre
+        // (fenêtre trop étroite) ou restaurer (réélargissement) sans toucher
+        // au choix persisté — MODE_KEY garde 'sidebar' entre-temps.
+        if (sidebarMode && !sidebarAllowed()) {
+            setSidebarMode(false, false);
+            applyLayoutPreset('balanced', false);
+            return;
+        }
+        if (!sidebarMode && sidebarAllowed()
+            && localStorage.getItem(MODE_KEY) === 'sidebar') {
+            setSidebarMode(true, false);
+        }
         applySavedRatioIfAny();
     });
 
@@ -1606,8 +1647,12 @@ function initMapTabsSplitPane() {
     requestAnimationFrame(() => {
         if (isFullscreenMode()) return;
         // Restaure le mode de disposition (bandeau / latéral) avant d'appliquer
-        // la taille sauvegardée, qui s'exprime sur l'axe de ce mode.
-        if (localStorage.getItem(MODE_KEY) === 'sidebar') setSidebarMode(true);
+        // la taille sauvegardée, qui s'exprime sur l'axe de ce mode. Un mode
+        // latéral mémorisé mais impossible (fenêtre trop étroite) reste
+        // suspendu : applySavedRatioIfAny applique alors le ratio équilibré.
+        if (localStorage.getItem(MODE_KEY) === 'sidebar' && sidebarAllowed()) {
+            setSidebarMode(true);
+        }
         applySavedRatioIfAny();
     });
 }

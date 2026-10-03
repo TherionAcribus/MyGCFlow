@@ -30,6 +30,20 @@ rapport effet/effort décroissant. **Lire d'abord « Règles communes ».**
 > le lien nvm-for-windows vers la version *active*, actuellement Node 24 — ne
 > pas l'utiliser). Corriger en montant la version d'@playwright/test (fix PR
 > #35933) ou en épinglant Node ≤24.11.
+>
+> **Corrections post-audit** (retours utilisateur) :
+> - `17b788a` — `/js_translations.js?lang=…` : le cache d'une heure servait le
+>   catalogue français après passage en anglais.
+> - `e70c0ca` + `1957b17` — le chip « Enregistré » de l'en-tête décalait le
+>   select d'apparence ; il est désormais une pilule flottante hors flux.
+> - Repli responsive du mode latéral : sous `SIDEBAR_MIN_VIEWPORT_PX`
+>   (1100 px) de fenêtre, `layout-sidebar` est suspendu au profit du bandeau
+>   sans écraser le choix persisté (restauré au réélargissement) ; le
+>   préréglage `data-layout="sidebar"` est masqué par media query ; en
+>   panneau étroit (`panel-lt-md`) les onglets affichent les libellés courts
+>   (`.tab-label-short` : « Animation », « Réglages »), les colonnes du
+>   panneau passent à 100 % et les boutons longs enrobent leur texte.
+>   Spec : `tests/e2e/splitter-responsive.spec.mjs`.
 
 ## Règles communes à tous les lots
 
