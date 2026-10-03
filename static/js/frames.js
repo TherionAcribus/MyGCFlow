@@ -16,15 +16,18 @@ export function syncOverlayVisibility(){
     const opts = pkg.options?.infos;
     if (!opts) return;
 
+    // Sans base chargée, aucun overlay : un titre/compteur seul sur une carte
+    // vide ne donne aucune information utile et chevauche l'état vide.
+    const dbReady = pkg.hasDatabase?.() ?? true;
     const titleFrame = document.getElementById("titleFrame");
     const infosFrame = document.getElementById("infosFrame");
-    const showTitle = opts.title?.display === true;
+    const showTitle = dbReady && opts.title?.display === true;
     // Mode Évolution : la ligne d'infos est un modèle libre — un modèle vide
     // masque la cartouche quelles que soient les cases du profil (elles ne sont
     // pas proposées dans ce mode).
-    const showInfos = isEvolutionPage()
+    const showInfos = dbReady && (isEvolutionPage()
         ? (pkg.evolutionInfosTemplate?.() ?? '').trim() !== ''
-        : (opts.numberOfCaches?.display === true || opts.currentDate?.display === true);
+        : (opts.numberOfCaches?.display === true || opts.currentDate?.display === true));
 
     if (titleFrame) {
         titleFrame.style.display = showTitle ? "block" : "none";

@@ -6302,7 +6302,8 @@ function hasAnimationData() {
 // Pilote l'état vide de la carte et l'inertie des sections Filtres /
 // Animation / Enregistrement — qui doivent rester actives quand les filtres
 // ramènent la sélection à 0, sinon on ne pourrait plus corriger la sélection.
-function hasDatabase() {
+// Exporté : frames.js s'en sert pour masquer titre et infos de la carte.
+export function hasDatabase() {
     // Même garde TDZ que hasAnimationData (appel pendant l'évaluation du
     // module, avant l'initialisation de bdd.js).
     try {
@@ -6365,6 +6366,9 @@ export function updateDataAvailabilityUI({ dataResolved = false } = {}) {
     const canRun = hasData && timingInputsValid;
     if (btnStart) btnStart.disabled = !canRun;
     if (btnRecord) btnRecord.disabled = !canRun;
+    // Titre/infos de la carte : re-évaluer quand l'état « base chargée »
+    // change — syncOverlayVisibility les masque tant qu'il n'y a pas de base.
+    pkg.syncOverlayVisibility?.();
     updateControlBar();
 }
 
