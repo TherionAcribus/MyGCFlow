@@ -21,15 +21,16 @@
                         </div>
                     </form>
 
-                    <!-- Bouton pour supprimer les données importées -->
-                    <div class="mt-3">
-                        <button id="clearDatabaseBtn" class="btn btn-danger w-100" style="display: none;">
+                    <!-- Infos de base et suppression des données importées
+                         sur la même ligne : bouton discret (outline) à droite,
+                         en vis-à-vis du compteur de trouvailles. -->
+                    <div class="d-flex justify-content-between align-items-center gap-2 mt-3">
+                        <div id="infosBDD" class="form-hint text-muted">
+                            {{ _("Aucune trouvaille chargée") }}
+                        </div>
+                        <button id="clearDatabaseBtn" class="btn btn-outline-danger btn-sm flex-shrink-0" style="display: none;">
                             <i class="ti ti-trash me-1"></i>{{ _("Supprimer mes trouvailles") }}
                         </button>
-                    </div>
-
-                    <div id="infosBDD" class="form-hint text-muted mt-3">
-                        {{ _("Aucune trouvaille chargée") }}
                     </div>
 
                     <!-- Prochaine étape suggérée après import : affiché tant que

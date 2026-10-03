@@ -367,6 +367,40 @@ h5, h6 { color: var(--color-heading); font-weight: 600; }
 /* Fond du mode plein écran (visible en bordure autour de la carte). */
 [data-bs-theme="dark"] .fullscreen-mode { background: var(--color-bg); }
 
+/* --- Boutons --- */
+
+/* Variantes « outline » sémantiques : --color-danger/success/warning sont
+   calibrées pour le thème clair et deviennent trop sombres en simple
+   texte/contour sur fond sombre. On n'éclaircit que la couleur de repos :
+   au survol/actif le bouton se remplit de la teinte pleine, qui porte déjà
+   un texte clair lisible. */
+[data-bs-theme="dark"] .btn-outline-danger {
+    --tblr-btn-color: #ef5350;
+    --tblr-btn-border-color: #ef5350;
+}
+[data-bs-theme="dark"] .btn-outline-success {
+    --tblr-btn-color: #81c784;
+    --tblr-btn-border-color: #81c784;
+}
+[data-bs-theme="dark"] .btn-outline-warning {
+    --tblr-btn-color: #ffb74d;
+    --tblr-btn-border-color: #ffb74d;
+}
+
+/* En sombre, --tblr-secondary vaut un gris clair (#9ca3af) : lisible en
+   contour, mais dès que le bouton se remplit (variante pleine, ou
+   hover/actif de l'outline), le texte clair --tblr-light devient
+   illisible → texte sombre forcé dans ces états. */
+[data-bs-theme="dark"] .btn-secondary {
+    --tblr-btn-color: var(--tblr-dark);
+    --tblr-btn-hover-color: var(--tblr-dark);
+    --tblr-btn-active-color: var(--tblr-dark);
+}
+[data-bs-theme="dark"] .btn-outline-secondary {
+    --tblr-btn-hover-color: var(--tblr-dark);
+    --tblr-btn-active-color: var(--tblr-dark);
+}
+
 /* Toasts custom MyGCFlow (fond blanc + textes gris codés en dur). */
 [data-bs-theme="dark"] .gcm-toast { background: var(--color-surface); color: var(--color-text); }
 [data-bs-theme="dark"] .gcm-toast-message { color: var(--color-text-muted); }

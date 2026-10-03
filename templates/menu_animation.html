@@ -23,7 +23,7 @@
                          écran : il y reste donc visible même si la
                          préférence le masque en mode normal. -->
                     <div class="my-3 d-flex align-items-center gap-2 flex-wrap">
-                        <button type="button" class="btn btn-secondary" id="btnFullscreenMode" title="{{ _('Passer en plein écran') }}">
+                        <button type="button" class="btn btn-outline-secondary" id="btnFullscreenMode" title="{{ _('Passer en plein écran') }}">
                             <i class="ti ti-maximize me-1" aria-hidden="true"></i><span class="fullscreen-label" data-enter-text="{{ _('Plein écran') }}" data-exit-text="{{ _('Quitter le plein écran') }}">{{ _("Plein écran") }}</span>
                         </button>
                         <button type="button" class="btn btn-primary" id="btnStartAnimation" disabled>
@@ -42,7 +42,7 @@
                         <button type="button" class="btn btn-secondary" id="btnStopAnimation" style="display: none;">
                             <i class="ti ti-player-stop me-1"></i>{{ _("Arrêter") }}
                         </button>
-                        <button type="button" class="btn btn-primary" id="btnToggleControlBar" aria-pressed="true"
+                        <button type="button" class="btn btn-outline-secondary active" id="btnToggleControlBar" aria-pressed="true"
                                 data-bs-toggle="tooltip" data-bs-title="{{ _('Afficher ou masquer le menu flottant — il n\'apparaît pas dans les vidéos enregistrées') }}">
                             <i class="ti ti-eye me-1" aria-hidden="true"></i><span>{{ _("Menu flottant") }}</span>
                         </button>{{ global_scope_badge() }}

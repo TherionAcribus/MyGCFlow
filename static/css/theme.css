@@ -30,24 +30,14 @@ h5, h6 { color: var(--color-text); font-weight: 600; }
     font-weight: 600;
 }
 
-/* Boutons: palette réduite — uniquement les variantes pleines (pas btn-link, btn-outline-*, btn-ghost, gc-css-target-btn) */
-.btn:not(.btn-link):not(.btn-outline-danger):not(.btn-outline-primary):not(.btn-outline-secondary):not(.btn-outline-success):not(.btn-outline-warning):not(.btn-outline-info):not(.btn-outline-light):not(.btn-outline-dark):not(.btn-ghost):not(.gc-css-target-btn) {
-    background-color: var(--color-accent);
-    transition: background-color 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
-}
-.btn:hover:not(.btn-link):not(.btn-outline-danger):not(.btn-outline-primary):not(.btn-outline-secondary):not(.btn-outline-success):not(.btn-outline-warning):not(.btn-outline-info):not(.btn-outline-light):not(.btn-outline-dark):not(.btn-ghost):not(.gc-css-target-btn) {
-    background-color: var(--color-accent-strong); /* accent assombri, hover sobre et uniforme */
-    box-shadow: var(--shadow-md);
-}
-.btn:focus:not(.btn-link):not(.btn-outline-danger):not(.btn-outline-primary):not(.btn-outline-secondary):not(.btn-outline-success):not(.btn-outline-warning):not(.btn-outline-info):not(.btn-outline-light):not(.btn-outline-dark):not(.btn-ghost):not(.gc-css-target-btn) {
-    background-color: var(--color-accent-deep);
-}
-
-/* Variantes sémantiques atténuées */
-.btn.green, .btn.success { background-color: var(--color-success) !important; }
-.btn.orange, .btn.warning { background-color: var(--color-warning) !important; }
-.btn.red, .btn.error { background-color: var(--color-danger) !important; }
-.btn.grey { background-color: #616161 !important; }
+/* .btn.green : seule variante-couleur historique encore utilisée — posée
+   par ui.js sur #btnPauseBar (menu flottant) quand l'animation est en
+   pause. Les autres variantes Materialize (.orange/.red/.grey/.success/
+   .warning/.error) ne sont plus portées par aucun élément, et la surcharge
+   qui forçait l'accent sur toutes les variantes pleines a été retirée :
+   chaque variante Bootstrap retrouve sa sémantique (l'accent reste porté
+   par .btn-primary et --tblr-primary, voir tabler_theme.css). */
+.btn.green { background-color: var(--color-success) !important; }
 
 /* filter-all-active maintenant géré par .btn-link.filter-all-active dans ui_improvements.css */
 

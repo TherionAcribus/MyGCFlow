@@ -6077,8 +6077,9 @@ function updateControlBarToggleButton() {
     if (!btn) return;
     const prefOn = window.userSettings?.show_control_bar !== false;
     btn.setAttribute('aria-pressed', String(prefOn));
-    btn.classList.toggle('btn-primary', prefOn);
-    btn.classList.toggle('btn-secondary', !prefOn);
+    // Bouton outline : l'état pressé est rendu par la classe .active
+    // (remplissage de la teinte du contour), plus par une variante pleine.
+    btn.classList.toggle('active', prefOn);
     const icon = btn.querySelector('i');
     if (icon) {
         icon.classList.toggle('ti-eye', prefOn);
@@ -6152,10 +6153,11 @@ function updateFullscreenButtonAppearance() {
     const label = btnFullscreenMode.querySelector('.fullscreen-label');
     const enterText = label?.dataset.enterText || pkg.t('Plein écran');
     const exitText = label?.dataset.exitText || pkg.t('Quitter le plein écran');
+    // Bouton outline : l'état actif est rendu par la classe .active,
+    // plus par un basculement btn-primary/btn-secondary.
+    btnFullscreenMode.classList.toggle('active', fullscreenButtonActive);
     if (fullscreenButtonActive) {
         // Mode plein écran actif
-        btnFullscreenMode.classList.remove('btn-secondary');
-        btnFullscreenMode.classList.add('btn-primary');
         if (icon) {
             icon.classList.remove('ti-maximize');
             icon.classList.add('ti-minimize');
@@ -6164,8 +6166,6 @@ function updateFullscreenButtonAppearance() {
         btnFullscreenMode.title = exitText;
     } else {
         // Mode normal
-        btnFullscreenMode.classList.remove('btn-primary');
-        btnFullscreenMode.classList.add('btn-secondary');
         if (icon) {
             icon.classList.remove('ti-minimize');
             icon.classList.add('ti-maximize');
