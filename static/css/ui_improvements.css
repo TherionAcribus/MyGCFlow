@@ -738,12 +738,13 @@ main.fullscreen-mode #infosFrame span:not([hidden]) {
     max-width: 100%;
 }
 /* Les .row de premier niveau des onglets dépassent de leurs marges négatives
-   (pas de padding parent pour les absorber) : en latéral le panneau étroit
-   rend ce dépassement visible sous forme de scroll horizontal. On absorbe
-   les marges avec un padding aligné sur celui de la barre d'outils (12px). */
-.layout-sidebar .tab-content {
-    padding-left: 12px;
-    padding-right: 12px;
+   (-12px) : sans padding parent pour les absorber, le contenu touchait le
+   bord gauche du panneau (x=0). Un padding de 16px décolle les sections et
+   absorbe les marges — c'est le .tab-content principal qui le porte pour
+   ne pas surcharger les .tab-content imbriqués (sous-onglets Style). */
+#tabsPanel > .row > .col-12 > .tab-content {
+    padding-left: 16px;
+    padding-right: 16px;
 }
 /* Le .row englobant .tab-content déborde lui aussi de ses marges négatives
    (zone vide, le contenu réel reste dans le padding de .col-12) : on le
@@ -810,7 +811,7 @@ main.fullscreen-mode #infosFrame span:not([hidden]) {
     align-items: center;
     flex-wrap: wrap;
     gap: 4px 8px;
-    padding: 6px 12px;
+    padding: 6px 16px;
     margin-bottom: 12px;
     background: var(--color-surface);
     border-bottom: 1px solid var(--color-border);
