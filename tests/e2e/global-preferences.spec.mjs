@@ -327,6 +327,9 @@ test('le ralentissement suggéré par le suivi de performance est persisté', as
 test('le centre de carte par défaut confirme dans le champ au lieu d\'un toast', async ({ page }) => {
   await openReadyApp(page);
   await page.locator('a[href="#settings"]').click();
+  // Le bloc centre/zoom n'apparaît qu'en mode « Centre et zoom personnalisés »
+  // (« Sur les Geocaches chargées » est le mode par défaut).
+  await page.locator('#selectMapFraming').selectOption('custom');
 
   const combined = page.locator('#inputMapCenterCombined');
   await combined.fill('45.5, 4.5');
@@ -356,6 +359,7 @@ test('un centre refusé par le serveur est signalé, et la même valeur repart a
     body: JSON.stringify({ map_default_center: null, map_default_zoom: null }),
   }));
   await page.locator('a[href="#settings"]').click();
+  await page.locator('#selectMapFraming').selectOption('custom');
 
   let refuseWrites = true;
   await page.route('**/api/settings', async (route) => {
@@ -392,12 +396,13 @@ test('un centre refusé par le serveur est signalé, et la même valeur repart a
 });
 
 
-test('« Utiliser la vue actuelle » enregistre le centre dans les deux modes de saisie', async ({ page }) => {
+test('« Enregistrer le cadrage » enregistre le centre dans les deux modes de saisie', async ({ page }) => {
   // Le bouton ne remplissait que les champs Latitude/Longitude. Dans le mode
   // par défaut (champ combiné), la sauvegarde lit le champ combiné resté vide :
   // le bouton effaçait donc le centre au lieu de l'enregistrer.
   await openReadyApp(page);
   await page.locator('a[href="#settings"]').click();
+  await page.locator('#selectMapFraming').selectOption('custom');
 
   const readCenter = async () => (await readServerSettings(page)).map_default_center;
 
@@ -423,6 +428,7 @@ test('un zoom par défaut hors plage est signalé puis ramené dans les bornes',
   // au clavier, 99 partait tel quel vers settings.json.
   await openReadyApp(page);
   await page.locator('a[href="#settings"]').click();
+  await page.locator('#selectMapFraming').selectOption('custom');
 
   const zoom = page.locator('#inputMapDefaultZoom');
   await zoom.fill('99');
@@ -460,6 +466,7 @@ test('le centre de carte se saisit en un champ ou en deux, au choix', async ({ p
   // l'échange effectif des champs dans les deux sens.
   await openReadyApp(page);
   await page.locator('a[href="#settings"]').click();
+  await page.locator('#selectMapFraming').selectOption('custom');
 
   const combined = page.locator('#inputMapCenterCombined');
   const lat = page.locator('#inputMapCenterLat');

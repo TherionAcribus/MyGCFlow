@@ -313,6 +313,38 @@ class MapCenterCoercionTests(unittest.TestCase):
         self.assertIsNone(coerce_settings({"map_default_center": [2.35, 200.0]}).map_default_center)
 
 
+class MapFramingCoercionTests(unittest.TestCase):
+    """Mode de cadrage de la carte au chargement des données.
+
+    « fit » (vue ajustée sur l'emprise des caches) est le défaut des nouvelles
+    installations ; un settings.json écrit avant l'apparition du mode et portant
+    déjà un centre ou un zoom est relu comme « custom », pour ne pas changer le
+    cadrage que l'utilisateur avait choisi à la main.
+    """
+
+    def test_the_default_is_fit_for_a_fresh_settings_file(self):
+        self.assertEqual(coerce_settings({}).map_framing, "fit")
+
+    def test_known_modes_are_kept(self):
+        self.assertEqual(coerce_settings({"map_framing": "fit"}).map_framing, "fit")
+        self.assertEqual(coerce_settings({"map_framing": "custom"}).map_framing, "custom")
+
+    def test_an_unknown_mode_falls_back_to_fit(self):
+        self.assertEqual(coerce_settings({"map_framing": "boussole"}).map_framing, "fit")
+
+    def test_a_settings_file_with_a_saved_center_reads_as_custom(self):
+        s = coerce_settings({"map_default_center": [2.35, 48.85]})
+        self.assertEqual(s.map_framing, "custom")
+
+    def test_a_settings_file_with_a_saved_zoom_reads_as_custom(self):
+        s = coerce_settings({"map_default_zoom": 9})
+        self.assertEqual(s.map_framing, "custom")
+
+    def test_an_explicit_mode_wins_over_the_migration_default(self):
+        s = coerce_settings({"map_framing": "fit", "map_default_center": [2.35, 48.85]})
+        self.assertEqual(s.map_framing, "fit")
+
+
 class RecordingConfiguredFlagTests(unittest.TestCase):
     """Drapeau qui pilote la reprise des anciens réglages du localStorage.
 
@@ -474,6 +506,28 @@ class SettingsApiTests(unittest.TestCase):
         self.client.put('/api/settings', json={'map_default_center': None})
 
         self.assertIsNone(self.client.get('/api/settings').get_json()['map_default_center'])
+
+    def test_get_exposes_the_map_framing(self):
+        self.assertEqual(self.client.get('/api/settings').get_json()['map_framing'], 'fit')
+
+    def test_map_framing_survives_a_round_trip(self):
+        self.assertEqual(self.client.put('/api/settings', json={'map_framing': 'custom'}).status_code, 200)
+
+        self.assertEqual(self.client.get('/api/settings').get_json()['map_framing'], 'custom')
+
+    def test_an_invalid_map_framing_leaves_the_stored_one_untouched(self):
+        self.client.put('/api/settings', json={'map_framing': 'custom'})
+        self.client.put('/api/settings', json={'map_framing': 'boussole'})
+
+        self.assertEqual(self.client.get('/api/settings').get_json()['map_framing'], 'custom')
+
+    def test_a_patch_without_map_framing_preserves_it(self):
+        # Le cas réel : un blur enregistre le centre de carte, la requête ne
+        # porte que `map_default_center` — le mode choisi ne doit pas bouger.
+        self.client.put('/api/settings', json={'map_framing': 'custom'})
+        self.client.put('/api/settings', json={'map_default_center': [2.35, 48.85]})
+
+        self.assertEqual(self.client.get('/api/settings').get_json()['map_framing'], 'custom')
 
     def test_two_simultaneous_patches_do_not_erase_each_other(self):
         """Deux écritures qui se croisent doivent toutes deux survivre.

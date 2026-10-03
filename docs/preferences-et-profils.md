@@ -11,7 +11,7 @@ mécanisme sous-jacent.
 | **Thème** | fond de carte et ses options ; forme, taille, couleurs des points ; icônes et halos ; forme, taille, couleur des flashs ; traits de déplacement (tracé, couleur, épaisseur, motif, effet, tête, persistance) ; effets visuels ; présentation des textes et infos | `%APPDATA%\MyGCFlow\profiles\<nom>.json` (serveur) | manuelle, bouton **Sauvegarder** de la section Thèmes |
 | **Animation** | mode de rythme (jours/s, durée finale, musique), jours par seconde, durée finale demandée, temps additionnel de fin, suivi de caméra, durée du flash, durée du tracé des traits de déplacement | clé `animation` de `%APPDATA%\MyGCFlow\settings.json` | automatique, à chaque modification |
 | **Enregistrement** | mode de capture, FPS, bitrate, codec, ralentissement, échelle, résolution, destinations, musique (volume, inclusion) | clé `recording` de `settings.json` | automatique, à chaque modification |
-| **Session** | centre et zoom courants de la carte, plage de dates de l'animation | mémoire uniquement (vue courante) ; le centre/zoom *par défaut* reste une préférence globale (`map_default_center`/`map_default_zoom`) | non persistée |
+| **Session** | centre et zoom courants de la carte, plage de dates de l'animation | mémoire uniquement (vue courante) ; le cadrage par défaut reste une préférence globale : `map_framing` (« fit » = emprise des données au chargement, « custom » = `map_default_center`/`map_default_zoom`) | non persistée |
 
 Un réglage global (Animation, Enregistrement, préférences) suit l'utilisateur
 quel que soit le thème chargé. Un réglage de thème est appliqué immédiatement
@@ -31,7 +31,7 @@ contenir des vitesses différentes, un choix automatique serait arbitraire.
 
 | Portée | Contenu | Stockage | Sauvegarde |
 | --- | --- | --- | --- |
-| **Globale** | langue, thème de l'app, vérification des mises à jour, thème par défaut, dernier thème actif, centre/zoom par défaut, réglages d'enregistrement vidéo (mode, FPS, bitrate, codec, ralentissement, échelle, destinations, musique), réglages d'animation (rythme, durées, suivi de caméra, durée du flash, durée du tracé des traits), et pour le mode Évolution son propre rythme (`evolution_animation`) et la dernière base ouverte (`evolution_dataset_id`) | `%APPDATA%\MyGCFlow\settings.json` (serveur) | automatique, à chaque modification |
+| **Globale** | langue, thème de l'app, vérification des mises à jour, thème par défaut, dernier thème actif, cadrage de la carte (`map_framing`) et centre/zoom par défaut, réglages d'enregistrement vidéo (mode, FPS, bitrate, codec, ralentissement, échelle, destinations, musique), réglages d'animation (rythme, durées, suivi de caméra, durée du flash, durée du tracé des traits), et pour le mode Évolution son propre rythme (`evolution_animation`) et la dernière base ouverte (`evolution_dataset_id`) | `%APPDATA%\MyGCFlow\settings.json` (serveur) | automatique, à chaque modification |
 | **Thème** | fond de carte et ses options, style des points, flash (forme/taille/couleur), flash de disparition du mode Évolution (`flash.disappear`), traits de déplacement (`trail`, voir [traits-de-deplacement.md](traits-de-deplacement.md)), titre et bloc d'infos (+ CSS) | `%APPDATA%\MyGCFlow\profiles\<nom>.json` (serveur) | manuelle, bouton **Sauvegarder** de la section Thèmes |
 
 ## Le plan de timing partagé

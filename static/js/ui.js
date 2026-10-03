@@ -92,7 +92,8 @@ let overlayCssDefaultsReady = Promise.resolve();
 let overlayCssDefaultsStarted = false;
 var selectLanguage, selectDateFormat, switchCheckVersionOnline, buttonCheckVersion, buttonHome;
 var inputMapCenterLat, inputMapCenterLon, inputMapCenterCombined, inputMapDefaultZoom;
-var btnUseCurrentMapCenter, btnPickMapCenter, btnClearMapCenter;
+var btnUseCurrentMapCenter;
+var selectMapFraming, mapFramingFitBlock, mapFramingCustomBlock, btnFitDataView;
 var latLonModeCombined, latLonModeSplit, fieldLat, fieldLon, fieldCombined;
 let isCombinedLatLonMode = true;
 // Enregistrement
@@ -893,11 +894,14 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     btnUseCurrentMapCenter = document.getElementById('btnUseCurrentMapCenter');
     if (btnUseCurrentMapCenter) btnUseCurrentMapCenter.addEventListener('click', applyCurrentMapViewAsDefault);
 
-    btnPickMapCenter = document.getElementById('btnPickMapCenter');
-    if (btnPickMapCenter) btnPickMapCenter.addEventListener('click', togglePickMapCenter);
-
-    btnClearMapCenter = document.getElementById('btnClearMapCenter');
-    if (btnClearMapCenter) btnClearMapCenter.addEventListener('click', clearMapCenterSettings);
+    // Cadrage de la carte : « fit » (emprise des données) ou « custom »
+    // (centre et zoom ci-dessous). Bascule les deux blocs de la carte.
+    selectMapFraming = document.getElementById('selectMapFraming');
+    mapFramingFitBlock = document.getElementById('mapFramingFitBlock');
+    mapFramingCustomBlock = document.getElementById('mapFramingCustomBlock');
+    btnFitDataView = document.getElementById('btnFitDataView');
+    if (selectMapFraming) selectMapFraming.addEventListener('change', onMapFramingChange);
+    if (btnFitDataView) btnFitDataView.addEventListener('click', () => pkg.fitViewOnData?.({ force: true }));
 
     // Segmented control : chaque radio porte le mode qu'il active, plutôt qu'un
     // unique bouton dont l'effet dépendait de l'état courant.
@@ -1590,17 +1594,35 @@ export function init_ui() {
 
     try {
         const s = window.userSettings;
-        if (s && Array.isArray(s.map_default_center) && s.map_default_center.length === 2) {
+        // Valeurs effectives affichées : préférences enregistrées, sinon les
+        // défauts embarqués (defaultValues.json) — les mêmes que centerMap()
+        // applique à la vue. Les champs ne restent donc jamais vides.
+        const savedCenter = (s && Array.isArray(s.map_default_center) && s.map_default_center.length === 2)
+            ? s.map_default_center
+            : (typeof pkg.getDefaultMapCenter === 'function' ? pkg.getDefaultMapCenter() : null);
+        if (savedCenter) {
             // Stockage/API : [longitude, latitude] ; champs : latitude puis longitude.
-            const lonVal = String(s.map_default_center[0] ?? '');
-            const latVal = String(s.map_default_center[1] ?? '');
+            const lonVal = String(savedCenter[0] ?? '');
+            const latVal = String(savedCenter[1] ?? '');
             setLatLonInputs(latVal, lonVal);
             lastSavedCenterKey = centerKey([lonVal, latVal]);
         }
-        if (s && (typeof s.map_default_zoom === 'number' || typeof s.map_default_zoom === 'string')) {
-            if (inputMapDefaultZoom) inputMapDefaultZoom.value = String(s.map_default_zoom ?? '');
-            lastSavedZoom = parseInt(s.map_default_zoom);
+        const savedZoom = (s && (typeof s.map_default_zoom === 'number' || typeof s.map_default_zoom === 'string'))
+            ? parseInt(s.map_default_zoom)
+            : null;
+        const effZoom = Number.isFinite(savedZoom)
+            ? savedZoom
+            : (typeof pkg.getDefaultMapZoom === 'function' ? pkg.getDefaultMapZoom() : null);
+        if (Number.isFinite(Number(effZoom))) {
+            if (inputMapDefaultZoom) inputMapDefaultZoom.value = String(effZoom);
+            lastSavedZoom = Number(effZoom);
         }
+        // Mode de cadrage : « fit » par défaut (emprise des données) ; le
+        // serveur renvoie « custom » pour les réglages écrits avant le mode,
+        // quand un centre/zoom était déjà enregistré.
+        const framing = (s && s.map_framing === 'custom') ? 'custom' : 'fit';
+        if (selectMapFraming) selectMapFraming.value = framing;
+        syncMapFramingUI(framing);
     } catch(_) {}
 
     // Charger l'arbre Country/State et peupler selects
@@ -1640,8 +1662,6 @@ export function init_ui() {
     initOptionsUI();
 }
 
-let isPickingMapCenter = false;
-let pickMapCenterHandler = null;
 let lastSavedCenterKey = null;
 let lastSavedZoom = null;
 
@@ -1941,6 +1961,34 @@ async function saveMapCenterSettings() {
             if (patch.map_default_zoom !== undefined) {
                 lastSavedZoom = patch.map_default_zoom;
             }
+            // Miroir côté session : repasser en « Centre et zoom personnalisés »
+            // relit window.userSettings, qui sinon garderait les anciennes
+            // valeurs jusqu'au prochain chargement.
+            try {
+                if (window.userSettings) {
+                    if ('map_default_center' in patch) window.userSettings.map_default_center = patch.map_default_center;
+                    if ('map_default_zoom' in patch) window.userSettings.map_default_zoom = patch.map_default_zoom;
+                }
+            } catch(_) {}
+            // Champ vidé = retour au défaut embarqué : on réaffiche la valeur
+            // effective plutôt qu'un champ vide (équivalent de l'ancien bouton
+            // « Réinitialiser »).
+            try {
+                if (patch.map_default_center === null && typeof pkg.getDefaultMapCenter === 'function') {
+                    const dc = pkg.getDefaultMapCenter();
+                    if (dc) {
+                        setLatLonInputs(String(dc[1]), String(dc[0]));
+                        lastSavedCenterKey = centerKey(dc);
+                    }
+                }
+                if (patch.map_default_zoom === null && typeof pkg.getDefaultMapZoom === 'function') {
+                    const dz = pkg.getDefaultMapZoom();
+                    if (Number.isFinite(Number(dz))) {
+                        inputMapDefaultZoom.value = String(dz);
+                        lastSavedZoom = Number(dz);
+                    }
+                }
+            } catch(_) {}
         }
         return ok;
     } catch(e) {
@@ -1970,75 +2018,36 @@ async function applyCurrentMapViewAsDefault() {
     }
 }
 
-async function clearMapCenterSettings() {
-    try {
-        if (inputMapCenterLat) inputMapCenterLat.value = '';
-        if (inputMapCenterLon) inputMapCenterLon.value = '';
-        if (inputMapCenterCombined) inputMapCenterCombined.value = '';
-        if (inputMapDefaultZoom) inputMapDefaultZoom.value = '';
-        const fields = mapCenterIndicatorFields({ centerChanged: true, zoomChanged: true });
-        const ok = await reportSave(fields, saveSettingsPatch({ map_default_center: null, map_default_zoom: null }));
-        // Le suivi "déjà enregistré" doit refléter la remise à zéro, sinon une
-        // ressaisie identique à l'ancienne valeur serait considérée inchangée
-        // et ne repartirait pas vers le serveur. Un effacement refusé par le
-        // serveur ne le met pas à jour : le centre est toujours en place là-bas.
-        if (ok) {
-            lastSavedCenterKey = 'null';
-            lastSavedZoom = null;
-        }
-        return ok;
-    } catch(e) {
-        return reportMapCenterFailure(e);
-    }
+// Bascule les blocs de cadrage selon le mode : « fit » montre l'indication et
+// le bouton de recadrage, « custom » les champs centre/zoom. `d-none`, comme
+// pour setLatLonMode : c'est la classe stylée par Bootstrap 5.
+function syncMapFramingUI(mode) {
+    const fit = mode !== 'custom';
+    if (mapFramingFitBlock) mapFramingFitBlock.classList.toggle('d-none', !fit);
+    if (mapFramingCustomBlock) mapFramingCustomBlock.classList.toggle('d-none', fit);
 }
 
-function togglePickMapCenter() {
+async function onMapFramingChange() {
     try {
-        const map = pkg.getMap && pkg.getMap();
-        if (!map || !map.on) return;
-
-        if (isPickingMapCenter) {
-            disablePickMapCenter(map);
-            return;
+        if (!selectMapFraming) return;
+        const mode = selectMapFraming.value === 'custom' ? 'custom' : 'fit';
+        syncMapFramingUI(mode);
+        try { if (window.userSettings) window.userSettings.map_framing = mode; } catch(_) {}
+        await reportSave(selectMapFraming, saveSettingsPatch({ map_framing: mode }));
+        // Bascule vers « fit » : le cadrage s'applique tout de suite si des
+        // données sont chargées, sans attendre le prochain import. Vers
+        // « custom » : la carte se réaffiche avec le centre/zoom enregistrés,
+        // ou les défauts embarqués (centre France) quand rien n'est encore
+        // sauvegardé — c'est ce qu'affichent les champs.
+        if (mode === 'fit') {
+            pkg.fitViewOnData?.({ force: true });
+        } else {
+            pkg.centerMap?.();
         }
-
-        isPickingMapCenter = true;
-        try { map.getTargetElement().style.cursor = 'crosshair'; } catch(_) {}
-        pkg.showToast && pkg.showToast(t('Cliquez sur la carte pour choisir le centre'), 'info', t('Carte'), 4000);
-
-        pickMapCenterHandler = async function(evt) {
-            try {
-                const lonLat = ol.proj.toLonLat(evt.coordinate);
-                const lon = lonLat[0];
-                const lat = lonLat[1];
-                setLatLonInputs(lat.toFixed(6), lon.toFixed(6));
-                try {
-                    const view = map.getView();
-                    if (view && inputMapDefaultZoom) inputMapDefaultZoom.value = String(view.getZoom());
-                } catch(_) {}
-                const ok = await saveMapCenterSettings();
-                if (ok !== false && pkg.showToast) {
-                    pkg.showToast(t('Centre par défaut mis à jour depuis la carte'), 'success', t('Carte'), 3000);
-                }
-            } finally {
-                disablePickMapCenter(map);
-            }
-        };
-
-        map.on('singleclick', pickMapCenterHandler);
     } catch(e) {
+        try { markSaveError(selectMapFraming); } catch(_) {}
+        console.warn('Erreur sauvegarde du mode de cadrage:', e);
     }
-}
-
-function disablePickMapCenter(map) {
-    isPickingMapCenter = false;
-    try { map.getTargetElement().style.cursor = ''; } catch(_) {}
-    try {
-        if (map && pickMapCenterHandler && typeof map.un === 'function') {
-            map.un('singleclick', pickMapCenterHandler);
-        }
-    } catch(_) {}
-    pickMapCenterHandler = null;
 }
 
 // Initialisation des valeurs UI pour les paramètres

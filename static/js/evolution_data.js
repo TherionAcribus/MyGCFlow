@@ -230,7 +230,7 @@ async function loadDataset(id, { fit = null, deferIfRunning = false } = {}) {
             sizes: base.sizes,
         });
         applySelection(readFilterSelection(), { resetDates: true });
-        if (fit) pkg.fitEvolutionView?.(selectionExtent(), { onlyIfOutside: fit === 'if-outside' });
+        if (fit) pkg.fitMapView?.(selectionExtent(), { onlyIfOutside: fit === 'if-outside' });
         try { await saveSettingsPatch({ evolution_dataset_id: id }); } catch (_) {}
         if (window.userSettings) window.userSettings.evolution_dataset_id = id;
         loadImportHistory(id);

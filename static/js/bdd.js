@@ -458,6 +458,43 @@ function clearLocalData() {
     totalCaches = 0;
 }
 
+// Emprise [ouest, sud, est, nord] (EPSG:4326) des points chargés, null si
+// aucun. Sert au cadrage automatique (préférence map_framing = "fit") et au
+// bouton « Cadrer sur les Geocaches » de l'onglet Paramètres.
+export function dataExtentLonLat() {
+    const feats = json_data && json_data.features;
+    if (!Array.isArray(feats) || feats.length === 0) return null;
+    let west = Infinity, south = Infinity, east = -Infinity, north = -Infinity;
+    for (const f of feats) {
+        const c = f && f.geometry && f.geometry.coordinates;
+        if (!c || c.length < 2) continue;
+        const lon = Number(c[0]);
+        const lat = Number(c[1]);
+        if (!Number.isFinite(lon) || !Number.isFinite(lat)) continue;
+        if (lon < west) west = lon;
+        if (lon > east) east = lon;
+        if (lat < south) south = lat;
+        if (lat > north) north = lat;
+    }
+    return west === Infinity ? null : [west, south, east, north];
+}
+
+// Recadre la vue sur l'emprise des données chargées. Sans `force`, ne fait
+// rien quand la préférence map_framing n'est pas « fit » (l'utilisateur a
+// choisi un centre/zoom personnalisés), ni pendant une animation ou un
+// enregistrement où un saut de caméra casserait le rendu. Avec `force`
+// (bouton dédié, bascule vers le mode « fit »), le cadrage est appliqué dans
+// tous les cas.
+export function fitViewOnData({ force = false } = {}) {
+    const extent = dataExtentLonLat();
+    if (!extent) return;
+    if (!force) {
+        if (window.userSettings?.map_framing !== 'fit') return;
+        if (pkg.isAnimationInProgress?.()) return;
+    }
+    pkg.fitMapView?.(extent);
+}
+
 function updateUIAfterClear() {
     const infos = document.getElementById('infosBDD');
     const infosModal = document.getElementById('infosBDDModal');
@@ -970,6 +1007,9 @@ export function readBdd(){
                 console.log('[readBdd] Appel addVector avec', result.geojson?.features?.length, 'features');
                 pkg.addVector(result.geojson);
 
+                // Cadrage « fit » : la vue s'ajuste sur l'emprise des données.
+                fitViewOnData();
+
                 // Mettre à jour le compteur : sélection = total au chargement initial
                 updateFiltersCounter(metadata.numberOfCaches || 0, totalCaches);
 
@@ -1290,6 +1330,10 @@ function loadAndDisplayPoints() {
 
                     // Ajouter les points à la carte
                     pkg.addVector(geojson);
+
+                    // Cadrage « fit » : après un import, la vue s'ajuste sur
+                    // l'emprise des données fraîchement chargées.
+                    fitViewOnData();
 
                     // Mettre à jour le compteur : sélection = total au chargement initial
                     updateFiltersCounter(metadata.numberOfCaches || 0, totalCaches);

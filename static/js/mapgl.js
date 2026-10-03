@@ -483,7 +483,7 @@ function isLayerOnMap(map, layerToFind) {
 // Vrai tant qu'une animation n'a pas déroulé toutes ses dates : lecture en cours,
 // lecture en pause, ou enregistrement (images ou MediaRecorder). Dans ces états,
 // la carte n'affiche qu'un sous-ensemble des points.
-function isAnimationInProgress(){
+export function isAnimationInProgress(){
     return !!animationInProgress || !!isRecording || !!isMediaRecording;
 }
 
@@ -3469,9 +3469,11 @@ export function setEvolutionFeatures(olFeatures) {
 }
 
 // Cadre la vue sur l'étendue [ouest, sud, est, nord] (degrés) d'une base.
+// Sert au mode Évolution et au cadrage automatique du mode principal
+// (préférence map_framing = "fit", voir fitViewOnData dans bdd.js).
 // onlyIfOutside : ne rien faire si la zone est déjà (en partie) visible, pour
 // respecter un cadrage choisi par l'utilisateur.
-export function fitEvolutionView(lonLatExtent, { onlyIfOutside = false } = {}) {
+export function fitMapView(lonLatExtent, { onlyIfOutside = false } = {}) {
     if (!map || !Array.isArray(lonLatExtent) || !lonLatExtent.every(Number.isFinite)) return;
     const extent = ol.proj.transformExtent(lonLatExtent, 'EPSG:4326', 'EPSG:3857');
     const view = map.getView();

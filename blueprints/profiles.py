@@ -23,6 +23,7 @@ from settings_manager import (
     coerce_evolution_animation,
     coerce_infos_template,
     coerce_map_center,
+    coerce_map_framing,
     coerce_map_zoom,
     coerce_profile,
     coerce_recording_settings,
@@ -74,6 +75,7 @@ def api_get_settings():
         'last_profile_name': last_profile_name,
         'map_default_center': list(s.map_default_center) if s.map_default_center else None,
         'map_default_zoom': s.map_default_zoom,
+        'map_framing': s.map_framing,
         'recording': asdict(s.recording),
         'recording_configured': s.recording_configured,
         'animation': asdict(s.animation),
@@ -182,6 +184,13 @@ def api_put_settings():
                 data.get('map_default_zoom'), current.map_default_zoom
             )
 
+        # Mode de cadrage (« fit » / « custom ») : réécrit seulement si envoyé.
+        map_framing = current.map_framing
+        if 'map_framing' in data:
+            map_framing = coerce_map_framing(
+                data.get('map_framing'), current.map_framing
+            )
+
         return AppSettings(
             version=current.version,
             language=language,
@@ -194,6 +203,7 @@ def api_put_settings():
             last_profile_uid=last_profile_uid,
             map_default_center=map_default_center,
             map_default_zoom=map_default_zoom,
+            map_framing=map_framing,
             recording=recording,
             recording_configured=recording_configured,
             animation=animation,

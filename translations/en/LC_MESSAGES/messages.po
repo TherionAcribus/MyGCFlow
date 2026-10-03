@@ -1963,14 +1963,6 @@ msgstr "Invalid coordinates. E.g. 48.85, 2.35 or N 49° 16.029 E 006° 07.512"
 msgid "Coordonnées invalides. Ex: N 49° 16.029 / E 006° 07.512"
 msgstr "Invalid coordinates. E.g. N 49° 16.029 / E 006° 07.512"
 
-#: static/js/ui.js:2330
-msgid "Cliquez sur la carte pour choisir le centre"
-msgstr "Click the map to choose the center"
-
-#: static/js/ui.js:2344
-msgid "Centre par défaut mis à jour depuis la carte"
-msgstr "Default center updated from the map"
-
 #: static/js/ui.js:2412
 #, python-brace-format
 msgid "Le format vidéo sauvegardé (${mime}) n'est pas supporté par ce navigateur."
@@ -3623,36 +3615,32 @@ msgstr ""
 "icon."
 
 #: templates/guide.html:302
-msgid "Vue de carte par défaut"
-msgstr "Default map view"
+msgid "Cadrage de la carte"
+msgstr "Map framing"
 
 #: templates/guide.html:303
 msgid ""
-"Définissez le centre (latitude, longitude — saisie combinée ou en deux "
-"champs) et le zoom utilisés au démarrage."
+"Par défaut, la carte se cadre automatiquement sur les Geocaches chargées. "
+"Vous pouvez choisir « Centre et zoom personnalisés » : la carte s'affiche "
+"alors avec le centre (latitude, longitude — saisie combinée ou en deux "
+"champs) et le zoom enregistrés."
 msgstr ""
-"Set the center (latitude, longitude — combined input or two separate "
-"fields) and the zoom used at startup."
+"By default, the map frames the loaded geocaches automatically. You can "
+"choose 'Custom center and zoom': the map is then displayed using the "
+"saved center (latitude, longitude — combined input or two separate "
+"fields) and zoom."
 
-#: templates/guide.html:305 templates/menu_options.html:93
-msgid "Utiliser la vue actuelle de la carte"
-msgstr "Use current map view"
+#: templates/guide.html:305 templates/menu_options.html:114
+msgid "Enregistrer le cadrage"
+msgstr "Save the framing"
 
 #: templates/guide.html:305
-msgid "reprend la position affichée."
-msgstr "reuses the currently displayed position."
-
-#: templates/guide.html:306 templates/menu_options.html:96
-msgid "Choisir sur la carte"
-msgstr "Pick on map"
+msgid "mémorise la vue actuelle comme centre et zoom personnalisés."
+msgstr "saves the current view as the custom center and zoom."
 
 #: templates/guide.html:306
-msgid "cliquez directement le point souhaité."
-msgstr "click directly on the desired point."
-
-#: templates/guide.html:307
-msgid "efface le centre enregistré."
-msgstr "clears the saved center."
+msgid "recadre la carte sur les données chargées, à la demande."
+msgstr "reframes the map on the loaded data, on demand."
 
 #: templates/guide.html:314
 msgid "Vous êtes prêt !"
@@ -4318,6 +4306,30 @@ msgid ""
 msgstr ""
 "Used the first time you open MyGCFlow. After that, MyGCFlow reopens the "
 "last profile you used."
+
+#: templates/menu_options.html:63 templates/menu_options.html:64
+msgid "Cadrage par défaut de la carte"
+msgstr "Default map framing"
+
+#: templates/menu_options.html:65
+msgid "Sur les Geocaches chargées"
+msgstr "Fit the loaded geocaches"
+
+#: templates/menu_options.html:66
+msgid "Centre et zoom personnalisés"
+msgstr "Custom center and zoom"
+
+#: templates/menu_options.html:73
+msgid "La vue se cadre automatiquement sur les Geocaches au chargement des données."
+msgstr "The view automatically frames the geocaches whenever data is loaded."
+
+#: templates/menu_options.html:76
+msgid "Cadrer sur les Geocaches"
+msgstr "Fit to the geocaches"
+
+#: templates/menu_options.html:82
+msgid "La carte s'affiche avec ce centre et ce zoom."
+msgstr "The map is displayed using this center and zoom."
 
 #: templates/menu_options.html:65
 msgid "Mode de saisie du centre de carte"

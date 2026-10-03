@@ -244,6 +244,10 @@ class AppSettings:
     # Convention persistée/API : (longitude, latitude).
     map_default_center: Optional[Tuple[float, float]] = None
     map_default_zoom: Optional[int] = None
+    # Cadrage de la carte quand des données sont chargées : "fit" ajuste la vue
+    # sur l'emprise des caches (défaut), "custom" applique le centre et le zoom
+    # ci-dessus — choisis dans l'onglet Paramètres.
+    map_framing: str = "fit"
     recording: RecordingSettings = field(default_factory=RecordingSettings)
     # True dès que l'utilisateur a enregistré des réglages vidéo côté serveur.
     # Sert uniquement à la reprise des anciens réglages : tant qu'il est False,
@@ -561,6 +565,15 @@ MAP_ZOOM_MAX = 22
 MAP_LONGITUDE_MAX = 180.0
 MAP_LATITUDE_MAX = 90.0
 
+# Modes de cadrage de la carte au chargement des données, en miroir du
+# sélecteur #selectMapFraming (templates/menu_options.html) : « fit » ajuste
+# la vue sur l'emprise des caches, « custom » applique map_default_center/zoom.
+MAP_FRAMINGS = ("fit", "custom")
+
+
+def coerce_map_framing(value, default: str = "fit") -> str:
+    return value if value in MAP_FRAMINGS else default
+
 
 def coerce_map_zoom(value, default: Optional[int] = None) -> Optional[int]:
     """Zoom ramené dans la plage de la carte ; `default` si la valeur est illisible.
@@ -738,6 +751,13 @@ def coerce_settings(d: dict) -> AppSettings:
             s.map_default_center = coerce_map_center(ordered)
 
         s.map_default_zoom = coerce_map_zoom(d.get("map_default_zoom"))
+
+        s.map_framing = coerce_map_framing(d.get("map_framing"), s.map_framing)
+        if "map_framing" not in d and (s.map_default_center is not None or s.map_default_zoom is not None):
+            # Réglage écrit avant l'apparition du mode : un centre ou un zoom
+            # déjà choisi vaut « custom », sinon le nouveau défaut « fit »
+            # écraserait le cadrage réglé à la main.
+            s.map_framing = "custom"
 
         if d.get("default_profile_uid"):
             s.default_profile_uid = d.get("default_profile_uid")
