@@ -1,6 +1,19 @@
 <!-- Informations à afficher -->
 <div id="infos">
-    <div id="gcCssAssistant" class="gc-css-assistant">
+    <div id="gcCssAssistant" class="gc-css-assistant editor-simple">
+        <!-- Toggle Simple / Avancé : préférence d'interface mémorisée en
+             localStorage (infosEditorMode) par infos_editor.js. En mode simple,
+             les champs marqués .infos-advanced sont masqués par CSS — ils
+             restent dans le DOM pour que les handlers de l'assistant continuent
+             de les lire. -->
+        <div class="infos-editor-mode d-flex align-items-center justify-content-between gap-2 mb-2">
+            <span class="form-label mb-0">{{ _('Réglages') }}</span>
+            <div class="btn-group btn-group-sm" role="group" aria-label="{{ _('Mode de réglage') }}">
+                <button type="button" id="infosModeSimple" class="btn active" aria-pressed="true">{{ _('Simple') }}</button>
+                <button type="button" id="infosModeAdvanced" class="btn" aria-pressed="false">{{ _('Avancé') }}</button>
+            </div>
+        </div>
+
         <!-- Onglets de cible Titre/Infos + toggle CSS avancé -->
         <div class="gc-css-assistant-header mb-2">
             <div class="gc-css-target-header d-flex flex-wrap align-items-end justify-content-between gap-2">
@@ -12,7 +25,7 @@
                         <button type="button" id="gcCssTargetInfos" class="nav-link" role="tab" aria-selected="false" aria-controls="gcInfosPanelInfos" tabindex="-1">{{ _("Infos") }}</button>
                     </li>
                 </ul>
-                <div class="gc-css-status d-flex align-items-center gap-2">
+                <div class="gc-css-status infos-advanced d-flex align-items-center gap-2">
                     <span id="gcCssUnmanagedBadge" class="gc-css-unmanaged" tabindex="0" aria-label="{{ _('Certaines propriétés CSS du fichier ne sont pas gérées par les champs ci-dessous. Utilisez le mode CSS avancé pour les éditer manuellement.') }}" data-bs-toggle="tooltip" data-bs-title="{{ _('Certaines propriétés CSS du fichier ne sont pas gérées par les champs ci-dessous. Utilisez le mode CSS avancé pour les éditer manuellement.') }}">?</span>
                     <div class="form-check form-switch m-0">
                         <input class="form-check-input" type="checkbox" id="gcCssAdvancedMode" role="switch">
@@ -96,12 +109,12 @@
                         <option value="monospace">monospace</option>
                     </select>
                 </div>
-                <div class="col-6">
-                    <label class="form-label" for="gcCssFontWeight">{{ _("Epaisseur") }}</label>
+                <div class="col-6 infos-advanced">
+                    <label class="form-label" for="gcCssFontWeight">{{ _("Épaisseur") }}</label>
                     <select id="gcCssFontWeight" class="form-select">
                         <option value="">{{ _("Défaut") }}</option>
-                        <option value="normal">normal</option>
-                        <option value="bold">bold</option>
+                        <option value="normal">{{ _("Normal") }}</option>
+                        <option value="bold">{{ _("Gras") }}</option>
                         <option value="100">100</option>
                         <option value="200">200</option>
                         <option value="300">300</option>
@@ -119,9 +132,9 @@
                     <label class="form-label" for="gcCssTextAlign">{{ _("Alignement") }}</label>
                     <select id="gcCssTextAlign" class="form-select">
                         <option value="">{{ _("Défaut") }}</option>
-                        <option value="left">left</option>
-                        <option value="center">center</option>
-                        <option value="right">right</option>
+                        <option value="left">{{ _("À gauche") }}</option>
+                        <option value="center">{{ _("Centré") }}</option>
+                        <option value="right">{{ _("À droite") }}</option>
                     </select>
                 </div>
             </div>
@@ -134,7 +147,7 @@
                     <label class="form-label" for="gcCssBackgroundColor">{{ _("Fond") }}</label>
                     <input id="gcCssBackgroundColor" type="color" class="form-control form-control-color gc-css-color">
                 </div>
-                <div class="col-6">
+                <div class="col-6 infos-advanced">
                     <label class="form-label" for="gcCssPadding">{{ _("Marge intérieure (px)") }}</label>
                     <input id="gcCssPadding" type="number" class="form-control" min="0" max="60" step="1">
                 </div>
@@ -144,20 +157,20 @@
                     <label class="form-label" for="gcCssBorderRadius">{{ _("Arrondi (px)") }}</label>
                     <input id="gcCssBorderRadius" type="number" class="form-control" min="0" max="60" step="1">
                 </div>
-                <div class="col-6">
+                <div class="col-6 infos-advanced">
                     <label class="form-label" for="gcCssBorderWidth">{{ _("Bordure (px)") }}</label>
                     <input id="gcCssBorderWidth" type="number" class="form-control" min="0" max="20" step="1">
                 </div>
             </div>
-            <div class="row g-2 mt-0">
+            <div class="row g-2 mt-0 infos-advanced">
                 <div class="col-6">
-                    <label class="form-label" for="gcCssBorderStyle">{{ _("Style") }}</label>
+                    <label class="form-label" for="gcCssBorderStyle">{{ _("Style de bordure") }}</label>
                     <select id="gcCssBorderStyle" class="form-select">
                         <option value="">{{ _("Défaut") }}</option>
-                        <option value="none">none</option>
-                        <option value="solid">solid</option>
-                        <option value="dashed">dashed</option>
-                        <option value="dotted">dotted</option>
+                        <option value="none">{{ _("Aucune") }}</option>
+                        <option value="solid">{{ _("Pleine") }}</option>
+                        <option value="dashed">{{ _("Tirets") }}</option>
+                        <option value="dotted">{{ _("Pointillés") }}</option>
                     </select>
                 </div>
                 <div class="col-6">
@@ -176,21 +189,21 @@
                 <input class="form-check-input" type="checkbox" id="gcCssBoxShadowEnable" aria-labelledby="gcCssBoxShadowEnableLabel">
                 <span class="form-check-label" id="gcCssBoxShadowEnableLabel">{{ _("Activer") }}</span>
             </div>
-            <div class="row g-2">
+            <div class="row g-2 infos-advanced">
                 <div class="col-3">
-                    <label class="form-label" for="gcCssShadowX">X</label>
+                    <label class="form-label" for="gcCssShadowX">{{ _("Décalage X") }}</label>
                     <input id="gcCssShadowX" type="number" class="form-control" step="1">
                 </div>
                 <div class="col-3">
-                    <label class="form-label" for="gcCssShadowY">Y</label>
+                    <label class="form-label" for="gcCssShadowY">{{ _("Décalage Y") }}</label>
                     <input id="gcCssShadowY" type="number" class="form-control" step="1">
                 </div>
                 <div class="col-3">
-                    <label class="form-label" for="gcCssShadowBlur">Blur</label>
+                    <label class="form-label" for="gcCssShadowBlur">{{ _("Flou") }}</label>
                     <input id="gcCssShadowBlur" type="number" class="form-control" min="0" step="1">
                 </div>
                 <div class="col-3">
-                    <label class="form-label" for="gcCssShadowSpread">Spread</label>
+                    <label class="form-label" for="gcCssShadowSpread">{{ _("Étendue") }}</label>
                     <input id="gcCssShadowSpread" type="number" class="form-control" step="1">
                 </div>
             </div>
@@ -204,14 +217,30 @@
 
         <!-- Panneau Position -->
         <div id="gcCssPanePosition" class="gc-css-pane pt-2">
-            <div class="row g-2">
+            <!-- Mode simple : ancrage par coin. Écrit position/top/right/bottom/
+                 left dans le même modèle CSS que les champs avancés (cf.
+                 infos_editor.js). « Personnalisé » reflète un réglage qui ne
+                 correspond à aucun coin — le choisir ne modifie rien. -->
+            <div class="row g-2 infos-simple-only">
+                <div class="col-12">
+                    <label class="form-label" for="gcCssAnchor">{{ _("Emplacement") }}</label>
+                    <select id="gcCssAnchor" class="form-select">
+                        <option value="">{{ _("Personnalisé") }}</option>
+                        <option value="top-left">{{ _("En haut à gauche") }}</option>
+                        <option value="top-right">{{ _("En haut à droite") }}</option>
+                        <option value="bottom-left">{{ _("En bas à gauche") }}</option>
+                        <option value="bottom-right">{{ _("En bas à droite") }}</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row g-2 infos-advanced">
                 <div class="col-6">
-                    <label class="form-label" for="gcCssPosition">{{ _("Position") }}</label>
+                    <label class="form-label" for="gcCssPosition">{{ _("Type de position") }}</label>
                     <select id="gcCssPosition" class="form-select">
                         <option value="">{{ _("Défaut") }}</option>
-                        <option value="relative">relative</option>
-                        <option value="absolute">absolute</option>
-                        <option value="fixed">fixed</option>
+                        <option value="relative">{{ _("Relative") }}</option>
+                        <option value="absolute">{{ _("Absolue") }}</option>
+                        <option value="fixed">{{ _("Fixe") }}</option>
                     </select>
                 </div>
                 <div class="col-6">
@@ -219,27 +248,27 @@
                     <input id="gcCssZIndex" type="number" class="form-control" step="1">
                 </div>
             </div>
-            <div class="row g-2 mt-0">
+            <div class="row g-2 mt-0 infos-advanced">
                 <div class="col-3">
-                    <label class="form-label" for="gcCssTop">top</label>
+                    <label class="form-label" for="gcCssTop">{{ _("Haut (px)") }}</label>
                     <input id="gcCssTop" type="number" class="form-control" step="1">
                 </div>
                 <div class="col-3">
-                    <label class="form-label" for="gcCssRight">right</label>
+                    <label class="form-label" for="gcCssRight">{{ _("Droite (px)") }}</label>
                     <input id="gcCssRight" type="number" class="form-control" step="1">
                 </div>
                 <div class="col-3">
-                    <label class="form-label" for="gcCssBottom">bottom</label>
+                    <label class="form-label" for="gcCssBottom">{{ _("Bas (px)") }}</label>
                     <input id="gcCssBottom" type="number" class="form-control" step="1">
                 </div>
                 <div class="col-3">
-                    <label class="form-label" for="gcCssLeft">left</label>
+                    <label class="form-label" for="gcCssLeft">{{ _("Gauche (px)") }}</label>
                     <input id="gcCssLeft" type="number" class="form-control" step="1">
                 </div>
             </div>
             <div class="row g-2 mt-0">
                 <div class="col-12">
-                    <label class="form-label" for="gcCssOpacity">opacity</label>
+                    <label class="form-label" for="gcCssOpacity">{{ _("Opacité") }}</label>
                     <input id="gcCssOpacity" type="number" class="form-control" min="0" max="1" step="0.05" placeholder="1">
                 </div>
             </div>
