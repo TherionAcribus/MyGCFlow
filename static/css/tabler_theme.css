@@ -167,6 +167,13 @@ h5, h6 { color: var(--color-heading); font-weight: 600; }
 .ts-control {
     border-color: var(--color-border);
     background-color: var(--color-surface);
+    /* Valeur affichée quand le select est fermé : la couleur fixe de
+       Tom Select (#343a40) était illisible en sombre — suivre le thème. */
+    color: var(--color-text);
+}
+.ts-control .item,
+.ts-control input {
+    color: inherit;
 }
 .ts-control:focus,
 .ts-wrapper.focus .ts-control {
