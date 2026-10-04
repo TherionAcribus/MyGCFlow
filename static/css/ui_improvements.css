@@ -2215,19 +2215,42 @@ background: rgba(33, 150, 243, 0.04);
 /* Le logo horizontal se cale sur la hauteur du bandeau (comme
    .empty-state-logo / .first-use-logo dans tabler_theme.css). */
 .app-header-logo {
-    height: 26px;
+    height: 30px;
 }
 
-/* Pastille de mode (« Évolution ») : rappel discret du mode courant. */
-.app-header-badge {
-    font-size: 0.72rem;
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: 999px;
+/* Sélecteur de mode segmenté (Mes trouvailles / Évolution) : il remplace le
+   nav.mode-switch de l'onglet Données, lequel se réduisait à la phrase
+   d'explication — le mode reste visible quelle que soit la vue active. */
+.app-header-mode {
+    display: flex;
+    align-items: stretch;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+.app-mode-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    text-decoration: none;
+    white-space: nowrap;
+    border-right: 1px solid var(--color-border);
+}
+.app-mode-link:last-child {
+    border-right: none;
+}
+.app-mode-link:hover {
+    color: var(--color-text);
+    background: var(--color-accent-weak);
+}
+.app-mode-link.active {
     color: var(--color-accent-strong);
     background: var(--color-accent-weak);
-    border: 1px solid rgba(var(--color-accent-rgb), 0.3);
-    white-space: nowrap;
+    box-shadow: inset 0 -2px 0 var(--color-accent);
 }
 
 .app-header-actions {
@@ -2256,6 +2279,12 @@ background: rgba(33, 150, 243, 0.04);
     gap: 6px;
     /* Repère pour le chip « Enregistré » posé hors flux (règle suivante). */
     position: relative;
+}
+/* Icône reflétant la préférence d'apparence (système/clair/sombre) :
+   synchronisée par theme.js (THEME_ICONS) via `theme:applied`. */
+#appHeaderThemeIcon {
+    font-size: 1.05rem;
+    color: var(--color-text-muted);
 }
 .app-header-theme .form-select {
     width: auto;
@@ -2338,11 +2367,15 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
     max-height: none;
 }
 
-/* Écran étroit : le libellé du lien Guide cède, l'icône suffit — le
-   aria-label du lien conserve le nom accessible. */
-@media (max-width: 575.98px) {
-    .app-header-link-label {
+/* Écran étroit : les libellés du lien Guide et du sélecteur de mode cèdent,
+   les icônes suffisent — les aria-label conservent les noms accessibles. */
+@media (max-width: 767.98px) {
+    .app-header-link-label,
+    .app-mode-label {
         display: none;
+    }
+    .app-mode-link {
+        padding: 3px 8px;
     }
 }
 

@@ -107,6 +107,20 @@ export function syncThemeFromSettings(userSettings) {
     themeSelects().forEach((select) => { select.value = serverPref; });
 }
 
+// Icône de l'en-tête reflétant la préférence choisie (system/light/dark) :
+// le select seul n'indiquait pas visuellement qu'il pilote l'apparence.
+const THEME_ICONS = {
+    system: 'ti-device-desktop-analytics',
+    light: 'ti-sun-high',
+    dark: 'ti-moon',
+};
+
+function syncThemeIcon(pref) {
+    const icon = document.getElementById('appHeaderThemeIcon');
+    if (!icon) return;
+    icon.className = `ti ${THEME_ICONS[pref] || THEME_ICONS.system}`;
+}
+
 function initThemeControls() {
     const pref = getPref();
 
@@ -118,10 +132,12 @@ function initThemeControls() {
         select.value = pref;
         select.addEventListener('change', () => setThemePref(select.value));
     });
+    syncThemeIcon(pref);
     document.addEventListener('theme:applied', (e) => {
         const p = e.detail && e.detail.pref;
         if (!isValidPref(p)) return;
         selects.forEach((select) => { if (select.value !== p) select.value = p; });
+        syncThemeIcon(p);
     });
 
     // Re-synchroniser data-bs-theme (déjà posé par le script inline du <head>) :

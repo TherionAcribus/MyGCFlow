@@ -44,6 +44,15 @@ rapport effet/effort décroissant. **Lire d'abord « Règles communes ».**
 >   (`.tab-label-short` : « Animation », « Réglages »), les colonnes du
 >   panneau passent à 100 % et les boutons longs enrobent leur texte.
 >   Spec : `tests/e2e/splitter-responsive.spec.mjs`.
+> - `c215ca1` + `2edd965` — listes TomSelect (formes de flash, filtres) :
+>   texte des options et valeur du contrôle fermé suivaient la couleur fixe
+>   `#343a40` de TomSelect, illisible en sombre — héritent de `--color-text`.
+> - En-tête enrichi (complétion du Lot 6) : logo 30 px, sélecteur de mode
+>   segmenté `.app-header-mode` (Mes trouvailles / Évolution) reporté de
+>   `nav.mode-switch` — réduit à la phrase d'explication — et icône
+>   `#appHeaderThemeIcon` synchronisée sur la préférence d'apparence
+>   (`theme.js::THEME_ICONS` via `theme:applied`). Libellés masqués sous
+>   768 px (icônes seules).
 
 ## Règles communes à tous les lots
 

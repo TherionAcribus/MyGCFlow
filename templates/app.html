@@ -53,15 +53,28 @@
             <header id="appHeader">
                 <div class="app-header-brand">
                     {% with logo_class='app-header-logo' %}{% include '_brand_logo.html' %}{% endwith %}
-                    {% if mode == 'evolution' %}
-                    <span class="app-header-badge">{{ _("Évolution") }}</span>
-                    {% endif %}
+                    <!-- Sélecteur de mode : remplace le nav.mode-switch qui
+                         était en tête de l'onglet Données (le libellé du mode
+                         reste visible quelle que soit la vue active). -->
+                    <nav class="app-header-mode" aria-label="{{ _('Mode') }}">
+                        <a href="/" id="linkMainMode" class="app-mode-link {{ 'active' if mode != 'evolution' }}"
+                           {% if mode != 'evolution' %}aria-current="page"{% endif %}>
+                            <i class="ti ti-database" aria-hidden="true"></i><span class="app-mode-label">{{ _("Mes trouvailles") }}</span>
+                        </a>
+                        <a href="/evolution" id="linkEvolutionMode" class="app-mode-link {{ 'active' if mode == 'evolution' }}"
+                           {% if mode == 'evolution' %}aria-current="page"{% endif %}>
+                            <i class="ti ti-stack" aria-hidden="true"></i><span class="app-mode-label">{{ _("Évolution") }}</span>
+                        </a>
+                    </nav>
                 </div>
                 <div class="app-header-actions">
                     <a class="app-header-link" href="/guide" target="_blank" rel="noopener" aria-label="{{ _('Guide') }}">
                         <i class="ti ti-help" aria-hidden="true"></i><span class="app-header-link-label" aria-hidden="true">{{ _("Guide") }}</span>
                     </a>
                     <div class="app-header-theme">
+                        <!-- L'icône suit la préférence (system/light/dark) :
+                             synchronisée par theme.js via `theme:applied`. -->
+                        <i id="appHeaderThemeIcon" class="ti ti-device-desktop-analytics" aria-hidden="true"></i>
                         <select id="appHeaderTheme" class="form-select form-select-sm" aria-label="{{ _('Apparence') }}">
                             <option value="system">{{ _("Système") }}</option>
                             <option value="light">{{ _("Clair") }}</option>
