@@ -650,6 +650,14 @@ class SettingsApiTests(unittest.TestCase):
         self.client.put('/api/settings', json={'evolution_dataset_id': None})
         self.assertIsNone(self.client.get('/api/settings').get_json()['evolution_dataset_id'])
 
+    def test_undated_archives_mode_survives_unrelated_writes(self):
+        self.assertEqual(self.client.get('/api/settings').get_json()['evolution_undated_archives'], 'hide')
+        self.client.put('/api/settings', json={'evolution_undated_archives': 'expire'})
+        self.client.put('/api/settings', json={'theme': 'dark'})
+        self.assertEqual(self.client.get('/api/settings').get_json()['evolution_undated_archives'], 'expire')
+        self.client.put('/api/settings', json={'evolution_undated_archives': 'keep'})
+        self.assertEqual(self.client.get('/api/settings').get_json()['evolution_undated_archives'], 'keep')
+
 
 class EvolutionPreferencesTests(unittest.TestCase):
     """Préférences du mode Évolution : rythme séparé et dernière base ouverte."""
@@ -659,6 +667,8 @@ class EvolutionPreferencesTests(unittest.TestCase):
         self.assertEqual(s.evolution_animation.rhythm_mode, "duration")
         self.assertEqual(s.evolution_animation.total_duration_seconds, 60.0)
         self.assertIsNone(s.evolution_dataset_id)
+        # Les archivées sans date sont masquées par défaut.
+        self.assertEqual(s.evolution_undated_archives, "hide")
 
     def test_camera_follow_is_never_enabled(self):
         s = coerce_settings({"evolution_animation": {"camera_follow": True, "days_per_second": 400}})
@@ -669,6 +679,18 @@ class EvolutionPreferencesTests(unittest.TestCase):
         for value, expected in ((3, 3), ("7", 7), (0, None), (-2, None), ("x", None), (True, None)):
             with self.subTest(value=value):
                 self.assertEqual(coerce_settings({"evolution_dataset_id": value}).evolution_dataset_id, expected)
+
+    def test_undated_archives_mode_is_whitelisted(self):
+        for value in ("hide", "keep", "expire"):
+            with self.subTest(value=value):
+                self.assertEqual(
+                    coerce_settings({"evolution_undated_archives": value}).evolution_undated_archives,
+                    value)
+        for value in ("oui", True, 0, None):
+            with self.subTest(value=value):
+                self.assertEqual(
+                    coerce_settings({"evolution_undated_archives": value}).evolution_undated_archives,
+                    "hide")
 
 
 if __name__ == "__main__":

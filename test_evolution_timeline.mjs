@@ -21,6 +21,7 @@ import {
     isoToDayNumber,
     lonLatExtentOf,
     maxEventsInWindow,
+    setUndatedArchivedDelay,
     stepEvolution,
 } from './static/js/evolution_timeline.mjs';
 import { EVO_NEVER_DAY, EVO_STATIC_FROM } from './static/js/evolution_style.mjs';
@@ -93,12 +94,47 @@ test('arbre région -> départements sans libellés vides', () => {
 
 test('filtre Pays / Région : inactif, sélection, « Aucun », libellés vides toujours inclus', () => {
     const base = buildEvolutionBase(PAYLOAD);
-    assert.deepEqual([...filterRows(base, {})], [0, 1, 2, 3, 4]);
-    assert.deepEqual([...filterRows(base, { countries: ['France'], regions: null })], [0, 1, 2, 4]);
-    // C (région inconnue) reste incluse quand on ne garde que l'Alsace.
-    assert.deepEqual([...filterRows(base, { countries: ['France'], regions: ['Alsace'] })], [0, 2, 4]);
+    // C (archivée sans date) est exclue par défaut, cf. test dédié.
+    assert.deepEqual([...filterRows(base, {})], [0, 1, 3, 4]);
+    assert.deepEqual([...filterRows(base, { countries: ['France'], regions: null })], [0, 1, 4]);
+    assert.deepEqual([...filterRows(base, { countries: ['France'], regions: ['Alsace'] })], [0, 4]);
     assert.deepEqual([...filterRows(base, { countries: [], regions: ['Alsace'] })], []);
     assert.deepEqual([...filterRows(base, { countries: ['France'], regions: [] })], []);
+    // C (région inconnue) reste incluse quand on ne garde que l'Alsace, une
+    // fois les archivées sans date réintégrées.
+    assert.deepEqual([...filterRows(base, { countries: ['France'], regions: ['Alsace'], undatedMode: 'keep' })], [0, 2, 4]);
+});
+
+test('archivées sans date : masquées par défaut, réintégrées par keep/expire', () => {
+    const base = buildEvolutionBase(PAYLOAD);
+    assert.deepEqual([...base.undatedRows], [2]);
+    // Toutes les formes « critère inactif » laissent C dehors.
+    assert.deepEqual([...filterRows(base, {})], [0, 1, 3, 4]);
+    assert.deepEqual([...filterRows(base, { undatedMode: 'hide' })], [0, 1, 3, 4]);
+    assert.deepEqual([...filterRows(base, { undatedMode: 'inconnu' })], [0, 1, 3, 4]);
+    // keep et expire la réintègrent ; les autres critères filtrent pareil.
+    assert.deepEqual([...filterRows(base, { undatedMode: 'keep' })], [0, 1, 2, 3, 4]);
+    assert.deepEqual([...filterRows(base, { undatedMode: 'expire' })], [0, 1, 2, 3, 4]);
+    assert.deepEqual([...filterRows(base, { types: ['Unknown Cache'], undatedMode: 'keep' })], [1, 4]);
+    // « Aucun » sur un critère l'emporte aussi sur undatedMode.
+    assert.deepEqual([...filterRows(base, { countries: [], undatedMode: 'keep' })], []);
+});
+
+test('mode expire : disparition N jours après le placement', () => {
+    const base = buildEvolutionBase(PAYLOAD);
+    // C placée j2 -> disparition j9.
+    setUndatedArchivedDelay(base, 7);
+    assert.equal(base.archived[2], 9);
+    // NaN : retour à « jamais » (mode keep ou hors champ).
+    setUndatedArchivedDelay(base, NaN);
+    assert.equal(base.archived[2], EVO_NEVER_DAY);
+    // La disparition entre dans la chronologie comme une archivée datée :
+    // j2 + 2 = j4 (disparue le jour J, vivante la veille).
+    setUndatedArchivedDelay(base, 2);
+    const tl = buildTimeline(base, filterRows(base, { undatedMode: 'expire' }));
+    assert.deepEqual([...eventsInRange(tl, 4, 4).archived], [2]);
+    assert.equal(activeAt(tl, 3), 3);
+    assert.equal(activeAt(tl, 4), 2);
 });
 
 test('filtres Type / Taille / D / T / Département : combinés, « Aucun », libellés vides', () => {
@@ -114,16 +150,20 @@ test('filtres Type / Taille / D / T / Département : combinés, « Aucun », lib
     assert.deepEqual([...filterRows(base, { types: [] })], []);
     assert.deepEqual([...filterRows(base, { sizes: ['Small'], counties: [] })], []);
     // C et E n'ont pas de difficulté : un filtre difficulté les conserve.
-    assert.deepEqual([...filterRows(base, { difficulties: ['1.5'] })], [0, 2, 3, 4]);
+    assert.deepEqual([...filterRows(base, { difficulties: ['1.5'], undatedMode: 'keep' })], [0, 2, 3, 4]);
     // D n'a pas de département : il passe aussi un filtre département actif.
-    assert.deepEqual([...filterRows(base, { counties: ['Bas-Rhin'] })], [0, 2, 3, 4]);
-    // Critère null : inactif ; seul le terrain filtre ici.
-    assert.deepEqual([...filterRows(base, { types: null, terrains: ['2'] })], [0, 2]);
+    assert.deepEqual([...filterRows(base, { counties: ['Bas-Rhin'], undatedMode: 'keep' })], [0, 2, 3, 4]);
+    // Critère null : inactif ; seul le terrain filtre ici (C exclue sans
+    // undatedMode).
+    assert.deepEqual([...filterRows(base, { types: null, terrains: ['2'] })], [0]);
+    assert.deepEqual([...filterRows(base, { types: null, terrains: ['2'], undatedMode: 'keep' })], [0, 2]);
 });
 
 test('chronologie : événements par jour et caches actives', () => {
     const base = buildEvolutionBase(PAYLOAD);
-    const rows = filterRows(base, {});
+    // undatedMode 'keep' : C reste dans le jeu (une archivée sans date y
+    // reste affichée jusqu'à la fin, comme une active).
+    const rows = filterRows(base, { undatedMode: 'keep' });
     const tl = buildTimeline(base, rows);
     assert.equal(tl.firstDay, 0);
     assert.equal(tl.lastDay, 7);
@@ -145,7 +185,7 @@ test('chronologie : événements par jour et caches actives', () => {
 
 test('compteur configurable : cumuls placées/archivées jour par jour', () => {
     const base = buildEvolutionBase(PAYLOAD);
-    const tl = buildTimeline(base, filterRows(base, {}));
+    const tl = buildTimeline(base, filterRows(base, { undatedMode: 'keep' }));
     // j0:A  j2:B,C  j3:D placée ET archivée  j5:B archivée  j7:E placée ET archivée
     assert.equal(counterAt(tl, 0, 'placed'), 1);
     assert.equal(counterAt(tl, 1, 'placed'), 1);
@@ -168,7 +208,7 @@ test('compteur configurable : cumuls placées/archivées jour par jour', () => {
 
 test('compteur configurable : hors bornes, jour non fini et mode inconnu', () => {
     const base = buildEvolutionBase(PAYLOAD);
-    const tl = buildTimeline(base, filterRows(base, {}));
+    const tl = buildTimeline(base, filterRows(base, { undatedMode: 'keep' }));
     // Avant le premier jour : 0 ; après le dernier : le total cumulé.
     assert.equal(counterAt(tl, -4, 'placed'), 0);
     assert.equal(counterAt(tl, -4, 'archived'), 0);
@@ -186,7 +226,7 @@ test('compteur configurable : hors bornes, jour non fini et mode inconnu', () =>
 
 test('compteur configurable : valeur maximale selon le mode', () => {
     const base = buildEvolutionBase(PAYLOAD);
-    const tl = buildTimeline(base, filterRows(base, {}));
+    const tl = buildTimeline(base, filterRows(base, { undatedMode: 'keep' }));
     assert.equal(counterMaxFor(tl, 'active'), 3);    // pic d'actives
     assert.equal(counterMaxFor(tl, 'placed'), 5);    // total des placements
     assert.equal(counterMaxFor(tl, 'archived'), 3);  // total des archivages

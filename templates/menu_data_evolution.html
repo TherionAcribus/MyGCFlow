@@ -122,6 +122,21 @@
                         {% include '_filter_cache_attrs.html' %}
                         {% include '_filter_country_state.html' %}
                         {% include '_filter_county.html' %}
+                        <!-- Pas un filtre de sélection : une cache archivée sans
+                             date ne peut pas disparaître au bon moment. Masquée
+                             (défaut), affichée jusqu'à la fin, ou disparue 7
+                             jours après son apparition — délai arbitraire, juste
+                             assez pour voir les deux flashs. Préférence
+                             persistée : evolution_undated_archives. -->
+                        <div class="mt-1">
+                            <label class="form-label" for="selectUndatedArchived">{{ _("Caches archivées sans date d'archivage") }}</label>
+                            <select id="selectUndatedArchived" class="form-select">
+                                <option value="hide" selected>{{ _("Masquées") }}</option>
+                                <option value="keep">{{ _("Affichées jusqu'à la fin") }}</option>
+                                <option value="expire">{{ _("Disparaissent 7 jours après leur apparition") }}</option>
+                            </select>
+                            <div class="form-hint text-muted">{{ _("Délai arbitraire : juste assez long pour voir l'apparition, puis la disparition.") }}</div>
+                        </div>
                     </section>
                 </div>
             </div>

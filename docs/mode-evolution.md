@@ -74,7 +74,13 @@ anglais ; la première colonne sans nom et les colonnes inconnues sont ignorées
   conservé tel quel et signalé.
 - **Archivage** :
   - archivée avec date → disparaît ce jour-là ;
-  - archivée **sans date** → ne disparaît jamais (comptée active) ;
+  - archivée **sans date** → le réglage « Caches archivées sans date
+    d'archivage » (onglet Données, préférence `evolution_undated_archives`)
+    décide : `hide` les masque (défaut — sans date de disparition connue,
+    elles ne sont pas représentables sur la chronologie), `keep` les garde
+    jusqu'à la fin comme les actives, `expire` les fait disparaître 7 jours
+    après leur placement — délai arbitraire, juste assez pour voir le flash
+    d'apparition puis celui de disparition ;
   - non archivée mais datée → cache réactivée, date ignorée ;
   - date antérieure au placement → disparition le jour du placement.
 - Les **coordonnées corrigées** sont volontairement ignorées : dans une vidéo
@@ -174,6 +180,7 @@ recommandé (l'estimation de charge de l'onglet Animation le signale).
 | Rythme propre au mode (défaut : durée finale 1 min) | Globale | `evolution_animation` de `settings.json` |
 | Dernière base ouverte | Globale | `evolution_dataset_id` de `settings.json` |
 | Ligne d'informations (modèle à balises) | Globale | `evolution_infos_template` de `settings.json` |
+| Sort des archivées sans date (masquées / jusqu'à la fin / disparaissent 7 jours après l'apparition) | Globale | `evolution_undated_archives` de `settings.json` |
 | Flash de disparition (forme, taille, couleur) | Thème | `flash.disappear` du profil |
 
 Le rythme est séparé de celui du mode principal (`animation`) pour qu'un

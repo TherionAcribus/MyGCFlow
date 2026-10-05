@@ -53,6 +53,7 @@ export function buildEvolutionBase(payload) {
     const placed = new Int32Array(count);
     const archived = new Int32Array(count);
     const status = new Uint8Array(count);
+    const undated = [];
     let clampedArchives = 0;
     for (let i = 0; i < count; i++) {
         const p = Number(payload.placed?.[i]) || 0;
@@ -65,6 +66,7 @@ export function buildEvolutionBase(payload) {
             archived[i] = EVO_NEVER_DAY;
         }
         status[i] = Number(payload.status?.[i]) || 0;
+        if (status[i] === 2) undated.push(i);
     }
     return {
         count,
@@ -93,7 +95,23 @@ export function buildEvolutionBase(payload) {
         counties: Array.isArray(payload?.counties) ? payload.counties : [],
         meta: payload?.meta || {},
         clampedArchives,
+        // Positions des caches archivées sans date (status 2) : exclues de la
+        // sélection selon `undatedMode` (filterRows) et dotées d'un jour de
+        // disparition en mode « expire » (setUndatedArchivedDelay).
+        undatedRows: Int32Array.from(undated),
     };
+}
+
+// Délai de disparition attribué en bloc aux archivées sans date (status 2) :
+// `days` jours après leur placement en mode « expire » — délai arbitraire,
+// juste assez long pour voir le flash d'apparition puis celui de disparition
+// —, EVO_NEVER_DAY sinon (mode « keep » ou hors champ). Muter avant
+// filterRows/buildTimeline permet de les animer comme des archivées datées
+// sans toucher au payload.
+export function setUndatedArchivedDelay(base, days) {
+    for (const i of base.undatedRows || []) {
+        base.archived[i] = Number.isFinite(days) ? base.placed[i] + days : EVO_NEVER_DAY;
+    }
 }
 
 // Index de jour (depuis l'origin du jeu) d'une date de l'animation.
@@ -153,6 +171,12 @@ export function buildRegionCountyTree(base) {
 // « Aucun » et ne retient rien ; une ligne dont le libellé est vide (valeur
 // inconnue, non filtrable) passe toujours le critère, comme les caches sans
 // région pour le filtre Pays / Région.
+//
+// `selection.undatedMode` décide du sort des caches archivées sans date
+// (status 2) : 'hide' (défaut) les exclut — sans date de disparition connue
+// elles ne sont pas représentables sur une chronologie ; 'keep' les affiche
+// jusqu'à la fin ; 'expire' les affiche avec une disparition au jour posé par
+// setUndatedArchivedDelay (placement + quelques jours).
 export function filterRows(base, selection = {}) {
     // (libellés choisis, colonne d'index, table de libellés) par critère.
     const specs = [
@@ -174,9 +198,11 @@ export function filterRows(base, selection = {}) {
         const set = new Set(picked.map(String));
         checks.push([(labels || []).map((label) => !label || set.has(label)), column]);
     }
+    const hideUndated = selection.undatedMode !== 'keep' && selection.undatedMode !== 'expire';
     const rows = new Int32Array(base.count);
     let n = 0;
     for (let i = 0; i < base.count; i++) {
+        if (hideUndated && base.status[i] === 2) continue;
         let pass = true;
         for (const [ok, column] of checks) {
             if (ok[column[i]] === false) { pass = false; break; }

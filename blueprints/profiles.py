@@ -28,6 +28,7 @@ from settings_manager import (
     coerce_profile,
     coerce_recording_settings,
     coerce_theme,
+    coerce_undated_archives,
     get_settings_manager,
 )
 
@@ -83,6 +84,7 @@ def api_get_settings():
         'evolution_animation': asdict(s.evolution_animation),
         'evolution_dataset_id': s.evolution_dataset_id,
         'evolution_infos_template': s.evolution_infos_template,
+        'evolution_undated_archives': s.evolution_undated_archives,
     })
     response.set_cookie(
         'mygcflow_lang',
@@ -154,6 +156,13 @@ def api_put_settings():
             evolution_infos_template = coerce_infos_template(
                 data.get('evolution_infos_template'), current.evolution_infos_template)
 
+        # Sort des archivées sans date (mode Évolution) : réécrit seulement
+        # si le client l'envoie, comme les autres préférences.
+        evolution_undated_archives = current.evolution_undated_archives
+        if 'evolution_undated_archives' in data:
+            evolution_undated_archives = coerce_undated_archives(
+                data.get('evolution_undated_archives'), current.evolution_undated_archives)
+
         # Ne modifier default_profile_uid que si le client l'a explicitement envoyé
         # (sinon un PUT partiel effacerait silencieusement le profil par défaut).
         default_profile_uid = current.default_profile_uid
@@ -216,6 +225,7 @@ def api_put_settings():
             evolution_animation=evolution_animation,
             evolution_dataset_id=evolution_dataset_id,
             evolution_infos_template=evolution_infos_template,
+            evolution_undated_archives=evolution_undated_archives,
             examples_seeded=current.examples_seeded,
             # Sans cette reprise, toute écriture de préférence ramenait le lot
             # d'exemples à 0 et réinstallait au démarrage suivant les profils

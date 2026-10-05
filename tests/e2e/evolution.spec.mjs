@@ -4,10 +4,13 @@
 //
 // Fixtures (9 caches distinctes, France) :
 //   evolution-a.csv (export du 10/01/2026) : GC1A01..GC1A06, dont GC1A03
-//     archivée sans date (reste active) ;
+//     archivée sans date (masquée par défaut, cf. selectUndatedArchived) ;
 //   evolution-b.csv (export du 10/02/2026) : GC1A01 archivée le 01/02/2026
 //     (mise à jour), GC1B01..GC1B03.
-// Caches actives : 12/01/2020 -> 6 ; 10/02/2026 -> 5.
+// Caches affichées : 8 au total ; actives : 12/01/2020 -> 5 ; 10/02/2026 -> 4
+// (GC1A03 réintégrée en mode « keep » : 9, 6 et 5 ; en « expire » elle
+// disparaît le 12/01/2020, 7 jours après son placement). La préférence est
+// persistée côté serveur et partagée entre les tests : beforeEach la réinitialise.
 import { expect, test } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -45,7 +48,8 @@ async function importFixtures(page) {
   const loaded = nextDatasetLoad(page);
   await page.locator('#evolutionCsvInput').setInputFiles([FIXTURE_A, FIXTURE_B]);
   const detail = await loaded;
-  expect(detail.selected).toBe(9);
+  // GC1A03 (archivée sans date) est masquée par défaut : 9 - 1.
+  expect(detail.selected).toBe(8);
 }
 
 async function setAnimationEnd(page, text) {
@@ -57,6 +61,8 @@ async function setAnimationEnd(page, text) {
 
 test.beforeEach(async ({ request }) => {
   await deleteAllDatasets(request);
+  // Préférence persistée : les tests repartent du comportement par défaut.
+  await request.put('/api/settings', { data: { evolution_undated_archives: 'hide' } });
 });
 
 test('import de deux exports : fusion, compteur au repos et date de fin', async ({ page }) => {
@@ -79,16 +85,53 @@ test('import de deux exports : fusion, compteur au repos et date de fin', async 
   await expect(summary).toContainText("1 caches archivées sans date d'archivage");
 
   await expect(page.locator('#emptyState')).toBeHidden();
-  await expect(page.locator('#filtersCounter')).toContainText('9 / 9');
+  // GC1A03 (archivée sans date) est masquée par défaut : 8 affichées sur 8
+  // possibles — le total du compteur ne compte pas les caches hors champ.
+  await expect(page.locator('#filtersCounter')).toContainText('8 / 8');
   // Carte au repos : caches actives à la date de l'export le plus récent.
-  await expect(page.locator('#spanNbCaches')).toHaveText('5');
+  await expect(page.locator('#spanNbCaches')).toHaveText('4');
   await expect(page.locator('#spanCurrentDate')).toHaveText('10/02/2026');
   await expect(page.locator('#btnQuickPreview')).toBeEnabled();
 
   // La carte au repos suit la date de fin choisie.
   await setAnimationEnd(page, '12/01/2020');
-  await expect(page.locator('#spanNbCaches')).toHaveText('6');
+  await expect(page.locator('#spanNbCaches')).toHaveText('5');
   await expect(page.locator('#spanCurrentDate')).toHaveText('12/01/2020');
+});
+
+test('le sort des « archivées sans date » : masquées, gardées ou disparues 7 jours après', async ({ page }) => {
+  await openEvolution(page);
+  await importFixtures(page);
+  const sel = page.locator('#selectUndatedArchived');
+  await expect(sel).toHaveValue('hide');
+  await expect(page.locator('#filtersCounter')).toContainText('8 / 8');
+  await expect(page.locator('#spanNbCaches')).toHaveText('4');
+
+  // « Affichées jusqu'à la fin » : GC1A03 revient, comptée comme active.
+  await sel.selectOption('keep');
+  await expect(page.locator('#filtersCounter')).toContainText('9 / 9');
+  await expect(page.locator('#spanNbCaches')).toHaveText('5');
+
+  // « Disparaissent 7 jours après leur apparition » : GC1A03 (placée le
+  // 05/01/2020) est encore là le 11/01, disparue le 12/01.
+  // (setAnimationEnd bascule sur l'onglet Animation : retour à Données pour
+  // que le select soit visible.)
+  await setAnimationEnd(page, '11/01/2020');
+  await expect(page.locator('#spanNbCaches')).toHaveText('6');
+  await page.locator('a[href="#data"]').click();
+  await sel.selectOption('expire');
+  await expect(page.locator('#spanNbCaches')).toHaveText('6');
+  await setAnimationEnd(page, '13/01/2020');
+  await expect(page.locator('#spanNbCaches')).toHaveText('5');
+
+  // Préférence globale persistée : le mode est retrouvé et réappliqué au
+  // rechargement (toujours disparue le 13/01).
+  await page.reload();
+  await page.waitForFunction(() => window.mygcflowReady === true && window.mygcflowEvolutionLoaded === true);
+  await expect(page.locator('#selectUndatedArchived')).toHaveValue('expire');
+  await expect(page.locator('#filtersCounter')).toContainText('9 / 9');
+  await setAnimationEnd(page, '13/01/2020');
+  await expect(page.locator('#spanNbCaches')).toHaveText('5');
 });
 
 test('la lecture fait monter puis descendre le compteur', async ({ page }) => {
@@ -115,7 +158,7 @@ test('la lecture fait monter puis descendre le compteur', async ({ page }) => {
   await page.locator('#btnQuickPreview').click();
   await expect(page.locator('#spanCurrentDate')).toHaveText('12/01/2020', { timeout: 20_000 });
   await expect(page.locator('#btnQuickPreview')).toBeVisible({ timeout: 20_000 });
-  await expect(page.locator('#spanNbCaches')).toHaveText('6');
+  await expect(page.locator('#spanNbCaches')).toHaveText('5');
 
   const samples = await page.evaluate(() => {
     cancelAnimationFrame(window.__counterRaf);
@@ -123,7 +166,7 @@ test('la lecture fait monter puis descendre le compteur', async ({ page }) => {
   });
   // Départ avant le 01/01/2020 : aucune cache.
   expect(samples).toContain(0);
-  expect(Math.max(...samples)).toBe(6);
+  expect(Math.max(...samples)).toBe(5);
   // Au moins une baisse (archivages du 06/01 et du 08/01).
   const decreased = samples.some((value, i) => i > 0 && value < samples[i - 1]);
   expect(decreased).toBe(true);
@@ -133,7 +176,7 @@ test('un export d\'une autre zone demande où importer', async ({ page }) => {
   await openEvolution(page);
   let loaded = nextDatasetLoad(page);
   await page.locator('#evolutionCsvInput').setInputFiles([FIXTURE_A]);
-  expect((await loaded).selected).toBe(6);
+  expect((await loaded).selected).toBe(5);
 
   // Réimport du même export : il correspond à la base, aucune question.
   loaded = nextDatasetLoad(page);
@@ -173,14 +216,15 @@ test('un export d\'une autre zone demande où importer', async ({ page }) => {
   await page.locator('#radioEvolutionTargetCurrent').check();
   loaded = nextDatasetLoad(page);
   await page.locator('#btnEvolutionImportTargetConfirm').click();
-  expect((await loaded).selected).toBe(9);
+  expect((await loaded).selected).toBe(8);
 });
 
 test('le compte rendu signale date d\'archivage illisible, « Ajouté » vide et taille inconnue', async ({ page }) => {
   await openEvolution(page);
   const loaded = nextDatasetLoad(page);
   await page.locator('#evolutionCsvInput').setInputFiles([FIXTURE_WARNINGS]);
-  expect((await loaded).selected).toBe(3);
+  // GC1C02 : archivée à date illisible = archivée sans date, masquée.
+  expect((await loaded).selected).toBe(2);
 
   const summary = page.locator('#evolutionImportSummary');
   await expect(summary).toContainText("1 dates d'archivage illisibles, ignorées");
@@ -236,19 +280,19 @@ test('filtre Région, « Aucun », et restauration de la base au rechargement', 
   };
 
   await selectRegions(['Grand-Est']);
-  await expect(page.locator('#filtersCounter')).toContainText('4 / 9');
+  await expect(page.locator('#filtersCounter')).toContainText('4 / 8');
   // Au 10/02/2026 : GC1A04, GC1A06, GC1B03 (GC1A05 archivée).
   await expect(page.locator('#spanNbCaches')).toHaveText('3');
 
   await selectRegions([]);
-  await expect(page.locator('#filtersCounter')).toContainText('0 / 9');
+  await expect(page.locator('#filtersCounter')).toContainText('0 / 8');
   await expect(page.locator('#btnQuickPreview')).toBeDisabled();
 
   await page.reload();
   await page.waitForFunction(() => window.mygcflowReady === true && window.mygcflowEvolutionLoaded === true);
   await expect(page.locator('#selectEvolutionDataset')).toHaveValue(/\d+/);
-  await expect(page.locator('#filtersCounter')).toContainText('9 / 9');
-  await expect(page.locator('#spanNbCaches')).toHaveText('5');
+  await expect(page.locator('#filtersCounter')).toContainText('8 / 8');
+  await expect(page.locator('#spanNbCaches')).toHaveText('4');
 });
 
 test('le mode principal reste indépendant du mode Évolution', async ({ page }) => {

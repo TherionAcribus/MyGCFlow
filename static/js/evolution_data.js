@@ -35,6 +35,7 @@ import {
     filterRows,
     lonLatExtentOf,
     maxEventsInWindow,
+    setUndatedArchivedDelay,
     stepEvolution,
 } from './evolution_timeline.mjs';
 
@@ -45,6 +46,10 @@ const MAX_CSV_BYTES = 500 * 1024 * 1024;
 // sensible (~1 Ko par cache affichée) : l'utilisateur est prévenu.
 const LARGE_SELECTION = 300000;
 const TASK_POLL_MS = 400;
+// Mode « expire » des archivées sans date : disparition arbitraire N jours
+// après le placement — juste assez pour voir le flash d'apparition puis
+// celui de disparition.
+const UNDATED_VISIBLE_DAYS = 7;
 
 let datasets = [];
 let current = null;          // base ouverte (entrée de la liste)
@@ -94,6 +99,13 @@ export async function initEvolutionPage() {
     if (!isEvolutionPage()) return;
     bindControls();
     setupCsvDragAndDrop();
+    // Sort des « archivées sans date » : préférence globale relue avant le
+    // chargement de la base, dont readFilterSelection dépend.
+    const undatedSel = el('selectUndatedArchived');
+    if (undatedSel) {
+        const mode = window.userSettings?.evolution_undated_archives;
+        undatedSel.value = ['hide', 'keep', 'expire'].includes(mode) ? mode : 'hide';
+    }
     const preferred = Number(window.userSettings?.evolution_dataset_id) || null;
     // Les préférences arrivent après l'évaluation du module : le modèle de la
     // ligne d'infos est (re)lu ici, à coup sûr, puis reflété dans le champ.
@@ -149,6 +161,14 @@ function bindControls() {
         handleCsvFiles(files);
     });
     el('btnEvolutionEmptyStateImport')?.addEventListener('click', () => input?.click());
+
+    // Sort des « archivées sans date » : préférence globale persistée,
+    // appliquée comme un changement de filtre (reportée à la fin d'une
+    // animation en cours par evolutionApplySelection).
+    el('selectUndatedArchived')?.addEventListener('change', (e) => {
+        try { saveSettingsPatch({ evolution_undated_archives: e.target.value }); } catch (_) {}
+        evolutionApplySelection();
+    });
 }
 
 // --- Liste des bases ----------------------------------------------------------------
@@ -306,6 +326,10 @@ function readFilterSelection() {
         difficulties: read('selectDifficulty'),
         terrains: read('selectTerrain'),
         counties: read('selectCounty'),
+        // Sort des « archivées sans date » (filterRows) : 'hide' les exclut,
+        // 'keep' les garde jusqu'à la fin, 'expire' les fait disparaître
+        // quelques jours après leur apparition.
+        undatedMode: el('selectUndatedArchived')?.value || 'hide',
     };
 }
 
@@ -325,11 +349,22 @@ export function evolutionApplySelection() {
 
 function applySelection(selection, { resetDates = false } = {}) {
     if (!base) return;
+    // En mode « expire », les archivées sans date disparaissent quelques
+    // jours après leur placement (UNDATED_VISIBLE_DAYS) ; les autres modes
+    // les laissent persistantes.
+    setUndatedArchivedDelay(base, selection.undatedMode === 'expire' ? UNDATED_VISIBLE_DAYS : NaN);
     rows = filterRows(base, selection);
     timeline = buildTimeline(base, rows);
     olFeatures = buildFeatures(rows);
 
-    datasetScope = { selected: rows.length, total: base.count };
+    // Les archivées sans date masquées ne font pas partie du jeu affiché :
+    // le « total » du compteur de sélection les exclut aussi, sinon la badge
+    // suggérerait un filtre actif permanent.
+    const undatedHidden = selection.undatedMode !== 'keep' && selection.undatedMode !== 'expire';
+    datasetScope = {
+        selected: rows.length,
+        total: undatedHidden ? base.count - (base.undatedRows?.length || 0) : base.count,
+    };
     pkg.setExternalDatasetState(buildMeta(), datasetScope);
     if (resetDates) pkg.setPickerDates?.(pkg.metadata);
     pkg.updateAnimationMenuAfterReadBdd?.(pkg.metadata);
@@ -914,7 +949,7 @@ function summaryLines(r) {
         lines.push({ text: t('${n} doublons dans le fichier (version la plus récente retenue)', { n: n(r.rows_duplicate) }) });
     }
     if (r.archived_without_date > 0) {
-        lines.push({ text: t('${n} caches archivées sans date d\'archivage : elles restent affichées jusqu\'à la fin', { n: n(r.archived_without_date) }), warning: true });
+        lines.push({ text: t('${n} caches archivées sans date d\'archivage : non affichées (option dans les filtres)', { n: n(r.archived_without_date) }), warning: true });
     }
     if (r.rows_invalid > 0) {
         const reasons = Object.entries(r.invalid || {}).map(([k, v]) => `${invalidReasonLabel(k)} : ${n(v)}`).join(', ');
@@ -927,8 +962,8 @@ function summaryLines(r) {
         lines.push({ text: t('${n} caches réactivées : leur ancienne date d\'archivage est ignorée', { n: n(r.reactivated) }) });
     }
     if (r.bad_archive_date > 0) {
-        // Date ignorée : la cache reste affichée jusqu'à la fin si elle est
-        // marquée archivée (comptée aussi dans « archivées sans date »).
+        // Date ignorée : la cache est traitée comme une archivée sans date
+        // (comptée dans « archivées sans date », masquée par défaut).
         lines.push({ text: t('${n} dates d\'archivage illisibles, ignorées (formats lus : AAAA-MM-JJ, JJ/MM/AAAA)', { n: n(r.bad_archive_date) }), warning: true });
     }
     if (r.missing_exported_at > 0) {
@@ -974,7 +1009,7 @@ function renderStats() {
     }
     const parts = [
         t('${n} caches', { n: formatNumber(s.total) }),
-        t('${n} actives', { n: formatNumber(s.active + (s.archived_no_date || 0)) }),
+        t('${n} actives', { n: formatNumber(s.active) }),
         t('${n} archivées', { n: formatNumber(s.archived) }),
     ];
     if (s.archived_no_date) {

@@ -275,6 +275,13 @@ class AppSettings:
     # ({date}, {actives}, {placees}, {archivees}, {total}) remplacées par les
     # valeurs courantes. Une chaîne vide masque la ligne.
     evolution_infos_template: str = '{date} · {actives}'
+    # Mode Évolution : sort des caches archivées sans date d'archivage.
+    # "hide" (défaut) : elles ne figurent ni sur la carte ni dans les
+    #   compteurs (on ne sait pas quand elles ont disparu, rien à animer).
+    # "keep" : elles restent affichées jusqu'à la fin, comme les actives.
+    # "expire" : elles apparaissent puis disparaissent à la date du dernier
+    #   export, seul instant où l'on sait qu'elles n'existaient plus.
+    evolution_undated_archives: str = "hide"  # "hide" | "keep" | "expire"
     examples_seeded: bool = False  # True une fois les profils d'exemple créés (premier lancement)
     # Lot de profils d'exemple déjà installé. Permet d'ajouter des exemples dans
     # une version ultérieure sans les réinstaller à chaque démarrage, ni faire
@@ -712,6 +719,11 @@ def coerce_dataset_id(value) -> Optional[int]:
     return number if number > 0 else None
 
 
+def coerce_undated_archives(value, fallback: str = "hide") -> str:
+    """Sort des archivées sans date (mode Évolution) ; inconnu → repli."""
+    return value if value in ("hide", "keep", "expire") else fallback
+
+
 def coerce_infos_template(value, fallback: str = '{date} · {actives}') -> str:
     """Modèle de la ligne d'infos du mode Évolution ; non-texte → repli.
 
@@ -743,6 +755,8 @@ def coerce_settings(d: dict) -> AppSettings:
         s.evolution_dataset_id = coerce_dataset_id(d.get("evolution_dataset_id"))
         s.evolution_infos_template = coerce_infos_template(
             d.get("evolution_infos_template"), s.evolution_infos_template)
+        s.evolution_undated_archives = coerce_undated_archives(
+            d.get("evolution_undated_archives"), s.evolution_undated_archives)
         # Un settings.json antérieur à la migration n'a pas de bloc `recording` :
         # il compte comme « jamais configuré ».
         s.recording_configured = bool(d.get("recording_configured", "recording" in d))
