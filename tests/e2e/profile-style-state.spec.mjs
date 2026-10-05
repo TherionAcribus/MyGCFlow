@@ -210,7 +210,10 @@ test('l\'indicateur "modifications non enregistrées" suit l\'état, pas les év
     return document.getElementById('inputSizePoint').value;
   });
 
+  // Thème enregistré : l'indicateur reste masqué, le nom du thème n'est pas
+  // répété à côté du sélecteur.
   await expect(indicator).not.toHaveClass(/unsaved/);
+  await expect(indicator).toBeHidden();
 
   // La taille du point n'est appliquée qu'à l'événement 'change' : fill() seul
   // ne produit qu'un 'input', il faut quitter le champ comme le ferait un
@@ -222,11 +225,13 @@ test('l\'indicateur "modifications non enregistrées" suit l\'état, pas les év
 
   await setSize(Number(initialSize) + 1);
   await expect(indicator).toHaveClass(/unsaved/);
+  await expect(indicator).toHaveText('Modifications non enregistrées');
 
   // Revenir à la valeur enregistrée doit éteindre l'indicateur : c'est ce qu'un
   // simple drapeau `dirty = true` posé sur chaque événement ne saurait pas faire.
   await setSize(initialSize);
   await expect(indicator).not.toHaveClass(/unsaved/);
+  await expect(indicator).toBeHidden();
 
   // Déplacer la carte n'est pas un réglage de style : le centre et le zoom
   // courants sont exclus de la comparaison.
@@ -510,7 +515,7 @@ test('créer un profil y enregistre les réglages affichés', async ({ page }) =
   // ...et c'est lui que le prochain démarrage restaurera.
   expect(settingsPatches).toContainEqual({ last_profile_uid: 'uid-nouveau' });
 
-  await expect(page.locator('.gcm-toast-message', { hasText: 'Profil "Nouveau" créé' })).toHaveCount(1);
+  await expect(page.locator('.gcm-toast-message', { hasText: 'Thème "Nouveau" créé' })).toHaveCount(1);
 });
 
 
@@ -628,9 +633,11 @@ test('un profil de démarrage illisible laisse l\'application sans profil actif'
     };
   });
 
-  // Le point de départ : un profil bien actif, pour que l'état d'arrivée ne
-  // puisse pas être confondu avec "rien n'a jamais été affiché".
-  expect(state.before).toEqual({ indicator: 'Alpha', marked: 1 });
+  // Le point de départ : un profil bien actif (marqué dans la liste), pour que
+  // l'état d'arrivée ne puisse pas être confondu avec "rien n'a jamais été
+  // affiché". L'indicateur reste vide : il ne s'allume que sur des
+  // modifications non enregistrées.
+  expect(state.before).toEqual({ indicator: '', marked: 1 });
 
   // L'arrivée : aucun profil actif, ni réel ni inventé.
   expect(state.currentProfile).toBeNull();
@@ -640,8 +647,8 @@ test('un profil de démarrage illisible laisse l\'application sans profil actif'
 
   // ...et l'utilisateur le sait, par un seul message (le toast d'erreur générique
   // de loadProfileByUid est tu au profit de celui qui décrit l'état).
-  await expect(page.locator('.gcm-toast-message', { hasText: 'aucun profil n\'est actif' })).toHaveCount(1);
-  await expect(page.locator('.gcm-toast-message', { hasText: 'Erreur lors du chargement du profil' })).toHaveCount(0);
+  await expect(page.locator('.gcm-toast-message', { hasText: 'aucun thème n\'est actif' })).toHaveCount(1);
+  await expect(page.locator('.gcm-toast-message', { hasText: 'Erreur lors du chargement du thème' })).toHaveCount(0);
 });
 
 

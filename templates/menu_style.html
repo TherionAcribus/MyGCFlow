@@ -15,7 +15,7 @@
                         <i class="ti ti-user-circle text-muted" aria-hidden="true"></i>
                         <label for="profile-select" class="form-label mb-0">{{ _("Thème") }}</label>
                         <select id="profile-select" class="form-select form-select-sm" disabled></select>
-                        <span id="current-profile-indicator" class="profile-active-indicator"></span>
+                        <span id="current-profile-indicator" class="profile-active-indicator" aria-live="polite"></span>
                         <div class="btn-group" role="group">
                             <button type="button" id="btn-save-profile" class="btn btn-sm btn-secondary" data-bs-toggle="tooltip" data-bs-title="{{ _('Sauvegarder le thème actif') }}">
                                 <i class="ti ti-device-floppy me-1"></i>{{ _("Sauvegarder") }}
@@ -52,7 +52,7 @@
                             <button type="button" id="btn-close-profiles-manager" class="btn-close" aria-label="{{ _('Fermer') }}"></button>
                         </div>
                         <p class="form-hint text-muted mb-2">
-                            {{ _("Un thème ne contient que des réglages visuels : il ne touche ni aux dates, ni au rythme, ni à la musique. Les réglages marqués « Thème » ne sont conservés qu'après un clic sur « Sauvegarder ». Un « • » à côté du nom du thème signale des modifications en attente.") }}
+                            {{ _("Un thème ne contient que des réglages visuels : il ne touche ni aux dates, ni au rythme, ni à la musique. Les réglages marqués « Thème » ne sont conservés qu'après un clic sur « Sauvegarder ». L'indication « Modifications non enregistrées » à côté du sélecteur signale des changements en attente.") }}
                         </p>
                         <div id="profiles-section">
                             <!-- Boutons d'action -->
@@ -265,7 +265,7 @@
                         <button type="button" class="btn-close modal-close" data-bs-dismiss="modal" aria-label="{{ _('Fermer') }}"></button>
                     </div>
                     <div class="modal-body">
-                        <p id="delete-profile-message" class="modal-body-text">{{ _("Êtes-vous sûr de vouloir supprimer ce profil ?") }}</p>
+                        <p id="delete-profile-message" class="modal-body-text">{{ _("Êtes-vous sûr de vouloir supprimer ce thème ?") }}</p>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary modal-close" data-bs-dismiss="modal">{{ _("Annuler") }}</button>
@@ -290,7 +290,7 @@
                         <button type="button" class="btn-close modal-close" data-bs-dismiss="modal" aria-label="{{ _('Fermer') }}"></button>
                     </div>
                     <div class="modal-body">
-                        <p id="reset-profile-message" class="modal-body-text">{{ _("Êtes-vous sûr de vouloir réinitialiser ce profil aux valeurs par défaut ?") }}</p>
+                        <p id="reset-profile-message" class="modal-body-text">{{ _("Êtes-vous sûr de vouloir réinitialiser ce thème aux valeurs par défaut ?") }}</p>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary modal-close" data-bs-dismiss="modal">{{ _("Annuler") }}</button>
@@ -312,7 +312,7 @@
                             <span class="modal-icon warning"><i class="ti ti-alert-triangle"></i></span>
                             <div>
                                 <h5 class="modal-title">{{ _("Modifications non enregistrées") }}</h5>
-                                <p class="modal-subtitle text-muted">{{ _("Le profil actif a été modifié") }}</p>
+                                <p class="modal-subtitle text-muted">{{ _("Le thème actif a été modifié") }}</p>
                             </div>
                         </div>
                         <button type="button" class="btn-close modal-close" data-bs-dismiss="modal" aria-label="{{ _('Fermer') }}"></button>
@@ -353,7 +353,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary modal-close" data-bs-dismiss="modal">{{ _("Annuler") }}</button>
-                        <button type="button" id="btn-confirm-save-as" class="btn btn-primary">{{ _("Enregistrer le profil") }}</button>
+                        <button type="button" id="btn-confirm-save-as" class="btn btn-primary">{{ _("Enregistrer le thème") }}</button>
                     </div>
                 </div>
             </div>

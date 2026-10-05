@@ -75,8 +75,11 @@ résultat calculé en lecture seule.
   pas non plus mettre à jour le suivi « déjà enregistré » d'un champ : sinon
   ressaisir la même valeur passerait pour un non-changement et ne repartirait
   jamais vers le serveur (cf. `lastSavedCenterKey` dans `ui.js`).
-- **Indicateur de thème** (`#current-profile-indicator`) : nom du thème actif,
-  suivi d'un « • » tant que des modifications de style ne sont pas enregistrées.
+- **Indicateur de thème** (`#current-profile-indicator`) : masqué tant que le
+  thème actif est enregistré (le sélecteur affiche déjà son nom) ; affiche
+  « Modifications non enregistrées » (`aria-live="polite"`) dès que des
+  réglages diffèrent de la version enregistrée. Le « • » compact reste accolé
+  au nom du thème actif dans les options du sélecteur `#profile-select`.
   Le suivi (`_bindDirtyTracking()`) écoute `input`, `change` **et `click`** sur
   le conteneur `#style`, puis compare l'état lu dans `pkg.options` à la dernière
   référence enregistrée. `click` est indispensable : plusieurs réglages de thème

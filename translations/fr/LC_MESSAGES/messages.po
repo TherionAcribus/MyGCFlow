@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-05 14:20+0200\n"
+"POT-Creation-Date: 2026-10-05 14:30+0200\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -1527,12 +1527,12 @@ msgstr "Import échoué"
 
 #: static/js/profiles.js:279
 #, python-brace-format
-msgid "Profil \"${name}\" importé"
-msgstr "Profil \"${name}\" importé"
+msgid "Thème \"${name}\" importé"
+msgstr "Thème \"${name}\" importé"
 
 #: static/js/profiles.js:283
-msgid "Erreur import du profil"
-msgstr "Erreur import du profil"
+msgid "Erreur import du thème"
+msgstr "Erreur import du thème"
 
 #: static/js/profiles.js:309
 msgid "Erreur API"
@@ -1543,40 +1543,40 @@ msgstr "Erreur API"
 msgid "Erreur: ${message}"
 msgstr "Erreur: ${message}"
 
-#: static/js/profiles.js:369 static/js/profiles.js:1395
+#: static/js/profiles.js:369 static/js/profiles.js:1402
 #, python-brace-format
-msgid "Profil \"${name}\" chargé"
-msgstr "Profil \"${name}\" chargé"
+msgid "Thème \"${name}\" chargé"
+msgstr "Thème \"${name}\" chargé"
 
 #: static/js/profiles.js:398
 #, python-brace-format
-msgid "Profil \"${name}\" sauvegardé"
-msgstr "Profil \"${name}\" sauvegardé"
+msgid "Thème \"${name}\" sauvegardé"
+msgstr "Thème \"${name}\" sauvegardé"
 
 #: static/js/profiles.js:451
 #, python-brace-format
-msgid "Profil \"${name}\" créé, mais l'enregistrement des réglages a échoué"
-msgstr "Profil \"${name}\" créé, mais l'enregistrement des réglages a échoué"
+msgid "Thème \"${name}\" créé, mais l'enregistrement des réglages a échoué"
+msgstr "Thème \"${name}\" créé, mais l'enregistrement des réglages a échoué"
 
 #: static/js/profiles.js:461
 #, python-brace-format
-msgid "Profil \"${name}\" créé"
-msgstr "Profil \"${name}\" créé"
+msgid "Thème \"${name}\" créé"
+msgstr "Thème \"${name}\" créé"
 
 #: static/js/profiles.js:477
 #, python-brace-format
-msgid "Profil dupliqué: \"${name}\""
-msgstr "Profil dupliqué: \"${name}\""
+msgid "Thème dupliqué: \"${name}\""
+msgstr "Thème dupliqué: \"${name}\""
 
 #: static/js/profiles.js:489
 #, python-brace-format
-msgid "Profil \"${name}\" supprimé"
-msgstr "Profil \"${name}\" supprimé"
+msgid "Thème \"${name}\" supprimé"
+msgstr "Thème \"${name}\" supprimé"
 
 #: static/js/profiles.js:559
 #, python-brace-format
-msgid "Profil \"${name}\" réinitialisé"
-msgstr "Profil \"${name}\" réinitialisé"
+msgid "Thème \"${name}\" réinitialisé"
+msgstr "Thème \"${name}\" réinitialisé"
 
 #: static/js/profiles.js:589
 msgid "Export échoué"
@@ -1584,39 +1584,39 @@ msgstr "Export échoué"
 
 #: static/js/profiles.js:600
 #, python-brace-format
-msgid "Profil \"${name}\" exporté"
-msgstr "Profil \"${name}\" exporté"
+msgid "Thème \"${name}\" exporté"
+msgstr "Thème \"${name}\" exporté"
 
 #: static/js/profiles.js:603
-msgid "Erreur export du profil"
-msgstr "Erreur export du profil"
+msgid "Erreur export du thème"
+msgstr "Erreur export du thème"
 
 #: static/js/profiles.js:623
-msgid "Profil introuvable ou UID manquant"
-msgstr "Profil introuvable ou UID manquant"
+msgid "Thème introuvable ou UID manquant"
+msgstr "Thème introuvable ou UID manquant"
 
 #: static/js/profiles.js:638
-msgid "Échec de la sauvegarde du profil par défaut"
-msgstr "Échec de la sauvegarde du profil par défaut"
+msgid "Échec de la sauvegarde du thème par défaut"
+msgstr "Échec de la sauvegarde du thème par défaut"
 
 #: static/js/profiles.js:643
 #, python-brace-format
-msgid "Profil \"${name}\" défini comme profil par défaut"
-msgstr "Profil \"${name}\" défini comme profil par défaut"
+msgid "Thème \"${name}\" défini comme thème par défaut"
+msgstr "Thème \"${name}\" défini comme thème par défaut"
 
 #: static/js/profiles.js:656
-msgid "Erreur lors de la définition du profil par défaut"
-msgstr "Erreur lors de la définition du profil par défaut"
+msgid "Erreur lors de la définition du thème par défaut"
+msgstr "Erreur lors de la définition du thème par défaut"
 
-#: static/js/profiles.js:671 static/js/profiles.js:932
-msgid "Aucun profil"
-msgstr "Aucun profil"
+#: static/js/profiles.js:671 static/js/profiles.js:939
+msgid "Aucun thème"
+msgstr "Aucun thème"
 
-#: static/js/profiles.js:757 static/js/profiles.js:2469
+#: static/js/profiles.js:757 static/js/profiles.js:2476
 msgid "Dupliquer"
 msgstr "Dupliquer"
 
-#: static/js/profiles.js:758 static/js/profiles.js:2449
+#: static/js/profiles.js:758 static/js/profiles.js:2456
 msgid "Renommer"
 msgstr "Renommer"
 
@@ -1640,123 +1640,123 @@ msgid "Définir comme par défaut"
 msgstr "Définir comme par défaut"
 
 #: static/js/profiles.js:843
-msgid "Profil par défaut"
-msgstr "Profil par défaut"
+msgid "Thème par défaut"
+msgstr "Thème par défaut"
 
-#: static/js/profiles.js:896 templates/menu_style.html:314
+#: static/js/profiles.js:902 templates/menu_style.html:314
 msgid "Modifications non enregistrées"
 msgstr "Modifications non enregistrées"
 
-#: static/js/profiles.js:943
-msgid "Choisir un profil"
-msgstr "Choisir un profil"
+#: static/js/profiles.js:950
+msgid "Choisir un thème"
+msgstr "Choisir un thème"
 
-#: static/js/profiles.js:1190
+#: static/js/profiles.js:1197
 #, python-brace-format
 msgid ""
-"Le profil \"${name}\" contient des modifications non enregistrées. Que "
+"Le thème \"${name}\" contient des modifications non enregistrées. Que "
 "voulez-vous faire ?"
 msgstr ""
-"Le profil \"${name}\" contient des modifications non enregistrées. Que "
+"Le thème \"${name}\" contient des modifications non enregistrées. Que "
 "voulez-vous faire ?"
 
-#: static/js/profiles.js:1191
+#: static/js/profiles.js:1198
 msgid "Vous avez des modifications non enregistrées. Que voulez-vous faire ?"
 msgstr "Vous avez des modifications non enregistrées. Que voulez-vous faire ?"
 
-#: static/js/profiles.js:1399
-msgid "Erreur lors du chargement du profil par défaut"
-msgstr "Erreur lors du chargement du profil par défaut"
+#: static/js/profiles.js:1406
+msgid "Erreur lors du chargement du thème par défaut"
+msgstr "Erreur lors du chargement du thème par défaut"
 
-#: static/js/profiles.js:1432
-msgid "Aucun profil par défaut"
-msgstr "Aucun profil par défaut"
+#: static/js/profiles.js:1439
+msgid "Aucun thème par défaut"
+msgstr "Aucun thème par défaut"
 
-#: static/js/profiles.js:1539
+#: static/js/profiles.js:1546
 #, python-brace-format
-msgid "Profil \"${selectedProfile}\" appliqué et défini comme profil par défaut"
-msgstr "Profil \"${selectedProfile}\" appliqué et défini comme profil par défaut"
+msgid "Thème \"${selectedProfile}\" appliqué et défini comme thème par défaut"
+msgstr "Thème \"${selectedProfile}\" appliqué et défini comme thème par défaut"
 
-#: static/js/profiles.js:1540
-msgid "Aucun profil par défaut défini"
-msgstr "Aucun profil par défaut défini"
+#: static/js/profiles.js:1547
+msgid "Aucun thème par défaut défini"
+msgstr "Aucun thème par défaut défini"
 
-#: static/js/profiles.js:1759
-msgid "Le profil n'a pas pu être chargé : aucun profil n'est actif."
-msgstr "Le profil n'a pas pu être chargé : aucun profil n'est actif."
+#: static/js/profiles.js:1766
+msgid "Le thème n'a pas pu être chargé : aucun thème n'est actif."
+msgstr "Le thème n'a pas pu être chargé : aucun thème n'est actif."
 
-#: static/js/profiles.js:2200
+#: static/js/profiles.js:2207
 #, python-brace-format
-msgid "Créer le profil \"${name}\""
-msgstr "Créer le profil \"${name}\""
+msgid "Créer le thème \"${name}\""
+msgstr "Créer le thème \"${name}\""
 
-#: static/js/profiles.js:2265 static/js/profiles.js:2642
-msgid "Veuillez saisir un nom de profil"
-msgstr "Veuillez saisir un nom de profil"
+#: static/js/profiles.js:2272 static/js/profiles.js:2649
+msgid "Veuillez saisir un nom de thème"
+msgstr "Veuillez saisir un nom de thème"
 
-#: static/js/profiles.js:2328
+#: static/js/profiles.js:2335
 #, python-brace-format
 msgid ""
-"Le profil « ${name} » existe déjà. Les réglages affichés remplaceront "
-"ceux enregistrés."
+"Le thème « ${name} » existe déjà. Les réglages affichés remplaceront ceux"
+" enregistrés."
 msgstr ""
-"Le profil « ${name} » existe déjà. Les réglages affichés remplaceront "
-"ceux enregistrés."
+"Le thème « ${name} » existe déjà. Les réglages affichés remplaceront ceux"
+" enregistrés."
 
-#: static/js/profiles.js:2374
+#: static/js/profiles.js:2381
 #, python-brace-format
 msgid "Réglages enregistrés dans \"${name}\""
 msgstr "Réglages enregistrés dans \"${name}\""
 
-#: static/js/profiles.js:2434
-msgid "Enregistrer dans un nouveau profil"
-msgstr "Enregistrer dans un nouveau profil"
+#: static/js/profiles.js:2441
+msgid "Enregistrer dans un nouveau thème"
+msgstr "Enregistrer dans un nouveau thème"
 
-#: static/js/profiles.js:2434
-msgid "Nouveau profil"
-msgstr "Nouveau profil"
+#: static/js/profiles.js:2441 templates/menu_style.html:232
+msgid "Nouveau thème"
+msgstr "Nouveau thème"
 
-#: static/js/profiles.js:2440 templates/menu_style.html:356
-msgid "Enregistrer le profil"
-msgstr "Enregistrer le profil"
+#: static/js/profiles.js:2447 templates/menu_style.html:356
+msgid "Enregistrer le thème"
+msgstr "Enregistrer le thème"
 
-#: static/js/profiles.js:2440 templates/menu_style.html:247
+#: static/js/profiles.js:2447 templates/menu_style.html:247
 msgid "Créer"
 msgstr "Créer"
 
-#: static/js/profiles.js:2447
-msgid "Renommer le profil"
-msgstr "Renommer le profil"
+#: static/js/profiles.js:2454
+msgid "Renommer le thème"
+msgstr "Renommer le thème"
 
-#: static/js/profiles.js:2467
-msgid "Dupliquer le profil"
-msgstr "Dupliquer le profil"
+#: static/js/profiles.js:2474
+msgid "Dupliquer le thème"
+msgstr "Dupliquer le thème"
 
-#: static/js/profiles.js:2523
+#: static/js/profiles.js:2530
 msgid "Le nom doit contenir au moins une lettre ou un chiffre"
 msgstr "Le nom doit contenir au moins une lettre ou un chiffre"
 
-#: static/js/profiles.js:2545
+#: static/js/profiles.js:2552
 #, python-brace-format
 msgid "« ${conflict} » existe déjà : la copie sera nommée « ${suggested} »"
 msgstr "« ${conflict} » existe déjà : la copie sera nommée « ${suggested} »"
 
-#: static/js/profiles.js:2561
+#: static/js/profiles.js:2568
 #, python-brace-format
-msgid "« ${name} » est le profil actif : ses réglages seront mis à jour"
-msgstr "« ${name} » est le profil actif : ses réglages seront mis à jour"
+msgid "« ${name} » est le thème actif : ses réglages seront mis à jour"
+msgstr "« ${name} » est le thème actif : ses réglages seront mis à jour"
 
-#: static/js/profiles.js:2567
+#: static/js/profiles.js:2574
 #, python-brace-format
 msgid "« ${name} » existe déjà : ses réglages seront remplacés"
 msgstr "« ${name} » existe déjà : ses réglages seront remplacés"
 
-#: static/js/profiles.js:2574
+#: static/js/profiles.js:2581
 #, python-brace-format
-msgid "Un profil nommé « ${name} » existe déjà"
-msgstr "Un profil nommé « ${name} » existe déjà"
+msgid "Un thème nommé « ${name} » existe déjà"
+msgstr "Un thème nommé « ${name} » existe déjà"
 
-#: static/js/profiles.js:2575
+#: static/js/profiles.js:2582
 #, python-brace-format
 msgid ""
 "Ce nom est déjà pris par « ${conflict} » : les deux se réduisent au "
@@ -1765,32 +1765,28 @@ msgstr ""
 "Ce nom est déjà pris par « ${conflict} » : les deux se réduisent au "
 "fichier « ${key} »"
 
-#: static/js/profiles.js:2584
+#: static/js/profiles.js:2591
+#, python-brace-format
+msgid "Caractères ignorés (${dropped}) : le thème sera enregistré sous « ${key} »"
+msgstr "Caractères ignorés (${dropped}) : le thème sera enregistré sous « ${key} »"
+
+#: static/js/profiles.js:2708
+#, python-brace-format
+msgid "Thème renommé en \"${name}\""
+msgstr "Thème renommé en \"${name}\""
+
+#: static/js/profiles.js:2722
+#, python-brace-format
+msgid "Êtes-vous sûr de vouloir supprimer le thème \"${name}\" ?"
+msgstr "Êtes-vous sûr de vouloir supprimer le thème \"${name}\" ?"
+
+#: static/js/profiles.js:2741
 #, python-brace-format
 msgid ""
-"Caractères ignorés (${dropped}) : le profil sera enregistré sous « ${key}"
-" »"
-msgstr ""
-"Caractères ignorés (${dropped}) : le profil sera enregistré sous « ${key}"
-" »"
-
-#: static/js/profiles.js:2701
-#, python-brace-format
-msgid "Profil renommé en \"${name}\""
-msgstr "Profil renommé en \"${name}\""
-
-#: static/js/profiles.js:2715
-#, python-brace-format
-msgid "Êtes-vous sûr de vouloir supprimer le profil \"${name}\" ?"
-msgstr "Êtes-vous sûr de vouloir supprimer le profil \"${name}\" ?"
-
-#: static/js/profiles.js:2734
-#, python-brace-format
-msgid ""
-"Êtes-vous sûr de vouloir réinitialiser le profil \"${name}\" aux valeurs "
+"Êtes-vous sûr de vouloir réinitialiser le thème \"${name}\" aux valeurs "
 "par défaut ?"
 msgstr ""
-"Êtes-vous sûr de vouloir réinitialiser le profil \"${name}\" aux valeurs "
+"Êtes-vous sûr de vouloir réinitialiser le thème \"${name}\" aux valeurs "
 "par défaut ?"
 
 #: static/js/record.js:29
@@ -3653,8 +3649,8 @@ msgid "lance la même vérification à la demande."
 msgstr "lance la même vérification à la demande."
 
 #: templates/guide.html:302 templates/menu_options.html:50
-msgid "Profil visuel par défaut au démarrage"
-msgstr "Profil visuel par défaut au démarrage"
+msgid "Thème visuel par défaut au démarrage"
+msgstr "Thème visuel par défaut au démarrage"
 
 #: templates/guide.html:302
 msgid ""
@@ -4451,10 +4447,10 @@ msgstr "Préférences de l'application"
 #: templates/menu_options.html:7
 msgid ""
 "Ces réglages sont enregistrés automatiquement et s'appliquent quel que "
-"soit le profil chargé."
+"soit le thème chargé."
 msgstr ""
 "Ces réglages sont enregistrés automatiquement et s'appliquent quel que "
-"soit le profil chargé."
+"soit le thème chargé."
 
 #: templates/menu_options.html:14
 msgid "Langue"
@@ -4485,8 +4481,8 @@ msgid "Apparence de l'interface"
 msgstr "Apparence de l'interface"
 
 #: templates/menu_options.html:51
-msgid "Profil visuel par défaut"
-msgstr "Profil visuel par défaut"
+msgid "Thème visuel par défaut"
+msgstr "Thème visuel par défaut"
 
 #: templates/menu_options.html:59
 msgid "Toujours démarrer sur ce thème"
@@ -4676,10 +4672,10 @@ msgstr "Réglages d'export"
 #: templates/menu_recording.html:7
 msgid ""
 "Enregistrés automatiquement avec les préférences de l'application, pas "
-"dans le profil."
+"dans le thème."
 msgstr ""
 "Enregistrés automatiquement avec les préférences de l'application, pas "
-"dans le profil."
+"dans le thème."
 
 #: templates/menu_recording.html:21
 msgid ""
@@ -4956,13 +4952,15 @@ msgstr "Enregistrer sous…"
 msgid ""
 "Un thème ne contient que des réglages visuels : il ne touche ni aux "
 "dates, ni au rythme, ni à la musique. Les réglages marqués « Thème » ne "
-"sont conservés qu'après un clic sur « Sauvegarder ». Un « • » à côté du "
-"nom du thème signale des modifications en attente."
+"sont conservés qu'après un clic sur « Sauvegarder ». L'indication « "
+"Modifications non enregistrées » à côté du sélecteur signale des "
+"changements en attente."
 msgstr ""
 "Un thème ne contient que des réglages visuels : il ne touche ni aux "
 "dates, ni au rythme, ni à la musique. Les réglages marqués « Thème » ne "
-"sont conservés qu'après un clic sur « Sauvegarder ». Un « • » à côté du "
-"nom du thème signale des modifications en attente."
+"sont conservés qu'après un clic sur « Sauvegarder ». L'indication « "
+"Modifications non enregistrées » à côté du sélecteur signale des "
+"changements en attente."
 
 #: templates/menu_style.html:60
 msgid "Créer un thème avec les réglages actuels"
@@ -5062,10 +5060,6 @@ msgstr ""
 msgid "Titre et informations"
 msgstr "Titre et informations"
 
-#: templates/menu_style.html:232
-msgid "Nouveau thème"
-msgstr "Nouveau thème"
-
 #: templates/menu_style.html:237 templates/menu_style.html:238
 msgid "Nom du thème"
 msgstr "Nom du thème"
@@ -5080,20 +5074,20 @@ msgid "Cette action est définitive"
 msgstr "Cette action est définitive"
 
 #: templates/menu_style.html:268
-msgid "Êtes-vous sûr de vouloir supprimer ce profil ?"
-msgstr "Êtes-vous sûr de vouloir supprimer ce profil ?"
+msgid "Êtes-vous sûr de vouloir supprimer ce thème ?"
+msgstr "Êtes-vous sûr de vouloir supprimer ce thème ?"
 
 #: templates/menu_style.html:286
 msgid "Confirmer la réinitialisation"
 msgstr "Confirmer la réinitialisation"
 
 #: templates/menu_style.html:293
-msgid "Êtes-vous sûr de vouloir réinitialiser ce profil aux valeurs par défaut ?"
-msgstr "Êtes-vous sûr de vouloir réinitialiser ce profil aux valeurs par défaut ?"
+msgid "Êtes-vous sûr de vouloir réinitialiser ce thème aux valeurs par défaut ?"
+msgstr "Êtes-vous sûr de vouloir réinitialiser ce thème aux valeurs par défaut ?"
 
 #: templates/menu_style.html:315
-msgid "Le profil actif a été modifié"
-msgstr "Le profil actif a été modifié"
+msgid "Le thème actif a été modifié"
+msgstr "Le thème actif a été modifié"
 
 #: templates/menu_style.html:321
 msgid "Vous avez des modifications non enregistrées."

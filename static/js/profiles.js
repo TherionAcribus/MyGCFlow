@@ -215,11 +215,11 @@ class ProfileManager {
                 const data = await resp.json();
                 if (!resp.ok || !data.success) throw new Error(data.message || pkg.t('Import échoué'));
 
-                this.showToast(pkg.t('Profil "${name}" importé', { name: data.name }), 'green');
+                this.showToast(pkg.t('Thème "${name}" importé', { name: data.name }), 'green');
                 await this.loadProfilesList();
             } catch (e) {
                 console.error('Import error', e);
-                this.showToast(pkg.t('Erreur import du profil'), 'red');
+                this.showToast(pkg.t('Erreur import du thème'), 'red');
             } finally {
                 if (inputImport) inputImport.value = '';
             }
@@ -295,7 +295,7 @@ class ProfileManager {
             // La liste des profils est inchangée : déplacer le marquage "ACTIF"
             // suffit, inutile de refetcher /api/profiles et de reconstruire le DOM.
             this._updateActiveProfileHighlight();
-            if (!quiet) this.showToast(pkg.t('Profil "${name}" chargé', { name }), 'green');
+            if (!quiet) this.showToast(pkg.t('Thème "${name}" chargé', { name }), 'green');
             return true;
         } catch (error) {
             console.error('❌ Erreur chargement profil:', error);
@@ -320,7 +320,7 @@ class ProfileManager {
 
             if (result.success && !quiet) {
                 dbgProfiles('Profil sauvegardé avec succès:', profileData.name);
-                this.showToast(pkg.t('Profil "${name}" sauvegardé', { name: profileData.name }), 'green');
+                this.showToast(pkg.t('Thème "${name}" sauvegardé', { name: profileData.name }), 'green');
                 this.loadProfilesList(); // Rafraîchir la liste
             }
             return result;
@@ -358,7 +358,7 @@ class ProfileManager {
                 // Le profil existe mais est resté aux valeurs par défaut : le
                 // dire, sinon l'écran (inchangé) laisse croire au succès.
                 this.showToast(
-                    pkg.t('Profil "${name}" créé, mais l\'enregistrement des réglages a échoué', { name: result.name }),
+                    pkg.t('Thème "${name}" créé, mais l\'enregistrement des réglages a échoué', { name: result.name }),
                     'red'
                 );
                 this._updateActiveProfileHighlight();
@@ -368,7 +368,7 @@ class ProfileManager {
             this._markSaved();
             await this._rememberActiveProfile(this.currentProfile.uid);
             this._updateActiveProfileHighlight();
-            this.showToast(pkg.t('Profil "${name}" créé', { name: result.name }), 'green');
+            this.showToast(pkg.t('Thème "${name}" créé', { name: result.name }), 'green');
             return true;
         } catch (error) {
             console.error('Erreur création profil:', error);
@@ -383,7 +383,7 @@ class ProfileManager {
             });
             if (result.success) {
                 // Le serveur peut avoir choisi un nom différent en cas de collision (ex: "X (1)")
-                this.showToast(pkg.t('Profil dupliqué: "${name}"', { name: result.name }), 'green');
+                this.showToast(pkg.t('Thème dupliqué: "${name}"', { name: result.name }), 'green');
                 this.loadProfilesList();
             }
         } catch (error) {
@@ -395,7 +395,7 @@ class ProfileManager {
         try {
             const result = await this.apiCall(`/api/profiles/${encodeURIComponent(name)}`, 'DELETE');
             if (result.success) {
-                this.showToast(pkg.t('Profil "${name}" supprimé', { name }), 'orange');
+                this.showToast(pkg.t('Thème "${name}" supprimé', { name }), 'orange');
                 // Le profil par défaut mémorisé n'existe plus : le serveur ne
                 // saura plus résoudre son UID en nom.
                 if (this._defaultProfileName === name) {
@@ -450,7 +450,7 @@ class ProfileManager {
         try {
             const result = await this.apiCall(`/api/profiles/${encodeURIComponent(name)}/reset`, 'POST');
             if (result.success) {
-                this.showToast(pkg.t('Profil "${name}" réinitialisé', { name }), 'blue');
+                this.showToast(pkg.t('Thème "${name}" réinitialisé', { name }), 'blue');
                 if (this.currentProfile && this.currentProfile.name === name) {
                     // L'utilisateur vient de confirmer la réinitialisation : les
                     // modifications en attente sur ce thème sont abandonnées.
@@ -485,10 +485,10 @@ class ProfileManager {
             a.click();
             a.remove();
             URL.revokeObjectURL(url);
-            this.showToast(pkg.t('Profil "${name}" exporté', { name }), 'green');
+            this.showToast(pkg.t('Thème "${name}" exporté', { name }), 'green');
         } catch (e) {
             console.error('Export error', e);
-            this.showToast(pkg.t('Erreur export du profil'), 'red');
+            this.showToast(pkg.t('Erreur export du thème'), 'red');
         }
     }
 
@@ -508,7 +508,7 @@ class ProfileManager {
         try {
             const profile = await this.apiCall(`/api/profiles/${encodeURIComponent(profileName)}`);
             if (!profile || !profile.uid) {
-                throw new Error(pkg.t('Profil introuvable ou UID manquant'));
+                throw new Error(pkg.t('Thème introuvable ou UID manquant'));
             }
 
             // Appliquer immédiatement le profil
@@ -521,12 +521,12 @@ class ProfileManager {
             const result = await this.saveAppSettings({ default_profile_uid: profile.uid });
 
             if (!result.success) {
-                throw new Error(pkg.t('Échec de la sauvegarde du profil par défaut'));
+                throw new Error(pkg.t('Échec de la sauvegarde du thème par défaut'));
             }
 
             this._defaultProfileName = profile.name;
 
-            this.showToast(pkg.t('Profil "${name}" défini comme profil par défaut', { name: profile.name }), 'green');
+            this.showToast(pkg.t('Thème "${name}" défini comme thème par défaut', { name: profile.name }), 'green');
 
             // Rafraîchir les éléments UI dépendants : la liste des profils n'a
             // pas changé, seules la valeur du sélecteur et la position des
@@ -536,7 +536,7 @@ class ProfileManager {
             this._updateDefaultProfileHighlight();
         } catch (error) {
             console.error('❌ Erreur définition profil par défaut:', error);
-            this.showToast(pkg.t('Erreur lors de la définition du profil par défaut'), 'red');
+            this.showToast(pkg.t('Erreur lors de la définition du thème par défaut'), 'red');
         }
     }
 
@@ -550,7 +550,7 @@ class ProfileManager {
         if (this.profilesList.length === 0) {
             const empty = document.createElement('div');
             empty.className = 'list-group-item text-center';
-            empty.textContent = pkg.t('Aucun profil');
+            empty.textContent = pkg.t('Aucun thème');
             container.appendChild(empty);
             // Le sélecteur compact doit aussi refléter la liste vide (option
             // « Aucun profil », contrôle désactivé) — voir le rendu normal.
@@ -690,7 +690,7 @@ class ProfileManager {
 
         const star = document.createElement('i');
         star.className = 'ti ti-star-filled ms-1 profile-default-star';
-        star.title = pkg.t('Profil par défaut');
+        star.title = pkg.t('Thème par défaut');
         nameWrap.querySelector('.profile-name')?.after(star);
     }
 
@@ -728,20 +728,22 @@ class ProfileManager {
         this.updateCurrentProfileIndicator();
     }
 
+    // Indicateur d'état à côté du sélecteur : masqué quand le thème actif est
+    // enregistré (le sélecteur affiche déjà son nom), il ne s'allume que pour
+    // signaler des modifications non enregistrées — texte explicite plutôt que
+    // le « • » cryptique accolé au nom, qui reste utilisé dans les options du
+    // sélecteur pour marquer QUEL thème de la liste est modifié.
     updateCurrentProfileIndicator() {
         const indicator = document.getElementById('current-profile-indicator');
         if (indicator) {
-            if (this.currentProfile && this.currentProfile.name) {
-                const suffix = this.hasUnsavedChanges ? ' •' : '';
-                indicator.textContent = this.currentProfile.name + suffix;
+            if (this.currentProfile && this.currentProfile.name && this.hasUnsavedChanges) {
+                indicator.textContent = pkg.t('Modifications non enregistrées');
                 indicator.classList.add('active');
-                indicator.classList.toggle('unsaved', !!this.hasUnsavedChanges);
-                indicator.title = this.hasUnsavedChanges ? pkg.t('Modifications non enregistrées') : '';
+                indicator.classList.add('unsaved');
             } else {
                 indicator.textContent = '';
                 indicator.classList.remove('active');
                 indicator.classList.remove('unsaved');
-                indicator.title = '';
             }
         }
         this._syncProfileSelect();
@@ -765,7 +767,7 @@ class ProfileManager {
         if (this.profilesList.length === 0) {
             const opt = document.createElement('option');
             opt.value = '';
-            opt.textContent = pkg.t('Aucun profil');
+            opt.textContent = pkg.t('Aucun thème');
             opt.selected = true;
             select.appendChild(opt);
             select.disabled = true;
@@ -776,7 +778,7 @@ class ProfileManager {
         if (!current) {
             const opt = document.createElement('option');
             opt.value = '';
-            opt.textContent = pkg.t('Choisir un profil');
+            opt.textContent = pkg.t('Choisir un thème');
             opt.selected = true;
             opt.disabled = true;
             select.appendChild(opt);
@@ -948,7 +950,7 @@ class ProfileManager {
         const message = document.getElementById('unsaved-changes-message');
         if (message) {
             message.textContent = this.currentProfile?.name
-                ? pkg.t('Le profil "${name}" contient des modifications non enregistrées. Que voulez-vous faire ?', { name: this.currentProfile.name })
+                ? pkg.t('Le thème "${name}" contient des modifications non enregistrées. Que voulez-vous faire ?', { name: this.currentProfile.name })
                 : pkg.t('Vous avez des modifications non enregistrées. Que voulez-vous faire ?');
         }
 
@@ -1117,11 +1119,11 @@ class ProfileManager {
 
             // Cf. loadProfile() : seul le marquage "ACTIF" change ici.
             this._updateActiveProfileHighlight();
-            if (!quiet) this.showToast(pkg.t('Profil "${name}" chargé', { name: profile.name }), 'green');
+            if (!quiet) this.showToast(pkg.t('Thème "${name}" chargé', { name: profile.name }), 'green');
             return true;
         } catch (error) {
             console.error('❌ [LOAD_PROFILE] Erreur chargement profil par UUID:', error);
-            if (!quiet) this.showToast(pkg.t('Erreur lors du chargement du profil par défaut'), 'red');
+            if (!quiet) this.showToast(pkg.t('Erreur lors du chargement du thème par défaut'), 'red');
             return false;
         }
     }
@@ -1148,7 +1150,7 @@ class ProfileManager {
             // Ajouter l'option "Aucun" (pas de profil par défaut)
             const noneOption = document.createElement('option');
             noneOption.value = '';
-            noneOption.textContent = pkg.t('Aucun profil par défaut');
+            noneOption.textContent = pkg.t('Aucun thème par défaut');
             selector.appendChild(noneOption);
 
             // Ajouter tous les profils disponibles
@@ -1234,8 +1236,8 @@ class ProfileManager {
             this._updateDefaultProfileHighlight();
             this.showToast(
                 appliedProfileName ?
-                    pkg.t('Profil "${selectedProfile}" appliqué et défini comme profil par défaut', { selectedProfile: appliedProfileName }) :
-                    pkg.t('Aucun profil par défaut défini'),
+                    pkg.t('Thème "${selectedProfile}" appliqué et défini comme thème par défaut', { selectedProfile: appliedProfileName }) :
+                    pkg.t('Aucun thème par défaut défini'),
                 appliedProfileName ? 'green' : 'blue'
             );
         } else {
@@ -1401,7 +1403,7 @@ class ProfileManager {
             console.warn('⚠️ [STARTUP_PROFILE] Aucun profil chargé, démarrage sans profil actif');
             this._setNoActiveProfile();
             this.showToast(
-                pkg.t('Le profil n\'a pas pu être chargé : aucun profil n\'est actif.'),
+                pkg.t('Le thème n\'a pas pu être chargé : aucun thème n\'est actif.'),
                 'orange'
             );
         } catch (error) {
@@ -1750,7 +1752,7 @@ class ProfileManager {
                 // pkg.t() est appelé hors du template literal : pybabel ne
                 // voit pas les appels imbriqués dans une interpolation ${…}.
                 option_create: (data, escape) => {
-                    const label = pkg.t('Créer le profil "${name}"', { name: data.input });
+                    const label = pkg.t('Créer le thème "${name}"', { name: data.input });
                     return `<div class="create">${escape(label)}</div>`;
                 },
             },
@@ -1804,7 +1806,7 @@ class ProfileManager {
         const check = this._validateProfileName(name, 'saveas');
         if (!check.valid) {
             this._updateSaveAsFeedback();
-            if (!name) this.showToast(pkg.t('Veuillez saisir un nom de profil'), 'orange');
+            if (!name) this.showToast(pkg.t('Veuillez saisir un nom de thème'), 'orange');
             return;
         }
 
@@ -1857,7 +1859,7 @@ class ProfileManager {
 
         const message = document.getElementById('overwrite-profile-message');
         if (message) {
-            message.textContent = pkg.t('Le profil « ${name} » existe déjà. Les réglages affichés remplaceront ceux enregistrés.', { name: profileName });
+            message.textContent = pkg.t('Le thème « ${name} » existe déjà. Les réglages affichés remplaceront ceux enregistrés.', { name: profileName });
         }
 
         return new Promise(resolve => {
@@ -1941,18 +1943,18 @@ class ProfileManager {
     // repartait de zéro et que le travail en cours n'était pas concerné.
     showNewProfileModal({ saveAs = false } = {}) {
         this._showProfileNameModal({
-            title: saveAs ? pkg.t('Enregistrer dans un nouveau profil') : pkg.t('Nouveau profil'),
+            title: saveAs ? pkg.t('Enregistrer dans un nouveau thème') : pkg.t('Nouveau thème'),
             value: '',
             // Pas de simple « Enregistrer » : cette chaîne est déjà celle du
             // bouton d'enregistrement vidéo (« Record » en anglais).
-            confirmLabel: saveAs ? pkg.t('Enregistrer le profil') : pkg.t('Créer'),
+            confirmLabel: saveAs ? pkg.t('Enregistrer le thème') : pkg.t('Créer'),
             action: 'create',
         });
     }
 
     renameProfile(profileName) {
         this._showProfileNameModal({
-            title: pkg.t('Renommer le profil'),
+            title: pkg.t('Renommer le thème'),
             value: profileName,
             confirmLabel: pkg.t('Renommer'),
             action: 'rename',
@@ -1967,7 +1969,7 @@ class ProfileManager {
     // donc exactement le même résultat qu'avant.
     showDuplicateProfileModal(profileName) {
         this._showProfileNameModal({
-            title: pkg.t('Dupliquer le profil'),
+            title: pkg.t('Dupliquer le thème'),
             value: this._suggestDuplicateName(profileName),
             confirmLabel: pkg.t('Dupliquer'),
             action: 'duplicate',
@@ -2040,7 +2042,7 @@ class ProfileManager {
                     return {
                         valid: true,
                         level: 'none',
-                        message: pkg.t('« ${name} » est le profil actif : ses réglages seront mis à jour', { name: conflict }),
+                        message: pkg.t('« ${name} » est le thème actif : ses réglages seront mis à jour', { name: conflict }),
                     };
                 }
                 return {
@@ -2053,7 +2055,7 @@ class ProfileManager {
                 valid: false,
                 level: 'error',
                 message: conflict === name
-                    ? pkg.t('Un profil nommé « ${name} » existe déjà', { name })
+                    ? pkg.t('Un thème nommé « ${name} » existe déjà', { name })
                     : pkg.t('Ce nom est déjà pris par « ${conflict} » : les deux se réduisent au fichier « ${key} »', { conflict, key }),
             };
         }
@@ -2063,7 +2065,7 @@ class ProfileManager {
             return {
                 valid: true,
                 level: 'warning',
-                message: pkg.t('Caractères ignorés (${dropped}) : le profil sera enregistré sous « ${key} »', { dropped, key }),
+                message: pkg.t('Caractères ignorés (${dropped}) : le thème sera enregistré sous « ${key} »', { dropped, key }),
             };
         }
 
@@ -2112,7 +2114,7 @@ class ProfileManager {
         // frappe (import, création dans un autre onglet).
         const check = this._updateProfileNameFeedback();
         if (check && !check.valid) {
-            if (!name) this.showToast(pkg.t('Veuillez saisir un nom de profil'), 'orange');
+            if (!name) this.showToast(pkg.t('Veuillez saisir un nom de thème'), 'orange');
             return;
         }
 
@@ -2163,7 +2165,7 @@ class ProfileManager {
 
                 this.populateDefaultProfileSelector();
 
-                this.showToast(pkg.t('Profil renommé en "${name}"', { name: result.name }), 'green');
+                this.showToast(pkg.t('Thème renommé en "${name}"', { name: result.name }), 'green');
             }
         } catch (error) {
             // apiCall affiche déjà un toast d'erreur avec le message du serveur
@@ -2176,7 +2178,7 @@ class ProfileManager {
         const message = document.getElementById('delete-profile-message');
         const confirmBtn = document.getElementById('btn-confirm-delete');
 
-        message.textContent = pkg.t('Êtes-vous sûr de vouloir supprimer le profil "${name}" ?', { name: profileName });
+        message.textContent = pkg.t('Êtes-vous sûr de vouloir supprimer le thème "${name}" ?', { name: profileName });
         confirmBtn.dataset.profileName = profileName;
 
         showBsModal(modal);
@@ -2195,7 +2197,7 @@ class ProfileManager {
         const message = document.getElementById('reset-profile-message');
         const confirmBtn = document.getElementById('btn-confirm-reset');
 
-        message.textContent = pkg.t('Êtes-vous sûr de vouloir réinitialiser le profil "${name}" aux valeurs par défaut ?', { name: profileName });
+        message.textContent = pkg.t('Êtes-vous sûr de vouloir réinitialiser le thème "${name}" aux valeurs par défaut ?', { name: profileName });
         confirmBtn.dataset.profileName = profileName;
 
         showBsModal(modal);
