@@ -24,7 +24,7 @@ COORDINATE_ORDER_VERSION = 2
 # que celui qu'elle a déjà vu : supprimer volontairement un ancien exemple ne le
 # fait donc pas revenir lors de l'ajout d'une nouvelle collection.
 EXAMPLE_PROFILE_BATCHES = {
-    2: {"Équilibré", "Cinématique"},
+    2: {"Épure", "Cinématique"},
     3: {
         "Encre & Papier",
         "Aurore Polaire",
@@ -1352,8 +1352,11 @@ class SettingsManager:
                     border_color_type="fix",
                     mode="icone",
                     icon_set="geocaching",
-                    icon_size=22
+                    icon_size=22,
+                    appear_animation=True
                 ),
+                # Pas de flash : seule l'apparition animée des icônes donne le
+                # mouvement.
                 flash=FlashOptions(
                     mode="none",
                     size=35,
@@ -1404,13 +1407,16 @@ class SettingsManager:
                     border_size=2,
                     fill_color_type="fix",
                     border_color_type="fix",
-                    mode="vectoriel"
+                    mode="vectoriel",
+                    appear_animation=True,
+                    recent_glow_days=30
                 ),
                 flash=FlashOptions(
-                    mode="none",
-                    size=40,
+                    mode="implode",
+                    duration=800,
+                    size=38,
                     color="#8b3a2e",
-                    color_type="none"
+                    color_type="fix"
                 ),
                 infos=build_infos(
                     "Atlas Geocaching",
@@ -1447,19 +1453,19 @@ class SettingsManager:
                     toner_options=TonerMapOptions(variant="light")
                 ),
                 points=PointStyle(
-                    size=10,
+                    size=7,
                     color="#ff6b35",
                     shape="circle",
                     halo=True,
-                    border_color="#ffffff",
-                    border_size=3,
+                    border_color="#111827",
+                    border_size=2,
                     fill_color_type="gc",
                     border_color_type="fix",
                     mode="vectoriel"
                 ),
                 flash=FlashOptions(
                     mode="square",
-                    size=90,
+                    size=50,
                     color="#ffd166",
                     color_type="fix"
                 ),
@@ -1468,9 +1474,9 @@ class SettingsManager:
                     """
                     color: #ffffff;
                     background: rgba(17, 24, 39, 0.85);
-                    padding: 14px 18px;
-                    border-radius: 12px;
-                    font-size: 32px;
+                    padding: 10px 16px;
+                    border-radius: 10px;
+                    font-size: 22px;
                     font-weight: 800;
                     letter-spacing: 1px;
                     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
@@ -1478,8 +1484,8 @@ class SettingsManager:
                     """
                     color: #111827;
                     background: rgba(255, 255, 255, 0.92);
-                    padding: 10px 14px;
-                    border-radius: 10px;
+                    padding: 8px 12px;
+                    border-radius: 8px;
                     border-left: 4px solid #ff6b35;
                     box-shadow: 0 10px 24px rgba(17, 24, 39, 0.12);
                     """
@@ -1540,8 +1546,9 @@ class SettingsManager:
             # Les deux profils ci-dessous sont des styles d'animation (EXAMPLES_VERSION 2) :
             # ils mettent en scène le flash « impulsion » et l'apparition animée des
             # points, éteints par défaut ailleurs.
-            "Équilibré": MapProfile(
-                name="Équilibré",
+            # Anciennement « Équilibré ».
+            "Épure": MapProfile(
+                name="Épure",
                 map=MapOptions(
                     tile_provider="stamenToner",
                     vector_options=VectorMapOptions(
@@ -1559,8 +1566,8 @@ class SettingsManager:
                     color="#0ea5e9",
                     shape="circle",
                     halo=True,
-                    border_color="#ffffff",
-                    border_size=1,
+                    border_color="#000000",
+                    border_size=3,
                     fill_color_type="gc",
                     border_color_type="fix",
                     mode="vectoriel",
@@ -1673,7 +1680,7 @@ class SettingsManager:
                     toner_options=TonerMapOptions(variant="light")
                 ),
                 points=PointStyle(
-                    size=5,
+                    size=3,
                     color="#1c1917",
                     shape="circle",
                     halo=False,
@@ -1901,43 +1908,54 @@ class SettingsManager:
                     mode="icone",
                     icon_set="geocaching",
                     icon_size=18,
+                    appear_animation=True,
                     recent_glow_days=90
                 ),
+                # Flash « cible » : le point de passage atteint, aux couleurs
+                # du type de cache.
                 flash=FlashOptions(
-                    mode="triangle",
-                    size=42,
-                    color="#65a30d",
+                    mode="target",
+                    duration=900,
+                    size=46,
+                    color="#c2410c",
                     color_type="gc"
                 ),
+                # Le sentier : tirets rouille (le balisage), courbes douces,
+                # arcs pour les grands sauts, et tout le parcours reste tracé.
                 trail=TrailOptions(
                     enabled=True,
+                    routing="clusters",
+                    jump_style="arc",
                     curve="smooth",
-                    color="#b45309",
-                    width=3,
-                    opacity=85,
-                    line_style="dotted",
+                    color="#c2410c",
+                    width=4,
+                    opacity=90,
+                    line_style="dashed",
                     effect="none",
-                    head="dot",
+                    head="pulse",
                     persist_days=0
                 ),
                 infos=build_infos(
                     "Carnet des sentiers",
                     """
-                    color: #365314;
-                    background: rgba(247, 254, 231, 0.92);
-                    padding: 10px 15px;
-                    border-radius: 8px;
-                    border: 1px solid #84cc16;
+                    color: #1c1917;
+                    background: rgba(255, 255, 255, 0.94);
+                    padding: 10px 16px 10px 14px;
+                    border-radius: 6px;
+                    border-left: 6px solid #c2410c;
                     font-family: Georgia;
                     font-weight: 700;
-                    box-shadow: 0 8px 18px rgba(63, 98, 18, 0.16);
+                    letter-spacing: 0.3px;
+                    box-shadow: 0 8px 20px rgba(28, 25, 23, 0.2);
                     """,
                     """
-                    color: #365314;
-                    background: rgba(247, 254, 231, 0.9);
+                    color: #1c1917;
+                    background: rgba(255, 255, 255, 0.92);
                     padding: 8px 12px;
-                    border-radius: 8px;
-                    border-left: 4px solid #65a30d;
+                    border-radius: 6px;
+                    border-bottom: 3px solid #c2410c;
+                    font-variant-numeric: tabular-nums;
+                    box-shadow: 0 6px 16px rgba(28, 25, 23, 0.14);
                     """
                 )
             ),

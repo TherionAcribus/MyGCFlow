@@ -87,7 +87,7 @@ class ExampleProfileSeedingTests(unittest.TestCase):
 
         # … et les lots parus depuis (thèmes du mode Évolution).
         self.assertEqual(set(profiles), EXAMPLE_PROFILE_BATCHES[3] | EXAMPLE_PROFILE_BATCHES[4])
-        self.assertNotIn("Équilibré", profiles)
+        self.assertNotIn("Épure", profiles)
         self.assertNotIn("Cinématique", profiles)
 
     def test_a_new_example_deleted_by_the_user_does_not_come_back(self):
@@ -111,12 +111,12 @@ class ExampleProfileSeedingTests(unittest.TestCase):
 
     def test_the_animation_styles_use_the_new_flash_and_appearance(self):
         manager = SettingsManager()
-        balanced = manager.load_profile("Équilibré")
+        balanced = manager.load_profile("Épure")
         cinematic = manager.load_profile("Cinématique")
 
         self.assertEqual(balanced.flash.mode, "impulse")
         self.assertEqual(cinematic.flash.mode, "impulse")
-        # « Équilibré » vise les grosses bases : pas d'apparition animée.
+        # « Épure » vise les grosses bases : pas d'apparition animée.
         self.assertFalse(balanced.points.appear_animation)
         self.assertTrue(cinematic.points.appear_animation)
         # « Cinématique » met aussi en avant les caches des 30 derniers jours.
@@ -143,7 +143,7 @@ class ExampleProfileSeedingTests(unittest.TestCase):
         )
         self.assertEqual(
             {profile.flash.mode for profile in collection},
-            {"none", "echo", "star", "square", "triangle"},
+            {"none", "echo", "star", "square", "target"},
         )
         # Aucun réglage temporel dans un thème : rythme, suivi de caméra et
         # dates vivent dans les préférences globales (AppSettings.animation).

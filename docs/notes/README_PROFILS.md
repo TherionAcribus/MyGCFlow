@@ -162,20 +162,21 @@ ceux qui les avaient déjà reçus.
 
 ### 🎨 **Carnet Aquarelle**
 - **Carte** : Watercolor centrée sur la France (zoom 6)
-- **Points** : Icônes geocaching avec encarts style carnet
-- **Animation** : Activée, légèrement ralentie
+- **Points** : Icônes geocaching avec encarts style carnet, apparition animée
+- **Flash** : Aucun — seule l'apparition des icônes donne le mouvement
 - **Usage** : Ambiance voyage, douce et illustrative
 
 ### 🗺️ **Atlas Vintage**
 - **Carte** : Carte vectorielle en palette papier ancien, centrée sur Lyon (zoom 6)
-- **Points** : Triangles terracotta avec bordure crème
-- **Animation** : Activée, discrète
-- **Usage** : Rendu cartographique rétro, adapté aux exports statiques
+- **Points** : Triangles terracotta avec bordure crème, apparition animée et
+  persistance sur 30 jours
+- **Flash** : Implosion terracotta (800 ms, 38 px), comme un tampon qui se pose
+- **Usage** : Rendu cartographique rétro
 
 ### 📣 **Présentation Impact**
 - **Carte** : OpenStreetMap vue large sur la France (zoom 5)
-- **Points** : Gros cercles aux couleurs GC avec halo blanc et flash carré ample
-- **Animation** : Activée, vitesse doublée
+- **Points** : Cercles de 7 px aux couleurs GC, cernés de sombre
+- **Flash** : Carré jaune (50 px) ; titre en 22 px
 - **Usage** : Profil conçu pour présentation, projection ou vidéo
 
 ### 🎉 **Fête Confetti**
@@ -184,9 +185,9 @@ ceux qui les avaient déjà reçus.
 - **Animation** : Activée, enjouée
 - **Usage** : Le plus multicolore, esprit festif
 
-### ⚖️ **Équilibré**
+### ⚖️ **Épure** (anciennement « Équilibré »)
 - **Carte** : Stamen Toner clair centrée sur Paris (zoom 6)
-- **Points** : Petits cercles aux couleurs GC, bordure blanche fine
+- **Points** : Petits cercles aux couleurs GC, bordure noire de 3 px
 - **Flash** : Impulsion courte (600 ms, 40 px) aux couleurs GC
 - **Usage** : Grosses bases — la carte reste lisible quand les points se densifient
 
@@ -201,7 +202,7 @@ ceux qui les avaient déjà reçus.
 
 ### 🖋️ **Encre & Papier**
 - **Carte** : Stamen Toner clair, vue large sur la France
-- **Points** : Cercles noirs minimalistes de 5 px, sans halo ni flash
+- **Points** : Cercles noirs minimalistes de 3 px, sans halo ni flash
 - **Animation** : Désactivée pour privilégier la composition statique
 - **Usage** : Exports sobres, impressions et présentations éditoriales
 
@@ -227,10 +228,12 @@ ceux qui les avaient déjà reçus.
 
 ### 🥾 **Randonnée Topo**
 - **Carte** : OpenStreetMap centrée sur les Alpes
-- **Points** : Icônes geocaching compactes de 18 px, persistance sur 90 jours
-- **Trajet** : Activé — sentier pointillé brun, tout le parcours reste affiché
-- **Animation** : Calme, flash triangulaire et suivi de caméra
-- **Usage** : Parcours régionaux et récits d'itinérance
+- **Points** : Icônes geocaching compactes de 18 px, apparition animée,
+  persistance sur 90 jours
+- **Trajet** : Activé — sentier en tirets rouille (4 px), courbes douces, arcs
+  pour les grands sauts, tête pulsée ; tout le parcours reste affiché
+- **Flash** : Cible aux couleurs GC (900 ms, 46 px)
+- **Usage** : Le thème vitrine — parcours régionaux et récits d'itinérance
 
 ### Extension
 
