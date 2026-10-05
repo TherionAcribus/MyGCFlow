@@ -142,6 +142,14 @@
             </label>
         </div>
     </div>
+    {# Erreur bloquante : sans destination cochée, la vidéo de capture rapide
+       serait produite puis perdue. Pilotée par updateRecordDestinationState
+       (ui.js) — masquée en mode images, comme les cases (.mediarecorder-only). #}
+    <div class="col-12 mediarecorder-only">
+        <div id="recordDestinationError" class="alert alert-danger py-2 px-3 mb-0 small" role="alert" hidden>
+            {{ _("La vidéo ne sera conservée nulle part : cochez « Copier dans le dossier Vidéos » et/ou « Télécharger une copie ».") }}
+        </div>
+    </div>
 </div>
 
 <div class="anim-section-divider mt-3">

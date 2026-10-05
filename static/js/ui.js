@@ -115,6 +115,11 @@ const isMusicLocked = () => pkg.options?.animation?.rhythmMode === 'music';
 // invalide (cf. updateDataAvailabilityUI).
 var timingInputsValid = false;
 var lastTimingPlan = null;
+// En capture rapide, au moins une destination (dossier Vidéos et/ou
+// téléchargement) est requise : sinon la vidéo serait produite puis perdue.
+// Recalculé par updateRecordDestinationState, consulté par
+// updateDataAvailabilityUI pour bloquer l'export.
+var recordDestinationValid = true;
 // Cache des durées audio lues (clé = identité du fichier) et jeton anti-course :
 // une lecture de métadonnées démarrée pour le fichier A ne doit pas écraser
 // l'état quand l'utilisateur a depuis choisi le fichier B.
@@ -2204,6 +2209,9 @@ function initOptionsUI() {
         if (cbRecordUpload) cbRecordUpload.checked = !!(pkg.options.record?.mediaRecorder?.uploadToServer);
         if (cbRecordDownload) cbRecordDownload.checked = !!(pkg.options.record?.mediaRecorder?.downloadLocal);
         if (cbRecordNormalize) cbRecordNormalize.checked = !!(pkg.options.record?.mediaRecorder?.offlineNormalization ?? true);
+        // Ré-afficher l'erreur de destination dès l'application des réglages
+        // restaurés (ex. préférences avec les deux destinations décochées).
+        updateRecordDestinationState();
 
         // Vérifier le format sauvegardé et l'état initial de normalize
         if (selectRecordMime && typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported) {
@@ -2515,12 +2523,11 @@ function changeRecordValues(field = undefined) {
             pkg.options.record.mediaRecorder.offlineNormalization = !!cbRecordNormalize.checked;
         }
 
-        if (cbRecordUpload && cbRecordDownload && !cbRecordUpload.checked && !cbRecordDownload.checked) {
-            pkg.showToast && pkg.showToast(
-                t('La vidéo ne sera ni téléchargée ni uploadée : elle sera perdue après l\'enregistrement.'),
-                'warning', t('Aucune destination'), 5000
-            );
-        }
+        // Destination requise en capture rapide : l'erreur persistante près
+        // des cases remplace l'ancien toast, et l'export est bloqué tant
+        // qu'aucune n'est cochée.
+        updateRecordDestinationState();
+        updateDataAvailabilityUI();
 
         // ------- AUDIO UTILISATEUR -------
         try {
@@ -4398,7 +4405,9 @@ function clickStartAnimation(){
 }
 
 function clickRecordAnimation(){
-    if (!hasAnimationData()) return;
+    // Garde défensive : les boutons sont déjà désactivés sans destination,
+    // mais un clic forcé ou un relais ne doit pas produire une vidéo perdue.
+    if (!hasAnimationData() || !recordDestinationValid) return;
     // Vide la source vectorielle avant de démarrer l'animation
     pkg.recordAnimation();
     showPauseStopButtons();
@@ -4771,6 +4780,18 @@ function updateExportSummary() {
     parts.push(t('destination : ${d}', { d: destination }));
 
     el.textContent = parts.join(' · ');
+}
+
+// Au moins une destination est requise en capture rapide : sans copie dans le
+// dossier Vidéos ni téléchargement, la vidéo serait produite puis perdue.
+// Le mode images n'est pas concerné (assemblage systématique dans Vidéos) ;
+// les cases sont d'ailleurs masquées (.mediarecorder-only).
+function updateRecordDestinationState() {
+    if (!selectRecordMode || !cbRecordUpload || !cbRecordDownload) return;
+    const isMediaRecorder = selectRecordMode.value === 'mediarecorder';
+    recordDestinationValid = !isMediaRecorder || cbRecordUpload.checked || cbRecordDownload.checked;
+    const err = document.getElementById('recordDestinationError');
+    if (err) err.hidden = recordDestinationValid;
 }
 
 // Erreurs bloquantes (boutons désactivés) et avertissements (plan appliqué
@@ -6532,12 +6553,15 @@ export function updateDataAvailabilityUI({ dataResolved = false } = {}) {
 
     const btnStart = document.getElementById('btnStartAnimation');
     const btnRecord = document.getElementById('btnRecordAnimation');
+    updateRecordDestinationState();
     // Un timing invalide (champ vide, hors bornes, plage de dates incohérente,
     // mode musique sans fichier) bloque le lancement tant qu'il n'est pas
     // expliqué et corrigé — on ne démarre jamais sur un plan invalide.
     const canRun = hasData && timingInputsValid;
     if (btnStart) btnStart.disabled = !canRun;
-    if (btnRecord) btnRecord.disabled = !canRun;
+    // L'export, lui, exige en plus une destination en capture rapide : la
+    // prévisualisation ne produit pas de fichier, elle garde seulement canRun.
+    if (btnRecord) btnRecord.disabled = !canRun || !recordDestinationValid;
     // Titre/infos de la carte : re-évaluer quand l'état « base chargée »
     // change — syncOverlayVisibility les masque tant qu'il n'y a pas de base.
     pkg.syncOverlayVisibility?.();
@@ -6598,6 +6622,8 @@ function updateControlBar() {
         if (btnRecordBar) {
             dbgUi("    btnRecordBar avant:", window.getComputedStyle(btnRecordBar).display);
             btnRecordBar.style.setProperty('display', hasData ? 'flex' : 'none', 'important');
+            // Même blocage que le bouton Export d'origine (timing, destination).
+            btnRecordBar.disabled = btnRecordAnimation ? btnRecordAnimation.disabled : true;
             dbgUi("    btnRecordBar après:", window.getComputedStyle(btnRecordBar).display);
         }
         if (btnPauseBar) {

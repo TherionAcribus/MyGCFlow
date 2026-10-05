@@ -192,7 +192,10 @@ test('les options MediaRecorder de l\'interface produisent un MP4 validé par ff
   await page.locator('#inputRecordBitrate').fill('1');
   await page.locator('#inputRecordSlowdown').fill('2');
   await page.locator('#inputRecordScaleFactor').fill('1');
-  await page.locator('#cbRecordUpload').uncheck();
+  // Sans aucune destination l'export est désormais bloqué (point d'audit) :
+  // on garde la copie dans le dossier Vidéos et on ne désactive que le
+  // téléchargement navigateur.
+  await page.locator('#cbRecordUpload').check();
   await page.locator('#cbRecordDownload').uncheck();
   await expect(page.locator('#cbRecordNormalize')).toBeEnabled();
   await page.locator('#cbRecordNormalize').uncheck();
@@ -224,7 +227,7 @@ test('les options MediaRecorder de l\'interface produisent un MP4 validé par ff
     bitrate: 1_000_000,
     slowdown: 2,
     scaleFactor: 1,
-    uploadToServer: false,
+    uploadToServer: true,
     downloadLocal: false,
     normalize: false,
     timePerDay: 80,
@@ -370,7 +373,10 @@ test('le mode MediaRecorder rend aussi la carte à la résolution demandée', as
   await page.locator('#inputRecordBitrate').fill('2');
   await page.locator('#inputRecordSlowdown').fill('1');
   await page.locator('#inputRecordScaleFactor').fill('1');
-  await page.locator('#cbRecordUpload').uncheck();
+  // Sans aucune destination l'export est désormais bloqué (point d'audit) :
+  // on garde la copie dans le dossier Vidéos, seul le téléchargement
+  // navigateur est désactivé.
+  await page.locator('#cbRecordUpload').check();
   await page.locator('#cbRecordDownload').uncheck();
 
   const plan = await page.evaluate(async () => {
