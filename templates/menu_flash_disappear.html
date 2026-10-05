@@ -29,14 +29,13 @@
         </div>
 
         <label class="form-label">{{ _("Couleur du flash") }}</label>
-        <!-- Libellés en <span> (et non <label for>) : seul le clic sur le bouton radio change la valeur, pas le clic sur toute la ligne -->
         <div class="form-check">
             <input class="form-check-input" type="radio" name="disappearFlashColor" id="disappearFlashColorGc" value="gc" aria-labelledby="disappearFlashColorGcLabel">
-            <span class="form-check-label" id="disappearFlashColorGcLabel">{{ _("Couleurs GC (par type)") }}</span>
+            <label class="form-check-label" id="disappearFlashColorGcLabel" for="disappearFlashColorGc">{{ _("Couleurs GC (par type)") }}</label>
         </div>
         <div class="form-check">
             <input class="form-check-input" type="radio" name="disappearFlashColor" id="disappearFlashColorFix" value="fix" checked aria-labelledby="disappearFlashColorFixLabel">
-            <span class="form-check-label" id="disappearFlashColorFixLabel">{{ _("Couleur unique") }}</span>
+            <label class="form-check-label" id="disappearFlashColorFixLabel" for="disappearFlashColorFix">{{ _("Couleur unique") }}</label>
         </div>
         <div class="mt-2">
             <label class="form-label" for="disappearFlashColor">{{ _("Choisir la couleur") }}</label>
@@ -45,22 +44,21 @@
 
         <!-- Contour des formes qui en ont un, comme pour le flash d'apparition. -->
         <label class="form-label mt-3">{{ _("Couleur du contour") }}</label>
-        <!-- Libellés en <span> (et non <label for>) : seul le clic sur le bouton radio change la valeur, pas le clic sur toute la ligne -->
         <div class="form-check">
             <input class="form-check-input" type="radio" name="disappearFlashBorderColor" id="disappearFlashBorderColorAuto" value="auto" checked aria-labelledby="disappearFlashBorderColorAutoLabel">
-            <span class="form-check-label" id="disappearFlashBorderColorAutoLabel">{{ _("Automatique") }}</span>
+            <label class="form-check-label" id="disappearFlashBorderColorAutoLabel" for="disappearFlashBorderColorAuto">{{ _("Automatique") }}</label>
         </div>
         <div class="form-check">
             <input class="form-check-input" type="radio" name="disappearFlashBorderColor" id="disappearFlashBorderColorGc" value="gc" aria-labelledby="disappearFlashBorderColorGcLabel">
-            <span class="form-check-label" id="disappearFlashBorderColorGcLabel">{{ _("Couleurs GC (par type)") }}</span>
+            <label class="form-check-label" id="disappearFlashBorderColorGcLabel" for="disappearFlashBorderColorGc">{{ _("Couleurs GC (par type)") }}</label>
         </div>
         <div class="form-check">
             <input class="form-check-input" type="radio" name="disappearFlashBorderColor" id="disappearFlashBorderColorNone" value="none" aria-labelledby="disappearFlashBorderColorNoneLabel">
-            <span class="form-check-label" id="disappearFlashBorderColorNoneLabel">{{ _("Transparent") }}</span>
+            <label class="form-check-label" id="disappearFlashBorderColorNoneLabel" for="disappearFlashBorderColorNone">{{ _("Transparent") }}</label>
         </div>
         <div class="form-check">
             <input class="form-check-input" type="radio" name="disappearFlashBorderColor" id="disappearFlashBorderColorFix" value="fix" aria-labelledby="disappearFlashBorderColorFixLabel">
-            <span class="form-check-label" id="disappearFlashBorderColorFixLabel">{{ _("Couleur unique") }}</span>
+            <label class="form-check-label" id="disappearFlashBorderColorFixLabel" for="disappearFlashBorderColorFix">{{ _("Couleur unique") }}</label>
         </div>
         <div class="mt-2">
             <label class="form-label" for="disappearFlashBorderColor">{{ _("Choisir la couleur") }}</label>
