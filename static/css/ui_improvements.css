@@ -27,8 +27,8 @@
 }
 
 .date-source-btn:hover:not(:disabled) {
-    border-color: var(--color-accent);
-    color: var(--color-accent);
+    border-color: var(--color-accent-text);
+    color: var(--color-accent-text);
     background: var(--color-accent-weak);
 }
 
@@ -38,8 +38,8 @@
 }
 
 .date-source-btn.is-active {
-    border-color: var(--color-accent);
-    color: var(--color-accent);
+    border-color: var(--color-accent-text);
+    color: var(--color-accent-text);
     background: var(--color-accent-weak);
     font-weight: 600;
 }
@@ -117,7 +117,7 @@
 
 .filter-sync-btn {
     background-color: var(--color-accent-weak) !important;
-    color: var(--color-accent-strong) !important;
+    color: var(--color-accent-on-weak) !important;
     padding: 4px 10px;
     border-radius: 6px;
     font-weight: 600;
@@ -176,7 +176,7 @@
 #stamenTonerLight:hover,
 #stamenTonerDark:hover {
     background: var(--color-accent-weak) !important;
-    color: var(--color-accent) !important;
+    color: var(--color-accent-text) !important;
 }
 /* Bouton actif (JS ajoute .disabled pour indiquer la sélection) */
 #stamenTonerLight.disabled,
@@ -219,7 +219,7 @@
 }
 
 .vector-color-picker:hover {
-    border-color: var(--color-accent);
+    border-color: var(--color-accent-text);
     transform: scale(1.05);
     box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
 }
@@ -274,7 +274,7 @@
 .vector-slider-value {
     font-size: 0.9rem;
     font-weight: 600;
-    color: var(--color-accent);
+    color: var(--color-accent-text);
     min-width: 35px;
     text-align: center;
     background: rgba(33, 150, 243, 0.1);
@@ -286,7 +286,7 @@
 .vector-color-picker:focus,
 .vector-slider:focus {
     outline: none;
-    border-color: var(--color-accent);
+    border-color: var(--color-accent-text);
     box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.3);
 }
 
@@ -315,7 +315,7 @@
     transform: translateX(100%);
     transition: transform 0.3s ease, opacity 0.3s ease;
     opacity: 0;
-    border-left: 4px solid var(--color-accent);
+    border-left: 4px solid var(--color-accent-text);
 }
 
 .gcm-toast.show {
@@ -336,7 +336,7 @@
 }
 
 .gcm-toast.info {
-    border-left-color: var(--color-accent);
+    border-left-color: var(--color-accent-text);
 }
 
 .gcm-toast-icon {
@@ -634,7 +634,7 @@ main.fullscreen-mode #infosFrame span:not([hidden]) {
     width: 60px;
     height: 60px;
     border: 4px solid #f3f3f3;
-    border-top: 4px solid var(--color-accent);
+    border-top: 4px solid var(--color-accent-text);
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
@@ -741,7 +741,7 @@ main.fullscreen-mode #infosFrame span:not([hidden]) {
 }
 
 #mapTabsResizer:focus-visible {
-    outline: 2px solid var(--color-accent);
+    outline: 2px solid var(--color-accent-text);
     outline-offset: -2px;
 }
 
@@ -899,8 +899,8 @@ main.fullscreen-mode #infosFrame span:not([hidden]) {
 /* L'état actif des préréglages reste visible aussi au clavier/lecteur
    d'écran (aria-pressed synchronisé par syncLayoutPresets dans ui.js). */
 #layoutPresets .btn[aria-pressed="true"] {
-    color: var(--color-accent);
-    border-color: var(--color-accent);
+    color: var(--color-accent-text);
+    border-color: var(--color-accent-text);
     background-color: rgba(33, 150, 243, 0.12);
 }
 /* Sous ~1100 px de fenêtre le mode latéral est suspendu (ui.js,
@@ -1476,7 +1476,7 @@ top: 20px;
 
 .gc-scope-global {
     background: var(--color-accent-weak);
-    color: var(--color-accent-strong);
+    color: var(--color-accent-on-weak);
     border-color: rgba(var(--color-accent-rgb), 0.3);
 }
 
@@ -1543,8 +1543,8 @@ color: #546e7a;
 }
 
 .gc-css-tab.active {
-color: var(--color-accent);
-border-bottom: 2px solid var(--color-accent);
+color: var(--color-accent-text);
+border-bottom: 2px solid var(--color-accent-text);
 }
 
 .gc-css-pane {
@@ -1601,7 +1601,7 @@ background: rgba(33, 150, 243, 0.04);
     overflow: hidden;
 }
 .map-card:hover {
-    border-color: var(--color-accent);
+    border-color: var(--color-accent-text);
     box-shadow: var(--shadow-md);
 }
 .map-card:active {
@@ -1609,7 +1609,7 @@ background: rgba(33, 150, 243, 0.04);
 }
 .map-card:focus-visible {
     outline: none;
-    border-color: var(--color-accent);
+    border-color: var(--color-accent-text);
     box-shadow: 0 0 0 3px rgba(var(--color-accent-rgb), 0.25);
 }
 .map-card-img {
@@ -1647,12 +1647,12 @@ background: rgba(33, 150, 243, 0.04);
    étiquette en couleur d'accent → nettement plus lisible que l'ancien
    « bleu estompé ». */
 .map-card.is-selected {
-    border-color: var(--color-accent);
+    border-color: var(--color-accent-text);
     background: var(--color-accent-weak);
     box-shadow: 0 0 0 3px rgba(var(--color-accent-rgb), 0.35), var(--shadow-md);
 }
 .map-card.is-selected .map-card-label {
-    color: var(--color-accent);
+    color: var(--color-accent-text);
     font-weight: 700;
 }
 .map-card.is-selected .map-card-check {
@@ -1671,7 +1671,7 @@ background: rgba(33, 150, 243, 0.04);
     margin: 0 0 8px;
     font-size: 0.95rem;
     font-weight: 600;
-    color: var(--color-accent);
+    color: var(--color-accent-text);
 }
 
 /* Cartes avec accent latéral (card-accent) */
@@ -1688,7 +1688,7 @@ background: rgba(33, 150, 243, 0.04);
     font-size: 0.95rem;
     font-weight: 600;
 }
-.card-accent-primary { border-left: 3px solid var(--color-accent); }
+.card-accent-primary { border-left: 3px solid var(--color-accent-text); }
 .card-accent-success { border-left: 3px solid var(--color-success); }
 .card-accent-warning { border-left: 3px solid var(--color-warning); }
 .card-accent-danger  { border-left: 3px solid var(--color-danger); }
@@ -1720,7 +1720,7 @@ background: rgba(33, 150, 243, 0.04);
     font-size: 0.85rem;
     text-decoration: none;
     background: transparent !important;
-    color: var(--color-accent);
+    color: var(--color-accent-text);
 }
 .filter-actions .btn-link:hover {
     text-decoration: underline;
@@ -1822,7 +1822,7 @@ background: rgba(33, 150, 243, 0.04);
     text-align: center;
     font-weight: 600;
     font-size: 0.85rem;
-    color: var(--color-accent);
+    color: var(--color-accent-text);
     background: var(--color-accent-weak);
 }
 
@@ -1920,7 +1920,7 @@ background: rgba(33, 150, 243, 0.04);
 
 /* Bouton de reset de date compact */
 .date-reset-btn {
-    color: var(--color-accent) !important;
+    color: var(--color-accent-text) !important;
     text-decoration: none;
     font-size: 0.85rem;
 }
@@ -1953,8 +1953,8 @@ background: rgba(33, 150, 243, 0.04);
     flex: 0 0 1.5rem;
     width: 1.5rem;
     height: 1.5rem;
-    border: 1px solid var(--color-accent);
-    color: var(--color-accent);
+    border: 1px solid var(--color-accent-text);
+    color: var(--color-accent-text);
     background-color: var(--color-accent-weak);
     border-radius: 50%;
     padding: 0;
@@ -2034,11 +2034,11 @@ background: rgba(33, 150, 243, 0.04);
    coche. L'état est exposé aux lecteurs d'écran par l'attribut aria-current
    posé dans _setProfileItemActive(). */
 .list-group-item.active-profile-item {
-    box-shadow: inset 2px 0 0 var(--color-accent);
+    box-shadow: inset 2px 0 0 var(--color-accent-text);
 }
 
 .active-profile {
-    color: var(--color-accent);
+    color: var(--color-accent-text);
     font-weight: 600;
 }
 
@@ -2119,12 +2119,12 @@ background: rgba(33, 150, 243, 0.04);
     display: flex;
 }
 .gpx-drop-overlay__inner {
-    border: 3px dashed var(--color-accent);
+    border: 3px dashed var(--color-accent-text);
     border-radius: 16px;
     padding: 2.5rem 3.5rem;
     background: rgba(255, 255, 255, 0.96);
     text-align: center;
-    color: var(--color-accent);
+    color: var(--color-accent-text);
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
     max-width: 90vw;
 }
@@ -2276,9 +2276,9 @@ background: rgba(33, 150, 243, 0.04);
     background: var(--color-accent-weak);
 }
 .app-mode-link.active {
-    color: var(--color-accent-strong);
+    color: var(--color-accent-on-weak);
     background: var(--color-accent-weak);
-    box-shadow: inset 0 -2px 0 var(--color-accent);
+    box-shadow: inset 0 -2px 0 var(--color-accent-text);
 }
 
 .app-header-actions {
@@ -2298,7 +2298,7 @@ background: rgba(33, 150, 243, 0.04);
     white-space: nowrap;
 }
 .app-header-link:hover {
-    color: var(--color-accent);
+    color: var(--color-accent-text);
 }
 
 .app-header-theme {
