@@ -75,6 +75,18 @@
                             </button>
                         </div>
                     </div>
+
+                    <!-- Sélection vide : base chargée mais les filtres
+                         excluent toutes les caches (hasDb sans hasData dans
+                         updateDataAvailabilityUI). Distinct de l'état
+                         « aucune donnée importée » : le problème est la
+                         sélection, la solution est la réinitialisation. -->
+                    <div id="dataNoResults" class="alert alert-warning mt-3 mb-0 py-2 px-3 align-items-center gap-2 flex-wrap" hidden>
+                        <span class="small">{{ _("Aucune cache ne correspond aux filtres actuels.") }}</span>
+                        <button type="button" id="btnResetFiltersFromData" class="btn btn-sm btn-warning ms-auto">
+                            <i class="ti ti-refresh me-1" aria-hidden="true"></i>{{ _("Réinitialiser les filtres") }}
+                        </button>
+                    </div>
                 </div>
             </div>
 

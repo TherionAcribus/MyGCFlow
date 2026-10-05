@@ -609,9 +609,11 @@ main.fullscreen-mode ~ .tooltip {
 #data .data-has-only { display: none; }
 #data.has-data .data-has-only { display: flex; }
 #data.has-data .data-empty-only { display: none; }
-/* Pas de .d-flex sur #dataNextStep : display:flex !important écraserait
-   l'attribut hidden — la disposition en ligne n'est posée que visible. */
-#dataNextStep:not([hidden]) { display: flex; }
+/* Pas de .d-flex sur #dataNextStep / #dataNoResults : display:flex
+   !important écraserait l'attribut hidden — la disposition en ligne n'est
+   posée que visible. */
+#dataNextStep:not([hidden]),
+#dataNoResults:not([hidden]) { display: flex; }
 
 /* Styles nettoyés pour la nouvelle disposition verticale */
 

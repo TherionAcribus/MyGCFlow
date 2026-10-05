@@ -409,6 +409,12 @@ const publishedDatePickerEnd = document.getElementById('publishedDatePickerEnd')
     // Bouton "Réinitialiser tous les filtres"
     const btnResetAllFilters = document.getElementById('btnResetAllFilters');
     if (btnResetAllFilters) btnResetAllFilters.addEventListener('click', resetAllFilters);
+    // Même action proposée dans la carte Mes trouvailles quand la sélection
+    // est vide (#dataNoResults) : délègue au bouton principal des filtres.
+    const btnResetFiltersFromData = document.getElementById('btnResetFiltersFromData');
+    if (btnResetFiltersFromData && btnResetAllFilters) {
+        btnResetFiltersFromData.addEventListener('click', () => btnResetAllFilters.click());
+    }
 
     // Initialiser Tom Select
     if (selectType) initFilterTomSelect(selectType);
@@ -6561,9 +6567,12 @@ export function updateDataAvailabilityUI({ dataResolved = false } = {}) {
     }
 
     // Suggestion « prochaine étape » dans la carte Mes trouvailles : visible
-    // uniquement quand une base est chargée.
+    // uniquement quand une base est chargée ET la sélection non vide — sinon
+    // c'est l'avertissement « aucun résultat » qui prend le relais.
     const nextStep = document.getElementById('dataNextStep');
-    if (nextStep) nextStep.hidden = !hasDb;
+    if (nextStep) nextStep.hidden = !hasDb || !hasData;
+    const noResults = document.getElementById('dataNoResults');
+    if (noResults) noResults.hidden = !hasDb || hasData;
 
     // État compact de la carte Mes trouvailles : avec une base chargée,
     // la zone d'import détaillée cède la place à une commande secondaire
