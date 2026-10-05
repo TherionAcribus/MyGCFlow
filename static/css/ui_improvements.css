@@ -948,13 +948,32 @@ main.fullscreen-mode #infosFrame span:not([hidden]) {
    largeur du viewport. panel-lt-sm implique panel-lt-md, une seule classe
    suffit à couvrir les deux seuils. */
 #tabsPanel.panel-lt-md #panelToolbar {
-    flex-wrap: nowrap;
+    /* Deux lignes voulues : les onglets occupent seuls la première
+       (flex-basis 100 % ci-dessous), les actions rapides et les
+       préréglages se partagent la seconde (gauche / droite). Sur une
+       seule ligne, les ~294 px d'onglets plus les boutons ne tenaient
+       pas dans un panneau latéral de ~540 px et « Réglages » était
+       tronqué. */
+    flex-wrap: wrap;
 }
 #tabsPanel.panel-lt-md #panelToolbar .nav-tabs {
     flex-wrap: nowrap;
     overflow-x: auto;
     min-width: 0;
     scrollbar-width: none;
+}
+/* Toute la première ligne : pousse les deux groupes de boutons sur la
+   seconde. */
+#tabsPanel.panel-lt-md #panelToolbar .nav-tabs {
+    flex: 1 1 100%;
+}
+/* Seconde ligne : actions rapides à gauche, préréglages à droite. */
+#tabsPanel.panel-lt-md #quickActions {
+    margin-left: 0;
+    margin-right: auto;
+}
+#tabsPanel.panel-lt-md #layoutPresets {
+    margin-left: auto;
 }
 #tabsPanel.panel-lt-md #panelToolbar .nav-tabs .nav-link {
     padding: 0.35rem 0.6rem;
