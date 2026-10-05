@@ -6253,34 +6253,20 @@ function exitFullscreenMode() {
     }, 100);
 }
 
-// Mettre à jour l'apparence du bouton fullscreen
+// Mettre à jour l'apparence du bouton fullscreen : icône seule dans la
+// barre collante (masquée en plein écran — il ne sert qu'à y entrer, la
+// sortie passe par le menu flottant). L'état pressé suit la convention des
+// préréglages de disposition voisins : aria-pressed + classe .active.
 function updateFullscreenButtonAppearance() {
     const btnFullscreenMode = document.getElementById('btnFullscreenMode');
     if (!btnFullscreenMode) return;
 
     const icon = btnFullscreenMode.querySelector('i');
-    const label = btnFullscreenMode.querySelector('.fullscreen-label');
-    const enterText = label?.dataset.enterText || pkg.t('Plein écran');
-    const exitText = label?.dataset.exitText || pkg.t('Quitter le plein écran');
-    // Bouton outline : l'état actif est rendu par la classe .active,
-    // plus par un basculement btn-primary/btn-secondary.
+    btnFullscreenMode.setAttribute('aria-pressed', String(fullscreenButtonActive));
     btnFullscreenMode.classList.toggle('active', fullscreenButtonActive);
-    if (fullscreenButtonActive) {
-        // Mode plein écran actif
-        if (icon) {
-            icon.classList.remove('ti-maximize');
-            icon.classList.add('ti-minimize');
-        }
-        if (label) label.textContent = exitText;
-        btnFullscreenMode.title = exitText;
-    } else {
-        // Mode normal
-        if (icon) {
-            icon.classList.remove('ti-minimize');
-            icon.classList.add('ti-maximize');
-        }
-        if (label) label.textContent = enterText;
-        btnFullscreenMode.title = enterText;
+    if (icon) {
+        icon.classList.toggle('ti-minimize', fullscreenButtonActive);
+        icon.classList.toggle('ti-maximize', !fullscreenButtonActive);
     }
 }
 

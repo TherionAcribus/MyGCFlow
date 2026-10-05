@@ -16,19 +16,10 @@
                         </li>
                     </ul>
 
-                    <!-- Commandes d'affichage volontairement hors des panes :
-                         elles restent actives même sans base chargée (les
-                         panes sont alors inertes). Le menu flottant n'existe
-                         qu'en plein écran : c'est lui qui porte le seul
-                         bouton de sortie du mode (le panneau y est masqué).
-                         Prévisualiser / Exporter / Pause / Arrêter ne sont
-                         pas répétés ici : la barre collante #quickActions et
-                         le menu flottant portent déjà ces commandes. -->
-                    <div class="my-3 d-flex align-items-center gap-2 flex-wrap">
-                        <button type="button" class="btn btn-outline-secondary" id="btnFullscreenMode" title="{{ _('Passer en plein écran') }}">
-                            <i class="ti ti-maximize me-1" aria-hidden="true"></i><span class="fullscreen-label" data-enter-text="{{ _('Plein écran') }}" data-exit-text="{{ _('Quitter le plein écran') }}">{{ _("Plein écran") }}</span>
-                        </button>
-                    </div>
+                    <!-- Le bouton Plein écran vit dans la barre collante
+                         #panelToolbar (groupe #layoutPresets) ; le menu
+                         flottant n'existe qu'en plein écran et porte le seul
+                         bouton de sortie du mode. -->
 
                     <!-- Boutons d'origine des commandes de lecture : retirés du
                          flux visible (les doublures de #quickActions et du

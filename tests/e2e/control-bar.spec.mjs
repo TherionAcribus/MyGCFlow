@@ -27,8 +27,8 @@ test('menu flottant : masqué hors plein écran, visible en plein écran', async
   await expect(bar).toBeHidden();
 
   // Le plein écran l'affiche : sans lui, aucun bouton de sortie n'est
-  // accessible (le panneau est masqué).
-  await page.locator('a[href="#animation"]').click();
+  // accessible (le panneau est masqué). Le bouton d'entrée vit dans la
+  // barre collante #panelToolbar, visible depuis n'importe quel onglet.
   await page.locator('#btnFullscreenMode').click();
   await expect(page.locator('main')).toHaveClass(/fullscreen-mode/);
   await expect(bar).toBeVisible();
@@ -48,7 +48,6 @@ test('menu flottant : boutons Lecture/Enregistrement activés par les données',
   await dismissFirstUseModal(page);
 
   // Sans données, Lecture/Enregistrement restent masqués dans le menu.
-  await page.locator('a[href="#animation"]').click();
   await page.locator('#btnFullscreenMode').click();
   await expect(page.locator('main')).toHaveClass(/fullscreen-mode/);
   await expect(page.locator('#btnStartBar')).toBeHidden();
@@ -59,9 +58,6 @@ test('menu flottant : boutons Lecture/Enregistrement activés par les données',
   await page.locator('#file-input').setInputFiles(FIXTURE);
   await expect(page.locator('#filtersCounter')).toContainText('6 / 6', { timeout: 45_000 });
 
-  // Le chargement ramène sur l'onglet Données : revenir à Animation pour
-  // retrouver le bouton d'entrée en plein écran.
-  await page.locator('a[href="#animation"]').click();
   await page.locator('#btnFullscreenMode').click();
   await expect(page.locator('main')).toHaveClass(/fullscreen-mode/);
   await expect(page.locator('#btnStartBar')).toBeVisible();

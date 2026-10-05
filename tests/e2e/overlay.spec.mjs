@@ -37,7 +37,6 @@ test('les options restent la source de vérité, y compris en plein écran', asy
   await expect(page.locator('#titleFrame')).toHaveAttribute('aria-hidden', 'true');
   await expect(page.locator('#infosFrame')).toHaveAttribute('aria-hidden', 'true');
 
-  await page.locator('a[href="#animation"]').click();
   await page.locator('#btnFullscreenMode').click();
   await expect(page.locator('main')).toHaveClass(/fullscreen-mode/);
   await expect(page.locator('#titleFrame')).toBeHidden();

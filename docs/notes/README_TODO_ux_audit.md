@@ -106,12 +106,14 @@ var(--color-accent)` sur **toutes** les variantes pleines. Résultat :
    `updateControlBarToggleButton()` et la préférence `show_control_bar` ont
    été supprimés ; le menu flottant n'apparaît plus qu'en plein écran (c'est
    lui qui porte le bouton de sortie du mode). Reste valable pour
-   `#btnFullscreenMode` : état actif rendu par la classe `active` dans
-   `updateFullscreenButtonAppearance()`.
+   `#btnFullscreenMode` : déplacé dans `#layoutPresets` (barre collante) en
+   bouton icône seule, état actif via `aria-pressed`/`.active` comme les
+   préréglages voisins (`updateFullscreenButtonAppearance()`).
 4. Dans l'en-tête Animation, hiérarchie cible : « Prévisualiser » = `btn-primary`,
    « Exporter » = `btn-primary` (ou `btn-success` si on veut le distinguer, à
    condition que le même choix soit appliqué à `#btnQuickExport` et
-   `#btnRecordBar`), « Plein écran » = `btn-outline-secondary`.
+   `#btnRecordBar`) ; « Plein écran » n'y figure plus (déplacé dans la barre
+   collante, `btn-outline-secondary` à côté des préréglages de disposition).
 
 **Vérification.** Captures des onglets Données et Animation en clair et sombre ;
 `npm run test:e2e -- tests/e2e/control-bar.spec.mjs tests/e2e/empty-state.spec.mjs tests/e2e/upload-feedback.spec.mjs`.
@@ -259,9 +261,10 @@ panneau Animation (`menu_animation.html` l.29-44) et menu flottant
    et faire porter l'état « idle » par une variable ou un `data-state` sur
    `#controlBar`, plutôt que par le `display` calculé. Mettre à jour
    `updateControlBar()` en conséquence.
-2. Ne garder dans l'en-tête Animation que « Plein écran »
-   (`btn-outline-secondary`, cf. Lot 1) : le bouton « Menu flottant » et son
-   badge `global_scope_badge()` ont été retirés avec la préférence
+2. L'en-tête Animation n'a plus de commande d'affichage : « Plein écran » a
+   rejoint `#layoutPresets` dans la barre collante (`btn-outline-secondary`,
+   cf. Lot 1) ; le bouton « Menu flottant » et son badge
+   `global_scope_badge()` ont été retirés avec la préférence
    `show_control_bar` (le menu n'existe plus qu'en plein écran).
 3. Les boutons rapides `#btnQuickPreview` / `#btnQuickExport` deviennent les
    seules commandes dans le panneau ; vérifier que `disabled` suit toujours

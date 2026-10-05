@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-05 08:50+0200\n"
+"POT-Creation-Date: 2026-10-05 09:01+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -274,8 +274,8 @@ msgstr ""
 
 #: templates/app.html:196 templates/guide.html:47 templates/guide.html:79
 #: templates/guide.html:101 templates/guide.html:114 templates/guide.html:134
-#: templates/guide.html:335 templates/menu_animation.html:69
-#: templates/menu_animation.html:83 templates/menu_filtre.html:24
+#: templates/guide.html:335 templates/menu_animation.html:60
+#: templates/menu_animation.html:74 templates/menu_filtre.html:24
 #: templates/menu_filtre.html:33 templates/menu_filtre.html:49
 #: templates/menu_filtre.html:58 test_translations.py:30
 msgid "Données"
@@ -1553,7 +1553,7 @@ msgstr ""
 
 #: static/js/profiles.js:759 templates/app.html:207 templates/app.html:208
 #: templates/guide.html:106 templates/guide.html:261 templates/guide.html:267
-#: templates/menu_animation.html:45
+#: templates/menu_animation.html:36
 msgid "Exporter"
 msgstr ""
 
@@ -2182,45 +2182,36 @@ msgstr ""
 msgid "Erreur lors de l’ouverture du dossier vidéo"
 msgstr ""
 
-#: static/js/ui.js:7288 templates/guide.html:263
-#: templates/menu_animation.html:29
-msgid "Plein écran"
-msgstr ""
-
-#: static/js/ui.js:7289 templates/menu_animation.html:29
-msgid "Quitter le plein écran"
-msgstr ""
-
-#: static/js/ui.js:7693
+#: static/js/ui.js:7678
 msgid "Sélectionnez d'abord un fichier audio"
 msgstr ""
 
-#: static/js/ui.js:7740 templates/menu_animation.html:222
+#: static/js/ui.js:7725 templates/menu_animation.html:213
 msgid "Aucune musique sélectionnée"
 msgstr ""
 
-#: static/js/ui.js:7773
+#: static/js/ui.js:7758
 msgid "Non disponible"
 msgstr ""
 
-#: static/js/ui.js:7780 templates/_filter_cache_attrs.html:42
+#: static/js/ui.js:7765 templates/_filter_cache_attrs.html:42
 #: templates/_filter_cache_attrs.html:43
 msgid "Taille"
 msgstr ""
 
-#: static/js/ui.js:7781
+#: static/js/ui.js:7766
 msgid "Type"
 msgstr ""
 
-#: static/js/ui.js:7782
+#: static/js/ui.js:7767
 msgid "Durée"
 msgstr ""
 
-#: static/js/ui.js:7783
+#: static/js/ui.js:7768
 msgid "Modifié"
 msgstr ""
 
-#: static/js/ui.js:7838
+#: static/js/ui.js:7823
 msgid "Erreur lors du chargement du fichier audio"
 msgstr ""
 
@@ -2602,22 +2593,22 @@ msgstr ""
 
 #: templates/app.html:203 templates/app.html:204 templates/guide.html:106
 #: templates/guide.html:260 templates/guide.html:267
-#: templates/menu_animation.html:42
+#: templates/menu_animation.html:33
 msgid "Prévisualiser"
 msgstr ""
 
 #: templates/app.html:211 templates/app.html:212 templates/app.html:213
 #: templates/guide.html:106 templates/guide.html:262
-#: templates/menu_animation.html:51 templates/menu_animation.html:52
+#: templates/menu_animation.html:42 templates/menu_animation.html:43
 msgid "Pause"
 msgstr ""
 
-#: templates/app.html:212 templates/menu_animation.html:51
+#: templates/app.html:212 templates/menu_animation.html:42
 msgid "Continuer"
 msgstr ""
 
 #: templates/app.html:216 templates/app.html:217 templates/guide.html:106
-#: templates/guide.html:262 templates/menu_animation.html:55
+#: templates/guide.html:262 templates/menu_animation.html:46
 msgid "Arrêter"
 msgstr ""
 
@@ -2639,6 +2630,10 @@ msgstr ""
 
 #: templates/app.html:241 templates/app.html:242
 msgid "Panneau latéral"
+msgstr ""
+
+#: templates/app.html:251 templates/app.html:252 templates/guide.html:263
+msgid "Plein écran"
 msgstr ""
 
 #: templates/guide.html:6 templates/guide.html:24
@@ -3108,15 +3103,15 @@ msgstr ""
 msgid "Renseignez la"
 msgstr ""
 
-#: templates/guide.html:219 templates/menu_animation.html:65
-#: templates/menu_animation.html:66 templates/menu_filtre.html:20
+#: templates/guide.html:219 templates/menu_animation.html:56
+#: templates/menu_animation.html:57 templates/menu_filtre.html:20
 #: templates/menu_filtre.html:21 templates/menu_filtre.html:45
 #: templates/menu_filtre.html:46
 msgid "Date de début"
 msgstr ""
 
-#: templates/guide.html:219 templates/menu_animation.html:79
-#: templates/menu_animation.html:80 templates/menu_filtre.html:29
+#: templates/guide.html:219 templates/menu_animation.html:70
+#: templates/menu_animation.html:71 templates/menu_filtre.html:29
 #: templates/menu_filtre.html:30 templates/menu_filtre.html:54
 #: templates/menu_filtre.html:55
 msgid "Date de fin"
@@ -3136,7 +3131,7 @@ msgstr ""
 msgid "Le"
 msgstr ""
 
-#: templates/guide.html:223 templates/menu_animation.html:99
+#: templates/guide.html:223 templates/menu_animation.html:90
 msgid "Rythme de l'animation"
 msgstr ""
 
@@ -3144,7 +3139,7 @@ msgstr ""
 msgid "offre trois modes exclusifs :"
 msgstr ""
 
-#: templates/guide.html:225 templates/menu_animation.html:103
+#: templates/guide.html:225 templates/menu_animation.html:94
 msgid "Par rythme"
 msgstr ""
 
@@ -3152,7 +3147,7 @@ msgstr ""
 msgid "vous fixez la vitesse en jours par seconde ; la durée finale est calculée."
 msgstr ""
 
-#: templates/guide.html:226 templates/menu_animation.html:107
+#: templates/guide.html:226 templates/menu_animation.html:98
 msgid "Par durée"
 msgstr ""
 
@@ -3161,7 +3156,7 @@ msgid "vous fixez la durée finale de la vidéo (mm:ss) ; le rythme est calculé
 msgstr ""
 
 #: templates/guide.html:227 templates/guide.html:241
-#: templates/menu_animation.html:111
+#: templates/menu_animation.html:102
 msgid "Sur la musique"
 msgstr ""
 
@@ -3173,7 +3168,7 @@ msgstr ""
 msgid "Un"
 msgstr ""
 
-#: templates/guide.html:229 templates/menu_animation.html:133
+#: templates/guide.html:229 templates/menu_animation.html:124
 msgid "Préréglage"
 msgstr ""
 
@@ -3181,7 +3176,7 @@ msgstr ""
 msgid "(Lent, Normal, Rapide) règle le rythme en un clic. Le"
 msgstr ""
 
-#: templates/guide.html:229 templates/menu_animation.html:160
+#: templates/guide.html:229 templates/menu_animation.html:151
 msgid "Temps additionnel en fin (sec)"
 msgstr ""
 
@@ -3189,7 +3184,7 @@ msgstr ""
 msgid "laisse la carte finale visible, et la"
 msgstr ""
 
-#: templates/guide.html:229 templates/menu_animation.html:168
+#: templates/guide.html:229 templates/menu_animation.html:159
 msgid "Durée du flash (ms)"
 msgstr ""
 
@@ -3207,7 +3202,7 @@ msgstr ""
 msgid "Activez"
 msgstr ""
 
-#: templates/guide.html:233 templates/menu_animation.html:189
+#: templates/guide.html:233 templates/menu_animation.html:180
 msgid "Suivi de caméra"
 msgstr ""
 
@@ -3215,7 +3210,7 @@ msgstr ""
 msgid "pour que la vue glisse vers les caches du jour, puis choisissez le"
 msgstr ""
 
-#: templates/guide.html:233 templates/menu_animation.html:191
+#: templates/guide.html:233 templates/menu_animation.html:182
 msgid "Dynamisme de la caméra"
 msgstr ""
 
@@ -3239,7 +3234,7 @@ msgstr ""
 msgid "Cochez"
 msgstr ""
 
-#: templates/guide.html:241 templates/menu_animation.html:210
+#: templates/guide.html:241 templates/menu_animation.html:201
 msgid "Inclure la musique"
 msgstr ""
 
@@ -3247,7 +3242,7 @@ msgstr ""
 msgid "sélectionnez un fichier audio et ajustez le volume. Le bouton"
 msgstr ""
 
-#: templates/guide.html:241 templates/menu_animation.html:233
+#: templates/guide.html:241 templates/menu_animation.html:224
 msgid "Caler sur la musique"
 msgstr ""
 
@@ -3255,7 +3250,7 @@ msgstr ""
 msgid "synchronise la durée sur celle du morceau — le bouton"
 msgstr ""
 
-#: templates/guide.html:241 templates/menu_animation.html:238
+#: templates/guide.html:241 templates/menu_animation.html:229
 msgid "Dissocier"
 msgstr ""
 
@@ -3621,166 +3616,162 @@ msgid ""
 "courantes."
 msgstr ""
 
-#: templates/menu_animation.html:28
-msgid "Passer en plein écran"
-msgstr ""
-
-#: templates/menu_animation.html:61
+#: templates/menu_animation.html:52
 msgid "Plage de dates de l'animation"
 msgstr ""
 
-#: templates/menu_animation.html:62
+#: templates/menu_animation.html:53
 msgid ""
 "Période parcourue par la vidéo — indépendante des filtres de l'onglet "
 "Données."
 msgstr ""
 
-#: templates/menu_animation.html:68 templates/menu_animation.html:82
+#: templates/menu_animation.html:59 templates/menu_animation.html:73
 #: templates/menu_filtre.html:23 templates/menu_filtre.html:32
 #: templates/menu_filtre.html:48 templates/menu_filtre.html:57
 msgid "Date par défaut (toutes les données)"
 msgstr ""
 
-#: templates/menu_animation.html:72 templates/menu_animation.html:86
+#: templates/menu_animation.html:63 templates/menu_animation.html:77
 msgid "Date issue du filtre"
 msgstr ""
 
-#: templates/menu_animation.html:73 templates/menu_animation.html:87
+#: templates/menu_animation.html:64 templates/menu_animation.html:78
 msgid "Filtre"
 msgstr ""
 
-#: templates/menu_animation.html:119
+#: templates/menu_animation.html:110
 msgid "Rythme (jours par seconde)"
 msgstr ""
 
-#: templates/menu_animation.html:126
+#: templates/menu_animation.html:117
 msgid "Durée finale de la vidéo (mm:ss)"
 msgstr ""
 
-#: templates/menu_animation.html:137
+#: templates/menu_animation.html:128
 msgid "Lent"
 msgstr ""
 
-#: templates/menu_animation.html:137 templates/menu_animation.html:138
-#: templates/menu_animation.html:139
+#: templates/menu_animation.html:128 templates/menu_animation.html:129
+#: templates/menu_animation.html:130
 msgid "jours/s"
 msgstr ""
 
-#: templates/menu_animation.html:138 templates/menu_informations.html:116
+#: templates/menu_animation.html:129 templates/menu_informations.html:116
 msgid "Normal"
 msgstr ""
 
-#: templates/menu_animation.html:139
+#: templates/menu_animation.html:130
 msgid "Rapide"
 msgstr ""
 
-#: templates/menu_animation.html:140 templates/menu_informations.html:228
+#: templates/menu_animation.html:131 templates/menu_informations.html:228
 msgid "Personnalisé"
 msgstr ""
 
-#: templates/menu_animation.html:142
+#: templates/menu_animation.html:133
 msgid "Préréglage global, indépendant du thème."
 msgstr ""
 
-#: templates/menu_animation.html:149
+#: templates/menu_animation.html:140
 msgid "Détail"
 msgstr ""
 
-#: templates/menu_animation.html:150
+#: templates/menu_animation.html:141
 msgid "(animation)"
 msgstr ""
 
-#: templates/menu_animation.html:151
+#: templates/menu_animation.html:142
 msgid "(pause automatique de fin)"
 msgstr ""
 
-#: templates/menu_animation.html:152
+#: templates/menu_animation.html:143
 msgid "(temps additionnel)"
 msgstr ""
 
-#: templates/menu_animation.html:161
+#: templates/menu_animation.html:152
 msgid "Temps additionnel (sec)"
 msgstr ""
 
-#: templates/menu_animation.html:169
+#: templates/menu_animation.html:160
 msgid "Durée du flash"
 msgstr ""
 
-#: templates/menu_animation.html:170
+#: templates/menu_animation.html:161
 msgid "Forme, taille et couleur du flash : onglet Style (thème)."
 msgstr ""
 
-#: templates/menu_animation.html:177
+#: templates/menu_animation.html:168
 msgid "Durée max. du tracé vers le prochain jour de caches (ms)"
 msgstr ""
 
-#: templates/menu_animation.html:178
+#: templates/menu_animation.html:169
 msgid "Durée du tracé"
 msgstr ""
 
-#: templates/menu_animation.html:179
+#: templates/menu_animation.html:170
 msgid ""
 "Durée de progression du stylo jusqu'à la fin du prochain jour de "
 "trouvailles, raccourcie automatiquement quand les jours défilent plus "
 "vite. Style du trajet : onglet Style (thème)."
 msgstr ""
 
-#: templates/menu_animation.html:193
+#: templates/menu_animation.html:184
 msgid "1 — Minimal : hors champ uniquement"
 msgstr ""
 
-#: templates/menu_animation.html:194
+#: templates/menu_animation.html:185
 msgid "2 — Discret : hors champ ou très périphérique"
 msgstr ""
 
-#: templates/menu_animation.html:195
+#: templates/menu_animation.html:186
 msgid "3 — Dynamique : hors zone centrale"
 msgstr ""
 
-#: templates/menu_animation.html:196
+#: templates/menu_animation.html:187
 msgid "4 — Intense : recentrage et zoom systématiques"
 msgstr ""
 
-#: templates/menu_animation.html:198
+#: templates/menu_animation.html:189
 msgid ""
 "La vue glisse vers les caches du jour ; la durée réelle peut dépasser "
 "l'estimation et celle de la musique."
 msgstr ""
 
-#: templates/menu_animation.html:198
+#: templates/menu_animation.html:189
 msgid "En savoir plus"
 msgstr ""
 
-#: templates/menu_animation.html:206
+#: templates/menu_animation.html:197
 msgid "Musique (optionnel)"
 msgstr ""
 
-#: templates/menu_animation.html:215
+#: templates/menu_animation.html:206
 msgid "Fichier de musique"
 msgstr ""
 
-#: templates/menu_animation.html:217
+#: templates/menu_animation.html:208
 msgid "Choisir un fichier audio"
 msgstr ""
 
-#: templates/menu_animation.html:218 templates/menu_data.html:24
+#: templates/menu_animation.html:209 templates/menu_data.html:24
 #: templates/menu_data_evolution.html:53
 msgid "Parcourir…"
 msgstr ""
 
-#: templates/menu_animation.html:225
+#: templates/menu_animation.html:216
 msgid "Volume musique"
 msgstr ""
 
-#: templates/menu_animation.html:232
+#: templates/menu_animation.html:223
 msgid "Caler la durée de la vidéo sur celle de la musique"
 msgstr ""
 
-#: templates/menu_animation.html:236
+#: templates/menu_animation.html:227
 msgid "Calé sur la musique"
 msgstr ""
 
-#: templates/menu_animation.html:239
+#: templates/menu_animation.html:230
 msgid "Différence"
 msgstr ""
 

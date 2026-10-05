@@ -242,6 +242,16 @@
                             data-bs-toggle="tooltip" data-bs-title="{{ _('Panneau latéral') }}">
                         <i class="ti ti-layout-sidebar-right" aria-hidden="true"></i>
                     </button>
+                    <!-- Plein écran : accolé aux préréglages (la disposition
+                         « carte maximale »). Sans data-layout pour rester hors
+                         de syncLayoutPresets. Le bouton de sortie vit dans le
+                         menu flottant #controlBar — celui-ci disparaît avec
+                         tout le panneau en plein écran. -->
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnFullscreenMode" aria-pressed="false"
+                            aria-label="{{ _('Plein écran') }}"
+                            data-bs-toggle="tooltip" data-bs-title="{{ _('Plein écran') }}">
+                        <i class="ti ti-maximize" aria-hidden="true"></i>
+                    </button>
                 </div>
             </div>
 
