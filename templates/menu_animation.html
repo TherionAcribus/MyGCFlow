@@ -64,6 +64,12 @@
                                         <i class="ti ti-filter" aria-hidden="true"></i><span class="date-source-label">{{ _('Filtre') }}</span><span class="date-source-separator" aria-hidden="true">·</span><span class="date-source-value">—</span><i class="ti ti-check date-source-check" aria-hidden="true"></i>
                                     </button>
                                 </div>
+                                <!-- 3e état explicite : valeur saisie qui n'est ni « Données »
+                                     ni « Filtre ». Puce d'état non interactive — il n'y a rien
+                                     à réappliquer, contrairement aux deux sources boutons. -->
+                                <span id="animCustomStartInfo" class="date-source-chip" hidden>
+                                    <i class="ti ti-pencil" aria-hidden="true"></i><span class="date-source-label">{{ _("Personnalisée") }}</span><i class="ti ti-check" aria-hidden="true"></i>
+                                </span>
                             </div>
                         </div>
                         <div class="mb-3 col-6">
@@ -78,6 +84,9 @@
                                         <i class="ti ti-filter" aria-hidden="true"></i><span class="date-source-label">{{ _('Filtre') }}</span><span class="date-source-separator" aria-hidden="true">·</span><span class="date-source-value">—</span><i class="ti ti-check date-source-check" aria-hidden="true"></i>
                                     </button>
                                 </div>
+                                <span id="animCustomEndInfo" class="date-source-chip" hidden>
+                                    <i class="ti ti-pencil" aria-hidden="true"></i><span class="date-source-label">{{ _("Personnalisée") }}</span><i class="ti ti-check" aria-hidden="true"></i>
+                                </span>
                             </div>
                         </div>
                     </div>

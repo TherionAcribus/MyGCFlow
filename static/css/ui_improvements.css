@@ -61,6 +61,29 @@
     font-variant-numeric: tabular-nums;
 }
 
+/* Puce d'état « Personnalisée » : même gabarit que les deux sources
+   cliquables, mais non interactive (rien à réappliquer) — bordure en
+   pointillés, pas de hover ni de curseur main, pour qu'elle se lise comme
+   un constat et non comme une action. */
+.date-source-chip {
+    display: inline-flex;
+    min-height: 32px;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.65rem;
+    border: 1px dashed var(--color-text-muted);
+    border-radius: 999px;
+    color: var(--color-text);
+    background: var(--color-surface);
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+}
+.date-source-chip .date-source-value {
+    font-variant-numeric: tabular-nums;
+}
+
 .date-source-filter:not(.is-active) {
     border-color: var(--color-warning);
     color: var(--color-warning);

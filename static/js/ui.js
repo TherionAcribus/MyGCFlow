@@ -3052,6 +3052,21 @@ function updateAnimFilterInfo(){
             endValueEl.onclick = applyFilterEndToAnim;
         }
     }
+
+    // Troisième source possible : une date qui n'est ni celle des données ni
+    // celle du filtre. Sans puce dédiée, les deux sources simplement
+    // décochées laissaient croire à un état neutre au lieu de dire
+    // « valeur saisie à la main ».
+    const startIsCustom = !!(animStart
+        && !(defaultStartStr && animStart === defaultStartStr)
+        && !(showStart && animStart === filterStart));
+    const endIsCustom = !!(animEnd
+        && !(defaultEndStr && animEnd === defaultEndStr)
+        && !(showEnd && animEnd === filterEnd));
+    const startCustomInfo = document.getElementById('animCustomStartInfo');
+    const endCustomInfo = document.getElementById('animCustomEndInfo');
+    if (startCustomInfo) startCustomInfo.hidden = !startIsCustom;
+    if (endCustomInfo) endCustomInfo.hidden = !endIsCustom;
 }
 
 function applyFilterStartToAnim(){
