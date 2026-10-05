@@ -157,7 +157,8 @@ class ProfileModeConversionTests(_IsolatedConfigTestCase):
 
         self.assertEqual(copy.mode, "main")
         self.assertEqual(copy.points.size, 8)
-        self.assertEqual(copy.flash.size, 35)
+        # Flash de 16 px du thème de départ (« Évolution Classique ») × 2,5.
+        self.assertEqual(copy.flash.size, 40)
 
     def test_copy_into_the_same_mode_or_an_unknown_mode_is_refused(self):
         self.manager.create_profile("Trouvailles")
