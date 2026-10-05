@@ -17,6 +17,7 @@ from dataclasses import asdict
 from settings_manager import (
     AppSettings,
     InvalidProfileNameError,
+    PROFILE_MODES,
     coerce_animation_settings,
     coerce_dataset_id,
     coerce_date_format,
@@ -62,6 +63,12 @@ def api_get_settings():
     last_profile_name = None
     if s.last_profile_uid:
         last_profile_name = settings_manager.get_profile_name_by_uid(s.last_profile_uid)
+    evolution_default_profile_name = None
+    if s.evolution_default_profile_uid:
+        evolution_default_profile_name = settings_manager.get_profile_name_by_uid(s.evolution_default_profile_uid)
+    evolution_last_profile_name = None
+    if s.evolution_last_profile_uid:
+        evolution_last_profile_name = settings_manager.get_profile_name_by_uid(s.evolution_last_profile_uid)
 
     response = jsonify({
         'version': s.version,
@@ -75,6 +82,10 @@ def api_get_settings():
         'last_profile_uid': s.last_profile_uid,
         'last_profile_name': last_profile_name,
         'startup_default_profile': s.startup_default_profile,
+        'evolution_default_profile_uid': s.evolution_default_profile_uid,
+        'evolution_default_profile_name': evolution_default_profile_name,
+        'evolution_last_profile_uid': s.evolution_last_profile_uid,
+        'evolution_last_profile_name': evolution_last_profile_name,
         'map_default_center': list(s.map_default_center) if s.map_default_center else None,
         'map_default_zoom': s.map_default_zoom,
         'map_framing': s.map_framing,
@@ -176,6 +187,15 @@ def api_put_settings():
         if 'last_profile_uid' in data:
             last_profile_uid = data.get('last_profile_uid')
 
+        # Thème par défaut et dernier thème actif de la page /evolution : mêmes
+        # règles que les deux clés du mode principal ci-dessus.
+        evolution_default_profile_uid = current.evolution_default_profile_uid
+        if 'evolution_default_profile_uid' in data:
+            evolution_default_profile_uid = data.get('evolution_default_profile_uid')
+        evolution_last_profile_uid = current.evolution_last_profile_uid
+        if 'evolution_last_profile_uid' in data:
+            evolution_last_profile_uid = data.get('evolution_last_profile_uid')
+
         # « Démarrer sur ce thème » : l'interrupteur n'est réécrit que si le
         # client l'envoie, comme les deux uid de profil ci-dessus.
         startup_default_profile = current.startup_default_profile
@@ -216,6 +236,8 @@ def api_put_settings():
             default_profile_uid=default_profile_uid,
             last_profile_uid=last_profile_uid,
             startup_default_profile=startup_default_profile,
+            evolution_default_profile_uid=evolution_default_profile_uid,
+            evolution_last_profile_uid=evolution_last_profile_uid,
             map_default_center=map_default_center,
             map_default_zoom=map_default_zoom,
             map_framing=map_framing,
@@ -258,7 +280,13 @@ def api_reset_settings():
 
 @profiles_bp.route('/api/profiles', methods=['GET'])
 def api_list_profiles():
-    return jsonify(settings_manager.list_profiles())
+    # `?details=1` : tous les thèmes avec leur mode, pour la page qui doit
+    # connaître les noms de l'autre mode (uniques tous modes confondus).
+    # `?mode=` : les noms d'un seul mode. Sans paramètre : tous les noms.
+    if request.args.get('details'):
+        return jsonify(settings_manager.list_profiles_with_modes())
+    mode = request.args.get('mode')
+    return jsonify(settings_manager.list_profiles(mode if mode in PROFILE_MODES else None))
 
 
 @profiles_bp.route('/api/profiles/<name>', methods=['GET'])
@@ -285,7 +313,7 @@ def api_create_profile():
     name = data.get('name') or 'NewProfile'
     base = data.get('base')
     try:
-        prof = settings_manager.create_profile(name, base)
+        prof = settings_manager.create_profile(name, base, data.get('mode'))
     except InvalidProfileNameError as e:
         return jsonify({'success': False, 'message': str(e)}), 400
     except ValueError as e:
@@ -365,6 +393,22 @@ def api_duplicate_profile(name: str):
     return jsonify({'success': True, 'name': prof.name})
 
 
+@profiles_bp.route('/api/profiles/<name>/transfer', methods=['POST'])
+def api_transfer_profile(name: str):
+    """Copie un thème dans l'autre mode (tailles adaptées à sa densité)."""
+    data = request.get_json(silent=True) or {}
+    try:
+        prof = settings_manager.copy_profile_to_mode(
+            name, data.get('mode'), data.get('new_name') or name)
+    except FileNotFoundError as e:
+        return jsonify({'success': False, 'message': str(e)}), 404
+    except InvalidProfileNameError as e:
+        return jsonify({'success': False, 'message': str(e)}), 400
+    except ValueError as e:
+        return jsonify({'success': False, 'message': str(e)}), 400
+    return jsonify({'success': True, 'name': prof.name, 'uid': prof.uid, 'mode': prof.mode})
+
+
 @profiles_bp.route('/api/profiles/<name>', methods=['DELETE'])
 def api_delete_profile(name: str):
     try:
@@ -400,7 +444,9 @@ def api_import_profile():
     try:
         data = request.get_json(silent=True) or {}
         prof = settings_manager.import_profile_payload(data)
-        return jsonify({'success': True, 'name': prof.name, 'uid': prof.uid})
+        # Le mode vient du fichier : la page qui importe peut ainsi dire que
+        # le thème a rejoint la liste de l'autre mode.
+        return jsonify({'success': True, 'name': prof.name, 'uid': prof.uid, 'mode': prof.mode})
     except ValueError as ve:
         return jsonify({'success': False, 'message': str(ve)}), 400
     except Exception as e:

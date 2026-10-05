@@ -33,6 +33,9 @@ EXAMPLE_PROFILE_BATCHES = {
         "Randonnée Topo",
         "Cuivre & Ardoise",
     },
+    # Thèmes du mode Évolution : points minuscules et flashs courts, pour des
+    # dizaines de milliers de caches (voir PROFILE_MODES).
+    4: {"Évolution Classique", "Évolution Black", "Évolution Encre", "Évolution Nuit"},
 }
 EXAMPLES_VERSION = max(EXAMPLE_PROFILE_BATCHES)
 # Thème chargé à la toute première ouverture. Sans lui, l'application démarrait
@@ -40,6 +43,15 @@ EXAMPLES_VERSION = max(EXAMPLE_PROFILE_BATCHES)
 # correspondent à aucun thème de la liste, et les réglages faits alors n'étaient
 # rattachés à rien (ni indicateur « • », ni avertissement avant fermeture).
 FIRST_LAUNCH_PROFILE = "Default"
+# Son équivalent pour la page /evolution, dont la liste de thèmes est séparée.
+FIRST_LAUNCH_EVOLUTION_PROFILE = "Évolution Classique"
+# Mode auquel un thème appartient. Chaque page ne liste que les siens : un
+# thème réglé pour quelques milliers de trouvailles (points de 5 à 10 px)
+# noie la carte en mode Évolution, et l'inverse y est illisible. Un fichier
+# sans ce champ est un thème du mode principal (tous ceux d'avant la séparation).
+PROFILE_MODE_MAIN = "main"
+PROFILE_MODE_EVOLUTION = "evolution"
+PROFILE_MODES = (PROFILE_MODE_MAIN, PROFILE_MODE_EVOLUTION)
 # Compatibilité avec les tests et extensions qui importent encore ce nom.
 EXAMPLES_ADDED_AFTER_V1 = set().union(*EXAMPLE_PROFILE_BATCHES.values())
 MAX_OVERLAY_TITLE_LENGTH = 500
@@ -246,6 +258,11 @@ class AppSettings:
     # défaut ne servant que de repli. True : `default_profile_uid` passe en
     # premier, le dernier profil utilisé n'étant alors que le repli.
     startup_default_profile: bool = False
+    # Mêmes rôles pour la page /evolution, qui a sa propre liste de thèmes
+    # (MapProfile.mode) : sans ces deux clés, changer de page rappellerait un
+    # thème de l'autre mode.
+    evolution_default_profile_uid: Optional[str] = None
+    evolution_last_profile_uid: Optional[str] = None
     # Convention persistée/API : (longitude, latitude).
     map_default_center: Optional[Tuple[float, float]] = None
     map_default_zoom: Optional[int] = None
@@ -454,6 +471,10 @@ class MapProfile:
     version: int = COORDINATE_ORDER_VERSION
     name: str = "Default"
     uid: str = field(default_factory=lambda: uuid.uuid4().hex)
+    # Page à laquelle le thème appartient (PROFILE_MODES). Jamais modifié par
+    # une sauvegarde : on change un thème de mode en le copiant
+    # (SettingsManager.copy_profile_to_mode).
+    mode: str = PROFILE_MODE_MAIN
     map: MapOptions = field(default_factory=MapOptions)
     points: PointStyle = field(default_factory=PointStyle)
     flash: FlashOptions = field(default_factory=FlashOptions)
@@ -786,6 +807,9 @@ def coerce_settings(d: dict) -> AppSettings:
         if d.get("last_profile_uid"):
             s.last_profile_uid = d.get("last_profile_uid")
 
+        s.evolution_default_profile_uid = _coerce_optional_str(d.get("evolution_default_profile_uid"))
+        s.evolution_last_profile_uid = _coerce_optional_str(d.get("evolution_last_profile_uid"))
+
         s.startup_default_profile = bool(d.get("startup_default_profile", s.startup_default_profile))
 
         s.examples_seeded = bool(d.get("examples_seeded", s.examples_seeded))
@@ -811,6 +835,7 @@ def coerce_profile(d: dict, base: Optional[MapProfile] = None) -> MapProfile:
             source_version = 1
         p.version = max(source_version, COORDINATE_ORDER_VERSION)
         p.uid = d.get("uid", p.uid)
+        p.mode = _coerce_choice(d.get("mode"), PROFILE_MODES, p.mode)
 
         # Options de carte. `default_center` et `default_zoom`, présents dans
         # les anciens fichiers, ne sont plus lus : le centre et le zoom sont un
@@ -939,6 +964,59 @@ def coerce_profile(d: dict, base: Optional[MapProfile] = None) -> MapProfile:
     return p
 
 
+# Échelle des tailles entre les deux modes. Le mode principal affiche quelques
+# milliers de points (rayon 5 à 10 px dans les exemples), le mode Évolution des
+# dizaines de milliers : au-delà de 2 ou 3 px les points se recouvrent et la
+# carte devient un aplat.
+EVOLUTION_POINT_SCALE = 0.25
+EVOLUTION_FLASH_SCALE = 0.4
+# Des dizaines de flashs par image : au-delà, ils se fondent en un voile.
+EVOLUTION_FLASH_MAX_DURATION = 500
+
+
+def _scaled(value: int, factor: float, minimum: int, maximum: int) -> int:
+    # Arrondi au plus proche, la moitié vers le haut (round() de Python arrondit
+    # 2,5 à 2) : une taille de 6 doit donner 2 et non 1.
+    return max(minimum, min(maximum, int(value * factor + 0.5)))
+
+
+def convert_profile_for_mode(prof: MapProfile, target_mode: str) -> MapProfile:
+    """Adapte un thème (modifié en place) à la densité de `target_mode`.
+
+    Fond de carte, couleurs, formes, titre et CSS sont conservés tels quels :
+    seul ce qui dépend du nombre de points à l'écran est ramené à l'échelle du
+    mode visé. Le trajet et le flash de disparition, sans effet dans l'un des
+    deux modes, traversent sans changement.
+    """
+    if target_mode == prof.mode:
+        return prof
+    points, flash = prof.points, prof.flash
+    if target_mode == PROFILE_MODE_EVOLUTION:
+        points.size = _scaled(points.size, EVOLUTION_POINT_SCALE, *POINT_SIZE_RANGE)
+        # Une icône par cache est illisible à cette densité : pastille aux
+        # couleurs du type, ce que l'icône exprimait.
+        if points.mode == "icone":
+            points.mode = "vectoriel"
+            points.fill_color_type = "gc"
+        # Un contour autour d'un point de 1 ou 2 px le recouvre entièrement.
+        # Un point dessiné par son seul contour (centre « aucun ») en reprend
+        # donc la couleur, sinon il disparaîtrait.
+        if points.fill_color_type == "none" and points.halo and points.border_size > 0:
+            points.fill_color_type = points.border_color_type
+            points.color = points.border_color
+        if points.fill_color_type == "none":
+            points.fill_color_type = "fix"
+        points.halo = False
+        points.border_size = 0
+        flash.size = _scaled(flash.size, EVOLUTION_FLASH_SCALE, *FLASH_SIZE_RANGE)
+        flash.duration = min(flash.duration, EVOLUTION_FLASH_MAX_DURATION)
+    else:
+        points.size = _scaled(points.size, 1 / EVOLUTION_POINT_SCALE, *POINT_SIZE_RANGE)
+        flash.size = _scaled(flash.size, 1 / EVOLUTION_FLASH_SCALE, *FLASH_SIZE_RANGE)
+    prof.mode = target_mode
+    return prof
+
+
 def _profiles_locked(method):
     """Exécute une opération sur les fichiers de thèmes verrou tenu.
 
@@ -979,6 +1057,10 @@ class SettingsManager:
         self._uid_to_path_cache: dict[str, Path] = {}
         self._uid_to_name_cache: dict[str, str] = {}
         self._name_to_path_cache: dict[str, Path] = {}
+        # Mode de chaque thème (PROFILE_MODES), par nom et par uid : la liste
+        # filtrée d'une page est demandée après chaque action.
+        self._name_to_mode_cache: dict[str, str] = {}
+        self._uid_to_mode_cache: dict[str, str] = {}
         self._cache_signature: tuple = ()
         self._build_profile_cache()
 
@@ -990,7 +1072,10 @@ class SettingsManager:
         settings = self.get_app_settings()
         if not settings.examples_seeded:
             self._create_example_profiles()
-            self._mark_examples_seeded(default_profile_name=FIRST_LAUNCH_PROFILE)
+            self._mark_examples_seeded(
+                default_profile_name=FIRST_LAUNCH_PROFILE,
+                evolution_default_profile_name=FIRST_LAUNCH_EVOLUTION_PROFILE,
+            )
         elif settings.examples_version < EXAMPLES_VERSION:
             missing_examples = set().union(*(
                 names
@@ -998,24 +1083,45 @@ class SettingsManager:
                 if version > settings.examples_version
             ))
             self._create_example_profiles(only=missing_examples)
-            self._mark_examples_seeded()
+            # Installation antérieure aux thèmes du mode Évolution : la page
+            # /evolution n'a encore aucun thème à elle, elle reçoit le sien.
+            # Contrairement au mode principal, aucun choix existant n'est
+            # écrasé — la clé n'existait pas.
+            evolution_default = (
+                FIRST_LAUNCH_EVOLUTION_PROFILE
+                if FIRST_LAUNCH_EVOLUTION_PROFILE in missing_examples else None
+            )
+            self._mark_examples_seeded(evolution_default_profile_name=evolution_default)
 
-    def _mark_examples_seeded(self, default_profile_name: Optional[str] = None) -> None:
+    def _mark_examples_seeded(
+        self,
+        default_profile_name: Optional[str] = None,
+        evolution_default_profile_name: Optional[str] = None,
+    ) -> None:
         # Le thème par défaut n'est posé qu'au premier lancement, et seulement
         # si aucun n'est déjà choisi : c'est lui que restoreStartupProfile()
         # (static/js/profiles.js) charge faute de dernier thème actif.
-        default_uid = None
-        if default_profile_name:
+        def uid_of(name: Optional[str], mode: str) -> Optional[str]:
+            if not name:
+                return None
             try:
-                default_uid = self.load_profile(default_profile_name).uid
+                prof = self.load_profile(name)
             except FileNotFoundError:
-                logging.warning("Thème de premier lancement '%s' introuvable", default_profile_name)
+                logging.warning("Thème de premier lancement '%s' introuvable", name)
+                return None
+            # Un thème de l'utilisateur peut porter ce nom dans l'autre mode.
+            return prof.uid if prof.mode == mode else None
+
+        default_uid = uid_of(default_profile_name, PROFILE_MODE_MAIN)
+        evolution_default_uid = uid_of(evolution_default_profile_name, PROFILE_MODE_EVOLUTION)
 
         def mark(current: AppSettings) -> AppSettings:
             current.examples_seeded = True
             current.examples_version = EXAMPLES_VERSION
             if default_uid and not current.default_profile_uid:
                 current.default_profile_uid = default_uid
+            if evolution_default_uid and not current.evolution_default_profile_uid:
+                current.evolution_default_profile_uid = evolution_default_uid
             return current
 
         self.update_app_settings(mark)
@@ -1049,22 +1155,30 @@ class SettingsManager:
         uid_to_path: dict[str, Path] = {}
         uid_to_name: dict[str, str] = {}
         name_to_path: dict[str, Path] = {}
+        name_to_mode: dict[str, str] = {}
+        uid_to_mode: dict[str, str] = {}
         signature = self._profiles_dir_signature()
         for profile_file in PROFILES_DIR.glob("*.json"):
             try:
                 data = read_json(profile_file)
                 name = data.get("name") or profile_file.stem
                 uid = data.get("uid")
+                mode = _coerce_choice(data.get("mode"), PROFILE_MODES, PROFILE_MODE_MAIN)
                 if uid:
                     uid_to_path[uid] = profile_file
                     uid_to_name[uid] = name
+                    uid_to_mode[uid] = mode
                 name_to_path[name] = profile_file
+                name_to_mode[name] = mode
             except Exception:
                 # Fichier illisible : on garde au moins le nom de fichier comme nom
                 name_to_path[profile_file.stem] = profile_file
+                name_to_mode[profile_file.stem] = PROFILE_MODE_MAIN
         self._uid_to_path_cache = uid_to_path
         self._uid_to_name_cache = uid_to_name
         self._name_to_path_cache = name_to_path
+        self._name_to_mode_cache = name_to_mode
+        self._uid_to_mode_cache = uid_to_mode
         # Empreinte prise AVANT le scan : un fichier modifié pendant celui-ci
         # rendra l'empreinte périmée, et le prochain accès reconstruira.
         self._cache_signature = signature
@@ -2111,8 +2225,239 @@ class SettingsManager:
                     """
                 )
             ),
+
+            # Thèmes du mode Évolution (EXAMPLES_VERSION 4) : des dizaines de
+            # milliers de caches à l'écran. Points de 1 ou 2 px sans contour,
+            # flashs petits et brefs — plusieurs dizaines peuvent partir sur la
+            # même image. Les trois premiers déclinent des thèmes du mode
+            # principal : « Default », « Black » et « Encre & Papier ».
+            "Évolution Classique": MapProfile(
+                name="Évolution Classique",
+                mode=PROFILE_MODE_EVOLUTION,
+                map=MapOptions(
+                    tile_provider="OSM",
+                    vector_options=VectorMapOptions(
+                        stroke_color="#64748b",
+                        fill_color="#e2e8f0",
+                        background_color="#f8fafc",
+                        stroke_width=1.0
+                    ),
+                    toner_options=TonerMapOptions(variant="light")
+                ),
+                points=PointStyle(
+                    size=2,
+                    color="#d32f2f",
+                    shape="circle",
+                    halo=False,
+                    border_color="#ffffff",
+                    border_size=0,
+                    fill_color_type="gc",
+                    border_color_type="fix",
+                    mode="vectoriel"
+                ),
+                flash=FlashOptions(
+                    mode="circle",
+                    duration=400,
+                    size=16,
+                    color="#f59e0b",
+                    color_type="gc",
+                    disappear=DisappearFlashOptions(mode="implode", size=12, color="#616161")
+                ),
+                infos=build_infos(
+                    "Évolution des géocaches",
+                    """
+                    color: #ffffff;
+                    background: rgba(15, 23, 42, 0.78);
+                    padding: 10px 16px;
+                    border-radius: 999px;
+                    font-weight: 700;
+                    letter-spacing: 0.4px;
+                    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.24);
+                    """,
+                    """
+                    color: #0f172a;
+                    background: rgba(255, 255, 255, 0.88);
+                    padding: 8px 12px;
+                    border-radius: 10px;
+                    border: 1px solid rgba(148, 163, 184, 0.5);
+                    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+                    """
+                )
+            ),
+
+            "Évolution Black": MapProfile(
+                name="Évolution Black",
+                mode=PROFILE_MODE_EVOLUTION,
+                map=MapOptions(
+                    tile_provider="vectorMap",
+                    vector_options=VectorMapOptions(
+                        stroke_color="#fafafa",
+                        fill_color="#000000",
+                        background_color="#4d4c4c",
+                        stroke_width=1.6
+                    ),
+                    toner_options=TonerMapOptions(variant="light")
+                ),
+                points=PointStyle(
+                    size=1,
+                    color="#8b3a2e",
+                    shape="circle",
+                    halo=False,
+                    border_color="#f6f0e3",
+                    border_size=0,
+                    fill_color_type="gc",
+                    border_color_type="gc",
+                    mode="vectoriel"
+                ),
+                flash=FlashOptions(
+                    mode="sparkle",
+                    duration=400,
+                    size=6,
+                    color="#fbff00",
+                    color_type="fix",
+                    disappear=DisappearFlashOptions(mode="implode", size=10, color="#9E9E9E")
+                ),
+                infos=build_infos(
+                    "Black Geocaching",
+                    """
+                    color: #f8fafc;
+                    background: rgba(11, 16, 32, 0.76);
+                    padding: 8px 12px;
+                    border-radius: 8px;
+                    border-left: 3px solid #6ef2ff;
+                    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+                    """,
+                    """
+                    color: #f8fafc;
+                    background: rgba(11, 16, 32, 0.76);
+                    padding: 8px 12px;
+                    border-radius: 8px;
+                    border-left: 3px solid #6ef2ff;
+                    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+                    """
+                )
+            ),
+
+            "Évolution Nuit": MapProfile(
+                name="Évolution Nuit",
+                mode=PROFILE_MODE_EVOLUTION,
+                map=MapOptions(
+                    tile_provider="vectorMap",
+                    vector_options=VectorMapOptions(
+                        stroke_color="#334155",
+                        fill_color="#111827",
+                        background_color="#030712",
+                        stroke_width=1.0
+                    ),
+                    toner_options=TonerMapOptions(variant="dark")
+                ),
+                points=PointStyle(
+                    size=1,
+                    color="#fde047",
+                    shape="circle",
+                    halo=False,
+                    border_color="#000000",
+                    border_size=0,
+                    fill_color_type="fix",
+                    border_color_type="fix",
+                    mode="vectoriel",
+                    recent_glow_days=30
+                ),
+                flash=FlashOptions(
+                    mode="impulse",
+                    duration=400,
+                    size=12,
+                    color="#fef9c3",
+                    color_type="fix",
+                    disappear=DisappearFlashOptions(mode="implode", size=10, color="#ef4444")
+                ),
+                infos=build_infos(
+                    "ÉVOLUTION DES GÉOCACHES",
+                    """
+                    color: #fef9c3;
+                    background: rgba(3, 7, 18, 0.78);
+                    padding: 10px 18px;
+                    border-radius: 999px;
+                    border: 1px solid rgba(253, 224, 71, 0.5);
+                    font-weight: 700;
+                    letter-spacing: 1.6px;
+                    """,
+                    """
+                    color: #e2e8f0;
+                    background: rgba(3, 7, 18, 0.72);
+                    padding: 8px 13px;
+                    border-radius: 999px;
+                    font-variant-numeric: tabular-nums;
+                    """
+                )
+            ),
+
+            "Évolution Encre": MapProfile(
+                name="Évolution Encre",
+                mode=PROFILE_MODE_EVOLUTION,
+                map=MapOptions(
+                    tile_provider="stamenToner",
+                    vector_options=VectorMapOptions(
+                        stroke_color="#292524",
+                        fill_color="#e7e5e4",
+                        background_color="#fafaf9",
+                        stroke_width=1.0
+                    ),
+                    toner_options=TonerMapOptions(variant="light")
+                ),
+                points=PointStyle(
+                    size=2,
+                    color="#1c1917",
+                    shape="circle",
+                    halo=False,
+                    border_color="#ffffff",
+                    border_size=0,
+                    fill_color_type="fix",
+                    border_color_type="fix",
+                    mode="vectoriel"
+                ),
+                flash=FlashOptions(
+                    mode="none",
+                    duration=400,
+                    size=12,
+                    color="#1c1917",
+                    color_type="none",
+                    disappear=DisappearFlashOptions(mode="none", size=10, color="#9E9E9E")
+                ),
+                infos=build_infos(
+                    "ÉVOLUTION DES GÉOCACHES",
+                    """
+                    color: #1c1917;
+                    background: rgba(250, 250, 249, 0.94);
+                    padding: 9px 14px;
+                    border-radius: 2px;
+                    border: 1px solid #292524;
+                    font-family: Georgia;
+                    font-weight: 700;
+                    letter-spacing: 1.4px;
+                    """,
+                    """
+                    color: #292524;
+                    background: rgba(250, 250, 249, 0.92);
+                    padding: 7px 11px;
+                    border-radius: 2px;
+                    border-bottom: 2px solid #292524;
+                    font-variant-numeric: tabular-nums;
+                    """
+                )
+            ),
         }
         return example_profiles
+
+    def _blank_profile(self, mode: str) -> MapProfile:
+        """Thème aux valeurs par défaut de `mode` (création, réinitialisation).
+
+        Les défauts de MapProfile sont ceux du mode principal (points de 8 px) ;
+        un thème Évolution part du thème d'exemple de premier lancement.
+        """
+        if mode == PROFILE_MODE_EVOLUTION:
+            return self._example_profile_definitions()[FIRST_LAUNCH_EVOLUTION_PROFILE]
+        return MapProfile()
 
     def _create_example_profiles(self, only: Optional[set] = None) -> None:
         """Crée des profils d'exemple (tous, ou seulement ceux nommés dans `only`)"""
@@ -2134,15 +2479,21 @@ class SettingsManager:
             # on nettoie la référence pour éviter des erreurs 404 récurrentes au démarrage.
             # Les deux références sont examinées avant l'écriture : une seule
             # sauvegarde, même si les deux pointent sur le profil supprimé.
+            # Une référence vers un thème de l'autre mode est effacée de la
+            # même façon : la page le chargerait sans pouvoir le montrer dans
+            # sa liste.
             stale = False
-            if settings.default_profile_uid and not self.get_profile_name_by_uid(settings.default_profile_uid):
-                logging.warning("Profil par défaut introuvable (uid=%s), réinitialisation.", settings.default_profile_uid)
-                settings.default_profile_uid = None
-                stale = True
-            if settings.last_profile_uid and not self.get_profile_name_by_uid(settings.last_profile_uid):
-                logging.warning("Dernier profil actif introuvable (uid=%s), réinitialisation.", settings.last_profile_uid)
-                settings.last_profile_uid = None
-                stale = True
+            for attr, mode in (
+                ("default_profile_uid", PROFILE_MODE_MAIN),
+                ("last_profile_uid", PROFILE_MODE_MAIN),
+                ("evolution_default_profile_uid", PROFILE_MODE_EVOLUTION),
+                ("evolution_last_profile_uid", PROFILE_MODE_EVOLUTION),
+            ):
+                uid = getattr(settings, attr)
+                if uid and self.get_profile_mode_by_uid(uid) != mode:
+                    logging.warning("Thème référencé par %s introuvable (uid=%s), réinitialisation.", attr, uid)
+                    setattr(settings, attr, None)
+                    stale = True
             if stale:
                 self.save_app_settings(settings)
 
@@ -2206,10 +2557,21 @@ class SettingsManager:
     def _profile_path(self, name: str) -> Path:
         return PROFILES_DIR / f"{self._profile_file_key(name) or 'Default'}.json"
 
-    def list_profiles(self) -> List[str]:
-        """Retourne la liste des noms de profils (pas les noms de fichiers)"""
+    def list_profiles(self, mode: Optional[str] = None) -> List[str]:
+        """Noms des thèmes (pas des fichiers) ; ceux de `mode` seulement s'il est donné."""
         self._ensure_profile_cache()
-        return sorted(self._name_to_path_cache)
+        if mode is None:
+            return sorted(self._name_to_path_cache)
+        return sorted(name for name, m in self._name_to_mode_cache.items() if m == mode)
+
+    def list_profiles_with_modes(self) -> List[dict]:
+        """Tous les thèmes avec leur mode : `[{"name": ..., "mode": ...}]`.
+
+        Les noms sont uniques tous modes confondus (un fichier par nom) : une
+        page a besoin de ceux de l'autre mode pour signaler une collision.
+        """
+        self._ensure_profile_cache()
+        return [{"name": name, "mode": self._name_to_mode_cache[name]} for name in sorted(self._name_to_mode_cache)]
 
     def load_profile(self, name: str) -> MapProfile:
         path = self._profile_path(name)
@@ -2242,6 +2604,11 @@ class SettingsManager:
         self._ensure_profile_cache()
         return self._uid_to_name_cache.get(uid)
 
+    def get_profile_mode_by_uid(self, uid: str) -> Optional[str]:
+        """Mode d'un thème par son UUID, None s'il n'existe pas."""
+        self._ensure_profile_cache()
+        return self._uid_to_mode_cache.get(uid)
+
     @_profiles_locked
     def save_profile(self, profile: MapProfile) -> None:
         write_json(self._profile_path(profile.name), asdict(profile))
@@ -2262,16 +2629,18 @@ class SettingsManager:
         return read_json(path).get("uid") == exclude_uid
 
     @_profiles_locked
-    def create_profile(self, name: str, base: Optional[str] = None) -> MapProfile:
+    def create_profile(self, name: str, base: Optional[str] = None, mode: str = PROFILE_MODE_MAIN) -> MapProfile:
         name = self._require_valid_profile_name(name)
+        mode = _coerce_choice(mode, PROFILE_MODES, PROFILE_MODE_MAIN)
         if not self.is_name_available(name):
             raise ValueError(_tr("Un thème nommé '%(name)s' existe déjà", name=name))
         if base and self._profile_path(base).exists():
             prof = self.load_profile(base)
-            prof.name = name
-            prof.uid = uuid.uuid4().hex
         else:
-            prof = MapProfile(name=name)
+            prof = self._blank_profile(mode)
+        prof.name = name
+        prof.uid = uuid.uuid4().hex
+        prof.mode = mode
         self.save_profile(prof)
         return prof
 
@@ -2310,6 +2679,25 @@ class SettingsManager:
         return prof
 
     @_profiles_locked
+    def copy_profile_to_mode(self, name: str, target_mode: str, new_name: str) -> MapProfile:
+        """Copie un thème dans l'autre mode, tailles ramenées à son échelle.
+
+        Une copie et non un déplacement : l'original reste disponible dans son
+        mode, inchangé (voir convert_profile_for_mode pour ce qui est adapté).
+        """
+        if target_mode not in PROFILE_MODES:
+            raise ValueError(_tr("Mode de thème inconnu"))
+        prof = self.load_profile(name)  # FileNotFoundError si absent
+        if prof.mode == target_mode:
+            raise ValueError(_tr("Le thème '%(name)s' appartient déjà à ce mode", name=name))
+        new_name = self._require_valid_profile_name(new_name)
+        convert_profile_for_mode(prof, target_mode)
+        prof.name = self._generate_unique_name(new_name)
+        prof.uid = uuid.uuid4().hex
+        self.save_profile(prof)
+        return prof
+
+    @_profiles_locked
     def delete_profile(self, name: str) -> None:
         # Une suppression sur un profil absent est signalée (comme load_profile
         # et rename_profile) : sans cela l'appelant croit avoir supprimé un
@@ -2338,9 +2726,14 @@ class SettingsManager:
         actif), que get_app_settings() effaçait alors sans rien dire.
         """
         current = self.load_profile(name)  # FileNotFoundError si absent
-        prof = self._example_profile_definitions().get(current.name) or MapProfile()
+        prof = self._example_profile_definitions().get(current.name)
+        # Un thème de l'utilisateur peut porter le nom d'un exemple de l'autre
+        # mode (après suppression de celui-ci) : il n'en reprend pas le design.
+        if prof is None or prof.mode != current.mode:
+            prof = self._blank_profile(current.mode)
         prof.name = current.name
         prof.uid = current.uid
+        prof.mode = current.mode
         self.save_profile(prof)
         return prof
 
@@ -2368,6 +2761,7 @@ class SettingsManager:
             'version': prof.version,
             'name': prof.name,
             'uid': prof.uid,
+            'mode': prof.mode,
             'map': {
                 'tile_provider': prof.map.tile_provider,
                 'vector_options': {

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-05 17:51+0200\n"
+"POT-Creation-Date: 2026-10-05 18:11+0200\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -264,7 +264,7 @@ msgstr "Out-of-sequence video fragment"
 msgid "Fragment vidéo absent"
 msgstr "Missing video fragment"
 
-#: settings_manager.py:2201
+#: settings_manager.py:2496
 #, python-format
 msgid ""
 "Le nom '%(name)s' ne contient aucun caractère utilisable (au moins une "
@@ -273,36 +273,45 @@ msgstr ""
 "The name '%(name)s' contains no usable characters (at least one letter or"
 " digit is required)"
 
-#: blueprints/profiles.py:393 settings_manager.py:2217 settings_manager.py:2287
-#: settings_manager.py:2320
+#: blueprints/profiles.py:437 settings_manager.py:2523 settings_manager.py:2600
+#: settings_manager.py:2652
 #, python-format
 msgid "Thème '%(name)s' introuvable"
 msgstr "Theme '%(name)s' not found"
 
-#: settings_manager.py:2238
+#: settings_manager.py:2544
 #, python-format
 msgid "Aucun thème trouvé avec l'UUID: %(uid)s"
 msgstr "No theme found with UUID: %(uid)s"
 
-#: settings_manager.py:2268 settings_manager.py:2292
+#: settings_manager.py:2580 settings_manager.py:2605
 #, , python-format
 msgid "Un thème nommé '%(name)s' existe déjà"
 msgstr "A theme named '%(name)s' already exists"
 
-#: settings_manager.py:2304
+#: settings_manager.py:2617
 #, python-format
 msgid "Thème source '%(name)s' introuvable"
 msgstr "Source theme '%(name)s' not found"
 
-#: settings_manager.py:2459
+#: settings_manager.py:2633
+msgid "Mode de thème inconnu"
+msgstr "Unknown theme mode"
+
+#: settings_manager.py:2636
+#, , python-format
+msgid "Le thème '%(name)s' appartient déjà à ce mode"
+msgstr "The theme '%(name)s' already belongs to this mode"
+
+#: settings_manager.py:2797
 msgid "Payload invalide"
 msgstr "Invalid payload"
 
-#: settings_manager.py:2462
+#: settings_manager.py:2800
 msgid "Fichier de thème invalide (détrompeur manquant)"
 msgstr "Invalid theme file (missing magic)"
 
-#: settings_manager.py:2466
+#: settings_manager.py:2804
 msgid "Section 'profile' manquante"
 msgstr "Missing 'profile' section"
 
@@ -516,13 +525,13 @@ msgstr ""
 "A video assembly is running: the captured/ folder cannot be emptied right"
 " now."
 
-#: blueprints/profiles.py:315
+#: blueprints/profiles.py:343
 msgid ""
 "Le renommage n'est pas autorisé via cet endpoint, utilisez "
 "/api/profiles/<name>/rename"
 msgstr "Renaming is not allowed via this endpoint, use /api/profiles/<name>/rename"
 
-#: blueprints/profiles.py:343
+#: blueprints/profiles.py:371
 msgid "Nouveau nom manquant"
 msgstr "New name missing"
 
@@ -1544,182 +1553,207 @@ msgstr "Later"
 msgid "Vous ne serez plus averti pour cette version."
 msgstr "You will no longer be notified about this version."
 
-#: static/js/profiles.js:83
+#: static/js/profiles.js:40 templates/app.html:40 templates/app.html:66
+#: templates/app.html:68
+msgid "Évolution"
+msgstr "Evolution"
+
+#: static/js/profiles.js:40 templates/app.html:61 templates/app.html:63
+#: templates/guide.html:139 templates/guide.html:340 templates/menu_data.html:8
+msgid "Mes trouvailles"
+msgstr "My finds"
+
+#: static/js/profiles.js:114
 msgid "espace"
 msgstr "space"
 
-#: static/js/profiles.js:287
+#: static/js/profiles.js:325
 msgid "Import échoué"
 msgstr "Import failed"
 
-#: static/js/profiles.js:289
+#: static/js/profiles.js:335
+#, python-brace-format
+msgid "Thème \"${name}\" importé dans le mode « ${mode} »"
+msgstr "Theme \"${name}\" imported into the “${mode}” mode"
+
+#: static/js/profiles.js:339
 #, python-brace-format
 msgid "Thème \"${name}\" importé"
 msgstr "Theme \"${name}\" imported"
 
-#: static/js/profiles.js:293
+#: static/js/profiles.js:344
 msgid "Erreur import du thème"
 msgstr "Theme import error"
 
-#: static/js/profiles.js:319
+#: static/js/profiles.js:370
 msgid "Erreur API"
 msgstr "API error"
 
-#: static/js/profiles.js:325
+#: static/js/profiles.js:376
 #, python-brace-format
 msgid "Erreur: ${message}"
 msgstr "Error: ${message}"
 
-#: static/js/profiles.js:447 static/js/profiles.js:1520
+#: static/js/profiles.js:509 static/js/profiles.js:1616
 #, python-brace-format
 msgid "Thème \"${name}\" chargé"
 msgstr "Theme \"${name}\" loaded"
 
-#: static/js/profiles.js:484
+#: static/js/profiles.js:546
 #, python-brace-format
 msgid "Thème \"${name}\" sauvegardé"
 msgstr "Theme \"${name}\" saved"
 
-#: static/js/profiles.js:538
+#: static/js/profiles.js:601
 #, python-brace-format
 msgid "Thème \"${name}\" créé, mais l'enregistrement des réglages a échoué"
 msgstr "Theme \"${name}\" created, but its settings could not be saved"
 
-#: static/js/profiles.js:548
+#: static/js/profiles.js:611
 #, python-brace-format
 msgid "Thème \"${name}\" créé"
 msgstr "Theme \"${name}\" created"
 
-#: static/js/profiles.js:564
+#: static/js/profiles.js:627
 #, python-brace-format
 msgid "Thème dupliqué: \"${name}\""
 msgstr "Theme duplicated: \"${name}\""
 
-#: static/js/profiles.js:576
+#: static/js/profiles.js:651
+#, python-brace-format
+msgid "Thème copié dans le mode « ${mode} » : \"${name}\""
+msgstr "Theme copied to the “${mode}” mode: \"${name}\""
+
+#: static/js/profiles.js:667
 #, python-brace-format
 msgid "Thème \"${name}\" supprimé"
 msgstr "Theme \"${name}\" deleted"
 
-#: static/js/profiles.js:646
+#: static/js/profiles.js:737
 #, python-brace-format
 msgid "Thème \"${name}\" réinitialisé"
 msgstr "Theme \"${name}\" reset"
 
-#: static/js/profiles.js:681
+#: static/js/profiles.js:772
 msgid "Export échoué"
 msgstr "Export failed"
 
-#: static/js/profiles.js:692
+#: static/js/profiles.js:783
 #, python-brace-format
 msgid "Thème \"${name}\" exporté"
 msgstr "Theme \"${name}\" exported"
 
-#: static/js/profiles.js:695
+#: static/js/profiles.js:786
 msgid "Erreur export du thème"
 msgstr "Theme export error"
 
-#: static/js/profiles.js:715
+#: static/js/profiles.js:806
 msgid "Thème introuvable ou UID manquant"
 msgstr "Theme not found or missing UID"
 
-#: static/js/profiles.js:730
+#: static/js/profiles.js:821
 msgid "Échec de la sauvegarde du thème par défaut"
 msgstr "Failed to save the default theme"
 
-#: static/js/profiles.js:735
+#: static/js/profiles.js:826
 #, python-brace-format
 msgid "Thème \"${name}\" défini comme thème par défaut"
 msgstr "Theme \"${name}\" set as the default theme"
 
-#: static/js/profiles.js:748
+#: static/js/profiles.js:839
 msgid "Erreur lors de la définition du thème par défaut"
 msgstr "Error while setting the default theme"
 
-#: static/js/profiles.js:763 static/js/profiles.js:1057
+#: static/js/profiles.js:854 static/js/profiles.js:1153
 msgid "Aucun thème"
 msgstr "No theme"
 
-#: static/js/profiles.js:867 static/js/profiles.js:2594
+#: static/js/profiles.js:958 static/js/profiles.js:2690
 msgid "Dupliquer"
 msgstr "Duplicate"
 
-#: static/js/profiles.js:868 static/js/profiles.js:2574
+#: static/js/profiles.js:961
+#, python-brace-format
+msgid "Copier vers « ${mode} »"
+msgstr "Copy to “${mode}”"
+
+#: static/js/profiles.js:964 static/js/profiles.js:2670
 msgid "Renommer"
 msgstr "Rename"
 
-#: static/js/profiles.js:869 templates/app.html:211 templates/app.html:212
+#: static/js/profiles.js:965 templates/app.html:211 templates/app.html:212
 #: templates/guide.html:106 templates/guide.html:266 templates/guide.html:272
 #: templates/menu_animation.html:36
 msgid "Exporter"
 msgstr "Export"
 
-#: static/js/profiles.js:870 templates/menu_style.html:297
+#: static/js/profiles.js:966 templates/menu_style.html:297
 msgid "Réinitialiser"
 msgstr "Reset"
 
-#: static/js/profiles.js:871 templates/menu_style.html:272
+#: static/js/profiles.js:967 templates/menu_style.html:272
 #: templates/modal_evolution.html:85
 msgid "Supprimer"
 msgstr "Delete"
 
-#: static/js/profiles.js:875
+#: static/js/profiles.js:971
 msgid "Définir comme par défaut"
 msgstr "Set as default"
 
-#: static/js/profiles.js:961
+#: static/js/profiles.js:1057
 msgid "Thème par défaut"
 msgstr "Default theme"
 
-#: static/js/profiles.js:1020 templates/menu_style.html:314
+#: static/js/profiles.js:1116 templates/menu_style.html:314
 msgid "Modifications non enregistrées"
 msgstr "Unsaved changes"
 
-#: static/js/profiles.js:1068
+#: static/js/profiles.js:1164
 msgid "Choisir un thème"
 msgstr "Choose a theme"
 
-#: static/js/profiles.js:1315
+#: static/js/profiles.js:1411
 #, python-brace-format
 msgid ""
 "Le thème \"${name}\" contient des modifications non enregistrées. Que "
 "voulez-vous faire ?"
 msgstr "Theme \"${name}\" has unsaved changes. What do you want to do?"
 
-#: static/js/profiles.js:1316
+#: static/js/profiles.js:1412
 msgid "Vous avez des modifications non enregistrées. Que voulez-vous faire ?"
 msgstr "You have unsaved changes. What do you want to do?"
 
-#: static/js/profiles.js:1524
+#: static/js/profiles.js:1620
 msgid "Erreur lors du chargement du thème par défaut"
 msgstr "Error while loading the default theme"
 
-#: static/js/profiles.js:1557
+#: static/js/profiles.js:1653
 msgid "Aucun thème par défaut"
 msgstr "No default theme"
 
-#: static/js/profiles.js:1664
+#: static/js/profiles.js:1760
 #, python-brace-format
 msgid "Thème \"${selectedProfile}\" appliqué et défini comme thème par défaut"
 msgstr "Theme \"${selectedProfile}\" applied and set as default theme"
 
-#: static/js/profiles.js:1665
+#: static/js/profiles.js:1761
 msgid "Aucun thème par défaut défini"
 msgstr "No default theme set"
 
-#: static/js/profiles.js:1884
+#: static/js/profiles.js:1980
 msgid "Le thème n'a pas pu être chargé : aucun thème n'est actif."
 msgstr "The theme could not be loaded: no theme is active."
 
-#: static/js/profiles.js:2325
+#: static/js/profiles.js:2421
 #, python-brace-format
 msgid "Créer le thème \"${name}\""
 msgstr "Create the theme \"${name}\""
 
-#: static/js/profiles.js:2390 static/js/profiles.js:2767
+#: static/js/profiles.js:2486 static/js/profiles.js:2907
 msgid "Veuillez saisir un nom de thème"
 msgstr "Please enter a theme name"
 
-#: static/js/profiles.js:2453
+#: static/js/profiles.js:2549
 #, python-brace-format
 msgid ""
 "Le thème « ${name} » existe déjà. Les réglages affichés remplaceront ceux"
@@ -1728,60 +1762,74 @@ msgstr ""
 "The theme « ${name} » already exists. The displayed settings will replace"
 " the saved ones."
 
-#: static/js/profiles.js:2499
+#: static/js/profiles.js:2595
 #, python-brace-format
 msgid "Réglages enregistrés dans \"${name}\""
 msgstr "Settings saved to \"${name}\""
 
-#: static/js/profiles.js:2559
+#: static/js/profiles.js:2655
 msgid "Enregistrer dans un nouveau thème"
 msgstr "Save to a new theme"
 
-#: static/js/profiles.js:2559 templates/menu_style.html:232
+#: static/js/profiles.js:2655 templates/menu_style.html:232
 msgid "Nouveau thème"
 msgstr "New theme"
 
-#: static/js/profiles.js:2565 templates/menu_style.html:356
+#: static/js/profiles.js:2661 templates/menu_style.html:356
 msgid "Enregistrer le thème"
 msgstr "Save the theme"
 
-#: static/js/profiles.js:2565 templates/menu_style.html:247
+#: static/js/profiles.js:2661 templates/menu_style.html:247
 msgid "Créer"
 msgstr "Create"
 
-#: static/js/profiles.js:2572
+#: static/js/profiles.js:2668
 msgid "Renommer le thème"
 msgstr "Rename the theme"
 
-#: static/js/profiles.js:2592
+#: static/js/profiles.js:2688
 msgid "Dupliquer le thème"
 msgstr "Duplicate the theme"
 
-#: static/js/profiles.js:2648
+#: static/js/profiles.js:2709
+#, python-brace-format
+msgid "Copier le thème vers « ${mode} »"
+msgstr "Copy the theme to “${mode}”"
+
+#: static/js/profiles.js:2711
+msgid "Copier"
+msgstr "Copy"
+
+#: static/js/profiles.js:2765
 msgid "Le nom doit contenir au moins une lettre ou un chiffre"
 msgstr "The name must contain at least one letter or digit"
 
-#: static/js/profiles.js:2670
+#: static/js/profiles.js:2790 static/js/profiles.js:2810
 #, python-brace-format
 msgid "« ${conflict} » existe déjà : la copie sera nommée « ${suggested} »"
 msgstr "“${conflict}” already exists: the copy will be named “${suggested}”"
 
-#: static/js/profiles.js:2686
+#: static/js/profiles.js:2796
+#, python-brace-format
+msgid "Ce nom est déjà pris par un thème du mode « ${mode} »"
+msgstr "This name is already taken by a theme of the “${mode}” mode"
+
+#: static/js/profiles.js:2826
 #, python-brace-format
 msgid "« ${name} » est le thème actif : ses réglages seront mis à jour"
 msgstr "« ${name} » is the active theme: its settings will be updated"
 
-#: static/js/profiles.js:2692
+#: static/js/profiles.js:2832
 #, python-brace-format
 msgid "« ${name} » existe déjà : ses réglages seront remplacés"
 msgstr "“${name}” already exists: its settings will be replaced"
 
-#: static/js/profiles.js:2699
+#: static/js/profiles.js:2839
 #, python-brace-format
 msgid "Un thème nommé « ${name} » existe déjà"
 msgstr "A theme named « ${name} » already exists"
 
-#: static/js/profiles.js:2700
+#: static/js/profiles.js:2840
 #, python-brace-format
 msgid ""
 "Ce nom est déjà pris par « ${conflict} » : les deux se réduisent au "
@@ -1790,22 +1838,22 @@ msgstr ""
 "This name is already taken by “${conflict}”: both reduce to the file "
 "“${key}”"
 
-#: static/js/profiles.js:2709
+#: static/js/profiles.js:2849
 #, python-brace-format
 msgid "Caractères ignorés (${dropped}) : le thème sera enregistré sous « ${key} »"
 msgstr "Ignored characters (${dropped}): the theme will be saved as « ${key} »"
 
-#: static/js/profiles.js:2826
+#: static/js/profiles.js:2968
 #, python-brace-format
 msgid "Thème renommé en \"${name}\""
 msgstr "Theme renamed to \"${name}\""
 
-#: static/js/profiles.js:2840
+#: static/js/profiles.js:2982
 #, python-brace-format
 msgid "Êtes-vous sûr de vouloir supprimer le thème \"${name}\" ?"
 msgstr "Are you sure you want to delete the theme \"${name}\"?"
 
-#: static/js/profiles.js:2859
+#: static/js/profiles.js:3001
 #, python-brace-format
 msgid ""
 "Êtes-vous sûr de vouloir réinitialiser le thème \"${name}\" aux valeurs "
@@ -2618,18 +2666,9 @@ msgstr "Experimental feature: behavior still being validated, subject to change.
 msgid "Expérimental"
 msgstr "Experimental"
 
-#: templates/app.html:40 templates/app.html:66 templates/app.html:68
-msgid "Évolution"
-msgstr "Evolution"
-
 #: templates/app.html:59
 msgid "Mode"
 msgstr "Mode"
-
-#: templates/app.html:61 templates/app.html:63 templates/guide.html:139
-#: templates/guide.html:340 templates/menu_data.html:8
-msgid "Mes trouvailles"
-msgstr "My finds"
 
 #: templates/app.html:73 templates/app.html:74
 msgid "Guide"

@@ -8,6 +8,31 @@ import { refreshTomSelect, initTomSelect, getTomSelect, showBsModal, hideBsModal
 import { markSaved, markSaveError } from './saved_indicator.mjs';
 import { normalizeTrailOptions } from './travel_trail.mjs';
 import { buildThemeThumbnail } from './theme_thumbs.js';
+import { isEvolutionPage } from './app_mode.mjs';
+
+// Chaque page a sa propre liste de thèmes (champ `mode` du thème, voir
+// PROFILE_MODES dans settings_manager.py) et mémorise son propre thème actif
+// et son propre thème par défaut : un thème réglé pour quelques milliers de
+// trouvailles noie la carte du mode Évolution, et inversement.
+const PROFILE_MODE = isEvolutionPage() ? 'evolution' : 'main';
+const OTHER_PROFILE_MODE = PROFILE_MODE === 'evolution' ? 'main' : 'evolution';
+// Clés de settings.json propres au mode de la page.
+const SETTINGS_KEYS = PROFILE_MODE === 'evolution'
+    ? Object.freeze({
+        defaultUid: 'evolution_default_profile_uid',
+        defaultName: 'evolution_default_profile_name',
+        lastUid: 'evolution_last_profile_uid',
+    })
+    : Object.freeze({
+        defaultUid: 'default_profile_uid',
+        defaultName: 'default_profile_name',
+        lastUid: 'last_profile_uid',
+    });
+
+// Nom affiché d'un mode : celui du sélecteur de mode de l'en-tête.
+function profileModeLabel(mode) {
+    return mode === 'evolution' ? pkg.t('Évolution') : pkg.t('Mes trouvailles');
+}
 
 // Flag de debug pour ce fichier. Mettre à true pour réactiver les logs en
 // console (désactivés par défaut : sérialiser des objets/chaînes à chaque
@@ -66,7 +91,11 @@ function droppedProfileNameChars(name) {
 class ProfileManager {
     constructor() {
         this.currentProfile = null;
+        // Thèmes du mode de la page, seuls listés. Ceux de l'autre mode ne
+        // sont connus que par leur nom : les noms sont uniques tous modes
+        // confondus (un fichier par nom), la saisie doit signaler la collision.
         this.profilesList = [];
+        this._otherModeNames = [];
         this.hasUnsavedChanges = false;
         this._lastSavedSnapshot = null;
         // Recalcul "dirty" débouncé en attente (cf. _bindDirtyTracking) : la
@@ -221,7 +250,17 @@ class ProfileManager {
                 const data = await resp.json();
                 if (!resp.ok || !data.success) throw new Error(data.message || pkg.t('Import échoué'));
 
-                this.showToast(pkg.t('Thème "${name}" importé', { name: data.name }), 'green');
+                if (data.mode && data.mode !== PROFILE_MODE) {
+                    // Le fichier décide du mode : sans ce message, le thème
+                    // semblerait ne pas avoir été importé (il n'apparaît pas
+                    // dans la liste de cette page).
+                    this.showToast(
+                        pkg.t('Thème "${name}" importé dans le mode « ${mode} »', { name: data.name, mode: profileModeLabel(data.mode) }),
+                        'blue'
+                    );
+                } else {
+                    this.showToast(pkg.t('Thème "${name}" importé', { name: data.name }), 'green');
+                }
                 await this.loadProfilesList();
             } catch (e) {
                 console.error('Import error', e);
@@ -261,10 +300,19 @@ class ProfileManager {
         }
     }
 
+    // Lit tous les thèmes et les répartit : ceux de la page dans profilesList,
+    // les noms de l'autre mode dans _otherModeNames. Retourne profilesList.
+    async _fetchProfileNames() {
+        const entries = await this.apiCall('/api/profiles?details=1');
+        const list = Array.isArray(entries) ? entries : [];
+        this.profilesList = list.filter(p => p.mode === PROFILE_MODE).map(p => p.name);
+        this._otherModeNames = list.filter(p => p.mode !== PROFILE_MODE).map(p => p.name);
+        return this.profilesList;
+    }
+
     async loadProfilesList() {
         try {
-            const profiles = await this.apiCall('/api/profiles');
-            this.profilesList = profiles;
+            await this._fetchProfileNames();
             this.renderProfilesList();
             // Lecture des dicts complets pour les vignettes (en parallèle,
             // asynchrone : la liste déjà rendue affiche des pastilles neutres
@@ -410,7 +458,8 @@ class ProfileManager {
         try {
             const result = await this.apiCall('/api/profiles', 'POST', {
                 name: name,
-                base: baseProfile
+                base: baseProfile,
+                mode: PROFILE_MODE
             });
             if (!result.success) return false;
 
@@ -458,6 +507,29 @@ class ProfileManager {
         }
     }
 
+    // Copie un thème dans l'autre mode. Le serveur ramène les tailles (points,
+    // contour, flash) à l'échelle du mode visé ; le thème d'origine reste en
+    // place, inchangé. La copie n'apparaît pas dans la liste de cette page :
+    // le toast dit où la retrouver.
+    async transferProfile(originalName, newName) {
+        try {
+            const result = await this.apiCall(`/api/profiles/${encodeURIComponent(originalName)}/transfer`, 'POST', {
+                mode: OTHER_PROFILE_MODE,
+                new_name: newName
+            });
+            if (result.success) {
+                this.showToast(
+                    pkg.t('Thème copié dans le mode « ${mode} » : "${name}"', { mode: profileModeLabel(result.mode), name: result.name }),
+                    'green'
+                );
+                // Le nom est désormais pris, même s'il n'est pas listé ici.
+                this.loadProfilesList();
+            }
+        } catch (error) {
+            console.error('Erreur copie du thème vers l\'autre mode:', error);
+        }
+    }
+
     async deleteProfile(name) {
         try {
             const result = await this.apiCall(`/api/profiles/${encodeURIComponent(name)}`, 'DELETE');
@@ -483,7 +555,7 @@ class ProfileManager {
                     // 1) Tenter le profil par défaut (UUID)
                     try {
                         const settings = await this.loadAppSettings();
-                        const defaultUid = settings?.default_profile_uid;
+                        const defaultUid = settings?.[SETTINGS_KEYS.defaultUid];
                         if (defaultUid) {
                             await this.loadProfileByUid(defaultUid);
                             return;
@@ -588,7 +660,7 @@ class ProfileManager {
             await this._rememberActiveProfile(profile.uid);
 
             // Sauvegarder l'UUID comme profil par défaut
-            const result = await this.saveAppSettings({ default_profile_uid: profile.uid });
+            const result = await this.saveAppSettings({ [SETTINGS_KEYS.defaultUid]: profile.uid });
 
             if (!result.success) {
                 throw new Error(pkg.t('Échec de la sauvegarde du thème par défaut'));
@@ -709,6 +781,11 @@ class ProfileManager {
             const menu = document.createElement('ul');
             menu.className = 'dropdown-menu dropdown-menu-end';
             menu.appendChild(buildMenuItem('ti-copy', pkg.t('Dupliquer'), () => this.showDuplicateProfileModal(profileName)));
+            menu.appendChild(buildMenuItem(
+                'ti-arrows-exchange',
+                pkg.t('Copier vers « ${mode} »', { mode: profileModeLabel(OTHER_PROFILE_MODE) }),
+                () => this.showTransferProfileModal(profileName)
+            ));
             menu.appendChild(buildMenuItem('ti-edit', pkg.t('Renommer'), () => this.renameProfile(profileName)));
             menu.appendChild(buildMenuItem('ti-download', pkg.t('Exporter'), () => this.exportProfile(profileName)));
             menu.appendChild(buildMenuItem('ti-refresh', pkg.t('Réinitialiser'), () => this.confirmReset(profileName), true));
@@ -1080,12 +1157,12 @@ class ProfileManager {
             return settings;
         } catch (error) {
             console.error('❌ Erreur chargement paramètres app:', error);
-            return { default_profile_uid: null, default_profile_name: null };
+            return { [SETTINGS_KEYS.defaultUid]: null, [SETTINGS_KEYS.defaultName]: null };
         }
     }
 
     // Nom du profil par défaut, lu une seule fois du serveur puis mémorisé.
-    // Seul ce module modifie `default_profile_uid` (ui.js réécrit la valeur
+    // Seul ce module modifie le thème par défaut du mode (ui.js réécrit la valeur
     // qu'il vient de lire), l'état en mémoire reste donc fidèle et évite un
     // GET /api/settings à chaque action sur le profil par défaut.
     async _getDefaultProfileName() {
@@ -1097,7 +1174,7 @@ class ProfileManager {
                 // Une écriture entre-temps (setProfileAsDefault) fait autorité :
                 // elle connaît une valeur plus récente que celle relue ici.
                 if (this._defaultProfileName === null) {
-                    this._defaultProfileName = settings.default_profile_name || '';
+                    this._defaultProfileName = settings[SETTINGS_KEYS.defaultName] || '';
                 }
                 this._defaultProfileNamePromise = null;
                 return this._defaultProfileName;
@@ -1130,7 +1207,7 @@ class ProfileManager {
         const value = uid || null;
         if (value === this._lastProfileUid) return;
         this._lastProfileUid = value;
-        const result = await this.saveAppSettings({ last_profile_uid: value });
+        const result = await this.saveAppSettings({ [SETTINGS_KEYS.lastUid]: value });
         if (!result || !result.success) {
             console.warn('⚠️ Mémorisation du dernier profil actif impossible (uid=%s)', value);
             this._lastProfileUid = undefined;
@@ -1225,7 +1302,7 @@ class ProfileManager {
             // refetche que si elle n'a pas encore été chargée.
             const profiles = Array.isArray(this.profilesList) && this.profilesList.length
                 ? this.profilesList
-                : await this.apiCall('/api/profiles');
+                : await this._fetchProfileNames();
             const defaultProfileName = await this._getDefaultProfileName();
 
             // Détruire l'instance Tom Select AVANT de modifier le DOM,
@@ -1311,7 +1388,7 @@ class ProfileManager {
             nom_selectionne: selectedProfileName
         });
 
-        const result = await this.saveAppSettings({ default_profile_uid: selectedProfileUid });
+        const result = await this.saveAppSettings({ [SETTINGS_KEYS.defaultUid]: selectedProfileUid });
         // Le sélecteur "profil par défaut" est une préférence globale : il reçoit
         // le même indicateur inline que ses voisins de l'onglet Préférences. Le
         // toast ci-dessous reste, car il rapporte une autre information — le
@@ -1346,7 +1423,7 @@ class ProfileManager {
         if (toggle.checked) {
             const defaultName = await this._getDefaultProfileName();
             if (!defaultName && this.currentProfile?.uid) {
-                patch.default_profile_uid = this.currentProfile.uid;
+                patch[SETTINGS_KEYS.defaultUid] = this.currentProfile.uid;
             }
         }
 
@@ -1360,7 +1437,7 @@ class ProfileManager {
             return;
         }
 
-        if (patch.default_profile_uid) {
+        if (patch[SETTINGS_KEYS.defaultUid]) {
             this._defaultProfileName = this.currentProfile.name;
             // Repeupler plutôt que simplement resynchroniser : le thème actif
             // peut avoir été créé après le rendu du sélecteur (ses options
@@ -1391,19 +1468,22 @@ class ProfileManager {
             });
 
             const settings = await this.loadAppSettings();
+            // Dernier thème actif et thème par défaut DU MODE de la page.
+            const lastUid = settings[SETTINGS_KEYS.lastUid] || null;
+            const defaultUid = settings[SETTINGS_KEYS.defaultUid] || null;
             dbgProfiles('🎯 [STARTUP_PROFILE] Paramètres chargés au démarrage:', {
-                last_profile_uid: settings.last_profile_uid,
-                last_profile_name: settings.last_profile_name,
-                default_profile_uid: settings.default_profile_uid,
-                default_profile_name: settings.default_profile_name,
+                mode: PROFILE_MODE,
+                last_profile_uid: lastUid,
+                default_profile_uid: defaultUid,
+                default_profile_name: settings[SETTINGS_KEYS.defaultName],
                 all_settings: settings
             });
 
             // Les réglages viennent d'être lus : en profiter pour amorcer les
             // caches et éviter un second GET /api/settings côté sélecteur, ainsi
             // qu'une réécriture inutile du dernier profil actif.
-            this._defaultProfileName = settings.default_profile_name || '';
-            this._lastProfileUid = settings.last_profile_uid || null;
+            this._defaultProfileName = settings[SETTINGS_KEYS.defaultName] || '';
+            this._lastProfileUid = lastUid;
             // La liste peut déjà avoir été rendue (init) sans connaître le défaut.
             this._updateDefaultProfileHighlight();
 
@@ -1418,18 +1498,14 @@ class ProfileManager {
             // la référence morte et renvoie null) : ne restent ici que des UID
             // censés être lisibles.
             const candidates = [];
-            if (startOnDefault && settings.default_profile_uid) {
+            if (startOnDefault && defaultUid) {
                 // Choix explicite : le thème par défaut passe d'abord, le
                 // dernier utilisé ne sert que de repli s'il a disparu.
-                candidates.push(settings.default_profile_uid);
-                if (settings.last_profile_uid && settings.last_profile_uid !== settings.default_profile_uid) {
-                    candidates.push(settings.last_profile_uid);
-                }
+                candidates.push(defaultUid);
+                if (lastUid && lastUid !== defaultUid) candidates.push(lastUid);
             } else {
-                if (settings.last_profile_uid) candidates.push(settings.last_profile_uid);
-                if (settings.default_profile_uid && settings.default_profile_uid !== settings.last_profile_uid) {
-                    candidates.push(settings.default_profile_uid);
-                }
+                if (lastUid) candidates.push(lastUid);
+                if (defaultUid && defaultUid !== lastUid) candidates.push(defaultUid);
             }
 
             if (!candidates.length) {
@@ -2065,6 +2141,22 @@ class ProfileManager {
         });
     }
 
+    // Copie vers l'autre mode : même modale de nom que la duplication. Le nom
+    // suggéré porte le mode visé — les noms sont uniques tous modes confondus,
+    // et la copie se distingue ainsi de l'original dans un export. Séparateur
+    // « _ » comme « X_copy » : il survit à la réduction en nom de fichier,
+    // des parenthèses ouvriraient la modale sur un avertissement.
+    showTransferProfileModal(profileName) {
+        const modeLabel = profileModeLabel(OTHER_PROFILE_MODE);
+        this._showProfileNameModal({
+            title: pkg.t('Copier le thème vers « ${mode} »', { mode: modeLabel }),
+            value: this._generateUniqueName(`${profileName}_${modeLabel}`),
+            confirmLabel: pkg.t('Copier'),
+            action: 'transfer',
+            originalName: profileName,
+        });
+    }
+
     // Nom pré-rempli pour une duplication : "X_copy", puis "X_copy (1)"... tant
     // que le nom est déjà pris.
     _suggestDuplicateName(profileName) {
@@ -2076,7 +2168,7 @@ class ProfileManager {
     // correspondent au nom qui sera réellement créé. La comparaison porte sur la
     // clé de fichier, comme `_name_exists` : "Mon Profil" occupe aussi "MonProfil".
     _generateUniqueName(baseName) {
-        const taken = new Set((this.profilesList || []).map(profileNameKey));
+        const taken = new Set([...(this.profilesList || []), ...this._otherModeNames].map(profileNameKey));
         if (!taken.has(profileNameKey(baseName))) return baseName;
         for (let idx = 1; ; idx++) {
             const candidate = `${baseName} (${idx})`;
@@ -2110,8 +2202,28 @@ class ProfileManager {
             !(action === 'rename' && existing === originalName) && profileNameKey(existing) === key
         ));
 
+        // Nom pris par un thème de l'autre mode : invisible dans la liste de
+        // cette page, il occupe pourtant le fichier. Jamais écrasable d'ici
+        // (« Enregistrer sous… » compris) — seule une copie est suffixée.
+        const otherConflict = conflict ? null : this._otherModeNames.find(existing => profileNameKey(existing) === key);
+        if (otherConflict) {
+            if (action === 'duplicate' || action === 'transfer') {
+                const suggested = this._generateUniqueName(name);
+                return {
+                    valid: true,
+                    level: 'warning',
+                    message: pkg.t('« ${conflict} » existe déjà : la copie sera nommée « ${suggested} »', { conflict: otherConflict, suggested }),
+                };
+            }
+            return {
+                valid: false,
+                level: 'error',
+                message: pkg.t('Ce nom est déjà pris par un thème du mode « ${mode} »', { mode: profileModeLabel(OTHER_PROFILE_MODE) }),
+            };
+        }
+
         if (conflict) {
-            if (action === 'duplicate') {
+            if (action === 'duplicate' || action === 'transfer') {
                 // Le serveur résout lui-même la collision en suffixant : inutile de
                 // bloquer, mais l'utilisateur doit savoir sous quel nom il atterrit.
                 const suggested = this._generateUniqueName(name);
@@ -2218,6 +2330,8 @@ class ProfileManager {
             // Un nom déjà pris (saisi tel quel ou liste rafraîchie entre-temps)
             // reste géré par le serveur, qui répond avec le nom retenu.
             this.duplicateProfile(originalName, name);
+        } else if (confirmBtn.dataset.action === 'transfer') {
+            this.transferProfile(originalName, name);
         }
 
         hideBsModal(document.getElementById('profile-modal'));

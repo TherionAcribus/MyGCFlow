@@ -85,7 +85,8 @@ class ExampleProfileSeedingTests(unittest.TestCase):
 
         profiles = SettingsManager().list_profiles()
 
-        self.assertEqual(set(profiles), EXAMPLE_PROFILE_BATCHES[3])
+        # … et les lots parus depuis (thèmes du mode Évolution).
+        self.assertEqual(set(profiles), EXAMPLE_PROFILE_BATCHES[3] | EXAMPLE_PROFILE_BATCHES[4])
         self.assertNotIn("Équilibré", profiles)
         self.assertNotIn("Cinématique", profiles)
 

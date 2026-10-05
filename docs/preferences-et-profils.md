@@ -126,6 +126,14 @@ la source conserve ses réglages enregistrés, et la marque « modifications en
 attente » s'éteint. Choisir « Annuler » à la confirmation rouvre la modale
 avec le choix intact, rien n'est écrit.
 
+**Un thème appartient à un mode.** Le champ `mode` (`main` ou `evolution`)
+sépare les thèmes de « Mes trouvailles » de ceux de la page `/evolution` :
+chaque page ne liste que les siens et tient son propre dernier thème actif et
+son propre thème par défaut (`evolution_last_profile_uid`,
+`evolution_default_profile_uid`). Tout ce qui suit vaut pour les deux pages,
+avec les clés de son mode. Détail et règles de copie d'un mode à l'autre :
+[mode-evolution.md](mode-evolution.md#thèmes).
+
 **Restauration au démarrage.** `restoreStartupProfile()` (appelée par `init.js`
 après `init_ui()`) charge le **dernier thème actif** — `last_profile_uid` dans
 `settings.json` — et n'utilise `default_profile_uid` qu'en repli : première
@@ -253,11 +261,15 @@ pourrait écraser un réglage plus récent.
   "default_profile_uid": null,
   "default_profile_name": null,
   "last_profile_uid": null,
-  "last_profile_name": null
+  "last_profile_name": null,
+  "evolution_default_profile_uid": null,
+  "evolution_default_profile_name": null,
+  "evolution_last_profile_uid": null,
+  "evolution_last_profile_name": null
 }
 ```
 
-Les deux `*_name` sont résolus à la lecture depuis l'`uid` : le nom d'un thème
+Les `*_name` sont résolus à la lecture depuis l'`uid` : le nom d'un thème
 peut changer (renommage), l'`uid` non. Une référence dont l'`uid` ne correspond
 plus à aucun thème est effacée par `get_app_settings()`, pour éviter un 404
 récurrent à chaque démarrage.

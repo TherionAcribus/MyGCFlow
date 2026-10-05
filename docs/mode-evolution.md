@@ -10,8 +10,8 @@ les préférences. C'est
 un mode secondaire, sur une page à part (`/evolution`),
 atteinte par le sélecteur de mode en haut de l'onglet Données
 (`templates/_mode_switch.html`, présent sur les deux pages). Les
-deux pages partagent l'interface (carte, thèmes, animation, export vidéo) mais
-jamais leurs données.
+deux pages partagent l'interface (carte, animation, export vidéo) mais
+jamais leurs données, ni leurs thèmes (voir « Thèmes » plus bas).
 
 ## Utilisation
 
@@ -188,16 +188,62 @@ réglage adapté à des décennies ne déborde pas sur l'animation des
 trouvailles. La sélection des filtres n'est pas persistée et n'écrase pas
 celle du mode principal (`filtersSelection` du localStorage).
 
+## Thèmes
+
+Chaque thème appartient à un mode (champ `mode` du fichier : `main` ou
+`evolution` ; un fichier sans ce champ est un thème du mode principal). Les
+deux pages n'affichent que les leurs : un thème réglé pour quelques milliers
+de trouvailles (points de 5 à 10 px, flashs de 30 à 90 px) noie la carte quand
+des dizaines de milliers de caches s'affichent, et un thème du mode Évolution
+(points de 1 ou 2 px) est illisible en mode principal.
+
+- **Liste filtrée** : `GET /api/profiles?details=1` renvoie tous les thèmes
+  avec leur mode ; `profiles.js` ne garde que ceux de la page
+  (`profilesList`) et retient les noms des autres (`_otherModeNames`). Les
+  noms restent uniques tous modes confondus (un fichier par nom) : la modale
+  de nom refuse un nom pris dans l'autre mode.
+- **Thème actif et thème par défaut par mode** : `evolution_last_profile_uid`
+  et `evolution_default_profile_uid` de `settings.json`, à côté de
+  `last_profile_uid` / `default_profile_uid`. Changer de page ne rappelle
+  donc jamais un thème de l'autre mode ; une référence vers un thème du
+  mauvais mode est effacée par `get_app_settings()`. L'interrupteur
+  « Toujours démarrer sur ce thème » (`startup_default_profile`) reste commun.
+- **Thèmes d'exemple** : lot 4 de `EXAMPLE_PROFILE_BATCHES` (« Évolution
+  Classique », « Évolution Black » et « Évolution Encre », déclinés de
+  « Default », « Black » et « Encre & Papier », plus « Évolution Nuit »). Le premier est le
+  thème de premier lancement de la page, y compris pour une installation
+  antérieure au lot. Un thème Évolution créé ou réinitialisé part de lui
+  (`_blank_profile`), pas des défauts de `MapProfile`.
+- **Passage d'un mode à l'autre** : action « Copier vers … » du menu « … »
+  d'un thème (`POST /api/profiles/<nom>/transfer`,
+  `copy_profile_to_mode`). C'est une copie, l'original reste dans son mode.
+  `convert_profile_for_mode` ne touche qu'à ce qui dépend de la densité :
+
+  | Vers Évolution | Vers le mode principal |
+  | --- | --- |
+  | taille des points × 0,25 (minimum 1) | taille des points × 4 (maximum 10) |
+  | contour supprimé ; un point sans centre prend la couleur de son contour | contour inchangé |
+  | icônes → pastilles aux couleurs GC | — |
+  | taille du flash × 0,4, durée plafonnée à 500 ms | taille du flash × 2,5 |
+
+  Fond de carte, couleurs, titre, CSS, trajet et flash de disparition sont
+  repris tels quels.
+- Une sauvegarde (`PUT /api/profiles/<nom>`) ne change jamais le mode ;
+  l'export l'emporte, et un thème importé rejoint la liste du mode inscrit
+  dans le fichier (un toast le dit s'il s'agit de l'autre page).
+
 ## Tests
 
-- Python : `tests/test_evolution_csv.py`, `tests/test_evolution_store.py`,
+- Python : `tests/test_profile_modes.py` (séparation des thèmes par mode),
+  `tests/test_evolution_csv.py`, `tests/test_evolution_store.py`,
   `tests/test_evolution_api.py`, plus les cas `flash.disappear` et
   `evolution_*` de `test_profile_validation.py` et `test_global_preferences.py`.
 - Node : `test_evolution_timeline.mjs`, `test_evolution_style.mjs`,
   `test_flash_implode.mjs`, `test_infos_template.mjs` (modèle de la ligne
   d'infos), `test_evolution_import_target.mjs` (choix de la base d'un import), et les cas « plusieurs jours par image » de
   `test_video_timing.mjs`.
-- Playwright : `tests/e2e/evolution.spec.mjs` (fixtures
+- Playwright : `tests/e2e/theme-modes.spec.mjs` (listes par mode, copie
+  vers l'autre mode, thème actif par mode), `tests/e2e/evolution.spec.mjs` (fixtures
   `tests/e2e/fixtures/evolution-a.csv` / `evolution-b.csv`, et
   `evolution-warnings.csv` pour les avertissements du compte rendu).
 
