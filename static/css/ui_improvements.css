@@ -502,6 +502,15 @@ main.fullscreen-mode .modal-overlay {
     display: none !important;
 }
 
+/* Tooltips du menu flottant : Bootstrap les attache à <body> avec un
+   z-index (~1080) inférieur au plein écran (2000) — sans cette élévation
+   elles resteraient derrière la carte. Les garder sur <body> les met aussi
+   hors de #mapWithFrames : le repli html2canvas de l'enregistrement image
+   par image ne peut donc jamais les capturer dans la vidéo. */
+main.fullscreen-mode ~ .tooltip {
+    z-index: 3000;
+}
+
 
 /* Barre de contrôle latérale - verticale à droite */
 .control-bar {

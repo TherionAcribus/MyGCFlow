@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-05 09:01+0200\n"
+"POT-Creation-Date: 2026-10-05 09:10+0200\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -279,7 +279,7 @@ msgstr "Filtres"
 msgid "Paramètres"
 msgstr "Paramètres"
 
-#: templates/app.html:196 templates/guide.html:47 templates/guide.html:79
+#: templates/app.html:198 templates/guide.html:47 templates/guide.html:79
 #: templates/guide.html:101 templates/guide.html:114 templates/guide.html:134
 #: templates/guide.html:335 templates/menu_animation.html:60
 #: templates/menu_animation.html:74 templates/menu_filtre.html:24
@@ -288,13 +288,13 @@ msgstr "Paramètres"
 msgid "Données"
 msgstr "Données"
 
-#: templates/app.html:197 templates/guide.html:50 templates/guide.html:84
+#: templates/app.html:199 templates/guide.html:50 templates/guide.html:84
 #: templates/guide.html:101 templates/guide.html:157 templates/guide.html:159
 #: templates/guide.html:348 test_translations.py:31
 msgid "Style"
 msgstr "Style"
 
-#: templates/app.html:198 templates/menu_animation.html:12
+#: templates/app.html:200 templates/menu_animation.html:12
 #: test_translations.py:32
 msgid "Animation"
 msgstr "Animation"
@@ -526,7 +526,7 @@ msgstr "Un import est déjà en cours, veuillez patienter."
 msgid "Import en cours"
 msgstr "Import en cours"
 
-#: static/js/bdd.js:303 static/js/bdd.js:311 templates/app.html:161
+#: static/js/bdd.js:303 static/js/bdd.js:311 templates/app.html:163
 msgid "Analyse du fichier GPX en cours..."
 msgstr "Analyse du fichier GPX en cours..."
 
@@ -1602,7 +1602,7 @@ msgstr "Dupliquer"
 msgid "Renommer"
 msgstr "Renommer"
 
-#: static/js/profiles.js:759 templates/app.html:207 templates/app.html:208
+#: static/js/profiles.js:759 templates/app.html:209 templates/app.html:210
 #: templates/guide.html:106 templates/guide.html:261 templates/guide.html:267
 #: templates/menu_animation.html:36
 msgid "Exporter"
@@ -2651,103 +2651,103 @@ msgstr "Pause / Reprendre"
 msgid "Arrêter l'animation"
 msgstr "Arrêter l'animation"
 
-#: templates/app.html:125 templates/app.html:126
-msgid "Basculer le plein écran"
-msgstr "Basculer le plein écran"
+#: templates/app.html:127 templates/app.html:128
+msgid "Quitter le plein écran"
+msgstr "Quitter le plein écran"
 
-#: templates/app.html:139
+#: templates/app.html:141
 msgid "Importez un ou plusieurs exports CSV des caches d'une zone pour commencer"
 msgstr "Importez un ou plusieurs exports CSV des caches d'une zone pour commencer"
 
-#: templates/app.html:141
+#: templates/app.html:143
 msgid "Sélectionner des exports CSV"
 msgstr "Sélectionner des exports CSV"
 
-#: templates/app.html:143 templates/menu_data_evolution.html:58
+#: templates/app.html:145 templates/menu_data_evolution.html:58
 msgid "ou glissez-déposez vos fichiers n'importe où sur la page"
 msgstr "ou glissez-déposez vos fichiers n'importe où sur la page"
 
-#: templates/app.html:144
+#: templates/app.html:146
 msgid "Revenir au mode principal (mes trouvailles)"
 msgstr "Revenir au mode principal (mes trouvailles)"
 
-#: templates/app.html:149
+#: templates/app.html:151
 msgid "Chargez votre fichier .gpx pour commencer"
 msgstr "Chargez votre fichier .gpx pour commencer"
 
-#: templates/app.html:151 templates/guide.html:134 templates/menu_data.html:14
+#: templates/app.html:153 templates/guide.html:134 templates/menu_data.html:14
 msgid "Sélectionner et charger un fichier .gpx"
 msgstr "Sélectionner et charger un fichier .gpx"
 
-#: templates/app.html:156
+#: templates/app.html:158
 msgid "Comment obtenir mon fichier .gpx ?"
 msgstr "Comment obtenir mon fichier .gpx ?"
 
-#: templates/app.html:167 templates/menu_data.html:29
+#: templates/app.html:169 templates/menu_data.html:29
 msgid "ou glissez-déposez votre fichier n'importe où sur la page"
 msgstr "ou glissez-déposez votre fichier n'importe où sur la page"
 
-#: templates/app.html:186
+#: templates/app.html:188
 msgid "Redimensionner la carte"
 msgstr "Redimensionner la carte"
 
-#: templates/app.html:198 templates/guide.html:53 templates/guide.html:89
+#: templates/app.html:200 templates/guide.html:53 templates/guide.html:89
 #: templates/guide.html:101 templates/guide.html:195 templates/guide.html:212
 #: templates/guide.html:214
 msgid "Animation & vidéo"
 msgstr "Animation & vidéo"
 
-#: templates/app.html:199 templates/guide.html:56 templates/guide.html:94
+#: templates/app.html:201 templates/guide.html:56 templates/guide.html:94
 #: templates/guide.html:101 templates/guide.html:285 templates/guide.html:287
 msgid "Préférences"
 msgstr "Préférences"
 
-#: templates/app.html:199 templates/menu_informations.html:10
+#: templates/app.html:201 templates/menu_informations.html:10
 msgid "Réglages"
 msgstr "Réglages"
 
-#: templates/app.html:203 templates/app.html:204 templates/guide.html:106
+#: templates/app.html:205 templates/app.html:206 templates/guide.html:106
 #: templates/guide.html:260 templates/guide.html:267
 #: templates/menu_animation.html:33
 msgid "Prévisualiser"
 msgstr "Prévisualiser"
 
-#: templates/app.html:211 templates/app.html:212 templates/app.html:213
+#: templates/app.html:213 templates/app.html:214 templates/app.html:215
 #: templates/guide.html:106 templates/guide.html:262
 #: templates/menu_animation.html:42 templates/menu_animation.html:43
 msgid "Pause"
 msgstr "Pause"
 
-#: templates/app.html:212 templates/menu_animation.html:42
+#: templates/app.html:214 templates/menu_animation.html:42
 msgid "Continuer"
 msgstr "Continuer"
 
-#: templates/app.html:216 templates/app.html:217 templates/guide.html:106
+#: templates/app.html:218 templates/app.html:219 templates/guide.html:106
 #: templates/guide.html:262 templates/menu_animation.html:46
 msgid "Arrêter"
 msgstr "Arrêter"
 
-#: templates/app.html:224
+#: templates/app.html:226
 msgid "Disposition carte / réglages"
 msgstr "Disposition carte / réglages"
 
-#: templates/app.html:226 templates/app.html:227
+#: templates/app.html:228 templates/app.html:229
 msgid "Grande carte"
 msgstr "Grande carte"
 
-#: templates/app.html:231 templates/app.html:232
+#: templates/app.html:233 templates/app.html:234
 msgid "Disposition équilibrée"
 msgstr "Disposition équilibrée"
 
-#: templates/app.html:236 templates/app.html:237
+#: templates/app.html:238 templates/app.html:239
 msgid "Grands réglages"
 msgstr "Grands réglages"
 
-#: templates/app.html:241 templates/app.html:242
+#: templates/app.html:243 templates/app.html:244
 msgid "Panneau latéral"
 msgstr "Panneau latéral"
 
-#: templates/app.html:251 templates/app.html:252 templates/guide.html:263
+#: templates/app.html:253 templates/app.html:254 templates/guide.html:263
 msgid "Plein écran"
 msgstr "Plein écran"
 

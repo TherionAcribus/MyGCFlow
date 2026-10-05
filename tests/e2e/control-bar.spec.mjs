@@ -34,6 +34,12 @@ test('menu flottant : masqué hors plein écran, visible en plein écran', async
   await expect(bar).toBeVisible();
   await expect(page.locator('#btnToggleFullscreen')).toBeVisible();
 
+  // Les tooltips des boutons s'affichent au-dessus du plein écran (elles
+  // restent attachées à <body>, hors de #mapWithFrames : le repli
+  // html2canvas de l'enregistrement ne peut pas les capturer).
+  await page.locator('#btnToggleFullscreen').hover();
+  await expect(page.locator('body > .tooltip')).toContainText('Quitter le plein écran');
+
   // Le bouton du menu flottant ramène à l'affichage normal, qui le masque.
   await page.locator('#btnToggleFullscreen').click();
   await expect(page.locator('main')).not.toHaveClass(/fullscreen-mode/);
