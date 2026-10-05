@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-05 14:30+0200\n"
+"POT-Creation-Date: 2026-10-05 15:04+0200\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -303,7 +303,7 @@ msgstr "Animation"
 msgid "Choisir fichier"
 msgstr "Choose file"
 
-#: blueprints/core.py:151 templates/menu_style.html:91
+#: blueprints/core.py:151 templates/menu_style.html:98
 msgid "Cartes"
 msgstr "Maps"
 
@@ -342,9 +342,9 @@ msgid "Confirmer"
 msgstr "Confirm"
 
 #: blueprints/core.py:183 static/js/notifications.js:406
-#: templates/menu_style.html:246 templates/menu_style.html:271
-#: templates/menu_style.html:296 templates/menu_style.html:324
-#: templates/menu_style.html:355 templates/menu_style.html:383
+#: templates/menu_style.html:253 templates/menu_style.html:278
+#: templates/menu_style.html:303 templates/menu_style.html:331
+#: templates/menu_style.html:362 templates/menu_style.html:390
 #: templates/modal_evolution.html:18 templates/modal_evolution.html:60
 #: templates/modal_evolution.html:84 templates/modal_loading.html:14
 msgid "Annuler"
@@ -483,19 +483,19 @@ msgstr "New name missing"
 msgid "Profil '%(name)s' introuvable"
 msgstr "Profile '%(name)s' not found"
 
-#: static/js/basemaps.js:115
+#: static/js/basemaps.js:166
 msgid ""
 "Certaines tuiles de la carte n'ont pas pu être chargées (connexion "
 "instable ?)."
 msgstr "Some map tiles could not be loaded (unstable connection?)."
 
-#: static/js/basemaps.js:117 static/js/basemaps.js:154 static/js/ui.js:2373
+#: static/js/basemaps.js:168 static/js/basemaps.js:205 static/js/ui.js:2373
 #: static/js/ui.js:2404 static/js/ui.js:2426 templates/guide.html:169
-#: templates/menu_style.html:77
+#: templates/menu_style.html:84
 msgid "Carte"
 msgstr "Map"
 
-#: static/js/basemaps.js:152
+#: static/js/basemaps.js:203
 #, python-brace-format
 msgid ""
 "${count} tuile(s) de carte n'ont pas pu être chargées pendant "
@@ -1389,7 +1389,7 @@ msgid "Aucun déplacement à tracer pour cette sélection."
 msgstr "No movement to draw for this selection."
 
 #: static/js/mapgl.js:4642 static/js/mapgl.js:4644 static/js/mapgl.js:4734
-#: templates/menu_style.html:82
+#: templates/menu_style.html:89
 msgid "Trajet"
 msgstr "Route"
 
@@ -1404,7 +1404,7 @@ msgid "Choisissez d’abord une forme de flash."
 msgstr "First choose a flash shape."
 
 #: static/js/mapgl.js:5348 static/js/mapgl.js:5352 templates/guide.html:200
-#: templates/menu_style.html:79
+#: templates/menu_style.html:86
 msgid "Flash"
 msgstr "Flash"
 
@@ -1415,10 +1415,10 @@ msgid ""
 msgstr "No cache visible on screen: move the map over your points."
 
 #: static/js/notifications.js:114 static/js/notifications.js:442
-#: templates/menu_style.html:52 templates/menu_style.html:233
-#: templates/menu_style.html:265 templates/menu_style.html:290
-#: templates/menu_style.html:318 templates/menu_style.html:341
-#: templates/menu_style.html:377 templates/modal_evolution.html:9
+#: templates/menu_style.html:59 templates/menu_style.html:240
+#: templates/menu_style.html:272 templates/menu_style.html:297
+#: templates/menu_style.html:325 templates/menu_style.html:348
+#: templates/menu_style.html:384 templates/modal_evolution.html:9
 #: templates/modal_evolution.html:39 templates/modal_evolution.html:78
 #: templates/modal_first_use.html:33 templates/modal_infos.html:11
 msgid "Fermer"
@@ -1502,182 +1502,183 @@ msgstr "Later"
 msgid "Vous ne serez plus averti pour cette version."
 msgstr "You will no longer be notified about this version."
 
-#: static/js/profiles.js:82
+#: static/js/profiles.js:83
 msgid "espace"
 msgstr "space"
 
-#: static/js/profiles.js:277
+#: static/js/profiles.js:287
 msgid "Import échoué"
 msgstr "Import failed"
 
-#: static/js/profiles.js:279
+#: static/js/profiles.js:289
 #, python-brace-format
 msgid "Thème \"${name}\" importé"
 msgstr "Theme \"${name}\" imported"
 
-#: static/js/profiles.js:283
+#: static/js/profiles.js:293
 msgid "Erreur import du thème"
 msgstr "Theme import error"
 
-#: static/js/profiles.js:309
+#: static/js/profiles.js:319
 msgid "Erreur API"
 msgstr "API error"
 
-#: static/js/profiles.js:315
+#: static/js/profiles.js:325
 #, python-brace-format
 msgid "Erreur: ${message}"
 msgstr "Error: ${message}"
 
-#: static/js/profiles.js:369 static/js/profiles.js:1402
+#: static/js/profiles.js:424 static/js/profiles.js:849
+#: static/js/profiles.js:1148
+msgid "Aucun thème"
+msgstr "No theme"
+
+#: static/js/profiles.js:480 static/js/profiles.js:1036
+msgid "Thème par défaut"
+msgstr "Default theme"
+
+#: static/js/profiles.js:523 static/js/profiles.js:1611
 #, python-brace-format
 msgid "Thème \"${name}\" chargé"
 msgstr "Theme \"${name}\" loaded"
 
-#: static/js/profiles.js:398
+#: static/js/profiles.js:560
 #, python-brace-format
 msgid "Thème \"${name}\" sauvegardé"
 msgstr "Theme \"${name}\" saved"
 
-#: static/js/profiles.js:451
+#: static/js/profiles.js:614
 #, python-brace-format
 msgid "Thème \"${name}\" créé, mais l'enregistrement des réglages a échoué"
 msgstr "Theme \"${name}\" created, but its settings could not be saved"
 
-#: static/js/profiles.js:461
+#: static/js/profiles.js:624
 #, python-brace-format
 msgid "Thème \"${name}\" créé"
 msgstr "Theme \"${name}\" created"
 
-#: static/js/profiles.js:477
+#: static/js/profiles.js:640
 #, python-brace-format
 msgid "Thème dupliqué: \"${name}\""
 msgstr "Theme duplicated: \"${name}\""
 
-#: static/js/profiles.js:489
+#: static/js/profiles.js:652
 #, python-brace-format
 msgid "Thème \"${name}\" supprimé"
 msgstr "Theme \"${name}\" deleted"
 
-#: static/js/profiles.js:559
+#: static/js/profiles.js:722
 #, python-brace-format
 msgid "Thème \"${name}\" réinitialisé"
 msgstr "Theme \"${name}\" reset"
 
-#: static/js/profiles.js:589
+#: static/js/profiles.js:757
 msgid "Export échoué"
 msgstr "Export failed"
 
-#: static/js/profiles.js:600
+#: static/js/profiles.js:768
 #, python-brace-format
 msgid "Thème \"${name}\" exporté"
 msgstr "Theme \"${name}\" exported"
 
-#: static/js/profiles.js:603
+#: static/js/profiles.js:771
 msgid "Erreur export du thème"
 msgstr "Theme export error"
 
-#: static/js/profiles.js:623
+#: static/js/profiles.js:791
 msgid "Thème introuvable ou UID manquant"
 msgstr "Theme not found or missing UID"
 
-#: static/js/profiles.js:638
+#: static/js/profiles.js:806
 msgid "Échec de la sauvegarde du thème par défaut"
 msgstr "Failed to save the default theme"
 
-#: static/js/profiles.js:643
+#: static/js/profiles.js:811
 #, python-brace-format
 msgid "Thème \"${name}\" défini comme thème par défaut"
 msgstr "Theme \"${name}\" set as the default theme"
 
-#: static/js/profiles.js:656
+#: static/js/profiles.js:824
 msgid "Erreur lors de la définition du thème par défaut"
 msgstr "Error while setting the default theme"
 
-#: static/js/profiles.js:671 static/js/profiles.js:939
-msgid "Aucun thème"
-msgstr "No theme"
-
-#: static/js/profiles.js:757 static/js/profiles.js:2476
+#: static/js/profiles.js:942 static/js/profiles.js:2685
 msgid "Dupliquer"
 msgstr "Duplicate"
 
-#: static/js/profiles.js:758 static/js/profiles.js:2456
+#: static/js/profiles.js:943 static/js/profiles.js:2665
 msgid "Renommer"
 msgstr "Rename"
 
-#: static/js/profiles.js:759 templates/app.html:211 templates/app.html:212
+#: static/js/profiles.js:944 templates/app.html:211 templates/app.html:212
 #: templates/guide.html:106 templates/guide.html:266 templates/guide.html:272
 #: templates/menu_animation.html:36
 msgid "Exporter"
 msgstr "Export"
 
-#: static/js/profiles.js:760 templates/menu_style.html:297
+#: static/js/profiles.js:945 templates/menu_style.html:304
 msgid "Réinitialiser"
 msgstr "Reset"
 
-#: static/js/profiles.js:761 templates/menu_style.html:272
+#: static/js/profiles.js:946 templates/menu_style.html:279
 #: templates/modal_evolution.html:85
 msgid "Supprimer"
 msgstr "Delete"
 
-#: static/js/profiles.js:765
+#: static/js/profiles.js:950
 msgid "Définir comme par défaut"
 msgstr "Set as default"
 
-#: static/js/profiles.js:843
-msgid "Thème par défaut"
-msgstr "Default theme"
-
-#: static/js/profiles.js:902 templates/menu_style.html:314
+#: static/js/profiles.js:1111 templates/menu_style.html:321
 msgid "Modifications non enregistrées"
 msgstr "Unsaved changes"
 
-#: static/js/profiles.js:950
+#: static/js/profiles.js:1159 templates/menu_style.html:46
 msgid "Choisir un thème"
 msgstr "Choose a theme"
 
-#: static/js/profiles.js:1197
+#: static/js/profiles.js:1406
 #, python-brace-format
 msgid ""
 "Le thème \"${name}\" contient des modifications non enregistrées. Que "
 "voulez-vous faire ?"
 msgstr "Theme \"${name}\" has unsaved changes. What do you want to do?"
 
-#: static/js/profiles.js:1198
+#: static/js/profiles.js:1407
 msgid "Vous avez des modifications non enregistrées. Que voulez-vous faire ?"
 msgstr "You have unsaved changes. What do you want to do?"
 
-#: static/js/profiles.js:1406
+#: static/js/profiles.js:1615
 msgid "Erreur lors du chargement du thème par défaut"
 msgstr "Error while loading the default theme"
 
-#: static/js/profiles.js:1439
+#: static/js/profiles.js:1648
 msgid "Aucun thème par défaut"
 msgstr "No default theme"
 
-#: static/js/profiles.js:1546
+#: static/js/profiles.js:1755
 #, python-brace-format
 msgid "Thème \"${selectedProfile}\" appliqué et défini comme thème par défaut"
 msgstr "Theme \"${selectedProfile}\" applied and set as default theme"
 
-#: static/js/profiles.js:1547
+#: static/js/profiles.js:1756
 msgid "Aucun thème par défaut défini"
 msgstr "No default theme set"
 
-#: static/js/profiles.js:1766
+#: static/js/profiles.js:1975
 msgid "Le thème n'a pas pu être chargé : aucun thème n'est actif."
 msgstr "The theme could not be loaded: no theme is active."
 
-#: static/js/profiles.js:2207
+#: static/js/profiles.js:2416
 #, python-brace-format
 msgid "Créer le thème \"${name}\""
 msgstr "Create the theme \"${name}\""
 
-#: static/js/profiles.js:2272 static/js/profiles.js:2649
+#: static/js/profiles.js:2481 static/js/profiles.js:2858
 msgid "Veuillez saisir un nom de thème"
 msgstr "Please enter a theme name"
 
-#: static/js/profiles.js:2335
+#: static/js/profiles.js:2544
 #, python-brace-format
 msgid ""
 "Le thème « ${name} » existe déjà. Les réglages affichés remplaceront ceux"
@@ -1686,60 +1687,60 @@ msgstr ""
 "The theme « ${name} » already exists. The displayed settings will replace"
 " the saved ones."
 
-#: static/js/profiles.js:2381
+#: static/js/profiles.js:2590
 #, python-brace-format
 msgid "Réglages enregistrés dans \"${name}\""
 msgstr "Settings saved to \"${name}\""
 
-#: static/js/profiles.js:2441
+#: static/js/profiles.js:2650
 msgid "Enregistrer dans un nouveau thème"
 msgstr "Save to a new theme"
 
-#: static/js/profiles.js:2441 templates/menu_style.html:232
+#: static/js/profiles.js:2650 templates/menu_style.html:239
 msgid "Nouveau thème"
 msgstr "New theme"
 
-#: static/js/profiles.js:2447 templates/menu_style.html:356
+#: static/js/profiles.js:2656 templates/menu_style.html:363
 msgid "Enregistrer le thème"
 msgstr "Save the theme"
 
-#: static/js/profiles.js:2447 templates/menu_style.html:247
+#: static/js/profiles.js:2656 templates/menu_style.html:254
 msgid "Créer"
 msgstr "Create"
 
-#: static/js/profiles.js:2454
+#: static/js/profiles.js:2663
 msgid "Renommer le thème"
 msgstr "Rename the theme"
 
-#: static/js/profiles.js:2474
+#: static/js/profiles.js:2683
 msgid "Dupliquer le thème"
 msgstr "Duplicate the theme"
 
-#: static/js/profiles.js:2530
+#: static/js/profiles.js:2739
 msgid "Le nom doit contenir au moins une lettre ou un chiffre"
 msgstr "The name must contain at least one letter or digit"
 
-#: static/js/profiles.js:2552
+#: static/js/profiles.js:2761
 #, python-brace-format
 msgid "« ${conflict} » existe déjà : la copie sera nommée « ${suggested} »"
 msgstr "“${conflict}” already exists: the copy will be named “${suggested}”"
 
-#: static/js/profiles.js:2568
+#: static/js/profiles.js:2777
 #, python-brace-format
 msgid "« ${name} » est le thème actif : ses réglages seront mis à jour"
 msgstr "« ${name} » is the active theme: its settings will be updated"
 
-#: static/js/profiles.js:2574
+#: static/js/profiles.js:2783
 #, python-brace-format
 msgid "« ${name} » existe déjà : ses réglages seront remplacés"
 msgstr "“${name}” already exists: its settings will be replaced"
 
-#: static/js/profiles.js:2581
+#: static/js/profiles.js:2790
 #, python-brace-format
 msgid "Un thème nommé « ${name} » existe déjà"
 msgstr "A theme named « ${name} » already exists"
 
-#: static/js/profiles.js:2582
+#: static/js/profiles.js:2791
 #, python-brace-format
 msgid ""
 "Ce nom est déjà pris par « ${conflict} » : les deux se réduisent au "
@@ -1748,22 +1749,22 @@ msgstr ""
 "This name is already taken by “${conflict}”: both reduce to the file "
 "“${key}”"
 
-#: static/js/profiles.js:2591
+#: static/js/profiles.js:2800
 #, python-brace-format
 msgid "Caractères ignorés (${dropped}) : le thème sera enregistré sous « ${key} »"
 msgstr "Ignored characters (${dropped}): the theme will be saved as « ${key} »"
 
-#: static/js/profiles.js:2708
+#: static/js/profiles.js:2917
 #, python-brace-format
 msgid "Thème renommé en \"${name}\""
 msgstr "Theme renamed to \"${name}\""
 
-#: static/js/profiles.js:2722
+#: static/js/profiles.js:2931
 #, python-brace-format
 msgid "Êtes-vous sûr de vouloir supprimer le thème \"${name}\" ?"
 msgstr "Are you sure you want to delete the theme \"${name}\"?"
 
-#: static/js/profiles.js:2741
+#: static/js/profiles.js:2950
 #, python-brace-format
 msgid ""
 "Êtes-vous sûr de vouloir réinitialiser le thème \"${name}\" aux valeurs "
@@ -2603,12 +2604,12 @@ msgid "Système"
 msgstr "System"
 
 #: templates/app.html:82 templates/menu_options.html:33
-#: templates/menu_style.html:160
+#: templates/menu_style.html:167
 msgid "Clair"
 msgstr "Light"
 
 #: templates/app.html:83 templates/menu_options.html:34
-#: templates/menu_style.html:163
+#: templates/menu_style.html:170
 msgid "Sombre"
 msgstr "Dark"
 
@@ -2993,7 +2994,7 @@ msgstr "artistic watercolor rendering"
 msgid "Ajoutez un titre et des informations"
 msgstr "Add a title and information"
 
-#: templates/guide.html:179 templates/menu_style.html:84
+#: templates/guide.html:179 templates/menu_style.html:91
 msgid "Titres"
 msgstr "Titles"
 
@@ -3087,7 +3088,7 @@ msgstr "to apply your changes."
 msgid "Personnalisez les points"
 msgstr "Customize the points"
 
-#: templates/guide.html:192 templates/menu_style.html:78
+#: templates/guide.html:192 templates/menu_style.html:85
 #: templates/menu_trail.html:124
 msgid "Points"
 msgstr "Points"
@@ -3170,7 +3171,7 @@ msgstr ""
 "A \"•\" next to the name marks unsaved changes."
 
 #: templates/guide.html:207 templates/menu_style.html:36
-#: templates/menu_style.html:50
+#: templates/menu_style.html:57
 msgid "Gérer les thèmes"
 msgstr "Manage themes"
 
@@ -3178,7 +3179,7 @@ msgstr "Manage themes"
 msgid "déplie un tiroir sous la barre :"
 msgstr "expands a drawer below the bar:"
 
-#: templates/guide.html:207 templates/menu_style.html:61
+#: templates/guide.html:207 templates/menu_style.html:68
 msgid "Nouveau"
 msgstr "New"
 
@@ -3186,7 +3187,7 @@ msgstr "New"
 msgid "crée un thème,"
 msgstr "creates a theme,"
 
-#: templates/guide.html:207 templates/menu_style.html:64
+#: templates/guide.html:207 templates/menu_style.html:71
 #: templates/modal_evolution.html:61
 msgid "Importer"
 msgstr "Import"
@@ -4898,11 +4899,11 @@ msgstr "Save the active theme"
 msgid "Autres options d'enregistrement"
 msgstr "More save options"
 
-#: templates/menu_style.html:29 templates/menu_style.html:340
+#: templates/menu_style.html:29 templates/menu_style.html:347
 msgid "Enregistrer sous…"
 msgstr "Save as…"
 
-#: templates/menu_style.html:55
+#: templates/menu_style.html:62
 msgid ""
 "Un thème ne contient que des réglages visuels : il ne touche ni aux "
 "dates, ni au rythme, ni à la musique. Les réglages marqués « Thème » ne "
@@ -4915,91 +4916,91 @@ msgstr ""
 "clicking \"Save\". The \"Unsaved changes\" indication next to the "
 "selector signals pending changes."
 
-#: templates/menu_style.html:60
+#: templates/menu_style.html:67
 msgid "Créer un thème avec les réglages actuels"
 msgstr "Create a theme with the current settings"
 
-#: templates/menu_style.html:63
+#: templates/menu_style.html:70
 msgid "Importer un thème JSON"
 msgstr "Import a JSON theme"
 
-#: templates/menu_style.html:95
+#: templates/menu_style.html:102
 msgid "OpenStreetMap"
 msgstr "OpenStreetMap"
 
-#: templates/menu_style.html:102
+#: templates/menu_style.html:109
 msgid "Stamen Toner"
 msgstr "Stamen Toner"
 
-#: templates/menu_style.html:109
+#: templates/menu_style.html:116
 msgid "Carte vectorielle"
 msgstr "Vector map"
 
-#: templates/menu_style.html:116
+#: templates/menu_style.html:123
 msgid "Watercolor"
 msgstr "Watercolor"
 
-#: templates/menu_style.html:130
+#: templates/menu_style.html:137
 msgid "Style Vector"
 msgstr "Vector Style"
 
-#: templates/menu_style.html:134
+#: templates/menu_style.html:141
 msgid "Définit la couleur des contours de la carte"
 msgstr "Sets the color of the map outlines"
 
-#: templates/menu_style.html:134
+#: templates/menu_style.html:141
 msgid "Couleur contour"
 msgstr "Border color"
 
-#: templates/menu_style.html:135
+#: templates/menu_style.html:142
 msgid "Cliquez pour choisir la couleur des contours"
 msgstr "Click to choose the border color"
 
-#: templates/menu_style.html:138
+#: templates/menu_style.html:145
 msgid "Définit la couleur de remplissage de la carte"
 msgstr "Sets the map fill color"
 
-#: templates/menu_style.html:138
+#: templates/menu_style.html:145
 msgid "Couleur remplissage"
 msgstr "Fill color"
 
-#: templates/menu_style.html:139
+#: templates/menu_style.html:146
 msgid "Cliquez pour choisir la couleur de remplissage"
 msgstr "Click to choose the fill color"
 
-#: templates/menu_style.html:142
+#: templates/menu_style.html:149
 msgid "Définit la couleur de fond de la carte"
 msgstr "Sets the map background color"
 
-#: templates/menu_style.html:142
+#: templates/menu_style.html:149
 msgid "Couleur fond"
 msgstr "Background color"
 
-#: templates/menu_style.html:143
+#: templates/menu_style.html:150
 msgid "Cliquez pour choisir la couleur de fond"
 msgstr "Click to choose the background color"
 
-#: templates/menu_style.html:146
+#: templates/menu_style.html:153
 msgid "Définit l'épaisseur des contours de la carte (0 = aucun contour)"
 msgstr "Sets the thickness of the map outlines (0 = no outline)"
 
-#: templates/menu_style.html:146
+#: templates/menu_style.html:153
 msgid "Largeur contour (0 = aucun)"
 msgstr "Outline width (0 = none)"
 
-#: templates/menu_style.html:148
+#: templates/menu_style.html:155
 msgid "Faites glisser pour ajuster l'épaisseur"
 msgstr "Drag to adjust the thickness"
 
-#: templates/menu_style.html:156 templates/menu_style.html:158
+#: templates/menu_style.html:163 templates/menu_style.html:165
 msgid "Style Toner"
 msgstr "Toner Style"
 
-#: templates/menu_style.html:181
+#: templates/menu_style.html:188
 msgid "Aperçu du flash"
 msgstr "Flash preview"
 
-#: templates/menu_style.html:183
+#: templates/menu_style.html:190
 msgid ""
 "Rejoue le flash en boucle sur quelques caches visibles, sans lancer "
 "l'animation : pratique pour vérifier la forme, la taille et les couleurs."
@@ -5009,60 +5010,60 @@ msgstr ""
 " animation: handy for checking shape, size and colors. In \"GC colors\" "
 "mode, several cache types blink together."
 
-#: templates/menu_style.html:208
+#: templates/menu_style.html:215
 msgid "Titre et informations"
 msgstr "Title and information"
 
-#: templates/menu_style.html:237 templates/menu_style.html:238
+#: templates/menu_style.html:244 templates/menu_style.html:245
 msgid "Nom du thème"
 msgstr "Theme name"
 
-#: templates/menu_style.html:261
+#: templates/menu_style.html:268
 msgid "Confirmer la suppression"
 msgstr "Confirm deletion"
 
-#: templates/menu_style.html:262 templates/menu_style.html:287
+#: templates/menu_style.html:269 templates/menu_style.html:294
 #: templates/modal_evolution.html:75
 msgid "Cette action est définitive"
 msgstr "This action is permanent"
 
-#: templates/menu_style.html:268
+#: templates/menu_style.html:275
 msgid "Êtes-vous sûr de vouloir supprimer ce thème ?"
 msgstr "Are you sure you want to delete this theme?"
 
-#: templates/menu_style.html:286
+#: templates/menu_style.html:293
 msgid "Confirmer la réinitialisation"
 msgstr "Confirm reset"
 
-#: templates/menu_style.html:293
+#: templates/menu_style.html:300
 msgid "Êtes-vous sûr de vouloir réinitialiser ce thème aux valeurs par défaut ?"
 msgstr "Are you sure you want to reset this theme to its default values?"
 
-#: templates/menu_style.html:315
+#: templates/menu_style.html:322
 msgid "Le thème actif a été modifié"
 msgstr "The active theme has been modified"
 
-#: templates/menu_style.html:321
+#: templates/menu_style.html:328
 msgid "Vous avez des modifications non enregistrées."
 msgstr "You have unsaved changes."
 
-#: templates/menu_style.html:325
+#: templates/menu_style.html:332
 msgid "Abandonner"
 msgstr "Discard"
 
-#: templates/menu_style.html:326
+#: templates/menu_style.html:333
 msgid "Enregistrer et charger"
 msgstr "Save and load"
 
-#: templates/menu_style.html:345
+#: templates/menu_style.html:352
 msgid "Thème de destination"
 msgstr "Destination theme"
 
-#: templates/menu_style.html:346
+#: templates/menu_style.html:353
 msgid "Choisir un thème ou saisir un nouveau nom"
 msgstr "Choose a theme or type a new name"
 
-#: templates/menu_style.html:347
+#: templates/menu_style.html:354
 msgid ""
 "Choisissez un thème existant pour y enregistrer les réglages affichés, ou"
 " saisissez un nouveau nom pour créer un thème."
@@ -5070,15 +5071,15 @@ msgstr ""
 "Choose an existing theme to save the displayed settings into, or type a "
 "new name to create a theme."
 
-#: templates/menu_style.html:373
+#: templates/menu_style.html:380
 msgid "Remplacer le thème ?"
 msgstr "Replace the theme?"
 
-#: templates/menu_style.html:374
+#: templates/menu_style.html:381
 msgid "Les réglages enregistrés du thème seront perdus"
 msgstr "The theme's saved settings will be lost"
 
-#: templates/menu_style.html:384
+#: templates/menu_style.html:391
 msgid "Remplacer"
 msgstr "Replace"
 

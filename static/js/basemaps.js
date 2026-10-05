@@ -48,6 +48,45 @@ export function getBasemapLayer(id) {
     return basemaps[id]?.layer || null;
 }
 
+// --- Tuile d'échantillon des vignettes de thèmes --------------------------
+// Le MÊME carreau pour tous les thèmes (bassin d'Arcachon, zoom 9 : mélange
+// terre/mer lisible), pour que les vignettes soient directement comparables.
+const THUMB_TILE_Z = 9;
+const THUMB_TILE_X = 254;   // lon ≈ -1.17°
+const THUMB_TILE_Y = 184;   // lat ≈ 44.65°
+
+// URL d'UNE tuile du fond de carte `providerId` ('OSM', 'watercolor',
+// 'stamenToner'), à l'échantillon fixe ci-dessus. `tonerVariant` ('light' |
+// 'dark') choisit la couche Stadia, comme refreshStamenTonerMap(). L'URL vient
+// de la source OpenLayers réelle (getTileUrlFunction) — source de vérité
+// unique, aucun gabarit d'URL dupliqué ici. Retourne null pour 'vectorMap'
+// (pas de tuile : la vignette dessine la scène vectorielle aux couleurs du
+// thème, qui est déjà fidèle) et pour les id inconnus.
+export function getBasemapTileUrl(providerId, tonerVariant = 'light') {
+    try {
+        let source;
+        if (providerId === 'OSM') {
+            source = new ol.source.OSM();
+        } else if (providerId === 'watercolor') {
+            source = new ol.source.StadiaMaps({ layer: 'stamen_watercolor' });
+        } else if (providerId === 'stamenToner') {
+            source = new ol.source.StadiaMaps({ layer: tonerVariant === 'dark' ? 'stamen_toner' : 'stamen_toner_lite' });
+        } else {
+            return null;
+        }
+        const tileUrlFunction = source.getTileUrlFunction();
+        const projection = source.getProjection?.() || ol.proj.get('EPSG:3857');
+        return tileUrlFunction(
+            [THUMB_TILE_Z, THUMB_TILE_X, THUMB_TILE_Y],
+            window.devicePixelRatio || 1,
+            projection
+        ) || null;
+    } catch (e) {
+        console.warn('getBasemapTileUrl:', e);
+        return null;
+    }
+}
+
 // Un seul niveau voisin est préchargé quand le suivi de caméra est actif. Cela
 // prépare la transition de zoom sans télécharger plusieurs pyramides de tuiles
 // ni conserver un cache disproportionné. Les couches vectorielles sont ignorées.

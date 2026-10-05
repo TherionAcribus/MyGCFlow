@@ -7,6 +7,7 @@ import * as pkg from './index.js';
 import { refreshTomSelect, initTomSelect, getTomSelect, showBsModal, hideBsModal, getBsModal } from './ui_bootstrap.js';
 import { markSaved, markSaveError } from './saved_indicator.mjs';
 import { normalizeTrailOptions } from './travel_trail.mjs';
+import { buildThemeThumbnail } from './theme_thumbs.js';
 
 // Flag de debug pour ce fichier. Mettre à true pour réactiver les logs en
 // console (désactivés par défaut : sérialiser des objets/chaînes à chaque
@@ -86,6 +87,11 @@ class ProfileManager {
         // Même garde pour la confirmation d'écrasement de « Enregistrer
         // sous… » (cf. _askOverwriteConfirm).
         this._overwriteChoicePending = false;
+        // Dicts complets des thèmes mis en cache pour les vignettes (clé =
+        // nom). /api/profiles ne renvoie que les noms : les vignettes lisent
+        // chaque dict via _refreshThumbs() et montrent le thème ENREGISTRÉ,
+        // jamais les modifications en cours.
+        this._thumbData = new Map();
         this.init();
     }
 
@@ -260,9 +266,64 @@ class ProfileManager {
             const profiles = await this.apiCall('/api/profiles');
             this.profilesList = profiles;
             this.renderProfilesList();
+            // Lecture des dicts complets pour les vignettes (en parallèle,
+            // asynchrone : la liste déjà rendue affiche des pastilles neutres
+            // à la même place, sans saut de mise en page à l'arrivée).
+            this._refreshThumbs().catch(e => console.warn('Vignettes de thèmes :', e));
         } catch (error) {
             console.error('Erreur chargement profils:', error);
         }
+    }
+
+    // --- Vignettes de thèmes -------------------------------------------------
+
+    // Élague le cache des noms disparus (renommage, suppression, autre onglet)
+    // puis lit les dicts manquants en parallèle et repeint toutes les vignettes.
+    async _refreshThumbs() {
+        const wanted = new Set(this.profilesList || []);
+        for (const name of [...this._thumbData.keys()]) {
+            if (!wanted.has(name)) this._thumbData.delete(name);
+        }
+        const missing = [...wanted].filter(name => !this._thumbData.has(name));
+        if (missing.length) {
+            await Promise.all(missing.map(name => this._fetchThumb(name)));
+        }
+        this._paintThumbs();
+    }
+
+    async _fetchThumb(name) {
+        try {
+            const resp = await fetch(`/api/profiles/${encodeURIComponent(name)}`);
+            if (!resp.ok) return;
+            this._thumbData.set(name, await resp.json());
+        } catch (_) {
+            // Vignette laissée au neutre : une tuile ou un dict manquant ne
+            // doit jamais bloquer la liste.
+        }
+    }
+
+    // Relecture ciblée après une écriture (sauvegarde, réinitialisation) : la
+    // vignette reflète le thème enregistré, pas l'état affiché à l'écran.
+    async _refreshThumb(name) {
+        await this._fetchThumb(name);
+        this._paintThumbs();
+    }
+
+    // Remplit les montures de vignettes (lignes de la liste de gestion) depuis
+    // le cache. Tant que le dict n'est pas relu, une pastille neutre occupe
+    // exactement la même place.
+    _paintThumbs() {
+        document.querySelectorAll('.theme-thumb-mount[data-thumb-name]').forEach(mount => {
+            mount.replaceChildren();
+            const dict = this._thumbData.get(mount.dataset.thumbName);
+            if (dict) {
+                mount.appendChild(buildThemeThumbnail(dict));
+            } else {
+                const placeholder = document.createElement('span');
+                placeholder.className = 'theme-thumb theme-thumb--row theme-thumb--fallback';
+                mount.appendChild(placeholder);
+            }
+        });
     }
 
     // Retourne true si le profil a bien été chargé, false s'il a été annulé
@@ -318,10 +379,16 @@ class ProfileManager {
 
             const result = await this.apiCall(`/api/profiles/${encodeURIComponent(profileData.name)}`, 'PUT', profileData);
 
-            if (result.success && !quiet) {
-                dbgProfiles('Profil sauvegardé avec succès:', profileData.name);
-                this.showToast(pkg.t('Thème "${name}" sauvegardé', { name: profileData.name }), 'green');
-                this.loadProfilesList(); // Rafraîchir la liste
+            if (result.success) {
+                // La vignette doit montrer le thème ENREGISTRÉ : relecture
+                // ciblée du dict (aussi pour les sauvegardes « quiet », ex.
+                // « Enregistrer sous… »), sans attendre un re-render complet.
+                this._refreshThumb(profileData.name);
+                if (!quiet) {
+                    dbgProfiles('Profil sauvegardé avec succès:', profileData.name);
+                    this.showToast(pkg.t('Thème "${name}" sauvegardé', { name: profileData.name }), 'green');
+                    this.loadProfilesList(); // Rafraîchir la liste
+                }
             }
             return result;
         } catch (error) {
@@ -451,6 +518,9 @@ class ProfileManager {
             const result = await this.apiCall(`/api/profiles/${encodeURIComponent(name)}/reset`, 'POST');
             if (result.success) {
                 this.showToast(pkg.t('Thème "${name}" réinitialisé', { name }), 'blue');
+                // Le thème enregistré vient de changer : la vignette se met à
+                // jour même si ce n'est pas le profil actif.
+                this._refreshThumb(name);
                 if (this.currentProfile && this.currentProfile.name === name) {
                     // L'utilisateur vient de confirmer la réinitialisation : les
                     // modifications en attente sur ce thème sont abandonnées.
@@ -585,22 +655,32 @@ class ProfileManager {
             row.className = 'row';
             row.style.marginBottom = '0';
 
-            // Colonne nom (cliquable pour charger le profil)
+            // Colonne principale (cliquable pour charger le profil) : vignette
+            // large puis nom + étoile « par défaut ».
             const colName = document.createElement('div');
-            colName.className = 'col-8';
+            colName.className = 'col';
             const nameWrap = document.createElement('div');
             nameWrap.className = 'profile-name-wrap';
             nameWrap.style.cursor = 'pointer';
             nameWrap.addEventListener('click', () => this.loadProfile(profileName));
 
-            const swatchIcon = document.createElement('i');
-            swatchIcon.className = 'ti ti-color-swatch me-1';
-            nameWrap.appendChild(swatchIcon);
+            // Vignette du thème enregistré, remplie par _paintThumbs() quand
+            // le dict complet est relu (voir _refreshThumbs).
+            const thumbMount = document.createElement('span');
+            thumbMount.className = 'theme-thumb-mount profile-thumb';
+            thumbMount.dataset.thumbName = profileName;
+            nameWrap.appendChild(thumbMount);
 
+            const nameCol = document.createElement('div');
+            nameCol.className = 'profile-name-col';
+            const nameLine = document.createElement('div');
+            nameLine.className = 'profile-name-line';
             const nameSpan = document.createElement('span');
             nameSpan.className = 'profile-name';
             nameSpan.textContent = profileName;
-            nameWrap.appendChild(nameSpan);
+            nameLine.appendChild(nameSpan);
+            nameCol.appendChild(nameLine);
+            nameWrap.appendChild(nameCol);
 
             // `_defaultProfileName` vaut null tant que les réglages n'ont pas été
             // lus : aucune étoile n'est posée, la comparaison échoue pour tous les
@@ -610,7 +690,7 @@ class ProfileManager {
 
             // Colonne actions (menu déroulant)
             const colActions = document.createElement('div');
-            colActions.className = 'col-4 text-end';
+            colActions.className = 'col-auto text-end';
             const dropdown = document.createElement('div');
             dropdown.className = 'dropdown';
 
@@ -662,6 +742,11 @@ class ProfileManager {
         if (this._defaultProfileName === null) {
             this._getDefaultProfileName().then(() => this._updateDefaultProfileHighlight());
         }
+
+        // Vignettes déjà en cache (rendu après une autre action que le
+        // chargement initial, ex. sauvegarde) ; les autres restent neutres en
+        // attendant _refreshThumbs().
+        this._paintThumbs();
     }
 
     // Pose ou retire le marquage "profil actif" sur un élément de liste déjà
@@ -715,9 +800,9 @@ class ProfileManager {
     // /api/profiles ni de reconstruction du DOM (donc pas de perte des
     // dropdowns Bootstrap ouverts ni de scroll réinitialisé).
     _updateActiveProfileHighlight() {
+        const activeName = this.currentProfile?.name ?? null;
         const container = document.getElementById('profiles-list');
         if (container) {
-            const activeName = this.currentProfile?.name ?? null;
             container.querySelectorAll('[data-profile-name]').forEach(item => {
                 const nameWrap = item.querySelector('.profile-name-wrap');
                 if (nameWrap) {
@@ -843,9 +928,9 @@ class ProfileManager {
             // (#profiles-manager) sont dans #style, mais aucun de leurs
             // contrôles n'est un réglage de style (sélecteur, Sauvegarder,
             // Gérer les thèmes, liste et actions des thèmes). Les ignorer
-            // évite de programmer un recalcul
-            // concurrent d'une sauvegarde en cours, qui rafraîchirait
-            // currentSettings juste avant que saveCurrentAsProfile n'en fasse la
+            // évite de programmer un recalcul concurrent d'une sauvegarde ou
+            // d'un chargement en cours, qui rafraîchirait currentSettings
+            // juste avant que saveCurrentAsProfile/_markSaved n'en fassent la
             // nouvelle référence enregistrée.
             if (event?.target?.closest?.('#profiles-manager, #profile-bar')) return;
             clearTimeout(this._dirtyDebounceTimer);

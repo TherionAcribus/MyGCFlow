@@ -476,8 +476,11 @@ test('créer un profil y enregistre les réglages affichés', async ({ page }) =
       ? JSON.stringify({ success: true, name: 'Nouveau', uid: 'uid-nouveau', version: 2 })
       : JSON.stringify(['Nouveau']),
   }));
+  // La même URL sert au PUT d'enregistrement et au GET de relecture des
+  // vignettes de thèmes : seul le PUT a un corps à capturer (postDataJSON()
+  // d'un GET renverrait null et écraserait le corps enregistré).
   await page.route('**/api/profiles/Nouveau', route => {
-    savedBody = route.request().postDataJSON();
+    if (route.request().method() === 'PUT') savedBody = route.request().postDataJSON();
     route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true }) });
   });
   await page.route('**/api/settings', route => {
