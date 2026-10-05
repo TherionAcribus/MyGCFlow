@@ -147,6 +147,11 @@
                     </button>
                     {% endif %}
                 </div>
+
+                {# Version installée (version.py), à citer dans un signalement
+                   de bug : jusqu'ici elle n'apparaissait que dans l'infobulle
+                   de la zone de notification et la modale de mise à jour. #}
+                <p id="appVersionLabel" class="col-12 form-hint text-muted mt-2 mb-0">MyGCFlow {{ config.APP_VERSION }}</p>
             </div>
         </div>
     </div>
