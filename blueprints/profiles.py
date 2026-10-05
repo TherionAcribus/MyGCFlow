@@ -73,6 +73,7 @@ def api_get_settings():
         'default_profile_name': default_profile_name,
         'last_profile_uid': s.last_profile_uid,
         'last_profile_name': last_profile_name,
+        'startup_default_profile': s.startup_default_profile,
         'map_default_center': list(s.map_default_center) if s.map_default_center else None,
         'map_default_zoom': s.map_default_zoom,
         'map_framing': s.map_framing,
@@ -168,6 +169,12 @@ def api_put_settings():
         if 'last_profile_uid' in data:
             last_profile_uid = data.get('last_profile_uid')
 
+        # « Démarrer sur ce thème » : l'interrupteur n'est réécrit que si le
+        # client l'envoie, comme les deux uid de profil ci-dessus.
+        startup_default_profile = current.startup_default_profile
+        if 'startup_default_profile' in data:
+            startup_default_profile = bool(data.get('startup_default_profile'))
+
         # Centre et zoom passent par les mêmes contrôles qu'à la relecture du
         # fichier : sans cela, l'écriture déposerait la valeur brute dans
         # settings.json et seul le chargement suivant la corrigerait. Une valeur
@@ -201,6 +208,7 @@ def api_put_settings():
             date_format=date_format,
             default_profile_uid=default_profile_uid,
             last_profile_uid=last_profile_uid,
+            startup_default_profile=startup_default_profile,
             map_default_center=map_default_center,
             map_default_zoom=map_default_zoom,
             map_framing=map_framing,

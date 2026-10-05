@@ -51,8 +51,15 @@
                     <select id="selectDefaultProfile" class="form-select" aria-label="{{ _('Profil visuel par défaut') }}">
                         <!-- Les options seront remplies dynamiquement par JavaScript -->
                     </select>
+                    <!-- Interrupteur « démarrer sur ce thème » : coché sans thème
+                         choisi, handleStartupDefaultToggle() prend le thème
+                         actif ; un choix déjà enregistré n'est pas réécrit. -->
+                    <div class="form-check form-switch mt-2">
+                        <input class="form-check-input" type="checkbox" id="switchStartupDefaultProfile" role="switch">
+                        <label class="form-check-label" for="switchStartupDefaultProfile">{{ _("Toujours démarrer sur ce thème") }}</label>
+                    </div>
                     <p class="form-hint text-muted mb-0">
-                        {{ _("Utilisé à la première ouverture. Ensuite, MyGCFlow rouvre le dernier profil utilisé.") }}
+                        {{ _("Décoché, MyGCFlow rouvre le dernier thème utilisé et le choix ci-dessus sert de repli. Coché sans thème choisi, le thème actif est pris.") }}
                     </p>
                 </div>
 

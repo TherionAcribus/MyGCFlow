@@ -241,6 +241,11 @@ class AppSettings:
     # repli, pour qu'un profil enregistré puis retrouvé au lancement suivant ne
     # dépende pas d'un passage par « Définir comme par défaut ».
     last_profile_uid: Optional[str] = None
+    # Interrupteur « Toujours démarrer sur ce thème » (onglet Paramètres).
+    # False (défaut) : le démarrage restaure `last_profile_uid`, le profil par
+    # défaut ne servant que de repli. True : `default_profile_uid` passe en
+    # premier, le dernier profil utilisé n'étant alors que le repli.
+    startup_default_profile: bool = False
     # Convention persistée/API : (longitude, latitude).
     map_default_center: Optional[Tuple[float, float]] = None
     map_default_zoom: Optional[int] = None
@@ -764,6 +769,8 @@ def coerce_settings(d: dict) -> AppSettings:
 
         if d.get("last_profile_uid"):
             s.last_profile_uid = d.get("last_profile_uid")
+
+        s.startup_default_profile = bool(d.get("startup_default_profile", s.startup_default_profile))
 
         s.examples_seeded = bool(d.get("examples_seeded", s.examples_seeded))
         s.examples_version = _to_int(d.get("examples_version"), s.examples_version)

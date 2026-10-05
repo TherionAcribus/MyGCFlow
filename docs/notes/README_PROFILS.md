@@ -23,6 +23,12 @@ La section **Profils** est accessible dans l'onglet **Style** de l'application.
 1. Modifiez les paramètres de votre carte (points, animations, etc.)
 2. Cliquez sur **Sauvegarder** pour enregistrer les changements dans le profil actif
 
+Pour enregistrer dans un **autre profil**, la flèche du bouton **Sauvegarder**
+ouvre **Enregistrer sous…** : choisissez un profil existant (l'écrasement est
+confirmé avant d'écrire) ou saisissez un nouveau nom pour créer un profil.
+La destination devient le profil actif ; la source garde ses réglages
+enregistrés.
+
 Sans profil actif, **Sauvegarder** propose d'enregistrer les réglages dans un nouveau profil.
 
 #### Charger un profil

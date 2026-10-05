@@ -83,6 +83,9 @@ class ProfileManager {
         // Modale "modifications non enregistrées" en cours d'affichage : elle
         // n'accepte qu'une question à la fois (cf. _askUnsavedChangesChoice).
         this._unsavedChoicePending = false;
+        // Même garde pour la confirmation d'écrasement de « Enregistrer
+        // sous… » (cf. _askOverwriteConfirm).
+        this._overwriteChoicePending = false;
         this.init();
     }
 
@@ -113,6 +116,17 @@ class ProfileManager {
         // Bouton sauvegarder profil
         document.getElementById('btn-save-profile')?.addEventListener('click', () => {
             this.saveCurrentAsProfile();
+        });
+
+        // « Enregistrer sous… » (menu du bouton Sauvegarder) : enregistre les
+        // réglages affichés dans un AUTRE thème — existant (écrasement
+        // confirmé) ou nouveau — puis le rend actif.
+        document.getElementById('btn-save-as-profile')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.showSaveAsModal();
+        });
+        document.getElementById('btn-confirm-save-as')?.addEventListener('click', () => {
+            this.confirmSaveAs();
         });
 
         // Sélecteur compact de la barre de profil : changer la valeur charge le
@@ -1223,8 +1237,49 @@ class ProfileManager {
         }
     }
 
+    // Interrupteur « Toujours démarrer sur ce thème » (onglet Paramètres) :
+    // bascule la préférence `startup_default_profile`. Coché sans thème choisi,
+    // le thème ACTIF devient le choix — l'utilisateur vient d'exprimer « celui
+    // que je vois » ; un choix déjà enregistré n'est jamais réécrit (décoché ou
+    // recoché, il est réutilisé tel quel).
+    async handleStartupDefaultToggle() {
+        const toggle = document.getElementById('switchStartupDefaultProfile');
+        if (!toggle) return;
+
+        const patch = { startup_default_profile: toggle.checked };
+        if (toggle.checked) {
+            const defaultName = await this._getDefaultProfileName();
+            if (!defaultName && this.currentProfile?.uid) {
+                patch.default_profile_uid = this.currentProfile.uid;
+            }
+        }
+
+        const result = await this.saveAppSettings(patch);
+        if (!result || !result.success) {
+            // La préférence n'est pas écrite : l'interrupteur revient à l'état
+            // serveur pour ne pas afficher un choix que le prochain démarrage
+            // ignorerait.
+            toggle.checked = !toggle.checked;
+            markSaveError('switchStartupDefaultProfile');
+            return;
+        }
+
+        if (patch.default_profile_uid) {
+            this._defaultProfileName = this.currentProfile.name;
+            // Repeupler plutôt que simplement resynchroniser : le thème actif
+            // peut avoir été créé après le rendu du sélecteur (ses options
+            // datent de l'init), sa valeur serait alors impossible à poser.
+            this.populateDefaultProfileSelector();
+            this._updateDefaultProfileHighlight();
+        }
+        try { if (window.userSettings) window.userSettings.startup_default_profile = toggle.checked; } catch (_) {}
+        markSaved('switchStartupDefaultProfile');
+    }
+
     // Restaure le profil du démarrage : le DERNIER PROFIL ACTIF d'abord, le
-    // profil par défaut seulement en repli.
+    // profil par défaut seulement en repli — sauf si la préférence
+    // `startup_default_profile` (« Toujours démarrer sur ce thème ») inverse
+    // cette priorité.
     //
     // L'application ne repartait auparavant que du profil par défaut : un profil
     // créé ou sélectionné puis enregistré revenait au lancement suivant sous les
@@ -1256,13 +1311,29 @@ class ProfileManager {
             // La liste peut déjà avoir été rendue (init) sans connaître le défaut.
             this._updateDefaultProfileHighlight();
 
+            // « Toujours démarrer sur ce thème » : les réglages sont déjà en
+            // main, l'interrupteur de l'onglet Paramètres est synchronisé ici
+            // sans un GET /api/settings de plus.
+            const startOnDefault = settings.startup_default_profile === true;
+            const startupToggle = document.getElementById('switchStartupDefaultProfile');
+            if (startupToggle) startupToggle.checked = startOnDefault;
+
             // Un UID orphelin est déjà traité en amont (get_app_settings() efface
             // la référence morte et renvoie null) : ne restent ici que des UID
             // censés être lisibles.
             const candidates = [];
-            if (settings.last_profile_uid) candidates.push(settings.last_profile_uid);
-            if (settings.default_profile_uid && settings.default_profile_uid !== settings.last_profile_uid) {
+            if (startOnDefault && settings.default_profile_uid) {
+                // Choix explicite : le thème par défaut passe d'abord, le
+                // dernier utilisé ne sert que de repli s'il a disparu.
                 candidates.push(settings.default_profile_uid);
+                if (settings.last_profile_uid && settings.last_profile_uid !== settings.default_profile_uid) {
+                    candidates.push(settings.last_profile_uid);
+                }
+            } else {
+                if (settings.last_profile_uid) candidates.push(settings.last_profile_uid);
+                if (settings.default_profile_uid && settings.default_profile_uid !== settings.last_profile_uid) {
+                    candidates.push(settings.default_profile_uid);
+                }
             }
 
             if (!candidates.length) {
@@ -1559,11 +1630,12 @@ class ProfileManager {
         dbgProfiles('Profil appliqué avec succès:', profile.name);
     }
 
-    // Corps du PUT décrivant les réglages affichés, sous le nom du profil actif.
+    // Corps du PUT décrivant les réglages affichés, sous le nom du profil actif
+    // (ou de `nameOverride` pour « Enregistrer sous… » vers un autre thème).
     // Extrait de saveCurrentAsProfile() pour que la création d'un profil écrive
     // exactement la même chose (cf. createProfile) : un profil créé et un profil
     // sauvegardé ne doivent pas pouvoir diverger.
-    _buildProfilePayload() {
+    _buildProfilePayload(nameOverride) {
         // Récupérer les paramètres actuels
         this.loadCurrentSettings();
 
@@ -1583,9 +1655,9 @@ class ProfileManager {
         }
 
         return {
-            name: this.currentProfile.name,
-            uid: this.currentProfile.uid,
-            version: this.currentProfile.version,
+            name: nameOverride || this.currentProfile.name,
+            uid: this.currentProfile ? this.currentProfile.uid : undefined,
+            version: this.currentProfile ? this.currentProfile.version : undefined,
             map: mapNormalized,
             points: this.currentSettings.points,
             flash: this.currentSettings.flash,
@@ -1624,6 +1696,200 @@ class ProfileManager {
         }
         this.updateCurrentProfileIndicator();
         return saved;
+    }
+
+    // « Enregistrer sous… » : enregistre les réglages affichés dans le thème
+    // choisi — existant (après confirmation d'écrasement) ou nouveau — puis le
+    // rend actif, comme le ferait un « Save As » classique : après coup, on
+    // travaille sur la destination et le thème d'origine reste inchangé.
+    async showSaveAsModal() {
+        const modal = document.getElementById('save-as-modal');
+        const select = document.getElementById('save-as-target');
+        if (!modal || !select) return;
+
+        // La liste peut être en retard (thème créé dans un autre onglet) : on
+        // la relit avant de proposer les destinations, sinon un nom en
+        // apparence libre pourrait écraser un thème sans confirmation.
+        await this.loadProfilesList();
+
+        // Repartir d'un champ vide : la destination choisie la fois précédente
+        // n'a aucune raison d'être reproposée.
+        select.innerHTML = '';
+        for (const name of this.profilesList || []) {
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            select.appendChild(opt);
+        }
+
+        // `create` transforme une frappe inconnue en nouveau thème ; le rendu
+        // « option_create » remplace le « Add … » anglais par défaut.
+        initTomSelect(select, {
+            maxItems: 1,
+            create: true,
+            createOnBlur: true,
+            persist: false,
+            closeAfterSelect: true,
+            placeholder: select.dataset.placeholder || '',
+            render: {
+                option: (data, escape) => `<div class="option">${escape(data.text)}</div>`,
+                item: (data, escape) => `<div class="item">${escape(data.text)}</div>`,
+                // pkg.t() est appelé hors du template literal : pybabel ne
+                // voit pas les appels imbriqués dans une interpolation ${…}.
+                option_create: (data, escape) => {
+                    const label = pkg.t('Créer le profil "${name}"', { name: data.input });
+                    return `<div class="create">${escape(label)}</div>`;
+                },
+            },
+            onChange: () => this._updateSaveAsFeedback(),
+            onType: () => this._updateSaveAsFeedback(),
+        });
+
+        this._updateSaveAsFeedback();
+        showBsModal(modal);
+        setTimeout(() => getTomSelect(select)?.focus(), 100);
+    }
+
+    // Diagnostic de la destination choisie dans la modale « Enregistrer
+    // sous… » : même convention que _updateProfileNameFeedback (bouton grisé
+    // tant que rien de valable n'est choisi, messages en warning plutôt qu'en
+    // erreur — écraser un thème existant est permis ici, il sera confirmé).
+    _updateSaveAsFeedback() {
+        const select = document.getElementById('save-as-target');
+        const confirmBtn = document.getElementById('btn-confirm-save-as');
+        const feedback = document.getElementById('save-as-feedback');
+        if (!select || !confirmBtn) return null;
+
+        const ts = getTomSelect(select);
+        const value = String(select.value || ts?.control_input?.value || '').trim();
+        const result = this._validateProfileName(value, 'saveas');
+
+        confirmBtn.disabled = !result.valid;
+        if (feedback) {
+            feedback.textContent = result.message;
+            feedback.className = result.level === 'error' ? 'invalid-feedback d-block'
+                : !result.message ? 'form-text d-none'
+                : result.level === 'warning' ? 'form-text text-warning'
+                : 'form-text text-muted';
+        }
+        return result;
+    }
+
+    // Validation du choix de la modale « Enregistrer sous… ». Trois cas :
+    //   - nom libre            → création d'un thème (avec les réglages affichés) ;
+    //   - nom du profil actif  → sauvegarde ordinaire, sans confirmation ;
+    //   - autre nom déjà pris  → écrasement, confirmé par une seconde modale.
+    async confirmSaveAs() {
+        const modal = document.getElementById('save-as-modal');
+        const select = document.getElementById('save-as-target');
+        const ts = getTomSelect(select);
+        // Une frappe non validée (ni Entrée ni clic sur la création) vit dans
+        // l'input du TomSelect : createOnBlur la matérialise au clic sur le
+        // bouton, l'input lu en repli couvre les autres sorties de champ.
+        const name = String(select?.value || ts?.control_input?.value || '').trim();
+
+        const check = this._validateProfileName(name, 'saveas');
+        if (!check.valid) {
+            this._updateSaveAsFeedback();
+            if (!name) this.showToast(pkg.t('Veuillez saisir un nom de profil'), 'orange');
+            return;
+        }
+
+        const key = profileNameKey(name);
+        const conflict = (this.profilesList || []).find(existing => profileNameKey(existing) === key);
+
+        if (!conflict) {
+            hideBsModal(modal);
+            await this.createProfile(name);
+            return;
+        }
+
+        if (this.currentProfile && conflict === this.currentProfile.name) {
+            hideBsModal(modal);
+            await this.saveCurrentAsProfile();
+            return;
+        }
+
+        // La confirmation d'écrasement n'est ouverte qu'après la fermeture
+        // complète de la modale : deux modales ne s'empilent pas proprement
+        // (même raison que l'attente sur 'hidden.bs.modal' dans
+        // _askUnsavedChangesChoice).
+        hideBsModal(modal);
+        await new Promise(resolve => {
+            if (!modal.classList.contains('show')) return resolve();
+            modal.addEventListener('hidden.bs.modal', resolve, { once: true });
+        });
+        const confirmed = await this._askOverwriteConfirm(conflict);
+        if (!confirmed) {
+            // Annulation : la modale de destination rouvre avec le choix intact
+            // (l'instance TomSelect de la select a survécu à la fermeture).
+            showBsModal(modal);
+            return;
+        }
+        await this.saveIntoProfile(conflict);
+    }
+
+    // Ouvre la modale de confirmation d'écrasement ; résout true si
+    // l'utilisateur confirme, false sinon (Annuler, Échap, clic sur le fond,
+    // croix). Même structure que _askUnsavedChangesChoice : 'hidden.bs.modal'
+    // est le seul point de sortie.
+    _askOverwriteConfirm(profileName) {
+        const modal = document.getElementById('overwrite-profile-modal');
+        if (!modal || !getBsModal(modal)) {
+            console.warn('ProfileManager: modale de confirmation d\'écrasement indisponible, enregistrement annulé');
+            return Promise.resolve(false);
+        }
+        if (this._overwriteChoicePending) return Promise.resolve(false);
+        this._overwriteChoicePending = true;
+
+        const message = document.getElementById('overwrite-profile-message');
+        if (message) {
+            message.textContent = pkg.t('Le profil « ${name} » existe déjà. Les réglages affichés remplaceront ceux enregistrés.', { name: profileName });
+        }
+
+        return new Promise(resolve => {
+            let confirmed = false;
+            const cleanups = [];
+            const on = (el, type, handler) => {
+                if (!el) return;
+                el.addEventListener(type, handler);
+                cleanups.push(() => el.removeEventListener(type, handler));
+            };
+            on(modal, 'hidden.bs.modal', () => {
+                cleanups.forEach(fn => fn());
+                this._overwriteChoicePending = false;
+                resolve(confirmed);
+            });
+            on(document.getElementById('btn-confirm-overwrite'), 'click', () => {
+                confirmed = true;
+                hideBsModal(modal);
+            });
+            showBsModal(modal);
+        });
+    }
+
+    // Enregistre les réglages affichés dans le thème existant `targetName`
+    // (écrasement déjà confirmé par l'appelant), puis le rend actif. Retourne
+    // true si l'écriture a réussi.
+    async saveIntoProfile(targetName) {
+        try {
+            // L'uid et la version du thème cible viennent du serveur — le PUT
+            // ne les retourne pas et ils sont nécessaires pour en faire le
+            // thème actif (et le mémoriser pour le prochain démarrage).
+            const target = await this.apiCall(`/api/profiles/${encodeURIComponent(targetName)}`);
+            const result = await this.saveProfile(this._buildProfilePayload(target.name), { quiet: true });
+            if (!result || !result.success) return false;
+
+            this.currentProfile = { name: target.name, uid: target.uid, version: target.version };
+            this._markSaved();
+            await this._rememberActiveProfile(target.uid);
+            this._updateActiveProfileHighlight();
+            this.showToast(pkg.t('Réglages enregistrés dans "${name}"', { name: target.name }), 'green');
+            return true;
+        } catch (error) {
+            console.error('Erreur « enregistrer sous » :', error);
+            return false;
+        }
     }
 
     // Modale de nom partagée par "Nouveau profil", "Renommer" et "Dupliquer" :
@@ -1750,6 +2016,24 @@ class ProfileManager {
                     valid: true,
                     level: 'warning',
                     message: pkg.t('« ${conflict} » existe déjà : la copie sera nommée « ${suggested} »', { conflict, suggested }),
+                };
+            }
+            if (action === 'saveas') {
+                // Viser un nom déjà pris est le cœur de « Enregistrer sous… » :
+                // autorisé, mais confirmé avant l'envoi (cf. confirmSaveAs).
+                // Sur le profil actif, c'est une sauvegarde ordinaire, sans
+                // surprise ni confirmation supplémentaire.
+                if (this.currentProfile && conflict === this.currentProfile.name) {
+                    return {
+                        valid: true,
+                        level: 'none',
+                        message: pkg.t('« ${name} » est le profil actif : ses réglages seront mis à jour', { name: conflict }),
+                    };
+                }
+                return {
+                    valid: true,
+                    level: 'warning',
+                    message: pkg.t('« ${name} » existe déjà : ses réglages seront remplacés', { name: conflict }),
                 };
             }
             return {
@@ -2257,6 +2541,14 @@ document.addEventListener('DOMContentLoaded', function() {
             defaultProfileSelector.addEventListener('change', () => {
                 dbgProfiles('🎯 Changement détecté dans sélecteur profil par défaut');
                 profileManager.handleDefaultProfileChange();
+            });
+        }
+
+        // Interrupteur « Toujours démarrer sur ce thème » du même réglage.
+        const startupDefaultToggle = document.getElementById('switchStartupDefaultProfile');
+        if (startupDefaultToggle) {
+            startupDefaultToggle.addEventListener('change', () => {
+                profileManager.handleStartupDefaultToggle();
             });
         }
     }, 100);

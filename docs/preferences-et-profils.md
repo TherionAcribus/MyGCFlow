@@ -108,6 +108,16 @@ d'afficher les réglages de l'utilisateur, présentés comme enregistrés : le
 travail était perdu au rechargement suivant, sans message. Si le `PUT` échoue,
 le thème existe mais est vide, et le toast le dit.
 
+**Enregistrer sous…** Le menu du bouton « Sauvegarder » permet d'écrire les
+réglages affichés dans un **autre** thème que l'actif : destination existante
+(`PUT`, précédée d'une confirmation d'écrasement), ou nom libre — le nom est
+alors créé par `createProfile()` comme « Nouveau », avec les réglages
+affichés. Choisir le thème actif retombe sur la sauvegarde ordinaire, sans
+confirmation. Convention « Save As » : la destination devient le thème actif,
+la source conserve ses réglages enregistrés, et la marque « modifications en
+attente » s'éteint. Choisir « Annuler » à la confirmation rouvre la modale
+avec le choix intact, rien n'est écrit.
+
 **Restauration au démarrage.** `restoreStartupProfile()` (appelée par `init.js`
 après `init_ui()`) charge le **dernier thème actif** — `last_profile_uid` dans
 `settings.json` — et n'utilise `default_profile_uid` qu'en repli : première

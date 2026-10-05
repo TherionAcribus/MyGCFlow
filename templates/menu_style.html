@@ -16,9 +16,21 @@
                         <label for="profile-select" class="form-label mb-0">{{ _("Thème") }}</label>
                         <select id="profile-select" class="form-select form-select-sm" disabled></select>
                         <span id="current-profile-indicator" class="profile-active-indicator"></span>
-                        <button type="button" id="btn-save-profile" class="btn btn-sm btn-secondary" data-bs-toggle="tooltip" data-bs-title="{{ _('Sauvegarder le thème actif') }}">
-                            <i class="ti ti-device-floppy me-1"></i>{{ _("Sauvegarder") }}
-                        </button>
+                        <div class="btn-group" role="group">
+                            <button type="button" id="btn-save-profile" class="btn btn-sm btn-secondary" data-bs-toggle="tooltip" data-bs-title="{{ _('Sauvegarder le thème actif') }}">
+                                <i class="ti ti-device-floppy me-1"></i>{{ _("Sauvegarder") }}
+                            </button>
+                            <button type="button" id="btn-save-profile-more" class="btn btn-sm btn-secondary dropdown-toggle dropdown-toggle-split"
+                                    data-bs-toggle="dropdown" aria-expanded="false"
+                                    aria-label="{{ _("Autres options d'enregistrement") }}"></button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item" href="#!" id="btn-save-as-profile">
+                                        <i class="ti ti-device-floppy me-1"></i>{{ _("Enregistrer sous…") }}
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                         <button type="button" id="btn-manage-profiles" class="btn btn-sm btn-outline-primary ms-auto"
                                 aria-expanded="false" aria-controls="profiles-manager">
                             <i class="ti ti-palette me-1"></i>{{ _("Gérer les thèmes") }}
@@ -297,6 +309,64 @@
                         <button type="button" class="btn btn-secondary modal-close" data-bs-dismiss="modal">{{ _("Annuler") }}</button>
                         <button type="button" id="btn-unsaved-discard" class="btn btn-danger">{{ _("Abandonner") }}</button>
                         <button type="button" id="btn-unsaved-save" class="btn btn-primary">{{ _("Enregistrer et charger") }}</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal « Enregistrer sous… » : destination = un thème existant
+             (dont les réglages seront remplacés, après confirmation) ou un
+             nouveau nom. Le sélecteur est un TomSelect avec `create` : la
+             liste sert de choix rapide, la frappe libre de création. -->
+        <div id="save-as-modal" class="modal bs-modal" tabindex="-1" aria-labelledby="save-as-modal-title" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 id="save-as-modal-title" class="modal-title">{{ _("Enregistrer sous…") }}</h5>
+                        <button type="button" class="btn-close modal-close" data-bs-dismiss="modal" aria-label="{{ _('Fermer') }}"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="save-as-target" class="form-label">{{ _("Thème de destination") }}</label>
+                            <select id="save-as-target" data-placeholder="{{ _("Choisir un thème ou saisir un nouveau nom") }}"></select>
+                            <div class="form-text">{{ _("Choisissez un thème existant pour y enregistrer les réglages affichés, ou saisissez un nouveau nom pour créer un thème.") }}</div>
+                            <!-- Diagnostic live de la destination choisie (écrasement
+                                 à confirmer, caractères ignorés par la sanitization),
+                                 posé par _updateSaveAsFeedback(). -->
+                            <div id="save-as-feedback" class="form-text d-none" aria-live="polite"></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary modal-close" data-bs-dismiss="modal">{{ _("Annuler") }}</button>
+                        <button type="button" id="btn-confirm-save-as" class="btn btn-primary">{{ _("Enregistrer le profil") }}</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de confirmation d'écrasement : « Enregistrer sous… » vers un
+             thème déjà existant remplace ses réglages enregistrés, on demande
+             avant (même gabarit que les confirmations suppression /
+             réinitialisation). -->
+        <div id="overwrite-profile-modal" class="modal bs-modal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <div class="modal-header-row d-flex align-items-center gap-2">
+                            <span class="modal-icon warning"><i class="ti ti-alert-triangle"></i></span>
+                            <div>
+                                <h5 class="modal-title">{{ _("Remplacer le thème ?") }}</h5>
+                                <p class="modal-subtitle text-muted">{{ _("Les réglages enregistrés du thème seront perdus") }}</p>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close modal-close" data-bs-dismiss="modal" aria-label="{{ _('Fermer') }}"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p id="overwrite-profile-message" class="modal-body-text"></p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary modal-close" data-bs-dismiss="modal">{{ _("Annuler") }}</button>
+                        <button type="button" id="btn-confirm-overwrite" class="btn btn-danger">{{ _("Remplacer") }}</button>
                     </div>
                 </div>
             </div>
