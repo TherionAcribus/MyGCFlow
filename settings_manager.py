@@ -321,8 +321,9 @@ class AnimationPrefs:
     # La vue suit les caches du jour selon une zone de confort réglable.
     camera_follow: bool = False
     camera_dynamism: int = 2
-    # Durée du flash : réglage d'animation (temporel), alors que forme, taille
-    # et couleur du flash restent dans le thème.
+    # Miroir persisté de la durée du flash : le réglage appartient au thème
+    # (FlashOptions.duration), cette clé reste la valeur de repli au démarrage
+    # quand aucun thème ne s'applique, et pour les anciens thèmes sans durée.
     flash_duration_ms: int = 1000
     # Durée maximale du tracé d'une étape du trajet (même logique que la durée
     # du flash) ; raccourcie à l'exécution quand les jours défilent plus vite.
@@ -363,6 +364,9 @@ class DisappearFlashOptions:
 @dataclass
 class FlashOptions:
     mode: str = "circle"  # "none", "circle", "impulse", "implode", "echo", "target", "star", "sparkle", "square", "triangle", "diamond"
+    # Durée (ms) : caractère du flash autant que sa forme — un flash sec de
+    # 300 ms et un halo lent de 2 s sont deux styles différents.
+    duration: int = 1000
     size: int = 50  # en px
     color: str = "#FF00FF"
     color_type: str = "fix"  # "gc", "none", "fix"
@@ -434,10 +438,11 @@ class InfosOptions:
 class MapProfile:
     """Un thème : réglages VISUELS uniquement.
 
-    Ni le rythme/timing (animation), ni la durée du flash, ni le centre et le
-    zoom de la carte n'y figurent : les anciens fichiers contenant ces blocs
-    restent lisibles (les clés inconnues sont ignorées par coerce_profile) mais
-    elles ne sont plus écrites ni appliquées.
+    Ni le rythme/timing (animation), ni le centre et le zoom de la carte n'y
+    figurent : les anciens fichiers contenant ces blocs restent lisibles (les
+    clés inconnues sont ignorées par coerce_profile) mais elles ne sont plus
+    écrites ni appliquées. La durée du flash y figure en revanche : elle fait
+    partie du caractère du flash autant que sa forme (FlashOptions.duration).
     """
     version: int = COORDINATE_ORDER_VERSION
     name: str = "Default"
@@ -529,6 +534,8 @@ POINT_SIZE_RANGE = (1, 10)
 BORDER_SIZE_RANGE = (0, 10)
 ICON_SIZE_RANGE = (12, 40)
 FLASH_SIZE_RANGE = (5, 200)
+# Durée du flash (ms) : même plage que le champ inputTimeFlash.
+FLASH_DURATION_RANGE = (100, 10000)
 STROKE_WIDTH_RANGE = (0.0, 5.0)
 RECENT_GLOW_DAYS_RANGE = (0, 365)
 # Traits de déplacement : miroir de static/js/travel_trail.mjs (TRAIL_*).
@@ -682,7 +689,7 @@ def coerce_animation_settings(d: dict, defaults: Optional[AnimationPrefs] = None
     a.extra_end_seconds = _clamp_float(d.get("extra_end_seconds"), a.extra_end_seconds, 0.0, 3600.0)
     a.camera_follow = bool(d.get("camera_follow", a.camera_follow))
     a.camera_dynamism = _clamp_int(d.get("camera_dynamism"), a.camera_dynamism, 1, 4)
-    a.flash_duration_ms = _clamp_int(d.get("flash_duration_ms"), a.flash_duration_ms, 100, 10000)
+    a.flash_duration_ms = _clamp_int(d.get("flash_duration_ms"), a.flash_duration_ms, *FLASH_DURATION_RANGE)
     a.trail_duration_ms = _clamp_int(d.get("trail_duration_ms"), a.trail_duration_ms, 100, 10000)
     return a
 
@@ -854,6 +861,9 @@ def coerce_profile(d: dict, base: Optional[MapProfile] = None) -> MapProfile:
         pfd = p.flash.disappear
         p.flash = FlashOptions(
             mode=_coerce_choice(f.get("mode"), FLASH_MODES, p.flash.mode),
+            # Thèmes antérieurs au déplacement de la durée : repli sur la
+            # valeur existante (défaut 1000), bornée comme le champ.
+            duration=_clamp_int(f.get("duration"), p.flash.duration, *FLASH_DURATION_RANGE),
             size=_clamp_int(f.get("size"), p.flash.size, *FLASH_SIZE_RANGE),
             color=_coerce_hex_color(f.get("color"), p.flash.color),
             color_type=_coerce_choice(f.get("color_type"), COLOR_TYPES, p.flash.color_type),
@@ -2373,14 +2383,19 @@ class SettingsManager:
             },
             'flash': {
                 'mode': prof.flash.mode,
+                'duration': prof.flash.duration,
                 'size': prof.flash.size,
                 'color': prof.flash.color,
                 'color_type': prof.flash.color_type,
+                'border_color': prof.flash.border_color,
+                'border_color_type': prof.flash.border_color_type,
                 'disappear': {
                     'mode': prof.flash.disappear.mode,
                     'size': prof.flash.disappear.size,
                     'color': prof.flash.disappear.color,
                     'color_type': prof.flash.disappear.color_type,
+                    'border_color': prof.flash.disappear.border_color,
+                    'border_color_type': prof.flash.disappear.border_color_type,
                 },
             },
             'infos': {

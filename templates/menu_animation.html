@@ -152,15 +152,9 @@
                                 <input placeholder="{{ _('Temps additionnel (sec)') }}" id="inputExtraEndTime" type="number" min="0" max="3600" step="1" class="form-control" aria-describedby="feedbackExtraEndTime">
                                 <div class="invalid-feedback" id="feedbackExtraEndTime"></div>
                             </div>
-                            <div class="mb-3">
-                                <!-- La durée du flash est un réglage TEMPOREL : elle
-                                     vit ici (préférence globale), tandis que la forme,
-                                     la taille et la couleur restent dans le thème. -->
-                                <label for="inputTimeFlash" class="form-label">{{ _("Durée du flash (ms)") }}{{ global_scope_badge() }}</label>
-                                <input id="inputTimeFlash" type="number" class="form-control" min="100" max="10000" step="100" placeholder="{{ _('Durée du flash') }}" aria-describedby="feedbackTimeFlash">
-                                <small class="form-hint text-muted">{{ _("Forme, taille et couleur du flash : onglet Style (thème).") }}</small>
-                                <div class="invalid-feedback" id="feedbackTimeFlash"></div>
-                            </div>
+                            <!-- La durée du flash fait partie du caractère du
+                                 flash : elle vit dans le thème, onglet
+                                 Style > Flash (inputTimeFlash). -->
                             {% if mode != 'evolution' %}
                             <div class="mb-3">
                                 <!-- Même logique que la durée du flash : réglage temporel,

@@ -22,14 +22,21 @@
             </select>
         </div>
 
-        <!-- La durée du flash est un réglage temporel : elle a été déplacée
-             dans le menu Animation (inputTimeFlash). Ce menu ne garde que les
-             réglages visuels du thème : forme, taille, couleur, effets. -->
+        <!-- La durée du flash fait partie de son caractère autant que la
+             forme : réglage de thème, ici — le rythme (jours/s, dates, temps
+             additionnel) reste une préférence globale dans Animation. -->
 
         <div class="mb-3">
             <label class="form-label" for="inputSizeFlash">{{ _("Taille du flash en px") }}</label>
             <input id="inputSizeFlash" type="number" class="form-control" min="5" max="200" step="5" placeholder="{{ _('Taille du Flash') }}" aria-describedby="helpSizeFlash">
             <small id="helpSizeFlash" class="form-hint text-muted">{{ _("5 à 200 px") }}</small>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="inputTimeFlash">{{ _("Durée du flash (ms)") }}</label>
+            <input id="inputTimeFlash" type="number" class="form-control" min="100" max="10000" step="100" placeholder="{{ _('Durée du flash') }}" aria-describedby="helpTimeFlash feedbackTimeFlash">
+            <small id="helpTimeFlash" class="form-hint text-muted">{{ _("100 à 10 000 ms — un flash sec ou un halo lent : la durée fait partie du style autant que la forme.") }}</small>
+            <div class="invalid-feedback" id="feedbackTimeFlash"></div>
         </div>
 
         <!-- Couleur du flash -->

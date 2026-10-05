@@ -14,9 +14,10 @@ async function openReadyApp(page) {
 
 // Profil complet côté style (points, flash, infos), sans bloc carte :
 // les tests de fond de carte vivent dans map-source-of-truth.spec.mjs.
-// Les clés legacy `animation` et `flash.duration` restent volontairement dans
-// la fixture : un ancien thème doit rester chargeable, mais ces valeurs sont
-// ignorées à l'application (le timing est une préférence globale).
+// La clé legacy `animation` reste volontairement dans la fixture : un ancien
+// thème doit rester chargeable, mais ce bloc est ignoré à l'application (le
+// timing est une préférence globale). `flash.duration`, elle, fait bien
+// partie du thème et s'applique.
 const STYLE_PROFILE = {
   name: 'Style',
   points: {
@@ -55,8 +56,9 @@ test('appliquer un profil écrit les options puis synchronise l\'interface', asy
   const applied = await page.evaluate(async (profile) => {
     const app = await import('/static/js/index.js');
     // État temporel distinctif AVANT l'application : un thème ne doit jamais
-    // modifier rythme, mode, dates, temps additionnel, suivi de caméra ou
-    // durée de flash — ce sont des préférences globales, pas du style.
+    // modifier rythme, mode, dates, temps additionnel ni suivi de caméra —
+    // ce sont des préférences globales, pas du style. La durée du flash, en
+    // revanche, est un réglage de thème : 2600 doit céder au 1500 du profil.
     app.options.animation.daysPerSecond = 7;
     app.options.animation.timePerDay = 1000 / 7;
     app.options.animation.rhythmMode = 'duration';
@@ -103,7 +105,7 @@ test('appliquer un profil écrit les options puis synchronise l\'interface', asy
         iconSize: document.getElementById('inputSizeIcon').value,
         iconeOptionsVisible: document.getElementById('iconeOptions').style.display !== 'none',
         flashMode: document.getElementById('selectFlashMode').value,
-        // inputTimeFlash reflète la préférence globale, pas le 1500 du thème.
+        // inputTimeFlash reflète désormais le thème : le 1500 du profil.
         flashDuration: document.getElementById('inputTimeFlash').value,
         flashSize: document.getElementById('inputSizeFlash').value,
         flashColorType: document.querySelector('input[name="flashColor"]:checked').value,
@@ -116,10 +118,11 @@ test('appliquer un profil écrit les options puis synchronise l\'interface', asy
     };
   }, STYLE_PROFILE);
 
-  // 0. Isolation : ni le timing ni la vue n'ont bougé, malgré les clés
-  // legacy animation/flash.duration présentes dans le fichier.
+  // 0. Isolation : ni le timing ni la vue n'ont bougé, malgré la clé legacy
+  // `animation` présente dans le fichier. La durée du flash est un réglage
+  // de thème : le 1500 du profil remplace le 2600 posé avant application.
   expect(applied.animation).toEqual(applied.beforeTiming.animation);
-  expect(applied.flash.duration).toBe(2600);
+  expect(applied.flash.duration).toBe(1500);
   expect(applied.view).toEqual(applied.beforeTiming.view);
 
   // 1. L'état : pkg.options est la source de vérité.
@@ -156,7 +159,7 @@ test('appliquer un profil écrit les options puis synchronise l\'interface', asy
     iconSize: '32',
     iconeOptionsVisible: true,
     flashMode: 'star',
-    flashDuration: '2600',
+    flashDuration: '1500',
     flashSize: '60',
     flashColorType: 'gc',
     title: 'Ma carte de test',
@@ -177,11 +180,10 @@ test('le profil relu juste après application est identique (aucun état transit
   }, STYLE_PROFILE);
 
   expect(reread.points).toMatchObject(STYLE_PROFILE.points);
-  // Le flash relu ne porte plus de `duration` : c'est un réglage temporel,
-  // sauvegardé dans les préférences globales et pas dans le thème.
-  const { duration: _dropped, ...flashSansDuree } = STYLE_PROFILE.flash;
-  expect(reread.flash).toMatchObject(flashSansDuree);
-  expect(reread.flash).not.toHaveProperty('duration');
+  // Le flash relu porte sa `duration` : réglage de thème depuis le
+  // déplacement du champ vers l'onglet Style > Flash.
+  expect(reread.flash).toMatchObject(STYLE_PROFILE.flash);
+  expect(reread.flash.duration).toBe(1500);
   // Aucun bloc `animation` dans un thème sauvegardé : le timing est global.
   expect(reread).not.toHaveProperty('animation');
   expect(reread.infos.title).toMatchObject(STYLE_PROFILE.infos.title);

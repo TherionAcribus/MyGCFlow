@@ -121,9 +121,10 @@ class ExampleProfileSeedingTests(unittest.TestCase):
         # « Cinématique » met aussi en avant les caches des 30 derniers jours.
         self.assertEqual(balanced.points.recent_glow_days, 0)
         self.assertEqual(cinematic.points.recent_glow_days, 30)
-        # La durée du flash n'est plus un réglage de thème (temporel →
-        # préférences d'animation) : elle n'existe pas sur FlashOptions.
-        self.assertFalse(hasattr(balanced.flash, "duration"))
+        # La durée du flash est un réglage de thème (Style > Flash) : elle
+        # existe sur FlashOptions, bornée comme le champ.
+        self.assertGreaterEqual(balanced.flash.duration, 100)
+        self.assertLessEqual(balanced.flash.duration, 10000)
 
     def test_the_aesthetic_collection_stays_compact_and_explores_distinct_settings(self):
         manager = SettingsManager()

@@ -1476,15 +1476,17 @@ class ProfileManager {
             dbgProfiles('Paramètres points récupérés:', pointSettings);
 
             // Le rythme et le timing (durée/jour, durée totale, plage de dates,
-            // temps additionnel, suivi de caméra, durée du flash) ne sont PAS
-            // sérialisés dans le thème : ils vivent dans les préférences
-            // globales (settings.json, bloc `animation`).
+            // temps additionnel, suivi de caméra) ne sont PAS sérialisés dans
+            // le thème : ils vivent dans les préférences globales
+            // (settings.json, bloc `animation`).
 
-            // Paramètres flash — la durée en fait exception : réglage temporel,
-            // il appartient aux préférences d'animation, pas au thème.
+            // Paramètres flash — la durée comprise : un flash sec de 300 ms
+            // et un halo lent de 2 s sont deux styles différents, c'est un
+            // réglage de thème autant que la forme. Bornée comme le champ.
             const flash = pkg.options?.flash || {};
             const flashSettings = {
                 mode: flash.mode || 'circle',
+                duration: Math.min(10000, Math.max(100, parseInt(flash.duration) || 1000)),
                 size: parseInt(flash.size) || 50,
                 color: flash.color || '#FF00FF',
                 color_type: flash.color_type || 'fix',
@@ -1562,6 +1564,7 @@ class ProfileManager {
                 },
                 flash: {
                     mode: 'circle',
+                    duration: 1000,
                     size: 50,
                     color: '#FF00FF'
                 }
@@ -1600,9 +1603,8 @@ class ProfileManager {
         // ---- 1. État ----
         // `profile.animation` (vitesse, suivi de caméra des anciens thèmes) est
         // volontairement ignoré : le timing est une préférence globale, un
-        // changement de thème ne doit jamais le modifier. Idem pour
-        // `flash.duration` (dans applyFlashState) et pour le centre/zoom de la
-        // carte (dans applyMapSettings).
+        // changement de thème ne doit jamais le modifier. Idem pour le
+        // centre/zoom de la carte (dans applyMapSettings).
         if (profile.points) applyPointState(profile.points);
         if (profile.flash) applyFlashState(profile.flash);
         if (profile.infos) applyInfosState(profile.infos);
@@ -1632,6 +1634,11 @@ class ProfileManager {
         // Les compteurs d'images dépendent de l'animation ET du flash : un profil
         // sans bloc animation doit quand même les recalculer.
         pkg.updateInfosForPictures();
+        // Miroir persisté flash_duration_ms : reflète la durée du thème appliqué
+        // (repli au démarrage quand aucun thème ne s'applique). Volontairement
+        // PAS de refreshTimingPlan ici : il lit les champs DOM et réécrirait
+        // options.animation — un thème ne doit pas toucher au timing.
+        if (profile.flash) pkg.saveAnimationSettings?.();
 
         dbgProfiles('Profil appliqué avec succès:', profile.name);
     }
@@ -2438,8 +2445,11 @@ function applyFlashState(flashOptions) {
         }
 
         if (flashOptions.mode) flash.mode = flashOptions.mode;
-        // `duration` des anciens fichiers est ignorée : la durée du flash est un
-        // réglage d'animation (préférence globale), pas un réglage de thème.
+        // Durée : réglage de thème, borné comme le champ. Fichiers antérieurs
+        // sans `duration` : la valeur courante est conservée (repli sur le
+        // miroir flash_duration_ms des préférences).
+        const duration = parseInt(flashOptions.duration);
+        if (Number.isFinite(duration)) flash.duration = Math.min(10000, Math.max(100, duration));
         const size = parseInt(flashOptions.size);
         if (Number.isFinite(size)) flash.size = size;
         if (flashOptions.color) {

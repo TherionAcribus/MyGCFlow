@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-05 10:58+0200\n"
+"POT-Creation-Date: 2026-10-05 11:27+0200\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -1222,7 +1222,7 @@ msgstr "Task monitoring stopped after ${count} consecutive errors: ${detail}"
 msgid "Envoi des dernières images..."
 msgstr "Sending last images..."
 
-#: static/js/mapgl.js:2783 static/js/ui.js:5878
+#: static/js/mapgl.js:2783 static/js/ui.js:5886
 msgid "Assemblage en cours"
 msgstr "Assembly in progress"
 
@@ -1399,16 +1399,16 @@ msgid ""
 "choisi."
 msgstr "Very busy days: automatic grouping applied at the chosen radius."
 
-#: static/js/mapgl.js:5330
+#: static/js/mapgl.js:5348
 msgid "Choisissez d’abord une forme de flash."
 msgstr "First choose a flash shape."
 
-#: static/js/mapgl.js:5330 static/js/mapgl.js:5334 templates/guide.html:195
+#: static/js/mapgl.js:5348 static/js/mapgl.js:5352 templates/guide.html:195
 #: templates/menu_style.html:79
 msgid "Flash"
 msgstr "Flash"
 
-#: static/js/mapgl.js:5334
+#: static/js/mapgl.js:5352
 msgid ""
 "Aucune cache visible à l’écran : déplacez la carte au-dessus de vos "
 "points."
@@ -1597,11 +1597,11 @@ msgstr "Error while setting the default profile"
 msgid "Aucun profil"
 msgstr "No profile"
 
-#: static/js/profiles.js:757 static/js/profiles.js:2458
+#: static/js/profiles.js:757 static/js/profiles.js:2467
 msgid "Dupliquer"
 msgstr "Duplicate"
 
-#: static/js/profiles.js:758 static/js/profiles.js:2438
+#: static/js/profiles.js:758 static/js/profiles.js:2447
 msgid "Renommer"
 msgstr "Rename"
 
@@ -1668,16 +1668,16 @@ msgstr "No default profile set"
 msgid "Le profil n'a pas pu être chargé : aucun profil n'est actif."
 msgstr "The profile could not be loaded: no profile is active."
 
-#: static/js/profiles.js:2189
+#: static/js/profiles.js:2198
 #, python-brace-format
 msgid "Créer le profil \"${name}\""
 msgstr "Create the profile \"${name}\""
 
-#: static/js/profiles.js:2254 static/js/profiles.js:2631
+#: static/js/profiles.js:2263 static/js/profiles.js:2640
 msgid "Veuillez saisir un nom de profil"
 msgstr "Please enter a profile name"
 
-#: static/js/profiles.js:2317
+#: static/js/profiles.js:2326
 #, python-brace-format
 msgid ""
 "Le profil « ${name} » existe déjà. Les réglages affichés remplaceront "
@@ -1686,60 +1686,60 @@ msgstr ""
 "The profile “${name}” already exists. The displayed settings will replace"
 " the saved ones."
 
-#: static/js/profiles.js:2363
+#: static/js/profiles.js:2372
 #, python-brace-format
 msgid "Réglages enregistrés dans \"${name}\""
 msgstr "Settings saved to \"${name}\""
 
-#: static/js/profiles.js:2423
+#: static/js/profiles.js:2432
 msgid "Enregistrer dans un nouveau profil"
 msgstr "Save to a new profile"
 
-#: static/js/profiles.js:2423
+#: static/js/profiles.js:2432
 msgid "Nouveau profil"
 msgstr "New profile"
 
-#: static/js/profiles.js:2429 templates/menu_style.html:356
+#: static/js/profiles.js:2438 templates/menu_style.html:356
 msgid "Enregistrer le profil"
 msgstr "Save profile"
 
-#: static/js/profiles.js:2429 templates/menu_style.html:247
+#: static/js/profiles.js:2438 templates/menu_style.html:247
 msgid "Créer"
 msgstr "Create"
 
-#: static/js/profiles.js:2436
+#: static/js/profiles.js:2445
 msgid "Renommer le profil"
 msgstr "Rename profile"
 
-#: static/js/profiles.js:2456
+#: static/js/profiles.js:2465
 msgid "Dupliquer le profil"
 msgstr "Duplicate profile"
 
-#: static/js/profiles.js:2512
+#: static/js/profiles.js:2521
 msgid "Le nom doit contenir au moins une lettre ou un chiffre"
 msgstr "The name must contain at least one letter or digit"
 
-#: static/js/profiles.js:2534
+#: static/js/profiles.js:2543
 #, python-brace-format
 msgid "« ${conflict} » existe déjà : la copie sera nommée « ${suggested} »"
 msgstr "“${conflict}” already exists: the copy will be named “${suggested}”"
 
-#: static/js/profiles.js:2550
+#: static/js/profiles.js:2559
 #, python-brace-format
 msgid "« ${name} » est le profil actif : ses réglages seront mis à jour"
 msgstr "“${name}” is the active profile: its settings will be updated"
 
-#: static/js/profiles.js:2556
+#: static/js/profiles.js:2565
 #, python-brace-format
 msgid "« ${name} » existe déjà : ses réglages seront remplacés"
 msgstr "“${name}” already exists: its settings will be replaced"
 
-#: static/js/profiles.js:2563
+#: static/js/profiles.js:2572
 #, python-brace-format
 msgid "Un profil nommé « ${name} » existe déjà"
 msgstr "Profile renamed to \"${name}\""
 
-#: static/js/profiles.js:2564
+#: static/js/profiles.js:2573
 #, python-brace-format
 msgid ""
 "Ce nom est déjà pris par « ${conflict} » : les deux se réduisent au "
@@ -1748,24 +1748,24 @@ msgstr ""
 "This name is already taken by “${conflict}”: both reduce to the file "
 "“${key}”"
 
-#: static/js/profiles.js:2573
+#: static/js/profiles.js:2582
 #, python-brace-format
 msgid ""
 "Caractères ignorés (${dropped}) : le profil sera enregistré sous « ${key}"
 " »"
 msgstr "Ignored characters (${dropped}): the profile will be saved as “${key}”"
 
-#: static/js/profiles.js:2690
+#: static/js/profiles.js:2699
 #, python-brace-format
 msgid "Profil renommé en \"${name}\""
 msgstr "Profile renamed to \"${name}\""
 
-#: static/js/profiles.js:2704
+#: static/js/profiles.js:2713
 #, python-brace-format
 msgid "Êtes-vous sûr de vouloir supprimer le profil \"${name}\" ?"
 msgstr "Are you sure you want to delete the profile \"${name}\"?"
 
-#: static/js/profiles.js:2723
+#: static/js/profiles.js:2732
 #, python-brace-format
 msgid ""
 "Êtes-vous sûr de vouloir réinitialiser le profil \"${name}\" aux valeurs "
@@ -2076,151 +2076,151 @@ msgstr "Filter by region/state"
 msgid "Pause non disponible pendant l'enregistrement - utilisez Arrêter"
 msgstr "Pause unavailable while recording - use Stop"
 
-#: static/js/ui.js:5483
+#: static/js/ui.js:5491
 msgid "Valeur requise."
 msgstr "Value required."
 
-#: static/js/ui.js:5485
+#: static/js/ui.js:5493
 msgid "Format attendu : mm:ss (ex. 4:55)."
 msgstr "Expected format: mm:ss (e.g. 4:55)."
 
-#: static/js/ui.js:5486
+#: static/js/ui.js:5494
 msgid "Nombre attendu."
 msgstr "Number expected."
 
-#: static/js/ui.js:5487
+#: static/js/ui.js:5495
 msgid "La valeur doit être strictement positive."
 msgstr "The value must be strictly positive."
 
-#: static/js/ui.js:5489
+#: static/js/ui.js:5497
 #, python-brace-format
 msgid "Entre ${min} et ${max} jours/s."
 msgstr "Between ${min} and ${max} days/s."
 
-#: static/js/ui.js:5490
+#: static/js/ui.js:5498
 #, python-brace-format
 msgid "Entre ${min} et ${max} s."
 msgstr "Between ${min} and ${max} s."
 
-#: static/js/ui.js:5491
+#: static/js/ui.js:5499
 #, python-brace-format
 msgid "Maximum ${max} s."
 msgstr "Maximum ${max} s."
 
-#: static/js/ui.js:5492
+#: static/js/ui.js:5500
 msgid "Entre 100 et 10000 ms."
 msgstr "Between 100 and 10000 ms."
 
-#: static/js/ui.js:5493
+#: static/js/ui.js:5501
 msgid "Hors limites."
 msgstr "Out of bounds."
 
-#: static/js/ui.js:5494
+#: static/js/ui.js:5502
 msgid "Valeur invalide."
 msgstr "Invalid value."
 
-#: static/js/ui.js:5554
+#: static/js/ui.js:5562
 #, python-brace-format
 msgid "${n} jours"
 msgstr "${n} days"
 
-#: static/js/ui.js:5555
+#: static/js/ui.js:5563
 #, python-brace-format
 msgid "${n} jours/s"
 msgstr "${n} days/s"
 
-#: static/js/ui.js:5557
+#: static/js/ui.js:5565
 #, python-brace-format
 msgid "animation minimale ${d}"
 msgstr "minimum animation ${d}"
 
-#: static/js/ui.js:5558
+#: static/js/ui.js:5566
 #, python-brace-format
 msgid "animation ${d}"
 msgstr "animation ${d}"
 
-#: static/js/ui.js:5559
+#: static/js/ui.js:5567
 #, python-brace-format
 msgid "fin ${d}"
 msgstr "end ${d}"
 
-#: static/js/ui.js:5561
+#: static/js/ui.js:5569
 #, python-brace-format
 msgid "+ ${d} additionnel"
 msgstr "+ ${d} extra"
 
-#: static/js/ui.js:5563
+#: static/js/ui.js:5571
 #, python-brace-format
 msgid "vidéo minimale ${d}"
 msgstr "minimum video ${d}"
 
-#: static/js/ui.js:5564
+#: static/js/ui.js:5572
 #, python-brace-format
 msgid "vidéo ${d}"
 msgstr "video ${d}"
 
-#: static/js/ui.js:5566
+#: static/js/ui.js:5574
 #, python-brace-format
 msgid "${n} images minimum"
 msgstr "${n} frames minimum"
 
-#: static/js/ui.js:5567
+#: static/js/ui.js:5575
 #, python-brace-format
 msgid "${n} images"
 msgstr "${n} frames"
 
-#: static/js/ui.js:5569
+#: static/js/ui.js:5577
 #, python-brace-format
 msgid "≈ ${n} jours par image"
 msgstr "≈ ${n} days per frame"
 
-#: static/js/ui.js:5595
+#: static/js/ui.js:5603
 #, python-brace-format
 msgid "Vidéo ~${d}"
 msgstr "Video ~${d}"
 
-#: static/js/ui.js:5603
+#: static/js/ui.js:5611
 msgid "musique incluse"
 msgstr "music included"
 
-#: static/js/ui.js:5604
+#: static/js/ui.js:5612
 msgid "sans musique"
 msgstr "no music"
 
-#: static/js/ui.js:5612 static/js/ui.js:5617
+#: static/js/ui.js:5620 static/js/ui.js:5625
 msgid "dossier Vidéos"
 msgstr "Videos folder"
 
-#: static/js/ui.js:5616
+#: static/js/ui.js:5624
 msgid "dossier Vidéos + téléchargement"
 msgstr "Videos folder + download"
 
-#: static/js/ui.js:5618
+#: static/js/ui.js:5626
 msgid "téléchargement navigateur"
 msgstr "browser download"
 
-#: static/js/ui.js:5619
+#: static/js/ui.js:5627
 msgid "aucune copie conservée"
 msgstr "no copy saved"
 
-#: static/js/ui.js:5621
+#: static/js/ui.js:5629
 #, python-brace-format
 msgid "destination : ${d}"
 msgstr "destination: ${d}"
 
-#: static/js/ui.js:5636
+#: static/js/ui.js:5644
 msgid "La plage de dates est invalide ou vide."
 msgstr "The date range is invalid or empty."
 
-#: static/js/ui.js:5637
+#: static/js/ui.js:5645
 msgid "Sélectionnez un fichier audio pour le mode « Sur la musique »."
 msgstr "Select an audio file for the \"Sync to music\" mode."
 
-#: static/js/ui.js:5644
+#: static/js/ui.js:5652
 msgid "En attente de la lecture de la durée de la musique."
 msgstr "Waiting for the music duration to be read."
 
-#: static/js/ui.js:5658
+#: static/js/ui.js:5666
 #, python-brace-format
 msgid ""
 "Durée demandée (${req}) trop courte pour afficher chaque jour (minimum "
@@ -2229,7 +2229,7 @@ msgstr ""
 "Requested duration (${req}) too short to show every day (minimum ${min}):"
 " ${app} applied."
 
-#: static/js/ui.js:5668
+#: static/js/ui.js:5676
 msgid ""
 "Le suivi de caméra met les dates en pause pendant chaque déplacement. La "
 "durée et le nombre d'images affichés sont des minimums ; le résultat sera"
@@ -2239,7 +2239,7 @@ msgstr ""
 "and frame count are minimums; the result will be longer and may exceed "
 "the music duration."
 
-#: static/js/ui.js:5713
+#: static/js/ui.js:5721
 #, python-brace-format
 msgid ""
 "Charge élevée : jusqu'à ~${n} flashs simultanés. Pistes : raccourcir la "
@@ -2248,7 +2248,7 @@ msgstr ""
 "High load: up to ~${n} simultaneous flashes. Suggestions: shorten the "
 "flash duration, slow down the animation, or use Images mode."
 
-#: static/js/ui.js:5717
+#: static/js/ui.js:5725
 #, python-brace-format
 msgid ""
 "${n} images à produire (~${d} en mode Images). Envisagez un fps plus bas "
@@ -2257,61 +2257,61 @@ msgstr ""
 "${n} frames to produce (~${d} in Images mode). Consider a lower fps or a "
 "shorter animation."
 
-#: static/js/ui.js:5874
+#: static/js/ui.js:5882
 msgid "Images de capture supprimées"
 msgstr "Capture images deleted"
 
-#: static/js/ui.js:5874
+#: static/js/ui.js:5882
 msgid "Nettoyage"
 msgstr "Cleanup"
 
-#: static/js/ui.js:5898
+#: static/js/ui.js:5906
 #, python-brace-format
 msgid "Dossier vidéo: ${folder}"
 msgstr "Video folder: ${folder}"
 
-#: static/js/ui.js:5898 static/js/ui.js:5900 static/js/ui.js:5905
+#: static/js/ui.js:5906 static/js/ui.js:5908 static/js/ui.js:5913
 msgid "Ouverture"
 msgstr "Opening"
 
-#: static/js/ui.js:5900
+#: static/js/ui.js:5908
 msgid "Impossible d’ouvrir le dossier vidéo"
 msgstr "Unable to open the video folder"
 
-#: static/js/ui.js:5905
+#: static/js/ui.js:5913
 msgid "Erreur lors de l’ouverture du dossier vidéo"
 msgstr "Error opening the video folder"
 
-#: static/js/ui.js:7902
+#: static/js/ui.js:7917
 msgid "Sélectionnez d'abord un fichier audio"
 msgstr "Select an audio file first"
 
-#: static/js/ui.js:7949 templates/menu_animation.html:213
+#: static/js/ui.js:7964 templates/menu_animation.html:207
 msgid "Aucune musique sélectionnée"
 msgstr "No music selected"
 
-#: static/js/ui.js:7982
+#: static/js/ui.js:7997
 msgid "Non disponible"
 msgstr "Not available"
 
-#: static/js/ui.js:7989 templates/_filter_cache_attrs.html:42
+#: static/js/ui.js:8004 templates/_filter_cache_attrs.html:42
 #: templates/_filter_cache_attrs.html:43
 msgid "Taille"
 msgstr "Size"
 
-#: static/js/ui.js:7990
+#: static/js/ui.js:8005
 msgid "Type"
 msgstr "Type"
 
-#: static/js/ui.js:7991
+#: static/js/ui.js:8006
 msgid "Durée"
 msgstr "Duration"
 
-#: static/js/ui.js:7992
+#: static/js/ui.js:8007
 msgid "Modifié"
 msgstr "Modified"
 
-#: static/js/ui.js:8047
+#: static/js/ui.js:8062
 msgid "Erreur lors du chargement du fichier audio"
 msgstr "Error loading the audio file"
 
@@ -3302,18 +3302,20 @@ msgid "Temps additionnel en fin (sec)"
 msgstr "Extra time at the end (sec)"
 
 #: templates/guide.html:229
-msgid "laisse la carte finale visible, et la"
-msgstr "keeps the final map visible, and the"
+msgid "laisse la carte finale visible. La"
+msgstr "keeps the final map visible. The"
 
-#: templates/guide.html:229 templates/menu_animation.html:159
+#: templates/guide.html:229 templates/menu_flash.html:36
 msgid "Durée du flash (ms)"
 msgstr "Flash duration (ms)"
 
 #: templates/guide.html:229
 msgid ""
-"se règle ici aussi : c'est une préférence globale, pas un réglage de "
-"thème."
-msgstr "is also set here: it is a global preference, not a theme setting."
+"se règle dans l'onglet Style > Flash : c'est un réglage de thème, comme "
+"la forme et la couleur."
+msgstr ""
+"is set in the Style > Flash tab: it's a theme setting, like the shape "
+"and color."
 
 #: templates/guide.html:232
 msgid "Suivi de caméra (expérimental)"
@@ -3323,7 +3325,7 @@ msgstr "Camera follow (experimental)"
 msgid "Activez"
 msgstr "Turn on"
 
-#: templates/guide.html:233 templates/menu_animation.html:180
+#: templates/guide.html:233 templates/menu_animation.html:174
 msgid "Suivi de caméra"
 msgstr "Camera follow"
 
@@ -3331,7 +3333,7 @@ msgstr "Camera follow"
 msgid "pour que la vue glisse vers les caches du jour, puis choisissez le"
 msgstr "to make the view glide toward the day's caches, then choose the"
 
-#: templates/guide.html:233 templates/menu_animation.html:182
+#: templates/guide.html:233 templates/menu_animation.html:176
 msgid "Dynamisme de la caméra"
 msgstr "Camera dynamism"
 
@@ -3359,7 +3361,7 @@ msgstr "Add music (optional)"
 msgid "Cochez"
 msgstr "Check"
 
-#: templates/guide.html:241 templates/menu_animation.html:201
+#: templates/guide.html:241 templates/menu_animation.html:195
 msgid "Inclure la musique"
 msgstr "Include music"
 
@@ -3367,7 +3369,7 @@ msgstr "Include music"
 msgid "sélectionnez un fichier audio et ajustez le volume. Le bouton"
 msgstr "select an audio file and adjust the volume. The"
 
-#: templates/guide.html:241 templates/menu_animation.html:224
+#: templates/guide.html:241 templates/menu_animation.html:218
 msgid "Caler sur la musique"
 msgstr "Sync to music"
 
@@ -3375,7 +3377,7 @@ msgstr "Sync to music"
 msgid "synchronise la durée sur celle du morceau — le bouton"
 msgstr "syncs the duration to the track length — the"
 
-#: templates/guide.html:241 templates/menu_animation.html:229
+#: templates/guide.html:241 templates/menu_animation.html:223
 msgid "Dissocier"
 msgstr "Unlink"
 
@@ -3862,23 +3864,15 @@ msgstr "(extra time)"
 msgid "Temps additionnel (sec)"
 msgstr "Extra time (sec)"
 
-#: templates/menu_animation.html:160
-msgid "Durée du flash"
-msgstr "Flash duration"
-
-#: templates/menu_animation.html:161
-msgid "Forme, taille et couleur du flash : onglet Style (thème)."
-msgstr "Flash shape, size and color: Style tab (theme)."
-
-#: templates/menu_animation.html:168
+#: templates/menu_animation.html:162
 msgid "Durée max. du tracé vers le prochain jour de caches (ms)"
 msgstr "Max. drawing time to the next day of caches (ms)"
 
-#: templates/menu_animation.html:169
+#: templates/menu_animation.html:163
 msgid "Durée du tracé"
 msgstr "Drawing time"
 
-#: templates/menu_animation.html:170
+#: templates/menu_animation.html:164
 msgid ""
 "Durée de progression du stylo jusqu'à la fin du prochain jour de "
 "trouvailles, raccourcie automatiquement quand les jours défilent plus "
@@ -3888,23 +3882,23 @@ msgstr ""
 "automatically shortened when days go by faster. Route style: Style tab "
 "(theme)."
 
-#: templates/menu_animation.html:184
+#: templates/menu_animation.html:178
 msgid "1 — Minimal : hors champ uniquement"
 msgstr "1 — Minimal: off-screen only"
 
-#: templates/menu_animation.html:185
+#: templates/menu_animation.html:179
 msgid "2 — Discret : hors champ ou très périphérique"
 msgstr "2 — Subtle: off-screen or near the edge"
 
-#: templates/menu_animation.html:186
+#: templates/menu_animation.html:180
 msgid "3 — Dynamique : hors zone centrale"
 msgstr "3 — Dynamic: outside the central area"
 
-#: templates/menu_animation.html:187
+#: templates/menu_animation.html:181
 msgid "4 — Intense : recentrage et zoom systématiques"
 msgstr "4 — Intense: always recenter and zoom"
 
-#: templates/menu_animation.html:189
+#: templates/menu_animation.html:183
 msgid ""
 "La vue glisse vers les caches du jour ; la durée réelle peut dépasser "
 "l'estimation et celle de la musique."
@@ -3912,40 +3906,40 @@ msgstr ""
 "The view glides toward each day's caches; the actual duration may exceed "
 "the estimate and the music length."
 
-#: templates/menu_animation.html:189
+#: templates/menu_animation.html:183
 msgid "En savoir plus"
 msgstr "Learn more"
 
-#: templates/menu_animation.html:197
+#: templates/menu_animation.html:191
 msgid "Musique (optionnel)"
 msgstr "Music (optional)"
 
-#: templates/menu_animation.html:206
+#: templates/menu_animation.html:200
 msgid "Fichier de musique"
 msgstr "Music file"
 
-#: templates/menu_animation.html:208
+#: templates/menu_animation.html:202
 msgid "Choisir un fichier audio"
 msgstr "Choose an audio file"
 
-#: templates/menu_animation.html:209 templates/menu_data.html:24
+#: templates/menu_animation.html:203 templates/menu_data.html:24
 #: templates/menu_data_evolution.html:53
 msgid "Parcourir…"
 msgstr "Browse…"
 
-#: templates/menu_animation.html:216
+#: templates/menu_animation.html:210
 msgid "Volume musique"
 msgstr "Music volume"
 
-#: templates/menu_animation.html:223
+#: templates/menu_animation.html:217
 msgid "Caler la durée de la vidéo sur celle de la musique"
 msgstr "Sync the video duration to the music"
 
-#: templates/menu_animation.html:227
+#: templates/menu_animation.html:221
 msgid "Calé sur la musique"
 msgstr "Synced to music"
 
-#: templates/menu_animation.html:230
+#: templates/menu_animation.html:224
 msgid "Différence"
 msgstr "Difference"
 
@@ -4092,50 +4086,62 @@ msgstr "Flash size"
 msgid "5 à 200 px"
 msgstr "5 to 200 px"
 
-#: templates/menu_flash.html:36 templates/menu_flash_disappear.html:31
+#: templates/menu_flash.html:37
+msgid "Durée du flash"
+msgstr "Flash duration"
+
+#: templates/menu_flash.html:38
+msgid ""
+"100 à 10 000 ms — un flash sec ou un halo lent : la durée fait partie du "
+"style autant que la forme."
+msgstr ""
+"100 to 10,000 ms — a crisp flash or a slow halo: duration is as much a "
+"part of the style as the shape."
+
+#: templates/menu_flash.html:43 templates/menu_flash_disappear.html:31
 msgid "Couleur du flash"
 msgstr "Flash color"
 
-#: templates/menu_flash.html:40 templates/menu_flash.html:67
+#: templates/menu_flash.html:47 templates/menu_flash.html:74
 #: templates/menu_flash_disappear.html:35
 #: templates/menu_flash_disappear.html:55 templates/menu_points.html:72
 #: templates/menu_points.html:138
 msgid "Couleurs GC (par type)"
 msgstr "GC colors (by type)"
 
-#: templates/menu_flash.html:44 templates/menu_flash.html:71
+#: templates/menu_flash.html:51 templates/menu_flash.html:78
 #: templates/menu_flash_disappear.html:59 templates/menu_points.html:76
 #: templates/menu_points.html:142
 msgid "Transparent"
 msgstr "Transparent"
 
-#: templates/menu_flash.html:48 templates/menu_flash.html:75
+#: templates/menu_flash.html:55 templates/menu_flash.html:82
 #: templates/menu_flash_disappear.html:39
 #: templates/menu_flash_disappear.html:63 templates/menu_points.html:80
 #: templates/menu_points.html:146
 msgid "Couleur unique"
 msgstr "Single color"
 
-#: templates/menu_flash.html:53 templates/menu_flash.html:78
+#: templates/menu_flash.html:60 templates/menu_flash.html:85
 #: templates/menu_flash_disappear.html:42
 #: templates/menu_flash_disappear.html:66 templates/menu_points.html:85
 #: templates/menu_points.html:151
 msgid "Choisir la couleur"
 msgstr "Choose color"
 
-#: templates/menu_flash.html:54
+#: templates/menu_flash.html:61
 msgid "Choisir la couleur du flash"
 msgstr "Choose the flash color"
 
-#: templates/menu_flash.html:59 templates/menu_flash_disappear.html:47
+#: templates/menu_flash.html:66 templates/menu_flash_disappear.html:47
 msgid "Couleur du contour"
 msgstr "Outline color"
 
-#: templates/menu_flash.html:63 templates/menu_flash_disappear.html:51
+#: templates/menu_flash.html:70 templates/menu_flash_disappear.html:51
 msgid "Automatique"
 msgstr "Automatic"
 
-#: templates/menu_flash.html:79
+#: templates/menu_flash.html:86
 msgid "Choisir la couleur du contour"
 msgstr "Choose the outline color"
 
@@ -5001,8 +5007,8 @@ msgid ""
 "l'animation : pratique pour vérifier la forme, la taille et les couleurs."
 " En mode « Couleurs GC », plusieurs types de caches clignotent ensemble."
 msgstr ""
-"Replays the flash in a loop on a few visible caches, without starting the "
-"animation: handy for checking shape, size and colors. In \"GC colors\" "
+"Replays the flash in a loop on a few visible caches, without starting the"
+" animation: handy for checking shape, size and colors. In \"GC colors\" "
 "mode, several cache types blink together."
 
 #: templates/menu_style.html:208
@@ -7033,4 +7039,13 @@ msgstr "View the user guide"
 
 #~ msgid "la section"
 #~ msgstr "the"
+
+#~ msgid ""
+#~ "se règle ici aussi : c'est une "
+#~ "préférence globale, pas un réglage de"
+#~ " thème."
+#~ msgstr "is also set here: it is a global preference, not a theme setting."
+
+#~ msgid "Forme, taille et couleur du flash : onglet Style (thème)."
+#~ msgstr "Flash shape, size and color: Style tab (theme)."
 

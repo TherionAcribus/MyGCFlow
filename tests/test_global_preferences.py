@@ -202,10 +202,11 @@ class AnimationCoercionTests(unittest.TestCase):
 class ThemeTimingIsolationTests(unittest.TestCase):
     """Un thème ne contient que des réglages visuels.
 
-    Les anciens fichiers peuvent encore embarquer un bloc `animation`, un
-    centre/zoom de carte ou une durée de flash : ils restent chargeables,
-    mais ces valeurs sont ignorées — jamais recopiées dans le profil ni dans
-    les préférences globales.
+    Les anciens fichiers peuvent encore embarquer un bloc `animation` ou un
+    centre/zoom de carte : ils restent chargeables, mais ces valeurs sont
+    ignorées — jamais recopiées dans le profil ni dans les préférences
+    globales. `flash.duration`, en revanche, est redevenue un réglage de
+    thème : un ancien fichier qui la porte la voit lue et appliquée.
     """
 
     LEGACY_PROFILE = {
@@ -228,7 +229,8 @@ class ThemeTimingIsolationTests(unittest.TestCase):
         self.assertFalse(hasattr(profile, "animation"))
         self.assertFalse(hasattr(profile.map, "center"))
         self.assertFalse(hasattr(profile.map, "zoom"))
-        self.assertFalse(hasattr(profile.flash, "duration"))
+        # La durée du flash fait partie du thème : lue comme la forme.
+        self.assertEqual(profile.flash.duration, 4500)
         # Le reste du fichier est bien lu.
         self.assertEqual(profile.flash.size, 30)
 
@@ -237,8 +239,11 @@ class ThemeTimingIsolationTests(unittest.TestCase):
         payload = manager._profile_to_dict(coerce_profile(self.LEGACY_PROFILE))
 
         serialized = json.dumps(payload)
-        for forbidden in ("animation", "duration", "default_center", "default_zoom", "speed"):
+        # `flash.duration` est un réglage de thème légitime : seules les
+        # clés temporelles ou de vue restent proscrites.
+        for forbidden in ("animation", "default_center", "default_zoom", "speed"):
             self.assertNotIn(f'"{forbidden}"', serialized)
+        self.assertEqual(payload["flash"]["duration"], 4500)
 
     def test_legacy_animation_does_not_leak_into_global_preferences(self):
         # Charger un ancien thème ne doit pas modifier les préférences

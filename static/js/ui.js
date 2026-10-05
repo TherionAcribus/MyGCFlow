@@ -2716,8 +2716,8 @@ function animationSettingsPayload() {
         extra_end_seconds: Math.max(0, Number(a.extraEndSeconds) || 0),
         camera_follow: a.cameraFollow === true && !isEvolutionPage(),
         camera_dynamism: Math.min(4, Math.max(1, Math.round(Number(a.cameraDynamism) || 2))),
-        // La durée du flash vit ici (temporel) même si son aspect est un
-        // réglage de thème.
+        // Miroir de la durée du flash (réglage de thème) : persistée comme
+        // repli au démarrage quand aucun thème ne s'applique.
         flash_duration_ms: Math.round(Number(pkg.options.flash?.duration) || 1000),
         // Idem pour la durée du tracé des traits de déplacement (sans objet en
         // mode Évolution, où les traits n'existent pas).
@@ -4574,7 +4574,8 @@ function refreshTimingPlan({ save = true } = {}) {
         timingErrorText('extraEnd', extraP)) && fieldsValid;
     if (extraP.ok) animation.extraEndSeconds = extraP.value;
 
-    // Durée du flash (réglage temporel global, déplacé hors du thème).
+    // Durée du flash (réglage de thème, onglet Style > Flash ; sa valeur est
+    // aussi lue ici pour le plan de timing et le miroir flash_duration_ms).
     const flashP = parseBoundedNumber(inputTimeFlash?.value, { min: 100, max: 10000 });
     fieldsValid = setTimingFieldValidity(
         inputTimeFlash, 'feedbackTimeFlash', flashP.ok || inputTimeFlash === null,

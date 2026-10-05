@@ -80,6 +80,19 @@ class CoerceProfileTests(unittest.TestCase):
         # La base n'est pas modifiée en place.
         self.assertEqual(base.points.shape, "triangle")
 
+    def test_flash_duration_is_a_theme_setting_clamped_to_the_field_bounds(self):
+        # Bornes du champ inputTimeFlash (Style > Flash) : 100–10 000 ms.
+        self.assertEqual(coerce_profile({"flash": {"duration": 30}}).flash.duration, 100)
+        self.assertEqual(coerce_profile({"flash": {"duration": 99_999}}).flash.duration, 10_000)
+        # Valeur illisible ou absente : la valeur courante sert de repli —
+        # les thèmes écrits avant le déplacement du champ n'ont pas de
+        # `duration` et ne doivent rien casser.
+        base = MapProfile()
+        base.flash.duration = 2500
+        self.assertEqual(coerce_profile({"flash": {"duration": "long"}}, base=base).flash.duration, 2500)
+        self.assertEqual(coerce_profile({"flash": {}}, base=base).flash.duration, 2500)
+        self.assertEqual(coerce_profile({}, base=base).flash.duration, 2500)
+
 
 class ProfileSaveAndImportValidationTests(unittest.TestCase):
     def setUp(self):
@@ -149,14 +162,17 @@ class ProfileSaveAndImportValidationTests(unittest.TestCase):
             "uid": "pirate",
             "map": {"default_center": [1, 2], "vectorOptions": {"strokeColor": "#fff"}},
             "animation": {"speed": 3},
-            "flash": {"duration": 5000},
+            "flash": {"duration": 5000, "bogus": 1},
         })
         saved = settings_manager.read_json(settings_manager.PROFILES_DIR / "Alpha.json")
         self.assertEqual(saved["uid"], self.uid)
         self.assertNotIn("default_center", saved["map"])
         self.assertNotIn("vectorOptions", saved["map"])
         self.assertNotIn("animation", saved)
-        self.assertNotIn("duration", saved["flash"])
+        # La durée du flash est un réglage de thème : clé connue, conservée
+        # bornée ; les clés réellement inconnues restent ignorées.
+        self.assertEqual(saved["flash"]["duration"], 5000)
+        self.assertNotIn("bogus", saved["flash"])
 
     def test_import_validates_the_values(self):
         payload = self.manager.export_profile_payload("Alpha", "test")
