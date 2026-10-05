@@ -3768,7 +3768,7 @@ function resetTravelTrail(silent = false) {
 // Ne touche pas volontairement trailPreview : l'aperçu survit à l'arrêt de la
 // lecture (l'utilisateur revoit sa route). Il est effacé explicitement par
 // resetTravelTrail (l'animation prend le relais), addVector (les données
-// changent) et refreshTrailPreview (l'option est désactivée).
+// changent) et refreshTrailPreview (mode Évolution).
 function clearTravelTrail() {
     setTrailAnimating(false);
     trailState = null;
@@ -3794,10 +3794,10 @@ export function toggleTrailPreview() {
     // Le trajet n'a pas de sens en mode Évolution (onglet absent) ; pendant
     // une lecture ou un enregistrement, l'aperçu serait de toute façon masqué
     // par l'animation — le bouton est alors désactivé côté UI. La pause garde
-    // animationInProgress vrai (isIdleState seul la laisserait passer).
+    // animationInProgress vrai (isIdleState seul la laisserait passer). Trajet
+    // désactivé, l'aperçu reste ouvrable : il sert à régler avant d'activer.
     if (isEvolutionPage() || !isIdleState() || isAnimationInProgress()) return !!trailPreview;
     const opts = currentTrailOptions();
-    if (!opts.enabled) return false;
 
     let geometry;
     try {
@@ -3832,11 +3832,12 @@ function clearTrailPreview() {
 
 // Réglages modifiés pendant l'aperçu : recalcul si la géométrie a divergé
 // (la clé mémoïsée couvre routing/clusterKm/jumpKm/jumpStyle/curve et la
-// borne de fin), redessin sinon. Ferme l'aperçu si le trajet est désactivé.
+// borne de fin), redessin sinon. Le trajet désactivé ne ferme PAS l'aperçu :
+// il est permis justement pour régler avant d'activer.
 export function refreshTrailPreview() {
     if (!trailPreview) return;
     const opts = currentTrailOptions();
-    if (!opts.enabled || isEvolutionPage()) {
+    if (isEvolutionPage()) {
         clearTrailPreview();
         return;
     }

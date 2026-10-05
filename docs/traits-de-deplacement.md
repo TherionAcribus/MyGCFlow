@@ -90,6 +90,10 @@ Le **mini-aperçu** (canvas `#trailStylePreview`) redessine un trajet
 synthétique — étapes proches plus un grand saut — avec la couleur, l'épaisseur,
 le motif, l'effet et la tête choisis, à chaque changement de réglage. Statique
 (sans `requestAnimationFrame`) : la tête « pulsante » est figée à mi-période.
+Son fond est le fond de carte actif, cadré sur le centre de carte par défaut
+(zoom fixe) : tuiles de la source OpenLayers pour les fonds raster (avec
+l'attribution du fournisseur en miniature), ou rendu des pays pour la carte
+vectorielle — recalculé à chaque changement de fond ou de variante.
 
 ## Aperçu du trajet et inspection des étapes
 
@@ -109,12 +113,14 @@ une vraie cache garde la priorité (popup de la cache) ; un clic ailleurs
 referme la popup comme avant.
 
 L'aperçu se referme de lui-même quand le tracé n'est plus valable ou utile :
-nouvelles données ou filtre modifié (`addVector`), option désactivée, lancement
-de la lecture ou de l'enregistrement (`resetTravelTrail` — l'animation prend le
-relais). En revanche il **survit à l'arrêt** de la lecture : après un stop,
-l'utilisateur revoit sa route. Le bouton reflète l'état réel (`aria-pressed`)
-et est désactivé quand l'aperçu ne pourrait pas s'ouvrir (trajet désactivé,
-pas de données, animation ou enregistrement en cours).
+nouvelles données ou filtre modifié (`addVector`), lancement de la lecture ou
+de l'enregistrement (`resetTravelTrail` — l'animation prend le relais). En
+revanche il **survit à l'arrêt** de la lecture : après un stop, l'utilisateur
+revoit sa route. Trajet désactivé, les réglages restent modifiables et l'aperçu
+ouvrable — c'est la façon de régler le trajet avant de l'activer (l'interrupteur
+ne pilote que l'affichage du trait pendant l'animation). Le bouton reflète
+l'état réel (`aria-pressed`) et est désactivé quand l'aperçu ne pourrait pas
+s'ouvrir (pas de données, animation ou enregistrement en cours).
 
 ## Réglages et portée
 

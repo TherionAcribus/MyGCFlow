@@ -40,6 +40,14 @@ function registerBasemap(id, layer, optionsPanelId = null) {
     pkg.registerMapMenu(id, optionsPanelId);
 }
 
+// Couche OpenLayers d'un fond de carte par son id ('OSM', 'watercolor',
+// 'stamenToner', 'vectorMap'), ou null si l'id est inconnu ou que les couches
+// ne sont pas encore créées. Le mini-aperçu « Apparence » du trait (ui.js)
+// réutilise la source de la couche active pour peindre son fond.
+export function getBasemapLayer(id) {
+    return basemaps[id]?.layer || null;
+}
+
 // Un seul niveau voisin est préchargé quand le suivi de caméra est actif. Cela
 // prépare la transition de zoom sans télécharger plusieurs pyramides de tuiles
 // ni conserver un cache disproportionné. Les couches vectorielles sont ignorées.
@@ -247,6 +255,8 @@ export function refreshVectorMap(newValues){
     // pays ne change pas, inutile de refaire une requête sur le fichier local.
     vectorTileLayer.setStyle(buildVectorMapStyle(newValues));
     vectorTileLayer.setBackground(newValues.background);
+    // Le fond du mini-aperçu « Apparence » du trait reflète ces couleurs.
+    pkg.drawTrailStylePreview?.();
 }
 
 
@@ -283,6 +293,8 @@ export function refreshStamenTonerMap(newValues){
     watchTileErrors(newSource); // setSource() ci-dessous perd les écouteurs de l'ancienne source
     stamenTonerLayer.setSource(newSource);
     stamenTonerLayerName = layerName;
+    // Le fond du mini-aperçu « Apparence » du trait suit la variante clair/sombre.
+    pkg.drawTrailStylePreview?.();
 }
 
 
@@ -370,6 +382,8 @@ export function switchLayer(layerName) {
         basemaps[id].layer.setVisible(id === layerName);
     }
     pkg.selectMapMenu(layerName);
+    // Le fond du mini-aperçu « Apparence » du trait suit le fond de carte actif.
+    pkg.drawTrailStylePreview?.();
 }
 
 // Délègue les clics depuis le conteneur : les boutons peuvent être rendus ou

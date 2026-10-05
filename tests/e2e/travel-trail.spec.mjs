@@ -44,9 +44,9 @@ async function openWithFixture(page) {
 async function enableTrail(page) {
   await page.locator('a[href="#style"]').click();
   await page.locator('a[href="#tabTrail"]').click();
-  await expect(page.locator('#selectTrailRouting')).toBeDisabled();
-  await page.locator('#switchTrail').check();
+  // Les réglages de tracé restent modifiables trajet désactivé.
   await expect(page.locator('#selectTrailRouting')).toBeEnabled();
+  await page.locator('#switchTrail').check();
 }
 
 async function setRhythm(page, daysPerSecond) {
@@ -143,7 +143,14 @@ test("l'arrêt efface le trait ; désactivé, aucun trajet n'est tracé", async 
   await page.locator('a[href="#style"]').click();
   await page.locator('a[href="#tabTrail"]').click();
   await page.locator('#switchTrail').uncheck();
-  await expect(page.locator('#selectTrailRouting')).toBeDisabled();
+  // Réglages modifiables et aperçu ouvrable, trajet désactivé.
+  await expect(page.locator('#selectTrailRouting')).toBeEnabled();
+  const btn = page.locator('#btnTrailPreview');
+  await expect(btn).toBeEnabled();
+  await btn.click();
+  await expect.poll(async () => (await trailState(page)).preview).toBe(true);
+  await btn.click();
+  await expect.poll(async () => (await trailState(page)).preview).toBe(false);
   await page.locator('a[href="#animation"]').click();
   await page.locator('#btnQuickPreview').click();
   await expect(page.locator('#btnQuickPause')).toBeVisible();

@@ -5189,21 +5189,21 @@ function changeTrailValues() {
     drawTrailStylePreview();
 }
 
-// Contrôles actifs seulement quand le trait est affiché ; rayon de
-// regroupement masqué en mode « un point par jour » — en mode « toutes les
-// caches », il sert de repli quand une journée dépasse le plafond.
+// Rayon de regroupement masqué en mode « un point par jour » — en mode
+// « toutes les caches », il sert de repli quand une journée dépasse le plafond.
+// Les réglages restent modifiables trajet désactivé : l'interrupteur ne pilote
+// que l'affichage du trait pendant l'animation, pas la préparation (réglages,
+// mini-aperçu du style, aperçu du trajet sur la carte).
 function updateTrailControlsState() {
     const trail = normalizeTrailOptions(pkg.options?.trail);
-    const fieldset = document.getElementById('trailOptions');
-    if (fieldset) fieldset.disabled = !trail.enabled;
     const clusterRow = document.getElementById('trailClusterRow');
     if (clusterRow) clusterRow.hidden = trail.routing === 'day';
     const opacityLabel = document.getElementById('spanTrailOpacity');
     if (opacityLabel) opacityLabel.textContent = `${trail.opacity}%`;
     // Aperçu du trajet actif : les réglages de tracé s'y appliquent tout de
-    // suite (getTrailGeometry est mémoïsé — gratuit sans divergence), et un
-    // trajet désactivé ferme l'aperçu. À faire AVANT le hint ci-dessous :
-    // recalculé, le trajet n'est plus « en retard » sur les réglages.
+    // suite (getTrailGeometry est mémoïsé — gratuit sans divergence). À faire
+    // AVANT le hint ci-dessous : recalculé, le trajet n'est plus « en retard »
+    // sur les réglages.
     pkg.refreshTrailPreview?.();
     // Réglages de tracé modifiés alors qu'un trajet est déjà calculé : ils ne
     // s'appliqueront qu'au prochain lancement.
@@ -5215,7 +5215,8 @@ function updateTrailControlsState() {
 // Bouton « Aperçu du trajet » : pressé selon l'état réel (mapgl est la source
 // de vérité — l'aperçu peut se fermer sans clic, p. ex. au lancement de la
 // lecture ou au rechargement des données), désactivé quand il ne pourrait de
-// toute façon pas basculer (trajet désactivé, pas de données, non idle).
+// toute façon pas basculer (pas de données, non idle). Ouvrable trajet
+// désactivé : l'aperçu sert justement à régler le trajet avant de l'activer.
 function syncTrailPreviewButton() {
     const btn = document.getElementById('btnTrailPreview');
     if (!btn) return;
@@ -5224,8 +5225,7 @@ function syncTrailPreviewButton() {
     // (les boutons source, masqués dans #animationControlsSource, n'ont plus
     // de display significatif).
     const idle = isPlaybackIdle();
-    const enabled = normalizeTrailOptions(pkg.options?.trail).enabled;
-    btn.disabled = !enabled || !idle || !hasAnimationData();
+    btn.disabled = !idle || !hasAnimationData();
     btn.setAttribute('aria-pressed', active ? 'true' : 'false');
     btn.classList.toggle('active', active);
 }
@@ -5276,12 +5276,159 @@ function applyTrailPreset(name) {
     changeTrailValues();
 }
 
-// Mini-aperçu du style, dans la carte « Apparence » : un trajet synthétique
-// (étapes proches + un grand saut ~9 700 km, toujours au-delà du seuil réglable
-// borné à 5 000 km) projeté directement en pixels du canvas, dessiné avec la
-// même logique que drawTravelTrail (couleur, épaisseur, motif, lueur, tête).
-// Statique : « pulsant » est figé à mi-période (anneau à moitié déployé).
-function drawTrailStylePreview() {
+// --- Fond de carte du mini-aperçu -------------------------------------------
+// Le fond du canvas est la carte actuellement utilisée, cadrée sur un bout de
+// France : le centre de carte de l'utilisateur (sinon le centre par défaut de
+// defaultValues.json, le centre de la France), à zoom fixe.
+const TRAIL_PREVIEW_ZOOM = 9;
+// Résolution Web Mercator (m/px) au zoom de l'aperçu, pour les géométries
+// EPSG:3857 de la carte vectorielle.
+const TRAIL_PREVIEW_RESOLUTION = 156543.03392804097 / (1 << TRAIL_PREVIEW_ZOOM);
+const WEB_MERCATOR_HALF_WORLD = 20037508.342789244;
+
+// Tuiles demandées pour le fond (url -> Image). Elles se chargent en
+// arrière-plan ; chaque image arrivée relance un dessin complet de l'aperçu.
+const trailPreviewTiles = new Map();
+
+// Dessine le fond de carte actif sous le trait de l'aperçu. Sans carte créée
+// (démarrage) ou sans source, le fond CSS du canvas reste visible.
+function drawTrailPreviewBasemap(ctx, cssW, cssH) {
+    try {
+        const layer = pkg.getBasemapLayer?.(pkg.options?.map?.default);
+        const source = layer?.getSource?.();
+        if (!source) return;
+        const center = ol.proj.fromLonLat(
+            pkg.parseLonLat?.(window.userSettings?.map_default_center) || pkg.getDefaultMapCenter());
+        const cx = cssW / 2;
+        const cy = cssH / 2;
+        if (typeof source.getTileUrlFunction === 'function') {
+            drawTrailPreviewTiles(ctx, source, center, cx, cy, cssW, cssH);
+        } else if (typeof source.getFeatures === 'function') {
+            drawTrailPreviewVectorMap(ctx, source, layer, center, cx, cy, cssW, cssH);
+        }
+    } catch (e) {
+        // ui.js est évalué avant basemaps.js (ordre des exports d'index.js) :
+        // au tout démarrage, les liaisons pkg.* sont encore en TDZ. L'aperçu
+        // sera redessiné à la première occasion (onglet Trajet affiché, fond
+        // de carte changé…). Les autres erreurs remontent normalement.
+        if (!(e instanceof ReferenceError)) throw e;
+    }
+}
+
+// Fond raster : les tuiles couvrant le cadre, positionnées en pixels du monde
+// Web Mercator au zoom de l'aperçu. Les URLs viennent de la source elle-même :
+// OSM, Toner (clair ou sombre) et Watercolor passent par le même code.
+function drawTrailPreviewTiles(ctx, source, center, cx, cy, cssW, cssH) {
+    const tileUrlFunction = source.getTileUrlFunction();
+    const worldPx = 256 * (1 << TRAIL_PREVIEW_ZOOM);
+    const left = ((center[0] + WEB_MERCATOR_HALF_WORLD) / (2 * WEB_MERCATOR_HALF_WORLD)) * worldPx - cx;
+    const top = ((WEB_MERCATOR_HALF_WORLD - center[1]) / (2 * WEB_MERCATOR_HALF_WORLD)) * worldPx - cy;
+    const tileCount = 1 << TRAIL_PREVIEW_ZOOM;
+    const projection = source.getProjection?.() || ol.proj.get('EPSG:3857');
+    const tx0 = Math.floor(left / 256);
+    const tx1 = Math.floor((left + cssW) / 256);
+    const ty0 = Math.max(0, Math.floor(top / 256));
+    const ty1 = Math.min(tileCount - 1, Math.floor((top + cssH) / 256));
+    for (let tx = tx0; tx <= tx1; tx++) {
+        const x = ((tx % tileCount) + tileCount) % tileCount;
+        for (let ty = ty0; ty <= ty1; ty++) {
+            const url = tileUrlFunction([TRAIL_PREVIEW_ZOOM, x, ty], window.devicePixelRatio || 1, projection);
+            if (url) drawTrailPreviewTile(ctx, url, tx * 256 - left, ty * 256 - top);
+        }
+    }
+    drawTrailPreviewAttribution(ctx, source, cssW, cssH);
+}
+
+// Une tuile du fond : dessinée si déjà chargée, sinon le téléchargement démarre
+// et onload relance drawTrailStylePreview (idempotent). Pas de crossOrigin :
+// le canvas n'est jamais relu, et certains serveurs de tuiles n'envoient pas
+// d'en-têtes CORS.
+function drawTrailPreviewTile(ctx, url, dx, dy) {
+    let img = trailPreviewTiles.get(url);
+    if (!img) {
+        img = new Image();
+        img.onload = drawTrailStylePreview;
+        trailPreviewTiles.set(url, img);
+        img.src = url;
+        return;
+    }
+    if (img.complete && img.naturalWidth > 0) ctx.drawImage(img, dx, dy, 256, 256);
+}
+
+// Attribution du fond raster en miniature, comme sur la carte principale (CGU
+// des fournisseurs de tuiles).
+function drawTrailPreviewAttribution(ctx, source, cssW, cssH) {
+    let attributions = typeof source.getAttributions === 'function' ? source.getAttributions() : null;
+    if (typeof attributions === 'function') attributions = attributions(null);
+    if (!Array.isArray(attributions) || attributions.length === 0) return;
+    // innerHTML -> textContent : retire les balises et décode les entités
+    // (les attributions OL sont du HTML, ex. « &#169; OpenStreetMap… »).
+    const div = document.createElement('div');
+    div.innerHTML = attributions.join(' ');
+    const text = (div.textContent || '').replace(/\s+/g, ' ').trim();
+    if (!text) return;
+    ctx.save();
+    ctx.font = '9px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'bottom';
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.strokeText(text, cssW - 3, cssH - 2);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+    ctx.fillText(text, cssW - 3, cssH - 2);
+    ctx.restore();
+}
+
+// Fond vectoriel : même rendu que buildVectorMapStyle — couleur de fond du
+// layer, pays remplis, et contour recoloré en couleur de remplissage quand sa
+// largeur est nulle (recouvre les coutures entre pays). Les géométries de la
+// source sont déjà en EPSG:3857 (reprojection faite par le loader).
+function drawTrailPreviewVectorMap(ctx, source, layer, center, cx, cy, cssW, cssH) {
+    const vectorOpts = pkg.options?.map?.vectorMap || {};
+    ctx.fillStyle = layer.getBackground?.() || vectorOpts.background || '#8c8b8b';
+    ctx.fillRect(0, 0, cssW, cssH);
+    const features = source.getFeatures();
+    if (features.length === 0) {
+        // Le fichier local des pays se charge en XHR : redessiner à son arrivée.
+        source.once?.('featuresloadend', drawTrailStylePreview);
+        return;
+    }
+    const project = ([x, y]) => [
+        cx + (x - center[0]) / TRAIL_PREVIEW_RESOLUTION,
+        cy - (y - center[1]) / TRAIL_PREVIEW_RESOLUTION,
+    ];
+    const traceRing = (ring) => {
+        ctx.moveTo(...project(ring[0]));
+        for (let i = 1; i < ring.length; i++) ctx.lineTo(...project(ring[i]));
+        ctx.closePath();
+    };
+    const traceGeometry = (geometry) => {
+        const type = geometry.getType();
+        if (type === 'Polygon') geometry.getCoordinates().forEach(traceRing);
+        else if (type === 'MultiPolygon') geometry.getCoordinates().forEach((polygon) => polygon.forEach(traceRing));
+        else if (type === 'GeometryCollection') geometry.getGeometries().forEach(traceGeometry);
+    };
+    ctx.beginPath();
+    for (const feature of features) {
+        const geometry = feature.getGeometry();
+        if (geometry) traceGeometry(geometry);
+    }
+    ctx.fillStyle = vectorOpts.fillColor || '#000000';
+    ctx.fill('evenodd');
+    const width = parseFloat(vectorOpts.strokeWidth);
+    const hasContour = Number.isFinite(width) && width > 0;
+    ctx.strokeStyle = hasContour ? vectorOpts.strokeColor : ctx.fillStyle;
+    ctx.lineWidth = hasContour ? width : 1;
+    ctx.stroke();
+}
+
+// Mini-aperçu du style, dans la carte « Apparence » : le fond de carte actif,
+// puis un trajet synthétique (étapes proches + un grand saut ~9 700 km, toujours
+// au-delà du seuil réglable borné à 5 000 km) projeté directement en pixels du
+// canvas, dessiné avec la même logique que drawTravelTrail (couleur, épaisseur,
+// motif, lueur, tête). Statique : « pulsant » est figé à mi-période (anneau à
+// moitié déployé).
+export function drawTrailStylePreview() {
     const canvas = document.getElementById('trailStylePreview');
     if (!canvas) return;
     const ratio = window.devicePixelRatio || 1;
@@ -5294,6 +5441,7 @@ function drawTrailStylePreview() {
     // Tout est dessiné en pixels CSS : le transform applique le devicePixelRatio.
     ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
     ctx.clearRect(0, 0, cssW, cssH);
+    drawTrailPreviewBasemap(ctx, cssW, cssH);
 
     const opts = normalizeTrailOptions(pkg.options?.trail);
     // Positions (fractions du canvas) : zigzag puis retour en arc vers la
