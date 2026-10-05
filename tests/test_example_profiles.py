@@ -131,7 +131,7 @@ class ExampleProfileSeedingTests(unittest.TestCase):
         manager = SettingsManager()
         collection = [manager.load_profile(name) for name in EXAMPLE_PROFILE_BATCHES[3]]
 
-        self.assertEqual(len(collection), 6)
+        self.assertEqual(len(collection), 5)
         self.assertTrue(all(profile.points.size <= 7 for profile in collection))
         self.assertTrue(all(
             profile.points.mode != "icone" or profile.points.icon_size <= 18
@@ -143,7 +143,7 @@ class ExampleProfileSeedingTests(unittest.TestCase):
         )
         self.assertEqual(
             {profile.flash.mode for profile in collection},
-            {"none", "impulse", "star", "square", "triangle", "diamond"},
+            {"none", "echo", "star", "square", "triangle"},
         )
         # Aucun réglage temporel dans un thème : rythme, suivi de caméra et
         # dates vivent dans les préférences globales (AppSettings.animation).

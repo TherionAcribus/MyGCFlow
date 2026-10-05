@@ -141,6 +141,12 @@ reçoit que les collections qu'elle n'a pas encore vues, sans faire revenir les
 anciens exemples qu'elle a supprimés (voir `EXAMPLE_PROFILE_BATCHES` dans
 `settings_manager.py`).
 
+Treize thèmes pour le mode principal, choisis pour ne pas se ressembler : chacun
+montre une possibilité que les autres ne montrent pas. Les anciens exemples
+retirés de la liste (Bonbon Pop, Océan Bubble, Arcade 80, Coucher Tropical,
+Forêt Émeraude, Cuivre & Ardoise — doublons d'un thème conservé) restent chez
+ceux qui les avaient déjà reçus.
+
 ### 🏠 **Default** (Par défaut)
 - **Carte** : OpenStreetMap centrée sur Paris (zoom 6)
 - **Points** : Cercle avec couleurs GC, halo blanc et flash circulaire par type
@@ -150,6 +156,7 @@ anciens exemples qu'elle a supprimés (voir `EXAMPLE_PROFILE_BATCHES` dans
 ### 🌃 **Nocturne Neon**
 - **Carte** : Stamen Toner sombre centrée sur Paris (zoom 7)
 - **Points** : Triangles cyan avec halo sombre
+- **Trajet** : Activé — trait rose courbe avec lueur et tête pulsée
 - **Animation** : Activée, légèrement accélérée
 - **Usage** : Rendu nocturne fort pour captures, vidéos et démos
 
@@ -167,39 +174,9 @@ anciens exemples qu'elle a supprimés (voir `EXAMPLE_PROFILE_BATCHES` dans
 
 ### 📣 **Présentation Impact**
 - **Carte** : OpenStreetMap vue large sur la France (zoom 5)
-- **Points** : Cercles orange avec halo blanc et flash carré ample
+- **Points** : Gros cercles aux couleurs GC avec halo blanc et flash carré ample
 - **Animation** : Activée, vitesse doublée
 - **Usage** : Profil conçu pour présentation, projection ou vidéo
-
-### 🍬 **Bonbon Pop**
-- **Carte** : OSM clair centrée sur la France (zoom 6)
-- **Points** : Cercles rose bonbon, halo blanc épais, flash étoile jaune
-- **Animation** : Activée, vive
-- **Usage** : Look acidulé et contrasté sur fond clair
-
-### 🌅 **Coucher Tropical**
-- **Carte** : Watercolor centrée sur la Méditerranée (zoom 6)
-- **Points** : Cercles corail colorés par type de cache, flash losange orange
-- **Animation** : Activée, posée
-- **Usage** : Ambiance chaude « carte postale »
-
-### 🌿 **Forêt Émeraude**
-- **Carte** : Carte vectorielle en palette verte, centrée sur les Alpes (zoom 6)
-- **Points** : Triangles vert forêt, halo clair, flash triangle
-- **Animation** : Activée, calme
-- **Usage** : Rendu nature, apaisant et lisible
-
-### 🫧 **Océan Bubble**
-- **Carte** : OSM clair centré sur la côte (zoom 6)
-- **Points** : Cercles turquoise, gros halo blanc, flash cercle qui s'étend
-- **Animation** : Activée, vitesse normale
-- **Usage** : Effet aquatique et frais
-
-### 🕹️ **Arcade 80**
-- **Carte** : Stamen Toner sombre centrée sur Paris (zoom 7)
-- **Points** : Cercles jaunes à halo rose, flash carré vert menthe rapide
-- **Animation** : Activée, nerveuse
-- **Usage** : Néon rétro joueur, vibe pixel/arcade
 
 ### 🎉 **Fête Confetti**
 - **Carte** : OSM vue large sur la France (zoom 5)
@@ -231,32 +208,29 @@ anciens exemples qu'elle a supprimés (voir `EXAMPLE_PROFILE_BATCHES` dans
 ### 🌌 **Aurore Polaire**
 - **Carte** : Fond vectoriel bleu nuit centré sur l'Islande
 - **Points** : Triangles turquoise de 7 px, aura et persistance sur 7 jours
-- **Animation** : Apparition animée, impulsion cyan et suivi de caméra
+- **Animation** : Apparition animée, flash écho cyan lent (1800 ms)
 - **Usage** : Démonstration nocturne fluide et immersive
 
 ### 🌸 **Sakura Pastel**
 - **Carte** : Watercolor centrée sur Kyoto
 - **Points** : Cercles roses de 6 px avec apparition douce et persistance sur 30 jours
-- **Animation** : Ralentie, avec un flash étoile violet
+- **Animation** : Flash étoile violet bref (600 ms)
 - **Usage** : Carnet de voyage délicat et illustré
 
 ### 📡 **Signal Technique**
 - **Carte** : Stamen Toner clair, cadrage européen
-- **Points** : Cercles ajourés de 5 px, bordures colorées par type de cache
-- **Animation** : Rapide, avec de petits flashs carrés aux couleurs GC
-- **Usage** : Visualisation dense, précise et contemporaine
+- **Points** : Aucun point affiché, volontairement (centre « aucun », contour
+  désactivé)
+- **Animation** : Seuls de petits flashs carrés aux couleurs GC signalent les
+  caches ; la carte se vide entre deux trouvailles
+- **Usage** : Montrer qu'une animation peut se passer de points
 
 ### 🥾 **Randonnée Topo**
 - **Carte** : OpenStreetMap centrée sur les Alpes
 - **Points** : Icônes geocaching compactes de 18 px, persistance sur 90 jours
+- **Trajet** : Activé — sentier pointillé brun, tout le parcours reste affiché
 - **Animation** : Calme, flash triangulaire et suivi de caméra
 - **Usage** : Parcours régionaux et récits d'itinérance
-
-### 🔶 **Cuivre & Ardoise**
-- **Carte** : Fond vectoriel ardoise sombre centré sur Lyon
-- **Points** : Triangles cuivre de 6 px, aura claire et persistance sur 7 jours
-- **Animation** : Apparition animée et flash losange orange
-- **Usage** : Rendu premium, chaleureux et très lisible en vidéo
 
 ### Extension
 

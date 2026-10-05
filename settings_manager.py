@@ -31,7 +31,6 @@ EXAMPLE_PROFILE_BATCHES = {
         "Sakura Pastel",
         "Signal Technique",
         "Randonnée Topo",
-        "Cuivre & Ardoise",
     },
     # Thèmes du mode Évolution : points minuscules et flashs courts, pour des
     # dizaines de milliers de caches (voir PROFILE_MODES).
@@ -1210,6 +1209,10 @@ class SettingsManager:
                 infos_css=infos_css.strip(),
             )
 
+        # Chaque exemple doit montrer quelque chose que les autres ne montrent
+        # pas (fond, forme, couleurs GC ou non, flash, trajet…) : la liste sert
+        # d'inspiration, pas de nuancier. Un exemple retiré d'ici reste chez
+        # ceux qui l'ont déjà reçu — il n'est simplement plus installé.
         example_profiles = {
             "Default": MapProfile(
                 name="Default",
@@ -1290,6 +1293,17 @@ class SettingsManager:
                     size=65,
                     color="#ff4fd8",
                     color_type="fix"
+                ),
+                trail=TrailOptions(
+                    enabled=True,
+                    curve="smooth",
+                    color="#ff4fd8",
+                    width=3,
+                    opacity=90,
+                    line_style="solid",
+                    effect="glow",
+                    head="pulse",
+                    persist_days=30
                 ),
                 infos=build_infos(
                     "Night Cache Trail",
@@ -1439,7 +1453,7 @@ class SettingsManager:
                     halo=True,
                     border_color="#ffffff",
                     border_size=3,
-                    fill_color_type="fix",
+                    fill_color_type="gc",
                     border_color_type="fix",
                     mode="vectoriel"
                 ),
@@ -1468,266 +1482,6 @@ class SettingsManager:
                     border-radius: 10px;
                     border-left: 4px solid #ff6b35;
                     box-shadow: 0 10px 24px rgba(17, 24, 39, 0.12);
-                    """
-                )
-            ),
-
-            "Bonbon Pop": MapProfile(
-                name="Bonbon Pop",
-                map=MapOptions(
-                    tile_provider="OSM",
-                    vector_options=VectorMapOptions(
-                        stroke_color="#ff4d9d",
-                        fill_color="#ffe14d",
-                        background_color="#fff5fb",
-                        stroke_width=2.4
-                    ),
-                    toner_options=TonerMapOptions(variant="light")
-                ),
-                points=PointStyle(
-                    size=10,
-                    color="#ff4d9d",
-                    shape="circle",
-                    halo=True,
-                    border_color="#ffffff",
-                    border_size=3,
-                    fill_color_type="fix",
-                    border_color_type="fix",
-                    mode="vectoriel"
-                ),
-                flash=FlashOptions(
-                    mode="sparkle",
-                    size=70,
-                    color="#ffe14d",
-                    color_type="fix"
-                ),
-                infos=build_infos(
-                    "Candy Cache Map",
-                    """
-                    color: #ff2e88;
-                    background: rgba(255, 255, 255, 0.92);
-                    padding: 10px 18px;
-                    border-radius: 999px;
-                    font-weight: 800;
-                    letter-spacing: 0.5px;
-                    box-shadow: 0 10px 24px rgba(255, 77, 157, 0.32);
-                    """,
-                    """
-                    color: #ff2e88;
-                    background: rgba(255, 245, 251, 0.94);
-                    padding: 8px 14px;
-                    border-radius: 999px;
-                    border: 2px solid #ffd1e8;
-                    box-shadow: 0 8px 18px rgba(255, 77, 157, 0.18);
-                    """
-                )
-            ),
-
-            "Coucher Tropical": MapProfile(
-                name="Coucher Tropical",
-                map=MapOptions(
-                    tile_provider="watercolor",
-                    vector_options=VectorMapOptions(
-                        stroke_color="#ff6b6b",
-                        fill_color="#ffd29d",
-                        background_color="#fff3e0",
-                        stroke_width=1.6
-                    ),
-                    toner_options=TonerMapOptions(variant="light")
-                ),
-                points=PointStyle(
-                    size=9,
-                    color="#ff6b6b",
-                    shape="circle",
-                    halo=True,
-                    border_color="#fff3e0",
-                    border_size=2,
-                    fill_color_type="gc",
-                    border_color_type="fix",
-                    mode="vectoriel"
-                ),
-                flash=FlashOptions(
-                    mode="diamond",
-                    size=60,
-                    color="#ff9e2c",
-                    color_type="gc"
-                ),
-                infos=build_infos(
-                    "Sunset Cache Trail",
-                    """
-                    color: #fff3e0;
-                    background: linear-gradient(135deg, #ff9e2c 0%, #ff6b6b 100%);
-                    padding: 12px 18px;
-                    border-radius: 14px;
-                    font-weight: 700;
-                    letter-spacing: 0.6px;
-                    box-shadow: 0 12px 26px rgba(255, 107, 107, 0.3);
-                    """,
-                    """
-                    color: #7a3b1d;
-                    background: rgba(255, 243, 224, 0.92);
-                    padding: 8px 14px;
-                    border-radius: 12px;
-                    border-left: 4px solid #ff9e2c;
-                    box-shadow: 0 8px 18px rgba(255, 107, 107, 0.16);
-                    """
-                )
-            ),
-
-            "Forêt Émeraude": MapProfile(
-                name="Forêt Émeraude",
-                map=MapOptions(
-                    tile_provider="vectorMap",
-                    vector_options=VectorMapOptions(
-                        stroke_color="#1b4332",
-                        fill_color="#95d5b2",
-                        background_color="#ecf8f0",
-                        stroke_width=1.6
-                    ),
-                    toner_options=TonerMapOptions(variant="light")
-                ),
-                points=PointStyle(
-                    size=8,
-                    color="#2d6a4f",
-                    shape="triangle",
-                    halo=True,
-                    border_color="#d8f3dc",
-                    border_size=2,
-                    fill_color_type="fix",
-                    border_color_type="fix",
-                    mode="vectoriel"
-                ),
-                flash=FlashOptions(
-                    mode="triangle",
-                    size=50,
-                    color="#74c69d",
-                    color_type="fix"
-                ),
-                infos=build_infos(
-                    "Forest Geocaching",
-                    """
-                    color: #1b4332;
-                    background: rgba(236, 248, 240, 0.94);
-                    padding: 10px 16px;
-                    border-radius: 10px;
-                    border: 1px solid #74c69d;
-                    font-weight: 700;
-                    letter-spacing: 0.4px;
-                    box-shadow: 0 8px 20px rgba(45, 106, 79, 0.18);
-                    """,
-                    """
-                    color: #1b4332;
-                    background: rgba(216, 243, 220, 0.9);
-                    padding: 8px 12px;
-                    border-radius: 10px;
-                    border-left: 4px solid #2d6a4f;
-                    box-shadow: 0 6px 16px rgba(45, 106, 79, 0.14);
-                    """
-                )
-            ),
-
-            "Océan Bubble": MapProfile(
-                name="Océan Bubble",
-                map=MapOptions(
-                    tile_provider="OSM",
-                    vector_options=VectorMapOptions(
-                        stroke_color="#0077b6",
-                        fill_color="#90e0ef",
-                        background_color="#f0fbff",
-                        stroke_width=2.0
-                    ),
-                    toner_options=TonerMapOptions(variant="light")
-                ),
-                points=PointStyle(
-                    size=9,
-                    color="#00b4d8",
-                    shape="circle",
-                    halo=True,
-                    border_color="#ffffff",
-                    border_size=3,
-                    fill_color_type="fix",
-                    border_color_type="fix",
-                    mode="vectoriel"
-                ),
-                flash=FlashOptions(
-                    mode="circle",
-                    size=80,
-                    color="#90e0ef",
-                    color_type="fix"
-                ),
-                infos=build_infos(
-                    "Ocean Cache Map",
-                    """
-                    color: #023e8a;
-                    background: rgba(240, 251, 255, 0.92);
-                    padding: 10px 18px;
-                    border-radius: 999px;
-                    font-weight: 700;
-                    letter-spacing: 0.5px;
-                    box-shadow: 0 10px 24px rgba(0, 180, 216, 0.26);
-                    """,
-                    """
-                    color: #023e8a;
-                    background: rgba(144, 224, 239, 0.32);
-                    padding: 8px 14px;
-                    border-radius: 999px;
-                    border: 1px solid rgba(0, 180, 216, 0.5);
-                    box-shadow: 0 8px 18px rgba(0, 180, 216, 0.16);
-                    """
-                )
-            ),
-
-            "Arcade 80": MapProfile(
-                name="Arcade 80",
-                map=MapOptions(
-                    tile_provider="stamenToner",
-                    vector_options=VectorMapOptions(
-                        stroke_color="#2effc7",
-                        fill_color="#1a1a2e",
-                        background_color="#0d0d1a",
-                        stroke_width=1.8
-                    ),
-                    toner_options=TonerMapOptions(variant="dark")
-                ),
-                points=PointStyle(
-                    size=9,
-                    color="#ffe14d",
-                    shape="circle",
-                    halo=True,
-                    border_color="#ff2e88",
-                    border_size=2,
-                    fill_color_type="fix",
-                    border_color_type="fix",
-                    mode="vectoriel"
-                ),
-                flash=FlashOptions(
-                    mode="square",
-                    size=50,
-                    color="#2effc7",
-                    color_type="fix"
-                ),
-                infos=build_infos(
-                    "ARCADE CACHE RUN",
-                    """
-                    color: #2effc7;
-                    background: rgba(13, 13, 26, 0.9);
-                    padding: 10px 16px;
-                    border-radius: 4px;
-                    border: 2px solid #ff2e88;
-                    font-family: monospace;
-                    font-weight: 800;
-                    text-transform: uppercase;
-                    letter-spacing: 3px;
-                    box-shadow: 0 0 22px rgba(46, 255, 199, 0.25);
-                    """,
-                    """
-                    color: #ffe14d;
-                    background: rgba(13, 13, 26, 0.85);
-                    padding: 8px 12px;
-                    border-radius: 4px;
-                    border-left: 3px solid #2effc7;
-                    font-family: monospace;
-                    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3);
                     """
                 )
             ),
@@ -1984,7 +1738,8 @@ class SettingsManager:
                     recent_glow_days=7
                 ),
                 flash=FlashOptions(
-                    mode="impulse",
+                    mode="echo",
+                    duration=1800,
                     size=55,
                     color="#67e8f9",
                     color_type="fix"
@@ -2039,6 +1794,7 @@ class SettingsManager:
                 ),
                 flash=FlashOptions(
                     mode="star",
+                    duration=600,
                     size=45,
                     color="#c084fc",
                     color_type="fix"
@@ -2065,6 +1821,9 @@ class SettingsManager:
                 )
             ),
 
+            # Aucun point affiché, volontairement (centre « aucun », contour
+            # désactivé) : seuls les flashs aux couleurs GC signalent les
+            # caches, la carte se vide entre deux trouvailles.
             "Signal Technique": MapProfile(
                 name="Signal Technique",
                 map=MapOptions(
@@ -2150,6 +1909,17 @@ class SettingsManager:
                     color="#65a30d",
                     color_type="gc"
                 ),
+                trail=TrailOptions(
+                    enabled=True,
+                    curve="smooth",
+                    color="#b45309",
+                    width=3,
+                    opacity=85,
+                    line_style="dotted",
+                    effect="none",
+                    head="dot",
+                    persist_days=0
+                ),
                 infos=build_infos(
                     "Carnet des sentiers",
                     """
@@ -2168,60 +1938,6 @@ class SettingsManager:
                     padding: 8px 12px;
                     border-radius: 8px;
                     border-left: 4px solid #65a30d;
-                    """
-                )
-            ),
-
-            "Cuivre & Ardoise": MapProfile(
-                name="Cuivre & Ardoise",
-                map=MapOptions(
-                    tile_provider="vectorMap",
-                    vector_options=VectorMapOptions(
-                        stroke_color="#64748b",
-                        fill_color="#1e293b",
-                        background_color="#0f172a",
-                        stroke_width=1.5
-                    ),
-                    toner_options=TonerMapOptions(variant="dark")
-                ),
-                points=PointStyle(
-                    size=6,
-                    color="#d97745",
-                    shape="triangle",
-                    halo=True,
-                    border_color="#ffedd5",
-                    border_size=1,
-                    fill_color_type="fix",
-                    border_color_type="fix",
-                    mode="vectoriel",
-                    appear_animation=True,
-                    recent_glow_days=7
-                ),
-                flash=FlashOptions(
-                    mode="diamond",
-                    size=50,
-                    color="#fb923c",
-                    color_type="fix"
-                ),
-                infos=build_infos(
-                    "CUIVRE / ARDOISE",
-                    """
-                    color: #ffedd5;
-                    background: rgba(15, 23, 42, 0.84);
-                    padding: 11px 17px;
-                    border-radius: 6px;
-                    border: 1px solid #d97745;
-                    font-weight: 800;
-                    letter-spacing: 1.6px;
-                    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.3);
-                    """,
-                    """
-                    color: #fed7aa;
-                    background: rgba(30, 41, 59, 0.82);
-                    padding: 8px 12px;
-                    border-radius: 6px;
-                    border-left: 3px solid #fb923c;
-                    font-variant-numeric: tabular-nums;
                     """
                 )
             ),
