@@ -194,6 +194,12 @@ Release GitHub.
 
 ## Crédits
 
+MyGCFlow est fortement inspiré de
+[Geocaching-Animation](https://github.com/GarenKreiz/Geocaching-Animation) de
+**GarenKreiz**, un script Python qui produit des vidéos animant les trouvailles
+de géocaching sur une carte — l'idée de rejouer ses trouvailles jour après jour
+vient de là.
+
 MyGCFlow n'est pas affilié à Groundspeak / Geocaching.com. Les licences des
 dépendances embarquées sont listées dans
 [installer/licenses/THIRD_PARTY_NOTICES.txt](installer/licenses/THIRD_PARTY_NOTICES.txt).
