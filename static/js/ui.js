@@ -6289,15 +6289,38 @@ function initCssAssistant() {
         syncFormFromCss(activeTarget);
     }
 
-    tabLinks.forEach(a => {
-        a.addEventListener('click', () => {
-            const paneId = a.getAttribute('data-pane');
-            if (!paneId) return;
-            tabLinks.forEach(x => x.classList.remove('active'));
-            a.classList.add('active');
-            root.querySelectorAll('.gc-css-pane').forEach(p => p.classList.remove('active'));
-            const pane = document.getElementById(paneId);
-            if (pane) pane.classList.add('active');
+    // Pattern d'onglets accessible : roving tabindex (seul l'onglet actif est
+    // dans l'ordre de tabulation), aria-selected resynchronisé à chaque
+    // activation, navigation au clavier par flèches/Home/End — même schéma que
+    // les onglets de cible Titre/Infos juste en dessous.
+    function activateCssTab(tab) {
+        const paneId = tab.getAttribute('data-pane');
+        if (!paneId) return;
+        tabLinks.forEach(x => {
+            const isActive = x === tab;
+            x.classList.toggle('active', isActive);
+            x.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            x.tabIndex = isActive ? 0 : -1;
+        });
+        root.querySelectorAll('.gc-css-pane').forEach(p => p.classList.remove('active'));
+        const pane = document.getElementById(paneId);
+        if (pane) pane.classList.add('active');
+    }
+
+    tabLinks.forEach(tab => {
+        tab.addEventListener('click', () => activateCssTab(tab));
+    });
+    [...tabLinks].forEach((tab, index, tabs) => {
+        tab.addEventListener('keydown', (event) => {
+            let nextIndex = null;
+            if (event.key === 'ArrowRight' || event.key === 'ArrowDown') nextIndex = (index + 1) % tabs.length;
+            if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') nextIndex = (index - 1 + tabs.length) % tabs.length;
+            if (event.key === 'Home') nextIndex = 0;
+            if (event.key === 'End') nextIndex = tabs.length - 1;
+            if (nextIndex === null) return;
+            event.preventDefault();
+            tabs[nextIndex].focus();
+            tabs[nextIndex].click();
         });
     });
 
