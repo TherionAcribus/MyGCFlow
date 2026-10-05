@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { dismissFirstUseModal } from './first-use.mjs';
 
-// Nom accessible des liens de mode « Mes trouvailles » / « Évolution » de
+// Nom accessible des liens de mode « Mes Géocaches » / « Évolution » de
 // l'en-tête.
 //
 // Sous ~768 px les libellés .app-mode-label sont masqués (display:none) et
@@ -25,7 +25,7 @@ test('les liens de mode gardent un nom accessible quand le libellé est masqué'
   await expect(mainLink.locator('i')).toHaveAttribute('aria-hidden', 'true');
 
   // …mais le nom accessible est porté par aria-label.
-  await expect(mainLink).toHaveAttribute('aria-label', 'Mes trouvailles');
+  await expect(mainLink).toHaveAttribute('aria-label', 'Mes Géocaches');
   await expect(evoLink).toHaveAttribute('aria-label', 'Évolution');
 
   // Et le mode courant garde son aria-current.

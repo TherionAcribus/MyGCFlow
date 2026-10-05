@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { dismissFirstUseModal } from './first-use.mjs';
 
-// Thèmes séparés par mode : chaque page (« Mes trouvailles » / « Évolution »)
+// Thèmes séparés par mode : chaque page (« Mes Géocaches » / « Évolution »)
 // ne liste que ses thèmes, mémorise son propre thème actif, et un thème passe
 // de l'une à l'autre par copie — tailles ramenées à la densité du mode visé.
 

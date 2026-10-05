@@ -727,8 +727,8 @@ msgid "Confirmation de suppression"
 msgstr "Deletion confirmation"
 
 #: static/js/bdd.js:1505 templates/guide.html:153 templates/menu_data.html:59
-msgid "Supprimer mes trouvailles"
-msgstr "Delete my finds"
+msgid "Supprimer mes géocaches"
+msgstr "Delete my geocaches"
 
 #: static/js/bdd.js:1512
 msgid "Confirmation non disponible, action annulée."
@@ -1560,8 +1560,8 @@ msgstr "Evolution"
 
 #: static/js/profiles.js:40 templates/app.html:61 templates/app.html:63
 #: templates/guide.html:139 templates/guide.html:340 templates/menu_data.html:8
-msgid "Mes trouvailles"
-msgstr "My finds"
+msgid "Mes Géocaches"
+msgstr "My Geocaches"
 
 #: static/js/profiles.js:114
 msgid "espace"
@@ -2727,8 +2727,8 @@ msgid "ou glissez-déposez vos fichiers n'importe où sur la page"
 msgstr "or drag and drop your files anywhere on the page"
 
 #: templates/app.html:148
-msgid "Revenir au mode principal (mes trouvailles)"
-msgstr "Back to the main mode (my finds)"
+msgid "Revenir au mode principal (mes géocaches)"
+msgstr "Back to the main mode (my geocaches)"
 
 #: templates/app.html:153
 msgid "Chargez votre fichier .gpx pour commencer"
@@ -7011,8 +7011,8 @@ msgstr "View the user guide"
 #~ msgid "Le lien"
 #~ msgstr "The"
 
-#~ msgid "Mode principal (mes trouvailles)"
-#~ msgstr "Main mode (my finds)"
+#~ msgid "Mode principal (mes géocaches)"
+#~ msgstr "Main mode (my geocaches)"
 
 #~ msgid "vous ramène à vos trouvailles."
 #~ msgstr "link takes you back to your finds."

@@ -127,7 +127,7 @@ attente » s'éteint. Choisir « Annuler » à la confirmation rouvre la modale
 avec le choix intact, rien n'est écrit.
 
 **Un thème appartient à un mode.** Le champ `mode` (`main` ou `evolution`)
-sépare les thèmes de « Mes trouvailles » de ceux de la page `/evolution` :
+sépare les thèmes de « Mes Géocaches » de ceux de la page `/evolution` :
 chaque page ne liste que les siens et tient son propre dernier thème actif et
 son propre thème par défaut (`evolution_last_profile_uid`,
 `evolution_default_profile_uid`). Tout ce qui suit vaut pour les deux pages,

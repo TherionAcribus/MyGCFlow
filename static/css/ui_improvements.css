@@ -807,7 +807,7 @@ main.fullscreen-mode #infosFrame span:not([hidden]) {
 }
 /* Les colonnes Bootstrap répondent à la largeur du viewport, pas du panneau :
    en latéral le viewport reste large alors que le panneau est étroit. On
-   force donc les colonnes lg à s'empiler (ex. « Mes trouvailles » au-dessus
+   force donc les colonnes lg à s'empiler (ex. « Mes Géocaches » au-dessus
    de « Filtres ») pour éviter le débordement. */
 .layout-sidebar .tab-pane .row > [class*="col-lg-"] {
     flex: 0 0 100%;
@@ -1021,7 +1021,7 @@ main.fullscreen-mode #infosFrame span:not([hidden]) {
 #tabsPanel.panel-lt-md #panelToolbar .tab-label-full { display: none; }
 #tabsPanel.panel-lt-md #panelToolbar .tab-label-short { display: inline; }
 
-/* Les boutons longs (« Supprimer mes trouvailles », « Prévisualiser
+/* Les boutons longs (« Supprimer mes géocaches », « Prévisualiser
    l'animation ») enveloppent leur texte au lieu de déborder de la carte.
    (Les colonnes col-lg-* sont déjà empilées par la règle .layout-sidebar
    plus haut ; en bandeau étroit, le viewport < lg les empile aussi.) */
@@ -2367,7 +2367,7 @@ background: rgba(33, 150, 243, 0.04);
     height: 30px;
 }
 
-/* Sélecteur de mode segmenté (Mes trouvailles / Évolution) : il remplace le
+/* Sélecteur de mode segmenté (Mes Géocaches / Évolution) : il remplace le
    nav.mode-switch de l'onglet Données, lequel se réduisait à la phrase
    d'explication — le mode reste visible quelle que soit la vue active. */
 .app-header-mode {

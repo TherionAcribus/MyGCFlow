@@ -92,7 +92,7 @@ Fichier SQLite séparé, `instance/evolution.db` (`paths.evolution_database_path
 voir `docs/distribution.md`), géré par `evolution_store.py` avec le module
 `sqlite3` standard et son propre numéro de schéma (`PRAGMA user_version`).
 Séparé de `geocaching.db` : le cache GeoJSON des trouvailles dépend de la date
-de modification de celle-ci, et « Supprimer mes trouvailles » ne touche pas
+de modification de celle-ci, et « Supprimer mes géocaches » ne touche pas
 aux bases du mode Évolution.
 
 - Tables `datasets` (nom unique sans distinction de casse, révision,

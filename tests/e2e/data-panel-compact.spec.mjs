@@ -55,7 +55,7 @@ test('base chargée : import compact, étape suivante sur une ligne, retour apr�
   // retour à l'import détaillé.
   await page.locator('#clearDatabaseBtn').click();
   await page.getByRole('dialog', { name: 'Confirmation de suppression' })
-    .getByRole('button', { name: 'Supprimer mes trouvailles' })
+    .getByRole('button', { name: 'Supprimer mes géocaches' })
     .click();
   await expect(page.locator('#filtersCounter')).toContainText('0 / 0', { timeout: 30_000 });
   await expect(page.locator('#data')).not.toHaveClass(/has-data/);

@@ -409,7 +409,7 @@ const publishedDatePickerEnd = document.getElementById('publishedDatePickerEnd')
     // Bouton "Réinitialiser tous les filtres"
     const btnResetAllFilters = document.getElementById('btnResetAllFilters');
     if (btnResetAllFilters) btnResetAllFilters.addEventListener('click', resetAllFilters);
-    // Même action proposée dans la carte Mes trouvailles quand la sélection
+    // Même action proposée dans la carte Mes Géocaches quand la sélection
     // est vide (#dataNoResults) : délègue au bouton principal des filtres.
     const btnResetFiltersFromData = document.getElementById('btnResetFiltersFromData');
     if (btnResetFiltersFromData && btnResetAllFilters) {
@@ -716,7 +716,7 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     dbgUi("Appel updateDataAvailabilityUI depuis initUIElements");
     updateDataAvailabilityUI();
 
-    // Suggestion « prochaine étape » de la carte Mes trouvailles : le bouton
+    // Suggestion « prochaine étape » de la carte Mes Géocaches : le bouton
     // Style mène au thème ; Prévisualiser ouvre l'onglet Animation et lance la
     // lecture si les réglages sont déjà valides (sinon la simple navigation
     // laisse l'utilisateur corriger ce qui bloque).
@@ -6597,7 +6597,7 @@ export function updateDataAvailabilityUI({ dataResolved = false } = {}) {
         if (dataTab) showBsTab(dataTab);
     }
 
-    // Suggestion « prochaine étape » dans la carte Mes trouvailles : visible
+    // Suggestion « prochaine étape » dans la carte Mes Géocaches : visible
     // uniquement quand une base est chargée ET la sélection non vide — sinon
     // c'est l'avertissement « aucun résultat » qui prend le relais.
     const nextStep = document.getElementById('dataNextStep');
@@ -6605,7 +6605,7 @@ export function updateDataAvailabilityUI({ dataResolved = false } = {}) {
     const noResults = document.getElementById('dataNoResults');
     if (noResults) noResults.hidden = !hasDb || hasData;
 
-    // État compact de la carte Mes trouvailles : avec une base chargée,
+    // État compact de la carte Mes Géocaches : avec une base chargée,
     // la zone d'import détaillée cède la place à une commande secondaire
     // (cf. .data-empty-only / .data-has-only dans ui_improvements.css).
     const dataPane = document.getElementById('data');

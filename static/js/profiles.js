@@ -31,7 +31,7 @@ const SETTINGS_KEYS = PROFILE_MODE === 'evolution'
 
 // Nom affiché d'un mode : celui du sélecteur de mode de l'en-tête.
 function profileModeLabel(mode) {
-    return mode === 'evolution' ? pkg.t('Évolution') : pkg.t('Mes trouvailles');
+    return mode === 'evolution' ? pkg.t('Évolution') : pkg.t('Mes Géocaches');
 }
 
 // Flag de debug pour ce fichier. Mettre à true pour réactiver les logs en

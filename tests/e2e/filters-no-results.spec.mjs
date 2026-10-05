@@ -1,5 +1,5 @@
 // État « aucun résultat » de l'onglet Données : quand les filtres excluent
-// toutes les caches, la carte Mes trouvailles remplace « Vos trouvailles
+// toutes les caches, la carte Mes Géocaches remplace « Vos trouvailles
 // sont prêtes » par un avertissement persistant proposant de réinitialiser
 // les filtres — distinct de l'état « aucune donnée importée ».
 import { expect, test } from '@playwright/test';

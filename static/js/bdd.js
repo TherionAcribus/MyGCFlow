@@ -1232,7 +1232,7 @@ async function clearDatabase() {
                 t("Confirmation de suppression"),
                 () => resolve(true),
                 () => resolve(false),
-                { danger: true, confirmText: t('Supprimer mes trouvailles') }
+                { danger: true, confirmText: t('Supprimer mes géocaches') }
             );
         } else {
             // Fallback : pas de système de confirmation disponible, on n'efface pas

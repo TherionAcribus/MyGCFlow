@@ -58,9 +58,9 @@
                          reste visible quelle que soit la vue active). -->
                     <nav class="app-header-mode" aria-label="{{ _('Mode') }}">
                         <a href="/" id="linkMainMode" class="app-mode-link {{ 'active' if mode != 'evolution' }}"
-                           aria-label="{{ _('Mes trouvailles') }}"
+                           aria-label="{{ _('Mes Géocaches') }}"
                            {% if mode != 'evolution' %}aria-current="page"{% endif %}>
-                            <i class="ti ti-database" aria-hidden="true"></i><span class="app-mode-label" aria-hidden="true">{{ _("Mes trouvailles") }}</span>
+                            <i class="ti ti-database" aria-hidden="true"></i><span class="app-mode-label" aria-hidden="true">{{ _("Mes Géocaches") }}</span>
                         </a>
                         <a href="/evolution" id="linkEvolutionMode" class="app-mode-link {{ 'active' if mode == 'evolution' }}"
                            aria-label="{{ _('Évolution') }}"
@@ -145,7 +145,7 @@
                                 <i class="ti ti-upload me-1" aria-hidden="true"></i>{{ _("Sélectionner des exports CSV") }}
                             </button>
                             <p class="empty-state-hint">{{ _("ou glissez-déposez vos fichiers n'importe où sur la page") }}</p>
-                            <p class="empty-state-hint"><a href="/">{{ _("Revenir au mode principal (mes trouvailles)") }}</a></p>
+                            <p class="empty-state-hint"><a href="/">{{ _("Revenir au mode principal (mes géocaches)") }}</a></p>
                         </div>
                         {% else %}
                         <div class="empty-state-card">

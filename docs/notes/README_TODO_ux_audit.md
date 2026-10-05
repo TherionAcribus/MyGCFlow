@@ -48,7 +48,7 @@ rapport effet/effort décroissant. **Lire d'abord « Règles communes ».**
 >   texte des options et valeur du contrôle fermé suivaient la couleur fixe
 >   `#343a40` de TomSelect, illisible en sombre — héritent de `--color-text`.
 > - En-tête enrichi (complétion du Lot 6) : logo 30 px, sélecteur de mode
->   segmenté `.app-header-mode` (Mes trouvailles / Évolution) reporté de
+>   segmenté `.app-header-mode` (Mes Géocaches / Évolution) reporté de
 >   `nav.mode-switch` — réduit à la phrase d'explication — et icône
 >   `#appHeaderThemeIcon` synchronisée sur la préférence d'apparence
 >   (`theme.js::THEME_ICONS` via `theme:applied`). Libellés masqués sous
@@ -81,7 +81,7 @@ rapport effet/effort décroissant. **Lire d'abord « Règles communes ».**
 var(--color-accent)` sur **toutes** les variantes pleines. Résultat :
 `btn-danger`, `btn-secondary`, `btn-success` et `btn-primary` sont identiques
 (bleu accent). Exemples visibles :
-- `#clearDatabaseBtn` (« Supprimer mes trouvailles », `btn-danger w-100`,
+- `#clearDatabaseBtn` (« Supprimer mes géocaches », `btn-danger w-100`,
   `templates/menu_data.html` l.26) est le bouton le plus voyant de l'onglet
   Données, en couleur « action principale ».
 - Onglet Animation (`templates/menu_animation.html` l.25-49) : « Plein
@@ -211,7 +211,7 @@ au démarrage avec base vide : zéro toast visible après 2 s.
 **Constat.** Trois points d'entrée identiques sont visibles en même temps à la
 première ouverture (capture `02`) : la modale `#modal_first_use`
 (`templates/modal_first_use.html`), la carte d'état vide `#emptyState`
-(`templates/app.html` l.94-124) et la carte « Mes trouvailles »
+(`templates/app.html` l.94-124) et la carte « Mes Géocaches »
 (`templates/menu_data.html` l.10-49). La modale et l'état vide répètent le
 même bouton et la même consigne de glisser-déposer.
 

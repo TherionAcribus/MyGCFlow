@@ -708,7 +708,7 @@ msgid "Confirmation de suppression"
 msgstr ""
 
 #: static/js/bdd.js:1505 templates/guide.html:153 templates/menu_data.html:59
-msgid "Supprimer mes trouvailles"
+msgid "Supprimer mes géocaches"
 msgstr ""
 
 #: static/js/bdd.js:1512
@@ -1520,7 +1520,7 @@ msgstr ""
 
 #: static/js/profiles.js:40 templates/app.html:61 templates/app.html:63
 #: templates/guide.html:139 templates/guide.html:340 templates/menu_data.html:8
-msgid "Mes trouvailles"
+msgid "Mes Géocaches"
 msgstr ""
 
 #: static/js/profiles.js:114
@@ -2636,7 +2636,7 @@ msgid "ou glissez-déposez vos fichiers n'importe où sur la page"
 msgstr ""
 
 #: templates/app.html:148
-msgid "Revenir au mode principal (mes trouvailles)"
+msgid "Revenir au mode principal (mes géocaches)"
 msgstr ""
 
 #: templates/app.html:153
