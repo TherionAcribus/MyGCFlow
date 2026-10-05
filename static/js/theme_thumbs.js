@@ -2,11 +2,12 @@
 //
 // Chaque vignette résume le thème ENREGISTRÉ : fond de carte réel (une tuile
 // d'échantillon commune pour les fonds raster — même lieu pour tous les
-// thèmes, donc comparables — ou une scène vectorielle aux vraies couleurs
-// pour vectorMap), style des points, glyphe du flash, trait de déplacement et
-// pastille du titre. Tout est construit par createElement / createElementNS :
-// aucune donnée de profil ne passe par innerHTML, et le seul accès réseau est
-// la tuile de fond elle-même (repli couleur si elle échoue).
+// thèmes, donc comparables — ou les pays d'Europe de l'Ouest aux vraies
+// couleurs pour vectorMap, cf. theme_thumb_map.js), style des points, glyphe
+// du flash, trait de déplacement et pastille du titre. Tout est construit par
+// createElement / createElementNS : aucune donnée de profil ne passe par
+// innerHTML, et le seul accès réseau est la tuile de fond elle-même (repli
+// couleur si elle échoue).
 //
 // Consommé par profiles.js (lignes du tiroir « Gérer les thèmes », seul
 // endroit de choix visuel d'un thème). Pas d'import de `pkg` : le module est
@@ -15,6 +16,7 @@
 
 import { getBasemapTileUrl } from './basemaps.js';
 import { defaultGcColors } from './gc_colors.js';
+import { THUMB_COUNTRIES_PATH } from './theme_thumb_map.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -30,15 +32,6 @@ const SAMPLE_POINTS = Object.freeze([[34, 60], [74, 34], [112, 62]]);
 // plus fréquentes et les plus distinctes).
 const GC_SAMPLE_TYPES = Object.freeze(['Traditional Cache', 'Multi-cache', 'Mystery Cache']);
 const GC_SAMPLE_FALLBACK = Object.freeze(['#008000', '#FFA500', '#0000FF']);
-
-// Silhouettes de continents stylisées pour la scène vectorielle : la
-// géographie exacte n'est pas nécessaire à la vignette, les couleurs du thème
-// suffisent à la rendre fidèle.
-const CONTINENT_PATHS = Object.freeze([
-    'M10,40 C6,26 20,12 36,16 C50,19 56,32 50,44 C44,56 26,60 15,52 Z',
-    'M74,20 C88,8 118,8 132,22 C146,36 138,58 116,62 C96,66 72,58 68,40 Z',
-    'M88,70 C96,62 114,64 117,74 C120,84 104,90 93,85 C85,81 84,74 88,70 Z',
-]);
 
 const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
 
@@ -64,16 +57,17 @@ function themedColor(type, fixed, index) {
     return (typeof fixed === 'string' && fixed) || '#888888';
 }
 
-// Scène de fond pour les thèmes à carte vectorielle : aplats de « continents »
-// aux couleurs vector_options du thème (fond, remplissage, contour). Un
-// contour de largeur <= 0 est omis, contrairement à buildVectorMapStyle qui le
-// recolore : ici les formes ne sont pas adjacentes, il n'y a aucune couture à
-// recouvrir.
+// Scène de fond pour les thèmes à carte vectorielle : les vrais pays d'Europe
+// de l'Ouest (THUMB_COUNTRIES_PATH, tiré du même fichier que le fond réel) aux
+// couleurs vector_options du thème (fond, remplissage, contour). Même règle
+// que buildVectorMapStyle : sans contour (largeur <= 0), un trait fin de la
+// couleur du remplissage recouvre les coutures entre pays adjacents.
 function buildVectorScene(vectorOptions) {
     const v = vectorOptions && typeof vectorOptions === 'object' ? vectorOptions : {};
     const svg = svgEl('svg', {
         class: 'theme-thumb-vectorscene',
         viewBox: `0 0 ${VB_W} ${VB_H}`,
+        preserveAspectRatio: 'xMidYMid slice',
         'aria-hidden': 'true',
         focusable: 'false',
     });
@@ -81,17 +75,18 @@ function buildVectorScene(vectorOptions) {
         x: 0, y: 0, width: VB_W, height: VB_H,
         fill: v.background_color || '#8c8b8b',
     }));
+    const fill = v.fill_color || '#c8c8c8';
     const width = parseFloat(v.stroke_width);
     const hasContour = Number.isFinite(width) && width > 0;
-    for (const d of CONTINENT_PATHS) {
-        svg.appendChild(svgEl('path', {
-            d,
-            fill: v.fill_color || '#c8c8c8',
-            stroke: hasContour ? (v.stroke_color || '#000000') : 'none',
-            'stroke-width': hasContour ? clamp(width * 0.7, 0.3, 3) : 0,
-            'stroke-linejoin': 'round',
-        }));
-    }
+    svg.appendChild(svgEl('path', {
+        d: THUMB_COUNTRIES_PATH,
+        fill,
+        stroke: hasContour ? (v.stroke_color || '#000000') : fill,
+        // Largeur réduite à l'échelle de la vignette, bornée pour que les
+        // petits pays ne disparaissent pas sous leur frontière.
+        'stroke-width': hasContour ? clamp(width * 0.4, 0.4, 1.4) : 0.5,
+        'stroke-linejoin': 'round',
+    }));
     return svg;
 }
 
