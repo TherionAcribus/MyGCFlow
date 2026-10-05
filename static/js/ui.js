@@ -3747,8 +3747,23 @@ function changePointStyleUI(event){
     // selects
     pkg.options.point.shape = selectShape.value
 
+    updatePointColorPickerVisibility();
+
     // rafraichissement des points
     pkg.refreshPoints(pkg.options);
+}
+
+// Le choix d'une couleur n'a de sens qu'en mode « couleur unique » (fix) :
+// hors de ce mode la valeur du picker est ignorée, on masque donc son
+// conteneur — même pattern que updateFlashColorPickerVisibility.
+function updatePointColorPickerVisibility() {
+    for (const [picker, mode] of [
+        [cpPointCenterColor, pkg.options?.point?.center?.mode],
+        [cpPointBorderColor, pkg.options?.point?.border?.mode],
+    ]) {
+        if (!picker?.parentElement) continue;
+        picker.parentElement.style.display = mode === 'fix' ? 'block' : 'none';
+    }
 }
 
 // Gestion de l'affichage des sous-menus pour les points
@@ -4010,6 +4025,7 @@ export function syncPointOptionsUI() {
     if (cpPointBorderColor && point.border?.color) cpPointBorderColor.value = point.border.color;
     setRadioGroupValue(radioFillColorPoint, point.center?.mode);
     setRadioGroupValue(radioborderColorPoint, point.border?.mode);
+    updatePointColorPickerVisibility();
 
     // Tailles (slider + champ numérique)
     setSliderAndInput('sliderSizePoint', 'inputSizePoint', point.center?.size);

@@ -678,6 +678,9 @@ class ProfileManager {
             const nameSpan = document.createElement('span');
             nameSpan.className = 'profile-name';
             nameSpan.textContent = profileName;
+            // Les noms longs sont élidés en CSS : le title natif permet de
+            // lire le nom complet au survol.
+            nameSpan.title = profileName;
             nameLine.appendChild(nameSpan);
             nameCol.appendChild(nameLine);
             nameWrap.appendChild(nameCol);
