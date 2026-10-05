@@ -168,8 +168,8 @@
                         </div>
                         {# Suivi de caméra : sans objet en mode Évolution (des milliers de caches à la fois). #}
                         {% if mode != 'evolution' %}
-                        <div class="col-12 col-md-6">
-                            <div class="form-check form-switch mb-2 mt-md-4">
+                        <div class="col-12">
+                            <div class="form-check form-switch mb-2">
                                 <input class="form-check-input" type="checkbox" id="switchCameraFollow" role="switch" aria-describedby="helpCameraFollow">
                                 <label class="form-check-label" for="switchCameraFollow">{{ _("Suivi de caméra") }}{{ experimental_badge() }}{{ global_scope_badge() }}</label>
                             </div>
