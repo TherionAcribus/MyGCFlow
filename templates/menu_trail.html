@@ -1,7 +1,9 @@
-{% from '_scope_badges.html' import profile_scope_badge with context %}
+{% from '_scope_badges.html' import profile_scope_badge, global_scope_badge with context %}
 <!-- Traits de déplacement : le trajet du géocacheur d'une étape à l'autre.
-     Réglages visuels du thème ; la durée du tracé, réglage temporel, vit dans
-     le menu Animation (inputTimeTrail), comme la durée du flash. -->
+     Réglages visuels du thème — à l'exception de la durée du tracé
+     (inputTimeTrail), préférence globale placée ici pour être réglée à côté
+     de l'aperçu : elle est raccourcie selon le rythme, donc plus proche du
+     tempo que du style. -->
 <div id="trail">
     <h5 class="gc-section-title">
         <i class="ti ti-route text-muted me-1"></i>{{ _("Trajet du géocacheur") }}{{ profile_scope_badge() }}
@@ -19,6 +21,15 @@
                     <i class="ti ti-route me-1"></i>{{ _("Aperçu du trajet") }}
                 </button>
                 <small id="helpTrailPreview" class="form-hint text-muted d-block mt-1">{{ _("Affiche le trajet calculé sur la carte, sans lancer l'animation : pratique pour vérifier les réglages de tracé. Cliquez près d'une étape pour voir sa date et le nombre de caches qu'elle regroupe.") }}</small>
+            </div>
+            <!-- Durée max. du tracé : seule exception de portée de l'onglet
+                 Style — préférence globale (badge bleu), pas un réglage de
+                 thème. -->
+            <div class="mt-3">
+                <label for="inputTimeTrail" class="form-label">{{ _("Durée max. du tracé vers le prochain jour de caches (ms)") }}{{ global_scope_badge() }}</label>
+                <input id="inputTimeTrail" type="number" class="form-control" min="100" max="10000" step="100" placeholder="{{ _('Durée du tracé') }}" aria-describedby="helpTimeTrail feedbackTimeTrail">
+                <small id="helpTimeTrail" class="form-hint text-muted">{{ _("Durée de progression du stylo jusqu'à la fin du prochain jour de trouvailles, raccourcie automatiquement quand les jours défilent plus vite.") }}</small>
+                <div class="invalid-feedback" id="feedbackTimeTrail"></div>
             </div>
         </div>
     </div>

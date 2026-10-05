@@ -3,7 +3,9 @@ import { dismissFirstUseModal } from './first-use.mjs';
 
 
 async function openReadyApp(page) {
-  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  // /#style : base vide, l'app forcerait sinon le retour sur l'onglet
+  // Données à chaque résolution du statut, en plein milieu des clics.
+  await page.goto('/#style', { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.mygcflowReady === true);
 
   // La base du runtime de test est vide : la modale de première utilisation

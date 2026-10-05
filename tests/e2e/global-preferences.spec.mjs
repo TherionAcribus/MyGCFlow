@@ -541,18 +541,23 @@ test('le format de date se règle dans les préférences et reformate les dates 
 
 
 test('chaque section indique où son réglage est enregistré', async ({ page }) => {
-  await openReadyApp(page);
+  // /#style dans l'URL : base vide, l'app forcerait sinon le retour sur
+  // l'onglet Données à chaque résolution du statut — y compris pendant une
+  // attente d'assertion, ce qui masquerait les badges en cours de test.
+  await openReadyApp(page, '/#style');
 
-  await page.locator('a[href="#style"]').click();
   // Sous-onglet actif par défaut de l'onglet Style.
   await expect(page.locator('#tabMap .gc-scope-badge.gc-scope-profile').first()).toBeVisible();
   await page.locator('a[href="#tabPoints"]').click();
   await expect(page.locator('#points .gc-scope-badge.gc-scope-profile')).toBeVisible();
   await page.locator('a[href="#tabFlash"]').click();
   await expect(page.locator('#flash .gc-scope-badge.gc-scope-profile')).toBeVisible();
-  // Rien de global ne se cache dans l'onglet Style : la distinction ne vaut que
-  // si elle est exclusive.
-  await expect(page.locator('#style .gc-scope-badge.gc-scope-global')).toHaveCount(0);
+  // Une seule dérogation de portée dans l'onglet Style : la durée max. du
+  // tracé (inputTimeTrail), préférence globale placée dans Style > Trajet
+  // pour être réglée à côté de l'aperçu. Tout le reste est du thème.
+  await expect(page.locator('#style .gc-scope-badge.gc-scope-global')).toHaveCount(1);
+  await page.locator('a[href="#tabTrail"]').click();
+  await expect(page.locator('label[for="inputTimeTrail"] .gc-scope-badge.gc-scope-global')).toBeVisible();
 
   await page.locator('a[href="#settings"]').click();
   await expect(page.locator('#settings .gc-scope-badge.gc-scope-global')).toBeVisible();

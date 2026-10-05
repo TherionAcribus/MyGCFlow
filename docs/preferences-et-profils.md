@@ -62,7 +62,10 @@ résultat calculé en lecture seule.
   « Expérimental » (même base de style) marque les fonctionnalités en cours de
   validation. Les styles vivent dans
   `static/css/ui_improvements.css` (`.gc-scope-badge`) et leurs variantes sombres
-  dans `static/css/tabler_theme.css`.
+  dans `static/css/tabler_theme.css`. Une dérogation unique : la **durée max.
+  du tracé** (`inputTimeTrail`) est une préférence globale placée dans
+  Style > Trajet — elle se règle à côté de l'aperçu du trajet et garde son
+  badge « Global » pour rappeler qu'elle n'est pas enregistrée avec le thème.
 - **Indicateur inline « Enregistré ✓ »** (`static/js/saved_indicator.mjs`) posé
   dans le `<label>` du champ modifié, pour les réglages globaux uniquement. Il
   remplace les toasts qui ne couvraient qu'une partie des champs (le centre de

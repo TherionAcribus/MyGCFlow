@@ -127,7 +127,7 @@ s'ouvrir (pas de données, animation ou enregistrement en cours).
 | Réglage | Portée | Stockage |
 | --- | --- | --- |
 | Activation, étapes, rayon, forme, grands sauts, couleur, épaisseur, opacité, motif, effet, tête, persistance | Thème | section `trail` du profil (`TrailOptions`) |
-| Durée max. du tracé d'une étape (800 ms par défaut, onglet Animation) | Globale | `animation.trail_duration_ms` de `settings.json` |
+| Durée max. du tracé d'une étape (800 ms par défaut, onglet Style > Trajet) | Globale | `animation.trail_duration_ms` de `settings.json` |
 
 Même partage que pour le flash : l'aspect appartient au thème, le temps aux
 préférences d'animation. Le rayon de regroupement sert aussi de **repli** en

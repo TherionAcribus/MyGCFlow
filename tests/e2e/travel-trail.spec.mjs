@@ -161,7 +161,9 @@ test("l'arrêt efface le trait ; désactivé, aucun trajet n'est tracé", async 
 
 test('la durée du tracé est une préférence globale enregistrée', async ({ page }) => {
   await openWithFixture(page);
-  await page.locator('a[href="#animation"]').click();
+  // Le champ vit dans Style > Trajet (préférence globale à portée dérogatoire).
+  await page.locator('a[href="#style"]').click();
+  await page.locator('a[href="#tabTrail"]').click();
   const input = page.locator('#inputTimeTrail');
   await expect(input).toHaveValue('800');
 
