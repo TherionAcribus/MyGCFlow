@@ -261,10 +261,6 @@ class AppSettings:
     # `recording` renvoyant toujours des valeurs par défaut, « jamais configuré »
     # serait indiscernable de « configuré avec les valeurs par défaut ».
     recording_configured: bool = False
-    # Menu flottant de lecture/enregistrement sur la carte. Préférence
-    # globale (le plein écran le force visible quelle que soit la valeur :
-    # il y porte le seul bouton de sortie du mode).
-    show_control_bar: bool = True
     # Rythme et déroulement temporel de l'animation : préférences GLOBALES,
     # persistées dans settings.json comme `recording`. Elles ne vivent jamais
     # dans un thème (MapProfile) : changer de thème ne doit pas modifier le
@@ -740,7 +736,6 @@ def coerce_settings(d: dict) -> AppSettings:
         s.evolution_dataset_id = coerce_dataset_id(d.get("evolution_dataset_id"))
         s.evolution_infos_template = coerce_infos_template(
             d.get("evolution_infos_template"), s.evolution_infos_template)
-        s.show_control_bar = bool(d.get("show_control_bar", s.show_control_bar))
         # Un settings.json antérieur à la migration n'a pas de bloc `recording` :
         # il compte comme « jamais configuré ».
         s.recording_configured = bool(d.get("recording_configured", "recording" in d))

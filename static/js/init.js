@@ -272,15 +272,6 @@ function applyUserSettings(userSettings) {
         console.log('📥 [USER_SETTINGS] Format de date appliqué:', userSettings.date_format);
     }
 
-    // Menu flottant de contrôle : affiché par défaut (absence de la clé =
-    // true), le plein écran le force visible quelle que soit la préférence.
-    // La fonction met aussi à jour l'apparence du bouton « Menu flottant ».
-    try {
-        pkg.applyControlBarVisibility();
-    } catch (e) {
-        console.warn('📥 [USER_SETTINGS] Menu flottant ignoré:', e?.message || e);
-    }
-
     // Le thème a déjà été appliqué depuis le miroir localStorage par le script
     // anti-FOUC ; ici on réaligne sur la préférence serveur, qui fait référence.
     try {

@@ -1193,7 +1193,10 @@ class ProfileManager {
         // Appliquer immédiatement le profil si un profil est sélectionné
         if (selectedProfileName && selectedProfileName !== '') {
             dbgProfiles('🎯 Application immédiate du profil:', selectedProfileName);
-            const loaded = await this.loadProfile(selectedProfileName);
+            // quiet : le toast final ci-dessous dit déjà que le profil a été
+            // appliqué ET défini par défaut — le « Profil chargé » de
+            // loadProfile() ferait doublon.
+            const loaded = await this.loadProfile(selectedProfileName, { quiet: true });
             if (!loaded) {
                 dbgProfiles('🚫 Chargement annulé ou en échec - profil par défaut inchangé');
                 this._syncDefaultProfileSelectorValue();

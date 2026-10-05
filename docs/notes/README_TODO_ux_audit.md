@@ -102,17 +102,16 @@ var(--color-accent)` sur **toutes** les variantes pleines. Résultat :
    pour le placer à droite de `#infosBDD` (ligne « Aucune trouvaille chargée /
    N trouvailles… »). La confirmation modale existe déjà (`bdd.js`
    `clearDatabase()` l.1131-1160) ; ne pas y toucher.
-3. Toggle « Menu flottant » (`#btnToggleControlBar`) : dans
-   `templates/menu_animation.html` l.45 utiliser `btn btn-outline-secondary` ;
-   dans `static/js/ui.js` `updateControlBarToggleButton()` (l.6075-6087)
-   remplacer le basculement `btn-primary`/`btn-secondary` par le basculement
-   d'une classe `active` (Bootstrap rend l'état pressé) en gardant
-   `aria-pressed`. Même traitement pour `#btnFullscreenMode` dans
-   `updateFullscreenButtonAppearance()` (l.6147-6175).
+3. ~~Toggle « Menu flottant »~~ : fait autrement — `#btnToggleControlBar`,
+   `updateControlBarToggleButton()` et la préférence `show_control_bar` ont
+   été supprimés ; le menu flottant n'apparaît plus qu'en plein écran (c'est
+   lui qui porte le bouton de sortie du mode). Reste valable pour
+   `#btnFullscreenMode` : état actif rendu par la classe `active` dans
+   `updateFullscreenButtonAppearance()`.
 4. Dans l'en-tête Animation, hiérarchie cible : « Prévisualiser » = `btn-primary`,
    « Exporter » = `btn-primary` (ou `btn-success` si on veut le distinguer, à
    condition que le même choix soit appliqué à `#btnQuickExport` et
-   `#btnRecordBar`), « Plein écran » et « Menu flottant » = `btn-outline-secondary`.
+   `#btnRecordBar`), « Plein écran » = `btn-outline-secondary`.
 
 **Vérification.** Captures des onglets Données et Animation en clair et sombre ;
 `npm run test:e2e -- tests/e2e/control-bar.spec.mjs tests/e2e/empty-state.spec.mjs tests/e2e/upload-feedback.spec.mjs`.
@@ -260,10 +259,10 @@ panneau Animation (`menu_animation.html` l.29-44) et menu flottant
    et faire porter l'état « idle » par une variable ou un `data-state` sur
    `#controlBar`, plutôt que par le `display` calculé. Mettre à jour
    `updateControlBar()` en conséquence.
-2. Garder dans l'en-tête Animation uniquement « Plein écran » et « Menu
-   flottant » (en `btn-outline-secondary`, cf. Lot 1) et déplacer le badge
-   `global_scope_badge()` orphelin (l.48) à côté du libellé « Menu flottant »
-   ou le supprimer là (la portée globale est déjà indiquée par la préférence).
+2. Ne garder dans l'en-tête Animation que « Plein écran »
+   (`btn-outline-secondary`, cf. Lot 1) : le bouton « Menu flottant » et son
+   badge `global_scope_badge()` ont été retirés avec la préférence
+   `show_control_bar` (le menu n'existe plus qu'en plein écran).
 3. Les boutons rapides `#btnQuickPreview` / `#btnQuickExport` deviennent les
    seules commandes dans le panneau ; vérifier que `disabled` suit toujours
    `canRun` (`updateDataAvailabilityUI()` l.6246-6248 ne met à jour que
