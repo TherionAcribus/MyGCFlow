@@ -12,7 +12,7 @@
                          supprimer, réinitialiser, définir par défaut) vivent
                          dans le tiroir déplié par « Gérer les thèmes ». -->
                     <div id="profile-bar" class="profile-bar">
-                        <i class="ti ti-user-circle text-muted" aria-hidden="true"></i>
+                        <i class="ti ti-palette text-muted" aria-hidden="true"></i>
                         <label for="profile-select" class="form-label mb-0">{{ _("Thème") }}</label>
                         <select id="profile-select" class="form-select form-select-sm" disabled></select>
                         <span id="current-profile-indicator" class="profile-active-indicator" aria-live="polite"></span>
@@ -74,7 +74,7 @@
                     </section>
 
                     <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
-                        <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tabMap" role="tab" aria-selected="true">{{ _("Carte") }}</a></li>
+                        <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tabMap" role="tab" aria-selected="true">{{ _("Cartes") }}</a></li>
                         <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabPoints" role="tab" aria-selected="false">{{ _("Points") }}</a></li>
                         <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabFlash" role="tab" aria-selected="false">{{ _("Flash") }}</a></li>
                         {# Traits de déplacement : un trajet n'a de sens que pour un seul géocacheur. #}
@@ -85,7 +85,7 @@
                     </ul>
 
                     <div class="tab-content pt-3">
-                    <!-- Sous-onglet Carte -->
+                    <!-- Sous-onglet Cartes -->
                     <div id="tabMap" class="tab-pane fade show active">
                         <h6 class="gc-section-title">
                             <i class="ti ti-map text-muted me-1"></i>{{ _("Cartes") }}{{ profile_scope_badge() }}
@@ -108,14 +108,14 @@
                             <div class="col-6 col-md-3">
                                 <button type="button" id="vectorMap" class="changeMap map-card" aria-label="{{ _('Carte vectorielle') }}" title="{{ _('Carte vectorielle') }}" aria-pressed="false">
                                     <img src="../static/images/vector.webp" alt="" class="map-card-img" width="600" height="200" loading="lazy" decoding="async" fetchpriority="low">
-                                    <span class="map-card-label">Vector</span>
+                                    <span class="map-card-label">{{ _("Vectorielle") }}</span>
                                     <i class="ti ti-check map-card-check"></i>
                                 </button>
                             </div>
                             <div class="col-6 col-md-3">
-                                <button type="button" id="watercolor" class="changeMap map-card" aria-label="{{ _('Watercolor') }}" title="{{ _('Watercolor') }}" aria-pressed="false">
+                                <button type="button" id="watercolor" class="changeMap map-card" aria-label="{{ _('Aquarelle') }}" title="{{ _('Aquarelle') }}" aria-pressed="false">
                                     <img src="../static/images/watercolor.webp" alt="" class="map-card-img" width="600" height="200" loading="lazy" decoding="async" fetchpriority="low">
-                                    <span class="map-card-label">Water</span>
+                                    <span class="map-card-label">{{ _("Aquarelle") }}</span>
                                     <i class="ti ti-check map-card-check"></i>
                                 </button>
                             </div>

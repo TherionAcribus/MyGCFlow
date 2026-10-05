@@ -380,7 +380,7 @@ def api_export_profile(name: str):
         payload = settings_manager.export_profile_payload(name, current_version)
         return jsonify(payload)
     except FileNotFoundError:
-        return jsonify({'success': False, 'message': _("Profil '%(name)s' introuvable", name=name)}), 404
+        return jsonify({'success': False, 'message': _("Thème '%(name)s' introuvable", name=name)}), 404
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 400
 

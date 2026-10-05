@@ -156,7 +156,7 @@ npm run test:e2e
 Le français est la langue source (`msgid`), l'anglais vit dans le `msgstr`.
 
 ```bash
-pybabel extract -F babel.cfg -k _ -k _l -k t -o messages.pot .
+pybabel extract -F babel.cfg -k _ -k _l -k t -k _tr -o messages.pot .
 pybabel update -i messages.pot -d translations
 pybabel compile -d translations
 python check_missing_translations.py

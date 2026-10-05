@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-05 15:04+0200\n"
+"POT-Creation-Date: 2026-10-05 15:56+0200\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -264,6 +264,53 @@ msgstr "Out-of-sequence video fragment"
 msgid "Fragment vidéo absent"
 msgstr "Missing video fragment"
 
+#: settings_manager.py:2187
+#, python-format
+msgid ""
+"Le nom '%(name)s' ne contient aucun caractère utilisable (au moins une "
+"lettre ou un chiffre est nécessaire)"
+msgstr ""
+"The name '%(name)s' contains no usable characters (at least one letter or "
+"digit is required)"
+
+#: blueprints/profiles.py:383 settings_manager.py:2203 settings_manager.py:2273
+#: settings_manager.py:2306
+#, python-format
+msgid "Thème '%(name)s' introuvable"
+msgstr "Theme '%(name)s' not found"
+
+#: settings_manager.py:2224
+#, python-format
+msgid "Aucun thème trouvé avec l'UUID: %(uid)s"
+msgstr "No theme found with UUID: %(uid)s"
+
+#: settings_manager.py:2254 settings_manager.py:2278
+#, , python-brace-format, python-format
+msgid "Un thème nommé '%(name)s' existe déjà"
+msgstr "A theme named '%(name)s' already exists"
+
+#: settings_manager.py:2290
+#, python-format
+msgid "Thème source '%(name)s' introuvable"
+msgstr "Source theme '%(name)s' not found"
+
+#: settings_manager.py:2445
+msgid "Payload invalide"
+msgstr "Invalid payload"
+
+#: settings_manager.py:2448
+msgid "Fichier de thème invalide (détrompeur manquant)"
+msgstr "Invalid theme file (missing magic)"
+
+#: settings_manager.py:2452
+msgid "Section 'profile' manquante"
+msgstr "Missing 'profile' section"
+
+#: task_manager.py:30
+#, python-format
+msgid "Une tâche '%(type)s' est déjà en cours"
+msgstr "A task '%(type)s' is already running"
+
 #: blueprints/core.py:148 blueprints/core.py:186 test_translations.py:27
 msgid "Base de données"
 msgstr "Database"
@@ -282,7 +329,7 @@ msgstr "Settings"
 #: templates/app.html:200 templates/guide.html:47 templates/guide.html:79
 #: templates/guide.html:101 templates/guide.html:119 templates/guide.html:139
 #: templates/guide.html:340 templates/menu_animation.html:60
-#: templates/menu_animation.html:74 templates/menu_filtre.html:24
+#: templates/menu_animation.html:80 templates/menu_filtre.html:24
 #: templates/menu_filtre.html:33 templates/menu_filtre.html:49
 #: templates/menu_filtre.html:58 test_translations.py:30
 msgid "Données"
@@ -303,7 +350,8 @@ msgstr "Animation"
 msgid "Choisir fichier"
 msgstr "Choose file"
 
-#: blueprints/core.py:151 templates/menu_style.html:98
+#: blueprints/core.py:151 templates/guide.html:169 templates/menu_style.html:77
+#: templates/menu_style.html:91
 msgid "Cartes"
 msgstr "Maps"
 
@@ -342,9 +390,9 @@ msgid "Confirmer"
 msgstr "Confirm"
 
 #: blueprints/core.py:183 static/js/notifications.js:406
-#: templates/menu_style.html:253 templates/menu_style.html:278
-#: templates/menu_style.html:303 templates/menu_style.html:331
-#: templates/menu_style.html:362 templates/menu_style.html:390
+#: templates/menu_style.html:246 templates/menu_style.html:271
+#: templates/menu_style.html:296 templates/menu_style.html:324
+#: templates/menu_style.html:355 templates/menu_style.html:383
 #: templates/modal_evolution.html:18 templates/modal_evolution.html:60
 #: templates/modal_evolution.html:84 templates/modal_loading.html:14
 msgid "Annuler"
@@ -478,11 +526,6 @@ msgstr "Renaming is not allowed via this endpoint, use /api/profiles/<name>/rena
 msgid "Nouveau nom manquant"
 msgstr "New name missing"
 
-#: blueprints/profiles.py:383
-#, python-format
-msgid "Profil '%(name)s' introuvable"
-msgstr "Profile '%(name)s' not found"
-
 #: static/js/basemaps.js:166
 msgid ""
 "Certaines tuiles de la carte n'ont pas pu être chargées (connexion "
@@ -490,8 +533,7 @@ msgid ""
 msgstr "Some map tiles could not be loaded (unstable connection?)."
 
 #: static/js/basemaps.js:168 static/js/basemaps.js:205 static/js/ui.js:2373
-#: static/js/ui.js:2404 static/js/ui.js:2426 templates/guide.html:169
-#: templates/menu_style.html:84
+#: static/js/ui.js:2404 static/js/ui.js:2426
 msgid "Carte"
 msgstr "Map"
 
@@ -1222,7 +1264,7 @@ msgstr "Task monitoring stopped after ${count} consecutive errors: ${detail}"
 msgid "Envoi des dernières images..."
 msgstr "Sending last images..."
 
-#: static/js/mapgl.js:2783 static/js/ui.js:5924
+#: static/js/mapgl.js:2783 static/js/ui.js:5943
 msgid "Assemblage en cours"
 msgstr "Assembly in progress"
 
@@ -1389,7 +1431,7 @@ msgid "Aucun déplacement à tracer pour cette sélection."
 msgstr "No movement to draw for this selection."
 
 #: static/js/mapgl.js:4642 static/js/mapgl.js:4644 static/js/mapgl.js:4734
-#: templates/menu_style.html:89
+#: templates/menu_style.html:82
 msgid "Trajet"
 msgstr "Route"
 
@@ -1404,7 +1446,7 @@ msgid "Choisissez d’abord une forme de flash."
 msgstr "First choose a flash shape."
 
 #: static/js/mapgl.js:5348 static/js/mapgl.js:5352 templates/guide.html:200
-#: templates/menu_style.html:86
+#: templates/menu_style.html:79
 msgid "Flash"
 msgstr "Flash"
 
@@ -1415,10 +1457,10 @@ msgid ""
 msgstr "No cache visible on screen: move the map over your points."
 
 #: static/js/notifications.js:114 static/js/notifications.js:442
-#: templates/menu_style.html:59 templates/menu_style.html:240
-#: templates/menu_style.html:272 templates/menu_style.html:297
-#: templates/menu_style.html:325 templates/menu_style.html:348
-#: templates/menu_style.html:384 templates/modal_evolution.html:9
+#: templates/menu_style.html:52 templates/menu_style.html:233
+#: templates/menu_style.html:265 templates/menu_style.html:290
+#: templates/menu_style.html:318 templates/menu_style.html:341
+#: templates/menu_style.html:377 templates/modal_evolution.html:9
 #: templates/modal_evolution.html:39 templates/modal_evolution.html:78
 #: templates/modal_first_use.html:33 templates/modal_infos.html:11
 msgid "Fermer"
@@ -1528,157 +1570,156 @@ msgstr "API error"
 msgid "Erreur: ${message}"
 msgstr "Error: ${message}"
 
-#: static/js/profiles.js:424 static/js/profiles.js:849
-#: static/js/profiles.js:1148
-msgid "Aucun thème"
-msgstr "No theme"
-
-#: static/js/profiles.js:480 static/js/profiles.js:1036
-msgid "Thème par défaut"
-msgstr "Default theme"
-
-#: static/js/profiles.js:523 static/js/profiles.js:1611
+#: static/js/profiles.js:447 static/js/profiles.js:1515
 #, python-brace-format
 msgid "Thème \"${name}\" chargé"
 msgstr "Theme \"${name}\" loaded"
 
-#: static/js/profiles.js:560
+#: static/js/profiles.js:484
 #, python-brace-format
 msgid "Thème \"${name}\" sauvegardé"
 msgstr "Theme \"${name}\" saved"
 
-#: static/js/profiles.js:614
+#: static/js/profiles.js:538
 #, python-brace-format
 msgid "Thème \"${name}\" créé, mais l'enregistrement des réglages a échoué"
 msgstr "Theme \"${name}\" created, but its settings could not be saved"
 
-#: static/js/profiles.js:624
+#: static/js/profiles.js:548
 #, python-brace-format
 msgid "Thème \"${name}\" créé"
 msgstr "Theme \"${name}\" created"
 
-#: static/js/profiles.js:640
+#: static/js/profiles.js:564
 #, python-brace-format
 msgid "Thème dupliqué: \"${name}\""
 msgstr "Theme duplicated: \"${name}\""
 
-#: static/js/profiles.js:652
+#: static/js/profiles.js:576
 #, python-brace-format
 msgid "Thème \"${name}\" supprimé"
 msgstr "Theme \"${name}\" deleted"
 
-#: static/js/profiles.js:722
+#: static/js/profiles.js:646
 #, python-brace-format
 msgid "Thème \"${name}\" réinitialisé"
 msgstr "Theme \"${name}\" reset"
 
-#: static/js/profiles.js:757
+#: static/js/profiles.js:681
 msgid "Export échoué"
 msgstr "Export failed"
 
-#: static/js/profiles.js:768
+#: static/js/profiles.js:692
 #, python-brace-format
 msgid "Thème \"${name}\" exporté"
 msgstr "Theme \"${name}\" exported"
 
-#: static/js/profiles.js:771
+#: static/js/profiles.js:695
 msgid "Erreur export du thème"
 msgstr "Theme export error"
 
-#: static/js/profiles.js:791
+#: static/js/profiles.js:715
 msgid "Thème introuvable ou UID manquant"
 msgstr "Theme not found or missing UID"
 
-#: static/js/profiles.js:806
+#: static/js/profiles.js:730
 msgid "Échec de la sauvegarde du thème par défaut"
 msgstr "Failed to save the default theme"
 
-#: static/js/profiles.js:811
+#: static/js/profiles.js:735
 #, python-brace-format
 msgid "Thème \"${name}\" défini comme thème par défaut"
 msgstr "Theme \"${name}\" set as the default theme"
 
-#: static/js/profiles.js:824
+#: static/js/profiles.js:748
 msgid "Erreur lors de la définition du thème par défaut"
 msgstr "Error while setting the default theme"
 
-#: static/js/profiles.js:942 static/js/profiles.js:2685
+#: static/js/profiles.js:763 static/js/profiles.js:1052
+msgid "Aucun thème"
+msgstr "No theme"
+
+#: static/js/profiles.js:862 static/js/profiles.js:2589
 msgid "Dupliquer"
 msgstr "Duplicate"
 
-#: static/js/profiles.js:943 static/js/profiles.js:2665
+#: static/js/profiles.js:863 static/js/profiles.js:2569
 msgid "Renommer"
 msgstr "Rename"
 
-#: static/js/profiles.js:944 templates/app.html:211 templates/app.html:212
+#: static/js/profiles.js:864 templates/app.html:211 templates/app.html:212
 #: templates/guide.html:106 templates/guide.html:266 templates/guide.html:272
 #: templates/menu_animation.html:36
 msgid "Exporter"
 msgstr "Export"
 
-#: static/js/profiles.js:945 templates/menu_style.html:304
+#: static/js/profiles.js:865 templates/menu_style.html:297
 msgid "Réinitialiser"
 msgstr "Reset"
 
-#: static/js/profiles.js:946 templates/menu_style.html:279
+#: static/js/profiles.js:866 templates/menu_style.html:272
 #: templates/modal_evolution.html:85
 msgid "Supprimer"
 msgstr "Delete"
 
-#: static/js/profiles.js:950
+#: static/js/profiles.js:870
 msgid "Définir comme par défaut"
 msgstr "Set as default"
 
-#: static/js/profiles.js:1111 templates/menu_style.html:321
+#: static/js/profiles.js:956
+msgid "Thème par défaut"
+msgstr "Default theme"
+
+#: static/js/profiles.js:1015 templates/menu_style.html:314
 msgid "Modifications non enregistrées"
 msgstr "Unsaved changes"
 
-#: static/js/profiles.js:1159 templates/menu_style.html:46
+#: static/js/profiles.js:1063
 msgid "Choisir un thème"
 msgstr "Choose a theme"
 
-#: static/js/profiles.js:1406
+#: static/js/profiles.js:1310
 #, python-brace-format
 msgid ""
 "Le thème \"${name}\" contient des modifications non enregistrées. Que "
 "voulez-vous faire ?"
 msgstr "Theme \"${name}\" has unsaved changes. What do you want to do?"
 
-#: static/js/profiles.js:1407
+#: static/js/profiles.js:1311
 msgid "Vous avez des modifications non enregistrées. Que voulez-vous faire ?"
 msgstr "You have unsaved changes. What do you want to do?"
 
-#: static/js/profiles.js:1615
+#: static/js/profiles.js:1519
 msgid "Erreur lors du chargement du thème par défaut"
 msgstr "Error while loading the default theme"
 
-#: static/js/profiles.js:1648
+#: static/js/profiles.js:1552
 msgid "Aucun thème par défaut"
 msgstr "No default theme"
 
-#: static/js/profiles.js:1755
+#: static/js/profiles.js:1659
 #, python-brace-format
 msgid "Thème \"${selectedProfile}\" appliqué et défini comme thème par défaut"
 msgstr "Theme \"${selectedProfile}\" applied and set as default theme"
 
-#: static/js/profiles.js:1756
+#: static/js/profiles.js:1660
 msgid "Aucun thème par défaut défini"
 msgstr "No default theme set"
 
-#: static/js/profiles.js:1975
+#: static/js/profiles.js:1879
 msgid "Le thème n'a pas pu être chargé : aucun thème n'est actif."
 msgstr "The theme could not be loaded: no theme is active."
 
-#: static/js/profiles.js:2416
+#: static/js/profiles.js:2320
 #, python-brace-format
 msgid "Créer le thème \"${name}\""
 msgstr "Create the theme \"${name}\""
 
-#: static/js/profiles.js:2481 static/js/profiles.js:2858
+#: static/js/profiles.js:2385 static/js/profiles.js:2762
 msgid "Veuillez saisir un nom de thème"
 msgstr "Please enter a theme name"
 
-#: static/js/profiles.js:2544
+#: static/js/profiles.js:2448
 #, python-brace-format
 msgid ""
 "Le thème « ${name} » existe déjà. Les réglages affichés remplaceront ceux"
@@ -1687,60 +1728,60 @@ msgstr ""
 "The theme « ${name} » already exists. The displayed settings will replace"
 " the saved ones."
 
-#: static/js/profiles.js:2590
+#: static/js/profiles.js:2494
 #, python-brace-format
 msgid "Réglages enregistrés dans \"${name}\""
 msgstr "Settings saved to \"${name}\""
 
-#: static/js/profiles.js:2650
+#: static/js/profiles.js:2554
 msgid "Enregistrer dans un nouveau thème"
 msgstr "Save to a new theme"
 
-#: static/js/profiles.js:2650 templates/menu_style.html:239
+#: static/js/profiles.js:2554 templates/menu_style.html:232
 msgid "Nouveau thème"
 msgstr "New theme"
 
-#: static/js/profiles.js:2656 templates/menu_style.html:363
+#: static/js/profiles.js:2560 templates/menu_style.html:356
 msgid "Enregistrer le thème"
 msgstr "Save the theme"
 
-#: static/js/profiles.js:2656 templates/menu_style.html:254
+#: static/js/profiles.js:2560 templates/menu_style.html:247
 msgid "Créer"
 msgstr "Create"
 
-#: static/js/profiles.js:2663
+#: static/js/profiles.js:2567
 msgid "Renommer le thème"
 msgstr "Rename the theme"
 
-#: static/js/profiles.js:2683
+#: static/js/profiles.js:2587
 msgid "Dupliquer le thème"
 msgstr "Duplicate the theme"
 
-#: static/js/profiles.js:2739
+#: static/js/profiles.js:2643
 msgid "Le nom doit contenir au moins une lettre ou un chiffre"
 msgstr "The name must contain at least one letter or digit"
 
-#: static/js/profiles.js:2761
+#: static/js/profiles.js:2665
 #, python-brace-format
 msgid "« ${conflict} » existe déjà : la copie sera nommée « ${suggested} »"
 msgstr "“${conflict}” already exists: the copy will be named “${suggested}”"
 
-#: static/js/profiles.js:2777
+#: static/js/profiles.js:2681
 #, python-brace-format
 msgid "« ${name} » est le thème actif : ses réglages seront mis à jour"
 msgstr "« ${name} » is the active theme: its settings will be updated"
 
-#: static/js/profiles.js:2783
+#: static/js/profiles.js:2687
 #, python-brace-format
 msgid "« ${name} » existe déjà : ses réglages seront remplacés"
 msgstr "“${name}” already exists: its settings will be replaced"
 
-#: static/js/profiles.js:2790
+#: static/js/profiles.js:2694
 #, python-brace-format
 msgid "Un thème nommé « ${name} » existe déjà"
 msgstr "A theme named « ${name} » already exists"
 
-#: static/js/profiles.js:2791
+#: static/js/profiles.js:2695
 #, python-brace-format
 msgid ""
 "Ce nom est déjà pris par « ${conflict} » : les deux se réduisent au "
@@ -1749,22 +1790,22 @@ msgstr ""
 "This name is already taken by “${conflict}”: both reduce to the file "
 "“${key}”"
 
-#: static/js/profiles.js:2800
+#: static/js/profiles.js:2704
 #, python-brace-format
 msgid "Caractères ignorés (${dropped}) : le thème sera enregistré sous « ${key} »"
 msgstr "Ignored characters (${dropped}): the theme will be saved as « ${key} »"
 
-#: static/js/profiles.js:2917
+#: static/js/profiles.js:2821
 #, python-brace-format
 msgid "Thème renommé en \"${name}\""
 msgstr "Theme renamed to \"${name}\""
 
-#: static/js/profiles.js:2931
+#: static/js/profiles.js:2835
 #, python-brace-format
 msgid "Êtes-vous sûr de vouloir supprimer le thème \"${name}\" ?"
 msgstr "Are you sure you want to delete the theme \"${name}\"?"
 
-#: static/js/profiles.js:2950
+#: static/js/profiles.js:2854
 #, python-brace-format
 msgid ""
 "Êtes-vous sûr de vouloir réinitialiser le thème \"${name}\" aux valeurs "
@@ -2037,7 +2078,7 @@ msgstr "MyGCFlow is closed"
 msgid "Vous pouvez fermer cet onglet."
 msgstr "You can close this tab."
 
-#: static/js/ui.js:3763 templates/_filter_cache_attrs.html:37
+#: static/js/ui.js:3782 templates/_filter_cache_attrs.html:37
 #: templates/_filter_cache_attrs.html:55 templates/_filter_cache_attrs.html:79
 #: templates/_filter_cache_attrs.html:100
 #: templates/_filter_country_state.html:12
@@ -2046,168 +2087,168 @@ msgstr "You can close this tab."
 msgid "Aucun"
 msgstr "None"
 
-#: static/js/ui.js:3916 templates/_filter_county.html:10
+#: static/js/ui.js:3935 templates/_filter_county.html:10
 msgid "Filtrer par département"
 msgstr "Filter by county"
 
-#: static/js/ui.js:3954 templates/_filter_country_state.html:8
+#: static/js/ui.js:3973 templates/_filter_country_state.html:8
 msgid "Filtrer par pays"
 msgstr "Filter by country"
 
-#: static/js/ui.js:3983 static/js/ui.js:4034
+#: static/js/ui.js:4002 static/js/ui.js:4053
 #: templates/_filter_country_state.html:18
 msgid "Filtrer par région/état"
 msgstr "Filter by region/state"
 
-#: static/js/ui.js:5231
+#: static/js/ui.js:5250
 msgid "Pause non disponible pendant l'enregistrement - utilisez Arrêter"
 msgstr "Pause unavailable while recording - use Stop"
 
-#: static/js/ui.js:5513
+#: static/js/ui.js:5532
 msgid "Valeur requise."
 msgstr "Value required."
 
-#: static/js/ui.js:5515
+#: static/js/ui.js:5534
 msgid "Format attendu : mm:ss (ex. 4:55)."
 msgstr "Expected format: mm:ss (e.g. 4:55)."
 
-#: static/js/ui.js:5516
+#: static/js/ui.js:5535
 msgid "Nombre attendu."
 msgstr "Number expected."
 
-#: static/js/ui.js:5517
+#: static/js/ui.js:5536
 msgid "La valeur doit être strictement positive."
 msgstr "The value must be strictly positive."
 
-#: static/js/ui.js:5519
+#: static/js/ui.js:5538
 #, python-brace-format
 msgid "Entre ${min} et ${max} jours/s."
 msgstr "Between ${min} and ${max} days/s."
 
-#: static/js/ui.js:5520
+#: static/js/ui.js:5539
 #, python-brace-format
 msgid "Entre ${min} et ${max} s."
 msgstr "Between ${min} and ${max} s."
 
-#: static/js/ui.js:5521
+#: static/js/ui.js:5540
 #, python-brace-format
 msgid "Maximum ${max} s."
 msgstr "Maximum ${max} s."
 
-#: static/js/ui.js:5522
+#: static/js/ui.js:5541
 msgid "Entre 100 et 10000 ms."
 msgstr "Between 100 and 10000 ms."
 
-#: static/js/ui.js:5523
+#: static/js/ui.js:5542
 msgid "Hors limites."
 msgstr "Out of bounds."
 
-#: static/js/ui.js:5524
+#: static/js/ui.js:5543
 msgid "Valeur invalide."
 msgstr "Invalid value."
 
-#: static/js/ui.js:5584
+#: static/js/ui.js:5603
 #, python-brace-format
 msgid "${n} jours"
 msgstr "${n} days"
 
-#: static/js/ui.js:5585
+#: static/js/ui.js:5604
 #, python-brace-format
 msgid "${n} jours/s"
 msgstr "${n} days/s"
 
-#: static/js/ui.js:5587
+#: static/js/ui.js:5606
 #, python-brace-format
 msgid "animation minimale ${d}"
 msgstr "minimum animation ${d}"
 
-#: static/js/ui.js:5588
+#: static/js/ui.js:5607
 #, python-brace-format
 msgid "animation ${d}"
 msgstr "animation ${d}"
 
-#: static/js/ui.js:5589
+#: static/js/ui.js:5608
 #, python-brace-format
 msgid "fin ${d}"
 msgstr "end ${d}"
 
-#: static/js/ui.js:5591
+#: static/js/ui.js:5610
 #, python-brace-format
 msgid "+ ${d} additionnel"
 msgstr "+ ${d} extra"
 
-#: static/js/ui.js:5593
+#: static/js/ui.js:5612
 #, python-brace-format
 msgid "vidéo minimale ${d}"
 msgstr "minimum video ${d}"
 
-#: static/js/ui.js:5594
+#: static/js/ui.js:5613
 #, python-brace-format
 msgid "vidéo ${d}"
 msgstr "video ${d}"
 
-#: static/js/ui.js:5596
+#: static/js/ui.js:5615
 #, python-brace-format
 msgid "${n} images minimum"
 msgstr "${n} frames minimum"
 
-#: static/js/ui.js:5597
+#: static/js/ui.js:5616
 #, python-brace-format
 msgid "${n} images"
 msgstr "${n} frames"
 
-#: static/js/ui.js:5599
+#: static/js/ui.js:5618
 #, python-brace-format
 msgid "≈ ${n} jours par image"
 msgstr "≈ ${n} days per frame"
 
-#: static/js/ui.js:5625
+#: static/js/ui.js:5644
 #, python-brace-format
 msgid "Vidéo ~${d}"
 msgstr "Video ~${d}"
 
-#: static/js/ui.js:5633
+#: static/js/ui.js:5652
 msgid "musique incluse"
 msgstr "music included"
 
-#: static/js/ui.js:5634
+#: static/js/ui.js:5653
 msgid "sans musique"
 msgstr "no music"
 
-#: static/js/ui.js:5642 static/js/ui.js:5647
+#: static/js/ui.js:5661 static/js/ui.js:5666
 msgid "dossier Vidéos"
 msgstr "Videos folder"
 
-#: static/js/ui.js:5646
+#: static/js/ui.js:5665
 msgid "dossier Vidéos + téléchargement"
 msgstr "Videos folder + download"
 
-#: static/js/ui.js:5648
+#: static/js/ui.js:5667
 msgid "téléchargement navigateur"
 msgstr "browser download"
 
-#: static/js/ui.js:5649
+#: static/js/ui.js:5668
 msgid "aucune copie conservée"
 msgstr "no copy saved"
 
-#: static/js/ui.js:5651
+#: static/js/ui.js:5670
 #, python-brace-format
 msgid "destination : ${d}"
 msgstr "destination: ${d}"
 
-#: static/js/ui.js:5682
+#: static/js/ui.js:5701
 msgid "La plage de dates est invalide ou vide."
 msgstr "The date range is invalid or empty."
 
-#: static/js/ui.js:5683
+#: static/js/ui.js:5702
 msgid "Sélectionnez un fichier audio pour le mode « Sur la musique »."
 msgstr "Select an audio file for the \"Sync to music\" mode."
 
-#: static/js/ui.js:5690
+#: static/js/ui.js:5709
 msgid "En attente de la lecture de la durée de la musique."
 msgstr "Waiting for the music duration to be read."
 
-#: static/js/ui.js:5704
+#: static/js/ui.js:5723
 #, python-brace-format
 msgid ""
 "Durée demandée (${req}) trop courte pour afficher chaque jour (minimum "
@@ -2216,7 +2257,7 @@ msgstr ""
 "Requested duration (${req}) too short to show every day (minimum ${min}):"
 " ${app} applied."
 
-#: static/js/ui.js:5714
+#: static/js/ui.js:5733
 msgid ""
 "Le suivi de caméra met les dates en pause pendant chaque déplacement. La "
 "durée et le nombre d'images affichés sont des minimums ; le résultat sera"
@@ -2226,7 +2267,7 @@ msgstr ""
 "and frame count are minimums; the result will be longer and may exceed "
 "the music duration."
 
-#: static/js/ui.js:5759
+#: static/js/ui.js:5778
 #, python-brace-format
 msgid ""
 "Charge élevée : jusqu'à ~${n} flashs simultanés. Pistes : raccourcir la "
@@ -2235,7 +2276,7 @@ msgstr ""
 "High load: up to ~${n} simultaneous flashes. Suggestions: shorten the "
 "flash duration, slow down the animation, or use Images mode."
 
-#: static/js/ui.js:5763
+#: static/js/ui.js:5782
 #, python-brace-format
 msgid ""
 "${n} images à produire (~${d} en mode Images). Envisagez un fps plus bas "
@@ -2244,61 +2285,61 @@ msgstr ""
 "${n} frames to produce (~${d} in Images mode). Consider a lower fps or a "
 "shorter animation."
 
-#: static/js/ui.js:5920
+#: static/js/ui.js:5939
 msgid "Images de capture supprimées"
 msgstr "Capture images deleted"
 
-#: static/js/ui.js:5920
+#: static/js/ui.js:5939
 msgid "Nettoyage"
 msgstr "Cleanup"
 
-#: static/js/ui.js:5944
+#: static/js/ui.js:5963
 #, python-brace-format
 msgid "Dossier vidéo: ${folder}"
 msgstr "Video folder: ${folder}"
 
-#: static/js/ui.js:5944 static/js/ui.js:5946 static/js/ui.js:5951
+#: static/js/ui.js:5963 static/js/ui.js:5965 static/js/ui.js:5970
 msgid "Ouverture"
 msgstr "Opening"
 
-#: static/js/ui.js:5946
+#: static/js/ui.js:5965
 msgid "Impossible d’ouvrir le dossier vidéo"
 msgstr "Unable to open the video folder"
 
-#: static/js/ui.js:5951
+#: static/js/ui.js:5970
 msgid "Erreur lors de l’ouverture du dossier vidéo"
 msgstr "Error opening the video folder"
 
-#: static/js/ui.js:8003
+#: static/js/ui.js:8022
 msgid "Sélectionnez d'abord un fichier audio"
 msgstr "Select an audio file first"
 
-#: static/js/ui.js:8050 templates/menu_animation.html:198
+#: static/js/ui.js:8069 templates/menu_animation.html:207
 msgid "Aucune musique sélectionnée"
 msgstr "No music selected"
 
-#: static/js/ui.js:8083
+#: static/js/ui.js:8102
 msgid "Non disponible"
 msgstr "Not available"
 
-#: static/js/ui.js:8090 templates/_filter_cache_attrs.html:42
+#: static/js/ui.js:8109 templates/_filter_cache_attrs.html:42
 #: templates/_filter_cache_attrs.html:43
 msgid "Taille"
 msgstr "Size"
 
-#: static/js/ui.js:8091
+#: static/js/ui.js:8110
 msgid "Type"
 msgstr "Type"
 
-#: static/js/ui.js:8092
+#: static/js/ui.js:8111
 msgid "Durée"
 msgstr "Duration"
 
-#: static/js/ui.js:8093
+#: static/js/ui.js:8112
 msgid "Modifié"
 msgstr "Modified"
 
-#: static/js/ui.js:8148
+#: static/js/ui.js:8167
 msgid "Erreur lors du chargement du fichier audio"
 msgstr "Error loading the audio file"
 
@@ -2604,12 +2645,12 @@ msgid "Système"
 msgstr "System"
 
 #: templates/app.html:82 templates/menu_options.html:33
-#: templates/menu_style.html:167
+#: templates/menu_style.html:160
 msgid "Clair"
 msgstr "Light"
 
 #: templates/app.html:83 templates/menu_options.html:34
-#: templates/menu_style.html:170
+#: templates/menu_style.html:163
 msgid "Sombre"
 msgstr "Dark"
 
@@ -2978,6 +3019,10 @@ msgstr "OpenStreetMap, classic colored map"
 msgid "noir et blanc, version claire ou sombre"
 msgstr "black and white, light or dark version"
 
+#: templates/guide.html:173 templates/menu_style.html:111
+msgid "Vectorielle"
+msgstr "Vector"
+
 #: templates/guide.html:173
 msgid ""
 "carte vectorielle dont vous réglez les couleurs (contour, remplissage, "
@@ -2985,6 +3030,11 @@ msgid ""
 msgstr ""
 "vector map where you adjust the colors (outline, fill, background) and "
 "the line thickness"
+
+#: templates/guide.html:174 templates/menu_style.html:116
+#: templates/menu_style.html:118
+msgid "Aquarelle"
+msgstr "Watercolor"
 
 #: templates/guide.html:174
 msgid "rendu aquarelle artistique"
@@ -2994,7 +3044,7 @@ msgstr "artistic watercolor rendering"
 msgid "Ajoutez un titre et des informations"
 msgstr "Add a title and information"
 
-#: templates/guide.html:179 templates/menu_style.html:91
+#: templates/guide.html:179 templates/menu_style.html:84
 msgid "Titres"
 msgstr "Titles"
 
@@ -3088,7 +3138,7 @@ msgstr "to apply your changes."
 msgid "Personnalisez les points"
 msgstr "Customize the points"
 
-#: templates/guide.html:192 templates/menu_style.html:85
+#: templates/guide.html:192 templates/menu_style.html:78
 #: templates/menu_trail.html:124
 msgid "Points"
 msgstr "Points"
@@ -3171,7 +3221,7 @@ msgstr ""
 "A \"•\" next to the name marks unsaved changes."
 
 #: templates/guide.html:207 templates/menu_style.html:36
-#: templates/menu_style.html:57
+#: templates/menu_style.html:50
 msgid "Gérer les thèmes"
 msgstr "Manage themes"
 
@@ -3179,7 +3229,7 @@ msgstr "Manage themes"
 msgid "déplie un tiroir sous la barre :"
 msgstr "expands a drawer below the bar:"
 
-#: templates/guide.html:207 templates/menu_style.html:68
+#: templates/guide.html:207 templates/menu_style.html:61
 msgid "Nouveau"
 msgstr "New"
 
@@ -3187,7 +3237,7 @@ msgstr "New"
 msgid "crée un thème,"
 msgstr "creates a theme,"
 
-#: templates/guide.html:207 templates/menu_style.html:71
+#: templates/guide.html:207 templates/menu_style.html:64
 #: templates/modal_evolution.html:61
 msgid "Importer"
 msgstr "Import"
@@ -3223,8 +3273,8 @@ msgstr "Fill in the"
 msgid "Date de début"
 msgstr "Start date"
 
-#: templates/guide.html:224 templates/menu_animation.html:70
-#: templates/menu_animation.html:71 templates/menu_filtre.html:29
+#: templates/guide.html:224 templates/menu_animation.html:76
+#: templates/menu_animation.html:77 templates/menu_filtre.html:29
 #: templates/menu_filtre.html:30 templates/menu_filtre.html:54
 #: templates/menu_filtre.html:55
 msgid "Date de fin"
@@ -3246,7 +3296,7 @@ msgstr "Set the pace"
 msgid "Le"
 msgstr "The"
 
-#: templates/guide.html:228 templates/menu_animation.html:90
+#: templates/guide.html:228 templates/menu_animation.html:99
 msgid "Rythme de l'animation"
 msgstr "Animation rhythm"
 
@@ -3254,7 +3304,7 @@ msgstr "Animation rhythm"
 msgid "offre trois modes exclusifs :"
 msgstr "offers three mutually exclusive modes:"
 
-#: templates/guide.html:230 templates/menu_animation.html:94
+#: templates/guide.html:230 templates/menu_animation.html:103
 msgid "Par rythme"
 msgstr "By rate"
 
@@ -3262,7 +3312,7 @@ msgstr "By rate"
 msgid "vous fixez la vitesse en jours par seconde ; la durée finale est calculée."
 msgstr "you set the speed in days per second; the final duration is computed."
 
-#: templates/guide.html:231 templates/menu_animation.html:98
+#: templates/guide.html:231 templates/menu_animation.html:107
 msgid "Par durée"
 msgstr "By duration"
 
@@ -3271,7 +3321,7 @@ msgid "vous fixez la durée finale de la vidéo (mm:ss) ; le rythme est calculé
 msgstr "you set the final video duration (mm:ss); the pace is computed."
 
 #: templates/guide.html:232 templates/guide.html:246
-#: templates/menu_animation.html:102
+#: templates/menu_animation.html:111
 msgid "Sur la musique"
 msgstr "Sync to music"
 
@@ -3283,7 +3333,7 @@ msgstr "the duration follows the track chosen below."
 msgid "Un"
 msgstr "A"
 
-#: templates/guide.html:234 templates/menu_animation.html:124
+#: templates/guide.html:234 templates/menu_animation.html:133
 msgid "Préréglage"
 msgstr "Preset"
 
@@ -3291,7 +3341,7 @@ msgstr "Preset"
 msgid "(Lent, Normal, Rapide) règle le rythme en un clic. Le"
 msgstr "(Slow, Normal, Fast) sets the pace in one click. The"
 
-#: templates/guide.html:234 templates/menu_animation.html:151
+#: templates/guide.html:234 templates/menu_animation.html:160
 msgid "Temps additionnel en fin (sec)"
 msgstr "Extra time at the end (sec)"
 
@@ -3319,7 +3369,7 @@ msgstr "Camera follow (experimental)"
 msgid "Activez"
 msgstr "Turn on"
 
-#: templates/guide.html:238 templates/menu_animation.html:165
+#: templates/guide.html:238 templates/menu_animation.html:174
 msgid "Suivi de caméra"
 msgstr "Camera follow"
 
@@ -3327,7 +3377,7 @@ msgstr "Camera follow"
 msgid "pour que la vue glisse vers les caches du jour, puis choisissez le"
 msgstr "to make the view glide toward the day's caches, then choose the"
 
-#: templates/guide.html:238 templates/menu_animation.html:167
+#: templates/guide.html:238 templates/menu_animation.html:176
 msgid "Dynamisme de la caméra"
 msgstr "Camera dynamism"
 
@@ -3355,7 +3405,7 @@ msgstr "Add music (optional)"
 msgid "Cochez"
 msgstr "Check"
 
-#: templates/guide.html:246 templates/menu_animation.html:186
+#: templates/guide.html:246 templates/menu_animation.html:195
 msgid "Inclure la musique"
 msgstr "Include music"
 
@@ -3363,7 +3413,7 @@ msgstr "Include music"
 msgid "sélectionnez un fichier audio et ajustez le volume. Le bouton"
 msgstr "select an audio file and adjust the volume. The"
 
-#: templates/guide.html:246 templates/menu_animation.html:209
+#: templates/guide.html:246 templates/menu_animation.html:218
 msgid "Caler sur la musique"
 msgstr "Sync to music"
 
@@ -3371,7 +3421,7 @@ msgstr "Sync to music"
 msgid "synchronise la durée sur celle du morceau — le bouton"
 msgstr "syncs the duration to the track length — the"
 
-#: templates/guide.html:246 templates/menu_animation.html:214
+#: templates/guide.html:246 templates/menu_animation.html:223
 msgid "Dissocier"
 msgstr "Unlink"
 
@@ -3791,90 +3841,95 @@ msgid ""
 "Données."
 msgstr "Period covered by the video — independent of the Data tab filters."
 
-#: templates/menu_animation.html:59 templates/menu_animation.html:73
+#: templates/menu_animation.html:59 templates/menu_animation.html:79
 #: templates/menu_filtre.html:23 templates/menu_filtre.html:32
 #: templates/menu_filtre.html:48 templates/menu_filtre.html:57
 msgid "Date par défaut (toutes les données)"
 msgstr "Default date (all data)"
 
-#: templates/menu_animation.html:63 templates/menu_animation.html:77
+#: templates/menu_animation.html:63 templates/menu_animation.html:83
 msgid "Date issue du filtre"
 msgstr "Date from the filter"
 
-#: templates/menu_animation.html:64 templates/menu_animation.html:78
+#: templates/menu_animation.html:64 templates/menu_animation.html:84
 msgid "Filtre"
 msgstr "Filter"
 
-#: templates/menu_animation.html:110
+#: templates/menu_animation.html:71 templates/menu_animation.html:88
+#: templates/menu_recording.html:65
+msgid "Personnalisée"
+msgstr "Custom"
+
+#: templates/menu_animation.html:119
 msgid "Rythme (jours par seconde)"
 msgstr "Rate (days per second)"
 
-#: templates/menu_animation.html:117
+#: templates/menu_animation.html:126
 msgid "Durée finale de la vidéo (mm:ss)"
 msgstr "Final video duration (mm:ss)"
 
-#: templates/menu_animation.html:128
+#: templates/menu_animation.html:137
 msgid "Lent"
 msgstr "Slow"
 
-#: templates/menu_animation.html:128 templates/menu_animation.html:129
-#: templates/menu_animation.html:130
+#: templates/menu_animation.html:137 templates/menu_animation.html:138
+#: templates/menu_animation.html:139
 msgid "jours/s"
 msgstr "days/s"
 
-#: templates/menu_animation.html:129 templates/menu_informations.html:119
+#: templates/menu_animation.html:138 templates/menu_informations.html:119
 msgid "Normal"
 msgstr "Normal"
 
-#: templates/menu_animation.html:130
+#: templates/menu_animation.html:139
 msgid "Rapide"
 msgstr "Fast"
 
-#: templates/menu_animation.html:131 templates/menu_informations.html:228
+#: templates/menu_animation.html:140 templates/menu_informations.html:228
 msgid "Personnalisé"
 msgstr "Custom"
 
-#: templates/menu_animation.html:133
+#: templates/menu_animation.html:142
 msgid "Préréglage global, indépendant du thème."
 msgstr "Global preset, independent of the theme."
 
-#: templates/menu_animation.html:140
+#: templates/menu_animation.html:149
 msgid "Détail"
 msgstr "Details"
 
-#: templates/menu_animation.html:141
+#: templates/menu_animation.html:150
 msgid "(animation)"
 msgstr "(animation)"
 
-#: templates/menu_animation.html:142
+#: templates/menu_animation.html:151
 msgid "(pause automatique de fin)"
 msgstr "(automatic ending pause)"
 
-#: templates/menu_animation.html:143
+#: templates/menu_animation.html:152
 msgid "(temps additionnel)"
 msgstr "(extra time)"
 
-#: templates/menu_animation.html:152
+#: templates/menu_animation.html:161
 msgid "Temps additionnel (sec)"
 msgstr "Extra time (sec)"
 
-#: templates/menu_animation.html:169
+#: templates/menu_animation.html:178
 msgid "1 — Minimal : hors champ uniquement"
 msgstr "1 — Minimal: off-screen only"
 
-#: templates/menu_animation.html:170
+#: templates/menu_animation.html:179
 msgid "2 — Discret : hors champ ou très périphérique"
 msgstr "2 — Subtle: off-screen or near the edge"
 
-#: templates/menu_animation.html:171
+#: templates/menu_animation.html:180
 msgid "3 — Dynamique : hors zone centrale"
 msgstr "3 — Dynamic: outside the central area"
 
-#: templates/menu_animation.html:172
+#: templates/menu_animation.html:181
 msgid "4 — Intense : recentrage et zoom systématiques"
 msgstr "4 — Intense: always recenter and zoom"
 
-#: templates/menu_animation.html:174
+#: templates/menu_animation.html:183
 msgid ""
 "La vue glisse vers les caches du jour ; la durée réelle peut dépasser "
 "l'estimation et celle de la musique."
@@ -3882,40 +3937,40 @@ msgstr ""
 "The view glides toward each day's caches; the actual duration may exceed "
 "the estimate and the music length."
 
-#: templates/menu_animation.html:174
+#: templates/menu_animation.html:183
 msgid "En savoir plus"
 msgstr "Learn more"
 
-#: templates/menu_animation.html:182
+#: templates/menu_animation.html:191
 msgid "Musique (optionnel)"
 msgstr "Music (optional)"
 
-#: templates/menu_animation.html:191
+#: templates/menu_animation.html:200
 msgid "Fichier de musique"
 msgstr "Music file"
 
-#: templates/menu_animation.html:193
+#: templates/menu_animation.html:202
 msgid "Choisir un fichier audio"
 msgstr "Choose an audio file"
 
-#: templates/menu_animation.html:194 templates/menu_data.html:28
+#: templates/menu_animation.html:203 templates/menu_data.html:28
 #: templates/menu_data_evolution.html:53
 msgid "Parcourir…"
 msgstr "Browse…"
 
-#: templates/menu_animation.html:201
+#: templates/menu_animation.html:210
 msgid "Volume musique"
 msgstr "Music volume"
 
-#: templates/menu_animation.html:208
+#: templates/menu_animation.html:217
 msgid "Caler la durée de la vidéo sur celle de la musique"
 msgstr "Sync the video duration to the music"
 
-#: templates/menu_animation.html:212
+#: templates/menu_animation.html:221
 msgid "Calé sur la musique"
 msgstr "Synced to music"
 
-#: templates/menu_animation.html:215
+#: templates/menu_animation.html:224
 msgid "Différence"
 msgstr "Difference"
 
@@ -4726,10 +4781,6 @@ msgstr "Standard — 30 FPS / 6 Mbps"
 msgid "Fluide — 60 FPS / 12 Mbps"
 msgstr "Smooth — 60 FPS / 12 Mbps"
 
-#: templates/menu_recording.html:65
-msgid "Personnalisée"
-msgstr "Custom"
-
 #: templates/menu_recording.html:74
 msgid "FPS"
 msgstr "FPS"
@@ -4899,11 +4950,11 @@ msgstr "Save the active theme"
 msgid "Autres options d'enregistrement"
 msgstr "More save options"
 
-#: templates/menu_style.html:29 templates/menu_style.html:347
+#: templates/menu_style.html:29 templates/menu_style.html:340
 msgid "Enregistrer sous…"
 msgstr "Save as…"
 
-#: templates/menu_style.html:62
+#: templates/menu_style.html:55
 msgid ""
 "Un thème ne contient que des réglages visuels : il ne touche ni aux "
 "dates, ni au rythme, ni à la musique. Les réglages marqués « Thème » ne "
@@ -4916,91 +4967,87 @@ msgstr ""
 "clicking \"Save\". The \"Unsaved changes\" indication next to the "
 "selector signals pending changes."
 
-#: templates/menu_style.html:67
+#: templates/menu_style.html:60
 msgid "Créer un thème avec les réglages actuels"
 msgstr "Create a theme with the current settings"
 
-#: templates/menu_style.html:70
+#: templates/menu_style.html:63
 msgid "Importer un thème JSON"
 msgstr "Import a JSON theme"
 
-#: templates/menu_style.html:102
+#: templates/menu_style.html:95
 msgid "OpenStreetMap"
 msgstr "OpenStreetMap"
 
-#: templates/menu_style.html:109
+#: templates/menu_style.html:102
 msgid "Stamen Toner"
 msgstr "Stamen Toner"
 
-#: templates/menu_style.html:116
+#: templates/menu_style.html:109
 msgid "Carte vectorielle"
 msgstr "Vector map"
 
-#: templates/menu_style.html:123
-msgid "Watercolor"
-msgstr "Watercolor"
-
-#: templates/menu_style.html:137
+#: templates/menu_style.html:130
 msgid "Style Vector"
 msgstr "Vector Style"
 
-#: templates/menu_style.html:141
+#: templates/menu_style.html:134
 msgid "Définit la couleur des contours de la carte"
 msgstr "Sets the color of the map outlines"
 
-#: templates/menu_style.html:141
+#: templates/menu_style.html:134
 msgid "Couleur contour"
 msgstr "Border color"
 
-#: templates/menu_style.html:142
+#: templates/menu_style.html:135
 msgid "Cliquez pour choisir la couleur des contours"
 msgstr "Click to choose the border color"
 
-#: templates/menu_style.html:145
+#: templates/menu_style.html:138
 msgid "Définit la couleur de remplissage de la carte"
 msgstr "Sets the map fill color"
 
-#: templates/menu_style.html:145
+#: templates/menu_style.html:138
 msgid "Couleur remplissage"
 msgstr "Fill color"
 
-#: templates/menu_style.html:146
+#: templates/menu_style.html:139
 msgid "Cliquez pour choisir la couleur de remplissage"
 msgstr "Click to choose the fill color"
 
-#: templates/menu_style.html:149
+#: templates/menu_style.html:142
 msgid "Définit la couleur de fond de la carte"
 msgstr "Sets the map background color"
 
-#: templates/menu_style.html:149
+#: templates/menu_style.html:142
 msgid "Couleur fond"
 msgstr "Background color"
 
-#: templates/menu_style.html:150
+#: templates/menu_style.html:143
 msgid "Cliquez pour choisir la couleur de fond"
 msgstr "Click to choose the background color"
 
-#: templates/menu_style.html:153
+#: templates/menu_style.html:146
 msgid "Définit l'épaisseur des contours de la carte (0 = aucun contour)"
 msgstr "Sets the thickness of the map outlines (0 = no outline)"
 
-#: templates/menu_style.html:153
+#: templates/menu_style.html:146
 msgid "Largeur contour (0 = aucun)"
 msgstr "Outline width (0 = none)"
 
-#: templates/menu_style.html:155
+#: templates/menu_style.html:148
 msgid "Faites glisser pour ajuster l'épaisseur"
 msgstr "Drag to adjust the thickness"
 
-#: templates/menu_style.html:163 templates/menu_style.html:165
+#: templates/menu_style.html:156 templates/menu_style.html:158
 msgid "Style Toner"
 msgstr "Toner Style"
 
-#: templates/menu_style.html:188
+#: templates/menu_style.html:181
 msgid "Aperçu du flash"
 msgstr "Flash preview"
 
-#: templates/menu_style.html:190
+#: templates/menu_style.html:183
 msgid ""
 "Rejoue le flash en boucle sur quelques caches visibles, sans lancer "
 "l'animation : pratique pour vérifier la forme, la taille et les couleurs."
@@ -5010,60 +5057,60 @@ msgstr ""
 " animation: handy for checking shape, size and colors. In \"GC colors\" "
 "mode, several cache types blink together."
 
-#: templates/menu_style.html:215
+#: templates/menu_style.html:208
 msgid "Titre et informations"
 msgstr "Title and information"
 
-#: templates/menu_style.html:244 templates/menu_style.html:245
+#: templates/menu_style.html:237 templates/menu_style.html:238
 msgid "Nom du thème"
 msgstr "Theme name"
 
-#: templates/menu_style.html:268
+#: templates/menu_style.html:261
 msgid "Confirmer la suppression"
 msgstr "Confirm deletion"
 
-#: templates/menu_style.html:269 templates/menu_style.html:294
+#: templates/menu_style.html:262 templates/menu_style.html:287
 #: templates/modal_evolution.html:75
 msgid "Cette action est définitive"
 msgstr "This action is permanent"
 
-#: templates/menu_style.html:275
+#: templates/menu_style.html:268
 msgid "Êtes-vous sûr de vouloir supprimer ce thème ?"
 msgstr "Are you sure you want to delete this theme?"
 
-#: templates/menu_style.html:293
+#: templates/menu_style.html:286
 msgid "Confirmer la réinitialisation"
 msgstr "Confirm reset"
 
-#: templates/menu_style.html:300
+#: templates/menu_style.html:293
 msgid "Êtes-vous sûr de vouloir réinitialiser ce thème aux valeurs par défaut ?"
 msgstr "Are you sure you want to reset this theme to its default values?"
 
-#: templates/menu_style.html:322
+#: templates/menu_style.html:315
 msgid "Le thème actif a été modifié"
 msgstr "The active theme has been modified"
 
-#: templates/menu_style.html:328
+#: templates/menu_style.html:321
 msgid "Vous avez des modifications non enregistrées."
 msgstr "You have unsaved changes."
 
-#: templates/menu_style.html:332
+#: templates/menu_style.html:325
 msgid "Abandonner"
 msgstr "Discard"
 
-#: templates/menu_style.html:333
+#: templates/menu_style.html:326
 msgid "Enregistrer et charger"
 msgstr "Save and load"
 
-#: templates/menu_style.html:352
+#: templates/menu_style.html:345
 msgid "Thème de destination"
 msgstr "Destination theme"
 
-#: templates/menu_style.html:353
+#: templates/menu_style.html:346
 msgid "Choisir un thème ou saisir un nouveau nom"
 msgstr "Choose a theme or type a new name"
 
-#: templates/menu_style.html:354
+#: templates/menu_style.html:347
 msgid ""
 "Choisissez un thème existant pour y enregistrer les réglages affichés, ou"
 " saisissez un nouveau nom pour créer un thème."
@@ -5071,15 +5118,15 @@ msgstr ""
 "Choose an existing theme to save the displayed settings into, or type a "
 "new name to create a theme."
 
-#: templates/menu_style.html:380
+#: templates/menu_style.html:373
 msgid "Remplacer le thème ?"
 msgstr "Replace the theme?"
 
-#: templates/menu_style.html:381
+#: templates/menu_style.html:374
 msgid "Les réglages enregistrés du thème seront perdus"
 msgstr "The theme's saved settings will be lost"
 
-#: templates/menu_style.html:391
+#: templates/menu_style.html:384
 msgid "Remplacer"
 msgstr "Replace"
 
@@ -7063,4 +7110,7 @@ msgstr "View the user guide"
 
 #~ msgid "car c'est une préférence globale et non un réglage de thème."
 #~ msgstr "because it is a global preference, not a theme setting."
+
+#~ msgid "Watercolor"
+#~ msgstr "Watercolor"
 

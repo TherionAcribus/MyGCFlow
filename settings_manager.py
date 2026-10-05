@@ -2200,7 +2200,7 @@ class SettingsManager:
     def load_profile(self, name: str) -> MapProfile:
         path = self._profile_path(name)
         if not path.exists():
-            raise FileNotFoundError(_tr("Profil '%(name)s' introuvable", name=name))
+            raise FileNotFoundError(_tr("Thème '%(name)s' introuvable", name=name))
         return coerce_profile(read_json(path))
 
     def load_profile_by_uid(self, uid: str) -> MapProfile:
@@ -2221,7 +2221,7 @@ class SettingsManager:
                     profile_data = json.loads(profile_path.read_text(encoding="utf-8"))
                     return coerce_profile(profile_data)
         
-        raise FileNotFoundError(_tr("Aucun profil trouvé avec l'UUID: %(uid)s", uid=uid))
+        raise FileNotFoundError(_tr("Aucun thème trouvé avec l'UUID: %(uid)s", uid=uid))
 
     def get_profile_name_by_uid(self, uid: str) -> Optional[str]:
         """Retourne le nom d'un profil par son UUID (sans relire le fichier)"""
@@ -2251,7 +2251,7 @@ class SettingsManager:
     def create_profile(self, name: str, base: Optional[str] = None) -> MapProfile:
         name = self._require_valid_profile_name(name)
         if not self.is_name_available(name):
-            raise ValueError(_tr("Un profil nommé '%(name)s' existe déjà", name=name))
+            raise ValueError(_tr("Un thème nommé '%(name)s' existe déjà", name=name))
         if base and self._profile_path(base).exists():
             prof = self.load_profile(base)
             prof.name = name
@@ -2270,12 +2270,12 @@ class SettingsManager:
         """
         old_path = self._profile_path(old_name)
         if not old_path.exists():
-            raise FileNotFoundError(_tr("Profil '%(name)s' introuvable", name=old_name))
+            raise FileNotFoundError(_tr("Thème '%(name)s' introuvable", name=old_name))
 
         new_name = self._require_valid_profile_name(new_name)
         prof = coerce_profile(read_json(old_path))
         if new_name != prof.name and not self.is_name_available(new_name, exclude_uid=prof.uid):
-            raise ValueError(_tr("Un profil nommé '%(name)s' existe déjà", name=new_name))
+            raise ValueError(_tr("Un thème nommé '%(name)s' existe déjà", name=new_name))
 
         prof.name = new_name
         new_path = self._profile_path(new_name)
@@ -2287,7 +2287,7 @@ class SettingsManager:
     @_profiles_locked
     def duplicate_profile(self, name: str, new_name: str) -> MapProfile:
         if not self._profile_path(name).exists():
-            raise ValueError(_tr("Profil source '%(name)s' introuvable", name=name))
+            raise ValueError(_tr("Thème source '%(name)s' introuvable", name=name))
         new_name = self._require_valid_profile_name(new_name)
         prof = self.load_profile(name)
         prof.name = self._generate_unique_name(new_name)
@@ -2303,7 +2303,7 @@ class SettingsManager:
         # entre la liste affichée et le disque.
         path = self._profile_path(name)
         if not path.exists():
-            raise FileNotFoundError(_tr("Profil '%(name)s' introuvable", name=name))
+            raise FileNotFoundError(_tr("Thème '%(name)s' introuvable", name=name))
         self._remove_profile_file(path)
 
     def _remove_profile_file(self, path: Path) -> None:
@@ -2445,7 +2445,7 @@ class SettingsManager:
             raise ValueError(_tr("Payload invalide"))
         # "gcmap.profile.v1" : profils exportés avant le changement de nom.
         if payload.get("$schema") not in ("mygcflow.profile.v1", "gcmap.profile.v1")                 or payload.get("kind") != "profile":
-            raise ValueError(_tr("Fichier de profil invalide (détrompeur manquant)"))
+            raise ValueError(_tr("Fichier de thème invalide (détrompeur manquant)"))
 
         prof_dict = payload.get("profile")
         if not isinstance(prof_dict, dict):

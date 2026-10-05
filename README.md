@@ -148,7 +148,7 @@ npm run test:e2e
 French is the source language (`msgid`); English lives in the `msgstr`.
 
 ```bash
-pybabel extract -F babel.cfg -k _ -k _l -k t -o messages.pot .
+pybabel extract -F babel.cfg -k _ -k _l -k t -k _tr -o messages.pot .
 pybabel update -i messages.pot -d translations
 pybabel compile -d translations
 python check_missing_translations.py
