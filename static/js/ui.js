@@ -775,6 +775,15 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
         radio.addEventListener('change', () => changeFlashBorderColorType(radio));
     });
 
+    // Bouton « Aperçu du flash » : l'état pressé reflète la réalité côté
+    // carte (le basculement peut être refusé : pas idle, forme « aucun »,
+    // aucune cache à l'écran) — même contrat que l'aperçu du trajet.
+    document.getElementById('btnFlashPreview')?.addEventListener('click', () => {
+        pkg.toggleFlashPreview?.();
+        syncFlashPreviewButton();
+    });
+    syncFlashPreviewButton();
+
     // Flash de disparition (page du mode Évolution uniquement)
     initDisappearFlashControls();
 
@@ -5053,6 +5062,9 @@ function changeFlashValues(event){
     // vidéo : répercuter dans le plan de timing (durées affichées = produites).
     refreshTimingPlan({ save: false });
     saveAnimationSettings();
+    // « Aucun » passe le bouton d'aperçu en désactivé, et ferme la boucle si
+    // elle tournait (queueFlashPreviewRound s'en charge au prochain rendu).
+    syncFlashPreviewButton();
 }
 
 // Gestion du type de couleur du flash (GC, fix, none)
@@ -5226,6 +5238,26 @@ function syncTrailPreviewButton() {
     // de display significatif).
     const idle = isPlaybackIdle();
     btn.disabled = !idle || !hasAnimationData();
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    btn.classList.toggle('active', active);
+}
+
+// Bouton « Aperçu du flash » : même source de vérité que
+// syncTrailPreviewButton, plus un cas qui n'existe pas côté trajet — la forme
+// « aucun » n'a rien à rejouer, le basculement est refusé et le bouton
+// désactivé. Les changements de réglages sont relus en direct par l'aperçu
+// (couleurs à chaque frame, forme/durée à chaque vague) : pas de refresh
+// explicite à appeler.
+function syncFlashPreviewButton() {
+    const btn = document.getElementById('btnFlashPreview');
+    if (!btn) return;
+    // try/catch : appelée pendant l'évaluation du module (initUIElements),
+    // avant l'évaluation de mapgl.js — la lecture de l'état aperçu lèverait
+    // alors un TDZ (même garde que hasAnimationData).
+    let active = false;
+    try { active = pkg.isFlashPreviewActive?.() === true; } catch(_) {}
+    btn.disabled = !isPlaybackIdle() || !hasAnimationData()
+        || pkg.options?.flash?.mode === 'none';
     btn.setAttribute('aria-pressed', active ? 'true' : 'false');
     btn.classList.toggle('active', active);
 }
@@ -6678,8 +6710,10 @@ function updateControlBar() {
 
     // Bouton « Aperçu du trajet » : le toggle n'est permis qu'au repos ; un
     // lancement a déjà fermé l'aperçu côté carte (resetTravelTrail), il reste
-    // à refléter l'état (pressed/disabled) dans l'onglet.
+    // à refléter l'état (pressed/disabled) dans l'onglet. Idem pour l'aperçu
+    // du flash (fermé côté carte par createFlashElements).
     syncTrailPreviewButton();
+    syncFlashPreviewButton();
 }
 
 // Bouton de bascule plein écran depuis la barre latérale

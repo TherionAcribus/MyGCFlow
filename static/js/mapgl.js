@@ -419,6 +419,7 @@ export function addVector(data) {
     // sélection.
     clearTravelTrail();
     clearTrailPreview();
+    clearFlashPreview();
     if (!data) {
         console.warn('[addVector] data is null/undefined, abort');
         features = [];
@@ -4194,7 +4195,7 @@ function flashFeatures(features, flashOptions) {
 // et retire ceux qui sont terminés. Un flash dont le départ est décalé (mode
 // impulsion) reste en attente, sans être dessiné, jusqu'à son tour.
 function drawActiveFlashes(event) {
-    if (activeFlashes.length === 0) return;
+    if (activeFlashes.length === 0 && !flashPreview) return;
 
     // Même horloge que flashFeatures : figée pendant une pause.
     const now = sampleAppearClock();
@@ -4235,11 +4236,20 @@ function drawActiveFlashes(event) {
     }
     activeFlashes.length = kept;
 
+    // Aperçu du flash : la vague qui s'achève enfile tout de suite la suivante
+    // (avec sa petite pause de départ) — sans cela la boucle de rendu
+    // s'arrêterait entre deux vagues.
+    if (flashPreview && activeFlashes.length === 0) queueFlashPreviewRound();
+
     // En capture MediaRecorder, la boucle de dessin (renderSync @fps) pilote déjà
     // les rendus : se re-planifier ici via map.render() doublerait (voire pire, en
     // rafale rAF) le rendu par frame → saccades. On ne le fait qu'en lecture live,
     // et pas en pause : les flashs y sont figés, la reprise relance le rendu.
-    if (liveFlashPending && !isMediaRecording && livePausedAt === null) {
+    // En aperçu, la file non vide entretient la boucle jusqu'à la vague suivante ;
+    // file vide = plus de cible à l'écran, le prochain rendu (pan, zoom)
+    // retentera l'échantillonnage.
+    if ((liveFlashPending || (flashPreview && activeFlashes.length > 0))
+            && !isMediaRecording && livePausedAt === null) {
         map.render();
     }
 }
@@ -4262,5 +4272,151 @@ function createFlashElements(){
     map.addLayer(animationLayer);
     // Les flashs de l'ancienne couche ne seront plus dessinés : on repart à vide.
     activeFlashes = [];
+    // Lancement d'une lecture ou d'un enregistrement : les vrais flashs
+    // occupent la file, l'aperçu s'arrête (le bouton se resynchronise à la
+    // prochaine maj de la barre de contrôle).
+    flashPreview = false;
     animationLayer.on('postrender', drawActiveFlashes);
+}
+
+// --- Aperçu du flash -------------------------------------------------------
+// Rejoue le flash en boucle sur un échantillon de caches visibles, sans
+// lancer l'animation : la forme, la taille et les couleurs se jugent sur le
+// fond de carte réel, à côté des vrais points. Chaque vague est une série de
+// flashs « live » ordinaires dans activeFlashes — même dessin, même horloge
+// que la lecture (sampleAppearClock tourne aussi au repos).
+const FLASH_PREVIEW_MAX_POINTS = 8;  // au-delà, l'écran se couvre
+const FLASH_PREVIEW_GAP_MS = 600;    // souffle entre deux vagues
+
+// Vrai tant que l'aperçu est demandé. Aucune géométrie n'est conservée :
+// chaque vague ré-échantillonne la vue, ce qui suit le déplacement de la
+// carte et les changements de sélection sans recalcul explicite.
+let flashPreview = false;
+// Nombre de vagues enfilées depuis l'ouverture : la boucle se prouve sans
+// observer le canvas (specs e2e, diagnostic).
+let flashPreviewWaves = 0;
+
+export function isFlashPreviewActive() {
+    return !!flashPreview;
+}
+
+// État exposé pour les specs e2e et le diagnostic (cf.
+// getTravelTrailDebugState) : bascule, file en cours, vagues déjà parties.
+export function getFlashPreviewDebugState() {
+    return {
+        preview: !!flashPreview,
+        waves: flashPreviewWaves,
+        queued: activeFlashes.length,
+        layerVisible: animationLayer ? animationLayer.getVisible() === true : false,
+    };
+}
+
+// Bascule calquée sur toggleTrailPreview : refusée pendant la lecture ou
+// l'enregistrement (les vrais flashs occupent alors la file) et quand la
+// forme est « aucun » — il n'y a rien à rejouer.
+export function toggleFlashPreview() {
+    if (flashPreview) {
+        clearFlashPreview();
+        return false;
+    }
+    if (!isIdleState() || isAnimationInProgress()) return false;
+    if (pkg.options.flash?.mode === 'none') {
+        pkg.showToast?.(pkg.t('Choisissez d’abord une forme de flash.'), 'info', pkg.t('Flash'));
+        return false;
+    }
+    if (pickFlashPreviewFeatures().length === 0) {
+        pkg.showToast?.(pkg.t('Aucune cache visible à l’écran : déplacez la carte au-dessus de vos points.'), 'info', pkg.t('Flash'));
+        return false;
+    }
+    // animationLayer ne naît qu'au premier lancement d'animation : l'aperçu
+    // doit pouvoir s'ouvrir avant toute lecture ; les nettoyages de fin
+    // l'avaient éventuellement laissée masquée.
+    if (!animationLayer) createFlashElements();
+    else if (!animationLayer.getVisible()) animationLayer.setVisible(true);
+    flashPreview = true;
+    flashPreviewWaves = 0;
+    map.render();
+    return true;
+}
+
+// Fermeture : les vagues déjà en file jouent jusqu'au bout (fondu naturel),
+// la suivante ne sera plus enfilée — cf. queueFlashPreviewRound.
+function clearFlashPreview() {
+    flashPreview = false;
+}
+
+// Cibles d'une vague : jusqu'à FLASH_PREVIEW_MAX_POINTS caches dans la vue
+// courante, mélangées par type (« Couleurs GC » ne se juge que si plusieurs
+// types clignotent ensemble) et étirées dans chaque groupe pour disperser
+// les cibles. En mode Évolution, la source contient aussi les caches hors
+// vue temporelle (pas encore placées ou déjà disparues) : flasher un
+// emplacement vide serait trompeur, on ne garde que le visible à l'instant.
+function pickFlashPreviewFeatures() {
+    if (!map || !window.vectorSource) return [];
+    const extent = map.getView().calculateExtent(map.getSize());
+    const restDay = isEvolutionPage() ? pointStyleVariables.evoDay : null;
+    const byType = new Map();
+    window.vectorSource.forEachFeatureInExtent(extent, (feature) => {
+        if (restDay !== null) {
+            const placed = Number(feature.get('placedDay')) || 0;
+            const archived = Number(feature.get('archivedDay')) || 0;
+            if (!(placed <= restDay && archived > restDay)) return;
+        }
+        const type = feature.get('cache_type') || '';
+        let bucket = byType.get(type);
+        if (!bucket) byType.set(type, bucket = []);
+        // Plafond par type : l'échantillonnage reste borné quand la vue
+        // couvre des dizaines de milliers de caches.
+        if (bucket.length < FLASH_PREVIEW_MAX_POINTS * 4) bucket.push(feature);
+    });
+    // Indice échelonné dans chaque groupe puis rotation entre types.
+    const queues = [...byType.values()].map((bucket) => {
+        const take = Math.min(bucket.length, FLASH_PREVIEW_MAX_POINTS);
+        const step = bucket.length / take;
+        const queue = [];
+        for (let i = 0; i < take; i++) queue.push(bucket[Math.floor(i * step)]);
+        return queue;
+    });
+    const picked = [];
+    while (picked.length < FLASH_PREVIEW_MAX_POINTS) {
+        let progressed = false;
+        for (const queue of queues) {
+            if (picked.length >= FLASH_PREVIEW_MAX_POINTS) break;
+            const feature = queue.shift();
+            if (feature) { picked.push(feature); progressed = true; }
+        }
+        if (!progressed) break;
+    }
+    return picked;
+}
+
+// Une vague de l'aperçu : un flash par cache de l'échantillon, dont le départ
+// est différé d'un souffle pour laisser la vague précédente s'achever. Les
+// réglages sont relus à chaque vague (forme, taille, durée) et à chaque frame
+// par flashStyleAt (couleurs) : modifier l'onglet s'applique sans réarmer
+// l'aperçu — sauf « aucun », qui ferme la boucle.
+function queueFlashPreviewRound() {
+    const flashOptions = pkg.options.flash;
+    if (!flashOptions || flashOptions.mode === 'none') {
+        clearFlashPreview();
+        return;
+    }
+    const duration = Math.max(1, Number(flashOptions.duration) || 0);
+    const stagger = flashOptions.mode === 'impulse';
+    const start = sampleAppearClock() + FLASH_PREVIEW_GAP_MS;
+    const targets = pickFlashPreviewFeatures();
+    if (targets.length > 0) flashPreviewWaves++;
+    for (const feature of targets) {
+        const [lon, lat] = ol.proj.toLonLat(feature.getGeometry().getCoordinates());
+        // Même raison que pushFeatureFlashes : un flash en cours empêche le
+        // compositing d'enregistrement de sauter des rendus.
+        mapDirtyTracker.beginAnimation();
+        activeFlashes.push({
+            geometry: feature.getGeometry(),
+            cacheType: feature.get('cache_type'),
+            flashOptions,
+            start: start + (stagger ? staggerDelayMs(lon, lat) : 0),
+            duration,
+        });
+    }
 }

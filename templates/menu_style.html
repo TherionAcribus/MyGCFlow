@@ -175,6 +175,14 @@
 
                     <!-- Sous-onglet Flash -->
                     <div id="tabFlash" class="tab-pane fade">
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <button type="button" id="btnFlashPreview" class="btn btn-sm" aria-pressed="false" aria-describedby="helpFlashPreview">
+                                    <i class="ti ti-bolt me-1"></i>{{ _("Aperçu du flash") }}
+                                </button>
+                                <small id="helpFlashPreview" class="form-hint text-muted d-block mt-1">{{ _("Rejoue le flash en boucle sur quelques caches visibles, sans lancer l'animation : pratique pour vérifier la forme, la taille et les couleurs. En mode « Couleurs GC », plusieurs types de caches clignotent ensemble.") }}</small>
+                            </div>
+                        </div>
                         <div class="row g-3">
                             <div class="col-12 col-md-6">
                                 {% include 'menu_flash.html' %}
