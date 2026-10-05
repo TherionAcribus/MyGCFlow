@@ -10,7 +10,11 @@
             <div class="card">
                 <div class="card-body">
                     <form id="uploadBddForm">
-                        <div class="mb-3">
+                        <!-- État « base vide » : l'import occupe toute la carte.
+                             Une base chargée bascule ce bloc en compact via la
+                             classe .has-data posée sur #data par
+                             updateDataAvailabilityUI (ui.js). -->
+                        <div class="mb-3 data-empty-only">
                             <label for="file-input" class="form-label">{{ _("Sélectionner et charger un fichier .gpx") }}</label>
                             <div class="gpx-dropzone">
                                 <!-- L'input natif (masqué) reste la cible des listeners de bdd.js ;
@@ -30,6 +34,18 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- État « base chargée » : la réimportation reste
+                             disponible en second plan — la zone complète est
+                             masquée et remplacée par cette commande compacte.
+                             Le glisser-déposer sur la page reste actif dans les
+                             deux états (listeners window dans bdd.js). -->
+                        <div class="data-has-only mb-3 align-items-center gap-2">
+                            <button type="button" id="file-input-btn-compact" class="btn btn-outline-primary btn-sm gcm-file-btn">
+                                <i class="ti ti-upload me-1" aria-hidden="true"></i>{{ _('Importer un autre fichier…') }}
+                            </button>
+                            <span class="form-hint text-muted">{{ _("ou glissez-déposez sur la page") }}</span>
+                        </div>
                     </form>
 
                     <!-- Infos de base et suppression des données importées
@@ -45,15 +61,17 @@
                     </div>
 
                     <!-- Prochaine étape suggérée après import : affiché tant que
-                         des données sont chargées (updateDataAvailabilityUI). -->
-                    <div id="dataNextStep" class="alert alert-success mt-3 mb-0 py-2 px-3" hidden>
-                        <div class="mb-2">{{ _("Vos trouvailles sont prêtes.") }}</div>
-                        <div class="d-flex gap-2 flex-wrap">
+                         des données sont chargées (updateDataAvailabilityUI).
+                         Une seule ligne quand la largeur le permet, sinon le
+                         libellé passe au-dessus des boutons (flex-wrap). -->
+                    <div id="dataNextStep" class="alert alert-success mt-3 mb-0 py-2 px-3 align-items-center gap-2 flex-wrap" hidden>
+                        <span class="small">{{ _("Vos trouvailles sont prêtes.") }}</span>
+                        <div class="d-flex gap-2 flex-wrap ms-auto">
                             <button type="button" id="btnGoStyleTab" class="btn btn-sm btn-success">
                                 <i class="ti ti-palette me-1" aria-hidden="true"></i>{{ _("Choisir un style") }}
                             </button>
                             <button type="button" id="btnGoPreview" class="btn btn-sm btn-outline-success">
-                                <i class="ti ti-player-play me-1" aria-hidden="true"></i>{{ _("Prévisualiser l'animation") }}
+                                <i class="ti ti-player-play me-1" aria-hidden="true"></i>{{ _("Prévisualiser") }}
                             </button>
                         </div>
                     </div>

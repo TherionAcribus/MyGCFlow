@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-05 14:01+0200\n"
+"POT-Creation-Date: 2026-10-05 14:09+0200\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -22,8 +22,8 @@ msgstr ""
 msgid "Aucun fichier envoyé"
 msgstr "Aucun fichier envoyé"
 
-#: bdd.py:118 static/js/bdd.js:67 static/js/evolution_data.js:193
-#: templates/menu_data.html:26 templates/menu_data_evolution.html:55
+#: bdd.py:118 static/js/bdd.js:75 static/js/evolution_data.js:193
+#: templates/menu_data.html:30 templates/menu_data_evolution.html:55
 msgid "Aucun fichier sélectionné"
 msgstr "Aucun fichier sélectionné"
 
@@ -31,11 +31,11 @@ msgstr "Aucun fichier sélectionné"
 msgid "Le fichier fourni n'est pas un fichier GPX valide"
 msgstr "Le fichier fourni n'est pas un fichier GPX valide"
 
-#: bdd.py:153 static/js/bdd.js:235
+#: bdd.py:153 static/js/bdd.js:243
 msgid "Le fichier GPX n'est pas un fichier produit par Groundspeak."
 msgstr "Le fichier GPX n'est pas un fichier produit par Groundspeak."
 
-#: bdd.py:157 static/js/bdd.js:239
+#: bdd.py:157 static/js/bdd.js:247
 msgid "Le fichier GPX est une Pocket Query et non un fichier My Finds."
 msgstr "Le fichier GPX est une Pocket Query et non un fichier My Finds."
 
@@ -47,7 +47,7 @@ msgstr "Fichier reçu avec succès"
 msgid "L'archive .zip ne contient aucun fichier .gpx."
 msgstr "L'archive .zip ne contient aucun fichier .gpx."
 
-#: bdd.py:207 bdd.py:218 static/js/bdd.js:258
+#: bdd.py:207 bdd.py:218 static/js/bdd.js:266
 msgid "Le fichier est trop volumineux (200 Mo max)"
 msgstr "Le fichier est trop volumineux (200 Mo max)"
 
@@ -270,7 +270,7 @@ msgstr "Base de données"
 
 #: blueprints/core.py:150 static/js/evolution_data.js:394
 #: templates/guide.html:143 templates/guide.html:149
-#: templates/menu_data.html:71 templates/menu_data_evolution.html:108
+#: templates/menu_data.html:89 templates/menu_data_evolution.html:108
 #: test_translations.py:28
 msgid "Filtres"
 msgstr "Filtres"
@@ -511,128 +511,128 @@ msgstr ""
 "${count} tuile(s) de carte n'ont pas pu être chargées pendant "
 "l'enregistrement : la vidéo peut comporter des zones vides."
 
-#: static/js/bdd.js:252
+#: static/js/bdd.js:260
 msgid "Veuillez sélectionner un fichier .gpx ou .zip"
 msgstr "Veuillez sélectionner un fichier .gpx ou .zip"
 
-#: static/js/bdd.js:255
+#: static/js/bdd.js:263
 msgid "Le fichier sélectionné est vide"
 msgstr "Le fichier sélectionné est vide"
 
-#: static/js/bdd.js:288
+#: static/js/bdd.js:296
 msgid "Un import est déjà en cours, veuillez patienter."
 msgstr "Un import est déjà en cours, veuillez patienter."
 
-#: static/js/bdd.js:288 static/js/bdd.js:1480
+#: static/js/bdd.js:296 static/js/bdd.js:1488
 msgid "Import en cours"
 msgstr "Import en cours"
 
-#: static/js/bdd.js:303 static/js/bdd.js:311 templates/app.html:165
+#: static/js/bdd.js:311 static/js/bdd.js:319 templates/app.html:165
 msgid "Analyse du fichier GPX en cours..."
 msgstr "Analyse du fichier GPX en cours..."
 
-#: static/js/bdd.js:303 static/js/bdd.js:1126 static/js/bdd.js:1223
+#: static/js/bdd.js:311 static/js/bdd.js:1134 static/js/bdd.js:1231
 #: static/js/evolution_data.js:299 static/js/notifications.js:266
 #: static/js/notifications.js:311
 msgid "Chargement"
 msgstr "Chargement"
 
-#: static/js/bdd.js:317
+#: static/js/bdd.js:325
 msgid "Fichier invalide"
 msgstr "Fichier invalide"
 
-#: static/js/bdd.js:346
+#: static/js/bdd.js:354
 msgid "Déposez votre fichier .gpx pour le charger"
 msgstr "Déposez votre fichier .gpx pour le charger"
 
-#: static/js/bdd.js:441 static/js/bdd.js:467 static/js/mapgl.js:871
+#: static/js/bdd.js:449 static/js/bdd.js:475 static/js/mapgl.js:871
 #, python-brace-format
 msgid "le ${date}"
 msgstr "le ${date}"
 
-#: static/js/bdd.js:454
+#: static/js/bdd.js:462
 #, python-brace-format
 msgid "du ${start} au ${end}"
 msgstr "du ${start} au ${end}"
 
-#: static/js/bdd.js:462
+#: static/js/bdd.js:470
 #, python-brace-format
 msgid "aujourd'hui à ${time}"
 msgstr "aujourd'hui à ${time}"
 
-#: static/js/bdd.js:465
+#: static/js/bdd.js:473
 #, python-brace-format
 msgid "hier à ${time}"
 msgstr "hier à ${time}"
 
-#: static/js/bdd.js:481
+#: static/js/bdd.js:489
 msgid "caches"
 msgstr "Geocaches"
 
-#: static/js/bdd.js:481
+#: static/js/bdd.js:489
 msgid "cache"
 msgstr "Geocache"
 
-#: static/js/bdd.js:484
+#: static/js/bdd.js:492
 #, python-brace-format
 msgid "importé ${when}"
 msgstr "importé ${when}"
 
-#: static/js/bdd.js:521 static/js/bdd.js:632 templates/menu_data.html:40
+#: static/js/bdd.js:529 static/js/bdd.js:640 templates/menu_data.html:56
 msgid "Aucune trouvaille chargée"
 msgstr "Aucune trouvaille chargée"
 
-#: static/js/bdd.js:1038 static/js/bdd.js:1136
+#: static/js/bdd.js:1046 static/js/bdd.js:1144
 #, python-brace-format
 msgid "Envoi du fichier : ${pct}%"
 msgstr "Envoi du fichier : ${pct}%"
 
-#: static/js/bdd.js:1050
+#: static/js/bdd.js:1058
 msgid "Réponse invalide du serveur"
 msgstr "Réponse invalide du serveur"
 
-#: static/js/bdd.js:1054
+#: static/js/bdd.js:1062
 msgid "Impossible de lancer l'import GPX"
 msgstr "Impossible de lancer l'import GPX"
 
-#: static/js/bdd.js:1064 static/js/bdd.js:1068 static/js/bdd.js:1166
+#: static/js/bdd.js:1072 static/js/bdd.js:1076 static/js/bdd.js:1174
 msgid "Traitement du fichier en cours..."
 msgstr "Traitement du fichier en cours..."
 
-#: static/js/bdd.js:1073 static/js/evolution_data.js:809
+#: static/js/bdd.js:1081 static/js/evolution_data.js:809
 msgid "Erreur réseau lors de l'envoi du fichier"
 msgstr "Erreur réseau lors de l'envoi du fichier"
 
-#: static/js/bdd.js:1074 static/js/evolution_data.js:810
+#: static/js/bdd.js:1082 static/js/evolution_data.js:810
 msgid "Envoi du fichier annulé"
 msgstr "Envoi du fichier annulé"
 
-#: static/js/bdd.js:1088
+#: static/js/bdd.js:1096
 msgid "Veuillez sélectionner un fichier .gpx"
 msgstr "Veuillez sélectionner un fichier .gpx"
 
-#: static/js/bdd.js:1088
+#: static/js/bdd.js:1096
 msgid "Aucun fichier"
 msgstr "Aucun fichier"
 
-#: static/js/bdd.js:1126 static/js/bdd.js:1127 static/js/bdd.js:1134
+#: static/js/bdd.js:1134 static/js/bdd.js:1135 static/js/bdd.js:1142
 msgid "Préparation de l'envoi..."
 msgstr "Préparation de l'envoi..."
 
-#: static/js/bdd.js:1151
+#: static/js/bdd.js:1159
 msgid "Fichier chargé avec succès !"
 msgstr "Fichier chargé avec succès !"
 
-#: static/js/bdd.js:1151 static/js/mapgl.js:3614
+#: static/js/bdd.js:1159 static/js/mapgl.js:3614
 msgid "Terminé"
 msgstr "Terminé"
 
-#: static/js/bdd.js:1165 static/js/bdd.js:1173
+#: static/js/bdd.js:1173 static/js/bdd.js:1181
 msgid "Erreur lors du chargement du fichier"
 msgstr "Erreur lors du chargement du fichier"
 
-#: static/js/bdd.js:1165 static/js/bdd.js:1173 static/js/bdd.js:1315
-#: static/js/bdd.js:1323 static/js/bdd.js:1558 static/js/evolution_data.js:218
+#: static/js/bdd.js:1173 static/js/bdd.js:1181 static/js/bdd.js:1323
+#: static/js/bdd.js:1331 static/js/bdd.js:1566 static/js/evolution_data.js:218
 #: static/js/evolution_data.js:322 static/js/evolution_data.js:856
 #: static/js/evolution_data.js:860 static/js/evolution_data.js:1210
 #: static/js/evolution_data.js:1248 static/js/evolution_data.js:1256
@@ -641,36 +641,36 @@ msgstr "Erreur lors du chargement du fichier"
 msgid "Erreur"
 msgstr "Erreur"
 
-#: static/js/bdd.js:1221 static/js/bdd.js:1223
+#: static/js/bdd.js:1229 static/js/bdd.js:1231
 msgid "Chargement de l'application..."
 msgstr "Chargement de l'application..."
 
-#: static/js/bdd.js:1240
+#: static/js/bdd.js:1248
 msgid "Impossible de lancer le chargement des données"
 msgstr "Impossible de lancer le chargement des données"
 
-#: static/js/bdd.js:1315 static/js/bdd.js:1323
+#: static/js/bdd.js:1323 static/js/bdd.js:1331
 msgid "Erreur lors du chargement des données"
 msgstr "Erreur lors du chargement des données"
 
-#: static/js/bdd.js:1400
+#: static/js/bdd.js:1408
 #, python-brace-format
 msgid "${selected} / ${total}"
 msgstr "${selected} / ${total}"
 
-#: static/js/bdd.js:1433
+#: static/js/bdd.js:1441
 msgid "Aucune cache ne correspond aux critères sélectionnés par les filtres."
 msgstr "Aucune cache ne correspond aux critères sélectionnés par les filtres."
 
-#: static/js/bdd.js:1433
+#: static/js/bdd.js:1441
 msgid "Aucune cache visible"
 msgstr "Aucune cache visible"
 
-#: static/js/bdd.js:1480
+#: static/js/bdd.js:1488
 msgid "Un import est en cours, veuillez patienter avant de supprimer les données."
 msgstr "Un import est en cours, veuillez patienter avant de supprimer les données."
 
-#: static/js/bdd.js:1493
+#: static/js/bdd.js:1501
 msgid ""
 "Êtes-vous sûr de vouloir supprimer toutes vos trouvailles ? Cette action "
 "est irréversible."
@@ -678,55 +678,55 @@ msgstr ""
 "Êtes-vous sûr de vouloir supprimer toutes vos trouvailles ? Cette action "
 "est irréversible."
 
-#: static/js/bdd.js:1494
+#: static/js/bdd.js:1502
 msgid "Confirmation de suppression"
 msgstr "Confirmation de suppression"
 
-#: static/js/bdd.js:1497 templates/guide.html:153 templates/menu_data.html:43
+#: static/js/bdd.js:1505 templates/guide.html:153 templates/menu_data.html:59
 msgid "Supprimer mes trouvailles"
 msgstr "Supprimer mes trouvailles"
 
-#: static/js/bdd.js:1504
+#: static/js/bdd.js:1512
 msgid "Confirmation non disponible, action annulée."
 msgstr "Confirmation non disponible, action annulée."
 
-#: static/js/bdd.js:1504 static/js/bdd.js:1516
+#: static/js/bdd.js:1512 static/js/bdd.js:1524
 msgid "Suppression"
 msgstr "Suppression"
 
-#: static/js/bdd.js:1516
+#: static/js/bdd.js:1524
 msgid "Suppression des trouvailles..."
 msgstr "Suppression des trouvailles..."
 
-#: static/js/bdd.js:1547
+#: static/js/bdd.js:1555
 msgid "Trouvailles supprimées avec succès"
 msgstr "Trouvailles supprimées avec succès"
 
-#: static/js/bdd.js:1547
+#: static/js/bdd.js:1555
 msgid "Suppression réussie"
 msgstr "Suppression réussie"
 
-#: static/js/bdd.js:1558
+#: static/js/bdd.js:1566
 msgid "Erreur lors de la suppression des trouvailles: "
 msgstr "Erreur lors de la suppression des trouvailles: "
 
-#: static/js/bdd.js:1565
+#: static/js/bdd.js:1573
 msgid "Chargement et affichage des points..."
 msgstr "Chargement et affichage des points..."
 
-#: static/js/bdd.js:1565 static/js/mapgl.js:662 static/js/notifications.js:337
+#: static/js/bdd.js:1573 static/js/mapgl.js:662 static/js/notifications.js:337
 msgid "Affichage des points"
 msgstr "Affichage des points"
 
-#: static/js/bdd.js:1571
+#: static/js/bdd.js:1579
 msgid "Impossible de lancer la génération du GeoJSON"
 msgstr "Impossible de lancer l'import GPX"
 
-#: static/js/bdd.js:1582 static/js/bdd.js:1651 static/js/bdd.js:1658
+#: static/js/bdd.js:1590 static/js/bdd.js:1659 static/js/bdd.js:1666
 msgid "Erreur lors de l'affichage des points sur la carte"
 msgstr "Erreur lors de l'affichage des points sur la carte"
 
-#: static/js/bdd.js:1582 static/js/bdd.js:1651 static/js/bdd.js:1658
+#: static/js/bdd.js:1590 static/js/bdd.js:1659 static/js/bdd.js:1666
 msgid "Erreur d'affichage"
 msgstr "Erreur d'affichage"
 
@@ -2292,36 +2292,36 @@ msgstr "Impossible d’ouvrir le dossier vidéo"
 msgid "Erreur lors de l’ouverture du dossier vidéo"
 msgstr "Erreur lors de l’ouverture du dossier vidéo"
 
-#: static/js/ui.js:7982
+#: static/js/ui.js:7991
 msgid "Sélectionnez d'abord un fichier audio"
 msgstr "Sélectionnez d'abord un fichier audio"
 
-#: static/js/ui.js:8029 templates/menu_animation.html:198
+#: static/js/ui.js:8038 templates/menu_animation.html:198
 msgid "Aucune musique sélectionnée"
 msgstr "Aucune musique sélectionnée"
 
-#: static/js/ui.js:8062
+#: static/js/ui.js:8071
 msgid "Non disponible"
 msgstr "Non disponible"
 
-#: static/js/ui.js:8069 templates/_filter_cache_attrs.html:42
+#: static/js/ui.js:8078 templates/_filter_cache_attrs.html:42
 #: templates/_filter_cache_attrs.html:43
 msgid "Taille"
 msgstr "Taille"
 
-#: static/js/ui.js:8070
+#: static/js/ui.js:8079
 msgid "Type"
 msgstr "Style"
 
-#: static/js/ui.js:8071
+#: static/js/ui.js:8080
 msgid "Durée"
 msgstr "Par durée"
 
-#: static/js/ui.js:8072
+#: static/js/ui.js:8081
 msgid "Modifié"
 msgstr "Modifié"
 
-#: static/js/ui.js:8127
+#: static/js/ui.js:8136
 msgid "Erreur lors du chargement du fichier audio"
 msgstr "Erreur lors du chargement du fichier"
 
@@ -2640,7 +2640,7 @@ msgstr "Clair"
 msgid "Sombre"
 msgstr "Sombre"
 
-#: templates/app.html:107 templates/app.html:108 templates/menu_data.html:56
+#: templates/app.html:107 templates/app.html:108
 #: templates/menu_data_evolution.html:95
 msgid "Prévisualiser l'animation"
 msgstr "Prévisualiser l'animation"
@@ -2681,7 +2681,7 @@ msgstr "Revenir au mode principal (mes trouvailles)"
 msgid "Chargez votre fichier .gpx pour commencer"
 msgstr "Chargez votre fichier .gpx pour commencer"
 
-#: templates/app.html:155 templates/guide.html:139 templates/menu_data.html:14
+#: templates/app.html:155 templates/guide.html:139 templates/menu_data.html:18
 msgid "Sélectionner et charger un fichier .gpx"
 msgstr "Sélectionner et charger un fichier .gpx"
 
@@ -2689,7 +2689,7 @@ msgstr "Sélectionner et charger un fichier .gpx"
 msgid "Comment obtenir mon fichier .gpx ?"
 msgstr "Comment obtenir mon fichier .gpx ?"
 
-#: templates/app.html:171 templates/menu_data.html:29
+#: templates/app.html:171 templates/menu_data.html:33
 msgid "ou glissez-déposez votre fichier n'importe où sur la page"
 msgstr "ou glissez-déposez votre fichier n'importe où sur la page"
 
@@ -2713,7 +2713,7 @@ msgstr "Réglages"
 
 #: templates/app.html:207 templates/app.html:208 templates/guide.html:106
 #: templates/guide.html:265 templates/guide.html:272
-#: templates/menu_animation.html:33
+#: templates/menu_animation.html:33 templates/menu_data.html:74
 msgid "Prévisualiser"
 msgstr "Prévisualiser"
 
@@ -3936,7 +3936,7 @@ msgstr "Fichier de musique"
 msgid "Choisir un fichier audio"
 msgstr "Choisir un fichier audio"
 
-#: templates/menu_animation.html:194 templates/menu_data.html:24
+#: templates/menu_animation.html:194 templates/menu_data.html:28
 #: templates/menu_data_evolution.html:53
 msgid "Parcourir…"
 msgstr "Parcourir…"
@@ -3957,19 +3957,27 @@ msgstr "Calé sur la musique"
 msgid "Différence"
 msgstr "Différence"
 
-#: templates/menu_data.html:20
+#: templates/menu_data.html:24
 msgid "Fichier .gpx"
 msgstr "Fichier .gpx"
 
-#: templates/menu_data.html:23
+#: templates/menu_data.html:27
 msgid "Choisir un fichier GPX"
 msgstr "Choisir un fichier GPX"
 
-#: templates/menu_data.html:50
+#: templates/menu_data.html:45
+msgid "Importer un autre fichier…"
+msgstr "Importer un autre fichier…"
+
+#: templates/menu_data.html:47
+msgid "ou glissez-déposez sur la page"
+msgstr "ou glissez-déposez sur la page"
+
+#: templates/menu_data.html:68
 msgid "Vos trouvailles sont prêtes."
 msgstr "Vos trouvailles sont prêtes."
 
-#: templates/menu_data.html:53 templates/menu_data_evolution.html:92
+#: templates/menu_data.html:71 templates/menu_data_evolution.html:92
 msgid "Choisir un style"
 msgstr "Choisir un style"
 

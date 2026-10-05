@@ -6565,6 +6565,12 @@ export function updateDataAvailabilityUI({ dataResolved = false } = {}) {
     const nextStep = document.getElementById('dataNextStep');
     if (nextStep) nextStep.hidden = !hasDb;
 
+    // État compact de la carte Mes trouvailles : avec une base chargée,
+    // la zone d'import détaillée cède la place à une commande secondaire
+    // (cf. .data-empty-only / .data-has-only dans ui_improvements.css).
+    const dataPane = document.getElementById('data');
+    if (dataPane) dataPane.classList.toggle('has-data', hasDb);
+
     // inert bloque interactions, focus et lecture d'écran ; .data-disabled
     // estompe visuellement la section.
     for (const id of ['filterPanel']) {

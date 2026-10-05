@@ -40,6 +40,12 @@ const fileInputName = document.getElementById('file-input-name');
 if (fileInputBtn && fileInput) {
     fileInputBtn.addEventListener('click', () => fileInput.click());
 }
+// Variante compacte affichée quand une base est déjà chargée (menu_data.html,
+// bloc .data-has-only) : même délégation à l'input masqué.
+const fileInputBtnCompact = document.getElementById('file-input-btn-compact');
+if (fileInputBtnCompact && fileInput) {
+    fileInputBtnCompact.addEventListener('click', () => fileInput.click());
+}
 if (fileInput && fileInputName) {
     // Enregistré AVANT le listener d'upload : uploadBddRequest vide
     // input.value dans le même événement (pour permettre la re-sélection

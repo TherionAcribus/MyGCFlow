@@ -603,6 +603,16 @@ main.fullscreen-mode ~ .tooltip {
     transition: opacity 0.2s ease;
 }
 
+/* Onglet Données : deux présentations de l'import selon l'état de la base.
+   .has-data est posé sur #data par updateDataAvailabilityUI (ui.js) —
+   le mode Évolution partage l'id #data mais n'utilise pas ces classes. */
+#data .data-has-only { display: none; }
+#data.has-data .data-has-only { display: flex; }
+#data.has-data .data-empty-only { display: none; }
+/* Pas de .d-flex sur #dataNextStep : display:flex !important écraserait
+   l'attribut hidden — la disposition en ligne n'est posée que visible. */
+#dataNextStep:not([hidden]) { display: flex; }
+
 /* Styles nettoyés pour la nouvelle disposition verticale */
 
 /* Corriger la fenêtre de titre en mode plein écran */
