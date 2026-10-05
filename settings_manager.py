@@ -11,7 +11,7 @@ import shutil
 import threading
 import time
 import uuid
-from typing import Callable, Tuple, Optional, List
+from typing import Callable, Dict, Tuple, Optional, List
 
 
 APP_NAME = "MyGCFlow"
@@ -152,6 +152,26 @@ def backup_path(path: Path) -> Path:
 _REPLACE_ATTEMPTS = 5
 _REPLACE_RETRY_DELAY_S = 0.05
 
+# Les tentatives ci-dessus ne traitent que les ouvertures venues de l'extérieur.
+# La concurrence interne, elle, est évitée à la source : deux écritures
+# simultanées du même fichier se gênaient mutuellement, la copie de sauvegarde
+# de l'une (shutil.copy2 ouvre la cible en lecture) faisant échouer le
+# os.replace() de l'autre — « Access is denied » sous Windows, observé en
+# intégration continue. Un verrou par chemin les met en file d'attente.
+_path_locks_guard = threading.Lock()
+_path_locks: Dict[str, threading.Lock] = {}
+
+
+def _path_lock(path: Path) -> threading.Lock:
+    # normcase : sous Windows, « Default.json » et « default.json » désignent
+    # le même fichier et doivent partager le verrou.
+    key = os.path.normcase(os.path.abspath(path))
+    with _path_locks_guard:
+        lock = _path_locks.get(key)
+        if lock is None:
+            lock = _path_locks[key] = threading.Lock()
+        return lock
+
 
 def atomic_write(path: Path, data: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -160,20 +180,21 @@ def atomic_write(path: Path, data: str) -> None:
     # alors s'écraser mutuellement ou déplacer le temporaire de l'autre.
     tmp = path.with_name(f"{path.name}.{uuid.uuid4().hex}.tmp")
     try:
-        tmp.write_text(data, encoding="utf-8")
-        if path.exists():
-            try:
-                shutil.copy2(path, backup_path(path))
-            except Exception:
-                pass
-        for attempt in range(_REPLACE_ATTEMPTS):
-            try:
-                os.replace(tmp, path)
-                break
-            except PermissionError:
-                if attempt == _REPLACE_ATTEMPTS - 1:
-                    raise
-                time.sleep(_REPLACE_RETRY_DELAY_S)
+        with _path_lock(path):
+            tmp.write_text(data, encoding="utf-8")
+            if path.exists():
+                try:
+                    shutil.copy2(path, backup_path(path))
+                except Exception:
+                    pass
+            for attempt in range(_REPLACE_ATTEMPTS):
+                try:
+                    os.replace(tmp, path)
+                    break
+                except PermissionError:
+                    if attempt == _REPLACE_ATTEMPTS - 1:
+                        raise
+                    time.sleep(_REPLACE_RETRY_DELAY_S)
     finally:
         # Échec d'écriture ou de remplacement : ne pas laisser de temporaire.
         tmp.unlink(missing_ok=True)
