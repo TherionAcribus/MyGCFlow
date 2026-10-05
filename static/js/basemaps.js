@@ -389,7 +389,7 @@ export function switchLayer(layerName) {
 // Délègue les clics depuis le conteneur : les boutons peuvent être rendus ou
 // remplacés après le chargement du module sans devoir rattacher des écouteurs.
 function initMapMenuDelegation() {
-    const container = document.getElementById('tabMapOverlay');
+    const container = document.getElementById('tabMap');
     if (!container) return;
 
     container.addEventListener('click', event => {

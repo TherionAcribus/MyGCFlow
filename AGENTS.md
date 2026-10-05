@@ -17,6 +17,10 @@ nvm) ou mettre à jour Playwright si une version corrige ce deadlock.
 Autres repères :
 - Le runtime E2E est isolé via `MYGCFLOW_E2E_RUNTIME` (config + données en
   `%TEMP%`), voir `playwright.config.mjs` et `tests/e2e/run-tests.mjs`.
+- Échec connu (préexistant) : `global-preferences.spec.mjs` › « Enregistrer
+  le cadrage ». Quand la vue est déjà au centre/zoom par défaut,
+  `saveMapCenterSettings` (ui.js) ne voit aucun changement et n'envoie pas le
+  PUT — le serveur garde `map_default_center: null`.
 - Base vide → l'app force le retour sur l'onglet Données à chaque résolution
   du statut ; `updateDataAvailabilityUI` saute ce bascule quand l'URL porte
   un hash — les specs qui ont besoin de l'onglet Style doivent ouvrir `/#style`.

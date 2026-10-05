@@ -545,7 +545,7 @@ test('chaque section indique où son réglage est enregistré', async ({ page })
 
   await page.locator('a[href="#style"]').click();
   // Sous-onglet actif par défaut de l'onglet Style.
-  await expect(page.locator('#tabMapOverlay .gc-scope-badge.gc-scope-profile').first()).toBeVisible();
+  await expect(page.locator('#tabMap .gc-scope-badge.gc-scope-profile').first()).toBeVisible();
   await page.locator('a[href="#tabPointsFlash"]').click();
   await expect(page.locator('#points .gc-scope-badge.gc-scope-profile')).toBeVisible();
   await expect(page.locator('#flash .gc-scope-badge.gc-scope-profile')).toBeVisible();

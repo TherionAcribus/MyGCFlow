@@ -27,6 +27,7 @@ test.beforeEach(async ({ page }) => {
 
 test('les options restent la source de vérité, y compris en plein écran', async ({ page }) => {
   await page.locator('a[href="#style"]').click();
+  await page.locator('a[href="#tabTitles"]').click();
   await page.locator('#cbDisplayTitle').uncheck();
   await page.locator('#gcCssTargetInfos').click();
   await page.locator('#cbDisplayNumberofCaches').uncheck();
@@ -46,6 +47,7 @@ test('les options restent la source de vérité, y compris en plein écran', asy
 
 test('le texte est littéral et le CSS importé ne peut pas forcer la visibilité', async ({ page }) => {
   await page.locator('a[href="#style"]').click();
+  await page.locator('a[href="#tabTitles"]').click();
   await page.locator('#inputTitle').fill('Titre utilisateur conservé');
   const storedTitle = await page.evaluate(async () => {
     const app = await import('/static/js/index.js');
@@ -196,6 +198,7 @@ test('la cartouche Infos ne bouge pas quand le compteur grandit', async ({ page 
 
 test('l’assistant simple conserve les propriétés CSS avancées', async ({ page }) => {
   await page.locator('a[href="#style"]').click();
+  await page.locator('a[href="#tabTitles"]').click();
   await page.evaluate(async () => {
     const app = await import('/static/js/index.js');
     app.changeTitleCssValues([

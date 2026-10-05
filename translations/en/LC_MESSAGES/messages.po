@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-05 09:10+0200\n"
+"POT-Creation-Date: 2026-10-05 10:33+0200\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -303,7 +303,7 @@ msgstr "Animation"
 msgid "Choisir fichier"
 msgstr "Choose file"
 
-#: blueprints/core.py:151 templates/menu_style.html:91
+#: blueprints/core.py:151 templates/menu_style.html:90
 msgid "Cartes"
 msgstr "Maps"
 
@@ -342,9 +342,9 @@ msgid "Confirmer"
 msgstr "Confirm"
 
 #: blueprints/core.py:183 static/js/notifications.js:406
-#: templates/menu_style.html:231 templates/menu_style.html:256
-#: templates/menu_style.html:281 templates/menu_style.html:309
-#: templates/menu_style.html:340 templates/menu_style.html:368
+#: templates/menu_style.html:233 templates/menu_style.html:258
+#: templates/menu_style.html:283 templates/menu_style.html:311
+#: templates/menu_style.html:342 templates/menu_style.html:370
 #: templates/modal_evolution.html:18 templates/modal_evolution.html:60
 #: templates/modal_evolution.html:84 templates/modal_loading.html:14
 msgid "Annuler"
@@ -483,18 +483,19 @@ msgstr "New name missing"
 msgid "Profil '%(name)s' introuvable"
 msgstr "Profile '%(name)s' not found"
 
-#: static/js/basemaps.js:100
+#: static/js/basemaps.js:115
 msgid ""
 "Certaines tuiles de la carte n'ont pas pu être chargées (connexion "
 "instable ?)."
 msgstr "Some map tiles could not be loaded (unstable connection?)."
 
-#: static/js/basemaps.js:102 static/js/basemaps.js:139 static/js/ui.js:2344
-#: static/js/ui.js:2375 static/js/ui.js:2397
+#: static/js/basemaps.js:117 static/js/basemaps.js:154 static/js/ui.js:2344
+#: static/js/ui.js:2375 static/js/ui.js:2397 templates/guide.html:164
+#: templates/menu_style.html:77
 msgid "Carte"
 msgstr "Map"
 
-#: static/js/basemaps.js:137
+#: static/js/basemaps.js:152
 #, python-brace-format
 msgid ""
 "${count} tuile(s) de carte n'ont pas pu être chargées pendant "
@@ -1383,11 +1384,11 @@ msgstr "No canvas found in the map"
 msgid "Échec conversion canvas en blob"
 msgstr "Canvas to blob conversion failed"
 
-#: static/js/mapgl.js:4641 static/js/mapgl.js:4732
+#: static/js/mapgl.js:4641 static/js/mapgl.js:4733
 msgid "Aucun déplacement à tracer pour cette sélection."
 msgstr "No movement to draw for this selection."
 
-#: static/js/mapgl.js:4641 static/js/mapgl.js:4643 static/js/mapgl.js:4732
+#: static/js/mapgl.js:4641 static/js/mapgl.js:4643 static/js/mapgl.js:4733
 #: templates/menu_style.html:81
 msgid "Trajet"
 msgstr "Route"
@@ -1399,10 +1400,10 @@ msgid ""
 msgstr "Very busy days: automatic grouping applied at the chosen radius."
 
 #: static/js/notifications.js:114 static/js/notifications.js:442
-#: templates/menu_style.html:52 templates/menu_style.html:218
-#: templates/menu_style.html:250 templates/menu_style.html:275
-#: templates/menu_style.html:303 templates/menu_style.html:326
-#: templates/menu_style.html:362 templates/modal_evolution.html:9
+#: templates/menu_style.html:52 templates/menu_style.html:220
+#: templates/menu_style.html:252 templates/menu_style.html:277
+#: templates/menu_style.html:305 templates/menu_style.html:328
+#: templates/menu_style.html:364 templates/modal_evolution.html:9
 #: templates/modal_evolution.html:39 templates/modal_evolution.html:78
 #: templates/modal_first_use.html:33 templates/modal_infos.html:11
 msgid "Fermer"
@@ -1595,11 +1596,11 @@ msgstr "Rename"
 msgid "Exporter"
 msgstr "Export"
 
-#: static/js/profiles.js:760 templates/menu_style.html:282
+#: static/js/profiles.js:760 templates/menu_style.html:284
 msgid "Réinitialiser"
 msgstr "Reset"
 
-#: static/js/profiles.js:761 templates/menu_style.html:257
+#: static/js/profiles.js:761 templates/menu_style.html:259
 #: templates/modal_evolution.html:85
 msgid "Supprimer"
 msgstr "Delete"
@@ -1612,7 +1613,7 @@ msgstr "Set as default"
 msgid "Profil par défaut"
 msgstr "Default profile"
 
-#: static/js/profiles.js:896 templates/menu_style.html:299
+#: static/js/profiles.js:896 templates/menu_style.html:301
 msgid "Modifications non enregistrées"
 msgstr "Unsaved changes"
 
@@ -1683,11 +1684,11 @@ msgstr "Save to a new profile"
 msgid "Nouveau profil"
 msgstr "New profile"
 
-#: static/js/profiles.js:2429 templates/menu_style.html:341
+#: static/js/profiles.js:2429 templates/menu_style.html:343
 msgid "Enregistrer le profil"
 msgstr "Save profile"
 
-#: static/js/profiles.js:2429 templates/menu_style.html:232
+#: static/js/profiles.js:2429 templates/menu_style.html:234
 msgid "Créer"
 msgstr "Create"
 
@@ -2266,36 +2267,36 @@ msgstr "Unable to open the video folder"
 msgid "Erreur lors de l’ouverture du dossier vidéo"
 msgstr "Error opening the video folder"
 
-#: static/js/ui.js:7678
+#: static/js/ui.js:7860
 msgid "Sélectionnez d'abord un fichier audio"
 msgstr "Select an audio file first"
 
-#: static/js/ui.js:7725 templates/menu_animation.html:213
+#: static/js/ui.js:7907 templates/menu_animation.html:213
 msgid "Aucune musique sélectionnée"
 msgstr "No music selected"
 
-#: static/js/ui.js:7758
+#: static/js/ui.js:7940
 msgid "Non disponible"
 msgstr "Not available"
 
-#: static/js/ui.js:7765 templates/_filter_cache_attrs.html:42
+#: static/js/ui.js:7947 templates/_filter_cache_attrs.html:42
 #: templates/_filter_cache_attrs.html:43
 msgid "Taille"
 msgstr "Size"
 
-#: static/js/ui.js:7766
+#: static/js/ui.js:7948
 msgid "Type"
 msgstr "Type"
 
-#: static/js/ui.js:7767
+#: static/js/ui.js:7949
 msgid "Durée"
 msgstr "Duration"
 
-#: static/js/ui.js:7768
+#: static/js/ui.js:7950
 msgid "Modifié"
 msgstr "Modified"
 
-#: static/js/ui.js:7823
+#: static/js/ui.js:8005
 msgid "Erreur lors du chargement du fichier audio"
 msgstr "Error loading the audio file"
 
@@ -2947,13 +2948,10 @@ msgstr ""
 msgid "Choisissez un fond de carte"
 msgstr "Choose a basemap"
 
-#: templates/guide.html:164 templates/guide.html:187 templates/guide.html:245
+#: templates/guide.html:164 templates/guide.html:174 templates/guide.html:187
+#: templates/guide.html:245
 msgid "Dans le sous-onglet"
 msgstr "In the sub-tab"
-
-#: templates/guide.html:164 templates/menu_style.html:77
-msgid "Carte, titre et informations"
-msgstr "Map, title and information"
 
 #: templates/guide.html:164
 msgid "sélectionnez un style :"
@@ -2983,13 +2981,9 @@ msgstr "artistic watercolor rendering"
 msgid "Ajoutez un titre et des informations"
 msgstr "Add a title and information"
 
-#: templates/guide.html:174
-msgid "Dans"
-msgstr "In"
-
-#: templates/guide.html:174 templates/menu_style.html:169
-msgid "Titre et informations"
-msgstr "Title and information"
+#: templates/guide.html:174 templates/menu_style.html:83
+msgid "Titres"
+msgstr "Titles"
 
 #: templates/guide.html:174
 msgid "activez"
@@ -4902,7 +4896,7 @@ msgstr "Save the active theme"
 msgid "Autres options d'enregistrement"
 msgstr "More save options"
 
-#: templates/menu_style.html:29 templates/menu_style.html:325
+#: templates/menu_style.html:29 templates/menu_style.html:327
 msgid "Enregistrer sous…"
 msgstr "Save as…"
 
@@ -4926,71 +4920,71 @@ msgstr "Create a theme with the current settings"
 msgid "Importer un thème JSON"
 msgstr "Import a JSON theme"
 
-#: templates/menu_style.html:95
+#: templates/menu_style.html:94
 msgid "OpenStreetMap"
 msgstr "OpenStreetMap"
 
-#: templates/menu_style.html:102
+#: templates/menu_style.html:101
 msgid "Stamen Toner"
 msgstr "Stamen Toner"
 
-#: templates/menu_style.html:109
+#: templates/menu_style.html:108
 msgid "Carte vectorielle"
 msgstr "Vector map"
 
-#: templates/menu_style.html:116
+#: templates/menu_style.html:115
 msgid "Watercolor"
 msgstr "Watercolor"
 
-#: templates/menu_style.html:127
+#: templates/menu_style.html:129
 msgid "Style Vector"
 msgstr "Vector Style"
 
-#: templates/menu_style.html:131
+#: templates/menu_style.html:133
 msgid "Définit la couleur des contours de la carte"
 msgstr "Sets the color of the map outlines"
 
-#: templates/menu_style.html:131
+#: templates/menu_style.html:133
 msgid "Couleur contour"
 msgstr "Border color"
 
-#: templates/menu_style.html:132
+#: templates/menu_style.html:134
 msgid "Cliquez pour choisir la couleur des contours"
 msgstr "Click to choose the border color"
 
-#: templates/menu_style.html:135
+#: templates/menu_style.html:137
 msgid "Définit la couleur de remplissage de la carte"
 msgstr "Sets the map fill color"
 
-#: templates/menu_style.html:135
+#: templates/menu_style.html:137
 msgid "Couleur remplissage"
 msgstr "Fill color"
 
-#: templates/menu_style.html:136
+#: templates/menu_style.html:138
 msgid "Cliquez pour choisir la couleur de remplissage"
 msgstr "Click to choose the fill color"
 
-#: templates/menu_style.html:139
+#: templates/menu_style.html:141
 msgid "Définit la couleur de fond de la carte"
 msgstr "Sets the map background color"
 
-#: templates/menu_style.html:139
+#: templates/menu_style.html:141
 msgid "Couleur fond"
 msgstr "Background color"
 
-#: templates/menu_style.html:140
+#: templates/menu_style.html:142
 msgid "Cliquez pour choisir la couleur de fond"
 msgstr "Click to choose the background color"
 
-#: templates/menu_style.html:143
+#: templates/menu_style.html:145
 msgid "Définit l'épaisseur des contours de la carte (0 = aucun contour)"
 msgstr "Sets the thickness of the map outlines (0 = no outline)"
 
-#: templates/menu_style.html:143
+#: templates/menu_style.html:145
 msgid "Largeur contour (0 = aucun)"
 msgstr "Outline width (0 = none)"
 
-#: templates/menu_style.html:145
+#: templates/menu_style.html:147
 msgid "Faites glisser pour ajuster l'épaisseur"
 msgstr "Drag to adjust the thickness"
 
@@ -4998,60 +4992,64 @@ msgstr "Drag to adjust the thickness"
 msgid "Style Toner"
 msgstr "Toner Style"
 
-#: templates/menu_style.html:217
+#: templates/menu_style.html:195
+msgid "Titre et informations"
+msgstr "Title and information"
+
+#: templates/menu_style.html:219
 msgid "Nouveau thème"
 msgstr "New theme"
 
-#: templates/menu_style.html:222 templates/menu_style.html:223
+#: templates/menu_style.html:224 templates/menu_style.html:225
 msgid "Nom du thème"
 msgstr "Theme name"
 
-#: templates/menu_style.html:246
+#: templates/menu_style.html:248
 msgid "Confirmer la suppression"
 msgstr "Confirm deletion"
 
-#: templates/menu_style.html:247 templates/menu_style.html:272
+#: templates/menu_style.html:249 templates/menu_style.html:274
 #: templates/modal_evolution.html:75
 msgid "Cette action est définitive"
 msgstr "This action is permanent"
 
-#: templates/menu_style.html:253
+#: templates/menu_style.html:255
 msgid "Êtes-vous sûr de vouloir supprimer ce profil ?"
 msgstr "Are you sure you want to delete this profile?"
 
-#: templates/menu_style.html:271
+#: templates/menu_style.html:273
 msgid "Confirmer la réinitialisation"
 msgstr "Confirm reset"
 
-#: templates/menu_style.html:278
+#: templates/menu_style.html:280
 msgid "Êtes-vous sûr de vouloir réinitialiser ce profil aux valeurs par défaut ?"
 msgstr "Are you sure you want to reset this profile to its default values?"
 
-#: templates/menu_style.html:300
+#: templates/menu_style.html:302
 msgid "Le profil actif a été modifié"
 msgstr "The active profile has been modified"
 
-#: templates/menu_style.html:306
+#: templates/menu_style.html:308
 msgid "Vous avez des modifications non enregistrées."
 msgstr "You have unsaved changes."
 
-#: templates/menu_style.html:310
+#: templates/menu_style.html:312
 msgid "Abandonner"
 msgstr "Discard"
 
-#: templates/menu_style.html:311
+#: templates/menu_style.html:313
 msgid "Enregistrer et charger"
 msgstr "Save and load"
 
-#: templates/menu_style.html:330
+#: templates/menu_style.html:332
 msgid "Thème de destination"
 msgstr "Destination theme"
 
-#: templates/menu_style.html:331
+#: templates/menu_style.html:333
 msgid "Choisir un thème ou saisir un nouveau nom"
 msgstr "Choose a theme or type a new name"
 
-#: templates/menu_style.html:332
+#: templates/menu_style.html:334
 msgid ""
 "Choisissez un thème existant pour y enregistrer les réglages affichés, ou"
 " saisissez un nouveau nom pour créer un thème."
@@ -5059,15 +5057,15 @@ msgstr ""
 "Choose an existing theme to save the displayed settings into, or type a "
 "new name to create a theme."
 
-#: templates/menu_style.html:358
+#: templates/menu_style.html:360
 msgid "Remplacer le thème ?"
 msgstr "Replace the theme?"
 
-#: templates/menu_style.html:359
+#: templates/menu_style.html:361
 msgid "Les réglages enregistrés du thème seront perdus"
 msgstr "The theme's saved settings will be lost"
 
-#: templates/menu_style.html:369
+#: templates/menu_style.html:371
 msgid "Remplacer"
 msgstr "Replace"
 
@@ -7007,4 +7005,10 @@ msgstr "View the user guide"
 
 #~ msgid "Passer en plein écran"
 #~ msgstr "Enter fullscreen"
+
+#~ msgid "Carte, titre et informations"
+#~ msgstr "Map, title and information"
+
+#~ msgid "Dans"
+#~ msgstr "In"
 

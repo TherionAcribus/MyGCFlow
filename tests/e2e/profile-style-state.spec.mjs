@@ -255,11 +255,11 @@ test('les réglages pilotés par un bouton signalent aussi des modifications', a
   await expect(indicator).not.toHaveClass(/unsaved/);
 
   const other = initialProvider === 'OSM' ? 'watercolor' : 'OSM';
-  await page.locator(`#tabMapOverlay #${other}`).click();
+  await page.locator(`#tabMap #${other}`).click();
   await expect(indicator).toHaveClass(/unsaved/);
 
   // Comme pour les champs, revenir au fond enregistré doit éteindre l'indicateur.
-  await page.locator(`#tabMapOverlay #${initialProvider}`).click();
+  await page.locator(`#tabMap #${initialProvider}`).click();
   await expect(indicator).not.toHaveClass(/unsaved/);
 
   // Les clics du panneau Profils sont ignorés : ils ne touchent aucun réglage de

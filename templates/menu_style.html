@@ -1,5 +1,5 @@
 {% from '_scope_badges.html' import profile_scope_badge with context %}
-<!-- Onglet Style : Cartes, Points et Flash -->
+<!-- Onglet Style : Carte, Points & Flash, Trajet, Titres -->
 <div id="style" class="col-12 tab-pane fade">
     <div class="row g-3">
 
@@ -74,54 +74,56 @@
                     </section>
 
                     <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
-                        <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tabMapOverlay" role="tab" aria-selected="true">{{ _("Carte, titre et informations") }}</a></li>
+                        <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tabMap" role="tab" aria-selected="true">{{ _("Carte") }}</a></li>
                         <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabPointsFlash" role="tab" aria-selected="false">{{ _("Points & Flash") }}</a></li>
                         {# Traits de déplacement : un trajet n'a de sens que pour un seul géocacheur. #}
                         {% if mode != 'evolution' %}
                         <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabTrail" role="tab" aria-selected="false">{{ _("Trajet") }}</a></li>
                         {% endif %}
+                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabTitles" role="tab" aria-selected="false">{{ _("Titres") }}</a></li>
                     </ul>
 
                     <div class="tab-content pt-3">
-                    <!-- Sous-onglet Cartes & Overlays -->
-                    <div id="tabMapOverlay" class="tab-pane fade show active">
-                        <div class="row g-3">
-                            <div class="col-12 col-md-6">
-                                <h6 class="gc-section-title">
-                                    <i class="ti ti-map text-muted me-1"></i>{{ _("Cartes") }}{{ profile_scope_badge() }}
-                                </h6>
-                                <div class="row g-2">
-                                    <div class="col-6">
-                                        <button type="button" id="OSM" class="changeMap map-card" aria-label="{{ _('OpenStreetMap') }}" title="{{ _('OpenStreetMap') }}" aria-pressed="false">
-                                            <img src="../static/images/osm.webp" alt="" class="map-card-img" width="600" height="200" loading="lazy" decoding="async" fetchpriority="low">
-                                            <span class="map-card-label">OSM</span>
-                                            <i class="ti ti-check map-card-check"></i>
-                                        </button>
-                                    </div>
-                                    <div class="col-6">
-                                        <button type="button" id="stamenToner" class="changeMap map-card" aria-label="{{ _('Stamen Toner') }}" title="{{ _('Stamen Toner') }}" aria-pressed="false">
-                                            <img src="../static/images/stamenToner.webp" alt="" class="map-card-img" width="600" height="200" loading="lazy" decoding="async" fetchpriority="low">
-                                            <span class="map-card-label">Toner</span>
-                                            <i class="ti ti-check map-card-check"></i>
-                                        </button>
-                                    </div>
-                                    <div class="col-6">
-                                        <button type="button" id="vectorMap" class="changeMap map-card" aria-label="{{ _('Carte vectorielle') }}" title="{{ _('Carte vectorielle') }}" aria-pressed="false">
-                                            <img src="../static/images/vector.webp" alt="" class="map-card-img" width="600" height="200" loading="lazy" decoding="async" fetchpriority="low">
-                                            <span class="map-card-label">Vector</span>
-                                            <i class="ti ti-check map-card-check"></i>
-                                        </button>
-                                    </div>
-                                    <div class="col-6">
-                                        <button type="button" id="watercolor" class="changeMap map-card" aria-label="{{ _('Watercolor') }}" title="{{ _('Watercolor') }}" aria-pressed="false">
-                                            <img src="../static/images/watercolor.webp" alt="" class="map-card-img" width="600" height="200" loading="lazy" decoding="async" fetchpriority="low">
-                                            <span class="map-card-label">Water</span>
-                                            <i class="ti ti-check map-card-check"></i>
-                                        </button>
-                                    </div>
-                                </div>
+                    <!-- Sous-onglet Carte -->
+                    <div id="tabMap" class="tab-pane fade show active">
+                        <h6 class="gc-section-title">
+                            <i class="ti ti-map text-muted me-1"></i>{{ _("Cartes") }}{{ profile_scope_badge() }}
+                        </h6>
+                        <div class="row g-2">
+                            <div class="col-6 col-md-3">
+                                <button type="button" id="OSM" class="changeMap map-card" aria-label="{{ _('OpenStreetMap') }}" title="{{ _('OpenStreetMap') }}" aria-pressed="false">
+                                    <img src="../static/images/osm.webp" alt="" class="map-card-img" width="600" height="200" loading="lazy" decoding="async" fetchpriority="low">
+                                    <span class="map-card-label">OSM</span>
+                                    <i class="ti ti-check map-card-check"></i>
+                                </button>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <button type="button" id="stamenToner" class="changeMap map-card" aria-label="{{ _('Stamen Toner') }}" title="{{ _('Stamen Toner') }}" aria-pressed="false">
+                                    <img src="../static/images/stamenToner.webp" alt="" class="map-card-img" width="600" height="200" loading="lazy" decoding="async" fetchpriority="low">
+                                    <span class="map-card-label">Toner</span>
+                                    <i class="ti ti-check map-card-check"></i>
+                                </button>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <button type="button" id="vectorMap" class="changeMap map-card" aria-label="{{ _('Carte vectorielle') }}" title="{{ _('Carte vectorielle') }}" aria-pressed="false">
+                                    <img src="../static/images/vector.webp" alt="" class="map-card-img" width="600" height="200" loading="lazy" decoding="async" fetchpriority="low">
+                                    <span class="map-card-label">Vector</span>
+                                    <i class="ti ti-check map-card-check"></i>
+                                </button>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <button type="button" id="watercolor" class="changeMap map-card" aria-label="{{ _('Watercolor') }}" title="{{ _('Watercolor') }}" aria-pressed="false">
+                                    <img src="../static/images/watercolor.webp" alt="" class="map-card-img" width="600" height="200" loading="lazy" decoding="async" fetchpriority="low">
+                                    <span class="map-card-label">Water</span>
+                                    <i class="ti ti-check map-card-check"></i>
+                                </button>
+                            </div>
+                        </div>
 
-                                <!-- Options Vector -->
+                        <!-- Options propres au fond choisi (une seule visible à la
+                             fois) : Vector ou Toner. -->
+                        <div class="row mt-1">
+                            <div class="col-12 col-md-6">
                                 <div id="vectorMapOptions" class="map-options mt-3" style="display: none;">
                                     <h6 class="map-options-title">
                                         <i class="ti ti-vector text-primary me-1"></i>{{ _("Style Vector") }}
@@ -148,8 +150,6 @@
                                         </div>
                                     </div>
                                 </div>
-
-                                <!-- Options Toner -->
                                 <div id="tonerMapOptions" class="map-options mt-3" style="display: none;">
                                     <h6 class="map-options-title">
                                         <i class="ti ti-contrast text-muted me-1"></i>{{ _("Style Toner") }}
@@ -161,16 +161,6 @@
                                         <button type="button" id="stamenTonerDark" class="btn btn-outline-secondary">
                                             <i class="ti ti-moon me-1"></i>{{ _("Sombre") }}
                                         </button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-12 col-md-6">
-                                <h6 class="gc-section-title">
-                                    <i class="ti ti-info-circle text-muted me-1"></i>{{ _("Titre et informations") }}{{ profile_scope_badge() }}
-                                </h6>
-                                <div class="card">
-                                    <div class="card-body">
-                                        {% include 'menu_informations.html' %}
                                     </div>
                                 </div>
                             </div>
@@ -198,6 +188,18 @@
                         {% include 'menu_trail.html' %}
                     </div>
                     {% endif %}
+
+                    <!-- Sous-onglet Titres : titre et ligne d'informations -->
+                    <div id="tabTitles" class="tab-pane fade">
+                        <h6 class="gc-section-title">
+                            <i class="ti ti-info-circle text-muted me-1"></i>{{ _("Titre et informations") }}{{ profile_scope_badge() }}
+                        </h6>
+                        <div class="card">
+                            <div class="card-body">
+                                {% include 'menu_informations.html' %}
+                            </div>
+                        </div>
+                    </div>
                     </div><!-- /.tab-content -->
 
                 </div>
