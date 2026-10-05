@@ -546,8 +546,9 @@ test('chaque section indique où son réglage est enregistré', async ({ page })
   await page.locator('a[href="#style"]').click();
   // Sous-onglet actif par défaut de l'onglet Style.
   await expect(page.locator('#tabMap .gc-scope-badge.gc-scope-profile').first()).toBeVisible();
-  await page.locator('a[href="#tabPointsFlash"]').click();
+  await page.locator('a[href="#tabPoints"]').click();
   await expect(page.locator('#points .gc-scope-badge.gc-scope-profile')).toBeVisible();
+  await page.locator('a[href="#tabFlash"]').click();
   await expect(page.locator('#flash .gc-scope-badge.gc-scope-profile')).toBeVisible();
   // Rien de global ne se cache dans l'onglet Style : la distinction ne vaut que
   // si elle est exclusive.

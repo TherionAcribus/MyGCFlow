@@ -19,7 +19,7 @@ async function openFlashPanel(page) {
     await dismissFirstUseModal(page);
 
     await page.locator('a[href="#style"]').click();
-    await page.locator('a[href="#tabPointsFlash"]').click();
+    await page.locator('a[href="#tabFlash"]').click();
 }
 
 

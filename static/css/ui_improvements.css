@@ -1468,7 +1468,7 @@ top: 20px;
 }
 
 /* Marges pour les contenus d'onglets internes */
-#tabMap, #tabPointsFlash, #tabTitles {
+#tabMap, #tabPoints, #tabFlash, #tabTitles {
 margin-top: 10px;
 }
 

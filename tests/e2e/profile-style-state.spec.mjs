@@ -193,8 +193,8 @@ test('le profil relu juste après application est identique (aucun état transit
 test('l\'indicateur "modifications non enregistrées" suit l\'état, pas les événements', async ({ page }) => {
   const indicator = page.locator('#current-profile-indicator');
 
-  // Les contrôles de points vivent dans le sous-onglet "Points & Flash".
-  await page.locator('a[href="#tabPointsFlash"]').click();
+  // Les contrôles de points vivent dans le sous-onglet "Points".
+  await page.locator('a[href="#tabPoints"]').click();
   await expect(page.locator('#inputSizePoint')).toBeVisible();
 
   // Un profil courant est nécessaire : sans lui l'indicateur reste vide et le

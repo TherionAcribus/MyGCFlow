@@ -1,5 +1,5 @@
 {% from '_scope_badges.html' import profile_scope_badge with context %}
-<!-- Onglet Style : Carte, Points & Flash, Trajet, Titres -->
+<!-- Onglet Style : Carte, Points, Flash, Trajet, Titres -->
 <div id="style" class="col-12 tab-pane fade">
     <div class="row g-3">
 
@@ -75,7 +75,8 @@
 
                     <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
                         <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tabMap" role="tab" aria-selected="true">{{ _("Carte") }}</a></li>
-                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabPointsFlash" role="tab" aria-selected="false">{{ _("Points & Flash") }}</a></li>
+                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabPoints" role="tab" aria-selected="false">{{ _("Points") }}</a></li>
+                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabFlash" role="tab" aria-selected="false">{{ _("Flash") }}</a></li>
                         {# Traits de déplacement : un trajet n'a de sens que pour un seul géocacheur. #}
                         {% if mode != 'evolution' %}
                         <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabTrail" role="tab" aria-selected="false">{{ _("Trajet") }}</a></li>
@@ -167,18 +168,22 @@
                         </div>
                     </div>
 
-                    <!-- Sous-onglet Points & Flash -->
-                    <div id="tabPointsFlash" class="tab-pane fade">
+                    <!-- Sous-onglet Points -->
+                    <div id="tabPoints" class="tab-pane fade">
+                        {% include 'menu_points.html' %}
+                    </div>
+
+                    <!-- Sous-onglet Flash -->
+                    <div id="tabFlash" class="tab-pane fade">
                         <div class="row g-3">
                             <div class="col-12 col-md-6">
-                                {% include 'menu_points.html' %}
-                            </div>
-                            <div class="col-12 col-md-6">
                                 {% include 'menu_flash.html' %}
-                                {% if mode == 'evolution' %}
-                                {% include 'menu_flash_disappear.html' %}
-                                {% endif %}
                             </div>
+                            {% if mode == 'evolution' %}
+                            <div class="col-12 col-md-6">
+                                {% include 'menu_flash_disappear.html' %}
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
 

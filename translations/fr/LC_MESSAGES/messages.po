@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-05 10:33+0200\n"
+"POT-Creation-Date: 2026-10-05 10:44+0200\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -303,7 +303,7 @@ msgstr "Animation"
 msgid "Choisir fichier"
 msgstr "Choisir fichier"
 
-#: blueprints/core.py:151 templates/menu_style.html:90
+#: blueprints/core.py:151 templates/menu_style.html:91
 msgid "Cartes"
 msgstr "Cartes"
 
@@ -344,9 +344,9 @@ msgid "Confirmer"
 msgstr "Confirmer"
 
 #: blueprints/core.py:183 static/js/notifications.js:406
-#: templates/menu_style.html:233 templates/menu_style.html:258
-#: templates/menu_style.html:283 templates/menu_style.html:311
-#: templates/menu_style.html:342 templates/menu_style.html:370
+#: templates/menu_style.html:238 templates/menu_style.html:263
+#: templates/menu_style.html:288 templates/menu_style.html:316
+#: templates/menu_style.html:347 templates/menu_style.html:375
 #: templates/modal_evolution.html:18 templates/modal_evolution.html:60
 #: templates/modal_evolution.html:84 templates/modal_loading.html:14
 msgid "Annuler"
@@ -1400,7 +1400,7 @@ msgid "Aucun déplacement à tracer pour cette sélection."
 msgstr "Aucun déplacement à tracer pour cette sélection."
 
 #: static/js/mapgl.js:4641 static/js/mapgl.js:4643 static/js/mapgl.js:4733
-#: templates/menu_style.html:81
+#: templates/menu_style.html:82
 msgid "Trajet"
 msgstr "Trajet"
 
@@ -1413,10 +1413,10 @@ msgstr ""
 "choisi."
 
 #: static/js/notifications.js:114 static/js/notifications.js:442
-#: templates/menu_style.html:52 templates/menu_style.html:220
-#: templates/menu_style.html:252 templates/menu_style.html:277
-#: templates/menu_style.html:305 templates/menu_style.html:328
-#: templates/menu_style.html:364 templates/modal_evolution.html:9
+#: templates/menu_style.html:52 templates/menu_style.html:225
+#: templates/menu_style.html:257 templates/menu_style.html:282
+#: templates/menu_style.html:310 templates/menu_style.html:333
+#: templates/menu_style.html:369 templates/modal_evolution.html:9
 #: templates/modal_evolution.html:39 templates/modal_evolution.html:78
 #: templates/modal_first_use.html:33 templates/modal_infos.html:11
 msgid "Fermer"
@@ -1609,11 +1609,11 @@ msgstr "Renommer"
 msgid "Exporter"
 msgstr "Exporter"
 
-#: static/js/profiles.js:760 templates/menu_style.html:284
+#: static/js/profiles.js:760 templates/menu_style.html:289
 msgid "Réinitialiser"
 msgstr "Réinitialiser"
 
-#: static/js/profiles.js:761 templates/menu_style.html:259
+#: static/js/profiles.js:761 templates/menu_style.html:264
 #: templates/modal_evolution.html:85
 msgid "Supprimer"
 msgstr "Supprimer"
@@ -1626,7 +1626,7 @@ msgstr "Définir comme par défaut"
 msgid "Profil par défaut"
 msgstr "Profil par défaut"
 
-#: static/js/profiles.js:896 templates/menu_style.html:301
+#: static/js/profiles.js:896 templates/menu_style.html:306
 msgid "Modifications non enregistrées"
 msgstr "Modifications non enregistrées"
 
@@ -1699,11 +1699,11 @@ msgstr "Enregistrer dans un nouveau profil"
 msgid "Nouveau profil"
 msgstr "Nouveau profil"
 
-#: static/js/profiles.js:2429 templates/menu_style.html:343
+#: static/js/profiles.js:2429 templates/menu_style.html:348
 msgid "Enregistrer le profil"
 msgstr "Enregistrer le profil"
 
-#: static/js/profiles.js:2429 templates/menu_style.html:234
+#: static/js/profiles.js:2429 templates/menu_style.html:239
 msgid "Créer"
 msgstr "Créer"
 
@@ -2626,12 +2626,12 @@ msgid "Système"
 msgstr "Système"
 
 #: templates/app.html:80 templates/menu_options.html:33
-#: templates/menu_style.html:159
+#: templates/menu_style.html:160
 msgid "Clair"
 msgstr "Clair"
 
 #: templates/app.html:81 templates/menu_options.html:34
-#: templates/menu_style.html:162
+#: templates/menu_style.html:163
 msgid "Sombre"
 msgstr "Sombre"
 
@@ -2898,7 +2898,7 @@ msgstr "Chargez le fichier dans MyGCFlow"
 msgid "Dans l'onglet"
 msgstr "Dans l'onglet"
 
-#: templates/guide.html:134 templates/guide.html:187
+#: templates/guide.html:134
 msgid "section"
 msgstr "section"
 
@@ -2977,7 +2977,7 @@ msgid "Choisissez un fond de carte"
 msgstr "Choisissez un fond de carte"
 
 #: templates/guide.html:164 templates/guide.html:174 templates/guide.html:187
-#: templates/guide.html:245
+#: templates/guide.html:195 templates/guide.html:245
 msgid "Dans le sous-onglet"
 msgstr "Dans le sous-onglet"
 
@@ -3009,7 +3009,7 @@ msgstr "rendu aquarelle artistique"
 msgid "Ajoutez un titre et des informations"
 msgstr "Ajoutez un titre et des informations"
 
-#: templates/guide.html:174 templates/menu_style.html:83
+#: templates/guide.html:174 templates/menu_style.html:84
 msgid "Titres"
 msgstr "Titres"
 
@@ -3103,12 +3103,8 @@ msgstr "pour valider vos modifications."
 msgid "Personnalisez les points"
 msgstr "Personnalisez les points"
 
-#: templates/guide.html:187 templates/guide.html:195
-#: templates/menu_style.html:78
-msgid "Points & Flash"
-msgstr "Points & Flash"
-
-#: templates/guide.html:187 templates/menu_trail.html:113
+#: templates/guide.html:187 templates/menu_style.html:78
+#: templates/menu_trail.html:113
 msgid "Points"
 msgstr "Points"
 
@@ -3146,24 +3142,16 @@ msgstr "choisissez un jeu d'icônes (Geocaching ou Smiley) et leur taille."
 msgid "Réglez l'effet « Flash »"
 msgstr "Réglez l'effet « Flash »"
 
-#: templates/guide.html:195
-msgid "Toujours dans"
-msgstr "Toujours dans"
-
-#: templates/guide.html:195
-msgid "la section"
-msgstr "la section"
-
-#: templates/guide.html:195
+#: templates/guide.html:195 templates/menu_style.html:79
 msgid "Flash"
 msgstr "Flash"
 
 #: templates/guide.html:195
 msgid ""
-"définit l'effet joué à l'apparition de chaque cache pendant la vidéo "
+"définissez l'effet joué à l'apparition de chaque cache pendant la vidéo "
 "(forme, taille, couleur). Sa durée se règle dans l'onglet"
 msgstr ""
-"définit l'effet joué à l'apparition de chaque cache pendant la vidéo "
+"définissez l'effet joué à l'apparition de chaque cache pendant la vidéo "
 "(forme, taille, couleur). Sa durée se règle dans l'onglet"
 
 #: templates/guide.html:195
@@ -4942,7 +4930,7 @@ msgstr "Sauvegarder le thème actif"
 msgid "Autres options d'enregistrement"
 msgstr "Autres options d'enregistrement"
 
-#: templates/menu_style.html:29 templates/menu_style.html:327
+#: templates/menu_style.html:29 templates/menu_style.html:332
 msgid "Enregistrer sous…"
 msgstr "Enregistrer sous…"
 
@@ -4966,136 +4954,136 @@ msgstr "Créer un thème avec les réglages actuels"
 msgid "Importer un thème JSON"
 msgstr "Importer un thème JSON"
 
-#: templates/menu_style.html:94
+#: templates/menu_style.html:95
 msgid "OpenStreetMap"
 msgstr "OpenStreetMap"
 
-#: templates/menu_style.html:101
+#: templates/menu_style.html:102
 msgid "Stamen Toner"
 msgstr "Stamen Toner"
 
-#: templates/menu_style.html:108
+#: templates/menu_style.html:109
 msgid "Carte vectorielle"
 msgstr "Carte vectorielle"
 
-#: templates/menu_style.html:115
+#: templates/menu_style.html:116
 msgid "Watercolor"
 msgstr "Watercolor"
 
-#: templates/menu_style.html:129
+#: templates/menu_style.html:130
 msgid "Style Vector"
 msgstr "Style Vector"
 
-#: templates/menu_style.html:133
+#: templates/menu_style.html:134
 msgid "Définit la couleur des contours de la carte"
 msgstr "Définit la couleur des contours de la carte"
 
-#: templates/menu_style.html:133
+#: templates/menu_style.html:134
 msgid "Couleur contour"
 msgstr "Couleur contour"
 
-#: templates/menu_style.html:134
+#: templates/menu_style.html:135
 msgid "Cliquez pour choisir la couleur des contours"
 msgstr "Cliquez pour choisir la couleur des contours"
 
-#: templates/menu_style.html:137
+#: templates/menu_style.html:138
 msgid "Définit la couleur de remplissage de la carte"
 msgstr "Définit la couleur de remplissage de la carte"
 
-#: templates/menu_style.html:137
+#: templates/menu_style.html:138
 msgid "Couleur remplissage"
 msgstr "Couleur remplissage"
 
-#: templates/menu_style.html:138
+#: templates/menu_style.html:139
 msgid "Cliquez pour choisir la couleur de remplissage"
 msgstr "Cliquez pour choisir la couleur de remplissage"
 
-#: templates/menu_style.html:141
+#: templates/menu_style.html:142
 msgid "Définit la couleur de fond de la carte"
 msgstr "Définit la couleur de fond de la carte"
 
-#: templates/menu_style.html:141
+#: templates/menu_style.html:142
 msgid "Couleur fond"
 msgstr "Couleur fond"
 
-#: templates/menu_style.html:142
+#: templates/menu_style.html:143
 msgid "Cliquez pour choisir la couleur de fond"
 msgstr "Cliquez pour choisir la couleur de fond"
 
-#: templates/menu_style.html:145
+#: templates/menu_style.html:146
 msgid "Définit l'épaisseur des contours de la carte (0 = aucun contour)"
 msgstr "Définit l'épaisseur des contours de la carte (0 = aucun contour)"
 
-#: templates/menu_style.html:145
+#: templates/menu_style.html:146
 msgid "Largeur contour (0 = aucun)"
 msgstr "Largeur contour (0 = aucun)"
 
-#: templates/menu_style.html:147
+#: templates/menu_style.html:148
 msgid "Faites glisser pour ajuster l'épaisseur"
 msgstr "Faites glisser pour ajuster l'épaisseur"
 
-#: templates/menu_style.html:155 templates/menu_style.html:157
+#: templates/menu_style.html:156 templates/menu_style.html:158
 msgid "Style Toner"
 msgstr "Style Toner"
 
-#: templates/menu_style.html:195
+#: templates/menu_style.html:200
 msgid "Titre et informations"
 msgstr "Titre et informations"
 
-#: templates/menu_style.html:219
+#: templates/menu_style.html:224
 msgid "Nouveau thème"
 msgstr "Nouveau thème"
 
-#: templates/menu_style.html:224 templates/menu_style.html:225
+#: templates/menu_style.html:229 templates/menu_style.html:230
 msgid "Nom du thème"
 msgstr "Nom du thème"
 
-#: templates/menu_style.html:248
+#: templates/menu_style.html:253
 msgid "Confirmer la suppression"
 msgstr "Confirmer la suppression"
 
-#: templates/menu_style.html:249 templates/menu_style.html:274
+#: templates/menu_style.html:254 templates/menu_style.html:279
 #: templates/modal_evolution.html:75
 msgid "Cette action est définitive"
 msgstr "Cette action est définitive"
 
-#: templates/menu_style.html:255
+#: templates/menu_style.html:260
 msgid "Êtes-vous sûr de vouloir supprimer ce profil ?"
 msgstr "Êtes-vous sûr de vouloir supprimer ce profil ?"
 
-#: templates/menu_style.html:273
+#: templates/menu_style.html:278
 msgid "Confirmer la réinitialisation"
 msgstr "Confirmer la réinitialisation"
 
-#: templates/menu_style.html:280
+#: templates/menu_style.html:285
 msgid "Êtes-vous sûr de vouloir réinitialiser ce profil aux valeurs par défaut ?"
 msgstr "Êtes-vous sûr de vouloir réinitialiser ce profil aux valeurs par défaut ?"
 
-#: templates/menu_style.html:302
+#: templates/menu_style.html:307
 msgid "Le profil actif a été modifié"
 msgstr "Le profil actif a été modifié"
 
-#: templates/menu_style.html:308
+#: templates/menu_style.html:313
 msgid "Vous avez des modifications non enregistrées."
 msgstr "Vous avez des modifications non enregistrées."
 
-#: templates/menu_style.html:312
+#: templates/menu_style.html:317
 msgid "Abandonner"
 msgstr "Abandonner"
 
-#: templates/menu_style.html:313
+#: templates/menu_style.html:318
 msgid "Enregistrer et charger"
 msgstr "Enregistrer et charger"
 
-#: templates/menu_style.html:332
+#: templates/menu_style.html:337
 msgid "Thème de destination"
 msgstr "Thème de destination"
 
-#: templates/menu_style.html:333
+#: templates/menu_style.html:338
 msgid "Choisir un thème ou saisir un nouveau nom"
 msgstr "Choisir un thème ou saisir un nouveau nom"
 
-#: templates/menu_style.html:334
+#: templates/menu_style.html:339
 msgid ""
 "Choisissez un thème existant pour y enregistrer les réglages affichés, ou"
 " saisissez un nouveau nom pour créer un thème."
@@ -5103,15 +5091,15 @@ msgstr ""
 "Choisissez un thème existant pour y enregistrer les réglages affichés, ou"
 " saisissez un nouveau nom pour créer un thème."
 
-#: templates/menu_style.html:360
+#: templates/menu_style.html:365
 msgid "Remplacer le thème ?"
 msgstr "Remplacer le thème ?"
 
-#: templates/menu_style.html:361
+#: templates/menu_style.html:366
 msgid "Les réglages enregistrés du thème seront perdus"
 msgstr "Les réglages enregistrés du thème seront perdus"
 
-#: templates/menu_style.html:371
+#: templates/menu_style.html:376
 msgid "Remplacer"
 msgstr "Remplacer"
 
@@ -7070,4 +7058,13 @@ msgstr "Voir le mode d'emploi"
 
 #~ msgid "Dans"
 #~ msgstr "Dans"
+
+#~ msgid "Points & Flash"
+#~ msgstr "Points & Flash"
+
+#~ msgid "Toujours dans"
+#~ msgstr "Toujours dans"
+
+#~ msgid "la section"
+#~ msgstr "la section"
 
