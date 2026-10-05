@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-05 08:06+0200\n"
+"POT-Creation-Date: 2026-10-05 08:14+0200\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -1581,11 +1581,11 @@ msgstr "Error while setting the default profile"
 msgid "Aucun profil"
 msgstr "No profile"
 
-#: static/js/profiles.js:757 static/js/profiles.js:2440
+#: static/js/profiles.js:757 static/js/profiles.js:2446
 msgid "Dupliquer"
 msgstr "Duplicate"
 
-#: static/js/profiles.js:758 static/js/profiles.js:2420
+#: static/js/profiles.js:758 static/js/profiles.js:2426
 msgid "Renommer"
 msgstr "Rename"
 
@@ -1648,20 +1648,20 @@ msgstr "Profile \"${selectedProfile}\" applied and set as default profile"
 msgid "Aucun profil par défaut défini"
 msgstr "No default profile set"
 
-#: static/js/profiles.js:1741
+#: static/js/profiles.js:1747
 msgid "Le profil n'a pas pu être chargé : aucun profil n'est actif."
 msgstr "The profile could not be loaded: no profile is active."
 
-#: static/js/profiles.js:2171
+#: static/js/profiles.js:2177
 #, python-brace-format
 msgid "Créer le profil \"${name}\""
 msgstr "Create the profile \"${name}\""
 
-#: static/js/profiles.js:2236 static/js/profiles.js:2613
+#: static/js/profiles.js:2242 static/js/profiles.js:2619
 msgid "Veuillez saisir un nom de profil"
 msgstr "Please enter a profile name"
 
-#: static/js/profiles.js:2299
+#: static/js/profiles.js:2305
 #, python-brace-format
 msgid ""
 "Le profil « ${name} » existe déjà. Les réglages affichés remplaceront "
@@ -1670,60 +1670,60 @@ msgstr ""
 "The profile “${name}” already exists. The displayed settings will replace"
 " the saved ones."
 
-#: static/js/profiles.js:2345
+#: static/js/profiles.js:2351
 #, python-brace-format
 msgid "Réglages enregistrés dans \"${name}\""
 msgstr "Settings saved to \"${name}\""
 
-#: static/js/profiles.js:2405
+#: static/js/profiles.js:2411
 msgid "Enregistrer dans un nouveau profil"
 msgstr "Save to a new profile"
 
-#: static/js/profiles.js:2405
+#: static/js/profiles.js:2411
 msgid "Nouveau profil"
 msgstr "New profile"
 
-#: static/js/profiles.js:2411 templates/menu_style.html:341
+#: static/js/profiles.js:2417 templates/menu_style.html:341
 msgid "Enregistrer le profil"
 msgstr "Save profile"
 
-#: static/js/profiles.js:2411 templates/menu_style.html:232
+#: static/js/profiles.js:2417 templates/menu_style.html:232
 msgid "Créer"
 msgstr "Create"
 
-#: static/js/profiles.js:2418
+#: static/js/profiles.js:2424
 msgid "Renommer le profil"
 msgstr "Rename profile"
 
-#: static/js/profiles.js:2438
+#: static/js/profiles.js:2444
 msgid "Dupliquer le profil"
 msgstr "Duplicate profile"
 
-#: static/js/profiles.js:2494
+#: static/js/profiles.js:2500
 msgid "Le nom doit contenir au moins une lettre ou un chiffre"
 msgstr "The name must contain at least one letter or digit"
 
-#: static/js/profiles.js:2516
+#: static/js/profiles.js:2522
 #, python-brace-format
 msgid "« ${conflict} » existe déjà : la copie sera nommée « ${suggested} »"
 msgstr "“${conflict}” already exists: the copy will be named “${suggested}”"
 
-#: static/js/profiles.js:2532
+#: static/js/profiles.js:2538
 #, python-brace-format
 msgid "« ${name} » est le profil actif : ses réglages seront mis à jour"
 msgstr "“${name}” is the active profile: its settings will be updated"
 
-#: static/js/profiles.js:2538
+#: static/js/profiles.js:2544
 #, python-brace-format
 msgid "« ${name} » existe déjà : ses réglages seront remplacés"
 msgstr "“${name}” already exists: its settings will be replaced"
 
-#: static/js/profiles.js:2545
+#: static/js/profiles.js:2551
 #, python-brace-format
 msgid "Un profil nommé « ${name} » existe déjà"
 msgstr "Profile renamed to \"${name}\""
 
-#: static/js/profiles.js:2546
+#: static/js/profiles.js:2552
 #, python-brace-format
 msgid ""
 "Ce nom est déjà pris par « ${conflict} » : les deux se réduisent au "
@@ -1732,24 +1732,24 @@ msgstr ""
 "This name is already taken by “${conflict}”: both reduce to the file "
 "“${key}”"
 
-#: static/js/profiles.js:2555
+#: static/js/profiles.js:2561
 #, python-brace-format
 msgid ""
 "Caractères ignorés (${dropped}) : le profil sera enregistré sous « ${key}"
 " »"
 msgstr "Ignored characters (${dropped}): the profile will be saved as “${key}”"
 
-#: static/js/profiles.js:2672
+#: static/js/profiles.js:2678
 #, python-brace-format
 msgid "Profil renommé en \"${name}\""
 msgstr "Profile renamed to \"${name}\""
 
-#: static/js/profiles.js:2686
+#: static/js/profiles.js:2692
 #, python-brace-format
 msgid "Êtes-vous sûr de vouloir supprimer le profil \"${name}\" ?"
 msgstr "Are you sure you want to delete the profile \"${name}\"?"
 
-#: static/js/profiles.js:2705
+#: static/js/profiles.js:2711
 #, python-brace-format
 msgid ""
 "Êtes-vous sûr de vouloir réinitialiser le profil \"${name}\" aux valeurs "
@@ -3645,11 +3645,13 @@ msgstr "Default visual profile at startup"
 
 #: templates/guide.html:297
 msgid ""
-"le thème de style chargé à la première ouverture. Ensuite, MyGCFlow "
-"rouvre le dernier thème que vous avez utilisé."
+"par défaut, MyGCFlow rouvre le dernier thème utilisé. Cochez « Toujours "
+"démarrer sur ce thème » pour repartir à chaque fois du thème choisi ici "
+"(à défaut d'un choix, c'est le thème actif qui est pris)."
 msgstr ""
-"the style theme loaded the first time you open MyGCFlow. After that, "
-"MyGCFlow reopens the last theme you used."
+"by default, MyGCFlow reopens the last used theme. Check \"Always start on "
+"this theme\" to start every time on the theme chosen here (if none is "
+"chosen, the active theme is used)."
 
 #: templates/guide.html:298 templates/menu_options.html:146
 msgid "Quitter MyGCFlow"
@@ -4487,8 +4489,8 @@ msgid ""
 "Décoché, MyGCFlow rouvre le dernier thème utilisé et le choix ci-dessus "
 "sert de repli. Coché sans thème choisi, le thème actif est pris."
 msgstr ""
-"Unchecked, MyGCFlow reopens the last used theme and the choice above acts "
-"as a fallback. Checked with no theme chosen, the active theme is used."
+"Unchecked, MyGCFlow reopens the last used theme and the choice above acts"
+" as a fallback. Checked with no theme chosen, the active theme is used."
 
 #: templates/menu_options.html:70 templates/menu_options.html:71
 msgid "Cadrage par défaut de la carte"
@@ -6989,4 +6991,15 @@ msgstr "View the user guide"
 #~ "Used the first time you open "
 #~ "MyGCFlow. After that, MyGCFlow reopens "
 #~ "the last profile you used."
+
+#~ msgid ""
+#~ "le thème de style chargé à la "
+#~ "première ouverture. Ensuite, MyGCFlow rouvre"
+#~ " le dernier thème que vous avez "
+#~ "utilisé."
+#~ msgstr ""
+#~ "the style theme loaded the first "
+#~ "time you open MyGCFlow. After that, "
+#~ "MyGCFlow reopens the last theme you "
+#~ "used."
 

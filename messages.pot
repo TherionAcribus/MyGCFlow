@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-05 08:06+0200\n"
+"POT-Creation-Date: 2026-10-05 08:14+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1543,11 +1543,11 @@ msgstr ""
 msgid "Aucun profil"
 msgstr ""
 
-#: static/js/profiles.js:757 static/js/profiles.js:2440
+#: static/js/profiles.js:757 static/js/profiles.js:2446
 msgid "Dupliquer"
 msgstr ""
 
-#: static/js/profiles.js:758 static/js/profiles.js:2420
+#: static/js/profiles.js:758 static/js/profiles.js:2426
 msgid "Renommer"
 msgstr ""
 
@@ -1610,104 +1610,104 @@ msgstr ""
 msgid "Aucun profil par défaut défini"
 msgstr ""
 
-#: static/js/profiles.js:1741
+#: static/js/profiles.js:1747
 msgid "Le profil n'a pas pu être chargé : aucun profil n'est actif."
 msgstr ""
 
-#: static/js/profiles.js:2171
+#: static/js/profiles.js:2177
 #, python-brace-format
 msgid "Créer le profil \"${name}\""
 msgstr ""
 
-#: static/js/profiles.js:2236 static/js/profiles.js:2613
+#: static/js/profiles.js:2242 static/js/profiles.js:2619
 msgid "Veuillez saisir un nom de profil"
 msgstr ""
 
-#: static/js/profiles.js:2299
+#: static/js/profiles.js:2305
 #, python-brace-format
 msgid ""
 "Le profil « ${name} » existe déjà. Les réglages affichés remplaceront "
 "ceux enregistrés."
 msgstr ""
 
-#: static/js/profiles.js:2345
+#: static/js/profiles.js:2351
 #, python-brace-format
 msgid "Réglages enregistrés dans \"${name}\""
 msgstr ""
 
-#: static/js/profiles.js:2405
+#: static/js/profiles.js:2411
 msgid "Enregistrer dans un nouveau profil"
 msgstr ""
 
-#: static/js/profiles.js:2405
+#: static/js/profiles.js:2411
 msgid "Nouveau profil"
 msgstr ""
 
-#: static/js/profiles.js:2411 templates/menu_style.html:341
+#: static/js/profiles.js:2417 templates/menu_style.html:341
 msgid "Enregistrer le profil"
 msgstr ""
 
-#: static/js/profiles.js:2411 templates/menu_style.html:232
+#: static/js/profiles.js:2417 templates/menu_style.html:232
 msgid "Créer"
 msgstr ""
 
-#: static/js/profiles.js:2418
+#: static/js/profiles.js:2424
 msgid "Renommer le profil"
 msgstr ""
 
-#: static/js/profiles.js:2438
+#: static/js/profiles.js:2444
 msgid "Dupliquer le profil"
 msgstr ""
 
-#: static/js/profiles.js:2494
+#: static/js/profiles.js:2500
 msgid "Le nom doit contenir au moins une lettre ou un chiffre"
 msgstr ""
 
-#: static/js/profiles.js:2516
+#: static/js/profiles.js:2522
 #, python-brace-format
 msgid "« ${conflict} » existe déjà : la copie sera nommée « ${suggested} »"
 msgstr ""
 
-#: static/js/profiles.js:2532
+#: static/js/profiles.js:2538
 #, python-brace-format
 msgid "« ${name} » est le profil actif : ses réglages seront mis à jour"
 msgstr ""
 
-#: static/js/profiles.js:2538
+#: static/js/profiles.js:2544
 #, python-brace-format
 msgid "« ${name} » existe déjà : ses réglages seront remplacés"
 msgstr ""
 
-#: static/js/profiles.js:2545
+#: static/js/profiles.js:2551
 #, python-brace-format
 msgid "Un profil nommé « ${name} » existe déjà"
 msgstr ""
 
-#: static/js/profiles.js:2546
+#: static/js/profiles.js:2552
 #, python-brace-format
 msgid ""
 "Ce nom est déjà pris par « ${conflict} » : les deux se réduisent au "
 "fichier « ${key} »"
 msgstr ""
 
-#: static/js/profiles.js:2555
+#: static/js/profiles.js:2561
 #, python-brace-format
 msgid ""
 "Caractères ignorés (${dropped}) : le profil sera enregistré sous « ${key}"
 " »"
 msgstr ""
 
-#: static/js/profiles.js:2672
+#: static/js/profiles.js:2678
 #, python-brace-format
 msgid "Profil renommé en \"${name}\""
 msgstr ""
 
-#: static/js/profiles.js:2686
+#: static/js/profiles.js:2692
 #, python-brace-format
 msgid "Êtes-vous sûr de vouloir supprimer le profil \"${name}\" ?"
 msgstr ""
 
-#: static/js/profiles.js:2705
+#: static/js/profiles.js:2711
 #, python-brace-format
 msgid ""
 "Êtes-vous sûr de vouloir réinitialiser le profil \"${name}\" aux valeurs "
@@ -3497,8 +3497,9 @@ msgstr ""
 
 #: templates/guide.html:297
 msgid ""
-"le thème de style chargé à la première ouverture. Ensuite, MyGCFlow "
-"rouvre le dernier thème que vous avez utilisé."
+"par défaut, MyGCFlow rouvre le dernier thème utilisé. Cochez « Toujours "
+"démarrer sur ce thème » pour repartir à chaque fois du thème choisi ici "
+"(à défaut d'un choix, c'est le thème actif qui est pris)."
 msgstr ""
 
 #: templates/guide.html:298 templates/menu_options.html:146

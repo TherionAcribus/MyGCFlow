@@ -11,6 +11,16 @@ async function openReadyApp(page) {
 }
 
 
+// Rechargement réel : goto() sur la même URL + hash n'est qu'une navigation
+// de fragment, sans réinitialisation. reload() rejoue tout le démarrage,
+// restauration du thème comprise (le hash #style est conservé).
+async function reloadApp(page) {
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.mygcflowReady === true);
+  await dismissFirstUseModal(page);
+}
+
+
 // mygcflowReady est posé après restoreStartupProfile() : au retour de
 // goto(), le thème restauré est déjà celui du démarrage.
 async function activeProfileName(page) {
@@ -72,7 +82,7 @@ test('l\'option « Toujours démarrer sur ce thème » pilote la restauration au
   await page.evaluate(() => window.profileManager.loadProfile('Startup-Dernier'));
   expect(await activeProfileName(page)).toBe('Startup-Dernier');
 
-  await openReadyApp(page);
+  await reloadApp(page);
   expect(await activeProfileName(page)).toBe('Startup-Fixe');
   // L'interrupteur est relu coché au démarrage.
   expect(await page.evaluate(() => document.getElementById('switchStartupDefaultProfile').checked)).toBe(true);
@@ -94,7 +104,7 @@ test('l\'option « Toujours démarrer sur ce thème » pilote la restauration au
   // Charger Startup-Dernier rend la distinction lisible au rechargement.
   await page.evaluate(() => window.profileManager.loadProfile('Startup-Dernier'));
 
-  await openReadyApp(page);
+  await reloadApp(page);
   expect(await activeProfileName(page)).toBe('Startup-Dernier');
   expect(await page.evaluate(() => document.getElementById('switchStartupDefaultProfile').checked)).toBe(false);
 
@@ -109,6 +119,6 @@ test('l\'option « Toujours démarrer sur ce thème » pilote la restauration au
     (await fetch('/api/settings')).json().then(s => s.startup_default_profile === true));
   expect((await appSettings(page)).default_profile_name).toBe('Startup-Fixe');
 
-  await openReadyApp(page);
+  await reloadApp(page);
   expect(await activeProfileName(page)).toBe('Startup-Fixe');
 });

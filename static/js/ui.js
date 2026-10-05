@@ -876,9 +876,9 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
         switchCheckVersionOnline.addEventListener('change', changeOptionsValues);
     }
 
-    // Select profil par défaut (Tom Select)
+    // Select profil par défaut (Tom Select) — un seul thème peut être choisi
     const selectDefaultProfile = document.getElementById('selectDefaultProfile');
-    if (selectDefaultProfile) initTomSelect(selectDefaultProfile, {});
+    if (selectDefaultProfile) initTomSelect(selectDefaultProfile, { maxItems: 1, plugins: [] });
 
     // boutons
     buttonCheckVersion = document.getElementById('buttonCheckVersion');

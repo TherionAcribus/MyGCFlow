@@ -35,9 +35,12 @@ Sans profil actif, **Sauvegarder** propose d'enregistrer les réglages dans un n
 - Cliquez sur le nom du profil dans la liste pour l'activer
 
 #### Au redémarrage
-MyGCFlow rouvre le **dernier profil utilisé**. Le profil marqué d'une étoile
-(**Définir comme par défaut**) ne sert qu'à la première ouverture, ou si le
-dernier profil utilisé a été supprimé.
+MyGCFlow rouvre le **dernier profil utilisé**. L'onglet **Paramètres** propose
+un interrupteur **« Toujours démarrer sur ce thème »** qui inverse la règle :
+le profil choisi dans le sélecteur « Profil visuel par défaut au démarrage »
+est alors restauré à chaque ouverture. Coché sans profil choisi, c'est le
+profil actif qui devient le choix ; un choix déjà enregistré est conservé
+(même décoché, il resservira au recochage).
 
 #### Actions sur les profils
 Chaque profil dispose d'un menu (⋮) avec les options :

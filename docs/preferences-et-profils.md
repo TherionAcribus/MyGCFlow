@@ -121,12 +121,16 @@ avec le choix intact, rien n'est écrit.
 **Restauration au démarrage.** `restoreStartupProfile()` (appelée par `init.js`
 après `init_ui()`) charge le **dernier thème actif** — `last_profile_uid` dans
 `settings.json` — et n'utilise `default_profile_uid` qu'en repli : première
-ouverture, ou dernier thème devenu illisible. Le repli qui aboutit est
-aussitôt mémorisé comme dernier thème actif, sinon chaque démarrage repasserait
-par la même lecture ratée. Si aucun candidat n'est lisible, l'application
-démarre **sans thème actif** et le dit : pas de repli sur un thème « Default »
-ni sur un pseudo-thème temporaire, que l'utilisateur ne pourrait ni retrouver
-dans la liste ni enregistrer.
+ouverture, ou dernier thème devenu illisible. L'interrupteur « Toujours
+démarrer sur ce thème » de l'onglet Paramètres (`startup_default_profile`,
+`handleStartupDefaultToggle()`) inverse la priorité : `default_profile_uid`
+passe alors d'abord. Coché sans thème choisi, le thème actif devient le choix ;
+le choix n'est jamais réécrit ni effacé en basculant l'interrupteur. Le repli
+qui aboutit est aussitôt mémorisé comme dernier thème actif, sinon chaque
+démarrage repasserait par la même lecture ratée. Si aucun candidat n'est
+lisible, l'application démarre **sans thème actif** et le dit : pas de repli
+sur un thème « Default » ni sur un pseudo-thème temporaire, que l'utilisateur
+ne pourrait ni retrouver dans la liste ni enregistrer.
 
 **Première ouverture.** Au tout premier lancement, `SettingsManager` installe
 les thèmes d'exemple et fait du thème « Default » (`FIRST_LAUNCH_PROFILE`) le

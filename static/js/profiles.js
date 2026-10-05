@@ -1162,7 +1162,10 @@ class ProfileManager {
             // Sélectionner le profil par défaut actuel (par nom si disponible)
             selector.value = defaultProfileName;
 
-            try { initTomSelect(selector, {}); } catch(_) {}
+            // Repeuplé ou non, le sélecteur reste à choix unique : les
+            // défauts d'initTomSelect (maxItems illimité + remove_button)
+            // le passeraient sinon en multi-sélection.
+            try { initTomSelect(selector, { maxItems: 1, plugins: [] }); } catch(_) {}
 
             dbgProfiles('Sélecteur profil par défaut rempli avec:', profiles);
             dbgProfiles('🎯 Profil par défaut actuel:', defaultProfileName || 'aucun');
