@@ -235,10 +235,27 @@ test('les options MediaRecorder de l\'interface produisent un MP4 validé par ff
   });
 
   await page.locator('#btnQuickExport').click({ force: true });
-  await expect(page.locator('.gcm-toast').filter({ hasText: 'Vidéo prête' }).last()).toBeVisible({ timeout: 75_000 });
+  await expect(page.locator('#modal_video_ready')).toBeVisible({ timeout: 75_000 });
   await expect.poll(latestCompletedMp4, { timeout: 15_000 }).not.toBeNull();
 
   const videoPath = latestCompletedMp4();
+
+  // L'écran de fin présente le fichier réellement produit : son nom, son
+  // dossier, sa taille, et un aperçu lisible dans la page.
+  const ready = page.locator('#modal_video_ready');
+  await expect(ready.locator('#videoReadyFile')).toHaveText(path.basename(videoPath));
+  await expect(ready.locator('#videoReadyFolder')).toHaveText(path.dirname(videoPath));
+  await expect(ready.locator('#videoReadyMeta')).toContainText('Mo');
+  const player = ready.locator('#videoReadyPlayer');
+  const previewUrl = await player.getAttribute('src');
+  expect(previewUrl).toContain(`/download_video/${encodeURIComponent(path.basename(videoPath))}?inline=1`);
+  const preview = await page.request.get(previewUrl);
+  expect(preview.status()).toBe(200);
+  expect(preview.headers()['content-disposition'] || '').not.toContain('attachment');
+  // Fermée, la modale relâche le fichier : plus de lecture en cours dessus.
+  await ready.locator('.modal-footer [data-bs-dismiss="modal"]').click();
+  await expect(ready).toBeHidden();
+  await expect(player).not.toHaveAttribute('src', /.+/);
   const expectationPath = path.join(RUNTIME, 'browser-video-expectation.json');
   writeFileSync(expectationPath, JSON.stringify({
     duration_seconds: 1.3,
@@ -307,7 +324,7 @@ test('le mode images rend la carte à la résolution demandée', async ({ page }
   expect(plan.ratio).toBeGreaterThan(1);
 
   await page.locator('#btnQuickExport').click({ force: true });
-  await expect(page.locator('.gcm-toast').filter({ hasText: 'Vidéo prête' }).last()).toBeVisible({ timeout: 120_000 });
+  await expect(page.locator('#modal_video_ready')).toBeVisible({ timeout: 120_000 });
   await expect.poll(latestCompletedMp4, { timeout: 30_000 }).not.toBeNull();
 
   const videoPath = latestCompletedMp4();
@@ -396,7 +413,7 @@ test('le mode MediaRecorder rend aussi la carte à la résolution demandée', as
   expect(plan.ratio).toBeGreaterThan(1);
 
   await page.locator('#btnQuickExport').click({ force: true });
-  await expect(page.locator('.gcm-toast').filter({ hasText: 'Vidéo prête' }).last()).toBeVisible({ timeout: 120_000 });
+  await expect(page.locator('#modal_video_ready')).toBeVisible({ timeout: 120_000 });
   await expect.poll(latestCompletedMp4, { timeout: 30_000 }).not.toBeNull();
 
   const videoPath = latestCompletedMp4();
@@ -569,7 +586,7 @@ test('le réglage Couleurs choisit le format de pixels du fichier final', async 
   });
 
   await page.locator('#btnQuickExport').click({ force: true });
-  await expect(page.locator('.gcm-toast').filter({ hasText: 'Vidéo prête' }).last()).toBeVisible({ timeout: 120_000 });
+  await expect(page.locator('#modal_video_ready')).toBeVisible({ timeout: 120_000 });
   await expect.poll(latestCompletedMp4, { timeout: 30_000 }).not.toBeNull();
 
   const videoPath = latestCompletedMp4();
@@ -744,7 +761,7 @@ test('un enregistrement avec suivi de caméra produit une vidéo et déplace la 
   });
 
   await page.locator('#btnQuickExport').click({ force: true });
-  await expect(page.locator('.gcm-toast').filter({ hasText: 'Vidéo prête' }).last()).toBeVisible({ timeout: 120_000 });
+  await expect(page.locator('#modal_video_ready')).toBeVisible({ timeout: 120_000 });
   await expect.poll(latestCompletedMp4, { timeout: 30_000 }).not.toBeNull();
 
   const arriveeX = await page.evaluate(async () => {

@@ -1,0 +1,38 @@
+<!-- Fin d'export : la vidéo produite, où elle se trouve et quoi en faire.
+     Remplace le toast « Vidéo prête », qui disparaissait sans dire ni le nom
+     ni l'emplacement du fichier. Pilotée par static/js/video_ready.js. -->
+<div id="modal_video_ready" class="modal bs-modal fade" tabindex="-1" aria-labelledby="modalVideoReadyTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 id="modalVideoReadyTitle" class="modal-title">
+                    <i class="ti ti-circle-check text-success me-1" aria-hidden="true"></i>{{ _("Vidéo prête") }}
+                </h5>
+                <button type="button" class="btn-close modal-close" data-bs-dismiss="modal" aria-label="{{ _('Fermer') }}"></button>
+            </div>
+            <div class="modal-body">
+                {# `src` posé à l'ouverture et retiré à la fermeture : le navigateur
+                   ne garde ainsi aucune lecture en cours sur un fichier que
+                   l'utilisateur peut vouloir déplacer ou supprimer. #}
+                <video id="videoReadyPlayer" class="w-100 rounded bg-dark mb-3" controls preload="metadata" playsinline style="max-height: 50vh;"></video>
+                <div class="fw-semibold text-break" id="videoReadyFile"></div>
+                <div class="form-hint text-muted" id="videoReadyMeta"></div>
+                <div class="form-hint text-muted text-break" id="videoReadyFolder"></div>
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                    <button type="button" class="btn btn-primary" id="btnVideoReadyReveal">
+                        <i class="ti ti-folder-open me-1" aria-hidden="true"></i>{{ _("Afficher dans le dossier") }}
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="btnVideoReadyOpen">
+                        <i class="ti ti-player-play me-1" aria-hidden="true"></i>{{ _("Ouvrir dans le lecteur") }}
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="btnVideoReadySaveAs">
+                        <i class="ti ti-device-floppy me-1" aria-hidden="true"></i>{{ _("Enregistrer une copie sous…") }}
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-link" data-bs-dismiss="modal">{{ _("Fermer") }}</button>
+            </div>
+        </div>
+    </div>
+</div>

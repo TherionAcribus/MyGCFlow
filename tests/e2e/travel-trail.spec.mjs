@@ -235,7 +235,7 @@ for (const mode of ['images', 'mediarecorder']) {
     });
 
     await page.locator('#btnQuickExport').click({ force: true });
-    await expect(page.locator('.gcm-toast').filter({ hasText: 'Vidéo prête' }).last()).toBeVisible({ timeout: 150_000 });
+    await expect(page.locator('#modal_video_ready')).toBeVisible({ timeout: 150_000 });
 
     // Relevé du moteur (conservé après l'arrêt) : le trajet a été tracé en
     // entier pendant la capture, jusqu'à la dernière étape.

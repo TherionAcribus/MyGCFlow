@@ -1996,6 +1996,15 @@ function abortRecordingOnError(error) {
     } catch(_) {}
 }
 
+// Fin d'export réussie : l'écran « Vidéo prête » présente le fichier et les
+// actions pour y accéder. Sans fichier côté serveur (repli navigateur avec
+// téléchargement seul), il n'y a rien à présenter : simple toast.
+function announceVideoReady(video) {
+    let shown = false;
+    try { shown = !!pkg.showVideoReady?.(video); } catch (e) { console.warn('[RECORD END] Écran de fin indisponible:', e); }
+    if (!shown) pkg.showToast && pkg.showToast(pkg.t('Vidéo prête'), 'success', pkg.t('Enregistrement'));
+}
+
 // Lancement de l'assemblage vidéo. En POST : la route déclenche un encodage, et
 // un GET pouvait être rejoué par un préchargement de lien ou un scanner d'URL.
 function postStartCreateVideo(body) {
@@ -2270,6 +2279,8 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
 
         // Réactive les boutons de l'UI (utilisé dans plusieurs branches)
         const reEnableRecordButtons = () => setAssembleUiBusy(false);
+        // Résultat de l'assemblage (nom, taille, durée) pour l'écran de fin.
+        let assembledVideo = null;
 
         tryAssembleWithAudio()
           .then(response => { logToast('Réponse assemblage reçue, status:', response?.status); return response.json(); })
@@ -2287,7 +2298,8 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
               }
             });
           })
-          .then(() => {
+          .then((result) => {
+            assembledVideo = result;
             dbgMapgl('[RECORD END] Assemblage réussi, nettoyage automatique...');
             try { pkg.updateProgressBar({progress: 70, message: pkg.t('Vidéo créée. Nettoyage des images...')}); } catch(e) {}
             try { pkg.updateTextsModal(pkg.t('Nettoyage en cours'), pkg.t('Vidéo créée avec succès. Nettoyage des images...')); } catch(e) {}
@@ -2308,9 +2320,7 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
               dbgMapgl('[RECORD END] Nettoyage automatique terminé');
               try { pkg.updateProgressBar({progress: 100, message: pkg.t('Nettoyage terminé')}); } catch(e) {}
               setTimeout(() => { try { pkg.closeModalLoading(); } catch(e) {} }, 400);
-              // Titre passé par pkg.t() pour rester extrait dans le catalogue :
-              // showToast traduit à l'exécution, mais l'extraction est statique.
-              pkg.showToast && pkg.showToast(pkg.t('Traitement automatique terminé avec succès !'), 'success', pkg.t('Vidéo prête'), 5000);
+              announceVideoReady(assembledVideo);
               warnIfTileErrors();
             } else {
               if (cleanData) console.warn('[RECORD END] Échec du nettoyage:', cleanData.message);
@@ -2885,11 +2895,13 @@ function finalizeMediaRecorderVideo(){
         const wantsNorm = !!pkg.options?.record?.mediaRecorder?.offlineNormalization;
         const doNormalize = wantsNorm && slowdown > 1;
 
-        const afterAll = () => {
+        // `video` : description du fichier produit dans le dossier des vidéos
+        // (absente si la vidéo n'a été que téléchargée par le navigateur).
+        const afterAll = (video) => {
             // Réactiver boutons et fermer loader
             try { pkg.updateProgressBar({ progress: 100, message: pkg.t('Terminé') }); } catch(_) {}
             setTimeout(() => { try { pkg.closeModalLoading(); } catch(_) {} }, 400);
-            pkg.showToast && pkg.showToast(pkg.t('Vidéo prête'), 'success', pkg.t('Enregistrement'));
+            announceVideoReady(video);
             warnIfTileErrors();
             // Débloquer la lecture de fond après enregistrement MR
             try { setBackgroundAudioBlocked(false); } catch(_) {}
@@ -2914,12 +2926,14 @@ function finalizeMediaRecorderVideo(){
                     fd.append('video', finalBlob, fileName);
                     fd.append('fileName', fileName);
                     tasks.push(fetchWithTimeout(`${CONFIG.BASE_URL}/upload_video`, { method: 'POST', body: fd }, { timeoutMs: FETCH_TIMEOUTS.videoUpload, t: pkg.t }).then(r => r.json()).catch(e => ({ success:false, message: e?.message || 'upload error'}))
-                        .then(res => { if (!res?.success) throw new Error(res?.message || pkg.t('Copie vers le dossier vidéo échouée')); }));
+                        .then(res => { if (!res?.success) throw new Error(res?.message || pkg.t('Copie vers le dossier vidéo échouée')); return res; }));
                 } catch(e) { console.warn('Upload setup failed:', e); }
             }
 
             if (tasks.length) {
-                Promise.allSettled(tasks).then(() => afterAll()).catch(() => afterAll());
+                Promise.allSettled(tasks)
+                    .then((settled) => afterAll(settled.find((s) => s.status === 'fulfilled')?.value))
+                    .catch(() => afterAll());
             } else {
                 afterAll();
             }
@@ -3039,7 +3053,7 @@ function finalizeMediaRecorderVideo(){
                                 setTimeout(() => a.remove(), 1000);
                             } catch(e) { console.warn('Téléchargement du résultat échoué:', e); }
                         }
-                        afterAll();
+                        afterAll(result);
                         resolve();
                     })
                     .catch(reject);

@@ -2,18 +2,19 @@ import os
 
 from flask import Blueprint, abort, current_app, jsonify, request, send_from_directory
 from flask_babel import gettext as _babel_gettext
-from werkzeug.utils import secure_filename
 
-import paths
 from capture import (
     TASK_TYPE_VIDEO,
     captured_session_dir,
     clear_pictures_directory,
     count_captured_pictures,
     default_video_output,
+    open_video,
     open_video_folder,
     coerce_color_fidelity,
     process_recorded_video,
+    resolve_video_file,
+    reveal_video,
     run_assemble_video_task,
     upload_audio,
     upload_image,
@@ -235,10 +236,23 @@ def route_process_recorded_video():
 @media_bp.route('/download_video/<path:filename>', methods=['GET'])
 def route_download_video(filename):
     # Sert un fichier du dossier des vidéos pour téléchargement navigateur.
-    safe_name = secure_filename(os.path.basename(filename))
-    if not safe_name:
+    # ?inline=1 : lecture dans la page (aperçu de l'écran « Vidéo prête ») ;
+    # send_from_directory honore les requêtes Range, donc le déplacement dans
+    # la vidéo fonctionne.
+    path = resolve_video_file(filename)
+    if path is None:
         abort(404)
-    video_dir = str(paths.video_dir())
-    if not os.path.exists(os.path.join(video_dir, safe_name)):
-        abort(404)
-    return send_from_directory(video_dir, safe_name, as_attachment=True)
+    inline = request.args.get('inline') == '1'
+    return send_from_directory(os.path.dirname(path), os.path.basename(path), as_attachment=not inline)
+
+
+# POST : ces deux routes lancent un programme sur la machine (Explorateur,
+# lecteur vidéo), elles ne doivent pas pouvoir être rejouées par un simple lien.
+@media_bp.route('/reveal_video', methods=['POST'])
+def route_reveal_video():
+    return reveal_video(request)
+
+
+@media_bp.route('/open_video', methods=['POST'])
+def route_open_video():
+    return open_video(request)

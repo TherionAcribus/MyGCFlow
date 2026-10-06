@@ -135,24 +135,96 @@ def upload_image(request):
         return jsonify({'success': False, 'message': str(e)}), 500
 
 
+def _open_with_system(path):
+    """Ouvre un dossier ou un fichier avec l'application associée du système."""
+    system = platform.system().lower()
+    if system == 'windows':
+        os.startfile(path)  # type: ignore[attr-defined]
+    elif system == 'darwin':
+        subprocess.Popen(['open', path])
+    else:
+        subprocess.Popen(['xdg-open', path])
+
+
 def open_video_folder():
     """Ouvre le dossier vidéo côté serveur (utile en déploiement local/desktop)."""
     try:
         folder = str(paths.ensure_dir(paths.video_dir()))
 
-        system = platform.system().lower()
         try:
-            if system == 'windows':
-                os.startfile(folder)  # type: ignore[attr-defined]
-            elif system == 'darwin':
-                subprocess.Popen(['open', folder])
-            else:
-                subprocess.Popen(['xdg-open', folder])
+            _open_with_system(folder)
         except Exception:
             # Si l'ouverture échoue (serveur headless, etc.), on continue et on renvoie seulement le chemin
             pass
 
         return jsonify({'success': True, 'folder': folder})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+def describe_video(path):
+    """Ce que l'écran « Vidéo prête » affiche d'un fichier produit : nom, dossier,
+    taille et durée. Les champs illisibles valent None plutôt que de faire
+    échouer un export par ailleurs réussi."""
+    path = str(path)
+    try:
+        size = os.path.getsize(path)
+    except OSError:
+        size = None
+    return {
+        'file': os.path.basename(path),
+        'folder': os.path.dirname(path),
+        'size_bytes': size,
+        'duration_seconds': _probe_duration_seconds(path),
+    }
+
+
+def resolve_video_file(name):
+    """Chemin d'une vidéo du dossier des vidéos à partir de son nom, None si absente.
+
+    secure_filename réduit l'entrée à un nom simple : aucune traversée hors du
+    dossier n'est possible, quel que soit ce que le client envoie.
+    """
+    safe_name = secure_filename(os.path.basename(str(name or '')))
+    if not safe_name:
+        return None
+    path = os.path.join(str(paths.video_dir()), safe_name)
+    return path if os.path.isfile(path) else None
+
+
+def _requested_video_file(request):
+    data = request.get_json(silent=True)
+    name = data.get('file') if isinstance(data, dict) else None
+    return resolve_video_file(name or request.form.get('file'))
+
+
+def reveal_video(request):
+    """Ouvre le dossier des vidéos avec le fichier demandé sélectionné."""
+    path = _requested_video_file(request)
+    if path is None:
+        return jsonify({'success': False, 'message': _('Fichier vidéo introuvable')}), 404
+    try:
+        if platform.system().lower() == 'windows':
+            # L'Explorateur n'accepte la sélection que sous cette forme ; ouvrir
+            # le dossier seul laisserait chercher le fichier parmi les autres.
+            subprocess.Popen(['explorer', '/select,', os.path.normpath(path)])
+        elif platform.system().lower() == 'darwin':
+            subprocess.Popen(['open', '-R', path])
+        else:
+            _open_with_system(os.path.dirname(path))
+        return jsonify({'success': True, 'file': os.path.basename(path)})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+def open_video(request):
+    """Ouvre la vidéo demandée dans le lecteur par défaut du système."""
+    path = _requested_video_file(request)
+    if path is None:
+        return jsonify({'success': False, 'message': _('Fichier vidéo introuvable')}), 404
+    try:
+        _open_with_system(path)
+        return jsonify({'success': True, 'file': os.path.basename(path)})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
@@ -648,7 +720,8 @@ def _assemble_pictures(image_folder, output_video, fps=24, audio_path=None, audi
         return result
 
     _progress(100, _("Vidéo créée avec succès"))
-    return {'success': True, 'message': _('Vidéo créée avec succès'), 'output': output_video}
+    return {'success': True, 'message': _('Vidéo créée avec succès'), 'output': output_video,
+            **describe_video(output_video)}
 
 
 def assemble_pictures_directory(image_folder, output_video, fps=24, audio_path=None, audio_volume=1.0,
@@ -786,7 +859,7 @@ def _process_recorded_video(input_path, output_path, slowdown=1.0, audio_path=No
         'success': True,
         'message': _('Vidéo traitée avec succès'),
         'output': output_path,
-        'file': os.path.basename(output_path),
+        **describe_video(output_path),
     }
 
 
@@ -910,7 +983,8 @@ def upload_video(request):
             file_name = base
         video_file.save(save_path)
 
-        return jsonify({'success': True, 'message': _('Vidéo reçue et sauvegardée'), 'path': save_path})
+        return jsonify({'success': True, 'message': _('Vidéo reçue et sauvegardée'), 'path': save_path,
+                        **describe_video(save_path)})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 

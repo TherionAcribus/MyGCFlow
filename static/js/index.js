@@ -12,6 +12,7 @@ export * from './recording_perf.js';
 export * from './upload_queue.js';
 export * from './background_audio.js';
 export * from './video_postprocess.js';
+export * from './video_ready.js';
 export * from './mapgl.js';
 export * from './bdd.js';
 export * from './record.js';
