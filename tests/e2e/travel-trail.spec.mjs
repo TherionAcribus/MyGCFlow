@@ -206,12 +206,6 @@ for (const mode of ['images', 'mediarecorder']) {
         await advanced.locator('summary').click();
       }
       await page.locator('#inputRecordSlowdown').fill('2');
-      // « Copier dans le dossier Vidéos » doit rester coché : l'enregistrement
-      // refuse désormais de démarrer quand aucune sortie n'est choisie (cf.
-      // record-destination.spec.mjs). Le dossier vidéo est celui du runtime
-      // jetable, rien n'atterrit chez l'utilisateur.
-      await page.locator('#cbRecordUpload').check();
-      await page.locator('#cbRecordDownload').uncheck();
       await page.locator('#cbRecordNormalize').uncheck();
     }
 

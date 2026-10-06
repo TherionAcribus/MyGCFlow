@@ -55,10 +55,7 @@
             "videoBitsPerSecond": 6000000,
             "slowdownFactor": 1,
             "tailFreezeMs": 3000,
-            "offlineNormalization": true,
-            "uploadToServer": true,
-            "downloadLocal": true,
-            "fileName": "mygcflow.webm"
+            "offlineNormalization": true
         }
     },
     "infos":{

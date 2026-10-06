@@ -119,21 +119,7 @@
             </div>
         </div>
     </details>
-    <div class="col-12 col-md-3 mediarecorder-only mt-3">
-        <div class="form-check mb-2">
-            <input id="cbRecordUpload" class="form-check-input" type="checkbox">
-            <label class="form-check-label" for="cbRecordUpload">
-                {{ _("Copier dans le dossier Vidéos") }}
-                <i class="ti ti-help ms-1" tabindex="0" data-bs-toggle="tooltip" data-bs-title="{{ _('Enregistre automatiquement la vidéo dans le dossier Vidéos de l\'application une fois l\'export terminé.') }}"></i>
-            </label>
-        </div>
-        <div class="form-check mb-2">
-            <input id="cbRecordDownload" class="form-check-input" type="checkbox">
-            <label class="form-check-label" for="cbRecordDownload">
-                {{ _("Télécharger une copie") }}
-                <i class="ti ti-help ms-1" tabindex="0" data-bs-toggle="tooltip" data-bs-title="{{ _('Télécharge aussi la vidéo dans le dossier de téléchargements de votre navigateur une fois l\'export terminé.') }}"></i>
-            </label>
-        </div>
+    <div class="col-12 col-md-6 mediarecorder-only mt-3">
         <div class="form-check mb-2">
             <input id="cbRecordNormalize" class="form-check-input" type="checkbox">
             <label class="form-check-label" for="cbRecordNormalize">
@@ -142,13 +128,16 @@
             </label>
         </div>
     </div>
-    {# Erreur bloquante : sans destination cochée, la vidéo de capture rapide
-       serait produite puis perdue. Pilotée par updateRecordDestinationState
-       (ui.js) — masquée en mode images, comme les cases (.mediarecorder-only). #}
-    <div class="col-12 mediarecorder-only">
-        <div id="recordDestinationError" class="alert alert-danger py-2 px-3 mb-0 small" role="alert" hidden>
-            {{ _("La vidéo ne sera conservée nulle part : cochez « Copier dans le dossier Vidéos » et/ou « Télécharger une copie ».") }}
-        </div>
+    {# Nom des vidéos produites, dans les deux modes. Vide : le nom du thème
+       actif, affiché en indication (updateRecordFileNameHint dans ui.js). La
+       date et l'heure sont ajoutées par le serveur (capture.video_output_path). #}
+    <div class="mb-3 col-12 mt-3">
+        <label for="inputRecordFileName" class="form-label">
+            {{ _("Nom du fichier") }}
+            <i class="ti ti-help ms-1" tabindex="0" data-bs-toggle="tooltip" data-bs-title="{{ _('Début du nom des vidéos produites. La date et l\'heure de l\'export sont ajoutées automatiquement : une vidéo existante n\'est jamais écrasée.') }}"></i>
+        </label>
+        <input id="inputRecordFileName" type="text" maxlength="80" autocomplete="off" spellcheck="false" class="form-control" aria-describedby="recordFileNameHelp">
+        <small id="recordFileNameHelp" class="form-hint text-muted"></small>
     </div>
 </div>
 

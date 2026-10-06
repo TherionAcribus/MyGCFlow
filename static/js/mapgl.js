@@ -2011,7 +2011,9 @@ function postStartCreateVideo(body) {
     return fetchWithTimeout(`${CONFIG.BASE_URL}/start_create_video`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body || {}),
+        // file_name : nom de base de la vidéo (saisie ou thème actif), que le
+        // serveur horodate — même règle qu'en capture rapide.
+        body: JSON.stringify({ file_name: pkg.recordingFileBaseName?.() || '', ...(body || {}) }),
     }, { timeoutMs: FETCH_TIMEOUTS.control, t: pkg.t });
 }
 
@@ -2868,25 +2870,10 @@ function finalizeMediaRecorderVideo(){
         // Nom du .webm remuxé dans video/ (renseigné par finish() du flux).
         let streamedFile = null;
 
-        // Construire un nom horodaté pour éviter l'écrasement
-        const buildTimestampedName = (base) => {
-            const safeBase = (base || 'mygcflow.webm').trim();
-            const now = new Date();
-            const pad = (n) => String(n).padStart(2, '0');
-            const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-            const lastDot = safeBase.lastIndexOf('.');
-            if (lastDot > 0 && lastDot < safeBase.length - 1) {
-                const name = safeBase.slice(0, lastDot);
-                const ext = safeBase.slice(lastDot);
-                return `${name}_${stamp}${ext}`;
-            }
-            return `${safeBase}_${stamp}.webm`;
-        };
-
-        const fileName = buildTimestampedName(pkg.options?.record?.mediaRecorder?.fileName);
-
-        const wantsDownload = !!pkg.options?.record?.mediaRecorder?.downloadLocal;
-        const wantsUpload = !!pkg.options?.record?.mediaRecorder?.uploadToServer;
+        // Nom de base de la vidéo (saisie de l'onglet Export, sinon thème actif).
+        // Le serveur le nettoie, l'horodate et pose l'extension : aucun nom de
+        // fichier n'est construit ici.
+        const baseName = pkg.recordingFileBaseName?.() || '';
         // Facteur réellement appliqué à la timeline (instantané du démarrage) :
         // la préférence a pu être modifiée pendant la capture par le moniteur
         // de performance, et normaliser avec une autre valeur désynchroniserait
@@ -2907,36 +2894,32 @@ function finalizeMediaRecorderVideo(){
             try { setBackgroundAudioBlocked(false); } catch(_) {}
         };
 
+        // Repli navigateur : la vidéo finale n'existe que dans cet onglet. Elle
+        // rejoint le dossier des vidéos comme les autres ; si cette copie
+        // échoue, on la télécharge plutôt que de la perdre.
         const deliver = (finalBlob) => {
-            const tasks = [];
-            if (wantsDownload) {
-                try {
-                    const a = document.createElement('a');
-                    a.href = URL.createObjectURL(finalBlob);
-                    a.download = fileName;
-                    document.body.appendChild(a);
-                    a.click();
-                    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
-                } catch(e) { console.warn('Download failed:', e); }
-            }
-
-            if (wantsUpload) {
-                try {
-                    const fd = new FormData();
-                    fd.append('video', finalBlob, fileName);
-                    fd.append('fileName', fileName);
-                    tasks.push(fetchWithTimeout(`${CONFIG.BASE_URL}/upload_video`, { method: 'POST', body: fd }, { timeoutMs: FETCH_TIMEOUTS.videoUpload, t: pkg.t }).then(r => r.json()).catch(e => ({ success:false, message: e?.message || 'upload error'}))
-                        .then(res => { if (!res?.success) throw new Error(res?.message || pkg.t('Copie vers le dossier vidéo échouée')); return res; }));
-                } catch(e) { console.warn('Upload setup failed:', e); }
-            }
-
-            if (tasks.length) {
-                Promise.allSettled(tasks)
-                    .then((settled) => afterAll(settled.find((s) => s.status === 'fulfilled')?.value))
-                    .catch(() => afterAll());
-            } else {
-                afterAll();
-            }
+            const uploadName = `${baseName || 'mygcflow'}.webm`;
+            const fd = new FormData();
+            fd.append('video', finalBlob, 'recording.webm');
+            fd.append('fileName', uploadName);
+            fetchWithTimeout(`${CONFIG.BASE_URL}/upload_video`, { method: 'POST', body: fd }, { timeoutMs: FETCH_TIMEOUTS.videoUpload, t: pkg.t })
+                .then(r => r.json())
+                .then(res => {
+                    if (!res?.success) throw new Error(res?.message || pkg.t('Copie vers le dossier vidéo échouée'));
+                    afterAll(res);
+                })
+                .catch((e) => {
+                    console.warn('Copie vers le dossier vidéo échouée, téléchargement de secours:', e);
+                    try {
+                        const a = document.createElement('a');
+                        a.href = URL.createObjectURL(finalBlob);
+                        a.download = uploadName;
+                        document.body.appendChild(a);
+                        a.click();
+                        setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+                    } catch(err) { console.warn('Download failed:', err); }
+                    afterAll();
+                });
         };
 
         // Avant livraison : réécrire l'en-tête WebM pour y injecter la durée réelle.
@@ -3025,7 +3008,7 @@ function finalizeMediaRecorderVideo(){
                 fd.append('fps', String(normalizeRecordingFps(pkg.options?.record?.fps)));
                 // Fidélité de couleur de l'encodage final (cf. color_fidelity.mjs).
                 fd.append('color_fidelity', normalizeColorFidelity(pkg.options?.record?.colorFidelity));
-                fd.append('fileName', fileName);
+                fd.append('fileName', baseName);
                 if (audioEnabled && audioFile) {
                     fd.append('audio', audioFile, audioFile.name || 'music');
                     const vol = (typeof pkg.options?.record?.audio?.volume === 'number') ? pkg.options.record.audio.volume : 1;
@@ -3041,18 +3024,6 @@ function finalizeMediaRecorderVideo(){
                         });
                     })
                     .then(result => {
-                        const file = result && result.file;
-                        // Si téléchargement local demandé, récupérer le MP4 traité depuis le serveur
-                        if (wantsDownload && file) {
-                            try {
-                                const a = document.createElement('a');
-                                a.href = `${CONFIG.BASE_URL}/download_video/${encodeURIComponent(file)}`;
-                                a.download = file;
-                                document.body.appendChild(a);
-                                a.click();
-                                setTimeout(() => a.remove(), 1000);
-                            } catch(e) { console.warn('Téléchargement du résultat échoué:', e); }
-                        }
                         afterAll(result);
                         resolve();
                     })
@@ -3064,7 +3035,9 @@ function finalizeMediaRecorderVideo(){
                 // passage l'élément « Duration » absent des flux MediaRecorder
                 // (remplace fixWebmFinalDuration sans charger le blob en mémoire).
                 stream.drain()
-                    .then(() => stream.finish(fileName))
+                    // Nom du fichier intermédiaire : le serveur le remplace
+                    // par le MP4 final puis le supprime.
+                    .then(() => stream.finish('mygcflow_raw.webm'))
                     .then((fin) => { streamedFile = fin.file; launchProcessing(); })
                     .catch(reject);
             } else {

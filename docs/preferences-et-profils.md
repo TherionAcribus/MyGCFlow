@@ -243,8 +243,7 @@ pourrait écraser un réglage plus récent.
     "bitrate_mbps": 6,
     "slowdown_factor": 1,
     "scale_factor": 1.0,
-    "upload_to_server": true,
-    "download_local": true,
+    "file_name": "",
     "offline_normalization": true,
     "audio_enabled": false,
     "audio_volume": 1.0

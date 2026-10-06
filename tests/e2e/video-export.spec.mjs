@@ -192,11 +192,10 @@ test('les options MediaRecorder de l\'interface produisent un MP4 validé par ff
   await page.locator('#inputRecordBitrate').fill('1');
   await page.locator('#inputRecordSlowdown').fill('2');
   await page.locator('#inputRecordScaleFactor').fill('1');
-  // Sans aucune destination l'export est désormais bloqué (point d'audit) :
-  // on garde la copie dans le dossier Vidéos et on ne désactive que le
-  // téléchargement navigateur.
-  await page.locator('#cbRecordUpload').check();
-  await page.locator('#cbRecordDownload').uncheck();
+  // Nom de fichier saisi : le serveur le nettoie (ASCII sans espace) et
+  // l'horodate ; l'aide sous le champ annonce le nom réel.
+  await page.locator('#inputRecordFileName').fill('Été en Bretagne');
+  await expect(page.locator('#recordFileNameHelp')).toContainText(/Ete_en_Bretagne_\d{4}-\d{2}-\d{2}_\d{2}h\d{2}\.mp4/);
   await expect(page.locator('#cbRecordNormalize')).toBeEnabled();
   await page.locator('#cbRecordNormalize').uncheck();
 
@@ -213,8 +212,7 @@ test('les options MediaRecorder de l\'interface produisent un MP4 validé par ff
       bitrate: Number(app.options.record.mediaRecorder.videoBitsPerSecond),
       slowdown: Number(app.options.record.mediaRecorder.slowdownFactor),
       scaleFactor: Number(app.options.record.mediaRecorder.scaleFactor),
-      uploadToServer: app.options.record.mediaRecorder.uploadToServer,
-      downloadLocal: app.options.record.mediaRecorder.downloadLocal,
+      fileName: app.options.record.fileName,
       normalize: app.options.record.mediaRecorder.offlineNormalization,
       timePerDay: Number(app.options.animation.timePerDay),
       extraEndSeconds: Number(app.options.animation.extraEndSeconds),
@@ -227,8 +225,7 @@ test('les options MediaRecorder de l\'interface produisent un MP4 validé par ff
     bitrate: 1_000_000,
     slowdown: 2,
     scaleFactor: 1,
-    uploadToServer: true,
-    downloadLocal: false,
+    fileName: 'Été en Bretagne',
     normalize: false,
     timePerDay: 80,
     extraEndSeconds: 0,
@@ -239,6 +236,10 @@ test('les options MediaRecorder de l\'interface produisent un MP4 validé par ff
   await expect.poll(latestCompletedMp4, { timeout: 15_000 }).not.toBeNull();
 
   const videoPath = latestCompletedMp4();
+  // Un seul horodatage, lisible ; -2, -3… si la minute est déjà prise.
+  expect(path.basename(videoPath)).toMatch(/^Ete_en_Bretagne_\d{4}-\d{2}-\d{2}_\d{2}h\d{2}(-\d+)?\.mp4$/);
+  // Aucun fichier intermédiaire ne reste dans le dossier des vidéos.
+  expect(readdirSync(path.dirname(videoPath)).filter((name) => name.endsWith('.webm'))).toEqual([]);
 
   // L'écran de fin présente le fichier réellement produit : son nom, son
   // dossier, sa taille, et un aperçu lisible dans la page.
@@ -256,6 +257,14 @@ test('les options MediaRecorder de l\'interface produisent un MP4 validé par ff
   await ready.locator('.modal-footer [data-bs-dismiss="modal"]').click();
   await expect(ready).toBeHidden();
   await expect(player).not.toHaveAttribute('src', /.+/);
+
+  // Champ vidé : le nom du thème actif reprend la main. Le réglage est
+  // global, on le laisse vide pour les tests suivants.
+  await page.locator('#inputRecordFileName').fill('');
+  await expect(page.locator('#recordFileNameHelp')).toContainText('nom du thème actif');
+  await expect.poll(async () => (
+    await (await page.request.get('/api/settings')).json()
+  ).recording.file_name).toBe('');
   const expectationPath = path.join(RUNTIME, 'browser-video-expectation.json');
   writeFileSync(expectationPath, JSON.stringify({
     duration_seconds: 1.3,
@@ -390,11 +399,6 @@ test('le mode MediaRecorder rend aussi la carte à la résolution demandée', as
   await page.locator('#inputRecordBitrate').fill('2');
   await page.locator('#inputRecordSlowdown').fill('1');
   await page.locator('#inputRecordScaleFactor').fill('1');
-  // Sans aucune destination l'export est désormais bloqué (point d'audit) :
-  // on garde la copie dans le dossier Vidéos, seul le téléchargement
-  // navigateur est désactivé.
-  await page.locator('#cbRecordUpload').check();
-  await page.locator('#cbRecordDownload').uncheck();
 
   const plan = await page.evaluate(async () => {
     const app = await import('/static/js/index.js');

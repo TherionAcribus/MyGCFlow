@@ -291,10 +291,48 @@ def _timestamped_name(base: str, ext_fallback: str):
     return f"{name}_{stamp}.{ext}"
 
 
-def default_video_output(ext: str = "mp4"):
-    """Return a default output path under the video folder with timestamp."""
-    base = f"mygcflow.{ext}"
-    return os.path.join(paths.video_dir(), _timestamped_name(base, ext))
+# Extensions qu'un utilisateur peut avoir saisies avec son nom de fichier : le
+# conteneur est imposé par l'export, elles sont donc retirées du nom de base.
+_VIDEO_EXTENSIONS = ('.mp4', '.webm', '.mkv', '.mov')
+VIDEO_BASE_NAME_DEFAULT = "mygcflow"
+VIDEO_BASE_NAME_MAX_LENGTH = 80
+
+
+def video_base_name(raw):
+    """Nom de base d'une vidéo à partir d'une saisie libre (nom du thème, champ
+    « Nom du fichier »).
+
+    secure_filename ne garde que de l'ASCII sans espace : le nom reste lisible
+    par tous les lecteurs et sites de partage, et resolve_video_file() le
+    retrouve tel quel. Une saisie vide ou entièrement filtrée retombe sur le
+    nom par défaut.
+    """
+    name = secure_filename(str(raw or ''))
+    while name.lower().endswith(_VIDEO_EXTENSIONS):
+        name = os.path.splitext(name)[0]
+    # « Encre & Papier » : le caractère retiré laisse deux séparateurs d'affilée.
+    name = re.sub(r'_{2,}', '_', name)
+    name = name[:VIDEO_BASE_NAME_MAX_LENGTH].strip('._-')
+    return name or VIDEO_BASE_NAME_DEFAULT
+
+
+def video_output_path(base_name=None, ext: str = "mp4"):
+    """Chemin d'une nouvelle vidéo : <nom>_AAAA-MM-JJ_HHhMM.<ext> dans le dossier
+    des vidéos.
+
+    Un seul horodatage, lisible et triable. Deux exports dans la même minute
+    reçoivent un suffixe -2, -3… plutôt que des secondes dans tous les noms :
+    un fichier existant n'est jamais écrasé.
+    """
+    video_dir = str(paths.video_dir())
+    stem = f"{video_base_name(base_name)}_{datetime.now().strftime('%Y-%m-%d_%Hh%M')}"
+    ext = (ext or 'mp4').lstrip('.')
+    candidate = os.path.join(video_dir, f"{stem}.{ext}")
+    counter = 2
+    while os.path.exists(candidate):
+        candidate = os.path.join(video_dir, f"{stem}-{counter}.{ext}")
+        counter += 1
+    return candidate
 
 
 # --------- Socle ffmpeg commun aux deux pipelines vidéo ---------
@@ -895,7 +933,8 @@ def process_recorded_video(request):
         flux délesté (video_stream_*), qui évite de re-téléverser le fichier.
     Autres champs :
       - 'audio' (fichier) OU 'audio' (nom déjà présent dans audio/) : piste audio optionnelle
-      - 'slowdown', 'audio_volume', 'fileName', 'color_fidelity' : options
+      - 'slowdown', 'audio_volume', 'color_fidelity' : options
+      - 'fileName' : nom de base de la vidéo (cf. video_output_path)
     """
     from task_manager import task_manager
 
@@ -932,13 +971,9 @@ def process_recorded_video(request):
     fps = _num('fps', 0) or None
     color_fidelity = coerce_color_fidelity(request.form.get('color_fidelity'))
 
-    # Nom de sortie basé sur fileName fourni, forcé en .mp4
-    suggested = request.form.get('fileName')
-    if suggested:
-        base = os.path.splitext(secure_filename(suggested))[0] + '.mp4'
-        out_path = os.path.join(video_dir, _timestamped_name(base, 'mp4'))
-    else:
-        out_path = default_video_output('mp4')
+    # Le client fournit le nom de base (thème ou saisie) ; l'horodatage et
+    # l'extension sont posés ici, comme pour l'assemblage d'images.
+    out_path = video_output_path(request.form.get('fileName'), 'mp4')
 
     status = task_manager.submit(
         TASK_TYPE_VIDEO_PROCESS, run_process_video_task,
@@ -958,29 +993,20 @@ def upload_video(request):
 
     Champs attendus:
       - 'video': le fichier binaire
-      - 'fileName' (optionnel): nom suggéré; sinon fallback sur nom horodaté
+      - 'fileName' (optionnel): nom de base suggéré, avec l'extension du conteneur
     """
     try:
         if not request.files or 'video' not in request.files:
             return jsonify({'success': False, 'message': _('Aucun fichier vidéo fourni')}), 400
 
         video_file = request.files['video']
-        suggested = request.form.get('fileName') or video_file.filename
+        suggested = request.form.get('fileName') or video_file.filename or ''
 
-        # Sécuriser le nom fourni et horodater si absent
-        safe_suggested = secure_filename(suggested) if suggested else None
-        base = safe_suggested or _timestamped_name("mygcflow.webm", "webm")
-        ext = os.path.splitext(base)[1].lstrip(".") or "webm"
-
-        video_dir = paths.ensure_dir(paths.video_dir())
-        save_path = os.path.join(video_dir, base)
-
-        # Si le fichier existe déjà, suffixer avec un horodatage pour éviter l'écrasement
-        if os.path.exists(save_path):
-            file_name = _timestamped_name(base, ext)
-            save_path = os.path.join(video_dir, file_name)
-        else:
-            file_name = base
+        # Le nom fourni porte l'extension du conteneur enregistré par le
+        # navigateur ; le nom final suit la même règle que les autres exports.
+        ext = os.path.splitext(secure_filename(suggested))[1].lstrip('.') or 'webm'
+        paths.ensure_dir(paths.video_dir())
+        save_path = video_output_path(suggested, ext)
         video_file.save(save_path)
 
         return jsonify({'success': True, 'message': _('Vidéo reçue et sauvegardée'), 'path': save_path,

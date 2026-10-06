@@ -8,7 +8,6 @@ from capture import (
     captured_session_dir,
     clear_pictures_directory,
     count_captured_pictures,
-    default_video_output,
     open_video,
     open_video_folder,
     coerce_color_fidelity,
@@ -20,6 +19,7 @@ from capture import (
     upload_image,
     upload_images,
     upload_video,
+    video_output_path,
     video_stream_abort,
     video_stream_append,
     video_stream_begin,
@@ -132,7 +132,7 @@ def start_create_video():
         image_folder = str(captured_session_dir(session))
         # Assemblage lancé en tâche de fond : évite l'expiration du fetch HTTP
         # sur les vidéos longues. Le client suit l'avancement via /tasks/<id>.
-        output_video = default_video_output("mp4")
+        output_video = video_output_path(_param('file_name'), "mp4")
         # exclusive : deux assemblages simultanés liraient le même dossier captured/
         try:
             status = task_manager.submit(

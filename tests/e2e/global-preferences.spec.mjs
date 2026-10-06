@@ -41,7 +41,7 @@ test.afterEach(async ({ page }) => {
       theme: 'system',
       check_updates: false,
       date_format: 'auto',
-      recording: { fps: 30, bitrate_mbps: 6, slowdown_factor: 1, download_local: true },
+      recording: { fps: 30, bitrate_mbps: 6, slowdown_factor: 1, offline_normalization: true, file_name: '' },
     }),
   })).catch(() => {});
 });
@@ -241,13 +241,18 @@ test('les réglages d\'enregistrement partent vers le serveur et confirment le c
   // Cases à cocher et champs numériques annexes : leurs écouteurs enveloppent
   // changeRecordValues() au lieu de la passer nue, sinon l'objet Event
   // atterrirait dans le paramètre `field` et l'indicateur ne s'afficherait pas.
-  await page.locator('#cbRecordDownload').uncheck();
-  await expect(page.locator('label[for="cbRecordDownload"] .gc-saved-indicator.is-saved.is-visible')).toBeVisible();
-  await expect.poll(async () => (await readServerSettings(page)).recording.download_local).toBe(false);
+  await page.locator('#inputRecordFileName').fill('Mes vacances');
+  await expect(page.locator('label[for="inputRecordFileName"] .gc-saved-indicator.is-saved.is-visible')).toBeVisible();
+  await expect.poll(async () => (await readServerSettings(page)).recording.file_name).toBe('Mes vacances');
 
   await page.locator('#inputRecordSlowdown').fill('2');
   await expect(page.locator('label[for="inputRecordSlowdown"] .gc-saved-indicator.is-saved.is-visible')).toBeVisible();
   await expect.poll(async () => (await readServerSettings(page)).recording.slowdown_factor).toBe(2);
+
+  // « Normaliser la vitesse » n'est actif qu'avec un ralentissement > 1.
+  await page.locator('#cbRecordNormalize').uncheck();
+  await expect(page.locator('label[for="cbRecordNormalize"] .gc-saved-indicator.is-saved.is-visible')).toBeVisible();
+  await expect.poll(async () => (await readServerSettings(page)).recording.offline_normalization).toBe(false);
 });
 
 

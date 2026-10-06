@@ -101,8 +101,6 @@ class RecordingDefaultsMatchTheClientTests(unittest.TestCase):
         self.assertEqual(media["mimeType"], server.mime_type)
         self.assertEqual(media["videoBitsPerSecond"] / 1_000_000, server.bitrate_mbps)
         self.assertEqual(media["slowdownFactor"], server.slowdown_factor)
-        self.assertEqual(media["uploadToServer"], server.upload_to_server)
-        self.assertEqual(media["downloadLocal"], server.download_local)
         self.assertEqual(media["offlineNormalization"], server.offline_normalization)
 
 
@@ -442,12 +440,12 @@ class SettingsApiTests(unittest.TestCase):
 
     def test_a_partial_recording_patch_keeps_the_other_video_settings(self):
         self.client.put('/api/settings', json={'recording': {'fps': 24, 'bitrate_mbps': 12}})
-        self.client.put('/api/settings', json={'recording': {'download_local': False}})
+        self.client.put('/api/settings', json={'recording': {'file_name': '  Mes vacances  '}})
 
         recording = self.client.get('/api/settings').get_json()['recording']
         self.assertEqual(recording['fps'], 24)
         self.assertEqual(recording['bitrate_mbps'], 12)
-        self.assertFalse(recording['download_local'])
+        self.assertEqual(recording['file_name'], 'Mes vacances')
 
     def test_writing_recording_marks_the_settings_as_configured(self):
         self.client.put('/api/settings', json={'recording': {'fps': 24}})

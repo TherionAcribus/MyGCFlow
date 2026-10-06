@@ -97,7 +97,7 @@ var selectMapFraming, mapFramingFitBlock, mapFramingCustomBlock, btnFitDataView;
 var latLonModeCombined, latLonModeSplit, fieldLat, fieldLon, fieldCombined;
 let isCombinedLatLonMode = true;
 // Enregistrement
-var selectRecordMode, selectRecordQualityProfile, recordAdvancedSettings, inputRecordFps, inputRecordBitrate, selectRecordMime, inputRecordSlowdown, inputRecordScaleFactor, cbRecordUpload, cbRecordDownload, cbRecordNormalize, selectRecordResolution, selectRecordColorFidelity;
+var selectRecordMode, selectRecordQualityProfile, recordAdvancedSettings, inputRecordFps, inputRecordBitrate, selectRecordMime, inputRecordSlowdown, inputRecordScaleFactor, inputRecordFileName, cbRecordNormalize, selectRecordResolution, selectRecordColorFidelity;
 var cbRecordAudioEnable, inputAudioFile, inputAudioVolume;
 // Passe à true à la première synchro déclenchée par une résolution de
 // données (chargement, filtrage, vidage). L'état vide de la carte ne se
@@ -115,11 +115,6 @@ const isMusicLocked = () => pkg.options?.animation?.rhythmMode === 'music';
 // invalide (cf. updateDataAvailabilityUI).
 var timingInputsValid = false;
 var lastTimingPlan = null;
-// En capture rapide, au moins une destination (dossier Vidéos et/ou
-// téléchargement) est requise : sinon la vidéo serait produite puis perdue.
-// Recalculé par updateRecordDestinationState, consulté par
-// updateDataAvailabilityUI pour bloquer l'export.
-var recordDestinationValid = true;
 // Cache des durées audio lues (clé = identité du fichier) et jeton anti-course :
 // une lecture de métadonnées démarrée pour le fichier A ne doit pas écraser
 // l'état quand l'utilisateur a depuis choisi le fichier B.
@@ -185,7 +180,7 @@ function syncRecordingQualityProfile({ revealCustom = false } = {}) {
 const RECORD_SETTINGS_FIELDS = [
     'selectRecordMode', 'selectRecordQualityProfile', 'inputRecordFps', 'inputRecordBitrate',
     'inputRecordSlowdown', 'inputRecordScaleFactor', 'selectRecordMime',
-    'cbRecordUpload', 'cbRecordDownload', 'cbRecordNormalize',
+    'inputRecordFileName', 'cbRecordNormalize',
     'cbRecordAudioEnable', 'inputAudioVolume', 'selectRecordResolution',
     'selectRecordColorFidelity',
 ];
@@ -1023,10 +1018,12 @@ function initOptionsElements() {
             inputRecordScaleFactor, normalizeRecordingScaleFactor, RECORDING_LIMITS.scaleFactor
         ));
     }
-    cbRecordUpload = document.getElementById('cbRecordUpload');
-    if (cbRecordUpload) cbRecordUpload.addEventListener('change', () => changeRecordValues());
-    cbRecordDownload = document.getElementById('cbRecordDownload');
-    if (cbRecordDownload) cbRecordDownload.addEventListener('change', () => changeRecordValues());
+    inputRecordFileName = document.getElementById('inputRecordFileName');
+    if (inputRecordFileName) {
+        inputRecordFileName.addEventListener('input', () => changeRecordValues());
+        // Le thème actif a pu changer depuis le dernier affichage.
+        inputRecordFileName.addEventListener('focus', () => updateRecordFileNameHint());
+    }
     cbRecordNormalize = document.getElementById('cbRecordNormalize');
     if (cbRecordNormalize) cbRecordNormalize.addEventListener('change', () => changeRecordValues());
     // Audio utilisateur
@@ -2212,12 +2209,9 @@ function initOptionsUI() {
         updateRecordResolutionWarning();
         if (inputRecordSlowdown) inputRecordSlowdown.value = (pkg.options.record?.mediaRecorder?.slowdownFactor) || 1;
         if (inputRecordScaleFactor) inputRecordScaleFactor.value = (pkg.options.record?.mediaRecorder?.scaleFactor) || 1;
-        if (cbRecordUpload) cbRecordUpload.checked = !!(pkg.options.record?.mediaRecorder?.uploadToServer);
-        if (cbRecordDownload) cbRecordDownload.checked = !!(pkg.options.record?.mediaRecorder?.downloadLocal);
+        if (inputRecordFileName) inputRecordFileName.value = pkg.options.record?.fileName || '';
+        updateRecordFileNameHint();
         if (cbRecordNormalize) cbRecordNormalize.checked = !!(pkg.options.record?.mediaRecorder?.offlineNormalization ?? true);
-        // Ré-afficher l'erreur de destination dès l'application des réglages
-        // restaurés (ex. préférences avec les deux destinations décochées).
-        updateRecordDestinationState();
 
         // Vérifier le format sauvegardé et l'état initial de normalize
         if (selectRecordMime && typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported) {
@@ -2519,21 +2513,12 @@ function changeRecordValues(field = undefined) {
             pkg.options.record.mediaRecorder.scaleFactor = sc;
         }
         updateRecordResolutionWarning();
-        if (cbRecordUpload) {
-            pkg.options.record.mediaRecorder.uploadToServer = !!cbRecordUpload.checked;
-        }
-        if (cbRecordDownload) {
-            pkg.options.record.mediaRecorder.downloadLocal = !!cbRecordDownload.checked;
+        if (inputRecordFileName) {
+            pkg.options.record.fileName = inputRecordFileName.value.trim();
         }
         if (cbRecordNormalize) {
             pkg.options.record.mediaRecorder.offlineNormalization = !!cbRecordNormalize.checked;
         }
-
-        // Destination requise en capture rapide : l'erreur persistante près
-        // des cases remplace l'ancien toast, et l'export est bloqué tant
-        // qu'aucune n'est cochée.
-        updateRecordDestinationState();
-        updateDataAvailabilityUI();
 
         // ------- AUDIO UTILISATEUR -------
         try {
@@ -2593,8 +2578,7 @@ function recordSettingsPayload() {
         bitrate_mbps: normalizeRecordingBitrateMbps(Number(mr.videoBitsPerSecond) / 1_000_000),
         slowdown_factor: mr.slowdownFactor || 1,
         scale_factor: mr.scaleFactor || 1,
-        upload_to_server: mr.uploadToServer ?? true,
-        download_local: mr.downloadLocal ?? true,
+        file_name: (record.fileName || '').trim(),
         offline_normalization: mr.offlineNormalization ?? true,
         audio_enabled: audio.enabled || false,
         audio_volume: (typeof audio.volume === 'number') ? audio.volume : 1,
@@ -2615,8 +2599,7 @@ function applyRecordSettingsPayload(recording) {
         normalizeRecordingBitrateMbps(recording.bitrate_mbps) * 1_000_000;
     pkg.options.record.mediaRecorder.slowdownFactor = recording.slowdown_factor || 1;
     pkg.options.record.mediaRecorder.scaleFactor = recording.scale_factor || 1;
-    pkg.options.record.mediaRecorder.uploadToServer = recording.upload_to_server ?? true;
-    pkg.options.record.mediaRecorder.downloadLocal = recording.download_local ?? true;
+    pkg.options.record.fileName = (typeof recording.file_name === 'string') ? recording.file_name : '';
     pkg.options.record.mediaRecorder.offlineNormalization = recording.offline_normalization ?? true;
     pkg.options.record.audio = pkg.options.record.audio || {};
     pkg.options.record.audio.enabled = recording.audio_enabled || false;
@@ -2652,8 +2635,6 @@ function migrateLegacyRecordSettings(userSettings) {
     ) * 1_000_000;
     pkg.options.record.mediaRecorder.slowdownFactor = legacy.mediaRecorder?.slowdownFactor || 1;
     pkg.options.record.mediaRecorder.scaleFactor = legacy.mediaRecorder?.scaleFactor || 1;
-    pkg.options.record.mediaRecorder.uploadToServer = legacy.mediaRecorder?.uploadToServer ?? true;
-    pkg.options.record.mediaRecorder.downloadLocal = legacy.mediaRecorder?.downloadLocal ?? true;
     pkg.options.record.mediaRecorder.offlineNormalization = legacy.mediaRecorder?.offlineNormalization ?? true;
     pkg.options.record.audio = pkg.options.record.audio || {};
     pkg.options.record.audio.enabled = legacy.audio?.enabled || false;
@@ -4442,9 +4423,7 @@ function clickStartAnimation(){
 }
 
 function clickRecordAnimation(){
-    // Garde défensive : les boutons sont déjà désactivés sans destination,
-    // mais un clic forcé ou un relais ne doit pas produire une vidéo perdue.
-    if (!hasAnimationData() || !recordDestinationValid) return;
+    if (!hasAnimationData()) return;
     // Vide la source vectorielle avant de démarrer l'animation
     pkg.recordAnimation();
     showPauseStopButtons();
@@ -4787,7 +4766,6 @@ function updateExportSummary() {
     if (!el) return;
 
     const record = pkg.options?.record || {};
-    const isMediaRecorder = (record.mode || 'mediarecorder') === 'mediarecorder';
 
     const totalMs = lastTimingPlan?.valid ? lastTimingPlan.totalDurationMs : null;
     const parts = [t('Vidéo ~${d}', { d: Number.isFinite(totalMs) ? formatMmSs(totalMs) : '—' })];
@@ -4801,34 +4779,42 @@ function updateExportSummary() {
             ? t('musique incluse')
             : t('sans musique'));
 
-    // La destination n'est configurable qu'en capture rapide : en rendu image
-    // par image, la vidéo est toujours assemblée dans le dossier Vidéos.
-    let destination;
-    if (!isMediaRecorder) {
-        destination = t('dossier Vidéos');
-    } else {
-        const toVideos = !!cbRecordUpload?.checked;
-        const toDownload = !!cbRecordDownload?.checked;
-        destination = toVideos && toDownload ? t('dossier Vidéos + téléchargement')
-            : toVideos ? t('dossier Vidéos')
-            : toDownload ? t('téléchargement navigateur')
-            : t('aucune copie conservée');
-    }
-    parts.push(t('destination : ${d}', { d: destination }));
+    // Les deux modes écrivent dans le dossier Vidéos ; une copie ailleurs se
+    // fait depuis l'écran de fin d'export.
+    parts.push(t('destination : ${d}', { d: t('dossier Vidéos') }));
 
     el.textContent = parts.join(' · ');
+    updateRecordFileNameHint();
 }
 
-// Au moins une destination est requise en capture rapide : sans copie dans le
-// dossier Vidéos ni téléchargement, la vidéo serait produite puis perdue.
-// Le mode images n'est pas concerné (assemblage systématique dans Vidéos) ;
-// les cases sont d'ailleurs masquées (.mediarecorder-only).
-function updateRecordDestinationState() {
-    if (!selectRecordMode || !cbRecordUpload || !cbRecordDownload) return;
-    const isMediaRecorder = selectRecordMode.value === 'mediarecorder';
-    recordDestinationValid = !isMediaRecorder || cbRecordUpload.checked || cbRecordDownload.checked;
-    const err = document.getElementById('recordDestinationError');
-    if (err) err.hidden = recordDestinationValid;
+// Nom de base des vidéos produites : la saisie de l'onglet Export, sinon le nom
+// du thème actif. Le serveur le nettoie, l'horodate et pose l'extension
+// (capture.video_output_path) ; vide, il retombe sur « mygcflow ».
+export function recordingFileBaseName() {
+    const typed = (pkg.options?.record?.fileName || '').trim();
+    if (typed) return typed;
+    return (window.profileManager?.currentProfile?.name || '').trim();
+}
+
+// Aperçu du nom que portera la prochaine vidéo. Reproduit le nettoyage du
+// serveur (ASCII sans espace) pour que l'exemple soit celui du fichier réel.
+function updateRecordFileNameHint() {
+    if (!inputRecordFileName) return;
+    const themeName = (window.profileManager?.currentProfile?.name || '').trim();
+    inputRecordFileName.placeholder = themeName || 'mygcflow';
+    const help = document.getElementById('recordFileNameHelp');
+    if (!help) return;
+    const base = recordingFileBaseName()
+        .normalize('NFKD').replace(/[^\x00-\x7F]/g, '')
+        .trim().replace(/\s+/g, '_').replace(/[^A-Za-z0-9_.-]/g, '')
+        .replace(/_{2,}/g, '_').replace(/^[._-]+|[._-]+$/g, '') || 'mygcflow';
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const name = `${base}_${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}h${pad(now.getMinutes())}.mp4`;
+    const example = t('Exemple : ${name}', { name });
+    help.textContent = (pkg.options?.record?.fileName || '').trim()
+        ? example
+        : t('Vide : nom du thème actif.') + ' ' + example;
 }
 
 // Erreurs bloquantes (boutons désactivés) et avertissements (plan appliqué
@@ -6622,15 +6608,12 @@ export function updateDataAvailabilityUI({ dataResolved = false } = {}) {
 
     const btnStart = document.getElementById('btnStartAnimation');
     const btnRecord = document.getElementById('btnRecordAnimation');
-    updateRecordDestinationState();
     // Un timing invalide (champ vide, hors bornes, plage de dates incohérente,
     // mode musique sans fichier) bloque le lancement tant qu'il n'est pas
     // expliqué et corrigé — on ne démarre jamais sur un plan invalide.
     const canRun = hasData && timingInputsValid;
     if (btnStart) btnStart.disabled = !canRun;
-    // L'export, lui, exige en plus une destination en capture rapide : la
-    // prévisualisation ne produit pas de fichier, elle garde seulement canRun.
-    if (btnRecord) btnRecord.disabled = !canRun || !recordDestinationValid;
+    if (btnRecord) btnRecord.disabled = !canRun;
     // Titre/infos de la carte : re-évaluer quand l'état « base chargée »
     // change — syncOverlayVisibility les masque tant qu'il n'y a pas de base.
     pkg.syncOverlayVisibility?.();

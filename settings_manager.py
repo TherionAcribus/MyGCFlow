@@ -213,6 +213,10 @@ def write_json(path: Path, obj: dict) -> None:
     atomic_write(path, json.dumps(obj, ensure_ascii=False, indent=2))
 
 
+# Même borne que le champ de saisie (maxlength) de l'onglet Export.
+RECORDING_FILE_NAME_MAX_LENGTH = 80
+
+
 @dataclass
 class RecordingSettings:
     """Réglages d'enregistrement vidéo.
@@ -243,8 +247,10 @@ class RecordingSettings:
     bitrate_mbps: int = 6
     slowdown_factor: int = 1
     scale_factor: float = 1.0
-    upload_to_server: bool = True
-    download_local: bool = True
+    # Nom de base des vidéos produites ; vide = nom du thème actif (le client
+    # le résout, cf. recordingFileBaseName dans ui.js). L'horodatage et
+    # l'extension sont ajoutés par capture.video_output_path.
+    file_name: str = ""
     offline_normalization: bool = True
     audio_enabled: bool = False
     audio_volume: float = 1.0
@@ -708,8 +714,8 @@ def coerce_recording_settings(d: dict) -> RecordingSettings:
     r.bitrate_mbps = _clamp_int(d.get("bitrate_mbps"), r.bitrate_mbps, 1, 30)
     r.slowdown_factor = _clamp_int(d.get("slowdown_factor"), r.slowdown_factor, 1, 20)
     r.scale_factor = _clamp_float(d.get("scale_factor"), r.scale_factor, 1.0, 3.0)
-    r.upload_to_server = bool(d.get("upload_to_server", r.upload_to_server))
-    r.download_local = bool(d.get("download_local", r.download_local))
+    if isinstance(d.get("file_name"), str):
+        r.file_name = d["file_name"].strip()[:RECORDING_FILE_NAME_MAX_LENGTH]
     r.offline_normalization = bool(d.get("offline_normalization", r.offline_normalization))
     r.audio_enabled = bool(d.get("audio_enabled", r.audio_enabled))
     r.audio_volume = _clamp_float(d.get("audio_volume"), r.audio_volume, 0.0, 1.0)
