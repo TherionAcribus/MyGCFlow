@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-06 09:06+0200\n"
+"POT-Creation-Date: 2026-10-06 09:21+0200\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -264,7 +264,7 @@ msgstr "Fragment vidéo hors séquence"
 msgid "Fragment vidéo absent"
 msgstr "Fragment vidéo absent"
 
-#: settings_manager.py:2313
+#: settings_manager.py:2320
 #, python-format
 msgid ""
 "Le nom '%(name)s' ne contient aucun caractère utilisable (au moins une "
@@ -273,45 +273,45 @@ msgstr ""
 "Le nom '%(name)s' ne contient aucun caractère utilisable (au moins une "
 "lettre ou un chiffre est nécessaire)"
 
-#: blueprints/profiles.py:437 settings_manager.py:2340 settings_manager.py:2417
-#: settings_manager.py:2469
+#: blueprints/profiles.py:441 settings_manager.py:2347 settings_manager.py:2424
+#: settings_manager.py:2476
 #, python-format
 msgid "Thème '%(name)s' introuvable"
 msgstr "Thème '%(name)s' introuvable"
 
-#: settings_manager.py:2361
+#: settings_manager.py:2368
 #, python-format
 msgid "Aucun thème trouvé avec l'UUID: %(uid)s"
 msgstr "Aucun thème trouvé avec l'UUID: %(uid)s"
 
-#: settings_manager.py:2397 settings_manager.py:2422
+#: settings_manager.py:2404 settings_manager.py:2429
 #, , python-format
 msgid "Un thème nommé '%(name)s' existe déjà"
 msgstr "Un thème nommé '%(name)s' existe déjà"
 
-#: settings_manager.py:2434
+#: settings_manager.py:2441
 #, python-format
 msgid "Thème source '%(name)s' introuvable"
 msgstr "Thème source '%(name)s' introuvable"
 
-#: settings_manager.py:2450
+#: settings_manager.py:2457
 msgid "Mode de thème inconnu"
 msgstr "Mode de thème inconnu"
 
-#: settings_manager.py:2453
+#: settings_manager.py:2460
 #, , python-format
 msgid "Le thème '%(name)s' appartient déjà à ce mode"
 msgstr "Le thème '%(name)s' appartient déjà à ce mode"
 
-#: settings_manager.py:2614
+#: settings_manager.py:2621
 msgid "Payload invalide"
 msgstr "Payload invalide"
 
-#: settings_manager.py:2617
+#: settings_manager.py:2624
 msgid "Fichier de thème invalide (détrompeur manquant)"
 msgstr "Fichier de thème invalide (détrompeur manquant)"
 
-#: settings_manager.py:2621
+#: settings_manager.py:2628
 msgid "Section 'profile' manquante"
 msgstr "Section 'profile' manquante"
 
@@ -506,7 +506,7 @@ msgstr "Base de données vidée avec succès. %(count)s entrées supprimées."
 msgid "Erreur lors du vidage de la base de données: %(error)s"
 msgstr "Erreur lors du vidage de la base de données: %(error)s"
 
-#: blueprints/media.py:77
+#: blueprints/media.py:82
 msgid ""
 "Un assemblage vidéo est déjà en cours. Attendez sa fin avant d'en lancer "
 "un autre ou de relancer une capture (les deux utilisent le dossier "
@@ -516,11 +516,11 @@ msgstr ""
 "un autre ou de relancer une capture (les deux utilisent le dossier "
 "captured/)."
 
-#: blueprints/media.py:150
+#: blueprints/media.py:155
 msgid "Assemblage vidéo lancé en tâche de fond"
 msgstr "Assemblage vidéo lancé en tâche de fond"
 
-#: blueprints/media.py:179
+#: blueprints/media.py:184
 msgid ""
 "Un assemblage vidéo est en cours : le dossier captured/ ne peut pas être "
 "vidé maintenant."
@@ -528,7 +528,31 @@ msgstr ""
 "Un assemblage vidéo est en cours : le dossier captured/ ne peut pas être "
 "vidé maintenant."
 
-#: blueprints/profiles.py:343
+#: blueprints/media.py:291
+msgid "Indiquez un dossier."
+msgstr "Indiquez un dossier."
+
+#: blueprints/media.py:294
+msgid "Indiquez le chemin complet du dossier (par exemple D:\\Vidéos)."
+msgstr "Indiquez le chemin complet du dossier (par exemple D:\\Vidéos)."
+
+#: blueprints/media.py:301
+msgid "MyGCFlow ne peut pas écrire dans ce dossier."
+msgstr "MyGCFlow ne peut pas écrire dans ce dossier."
+
+#: blueprints/media.py:329
+msgid "Choisir le dossier des vidéos"
+msgstr "Choisir le dossier des vidéos"
+
+#: blueprints/media.py:334
+msgid "Une fenêtre de choix du dossier est déjà ouverte."
+msgstr "Une fenêtre de choix du dossier est déjà ouverte."
+
+#: blueprints/media.py:338
+msgid "Le sélecteur de dossier n'est pas disponible : saisissez le chemin."
+msgstr "Le sélecteur de dossier n'est pas disponible : saisissez le chemin."
+
+#: blueprints/profiles.py:347
 msgid ""
 "Le renommage n'est pas autorisé via cet endpoint, utilisez "
 "/api/profiles/<name>/rename"
@@ -536,7 +560,7 @@ msgstr ""
 "Le renommage n'est pas autorisé via cet endpoint, utilisez "
 "/api/profiles/<name>/rename"
 
-#: blueprints/profiles.py:371
+#: blueprints/profiles.py:375
 msgid "Nouveau nom manquant"
 msgstr "Nouveau nom manquant"
 
@@ -1288,7 +1312,7 @@ msgstr ""
 msgid "Envoi des dernières images..."
 msgstr "Envoi des dernières images..."
 
-#: static/js/mapgl.js:2237 static/js/ui.js:5041
+#: static/js/mapgl.js:2237 static/js/ui.js:5044
 msgid "Assemblage en cours"
 msgstr "Assemblage en cours"
 
@@ -2285,28 +2309,28 @@ msgstr "sans musique"
 msgid "destination : ${d}"
 msgstr "destination : ${d}"
 
-#: static/js/ui.js:4814
+#: static/js/ui.js:4817
 #, python-brace-format
 msgid "Exemple : ${name}"
 msgstr "Exemple : ${name}"
 
-#: static/js/ui.js:4817
+#: static/js/ui.js:4820
 msgid "Vide : nom du thème actif."
 msgstr "Vide : nom du thème actif."
 
-#: static/js/ui.js:4828
+#: static/js/ui.js:4831
 msgid "La plage de dates est invalide ou vide."
 msgstr "La plage de dates est invalide ou vide."
 
-#: static/js/ui.js:4829
+#: static/js/ui.js:4832
 msgid "Sélectionnez un fichier audio pour le mode « Sur la musique »."
 msgstr "Sélectionnez un fichier audio pour le mode « Sur la musique »."
 
-#: static/js/ui.js:4834
+#: static/js/ui.js:4837
 msgid "En attente de la lecture de la durée de la musique."
 msgstr "En attente de la lecture de la durée de la musique."
 
-#: static/js/ui.js:4848
+#: static/js/ui.js:4851
 #, python-brace-format
 msgid ""
 "Durée demandée (${req}) trop courte pour afficher chaque jour (minimum "
@@ -2315,7 +2339,7 @@ msgstr ""
 "Durée demandée (${req}) trop courte pour afficher chaque jour (minimum "
 "${min}) : ${app} appliquée."
 
-#: static/js/ui.js:4856
+#: static/js/ui.js:4859
 msgid ""
 "Le suivi de caméra met les dates en pause pendant chaque déplacement. La "
 "durée et le nombre d'images affichés sont des minimums ; le résultat sera"
@@ -2325,7 +2349,7 @@ msgstr ""
 "durée et le nombre d'images affichés sont des minimums ; le résultat sera"
 " plus long et peut dépasser la durée de la musique."
 
-#: static/js/ui.js:4895
+#: static/js/ui.js:4898
 #, python-brace-format
 msgid ""
 "Charge élevée : jusqu'à ~${n} flashs simultanés. Pistes : raccourcir la "
@@ -2334,7 +2358,7 @@ msgstr ""
 "Charge élevée : jusqu'à ~${n} flashs simultanés. Pistes : raccourcir la "
 "durée du flash, ralentir l'animation, ou utiliser le mode Images."
 
-#: static/js/ui.js:4899
+#: static/js/ui.js:4902
 #, python-brace-format
 msgid ""
 "${n} images à produire (~${d} en mode Images). Envisagez un fps plus bas "
@@ -2343,63 +2367,78 @@ msgstr ""
 "${n} images à produire (~${d} en mode Images). Envisagez un fps plus bas "
 "ou une animation plus courte."
 
-#: static/js/ui.js:5038
+#: static/js/ui.js:5041
 msgid "Images de capture supprimées"
 msgstr "Images de capture supprimées"
 
-#: static/js/ui.js:5038
+#: static/js/ui.js:5041
 msgid "Nettoyage"
 msgstr "Nettoyage"
 
-#: static/js/ui.js:5061
+#: static/js/ui.js:5064
 #, python-brace-format
 msgid "Dossier vidéo: ${folder}"
 msgstr "Dossier vidéo: ${folder}"
 
-#: static/js/ui.js:5061 static/js/ui.js:5063 static/js/ui.js:5068
+#: static/js/ui.js:5064 static/js/ui.js:5066 static/js/ui.js:5071
 msgid "Ouverture"
 msgstr "Ouverture"
 
-#: static/js/ui.js:5063
+#: static/js/ui.js:5066
 msgid "Impossible d’ouvrir le dossier vidéo"
 msgstr "Impossible d’ouvrir le dossier vidéo"
 
-#: static/js/ui.js:5068
+#: static/js/ui.js:5071
 msgid "Erreur lors de l’ouverture du dossier vidéo"
 msgstr "Erreur lors de l’ouverture du dossier vidéo"
 
-#: static/js/ui.js:6832
+#: static/js/ui.js:6835
 msgid "Sélectionnez d'abord un fichier audio"
 msgstr "Sélectionnez d'abord un fichier audio"
 
-#: static/js/ui.js:6872 templates/menu_animation.html:207
+#: static/js/ui.js:6875 templates/menu_animation.html:207
 msgid "Aucune musique sélectionnée"
 msgstr "Aucune musique sélectionnée"
 
-#: static/js/ui.js:6901
+#: static/js/ui.js:6904
 msgid "Non disponible"
 msgstr "Non disponible"
 
-#: static/js/ui.js:6906 templates/_filter_cache_attrs.html:42
+#: static/js/ui.js:6909 templates/_filter_cache_attrs.html:42
 #: templates/_filter_cache_attrs.html:43
 msgid "Taille"
 msgstr "Taille"
 
-#: static/js/ui.js:6907
+#: static/js/ui.js:6910
 msgid "Type"
 msgstr "Style"
 
-#: static/js/ui.js:6908
+#: static/js/ui.js:6911
 msgid "Durée"
 msgstr "Par durée"
 
-#: static/js/ui.js:6909
+#: static/js/ui.js:6912
 msgid "Modifié"
 msgstr "Modifié"
 
-#: static/js/ui.js:6957
+#: static/js/ui.js:6960
 msgid "Erreur lors du chargement du fichier audio"
 msgstr "Erreur lors du chargement du fichier"
+
+#: static/js/video_folder.js:37
+#, python-brace-format
+msgid ""
+"Le dossier choisi (${folder}) est inaccessible : les vidéos sont "
+"enregistrées dans le dossier par défaut en attendant."
+msgstr ""
+"Le dossier choisi (${folder}) est inaccessible : les vidéos sont "
+"enregistrées dans le dossier par défaut en attendant."
+
+#: static/js/video_folder.js:82 static/js/video_folder.js:86
+#: static/js/video_folder.js:101 static/js/video_folder.js:105
+#: static/js/video_folder.js:115
+msgid "Le dossier des vidéos n’a pas pu être modifié."
+msgstr "Le dossier des vidéos n’a pas pu être modifié."
 
 #: static/js/video_postprocess.js:28
 #, python-brace-format
@@ -3636,6 +3675,18 @@ msgstr ""
 " la lire, de l'afficher dans son dossier ou d'en enregistrer une copie "
 "ailleurs."
 
+#: templates/guide.html:256
+msgid "Pour enregistrer vos vidéos ailleurs, changez le"
+msgstr "Pour enregistrer vos vidéos ailleurs, changez le"
+
+#: templates/guide.html:256 templates/menu_recording.html:146
+msgid "Dossier des vidéos"
+msgstr "Dossier des vidéos"
+
+#: templates/guide.html:256
+msgid "juste en dessous."
+msgstr "juste en dessous."
+
 #: templates/guide.html:259
 msgid "Chaque réglage dispose d'une icône d'aide"
 msgstr "Chaque réglage dispose d'une icône d'aide"
@@ -3698,11 +3749,11 @@ msgstr ""
 "La vidéo est créée automatiquement à la fin de l'enregistrement. Utilisez"
 " ensuite les boutons de la section"
 
-#: templates/guide.html:277 templates/menu_recording.html:145
+#: templates/guide.html:277 templates/menu_recording.html:165
 msgid "Fichiers vidéo"
 msgstr "Fichiers vidéo"
 
-#: templates/guide.html:279 templates/menu_recording.html:160
+#: templates/guide.html:279 templates/menu_recording.html:180
 msgid "Ouvrir le dossier vidéo"
 msgstr "Ouvrir le dossier vidéo"
 
@@ -3710,7 +3761,7 @@ msgstr "Ouvrir le dossier vidéo"
 msgid "accède au dossier contenant vos vidéos."
 msgstr "accède au dossier contenant vos vidéos."
 
-#: templates/guide.html:280 templates/menu_recording.html:156
+#: templates/guide.html:280 templates/menu_recording.html:176
 msgid "Supprimer les images de capture inutilisées"
 msgstr "Supprimer les images de capture inutilisées"
 
@@ -5062,7 +5113,27 @@ msgstr ""
 "Début du nom des vidéos produites. La date et l'heure de l'export sont "
 "ajoutées automatiquement : une vidéo existante n'est jamais écrasée."
 
-#: templates/menu_recording.html:155
+#: templates/menu_recording.html:150
+msgid "Modifier…"
+msgstr "Modifier…"
+
+#: templates/menu_recording.html:152
+msgid "Dossier par défaut"
+msgstr "Dossier par défaut"
+
+#: templates/menu_recording.html:156
+msgid "Chemin du dossier des vidéos"
+msgstr "Chemin du dossier des vidéos"
+
+#: templates/menu_recording.html:156
+msgid "Chemin complet du dossier"
+msgstr "Chemin complet du dossier"
+
+#: templates/menu_recording.html:157 templates/modal_evolution.html:19
+msgid "Valider"
+msgstr "Valider"
+
+#: templates/menu_recording.html:175
 msgid ""
 "Supprime les images de capture restées dans le dossier temporaire, en "
 "général après un enregistrement interrompu. Sans effet sur les vidéos "
@@ -5500,10 +5571,6 @@ msgstr "Nom de la base"
 #: templates/modal_evolution.html:14
 msgid "Ex. : Slovénie et Croatie"
 msgstr "Ex. : Slovénie et Croatie"
-
-#: templates/modal_evolution.html:19
-msgid "Valider"
-msgstr "Valider"
 
 #: templates/modal_evolution.html:35
 msgid "Où importer ces exports ?"

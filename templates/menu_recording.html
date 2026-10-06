@@ -139,6 +139,26 @@
         <input id="inputRecordFileName" type="text" maxlength="80" autocomplete="off" spellcheck="false" class="form-control" aria-describedby="recordFileNameHelp">
         <small id="recordFileNameHelp" class="form-hint text-muted"></small>
     </div>
+    {# Dossier où les vidéos sont enregistrées. Piloté par static/js/video_folder.js :
+       « Modifier… » fait ouvrir le sélecteur de dossier du système par le serveur
+       local ; la saisie manuelle n'apparaît que s'il est indisponible. #}
+    <div class="mb-3 col-12" id="videoFolderSetting">
+        <span class="form-label d-block" id="videoFolderLabel">{{ _("Dossier des vidéos") }}</span>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <code class="flex-fill text-break border rounded px-2 py-1" id="videoFolderPath" aria-labelledby="videoFolderLabel"></code>
+            <button type="button" class="btn btn-secondary" id="btnVideoFolderChoose">
+                <i class="ti ti-folder-search me-1" aria-hidden="true"></i>{{ _("Modifier…") }}
+            </button>
+            <button type="button" class="btn btn-link px-1" id="btnVideoFolderReset" hidden>{{ _("Dossier par défaut") }}</button>
+        </div>
+        <div id="videoFolderManual" class="input-group mt-2" hidden>
+            <input type="text" id="inputVideoFolderPath" class="form-control" autocomplete="off" spellcheck="false"
+                   aria-label="{{ _('Chemin du dossier des vidéos') }}" placeholder="{{ _('Chemin complet du dossier') }}">
+            <button type="button" class="btn btn-primary" id="btnVideoFolderApply">{{ _("Valider") }}</button>
+        </div>
+        <div id="videoFolderError" class="alert alert-danger py-2 px-3 mt-2 mb-0 small" role="alert" hidden></div>
+        <div id="videoFolderWarning" class="alert alert-warning py-2 px-3 mt-2 mb-0 small" role="status" hidden></div>
+    </div>
 </div>
 
 <div class="anim-section-divider mt-3">

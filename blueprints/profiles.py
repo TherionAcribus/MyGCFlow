@@ -135,7 +135,11 @@ def api_put_settings():
         recording_configured = current.recording_configured
         if 'recording' in data and isinstance(data.get('recording'), dict):
             merged_recording = asdict(current.recording)
-            merged_recording.update(data['recording'])
+            # output_dir n'est pas un champ de formulaire : seules les routes
+            # /api/video_folder l'écrivent, après avoir vérifié le dossier.
+            merged_recording.update(
+                {key: value for key, value in data['recording'].items() if key != 'output_dir'}
+            )
             recording = coerce_recording_settings(merged_recording)
             recording_configured = True
 

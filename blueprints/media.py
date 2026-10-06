@@ -1,4 +1,6 @@
 import os
+import tempfile
+from dataclasses import replace
 
 from flask import Blueprint, abort, current_app, jsonify, request, send_from_directory
 from flask_babel import gettext as _babel_gettext
@@ -25,7 +27,10 @@ from capture import (
     video_stream_begin,
     video_stream_finish,
 )
+import folder_picker
+import paths
 from localization import get_locale
+from settings_manager import get_settings_manager
 from task_manager import TaskAlreadyRunning, task_manager
 
 media_bp = Blueprint('media', __name__)
@@ -256,3 +261,90 @@ def route_reveal_video():
 @media_bp.route('/open_video', methods=['POST'])
 def route_open_video():
     return open_video(request)
+
+
+# ---- Dossier des vidéos ----
+# Préférence globale (recording.output_dir). Elle ne passe pas par
+# PUT /api/settings : un dossier doit être vérifié avant d'être retenu, et le
+# choisir demande une boîte de dialogue que seul le serveur peut ouvrir.
+
+def _video_folder_state():
+    """État affiché par l'onglet Export : dossier effectif, et dossier choisi
+    quand il est devenu inaccessible (les vidéos vont alors dans celui par
+    défaut)."""
+    configured = paths.configured_video_dir()
+    effective = paths.video_dir()
+    return {
+        'success': True,
+        'folder': str(effective),
+        'default_folder': str(paths.default_video_dir()),
+        'is_default': configured is None,
+        'unavailable_folder': str(configured) if configured is not None and configured != effective else None,
+    }
+
+
+def _usable_video_folder(raw):
+    """Chemin absolu d'un dossier où MyGCFlow peut écrire, sinon ValueError
+    portant le message à afficher."""
+    text = str(raw or '').strip().strip('"')
+    if not text:
+        raise ValueError(_("Indiquez un dossier."))
+    folder = os.path.abspath(os.path.expanduser(text))
+    if not os.path.isabs(text) and not text.startswith('~'):
+        raise ValueError(_("Indiquez le chemin complet du dossier (par exemple D:\Vidéos)."))
+    try:
+        os.makedirs(folder, exist_ok=True)
+        # Essai d'écriture réel : os.access ne reflète pas les droits Windows.
+        with tempfile.TemporaryFile(dir=folder):
+            pass
+    except OSError:
+        raise ValueError(_("MyGCFlow ne peut pas écrire dans ce dossier.")) from None
+    return folder
+
+
+def _save_video_folder(folder):
+    def mutate(current):
+        return replace(current, recording=replace(current.recording, output_dir=folder))
+
+    get_settings_manager().update_app_settings(mutate)
+
+
+@media_bp.route('/api/video_folder', methods=['GET'])
+def route_video_folder():
+    return jsonify(_video_folder_state())
+
+
+@media_bp.route('/api/video_folder/choose', methods=['POST'])
+def route_choose_video_folder():
+    """Change le dossier des vidéos.
+
+    Avec `path` : saisie manuelle. Sans : ouvre le sélecteur de dossier du
+    système et attend le choix — la requête dure donc le temps que
+    l'utilisateur se décide.
+    """
+    payload = request.get_json(silent=True)
+    path = payload.get('path') if isinstance(payload, dict) else None
+    if path is None:
+        outcome, path = folder_picker.pick_folder(
+            _("Choisir le dossier des vidéos"), str(paths.video_dir()),
+        )
+        if outcome == folder_picker.CANCELLED:
+            return jsonify({**_video_folder_state(), 'cancelled': True})
+        if outcome == folder_picker.BUSY:
+            return jsonify({'success': False, 'message': _("Une fenêtre de choix du dossier est déjà ouverte.")}), 409
+        if outcome != folder_picker.PICKED:
+            # Le client propose alors la saisie manuelle du chemin.
+            return jsonify({'success': False, 'picker_unavailable': True,
+                            'message': _("Le sélecteur de dossier n'est pas disponible : saisissez le chemin.")}), 501
+    try:
+        folder = _usable_video_folder(path)
+    except ValueError as exc:
+        return jsonify({'success': False, 'message': str(exc)}), 400
+    _save_video_folder(folder)
+    return jsonify(_video_folder_state())
+
+
+@media_bp.route('/api/video_folder/reset', methods=['POST'])
+def route_reset_video_folder():
+    _save_video_folder('')
+    return jsonify(_video_folder_state())

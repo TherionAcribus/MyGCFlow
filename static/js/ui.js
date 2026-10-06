@@ -4779,13 +4779,16 @@ function updateExportSummary() {
             ? t('musique incluse')
             : t('sans musique'));
 
-    // Les deux modes écrivent dans le dossier Vidéos ; une copie ailleurs se
-    // fait depuis l'écran de fin d'export.
-    parts.push(t('destination : ${d}', { d: t('dossier Vidéos') }));
+    // Les deux modes écrivent dans le même dossier (celui par défaut, ou celui
+    // choisi plus bas) ; une copie ailleurs se fait depuis l'écran de fin.
+    parts.push(t('destination : ${d}', { d: pkg.customVideoFolder?.() || t('dossier Vidéos') }));
 
     el.textContent = parts.join(' · ');
     updateRecordFileNameHint();
 }
+
+// Le dossier des vidéos se choisit hors du formulaire (video_folder.js).
+window.addEventListener('mygcflow:video-folder-changed', () => updateExportSummary());
 
 // Nom de base des vidéos produites : la saisie de l'onglet Export, sinon le nom
 // du thème actif. Le serveur le nettoie, l'horodate et pose l'extension

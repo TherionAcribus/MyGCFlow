@@ -244,6 +244,7 @@ pourrait écraser un réglage plus récent.
     "slowdown_factor": 1,
     "scale_factor": 1.0,
     "file_name": "",
+    "output_dir": "",
     "offline_normalization": true,
     "audio_enabled": false,
     "audio_volume": 1.0

@@ -251,6 +251,11 @@ class RecordingSettings:
     # le résout, cf. recordingFileBaseName dans ui.js). L'horodatage et
     # l'extension sont ajoutés par capture.video_output_path.
     file_name: str = ""
+    # Dossier des vidéos choisi par l'utilisateur (chemin absolu) ; vide = le
+    # dossier par défaut (paths.default_video_dir). Écrit par les routes
+    # /api/video_folder, qui vérifient que le dossier est utilisable ; lu par
+    # paths.video_dir, qui se replie sur le défaut s'il ne l'est plus.
+    output_dir: str = ""
     offline_normalization: bool = True
     audio_enabled: bool = False
     audio_volume: float = 1.0
@@ -716,6 +721,8 @@ def coerce_recording_settings(d: dict) -> RecordingSettings:
     r.scale_factor = _clamp_float(d.get("scale_factor"), r.scale_factor, 1.0, 3.0)
     if isinstance(d.get("file_name"), str):
         r.file_name = d["file_name"].strip()[:RECORDING_FILE_NAME_MAX_LENGTH]
+    if isinstance(d.get("output_dir"), str):
+        r.output_dir = d["output_dir"].strip()
     r.offline_normalization = bool(d.get("offline_normalization", r.offline_normalization))
     r.audio_enabled = bool(d.get("audio_enabled", r.audio_enabled))
     r.audio_volume = _clamp_float(d.get("audio_volume"), r.audio_volume, 0.0, 1.0)

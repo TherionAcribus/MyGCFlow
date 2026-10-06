@@ -150,8 +150,8 @@ def audio_dir() -> Path:
     return data_dir() / "audio"
 
 
-def video_dir() -> Path:
-    """Dossier des vidéos produites.
+def default_video_dir() -> Path:
+    """Dossier des vidéos tant que l'utilisateur n'en a pas choisi un autre.
 
     Application installée : « Vidéos\\MyGCFlow », là où l'utilisateur s'attend à
     retrouver ses films. Sinon (développement, tests), sous la racine des
@@ -161,6 +161,42 @@ def video_dir() -> Path:
         videos = _known_folder(_FOLDERID_VIDEOS) or Path.home() / "Videos"
         return videos / APP_NAME
     return data_dir() / "video"
+
+
+def configured_video_dir() -> Path | None:
+    """Dossier des vidéos choisi dans l'onglet Export, None s'il n'y en a pas.
+
+    Lu dans settings.json à chaque appel : le choix s'applique à l'export
+    suivant sans redémarrage. Le chemin est renvoyé tel qu'enregistré, qu'il
+    soit encore accessible ou non — c'est video_dir() qui décide du repli.
+    """
+    try:
+        # Import tardif : settings_manager fige le dossier de configuration à
+        # son import, que les tests redirigent par variable d'environnement.
+        import settings_manager
+
+        recording = settings_manager.read_json(settings_manager.SETTINGS_PATH).get("recording")
+        raw = recording.get("output_dir") if isinstance(recording, dict) else None
+    except Exception:
+        return None
+    if not isinstance(raw, str) or not raw.strip():
+        return None
+    path = Path(raw.strip())
+    return path if path.is_absolute() else None
+
+
+def video_dir() -> Path:
+    """Dossier des vidéos produites : celui choisi par l'utilisateur, sinon
+    celui par défaut.
+
+    Un dossier choisi devenu inaccessible (disque externe débranché, dossier
+    supprimé) ne doit pas faire échouer un export : on retombe sur le dossier
+    par défaut, et l'onglet Export signale l'écart.
+    """
+    custom = configured_video_dir()
+    if custom is not None and custom.is_dir():
+        return custom
+    return default_video_dir()
 
 
 def logs_dir() -> Path:
