@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { readdirSync, statSync, writeFileSync } from 'node:fs';
+import { readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -294,6 +294,69 @@ test('les options MediaRecorder de l\'interface produisent un MP4 validé par ff
     body: Buffer.from(JSON.stringify(report, null, 2)),
     contentType: 'application/json',
   });
+});
+
+test('traitement ffmpeg en échec : le repli navigateur livre quand même la vidéo', async ({ page }) => {
+  // Le traitement serveur refuse : le navigateur récupère l'enregistrement brut
+  // dans le dossier de travail du serveur (/recorded_video), le finalise et le
+  // dépose dans le dossier des vidéos. Le brut, lui, n'y apparaît jamais.
+  await selectTraditionalCaches(page);
+
+  await page.locator('a[href="#animation"]').click();
+  await page.locator('#inputDaysPerSecond').fill('12.5');
+  await page.locator('#inputExtraEndTime').fill('0');
+  await page.locator('#recordingConfigTab').click();
+  await expect(page.locator('#recordingConfigPane')).toBeVisible();
+  await page.locator('#selectRecordMode').selectOption('mediarecorder');
+  await page.locator('#selectRecordResolution').selectOption('window');
+  const advanced = page.locator('#recordAdvancedSettings');
+  if (!(await advanced.evaluate((element) => element.open))) {
+    await advanced.locator('summary').click();
+  }
+  await page.locator('#selectRecordMime').selectOption('video/webm;codecs=vp8');
+  await page.locator('#inputRecordFps').fill('12');
+  await page.locator('#inputRecordBitrate').fill('1');
+  await page.locator('#inputRecordSlowdown').fill('1');
+  await page.locator('#inputRecordFileName').fill('Repli');
+  await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    app.options.record.mediaRecorder.tailFreezeMs = 250;
+    app.options.flash.mode = 'none';
+  });
+
+  let processingRequests = 0;
+  await page.route('**/process_recorded_video', async (route) => {
+    processingRequests += 1;
+    await route.fulfill({
+      status: 500,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: false, message: 'ffmpeg indisponible (test)' }),
+    });
+  });
+  const rawDownload = page.waitForResponse((response) => response.url().includes('/recorded_video/raw_'));
+
+  await page.locator('#btnQuickExport').click({ force: true });
+  expect((await rawDownload).status()).toBe(200);
+
+  const ready = page.locator('#modal_video_ready');
+  await expect(ready).toBeVisible({ timeout: 120_000 });
+  expect(processingRequests).toBe(1);
+  const delivered = await ready.locator('#videoReadyFile').textContent();
+  expect(delivered).toMatch(/^Repli_\d{4}-\d{2}-\d{2}_\d{2}h\d{2}(-\d+)?\.webm$/);
+
+  const videoDir = path.join(RUNTIME, 'video');
+  expect(statSync(path.join(videoDir, delivered)).size).toBeGreaterThan(1_000);
+  // Seule la vidéo livrée est un .webm du dossier : aucun brut n'y traîne.
+  expect(readdirSync(videoDir).filter((name) => name.endsWith('.webm'))).toEqual([delivered]);
+
+  await ready.locator('.modal-footer [data-bs-dismiss="modal"]').click();
+  await page.locator('#inputRecordFileName').fill('');
+  await expect.poll(async () => (
+    await (await page.request.get('/api/settings')).json()
+  ).recording.file_name).toBe('');
+  // Le .webm livré fausserait le contrôle « aucun .webm » des autres tests.
+  // Retiré ici plutôt que par l'application, qui l'enverrait à la Corbeille.
+  rmSync(path.join(videoDir, delivered));
 });
 
 test('le mode images rend la carte à la résolution demandée', async ({ page }, testInfo) => {

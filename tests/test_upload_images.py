@@ -1,18 +1,21 @@
 import io
 import os
 import tempfile
+import time
 import unittest
 from unittest import mock
 
 from flask import Flask, request
 
 from capture import (
+    VIDEO_STREAM_MAX_AGE_S,
     _assemble_pictures,
     _video_streams,
     captured_session_dir,
     clear_pictures_directory,
     count_captured_pictures,
     process_recorded_video,
+    recorded_video_path,
     upload_image,
     upload_images,
     video_stream_abort,
@@ -293,10 +296,11 @@ class VideoStreamTests(unittest.TestCase):
             response, *rest = _unpack(video_stream_append(request))
             self.assertEqual(rest[0] if rest else 200, 400)
 
-    def test_finish_remuxes_into_video_dir_and_purges(self):
-        """finish remuxe (sans ré-encodage) vers video/, retire le flux du
-        registre et supprime le fichier brut. ffmpeg est simulé en échec pour
-        exercer le repli « copie brute » sans dépendre du binaire."""
+    def test_finish_remuxes_into_the_working_dir_and_purges(self):
+        """finish remuxe (sans ré-encodage) en raw_<id>.webm dans le dossier de
+        travail, retire le flux du registre et supprime le fichier de flux.
+        Rien n'est écrit dans le dossier des vidéos. ffmpeg est simulé en échec
+        pour exercer le repli « copie brute » sans dépendre du binaire."""
         stream_id = self._begin()
         self._append(stream_id, 0, b'WEBMDATA')
         raw_path = _video_streams[stream_id]['path']
@@ -306,9 +310,11 @@ class VideoStreamTests(unittest.TestCase):
             payload, status = self._finish(stream_id, 'capture.webm')
 
         self.assertEqual(status, 200)
-        self.assertEqual(payload['file'], 'capture.webm')
-        out = os.path.join('video', 'capture.webm')
+        self.assertEqual(payload['file'], f'raw_{stream_id}.webm')
+        out = os.path.join('video_streams', payload['file'])
         self.assertTrue(os.path.isfile(out))
+        self.assertFalse(os.path.exists('video'))
+        self.assertEqual(recorded_video_path(payload['file']), os.path.join(os.getcwd(), out))
         with open(out, 'rb') as handle:
             self.assertEqual(handle.read(), b'WEBMDATA')
         self.assertNotIn(stream_id, _video_streams)
@@ -333,15 +339,16 @@ class VideoStreamTests(unittest.TestCase):
         self.assertFalse(os.path.exists(raw_path))
 
     def test_process_recorded_video_accepts_recorded_file(self):
-        """Le flux remuxé dans video/ doit pouvoir être désigné par son nom —
-        sans re-téléversement du fichier complet."""
-        os.makedirs('video')
-        with open(os.path.join('video', 'capture.webm'), 'wb') as handle:
+        """Le flux remuxé doit pouvoir être désigné par son nom — sans
+        re-téléversement du fichier complet."""
+        os.makedirs('video_streams')
+        raw = os.path.join(os.getcwd(), 'video_streams', 'raw_abc.webm')
+        with open(raw, 'wb') as handle:
             handle.write(b'WEBM')
 
         with self.app.test_request_context(
             '/process_recorded_video', method='POST',
-            data={'recorded_file': 'capture.webm', 'slowdown': '1', 'fps': '30'},
+            data={'recorded_file': 'raw_abc.webm', 'slowdown': '1', 'fps': '30'},
         ):
             with mock.patch('task_manager.task_manager') as tm:
                 tm.submit.return_value = mock.Mock(id='task-1', state='running')
@@ -351,6 +358,58 @@ class VideoStreamTests(unittest.TestCase):
         self.assertEqual(rest[0] if rest else 200, 202)
         self.assertTrue(payload['success'])
         self.assertEqual(payload['task_id'], 'task-1')
+        # Le traitement lit le brut du dossier de travail…
+        self.assertEqual(tm.submit.call_args.args[3], raw)
+        # …et écrit le MP4 dans le dossier des vidéos.
+        self.assertEqual(os.path.dirname(tm.submit.call_args.args[4]), os.path.join(os.getcwd(), 'video'))
+
+    def test_uploaded_recording_is_kept_out_of_the_video_dir(self):
+        """Téléversement d'un bloc (sans flux) : le .webm brut ne doit pas
+        apparaître parmi les vidéos de l'utilisateur."""
+        with self.app.test_request_context(
+            '/process_recorded_video', method='POST',
+            data={'video': _file('recording.webm', b'WEBM'), 'slowdown': '1'},
+        ):
+            with mock.patch('task_manager.task_manager') as tm:
+                tm.submit.return_value = mock.Mock(id='task-2', state='running')
+                response, *rest = _unpack(process_recorded_video(request))
+
+        self.assertEqual(rest[0] if rest else 200, 202)
+        self.assertEqual(os.listdir('video'), [])
+        raw = tm.submit.call_args.args[3]
+        self.assertEqual(os.path.dirname(raw), os.path.join(os.getcwd(), 'video_streams'))
+        with open(raw, 'rb') as handle:
+            self.assertEqual(handle.read(), b'WEBM')
+
+    def test_recorded_file_only_reaches_finished_recordings(self):
+        """Ni un flux encore ouvert, ni un fichier d'un autre dossier."""
+        os.makedirs('video_streams')
+        os.makedirs('video')
+        for path in (os.path.join('video_streams', 'stream_abc.webm'),
+                     os.path.join('video_streams', 'raw_abc.txt'),
+                     os.path.join('video', 'raw_film.webm')):
+            with open(path, 'wb') as handle:
+                handle.write(b'x')
+
+        for name in ('stream_abc.webm', 'raw_abc.txt', 'raw_film.webm', '../video/raw_film.webm', '', None):
+            self.assertIsNone(recorded_video_path(name), name)
+
+    def test_sweep_removes_stale_recordings_but_keeps_recent_ones(self):
+        """Un brut dont le traitement a échoué ne doit pas s'accumuler."""
+        stream_id = self._begin()
+        streams_dir = os.path.dirname(_video_streams[stream_id]['path'])
+        stale = os.path.join(streams_dir, 'raw_vieux.webm')
+        fresh = os.path.join(streams_dir, 'raw_recent.webm')
+        for path in (stale, fresh):
+            with open(path, 'wb') as handle:
+                handle.write(b'x')
+        old = time.time() - VIDEO_STREAM_MAX_AGE_S - 60
+        os.utime(stale, (old, old))
+
+        self._begin()  # chaque ouverture de flux balaie le dossier
+
+        self.assertFalse(os.path.exists(stale))
+        self.assertTrue(os.path.exists(fresh))
 
     def test_process_recorded_video_rejects_traversal_in_recorded_file(self):
         """secure_filename réduit '../..' à un nom plat : pas de sortie de video/."""

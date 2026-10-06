@@ -194,7 +194,8 @@ def resolve_video_file(name):
 
 
 # Vidéos proposées dans « Dernières vidéos » : les conteneurs que l'application
-# produit. Le préfixe écarte les .webm bruts d'un enregistrement en cours.
+# produit. Le préfixe écarte les .webm bruts que les versions antérieures
+# déposaient dans ce dossier et qu'un traitement échoué a pu y laisser.
 RECENT_VIDEO_EXTENSIONS = ('.mp4', '.webm')
 RAW_VIDEO_PREFIX = 'mygcflow_raw'
 RECENT_VIDEOS_DEFAULT_LIMIT = 8
@@ -333,15 +334,6 @@ def clear_pictures_directory():
         # Gérer les exceptions imprévues
         return jsonify({'success': False, 'message': str(e)})
     
-
-def _timestamped_name(base: str, ext_fallback: str):
-    """Return <base>_YYYYMMDD-HHMMSS.ext (ext from base or fallback)."""
-    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    base = base or "mygcflow"
-    name, ext = os.path.splitext(base)
-    ext = ext.lstrip(".") or ext_fallback
-    return f"{name}_{stamp}.{ext}"
-
 
 # Extensions qu'un utilisateur peut avoir saisies avec son nom de fichier : le
 # conteneur est imposé par l'export, elles sont donc retirées du nom de base.
@@ -981,8 +973,10 @@ def process_recorded_video(request):
 
     Source vidéo, au choix :
       - 'video' (fichier multipart) : le .webm brut du MediaRecorder ;
-      - 'recorded_file' (champ) : nom d'un .webm déjà déposé dans video/ par un
-        flux délesté (video_stream_*), qui évite de re-téléverser le fichier.
+      - 'recorded_file' (champ) : nom d'un .webm déjà déposé côté serveur par
+        un flux délesté (video_stream_*), qui évite de re-téléverser le fichier.
+    Dans les deux cas le brut vit dans le dossier de travail (cf.
+    recorded_video_path), jamais dans le dossier des vidéos de l'utilisateur.
     Autres champs :
       - 'audio' (fichier) OU 'audio' (nom déjà présent dans audio/) : piste audio optionnelle
       - 'slowdown', 'audio_volume', 'color_fidelity' : options
@@ -990,15 +984,12 @@ def process_recorded_video(request):
     """
     from task_manager import task_manager
 
-    video_dir = paths.ensure_dir(paths.video_dir())
-    recorded = secure_filename(request.form.get('recorded_file') or '')
+    paths.ensure_dir(paths.video_dir())
     if request.files and 'video' in request.files:
-        raw_name = _timestamped_name("mygcflow_raw.webm", "webm")
-        raw_path = os.path.join(video_dir, raw_name)
+        raw_path = new_recorded_video_path()
         request.files['video'].save(raw_path)
-    elif recorded and os.path.isfile(os.path.join(video_dir, recorded)):
-        # secure_filename garantit un nom simple : pas de traversée hors video/.
-        raw_path = os.path.join(video_dir, recorded)
+    elif recorded_video_path(request.form.get('recorded_file')):
+        raw_path = recorded_video_path(request.form.get('recorded_file'))
     else:
         return jsonify({'success': False, 'message': _('Aucun fichier vidéo fourni')}), 400
 
@@ -1094,7 +1085,7 @@ def upload_audio(request):
 # la fin de l'enregistrement (~225 Mo/min à 30 Mbit/s). Le flux les envoie au
 # serveur au fil de l'eau : chaque fragment est ajouté au fichier dès réception,
 # en respectant l'ordre strict exigé par le conteneur EBML. À la fin, le fichier
-# est remuxé sans ré-encodage dans video/ — ce qui répare au passage l'élément
+# est remuxé sans ré-encodage, toujours dans le dossier de travail — ce qui répare au passage l'élément
 # « Duration » que MediaRecorder n'écrit pas.
 #
 # Le registre est en mémoire : un redémarrage serveur abandonne les flux, dont
@@ -1104,12 +1095,38 @@ _video_streams = {}
 _video_streams_lock = threading.Lock()
 VIDEO_STREAM_MAX_AGE_S = 6 * 3600
 
+# Enregistrement brut complet, en attente de son traitement ffmpeg : le flux
+# remuxé, ou le .webm téléversé d'un bloc. Il vit dans le dossier de travail
+# (paths.video_streams_dir) et non dans le dossier des vidéos : l'utilisateur
+# n'y voit que des vidéos terminées, même si un traitement échoue.
+RECORDED_VIDEO_PREFIX = 'raw_'
+
+
+def new_recorded_video_path(identifier=None):
+    """Chemin d'un nouvel enregistrement brut dans le dossier de travail."""
+    streams_dir = paths.ensure_dir(paths.video_streams_dir())
+    return os.path.join(str(streams_dir), f"{RECORDED_VIDEO_PREFIX}{identifier or uuid.uuid4().hex}.webm")
+
+
+def recorded_video_path(name):
+    """Chemin d'un enregistrement brut à partir de son nom, None s'il n'existe pas.
+
+    secure_filename réduit l'entrée à un nom simple, et le préfixe écarte les
+    flux encore ouverts (stream_*) : rien d'autre n'est atteignable.
+    """
+    safe_name = secure_filename(os.path.basename(str(name or '')))
+    if not safe_name.startswith(RECORDED_VIDEO_PREFIX) or not safe_name.lower().endswith('.webm'):
+        return None
+    path = os.path.join(str(paths.video_streams_dir()), safe_name)
+    return path if os.path.isfile(path) else None
+
 
 def _sweep_video_streams(streams_dir):
-    """Supprime les fichiers de flux abandonnés (crash, onglet fermé)."""
+    """Supprime les fichiers abandonnés : flux jamais refermés (crash, onglet
+    fermé) et enregistrements bruts dont le traitement n'a pas abouti."""
     try:
         cutoff = time.time() - VIDEO_STREAM_MAX_AGE_S
-        for path in Path(streams_dir).glob('stream_*.webm'):
+        for path in Path(streams_dir).glob('*.webm'):
             try:
                 if path.stat().st_mtime < cutoff:
                     path.unlink()
@@ -1162,7 +1179,11 @@ def video_stream_append(request):
 
 
 def video_stream_finish(request):
-    """Referme le flux : remux sans ré-encodage vers video/ puis purge.
+    """Referme le flux : remux sans ré-encodage, dans le dossier de travail.
+
+    Le résultat est un enregistrement brut (raw_<id>.webm) que le client désigne
+    ensuite à process_recorded_video ; il ne passe jamais par le dossier des
+    vidéos.
 
     Le remux réécrit les timestamps et l'élément Duration que MediaRecorder
     omet (sans lui, les lecteurs n'affichent ni durée ni seekbar utilisable).
@@ -1171,7 +1192,6 @@ def video_stream_finish(request):
     if not isinstance(data, dict):
         data = {}
     stream_id = data.get('stream_id') or request.form.get('stream_id') or ''
-    suggested = data.get('fileName') or request.form.get('fileName') or ''
 
     with _video_streams_lock:
         entry = _video_streams.pop(stream_id, None)
@@ -1180,16 +1200,8 @@ def video_stream_finish(request):
 
     raw_path = entry['path']
     try:
-        base = secure_filename(suggested) if suggested else ''
-        if not base:
-            base = _timestamped_name('mygcflow.webm', 'webm')
-        if os.path.splitext(base)[1].lower() != '.webm':
-            base = os.path.splitext(base)[0] + '.webm'
-
-        video_dir = paths.ensure_dir(paths.video_dir())
-        name = base if not os.path.exists(os.path.join(video_dir, base)) \
-            else _timestamped_name(base, 'webm')
-        out_path = os.path.join(video_dir, name)
+        out_path = new_recorded_video_path(secure_filename(stream_id))
+        name = os.path.basename(out_path)
 
         ffmpeg = _get_ffmpeg_exe()
         proc = subprocess.run(
@@ -1202,7 +1214,7 @@ def video_stream_finish(request):
             shutil.copyfile(raw_path, out_path)
 
         os.remove(raw_path)
-        return jsonify({'success': True, 'file': name, 'path': out_path})
+        return jsonify({'success': True, 'file': name})
     except Exception as e:
         # Le fichier brut reste sur disque (diagnostic) ; le balayage le purgera.
         return jsonify({'success': False, 'message': str(e)}), 500

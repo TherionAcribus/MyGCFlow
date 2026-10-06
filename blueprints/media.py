@@ -16,6 +16,7 @@ from capture import (
     open_video_folder,
     coerce_color_fidelity,
     process_recorded_video,
+    recorded_video_path,
     resolve_video_file,
     reveal_video,
     run_assemble_video_task,
@@ -251,6 +252,16 @@ def route_download_video(filename):
         abort(404)
     inline = request.args.get('inline') == '1'
     return send_from_directory(os.path.dirname(path), os.path.basename(path), as_attachment=not inline)
+
+
+@media_bp.route('/recorded_video/<path:filename>', methods=['GET'])
+def route_recorded_video(filename):
+    # Enregistrement brut du dossier de travail, pour le repli navigateur quand
+    # le traitement ffmpeg a échoué (cf. ensureBlob dans mapgl.js).
+    path = recorded_video_path(filename)
+    if path is None:
+        abort(404)
+    return send_from_directory(os.path.dirname(path), os.path.basename(path))
 
 
 # POST : ces deux routes lancent un programme sur la machine (Explorateur,

@@ -67,14 +67,15 @@ export function createVideoStream({ baseUrl = '', fetchImpl = null, t = (s) => s
         // Attend la fin des envois en file ; rejette si un fragment a été perdu.
         drain,
 
-        // Referme le flux : le serveur remuxe le .webm dans video/ et renvoie
-        // son nom ({ success, file }). Le flux ne peut plus recevoir de fragment.
-        async finish(fileName) {
+        // Referme le flux : le serveur le remuxe en un enregistrement brut dans
+        // son dossier de travail et renvoie son nom ({ success, file }). Le flux
+        // ne peut plus recevoir de fragment.
+        async finish() {
             if (!streamId) throw new Error(t('Aucun flux vidéo ouvert'));
             await drain();
             const data = await post(`${baseUrl}/video_stream_finish`, {
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ stream_id: streamId, fileName }),
+                body: JSON.stringify({ stream_id: streamId }),
             });
             streamId = null;
             return data;

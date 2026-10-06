@@ -2869,7 +2869,8 @@ function finalizeMediaRecorderVideo(){
         const stream = mrVideoStream;
         mrVideoStream = null;
         let blob = stream ? null : new Blob(mrRecordedChunks || [], { type: mime });
-        // Nom du .webm remuxé dans video/ (renseigné par finish() du flux).
+        // Nom de l'enregistrement brut remuxé côté serveur (renseigné par
+        // finish() du flux) ; il reste dans le dossier de travail du serveur.
         let streamedFile = null;
 
         // Nom de base de la vidéo (saisie de l'onglet Export, sinon thème actif).
@@ -2953,13 +2954,13 @@ function finalizeMediaRecorderVideo(){
             }
         };
         // Le repli navigateur travaille sur un Blob : en chemin « flux », on le
-        // re-télécharge depuis video/ — cas rare (serveur de traitement en
+        // re-télécharge depuis le serveur — cas rare (serveur de traitement en
         // échec alors que le flux a abouti), la mémoire n'est plus le souci ici.
         const ensureBlob = () => {
             if (blob) return Promise.resolve(blob);
             if (!streamedFile) return Promise.reject(new Error('pas de données vidéo disponibles'));
             return fetchWithTimeout(
-                `${CONFIG.BASE_URL}/download_video/${encodeURIComponent(streamedFile)}`,
+                `${CONFIG.BASE_URL}/recorded_video/${encodeURIComponent(streamedFile)}`,
                 {}, { timeoutMs: FETCH_TIMEOUTS.videoUpload, t: pkg.t },
             ).then((r) => {
                 if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -2997,7 +2998,7 @@ function finalizeMediaRecorderVideo(){
             const launchProcessing = () => {
                 const fd = new FormData();
                 if (streamedFile) {
-                    // Le .webm est déjà dans video/ (flux délesté) : on désigne
+                    // Le .webm est déjà sur le serveur (flux délesté) : on désigne
                     // son nom au lieu de re-téléverser le fichier complet.
                     fd.append('recorded_file', streamedFile);
                 } else {
@@ -3037,9 +3038,7 @@ function finalizeMediaRecorderVideo(){
                 // passage l'élément « Duration » absent des flux MediaRecorder
                 // (remplace fixWebmFinalDuration sans charger le blob en mémoire).
                 stream.drain()
-                    // Nom du fichier intermédiaire : le serveur le remplace
-                    // par le MP4 final puis le supprime.
-                    .then(() => stream.finish('mygcflow_raw.webm'))
+                    .then(() => stream.finish())
                     .then((fin) => { streamedFile = fin.file; launchProcessing(); })
                     .catch(reject);
             } else {

@@ -141,7 +141,9 @@ def video_streams_dir() -> Path:
     """Fragments .webm délestés pendant un enregistrement MediaRecorder.
 
     Chaque flux est un fichier stream_<id>.webm alimenté en append au fil de
-    l'eau ; il est remuxé dans video/ à la fin puis supprimé.
+    l'eau, remuxé ici même en raw_<id>.webm à la fin de la capture. Ce brut est
+    supprimé une fois le MP4 produit : le dossier des vidéos ne reçoit que des
+    vidéos terminées.
     """
     return data_dir() / "video_streams"
 
