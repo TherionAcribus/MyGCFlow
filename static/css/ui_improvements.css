@@ -2422,6 +2422,26 @@ background: rgba(33, 150, 243, 0.04);
     color: var(--color-accent-text);
 }
 
+/* Bouton « Quitter » du bandeau : même gabarit que le lien Guide, séparé
+   des accès rapides par un filet et teinté en rouge (il arrête le serveur). */
+.app-header-quit {
+    padding: 3px 0 3px 10px;
+    background: none;
+    border: none;
+    border-left: 1px solid var(--tblr-border-color, var(--color-border));
+    color: var(--tblr-danger, #d63939);
+    cursor: pointer;
+}
+.app-header-quit:hover {
+    color: var(--tblr-danger, #d63939);
+    text-decoration: underline;
+}
+.app-header-quit:focus-visible {
+    outline: 2px solid var(--tblr-danger, #d63939);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
 .app-header-theme {
     display: flex;
     align-items: center;

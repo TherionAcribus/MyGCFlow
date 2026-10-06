@@ -884,10 +884,13 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     buttonHome = document.getElementById('buttonHome');
     if (buttonHome) buttonHome.addEventListener('click', pkg.openHomePage);
 
-    // Le bouton n'est rendu que si l'application tourne sous launcher.py
-    // (cf. `can_quit` dans menu_options.html).
-    const buttonQuitApp = document.getElementById('buttonQuitApp');
-    if (buttonQuitApp) buttonQuitApp.addEventListener('click', quitApp);
+    // Les boutons ne sont rendus que si l'application tourne sous launcher.py
+    // (cf. `can_quit` dans app.html pour le bandeau, menu_options.html pour
+    // l'onglet Préférences).
+    ['buttonQuitAppHeader', 'buttonQuitApp'].forEach(id => {
+        const button = document.getElementById(id);
+        if (button) button.addEventListener('click', quitApp);
+    });
 
     inputMapCenterLat = document.getElementById('inputMapCenterLat');
     inputMapCenterLon = document.getElementById('inputMapCenterLon');

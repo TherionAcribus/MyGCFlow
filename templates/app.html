@@ -83,6 +83,15 @@
                             <option value="dark">{{ _("Sombre") }}</option>
                         </select>
                     </div>
+                    {% if can_quit %}
+                    <!-- Sortie de l'application, visible quel que soit l'onglet :
+                         le bouton du bas de l'onglet Préférences restait
+                         introuvable sans le chercher. -->
+                    <button type="button" id="buttonQuitAppHeader" class="app-header-link app-header-quit"
+                            aria-label="{{ _('Quitter MyGCFlow') }}" title="{{ _('Quitter MyGCFlow') }}">
+                        <i class="ti ti-power" aria-hidden="true"></i><span class="app-header-link-label" aria-hidden="true">{{ _("Quitter") }}</span>
+                    </button>
+                    {% endif %}
                 </div>
             </header>
 

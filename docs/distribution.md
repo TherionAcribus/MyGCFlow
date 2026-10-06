@@ -20,7 +20,8 @@ dépendances, ffmpeg et les ressources : l'utilisateur n'installe rien d'autre.
 
 Il n'y a ni fenêtre ni console : l'arrêt passe par l'un des deux chemins.
 
-1. **Bouton *Quitter MyGCFlow*** dans l'onglet *Préférences* de l'interface
+1. **Bouton *Quitter*** à droite du bandeau supérieur, visible depuis tous les
+   onglets, doublé par *Quitter MyGCFlow* en bas de l'onglet *Préférences*
    (`POST /api/quit`). C'est le chemin principal, parce qu'il est sous les yeux
    de l'utilisateur.
 2. **Menu de l'icône** dans la zone de notification.
