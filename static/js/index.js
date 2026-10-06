@@ -14,6 +14,7 @@ export * from './background_audio.js';
 export * from './video_postprocess.js';
 export * from './video_ready.js';
 export * from './video_folder.js';
+export * from './recent_videos.js';
 export * from './mapgl.js';
 export * from './bdd.js';
 export * from './record.js';

@@ -24,6 +24,7 @@ import time
 from werkzeug.utils import secure_filename
 
 import paths
+import recycle_bin
 from localization import get_locale
 
 
@@ -190,6 +191,57 @@ def resolve_video_file(name):
         return None
     path = os.path.join(str(paths.video_dir()), safe_name)
     return path if os.path.isfile(path) else None
+
+
+# Vidéos proposées dans « Dernières vidéos » : les conteneurs que l'application
+# produit. Le préfixe écarte les .webm bruts d'un enregistrement en cours.
+RECENT_VIDEO_EXTENSIONS = ('.mp4', '.webm')
+RAW_VIDEO_PREFIX = 'mygcflow_raw'
+RECENT_VIDEOS_DEFAULT_LIMIT = 8
+RECENT_VIDEOS_MAX_LIMIT = 50
+
+
+def list_recent_videos(limit=RECENT_VIDEOS_DEFAULT_LIMIT):
+    """Vidéos du dossier des vidéos, de la plus récente à la plus ancienne.
+
+    Sans la durée : la lire demanderait un ffmpeg par fichier à chaque
+    affichage de l'onglet. Ne retient que les fichiers que resolve_video_file()
+    sait retrouver, pour que chaque ligne affichée soit actionnable.
+    """
+    limit = max(1, min(RECENT_VIDEOS_MAX_LIMIT, _to_int(limit, RECENT_VIDEOS_DEFAULT_LIMIT)))
+    folder = paths.video_dir()
+    videos = []
+    try:
+        with os.scandir(folder) as entries:
+            for entry in entries:
+                name = entry.name
+                if not name.lower().endswith(RECENT_VIDEO_EXTENSIONS) or name.startswith(RAW_VIDEO_PREFIX):
+                    continue
+                if secure_filename(name) != name or not entry.is_file():
+                    continue
+                stat = entry.stat()
+                videos.append({'file': name, 'size_bytes': stat.st_size, 'modified': stat.st_mtime})
+    except OSError:
+        # Dossier pas encore créé (aucun export) ou devenu illisible : liste vide.
+        pass
+    videos.sort(key=lambda video: video['modified'], reverse=True)
+    return {'success': True, 'folder': str(folder), 'videos': videos[:limit], 'total': len(videos)}
+
+
+def delete_video(request):
+    """Supprime une vidéo du dossier des vidéos (Corbeille quand c'est possible)."""
+    path = _requested_video_file(request)
+    if path is None:
+        return jsonify({'success': False, 'message': _('Fichier vidéo introuvable')}), 404
+    try:
+        recoverable = recycle_bin.send_to_trash(path)
+    except OSError as e:
+        # Typiquement : fichier ouvert dans un lecteur vidéo.
+        print(f"[videos] Suppression impossible ({path}): {e}")
+        return jsonify({'success': False, 'message': _(
+            "Impossible de supprimer cette vidéo : elle est peut-être ouverte dans un autre programme."
+        )}), 409
+    return jsonify({'success': True, 'file': os.path.basename(path), 'recoverable': recoverable})
 
 
 def _requested_video_file(request):

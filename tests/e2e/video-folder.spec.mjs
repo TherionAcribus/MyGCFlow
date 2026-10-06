@@ -11,6 +11,9 @@ const DEFAULT_FOLDER = path.join(RUNTIME, 'video');
 const CUSTOM_FOLDER = path.join(RUNTIME, 'mes films');
 
 async function openExportTab(page) {
+  // Passage par une page vide : rappeler la même adresse (seul le fragment
+  // diffère) ne recharge pas la page.
+  await page.goto('about:blank');
   await page.goto('/#animation', { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.mygcflowReady === true);
   await dismissFirstUseModal(page);

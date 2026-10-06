@@ -162,8 +162,13 @@
 </div>
 
 <div class="anim-section-divider mt-3">
-    <span class="anim-section-label">{{ _("Fichiers vidéo") }}</span>
+    <span class="anim-section-label">{{ _("Dernières vidéos") }}</span>
 </div>
+{# Vidéos les plus récentes du dossier des vidéos : un clic rouvre l'écran de
+   fin d'export (aperçu, lecteur, copie). Remplie par static/js/recent_videos.js. #}
+<ul id="recentVideosList" class="list-group mb-2" aria-label="{{ _('Dernières vidéos') }}"></ul>
+<p id="recentVideosEmpty" class="form-hint text-muted mb-2" hidden>{{ _("Aucune vidéo dans ce dossier pour l'instant.") }}</p>
+<p id="recentVideosMore" class="form-hint text-muted mb-2" hidden></p>
 <div class="anim-btn-group">
     {# Masqué par défaut : en fonctionnement normal le dossier temporaire est vidé
        automatiquement en fin d'enregistrement, il n'y a donc rien à supprimer. Le

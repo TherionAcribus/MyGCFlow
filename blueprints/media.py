@@ -10,6 +10,8 @@ from capture import (
     captured_session_dir,
     clear_pictures_directory,
     count_captured_pictures,
+    delete_video,
+    list_recent_videos,
     open_video,
     open_video_folder,
     coerce_color_fidelity,
@@ -261,6 +263,18 @@ def route_reveal_video():
 @media_bp.route('/open_video', methods=['POST'])
 def route_open_video():
     return open_video(request)
+
+
+# ---- Dernières vidéos ----
+
+@media_bp.route('/api/videos', methods=['GET'])
+def route_list_videos():
+    return jsonify(list_recent_videos(request.args.get('limit')))
+
+
+@media_bp.route('/api/videos/delete', methods=['POST'])
+def route_delete_video():
+    return delete_video(request)
 
 
 # ---- Dossier des vidéos ----

@@ -2003,6 +2003,8 @@ function announceVideoReady(video) {
     let shown = false;
     try { shown = !!pkg.showVideoReady?.(video); } catch (e) { console.warn('[RECORD END] Écran de fin indisponible:', e); }
     if (!shown) pkg.showToast && pkg.showToast(pkg.t('Vidéo prête'), 'success', pkg.t('Enregistrement'));
+    // La liste « Dernières vidéos » de l'onglet Export se met à jour.
+    window.dispatchEvent(new CustomEvent('mygcflow:video-exported'));
 }
 
 // Lancement de l'assemblage vidéo. En POST : la route déclenche un encodage, et

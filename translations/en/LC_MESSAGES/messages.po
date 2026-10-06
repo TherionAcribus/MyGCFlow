@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-06 09:21+0200\n"
+"POT-Creation-Date: 2026-10-06 12:27+0200\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -113,42 +113,48 @@ msgstr "Applying in-memory indexes (date/type/region)..."
 msgid "Filtrage direct en base (fallback)..."
 msgstr "Direct database filtering (fallback)..."
 
-#: capture.py:91
+#: capture.py:92
 msgid "Aucune image dans la requête"
 msgstr "No image in the request"
 
-#: capture.py:130
+#: capture.py:131
 msgid "Format de données non supporté"
 msgstr "Unsupported data format"
 
-#: capture.py:132
+#: capture.py:133
 msgid "Image reçue avec succès"
 msgstr "Image received successfully"
 
-#: capture.py:205 capture.py:224 capture.py:823
+#: capture.py:235 capture.py:257 capture.py:276 capture.py:875
 msgid "Fichier vidéo introuvable"
 msgstr "Video file not found"
 
-#: capture.py:277
+#: capture.py:242
+msgid ""
+"Impossible de supprimer cette vidéo : elle est peut-être ouverte dans un "
+"autre programme."
+msgstr "Unable to delete this video: it may be open in another program."
+
+#: capture.py:329
 msgid "Le répertoire a été vidé avec succès"
 msgstr "The directory was emptied successfully"
 
-#: capture.py:551
+#: capture.py:603
 #, python-format
 msgid "%(label)s... %(pct)s%%"
 msgstr "%(label)s... %(pct)s%%"
 
-#: capture.py:553
+#: capture.py:605
 #, python-format
 msgid "%(label)s en cours..."
 msgstr "%(label)s in progress..."
 
-#: capture.py:582
+#: capture.py:634
 #, python-format
 msgid "%(label)s interrompu : le processus ne s'est pas terminé."
 msgstr "%(label)s interrupted: the process did not terminate."
 
-#: capture.py:589
+#: capture.py:641
 #, python-format
 msgid ""
 "%(label)s interrompu : aucune progression pendant %(minutes)s min. Le "
@@ -157,21 +163,21 @@ msgstr ""
 "%(label)s interrupted: no progress for %(minutes)s min. The source file "
 "is probably corrupted."
 
-#: capture.py:594
+#: capture.py:646
 #, python-format
 msgid "ffmpeg a échoué (code %(code)s)"
 msgstr "ffmpeg failed (code %(code)s)"
 
-#: capture.py:596
+#: capture.py:648
 #, python-format
 msgid "%(label)s échoué : %(detail)s"
 msgstr "%(label)s failed: %(detail)s"
 
-#: capture.py:665
+#: capture.py:717
 msgid "Aucune image trouvée dans le dossier"
 msgstr "No image found in the folder"
 
-#: capture.py:671
+#: capture.py:723
 #, python-format
 msgid ""
 "Assemblage refusé : %(expected)d images attendues, %(found)d trouvées "
@@ -180,7 +186,7 @@ msgstr ""
 "Assembly refused: %(expected)d images expected, %(found)d found in the "
 "capture"
 
-#: capture.py:690
+#: capture.py:742
 msgid ""
 "Assemblage refusé : la séquence d'images n'est pas continue (frames "
 "manquantes ou dupliquées)"
@@ -188,79 +194,79 @@ msgstr ""
 "Assembly refused: the image sequence is not contiguous (missing or "
 "duplicated frames)"
 
-#: capture.py:695
+#: capture.py:747
 msgid "Préparation des images..."
 msgstr "Preparing images..."
 
-#: capture.py:744
+#: capture.py:796
 msgid "Encodage de la vidéo..."
 msgstr "Encoding the video..."
 
-#: capture.py:748
+#: capture.py:800
 msgid "Encodage vidéo"
 msgstr "Video encoding"
 
-#: capture.py:748
+#: capture.py:800
 msgid "Assemblage ffmpeg"
 msgstr "ffmpeg assembly"
 
-#: capture.py:760 capture.py:761
+#: capture.py:812 capture.py:813
 msgid "Vidéo créée avec succès"
 msgstr "Video created successfully"
 
-#: capture.py:791
+#: capture.py:843
 msgid "Échec de l'assemblage"
 msgstr "Assembly failed"
 
-#: capture.py:879
+#: capture.py:931
 msgid "Démarrage du traitement vidéo..."
 msgstr "Starting video processing..."
 
-#: capture.py:883
+#: capture.py:935
 msgid "Traitement vidéo"
 msgstr "Video processing"
 
-#: capture.py:883
+#: capture.py:935
 msgid "Traitement ffmpeg"
 msgstr "ffmpeg processing"
 
-#: capture.py:895 static/js/mapgl.js:2005 templates/modal_video_ready.html:9
+#: capture.py:947 static/js/mapgl.js:2005 templates/modal_video_ready.html:9
 msgid "Vidéo prête"
 msgstr "Video ready"
 
-#: capture.py:898
+#: capture.py:950
 msgid "Vidéo traitée avec succès"
 msgstr "Video processed successfully"
 
-#: capture.py:915
+#: capture.py:967
 msgid "Échec du traitement vidéo"
 msgstr "Video processing failed"
 
-#: capture.py:951 capture.py:1000
+#: capture.py:1003 capture.py:1052
 msgid "Aucun fichier vidéo fourni"
 msgstr "No video file provided"
 
-#: capture.py:985
+#: capture.py:1037
 msgid "Traitement vidéo lancé en tâche de fond"
 msgstr "Video processing started in the background"
 
-#: capture.py:1012
+#: capture.py:1064
 msgid "Vidéo reçue et sauvegardée"
 msgstr "Video received and saved"
 
-#: capture.py:1028
+#: capture.py:1080
 msgid "Aucun fichier audio fourni"
 msgstr "No audio file provided"
 
-#: capture.py:1093 capture.py:1127
+#: capture.py:1145 capture.py:1179
 msgid "Flux vidéo inconnu"
 msgstr "Unknown video stream"
 
-#: capture.py:1098
+#: capture.py:1150
 msgid "Fragment vidéo hors séquence"
 msgstr "Out-of-sequence video fragment"
 
-#: capture.py:1101
+#: capture.py:1153
 msgid "Fragment vidéo absent"
 msgstr "Missing video fragment"
 
@@ -504,7 +510,7 @@ msgstr "Database cleared successfully. %(count)s entries deleted."
 msgid "Erreur lors du vidage de la base de données: %(error)s"
 msgstr "Error while clearing the database: %(error)s"
 
-#: blueprints/media.py:82
+#: blueprints/media.py:84
 msgid ""
 "Un assemblage vidéo est déjà en cours. Attendez sa fin avant d'en lancer "
 "un autre ou de relancer une capture (les deux utilisent le dossier "
@@ -513,11 +519,11 @@ msgstr ""
 "A video assembly is already running. Wait for it to finish before "
 "starting another or restarting a capture (both use the captured/ folder)."
 
-#: blueprints/media.py:155
+#: blueprints/media.py:157
 msgid "Assemblage vidéo lancé en tâche de fond"
 msgstr "Video assembly started in the background"
 
-#: blueprints/media.py:184
+#: blueprints/media.py:186
 msgid ""
 "Un assemblage vidéo est en cours : le dossier captured/ ne peut pas être "
 "vidé maintenant."
@@ -525,27 +531,27 @@ msgstr ""
 "A video assembly is running: the captured/ folder cannot be emptied right"
 " now."
 
-#: blueprints/media.py:291
+#: blueprints/media.py:305
 msgid "Indiquez un dossier."
 msgstr "Enter a folder."
 
-#: blueprints/media.py:294
+#: blueprints/media.py:308
 msgid "Indiquez le chemin complet du dossier (par exemple D:\\Vidéos)."
 msgstr "Enter the full path of the folder (for example D:\\Videos)."
 
-#: blueprints/media.py:301
+#: blueprints/media.py:315
 msgid "MyGCFlow ne peut pas écrire dans ce dossier."
 msgstr "MyGCFlow cannot write to this folder."
 
-#: blueprints/media.py:329
+#: blueprints/media.py:343
 msgid "Choisir le dossier des vidéos"
 msgstr "Choose the videos folder"
 
-#: blueprints/media.py:334
+#: blueprints/media.py:348
 msgid "Une fenêtre de choix du dossier est déjà ouverte."
 msgstr "A folder selection window is already open."
 
-#: blueprints/media.py:338
+#: blueprints/media.py:352
 msgid "Le sélecteur de dossier n'est pas disponible : saisissez le chemin."
 msgstr "The folder picker is not available: type the path."
 
@@ -691,7 +697,7 @@ msgstr "Preparing upload..."
 msgid "Fichier chargé avec succès !"
 msgstr "File uploaded successfully!"
 
-#: static/js/bdd.js:958 static/js/mapgl.js:2889
+#: static/js/bdd.js:958 static/js/mapgl.js:2891
 msgid "Terminé"
 msgstr "Done"
 
@@ -827,7 +833,7 @@ msgstr "Stop the animation before switching datasets."
 
 #: static/js/evolution_data.js:308 static/js/evolution_data.js:1292
 #: static/js/mapgl.js:1592 static/js/mapgl.js:1628 static/js/mapgl.js:1634
-#: static/js/mapgl.js:2412 static/js/notifications.js:383
+#: static/js/mapgl.js:2414 static/js/notifications.js:383
 msgid "Attention"
 msgstr "Warning"
 
@@ -1229,7 +1235,7 @@ msgstr "Initial cleanup error. Continuing."
 msgid "0% | préparation..."
 msgstr "0% | preparing..."
 
-#: static/js/mapgl.js:1725 static/js/mapgl.js:2425
+#: static/js/mapgl.js:1725 static/js/mapgl.js:2427
 msgid " ♪ La musique sera intégrée automatiquement après la capture."
 msgstr " ♪ The music will be added automatically after capture."
 
@@ -1245,7 +1251,7 @@ msgstr "Preparing capture..."
 msgid "Capture en pause : revenez sur cet onglet pour la poursuivre."
 msgstr "Capture paused: return to this tab to resume."
 
-#: static/js/mapgl.js:1755 static/js/mapgl.js:2781
+#: static/js/mapgl.js:1755 static/js/mapgl.js:2783
 msgid "Onglet masqué"
 msgstr "Tab hidden"
 
@@ -1270,105 +1276,105 @@ msgstr "The capture was interrupted by an error: ${message}"
 msgid "Capture interrompue"
 msgstr "Capture interrupted"
 
-#: static/js/mapgl.js:2005 static/js/mapgl.js:2529 static/js/mapgl.js:2701
-#: static/js/mapgl.js:2715 static/js/mapgl.js:2987 static/js/mapgl.js:3061
-#: static/js/mapgl.js:3065
+#: static/js/mapgl.js:2005 static/js/mapgl.js:2531 static/js/mapgl.js:2703
+#: static/js/mapgl.js:2717 static/js/mapgl.js:2989 static/js/mapgl.js:3063
+#: static/js/mapgl.js:3067
 msgid "Enregistrement"
 msgstr "Recording"
 
-#: static/js/mapgl.js:2032
+#: static/js/mapgl.js:2034
 msgid "task_id manquant"
 msgstr "missing task_id"
 
-#: static/js/mapgl.js:2033
+#: static/js/mapgl.js:2035
 msgid "Délai d'assemblage dépassé"
 msgstr "Assembly timed out"
 
-#: static/js/mapgl.js:2042
+#: static/js/mapgl.js:2044
 msgid "Tâche introuvable sur le serveur (purgée ou serveur redémarré)"
 msgstr "Task not found on the server (purged or server restarted)"
 
-#: static/js/mapgl.js:2056
+#: static/js/mapgl.js:2058
 msgid "Tâche échouée"
 msgstr "Task failed"
 
-#: static/js/mapgl.js:2063
+#: static/js/mapgl.js:2065
 #, python-brace-format
 msgid ""
 "Suivi de la tâche interrompu après ${count} erreurs consécutives : "
 "${detail}"
 msgstr "Task monitoring stopped after ${count} consecutive errors: ${detail}"
 
-#: static/js/mapgl.js:2170
+#: static/js/mapgl.js:2172
 msgid "Envoi des dernières images..."
 msgstr "Sending last images..."
 
-#: static/js/mapgl.js:2237 static/js/ui.js:5044
+#: static/js/mapgl.js:2239 static/js/ui.js:5044
 msgid "Assemblage en cours"
 msgstr "Assembly in progress"
 
-#: static/js/mapgl.js:2237
+#: static/js/mapgl.js:2239
 msgid "Création de la vidéo à partir des images..."
 msgstr "Creating video from images..."
 
-#: static/js/mapgl.js:2293
+#: static/js/mapgl.js:2295
 msgid "Impossible de lancer l'assemblage vidéo"
 msgstr "Unable to start the GPX import"
 
-#: static/js/mapgl.js:2299
+#: static/js/mapgl.js:2301
 msgid "Création de la vidéo..."
 msgstr "Creating the video..."
 
-#: static/js/mapgl.js:2306
+#: static/js/mapgl.js:2308
 msgid "Vidéo créée. Nettoyage des images..."
 msgstr "Video created. Cleaning up images..."
 
-#: static/js/mapgl.js:2307
+#: static/js/mapgl.js:2309
 msgid "Nettoyage en cours"
 msgstr "Cleaning up..."
 
-#: static/js/mapgl.js:2307
+#: static/js/mapgl.js:2309
 msgid "Vidéo créée avec succès. Nettoyage des images..."
 msgstr "Video created successfully. Cleaning up images..."
 
-#: static/js/mapgl.js:2323
+#: static/js/mapgl.js:2325
 msgid "Nettoyage terminé"
 msgstr "Cleanup finished"
 
-#: static/js/mapgl.js:2337
+#: static/js/mapgl.js:2339
 #, python-brace-format
 msgid "Erreur lors du traitement automatique: ${message}"
 msgstr "Error during automatic processing: ${message}"
 
-#: static/js/mapgl.js:2339
+#: static/js/mapgl.js:2341
 msgid "Erreur chaîne"
 msgstr "Pipeline error"
 
-#: static/js/mapgl.js:2412
+#: static/js/mapgl.js:2414
 msgid "Données en cours de chargement. Réessayez."
 msgstr "Data is still loading. Try again."
 
-#: static/js/mapgl.js:2497
+#: static/js/mapgl.js:2499
 msgid "Enregistrement en cours – Ne pas bouger la fenêtre"
 msgstr "Recording in progress – Do not move the window"
 
-#: static/js/mapgl.js:2498
+#: static/js/mapgl.js:2500
 msgid "Démarrage de la capture..."
 msgstr "Starting capture..."
 
-#: static/js/mapgl.js:2529
+#: static/js/mapgl.js:2531
 msgid "Erreur de la capture rapide, bascule en mode image par image."
 msgstr "Fast capture error, switching to frame-by-frame mode."
 
-#: static/js/mapgl.js:2667
+#: static/js/mapgl.js:2669
 msgid "Résolution réduite aux capacités du navigateur."
 msgstr "Resolution reduced to what the browser can handle."
 
-#: static/js/mapgl.js:2701
+#: static/js/mapgl.js:2703
 msgid "La copie de la vidéo a échoué. Arrêt de l'enregistrement."
 msgstr "Copying the video failed. Stopping the recording."
 
-#: static/js/mapgl.js:2715
+#: static/js/mapgl.js:2717
 msgid ""
 "Erreur de l'encodeur vidéo. Arrêt de l'enregistrement et récupération de "
 "la séquence déjà capturée."
@@ -1376,110 +1382,110 @@ msgstr ""
 "Video encoder error. Stopping the recording and recovering the captured "
 "sequence."
 
-#: static/js/mapgl.js:2781
+#: static/js/mapgl.js:2783
 msgid ""
 "Enregistrement en pause : revenez sur cet onglet pour reprendre la "
 "capture."
 msgstr "Recording paused: return to this tab to resume capture."
 
-#: static/js/mapgl.js:2908
+#: static/js/mapgl.js:2910
 msgid "Copie vers le dossier vidéo échouée"
 msgstr "Copy to video folder failed"
 
-#: static/js/mapgl.js:2929
+#: static/js/mapgl.js:2931
 msgid "Finalisation"
 msgstr "Finalizing"
 
-#: static/js/mapgl.js:2929
+#: static/js/mapgl.js:2931
 msgid "Écriture de la durée de la vidéo..."
 msgstr "Writing video duration..."
 
-#: static/js/mapgl.js:2942
+#: static/js/mapgl.js:2944
 msgid "Ajout audio"
 msgstr "Adding audio"
 
-#: static/js/mapgl.js:2942
+#: static/js/mapgl.js:2944
 msgid "Fusion de la piste audio avec la vidéo en cours..."
 msgstr "Merging audio track with video..."
 
-#: static/js/mapgl.js:2973 static/js/video_postprocess.js:29
+#: static/js/mapgl.js:2975 static/js/video_postprocess.js:29
 msgid "Normalisation"
 msgstr "Normalization"
 
-#: static/js/mapgl.js:2973
+#: static/js/mapgl.js:2975
 #, python-brace-format
 msgid "Accélération x${applicable} pour lecture à vitesse normale..."
 msgstr "Speeding up x${applicable} for normal-speed playback..."
 
-#: static/js/mapgl.js:2987
+#: static/js/mapgl.js:2989
 msgid "La vidéo n'a pas pu être assemblée."
 msgstr "The video could not be assembled."
 
-#: static/js/mapgl.js:2994
+#: static/js/mapgl.js:2996
 msgid "Traitement serveur"
 msgstr "Server processing"
 
-#: static/js/mapgl.js:2994
+#: static/js/mapgl.js:2996
 msgid "Envoi de la vidéo au serveur..."
 msgstr "Sending video to server..."
 
-#: static/js/mapgl.js:3017 static/js/mapgl.js:3023
+#: static/js/mapgl.js:3019 static/js/mapgl.js:3025
 msgid "Traitement serveur..."
 msgstr "Server processing..."
 
-#: static/js/mapgl.js:3021
+#: static/js/mapgl.js:3023
 msgid "Traitement serveur non démarré"
 msgstr "Server processing not started"
 
-#: static/js/mapgl.js:3061
+#: static/js/mapgl.js:3063
 msgid "L'enregistrement a été interrompu : la copie des données a échoué."
 msgstr "Recording was interrupted: copying the data failed."
 
-#: static/js/mapgl.js:3065
+#: static/js/mapgl.js:3067
 msgid "Traitement serveur indisponible, repli local..."
 msgstr "Server processing unavailable, falling back to local..."
 
-#: static/js/mapgl.js:3112
+#: static/js/mapgl.js:3114
 msgid "Élément non trouvé"
 msgstr "Element not found"
 
-#: static/js/mapgl.js:3129
+#: static/js/mapgl.js:3131
 msgid "Timeout rendercomplete (5s) : rendu carte bloqué"
 msgstr "rendercomplete timeout (5s): map rendering stalled"
 
-#: static/js/mapgl.js:3145
+#: static/js/mapgl.js:3147
 msgid "Aucun canvas trouvé dans la carte"
 msgstr "No canvas found in the map"
 
-#: static/js/mapgl.js:3190
+#: static/js/mapgl.js:3192
 msgid "Échec conversion canvas en blob"
 msgstr "Canvas to blob conversion failed"
 
-#: static/js/mapgl.js:3723 static/js/mapgl.js:3798
+#: static/js/mapgl.js:3725 static/js/mapgl.js:3800
 msgid "Aucun déplacement à tracer pour cette sélection."
 msgstr "No movement to draw for this selection."
 
-#: static/js/mapgl.js:3723 static/js/mapgl.js:3725 static/js/mapgl.js:3798
+#: static/js/mapgl.js:3725 static/js/mapgl.js:3727 static/js/mapgl.js:3800
 #: templates/menu_style.html:82
 msgid "Trajet"
 msgstr "Route"
 
-#: static/js/mapgl.js:3725
+#: static/js/mapgl.js:3727
 msgid ""
 "Journées très chargées : regroupement automatique appliqué sur le rayon "
 "choisi."
 msgstr "Very busy days: automatic grouping applied at the chosen radius."
 
-#: static/js/mapgl.js:4311
+#: static/js/mapgl.js:4313
 msgid "Choisissez d’abord une forme de flash."
 msgstr "First choose a flash shape."
 
-#: static/js/mapgl.js:4311 static/js/mapgl.js:4315 templates/guide.html:200
+#: static/js/mapgl.js:4313 static/js/mapgl.js:4317 templates/guide.html:200
 #: templates/menu_style.html:79
 msgid "Flash"
 msgstr "Flash"
 
-#: static/js/mapgl.js:4315
+#: static/js/mapgl.js:4317
 msgid ""
 "Aucune cache visible à l’écran : déplacez la carte au-dessus de vos "
 "points."
@@ -1712,7 +1718,8 @@ msgstr "Export"
 msgid "Réinitialiser"
 msgstr "Reset"
 
-#: static/js/profiles.js:792 templates/menu_style.html:272
+#: static/js/profiles.js:792 static/js/recent_videos.js:60
+#: static/js/recent_videos.js:119 templates/menu_style.html:272
 #: templates/modal_evolution.html:85
 msgid "Supprimer"
 msgstr "Delete"
@@ -1882,6 +1889,51 @@ msgid ""
 msgstr ""
 "Are you sure you want to reset the theme \"${name}\" to its default "
 "values?"
+
+#: static/js/recent_videos.js:52 static/js/video_ready.js:116
+msgid "Impossible d’afficher la vidéo dans son dossier"
+msgstr "Unable to show the video in its folder"
+
+#: static/js/recent_videos.js:52 static/js/recent_videos.js:90
+#: static/js/recent_videos.js:94 static/js/video_ready.js:55
+#: static/js/video_ready.js:84 static/js/video_ready.js:101
+#: static/js/video_ready.js:104
+msgid "Vidéo"
+msgstr "Video"
+
+#: static/js/recent_videos.js:75
+msgid "Supprimer ?"
+msgstr "Delete?"
+
+#: static/js/recent_videos.js:77
+#, python-brace-format
+msgid "Confirmer la suppression de ${name}"
+msgstr "Confirm deletion of ${name}"
+
+#: static/js/recent_videos.js:89
+msgid "Vidéo envoyée à la Corbeille."
+msgstr "Video sent to the Recycle Bin."
+
+#: static/js/recent_videos.js:89
+msgid "Vidéo supprimée."
+msgstr "Video deleted."
+
+#: static/js/recent_videos.js:94
+msgid "La vidéo n’a pas pu être supprimée."
+msgstr "The video could not be deleted."
+
+#: static/js/recent_videos.js:117 templates/modal_video_ready.html:23
+msgid "Afficher dans le dossier"
+msgstr "Show in folder"
+
+#: static/js/recent_videos.js:143
+#, python-brace-format
+msgid "${n} autres vidéos dans le dossier."
+msgstr "${n} more videos in the folder."
+
+#: static/js/recent_videos.js:144
+msgid "1 autre vidéo dans le dossier."
+msgstr "1 more video in the folder."
 
 #: static/js/record.js:29
 msgid "Échec conversion en Blob"
@@ -2499,11 +2551,6 @@ msgstr "${n} GB"
 msgid "${n} Mo"
 msgstr "${n} MB"
 
-#: static/js/video_ready.js:55 static/js/video_ready.js:84
-#: static/js/video_ready.js:101 static/js/video_ready.js:104
-msgid "Vidéo"
-msgstr "Video"
-
 #: static/js/video_ready.js:101
 #, python-brace-format
 msgid "Copie enregistrée : ${name}"
@@ -2512,10 +2559,6 @@ msgstr "Copy saved: ${name}"
 #: static/js/video_ready.js:104
 msgid "La copie de la vidéo a échoué."
 msgstr "Copying the video failed."
-
-#: static/js/video_ready.js:116
-msgid "Impossible d’afficher la vidéo dans son dossier"
-msgstr "Unable to show the video in its folder"
 
 #: static/js/video_ready.js:121
 msgid "Impossible d’ouvrir la vidéo"
@@ -3716,11 +3759,11 @@ msgstr ""
 "The video is created automatically at the end of the recording. Then use "
 "the buttons in the"
 
-#: templates/guide.html:277 templates/menu_recording.html:165
+#: templates/guide.html:277
 msgid "Fichiers vidéo"
 msgstr "Video files"
 
-#: templates/guide.html:279 templates/menu_recording.html:180
+#: templates/guide.html:279 templates/menu_recording.html:185
 msgid "Ouvrir le dossier vidéo"
 msgstr "Open the video folder"
 
@@ -3728,7 +3771,7 @@ msgstr "Open the video folder"
 msgid "accède au dossier contenant vos vidéos."
 msgstr "opens the folder containing your videos."
 
-#: templates/guide.html:280 templates/menu_recording.html:176
+#: templates/guide.html:280 templates/menu_recording.html:181
 msgid "Supprimer les images de capture inutilisées"
 msgstr "Delete unused capture images"
 
@@ -5087,7 +5130,15 @@ msgstr "Full path of the folder"
 msgid "Valider"
 msgstr "Confirm"
 
-#: templates/menu_recording.html:175
+#: templates/menu_recording.html:165 templates/menu_recording.html:169
+msgid "Dernières vidéos"
+msgstr "Latest videos"
+
+#: templates/menu_recording.html:170
+msgid "Aucune vidéo dans ce dossier pour l'instant."
+msgstr "No video in this folder yet."
+
+#: templates/menu_recording.html:180
 msgid ""
 "Supprime les images de capture restées dans le dossier temporaire, en "
 "général après un enregistrement interrompu. Sans effet sur les vidéos "
@@ -5579,10 +5630,6 @@ msgstr "The \"My Finds\" Pocket Query can only be generated once every 3 days."
 #: templates/modal_first_use.html:31
 msgid "Voir le mode d'emploi"
 msgstr "View the user guide"
-
-#: templates/modal_video_ready.html:23
-msgid "Afficher dans le dossier"
-msgstr "Show in folder"
 
 #: templates/modal_video_ready.html:26
 msgid "Ouvrir dans le lecteur"

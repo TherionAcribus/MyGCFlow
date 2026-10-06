@@ -19,7 +19,7 @@ function videoUrl(file, { inline = false } = {}) {
     return inline ? `${url}?inline=1` : url;
 }
 
-function formatSize(bytes) {
+export function formatVideoSize(bytes) {
     if (!Number.isFinite(bytes) || bytes <= 0) return '';
     const locale = document.documentElement.lang || undefined;
     const megabytes = bytes / (1024 * 1024);
@@ -152,7 +152,7 @@ export function showVideoReady(info) {
     if (fileEl) fileEl.textContent = file;
     const metaEl = document.getElementById('videoReadyMeta');
     if (metaEl) {
-        metaEl.textContent = [formatDuration(info.duration_seconds), formatSize(info.size_bytes)]
+        metaEl.textContent = [formatDuration(info.duration_seconds), formatVideoSize(info.size_bytes)]
             .filter(Boolean).join(' · ');
     }
     const folderEl = document.getElementById('videoReadyFolder');
