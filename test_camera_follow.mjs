@@ -17,6 +17,7 @@ import {
     simulateCameraJourneys,
     smoothingFactor,
     stepCenter,
+    zoomForExtent,
 } from './static/js/camera_follow.mjs';
 
 test('le lissage ne dépend pas de la cadence', () => {
@@ -442,4 +443,146 @@ test('fly : la simulation rejoue les mêmes décisions que la lecture', () => {
         sim.travelMsByDay[1],
         createCameraJourney([0, 0], [3000, 0], 8, 1, { path: 'fly', minCruiseZoom: 4 }).totalDurationMs,
     );
+});
+
+// ---------- Zoom d'arrivée adapté à l'étendue du jour ----------
+
+test('zoomForExtent cadre l\'étendue dans le viewport utile', () => {
+    // Étendue 2× le viewport : il faut un niveau de zoom en moins.
+    assert.equal(zoomForExtent([0, 0, 2000, 1600], [1000, 800], 1, 8, 0), 7);
+    // Étendue 2× plus petite : un niveau de plus.
+    assert.equal(zoomForExtent([0, 0, 500, 400], [1000, 800], 1, 8, 0), 9);
+    // La résolution entre dans le calcul : 4× le viewport à résolution 2 → −1.
+    assert.equal(zoomForExtent([0, 0, 4000, 3200], [1000, 800], 2, 8, 0), 7);
+    // Une étendue ponctuelle n'a pas de zoom « à l'échelle » : zoom inchangé.
+    assert.equal(zoomForExtent([10, 10, 10, 10], [1000, 800], 1, 8), 8);
+    // Le padding rétrécit le cadre utile : extent 904×704 dans
+    // (1000−96)×(800−96) = 904×704 → cadrage exact, zoom inchangé.
+    assert.equal(zoomForExtent([0, 0, 904, 704], [1000, 800], 1, 8, 48), 8);
+    // Un pixel de trop en largeur impose le dézoom.
+    assert.equal(zoomForExtent([0, 0, 905, 704], [1000, 800], 1, 8, 48) < 8, true);
+    // Entrées invalides : « pas renseigné » vaut « pas de changement ».
+    assert.equal(zoomForExtent(null, [1000, 800], 1, 8), 8);
+    assert.equal(zoomForExtent([0, 0, 10, 10], null, 1, 8), 8);
+    assert.equal(zoomForExtent([0, 0, 10, 10], [1000, 800], 0, 8), 8);
+});
+
+test('un pur changement de zoom suffit à créer un trajet', () => {
+    // Distance sous la zone morte, endZoom différent : le trajet existe.
+    const journey = createCameraJourney([0, 0], [0, 0], 8, 1, { endZoom: 6 });
+    assert.ok(journey);
+    assert.equal(journey.endZoom, 6);
+    assert.equal(journey.panDurationMs, 0);
+    // Sans dézoom ni translation, seule la phase 3 a une durée : le trajet est
+    // une convergence douce de 8 vers 6.
+    assert.equal(journey.zoomOutDurationMs, 0);
+    assert.equal(journey.zoomInDurationMs, Math.min(1200, 600 + 2 * 150));
+    const arrival = sampleCameraJourney(journey, journey.totalDurationMs);
+    assert.equal(arrival.zoom, 6);
+    assert.equal(arrival.done, true);
+    // Un endZoom indiscernable (< 0,05 niveau) ou invalide ne crée rien.
+    assert.equal(createCameraJourney([0, 0], [0, 0], 8, 1, { endZoom: 8.03 }), null);
+    assert.equal(createCameraJourney([0, 0], [0, 0], 8, 1, { endZoom: NaN }), null);
+});
+
+test('phases : la phase 3 converge vers endZoom, pas vers startZoom', () => {
+    const journey = createCameraJourney([0, 0], [5000, 0], 8, 1, { endZoom: 6 });
+    assert.ok(journey.cruiseZoom < 8);
+    // Durée de rezoom calculée sur l'écart cruiseZoom → endZoom (asymétrique).
+    const attendu = Math.min(1200, 600 + Math.abs(6 - journey.cruiseZoom) * 150);
+    assert.equal(journey.zoomInDurationMs, attendu);
+    assert.equal(journey.totalDurationMs,
+        journey.zoomOutDurationMs + journey.panDurationMs + journey.zoomInDurationMs);
+    // En pleine phase 3, le zoom est entre cruiseZoom et endZoom.
+    const mid = sampleCameraJourney(
+        journey,
+        journey.zoomOutDurationMs + journey.panDurationMs + journey.zoomInDurationMs / 2,
+    );
+    assert.ok(mid.zoom > journey.cruiseZoom && mid.zoom < 6);
+    const arrival = sampleCameraJourney(journey, journey.totalDurationMs);
+    assert.equal(arrival.zoom, 6);
+    assert.equal(arrival.done, true);
+    // endZoom au-dessus du zoom de départ aussi (jour compact après un jour large).
+    const remonte = createCameraJourney([0, 0], [5000, 0], 6, 4, { endZoom: 8 });
+    assert.equal(sampleCameraJourney(remonte, remonte.totalDurationMs).zoom, 8);
+});
+
+test('fly asymétrique : endpoints exacts et mouvement continu', () => {
+    for (const endZoom of [6, 10]) {
+        const journey = createCameraJourney([0, 0], [5000, 0], 8, 1, { path: 'fly', endZoom });
+        assert.equal(journey.path, 'fly');
+        assert.equal(journey.endZoom, endZoom);
+        assert.equal(journey.flyIsZoomOnly, false);
+
+        const start = sampleCameraJourney(journey, 0);
+        assert.deepEqual(start.center, [0, 0]);
+        assert.equal(start.zoom, 8);
+
+        const arrival = sampleCameraJourney(journey, journey.totalDurationMs);
+        assert.ok(Math.abs(arrival.center[0] - 5000) < 1e-6);
+        assert.equal(arrival.zoom, endZoom);
+        assert.equal(arrival.done, true);
+
+        // u(S) = u1 : la construction de b0/b1 le garantit — vérifié aux
+        // bornes avec les champs du trajet (ρ = √2, w0 = 1).
+        const uS = (Math.cosh(journey.flyR0) * Math.tanh(Math.SQRT2 * journey.flyS + journey.flyR0)
+            - Math.sinh(journey.flyR0)) / (2 * journey.flyU1);
+        assert.ok(Math.abs(uS - 1) < 1e-6, `u(S) = ${uS} attendu 1`);
+
+        // Continuité à la cadence vidéo, centre monotone vers la cible.
+        let prev = start;
+        for (let t = 16; t <= journey.totalDurationMs; t += 16) {
+            const cur = sampleCameraJourney(journey, t);
+            assert.ok(Math.abs(cur.zoom - prev.zoom) < 0.5, `saut de zoom à ${t} ms`);
+            assert.ok(cur.center[0] >= prev.center[0] - 1e-9, `recul en x à ${t} ms`);
+            prev = cur;
+        }
+    }
+});
+
+test('fly : zoom pur à centre fixe, monotone vers endZoom', () => {
+    const journey = createCameraJourney([0, 0], [0, 0], 8, 1, { path: 'fly', endZoom: 6 });
+    assert.equal(journey.path, 'fly');
+    assert.equal(journey.flyIsZoomOnly, true);
+    let prev = 8;
+    for (let t = 1; t < journey.totalDurationMs; t += 16) {
+        const cur = sampleCameraJourney(journey, t);
+        assert.ok(cur.zoom <= prev + 1e-9, `zoom non monotone à ${t} ms`);
+        assert.ok(cur.zoom >= 6 - 1e-9);
+        prev = cur.zoom;
+    }
+    const arrival = sampleCameraJourney(journey, journey.totalDurationMs);
+    assert.equal(arrival.zoom, 6);
+    assert.equal(arrival.done, true);
+
+    // Le zoom monte tout aussi bien (jour compact après un jour large).
+    const remonte = createCameraJourney([0, 0], [0, 0], 8, 1, { path: 'fly', endZoom: 10 });
+    const mid = sampleCameraJourney(remonte, remonte.totalDurationMs / 2);
+    assert.ok(mid.zoom > 8 && mid.zoom < 10);
+    assert.equal(sampleCameraJourney(remonte, remonte.totalDurationMs).zoom, 10);
+});
+
+test('simulation fitDay : le zoom d\'arrivée se propage au jour suivant', () => {
+    // Jour 0 : étendue 4000×3200 → zoom de cadrage 6 (resFit 4 à res 1).
+    // Jour 1 : étendue compacte loin de là → trajet depuis le zoom 6 atteint.
+    const days = [
+        { center: [3000, 0], extent: [1000, -1600, 5000, 1600] },
+        { center: [6000, 0], extent: [5950, -50, 6050, 50] },
+    ];
+    const base = { ...vue, dynamism: 2, paddingPx: 0 };
+    const avec = simulateCameraJourneys(days, { ...base, fitDay: true });
+    const sans = simulateCameraJourneys(days, { ...base, fitDay: false });
+    assert.equal(avec.journeyCount, 2);
+    assert.equal(sans.journeyCount, 2);
+    // Le jour 1 part du zoom 6 laissé par le jour 0 (res 4, 750 px) et vise 8,
+    // au lieu d'un départ à 8 (res 1, 3000 px) : durées différentes.
+    assert.notEqual(avec.travelMsByDay[1], sans.travelMsByDay[1]);
+    // Régression : sans fitDay, tout est strictement identique à avant.
+    assert.equal(sans.travelMsByDay[0], createCameraJourney([0, 0], [3000, 0], 8, 1).totalDurationMs);
+    assert.equal(sans.travelMsByDay[1], createCameraJourney([3000, 0], [6000, 0], 8, 1).totalDurationMs);
+    // Avec fitDay, les durées sont celles des trajets effectivement créés.
+    assert.equal(avec.travelMsByDay[0],
+        createCameraJourney([0, 0], [3000, 0], 8, 1, { endZoom: 6 }).totalDurationMs);
+    assert.equal(avec.travelMsByDay[1],
+        createCameraJourney([3000, 0], [6000, 0], 6, 4, { endZoom: 8 }).totalDurationMs);
 });

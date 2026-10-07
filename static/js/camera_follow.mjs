@@ -165,11 +165,46 @@ export function easeInOutCubic(progress) {
         : 1 - Math.pow(-2 * value + 2, 3) / 2;
 }
 
+// Zoom auquel l'étendue [minX, minY, maxX, maxY] (coordonnées carte) tient
+// entièrement dans le viewport réduit de `paddingPx` de chaque côté. Sert à
+// choisir le zoom d'arrivée d'un trajet : montrer toutes les caches du jour,
+// pas seulement leur barycentre. `resolution` est la résolution courante
+// (unités carte/px au zoom `currentZoom`) ; la résolution divisant par 2 à
+// chaque niveau, le zoom cherché est currentZoom + log2(resolution / resFit)
+// où resFit est la résolution qui ferrait l'étendue dans le cadre utile.
+//
+// Entrées invalides ou étendue ponctuelle (resFit nul, infini ou négatif) :
+// retourner currentZoom — « pas assez renseigné » vaut « pas de changement »,
+// jamais un saut de zoom arbitraire.
+export function zoomForExtent(extent, viewportSize, resolution, currentZoom, paddingPx = 48) {
+    const zoom = Number(currentZoom);
+    if (!Number.isFinite(zoom)) return zoom;
+    const res = Number(resolution);
+    if (!Array.isArray(extent) || extent.length !== 4
+        || !Array.isArray(viewportSize) || viewportSize.length < 2
+        || !(res > 0)) return zoom;
+    const pad = Math.max(0, Number(paddingPx) || 0);
+    const width = Number(viewportSize[0]) - 2 * pad;
+    const height = Number(viewportSize[1]) - 2 * pad;
+    const extentW = Number(extent[2]) - Number(extent[0]);
+    const extentH = Number(extent[3]) - Number(extent[1]);
+    if (!(width > 0) || !(height > 0) || !(extentW >= 0) || !(extentH >= 0)) return zoom;
+    const resFit = Math.max(extentW / width, extentH / height);
+    if (!(resFit > 0) || !Number.isFinite(resFit)) return zoom;
+    return zoom + Math.log2(res / resFit);
+}
+
 // Prépare un trajet déterministe. Deux tracés : 'phases' (dézoom éventuel,
 // translation, puis retour au zoom initial) ou 'fly' (trajectoire continue de
 // van Wijk & Nuij, cf. createFlyJourney). La distance est mesurée dans le
 // viewport courant, ce qui rend les seuils stables quelle que soit la
 // projection ou la latitude.
+//
+// `endZoom` : zoom d'arrivée différent du zoom de départ (par ex. celui qui
+// cadre toutes les caches du jour, cf. zoomForExtent). Un trajet n'est créé
+// que si l'écart dépasse ~1/20 de niveau : en dessous, le changement
+// d'échelle est indiscernable mais coûte quand même un rechargement de tuiles.
+// null/absent : retour au zoom de départ, comportement historique inchangé.
 export function createCameraJourney(current, target, startZoom, resolution, {
     longTravelThresholdPx = LONG_TRAVEL_THRESHOLD_PX,
     cruiseDistancePx = CRUISE_DISTANCE_PX,
@@ -180,6 +215,7 @@ export function createCameraJourney(current, target, startZoom, resolution, {
     // doivent tenir dans une durée de vidéo imposée, > 1 quand toute la timeline
     // est ralentie (capture rapide avec ralentissement).
     durationScale = 1,
+    endZoom = null,
 } = {}) {
     if (!current || !target) return null;
     const zoom = Number(startZoom);
@@ -189,15 +225,28 @@ export function createCameraJourney(current, target, startZoom, resolution, {
     const distanceMapUnits = Math.hypot(target[0] - current[0], target[1] - current[1]);
     const distancePx = distanceMapUnits / unitsPerPixel;
     const addedZoom = Math.max(0, Number(extraZoomOut) || 0);
-    if (!(distancePx > DEFAULT_DEAD_ZONE_PX) && addedZoom === 0) return null;
+    // Zoom d'arrivée effectif : toute valeur absente, invalide ou trop proche
+    // du zoom de départ retombe sur « retour au zoom initial ». Attention :
+    // Number(null) vaut 0, pas NaN — le test sur la valeur fournie est donc
+    // indispensable avant la conversion.
+    const end = Number(endZoom);
+    const endZoomEffective = endZoom != null && Number.isFinite(end) && Math.abs(end - zoom) > 0.05
+        ? end : zoom;
+    // Ni déplacement, ni changement d'échelle, ni respiration : rien à jouer.
+    if (!(distancePx > DEFAULT_DEAD_ZONE_PX) && endZoomEffective === zoom && addedZoom === 0) return null;
 
     const scale = Number(durationScale);
     const timeScale = Number.isFinite(scale) && scale >= 0 ? scale : 1;
 
+    const zoomOnly = !(distancePx > DEFAULT_DEAD_ZONE_PX);
     // La parabole de van Wijk ne sait pas exprimer un zoom aller-retour à centre
-    // fixe (u1 = 0) : la « respiration » du niveau 4 garde le trajet en phases.
-    if (normalizeCameraPath(path) === 'fly' && distancePx > DEFAULT_DEAD_ZONE_PX) {
-        return createFlyJourney(current, target, zoom, distancePx,
+    // fixe : la « respiration » du niveau 4 (extraZoomOut sans déplacement)
+    // garde le trajet en phases. En revanche un zoom monotone vers endZoom,
+    // même à centre quasi fixe, est le cas dégénéré u1 = 0 de van Wijk, géré
+    // dans createFlyJourney.
+    if (normalizeCameraPath(path) === 'fly' && !(zoomOnly && addedZoom > 0)
+        && (!zoomOnly || endZoomEffective !== zoom)) {
+        return createFlyJourney(current, target, zoom, endZoomEffective, distancePx,
             cruiseDistancePx, minCruiseZoom, addedZoom, timeScale);
     }
 
@@ -211,26 +260,29 @@ export function createCameraJourney(current, target, startZoom, resolution, {
     }
 
     cruiseZoom = Math.max(Number(minCruiseZoom) || 0, cruiseZoom - addedZoom);
-    const zoomDelta = Math.max(0, zoom - cruiseZoom);
-    const zoomDurationMs = (zoomDelta > 0 ? Math.min(1200, 600 + zoomDelta * 150) : 0) * timeScale;
-    const cruiseDistance = distancePx / Math.pow(2, zoomDelta);
+    const zoomOutDelta = Math.max(0, zoom - cruiseZoom);
+    const zoomOutDurationMs = (zoomOutDelta > 0 ? Math.min(1200, 600 + zoomOutDelta * 150) : 0) * timeScale;
+    const cruiseDistance = distancePx / Math.pow(2, zoomOutDelta);
     const panDurationMs = (distancePx > DEFAULT_DEAD_ZONE_PX
         ? Math.min(2800, 700 + cruiseDistance * 2.5)
         : 0) * timeScale;
+    // Phase 3 : convergence vers le zoom d'arrivée — endZoom, qui peut être
+    // plus bas (jour à grande étendue) ou plus haut (retour vers le zoom de
+    // départ après un jour « large »). Même formule de durée que le dézoom.
+    const zoomInDelta = Math.abs(endZoomEffective - cruiseZoom);
+    const zoomInDurationMs = (zoomInDelta > 0 ? Math.min(1200, 600 + zoomInDelta * 150) : 0) * timeScale;
 
     return {
         path: 'phases',
         startCenter: [...current],
         targetCenter: [...target],
         startZoom: zoom,
-        // Champ homologue à celui des trajets 'fly' : aujourd'hui le zoom de
-        // fin est toujours le zoom de départ.
-        endZoom: zoom,
+        endZoom: endZoomEffective,
         cruiseZoom,
-        zoomOutDurationMs: zoomDurationMs,
+        zoomOutDurationMs,
         panDurationMs,
-        zoomInDurationMs: zoomDurationMs,
-        totalDurationMs: zoomDurationMs * 2 + panDurationMs,
+        zoomInDurationMs,
+        totalDurationMs: zoomOutDurationMs + panDurationMs + zoomInDurationMs,
         distancePx,
     };
 }
@@ -240,61 +292,104 @@ export function createCameraJourney(current, target, startZoom, resolution, {
 // parabole en cosinus hyperbolique — un seul mouvement continu, sans les trois
 // accélérations/freinages du tracé en phases.
 //
-// Cas symétrique w0 = w1 = 1 : même zoom au départ et à l'arrivée, donc
-// b1 = −b0 et r1 = −r0. La distance u1 est ramenée à une échelle fixe
+// Cas général w0 ≠ w1 (formules du §6 du papier, identiques à d3) : w0 = 1 et
+// w1 = 2^(startZoom − endZoom) — w croît quand le zoom baisse. Le cas
+// symétrique historique est w1 = 1, qui redonne b1 = −b0, r1 = −r0 et
+// S = 2|r0|/ρ. La distance u1 est ramenée à une échelle fixe
 // (cruiseDistancePx, en px) plutôt qu'à la largeur réelle du viewport : la
 // descente de zoom vaut alors ≈ log2(u1), proche de l'ancien zoomDelta, et ne
 // dépend pas de la taille de la fenêtre.
-function createFlyJourney(current, target, zoom, distancePx, cruiseDistancePx, minCruiseZoom, addedZoom, timeScale) {
+function createFlyJourney(current, target, zoom, end, distancePx, cruiseDistancePx, minCruiseZoom, addedZoom, timeScale) {
     // extraZoomOut creuse la parabole : multiplier u1 par 2^extraZoomOut ajoute
     // ~extraZoomOut niveaux de descente, la courbe étant logarithmique.
     const u1 = distancePx / Math.max(1, Number(cruiseDistancePx) || CRUISE_DISTANCE_PX)
         * Math.pow(2, addedZoom);
-    const b0 = FLY_RHO2 * u1 / 2;
-    const r0 = Math.log(Math.sqrt(b0 * b0 + 1) - b0);
-    const S = 2 * Math.abs(r0) / FLY_RHO;
     const floor = Number(minCruiseZoom);
+    const w1 = Math.pow(2, zoom - end);
+
+    // Zoom pur à centre (quasi) fixe : u1 ≈ 0 rend b0 et b1 infinis, mais la
+    // limite est propre — la largeur suit w0·exp(ρ·s) et le centre avance
+    // linéairement. S est signé : négatif quand le zoom monte (w1 < w0).
+    if (!(distancePx > DEFAULT_DEAD_ZONE_PX) || !(u1 > 0)) {
+        const S = Math.log(w1) / FLY_RHO;
+        return {
+            path: 'fly',
+            startCenter: [...current],
+            targetCenter: [...target],
+            startZoom: zoom,
+            endZoom: end,
+            totalDurationMs: Math.min(4000, Math.max(300, Math.abs(S) * CAMERA_FLY_MS_PER_UNIT)) * timeScale,
+            distancePx,
+            flyU1: u1,
+            flyR0: 0,
+            flyR1: 0,
+            flyW1: w1,
+            flyIsZoomOnly: true,
+            flyS: S,
+            flyMinZoom: Number.isFinite(floor) ? floor : null,
+        };
+    }
+
+    const rho4u1sq = FLY_RHO2 * FLY_RHO2 * u1 * u1;
+    const b0 = (w1 * w1 - 1 + rho4u1sq) / (2 * FLY_RHO2 * u1);
+    const b1 = (w1 * w1 - 1 - rho4u1sq) / (2 * w1 * FLY_RHO2 * u1);
+    const r0 = Math.log(Math.sqrt(b0 * b0 + 1) - b0);
+    const r1 = Math.log(Math.sqrt(b1 * b1 + 1) - b1);
+    // r1 − r0 nul n'arrive qu'en u1 = 0 (exclu) ; le repli de d3 sur
+    // ln(w1/w0)/ρ évite par prudence un trajet de longueur nulle.
+    const dr = r1 - r0;
+    const S = (dr || Math.log(w1)) / FLY_RHO;
     return {
         path: 'fly',
         startCenter: [...current],
         targetCenter: [...target],
         startZoom: zoom,
-        // Toujours égal à startZoom pour l'instant : le champ prépare un futur
-        // zoom d'arrivée adapté au contenu de la cible.
-        endZoom: zoom,
+        endZoom: end,
         // S croît en log(distance) : le plafond ne sert qu'aux trajets
         // transcontinentaux, le plancher évite les trajets « déjà finis ».
-        totalDurationMs: Math.min(4000, Math.max(300, S * CAMERA_FLY_MS_PER_UNIT)) * timeScale,
+        totalDurationMs: Math.min(4000, Math.max(300, Math.abs(S) * CAMERA_FLY_MS_PER_UNIT)) * timeScale,
         distancePx,
         flyU1: u1,
         flyR0: r0,
+        flyR1: r1,
+        flyW1: w1,
+        flyIsZoomOnly: false,
         flyS: S,
         flyMinZoom: Number.isFinite(floor) ? floor : null,
     };
 }
 
 // Échantillonne un trajet 'fly' à l'instant elapsed (ms depuis le départ).
-// Le temps est linéaire : la courbe w(s) = cosh(r0)/cosh(ρs + r0) produit
+// Le temps est linéaire : la courbe w(s) = w0·cosh(r0)/cosh(ρs + r0) produit
 // déjà un départ et une arrivée en douceur, aucune easing supplémentaire.
 function sampleFlyJourney(journey, elapsed) {
     const total = Math.max(0, journey.totalDurationMs);
     if (elapsed >= total) {
         return { center: [...journey.targetCenter], zoom: journey.endZoom, done: true };
     }
-    const r0 = journey.flyR0;
     const s = journey.flyS * (total > 0 ? elapsed / total : 1);
-    const coshR0 = Math.cosh(r0);
-    const w = coshR0 / Math.cosh(FLY_RHO * s + r0);
+    let w;
+    let fraction;
+    if (journey.flyIsZoomOnly) {
+        // Cas dégénéré u1 = 0 : la largeur évolue en exponentielle pure et le
+        // centre avance linéairement. S et s partagent le même signe : la
+        // fraction monte monotone de 0 à 1 dans les deux sens de zoom.
+        w = Math.exp(FLY_RHO * s);
+        fraction = journey.flyS !== 0 ? s / journey.flyS : 1;
+    } else {
+        const r0 = journey.flyR0;
+        const coshR0 = Math.cosh(r0);
+        w = coshR0 / Math.cosh(FLY_RHO * s + r0);
+        // u(s) projeté en fraction du segment départ→cible. La construction de
+        // b0/b1 garantit u(S) = u1 : la fraction vaut 0 en s = 0 et 1 en s = S.
+        fraction = (coshR0 * Math.tanh(FLY_RHO * s + r0) - Math.sinh(r0))
+            / (FLY_RHO2 * journey.flyU1);
+    }
     let zoom = journey.startZoom - Math.log2(w);
     // Plancher imposé par la contrainte multiWorld d'OpenLayers : sans lui OL
     // relèverait le zoom et contraindrait le centre en plein vol. Le plateau
     // qui en résulte est assumé — la contrainte l'aurait imposé de toute façon.
     if (journey.flyMinZoom != null) zoom = Math.max(journey.flyMinZoom, zoom);
-    // u(s) projeté en fraction du segment départ→cible. Au dénominateur,
-    // ρ²·u1, qui vaut exactement cosh(r0)·tanh(r1) − sinh(r0) avec r1 = −r0 :
-    // la fraction vaut 0 en s = 0 et 1 en s = S.
-    const fraction = (coshR0 * Math.tanh(FLY_RHO * s + r0) - Math.sinh(r0))
-        / (FLY_RHO2 * journey.flyU1);
     return {
         center: [
             journey.startCenter[0] + (journey.targetCenter[0] - journey.startCenter[0]) * fraction,
@@ -336,13 +431,13 @@ export function sampleCameraJourney(journey, elapsedMs) {
         const progress = easeInOutCubic((elapsed - panEnd) / Math.max(1, journey.zoomInDurationMs));
         return {
             center: [...journey.targetCenter],
-            zoom: journey.cruiseZoom + (journey.startZoom - journey.cruiseZoom) * progress,
+            zoom: journey.cruiseZoom + (journey.endZoom - journey.cruiseZoom) * progress,
             done: false,
         };
     }
     return {
         center: [...journey.targetCenter],
-        zoom: journey.startZoom,
+        zoom: journey.endZoom,
         done: true,
     };
 }
@@ -368,6 +463,12 @@ export const CAMERA_JOURNEY_EXTRA_FRAMES = 1;
 // `path` et `minCruiseZoom` sont forwardés tels quels à createCameraJourney :
 // la simulation doit prendre exactement les mêmes décisions que la lecture
 // réelle, qui lit ces options depuis les préférences.
+//
+// `fitDay` : chaque trajet vise le zoom qui cadre l'étendue du jour, borné par
+// le zoom de lancement (homeZoom) — la caméra ne se rapproche jamais plus que
+// la vue choisie, et s'éloigne si l'étendue dépasse le viewport. Le zoom alors
+// atteint se propage aux jours suivants : leurs distances en pixels et leurs
+// décisions (shouldMoveCamera, zooms de croisière) dépendent du zoom courant.
 export function simulateCameraJourneys(days, {
     center,
     zoom,
@@ -377,6 +478,8 @@ export function simulateCameraJourneys(days, {
     extent = null,
     path,
     minCruiseZoom,
+    fitDay = false,
+    paddingPx = 48,
 } = {}) {
     const list = Array.isArray(days) ? days : [];
     const level = normalizeCameraDynamism(dynamism);
@@ -384,27 +487,47 @@ export function simulateCameraJourneys(days, {
     let totalMs = 0;
     let journeyCount = 0;
     let current = Array.isArray(center) ? [...center] : null;
+    // Zoom de référence de toute l'animation : la vue au lancement.
+    const homeZoom = Number(zoom);
+    let currentZoom = homeZoom;
+    const baseResolution = Number(resolution);
+    const floor = Number(minCruiseZoom);
     for (let i = 0; i < list.length; i++) {
         const day = list[i];
         if (!day || !day.center) continue;
-        if (!shouldMoveCamera(current, resolution, viewportSize, day.extent, level)) continue;
+        // Résolution au zoom simulé courant : elle convertit les distances en
+        // pixels pour shouldMoveCamera comme pour createCameraJourney.
+        const currentResolution = baseResolution * Math.pow(2, homeZoom - currentZoom);
+        if (!shouldMoveCamera(current, currentResolution, viewportSize, day.extent, level)) continue;
+        const options = {
+            extraZoomOut: level === 4 ? INTENSE_EXTRA_ZOOM_OUT : 0,
+            path,
+            minCruiseZoom,
+        };
+        if (fitDay) {
+            // Jamais plus près que la vue de lancement ; le plancher de zoom
+            // de la lecture réelle borne aussi l'éloignement.
+            const fit = zoomForExtent(day.extent, viewportSize, currentResolution, currentZoom, paddingPx);
+            options.endZoom = Number.isFinite(floor)
+                ? Math.max(floor, Math.min(homeZoom, fit))
+                : Math.min(homeZoom, fit);
+        }
         const journey = createCameraJourney(
             current,
             clampToExtent(day.center, extent),
-            zoom,
-            resolution,
-            {
-                extraZoomOut: level === 4 ? INTENSE_EXTRA_ZOOM_OUT : 0,
-                path,
-                minCruiseZoom,
-            },
+            currentZoom,
+            currentResolution,
+            options,
         );
         if (!journey) continue;
         travelMsByDay[i] = journey.totalDurationMs;
         totalMs += journey.totalDurationMs;
         journeyCount += 1;
-        // Le zoom revient toujours à sa valeur de départ : seul le centre change.
+        // Seul le centre changeait auparavant ; avec fitDay, le zoom d'arrivée
+        // devient le zoom de départ du jour suivant (sans fitDay, endZoom vaut
+        // toujours le zoom de départ : la propagation reste un no-op).
         current = journey.targetCenter;
+        currentZoom = journey.endZoom;
     }
     return { dayCount: list.length, travelMsByDay, totalMs, journeyCount };
 }

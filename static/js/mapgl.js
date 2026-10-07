@@ -129,6 +129,7 @@ import {
     sampleCameraJourney,
     shouldMoveCamera,
     simulateCameraJourneys,
+    zoomForExtent,
 } from './camera_follow.mjs';
 import { dateToDayNumber, dayNumberToDate } from './evolution_timeline.mjs';
 import {
@@ -348,8 +349,14 @@ let pointsAppearing = false;     // compte comme une animation pour mapDirtyTrac
 let pointsGlowing = false;       // persistance active : la carte change à chaque frame
 // Suivi de caméra (voir camera_follow.mjs) : cible = barycentre des caches du
 // jour, étendue = celle de toutes les caches affichées, horloge = celle des points.
+// cameraTargetExtent : étendue des seules caches du jour visé — sert à choisir
+// le zoom d'arrivée quand l'option « cadrer le jour » est active.
+// cameraHomeZoom : zoom de la vue au lancement de l'animation ; borne sup du
+// zoom d'arrivée (jamais plus près que la vue choisie par l'utilisateur).
 let cameraTarget = null;
+let cameraTargetExtent = null;
 let cameraExtent = null;
+let cameraHomeZoom = null;
 let cameraInteractionKey = null;
 let cameraTravelPending = false;
 let cameraJourney = null;
@@ -920,6 +927,19 @@ function updateCameraFollow(now) {
     const view = map.getView();
     if (!cameraJourney) {
         const target = clampToExtent(cameraTarget, cameraExtent);
+        // Zoom d'arrivée « fitDay » : le jour entier tient dans le viewport,
+        // jamais plus près que la vue au lancement, plus loin si l'étendue
+        // déborde. Zoom et résolution sont lus avant de créer le trajet : la
+        // vue est encore là où le trajet précédent l'a laissée.
+        let endZoom = null;
+        if (effectiveCameraFitDay()) {
+            const startZoom = view.getZoom();
+            const homeZoom = Number.isFinite(cameraHomeZoom) ? cameraHomeZoom : startZoom;
+            endZoom = Math.max(cameraMinZoomFloor(), Math.min(
+                homeZoom,
+                zoomForExtent(cameraTargetExtent, map.getSize(), view.getResolution(), startZoom),
+            ));
+        }
         cameraJourney = createCameraJourney(
             view.getCenter(),
             target,
@@ -930,6 +950,7 @@ function updateCameraFollow(now) {
                 durationScale: cameraDurationScale,
                 path: effectiveCameraPath(),
                 minCruiseZoom: cameraMinZoomFloor(),
+                endZoom,
             },
         );
         // En capture image par image, la frame qui montrait déjà cette vue de
@@ -945,6 +966,7 @@ function updateCameraFollow(now) {
         }
         if (!cameraJourney) {
             cameraTarget = null;
+            cameraTargetExtent = null;
             beginCameraRenderWait();
             return false;
         }
@@ -960,6 +982,7 @@ function updateCameraFollow(now) {
     view.setZoom(state.zoom);
     if (state.done) {
         cameraTarget = null;
+        cameraTargetExtent = null;
         cameraJourney = null;
         cameraJourneyStartedAt = null;
         beginCameraRenderWait();
@@ -1011,6 +1034,7 @@ function beginCameraRenderWait() {
 function cancelCameraFollowMotion() {
     clearCameraRenderWait();
     cameraTarget = null;
+    cameraTargetExtent = null;
     cameraJourney = null;
     cameraJourneyStartedAt = null;
     cameraTravelPending = false;
@@ -1021,6 +1045,10 @@ function cancelCameraFollowMotion() {
 function resetCameraFollow() {
     cancelCameraFollowMotion();
     cameraExtent = null;
+    // Zoom de départ de toute l'animation : borne supérieure du zoom d'arrivée
+    // « fitDay » — la caméra ne se rapproche jamais plus que la vue choisie.
+    // Posé avant le early return : sans suivi la valeur est simplement inutile.
+    cameraHomeZoom = map?.getView?.()?.getZoom() ?? null;
     if (!pkg.options.animation?.cameraFollow || isEvolutionPage()) return;
     // L'utilisateur reprend la main dès qu'il touche la carte : sans cela, la
     // vue glisserait de nouveau vers la cible juste après son déplacement.
@@ -1081,6 +1109,13 @@ function effectiveCameraDynamism(forRecording = isRecording || isMediaRecording)
 // Option de préférence non documentée — repli et comparaison à l'ancien mode.
 function effectiveCameraPath() {
     return pkg.options.animation?.cameraPath === 'phases' ? 'phases' : 'fly';
+}
+
+// Zoom d'arrivée adapté à l'étendue des caches du jour (cf. zoomForExtent) :
+// activé par défaut ; l'option non documentée cameraFitDay permet de revenir
+// au « retour au zoom de départ » pour comparaison ou diagnostic.
+function effectiveCameraFitDay() {
+    return pkg.options.animation?.cameraFitDay !== false;
 }
 
 // Plancher de zoom pendant un vol 'fly'. La vue (multiWorld absent, donc false)
@@ -1169,6 +1204,9 @@ function simulateCurrentCameraJourneys({ forRecording } = {}) {
             extent: cameraSummariesExtent,
             path: effectiveCameraPath(),
             minCruiseZoom: cameraMinZoomFloor(),
+            // Même règle que la lecture réelle : endZoom cadre le jour, borné
+            // par le zoom de lancement (homeZoom = zoom de la vue à l'appel).
+            fitDay: effectiveCameraFitDay(),
         });
     } catch (e) {
         console.warn('[CAMERA] Simulation des trajets indisponible:', e);
@@ -3716,6 +3754,9 @@ function displayFeaturesForDates(dates, pointOptions, flashOptions, record, info
             cameraDynamism,
         )) {
             cameraTarget = target;
+            // Étendue propre au jour visé : elle choisira le zoom d'arrivée
+            // du trajet quand l'option « cadrer le jour » est active.
+            cameraTargetExtent = targetExtent;
             cameraJourney = null;
             cameraJourneyStartedAt = null;
             cameraTravelPending = true;
