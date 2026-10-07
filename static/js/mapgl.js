@@ -123,6 +123,7 @@ import {
     createCameraJourney,
     createCameraPacing,
     INTENSE_EXTRA_ZOOM_OUT,
+    MIN_CRUISE_ZOOM,
     normalizeCameraDynamism,
     pacedDayMs,
     sampleCameraJourney,
@@ -927,6 +928,8 @@ function updateCameraFollow(now) {
             {
                 extraZoomOut: cameraDynamism === 4 ? INTENSE_EXTRA_ZOOM_OUT : 0,
                 durationScale: cameraDurationScale,
+                path: effectiveCameraPath(),
+                minCruiseZoom: cameraMinZoomFloor(),
             },
         );
         // En capture image par image, la frame qui montrait déjà cette vue de
@@ -1073,6 +1076,23 @@ function effectiveCameraDynamism(forRecording = isRecording || isMediaRecording)
     return prefersReducedMotion() ? Math.min(dynamism, 1) : dynamism;
 }
 
+// Tracé des trajets caméra : 'fly' (van Wijk & Nuij, zoom et translation
+// simultanés) est le défaut ; 'phases' conserve l'ancien trajet séquentiel.
+// Option de préférence non documentée — repli et comparaison à l'ancien mode.
+function effectiveCameraPath() {
+    return pkg.options.animation?.cameraPath === 'phases' ? 'phases' : 'fly';
+}
+
+// Plancher de zoom pendant un vol 'fly'. La vue (multiWorld absent, donc false)
+// n'affiche qu'un monde : en EPSG:3857 il fait 256·2^z px de large, et sous
+// log2(largeurViewport/256) il ne couvre plus l'écran. Sans cette borne, OL
+// relèverait le zoom et contraindrait le centre en plein trajet — un accroc
+// visible. Anticiper la borne ici produit un plateau propre à la place.
+function cameraMinZoomFloor() {
+    const width = Math.max(1, Number(map?.getSize?.()?.[0]) || 256);
+    return Math.max(MIN_CRUISE_ZOOM, Math.log2(width / 256));
+}
+
 // Barycentre et étendue des caches d'un jour, en coordonnées de carte : ce que
 // displayFeaturesForDates donne à viser à la caméra. Calculés sans tableau
 // intermédiaire, la simulation parcourant toutes les caches de la sélection.
@@ -1147,6 +1167,8 @@ function simulateCurrentCameraJourneys({ forRecording } = {}) {
             viewportSize: map.getSize(),
             dynamism: effectiveCameraDynamism(forRecording),
             extent: cameraSummariesExtent,
+            path: effectiveCameraPath(),
+            minCruiseZoom: cameraMinZoomFloor(),
         });
     } catch (e) {
         console.warn('[CAMERA] Simulation des trajets indisponible:', e);

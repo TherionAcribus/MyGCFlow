@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+    CAMERA_PATH_MODES,
     centroid,
     clampToExtent,
     createCameraJourney,
@@ -9,6 +10,7 @@ import {
     DEFAULT_RESPONSE_MS,
     easeInOutCubic,
     normalizeCameraDynamism,
+    normalizeCameraPath,
     pacedDayMs,
     sampleCameraJourney,
     shouldMoveCamera,
@@ -312,4 +314,132 @@ test('capture image par image : un premier trajet froid n\'affame pas les dates'
     // déjà spentMs. Écart mesuré : 0 — la borne garde la marge du plafond.
     const ecartMs = frames * 1000 / fps - budgetMs;
     assert.ok(ecartMs < 1000, `dépassement de ${ecartMs} ms`);
+});
+
+// ---------- Tracé 'fly' (van Wijk & Nuij) ----------
+
+test('normalizeCameraPath retombe sur phases pour toute valeur inconnue', () => {
+    assert.deepEqual([...CAMERA_PATH_MODES], ['phases', 'fly']);
+    assert.equal(normalizeCameraPath('fly'), 'fly');
+    assert.equal(normalizeCameraPath('phases'), 'phases');
+    assert.equal(normalizeCameraPath('x'), 'phases');
+    assert.equal(normalizeCameraPath(undefined), 'phases');
+    // Le défaut fonction reste 'phases' : les tests existants sont inchangés.
+    assert.equal(createCameraJourney([0, 0], [5000, 0], 8, 1).path, 'phases');
+});
+
+test('fly : le trajet joint exactement le départ et l\'arrivée', () => {
+    const journey = createCameraJourney([0, 0], [5000, 0], 8, 1, { path: 'fly' });
+    assert.equal(journey.path, 'fly');
+    assert.equal(journey.endZoom, 8);
+
+    const start = sampleCameraJourney(journey, 0);
+    assert.deepEqual(start.center, [0, 0]);
+    assert.equal(start.zoom, 8);
+    assert.equal(start.done, false);
+
+    const arrival = sampleCameraJourney(journey, journey.totalDurationMs);
+    assert.ok(Math.abs(arrival.center[0] - 5000) < 1e-6);
+    assert.ok(Math.abs(arrival.center[1]) < 1e-6);
+    assert.equal(arrival.zoom, 8);
+    assert.equal(arrival.done, true);
+});
+
+test('fly : le mouvement est continu à la cadence vidéo', () => {
+    const journey = createCameraJourney([0, 0], [8000, 3000], 8, 1, { path: 'fly' });
+    let prev = sampleCameraJourney(journey, 0);
+    for (let t = 16; t <= journey.totalDurationMs; t += 16) {
+        const cur = sampleCameraJourney(journey, t);
+        assert.ok(Math.abs(cur.zoom - prev.zoom) < 0.5, `saut de zoom à ${t} ms`);
+        // Centre monotone vers la cible sur les deux axes.
+        assert.ok(cur.center[0] >= prev.center[0] - 1e-9, `recul en x à ${t} ms`);
+        assert.ok(cur.center[1] >= prev.center[1] - 1e-9, `recul en y à ${t} ms`);
+        assert.ok(cur.zoom <= 8 + 1e-9, 'le zoom ne dépasse jamais le zoom de départ');
+        prev = cur;
+    }
+});
+
+test('fly : durationScale change la durée, pas le tracé', () => {
+    const normal = createCameraJourney([0, 0], [5000, 0], 8, 1, { path: 'fly' });
+    const rapide = createCameraJourney([0, 0], [5000, 0], 8, 1, { path: 'fly', durationScale: 0.5 });
+    assert.equal(rapide.totalDurationMs, normal.totalDurationMs / 2);
+    const a = sampleCameraJourney(rapide, rapide.totalDurationMs / 2);
+    const b = sampleCameraJourney(normal, normal.totalDurationMs / 2);
+    assert.ok(Math.abs(a.center[0] - b.center[0]) < 1e-9);
+    assert.ok(Math.abs(a.zoom - b.zoom) < 1e-9);
+    // Durée nulle : la caméra est immédiatement arrivée.
+    const instantane = createCameraJourney([0, 0], [5000, 0], 8, 1, { path: 'fly', durationScale: 0 });
+    assert.equal(instantane.totalDurationMs, 0);
+    assert.deepEqual(sampleCameraJourney(instantane, 0), { center: [5000, 0], zoom: 8, done: true });
+});
+
+test('fly : la durée croît avec la distance puis plafonne', () => {
+    let prev = 0;
+    for (const px of [100, 500, 1000, 5000, 20000]) {
+        const journey = createCameraJourney([0, 0], [px, 0], 8, 1, { path: 'fly' });
+        assert.ok(journey.totalDurationMs >= prev, `${px} px`);
+        assert.ok(journey.totalDurationMs <= 4000, `${px} px`);
+        prev = journey.totalDurationMs;
+    }
+    // Croissance stricte tant que le plafond de 4 s n'est pas atteint.
+    const court = createCameraJourney([0, 0], [100, 0], 8, 1, { path: 'fly' });
+    const moyen = createCameraJourney([0, 0], [1000, 0], 8, 1, { path: 'fly' });
+    assert.ok(moyen.totalDurationMs > court.totalDurationMs);
+    // ~1 000 px → ~2,8 s : la calibration de CAMERA_FLY_MS_PER_UNIT.
+    assert.ok(moyen.totalDurationMs > 2500 && moyen.totalDurationMs < 3000);
+});
+
+// Plus bas zoom atteint pendant un trajet 'fly'.
+function flyMinZoom(journey) {
+    let min = journey.startZoom;
+    for (let t = 0; t <= journey.totalDurationMs; t += 10) {
+        min = Math.min(min, sampleCameraJourney(journey, t).zoom);
+    }
+    return journey.startZoom - min;
+}
+
+test('fly : la descente de zoom vaut environ log2(u1) + 1', () => {
+    // 6400 px → u1 = 10 → descente attendue ≈ log2(10) + 1 ≈ 4,32.
+    // La descente réelle est log2(√(u1²+1)), asymptote de la borne par en
+    // dessous : l'écart reste strictement inférieur à 1 niveau.
+    const journey = createCameraJourney([0, 0], [6400, 0], 12, 1, { path: 'fly' });
+    const expected = Math.log2(6400 / 640) + 1;
+    assert.ok(Math.abs(flyMinZoom(journey) - expected) <= 1);
+});
+
+test('fly : extraZoomOut creuse la parabole d\'autant', () => {
+    const creuse = (extraZoomOut) => flyMinZoom(
+        createCameraJourney([0, 0], [5000, 0], 12, 1, { path: 'fly', extraZoomOut }),
+    );
+    assert.ok(creuse(1.25) > creuse(0));
+    assert.ok(creuse(2.5) > creuse(1.25));
+});
+
+test('fly : le plancher minCruiseZoom produit un plateau', () => {
+    const journey = createCameraJourney([0, 0], [6400, 0], 10, 1, { path: 'fly', minCruiseZoom: 9 });
+    for (let t = 0; t <= journey.totalDurationMs; t += 8) {
+        assert.ok(sampleCameraJourney(journey, t).zoom >= 9);
+    }
+    // La borne est réellement atteinte : la descente libre irait à ~6,7.
+    assert.equal(flyMinZoom(journey), 1);
+});
+
+test('fly : centre fixe + extraZoomOut conserve la respiration en phases', () => {
+    const journey = createCameraJourney([0, 0], [0, 0], 8, 1, { path: 'fly', extraZoomOut: 1.25 });
+    assert.equal(journey.path, 'phases');
+    assert.equal(journey.panDurationMs, 0);
+    assert.equal(journey.cruiseZoom, 6.75);
+    assert.equal(sampleCameraJourney(journey, journey.totalDurationMs).zoom, 8);
+});
+
+test('fly : la simulation rejoue les mêmes décisions que la lecture', () => {
+    const days = [jour(100, 0), jour(3000, 0)];
+    const sim = simulateCameraJourneys(days, {
+        ...vue, dynamism: 2, path: 'fly', minCruiseZoom: 4,
+    });
+    assert.equal(sim.journeyCount, 1);
+    assert.equal(
+        sim.travelMsByDay[1],
+        createCameraJourney([0, 0], [3000, 0], 8, 1, { path: 'fly', minCruiseZoom: 4 }).totalDurationMs,
+    );
 });
