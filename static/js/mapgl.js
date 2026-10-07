@@ -117,6 +117,7 @@ import { CAPTURE_IMAGE_QUALITY, CAPTURE_IMAGE_TYPE } from './capture_image_forma
 import { captureRatioFor } from './capture_resolution.mjs';
 import { normalizeColorFidelity } from './color_fidelity.mjs';
 import {
+    CAMERA_JOURNEY_EXTRA_FRAMES,
     centroid,
     clampToExtent,
     createCameraJourney,
@@ -372,6 +373,19 @@ let lastCameraTravelEstimate = null;
 // Delta maximal compté par frame dans le temps écoulé : un onglet revenu au
 // premier plan ne doit pas faire croire à plusieurs secondes d'animation.
 const CAMERA_PACING_MAX_STEP_MS = 1000;
+// Surcoût forfaitaire d'un trajet en lecture live tant qu'aucun n'a encore été
+// chronométré : chaque déplacement impose une pause « rendercomplete » avant
+// que les dates reprennent. pacedDayMs remplace cette estimation par la mesure
+// réelle dès le premier trajet effectué.
+const CAMERA_LIVE_OVERHEAD_ESTIMATE_MS = 250;
+// Résumés par jour et étendue globale des caches, indexés sur la révision de
+// l'index des dates : la simulation des trajets est relancée à chaque
+// refreshTimingPlan (retouche d'option) alors que les données, elles, ne
+// changent que sur re-filtrage ou chargement. -1 force un premier calcul (la
+// révision démarre à 0) ; un rechargement du module repart d'un cache vide.
+let cameraSummariesRevision = -1;
+let cameraSummaries = null;
+let cameraSummariesExtent = null;
 // Traits de déplacement (voir travel_trail.mjs) : couche sous les points,
 // trajet précalculé au lancement et mémoïsé, stylo piloté par l'horloge des
 // points (déterministe en capture image par image).
@@ -915,7 +929,17 @@ function updateCameraFollow(now) {
                 durationScale: cameraDurationScale,
             },
         );
-        cameraJourneyStartedAt = now;
+        // En capture image par image, la frame qui montrait déjà cette vue de
+        // départ vient d'être enregistrée : reculer l'origine d'une frame fait
+        // commencer le premier échantillon capturé à une frame de mouvement,
+        // au lieu de reproduire à l'identique l'image précédente. Hors capture,
+        // le trajet démarre à l'instant présent comme avant.
+        if (isRecording) {
+            const frameMs = 1000 / (Number(pkg.options.record.framesPerSec) || 30);
+            cameraJourneyStartedAt = now - frameMs;
+        } else {
+            cameraJourneyStartedAt = now;
+        }
         if (!cameraJourney) {
             cameraTarget = null;
             beginCameraRenderWait();
@@ -1014,6 +1038,41 @@ function resetCameraFollow() {
     }
 }
 
+// Requête « prefers-reduced-motion », créée paresseusement au premier appel et
+// mémoïsée : MediaQueryList.matches reste vivante si le réglage système change,
+// et hors navigateur (tests, workers) l'absence de window/matchMedia vaut
+// « pas de réduction » plutôt qu'une erreur.
+let reducedMotionQuery;
+function prefersReducedMotion() {
+    if (reducedMotionQuery === undefined) {
+        try {
+            reducedMotionQuery = (typeof window !== 'undefined' && typeof window.matchMedia === 'function')
+                ? window.matchMedia('(prefers-reduced-motion: reduce)')
+                : null;
+        } catch (_) {
+            reducedMotionQuery = null;
+        }
+    }
+    return !!reducedMotionQuery?.matches;
+}
+
+// Dynamisme de caméra effectivement appliqué : le réglage configuré, plafonné
+// au niveau 1 en lecture live quand le système demande de réduire les
+// animations. Les enregistrements gardent le réglage tel quel : la vidéo
+// produite doit être identique quel que soit le poste qui la génère. La
+// simulation des trajets lit cette même valeur pour ne pas diverger de la
+// lecture réelle.
+//
+// `forRecording` : le drapeau isRecording/isMediaRecording est posé APRÈS la
+// simulation de planification (prepareCameraPacing) — les chemins
+// d'enregistrement le passent donc explicitement, sans quoi le dynamisme
+// simulé (plafonné) différerait de celui exécuté (réglage réel).
+function effectiveCameraDynamism(forRecording = isRecording || isMediaRecording) {
+    const dynamism = normalizeCameraDynamism(pkg.options.animation?.cameraDynamism);
+    if (forRecording) return dynamism;
+    return prefersReducedMotion() ? Math.min(dynamism, 1) : dynamism;
+}
+
 // Barycentre et étendue des caches d'un jour, en coordonnées de carte : ce que
 // displayFeaturesForDates donne à viser à la caméra. Calculés sans tableau
 // intermédiaire, la simulation parcourant toutes les caches de la sélection.
@@ -1044,7 +1103,8 @@ function summarizeCameraDay(points) {
 
 // Déroule à blanc les trajets que fera la caméra depuis la vue courante, sur la
 // plage de dates animée. null si le suivi est inactif ou les données absentes.
-function simulateCurrentCameraJourneys() {
+// `forRecording` : cf. effectiveCameraDynamism.
+function simulateCurrentCameraJourneys({ forRecording } = {}) {
     if (!pkg.options.animation?.cameraFollow || isEvolutionPage()) return null;
     try {
         const start = animationStartDate();
@@ -1052,19 +1112,30 @@ function simulateCurrentCameraJourneys() {
         if (!map || !pkg.pointsByDate || !(start instanceof Date) || !(end instanceof Date) || end < start) return null;
 
         // Même borne que resetCameraFollow : l'étendue de toutes les caches.
-        const summaries = new Map();
-        let extent = null;
-        for (const [dateKey, points] of pkg.pointsByDate.entries()) {
-            const summary = summarizeCameraDay(points || []);
-            if (!summary) continue;
-            summaries.set(dateKey, summary);
-            extent = extent ? ol.extent.extend(extent, summary.extent) : [...summary.extent];
+        // Re-projeter chaque cache est le coût dominant de la simulation : les
+        // résumés ne sont reconstruits que quand l'index des dates a changé
+        // (re-filtrage, chargement), pas à chaque refreshTimingPlan.
+        if (cameraSummariesRevision !== pkg.pointsByDateRevision) {
+            const summaries = new Map();
+            let extent = null;
+            for (const [dateKey, points] of pkg.pointsByDate.entries()) {
+                const summary = summarizeCameraDay(points || []);
+                if (!summary) continue;
+                summaries.set(dateKey, summary);
+                extent = extent ? ol.extent.extend(extent, summary.extent) : [...summary.extent];
+            }
+            cameraSummaries = summaries;
+            cameraSummariesExtent = extent;
+            // Révision posée après un calcul mené à terme : une projection qui
+            // lèverait une exception à mi-parcours laisse le cache périmé (il
+            // sera retenté à l'appel suivant) plutôt que tronqué.
+            cameraSummariesRevision = pkg.pointsByDateRevision;
         }
 
         const days = [];
         const day = new Date(start);
         while (day <= end) {
-            days.push(summaries.get(day.toDateString()) || null);
+            days.push(cameraSummaries.get(day.toDateString()) || null);
             day.setDate(day.getDate() + 1);
         }
 
@@ -1074,8 +1145,8 @@ function simulateCurrentCameraJourneys() {
             zoom: view.getZoom(),
             resolution: view.getResolution(),
             viewportSize: map.getSize(),
-            dynamism: pkg.options.animation?.cameraDynamism,
-            extent,
+            dynamism: effectiveCameraDynamism(forRecording),
+            extent: cameraSummariesExtent,
         });
     } catch (e) {
         console.warn('[CAMERA] Simulation des trajets indisponible:', e);
@@ -1104,13 +1175,13 @@ export function estimateCameraTravel() {
 //
 // Retourne { travelMs, datesMs } en temps vidéo final (datesMs null quand la
 // durée n'est pas imposée), ou null sans suivi de caméra.
-function prepareCameraPacing({ timelineScale = 1 } = {}) {
+function prepareCameraPacing({ timelineScale = 1, forRecording = isRecording || isMediaRecording } = {}) {
     const stretch = Math.max(1, Number(timelineScale) || 1);
     cameraPacing = null;
     cameraPacingState = { elapsedMs: 0, travelSpentMs: 0, dayIndex: 0, travelFrames: 0, retarget: false };
     cameraDurationScale = stretch;
 
-    const simulation = simulateCurrentCameraJourneys();
+    const simulation = simulateCurrentCameraJourneys({ forRecording });
     if (!simulation) return null;
     lastCameraTravelEstimate = simulation;
 
@@ -1145,9 +1216,10 @@ function cameraPacedFrameTarget(travelDone) {
         travelSpentMs: cameraPacingState.travelFrames * frameMs,
         travelDone,
         minMs: frameMs,
-        // Un trajet coûte en pratique une à deux images de plus que sa durée :
-        // celle où il démarre et celle qui attend le rendu final.
-        defaultOverheadMs: 2 * frameMs,
+        // Un trajet coûte en pratique ~1 image de plus que sa durée : celle
+        // capturée pendant l'attente du rendu final (l'image de départ,
+        // redondante, a été supprimée — cf. updateCameraFollow).
+        defaultOverheadMs: CAMERA_JOURNEY_EXTRA_FRAMES * frameMs,
     });
     return Math.max(1, Math.round(dayMs / frameMs));
 }
@@ -1572,6 +1644,10 @@ export function startAnimation(restart=false) {
                 dayIndex: cameraPacingState.dayIndex,
                 spentMs: cameraPacingState.elapsedMs - pacedStepMs - animationAccMs,
                 travelSpentMs: cameraPacingState.travelSpentMs,
+                // Avant le premier trajet chronométré, provisionner l'attente
+                // « rendercomplete » de chaque déplacement à venir : sinon les
+                // premières dates consomment un temps qu'elles n'ont pas.
+                defaultOverheadMs: CAMERA_LIVE_OVERHEAD_ESTIMATE_MS,
             })
             : baseDayDuration;
         animationAccMs += Math.min(ts - animationLastTs, dayDuration * Math.max(MAX_DAYS_PER_FRAME, maxDaysThisFrame));
@@ -1864,7 +1940,9 @@ function startRecordingProcess(){
         recordingDayCount = inclusiveDayCount(currentDate, pkg.metadata.endDate);
         // Suivi de caméra : les trajets sont simulés depuis la vue de départ.
         // Durée imposée → le temps des dates est ce qu'ils laissent libre.
-        const cameraPlan = prepareCameraPacing();
+        // forRecording : isRecording n'est posé que plus bas, mais la lecture
+        // enregistrée utilisera le dynamisme réel (sans plafond reduced-motion).
+        const cameraPlan = prepareCameraPacing({ forRecording: true });
         const timingPlan = buildImageTimingPlan({
             dayCount: recordingDayCount,
             timePerDayMs: Number.isFinite(cameraPlan?.datesMs)
@@ -2729,7 +2807,8 @@ function recordAnimationMediaRecorder(){
 
     // Suivi de caméra : trajets simulés depuis la vue de départ et, si la durée
     // est imposée, partage de cette durée — le tout étiré comme la timeline.
-    prepareCameraPacing({ timelineScale: appliedSlowdown });
+    // forRecording : cf. ci-dessus, isMediaRecording n'est pas encore posé.
+    prepareCameraPacing({ timelineScale: appliedSlowdown, forRecording: true });
 
     // Démarrer animation timeline existante (musique bloquée)
     try { startAnimation(true); } catch(_) { startAnimation(); }
@@ -3605,7 +3684,7 @@ function displayFeaturesForDates(dates, pointOptions, flashOptions, record, info
         ]));
         const target = centroid(coordinates);
         const targetExtent = coordinates.length > 0 ? ol.extent.boundingExtent(coordinates) : null;
-        cameraDynamism = normalizeCameraDynamism(pkg.options.animation?.cameraDynamism);
+        cameraDynamism = effectiveCameraDynamism();
         const view = map.getView();
         if (target && shouldMoveCamera(
             view.getCenter(),

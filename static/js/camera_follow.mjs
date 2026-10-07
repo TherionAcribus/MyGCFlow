@@ -49,7 +49,7 @@ export function normalizeCameraDynamism(value) {
 // Une journée ne déclenche un mouvement que si au moins une de ses caches sort
 // de la zone de confort choisie. Le niveau 4 assume volontairement un mouvement
 // systématique, même si le barycentre est déjà centré.
-export function shouldMoveCamera(viewCenter, resolution, viewportSize, targetExtent, dynamism) {
+export function shouldMoveCamera(viewCenter, resolution, viewportSize, targetExtent, dynamism, marginPx = 24) {
     const level = normalizeCameraDynamism(dynamism);
     if (level === 4) return true;
     if (!viewCenter || !Array.isArray(viewportSize) || viewportSize.length < 2) return true;
@@ -60,8 +60,12 @@ export function shouldMoveCamera(viewCenter, resolution, viewportSize, targetExt
     if (!(unitsPerPixel > 0) || !(width > 0) || !(height > 0)) return true;
 
     const ratio = CAMERA_COMFORT_RATIOS[level];
-    const halfWidth = width * unitsPerPixel * ratio / 2;
-    const halfHeight = height * unitsPerPixel * ratio / 2;
+    // Le marqueur déborde du point projeté : une cache juste à l'intérieur du
+    // bord de la zone apparaît déjà tronquée à l'écran. La marge réduit
+    // d'autant la zone de confort, convertie en unités de carte.
+    const margin = Math.max(0, Number(marginPx) || 0) * unitsPerPixel;
+    const halfWidth = Math.max(0, width * unitsPerPixel * ratio / 2 - margin);
+    const halfHeight = Math.max(0, height * unitsPerPixel * ratio / 2 - margin);
     return targetExtent[0] < viewCenter[0] - halfWidth
         || targetExtent[2] > viewCenter[0] + halfWidth
         || targetExtent[1] < viewCenter[1] - halfHeight
@@ -242,6 +246,13 @@ export function sampleCameraJourney(journey, elapsedMs) {
 // l'animation, connaître le temps qu'ils prendront, et le retrancher du temps
 // d'affichage des dates quand la vidéo doit durer un temps précis (musique).
 
+// En capture image par image, un trajet coûte ~1 image de plus que sa durée :
+// celle qui attend le rendu final (rendercomplete) avant de reprendre les
+// dates. L'image de départ redondante n'entre pas en compte, elle est supprimée
+// côté capture. Source unique de ce surcoût « images de raccord », partagée
+// entre la provision des trajets et le plan de timing annoncé à l'UI.
+export const CAMERA_JOURNEY_EXTRA_FRAMES = 1;
+
 // Rejoue la suite des décisions prises pendant l'animation, sans rien afficher.
 // `days` : une entrée par jour animé, null sans cache ce jour-là, sinon
 // { center, extent } en coordonnées de carte. Retourne la durée de trajet de
@@ -311,7 +322,11 @@ export function createCameraPacing({ budgetMs, travelMsByDay, travelScale = 1 } 
 //  - travelSpentMs : part de ce temps passée dates en pause. L'écart avec les
 //    trajets simulés donne le surcoût moyen d'un trajet, reporté sur ceux qui
 //    restent — le rythme reste ainsi régulier au lieu d'accélérer vers la fin ;
-//  - travelDone : le trajet du jour `dayIndex` est déjà effectué.
+//  - travelDone : le trajet du jour `dayIndex` est déjà effectué ;
+//  - maxOverheadMs : plafond du surcoût provisionné par trajet à venir. Un
+//    premier trajet « froid » (attente des tuiles jusqu'au timeout) ne doit
+//    pas affamer toutes les dates restantes : le temps réellement dépensé
+//    rentre déjà via spentMs, seule la provision est bornée.
 export function pacedDayMs(pacing, {
     dayIndex = 0,
     spentMs = 0,
@@ -319,6 +334,7 @@ export function pacedDayMs(pacing, {
     travelDone = false,
     minMs = 1,
     defaultOverheadMs = 0,
+    maxOverheadMs = 1000,
 } = {}) {
     const floor = Math.max(0, Number(minMs) || 0);
     if (!pacing || !(pacing.dayCount > 0)) return floor;
@@ -326,7 +342,9 @@ export function pacedDayMs(pacing, {
     const from = travelDone ? index + 1 : index;
     const doneJourneys = pacing.journeysFrom[0] - pacing.journeysFrom[from];
     const overheadMs = doneJourneys > 0
-        ? Math.max(0, ((Number(travelSpentMs) || 0) - (pacing.travelFrom[0] - pacing.travelFrom[from])) / doneJourneys)
+        ? Math.min(
+            Math.max(0, Number(maxOverheadMs) || 0),
+            Math.max(0, ((Number(travelSpentMs) || 0) - (pacing.travelFrom[0] - pacing.travelFrom[from])) / doneJourneys))
         : Math.max(0, Number(defaultOverheadMs) || 0);
     const remainingMs = pacing.budgetMs
         - Math.max(0, Number(spentMs) || 0)

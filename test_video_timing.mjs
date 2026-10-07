@@ -354,6 +354,9 @@ test('durée imposée : les trajets de caméra sont pris sur le temps des dates'
     // Les dates se partagent ce que les trajets laissent : 40 s pour 100 jours.
     assert.equal(plan.timePerDayMs, 400);
     assert.equal(plan.totalFrameCount, 63 * 30);
+    // Les images de raccord sont exposées pour l'UI mais restent dans le
+    // budget : 12 trajets × 1 image à 30 fps, sans effet sur animationMs.
+    assert.equal(plan.cameraOverheadMs, 12 * 1000 / 30);
 });
 
 test('rythme en jours/s : les trajets de caméra s\'ajoutent à la durée annoncée', () => {
@@ -369,6 +372,31 @@ test('rythme en jours/s : les trajets de caméra s\'ajoutent à la durée annonc
     assert.equal(plan.totalDurationMs, 33000);
     assert.ok(Number.isNaN(plan.cameraTimeBudgetMs), 'aucune durée à tenir');
     assert.equal(plan.totalFrameCount, 33 * 30);
+});
+
+test('rythme en jours/s : les images de raccord des trajets s\'ajoutent à la durée', () => {
+    const plan = buildTimingPlan({
+        dayCount: 100,
+        rhythm: { mode: 'rate', daysPerSecond: 10 },
+        fps: 30,
+        tailFreezeMs: 3000,
+        cameraTravelMs: 20000,
+        cameraJourneyCount: 15,
+    });
+    // 15 trajets × 1 image de raccord à 30 fps = 500 ms de surcoût : la vidéo
+    // réelle dure dates + trajets + raccords, le plan doit l'annoncer.
+    assert.equal(plan.cameraOverheadMs, 500);
+    assert.equal(plan.animationMs, 30500);
+    assert.equal(plan.totalDurationMs, 33500);
+});
+
+test('sans durée de trajets connue, le surcoût caméra n\'est pas exposé', () => {
+    const plan = buildTimingPlan({
+        dayCount: 100,
+        rhythm: { mode: 'rate', daysPerSecond: 10 },
+        fps: 30,
+    });
+    assert.ok(Number.isNaN(plan.cameraOverheadMs));
 });
 
 test('sans durée de trajets fournie, le plan est inchangé', () => {

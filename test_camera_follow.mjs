@@ -118,8 +118,8 @@ test('les niveaux de dynamisme utilisent des zones de confort croissantes', () =
     const size = [1000, 800];
     const resolution = 1;
     const central = [-100, -100, 100, 100];
-    const peripheral = [350, -20, 380, 20];
-    const edge = [470, -20, 490, 20];
+    const peripheral = [330, -20, 350, 20];
+    const edge = [440, -20, 460, 20];
     const outside = [520, -20, 540, 20];
 
     assert.equal(shouldMoveCamera(center, resolution, size, central, 1), false);
@@ -132,6 +132,15 @@ test('les niveaux de dynamisme utilisent des zones de confort croissantes', () =
     assert.equal(shouldMoveCamera(center, resolution, size, peripheral, 3), true);
     assert.equal(shouldMoveCamera(center, resolution, size, central, 3), false);
     assert.equal(shouldMoveCamera(center, resolution, size, central, 4), true);
+});
+
+test('la marge de la zone de confort déclenche près du bord', () => {
+    // Niveau 1, viewport de 1000 px, résolution 1 : demi-zone de 500 px.
+    // Une cache à 490 px du centre tient dans la zone nue, mais son marqueur
+    // déborde : la marge par défaut (24 px) déclenche le mouvement.
+    const extent = [480, -10, 490, 10];
+    assert.equal(shouldMoveCamera([0, 0], 1, [1000, 800], extent, 1), true);
+    assert.equal(shouldMoveCamera([0, 0], 1, [1000, 800], extent, 1, 0), false);
 });
 
 test('le niveau agressif peut produire une respiration de zoom sans translation', () => {
@@ -227,12 +236,15 @@ test('travelScale accélère les trajets comptés dans le budget', () => {
 
 // Rejoue la boucle de capture image par image de mapgl.js (captureNextFrame) :
 // une date est affichée, son trajet est capturé dates en pause, puis elle
-// reçoit ses images. Chaque trajet coûte `overheadFrames` images imprévues.
+// reçoit ses images. `overheadFrames` : images imprévues par trajet, soit un
+// nombre uniforme soit une fonction du rang du trajet.
 function captureImages({ budgetMs, travelMsByDay, fps, overheadFrames }) {
     const frameMs = 1000 / fps;
+    const overheadFor = typeof overheadFrames === 'function' ? overheadFrames : () => overheadFrames;
     const pacing = createCameraPacing({ budgetMs, travelMsByDay });
     let frames = 0;
     let travelFrames = 0;
+    let journeyIndex = 0;
     const perDay = [];
     const target = (dayIndex, travelDone) => Math.max(1, Math.round(pacedDayMs(pacing, {
         dayIndex,
@@ -245,7 +257,8 @@ function captureImages({ budgetMs, travelMsByDay, fps, overheadFrames }) {
     for (let day = 0; day < travelMsByDay.length; day++) {
         let dayFrames = target(day, false);
         if (travelMsByDay[day] > 0) {
-            const cost = Math.ceil(travelMsByDay[day] / frameMs) + overheadFrames;
+            const cost = Math.ceil(travelMsByDay[day] / frameMs) + overheadFor(journeyIndex);
+            journeyIndex += 1;
             frames += cost;
             travelFrames += cost;
             dayFrames = target(day, true);
@@ -278,4 +291,25 @@ test('capture image par image : sans marge, les dates tombent à une image', () 
         budgetMs: 1000, travelMsByDay: [0, 3000, 0, 3000, 0], fps: 30, overheadFrames: 2,
     });
     assert.deepEqual(perDay, [1, 1, 1, 1, 1]);
+});
+
+test('capture image par image : un premier trajet froid n\'affame pas les dates', () => {
+    const fps = 30;
+    // Même plan que ci-dessus, mais le premier trajet attend les tuiles
+    // jusqu'à ~2 s (60 images de surcoût) avant de retrouver le rythme normal.
+    const travelMsByDay = Array.from({ length: 400 }, (_, i) => (i % 5 === 2 ? 900 + (i % 7) * 250 : 0));
+    const budgetMs = 240000;
+    const { frames, perDay } = captureImages({
+        budgetMs, travelMsByDay, fps,
+        overheadFrames: (journey) => (journey === 0 ? 60 : 2),
+    });
+    // Le surcoût mesuré (~2 s) est plafonné à 1 s par trajet à venir : les
+    // dates retrouvent un rythme régulier au lieu d'être compressées durablement.
+    const regime = perDay.slice(50);
+    assert.ok(Math.max(...regime) - Math.min(...regime) <= 2, 'rythme irrégulier');
+    // Le dépassement reste borné : le plafond ne rogne que la provision des
+    // trajets à venir (maxOverheadMs = 1 s chacun), le surcoût réel débite
+    // déjà spentMs. Écart mesuré : 0 — la borne garde la marge du plafond.
+    const ecartMs = frames * 1000 / fps - budgetMs;
+    assert.ok(ecartMs < 1000, `dépassement de ${ecartMs} ms`);
 });

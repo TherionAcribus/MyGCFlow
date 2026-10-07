@@ -1,4 +1,5 @@
 import { IMPULSE_MAX_STAGGER_MS } from './flash_impulse.mjs';
+import { CAMERA_JOURNEY_EXTRA_FRAMES } from './camera_follow.mjs';
 
 const DEFAULT_FPS = 30;
 const DEFAULT_END_HOLD_MS = 3000;
@@ -259,6 +260,14 @@ export function buildTimingPlan({
 
     const cameraKnown = typeof cameraTravelMs === 'number' && Number.isFinite(cameraTravelMs);
     const cameraRawMs = cameraKnown ? Math.max(0, cameraTravelMs) : 0;
+    const cameraJourneys = cameraKnown ? Math.max(0, Math.round(finiteNumber(cameraJourneyCount, 0))) : 0;
+    // Images de raccord des trajets en capture image par image (attente du
+    // rendu final). En mode 'rate' elles s'ajoutent à la durée annoncée ;
+    // en 'duration'/'music' elles sont déjà absorbées par le pacing dans le
+    // budget — la valeur n'est alors exposée que pour l'UI.
+    const cameraOverheadMs = cameraKnown
+        ? cameraJourneys * CAMERA_JOURNEY_EXTRA_FRAMES * 1000 / safeFps
+        : NaN;
     let cameraAppliedMs = cameraRawMs;
     let cameraScale = 1;
     // Durée d'animation (dates + trajets) que le moteur doit tenir ; NaN quand
@@ -272,7 +281,9 @@ export function buildTimingPlan({
             errors.push('daysPerSecond');
         } else {
             timePerDayMs = 1000 / p.value;
-            animationMs = days > 0 ? days * timePerDayMs + cameraRawMs : 0;
+            animationMs = days > 0
+                ? days * timePerDayMs + cameraRawMs + (cameraKnown ? cameraOverheadMs : 0)
+                : 0;
         }
     } else if (mode === 'duration' || mode === 'music') {
         const requested = mode === 'music' ? rhythm.musicDurationMs : rhythm.totalDurationMs;
@@ -367,7 +378,8 @@ export function buildTimingPlan({
         cameraTravelMs: cameraKnown ? cameraAppliedMs : NaN,
         cameraTravelRawMs: cameraKnown ? cameraRawMs : NaN,
         cameraTravelScale: cameraScale,
-        cameraJourneyCount: cameraKnown ? Math.max(0, Math.round(finiteNumber(cameraJourneyCount, 0))) : 0,
+        cameraJourneyCount: cameraJourneys,
+        cameraOverheadMs,
         cameraTimeBudgetMs,
         // Durée de la musique retenue pour l'UI : la comparaison avec la vidéo
         // (plus courte / plus longue → coupée en fin de vidéo) est affichée par
