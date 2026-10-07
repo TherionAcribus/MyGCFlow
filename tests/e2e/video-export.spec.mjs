@@ -687,7 +687,21 @@ test('le suivi de caméra glisse vers les caches, se stabilise et rend la main',
   await page.locator('a[href="#animation"]').click();
   await page.locator('#switchCameraFollow').check();
   await page.locator('#selectCameraDynamism').selectOption('2');
+  // Caches dans le champ : aucun trajet prévu, donc rien à signaler.
+  await expect(page.locator('#timingWarnings')).not.toContainText('dates en pause');
+  // Caches à New York, vue sur Paris : le trajet est simulé dès que la carte
+  // est recadrée, et annoncé dans la durée de la vidéo.
+  await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    for (const day of [...app.pointsByDate.keys()]) {
+      for (const feature of app.pointsByDate.get(day)) feature.geometry.coordinates = [-74.006, 40.7128];
+    }
+    const view = app.getMap().getView();
+    view.setCenter(ol.proj.fromLonLat([2.3522, 48.8566]));
+    view.setZoom(6);
+  });
   await expect(page.locator('#timingWarnings')).toContainText('dates en pause');
+  await expect(page.locator('#timingSummary')).toContainText('trajets de caméra');
   await expect.poll(() => page.evaluate(async () => {
     const app = await import('/static/js/index.js');
     const layer = app.getMap().getLayers().getArray().find((item) => (
@@ -847,3 +861,155 @@ test('un enregistrement avec suivi de caméra produit une vidéo et déplace la 
   });
 });
 
+
+// Rythme « Par durée » avec suivi de caméra : les caches alternent d'un bord à
+// l'autre de la vue, si bien que chaque jour de trouvailles impose un trajet.
+// Sans prise en compte de ces trajets, la vidéo durerait ~10 s de plus.
+// La base du runtime garde les caches du test précédent : « 6 / 6 » s'affiche
+// avant la fin de l'import, dont le rechargement tardif reconstruit l'index des
+// jours (cf. travel-trail.spec.mjs). On attend qu'il ne bouge plus.
+async function waitForStableTimeline(page) {
+  let previous = -1;
+  await expect.poll(async () => {
+    const revision = await page.evaluate(async () => (await import('/static/js/index.js')).pointsByDateRevision);
+    const stable = revision === previous;
+    previous = revision;
+    return stable;
+  }, { intervals: [700], timeout: 15_000 }).toBe(true);
+}
+
+async function setUpCameraRoundTrips(page, duration) {
+  // Les caches sont déplacées plus bas : un rechargement tardif leur rendrait
+  // leurs coordonnées d'origine, et les trajets attendus n'auraient pas lieu.
+  await waitForStableTimeline(page);
+  await selectTraditionalCaches(page);
+  await waitForStableTimeline(page);
+  expect(await page.evaluate(async () => (await import('/static/js/index.js')).pointsByDate.size)).toBe(3);
+
+  await page.locator('a[href="#animation"]').click();
+  await page.locator('#inputExtraEndTime').fill('0');
+  await page.locator('#rhythmModeDuration').check({ force: true });
+  await page.locator('#inputTotalDuration').fill(duration);
+  await page.locator('#switchCameraFollow').check();
+
+  return page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    const map = app.getMap();
+    const view = map.getView();
+    view.setCenter(ol.proj.fromLonLat([-3.5, 47.4]));
+    view.setZoom(6);
+    const [width] = map.getSize();
+    const [centerX, centerY] = view.getCenter();
+    const days = [...app.pointsByDate.keys()].sort((a, b) => new Date(a) - new Date(b));
+    let side = 1;
+    for (const day of days) {
+      const cible = ol.proj.toLonLat([centerX + side * width * 0.7 * view.getResolution(), centerY]);
+      for (const feature of app.pointsByDate.get(day)) feature.geometry.coordinates = [...cible];
+      side = -side;
+    }
+    app.refreshTimingPlan({ save: false });
+    const travel = app.estimateCameraTravel();
+    return {
+      journeys: travel.journeyCount,
+      travelMs: travel.totalMs,
+      budgetMs: app.options.animation.cameraTimeBudgetMs,
+      summary: document.getElementById('timingSummary').textContent,
+      warnings: document.getElementById('timingWarnings').textContent,
+    };
+  });
+}
+
+// Rythme et suivi de caméra sont des préférences globales, enregistrées côté
+// serveur : on les remet par défaut pour les tests suivants. Sans passer par
+// des clics Playwright — la modale de fin d'export les intercepte encore.
+async function restoreAnimationDefaults(page) {
+  await page.evaluate(() => {
+    document.getElementById('rhythmModeRate')?.click();
+    const switchCameraFollow = document.getElementById('switchCameraFollow');
+    if (switchCameraFollow?.checked) switchCameraFollow.click();
+  });
+  await expect.poll(async () => {
+    const { animation } = await (await page.request.get('/api/settings')).json();
+    return `${animation?.rhythm_mode}/${animation?.camera_follow}`;
+  }).toBe('rate/false');
+}
+
+test.afterEach(async ({ page }, testInfo) => {
+  if (testInfo.title.includes('« Par durée »')) await restoreAnimationDefaults(page);
+});
+
+
+test('avec le suivi de caméra, un export « Par durée » garde la durée demandée', async ({ page }, testInfo) => {
+  const prevu = await setUpCameraRoundTrips(page, '0:24');
+  // Trois jours de trouvailles, trois trajets : ils sont annoncés et comptés
+  // dans les 24 s, au lieu de s'y ajouter.
+  expect(prevu.journeys).toBe(3);
+  expect(prevu.travelMs).toBeGreaterThan(5_000);
+  expect(prevu.budgetMs).toBe(21_000);
+  expect(prevu.summary).toContain('vidéo 0:24');
+  expect(prevu.summary).toContain('trajets de caméra');
+  expect(prevu.warnings).not.toContain('minimums');
+
+  await page.locator('#recordingConfigTab').click();
+  await expect(page.locator('#recordingConfigPane')).toBeVisible();
+  await page.locator('#selectRecordMode').selectOption('images');
+  await page.locator('#selectRecordResolution').selectOption('window');
+
+  await page.locator('#btnQuickExport').click({ force: true });
+  await expect(page.locator('#modal_video_ready')).toBeVisible({ timeout: 180_000 });
+  await expect.poll(latestCompletedMp4, { timeout: 30_000 }).not.toBeNull();
+  const videoPath = latestCompletedMp4();
+
+  const expectationPath = path.join(RUNTIME, 'camera-duration-expectation.json');
+  writeFileSync(expectationPath, JSON.stringify({
+    duration_seconds: 24,
+    duration_tolerance_seconds: 0.75,
+    min_size_bytes: 1_000,
+  }, null, 2));
+  const python = process.env.MYGCFLOW_E2E_PYTHON
+    || process.env.PYTHON
+    || (process.platform === 'win32' ? 'python' : 'python3');
+  const validation = spawnSync(
+    python,
+    [path.join(ROOT, 'video_validator.py'), videoPath, '--expect', expectationPath, '--json'],
+    { encoding: 'utf8' },
+  );
+  expect(validation.status, `${validation.stdout}\n${validation.stderr}`).toBe(0);
+  await testInfo.attach('camera-duration.mp4', { path: videoPath, contentType: 'video/mp4' });
+});
+
+
+test('avec le suivi de caméra, la lecture « Par durée » finit à l\'heure', async ({ page }) => {
+  const prevu = await setUpCameraRoundTrips(page, '0:15');
+  expect(prevu.journeys).toBe(3);
+  // 15 s demandées dont 3 s de pause finale (propre à l'export) : la lecture
+  // déroule dates et trajets en 12 s.
+  expect(prevu.budgetMs).toBe(12_000);
+
+  const lecture = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    const view = app.getMap().getView();
+    const departX = view.getCenter()[0];
+    let ecartMax = 0;
+    const debut = performance.now();
+    app.startAnimation();
+    while (app.isAnimationInProgress() && performance.now() - debut < 40_000) {
+      await new Promise((r) => setTimeout(r, 50));
+      ecartMax = Math.max(ecartMax, Math.abs(view.getCenter()[0] - departX));
+    }
+    return {
+      dureeMs: performance.now() - debut,
+      terminee: !app.isAnimationInProgress(),
+      ecartMax,
+      caches: window.vectorSource?.getFeatures().length || 0,
+    };
+  });
+  await page.evaluate(async () => (await import('/static/js/index.js')).stopAnimation());
+
+  expect(lecture.terminee).toBe(true);
+  expect(lecture.ecartMax, 'la caméra s\'est bien déplacée').toBeGreaterThan(1_000);
+  expect(lecture.caches).toBe(3);
+  // Les trajets (~10 s) ne s'ajoutent plus aux 12 s : ils sont pris dessus,
+  // accélérés puisqu'ils en dépasseraient la part réservée aux déplacements.
+  expect(Math.abs(lecture.dureeMs - 12_000)).toBeLessThan(1_500);
+});

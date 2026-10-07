@@ -5,11 +5,14 @@ import {
     centroid,
     clampToExtent,
     createCameraJourney,
+    createCameraPacing,
     DEFAULT_RESPONSE_MS,
     easeInOutCubic,
     normalizeCameraDynamism,
+    pacedDayMs,
     sampleCameraJourney,
     shouldMoveCamera,
+    simulateCameraJourneys,
     smoothingFactor,
     stepCenter,
 } from './static/js/camera_follow.mjs';
@@ -144,4 +147,135 @@ test('un niveau de dynamisme invalide retombe sur le niveau discret', () => {
     assert.equal(normalizeCameraDynamism(4), 4);
     assert.equal(normalizeCameraDynamism(99), 2);
     assert.equal(normalizeCameraDynamism('x'), 2);
+});
+
+// ---------- Durée des trajets connue d'avance ----------
+
+test('durationScale change la durée d\'un trajet, pas son tracé', () => {
+    const normal = createCameraJourney([0, 0], [5000, 0], 8, 1);
+    const rapide = createCameraJourney([0, 0], [5000, 0], 8, 1, { durationScale: 0.5 });
+    assert.equal(rapide.totalDurationMs, normal.totalDurationMs / 2);
+    assert.equal(rapide.cruiseZoom, normal.cruiseZoom);
+    assert.deepEqual(
+        sampleCameraJourney(rapide, rapide.totalDurationMs / 2).center,
+        sampleCameraJourney(normal, normal.totalDurationMs / 2).center,
+    );
+    // Durée nulle : la caméra est immédiatement arrivée.
+    const instantane = createCameraJourney([0, 0], [5000, 0], 8, 1, { durationScale: 0 });
+    assert.equal(instantane.totalDurationMs, 0);
+    assert.deepEqual(sampleCameraJourney(instantane, 0), { center: [5000, 0], zoom: 8, done: true });
+});
+
+const vue = { center: [0, 0], zoom: 8, resolution: 1, viewportSize: [1000, 800] };
+const jour = (x, y) => ({ center: [x, y], extent: [x - 10, y - 10, x + 10, y + 10] });
+
+test('la simulation rejoue les décisions de l\'animation', () => {
+    const days = [
+        null,               // aucun cache : pas de trajet
+        jour(100, 0),       // dans la zone de confort : la vue reste
+        jour(3000, 0),      // hors champ : trajet
+        jour(3050, 20),     // tout près de la nouvelle vue : la vue reste
+        jour(0, 0),         // retour : trajet
+    ];
+    const sim = simulateCameraJourneys(days, { ...vue, dynamism: 2 });
+    assert.equal(sim.dayCount, 5);
+    assert.equal(sim.journeyCount, 2);
+    assert.deepEqual(sim.travelMsByDay.map((ms) => ms > 0), [false, false, true, false, true]);
+    // Chaque durée est celle du trajet réellement créé depuis la vue d'alors.
+    assert.equal(sim.travelMsByDay[2], createCameraJourney([0, 0], [3000, 0], 8, 1).totalDurationMs);
+    assert.equal(sim.travelMsByDay[4], createCameraJourney([3000, 0], [0, 0], 8, 1).totalDurationMs);
+    assert.equal(sim.totalMs, sim.travelMsByDay[2] + sim.travelMsByDay[4]);
+});
+
+test('la simulation respecte le dynamisme et l\'étendue des données', () => {
+    const days = [jour(100, 0), jour(120, 0)];
+    assert.equal(simulateCameraJourneys(days, { ...vue, dynamism: 1 }).journeyCount, 0);
+    // Niveau 4 : recentrage et respiration de zoom à chaque journée.
+    const intense = simulateCameraJourneys(days, { ...vue, dynamism: 4 });
+    assert.equal(intense.journeyCount, 2);
+    assert.ok(intense.totalMs > 0);
+
+    // La cible est ramenée dans l'étendue : le trajet simulé est plus court.
+    const loin = [jour(9000, 0)];
+    const libre = simulateCameraJourneys(loin, { ...vue, dynamism: 2 });
+    const borne = simulateCameraJourneys(loin, { ...vue, dynamism: 2, extent: [-500, -500, 1500, 500] });
+    assert.ok(borne.totalMs < libre.totalMs);
+    assert.equal(simulateCameraJourneys(null, vue).totalMs, 0);
+});
+
+test('le temps des dates se déduit du budget et des trajets à venir', () => {
+    // 10 jours, 10 s de budget, deux trajets d'1 s (jours 2 et 7).
+    const travelMsByDay = [0, 0, 1000, 0, 0, 0, 0, 1000, 0, 0];
+    const pacing = createCameraPacing({ budgetMs: 10000, travelMsByDay });
+    assert.equal(pacedDayMs(pacing, { dayIndex: 0, spentMs: 0 }), 800);
+    // Après deux dates à l'heure, rien ne change.
+    assert.equal(pacedDayMs(pacing, { dayIndex: 2, spentMs: 1600 }), 800);
+    // Le trajet du jour 2 a coûté 1,7 s au lieu d'1 s (attente des tuiles) :
+    // le surcoût est réparti et anticipé pour le trajet restant.
+    const apres = pacedDayMs(pacing, { dayIndex: 3, spentMs: 2400 + 1700, travelSpentMs: 1700 });
+    assert.ok(Math.abs(apres - (10000 - 4100 - 1000 - 700) / 7) < 1e-9);
+    // Budget épuisé : le plancher s'applique, jamais de durée négative.
+    assert.equal(pacedDayMs(pacing, { dayIndex: 9, spentMs: 20000, minMs: 33 }), 33);
+});
+
+test('travelScale accélère les trajets comptés dans le budget', () => {
+    const pacing = createCameraPacing({ budgetMs: 10000, travelMsByDay: [0, 4000, 0, 4000], travelScale: 0.5 });
+    assert.equal(pacing.travelFrom[0], 4000);
+    assert.equal(pacing.journeysFrom[0], 2);
+    assert.equal(pacedDayMs(pacing, { dayIndex: 0, spentMs: 0 }), 1500);
+});
+
+// Rejoue la boucle de capture image par image de mapgl.js (captureNextFrame) :
+// une date est affichée, son trajet est capturé dates en pause, puis elle
+// reçoit ses images. Chaque trajet coûte `overheadFrames` images imprévues.
+function captureImages({ budgetMs, travelMsByDay, fps, overheadFrames }) {
+    const frameMs = 1000 / fps;
+    const pacing = createCameraPacing({ budgetMs, travelMsByDay });
+    let frames = 0;
+    let travelFrames = 0;
+    const perDay = [];
+    const target = (dayIndex, travelDone) => Math.max(1, Math.round(pacedDayMs(pacing, {
+        dayIndex,
+        spentMs: frames * frameMs,
+        travelSpentMs: travelFrames * frameMs,
+        travelDone,
+        minMs: frameMs,
+        defaultOverheadMs: 2 * frameMs,
+    }) / frameMs));
+    for (let day = 0; day < travelMsByDay.length; day++) {
+        let dayFrames = target(day, false);
+        if (travelMsByDay[day] > 0) {
+            const cost = Math.ceil(travelMsByDay[day] / frameMs) + overheadFrames;
+            frames += cost;
+            travelFrames += cost;
+            dayFrames = target(day, true);
+        }
+        frames += dayFrames;
+        perDay.push(dayFrames);
+    }
+    return { frames, perDay };
+}
+
+test('capture image par image : la durée imposée est tenue malgré les trajets', () => {
+    const fps = 30;
+    // 400 jours, un trajet de 0,9 à 2,4 s tous les 5 jours : 132 s de trajets.
+    const travelMsByDay = Array.from({ length: 400 }, (_, i) => (i % 5 === 2 ? 900 + (i % 7) * 250 : 0));
+    const budgetMs = 240000;
+    for (const overheadFrames of [0, 2, 5]) {
+        const { frames, perDay } = captureImages({ budgetMs, travelMsByDay, fps, overheadFrames });
+        const ecartMs = Math.abs(frames * 1000 / fps - budgetMs);
+        assert.ok(ecartMs <= 500, `écart de ${ecartMs} ms avec ${overheadFrames} images de surcoût`);
+        // Rythme régulier : passé les premiers trajets (le surcoût réel n'est
+        // pas encore mesuré), les dates ont toutes la même durée à une image près.
+        const regime = perDay.slice(50);
+        assert.ok(Math.max(...regime) - Math.min(...regime) <= 2, 'rythme irrégulier');
+    }
+});
+
+test('capture image par image : sans marge, les dates tombent à une image', () => {
+    // Budget plus court que les trajets : rien à rattraper, une image par jour.
+    const { perDay } = captureImages({
+        budgetMs: 1000, travelMsByDay: [0, 3000, 0, 3000, 0], fps: 30, overheadFrames: 2,
+    });
+    assert.deepEqual(perDay, [1, 1, 1, 1, 1]);
 });

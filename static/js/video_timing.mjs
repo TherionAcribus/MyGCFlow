@@ -163,6 +163,31 @@ export function formatDurationHuman(ms) {
     return parts.join(' ');
 }
 
+// ---------- Suivi de caméra : partage de la durée ----------
+
+// Part maximale de l'animation que les trajets de caméra peuvent occuper quand
+// la durée de la vidéo est imposée. Au-delà, les trajets sont accélérés : les
+// dates gardent ainsi au moins 40 % du temps au lieu de défiler en un éclair
+// entre deux longs déplacements.
+export const CAMERA_TRAVEL_MAX_SHARE = 0.6;
+
+// Répartit une durée d'animation imposée entre l'affichage des dates et les
+// trajets de caméra (durée simulée, cf. simulateCameraJourneys). Tant qu'ils
+// tiennent dans leur part, les trajets gardent leur vitesse et c'est le rythme
+// des dates qui s'ajuste ; sinon ils sont accélérés du facteur travelScale.
+// minDatesMs : durée incompressible des dates (une image par jour).
+export function splitCameraBudget({ animationMs, minDatesMs = 0, travelMs = 0 } = {}) {
+    const total = Math.max(0, finiteNumber(animationMs, 0));
+    const travel = Math.max(0, finiteNumber(travelMs, 0));
+    const minDates = Math.max(0, finiteNumber(minDatesMs, 0));
+    if (!(travel > 0)) return { datesMs: total, travelMs: 0, travelScale: 1, compressed: false };
+    const maxTravel = Math.max(0, Math.min(total * CAMERA_TRAVEL_MAX_SHARE, total - minDates));
+    if (travel <= maxTravel) {
+        return { datesMs: total - travel, travelMs: travel, travelScale: 1, compressed: false };
+    }
+    return { datesMs: total - maxTravel, travelMs: maxTravel, travelScale: maxTravel / travel, compressed: true };
+}
+
 // ---------- Plan de timing unifié ----------
 
 // `rhythm` décrit la source unique du tempo de l'animation principale :
@@ -179,6 +204,12 @@ export function formatDurationHuman(ms) {
 // qui couvre des décennies (≈ 9 000 jours : 5 min de vidéo minimum sinon) et
 // dont le coût d'un jour ne dépend pas du nombre de points affichés.
 //
+// cameraTravelMs : durée cumulée des trajets du suivi de caméra, simulée par
+// l'appelant (non fournie = suivi inactif ou durée inconnue). Les dates sont en
+// pause pendant un trajet : en mode 'rate' cette durée s'ajoute donc à
+// l'animation ; en modes 'duration' et 'music' elle est prise sur la durée
+// demandée, qui reste respectée (cf. splitCameraBudget).
+//
 // Retourne un plan : compte de jours, décomposition des durées, frames,
 // minimum réalisable, `errors` (entrées invalides — ne pas lancer) et
 // `warnings` (limites appliquées, ex. pincement au minimum ou musique plus
@@ -194,6 +225,8 @@ export function buildTimingPlan({
     tailFreezeMs = DEFAULT_END_HOLD_MS,
     extraEndSeconds = 0,
     allowMultipleDaysPerFrame = false,
+    cameraTravelMs,
+    cameraJourneyCount = 0,
 } = {}) {
     const errors = [];
     const warnings = [];
@@ -224,6 +257,14 @@ export function buildTimingPlan({
     let requestedTotalMs = NaN;
     let clampedToMinimum = false;
 
+    const cameraKnown = typeof cameraTravelMs === 'number' && Number.isFinite(cameraTravelMs);
+    const cameraRawMs = cameraKnown ? Math.max(0, cameraTravelMs) : 0;
+    let cameraAppliedMs = cameraRawMs;
+    let cameraScale = 1;
+    // Durée d'animation (dates + trajets) que le moteur doit tenir ; NaN quand
+    // les trajets s'ajoutent librement à l'animation.
+    let cameraTimeBudgetMs = NaN;
+
     const mode = rhythm && rhythm.mode;
     if (mode === 'rate') {
         const p = parseBoundedNumber(rhythm.daysPerSecond, TIMING_LIMITS.daysPerSecond);
@@ -231,7 +272,7 @@ export function buildTimingPlan({
             errors.push('daysPerSecond');
         } else {
             timePerDayMs = 1000 / p.value;
-            animationMs = days > 0 ? days * timePerDayMs : 0;
+            animationMs = days > 0 ? days * timePerDayMs + cameraRawMs : 0;
         }
     } else if (mode === 'duration' || mode === 'music') {
         const requested = mode === 'music' ? rhythm.musicDurationMs : rhythm.totalDurationMs;
@@ -245,11 +286,11 @@ export function buildTimingPlan({
                 // Trop court pour une frame par jour : le minimum est appliqué
                 // et signalé au lieu d'être corrigé silencieusement.
                 clampedToMinimum = true;
-                animationMs = minAnimationMs;
+                animationMs = minAnimationMs + cameraRawMs;
                 warnings.push({
                     type: 'minimum-total',
                     minimumMs: minTotalMs,
-                    appliedMs: minTotalMs,
+                    appliedMs: minTotalMs + cameraRawMs,
                     requestedMs: p.value,
                     reason: 'one-frame-per-day',
                 });
@@ -257,13 +298,31 @@ export function buildTimingPlan({
                     warnings.push({
                         type: 'music-shorter-than-minimum',
                         musicMs: p.value,
-                        appliedMs: minTotalMs,
+                        appliedMs: minTotalMs + cameraRawMs,
                     });
                 }
             } else {
                 animationMs = animRequested;
+                if (cameraKnown) {
+                    const split = splitCameraBudget({
+                        animationMs: animRequested,
+                        minDatesMs: minAnimationMs,
+                        travelMs: cameraRawMs,
+                    });
+                    cameraAppliedMs = split.travelMs;
+                    cameraScale = split.travelScale;
+                    cameraTimeBudgetMs = animRequested;
+                    if (split.compressed) {
+                        warnings.push({
+                            type: 'camera-travel-compressed',
+                            travelMs: cameraRawMs,
+                            appliedMs: split.travelMs,
+                            scale: split.travelScale,
+                        });
+                    }
+                }
             }
-            timePerDayMs = days > 0 ? animationMs / days : NaN;
+            timePerDayMs = days > 0 ? (animationMs - cameraAppliedMs) / days : NaN;
         }
     } else {
         errors.push('rhythm');
@@ -280,6 +339,7 @@ export function buildTimingPlan({
             flashMode,
             flashDurationMs,
             allowMultipleDaysPerFrame,
+            cameraTravelMs: cameraAppliedMs,
         })
         : { baseFrameCount: 0, tailFrameCount: 0, totalFrameCount: 0, framesPerDayAverage: 0 };
 
@@ -303,6 +363,12 @@ export function buildTimingPlan({
         tailFrameCount: frames.tailFrameCount,
         totalFrameCount: frames.totalFrameCount,
         framesPerDayAverage: frames.framesPerDayAverage,
+        // Suivi de caméra : NaN quand la durée des trajets n'est pas connue.
+        cameraTravelMs: cameraKnown ? cameraAppliedMs : NaN,
+        cameraTravelRawMs: cameraKnown ? cameraRawMs : NaN,
+        cameraTravelScale: cameraScale,
+        cameraJourneyCount: cameraKnown ? Math.max(0, Math.round(finiteNumber(cameraJourneyCount, 0))) : 0,
+        cameraTimeBudgetMs,
         // Durée de la musique retenue pour l'UI : la comparaison avec la vidéo
         // (plus courte / plus longue → coupée en fin de vidéo) est affichée par
         // ui.js, qui seul connaît le fichier sélectionné.
@@ -365,6 +431,9 @@ export function buildLoadEstimate({ plan, maxPointsPerDay = 0, flashDurationMs =
 //    animation (fixe : durée D ; duration/impulse : cf. automaticEndHoldMs) ;
 //  - la durée totale correspond exactement à totalFrameCount frames au fps
 //    demandé (la durée réelle est quantifiée par la grille fps).
+//
+// cameraTravelMs : trajets du suivi de caméra, capturés en plus des images des
+// dates (baseFrameCount ne compte que ces dernières).
 export function buildImageTimingPlan({
     dayCount,
     timePerDayMs,
@@ -374,6 +443,7 @@ export function buildImageTimingPlan({
     flashMode = 'none',
     flashDurationMs = 0,
     allowMultipleDaysPerFrame = false,
+    cameraTravelMs = 0,
 } = {}) {
     const safeDays = Math.max(1, Math.round(finiteNumber(dayCount, 1)));
     const safeFps = normalizeVideoFps(fps);
@@ -388,12 +458,14 @@ export function buildImageTimingPlan({
     const requestedBaseFrames = Math.round(safeDays * safeTimePerDayMs * safeFps / 1000);
     const baseFrameCount = Math.max(minFrames, requestedBaseFrames);
     const tailFrameCount = Math.max(0, Math.round((endHoldMs + extraEndMs) * safeFps / 1000));
-    const totalFrameCount = baseFrameCount + tailFrameCount;
+    const travelFrameCount = Math.max(0, Math.round(Math.max(0, finiteNumber(cameraTravelMs, 0)) * safeFps / 1000));
+    const totalFrameCount = baseFrameCount + travelFrameCount + tailFrameCount;
 
     return {
         fps: safeFps,
         dayCount: safeDays,
         baseFrameCount,
+        travelFrameCount,
         tailFrameCount,
         totalFrameCount,
         framesPerDayAverage: baseFrameCount / safeDays,

@@ -4548,7 +4548,9 @@ function setTimingFieldValidity(input, feedbackId, ok, message) {
 // (options.animation.timePerDay, record.totalTimeInMilliSec) et rafraîchit
 // l'affichage (champs en lecture seule, synthèse, erreurs, avertissements,
 // estimation de charge, état des boutons).
-function refreshTimingPlan({ save = true } = {}) {
+// Exportée : la carte la rappelle quand son cadrage change (basemaps.js), la
+// durée des trajets du suivi de caméra dépendant de la vue de départ.
+export function refreshTimingPlan({ save = true } = {}) {
     const animation = pkg.options?.animation;
     if (!animation) return;
     const mode = rhythmMode();
@@ -4624,6 +4626,10 @@ function refreshTimingPlan({ save = true } = {}) {
         }
     }
 
+    // Suivi de caméra : les trajets sont simulés depuis la vue courante, pour
+    // que leur durée entre dans le plan au lieu de s'y ajouter par surprise.
+    const cameraTravel = animation.cameraFollow === true ? pkg.estimateCameraTravel?.() : null;
+
     // 2. Plan de timing partagé (aperçu, MediaRecorder, Images).
     const plan = buildTimingPlan({
         dayCount: dayCount ?? undefined,
@@ -4638,6 +4644,8 @@ function refreshTimingPlan({ save = true } = {}) {
         // Mode Évolution : plusieurs jours peuvent partager une image, sinon
         // vingt ans de données imposeraient cinq minutes de vidéo au minimum.
         allowMultipleDaysPerFrame: isEvolutionPage(),
+        cameraTravelMs: cameraTravel ? cameraTravel.totalMs : undefined,
+        cameraJourneyCount: cameraTravel ? cameraTravel.journeyCount : 0,
     });
     lastTimingPlan = plan;
 
@@ -4647,6 +4655,9 @@ function refreshTimingPlan({ save = true } = {}) {
         animation.timePerDay = plan.timePerDayMs;
         pkg.options.record.totalTimeInMilliSec = plan.totalDurationMs;
         pkg.options.record.automaticEndHoldMs = plan.endHoldMs;
+        // Durée imposée avec suivi de caméra : le moteur tient cette durée
+        // d'animation, trajets compris (mapgl.js, prepareCameraPacing).
+        animation.cameraTimeBudgetMs = Number.isFinite(plan.cameraTimeBudgetMs) ? plan.cameraTimeBudgetMs : null;
     }
 
     // 3. Rendu : champs en lecture seule + synthèse + messages.
@@ -4733,7 +4744,10 @@ function renderTimingSummary(plan) {
         return;
     }
     if (summary) {
-        const cameraAddsTravel = pkg.options.animation?.cameraFollow === true;
+        // Trajets simulés : la durée affichée les comprend. Sans simulation
+        // (données absentes), elle ne reste qu'un minimum.
+        const cameraTravelKnown = Number.isFinite(plan.cameraTravelMs);
+        const cameraAddsTravel = pkg.options.animation?.cameraFollow === true && !cameraTravelKnown;
         const parts = [
             t('${n} jours', { n: plan.dayCount }),
             t('${n} jours/s', { n: Number(plan.daysPerSecond.toFixed(2)) }),
@@ -4742,6 +4756,9 @@ function renderTimingSummary(plan) {
                 : t('animation ${d}', { d: formatMmSs(plan.animationMs) }),
             t('fin ${d}', { d: formatDurationHuman(plan.endHoldMs) }),
         ];
+        if (cameraTravelKnown && plan.cameraTravelMs > 0) {
+            parts.splice(3, 0, t('dont trajets de caméra ${d}', { d: formatDurationHuman(plan.cameraTravelMs) }));
+        }
         if (plan.extraEndMs > 0) parts.push(t('+ ${d} additionnel', { d: formatDurationHuman(plan.extraEndMs) }));
         parts.push(cameraAddsTravel
             ? t('vidéo minimale ${d}', { d: formatMmSs(plan.totalDurationMs) })
@@ -4859,7 +4876,20 @@ function renderTimingMessages(plan, fieldsValid) {
         }
     }
     if (plan?.valid && pkg.options.animation?.cameraFollow === true) {
-        warnings.push(t('Le suivi de caméra met les dates en pause pendant chaque déplacement. La durée et le nombre d\'images affichés sont des minimums ; le résultat sera plus long et peut dépasser la durée de la musique.'));
+        const compressed = plan.warnings.find((w) => w.type === 'camera-travel-compressed');
+        if (!Number.isFinite(plan.cameraTravelMs)) {
+            warnings.push(t('Le suivi de caméra met les dates en pause pendant chaque déplacement. La durée et le nombre d\'images affichés sont des minimums ; le résultat sera plus long et peut dépasser la durée de la musique.'));
+        } else if (compressed) {
+            warnings.push(t('Les trajets de caméra dureraient ${travel}, trop pour la durée demandée : ils sont accélérés pour tenir en ${applied}. Pour des déplacements plus posés, baissez le dynamisme ou allongez la vidéo.', {
+                travel: formatDurationHuman(compressed.travelMs),
+                applied: formatDurationHuman(compressed.appliedMs),
+            }));
+        } else if (rhythmMode() === 'rate' && plan.cameraTravelMs > 0) {
+            warnings.push(t('Le suivi de caméra met les dates en pause pendant chaque déplacement : depuis ce cadrage, ${n} trajets ajoutent environ ${d} à la vidéo. Pour tenir une durée précise, choisissez « Par durée » ou « Sur la musique ».', {
+                n: plan.cameraJourneyCount,
+                d: formatDurationHuman(plan.cameraTravelMs),
+            }));
+        }
     }
     if (warnBox) {
         warnBox.style.display = warnings.length ? '' : 'none';

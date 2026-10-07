@@ -213,6 +213,15 @@ export function createMap(){
 
     // Initialiser l'overlay de popup et les écouteurs de clics
     try { initPopupOverlay(); } catch(e) { console.warn('Init popup error:', e); }
+
+    // Suivi de caméra : la durée des trajets dépend de la vue de départ. Le
+    // plan de durée affiché est donc recalculé quand l'utilisateur recadre la
+    // carte — pas pendant une animation, où c'est la caméra qui la déplace.
+    olMap.on('moveend', () => {
+        if (pkg.options?.animation?.cameraFollow !== true) return;
+        if (isRecordingActive() || pkg.isAnimationInProgress?.()) return;
+        try { pkg.refreshTimingPlan?.({ save: false }); } catch(e) { console.warn('Refresh timing plan error:', e); }
+    });
 }
 
 // ajoute les différents layers de cartes à la map et affiche la bonne

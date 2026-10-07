@@ -17,6 +17,8 @@ import {
     parseDurationText,
     TIMING_LIMITS,
     serverNormalizationFactor,
+    splitCameraBudget,
+    CAMERA_TRAVEL_MAX_SHARE,
 } from './static/js/video_timing.mjs';
 
 test('inclusiveDayCount compte les deux bornes', () => {
@@ -327,4 +329,114 @@ test('buildTimingPlan : le minimum ne dépend plus du nombre de jours avec l\'op
     assert.deepEqual(relaxed.warnings, []);
     assert.equal(relaxed.baseFrameCount, 900);
     assert.equal(relaxed.totalDurationMs, 30000);
+});
+
+// ---------- Suivi de caméra ----------
+
+test('durée imposée : les trajets de caméra sont pris sur le temps des dates', () => {
+    const plan = buildTimingPlan({
+        dayCount: 100,
+        rhythm: { mode: 'music', musicDurationMs: 63000 },
+        fps: 30,
+        tailFreezeMs: 3000,
+        cameraTravelMs: 20000,
+        cameraJourneyCount: 12,
+    });
+    assert.equal(plan.valid, true);
+    assert.deepEqual(plan.warnings, []);
+    // La vidéo garde la durée de la musique, trajets compris.
+    assert.equal(plan.totalDurationMs, 63000);
+    assert.equal(plan.animationMs, 60000);
+    assert.equal(plan.cameraTravelMs, 20000);
+    assert.equal(plan.cameraTravelScale, 1);
+    assert.equal(plan.cameraJourneyCount, 12);
+    assert.equal(plan.cameraTimeBudgetMs, 60000);
+    // Les dates se partagent ce que les trajets laissent : 40 s pour 100 jours.
+    assert.equal(plan.timePerDayMs, 400);
+    assert.equal(plan.totalFrameCount, 63 * 30);
+});
+
+test('rythme en jours/s : les trajets de caméra s\'ajoutent à la durée annoncée', () => {
+    const plan = buildTimingPlan({
+        dayCount: 100,
+        rhythm: { mode: 'rate', daysPerSecond: 10 },
+        fps: 30,
+        tailFreezeMs: 3000,
+        cameraTravelMs: 20000,
+    });
+    assert.equal(plan.timePerDayMs, 100);
+    assert.equal(plan.animationMs, 30000);
+    assert.equal(plan.totalDurationMs, 33000);
+    assert.ok(Number.isNaN(plan.cameraTimeBudgetMs), 'aucune durée à tenir');
+    assert.equal(plan.totalFrameCount, 33 * 30);
+});
+
+test('sans durée de trajets fournie, le plan est inchangé', () => {
+    const base = { dayCount: 100, rhythm: { mode: 'duration', totalDurationMs: 60000 }, fps: 30 };
+    const plan = buildTimingPlan(base);
+    assert.ok(Number.isNaN(plan.cameraTravelMs));
+    assert.ok(Number.isNaN(plan.cameraTimeBudgetMs));
+    assert.equal(plan.timePerDayMs, 570);
+    // Suivi actif mais aucun trajet prévu : même rythme, durée à tenir connue.
+    const still = buildTimingPlan({ ...base, cameraTravelMs: 0 });
+    assert.equal(still.timePerDayMs, 570);
+    assert.equal(still.cameraTimeBudgetMs, 57000);
+});
+
+test('des trajets trop longs pour la durée demandée sont accélérés et signalés', () => {
+    const plan = buildTimingPlan({
+        dayCount: 100,
+        rhythm: { mode: 'duration', totalDurationMs: 63000 },
+        fps: 30,
+        tailFreezeMs: 3000,
+        cameraTravelMs: 90000,
+    });
+    assert.equal(plan.totalDurationMs, 63000);
+    assert.equal(plan.cameraTravelMs, 60000 * CAMERA_TRAVEL_MAX_SHARE);
+    assert.equal(plan.cameraTravelRawMs, 90000);
+    assert.ok(Math.abs(plan.cameraTravelScale - 0.4) < 1e-9);
+    assert.equal(plan.timePerDayMs, 240);
+    const warning = plan.warnings.find((w) => w.type === 'camera-travel-compressed');
+    assert.ok(warning);
+    assert.equal(warning.travelMs, 90000);
+    assert.equal(warning.appliedMs, 36000);
+});
+
+test('splitCameraBudget garde une image par jour aux dates', () => {
+    // 10 s d'animation dont 8 s incompressibles pour les dates.
+    const split = splitCameraBudget({ animationMs: 10000, minDatesMs: 8000, travelMs: 5000 });
+    assert.equal(split.datesMs, 8000);
+    assert.equal(split.travelMs, 2000);
+    assert.equal(split.travelScale, 0.4);
+    assert.equal(split.compressed, true);
+
+    const large = splitCameraBudget({ animationMs: 10000, minDatesMs: 1000, travelMs: 5000 });
+    assert.deepEqual(large, { datesMs: 5000, travelMs: 5000, travelScale: 1, compressed: false });
+
+    const none = splitCameraBudget({ animationMs: 10000, minDatesMs: 1000, travelMs: 0 });
+    assert.deepEqual(none, { datesMs: 10000, travelMs: 0, travelScale: 1, compressed: false });
+});
+
+test('durée inférieure au minimum : les trajets s\'ajoutent au minimum appliqué', () => {
+    const plan = buildTimingPlan({
+        dayCount: 300,
+        rhythm: { mode: 'duration', totalDurationMs: 5000 },
+        fps: 30,
+        tailFreezeMs: 0,
+        cameraTravelMs: 4000,
+    });
+    assert.equal(plan.clampedToMinimum, true);
+    assert.equal(plan.totalDurationMs, 14000);
+    assert.equal(plan.warnings[0].appliedMs, 14000);
+    assert.ok(Number.isNaN(plan.cameraTimeBudgetMs));
+});
+
+test('buildImageTimingPlan compte les images des trajets de caméra', () => {
+    const plan = buildImageTimingPlan({
+        dayCount: 10, timePerDayMs: 100, fps: 30, tailFreezeMs: 0, cameraTravelMs: 2000,
+    });
+    assert.equal(plan.baseFrameCount, 30);
+    assert.equal(plan.travelFrameCount, 60);
+    assert.equal(plan.totalFrameCount, 90);
+    assert.equal(plan.framesPerDayAverage, 3);
 });

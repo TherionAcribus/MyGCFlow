@@ -31,6 +31,8 @@ export const LONG_TRAVEL_THRESHOLD_PX = 900;
 export const CRUISE_DISTANCE_PX = 640;
 export const MIN_CRUISE_ZOOM = 2;
 export const DEFAULT_CAMERA_DYNAMISM = 2;
+// Dézoom ajouté à chaque trajet au niveau 4 : la « respiration » systématique.
+export const INTENSE_EXTRA_ZOOM_OUT = 1.25;
 
 const CAMERA_COMFORT_RATIOS = Object.freeze({
     1: 1,
@@ -145,6 +147,10 @@ export function createCameraJourney(current, target, startZoom, resolution, {
     cruiseDistancePx = CRUISE_DISTANCE_PX,
     minCruiseZoom = MIN_CRUISE_ZOOM,
     extraZoomOut = 0,
+    // Facteur appliqué aux durées, sans toucher au tracé : < 1 quand les trajets
+    // doivent tenir dans une durée de vidéo imposée, > 1 quand toute la timeline
+    // est ralentie (capture rapide avec ralentissement).
+    durationScale = 1,
 } = {}) {
     if (!current || !target) return null;
     const zoom = Number(startZoom);
@@ -167,11 +173,13 @@ export function createCameraJourney(current, target, startZoom, resolution, {
 
     cruiseZoom = Math.max(Number(minCruiseZoom) || 0, cruiseZoom - addedZoom);
     const zoomDelta = Math.max(0, zoom - cruiseZoom);
-    const zoomDurationMs = zoomDelta > 0 ? Math.min(1200, 600 + zoomDelta * 150) : 0;
+    const scale = Number(durationScale);
+    const timeScale = Number.isFinite(scale) && scale >= 0 ? scale : 1;
+    const zoomDurationMs = (zoomDelta > 0 ? Math.min(1200, 600 + zoomDelta * 150) : 0) * timeScale;
     const cruiseDistance = distancePx / Math.pow(2, zoomDelta);
-    const panDurationMs = distancePx > DEFAULT_DEAD_ZONE_PX
+    const panDurationMs = (distancePx > DEFAULT_DEAD_ZONE_PX
         ? Math.min(2800, 700 + cruiseDistance * 2.5)
-        : 0;
+        : 0) * timeScale;
 
     return {
         startCenter: [...current],
@@ -225,4 +233,104 @@ export function sampleCameraJourney(journey, elapsedMs) {
         zoom: journey.startZoom,
         done: true,
     };
+}
+
+// ---------- Durée des trajets connue d'avance ----------
+//
+// Les trajets sont déterministes : ils ne dépendent que de la vue de départ et
+// des caches de chaque jour. On peut donc les dérouler à blanc avant de lancer
+// l'animation, connaître le temps qu'ils prendront, et le retrancher du temps
+// d'affichage des dates quand la vidéo doit durer un temps précis (musique).
+
+// Rejoue la suite des décisions prises pendant l'animation, sans rien afficher.
+// `days` : une entrée par jour animé, null sans cache ce jour-là, sinon
+// { center, extent } en coordonnées de carte. Retourne la durée de trajet de
+// chaque jour (0 si la caméra ne bouge pas), leur somme et leur nombre.
+export function simulateCameraJourneys(days, {
+    center,
+    zoom,
+    resolution,
+    viewportSize,
+    dynamism,
+    extent = null,
+} = {}) {
+    const list = Array.isArray(days) ? days : [];
+    const level = normalizeCameraDynamism(dynamism);
+    const travelMsByDay = new Array(list.length).fill(0);
+    let totalMs = 0;
+    let journeyCount = 0;
+    let current = Array.isArray(center) ? [...center] : null;
+    for (let i = 0; i < list.length; i++) {
+        const day = list[i];
+        if (!day || !day.center) continue;
+        if (!shouldMoveCamera(current, resolution, viewportSize, day.extent, level)) continue;
+        const journey = createCameraJourney(
+            current,
+            clampToExtent(day.center, extent),
+            zoom,
+            resolution,
+            { extraZoomOut: level === 4 ? INTENSE_EXTRA_ZOOM_OUT : 0 },
+        );
+        if (!journey) continue;
+        travelMsByDay[i] = journey.totalDurationMs;
+        totalMs += journey.totalDurationMs;
+        journeyCount += 1;
+        // Le zoom revient toujours à sa valeur de départ : seul le centre change.
+        current = journey.targetCenter;
+    }
+    return { dayCount: list.length, travelMsByDay, totalMs, journeyCount };
+}
+
+// Prépare le suivi d'un budget de temps : `budgetMs` couvre l'affichage de
+// toutes les dates ET tous les trajets. Les cumuls « à partir du jour i »
+// évitent de reparcourir la liste à chaque date.
+export function createCameraPacing({ budgetMs, travelMsByDay, travelScale = 1 } = {}) {
+    const list = Array.isArray(travelMsByDay) ? travelMsByDay : [];
+    const scale = Math.max(0, Number(travelScale) || 0);
+    const travelFrom = new Float64Array(list.length + 1);
+    const journeysFrom = new Uint32Array(list.length + 1);
+    for (let i = list.length - 1; i >= 0; i--) {
+        const travel = Math.max(0, Number(list[i]) || 0);
+        travelFrom[i] = travelFrom[i + 1] + travel * scale;
+        journeysFrom[i] = journeysFrom[i + 1] + (travel > 0 ? 1 : 0);
+    }
+    return {
+        budgetMs: Math.max(0, Number(budgetMs) || 0),
+        dayCount: list.length,
+        travelFrom,
+        journeysFrom,
+    };
+}
+
+// Temps d'affichage à accorder à la date `dayIndex` pour que la fin de
+// l'animation tombe sur le budget : ce qui reste, moins les trajets encore à
+// venir, réparti entre les dates restantes. Recalculé à chaque date, il absorbe
+// de lui-même ce que la simulation ne peut pas prévoir (attente des tuiles en
+// fin de trajet, images de raccord en capture image par image) :
+//  - spentMs : temps déjà écoulé depuis le début de l'animation ;
+//  - travelSpentMs : part de ce temps passée dates en pause. L'écart avec les
+//    trajets simulés donne le surcoût moyen d'un trajet, reporté sur ceux qui
+//    restent — le rythme reste ainsi régulier au lieu d'accélérer vers la fin ;
+//  - travelDone : le trajet du jour `dayIndex` est déjà effectué.
+export function pacedDayMs(pacing, {
+    dayIndex = 0,
+    spentMs = 0,
+    travelSpentMs = 0,
+    travelDone = false,
+    minMs = 1,
+    defaultOverheadMs = 0,
+} = {}) {
+    const floor = Math.max(0, Number(minMs) || 0);
+    if (!pacing || !(pacing.dayCount > 0)) return floor;
+    const index = Math.max(0, Math.min(pacing.dayCount - 1, Math.round(Number(dayIndex) || 0)));
+    const from = travelDone ? index + 1 : index;
+    const doneJourneys = pacing.journeysFrom[0] - pacing.journeysFrom[from];
+    const overheadMs = doneJourneys > 0
+        ? Math.max(0, ((Number(travelSpentMs) || 0) - (pacing.travelFrom[0] - pacing.travelFrom[from])) / doneJourneys)
+        : Math.max(0, Number(defaultOverheadMs) || 0);
+    const remainingMs = pacing.budgetMs
+        - Math.max(0, Number(spentMs) || 0)
+        - pacing.travelFrom[from]
+        - overheadMs * pacing.journeysFrom[from];
+    return Math.max(floor, remainingMs / (pacing.dayCount - index));
 }
