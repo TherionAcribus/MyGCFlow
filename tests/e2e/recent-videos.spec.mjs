@@ -129,9 +129,17 @@ test('un nouvel export apparaît dans la liste sans recharger la page', async ({
     app.options.record.fps = 12;
   });
 
-  await page.locator('#btnQuickExport').click({ force: true });
+  // On enregistre le plus souvent en plein écran, où le panneau est masqué :
+  // le bouton d'export y est donc déclenché sans passer par un clic visible.
+  await page.locator('#btnFullscreenMode').click();
+  await expect(page.locator('main')).toHaveClass(/fullscreen-mode/);
+  await page.evaluate(() => document.getElementById('btnQuickExport').click());
   const ready = page.locator('#modal_video_ready');
   await expect(ready).toBeVisible({ timeout: 120_000 });
+  // Fin d'export : le plein écran est quitté, sinon ni l'écran de fin ni la
+  // liste ne seraient visibles.
+  await expect(page.locator('main')).not.toHaveClass(/fullscreen-mode/);
+  await expect(page.locator('#btnFullscreenMode')).toHaveAttribute('aria-pressed', 'false');
   const exported = await ready.locator('#videoReadyFile').textContent();
   await ready.locator('.modal-footer [data-bs-dismiss="modal"]').click();
 

@@ -2189,6 +2189,8 @@ function abortRecordingOnError(error) {
 // téléchargement seul), il n'y a rien à présenter : simple toast.
 function announceVideoReady(video) {
     let shown = false;
+    // La capture est terminée : redimensionner la carte n'affecte plus la vidéo.
+    try { pkg.leaveFullscreenMode?.(); } catch (e) { console.warn('[RECORD END] Sortie du plein écran impossible:', e); }
     try { shown = !!pkg.showVideoReady?.(video); } catch (e) { console.warn('[RECORD END] Écran de fin indisponible:', e); }
     if (!shown) pkg.showToast && pkg.showToast(pkg.t('Vidéo prête'), 'success', pkg.t('Enregistrement'));
     // La liste « Dernières vidéos » de l'onglet Export se met à jour.

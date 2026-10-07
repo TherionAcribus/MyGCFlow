@@ -6831,6 +6831,15 @@ function updateControlBar() {
     syncFlashPreviewButton();
 }
 
+// Quitte le plein écran s'il est actif. Appelé en fin d'export : on enregistre
+// le plus souvent en plein écran, où l'écran « Vidéo prête » et le panneau
+// (liste des dernières vidéos) ne sont pas visibles.
+export function leaveFullscreenMode() {
+    if (document.querySelector('main')?.classList.contains('fullscreen-mode')) {
+        toggleFullscreenFromButton();
+    }
+}
+
 // Bouton de bascule plein écran depuis la barre latérale
 function toggleFullscreenFromButton(){
     const mainElement = document.querySelector('main');
