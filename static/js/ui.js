@@ -1069,7 +1069,15 @@ function initOptionsElements() {
                 changeRecordValues(cbRecordAudioEnable); // Met à jour les options
                 // Attendre la lecture des métadonnées (mise en cache,
                 // anti-course) : le fichier est alors utilisable.
-                await refreshMusicDuration();
+                const duration = await refreshMusicDuration();
+                // Une musique choisie cale d'office la durée de la vidéo
+                // dessus — équivalent du bouton « Caler sur la musique ».
+                // null = lecture périmée (un autre fichier a suivi) ou
+                // durée illisible : on ne change alors pas le mode.
+                if (Number.isFinite(duration) && duration > 0) {
+                    setRhythmMode('music');
+                    pkg.showToast && pkg.showToast(t('Durée de l\'animation calée sur la musique'), 'info', t('Musique'), 3000);
+                }
                 // Un autre fichier a pu être choisi entre-temps : n'afficher
                 // les infos que si c'est toujours celui-ci.
                 if (inputAudioFile.files && inputAudioFile.files[0] === file) {
