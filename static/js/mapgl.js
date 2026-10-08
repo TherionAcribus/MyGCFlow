@@ -4033,7 +4033,12 @@ function displayFeaturesForDates(dates, pointOptions, flashOptions, record, info
             targetExtent,
             cameraDynamism,
         )) {
-            cameraTarget = target;
+            // « Cadrer le jour » vise le centre de l'étendue, pas le
+            // barycentre : le zoom calculé sur l'étendue suppose la vue
+            // centrée dessus (jour « grappe + cache isolée »).
+            cameraTarget = effectiveCameraFitDay() && targetExtent
+                ? ol.extent.getCenter(targetExtent)
+                : target;
             // Étendue propre au jour visé : elle choisira le zoom d'arrivée
             // du trajet quand l'option « cadrer le jour » est active.
             cameraTargetExtent = targetExtent;

@@ -516,9 +516,15 @@ export function simulateCameraJourneys(days, {
                 ? Math.max(floor, Math.min(homeZoom, fit))
                 : Math.min(homeZoom, fit);
         }
+        // fitDay cadre l'étendue du jour : le zoom calculé par zoomForExtent
+        // suppose la vue centrée sur cette étendue — viser le barycentre
+        // laisserait une cache isolée hors cadre (jour « grappe + isolée »).
+        const aim = fitDay && Array.isArray(day.extent) && day.extent.length === 4
+            ? [(day.extent[0] + day.extent[2]) / 2, (day.extent[1] + day.extent[3]) / 2]
+            : day.center;
         const journey = createCameraJourney(
             current,
-            clampToExtent(day.center, extent),
+            clampToExtent(aim, extent),
             currentZoom,
             currentResolution,
             options,

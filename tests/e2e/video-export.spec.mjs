@@ -813,6 +813,63 @@ test('le suivi de caméra glisse vers les caches, se stabilise et rend la main',
 });
 
 
+test('le jour « grappe + isolée » est cadré sur son étendue, pas son barycentre', async ({ page }) => {
+  await page.locator('a[href="#animation"]').click();
+  await page.locator('#switchCameraFollow').check();
+  await page.locator('#inputDaysPerSecond').fill('2');
+  await page.locator('#inputExtraEndTime').fill('0');
+
+  const releve = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    const view = app.getMap().getView();
+    // Dernier jour : 3 caches groupées à New York + 1 isolée à Saint-Louis.
+    // Barycentre ≈ -78°, centre de l'étendue = -82° : fitDay doit viser le
+    // second, sinon l'isolée reste hors du cadre calculé pour elle.
+    const jours = [...app.pointsByDate.keys()];
+    const dernier = app.pointsByDate.get(jours[jours.length - 1]);
+    for (const key of jours.slice(0, 3)) {
+      for (const f of app.pointsByDate.get(key)) {
+        f.geometry.coordinates = [-74.006, 40.7128];
+        dernier.push(f);
+      }
+      app.pointsByDate.delete(key);
+    }
+    for (const key of jours.slice(3, -1)) {
+      for (const f of app.pointsByDate.get(key)) f.geometry.coordinates = [-74.006, 40.7128];
+    }
+    dernier[0].geometry.coordinates = [-74.006, 40.7128];
+    dernier[dernier.length - 1].geometry.coordinates = [-90.2, 38.63];
+    app.bumpPointsByDateRevision();
+    view.setCenter(ol.proj.fromLonLat([2.3522, 48.8566]));
+    view.setZoom(6);
+
+    const centreEtendueX = ol.proj.fromLonLat([-82.103, 39.671])[0];
+    const barycentreX = ol.proj.fromLonLat([-78.0545, 40.192])[0];
+
+    app.startAnimation();
+    const positions = [];
+    for (let i = 0; i < 30; i++) {
+      await new Promise((r) => setTimeout(r, 400));
+      positions.push(view.getCenter()[0]);
+      if (positions.length >= 3 && positions.at(-1) === positions.at(-2)
+          && positions.at(-2) === positions.at(-3)) break;
+    }
+    app.stopAnimation();
+    return { positions, centreEtendueX, barycentreX };
+  });
+
+  // La caméra finit sur le centre de l'étendue du dernier jour, nettement à
+  // l'ouest de son barycentre (~445 km d'écart entre les deux).
+  const final = releve.positions.at(-1);
+  expect(Math.abs(final - releve.centreEtendueX),
+    `positions: ${releve.positions.map((x) => Math.round(x / 1000)).join(' | ')}`)
+    .toBeLessThan(150_000);
+  expect(Math.abs(final - releve.barycentreX)).toBeGreaterThan(250_000);
+
+  await page.locator('#switchCameraFollow').uncheck();
+});
+
+
 test('un enregistrement avec suivi de caméra produit une vidéo et déplace la vue', async ({ page }) => {
   // Le mode images attend le chargement des tuiles à chaque frame : c'est le mode
   // recommandé avec le suivi, et celui qu'on vérifie de bout en bout.

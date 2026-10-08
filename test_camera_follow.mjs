@@ -589,6 +589,21 @@ test('simulation fitDay : le zoom d\'arrivée se propage au jour suivant', () =>
         createCameraJourney([3000, 0], [6000, 0], 6, 4, { endZoom: 8 }).totalDurationMs);
 });
 
+test('simulation fitDay : la cible est le centre de l\'étendue, pas le barycentre', () => {
+    // Jour « grappe + cache isolée » : le barycentre [1500,0] est loin du
+    // centre de l'étendue [3000,0]. Le zoom calculé par zoomForExtent suppose
+    // la vue centrée sur l'étendue — viser le barycentre laisserait l'isolée
+    // hors cadre.
+    const days = [{ center: [1500, 0], extent: [1000, -1600, 5000, 1600] }];
+    const base = { ...vue, dynamism: 2, paddingPx: 0 };
+    const avec = simulateCameraJourneys(days, { ...base, fitDay: true });
+    const sans = simulateCameraJourneys(days, { ...base, fitDay: false });
+    assert.equal(avec.journeyCount, 1);
+    assert.deepEqual(avec.journeysByDay[0].targetCenter, [3000, 0]);
+    // Sans fitDay, comportement historique : la cible reste le barycentre.
+    assert.deepEqual(sans.journeysByDay[0].targetCenter, [1500, 0]);
+});
+
 // ---------- Piste de caméra précalculée ----------
 
 test('la simulation expose les trajets eux-mêmes, chaînés par leurs cibles', () => {
