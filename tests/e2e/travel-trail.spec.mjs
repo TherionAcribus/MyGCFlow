@@ -264,11 +264,18 @@ test('le suivi « tête du trait » fait glisser la caméra derrière le stylo',
   await page.locator('#switchCameraFollow').check();
   await expect(page.locator('#selectCameraTarget')).toBeEnabled();
   await page.locator('#selectCameraTarget').selectOption('trail');
-  // Le dynamisme (zone de confort par jour) est sans objet dans ce mode.
+  // Le dynamisme (zone de confort par jour) est sans objet dans ce mode, et
+  // la condition « trajet activé » est rappelée sous le sélecteur.
   await expect(page.locator('#selectCameraDynamism')).toBeDisabled();
+  await expect(page.locator('#helpCameraTargetTrail')).toBeVisible();
   expect(await page.evaluate(async () => (
     (await import('/static/js/index.js')).options.animation.cameraFollowMode
   ))).toBe('trail');
+
+  // Rythme explicitement fixé via l'UI : le runtime partagé conserve le
+  // réglage de la spec précédente — sans cela l'animation peut durer ~1 s
+  // et le stylo finir avant que la caméra ait glissé.
+  await setRhythm(page, 2);
 
   // Un arrêt régulier par jour, espacés d'environ 2° de longitude vers
   // l'ouest : le stylo traverse la carte, la caméra doit suivre.
@@ -285,19 +292,18 @@ test('le suivi « tête du trait » fait glisser la caméra derrière le stylo',
     const view = app.getMap().getView();
     view.setCenter(ol.proj.fromLonLat([2.3522, 48.8566]));
     view.setZoom(5);
-    app.options.animation.timePerDay = 500;
   });
 
   const suivi = await page.evaluate(async () => {
     const app = await import('/static/js/index.js');
     const view = app.getMap().getView();
     app.startAnimation();
+    // Fenêtre fixe (pas de break sur la fin du stylo) : la caméra finit son
+    // glissement après l'animation, c'est aussi du mouvement à capturer.
     const positions = [];
-    for (let i = 0; i < 24; i++) {
+    for (let i = 0; i < 20; i++) {
       await new Promise((resolve) => setTimeout(resolve, 300));
       positions.push(view.getCenter()[0]);
-      const state = app.getTravelTrailDebugState?.();
-      if (state?.totalLength > 0 && state.penLength >= state.totalLength) break;
     }
     app.stopAnimation();
     return positions;

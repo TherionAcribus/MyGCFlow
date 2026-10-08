@@ -591,6 +591,7 @@ const btnRecordAnimation = document.getElementById('btnRecordAnimation');
     const switchCameraFollow = document.getElementById('switchCameraFollow');
     const selectCameraDynamism = document.getElementById('selectCameraDynamism');
     const selectCameraTarget = document.getElementById('selectCameraTarget');
+    const helpCameraTargetTrail = document.getElementById('helpCameraTargetTrail');
     const syncCameraFollowControls = () => {
         const trailMode = selectCameraTarget?.value === 'trail';
         // Le dynamisme (zone de confort par jour) n'a pas d'effet en suivi de
@@ -599,6 +600,8 @@ const btnRecordAnimation = document.getElementById('btnRecordAnimation');
             selectCameraDynamism.disabled = !switchCameraFollow?.checked || trailMode;
         }
         if (selectCameraTarget) selectCameraTarget.disabled = !switchCameraFollow?.checked;
+        // Rappeler la condition du mode (trajet activé) quand il est choisi.
+        if (helpCameraTargetTrail) helpCameraTargetTrail.hidden = !trailMode;
     };
     if (switchCameraFollow) {
         switchCameraFollow.addEventListener('change', () => {
@@ -5054,14 +5057,16 @@ export function syncAnimationOptionsUI() {
     if (switchCameraFollow) switchCameraFollow.checked = animation.cameraFollow === true;
     const selectCameraDynamism = document.getElementById('selectCameraDynamism');
     const selectCameraTarget = document.getElementById('selectCameraTarget');
+    const trailTarget = animation.cameraFollowMode === 'trail';
     if (selectCameraTarget) {
-        selectCameraTarget.value = animation.cameraFollowMode === 'trail' ? 'trail' : 'days';
+        selectCameraTarget.value = trailTarget ? 'trail' : 'days';
         selectCameraTarget.disabled = animation.cameraFollow !== true;
     }
+    const helpCameraTargetTrail = document.getElementById('helpCameraTargetTrail');
+    if (helpCameraTargetTrail) helpCameraTargetTrail.hidden = !trailTarget;
     if (selectCameraDynamism) {
         selectCameraDynamism.value = String(animation.cameraDynamism);
-        selectCameraDynamism.disabled = animation.cameraFollow !== true
-            || animation.cameraFollowMode === 'trail';
+        selectCameraDynamism.disabled = animation.cameraFollow !== true || trailTarget;
     }
 
     refreshTimingPlan({ save: false });
