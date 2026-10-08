@@ -696,6 +696,8 @@ test('le suivi de caméra glisse vers les caches, se stabilise et rend la main',
     for (const day of [...app.pointsByDate.keys()]) {
       for (const feature of app.pointsByDate.get(day)) feature.geometry.coordinates = [-74.006, 40.7128];
     }
+    // Mutation en place : invalider les mémoïsations indexées sur la révision.
+    app.bumpPointsByDateRevision();
     const view = app.getMap().getView();
     view.setCenter(ol.proj.fromLonLat([2.3522, 48.8566]));
     view.setZoom(6);
@@ -720,6 +722,7 @@ test('le suivi de caméra glisse vers les caches, se stabilise et rend la main',
     for (const day of [...app.pointsByDate.keys()]) {
       for (const feature of app.pointsByDate.get(day)) feature.geometry.coordinates = [...cible];
     }
+    app.bumpPointsByDateRevision();
     view.setCenter(ol.proj.fromLonLat([2.3522, 48.8566]));
     view.setZoom(6);
     const departX = view.getCenter()[0];
@@ -837,6 +840,7 @@ test('un enregistrement avec suivi de caméra produit une vidéo et déplace la 
     for (const day of [...app.pointsByDate.keys()]) {
       for (const feature of app.pointsByDate.get(day)) feature.geometry.coordinates = [...cible];
     }
+    app.bumpPointsByDateRevision();
     app.options.record.fps = 12;
     return map.getView().getCenter()[0];
   });
@@ -907,6 +911,7 @@ async function setUpCameraRoundTrips(page, duration) {
       for (const feature of app.pointsByDate.get(day)) feature.geometry.coordinates = [...cible];
       side = -side;
     }
+    app.bumpPointsByDateRevision();
     app.refreshTimingPlan({ save: false });
     const travel = app.estimateCameraTravel();
     return {

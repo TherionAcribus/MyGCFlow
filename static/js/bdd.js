@@ -15,6 +15,14 @@ export const pointsByDate = new Map();
 export let pointsByDateRevision = 0;
 export let totalCaches = 0;
 
+// À appeler quand les features indexées ont été modifiées en place (coordonnées
+// mutées sans reconstruction de l'index — scénarios de test notamment) : les
+// mémoïsations indexées sur la révision (traits de déplacement, résumés de la
+// simulation caméra) seraient sinon figées sur l'ancien contenu.
+export function bumpPointsByDateRevision() {
+    pointsByDateRevision++;
+}
+
 let readLoadingToast = null;
 let noCacheToast = null;
 

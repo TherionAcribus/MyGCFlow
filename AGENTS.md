@@ -21,6 +21,11 @@ Autres repères :
   le cadrage ». Quand la vue est déjà au centre/zoom par défaut,
   `saveMapCenterSettings` (ui.js) ne voit aucun changement et n'envoie pas le
   PUT — le serveur garde `map_default_center: null`.
+- Muter `feature.geometry.coordinates` en place dans un `page.evaluate`
+  n'incrémente pas `pointsByDateRevision` : les mémoïsations indexées dessus
+  (résumés de la simulation caméra, trajet du trail) restent figées. Appeler
+  `app.bumpPointsByDateRevision()` après la mutation — exemple dans
+  `video-export.spec.mjs`.
 - Base vide → l'app force le retour sur l'onglet Données à chaque résolution
   du statut ; `updateDataAvailabilityUI` saute ce bascule quand l'URL porte
   un hash — les specs qui ont besoin de l'onglet Style doivent ouvrir `/#style`.
