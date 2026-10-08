@@ -376,6 +376,9 @@ class AnimationPrefs:
     # La vue suit les caches du jour selon une zone de confort réglable.
     camera_follow: bool = False
     camera_dynamism: int = 2
+    # Cible du suivi : "days" (les caches du jour qui s'affiche) ou "trail"
+    # (la tête du trait de déplacement, glissement continu derrière le stylo).
+    camera_follow_mode: str = "days"
     # Miroir persisté de la durée du flash : le réglage appartient au thème
     # (FlashOptions.duration), cette clé reste la valeur de repli au démarrage
     # quand aucun thème ne s'applique, et pour les anciens thèmes sans durée.
@@ -750,6 +753,8 @@ def coerce_animation_settings(d: dict, defaults: Optional[AnimationPrefs] = None
     a.extra_end_seconds = _clamp_float(d.get("extra_end_seconds"), a.extra_end_seconds, 0.0, 3600.0)
     a.camera_follow = bool(d.get("camera_follow", a.camera_follow))
     a.camera_dynamism = _clamp_int(d.get("camera_dynamism"), a.camera_dynamism, 1, 4)
+    follow_mode = d.get("camera_follow_mode", a.camera_follow_mode)
+    a.camera_follow_mode = follow_mode if follow_mode in ("days", "trail") else a.camera_follow_mode
     a.flash_duration_ms = _clamp_int(d.get("flash_duration_ms"), a.flash_duration_ms, *FLASH_DURATION_RANGE)
     a.trail_duration_ms = _clamp_int(d.get("trail_duration_ms"), a.trail_duration_ms, 100, 10000)
     return a

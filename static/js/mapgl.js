@@ -125,12 +125,14 @@ import {
     createCameraJourney,
     createCameraPacing,
     INTENSE_EXTRA_ZOOM_OUT,
+    LONG_TRAVEL_THRESHOLD_PX,
     MIN_CRUISE_ZOOM,
     normalizeCameraDynamism,
     pacedDayMs,
     sampleCameraJourney,
     shouldMoveCamera,
     simulateCameraJourneys,
+    stepCenter,
     zoomForExtent,
 } from './camera_follow.mjs';
 import { dateToDayNumber, dayNumberToDate } from './evolution_timeline.mjs';
@@ -147,6 +149,7 @@ import {
     scheduleStroke,
     SEGMENT_HIDDEN,
     SEGMENT_JUMP_DASHED,
+    SEGMENT_NORMAL,
     splitTrailRuns,
     TRAIL_DEFAULTS,
     trailOpacity,
@@ -368,6 +371,10 @@ let cameraRenderKey = null;
 let cameraRenderTimeout = null;
 let cameraDynamism = 2;
 const CAMERA_RENDER_TIMEOUT_MS = 6000;
+// Suivi « tête du trait » : réponse du glissement amorti derrière le stylo
+// (~1 s) — assez vif pour rester sur le géocacheur, assez amorti pour ne pas
+// trembler à chaque frame. Indépendant de la cadence (exponentielle).
+const TRAIL_FOLLOW_RESPONSE_MS = 1000;
 // Durée imposée (rythme « Par durée » ou « Sur la musique ») : les trajets sont
 // simulés au lancement, puis chaque date reçoit le temps qui permet de finir à
 // l'heure (cf. prepareCameraPacing). null quand les trajets s'ajoutent librement.
@@ -380,6 +387,13 @@ let cameraPacing = null;
 // mode réactif (repli).
 let cameraTrack = null;
 let cameraTrackStartAt = null;    // origine de la piste sur l'horloge de `now`
+// Suivi « tête du trait » (options.animation.cameraFollowMode === 'trail') :
+// la caméra glisse en continu derrière le stylo du trail au lieu de recadrer
+// chaque jour. Vol dédié quand le stylo franchit un saut, lissage amorti sinon.
+let trailCamJourney = null;
+let trailCamJourneyStartedAt = null;
+let trailCamLastNow = null;       // dernier échantillon, pour le dt du lissage
+let trailCamSuspended = false;    // pointerdown : l'utilisateur a repris la main
 // Temps écoulé et avancement de l'animation en cours, pour ce calcul.
 let cameraPacingState = { elapsedMs: 0, travelSpentMs: 0, dayIndex: 0, travelFrames: 0, retarget: false };
 // Facteur appliqué à la durée des trajets : accélération pour tenir la durée
@@ -928,6 +942,9 @@ function updateCameraFollow(now) {
         cancelCameraFollowMotion();
         return false;
     }
+    if (effectiveCameraFollowMode() === 'trail') {
+        return updateTrailCameraFollow(now);
+    }
     if (cameraTrack) {
         // Mode « piste » : la position est lue sur la piste précalculée,
         // indexée sur la même horloge que les points (temps vidéo en capture
@@ -1055,6 +1072,98 @@ function updateCameraFollow(now) {
     return true;
 }
 
+// Mode de suivi : 'days' (par jour affiché — piste précalculée ou réactif,
+// défaut) ou 'trail' (glissement continu derrière la tête du trait de
+// déplacement). 'trail' exige les traits activés ; sinon retombe sur 'days'.
+function effectiveCameraFollowMode() {
+    return pkg.options.animation?.cameraFollowMode === 'trail'
+        && currentTrailOptions().enabled === true ? 'trail' : 'days';
+}
+
+// Position carte de la tête du trait à l'instant `now` (même horloge que les
+// points), avec l'index du sommet courant — path.kind y distingue les sauts
+// (pointillés, tronçon masqué) des segments normaux.
+function trailHeadMapPosition(now) {
+    const state = trailState;
+    if (!state?.pen || !state?.path) return null;
+    const head = pointAtLength(state.path, penLengthAt(state.pen, now));
+    return head ? { x: head.x, y: head.y, segment: head.segment, path: state.path } : null;
+}
+
+// Mode « tête du trait » : la caméra suit le stylo en amorti exponentiel
+// (stepCenter, zoom inchangé) ; quand le stylo s'engage sur un saut ou
+// s'éloigne au-delà du seuil de grand trajet, un vol dédié la rejoint — cible :
+// la fin du saut, pas la position instantanée du stylo. Les dates ne sont
+// jamais en pause : le retour ne sert qu'à entretenir le rendu.
+function updateTrailCameraFollow(now) {
+    const view = map.getView();
+    if (trailCamSuspended) return false;
+    // Vol dédié en cours (saut du stylo) : il va jusqu'au bout, puis le suivi
+    // amorti reprend la main sur la position du stylo d'alors.
+    if (trailCamJourney) {
+        const st = sampleCameraJourney(trailCamJourney, now - trailCamJourneyStartedAt);
+        if (st) {
+            view.setCenter(st.center);
+            view.setZoom(st.zoom);
+        }
+        if (!st || st.done) {
+            trailCamJourney = null;
+            trailCamJourneyStartedAt = null;
+            trailCamLastNow = null;
+        } else {
+            return true;
+        }
+    }
+    const head = trailHeadMapPosition(now);
+    if (!head) {
+        trailCamLastNow = null;
+        return false;
+    }
+    const center = view.getCenter();
+    const resolution = view.getResolution() || 1;
+    const distancePx = center
+        ? Math.hypot(head.x - center[0], head.y - center[1]) / resolution
+        : Infinity;
+    const { path } = head;
+    const jumping = path.kind[head.segment] !== SEGMENT_NORMAL;
+    if (jumping || distancePx > LONG_TRAVEL_THRESHOLD_PX) {
+        // Le stylo traverse un saut : viser son point de chute (dernier sommet
+        // du tronçon de saut) plutôt que sa position en vol.
+        let target = [head.x, head.y];
+        if (jumping) {
+            let v = head.segment;
+            while (v + 1 < path.cum.length && path.kind[v + 1] !== SEGMENT_NORMAL) v++;
+            target = [path.xy[2 * v], path.xy[2 * v + 1]];
+        }
+        trailCamJourney = createCameraJourney(
+            center, target, view.getZoom(), resolution,
+            {
+                path: effectiveCameraPath(),
+                minCruiseZoom: cameraMinZoomFloor(),
+                durationScale: cameraDurationScale,
+            },
+        );
+        if (trailCamJourney) {
+            trailCamJourneyStartedAt = isRecording
+                ? now - 1000 / (Number(pkg.options.record.framesPerSec) || 30)
+                : now;
+            prefetchBasemapTiles(target, view.getZoom());
+            trailCamLastNow = null;
+            return true;
+        }
+    }
+    const dtMs = trailCamLastNow === null ? 0 : now - trailCamLastNow;
+    trailCamLastNow = now;
+    const step = stepCenter(center, [head.x, head.y], dtMs, {
+        responseMs: TRAIL_FOLLOW_RESPONSE_MS,
+        resolution,
+        extent: cameraExtent,
+    });
+    if (!step.moved) return false;
+    view.setCenter(step.center);
+    return true;
+}
+
 function cameraFollowBlocksDates() {
     // Mode piste : les dates ne sont jamais en pause — les trajets se jouent
     // pendant leur affichage, la branche « pause » devient inerte partout.
@@ -1109,12 +1218,18 @@ function cancelCameraFollowMotion() {
     // pour un trajet réactif en cours — la vue reste où il l'a mise.
     cameraTrack = null;
     cameraTrackStartAt = null;
+    // Suivi « tête du trait » : le vol dédié est abandonné avec le reste ;
+    // la suspension (pointerdown) est armée par le gestionnaire d'événement.
+    trailCamJourney = null;
+    trailCamJourneyStartedAt = null;
+    trailCamLastNow = null;
 }
 
 // À appeler au début d'une lecture ou d'un enregistrement : la caméra repart de
 // la vue courante, et ne sortira pas de l'étendue des caches affichées.
 function resetCameraFollow() {
     cancelCameraFollowMotion();
+    trailCamSuspended = false;
     cameraExtent = null;
     // Zoom de départ de toute l'animation : borne supérieure du zoom d'arrivée
     // « fitDay » — la caméra ne se rapproche jamais plus que la vue choisie.
@@ -1125,6 +1240,9 @@ function resetCameraFollow() {
     // vue glisserait de nouveau vers la cible juste après son déplacement.
     if (!cameraInteractionKey) {
         cameraInteractionKey = map.on('pointerdown', () => {
+            // Mode « tête du trait » : la tête bouge en continu — sans
+            // suspension explicite, le suivi reprendrait dès la frame suivante.
+            trailCamSuspended = true;
             cancelCameraFollowMotion();
         });
     }
@@ -1194,7 +1312,10 @@ function effectiveCameraFitDay() {
 // déclenché à l'affichage de son jour, dates en pause) pour comparaison ou
 // diagnostic.
 function effectiveCameraTrack() {
-    return pkg.options.animation?.cameraTrack !== false;
+    // Sans objet en suivi « tête du trait » : mouvement continu, sans trajets
+    // planifiés ni pause des dates — la piste n'a rien à rejouer.
+    return pkg.options.animation?.cameraTrack !== false
+        && effectiveCameraFollowMode() !== 'trail';
 }
 
 // Plancher de zoom pendant un vol 'fly'. La vue (multiWorld absent, donc false)
@@ -1297,6 +1418,9 @@ function simulateCurrentCameraJourneys({ forRecording } = {}) {
 // le plan de durée affiché (ui.js, refreshTimingPlan).
 export function estimateCameraTravel() {
     if (!pkg.options.animation?.cameraFollow || isEvolutionPage()) return null;
+    // Suivi « tête du trait » : aucun trajet à simuler — le mouvement continu
+    // ne met jamais les dates en pause, la durée annoncée est exacte.
+    if (effectiveCameraFollowMode() === 'trail') return null;
     if (!animationInProgress && !isRecording && !isMediaRecording) {
         lastCameraTravelEstimate = simulateCurrentCameraJourneys();
     }
@@ -1322,11 +1446,18 @@ function prepareCameraPacing({ timelineScale = 1, forRecording = isRecording || 
     cameraPacingState = { elapsedMs: 0, travelSpentMs: 0, dayIndex: 0, travelFrames: 0, retarget: false };
     cameraDurationScale = stretch;
 
+    const budgetMs = Number(pkg.options.animation?.cameraTimeBudgetMs);
+
+    // Suivi « tête du trait » : mouvement continu qui ne met jamais les dates
+    // en pause — aucune piste ni répartition à construire, tout le budget
+    // d'animation va aux dates et la durée demandée est tenue telle quelle.
+    if (effectiveCameraFollowMode() === 'trail') {
+        return { travelMs: 0, datesMs: budgetMs > 0 ? budgetMs : null };
+    }
+
     const simulation = simulateCurrentCameraJourneys({ forRecording });
     if (!simulation) return null;
     lastCameraTravelEstimate = simulation;
-
-    const budgetMs = Number(pkg.options.animation?.cameraTimeBudgetMs);
 
     // Mode « piste » (défaut) : les trajets simulés sont planifiés pour se
     // terminer pile quand leur jour s'affiche, pendant l'affichage des jours
@@ -2408,6 +2539,10 @@ function abortRecordingOnError(error) {
     // directement sur la dernière cible — on la jette donc avec la capture.
     cameraTrack = null;
     cameraTrackStartAt = null;
+    // Idem pour un vol « tête du trait » en cours, indexé sur la même horloge.
+    trailCamJourney = null;
+    trailCamJourneyStartedAt = null;
+    trailCamLastNow = null;
 
     // Fermer la modale de chargement et les toasts
     try { pkg.closeModalLoading && pkg.closeModalLoading(); } catch(_) {}
@@ -2649,6 +2784,10 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
         // échantillon pourrait téléporter la vue sur la dernière cible.
         cameraTrack = null;
         cameraTrackStartAt = null;
+        // Idem pour un vol « tête du trait » en cours, indexé sur cette horloge.
+        trailCamJourney = null;
+        trailCamJourneyStartedAt = null;
+        trailCamLastNow = null;
         endHighResCapture();
         removeCaptureVisibilityGuard();
         imgOutCanvas = imgOutCtx = null; // libérer le canvas réutilisé (P4)
@@ -3874,7 +4013,9 @@ function displayFeaturesForDates(dates, pointOptions, flashOptions, record, info
 
     // Mode piste : la caméra suit la piste précalculée (updateCameraFollow) —
     // aucune cible réactive à poser, sinon elle se superposerait à la piste.
-    if (pkg.options.animation?.cameraFollow && !cameraTrack) {
+    // Mode « tête du trait » : idem, la cible est la position du stylo.
+    if (pkg.options.animation?.cameraFollow && !cameraTrack
+        && effectiveCameraFollowMode() !== 'trail') {
         // La caméra vise le barycentre des caches du jour ; c'est le lissage qui
         // fait le mouvement, pas ce saut de cible.
         const coordinates = newFeatures.map((feature) => ol.proj.fromLonLat([

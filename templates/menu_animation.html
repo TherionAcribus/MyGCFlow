@@ -180,6 +180,11 @@
                                 <option value="3">{{ _("3 — Dynamique : hors zone centrale") }}</option>
                                 <option value="4">{{ _("4 — Intense : recentrage et zoom systématiques") }}</option>
                             </select>
+                            <label for="selectCameraTarget" class="form-label mb-1">{{ _("Cible du suivi") }}</label>
+                            <select id="selectCameraTarget" class="form-select form-select-sm mb-2" disabled>
+                                <option value="days">{{ _("Chaque jour, quand il s'affiche") }}</option>
+                                <option value="trail">{{ _("La tête du trait de déplacement") }}</option>
+                            </select>
                             <small id="helpCameraFollow" class="form-hint text-muted">{{ _("La vue glisse vers les caches du jour. Les trajets sont comptés dans la durée : en « Par durée » ou « Sur la musique », la vidéo garde la durée demandée.") }} <a href="/guide#animation" target="_blank">{{ _("En savoir plus") }}</a></small>
                         </div>
                         {% endif %}

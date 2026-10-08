@@ -590,10 +590,20 @@ const btnRecordAnimation = document.getElementById('btnRecordAnimation');
     // thème), appliquée à la prochaine lecture ou au prochain enregistrement.
     const switchCameraFollow = document.getElementById('switchCameraFollow');
     const selectCameraDynamism = document.getElementById('selectCameraDynamism');
+    const selectCameraTarget = document.getElementById('selectCameraTarget');
+    const syncCameraFollowControls = () => {
+        const trailMode = selectCameraTarget?.value === 'trail';
+        // Le dynamisme (zone de confort par jour) n'a pas d'effet en suivi de
+        // la tête du trait — le glissement amorti n'en dépend pas.
+        if (selectCameraDynamism) {
+            selectCameraDynamism.disabled = !switchCameraFollow?.checked || trailMode;
+        }
+        if (selectCameraTarget) selectCameraTarget.disabled = !switchCameraFollow?.checked;
+    };
     if (switchCameraFollow) {
         switchCameraFollow.addEventListener('change', () => {
             pkg.options.animation.cameraFollow = switchCameraFollow.checked;
-            if (selectCameraDynamism) selectCameraDynamism.disabled = !switchCameraFollow.checked;
+            syncCameraFollowControls();
             pkg.setCameraTilePreload?.(switchCameraFollow.checked);
             refreshTimingPlan();
         });
@@ -601,6 +611,13 @@ const btnRecordAnimation = document.getElementById('btnRecordAnimation');
     if (selectCameraDynamism) {
         selectCameraDynamism.addEventListener('change', () => {
             pkg.options.animation.cameraDynamism = Math.min(4, Math.max(1, Number(selectCameraDynamism.value) || 2));
+            refreshTimingPlan();
+        });
+    }
+    if (selectCameraTarget) {
+        selectCameraTarget.addEventListener('change', () => {
+            pkg.options.animation.cameraFollowMode = selectCameraTarget.value === 'trail' ? 'trail' : 'days';
+            syncCameraFollowControls();
             refreshTimingPlan();
         });
     }
@@ -2721,6 +2738,7 @@ function animationSettingsPayload() {
         extra_end_seconds: Math.max(0, Number(a.extraEndSeconds) || 0),
         camera_follow: a.cameraFollow === true && !isEvolutionPage(),
         camera_dynamism: Math.min(4, Math.max(1, Math.round(Number(a.cameraDynamism) || 2))),
+        camera_follow_mode: a.cameraFollowMode === 'trail' ? 'trail' : 'days',
         // Miroir de la durée du flash (réglage de thème) : persistée comme
         // repli au démarrage quand aucun thème ne s'applique.
         flash_duration_ms: Math.round(Number(pkg.options.flash?.duration) || 1000),
@@ -2766,6 +2784,9 @@ function applyAnimationSettingsPayload(anim) {
     if (isEvolutionPage()) a.cameraFollow = false;
     const cameraDynamism = Math.round(Number(anim.camera_dynamism));
     if (cameraDynamism >= 1 && cameraDynamism <= 4) a.cameraDynamism = cameraDynamism;
+    if (anim.camera_follow_mode === 'trail' || anim.camera_follow_mode === 'days') {
+        a.cameraFollowMode = anim.camera_follow_mode;
+    }
     const flash = Number(anim.flash_duration_ms);
     if (Number.isFinite(flash) && flash > 0) {
         pkg.options.flash = pkg.options.flash || {};
@@ -4552,6 +4573,14 @@ function setTimingFieldValidity(input, feedbackId, ok, message) {
     return ok;
 }
 
+// Suivi « tête du trait » réellement actif : l'option est choisie ET les
+// traits de déplacement sont activés — sinon le suivi retombe sur le mode
+// par jour (même condition que effectiveCameraFollowMode côté mapgl.js).
+function isCameraTrailMode() {
+    return pkg.options?.animation?.cameraFollowMode === 'trail'
+        && normalizeTrailOptions(pkg.options?.trail).enabled === true;
+}
+
 // Recalcule le plan depuis l'état courant, répercute les valeurs dérivées
 // (options.animation.timePerDay, record.totalTimeInMilliSec) et rafraîchit
 // l'affichage (champs en lecture seule, synthèse, erreurs, avertissements,
@@ -4636,6 +4665,8 @@ export function refreshTimingPlan({ save = true } = {}) {
 
     // Suivi de caméra : les trajets sont simulés depuis la vue courante, pour
     // que leur durée entre dans le plan au lieu de s'y ajouter par surprise.
+    // En mode « tête du trait » il n'y a pas de trajets à simuler (mouvement
+    // continu) — estimateCameraTravel renvoie alors null.
     const cameraTravel = animation.cameraFollow === true ? pkg.estimateCameraTravel?.() : null;
 
     // 2. Plan de timing partagé (aperçu, MediaRecorder, Images).
@@ -4656,8 +4687,9 @@ export function refreshTimingPlan({ save = true } = {}) {
         cameraJourneyCount: cameraTravel ? cameraTravel.journeyCount : 0,
         // Piste de caméra (défaut) : les trajets se superposent à l'affichage
         // des dates. cameraTrack:false revient au mode réactif, où les dates
-        // sont en pause pendant chaque déplacement.
-        cameraOverlap: animation.cameraTrack !== false,
+        // sont en pause pendant chaque déplacement. Suivi « tête du trait » :
+        // mouvement continu — jamais de pause non plus.
+        cameraOverlap: animation.cameraTrack !== false || isCameraTrailMode(),
     });
     lastTimingPlan = plan;
 
@@ -4760,8 +4792,10 @@ function renderTimingSummary(plan) {
         // (données absentes), elle ne reste qu'un minimum.
         const cameraTravelKnown = Number.isFinite(plan.cameraTravelMs);
         // Mode piste : la durée est exacte même sans simulation connue — les
-        // trajets se jouent pendant les dates, rien ne s'ajoute.
-        const cameraAddsTravel = pkg.options.animation?.cameraFollow === true && !cameraTravelKnown && !plan.cameraOverlap;
+        // trajets se jouent pendant les dates, rien ne s'ajoute. Mode « tête
+        // du trait » : mouvement continu, pas de trajets à ajouter non plus.
+        const cameraAddsTravel = pkg.options.animation?.cameraFollow === true && !cameraTravelKnown
+            && !plan.cameraOverlap && !isCameraTrailMode();
         const parts = [
             t('${n} jours', { n: plan.dayCount }),
             t('${n} jours/s', { n: Number(plan.daysPerSecond.toFixed(2)) }),
@@ -4891,8 +4925,9 @@ function renderTimingMessages(plan, fieldsValid) {
     }
     // En mode piste les dates ne sont jamais en pause : les trois avertissements
     // qui la décrivent n'ont plus lieu d'être (les trajets restent annoncés dans
-    // le résumé via cameraTravelMs).
-    if (plan?.valid && pkg.options.animation?.cameraFollow === true && !plan.cameraOverlap) {
+    // le résumé via cameraTravelMs). En mode « tête du trait » non plus :
+    // la caméra glisse en continu, sans trajets.
+    if (plan?.valid && pkg.options.animation?.cameraFollow === true && !plan.cameraOverlap && !isCameraTrailMode()) {
         const compressed = plan.warnings.find((w) => w.type === 'camera-travel-compressed');
         if (!Number.isFinite(plan.cameraTravelMs)) {
             warnings.push(t('Le suivi de caméra met les dates en pause pendant chaque déplacement. La durée et le nombre d\'images affichés sont des minimums ; le résultat sera plus long et peut dépasser la durée de la musique.'));
@@ -5000,6 +5035,7 @@ function normalizeAnimationOptions() {
     animation.cameraFollow = animation.cameraFollow === true;
     const cameraDynamism = Math.round(Number(animation.cameraDynamism));
     animation.cameraDynamism = cameraDynamism >= 1 && cameraDynamism <= 4 ? cameraDynamism : 2;
+    animation.cameraFollowMode = animation.cameraFollowMode === 'trail' ? 'trail' : 'days';
 }
 
 // Reflète pkg.options.animation dans les contrôles de l'onglet Animation, puis
@@ -5017,9 +5053,15 @@ export function syncAnimationOptionsUI() {
     const switchCameraFollow = document.getElementById('switchCameraFollow');
     if (switchCameraFollow) switchCameraFollow.checked = animation.cameraFollow === true;
     const selectCameraDynamism = document.getElementById('selectCameraDynamism');
+    const selectCameraTarget = document.getElementById('selectCameraTarget');
+    if (selectCameraTarget) {
+        selectCameraTarget.value = animation.cameraFollowMode === 'trail' ? 'trail' : 'days';
+        selectCameraTarget.disabled = animation.cameraFollow !== true;
+    }
     if (selectCameraDynamism) {
         selectCameraDynamism.value = String(animation.cameraDynamism);
-        selectCameraDynamism.disabled = animation.cameraFollow !== true;
+        selectCameraDynamism.disabled = animation.cameraFollow !== true
+            || animation.cameraFollowMode === 'trail';
     }
 
     refreshTimingPlan({ save: false });

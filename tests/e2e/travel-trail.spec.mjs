@@ -253,6 +253,82 @@ for (const mode of ['images', 'mediarecorder']) {
   });
 }
 
+// Suivi de caméra « tête du trait » (cameraFollowMode === 'trail') : la caméra
+// glisse en continu derrière le stylo au lieu de recadrer chaque jour.
+test('le suivi « tête du trait » fait glisser la caméra derrière le stylo', async ({ page }) => {
+  await openWithFixture(page);
+  await enableTrail(page);
+
+  // Le choix de cible est proposé dans l'onglet Animation, activé par le suivi.
+  await page.locator('a[href="#animation"]').click();
+  await page.locator('#switchCameraFollow').check();
+  await expect(page.locator('#selectCameraTarget')).toBeEnabled();
+  await page.locator('#selectCameraTarget').selectOption('trail');
+  // Le dynamisme (zone de confort par jour) est sans objet dans ce mode.
+  await expect(page.locator('#selectCameraDynamism')).toBeDisabled();
+  expect(await page.evaluate(async () => (
+    (await import('/static/js/index.js')).options.animation.cameraFollowMode
+  ))).toBe('trail');
+
+  // Un arrêt régulier par jour, espacés d'environ 2° de longitude vers
+  // l'ouest : le stylo traverse la carte, la caméra doit suivre.
+  await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    let index = 0;
+    for (const day of [...app.pointsByDate.keys()]) {
+      for (const feature of app.pointsByDate.get(day)) {
+        feature.geometry.coordinates = [-74 + index * 2, 40 + index * 0.5];
+      }
+      index++;
+    }
+    app.bumpPointsByDateRevision();
+    const view = app.getMap().getView();
+    view.setCenter(ol.proj.fromLonLat([2.3522, 48.8566]));
+    view.setZoom(5);
+    app.options.animation.timePerDay = 500;
+  });
+
+  const suivi = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    const view = app.getMap().getView();
+    app.startAnimation();
+    const positions = [];
+    for (let i = 0; i < 24; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      positions.push(view.getCenter()[0]);
+      const state = app.getTravelTrailDebugState?.();
+      if (state?.totalLength > 0 && state.penLength >= state.totalLength) break;
+    }
+    app.stopAnimation();
+    return positions;
+  });
+
+  // La caméra a glissé vers l'ouest (x décroissant) en plusieurs positions
+  // distinctes — un mouvement continu, pas un saut unique.
+  expect(new Set(suivi.map((x) => Math.round(x))).size).toBeGreaterThan(3);
+  expect(suivi.at(-1)).toBeLessThan(suivi[0]);
+
+  // Une interaction rend la main : la vue déplacée ne repart pas vers le stylo.
+  const centrePose = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    const map = app.getMap();
+    const cible = ol.proj.fromLonLat([-4, 47.4]);
+    map.getView().setCenter(cible);
+    map.dispatchEvent({ type: 'pointerdown' });
+    return cible;
+  });
+  await page.waitForTimeout(1000);
+  const centreFinal = await page.evaluate(async () => (
+    (await import('/static/js/index.js')).getMap().getView().getCenter()
+  ));
+  expect(Math.abs(centreFinal[0] - centrePose[0])).toBeLessThan(1);
+  expect(Math.abs(centreFinal[1] - centrePose[1])).toBeLessThan(1);
+
+  // Préférences globales : les restaurer pour les specs suivantes (page partagée).
+  await page.locator('#selectCameraTarget').selectOption('days');
+  await page.locator('#switchCameraFollow').uncheck();
+});
+
 test("l'aperçu affiche le trajet calculé et l'inspecte au clic", async ({ page }) => {
   await openWithFixture(page);
   await enableTrail(page);

@@ -182,6 +182,13 @@ class AnimationCoercionTests(unittest.TestCase):
         self.assertEqual(coerce_animation_settings({"rhythm_mode": "music"}).rhythm_mode, "music")
         self.assertEqual(coerce_animation_settings({"rhythm_mode": "duration"}).rhythm_mode, "duration")
 
+    def test_camera_follow_mode_accepts_only_known_values(self):
+        self.assertEqual(coerce_animation_settings({"camera_follow_mode": "trail"}).camera_follow_mode, "trail")
+        self.assertEqual(coerce_animation_settings({"camera_follow_mode": "days"}).camera_follow_mode, "days")
+        self.assertEqual(coerce_animation_settings({"camera_follow_mode": "lune"}).camera_follow_mode, "days")
+        self.assertEqual(coerce_animation_settings({"camera_follow_mode": 42}).camera_follow_mode, "days")
+        self.assertEqual(coerce_animation_settings({}).camera_follow_mode, "days")
+
     def test_garbage_payload_yields_defaults(self):
         self.assertEqual(coerce_animation_settings(None), AnimationPrefs())
 
