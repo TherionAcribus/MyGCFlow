@@ -211,6 +211,13 @@ export function splitCameraBudget({ animationMs, minDatesMs = 0, travelMs = 0 } 
 // l'animation ; en modes 'duration' et 'music' elle est prise sur la durée
 // demandée, qui reste respectée (cf. splitCameraBudget).
 //
+// cameraOverlap (piste de caméra précalculée, camera_follow.mjs) : les trajets
+// se jouent PENDANT l'affichage des dates — chacun se termine pile quand son
+// jour s'affiche. Rien n'est donc ajouté ni retranché : tout le budget
+// d'animation va aux dates, les frames de trajet SONT des frames de dates, et
+// la durée annoncée est exacte. cameraTravelMs reste exposé à titre
+// informationnel (résumé UI), sans aucun effet sur le calcul.
+//
 // Retourne un plan : compte de jours, décomposition des durées, frames,
 // minimum réalisable, `errors` (entrées invalides — ne pas lancer) et
 // `warnings` (limites appliquées, ex. pincement au minimum ou musique plus
@@ -228,6 +235,7 @@ export function buildTimingPlan({
     allowMultipleDaysPerFrame = false,
     cameraTravelMs,
     cameraJourneyCount = 0,
+    cameraOverlap = false,
 } = {}) {
     const errors = [];
     const warnings = [];
@@ -261,17 +269,24 @@ export function buildTimingPlan({
     const cameraKnown = typeof cameraTravelMs === 'number' && Number.isFinite(cameraTravelMs);
     const cameraRawMs = cameraKnown ? Math.max(0, cameraTravelMs) : 0;
     const cameraJourneys = cameraKnown ? Math.max(0, Math.round(finiteNumber(cameraJourneyCount, 0))) : 0;
+    // Mode piste : les trajets se superposent à l'affichage des dates — aucune
+    // pause à financer, aucune image de raccord à produire.
+    const overlap = cameraOverlap === true && cameraKnown;
     // Images de raccord des trajets en capture image par image (attente du
     // rendu final). En mode 'rate' elles s'ajoutent à la durée annoncée ;
     // en 'duration'/'music' elles sont déjà absorbées par le pacing dans le
-    // budget — la valeur n'est alors exposée que pour l'UI.
+    // budget — la valeur n'est alors exposée que pour l'UI. En mode piste,
+    // elles n'existent pas : les frames de trajet sont des frames de dates.
     const cameraOverheadMs = cameraKnown
-        ? cameraJourneys * CAMERA_JOURNEY_EXTRA_FRAMES * 1000 / safeFps
+        ? (overlap ? 0 : cameraJourneys * CAMERA_JOURNEY_EXTRA_FRAMES * 1000 / safeFps)
         : NaN;
-    let cameraAppliedMs = cameraRawMs;
+    // Part de la durée des trajets retranchée des dates (mode réactif) ; nulle
+    // en mode piste puisque les trajets occupent le temps des dates elles-mêmes.
+    let cameraAppliedMs = overlap ? 0 : cameraRawMs;
     let cameraScale = 1;
     // Durée d'animation (dates + trajets) que le moteur doit tenir ; NaN quand
-    // les trajets s'ajoutent librement à l'animation.
+    // les trajets s'ajoutent librement à l'animation. En mode piste, c'est la
+    // durée d'animation entièrement dévolue aux dates.
     let cameraTimeBudgetMs = NaN;
 
     const mode = rhythm && rhythm.mode;
@@ -281,8 +296,10 @@ export function buildTimingPlan({
             errors.push('daysPerSecond');
         } else {
             timePerDayMs = 1000 / p.value;
+            // Mode piste : les trajets ne s'ajoutent pas — l'animation est la
+            // durée des dates seules.
             animationMs = days > 0
-                ? days * timePerDayMs + cameraRawMs + (cameraKnown ? cameraOverheadMs : 0)
+                ? days * timePerDayMs + (overlap ? 0 : cameraRawMs + (cameraKnown ? cameraOverheadMs : 0))
                 : 0;
         }
     } else if (mode === 'duration' || mode === 'music') {
@@ -297,11 +314,11 @@ export function buildTimingPlan({
                 // Trop court pour une frame par jour : le minimum est appliqué
                 // et signalé au lieu d'être corrigé silencieusement.
                 clampedToMinimum = true;
-                animationMs = minAnimationMs + cameraRawMs;
+                animationMs = minAnimationMs + cameraAppliedMs;
                 warnings.push({
                     type: 'minimum-total',
                     minimumMs: minTotalMs,
-                    appliedMs: minTotalMs + cameraRawMs,
+                    appliedMs: minTotalMs + cameraAppliedMs,
                     requestedMs: p.value,
                     reason: 'one-frame-per-day',
                 });
@@ -309,12 +326,16 @@ export function buildTimingPlan({
                     warnings.push({
                         type: 'music-shorter-than-minimum',
                         musicMs: p.value,
-                        appliedMs: minTotalMs + cameraRawMs,
+                        appliedMs: minTotalMs + cameraAppliedMs,
                     });
                 }
             } else {
                 animationMs = animRequested;
-                if (cameraKnown) {
+                if (overlap) {
+                    // Tout le budget d'animation revient aux dates : les
+                    // trajets sont joués pendant leur affichage.
+                    cameraTimeBudgetMs = animRequested;
+                } else if (cameraKnown) {
                     const split = splitCameraBudget({
                         animationMs: animRequested,
                         minDatesMs: minAnimationMs,
@@ -375,12 +396,18 @@ export function buildTimingPlan({
         totalFrameCount: frames.totalFrameCount,
         framesPerDayAverage: frames.framesPerDayAverage,
         // Suivi de caméra : NaN quand la durée des trajets n'est pas connue.
-        cameraTravelMs: cameraKnown ? cameraAppliedMs : NaN,
+        // En mode piste la durée simulée reste exposée pour le résumé UI —
+        // rien n'est retranché aux dates (cameraAppliedMs vaut alors 0).
+        cameraTravelMs: cameraKnown ? (overlap ? cameraRawMs : cameraAppliedMs) : NaN,
         cameraTravelRawMs: cameraKnown ? cameraRawMs : NaN,
         cameraTravelScale: cameraScale,
         cameraJourneyCount: cameraJourneys,
         cameraOverheadMs,
         cameraTimeBudgetMs,
+        // Mode piste réellement actif : exige la durée simulée. Sans elle le
+        // runtime retombe sur le suivi réactif (dates en pause), avertissement
+        // « dates en pause » donc encore pertinent côté UI.
+        cameraOverlap: overlap,
         // Durée de la musique retenue pour l'UI : la comparaison avec la vidéo
         // (plus courte / plus longue → coupée en fin de vidéo) est affichée par
         // ui.js, qui seul connaît le fichier sélectionné.

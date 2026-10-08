@@ -97,6 +97,62 @@ export function setCameraTilePreload(enabled) {
     }
 }
 
+// Précharge les tuiles du fond de carte actif couvrant une vue donnée. Appelé
+// au début d'un trajet de caméra : la destination est connue dès le départ du
+// vol, les tuiles ont donc ~la durée du trajet pour arriver — moins d'attente
+// du rendu final et moins de zones grises à l'atterrissage. Seules les couches
+// visibles à source tuilée sont concernées (la couche vectorielle et les
+// sources sans getTile/getTileGrid sont ignorées).
+// `limit` borne le nombre de chargements déclenchés par appel.
+const CAMERA_PREFETCH_TILE_LIMIT = 150;
+
+export function prefetchBasemapTiles(center, zoom, limit = CAMERA_PREFETCH_TILE_LIMIT) {
+    try {
+        const view = olMap?.getView?.();
+        const size = olMap?.getSize?.();
+        const targetZoom = Number(zoom);
+        if (!view || !Array.isArray(center) || !Number.isFinite(targetZoom)
+            || !Array.isArray(size) || !(size[0] > 0) || !(size[1] > 0)) return;
+        const resolution = view.getResolutionForZoom(targetZoom);
+        if (!(resolution > 0)) return;
+        const halfW = (size[0] / 2) * resolution;
+        const halfH = (size[1] / 2) * resolution;
+        const extent = [
+            center[0] - halfW, center[1] - halfH,
+            center[0] + halfW, center[1] + halfH,
+        ];
+        const projection = view.getProjection();
+        const pixelRatio = window.devicePixelRatio || 1;
+        let budget = Math.max(0, Number(limit) || 0);
+        for (const { layer } of Object.values(basemaps)) {
+            if (budget <= 0) break;
+            if (!layer || layer.getVisible?.() !== true) continue;
+            const source = layer.getSource?.();
+            const tileGrid = source?.getTileGrid?.();
+            if (!tileGrid || typeof source.getTile !== 'function') continue;
+            // Le rendu pioche les tuiles au niveau entier le plus proche du
+            // zoom effectif — on vise le même, borné par la pyramide de la
+            // source.
+            const z = Math.min(tileGrid.getMaxZoom(),
+                Math.max(tileGrid.getMinZoom(), Math.round(targetZoom)));
+            const range = tileGrid.getTileRangeForExtentAndZ(extent, z);
+            for (let x = range.minX; x <= range.maxX && budget > 0; x++) {
+                for (let y = range.minY; y <= range.maxY && budget > 0; y++) {
+                    const tile = source.getTile(z, x, y, pixelRatio, projection);
+                    // TileState.LOADED = 2 : les tuiles déjà en cache n'ont rien
+                    // à refaire ; IDLE et ERROR (repli) sont (re)lancées.
+                    if (tile && typeof tile.load === 'function' && tile.getState?.() !== 2) {
+                        tile.load();
+                        budget--;
+                    }
+                }
+            }
+        }
+    } catch (e) {
+        console.warn('prefetchBasemapTiles:', e);
+    }
+}
+
 
 // --- Suivi des erreurs de chargement de tuiles ---
 // Signale les échecs réseau/CDN plutôt que de laisser des zones de carte

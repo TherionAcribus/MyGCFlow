@@ -468,3 +468,83 @@ test('buildImageTimingPlan compte les images des trajets de caméra', () => {
     assert.equal(plan.totalFrameCount, 90);
     assert.equal(plan.framesPerDayAverage, 3);
 });
+
+// ---------- Piste de caméra (cameraOverlap) ----------
+//
+// Mode par défaut : les trajets se jouent PENDANT l'affichage des dates —
+// chacun se termine pile quand son jour s'affiche. Rien n'est ajouté ni
+// retranché : tout le budget d'animation va aux dates.
+
+test('cameraOverlap en rythme jours/s : l\'animation est la durée des dates seules', () => {
+    const plan = buildTimingPlan({
+        dayCount: 100,
+        rhythm: { mode: 'rate', daysPerSecond: 10 },
+        fps: 30,
+        tailFreezeMs: 3000,
+        cameraTravelMs: 20000,
+        cameraJourneyCount: 15,
+        cameraOverlap: true,
+    });
+    assert.equal(plan.valid, true);
+    assert.equal(plan.cameraOverlap, true);
+    assert.equal(plan.timePerDayMs, 100);
+    // Ni trajets ni images de raccord ne s'ajoutent : les frames de trajet
+    // SONT des frames de dates.
+    assert.equal(plan.animationMs, 10000);
+    assert.equal(plan.totalDurationMs, 13000);
+    assert.equal(plan.cameraOverheadMs, 0);
+    // La durée simulée reste exposée à titre informationnel (résumé UI).
+    assert.equal(plan.cameraTravelMs, 20000);
+    assert.equal(plan.cameraTravelRawMs, 20000);
+    assert.equal(plan.cameraJourneyCount, 15);
+    assert.ok(Number.isNaN(plan.cameraTimeBudgetMs), 'aucune durée à tenir');
+    // Aucune image supplémentaire : même nombre de frames que sans trajet.
+    const sansTrajets = buildTimingPlan({
+        dayCount: 100, rhythm: { mode: 'rate', daysPerSecond: 10 }, fps: 30, tailFreezeMs: 3000,
+    });
+    assert.equal(plan.totalFrameCount, sansTrajets.totalFrameCount);
+});
+
+test('cameraOverlap en durée imposée : tout le budget va aux dates', () => {
+    const plan = buildTimingPlan({
+        dayCount: 100,
+        rhythm: { mode: 'duration', totalDurationMs: 63000 },
+        fps: 30,
+        tailFreezeMs: 3000,
+        cameraTravelMs: 90000,
+        cameraJourneyCount: 3,
+        cameraOverlap: true,
+    });
+    assert.equal(plan.valid, true);
+    assert.equal(plan.totalDurationMs, 63000);
+    // Pas de partage : timePerDay = animation entière / jours, et le budget
+    // exposé au moteur est l'animation complète (désormais entièrement dates).
+    assert.equal(plan.animationMs, 60000);
+    assert.equal(plan.timePerDayMs, 600);
+    assert.equal(plan.cameraTimeBudgetMs, 60000);
+    assert.equal(plan.cameraTravelScale, 1);
+    // Des trajets qui dépasseraient tout ne produisent pas de compression ni
+    // d'avertissement : ils se jouent pendant les dates, au pire en retard sur
+    // leur jour (comportement documenté dans camera_follow.mjs).
+    assert.ok(!plan.warnings.some((w) => w.type === 'camera-travel-compressed'));
+});
+
+test('cameraOverlap ne change rien quand la durée des trajets est inconnue', () => {
+    const base = buildTimingPlan({
+        dayCount: 100, rhythm: { mode: 'rate', daysPerSecond: 10 }, fps: 30,
+    });
+    const overlapSansSim = buildTimingPlan({
+        dayCount: 100, rhythm: { mode: 'rate', daysPerSecond: 10 }, fps: 30,
+        cameraOverlap: true,
+    });
+    assert.equal(overlapSansSim.cameraOverlap, false);
+    assert.deepEqual(overlapSansSim.animationMs, base.animationMs);
+    // Sans cameraOverlap, le comportement actuel est strictement conservé.
+    const reactif = buildTimingPlan({
+        dayCount: 100, rhythm: { mode: 'rate', daysPerSecond: 10 }, fps: 30,
+        tailFreezeMs: 3000, cameraTravelMs: 20000, cameraJourneyCount: 15,
+    });
+    assert.equal(reactif.cameraOverlap, false);
+    assert.equal(reactif.animationMs, 30500);
+    assert.equal(reactif.cameraOverheadMs, 500);
+});

@@ -83,7 +83,7 @@ import { createMapDirtyTracker } from './map_dirty.mjs';
 // Fonds de carte extraits dans basemaps.js. `olMap` est importé sous le nom
 // `map` : c'est une liaison vivante d'ES modules, donc l'affectation faite par
 // createMap() côté basemaps.js est visible ici sans accesseur.
-import { olMap as map, resetTileErrorCount, warnIfTileErrors } from './basemaps.js';
+import { olMap as map, prefetchBasemapTiles, resetTileErrorCount, warnIfTileErrors } from './basemaps.js';
 import { perfMetrics, recordingPerformanceMonitor, resetPerfMetrics } from './recording_perf.js';
 import {
     awaitAllUploads,
@@ -117,7 +117,9 @@ import { CAPTURE_IMAGE_QUALITY, CAPTURE_IMAGE_TYPE } from './capture_image_forma
 import { captureRatioFor } from './capture_resolution.mjs';
 import { normalizeColorFidelity } from './color_fidelity.mjs';
 import {
+    buildCameraTrack,
     CAMERA_JOURNEY_EXTRA_FRAMES,
+    cameraTrackStateAt,
     centroid,
     clampToExtent,
     createCameraJourney,
@@ -370,6 +372,14 @@ const CAMERA_RENDER_TIMEOUT_MS = 6000;
 // simulés au lancement, puis chaque date reçoit le temps qui permet de finir à
 // l'heure (cf. prepareCameraPacing). null quand les trajets s'ajoutent librement.
 let cameraPacing = null;
+// Mode « piste » (défaut, options.animation.cameraTrack !== false) : tous les
+// trajets simulés au lancement sont planifiés sur la timeline — chacun se
+// termine pile quand son jour s'affiche, pendant l'affichage des jours
+// précédents (buildCameraTrack, camera_follow.mjs). Les dates ne sont donc
+// jamais en pause et la durée annoncée est exacte. null hors animation ou en
+// mode réactif (repli).
+let cameraTrack = null;
+let cameraTrackStartAt = null;    // origine de la piste sur l'horloge de `now`
 // Temps écoulé et avancement de l'animation en cours, pour ce calcul.
 let cameraPacingState = { elapsedMs: 0, travelSpentMs: 0, dayIndex: 0, travelFrames: 0, retarget: false };
 // Facteur appliqué à la durée des trajets : accélération pour tenir la durée
@@ -918,6 +928,57 @@ function updateCameraFollow(now) {
         cancelCameraFollowMotion();
         return false;
     }
+    if (cameraTrack) {
+        // Mode « piste » : la position est lue sur la piste précalculée,
+        // indexée sur la même horloge que les points (temps vidéo en capture
+        // image par image, temps actif en capture rapide, temps réel sinon).
+        // Pas d'attente « rendercomplete » : les dates ne s'arrêtant plus,
+        // elle n'aurait plus rien à geler — le trajet suivant démarre à l'heure.
+        if (cameraTrackStartAt === null) cameraTrackStartAt = now;
+        // En capture image par image la pose posée en pré-rendu s'applique à la
+        // frame suivante (cf. ci-dessus) : échantillonner une frame en avance
+        // fait arriver chaque trajet pile sur sa frame de date, comme le recul
+        // d'origine du trajet réactif.
+        const trackNow = now - cameraTrackStartAt
+            + (isRecording ? 1000 / (Number(pkg.options.record.framesPerSec) || 30) : 0);
+        // La piste continue tant qu'un trajet est actif ou à venir : sans cela,
+        // un départ programmé dans le silence entre deux dates ne serait jamais
+        // échantillonné en lecture live (aucune frame pendant le trou).
+        const events = cameraTrack.events || [];
+        const lastEvent = events[events.length - 1];
+        const trackEndMs = lastEvent
+            ? lastEvent.startMs + Math.max(0, Number(lastEvent.durationMs) || 0)
+            : 0;
+        // Préchargement des tuiles des destinations à venir : chaque trajet
+        // connaît sa cible dès le lancement — déclencher les chargements ~une
+        // durée de trajet avant le départ laisse aux tuiles le temps d'arriver
+        // pour l'atterrissage (et d'être prêtes pour les frames capturées).
+        while (cameraTrack.prefetchIndex < events.length) {
+            const event = events[cameraTrack.prefetchIndex];
+            if (event.startMs - event.durationMs > trackNow) break;
+            prefetchBasemapTiles(event.journey.targetCenter, event.journey.endZoom);
+            cameraTrack.prefetchIndex++;
+        }
+        const pending = trackNow < trackEndMs;
+        const state = cameraTrackStateAt(cameraTrack, trackNow);
+        if (!state) return pending;
+        const view = map.getView();
+        const prevCenter = view.getCenter();
+        const prevZoom = view.getZoom();
+        const changed = !prevCenter
+            || prevCenter[0] !== state.center[0]
+            || prevCenter[1] !== state.center[1]
+            || prevZoom !== state.zoom;
+        // Ne poser la vue que si elle change : un setCenter identique notifie
+        // quand même un changement (ol.Object ne compare pas), ce qui
+        // entretiendrait une boucle de rendu après la fin de la piste — pile
+        // ce que le retour `false` final est censé éviter.
+        if (changed) {
+            view.setCenter(state.center);
+            view.setZoom(state.zoom);
+        }
+        return pending || changed;
+    }
     if (cameraRenderPending) return false;
     if (!cameraTarget) {
         cameraTravelPending = false;
@@ -970,6 +1031,9 @@ function updateCameraFollow(now) {
             beginCameraRenderWait();
             return false;
         }
+        // La destination est connue dès le départ du vol : lancer le chargement
+        // de ses tuiles maintenant leur laisse la durée du trajet pour arriver.
+        prefetchBasemapTiles(cameraJourney.targetCenter, cameraJourney.endZoom);
     }
 
     const state = sampleCameraJourney(cameraJourney, now - cameraJourneyStartedAt);
@@ -992,7 +1056,10 @@ function updateCameraFollow(now) {
 }
 
 function cameraFollowBlocksDates() {
+    // Mode piste : les dates ne sont jamais en pause — les trajets se jouent
+    // pendant leur affichage, la branche « pause » devient inerte partout.
     return pkg.options.animation?.cameraFollow === true
+        && !cameraTrack
         && cameraTravelPending;
 }
 
@@ -1038,6 +1105,10 @@ function cancelCameraFollowMotion() {
     cameraJourney = null;
     cameraJourneyStartedAt = null;
     cameraTravelPending = false;
+    // Piste précalculée : pointerdown de l'utilisateur = fin du suivi, comme
+    // pour un trajet réactif en cours — la vue reste où il l'a mise.
+    cameraTrack = null;
+    cameraTrackStartAt = null;
 }
 
 // À appeler au début d'une lecture ou d'un enregistrement : la caméra repart de
@@ -1116,6 +1187,14 @@ function effectiveCameraPath() {
 // au « retour au zoom de départ » pour comparaison ou diagnostic.
 function effectiveCameraFitDay() {
     return pkg.options.animation?.cameraFitDay !== false;
+}
+
+// Piste de caméra précalculée avec anticipation : mode par défaut. L'option
+// non documentée cameraTrack:false restaure le mode réactif (chaque trajet
+// déclenché à l'affichage de son jour, dates en pause) pour comparaison ou
+// diagnostic.
+function effectiveCameraTrack() {
+    return pkg.options.animation?.cameraTrack !== false;
 }
 
 // Plancher de zoom pendant un vol 'fly'. La vue (multiWorld absent, donc false)
@@ -1238,6 +1317,8 @@ export function estimateCameraTravel() {
 function prepareCameraPacing({ timelineScale = 1, forRecording = isRecording || isMediaRecording } = {}) {
     const stretch = Math.max(1, Number(timelineScale) || 1);
     cameraPacing = null;
+    cameraTrack = null;
+    cameraTrackStartAt = null;
     cameraPacingState = { elapsedMs: 0, travelSpentMs: 0, dayIndex: 0, travelFrames: 0, retarget: false };
     cameraDurationScale = stretch;
 
@@ -1246,6 +1327,32 @@ function prepareCameraPacing({ timelineScale = 1, forRecording = isRecording || 
     lastCameraTravelEstimate = simulation;
 
     const budgetMs = Number(pkg.options.animation?.cameraTimeBudgetMs);
+
+    // Mode « piste » (défaut) : les trajets simulés sont planifiés pour se
+    // terminer pile quand leur jour s'affiche, pendant l'affichage des jours
+    // précédents. Tout le budget va aux dates — rien n'est retranché.
+    if (effectiveCameraTrack()) {
+        const dayMs = budgetMs > 0 && simulation.dayCount > 0
+            ? budgetMs * stretch / simulation.dayCount
+            // timePerDay est déjà étiré par la capture rapide (la préférence est
+            // multipliée avant l'appel) : stretch ne s'y applique pas, au
+            // contraire du budget qui vient du plan non étiré.
+            : Number(pkg.options.animation.timePerDay);
+        cameraTrack = buildCameraTrack(simulation.journeysByDay, { dayMs, timeScale: stretch });
+        // Prochaine destination dont les tuiles ne sont pas encore demandées —
+        // comptable runtime, cf. updateCameraFollow (pas une donnée de la piste).
+        cameraTrack.prefetchIndex = 0;
+        // Origine de la piste : posée paresseusement au premier échantillon
+        // d'updateCameraFollow. Ne PAS la prendre ici sur sampleAppearClock :
+        // cette horloge est raccordée monotone — basculer sur la source
+        // 'frames'/'mediarecorder' préserve la valeur courante, le temps vidéo
+        // zéro n'y vaut donc PAS zéro. Le premier appel reçoit le `now` du tout
+        // premier rendu de l'animation, ce qui aligne pile la piste.
+        cameraTrackStartAt = null;
+        dbgMapgl('[CAMERA] Piste précalculée:', simulation.journeyCount, 'trajets,', dayMs, 'ms/jour');
+        return { travelMs: simulation.totalMs, datesMs: budgetMs > 0 ? budgetMs : null };
+    }
+
     if (!(budgetMs > 0) || !(simulation.dayCount > 0)) {
         return { travelMs: simulation.totalMs, datesMs: null };
     }
@@ -1559,6 +1666,10 @@ function finalizeAnimationEnd() {
     // des points filtrés, un changement de style peut repartir de `features`.
     animationInProgress = false;
     animationDatesComplete = false;
+    // La piste de caméra n'existe que pendant l'animation : hors de celle-ci
+    // l'état piste doit être nul (la cible réactive resterait sinon inhibée).
+    cameraTrack = null;
+    cameraTrackStartAt = null;
     if (isEvolutionPage()) endEvolutionTimeline();
 
     // Fin RÉELLE de l'animation atteinte. En mode MediaRecorder, c'est ici qu'il
@@ -1694,7 +1805,10 @@ export function startAnimation(restart=false) {
         // ne peut donc pas gonfler indéfiniment quand le rendu ne suit pas.
         const maxDaysThisFrame = isEvolutionPage()
             ? EVOLUTION_MAX_DAYS_PER_FRAME
-            : (pkg.options.animation?.cameraFollow ? 1 : MAX_DAYS_PER_FRAME);
+            // La limite à 1 jour/frame ne se justifie qu'en mode réactif, où
+            // chaque date affichée peut figer l'animation pour un trajet. En
+            // mode piste les dates ne s'arrêtent pas : rattrapage normal.
+            : (pkg.options.animation?.cameraFollow && !cameraTrack ? 1 : MAX_DAYS_PER_FRAME);
         // Durée imposée avec suivi de caméra : le temps d'une date se déduit de
         // ce qui reste une fois les trajets à venir retranchés. Le temps déjà
         // accumulé vers la date suivante est exclu du temps écoulé : le
@@ -1759,6 +1873,9 @@ export function stopAnimation(){
     animationLastTs = null;
     livePausedAt = null;
     livePauseOffsetMs = 0;
+    // La piste de caméra précalculée appartient à l'animation qui s'arrête.
+    cameraTrack = null;
+    cameraTrackStartAt = null;
 
     endHoldTimer.clear();
 
@@ -1994,6 +2111,11 @@ function startRecordingProcess(){
 
     dbgMapgl('[RECORD] 🚀 Démarrage enregistrement avec date:', currentDate, '->', pkg.metadata.endDate);
 
+    // Remise à zéro du suivi AVANT la simulation : resetCameraFollow annule
+    // tout mouvement en cours (cancelCameraFollowMotion), ce qui effacerait la
+    // piste fraîchement construite si elle était appelée après.
+    resetCameraFollow();
+
     // Calculer le total global puis répartir ses fractions entre les jours. Arrondir
     // chaque jour séparément faisait dériver fortement les vidéos longues.
     try {
@@ -2008,7 +2130,9 @@ function startRecordingProcess(){
             timePerDayMs: Number.isFinite(cameraPlan?.datesMs)
                 ? cameraPlan.datesMs / recordingDayCount
                 : pkg.options.animation.timePerDay,
-            cameraTravelMs: cameraPlan?.travelMs || 0,
+            // Mode piste : les frames de trajet SONT des frames de dates —
+            // nbOfImages ne reçoit plus d'extension trajets.
+            cameraTravelMs: cameraTrack ? 0 : (cameraPlan?.travelMs || 0),
             fps: pkg.options.record.fps,
             extraEndSeconds: pkg.options.animation.extraEndSeconds,
             tailFreezeMs: pkg.options.record?.mediaRecorder?.tailFreezeMs,
@@ -2116,8 +2240,8 @@ function startRecordingProcess(){
             displayWebGLPoints(filteredPointsAtStart, pkg.options.point);
         }
 
+        // resetCameraFollow a déjà été fait avant prepareCameraPacing, plus haut.
         createFlashElements();
-        resetCameraFollow();
         resetTravelTrail();
         initialCount = filteredPointsAtStart.length;
     }
@@ -2279,6 +2403,11 @@ function abortRecordingOnError(error) {
     imgOutCanvas = imgOutCtx = null; // libérer le canvas réutilisé (P4)
     try { recordingPerformanceMonitor.stopMonitoring(); } catch(_) {}
     try { setBackgroundAudioBlocked(false); } catch(_) {}
+    // La piste précalculée est indexée sur le temps vidéo : après l'abandon,
+    // l'horloge repasse au temps réel et son échantillonnage enverrait la vue
+    // directement sur la dernière cible — on la jette donc avec la capture.
+    cameraTrack = null;
+    cameraTrackStartAt = null;
 
     // Fermer la modale de chargement et les toasts
     try { pkg.closeModalLoading && pkg.closeModalLoading(); } catch(_) {}
@@ -2515,6 +2644,11 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
 
         // Traitement de fin
         isRecording = false; // Marquer la fin de l'enregistrement
+        // La piste précalculée est indexée sur le temps vidéo : une fois la
+        // capture terminée, l'horloge des points repasse au temps réel et un
+        // échantillon pourrait téléporter la vue sur la dernière cible.
+        cameraTrack = null;
+        cameraTrackStartAt = null;
         endHighResCapture();
         removeCaptureVisibilityGuard();
         imgOutCanvas = imgOutCtx = null; // libérer le canvas réutilisé (P4)
@@ -2905,7 +3039,10 @@ function computeTotalAnimationMs(){
         // sinon les trajets s'ajoutent au temps des dates.
         const cameraBudgetMs = Number(pkg.options.animation?.cameraTimeBudgetMs);
         const cameraTravel = estimateCameraTravel();
-        if (cameraTravel) base = cameraBudgetMs > 0 ? cameraBudgetMs : base + cameraTravel.totalMs;
+        // Mode piste : les trajets se jouent pendant les dates — rien à ajouter.
+        if (cameraTravel) base = cameraBudgetMs > 0
+            ? cameraBudgetMs
+            : (effectiveCameraTrack() ? base : base + cameraTravel.totalMs);
         const extraEndMs = Math.max(0, Number(pkg.options?.animation?.extraEndSeconds) || 0) * 1000;
         const endHoldMs = automaticEndHoldMs({
             tailFreezeMs: pkg.options.record?.mediaRecorder?.tailFreezeMs,
@@ -3735,7 +3872,9 @@ function displayFeaturesForDates(dates, pointOptions, flashOptions, record, info
     // dernier jour du lot, le compteur reçoit le total des points ajoutés.
     displayInfosForDate(infos, dates[dates.length - 1], newFeatures);
 
-    if (pkg.options.animation?.cameraFollow) {
+    // Mode piste : la caméra suit la piste précalculée (updateCameraFollow) —
+    // aucune cible réactive à poser, sinon elle se superposerait à la piste.
+    if (pkg.options.animation?.cameraFollow && !cameraTrack) {
         // La caméra vise le barycentre des caches du jour ; c'est le lissage qui
         // fait le mouvement, pas ce saut de cible.
         const coordinates = newFeatures.map((feature) => ol.proj.fromLonLat([

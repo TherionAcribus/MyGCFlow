@@ -702,7 +702,9 @@ test('le suivi de caméra glisse vers les caches, se stabilise et rend la main',
     view.setCenter(ol.proj.fromLonLat([2.3522, 48.8566]));
     view.setZoom(6);
   });
-  await expect(page.locator('#timingWarnings')).toContainText('dates en pause');
+  // Mode piste (défaut) : les trajets se jouent pendant l'affichage des dates —
+  // les dates ne sont jamais en pause, l'avertissement ne s'affiche plus.
+  await expect(page.locator('#timingWarnings')).not.toContainText('dates en pause');
   await expect(page.locator('#timingSummary')).toContainText('trajets de caméra');
   await expect.poll(() => page.evaluate(async () => {
     const app = await import('/static/js/index.js');
@@ -792,8 +794,10 @@ test('le suivi de caméra glisse vers les caches, se stabilise et rend la main',
   const releve = suivi.positions.map((x, i) => (
     `${Math.round(Math.abs(x - suivi.cibleX) / 1000)}km z${suivi.zooms[i].toFixed(2)} n${suivi.featureCounts[i]}`
   )).join(' | ');
-  expect(new Set(countsWhileMoving.filter((count) => count >= firstDisplayedCount)).size,
-    `les dates suivantes restent bloquées pendant le déplacement — ${releve}`).toBe(1);
+  // Mode piste : les dates ne sont JAMAIS en pause — le nombre de caches
+  // affichées continue de croître pendant le déplacement de la caméra.
+  expect(new Set(countsWhileMoving).size,
+    `les dates continuent de s'afficher pendant le déplacement — ${releve}`).toBeGreaterThan(1);
   expect(suivi.figee, 'la caméra finit par s\'arrêter').toBe(true);
   expect(Math.abs(suivi.stabilise - suivi.cibleX)).toBeLessThan(10_000);
   expect(suivi.resteOuLUtilisateurLAMise).toBe(true);
@@ -1014,7 +1018,7 @@ test('avec le suivi de caméra, la lecture « Par durée » finit à l\'heure', 
   expect(lecture.terminee).toBe(true);
   expect(lecture.ecartMax, 'la caméra s\'est bien déplacée').toBeGreaterThan(1_000);
   expect(lecture.caches).toBe(3);
-  // Les trajets (~10 s) ne s'ajoutent plus aux 12 s : ils sont pris dessus,
-  // accélérés puisqu'ils en dépasseraient la part réservée aux déplacements.
+  // Mode piste (défaut) : les trajets (~10 s) sont joués pendant l'affichage
+  // des jours précédents — les 12 s sont entièrement dévolues aux dates.
   expect(Math.abs(lecture.dureeMs - 12_000)).toBeLessThan(1_500);
 });

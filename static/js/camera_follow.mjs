@@ -484,6 +484,10 @@ export function simulateCameraJourneys(days, {
     const list = Array.isArray(days) ? days : [];
     const level = normalizeCameraDynamism(dynamism);
     const travelMsByDay = new Array(list.length).fill(0);
+    // Les trajets eux-mêmes, pas seulement leurs durées : le mode « piste » les
+    // rejoue tels quels à la lecture (buildCameraTrack) — aucune recréation,
+    // donc aucune dérive entre la simulation et l'exécution.
+    const journeysByDay = new Array(list.length).fill(null);
     let totalMs = 0;
     let journeyCount = 0;
     let current = Array.isArray(center) ? [...center] : null;
@@ -521,6 +525,7 @@ export function simulateCameraJourneys(days, {
         );
         if (!journey) continue;
         travelMsByDay[i] = journey.totalDurationMs;
+        journeysByDay[i] = journey;
         totalMs += journey.totalDurationMs;
         journeyCount += 1;
         // Seul le centre changeait auparavant ; avec fitDay, le zoom d'arrivée
@@ -529,7 +534,7 @@ export function simulateCameraJourneys(days, {
         current = journey.targetCenter;
         currentZoom = journey.endZoom;
     }
-    return { dayCount: list.length, travelMsByDay, totalMs, journeyCount };
+    return { dayCount: list.length, travelMsByDay, journeysByDay, totalMs, journeyCount };
 }
 
 // Prépare le suivi d'un budget de temps : `budgetMs` couvre l'affichage de
@@ -591,4 +596,112 @@ export function pacedDayMs(pacing, {
         - pacing.travelFrom[from]
         - overheadMs * pacing.journeysFrom[from];
     return Math.max(floor, remainingMs / (pacing.dayCount - index));
+}
+
+// ---------- Piste de caméra précalculée (mode par défaut) ----------
+//
+// Au lieu de déclencher chaque trajet quand son jour s'affiche (mode réactif,
+// dates en pause pendant le déplacement), tous les trajets simulés sont
+// planifiés sur la timeline : le trajet du jour i se termine pile quand le
+// jour s'affiche et s'exécute pendant l'affichage des jours précédents.
+// L'anticipation est possible parce que le trajet i part de la cible du trajet
+// précédent (la simulation chaîne déjà les positions via
+// current = journey.targetCenter) : démarrer plus tôt ne produit aucun saut.
+//
+// Conséquences : les dates ne sont jamais en pause, tout le budget d'animation
+// leur revient, et l'avancement est entièrement connu à l'avance — la durée
+// annoncée est exacte, quels que soient les trajets.
+
+// Planifie les trajets simulés sur la timeline. `journeysByDay` : une entrée
+// par jour animé (journey ou null), telle que simulateCameraJourneys la
+// retourne. `dayMs` : durée d'affichage d'un jour sur la timeline réelle
+// (étirement compris). `timeScale` : facteur appliqué aux durées des trajets
+// (ralentissement de la capture rapide) — le tracé est inchangé, seule la
+// vitesse de lecture l'est.
+//
+// Retourne { events: [{ dayIndex, journey, startMs, endMs, durationMs, rate }],
+// timeScale, totalMs } : pour chaque jour doté d'un trajet, endMs = i × dayMs
+// (le trajet finit pile quand son jour s'affiche) et startMs = max(endMs −
+// durée × timeScale, fin réelle du trajet précédent). Jamais de recouvrement :
+// si la durée dépasse la fenêtre libre, le trajet démarre où le précédent finit
+// et arrive en retard sur son jour — accepté (la date n'est pas retardée).
+//
+// En revanche aucun trajet ne peut dépasser la fin de la timeline (totalMs =
+// dayCount × dayMs) : en capture le nombre d'images est figé d'avance, en
+// lecture l'animation s'arrête — un trajet tronqué figerait la caméra en plein
+// vol. Le trajet concerné est donc accéléré : durationMs < durée naturelle et
+// rate = durée naturelle / durationMs accélère l'échantillonnage. Fenêtre nulle
+// (startMs ≥ totalMs) : durationMs 0, la caméra saute directement à la cible.
+export function buildCameraTrack(journeysByDay, { dayMs, timeScale = 1 } = {}) {
+    const list = Array.isArray(journeysByDay) ? journeysByDay : [];
+    const step = Math.max(0, Number(dayMs) || 0);
+    const scale = Number.isFinite(Number(timeScale)) && Number(timeScale) >= 0
+        ? Number(timeScale) : 1;
+    const totalMs = list.length * step;
+    const events = [];
+    let previousFinishMs = 0;
+    for (let i = 0; i < list.length; i++) {
+        const journey = list[i];
+        if (!journey) continue;
+        const journeyMs = Math.max(0, Number(journey.totalDurationMs) || 0);
+        const naturalMs = journeyMs * scale;
+        const endMs = i * step;
+        const startMs = Math.max(endMs - naturalMs, previousFinishMs);
+        const durationMs = Math.max(0, Math.min(naturalMs, totalMs - startMs));
+        // rate convertit le temps timeline en temps trajet pour
+        // sampleCameraJourney : timeScale quand le trajet tient dans sa
+        // fenêtre, davantage quand il est accéléré pour finir avec l'animation.
+        events.push({
+            dayIndex: i,
+            journey,
+            startMs,
+            endMs,
+            durationMs,
+            rate: durationMs > 0 ? journeyMs / durationMs : 1,
+        });
+        previousFinishMs = startMs + durationMs;
+    }
+    return { events, timeScale: scale, totalMs };
+}
+
+// Pose de la caméra à l'instant `nowMs` de la timeline de la piste :
+//  - trajet actif (startMs ≤ nowMs < startMs + durationMs) → position
+//    échantillonnée sur le trajet, moving: true (rate > 1 quand le trajet a
+//    été accéléré pour rester dans la timeline) ;
+//  - entre deux trajets ou après le dernier → dernière cible atteinte,
+//    moving: false ;
+//  - avant le premier trajet ou piste vide → null (la vue courante est
+//    conservée telle quelle).
+// Les appels arrivent par frames successives ; la recherche dichotomique sur
+// startMs reste exacte quel que soit le pas de temps (saut d'onglet masqué,
+// capture image par image).
+export function cameraTrackStateAt(track, nowMs) {
+    const events = track?.events;
+    if (!Array.isArray(events) || events.length === 0) return null;
+    const now = Number(nowMs);
+    if (!Number.isFinite(now)) return null;
+    // Dernier événement dont le départ est déjà passé : les startMs sont
+    // croissants par construction (jamais de recouvrement).
+    let lo = 0;
+    let hi = events.length;
+    while (lo < hi) {
+        const mid = (lo + hi) >> 1;
+        if (events[mid].startMs <= now) lo = mid + 1; else hi = mid;
+    }
+    const index = lo - 1;
+    if (index < 0) return null;
+    const event = events[index];
+    const durationMs = Math.max(0, Number(event.durationMs) || 0);
+    if (now < event.startMs + durationMs) {
+        const state = sampleCameraJourney(
+            event.journey,
+            (now - event.startMs) * (event.rate > 0 ? event.rate : 1),
+        );
+        if (state) return { center: state.center, zoom: state.zoom, moving: true };
+    }
+    return {
+        center: [...event.journey.targetCenter],
+        zoom: event.journey.endZoom,
+        moving: false,
+    };
 }

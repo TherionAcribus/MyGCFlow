@@ -2,7 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+    buildCameraTrack,
     CAMERA_PATH_MODES,
+    cameraTrackStateAt,
     centroid,
     clampToExtent,
     createCameraJourney,
@@ -585,4 +587,150 @@ test('simulation fitDay : le zoom d\'arrivée se propage au jour suivant', () =>
         createCameraJourney([0, 0], [3000, 0], 8, 1, { endZoom: 6 }).totalDurationMs);
     assert.equal(avec.travelMsByDay[1],
         createCameraJourney([3000, 0], [6000, 0], 6, 4, { endZoom: 8 }).totalDurationMs);
+});
+
+// ---------- Piste de caméra précalculée ----------
+
+test('la simulation expose les trajets eux-mêmes, chaînés par leurs cibles', () => {
+    const days = [null, jour(100, 0), jour(3000, 0), jour(3050, 20), jour(0, 0)];
+    const sim = simulateCameraJourneys(days, { ...vue, dynamism: 2 });
+    // journeysByDay : journey|null par jour — le runtime les rejoue tels quels,
+    // sans recréation (pas de dérive entre simulation et exécution).
+    assert.deepEqual(sim.journeysByDay.map((j) => j !== null), [false, false, true, false, true]);
+    assert.equal(sim.journeysByDay[2].totalDurationMs, sim.travelMsByDay[2]);
+    // Le départ d'un trajet est la cible du précédent : la caméra peut partir
+    // plus tôt sans produire aucun saut (cœur de l'anticipation).
+    assert.deepEqual(sim.journeysByDay[4].startCenter, sim.journeysByDay[2].targetCenter);
+});
+
+test('buildCameraTrack : chaque trajet finit pile quand son jour s\'affiche', () => {
+    const days = [null, jour(3000, 0), jour(6000, 0), jour(9000, 0)];
+    const sim = simulateCameraJourneys(days, { ...vue, dynamism: 2 });
+    assert.equal(sim.journeyCount, 3);
+    const track = buildCameraTrack(sim.journeysByDay, { dayMs: 10000 });
+    assert.equal(track.events.length, 3);
+    for (const event of track.events) {
+        assert.equal(event.endMs, event.dayIndex * 10000);
+        // Fenêtre assez large : le trajet démarre en avance pendant les jours
+        // précédents et termine à l'heure exacte de son jour.
+        assert.equal(event.startMs + event.journey.totalDurationMs * track.timeScale, event.endMs);
+        assert.ok(event.startMs < event.endMs);
+    }
+});
+
+test('buildCameraTrack : jamais de recouvrement, retard documenté si la fenêtre est trop courte', () => {
+    const journey1 = createCameraJourney([0, 0], [3000, 0], 8, 1);   // ~4 s
+    const journey2 = createCameraJourney([3000, 0], [6000, 0], 8, 1);
+    const track = buildCameraTrack([null, journey1, journey2], { dayMs: 1000 });
+    const [e1, e2] = track.events;
+    assert.equal(e1.dayIndex, 1);
+    assert.equal(e1.endMs, 1000);
+    // Fenêtre libre de 1 s pour ~4 s de trajet : départ à 0, arrivée en retard
+    // sur son jour — accepté, les dates ne sont jamais retardées pour autant.
+    assert.equal(e1.startMs, 0);
+    assert.ok(e1.startMs + e1.durationMs > e1.endMs);
+    // Le second trajet démarre là où le premier finit réellement (son départ
+    // est la cible du premier : continuité de caméra sans saut).
+    assert.equal(e2.endMs, 2000);
+    assert.equal(e2.startMs, e1.startMs + e1.durationMs);
+});
+
+test('buildCameraTrack : un trajet qui déborderait de la timeline est accéléré, jamais tronqué', () => {
+    const journey = createCameraJourney([0, 0], [3000, 0], 8, 1);   // ~2-4 s
+    assert.ok(journey.totalDurationMs > 1000);
+    // 2 jours à 1 s : le trajet du jour 1 ne peut finir qu'à la fin de
+    // l'animation (2 s) alors qu'il en faudrait ~4. Sans le plafond, la caméra
+    // serait figée en plein vol quand l'animation se termine (régression E2E :
+    // zoom coincé au creux de la parabole).
+    const track = buildCameraTrack([null, journey], { dayMs: 1000 });
+    const event = track.events[0];
+    assert.equal(track.totalMs, 2000);
+    assert.equal(event.startMs, 0);
+    assert.equal(event.durationMs, 2000);
+    assert.ok(event.durationMs < journey.totalDurationMs);
+    assert.ok(event.rate > 1);
+    // La piste se termine avec l'animation : la caméra est arrivée à la cible.
+    const fin = cameraTrackStateAt(track, event.startMs + event.durationMs);
+    assert.equal(fin.moving, false);
+    assert.deepEqual(fin.center, [3000, 0]);
+    assert.equal(fin.zoom, journey.endZoom);
+    // Mi-chemin accéléré : même position que le trajet naturel à mi-parcours.
+    const mid = cameraTrackStateAt(track, event.startMs + event.durationMs / 2);
+    const attendu = sampleCameraJourney(journey, journey.totalDurationMs / 2);
+    assert.equal(mid.moving, true);
+    assert.ok(Math.abs(mid.center[0] - attendu.center[0]) < 1e-6);
+    assert.ok(Math.abs(mid.zoom - attendu.zoom) < 1e-9);
+});
+
+test('buildCameraTrack : fenêtre nulle en fin de timeline — la caméra saute à la cible', () => {
+    const journey1 = createCameraJourney([0, 0], [3000, 0], 8, 1);
+    const journey2 = createCameraJourney([3000, 0], [6000, 0], 8, 1);
+    // Le premier trajet remplit toute la timeline ; le second n'a plus de
+    // fenêtre : durationMs 0, il atterrit instantanément au dernier instant.
+    const track = buildCameraTrack([journey1, journey2], { dayMs: 1000 });
+    const [e1, e2] = track.events;
+    assert.ok(e1.startMs + e1.durationMs <= track.totalMs);
+    assert.equal(e2.startMs, e1.startMs + e1.durationMs);
+    assert.equal(e2.durationMs, 0);
+    const atterri = cameraTrackStateAt(track, track.totalMs);
+    assert.equal(atterri.moving, false);
+    assert.deepEqual(atterri.center, [6000, 0]);
+});
+
+test('buildCameraTrack : timeScale étire les durées, pas les bornes des jours', () => {
+    const journey = createCameraJourney([0, 0], [3000, 0], 8, 1);
+    const track = buildCameraTrack([null, journey], { dayMs: 20000, timeScale: 2 });
+    const event = track.events[0];
+    assert.equal(event.endMs, 20000);
+    assert.equal(event.startMs, 20000 - journey.totalDurationMs * 2);
+    // À la moitié de la fenêtre étirée, le trajet est à mi-parcours de son
+    // temps propre : l'échantillonnage divise par timeScale.
+    const mid = cameraTrackStateAt(track, event.startMs + journey.totalDurationMs);
+    const attendu = sampleCameraJourney(journey, journey.totalDurationMs / 2);
+    assert.ok(Math.abs(mid.center[0] - attendu.center[0]) < 1e-6);
+    assert.ok(Math.abs(mid.center[1] - attendu.center[1]) < 1e-6);
+    assert.ok(Math.abs(mid.zoom - attendu.zoom) < 1e-9);
+    assert.equal(mid.moving, true);
+});
+
+test('cameraTrackStateAt : avant, pendant, entre et après les trajets', () => {
+    const journey1 = createCameraJourney([0, 0], [3000, 0], 8, 1);
+    const journey2 = createCameraJourney([3000, 0], [6000, 0], 8, 1);
+    const track = buildCameraTrack([null, journey1, null, journey2], { dayMs: 10000 });
+    const [e1, e2] = track.events;
+    const dur = journey1.totalDurationMs;
+    assert.equal(e1.startMs, 10000 - dur);
+    assert.equal(e2.startMs, 30000 - journey2.totalDurationMs);
+
+    // Avant le premier trajet (ou piste vide) : null, la vue est conservée.
+    assert.equal(cameraTrackStateAt(track, e1.startMs - 1), null);
+    assert.equal(cameraTrackStateAt(track, -5), null);
+    assert.equal(cameraTrackStateAt(null, 0), null);
+    assert.equal(cameraTrackStateAt(buildCameraTrack([null, null], { dayMs: 100 }), 500), null);
+
+    // Aux bornes : départ inclus, fin exclue.
+    const depart = cameraTrackStateAt(track, e1.startMs);
+    assert.equal(depart.moving, true);
+    assert.deepEqual(depart.center, [0, 0]);
+    assert.equal(depart.zoom, 8);
+    const enVol = cameraTrackStateAt(track, e1.startMs + dur / 2);
+    assert.equal(enVol.moving, true);
+    assert.ok(enVol.center[0] > 0 && enVol.center[0] < 3000);
+    const fin = cameraTrackStateAt(track, e1.startMs + dur);
+    assert.equal(fin.moving, false);
+    assert.deepEqual(fin.center, [3000, 0]);
+    assert.equal(fin.zoom, journey1.endZoom);
+
+    // Entre les deux trajets : la caméra reste sur la dernière cible atteinte.
+    const entre = cameraTrackStateAt(track, 20000);
+    assert.equal(entre.moving, false);
+    assert.deepEqual(entre.center, [3000, 0]);
+    assert.equal(entre.zoom, journey1.endZoom);
+
+    // Pendant le second trajet, puis après le dernier.
+    assert.equal(cameraTrackStateAt(track, e2.startMs + 1).moving, true);
+    const apres = cameraTrackStateAt(track, e2.startMs + journey2.totalDurationMs + 1);
+    assert.equal(apres.moving, false);
+    assert.deepEqual(apres.center, [6000, 0]);
+    assert.equal(apres.zoom, journey2.endZoom);
 });

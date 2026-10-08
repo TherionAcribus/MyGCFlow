@@ -4654,6 +4654,10 @@ export function refreshTimingPlan({ save = true } = {}) {
         allowMultipleDaysPerFrame: isEvolutionPage(),
         cameraTravelMs: cameraTravel ? cameraTravel.totalMs : undefined,
         cameraJourneyCount: cameraTravel ? cameraTravel.journeyCount : 0,
+        // Piste de caméra (défaut) : les trajets se superposent à l'affichage
+        // des dates. cameraTrack:false revient au mode réactif, où les dates
+        // sont en pause pendant chaque déplacement.
+        cameraOverlap: animation.cameraTrack !== false,
     });
     lastTimingPlan = plan;
 
@@ -4755,7 +4759,9 @@ function renderTimingSummary(plan) {
         // Trajets simulés : la durée affichée les comprend. Sans simulation
         // (données absentes), elle ne reste qu'un minimum.
         const cameraTravelKnown = Number.isFinite(plan.cameraTravelMs);
-        const cameraAddsTravel = pkg.options.animation?.cameraFollow === true && !cameraTravelKnown;
+        // Mode piste : la durée est exacte même sans simulation connue — les
+        // trajets se jouent pendant les dates, rien ne s'ajoute.
+        const cameraAddsTravel = pkg.options.animation?.cameraFollow === true && !cameraTravelKnown && !plan.cameraOverlap;
         const parts = [
             t('${n} jours', { n: plan.dayCount }),
             t('${n} jours/s', { n: Number(plan.daysPerSecond.toFixed(2)) }),
@@ -4883,7 +4889,10 @@ function renderTimingMessages(plan, fieldsValid) {
             // musicSyncStatus (plus précise) — pas de doublon.
         }
     }
-    if (plan?.valid && pkg.options.animation?.cameraFollow === true) {
+    // En mode piste les dates ne sont jamais en pause : les trois avertissements
+    // qui la décrivent n'ont plus lieu d'être (les trajets restent annoncés dans
+    // le résumé via cameraTravelMs).
+    if (plan?.valid && pkg.options.animation?.cameraFollow === true && !plan.cameraOverlap) {
         const compressed = plan.warnings.find((w) => w.type === 'camera-travel-compressed');
         if (!Number.isFinite(plan.cameraTravelMs)) {
             warnings.push(t('Le suivi de caméra met les dates en pause pendant chaque déplacement. La durée et le nombre d\'images affichés sont des minimums ; le résultat sera plus long et peut dépasser la durée de la musique.'));
