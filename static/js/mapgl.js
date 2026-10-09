@@ -409,7 +409,11 @@ let cameraTrackStartAt = null;    // origine de la piste sur l'horloge de `now`
 let trailCamJourney = null;
 let trailCamJourneyStartedAt = null;
 let trailCamLastNow = null;       // dernier échantillon, pour le dt du lissage
-let trailCamSuspended = false;    // pointerdown : l'utilisateur a repris la main
+// Vrai après une interaction manuelle pendant l'animation : la suspension vaut
+// pour TOUS les modes (piste, suivi par jour et tête du trait), jusqu'au prochain
+// lancement. Sans cet état commun, annuler la piste ne suffisait pas : le jour
+// suivant recréait une cible réactive et la caméra reprenait la main.
+let cameraFollowSuspended = false;
 // Temps écoulé et avancement de l'animation en cours, pour ce calcul.
 let cameraPacingState = { elapsedMs: 0, travelSpentMs: 0, dayIndex: 0, travelFrames: 0, retarget: false };
 // Facteur appliqué à la durée des trajets : accélération pour tenir la durée
@@ -958,6 +962,7 @@ function updateCameraFollow(now) {
         cancelCameraFollowMotion();
         return false;
     }
+    if (cameraFollowSuspended) return false;
     if (effectiveCameraFollowMode() === 'trail') {
         return updateTrailCameraFollow(now);
     }
@@ -1113,7 +1118,6 @@ function trailHeadMapPosition(now) {
 // jamais en pause : le retour ne sert qu'à entretenir le rendu.
 function updateTrailCameraFollow(now) {
     const view = map.getView();
-    if (trailCamSuspended) return false;
     // Vol dédié en cours (saut du stylo) : il va jusqu'au bout, puis le suivi
     // amorti reprend la main sur la position du stylo d'alors.
     if (trailCamJourney) {
@@ -1277,7 +1281,7 @@ function cancelCameraFollowMotion() {
 // la vue courante, et ne sortira pas de l'étendue des caches affichées.
 function resetCameraFollow() {
     cancelCameraFollowMotion();
-    trailCamSuspended = false;
+    cameraFollowSuspended = false;
     cameraExtent = null;
     // Zoom de départ de toute l'animation : borne supérieure du zoom d'arrivée
     // « fitDay » — la caméra ne se rapproche jamais plus que la vue choisie.
@@ -1288,9 +1292,10 @@ function resetCameraFollow() {
     // vue glisserait de nouveau vers la cible juste après son déplacement.
     if (!cameraInteractionKey) {
         cameraInteractionKey = map.on('pointerdown', () => {
-            // Mode « tête du trait » : la tête bouge en continu — sans
-            // suspension explicite, le suivi reprendrait dès la frame suivante.
-            trailCamSuspended = true;
+            // L'annulation retire la piste/le trajet courant ; la suspension
+            // empêche aussi les jours suivants d'en recréer un. Le prochain
+            // lancement (resetCameraFollow) réactive normalement le suivi.
+            cameraFollowSuspended = true;
             cancelCameraFollowMotion();
         });
     }
@@ -4152,7 +4157,7 @@ function displayFeaturesForDates(dates, pointOptions, flashOptions, record, info
     // Mode piste : la caméra suit la piste précalculée (updateCameraFollow) —
     // aucune cible réactive à poser, sinon elle se superposerait à la piste.
     // Mode « tête du trait » : idem, la cible est la position du stylo.
-    if (pkg.options.animation?.cameraFollow && !cameraTrack
+    if (pkg.options.animation?.cameraFollow && !cameraFollowSuspended && !cameraTrack
         && effectiveCameraFollowMode() !== 'trail') {
         // La caméra vise le barycentre des caches du jour ; c'est le lissage qui
         // fait le mouvement, pas ce saut de cible.

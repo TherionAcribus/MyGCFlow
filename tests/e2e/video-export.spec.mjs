@@ -818,6 +818,75 @@ test('le suivi de caméra glisse vers les caches, se stabilise et rend la main',
 });
 
 
+test('une interaction suspend le suivi par jour jusqu\'au prochain lancement', async ({ page }) => {
+  await page.locator('a[href="#animation"]').click();
+  await page.locator('#switchCameraFollow').check();
+  await page.locator('#selectCameraTarget').selectOption('days');
+
+  const result = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    const map = app.getMap();
+    const view = map.getView();
+    const days = [...app.pointsByDate.keys()];
+
+    // Pas de pré-roll : les deux premiers jours restent près de la vue de
+    // départ. Les jours suivants alternent entre des destinations lointaines :
+    // après l'interaction, l'ancien code recréait alors une cible réactive.
+    const destinations = [
+      [2.35, 48.86], [2.6, 48.8], [-74.006, 40.7128],
+      [139.6917, 35.6895], [-122.4194, 37.7749], [151.2093, -33.8688],
+    ];
+    days.forEach((day, index) => {
+      for (const feature of app.pointsByDate.get(day)) {
+        feature.geometry.coordinates = [...destinations[index % destinations.length]];
+      }
+    });
+    app.bumpPointsByDateRevision();
+    view.setCenter(ol.proj.fromLonLat([2.3522, 48.8566]));
+    view.setZoom(6);
+    app.options.animation.timePerDay = 400;
+    app.startAnimation();
+
+    // Suspendre avant l'affichage des destinations lointaines, puis laisser
+    // plusieurs jours s'afficher : ils ne doivent jamais reprendre la caméra.
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    const manualCenter = ol.proj.fromLonLat([-4, 47.4]);
+    map.dispatchEvent({ type: 'pointerdown' });
+    view.setCenter(manualCenter);
+    const countAtInteraction = window.vectorSource?.getFeatures().length || 0;
+    await new Promise((resolve) => setTimeout(resolve, 2600));
+    const finalCenter = view.getCenter();
+    const finalCount = window.vectorSource?.getFeatures().length || 0;
+    app.stopAnimation();
+
+    // Un nouveau lancement lève la suspension : le suivi doit repartir sans
+    // obliger l'utilisateur à décocher/recocher son réglage global.
+    view.setCenter(manualCenter);
+    app.startAnimation();
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    const restartedCenter = view.getCenter();
+    app.stopAnimation();
+
+    return {
+      delta: Math.hypot(finalCenter[0] - manualCenter[0], finalCenter[1] - manualCenter[1]),
+      restartedDelta: Math.hypot(
+        restartedCenter[0] - manualCenter[0],
+        restartedCenter[1] - manualCenter[1],
+      ),
+      countAtInteraction,
+      finalCount,
+    };
+  });
+
+  expect(result.finalCount, 'les jours suivants ont bien continué à s\'afficher')
+    .toBeGreaterThan(result.countAtInteraction);
+  expect(result.delta, 'la caméra reste au centre choisi par l\'utilisateur').toBeLessThan(1);
+  expect(result.restartedDelta, 'un nouveau lancement réactive le suivi').toBeGreaterThan(1);
+
+  await page.locator('#switchCameraFollow').uncheck();
+});
+
+
 test('le jour « grappe + isolée » est cadré sur son étendue, pas son barycentre', async ({ page }) => {
   await page.locator('a[href="#animation"]').click();
   await page.locator('#switchCameraFollow').check();
