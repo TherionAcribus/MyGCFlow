@@ -745,3 +745,46 @@ export function cameraTrackStateAt(track, nowMs) {
         moving: false,
     };
 }
+
+// ---------- Zoom adaptatif du suivi « tête du trait » ----------
+
+// Distance d'avance du stylo visée à l'écran, en pixels : ~un tiers de la
+// hauteur d'un viewport courant — le stylo reste dans la zone de lecture
+// pendant que le lissage du centre rattrape son retard.
+export const TRAIL_LEAD_PX = 350;
+
+// Zoom cible du suivi « tête du trait », façon GPS : la vue s'écarte quand le
+// stylo avance vite et revient à `homeZoom` (la vue au lancement) quand il
+// ralentit ou se pose. `speedMapPerMs` est la vitesse instantanée du stylo en
+// unités de carte par ms (dérivée du smoothstep de penLengthAt), `resolution`
+// la résolution courante (unités de carte par pixel).
+//
+// Pendant que le lissage du centre (~responseMs) rattrape sa cible, le stylo
+// prend pxLead = speedMapPerMs × responseMs / resolution pixels d'avance. La
+// cible choisit le zoom où cette avance vaudrait exactement leadPx : la
+// résolution divisant par deux à chaque niveau, c'est
+// currentZoom + log2(leadPx / pxLead).
+//
+// Bornes : jamais plus près que homeZoom (la vue de lancement reste le plan
+// le plus détaillé du suivi), jamais plus loin que minZoom (plancher de la
+// vue). Stylo posé ou avance déjà sous leadPx → homeZoom : écarter la vue ne
+// servirait à rien.
+export function trailCameraZoomTarget(speedMapPerMs, resolution, currentZoom, {
+    homeZoom, minZoom, leadPx = TRAIL_LEAD_PX, responseMs = DEFAULT_RESPONSE_MS,
+} = {}) {
+    const zoom = Number(currentZoom);
+    const home = Number.isFinite(Number(homeZoom)) ? Number(homeZoom) : zoom;
+    const floor = Number.isFinite(Number(minZoom)) ? Number(minZoom) : -Infinity;
+    const speed = Number(speedMapPerMs);
+    const res = Number(resolution);
+    // Stylo posé (vitesse nulle, négative ou inexploitable) ou vue illisible :
+    // retour franc à la vue de lancement, plan de référence du suivi.
+    if (!Number.isFinite(speed) || !(speed > 0) || !(res > 0) || !Number.isFinite(zoom)) {
+        return Math.max(floor, home);
+    }
+    const lead = Number(leadPx);
+    const pxLead = speed * Math.max(1, Number(responseMs) || DEFAULT_RESPONSE_MS) / res;
+    // L'avance tient dans la zone de lecture : rien à écarter.
+    if (!(lead > 0) || pxLead <= lead) return Math.max(floor, home);
+    return Math.max(floor, Math.min(home, zoom + Math.log2(lead / pxLead)));
+}

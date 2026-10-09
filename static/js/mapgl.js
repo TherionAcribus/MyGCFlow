@@ -132,7 +132,9 @@ import {
     sampleCameraJourney,
     shouldMoveCamera,
     simulateCameraJourneys,
+    smoothingFactor,
     stepCenter,
+    trailCameraZoomTarget,
     zoomForExtent,
 } from './camera_follow.mjs';
 import { dateToDayNumber, dayNumberToDate } from './evolution_timeline.mjs';
@@ -380,6 +382,15 @@ const CAMERA_RENDER_TIMEOUT_MS = 6000;
 // (~1 s) — assez vif pour rester sur le géocacheur, assez amorti pour ne pas
 // trembler à chaque frame. Indépendant de la cadence (exponentielle).
 const TRAIL_FOLLOW_RESPONSE_MS = 1000;
+// Zoom adaptatif du suivi « tête du trait » : sa cible suit la vitesse
+// instantanée du stylo (trailCameraZoomTarget), mais le zoom la rejoint plus
+// lentement que le centre — un changement d'échelle nerveux fatigue bien plus
+// qu'un glissement. Indépendant de la cadence (même exponentielle).
+const TRAIL_ZOOM_RESPONSE_MS = 1500;
+// Zone morte du zoom adaptatif : sous ~1/50 de niveau l'écart est invisible
+// mais re-rendrait la carte — et la cible n'étant jamais atteinte exactement,
+// la boucle de rendu ne s'arrêterait plus.
+const TRAIL_ZOOM_DEADBAND = 0.02;
 // Durée imposée (rythme « Par durée » ou « Sur la musique ») : les trajets sont
 // simulés au lancement, puis chaque date reçoit le temps qui permet de finir à
 // l'heure (cf. prepareCameraPacing). null quand les trajets s'ajoutent librement.
@@ -1164,9 +1175,41 @@ function updateTrailCameraFollow(now) {
         resolution,
         extent: cameraExtent,
     });
-    if (!step.moved) return false;
-    view.setCenter(step.center);
-    return true;
+    let moving = step.moved;
+    if (step.moved) view.setCenter(step.center);
+    // Zoom adaptatif « GPS » : la vue s'écarte quand le stylo avance vite,
+    // revient au zoom de lancement quand il ralentit ou se pose. Lissage
+    // séparé et plus lent que celui du centre — l'œil supporte mal un
+    // changement d'échelle nerveux. Pas de gestion ici pendant un vol dédié
+    // (le trajet pilote le zoom, cf. le return plus haut) ni sur un saut (le
+    // déclenchement du vol prime).
+    if (!jumping && effectiveTrailAdaptiveZoom()) {
+        const pen = trailState?.pen;
+        const penDur = pen ? pen.endAt - pen.startAt : 0;
+        // Vitesse instantanée du stylo, analytique : dérivée du smoothstep de
+        // penLengthAt — (toLen−fromLen)/durée × 6p(1−p). p borné à [0,1] :
+        // la vitesse est nulle avant startAt comme après endAt (stylo posé).
+        const p = penDur > 0
+            ? Math.min(1, Math.max(0, (now - pen.startAt) / penDur))
+            : 1;
+        const vLenMs = penDur > 0
+            ? (pen.toLen - pen.fromLen) / penDur * 6 * p * (1 - p)
+            : 0;
+        const zoom = view.getZoom();
+        const targetZoom = trailCameraZoomTarget(vLenMs, resolution, zoom, {
+            homeZoom: Number.isFinite(cameraHomeZoom) ? cameraHomeZoom : zoom,
+            minZoom: cameraMinZoomFloor(),
+            responseMs: TRAIL_FOLLOW_RESPONSE_MS,
+        });
+        const nextZoom = zoom + (targetZoom - zoom) * smoothingFactor(dtMs, TRAIL_ZOOM_RESPONSE_MS);
+        // Même quand le centre n'a pas bougé (stylo posé), le zoom peut avoir
+        // à rejoindre la vue de lancement : le rendu doit alors continuer.
+        if (Math.abs(nextZoom - zoom) >= TRAIL_ZOOM_DEADBAND) {
+            view.setZoom(nextZoom);
+            moving = true;
+        }
+    }
+    return moving;
 }
 
 function cameraFollowBlocksDates() {
@@ -1321,6 +1364,14 @@ function effectiveCameraTrack() {
     // planifiés ni pause des dates — la piste n'a rien à rejouer.
     return pkg.options.animation?.cameraTrack !== false
         && effectiveCameraFollowMode() !== 'trail';
+}
+
+// Zoom adaptatif du suivi « tête du trait » (la vue s'écarte quand le stylo
+// avance vite, revient au zoom de lancement quand il se pose) : actif par
+// défaut ; l'option non documentée cameraTrailAdaptiveZoom:false conserve le
+// zoom de lancement pendant tout le suivi, pour comparaison ou diagnostic.
+function effectiveTrailAdaptiveZoom() {
+    return pkg.options.animation?.cameraTrailAdaptiveZoom !== false;
 }
 
 // Plancher de zoom pendant un vol 'fly'. La vue (multiWorld absent, donc false)

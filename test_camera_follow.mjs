@@ -20,6 +20,8 @@ import {
     smoothingFactor,
     stepCenter,
     TRACK_LATE_EPSILON_MS,
+    TRAIL_LEAD_PX,
+    trailCameraZoomTarget,
     zoomForExtent,
 } from './static/js/camera_follow.mjs';
 
@@ -874,4 +876,58 @@ test('buildCameraTrack : un saut instantané passé son jour compte comme en ret
     // événements en retard, le pire étant celui du premier trajet.
     assert.equal(track.lateCount, 2);
     assert.equal(track.worstLateMs, e1.startMs + e1.durationMs - e1.endMs);
+});
+
+// ---------- Zoom adaptatif du suivi « tête du trait » ----------
+
+test('zoom adaptatif : stylo posé, lent ou données illisibles → zoom de lancement', () => {
+    const opts = { homeZoom: 10, minZoom: 2, responseMs: 1000 };
+    // Vitesse nulle, négative, absente ou non finie : le stylo est posé, la
+    // vue revient à homeZoom.
+    for (const v of [0, -3, NaN, Infinity, -Infinity, undefined, 'x']) {
+        assert.equal(trailCameraZoomTarget(v, 600, 10, opts), 10, `v=${v}`);
+    }
+    // Avance sous le seuil (0,1·1000/600 ≈ 0,17 px) ou pile au seuil
+    // (210·1000/600 = 350 px = TRAIL_LEAD_PX) : rien à écarter.
+    assert.equal(trailCameraZoomTarget(0.1, 600, 10, opts), 10);
+    assert.equal(trailCameraZoomTarget(210, 600, 10, opts), 10);
+    // Résolution inexploitable : repli sur la vue de lancement.
+    assert.equal(trailCameraZoomTarget(500, 0, 10, opts), 10);
+    assert.equal(trailCameraZoomTarget(500, -1, 10, opts), 10);
+    // Zoom courant illisible : homeZoom reste la référence la moins risquée.
+    assert.equal(trailCameraZoomTarget(500, 600, NaN, opts), 10);
+    assert.equal(trailCameraZoomTarget(500, 600, NaN, { minZoom: 2 }), NaN);
+});
+
+test('zoom adaptatif : la vue s\'écarte d\'autant que le stylo accélère', () => {
+    const opts = { homeZoom: 10, minZoom: 2, responseMs: 1000 };
+    // pxLead = v·1000/600 : v=420 → 700 px → 10 + log2(350/700) = 9.
+    const lent = trailCameraZoomTarget(420, 600, 10, opts);
+    assert.ok(Math.abs(lent - 9) < 1e-9, `cible ${lent}`);
+    // Deux fois plus vite → pxLead 1400 px → un niveau d'écart de plus.
+    const rapide = trailCameraZoomTarget(840, 600, 10, opts);
+    assert.ok(Math.abs(rapide - 8) < 1e-9, `cible ${rapide}`);
+    // La cible descend monotonement avec la vitesse.
+    assert.ok(rapide < lent);
+    // Même avance en unités de carte à résolution double → même avance en px.
+    assert.equal(trailCameraZoomTarget(840, 1200, 10, opts), lent);
+});
+
+test('zoom adaptatif : homeZoom plafonne, minZoom planchonne', () => {
+    const opts = { homeZoom: 10, minZoom: 2, responseMs: 1000 };
+    // Vue déjà plus près que le lancement : la cible ne la rapproche jamais
+    // davantage (12 + log2(0,25) = 10 → plafonnée à homeZoom).
+    assert.equal(trailCameraZoomTarget(840, 600, 12, opts), 10);
+    // Stylo très rapide : la cible libre tomberait sous le plancher de la vue.
+    assert.equal(trailCameraZoomTarget(1e6, 600, 10, opts), 2);
+    // Sans homeZoom exploitable, le zoom courant fait office de plafond.
+    assert.ok(Math.abs(
+        trailCameraZoomTarget(420, 600, 10, { minZoom: 2, responseMs: 1000 }) - 9,
+    ) < 1e-9);
+    // leadPx par défaut : la constante exportée.
+    assert.equal(TRAIL_LEAD_PX, 350);
+    assert.ok(Math.abs(
+        trailCameraZoomTarget(0.875, 1, 10, { homeZoom: 10, minZoom: 2, responseMs: 1000 })
+        - (10 + Math.log2(TRAIL_LEAD_PX / 875)),
+    ) < 1e-9);
 });

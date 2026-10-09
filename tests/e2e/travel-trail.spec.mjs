@@ -335,6 +335,66 @@ test('le suivi « tête du trait » fait glisser la caméra derrière le stylo',
   await page.locator('#switchCameraFollow').uncheck();
 });
 
+// Zoom adaptatif du suivi « tête du trait » : la vue s'écarte quand le stylo
+// avance vite (façon GPS), revient au zoom de lancement quand il se pose.
+test("le suivi « tête du trait » écarte le zoom quand le stylo avance vite", async ({ page }) => {
+  await openWithFixture(page);
+  await enableTrail(page);
+
+  await page.locator('a[href="#animation"]').click();
+  await page.locator('#switchCameraFollow').check();
+  await page.locator('#selectCameraTarget').selectOption('trail');
+  // Rythme rapide : chaque tronçon se trace en ~un quart de seconde, assez
+  // pour que l'avance du stylo à l'écran dépasse le seuil du zoom adaptatif.
+  await setRhythm(page, 4);
+
+  // Étapes espacées d'environ 1° de longitude (~100 km au sol à cette
+  // latitude) : sous le seuil de saut du tracé (150 km → segments normaux,
+  // pas de vol dédié) mais assez longues pour que le stylo file à l'écran.
+  await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    let index = 0;
+    for (const day of [...app.pointsByDate.keys()]) {
+      for (const feature of app.pointsByDate.get(day)) {
+        feature.geometry.coordinates = [-74 + index * 1, 40 + index * 0.5];
+      }
+      index++;
+    }
+    app.bumpPointsByDateRevision();
+    const view = app.getMap().getView();
+    view.setCenter(ol.proj.fromLonLat([-74, 40]));
+    view.setZoom(8);
+  });
+
+  const zooms = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    const view = app.getMap().getView();
+    const initial = view.getZoom();
+    app.startAnimation();
+    // ~250 ms par échantillon : la descente de zoom (réponse ~1,5 s) est
+    // visible en quelques mesures pendant que le stylo court, puis la vue
+    // revient quand il se pose.
+    const samples = [initial];
+    for (let i = 0; i < 20; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      samples.push(view.getZoom());
+    }
+    app.stopAnimation();
+    return samples;
+  });
+
+  // La vue s'est écartée du zoom de lancement pendant les tronçons rapides…
+  expect(Math.min(...zooms)).toBeLessThan(zooms[0] - 0.15);
+  // …et le zoom a réellement varié (plus d'une valeur distincte à 0,05 près) :
+  // un zoom adaptatif, pas un cadrage fixe.
+  const distinct = new Set(zooms.map((z) => Math.round(z / 0.05)));
+  expect(distinct.size).toBeGreaterThan(1);
+
+  // Préférences globales : les restaurer pour les specs suivantes (page partagée).
+  await page.locator('#selectCameraTarget').selectOption('days');
+  await page.locator('#switchCameraFollow').uncheck();
+});
+
 test("l'aperçu affiche le trajet calculé et l'inspecte au clic", async ({ page }) => {
   await openWithFixture(page);
   await enableTrail(page);
