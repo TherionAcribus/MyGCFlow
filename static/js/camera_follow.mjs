@@ -125,6 +125,97 @@ export function centroid(coordinates) {
     return count > 0 ? [x / count, y / count] : null;
 }
 
+// Copie du monde la plus proche d'une abscisse de référence. En Web Mercator,
+// deux positions séparées d'une largeur de monde représentent le même méridien.
+// Garder la copie voisine évite qu'un passage 179° -> -179° soit interprété
+// comme un tour de Terre presque complet.
+export function nearestWorldX(x, referenceX, worldWidth) {
+    const value = Number(x);
+    const reference = Number(referenceX);
+    const width = Number(worldWidth);
+    if (!Number.isFinite(value) || !Number.isFinite(reference) || !(width > 0)) return value;
+    return value + Math.round((reference - value) / width) * width;
+}
+
+// Ramène une abscisse dans le monde canonique centré sur zéro. Le moteur peut
+// ainsi calculer un trajet court avec des coordonnées dépliées, tandis que la
+// vue OpenLayers (multiWorld=false) reçoit toujours une position admissible.
+export function normalizeWorldX(x, worldWidth) {
+    const value = Number(x);
+    const width = Number(worldWidth);
+    if (!Number.isFinite(value) || !(width > 0)) return value;
+    return value - Math.floor((value + width / 2) / width) * width;
+}
+
+// Résume un lot de coordonnées sur le plus petit arc horizontal qui les
+// contient, puis déplace l'ensemble vers la copie du monde la plus proche de
+// referenceX. Couper au plus grand espace vide est plus robuste qu'un simple
+// dépliage autour du premier point pour les lots répartis sur plusieurs zones.
+export function summarizeWorldCoordinates(coordinates, worldWidth, referenceX = null) {
+    const valid = (Array.isArray(coordinates) ? coordinates : []).filter((point) => (
+        point && Number.isFinite(point[0]) && Number.isFinite(point[1])
+    ));
+    if (valid.length === 0) return null;
+    const width = Number(worldWidth);
+    const anchor = valid[0][0];
+    let xs = valid.map((point) => point[0]);
+    if (width > 0 && valid.length > 1) {
+        const wrapped = xs
+            .map((x) => ((x % width) + width) % width)
+            .sort((a, b) => a - b);
+        let largestGap = -1;
+        let arcStart = wrapped[0];
+        for (let i = 0; i < wrapped.length; i++) {
+            const next = i + 1 < wrapped.length ? wrapped[i + 1] : wrapped[0] + width;
+            const gap = next - wrapped[i];
+            if (gap > largestGap) {
+                largestGap = gap;
+                arcStart = next % width;
+            }
+        }
+        xs = valid.map((point) => {
+            const wrappedX = ((point[0] % width) + width) % width;
+            return wrappedX < arcStart ? wrappedX + width : wrappedX;
+        });
+    }
+    const meanX = xs.reduce((sum, x) => sum + x, 0) / xs.length;
+    const reference = Number.isFinite(Number(referenceX)) ? Number(referenceX) : anchor;
+    const shift = width > 0
+        ? nearestWorldX(meanX, reference, width) - meanX
+        : 0;
+    let sumX = 0;
+    let sumY = 0;
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    for (let i = 0; i < valid.length; i++) {
+        const x = xs[i] + shift;
+        const y = valid[i][1];
+        sumX += x;
+        sumY += y;
+        minX = Math.min(minX, x);
+        minY = Math.min(minY, y);
+        maxX = Math.max(maxX, x);
+        maxY = Math.max(maxY, y);
+    }
+    return {
+        center: [sumX / valid.length, sumY / valid.length],
+        extent: [minX, minY, maxX, maxY],
+    };
+}
+
+// Déplace une étendue entière vers la copie du monde voisine d'une référence,
+// sans modifier sa largeur.
+export function alignWorldExtent(extent, referenceX, worldWidth) {
+    if (!Array.isArray(extent) || extent.length !== 4) return extent;
+    const centerX = (Number(extent[0]) + Number(extent[2])) / 2;
+    if (!Number.isFinite(centerX)) return extent;
+    const aligned = nearestWorldX(centerX, referenceX, worldWidth);
+    const shift = aligned - centerX;
+    return [extent[0] + shift, extent[1], extent[2] + shift, extent[3]];
+}
+
 // Ramène un centre dans l'étendue des données : la caméra ne part jamais
 // regarder une zone vide parce qu'un point isolé a tiré le barycentre.
 export function clampToExtent(center, extent) {
@@ -488,6 +579,7 @@ export function simulateCameraJourneys(days, {
     minCruiseZoom,
     fitDay = false,
     paddingPx = 48,
+    worldWidth = null,
 } = {}) {
     const list = Array.isArray(days) ? days : [];
     const level = normalizeCameraDynamism(dynamism);
@@ -505,7 +597,13 @@ export function simulateCameraJourneys(days, {
     const baseResolution = Number(resolution);
     const floor = Number(minCruiseZoom);
     for (let i = 0; i < list.length; i++) {
-        const day = list[i];
+        const rawDay = list[i];
+        const day = rawDay && current && Number(worldWidth) > 0
+            ? {
+                center: [nearestWorldX(rawDay.center?.[0], current[0], worldWidth), rawDay.center?.[1]],
+                extent: alignWorldExtent(rawDay.extent, current[0], worldWidth),
+            }
+            : rawDay;
         if (!day || !day.center) continue;
         // Résolution au zoom simulé courant : elle convertit les distances en
         // pixels pour shouldMoveCamera comme pour createCameraJourney.
@@ -532,7 +630,12 @@ export function simulateCameraJourneys(days, {
             : day.center;
         const journey = createCameraJourney(
             current,
-            clampToExtent(aim, extent),
+            clampToExtent(
+                aim,
+                current && Number(worldWidth) > 0
+                    ? alignWorldExtent(extent, current[0], worldWidth)
+                    : extent,
+            ),
             currentZoom,
             currentResolution,
             options,

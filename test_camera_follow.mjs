@@ -6,6 +6,7 @@ import {
     CAMERA_PATH_MODES,
     cameraTrackStateAt,
     centroid,
+    alignWorldExtent,
     clampToExtent,
     createCameraJourney,
     createCameraPacing,
@@ -13,6 +14,8 @@ import {
     easeInOutCubic,
     normalizeCameraDynamism,
     normalizeCameraPath,
+    nearestWorldX,
+    normalizeWorldX,
     resolveCameraFollowMode,
     pacedDayMs,
     sampleCameraJourney,
@@ -20,6 +23,7 @@ import {
     simulateCameraJourneys,
     smoothingFactor,
     stepCenter,
+    summarizeWorldCoordinates,
     TRACK_LATE_EPSILON_MS,
     TRAIL_LEAD_PX,
     trailCameraZoomTarget,
@@ -93,6 +97,43 @@ test('le barycentre ignore les coordonnées invalides', () => {
     assert.equal(centroid([]), null);
     assert.equal(centroid(null), null);
     assert.equal(centroid([[NaN, NaN]]), null);
+});
+
+test('l’antiméridien utilise la copie du monde la plus proche', () => {
+    assert.equal(nearestWorldX(-179, 179, 360), 181);
+    assert.equal(nearestWorldX(179, -179, 360), -181);
+    assert.equal(normalizeWorldX(181, 360), -179);
+    assert.equal(normalizeWorldX(-181, 360), 179);
+    assert.deepEqual(alignWorldExtent([-181, 0, -179, 10], 179, 360), [179, 0, 181, 10]);
+});
+
+test('le résumé d’un jour reste compact de part et d’autre de l’antiméridien', () => {
+    const east = summarizeWorldCoordinates([[179, 10], [-179, 12]], 360, 179);
+    assert.deepEqual(east, { center: [180, 11], extent: [179, 10, 181, 12] });
+    const west = summarizeWorldCoordinates([[179, 10], [-179, 12]], 360, -179);
+    assert.deepEqual(west, { center: [-180, 11], extent: [-181, 10, -179, 12] });
+    const global = summarizeWorldCoordinates([[0, 0], [179, 0], [-179, 0]], 360, 0);
+    assert.equal(global.extent[2] - global.extent[0], 181);
+});
+
+test('la simulation traverse l’antiméridien par le chemin court', () => {
+    const result = simulateCameraJourneys([
+        null,
+        { center: [-179, 0], extent: [-179, 0, -179, 0] },
+    ], {
+        center: [179, 0],
+        zoom: 8,
+        resolution: 0.01,
+        viewportSize: [1000, 800],
+        dynamism: 4,
+        extent: [179, 0, 181, 0],
+        worldWidth: 360,
+    });
+    const journey = result.journeysByDay[1];
+    assert.ok(journey);
+    assert.equal(journey.startCenter[0], 179);
+    assert.equal(journey.targetCenter[0], 181);
+    assert.equal(journey.distancePx, 200);
 });
 
 test('un saut intercontinental dézoome temporairement puis restaure le zoom', () => {

@@ -818,6 +818,46 @@ test('le suivi de caméra glisse vers les caches, se stabilise et rend la main',
 });
 
 
+test('la caméra franchit l’antiméridien sans faire le tour du monde', async ({ page }) => {
+  await page.locator('a[href="#animation"]').click();
+  await page.locator('#switchCameraFollow').check();
+  await page.locator('#selectCameraTarget').selectOption('days');
+  await page.locator('#selectCameraDynamism').selectOption('4');
+
+  const longitudes = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    const days = [...app.pointsByDate.keys()];
+    for (const day of days) {
+      const lon = day === days[days.length - 1] ? -179 : 179;
+      for (const feature of app.pointsByDate.get(day)) {
+        feature.geometry.coordinates = [lon, 0];
+      }
+    }
+    app.bumpPointsByDateRevision();
+    const view = app.getMap().getView();
+    view.setCenter(ol.proj.fromLonLat([179, 0]));
+    view.setZoom(6);
+    app.options.animation.timePerDay = 400;
+    app.startAnimation();
+
+    const samples = [];
+    for (let i = 0; i < 24; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      samples.push(ol.proj.toLonLat(view.getCenter())[0]);
+    }
+    app.stopAnimation();
+    return samples;
+  });
+
+  // Le changement de signe à la couture est normal. En revanche, passer près
+  // de Greenwich révélerait l'ancien trajet long de 358°.
+  expect(longitudes.some((lon) => lon < -170), longitudes.join(' → ')).toBe(true);
+  expect(longitudes.every((lon) => Math.abs(lon) > 150), longitudes.join(' → ')).toBe(true);
+
+  await page.locator('#switchCameraFollow').uncheck();
+});
+
+
 test('une interaction suspend le suivi par jour jusqu\'au prochain lancement', async ({ page }) => {
   await page.locator('a[href="#animation"]').click();
   await page.locator('#switchCameraFollow').check();

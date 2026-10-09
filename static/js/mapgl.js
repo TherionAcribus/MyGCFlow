@@ -120,14 +120,16 @@ import {
     buildCameraTrack,
     CAMERA_JOURNEY_EXTRA_FRAMES,
     cameraTrackStateAt,
-    centroid,
+    alignWorldExtent,
     clampToExtent,
     createCameraJourney,
     createCameraPacing,
     INTENSE_EXTRA_ZOOM_OUT,
     LONG_TRAVEL_THRESHOLD_PX,
     MIN_CRUISE_ZOOM,
+    nearestWorldX,
     normalizeCameraDynamism,
+    normalizeWorldX,
     pacedDayMs,
     resolveCameraFollowMode,
     sampleCameraJourney,
@@ -135,6 +137,7 @@ import {
     simulateCameraJourneys,
     smoothingFactor,
     stepCenter,
+    summarizeWorldCoordinates,
     trailCameraZoomTarget,
     zoomForExtent,
 } from './camera_follow.mjs';
@@ -379,6 +382,17 @@ let cameraRenderKey = null;
 let cameraRenderTimeout = null;
 let cameraDynamism = 2;
 const CAMERA_RENDER_TIMEOUT_MS = 6000;
+
+function cameraWorldWidth() {
+    const extent = ol.proj.get('EPSG:3857')?.getExtent?.();
+    const width = Array.isArray(extent) ? Number(extent[2]) - Number(extent[0]) : NaN;
+    return width > 0 ? width : null;
+}
+
+function canonicalCameraCenter(center) {
+    if (!Array.isArray(center)) return center;
+    return [normalizeWorldX(center[0], cameraWorldWidth()), center[1]];
+}
 // Suivi « tête du trait » : réponse du glissement amorti derrière le stylo
 // (~1 s) — assez vif pour rester sur le géocacheur, assez amorti pour ne pas
 // trembler à chaque frame. Indépendant de la cadence (exponentielle).
@@ -995,7 +1009,7 @@ function updateCameraFollow(now) {
         while (cameraTrack.prefetchIndex < events.length) {
             const event = events[cameraTrack.prefetchIndex];
             if (event.startMs - event.durationMs > trackNow) break;
-            prefetchBasemapTiles(event.journey.targetCenter, event.journey.endZoom);
+            prefetchBasemapTiles(canonicalCameraCenter(event.journey.targetCenter), event.journey.endZoom);
             cameraTrack.prefetchIndex++;
         }
         const pending = trackNow < trackEndMs;
@@ -1004,16 +1018,17 @@ function updateCameraFollow(now) {
         const view = map.getView();
         const prevCenter = view.getCenter();
         const prevZoom = view.getZoom();
+        const renderedCenter = canonicalCameraCenter(state.center);
         const changed = !prevCenter
-            || prevCenter[0] !== state.center[0]
-            || prevCenter[1] !== state.center[1]
+            || prevCenter[0] !== renderedCenter[0]
+            || prevCenter[1] !== renderedCenter[1]
             || prevZoom !== state.zoom;
         // Ne poser la vue que si elle change : un setCenter identique notifie
         // quand même un changement (ol.Object ne compare pas), ce qui
         // entretiendrait une boucle de rendu après la fin de la piste — pile
         // ce que le retour `false` final est censé éviter.
         if (changed) {
-            view.setCenter(state.center);
+            view.setCenter(renderedCenter);
             view.setZoom(state.zoom);
         }
         return pending || changed;
@@ -1026,7 +1041,12 @@ function updateCameraFollow(now) {
 
     const view = map.getView();
     if (!cameraJourney) {
-        const target = clampToExtent(cameraTarget, cameraExtent);
+        const center = view.getCenter();
+        const width = cameraWorldWidth();
+        const target = clampToExtent(
+            [nearestWorldX(cameraTarget[0], center[0], width), cameraTarget[1]],
+            alignWorldExtent(cameraExtent, center[0], width),
+        );
         // Zoom d'arrivée « fitDay » : le jour entier tient dans le viewport,
         // jamais plus près que la vue au lancement, plus loin si l'étendue
         // déborde. Zoom et résolution sont lus avant de créer le trajet : la
@@ -1072,7 +1092,7 @@ function updateCameraFollow(now) {
         }
         // La destination est connue dès le départ du vol : lancer le chargement
         // de ses tuiles maintenant leur laisse la durée du trajet pour arriver.
-        prefetchBasemapTiles(cameraJourney.targetCenter, cameraJourney.endZoom);
+        prefetchBasemapTiles(canonicalCameraCenter(cameraJourney.targetCenter), cameraJourney.endZoom);
     }
 
     const state = sampleCameraJourney(cameraJourney, now - cameraJourneyStartedAt);
@@ -1081,7 +1101,7 @@ function updateCameraFollow(now) {
         return false;
     }
     cameraTravelPending = true;
-    view.setCenter(state.center);
+    view.setCenter(canonicalCameraCenter(state.center));
     view.setZoom(state.zoom);
     if (state.done) {
         cameraTarget = null;
@@ -1126,7 +1146,7 @@ function updateTrailCameraFollow(now) {
     if (trailCamJourney) {
         const st = sampleCameraJourney(trailCamJourney, now - trailCamJourneyStartedAt);
         if (st) {
-            view.setCenter(st.center);
+            view.setCenter(canonicalCameraCenter(st.center));
             view.setZoom(st.zoom);
         }
         if (!st || st.done) {
@@ -1143,20 +1163,24 @@ function updateTrailCameraFollow(now) {
         return false;
     }
     const center = view.getCenter();
+    const width = cameraWorldWidth();
+    const headCenter = center
+        ? [nearestWorldX(head.x, center[0], width), head.y]
+        : [head.x, head.y];
     const resolution = view.getResolution() || 1;
     const distancePx = center
-        ? Math.hypot(head.x - center[0], head.y - center[1]) / resolution
+        ? Math.hypot(headCenter[0] - center[0], headCenter[1] - center[1]) / resolution
         : Infinity;
     const { path } = head;
     const jumping = path.kind[head.segment] !== SEGMENT_NORMAL;
     if (jumping || distancePx > LONG_TRAVEL_THRESHOLD_PX) {
         // Le stylo traverse un saut : viser son point de chute (dernier sommet
         // du tronçon de saut) plutôt que sa position en vol.
-        let target = [head.x, head.y];
+        let target = headCenter;
         if (jumping) {
             let v = head.segment;
             while (v + 1 < path.cum.length && path.kind[v + 1] !== SEGMENT_NORMAL) v++;
-            target = [path.xy[2 * v], path.xy[2 * v + 1]];
+            target = [nearestWorldX(path.xy[2 * v], center[0], width), path.xy[2 * v + 1]];
         }
         trailCamJourney = createCameraJourney(
             center, target, view.getZoom(), resolution,
@@ -1170,20 +1194,20 @@ function updateTrailCameraFollow(now) {
             trailCamJourneyStartedAt = isRecording
                 ? now - 1000 / (Number(pkg.options.record.framesPerSec) || 30)
                 : now;
-            prefetchBasemapTiles(target, view.getZoom());
+            prefetchBasemapTiles(canonicalCameraCenter(target), view.getZoom());
             trailCamLastNow = null;
             return true;
         }
     }
     const dtMs = trailCamLastNow === null ? 0 : now - trailCamLastNow;
     trailCamLastNow = now;
-    const step = stepCenter(center, [head.x, head.y], dtMs, {
+    const step = stepCenter(center, headCenter, dtMs, {
         responseMs: TRAIL_FOLLOW_RESPONSE_MS,
         resolution,
-        extent: cameraExtent,
+        extent: alignWorldExtent(cameraExtent, center?.[0], width),
     });
     let moving = step.moved;
-    if (step.moved) view.setCenter(step.center);
+    if (step.moved) view.setCenter(canonicalCameraCenter(step.center));
     // Zoom adaptatif « GPS » : la vue s'écarte quand le stylo avance vite,
     // revient au zoom de lancement quand il ralentit ou se pose. Lissage
     // séparé et plus lent que celui du centre — l'œil supporte mal un
@@ -1308,7 +1332,12 @@ function resetCameraFollow() {
             feature.geometry.coordinates[0],
             feature.geometry.coordinates[1],
         ]));
-        if (coordinates.length > 0) cameraExtent = ol.extent.boundingExtent(coordinates);
+        const summary = summarizeWorldCoordinates(
+            coordinates,
+            cameraWorldWidth(),
+            map.getView().getCenter()?.[0],
+        );
+        if (summary) cameraExtent = summary.extent;
     } catch (e) {
         console.warn('[CAMERA] Étendue des caches indisponible, suivi sans bornes:', e);
     }
@@ -1396,28 +1425,15 @@ function cameraMinZoomFloor() {
 // displayFeaturesForDates donne à viser à la caméra. Calculés sans tableau
 // intermédiaire, la simulation parcourant toutes les caches de la sélection.
 function summarizeCameraDay(points) {
-    let sumX = 0;
-    let sumY = 0;
-    let count = 0;
-    let minX = Infinity;
-    let minY = Infinity;
-    let maxX = -Infinity;
-    let maxY = -Infinity;
+    const coordinates = [];
     for (let i = 0; i < points.length; i++) {
         const lonLat = points[i]?.geometry?.coordinates;
         if (!lonLat) continue;
         const [x, y] = ol.proj.fromLonLat([lonLat[0], lonLat[1]]);
         if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
-        sumX += x;
-        sumY += y;
-        count += 1;
-        if (x < minX) minX = x;
-        if (y < minY) minY = y;
-        if (x > maxX) maxX = x;
-        if (y > maxY) maxY = y;
+        coordinates.push([x, y]);
     }
-    if (count === 0) return null;
-    return { center: [sumX / count, sumY / count], extent: [minX, minY, maxX, maxY] };
+    return summarizeWorldCoordinates(coordinates, cameraWorldWidth());
 }
 
 // Déroule à blanc les trajets que fera la caméra depuis la vue courante, sur la
@@ -1441,7 +1457,15 @@ function simulateCurrentCameraJourneys({ forRecording } = {}) {
                 const summary = summarizeCameraDay(points || []);
                 if (!summary) continue;
                 summaries.set(dateKey, summary);
-                extent = extent ? ol.extent.extend(extent, summary.extent) : [...summary.extent];
+                if (extent) {
+                    const referenceX = (extent[0] + extent[2]) / 2;
+                    ol.extent.extend(
+                        extent,
+                        alignWorldExtent(summary.extent, referenceX, cameraWorldWidth()),
+                    );
+                } else {
+                    extent = [...summary.extent];
+                }
             }
             cameraSummaries = summaries;
             cameraSummariesExtent = extent;
@@ -1471,6 +1495,7 @@ function simulateCurrentCameraJourneys({ forRecording } = {}) {
             // Même règle que la lecture réelle : endZoom cadre le jour, borné
             // par le zoom de lancement (homeZoom = zoom de la vue à l'appel).
             fitDay: effectiveCameraFitDay(),
+            worldWidth: cameraWorldWidth(),
         });
     } catch (e) {
         console.warn('[CAMERA] Simulation des trajets indisponible:', e);
@@ -4168,10 +4193,15 @@ function displayFeaturesForDates(dates, pointOptions, flashOptions, record, info
             feature.geometry.coordinates[0],
             feature.geometry.coordinates[1],
         ]));
-        const target = centroid(coordinates);
-        const targetExtent = coordinates.length > 0 ? ol.extent.boundingExtent(coordinates) : null;
         cameraDynamism = effectiveCameraDynamism();
         const view = map.getView();
+        const summary = summarizeWorldCoordinates(
+            coordinates,
+            cameraWorldWidth(),
+            view.getCenter()?.[0],
+        );
+        const target = summary?.center || null;
+        const targetExtent = summary?.extent || null;
         if (target && shouldMoveCamera(
             view.getCenter(),
             view.getResolution(),
