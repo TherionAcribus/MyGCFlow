@@ -540,7 +540,12 @@ export function simulateCameraJourneys(days, {
         current = journey.targetCenter;
         currentZoom = journey.endZoom;
     }
-    return { dayCount: list.length, travelMsByDay, journeysByDay, totalMs, journeyCount };
+    // leadMs : durée vidéo du « pré-roll » — le trajet du jour 0 tel quel
+    // (hors timeScale), que le mode piste joue en tête de timeline avant la
+    // première date. 0 quand le jour 0 n'a pas de trajet : pas de marge à
+    // prévoir, le comportement historique est conservé.
+    const leadMs = journeysByDay[0] ? journeysByDay[0].totalDurationMs : 0;
+    return { dayCount: list.length, travelMsByDay, journeysByDay, totalMs, journeyCount, leadMs };
 }
 
 // Prépare le suivi d'un budget de temps : `budgetMs` couvre l'affichage de
@@ -625,25 +630,36 @@ export function pacedDayMs(pacing, {
 // (ralentissement de la capture rapide) — le tracé est inchangé, seule la
 // vitesse de lecture l'est.
 //
+// `leadMs` : marge d'anticipation du premier trajet (le « pré-roll »). Sans
+// elle, le trajet du jour 0 a une fenêtre nulle — rien ne pouvant commencer
+// avant t=0, il est compressé ou instantané. Avec leadMs, toutes les arrivées
+// sont décalées d'autant (endMs = leadMs + i × dayMs) sans changer la
+// structure : le trajet 0 joue de t=0 à t=leadMs, avant la première date. Avec
+// leadMs = durée naturelle du trajet 0 (étirement compris), il joue donc à
+// vitesse réelle. leadMs = 0 : comportement historique strictement inchangé.
+//
 // Retourne { events: [{ dayIndex, journey, startMs, endMs, durationMs, rate }],
-// timeScale, totalMs } : pour chaque jour doté d'un trajet, endMs = i × dayMs
-// (le trajet finit pile quand son jour s'affiche) et startMs = max(endMs −
-// durée × timeScale, fin réelle du trajet précédent). Jamais de recouvrement :
-// si la durée dépasse la fenêtre libre, le trajet démarre où le précédent finit
-// et arrive en retard sur son jour — accepté (la date n'est pas retardée).
+// timeScale, totalMs, leadMs } : pour chaque jour doté d'un trajet, endMs =
+// leadMs + i × dayMs (le trajet finit pile quand son jour s'affiche) et
+// startMs = max(endMs − durée × timeScale, fin réelle du trajet précédent).
+// Jamais de recouvrement : si la durée dépasse la fenêtre libre, le trajet
+// démarre où le précédent finit et arrive en retard sur son jour — accepté
+// (la date n'est pas retardée).
 //
 // En revanche aucun trajet ne peut dépasser la fin de la timeline (totalMs =
-// dayCount × dayMs) : en capture le nombre d'images est figé d'avance, en
-// lecture l'animation s'arrête — un trajet tronqué figerait la caméra en plein
-// vol. Le trajet concerné est donc accéléré : durationMs < durée naturelle et
-// rate = durée naturelle / durationMs accélère l'échantillonnage. Fenêtre nulle
-// (startMs ≥ totalMs) : durationMs 0, la caméra saute directement à la cible.
-export function buildCameraTrack(journeysByDay, { dayMs, timeScale = 1 } = {}) {
+// leadMs + dayCount × dayMs) : en capture le nombre d'images est figé d'avance,
+// en lecture l'animation s'arrête — un trajet tronqué figerait la caméra en
+// plein vol. Le trajet concerné est donc accéléré : durationMs < durée
+// naturelle et rate = durée naturelle / durationMs accélère l'échantillonnage.
+// Fenêtre nulle (startMs ≥ totalMs) : durationMs 0, la caméra saute
+// directement à la cible.
+export function buildCameraTrack(journeysByDay, { dayMs, timeScale = 1, leadMs = 0 } = {}) {
     const list = Array.isArray(journeysByDay) ? journeysByDay : [];
     const step = Math.max(0, Number(dayMs) || 0);
     const scale = Number.isFinite(Number(timeScale)) && Number(timeScale) >= 0
         ? Number(timeScale) : 1;
-    const totalMs = list.length * step;
+    const lead = Math.max(0, Number(leadMs) || 0);
+    const totalMs = lead + list.length * step;
     const events = [];
     let previousFinishMs = 0;
     for (let i = 0; i < list.length; i++) {
@@ -651,7 +667,7 @@ export function buildCameraTrack(journeysByDay, { dayMs, timeScale = 1 } = {}) {
         if (!journey) continue;
         const journeyMs = Math.max(0, Number(journey.totalDurationMs) || 0);
         const naturalMs = journeyMs * scale;
-        const endMs = i * step;
+        const endMs = lead + i * step;
         const startMs = Math.max(endMs - naturalMs, previousFinishMs);
         const durationMs = Math.max(0, Math.min(naturalMs, totalMs - startMs));
         // rate convertit le temps timeline en temps trajet pour
@@ -667,7 +683,7 @@ export function buildCameraTrack(journeysByDay, { dayMs, timeScale = 1 } = {}) {
         });
         previousFinishMs = startMs + durationMs;
     }
-    return { events, timeScale: scale, totalMs };
+    return { events, timeScale: scale, totalMs, leadMs: lead };
 }
 
 // Pose de la caméra à l'instant `nowMs` de la timeline de la piste :

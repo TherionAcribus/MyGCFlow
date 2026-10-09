@@ -718,11 +718,16 @@ test('le suivi de caméra glisse vers les caches, se stabilise et rend la main',
     const app = await import('/static/js/index.js');
     const map = app.getMap();
     const view = map.getView();
-    // Toutes les caches à New York, vue initiale sur Paris : ce saut
-    // intercontinental doit déclencher le dézoom adaptatif.
+    // Jours 0-4 dans la zone de confort (Est de la France), dernier jour à
+    // New York : le seul trajet est celui du jour 5, joué pendant que les
+    // jours précédents s'affichent — c'est ce recouvrement qu'on vérifie.
+    // (Avec toutes les caches à New York, le trajet serait celui du jour 0,
+    // joué pendant le pré-roll avant toute date : rien à observer.)
     const cible = [-74.006, 40.7128];
-    for (const day of [...app.pointsByDate.keys()]) {
-      for (const feature of app.pointsByDate.get(day)) feature.geometry.coordinates = [...cible];
+    const jours = [...app.pointsByDate.keys()];
+    for (const day of jours) {
+      const coords = day === jours[jours.length - 1] ? cible : [6.0, 48.0];
+      for (const feature of app.pointsByDate.get(day)) feature.geometry.coordinates = [...coords];
     }
     app.bumpPointsByDateRevision();
     view.setCenter(ol.proj.fromLonLat([2.3522, 48.8566]));

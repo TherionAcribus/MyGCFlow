@@ -44,6 +44,9 @@ export function updateInfosForPictures(){
         flashMode: pkg.effectiveFlashMode ? pkg.effectiveFlashMode() : pkg.options.flash.mode,
         flashDurationMs: pkg.options.flash.duration,
         allowMultipleDaysPerFrame: isEvolutionPage(),
+        // Pré-roll « piste » éventuel (déjà nul hors mode piste) : ses images
+        // de tête comptent dans le total annoncé.
+        cameraLeadMs: pkg.options.animation?.cameraLeadMs || 0,
     });
 
     pkg.options.record.framesPerDay = plan.framesPerDayAverage;

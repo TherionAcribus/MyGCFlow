@@ -232,6 +232,11 @@ let recordingDayIndex = 0;
 let recordingDayCount = 1;
 let recordingBaseFrameCount = 1;
 let currentDayFrameTarget = 1;
+// Pré-roll « piste » en capture image par image : vrai tant que les images de
+// tête (le vol vers le jour 0) n'ont pas été écoulées — le jour 0 n'est alors
+// pas encore affiché. Posé par startRecordingProcess, consommé dans la branche
+// « jour suivant » de captureNextFrame.
+let recordingLeadPending = false;
 // FLASH
 let animationSource;
 let animationLayer;
@@ -1463,13 +1468,27 @@ function prepareCameraPacing({ timelineScale = 1, forRecording = isRecording || 
     // terminer pile quand leur jour s'affiche, pendant l'affichage des jours
     // précédents. Tout le budget va aux dates — rien n'est retranché.
     if (effectiveCameraTrack()) {
+        // Pré-roll : le trajet du jour 0 n'a sinon aucune fenêtre — rien ne
+        // peut commencer avant t=0, il serait compressé ou instantané. On lui
+        // réserve le début de la timeline (leadMs, temps timeline étiré) : la
+        // caméra vole vers le jour 0 pendant que les dates attendent, puis les
+        // dates démarrent. Sans trajet au jour 0 : 0, comportement inchangé.
+        const leadVideoMs = simulation.journeysByDay[0]
+            ? Math.max(0, Number(simulation.journeysByDay[0].totalDurationMs) || 0)
+            : 0;
+        const leadMs = leadVideoMs * stretch;
         const dayMs = budgetMs > 0 && simulation.dayCount > 0
-            ? budgetMs * stretch / simulation.dayCount
+            // Durée imposée : le pré-roll mange le budget — les dates se
+            // partagent ce qui reste, la vidéo garde sa durée totale.
+            ? Math.max(1, budgetMs - leadVideoMs) * stretch / simulation.dayCount
             // timePerDay est déjà étiré par la capture rapide (la préférence est
             // multipliée avant l'appel) : stretch ne s'y applique pas, au
             // contraire du budget qui vient du plan non étiré.
             : Number(pkg.options.animation.timePerDay);
-        cameraTrack = buildCameraTrack(simulation.journeysByDay, { dayMs, timeScale: stretch });
+        cameraTrack = buildCameraTrack(simulation.journeysByDay, { dayMs, timeScale: stretch, leadMs });
+        // Mémorisée sur la piste pour le runtime : décalage de départ de
+        // l'accumulateur de dates (lecture) et images de tête (capture).
+        cameraTrack.leadMs = leadMs;
         // Prochaine destination dont les tuiles ne sont pas encore demandées —
         // comptable runtime, cf. updateCameraFollow (pas une donnée de la piste).
         cameraTrack.prefetchIndex = 0;
@@ -1480,8 +1499,8 @@ function prepareCameraPacing({ timelineScale = 1, forRecording = isRecording || 
         // zéro n'y vaut donc PAS zéro. Le premier appel reçoit le `now` du tout
         // premier rendu de l'animation, ce qui aligne pile la piste.
         cameraTrackStartAt = null;
-        dbgMapgl('[CAMERA] Piste précalculée:', simulation.journeyCount, 'trajets,', dayMs, 'ms/jour');
-        return { travelMs: simulation.totalMs, datesMs: budgetMs > 0 ? budgetMs : null };
+        dbgMapgl('[CAMERA] Piste précalculée:', simulation.journeyCount, 'trajets,', dayMs, 'ms/jour, pré-roll', leadMs, 'ms');
+        return { travelMs: simulation.totalMs, datesMs: budgetMs > 0 ? budgetMs - leadVideoMs : null };
     }
 
     if (!(budgetMs > 0) || !(simulation.dayCount > 0)) {
@@ -1902,7 +1921,16 @@ export function startAnimation(restart=false) {
     // pas le temps écoulé pendant la pause, exactement comme l'ancien
     // setInterval + clearInterval + nouveau setInterval.
     animationLastTs = null;
-    animationAccMs = 0;
+    // Pré-roll « piste » : l'accumulateur démarre en négatif de la marge
+    // d'anticipation — les dates attendent pendant que la caméra vole vers le
+    // jour 0 (le trajet 0 de la piste joue de t=0 à t=leadMs).
+    // Condition : la piste vient d'être planifiée et son origine pas encore
+    // échantillonnée (cameraTrackStartAt === null) — c'est le cas d'un premier
+    // lancement ET du démarrage MediaRecorder (restart=true technique après sa
+    // propre préparation), mais pas d'une reprise de pause, où l'origine est
+    // déjà posée : le pré-roll n'est alors pas rejoué.
+    const cameraLeadMs = cameraTrack?.leadMs || 0;
+    animationAccMs = cameraLeadMs > 0 && cameraTrackStartAt === null ? -cameraLeadMs : 0;
 
     const animationStep = (ts) => {
         if (animationLastTs === null) animationLastTs = ts;
@@ -2219,6 +2247,9 @@ function startRecordingProcess(){
     currentFrame = 0;
     globalRecordFrame = 0;
     infosProgressBar = {};
+    // Pré-roll « piste » : jamais de reliquat d'une capture précédente
+    // interrompue — l'affichage initial du jour 0 en dépend.
+    recordingLeadPending = false;
 
     // NB : l'affichage des caches antérieures à la date de début est fait plus bas,
     // APRÈS le window.vectorSource.clear() de préparation — sinon ce clear les efface
@@ -2264,6 +2295,10 @@ function startRecordingProcess(){
             // Mode piste : les frames de trajet SONT des frames de dates —
             // nbOfImages ne reçoit plus d'extension trajets.
             cameraTravelMs: cameraTrack ? 0 : (cameraPlan?.travelMs || 0),
+            // Pré-roll « piste » : ses images de tête s'ajoutent au total sans
+            // rogner le quota des jours (baseFrameCount inchangé). timelineScale
+            // vaut 1 sur ce chemin : cameraTrack.leadMs est en ms vidéo.
+            cameraLeadMs: cameraTrack?.leadMs || 0,
             fps: pkg.options.record.fps,
             extraEndSeconds: pkg.options.animation.extraEndSeconds,
             tailFreezeMs: pkg.options.record?.mediaRecorder?.tailFreezeMs,
@@ -2273,6 +2308,7 @@ function startRecordingProcess(){
         });
 
         recordingDayIndex = 0;
+        recordingLeadPending = false;
         recordingBaseFrameCount = timingPlan.baseFrameCount;
         currentDayFrameTarget = framesForDay(0, recordingDayCount, recordingBaseFrameCount,
             { allowZero: isEvolutionPage() });
@@ -2286,6 +2322,14 @@ function startRecordingProcess(){
         pkg.options.record.nbOfImages = timingPlan.totalFrameCount;
         pkg.options.record.numberOfDigits = Math.max(4, String(timingPlan.totalFrameCount).length);
         if (cameraPacing) currentDayFrameTarget = cameraPacedFrameTarget(false);
+        // Pré-roll « piste » : les leadFrameCount premières images montrent le
+        // vol de la caméra vers le jour 0 — celui-ci n'est affiché qu'à leur
+        // écoulement (branche recordingLeadPending de captureNextFrame).
+        const leadFrames = timingPlan.leadFrameCount || 0;
+        if (leadFrames > 0) {
+            recordingLeadPending = true;
+            currentDayFrameTarget = leadFrames;
+        }
         dbgMapgl('[RECORD] Jours animation:', recordingDayCount, 'frames animation:', recordingBaseFrameCount, 'total images:', timingPlan.totalFrameCount);
     } catch(e) { console.warn('Calcul jours animation échoué:', e); }
 
@@ -2389,8 +2433,12 @@ function startRecordingProcess(){
     // cohérent avec le canvas de capture images dimensionné en pixels device.
     buildOverlayCache(getCaptureRatio());
 
-    // Afficher les points initiaux pour la date de début
-    displayFeaturesForDate(currentDate, pkg.options.point, pkg.options.flash, true, infos);
+    // Afficher les points initiaux pour la date de début — sauf en pré-roll
+    // « piste » : les images de tête montrent le vol vers le jour 0, qui n'est
+    // affiché qu'à leur écoulement (captureNextFrame, branche leadPending).
+    if (!recordingLeadPending) {
+        displayFeaturesForDate(currentDate, pkg.options.point, pkg.options.flash, true, infos);
+    }
 
     // Attendre que le rendu soit complet avant de commencer la capture.
     // scheduleCaptureFrame attrape toute erreur de la boucle asynchrone pour
@@ -2977,7 +3025,17 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
         // Mise à jour de la Modale
         updateProgress();
 
-        if (isEvolutionPage()) {
+        if (recordingLeadPending) {
+            // Pré-roll « piste » écoulé : le jour 0 s'affiche à présent — la
+            // caméra vient d'achever son approche sur lui — et reçoit son quota
+            // d'images normal. La date n'avance PAS encore : currentDate et
+            // recordingDayIndex restent sur le jour 0.
+            recordingLeadPending = false;
+            currentDayFrameTarget = cameraPacing
+                ? cameraPacedFrameTarget(false)
+                : framesForDay(0, recordingDayCount, recordingBaseFrameCount);
+            displayFeaturesForDate(currentDate, pointOptions, flashOptions, true, infos);
+        } else if (isEvolutionPage()) {
             // Plusieurs jours peuvent partager une image : les jours qui n'en
             // reçoivent aucune sont affichés en un seul lot avec le suivant.
             const batch = [];
@@ -3178,10 +3236,13 @@ function computeTotalAnimationMs(){
         // sinon les trajets s'ajoutent au temps des dates.
         const cameraBudgetMs = Number(pkg.options.animation?.cameraTimeBudgetMs);
         const cameraTravel = estimateCameraTravel();
-        // Mode piste : les trajets se jouent pendant les dates — rien à ajouter.
+        // Mode piste : les trajets se jouent pendant les dates — rien à
+        // ajouter, sauf le pré-roll (le trajet du jour 0 joué en tête, avant
+        // la première date) qui allonge l'animation d'autant en rythme libre.
+        // Avec durée imposée, cameraBudgetMs inclut déjà le pré-roll.
         if (cameraTravel) base = cameraBudgetMs > 0
             ? cameraBudgetMs
-            : (effectiveCameraTrack() ? base : base + cameraTravel.totalMs);
+            : (effectiveCameraTrack() ? base + (cameraTravel.leadMs || 0) : base + cameraTravel.totalMs);
         const extraEndMs = Math.max(0, Number(pkg.options?.animation?.extraEndSeconds) || 0) * 1000;
         const endHoldMs = automaticEndHoldMs({
             tailFreezeMs: pkg.options.record?.mediaRecorder?.tailFreezeMs,

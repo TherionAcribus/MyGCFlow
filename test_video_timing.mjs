@@ -548,3 +548,98 @@ test('cameraOverlap ne change rien quand la durée des trajets est inconnue', ()
     assert.equal(reactif.animationMs, 30500);
     assert.equal(reactif.cameraOverheadMs, 500);
 });
+
+// ---------- Pré-roll de la piste (cameraLeadMs) ----------
+//
+// Le trajet du jour 0 joue en tête de timeline, avant la première date.
+// En mode 'rate' la vidéo s'allonge d'autant ; en 'duration'/'music' le
+// pré-roll est pris sur le budget d'animation, qui reste respecté.
+
+test('cameraLeadMs en rythme jours/s : le pré-roll allonge l\'animation', () => {
+    const plan = buildTimingPlan({
+        dayCount: 100,
+        rhythm: { mode: 'rate', daysPerSecond: 10 },
+        fps: 30,
+        tailFreezeMs: 3000,
+        cameraTravelMs: 20000,
+        cameraJourneyCount: 15,
+        cameraOverlap: true,
+        cameraLeadMs: 2500,
+    });
+    assert.equal(plan.valid, true);
+    assert.equal(plan.cameraLeadMs, 2500);
+    // Le rythme des dates est inchangé ; la vidéo est plus longue du pré-roll.
+    assert.equal(plan.timePerDayMs, 100);
+    assert.equal(plan.animationMs, 12500);
+    assert.equal(plan.totalDurationMs, 15500);
+    // Les images de pré-roll s'ajoutent au total sans toucher le quota des
+    // jours : 100 jours × 100 ms = 300 frames de dates, +75 frames de pré-roll,
+    // +90 frames de pause de fin.
+    assert.equal(plan.baseFrameCount, 300);
+    assert.equal(plan.totalFrameCount, 465);
+});
+
+test('cameraLeadMs en durée imposée : total inchangé, dates réduites du pré-roll', () => {
+    const plan = buildTimingPlan({
+        dayCount: 100,
+        rhythm: { mode: 'duration', totalDurationMs: 63000 },
+        fps: 30,
+        tailFreezeMs: 3000,
+        cameraTravelMs: 40000,
+        cameraJourneyCount: 3,
+        cameraOverlap: true,
+        cameraLeadMs: 3000,
+    });
+    assert.equal(plan.valid, true);
+    assert.equal(plan.cameraLeadMs, 3000);
+    // La vidéo garde sa durée ; le budget d'animation exposé au moteur inclut
+    // le pré-roll (prepareCameraPacing le soustrait à son tour).
+    assert.equal(plan.totalDurationMs, 63000);
+    assert.equal(plan.animationMs, 60000);
+    assert.equal(plan.cameraTimeBudgetMs, 60000);
+    // Les dates se partagent 60 s − 3 s d'approche : 570 ms/jour.
+    assert.equal(plan.timePerDayMs, 570);
+    // Frames : dates (100 × 570 ms → 1710) + pré-roll (90) + fin (90).
+    assert.equal(plan.baseFrameCount, 1710);
+    assert.equal(plan.totalFrameCount, 1890);
+    assert.equal(plan.totalFrameCount, Math.round(plan.totalDurationMs * 30 / 1000));
+});
+
+test('cameraLeadMs est ignoré hors mode piste', () => {
+    // Sans cameraOverlap (mode réactif) : le trajet du jour 0 se joue pendant
+    // l'affichage de sa date comme les autres — pas de pré-roll.
+    const reactif = buildTimingPlan({
+        dayCount: 100,
+        rhythm: { mode: 'rate', daysPerSecond: 10 },
+        fps: 30,
+        tailFreezeMs: 3000,
+        cameraTravelMs: 20000,
+        cameraLeadMs: 2500,
+    });
+    assert.equal(reactif.cameraLeadMs, 0);
+    assert.equal(reactif.animationMs, 30000);
+    // cameraOverlap sans simulation connue : pas d'overlap, pas de pré-roll.
+    const sansSim = buildTimingPlan({
+        dayCount: 100,
+        rhythm: { mode: 'rate', daysPerSecond: 10 },
+        fps: 30,
+        cameraOverlap: true,
+        cameraLeadMs: 2500,
+    });
+    assert.equal(sansSim.cameraOverlap, false);
+    assert.equal(sansSim.cameraLeadMs, 0);
+    assert.equal(sansSim.animationMs, 10000);
+});
+
+test('buildImageTimingPlan : le pré-roll s\'ajoute au total sans rogner les jours', () => {
+    const plan = buildImageTimingPlan({
+        dayCount: 10, timePerDayMs: 100, fps: 30, tailFreezeMs: 0, cameraLeadMs: 2000,
+    });
+    assert.equal(plan.baseFrameCount, 30);   // quota des jours inchangé
+    assert.equal(plan.leadFrameCount, 60);
+    assert.equal(plan.totalFrameCount, 90);
+    // Sans pré-roll : leadFrameCount exposé mais nul, total inchangé.
+    const sans = buildImageTimingPlan({ dayCount: 10, timePerDayMs: 100, fps: 30, tailFreezeMs: 0 });
+    assert.equal(sans.leadFrameCount, 0);
+    assert.equal(sans.totalFrameCount, 30);
+});

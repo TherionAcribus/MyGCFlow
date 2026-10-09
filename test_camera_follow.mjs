@@ -749,3 +749,69 @@ test('cameraTrackStateAt : avant, pendant, entre et après les trajets', () => {
     assert.deepEqual(apres.center, [6000, 0]);
     assert.equal(apres.zoom, journey2.endZoom);
 });
+
+// ---------- Pré-roll (leadMs) ----------
+
+test('la simulation expose leadMs : la durée du trajet du jour 0', () => {
+    const avec = simulateCameraJourneys([jour(3000, 0), jour(6000, 0)], { ...vue, dynamism: 2 });
+    assert.ok(avec.leadMs > 0);
+    assert.equal(avec.leadMs, avec.travelMsByDay[0]);
+    assert.equal(avec.leadMs, avec.journeysByDay[0].totalDurationMs);
+
+    // Jour 0 sans trajet (aucune cache, ou caméra déjà dans la zone de
+    // confort) : pas de pré-roll, le comportement historique est conservé.
+    assert.equal(simulateCameraJourneys([null, jour(3000, 0)], { ...vue, dynamism: 2 }).leadMs, 0);
+    assert.equal(simulateCameraJourneys([jour(100, 0), jour(3000, 0)], { ...vue, dynamism: 1 }).leadMs, 0);
+    assert.equal(simulateCameraJourneys([], { ...vue, dynamism: 2 }).leadMs, 0);
+});
+
+test('buildCameraTrack : leadMs donne au premier trajet sa fenêtre d\'anticipation', () => {
+    const journey0 = createCameraJourney([0, 0], [3000, 0], 8, 1);
+    const journey2 = createCameraJourney([3000, 0], [6000, 0], 8, 1);
+    // leadMs = durée naturelle du 1er trajet : il joue à vitesse réelle de
+    // t=0 à t=leadMs, pendant que les dates attendent encore.
+    const leadMs = journey0.totalDurationMs;
+    const track = buildCameraTrack([journey0, null, journey2], { dayMs: 10000, leadMs });
+    const [e0, e2] = track.events;
+    assert.equal(e0.dayIndex, 0);
+    assert.equal(e0.startMs, 0);
+    assert.equal(e0.endMs, leadMs);
+    assert.equal(e0.durationMs, journey0.totalDurationMs);
+    assert.equal(e0.rate, 1);
+    // Les autres arrivées sont décalées d'autant, structure inchangée.
+    assert.equal(e2.endMs, leadMs + 2 * 10000);
+    assert.equal(e2.startMs, leadMs + 2 * 10000 - journey2.totalDurationMs);
+    assert.equal(e2.startMs + e2.durationMs, e2.endMs);
+    assert.equal(track.totalMs, leadMs + 3 * 10000);
+    assert.equal(track.leadMs, leadMs);
+    // Pendant le pré-roll, la caméra est bien en vol vers le jour 0.
+    const enVol = cameraTrackStateAt(track, leadMs / 2);
+    assert.equal(enVol.moving, true);
+    assert.ok(enVol.center[0] > 0 && enVol.center[0] < 3000);
+    const atterri = cameraTrackStateAt(track, leadMs);
+    assert.equal(atterri.moving, false);
+    assert.deepEqual(atterri.center, [3000, 0]);
+});
+
+test('buildCameraTrack : un leadMs plus court que le trajet laisse un départ à t=0', () => {
+    // Marge insuffisante : le trajet 0 démarre quand même à 0 et finit en
+    // retard sur son jour — accepté, les dates ne sont jamais retardées.
+    const journey0 = createCameraJourney([0, 0], [3000, 0], 8, 1);
+    const track = buildCameraTrack([journey0], { dayMs: 5000, leadMs: 1000 });
+    const [e0] = track.events;
+    assert.equal(e0.startMs, 0);
+    assert.equal(e0.endMs, 1000);
+    assert.equal(e0.durationMs, journey0.totalDurationMs);
+    assert.ok(e0.startMs + e0.durationMs > e0.endMs);
+    assert.equal(track.totalMs, 1000 + 5000);
+});
+
+test('buildCameraTrack : leadMs omis ou nul ne change rien', () => {
+    const journey = createCameraJourney([0, 0], [3000, 0], 8, 1);
+    const sans = buildCameraTrack([journey, null], { dayMs: 5000 });
+    const zero = buildCameraTrack([journey, null], { dayMs: 5000, leadMs: 0 });
+    assert.equal(sans.leadMs, 0);
+    assert.deepEqual(zero, sans);
+    assert.equal(sans.events[0].endMs, 0);
+    assert.equal(sans.totalMs, 2 * 5000);
+});

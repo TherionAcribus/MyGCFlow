@@ -2223,6 +2223,11 @@ msgstr ""
 msgid "dont trajets de caméra ${d}"
 msgstr ""
 
+#: static/js/ui.js:4821
+#, python-brace-format
+msgid "dont approche caméra ${d}"
+msgstr ""
+
 #: static/js/ui.js:4813
 #, python-brace-format
 msgid "+ ${d} additionnel"

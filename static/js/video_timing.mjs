@@ -218,6 +218,15 @@ export function splitCameraBudget({ animationMs, minDatesMs = 0, travelMs = 0 } 
 // la durée annoncée est exacte. cameraTravelMs reste exposé à titre
 // informationnel (résumé UI), sans aucun effet sur le calcul.
 //
+// cameraLeadMs : « pré-roll » du mode piste — la durée vidéo du trajet du
+// jour 0, jouée en tête de timeline avant la première date (sinon ce trajet,
+// sans fenêtre avant t=0, serait compressé ou instantané). En mode 'rate' la
+// durée annoncée s'allonge d'autant ; en 'duration'/'music' le pré-roll est
+// pris sur le budget d'animation, qui reste respecté — le temps des dates est
+// alors réduit de leadMs (le moteur, prepareCameraPacing, fait la même
+// soustraction sur cameraTimeBudgetMs). Hors mode piste (pas d'overlap) le
+// paramètre est sans objet : ignoré.
+//
 // Retourne un plan : compte de jours, décomposition des durées, frames,
 // minimum réalisable, `errors` (entrées invalides — ne pas lancer) et
 // `warnings` (limites appliquées, ex. pincement au minimum ou musique plus
@@ -236,6 +245,7 @@ export function buildTimingPlan({
     cameraTravelMs,
     cameraJourneyCount = 0,
     cameraOverlap = false,
+    cameraLeadMs = 0,
 } = {}) {
     const errors = [];
     const warnings = [];
@@ -272,6 +282,10 @@ export function buildTimingPlan({
     // Mode piste : les trajets se superposent à l'affichage des dates — aucune
     // pause à financer, aucune image de raccord à produire.
     const overlap = cameraOverlap === true && cameraKnown;
+    // Pré-roll du premier trajet (tête de la piste, cf. doc de la fonction) :
+    // n'existe qu'en mode piste — en mode réactif le trajet du jour 0 se joue
+    // pendant l'affichage de sa date, comme les autres.
+    const cameraLead = overlap ? Math.max(0, finiteNumber(cameraLeadMs, 0)) : 0;
     // Images de raccord des trajets en capture image par image (attente du
     // rendu final). En mode 'rate' elles s'ajoutent à la durée annoncée ;
     // en 'duration'/'music' elles sont déjà absorbées par le pacing dans le
@@ -286,7 +300,8 @@ export function buildTimingPlan({
     let cameraScale = 1;
     // Durée d'animation (dates + trajets) que le moteur doit tenir ; NaN quand
     // les trajets s'ajoutent librement à l'animation. En mode piste, c'est la
-    // durée d'animation entièrement dévolue aux dates.
+    // durée d'animation entière, pré-roll compris — les dates reçoivent ce
+    // budget moins cameraLead (prepareCameraPacing fait la soustraction).
     let cameraTimeBudgetMs = NaN;
 
     const mode = rhythm && rhythm.mode;
@@ -297,9 +312,9 @@ export function buildTimingPlan({
         } else {
             timePerDayMs = 1000 / p.value;
             // Mode piste : les trajets ne s'ajoutent pas — l'animation est la
-            // durée des dates seules.
+            // durée des dates, plus le pré-roll qui la précède.
             animationMs = days > 0
-                ? days * timePerDayMs + (overlap ? 0 : cameraRawMs + (cameraKnown ? cameraOverheadMs : 0))
+                ? days * timePerDayMs + (overlap ? cameraLead : cameraRawMs + (cameraKnown ? cameraOverheadMs : 0))
                 : 0;
         }
     } else if (mode === 'duration' || mode === 'music') {
@@ -312,13 +327,16 @@ export function buildTimingPlan({
             const animRequested = Math.max(0, p.value - endHoldMs - extraEndMs);
             if (animRequested < minAnimationMs) {
                 // Trop court pour une frame par jour : le minimum est appliqué
-                // et signalé au lieu d'être corrigé silencieusement.
+                // et signalé au lieu d'être corrigé silencieusement. Le
+                // pré-roll s'y ajoute : sans durée imposée tenable, il revient
+                // à allonger l'animation (le moteur retombe alors sur le
+                // rythme libre timePerDay, le pré-roll restant joué en tête).
                 clampedToMinimum = true;
-                animationMs = minAnimationMs + cameraAppliedMs;
+                animationMs = minAnimationMs + cameraAppliedMs + cameraLead;
                 warnings.push({
                     type: 'minimum-total',
                     minimumMs: minTotalMs,
-                    appliedMs: minTotalMs + cameraAppliedMs,
+                    appliedMs: minTotalMs + cameraAppliedMs + cameraLead,
                     requestedMs: p.value,
                     reason: 'one-frame-per-day',
                 });
@@ -326,14 +344,15 @@ export function buildTimingPlan({
                     warnings.push({
                         type: 'music-shorter-than-minimum',
                         musicMs: p.value,
-                        appliedMs: minTotalMs + cameraAppliedMs,
+                        appliedMs: minTotalMs + cameraAppliedMs + cameraLead,
                     });
                 }
             } else {
                 animationMs = animRequested;
                 if (overlap) {
-                    // Tout le budget d'animation revient aux dates : les
-                    // trajets sont joués pendant leur affichage.
+                    // Tout le budget d'animation revient aux dates et au
+                    // pré-roll : les autres trajets sont joués pendant
+                    // l'affichage des jours précédents.
                     cameraTimeBudgetMs = animRequested;
                 } else if (cameraKnown) {
                     const split = splitCameraBudget({
@@ -354,7 +373,13 @@ export function buildTimingPlan({
                     }
                 }
             }
-            timePerDayMs = days > 0 ? (animationMs - cameraAppliedMs) / days : NaN;
+            // Le temps des dates exclut le pré-roll : en durée imposée, la
+            // marge d'anticipation est prise sur le budget (le moteur applique
+            // la même soustraction sur cameraTimeBudgetMs — le plancher à 1 ms
+            // total est le sien, cf. prepareCameraPacing dans mapgl.js).
+            timePerDayMs = days > 0
+                ? Math.max(1, animationMs - cameraAppliedMs - cameraLead) / days
+                : NaN;
         }
     } else {
         errors.push('rhythm');
@@ -372,8 +397,9 @@ export function buildTimingPlan({
             flashDurationMs,
             allowMultipleDaysPerFrame,
             cameraTravelMs: cameraAppliedMs,
+            cameraLeadMs: cameraLead,
         })
-        : { baseFrameCount: 0, tailFrameCount: 0, totalFrameCount: 0, framesPerDayAverage: 0 };
+        : { baseFrameCount: 0, tailFrameCount: 0, totalFrameCount: 0, framesPerDayAverage: 0, leadFrameCount: 0 };
 
     return {
         valid: errors.length === 0,
@@ -404,6 +430,9 @@ export function buildTimingPlan({
         cameraJourneyCount: cameraJourneys,
         cameraOverheadMs,
         cameraTimeBudgetMs,
+        // Pré-roll de la piste réellement appliqué (0 hors mode piste) : durée
+        // vidéo de l'approche du jour 0, exposée pour le résumé UI.
+        cameraLeadMs: cameraLead,
         // Mode piste réellement actif : exige la durée simulée. Sans elle le
         // runtime retombe sur le suivi réactif (dates en pause), avertissement
         // « dates en pause » donc encore pertinent côté UI.
@@ -473,6 +502,11 @@ export function buildLoadEstimate({ plan, maxPointsPerDay = 0, flashDurationMs =
 //
 // cameraTravelMs : trajets du suivi de caméra, capturés en plus des images des
 // dates (baseFrameCount ne compte que ces dernières).
+//
+// cameraLeadMs : « pré-roll » du mode piste (ms vidéo) — le trajet du jour 0
+// joué en tête avant la première date. Ses images s'ajoutent au total mais PAS
+// au baseFrameCount : les jours gardent leur quota d'images intact, le jour 0
+// ne démarre qu'à l'écoulement du pré-roll.
 export function buildImageTimingPlan({
     dayCount,
     timePerDayMs,
@@ -483,6 +517,7 @@ export function buildImageTimingPlan({
     flashDurationMs = 0,
     allowMultipleDaysPerFrame = false,
     cameraTravelMs = 0,
+    cameraLeadMs = 0,
 } = {}) {
     const safeDays = Math.max(1, Math.round(finiteNumber(dayCount, 1)));
     const safeFps = normalizeVideoFps(fps);
@@ -498,13 +533,15 @@ export function buildImageTimingPlan({
     const baseFrameCount = Math.max(minFrames, requestedBaseFrames);
     const tailFrameCount = Math.max(0, Math.round((endHoldMs + extraEndMs) * safeFps / 1000));
     const travelFrameCount = Math.max(0, Math.round(Math.max(0, finiteNumber(cameraTravelMs, 0)) * safeFps / 1000));
-    const totalFrameCount = baseFrameCount + travelFrameCount + tailFrameCount;
+    const leadFrameCount = Math.max(0, Math.round(Math.max(0, finiteNumber(cameraLeadMs, 0)) * safeFps / 1000));
+    const totalFrameCount = baseFrameCount + travelFrameCount + leadFrameCount + tailFrameCount;
 
     return {
         fps: safeFps,
         dayCount: safeDays,
         baseFrameCount,
         travelFrameCount,
+        leadFrameCount,
         tailFrameCount,
         totalFrameCount,
         framesPerDayAverage: baseFrameCount / safeDays,

@@ -4688,6 +4688,10 @@ export function refreshTimingPlan({ save = true } = {}) {
         allowMultipleDaysPerFrame: isEvolutionPage(),
         cameraTravelMs: cameraTravel ? cameraTravel.totalMs : undefined,
         cameraJourneyCount: cameraTravel ? cameraTravel.journeyCount : 0,
+        // Pré-roll du mode piste : durée vidéo du trajet du jour 0, jouée en
+        // tête de l'animation (0 quand il n'y en a pas). Sans effet hors mode
+        // piste — le plan l'ignore alors (cf. video_timing.mjs).
+        cameraLeadMs: cameraTravel ? (cameraTravel.leadMs || 0) : 0,
         // Piste de caméra (défaut) : les trajets se superposent à l'affichage
         // des dates. cameraTrack:false revient au mode réactif, où les dates
         // sont en pause pendant chaque déplacement. Suivi « tête du trait » :
@@ -4705,6 +4709,9 @@ export function refreshTimingPlan({ save = true } = {}) {
         // Durée imposée avec suivi de caméra : le moteur tient cette durée
         // d'animation, trajets compris (mapgl.js, prepareCameraPacing).
         animation.cameraTimeBudgetMs = Number.isFinite(plan.cameraTimeBudgetMs) ? plan.cameraTimeBudgetMs : null;
+        // Pré-roll « piste » (ms vidéo, déjà nul hors mode piste) : conservé
+        // pour l'estimation d'images d'updateInfosForPictures (utils.js).
+        animation.cameraLeadMs = plan.cameraLeadMs || 0;
     }
 
     // 3. Rendu : champs en lecture seule + synthèse + messages.
@@ -4809,6 +4816,12 @@ function renderTimingSummary(plan) {
         ];
         if (cameraTravelKnown && plan.cameraTravelMs > 0) {
             parts.splice(3, 0, t('dont trajets de caméra ${d}', { d: formatDurationHuman(plan.cameraTravelMs) }));
+        }
+        // Pré-roll « piste » : l'approche caméra du jour 0 est jouée en tête
+        // d'animation — mention discrète, la durée annoncée l'inclut déjà.
+        if (plan.cameraLeadMs > 0) {
+            parts.splice(cameraTravelKnown && plan.cameraTravelMs > 0 ? 4 : 3, 0,
+                t('dont approche caméra ${d}', { d: formatDurationHuman(plan.cameraLeadMs) }));
         }
         if (plan.extraEndMs > 0) parts.push(t('+ ${d} additionnel', { d: formatDurationHuman(plan.extraEndMs) }));
         parts.push(cameraAddsTravel
