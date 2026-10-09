@@ -13,6 +13,7 @@ import {
     easeInOutCubic,
     normalizeCameraDynamism,
     normalizeCameraPath,
+    resolveCameraFollowMode,
     pacedDayMs,
     sampleCameraJourney,
     shouldMoveCamera,
@@ -24,6 +25,13 @@ import {
     trailCameraZoomTarget,
     zoomForExtent,
 } from './static/js/camera_follow.mjs';
+
+test('le mode tête du trait retombe sur le suivi par jour si le trajet est désactivé', () => {
+    assert.equal(resolveCameraFollowMode('trail', true), 'trail');
+    assert.equal(resolveCameraFollowMode('trail', false), 'days');
+    assert.equal(resolveCameraFollowMode('days', true), 'days');
+    assert.equal(resolveCameraFollowMode('inconnu', true), 'days');
+});
 
 test('le lissage ne dépend pas de la cadence', () => {
     // Même durée totale, découpée en 1 pas ou en 10 : même chemin parcouru.

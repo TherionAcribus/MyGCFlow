@@ -68,6 +68,14 @@ export function normalizeCameraDynamism(value) {
     return level >= 1 && level <= 4 ? level : DEFAULT_CAMERA_DYNAMISM;
 }
 
+// Mode réellement applicable : demander la tête du trait ne suffit pas, le
+// trajet doit aussi être actif. Centralisé ici pour que le moteur et l'interface
+// ne divergent plus quand l'utilisateur active/désactive le trait après avoir
+// choisi sa cible de suivi.
+export function resolveCameraFollowMode(requestedMode, trailEnabled) {
+    return requestedMode === 'trail' && trailEnabled === true ? 'trail' : 'days';
+}
+
 // Une journée ne déclenche un mouvement que si au moins une de ses caches sort
 // de la zone de confort choisie. Le niveau 4 assume volontairement un mouvement
 // systématique, même si le barycentre est déjà centré.

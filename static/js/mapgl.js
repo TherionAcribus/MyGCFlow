@@ -129,6 +129,7 @@ import {
     MIN_CRUISE_ZOOM,
     normalizeCameraDynamism,
     pacedDayMs,
+    resolveCameraFollowMode,
     sampleCameraJourney,
     shouldMoveCamera,
     simulateCameraJourneys,
@@ -1097,8 +1098,10 @@ function updateCameraFollow(now) {
 // défaut) ou 'trail' (glissement continu derrière la tête du trait de
 // déplacement). 'trail' exige les traits activés ; sinon retombe sur 'days'.
 function effectiveCameraFollowMode() {
-    return pkg.options.animation?.cameraFollowMode === 'trail'
-        && currentTrailOptions().enabled === true ? 'trail' : 'days';
+    return resolveCameraFollowMode(
+        pkg.options.animation?.cameraFollowMode,
+        currentTrailOptions().enabled,
+    );
 }
 
 // Position carte de la tête du trait à l'instant `now` (même horloge que les

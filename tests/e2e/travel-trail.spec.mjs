@@ -253,6 +253,51 @@ for (const mode of ['images', 'mediarecorder']) {
   });
 }
 
+test('la cible tête du trait suit l\'état réel du trajet', async ({ page }) => {
+  await openWithFixture(page);
+
+  // Forcer un trajet Caméra mesurable en mode par jour : vue sur Paris,
+  // caches à New York. Quand le trait est coupé, « tête du trait » doit
+  // retomber sur ce mode et conserver son réglage de dynamisme disponible.
+  await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    for (const points of app.pointsByDate.values()) {
+      for (const feature of points) feature.geometry.coordinates = [-74.006, 40.7128];
+    }
+    app.bumpPointsByDateRevision();
+    const view = app.getMap().getView();
+    view.setCenter(ol.proj.fromLonLat([2.3522, 48.8566]));
+    view.setZoom(6);
+  });
+
+  await page.locator('a[href="#animation"]').click();
+  await page.locator('#switchCameraFollow').check();
+  await page.locator('#selectCameraTarget').selectOption('trail');
+  await expect(page.locator('#helpCameraTargetTrail')).toBeVisible();
+  await expect(page.locator('#selectCameraDynamism')).toBeEnabled();
+  await expect(page.locator('#timingSummary')).toContainText('trajets de caméra');
+
+  // Activer le trait rend le mode demandé effectif : le dynamisme quotidien
+  // devient sans objet et le plan ne compte plus de vols par jour.
+  await page.locator('a[href="#style"]').click();
+  await page.locator('a[href="#tabTrail"]').click();
+  await page.locator('#switchTrail').check();
+  await page.locator('a[href="#animation"]').click();
+  await expect(page.locator('#selectCameraDynamism')).toBeDisabled();
+  await expect(page.locator('#timingSummary')).not.toContainText('trajets de caméra');
+
+  // Et le repli est immédiatement restauré si le trait est recoupé.
+  await page.locator('a[href="#style"]').click();
+  await page.locator('a[href="#tabTrail"]').click();
+  await page.locator('#switchTrail').uncheck();
+  await page.locator('a[href="#animation"]').click();
+  await expect(page.locator('#selectCameraDynamism')).toBeEnabled();
+  await expect(page.locator('#timingSummary')).toContainText('trajets de caméra');
+
+  await page.locator('#switchCameraFollow').uncheck();
+});
+
+
 // Suivi de caméra « tête du trait » (cameraFollowMode === 'trail') : la caméra
 // glisse en continu derrière le stylo au lieu de recadrer chaque jour.
 test('le suivi « tête du trait » fait glisser la caméra derrière le stylo', async ({ page }) => {

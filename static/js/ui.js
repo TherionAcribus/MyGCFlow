@@ -30,6 +30,7 @@ import { saveSettingsPatch, makeDebouncedSettingsSaver } from './settings_api.mj
 import { reportSave, markSaveError } from './saved_indicator.mjs';
 import { t } from './notifications.js';
 import { isEvolutionPage } from './app_mode.mjs';
+import { resolveCameraFollowMode } from './camera_follow.mjs';
 import {
     buildTrailPath,
     buildTrailRoute,
@@ -591,18 +592,6 @@ const btnRecordAnimation = document.getElementById('btnRecordAnimation');
     const switchCameraFollow = document.getElementById('switchCameraFollow');
     const selectCameraDynamism = document.getElementById('selectCameraDynamism');
     const selectCameraTarget = document.getElementById('selectCameraTarget');
-    const helpCameraTargetTrail = document.getElementById('helpCameraTargetTrail');
-    const syncCameraFollowControls = () => {
-        const trailMode = selectCameraTarget?.value === 'trail';
-        // Le dynamisme (zone de confort par jour) n'a pas d'effet en suivi de
-        // la tête du trait — le glissement amorti n'en dépend pas.
-        if (selectCameraDynamism) {
-            selectCameraDynamism.disabled = !switchCameraFollow?.checked || trailMode;
-        }
-        if (selectCameraTarget) selectCameraTarget.disabled = !switchCameraFollow?.checked;
-        // Rappeler la condition du mode (trajet activé) quand il est choisi.
-        if (helpCameraTargetTrail) helpCameraTargetTrail.hidden = !trailMode;
-    };
     if (switchCameraFollow) {
         switchCameraFollow.addEventListener('change', () => {
             pkg.options.animation.cameraFollow = switchCameraFollow.checked;
@@ -4580,8 +4569,26 @@ function setTimingFieldValidity(input, feedbackId, ok, message) {
 // traits de déplacement sont activés — sinon le suivi retombe sur le mode
 // par jour (même condition que effectiveCameraFollowMode côté mapgl.js).
 function isCameraTrailMode() {
-    return pkg.options?.animation?.cameraFollowMode === 'trail'
-        && normalizeTrailOptions(pkg.options?.trail).enabled === true;
+    return resolveCameraFollowMode(
+        pkg.options?.animation?.cameraFollowMode,
+        normalizeTrailOptions(pkg.options?.trail).enabled,
+    ) === 'trail';
+}
+
+// Reflète le mode EFFECTIF, pas seulement la valeur du sélecteur : si
+// « tête du trait » est demandé mais que le trajet est désactivé, le moteur
+// retombe sur le suivi par jour et le réglage de dynamisme reste donc utile.
+function syncCameraFollowControls() {
+    const enabled = document.getElementById('switchCameraFollow')?.checked === true;
+    const target = document.getElementById('selectCameraTarget');
+    const dynamism = document.getElementById('selectCameraDynamism');
+    const trailRequested = target?.value === 'trail';
+    if (target) target.disabled = !enabled;
+    if (dynamism) dynamism.disabled = !enabled || isCameraTrailMode();
+    const help = document.getElementById('helpCameraTargetTrail');
+    // L'aide reste visible dès que le mode est demandé : elle explique
+    // justement pourquoi le repli par jour s'applique quand le trajet est off.
+    if (help) help.hidden = !trailRequested;
 }
 
 // Recalcule le plan depuis l'état courant, répercute les valeurs dérivées
@@ -5087,14 +5094,11 @@ export function syncAnimationOptionsUI() {
     const trailTarget = animation.cameraFollowMode === 'trail';
     if (selectCameraTarget) {
         selectCameraTarget.value = trailTarget ? 'trail' : 'days';
-        selectCameraTarget.disabled = animation.cameraFollow !== true;
     }
-    const helpCameraTargetTrail = document.getElementById('helpCameraTargetTrail');
-    if (helpCameraTargetTrail) helpCameraTargetTrail.hidden = !trailTarget;
     if (selectCameraDynamism) {
         selectCameraDynamism.value = String(animation.cameraDynamism);
-        selectCameraDynamism.disabled = animation.cameraFollow !== true || trailTarget;
     }
+    syncCameraFollowControls();
 
     refreshTimingPlan({ save: false });
 }
@@ -5339,6 +5343,7 @@ function initTrailControls() {
 // Contrôles -> pkg.options.trail. La durée (préférence globale) est conservée.
 function changeTrailValues() {
     const trail = pkg.options.trail = pkg.options.trail || {};
+    const wasEnabled = normalizeTrailOptions(trail).enabled;
     const field = (id) => document.getElementById(id);
     const enabled = field('switchTrail');
     if (enabled) trail.enabled = enabled.checked;
@@ -5368,6 +5373,12 @@ function changeTrailValues() {
         if (el && el.value !== '' && Number.isFinite(Number(el.value))) trail[key] = Number(el.value);
     }
     Object.assign(trail, normalizeTrailOptions(trail));
+    if (trail.enabled !== wasEnabled) {
+        // Le choix « tête du trait » bascule alors entre son vrai mode et le
+        // repli par jour : contrôles et estimation de durée doivent suivre.
+        syncCameraFollowControls();
+        refreshTimingPlan();
+    }
     updateTrailControlsState();
     pkg.refreshTravelTrailStyle?.();
     drawTrailStylePreview();
