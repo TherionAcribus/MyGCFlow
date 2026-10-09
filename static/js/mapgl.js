@@ -120,6 +120,7 @@ import {
     buildCameraTrack,
     CAMERA_JOURNEY_EXTRA_FRAMES,
     cameraTrackStateAt,
+    fitCameraTrackDayMs,
     alignWorldExtent,
     clampToExtent,
     createCameraJourney,
@@ -243,6 +244,9 @@ let currentDayFrameTarget = 1;
 // pas encore affiché. Posé par startRecordingProcess, consommé dans la branche
 // « jour suivant » de captureNextFrame.
 let recordingLeadPending = false;
+// Pause « piste » planifiée en capture : vrai tant que les images de hold du
+// jour à venir ne sont pas écoulées — la date n'avance pas pendant ce temps.
+let recordingHoldPending = false;
 // FLASH
 let animationSource;
 let animationLayer;
@@ -1386,10 +1390,12 @@ function effectiveCameraPath() {
 }
 
 // Zoom d'arrivée adapté à l'étendue des caches du jour (cf. zoomForExtent) :
-// activé par défaut ; l'option non documentée cameraFitDay permet de revenir
-// au « retour au zoom de départ » pour comparaison ou diagnostic.
+// désactivé par défaut — sur des jours « grappe + cache isolée », cadrer tout
+// le jour dézoome trop et vise le centre d'une étendue vide. Le défaut revient
+// au zoom de départ, cible barycentre ; l'option non documentée
+// cameraFitDay:true réactive le cadrage pour comparaison ou diagnostic.
 function effectiveCameraFitDay() {
-    return pkg.options.animation?.cameraFitDay !== false;
+    return pkg.options.animation?.cameraFitDay === true;
 }
 
 // Piste de caméra précalculée avec anticipation : mode par défaut. L'option
@@ -1517,29 +1523,47 @@ export function estimateCameraTravel() {
 }
 
 // Diagnostic plan-time du mode « piste » : rejoue la planification des trajets
-// simulés avec le rythme du plan affiché (dayMs) pour mesurer le retard
-// prévisible — un trajet sans fenêtre assez large démarre où le précédent
-// finit et arrive après l'affichage de son jour, retard qui s'accumule le
-// long de la piste. Indépendant de la piste effective : celle-ci n'est
+// simulés pour mesurer les pauses de dates (holds) que la congestion impose —
+// un trajet sans fenêtre assez large retarde l'affichage de son jour plutôt
+// que d'arriver après lui. Indépendant de la piste effective : celle-ci n'est
 // construite qu'au lancement (prepareCameraPacing), avec le rythme réel.
-// Retourne { lateCount, worstLateMs } (cf. buildCameraTrack), ou null quand le
-// diagnostic n'a pas de sens : suivi inactif, mode « tête du trait », piste
-// désactivée, simulation absente/vide ou rythme invalide.
-export function estimateCameraTrackLateness(dayMs) {
+//
+// Rythme libre : passer dayMs (ms vidéo par jour). Durée imposée : passer
+// budgetMs = budget d'animation ENTIER, pré-roll compris (la convention de
+// fitCameraTrackDayMs : lead + n·dayMs + holds ≤ budget). Retourne
+// { dayMs, holdTotalMs, holdCount } (ms vidéo), ou null quand le diagnostic
+// n'a pas de sens : suivi inactif, mode « tête du trait », piste désactivée,
+// simulation absente/vide ou rythme invalide.
+export function estimateCameraTrackHold(dayMs, { budgetMs } = {}) {
     if (!pkg.options.animation?.cameraFollow) return null;
     if (effectiveCameraFollowMode() === 'trail') return null;
     if (!effectiveCameraTrack()) return null;
-    const step = Number(dayMs);
-    if (!Number.isFinite(step) || step <= 0) return null;
     const estimate = lastCameraTravelEstimate;
     if (!estimate || !Array.isArray(estimate.journeysByDay) || estimate.journeysByDay.length === 0) {
         return null;
     }
+    const dayCount = estimate.dayCount || estimate.journeysByDay.length;
+    const budget = Number(budgetMs);
+    if (Number.isFinite(budget) && budget > 0) {
+        const fps = normalizeRecordingFps(pkg.options.record?.fps);
+        const fit = fitCameraTrackDayMs(estimate.journeysByDay, {
+            budgetMs: budget,
+            // leadMs réel, comme dans prepareCameraPacing : sans lui le fit
+            // verrait un hold fantôme sur le jour 0.
+            leadMs: estimate.leadMs || 0,
+            dayCount,
+            minDayMs: 1000 / fps,
+        });
+        return { dayMs: fit.dayMs, holdTotalMs: fit.holdTotalMs, holdCount: fit.holdCount };
+    }
+    const step = Number(dayMs);
+    if (!Number.isFinite(step) || step <= 0) return null;
     const track = buildCameraTrack(estimate.journeysByDay, {
         dayMs: step,
         leadMs: estimate.leadMs || 0,
+        holdLate: true,
     });
-    return { lateCount: track.lateCount, worstLateMs: track.worstLateMs };
+    return { dayMs: step, holdTotalMs: track.holdTotalMs, holdCount: track.holdCount };
 }
 
 // À appeler au lancement d'une lecture ou d'un enregistrement, la vue étant
@@ -1587,15 +1611,45 @@ function prepareCameraPacing({ timelineScale = 1, forRecording = isRecording || 
             ? Math.max(0, Number(simulation.journeysByDay[0].totalDurationMs) || 0)
             : 0;
         const leadMs = leadVideoMs * stretch;
-        const dayMs = budgetMs > 0 && simulation.dayCount > 0
-            // Durée imposée : le pré-roll mange le budget — les dates se
-            // partagent ce qui reste, la vidéo garde sa durée totale.
-            ? Math.max(1, budgetMs - leadVideoMs) * stretch / simulation.dayCount
-            // timePerDay est déjà étiré par la capture rapide (la préférence est
-            // multipliée avant l'appel) : stretch ne s'y applique pas, au
-            // contraire du budget qui vient du plan non étiré.
-            : Number(pkg.options.animation.timePerDay);
-        cameraTrack = buildCameraTrack(simulation.journeysByDay, { dayMs, timeScale: stretch, leadMs });
+        let dayMs;
+        // Temps vidéo des pauses de dates planifiées (holds) : déduit du budget
+        // des dates en durée imposée, ajouté à la durée annoncée en rythme
+        // libre (le plan fait l'un et l'autre via cameraHoldMs).
+        let holdTotalVideoMs = 0;
+        if (budgetMs > 0 && simulation.dayCount > 0) {
+            // Durée imposée : le pré-roll mange le budget — dates et pauses se
+            // partagent ce qui reste, la vidéo garde sa durée totale. Le plus
+            // grand rythme tenable est cherché par dichotomie (les holds
+            // allongent la timeline : ils entrent dans le même budget).
+            const fps = normalizeRecordingFps(pkg.options.record?.fps);
+            const fit = fitCameraTrackDayMs(simulation.journeysByDay, {
+                // Convention : le budget passé au fit est le budget animation
+                // entier, pré-roll compris — la contrainte du fit est
+                // lead + n·dayMs + holds ≤ budget. Passer leadMs: 0 avec un
+                // budget amputé du pré-roll créerait un hold fantôme sur le
+                // jour 0 (son trajet aurait pour échéance t=0).
+                budgetMs: budgetMs * stretch,
+                leadMs,
+                timeScale: stretch,
+                dayCount: simulation.dayCount,
+                // Une image par jour minimum, en temps timeline étiré.
+                minDayMs: 1000 / fps * stretch,
+            });
+            dayMs = fit.dayMs;
+            holdTotalVideoMs = fit.holdTotalMs / stretch;
+        } else {
+            // Rythme libre : timePerDay est déjà étiré par la capture rapide
+            // (la préférence est multipliée avant l'appel) : stretch ne s'y
+            // applique pas, au contraire du budget qui vient du plan non étiré.
+            dayMs = Number(pkg.options.animation.timePerDay);
+        }
+        cameraTrack = buildCameraTrack(simulation.journeysByDay, {
+            dayMs, timeScale: stretch, leadMs, holdLate: true,
+        });
+        // Rythme timeline réellement planifié : l'accumulateur de dates
+        // (animationStep) s'en sert comme seuil de base, plus holdsByDay[i].
+        cameraTrack.dayMs = dayMs;
+        cameraTrack.holdTotalVideoMs = holdTotalVideoMs || cameraTrack.holdTotalMs / stretch;
         // Mémorisée sur la piste pour le runtime : décalage de départ de
         // l'accumulateur de dates (lecture) et images de tête (capture).
         cameraTrack.leadMs = leadMs;
@@ -1609,8 +1663,15 @@ function prepareCameraPacing({ timelineScale = 1, forRecording = isRecording || 
         // zéro n'y vaut donc PAS zéro. Le premier appel reçoit le `now` du tout
         // premier rendu de l'animation, ce qui aligne pile la piste.
         cameraTrackStartAt = null;
-        dbgMapgl('[CAMERA] Piste précalculée:', simulation.journeyCount, 'trajets,', dayMs, 'ms/jour, pré-roll', leadMs, 'ms');
-        return { travelMs: simulation.totalMs, datesMs: budgetMs > 0 ? budgetMs - leadVideoMs : null };
+        dbgMapgl('[CAMERA] Piste précalculée:', simulation.journeyCount, 'trajets,', dayMs,
+            'ms/jour, pré-roll', leadMs, 'ms, pauses', cameraTrack.holdTotalMs, 'ms sur',
+            cameraTrack.holdCount, 'jours —', JSON.stringify(cameraTrack.holdsByDay));
+        return {
+            travelMs: simulation.totalMs,
+            // Les pauses de dates sont financées sur le budget, comme le
+            // pré-roll : le temps des dates est ce qui reste aux jours.
+            datesMs: budgetMs > 0 ? budgetMs - leadVideoMs - holdTotalVideoMs : null,
+        };
     }
 
     if (!(budgetMs > 0) || !(simulation.dayCount > 0)) {
@@ -1649,6 +1710,24 @@ function cameraPacedFrameTarget(travelDone) {
         defaultOverheadMs: CAMERA_JOURNEY_EXTRA_FRAMES * frameMs,
     });
     return Math.max(1, Math.round(dayMs / frameMs));
+}
+
+// Images de la pause « piste » planifiée avant l'affichage du jour dayIndex
+// (holdLate, camera_follow.mjs). Répartition cumulative, comme framesForDay :
+// la somme sur tous les jours vaut exactement round(holdTotalMs·fps/1000) —
+// le holdFrameCount du plan d'images.
+function cameraTrackHoldFrames(dayIndex) {
+    const holds = cameraTrack?.holdsByDay;
+    if (!holds || !(holds.length > 0)) return 0;
+    const fps = Number(pkg.options.record.framesPerSec) || 30;
+    let cumMs = 0;
+    let cumPrevMs = 0;
+    const index = Math.max(0, Math.min(holds.length - 1, dayIndex));
+    for (let i = 0; i <= index; i++) {
+        cumPrevMs = cumMs;
+        cumMs += Math.max(0, Number(holds[i]) || 0);
+    }
+    return Math.max(0, Math.round(cumMs * fps / 1000) - Math.round(cumPrevMs * fps / 1000));
 }
 
 // Écrit la valeur courante du compteur dans l'overlay. Retourne true tant que
@@ -2092,7 +2171,9 @@ export function startAnimation(restart=false) {
                 // premières dates consomment un temps qu'elles n'ont pas.
                 defaultOverheadMs: CAMERA_LIVE_OVERHEAD_ESTIMATE_MS,
             })
-            : baseDayDuration;
+            // Mode piste en durée imposée : le rythme réel est celui choisi par
+            // fitCameraTrackDayMs (pauses comprises), pas la préférence.
+            : (cameraTrack?.dayMs ?? baseDayDuration);
         animationAccMs += Math.min(ts - animationLastTs, dayDuration * Math.max(MAX_DAYS_PER_FRAME, maxDaysThisFrame));
         animationLastTs = ts;
 
@@ -2102,8 +2183,15 @@ export function startAnimation(restart=false) {
         // déchargeraient d'un coup. Les jours du lot sont affichés ensemble.
         const daysThisFrame = [];
         let reachedEnd = false;
-        while (animationAccMs >= dayDuration && daysThisFrame.length < maxDaysThisFrame) {
-            animationAccMs -= dayDuration;
+        while (daysThisFrame.length < maxDaysThisFrame) {
+            // Pause « piste » planifiée : le jour i n'est affiché qu'une fois
+            // son trajet terminé — le seuil du passage qui l'affiche porte son
+            // hold (holdsByDay est indexé comme journeysByDay, donc comme
+            // l'indice du jour affiché par ce franchissement).
+            const threshold = dayDuration
+                + (cameraTrack?.holdsByDay?.[cameraPacingState.dayIndex] || 0);
+            if (animationAccMs < threshold) break;
+            animationAccMs -= threshold;
             // currentDate est muté juste après : le lot doit garder une copie.
             daysThisFrame.push(new Date(currentDate));
             cameraPacingState.dayIndex++;
@@ -2360,6 +2448,7 @@ function startRecordingProcess(){
     // Pré-roll « piste » : jamais de reliquat d'une capture précédente
     // interrompue — l'affichage initial du jour 0 en dépend.
     recordingLeadPending = false;
+    recordingHoldPending = false;
 
     // NB : l'affichage des caches antérieures à la date de début est fait plus bas,
     // APRÈS le window.vectorSource.clear() de préparation — sinon ce clear les efface
@@ -2409,6 +2498,10 @@ function startRecordingProcess(){
             // rogner le quota des jours (baseFrameCount inchangé). timelineScale
             // vaut 1 sur ce chemin : cameraTrack.leadMs est en ms vidéo.
             cameraLeadMs: cameraTrack?.leadMs || 0,
+            // Pauses de dates planifiées (holds) : leurs images s'ajoutent au
+            // total, chaque jour gardant son quota (captureNextFrame les
+            // consomme avant l'affichage du jour concerné).
+            cameraHoldMs: cameraTrack?.holdTotalMs || 0,
             fps: pkg.options.record.fps,
             extraEndSeconds: pkg.options.animation.extraEndSeconds,
             tailFreezeMs: pkg.options.record?.mediaRecorder?.tailFreezeMs,
@@ -2419,6 +2512,7 @@ function startRecordingProcess(){
 
         recordingDayIndex = 0;
         recordingLeadPending = false;
+        recordingHoldPending = false;
         recordingBaseFrameCount = timingPlan.baseFrameCount;
         currentDayFrameTarget = framesForDay(0, recordingDayCount, recordingBaseFrameCount,
             { allowZero: isEvolutionPage() });
@@ -3163,17 +3257,32 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
             } while (currentDayFrameTarget === 0);
             if (batch.length > 0) displayFeaturesForDates(batch, pointOptions, flashOptions, true, infos);
         } else {
-            currentDate.setDate(currentDate.getDate() + 1);
-            if (currentDate <= pkg.metadata.endDate) {
-                recordingDayIndex++;
-                currentDayFrameTarget = cameraPacing
-                    ? cameraPacedFrameTarget(false)
-                    : framesForDay(
-                        recordingDayIndex,
-                        recordingDayCount,
-                        recordingBaseFrameCount,
-                    );
-                displayFeaturesForDate(currentDate, pointOptions, flashOptions, true, infos);
+            // Pause « piste » planifiée (hold) : avant d'afficher un jour dont
+            // le trajet ne tenait pas dans sa fenêtre, on écoule ses images de
+            // pause — la date n'avance pas, rien de nouveau n'est affiché. À
+            // l'écoulement, on retombe ici et le jour s'affiche normalement.
+            const prochainJour = new Date(currentDate);
+            prochainJour.setDate(prochainJour.getDate() + 1);
+            const holdFrames = !recordingHoldPending && prochainJour <= pkg.metadata.endDate
+                ? cameraTrackHoldFrames(recordingDayIndex + 1)
+                : 0;
+            if (holdFrames > 0) {
+                recordingHoldPending = true;
+                currentDayFrameTarget = holdFrames;
+            } else {
+                recordingHoldPending = false;
+                currentDate.setDate(currentDate.getDate() + 1);
+                if (currentDate <= pkg.metadata.endDate) {
+                    recordingDayIndex++;
+                    currentDayFrameTarget = cameraPacing
+                        ? cameraPacedFrameTarget(false)
+                        : framesForDay(
+                            recordingDayIndex,
+                            recordingDayCount,
+                            recordingBaseFrameCount,
+                        );
+                    displayFeaturesForDate(currentDate, pointOptions, flashOptions, true, infos);
+                }
             }
         }
         currentFrame = 0;  // Réinitialisez le compteur de frames pour le nouveau jour
@@ -3348,11 +3457,14 @@ function computeTotalAnimationMs(){
         const cameraTravel = estimateCameraTravel();
         // Mode piste : les trajets se jouent pendant les dates — rien à
         // ajouter, sauf le pré-roll (le trajet du jour 0 joué en tête, avant
-        // la première date) qui allonge l'animation d'autant en rythme libre.
-        // Avec durée imposée, cameraBudgetMs inclut déjà le pré-roll.
+        // la première date) et les pauses de dates planifiées (holds), qui
+        // allongent l'animation d'autant en rythme libre. Avec durée imposée,
+        // cameraBudgetMs inclut déjà les deux.
         if (cameraTravel) base = cameraBudgetMs > 0
             ? cameraBudgetMs
-            : (effectiveCameraTrack() ? base + (cameraTravel.leadMs || 0) : base + cameraTravel.totalMs);
+            : (effectiveCameraTrack()
+                ? base + (cameraTravel.leadMs || 0) + (pkg.options.animation?.cameraHoldMs || 0)
+                : base + cameraTravel.totalMs);
         const extraEndMs = Math.max(0, Number(pkg.options?.animation?.extraEndSeconds) || 0) * 1000;
         const endHoldMs = automaticEndHoldMs({
             tailFreezeMs: pkg.options.record?.mediaRecorder?.tailFreezeMs,

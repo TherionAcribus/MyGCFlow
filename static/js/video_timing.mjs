@@ -227,6 +227,12 @@ export function splitCameraBudget({ animationMs, minDatesMs = 0, travelMs = 0 } 
 // soustraction sur cameraTimeBudgetMs). Hors mode piste (pas d'overlap) le
 // paramètre est sans objet : ignoré.
 //
+// cameraHoldMs : pauses de dates planifiées du mode piste (holds) — le temps
+// manquant des trajets qui ne peuvent pas arriver avant l'affichage de leur
+// jour. Comme le pré-roll : s'ajoute à la durée annoncée en 'rate', est pris
+// sur le budget d'animation en 'duration'/'music' (cameraTimeBudgetMs inchangé,
+// le moteur fait la même soustraction). Ignoré hors mode piste.
+//
 // Retourne un plan : compte de jours, décomposition des durées, frames,
 // minimum réalisable, `errors` (entrées invalides — ne pas lancer) et
 // `warnings` (limites appliquées, ex. pincement au minimum ou musique plus
@@ -246,6 +252,7 @@ export function buildTimingPlan({
     cameraJourneyCount = 0,
     cameraOverlap = false,
     cameraLeadMs = 0,
+    cameraHoldMs = 0,
 } = {}) {
     const errors = [];
     const warnings = [];
@@ -286,6 +293,9 @@ export function buildTimingPlan({
     // n'existe qu'en mode piste — en mode réactif le trajet du jour 0 se joue
     // pendant l'affichage de sa date, comme les autres.
     const cameraLead = overlap ? Math.max(0, finiteNumber(cameraLeadMs, 0)) : 0;
+    // Pauses de dates planifiées (holds) du mode piste : même financement que
+    // le pré-roll — ajoutées en 'rate', prises sur le budget sinon.
+    const cameraHold = overlap ? Math.max(0, finiteNumber(cameraHoldMs, 0)) : 0;
     // Images de raccord des trajets en capture image par image (attente du
     // rendu final). En mode 'rate' elles s'ajoutent à la durée annoncée ;
     // en 'duration'/'music' elles sont déjà absorbées par le pacing dans le
@@ -312,9 +322,10 @@ export function buildTimingPlan({
         } else {
             timePerDayMs = 1000 / p.value;
             // Mode piste : les trajets ne s'ajoutent pas — l'animation est la
-            // durée des dates, plus le pré-roll qui la précède.
+            // durée des dates, plus le pré-roll qui la précède et les pauses
+            // de dates planifiées (holds) le cas échéant.
             animationMs = days > 0
-                ? days * timePerDayMs + (overlap ? cameraLead : cameraRawMs + (cameraKnown ? cameraOverheadMs : 0))
+                ? days * timePerDayMs + (overlap ? cameraLead + cameraHold : cameraRawMs + (cameraKnown ? cameraOverheadMs : 0))
                 : 0;
         }
     } else if (mode === 'duration' || mode === 'music') {
@@ -332,11 +343,11 @@ export function buildTimingPlan({
                 // à allonger l'animation (le moteur retombe alors sur le
                 // rythme libre timePerDay, le pré-roll restant joué en tête).
                 clampedToMinimum = true;
-                animationMs = minAnimationMs + cameraAppliedMs + cameraLead;
+                animationMs = minAnimationMs + cameraAppliedMs + cameraLead + cameraHold;
                 warnings.push({
                     type: 'minimum-total',
                     minimumMs: minTotalMs,
-                    appliedMs: minTotalMs + cameraAppliedMs + cameraLead,
+                    appliedMs: minTotalMs + cameraAppliedMs + cameraLead + cameraHold,
                     requestedMs: p.value,
                     reason: 'one-frame-per-day',
                 });
@@ -344,7 +355,7 @@ export function buildTimingPlan({
                     warnings.push({
                         type: 'music-shorter-than-minimum',
                         musicMs: p.value,
-                        appliedMs: minTotalMs + cameraAppliedMs + cameraLead,
+                        appliedMs: minTotalMs + cameraAppliedMs + cameraLead + cameraHold,
                     });
                 }
             } else {
@@ -373,12 +384,12 @@ export function buildTimingPlan({
                     }
                 }
             }
-            // Le temps des dates exclut le pré-roll : en durée imposée, la
-            // marge d'anticipation est prise sur le budget (le moteur applique
+            // Le temps des dates exclut le pré-roll et les pauses planifiées :
+            // en durée imposée, ils sont pris sur le budget (le moteur applique
             // la même soustraction sur cameraTimeBudgetMs — le plancher à 1 ms
             // total est le sien, cf. prepareCameraPacing dans mapgl.js).
             timePerDayMs = days > 0
-                ? Math.max(1, animationMs - cameraAppliedMs - cameraLead) / days
+                ? Math.max(1, animationMs - cameraAppliedMs - cameraLead - cameraHold) / days
                 : NaN;
         }
     } else {
@@ -398,8 +409,9 @@ export function buildTimingPlan({
             allowMultipleDaysPerFrame,
             cameraTravelMs: cameraAppliedMs,
             cameraLeadMs: cameraLead,
+            cameraHoldMs: cameraHold,
         })
-        : { baseFrameCount: 0, tailFrameCount: 0, totalFrameCount: 0, framesPerDayAverage: 0, leadFrameCount: 0 };
+        : { baseFrameCount: 0, tailFrameCount: 0, totalFrameCount: 0, framesPerDayAverage: 0, leadFrameCount: 0, holdFrameCount: 0 };
 
     return {
         valid: errors.length === 0,
@@ -433,6 +445,9 @@ export function buildTimingPlan({
         // Pré-roll de la piste réellement appliqué (0 hors mode piste) : durée
         // vidéo de l'approche du jour 0, exposée pour le résumé UI.
         cameraLeadMs: cameraLead,
+        // Pauses de dates planifiées (holds) réellement appliquées, idem.
+        cameraHoldMs: cameraHold,
+        holdFrameCount: frames.holdFrameCount,
         // Mode piste réellement actif : exige la durée simulée. Sans elle le
         // runtime retombe sur le suivi réactif (dates en pause), avertissement
         // « dates en pause » donc encore pertinent côté UI.
@@ -507,6 +522,10 @@ export function buildLoadEstimate({ plan, maxPointsPerDay = 0, flashDurationMs =
 // joué en tête avant la première date. Ses images s'ajoutent au total mais PAS
 // au baseFrameCount : les jours gardent leur quota d'images intact, le jour 0
 // ne démarre qu'à l'écoulement du pré-roll.
+//
+// cameraHoldMs : pauses de dates planifiées du mode piste (holds), ms vidéo —
+// idem : des images en plus du quota des jours, écoulées avant l'affichage du
+// jour qu'elles précèdent.
 export function buildImageTimingPlan({
     dayCount,
     timePerDayMs,
@@ -518,6 +537,7 @@ export function buildImageTimingPlan({
     allowMultipleDaysPerFrame = false,
     cameraTravelMs = 0,
     cameraLeadMs = 0,
+    cameraHoldMs = 0,
 } = {}) {
     const safeDays = Math.max(1, Math.round(finiteNumber(dayCount, 1)));
     const safeFps = normalizeVideoFps(fps);
@@ -534,7 +554,8 @@ export function buildImageTimingPlan({
     const tailFrameCount = Math.max(0, Math.round((endHoldMs + extraEndMs) * safeFps / 1000));
     const travelFrameCount = Math.max(0, Math.round(Math.max(0, finiteNumber(cameraTravelMs, 0)) * safeFps / 1000));
     const leadFrameCount = Math.max(0, Math.round(Math.max(0, finiteNumber(cameraLeadMs, 0)) * safeFps / 1000));
-    const totalFrameCount = baseFrameCount + travelFrameCount + leadFrameCount + tailFrameCount;
+    const holdFrameCount = Math.max(0, Math.round(Math.max(0, finiteNumber(cameraHoldMs, 0)) * safeFps / 1000));
+    const totalFrameCount = baseFrameCount + travelFrameCount + leadFrameCount + holdFrameCount + tailFrameCount;
 
     return {
         fps: safeFps,
@@ -542,6 +563,7 @@ export function buildImageTimingPlan({
         baseFrameCount,
         travelFrameCount,
         leadFrameCount,
+        holdFrameCount,
         tailFrameCount,
         totalFrameCount,
         framesPerDayAverage: baseFrameCount / safeDays,

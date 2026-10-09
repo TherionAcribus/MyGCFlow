@@ -170,7 +170,11 @@ export function summarizeWorldCoordinates(coordinates, worldWidth, referenceX = 
             const gap = next - wrapped[i];
             if (gap > largestGap) {
                 largestGap = gap;
-                arcStart = next % width;
+                // wrapped[0] quand le plus grand espace boucle le tour du
+                // monde : next = wrapped[0] + width, et un « % width »
+                // recomputé tomberait à un ulp près sous la valeur stockée —
+                // le point frontière partirait alors dans le monde voisin.
+                arcStart = i + 1 < wrapped.length ? next : wrapped[0];
             }
         }
         xs = valid.map((point) => {
@@ -774,14 +778,22 @@ export const TRACK_LATE_EPSILON_MS = 50;
 // naturelle et rate = durée naturelle / durationMs accélère l'échantillonnage.
 // Fenêtre nulle (startMs ≥ totalMs) : durationMs 0, la caméra saute
 // directement à la cible.
-export function buildCameraTrack(journeysByDay, { dayMs, timeScale = 1, leadMs = 0 } = {}) {
+export function buildCameraTrack(journeysByDay, { dayMs, timeScale = 1, leadMs = 0, holdLate = false } = {}) {
     const list = Array.isArray(journeysByDay) ? journeysByDay : [];
     const step = Math.max(0, Number(dayMs) || 0);
     const scale = Number.isFinite(Number(timeScale)) && Number(timeScale) >= 0
         ? Number(timeScale) : 1;
     const lead = Math.max(0, Number(leadMs) || 0);
-    const totalMs = lead + list.length * step;
+    // holdLate : les dates attendent un trajet qui ne peut pas arriver à temps
+    // au lieu de s'afficher sans lui. La pause du jour i est insérée AVANT son
+    // affichage ; elle décale tous les jours suivants via cumHoldMs, et la
+    // timeline s'allonge d'autant (totalMs). Chaque trajet finit alors pile
+    // quand son jour s'affiche : lateCount vaut 0 par construction.
     const events = [];
+    const holdsByDay = new Array(list.length).fill(0);
+    let cumHoldMs = 0;
+    let holdCount = 0;
+    let holdTotalMs = 0;
     let previousFinishMs = 0;
     let lateCount = 0;
     let worstLateMs = 0;
@@ -790,8 +802,29 @@ export function buildCameraTrack(journeysByDay, { dayMs, timeScale = 1, leadMs =
         if (!journey) continue;
         const journeyMs = Math.max(0, Number(journey.totalDurationMs) || 0);
         const naturalMs = journeyMs * scale;
-        const endMs = lead + i * step;
-        const startMs = Math.max(endMs - naturalMs, previousFinishMs);
+        // Instant d'affichage du jour, pauses déjà planifiées comprises.
+        const nominalEnd = lead + i * step + cumHoldMs;
+        const startMs = Math.max(nominalEnd - naturalMs, previousFinishMs);
+        let endMs = nominalEnd;
+        let holdMs = 0;
+        if (holdLate) {
+            const finishMs = startMs + naturalMs;
+            if (finishMs - nominalEnd > TRACK_LATE_EPSILON_MS) {
+                // Le trajet ne peut pas tenir sa fenêtre : on décale le jour
+                // du temps manquant plutôt que de l'afficher sans la caméra.
+                // Micro-retard (< epsilon) : accepté, pas de micro-pause.
+                holdMs = finishMs - nominalEnd;
+                cumHoldMs += holdMs;
+                holdsByDay[i] = holdMs;
+                holdCount += 1;
+                holdTotalMs += holdMs;
+                endMs = finishMs;
+            }
+        }
+        // Le plafond de fin de timeline reste valable : avec holds il ne mord
+        // plus qu'en cas de trajet arrivant après même la fin de l'animation
+        // (dernier trajet déjà décalé au-delà du dernier jour affiché).
+        const totalMs = lead + list.length * step + cumHoldMs;
         const durationMs = Math.max(0, Math.min(naturalMs, totalMs - startMs));
         // rate convertit le temps timeline en temps trajet pour
         // sampleCameraJourney : timeScale quand le trajet tient dans sa
@@ -802,17 +835,72 @@ export function buildCameraTrack(journeysByDay, { dayMs, timeScale = 1, leadMs =
             startMs,
             endMs,
             durationMs,
+            holdMs,
             rate: durationMs > 0 ? journeyMs / durationMs : 1,
         });
         previousFinishMs = startMs + durationMs;
         // Diagnostic de congestion : fin réelle après l'instant où le jour
-        // s'affiche — le trajet arrive en retard et retarde d'autant le
-        // départ du suivant (d'où un retard qui croît le long de la piste).
+        // s'affiche. Avec holdLate l'écart est déjà financé en pause — il vaut
+        // 0 par construction.
         const lateMs = previousFinishMs - endMs;
         if (lateMs > TRACK_LATE_EPSILON_MS) lateCount += 1;
         if (lateMs > worstLateMs) worstLateMs = lateMs;
     }
-    return { events, timeScale: scale, totalMs, leadMs: lead, lateCount, worstLateMs };
+    const totalMs = lead + list.length * step + cumHoldMs;
+    return {
+        events,
+        timeScale: scale,
+        totalMs,
+        leadMs: lead,
+        lateCount,
+        worstLateMs,
+        holdCount,
+        holdTotalMs,
+        // Pause insérée avant l'affichage de chaque jour, indexée comme
+        // journeysByDay : le runtime ajoute holdsByDay[i] au seuil du passage
+        // qui affiche le jour i.
+        holdsByDay,
+    };
+}
+
+// Rythme des dates le plus rapide qui tienne un budget d'animation donné en
+// mode « piste » avec holds : lead + dayCount·dayMs + holdTotalMs(dayMs) ≤
+// budgetMs. Plus dayMs est petit, plus les pauses grandissent — le total reste
+// néanmoins monotone en dayMs (les holds compensent les fenêtres manquantes).
+// Dichotomie ≤ 40 itérations entre minDayMs (durée incompressible d'un jour)
+// et (budgetMs − leadMs) / dayCount (rythme atteint sans aucune pause).
+// Retourne { dayMs, holdTotalMs, holdCount } ; si même minDayMs déborde le
+// budget, dayMs vaut minDayMs et les compteurs décrivent ce pincement.
+export function fitCameraTrackDayMs(journeysByDay, {
+    budgetMs,
+    leadMs = 0,
+    timeScale = 1,
+    dayCount,
+    minDayMs = 1,
+} = {}) {
+    const list = Array.isArray(journeysByDay) ? journeysByDay : [];
+    const days = Math.max(1, Math.round(Number(dayCount) || list.length || 1));
+    const budget = Math.max(0, Number(budgetMs) || 0);
+    const lo = Math.max(0, Number(minDayMs) || 0);
+    const hi = Math.max(lo, (budget - Math.max(0, Number(leadMs) || 0)) / days);
+    const trackFor = (ms) => buildCameraTrack(list, {
+        dayMs: ms, timeScale, leadMs, holdLate: true,
+    });
+    const fits = (track) => track.totalMs <= budget + 1e-9;
+    const atMin = trackFor(lo);
+    if (!fits(atMin)) {
+        return { dayMs: lo, holdTotalMs: atMin.holdTotalMs, holdCount: atMin.holdCount };
+    }
+    let best = lo;
+    let left = lo;
+    let right = hi;
+    for (let i = 0; i < 40; i++) {
+        const mid = (left + right) / 2;
+        if (fits(trackFor(mid))) { best = mid; left = mid; } else { right = mid; }
+        if (right - left < 1e-3) break;
+    }
+    const bestTrack = trackFor(best);
+    return { dayMs: best, holdTotalMs: bestTrack.holdTotalMs, holdCount: bestTrack.holdCount };
 }
 
 // Pose de la caméra à l'instant `nowMs` de la timeline de la piste :

@@ -4679,8 +4679,9 @@ export function refreshTimingPlan({ save = true } = {}) {
     // continu) — estimateCameraTravel renvoie alors null.
     const cameraTravel = animation.cameraFollow === true ? pkg.estimateCameraTravel?.() : null;
 
-    // 2. Plan de timing partagé (aperçu, MediaRecorder, Images).
-    const plan = buildTimingPlan({
+    // 2. Plan de timing partagé (aperçu, MediaRecorder, Images). `let` : une
+    // seconde passe peut le recalculer avec les pauses de dates (holds).
+    let plan = buildTimingPlan({
         dayCount: dayCount ?? undefined,
         startDate: animation.dateStart,
         endDate: animation.dateEnd,
@@ -4705,6 +4706,43 @@ export function refreshTimingPlan({ save = true } = {}) {
         // mouvement continu — jamais de pause non plus.
         cameraOverlap: animation.cameraTrack !== false || isCameraTrailMode(),
     });
+
+    // Mode piste : les trajets qui ne peuvent pas arriver avant l'affichage de
+    // leur jour mettent les dates en pause (holds). Deuxième passe avec le
+    // total mesuré : en rythme libre la durée annoncée s'allonge d'autant, en
+    // durée imposée ce temps est retranché des dates (le moteur refait le même
+    // calcul dans prepareCameraPacing).
+    let cameraHoldCount = 0;
+    const hold = plan.cameraOverlap && pkg.options.animation?.cameraFollow === true
+        && !isCameraTrailMode() && typeof pkg.estimateCameraTrackHold === 'function'
+        ? pkg.estimateCameraTrackHold(
+            rhythmMode() === 'rate' ? plan.timePerDayMs : null,
+            { budgetMs: rhythmMode() === 'rate' || !Number.isFinite(plan.cameraTimeBudgetMs)
+                ? undefined
+                : plan.cameraTimeBudgetMs },
+        )
+        : null;
+    if (hold && hold.holdTotalMs > 0) {
+        cameraHoldCount = hold.holdCount;
+        plan = buildTimingPlan({
+            dayCount: dayCount ?? undefined,
+            startDate: animation.dateStart,
+            endDate: animation.dateEnd,
+            rhythm: rhythm || { mode: 'rate', daysPerSecond: animation.daysPerSecond || TIMING_LIMITS.daysPerSecond.fallback },
+            fps: pkg.options.record?.fps,
+            flashMode: pkg.effectiveFlashMode ? pkg.effectiveFlashMode() : pkg.options.flash?.mode,
+            flashDurationMs: Number(pkg.options.flash?.duration) || 0,
+            tailFreezeMs: pkg.options.record?.mediaRecorder?.tailFreezeMs,
+            extraEndSeconds: extraP.ok ? extraP.value : (Number(animation.extraEndSeconds) || 0),
+            allowMultipleDaysPerFrame: isEvolutionPage(),
+            cameraTravelMs: cameraTravel ? cameraTravel.totalMs : undefined,
+            cameraJourneyCount: cameraTravel ? cameraTravel.journeyCount : 0,
+            cameraLeadMs: cameraTravel ? (cameraTravel.leadMs || 0) : 0,
+            cameraHoldMs: hold.holdTotalMs,
+            cameraOverlap: animation.cameraTrack !== false || isCameraTrailMode(),
+        });
+        plan.cameraHoldCount = cameraHoldCount;
+    }
     lastTimingPlan = plan;
 
     if (plan.valid && Number.isFinite(plan.timePerDayMs)) {
@@ -4719,6 +4757,8 @@ export function refreshTimingPlan({ save = true } = {}) {
         // Pré-roll « piste » (ms vidéo, déjà nul hors mode piste) : conservé
         // pour l'estimation d'images d'updateInfosForPictures (utils.js).
         animation.cameraLeadMs = plan.cameraLeadMs || 0;
+        // Pauses de dates planifiées du mode piste (idem : ms vidéo, 0 sinon).
+        animation.cameraHoldMs = plan.cameraHoldMs || 0;
     }
 
     // 3. Rendu : champs en lecture seule + synthèse + messages.
@@ -4829,6 +4869,11 @@ function renderTimingSummary(plan) {
         if (plan.cameraLeadMs > 0) {
             parts.splice(cameraTravelKnown && plan.cameraTravelMs > 0 ? 4 : 3, 0,
                 t('dont approche caméra ${d}', { d: formatDurationHuman(plan.cameraLeadMs) }));
+        }
+        // Pauses de dates planifiées (holds) : la durée annoncée les inclut.
+        if (plan.cameraHoldMs > 0) {
+            parts.splice(cameraTravelKnown && plan.cameraTravelMs > 0 ? 4 : 3, 0,
+                t('dont pauses caméra ${d}', { d: formatDurationHuman(plan.cameraHoldMs) }));
         }
         if (plan.extraEndMs > 0) parts.push(t('+ ${d} additionnel', { d: formatDurationHuman(plan.extraEndMs) }));
         parts.push(cameraAddsTravel
@@ -4946,10 +4991,11 @@ function renderTimingMessages(plan, fieldsValid) {
             // musicSyncStatus (plus précise) — pas de doublon.
         }
     }
-    // En mode piste les dates ne sont jamais en pause : les trois avertissements
-    // qui la décrivent n'ont plus lieu d'être (les trajets restent annoncés dans
-    // le résumé via cameraTravelMs). En mode « tête du trait » non plus :
-    // la caméra glisse en continu, sans trajets.
+    // Ces trois avertissements décrivent le mode réactif (dates en pause à
+    // chaque déplacement) : hors sujet en mode piste — les trajets y restent
+    // annoncés via cameraTravelMs et leurs pauses planifiées via le message
+    // « holds » plus bas. En mode « tête du trait » non plus : la caméra
+    // glisse en continu, sans trajets.
     if (plan?.valid && pkg.options.animation?.cameraFollow === true && !plan.cameraOverlap && !isCameraTrailMode()) {
         const compressed = plan.warnings.find((w) => w.type === 'camera-travel-compressed');
         if (!Number.isFinite(plan.cameraTravelMs)) {
@@ -4966,19 +5012,16 @@ function renderTimingMessages(plan, fieldsValid) {
             }));
         }
     }
-    // Mode piste actif avec simulation : les dates ne sont jamais en pause,
-    // mais un rythme trop rapide ne laisse pas aux trajets la fenêtre qu'il
-    // leur faut — chacun arrive en retard sur son jour et retarde le départ
-    // du suivant. Diagnostic rejoué sur le rythme du plan
-    // (estimateCameraTrackLateness, mapgl.js) ; null hors mode piste.
-    if (plan?.valid && pkg.options.animation?.cameraFollow === true && plan.cameraOverlap) {
-        const late = pkg.estimateCameraTrackLateness?.(plan.timePerDayMs);
-        if (late?.lateCount > 0) {
-            warnings.push(t('${n} trajets de caméra arriveront en retard sur leur jour (décalage max ${d}) : la caméra traînera sur les jours suivants. Réduisez le rythme ou le dynamisme.', {
-                n: late.lateCount,
-                d: formatDurationHuman(late.worstLateMs),
-            }));
-        }
+    // Mode piste : les trajets qui ne tiennent pas dans leur fenêtre mettent
+    // les dates en pause (holds) — mesurés dans refreshTimingPlan via
+    // estimateCameraTrackHold et déjà inclus dans la durée annoncée. Info,
+    // pas alarme : chaque jour est cadré à son affichage.
+    if (plan?.valid && pkg.options.animation?.cameraFollow === true && plan.cameraOverlap
+        && plan.cameraHoldMs > 0) {
+        warnings.push(t('${n} trajets de caméra mettront les dates en pause (+${d} au total) pour que chaque jour soit cadré à son affichage. Réduisez le dynamisme ou le rythme pour l\'éviter.', {
+            n: plan.cameraHoldCount || 0,
+            d: formatDurationHuman(plan.cameraHoldMs),
+        }));
     }
     if (warnBox) {
         warnBox.style.display = warnings.length ? '' : 'none';

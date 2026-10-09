@@ -841,7 +841,14 @@ test('la caméra franchit l’antiméridien sans faire le tour du monde', async 
     app.startAnimation();
 
     const samples = [];
-    for (let i = 0; i < 24; i++) {
+    // Les pauses planifiées (holds) allongent l'animation : on échantillonne
+    // jusqu'à son terme, plus quelques relevés pour la fin du dernier trajet.
+    const debut = performance.now();
+    while (app.isAnimationInProgress() && performance.now() - debut < 60_000) {
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      samples.push(ol.proj.toLonLat(view.getCenter())[0]);
+    }
+    for (let i = 0; i < 6; i++) {
       await new Promise((resolve) => setTimeout(resolve, 250));
       samples.push(ol.proj.toLonLat(view.getCenter())[0]);
     }
@@ -960,16 +967,30 @@ test('le jour « grappe + isolée » est cadré sur son étendue, pas son baryce
     const centreEtendueX = ol.proj.fromLonLat([-82.103, 39.671])[0];
     const barycentreX = ol.proj.fromLonLat([-78.0545, 40.192])[0];
 
+    app.options.animation.cameraFitDay = true;
     app.startAnimation();
+    // Échantillonner jusqu'à la fin de l'animation (les holds l'allongent) +
+    // une queue de stabilisation : un plateau sur place peut précéder un
+    // nouveau départ, il ne marque plus la fin.
     const positions = [];
-    for (let i = 0; i < 30; i++) {
+    const zooms = [];
+    const debut = performance.now();
+    while (app.isAnimationInProgress() && performance.now() - debut < 60_000) {
+      await new Promise((r) => setTimeout(r, 300));
+      positions.push(view.getCenter()[0]);
+      zooms.push(view.getZoom());
+    }
+    let precedent = view.getCenter()[0];
+    for (let i = 0; i < 20; i++) {
       await new Promise((r) => setTimeout(r, 400));
       positions.push(view.getCenter()[0]);
-      if (positions.length >= 3 && positions.at(-1) === positions.at(-2)
-          && positions.at(-2) === positions.at(-3)) break;
+      zooms.push(view.getZoom());
+      if (positions.at(-1) === precedent && i >= 2) break;
+      precedent = positions.at(-1);
     }
     app.stopAnimation();
-    return { positions, centreEtendueX, barycentreX };
+    delete app.options.animation.cameraFitDay;
+    return { positions, zooms, centreEtendueX, barycentreX };
   });
 
   // La caméra finit sur le centre de l'étendue du dernier jour, nettement à
@@ -979,6 +1000,70 @@ test('le jour « grappe + isolée » est cadré sur son étendue, pas son baryce
     `positions: ${releve.positions.map((x) => Math.round(x / 1000)).join(' | ')}`)
     .toBeLessThan(150_000);
   expect(Math.abs(final - releve.barycentreX)).toBeGreaterThan(250_000);
+
+  await page.locator('#switchCameraFollow').uncheck();
+});
+
+
+test('sans « cadrer le jour », le même jour vise son barycentre au zoom de départ', async ({ page }) => {
+  await page.locator('a[href="#animation"]').click();
+  await page.locator('#switchCameraFollow').check();
+  await page.locator('#inputDaysPerSecond').fill('2');
+  await page.locator('#inputExtraEndTime').fill('0');
+
+  const releve = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    const view = app.getMap().getView();
+    // Même scénario « grappe + isolée » que le test fitDay : sans l'option
+    // (défaut), la cible reste le barycentre et le zoom d'arrivée celui du
+    // lancement.
+    const jours = [...app.pointsByDate.keys()];
+    const dernier = app.pointsByDate.get(jours[jours.length - 1]);
+    for (const key of jours.slice(0, 3)) {
+      for (const f of app.pointsByDate.get(key)) {
+        f.geometry.coordinates = [-74.006, 40.7128];
+        dernier.push(f);
+      }
+      app.pointsByDate.delete(key);
+    }
+    for (const key of jours.slice(3, -1)) {
+      for (const f of app.pointsByDate.get(key)) f.geometry.coordinates = [-74.006, 40.7128];
+    }
+    dernier[0].geometry.coordinates = [-74.006, 40.7128];
+    dernier[dernier.length - 1].geometry.coordinates = [-90.2, 38.63];
+    app.bumpPointsByDateRevision();
+    view.setCenter(ol.proj.fromLonLat([2.3522, 48.8566]));
+    view.setZoom(6);
+
+    const barycentreX = ol.proj.fromLonLat([-78.0545, 40.192])[0];
+    const zoomDepart = view.getZoom();
+
+    app.startAnimation();
+    // Même échantillonnage « jusqu'à la fin » que le test fitDay : les holds
+    // allongent l'animation et un plateau n'y marque plus la fin.
+    const positions = [];
+    const debut = performance.now();
+    while (app.isAnimationInProgress() && performance.now() - debut < 60_000) {
+      await new Promise((r) => setTimeout(r, 300));
+      positions.push(view.getCenter()[0]);
+    }
+    let precedent = view.getCenter()[0];
+    for (let i = 0; i < 20; i++) {
+      await new Promise((r) => setTimeout(r, 400));
+      positions.push(view.getCenter()[0]);
+      if (positions.at(-1) === precedent && i >= 2) break;
+      precedent = positions.at(-1);
+    }
+    const zoomFinal = view.getZoom();
+    app.stopAnimation();
+    return { positions, barycentreX, zoomDepart, zoomFinal };
+  });
+
+  const final = releve.positions.at(-1);
+  expect(Math.abs(final - releve.barycentreX),
+    `positions: ${releve.positions.map((x) => Math.round(x / 1000)).join(' | ')}`)
+    .toBeLessThan(150_000);
+  expect(Math.abs(releve.zoomFinal - releve.zoomDepart)).toBeLessThanOrEqual(0.1);
 
   await page.locator('#switchCameraFollow').uncheck();
 });
@@ -1195,12 +1280,14 @@ test('avec le suivi de caméra, la lecture « Par durée » finit à l\'heure', 
 });
 
 
-test('le plan signale les trajets en retard quand le rythme est trop rapide', async ({ page }) => {
+test('le plan annonce les pauses de dates quand le rythme est trop rapide', async ({ page }) => {
   await page.locator('a[href="#animation"]').click();
   await page.locator('#switchCameraFollow').check();
+  await page.locator('#inputExtraEndTime').fill('0');
   // Caches alternant New York / Paris chaque jour : chaque jour impose un
   // trajet transatlantique (~4 s) qui ne peut pas tenir dans 50 ms/jour —
-  // chaque trajet arrivera en retard sur son jour, et le plan doit le dire.
+  // les dates seront mises en pause pour laisser la caméra arriver, et le
+  // plan doit le dire (l'ancien message « en retard » n'existe plus).
   await page.evaluate(async () => {
     const app = await import('/static/js/index.js');
     const jours = [...app.pointsByDate.keys()];
@@ -1215,8 +1302,173 @@ test('le plan signale les trajets en retard quand le rythme est trop rapide', as
     view.setZoom(6);
   });
   await page.locator('#inputDaysPerSecond').fill('20');
-  await expect(page.locator('#timingWarnings')).toContainText('en retard');
+  await expect(page.locator('#timingWarnings')).toContainText('dates en pause');
+  await expect(page.locator('#timingWarnings')).not.toContainText('en retard');
+
+  const releve = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    const { buildImageTimingPlan } = await import('/static/js/video_timing.mjs');
+    const map = app.getMap();
+    const view = map.getView();
+    const jours = [...app.pointsByDate.keys()];
+    const dayMs = app.options.animation.timePerDay;
+    // Cible de chaque jour (toutes ses caches sont co-localisées) et nombre
+    // cumulé de caches : quand le compte affiché atteint cum[i], le jour i
+    // vient de s'afficher.
+    const ciblesX = [];
+    // Signal fiable d'affichage d'un jour : #spanCurrentDate n'est mis à jour
+    // que par displayInfosForDate à chaque jour poussé — le compte de features
+    // de vectorSource peut, lui, remonter d'un coup si une re-génération de la
+    // sélection au repos retombe pendant l'animation.
+    app.options.infos.currentDate.display = true;
+    const textesJours = jours.map((day) => app.formatDateDisplay(new Date(day)));
+    jours.forEach((day, index) => {
+      const coords = index % 2 === 0 ? [-74.006, 40.7128] : [2.3522, 48.8566];
+      ciblesX.push(ol.proj.fromLonLat(coords)[0]);
+    });
+    // Durée prévue : pré-roll + dates + pauses planifiées, estimées par le
+    // même diagnostic que le plan (estimateCameraTrackHold).
+    const est = app.estimateCameraTravel();
+    const hold = app.estimateCameraTrackHold(dayMs);
+    const prevuMs = (est?.leadMs || 0) + jours.length * dayMs + (hold?.holdTotalMs || 0);
+    // Estimation d'images : les pauses planifiées comptent comme le pré-roll.
+    const planImages = buildImageTimingPlan({
+      dayCount: jours.length,
+      timePerDayMs: dayMs,
+      fps: app.options.record.fps,
+      tailFreezeMs: app.options.record?.mediaRecorder?.tailFreezeMs,
+      cameraLeadMs: app.options.animation.cameraLeadMs || 0,
+      cameraHoldMs: app.options.animation.cameraHoldMs || 0,
+    });
+
+    const jourAffiche = () => textesJours.lastIndexOf(
+      document.getElementById('spanCurrentDate')?.textContent || '');
+    const debut = performance.now();
+    // Le span montre la date de fin au repos : le vider pour que sa première
+    // écriture par l'animation marque pile le premier jour affiché.
+    const spanDate = document.getElementById('spanCurrentDate');
+    if (spanDate) spanDate.textContent = '';
+    app.startAnimation();
+    // Premier affichage de chaque jour : distance vue ↔ cible à cet instant.
+    const distancesParJour = new Map();
+    const trace = [];
+    let jourCourant = -1;
+    while (app.isAnimationInProgress() && performance.now() - debut < 90_000) {
+      await new Promise((r) => setTimeout(r, 15));
+      const jour = jourAffiche();
+      trace.push(`${Math.round(performance.now() - debut)}ms:j${jour}:x${Math.round(view.getCenter()[0] / 1000)}`);
+      // Au lancement le span reçoit la date de fin (jour nbJours-1) avant le
+      // premier vrai franchissement : s'ancrer sur le jour 0 d'abord.
+      if (jourCourant === -1 ? jour === 0 : jour > jourCourant) {
+        jourCourant = jour;
+        if (!distancesParJour.has(jour)) {
+          distancesParJour.set(jour, Math.abs(view.getCenter()[0] - ciblesX[jour]));
+        }
+      }
+    }
+    return {
+      dureeMs: performance.now() - debut,
+      terminee: !app.isAnimationInProgress(),
+      distances: [...distancesParJour.entries()],
+      trace,
+      nbJours: jours.length,
+      dayMs,
+      prevuMs,
+      holdTotalMs: hold?.holdTotalMs || 0,
+      holdCount: hold?.holdCount || 0,
+      nbOfImages: app.options.record.nbOfImages,
+      totalFrameCount: planImages.totalFrameCount,
+      holdFrameCount: planImages.holdFrameCount,
+    };
+  });
+  await page.evaluate(async () => (await import('/static/js/index.js')).stopAnimation());
+
+  expect(releve.holdCount).toBeGreaterThan(0);
+  expect(releve.terminee).toBe(true);
+  // Chaque jour affiché (au-delà du jour 0, déjà visible au départ) est cadré
+  // sur ses caches à l'instant où il apparaît — la garantie des pauses. Le
+  // jour 0 peut ré-apparaître au franchissement qui suit le pré-roll : il est
+  // alors compté aussi, d'où >= plutôt que ==.
+  expect(releve.distances.length,
+    `jours vus: ${releve.distances.map(([j]) => j).join(',')} — trace: ${releve.trace.join(' ')}`)
+    .toBeGreaterThanOrEqual(releve.nbJours - 1);
+  for (const [jour, distance] of releve.distances) {
+    expect(distance, `jour ${jour} cadré à son affichage`).toBeLessThan(150_000);
+  }
+  // La durée réelle suit la planification : n×dayMs seuls suffiraient (~0,3 s)
+  // — les pauses l'allongent jusqu'à la durée annoncée.
+  expect(releve.dureeMs,
+    `durée ${Math.round(releve.dureeMs)} ms vs prévu ${Math.round(releve.prevuMs)} ms`)
+    .toBeGreaterThan(releve.nbJours * releve.dayMs + 1_000);
+  expect(Math.abs(releve.dureeMs - releve.prevuMs)).toBeLessThan(1_000);
+  // Les images de pause entrent dans le total annoncé, comme celles du pré-roll.
+  expect(releve.holdFrameCount).toBeGreaterThan(0);
+  expect(releve.nbOfImages).toBe(releve.totalFrameCount);
 
   // Réglages caméra globaux et persistés : on les rend comme les autres tests.
   await page.locator('#switchCameraFollow').uncheck();
+});
+
+
+test('avec le suivi de caméra, la lecture « Par durée » congestionnée finit à l\'heure', async ({ page }) => {
+  // Même scénario « Par durée » que le test précédent, mais chaque jour impose
+  // un trajet transatlantique indélogeable : les pauses de dates planifiées
+  // doivent tenir la durée demandée quand même. Le budget (16 s − 3 s de fin)
+  // couvre tout juste la sérialisation des trois trajets (~12 s) : en deçà,
+  // aucun rythme ne permettrait à la caméra d'arriver à temps.
+  await waitForStableTimeline(page);
+  await selectTraditionalCaches(page);
+  await waitForStableTimeline(page);
+  expect(await page.evaluate(async () => (await import('/static/js/index.js')).pointsByDate.size)).toBe(3);
+
+  await page.locator('a[href="#animation"]').click();
+  await page.locator('#inputExtraEndTime').fill('0');
+  await page.locator('#rhythmModeDuration').check({ force: true });
+  await page.locator('#inputTotalDuration').fill('0:16');
+  await page.locator('#switchCameraFollow').check();
+
+  const prevu = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    const view = app.getMap().getView();
+    view.setCenter(ol.proj.fromLonLat([2.3522, 48.8566]));
+    view.setZoom(6);
+    const days = [...app.pointsByDate.keys()].sort((a, b) => new Date(a) - new Date(b));
+    days.forEach((day, index) => {
+      const coords = index % 2 === 0 ? [-74.006, 40.7128] : [2.3522, 48.8566];
+      for (const feature of app.pointsByDate.get(day)) feature.geometry.coordinates = [...coords];
+    });
+    app.bumpPointsByDateRevision();
+    app.refreshTimingPlan({ save: false });
+    const hold = app.estimateCameraTrackHold(null, {
+      budgetMs: app.options.animation.cameraTimeBudgetMs,
+    });
+    return {
+      budgetMs: app.options.animation.cameraTimeBudgetMs,
+      cameraHoldMs: app.options.animation.cameraHoldMs || 0,
+      holdTotalMs: hold?.holdTotalMs || 0,
+      warnings: document.getElementById('timingWarnings').textContent,
+      summary: document.getElementById('timingSummary').textContent,
+    };
+  });
+  // Des pauses sont bien planifiées, annoncées dans la synthèse et le message,
+  // et financées sur le budget — pas ajoutées à la durée demandée.
+  expect(prevu.cameraHoldMs).toBeGreaterThan(0);
+  expect(prevu.warnings).toContain('dates en pause');
+  expect(prevu.summary).toContain('pauses caméra');
+
+  const lecture = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    const debut = performance.now();
+    app.startAnimation();
+    while (app.isAnimationInProgress() && performance.now() - debut < 40_000) {
+      await new Promise((r) => setTimeout(r, 50));
+    }
+    return { dureeMs: performance.now() - debut, terminee: !app.isAnimationInProgress() };
+  });
+  await page.evaluate(async () => (await import('/static/js/index.js')).stopAnimation());
+
+  expect(lecture.terminee).toBe(true);
+  expect(Math.abs(lecture.dureeMs - prevu.budgetMs),
+    `durée ${Math.round(lecture.dureeMs)} ms vs budget ${prevu.budgetMs} ms`)
+    .toBeLessThan(1_500);
 });

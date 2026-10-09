@@ -12,6 +12,7 @@ import {
     createCameraPacing,
     DEFAULT_RESPONSE_MS,
     easeInOutCubic,
+    fitCameraTrackDayMs,
     normalizeCameraDynamism,
     normalizeCameraPath,
     nearestWorldX,
@@ -925,6 +926,125 @@ test('buildCameraTrack : un saut instantané passé son jour compte comme en ret
     // événements en retard, le pire étant celui du premier trajet.
     assert.equal(track.lateCount, 2);
     assert.equal(track.worstLateMs, e1.startMs + e1.durationMs - e1.endMs);
+});
+
+// ---------- Pauses de dates planifiées (holdLate) ----------
+
+test('buildCameraTrack holdLate : les jours congestionnés attendent leur trajet', () => {
+    // Même scénario que « comptés en retard » : fenêtre de 1 s par jour pour
+    // des trajets de ~4 s. Avec holdLate chaque jour est décalé du temps
+    // manquant — sa pause — et le retard disparaît par construction.
+    const journey1 = createCameraJourney([0, 0], [3000, 0], 8, 1);
+    const journey2 = createCameraJourney([3000, 0], [6000, 0], 8, 1);
+    const journey3 = createCameraJourney([6000, 0], [9000, 0], 8, 1);
+    const days = new Array(14).fill(null);
+    days[1] = journey1;
+    days[2] = journey2;
+    days[3] = journey3;
+    const track = buildCameraTrack(days, { dayMs: 1000, holdLate: true });
+    assert.equal(track.events.length, 3);
+    assert.equal(track.lateCount, 0);
+    assert.equal(track.worstLateMs, 0);
+    // Chaque trajet finit pile à l'instant d'affichage décalé de son jour ;
+    // les pauses s'accumulent le long de la piste (~3 s chacune ici).
+    const [e1, e2, e3] = track.events;
+    for (const event of [e1, e2, e3]) {
+        assert.ok(event.holdMs > TRACK_LATE_EPSILON_MS);
+        assert.equal(event.startMs + event.durationMs, event.endMs);
+    }
+    const holdDe = (i) => track.events.find((e) => e.dayIndex === i)?.holdMs || 0;
+    let cumHold = 0;
+    for (const event of [e1, e2, e3]) {
+        cumHold += holdDe(event.dayIndex);
+        // Instant d'affichage du jour i : lead + i×dayMs + pauses des jours ≤ i.
+        assert.equal(event.endMs, event.dayIndex * 1000 + cumHold);
+    }
+    assert.equal(track.holdCount, 3);
+    assert.equal(track.holdTotalMs, cumHold);
+    assert.equal(track.totalMs, 14 * 1000 + cumHold);
+    // holdsByDay est indexé comme journeysByDay : 0 pour les jours sans pause.
+    assert.equal(track.holdsByDay.length, 14);
+    assert.equal(track.holdsByDay[0], 0);
+    assert.equal(track.holdsByDay[1], e1.holdMs);
+    assert.equal(track.holdsByDay[2], e2.holdMs);
+    assert.equal(track.holdsByDay[3], e3.holdMs);
+    assert.equal(track.holdsByDay[4], 0);
+});
+
+test('buildCameraTrack holdLate : rythme large — aucune pause, piste inchangée', () => {
+    const journey1 = createCameraJourney([0, 0], [3000, 0], 8, 1);
+    const journey2 = createCameraJourney([3000, 0], [6000, 0], 8, 1);
+    const jours = [null, journey1, null, journey2];
+    const sans = buildCameraTrack(jours, { dayMs: 30000 });
+    const avec = buildCameraTrack(jours, { dayMs: 30000, holdLate: true });
+    assert.equal(avec.holdCount, 0);
+    assert.equal(avec.holdTotalMs, 0);
+    assert.deepEqual(avec.holdsByDay, [0, 0, 0, 0]);
+    assert.equal(avec.totalMs, sans.totalMs);
+    assert.deepEqual(
+        avec.events.map((e) => [e.dayIndex, e.startMs, e.endMs, e.durationMs, e.holdMs]),
+        sans.events.map((e) => [e.dayIndex, e.startMs, e.endMs, e.durationMs, 0]),
+    );
+});
+
+test('buildCameraTrack holdLate : un micro-retard sous l\'epsilon ne pause pas', () => {
+    // 30 ms de dépassement (~une image) : accepté comme aujourd'hui, pas de
+    // micro-pause qui décalerait tous les jours suivants pour rien.
+    const track = buildCameraTrack([{ totalDurationMs: 1030 }], { dayMs: 1000, leadMs: 1000, holdLate: true });
+    const event = track.events[0];
+    assert.equal(event.holdMs, 0);
+    assert.equal(track.holdCount, 0);
+    assert.equal(track.holdTotalMs, 0);
+    assert.deepEqual(track.holdsByDay, [0]);
+    assert.equal(track.lateCount, 0);
+    assert.equal(track.worstLateMs, 30);
+});
+
+test('fitCameraTrackDayMs : le plus grand rythme qui tient le budget, pauses comprises', () => {
+    // Quatre trajets de 4 s qui se suivent : quelle que soit la fenêtre, les
+    // arrivées restent sérialisées (~4 s l'une après l'autre) et les pauses
+    // financent ce que le rythme ne couvre pas.
+    const jours = [4000, 4000, 4000, 4000].map((totalDurationMs) => ({ totalDurationMs }));
+    const fit = fitCameraTrackDayMs(jours, {
+        budgetMs: 17000, leadMs: 0, dayCount: 4, minDayMs: 33,
+    });
+    // Sans pause le budget donnerait 17000/4 = 4250 ms/jour ; les pauses
+    // imposent un rythme bien plus lent.
+    assert.ok(fit.dayMs < 4250, `dayMs=${fit.dayMs}`);
+    assert.ok(fit.dayMs >= 33);
+    assert.ok(fit.holdCount > 0);
+    assert.ok(fit.holdTotalMs > 0);
+    // Le budget est tenu : total planifié ≤ budget, et au plus une marge de
+    // dichotomie en dessous.
+    const track = buildCameraTrack(jours, { dayMs: fit.dayMs, leadMs: 0, holdLate: true });
+    assert.ok(track.totalMs <= 17000 + 1e-6, `totalMs=${track.totalMs}`);
+    assert.ok(17000 - track.totalMs < 50, `marge=${17000 - track.totalMs}`);
+});
+
+test('fitCameraTrackDayMs : sans congestion, le rythme est le budget réparti', () => {
+    // Aucun trajet n'a besoin de pause : la borne haute (budget − lead)/n est
+    // atteinte — la dichotomie la conserve.
+    const jours = [{ totalDurationMs: 100 }, null, null, null];
+    const fit = fitCameraTrackDayMs(jours, {
+        budgetMs: 20000, leadMs: 2000, dayCount: 4, minDayMs: 33,
+    });
+    assert.ok(Math.abs(fit.dayMs - 4500) < 1e-3, `dayMs=${fit.dayMs}`);
+    assert.equal(fit.holdCount, 0);
+    assert.equal(fit.holdTotalMs, 0);
+});
+
+test('fitCameraTrackDayMs : budget impossible — minDayMs conservé, pincement mesuré', () => {
+    // Même minDayMs déborde : on retourne minDayMs et les compteurs de ce
+    // pincement (le plan le signalera comme les autres dépassements).
+    const jours = [4000, 4000].map((totalDurationMs) => ({ totalDurationMs }));
+    const fit = fitCameraTrackDayMs(jours, {
+        budgetMs: 100, leadMs: 0, dayCount: 2, minDayMs: 33,
+    });
+    assert.equal(fit.dayMs, 33);
+    const track = buildCameraTrack(jours, { dayMs: 33, holdLate: true });
+    assert.ok(track.totalMs > 100);
+    assert.equal(fit.holdTotalMs, track.holdTotalMs);
+    assert.equal(fit.holdCount, track.holdCount);
 });
 
 // ---------- Zoom adaptatif du suivi « tête du trait » ----------

@@ -643,3 +643,84 @@ test('buildImageTimingPlan : le pré-roll s\'ajoute au total sans rogner les jou
     assert.equal(sans.leadFrameCount, 0);
     assert.equal(sans.totalFrameCount, 30);
 });
+
+// ---------- Pauses de dates planifiées (cameraHoldMs) ----------
+//
+// Même financement que le pré-roll : ajouté à la durée annoncée en 'rate',
+// pris sur le budget d'animation en 'duration'/'music'.
+
+test('cameraHoldMs en rythme jours/s : les pauses allongent l\'animation', () => {
+    const plan = buildTimingPlan({
+        dayCount: 100,
+        rhythm: { mode: 'rate', daysPerSecond: 10 },
+        fps: 30,
+        tailFreezeMs: 3000,
+        cameraTravelMs: 20000,
+        cameraJourneyCount: 15,
+        cameraOverlap: true,
+        cameraLeadMs: 2500,
+        cameraHoldMs: 4000,
+    });
+    assert.equal(plan.valid, true);
+    assert.equal(plan.cameraHoldMs, 4000);
+    // Rythme des dates inchangé ; la vidéo s'allonge des pauses (comme du
+    // pré-roll) : 10 s de dates + 2,5 s d'approche + 4 s de pauses + 3 s de fin.
+    assert.equal(plan.timePerDayMs, 100);
+    assert.equal(plan.animationMs, 16500);
+    assert.equal(plan.totalDurationMs, 19500);
+    // Images : 300 de dates + 75 de pré-roll + 120 de pauses + 90 de fin.
+    assert.equal(plan.baseFrameCount, 300);
+    assert.equal(plan.holdFrameCount, 120);
+    assert.equal(plan.totalFrameCount, 585);
+});
+
+test('cameraHoldMs en durée imposée : total inchangé, dates réduites des pauses', () => {
+    const plan = buildTimingPlan({
+        dayCount: 100,
+        rhythm: { mode: 'duration', totalDurationMs: 63000 },
+        fps: 30,
+        tailFreezeMs: 3000,
+        cameraTravelMs: 40000,
+        cameraJourneyCount: 3,
+        cameraOverlap: true,
+        cameraLeadMs: 3000,
+        cameraHoldMs: 7000,
+    });
+    assert.equal(plan.valid, true);
+    assert.equal(plan.cameraHoldMs, 7000);
+    assert.equal(plan.totalDurationMs, 63000);
+    // cameraTimeBudgetMs reste le budget animation entier — le moteur refait
+    // la soustraction (approche + pauses) dans prepareCameraPacing.
+    assert.equal(plan.cameraTimeBudgetMs, 60000);
+    // Dates : 60 s − 3 s d'approche − 7 s de pauses = 50 s → 500 ms/jour.
+    assert.equal(plan.timePerDayMs, 500);
+    // Frames : dates (1500) + pré-roll (90) + pauses (210) + fin (90) = 1890,
+    // exactement la durée totale à 30 i/s.
+    assert.equal(plan.baseFrameCount, 1500);
+    assert.equal(plan.totalFrameCount, 1890);
+    assert.equal(plan.totalFrameCount, Math.round(plan.totalDurationMs * 30 / 1000));
+});
+
+test('cameraHoldMs est ignoré hors mode piste', () => {
+    const reactif = buildTimingPlan({
+        dayCount: 100,
+        rhythm: { mode: 'rate', daysPerSecond: 10 },
+        fps: 30,
+        tailFreezeMs: 3000,
+        cameraTravelMs: 20000,
+        cameraHoldMs: 4000,
+    });
+    assert.equal(reactif.cameraHoldMs, 0);
+    assert.equal(reactif.animationMs, 30000);
+});
+
+test('buildImageTimingPlan : les pauses planifiées s\'ajoutent au total', () => {
+    const plan = buildImageTimingPlan({
+        dayCount: 10, timePerDayMs: 100, fps: 30, tailFreezeMs: 0,
+        cameraLeadMs: 2000, cameraHoldMs: 1000,
+    });
+    assert.equal(plan.baseFrameCount, 30);   // quota des jours inchangé
+    assert.equal(plan.leadFrameCount, 60);
+    assert.equal(plan.holdFrameCount, 30);
+    assert.equal(plan.totalFrameCount, 120);
+});

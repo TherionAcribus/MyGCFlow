@@ -47,6 +47,8 @@ export function updateInfosForPictures(){
         // Pré-roll « piste » éventuel (déjà nul hors mode piste) : ses images
         // de tête comptent dans le total annoncé.
         cameraLeadMs: pkg.options.animation?.cameraLeadMs || 0,
+        // Pauses de dates planifiées (holds) du mode piste, idem.
+        cameraHoldMs: pkg.options.animation?.cameraHoldMs || 0,
     });
 
     pkg.options.record.framesPerDay = plan.framesPerDayAverage;
