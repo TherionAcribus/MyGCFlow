@@ -96,6 +96,21 @@
     background: rgba(239, 108, 0, 0.1);
 }
 
+/* « Sélection » (étendue réelle des caches filtrées) : vert pour la distinguer
+   des deux autres sources — bleu « Données » (toute la base) et orange
+   « Filtre » (critère saisi). */
+.date-source-selection:not(.is-active) {
+    border-color: var(--color-success);
+    color: var(--color-success);
+}
+
+.date-source-selection.is-active,
+.date-source-selection:hover:not(:disabled) {
+    border-color: var(--color-success);
+    color: var(--color-success);
+    background: rgba(46, 125, 50, 0.1);
+}
+
 .date-inline-row {
     display: flex;
     align-items: center;

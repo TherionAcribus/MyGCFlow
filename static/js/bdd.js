@@ -449,6 +449,18 @@ export function readBddValues({ settleFirstUse = false } = {}){
     }
 }
 
+// Étendue réelle de la sélection affichée (première/dernière date), capturée
+// à chaque setMetadata. On ne peut pas la relire dans metadata à la demande :
+// le moteur d'animation réécrit metadata.startDate/endDate avec la plage
+// choisie au démarrage d'une lecture (mapgl.js). Elle alimente les boutons
+// « Sélection » de l'onglet Animation.
+let selectionExtentStart = null;
+let selectionExtentEnd = null;
+
+export function getSelectionDateExtent() {
+    return { start: selectionExtentStart, end: selectionExtentEnd };
+}
+
 function setMetadata(meta) {
     try {
         for (const k of Object.keys(metadata)) {
@@ -471,6 +483,8 @@ function setMetadata(meta) {
         if (metadata.publishedEndDate) {
             metadata.publishedEndDate = pkg.parseLocalDate(metadata.publishedEndDate);
         }
+        selectionExtentStart = metadata.startDate ? new Date(metadata.startDate) : null;
+        selectionExtentEnd = metadata.endDate ? new Date(metadata.endDate) : null;
     } catch (e) {
         console.warn('setMetadata error:', e);
     }
@@ -480,6 +494,8 @@ function clearLocalData() {
     json_data = null;
     baseGeojson = null;
     for (const k of Object.keys(metadata)) delete metadata[k];
+    selectionExtentStart = null;
+    selectionExtentEnd = null;
     pointsByDate.clear();
     hiddenPointsByDate.clear();
     pointsByDateRevision++;
@@ -1166,6 +1182,8 @@ export function changeSelect(selectedValues, optionValues) {
     dateStrToDate();
     // remets à jour les options/infos dépendant de la BDD (deltaDays, dates)
     updateOptionsValues(metadata);
+    // Boutons « Sélection » de l'onglet Animation : l'étendue a pu changer.
+    pkg.updateAnimFilterInfo?.();
     // MAJ des frames Infos
     pkg.updateInfosFrameAfterReadBdd(metadata);
     // Mettre à jour les features affichées sur la carte
@@ -1190,6 +1208,8 @@ export function setExternalDatasetState(meta, { selected = 0, total = 0 } = {}) 
     totalCaches = Math.max(0, Number(total) || 0);
     updateOptionsValues(metadata);
     updateFiltersCounter(selected, totalCaches);
+    // Boutons « Sélection » de l'onglet Animation : l'étendue a pu changer.
+    pkg.updateAnimFilterInfo?.();
 }
 
 function updateFiltersCounter(selected, total){

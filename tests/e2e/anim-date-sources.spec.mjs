@@ -1,8 +1,9 @@
 // Sources des dates d'animation (onglet Animation) : chaque champ montre
-// sous lui les puces « Données », « Filtre » (si un filtre de dates actif
-// diffère des données) et « Personnalisée » — cette dernière uniquement
-// quand la valeur saisie ne correspond à aucune des deux sources, pour
-// que l'état « date à la main » ne passe pas pour un état neutre.
+// sous lui les puces « Données », « Sélection » (étendue réelle des caches
+// filtrées, quand elle diffère des données), « Filtre » (si un filtre de
+// dates actif diffère des données) et « Personnalisée » — cette dernière
+// uniquement quand la valeur saisie ne correspond à aucune des sources,
+// pour que l'état « date à la main » ne passe pas pour un état neutre.
 import { expect, test } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -82,6 +83,59 @@ test('filtre de dates actif : puce « Filtre » proposée puis cochée au clic',
   await expect(filterChip).toHaveClass(/is-active/);
   await expect(page.locator('#animCustomStartInfo')).toBeHidden();
   await expect(page.locator('#btnResetAnimStartDate')).not.toHaveClass(/is-active/);
+});
+
+test('filtre hors dates : puces « Sélection » proposent l\u2019étendue réelle des caches', async ({ page }) => {
+  // Sans filtre, l'étendue de la sélection rejoint « Données » : rien à
+  // proposer, les puces Sélection restent cachées.
+  await expect(page.locator('#animSelectionStartInfo')).toBeHidden();
+  await expect(page.locator('#animSelectionEndInfo')).toBeHidden();
+
+  // Filtre de type (pas de critère de dates) : la sélection devient les deux
+  // Multi du jeu (02/01 → 04/01 au lieu de 01/01 → 06/01). Les puces
+  // « Sélection » apparaissent — sans puce « Filtre », le critère de dates
+  // n'ayant pas bougé.
+  await page.locator('#selectType').evaluate(el => el.tomselect.setValue(['Multi-cache']));
+
+  const selStartChip = page.locator('#animSelectionStartValue');
+  const selEndChip = page.locator('#animSelectionEndValue');
+  const dataStartChip = page.locator('#btnResetAnimStartDate');
+  const dataEndChip = page.locator('#btnResetAnimEndDate');
+
+  await expect(page.locator('#animSelectionStartInfo')).toBeVisible();
+  await expect(page.locator('#animSelectionEndInfo')).toBeVisible();
+  await expect(page.locator('#animFilterStartInfo')).toBeHidden();
+  await expect(page.locator('#animFilterEndInfo')).toBeHidden();
+
+  // La date proposée diffère de la borne « Données » (01/01 → 02/01 et
+  // 06/01 → 04/01). Texte comparé aux valeurs affichées pour rester
+  // indépendant du format de date actif.
+  const selStartText = await selStartChip.locator('.date-source-value').innerText();
+  const selEndText = await selEndChip.locator('.date-source-value').innerText();
+  const dataStartText = await dataStartChip.locator('.date-source-value').innerText();
+  const dataEndText = await dataEndChip.locator('.date-source-value').innerText();
+  expect(selStartText).not.toBe(dataStartText);
+  expect(selEndText).not.toBe(dataEndText);
+  expect(selStartText).not.toBe(selEndText);
+
+  // Cliquer « Sélection » applique la date au champ et coche sa puce.
+  await selStartChip.click();
+  await expect(page.locator('#animDateStart')).toHaveValue(selStartText);
+  await expect(selStartChip).toHaveClass(/is-active/);
+  await expect(dataStartChip).not.toHaveClass(/is-active/);
+  await expect(page.locator('#animCustomStartInfo')).toBeHidden();
+
+  await selEndChip.click();
+  await expect(page.locator('#animDateEnd')).toHaveValue(selEndText);
+  await expect(selEndChip).toHaveClass(/is-active/);
+  await expect(dataEndChip).not.toHaveClass(/is-active/);
+  await expect(page.locator('#animCustomEndInfo')).toBeHidden();
+
+  // Retour à « Données » : la puce Sélection se décoche sans disparaître.
+  await dataStartChip.click();
+  await expect(dataStartChip).toHaveClass(/is-active/);
+  await expect(selStartChip).not.toHaveClass(/is-active/);
+  await expect(page.locator('#animSelectionStartInfo')).toBeVisible();
 });
 
 test('les puces sont mutuellement exclusives sur les deux champs', async ({ page }) => {

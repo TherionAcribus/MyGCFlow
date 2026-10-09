@@ -24,6 +24,7 @@
 .ti-alert-triangle:before { content: "\ea06"; }
 .ti-arrow-left:before { content: "\ea19"; }
 .ti-arrow-right:before { content: "\ea1f"; }
+.ti-arrows-exchange:before { content: "\f1f4"; }
 .ti-bell-off:before { content: "\ece9"; }
 .ti-bolt:before { content: "\ea38"; }
 .ti-border-outer:before { content: "\ea41"; }
@@ -45,6 +46,7 @@
 .ti-copy:before { content: "\ea7a"; }
 .ti-current-location:before { content: "\ecef"; }
 .ti-database:before { content: "\ea88"; }
+.ti-database-import:before { content: "\ee6f"; }
 .ti-device-desktop-analytics:before { content: "\ee77"; }
 .ti-device-floppy:before { content: "\eb62"; }
 .ti-dots:before { content: "\ea95"; }
@@ -61,6 +63,7 @@
 .ti-flask:before { content: "\ebd2"; }
 .ti-folder:before { content: "\eaad"; }
 .ti-folder-open:before { content: "\faf7"; }
+.ti-folder-search:before { content: "\f918"; }
 .ti-hand-click:before { content: "\ef4f"; }
 .ti-heart:before { content: "\eabe"; }
 .ti-help:before { content: "\eabf"; }
@@ -71,6 +74,7 @@
 .ti-layout-bottombar:before { content: "\ead3"; }
 .ti-layout-sidebar-right:before { content: "\ead9"; }
 .ti-link:before { content: "\eade"; }
+.ti-list-check:before { content: "\eb6a"; }
 .ti-lock:before { content: "\eae2"; }
 .ti-lock-open:before { content: "\eae1"; }
 .ti-map:before { content: "\eae9"; }
@@ -83,6 +87,7 @@
 .ti-movie:before { content: "\eafa"; }
 .ti-music:before { content: "\eafc"; }
 .ti-palette:before { content: "\eb01"; }
+.ti-pencil:before { content: "\eb04"; }
 .ti-player-pause:before { content: "\ed45"; }
 .ti-player-play:before { content: "\ed46"; }
 .ti-player-stop:before { content: "\ed4a"; }
@@ -104,11 +109,11 @@
 .ti-trash-x:before { content: "\ef88"; }
 .ti-upload:before { content: "\eb47"; }
 .ti-user:before { content: "\eb4d"; }
-.ti-user-circle:before { content: "\ef68"; }
 .ti-users:before { content: "\ebf2"; }
 .ti-vector:before { content: "\eca9"; }
 .ti-video:before { content: "\ed22"; }
 .ti-world-cog:before { content: "\f9dd"; }
 .ti-x:before { content: "\eb55"; }
 .ti-zoom-in:before { content: "\eb56"; }
+.ti-zoom-in-area:before { content: "\f1dc"; }
 .ti-zoom-out:before { content: "\eb57"; }

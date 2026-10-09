@@ -3056,12 +3056,19 @@ function updateResetAnimButtonsHighlight(){
     updateAnimFilterInfo();
 }
 
-// Affichage conditionnel des dates de filtre sous les champs Animation
-function updateAnimFilterInfo(){
+// Affichage conditionnel des dates de filtre et de sélection sous les champs
+// Animation. Exportée : bdd.js l'appelle après chaque filtrage (changeSelect,
+// setExternalDatasetState) puisque l'étendue de la sélection peut changer sans
+// toucher aux champs.
+export function updateAnimFilterInfo(){
     const startRow = document.getElementById('animFilterStartInfo');
     const endRow = document.getElementById('animFilterEndInfo');
     const startValueEl = document.getElementById('animFilterStartValue');
     const endValueEl = document.getElementById('animFilterEndValue');
+    const selStartRow = document.getElementById('animSelectionStartInfo');
+    const selEndRow = document.getElementById('animSelectionEndInfo');
+    const selStartValueEl = document.getElementById('animSelectionStartValue');
+    const selEndValueEl = document.getElementById('animSelectionEndValue');
 
     const filterStart = document.querySelector('#datePickerStart')?.value?.trim();
     const filterEnd = document.querySelector('#datePickerEnd')?.value?.trim();
@@ -3069,6 +3076,33 @@ function updateAnimFilterInfo(){
     const animEnd = document.querySelector('#animDateEnd')?.value?.trim();
     const defaultStartStr = defaultStartDate ? formatDateForPickers(defaultStartDate) : null;
     const defaultEndStr = defaultEndDate ? formatDateForPickers(defaultEndDate) : null;
+
+    // Étendue réelle des caches sélectionnées (première/dernière date),
+    // capturée par bdd.js à chaque filtrage — metadata est mutée par le moteur
+    // d'animation au démarrage d'une lecture et ne peut pas servir de source.
+    const extent = (typeof pkg.getSelectionDateExtent === 'function') ? pkg.getSelectionDateExtent() : null;
+    const selStartStr = extent?.start instanceof Date ? formatDateForPickers(extent.start) : null;
+    const selEndStr = extent?.end instanceof Date ? formatDateForPickers(extent.end) : null;
+
+    // « Sélection » n'apporte rien quand l'étendue filtrée rejoint la borne
+    // « Données » : le bouton n'apparaît que s'il propose une autre date.
+    const showSelStart = !!(selStartRow && selStartStr && selStartStr !== defaultStartStr);
+    const showSelEnd = !!(selEndRow && selEndStr && selEndStr !== defaultEndStr);
+
+    if (selStartRow) {
+        selStartRow.style.display = showSelStart ? 'flex' : 'none';
+        if (showSelStart && selStartValueEl) {
+            updateDateSourceButton(selStartValueEl, selStartStr, animStart === selStartStr);
+            selStartValueEl.onclick = applySelectionStartToAnim;
+        }
+    }
+    if (selEndRow) {
+        selEndRow.style.display = showSelEnd ? 'flex' : 'none';
+        if (showSelEnd && selEndValueEl) {
+            updateDateSourceButton(selEndValueEl, selEndStr, animEnd === selEndStr);
+            selEndValueEl.onclick = applySelectionEndToAnim;
+        }
+    }
 
     const showStart = !!(startRow && filterStart && defaultStartStr && filterStart !== defaultStartStr);
     const showEnd = !!(endRow && filterEnd && defaultEndStr && filterEnd !== defaultEndStr);
@@ -3088,15 +3122,17 @@ function updateAnimFilterInfo(){
         }
     }
 
-    // Troisième source possible : une date qui n'est ni celle des données ni
-    // celle du filtre. Sans puce dédiée, les deux sources simplement
-    // décochées laissaient croire à un état neutre au lieu de dire
+    // Dernière source possible : une date qui n'est ni celle des données, ni
+    // celle de la sélection, ni celle du filtre. Sans puce dédiée, les sources
+    // simplement décochées laissaient croire à un état neutre au lieu de dire
     // « valeur saisie à la main ».
     const startIsCustom = !!(animStart
         && !(defaultStartStr && animStart === defaultStartStr)
+        && !(showSelStart && animStart === selStartStr)
         && !(showStart && animStart === filterStart));
     const endIsCustom = !!(animEnd
         && !(defaultEndStr && animEnd === defaultEndStr)
+        && !(showSelEnd && animEnd === selEndStr)
         && !(showEnd && animEnd === filterEnd));
     const startCustomInfo = document.getElementById('animCustomStartInfo');
     const endCustomInfo = document.getElementById('animCustomEndInfo');
@@ -3130,6 +3166,34 @@ function applyFilterEndToAnim(){
         animEndEl.value = formatDateForPickers(parsed);
     }
     pkg.options.animation.dateEnd = parsed;
+    updateResetAnimButtonsHighlight();
+    updateDeltaDaysAndTimes();
+}
+
+// Boutons « Sélection » : appliquent l'étendue réelle des caches filtrées
+// (première / dernière date de la sélection), capturée par bdd.js.
+function applySelectionStartToAnim(){
+    const start = pkg.getSelectionDateExtent?.().start;
+    if (!(start instanceof Date)) return;
+    const animStartEl = document.querySelector('#animDateStart');
+    if (animStartEl) {
+        setTdDate(animStartEl, start);
+        animStartEl.value = formatDateForPickers(start);
+    }
+    pkg.options.animation.dateStart = start;
+    updateResetAnimButtonsHighlight();
+    updateDeltaDaysAndTimes();
+}
+
+function applySelectionEndToAnim(){
+    const end = pkg.getSelectionDateExtent?.().end;
+    if (!(end instanceof Date)) return;
+    const animEndEl = document.querySelector('#animDateEnd');
+    if (animEndEl) {
+        setTdDate(animEndEl, end);
+        animEndEl.value = formatDateForPickers(end);
+    }
+    pkg.options.animation.dateEnd = end;
     updateResetAnimButtonsHighlight();
     updateDeltaDaysAndTimes();
 }
