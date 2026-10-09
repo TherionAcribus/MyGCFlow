@@ -355,6 +355,31 @@ class MapFramingCoercionTests(unittest.TestCase):
         self.assertEqual(s.map_framing, "fit")
 
 
+class LocationlessDisplayTests(unittest.TestCase):
+    """Sort des caches sans localisation (position fictive dans le GPX).
+
+    « hidden » est le défaut : les locationless restent comptées mais aucun
+    point n'est dessiné à leur position factice. Une valeur inconnue —
+    settings.json édité à la main, client plus ancien — retombe sur ce repli
+    plutôt que d'afficher un point là où l'utilisateur n'est pas allé.
+    """
+
+    def test_the_default_hides_locationless_points(self):
+        self.assertEqual(coerce_settings({}).locationless_display, "hidden")
+
+    def test_known_values_are_kept(self):
+        self.assertEqual(
+            coerce_settings({"locationless_display": "shown"}).locationless_display, "shown")
+        self.assertEqual(
+            coerce_settings({"locationless_display": "hidden"}).locationless_display, "hidden")
+
+    def test_an_unknown_value_falls_back_to_hidden(self):
+        self.assertEqual(
+            coerce_settings({"locationless_display": "partout"}).locationless_display, "hidden")
+        self.assertEqual(
+            coerce_settings({"locationless_display": 42}).locationless_display, "hidden")
+
+
 class RecordingConfiguredFlagTests(unittest.TestCase):
     """Drapeau qui pilote la reprise des anciens réglages du localStorage.
 
@@ -430,6 +455,21 @@ class SettingsApiTests(unittest.TestCase):
         self.assertEqual(self.client.put('/api/settings', json={'date_format': 'us'}).status_code, 200)
 
         self.assertEqual(self.client.get('/api/settings').get_json()['date_format'], 'us')
+
+    def test_locationless_display_survives_a_round_trip(self):
+        self.assertEqual(
+            self.client.get('/api/settings').get_json()['locationless_display'], 'hidden')
+        self.assertEqual(
+            self.client.put('/api/settings', json={'locationless_display': 'shown'}).status_code, 200)
+        self.assertEqual(
+            self.client.get('/api/settings').get_json()['locationless_display'], 'shown')
+
+    def test_an_invalid_locationless_display_leaves_the_stored_one_untouched(self):
+        self.client.put('/api/settings', json={'locationless_display': 'shown'})
+        self.client.put('/api/settings', json={'locationless_display': 'lune'})
+
+        self.assertEqual(
+            self.client.get('/api/settings').get_json()['locationless_display'], 'shown')
 
     def test_an_invalid_date_format_leaves_the_stored_one_untouched(self):
         self.client.put('/api/settings', json={'date_format': 'eu'})

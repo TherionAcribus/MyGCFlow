@@ -12,6 +12,7 @@ instance/
 # Données générées
 *.gpx
 !tests/e2e/fixtures/my-finds.gpx
+!tests/e2e/fixtures/my-finds-locationless.gpx
 captured/
 static/geojson_data.json
 static/json/country_state.json

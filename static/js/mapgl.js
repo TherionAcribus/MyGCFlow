@@ -535,6 +535,12 @@ export function addVector(data) {
         dataProjection: 'EPSG:4326',
         featureProjection: 'EPSG:3857'
     });
+    // Locationless masquées (préférence « hidden ») : comptées dans les
+    // métadonnées et le compteur animé, mais jamais dessinées — leur position
+    // GPX est fictive, ce n'est pas un lieu où l'utilisateur est allé.
+    if (!pkg.isLocationlessShown?.()) {
+        features = features.filter((feature) => !pkg.isLocationlessFeature(feature));
+    }
     dbgMapgl('[addVector] features lues:', features.length, '| vectorSource existant:', !!window.vectorSource, '| vectorLayer existant:', !!vectorLayer);
 
     // Vider la source avant le rechargement pour éviter l'accumulation de features
@@ -1920,6 +1926,40 @@ function getPointsUpToDate(targetDate) {
     return allPoints;
 }
 
+// Caches comptées sans point (locationless masquées) sur un lot de jours :
+// l'animation les fait monter dans le compteur à leur date de trouvaille,
+// comme les caches affichées, mais sans rien dessiner (bdd.js les indexe dans
+// hiddenPointsByDate plutôt que pointsByDate).
+function countHiddenPointsFor(dates) {
+    const index = pkg.hiddenPointsByDate;
+    if (!index || index.size === 0) return 0;
+    let n = 0;
+    for (const date of dates) {
+        n += index.get(date.toDateString())?.length || 0;
+    }
+    return n;
+}
+
+// Locationless masquées antérieures à la date de début d'animation : déjà
+// « trouvées », elles rejoignent le compteur initial comme les points visibles
+// de getFilteredPointsAtStart.
+function countHiddenPointsBefore(startDate) {
+    const index = pkg.hiddenPointsByDate;
+    if (!index || index.size === 0 || !(startDate instanceof Date)) return 0;
+    let n = 0;
+    for (const [dateKey, points] of index.entries()) {
+        const date = new Date(dateKey);
+        if (date < startDate) n += points.length;
+    }
+    return n;
+}
+
+// Compteur de départ de l'animation : caches affichées avant la date de début
+// + locationless masquées du même passé.
+function initialCacheCount() {
+    return getFilteredPointsAtStart().length + countHiddenPointsBefore(animationStartDate());
+}
+
 function getExtraEndMs() {
     const extraSeconds = Number(pkg.options?.animation?.extraEndSeconds) || 0;
     return Math.max(0, extraSeconds) * 1000;
@@ -2065,7 +2105,7 @@ export function startAnimation(restart=false) {
         createFlashElements();
         resetCameraFollow();
         resetTravelTrail();
-        infos = createObjectInfos(filteredPointsAtStart.length);
+        infos = createObjectInfos(filteredPointsAtStart.length + countHiddenPointsBefore(animationStartDate()));
         // Démarrer la musique de fond si activée (lecture seule)
         try { startBackgroundMusicIfAny(); } catch(e) { console.warn('startBackgroundMusicIfAny error:', e); }
     } else {
@@ -2622,7 +2662,7 @@ function startRecordingProcess(){
         // resetCameraFollow a déjà été fait avant prepareCameraPacing, plus haut.
         createFlashElements();
         resetTravelTrail();
-        initialCount = filteredPointsAtStart.length;
+        initialCount = filteredPointsAtStart.length + countHiddenPointsBefore(animationStartDate());
     }
     // creation objet pour stocker les infos liées aux Frames (dt nombre de caches)
     let infos = createObjectInfos(initialCount);
@@ -2682,7 +2722,7 @@ function startRecordingProcess(){
 // annonce 0 alors que ces points sont bien visibles.
 // En mode Évolution, beginEvolutionTimeline passe un objet { actives, placees,
 // archivees } qui initialise les trois compteurs de la ligne d'infos à balises.
-function createObjectInfos(initialCount = getFilteredPointsAtStart().length){
+function createObjectInfos(initialCount = initialCacheCount()){
     let infos = new Object();
     infos.displayDate = pkg.options.infos.currentDate.display
     infos.displayNumberofCaches = pkg.options.infos.numberOfCaches.display
@@ -3376,7 +3416,7 @@ function recordAnimationMediaRecorder(){
         // startMediaRecorderPipeline, plus bas — sans `silent`, les toasts
         // d'info apparaîtraient au lancement de l'enregistrement.
         resetTravelTrail(true);
-        initialCount = filteredPointsAtStart.length;
+        initialCount = filteredPointsAtStart.length + countHiddenPointsBefore(animationStartDate());
     }
     animationDatesComplete = false;
     // IMPORTANT : réinitialiser la variable module 'infos' (compteur de caches).
@@ -4291,8 +4331,9 @@ function displayFeaturesForDates(dates, pointOptions, flashOptions, record, info
     if (trailState) advanceTravelTrail(dateToDayNumber(dates[dates.length - 1]), sampleAppearClock());
 
     // affiche éventuellement les infos demandées : la date affichée est celle du
-    // dernier jour du lot, le compteur reçoit le total des points ajoutés.
-    displayInfosForDate(infos, dates[dates.length - 1], newFeatures);
+    // dernier jour du lot, le compteur reçoit le total des points ajoutés —
+    // locationless masquées comprises (comptées, jamais dessinées).
+    displayInfosForDate(infos, dates[dates.length - 1], newFeatures, countHiddenPointsFor(dates));
 
     // Mode piste : la caméra suit la piste précalculée (updateCameraFollow) —
     // aucune cible réactive à poser, sinon elle se superposerait à la piste.
@@ -4342,13 +4383,15 @@ function displayFeaturesForDates(dates, pointOptions, flashOptions, record, info
     mapDirtyTracker.markDirty();
 }
 
-// affiche les infos (date, nb de caches) en fonction des jours
-function displayInfosForDate(infos, date, featuresForDate) {
+// affiche les infos (date, nb de caches) en fonction des jours.
+// hiddenCount : caches du lot comptées sans point (locationless masquées) —
+// elles montent le compteur comme les points affichés.
+function displayInfosForDate(infos, date, featuresForDate, hiddenCount = 0) {
     if (infos.displayDate) {
         pkg.updateCurrentDate(date);
     }
     if (infos.displayNumberofCaches) {
-        const newCaches = featuresForDate.length;
+        const newCaches = featuresForDate.length + hiddenCount;
         infos.cacheNumber += newCaches
         // L'animation du compteur ne dure jamais plus d'un jour d'animation : la
         // valeur exacte du jour est toujours atteinte avant le jour suivant.
@@ -4438,7 +4481,11 @@ function endEvolutionTimeline() {
 
 function hasTimelineData() {
     if (isEvolutionPage()) return !!pkg.evolutionHasData?.();
-    return !!(pkg.pointsByDate && pkg.pointsByDate.size > 0);
+    // Les locationless masquées n'ont pas de point mais restent comptées :
+    // une sélection qui n'en contient que des masquées a quand même une
+    // chronologie à jouer (le compteur avance de jour en jour).
+    return !!((pkg.pointsByDate && pkg.pointsByDate.size > 0)
+        || (pkg.hiddenPointsByDate && pkg.hiddenPointsByDate.size > 0));
 }
 
 // Mode du flash retenu pour la pause de fin : en mode Évolution, le flash de

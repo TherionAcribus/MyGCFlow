@@ -9,6 +9,11 @@ import { isEvolutionPage } from './app_mode.mjs';
 export let json_data = null;
 export const metadata = {};
 export const pointsByDate = new Map();
+// Caches comptées mais jamais dessinées : les locationless quand la préférence
+// « locationless_display » vaut « hidden » (leur position GPX est fictive).
+// Indexées par jour comme pointsByDate pour que le compteur de l'animation
+// continue de les prendre en compte à leur date de trouvaille.
+export const hiddenPointsByDate = new Map();
 // Révision de l'index : change à chaque reconstruction (import, filtre, vidage).
 // Le trajet des traits de déplacement, précalculé à partir de l'index, s'en sert
 // comme clé de mémoïsation.
@@ -476,6 +481,7 @@ function clearLocalData() {
     baseGeojson = null;
     for (const k of Object.keys(metadata)) delete metadata[k];
     pointsByDate.clear();
+    hiddenPointsByDate.clear();
     pointsByDateRevision++;
     totalCaches = 0;
     lastDbHasData = false;
@@ -487,8 +493,12 @@ function clearLocalData() {
 export function dataExtentLonLat() {
     const feats = json_data && json_data.features;
     if (!Array.isArray(feats) || feats.length === 0) return null;
+    // Locationless masquées : leur position fictive ne doit pas étendre
+    // l'emprise (un point aux États-Unis dézoomerait toute la carte).
+    const hideLocationless = !pkg.isLocationlessShown();
     let west = Infinity, south = Infinity, east = -Infinity, north = -Infinity;
     for (const f of feats) {
+        if (hideLocationless && pkg.isLocationlessFeature(f)) continue;
         const c = f && f.geometry && f.geometry.coordinates;
         if (!c || c.length < 2) continue;
         const lon = Number(c[0]);
@@ -518,6 +528,22 @@ export function fitViewOnData({ force = false } = {}) {
     pkg.fitMapView?.(extent);
 }
 
+// Bascule « locationless affichées / comptées sans point » appliquée à la volée
+// (changement de la préférence dans l'onglet Paramètres). La sélection et les
+// compteurs ne changent pas : seul l'index des jours est reconstruit — les
+// locationless passent de pointsByDate à hiddenPointsByDate (ou inversement),
+// ce qui invalide aussi le trajet et les résumés caméra mémoïsés via
+// pointsByDateRevision — puis la carte réaffiche la sélection courante.
+export function refreshLocationlessDisplay() {
+    if (!json_data || !Array.isArray(json_data.features)) return;
+    buildPointsByDateIndex(json_data.features);
+    clearMap();
+    pkg.addVector(json_data);
+    // En cadrage « fit », l'emprise a changé (le point fictif entre ou sort) :
+    // la vue se recale d'elle-même. Hors « fit », la vue de l'utilisateur prime.
+    fitViewOnData();
+}
+
 function updateUIAfterClear() {
     const infos = document.getElementById('infosBDD');
     const btn = document.getElementById('clearDatabaseBtn');
@@ -537,17 +563,25 @@ function buildPointsByDateIndex(features = []) {
     pointsByDateRevision++;
     try {
         pointsByDate.clear();
+        hiddenPointsByDate.clear();
         if (!Array.isArray(features)) return;
 
+        // Locationless masquées : comptées par jour (hiddenPointsByDate) mais
+        // hors de pointsByDate, dont dépendent l'affichage, le trajet et le
+        // suivi de caméra — aucun point ne s'affiche à leur position fictive.
+        const hideLocationless = !pkg.isLocationlessShown();
         for (const f of features) {
             const dateStr = f?.properties?.date_find;
             if (!dateStr) continue;
             const d = new Date(`${dateStr}T00:00:00`);
             if (Number.isNaN(d.getTime())) continue;
             const key = d.toDateString();
-            const arr = pointsByDate.get(key) || [];
+            const index = (hideLocationless && pkg.isLocationlessFeature(f))
+                ? hiddenPointsByDate
+                : pointsByDate;
+            const arr = index.get(key) || [];
             arr.push(f);
-            pointsByDate.set(key, arr);
+            index.set(key, arr);
         }
     } catch (e) {
         console.warn('buildPointsByDateIndex error:', e);
@@ -1150,6 +1184,7 @@ export function setExternalDatasetState(meta, { selected = 0, total = 0 } = {}) 
     json_data = null;
     baseGeojson = null;
     pointsByDate.clear();
+    hiddenPointsByDate.clear();
     pointsByDateRevision++;
     setMetadata(meta || {});
     totalCaches = Math.max(0, Number(total) || 0);

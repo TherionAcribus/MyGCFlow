@@ -301,6 +301,13 @@ class AppSettings:
     # sur l'emprise des caches (défaut), "custom" applique le centre et le zoom
     # ci-dessus — choisis dans l'onglet Paramètres.
     map_framing: str = "fit"
+    # Sort des caches sans localisation (type "Locationless (Reverse) Cache",
+    # ex. GC9FAVE) : leur position dans le GPX est fictive — affichée, elle
+    # planterait un point là où l'utilisateur n'est jamais allé.
+    # "hidden" (défaut) : pas de point sur la carte, ni dans le trajet ni le
+    #   suivi de caméra, mais elles restent comptées (compteurs, « n / total »).
+    # "shown" : affichées comme les autres caches.
+    locationless_display: str = "hidden"  # "hidden" | "shown"
     recording: RecordingSettings = field(default_factory=RecordingSettings)
     # True dès que l'utilisateur a enregistré des réglages vidéo côté serveur.
     # Sert uniquement à la reprise des anciens réglages : tant qu'il est False,
@@ -783,6 +790,14 @@ def coerce_undated_archives(value, fallback: str = "hide") -> str:
     return value if value in ("hide", "keep", "expire") else fallback
 
 
+LOCATIONLESS_DISPLAYS = ("hidden", "shown")
+
+
+def coerce_locationless_display(value, fallback: str = "hidden") -> str:
+    """Sort des caches sans localisation ; inconnu → repli."""
+    return value if value in LOCATIONLESS_DISPLAYS else fallback
+
+
 def coerce_infos_template(value, fallback: str = '{date} · {actives}') -> str:
     """Modèle de la ligne d'infos du mode Évolution ; non-texte → repli.
 
@@ -816,6 +831,8 @@ def coerce_settings(d: dict) -> AppSettings:
             d.get("evolution_infos_template"), s.evolution_infos_template)
         s.evolution_undated_archives = coerce_undated_archives(
             d.get("evolution_undated_archives"), s.evolution_undated_archives)
+        s.locationless_display = coerce_locationless_display(
+            d.get("locationless_display"), s.locationless_display)
         # Un settings.json antérieur à la migration n'a pas de bloc `recording` :
         # il compte comme « jamais configuré ».
         s.recording_configured = bool(d.get("recording_configured", "recording" in d))

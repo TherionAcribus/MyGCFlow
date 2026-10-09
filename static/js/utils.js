@@ -14,6 +14,27 @@ export function hexToRgb(hex) {
     return {r, g, b};
 }
 
+// Type GPX des caches « locationless » (ex. GC9FAVE) : leur position dans le
+// fichier est fictive — ce n'est pas un lieu où l'utilisateur est allé.
+export const LOCATIONLESS_CACHE_TYPE = 'Locationless (Reverse) Cache';
+
+// Vrai pour une feature locationless, qu'elle soit un objet GeoJSON brut
+// (properties.cache_type) ou une feature OpenLayers (get('cache_type')).
+export function isLocationlessFeature(feature) {
+    if (!feature) return false;
+    const type = typeof feature.get === 'function'
+        ? feature.get('cache_type')
+        : feature.properties?.cache_type;
+    return type === LOCATIONLESS_CACHE_TYPE;
+}
+
+// Préférence globale « locationless_display » (settings.json) : "shown"
+// affiche leur point sur la carte ; toute autre valeur (« hidden », clé
+// absente) les compte dans les statistiques sans rien dessiner.
+export function isLocationlessShown() {
+    return window.userSettings?.locationless_display === 'shown';
+}
+
 // permet de générer un certificat cfrf
 export function getCookie(name) {
     let cookieValue = null;

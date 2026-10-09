@@ -95,6 +95,7 @@ var selectLanguage, selectDateFormat, switchCheckVersionOnline, buttonCheckVersi
 var inputMapCenterLat, inputMapCenterLon, inputMapCenterCombined, inputMapDefaultZoom;
 var btnUseCurrentMapCenter;
 var selectMapFraming, mapFramingFitBlock, mapFramingCustomBlock, btnFitDataView;
+var selectLocationlessDisplay;
 var latLonModeCombined, latLonModeSplit, fieldLat, fieldLon, fieldCombined;
 let isCombinedLatLonMode = true;
 // Enregistrement
@@ -938,6 +939,14 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     if (selectMapFraming) selectMapFraming.addEventListener('change', onMapFramingChange);
     if (btnFitDataView) btnFitDataView.addEventListener('click', () => pkg.fitViewOnData?.({ force: true }));
 
+    // Sort des locationless (comptées sans point, ou affichées) : préférence
+    // globale du mode principal — le select n'existe pas sur la page Évolution
+    // (menu_data_evolution.html n'inclut pas menu_filtre.html).
+    selectLocationlessDisplay = document.getElementById('selectLocationlessDisplay');
+    if (selectLocationlessDisplay) {
+        selectLocationlessDisplay.addEventListener('change', onLocationlessDisplayChange);
+    }
+
     // Segmented control : chaque radio porte le mode qu'il active, plutôt qu'un
     // unique bouton dont l'effet dépendait de l'état courant.
     latLonModeCombined = document.getElementById('latLonModeCombined');
@@ -1772,6 +1781,11 @@ export function init_ui() {
         const framing = (s && s.map_framing === 'custom') ? 'custom' : 'fit';
         if (selectMapFraming) selectMapFraming.value = framing;
         syncMapFramingUI(framing);
+        // Locationless : « hidden » par défaut — leur point fictif n'apparaît
+        // qu'à la demande (« shown »).
+        if (selectLocationlessDisplay) {
+            selectLocationlessDisplay.value = (s && s.locationless_display === 'shown') ? 'shown' : 'hidden';
+        }
     } catch(_) {}
 
     // Charger l'arbre Country/State et peupler selects
@@ -2196,6 +2210,22 @@ async function onMapFramingChange() {
     } catch(e) {
         try { markSaveError(selectMapFraming); } catch(_) {}
         console.warn('Erreur sauvegarde du mode de cadrage:', e);
+    }
+}
+
+// Sort des locationless : « hidden » (défaut) les compte sans dessiner leur
+// point fictif, « shown » les affiche comme les autres caches. Préférence
+// globale répercutée à la volée sur la sélection déjà chargée.
+async function onLocationlessDisplayChange() {
+    try {
+        if (!selectLocationlessDisplay) return;
+        const mode = selectLocationlessDisplay.value === 'shown' ? 'shown' : 'hidden';
+        try { if (window.userSettings) window.userSettings.locationless_display = mode; } catch(_) {}
+        await reportSave(selectLocationlessDisplay, saveSettingsPatch({ locationless_display: mode }));
+        pkg.refreshLocationlessDisplay?.();
+    } catch(e) {
+        try { markSaveError(selectLocationlessDisplay); } catch(_) {}
+        console.warn('Erreur sauvegarde du sort des locationless:', e);
     }
 }
 

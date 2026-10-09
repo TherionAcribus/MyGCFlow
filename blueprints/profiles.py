@@ -23,6 +23,7 @@ from settings_manager import (
     coerce_date_format,
     coerce_evolution_animation,
     coerce_infos_template,
+    coerce_locationless_display,
     coerce_map_center,
     coerce_map_framing,
     coerce_map_zoom,
@@ -89,6 +90,7 @@ def api_get_settings():
         'map_default_center': list(s.map_default_center) if s.map_default_center else None,
         'map_default_zoom': s.map_default_zoom,
         'map_framing': s.map_framing,
+        'locationless_display': s.locationless_display,
         'recording': asdict(s.recording),
         'recording_configured': s.recording_configured,
         'animation': asdict(s.animation),
@@ -229,6 +231,14 @@ def api_put_settings():
                 data.get('map_framing'), current.map_framing
             )
 
+        # Sort des locationless (« hidden » / « shown ») : même règle, réécrit
+        # seulement si le client l'envoie.
+        locationless_display = current.locationless_display
+        if 'locationless_display' in data:
+            locationless_display = coerce_locationless_display(
+                data.get('locationless_display'), current.locationless_display
+            )
+
         return AppSettings(
             version=current.version,
             language=language,
@@ -245,6 +255,7 @@ def api_put_settings():
             map_default_center=map_default_center,
             map_default_zoom=map_default_zoom,
             map_framing=map_framing,
+            locationless_display=locationless_display,
             recording=recording,
             recording_configured=recording_configured,
             animation=animation,

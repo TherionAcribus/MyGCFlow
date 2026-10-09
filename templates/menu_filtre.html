@@ -63,4 +63,26 @@
 
     <!-- Ligne 5 : Pays et Régions/États -->
     {% include '_filter_country_state.html' %}
+
+    <!-- Caches « locationless » (ex. GC9FAVE) : leur position dans le GPX est
+         fictive — affichée, elle planterait un point (et un trajet) là où
+         l'utilisateur n'est jamais allé. Ce n'est pas un filtre (elles restent
+         comptées) mais un choix d'affichage, d'où le <hr> qui le distingue des
+         lignes de sélection ; pas de classe filter-select non plus : il ne doit
+         ni entrer dans getSelectedFilters ni marquer le panneau « filtre
+         actif ». Préférence globale persistée dans settings.json. Absent de la
+         page Évolution : menu_data_evolution.html n'inclut pas ce gabarit. -->
+    <hr class="my-2">
+    <div class="row g-2">
+        <div class="mb-1 col-12 col-md-6" id="locationlessDisplayField">
+            <label class="form-label" for="selectLocationlessDisplay">{{ _("Caches sans localisation (locationless)") }}</label>
+            <select id="selectLocationlessDisplay" class="form-select" aria-label="{{ _('Caches sans localisation (locationless)') }}">
+                <option value="hidden">{{ _("Comptées, sans point sur la carte") }}</option>
+                <option value="shown">{{ _("Comptées et affichées sur la carte") }}</option>
+            </select>
+            <p class="form-hint text-muted mb-0">
+                {{ _("Leur position dans le fichier est fictive : affichée, elle trace un point là où vous n'êtes pas allé.") }}
+            </p>
+        </div>
+    </div>
 </section>
