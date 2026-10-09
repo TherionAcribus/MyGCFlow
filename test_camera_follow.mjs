@@ -19,6 +19,7 @@ import {
     simulateCameraJourneys,
     smoothingFactor,
     stepCenter,
+    TRACK_LATE_EPSILON_MS,
     zoomForExtent,
 } from './static/js/camera_follow.mjs';
 
@@ -814,4 +815,63 @@ test('buildCameraTrack : leadMs omis ou nul ne change rien', () => {
     assert.deepEqual(zero, sans);
     assert.equal(sans.events[0].endMs, 0);
     assert.equal(sans.totalMs, 2 * 5000);
+});
+
+// ---------- Diagnostic de congestion (trajets en retard) ----------
+
+test('buildCameraTrack : les trajets trop longs pour le rythme sont comptés en retard', () => {
+    // Fenêtre de 1 s par jour pour des trajets de ~4 s : chacun arrive après
+    // l'affichage de son jour et retarde le départ du suivant — le retard
+    // s'accumule le long de la piste.
+    const journey1 = createCameraJourney([0, 0], [3000, 0], 8, 1);
+    const journey2 = createCameraJourney([3000, 0], [6000, 0], 8, 1);
+    const journey3 = createCameraJourney([6000, 0], [9000, 0], 8, 1);
+    // Assez de jours pour que le dernier trajet ne soit pas tronqué par la fin
+    // de la timeline : le retard mesuré est alors purement l'accumulation.
+    const days = new Array(14).fill(null);
+    days[1] = journey1;
+    days[2] = journey2;
+    days[3] = journey3;
+    const track = buildCameraTrack(days, { dayMs: 1000 });
+    assert.equal(track.events.length, 3);
+    assert.equal(track.lateCount, 3);
+    const lateOf = (event) => event.startMs + event.durationMs - event.endMs;
+    const lates = track.events.map(lateOf);
+    assert.equal(track.worstLateMs, Math.max(...lates));
+    // Le dernier trajet porte le retard cumulé de tous les précédents.
+    assert.ok(lates[0] > TRACK_LATE_EPSILON_MS);
+    assert.ok(lates[1] > lates[0] && lates[2] > lates[1]);
+});
+
+test('buildCameraTrack : un rythme large ne signale aucun retard', () => {
+    const journey1 = createCameraJourney([0, 0], [3000, 0], 8, 1);
+    const journey2 = createCameraJourney([3000, 0], [6000, 0], 8, 1);
+    const track = buildCameraTrack([null, journey1, null, journey2], { dayMs: 30000 });
+    assert.equal(track.lateCount, 0);
+    assert.equal(track.worstLateMs, 0);
+    // Retard sous l'epsilon (~une image d'écart) : invisible, non compté.
+    const epsilon = buildCameraTrack([{ totalDurationMs: 1030 }], { dayMs: 1000, leadMs: 1000 });
+    const event = epsilon.events[0];
+    assert.equal(event.startMs + event.durationMs - event.endMs, 30);
+    assert.ok(30 <= TRACK_LATE_EPSILON_MS);
+    assert.equal(epsilon.lateCount, 0);
+    // worstLateMs reste le plus grand écart mesuré, même sous le seuil.
+    assert.equal(epsilon.worstLateMs, 30);
+});
+
+test('buildCameraTrack : un saut instantané passé son jour compte comme en retard', () => {
+    // Fenêtre nulle (durationMs 0) dont la fin réelle dépasse l'affichage du
+    // jour : la caméra saute à la cible — en retard quand même, l'écart de
+    // position de la piste compte comme celui d'un trajet ordinaire.
+    const journey1 = createCameraJourney([0, 0], [3000, 0], 8, 1);
+    const journey2 = createCameraJourney([3000, 0], [6000, 0], 8, 1);
+    const track = buildCameraTrack([journey1, journey2], { dayMs: 1000 });
+    const [e1, e2] = track.events;
+    assert.equal(e2.durationMs, 0);
+    assert.ok(e2.startMs > e2.endMs);
+    // e1 finit au terme de la timeline (2 s) alors que son jour s'affiche à
+    // t=0 ; e2 saute à la cible à t=2 s pour un jour affiché à t=1 s : deux
+    // événements en retard, le pire étant celui du premier trajet.
+    assert.equal(track.lateCount, 2);
+    assert.equal(track.worstLateMs, e1.startMs + e1.durationMs - e1.endMs);
 });

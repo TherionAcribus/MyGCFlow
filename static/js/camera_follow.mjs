@@ -623,6 +623,10 @@ export function pacedDayMs(pacing, {
 // leur revient, et l'avancement est entièrement connu à l'avance — la durée
 // annoncée est exacte, quels que soient les trajets.
 
+// Retard toléré avant de compter un trajet comme « arrivé après l'affichage de
+// son jour » : sous ~une image d'écart, le décalage est invisible à l'écran.
+export const TRACK_LATE_EPSILON_MS = 50;
+
 // Planifie les trajets simulés sur la timeline. `journeysByDay` : une entrée
 // par jour animé (journey ou null), telle que simulateCameraJourneys la
 // retourne. `dayMs` : durée d'affichage d'un jour sur la timeline réelle
@@ -639,12 +643,18 @@ export function pacedDayMs(pacing, {
 // vitesse réelle. leadMs = 0 : comportement historique strictement inchangé.
 //
 // Retourne { events: [{ dayIndex, journey, startMs, endMs, durationMs, rate }],
-// timeScale, totalMs, leadMs } : pour chaque jour doté d'un trajet, endMs =
-// leadMs + i × dayMs (le trajet finit pile quand son jour s'affiche) et
-// startMs = max(endMs − durée × timeScale, fin réelle du trajet précédent).
-// Jamais de recouvrement : si la durée dépasse la fenêtre libre, le trajet
-// démarre où le précédent finit et arrive en retard sur son jour — accepté
-// (la date n'est pas retardée).
+// timeScale, totalMs, leadMs, lateCount, worstLateMs } : pour chaque jour doté
+// d'un trajet, endMs = leadMs + i × dayMs (le trajet finit pile quand son jour
+// s'affiche) et startMs = max(endMs − durée × timeScale, fin réelle du trajet
+// précédent). Jamais de recouvrement : si la durée dépasse la fenêtre libre,
+// le trajet démarre où le précédent finit et arrive en retard sur son jour —
+// accepté (la date n'est pas retardée).
+//
+// lateCount et worstLateMs forment le diagnostic de congestion : nombre de
+// trajets arrivés plus de TRACK_LATE_EPSILON_MS après l'affichage de leur
+// jour (le retard s'accumule — chaque trajet en retard retarde le départ du
+// suivant) et le plus grand retard observé, celui du dernier trajet concerné.
+// Tous deux nuls quand chaque trajet tient dans sa fenêtre.
 //
 // En revanche aucun trajet ne peut dépasser la fin de la timeline (totalMs =
 // leadMs + dayCount × dayMs) : en capture le nombre d'images est figé d'avance,
@@ -662,6 +672,8 @@ export function buildCameraTrack(journeysByDay, { dayMs, timeScale = 1, leadMs =
     const totalMs = lead + list.length * step;
     const events = [];
     let previousFinishMs = 0;
+    let lateCount = 0;
+    let worstLateMs = 0;
     for (let i = 0; i < list.length; i++) {
         const journey = list[i];
         if (!journey) continue;
@@ -682,8 +694,14 @@ export function buildCameraTrack(journeysByDay, { dayMs, timeScale = 1, leadMs =
             rate: durationMs > 0 ? journeyMs / durationMs : 1,
         });
         previousFinishMs = startMs + durationMs;
+        // Diagnostic de congestion : fin réelle après l'instant où le jour
+        // s'affiche — le trajet arrive en retard et retarde d'autant le
+        // départ du suivant (d'où un retard qui croît le long de la piste).
+        const lateMs = previousFinishMs - endMs;
+        if (lateMs > TRACK_LATE_EPSILON_MS) lateCount += 1;
+        if (lateMs > worstLateMs) worstLateMs = lateMs;
     }
-    return { events, timeScale: scale, totalMs, leadMs: lead };
+    return { events, timeScale: scale, totalMs, leadMs: lead, lateCount, worstLateMs };
 }
 
 // Pose de la caméra à l'instant `nowMs` de la timeline de la piste :

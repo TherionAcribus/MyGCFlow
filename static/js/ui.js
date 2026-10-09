@@ -4959,6 +4959,20 @@ function renderTimingMessages(plan, fieldsValid) {
             }));
         }
     }
+    // Mode piste actif avec simulation : les dates ne sont jamais en pause,
+    // mais un rythme trop rapide ne laisse pas aux trajets la fenêtre qu'il
+    // leur faut — chacun arrive en retard sur son jour et retarde le départ
+    // du suivant. Diagnostic rejoué sur le rythme du plan
+    // (estimateCameraTrackLateness, mapgl.js) ; null hors mode piste.
+    if (plan?.valid && pkg.options.animation?.cameraFollow === true && plan.cameraOverlap) {
+        const late = pkg.estimateCameraTrackLateness?.(plan.timePerDayMs);
+        if (late?.lateCount > 0) {
+            warnings.push(t('${n} trajets de caméra arriveront en retard sur leur jour (décalage max ${d}) : la caméra traînera sur les jours suivants. Réduisez le rythme ou le dynamisme.', {
+                n: late.lateCount,
+                d: formatDurationHuman(late.worstLateMs),
+            }));
+        }
+    }
     if (warnBox) {
         warnBox.style.display = warnings.length ? '' : 'none';
         warnBox.textContent = warnings.join(' ');

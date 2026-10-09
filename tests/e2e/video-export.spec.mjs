@@ -1084,3 +1084,30 @@ test('avec le suivi de caméra, la lecture « Par durée » finit à l\'heure', 
   // des jours précédents — les 12 s sont entièrement dévolues aux dates.
   expect(Math.abs(lecture.dureeMs - 12_000)).toBeLessThan(1_500);
 });
+
+
+test('le plan signale les trajets en retard quand le rythme est trop rapide', async ({ page }) => {
+  await page.locator('a[href="#animation"]').click();
+  await page.locator('#switchCameraFollow').check();
+  // Caches alternant New York / Paris chaque jour : chaque jour impose un
+  // trajet transatlantique (~4 s) qui ne peut pas tenir dans 50 ms/jour —
+  // chaque trajet arrivera en retard sur son jour, et le plan doit le dire.
+  await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    const jours = [...app.pointsByDate.keys()];
+    jours.forEach((day, index) => {
+      const coords = index % 2 === 0 ? [-74.006, 40.7128] : [2.3522, 48.8566];
+      for (const feature of app.pointsByDate.get(day)) feature.geometry.coordinates = [...coords];
+    });
+    // Mutation en place : invalider les mémoïsations indexées sur la révision.
+    app.bumpPointsByDateRevision();
+    const view = app.getMap().getView();
+    view.setCenter(ol.proj.fromLonLat([2.3522, 48.8566]));
+    view.setZoom(6);
+  });
+  await page.locator('#inputDaysPerSecond').fill('20');
+  await expect(page.locator('#timingWarnings')).toContainText('en retard');
+
+  // Réglages caméra globaux et persistés : on les rend comme les autres tests.
+  await page.locator('#switchCameraFollow').uncheck();
+});

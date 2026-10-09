@@ -1432,6 +1432,32 @@ export function estimateCameraTravel() {
     return lastCameraTravelEstimate;
 }
 
+// Diagnostic plan-time du mode « piste » : rejoue la planification des trajets
+// simulés avec le rythme du plan affiché (dayMs) pour mesurer le retard
+// prévisible — un trajet sans fenêtre assez large démarre où le précédent
+// finit et arrive après l'affichage de son jour, retard qui s'accumule le
+// long de la piste. Indépendant de la piste effective : celle-ci n'est
+// construite qu'au lancement (prepareCameraPacing), avec le rythme réel.
+// Retourne { lateCount, worstLateMs } (cf. buildCameraTrack), ou null quand le
+// diagnostic n'a pas de sens : suivi inactif, mode « tête du trait », piste
+// désactivée, simulation absente/vide ou rythme invalide.
+export function estimateCameraTrackLateness(dayMs) {
+    if (!pkg.options.animation?.cameraFollow) return null;
+    if (effectiveCameraFollowMode() === 'trail') return null;
+    if (!effectiveCameraTrack()) return null;
+    const step = Number(dayMs);
+    if (!Number.isFinite(step) || step <= 0) return null;
+    const estimate = lastCameraTravelEstimate;
+    if (!estimate || !Array.isArray(estimate.journeysByDay) || estimate.journeysByDay.length === 0) {
+        return null;
+    }
+    const track = buildCameraTrack(estimate.journeysByDay, {
+        dayMs: step,
+        leadMs: estimate.leadMs || 0,
+    });
+    return { lateCount: track.lateCount, worstLateMs: track.worstLateMs };
+}
+
 // À appeler au lancement d'une lecture ou d'un enregistrement, la vue étant
 // celle du départ. Simule les trajets et, si la durée est imposée, partage
 // cette durée entre dates et trajets : la vidéo finit alors à l'heure au lieu
