@@ -194,16 +194,30 @@
                     </div>
                     <div class="row g-2">
                         <div class="col-12">
-                            <div class="form-check form-switch mb-2">
+                            <div class="form-check form-switch mb-0">
                                 <input class="form-check-input" type="checkbox" id="switchCameraFollow" role="switch" aria-describedby="helpCameraFollow">
-                                <label class="form-check-label" for="switchCameraFollow">{{ _("Activer") }}</label>
+                                <label class="form-check-label" for="switchCameraFollow">{{ _("Activer le suivi de caméra") }}</label>
                             </div>
+                        </div>
+                        <div class="col-12 col-md-6">
                             <label for="selectCameraTarget" class="form-label mb-1">{{ _("Cible du suivi") }}</label>
-                            <select id="selectCameraTarget" class="form-select form-select-sm mb-2" disabled>
+                            <select id="selectCameraTarget" class="form-select form-select-sm" disabled>
                                 <option value="days">{{ _("Chaque jour, quand il s'affiche") }}</option>
-                                <option value="trail">{{ _("La tête du trait de déplacement") }}</option>
+                                <option value="trail">{{ _("La tête du trajet") }}</option>
                             </select>
-                            <!-- Repli signalé : « tête du trait » demandé mais
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label for="selectCameraDynamism" class="form-label mb-1">{{ _("Dynamisme de la caméra") }}</label>
+                            <select id="selectCameraDynamism" class="form-select form-select-sm" aria-describedby="helpCameraDynamismTrail" disabled>
+                                <option value="1">{{ _("1 — Minimal : hors champ uniquement") }}</option>
+                                <option value="2">{{ _("2 — Discret : hors champ ou très périphérique") }}</option>
+                                <option value="3">{{ _("3 — Dynamique : hors zone centrale") }}</option>
+                                <option value="4">{{ _("4 — Intense : recentrage et zoom systématiques") }}</option>
+                            </select>
+                            <small id="helpCameraDynamismTrail" class="form-hint text-muted mt-1" hidden>{{ _("Sans effet avec cette cible : la caméra suit le stylo en continu.") }}</small>
+                        </div>
+                        <div class="col-12">
+                            <!-- Repli signalé : « tête du trajet » demandé mais
                                  trajet désactivé — le moteur suit alors par jour. -->
                             <div id="cameraTrailFallbackWarning" class="alert alert-warning py-2 px-3 mb-2 small" role="status" hidden>
                                 {{ _("Le trajet est désactivé : le suivi reste par jour.") }}
@@ -211,19 +225,11 @@
                             </div>
                             <!-- Une seule aide, dont le texte suit la cible choisie
                                  (bascule dans ui.js, syncCameraFollowControls). -->
-                            <small id="helpCameraFollow" class="form-hint text-muted mb-2">
+                            <small id="helpCameraFollow" class="form-hint text-muted">
                                 <span id="helpCameraTargetDays">{{ _("La vue glisse vers les caches du jour. Les trajets sont comptés dans la durée : en « Par durée » ou « Sur la musique », la vidéo garde la durée demandée.") }}</span>
                                 <span id="helpCameraTargetTrail" hidden>{{ _("La vue glisse derrière le stylo qui dessine le trajet et adapte son zoom à la vitesse du parcours.") }}</span>
                                 <a href="/guide#animation" target="_blank">{{ _("En savoir plus") }}</a>
                             </small>
-                            <label for="selectCameraDynamism" class="form-label mb-1">{{ _("Dynamisme de la caméra") }}</label>
-                            <select id="selectCameraDynamism" class="form-select form-select-sm mb-2" aria-describedby="helpCameraDynamismTrail" disabled>
-                                <option value="1">{{ _("1 — Minimal : hors champ uniquement") }}</option>
-                                <option value="2">{{ _("2 — Discret : hors champ ou très périphérique") }}</option>
-                                <option value="3">{{ _("3 — Dynamique : hors zone centrale") }}</option>
-                                <option value="4">{{ _("4 — Intense : recentrage et zoom systématiques") }}</option>
-                            </select>
-                            <small id="helpCameraDynamismTrail" class="form-hint text-muted" hidden>{{ _("Sans effet avec cette cible : la caméra suit le stylo en continu.") }}</small>
                             <!-- Avertissements propres au suivi (trajets, pauses de dates) :
                                  affichés ici, près du réglage qui les provoque — pas dans
                                  la zone de la section Rythme (voir renderTimingMessages). -->
