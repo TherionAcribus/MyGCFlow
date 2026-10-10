@@ -52,14 +52,23 @@ test('pause, reprise et arrêt ne provoquent aucun rattrapage brutal', async ({ 
   const btnPause = page.locator('#btnQuickPause');
   const btnStop = page.locator('#btnQuickStop');
 
+  // La date affichée avant lecture est celle de FIN de la plage (posée après
+  // l'import) ; le démarrage la ramène au début puis avance.
+  const dateAvantLecture = await currentDate.textContent();
+
   await btnStart.click();
   await expect(btnPause).toBeVisible();
 
-  // Laisser tourner ~0,8 s (≈ 1-2 jours à 2 j/s ; la plage fait ~5 jours,
-  // soit ~2,5 s au total — la pause doit intervenir avant la fin).
-  // La date affichée initialement est la date de FIN de la plage (affichée
-  // après l'import) ; le démarrage la ramène au début puis avance.
-  await page.waitForTimeout(800);
+  // Attendre que l'animation ait réellement pris la main plutôt qu'un délai
+  // fixe : la mise en place (préparation de la caméra, première frame) prend
+  // quelques centaines de millisecondes, davantage sur une machine chargée.
+  // Mesurer trop tôt comparait la date de fin d'avant lecture à une date de
+  // début, et donnait un écart négatif.
+  await expect.poll(() => currentDate.textContent(), { timeout: 15_000 })
+    .not.toBe(dateAvantLecture);
+
+  // Puis laisser tourner ~0,5 s (≈ 1 jour à 2 j/s ; la plage fait ~5 jours).
+  await page.waitForTimeout(500);
 
   // Pause : la date affichée ne doit plus bouger.
   await expect(btnPause).toBeVisible();

@@ -596,8 +596,8 @@ const btnRecordAnimation = document.getElementById('btnRecordAnimation');
     if (switchCameraFollow) {
         switchCameraFollow.addEventListener('change', () => {
             pkg.options.animation.cameraFollow = switchCameraFollow.checked;
+            // syncCameraFollowControls() arme aussi le préchargement des tuiles.
             syncCameraFollowControls();
-            pkg.setCameraTilePreload?.(switchCameraFollow.checked);
             refreshTimingPlan();
         });
     }
@@ -4682,6 +4682,12 @@ function isCameraTrailMode() {
 // retombe sur le suivi par jour et le réglage de dynamisme reste donc utile.
 function syncCameraFollowControls() {
     const enabled = document.getElementById('switchCameraFollow')?.checked === true;
+    // Préchargement des tuiles armé ici, et non au seul changement de
+    // l'interrupteur : les fonds de carte sont construits avant que les
+    // préférences enregistrées n'arrivent du serveur. Un utilisateur ayant
+    // activé le suivi repartait donc sans préchargement au lancement suivant,
+    // jusqu'à ce qu'il touche l'interrupteur.
+    pkg.setCameraTilePreload?.(enabled);
     const target = document.getElementById('selectCameraTarget');
     const dynamism = document.getElementById('selectCameraDynamism');
     const trailRequested = target?.value === 'trail';

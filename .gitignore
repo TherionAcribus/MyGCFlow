@@ -27,3 +27,10 @@ audio/
 
 # Runtimes de test laissés par un lancement manuel du harnais Playwright.
 .e2e_runtime*/
+
+# Journal laissé par Chromium/Playwright lors des tests navigateur.
+debug.log
+
+# Fichier vide laissé par la chaîne de compilation Windows (nom de périphérique
+# réservé). Git refuse de l'indexer et faisait échouer « git add -A ».
+nul

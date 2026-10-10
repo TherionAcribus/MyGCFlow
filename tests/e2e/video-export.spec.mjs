@@ -706,13 +706,17 @@ test('le suivi de caméra glisse vers les caches, se stabilise et rend la main',
   // les dates ne sont jamais en pause, l'avertissement ne s'affiche plus.
   await expect(page.locator('#cameraTimingWarnings')).not.toContainText('dates en pause');
   await expect(page.locator('#timingSummary')).toContainText('trajets de caméra');
+  // Toutes les couches tuilées, sans filtrer sur la visibilité : le suivi de
+  // caméra arme le préchargement sur chacune d'elles, et le fond actif dépend
+  // de ce qu'a laissé une spec précédente (le runtime est partagé). Avec le
+  // fond vectoriel actif — qui n'a pas de préchargement — la recherche de la
+  // première couche *visible* ne trouvait rien et lisait 0.
   await expect.poll(() => page.evaluate(async () => {
     const app = await import('/static/js/index.js');
-    const layer = app.getMap().getLayers().getArray().find((item) => (
-      item.getVisible?.() && typeof item.getPreload === 'function'
-    ));
-    return layer?.getPreload?.() ?? 0;
-  })).toBe(1);
+    const tuilees = app.getMap().getLayers().getArray()
+      .filter((item) => typeof item.getPreload === 'function');
+    return tuilees.length > 0 && tuilees.every((item) => item.getPreload() === 1);
+  })).toBe(true);
 
   const suivi = await page.evaluate(async () => {
     const app = await import('/static/js/index.js');

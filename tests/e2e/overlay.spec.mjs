@@ -248,6 +248,11 @@ test('le renderer Canvas restitue gradient, opacité et retour à la ligne', asy
       'letter-spacing: 1px',
       'border: 2px dashed #ffffff',
     ].join(';'));
+    // Le cadre est masqué tant qu'aucune base n'est chargée, donc de taille
+    // nulle ici. Le renderer se cale désormais sur la boîte CSS réelle (il
+    // n'agrandit plus la boîte à partir du texte mesuré) : sans cet affichage,
+    // il ne resterait que le texte, sans fond dégradé à mesurer.
+    document.getElementById('titleFrame').style.display = 'block';
 
     const canvas = document.createElement('canvas');
     canvas.width = 420;
