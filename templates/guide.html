@@ -152,6 +152,7 @@
                             <li>{{ _("par pays ou région") }}</li>
                         </ul>
                         <p>{{ _("Le badge") }} <span class="ui-chip">0 / 0</span> {{ _("dans le titre de la carte") }} <strong>{{ _("Filtres") }}</strong> {{ _("indique combien de caches sont retenues par rapport au total.") }}</p>
+                        <p>{{ _("Sous les filtres, le réglage") }} <strong>{{ _("Caches sans localisation (locationless)") }}</strong> {{ _("décide si ces caches, toujours comptées, ont aussi un point sur la carte : leur position dans le fichier est fictive.") }}</p>
                     </li>
                     <li>
                         <h3>{{ _("Repartir de zéro (optionnel)") }}</h3>
@@ -180,6 +181,31 @@
                         </ul>
                     </li>
                     <li>
+                        <h3>{{ _("Personnalisez les points") }}</h3>
+                        <p>{{ _("Dans le sous-onglet") }} <span class="ui-chip">{{ _("Points") }}</span>, {{ _("choisissez le mode d'affichage avec l'interrupteur") }} <strong>{{ _("Icône / Vectoriel") }}</strong> :</p>
+                        <ul class="sub">
+                            <li><strong>{{ _("Vectoriel") }}</strong> — {{ _("réglez la forme (cercle, triangle), la taille, la couleur du centre et de la bordure. Les couleurs peuvent suivre le type de cache (Couleurs GC), être transparentes ou uniques.") }}</li>
+                            <li><strong>{{ _("Icône") }}</strong> — {{ _("choisissez un jeu d'icônes (Geocaching ou Smiley) et leur taille.") }}</li>
+                        </ul>
+                    </li>
+                    <li>
+                        <h3>{{ _("Réglez l'effet « Flash »") }}</h3>
+                        <p>{{ _("Dans le sous-onglet") }} <span class="ui-chip">{{ _("Flash") }}</span>, {{ _("définissez l'effet joué à l'apparition de chaque cache pendant la vidéo (forme, taille, durée, couleur) — tout y fait partie du thème.") }}</p>
+                    </li>
+                    <li>
+                        <h3>{{ _("Tracez votre trajet (optionnel)") }}</h3>
+                        <p>{{ _("Dans le sous-onglet") }} <span class="ui-chip">{{ _("Trajet") }}</span>, {{ _("activez") }} <span class="ui-chip">{{ _("Afficher le trajet pendant l'animation") }}</span> : {{ _("un trait relie les caches d'un jour à l'autre et arrive sur les nouvelles caches au moment où elles apparaissent. C'est un trajet indicatif, reconstitué d'après les dates : il ne suit ni les routes ni l'ordre réel de vos visites.") }}</p>
+                        <ul class="sub">
+                            <li><strong>{{ _("Tracé") }}</strong> — {{ _("choisissez les étapes (un point par jour, groupes de caches proches ou toutes les caches), la forme du trait et l'affichage des grands sauts (arc, pointillés, trait normal ou masqué).") }}</li>
+                            <li><strong>{{ _("Apparence") }}</strong> — {{ _("partez d'un préréglage (Discret, Voyage, Parcours complet), puis ajustez couleur, épaisseur, opacité, motif, lueur, tête du trait et durée de la traînée.") }}</li>
+                            <li><span class="ui-chip"><i class="ti ti-route"></i> {{ _("Aperçu du trajet") }}</span> — {{ _("affiche le trajet calculé sur la carte sans lancer l'animation, pour vérifier vos réglages.") }}</li>
+                        </ul>
+                        <div class="guide-callout info">
+                            <i class="ti ti-info-circle"></i>
+                            <div>{{ _("La durée maximale du tracé est la seule préférence globale de ce sous-onglet : elle n'est pas enregistrée dans le thème.") }}</div>
+                        </div>
+                    </li>
+                    <li>
                         <h3>{{ _("Ajoutez un titre et des informations") }}</h3>
                         <p>{{ _("Dans le sous-onglet") }} <span class="ui-chip">{{ _("Titres") }}</span>, {{ _("activez") }} <span class="ui-chip">{{ _("Afficher un titre") }}</span> {{ _("et saisissez votre texte. Vous pouvez aussi afficher le nombre de caches trouvées et la date.") }}</p>
                         <ul class="sub">
@@ -191,18 +217,6 @@
                             <i class="ti ti-hand-click"></i>
                             <div>{{ _("N'oubliez pas de cliquer sur") }} <span class="ui-chip">{{ _("Appliquer") }}</span> {{ _("pour valider vos modifications.") }}</div>
                         </div>
-                    </li>
-                    <li>
-                        <h3>{{ _("Personnalisez les points") }}</h3>
-                        <p>{{ _("Dans le sous-onglet") }} <span class="ui-chip">{{ _("Points") }}</span>, {{ _("choisissez le mode d'affichage avec l'interrupteur") }} <strong>{{ _("Icône / Vectoriel") }}</strong> :</p>
-                        <ul class="sub">
-                            <li><strong>{{ _("Vectoriel") }}</strong> — {{ _("réglez la forme (cercle, triangle), la taille, la couleur du centre et de la bordure. Les couleurs peuvent suivre le type de cache (Couleurs GC), être transparentes ou uniques.") }}</li>
-                            <li><strong>{{ _("Icône") }}</strong> — {{ _("choisissez un jeu d'icônes (Geocaching ou Smiley) et leur taille.") }}</li>
-                        </ul>
-                    </li>
-                    <li>
-                        <h3>{{ _("Réglez l'effet « Flash »") }}</h3>
-                        <p>{{ _("Dans le sous-onglet") }} <span class="ui-chip">{{ _("Flash") }}</span>, {{ _("définissez l'effet joué à l'apparition de chaque cache pendant la vidéo (forme, taille, durée, couleur) — tout y fait partie du thème.") }}</p>
                     </li>
                     <li>
                         <h3>{{ _("Sauvegardez votre style dans un thème") }}</h3>
@@ -226,7 +240,7 @@
                 <ol class="guide-steps">
                     <li>
                         <h3>{{ _("Définissez la période") }}</h3>
-                        <p>{{ _("Renseignez la") }} <span class="ui-chip">{{ _("Date de début") }}</span> {{ _("et la") }} <span class="ui-chip">{{ _("Date de fin") }}</span> {{ _("de l'animation. Par défaut elles couvrent toutes vos données ; vous pouvez aussi reprendre les dates issues du filtre.") }}</p>
+                        <p>{{ _("Renseignez la") }} <span class="ui-chip">{{ _("Date de début") }}</span> {{ _("et la") }} <span class="ui-chip">{{ _("Date de fin") }}</span> {{ _("de l'animation. Par défaut elles couvrent toutes vos données. Sous chaque champ, des raccourcis reprennent la première ou la dernière cache de toutes les données, celle de la sélection filtrée, ou la date saisie dans le filtre.") }}</p>
                     </li>
                     <li>
                         <h3>{{ _("Réglez le rythme") }}</h3>
@@ -240,11 +254,15 @@
                     </li>
                     <li>
                         <h3>{{ _("Suivi de caméra (expérimental)") }}</h3>
-                        <p>{{ _("Activez") }} <span class="ui-chip">{{ _("Suivi de caméra") }}</span> {{ _("pour que la vue glisse vers les caches du jour, puis choisissez le") }} <strong>{{ _("Dynamisme de la caméra") }}</strong> {{ _("de 1 (minimal) à 4 (intense). Pour un grand trajet, la carte dézoome temporairement puis revient au niveau initial.") }}</p>
+                        <p>{{ _("Cochez") }} <span class="ui-chip">{{ _("Activer le suivi de caméra") }}</span> {{ _("pour que la vue glisse vers les caches du jour, puis choisissez le") }} <strong>{{ _("Dynamisme de la caméra") }}</strong> {{ _("de 1 (minimal) à 4 (intense). Pour un grand trajet, la carte dézoome temporairement puis revient au niveau initial.") }}</p>
                         <p>{{ _("La") }} <strong>{{ _("Cible du suivi") }}</strong> {{ _("choisit ce que la caméra accompagne : chaque jour au moment où il s'affiche, ou la tête du trajet, que la vue suit alors en continu. Dans ce second cas, le trajet doit être activé dans Style > Trajet et le dynamisme est sans effet.") }}</p>
                         <div class="guide-callout info">
                             <i class="ti ti-clock"></i>
-                            <div>{{ _("Chaque trajet met les dates en pause. En rythme « Par durée » ou « Sur la musique », ce temps est pris sur celui des dates : la vidéo garde la durée demandée. En « Par rythme », il s'ajoute à la durée affichée.") }}</div>
+                            <div>{{ _("La caméra part en avance : elle se déplace pendant l'affichage des jours précédents et arrive quand son jour s'affiche. Si un trajet est trop long pour arriver à temps, les dates marquent une courte pause. En rythme « Par durée » ou « Sur la musique », ce temps est pris sur celui des dates : la vidéo garde la durée demandée. En « Par rythme », il s'ajoute à la durée affichée.") }}</div>
+                        </div>
+                        <div class="guide-callout tip">
+                            <i class="ti ti-hand-click"></i>
+                            <div>{{ _("Si vous déplacez la carte à la main pendant l'animation, la caméra vous laisse la main : le suivi reprend au lancement suivant.") }}</div>
                         </div>
                     </li>
                     <li>
@@ -269,8 +287,8 @@
                         <h3>{{ _("Lancez l'aperçu puis enregistrez") }}</h3>
                         <ul class="sub">
                             <li><span class="ui-chip"><i class="ti ti-player-play"></i> {{ _("Prévisualiser") }}</span> — {{ _("joue l'animation à l'écran pour vérifier le rendu.") }}</li>
-                            <li><span class="ui-chip"><i class="ti ti-video"></i> {{ _("Exporter") }}</span> — {{ _("lance l'animation en capturant la vidéo.") }}</li>
-                            <li><span class="ui-chip"><i class="ti ti-player-pause"></i> {{ _("Pause") }}</span> {{ _("et") }} <span class="ui-chip"><i class="ti ti-player-stop"></i> {{ _("Arrêter") }}</span> {{ _("contrôlent la lecture — ces mêmes actions restent accessibles dans la barre supérieure, quel que soit l'onglet affiché.") }}</li>
+                            <li><span class="ui-chip"><i class="ti ti-video"></i> {{ _("Exporter") }}</span> — {{ _("lance l'animation en capturant la vidéo. Le bouton reste indisponible tant que la vidéo précédente est en cours de traitement.") }}</li>
+                            <li><span class="ui-chip"><i class="ti ti-player-pause"></i> {{ _("Pause") }}</span> {{ _("et") }} <span class="ui-chip"><i class="ti ti-player-stop"></i> {{ _("Arrêter") }}</span> {{ _("contrôlent la lecture — ces mêmes actions restent accessibles dans la barre supérieure, quel que soit l'onglet affiché. Pendant un export, la pause est désactivée : utilisez Arrêter.") }}</li>
                             <li><span class="ui-chip"><i class="ti ti-maximize"></i> {{ _("Plein écran") }}</span> — {{ _("agrandit la carte et affiche le menu flottant des commandes de lecture, qui n'apparaît jamais dans la vidéo enregistrée ; son dernier bouton quitte le plein écran.") }}</li>
                         </ul>
                         <div class="guide-callout tip">
@@ -280,8 +298,9 @@
                     </li>
                     <li>
                         <h3>{{ _("Récupérez votre vidéo") }}</h3>
-                        <p>{{ _("La vidéo est créée automatiquement à la fin de l'enregistrement. Utilisez ensuite les boutons de la section") }} <strong>{{ _("Fichiers vidéo") }}</strong> :</p>
+                        <p>{{ _("La vidéo est créée automatiquement à la fin de l'export : l'application quitte le plein écran et l'écran") }} <strong>{{ _("Vidéo prête") }}</strong> {{ _("propose de la lire, de l'afficher dans son dossier ou d'en enregistrer une copie. Vous la retrouvez ensuite dans la section") }} <strong>{{ _("Dernières vidéos") }}</strong> {{ _("du sous-onglet Export vidéo :") }}</p>
                         <ul class="sub">
+                            <li>{{ _("Cliquez sur une vidéo de la liste pour rouvrir cet écran ; les icônes à droite l'affichent dans son dossier ou la suppriment — elle part alors à la Corbeille.") }}</li>
                             <li><span class="ui-chip"><i class="ti ti-folder-open"></i> {{ _("Ouvrir le dossier vidéo") }}</span> — {{ _("accède au dossier contenant vos vidéos.") }}</li>
                             <li><span class="ui-chip"><i class="ti ti-trash-x"></i> {{ _("Supprimer les images de capture inutilisées") }}</span> — {{ _("n'apparaît qu'après un enregistrement interrompu, quand des images temporaires sont restées sur le disque.") }}</li>
                         </ul>
@@ -306,7 +325,8 @@
                             <li><strong>{{ _("Apparence") }}</strong> — {{ _("interface claire, sombre ou alignée sur le système.") }}</li>
                             <li><strong>{{ _("Vérifier les nouvelles versions au démarrage") }}</strong> — {{ _("soyez prévenu d'une nouvelle version ; le bouton") }} <span class="ui-chip">{{ _("Vérifier les mises à jour") }}</span> {{ _("lance la même vérification à la demande.") }}</li>
                             <li><strong>{{ _("Thème visuel par défaut au démarrage") }}</strong> — {{ _("par défaut, MyGCFlow rouvre le dernier thème utilisé. Cochez « Toujours démarrer sur ce thème » pour repartir à chaque fois du thème choisi ici (à défaut d'un choix, c'est le thème actif qui est pris).") }}</li>
-                            <li><span class="ui-chip"><i class="ti ti-power"></i> {{ _("Quitter MyGCFlow") }}</span> — {{ _("arrête l'application depuis l'interface, en plus de l'icône de la zone de notification.") }}</li>
+                            <li><span class="ui-chip"><i class="ti ti-power"></i> {{ _("Quitter MyGCFlow") }}</span> — {{ _("arrête l'application depuis l'interface, en plus de l'icône de la zone de notification. Le même bouton, en rouge, reste visible dans le bandeau du haut quel que soit l'onglet.") }}</li>
+                            <li><strong>{{ _("Licence MIT") }}</strong> {{ _("et") }} <strong>{{ _("Composants tiers") }}</strong> — {{ _("en bas de l'onglet, à côté du numéro de version : le texte de la licence de MyGCFlow et celui des composants qu'il embarque.") }}</li>
                         </ul>
                     </li>
                     <li>

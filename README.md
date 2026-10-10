@@ -33,14 +33,20 @@ video (with a music track if you want one).
 - **Overlay** — title and info block (find count, current date), styled through
   text/box/shadow/position controls or raw CSS.
 - **Animation** — start/end dates, duration per day or total target duration,
-  end pause, optional camera follow and animated point appearance.
+  end pause, animated point appearance, and an optional camera follow that
+  tracks either each day's caches or the head of the route.
 - **Audio** — add a music track, set its volume, or derive the animation length
   from the track's duration.
 - **Video recording** — two pipelines: **MediaRecorder** (fast, in-browser
   `.webm`) or **frames + ffmpeg** (slower, lossless, server-side assembly), with
-  FPS, bitrate, output resolution, slowdown and quality scale.
-- **Profiles** — the whole styling setup saved as a named profile, with
+  FPS, bitrate, output resolution, slowdown and quality scale. You choose the
+  file name and the destination folder; the latest videos stay listed in the
+  app.
+- **Themes** — the whole styling setup saved as a named theme, with
   duplicate / rename / reset / JSON import-export, plus bundled examples.
+- **Evolution mode** — instead of your own finds, animate every cache of an
+  area from CSV exports: each one appears on its placement date and disappears
+  when it is archived.
 - **Bilingual UI** — French and English, switchable at runtime.
 - **Offline** — every third-party library is vendored locally; no CDN, no
   network access required beyond the map tiles.
@@ -57,9 +63,10 @@ Both bundle Python, the dependencies and ffmpeg: there is nothing else to
 install.
 
 Once launched, MyGCFlow starts a server on `127.0.0.1:51730`, opens your browser
-and sits in the notification area. That tray icon (*Open MyGCFlow*, *Videos
-folder*, *Logs*, *Quit*) is the only way to close the app — there is no window
-and no console. Launching MyGCFlow twice simply reopens a tab.
+and sits in the notification area (*Open MyGCFlow*, *Videos folder*, *Logs*,
+*Quit*). There is no window and no console: close the app from that tray icon
+or with the **Quit** button in the app header. Launching MyGCFlow twice simply
+reopens a tab.
 
 Troubleshooting flags: `MyGCFlow.exe --no-browser`, `--no-tray` (stop with
 Ctrl+C), `--port N`.
@@ -69,12 +76,12 @@ Ctrl+C), `--port N`.
 1. **Data** — on geocaching.com, go to *Profile › Pocket Queries › My Finds*,
    click *Add to Queue*, and download the file when it arrives (it can be
    generated once every 3 days). Load it in the **Data** tab, then filter.
-2. **Style** — pick a basemap, style the points and the flash, add a title and
-   an info block, and save it all in a profile.
+2. **Style** — pick a basemap, style the points, the flash and the route, add
+   a title and an info block, and save it all in a theme.
 3. **Animation & video** — set the period and the speed, optionally add music,
-   hit **Start** to preview, then **Record** for the final take.
-4. **Preferences** — language, update check, default startup profile, default
-   map view.
+   hit **Preview** to check the result, then **Export** for the final take.
+4. **Preferences** — language, update check, default startup theme, map
+   framing.
 
 The app also ships a full in-app guide at `/guide`.
 
@@ -85,9 +92,9 @@ The app also ships a full in-app guide at `/guide`.
 | Program and resources | `%LOCALAPPDATA%\Programs\MyGCFlow` (read-only) | project folder |
 | SQLite database, GeoJSON caches | `%LOCALAPPDATA%\MyGCFlow\instance` | `instance/` |
 | Captured frames, audio tracks | `%LOCALAPPDATA%\MyGCFlow\` | project folder |
-| Rendered videos | `Videos\MyGCFlow` | `video/` |
+| Rendered videos | `Videos\MyGCFlow` by default (changeable under *Animation & video › Video export*) | `video/` |
 | Logs | `%LOCALAPPDATA%\MyGCFlow\logs\mygcflow.log` | `logs/` |
-| Preferences and profiles | `%APPDATA%\MyGCFlow` | `%APPDATA%\MyGCFlow` |
+| Preferences and themes | `%APPDATA%\MyGCFlow` | `%APPDATA%\MyGCFlow` |
 
 Uninstalling removes the program but **keeps** data and videos. `MYGCFLOW_DATA_DIR`
 redirects all data, `MYGCFLOW_CONFIG_DIR` the preferences — that is what the

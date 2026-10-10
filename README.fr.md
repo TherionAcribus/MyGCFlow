@@ -35,16 +35,22 @@ exportez le résultat en vidéo (avec une musique si vous le souhaitez).
 - **Overlay** — titre et cartouche d'informations (nombre de caches, date en
   cours), stylés via les onglets texte / boîte / ombre / position ou en CSS.
 - **Animation** — dates de début et de fin, durée par jour ou durée totale
-  visée, pause finale, suivi de caméra et apparition animée des points.
+  visée, pause finale, apparition animée des points, et suivi de caméra qui
+  accompagne les caches du jour ou la tête du trajet.
 - **Audio** — ajout d'une musique, réglage du volume, ou calage de la durée de
   l'animation sur celle du morceau.
 - **Enregistrement vidéo** — deux pipelines : **MediaRecorder** (rapide, `.webm`
   directement dans le navigateur) ou **images + ffmpeg** (plus lent, sans perte,
   assemblage côté serveur), avec FPS, débit, résolution de sortie,
-  ralentissement et échelle de qualité.
-- **Profils** — toute la configuration de style enregistrée sous un nom, avec
+  ralentissement et échelle de qualité. Vous choisissez le nom du fichier et le
+  dossier de destination ; les dernières vidéos restent listées dans
+  l'application.
+- **Thèmes** — toute la configuration de style enregistrée sous un nom, avec
   duplication / renommage / réinitialisation / import-export JSON, et des
-  profils d'exemple fournis.
+  thèmes d'exemple fournis.
+- **Mode Évolution** — au lieu de vos trouvailles, animez toutes les caches
+  d'une zone à partir d'exports CSV : chacune apparaît à sa date de placement et
+  disparaît à son archivage.
 - **Interface bilingue** — français et anglais, changement à chaud.
 - **Hors ligne** — toutes les bibliothèques tierces sont hébergées localement :
   aucun CDN, aucun accès réseau nécessaire hors tuiles de carte.
@@ -61,10 +67,11 @@ Les deux embarquent Python, les dépendances et ffmpeg : il n'y a rien d'autre �
 installer.
 
 Au lancement, MyGCFlow démarre un serveur sur `127.0.0.1:51730`, ouvre votre
-navigateur et affiche une icône dans la zone de notification. Cette icône
-(*Ouvrir MyGCFlow*, *Dossier des vidéos*, *Journaux*, *Quitter*) est le seul
-moyen de fermer l'application : il n'y a ni fenêtre ni console. Relancer
-MyGCFlow rouvre simplement un onglet.
+navigateur et affiche une icône dans la zone de notification (*Ouvrir
+MyGCFlow*, *Dossier des vidéos*, *Journaux*, *Quitter*). Il n'y a ni fenêtre ni
+console : pour fermer l'application, passez par cette icône ou par le bouton
+**Quitter** du bandeau de l'interface. Relancer MyGCFlow rouvre simplement un
+onglet.
 
 Options de dépannage : `MyGCFlow.exe --no-browser`, `--no-tray` (arrêt par
 Ctrl+C), `--port N`.
@@ -75,14 +82,14 @@ Ctrl+C), `--port N`.
    Finds*, cliquez sur « Add to Queue » et téléchargez le fichier une fois prêt
    (générable une fois tous les 3 jours). Chargez-le dans l'onglet **Données**,
    puis filtrez.
-2. **Style** — choisissez un fond de carte, réglez les points et le flash,
-   ajoutez un titre et un cartouche d'infos, puis sauvegardez le tout dans un
-   profil.
+2. **Style** — choisissez un fond de carte, réglez les points, le flash et le
+   trajet, ajoutez un titre et un cartouche d'infos, puis sauvegardez le tout
+   dans un thème.
 3. **Animation & vidéo** — définissez la période et la vitesse, ajoutez
-   éventuellement une musique, cliquez sur **Démarrer** pour prévisualiser, puis
-   sur **Enregistrer** pour la version finale.
-4. **Préférences** — langue, vérification des mises à jour, profil par défaut au
-   démarrage, vue de carte par défaut.
+   éventuellement une musique, cliquez sur **Prévisualiser** pour vérifier le
+   rendu, puis sur **Exporter** pour la version finale.
+4. **Préférences** — langue, vérification des mises à jour, thème par défaut au
+   démarrage, cadrage de la carte.
 
 Un mode d'emploi complet est intégré à l'application, à l'adresse `/guide`.
 
@@ -93,9 +100,9 @@ Un mode d'emploi complet est intégré à l'application, à l'adresse `/guide`.
 | Programme et ressources | `%LOCALAPPDATA%\Programs\MyGCFlow` (lecture seule) | dossier du projet |
 | Base SQLite, caches GeoJSON | `%LOCALAPPDATA%\MyGCFlow\instance` | `instance/` |
 | Images de capture, pistes audio | `%LOCALAPPDATA%\MyGCFlow\` | dossier du projet |
-| Vidéos produites | `Vidéos\MyGCFlow` | `video/` |
+| Vidéos produites | `Vidéos\MyGCFlow` par défaut (modifiable dans *Animation & vidéo › Export vidéo*) | `video/` |
 | Journaux | `%LOCALAPPDATA%\MyGCFlow\logs\mygcflow.log` | `logs/` |
-| Préférences et profils | `%APPDATA%\MyGCFlow` | `%APPDATA%\MyGCFlow` |
+| Préférences et thèmes | `%APPDATA%\MyGCFlow` | `%APPDATA%\MyGCFlow` |
 
 La désinstallation supprime le programme mais **conserve** les données et les
 vidéos. `MYGCFLOW_DATA_DIR` redirige toutes les données et `MYGCFLOW_CONFIG_DIR`
