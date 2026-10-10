@@ -275,6 +275,7 @@ test('la cible tête du trait suit l\'état réel du trajet', async ({ page }) =
   await page.locator('#selectCameraTarget').selectOption('trail');
   await expect(page.locator('#helpCameraTargetTrail')).toBeVisible();
   await expect(page.locator('#selectCameraDynamism')).toBeEnabled();
+  await expect(page.locator('#helpCameraDynamismTrail')).toBeHidden();
   await expect(page.locator('#timingSummary')).toContainText('trajets de caméra');
   // Le repli est signalé, et son bouton mène au réglage qui le lève.
   await expect(page.locator('#cameraTrailFallbackWarning')).toBeVisible();
@@ -286,6 +287,8 @@ test('la cible tête du trait suit l\'état réel du trajet', async ({ page }) =
   await page.locator('a[href="#animation"]').click();
   await expect(page.locator('#cameraTrailFallbackWarning')).toBeHidden();
   await expect(page.locator('#selectCameraDynamism')).toBeDisabled();
+  // …et la raison du grisage est dite sous le sélecteur.
+  await expect(page.locator('#helpCameraDynamismTrail')).toBeVisible();
   await expect(page.locator('#timingSummary')).not.toContainText('trajets de caméra');
 
   // Et le repli est immédiatement restauré si le trait est recoupé.
@@ -294,6 +297,7 @@ test('la cible tête du trait suit l\'état réel du trajet', async ({ page }) =
   await page.locator('#switchTrail').uncheck();
   await page.locator('a[href="#animation"]').click();
   await expect(page.locator('#selectCameraDynamism')).toBeEnabled();
+  await expect(page.locator('#helpCameraDynamismTrail')).toBeHidden();
   await expect(page.locator('#timingSummary')).toContainText('trajets de caméra');
   await expect(page.locator('#cameraTrailFallbackWarning')).toBeVisible();
 

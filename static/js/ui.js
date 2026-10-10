@@ -4686,7 +4686,11 @@ function syncCameraFollowControls() {
     const dynamism = document.getElementById('selectCameraDynamism');
     const trailRequested = target?.value === 'trail';
     if (target) target.disabled = !enabled;
-    if (dynamism) dynamism.disabled = !enabled || isCameraTrailMode();
+    const trailActive = isCameraTrailMode();
+    if (dynamism) dynamism.disabled = !enabled || trailActive;
+    // Dynamisme grisé par la cible (et non par l'interrupteur) : le dire.
+    const helpDynamism = document.getElementById('helpCameraDynamismTrail');
+    if (helpDynamism) helpDynamism.hidden = !(enabled && trailActive);
     const helpDays = document.getElementById('helpCameraTargetDays');
     const helpTrail = document.getElementById('helpCameraTargetTrail');
     // Une seule aide à la fois, selon la cible DEMANDÉE ; le repli par jour
@@ -4694,7 +4698,7 @@ function syncCameraFollowControls() {
     if (helpDays) helpDays.hidden = trailRequested;
     if (helpTrail) helpTrail.hidden = !trailRequested;
     const fallback = document.getElementById('cameraTrailFallbackWarning');
-    if (fallback) fallback.hidden = !(enabled && trailRequested && !isCameraTrailMode());
+    if (fallback) fallback.hidden = !(enabled && trailRequested && !trailActive);
 }
 
 // Recalcule le plan depuis l'état courant, répercute les valeurs dérivées

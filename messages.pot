@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-10 15:21+0200\n"
+"POT-Creation-Date: 2026-10-10 15:31+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1271,7 +1271,7 @@ msgstr ""
 msgid "Envoi des dernières images..."
 msgstr ""
 
-#: static/js/mapgl.js:3160 static/js/ui.js:6294
+#: static/js/mapgl.js:3160 static/js/ui.js:6299
 msgid "Assemblage en cours"
 msgstr ""
 
@@ -2039,7 +2039,7 @@ msgstr ""
 msgid "Durée de l'animation calée sur la musique"
 msgstr ""
 
-#: static/js/ui.js:1310 static/js/ui.js:1362 templates/menu_animation.html:232
+#: static/js/ui.js:1310 static/js/ui.js:1362 templates/menu_animation.html:233
 msgid "Musique"
 msgstr ""
 
@@ -2150,173 +2150,173 @@ msgstr ""
 msgid "Pause non disponible pendant l'enregistrement - utilisez Arrêter"
 msgstr ""
 
-#: static/js/ui.js:5798
+#: static/js/ui.js:5803
 msgid "Valeur requise."
 msgstr ""
 
-#: static/js/ui.js:5800
+#: static/js/ui.js:5805
 msgid "Format attendu : mm:ss (ex. 4:55)."
 msgstr ""
 
-#: static/js/ui.js:5801
+#: static/js/ui.js:5806
 msgid "Nombre attendu."
 msgstr ""
 
-#: static/js/ui.js:5802
+#: static/js/ui.js:5807
 msgid "La valeur doit être strictement positive."
 msgstr ""
 
-#: static/js/ui.js:5804
+#: static/js/ui.js:5809
 #, python-brace-format
 msgid "Entre ${min} et ${max} jours/s."
 msgstr ""
 
-#: static/js/ui.js:5805
+#: static/js/ui.js:5810
 #, python-brace-format
 msgid "Entre ${min} et ${max} s."
 msgstr ""
 
-#: static/js/ui.js:5806
+#: static/js/ui.js:5811
 #, python-brace-format
 msgid "Maximum ${max} s."
 msgstr ""
 
-#: static/js/ui.js:5807
+#: static/js/ui.js:5812
 msgid "Entre 100 et 10000 ms."
 msgstr ""
 
-#: static/js/ui.js:5808
+#: static/js/ui.js:5813
 msgid "Hors limites."
 msgstr ""
 
-#: static/js/ui.js:5809
+#: static/js/ui.js:5814
 msgid "Valeur invalide."
-msgstr ""
-
-#: static/js/ui.js:5881
-#, python-brace-format
-msgid "${n} jours"
-msgstr ""
-
-#: static/js/ui.js:5882
-#, python-brace-format
-msgid "${n} jours/s"
-msgstr ""
-
-#: static/js/ui.js:5884
-#, python-brace-format
-msgid "animation minimale ${d}"
-msgstr ""
-
-#: static/js/ui.js:5885
-#, python-brace-format
-msgid "animation ${d}"
 msgstr ""
 
 #: static/js/ui.js:5886
 #, python-brace-format
-msgid "fin ${d}"
+msgid "${n} jours"
+msgstr ""
+
+#: static/js/ui.js:5887
+#, python-brace-format
+msgid "${n} jours/s"
 msgstr ""
 
 #: static/js/ui.js:5889
 #, python-brace-format
+msgid "animation minimale ${d}"
+msgstr ""
+
+#: static/js/ui.js:5890
+#, python-brace-format
+msgid "animation ${d}"
+msgstr ""
+
+#: static/js/ui.js:5891
+#, python-brace-format
+msgid "fin ${d}"
+msgstr ""
+
+#: static/js/ui.js:5894
+#, python-brace-format
 msgid "dont trajets de caméra ${d}"
 msgstr ""
 
-#: static/js/ui.js:5897
+#: static/js/ui.js:5902
 #, python-brace-format
 msgid "dont approche caméra ${d}"
 msgstr ""
 
-#: static/js/ui.js:5903
+#: static/js/ui.js:5908
 #, python-brace-format
 msgid "dont pauses caméra ${d}"
 msgstr ""
 
-#: static/js/ui.js:5905
+#: static/js/ui.js:5910
 #, python-brace-format
 msgid "+ ${d} additionnel"
 msgstr ""
 
-#: static/js/ui.js:5907
+#: static/js/ui.js:5912
 #, python-brace-format
 msgid "vidéo minimale ${d}"
 msgstr ""
 
-#: static/js/ui.js:5908
+#: static/js/ui.js:5913
 #, python-brace-format
 msgid "vidéo ${d}"
 msgstr ""
 
-#: static/js/ui.js:5910
+#: static/js/ui.js:5915
 #, python-brace-format
 msgid "${n} images minimum"
 msgstr ""
 
-#: static/js/ui.js:5911
+#: static/js/ui.js:5916
 #, python-brace-format
 msgid "${n} images"
 msgstr ""
 
-#: static/js/ui.js:5913
+#: static/js/ui.js:5918
 #, python-brace-format
 msgid "≈ ${n} jours par image"
 msgstr ""
 
-#: static/js/ui.js:5938
+#: static/js/ui.js:5943
 #, python-brace-format
 msgid "Vidéo ~${d}"
 msgstr ""
 
-#: static/js/ui.js:5946
+#: static/js/ui.js:5951
 msgid "musique incluse"
 msgstr ""
 
-#: static/js/ui.js:5947
+#: static/js/ui.js:5952
 msgid "sans musique"
 msgstr ""
 
-#: static/js/ui.js:5953
+#: static/js/ui.js:5958
 #, python-brace-format
 msgid "destination : ${d}"
 msgstr ""
 
-#: static/js/ui.js:5992
+#: static/js/ui.js:5997
 #, python-brace-format
 msgid "Exemple : ${name}"
 msgstr ""
 
-#: static/js/ui.js:5995
+#: static/js/ui.js:6000
 msgid "Vide : nom du thème actif."
 msgstr ""
 
-#: static/js/ui.js:6008
+#: static/js/ui.js:6013
 msgid "La plage de dates est invalide ou vide."
 msgstr ""
 
-#: static/js/ui.js:6009
+#: static/js/ui.js:6014
 msgid "Sélectionnez un fichier audio pour le mode « Sur la musique »."
 msgstr ""
 
-#: static/js/ui.js:6016
+#: static/js/ui.js:6021
 msgid "En attente de la lecture de la durée de la musique."
 msgstr ""
 
-#: static/js/ui.js:6030
+#: static/js/ui.js:6035
 #, python-brace-format
 msgid ""
 "Durée demandée (${req}) trop courte pour afficher chaque jour (minimum "
 "${min}) : ${app} appliquée."
 msgstr ""
 
-#: static/js/ui.js:6052
+#: static/js/ui.js:6057
 msgid ""
 "Le suivi de caméra met les dates en pause pendant chaque déplacement. La "
 "durée et le nombre d'images affichés sont des minimums ; le résultat sera"
 " plus long et peut dépasser la durée de la musique."
 msgstr ""
 
-#: static/js/ui.js:6056
+#: static/js/ui.js:6061
 #, python-brace-format
 msgid ""
 "Les trajets de caméra dureraient ${travel}, trop pour la durée demandée :"
@@ -2324,7 +2324,7 @@ msgid ""
 "posés, baissez le dynamisme ou allongez la vidéo."
 msgstr ""
 
-#: static/js/ui.js:6061
+#: static/js/ui.js:6066
 #, python-brace-format
 msgid ""
 "Le suivi de caméra met les dates en pause pendant chaque déplacement : "
@@ -2332,7 +2332,7 @@ msgid ""
 "tenir une durée précise, choisissez « Par durée » ou « Sur la musique »."
 msgstr ""
 
-#: static/js/ui.js:6077
+#: static/js/ui.js:6082
 #, python-brace-format
 msgid ""
 "${n} trajets de caméra mettront les dates en pause (+${d} au total) pour "
@@ -2340,75 +2340,75 @@ msgid ""
 "rythme pour l'éviter."
 msgstr ""
 
-#: static/js/ui.js:6123
+#: static/js/ui.js:6128
 #, python-brace-format
 msgid ""
 "Charge élevée : jusqu'à ~${n} flashs simultanés. Pistes : raccourcir la "
 "durée du flash, ralentir l'animation, ou utiliser le mode Images."
 msgstr ""
 
-#: static/js/ui.js:6127
+#: static/js/ui.js:6132
 #, python-brace-format
 msgid ""
 "${n} images à produire (~${d} en mode Images). Envisagez un fps plus bas "
 "ou une animation plus courte."
 msgstr ""
 
-#: static/js/ui.js:6290
+#: static/js/ui.js:6295
 msgid "Images de capture supprimées"
 msgstr ""
 
-#: static/js/ui.js:6290
+#: static/js/ui.js:6295
 msgid "Nettoyage"
 msgstr ""
 
-#: static/js/ui.js:6314
+#: static/js/ui.js:6319
 #, python-brace-format
 msgid "Dossier vidéo: ${folder}"
 msgstr ""
 
-#: static/js/ui.js:6314 static/js/ui.js:6316 static/js/ui.js:6321
+#: static/js/ui.js:6319 static/js/ui.js:6321 static/js/ui.js:6326
 msgid "Ouverture"
 msgstr ""
 
-#: static/js/ui.js:6316
+#: static/js/ui.js:6321
 msgid "Impossible d’ouvrir le dossier vidéo"
 msgstr ""
 
-#: static/js/ui.js:6321
+#: static/js/ui.js:6326
 msgid "Erreur lors de l’ouverture du dossier vidéo"
 msgstr ""
 
-#: static/js/ui.js:8389
+#: static/js/ui.js:8394
 msgid "Sélectionnez d'abord un fichier audio"
 msgstr ""
 
-#: static/js/ui.js:8436 templates/menu_animation.html:251
+#: static/js/ui.js:8441 templates/menu_animation.html:252
 msgid "Aucune musique sélectionnée"
 msgstr ""
 
-#: static/js/ui.js:8469
+#: static/js/ui.js:8474
 msgid "Non disponible"
 msgstr ""
 
-#: static/js/ui.js:8476 templates/_filter_cache_attrs.html:42
+#: static/js/ui.js:8481 templates/_filter_cache_attrs.html:42
 #: templates/_filter_cache_attrs.html:43
 msgid "Taille"
 msgstr ""
 
-#: static/js/ui.js:8477
+#: static/js/ui.js:8482
 msgid "Type"
 msgstr ""
 
-#: static/js/ui.js:8478
+#: static/js/ui.js:8483
 msgid "Durée"
 msgstr ""
 
-#: static/js/ui.js:8479
+#: static/js/ui.js:8484
 msgid "Modifié"
 msgstr ""
 
-#: static/js/ui.js:8534
+#: static/js/ui.js:8539
 msgid "Erreur lors du chargement du fichier audio"
 msgstr ""
 
@@ -3445,7 +3445,7 @@ msgstr ""
 msgid "pour que la vue glisse vers les caches du jour, puis choisissez le"
 msgstr ""
 
-#: templates/guide.html:243 templates/menu_animation.html:201
+#: templates/guide.html:243 templates/menu_animation.html:219
 msgid "Dynamisme de la caméra"
 msgstr ""
 
@@ -3470,7 +3470,7 @@ msgstr ""
 msgid "Cochez"
 msgstr ""
 
-#: templates/guide.html:251 templates/menu_animation.html:239
+#: templates/guide.html:251 templates/menu_animation.html:240
 msgid "Inclure la musique"
 msgstr ""
 
@@ -3478,7 +3478,7 @@ msgstr ""
 msgid "sélectionnez un fichier audio et ajustez le volume. Le bouton"
 msgstr ""
 
-#: templates/guide.html:251 templates/menu_animation.html:262
+#: templates/guide.html:251 templates/menu_animation.html:263
 msgid "Caler sur la musique"
 msgstr ""
 
@@ -3486,7 +3486,7 @@ msgstr ""
 msgid "synchronise la durée sur celle du morceau — le bouton"
 msgstr ""
 
-#: templates/guide.html:251 templates/menu_animation.html:267
+#: templates/guide.html:251 templates/menu_animation.html:268
 msgid "Dissocier"
 msgstr ""
 
@@ -3974,85 +3974,89 @@ msgstr ""
 msgid "Activer"
 msgstr ""
 
-#: templates/menu_animation.html:203
-msgid "1 — Minimal : hors champ uniquement"
-msgstr ""
-
-#: templates/menu_animation.html:204
-msgid "2 — Discret : hors champ ou très périphérique"
-msgstr ""
-
-#: templates/menu_animation.html:205
-msgid "3 — Dynamique : hors zone centrale"
-msgstr ""
-
-#: templates/menu_animation.html:206
-msgid "4 — Intense : recentrage et zoom systématiques"
-msgstr ""
-
-#: templates/menu_animation.html:208
+#: templates/menu_animation.html:201
 msgid "Cible du suivi"
 msgstr ""
 
-#: templates/menu_animation.html:210
+#: templates/menu_animation.html:203
 msgid "Chaque jour, quand il s'affiche"
 msgstr ""
 
-#: templates/menu_animation.html:211
+#: templates/menu_animation.html:204
 msgid "La tête du trait de déplacement"
 msgstr ""
 
-#: templates/menu_animation.html:216
+#: templates/menu_animation.html:209
 msgid "Le trajet est désactivé : le suivi reste par jour."
 msgstr ""
 
-#: templates/menu_animation.html:217
+#: templates/menu_animation.html:210
 msgid "Ouvrir Style › Trajet"
 msgstr ""
 
-#: templates/menu_animation.html:222
+#: templates/menu_animation.html:215
 msgid ""
 "La vue glisse vers les caches du jour. Les trajets sont comptés dans la "
 "durée : en « Par durée » ou « Sur la musique », la vidéo garde la durée "
 "demandée."
 msgstr ""
 
-#: templates/menu_animation.html:223
+#: templates/menu_animation.html:216
 msgid ""
 "La vue glisse derrière le stylo qui dessine le trajet et adapte son zoom "
 "à la vitesse du parcours."
 msgstr ""
 
-#: templates/menu_animation.html:224
+#: templates/menu_animation.html:217
 msgid "En savoir plus"
 msgstr ""
 
-#: templates/menu_animation.html:244
+#: templates/menu_animation.html:221
+msgid "1 — Minimal : hors champ uniquement"
+msgstr ""
+
+#: templates/menu_animation.html:222
+msgid "2 — Discret : hors champ ou très périphérique"
+msgstr ""
+
+#: templates/menu_animation.html:223
+msgid "3 — Dynamique : hors zone centrale"
+msgstr ""
+
+#: templates/menu_animation.html:224
+msgid "4 — Intense : recentrage et zoom systématiques"
+msgstr ""
+
+#: templates/menu_animation.html:226
+msgid "Sans effet avec cette cible : la caméra suit le stylo en continu."
+msgstr ""
+
+#: templates/menu_animation.html:245
 msgid "Fichier de musique"
 msgstr ""
 
-#: templates/menu_animation.html:246
+#: templates/menu_animation.html:247
 msgid "Choisir un fichier audio"
 msgstr ""
 
-#: templates/menu_animation.html:247 templates/menu_data.html:28
+#: templates/menu_animation.html:248 templates/menu_data.html:28
 #: templates/menu_data_evolution.html:53
 msgid "Parcourir…"
 msgstr ""
 
-#: templates/menu_animation.html:254
+#: templates/menu_animation.html:255
 msgid "Volume musique"
 msgstr ""
 
-#: templates/menu_animation.html:261
+#: templates/menu_animation.html:262
 msgid "Caler la durée de la vidéo sur celle de la musique"
 msgstr ""
 
-#: templates/menu_animation.html:265
+#: templates/menu_animation.html:266
 msgid "Calé sur la musique"
 msgstr ""
 
-#: templates/menu_animation.html:268
+#: templates/menu_animation.html:269
 msgid "Différence"
 msgstr ""
 
