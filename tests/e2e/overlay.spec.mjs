@@ -364,3 +364,58 @@ test('le texte Canvas suit la boîte de contenu CSS de la preview', async ({ pag
     expect(Math.abs(metrics.actual.minY - metrics.expectedTop), metrics.textAlign).toBeLessThanOrEqual(1.5);
   }
 });
+
+
+test('un grand compteur reste sur une seule ligne dans le rendu Canvas', async ({ page }) => {
+  const metrics = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    app.options.infos.title.display = false;
+    app.options.infos.numberOfCaches.display = true;
+    app.options.infos.currentDate.display = true;
+    app.metadata.numberOfCaches = 123456789;
+    app.updateNbCaches(123456789);
+    app.updateCurrentDate(new Date(2026, 11, 31));
+    app.changeInfosCssValues([
+      'position:absolute', 'top:10px', 'right:10px', 'width:150px',
+      'padding:6px 8px', 'white-space:nowrap',
+      'font:500 20px/24px Arial', 'letter-spacing:1px', 'text-align:right',
+      'color:rgb(0,0,0)', 'background:rgb(255,0,0)',
+      'border:2px solid rgb(0,0,255)', 'box-shadow:none', 'border-radius:0',
+    ].join(';'));
+    const frame = document.getElementById('infosFrame');
+    frame.style.display = 'grid';
+    const containerRect = document.getElementById('mapWithFrames').getBoundingClientRect();
+    const frameRect = frame.getBoundingClientRect();
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(containerRect.width);
+    canvas.height = Math.round(containerRect.height);
+    const ctx = canvas.getContext('2d');
+    app.addOverlaysToCanvas(ctx, canvas.width, canvas.height, 1);
+    const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    let minY = canvas.height;
+    let maxY = -1;
+    for (let y = 0; y < canvas.height; y += 1) {
+      for (let x = 0; x < canvas.width; x += 1) {
+        const offset = (y * canvas.width + x) * 4;
+        const r = pixels[offset];
+        const g = pixels[offset + 1];
+        const b = pixels[offset + 2];
+        const a = pixels[offset + 3];
+        if (a < 128 || r > 80 || g > 80 || b > 80) continue;
+        minY = Math.min(minY, y);
+        maxY = Math.max(maxY, y);
+      }
+    }
+    return {
+      whiteSpace: getComputedStyle(frame).whiteSpace,
+      frameTop: frameRect.top - containerRect.top,
+      frameBottom: frameRect.bottom - containerRect.top,
+      minY,
+      maxY,
+    };
+  });
+
+  expect(metrics.whiteSpace).toBe('nowrap');
+  expect(metrics.minY).toBeGreaterThanOrEqual(Math.floor(metrics.frameTop) - 1);
+  expect(metrics.maxY).toBeLessThanOrEqual(Math.ceil(metrics.frameBottom) + 1);
+});

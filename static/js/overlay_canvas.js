@@ -146,6 +146,7 @@ export function buildOverlayCache(scaleFactor) {
             // pas à fillText() — c'est à nous de le refaire (cf. tabular_text.mjs).
             tabularNums: isTabularNums(style.fontVariantNumeric),
             textTransform: style.textTransform || 'none',
+            whiteSpace: style.whiteSpace || 'normal',
             backgroundImage: style.backgroundImage || 'none',
             zIndex: Number.isFinite(parseInt(style.zIndex, 10)) ? parseInt(style.zIndex, 10) : 0,
             leftGap: Math.max(0, x), rightGap,
@@ -203,6 +204,7 @@ export function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor 
             const { x, y, w, h, bg, color, radius, padL, padR, padT, padB, font, fontPx, textAlignCss, tabularNums,
                     hasShadow, shColor, shBlur, shSpread, shOffX, shOffY, lineGap,
                     borders, opacity, letterSpacing, textTransform, backgroundImage,
+                    whiteSpace,
                     leftGap, rightGap, topGap, bottomGap,
                     horizontalAnchor, verticalAnchor } = cached;
 
@@ -231,9 +233,15 @@ export function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor 
             const availableBoxWidth = Math.max(1, canvasWidth - leftMargin - rightMargin);
             const horizontalBorders = borders.left.width + borders.right.width;
             const availableTextWidth = Math.max(1, Math.min(w, availableBoxWidth) - horizontalBorders - padL - padR);
-            const lines = transformedText
-                .split(/\r?\n/)
-                .flatMap(line => wrapOverlayText(paintCtx, line, availableTextWidth, layoutLetterSpacing, digitWidth));
+            const noWrap = whiteSpace === 'nowrap' || whiteSpace === 'pre';
+            const sourceLines = whiteSpace === 'nowrap'
+                ? [transformedText.replace(/\s*\r?\n\s*/g, ' ')]
+                : transformedText.split(/\r?\n/);
+            const lines = noWrap
+                ? sourceLines
+                : sourceLines.flatMap(line => wrapOverlayText(
+                    paintCtx, line, availableTextWidth, layoutLetterSpacing, digitWidth,
+                ));
 
             // CSS aligne le texte dans une boîte de ligne basée sur les métriques de
             // la police, et non sur la seule encre visible de "Mg". Utiliser les

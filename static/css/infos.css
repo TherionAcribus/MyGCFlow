@@ -17,6 +17,10 @@
     font-weight: 500;
     letter-spacing: 0.2px;
     line-height: 1.3;
+    /* Le compteur et la date forment une seule ligne atomique. La largeur
+       maximale est réservée plus bas ; un retour à la ligne ferait sortir le
+       texte du cartouche dans la preview comme dans la vidéo. */
+    white-space: nowrap;
     /* Chiffres à largeur fixe : le compteur défile et la date change de jour
        sans faire danser le texte. Repris à l'identique pour la vidéo par
        overlay_canvas.js (Canvas 2D ignore font-variant-numeric). */
