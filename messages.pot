@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-09 20:17+0200\n"
+"POT-Creation-Date: 2026-10-10 13:39+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -317,33 +317,33 @@ msgstr ""
 msgid "Une tâche '%(type)s' est déjà en cours"
 msgstr ""
 
-#: blueprints/core.py:148 blueprints/core.py:186 test_translations.py:27
+#: blueprints/core.py:180 blueprints/core.py:218 test_translations.py:27
 msgid "Base de données"
 msgstr ""
 
-#: blueprints/core.py:150 static/js/evolution_data.js:429
-#: templates/guide.html:143 templates/guide.html:149
+#: blueprints/core.py:182 static/js/evolution_data.js:429
+#: templates/guide.html:148 templates/guide.html:154
 #: templates/menu_data.html:101 templates/menu_data_evolution.html:108
 #: test_translations.py:28
 msgid "Filtres"
 msgstr ""
 
-#: blueprints/core.py:152 test_translations.py:29
+#: blueprints/core.py:184 test_translations.py:29
 msgid "Paramètres"
 msgstr ""
 
 #: templates/app.html:209 templates/guide.html:47 templates/guide.html:79
-#: templates/guide.html:101 templates/guide.html:119 templates/guide.html:139
-#: templates/guide.html:340 templates/menu_animation.html:60
-#: templates/menu_animation.html:90 templates/menu_filtre.html:24
+#: templates/guide.html:101 templates/guide.html:124 templates/guide.html:144
+#: templates/guide.html:345 templates/menu_animation.html:62
+#: templates/menu_animation.html:92 templates/menu_filtre.html:24
 #: templates/menu_filtre.html:33 templates/menu_filtre.html:49
 #: templates/menu_filtre.html:58 test_translations.py:30
 msgid "Données"
 msgstr ""
 
 #: templates/app.html:210 templates/guide.html:50 templates/guide.html:84
-#: templates/guide.html:101 templates/guide.html:162 templates/guide.html:164
-#: templates/guide.html:353 test_translations.py:31
+#: templates/guide.html:101 templates/guide.html:167 templates/guide.html:169
+#: templates/guide.html:358 test_translations.py:31
 msgid "Style"
 msgstr ""
 
@@ -352,48 +352,48 @@ msgstr ""
 msgid "Animation"
 msgstr ""
 
-#: blueprints/core.py:149
+#: blueprints/core.py:181
 msgid "Choisir fichier"
 msgstr ""
 
-#: blueprints/core.py:151 templates/guide.html:169 templates/menu_style.html:77
+#: blueprints/core.py:183 templates/guide.html:174 templates/menu_style.html:77
 #: templates/menu_style.html:91
 msgid "Cartes"
 msgstr ""
 
-#: blueprints/core.py:153
+#: blueprints/core.py:185
 msgid "Cancel"
 msgstr ""
 
-#: blueprints/core.py:154 templates/menu_points.html:6
+#: blueprints/core.py:186 templates/menu_points.html:6
 msgid "Graphisme des points"
 msgstr ""
 
-#: blueprints/core.py:155 templates/menu_points.html:49
+#: blueprints/core.py:187 templates/menu_points.html:49
 msgid "Centre du point"
 msgstr ""
 
-#: blueprints/core.py:175
+#: blueprints/core.py:207
 msgid ""
 "La langue a été changée. La page va se recharger pour appliquer les "
 "modifications."
 msgstr ""
 
-#: blueprints/core.py:177
+#: blueprints/core.py:209
 msgid "Changement de langue"
 msgstr ""
 
-#: blueprints/core.py:179
+#: blueprints/core.py:211
 msgid ""
 "La langue a été changée. L'application va redémarrer pour appliquer les "
 "modifications."
 msgstr ""
 
-#: blueprints/core.py:181 static/js/notifications.js:405
+#: blueprints/core.py:213 static/js/notifications.js:405
 msgid "Confirmer"
 msgstr ""
 
-#: blueprints/core.py:183 static/js/notifications.js:406
+#: blueprints/core.py:215 static/js/notifications.js:406
 #: templates/menu_style.html:246 templates/menu_style.html:271
 #: templates/menu_style.html:296 templates/menu_style.html:324
 #: templates/menu_style.html:355 templates/menu_style.html:383
@@ -737,7 +737,7 @@ msgstr ""
 msgid "Confirmation de suppression"
 msgstr ""
 
-#: static/js/bdd.js:1298 templates/guide.html:153 templates/menu_data.html:59
+#: static/js/bdd.js:1298 templates/guide.html:158 templates/menu_data.html:59
 msgid "Supprimer mes géocaches"
 msgstr ""
 
@@ -1440,7 +1440,7 @@ msgstr ""
 msgid "Choisissez d’abord une forme de flash."
 msgstr ""
 
-#: static/js/mapgl.js:5288 static/js/mapgl.js:5292 templates/guide.html:200
+#: static/js/mapgl.js:5288 static/js/mapgl.js:5292 templates/guide.html:205
 #: templates/menu_style.html:79
 msgid "Flash"
 msgstr ""
@@ -1546,7 +1546,7 @@ msgid "Évolution"
 msgstr ""
 
 #: static/js/profiles.js:34 templates/app.html:61 templates/app.html:63
-#: templates/guide.html:139 templates/guide.html:340 templates/menu_data.html:8
+#: templates/guide.html:144 templates/guide.html:345 templates/menu_data.html:8
 msgid "Mes Géocaches"
 msgstr ""
 
@@ -1669,7 +1669,7 @@ msgid "Renommer"
 msgstr ""
 
 #: static/js/profiles.js:790 templates/app.html:220 templates/app.html:221
-#: templates/guide.html:106 templates/guide.html:266 templates/guide.html:272
+#: templates/guide.html:106 templates/guide.html:271 templates/guide.html:277
 #: templates/menu_animation.html:36
 msgid "Exporter"
 msgstr ""
@@ -1944,7 +1944,7 @@ msgstr ""
 msgid "Conseil"
 msgstr ""
 
-#: static/js/recording_perf.js:201 templates/guide.html:187
+#: static/js/recording_perf.js:201 templates/guide.html:192
 #: templates/menu_informations.html:288
 msgid "Appliquer"
 msgstr ""
@@ -2039,7 +2039,7 @@ msgstr ""
 msgid "Durée de l'animation calée sur la musique"
 msgstr ""
 
-#: static/js/ui.js:1097 static/js/ui.js:1140
+#: static/js/ui.js:1097 static/js/ui.js:1140 templates/menu_animation.html:221
 msgid "Musique"
 msgstr ""
 
@@ -2383,7 +2383,7 @@ msgstr ""
 msgid "Sélectionnez d'abord un fichier audio"
 msgstr ""
 
-#: static/js/ui.js:7156 templates/menu_animation.html:228
+#: static/js/ui.js:7156 templates/menu_animation.html:240
 msgid "Aucune musique sélectionnée"
 msgstr ""
 
@@ -2691,7 +2691,7 @@ msgid ""
 "après un clic sur « Sauvegarder » dans la section Thèmes."
 msgstr ""
 
-#: templates/_scope_badges.html:26 templates/guide.html:204
+#: templates/_scope_badges.html:26 templates/guide.html:209
 #: templates/menu_style.html:16
 msgid "Thème"
 msgstr ""
@@ -2724,7 +2724,7 @@ msgstr ""
 msgid "Guide"
 msgstr ""
 
-#: templates/app.html:80 templates/guide.html:300
+#: templates/app.html:80 templates/guide.html:305
 #: templates/menu_options.html:30 templates/menu_trail.html:94
 msgid "Apparence"
 msgstr ""
@@ -2743,7 +2743,7 @@ msgstr ""
 msgid "Sombre"
 msgstr ""
 
-#: templates/app.html:91 templates/guide.html:303
+#: templates/app.html:91 templates/guide.html:308
 #: templates/menu_options.html:146
 msgid "Quitter MyGCFlow"
 msgstr ""
@@ -2789,7 +2789,7 @@ msgstr ""
 msgid "Chargez votre fichier .gpx pour commencer"
 msgstr ""
 
-#: templates/app.html:164 templates/guide.html:139 templates/menu_data.html:18
+#: templates/app.html:164 templates/guide.html:144 templates/menu_data.html:18
 msgid "Sélectionner et charger un fichier .gpx"
 msgstr ""
 
@@ -2806,12 +2806,12 @@ msgid "Redimensionner la carte"
 msgstr ""
 
 #: templates/app.html:211 templates/guide.html:53 templates/guide.html:89
-#: templates/guide.html:101 templates/guide.html:217 templates/guide.html:219
+#: templates/guide.html:101 templates/guide.html:222 templates/guide.html:224
 msgid "Animation & vidéo"
 msgstr ""
 
 #: templates/app.html:212 templates/guide.html:56 templates/guide.html:94
-#: templates/guide.html:101 templates/guide.html:290 templates/guide.html:292
+#: templates/guide.html:101 templates/guide.html:295 templates/guide.html:297
 msgid "Préférences"
 msgstr ""
 
@@ -2820,13 +2820,13 @@ msgid "Réglages"
 msgstr ""
 
 #: templates/app.html:216 templates/app.html:217 templates/guide.html:106
-#: templates/guide.html:265 templates/guide.html:272
+#: templates/guide.html:270 templates/guide.html:277
 #: templates/menu_animation.html:33 templates/menu_data.html:74
 msgid "Prévisualiser"
 msgstr ""
 
 #: templates/app.html:224 templates/app.html:225 templates/app.html:226
-#: templates/guide.html:106 templates/guide.html:267
+#: templates/guide.html:106 templates/guide.html:272
 #: templates/menu_animation.html:42 templates/menu_animation.html:43
 msgid "Pause"
 msgstr ""
@@ -2836,7 +2836,7 @@ msgid "Continuer"
 msgstr ""
 
 #: templates/app.html:229 templates/app.html:230 templates/guide.html:106
-#: templates/guide.html:267 templates/menu_animation.html:46
+#: templates/guide.html:272 templates/menu_animation.html:46
 msgid "Arrêter"
 msgstr ""
 
@@ -2860,7 +2860,7 @@ msgstr ""
 msgid "Panneau latéral"
 msgstr ""
 
-#: templates/app.html:264 templates/app.html:265 templates/guide.html:268
+#: templates/app.html:264 templates/app.html:265 templates/guide.html:273
 msgid "Plein écran"
 msgstr ""
 
@@ -2869,7 +2869,7 @@ msgstr ""
 msgid "Mode d'emploi"
 msgstr ""
 
-#: templates/guide.html:29 templates/guide.html:324
+#: templates/guide.html:29 templates/guide.html:329
 msgid "Retour à l'application"
 msgstr ""
 
@@ -2889,7 +2889,7 @@ msgstr ""
 msgid "Autre mode"
 msgstr ""
 
-#: templates/guide.html:61 templates/guide.html:340
+#: templates/guide.html:61 templates/guide.html:345
 msgid "Évolution d'une zone"
 msgstr ""
 
@@ -2925,7 +2925,7 @@ msgstr ""
 msgid "Astuce : en haut de l'application, des onglets"
 msgstr ""
 
-#: templates/guide.html:101 templates/guide.html:181 templates/guide.html:267
+#: templates/guide.html:101 templates/guide.html:186 templates/guide.html:272
 msgid "et"
 msgstr ""
 
@@ -2955,33 +2955,49 @@ msgid ""
 "carte. Merci à lui pour l'idée !"
 msgstr ""
 
-#: templates/guide.html:121
+#: templates/guide.html:116 templates/menu_options.html:160
+msgid "Une question, un problème, une suggestion ?"
+msgstr ""
+
+#: templates/guide.html:116
+msgid "Écrivez-moi via mon"
+msgstr ""
+
+#: templates/guide.html:116
+msgid "profil Geocaching"
+msgstr ""
+
+#: templates/guide.html:116
+msgid "ou par mail :"
+msgstr ""
+
+#: templates/guide.html:126
 msgid ""
 "Tout commence ici : importez vos trouvailles puis sélectionnez celles que"
 " vous voulez afficher."
 msgstr ""
 
-#: templates/guide.html:125
+#: templates/guide.html:130
 msgid "Récupérez votre fichier .gpx"
 msgstr ""
 
-#: templates/guide.html:126
+#: templates/guide.html:131
 msgid "Connectez-vous à geocaching.com, puis allez dans"
 msgstr ""
 
-#: templates/guide.html:126
+#: templates/guide.html:131
 msgid "(en bas de la page). Cliquez sur"
 msgstr ""
 
-#: templates/guide.html:126
+#: templates/guide.html:131
 msgid "pour générer le fichier, puis téléchargez-le une fois prêt."
 msgstr ""
 
-#: templates/guide.html:127 templates/modal_first_use.html:24
+#: templates/guide.html:132 templates/modal_first_use.html:24
 msgid "Ouvrir mes Pocket Queries sur geocaching.com"
 msgstr ""
 
-#: templates/guide.html:130
+#: templates/guide.html:135
 msgid ""
 "Le fichier arrive par e-mail et reste téléchargeable dans l'onglet "
 "\"Pocket Queries Ready for Download\" (au format .zip, que MyGCFlow "
@@ -2989,290 +3005,290 @@ msgid ""
 "Finds\" ne peut être générée qu'une fois tous les 3 jours."
 msgstr ""
 
-#: templates/guide.html:134
+#: templates/guide.html:139
 msgid ""
 "Le fichier .gpx contient toutes vos caches trouvées avec leur date et "
 "leurs coordonnées : c'est le carburant de l'animation."
 msgstr ""
 
-#: templates/guide.html:138
+#: templates/guide.html:143
 msgid "Chargez le fichier dans MyGCFlow"
 msgstr ""
 
-#: templates/guide.html:139 templates/guide.html:353
+#: templates/guide.html:144 templates/guide.html:358
 msgid "Dans l'onglet"
 msgstr ""
 
-#: templates/guide.html:139
+#: templates/guide.html:144
 msgid "section"
 msgstr ""
 
-#: templates/guide.html:139
+#: templates/guide.html:144
 msgid "cliquez sur"
 msgstr ""
 
-#: templates/guide.html:139
+#: templates/guide.html:144
 msgid ""
 "et choisissez votre fichier — ou glissez-déposez-le n'importe où sur la "
 "page. Le nombre de caches importées s'affiche une fois le chargement "
 "terminé."
 msgstr ""
 
-#: templates/guide.html:142
+#: templates/guide.html:147
 msgid "Filtrez vos caches"
 msgstr ""
 
-#: templates/guide.html:143
+#: templates/guide.html:148
 msgid "Dans la section"
 msgstr ""
 
-#: templates/guide.html:143
+#: templates/guide.html:148
 msgid "affinez la sélection selon vos besoins :"
 msgstr ""
 
-#: templates/guide.html:145
+#: templates/guide.html:150
 msgid "par type de cache (Traditional, Mystery, Multi…)"
 msgstr ""
 
-#: templates/guide.html:146
+#: templates/guide.html:151
 msgid "par période (dates de début et de fin)"
 msgstr ""
 
-#: templates/guide.html:147
+#: templates/guide.html:152
 msgid "par pays ou région"
 msgstr ""
 
-#: templates/guide.html:149
+#: templates/guide.html:154
 msgid "Le badge"
 msgstr ""
 
-#: templates/guide.html:149
+#: templates/guide.html:154
 msgid "dans le titre de la carte"
 msgstr ""
 
-#: templates/guide.html:149
+#: templates/guide.html:154
 msgid "indique combien de caches sont retenues par rapport au total."
 msgstr ""
 
-#: templates/guide.html:152
+#: templates/guide.html:157
 msgid "Repartir de zéro (optionnel)"
 msgstr ""
 
-#: templates/guide.html:153
+#: templates/guide.html:158
 msgid "Le bouton"
 msgstr ""
 
-#: templates/guide.html:153
+#: templates/guide.html:158
 msgid "supprime les données chargées si vous voulez importer un autre fichier."
 msgstr ""
 
-#: templates/guide.html:164
+#: templates/guide.html:169
 msgid ""
 "Donnez à votre carte l'apparence que vous souhaitez : fond de carte, "
 "points, titres et effets. Tout se règle dans l'onglet"
 msgstr ""
 
-#: templates/guide.html:168
+#: templates/guide.html:173
 msgid "Choisissez un fond de carte"
 msgstr ""
 
-#: templates/guide.html:169 templates/guide.html:179 templates/guide.html:192
-#: templates/guide.html:200 templates/guide.html:250
+#: templates/guide.html:174 templates/guide.html:184 templates/guide.html:197
+#: templates/guide.html:205 templates/guide.html:255
 msgid "Dans le sous-onglet"
 msgstr ""
 
-#: templates/guide.html:169
+#: templates/guide.html:174
 msgid "sélectionnez un style :"
 msgstr ""
 
-#: templates/guide.html:171
+#: templates/guide.html:176
 msgid "OpenStreetMap, carte classique colorée"
 msgstr ""
 
-#: templates/guide.html:172
+#: templates/guide.html:177
 msgid "noir et blanc, version claire ou sombre"
 msgstr ""
 
-#: templates/guide.html:173 templates/menu_style.html:111
+#: templates/guide.html:178 templates/menu_style.html:111
 msgid "Vectorielle"
 msgstr ""
 
-#: templates/guide.html:173
+#: templates/guide.html:178
 msgid ""
 "carte vectorielle dont vous réglez les couleurs (contour, remplissage, "
 "fond) et l'épaisseur des traits"
 msgstr ""
 
-#: templates/guide.html:174 templates/menu_style.html:116
+#: templates/guide.html:179 templates/menu_style.html:116
 #: templates/menu_style.html:118
 msgid "Aquarelle"
 msgstr ""
 
-#: templates/guide.html:174
+#: templates/guide.html:179
 msgid "rendu aquarelle artistique"
 msgstr ""
 
-#: templates/guide.html:178
+#: templates/guide.html:183
 msgid "Ajoutez un titre et des informations"
 msgstr ""
 
-#: templates/guide.html:179 templates/menu_style.html:84
+#: templates/guide.html:184 templates/menu_style.html:84
 msgid "Titres"
 msgstr ""
 
-#: templates/guide.html:179
+#: templates/guide.html:184
 msgid "activez"
 msgstr ""
 
-#: templates/guide.html:179 templates/menu_informations.html:42
+#: templates/guide.html:184 templates/menu_informations.html:42
 msgid "Afficher un titre"
 msgstr ""
 
-#: templates/guide.html:179
+#: templates/guide.html:184
 msgid ""
 "et saisissez votre texte. Vous pouvez aussi afficher le nombre de caches "
 "trouvées et la date."
 msgstr ""
 
-#: templates/guide.html:181
+#: templates/guide.html:186
 msgid "Basculez entre la cible"
 msgstr ""
 
-#: templates/guide.html:181 templates/menu_informations.html:22
+#: templates/guide.html:186 templates/menu_informations.html:22
 #: templates/menu_informations.html:45 templates/menu_informations.html:46
 msgid "Titre"
 msgstr ""
 
-#: templates/guide.html:181 templates/guide.html:353
+#: templates/guide.html:186 templates/guide.html:358
 #: templates/menu_informations.html:25
 msgid "Infos"
 msgstr ""
 
-#: templates/guide.html:181
+#: templates/guide.html:186
 msgid "pour les styliser séparément."
 msgstr ""
 
-#: templates/guide.html:182
+#: templates/guide.html:187
 msgid "Réglez le"
 msgstr ""
 
-#: templates/guide.html:182 templates/menu_informations.html:82
+#: templates/guide.html:187 templates/menu_informations.html:82
 msgid "Texte"
 msgstr ""
 
-#: templates/guide.html:182
+#: templates/guide.html:187
 msgid "la"
 msgstr ""
 
-#: templates/guide.html:182 templates/menu_informations.html:83
+#: templates/guide.html:187 templates/menu_informations.html:83
 msgid "Boîte"
 msgstr ""
 
-#: templates/guide.html:182
+#: templates/guide.html:187
 msgid "l'"
 msgstr ""
 
-#: templates/guide.html:182 templates/menu_informations.html:84
+#: templates/guide.html:187 templates/menu_informations.html:84
 msgid "Ombre"
 msgstr ""
 
-#: templates/guide.html:182 templates/guide.html:224
+#: templates/guide.html:187 templates/guide.html:229
 msgid "et la"
 msgstr ""
 
-#: templates/guide.html:182 templates/menu_informations.html:85
+#: templates/guide.html:187 templates/menu_informations.html:85
 msgid "Position"
 msgstr ""
 
-#: templates/guide.html:182
+#: templates/guide.html:187
 msgid "via les onglets dédiés."
 msgstr ""
 
-#: templates/guide.html:183
+#: templates/guide.html:188
 msgid "Pour un contrôle total, cochez"
 msgstr ""
 
-#: templates/guide.html:183
+#: templates/guide.html:188
 msgid "et éditez le style à la main."
 msgstr ""
 
-#: templates/guide.html:187
+#: templates/guide.html:192
 msgid "N'oubliez pas de cliquer sur"
 msgstr ""
 
-#: templates/guide.html:187
+#: templates/guide.html:192
 msgid "pour valider vos modifications."
 msgstr ""
 
-#: templates/guide.html:191
+#: templates/guide.html:196
 msgid "Personnalisez les points"
 msgstr ""
 
-#: templates/guide.html:192 templates/menu_style.html:78
+#: templates/guide.html:197 templates/menu_style.html:78
 #: templates/menu_trail.html:124
 msgid "Points"
 msgstr ""
 
-#: templates/guide.html:192
+#: templates/guide.html:197
 msgid "choisissez le mode d'affichage avec l'interrupteur"
 msgstr ""
 
-#: templates/guide.html:192
+#: templates/guide.html:197
 msgid "Icône / Vectoriel"
 msgstr ""
 
-#: templates/guide.html:194 templates/menu_points.html:18
+#: templates/guide.html:199 templates/menu_points.html:18
 msgid "Vectoriel"
 msgstr ""
 
-#: templates/guide.html:194
+#: templates/guide.html:199
 msgid ""
 "réglez la forme (cercle, triangle), la taille, la couleur du centre et de"
 " la bordure. Les couleurs peuvent suivre le type de cache (Couleurs GC), "
 "être transparentes ou uniques."
 msgstr ""
 
-#: templates/guide.html:195 templates/menu_points.html:13
+#: templates/guide.html:200 templates/menu_points.html:13
 msgid "Icône"
 msgstr ""
 
-#: templates/guide.html:195
+#: templates/guide.html:200
 msgid "choisissez un jeu d'icônes (Geocaching ou Smiley) et leur taille."
 msgstr ""
 
-#: templates/guide.html:199
+#: templates/guide.html:204
 msgid "Réglez l'effet « Flash »"
 msgstr ""
 
-#: templates/guide.html:200
+#: templates/guide.html:205
 msgid ""
 "définissez l'effet joué à l'apparition de chaque cache pendant la vidéo "
 "(forme, taille, durée, couleur) — tout y fait partie du thème."
 msgstr ""
 
-#: templates/guide.html:203
+#: templates/guide.html:208
 msgid "Sauvegardez votre style dans un thème"
 msgstr ""
 
-#: templates/guide.html:204
+#: templates/guide.html:209
 msgid "La barre"
 msgstr ""
 
-#: templates/guide.html:204
+#: templates/guide.html:209
 msgid ""
 "en haut de l'onglet mémorise toute votre configuration de style — jamais "
 "le rythme, les dates ou la musique, qui sont des préférences globales."
 msgstr ""
 
-#: templates/guide.html:206
+#: templates/guide.html:211
 msgid "Choisissez le thème dans la liste déroulante ;"
 msgstr ""
 
-#: templates/guide.html:206 templates/menu_style.html:21
+#: templates/guide.html:211 templates/menu_style.html:21
 msgid "Sauvegarder"
 msgstr ""
 
-#: templates/guide.html:206
+#: templates/guide.html:211
 msgid ""
 "enregistre le thème actif, et son menu « Enregistrer sous… » enregistre "
 "les réglages affichés dans un autre thème — écrasement confirmé — ou dans"
@@ -3280,465 +3296,465 @@ msgid ""
 "attente."
 msgstr ""
 
-#: templates/guide.html:207 templates/menu_style.html:36
+#: templates/guide.html:212 templates/menu_style.html:36
 #: templates/menu_style.html:50
 msgid "Gérer les thèmes"
 msgstr ""
 
-#: templates/guide.html:207
+#: templates/guide.html:212
 msgid "déplie un tiroir sous la barre :"
 msgstr ""
 
-#: templates/guide.html:207 templates/menu_style.html:61
+#: templates/guide.html:212 templates/menu_style.html:61
 msgid "Nouveau"
 msgstr ""
 
-#: templates/guide.html:207
+#: templates/guide.html:212
 msgid "crée un thème,"
 msgstr ""
 
-#: templates/guide.html:207 templates/menu_style.html:64
+#: templates/guide.html:212 templates/menu_style.html:64
 #: templates/modal_evolution.html:61
 msgid "Importer"
 msgstr ""
 
-#: templates/guide.html:207
+#: templates/guide.html:212
 msgid ""
 "récupère un thème partagé au format JSON, et la liste permet de renommer,"
 " dupliquer ou supprimer."
 msgstr ""
 
-#: templates/guide.html:219
+#: templates/guide.html:224
 msgid ""
 "C'est le moment de donner vie à votre carte et, si vous le souhaitez, de "
 "l'enregistrer en vidéo. Tout se passe dans l'onglet"
 msgstr ""
 
-#: templates/guide.html:223
+#: templates/guide.html:228
 msgid "Définissez la période"
 msgstr ""
 
-#: templates/guide.html:224
+#: templates/guide.html:229
 msgid "Renseignez la"
 msgstr ""
 
-#: templates/guide.html:224 templates/menu_animation.html:56
-#: templates/menu_animation.html:57 templates/menu_filtre.html:20
+#: templates/guide.html:229 templates/menu_animation.html:58
+#: templates/menu_animation.html:59 templates/menu_filtre.html:20
 #: templates/menu_filtre.html:21 templates/menu_filtre.html:45
 #: templates/menu_filtre.html:46
 msgid "Date de début"
 msgstr ""
 
-#: templates/guide.html:224 templates/menu_animation.html:86
-#: templates/menu_animation.html:87 templates/menu_filtre.html:29
+#: templates/guide.html:229 templates/menu_animation.html:88
+#: templates/menu_animation.html:89 templates/menu_filtre.html:29
 #: templates/menu_filtre.html:30 templates/menu_filtre.html:54
 #: templates/menu_filtre.html:55
 msgid "Date de fin"
 msgstr ""
 
-#: templates/guide.html:224
+#: templates/guide.html:229
 msgid ""
 "de l'animation. Par défaut elles couvrent toutes vos données ; vous "
 "pouvez aussi reprendre les dates issues du filtre."
 msgstr ""
 
-#: templates/guide.html:227
+#: templates/guide.html:232
 msgid "Réglez le rythme"
 msgstr ""
 
-#: templates/guide.html:228
+#: templates/guide.html:233
 msgid "Le"
 msgstr ""
 
-#: templates/guide.html:228 templates/menu_animation.html:114
+#: templates/guide.html:233 templates/menu_animation.html:115
 msgid "Rythme de l'animation"
 msgstr ""
 
-#: templates/guide.html:228
+#: templates/guide.html:233
 msgid "offre trois modes exclusifs :"
 msgstr ""
 
-#: templates/guide.html:230 templates/menu_animation.html:118
+#: templates/guide.html:235 templates/menu_animation.html:122
 msgid "Par rythme"
 msgstr ""
 
-#: templates/guide.html:230
+#: templates/guide.html:235
 msgid "vous fixez la vitesse en jours par seconde ; la durée finale est calculée."
 msgstr ""
 
-#: templates/guide.html:231 templates/menu_animation.html:122
+#: templates/guide.html:236 templates/menu_animation.html:126
 msgid "Par durée"
 msgstr ""
 
-#: templates/guide.html:231
+#: templates/guide.html:236
 msgid "vous fixez la durée finale de la vidéo (mm:ss) ; le rythme est calculé."
 msgstr ""
 
-#: templates/guide.html:232 templates/guide.html:246
-#: templates/menu_animation.html:126
+#: templates/guide.html:237 templates/guide.html:251
+#: templates/menu_animation.html:130
 msgid "Sur la musique"
 msgstr ""
 
-#: templates/guide.html:232
+#: templates/guide.html:237
 msgid "la durée suit celle du morceau choisi plus bas."
 msgstr ""
 
-#: templates/guide.html:234
+#: templates/guide.html:239
 msgid "Un"
 msgstr ""
 
-#: templates/guide.html:234 templates/menu_animation.html:148
+#: templates/guide.html:239 templates/menu_animation.html:152
 msgid "Préréglage"
 msgstr ""
 
-#: templates/guide.html:234
+#: templates/guide.html:239
 msgid "(Lent, Normal, Rapide) règle le rythme en un clic. Le"
 msgstr ""
 
-#: templates/guide.html:234 templates/menu_animation.html:175
+#: templates/guide.html:239 templates/menu_animation.html:179
 msgid "Temps additionnel en fin (sec)"
 msgstr ""
 
-#: templates/guide.html:234
+#: templates/guide.html:239
 msgid "laisse la carte finale visible. La"
 msgstr ""
 
-#: templates/guide.html:234 templates/menu_flash.html:36
+#: templates/guide.html:239 templates/menu_flash.html:36
 msgid "Durée du flash (ms)"
 msgstr ""
 
-#: templates/guide.html:234
+#: templates/guide.html:239
 msgid ""
 "se règle dans l'onglet Style > Flash : c'est un réglage de thème, comme "
 "la forme et la couleur."
 msgstr ""
 
-#: templates/guide.html:237
+#: templates/guide.html:242
 msgid "Suivi de caméra (expérimental)"
 msgstr ""
 
-#: templates/guide.html:238
+#: templates/guide.html:243
 msgid "Activez"
 msgstr ""
 
-#: templates/guide.html:238 templates/menu_animation.html:189
+#: templates/guide.html:243 templates/menu_animation.html:193
 msgid "Suivi de caméra"
 msgstr ""
 
-#: templates/guide.html:238
+#: templates/guide.html:243
 msgid "pour que la vue glisse vers les caches du jour, puis choisissez le"
 msgstr ""
 
-#: templates/guide.html:238 templates/menu_animation.html:191
+#: templates/guide.html:243 templates/menu_animation.html:201
 msgid "Dynamisme de la caméra"
 msgstr ""
 
-#: templates/guide.html:238
+#: templates/guide.html:243
 msgid ""
 "de 1 (minimal) à 4 (intense). Pour un grand trajet, la carte dézoome "
 "temporairement puis revient au niveau initial."
 msgstr ""
 
-#: templates/guide.html:241
+#: templates/guide.html:246
 msgid ""
 "Chaque trajet met les dates en pause. En rythme « Par durée » ou « Sur la"
 " musique », ce temps est pris sur celui des dates : la vidéo garde la "
 "durée demandée. En « Par rythme », il s'ajoute à la durée affichée."
 msgstr ""
 
-#: templates/guide.html:245
+#: templates/guide.html:250
 msgid "Ajoutez une musique (optionnel)"
 msgstr ""
 
-#: templates/guide.html:246
+#: templates/guide.html:251
 msgid "Cochez"
 msgstr ""
 
-#: templates/guide.html:246 templates/menu_animation.html:216
+#: templates/guide.html:251 templates/menu_animation.html:228
 msgid "Inclure la musique"
 msgstr ""
 
-#: templates/guide.html:246
+#: templates/guide.html:251
 msgid "sélectionnez un fichier audio et ajustez le volume. Le bouton"
 msgstr ""
 
-#: templates/guide.html:246 templates/menu_animation.html:239
+#: templates/guide.html:251 templates/menu_animation.html:251
 msgid "Caler sur la musique"
 msgstr ""
 
-#: templates/guide.html:246
+#: templates/guide.html:251
 msgid "synchronise la durée sur celle du morceau — le bouton"
 msgstr ""
 
-#: templates/guide.html:246 templates/menu_animation.html:244
+#: templates/guide.html:251 templates/menu_animation.html:256
 msgid "Dissocier"
 msgstr ""
 
-#: templates/guide.html:246
+#: templates/guide.html:251
 msgid ""
 "annule cette liaison. Vous pouvez aussi choisir directement le mode de "
 "rythme"
 msgstr ""
 
-#: templates/guide.html:249
+#: templates/guide.html:254
 msgid "Qualité d'export"
 msgstr ""
 
-#: templates/guide.html:250 templates/menu_animation.html:15
+#: templates/guide.html:255 templates/menu_animation.html:15
 msgid "Export vidéo"
 msgstr ""
 
-#: templates/guide.html:250
+#: templates/guide.html:255
 msgid ""
 "un récapitulatif en haut du panneau résume durée, mode, définition, "
 "musique et destination. Choisissez d'abord le"
 msgstr ""
 
-#: templates/guide.html:250 templates/menu_recording.html:20
+#: templates/guide.html:255 templates/menu_recording.html:20
 msgid "Mode d'export"
 msgstr ""
 
-#: templates/guide.html:252 templates/menu_recording.html:24
+#: templates/guide.html:257 templates/menu_recording.html:24
 msgid "Capture rapide (.webm)"
 msgstr ""
 
-#: templates/guide.html:252
+#: templates/guide.html:257
 msgid "rapide et léger, directement dans le navigateur."
 msgstr ""
 
-#: templates/guide.html:253 templates/menu_recording.html:25
+#: templates/guide.html:258 templates/menu_recording.html:25
 msgid "Rendu image par image (ffmpeg)"
 msgstr ""
 
-#: templates/guide.html:253
+#: templates/guide.html:258
 msgid "plus lent mais plus régulier, assemblage par l'application."
 msgstr ""
 
-#: templates/guide.html:255
+#: templates/guide.html:260
 msgid "Ajustez ensuite la"
 msgstr ""
 
-#: templates/guide.html:255 templates/menu_recording.html:30
+#: templates/guide.html:260 templates/menu_recording.html:30
 msgid "Résolution de sortie"
 msgstr ""
 
-#: templates/guide.html:255
+#: templates/guide.html:260
 msgid ""
 "(jusqu'à 4K : la carte est redessinée plus finement, sans changer le "
 "cadrage) et les"
 msgstr ""
 
-#: templates/guide.html:255 templates/menu_recording.html:46
+#: templates/guide.html:260 templates/menu_recording.html:46
 msgid "Couleurs"
 msgstr ""
 
-#: templates/guide.html:255
+#: templates/guide.html:260
 msgid ""
 "— 4:2:0 pour une compatibilité maximale, 4:4:4 plus fidèle mais illisible"
 " sur certains appareils."
 msgstr ""
 
-#: templates/guide.html:256
+#: templates/guide.html:261
 msgid "En capture rapide, le préréglage"
 msgstr ""
 
-#: templates/guide.html:256 templates/menu_recording.html:60
+#: templates/guide.html:261 templates/menu_recording.html:60
 msgid "Qualité vidéo"
 msgstr ""
 
-#: templates/guide.html:256
+#: templates/guide.html:261
 msgid "(Économique, Standard, Fluide) règle FPS et bitrate d'un coup ; les"
 msgstr ""
 
-#: templates/guide.html:256 templates/menu_recording.html:70
+#: templates/guide.html:261 templates/menu_recording.html:70
 msgid "Réglages avancés"
 msgstr ""
 
-#: templates/guide.html:256
+#: templates/guide.html:261
 msgid ""
 "permettent de tout affiner (FPS, bitrate, ralentissement de capture, "
 "facteur d'échelle, codec VP9/VP8/H.264). Cochez"
 msgstr ""
 
-#: templates/guide.html:256 templates/menu_recording.html:126
+#: templates/guide.html:261 templates/menu_recording.html:126
 msgid "Normaliser la vitesse"
 msgstr ""
 
-#: templates/guide.html:256
+#: templates/guide.html:261
 msgid "si vous avez ralenti la capture."
 msgstr ""
 
-#: templates/guide.html:256
+#: templates/guide.html:261
 msgid "La vidéo est enregistrée dans le dossier Vidéos sous le"
 msgstr ""
 
-#: templates/guide.html:256 templates/menu_recording.html:136
+#: templates/guide.html:261 templates/menu_recording.html:136
 msgid "Nom du fichier"
 msgstr ""
 
-#: templates/guide.html:256
+#: templates/guide.html:261
 msgid ""
 "choisi, suivi de la date et de l'heure. L'écran de fin d'export permet de"
 " la lire, de l'afficher dans son dossier ou d'en enregistrer une copie "
 "ailleurs."
 msgstr ""
 
-#: templates/guide.html:256
+#: templates/guide.html:261
 msgid "Pour enregistrer vos vidéos ailleurs, changez le"
 msgstr ""
 
-#: templates/guide.html:256 templates/menu_recording.html:146
+#: templates/guide.html:261 templates/menu_recording.html:146
 msgid "Dossier des vidéos"
 msgstr ""
 
-#: templates/guide.html:256
+#: templates/guide.html:261
 msgid "juste en dessous."
 msgstr ""
 
-#: templates/guide.html:259
+#: templates/guide.html:264
 msgid "Chaque réglage dispose d'une icône d'aide"
 msgstr ""
 
-#: templates/guide.html:259
+#: templates/guide.html:264
 msgid "dans l'application : survolez-la pour en savoir plus."
 msgstr ""
 
-#: templates/guide.html:263
+#: templates/guide.html:268
 msgid "Lancez l'aperçu puis enregistrez"
 msgstr ""
 
-#: templates/guide.html:265
+#: templates/guide.html:270
 msgid "joue l'animation à l'écran pour vérifier le rendu."
 msgstr ""
 
-#: templates/guide.html:266
+#: templates/guide.html:271
 msgid "lance l'animation en capturant la vidéo."
 msgstr ""
 
-#: templates/guide.html:267
+#: templates/guide.html:272
 msgid ""
 "contrôlent la lecture — ces mêmes actions restent accessibles dans la "
 "barre supérieure, quel que soit l'onglet affiché."
 msgstr ""
 
-#: templates/guide.html:268
+#: templates/guide.html:273
 msgid ""
 "agrandit la carte et affiche le menu flottant des commandes de lecture, "
 "qui n'apparaît jamais dans la vidéo enregistrée ; son dernier bouton "
 "quitte le plein écran."
 msgstr ""
 
-#: templates/guide.html:272
+#: templates/guide.html:277
 msgid "Lancez d'abord un"
 msgstr ""
 
-#: templates/guide.html:272
+#: templates/guide.html:277
 msgid "pour valider le style et la vitesse, puis seulement"
 msgstr ""
 
-#: templates/guide.html:272
+#: templates/guide.html:277
 msgid "pour la version finale."
 msgstr ""
 
-#: templates/guide.html:276
+#: templates/guide.html:281
 msgid "Récupérez votre vidéo"
 msgstr ""
 
-#: templates/guide.html:277
+#: templates/guide.html:282
 msgid ""
 "La vidéo est créée automatiquement à la fin de l'enregistrement. Utilisez"
 " ensuite les boutons de la section"
 msgstr ""
 
-#: templates/guide.html:277
+#: templates/guide.html:282
 msgid "Fichiers vidéo"
 msgstr ""
 
-#: templates/guide.html:279 templates/menu_recording.html:185
+#: templates/guide.html:284 templates/menu_recording.html:185
 msgid "Ouvrir le dossier vidéo"
 msgstr ""
 
-#: templates/guide.html:279
+#: templates/guide.html:284
 msgid "accède au dossier contenant vos vidéos."
 msgstr ""
 
-#: templates/guide.html:280 templates/menu_recording.html:181
+#: templates/guide.html:285 templates/menu_recording.html:181
 msgid "Supprimer les images de capture inutilisées"
 msgstr ""
 
-#: templates/guide.html:280
+#: templates/guide.html:285
 msgid ""
 "n'apparaît qu'après un enregistrement interrompu, quand des images "
 "temporaires sont restées sur le disque."
 msgstr ""
 
-#: templates/guide.html:292
+#: templates/guide.html:297
 msgid "Réglez une fois pour toutes le comportement de l'application dans l'onglet"
 msgstr ""
 
-#: templates/guide.html:296
+#: templates/guide.html:301
 msgid "Préférences générales"
 msgstr ""
 
-#: templates/guide.html:298 templates/menu_options.html:13
+#: templates/guide.html:303 templates/menu_options.html:13
 msgid "Choix de la langue"
 msgstr ""
 
-#: templates/guide.html:298
+#: templates/guide.html:303
 msgid "basculez entre français et anglais."
 msgstr ""
 
-#: templates/guide.html:299 templates/menu_options.html:21
+#: templates/guide.html:304 templates/menu_options.html:21
 #: templates/menu_options.html:22
 msgid "Format des dates"
 msgstr ""
 
-#: templates/guide.html:299
+#: templates/guide.html:304
 msgid "automatique selon la langue, ou jour/mois/année contre mois/jour/année."
 msgstr ""
 
-#: templates/guide.html:300
+#: templates/guide.html:305
 msgid "interface claire, sombre ou alignée sur le système."
 msgstr ""
 
-#: templates/guide.html:301 templates/menu_options.html:45
+#: templates/guide.html:306 templates/menu_options.html:45
 msgid "Vérifier les nouvelles versions au démarrage"
 msgstr ""
 
-#: templates/guide.html:301
+#: templates/guide.html:306
 msgid "soyez prévenu d'une nouvelle version ; le bouton"
 msgstr ""
 
-#: templates/guide.html:301 templates/menu_options.html:132
+#: templates/guide.html:306 templates/menu_options.html:132
 msgid "Vérifier les mises à jour"
 msgstr ""
 
-#: templates/guide.html:301
+#: templates/guide.html:306
 msgid "lance la même vérification à la demande."
 msgstr ""
 
-#: templates/guide.html:302 templates/menu_options.html:50
+#: templates/guide.html:307 templates/menu_options.html:50
 msgid "Thème visuel par défaut au démarrage"
 msgstr ""
 
-#: templates/guide.html:302
+#: templates/guide.html:307
 msgid ""
 "par défaut, MyGCFlow rouvre le dernier thème utilisé. Cochez « Toujours "
 "démarrer sur ce thème » pour repartir à chaque fois du thème choisi ici "
 "(à défaut d'un choix, c'est le thème actif qui est pris)."
 msgstr ""
 
-#: templates/guide.html:303
+#: templates/guide.html:308
 msgid ""
 "arrête l'application depuis l'interface, en plus de l'icône de la zone de"
 " notification."
 msgstr ""
 
-#: templates/guide.html:307
+#: templates/guide.html:312
 msgid "Cadrage de la carte"
 msgstr ""
 
-#: templates/guide.html:308
+#: templates/guide.html:313
 msgid ""
 "Par défaut, la carte se cadre automatiquement sur les Geocaches chargées."
 " Vous pouvez choisir « Centre et zoom personnalisés » : la carte "
@@ -3746,64 +3762,64 @@ msgid ""
 "en deux champs) et le zoom enregistrés."
 msgstr ""
 
-#: templates/guide.html:310 templates/menu_options.html:121
+#: templates/guide.html:315 templates/menu_options.html:121
 msgid "Enregistrer le cadrage"
 msgstr ""
 
-#: templates/guide.html:310
+#: templates/guide.html:315
 msgid "mémorise la vue actuelle comme centre et zoom personnalisés."
 msgstr ""
 
-#: templates/guide.html:311 templates/menu_options.html:83
+#: templates/guide.html:316 templates/menu_options.html:83
 msgid "Cadrer sur les Geocaches"
 msgstr ""
 
-#: templates/guide.html:311
+#: templates/guide.html:316
 msgid "recadre la carte sur les données chargées, à la demande."
 msgstr ""
 
-#: templates/guide.html:318
+#: templates/guide.html:323
 msgid "Vous êtes prêt !"
 msgstr ""
 
-#: templates/guide.html:318
+#: templates/guide.html:323
 msgid ""
 "Chargez vos données, composez votre style, lancez l'animation et partagez"
 " votre carte de géocaching."
 msgstr ""
 
-#: templates/guide.html:333
+#: templates/guide.html:338
 msgid "Autre mode : évolution d'une zone"
 msgstr ""
 
-#: templates/guide.html:335
+#: templates/guide.html:340
 msgid ""
 "Au lieu de vos trouvailles, animez toutes les caches d'une zone : chacune"
 " apparaît à sa date de placement et disparaît à son archivage, et le "
 "compteur suit le nombre de caches actives."
 msgstr ""
 
-#: templates/guide.html:339
+#: templates/guide.html:344
 msgid "Ouvrez le mode Évolution"
 msgstr ""
 
-#: templates/guide.html:340
+#: templates/guide.html:345
 msgid "En haut de l'onglet"
 msgstr ""
 
-#: templates/guide.html:340
+#: templates/guide.html:345
 msgid "le sélecteur"
 msgstr ""
 
-#: templates/guide.html:340
+#: templates/guide.html:345
 msgid "passe d'un mode à l'autre. Chaque mode garde ses propres données."
 msgstr ""
 
-#: templates/guide.html:343
+#: templates/guide.html:348
 msgid "Importez les exports CSV de la zone"
 msgstr ""
 
-#: templates/guide.html:344
+#: templates/guide.html:349
 msgid ""
 "Sélectionnez ou glissez-déposez un ou plusieurs fichiers CSV (code GC, "
 "latitude, longitude, date de placement et, si possible, date "
@@ -3812,7 +3828,7 @@ msgid ""
 "les archivages s'y ajoutent."
 msgstr ""
 
-#: templates/guide.html:347
+#: templates/guide.html:352
 msgid ""
 "Une cache archivée sans date d'archivage n'est pas affichée par défaut : "
 "impossible de la faire disparaître au bon moment. Le réglage « Caches "
@@ -3822,11 +3838,11 @@ msgid ""
 "coordonnées corrigées ne sont jamais utilisées."
 msgstr ""
 
-#: templates/guide.html:351
+#: templates/guide.html:356
 msgid "Réglez puis exportez"
 msgstr ""
 
-#: templates/guide.html:352
+#: templates/guide.html:357
 msgid ""
 "Filtrez par pays, région, type, taille, difficulté, terrain ou "
 "département, choisissez un thème (le flash de disparition se règle dans "
@@ -3834,19 +3850,19 @@ msgid ""
 "minute."
 msgstr ""
 
-#: templates/guide.html:353
+#: templates/guide.html:358
 msgid "cible"
 msgstr ""
 
-#: templates/guide.html:353
+#: templates/guide.html:358
 msgid "le champ"
 msgstr ""
 
-#: templates/guide.html:353 templates/menu_informations.html:54
+#: templates/guide.html:358 templates/menu_informations.html:54
 msgid "Ligne d'informations"
 msgstr ""
 
-#: templates/guide.html:353
+#: templates/guide.html:358
 #, python-brace-format
 msgid ""
 "compose le cartouche en bas de carte : texte libre et balises {date}, "
@@ -3854,182 +3870,182 @@ msgid ""
 "courantes."
 msgstr ""
 
-#: templates/menu_animation.html:52
+#: templates/menu_animation.html:53
 msgid "Plage de dates de l'animation"
 msgstr ""
 
-#: templates/menu_animation.html:53
+#: templates/menu_animation.html:55
 msgid ""
 "Période parcourue par la vidéo — indépendante des filtres de l'onglet "
 "Données."
 msgstr ""
 
-#: templates/menu_animation.html:59
+#: templates/menu_animation.html:61
 msgid "Première cache de toutes les données"
 msgstr ""
 
-#: templates/menu_animation.html:67
+#: templates/menu_animation.html:69
 msgid "Première cache de la sélection filtrée"
 msgstr ""
 
-#: templates/menu_animation.html:68 templates/menu_animation.html:94
+#: templates/menu_animation.html:70 templates/menu_animation.html:96
 msgid "Sélection"
 msgstr ""
 
-#: templates/menu_animation.html:72
+#: templates/menu_animation.html:74
 msgid "Date de début saisie dans le filtre"
 msgstr ""
 
-#: templates/menu_animation.html:73 templates/menu_animation.html:99
+#: templates/menu_animation.html:75 templates/menu_animation.html:101
 msgid "Filtre"
 msgstr ""
 
-#: templates/menu_animation.html:81 templates/menu_animation.html:103
+#: templates/menu_animation.html:83 templates/menu_animation.html:105
 #: templates/menu_recording.html:65
 msgid "Personnalisée"
 msgstr ""
 
-#: templates/menu_animation.html:89
+#: templates/menu_animation.html:91
 msgid "Dernière cache de toutes les données"
 msgstr ""
 
-#: templates/menu_animation.html:93
+#: templates/menu_animation.html:95
 msgid "Dernière cache de la sélection filtrée"
 msgstr ""
 
-#: templates/menu_animation.html:98
+#: templates/menu_animation.html:100
 msgid "Date de fin saisie dans le filtre"
 msgstr ""
 
-#: templates/menu_animation.html:134
+#: templates/menu_animation.html:138
 msgid "Rythme (jours par seconde)"
 msgstr ""
 
-#: templates/menu_animation.html:141
+#: templates/menu_animation.html:145
 msgid "Durée finale de la vidéo (mm:ss)"
 msgstr ""
 
-#: templates/menu_animation.html:152
+#: templates/menu_animation.html:156
 msgid "Lent"
 msgstr ""
 
-#: templates/menu_animation.html:152 templates/menu_animation.html:153
-#: templates/menu_animation.html:154
+#: templates/menu_animation.html:156 templates/menu_animation.html:157
+#: templates/menu_animation.html:158
 msgid "jours/s"
 msgstr ""
 
-#: templates/menu_animation.html:153 templates/menu_informations.html:119
+#: templates/menu_animation.html:157 templates/menu_informations.html:119
 msgid "Normal"
 msgstr ""
 
-#: templates/menu_animation.html:154
+#: templates/menu_animation.html:158
 msgid "Rapide"
 msgstr ""
 
-#: templates/menu_animation.html:155 templates/menu_informations.html:228
+#: templates/menu_animation.html:159 templates/menu_informations.html:228
 msgid "Personnalisé"
 msgstr ""
 
-#: templates/menu_animation.html:157
+#: templates/menu_animation.html:161
 msgid "Préréglage global, indépendant du thème."
 msgstr ""
 
-#: templates/menu_animation.html:164
+#: templates/menu_animation.html:168
 msgid "Détail"
 msgstr ""
 
-#: templates/menu_animation.html:165
+#: templates/menu_animation.html:169
 msgid "(animation)"
 msgstr ""
 
-#: templates/menu_animation.html:166
+#: templates/menu_animation.html:170
 msgid "(pause automatique de fin)"
 msgstr ""
 
-#: templates/menu_animation.html:167
+#: templates/menu_animation.html:171
 msgid "(temps additionnel)"
 msgstr ""
 
-#: templates/menu_animation.html:176
+#: templates/menu_animation.html:180
 msgid "Temps additionnel (sec)"
 msgstr ""
 
-#: templates/menu_animation.html:193
-msgid "1 — Minimal : hors champ uniquement"
-msgstr ""
-
-#: templates/menu_animation.html:194
-msgid "2 — Discret : hors champ ou très périphérique"
-msgstr ""
-
-#: templates/menu_animation.html:195
-msgid "3 — Dynamique : hors zone centrale"
-msgstr ""
-
-#: templates/menu_animation.html:196
-msgid "4 — Intense : recentrage et zoom systématiques"
-msgstr ""
-
-#: templates/menu_animation.html:198
-msgid "Cible du suivi"
-msgstr ""
-
-#: templates/menu_animation.html:200
-msgid "Chaque jour, quand il s'affiche"
-msgstr ""
-
-#: templates/menu_animation.html:201
-msgid "La tête du trait de déplacement"
+#: templates/menu_animation.html:199 templates/menu_informations.html:190
+msgid "Activer"
 msgstr ""
 
 #: templates/menu_animation.html:203
+msgid "1 — Minimal : hors champ uniquement"
+msgstr ""
+
+#: templates/menu_animation.html:204
+msgid "2 — Discret : hors champ ou très périphérique"
+msgstr ""
+
+#: templates/menu_animation.html:205
+msgid "3 — Dynamique : hors zone centrale"
+msgstr ""
+
+#: templates/menu_animation.html:206
+msgid "4 — Intense : recentrage et zoom systématiques"
+msgstr ""
+
+#: templates/menu_animation.html:208
+msgid "Cible du suivi"
+msgstr ""
+
+#: templates/menu_animation.html:210
+msgid "Chaque jour, quand il s'affiche"
+msgstr ""
+
+#: templates/menu_animation.html:211
+msgid "La tête du trait de déplacement"
+msgstr ""
+
+#: templates/menu_animation.html:213
 msgid ""
 "La vue glisse derrière le stylo qui dessine le trajet et adapte son zoom "
 "à la vitesse du parcours. Ce mode nécessite le trajet activé (Style › "
 "Trajet) — sinon le suivi reste par jour."
 msgstr ""
 
-#: templates/menu_animation.html:204
+#: templates/menu_animation.html:214
 msgid ""
 "La vue glisse vers les caches du jour. Les trajets sont comptés dans la "
 "durée : en « Par durée » ou « Sur la musique », la vidéo garde la durée "
 "demandée."
 msgstr ""
 
-#: templates/menu_animation.html:204
+#: templates/menu_animation.html:214
 msgid "En savoir plus"
 msgstr ""
 
-#: templates/menu_animation.html:212
-msgid "Musique (optionnel)"
-msgstr ""
-
-#: templates/menu_animation.html:221
+#: templates/menu_animation.html:233
 msgid "Fichier de musique"
 msgstr ""
 
-#: templates/menu_animation.html:223
+#: templates/menu_animation.html:235
 msgid "Choisir un fichier audio"
 msgstr ""
 
-#: templates/menu_animation.html:224 templates/menu_data.html:28
+#: templates/menu_animation.html:236 templates/menu_data.html:28
 #: templates/menu_data_evolution.html:53
 msgid "Parcourir…"
 msgstr ""
 
-#: templates/menu_animation.html:231
+#: templates/menu_animation.html:243
 msgid "Volume musique"
 msgstr ""
 
-#: templates/menu_animation.html:238
+#: templates/menu_animation.html:250
 msgid "Caler la durée de la vidéo sur celle de la musique"
 msgstr ""
 
-#: templates/menu_animation.html:242
+#: templates/menu_animation.html:254
 msgid "Calé sur la musique"
 msgstr ""
 
-#: templates/menu_animation.html:245
+#: templates/menu_animation.html:257
 msgid "Différence"
 msgstr ""
 
@@ -4459,10 +4475,6 @@ msgstr ""
 msgid "Pointillés"
 msgstr ""
 
-#: templates/menu_informations.html:190
-msgid "Activer"
-msgstr ""
-
 #: templates/menu_informations.html:194
 msgid "Décalage X"
 msgstr ""
@@ -4657,6 +4669,18 @@ msgstr ""
 
 #: templates/menu_options.html:135
 msgid "Accueil"
+msgstr ""
+
+#: templates/menu_options.html:162
+msgid "Profil Geocaching"
+msgstr ""
+
+#: templates/menu_options.html:174
+msgid "Licence MIT"
+msgstr ""
+
+#: templates/menu_options.html:177
+msgid "Composants tiers"
 msgstr ""
 
 #: templates/menu_points.html:22

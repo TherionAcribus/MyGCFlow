@@ -110,6 +110,11 @@
                     <i class="ti ti-heart"></i>
                     <div>{{ _("MyGCFlow est fortement inspiré de") }} <a href="https://github.com/GarenKreiz/Geocaching-Animation" target="_blank" rel="noopener noreferrer">Geocaching-Animation</a>, {{ _("le projet de GarenKreiz qui anime les trouvailles de géocaching sur une carte. Merci à lui pour l'idée !") }}</div>
                 </div>
+
+                <div class="guide-callout info">
+                    <i class="ti ti-message-circle"></i>
+                    <div>{{ _("Une question, un problème, une suggestion ?") }} {{ _("Écrivez-moi via mon") }} <a href="{{ config.CONTACT_GEOCACHING_URL }}" target="_blank" rel="noopener noreferrer">{{ _("profil Geocaching") }}</a> {{ _("ou par mail :") }} <a href="mailto:{{ config.CONTACT_EMAIL }}?subject={{ ('MyGCFlow ' ~ config.APP_VERSION)|urlencode }}">{{ config.CONTACT_EMAIL }}</a>.</div>
+                </div>
             </section>
 
             <!-- ===================== 1. DONNÉES ===================== -->

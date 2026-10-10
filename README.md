@@ -191,6 +191,20 @@ MyGCFlow is heavily inspired by
 **GarenKreiz**, a Python script that produces videos animating geocaching
 finds on a map — the idea of replaying your finds day by day comes from there.
 
-MyGCFlow is not affiliated with Groundspeak / Geocaching.com. Third-party
-licenses for the bundled dependencies are listed in
-[installer/licenses/THIRD_PARTY_NOTICES.txt](installer/licenses/THIRD_PARTY_NOTICES.txt).
+MyGCFlow is not affiliated with Groundspeak / Geocaching.com.
+
+## Contact
+
+Questions, problems, suggestions: message me through my
+[Geocaching profile](https://www.geocaching.com/p/?guid=b19d6e80-a3cd-49f5-8bad-35351a14681c),
+write to <at_mop@hotmail.com>, or open an
+[issue](https://github.com/TherionAcribus/MyGCFlow/issues).
+
+## License
+
+MyGCFlow is released under the [MIT License](LICENSE).
+
+The bundled dependencies keep their own licenses, listed in
+[installer/licenses/THIRD_PARTY_NOTICES.txt](installer/licenses/THIRD_PARTY_NOTICES.txt)
+— notably the embedded ffmpeg build, which is GPL v3 and is run as a separate
+program.

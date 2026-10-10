@@ -200,6 +200,19 @@ MyGCFlow est fortement inspiré de
 de géocaching sur une carte — l'idée de rejouer ses trouvailles jour après jour
 vient de là.
 
-MyGCFlow n'est pas affilié à Groundspeak / Geocaching.com. Les licences des
-dépendances embarquées sont listées dans
-[installer/licenses/THIRD_PARTY_NOTICES.txt](installer/licenses/THIRD_PARTY_NOTICES.txt).
+MyGCFlow n'est pas affilié à Groundspeak / Geocaching.com.
+
+## Contact
+
+Questions, problèmes, suggestions : écrivez-moi via mon
+[profil Geocaching](https://www.geocaching.com/p/?guid=b19d6e80-a3cd-49f5-8bad-35351a14681c),
+par mail à <at_mop@hotmail.com>, ou ouvrez un
+[ticket](https://github.com/TherionAcribus/MyGCFlow/issues).
+
+## Licence
+
+MyGCFlow est distribué sous [licence MIT](LICENSE).
+
+Les dépendances embarquées gardent leur propre licence, listée dans
+[installer/licenses/THIRD_PARTY_NOTICES.txt](installer/licenses/THIRD_PARTY_NOTICES.txt)
+— notamment le ffmpeg embarqué, sous GPL v3, lancé comme un programme séparé.

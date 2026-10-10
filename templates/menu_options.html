@@ -148,10 +148,35 @@
                     {% endif %}
                 </div>
 
-                {# Version installée (version.py), à citer dans un signalement
-                   de bug : jusqu'ici elle n'apparaissait que dans l'infobulle
-                   de la zone de notification et la modale de mise à jour. #}
-                <p id="appVersionLabel" class="col-12 form-hint text-muted mt-2 mb-0">MyGCFlow {{ config.APP_VERSION }}</p>
+                {# « À propos » : version installée (version.py), à citer dans
+                   un signalement de bug, dépôt GitHub et licences. Les textes
+                   de licence sont servis par l'application (/license) : ils
+                   restent lisibles hors connexion. #}
+                {# Contact : le profil Geocaching d'abord (aucun compte à créer
+                   pour un géocacheur), le mail ensuite — son adresse reste
+                   lisible pour qui n'a pas de logiciel de messagerie, et son
+                   objet pré-rempli porte la version. #}
+                <div id="appContact" class="col-12 d-flex flex-wrap align-items-center column-gap-3 row-gap-1 form-hint text-muted border-top pt-3 mt-3 mb-0">
+                    <span>{{ _("Une question, un problème, une suggestion ?") }}</span>
+                    <a id="appContactGeocaching" class="link-secondary" href="{{ config.CONTACT_GEOCACHING_URL }}" target="_blank" rel="noopener noreferrer">
+                        <i class="ti ti-message-circle me-1"></i>{{ _("Profil Geocaching") }}
+                    </a>
+                    <a id="appContactMail" class="link-secondary" href="mailto:{{ config.CONTACT_EMAIL }}?subject={{ ('MyGCFlow ' ~ config.APP_VERSION)|urlencode }}">
+                        <i class="ti ti-mail me-1"></i>{{ config.CONTACT_EMAIL }}
+                    </a>
+                </div>
+                <div id="appAbout" class="col-12 d-flex flex-wrap align-items-center column-gap-3 row-gap-1 form-hint text-muted mt-2 mb-0">
+                    <span id="appVersionLabel" class="fw-medium">MyGCFlow {{ config.APP_VERSION }}</span>
+                    <a id="appRepoLink" class="link-secondary" href="{{ repo_url }}" target="_blank" rel="noopener noreferrer">
+                        <i class="ti ti-brand-github me-1"></i>GitHub
+                    </a>
+                    <a id="appLicenseLink" class="link-secondary" href="/license" target="_blank">
+                        <i class="ti ti-license me-1"></i>{{ _("Licence MIT") }}
+                    </a>
+                    <a id="appThirdPartyLink" class="link-secondary" href="/license/third-party" target="_blank">
+                        <i class="ti ti-packages me-1"></i>{{ _("Composants tiers") }}
+                    </a>
+                </div>
             </div>
         </div>
     </div>

@@ -183,6 +183,11 @@ Aucune en-tête CORS n'est émise : le front est servi par le même serveur.
 
 ## Licences
 
+MyGCFlow est sous **licence MIT** (`LICENSE` à la racine). Le fichier est copié
+à côté de l'exécutable (`LICENSE.txt`, par `installer/build.ps1`) et embarqué
+dans `_internal\` pour la route `/license`, vers laquelle pointe le pied de
+l'onglet Préférences (avec `/license/third-party` pour les composants tiers).
+
 Le ffmpeg embarqué (build gyan.dev, via imageio-ffmpeg) est sous **GPL v3**.
 Sa licence et les liens vers ses sources sont livrés dans
 `_internal\licenses\` avec l'inventaire des autres composants

@@ -4,10 +4,11 @@ import os
 
 from dataclasses import replace
 
-from flask import Blueprint, current_app, jsonify, make_response, render_template, request
+from flask import Blueprint, abort, current_app, jsonify, make_response, render_template, request
 from flask_babel import gettext as _
 
 import options
+import paths
 from localization import get_locale
 from settings_manager import get_settings_manager
 from task_manager import task_manager
@@ -35,6 +36,7 @@ def render_app_page(mode: str):
         'app.html',
         mode=mode,
         can_quit=bool(current_app.config.get('QUIT_HOOK')),
+        repo_url=options.REPO_URL,
         lang=(current_locale or 'fr').split('_')[0],
     ))
     if current_locale:
@@ -63,6 +65,36 @@ def guide():
             path='/'
         )
     return response
+
+
+# Textes de licence servis par /license : celui de MyGCFlow (LICENSE, à la
+# racine du dépôt) et l'inventaire des composants redistribués. Le second
+# change de place une fois empaqueté : mygcflow.spec copie installer/licenses/
+# dans licenses/.
+_LICENSE_FILES = {
+    None: ('LICENSE',),
+    'third-party': (
+        'licenses/THIRD_PARTY_NOTICES.txt',
+        'installer/licenses/THIRD_PARTY_NOTICES.txt',
+    ),
+}
+
+
+@core_bp.route('/license')
+@core_bp.route('/license/<name>')
+def license_text(name=None):
+    """Licence de MyGCFlow (MIT) ou notices des composants tiers, en texte brut.
+
+    Servies par l'application plutôt que par un lien vers GitHub : elles
+    restent lisibles hors connexion et correspondent à la version installée.
+    """
+    for relative in _LICENSE_FILES.get(name, ()):
+        path = paths.resource_dir() / relative
+        if path.is_file():
+            response = make_response(path.read_text(encoding='utf-8'))
+            response.mimetype = 'text/plain'
+            return response
+    abort(404)
 
 
 @core_bp.route('/api/ping', methods=['GET'])

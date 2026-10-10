@@ -23,6 +23,8 @@ from packaging.version import InvalidVersion, Version
 GITHUB_OWNER = "TherionAcribus"
 GITHUB_REPO = "MyGCFlow"
 RELEASES_URL = f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}/releases"
+# Page du dépôt : lien « GitHub » du pied de l'onglet Préférences.
+REPO_URL = f"https://github.com/{GITHUB_OWNER}/{GITHUB_REPO}"
 
 # Paramètres HTTP pour la robustesse réseau.
 HTTP_TIMEOUT = 5
@@ -30,7 +32,7 @@ RELEASES_PER_PAGE = 30
 HTTP_HEADERS = {
     "Accept": "application/vnd.github+json",
     "X-GitHub-Api-Version": "2022-11-28",
-    "User-Agent": f"MyGCFlow/VersionCheck (+https://github.com/{GITHUB_OWNER}/{GITHUB_REPO})",
+    "User-Agent": f"MyGCFlow/VersionCheck (+{REPO_URL})",
 }
 
 # Délai minimal entre deux vérifications automatiques. Une vérification demandée

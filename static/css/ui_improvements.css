@@ -922,6 +922,12 @@ main.fullscreen-mode #infosFrame span:not([hidden]) {
     background: var(--color-surface);
     border-bottom: 1px solid var(--color-border);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    /* Sans ce confinement, Chrome n'arrondit pas tous les boutons de
+       #layoutPresets sur la même rangée de pixels dès que la barre collante
+       tombe sur une position fractionnaire (échelle d'affichage 175 %,
+       225 %…) : le groupe se cassait d'1 px au niveau du bouton actif ou
+       survolé. Mesuré : 22 captures décalées sur 37 à 225 %, 0 avec. */
+    contain: paint;
 }
 #panelToolbar .nav-tabs {
     flex: 1 1 auto;

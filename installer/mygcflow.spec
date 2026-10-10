@@ -56,6 +56,8 @@ datas = (
     # Seuls les catalogues compilés sont lus à l'exécution.
     + resource_tree("translations", suffixes={".mo"})
     + [(str(ROOT / "installer" / "licenses"), "licenses")]
+    # Licence de MyGCFlow, servie par la route /license.
+    + [(str(ROOT / "LICENSE"), ".")]
 )
 
 version_info = VSVersionInfo(
@@ -66,6 +68,7 @@ version_info = VSVersionInfo(
             StringStruct("FileDescription", "MyGCFlow"),
             StringStruct("FileVersion", VERSION),
             StringStruct("InternalName", "MyGCFlow"),
+            StringStruct("LegalCopyright", "© 2024-2026 TherionAcribus — MIT License"),
             StringStruct("OriginalFilename", "MyGCFlow.exe"),
             StringStruct("ProductName", "MyGCFlow"),
             StringStruct("ProductVersion", VERSION),

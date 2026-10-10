@@ -43,6 +43,8 @@ Write-Host '== PyInstaller'
 Invoke-Checked $VenvPython @('-m', 'PyInstaller', 'installer\mygcflow.spec', '--noconfirm', '--clean',
                              '--distpath', 'dist', '--workpath', 'build')
 Invoke-Checked $VenvPython @('installer\collect_licenses.py', 'dist\MyGCFlow\_internal\licenses\python')
+# Licence de MyGCFlow à côté de l'exécutable (installeur et archive portable).
+Copy-Item 'LICENSE' 'dist\MyGCFlow\LICENSE.txt'
 
 # --- Installeur ---------------------------------------------------------------
 if ($SkipInstaller) { Write-Host '== Installeur ignoré (-SkipInstaller)'; exit 0 }

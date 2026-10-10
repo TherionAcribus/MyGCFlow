@@ -1,7 +1,10 @@
 MyGCFlow — composants tiers
 ========================
 
-MyGCFlow redistribue les composants suivants. Chacun reste soumis à sa propre
+MyGCFlow est distribué sous licence MIT (fichier LICENSE.txt à côté de
+l'exécutable, https://github.com/TherionAcribus/MyGCFlow/blob/main/LICENSE).
+
+Il redistribue les composants suivants. Chacun reste soumis à sa propre
 licence.
 
 FFmpeg (ffmpeg.exe)
