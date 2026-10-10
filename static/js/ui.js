@@ -7045,6 +7045,9 @@ function updateControlBar() {
 
     // Synchroniser l'icône Pause/Play
     if (btnPauseBar && btnPauseAnimation) {
+        // Même blocage que le bouton d'origine : pas de pause pendant un
+        // enregistrement (cf. clickRecordAnimation).
+        btnPauseBar.disabled = btnPauseAnimation.disabled;
         const isPaused = btnPauseAnimation.classList.contains('restart');
         const icon = btnPauseBar.querySelector('i');
         // Icône Tabler selon l'état (même correctif que le bouton plein écran :

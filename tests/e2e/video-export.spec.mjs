@@ -1536,9 +1536,15 @@ test('capture rapide : arrêter annule la vidéo, relancer dans la foulée en pr
   const firstChunk = page.waitForResponse((response) => response.url().includes('/video_stream_append'));
   await page.locator('#btnQuickExport').click({ force: true });
   await firstChunk;
+  // Pas de pause pendant un enregistrement : barre collante ET barre flottante.
+  await expect(page.locator('#btnQuickPause')).toBeDisabled();
+  await expect(page.locator('#btnPauseBar')).toBeDisabled();
+  await expect(page.locator('#btnStopBar')).toBeEnabled();
 
   await page.locator('#btnQuickStop').click({ force: true });
   await expectIdle(page);
+  // L'aperçu, lui, retrouve sa pause.
+  await expect(page.locator('#btnPauseBar')).toBeEnabled();
   await expect.poll(() => requests.abort).toBe(1);
   // L'arrêt s'annonce comme tel — pas comme un enregistrement qui se poursuit.
   const stopToast = page.locator('.gcm-toast', { hasText: 'Arrêt de l\'enregistrement' });
