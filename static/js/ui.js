@@ -4682,10 +4682,13 @@ function syncCameraFollowControls() {
     const trailRequested = target?.value === 'trail';
     if (target) target.disabled = !enabled;
     if (dynamism) dynamism.disabled = !enabled || isCameraTrailMode();
-    const help = document.getElementById('helpCameraTargetTrail');
-    // L'aide reste visible dès que le mode est demandé : elle explique
-    // justement pourquoi le repli par jour s'applique quand le trajet est off.
-    if (help) help.hidden = !trailRequested;
+    const helpDays = document.getElementById('helpCameraTargetDays');
+    const helpTrail = document.getElementById('helpCameraTargetTrail');
+    // Une seule aide à la fois, selon la cible DEMANDÉE : celle du trait reste
+    // visible même trajet désactivé — elle explique justement pourquoi le
+    // repli par jour s'applique.
+    if (helpDays) helpDays.hidden = trailRequested;
+    if (helpTrail) helpTrail.hidden = !trailRequested;
 }
 
 // Recalcule le plan depuis l'état courant, répercute les valeurs dérivées

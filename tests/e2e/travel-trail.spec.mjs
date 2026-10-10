@@ -308,7 +308,11 @@ test('le suivi « tête du trait » fait glisser la caméra derrière le stylo',
   await page.locator('a[href="#animation"]').click();
   await page.locator('#switchCameraFollow').check();
   await expect(page.locator('#selectCameraTarget')).toBeEnabled();
+  // Une seule aide à la fois : celle du suivi par jour cède la place.
+  await expect(page.locator('#helpCameraTargetDays')).toBeVisible();
+  await expect(page.locator('#helpCameraTargetTrail')).toBeHidden();
   await page.locator('#selectCameraTarget').selectOption('trail');
+  await expect(page.locator('#helpCameraTargetDays')).toBeHidden();
   // Le dynamisme (zone de confort par jour) est sans objet dans ce mode, et
   // la condition « trajet activé » est rappelée sous le sélecteur.
   await expect(page.locator('#selectCameraDynamism')).toBeDisabled();
