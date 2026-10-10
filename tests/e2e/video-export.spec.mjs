@@ -1490,10 +1490,10 @@ function mp4Names() {
 
 
 // Plage de 5 jours à 1 jour/s : ~5 s d'animation, de quoi arrêter en cours.
-async function prepareSlowRecording(page, mode) {
+async function prepareSlowRecording(page, mode, daysPerSecond = '1') {
   await selectTraditionalCaches(page);
   await page.locator('a[href="#animation"]').click();
-  await page.locator('#inputDaysPerSecond').fill('1');
+  await page.locator('#inputDaysPerSecond').fill(daysPerSecond);
   await page.locator('#inputExtraEndTime').fill('0');
   await page.locator('#recordingConfigTab').click();
   await expect(page.locator('#recordingConfigPane')).toBeVisible();
@@ -1603,4 +1603,45 @@ test('mode images : arrêter annule l\'assemblage, relancer dans la foulée prod
   expect(assemblies[0].expected_frames).toBe(planned);
   await expect.poll(() => mp4Names().length, { timeout: 30_000 }).toBe(before.length + 1);
   await expectIdle(page);
+});
+
+
+test('capture rapide : Enregistrer reste indisponible tant que la vidéo précédente est en traitement', async ({ page }) => {
+  await prepareSlowRecording(page, 'mediarecorder', '12.5');
+  const before = mp4Names();
+
+  // Traitement serveur retenu : la capture est finie, la vidéo pas encore.
+  let release;
+  const held = new Promise((resolve) => { release = resolve; });
+  let processingRequests = 0;
+  await page.route('**/process_recorded_video', async (route) => {
+    processingRequests += 1;
+    await held;
+    await route.continue();
+  });
+
+  const exportButton = page.locator('#btnQuickExport');
+  await exportButton.click({ force: true });
+  await expect.poll(() => processingRequests, { timeout: 60_000 }).toBe(1);
+
+  // Les contrôles sont revenus au repos, mais pas l'enregistrement.
+  await expect(page.locator('#controlBar')).toHaveAttribute('data-playback-state', 'idle');
+  await expect(exportButton).toBeDisabled();
+  await expect(page.locator('#btnRecordAnimation')).toBeDisabled();
+  await expect(page.locator('#btnQuickPreview')).toBeEnabled();
+  // Un rafraîchissement de l'interface (recalcul de timing, filtre…) ne doit
+  // pas le réactiver en douce.
+  await page.evaluate(async () => (await import('/static/js/index.js')).updateDataAvailabilityUI());
+  await expect(exportButton).toBeDisabled();
+  // Ni un appel direct lancer une seconde capture.
+  expect(await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    return { started: app.recordAnimation(), active: app.isRecordingActive() };
+  })).toEqual({ started: false, active: false });
+
+  release();
+  await expect(page.locator('#modal_video_ready')).toBeVisible({ timeout: 75_000 });
+  await expect(exportButton).toBeEnabled();
+  expect(processingRequests).toBe(1);
+  await expect.poll(() => mp4Names().length, { timeout: 15_000 }).toBe(before.length + 1);
 });

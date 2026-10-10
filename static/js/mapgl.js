@@ -299,6 +299,24 @@ let isRecording = false;
 // s'arrête sans rien toucher. Un simple booléen ne suffit pas — relancer dans
 // la foulée le remet à vrai, et la boucle annulée repartait avec la nouvelle.
 let recordingSession = 0;
+// Vrai tant qu'une vidéo capturée est en cours de fabrication (gel de fin et
+// traitement serveur de la capture rapide, assemblage du mode images). La
+// capture est finie, la carte est libre, mais un nouvel enregistrement
+// partagerait la fenêtre de progression et l'écran « Vidéo prête » de celui
+// qui s'achève : il est refusé jusqu'à la fin ou l'annulation.
+let videoProcessing = false;
+
+export function isVideoProcessing() {
+    return videoProcessing;
+}
+
+// Pose l'état et laisse updateDataAvailabilityUI en déduire celui du bouton
+// Enregistrer (et de ses relais) : un simple disabled posé ici serait défait
+// par le premier recalcul de timing venu.
+function setVideoProcessing(processing) {
+    videoProcessing = !!processing;
+    try { pkg.updateDataAvailabilityUI?.(); } catch(_) {}
+}
 
 // MediaRecorder pipeline state
 let mrRecorder = null;
@@ -2078,6 +2096,9 @@ function finalizeAnimationEnd() {
     // le rendu rame (l'animation prend du retard) et tronque la vidéo. On stoppe
     // depuis la fin réelle, après un court "tail" pour figer la dernière frame.
     if (isMediaRecording) {
+        // Les contrôles reviennent au repos plus bas, alors que le gel de fin
+        // puis le traitement restent à faire : Enregistrer attend leur terme.
+        setVideoProcessing(true);
         // Annuler le filet de sécurité théorique
         mrSafetyTimer.clear();
         const tailMs = Math.max(0, Number(mrTailMs) || 0);
@@ -2448,8 +2469,9 @@ export function pauseAnimation() {
 // alors les contrôles dans leur état de repos.
 export function recordAnimation(){
     // Un enregistrement tourne encore (gel de fin de la capture rapide, par
-    // exemple) : en lancer un second mélangerait leurs états.
-    if (isRecordingActive()) return false;
+    // exemple) ou sa vidéo est encore en fabrication : en lancer un second
+    // mélangerait leurs états.
+    if (isRecordingActive() || videoProcessing) return false;
 
     resetTileErrorCount(); // repartir d'un compte propre pour cette session d'enregistrement
 
@@ -2848,7 +2870,6 @@ function scheduleCaptureFrame(pointOptions, flashOptions, infos, session) {
 // séquence enable/disable était dupliquée dans plusieurs branches).
 function setAssembleUiBusy(busy) {
     const cleanBtn = document.getElementById('btnCleanMoviePictures');
-    const recordBtn = document.getElementById('btnRecordAnimation');
     if (cleanBtn) {
         cleanBtn.disabled = busy;
         // Seul le libellé change : écrire dans le bouton lui-même effacerait son
@@ -2863,11 +2884,10 @@ function setAssembleUiBusy(busy) {
             }
         }
     }
-    if (busy && recordBtn) { recordBtn.disabled = true; }
-    // En fin d'opération, ne pas réactiver aveuglément : sans données ou avec
-    // un timing invalide, le bouton doit rester désactivé — c'est
-    // updateDataAvailabilityUI qui arbitre (hasData && timingInputsValid).
-    if (!busy) { try { pkg.updateDataAvailabilityUI?.(); } catch(_) {} }
+    // Enregistrer : désactivé pendant l'opération, puis rendu à l'arbitrage
+    // de updateDataAvailabilityUI (sans données ou avec un timing invalide,
+    // il doit rester désactivé).
+    setVideoProcessing(busy);
     // Fin d'opération : le dossier temporaire a pu être vidé (ou pas, en cas
     // d'échec) → réaligner l'affichage du bouton sur son contenu réel.
     if (!busy) { try { pkg.refreshCapturedPicturesUi && pkg.refreshCapturedPicturesUi(); } catch(_) {} }
@@ -3853,6 +3873,7 @@ function stopMediaRecorderPipeline(finalize){
         mrRecordedChunks = [];
         mrOutCanvas = null;
         mrOutCtx = null;
+        setVideoProcessing(false);
     } else if (mrRecorder && mrRecorder.state !== 'inactive') {
         try { mrRecorder.stop(); } catch(_) {}
     } else {
@@ -3867,6 +3888,8 @@ function stopMediaRecorderPipeline(finalize){
 function finalizeMediaRecorderVideo(){
     if (mrIsFinalizing) return;
     mrIsFinalizing = true;
+    // Levé à chaque issue ci-dessous : vidéo livrée, ou échec annoncé.
+    setVideoProcessing(true);
     try {
         const mime = pkg.options?.record?.mediaRecorder?.mimeType || 'video/webm;codecs=vp9';
         // Chemin « flux » : les fragments ont déjà été poussés au serveur au fil
@@ -3900,6 +3923,7 @@ function finalizeMediaRecorderVideo(){
             warnIfTileErrors();
             // Débloquer la lecture de fond après enregistrement MR
             try { setBackgroundAudioBlocked(false); } catch(_) {}
+            setVideoProcessing(false);
         };
 
         // Repli navigateur : la vidéo finale n'existe que dans cet onglet. Elle
@@ -3935,7 +3959,9 @@ function finalizeMediaRecorderVideo(){
         // n'affichent pas la durée et la barre de progression ne permet pas de chercher.
         const proceedWith = (finalBlob) => {
             try { pkg.updateTextsModal(pkg.t('Finalisation'), pkg.t('Écriture de la durée de la vidéo...')); } catch(_) {}
-            fixWebmFinalDuration(finalBlob).then((fixedBlob) => deliver(fixedBlob || finalBlob));
+            fixWebmFinalDuration(finalBlob)
+                .catch(() => null)
+                .then((fixedBlob) => deliver(fixedBlob || finalBlob));
         };
 
         // Audio utilisateur éventuellement sélectionné
@@ -3992,6 +4018,7 @@ function finalizeMediaRecorderVideo(){
                 console.error('Flux indisponible pour le repli local:', e);
                 try { pkg.closeModalLoading(); } catch(_) {}
                 try { setBackgroundAudioBlocked(false); } catch(_) {}
+                setVideoProcessing(false);
                 try { pkg.showToast && pkg.showToast(pkg.t('La vidéo n\'a pas pu être assemblée.'), 'error', pkg.t('Enregistrement'), 8000); } catch(_) {}
             });
         };
@@ -4064,6 +4091,7 @@ function finalizeMediaRecorderVideo(){
                 try { stream.abort(); } catch(_) {}
                 try { pkg.closeModalLoading(); } catch(_) {}
                 try { setBackgroundAudioBlocked(false); } catch(_) {}
+                setVideoProcessing(false);
                 try { pkg.showToast && pkg.showToast(pkg.t('L\'enregistrement a été interrompu : la copie des données a échoué.'), 'error', pkg.t('Enregistrement'), 8000); } catch(_) {}
                 return;
             }
@@ -4075,6 +4103,7 @@ function finalizeMediaRecorderVideo(){
     } catch(e) {
         console.error('Finalize MediaRecorder error:', e);
         try { pkg.closeModalLoading(); } catch(_) {}
+        setVideoProcessing(false);
     } finally {
         try { if (typeof mrOnFinalizeRestoreTimePerDay === 'function') { mrOnFinalizeRestoreTimePerDay(); } } catch(_) {}
         mrOnFinalizeRestoreTimePerDay = null;

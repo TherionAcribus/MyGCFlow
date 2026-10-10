@@ -6925,7 +6925,9 @@ export function updateDataAvailabilityUI({ dataResolved = false } = {}) {
     // expliqué et corrigé — on ne démarre jamais sur un plan invalide.
     const canRun = hasData && timingInputsValid;
     if (btnStart) btnStart.disabled = !canRun;
-    if (btnRecord) btnRecord.disabled = !canRun;
+    // Une vidéo encore en fabrication (traitement serveur, assemblage) retient
+    // aussi l'enregistrement suivant ; l'aperçu, lui, reste disponible.
+    if (btnRecord) btnRecord.disabled = !canRun || !!pkg.isVideoProcessing?.();
     // Titre/infos de la carte : re-évaluer quand l'état « base chargée »
     // change — syncOverlayVisibility les masque tant qu'il n'y a pas de base.
     pkg.syncOverlayVisibility?.();
