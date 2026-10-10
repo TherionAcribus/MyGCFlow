@@ -22,8 +22,8 @@ export function checkVersionInit(){
 export function openHomePage(){
     const currentLang = getCurrentLanguage();
     const homeUrls = {
-        'en': 'http://blfa1842.odns.fr/app/GCMap/gc_map_home_en.html',
-        'fr': 'http://blfa1842.odns.fr/app/GCMap/gc_map_home_fr.html'
+        'en': 'http://blfa1842.odns.fr/app/GCMap/en.html',
+        'fr': 'http://blfa1842.odns.fr/app/GCMap/index.html'
     };
 
     const url = homeUrls[currentLang] || homeUrls['fr'];
