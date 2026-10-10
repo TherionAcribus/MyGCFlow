@@ -292,6 +292,13 @@ const endHoldTimer = createPausableTimeout(() => finalizeAnimationEnd());
 let infos;
 // flag pour indiquer si un enregistrement est en cours
 let isRecording = false;
+// Génération de l'enregistrement : incrémentée à chaque lancement et à chaque
+// arrêt. Toute suite asynchrone d'un enregistrement (frame en cours de capture,
+// réponse du serveur, ouverture du flux vidéo) compare la valeur relevée à son
+// lancement : différente, elle appartient à un enregistrement annulé et
+// s'arrête sans rien toucher. Un simple booléen ne suffit pas — relancer dans
+// la foulée le remet à vrai, et la boucle annulée repartait avec la nouvelle.
+let recordingSession = 0;
 
 // MediaRecorder pipeline state
 let mrRecorder = null;
@@ -2271,8 +2278,13 @@ export function startAnimation(restart=false) {
 }
 
 export function stopAnimation(){
-    // Arrêter l'enregistrement si en cours
+    // Arrêter l'enregistrement si en cours : c'est une annulation, rien n'est
+    // assemblé. Changer de génération congédie la boucle de capture, la
+    // préparation en attente du serveur et le démarrage du flux vidéo.
+    const wasRecording = isRecording || isMediaRecording;
+    recordingSession++;
     isRecording = false;
+    imgOutCanvas = imgOutCtx = null; // libérer le canvas réutilisé (P4)
     endHighResCapture();
     animationInProgress = false;
     animationDatesComplete = false;
@@ -2285,21 +2297,27 @@ export function stopAnimation(){
     animationLastTs = null;
     livePausedAt = null;
     livePauseOffsetMs = 0;
-    // La piste de caméra précalculée appartient à l'animation qui s'arrête.
-    cameraTrack = null;
-    cameraTrackStartAt = null;
+    // La piste de caméra précalculée appartient à l'animation qui s'arrête,
+    // comme tout trajet en cours : sans cela la vue continuerait de glisser.
+    cancelCameraFollowMotion();
 
     endHoldTimer.clear();
 
-    // Arrêter le pipeline MediaRecorder si actif
+    // Arrêter le pipeline MediaRecorder si actif, sans finaliser de vidéo
     try {
         if (isMediaRecording) {
-            stopMediaRecorderPipeline(true);
+            stopMediaRecorderPipeline(false);
         }
     } catch(e) { console.warn('Erreur arrêt MediaRecorder:', e); }
+    try { recordingPerformanceMonitor.stopMonitoring(); } catch(_) {}
+    // Les images encore en tampon n'ont plus de vidéo à rejoindre.
+    if (wasRecording) { try { resetUploadQueue(null); } catch(_) {} }
 
     // Arrêter musique de fond si lecture seule
     try { stopBackgroundMusic(); } catch(e) { console.warn('stopBackgroundMusic error:', e); }
+    // Posé par l'enregistrement : sans cette levée, la prévisualisation
+    // resterait muette après une annulation.
+    try { setBackgroundAudioBlocked(false); } catch(_) {}
 
     // Fermer le toast de chargement s'il est ouvert
     // IMPORTANT: ne pas utiliser de sélecteur large type [class*="toast"] qui peut matcher
@@ -2323,6 +2341,14 @@ export function stopAnimation(){
         });
     } catch(e) {
         console.warn('Erreur lors de la fermeture du toast:', e);
+    }
+    // Le loader vient d'être retiré de l'écran : ui.js doit aussi l'oublier.
+    try { pkg.closeModalLoading && pkg.closeModalLoading(); } catch(_) {}
+    if (wasRecording) {
+        try { pkg.showToast && pkg.showToast(pkg.t('Enregistrement annulé'), 'info', pkg.t('Enregistrement'), 3000); } catch(_) {}
+        // Les images déjà envoyées restent dans le dossier temporaire jusqu'au
+        // prochain enregistrement : le bouton de nettoyage doit les annoncer.
+        try { pkg.refreshCapturedPicturesUi && pkg.refreshCapturedPicturesUi(); } catch(_) {}
     }
 
     // Remettre la carte à l'état d'origine avec tous les points filtrés.
@@ -2418,26 +2444,35 @@ export function pauseAnimation() {
     // La carte, vectorSource, les points et currentDate sont conservés tels quels
 }
 
+// Renvoie false quand l'enregistrement n'a pas été lancé : l'appelant laisse
+// alors les contrôles dans leur état de repos.
 export function recordAnimation(){
+    // Un enregistrement tourne encore (gel de fin de la capture rapide, par
+    // exemple) : en lancer un second mélangerait leurs états.
+    if (isRecordingActive()) return false;
+
     resetTileErrorCount(); // repartir d'un compte propre pour cette session d'enregistrement
 
     // Branche MediaRecorder si demandé et supporté
+    let mediaRecorderMode = false;
     try {
         const mode = pkg.options?.record?.mode;
         if (mode === 'mediarecorder' && isMediaRecorderSupported()) {
-            recordAnimationMediaRecorder();
-            return;
+            mediaRecorderMode = true;
         } else if (mode === 'mediarecorder' && !isMediaRecorderSupported()) {
             pkg.showToast && pkg.showToast(pkg.t('Capture rapide non supportée, bascule en mode image par image.'), 'warning', pkg.t('Compatibilité'));
         }
     } catch(e) { console.warn('Detection MediaRecorder error:', e); }
+    if (mediaRecorderMode) return recordAnimationMediaRecorder();
 
     // Vérifier que les données sont prêtes
     if (!hasTimelineData()) {
         console.error("Les données de géocaches ne sont pas encore chargées");
         pkg.showToast(pkg.t("Données en cours de chargement. Veuillez réessayer."), "warning", pkg.t("Attention"));
-        return;
+        return false;
     }
+
+    const session = ++recordingSession;
 
     // Nouvelle session de capture : identifiant propre à cet enregistrement.
     // Généré avant le nettoyage : même si celui-ci échoue, les frames de cette
@@ -2457,11 +2492,15 @@ export function recordAnimation(){
     .then(r => r.json())
     .then(d => {
         if (prepToast) { pkg.hideToast && pkg.hideToast(prepToast); }
+        // Arrêté pendant la préparation : ne pas démarrer après coup.
+        if (session !== recordingSession) return;
         // Assemblage en cours côté serveur : le dossier n'a pas pu être vidé.
         // On annule la capture au lieu de poursuivre : les nouvelles images se
         // mélangeraient aux anciennes et la vidéo finale contiendrait les deux.
         if (d && d.busy) {
             try { recordingPerformanceMonitor.stopMonitoring(); } catch(_) {}
+            // Rien ne tourne : les boutons Pause/Arrêter n'ont pas lieu d'être.
+            try { pkg.resetControlsToInitialState && pkg.resetControlsToInitialState(); } catch(_) {}
             pkg.showToast && pkg.showToast(
                 d.message || pkg.t('Un assemblage vidéo est en cours. Réessayez à la fin du traitement.'),
                 'warning', pkg.t('Enregistrement annulé'), 6000
@@ -2473,18 +2512,19 @@ export function recordAnimation(){
         } else {
             pkg.showToast && pkg.showToast(pkg.t('Nettoyage initial impossible. Poursuite de l\'enregistrement.'), 'warning', pkg.t('Attention'), 3000);
         }
-        startRecordingProcess();
+        startRecordingProcess(session);
     })
     .catch(err => {
         if (prepToast) { pkg.hideToast && pkg.hideToast(prepToast); }
+        if (session !== recordingSession) return;
         pkg.showToast && pkg.showToast(pkg.t('Erreur nettoyage initial. Poursuite.'), 'warning', pkg.t('Attention'), 3000);
-        startRecordingProcess();
+        startRecordingProcess(session);
     });
     try { hidePopup(); } catch(_) {}
     return;
 }
 
-function startRecordingProcess(){
+function startRecordingProcess(session){
     // Précharger html2canvas en tâche de fond : s'il est nécessaire (repli rare,
     // cf. scheduleCaptureFrame), le téléchargement se recouvre avec le début de
     // la capture au lieu de bloquer la première frame qui en aurait besoin.
@@ -2708,13 +2748,15 @@ function startRecordingProcess(){
     let initialRenderKey = map.once('rendercomplete', () => {
         clearTimeout(initialRenderTimeout);
         initialRenderKey = null;
-        scheduleCaptureFrame(pkg.options.point, pkg.options.flash, infos);
+        scheduleCaptureFrame(pkg.options.point, pkg.options.flash, infos, session);
     });
     const initialRenderTimeout = setTimeout(() => {
         if (initialRenderKey) {
             ol.Observable.unByKey(initialRenderKey);
             initialRenderKey = null;
         }
+        // Arrêté entre-temps : ne pas faire échouer l'enregistrement suivant.
+        if (session !== recordingSession) return;
         abortRecordingOnError(new Error(pkg.t('Le rendu initial de la carte n\'a pas abouti (timeout)')));
     }, 10000);
     try {
@@ -2766,8 +2808,12 @@ function createObjectInfos(initialCount = initialCacheCount()){
 // fois avant d'abandonner, pour absorber les incidents transitoires.
 async function captureElementWithRetry() {
     const maxRetries = Math.max(0, Number(pkg.options?.record?.frameRetries ?? 2));
+    const session = recordingSession;
     let lastError;
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        // Enregistrement arrêté pendant l'attente : un nouvel essai capturerait
+        // une image pour le compte de l'enregistrement suivant.
+        if (session !== recordingSession) return;
         try {
             await captureElement();
             return;
@@ -2779,15 +2825,20 @@ async function captureElementWithRetry() {
             }
         }
     }
+    if (session !== recordingSession) return;
     throw lastError;
 }
 
 // Planifie la frame suivante en attrapant TOUTE erreur de la boucle asynchrone.
 // Sans ce .catch(), une seule frame échouée tuait la boucle silencieusement et
 // laissait la modale « Capture en cours » ouverte à jamais.
-function scheduleCaptureFrame(pointOptions, flashOptions, infos) {
+// `session` : génération de l'enregistrement auquel la boucle appartient — une
+// boucle annulée s'éteint ici, sans erreur ni nettoyage (stopAnimation l'a fait).
+function scheduleCaptureFrame(pointOptions, flashOptions, infos, session) {
     requestAnimationFrame(() => {
-        captureNextFrame(true, pointOptions, flashOptions, infos).catch(err => {
+        if (session !== recordingSession) return;
+        captureNextFrame(true, pointOptions, flashOptions, infos, session).catch(err => {
+            if (session !== recordingSession) return;
             abortRecordingOnError(err);
         });
     });
@@ -2835,6 +2886,7 @@ function removeCaptureVisibilityGuard() {
 function abortRecordingOnError(error) {
     console.error('[CAPTURE] Abandon de l\'enregistrement suite à une erreur:', error);
 
+    recordingSession++; // congédie ce qui reste de la boucle de capture
     isRecording = false;
     endHighResCapture();
     removeCaptureVisibilityGuard();
@@ -2974,64 +3026,13 @@ function pollTaskStatus(taskId, { intervalMs = 700, timeoutMs = 1800000, maxCons
 }
 
 // TODO Voir pour Capture, car à priori c'est forcement == True
-async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
-    // Vérifier si l'enregistrement a été arrêté
-    if (!isRecording) {
-        dbgMapgl('[CAPTURE] Enregistrement arrêté par l\'utilisateur');
-        removeCaptureVisibilityGuard();
-        imgOutCanvas = imgOutCtx = null; // libérer le canvas réutilisé (P4)
-
-        // Fermer le toast de chargement
-        // IMPORTANT: ne pas utiliser de sélecteur large type [class*="toast"] qui peut matcher le conteneur (.gcm-toast-container)
-        // et casser l'affichage des loaders suivants.
-        try {
-            const loadingToast = document.querySelector('.toast-loading') ||
-                               document.querySelector('.gcm-toast') ||
-                               document.querySelector('.toast');
-            if (loadingToast) {
-                dbgMapgl('[CAPTURE] Toast trouvé, tentative de fermeture:', loadingToast);
-                pkg.hideToast && pkg.hideToast(loadingToast);
-            } else {
-                dbgMapgl('[CAPTURE] Aucun toast trouvé avec les sélecteurs testés');
-            }
-
-            // Essayer aussi de fermer tous les toasts visibles (sans toucher au conteneur)
-            const allToasts = document.querySelectorAll('.gcm-toast, .toast, .toast-loading');
-            allToasts.forEach((toast, index) => {
-                dbgMapgl(`[CAPTURE] Fermeture toast ${index}:`, toast.textContent);
-                pkg.hideToast && pkg.hideToast(toast);
-            });
-        } catch(e) {
-            console.warn('Erreur lors de la fermeture du toast:', e);
-        }
-
-        // Nettoyer les animations de flash
-        if (animationSource) {
-            animationSource.clear();
-            dbgMapgl('[CAPTURE] Animation source nettoyé');
-        }
-        if (animationLayer) {
-            animationLayer.setVisible(false);
-            dbgMapgl('[CAPTURE] Animation layer masqué');
-        }
-        clearTravelTrail();
-
-        // Remettre la carte avec tous les points filtrés
-        if (isEvolutionPage()) {
-            ensureEvolutionPoints();
-            endEvolutionTimeline();
-        } else {
-            clearMap();
-            const allFilteredPoints = getAllFilteredPoints();
-            if (allFilteredPoints.length > 0) {
-                displayWebGLPoints(allFilteredPoints, pkg.options.point);
-                dbgMapgl('[CAPTURE] Affichage de', allFilteredPoints.length, 'points filtrés');
-            }
-        }
-
-        try { pkg.resetControlsToInitialState && pkg.resetControlsToInitialState(); } catch(e) { console.warn(e); }
-        return;
-    }
+async function captureNextFrame(capture, pointOptions, flashOptions, infos, session) {
+    // Enregistrement arrêté (ou relancé depuis) : cette boucle n'a plus lieu
+    // d'être. stopAnimation a déjà remis la carte et les contrôles en état ;
+    // refaire ce nettoyage ici viderait la carte de l'enregistrement suivant.
+    // À revérifier après chaque attente, l'arrêt pouvant survenir pendant.
+    const cancelled = () => session !== recordingSession;
+    if (cancelled()) return;
 
     if (cameraFollowBlocksDates()) {
         // En mode Images, chaque pas de caméra devient une vraie frame vidéo,
@@ -3044,11 +3045,12 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
                 Number(pkg.options.record.nbOfImages) || 0
             );
             await captureElementWithRetry();
+            if (cancelled()) return;
             globalRecordFrame++;
             cameraPacingState.travelFrames++;
             cameraPacingState.retarget = true;
         }
-        scheduleCaptureFrame(pointOptions, flashOptions, infos);
+        scheduleCaptureFrame(pointOptions, flashOptions, infos, session);
         return;
     }
 
@@ -3070,6 +3072,9 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
             map.render();
             if (capture == true) {
                 await captureElementWithRetry();
+                // Arrêt pendant les images de fin : ne pas aller jusqu'à
+                // l'assemblage d'une vidéo que l'utilisateur vient d'annuler.
+                if (cancelled()) return;
                 currentFrame++;
 
             } else {
@@ -3083,6 +3088,7 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
         // et déclenche l'abandon propre via scheduleCaptureFrame().
         try { pkg.updateProgressBar({ progress: 99, message: pkg.t('Envoi des dernières images...') }); } catch(_) {}
         await awaitAllUploads();
+        if (cancelled()) return;
 
         // Traitement de fin
         isRecording = false; // Marquer la fin de l'enregistrement
@@ -3271,13 +3277,14 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
         // Capturez la frame actuelle
         if (capture == true) {
             await captureElementWithRetry();
+            if (cancelled()) return;
                 globalRecordFrame++;  // avancer l'animation d'1 cran par capture
                 currentFrame++;
-                scheduleCaptureFrame(pointOptions, flashOptions, infos);
+                scheduleCaptureFrame(pointOptions, flashOptions, infos, session);
         } else {
             currentFrame++;
             // De même ici, si vous avez besoin de passer des arguments spécifiques
-            scheduleCaptureFrame(pointOptions, flashOptions, infos);
+            scheduleCaptureFrame(pointOptions, flashOptions, infos, session);
         }
     } else {
         // JOUR SUIVANT
@@ -3341,7 +3348,7 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos) {
             }
         }
         currentFrame = 0;  // Réinitialisez le compteur de frames pour le nouveau jour
-        scheduleCaptureFrame(pointOptions, flashOptions, infos);
+        scheduleCaptureFrame(pointOptions, flashOptions, infos, session);
     }
 }
 
@@ -3360,8 +3367,9 @@ function recordAnimationMediaRecorder(){
     // Vérifier données
     if (!hasTimelineData()) {
         pkg.showToast && pkg.showToast(pkg.t('Données en cours de chargement. Réessayez.'), 'warning', pkg.t('Attention'));
-        return;
+        return false;
     }
+    const session = ++recordingSession;
 
     // Bloquer la musique et détecter l'audio pour l'intégrer dans le toast
     let _mrAudioNote = '';
@@ -3479,7 +3487,9 @@ function recordAnimationMediaRecorder(){
     try { startAnimation(true); } catch(_) { startAnimation(); }
 
     // Démarrer capture MediaRecorder
-    startMediaRecorderPipeline(totalMs * appliedSlowdown, appliedSlowdown).catch(e => {
+    startMediaRecorderPipeline(totalMs * appliedSlowdown, appliedSlowdown, session).catch(e => {
+        // Arrêté entre-temps : ne pas relancer une capture en mode images.
+        if (session !== recordingSession) return;
         console.error('MediaRecorder pipeline error:', e);
         pkg.showToast && pkg.showToast(pkg.t('Erreur de la capture rapide, bascule en mode image par image.'), 'error', pkg.t('Enregistrement'));
         // Stopper proprement la boucle animation (rAF) déjà lancée par startAnimation()
@@ -3590,7 +3600,7 @@ function overlayContentSignature() {
     }
 }
 
-async function startMediaRecorderPipeline(totalDurationMs, timelineScale = 1){
+async function startMediaRecorderPipeline(totalDurationMs, timelineScale = 1, session = recordingSession){
     const fps = normalizeRecordingFps(pkg.options.record?.fps);
     const mime = pkg.options?.record?.mediaRecorder?.mimeType || 'video/webm;codecs=vp9';
     const vbps = normalizeRecordingBitrateMbps(
@@ -3689,13 +3699,23 @@ async function startMediaRecorderPipeline(totalDurationMs, timelineScale = 1){
     // Délestage mémoire : ouvrir le flux vers le serveur local avant le premier
     // fragment. Sans lui, les chunks s'accumuleraient en RAM jusqu'à la fin
     // (~225 Mo/min à 30 Mbit/s). Repli silencieux sur l'accumulation en mémoire.
-    mrVideoStream = createVideoStream({
+    const stream = createVideoStream({
         baseUrl: CONFIG.BASE_URL,
         fetchImpl: (url, opts) => fetchWithTimeout(url, opts, { timeoutMs: FETCH_TIMEOUTS.upload, t: pkg.t }),
         t: pkg.t,
     });
-    try { await mrVideoStream.begin(); } catch (e) {
-        console.warn('[MediaRecorder] Flux serveur indisponible, accumulation en mémoire:', e);
+    mrVideoStream = stream;
+    let streamError = null;
+    try { await stream.begin(); } catch (e) { streamError = e; }
+    // Arrêté pendant l'ouverture du flux : mrRecorder et mrVideoStream ne sont
+    // plus les nôtres (remis à zéro, voire repris par l'enregistrement suivant).
+    // Seul le fichier que le serveur vient d'ouvrir reste à purger.
+    if (session !== recordingSession) {
+        if (!streamError) stream.abort();
+        return;
+    }
+    if (streamError) {
+        console.warn('[MediaRecorder] Flux serveur indisponible, accumulation en mémoire:', streamError);
         mrVideoStream = null;
     }
     mrRecorder.start(timesliceMs);
@@ -3809,16 +3829,34 @@ function stopMediaRecorderPipeline(finalize){
     // rendu en haute résolution après l'enregistrement.
     endHighResCapture();
 
-    if (mrRecorder && mrRecorder.state !== 'inactive') {
-        try { mrRecorder.stop(); } catch(_) {}
-    } else if (finalize) {
-        finalizeMediaRecorderVideo();
-    } else {
-        // Annulation sans finalization : restaurer timePerDay immédiatement
-        try { mrOnFinalizeRestoreTimePerDay?.(); mrOnFinalizeRestoreTimePerDay = null; } catch(_) {}
+    if (!finalize) {
+        // Annulation : aucune vidéo ne doit sortir. Les handlers sont détachés
+        // AVANT stop(), qui déclenche sinon onstop — donc la finalisation — de
+        // façon asynchrone : la vidéo tronquée était traitée par le serveur puis
+        // annoncée « prête », en fermant au passage la fenêtre de progression
+        // d'un enregistrement relancé entre-temps.
+        const recorder = mrRecorder;
+        if (recorder) {
+            recorder.ondataavailable = null;
+            recorder.onstop = null;
+            recorder.onerror = null;
+            try { if (recorder.state !== 'inactive') recorder.stop(); } catch(_) {}
+            try { recorder.stream?.getTracks().forEach(track => track.stop()); } catch(_) {}
+        }
+        // Restaurer timePerDay immédiatement
+        try { mrOnFinalizeRestoreTimePerDay?.(); } catch(_) {}
+        mrOnFinalizeRestoreTimePerDay = null;
         // Un flux ouvert sans finalisation : le purger côté serveur (le fichier
         // partiel n'a plus de raison d'être).
         try { if (mrVideoStream) { mrVideoStream.abort(); mrVideoStream = null; } } catch(_) {}
+        mrRecorder = null;
+        mrRecordedChunks = [];
+        mrOutCanvas = null;
+        mrOutCtx = null;
+    } else if (mrRecorder && mrRecorder.state !== 'inactive') {
+        try { mrRecorder.stop(); } catch(_) {}
+    } else {
+        finalizeMediaRecorderVideo();
     }
     isMediaRecording = false;
     mrIsFinalizing = false;
@@ -4081,6 +4119,7 @@ async function captureElement() {
             return;
         }
 
+        const session = recordingSession;
         const captureStart = performance.now();
         perfMetrics.lastCaptureStart = captureStart;
 
@@ -4169,6 +4208,9 @@ async function captureElement() {
                             // et remonte une éventuelle erreur d'upload déjà survenue.
                             await awaitUploadSlot();
                         } catch (e) { reject(e); return; }
+                        // Enregistrement arrêté pendant la composition : cette image
+                        // ne doit ni partir ni décaler le compteur du suivant.
+                        if (session !== recordingSession) { resolve(); return; }
 
                         // Upload en tâche de fond (ne bloque pas la frame suivante)
                         enqueueImageUpload(blob, imageCounter++);
@@ -4221,6 +4263,7 @@ async function captureElement() {
                         canvas.toBlob(async (blob) => {
                             if (!blob) { rejBlob(new Error('html2canvas toBlob a retourné null')); return; }
                             try { await awaitUploadSlot(); } catch(e) { rejBlob(e); return; }
+                            if (session !== recordingSession) { resBlob(); return; }
                             enqueueImageUpload(blob, imageCounter++);
                             try { updateProgress(); } catch(e) {}
                             resBlob();

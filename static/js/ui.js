@@ -4550,8 +4550,10 @@ function clickStartAnimation(){
 
 function clickRecordAnimation(){
     if (!hasAnimationData()) return;
-    // Vide la source vectorielle avant de démarrer l'animation
-    pkg.recordAnimation();
+    // Vide la source vectorielle avant de démarrer l'animation.
+    // false : rien n'a démarré (données absentes, enregistrement déjà en
+    // cours) — les contrôles restent tels quels.
+    if (pkg.recordAnimation() === false) return;
     showPauseStopButtons();
     // En mode enregistrement, la pause ferait un arrêt complet sans feedback
     // → on désactive le bouton Pause et on redirige vers Arrêter

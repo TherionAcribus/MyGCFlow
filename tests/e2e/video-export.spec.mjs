@@ -1476,3 +1476,131 @@ test('avec le suivi de caméra, la lecture « Par durée » congestionnée finit
     `durée ${Math.round(lecture.dureeMs)} ms vs budget ${prevu.budgetMs} ms`)
     .toBeLessThan(1_500);
 });
+
+
+// --- Annulation d'un enregistrement ------------------------------------------
+
+function mp4Names() {
+  try {
+    return readdirSync(path.join(RUNTIME, 'video')).filter((name) => name.endsWith('.mp4')).sort();
+  } catch (_) {
+    return [];
+  }
+}
+
+
+// Plage de 5 jours à 1 jour/s : ~5 s d'animation, de quoi arrêter en cours.
+async function prepareSlowRecording(page, mode) {
+  await selectTraditionalCaches(page);
+  await page.locator('a[href="#animation"]').click();
+  await page.locator('#inputDaysPerSecond').fill('1');
+  await page.locator('#inputExtraEndTime').fill('0');
+  await page.locator('#recordingConfigTab').click();
+  await expect(page.locator('#recordingConfigPane')).toBeVisible();
+  await page.locator('#selectRecordMode').selectOption(mode);
+  await page.locator('#selectRecordResolution').selectOption('window');
+  await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    app.options.record.fps = 12;
+    app.options.record.mediaRecorder.tailFreezeMs = 250;
+    app.options.record.mediaRecorder.slowdownFactor = 1;
+    app.options.record.mediaRecorder.mimeType = 'video/webm;codecs=vp8';
+    app.options.flash.mode = 'none';
+  });
+}
+
+
+async function expectIdle(page) {
+  await expect(page.locator('#controlBar')).toHaveAttribute('data-playback-state', 'idle');
+  expect(await page.evaluate(async () => (
+    (await import('/static/js/mapgl.js')).isRecordingActive()
+  ))).toBe(false);
+  // La fenêtre de progression de la capture a disparu avec elle.
+  await expect(page.locator('.gcm-toast .gcm-toast-progress')).toHaveCount(0);
+}
+
+
+test('capture rapide : arrêter annule la vidéo, relancer dans la foulée en produit une seule', async ({ page }) => {
+  await prepareSlowRecording(page, 'mediarecorder');
+  const before = mp4Names();
+
+  const requests = { process: 0, abort: 0, finish: 0 };
+  page.on('request', (request) => {
+    const url = request.url();
+    if (url.includes('/process_recorded_video')) requests.process += 1;
+    if (url.includes('/video_stream_abort')) requests.abort += 1;
+    if (url.includes('/video_stream_finish')) requests.finish += 1;
+  });
+
+  // Premier fragment envoyé : l'enregistrement tourne réellement.
+  const firstChunk = page.waitForResponse((response) => response.url().includes('/video_stream_append'));
+  await page.locator('#btnQuickExport').click({ force: true });
+  await firstChunk;
+
+  await page.locator('#btnQuickStop').click({ force: true });
+  await expectIdle(page);
+  await expect.poll(() => requests.abort).toBe(1);
+
+  // Laisser à une finalisation fautive le temps de se manifester.
+  await page.waitForTimeout(2_500);
+  expect(requests.finish).toBe(0);
+  expect(requests.process).toBe(0);
+  await expect(page.locator('#modal_video_ready')).toBeHidden();
+  expect(mp4Names()).toEqual(before);
+  // Arrêt puis relance sans attendre : l'enregistrement annulé ne doit ni
+  // fermer la progression du suivant, ni produire sa propre vidéo.
+  const secondChunk = page.waitForResponse((response) => response.url().includes('/video_stream_append'));
+  await page.locator('#btnQuickExport').click({ force: true });
+  await secondChunk;
+  await page.locator('#btnQuickStop').click({ force: true });
+  await page.locator('#btnQuickExport').click({ force: true });
+
+  await expect(page.locator('#modal_video_ready')).toBeVisible({ timeout: 75_000 });
+  expect(requests.process).toBe(1);
+  expect(requests.finish).toBe(1);
+  expect(requests.abort).toBe(2);
+  await expect.poll(() => mp4Names().length, { timeout: 15_000 }).toBe(before.length + 1);
+  await expectIdle(page);
+});
+
+
+test('mode images : arrêter annule l\'assemblage, relancer dans la foulée produit une vidéo complète', async ({ page }) => {
+  await prepareSlowRecording(page, 'images');
+  const before = mp4Names();
+
+  const assemblies = [];
+  page.on('request', (request) => {
+    if (request.url().includes('/start_create_video')) assemblies.push(request.postDataJSON());
+  });
+
+  const firstBatch = page.waitForResponse((response) => response.url().includes('/upload_images'));
+  await page.locator('#btnQuickExport').click({ force: true });
+  await firstBatch;
+
+  await page.locator('#btnQuickStop').click({ force: true });
+  await expectIdle(page);
+  await page.waitForTimeout(2_500);
+  expect(assemblies).toEqual([]);
+  await expect(page.locator('#modal_video_ready')).toBeHidden();
+  expect(mp4Names()).toEqual(before);
+
+  // Arrêt et relance dans le même tour d'horloge : la boucle de capture
+  // annulée a encore une image en cours quand la nouvelle démarre.
+  const secondBatch = page.waitForResponse((response) => response.url().includes('/upload_images'));
+  await page.locator('#btnQuickExport').click({ force: true });
+  await secondBatch;
+  await page.evaluate(() => {
+    document.getElementById('btnStopAnimation').click();
+    document.getElementById('btnRecordAnimation').click();
+  });
+
+  await expect(page.locator('#modal_video_ready')).toBeVisible({ timeout: 120_000 });
+  expect(assemblies).toHaveLength(1);
+  // Toutes les images prévues, ni plus (deux boucles) ni moins (arrêt tardif).
+  const planned = await page.evaluate(async () => (
+    (await import('/static/js/index.js')).options.record.nbOfImages
+  ));
+  expect(assemblies[0].expected_frames).toBe(planned);
+  await expect.poll(() => mp4Names().length, { timeout: 30_000 }).toBe(before.length + 1);
+  await expectIdle(page);
+});
