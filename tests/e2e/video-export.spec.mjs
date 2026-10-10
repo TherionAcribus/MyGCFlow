@@ -1545,6 +1545,9 @@ test('capture rapide : arrêter annule la vidéo, relancer dans la foulée en pr
   await expectIdle(page);
   // L'aperçu, lui, retrouve sa pause.
   await expect(page.locator('#btnPauseBar')).toBeEnabled();
+  // La carte réaffiche toute la sélection : le compteur la décrit de nouveau
+  // (3 traditionnelles), au lieu de rester sur le jour de l'arrêt.
+  await expect(page.locator('#spanNbCaches')).toHaveText('3');
   await expect.poll(() => requests.abort).toBe(1);
   // L'arrêt s'annonce comme tel — pas comme un enregistrement qui se poursuit.
   const stopToast = page.locator('.gcm-toast', { hasText: 'Arrêt de l\'enregistrement' });
@@ -1588,6 +1591,7 @@ test('mode images : arrêter annule l\'assemblage, relancer dans la foulée prod
 
   await page.locator('#btnQuickStop').click({ force: true });
   await expectIdle(page);
+  await expect(page.locator('#spanNbCaches')).toHaveText('3');
   await page.waitForTimeout(2_500);
   expect(assemblies).toEqual([]);
   await expect(page.locator('#modal_video_ready')).toBeHidden();

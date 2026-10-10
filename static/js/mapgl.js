@@ -1823,6 +1823,14 @@ function resetCacheCount(value = 0) {
     pkg.updateNbCaches(value);
 }
 
+// Infos au repos, comme après un chargement ou un filtrage : la carte affiche
+// de nouveau toute la sélection, le compteur et la date doivent la décrire —
+// pas le jour où l'animation a été interrompue.
+function showRestInfos() {
+    resetCacheCount(Math.max(0, Number(pkg.metadata?.numberOfCaches) || 0));
+    if (pkg.metadata?.endDate) pkg.updateCurrentDate(pkg.metadata.endDate);
+}
+
 // Mode Évolution : pose les trois compteurs sans animation et réécrit la
 // ligne d'infos immédiatement (état au repos, début d'animation).
 function resetEvolutionCounters(values = {}) {
@@ -2429,6 +2437,7 @@ export function stopAnimation(){
         } else {
             dbgMapgl('[STOP] Aucun point à afficher');
         }
+        showRestInfos();
     }
 
     // Remettre les contrôles UI dans l'état initial
@@ -2946,6 +2955,7 @@ function abortRecordingOnError(error) {
             if (allFilteredPoints.length > 0) {
                 displayWebGLPoints(allFilteredPoints, pkg.options.point);
             }
+            showRestInfos();
         }
     } catch(_) {}
 
