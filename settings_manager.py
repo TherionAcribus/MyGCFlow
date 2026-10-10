@@ -1283,12 +1283,12 @@ class SettingsManager:
                     toner_options=TonerMapOptions(variant="light")
                 ),
                 points=PointStyle(
-                    size=8,
+                    size=6,
                     color="#f97316",
                     shape="circle",
                     halo=True,
                     border_color="#ffffff",
-                    border_size=2,
+                    border_size=1,
                     fill_color_type="gc",
                     border_color_type="fix",
                     mode="vectoriel"
