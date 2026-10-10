@@ -660,7 +660,15 @@ export function simulateCameraJourneys(days, {
     // première date. 0 quand le jour 0 n'a pas de trajet : pas de marge à
     // prévoir, le comportement historique est conservé.
     const leadMs = journeysByDay[0] ? journeysByDay[0].totalDurationMs : 0;
-    return { dayCount: list.length, travelMsByDay, journeysByDay, totalMs, journeyCount, leadMs };
+    return {
+        dayCount: list.length,
+        hasPointsByDay: list.map((day) => Boolean(day?.center)),
+        travelMsByDay,
+        journeysByDay,
+        totalMs,
+        journeyCount,
+        leadMs,
+    };
 }
 
 // Prépare le suivi d'un budget de temps : `budgetMs` couvre l'affichage de
@@ -751,17 +759,25 @@ export const TRACK_LATE_EPSILON_MS = 50;
 //
 // `leadMs` : marge d'anticipation du premier trajet (le « pré-roll »). Sans
 // elle, le trajet du jour 0 a une fenêtre nulle — rien ne pouvant commencer
-// avant t=0, il est compressé ou instantané. Avec leadMs, toutes les arrivées
-// sont décalées d'autant (endMs = leadMs + i × dayMs) sans changer la
-// structure : le trajet 0 joue de t=0 à t=leadMs, avant la première date. Avec
+// avant t=0, il est compressé ou instantané. Le trajet 0 joue de t=0 à
+// t=leadMs, avant la première date. Les autres trajets finissent à l'instant
+// réel où leur jour s'affiche : leadMs + (i + 1) × dayMs, pauses comprises. Avec
 // leadMs = durée naturelle du trajet 0 (étirement compris), il joue donc à
-// vitesse réelle. leadMs = 0 : comportement historique strictement inchangé.
+// vitesse réelle.
+//
+// `settleMsByDay[i]` : temps à conserver la zone du jour i après son
+// affichage, notamment pour laisser finir l'apparition animée de ses points.
+// Un prochain trajet ne peut pas commencer avant cette borne.
 //
 // Retourne { events: [{ dayIndex, journey, startMs, endMs, durationMs, rate }],
 // timeScale, totalMs, leadMs, lateCount, worstLateMs } : pour chaque jour doté
-// d'un trajet, endMs = leadMs + i × dayMs (le trajet finit pile quand son jour
-// s'affiche) et startMs = max(endMs − durée × timeScale, fin réelle du trajet
-// précédent). Jamais de recouvrement : si la durée dépasse la fenêtre libre,
+// d'un trajet après le jour 0, endMs = leadMs + (i + 1) × dayMs (le trajet
+// finit pile quand son jour s'affiche) et startMs = max(endMs − durée ×
+// timeScale, fin réelle du trajet
+// précédent, fin d'apparition de la dernière zone affichée). Le jour 0
+// est le seul cas particulier : son trajet finit pendant le pré-roll, avant
+// son propre intervalle d'affichage. Jamais de recouvrement : si la durée
+// dépasse la fenêtre libre,
 // le trajet démarre où le précédent finit et arrive en retard sur son jour —
 // accepté (la date n'est pas retardée).
 //
@@ -778,7 +794,13 @@ export const TRACK_LATE_EPSILON_MS = 50;
 // naturelle et rate = durée naturelle / durationMs accélère l'échantillonnage.
 // Fenêtre nulle (startMs ≥ totalMs) : durationMs 0, la caméra saute
 // directement à la cible.
-export function buildCameraTrack(journeysByDay, { dayMs, timeScale = 1, leadMs = 0, holdLate = false } = {}) {
+export function buildCameraTrack(journeysByDay, {
+    dayMs,
+    timeScale = 1,
+    leadMs = 0,
+    holdLate = false,
+    settleMsByDay = null,
+} = {}) {
     const list = Array.isArray(journeysByDay) ? journeysByDay : [];
     const step = Math.max(0, Number(dayMs) || 0);
     const scale = Number.isFinite(Number(timeScale)) && Number(timeScale) >= 0
@@ -795,56 +817,71 @@ export function buildCameraTrack(journeysByDay, { dayMs, timeScale = 1, leadMs =
     let holdCount = 0;
     let holdTotalMs = 0;
     let previousFinishMs = 0;
+    // Borne de départ imposée par la dernière journée qui contient des
+    // points animés. Les jours vides ne cassent pas cette protection, mais ne
+    // forcent pas non plus la caméra à attendre leur propre intervalle.
+    let latestSettleEndMs = 0;
     let lateCount = 0;
     let worstLateMs = 0;
     for (let i = 0; i < list.length; i++) {
         const journey = list[i];
-        if (!journey) continue;
-        const journeyMs = Math.max(0, Number(journey.totalDurationMs) || 0);
-        const naturalMs = journeyMs * scale;
-        // Instant d'affichage du jour, pauses déjà planifiées comprises.
-        const nominalEnd = lead + i * step + cumHoldMs;
-        const startMs = Math.max(nominalEnd - naturalMs, previousFinishMs);
-        let endMs = nominalEnd;
-        let holdMs = 0;
-        if (holdLate) {
-            const finishMs = startMs + naturalMs;
-            if (finishMs - nominalEnd > TRACK_LATE_EPSILON_MS) {
-                // Le trajet ne peut pas tenir sa fenêtre : on décale le jour
-                // du temps manquant plutôt que de l'afficher sans la caméra.
-                // Micro-retard (< epsilon) : accepté, pas de micro-pause.
-                holdMs = finishMs - nominalEnd;
-                cumHoldMs += holdMs;
-                holdsByDay[i] = holdMs;
-                holdCount += 1;
-                holdTotalMs += holdMs;
-                endMs = finishMs;
+        if (journey) {
+            const journeyMs = Math.max(0, Number(journey.totalDurationMs) || 0);
+            const naturalMs = journeyMs * scale;
+            // Le runtime affiche le jour i après (i + 1) intervalles. Le trajet
+            // du jour 0 reste une approche pré-roll qui finit à `lead`.
+            const nominalEnd = lead + (i === 0 ? 0 : (i + 1) * step) + cumHoldMs;
+            const startMs = Math.max(nominalEnd - naturalMs, previousFinishMs, latestSettleEndMs);
+            let endMs = nominalEnd;
+            let holdMs = 0;
+            if (holdLate) {
+                const finishMs = startMs + naturalMs;
+                if (finishMs - nominalEnd > TRACK_LATE_EPSILON_MS) {
+                    // Le trajet ne peut pas tenir sa fenêtre : on décale le jour
+                    // du temps manquant plutôt que de l'afficher sans la caméra.
+                    // Micro-retard (< epsilon) : accepté, pas de micro-pause.
+                    holdMs = finishMs - nominalEnd;
+                    cumHoldMs += holdMs;
+                    holdsByDay[i] = holdMs;
+                    holdCount += 1;
+                    holdTotalMs += holdMs;
+                    endMs = finishMs;
+                }
             }
+            // Le plafond de fin de timeline reste valable : avec holds il ne mord
+            // plus qu'en cas de trajet arrivant après même la fin de l'animation
+            // (dernier trajet déjà décalé au-delà du dernier jour affiché).
+            const totalMs = lead + list.length * step + cumHoldMs;
+            const durationMs = Math.max(0, Math.min(naturalMs, totalMs - startMs));
+            // rate convertit le temps timeline en temps trajet pour
+            // sampleCameraJourney : timeScale quand le trajet tient dans sa
+            // fenêtre, davantage quand il est accéléré pour finir avec l'animation.
+            events.push({
+                dayIndex: i,
+                journey,
+                startMs,
+                endMs,
+                durationMs,
+                holdMs,
+                rate: durationMs > 0 ? journeyMs / durationMs : 1,
+            });
+            previousFinishMs = startMs + durationMs;
+            // Diagnostic de congestion : fin réelle après l'instant où le jour
+            // s'affiche. Avec holdLate l'écart est déjà financé en pause — il vaut
+            // 0 par construction.
+            const lateMs = previousFinishMs - endMs;
+            if (lateMs > TRACK_LATE_EPSILON_MS) lateCount += 1;
+            if (lateMs > worstLateMs) worstLateMs = lateMs;
         }
-        // Le plafond de fin de timeline reste valable : avec holds il ne mord
-        // plus qu'en cas de trajet arrivant après même la fin de l'animation
-        // (dernier trajet déjà décalé au-delà du dernier jour affiché).
-        const totalMs = lead + list.length * step + cumHoldMs;
-        const durationMs = Math.max(0, Math.min(naturalMs, totalMs - startMs));
-        // rate convertit le temps timeline en temps trajet pour
-        // sampleCameraJourney : timeScale quand le trajet tient dans sa
-        // fenêtre, davantage quand il est accéléré pour finir avec l'animation.
-        events.push({
-            dayIndex: i,
-            journey,
-            startMs,
-            endMs,
-            durationMs,
-            holdMs,
-            rate: durationMs > 0 ? journeyMs / durationMs : 1,
-        });
-        previousFinishMs = startMs + durationMs;
-        // Diagnostic de congestion : fin réelle après l'instant où le jour
-        // s'affiche. Avec holdLate l'écart est déjà financé en pause — il vaut
-        // 0 par construction.
-        const lateMs = previousFinishMs - endMs;
-        if (lateMs > TRACK_LATE_EPSILON_MS) lateCount += 1;
-        if (lateMs > worstLateMs) worstLateMs = lateMs;
+
+        // L'instant réel d'affichage du jour suit son intervalle et sa pause
+        // éventuelle. Une prochaine destination ne peut être quittée avant
+        // que la dernière vague de points soit entièrement posée.
+        const settleMs = Math.max(0, Number(settleMsByDay?.[i]) || 0);
+        if (settleMs > 0) {
+            const shownMs = lead + (i + 1) * step + cumHoldMs;
+            latestSettleEndMs = Math.max(latestSettleEndMs, shownMs + settleMs);
+        }
     }
     const totalMs = lead + list.length * step + cumHoldMs;
     return {
@@ -877,6 +914,7 @@ export function fitCameraTrackDayMs(journeysByDay, {
     timeScale = 1,
     dayCount,
     minDayMs = 1,
+    settleMsByDay = null,
 } = {}) {
     const list = Array.isArray(journeysByDay) ? journeysByDay : [];
     const days = Math.max(1, Math.round(Number(dayCount) || list.length || 1));
@@ -884,7 +922,7 @@ export function fitCameraTrackDayMs(journeysByDay, {
     const lo = Math.max(0, Number(minDayMs) || 0);
     const hi = Math.max(lo, (budget - Math.max(0, Number(leadMs) || 0)) / days);
     const trackFor = (ms) => buildCameraTrack(list, {
-        dayMs: ms, timeScale, leadMs, holdLate: true,
+        dayMs: ms, timeScale, leadMs, holdLate: true, settleMsByDay,
     });
     const fits = (track) => track.totalMs <= budget + 1e-9;
     const atMin = trackFor(lo);

@@ -665,6 +665,7 @@ test('la simulation expose les trajets eux-mêmes, chaînés par leurs cibles', 
     // journeysByDay : journey|null par jour — le runtime les rejoue tels quels,
     // sans recréation (pas de dérive entre simulation et exécution).
     assert.deepEqual(sim.journeysByDay.map((j) => j !== null), [false, false, true, false, true]);
+    assert.deepEqual(sim.hasPointsByDay, [false, true, true, true, true]);
     assert.equal(sim.journeysByDay[2].totalDurationMs, sim.travelMsByDay[2]);
     // Le départ d'un trajet est la cible du précédent : la caméra peut partir
     // plus tôt sans produire aucun saut (cœur de l'anticipation).
@@ -678,7 +679,7 @@ test('buildCameraTrack : chaque trajet finit pile quand son jour s\'affiche', ()
     const track = buildCameraTrack(sim.journeysByDay, { dayMs: 10000 });
     assert.equal(track.events.length, 3);
     for (const event of track.events) {
-        assert.equal(event.endMs, event.dayIndex * 10000);
+        assert.equal(event.endMs, (event.dayIndex + 1) * 10000);
         // Fenêtre assez large : le trajet démarre en avance pendant les jours
         // précédents et termine à l'heure exacte de son jour.
         assert.equal(event.startMs + event.journey.totalDurationMs * track.timeScale, event.endMs);
@@ -692,14 +693,14 @@ test('buildCameraTrack : jamais de recouvrement, retard documenté si la fenêtr
     const track = buildCameraTrack([null, journey1, journey2], { dayMs: 1000 });
     const [e1, e2] = track.events;
     assert.equal(e1.dayIndex, 1);
-    assert.equal(e1.endMs, 1000);
-    // Fenêtre libre de 1 s pour ~4 s de trajet : départ à 0, arrivée en retard
+    assert.equal(e1.endMs, 2000);
+    // Fenêtre libre de 2 s pour ~4 s de trajet : départ à 0, arrivée en retard
     // sur son jour — accepté, les dates ne sont jamais retardées pour autant.
     assert.equal(e1.startMs, 0);
     assert.ok(e1.startMs + e1.durationMs > e1.endMs);
     // Le second trajet démarre là où le premier finit réellement (son départ
     // est la cible du premier : continuité de caméra sans saut).
-    assert.equal(e2.endMs, 2000);
+    assert.equal(e2.endMs, 3000);
     assert.equal(e2.startMs, e1.startMs + e1.durationMs);
 });
 
@@ -749,8 +750,8 @@ test('buildCameraTrack : timeScale étire les durées, pas les bornes des jours'
     const journey = createCameraJourney([0, 0], [3000, 0], 8, 1);
     const track = buildCameraTrack([null, journey], { dayMs: 20000, timeScale: 2 });
     const event = track.events[0];
-    assert.equal(event.endMs, 20000);
-    assert.equal(event.startMs, 20000 - journey.totalDurationMs * 2);
+    assert.equal(event.endMs, 40000);
+    assert.equal(event.startMs, 40000 - journey.totalDurationMs * 2);
     // À la moitié de la fenêtre étirée, le trajet est à mi-parcours de son
     // temps propre : l'échantillonnage divise par timeScale.
     const mid = cameraTrackStateAt(track, event.startMs + journey.totalDurationMs);
@@ -767,8 +768,8 @@ test('cameraTrackStateAt : avant, pendant, entre et après les trajets', () => {
     const track = buildCameraTrack([null, journey1, null, journey2], { dayMs: 10000 });
     const [e1, e2] = track.events;
     const dur = journey1.totalDurationMs;
-    assert.equal(e1.startMs, 10000 - dur);
-    assert.equal(e2.startMs, 30000 - journey2.totalDurationMs);
+    assert.equal(e1.startMs, 20000 - dur);
+    assert.equal(e2.startMs, 40000 - journey2.totalDurationMs);
 
     // Avant le premier trajet (ou piste vide) : null, la vue est conservée.
     assert.equal(cameraTrackStateAt(track, e1.startMs - 1), null);
@@ -790,7 +791,7 @@ test('cameraTrackStateAt : avant, pendant, entre et après les trajets', () => {
     assert.equal(fin.zoom, journey1.endZoom);
 
     // Entre les deux trajets : la caméra reste sur la dernière cible atteinte.
-    const entre = cameraTrackStateAt(track, 20000);
+    const entre = cameraTrackStateAt(track, 30000);
     assert.equal(entre.moving, false);
     assert.deepEqual(entre.center, [3000, 0]);
     assert.equal(entre.zoom, journey1.endZoom);
@@ -832,8 +833,8 @@ test('buildCameraTrack : leadMs donne au premier trajet sa fenêtre d\'anticipat
     assert.equal(e0.durationMs, journey0.totalDurationMs);
     assert.equal(e0.rate, 1);
     // Les autres arrivées sont décalées d'autant, structure inchangée.
-    assert.equal(e2.endMs, leadMs + 2 * 10000);
-    assert.equal(e2.startMs, leadMs + 2 * 10000 - journey2.totalDurationMs);
+    assert.equal(e2.endMs, leadMs + 3 * 10000);
+    assert.equal(e2.startMs, leadMs + 3 * 10000 - journey2.totalDurationMs);
     assert.equal(e2.startMs + e2.durationMs, e2.endMs);
     assert.equal(track.totalMs, leadMs + 3 * 10000);
     assert.equal(track.leadMs, leadMs);
@@ -917,13 +918,15 @@ test('buildCameraTrack : un saut instantané passé son jour compte comme en ret
     // position de la piste compte comme celui d'un trajet ordinaire.
     const journey1 = createCameraJourney([0, 0], [3000, 0], 8, 1);
     const journey2 = createCameraJourney([3000, 0], [6000, 0], 8, 1);
-    const track = buildCameraTrack([journey1, journey2], { dayMs: 1000 });
-    const [e1, e2] = track.events;
+    const journey3 = createCameraJourney([6000, 0], [9000, 0], 8, 1);
+    const track = buildCameraTrack([journey1, journey2, journey3], { dayMs: 1000 });
+    const [e1, e2, e3] = track.events;
     assert.equal(e2.durationMs, 0);
     assert.ok(e2.startMs > e2.endMs);
-    // e1 finit au terme de la timeline (2 s) alors que son jour s'affiche à
-    // t=0 ; e2 saute à la cible à t=2 s pour un jour affiché à t=1 s : deux
-    // événements en retard, le pire étant celui du premier trajet.
+    assert.equal(e3.durationMs, 0);
+    // e1 finit au terme de la timeline (3 s) alors que son approche devait
+    // finir à t=0 ; e2 saute alors à la cible pour un jour affiché à t=2 s.
+    // Le jour 2, lui, est atteint exactement à sa borne t=3 s.
     assert.equal(track.lateCount, 2);
     assert.equal(track.worstLateMs, e1.startMs + e1.durationMs - e1.endMs);
 });
@@ -956,8 +959,8 @@ test('buildCameraTrack holdLate : les jours congestionnés attendent leur trajet
     let cumHold = 0;
     for (const event of [e1, e2, e3]) {
         cumHold += holdDe(event.dayIndex);
-        // Instant d'affichage du jour i : lead + i×dayMs + pauses des jours ≤ i.
-        assert.equal(event.endMs, event.dayIndex * 1000 + cumHold);
+        // Instant d'affichage du jour i : lead + (i+1)×dayMs + pauses des jours ≤ i.
+        assert.equal(event.endMs, (event.dayIndex + 1) * 1000 + cumHold);
     }
     assert.equal(track.holdCount, 3);
     assert.equal(track.holdTotalMs, cumHold);
@@ -998,6 +1001,52 @@ test('buildCameraTrack holdLate : un micro-retard sous l\'epsilon ne pause pas',
     assert.deepEqual(track.holdsByDay, [0]);
     assert.equal(track.lateCount, 0);
     assert.equal(track.worstLateMs, 30);
+});
+
+test('buildCameraTrack : la caméra attend que les points de la zone précédente soient posés', () => {
+    const journey = { totalDurationMs: 600 };
+    const track = buildCameraTrack([null, journey], {
+        dayMs: 1000,
+        holdLate: true,
+        settleMsByDay: [500, 0],
+    });
+    const [event] = track.events;
+    // Jour 0 affiché à 1 000 ms, puis 500 ms d'apparition : le trajet ne
+    // part pas à 1 400 ms comme son placement naturel l'aurait demandé.
+    assert.equal(event.startMs, 1500);
+    assert.equal(event.holdMs, 100);
+    assert.equal(event.endMs, 2100);
+    assert.deepEqual(track.holdsByDay, [0, 100]);
+    assert.equal(track.totalMs, 2100);
+});
+
+test('buildCameraTrack : sans apparition animée, le départ anticipé reste inchangé', () => {
+    const journey = { totalDurationMs: 600 };
+    const track = buildCameraTrack([null, journey], {
+        dayMs: 1000,
+        holdLate: true,
+        settleMsByDay: [0, 0],
+    });
+    const [event] = track.events;
+    assert.equal(event.startMs, 1400);
+    assert.equal(event.endMs, 2000);
+    assert.equal(event.holdMs, 0);
+    assert.equal(track.totalMs, 2000);
+});
+
+test('buildCameraTrack : un jour vide ne fait pas oublier la dernière apparition', () => {
+    const journey = { totalDurationMs: 1800 };
+    const track = buildCameraTrack([null, null, journey], {
+        dayMs: 1000,
+        holdLate: true,
+        settleMsByDay: [500, 0, 0],
+    });
+    const [event] = track.events;
+    // La fenêtre naturelle commencerait à 1 200 ms, encore pendant
+    // l'apparition du jour 0. Le jour 1 vide ne doit pas lever la protection.
+    assert.equal(event.startMs, 1500);
+    assert.equal(event.holdMs, 300);
+    assert.equal(event.endMs, 3300);
 });
 
 test('fitCameraTrackDayMs : le plus grand rythme qui tient le budget, pauses comprises', () => {

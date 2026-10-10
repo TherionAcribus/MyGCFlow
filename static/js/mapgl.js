@@ -1515,6 +1515,16 @@ function simulateCurrentCameraJourneys({ forRecording } = {}) {
     }
 }
 
+// Temps pendant lequel la caméra doit rester sur chaque zone après l'affichage
+// de ses points. La vague « Impulsion » décale leur départ de 120 ms au plus ;
+// la caméra attend donc aussi ce décalage avant de viser la zone suivante.
+function cameraPointSettleMsByDay(simulation) {
+    const settleMs = pkg.options.point?.appearAnimation === true
+        ? POINT_APPEAR_MS + (pkg.options.flash?.mode === 'impulse' ? IMPULSE_MAX_STAGGER_MS : 0)
+        : 0;
+    return (simulation?.hasPointsByDay || []).map((hasPoints) => (hasPoints ? settleMs : 0));
+}
+
 // Durée cumulée et nombre des trajets de caméra de la prochaine animation, pour
 // le plan de durée affiché (ui.js, refreshTimingPlan).
 export function estimateCameraTravel() {
@@ -1549,6 +1559,7 @@ export function estimateCameraTrackHold(dayMs, { budgetMs } = {}) {
         return null;
     }
     const dayCount = estimate.dayCount || estimate.journeysByDay.length;
+    const settleMsByDay = cameraPointSettleMsByDay(estimate);
     const budget = Number(budgetMs);
     if (Number.isFinite(budget) && budget > 0) {
         const fps = normalizeRecordingFps(pkg.options.record?.fps);
@@ -1559,6 +1570,7 @@ export function estimateCameraTrackHold(dayMs, { budgetMs } = {}) {
             leadMs: estimate.leadMs || 0,
             dayCount,
             minDayMs: 1000 / fps,
+            settleMsByDay,
         });
         return { dayMs: fit.dayMs, holdTotalMs: fit.holdTotalMs, holdCount: fit.holdCount };
     }
@@ -1568,6 +1580,7 @@ export function estimateCameraTrackHold(dayMs, { budgetMs } = {}) {
         dayMs: step,
         leadMs: estimate.leadMs || 0,
         holdLate: true,
+        settleMsByDay,
     });
     return { dayMs: step, holdTotalMs: track.holdTotalMs, holdCount: track.holdCount };
 }
@@ -1617,6 +1630,7 @@ function prepareCameraPacing({ timelineScale = 1, forRecording = isRecording || 
             ? Math.max(0, Number(simulation.journeysByDay[0].totalDurationMs) || 0)
             : 0;
         const leadMs = leadVideoMs * stretch;
+        const settleMsByDay = cameraPointSettleMsByDay(simulation);
         let dayMs;
         // Temps vidéo des pauses de dates planifiées (holds) : déduit du budget
         // des dates en durée imposée, ajouté à la durée annoncée en rythme
@@ -1640,6 +1654,7 @@ function prepareCameraPacing({ timelineScale = 1, forRecording = isRecording || 
                 dayCount: simulation.dayCount,
                 // Une image par jour minimum, en temps timeline étiré.
                 minDayMs: 1000 / fps * stretch,
+                settleMsByDay,
             });
             dayMs = fit.dayMs;
             holdTotalVideoMs = fit.holdTotalMs / stretch;
@@ -1650,7 +1665,7 @@ function prepareCameraPacing({ timelineScale = 1, forRecording = isRecording || 
             dayMs = Number(pkg.options.animation.timePerDay);
         }
         cameraTrack = buildCameraTrack(simulation.journeysByDay, {
-            dayMs, timeScale: stretch, leadMs, holdLate: true,
+            dayMs, timeScale: stretch, leadMs, holdLate: true, settleMsByDay,
         });
         // Rythme timeline réellement planifié : l'accumulateur de dates
         // (animationStep) s'en sert comme seuil de base, plus holdsByDay[i].

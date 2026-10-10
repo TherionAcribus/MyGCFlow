@@ -3850,6 +3850,9 @@ function changePointStyleUI(event){
 
     // rafraichissement des points
     pkg.refreshPoints(pkg.options);
+    // L'apparition animée réserve désormais une courte pose avant le
+    // prochain départ de caméra : recalculer immédiatement la durée annoncée.
+    if (event?.target?.id === 'switchPointAppear') refreshTimingPlan({ save: false });
 }
 
 // Le choix d'une couleur n'a de sens qu'en mode « couleur unique » (fix) :
