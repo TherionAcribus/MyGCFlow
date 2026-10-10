@@ -35,7 +35,17 @@ Autres repères :
 
 ## Traductions
 
-Source en français (`msgid`), anglais en `msgstr`. Commandes dans README.md
+Source en français (`msgid`), anglais en `msgstr` — et dans le catalogue FR,
+`msgstr` doit reprendre le `msgid` (exceptions : msgids anglais historiques
+comme `Cancel`→`Annuler`). Commandes dans README.md
 (pybabel extract/update/compile + `check_missing_translations.py`).
 Côté JS, seul helper : `t()` via `pkg.t(...)` ; l'appeler **hors** d'un
 template literal, sinon pybabel ne l'extrait pas.
+
+**Piège fuzzy :** `pybabel update` apparie les msgids nouveaux/renommés aux
+msgstr les plus proches et marque `#, fuzzy`. Si le drapeau est retiré sans
+corriger le msgstr, des textes sans rapport s'affichent (ex. le bouton
+« Télécharger la mise à jour » est devenu « Vérifier les mises à jour »).
+Après un `update`, `grep fuzzy translations/*/LC_MESSAGES/messages.po` et
+corriger avant `compile` — ou lancer `pybabel update` avec
+`--no-fuzzy-matching` et traduire les chaînes vides ensuite.

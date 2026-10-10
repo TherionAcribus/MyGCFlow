@@ -804,7 +804,7 @@ msgstr "Affichage des points"
 
 #: static/js/bdd.js:1387
 msgid "Impossible de lancer la génération du GeoJSON"
-msgstr "Impossible de lancer l'import GPX"
+msgstr "Impossible de lancer la génération du GeoJSON"
 
 #: static/js/bdd.js:1399 static/js/bdd.js:1454 static/js/bdd.js:1462
 msgid "Erreur lors de l'affichage des points sur la carte"
@@ -1153,7 +1153,7 @@ msgstr "Le serveur local ne répond pas (délai dépassé)"
 #: static/js/gc_colors.js:28
 #, python-brace-format
 msgid "Erreur lors du chargement des couleurs GC (${status}): ${statusText}"
-msgstr "Erreur lors du chargement des données"
+msgstr "Erreur lors du chargement des couleurs GC (${status}): ${statusText}"
 
 #: static/js/mapgl.js:270
 msgid "Impossible de charger html2canvas"
@@ -1208,7 +1208,7 @@ msgstr "Capture rapide non supportée, bascule en mode image par image."
 
 #: static/js/mapgl.js:3233
 msgid "Compatibilité"
-msgstr "Compatibilité maximale (4:2:0)"
+msgstr "Compatibilité"
 
 #: static/js/mapgl.js:3242
 msgid "Données en cours de chargement. Veuillez réessayer."
@@ -1216,22 +1216,19 @@ msgstr "Données en cours de chargement. Veuillez réessayer."
 
 #: static/js/mapgl.js:3262
 msgid "Préparation de l'enregistrement..."
-msgstr "Préparation de l'envoi..."
+msgstr "Préparation de l'enregistrement..."
 
 #: static/js/mapgl.js:3262
 msgid "Nettoyage initial"
-msgstr "Nettoyage"
+msgstr "Nettoyage initial"
 
 #: static/js/mapgl.js:3286
 msgid "Un assemblage vidéo est en cours. Réessayez à la fin du traitement."
-msgstr ""
-"Un assemblage vidéo est en cours. Réessayez à la fin du traitement.\"\"Un"
-" assemblage vidéo est en cours : le dossier captured/ ne peut pas être "
-"vidé maintenant."
+msgstr "Un assemblage vidéo est en cours. Réessayez à la fin du traitement."
 
 #: static/js/mapgl.js:3287
 msgid "Enregistrement annulé"
-msgstr "Enregistrement vidéo"
+msgstr "Enregistrement annulé"
 
 #: static/js/mapgl.js:3292
 msgid "Répertoire d’images nettoyé."
@@ -1239,7 +1236,7 @@ msgstr "Répertoire d’images nettoyé."
 
 #: static/js/mapgl.js:3292
 msgid "Préparation"
-msgstr "Préparation de l'envoi..."
+msgstr "Préparation"
 
 #: static/js/mapgl.js:3294
 msgid "Nettoyage initial impossible. Poursuite de l'enregistrement."
@@ -1251,7 +1248,7 @@ msgstr "Erreur nettoyage initial. Poursuite."
 
 #: static/js/mapgl.js:3457
 msgid "0% | préparation..."
-msgstr "Préparation de l'envoi..."
+msgstr "0% | préparation..."
 
 #: static/js/mapgl.js:3469 static/js/mapgl.js:4370
 msgid " ♪ La musique sera intégrée automatiquement après la capture."
@@ -1263,7 +1260,7 @@ msgstr "Capture en cours – Ne pas bouger la fenêtre"
 
 #: static/js/mapgl.js:3477
 msgid "Préparation de la capture..."
-msgstr "Préparation de l'envoi..."
+msgstr "Préparation de la capture..."
 
 #: static/js/mapgl.js:3509
 msgid "Capture en pause : revenez sur cet onglet pour la poursuivre."
@@ -1283,7 +1280,7 @@ msgstr "Nettoyage en cours..."
 
 #: static/js/mapgl.js:3837
 msgid "erreur inconnue"
-msgstr "Erreur API"
+msgstr "erreur inconnue"
 
 #: static/js/mapgl.js:3839
 #, python-brace-format
@@ -1298,7 +1295,7 @@ msgstr "Capture interrompue"
 #: static/js/mapgl.js:4776 static/js/mapgl.js:5172 static/js/mapgl.js:5261
 #: static/js/mapgl.js:5265
 msgid "Enregistrement"
-msgstr "Enregistrement…"
+msgstr "Enregistrement"
 
 #: static/js/mapgl.js:3900
 msgid "task_id manquant"
@@ -1314,7 +1311,7 @@ msgstr "Tâche introuvable sur le serveur (purgée ou serveur redémarré)"
 
 #: static/js/mapgl.js:3928
 msgid "Tâche échouée"
-msgstr "Import échoué"
+msgstr "Tâche échouée"
 
 #: static/js/mapgl.js:3935
 #, python-brace-format
@@ -1339,11 +1336,11 @@ msgstr "Création de la vidéo à partir des images..."
 
 #: static/js/mapgl.js:4188
 msgid "Impossible de lancer l'assemblage vidéo"
-msgstr "Impossible de lancer l'import GPX"
+msgstr "Impossible de lancer l'assemblage vidéo"
 
 #: static/js/mapgl.js:4195
 msgid "Création de la vidéo..."
-msgstr "Préparation de l'envoi..."
+msgstr "Création de la vidéo..."
 
 #: static/js/mapgl.js:4202
 msgid "Vidéo créée. Nettoyage des images..."
@@ -1351,7 +1348,7 @@ msgstr "Vidéo créée. Nettoyage des images..."
 
 #: static/js/mapgl.js:4203
 msgid "Nettoyage en cours"
-msgstr "Nettoyage en cours..."
+msgstr "Nettoyage en cours"
 
 #: static/js/mapgl.js:4203
 msgid "Vidéo créée avec succès. Nettoyage des images..."
@@ -1359,7 +1356,7 @@ msgstr "Vidéo créée avec succès. Nettoyage des images..."
 
 #: static/js/mapgl.js:4220
 msgid "Nettoyage terminé"
-msgstr "Nettoyage"
+msgstr "Nettoyage terminé"
 
 #: static/js/mapgl.js:4234
 #, python-brace-format
@@ -1368,7 +1365,7 @@ msgstr "Erreur lors du traitement automatique: ${message}"
 
 #: static/js/mapgl.js:4236
 msgid "Erreur chaîne"
-msgstr "Erreur d'affichage"
+msgstr "Erreur chaîne"
 
 #: static/js/mapgl.js:4355
 msgid "Données en cours de chargement. Réessayez."
@@ -1416,11 +1413,11 @@ msgstr "Copie vers le dossier vidéo échouée"
 
 #: static/js/mapgl.js:5104
 msgid "Finalisation"
-msgstr "Animation"
+msgstr "Finalisation"
 
 #: static/js/mapgl.js:5104
 msgid "Écriture de la durée de la vidéo..."
-msgstr "En attente de la lecture de la durée de la musique."
+msgstr "Écriture de la durée de la vidéo..."
 
 #: static/js/mapgl.js:5122
 msgid "Ajout audio"
@@ -1432,7 +1429,7 @@ msgstr "Fusion de la piste audio avec la vidéo en cours..."
 
 #: static/js/mapgl.js:5157 static/js/video_postprocess.js:29
 msgid "Normalisation"
-msgstr "Information"
+msgstr "Normalisation"
 
 #: static/js/mapgl.js:5157
 #, python-brace-format
@@ -1445,7 +1442,7 @@ msgstr "La vidéo n'a pas pu être assemblée."
 
 #: static/js/mapgl.js:5181
 msgid "Traitement serveur"
-msgstr "Traitement du fichier en cours..."
+msgstr "Traitement serveur"
 
 #: static/js/mapgl.js:5181
 msgid "Envoi de la vidéo au serveur..."
@@ -1453,7 +1450,7 @@ msgstr "Envoi de la vidéo au serveur..."
 
 #: static/js/mapgl.js:5210 static/js/mapgl.js:5216
 msgid "Traitement serveur..."
-msgstr "Traitement du fichier en cours..."
+msgstr "Traitement serveur..."
 
 #: static/js/mapgl.js:5214
 msgid "Traitement serveur non démarré"
@@ -1477,7 +1474,7 @@ msgstr "Timeout rendercomplete (5s) : rendu carte bloqué"
 
 #: static/js/mapgl.js:5363
 msgid "Aucun canvas trouvé dans la carte"
-msgstr "Aucun waypoint trouvé dans le fichier GPX"
+msgstr "Aucun canvas trouvé dans la carte"
 
 #: static/js/mapgl.js:5422
 msgid "Échec conversion canvas en blob"
@@ -1554,7 +1551,7 @@ msgstr "Impossible de vérifier les mises à jour. Vérifiez votre connexion."
 
 #: static/js/options.js:64 static/js/options.js:83
 msgid "Erreur de vérification"
-msgstr "pour valider vos modifications."
+msgstr "Erreur de vérification"
 
 #: static/js/options.js:100
 msgid "Votre application est à jour"
@@ -1592,7 +1589,7 @@ msgstr "Nouveautés et améliorations"
 
 #: static/js/options.js:210
 msgid "Télécharger la mise à jour"
-msgstr "Vérifier les mises à jour"
+msgstr "Télécharger la mise à jour"
 
 #: static/js/options.js:211
 msgid "Ignorer cette version"
@@ -1969,15 +1966,15 @@ msgstr "Échec conversion en Blob"
 
 #: static/js/record.js:33
 msgid "Échec chargement image"
-msgstr "Chargement"
+msgstr "Échec chargement image"
 
 #: static/js/record.js:203
 msgid "Type de données image non supporté"
-msgstr "Format non supporté"
+msgstr "Type de données image non supporté"
 
 #: static/js/record.js:230
 msgid "Enregistrement réinitialisé"
-msgstr "Enregistrement vidéo"
+msgstr "Enregistrement réinitialisé"
 
 #: static/js/recording_perf.js:144
 #, python-brace-format, python-format
@@ -1993,7 +1990,7 @@ msgstr ""
 #: static/js/recording_perf.js:164 static/js/recording_perf.js:217
 #: static/js/recording_perf.js:243
 msgid "Performance enregistrement"
-msgstr "Mode d'enregistrement"
+msgstr "Performance enregistrement"
 
 #: static/js/recording_perf.js:180
 #, python-brace-format
@@ -2006,11 +2003,11 @@ msgstr ""
 
 #: static/js/recording_perf.js:182
 msgid "Paramètre mis à jour"
-msgstr "Paramètres"
+msgstr "Paramètre mis à jour"
 
 #: static/js/recording_perf.js:187
 msgid "Erreur lors de la mise à jour du paramètre."
-msgstr "Erreur lors de l'affichage des points sur la carte"
+msgstr "Erreur lors de la mise à jour du paramètre."
 
 #: static/js/recording_perf.js:194
 #, python-brace-format
@@ -2023,7 +2020,7 @@ msgstr ""
 
 #: static/js/recording_perf.js:196
 msgid "Conseil"
-msgstr "Annuler"
+msgstr "Conseil"
 
 #: static/js/recording_perf.js:201 templates/guide.html:218
 #: templates/menu_informations.html:288
@@ -2522,11 +2519,11 @@ msgstr "Taille"
 
 #: static/js/ui.js:8524
 msgid "Type"
-msgstr "Style"
+msgstr "Type"
 
 #: static/js/ui.js:8525
 msgid "Durée"
-msgstr "Par durée"
+msgstr "Durée"
 
 #: static/js/ui.js:8526
 msgid "Modifié"
@@ -2534,7 +2531,7 @@ msgstr "Modifié"
 
 #: static/js/ui.js:8581
 msgid "Erreur lors du chargement du fichier audio"
-msgstr "Erreur lors du chargement du fichier"
+msgstr "Erreur lors du chargement du fichier audio"
 
 #: static/js/video_folder.js:37
 #, python-brace-format
@@ -2573,7 +2570,7 @@ msgstr "Timeout normalisation vidéo (${timeout}s) : lecture bloquée ?"
 
 #: static/js/video_postprocess.js:102 static/js/video_postprocess.js:251
 msgid "inconnue"
-msgstr "Continuer"
+msgstr "inconnue"
 
 #: static/js/video_postprocess.js:103
 #, python-brace-format
@@ -2583,11 +2580,11 @@ msgstr "Erreur encodeur lors de la normalisation : ${detail}"
 #: static/js/video_postprocess.js:110
 #, python-brace-format
 msgid "Normalisation ${p}%"
-msgstr "animation ${d}"
+msgstr "Normalisation ${p}%"
 
 #: static/js/video_postprocess.js:110
 msgid "Normalisation en cours"
-msgstr "Import en cours"
+msgstr "Normalisation en cours"
 
 #: static/js/video_postprocess.js:127
 msgid "Erreur lecture vidéo pour normalisation"
@@ -2618,7 +2615,7 @@ msgstr "Impossible de démarrer la piste audio : ${detail}"
 
 #: static/js/video_postprocess.js:282
 msgid "Erreur lecture vidéo pour mux audio"
-msgstr "Erreur lors de la lecture du fichier audio"
+msgstr "Erreur lecture vidéo pour mux audio"
 
 #: static/js/video_ready.js:28
 #, python-brace-format
@@ -6010,7 +6007,7 @@ msgstr "Enregistrer une copie sous…"
 #~ msgstr ""
 
 #~ msgid "Dupliquer le CSS"
-#~ msgstr "Dupliquer"
+#~ msgstr "Dupliquer le CSS"
 
 #~ msgid "Réglez la langue, la qualité et les valeurs par défaut"
 #~ msgstr "Réglez la langue, la qualité et les valeurs par défaut"
@@ -6227,19 +6224,22 @@ msgstr "Enregistrer une copie sous…"
 #~ "Le nom '%(name)s' ne contient aucun "
 #~ "caractère utilisable (au moins une "
 #~ "lettre ou un chiffre est nécessaire)"
-#~ msgstr "Le nom doit contenir au moins une lettre ou un chiffre"
+#~ msgstr ""
+#~ "Le nom '%(name)s' ne contient aucun "
+#~ "caractère utilisable (au moins une "
+#~ "lettre ou un chiffre est nécessaire)"
 
 #~ msgid "Aucun profil trouvé avec l'UUID: %(uid)s"
 #~ msgstr "Aucun profil trouvé avec l'UUID: %(uid)s"
 
 #~ msgid "Un profil nommé '%(name)s' existe déjà"
-#~ msgstr "Un profil nommé « ${name} » existe déjà"
+#~ msgstr "Un profil nommé '%(name)s' existe déjà"
 
 #~ msgid "Profil source '%(name)s' introuvable"
 #~ msgstr "Profil source '%(name)s' introuvable"
 
 #~ msgid "Payload invalide"
-#~ msgstr "Valeur invalide."
+#~ msgstr "Payload invalide"
 
 #~ msgid "Fichier de profil invalide (détrompeur manquant)"
 #~ msgstr "Fichier de profil invalide (détrompeur manquant)"
@@ -6260,7 +6260,7 @@ msgstr "Enregistrer une copie sous…"
 #~ msgstr "Base de données vidée avec succès"
 
 #~ msgid "Upload échoué"
-#~ msgstr "Import échoué"
+#~ msgstr "Upload échoué"
 
 #~ msgid "Vider la base de données"
 #~ msgstr "Vider la base de données"
@@ -6476,7 +6476,7 @@ msgstr "Enregistrer une copie sous…"
 #~ msgstr "Affichage des points"
 
 #~ msgid "Impossible de lancer la génération du GeoJSON"
-#~ msgstr "Impossible de lancer l'import GPX"
+#~ msgstr "Impossible de lancer la génération du GeoJSON"
 
 #~ msgid "Erreur lors de l'affichage des points sur la carte"
 #~ msgstr "Erreur lors de l'affichage des points sur la carte"
@@ -6488,7 +6488,7 @@ msgstr "Enregistrer une copie sous…"
 #~ msgstr "Le serveur local ne répond pas (délai dépassé)"
 
 #~ msgid "Erreur lors du chargement des couleurs GC (${status}): ${statusText}"
-#~ msgstr "Erreur lors du chargement des données"
+#~ msgstr "Erreur lors du chargement des couleurs GC (${status}): ${statusText}"
 
 #~ msgid "Impossible de charger html2canvas"
 #~ msgstr "Impossible de charger html2canvas"
@@ -6512,7 +6512,7 @@ msgstr "Enregistrer une copie sous…"
 #~ msgstr "Capture rapide non supportée, bascule en mode image par image."
 
 #~ msgid "Compatibilité"
-#~ msgstr "Compatibilité maximale (4:2:0)"
+#~ msgstr "Compatibilité"
 
 #~ msgid "Données en cours de chargement. Veuillez réessayer."
 #~ msgstr "Données en cours de chargement. Veuillez réessayer."
@@ -6521,22 +6521,22 @@ msgstr "Enregistrer une copie sous…"
 #~ msgstr "Attention"
 
 #~ msgid "Préparation de l'enregistrement..."
-#~ msgstr "Préparation de l'envoi..."
+#~ msgstr "Préparation de l'enregistrement..."
 
 #~ msgid "Nettoyage initial"
-#~ msgstr "Nettoyage"
+#~ msgstr "Nettoyage initial"
 
 #~ msgid "Un assemblage vidéo est en cours. Réessayez à la fin du traitement."
 #~ msgstr "Un assemblage vidéo est en cours. Réessayez à la fin du traitement."
 
 #~ msgid "Enregistrement annulé"
-#~ msgstr "Enregistrement vidéo"
+#~ msgstr "Enregistrement annulé"
 
 #~ msgid "Répertoire d’images nettoyé."
 #~ msgstr "Répertoire d’images nettoyé."
 
 #~ msgid "Préparation"
-#~ msgstr "Préparation de l'envoi..."
+#~ msgstr "Préparation"
 
 #~ msgid "Nettoyage initial impossible. Poursuite de l'enregistrement."
 #~ msgstr "Nettoyage initial impossible. Poursuite de l'enregistrement."
@@ -6545,7 +6545,7 @@ msgstr "Enregistrer une copie sous…"
 #~ msgstr "Erreur nettoyage initial. Poursuite."
 
 #~ msgid "0% | préparation..."
-#~ msgstr "Préparation de l'envoi..."
+#~ msgstr "0% | préparation..."
 
 #~ msgid " ♪ La musique sera intégrée automatiquement après la capture."
 #~ msgstr " ♪ La musique sera intégrée automatiquement après la capture."
@@ -6554,7 +6554,7 @@ msgstr "Enregistrer une copie sous…"
 #~ msgstr "Capture en cours – Ne pas bouger la fenêtre"
 
 #~ msgid "Préparation de la capture..."
-#~ msgstr "Préparation de l'envoi..."
+#~ msgstr "Préparation de la capture..."
 
 #~ msgid "Capture en pause : revenez sur cet onglet pour la poursuivre."
 #~ msgstr "Capture en pause : revenez sur cet onglet pour la poursuivre."
@@ -6569,7 +6569,7 @@ msgstr "Enregistrer une copie sous…"
 #~ msgstr "Nettoyage en cours..."
 
 #~ msgid "erreur inconnue"
-#~ msgstr "Erreur API"
+#~ msgstr "erreur inconnue"
 
 #~ msgid "La capture a été interrompue suite à une erreur : ${message}"
 #~ msgstr "La capture a été interrompue suite à une erreur : ${message}"
@@ -6587,7 +6587,7 @@ msgstr "Enregistrer une copie sous…"
 #~ msgstr "Tâche introuvable sur le serveur (purgée ou serveur redémarré)"
 
 #~ msgid "Tâche échouée"
-#~ msgstr "Import échoué"
+#~ msgstr "Tâche échouée"
 
 #~ msgid ""
 #~ "Suivi de la tâche interrompu après "
@@ -6606,22 +6606,22 @@ msgstr "Enregistrer une copie sous…"
 #~ msgstr "Création de la vidéo à partir des images..."
 
 #~ msgid "Impossible de lancer l'assemblage vidéo"
-#~ msgstr "Impossible de lancer l'import GPX"
+#~ msgstr "Impossible de lancer l'assemblage vidéo"
 
 #~ msgid "Création de la vidéo..."
-#~ msgstr "Préparation de l'envoi..."
+#~ msgstr "Création de la vidéo..."
 
 #~ msgid "Vidéo créée. Nettoyage des images..."
 #~ msgstr "Vidéo créée. Nettoyage des images..."
 
 #~ msgid "Nettoyage en cours"
-#~ msgstr "Nettoyage en cours..."
+#~ msgstr "Nettoyage en cours"
 
 #~ msgid "Vidéo créée avec succès. Nettoyage des images..."
 #~ msgstr "Vidéo créée avec succès. Nettoyage des images..."
 
 #~ msgid "Nettoyage terminé"
-#~ msgstr "Nettoyage"
+#~ msgstr "Nettoyage terminé"
 
 #~ msgid "Traitement automatique terminé avec succès !"
 #~ msgstr "Traitement automatique terminé avec succès !"
@@ -6630,7 +6630,7 @@ msgstr "Enregistrer une copie sous…"
 #~ msgstr "Erreur lors du traitement automatique: ${message}"
 
 #~ msgid "Erreur chaîne"
-#~ msgstr "Erreur d'affichage"
+#~ msgstr "Erreur chaîne"
 
 #~ msgid "Données en cours de chargement. Réessayez."
 #~ msgstr "Données en cours de chargement. Réessayez."
@@ -6645,7 +6645,7 @@ msgstr "Enregistrer une copie sous…"
 #~ msgstr "Erreur de la capture rapide, bascule en mode image par image."
 
 #~ msgid "Enregistrement"
-#~ msgstr "Enregistrement…"
+#~ msgstr "Enregistrement"
 
 #~ msgid "Résolution réduite aux capacités du navigateur."
 #~ msgstr "Résolution réduite aux capacités du navigateur."
@@ -6675,10 +6675,10 @@ msgstr "Enregistrer une copie sous…"
 #~ msgstr "Copie vers le dossier vidéo échouée"
 
 #~ msgid "Finalisation"
-#~ msgstr "Animation"
+#~ msgstr "Finalisation"
 
 #~ msgid "Écriture de la durée de la vidéo..."
-#~ msgstr "En attente de la lecture de la durée de la musique."
+#~ msgstr "Écriture de la durée de la vidéo..."
 
 #~ msgid "Ajout audio"
 #~ msgstr "Ajout audio"
@@ -6687,7 +6687,7 @@ msgstr "Enregistrer une copie sous…"
 #~ msgstr "Fusion de la piste audio avec la vidéo en cours..."
 
 #~ msgid "Normalisation"
-#~ msgstr "Information"
+#~ msgstr "Normalisation"
 
 #~ msgid "Accélération x${applicable} pour lecture à vitesse normale..."
 #~ msgstr "Accélération x${applicable} pour lecture à vitesse normale..."
@@ -6696,13 +6696,13 @@ msgstr "Enregistrer une copie sous…"
 #~ msgstr "La vidéo n'a pas pu être assemblée."
 
 #~ msgid "Traitement serveur"
-#~ msgstr "Traitement du fichier en cours..."
+#~ msgstr "Traitement serveur"
 
 #~ msgid "Envoi de la vidéo au serveur..."
 #~ msgstr "Envoi de la vidéo au serveur..."
 
 #~ msgid "Traitement serveur..."
-#~ msgstr "Traitement du fichier en cours..."
+#~ msgstr "Traitement serveur..."
 
 #~ msgid "Traitement serveur non démarré"
 #~ msgstr "Traitement serveur non démarré"
@@ -6720,7 +6720,7 @@ msgstr "Enregistrer une copie sous…"
 #~ msgstr "Timeout rendercomplete (5s) : rendu carte bloqué"
 
 #~ msgid "Aucun canvas trouvé dans la carte"
-#~ msgstr "Aucun waypoint trouvé dans le fichier GPX"
+#~ msgstr "Aucun canvas trouvé dans la carte"
 
 #~ msgid "Échec conversion canvas en blob"
 #~ msgstr "Échec conversion canvas en blob"
@@ -6744,7 +6744,7 @@ msgstr "Enregistrer une copie sous…"
 #~ msgstr "Impossible de vérifier les mises à jour. Vérifiez votre connexion."
 
 #~ msgid "Erreur de vérification"
-#~ msgstr "pour valider vos modifications."
+#~ msgstr "Erreur de vérification"
 
 #~ msgid "Votre application est à jour"
 #~ msgstr "Votre application est à jour"
@@ -6771,7 +6771,7 @@ msgstr "Enregistrer une copie sous…"
 #~ msgstr "Nouveautés et améliorations"
 
 #~ msgid "Télécharger la mise à jour"
-#~ msgstr "Vérifier les mises à jour"
+#~ msgstr "Télécharger la mise à jour"
 
 #~ msgid "Ignorer cette version"
 #~ msgstr "Ignorer cette version"
@@ -6955,13 +6955,13 @@ msgstr "Enregistrer une copie sous…"
 #~ msgstr "Échec conversion en Blob"
 
 #~ msgid "Échec chargement image"
-#~ msgstr "Chargement"
+#~ msgstr "Échec chargement image"
 
 #~ msgid "Type de données image non supporté"
-#~ msgstr "Format non supporté"
+#~ msgstr "Type de données image non supporté"
 
 #~ msgid "Enregistrement réinitialisé"
-#~ msgstr "Enregistrement vidéo"
+#~ msgstr "Enregistrement réinitialisé"
 
 #~ msgid ""
 #~ "Performance d'enregistrement instable (${pct}% "
@@ -6975,7 +6975,7 @@ msgstr "Enregistrer une copie sous…"
 #~ "automatiquement ?"
 
 #~ msgid "Performance enregistrement"
-#~ msgstr "Mode d'enregistrement"
+#~ msgstr "Performance enregistrement"
 
 #~ msgid ""
 #~ "Ralentissement augmenté à x${slowdown}. "
@@ -6987,10 +6987,10 @@ msgstr "Enregistrer une copie sous…"
 #~ " changement."
 
 #~ msgid "Paramètre mis à jour"
-#~ msgstr "Paramètres"
+#~ msgstr "Paramètre mis à jour"
 
 #~ msgid "Erreur lors de la mise à jour du paramètre."
-#~ msgstr "Erreur lors de l'affichage des points sur la carte"
+#~ msgstr "Erreur lors de la mise à jour du paramètre."
 
 #~ msgid ""
 #~ "Vous pouvez manuellement augmenter le "
@@ -7002,7 +7002,7 @@ msgstr "Enregistrer une copie sous…"
 #~ "paramètres d'enregistrement."
 
 #~ msgid "Conseil"
-#~ msgstr "Annuler"
+#~ msgstr "Conseil"
 
 #~ msgid "Ignorer"
 #~ msgstr "Ignorer"
@@ -7373,16 +7373,16 @@ msgstr "Enregistrer une copie sous…"
 #~ msgstr "Non disponible"
 
 #~ msgid "Type"
-#~ msgstr "Style"
+#~ msgstr "Type"
 
 #~ msgid "Durée"
-#~ msgstr "Par durée"
+#~ msgstr "Durée"
 
 #~ msgid "Modifié"
 #~ msgstr "Modifié"
 
 #~ msgid "Erreur lors du chargement du fichier audio"
-#~ msgstr "Erreur lors du chargement du fichier"
+#~ msgstr "Erreur lors du chargement du fichier audio"
 
 #~ msgid ""
 #~ "Le navigateur limite l'accélération à "
@@ -7404,16 +7404,16 @@ msgstr "Enregistrer une copie sous…"
 #~ msgstr "Timeout normalisation vidéo (${timeout}s) : lecture bloquée ?"
 
 #~ msgid "inconnue"
-#~ msgstr "Continuer"
+#~ msgstr "inconnue"
 
 #~ msgid "Erreur encodeur lors de la normalisation : ${detail}"
 #~ msgstr "Erreur encodeur lors de la normalisation : ${detail}"
 
 #~ msgid "Normalisation ${p}%"
-#~ msgstr "animation ${d}"
+#~ msgstr "Normalisation ${p}%"
 
 #~ msgid "Normalisation en cours"
-#~ msgstr "Import en cours"
+#~ msgstr "Normalisation en cours"
 
 #~ msgid "Erreur lecture vidéo pour normalisation"
 #~ msgstr "Erreur lecture vidéo pour normalisation"
@@ -7434,7 +7434,7 @@ msgstr "Enregistrer une copie sous…"
 #~ msgstr "Impossible de démarrer la piste audio : ${detail}"
 
 #~ msgid "Erreur lecture vidéo pour mux audio"
-#~ msgstr "Erreur lors de la lecture du fichier audio"
+#~ msgstr "Erreur lecture vidéo pour mux audio"
 
 #~ msgid "Ouverture du flux vidéo impossible"
 #~ msgstr "Ouverture du flux vidéo impossible"

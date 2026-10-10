@@ -1215,10 +1215,7 @@ msgstr "Initial cleanup"
 
 #: static/js/mapgl.js:3286
 msgid "Un assemblage vidéo est en cours. Réessayez à la fin du traitement."
-msgstr ""
-"A video assembly is running. Try again when processing is done.\"\"A "
-"video assembly is running: the captured/ folder cannot be emptied right "
-"now."
+msgstr "A video assembly is running. Try again when processing is done."
 
 #: static/js/mapgl.js:3287
 msgid "Enregistrement annulé"
