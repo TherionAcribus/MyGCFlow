@@ -16,13 +16,21 @@ import { isEvolutionPage } from './app_mode.mjs';
 // Largeur commune des chiffres par police (font-variant-numeric: tabular-nums).
 // Mesurer les dix chiffres à chaque frame serait inutile : la police ne change
 // qu'avec le cache d'overlays.
-const digitWidthByFont = new Map();
+const digitLayoutByFont = new Map();
 
-function tabularDigitWidth(ctx, font) {
-    if (digitWidthByFont.has(font)) return digitWidthByFont.get(font);
+function tabularDigitLayout(ctx, font) {
+    if (digitLayoutByFont.has(font)) return digitLayoutByFont.get(font);
+    const widths = Array.from('0123456789', glyph => ctx.measureText(glyph).width);
     const width = digitAdvance((glyph) => ctx.measureText(glyph).width);
-    digitWidthByFont.set(font, width);
-    return width;
+    const layout = {
+        // Beaucoup de polices de l'application ont déjà des chiffres tabulaires
+        // par défaut. Dans ce cas, garder fillText sur la ligne complète préserve
+        // le crénage et la mise en forme du navigateur.
+        requiresManualLayout: Math.max(...widths) - Math.min(...widths) > 0.01,
+        width,
+    };
+    digitLayoutByFont.set(font, layout);
+    return layout;
 }
 
 // Cache des overlays : calculé une seule fois au démarrage de chaque session
@@ -34,7 +42,7 @@ let overlayLayerCanvas = null;
 export function invalidateOverlayCache() {
     overlayCache = null;
     overlayCacheRevision += 1;
-    digitWidthByFont.clear();
+    digitLayoutByFont.clear();
 }
 
 // Exposé pour la signature de contenu du pipeline MediaRecorder : une
@@ -207,7 +215,15 @@ export function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor 
             paintCtx.imageSmoothingQuality = 'high';
             paintCtx.font = font;
             paintCtx.textBaseline = 'alphabetic';
-            const digitWidth = tabularNums ? tabularDigitWidth(paintCtx, font) : 0;
+            const tabularLayout = tabularNums ? tabularDigitLayout(paintCtx, font) : null;
+            const digitWidth = tabularLayout?.requiresManualLayout ? tabularLayout.width : 0;
+            // Chromium sait appliquer letter-spacing directement au texte Canvas.
+            // On peut alors dessiner la ligne d'un bloc et conserver crénage,
+            // ligatures et largeur d'avance CSS. Le repli manuel reste nécessaire
+            // pour un navigateur ancien ou des chiffres réellement proportionnels.
+            const nativeLetterSpacing = 'letterSpacing' in paintCtx && !digitWidth;
+            if (nativeLetterSpacing) paintCtx.letterSpacing = `${letterSpacing}px`;
+            const layoutLetterSpacing = nativeLetterSpacing ? 0 : letterSpacing;
 
             const transformedText = transformOverlayText(String(text), textTransform);
             const leftMargin = horizontalAnchor === 'right' ? 0 : leftGap;
@@ -217,7 +233,7 @@ export function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor 
             const availableTextWidth = Math.max(1, Math.min(w, availableBoxWidth) - horizontalBorders - padL - padR);
             const lines = transformedText
                 .split(/\r?\n/)
-                .flatMap(line => wrapOverlayText(paintCtx, line, availableTextWidth, letterSpacing, digitWidth));
+                .flatMap(line => wrapOverlayText(paintCtx, line, availableTextWidth, layoutLetterSpacing, digitWidth));
 
             // CSS aligne le texte dans une boîte de ligne basée sur les métriques de
             // la police, et non sur la seule encre visible de "Mg". Utiliser les
@@ -275,7 +291,7 @@ export function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor 
                 let xText = contentLeft;
                 if (paintCtx.textAlign === 'center') xText = (contentLeft + contentRight) / 2;
                 else if (paintCtx.textAlign === 'right') xText = contentRight;
-                drawOverlayText(paintCtx, line, xText, curY, letterSpacing, digitWidth);
+                drawOverlayText(paintCtx, line, xText, curY, layoutLetterSpacing, digitWidth);
                 curY += lh;
             });
             paintCtx.restore();

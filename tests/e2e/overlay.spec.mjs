@@ -298,62 +298,69 @@ test('le renderer Canvas restitue gradient, opacité et retour à la ligne', asy
 
 
 test('le texte Canvas suit la boîte de contenu CSS de la preview', async ({ page }) => {
-  const metrics = await page.evaluate(async () => {
+  const samples = await page.evaluate(async () => {
     const app = await import('/static/js/index.js');
     app.options.infos.title.display = true;
     app.options.infos.numberOfCaches.display = false;
     app.options.infos.currentDate.display = false;
-    app.updateTitleFrame('Mg');
-    app.changeTitleCssValues([
-      'position:absolute', 'top:10px', 'left:10px', 'width:180px', 'height:80px',
-      'padding:12px 20px',
-      'font:600 22px/1.25 Arial', 'color:rgb(0,0,0)',
-      'background:rgb(255,0,0)', 'border:6px solid rgb(0,0,255)',
-      'box-shadow:none', 'border-radius:0',
-    ].join(';'));
-    document.getElementById('titleFrame').style.display = 'block';
-    const frame = document.getElementById('titleFrame');
     const containerRect = document.getElementById('mapWithFrames').getBoundingClientRect();
-    const range = document.createRange();
-    range.selectNodeContents(frame);
-    const textRect = range.getBoundingClientRect();
-    const style = getComputedStyle(frame);
-    const probe = document.createElement('canvas').getContext('2d');
-    probe.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
-    const tm = probe.measureText('Mg');
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.round(containerRect.width);
-    canvas.height = Math.round(containerRect.height);
-    const ctx = canvas.getContext('2d');
-    app.addOverlaysToCanvas(ctx, canvas.width, canvas.height, 1);
-    const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-    let minX = canvas.width;
-    let minY = canvas.height;
-    let maxX = -1;
-    let maxY = -1;
-    for (let y = 0; y < canvas.height; y += 1) {
-      for (let x = 0; x < canvas.width; x += 1) {
-        const offset = (y * canvas.width + x) * 4;
-        const r = pixels[offset];
-        const g = pixels[offset + 1];
-        const b = pixels[offset + 2];
-        const a = pixels[offset + 3];
-        if (a < 128 || r > 80 || g > 80 || b > 80) continue;
-        minX = Math.min(minX, x);
-        minY = Math.min(minY, y);
-        maxX = Math.max(maxX, x);
-        maxY = Math.max(maxY, y);
+    const render = (textAlign) => {
+      const text = 'AVATAR 2026';
+      app.updateTitleFrame(text);
+      app.changeTitleCssValues([
+        'position:absolute', 'top:10px', 'left:10px', 'width:240px', 'height:80px',
+        'padding:12px 20px', `text-align:${textAlign}`,
+        'font:600 22px/1.25 Arial', 'letter-spacing:2px', 'color:rgb(0,0,0)',
+        'background:rgb(255,0,0)', 'border:6px solid rgb(0,0,255)',
+        'box-shadow:none', 'border-radius:0',
+      ].join(';'));
+      const frame = document.getElementById('titleFrame');
+      frame.style.display = 'block';
+      const range = document.createRange();
+      range.selectNodeContents(frame);
+      const textRect = range.getBoundingClientRect();
+      const style = getComputedStyle(frame);
+      const probe = document.createElement('canvas').getContext('2d');
+      probe.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+      const tm = probe.measureText(text);
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(containerRect.width);
+      canvas.height = Math.round(containerRect.height);
+      const ctx = canvas.getContext('2d');
+      app.addOverlaysToCanvas(ctx, canvas.width, canvas.height, 1);
+      const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      let minX = canvas.width;
+      let minY = canvas.height;
+      let maxX = -1;
+      let maxY = -1;
+      for (let y = 0; y < canvas.height; y += 1) {
+        for (let x = 0; x < canvas.width; x += 1) {
+          const offset = (y * canvas.width + x) * 4;
+          const r = pixels[offset];
+          const g = pixels[offset + 1];
+          const b = pixels[offset + 2];
+          const a = pixels[offset + 3];
+          if (a < 128 || r > 80 || g > 80 || b > 80) continue;
+          minX = Math.min(minX, x);
+          minY = Math.min(minY, y);
+          maxX = Math.max(maxX, x);
+          maxY = Math.max(maxY, y);
+        }
       }
-    }
-    return {
-      expectedLeft: textRect.left - containerRect.left - tm.actualBoundingBoxLeft,
-      expectedTop: textRect.top - containerRect.top
-        + tm.fontBoundingBoxAscent - tm.actualBoundingBoxAscent,
-      actual: { minX, minY, maxX, maxY },
+      return {
+        textAlign,
+        expectedLeft: textRect.left - containerRect.left - tm.actualBoundingBoxLeft,
+        expectedTop: textRect.top - containerRect.top
+          + tm.fontBoundingBoxAscent - tm.actualBoundingBoxAscent,
+        actual: { minX, minY, maxX, maxY },
+      };
     };
+    return ['left', 'center', 'right'].map(render);
   });
-  expect(metrics.actual.maxX).toBeGreaterThan(metrics.actual.minX);
-  expect(metrics.actual.maxY).toBeGreaterThan(metrics.actual.minY);
-  expect(Math.abs(metrics.actual.minX - metrics.expectedLeft)).toBeLessThanOrEqual(1.5);
-  expect(Math.abs(metrics.actual.minY - metrics.expectedTop)).toBeLessThanOrEqual(1.5);
+  for (const metrics of samples) {
+    expect(metrics.actual.maxX, metrics.textAlign).toBeGreaterThan(metrics.actual.minX);
+    expect(metrics.actual.maxY, metrics.textAlign).toBeGreaterThan(metrics.actual.minY);
+    expect(Math.abs(metrics.actual.minX - metrics.expectedLeft), metrics.textAlign).toBeLessThanOrEqual(1.5);
+    expect(Math.abs(metrics.actual.minY - metrics.expectedTop), metrics.textAlign).toBeLessThanOrEqual(1.5);
+  }
 });
