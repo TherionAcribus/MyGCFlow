@@ -49,7 +49,9 @@
 
                     <div class="tab-content pt-3">
                     <div class="tab-pane fade show active" id="animationConfigPane" role="tabpanel" aria-labelledby="animationConfigTab" tabindex="0">
-                    <label class="form-label">{{ _("Plage de dates de l'animation") }}</label>
+                    <div class="anim-section-divider mt-0 mb-2">
+                        <span class="anim-section-label">{{ _("Plage de dates de l'animation") }}</span>
+                    </div>
                     <p class="form-hint text-muted mb-2">{{ _("Période parcourue par la vidéo — indépendante des filtres de l'onglet Données.") }}</p>
                     <div class="row g-2">
                         <div class="mb-3 col-6">
@@ -109,9 +111,11 @@
                     <!-- Trois façons exclusives de définir le tempo : une seule
                          valeur est éditable, les deux autres sont des résultats
                          calculés en lecture seule (voir ui.js, refreshTimingPlan). -->
+                    <div class="anim-section-divider mt-3 mb-2">
+                        <span class="anim-section-label" id="labelRhythmMode">{{ _("Rythme de l'animation") }}{{ global_scope_badge() }}</span>
+                    </div>
                     <div class="row g-2 mt-1">
                         <div class="col-12">
-                            <label class="form-label" id="labelRhythmMode">{{ _("Rythme de l'animation") }}{{ global_scope_badge() }}</label>
                             <div class="form-selectgroup" role="radiogroup" aria-labelledby="labelRhythmMode">
                                 <label class="form-selectgroup-item">
                                     <input type="radio" name="rhythmMode" id="rhythmModeRate" value="rate" class="form-selectgroup-input" checked>
@@ -181,12 +185,18 @@
                                  (thème, inputTimeFlash), durée max. du tracé
                                  dans Style > Trajet (globale, inputTimeTrail). -->
                         </div>
-                        {# Suivi de caméra : sans objet en mode Évolution (des milliers de caches à la fois). #}
-                        {% if mode != 'evolution' %}
+                    </div>
+
+                    {# Suivi de caméra : sans objet en mode Évolution (des milliers de caches à la fois). #}
+                    {% if mode != 'evolution' %}
+                    <div class="anim-section-divider mt-3 mb-2">
+                        <span class="anim-section-label">{{ _("Suivi de caméra") }}{{ experimental_badge() }}{{ global_scope_badge() }}</span>
+                    </div>
+                    <div class="row g-2">
                         <div class="col-12">
                             <div class="form-check form-switch mb-2">
                                 <input class="form-check-input" type="checkbox" id="switchCameraFollow" role="switch" aria-describedby="helpCameraFollow">
-                                <label class="form-check-label" for="switchCameraFollow">{{ _("Suivi de caméra") }}{{ experimental_badge() }}{{ global_scope_badge() }}</label>
+                                <label class="form-check-label" for="switchCameraFollow">{{ _("Activer") }}</label>
                             </div>
                             <label for="selectCameraDynamism" class="form-label mb-1">{{ _("Dynamisme de la caméra") }}</label>
                             <select id="selectCameraDynamism" class="form-select form-select-sm mb-2" disabled>
@@ -203,13 +213,15 @@
                             <small id="helpCameraTargetTrail" class="form-hint text-muted mb-2" hidden>{{ _("La vue glisse derrière le stylo qui dessine le trajet et adapte son zoom à la vitesse du parcours. Ce mode nécessite le trajet activé (Style › Trajet) — sinon le suivi reste par jour.") }}</small>
                             <small id="helpCameraFollow" class="form-hint text-muted">{{ _("La vue glisse vers les caches du jour. Les trajets sont comptés dans la durée : en « Par durée » ou « Sur la musique », la vidéo garde la durée demandée.") }} <a href="/guide#animation" target="_blank">{{ _("En savoir plus") }}</a></small>
                         </div>
-                        {% endif %}
                     </div>
+                    {% endif %}
 
                     <!-- Audio utilisateur (lecture/record) -->
+                    <div class="anim-section-divider mt-3 mb-2">
+                        <span class="anim-section-label">{{ _("Musique") }}{{ global_scope_badge() }}</span>
+                    </div>
                     <div class="row g-2">
                         <div class="col-12 col-md-6">
-                            <label class="form-label d-block mb-2">{{ _("Musique (optionnel)") }}{{ global_scope_badge() }}</label>
                             <div class="d-flex gap-3 align-items-center flex-wrap">
                                 <div class="form-check">
                                     <input id="cbRecordAudioEnable" class="form-check-input" type="checkbox">
