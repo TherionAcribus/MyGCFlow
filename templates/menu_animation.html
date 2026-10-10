@@ -224,6 +224,10 @@
                                 <option value="4">{{ _("4 — Intense : recentrage et zoom systématiques") }}</option>
                             </select>
                             <small id="helpCameraDynamismTrail" class="form-hint text-muted" hidden>{{ _("Sans effet avec cette cible : la caméra suit le stylo en continu.") }}</small>
+                            <!-- Avertissements propres au suivi (trajets, pauses de dates) :
+                                 affichés ici, près du réglage qui les provoque — pas dans
+                                 la zone de la section Rythme (voir renderTimingMessages). -->
+                            <div id="cameraTimingWarnings" class="alert alert-warning py-2 px-3 mt-2 mb-0" role="status" aria-live="polite" style="display:none;"></div>
                         </div>
                     </div>
                     {% endif %}

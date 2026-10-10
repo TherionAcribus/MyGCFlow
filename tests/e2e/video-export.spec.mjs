@@ -688,7 +688,7 @@ test('le suivi de caméra glisse vers les caches, se stabilise et rend la main',
   await page.locator('#switchCameraFollow').check();
   await page.locator('#selectCameraDynamism').selectOption('2');
   // Caches dans le champ : aucun trajet prévu, donc rien à signaler.
-  await expect(page.locator('#timingWarnings')).not.toContainText('dates en pause');
+  await expect(page.locator('#cameraTimingWarnings')).not.toContainText('dates en pause');
   // Caches à New York, vue sur Paris : le trajet est simulé dès que la carte
   // est recadrée, et annoncé dans la durée de la vidéo.
   await page.evaluate(async () => {
@@ -704,7 +704,7 @@ test('le suivi de caméra glisse vers les caches, se stabilise et rend la main',
   });
   // Mode piste (défaut) : les trajets se jouent pendant l'affichage des dates —
   // les dates ne sont jamais en pause, l'avertissement ne s'affiche plus.
-  await expect(page.locator('#timingWarnings')).not.toContainText('dates en pause');
+  await expect(page.locator('#cameraTimingWarnings')).not.toContainText('dates en pause');
   await expect(page.locator('#timingSummary')).toContainText('trajets de caméra');
   await expect.poll(() => page.evaluate(async () => {
     const app = await import('/static/js/index.js');
@@ -1179,7 +1179,7 @@ async function setUpCameraRoundTrips(page, duration) {
       travelMs: travel.totalMs,
       budgetMs: app.options.animation.cameraTimeBudgetMs,
       summary: document.getElementById('timingSummary').textContent,
-      warnings: document.getElementById('timingWarnings').textContent,
+      warnings: document.getElementById('cameraTimingWarnings').textContent,
     };
   });
 }
@@ -1302,8 +1302,8 @@ test('le plan annonce les pauses de dates quand le rythme est trop rapide', asyn
     view.setZoom(6);
   });
   await page.locator('#inputDaysPerSecond').fill('20');
-  await expect(page.locator('#timingWarnings')).toContainText('dates en pause');
-  await expect(page.locator('#timingWarnings')).not.toContainText('en retard');
+  await expect(page.locator('#cameraTimingWarnings')).toContainText('dates en pause');
+  await expect(page.locator('#cameraTimingWarnings')).not.toContainText('en retard');
 
   const releve = await page.evaluate(async () => {
     const app = await import('/static/js/index.js');
@@ -1446,7 +1446,7 @@ test('avec le suivi de caméra, la lecture « Par durée » congestionnée finit
       budgetMs: app.options.animation.cameraTimeBudgetMs,
       cameraHoldMs: app.options.animation.cameraHoldMs || 0,
       holdTotalMs: hold?.holdTotalMs || 0,
-      warnings: document.getElementById('timingWarnings').textContent,
+      warnings: document.getElementById('cameraTimingWarnings').textContent,
       summary: document.getElementById('timingSummary').textContent,
     };
   });

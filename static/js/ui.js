@@ -5066,11 +5066,27 @@ function updateRecordFileNameHint() {
         : t('Vide : nom du thème actif.') + ' ' + example;
 }
 
+// Un message par ligne dans une zone d'alerte ; zone masquée si elle est vide.
+// append : ajoute aux lignes déjà affichées au lieu de les remplacer.
+function renderMessageLines(box, lines, { append = false } = {}) {
+    if (!box) return;
+    if (!append) box.replaceChildren();
+    for (const line of lines) {
+        const row = document.createElement('div');
+        if (box.childElementCount) row.className = 'mt-1';
+        row.textContent = line;
+        box.appendChild(row);
+    }
+    box.style.display = box.childElementCount ? '' : 'none';
+}
+
 // Erreurs bloquantes (boutons désactivés) et avertissements (plan appliqué
-// mais limité) : deux zones séparées pour ne pas les confondre.
+// mais limité) : deux zones séparées pour ne pas les confondre. Les
+// avertissements du suivi de caméra vont dans sa propre section.
 function renderTimingMessages(plan, fieldsValid) {
     const errBox = document.getElementById('timingErrors');
     const warnBox = document.getElementById('timingWarnings');
+    const cameraBox = document.getElementById('cameraTimingWarnings');
     const errors = [];
     if (plan) {
         for (const e of plan.errors) {
@@ -5083,10 +5099,7 @@ function renderTimingMessages(plan, fieldsValid) {
             errors.push(t('En attente de la lecture de la durée de la musique.'));
         }
     }
-    if (errBox) {
-        errBox.style.display = errors.length ? '' : 'none';
-        errBox.textContent = errors.join(' ');
-    }
+    renderMessageLines(errBox, errors);
     const warnings = [];
     if (plan?.warnings) {
         for (const w of plan.warnings) {
@@ -5101,6 +5114,7 @@ function renderTimingMessages(plan, fieldsValid) {
             // musicSyncStatus (plus précise) — pas de doublon.
         }
     }
+    const cameraWarnings = [];
     // Ces trois avertissements décrivent le mode réactif (dates en pause à
     // chaque déplacement) : hors sujet en mode piste — les trajets y restent
     // annoncés via cameraTravelMs et leurs pauses planifiées via le message
@@ -5109,14 +5123,14 @@ function renderTimingMessages(plan, fieldsValid) {
     if (plan?.valid && pkg.options.animation?.cameraFollow === true && !plan.cameraOverlap && !isCameraTrailMode()) {
         const compressed = plan.warnings.find((w) => w.type === 'camera-travel-compressed');
         if (!Number.isFinite(plan.cameraTravelMs)) {
-            warnings.push(t('Le suivi de caméra met les dates en pause pendant chaque déplacement. La durée et le nombre d\'images affichés sont des minimums ; le résultat sera plus long et peut dépasser la durée de la musique.'));
+            cameraWarnings.push(t('Le suivi de caméra met les dates en pause pendant chaque déplacement. La durée et le nombre d\'images affichés sont des minimums ; le résultat sera plus long et peut dépasser la durée de la musique.'));
         } else if (compressed) {
-            warnings.push(t('Les trajets de caméra dureraient ${travel}, trop pour la durée demandée : ils sont accélérés pour tenir en ${applied}. Pour des déplacements plus posés, baissez le dynamisme ou allongez la vidéo.', {
+            cameraWarnings.push(t('Les trajets de caméra dureraient ${travel}, trop pour la durée demandée : ils sont accélérés pour tenir en ${applied}. Pour des déplacements plus posés, baissez le dynamisme ou allongez la vidéo.', {
                 travel: formatDurationHuman(compressed.travelMs),
                 applied: formatDurationHuman(compressed.appliedMs),
             }));
         } else if (rhythmMode() === 'rate' && plan.cameraTravelMs > 0) {
-            warnings.push(t('Le suivi de caméra met les dates en pause pendant chaque déplacement : depuis ce cadrage, ${n} trajets ajoutent environ ${d} à la vidéo. Pour tenir une durée précise, choisissez « Par durée » ou « Sur la musique ».', {
+            cameraWarnings.push(t('Le suivi de caméra met les dates en pause pendant chaque déplacement : depuis ce cadrage, ${n} trajets ajoutent environ ${d} à la vidéo. Pour tenir une durée précise, choisissez « Par durée » ou « Sur la musique ».', {
                 n: plan.cameraJourneyCount,
                 d: formatDurationHuman(plan.cameraTravelMs),
             }));
@@ -5128,15 +5142,15 @@ function renderTimingMessages(plan, fieldsValid) {
     // pas alarme : chaque jour est cadré à son affichage.
     if (plan?.valid && pkg.options.animation?.cameraFollow === true && plan.cameraOverlap
         && plan.cameraHoldMs > 0) {
-        warnings.push(t('${n} trajets de caméra mettront les dates en pause (+${d} au total) pour que chaque jour soit cadré à son affichage. Réduisez le dynamisme ou le rythme pour l\'éviter.', {
+        cameraWarnings.push(t('${n} trajets de caméra mettront les dates en pause (+${d} au total) pour que chaque jour soit cadré à son affichage. Réduisez le dynamisme ou le rythme pour l\'éviter.', {
             n: plan.cameraHoldCount || 0,
             d: formatDurationHuman(plan.cameraHoldMs),
         }));
     }
-    if (warnBox) {
-        warnBox.style.display = warnings.length ? '' : 'none';
-        warnBox.textContent = warnings.join(' ');
-    }
+    // Sans section caméra dans la page, rien n'est perdu : zone commune.
+    if (!cameraBox) warnings.push(...cameraWarnings);
+    renderMessageLines(warnBox, warnings);
+    renderMessageLines(cameraBox, cameraWarnings);
 }
 
 // Estimation de charge : pics de flashs simultanés et nombre d'images. Un
@@ -5168,7 +5182,7 @@ function renderLoadEstimate(plan) {
         simultaneousFlashes,
     });
     if (!estimate || !estimate.warnings.length) return;
-    const lines = warnBox.textContent ? [warnBox.textContent] : [];
+    const lines = [];
     if (estimate.warnings.includes('flashes')) {
         lines.push(t('Charge élevée : jusqu\'à ~${n} flashs simultanés. Pistes : raccourcir la durée du flash, ralentir l\'animation, ou utiliser le mode Images.', { n: estimate.maxSimultaneousFlashes }));
     }
@@ -5177,8 +5191,7 @@ function renderLoadEstimate(plan) {
             n: estimate.totalFrames, d: formatDurationHuman(estimate.imageCaptureEstimateMs),
         }));
     }
-    warnBox.style.display = '';
-    warnBox.textContent = lines.join(' ');
+    renderMessageLines(warnBox, lines, { append: true });
 }
 
 function setRhythmMode(mode) {
