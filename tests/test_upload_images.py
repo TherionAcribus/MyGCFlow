@@ -23,6 +23,7 @@ from capture import (
     video_stream_begin,
     video_stream_finish,
 )
+from tests.tmp_paths import canonical_temporary_directory
 
 
 def _file(name, content=b'webp-bytes'):
@@ -34,7 +35,7 @@ class UploadImagesTests(unittest.TestCase):
 
     def setUp(self):
         self.app = Flask(__name__)
-        self.tmpdir = tempfile.TemporaryDirectory()
+        self.tmpdir = canonical_temporary_directory()
         self.previous_cwd = os.getcwd()
         # capture.py écrit dans paths.captured_dir() : on redirige les données
         # vers le dossier temporaire, où les assertions lisent « captured/ ».
@@ -119,7 +120,7 @@ class SessionIsolationTests(unittest.TestCase):
 
     def setUp(self):
         self.app = Flask(__name__)
-        self.tmpdir = tempfile.TemporaryDirectory()
+        self.tmpdir = canonical_temporary_directory()
         self.previous_cwd = os.getcwd()
         env = mock.patch.dict(os.environ, {'MYGCFLOW_DATA_DIR': self.tmpdir.name})
         env.start()
@@ -227,7 +228,7 @@ class VideoStreamTests(unittest.TestCase):
 
     def setUp(self):
         self.app = Flask(__name__)
-        self.tmpdir = tempfile.TemporaryDirectory()
+        self.tmpdir = canonical_temporary_directory()
         self.previous_cwd = os.getcwd()
         env = mock.patch.dict(os.environ, {'MYGCFLOW_DATA_DIR': self.tmpdir.name})
         env.start()

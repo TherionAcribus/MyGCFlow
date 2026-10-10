@@ -7,6 +7,8 @@ from flask import Flask, request
 
 from capture import describe_video, open_video, resolve_video_file, reveal_video
 
+from tests.tmp_paths import canonical_temporary_directory
+
 
 class VideoReadyTests(unittest.TestCase):
     """Écran de fin d'export : description du fichier produit et actions
@@ -14,7 +16,7 @@ class VideoReadyTests(unittest.TestCase):
 
     def setUp(self):
         self.app = Flask(__name__)
-        self.tmpdir = tempfile.TemporaryDirectory()
+        self.tmpdir = canonical_temporary_directory()
         self.previous_cwd = os.getcwd()
         env = mock.patch.dict(os.environ, {'MYGCFLOW_DATA_DIR': self.tmpdir.name})
         env.start()

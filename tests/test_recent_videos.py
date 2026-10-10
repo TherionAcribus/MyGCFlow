@@ -7,13 +7,15 @@ from flask import Flask, request
 
 from capture import delete_video, list_recent_videos
 
+from tests.tmp_paths import canonical_temporary_directory
+
 
 class RecentVideosTests(unittest.TestCase):
     """Liste « Dernières vidéos » de l'onglet Export et suppression d'une vidéo."""
 
     def setUp(self):
         self.app = Flask(__name__)
-        self.tmpdir = tempfile.TemporaryDirectory()
+        self.tmpdir = canonical_temporary_directory()
         self.previous_cwd = os.getcwd()
         env = mock.patch.dict(os.environ, {'MYGCFLOW_DATA_DIR': self.tmpdir.name})
         env.start()

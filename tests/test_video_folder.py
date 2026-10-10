@@ -12,6 +12,8 @@ import settings_manager
 from blueprints.media import media_bp
 from blueprints.profiles import profiles_bp
 
+from tests.tmp_paths import canonical_temporary_directory
+
 
 class VideoFolderTests(unittest.TestCase):
     """Dossier des vidéos choisi par l'utilisateur : préférence globale
@@ -19,7 +21,7 @@ class VideoFolderTests(unittest.TestCase):
     paths.video_dir()."""
 
     def setUp(self):
-        self.tmpdir = tempfile.TemporaryDirectory()
+        self.tmpdir = canonical_temporary_directory()
         self.addCleanup(self.tmpdir.cleanup)
         root = Path(self.tmpdir.name).resolve()
         self.data = root / 'data'

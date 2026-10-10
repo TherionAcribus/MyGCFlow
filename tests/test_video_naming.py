@@ -10,6 +10,8 @@ from flask import Flask, request
 from capture import upload_video, video_base_name, video_output_path
 from settings_manager import RECORDING_FILE_NAME_MAX_LENGTH, coerce_recording_settings
 
+from tests.tmp_paths import canonical_temporary_directory
+
 
 STAMP = r'\d{4}-\d{2}-\d{2}_\d{2}h\d{2}'
 
@@ -20,7 +22,7 @@ class VideoNamingTests(unittest.TestCase):
 
     def setUp(self):
         self.app = Flask(__name__)
-        self.tmpdir = tempfile.TemporaryDirectory()
+        self.tmpdir = canonical_temporary_directory()
         self.previous_cwd = os.getcwd()
         env = mock.patch.dict(os.environ, {'MYGCFLOW_DATA_DIR': self.tmpdir.name})
         env.start()
