@@ -1540,6 +1540,9 @@ test('capture rapide : arrêter annule la vidéo, relancer dans la foulée en pr
   await page.locator('#btnQuickStop').click({ force: true });
   await expectIdle(page);
   await expect.poll(() => requests.abort).toBe(1);
+  // L'arrêt s'annonce comme tel — pas comme un enregistrement qui se poursuit.
+  const stopToast = page.locator('.gcm-toast', { hasText: 'Arrêt de l\'enregistrement' });
+  await expect(stopToast).toContainText('Aucune vidéo n\'a été créée.');
 
   // Laisser à une finalisation fautive le temps de se manifester.
   await page.waitForTimeout(2_500);

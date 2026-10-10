@@ -2366,7 +2366,7 @@ export function stopAnimation(){
     // Le loader vient d'être retiré de l'écran : ui.js doit aussi l'oublier.
     try { pkg.closeModalLoading && pkg.closeModalLoading(); } catch(_) {}
     if (wasRecording) {
-        try { pkg.showToast && pkg.showToast(pkg.t('Enregistrement annulé'), 'info', pkg.t('Enregistrement'), 3000); } catch(_) {}
+        try { pkg.showToast && pkg.showToast(pkg.t('Aucune vidéo n\'a été créée.'), 'info', pkg.t('Arrêt de l\'enregistrement'), 4000); } catch(_) {}
         // Les images déjà envoyées restent dans le dossier temporaire jusqu'au
         // prochain enregistrement : le bouton de nettoyage doit les annoncer.
         try { pkg.refreshCapturedPicturesUi && pkg.refreshCapturedPicturesUi(); } catch(_) {}
