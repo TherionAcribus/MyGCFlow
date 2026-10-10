@@ -1,0 +1,10 @@
+[1010/165026.758:ERROR:ui\gl\init\gl_factory.cc:103] Requested GL implementation (gl=none,angle=none) not found in allowed implementations: [(gl=egl-angle,angle=default)].
+[1010/165026.759:ERROR:components\viz\service\main\viz_main_impl.cc:183] Exiting GPU process due to errors during initialization
+[1010/165027.434:ERROR:gpu\command_buffer\service\gl_utils.cc:431] [.WebGL-0x5e7402b88600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+[1010/165027.477:ERROR:gpu\command_buffer\service\gl_utils.cc:431] [.WebGL-0x5e7402b88600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+[1010/165027.496:ERROR:gpu\command_buffer\service\gl_utils.cc:431] [.WebGL-0x5e7402b88600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+[1010/165418.593:ERROR:ui\gl\init\gl_factory.cc:103] Requested GL implementation (gl=none,angle=none) not found in allowed implementations: [(gl=egl-angle,angle=default)].
+[1010/165418.595:ERROR:components\viz\service\main\viz_main_impl.cc:183] Exiting GPU process due to errors during initialization
+[1010/165419.121:ERROR:gpu\command_buffer\service\gl_utils.cc:431] [.WebGL-0x27dc039bce00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+[1010/165419.146:ERROR:gpu\command_buffer\service\gl_utils.cc:431] [.WebGL-0x27dc039bce00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+[1010/165419.167:ERROR:gpu\command_buffer\service\gl_utils.cc:431] [.WebGL-0x27dc039bce00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels

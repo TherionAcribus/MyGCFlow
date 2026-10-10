@@ -10,8 +10,7 @@
 // frames.js à chaque modification de style (via pkg.invalidateOverlayCache).
 import * as pkg from './index.js';
 import { digitAdvance, isTabularNums, layoutTabularText } from './tabular_text.mjs';
-import { INFOS_SEPARATOR, reservedInfosText } from './infos_reserve.mjs';
-import { reservedInfosTemplateText } from './infos_template.mjs';
+import { INFOS_SEPARATOR } from './infos_reserve.mjs';
 import { isEvolutionPage } from './app_mode.mjs';
 
 // Largeur commune des chiffres par police (font-variant-numeric: tabular-nums).
@@ -71,21 +70,22 @@ export function buildOverlayCache(scaleFactor) {
         const rect = el.getBoundingClientRect();
         const style = window.getComputedStyle(el);
 
-        const x = Math.round((rect.left - containerRect.left) * scaleFactor);
-        const y = Math.round((rect.top - containerRect.top) * scaleFactor);
-        const w = Math.round(rect.width * scaleFactor);
-        const h = Math.round(rect.height * scaleFactor);
-        const rightGap = Math.max(0, Math.round((containerRect.right - rect.right) * scaleFactor));
-        const bottomGap = Math.max(0, Math.round((containerRect.bottom - rect.bottom) * scaleFactor));
+        const x = (rect.left - containerRect.left) * scaleFactor;
+        const y = (rect.top - containerRect.top) * scaleFactor;
+        const w = rect.width * scaleFactor;
+        const h = rect.height * scaleFactor;
+        const rightGap = Math.max(0, (containerRect.right - rect.right) * scaleFactor);
+        const bottomGap = Math.max(0, (containerRect.bottom - rect.bottom) * scaleFactor);
 
         const bg = style.backgroundColor || 'rgba(255,255,255,1)';
         const color = style.color || '#000';
-        const radius = parseFloat(style.borderRadius) || 0;
+        const radius = (parseFloat(style.borderRadius) || 0) * scaleFactor;
         const padL = (parseFloat(style.paddingLeft) || 0) * scaleFactor;
         const padR = (parseFloat(style.paddingRight) || 0) * scaleFactor;
         const padT = (parseFloat(style.paddingTop) || 0) * scaleFactor;
         const fontSizePx = parseFloat(style.fontSize) || 16;
-        const font = `${style.fontWeight || 'normal'} ${Math.round(fontSizePx * scaleFactor)}px ${style.fontFamily || 'Arial'}`;
+        const fontPx = fontSizePx * scaleFactor;
+        const font = `${style.fontStyle || 'normal'} ${style.fontWeight || 'normal'} ${fontPx}px ${style.fontFamily || 'Arial'}`;
         const textAlignCss = style.textAlign || 'left';
 
         const shadowRaw = style.boxShadow && style.boxShadow !== 'none' ? style.boxShadow : null;
@@ -102,7 +102,6 @@ export function buildOverlayCache(scaleFactor) {
         }
 
         const padB = (parseFloat(style.paddingBottom) || 0) * scaleFactor;
-        const fontPx = Math.round(fontSizePx * scaleFactor);
         const lineHeightCss = parseFloat(style.lineHeight);
 
         const borderFor = (side) => ({
@@ -144,7 +143,7 @@ export function buildOverlayCache(scaleFactor) {
             leftGap: Math.max(0, x), rightGap,
             topGap: Math.max(0, y), bottomGap,
             horizontalAnchor, verticalAnchor,
-            lineGap: Math.round((Number.isFinite(lineHeightCss) ? lineHeightCss : fontSizePx * 1.2) * scaleFactor),
+            lineGap: (Number.isFinite(lineHeightCss) ? lineHeightCss : fontSizePx * 1.2) * scaleFactor,
         };
     };
 
@@ -182,30 +181,6 @@ export function getOverlayTextContent() {
     return { title, infos: infoParts.join(INFOS_SEPARATOR) };
 }
 
-// Réserve du tracé Canvas. La boîte HTML de l'aperçu réserve la même chose, par
-// un doublon invisible (cf. updateInfosReserve dans frames.js).
-function getReservedInfosText() {
-    const opts = pkg.options?.infos;
-    const meta = pkg.metadata;
-    // Mode Évolution : le contenu vient du modèle de la ligne d'infos ; la
-    // réserve remplace chaque balise par sa plus grande valeur à venir.
-    if (isEvolutionPage()) {
-        return reservedInfosTemplateText(pkg.evolutionInfosTemplate?.(), {
-            actives: meta?.counterMaxes?.active,
-            placees: meta?.counterMaxes?.placed,
-            archivees: meta?.counterMaxes?.archived,
-            total: meta?.numberOfCaches,
-        });
-    }
-    return reservedInfosText({
-        showCount: opts?.numberOfCaches?.display === true,
-        showDate: opts?.currentDate?.display === true,
-        currentValue: document.getElementById('spanNbCaches')?.textContent,
-        // Le compteur ne dépasse jamais le total de la sélection.
-        finalValue: meta?.numberOfCaches,
-    });
-}
-
 export function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor = 1) {
     if (!overlayCache || overlayCache.scaleFactor !== scaleFactor || overlayCache.revision !== overlayCacheRevision) {
         buildOverlayCache(scaleFactor);
@@ -238,37 +213,31 @@ export function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor 
             const leftMargin = horizontalAnchor === 'right' ? 0 : leftGap;
             const rightMargin = horizontalAnchor === 'left' ? 0 : rightGap;
             const availableBoxWidth = Math.max(1, canvasWidth - leftMargin - rightMargin);
-            const availableTextWidth = Math.max(1, availableBoxWidth - padL - padR);
+            const horizontalBorders = borders.left.width + borders.right.width;
+            const availableTextWidth = Math.max(1, Math.min(w, availableBoxWidth) - horizontalBorders - padL - padR);
             const lines = transformedText
                 .split(/\r?\n/)
                 .flatMap(line => wrapOverlayText(paintCtx, line, availableTextWidth, letterSpacing, digitWidth));
 
-            // Mesurer le texte pour adapter la boîte (le contenu grandit pendant l'animation :
-            // compteur de caches, dates plus longues...). La largeur cachée du DOM correspond
-            // au texte initial court et provoquerait un débordement.
-            let maxTextW = 0;
-            for (const line of lines) {
-                if (!line) continue;
-                const measured = measureOverlayText(paintCtx, line, letterSpacing, digitWidth);
-                if (measured > maxTextW) maxTextW = measured;
-            }
-            if (cached.el.id === 'infosFrame') {
-                const reservedText = transformOverlayText(getReservedInfosText(), textTransform);
-                maxTextW = Math.max(
-                    maxTextW,
-                    Math.min(availableTextWidth, measureOverlayText(paintCtx, reservedText, letterSpacing, digitWidth)),
-                );
-            }
-            // Métriques verticales (fallback si actualBoundingBox non disponible)
+            // CSS aligne le texte dans une boîte de ligne basée sur les métriques de
+            // la police, et non sur la seule encre visible de "Mg". Utiliser les
+            // actualBoundingBox* recentrait les glyphes différemment de l'aperçu.
             const fm = paintCtx.measureText('Mg');
-            const ascent = fm.actualBoundingBoxAscent || (fontPx * 0.8);
-            const descent = fm.actualBoundingBoxDescent || (fontPx * 0.2);
-            const lh = Math.max(lineGap, ascent + descent);
-            const textBlockH = ascent + descent + (lines.length - 1) * lh;
+            const ascent = Number.isFinite(fm.fontBoundingBoxAscent)
+                ? fm.fontBoundingBoxAscent
+                : fontPx * 0.8;
+            const descent = Number.isFinite(fm.fontBoundingBoxDescent)
+                ? fm.fontBoundingBoxDescent
+                : fontPx * 0.2;
+            const fontBoxHeight = ascent + descent;
+            const lh = lineGap > 0 ? lineGap : fontBoxHeight;
 
-            // La boîte ne rétrécit jamais sous la taille CSS, mais grandit pour contenir le texte
-            const drawW = Math.min(availableBoxWidth, Math.max(w, Math.ceil(padL + maxTextW + padR)));
-            const drawH = Math.min(canvasHeight, Math.max(h, Math.ceil(padT + textBlockH + padB)));
+            // La taille mesurée du DOM est la source de vérité. Le cartouche Infos
+            // réserve déjà dans le DOM sa largeur maximale (frames.js) et chaque
+            // changement de titre invalide le cache : faire grandir la boîte ici
+            // créerait une géométrie différente de la preview.
+            const drawW = Math.min(availableBoxWidth, w);
+            const drawH = Math.min(canvasHeight, h);
             let drawX = x;
             let drawY = y;
             if (horizontalAnchor === 'right') drawX = canvasWidth - rightGap - drawW;
@@ -294,13 +263,18 @@ export function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor 
             else if (textAlignCss === 'right' || textAlignCss === 'end') paintCtx.textAlign = 'right';
             else paintCtx.textAlign = 'left';
 
-            // Centrer verticalement le bloc de texte dans la boîte
-            let curY = drawY + (drawH - textBlockH) / 2 + ascent;
+            // Comme un bloc CSS, la première boîte de ligne commence après la
+            // bordure et le padding supérieurs. Une hauteur explicite laisse donc
+            // l'espace supplémentaire sous le texte au lieu de le recentrer.
+            const contentLeft = drawX + borders.left.width + padL;
+            const contentRight = drawX + drawW - borders.right.width - padR;
+            const contentTop = drawY + borders.top.width + padT;
+            let curY = contentTop + ((lh - fontBoxHeight) / 2) + ascent;
             lines.forEach(line => {
                 if (!line) { curY += lh; return; }
-                let xText = drawX + padL;
-                if (paintCtx.textAlign === 'center') xText = drawX + (drawW / 2);
-                else if (paintCtx.textAlign === 'right') xText = drawX + drawW - padR;
+                let xText = contentLeft;
+                if (paintCtx.textAlign === 'center') xText = (contentLeft + contentRight) / 2;
+                else if (paintCtx.textAlign === 'right') xText = contentRight;
                 drawOverlayText(paintCtx, line, xText, curY, letterSpacing, digitWidth);
                 curY += lh;
             });
