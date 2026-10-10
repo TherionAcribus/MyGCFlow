@@ -41,6 +41,31 @@ test('import via état vide : toast immédiate et indicateur inline pendant le t
   await expect(page.locator('#emptyState')).toBeVisible();
   await expect(indicator).toBeHidden();
 
+  // Sonde de régression : entre la fin de l'import serveur et l'apparition
+  // des points, l'état vide ne doit pas repasser en « proposition d'import »
+  // (affiché + bouton actif + indicateur masqué) — la fenêtre durait ~1-2 s
+  // et ressemblait à un bug.
+  await page.evaluate(() => {
+    window.__watchImport = false;
+    window.__importProposalSeen = false;
+    const check = () => {
+      if (!window.__watchImport) return;
+      const es = document.getElementById('emptyState');
+      const btn = document.getElementById('btnEmptyStateImport');
+      const ind = document.getElementById('emptyStateUploadProgress');
+      if (es && getComputedStyle(es).display !== 'none'
+          && btn && !btn.disabled
+          && ind && ind.hidden) {
+        window.__importProposalSeen = true;
+      }
+    };
+    new MutationObserver(check).observe(document.body, {
+      attributes: true,
+      subtree: true,
+      attributeFilter: ['disabled', 'hidden', 'style'],
+    });
+  });
+
   // Sélection directe sur l'input (le bouton de l'état vide lui délègue le
   // clic) : toast + indicateur doivent être visibles pendant l'import.
   await page.locator('#file-input').setInputFiles(FIXTURE);
@@ -48,10 +73,16 @@ test('import via état vide : toast immédiate et indicateur inline pendant le t
   await expect(indicator).toBeVisible();
   await expect(page.locator('#btnEmptyStateImport')).toBeDisabled();
 
+  // L'import est engagé : la sonde surveille la phase d'affichage des points.
+  await page.evaluate(() => { window.__watchImport = true; });
+
   // Fin d'import : indicateur refermé, toast de chargement remplacée par le
-  // succès, commandes débloquées.
+  // succès, commandes débloquées — sans que l'état vide ait re-proposé un
+  // import entre-temps.
   await expect(page.locator('#filtersCounter')).toContainText('6 / 6', { timeout: 45_000 });
+  await expect(page.locator('#emptyState')).toBeHidden();
   await expect(indicator).toBeHidden();
+  expect(await page.evaluate(() => window.__importProposalSeen)).toBe(false);
 });
 
 test('aide .gpx : la modale première utilisation s\'ouvre depuis l\'état vide, sans import interne', async ({ page, request }) => {

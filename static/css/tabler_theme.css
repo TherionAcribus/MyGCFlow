@@ -171,6 +171,19 @@ h5, h6 { color: var(--color-heading); font-weight: 600; }
     box-shadow: 0 0 0 0.25rem rgba(var(--color-accent-rgb), 0.25);
 }
 
+/* --- Listes désactivées : Tabler ne change que (très légèrement) le fond,
+   le texte reste noir et la liste semble active. On grise la liste et son
+   libellé pour que l'indisponibilité se voie. --- */
+.form-select:disabled {
+    color: var(--color-text-muted);
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+.form-label:has(+ .form-select:disabled) {
+    color: var(--color-text-muted);
+    opacity: 0.55;
+}
+
 /* --- Form-floating : labels --- */
 .form-floating > label {
     color: var(--color-text-muted);

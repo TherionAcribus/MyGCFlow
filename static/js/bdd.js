@@ -1007,10 +1007,8 @@ function uploadBdd (file, uploadToast){
     uploadGpxWithProgress(file, uploadToast, indicatorHooks)
     .then(data => {
         checkLoadingProgress(uploadToast, data.task_id, () => {
-            endImport();
             console.log('[uploadBdd] Import terminé, lancement loadAndDisplayPoints');
             pkg.hideToast(uploadToast);
-            hideUploadIndicator(indicatorId);
             // Succès d'import : toast brève (4 s), l'information durable est
             // déjà portée par #infosBDD et #dataNextStep.
             pkg.showToast(t("Fichier chargé avec succès !"), "success", t("Terminé"), 4000);
@@ -1018,8 +1016,26 @@ function uploadBdd (file, uploadToast){
             // mets à jour les infos de la BDD
             readBddValues();
 
+            // L'état vide reste affiché tant que totalCaches n'est pas connu :
+            // garder l'indicateur (et les contrôles verrouillés, endImport est
+            // différé à onDone) pendant tout l'affichage des points — sinon la
+            // carte re-proposerait un import pendant le délai entre la fin de
+            // l'import et l'apparition des points.
+            updateUploadIndicator(indicatorId, t('Chargement et affichage des points...'), null);
+            const finishDisplay = () => {
+                endImport();
+                hideUploadIndicator(indicatorId);
+            };
             // Charger et afficher les points sur la carte
-            loadAndDisplayPoints();
+            try {
+                loadAndDisplayPoints({
+                    onProgress: (p) => updateUploadIndicator(indicatorId, null, p),
+                    onDone: finishDisplay,
+                });
+            } catch (e) {
+                console.error('[uploadBdd] loadAndDisplayPoints a levé une erreur:', e);
+                finishDisplay();
+            }
         }, (message) => {
             endImport();
             console.error('[uploadBdd] Erreur import:', message);
@@ -1352,7 +1368,15 @@ async function clearDatabase() {
     }
 }
 
-function loadAndDisplayPoints() {
+// onProgress : progression 0-100 de la tâche GeoJSON (en miroir de la toast,
+// pour l'indicateur inline de l'état vide) ; onDone : appelé une fois sur
+// chaque chemin terminal (succès ou erreur) — uploadBdd s'en sert pour
+// refermer l'indicateur et lever le verrou d'import une fois les points
+// affichés ou l'échec acté.
+function loadAndDisplayPoints({ onProgress: onDisplayProgress = null, onDone = null } = {}) {
+    const finishDisplay = () => {
+        if (typeof onDone === 'function') { try { onDone(); } catch (_) {} }
+    };
     // Afficher un toast pour l'affichage initial des points
     const pointsToast = pkg.showPointsToast(t('Chargement et affichage des points...'), t('Affichage des points'));
 
@@ -1365,6 +1389,7 @@ function loadAndDisplayPoints() {
             pollGeojsonTask(data.task_id, {
                 onProgress: (p) => {
                     try { if (pointsToast) pkg.updateToastProgress(pointsToast, p); } catch(_) {}
+                    if (typeof onDisplayProgress === 'function') { try { onDisplayProgress(p); } catch(_) {} }
                 },
                 onSuccess: (result) => {
                     console.log('[loadAndDisplayPoints] onSuccess - features:', result?.geojson?.features?.length, '| error:', result?.error);
@@ -1372,6 +1397,7 @@ function loadAndDisplayPoints() {
                         console.error('Erreur tâche GeoJSON (loadAndDisplayPoints):', result.error || 'geojson manquant');
                         pkg.hidePointsToast();
                         showError(t("Erreur lors de l'affichage des points sur la carte"), t("Erreur d'affichage"));
+                        finishDisplay();
                         return;
                     }
                     const geojson = result.geojson;
@@ -1420,11 +1446,13 @@ function loadAndDisplayPoints() {
 
                     // Masquer le toast d'affichage initial
                     pkg.hidePointsToast();
+                    finishDisplay();
                 },
                 onError: (err) => {
                     console.error('[LOAD_POINTS] Erreur lors du suivi de la génération GeoJSON:', err);
                     pkg.hidePointsToast();
                     showError(t("Erreur lors de l'affichage des points sur la carte"), t("Erreur d'affichage"));
+                    finishDisplay();
                 }
             });
         })
@@ -1432,6 +1460,7 @@ function loadAndDisplayPoints() {
             console.error('[LOAD_POINTS] Erreur lors du lancement de la génération des points:', error);
             pkg.hidePointsToast();
             showError(t("Erreur lors de l'affichage des points sur la carte"), t("Erreur d'affichage"));
+            finishDisplay();
         });
 }
 
