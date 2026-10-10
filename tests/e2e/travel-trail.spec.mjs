@@ -276,13 +276,15 @@ test('la cible tête du trait suit l\'état réel du trajet', async ({ page }) =
   await expect(page.locator('#helpCameraTargetTrail')).toBeVisible();
   await expect(page.locator('#selectCameraDynamism')).toBeEnabled();
   await expect(page.locator('#timingSummary')).toContainText('trajets de caméra');
+  // Le repli est signalé, et son bouton mène au réglage qui le lève.
+  await expect(page.locator('#cameraTrailFallbackWarning')).toBeVisible();
 
   // Activer le trait rend le mode demandé effectif : le dynamisme quotidien
   // devient sans objet et le plan ne compte plus de vols par jour.
-  await page.locator('a[href="#style"]').click();
-  await page.locator('a[href="#tabTrail"]').click();
+  await page.locator('#btnGoTrailTab').click();
   await page.locator('#switchTrail').check();
   await page.locator('a[href="#animation"]').click();
+  await expect(page.locator('#cameraTrailFallbackWarning')).toBeHidden();
   await expect(page.locator('#selectCameraDynamism')).toBeDisabled();
   await expect(page.locator('#timingSummary')).not.toContainText('trajets de caméra');
 
@@ -293,8 +295,10 @@ test('la cible tête du trait suit l\'état réel du trajet', async ({ page }) =
   await page.locator('a[href="#animation"]').click();
   await expect(page.locator('#selectCameraDynamism')).toBeEnabled();
   await expect(page.locator('#timingSummary')).toContainText('trajets de caméra');
+  await expect(page.locator('#cameraTrailFallbackWarning')).toBeVisible();
 
   await page.locator('#switchCameraFollow').uncheck();
+  await expect(page.locator('#cameraTrailFallbackWarning')).toBeHidden();
 });
 
 
@@ -313,9 +317,10 @@ test('le suivi « tête du trait » fait glisser la caméra derrière le stylo',
   await expect(page.locator('#helpCameraTargetTrail')).toBeHidden();
   await page.locator('#selectCameraTarget').selectOption('trail');
   await expect(page.locator('#helpCameraTargetDays')).toBeHidden();
-  // Le dynamisme (zone de confort par jour) est sans objet dans ce mode, et
-  // la condition « trajet activé » est rappelée sous le sélecteur.
+  // Le dynamisme (zone de confort par jour) est sans objet dans ce mode ;
+  // trajet activé, aucun repli à signaler.
   await expect(page.locator('#selectCameraDynamism')).toBeDisabled();
+  await expect(page.locator('#cameraTrailFallbackWarning')).toBeHidden();
   await expect(page.locator('#helpCameraTargetTrail')).toBeVisible();
   expect(await page.evaluate(async () => (
     (await import('/static/js/index.js')).options.animation.cameraFollowMode

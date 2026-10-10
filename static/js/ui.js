@@ -614,6 +614,11 @@ const btnRecordAnimation = document.getElementById('btnRecordAnimation');
             refreshTimingPlan();
         });
     }
+    const btnGoTrailTab = document.getElementById('btnGoTrailTab');
+    if (btnGoTrailTab) btnGoTrailTab.addEventListener('click', () => {
+        showBsTab(document.querySelector('#mainTabs a[href="#style"]'));
+        showBsTab(document.querySelector('a[href="#tabTrail"]'));
+    });
 
 const btnStopAnimation = document.getElementById('btnStopAnimation');
     if (btnStopAnimation) btnStopAnimation.addEventListener('click', () => {
@@ -4684,11 +4689,12 @@ function syncCameraFollowControls() {
     if (dynamism) dynamism.disabled = !enabled || isCameraTrailMode();
     const helpDays = document.getElementById('helpCameraTargetDays');
     const helpTrail = document.getElementById('helpCameraTargetTrail');
-    // Une seule aide à la fois, selon la cible DEMANDÉE : celle du trait reste
-    // visible même trajet désactivé — elle explique justement pourquoi le
-    // repli par jour s'applique.
+    // Une seule aide à la fois, selon la cible DEMANDÉE ; le repli par jour
+    // (trajet désactivé) est signalé à part, par l'avertissement.
     if (helpDays) helpDays.hidden = trailRequested;
     if (helpTrail) helpTrail.hidden = !trailRequested;
+    const fallback = document.getElementById('cameraTrailFallbackWarning');
+    if (fallback) fallback.hidden = !(enabled && trailRequested && !isCameraTrailMode());
 }
 
 // Recalcule le plan depuis l'état courant, répercute les valeurs dérivées

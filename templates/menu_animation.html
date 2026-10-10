@@ -210,11 +210,17 @@
                                 <option value="days">{{ _("Chaque jour, quand il s'affiche") }}</option>
                                 <option value="trail">{{ _("La tête du trait de déplacement") }}</option>
                             </select>
+                            <!-- Repli signalé : « tête du trait » demandé mais
+                                 trajet désactivé — le moteur suit alors par jour. -->
+                            <div id="cameraTrailFallbackWarning" class="alert alert-warning py-2 px-3 mb-2 small" role="status" hidden>
+                                {{ _("Le trajet est désactivé : le suivi reste par jour.") }}
+                                <button type="button" id="btnGoTrailTab" class="btn btn-link btn-sm p-0 align-baseline">{{ _("Ouvrir Style › Trajet") }}</button>
+                            </div>
                             <!-- Une seule aide, dont le texte suit la cible choisie
                                  (bascule dans ui.js, syncCameraFollowControls). -->
                             <small id="helpCameraFollow" class="form-hint text-muted">
                                 <span id="helpCameraTargetDays">{{ _("La vue glisse vers les caches du jour. Les trajets sont comptés dans la durée : en « Par durée » ou « Sur la musique », la vidéo garde la durée demandée.") }}</span>
-                                <span id="helpCameraTargetTrail" hidden>{{ _("La vue glisse derrière le stylo qui dessine le trajet et adapte son zoom à la vitesse du parcours. Ce mode nécessite le trajet activé (Style › Trajet) — sinon le suivi reste par jour.") }}</span>
+                                <span id="helpCameraTargetTrail" hidden>{{ _("La vue glisse derrière le stylo qui dessine le trajet et adapte son zoom à la vitesse du parcours.") }}</span>
                                 <a href="/guide#animation" target="_blank">{{ _("En savoir plus") }}</a>
                             </small>
                         </div>
