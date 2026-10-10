@@ -165,10 +165,16 @@ def check_version():
             settings.skipped_update_version == info['latest_version']['version']
         )
 
-    checked_at = options.now_iso()
-    settings_manager.update_app_settings(
-        lambda current: replace(current, last_update_check=checked_at)
-    )
+    # Seule la vérification automatique horodate : l'horodatage sert à espacer
+    # les vérifications du démarrage. Une vérification manuelle qui
+    # l'alimenterait repousserait d'autant le prochain passage auto — lancée
+    # chaque jour et cliquée par habitude, la vérification de démarrage serait
+    # reportée indéfiniment sans jamais interroger GitHub.
+    if not forced:
+        checked_at = options.now_iso()
+        settings_manager.update_app_settings(
+            lambda current: replace(current, last_update_check=checked_at)
+        )
     return jsonify(info)
 
 

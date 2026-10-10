@@ -98,6 +98,18 @@ class CheckVersionRouteTests(unittest.TestCase):
         self.assertTrue(payload['update_available'])
         self.assertEqual(self.get.call_count, 2)
 
+    def test_manual_check_does_not_postpone_the_next_startup_check(self):
+        # L'horodatage espace les vérifications AUTOMATIQUES : un clic sur
+        # « Vérifier » n'a pas à retarder le contrôle du lancement suivant.
+        self.client.get('/check_version?mode=manual')
+        self.assertIsNone(self.manager.get_app_settings().last_update_check)
+
+        payload = self.client.get('/check_version?mode=init').get_json()
+
+        self.assertTrue(payload['checked'])
+        self.assertTrue(payload['update_available'])
+        self.assertEqual(self.get.call_count, 2)
+
     def test_skipped_version_is_flagged(self):
         self.manager.update_app_settings(
             lambda current: _with(current, skipped_update_version='1.1.0')

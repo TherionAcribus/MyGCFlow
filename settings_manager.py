@@ -266,9 +266,11 @@ class AppSettings:
     version: int = COORDINATE_ORDER_VERSION
     language: str = "fr"
     check_updates: bool = True
-    # Horodatage ISO-8601 (UTC) de la dernière vérification de mise à jour
-    # aboutie. Sert à espacer les vérifications automatiques : sans lui, chaque
-    # lancement interrogeait GitHub et rouvrait la modale déjà vue.
+    # Horodatage ISO-8601 (UTC) de la dernière vérification AUTOMATIQUE de mise
+    # à jour aboutie (les vérifications manuelles ne l'écrivent pas : un clic
+    # sur « Vérifier » ne doit pas repousser le prochain contrôle du
+    # démarrage). Sert à espacer les vérifications automatiques : sans lui,
+    # chaque lancement interrogeait GitHub et rouvrait la modale déjà vue.
     last_update_check: Optional[str] = None
     # Version pour laquelle l'utilisateur a cliqué sur « Ignorer cette version ».
     # Seule la vérification automatique en tient compte, et seulement tant que
