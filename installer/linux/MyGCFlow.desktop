@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=MyGCFlow
+Comment=Carte animée de vos découvertes geocaching
+Exec=mygcflow
+Icon=mygcflow
+Terminal=false
+Categories=Utility;Network;

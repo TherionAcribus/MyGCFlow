@@ -1,21 +1,28 @@
 # -*- mode: python ; coding: utf-8 -*-
-"""Construction de MyGCFlow.exe (PyInstaller, mode dossier).
+"""Construction de l'exécutable MyGCFlow (PyInstaller, mode dossier).
 
-    .venv-build\\Scripts\\pyinstaller installer\\mygcflow.spec --noconfirm
+    .venv-build\\Scripts\\pyinstaller installer\\mygcflow.spec --noconfirm   (Windows)
+    pyinstaller installer/mygcflow.spec --noconfirm                          (Linux)
 
-Résultat : dist\\MyGCFlow\\MyGCFlow.exe + dist\\MyGCFlow\\_internal\\ (bibliothèques et
-ressources). Mode dossier plutôt que fichier unique : démarrage immédiat (pas
+Résultat : dist/MyGCFlow/MyGCFlow(.exe) + dist/MyGCFlow/_internal/ (bibliothèques
+et ressources). Mode dossier plutôt que fichier unique : démarrage immédiat (pas
 de décompression à chaque lancement) et bien moins de faux positifs antivirus.
 """
 
 import os
 import re
+import sys
 from pathlib import Path
 
-from PyInstaller.utils.win32.versioninfo import (
-    FixedFileInfo, StringFileInfo, StringStruct, StringTable, VarFileInfo,
-    VarStruct, VSVersionInfo,
-)
+IS_WINDOWS = sys.platform == "win32"
+
+if IS_WINDOWS:
+    # Métadonnées de version de l'exécutable : module propre à Windows, absent
+    # du PyInstaller des autres plateformes.
+    from PyInstaller.utils.win32.versioninfo import (
+        FixedFileInfo, StringFileInfo, StringStruct, StringTable, VarFileInfo,
+        VarStruct, VSVersionInfo,
+    )
 
 ROOT = Path(SPECPATH).parent
 
@@ -60,30 +67,36 @@ datas = (
     + [(str(ROOT / "LICENSE"), ".")]
 )
 
-version_info = VSVersionInfo(
-    ffi=FixedFileInfo(filevers=VERSION_TUPLE, prodvers=VERSION_TUPLE),
-    kids=[
-        StringFileInfo([StringTable("040C04B0", [
-            StringStruct("CompanyName", "MyGCFlow"),
-            StringStruct("FileDescription", "MyGCFlow"),
-            StringStruct("FileVersion", VERSION),
-            StringStruct("InternalName", "MyGCFlow"),
-            StringStruct("LegalCopyright", "© 2024-2026 TherionAcribus — MIT License"),
-            StringStruct("OriginalFilename", "MyGCFlow.exe"),
-            StringStruct("ProductName", "MyGCFlow"),
-            StringStruct("ProductVersion", VERSION),
-        ])]),
-        VarFileInfo([VarStruct("Translation", [0x040C, 1200])]),
-    ],
-)
+if IS_WINDOWS:
+    version_info = VSVersionInfo(
+        ffi=FixedFileInfo(filevers=VERSION_TUPLE, prodvers=VERSION_TUPLE),
+        kids=[
+            StringFileInfo([StringTable("040C04B0", [
+                StringStruct("CompanyName", "MyGCFlow"),
+                StringStruct("FileDescription", "MyGCFlow"),
+                StringStruct("FileVersion", VERSION),
+                StringStruct("InternalName", "MyGCFlow"),
+                StringStruct("LegalCopyright", "© 2024-2026 TherionAcribus — MIT License"),
+                StringStruct("OriginalFilename", "MyGCFlow.exe"),
+                StringStruct("ProductName", "MyGCFlow"),
+                StringStruct("ProductVersion", VERSION),
+            ])]),
+            VarFileInfo([VarStruct("Translation", [0x040C, 1200])]),
+        ],
+    )
 
 a = Analysis(
     [str(ROOT / "launcher.py")],
     pathex=[str(ROOT)],
     binaries=[],
     datas=datas,
-    # pystray choisit son moteur à l'exécution (import dynamique).
-    hiddenimports=["pystray._win32"],
+    # pystray choisit son moteur à l'exécution (import dynamique) : embarquer
+    # les backends de la plateforme de construction. Ceux qui manqueraient dans
+    # l'environnement figé sont simplement ignorés par pystray.
+    hiddenimports=(
+        ["pystray._win32"] if IS_WINDOWS
+        else ["pystray._appindicator", "pystray._xorg", "pystray._gtk"]
+    ),
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -109,17 +122,23 @@ a.datas = [entry for entry in a.datas if _keep(entry)]
 
 pyz = PYZ(a.pure)
 
+# Icône .ico et métadonnées de version : propres à Windows, PyInstaller les
+# refuse sur les autres plateformes.
+exe_platform = (
+    {"icon": str(ROOT / "installer" / "mygcflow.ico"), "version": version_info}
+    if IS_WINDOWS else {}
+)
+
 exe = EXE(
     pyz,
     a.scripts,
     [],
     exclude_binaries=True,
     name="MyGCFlow",
-    icon=str(ROOT / "installer" / "mygcflow.ico"),
-    version=version_info,
     console=False,
     # UPX déclenche des faux positifs antivirus pour un gain de taille modeste.
     upx=False,
+    **exe_platform,
 )
 
 coll = COLLECT(

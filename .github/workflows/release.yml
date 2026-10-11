@@ -1,11 +1,12 @@
-name: Release Windows
+name: Release
 
 # Publier une version :
 #   1. mettre à jour __version__ dans version.py, committer ;
 #   2. git tag v1.2.0 && git push origin v1.2.0
-# Le workflow construit l'installeur et la version portable, puis crée la
-# Release GitHub correspondante. Lancé à la main (workflow_dispatch), il
-# construit seulement, sans publier : les fichiers sont dans les artefacts.
+# Le workflow construit l'installeur Windows, la version portable et l'archive
+# Linux, puis crée la Release GitHub correspondante. Lancé à la main
+# (workflow_dispatch), il construit seulement, sans publier : les fichiers
+# sont dans les artefacts.
 
 on:
   push:
@@ -89,9 +90,116 @@ jobs:
             dist/MyGCFlow-Setup-*.exe
             dist/MyGCFlow-*-portable.zip
 
+  build-linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v6
+
+      - name: Installer Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-build.txt
+
+      - name: Lire la version
+        id: version
+        shell: bash
+        run: |
+          version=$(grep -oP '__version__\s*=\s*"\K[^"]+' version.py)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if [ "$GITHUB_REF_TYPE" = "tag" ] && [ "$GITHUB_REF_NAME" != "v$version" ]; then
+            echo "Le tag $GITHUB_REF_NAME ne correspond pas à version.py ($version)" >&2
+            exit 1
+          fi
+
+      - name: Tests unitaires
+        shell: bash
+        env:
+          PYTHONUTF8: "1"
+        run: |
+          python -m pip install -r requirements.txt
+          python -m unittest discover -s tests -t .
+
+      - name: Construire l'exécutable
+        shell: bash
+        run: |
+          python -m pip install -r requirements-build.txt
+          pyinstaller installer/mygcflow.spec --noconfirm
+
+      - name: Vérifier que l'exécutable démarre
+        shell: bash
+        run: |
+          # Les runners ubuntu n'ont pas d'affichage : ce test vérifie justement
+          # le démarrage sans icône de notification (_display_available).
+          export MYGCFLOW_DATA_DIR="$RUNNER_TEMP/mygcflow-data"
+          export MYGCFLOW_CONFIG_DIR="$RUNNER_TEMP/mygcflow-config"
+          dist/MyGCFlow/MyGCFlow --no-browser --no-tray &
+          pid=$!
+          ok=""
+          for i in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:51730/api/ping > "$RUNNER_TEMP/ping.json" 2>/dev/null; then ok=1; break; fi
+            sleep 0.5
+          done
+          kill "$pid" 2>/dev/null || true
+          if [ -z "$ok" ]; then
+            cat "$MYGCFLOW_DATA_DIR/logs/mygcflow.log" 2>/dev/null || true
+            echo "MyGCFlow ne répond pas" >&2
+            exit 1
+          fi
+          echo "MyGCFlow a démarré : $(cat "$RUNNER_TEMP/ping.json")"
+
+      - name: Archive Linux
+        shell: bash
+        run: |
+          # Le .desktop et l'installateur sont livrés dans le dossier MyGCFlow
+          # de l'archive : install.sh les range aux emplacements XDG.
+          cp installer/linux/MyGCFlow.desktop installer/linux/install.sh dist/MyGCFlow/
+          chmod +x dist/MyGCFlow/install.sh
+          # Le nom doit contenir « -linux » : c'est ce repère qui fait choisir
+          # cet asset par options.py sur un poste Linux.
+          tar -C dist -czf "dist/MyGCFlow-${{ steps.version.outputs.version }}-linux-x86_64.tar.gz" MyGCFlow
+
+      - name: Conserver les fichiers construits
+        uses: actions/upload-artifact@v4
+        with:
+          name: MyGCFlow-${{ steps.version.outputs.version }}-linux
+          path: dist/MyGCFlow-*-linux*.tar.gz
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: [build-windows, build-linux]
+    if: github.ref_type == 'tag'
+
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v6
+
+      - name: Lire la version
+        id: version
+        shell: bash
+        run: |
+          version=$(grep -oP '__version__\s*=\s*"\K[^"]+' version.py)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if [ "$GITHUB_REF_NAME" != "v$version" ]; then
+            echo "Le tag $GITHUB_REF_NAME ne correspond pas à version.py ($version)" >&2
+            exit 1
+          fi
+
+      - name: Récupérer les fichiers construits
+        uses: actions/download-artifact@v4
+        with:
+          pattern: MyGCFlow-*
+          path: dist
+          merge-multiple: true
+
       - name: Publier la Release
-        if: github.ref_type == 'tag'
-        shell: pwsh
+        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -100,16 +208,14 @@ jobs:
           # utilisateur. On préfère donc des notes écrites à la main quand
           # docs/release_notes/<version>.md existe, et on ne retombe sur les
           # titres de commits que par défaut.
-          $notes = "docs/release_notes/${{ steps.version.outputs.version }}.md"
-          if (Test-Path $notes) {
-            $notesArgs = @('--notes-file', $notes)
-            Write-Host "Notes de Release : $notes"
-          } else {
-            $notesArgs = @('--generate-notes')
-            Write-Warning "Aucune note écrite pour ${{ steps.version.outputs.version }} : repli sur les titres de commits."
-          }
-          gh release create "$env:GITHUB_REF_NAME" `
-            (Get-ChildItem dist/MyGCFlow-Setup-*.exe).FullName `
-            (Get-ChildItem dist/MyGCFlow-*-portable.zip).FullName `
-            --title "MyGCFlow ${{ steps.version.outputs.version }}" `
-            @notesArgs
+          notes="docs/release_notes/${{ steps.version.outputs.version }}.md"
+          if [ -f "$notes" ]; then
+            notes_args=(--notes-file "$notes")
+            echo "Notes de Release : $notes"
+          else
+            notes_args=(--generate-notes)
+            echo "::warning::Aucune note écrite pour ${{ steps.version.outputs.version }} : repli sur les titres de commits."
+          fi
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --title "MyGCFlow ${{ steps.version.outputs.version }}" \
+            "${notes_args[@]}"

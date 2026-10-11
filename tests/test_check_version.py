@@ -50,6 +50,14 @@ def _fake_response(payload, status_code=200):
 
 class FetchVersionInfoTests(unittest.TestCase):
 
+    def setUp(self):
+        # Les assets fabriqués ici sont des installeurs Windows : le choix
+        # d'asset étant propre à la plateforme (options._matches_platform_asset),
+        # les tests se placent dans le cas Windows partout où ils tournent.
+        patcher = patch.object(options.platform, "system", return_value="Windows")
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
     @patch("options.requests.get")
     def test_up_to_date(self, mock_get):
         mock_get.return_value = _fake_response([_release("v1.0.0")])
@@ -287,6 +295,55 @@ class FetchVersionInfoTests(unittest.TestCase):
         mock_get.return_value = _fake_response({"message": "Not Found"})
 
         self.assertTrue(fetch_version_info("1.0.0")["error"])
+
+
+class FetchVersionInfoLinuxTests(unittest.TestCase):
+    """Choix de l'asset de téléchargement sous Linux.
+
+    L'installeur Windows n'y convient pas : c'est l'archive tar.gz (ou une
+    AppImage) qui est proposée, et la page de la Release sinon.
+    """
+
+    def setUp(self):
+        patcher = patch.object(options.platform, "system", return_value="Linux")
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    @patch("options.requests.get")
+    def test_linux_archive_is_chosen(self, mock_get):
+        mock_get.return_value = _fake_response([
+            _release("v1.3.0", assets=[
+                _asset("MyGCFlow-Setup-1.3.0.exe"),
+                _asset("MyGCFlow-1.3.0-linux-x86_64.tar.gz"),
+            ]),
+        ])
+
+        latest = fetch_version_info("1.0.0")["latest_version"]
+
+        self.assertEqual(
+            latest["download_url"],
+            "https://github.com/TherionAcribus/MyGCFlow/releases/download/v1.1.0/MyGCFlow-1.3.0-linux-x86_64.tar.gz",
+        )
+
+    @patch("options.requests.get")
+    def test_windows_only_release_falls_back_to_release_page(self, mock_get):
+        """Seul l'installeur Windows est publié : rien à proposer sous Linux."""
+        mock_get.return_value = _fake_response([
+            _release("v1.3.0", assets=[_asset("MyGCFlow-Setup-1.3.0.exe")]),
+        ])
+
+        latest = fetch_version_info("1.0.0")["latest_version"]
+
+        self.assertEqual(
+            latest["download_url"],
+            "https://github.com/TherionAcribus/MyGCFlow/releases/tag/v1.3.0",
+        )
+
+    def test_platform_asset_matching(self):
+        self.assertTrue(options._matches_platform_asset("MyGCFlow-1.3.0-linux-x86_64.tar.gz"))
+        self.assertTrue(options._matches_platform_asset("MyGCFlow-1.3.0.AppImage"))
+        self.assertFalse(options._matches_platform_asset("MyGCFlow-Setup-1.3.0.exe"))
+        self.assertFalse(options._matches_platform_asset("MyGCFlow-1.3.0-portable.zip"))
 
 
 class ShouldCheckTests(unittest.TestCase):

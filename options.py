@@ -12,6 +12,7 @@ appliquées par la route `/check_version` (blueprints/core.py).
 import html
 import json
 import logging
+import platform
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlparse
 
@@ -50,9 +51,10 @@ ALLOWED_DOWNLOAD_HOSTS = frozenset({
     "release-assets.githubusercontent.com",
 })
 
-# Asset proposé en priorité : l'installeur. À défaut, on renvoie vers la page de
-# la Release, où l'utilisateur choisit entre installeur et version portable.
-INSTALLER_ASSET_PREFIX = "MyGCFlow-Setup"
+# Asset proposé en priorité : celui qui convient à la plateforme courante —
+# installeur `MyGCFlow-Setup-*` sous Windows, archive `*-linux*` ou AppImage
+# sous Linux, `*-macos*` ou .dmg sous macOS. À défaut, on renvoie vers la page
+# de la Release, où l'utilisateur choisit parmi tous les assets.
 
 # Les notes de Release générées par GitHub tiennent en quelques lignes ; la borne
 # évite qu'un corps de Release inhabituel remplisse la modale.
@@ -135,6 +137,17 @@ def _changelog_lines(body):
     return [_text(entry) for entry in entries[:MAX_CHANGELOG_ENTRIES]]
 
 
+def _matches_platform_asset(name):
+    """L'asset d'une Release convient-il à la plateforme courante ?"""
+    system = platform.system()
+    name = name.lower()
+    if system == "Windows":
+        return name.startswith("mygcflow-setup")
+    if system == "Darwin":
+        return "-macos" in name or name.endswith(".dmg")
+    return "-linux" in name or name.endswith(".appimage")
+
+
 def _release_entry(release):
     """Release GitHub convertie en entrée exploitable, ou None si inutilisable."""
     if not isinstance(release, dict) or release.get('draft'):
@@ -150,10 +163,12 @@ def _release_entry(release):
         for asset in assets:
             if not isinstance(asset, dict):
                 continue
-            if str(asset.get('name') or '').startswith(INSTALLER_ASSET_PREFIX):
-                download_url = _safe_url(asset.get('browser_download_url'))
-                if download_url:
-                    break
+            # Seul l'asset de la plateforme courante est proposé au clic.
+            if not _matches_platform_asset(str(asset.get('name') or '')):
+                continue
+            download_url = _safe_url(asset.get('browser_download_url'))
+            if download_url:
+                break
     release_url = _safe_url(release.get('html_url'))
 
     # `published_at` est une date ISO-8601 en UTC : la partie date suffit.
