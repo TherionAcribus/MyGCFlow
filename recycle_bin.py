@@ -2,14 +2,17 @@
 
 Une vidéo peut représenter de longues minutes de rendu : la supprimer depuis
 l'interface ne doit pas être définitif. Sous Windows, le fichier part dans la
-Corbeille (SHFileOperation, via ctypes, sans dépendance). Ailleurs, ou si la
-Corbeille refuse, il est supprimé pour de bon — l'interface demande de toute
-façon une confirmation.
+Corbeille (SHFileOperation, via ctypes, sans dépendance). Sous Linux, « gio
+trash » (GLib, présent sur quasiment tous les bureaux) puis KIO de KDE sont
+essayés. À défaut — ou si la Corbeille refuse — il est supprimé pour de bon :
+l'interface demande de toute façon une confirmation.
 """
 
 from __future__ import annotations
 
 import os
+import shutil
+import subprocess
 
 _FO_DELETE = 3
 _FOF_SILENT = 0x0004
@@ -29,8 +32,34 @@ def send_to_trash(path) -> bool:
                 return True
         except Exception as exc:
             print(f"[recycle_bin] Corbeille indisponible, suppression directe : {exc}")
+    else:
+        try:
+            if _trash_linux(path) and not os.path.exists(path):
+                return True
+        except Exception as exc:
+            print(f"[recycle_bin] Corbeille indisponible, suppression directe : {exc}")
     if os.path.exists(path):
         os.remove(path)
+    return False
+
+
+def _trash_linux(path) -> bool:
+    """Met `path` à la Corbeille via les outils du bureau. True si accepté.
+
+    gio (GLib) d'abord, puis kioclient de KDE — renommé de kioclient5 en
+    kioclient avec Frameworks 6, les deux noms sont donc essayés.
+    """
+    if shutil.which("gio") and subprocess.run(
+        ["gio", "trash", path],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+    ).returncode == 0:
+        return True
+    for tool in ("kioclient", "kioclient5"):
+        if shutil.which(tool) and subprocess.run(
+            [tool, "move", path, "trash:/"],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        ).returncode == 0:
+            return True
     return False
 
 

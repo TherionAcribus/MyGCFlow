@@ -5,14 +5,18 @@ chemin d'un dossier choisi par l'utilisateur. Le serveur tournant sur la même
 machine, c'est lui qui ouvre la boîte de dialogue de Windows (IFileOpenDialog,
 celle de l'Explorateur) et renvoie le chemin.
 
-Sans dépendance : l'interface COM est appelée via ctypes. Ailleurs que sous
-Windows, ou si la boîte de dialogue ne peut pas s'ouvrir, pick_folder() le
-signale et l'interface propose une saisie manuelle du chemin.
+Sans dépendance : l'interface COM est appelée via ctypes. Hors Windows, les
+outils de dialogue du bureau sont essayés à tour de rôle (zenity, kdialog,
+osascript sur macOS). Si aucun ne peut s'afficher, pick_folder() le signale
+et l'interface propose une saisie manuelle du chemin — dernier recours.
 """
 
 from __future__ import annotations
 
 import os
+import shutil
+import subprocess
+import sys
 import threading
 
 PICKED = "picked"
@@ -55,11 +59,12 @@ def pick_folder(title: str = "", initial_dir: str | None = None) -> tuple[str, s
     dialogue est déjà ouverte, ou (UNAVAILABLE, None) si elle ne peut pas
     s'afficher sur ce système.
     """
-    if os.name != "nt":
-        return UNAVAILABLE, None
     if not _dialog_lock.acquire(blocking=False):
         return BUSY, None
     try:
+        if os.name != "nt":
+            return _native_dialog(title, initial_dir)
+
         import ctypes
 
         # Relevée ici, dans le fil de la requête : la fenêtre au premier plan
@@ -85,6 +90,70 @@ def pick_folder(title: str = "", initial_dir: str | None = None) -> tuple[str, s
         return outcome[0], outcome[1]
     finally:
         _dialog_lock.release()
+
+
+def _native_dialog(title, initial_dir):
+    """Sélecteur de dossier hors Windows : zenity, kdialog, osascript.
+
+    Le premier outil qui rend un verdict gagne ; un outil absent ou qui
+    échoue à se lancer fait essayer le suivant. Aucun ne convient :
+    (UNAVAILABLE, None), et l'interface repasse en saisie manuelle.
+    """
+    if shutil.which("zenity"):
+        cmd = ["zenity", "--file-selection", "--directory"]
+        if title:
+            cmd.append(f"--title={title}")
+        # zenity n'ouvre un dossier donné que si le chemin finit par le
+        # séparateur — sinon il le prend pour un nom de fichier.
+        if initial_dir and os.path.isdir(initial_dir):
+            cmd.append(f"--filename={initial_dir}{os.sep}")
+        outcome = _run_dialog(cmd, cancel_codes=(1, 5))
+        if outcome is not None:
+            return outcome
+    if shutil.which("kdialog"):
+        cmd = ["kdialog", "--getexistingdirectory", initial_dir or ".",
+               "--title", title]
+        outcome = _run_dialog(cmd, cancel_codes=(1,))
+        if outcome is not None:
+            return outcome
+    if sys.platform == "darwin":
+        # osascript est livré avec macOS : « choose folder » renvoie le
+        # chemin terminé par « / », l'annulation (erreur -128) sort par un
+        # code retour non nul.
+        prompt = (title or "Choisir un dossier").replace('"', '\\"')
+        try:
+            result = subprocess.run(
+                ["osascript", "-e",
+                 f'POSIX path of (choose folder with prompt "{prompt}")'],
+                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            )
+            if result.returncode == 0:
+                path = result.stdout.decode("utf-8", "replace").strip()
+                return PICKED, path.rstrip("/") or "/"
+            return CANCELLED, None
+        except Exception:
+            pass
+    return UNAVAILABLE, None
+
+
+def _run_dialog(cmd, cancel_codes):
+    """Lance un outil de sélection de dossier et interprète son code retour.
+
+    Renvoie (PICKED, chemin), (CANCELLED, None), ou None quand l'outil n'a
+    pas rendu de verdict — lancement impossible ou code inattendu : à
+    l'appelant d'essayer l'outil suivant.
+    """
+    try:
+        result = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+        )
+    except Exception:
+        return None
+    if result.returncode == 0:
+        return PICKED, result.stdout.decode("utf-8", "replace").strip()
+    if result.returncode in cancel_codes:
+        return CANCELLED, None
+    return None
 
 
 def _show_dialog(title, initial_dir, owner):
