@@ -38,6 +38,7 @@
         "timePerDay":50,
         "cameraFollow": false,
         "cameraDynamism": 2,
+        "cameraReturnHome": true,
         "extraEndSeconds": 0
     },
     "record": {

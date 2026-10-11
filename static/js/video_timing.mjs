@@ -233,6 +233,12 @@ export function splitCameraBudget({ animationMs, minDatesMs = 0, travelMs = 0 } 
 // sur le budget d'animation en 'duration'/'music' (cameraTimeBudgetMs inchangé,
 // le moteur fait la même soustraction). Ignoré hors mode piste.
 //
+// cameraReturnMs : retour de la caméra au cadrage de départ, joué après la
+// dernière date et avant la pause de fin (attente de l'apparition des derniers
+// points comprise). Financé comme le pré-roll — ajouté en 'rate', pris sur le
+// budget d'animation en 'duration'/'music' — mais dans tous les modes de suivi,
+// « tête du trajet » compris : il ne dépend pas de cameraOverlap.
+//
 // Retourne un plan : compte de jours, décomposition des durées, frames,
 // minimum réalisable, `errors` (entrées invalides — ne pas lancer) et
 // `warnings` (limites appliquées, ex. pincement au minimum ou musique plus
@@ -253,6 +259,7 @@ export function buildTimingPlan({
     cameraOverlap = false,
     cameraLeadMs = 0,
     cameraHoldMs = 0,
+    cameraReturnMs = 0,
 } = {}) {
     const errors = [];
     const warnings = [];
@@ -296,6 +303,9 @@ export function buildTimingPlan({
     // Pauses de dates planifiées (holds) du mode piste : même financement que
     // le pré-roll — ajoutées en 'rate', prises sur le budget sinon.
     const cameraHold = overlap ? Math.max(0, finiteNumber(cameraHoldMs, 0)) : 0;
+    // Retour au cadrage de départ : après la dernière date, quel que soit le
+    // mode de suivi.
+    const cameraReturn = Math.max(0, finiteNumber(cameraReturnMs, 0));
     // Images de raccord des trajets en capture image par image (attente du
     // rendu final). En mode 'rate' elles s'ajoutent à la durée annoncée ;
     // en 'duration'/'music' elles sont déjà absorbées par le pacing dans le
@@ -325,7 +335,8 @@ export function buildTimingPlan({
             // durée des dates, plus le pré-roll qui la précède et les pauses
             // de dates planifiées (holds) le cas échéant.
             animationMs = days > 0
-                ? days * timePerDayMs + (overlap ? cameraLead + cameraHold : cameraRawMs + (cameraKnown ? cameraOverheadMs : 0))
+                ? days * timePerDayMs + cameraReturn
+                    + (overlap ? cameraLead + cameraHold : cameraRawMs + (cameraKnown ? cameraOverheadMs : 0))
                 : 0;
         }
     } else if (mode === 'duration' || mode === 'music') {
@@ -343,11 +354,11 @@ export function buildTimingPlan({
                 // à allonger l'animation (le moteur retombe alors sur le
                 // rythme libre timePerDay, le pré-roll restant joué en tête).
                 clampedToMinimum = true;
-                animationMs = minAnimationMs + cameraAppliedMs + cameraLead + cameraHold;
+                animationMs = minAnimationMs + cameraAppliedMs + cameraLead + cameraHold + cameraReturn;
                 warnings.push({
                     type: 'minimum-total',
                     minimumMs: minTotalMs,
-                    appliedMs: minTotalMs + cameraAppliedMs + cameraLead + cameraHold,
+                    appliedMs: minTotalMs + cameraAppliedMs + cameraLead + cameraHold + cameraReturn,
                     requestedMs: p.value,
                     reason: 'one-frame-per-day',
                 });
@@ -355,7 +366,7 @@ export function buildTimingPlan({
                     warnings.push({
                         type: 'music-shorter-than-minimum',
                         musicMs: p.value,
-                        appliedMs: minTotalMs + cameraAppliedMs + cameraLead + cameraHold,
+                        appliedMs: minTotalMs + cameraAppliedMs + cameraLead + cameraHold + cameraReturn,
                     });
                 }
             } else {
@@ -367,7 +378,9 @@ export function buildTimingPlan({
                     cameraTimeBudgetMs = animRequested;
                 } else if (cameraKnown) {
                     const split = splitCameraBudget({
-                        animationMs: animRequested,
+                        // Le retour final n'est pas partageable : dates et
+                        // trajets se répartissent ce qu'il laisse.
+                        animationMs: Math.max(0, animRequested - cameraReturn),
                         minDatesMs: minAnimationMs,
                         travelMs: cameraRawMs,
                     });
@@ -384,12 +397,12 @@ export function buildTimingPlan({
                     }
                 }
             }
-            // Le temps des dates exclut le pré-roll et les pauses planifiées :
-            // en durée imposée, ils sont pris sur le budget (le moteur applique
+            // Le temps des dates exclut le pré-roll, les pauses planifiées et
+            // le retour final : en durée imposée, ils sont pris sur le budget (le moteur applique
             // la même soustraction sur cameraTimeBudgetMs — le plancher à 1 ms
             // total est le sien, cf. prepareCameraPacing dans mapgl.js).
             timePerDayMs = days > 0
-                ? Math.max(1, animationMs - cameraAppliedMs - cameraLead - cameraHold) / days
+                ? Math.max(1, animationMs - cameraAppliedMs - cameraLead - cameraHold - cameraReturn) / days
                 : NaN;
         }
     } else {
@@ -410,8 +423,9 @@ export function buildTimingPlan({
             cameraTravelMs: cameraAppliedMs,
             cameraLeadMs: cameraLead,
             cameraHoldMs: cameraHold,
+            cameraReturnMs: cameraReturn,
         })
-        : { baseFrameCount: 0, tailFrameCount: 0, totalFrameCount: 0, framesPerDayAverage: 0, leadFrameCount: 0, holdFrameCount: 0 };
+        : { baseFrameCount: 0, tailFrameCount: 0, totalFrameCount: 0, framesPerDayAverage: 0, leadFrameCount: 0, holdFrameCount: 0, returnFrameCount: 0 };
 
     return {
         valid: errors.length === 0,
@@ -448,6 +462,9 @@ export function buildTimingPlan({
         // Pauses de dates planifiées (holds) réellement appliquées, idem.
         cameraHoldMs: cameraHold,
         holdFrameCount: frames.holdFrameCount,
+        // Retour au cadrage de départ réellement appliqué (0 sans retour).
+        cameraReturnMs: cameraReturn,
+        returnFrameCount: frames.returnFrameCount,
         // Mode piste réellement actif : exige la durée simulée. Sans elle le
         // runtime retombe sur le suivi réactif (dates en pause), avertissement
         // « dates en pause » donc encore pertinent côté UI.
@@ -526,6 +543,9 @@ export function buildLoadEstimate({ plan, maxPointsPerDay = 0, flashDurationMs =
 // cameraHoldMs : pauses de dates planifiées du mode piste (holds), ms vidéo —
 // idem : des images en plus du quota des jours, écoulées avant l'affichage du
 // jour qu'elles précèdent.
+//
+// cameraReturnMs : retour de la caméra au cadrage de départ (ms vidéo) — des
+// images en plus, capturées entre le dernier jour et la pause de fin.
 export function buildImageTimingPlan({
     dayCount,
     timePerDayMs,
@@ -538,6 +558,7 @@ export function buildImageTimingPlan({
     cameraTravelMs = 0,
     cameraLeadMs = 0,
     cameraHoldMs = 0,
+    cameraReturnMs = 0,
 } = {}) {
     const safeDays = Math.max(1, Math.round(finiteNumber(dayCount, 1)));
     const safeFps = normalizeVideoFps(fps);
@@ -555,7 +576,9 @@ export function buildImageTimingPlan({
     const travelFrameCount = Math.max(0, Math.round(Math.max(0, finiteNumber(cameraTravelMs, 0)) * safeFps / 1000));
     const leadFrameCount = Math.max(0, Math.round(Math.max(0, finiteNumber(cameraLeadMs, 0)) * safeFps / 1000));
     const holdFrameCount = Math.max(0, Math.round(Math.max(0, finiteNumber(cameraHoldMs, 0)) * safeFps / 1000));
-    const totalFrameCount = baseFrameCount + travelFrameCount + leadFrameCount + holdFrameCount + tailFrameCount;
+    const returnFrameCount = Math.max(0, Math.round(Math.max(0, finiteNumber(cameraReturnMs, 0)) * safeFps / 1000));
+    const totalFrameCount = baseFrameCount + travelFrameCount + leadFrameCount + holdFrameCount
+        + returnFrameCount + tailFrameCount;
 
     return {
         fps: safeFps,
@@ -564,6 +587,7 @@ export function buildImageTimingPlan({
         travelFrameCount,
         leadFrameCount,
         holdFrameCount,
+        returnFrameCount,
         tailFrameCount,
         totalFrameCount,
         framesPerDayAverage: baseFrameCount / safeDays,

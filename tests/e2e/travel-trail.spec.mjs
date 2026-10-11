@@ -316,6 +316,8 @@ test('le suivi « tête du trait » fait glisser la caméra derrière le stylo',
   await page.locator('a[href="#animation"]').click();
   await page.locator('#switchCameraFollow').check();
   await expect(page.locator('#selectCameraTarget')).toBeEnabled();
+  // Retour au cadrage de départ : coché par défaut, vérifié plus bas.
+  await page.locator('#cbCameraReturnHome').check();
   // Une seule aide à la fois : celle du suivi par jour cède la place.
   await expect(page.locator('#helpCameraTargetDays')).toBeVisible();
   await expect(page.locator('#helpCameraTargetTrail')).toBeHidden();
@@ -355,22 +357,29 @@ test('le suivi « tête du trait » fait glisser la caméra derrière le stylo',
   const suivi = await page.evaluate(async () => {
     const app = await import('/static/js/index.js');
     const view = app.getMap().getView();
+    const depart = { x: view.getCenter()[0], zoom: view.getZoom() };
     app.startAnimation();
-    // Fenêtre fixe (pas de break sur la fin du stylo) : la caméra finit son
-    // glissement après l'animation, c'est aussi du mouvement à capturer.
+    // Jusqu'à la fin de l'animation : le glissement derrière le stylo, puis
+    // le retour au cadrage de départ (coché par défaut).
     const positions = [];
-    for (let i = 0; i < 20; i++) {
+    const debut = performance.now();
+    while (app.isAnimationInProgress() && performance.now() - debut < 30_000) {
       await new Promise((resolve) => setTimeout(resolve, 300));
       positions.push(view.getCenter()[0]);
     }
+    // La pose finale du retour est appliquée au rendu qui suit la fin.
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    const arrivee = { x: view.getCenter()[0], zoom: view.getZoom() };
     app.stopAnimation();
-    return positions;
+    return { positions, depart, arrivee };
   });
 
   // La caméra a glissé vers l'ouest (x décroissant) en plusieurs positions
   // distinctes — un mouvement continu, pas un saut unique.
-  expect(new Set(suivi.map((x) => Math.round(x))).size).toBeGreaterThan(3);
-  expect(suivi.at(-1)).toBeLessThan(suivi[0]);
+  expect(new Set(suivi.positions.map((x) => Math.round(x))).size).toBeGreaterThan(3);
+  expect(Math.min(...suivi.positions)).toBeLessThan(suivi.depart.x - 100_000);
+  // Puis elle a retrouvé la position et le zoom du lancement.
+  expect(suivi.arrivee).toEqual(suivi.depart);
 
   // Une interaction rend la main : la vue déplacée ne repart pas vers le stylo.
   const centrePose = await page.evaluate(async () => {

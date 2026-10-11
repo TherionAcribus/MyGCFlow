@@ -70,6 +70,8 @@ export function updateInfosForPictures(){
         cameraLeadMs: pkg.options.animation?.cameraLeadMs || 0,
         // Pauses de dates planifiées (holds) du mode piste, idem.
         cameraHoldMs: pkg.options.animation?.cameraHoldMs || 0,
+        // Retour de la caméra au cadrage de départ, idem (tous modes de suivi).
+        cameraReturnMs: pkg.options.animation?.cameraReturnMs || 0,
     });
 
     pkg.options.record.framesPerDay = plan.framesPerDayAverage;

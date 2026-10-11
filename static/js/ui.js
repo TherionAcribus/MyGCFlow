@@ -611,6 +611,13 @@ const btnRecordAnimation = document.getElementById('btnRecordAnimation');
             refreshTimingPlan();
         });
     }
+    const cbCameraReturnHome = document.getElementById('cbCameraReturnHome');
+    if (cbCameraReturnHome) {
+        cbCameraReturnHome.addEventListener('change', () => {
+            pkg.options.animation.cameraReturnHome = cbCameraReturnHome.checked;
+            refreshTimingPlan();
+        });
+    }
     if (selectCameraTarget) {
         selectCameraTarget.addEventListener('change', () => {
             pkg.options.animation.cameraFollowMode = selectCameraTarget.value === 'trail' ? 'trail' : 'days';
@@ -2795,6 +2802,7 @@ function animationSettingsPayload() {
         camera_follow: a.cameraFollow === true && !isEvolutionPage(),
         camera_dynamism: Math.min(4, Math.max(1, Math.round(Number(a.cameraDynamism) || 2))),
         camera_follow_mode: a.cameraFollowMode === 'trail' ? 'trail' : 'days',
+        camera_return_home: a.cameraReturnHome !== false,
         // Miroir de la durée du flash (réglage de thème) : persistée comme
         // repli au démarrage quand aucun thème ne s'applique.
         flash_duration_ms: Math.round(Number(pkg.options.flash?.duration) || 1000),
@@ -2843,6 +2851,7 @@ function applyAnimationSettingsPayload(anim) {
     if (anim.camera_follow_mode === 'trail' || anim.camera_follow_mode === 'days') {
         a.cameraFollowMode = anim.camera_follow_mode;
     }
+    if (typeof anim.camera_return_home === 'boolean') a.cameraReturnHome = anim.camera_return_home;
     const flash = Number(anim.flash_duration_ms);
     if (Number.isFinite(flash) && flash > 0) {
         pkg.options.flash = pkg.options.flash || {};
@@ -4725,6 +4734,8 @@ function syncCameraFollowControls() {
     if (target) target.disabled = !enabled;
     const trailActive = isCameraTrailMode();
     if (dynamism) dynamism.disabled = !enabled || trailActive;
+    const returnHome = document.getElementById('cbCameraReturnHome');
+    if (returnHome) returnHome.disabled = !enabled;
     // Dynamisme grisé par la cible (et non par l'interrupteur) : le dire.
     const helpDynamism = document.getElementById('helpCameraDynamismTrail');
     if (helpDynamism) helpDynamism.hidden = !(enabled && trailActive);
@@ -4825,6 +4836,10 @@ export function refreshTimingPlan({ save = true } = {}) {
     // En mode « tête du trait » il n'y a pas de trajets à simuler (mouvement
     // continu) — estimateCameraTravel renvoie alors null.
     const cameraTravel = animation.cameraFollow === true ? pkg.estimateCameraTravel?.() : null;
+    // Retour au cadrage de départ en fin d'animation (0 si décoché ou si la
+    // caméra ne quitte pas ce cadrage). Après estimateCameraTravel : le retour
+    // du suivi par jour est tiré de la même simulation.
+    const cameraReturnMs = animation.cameraFollow === true ? (pkg.estimateCameraReturnMs?.() || 0) : 0;
 
     // 2. Plan de timing partagé (aperçu, MediaRecorder, Images). `let` : une
     // seconde passe peut le recalculer avec les pauses de dates (holds).
@@ -4847,6 +4862,7 @@ export function refreshTimingPlan({ save = true } = {}) {
         // tête de l'animation (0 quand il n'y en a pas). Sans effet hors mode
         // piste — le plan l'ignore alors (cf. video_timing.mjs).
         cameraLeadMs: cameraTravel ? (cameraTravel.leadMs || 0) : 0,
+        cameraReturnMs,
         // Piste de caméra (défaut) : les trajets se superposent à l'affichage
         // des dates. cameraTrack:false revient au mode réactif, où les dates
         // sont en pause pendant chaque déplacement. Suivi « tête du trait » :
@@ -4866,7 +4882,9 @@ export function refreshTimingPlan({ save = true } = {}) {
             rhythmMode() === 'rate' ? plan.timePerDayMs : null,
             { budgetMs: rhythmMode() === 'rate' || !Number.isFinite(plan.cameraTimeBudgetMs)
                 ? undefined
-                : plan.cameraTimeBudgetMs },
+                // Le retour final est réservé avant le partage dates/pauses,
+                // comme dans prepareCameraPacing.
+                : Math.max(1, plan.cameraTimeBudgetMs - plan.cameraReturnMs) },
         )
         : null;
     if (hold && hold.holdTotalMs > 0) {
@@ -4886,6 +4904,7 @@ export function refreshTimingPlan({ save = true } = {}) {
             cameraJourneyCount: cameraTravel ? cameraTravel.journeyCount : 0,
             cameraLeadMs: cameraTravel ? (cameraTravel.leadMs || 0) : 0,
             cameraHoldMs: hold.holdTotalMs,
+            cameraReturnMs,
             cameraOverlap: animation.cameraTrack !== false || isCameraTrailMode(),
         });
         plan.cameraHoldCount = cameraHoldCount;
@@ -4906,6 +4925,9 @@ export function refreshTimingPlan({ save = true } = {}) {
         animation.cameraLeadMs = plan.cameraLeadMs || 0;
         // Pauses de dates planifiées du mode piste (idem : ms vidéo, 0 sinon).
         animation.cameraHoldMs = plan.cameraHoldMs || 0;
+        // Retour au cadrage de départ (ms vidéo) : même usage, plus la durée
+        // théorique de la capture rapide (computeTotalAnimationMs, mapgl.js).
+        animation.cameraReturnMs = plan.cameraReturnMs || 0;
     }
 
     // 3. Rendu : champs en lecture seule + synthèse + messages.
@@ -5021,6 +5043,12 @@ function renderTimingSummary(plan) {
         if (plan.cameraHoldMs > 0) {
             parts.splice(cameraTravelKnown && plan.cameraTravelMs > 0 ? 4 : 3, 0,
                 t('dont pauses caméra ${d}', { d: formatDurationHuman(plan.cameraHoldMs) }));
+        }
+        // Retour au cadrage de départ : joué après la dernière date, la durée
+        // annoncée l'inclut. Inséré juste avant « fin … ».
+        if (plan.cameraReturnMs > 0) {
+            parts.splice(parts.length - 1, 0,
+                t('dont retour caméra ${d}', { d: formatDurationHuman(plan.cameraReturnMs) }));
         }
         if (plan.extraEndMs > 0) parts.push(t('+ ${d} additionnel', { d: formatDurationHuman(plan.extraEndMs) }));
         parts.push(cameraAddsTravel
@@ -5249,7 +5277,7 @@ function changeAnimationValues(event){
 // Borne les options d'animation venues des valeurs par défaut ou des réglages
 // persistés. Le schéma courant : rhythmMode/daysPerSecond/totalDurationSeconds
 // + timePerDay (ms, valeur canonique lue par le moteur) + extraEndSeconds +
-// cameraFollow/cameraDynamism. Les anciennes clés (speed) sont converties une fois.
+// cameraFollow/cameraDynamism/cameraReturnHome. Les anciennes clés (speed) sont converties une fois.
 function normalizeAnimationOptions() {
     const animation = pkg.options?.animation;
     if (!animation) return;
@@ -5276,6 +5304,7 @@ function normalizeAnimationOptions() {
     const cameraDynamism = Math.round(Number(animation.cameraDynamism));
     animation.cameraDynamism = cameraDynamism >= 1 && cameraDynamism <= 4 ? cameraDynamism : 2;
     animation.cameraFollowMode = animation.cameraFollowMode === 'trail' ? 'trail' : 'days';
+    animation.cameraReturnHome = animation.cameraReturnHome !== false;
 }
 
 // Reflète pkg.options.animation dans les contrôles de l'onglet Animation, puis
@@ -5301,6 +5330,8 @@ export function syncAnimationOptionsUI() {
     if (selectCameraDynamism) {
         selectCameraDynamism.value = String(animation.cameraDynamism);
     }
+    const cbCameraReturnHome = document.getElementById('cbCameraReturnHome');
+    if (cbCameraReturnHome) cbCameraReturnHome.checked = animation.cameraReturnHome !== false;
     syncCameraFollowControls();
 
     refreshTimingPlan({ save: false });

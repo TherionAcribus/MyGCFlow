@@ -404,6 +404,10 @@ class AnimationPrefs:
     # Cible du suivi : "days" (les caches du jour qui s'affiche) ou "trail"
     # (la tête du trait de déplacement, glissement continu derrière le stylo).
     camera_follow_mode: str = "days"
+    # En fin d'animation, la caméra revient au cadrage de départ (centre et
+    # zoom) : la dernière image ne dépend plus de la position des dernières
+    # caches. Sans effet quand le suivi est désactivé.
+    camera_return_home: bool = True
     # Miroir persisté de la durée du flash : le réglage appartient au thème
     # (FlashOptions.duration), cette clé reste la valeur de repli au démarrage
     # quand aucun thème ne s'applique, et pour les anciens thèmes sans durée.
@@ -780,6 +784,7 @@ def coerce_animation_settings(d: dict, defaults: Optional[AnimationPrefs] = None
     a.camera_dynamism = _clamp_int(d.get("camera_dynamism"), a.camera_dynamism, 1, 4)
     follow_mode = d.get("camera_follow_mode", a.camera_follow_mode)
     a.camera_follow_mode = follow_mode if follow_mode in ("days", "trail") else a.camera_follow_mode
+    a.camera_return_home = bool(d.get("camera_return_home", a.camera_return_home))
     a.flash_duration_ms = _clamp_int(d.get("flash_duration_ms"), a.flash_duration_ms, *FLASH_DURATION_RANGE)
     a.trail_duration_ms = _clamp_int(d.get("trail_duration_ms"), a.trail_duration_ms, 100, 10000)
     return a

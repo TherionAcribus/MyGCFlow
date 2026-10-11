@@ -189,6 +189,11 @@ class AnimationCoercionTests(unittest.TestCase):
         self.assertEqual(coerce_animation_settings({"camera_follow_mode": 42}).camera_follow_mode, "days")
         self.assertEqual(coerce_animation_settings({}).camera_follow_mode, "days")
 
+    def test_camera_return_home_defaults_to_true(self):
+        self.assertTrue(coerce_animation_settings({}).camera_return_home)
+        self.assertFalse(coerce_animation_settings({"camera_return_home": False}).camera_return_home)
+        self.assertTrue(coerce_animation_settings({"camera_return_home": True}).camera_return_home)
+
     def test_garbage_payload_yields_defaults(self):
         self.assertEqual(coerce_animation_settings(None), AnimationPrefs())
 

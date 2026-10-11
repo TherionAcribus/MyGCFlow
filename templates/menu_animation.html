@@ -217,6 +217,13 @@
                             <small id="helpCameraDynamismTrail" class="form-hint text-muted mt-1" hidden>{{ _("Sans effet avec cette cible : la caméra suit le stylo en continu.") }}</small>
                         </div>
                         <div class="col-12">
+                            <div class="form-check mb-0">
+                                <input class="form-check-input" type="checkbox" id="cbCameraReturnHome" aria-describedby="helpCameraReturnHome" checked disabled>
+                                <label class="form-check-label" for="cbCameraReturnHome">{{ _("Revenir au cadrage de départ à la fin") }}</label>
+                            </div>
+                            <small id="helpCameraReturnHome" class="form-hint text-muted">{{ _("Après la dernière date, la caméra retrouve la position et le zoom du lancement : la dernière image ne dépend plus de l'endroit où se trouvent les dernières caches.") }}</small>
+                        </div>
+                        <div class="col-12">
                             <!-- Repli signalé : « tête du trajet » demandé mais
                                  trajet désactivé — le moteur suit alors par jour. -->
                             <div id="cameraTrailFallbackWarning" class="alert alert-warning py-2 px-3 mb-2 small" role="status" hidden>

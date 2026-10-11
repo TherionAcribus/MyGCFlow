@@ -724,3 +724,59 @@ test('buildImageTimingPlan : les pauses planifiées s\'ajoutent au total', () =>
     assert.equal(plan.holdFrameCount, 30);
     assert.equal(plan.totalFrameCount, 120);
 });
+
+// ---------- Retour de la caméra au cadrage de départ (cameraReturnMs) ----------
+
+test('cameraReturnMs en rythme jours/s : le retour allonge l\'animation', () => {
+    const plan = buildTimingPlan({
+        dayCount: 100,
+        rhythm: { mode: 'rate', daysPerSecond: 10 },
+        fps: 30,
+        tailFreezeMs: 3000,
+        cameraTravelMs: 20000,
+        cameraOverlap: true,
+        cameraReturnMs: 2000,
+    });
+    assert.equal(plan.cameraReturnMs, 2000);
+    assert.equal(plan.timePerDayMs, 100);
+    assert.equal(plan.animationMs, 12000);
+    assert.equal(plan.totalDurationMs, 15000);
+    // 300 images de dates + 60 de retour + 90 de pause de fin.
+    assert.equal(plan.baseFrameCount, 300);
+    assert.equal(plan.returnFrameCount, 60);
+    assert.equal(plan.totalFrameCount, 450);
+});
+
+test('cameraReturnMs en durée imposée : total inchangé, dates réduites du retour', () => {
+    const plan = buildTimingPlan({
+        dayCount: 100,
+        rhythm: { mode: 'duration', totalDurationMs: 63000 },
+        fps: 30,
+        tailFreezeMs: 3000,
+        cameraTravelMs: 40000,
+        cameraOverlap: true,
+        cameraLeadMs: 3000,
+        cameraReturnMs: 2000,
+    });
+    assert.equal(plan.totalDurationMs, 63000);
+    assert.equal(plan.cameraTimeBudgetMs, 60000);
+    assert.equal(plan.timePerDayMs, 550);
+    assert.equal(plan.totalFrameCount, Math.round(plan.totalDurationMs * 30 / 1000));
+});
+
+test('cameraReturnMs s\'applique aussi sans piste (suivi « tête du trajet »)', () => {
+    const base = {
+        dayCount: 100,
+        rhythm: { mode: 'duration', totalDurationMs: 63000 },
+        fps: 30,
+        tailFreezeMs: 3000,
+    };
+    const plan = buildTimingPlan({ ...base, cameraReturnMs: 2000 });
+    assert.equal(plan.cameraReturnMs, 2000);
+    assert.equal(plan.totalDurationMs, 63000);
+    assert.equal(plan.timePerDayMs, 580);
+    // Mode réactif : le retour est réservé avant le partage dates/trajets.
+    const reactif = buildTimingPlan({ ...base, cameraTravelMs: 10000, cameraReturnMs: 2000 });
+    assert.equal(reactif.totalDurationMs, 63000);
+    assert.equal(reactif.timePerDayMs, 480);
+});

@@ -128,6 +128,7 @@ import {
     clampToExtent,
     createCameraJourney,
     createCameraPacing,
+    createReturnJourney,
     INTENSE_EXTRA_ZOOM_OUT,
     LONG_TRAVEL_THRESHOLD_PX,
     MIN_CRUISE_ZOOM,
@@ -405,6 +406,22 @@ let cameraTarget = null;
 let cameraTargetExtent = null;
 let cameraExtent = null;
 let cameraHomeZoom = null;
+// Cadrage complet au lancement ({ center, zoom }) : cible du retour de fin
+// d'animation (options.animation.cameraReturnHome, actif par défaut).
+let cameraHome = null;
+// Retour au cadrage de départ. cameraReturnPlan : fenêtre réservée sur la
+// timeline après la dernière date ({ windowMs, delayMs }, ms de timeline,
+// ralentissement de la capture rapide compris), posée par prepareCameraPacing.
+// cameraReturn : le retour en cours, armé par beginCameraReturn quand la
+// dernière date est affichée ; il reste en place une fois terminé, pour que le
+// suivi ne reparte pas vers les dernières caches.
+let cameraReturnPlan = null;
+let cameraReturn = null;
+// Durée vidéo du dernier retour planifié, resservie pendant qu'une animation
+// tourne (même raison que lastCameraTravelEstimate).
+let lastCameraReturnEstimate = 0;
+// Images du retour restant à capturer en mode image par image.
+let recordingReturnFrames = 0;
 let cameraInteractionKey = null;
 let cameraTravelPending = false;
 let cameraJourney = null;
@@ -1016,6 +1033,23 @@ function updateCameraFollow(now) {
         return false;
     }
     if (cameraFollowSuspended) return false;
+    if (cameraReturn) {
+        if (cameraReturn.finished) return false;
+        // Même avance d'une frame que la piste en capture image par image : la
+        // pose posée en pré-rendu s'applique à la frame suivante.
+        const returnNow = now
+            + (isRecording ? 1000 / (Number(pkg.options.record.framesPerSec) || 30) : 0);
+        if (returnNow >= cameraReturn.startAt) return stepCameraReturn(returnNow);
+        // Avant le départ (apparition des derniers points) : le suivi normal
+        // garde la main, et le rendu doit continuer jusqu'au départ.
+        updateCameraFollowMotion(now);
+        return true;
+    }
+    return updateCameraFollowMotion(now);
+}
+
+// Suivi proprement dit : tête du trait, piste précalculée ou trajet réactif.
+function updateCameraFollowMotion(now) {
     if (effectiveCameraFollowMode() === 'trail') {
         return updateTrailCameraFollow(now);
     }
@@ -1150,6 +1184,91 @@ function updateCameraFollow(now) {
         return false;
     }
     return true;
+}
+
+// Retour au cadrage de départ, activé par défaut : sans lui la dernière image
+// reste là où se trouvaient les dernières caches, souvent décentrée.
+function effectiveCameraReturnHome() {
+    return pkg.options.animation?.cameraReturnHome !== false;
+}
+
+// À appeler quand la dernière date vient d'être affichée : arme le retour sur
+// l'horloge des points. Sans effet si rien n'est planifié (option décochée,
+// suivi inactif) ou si l'utilisateur a repris la main sur la carte.
+function beginCameraReturn() {
+    if (cameraReturn || !cameraReturnPlan || !cameraHome || cameraFollowSuspended) return;
+    const now = sampleAppearClock();
+    cameraReturn = {
+        startAt: now + cameraReturnPlan.delayMs,
+        endAt: now + cameraReturnPlan.windowMs,
+        journey: null,
+        rate: 1,
+        started: false,
+        finished: false,
+    };
+    if (!isRecording && !isMediaRecording) map.render();
+}
+
+// Vrai tant que la fenêtre du retour n'est pas écoulée : la fin de l'animation
+// (temps additionnel, gel de fin) attend, comme elle attendrait une date.
+function cameraReturnBlocksEnd() {
+    return !!cameraReturn && sampleAppearClock() < cameraReturn.endAt;
+}
+
+// Joue le retour. Le trajet part de la vue RÉELLE à l'instant du départ, puis
+// sa vitesse est ajustée pour qu'il se termine avec la fenêtre planifiée : la
+// durée annoncée reste exacte même quand la vue diffère de la simulation
+// (suivi « tête du trait », dont la position finale n'est qu'estimée).
+function stepCameraReturn(now) {
+    const view = map.getView();
+    const state = cameraReturn;
+    if (!state.started) {
+        state.started = true;
+        // Le retour remplace tout mouvement en cours du suivi réactif.
+        clearCameraRenderWait();
+        cameraTarget = null;
+        cameraTargetExtent = null;
+        cameraJourney = null;
+        cameraJourneyStartedAt = null;
+        cameraTravelPending = false;
+        state.journey = createReturnJourney(
+            view.getCenter(), view.getZoom(), view.getResolution(), cameraHome,
+            {
+                path: effectiveCameraPath(),
+                minCruiseZoom: cameraMinZoomFloor(),
+                worldWidth: cameraWorldWidth(),
+            },
+        );
+        if (state.journey) {
+            const flightMs = state.endAt - state.startAt;
+            // Fenêtre nulle (rien n'était prévu) : vitesse naturelle, le
+            // retour déborde alors sur la pause de fin plutôt que de sauter.
+            state.rate = flightMs > 0
+                ? state.journey.totalDurationMs / flightMs
+                : 1 / Math.max(1, cameraDurationScale);
+            prefetchBasemapTiles(cameraHome.center, cameraHome.zoom);
+        }
+    }
+    const pose = state.journey
+        ? sampleCameraJourney(state.journey, (now - state.startAt) * state.rate)
+        : null;
+    if (pose && !pose.done) {
+        view.setCenter(canonicalCameraCenter(pose.center));
+        view.setZoom(pose.zoom);
+        return true;
+    }
+    // Arrivée : le cadrage de départ exact, pas sa copie à un arrondi près.
+    state.finished = true;
+    const center = view.getCenter();
+    const changed = !center
+        || center[0] !== cameraHome.center[0]
+        || center[1] !== cameraHome.center[1]
+        || view.getZoom() !== cameraHome.zoom;
+    if (changed) {
+        view.setCenter([...cameraHome.center]);
+        view.setZoom(cameraHome.zoom);
+    }
+    return changed;
 }
 
 // Mode de suivi : 'days' (par jour affiché — piste précalculée ou réactif,
@@ -1340,6 +1459,9 @@ function cancelCameraFollowMotion() {
     trailCamJourney = null;
     trailCamJourneyStartedAt = null;
     trailCamLastNow = null;
+    // Retour au cadrage de départ : abandonné lui aussi, en cours ou planifié.
+    cameraReturn = null;
+    cameraReturnPlan = null;
 }
 
 // À appeler au début d'une lecture ou d'un enregistrement : la caméra repart de
@@ -1352,6 +1474,10 @@ function resetCameraFollow() {
     // « fitDay » — la caméra ne se rapproche jamais plus que la vue choisie.
     // Posé avant le early return : sans suivi la valeur est simplement inutile.
     cameraHomeZoom = map?.getView?.()?.getZoom() ?? null;
+    const homeCenter = map?.getView?.()?.getCenter();
+    cameraHome = Array.isArray(homeCenter) && Number.isFinite(cameraHomeZoom)
+        ? { center: [...homeCenter], zoom: cameraHomeZoom }
+        : null;
     if (!pkg.options.animation?.cameraFollow || isEvolutionPage()) return;
     // L'utilisateur reprend la main dès qu'il touche la carte : sans cela, la
     // vue glisserait de nouveau vers la cible juste après son déplacement.
@@ -1476,6 +1602,37 @@ function summarizeCameraDay(points) {
     return summarizeWorldCoordinates(coordinates, cameraWorldWidth());
 }
 
+// Résumés par jour (cameraSummaries) et étendue de toutes les caches
+// (cameraSummariesExtent, même borne que resetCameraFollow). Re-projeter chaque
+// cache est le coût dominant de la simulation : ils ne sont reconstruits que
+// quand l'index des dates a changé (re-filtrage, chargement), pas à chaque
+// refreshTimingPlan.
+function ensureCameraSummaries() {
+    if (cameraSummariesRevision === pkg.pointsByDateRevision) return;
+    const summaries = new Map();
+    let extent = null;
+    for (const [dateKey, points] of pkg.pointsByDate.entries()) {
+        const summary = summarizeCameraDay(points || []);
+        if (!summary) continue;
+        summaries.set(dateKey, summary);
+        if (extent) {
+            const referenceX = (extent[0] + extent[2]) / 2;
+            ol.extent.extend(
+                extent,
+                alignWorldExtent(summary.extent, referenceX, cameraWorldWidth()),
+            );
+        } else {
+            extent = [...summary.extent];
+        }
+    }
+    cameraSummaries = summaries;
+    cameraSummariesExtent = extent;
+    // Révision posée après un calcul mené à terme : une projection qui
+    // lèverait une exception à mi-parcours laisse le cache périmé (il
+    // sera retenté à l'appel suivant) plutôt que tronqué.
+    cameraSummariesRevision = pkg.pointsByDateRevision;
+}
+
 // Déroule à blanc les trajets que fera la caméra depuis la vue courante, sur la
 // plage de dates animée. null si le suivi est inactif ou les données absentes.
 // `forRecording` : cf. effectiveCameraDynamism.
@@ -1486,34 +1643,7 @@ function simulateCurrentCameraJourneys({ forRecording } = {}) {
         const end = animationEndDate();
         if (!map || !pkg.pointsByDate || !(start instanceof Date) || !(end instanceof Date) || end < start) return null;
 
-        // Même borne que resetCameraFollow : l'étendue de toutes les caches.
-        // Re-projeter chaque cache est le coût dominant de la simulation : les
-        // résumés ne sont reconstruits que quand l'index des dates a changé
-        // (re-filtrage, chargement), pas à chaque refreshTimingPlan.
-        if (cameraSummariesRevision !== pkg.pointsByDateRevision) {
-            const summaries = new Map();
-            let extent = null;
-            for (const [dateKey, points] of pkg.pointsByDate.entries()) {
-                const summary = summarizeCameraDay(points || []);
-                if (!summary) continue;
-                summaries.set(dateKey, summary);
-                if (extent) {
-                    const referenceX = (extent[0] + extent[2]) / 2;
-                    ol.extent.extend(
-                        extent,
-                        alignWorldExtent(summary.extent, referenceX, cameraWorldWidth()),
-                    );
-                } else {
-                    extent = [...summary.extent];
-                }
-            }
-            cameraSummaries = summaries;
-            cameraSummariesExtent = extent;
-            // Révision posée après un calcul mené à terme : une projection qui
-            // lèverait une exception à mi-parcours laisse le cache périmé (il
-            // sera retenté à l'appel suivant) plutôt que tronqué.
-            cameraSummariesRevision = pkg.pointsByDateRevision;
-        }
+        ensureCameraSummaries();
 
         const days = [];
         const day = new Date(start);
@@ -1536,6 +1666,7 @@ function simulateCurrentCameraJourneys({ forRecording } = {}) {
             // par le zoom de lancement (homeZoom = zoom de la vue à l'appel).
             fitDay: effectiveCameraFitDay(),
             worldWidth: cameraWorldWidth(),
+            returnHome: effectiveCameraReturnHome(),
         });
     } catch (e) {
         console.warn('[CAMERA] Simulation des trajets indisponible:', e);
@@ -1547,10 +1678,74 @@ function simulateCurrentCameraJourneys({ forRecording } = {}) {
 // de ses points. La vague « Impulsion » décale leur départ de 120 ms au plus ;
 // la caméra attend donc aussi ce décalage avant de viser la zone suivante.
 function cameraPointSettleMsByDay(simulation) {
-    const settleMs = pkg.options.point?.appearAnimation === true
+    const settleMs = cameraPointSettleMs();
+    return (simulation?.hasPointsByDay || []).map((hasPoints) => (hasPoints ? settleMs : 0));
+}
+
+function cameraPointSettleMs() {
+    return pkg.options.point?.appearAnimation === true
         ? POINT_APPEAR_MS + (pkg.options.flash?.mode === 'impulse' ? IMPULSE_MAX_STAGGER_MS : 0)
         : 0;
-    return (simulation?.hasPointsByDay || []).map((hasPoints) => (hasPoints ? settleMs : 0));
+}
+
+// Suivi « tête du trait » : aucune simulation ne dit où la caméra finira. Elle
+// suit le stylo, qui se pose sur la dernière cache — le retour est donc estimé
+// depuis le dernier jour animé qui en contient, au zoom de lancement. Le
+// trajet réel partira de la vue du moment (stepCameraReturn) ; seule sa durée
+// est prise ici.
+function estimateTrailReturnJourney() {
+    const start = animationStartDate();
+    const end = animationEndDate();
+    if (!map || !pkg.pointsByDate || !(start instanceof Date) || !(end instanceof Date) || end < start) return null;
+    ensureCameraSummaries();
+    let last = null;
+    const day = new Date(end);
+    while (day >= start && !last) {
+        last = cameraSummaries.get(day.toDateString()) || null;
+        day.setDate(day.getDate() - 1);
+    }
+    if (!last) return null;
+    const view = map.getView();
+    const center = view.getCenter();
+    const width = cameraWorldWidth();
+    const from = clampToExtent(
+        [nearestWorldX(last.center[0], center[0], width), last.center[1]],
+        alignWorldExtent(cameraSummariesExtent, center[0], width),
+    );
+    return createReturnJourney(from, view.getZoom(), view.getResolution(),
+        { center, zoom: view.getZoom() },
+        { path: effectiveCameraPath(), minCruiseZoom: cameraMinZoomFloor(), worldWidth: width });
+}
+
+// Fenêtre du retour au cadrage de départ, en ms vidéo : { delayMs, totalMs }.
+// delayMs laisse finir l'apparition des derniers points avant de quitter leur
+// zone ; totalMs y ajoute le trajet. null quand le retour n'a pas lieu d'être,
+// fenêtre nulle quand la caméra est déjà chez elle. `simulation` : celle des
+// trajets par jour (sans objet en suivi « tête du trait »).
+function planCameraReturn(simulation) {
+    if (!pkg.options.animation?.cameraFollow || isEvolutionPage() || !effectiveCameraReturnHome()) return null;
+    let journey = null;
+    try {
+        journey = effectiveCameraFollowMode() === 'trail'
+            ? estimateTrailReturnJourney()
+            : (simulation?.returnJourney || null);
+    } catch (e) {
+        console.warn('[CAMERA] Estimation du retour indisponible:', e);
+    }
+    const travelMs = Math.max(0, Number(journey?.totalDurationMs) || 0);
+    if (!(travelMs > 0)) return { delayMs: 0, totalMs: 0 };
+    const delayMs = cameraPointSettleMs();
+    return { delayMs, totalMs: delayMs + travelMs };
+}
+
+// Durée vidéo du retour au cadrage de départ de la prochaine animation, pour
+// le plan de durée affiché (ui.js, refreshTimingPlan). À appeler APRÈS
+// estimateCameraTravel : le retour du suivi par jour vient de sa simulation.
+export function estimateCameraReturnMs() {
+    if (!animationInProgress && !isRecording && !isMediaRecording) {
+        lastCameraReturnEstimate = planCameraReturn(lastCameraTravelEstimate)?.totalMs || 0;
+    }
+    return lastCameraReturnEstimate;
 }
 
 // Durée cumulée et nombre des trajets de caméra de la prochaine animation, pour
@@ -1622,28 +1817,48 @@ export function estimateCameraTrackHold(dayMs, { budgetMs } = {}) {
 // étirée puis ramenée à sa vitesse par la normalisation : les trajets doivent
 // l'être aussi, sinon ils seraient accélérés dans la vidéo finale.
 //
-// Retourne { travelMs, datesMs } en temps vidéo final (datesMs null quand la
-// durée n'est pas imposée), ou null sans suivi de caméra.
+// Le retour au cadrage de départ (planCameraReturn) est réservé ici : en durée
+// imposée il est retranché du budget avant tout partage, comme le fait le plan.
+//
+// Retourne { travelMs, datesMs, returnMs } en temps vidéo final (datesMs null
+// quand la durée n'est pas imposée), ou null sans suivi de caméra.
 function prepareCameraPacing({ timelineScale = 1, forRecording = isRecording || isMediaRecording } = {}) {
     const stretch = Math.max(1, Number(timelineScale) || 1);
     cameraPacing = null;
     cameraTrack = null;
     cameraTrackStartAt = null;
+    cameraReturnPlan = null;
+    cameraReturn = null;
     cameraPacingState = { elapsedMs: 0, travelSpentMs: 0, dayIndex: 0, travelFrames: 0, retarget: false };
     cameraDurationScale = stretch;
 
-    const budgetMs = Number(pkg.options.animation?.cameraTimeBudgetMs);
+    // Budget d'animation entier, retour compris ; `budgetMs` est ce qu'il en
+    // reste une fois le retour réservé.
+    const fullBudgetMs = Number(pkg.options.animation?.cameraTimeBudgetMs);
+    let budgetMs = fullBudgetMs;
+    let returnMs = 0;
+    const reserveReturn = (simulation) => {
+        const plan = planCameraReturn(simulation);
+        returnMs = plan?.totalMs || 0;
+        lastCameraReturnEstimate = returnMs;
+        cameraReturnPlan = plan
+            ? { windowMs: plan.totalMs * stretch, delayMs: plan.delayMs * stretch }
+            : null;
+        if (fullBudgetMs > 0) budgetMs = Math.max(1, fullBudgetMs - returnMs);
+    };
 
     // Suivi « tête du trait » : mouvement continu qui ne met jamais les dates
     // en pause — aucune piste ni répartition à construire, tout le budget
     // d'animation va aux dates et la durée demandée est tenue telle quelle.
     if (effectiveCameraFollowMode() === 'trail') {
-        return { travelMs: 0, datesMs: budgetMs > 0 ? budgetMs : null };
+        reserveReturn(null);
+        return { travelMs: 0, datesMs: budgetMs > 0 ? budgetMs : null, returnMs };
     }
 
     const simulation = simulateCurrentCameraJourneys({ forRecording });
     if (!simulation) return null;
     lastCameraTravelEstimate = simulation;
+    reserveReturn(simulation);
 
     // Mode « piste » (défaut) : les trajets simulés sont planifiés pour se
     // terminer pile quand leur jour s'affiche, pendant l'affichage des jours
@@ -1720,11 +1935,12 @@ function prepareCameraPacing({ timelineScale = 1, forRecording = isRecording || 
             // Les pauses de dates sont financées sur le budget, comme le
             // pré-roll : le temps des dates est ce qui reste aux jours.
             datesMs: budgetMs > 0 ? budgetMs - leadVideoMs - holdTotalVideoMs : null,
+            returnMs,
         };
     }
 
     if (!(budgetMs > 0) || !(simulation.dayCount > 0)) {
-        return { travelMs: simulation.totalMs, datesMs: null };
+        return { travelMs: simulation.totalMs, datesMs: null, returnMs };
     }
     const fps = normalizeRecordingFps(pkg.options.record?.fps);
     const split = splitCameraBudget({
@@ -1739,7 +1955,7 @@ function prepareCameraPacing({ timelineScale = 1, forRecording = isRecording || 
         travelScale: cameraDurationScale,
     });
     dbgMapgl('[CAMERA] Durée imposée:', budgetMs, 'ms dont trajets', split.travelMs, 'ms (x' + split.travelScale + ')');
-    return { travelMs: split.travelMs, datesMs: split.datesMs };
+    return { travelMs: split.travelMs, datesMs: split.datesMs, returnMs };
 }
 
 // Nombre d'images à accorder à la date courante en capture image par image,
@@ -2231,6 +2447,14 @@ export function startAnimation(restart=false) {
             return;
         }
         if (animationDatesComplete) {
+            // Retour au cadrage de départ : la fin (temps additionnel, gel de
+            // la capture rapide) attend que sa fenêtre soit écoulée.
+            beginCameraReturn();
+            if (cameraReturnBlocksEnd()) {
+                animationLastTs = ts;
+                animationRafId = requestAnimationFrame(animationStep);
+                return;
+            }
             animationRafId = null;
             const extraMs = getExtraEndMs();
             if (extraMs > 0) {
@@ -2578,6 +2802,7 @@ function startRecordingProcess(session){
     // interrompue — l'affichage initial du jour 0 en dépend.
     recordingLeadPending = false;
     recordingHoldPending = false;
+    recordingReturnFrames = 0;
 
     // NB : l'affichage des caches antérieures à la date de début est fait plus bas,
     // APRÈS le window.vectorSource.clear() de préparation — sinon ce clear les efface
@@ -2631,6 +2856,9 @@ function startRecordingProcess(session){
             // total, chaque jour gardant son quota (captureNextFrame les
             // consomme avant l'affichage du jour concerné).
             cameraHoldMs: cameraTrack?.holdTotalMs || 0,
+            // Retour au cadrage de départ : ses images suivent le dernier jour
+            // (captureNextFrame les écoule avant la pause de fin).
+            cameraReturnMs: cameraPlan?.returnMs || 0,
             fps: pkg.options.record.fps,
             extraEndSeconds: pkg.options.animation.extraEndSeconds,
             tailFreezeMs: pkg.options.record?.mediaRecorder?.tailFreezeMs,
@@ -2643,6 +2871,7 @@ function startRecordingProcess(session){
         recordingLeadPending = false;
         recordingHoldPending = false;
         recordingBaseFrameCount = timingPlan.baseFrameCount;
+        recordingReturnFrames = timingPlan.returnFrameCount || 0;
         currentDayFrameTarget = framesForDay(0, recordingDayCount, recordingBaseFrameCount,
             { allowZero: isEvolutionPage() });
         framesPerDay = timingPlan.framesPerDayAverage;
@@ -3094,6 +3323,21 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos, sess
         if (cameraPacing && currentFrame === 0 && currentDate <= pkg.metadata.endDate) {
             currentDayFrameTarget = cameraPacedFrameTarget(true);
         }
+    }
+
+    // Retour au cadrage de départ : ses images sont capturées entre le dernier
+    // jour et la pause de fin. Elles le sont même si le retour a été annulé
+    // entre-temps (carte déplacée à la main) : la vidéo garde sa durée.
+    if (currentDate > pkg.metadata.endDate && recordingReturnFrames > 0) {
+        beginCameraReturn();
+        recordingReturnFrames--;
+        if (capture == true) {
+            await captureElementWithRetry();
+            if (cancelled()) return;
+        }
+        globalRecordFrame++;
+        scheduleCaptureFrame(pointOptions, flashOptions, infos, session);
+        return;
     }
 
     if (currentDate > pkg.metadata.endDate) {
@@ -3563,6 +3807,10 @@ function computeTotalAnimationMs(){
             : (effectiveCameraTrack()
                 ? base + (cameraTravel.leadMs || 0) + (pkg.options.animation?.cameraHoldMs || 0)
                 : base + cameraTravel.totalMs);
+        // Retour au cadrage de départ : déjà dans cameraBudgetMs quand la durée
+        // est imposée, à ajouter sinon (suivi « tête du trait » compris, dont
+        // le temps des dates exclut déjà le retour).
+        if (!(cameraTravel && cameraBudgetMs > 0)) base += pkg.options.animation?.cameraReturnMs || 0;
         const extraEndMs = Math.max(0, Number(pkg.options?.animation?.extraEndSeconds) || 0) * 1000;
         const endHoldMs = automaticEndHoldMs({
             tailFreezeMs: pkg.options.record?.mediaRecorder?.tailFreezeMs,

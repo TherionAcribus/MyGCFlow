@@ -503,6 +503,30 @@ function sampleFlyJourney(journey, elapsed) {
     };
 }
 
+// Trajet de retour au cadrage de départ (`home` : { center, zoom }), joué en fin
+// d'animation pour que la dernière image ne dépende pas de l'endroit où se
+// trouvaient les dernières caches. Même tracé qu'un trajet ordinaire, sans la
+// « respiration » du niveau 4 : un retour n'a rien à souligner. La cible est
+// prise dans la copie du monde la plus proche — le retour passe par le plus
+// court chemin, comme les autres trajets. null quand la vue y est déjà.
+export function createReturnJourney(current, currentZoom, resolution, home, {
+    path,
+    minCruiseZoom,
+    worldWidth = null,
+} = {}) {
+    if (!current || !home || !Array.isArray(home.center)) return null;
+    const homeZoom = Number(home.zoom);
+    if (!Number.isFinite(homeZoom)) return null;
+    const target = Number(worldWidth) > 0
+        ? [nearestWorldX(home.center[0], current[0], worldWidth), home.center[1]]
+        : [...home.center];
+    return createCameraJourney(current, target, currentZoom, resolution, {
+        path,
+        minCruiseZoom,
+        endZoom: homeZoom,
+    });
+}
+
 export function sampleCameraJourney(journey, elapsedMs) {
     if (!journey) return null;
     const elapsed = Math.max(0, Number(elapsedMs) || 0);
@@ -572,6 +596,11 @@ export const CAMERA_JOURNEY_EXTRA_FRAMES = 1;
 // la vue choisie, et s'éloigne si l'étendue dépasse le viewport. Le zoom alors
 // atteint se propage aux jours suivants : leurs distances en pixels et leurs
 // décisions (shouldMoveCamera, zooms de croisière) dépendent du zoom courant.
+//
+// `returnHome` : ajoute au résultat `returnJourney`, le trajet qui ramène la
+// caméra de sa dernière position simulée au cadrage de lancement (null si elle
+// n'en a pas bougé). Il n'entre ni dans totalMs ni dans journeyCount, qui
+// décrivent les trajets des jours : il se joue après la dernière date.
 export function simulateCameraJourneys(days, {
     center,
     zoom,
@@ -584,6 +613,7 @@ export function simulateCameraJourneys(days, {
     fitDay = false,
     paddingPx = 48,
     worldWidth = null,
+    returnHome = false,
 } = {}) {
     const list = Array.isArray(days) ? days : [];
     const level = normalizeCameraDynamism(dynamism);
@@ -660,7 +690,17 @@ export function simulateCameraJourneys(days, {
     // première date. 0 quand le jour 0 n'a pas de trajet : pas de marge à
     // prévoir, le comportement historique est conservé.
     const leadMs = journeysByDay[0] ? journeysByDay[0].totalDurationMs : 0;
+    const returnJourney = returnHome && current && Array.isArray(center)
+        ? createReturnJourney(
+            current,
+            currentZoom,
+            baseResolution * Math.pow(2, homeZoom - currentZoom),
+            { center, zoom: homeZoom },
+            { path, minCruiseZoom, worldWidth },
+        )
+        : null;
     return {
+        returnJourney,
         dayCount: list.length,
         hasPointsByDay: list.map((day) => Boolean(day?.center)),
         travelMsByDay,

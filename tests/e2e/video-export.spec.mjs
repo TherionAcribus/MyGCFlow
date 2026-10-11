@@ -47,6 +47,17 @@ async function importFixture(page) {
 }
 
 
+// « Revenir au cadrage de départ à la fin » : préférence globale, enregistrée
+// côté serveur après un court délai. On attend qu'elle y soit, sans quoi le
+// rechargement du test suivant retrouverait l'ancienne valeur.
+async function setCameraReturnHome(page, checked) {
+  await page.locator('#cbCameraReturnHome').setChecked(checked);
+  await expect.poll(async () => {
+    const { animation } = await (await page.request.get('/api/settings')).json();
+    return animation?.camera_return_home;
+  }).toBe(checked);
+}
+
 async function selectTraditionalCaches(page) {
   await page.evaluate(() => {
     document.querySelector('#selectType').tomselect.setValue(['Traditional Cache']);
@@ -685,7 +696,16 @@ test('le réglage Couleurs choisit le format de pixels du fichier final', async 
 
 test('le suivi de caméra glisse vers les caches, se stabilise et rend la main', async ({ page }) => {
   await page.locator('a[href="#animation"]').click();
+  // Le retour suit l'interrupteur du suivi : grisé tant qu'il est coupé.
+  // (Décoché d'abord : le suivi est une préférence globale, qu'une spec
+  // précédente a pu laisser active sur ce runtime partagé.)
+  await page.locator('#switchCameraFollow').uncheck();
+  await expect(page.locator('#cbCameraReturnHome')).toBeDisabled();
   await page.locator('#switchCameraFollow').check();
+  await expect(page.locator('#cbCameraReturnHome')).toBeEnabled();
+  // Décoché ici : ce test observe où le suivi amène la caméra et comment elle
+  // s'y stabilise, pas le retour au cadrage de départ qui s'ensuivrait.
+  await setCameraReturnHome(page, false);
   await page.locator('#selectCameraDynamism').selectOption('2');
   // Caches dans le champ : aucun trajet prévu, donc rien à signaler.
   await expect(page.locator('#cameraTimingWarnings')).not.toContainText('dates en pause');
@@ -811,6 +831,7 @@ test('le suivi de caméra glisse vers les caches, se stabilise et rend la main',
   expect(Math.abs(suivi.stabilise - suivi.cibleX)).toBeLessThan(10_000);
   expect(suivi.resteOuLUtilisateurLAMise).toBe(true);
 
+  await setCameraReturnHome(page, true);
   await page.locator('#switchCameraFollow').uncheck();
   await expect.poll(() => page.evaluate(async () => {
     const app = await import('/static/js/index.js');
@@ -997,9 +1018,10 @@ test('le jour « grappe + isolée » est cadré sur son étendue, pas son baryce
     return { positions, zooms, centreEtendueX, barycentreX };
   });
 
-  // La caméra finit sur le centre de l'étendue du dernier jour, nettement à
-  // l'ouest de son barycentre (~445 km d'écart entre les deux).
-  const final = releve.positions.at(-1);
+  // La caméra atteint le centre de l'étendue du dernier jour, nettement à
+  // l'ouest de son barycentre (~445 km d'écart entre les deux). C'est sa
+  // position la plus à l'ouest : elle revient ensuite au cadrage de départ.
+  const final = Math.min(...releve.positions);
   expect(Math.abs(final - releve.centreEtendueX),
     `positions: ${releve.positions.map((x) => Math.round(x / 1000)).join(' | ')}`)
     .toBeLessThan(150_000);
@@ -1046,34 +1068,39 @@ test('sans « cadrer le jour », le même jour vise son barycentre au zoom de d�
     // Même échantillonnage « jusqu'à la fin » que le test fitDay : les holds
     // allongent l'animation et un plateau n'y marque plus la fin.
     const positions = [];
+    const zooms = [];
     const debut = performance.now();
     while (app.isAnimationInProgress() && performance.now() - debut < 60_000) {
       await new Promise((r) => setTimeout(r, 300));
       positions.push(view.getCenter()[0]);
+      zooms.push(view.getZoom());
     }
     let precedent = view.getCenter()[0];
     for (let i = 0; i < 20; i++) {
       await new Promise((r) => setTimeout(r, 400));
       positions.push(view.getCenter()[0]);
+      zooms.push(view.getZoom());
       if (positions.at(-1) === precedent && i >= 2) break;
       precedent = positions.at(-1);
     }
-    const zoomFinal = view.getZoom();
     app.stopAnimation();
-    return { positions, barycentreX, zoomDepart, zoomFinal };
+    return { positions, zooms, barycentreX, zoomDepart };
   });
 
-  const final = releve.positions.at(-1);
+  // Position la plus à l'ouest : celle du dernier jour, d'où la caméra
+  // revient ensuite au cadrage de départ.
+  const final = Math.min(...releve.positions);
   expect(Math.abs(final - releve.barycentreX),
     `positions: ${releve.positions.map((x) => Math.round(x / 1000)).join(' | ')}`)
     .toBeLessThan(150_000);
-  expect(Math.abs(releve.zoomFinal - releve.zoomDepart)).toBeLessThanOrEqual(0.1);
+  const zoomSurPlace = releve.zooms[releve.positions.indexOf(final)];
+  expect(Math.abs(zoomSurPlace - releve.zoomDepart)).toBeLessThanOrEqual(0.1);
 
   await page.locator('#switchCameraFollow').uncheck();
 });
 
 
-test('un enregistrement avec suivi de caméra produit une vidéo et déplace la vue', async ({ page }) => {
+test('un enregistrement avec suivi de caméra déplace la vue, puis la ramène au cadrage de départ', async ({ page }) => {
   // Le mode images attend le chargement des tuiles à chaque frame : c'est le mode
   // recommandé avec le suivi, et celui qu'on vérifie de bout en bout.
   await selectTraditionalCaches(page);
@@ -1087,7 +1114,7 @@ test('un enregistrement avec suivi de caméra produit une vidéo et déplace la 
   await page.locator('#selectRecordMode').selectOption('images');
   await page.locator('#selectRecordResolution').selectOption('window');
 
-  const departX = await page.evaluate(async () => {
+  const depart = await page.evaluate(async () => {
     const app = await import('/static/js/index.js');
     const map = app.getMap();
     const view = map.getView();
@@ -1106,18 +1133,27 @@ test('un enregistrement avec suivi de caméra produit une vidéo et déplace la 
     }
     app.bumpPointsByDateRevision();
     app.options.record.fps = 12;
-    return map.getView().getCenter()[0];
+    return { x: map.getView().getCenter()[0], zoom: map.getView().getZoom() };
   });
+  // Le retour au cadrage de départ est annoncé dans la durée.
+  await setCameraReturnHome(page, true);
+  await expect(page.locator('#timingSummary')).toContainText('retour caméra');
 
   await page.locator('#btnQuickExport').click({ force: true });
+  // Pendant la capture, la caméra part vers les caches, à l'est.
+  await expect.poll(() => page.evaluate(async () => (
+    (await import('/static/js/index.js')).getMap().getView().getCenter()[0]
+  )), { timeout: 60_000 }).toBeGreaterThan(depart.x + 1_000);
   await expect(page.locator('#modal_video_ready')).toBeVisible({ timeout: 120_000 });
   await expect.poll(latestCompletedMp4, { timeout: 30_000 }).not.toBeNull();
 
-  const arriveeX = await page.evaluate(async () => {
-    const app = await import('/static/js/index.js');
-    return app.getMap().getView().getCenter()[0];
+  // À la fin, elle a retrouvé exactement la position et le zoom du lancement.
+  const arrivee = await page.evaluate(async () => {
+    const view = (await import('/static/js/index.js')).getMap().getView();
+    return { x: view.getCenter()[0], zoom: view.getZoom() };
   });
-  expect(arriveeX).toBeGreaterThan(departX);
+  expect(arrivee.x).toBe(depart.x);
+  expect(arrivee.zoom).toBe(depart.zoom);
 
   // Nettoyage sans passer par l'interface : la modale de fin d'enregistrement
   // intercepte encore les clics à cet instant.
@@ -1159,6 +1195,7 @@ async function setUpCameraRoundTrips(page, duration) {
   await page.locator('#rhythmModeDuration').check({ force: true });
   await page.locator('#inputTotalDuration').fill(duration);
   await page.locator('#switchCameraFollow').check();
+  await setCameraReturnHome(page, true);
 
   return page.evaluate(async () => {
     const app = await import('/static/js/index.js');
@@ -1266,10 +1303,14 @@ test('avec le suivi de caméra, la lecture « Par durée » finit à l\'heure', 
       await new Promise((r) => setTimeout(r, 50));
       ecartMax = Math.max(ecartMax, Math.abs(view.getCenter()[0] - departX));
     }
+    const dureeMs = performance.now() - debut;
+    // La pose finale du retour est appliquée au rendu qui suit la fin.
+    await new Promise((r) => setTimeout(r, 300));
     return {
-      dureeMs: performance.now() - debut,
+      dureeMs,
       terminee: !app.isAnimationInProgress(),
       ecartMax,
+      ecartFinal: Math.abs(view.getCenter()[0] - departX),
       caches: window.vectorSource?.getFeatures().length || 0,
     };
   });
@@ -1279,8 +1320,10 @@ test('avec le suivi de caméra, la lecture « Par durée » finit à l\'heure', 
   expect(lecture.ecartMax, 'la caméra s\'est bien déplacée').toBeGreaterThan(1_000);
   expect(lecture.caches).toBe(3);
   // Mode piste (défaut) : les trajets (~10 s) sont joués pendant l'affichage
-  // des jours précédents — les 12 s sont entièrement dévolues aux dates.
+  // des jours précédents — les 12 s vont aux dates, moins le retour au cadrage
+  // de départ, pris lui aussi sur la durée demandée.
   expect(Math.abs(lecture.dureeMs - 12_000)).toBeLessThan(1_500);
+  expect(lecture.ecartFinal, 'la caméra a retrouvé le cadrage de départ').toBe(0);
 });
 
 
@@ -1417,9 +1460,10 @@ test('le plan annonce les pauses de dates quand le rythme est trop rapide', asyn
 test('avec le suivi de caméra, la lecture « Par durée » congestionnée finit à l\'heure', async ({ page }) => {
   // Même scénario « Par durée » que le test précédent, mais chaque jour impose
   // un trajet transatlantique indélogeable : les pauses de dates planifiées
-  // doivent tenir la durée demandée quand même. Le budget (16 s − 3 s de fin)
-  // couvre tout juste la sérialisation des trois trajets (~12 s) : en deçà,
-  // aucun rythme ne permettrait à la caméra d'arriver à temps.
+  // doivent tenir la durée demandée quand même. Le budget (20 s − 3 s de fin)
+  // couvre tout juste la sérialisation des trois trajets (~12 s) et du retour
+  // au cadrage de départ (~3 s) : en deçà, aucun rythme ne permettrait à la
+  // caméra d'arriver à temps.
   await waitForStableTimeline(page);
   await selectTraditionalCaches(page);
   await waitForStableTimeline(page);
@@ -1428,8 +1472,9 @@ test('avec le suivi de caméra, la lecture « Par durée » congestionnée finit
   await page.locator('a[href="#animation"]').click();
   await page.locator('#inputExtraEndTime').fill('0');
   await page.locator('#rhythmModeDuration').check({ force: true });
-  await page.locator('#inputTotalDuration').fill('0:16');
+  await page.locator('#inputTotalDuration').fill('0:20');
   await page.locator('#switchCameraFollow').check();
+  await setCameraReturnHome(page, true);
 
   const prevu = await page.evaluate(async () => {
     const app = await import('/static/js/index.js');
@@ -1444,7 +1489,7 @@ test('avec le suivi de caméra, la lecture « Par durée » congestionnée finit
     app.bumpPointsByDateRevision();
     app.refreshTimingPlan({ save: false });
     const hold = app.estimateCameraTrackHold(null, {
-      budgetMs: app.options.animation.cameraTimeBudgetMs,
+      budgetMs: app.options.animation.cameraTimeBudgetMs - app.options.animation.cameraReturnMs,
     });
     return {
       budgetMs: app.options.animation.cameraTimeBudgetMs,

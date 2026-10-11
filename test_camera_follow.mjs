@@ -10,6 +10,7 @@ import {
     clampToExtent,
     createCameraJourney,
     createCameraPacing,
+    createReturnJourney,
     DEFAULT_RESPONSE_MS,
     easeInOutCubic,
     fitCameraTrackDayMs,
@@ -1148,4 +1149,47 @@ test('zoom adaptatif : homeZoom plafonne, minZoom planchonne', () => {
         trailCameraZoomTarget(0.875, 1, 10, { homeZoom: 10, minZoom: 2, responseMs: 1000 })
         - (10 + Math.log2(TRAIL_LEAD_PX / 875)),
     ) < 1e-9);
+});
+
+// ---------- Retour au cadrage de départ ----------
+
+test('retour : le trajet ramène au centre et au zoom du lancement', () => {
+    const home = { center: [0, 0], zoom: 8 };
+    // Vue partie loin et dézoomée (zoom 6 : résolution ×4).
+    const journey = createReturnJourney([3000, 400], 6, 4, home, { path: 'fly' });
+    assert.ok(journey.totalDurationMs > 0);
+    const end = sampleCameraJourney(journey, journey.totalDurationMs);
+    assert.equal(end.done, true);
+    assert.deepEqual(end.center, [0, 0]);
+    assert.equal(end.zoom, 8);
+    // Même centre mais zoom différent : il reste un trajet à jouer.
+    assert.ok(createReturnJourney([0, 0], 6, 4, home, { path: 'fly' }));
+    // Déjà au cadrage de départ : rien à jouer.
+    assert.equal(createReturnJourney([0, 0], 8, 1, home), null);
+    assert.equal(createReturnJourney([0, 0], 8, 1, null), null);
+});
+
+test('retour : le plus court chemin franchit la ligne de changement de date', () => {
+    const worldWidth = 400;
+    const journey = createReturnJourney([190, 0], 8, 1, { center: [-190, 0], zoom: 8 }, { worldWidth });
+    // 20 unités vers l'est, pas 380 vers l'ouest.
+    assert.deepEqual(journey.targetCenter, [210, 0]);
+});
+
+test('la simulation fournit le retour depuis la dernière position, hors totaux', () => {
+    const days = [jour(3000, 0), jour(3050, 20)];
+    const sans = simulateCameraJourneys(days, { ...vue, dynamism: 2 });
+    assert.equal(sans.returnJourney, null);
+    const avec = simulateCameraJourneys(days, { ...vue, dynamism: 2, returnHome: true });
+    assert.deepEqual(avec.returnJourney.startCenter, [3000, 0]);
+    assert.deepEqual(avec.returnJourney.targetCenter, [0, 0]);
+    assert.equal(avec.returnJourney.endZoom, 8);
+    // Les totaux ne décrivent que les trajets des jours.
+    assert.equal(avec.totalMs, sans.totalMs);
+    assert.equal(avec.journeyCount, sans.journeyCount);
+    // Caméra restée sur place : aucun retour.
+    assert.equal(
+        simulateCameraJourneys([jour(100, 0)], { ...vue, dynamism: 2, returnHome: true }).returnJourney,
+        null,
+    );
 });
