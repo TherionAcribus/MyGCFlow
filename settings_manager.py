@@ -128,10 +128,21 @@ def app_config_dir() -> Path:
     override = os.getenv("MYGCFLOW_CONFIG_DIR") or os.getenv("GCMAP_CONFIG_DIR")
     if override:
         return Path(override)
-    # Windows: %APPDATA%\MyGCFlow ; fallback vers home si non défini
-    base = Path(os.getenv("APPDATA") or os.path.expanduser("~"))
+    # Import tardif : paths importe déjà settings_manager paresseusement
+    # (configured_video_dir), un import en tête de module créerait un cycle.
+    import paths
+
+    # Base de configuration propre à la plateforme : %APPDATA% sous Windows,
+    # ~/Library/Application Support sous macOS, $XDG_CONFIG_HOME (~/.config)
+    # sous Linux/BSD.
+    base = paths.user_dir("config")
     current = base / APP_NAME
     adopt_legacy_dir(current, base / LEGACY_APP_NAME)
+    if os.name != "nt":
+        # Installations antérieures à la prise en charge XDG/macOS : leur
+        # configuration tombait directement dans le dossier personnel.
+        adopt_legacy_dir(current, Path.home() / APP_NAME)
+        adopt_legacy_dir(current, Path.home() / LEGACY_APP_NAME)
     return current
 
 

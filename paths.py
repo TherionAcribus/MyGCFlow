@@ -9,8 +9,14 @@ Deux racines distinctes :
 - les **données** (base, caches, captures, pistes audio, vidéos) : propres à
   l'utilisateur, conservées entre deux versions et à la désinstallation.
 
-Les préférences et profils ont leur propre emplacement (%APPDATA%\\MyGCFlow),
-géré par settings_manager.app_config_dir().
+Chaque racine suit l'emplacement propre à la plateforme : %LOCALAPPDATA% sous
+Windows, ~/Library/Application Support sous macOS, $XDG_DATA_HOME
+(~/.local/share) sous Linux/BSD pour les données ; %APPDATA%, même dossier
+macOS et $XDG_CONFIG_HOME (~/.config) pour la configuration.
+
+Les préférences et profils ont leur propre emplacement
+(%APPDATA%\\MyGCFlow sous Windows), géré par
+settings_manager.app_config_dir().
 
 Toutes les fonctions sont évaluées à l'appel (pas de constantes de module) :
 les tests redirigent les données via une variable d'environnement posée après
@@ -62,12 +68,43 @@ def _data_override() -> str | None:
     )
 
 
+def _xdg_dir(env_var: str, fallback: Path) -> Path:
+    """Sous-dossier XDG : $env_var s'il est absolu, sinon `fallback` sous $HOME."""
+    base = os.getenv(env_var)
+    if base and Path(base).is_absolute():
+        return Path(base)
+    return Path.home() / fallback
+
+
+def user_dir(kind: str) -> Path:
+    """Base utilisateur des données (`"data"`) ou de la configuration (`"config"`).
+
+    Windows : %LOCALAPPDATA% / %APPDATA% (repli sur le dossier personnel).
+    macOS : ~/Library/Application Support dans les deux cas.
+    Linux/BSD : $XDG_DATA_HOME ($HOME/.local/share) et $XDG_CONFIG_HOME
+    ($HOME/.config), conformément à la spec XDG Base Directory.
+    """
+    home = Path.home()
+    if os.name == "nt":
+        env = "APPDATA" if kind == "config" else "LOCALAPPDATA"
+        return Path(os.getenv(env) or home)
+    if sys.platform == "darwin":
+        return home / "Library" / "Application Support"
+    if kind == "config":
+        return _xdg_dir("XDG_CONFIG_HOME", Path(".config"))
+    return _xdg_dir("XDG_DATA_HOME", Path(".local") / "share")
+
+
 def data_dir() -> Path:
     """Racine des données de l'utilisateur.
 
     - variable d'environnement si fournie (tests, installation portable) ;
-    - application installée : %LOCALAPPDATA%\\MyGCFlow (données volumineuses et
-      propres à la machine, donc pas dans le profil itinérant %APPDATA%) ;
+    - application installée : sous la base propre à la plateforme
+      (%LOCALAPPDATA% sous Windows — données volumineuses et propres à la
+      machine, donc pas dans le profil itinérant %APPDATA% —,
+      ~/Library/Application Support sous macOS, $XDG_DATA_HOME sous
+      Linux/BSD). Les données d'installations antérieures (ancien nom,
+      dossier personnel d'avant XDG) sont reprises au passage ;
     - développement : le dossier du projet, où se trouvent les données
       historiques (instance/geocaching.db, video/, audio/, captured/).
     """
@@ -75,9 +112,14 @@ def data_dir() -> Path:
     if override:
         return Path(override).resolve()
     if is_frozen():
-        base = Path(os.getenv("LOCALAPPDATA") or os.path.expanduser("~"))
+        base = user_dir("data")
         current = base / APP_NAME
         _adopt_legacy_data_dir(current, base / LEGACY_APP_NAME)
+        if os.name != "nt":
+            # Builds antérieurs à la prise en charge XDG/macOS : leurs données
+            # tombaient directement dans le dossier personnel.
+            _adopt_legacy_data_dir(current, Path.home() / APP_NAME)
+            _adopt_legacy_data_dir(current, Path.home() / LEGACY_APP_NAME)
         return current
     return resource_dir()
 
@@ -155,12 +197,14 @@ def audio_dir() -> Path:
 def default_video_dir() -> Path:
     """Dossier des vidéos tant que l'utilisateur n'en a pas choisi un autre.
 
-    Application installée : « Vidéos\\MyGCFlow », là où l'utilisateur s'attend à
+    Application installée : le dossier « Vidéos » propre à la plateforme
+    (dossier connu Windows, dossier XDG localisé sous Linux, ~/Videos en
+    repli) suivi du nom de l'application — là où l'utilisateur s'attend à
     retrouver ses films. Sinon (développement, tests), sous la racine des
     données, comme auparavant.
     """
     if is_frozen() and not _data_override():
-        videos = _known_folder(_FOLDERID_VIDEOS) or Path.home() / "Videos"
+        videos = _known_folder(_FOLDERID_VIDEOS) or _xdg_videos_dir() or Path.home() / "Videos"
         return videos / APP_NAME
     return data_dir() / "video"
 
@@ -208,6 +252,23 @@ def logs_dir() -> Path:
 def ensure_dir(path: Path) -> Path:
     path.mkdir(parents=True, exist_ok=True)
     return path
+
+
+def _xdg_videos_dir() -> Path | None:
+    """Dossier « Vidéos » XDG (user-dirs.dirs), None hors Linux ou si illisible."""
+    if os.name == "nt" or sys.platform == "darwin":
+        return None
+    config = _xdg_dir("XDG_CONFIG_HOME", Path(".config")) / "user-dirs.dirs"
+    try:
+        for line in config.read_text(encoding="utf-8").splitlines():
+            key, sep, value = line.partition("=")
+            if not sep or key.strip() != "XDG_VIDEOS_DIR":
+                continue
+            path = Path(value.strip().strip('"').replace("$HOME", str(Path.home())))
+            return path if path.is_absolute() else None
+    except OSError:
+        pass
+    return None
 
 
 def _known_folder(folder_id: str) -> Path | None:

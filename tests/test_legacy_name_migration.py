@@ -54,7 +54,10 @@ class AdoptLegacyConfigDirTests(unittest.TestCase):
 
     def test_app_config_dir_reprend_lancien_dossier(self):
         self._seed_legacy()
-        with mock.patch.dict(os.environ, {"APPDATA": str(self.base)}, clear=False):
+        # Base %APPDATA% simulée via user_dir : son calcul dépend désormais de
+        # la plateforme (XDG hors Windows) et n'est pas l'objet du test.
+        with mock.patch.object(paths, "user_dir", return_value=self.base), \
+                mock.patch.dict(os.environ, {}, clear=False):
             for var in ("MYGCFLOW_CONFIG_DIR", "GCMAP_CONFIG_DIR"):
                 os.environ.pop(var, None)
             self.assertEqual(settings_manager.app_config_dir(), self.current)
@@ -78,9 +81,11 @@ class LegacyDataDirTests(unittest.TestCase):
 
     def test_data_dir_reprend_lancien_dossier(self):
         (self.base / "GCMap" / "instance").mkdir(parents=True)
-        env = {"LOCALAPPDATA": str(self.base)}
+        # Même simulation : user_dir renvoie la base %LOCALAPPDATA% quelle que
+        # soit la plateforme d'exécution du test.
         with mock.patch.object(paths, "is_frozen", return_value=True), \
-                mock.patch.dict(os.environ, env, clear=False):
+                mock.patch.object(paths, "user_dir", return_value=self.base), \
+                mock.patch.dict(os.environ, {}, clear=False):
             for var in ("MYGCFLOW_DATA_DIR", "MYGCFLOW_RUNTIME_DIR",
                         "GCMAP_DATA_DIR", "GCMAP_RUNTIME_DIR"):
                 os.environ.pop(var, None)
