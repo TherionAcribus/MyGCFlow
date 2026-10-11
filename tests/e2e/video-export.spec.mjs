@@ -843,6 +843,61 @@ test('le suivi de caméra glisse vers les caches, se stabilise et rend la main',
 });
 
 
+test('« Privilégier le cadrage de départ » ramène la caméra sur ce cadrage', async ({ page }) => {
+  await page.locator('a[href="#animation"]').click();
+  await page.locator('#switchCameraFollow').check();
+  await expect(page.locator('#cbCameraPreferHome')).toBeEnabled();
+  await expect(page.locator('#cbCameraPreferHome')).not.toBeChecked();
+
+  // Tous les jours à New York sauf le dernier, près de Paris mais décalé de
+  // ~100 km : il tient dans le cadrage de départ (vue sur Paris).
+  const cibleDernierJour = () => page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    const view = app.getMap().getView();
+    const jours = [...app.pointsByDate.keys()].sort((a, b) => new Date(a) - new Date(b));
+    jours.forEach((day, index) => {
+      const coords = index === jours.length - 1 ? [3.7, 48.8566] : [-74.006, 40.7128];
+      for (const feature of app.pointsByDate.get(day)) feature.geometry.coordinates = [...coords];
+    });
+    app.bumpPointsByDateRevision();
+    view.setCenter(ol.proj.fromLonLat([2.3522, 48.8566]));
+    view.setZoom(6);
+    app.refreshTimingPlan({ save: false });
+    const trajets = app.estimateCameraTravel().journeysByDay.filter(Boolean);
+    return {
+      cibleX: trajets.at(-1).targetCenter[0],
+      departX: view.getCenter()[0],
+      cachesX: ol.proj.fromLonLat([3.7, 48.8566])[0],
+      retourMs: app.estimateCameraReturnMs(),
+    };
+  });
+
+  // Décochée (défaut) : le dernier trajet vise les caches ; un retour reste à
+  // jouer en fin d'animation.
+  const sans = await cibleDernierJour();
+  expect(Math.abs(sans.cibleX - sans.cachesX)).toBeLessThan(1);
+  expect(sans.retourMs).toBeGreaterThan(0);
+
+  // Cochée : il vise le cadrage de départ — plus aucun retour à jouer.
+  await page.locator('#cbCameraPreferHome').check();
+  const avec = await cibleDernierJour();
+  expect(Math.abs(avec.cibleX - avec.departX)).toBeLessThan(1);
+  expect(avec.retourMs).toBe(0);
+
+  // Préférence globale enregistrée : la rendre comme les autres tests.
+  await expect.poll(async () => (
+    (await (await page.request.get('/api/settings')).json()).animation?.camera_prefer_home
+  )).toBe(true);
+  await page.locator('#cbCameraPreferHome').uncheck();
+  await expect.poll(async () => (
+    (await (await page.request.get('/api/settings')).json()).animation?.camera_prefer_home
+  )).toBe(false);
+  // Sans objet en suivi « tête du trajet » comme sans suivi : grisée.
+  await page.locator('#switchCameraFollow').uncheck();
+  await expect(page.locator('#cbCameraPreferHome')).toBeDisabled();
+});
+
+
 test('la caméra franchit l’antiméridien sans faire le tour du monde', async ({ page }) => {
   await page.locator('a[href="#animation"]').click();
   await page.locator('#switchCameraFollow').check();

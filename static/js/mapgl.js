@@ -135,6 +135,7 @@ import {
     nearestWorldX,
     normalizeCameraDynamism,
     normalizeWorldX,
+    preferredHomeTarget,
     pacedDayMs,
     resolveCameraFollowMode,
     sampleCameraJourney,
@@ -406,9 +407,13 @@ let cameraTarget = null;
 let cameraTargetExtent = null;
 let cameraExtent = null;
 let cameraHomeZoom = null;
-// Cadrage complet au lancement ({ center, zoom }) : cible du retour de fin
-// d'animation (options.animation.cameraReturnHome, actif par défaut).
+// Cadrage complet au lancement ({ center, zoom, resolution }) : cible du
+// retour de fin d'animation (options.animation.cameraReturnHome, actif par
+// défaut) et des jours qui y tiennent (cameraPreferHome).
 let cameraHome = null;
+// Suivi réactif : la cible courante est le cadrage de départ, à ne pas borner
+// sur l'étendue des caches.
+let cameraTargetIsHome = false;
 // Retour au cadrage de départ. cameraReturnPlan : fenêtre réservée sur la
 // timeline après la dernière date ({ windowMs, delayMs }, ms de timeline,
 // ralentissement de la capture rapide compris), posée par prepareCameraPacing.
@@ -1115,16 +1120,18 @@ function updateCameraFollowMotion(now) {
     if (!cameraJourney) {
         const center = view.getCenter();
         const width = cameraWorldWidth();
-        const target = clampToExtent(
-            [nearestWorldX(cameraTarget[0], center[0], width), cameraTarget[1]],
-            alignWorldExtent(cameraExtent, center[0], width),
-        );
+        const aligned = [nearestWorldX(cameraTarget[0], center[0], width), cameraTarget[1]];
+        const target = cameraTargetIsHome
+            ? aligned
+            : clampToExtent(aligned, alignWorldExtent(cameraExtent, center[0], width));
         // Zoom d'arrivée « fitDay » : le jour entier tient dans le viewport,
         // jamais plus près que la vue au lancement, plus loin si l'étendue
         // déborde. Zoom et résolution sont lus avant de créer le trajet : la
         // vue est encore là où le trajet précédent l'a laissée.
         let endZoom = null;
-        if (effectiveCameraFitDay()) {
+        if (cameraTargetIsHome) {
+            endZoom = cameraHome.zoom;
+        } else if (effectiveCameraFitDay()) {
             const startZoom = view.getZoom();
             const homeZoom = Number.isFinite(cameraHomeZoom) ? cameraHomeZoom : startZoom;
             endZoom = Math.max(cameraMinZoomFloor(), Math.min(
@@ -1184,6 +1191,12 @@ function updateCameraFollowMotion(now) {
         return false;
     }
     return true;
+}
+
+// « Privilégier le cadrage de départ » (cf. preferredHomeTarget), désactivé
+// par défaut : il change la destination des trajets en cours d'animation.
+function effectiveCameraPreferHome() {
+    return pkg.options.animation?.cameraPreferHome === true;
 }
 
 // Retour au cadrage de départ, activé par défaut : sans lui la dernière image
@@ -1476,7 +1489,7 @@ function resetCameraFollow() {
     cameraHomeZoom = map?.getView?.()?.getZoom() ?? null;
     const homeCenter = map?.getView?.()?.getCenter();
     cameraHome = Array.isArray(homeCenter) && Number.isFinite(cameraHomeZoom)
-        ? { center: [...homeCenter], zoom: cameraHomeZoom }
+        ? { center: [...homeCenter], zoom: cameraHomeZoom, resolution: map.getView().getResolution() }
         : null;
     if (!pkg.options.animation?.cameraFollow || isEvolutionPage()) return;
     // L'utilisateur reprend la main dès qu'il touche la carte : sans cela, la
@@ -1667,6 +1680,7 @@ function simulateCurrentCameraJourneys({ forRecording } = {}) {
             fitDay: effectiveCameraFitDay(),
             worldWidth: cameraWorldWidth(),
             returnHome: effectiveCameraReturnHome(),
+            preferHome: effectiveCameraPreferHome(),
         });
     } catch (e) {
         console.warn('[CAMERA] Simulation des trajets indisponible:', e);
@@ -4673,12 +4687,19 @@ function displayFeaturesForDates(dates, pointOptions, flashOptions, record, info
             targetExtent,
             cameraDynamism,
         )) {
+            // Même décision que la simulation : un jour qui tient dans le
+            // cadrage de départ y ramène la caméra.
+            const homeTarget = effectiveCameraPreferHome()
+                ? preferredHomeTarget(cameraHome, view.getCenter(), map.getSize(),
+                    targetExtent, cameraDynamism, cameraWorldWidth())
+                : null;
+            cameraTargetIsHome = !!homeTarget;
             // « Cadrer le jour » vise le centre de l'étendue, pas le
             // barycentre : le zoom calculé sur l'étendue suppose la vue
             // centrée dessus (jour « grappe + cache isolée »).
-            cameraTarget = effectiveCameraFitDay() && targetExtent
+            cameraTarget = homeTarget || (effectiveCameraFitDay() && targetExtent
                 ? ol.extent.getCenter(targetExtent)
-                : target;
+                : target);
             // Étendue propre au jour visé : elle choisira le zoom d'arrivée
             // du trajet quand l'option « cadrer le jour » est active.
             cameraTargetExtent = targetExtent;

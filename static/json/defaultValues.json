@@ -39,6 +39,7 @@
         "cameraFollow": false,
         "cameraDynamism": 2,
         "cameraReturnHome": true,
+        "cameraPreferHome": false,
         "extraEndSeconds": 0
     },
     "record": {

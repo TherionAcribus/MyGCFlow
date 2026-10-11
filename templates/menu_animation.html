@@ -218,6 +218,13 @@
                         </div>
                         <div class="col-12">
                             <div class="form-check mb-0">
+                                <input class="form-check-input" type="checkbox" id="cbCameraPreferHome" aria-describedby="helpCameraPreferHome" disabled>
+                                <label class="form-check-label" for="cbCameraPreferHome">{{ _("Privilégier le cadrage de départ") }}</label>
+                            </div>
+                            <small id="helpCameraPreferHome" class="form-hint text-muted d-block mb-2">{{ _("Quand les caches d'un jour tiennent dans le cadrage de départ, la caméra revient sur ce cadrage au lieu de se centrer sur elles. Sans effet avec la cible « La tête du trajet ».") }}</small>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check mb-0">
                                 <input class="form-check-input" type="checkbox" id="cbCameraReturnHome" aria-describedby="helpCameraReturnHome" checked disabled>
                                 <label class="form-check-label" for="cbCameraReturnHome">{{ _("Revenir au cadrage de départ à la fin") }}</label>
                             </div>

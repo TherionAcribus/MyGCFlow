@@ -618,6 +618,13 @@ const btnRecordAnimation = document.getElementById('btnRecordAnimation');
             refreshTimingPlan();
         });
     }
+    const cbCameraPreferHome = document.getElementById('cbCameraPreferHome');
+    if (cbCameraPreferHome) {
+        cbCameraPreferHome.addEventListener('change', () => {
+            pkg.options.animation.cameraPreferHome = cbCameraPreferHome.checked;
+            refreshTimingPlan();
+        });
+    }
     if (selectCameraTarget) {
         selectCameraTarget.addEventListener('change', () => {
             pkg.options.animation.cameraFollowMode = selectCameraTarget.value === 'trail' ? 'trail' : 'days';
@@ -2803,6 +2810,7 @@ function animationSettingsPayload() {
         camera_dynamism: Math.min(4, Math.max(1, Math.round(Number(a.cameraDynamism) || 2))),
         camera_follow_mode: a.cameraFollowMode === 'trail' ? 'trail' : 'days',
         camera_return_home: a.cameraReturnHome !== false,
+        camera_prefer_home: a.cameraPreferHome === true,
         // Miroir de la durée du flash (réglage de thème) : persistée comme
         // repli au démarrage quand aucun thème ne s'applique.
         flash_duration_ms: Math.round(Number(pkg.options.flash?.duration) || 1000),
@@ -2852,6 +2860,7 @@ function applyAnimationSettingsPayload(anim) {
         a.cameraFollowMode = anim.camera_follow_mode;
     }
     if (typeof anim.camera_return_home === 'boolean') a.cameraReturnHome = anim.camera_return_home;
+    if (typeof anim.camera_prefer_home === 'boolean') a.cameraPreferHome = anim.camera_prefer_home;
     const flash = Number(anim.flash_duration_ms);
     if (Number.isFinite(flash) && flash > 0) {
         pkg.options.flash = pkg.options.flash || {};
@@ -4736,6 +4745,9 @@ function syncCameraFollowControls() {
     if (dynamism) dynamism.disabled = !enabled || trailActive;
     const returnHome = document.getElementById('cbCameraReturnHome');
     if (returnHome) returnHome.disabled = !enabled;
+    // Comme le dynamisme : sans objet quand la caméra suit le stylo en continu.
+    const preferHome = document.getElementById('cbCameraPreferHome');
+    if (preferHome) preferHome.disabled = !enabled || trailActive;
     // Dynamisme grisé par la cible (et non par l'interrupteur) : le dire.
     const helpDynamism = document.getElementById('helpCameraDynamismTrail');
     if (helpDynamism) helpDynamism.hidden = !(enabled && trailActive);
@@ -5305,6 +5317,7 @@ function normalizeAnimationOptions() {
     animation.cameraDynamism = cameraDynamism >= 1 && cameraDynamism <= 4 ? cameraDynamism : 2;
     animation.cameraFollowMode = animation.cameraFollowMode === 'trail' ? 'trail' : 'days';
     animation.cameraReturnHome = animation.cameraReturnHome !== false;
+    animation.cameraPreferHome = animation.cameraPreferHome === true;
 }
 
 // Reflète pkg.options.animation dans les contrôles de l'onglet Animation, puis
@@ -5332,6 +5345,8 @@ export function syncAnimationOptionsUI() {
     }
     const cbCameraReturnHome = document.getElementById('cbCameraReturnHome');
     if (cbCameraReturnHome) cbCameraReturnHome.checked = animation.cameraReturnHome !== false;
+    const cbCameraPreferHome = document.getElementById('cbCameraPreferHome');
+    if (cbCameraPreferHome) cbCameraPreferHome.checked = animation.cameraPreferHome === true;
     syncCameraFollowControls();
 
     refreshTimingPlan({ save: false });

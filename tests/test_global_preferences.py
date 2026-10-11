@@ -194,6 +194,10 @@ class AnimationCoercionTests(unittest.TestCase):
         self.assertFalse(coerce_animation_settings({"camera_return_home": False}).camera_return_home)
         self.assertTrue(coerce_animation_settings({"camera_return_home": True}).camera_return_home)
 
+    def test_camera_prefer_home_defaults_to_false(self):
+        self.assertFalse(coerce_animation_settings({}).camera_prefer_home)
+        self.assertTrue(coerce_animation_settings({"camera_prefer_home": True}).camera_prefer_home)
+
     def test_garbage_payload_yields_defaults(self):
         self.assertEqual(coerce_animation_settings(None), AnimationPrefs())
 

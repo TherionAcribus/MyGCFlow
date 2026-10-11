@@ -102,6 +102,25 @@ export function shouldMoveCamera(viewCenter, resolution, viewportSize, targetExt
         || targetExtent[3] > viewCenter[1] + halfHeight;
 }
 
+// « Privilégier le cadrage de départ » : quand la caméra doit bouger pour un
+// jour dont toutes les caches tiennent dans le cadrage de lancement (`home` :
+// { center, resolution }), c'est ce cadrage qu'elle vise plutôt que les caches
+// elles-mêmes — de retour d'un voyage, la vue retrouve toujours le même plan
+// au lieu d'un cadrage un peu décalé à chaque fois. Retourne le centre à viser
+// (copie du monde la plus proche de `current`), ou null si le jour n'y tient
+// pas. « Tenir » suit la zone de confort du dynamisme choisi ; le niveau 4,
+// qui n'en a pas, emprunte celle du niveau 3.
+export function preferredHomeTarget(home, current, viewportSize, dayExtent, dynamism, worldWidth = null) {
+    if (!home || !Array.isArray(home.center) || !current) return null;
+    if (!Array.isArray(dayExtent) || dayExtent.length !== 4) return null;
+    const center = Number(worldWidth) > 0
+        ? [nearestWorldX(home.center[0], current[0], worldWidth), home.center[1]]
+        : [...home.center];
+    const extent = Number(worldWidth) > 0 ? alignWorldExtent(dayExtent, center[0], worldWidth) : dayExtent;
+    const level = Math.min(3, normalizeCameraDynamism(dynamism));
+    return shouldMoveCamera(center, home.resolution, viewportSize, extent, level) ? null : center;
+}
+
 // Part du chemin à parcourir pendant dtMs. Exponentielle : indépendante de la
 // cadence, donc un enregistrement à 12 ou 60 images/s donne le même mouvement.
 export function smoothingFactor(dtMs, responseMs = DEFAULT_RESPONSE_MS) {
@@ -601,6 +620,10 @@ export const CAMERA_JOURNEY_EXTRA_FRAMES = 1;
 // caméra de sa dernière position simulée au cadrage de lancement (null si elle
 // n'en a pas bougé). Il n'entre ni dans totalMs ni dans journeyCount, qui
 // décrivent les trajets des jours : il se joue après la dernière date.
+//
+// `preferHome` : un jour qui tient dans le cadrage de lancement fait revenir
+// la caméra sur ce cadrage (cf. preferredHomeTarget) au lieu de viser ses
+// caches.
 export function simulateCameraJourneys(days, {
     center,
     zoom,
@@ -614,6 +637,7 @@ export function simulateCameraJourneys(days, {
     paddingPx = 48,
     worldWidth = null,
     returnHome = false,
+    preferHome = false,
 } = {}) {
     const list = Array.isArray(days) ? days : [];
     const level = normalizeCameraDynamism(dynamism);
@@ -662,9 +686,17 @@ export function simulateCameraJourneys(days, {
         const aim = fitDay && Array.isArray(day.extent) && day.extent.length === 4
             ? [(day.extent[0] + day.extent[2]) / 2, (day.extent[1] + day.extent[3]) / 2]
             : day.center;
+        const homeTarget = preferHome
+            ? preferredHomeTarget({ center, resolution: baseResolution }, current, viewportSize,
+                day.extent, level, worldWidth)
+            : null;
+        // Le cadrage de départ se retrouve tel quel, zoom compris.
+        if (homeTarget) options.endZoom = homeZoom;
         const journey = createCameraJourney(
             current,
-            clampToExtent(
+            // Pas de bornage sur l'étendue des données : le cadrage de départ
+            // est celui que l'utilisateur a choisi, où qu'il soit.
+            homeTarget || clampToExtent(
                 aim,
                 current && Number(worldWidth) > 0
                     ? alignWorldExtent(extent, current[0], worldWidth)

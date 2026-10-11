@@ -20,6 +20,7 @@ import {
     normalizeWorldX,
     resolveCameraFollowMode,
     pacedDayMs,
+    preferredHomeTarget,
     sampleCameraJourney,
     shouldMoveCamera,
     simulateCameraJourneys,
@@ -1192,4 +1193,38 @@ test('la simulation fournit le retour depuis la dernière position, hors totaux'
         simulateCameraJourneys([jour(100, 0)], { ...vue, dynamism: 2, returnHome: true }).returnJourney,
         null,
     );
+});
+
+// ---------- Privilégier le cadrage de départ ----------
+
+test('cadrage de départ privilégié : visé quand le jour y tient', () => {
+    const home = { center: [0, 0], resolution: 1 };
+    const viewport = [1000, 800];
+    // Caméra partie à l'est ; un jour près du centre de départ tient dedans.
+    assert.deepEqual(preferredHomeTarget(home, [3000, 0], viewport, [90, -10, 110, 10], 2), [0, 0]);
+    // Un jour hors du cadrage de départ : la caméra vise ses caches.
+    assert.equal(preferredHomeTarget(home, [3000, 0], viewport, [1500, -10, 1520, 10], 2), null);
+    // Zone de confort du dynamisme : à 350 px du centre, le jour tient au
+    // niveau 2 (80 % de la vue) mais plus au niveau 3 (55 %) ; le niveau 4
+    // emprunte celle du niveau 3.
+    const peripherique = [340, -10, 360, 10];
+    assert.deepEqual(preferredHomeTarget(home, [3000, 0], viewport, peripherique, 2), [0, 0]);
+    assert.equal(preferredHomeTarget(home, [3000, 0], viewport, peripherique, 3), null);
+    assert.equal(preferredHomeTarget(home, [3000, 0], viewport, peripherique, 4), null);
+    assert.equal(preferredHomeTarget(null, [3000, 0], viewport, peripherique, 2), null);
+});
+
+test('la simulation ramène la caméra au cadrage de départ plutôt que sur les caches', () => {
+    const days = [jour(3000, 0), jour(100, 0)];
+    // Sans l'option : le second trajet vise les caches, décalées de 100.
+    const sans = simulateCameraJourneys(days, { ...vue, dynamism: 2 });
+    assert.deepEqual(sans.journeysByDay[1].targetCenter, [100, 0]);
+    // Avec : il vise le cadrage de départ, zoom compris — et il ne reste alors
+    // plus de retour à jouer en fin d'animation.
+    const avec = simulateCameraJourneys(days, { ...vue, dynamism: 2, preferHome: true, returnHome: true });
+    assert.deepEqual(avec.journeysByDay[0].targetCenter, [3000, 0]);
+    assert.deepEqual(avec.journeysByDay[1].targetCenter, [0, 0]);
+    assert.equal(avec.journeysByDay[1].endZoom, 8);
+    assert.equal(avec.returnJourney, null);
+    assert.equal(avec.journeyCount, sans.journeyCount);
 });

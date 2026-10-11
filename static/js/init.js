@@ -316,7 +316,7 @@ async function requeteDefaultValues(){
             // [longitude, latitude] de toute l'app.
             map: { default: 'OSM', default_center: [2.2137, 46.2276], default_zoom: 6 },
             point: { size: 8, color: '#ff0000' },
-            animation: { rhythmMode: 'rate', daysPerSecond: 20, totalDurationSeconds: 60, timePerDay: 50, cameraFollow: false, cameraDynamism: 2, cameraReturnHome: true, extraEndSeconds: 0 },
+            animation: { rhythmMode: 'rate', daysPerSecond: 20, totalDurationSeconds: 60, timePerDay: 50, cameraFollow: false, cameraDynamism: 2, cameraReturnHome: true, cameraPreferHome: false, extraEndSeconds: 0 },
             infos: { show: true },
             flash: { show: false },
             date: { format: 'yyyy-mm-dd' },
