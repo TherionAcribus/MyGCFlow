@@ -204,22 +204,25 @@
                 <input class="form-check-input" type="checkbox" id="gcCssBoxShadowEnable" aria-labelledby="gcCssBoxShadowEnableLabel">
                 <label class="form-check-label" id="gcCssBoxShadowEnableLabel" for="gcCssBoxShadowEnable">{{ _("Activer") }}</label>
             </div>
+            <!-- Défauts visibles : « Activer » seul produit une ombre réelle,
+                 pas un 0px 0px 0px invisible (surtout en mode Simple où ces
+                 champs sont masqués). Un CSS existant les écrase au chargement. -->
             <div class="row g-2 infos-advanced">
                 <div class="col-3">
                     <label class="form-label" for="gcCssShadowX">{{ _("Décalage X") }}</label>
-                    <input id="gcCssShadowX" type="number" class="form-control" step="1">
+                    <input id="gcCssShadowX" type="number" class="form-control" step="1" value="0">
                 </div>
                 <div class="col-3">
                     <label class="form-label" for="gcCssShadowY">{{ _("Décalage Y") }}</label>
-                    <input id="gcCssShadowY" type="number" class="form-control" step="1">
+                    <input id="gcCssShadowY" type="number" class="form-control" step="1" value="2">
                 </div>
                 <div class="col-3">
                     <label class="form-label" for="gcCssShadowBlur">{{ _("Flou") }}</label>
-                    <input id="gcCssShadowBlur" type="number" class="form-control" min="0" step="1">
+                    <input id="gcCssShadowBlur" type="number" class="form-control" min="0" step="1" value="8">
                 </div>
                 <div class="col-3">
                     <label class="form-label" for="gcCssShadowSpread">{{ _("Étendue") }}</label>
-                    <input id="gcCssShadowSpread" type="number" class="form-control" step="1">
+                    <input id="gcCssShadowSpread" type="number" class="form-control" step="1" value="0">
                 </div>
             </div>
             <div class="row g-2 mt-0">
@@ -239,15 +242,15 @@
             <div class="row g-2 infos-advanced">
                 <div class="col-4">
                     <label class="form-label" for="gcCssTextShadowX">{{ _("Décalage X") }}</label>
-                    <input id="gcCssTextShadowX" type="number" class="form-control" step="1">
+                    <input id="gcCssTextShadowX" type="number" class="form-control" step="1" value="0">
                 </div>
                 <div class="col-4">
                     <label class="form-label" for="gcCssTextShadowY">{{ _("Décalage Y") }}</label>
-                    <input id="gcCssTextShadowY" type="number" class="form-control" step="1">
+                    <input id="gcCssTextShadowY" type="number" class="form-control" step="1" value="2">
                 </div>
                 <div class="col-4">
                     <label class="form-label" for="gcCssTextShadowBlur">{{ _("Flou") }}</label>
-                    <input id="gcCssTextShadowBlur" type="number" class="form-control" min="0" step="1">
+                    <input id="gcCssTextShadowBlur" type="number" class="form-control" min="0" step="1" value="4">
                 </div>
             </div>
             <div class="row g-2 mt-0">

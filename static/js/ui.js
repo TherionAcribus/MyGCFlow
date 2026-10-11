@@ -6469,18 +6469,31 @@ function initCssAssistant() {
             else if (borderColor) unmanagedExtra.push('border-color');
         }
 
+        // Longueurs d'une ombre (<length>px : X, Y, puis flou/étendue) et
+        // couleur, dans n'importe quel ordre — style.cssText sérialise la
+        // couleur en tête (rgb(...) Xpx Ypx) alors qu'une saisie manuelle la
+        // met souvent en queue. On extrait les longueurs par regex globale et
+        // la couleur comme « reste » : un regex alterné couleur/longueurs
+        // serait piégé par les rgb() qui contiennent eux-mêmes des nombres.
+        const shadowParts = (value) => ({
+            lengths: value.match(/-?\d+(?:\.\d+)?px/gi) || [],
+            color: value.replace(/-?\d+(?:\.\d+)?px/gi, '').trim(),
+        });
+
         if (fields.boxShadowEnable) {
             const bs = declarations['box-shadow'] || '';
             if (bs && bs !== 'none') {
                 fields.boxShadowEnable.checked = true;
-                const sm = bs.match(/(-?\d+(?:\.\d+)?)px\s+(-?\d+(?:\.\d+)?)px\s+(\d+(?:\.\d+)?)px\s+(-?\d+(?:\.\d+)?)px\s+(.+)$/i);
-                if (sm) {
-                    if (fields.shadowX) fields.shadowX.value = sm[1];
-                    if (fields.shadowY) fields.shadowY.value = sm[2];
-                    if (fields.shadowBlur) fields.shadowBlur.value = sm[3];
-                    if (fields.shadowSpread) fields.shadowSpread.value = sm[4];
+                const { lengths, color } = shadowParts(bs);
+                // inset est hors modèle du formulaire (et ignoré par le rendu
+                // vidéo) : signalé « non géré » plutôt que perdu à la réécriture.
+                if (lengths.length >= 2 && lengths.length <= 4 && !/\binset\b/i.test(color)) {
+                    if (fields.shadowX) fields.shadowX.value = parseFloat(lengths[0]);
+                    if (fields.shadowY) fields.shadowY.value = parseFloat(lengths[1]);
+                    if (fields.shadowBlur) fields.shadowBlur.value = lengths[2] ? parseFloat(lengths[2]) : '';
+                    if (fields.shadowSpread) fields.shadowSpread.value = lengths[3] ? parseFloat(lengths[3]) : '';
                     if (fields.shadowColor) {
-                        const c = normalizeColorToHex(sm[5]);
+                        const c = normalizeColorToHex(color);
                         if (c) fields.shadowColor.value = c;
                         else unmanagedExtra.push('box-shadow');
                     }
@@ -6496,17 +6509,15 @@ function initCssAssistant() {
             const ts = declarations['text-shadow'] || '';
             if (ts && ts !== 'none') {
                 fields.textShadowEnable.checked = true;
-                // Xpx Ypx [flou px] couleur — la couleur peut aussi précéder.
-                const tm = ts.match(/(-?\d+(?:\.\d+)?)px\s+(-?\d+(?:\.\d+)?)px(?:\s+(\d+(?:\.\d+)?)px)?\s+(.+)$/i)
-                    || ts.match(/(.+?)\s+(-?\d+(?:\.\d+)?)px\s+(-?\d+(?:\.\d+)?)px(?:\s+(\d+(?:\.\d+)?)px)?$/i);
-                if (tm) {
-                    const colorFirst = tm[1].match(/[-0-9.]+px/i) === null;
-                    const ci = colorFirst ? 1 : 4;
-                    if (fields.textShadowX) fields.textShadowX.value = tm[colorFirst ? 2 : 1];
-                    if (fields.textShadowY) fields.textShadowY.value = tm[colorFirst ? 3 : 2];
-                    if (fields.textShadowBlur) fields.textShadowBlur.value = tm[colorFirst ? 4 : 3] || '';
+                const { lengths, color } = shadowParts(ts);
+                // 2 ou 3 longueurs (X, Y, flou optionnel) ; une liste d'ombres
+                // multiples dépasse le modèle du formulaire → « non géré ».
+                if (lengths.length === 2 || lengths.length === 3) {
+                    if (fields.textShadowX) fields.textShadowX.value = parseFloat(lengths[0]);
+                    if (fields.textShadowY) fields.textShadowY.value = parseFloat(lengths[1]);
+                    if (fields.textShadowBlur) fields.textShadowBlur.value = lengths[2] ? parseFloat(lengths[2]) : '';
                     if (fields.textShadowColor) {
-                        const c = normalizeColorToHex(tm[ci]);
+                        const c = normalizeColorToHex(color);
                         if (c) fields.textShadowColor.value = c;
                         else unmanagedExtra.push('text-shadow');
                     }

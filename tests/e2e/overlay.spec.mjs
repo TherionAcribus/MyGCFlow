@@ -657,3 +657,42 @@ test('un grand compteur reste sur une seule ligne dans le rendu Canvas', async (
   expect(metrics.minY).toBeGreaterThanOrEqual(Math.floor(metrics.frameTop) - 1);
   expect(metrics.maxY).toBeLessThanOrEqual(Math.ceil(metrics.frameBottom) + 1);
 });
+
+
+test('les champs d’ombre acceptent la saisie en mode avancé', async ({ page }) => {
+  // Régression : le parseur d'ombres attendait les longueurs en tête alors que
+  // style.cssText sérialise la couleur en tête (rgb(...) Xpx Ypx Zpx). La
+  // resync qui suit chaque frappe réécrivait X avec la valeur de Y — il était
+  // impossible de remplir les champs.
+  await page.locator('a[href="#style"]').click();
+  await page.locator('a[href="#tabTitles"]').click();
+  await page.locator('#gcCssTabShadow').click();
+
+  // Mode Simple : « Activer » seul produit une ombre visible — les champs
+  // masqués portent des défauts (0 / 2 / 4 px) au lieu de 0px 0px 0px.
+  await page.locator('#gcCssTextShadowEnable').check();
+  await expect(page.locator('#gcCssTextShadowX')).toHaveValue('0');
+  await expect(page.locator('#gcCssTextShadowY')).toHaveValue('2');
+  await expect(page.locator('#gcCssTextShadowBlur')).toHaveValue('4');
+  let css = await page.locator('#inputTitleCss').inputValue();
+  expect(css).toMatch(/text-shadow:[^;]*\d+px[^;]*\d+px/);
+
+  // Mode Avancé : chaque frappe doit persister — avant la correction, le
+  // champ retombait à la valeur de Y dès que le CSS était relu.
+  await page.locator('#infosModeAdvanced').click();
+  const textShadowX = page.locator('#gcCssTextShadowX');
+  await expect(textShadowX).toBeVisible();
+  await textShadowX.fill('7');
+  await expect(textShadowX).toHaveValue('7');
+  css = await page.locator('#inputTitleCss').inputValue();
+  expect(css).toMatch(/text-shadow:[^;]*\b7px\b/);
+
+  // box-shadow souffrait du même défaut (le regex exigeait couleur en queue) :
+  // la valeur saisie doit elle aussi persister.
+  await page.locator('#gcCssBoxShadowEnable').check();
+  const boxShadowX = page.locator('#gcCssShadowX');
+  await boxShadowX.fill('9');
+  await expect(boxShadowX).toHaveValue('9');
+  css = await page.locator('#inputTitleCss').inputValue();
+  expect(css).toMatch(/box-shadow:[^;]*\b9px\b/);
+});
