@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -208,6 +209,51 @@ class VideoProcessingTests(unittest.TestCase):
                 self.assertTrue(result["success"], result)
                 sequence = self._decode_frame_color_ids(output, colors, frame_size)
                 self.assertEqual(sequence, list(range(fps)))
+
+    def _mean_volume_db(self, video_path, start, duration):
+        """Niveau moyen (dB) de la piste audio sur une fenêtre de la vidéo."""
+        log = subprocess.run(
+            [self.ffmpeg, '-hide_banner', '-ss', str(start), '-t', str(duration), '-i', str(video_path),
+             '-vn', '-af', 'volumedetect', '-f', 'null', '-'],
+            check=True, capture_output=True, text=True, errors='replace',
+        ).stderr
+        match = re.search(r'mean_volume:\s*(-?[\d.]+) dB', log)
+        self.assertIsNotNone(match, log)
+        return float(match.group(1))
+
+    def test_music_longer_than_the_video_can_fade_out(self):
+        """Musique de 10 s sur une vidéo de 6 s : fondu sur les 3 dernières secondes.
+
+        Sans l'option, la musique est coupée net (niveau constant jusqu'au
+        bout) ; avec, la dernière demi-seconde est nettement plus faible que
+        le début, dans les deux pipelines.
+        """
+        for pipeline in ("images", "mediarecorder"):
+            for fade_out, quieter in ((0.0, False), (3.0, True)):
+                with self.subTest(pipeline=pipeline, fade_out=fade_out), tempfile.TemporaryDirectory() as tmp:
+                    tmp_path = Path(tmp)
+                    (tmp_path / "audio").mkdir()
+                    self._create_audio(tmp_path / "audio" / "tone.wav", 10)
+                    output = tmp_path / "out.mp4"
+                    with mock.patch.dict(os.environ, {"MYGCFLOW_DATA_DIR": tmp}):
+                        if pipeline == "images":
+                            self._create_image_sequence(tmp_path / "captured", 6, 10)
+                            result = _assemble_pictures(
+                                str(tmp_path / "captured"), str(output), fps=10,
+                                audio_path="tone.wav", status=_SilentStatus(), audio_fade_out=fade_out,
+                            )
+                        else:
+                            self._create_raw_video(tmp_path / "raw.webm", 6, 10)
+                            result = _process_recorded_video(
+                                str(tmp_path / "raw.webm"), str(output), fps=10,
+                                audio_path="tone.wav", audio_fade_out=fade_out,
+                            )
+                    self.assertTrue(result["success"], result)
+                    drop = self._mean_volume_db(output, 1, 1) - self._mean_volume_db(output, 5.5, 0.5)
+                    if quieter:
+                        self.assertGreater(drop, 12)
+                    else:
+                        self.assertLess(abs(drop), 3)
 
     def test_rate_parser(self):
         self.assertEqual(_parse_rate("30000/1001"), 30000 / 1001)

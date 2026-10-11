@@ -3485,6 +3485,7 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos, sess
                 if (audioFileName) {
                     body.audio = audioFileName;
                     body.audio_volume = audioVol;
+                    body.audio_fade_out = pkg.audioFadeOutPlan()?.seconds || 0;
                 }
                 return postStartCreateVideo(body);
             } catch(e) {
@@ -4260,7 +4261,7 @@ function finalizeMediaRecorderVideo(){
         const doMux = (videoBlob) => {
             if (audioEnabled && audioFile) {
                 try { pkg.updateTextsModal(pkg.t('Ajout audio'), pkg.t('Fusion de la piste audio avec la vidéo en cours...')); } catch(_) {}
-                muxRecordedVideoWithAudio(videoBlob, audioFile).then((mixed) => {
+                muxRecordedVideoWithAudio(videoBlob, audioFile, pkg.audioFadeOutPlan()).then((mixed) => {
                     proceedWith(mixed || videoBlob);
                 }).catch((e) => {
                     console.warn('Mux audio échoué, utilisation de la vidéo seule:', e);
@@ -4334,6 +4335,7 @@ function finalizeMediaRecorderVideo(){
                     fd.append('audio', audioFile, audioFile.name || 'music');
                     const vol = (typeof pkg.options?.record?.audio?.volume === 'number') ? pkg.options.record.audio.volume : 1;
                     fd.append('audio_volume', String(vol));
+                    fd.append('audio_fade_out', String(pkg.audioFadeOutPlan()?.seconds || 0));
                 }
                 try { pkg.updateProgressBar({ progress: 0, message: pkg.t('Traitement serveur...') }); } catch(_) {}
                 fetchWithTimeout(`${CONFIG.BASE_URL}/process_recorded_video`, { method: 'POST', body: fd }, { timeoutMs: FETCH_TIMEOUTS.videoUpload, t: pkg.t })

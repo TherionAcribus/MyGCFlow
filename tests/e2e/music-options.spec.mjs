@@ -78,6 +78,41 @@ test('un blanc de fin est signalé et peut être ignoré', async ({ page }) => {
 });
 
 
+test('une musique plus longue que la vidéo peut se terminer en fondu', async ({ page }) => {
+  const box = page.locator('#audioFadeOutBox');
+  const fade = page.locator('#cbAudioFadeOut');
+  const status = page.locator('#musicSyncStatus');
+  const fadePlan = () => page.evaluate(async () => (await import('/static/js/index.js')).audioFadeOutPlan());
+
+  await page.locator('#inputAudioFile').setInputFiles(wavFile('longue.wav', 60, 0));
+
+  // Choisir une musique cale la vidéo dessus : rien à couper, pas d'option.
+  await expect(status).toContainText('Durée calée sur la musique');
+  await expect(box).toBeHidden();
+
+  // Retour au rythme en jours/seconde : la vidéo (quelques secondes pour les
+  // 6 caches de la fixture) devient bien plus courte que la musique.
+  await page.locator('label:has(#rhythmModeRate)').click();
+  await expect(box).toBeVisible();
+  await expect(fade).not.toBeChecked();
+  await expect(status).toContainText('elle sera coupée en fin de vidéo');
+  expect(await fadePlan()).toBeNull();
+
+  await fade.check();
+  await expect(status).toContainText('elle se terminera en fondu');
+  await expect.poll(async () => (await recordingSettings(page)).audio_fade_out).toBe(true);
+  const plan = await fadePlan();
+  expect(plan.seconds).toBe(3);
+  expect(plan.endMs).toBeGreaterThan(0);
+  expect(plan.endMs).toBeLessThan(60_000);
+
+  // Remet la préférence globale dans son état initial pour les specs suivantes.
+  await fade.uncheck();
+  await expect(status).toContainText('elle sera coupée en fin de vidéo');
+  await expect.poll(async () => (await recordingSettings(page)).audio_fade_out).toBe(false);
+});
+
+
 test('une musique sans blanc de fin ne propose pas l\'option', async ({ page }) => {
   await page.locator('#inputAudioFile').setInputFiles(wavFile('sans-blanc.wav', 4, 0));
 

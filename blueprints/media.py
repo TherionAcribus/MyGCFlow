@@ -123,6 +123,9 @@ def start_create_video():
             vol = float(_param('audio_volume', 1.0))
         except (TypeError, ValueError):
             vol = 1.0
+        # Fondu de sortie de la musique (secondes, 0 = aucun) ; borné par
+        # capture._safe_fade_out.
+        audio_fade_out = _param('audio_fade_out', 0)
         # FPS configurable côté client : sans cela la vitesse de lecture est
         # fausse dès qu'on change le FPS (le client calcule les frames avec son FPS).
         fps = _parse_fps(_param('fps'))
@@ -149,6 +152,7 @@ def start_create_video():
                 image_folder, output_video, fps, audio, vol, color_fidelity,
                 get_locale(),
                 expected_frames=expected_frames,
+                audio_fade_out=audio_fade_out,
                 exclusive=True,
             )
         except TaskAlreadyRunning as exc:

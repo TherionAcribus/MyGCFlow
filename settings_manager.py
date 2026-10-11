@@ -273,6 +273,9 @@ class RecordingSettings:
     # Compter la durée de la musique sans son blanc de fin (détecté côté
     # client, cf. static/js/audio_silence.mjs).
     audio_trim_silence: bool = False
+    # Terminer la musique en fondu quand elle est plus longue que la vidéo,
+    # au lieu de la couper net.
+    audio_fade_out: bool = False
 
 
 @dataclass
@@ -765,6 +768,7 @@ def coerce_recording_settings(d: dict) -> RecordingSettings:
     r.audio_enabled = bool(d.get("audio_enabled", r.audio_enabled))
     r.audio_volume = _clamp_float(d.get("audio_volume"), r.audio_volume, 0.0, 1.0)
     r.audio_trim_silence = bool(d.get("audio_trim_silence", r.audio_trim_silence))
+    r.audio_fade_out = bool(d.get("audio_fade_out", r.audio_fade_out))
     return r
 
 

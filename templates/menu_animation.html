@@ -304,6 +304,13 @@
                                 <button type="button" class="btn btn-sm btn-outline-secondary" id="btnUnlinkAudio" style="display:none;">{{ _("Dissocier") }}</button>
                                 <span id="durationMatchIndicator" class="small" style="display:none;" data-difference-text="{{ _('Différence') }}"></span>
                             </div>
+                            <!-- Affiché seulement quand la musique est plus longue
+                                 que la vidéo (updateMusicSyncUi, ui.js). -->
+                            <div id="audioFadeOutBox" class="form-check mt-2 mb-0" style="display:none;">
+                                <input id="cbAudioFadeOut" class="form-check-input" type="checkbox">
+                                <label class="form-check-label" for="cbAudioFadeOut"
+                                       title="{{ _('Le volume de la musique baisse progressivement sur les 3 dernières secondes de la vidéo, au lieu d\'une coupure nette.') }}">{{ _("Terminer la musique en fondu") }}</label>
+                            </div>
                             <!-- État textuel de la synchronisation, annoncé aux
                                  lecteurs d'écran (le badge seul ne suffit pas). -->
                             <div id="musicSyncStatus" class="form-hint text-muted mt-1" aria-live="polite"></div>

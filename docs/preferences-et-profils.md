@@ -248,7 +248,8 @@ pourrait écraser un réglage plus récent.
     "offline_normalization": true,
     "audio_enabled": false,
     "audio_volume": 1.0,
-    "audio_trim_silence": false
+    "audio_trim_silence": false,
+    "audio_fade_out": false
   },
   "recording_configured": false,
   "animation": {

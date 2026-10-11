@@ -42,3 +42,33 @@ class ColorFidelityEncodingTests(unittest.TestCase):
         self.assertIn("yuv420p", capture._h264_output_args())
         self.assertEqual(capture.coerce_color_fidelity("inconnu"), "compatible")
         self.assertEqual(capture.coerce_color_fidelity("fidele"), "fidele")
+
+
+class AudioFadeOutFilterTests(unittest.TestCase):
+    """Fondu de sortie de la musique, quand elle dépasse la durée de la vidéo."""
+
+    def test_no_fade_is_requested_by_default(self):
+        self.assertEqual(capture._audio_filter_chain(0.5, 60.0), "volume=0.5,apad")
+
+    def test_the_fade_ends_exactly_at_the_end_of_the_video(self):
+        self.assertEqual(
+            capture._audio_filter_chain(1.0, 180.0, 3.0),
+            "volume=1.0,afade=t=out:st=177.000:d=3.000,apad",
+        )
+
+    def test_the_fade_never_lasts_longer_than_the_video(self):
+        self.assertEqual(
+            capture._audio_filter_chain(1.0, 2.0, 3.0),
+            "volume=1.0,afade=t=out:st=0.000:d=2.000,apad",
+        )
+
+    def test_no_fade_without_a_known_output_duration(self):
+        # Sans durée de sortie, impossible de placer le fondu : on ne pose rien
+        # plutôt qu'un fondu au mauvais endroit.
+        self.assertEqual(capture._audio_filter_chain(1.0, None, 3.0, pad=False), "volume=1.0")
+
+    def test_the_requested_duration_is_sanitised(self):
+        self.assertEqual(capture._safe_fade_out("3"), 3.0)
+        self.assertEqual(capture._safe_fade_out(9999), capture.MAX_AUDIO_FADE_OUT_SECONDS)
+        for value in (None, "", "abc", -2, 0, float("nan"), float("inf")):
+            self.assertEqual(capture._safe_fade_out(value), 0.0)

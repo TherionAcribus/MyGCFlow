@@ -12,6 +12,21 @@ import { isRecordingActive } from './mapgl.js';
 
 let bgAudioCtx = null, bgAudioEl = null, bgAudioSource = null, bgAudioGain = null, bgAudioActive = false;
 let blockBackgroundAudioPlayback = false;
+let bgAudioFadeTimer = null;
+
+// Fondu de sortie de l'aperçu (cf. audioFadeOutPlan dans ui.js) : le gain suit
+// la position de lecture de la piste, qui avance et se met en pause avec
+// l'animation — pas besoin de reprogrammer quoi que ce soit à la reprise.
+function startFadeOutWatch(volume) {
+    const fade = pkg.audioFadeOutPlan?.();
+    if (!fade) return;
+    const endS = fade.endMs / 1000;
+    bgAudioFadeTimer = setInterval(() => {
+        if (!bgAudioEl || !bgAudioGain) return;
+        const remaining = endS - bgAudioEl.currentTime;
+        bgAudioGain.gain.value = volume * Math.max(0, Math.min(1, remaining / fade.seconds));
+    }, 50);
+}
 
 // Posé par les pipelines d'enregistrement : la musique ne doit pas démarrer
 // pendant une capture, même si l'animation est (re)lancée en interne.
@@ -49,6 +64,7 @@ export function startBackgroundMusicIfAny(){
         bgAudioGain = bgAudioCtx.createGain();
         bgAudioGain.gain.value = Math.max(0, Math.min(1, volume));
         bgAudioSource.connect(bgAudioGain).connect(bgAudioCtx.destination);
+        startFadeOutWatch(bgAudioGain.gain.value);
 
         try { bgAudioCtx.resume().catch(()=>{}); } catch(_) {}
         bgAudioEl.play().then(()=>{ bgAudioActive = true; }).catch(e => console.warn('Lecture audio bloquée:', e));
@@ -90,6 +106,7 @@ export function resumeBackgroundMusic(){
 }
 
 export function stopBackgroundMusic(){
+    if (bgAudioFadeTimer) { clearInterval(bgAudioFadeTimer); bgAudioFadeTimer = null; }
     try { if (bgAudioEl) { bgAudioEl.pause(); URL.revokeObjectURL(bgAudioEl.src); } } catch(_) {}
     try { if (bgAudioCtx) { bgAudioCtx.close(); } } catch(_) {}
     bgAudioEl = bgAudioCtx = bgAudioSource = bgAudioGain = null;

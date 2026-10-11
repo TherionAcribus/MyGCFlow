@@ -133,7 +133,9 @@ export function normalizeRecordedVideoSpeed(sourceBlob, factor){
     });
 }
 
-export function muxRecordedVideoWithAudio(sourceBlob, audioFile){
+// `fadeOut` ({ seconds, endMs } ou null, cf. audioFadeOutPlan dans ui.js) :
+// fondu de sortie de la musique se terminant à la fin prévue de la vidéo.
+export function muxRecordedVideoWithAudio(sourceBlob, audioFile, fadeOut = null){
     return new Promise((resolve, reject) => {
         try {
             const video = document.createElement('video');
@@ -264,6 +266,12 @@ export function muxRecordedVideoWithAudio(sourceBlob, audioFile){
                             try { video.currentTime = 0; } catch(_) {}
                             try {
                                 audioNode.start(0);
+                                if (fadeOut && fadeOut.seconds > 0 && fadeOut.endMs > 0) {
+                                    const end = audioCtx.currentTime + fadeOut.endMs / 1000;
+                                    const start = Math.max(audioCtx.currentTime, end - fadeOut.seconds);
+                                    audioGain.gain.setValueAtTime(audioGain.gain.value, start);
+                                    audioGain.gain.linearRampToValueAtTime(0, end);
+                                }
                             } catch(e) {
                                 cleanup();
                                 reject(new Error(pkg.t('Impossible de démarrer la piste audio : ${detail}', { detail: e.message })));
