@@ -11,7 +11,11 @@ permissions:
 jobs:
   video-tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # Les tests navigateur demandent à eux seuls ~8 min en local, davantage ici
+    # (un seul worker, machine partagée). Avec le budget de 10 min, le job était
+    # tué en plein milieu de cette étape et finissait « cancelled » : l'interface
+    # n'était plus testée du tout, sans que rien ne le signale.
+    timeout-minutes: 30
 
     steps:
       - name: Récupérer le dépôt
@@ -48,3 +52,17 @@ jobs:
 
       - name: Tester l'interface et l'export navigateur
         run: npm run test:e2e
+
+      # Sans cela, un échec ne laisse aucune trace consultable : les journaux
+      # d'exécution demandent une authentification, et le rapport Playwright
+      # (captures, traces, contexte d'erreur) disparaît avec la machine.
+      - name: Conserver le rapport Playwright en cas d'échec
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rapport-playwright
+          path: |
+            output/playwright-report
+            output/playwright
+          retention-days: 7
+          if-no-files-found: ignore
