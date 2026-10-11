@@ -76,8 +76,11 @@ import {
     splitCameraBudget,
 } from './video_timing.mjs';
 import {
+    browserRecorderMimeType,
+    DEFAULT_RECORDER_MIME,
     normalizeRecordingBitrateMbps,
     normalizeRecordingFps,
+    recorderMimeLabel,
 } from './recording_settings.mjs';
 import { createMapDirtyTracker } from './map_dirty.mjs';
 // Fonds de carte extraits dans basemaps.js. `olMap` est importé sous le nom
@@ -3385,10 +3388,10 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos, sess
 // ---------------- MEDIARECORDER PIPELINE ----------------
 function isMediaRecorderSupported() {
     try {
-        const mime = pkg.options?.record?.mediaRecorder?.mimeType || 'video/webm;codecs=vp9';
         const hasMR = typeof window !== 'undefined' && 'MediaRecorder' in window;
         const hasCanvasCapture = typeof HTMLCanvasElement !== 'undefined' && typeof HTMLCanvasElement.prototype.captureStream === 'function';
-        const mimeOk = hasMR ? (MediaRecorder.isTypeSupported ? MediaRecorder.isTypeSupported(mime) : true) : false;
+        // Un format de repli suffit (VP8 sous Firefox, qui n'encode pas le VP9).
+        const mimeOk = hasMR && !!browserRecorderMimeType(pkg.options?.record?.mediaRecorder?.mimeType);
         return hasMR && hasCanvasCapture && mimeOk;
     } catch(_) { return false; }
 }
@@ -3632,7 +3635,18 @@ function overlayContentSignature() {
 
 async function startMediaRecorderPipeline(totalDurationMs, timelineScale = 1, session = recordingSession){
     const fps = normalizeRecordingFps(pkg.options.record?.fps);
-    const mime = pkg.options?.record?.mediaRecorder?.mimeType || 'video/webm;codecs=vp9';
+    const wantedMime = pkg.options?.record?.mediaRecorder?.mimeType || DEFAULT_RECORDER_MIME;
+    const mime = browserRecorderMimeType(wantedMime);
+    if (mime && mime !== wantedMime) {
+        // Le navigateur n'encode pas le format demandé (VP9 sous Firefox) : le
+        // dire, la vidéo ne sortira pas dans le format affiché dans les réglages.
+        try {
+            pkg.showToast && pkg.showToast(
+                pkg.t('Format ${wanted} non pris en charge par ce navigateur : enregistrement en ${used}.',
+                    { wanted: recorderMimeLabel(wantedMime), used: recorderMimeLabel(mime) }),
+                'info', pkg.t('Compatibilité'), 7000);
+        } catch(_) {}
+    }
     const vbps = normalizeRecordingBitrateMbps(
         Number(pkg.options?.record?.mediaRecorder?.videoBitsPerSecond) / 1_000_000
     ) * 1_000_000;
@@ -3901,7 +3915,7 @@ function finalizeMediaRecorderVideo(){
     // Levé à chaque issue ci-dessous : vidéo livrée, ou échec annoncé.
     setVideoProcessing(true);
     try {
-        const mime = pkg.options?.record?.mediaRecorder?.mimeType || 'video/webm;codecs=vp9';
+        const mime = browserRecorderMimeType(pkg.options?.record?.mediaRecorder?.mimeType) || 'video/webm';
         // Chemin « flux » : les fragments ont déjà été poussés au serveur au fil
         // de l'eau — rien à assembler en mémoire, blob reste null.
         const stream = mrVideoStream;

@@ -71,6 +71,46 @@ export function bitrateIsCappedFor({ width, height, fps } = {}) {
     return Math.round(raw) > RECORDING_LIMITS.bitrateMbps.max;
 }
 
+// Format réellement utilisable par le MediaRecorder de ce navigateur.
+//
+// Le format demandé n'est pas encodable partout : Firefox n'encode pas le VP9
+// (le format par défaut) mais sait faire du VP8. Abandonner la capture rapide
+// pour autant serait disproportionné — on retombe sur le WebM le plus proche.
+// Les replis restent en WebM : c'est le conteneur attendu par le traitement
+// serveur. Renvoie null quand rien n'est encodable.
+export const DEFAULT_RECORDER_MIME = 'video/webm;codecs=vp9';
+
+const RECORDER_MIME_FALLBACKS = Object.freeze([
+    'video/webm;codecs=vp9',
+    'video/webm;codecs=vp8',
+    'video/webm',
+]);
+
+export function resolveRecorderMimeType(preferred, isSupported) {
+    const candidates = [preferred || DEFAULT_RECORDER_MIME, ...RECORDER_MIME_FALLBACKS];
+    for (const mime of candidates) {
+        try { if (isSupported(mime)) return mime; } catch (_) {}
+    }
+    return null;
+}
+
+// Variante branchée sur le navigateur courant. Un MediaRecorder sans
+// isTypeSupported ne permet pas de tester : le format demandé est tenté tel quel.
+export function browserRecorderMimeType(preferred) {
+    if (typeof MediaRecorder === 'undefined') return null;
+    if (typeof MediaRecorder.isTypeSupported !== 'function') return preferred || DEFAULT_RECORDER_MIME;
+    return resolveRecorderMimeType(preferred, (mime) => MediaRecorder.isTypeSupported(mime));
+}
+
+// Nom court d'un format, pour les messages (les codecs ne se traduisent pas).
+export function recorderMimeLabel(mime) {
+    const value = String(mime || '').toLowerCase();
+    if (value.includes('vp9')) return 'VP9';
+    if (value.includes('vp8')) return 'VP8';
+    if (value.includes('mp4')) return 'H.264 (MP4)';
+    return 'WebM';
+}
+
 export function isValidRecordingNumber(value, limits) {
     const number = Number(value);
     if (value === '' || !Number.isFinite(number) || number < limits.min || number > limits.max) {

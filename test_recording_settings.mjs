@@ -12,7 +12,32 @@ import {
     recordingQualityProfileFor,
     bitrateIsCappedFor,
     recommendedBitrateMbps,
+    recorderMimeLabel,
+    resolveRecorderMimeType,
 } from './static/js/recording_settings.mjs';
+
+test('chaque format proposé a un nom court', () => {
+    assert.equal(recorderMimeLabel('video/webm;codecs=vp9'), 'VP9');
+    assert.equal(recorderMimeLabel('video/webm;codecs=vp8'), 'VP8');
+    assert.equal(recorderMimeLabel('video/mp4;codecs=h264'), 'H.264 (MP4)');
+    assert.equal(recorderMimeLabel('video/webm'), 'WebM');
+});
+
+test('le format demandé est gardé quand le navigateur sait l\'encoder', () => {
+    assert.equal(resolveRecorderMimeType('video/mp4;codecs=h264', () => true), 'video/mp4;codecs=h264');
+    assert.equal(resolveRecorderMimeType('', () => true), 'video/webm;codecs=vp9');
+});
+
+test('sans VP9 (Firefox), la capture rapide retombe sur VP8', () => {
+    const firefox = (mime) => mime === 'video/webm;codecs=vp8' || mime === 'video/webm';
+    assert.equal(resolveRecorderMimeType('video/webm;codecs=vp9', firefox), 'video/webm;codecs=vp8');
+    assert.equal(resolveRecorderMimeType('video/mp4;codecs=h264', firefox), 'video/webm;codecs=vp8');
+});
+
+test('aucun format encodable : pas de capture rapide', () => {
+    assert.equal(resolveRecorderMimeType('video/webm;codecs=vp9', () => false), null);
+    assert.equal(resolveRecorderMimeType('video/webm;codecs=vp9', () => { throw new Error('x'); }), null);
+});
 
 test('les FPS sont arrondis et bornés entre 1 et 60', () => {
     assert.equal(normalizeRecordingFps(300), 60);

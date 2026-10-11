@@ -15,6 +15,7 @@ import { captureRatioFor, normalizeCaptureResolution } from './capture_resolutio
 import { normalizeColorFidelity } from './color_fidelity.mjs';
 import {
     bitrateIsCappedFor,
+    browserRecorderMimeType,
     RECORDING_LIMITS,
     RECORDING_QUALITY_PROFILES,
     recommendedBitrateMbps,
@@ -99,6 +100,9 @@ var selectLocationlessDisplay;
 var latLonModeCombined, latLonModeSplit, fieldLat, fieldLon, fieldCombined;
 let isCombinedLatLonMode = true;
 // Enregistrement
+// Format de repli affiché dans #selectRecordMime à la place du réglage
+// sauvegardé, quand ce navigateur ne sait pas encoder ce dernier ; null sinon.
+var recordMimeShownFallback = null;
 var selectRecordMode, selectRecordQualityProfile, recordAdvancedSettings, inputRecordFps, inputRecordBitrate, selectRecordMime, inputRecordSlowdown, inputRecordScaleFactor, inputRecordFileName, cbRecordNormalize, selectRecordResolution, selectRecordColorFidelity;
 var cbRecordAudioEnable, inputAudioFile, inputAudioVolume;
 // Passe à true à la première synchro déclenchée par une résolution de
@@ -1014,6 +1018,8 @@ function initOptionsElements() {
     selectRecordMime = document.getElementById('selectRecordMime');
     if (selectRecordMime) {
         selectRecordMime.addEventListener('change', () => {
+            // Choix explicite : il remplace le repli affiché d'office.
+            recordMimeShownFallback = null;
             const mime = selectRecordMime.value;
             if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported && !MediaRecorder.isTypeSupported(mime)) {
                 pkg.showToast && pkg.showToast(
@@ -2263,7 +2269,13 @@ function initOptionsUI() {
         if (inputRecordFps) inputRecordFps.value = pkg.options.record.fps;
         if (inputRecordBitrate) inputRecordBitrate.value = ((pkg.options.record?.mediaRecorder?.videoBitsPerSecond) || 6000000) / 1000000;
         if (selectRecordMime) {
-            selectRecordMime.value = (pkg.options.record?.mediaRecorder?.mimeType) || 'video/webm;codecs=vp9';
+            // Afficher le format réellement utilisable par ce navigateur (VP8
+            // sous Firefox quand VP9 est demandé) sans l'écrire dans les
+            // réglages : le choix sauvegardé reste valable ailleurs.
+            const savedRecordMime = (pkg.options.record?.mediaRecorder?.mimeType) || 'video/webm;codecs=vp9';
+            const usableRecordMime = browserRecorderMimeType(savedRecordMime) || savedRecordMime;
+            recordMimeShownFallback = usableRecordMime !== savedRecordMime ? usableRecordMime : null;
+            selectRecordMime.value = usableRecordMime;
             refreshTomSelect(selectRecordMime);
         }
         if (selectRecordResolution) {
@@ -2285,7 +2297,9 @@ function initOptionsUI() {
         // Vérifier le format sauvegardé et l'état initial de normalize
         if (selectRecordMime && typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported) {
             const savedMime = selectRecordMime.value;
-            if (savedMime && !MediaRecorder.isTypeSupported(savedMime)) {
+            // Un format de repli existe (VP8 sous Firefox) : la capture rapide
+            // fonctionnera, inutile d'alerter à chaque ouverture.
+            if (savedMime && !browserRecorderMimeType(savedMime)) {
                 setTimeout(() => {
                     pkg.showToast && pkg.showToast(
                         t('Le format vidéo sauvegardé (${mime}) n\'est pas supporté par ce navigateur.', { mime: savedMime }),
@@ -2559,7 +2573,8 @@ function changeRecordValues(field = undefined) {
             const bitrateMbps = normalizeRecordingBitrateMbps(inputRecordBitrate.value);
             pkg.options.record.mediaRecorder.videoBitsPerSecond = bitrateMbps * 1_000_000;
         }
-        if (selectRecordMime && selectRecordMime.value !== '') {
+        // Un format de repli seulement affiché n'est pas un choix de l'utilisateur.
+        if (selectRecordMime && selectRecordMime.value !== '' && selectRecordMime.value !== recordMimeShownFallback) {
             pkg.options.record.mediaRecorder.mimeType = selectRecordMime.value;
         }
         if (selectRecordResolution) {

@@ -7,6 +7,7 @@ import * as pkg from './index.js';
 import fixWebmDuration from './fix-webm-duration.js';
 import { clampPlaybackRate, MAX_BROWSER_PLAYBACK_RATE } from './video_timing.mjs';
 import {
+    browserRecorderMimeType,
     normalizeRecordingBitrateMbps,
     normalizeRecordingFps,
 } from './recording_settings.mjs';
@@ -43,7 +44,7 @@ export function normalizeRecordedVideoSpeed(sourceBlob, factor){
             video.src = url;
 
             const fps = normalizeRecordingFps(pkg.options?.record?.fps);
-            const mime = pkg.options?.record?.mediaRecorder?.mimeType || 'video/webm;codecs=vp9';
+            const mime = browserRecorderMimeType(pkg.options?.record?.mediaRecorder?.mimeType) || 'video/webm';
             const vbps = normalizeRecordingBitrateMbps(
                 Number(pkg.options?.record?.mediaRecorder?.videoBitsPerSecond) / 1_000_000
             ) * 1_000_000;
