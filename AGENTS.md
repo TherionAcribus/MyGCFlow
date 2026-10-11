@@ -34,7 +34,11 @@ Autres repères :
   un hash — les specs qui ont besoin de l'onglet Style doivent ouvrir `/#style`.
 - Vider les processus orphelins si un run est tué : `taskkill /F /T /PID <id>`
   sur les `node.exe`/`python.exe` dont la ligne de commande contient
-  `cli.js`/`run_server.py`.
+  `cli.js`/`run_server.py`. Sous Linux : `pkill -f cli.js` /
+  `pkill -f run_server.py`.
+- Sous Linux, config et données suivent la spec XDG : préférences et thèmes
+  dans `$XDG_CONFIG_HOME/MyGCFlow` (`~/.config`), données dans
+  `$XDG_DATA_HOME/MyGCFlow` (`~/.local/share`).
 
 ## Traductions
 

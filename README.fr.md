@@ -7,9 +7,10 @@
 
 ---
 
-MyGCFlow est une **application de bureau pour Windows** : elle lance un serveur
-Flask local et s'ouvre dans votre navigateur par défaut. Rien n'est envoyé sur
-Internet — votre fichier GPX, votre base et vos vidéos restent sur votre machine.
+MyGCFlow est une **application de bureau pour Windows et Linux** : elle lance
+un serveur Flask local et s'ouvre dans votre navigateur par défaut. Rien n'est
+envoyé sur Internet — votre fichier GPX, votre base et vos vidéos restent sur
+votre machine.
 
 Chargez la Pocket Query « My Finds » exportée depuis geocaching.com, composez le
 style de carte qui vous plaît, puis rejouez vos caches jour après jour et
@@ -61,10 +62,12 @@ Récupérez la dernière version sur la
 [page des Releases](https://github.com/TherionAcribus/MyGCFlow/releases) :
 
 - `MyGCFlow-Setup-<version>.exe` — installeur ;
-- l'archive portable — à décompresser, puis lancer `MyGCFlow.exe`.
+- l'archive portable — à décompresser, puis lancer `MyGCFlow.exe` ;
+- `MyGCFlow-<version>-linux-x86_64.tar.gz` — version Linux, voir
+  [Linux](#linux) plus bas.
 
-Les deux embarquent Python, les dépendances et ffmpeg : il n'y a rien d'autre à
-installer.
+Les deux versions Windows embarquent Python, les dépendances et ffmpeg : il
+n'y a rien d'autre à installer.
 
 Au lancement, MyGCFlow démarre un serveur sur `127.0.0.1:51730`, ouvre votre
 navigateur et affiche une icône dans la zone de notification (*Ouvrir
@@ -75,6 +78,45 @@ onglet.
 
 Options de dépannage : `MyGCFlow.exe --no-browser`, `--no-tray` (arrêt par
 Ctrl+C), `--port N`.
+
+## Linux
+
+Récupérez `MyGCFlow-<version>-linux-x86_64.tar.gz` sur la page des Releases,
+puis :
+
+```bash
+tar xf MyGCFlow-*-linux-x86_64.tar.gz
+cd MyGCFlow
+./install.sh
+```
+
+`install.sh` copie l'application dans `~/.local/opt/MyGCFlow`, crée un lien
+`mygcflow` dans `~/.local/bin` et installe l'entrée `.desktop`, si bien que
+MyGCFlow apparaît dans le menu des applications. Depuis les sources,
+`python launcher.py` est le même point d'entrée.
+
+Les options de dépannage sont les mêmes — `mygcflow --no-browser`, `--no-tray`
+(arrêt par Ctrl+C), `--port N`. Tout ce qui dépasse Python lui-même est
+optionnel : en cas d'absence, l'application se contente de fonctionnalités
+réduites.
+
+- **Icône de notification** — nécessite les bindings GObject et une
+  bibliothèque AppIndicator : `python3-gi` +
+  `gir1.2-ayatanaappindicator3-0.1` sous Debian/Ubuntu,
+  `libayatana-appindicator` sur les autres distributions. Sans eux — ou sans
+  affichage du tout — l'application tourne sans icône, comme avec `--no-tray`.
+- **Boîtes de dialogue natives** (sélecteur de dossier, confirmations) —
+  `zenity` ou `kdialog` ; à défaut, l'application retombe sur la saisie
+  manuelle et les journaux.
+- **Corbeille** — `gio` ou `kioclient` ; sans eux, les suppressions sont
+  définitives.
+
+Les fichiers suivent les dossiers de base XDG : préférences et thèmes sous
+`$XDG_CONFIG_HOME/MyGCFlow` (`~/.config/MyGCFlow`), données (base, caches,
+captures, journaux) sous `$XDG_DATA_HOME/MyGCFlow`
+(`~/.local/share/MyGCFlow`), et vidéos produites dans le dossier « Vidéos »
+XDG par défaut. `MYGCFLOW_DATA_DIR` et `MYGCFLOW_CONFIG_DIR` continuent de
+tout rediriger.
 
 ## Utilisation
 
@@ -118,6 +160,9 @@ py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe app.py      # serveur de développement (Werkzeug, débogueur)
 ```
 
+Sous Linux : `python3.12 -m venv .venv`, puis `.venv/bin/python` à la place de
+`.\.venv\Scripts\python.exe`.
+
 `python app.py` est le serveur de **développement** ; `launcher.py` est le point
 d'entrée de la version empaquetée (waitress + icône de notification).
 
@@ -152,6 +197,7 @@ WebGL), Tabler/Bootstrap, HTMX, ffmpeg via `imageio-ffmpeg`.
 
 # pipelines vidéo (produit de vrais fichiers, contrôlés avec ffprobe)
 .\.venv\Scripts\python.exe run_video_tests.py            # --quick pour éviter le réencodage
+# (sous Linux, lancez les deux avec .venv/bin/python)
 
 # bout en bout dans le navigateur (Playwright)
 npm install && npx playwright install chromium

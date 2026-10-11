@@ -62,6 +62,25 @@ class ProfileNameValidationTests(unittest.TestCase):
             self.manager.create_profile("MonProfil")
         self.assertEqual(self.manager.list_profiles(), ["Mon Profil"])
 
+    def test_names_differing_only_by_case_share_the_same_file(self):
+        # Sous un système de fichiers sensible à la casse (Linux), « theme test »
+        # mènerait à un second fichier à côté de ThemeTest.json : _profile_path
+        # retombe sur le fichier existant, comme Windows/macOS le font
+        # nativement. Le fichier garde sa casse d'origine.
+        prof = self.manager.create_profile("Theme Test")
+        path = settings_manager.PROFILES_DIR / "ThemeTest.json"
+        self.assertTrue(path.is_file())
+        self.assertEqual(
+            [p.name for p in settings_manager.PROFILES_DIR.glob("*.json")],
+            ["ThemeTest.json"],
+        )
+
+        self.assertFalse(self.manager.is_name_available("theme test"))
+        self.assertEqual(self.manager.load_profile("theme test").uid, prof.uid)
+
+        self.manager.delete_profile("theme test")
+        self.assertFalse(path.exists())
+
     def test_create_refuses_a_name_without_any_usable_character(self):
         # Sans ce refus, le nom retombait sur "Default.json" et écrasait
         # silencieusement un profil existant portant ce nom.

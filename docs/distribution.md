@@ -111,8 +111,12 @@ dist\MyGCFlow\MyGCFlow.exe
    propriétés de l'exécutable, installeur).
 2. Committer, puis `git tag v<version>` et `git push origin v<version>`.
 3. Le workflow `.github/workflows/release.yml` lance les tests unitaires,
-   construit l'installeur et la version portable, vérifie que l'exécutable
-   démarre, puis crée la Release GitHub avec les deux fichiers.
+   puis deux jobs parallèles : `build-windows` (installeur + version
+   portable) et `build-linux` (exécutable PyInstaller vérifié au démarrage,
+   archivé en `MyGCFlow-<version>-linux-x86_64.tar.gz` avec `install.sh` et
+   `MyGCFlow.desktop`). Le job `publish` crée ensuite la Release GitHub avec
+   les trois fichiers. `options.py` choisit l'asset à proposer selon l'OS —
+   le repère `-linux` dans le nom est ce qui désigne l'archive Linux.
    La Release créée est **la** source de la vérification des mises à jour
    (`options.py` lit `api.github.com/repos/<owner>/<repo>/releases`) : rien
    d'autre à publier, et rien qui puisse diverger de ce qu'a construit la CI.

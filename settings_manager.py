@@ -2348,6 +2348,12 @@ class SettingsManager:
         "MonProfil"). La modale de nom reproduit cette règle pour montrer la
         collision à la saisie (cf. profileNameKey() dans static/js/profiles.js).
 
+        La correspondance avec les fichiers est aussi insensible à la casse —
+        par construction, pas par la clé elle-même : _profile_path retombe sur
+        le fichier existant qui ne diffère que par la casse, ce qui reproduit
+        le comportement des systèmes de fichiers Windows/macOS sous Linux.
+        Un renommage qui ne change que la casse garde donc le même fichier.
+
         Peut être vide : c'est à l'appelant de refuser un tel nom (voir
         _require_valid_profile_name) plutôt que de le laisser retomber sur un
         fichier générique qui écraserait un profil existant.
@@ -2365,7 +2371,20 @@ class SettingsManager:
         return name
 
     def _profile_path(self, name: str) -> Path:
-        return PROFILES_DIR / f"{self._profile_file_key(name) or 'Default'}.json"
+        path = PROFILES_DIR / f"{self._profile_file_key(name) or 'Default'}.json"
+        if not path.exists() and PROFILES_DIR.is_dir():
+            # Sous un système de fichiers sensible à la casse, "default" et
+            # "Default" désigneraient deux fichiers alors que Windows/macOS les
+            # confondent : retomber sur le fichier existant qui ne diffère que
+            # par la casse évite de créer un doublon.
+            try:
+                with os.scandir(PROFILES_DIR) as it:
+                    for entry in it:
+                        if entry.name.casefold() == path.name.casefold():
+                            return PROFILES_DIR / entry.name
+            except OSError:
+                pass
+        return path
 
     def list_profiles(self, mode: Optional[str] = None) -> List[str]:
         """Noms des thèmes (pas des fichiers) ; ceux de `mode` seulement s'il est donné."""

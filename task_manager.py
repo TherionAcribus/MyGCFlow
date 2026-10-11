@@ -1,7 +1,7 @@
 import threading
 import uuid
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Optional, Union
 
 
@@ -42,7 +42,7 @@ class TaskStatus:
         self.message = ""
         self.result = None
         self.error = None
-        self.started_at = datetime.utcnow()
+        self.started_at = datetime.now(timezone.utc)
         self.finished_at = None
         self._lock = threading.Lock()
 
@@ -52,7 +52,7 @@ class TaskStatus:
             if message is not None:
                 self.message = message
             if state in ("finished", "failed"):
-                self.finished_at = datetime.utcnow()
+                self.finished_at = datetime.now(timezone.utc)
 
     def set_progress(self, progress: float, message: Optional[str] = None):
         with self._lock:
@@ -69,7 +69,7 @@ class TaskStatus:
         with self._lock:
             self.state = "failed"
             self.error = str(error)
-            self.finished_at = datetime.utcnow()
+            self.finished_at = datetime.now(timezone.utc)
 
     def to_dict(self, include_result: bool = False):
         data = {
@@ -168,7 +168,7 @@ class TaskManager:
 
     def purge_old_tasks(self) -> int:
         """Supprime les tâches terminées/échouées au-delà du TTL. Retourne le nombre de tâches purgées."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         purged = 0
         with self._lock:
             to_remove = []

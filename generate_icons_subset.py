@@ -11,7 +11,8 @@ centaine. Ce script produit, sans modifier les fichiers vendor d'origine :
 Les templates référencent tabler-icons-subset.css. Pour revenir à la fonte
 complète, repointer les <link> vers tabler-icons.min.css.
 
-Usage : .venv/Scripts/python.exe generate_icons_subset.py
+Usage : .venv\Scripts\python.exe generate_icons_subset.py   (Windows)
+        .venv/bin/python generate_icons_subset.py           (Linux)
 
 À relancer après toute mise à jour de @tabler/icons-webfont ou ajout d'une
 classe `ti-*` dans templates/, static/js/ ou static/css/. Les icônes listées
