@@ -112,6 +112,65 @@ test('le contenu exporté respecte séparément compteur et date', async ({ page
 });
 
 
+test('le modèle à balises pilote la ligne Infos du mode principal', async ({ page }) => {
+  // Un champ rempli prend la main sur les cases ; la ligne affichée est celle
+  // lue par le rendu vidéo (getOverlayTextContent) — même source de vérité.
+  const result = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    app.options.infos.numberOfCaches.display = true;
+    app.options.infos.currentDate.display = true;
+    app.metadata.numberOfCaches = 48;
+    app.updateNbCaches(12);
+    app.updateCurrentDate(new Date(2026, 6, 20));
+
+    const spans = () => ({
+      caches: document.querySelector('#spanNbCaches').hidden,
+      sep: document.querySelector('#spanInfosSep').hidden,
+      date: document.querySelector('#spanCurrentDate').hidden,
+      template: document.querySelector('#spanInfosTemplate').hidden,
+    });
+
+    const before = { spans: spans(), infos: app.getOverlayTextContent().infos };
+
+    app.setMainInfosTemplate('Caches : {trouvees}/{total} ({pct}) — {date}');
+    const during = {
+      text: document.querySelector('#spanInfosTemplate').textContent,
+      spans: spans(),
+      infos: app.getOverlayTextContent().infos,
+    };
+
+    app.updateNbCaches(24);
+    const afterCount = document.querySelector('#spanInfosTemplate').textContent;
+
+    // Champ vidé : les cases reprennent la main.
+    app.setMainInfosTemplate('');
+    const after = { spans: spans(), infos: app.getOverlayTextContent().infos };
+
+    // Balise d'un autre mode : littérale, comme en Évolution.
+    app.setMainInfosTemplate('{actives} {nom} caches');
+    const literal = document.querySelector('#spanInfosTemplate').textContent;
+    app.setMainInfosTemplate('');
+
+    return { before, during, afterCount, after, literal };
+  });
+
+  expect(result.before.infos).toBe('12 · 20/07/2026');
+  expect(result.before.spans.template).toBe(true);
+
+  expect(result.during.text).toBe('Caches : 12/48 (25 %) — 20/07/2026');
+  expect(result.during.spans).toEqual({ caches: true, sep: true, date: true, template: false });
+  expect(result.during.infos).toBe('Caches : 12/48 (25 %) — 20/07/2026');
+
+  // La ligne suit les valeurs affichées : compteur à 24 → 50 %.
+  expect(result.afterCount).toBe('Caches : 24/48 (50 %) — 20/07/2026');
+
+  expect(result.after.spans).toEqual({ caches: false, sep: false, date: false, template: true });
+  expect(result.after.infos).toBe('24 · 20/07/2026');
+
+  expect(result.literal).toBe('{actives} {nom} caches');
+});
+
+
 test('l’Overlay Infos réserve dès le départ la largeur du compteur final', async ({ page }) => {
   const boxes = await page.evaluate(async () => {
     const app = await import('/static/js/index.js');

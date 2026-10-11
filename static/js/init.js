@@ -272,6 +272,15 @@ function applyUserSettings(userSettings) {
         console.log('📥 [USER_SETTINGS] Format de date appliqué:', userSettings.date_format);
     }
 
+    // Modèle de la ligne d'infos du mode principal : préférence globale relue
+    // ici, à coup sûr (les préférences arrivent après l'évaluation des
+    // modules), puis reflétée dans le champ de l'onglet Infos.
+    if (!isEvolutionPage() && 'infos_template' in userSettings) {
+        pkg.setMainInfosTemplate?.(userSettings.infos_template);
+        const inp = document.getElementById('inputInfosTemplate');
+        if (inp) inp.value = pkg.mainInfosTemplateText?.() ?? '';
+    }
+
     // Le thème a déjà été appliqué depuis le miroir localStorage par le script
     // anti-FOUC ; ici on réaligne sur la préférence serveur, qui fait référence.
     try {

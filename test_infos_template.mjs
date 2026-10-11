@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
     DEFAULT_EVOLUTION_TEMPLATE,
     EVOLUTION_INFO_TAGS,
+    MAIN_INFO_TAGS,
     renderInfosTemplate,
     reservedInfosTemplateText,
 } from './static/js/infos_template.mjs';
@@ -72,4 +73,32 @@ test('la réserve conserve le texte libre et les balises inconnues', () => {
 test('la réserve d\'une balise sans maximum vaut 0', () => {
     assert.equal(reservedInfosTemplateText('{actives}'), '0');
     assert.equal(reservedInfosTemplateText(''), '');
+});
+
+const MAIN_VALUES = {
+    date: '10/02/2026',
+    trouvees: '12',
+    total: '48',
+    pct: '25 %',
+};
+
+test('mode principal : les quatre balises sont remplacées', () => {
+    const text = renderInfosTemplate('{date} · {trouvees} / {total} · {pct}', MAIN_VALUES, MAIN_INFO_TAGS);
+    assert.equal(text, '10/02/2026 · 12 / 48 · 25 %');
+});
+
+test('mode principal : les balises du mode Évolution restent littérales', () => {
+    // Une faute de frappe reste visible plutôt qu'un trou dans la ligne.
+    assert.equal(renderInfosTemplate('{actives} caches', MAIN_VALUES, MAIN_INFO_TAGS), '{actives} caches');
+    // Et réciproquement : {trouvees} n'est pas reconnue côté Évolution.
+    assert.equal(renderInfosTemplate('{trouvees}', { trouvees: '5' }), '{trouvees}');
+});
+
+test('mode principal : la réserve prend le total et le plus grand pourcentage', () => {
+    const text = reservedInfosTemplateText('{trouvees} / {total} · {pct}', {
+        trouvees: 48,
+        total: 48,
+        pct: '100 %',
+    }, MAIN_INFO_TAGS);
+    assert.equal(text, '48 / 48 · 100 %');
 });

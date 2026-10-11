@@ -97,6 +97,7 @@ def api_get_settings():
         'evolution_animation': asdict(s.evolution_animation),
         'evolution_dataset_id': s.evolution_dataset_id,
         'evolution_infos_template': s.evolution_infos_template,
+        'infos_template': s.infos_template,
         'evolution_undated_archives': s.evolution_undated_archives,
     })
     response.set_cookie(
@@ -172,6 +173,14 @@ def api_put_settings():
         if 'evolution_infos_template' in data:
             evolution_infos_template = coerce_infos_template(
                 data.get('evolution_infos_template'), current.evolution_infos_template)
+
+        # Modèle de la ligne d'infos du mode principal : même règle — réécrit
+        # seulement si envoyé. Une chaîne vide est admise : elle rend la main
+        # aux cases « nombre de caches » / « date ».
+        infos_template = current.infos_template
+        if 'infos_template' in data:
+            infos_template = coerce_infos_template(
+                data.get('infos_template'), current.infos_template)
 
         # Sort des archivées sans date (mode Évolution) : réécrit seulement
         # si le client l'envoie, comme les autres préférences.
@@ -262,6 +271,7 @@ def api_put_settings():
             evolution_animation=evolution_animation,
             evolution_dataset_id=evolution_dataset_id,
             evolution_infos_template=evolution_infos_template,
+            infos_template=infos_template,
             evolution_undated_archives=evolution_undated_archives,
             examples_seeded=current.examples_seeded,
             # Sans cette reprise, toute écriture de préférence ramenait le lot

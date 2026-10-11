@@ -217,10 +217,15 @@ export function getOverlayTextContent() {
         ? (document.getElementById('titleFrame')?.textContent || '')
         : '';
     const infoParts = [];
+    const spanTemplate = document.getElementById('spanInfosTemplate');
     if (isEvolutionPage()) {
         // Ligne à balises : le span du modèle est tenu à jour par mapgl.js ;
         // les spans classiques existent mais sont masqués dans ce mode.
-        infoParts.push(document.getElementById('spanInfosTemplate')?.textContent || '');
+        infoParts.push(spanTemplate?.textContent || '');
+    } else if (spanTemplate && !spanTemplate.hidden && spanTemplate.style.display !== 'none') {
+        // Mode principal avec modèle rempli : même ligne qu'en preview — le
+        // span affiché est la source de vérité (frames.js l'alimente).
+        infoParts.push(spanTemplate.textContent || '');
     } else {
         if (opts?.numberOfCaches?.display === true) {
             infoParts.push(document.getElementById('spanNbCaches')?.textContent || '0');

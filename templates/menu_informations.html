@@ -71,6 +71,20 @@
                 <input class="form-check-input" type="checkbox" id="cbDisplayCurrentDate">
                 <label class="form-check-label" for="cbDisplayCurrentDate">{{ _("Afficher la date") }}</label>
             </div>
+            <!-- Modèle libre de la ligne d'infos (balises), même mécanique
+                 qu'en mode Évolution : rempli, il prend la main sur les deux
+                 cases ci-dessus ; vide, il leur rend la main. -->
+            <div class="mb-1 mt-2">
+                <label class="form-label" for="inputInfosTemplate">{{ _("Ligne d'informations personnalisée") }}</label>
+                <input id="inputInfosTemplate" type="text" class="form-control" maxlength="200" autocomplete="off" placeholder="{date} · {trouvees} / {total}">
+                <div class="d-flex flex-wrap gap-1 mt-1" role="group" aria-label="{{ _('Insérer une balise') }}">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-infos-tag="date">{{ _("Date") }}</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-infos-tag="trouvees">{{ _("Trouvées") }}</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-infos-tag="total">{{ _("Total") }}</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-infos-tag="pct">{{ _("Pourcentage") }}</button>
+                </div>
+                <div class="form-text">{{ _("Balises remplacées en direct : {date}, {trouvees}, {total}, {pct}. Un champ rempli remplace la ligne pilotée par les cases ; vide, il leur rend la main.") }}</div>
+            </div>
             {% endif %}
         </div>
 

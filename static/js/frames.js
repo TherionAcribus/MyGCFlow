@@ -1,8 +1,67 @@
-// GESTION DES FRAMES d'INFORMATIONS ET DE TITRE 
+// GESTION DES FRAMES d'INFORMATIONS ET DE TITRE
 import * as pkg from './index.js';
 import { reservedInfosText } from './infos_reserve.mjs';
-import { reservedInfosTemplateText } from './infos_template.mjs';
+import { MAIN_INFO_TAGS, renderInfosTemplate, reservedInfosTemplateText } from './infos_template.mjs';
 import { isEvolutionPage } from './app_mode.mjs';
+
+// Modèle de la ligne d'infos du mode principal : texte libre avec balises
+// {date}, {trouvees}, {total}, {pct} (infos_template de settings.json).
+// Une chaîne vide — la valeur par défaut — laisse les cases à cocher piloter
+// la ligne, comme avant l'introduction du modèle. Même normalisation que le
+// modèle Évolution (une seule ligne, 200 caractères).
+let mainInfosTemplate = normalizeMainInfosTemplate(window.userSettings?.infos_template);
+
+function normalizeMainInfosTemplate(value) {
+    return String(value ?? '').replace(/\r\n|[\r\n]/g, ' ').slice(0, 200);
+}
+
+export function mainInfosTemplateText() {
+    return mainInfosTemplate;
+}
+
+// Modèle rempli → il prend la main sur les cases nombre de caches / date.
+// Garde TDZ comme safeEvolutionTemplate ci-dessus : initUIElements peut
+// appeler syncOverlayVisibility pendant l'évaluation des modules, avant que
+// mainInfosTemplate soit initialisé — un modèle alors « inactif » est le bon
+// repli (les cases pilotent la ligne).
+function mainTemplateActive() {
+    try {
+        return !isEvolutionPage() && mainInfosTemplate.trim() !== '';
+    } catch (_) {
+        return false;
+    }
+}
+
+// Champ « Ligne d'informations » de l'onglet Infos (ui.js). Le contenu, la
+// réserve de largeur et la visibilité suivent immédiatement.
+export function setMainInfosTemplate(value) {
+    const next = normalizeMainInfosTemplate(value);
+    if (next === mainInfosTemplate) return;
+    mainInfosTemplate = next;
+    updateInfosReserve();
+    try { pkg.invalidateOverlayCache?.(); } catch(_) {}
+    syncOverlayVisibility();
+    refreshMainInfosLine();
+}
+
+// Compose la ligne depuis les valeurs affichées — mêmes sources que les spans
+// classiques, lus dans le DOM (date et compteur y sont tenus à jour par
+// l'animation comme au repos).
+export function refreshMainInfosLine() {
+    if (!mainTemplateActive()) return;
+    const span = document.getElementById('spanInfosTemplate');
+    if (!span) return;
+    const foundText = document.getElementById('spanNbCaches')?.textContent ?? '';
+    const total = Math.max(0, Number(pkg.metadata?.numberOfCaches) || 0);
+    const found = Math.max(0, Number.parseInt(foundText, 10) || 0);
+    const text = renderInfosTemplate(mainInfosTemplate, {
+        date: document.getElementById('spanCurrentDate')?.textContent ?? '',
+        trouvees: foundText,
+        total: String(total),
+        pct: `${total > 0 ? Math.round(found * 100 / total) : 0} %`,
+    }, MAIN_INFO_TAGS);
+    if (span.textContent !== text) span.textContent = text;
+}
 
 export function displayFrames(){
     const optionsTitre = pkg.options.infos?.title;
@@ -31,10 +90,11 @@ export function syncOverlayVisibility(){
     const showTitle = dbReady && opts.title?.display === true;
     // Mode Évolution : la ligne d'infos est un modèle libre — un modèle vide
     // masque la cartouche quelles que soient les cases du profil (elles ne sont
-    // pas proposées dans ce mode).
+    // pas proposées dans ce mode). Mode principal : un modèle rempli prend la
+    // main sur les cases ; vide, ce sont les cases qui décident.
     const showInfos = dbReady && (isEvolutionPage()
         ? safeEvolutionTemplate().trim() !== ''
-        : (opts.numberOfCaches?.display === true || opts.currentDate?.display === true));
+        : (mainTemplateActive() || opts.numberOfCaches?.display === true || opts.currentDate?.display === true));
 
     if (titleFrame) {
         titleFrame.style.display = showTitle ? "block" : "none";
@@ -78,8 +138,12 @@ export function updateInfosSpansVisibility(){
     }
     // options.infos reste {} jusqu'à l'application du premier profil (initUIElements
     // appelle déjà syncOverlayVisibility) : mêmes ?. que syncOverlayVisibility.
-    const showCaches = opts.numberOfCaches?.display === true;
-    const showDate = opts.currentDate?.display === true;
+    // Un modèle rempli masque les spans classiques comme en mode Évolution ;
+    // ils restent alimentés en arrière-plan (leurs valeurs sont celles des
+    // balises {date} et {trouvees}).
+    const templateOn = mainTemplateActive();
+    const showCaches = !templateOn && opts.numberOfCaches?.display === true;
+    const showDate = !templateOn && opts.currentDate?.display === true;
     if (spanCaches) {
         spanCaches.hidden = !showCaches;
         spanCaches.style.display = showCaches ? "inline" : "none";
@@ -94,9 +158,10 @@ export function updateInfosSpansVisibility(){
         spanSep.style.display = showSeparator ? "inline" : "none";
     }
     if (spanTemplate) {
-        spanTemplate.hidden = true;
-        spanTemplate.style.display = "none";
+        spanTemplate.hidden = !templateOn;
+        spanTemplate.style.display = templateOn ? "inline" : "none";
     }
+    refreshMainInfosLine();
     updateInfosReserve();
 }
 
@@ -127,6 +192,14 @@ export function updateInfosReserve(){
                 archivees: meta?.counterMaxes?.archived,
                 total: meta?.numberOfCaches,
             })
+            : mainTemplateActive()
+            ? reservedInfosTemplateText(mainInfosTemplate, {
+                // Le compteur ne dépasse jamais le total de la sélection ;
+                // {pct} plafonne à « 100 % ».
+                trouvees: meta?.numberOfCaches,
+                total: meta?.numberOfCaches,
+                pct: '100 %',
+            }, MAIN_INFO_TAGS)
             : reservedInfosText({
                 showCount: opts?.numberOfCaches?.display === true,
                 showDate: opts?.currentDate?.display === true,
@@ -169,6 +242,7 @@ export function destroyInfosFrame(){
 export function updateNbCaches(nbCaches){
     const spanNbCaches = document.getElementById("spanNbCaches");
     if (spanNbCaches) spanNbCaches.textContent = nbCaches ?? 0;
+    refreshMainInfosLine();
     updateInfosReserve();
 }
 
@@ -177,6 +251,7 @@ export function updateCurrentDate(currentDate){
     currentDate = formatDate(currentDate);
     const spanCurrentDate = document.getElementById("spanCurrentDate");
     if (spanCurrentDate) spanCurrentDate.textContent = currentDate;
+    refreshMainInfosLine();
     updateInfosReserve();
 }
 

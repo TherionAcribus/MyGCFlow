@@ -822,13 +822,17 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
     cbDisplayCurrentDate = document.getElementById('cbDisplayCurrentDate');
     if (cbDisplayCurrentDate) cbDisplayCurrentDate.addEventListener('change', changeInfosValues);
 
-    // Modèle de la ligne d'infos (page du mode Évolution uniquement) : texte
-    // libre avec balises {date}/{actives}/{placees}/{archivees}/{total}. Les
-    // boutons insèrent la balise à la position du curseur.
+    // Modèle de la ligne d'infos : texte libre avec balises — {date}/
+    // {actives}/{placees}/{archivees}/{total} en mode Évolution, {date}/
+    // {trouvees}/{total}/{pct} en mode principal. Les boutons insèrent la
+    // balise à la position du curseur.
     inputInfosTemplate = document.getElementById('inputInfosTemplate');
     if (inputInfosTemplate) inputInfosTemplate.addEventListener('input', changeInfosTemplate);
     document.querySelectorAll('[data-evolution-info-tag]').forEach(btn => {
         btn.addEventListener('click', () => insertInfosTemplateTag(btn.dataset.evolutionInfoTag));
+    });
+    document.querySelectorAll('[data-infos-tag]').forEach(btn => {
+        btn.addEventListener('click', () => insertInfosTemplateTag(btn.dataset.infosTag));
     });
 
     // inputs
@@ -6087,14 +6091,20 @@ function changeInfosValues(event){
 // disque par caractère serait absurde (cf. les réglages d'enregistrement).
 const saveInfosTemplateDebounced = makeDebouncedSettingsSaver(500);
 
-// Mode Évolution : modèle libre de la ligne d'infos (texte + balises).
-// Préférence globale persistée (evolution_infos_template de settings.json) ;
-// l'aperçu suit la frappe sans attendre l'enregistrement.
+// Modèle libre de la ligne d'infos (texte + balises). Préférence globale
+// persistée par mode (evolution_infos_template / infos_template de
+// settings.json) ; l'aperçu suit la frappe sans attendre l'enregistrement.
 function changeInfosTemplate() {
     const value = inputInfosTemplate ? inputInfosTemplate.value : '';
-    pkg.setEvolutionInfosTemplate?.(value);
-    if (window.userSettings) window.userSettings.evolution_infos_template = value;
-    reportSave(inputInfosTemplate, saveInfosTemplateDebounced({ evolution_infos_template: value }));
+    if (isEvolutionPage()) {
+        pkg.setEvolutionInfosTemplate?.(value);
+        if (window.userSettings) window.userSettings.evolution_infos_template = value;
+        reportSave(inputInfosTemplate, saveInfosTemplateDebounced({ evolution_infos_template: value }));
+    } else {
+        pkg.setMainInfosTemplate?.(value);
+        if (window.userSettings) window.userSettings.infos_template = value;
+        reportSave(inputInfosTemplate, saveInfosTemplateDebounced({ infos_template: value }));
+    }
 }
 
 // Insère {tag} à la position du curseur dans le champ du modèle, comme une

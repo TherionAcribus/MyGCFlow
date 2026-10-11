@@ -1,46 +1,58 @@
-// Modèle de la ligne d'infos du mode Évolution : texte libre + balises
-// remplacées par les valeurs courantes ({date}, {actives}, {placees},
-// {archivees}, {total}). Aucune dépendance au DOM : logique pure, testable.
+// Modèles de la ligne d'infos : texte libre + balises remplacées par les
+// valeurs courantes. Aucune dépendance au DOM : logique pure, testable.
 //
-// - {date}      : date affichée (texte de #spanCurrentDate) ;
-// - {actives}   : caches présentes à la date courante (monte et descend) ;
-// - {placees}   : cumul des caches placées depuis le début ;
-// - {archivees} : cumul des caches archivées depuis le début ;
-// - {total}     : taille de la sélection, constante pendant l'animation.
+// Mode Évolution — {date}      : date affichée (texte de #spanCurrentDate) ;
+//                  {actives}   : caches présentes à la date courante ;
+//                  {placees}   : cumul des caches placées depuis le début ;
+//                  {archivees} : cumul des caches archivées depuis le début ;
+//                  {total}     : taille de la sélection, constante.
+// Mode principal — {date}      : date affichée ;
+//                  {trouvees}  : compteur courant de caches trouvées ;
+//                  {total}     : taille de la sélection ;
+//                  {pct}       : trouvées / total en pourcentage (« 42 % »).
 
 import { WIDEST_DATE } from './infos_reserve.mjs';
 
-// Modèle par défaut, identique à la ligne historique « date · compteur » et
-// à la préférence `evolution_infos_template` côté serveur (settings.json).
+// Modèle par défaut du mode Évolution, identique à la ligne historique
+// « date · compteur » et à la préférence `evolution_infos_template` côté
+// serveur (settings.json).
 export const DEFAULT_EVOLUTION_TEMPLATE = '{date} · {actives}';
 
-// Balises reconnues, dans l'ordre où l'onglet Infos les propose.
+// Balises reconnues par mode, dans l'ordre où l'onglet Infos les propose.
+// Une balise d'un autre mode reste littérale chez soi : l'utilisateur voit
+// sa faute de frappe plutôt qu'un trou dans la ligne.
 export const EVOLUTION_INFO_TAGS = ['date', 'actives', 'placees', 'archivees', 'total'];
-
-// Balises numériques : pour la réserve de largeur elles prennent leur valeur
-// maximale à venir ; {date} prend la plus large des dates possibles.
-const NUMERIC_TAGS = ['actives', 'placees', 'archivees', 'total'];
+export const MAIN_INFO_TAGS = ['date', 'trouvees', 'total', 'pct'];
 
 // {tag} : insensible à la casse, espaces tolérés autour du nom ({ ACTIVES }).
-const TAG_PATTERN = /\{\s*(date|actives|placees|archivees|total)\s*\}/gi;
+// Le motif est construit par mode (voir renderInfosTemplate).
+const patternByTags = new Map();
+function tagPattern(tags) {
+    const key = tags.join('|');
+    if (!patternByTags.has(key)) {
+        patternByTags.set(key, new RegExp(`\\{\\s*(${key})\\s*\\}`, 'gi'));
+    }
+    return patternByTags.get(key);
+}
 
-// Remplace les balises connues par les valeurs courantes. Les accolades
-// inconnues ({nom}, {archive}…) restent littérales : l'utilisateur voit sa
-// faute de frappe plutôt qu'un trou dans la ligne.
-export function renderInfosTemplate(template, values = {}) {
+// Remplace les balises reconnues (paramètre `tags`) par les valeurs courantes.
+// Les accolades inconnues ({nom}, balise d'un autre mode…) restent littérales.
+export function renderInfosTemplate(template, values = {}, tags = EVOLUTION_INFO_TAGS) {
     return String(template ?? '').replace(
-        TAG_PATTERN,
+        tagPattern(tags),
         (match, tag) => String(values[tag.toLowerCase()] ?? ''),
     );
 }
 
 // Texte de réserve : le même modèle rendu avec les plus grandes valeurs à
 // venir, pour figer la largeur de la cartouche (même rôle que
-// reservedInfosText dans infos_reserve.mjs).
-export function reservedInfosTemplateText(template, maxValues = {}) {
+// reservedInfosText dans infos_reserve.mjs). `maxValues` donne le maximum de
+// chaque balise autre que {date}, qui prend la plus large date possible.
+export function reservedInfosTemplateText(template, maxValues = {}, tags = EVOLUTION_INFO_TAGS) {
     const widest = { date: WIDEST_DATE };
-    for (const tag of NUMERIC_TAGS) {
+    for (const tag of tags) {
+        if (tag === 'date') continue;
         widest[tag] = String(maxValues[tag] ?? 0);
     }
-    return renderInfosTemplate(template, widest);
+    return renderInfosTemplate(template, widest, tags);
 }
