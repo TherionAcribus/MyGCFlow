@@ -41,6 +41,14 @@ test.afterEach(async ({ page }) => {
       theme: 'system',
       check_updates: false,
       date_format: 'auto',
+      // Le runtime est partagé : plusieurs tests d'ici basculent le cadrage sur
+      // « personnalisé » et n'y revenaient pas. Les specs suivantes démarraient
+      // alors sur une vue qui n'était plus ajustée aux données, ce qui change
+      // la durée des trajets de caméra (constaté sur « le plan annonce les
+      // pauses de dates »).
+      map_framing: 'fit',
+      map_default_center: null,
+      map_default_zoom: null,
       recording: { fps: 30, bitrate_mbps: 6, slowdown_factor: 1, offline_normalization: true, file_name: '' },
     }),
   })).catch(() => {});
