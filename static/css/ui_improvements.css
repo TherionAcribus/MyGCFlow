@@ -655,26 +655,11 @@ main.fullscreen-mode ~ .tooltip {
 
 /* Styles nettoyés pour la nouvelle disposition verticale */
 
-/* Corriger la fenêtre de titre en mode plein écran */
-main.fullscreen-mode #titleFrame {
-    flex-direction: row !important;
-    text-align: center !important;
-    white-space: nowrap !important;
-}
-
-/* Corriger la barre d'infos en mode plein écran */
-main.fullscreen-mode #infosFrame {
-    flex-direction: row !important;
-    white-space: nowrap !important;
-    text-align: left !important;
-}
-
-/* Conserver la disposition horizontale sans écraser la visibilité pilotée par JS. */
-main.fullscreen-mode #infosFrame span:not([hidden]) {
-    float: none !important;
-    clear: none !important;
-    vertical-align: baseline !important;
-}
+/* En plein écran, les cartouches titre/infos obéissent aux mêmes règles
+   qu'ailleurs (titre.css / infos.css / CSS du profil) : le rendu vidéo lit le
+   style calculé, une surcharge fullscreen créerait une divergence
+   preview/enregistrement. Les anciennes corrections !important dateint de la
+   mise en page par float, remplacée depuis par block + grid. */
 
 /* Le fond et la couleur des cartouches titre/infos sont définis par
    static/css/titre.css et static/css/infos.css (fond blanc translucide).
