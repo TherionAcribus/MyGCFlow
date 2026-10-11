@@ -4,6 +4,10 @@ Sous Windows, rien de tout cela ne s'exécute (la branche `os.name == "nt"`
 reste sur ctypes) : ces tests tournent la branche réelle et simulent les
 outils externes — zenity, kdialog, gio, kioclient — en patchant shutil.which
 et subprocess.run. Aucun vrai processus requis.
+
+os.name est forcé à "posix" : lancés sous Windows sans cela, ces tests
+ouvriraient de vrais sélecteurs de dossier bloquants et passeraient par la
+vraie Corbeille.
 """
 import os
 import shutil
@@ -26,8 +30,24 @@ def _completed(returncode, stdout=b""):
     return mock.Mock(returncode=returncode, stdout=stdout)
 
 
+def _hors_windows(test):
+    """Force os.name à "posix" pour la durée du test.
+
+    À appeler après avoir construit les Path du test : sous Windows, Path()
+    refuse de s'instancier tant que os.name vaut "posix".
+    """
+    patcher = mock.patch.object(os, "name", "posix")
+    patcher.start()
+    test.addCleanup(patcher.stop)
+
+
 class PickFolderLinuxTests(unittest.TestCase):
     """Cascade zenity → kdialog de pick_folder hors Windows."""
+
+    def setUp(self):
+        self.base = Path(tempfile.mkdtemp(prefix="mygcflow-picker-"))
+        self.addCleanup(shutil.rmtree, self.base, True)
+        _hors_windows(self)
 
     def test_zenity_renvoie_le_dossier_choisi(self):
         with mock.patch.object(folder_picker.shutil, "which", _which("zenity")), \
@@ -100,8 +120,7 @@ class PickFolderLinuxTests(unittest.TestCase):
         run.assert_not_called()
 
     def test_filename_seulement_pour_un_dossier_reel(self):
-        base = Path(tempfile.mkdtemp(prefix="mygcflow-picker-"))
-        self.addCleanup(shutil.rmtree, base, True)
+        base = self.base
         with mock.patch.object(folder_picker.shutil, "which", _which("zenity")), \
                 mock.patch.object(folder_picker.subprocess, "run",
                                   return_value=_completed(1)) as run:
@@ -139,6 +158,7 @@ class SendToTrashLinuxTests(unittest.TestCase):
         self.addCleanup(shutil.rmtree, self.base, True)
         self.target = self.base / "video.mp4"
         self.target.write_text("données", encoding="utf-8")
+        _hors_windows(self)
 
     def _fake_trash(self, cmd, **kwargs):
         """subprocess.run factice : l'outil « déplace » vraiment le fichier."""

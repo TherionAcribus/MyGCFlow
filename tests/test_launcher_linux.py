@@ -4,9 +4,13 @@ Sous Windows, rien de tout cela ne s'exécute (la branche `os.name == "nt"`
 reste sur ctypes) : ces tests tournent la branche réelle et simulent les
 outils externes — zenity, kdialog, gdbus, dbus-send — en patchant
 shutil.which et subprocess.run. Aucun vrai processus ni bus D-Bus requis.
+
+os.name est forcé à "posix" : lancés sous Windows sans cela, ces tests
+ouvriraient de vraies MessageBoxW bloquantes.
 """
 import os
 import unittest
+from pathlib import PurePosixPath
 from unittest import mock
 
 import capture
@@ -18,8 +22,18 @@ def _which(*available):
     return lambda name: f"/usr/bin/{name}" if name in available else None
 
 
+def _hors_windows(test):
+    """Force os.name à "posix" pour la durée du test."""
+    patcher = mock.patch.object(os, "name", "posix")
+    patcher.start()
+    test.addCleanup(patcher.stop)
+
+
 class MessageBoxLinuxTests(unittest.TestCase):
     """Cascade zenity → kdialog → journal de _message_box hors Windows."""
+
+    def setUp(self):
+        _hors_windows(self)
 
     def test_zenity_question_confirmee(self):
         with mock.patch.object(launcher.shutil, "which", _which("zenity")), \
@@ -84,6 +98,9 @@ class MessageBoxLinuxTests(unittest.TestCase):
 class DisplayAvailableTests(unittest.TestCase):
     """_display_available : sans DISPLAY ni WAYLAND_DISPLAY, pas de tray."""
 
+    def setUp(self):
+        _hors_windows(self)
+
     def test_display_present(self):
         with mock.patch.dict(os.environ, {"DISPLAY": ":0"}, clear=False):
             os.environ.pop("WAYLAND_DISPLAY", None)
@@ -103,6 +120,12 @@ class DisplayAvailableTests(unittest.TestCase):
 
 class RevealInFileManagerTests(unittest.TestCase):
     """capture._reveal_in_file_manager : sélection via FileManager1 (D-Bus)."""
+
+    def setUp(self):
+        # Sous Windows, « /tmp/… » n'a pas de lecteur : Path.as_uri() le refuse.
+        patcher = mock.patch.object(capture, "Path", PurePosixPath)
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
     def test_gdbus_show_items_avec_uri(self):
         with mock.patch.object(capture.shutil, "which", _which("gdbus")), \
