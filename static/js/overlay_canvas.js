@@ -134,9 +134,16 @@ export function buildOverlayCache(scaleFactor) {
             : inlineTop ? 'top'
             : (bottomGap < y ? 'bottom' : 'top');
 
+        // La boîte DOM est la source de vérité : tout ce qui la masque dans la
+        // preview (cases décochées, base absente, visibility côté CSS — display
+        // est filtré par l'assainissement mais visibility ne l'est pas) doit la
+        // masquer dans la vidéo.
+        const hidden = style.display === 'none'
+            || style.visibility === 'hidden' || style.visibility === 'collapse';
+
         const parsedOpacity = parseFloat(style.opacity);
         return {
-            el, x, y, w, h, bg, color, radius, padL, padR: (parseFloat(style.paddingRight) || 0) * scaleFactor,
+            el, x, y, w, h, bg, color, radius, padL, padR, hidden,
             padT, padB, font, fontPx, textAlignCss, hasShadow: !!shadowRaw,
             shColor, shBlur, shSpread, shOffX, shOffY,
             borders,
@@ -199,6 +206,10 @@ export function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor 
     try {
         const renderFromCache = (cached, text) => {
             if (!cached || !cached.el) return;
+            // Masquée dans la preview (display/visibility) → absente de la vidéo.
+            // opacity <= 0 rendrait un calque entièrement transparent : on
+            // économise la passe plutôt que de peindre pour rien.
+            if (cached.hidden || cached.opacity <= 0) return;
             if (!text || !text.trim()) return;
 
             const { x, y, w, h, bg, color, radius, padL, padR, padT, padB, font, fontPx, textAlignCss, tabularNums,

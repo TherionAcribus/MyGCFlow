@@ -366,6 +366,41 @@ test('le texte Canvas suit la boîte de contenu CSS de la preview', async ({ pag
 });
 
 
+test('un overlay masqué dans la preview ne se dessine pas dans la vidéo', async ({ page }) => {
+  // visibility n'est pas filtrée par l'assainissement (seuls display et url()
+  // le sont) : un utilisateur peut donc masquer la boîte par CSS. Le rendu
+  // vidéo doit suivre la preview — la boîte DOM est la source de vérité.
+  const painted = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    app.options.infos.title.display = true;
+    app.options.infos.numberOfCaches.display = false;
+    app.options.infos.currentDate.display = false;
+    app.updateTitleFrame('Titre masqué');
+    app.changeTitleCssValues([
+      'position:absolute', 'top:10px', 'left:10px', 'padding:8px',
+      'font:20px Arial', 'color:rgb(0,0,0)', 'background:rgb(255,0,0)',
+      'visibility:hidden',
+    ].join(';'));
+    // Contournement dbReady identique aux autres tests : la boîte resterait
+    // sinon display:none et le test ne distinguerait plus les deux causes.
+    document.getElementById('titleFrame').style.display = 'block';
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 300;
+    canvas.height = 120;
+    const ctx = canvas.getContext('2d');
+    app.addOverlaysToCanvas(ctx, canvas.width, canvas.height, 1);
+    const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    let count = 0;
+    for (let i = 3; i < pixels.length; i += 4) {
+      if (pixels[i]) count += 1;
+    }
+    return count;
+  });
+  expect(painted).toBe(0);
+});
+
+
 test('un grand compteur reste sur une seule ligne dans le rendu Canvas', async ({ page }) => {
   const metrics = await page.evaluate(async () => {
     const app = await import('/static/js/index.js');
