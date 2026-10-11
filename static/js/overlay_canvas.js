@@ -117,33 +117,12 @@ export function buildOverlayCache(scaleFactor) {
         const font = `${style.fontStyle || 'normal'} ${style.fontWeight || 'normal'} ${fontPx}px ${style.fontFamily || 'Arial'}`;
         const textAlignCss = style.textAlign || 'left';
 
-        const shadowRaw = style.boxShadow && style.boxShadow !== 'none' ? style.boxShadow : null;
-        let shColor = 'rgba(0,0,0,0)', shBlur = 0, shSpread = 0, shOffX = 0, shOffY = 0;
-        if (shadowRaw) {
-            const parts = shadowRaw.match(/(rgba?\([^\)]+\))\s+([-0-9.]+)px\s+([-0-9.]+)px\s+([-0-9.]+)px(?:\s+([-0-9.]+)px)?/);
-            if (parts) {
-                shColor = parts[1];
-                shOffX = parseFloat(parts[2]) * scaleFactor;
-                shOffY = parseFloat(parts[3]) * scaleFactor;
-                shBlur = parseFloat(parts[4]) * scaleFactor;
-                shSpread = (parseFloat(parts[5]) || 0) * scaleFactor;
-            }
-        }
-
-        // text-shadow : couleur puis deux longueurs, flou optionnel (pas de
-        // spread ni d'inset contrairement à box-shadow). Première ombre
-        // seulement — le style calculé place la couleur en tête.
-        const textShadowRaw = style.textShadow && style.textShadow !== 'none' ? style.textShadow : null;
-        let tsColor = 'rgba(0,0,0,0)', tsBlur = 0, tsOffX = 0, tsOffY = 0;
-        if (textShadowRaw) {
-            const tsParts = textShadowRaw.match(/(rgba?\([^\)]+\))\s+([-0-9.]+)px\s+([-0-9.]+)px(?:\s+([-0-9.]+)px)?/);
-            if (tsParts) {
-                tsColor = tsParts[1];
-                tsOffX = parseFloat(tsParts[2]) * scaleFactor;
-                tsOffY = parseFloat(tsParts[3]) * scaleFactor;
-                tsBlur = (parseFloat(tsParts[4]) || 0) * scaleFactor;
-            }
-        }
+        // Ombres : le style calculé sérialise chaque ombre couleur en tête,
+        // longueurs en px, `inset` éventuel en queue. Les listes (séparées
+        // par des virgules) sont reprises entièrement — sauf les `inset`,
+        // que le canvas ne sait pas creuser (cf. parseCssShadows).
+        const boxShadows = parseCssShadows(style.boxShadow, scaleFactor);
+        const textShadows = parseCssShadows(style.textShadow, scaleFactor);
 
         const padB = (parseFloat(style.paddingBottom) || 0) * scaleFactor;
         const lineHeightCss = parseFloat(style.lineHeight);
@@ -180,9 +159,7 @@ export function buildOverlayCache(scaleFactor) {
         const parsedOpacity = parseFloat(style.opacity);
         return {
             el, x, y, w, h, bg, color, radius, padL, padR, hidden,
-            padT, padB, font, fontPx, textAlignCss, hasShadow: !!shadowRaw,
-            shColor, shBlur, shSpread, shOffX, shOffY,
-            hasTextShadow: !!textShadowRaw, tsColor, tsBlur, tsOffX, tsOffY,
+            padT, padB, font, fontPx, textAlignCss, boxShadows, textShadows,
             borders,
             opacity: Number.isFinite(parsedOpacity) ? Math.max(0, Math.min(1, parsedOpacity)) : 1,
             letterSpacing: (parseFloat(style.letterSpacing) || 0) * scaleFactor,
@@ -255,8 +232,7 @@ export function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor 
             if (!text || !text.trim()) return;
 
             const { x, y, w, h, bg, color, radius, padL, padR, padT, padB, font, fontPx, textAlignCss, tabularNums,
-                    hasShadow, shColor, shBlur, shSpread, shOffX, shOffY, lineGap,
-                    hasTextShadow, tsColor, tsBlur, tsOffX, tsOffY,
+                    boxShadows, textShadows, lineGap,
                     borders, opacity, letterSpacing, textTransform, backgroundImage,
                     whiteSpace,
                     leftGap, rightGap, topGap, bottomGap,
@@ -325,29 +301,28 @@ export function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor 
             drawX = Math.max(0, Math.min(canvasWidth - drawW, drawX));
             drawY = Math.max(0, Math.min(canvasHeight - drawH, drawY));
 
-            if (hasShadow) {
-                paintCtx.shadowColor = shColor;
-                paintCtx.shadowBlur = shBlur + Math.max(0, shSpread * 2);
-                paintCtx.shadowOffsetX = shOffX;
-                paintCtx.shadowOffsetY = shOffY;
-            }
             const fillStyle = createOverlayFillStyle(paintCtx, backgroundImage, bg, drawX, drawY, drawW, drawH);
-            drawRoundedRect(paintCtx, drawX, drawY, drawW, drawH, radius, fillStyle);
-            paintCtx.shadowColor = 'rgba(0,0,0,0)';
+            // Le canvas ne gère qu'une ombre par tracé : une liste CSS est
+            // repeinte boîte par boîte, dans l'ordre inverse — la première
+            // ombre de la liste finit au premier plan, comme en CSS.
+            const shadowLayers = boxShadows.length ? boxShadows : [null];
+            for (let i = shadowLayers.length - 1; i >= 0; i--) {
+                const shadow = shadowLayers[i];
+                if (shadow) {
+                    paintCtx.shadowColor = shadow.color;
+                    paintCtx.shadowBlur = shadow.blur + Math.max(0, shadow.spread * 2);
+                    paintCtx.shadowOffsetX = shadow.offX;
+                    paintCtx.shadowOffsetY = shadow.offY;
+                }
+                drawRoundedRect(paintCtx, drawX, drawY, drawW, drawH, radius, fillStyle);
+                paintCtx.shadowColor = 'rgba(0,0,0,0)';
+            }
             drawOverlayBorders(paintCtx, drawX, drawY, drawW, drawH, radius, borders);
 
             paintCtx.fillStyle = color;
             if (textAlignCss === 'center') paintCtx.textAlign = 'center';
             else if (textAlignCss === 'right' || textAlignCss === 'end') paintCtx.textAlign = 'right';
             else paintCtx.textAlign = 'left';
-            // L'ombre du texte est posée après celle de la boîte (réinitialisée
-            // plus haut) : seuls les fillText qui suivent la consomment.
-            if (hasTextShadow) {
-                paintCtx.shadowColor = tsColor;
-                paintCtx.shadowBlur = tsBlur;
-                paintCtx.shadowOffsetX = tsOffX;
-                paintCtx.shadowOffsetY = tsOffY;
-            }
 
             // Comme un bloc CSS, la première boîte de ligne commence après la
             // bordure et le padding supérieurs. Une hauteur explicite laisse donc
@@ -355,15 +330,29 @@ export function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor 
             const contentLeft = drawX + borders.left.width + padL;
             const contentRight = drawX + drawW - borders.right.width - padR;
             const contentTop = drawY + borders.top.width + padT;
-            let curY = contentTop + ((lh - fontBoxHeight) / 2) + ascent;
-            lines.forEach(line => {
-                if (!line) { curY += lh; return; }
-                let xText = contentLeft;
-                if (paintCtx.textAlign === 'center') xText = (contentLeft + contentRight) / 2;
-                else if (paintCtx.textAlign === 'right') xText = contentRight;
-                drawOverlayText(paintCtx, line, xText, curY, layoutLetterSpacing, digitWidth);
-                curY += lh;
-            });
+            const firstLineY = contentTop + ((lh - fontBoxHeight) / 2) + ascent;
+            // Même mécanique que la boîte : une passe de texte par ombre, dans
+            // l'ordre inverse de la liste CSS.
+            const textShadowLayers = textShadows.length ? textShadows : [null];
+            for (let i = textShadowLayers.length - 1; i >= 0; i--) {
+                const shadow = textShadowLayers[i];
+                if (shadow) {
+                    paintCtx.shadowColor = shadow.color;
+                    paintCtx.shadowBlur = shadow.blur;
+                    paintCtx.shadowOffsetX = shadow.offX;
+                    paintCtx.shadowOffsetY = shadow.offY;
+                }
+                let curY = firstLineY;
+                lines.forEach(line => {
+                    if (!line) { curY += lh; return; }
+                    let xText = contentLeft;
+                    if (paintCtx.textAlign === 'center') xText = (contentLeft + contentRight) / 2;
+                    else if (paintCtx.textAlign === 'right') xText = contentRight;
+                    drawOverlayText(paintCtx, line, xText, curY, layoutLetterSpacing, digitWidth);
+                    curY += lh;
+                });
+            }
+            paintCtx.shadowColor = 'rgba(0,0,0,0)';
             paintCtx.restore();
             if (layer) {
                 ctx.save();
@@ -466,6 +455,31 @@ function splitCssArguments(value) {
     }
     parts.push(value.slice(start).trim());
     return parts;
+}
+
+// Liste d'ombres du style calculé (couleur en tête, longueurs en px, `inset`
+// éventuel en queue) : box-shadow et text-shadow partagent la même forme, la
+// seconde n'a juste jamais de spread — sa liste garde donc spread = 0.
+// Le canvas ne gère qu'une ombre par tracé : renderFromCache repeint la forme
+// une fois par entrée. Les ombres `inset` sont ignorées — le canvas 2D ne
+// sait pas creuser l'intérieur d'une boîte, et une ombre absente vaut mieux
+// qu'une ombre extérieure contraire à la preview.
+function parseCssShadows(raw, scaleFactor) {
+    if (!raw || raw === 'none') return [];
+    const shadows = [];
+    for (const part of splitCssArguments(raw)) {
+        if (/\binset\b/i.test(part)) continue;
+        const match = part.match(/(rgba?\([^\)]*\))\s+([-0-9.]+)px\s+([-0-9.]+)px(?:\s+([-0-9.]+)px)?(?:\s+([-0-9.]+)px)?/);
+        if (!match) continue;
+        shadows.push({
+            color: match[1],
+            offX: parseFloat(match[2]) * scaleFactor,
+            offY: parseFloat(match[3]) * scaleFactor,
+            blur: (parseFloat(match[4]) || 0) * scaleFactor,
+            spread: (parseFloat(match[5]) || 0) * scaleFactor,
+        });
+    }
+    return shadows;
 }
 
 function createOverlayFillStyle(ctx, backgroundImage, fallback, x, y, width, height) {

@@ -554,6 +554,56 @@ test('le renderer Canvas applique text-shadow au texte', async ({ page }) => {
 });
 
 
+test('les ombres multiples sont dessinées et les inset ignorées', async ({ page }) => {
+  // Le canvas ne gère qu'une ombre par tracé : une liste CSS est repeinte
+  // ombre par ombre. `inset` ne peut pas être creusé en canvas 2D — elle est
+  // ignorée plutôt que dessinée vers l'extérieur.
+  const metrics = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    app.options.infos.title.display = true;
+    app.options.infos.numberOfCaches.display = false;
+    app.options.infos.currentDate.display = false;
+    app.updateTitleFrame('X');
+    app.changeTitleCssValues([
+      'position:absolute', 'top:10px', 'left:10px', 'padding:8px',
+      'font:bold 40px Arial', 'color:rgb(0,0,0)',
+      'background-color:rgba(255,255,255,0)', 'border:none',
+      // Deux ombres de texte opposées + une ombre de boîte « creusante ».
+      'text-shadow: -16px 0px 0px rgb(255,0,0), 16px 0px 0px rgb(0,0,255)',
+      'box-shadow: inset 0px 40px 0px rgb(0,255,0)',
+    ].join(';'));
+    document.getElementById('titleFrame').style.display = 'block';
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 300;
+    canvas.height = 200;
+    const ctx = canvas.getContext('2d');
+    app.addOverlaysToCanvas(ctx, canvas.width, canvas.height, 1);
+    const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+
+    const boxRect = document.getElementById('titleFrame').getBoundingClientRect();
+    const containerRect = document.getElementById('mapWithFrames').getBoundingClientRect();
+    const boxBottom = Math.ceil(boxRect.bottom - containerRect.top);
+
+    let red = 0, blue = 0, below = 0;
+    for (let y = 0; y < canvas.height; y += 1) {
+      for (let x = 0; x < canvas.width; x += 1) {
+        const o = (y * canvas.width + x) * 4;
+        if (!pixels[o + 3]) continue;
+        if (pixels[o] > 200 && pixels[o + 1] < 80 && pixels[o + 2] < 80) red += 1;
+        if (pixels[o + 2] > 200 && pixels[o] < 80 && pixels[o + 1] < 80) blue += 1;
+        // L'ombre inset verte ne doit rien déborder sous la boîte.
+        if (y > boxBottom + 1) below += 1;
+      }
+    }
+    return { red, blue, below };
+  });
+  expect(metrics.red).toBeGreaterThan(50);
+  expect(metrics.blue).toBeGreaterThan(50);
+  expect(metrics.below).toBe(0);
+});
+
+
 test('un grand compteur reste sur une seule ligne dans le rendu Canvas', async ({ page }) => {
   const metrics = await page.evaluate(async () => {
     const app = await import('/static/js/index.js');

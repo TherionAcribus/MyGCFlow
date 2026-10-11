@@ -2,11 +2,11 @@
    Tout ce qui est utilisé ici doit être reproductible par le rendu Canvas des
    overlays (static/js/overlay_canvas.js), sans quoi la vidéo ne ressemblerait
    plus à l'aperçu : couleur de fond (transparence comprise), dégradé, rayon,
-   bordures, UNE ombre portée de boîte ET UNE de texte, opacité, interlettrage,
-   casse, interligne.
-   À éviter : backdrop-filter, ombres multiples (une seule est reprise), et
-   tout style propre à une partie du texte (la boîte est dessinée d'une seule
-   police et d'une seule couleur). */
+   bordures, ombres portées de boîte et de texte (listes multiples comprises),
+   opacité, interlettrage, casse, interligne.
+   À éviter : backdrop-filter, ombres `inset` (ignorées : le canvas ne sait
+   pas les creuser), et tout style propre à une partie du texte (la boîte est
+   dessinée d'une seule police et d'une seule couleur). */
 #titleFrame {
     position: absolute;
     top: 10px;
