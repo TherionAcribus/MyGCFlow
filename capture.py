@@ -137,14 +137,20 @@ def upload_image(request):
 
 
 def _open_with_system(path):
-    """Ouvre un dossier ou un fichier avec l'application associée du système."""
+    """Ouvre un dossier ou un fichier avec l'application associée du système.
+
+    Sorties redirigées et nouvelle session : l'application lancée (gestionnaire
+    de fichiers, lecteur vidéo) n'hérite ni de la console du serveur ni de son
+    groupe de processus, qu'elle survivrait sinon en pollueur de journal."""
     system = platform.system().lower()
     if system == 'windows':
         os.startfile(path)  # type: ignore[attr-defined]
     elif system == 'darwin':
-        subprocess.Popen(['open', path])
+        subprocess.Popen(['open', path], stdout=subprocess.DEVNULL,
+                         stderr=subprocess.DEVNULL, start_new_session=True)
     else:
-        subprocess.Popen(['xdg-open', path])
+        subprocess.Popen(['xdg-open', path], stdout=subprocess.DEVNULL,
+                         stderr=subprocess.DEVNULL, start_new_session=True)
 
 
 def open_video_folder():
@@ -251,6 +257,42 @@ def _requested_video_file(request):
     return resolve_video_file(name or request.form.get('file'))
 
 
+def _reveal_in_file_manager(path):
+    """Sélectionne le fichier dans le gestionnaire de fichiers de la session.
+
+    Passe par l'interface D-Bus freedesktop FileManager1, que savent servir
+    Nautilus, Dolphin, Nemo, Thunar… Renvoie False quand aucun client D-Bus
+    n'est disponible ou que l'appel échoue : l'appelant retombe alors sur la
+    simple ouverture du dossier parent.
+    """
+    uri = Path(path).as_uri()
+    if shutil.which('gdbus'):
+        command = [
+            'gdbus', 'call', '--session',
+            '--dest', 'org.freedesktop.FileManager1',
+            '--object-path', '/org/freedesktop/FileManager1',
+            '--method', 'org.freedesktop.FileManager1.ShowItems',
+            f"['{uri}']", '',
+        ]
+    elif shutil.which('dbus-send'):
+        command = [
+            'dbus-send', '--session', '--print-reply',
+            '--dest=org.freedesktop.FileManager1',
+            '/org/freedesktop/FileManager1',
+            'org.freedesktop.FileManager1.ShowItems',
+            f'array:string:{uri}', 'string:',
+        ]
+    else:
+        return False
+    try:
+        return subprocess.run(
+            command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            timeout=5,
+        ).returncode == 0
+    except Exception:
+        return False
+
+
 def reveal_video(request):
     """Ouvre le dossier des vidéos avec le fichier demandé sélectionné."""
     path = _requested_video_file(request)
@@ -263,7 +305,7 @@ def reveal_video(request):
             subprocess.Popen(['explorer', '/select,', os.path.normpath(path)])
         elif platform.system().lower() == 'darwin':
             subprocess.Popen(['open', '-R', path])
-        else:
+        elif not _reveal_in_file_manager(path):
             _open_with_system(os.path.dirname(path))
         return jsonify({'success': True, 'file': os.path.basename(path)})
     except Exception as e:

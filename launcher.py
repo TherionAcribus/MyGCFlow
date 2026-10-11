@@ -20,7 +20,9 @@ import argparse
 import json
 import logging
 import os
+import shutil
 import socket
+import subprocess
 import sys
 import threading
 import urllib.request
@@ -171,16 +173,62 @@ def _language():
     return lang if lang in _LABELS else "fr"
 
 
+def _gui_dialog(arguments):
+    """Lance un outil de dialogue externe (zenity, kdialog).
+
+    True si l'utilisateur a confirmé (code retour 0), False s'il a refusé
+    (zenity/kdialog renvoient 1 sur Annuler/Non), None si l'outil n'a pas pu
+    tourner du tout — présent dans le PATH mais sans affichage joignable, par
+    exemple : l'appelant essaie alors l'outil suivant.
+    """
+    try:
+        return subprocess.run(
+            arguments, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        ).returncode == 0
+    except Exception:
+        logger.debug("Boîte de dialogue : %s inutilisable", arguments[0], exc_info=True)
+        return None
+
+
 def _message_box(text, title="MyGCFlow", question=False):
-    """Boîte de dialogue native (Windows). Renvoie True pour « Oui » / OK."""
+    """Boîte de dialogue native. Renvoie True pour « Oui » / OK.
+
+    Hors Windows : zenity (GTK) puis kdialog (Qt). Si aucun des deux n'est
+    disponible — session serveur, bureau minimal — on renvoie True quand
+    même : le seul appelant qui teste le résultat est la confirmation
+    « quitter malgré les tâches en cours » de l'icône, et l'utilisateur a
+    déjà choisi Quitter.
+    """
     if os.name == "nt":
         import ctypes
         MB_YESNO, MB_ICONWARNING, MB_ICONERROR, MB_TOPMOST = 0x4, 0x30, 0x10, 0x40000
         flags = (MB_YESNO | MB_ICONWARNING if question else MB_ICONERROR) | MB_TOPMOST
         IDYES, IDOK = 6, 1
         return ctypes.windll.user32.MessageBoxW(None, text, title, flags) in (IDYES, IDOK)
+    if shutil.which("zenity"):
+        result = _gui_dialog([
+            "zenity", "--question" if question else "--error",
+            f"--title={title}", f"--text={text}",
+        ])
+        if result is not None:
+            return result
+    if shutil.which("kdialog"):
+        result = _gui_dialog([
+            "kdialog", f"--title={title}",
+            f"--yesno={text}" if question else f"--error={text}",
+        ])
+        if result is not None:
+            return result
+    logger.warning("Aucune boîte de dialogue disponible (zenity/kdialog absents) : %s", text)
     print(text, file=sys.stderr)
-    return not question
+    return True
+
+
+def _display_available():
+    """Faux sur une session Linux sans bureau (SSH, service) — pas de tray."""
+    if os.name == "nt" or sys.platform == "darwin":
+        return True
+    return bool(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"))
 
 
 def _open_folder(path):
@@ -189,7 +237,6 @@ def _open_folder(path):
         if os.name == "nt":
             os.startfile(path)  # type: ignore[attr-defined]
         else:
-            import subprocess
             subprocess.Popen(["open" if sys.platform == "darwin" else "xdg-open", str(path)])
     except Exception:
         logger.exception("Ouverture du dossier impossible : %s", path)
@@ -282,6 +329,15 @@ def _register_quit_hook(server):
 def run_tray(server, port, labels):
     global _tray_icon
 
+    # Sous Wayland, le backend Xorg de pystray n'affiche souvent rien ;
+    # AppIndicator est le chemin fiable, à condition que les bindings GObject
+    # (paquet python3-gi) soient installés. setdefault : l'utilisateur peut
+    # forcer un autre backend via la variable d'environnement.
+    import importlib.util
+    if (os.environ.get("XDG_SESSION_TYPE") == "wayland"
+            and importlib.util.find_spec("gi") is not None):
+        os.environ.setdefault("PYSTRAY_BACKEND", "appindicator")
+
     import pystray
     from PIL import Image
 
@@ -338,7 +394,9 @@ def main(argv=None):
     if not args.no_browser:
         open_browser(port)
 
-    if args.no_tray:
+    if args.no_tray or not _display_available():
+        if not args.no_tray:
+            logger.info("Aucun affichage : démarrage sans icône de notification (Ctrl+C pour quitter)")
         try:
             server.run()
         except KeyboardInterrupt:
@@ -348,12 +406,20 @@ def main(argv=None):
     threading.Thread(target=server.run, name="waitress", daemon=True).start()
     try:
         run_tray(server, port, labels)
-    except Exception:
+    except Exception as exc:
         # Pas de zone de notification disponible (session sans bureau…) : le
-        # serveur continue. L'exécutable étant construit sans console, il n'y a
-        # ici ni Ctrl+C ni fenêtre — l'arrêt passe forcément par le bouton
-        # « Quitter » de l'interface (POST /api/quit).
-        logger.exception("Icône de notification indisponible — arrêt depuis l'interface uniquement")
+        # serveur continue, l'arrêt passe par le bouton « Quitter » de
+        # l'interface (POST /api/quit).
+        if os.name == "nt" or sys.platform == "darwin":
+            # L'exécutable est construit sans console : ni Ctrl+C ni fenêtre
+            # ici, et le journal doit garder la trace complète.
+            logger.exception("Icône de notification indisponible — arrêt depuis l'interface uniquement")
+        else:
+            logger.warning(
+                "Icône de notification indisponible (%s) — quitter via le "
+                "bouton « Quitter » de l'interface. Pour l'icône, installer "
+                "python3-gi + gir1.2-ayatanaappindicator3-0.1 (Debian/Ubuntu) "
+                "ou libayatana-appindicator (Arch/Fedora).", exc)
         try:
             threading.Event().wait()
         except KeyboardInterrupt:
