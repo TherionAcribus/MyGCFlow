@@ -4324,54 +4324,6 @@ async function captureElement() {
     });
 }
 
-// Précalcule les propriétés statiques d'un overlay (styles CSS, position, shadow, font)
-// pour éviter getElementById/getBoundingClientRect/getComputedStyle à chaque frame.
-// Appelé une seule fois au démarrage de chaque session d'enregistrement.
-
-// Fonction fallback pour dessiner manuellement les overlays
-function drawManualOverlay(ctx, type, infos = null) {
-    let x, y, text;
-
-    if (type === 'title') {
-        // Vérifier le paramètre utilisateur pour le titre
-        if (!pkg.options?.infos?.title?.display) return;
-        x = 20;
-        y = 20;
-        text = pkg.options.infos.title.text ? pkg.options.infos.title.text : 'My Geocaching Map';
-    } else if (type === 'infos') {
-        // Vérifier si au moins un paramètre est activé
-        const shouldDisplayDate = pkg.options?.infos?.currentDate?.display === true;
-        const shouldDisplayCaches = pkg.options?.infos?.numberOfCaches?.display === true;
-        if (!shouldDisplayDate && !shouldDisplayCaches) return;
-
-        x = 20;
-        y = 40;
-
-        // Fond semi-transparent pour les overlays
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-        ctx.fillRect(12, 12, Math.min(300, ctx.canvas.width - 24), 60);
-
-        // Style du texte
-        ctx.fillStyle = '#000';
-        ctx.font = '16px Arial';
-        ctx.textBaseline = 'top';
-
-        // Date
-        if (shouldDisplayDate && currentDate) {
-            const dateText = currentDate.toLocaleDateString('fr-FR');
-            ctx.fillText(dateText, x, y);
-            y += 20;
-        }
-
-        // Nombre de caches
-        if (shouldDisplayCaches) {
-            const cacheCount = infos ? infos.cacheNumber || 0 : 0;
-            ctx.fillText(`${cacheCount} caches`, x, y);
-        }
-    }
-}
-
-
 function displayFeaturesForDate(date, pointOptions, flashOptions, record, infos) {
     displayFeaturesForDates([date], pointOptions, flashOptions, record, infos);
 }
