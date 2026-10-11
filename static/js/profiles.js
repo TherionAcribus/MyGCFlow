@@ -1901,6 +1901,11 @@ class ProfileManager {
             select.appendChild(opt);
         }
 
+        // Horodatage du dernier choix : sert à distinguer la réouverture
+        // automatique de la liste (juste après une sélection) d'une ouverture
+        // voulue par l'utilisateur.
+        let dernierChoix = 0;
+
         // `create` transforme une frappe inconnue en nouveau thème ; le rendu
         // « option_create » remplace le « Add … » anglais par défaut.
         initTomSelect(select, {
@@ -1921,6 +1926,37 @@ class ProfileManager {
                 },
             },
             onChange: () => this._updateSaveAsFeedback(),
+            // `closeAfterSelect` ferme bien la liste, mais Tom Select rend
+            // ensuite le focus au champ, ce qui la rouvre aussitôt
+            // (openOnFocus). Elle recouvre alors le pied de la fenêtre et
+            // intercepte le clic sur « Enregistrer le thème » dès qu'il y a
+            // assez de thèmes pour qu'elle descende jusque-là : l'utilisateur
+            // sélectionne une option au lieu de valider.
+            // On retire donc le focus du champ une fois le choix fait (après la
+            // réouverture, d'où le report), et on le pose sur le bouton :
+            // la validation est alors à une touche Entrée.
+            // `openOnFocus: false` réglerait aussi le problème, mais rendrait
+            // le champ muet au clic — Tom Select n'ouvre la liste que via
+            // focus() (cf. son gestionnaire de clic).
+            onItemAdd: () => { dernierChoix = Date.now(); },
+            onDropdownOpen: () => {
+                // Seule la réouverture automatique qui suit un choix est
+                // refusée ; une ouverture demandée par l'utilisateur (clic sur
+                // le champ) arrive plus tard et reste normale.
+                if (Date.now() - dernierChoix < 500) {
+                    setTimeout(() => {
+                        const ts = getTomSelect(select);
+                        ts?.close();
+                        // Sans ce blur, le champ resterait focalisé et fermé :
+                        // Tom Select n'ouvre sa liste que sur une *prise* de
+                        // focus, un clic suivant ne la rouvrirait donc pas.
+                        // Le focus va au bouton, à une touche Entrée de valider.
+                        ts?.blur();
+                        const confirmer = document.getElementById('btn-confirm-save-as');
+                        if (confirmer && !confirmer.disabled) confirmer.focus();
+                    }, 0);
+                }
+            },
             onType: () => this._updateSaveAsFeedback(),
         });
 

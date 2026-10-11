@@ -419,8 +419,13 @@ test('le texte Canvas suit la boîte de contenu CSS de la preview', async ({ pag
   for (const metrics of samples) {
     expect(metrics.actual.maxX, metrics.textAlign).toBeGreaterThan(metrics.actual.minX);
     expect(metrics.actual.maxY, metrics.textAlign).toBeGreaterThan(metrics.actual.minY);
-    expect(Math.abs(metrics.actual.minX - metrics.expectedLeft), metrics.textAlign).toBeLessThanOrEqual(1.5);
-    expect(Math.abs(metrics.actual.minY - metrics.expectedTop), metrics.textAlign).toBeLessThanOrEqual(1.5);
+    // 3 px : la position du premier pixel « assez sombre » dépend du lissage
+    // des polices, qui diffère d'un système à l'autre — mesuré 1,0 à 1,2 px
+    // sous Windows, 2 px sous Linux (CI). Reste bien en deçà du décalage que
+    // ce test surveille (texte calé sur la bordure au lieu de la boîte de
+    // contenu, soit des dizaines de pixels).
+    expect(Math.abs(metrics.actual.minX - metrics.expectedLeft), metrics.textAlign).toBeLessThanOrEqual(3);
+    expect(Math.abs(metrics.actual.minY - metrics.expectedTop), metrics.textAlign).toBeLessThanOrEqual(3);
   }
 });
 

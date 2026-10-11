@@ -2045,7 +2045,15 @@ function reportMapCenterFailure(e) {
     return false;
 }
 
-async function saveMapCenterSettings() {
+// `force` : enregistrer même si les valeurs n'ont pas changé. Le raccourci
+// « rien n'a bougé, rien à envoyer » convient aux sorties de champ (on tabule
+// sans rien modifier), mais pas à un clic explicite sur « Utiliser le cadrage
+// actuel » : si la vue est déjà au centre par défaut, l'intention de
+// l'utilisateur n'était jamais enregistrée (le serveur gardait
+// map_default_center: null) et aucun retour visuel ne le signalait.
+// Les écouteurs de blur passent un Event en argument : `event.force` vaut
+// alors undefined, donc false.
+async function saveMapCenterSettings({ force = false } = {}) {
     try {
         // `false` et non `undefined` : les appelants distinguent l'échec de la
         // réussite sur cette seule valeur.
@@ -2110,7 +2118,7 @@ async function saveMapCenterSettings() {
 
         const zoomChanged = (patch.map_default_zoom !== undefined) && (patch.map_default_zoom !== lastSavedZoom);
         const centerChanged = newCenterKey !== lastSavedCenterKey;
-        if (!centerChanged && !zoomChanged) {
+        if (!force && !centerChanged && !zoomChanged) {
             return true;
         }
 
@@ -2185,7 +2193,9 @@ async function applyCurrentMapViewAsDefault() {
         if (inputMapDefaultZoom) inputMapDefaultZoom.value = String(view.getZoom());
         // saveMapCenterSettings() pose déjà l'indicateur « Enregistré ✓ » sur les
         // champs remplis : pas de toast en plus pour la même information.
-        await saveMapCenterSettings();
+        // `force` : le clic doit enregistrer même si la vue est déjà au centre
+        // et au zoom par défaut.
+        await saveMapCenterSettings({ force: true });
     } catch(e) {
     }
 }

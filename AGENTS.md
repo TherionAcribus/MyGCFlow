@@ -17,10 +17,13 @@ nvm) ou mettre à jour Playwright si une version corrige ce deadlock.
 Autres repères :
 - Le runtime E2E est isolé via `MYGCFLOW_E2E_RUNTIME` (config + données en
   `%TEMP%`), voir `playwright.config.mjs` et `tests/e2e/run-tests.mjs`.
-- Échec connu (préexistant) : `global-preferences.spec.mjs` › « Enregistrer
-  le cadrage ». Quand la vue est déjà au centre/zoom par défaut,
-  `saveMapCenterSettings` (ui.js) ne voit aucun changement et n'envoie pas le
-  PUT — le serveur garde `map_default_center: null`.
+- `saveMapCenterSettings` (ui.js) n'envoie rien quand les valeurs n'ont pas
+  changé, ce qui convient aux sorties de champ mais pas à un clic explicite :
+  « Utiliser le cadrage actuel » passe donc `{ force: true }`. Sans cela, une
+  vue déjà au centre/zoom par défaut n'était jamais enregistrée (le serveur
+  gardait `map_default_center: null`), sans aucun retour visuel — c'était
+  l'échec de longue date de `global-preferences.spec.mjs` › « Enregistrer le
+  cadrage », corrigé le 2026-10-11.
 - Muter `feature.geometry.coordinates` en place dans un `page.evaluate`
   n'incrémente pas `pointsByDateRevision` : les mémoïsations indexées dessus
   (résumés de la simulation caméra, trajet du trail) restent figées. Appeler
