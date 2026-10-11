@@ -54,6 +54,26 @@ export function getOverlayCacheRevision() {
 if (typeof window !== 'undefined') {
     window.addEventListener('resize', invalidateOverlayCache, { passive: true });
     try { document.fonts?.ready?.then(invalidateOverlayCache); } catch(_) {}
+    // fonts.ready ne se résout qu'une fois : une webfont appliquée plus tard
+    // (font-display: swap) change les métriques mesurées sans invalidation.
+    try { document.fonts?.addEventListener?.('loadingdone', invalidateOverlayCache); } catch(_) {}
+}
+
+// La géométrie des boîtes peut changer sans passer par les chemins
+// d'invalidation : titre wrappant sur une ligne de plus, ligne d'infos sans
+// white-space:nowrap via le CSS personnalisé, conteneur redimensionné par un
+// chemin qui ne déclenche pas l'événement resize. Observer les trois boîtes
+// garantit que la géométrie mesurée ne reste jamais périmée.
+let overlayResizeObserver = null;
+
+function ensureOverlayResizeObserver(container) {
+    if (overlayResizeObserver || typeof ResizeObserver === 'undefined') return;
+    overlayResizeObserver = new ResizeObserver(() => invalidateOverlayCache());
+    overlayResizeObserver.observe(container);
+    for (const id of ['titleFrame', 'infosFrame']) {
+        const el = document.getElementById(id);
+        if (el) overlayResizeObserver.observe(el);
+    }
 }
 
 function acquireOverlayLayerCanvas(width, height) {
@@ -70,6 +90,7 @@ export function buildOverlayCache(scaleFactor) {
     overlayCache = null;
     const container = document.getElementById('mapWithFrames');
     if (!container) return;
+    ensureOverlayResizeObserver(container);
     const containerRect = container.getBoundingClientRect();
 
     const cacheElement = (id) => {

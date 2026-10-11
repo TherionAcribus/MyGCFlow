@@ -401,6 +401,36 @@ test('un overlay masqué dans la preview ne se dessine pas dans la vidéo', asyn
 });
 
 
+test('une hauteur de boîte modifiée hors des API invalide le cache', async ({ page }) => {
+  // Les chemins officiels (updateTitleFrame, change*CssValues, resize fenêtre)
+  // invalident le cache. Mais la boîte peut changer de taille sans eux — ici
+  // une mutation directe du style, comme le ferait un wrap inattendu. Seul le
+  // ResizeObserver garantit alors que la géométrie mesurée ne reste pas périmée.
+  const result = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    app.options.infos.title.display = true;
+    app.options.infos.numberOfCaches.display = false;
+    app.options.infos.currentDate.display = false;
+    app.updateTitleFrame('Titre');
+    app.changeTitleCssValues('position:absolute; top:10px; left:10px; font:20px Arial;');
+    document.getElementById('titleFrame').style.display = 'block';
+
+    // Force la construction du cache à la géométrie initiale.
+    const canvas = document.createElement('canvas');
+    canvas.width = 300;
+    canvas.height = 120;
+    app.addOverlaysToCanvas(canvas.getContext('2d'), canvas.width, canvas.height, 1);
+    const revBefore = app.getOverlayCacheRevision();
+
+    // Mutation directe : n'appelle aucun chemin d'invalidation explicite.
+    document.getElementById('titleFrame').style.fontSize = '60px';
+    await new Promise(resolve => setTimeout(resolve, 100));
+    return { revBefore, revAfter: app.getOverlayCacheRevision() };
+  });
+  expect(result.revAfter).toBeGreaterThan(result.revBefore);
+});
+
+
 test('un grand compteur reste sur une seule ligne dans le rendu Canvas', async ({ page }) => {
   const metrics = await page.evaluate(async () => {
     const app = await import('/static/js/index.js');
