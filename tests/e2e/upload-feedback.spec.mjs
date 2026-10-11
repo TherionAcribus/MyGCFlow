@@ -48,7 +48,17 @@ test('import via état vide : toast immédiate et indicateur inline pendant le t
   await page.evaluate(() => {
     window.__watchImport = false;
     window.__importProposalSeen = false;
+    // Le blocage du bouton pendant le traitement est un état transitoire :
+    // l'affirmer après coup est une course (manquée sur une machine lente,
+    // où l'import était déjà terminé). On enregistre donc son passage.
+    window.__importBusySeen = false;
+    const checkBusy = () => {
+      const btn = document.getElementById('btnEmptyStateImport');
+      if (btn && btn.disabled) window.__importBusySeen = true;
+    };
+    checkBusy();
     const check = () => {
+      checkBusy();
       if (!window.__watchImport) return;
       const es = document.getElementById('emptyState');
       const btn = document.getElementById('btnEmptyStateImport');
@@ -71,7 +81,10 @@ test('import via état vide : toast immédiate et indicateur inline pendant le t
   await page.locator('#file-input').setInputFiles(FIXTURE);
   await expect(loadingToast(page)).toBeVisible();
   await expect(indicator).toBeVisible();
-  await expect(page.locator('#btnEmptyStateImport')).toBeDisabled();
+  // Constat du blocage via la sonde plutôt que par une assertion instantanée :
+  // la fenêtre peut s'être refermée entre-temps, le passage reste vrai.
+  await expect.poll(() => page.evaluate(() => window.__importBusySeen), { timeout: 30_000 })
+    .toBe(true);
 
   // L'import est engagé : la sonde surveille la phase d'affichage des points.
   await page.evaluate(() => { window.__watchImport = true; });
