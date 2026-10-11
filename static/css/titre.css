@@ -3,10 +3,11 @@
    overlays (static/js/overlay_canvas.js), sans quoi la vidéo ne ressemblerait
    plus à l'aperçu : couleur de fond (transparence comprise), dégradé, rayon,
    bordures, ombres portées de boîte et de texte (listes multiples comprises),
-   opacité, interlettrage, casse, interligne.
+   opacité, interlettrage, casse, interligne, rognage du contenu par overflow.
    À éviter : backdrop-filter, ombres `inset` (ignorées : le canvas ne sait
-   pas les creuser), et tout style propre à une partie du texte (la boîte est
-   dessinée d'une seule police et d'une seule couleur). */
+   pas les creuser), text-overflow (le « … » n'est pas reproduit), et tout
+   style propre à une partie du texte (la boîte est dessinée d'une seule
+   police et d'une seule couleur). */
 #titleFrame {
     position: absolute;
     top: 10px;

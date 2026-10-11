@@ -696,3 +696,48 @@ test('les champs d’ombre acceptent la saisie en mode avancé', async ({ page }
   css = await page.locator('#inputTitleCss').inputValue();
   expect(css).toMatch(/box-shadow:[^;]*\b9px\b/);
 });
+
+
+test('overflow:hidden rogne le texte au bord du cartouche', async ({ page }) => {
+  // La preview clippe le contenu à la padding-box quand overflow n'est pas
+  // visible ; la vidéo doit faire pareil — sans clip, un texte nowrap trop
+  // long était peint par-dessus padding et bordure, jusqu'au bord du canvas.
+  const metrics = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    app.options.infos.title.display = true;
+    app.options.infos.numberOfCaches.display = false;
+    app.options.infos.currentDate.display = false;
+    app.updateTitleFrame('Titre très long qui déborde nettement du cartouche');
+    app.changeTitleCssValues([
+      'position:absolute', 'top:10px', 'left:10px',
+      'width:120px', 'padding:4px', 'white-space:nowrap', 'overflow:hidden',
+      'font:20px Arial', 'color:rgb(0,0,0)',
+      'background-color:rgba(255,255,255,0)', 'border:none', 'box-shadow:none',
+    ].join(';'));
+    document.getElementById('titleFrame').style.display = 'block';
+
+    const boxRect = document.getElementById('titleFrame').getBoundingClientRect();
+    const containerRect = document.getElementById('mapWithFrames').getBoundingClientRect();
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(containerRect.width);
+    canvas.height = Math.round(containerRect.height);
+    const ctx = canvas.getContext('2d');
+    app.addOverlaysToCanvas(ctx, canvas.width, canvas.height, 1);
+    const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+
+    const boxRight = Math.ceil(boxRect.right - containerRect.left);
+    let inside = 0;
+    let outside = 0;
+    for (let y = 0; y < canvas.height; y += 1) {
+      for (let x = 0; x < canvas.width; x += 1) {
+        const o = (y * canvas.width + x) * 4;
+        if (pixels[o + 3] < 128 || pixels[o] > 80 || pixels[o + 1] > 80 || pixels[o + 2] > 80) continue;
+        if (x > boxRight + 1) outside += 1;
+        else inside += 1;
+      }
+    }
+    return { inside, outside };
+  });
+  expect(metrics.inside).toBeGreaterThan(0);
+  expect(metrics.outside).toBe(0);
+});

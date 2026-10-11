@@ -168,6 +168,11 @@ export function buildOverlayCache(scaleFactor) {
             tabularNums: isTabularNums(style.fontVariantNumeric),
             textTransform: style.textTransform || 'none',
             whiteSpace: style.whiteSpace || 'normal',
+            // overflow autre que 'visible' clippe le contenu à la padding-box
+            // (bordure exclue). Le style calculé propage déjà la règle CSS
+            // « un axe non visible rend l'autre auto » — tester les deux.
+            clipX: (style.overflowX || 'visible') !== 'visible',
+            clipY: (style.overflowY || 'visible') !== 'visible',
             backgroundImage: style.backgroundImage || 'none',
             zIndex: Number.isFinite(parseInt(style.zIndex, 10)) ? parseInt(style.zIndex, 10) : 0,
             leftGap: Math.max(0, x), rightGap,
@@ -234,7 +239,7 @@ export function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor 
             const { x, y, w, h, bg, color, radius, padL, padR, padT, padB, font, fontPx, textAlignCss, tabularNums,
                     boxShadows, textShadows, lineGap,
                     borders, opacity, letterSpacing, textTransform, backgroundImage,
-                    whiteSpace,
+                    whiteSpace, clipX, clipY,
                     leftGap, rightGap, topGap, bottomGap,
                     horizontalAnchor, verticalAnchor } = cached;
 
@@ -318,6 +323,28 @@ export function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor 
                 paintCtx.shadowColor = 'rgba(0,0,0,0)';
             }
             drawOverlayBorders(paintCtx, drawX, drawY, drawW, drawH, radius, borders);
+
+            // overflow non visible : le contenu est rogné à la padding-box —
+            // le texte trop long ne doit plus traverser bordure et padding.
+            // Un seul axe clippe : l'autre reste libre jusqu'au bord du canvas.
+            if (clipX || clipY) {
+                const clipPadLeft = drawX + borders.left.width;
+                const clipPadTop = drawY + borders.top.width;
+                const clipPadRight = drawX + drawW - borders.right.width;
+                const clipPadBottom = drawY + drawH - borders.bottom.width;
+                const clipRadius = clipX && clipY
+                    ? Math.max(0, radius - Math.max(
+                        borders.top.width, borders.right.width,
+                        borders.bottom.width, borders.left.width))
+                    : 0;
+                roundedRectPath(paintCtx,
+                    clipX ? clipPadLeft : 0,
+                    clipY ? clipPadTop : 0,
+                    clipX ? clipPadRight - clipPadLeft : canvasWidth,
+                    clipY ? clipPadBottom - clipPadTop : canvasHeight,
+                    clipRadius);
+                paintCtx.clip();
+            }
 
             paintCtx.fillStyle = color;
             if (textAlignCss === 'center') paintCtx.textAlign = 'center';
