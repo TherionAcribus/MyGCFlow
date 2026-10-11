@@ -316,7 +316,7 @@ def _usable_video_folder(raw):
         raise ValueError(_("Indiquez un dossier."))
     folder = os.path.abspath(os.path.expanduser(text))
     if not os.path.isabs(text) and not text.startswith('~'):
-        raise ValueError(_("Indiquez le chemin complet du dossier (par exemple D:\Vidéos)."))
+        raise ValueError(_("Indiquez le chemin complet du dossier (par exemple D:\\Vidéos)."))
     try:
         os.makedirs(folder, exist_ok=True)
         # Essai d'écriture réel : os.access ne reflète pas les droits Windows.
