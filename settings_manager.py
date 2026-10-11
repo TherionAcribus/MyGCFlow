@@ -270,6 +270,9 @@ class RecordingSettings:
     offline_normalization: bool = True
     audio_enabled: bool = False
     audio_volume: float = 1.0
+    # Compter la durée de la musique sans son blanc de fin (détecté côté
+    # client, cf. static/js/audio_silence.mjs).
+    audio_trim_silence: bool = False
 
 
 @dataclass
@@ -761,6 +764,7 @@ def coerce_recording_settings(d: dict) -> RecordingSettings:
     r.offline_normalization = bool(d.get("offline_normalization", r.offline_normalization))
     r.audio_enabled = bool(d.get("audio_enabled", r.audio_enabled))
     r.audio_volume = _clamp_float(d.get("audio_volume"), r.audio_volume, 0.0, 1.0)
+    r.audio_trim_silence = bool(d.get("audio_trim_silence", r.audio_trim_silence))
     return r
 
 

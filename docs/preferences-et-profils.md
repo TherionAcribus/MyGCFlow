@@ -247,7 +247,8 @@ pourrait écraser un réglage plus récent.
     "output_dir": "",
     "offline_normalization": true,
     "audio_enabled": false,
-    "audio_volume": 1.0
+    "audio_volume": 1.0,
+    "audio_trim_silence": false
   },
   "recording_configured": false,
   "animation": {

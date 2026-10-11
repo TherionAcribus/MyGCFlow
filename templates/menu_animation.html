@@ -275,6 +275,18 @@
                             <div id="audioFileInfo" class="form-hint text-muted mt-2" aria-live="polite">
                                 <em>{{ _("Aucune musique sélectionnée") }}</em>
                             </div>
+                            <!-- Affiché seulement quand la piste se termine par un
+                                 blanc (applyMusicSilenceTrim, ui.js). -->
+                            <div id="audioTrailingSilence" class="mt-2" style="display:none;">
+                                <div class="form-hint" aria-live="polite">
+                                    <i class="ti ti-info-circle me-1" aria-hidden="true"></i><span id="audioTrailingSilenceText"></span>
+                                </div>
+                                <div class="form-check mt-1 mb-0">
+                                    <input id="cbAudioTrimSilence" class="form-check-input" type="checkbox">
+                                    <label class="form-check-label" for="cbAudioTrimSilence"
+                                           title="{{ _('La durée de la musique est comptée sans son blanc de fin : une vidéo calée dessus se termine avec le dernier son.') }}">{{ _("Ignorer le blanc de fin") }}</label>
+                                </div>
+                            </div>
                             <div class="mt-3">
                                 <label class="form-label d-block mb-1" for="inputAudioVolume">{{ _("Volume musique") }}</label>
                                 <div class="vector-slider-container">

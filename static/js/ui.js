@@ -32,6 +32,7 @@ import { reportSave, markSaveError } from './saved_indicator.mjs';
 import { t } from './notifications.js';
 import { isEvolutionPage } from './app_mode.mjs';
 import { resolveCameraFollowMode } from './camera_follow.mjs';
+import { detectTrailingSilenceMs, hasNotableTrailingSilence, trimmedDurationMs } from './audio_silence.mjs';
 import {
     buildTrailPath,
     buildTrailRoute,
@@ -104,7 +105,7 @@ let isCombinedLatLonMode = true;
 // sauvegardé, quand ce navigateur ne sait pas encoder ce dernier ; null sinon.
 var recordMimeShownFallback = null;
 var selectRecordMode, selectRecordQualityProfile, recordAdvancedSettings, inputRecordFps, inputRecordBitrate, selectRecordMime, inputRecordSlowdown, inputRecordScaleFactor, inputRecordFileName, cbRecordNormalize, selectRecordResolution, selectRecordColorFidelity;
-var cbRecordAudioEnable, inputAudioFile, inputAudioVolume;
+var cbRecordAudioEnable, inputAudioFile, inputAudioVolume, cbAudioTrimSilence;
 // Passe à true à la première synchro déclenchée par une résolution de
 // données (chargement, filtrage, vidage). L'état vide de la carte ne se
 // révèle qu'à ce moment-là : l'afficher dès l'init le ferait flasher
@@ -125,8 +126,15 @@ var lastTimingPlan = null;
 // une lecture de métadonnées démarrée pour le fichier A ne doit pas écraser
 // l'état quand l'utilisateur a depuis choisi le fichier B.
 const audioDurationCache = new Map();
+const audioSilenceCache = new Map();
 let audioReadToken = 0;
+// musicDurationMs est la durée UTILE de la musique, celle sur laquelle le plan
+// de timing se cale : la durée du fichier (musicFileDurationMs), moins son
+// blanc de fin (musicTrailingSilenceMs) quand l'utilisateur a choisi de
+// l'ignorer. Recalculée par applyMusicSilenceTrim().
 var musicDurationMs = null;
+var musicFileDurationMs = null;
+var musicTrailingSilenceMs = 0;
 
 const LANGUAGE_COOKIE_NAME = 'mygcflow_lang';
 
@@ -187,7 +195,7 @@ const RECORD_SETTINGS_FIELDS = [
     'selectRecordMode', 'selectRecordQualityProfile', 'inputRecordFps', 'inputRecordBitrate',
     'inputRecordSlowdown', 'inputRecordScaleFactor', 'selectRecordMime',
     'inputRecordFileName', 'cbRecordNormalize',
-    'cbRecordAudioEnable', 'inputAudioVolume', 'selectRecordResolution',
+    'cbRecordAudioEnable', 'inputAudioVolume', 'cbAudioTrimSilence', 'selectRecordResolution',
     'selectRecordColorFidelity',
 ];
 let lastTouchedRecordField = null;
@@ -253,6 +261,7 @@ function updateMusicSyncUi(plan = lastTimingPlan) {
     const lines = [];
     if (hasFile && Number.isFinite(musicDurationMs) && musicDurationMs > 0) {
         lines.push(t('Musique : ${d}', { d: formatDurationHuman(musicDurationMs) }));
+        if (musicDurationMs < musicFileDurationMs) lines.push(t('(blanc de fin ignoré)'));
     }
     if (locked && plan?.valid) {
         if (plan.clampedToMinimum) {
@@ -1087,6 +1096,8 @@ function initOptionsElements() {
             changeRecordValues();
         });
     }
+    cbAudioTrimSilence = document.getElementById('cbAudioTrimSilence');
+    if (cbAudioTrimSilence) cbAudioTrimSilence.addEventListener('change', () => changeRecordValues());
     // Après la déclaration de tous les champs : mémorise le dernier manipulé
     // pour cibler l'indicateur « Enregistré ✓ ».
     trackRecordFieldTouches();
@@ -2354,6 +2365,8 @@ function initOptionsUI() {
                 const display = document.getElementById('spanAudioVolumeDisplay');
                 if (display) display.textContent = Math.round(vol * 100) + '%';
             }
+            if (cbAudioTrimSilence) cbAudioTrimSilence.checked = !!pkg.options.record.audio.trimSilence;
+            applyMusicSilenceTrim();
         } catch(e) { console.warn('Init audio UI error:', e); }
 
         // Mettre à jour la visibilité après l'initialisation
@@ -2636,6 +2649,12 @@ function changeRecordValues(field = undefined) {
                 const vol = Math.max(0, Math.min(1, parseFloat(inputAudioVolume.value) || 1));
                 pkg.options.record.audio.volume = vol;
             }
+            if (cbAudioTrimSilence) {
+                pkg.options.record.audio.trimSilence = !!cbAudioTrimSilence.checked;
+                // La durée utile de la musique change : le plan recalculé
+                // plus bas (refreshTimingPlan) s'appuie dessus.
+                applyMusicSilenceTrim();
+            }
         } catch(e) { console.warn('changeRecordValues audio error:', e); }
 
         // Sauvegarder automatiquement les paramètres d'enregistrement
@@ -2680,6 +2699,7 @@ function recordSettingsPayload() {
         offline_normalization: mr.offlineNormalization ?? true,
         audio_enabled: audio.enabled || false,
         audio_volume: (typeof audio.volume === 'number') ? audio.volume : 1,
+        audio_trim_silence: !!audio.trimSilence,
     };
 }
 
@@ -2703,6 +2723,7 @@ function applyRecordSettingsPayload(recording) {
     pkg.options.record.audio.enabled = recording.audio_enabled || false;
     pkg.options.record.audio.volume =
         (typeof recording.audio_volume === 'number') ? recording.audio_volume : 1;
+    pkg.options.record.audio.trimSilence = !!recording.audio_trim_silence;
     return true;
 }
 
@@ -7481,19 +7502,69 @@ async function refreshMusicDuration() {
     const file = inputAudioFile?.files?.[0];
     const token = ++audioReadToken;
     if (!file) {
-        musicDurationMs = null;
+        musicFileDurationMs = null;
+        musicTrailingSilenceMs = 0;
+        applyMusicSilenceTrim();
         refreshTimingPlan();
         return null;
     }
     try {
         const seconds = await getAudioDuration(file);
         if (token !== audioReadToken) return null; // lecture périmée
-        musicDurationMs = Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : null;
+        musicFileDurationMs = Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : null;
     } catch (e) {
         if (token !== audioReadToken) return null;
-        musicDurationMs = null;
+        musicFileDurationMs = null;
         console.warn('Durée audio illisible:', e);
     }
+    // Le blanc de fin demande de décoder la piste : format non décodable ou
+    // navigateur sans Web Audio → on fait comme s'il n'y en avait pas.
+    let silenceMs = 0;
+    if (musicFileDurationMs) {
+        try {
+            silenceMs = await getAudioTrailingSilence(file);
+        } catch (e) {
+            console.warn('Blanc de fin non mesurable:', e);
+        }
+        if (token !== audioReadToken) return null;
+    }
+    musicTrailingSilenceMs = silenceMs;
+    applyMusicSilenceTrim();
     refreshTimingPlan();
     return musicDurationMs;
+}
+
+// Blanc de fin (ms) d'un fichier audio, mis en cache comme sa durée : le
+// décodage complet de la piste coûte bien plus cher que la lecture des
+// métadonnées.
+function getAudioTrailingSilence(file) {
+    const key = `${file.name}|${file.size}|${file.lastModified}`;
+    if (audioSilenceCache.has(key)) return audioSilenceCache.get(key);
+    const promise = detectTrailingSilenceMs(file);
+    audioSilenceCache.set(key, promise);
+    promise.catch(() => audioSilenceCache.delete(key));
+    return promise;
+}
+
+// Recalcule la durée utile de la musique et met à jour l'encart « blanc de
+// fin ». L'encart (et donc l'option) n'apparaît que si un blanc a été détecté.
+// Ne recalcule pas le plan de timing : c'est à l'appelant de le faire.
+function applyMusicSilenceTrim() {
+    const notable = !!musicFileDurationMs && hasNotableTrailingSilence(musicTrailingSilenceMs)
+        // Piste entièrement muette : rien à proposer.
+        && musicTrailingSilenceMs < musicFileDurationMs;
+    const trim = notable && !!pkg.options?.record?.audio?.trimSilence;
+    musicDurationMs = trim
+        ? trimmedDurationMs(musicFileDurationMs, musicTrailingSilenceMs)
+        : musicFileDurationMs;
+
+    const box = document.getElementById('audioTrailingSilence');
+    if (!box) return;
+    box.style.display = notable ? '' : 'none';
+    const text = document.getElementById('audioTrailingSilenceText');
+    if (text && notable) {
+        text.textContent = t('Blanc de ${s} s détecté à la fin de la musique.', {
+            s: (musicTrailingSilenceMs / 1000).toFixed(1),
+        });
+    }
 }

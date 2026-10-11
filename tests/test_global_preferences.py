@@ -65,6 +65,10 @@ class RecordingCoercionTests(unittest.TestCase):
         self.assertEqual(coerce_recording_settings({"capture_resolution": None}).capture_resolution, "window")
         self.assertEqual(coerce_recording_settings({"capture_resolution": "1440p"}).capture_resolution, "1440p")
 
+    def test_trailing_silence_trim_is_opt_in(self):
+        self.assertFalse(coerce_recording_settings({}).audio_trim_silence)
+        self.assertTrue(coerce_recording_settings({"audio_trim_silence": True}).audio_trim_silence)
+
     def test_garbage_payload_yields_defaults(self):
         self.assertEqual(coerce_recording_settings(None), coerce_recording_settings({}))
 
