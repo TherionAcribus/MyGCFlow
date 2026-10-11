@@ -6211,6 +6211,11 @@ function initCssAssistant() {
         shadowBlur: document.getElementById('gcCssShadowBlur'),
         shadowSpread: document.getElementById('gcCssShadowSpread'),
         shadowColor: document.getElementById('gcCssShadowColor'),
+        textShadowEnable: document.getElementById('gcCssTextShadowEnable'),
+        textShadowX: document.getElementById('gcCssTextShadowX'),
+        textShadowY: document.getElementById('gcCssTextShadowY'),
+        textShadowBlur: document.getElementById('gcCssTextShadowBlur'),
+        textShadowColor: document.getElementById('gcCssTextShadowColor'),
         position: document.getElementById('gcCssPosition'),
         zIndex: document.getElementById('gcCssZIndex'),
         top: document.getElementById('gcCssTop'),
@@ -6248,6 +6253,7 @@ function initCssAssistant() {
         'border-style',
         'border-color',
         'box-shadow',
+        'text-shadow',
         'position',
         'z-index',
         'top',
@@ -6256,6 +6262,35 @@ function initCssAssistant() {
         'left',
         'opacity',
     ]);
+
+    function rgbMatchToHex(rgb) {
+        if (!rgb) return '';
+        const r = Math.max(0, Math.min(255, parseInt(rgb[1], 10)));
+        const g = Math.max(0, Math.min(255, parseInt(rgb[2], 10)));
+        const b = Math.max(0, Math.min(255, parseInt(rgb[3], 10)));
+        return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+    }
+
+    // Probe réutilisé pour convertir n'importe quelle couleur CSS (noms,
+    // hsl, hwb…) : le style calculé la renvoie en rgb()/rgba() — ou en
+    // color(srgb …) pour les entrées modernes. Doit être attaché au document,
+    // sinon getComputedStyle ne résout rien.
+    let colorProbeEl = null;
+    function cssColorToRgbString(value) {
+        try {
+            if (!colorProbeEl) {
+                colorProbeEl = document.createElement('span');
+                colorProbeEl.style.display = 'none';
+                document.body.appendChild(colorProbeEl);
+            }
+            colorProbeEl.style.color = '';
+            colorProbeEl.style.color = value;
+            if (!colorProbeEl.style.color) return '';
+            return getComputedStyle(colorProbeEl).color || '';
+        } catch (_) {
+            return '';
+        }
+    }
 
     function normalizeColorToHex(value) {
         if (!value || typeof value !== 'string') return '';
@@ -6266,13 +6301,20 @@ function initCssAssistant() {
         }
         if (/^#([0-9a-f]{6})$/i.test(v)) return v.toLowerCase();
         const rgb = v.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([0-9.]+))?\s*\)$/i);
-        if (rgb) {
-            const r = Math.max(0, Math.min(255, parseInt(rgb[1], 10)));
-            const g = Math.max(0, Math.min(255, parseInt(rgb[2], 10)));
-            const b = Math.max(0, Math.min(255, parseInt(rgb[3], 10)));
-            return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+        if (rgb) return rgbMatchToHex(rgb);
+        const srgb = v.match(/^color\(srgb\s+([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)/i);
+        if (srgb) {
+            const to255 = (f) => Math.max(0, Math.min(255, Math.round(parseFloat(f) * 255)));
+            return `#${to255(srgb[1]).toString(16).padStart(2, '0')}${to255(srgb[2]).toString(16).padStart(2, '0')}${to255(srgb[3]).toString(16).padStart(2, '0')}`;
         }
-        return '';
+        // Mots-clés sans traduction de pastille possible : les laisser au
+        // compteur « non géré » plutôt que de les peindre en noir trompeur.
+        if (/^(transparent|currentcolor|inherit|initial|unset|revert)$/i.test(v)) return '';
+        // Tout le reste (red, rebeccapurple, hsl(…), hwb(…)…) via le style
+        // calculé, qui sérialise en rgb()/rgba() ou color(srgb) — repris par
+        // les chemins plus haut. Valeur illisible → non géré.
+        const computed = cssColorToRgbString(v);
+        return computed && computed !== v ? normalizeColorToHex(computed) : '';
     }
 
     // Les profils livrés (settings_manager._create_example_profiles) écrivent
@@ -6440,6 +6482,32 @@ function initCssAssistant() {
             }
         }
 
+        if (fields.textShadowEnable) {
+            const ts = declarations['text-shadow'] || '';
+            if (ts && ts !== 'none') {
+                fields.textShadowEnable.checked = true;
+                // Xpx Ypx [flou px] couleur — la couleur peut aussi précéder.
+                const tm = ts.match(/(-?\d+(?:\.\d+)?)px\s+(-?\d+(?:\.\d+)?)px(?:\s+(\d+(?:\.\d+)?)px)?\s+(.+)$/i)
+                    || ts.match(/(.+?)\s+(-?\d+(?:\.\d+)?)px\s+(-?\d+(?:\.\d+)?)px(?:\s+(\d+(?:\.\d+)?)px)?$/i);
+                if (tm) {
+                    const colorFirst = tm[1].match(/[-0-9.]+px/i) === null;
+                    const ci = colorFirst ? 1 : 4;
+                    if (fields.textShadowX) fields.textShadowX.value = tm[colorFirst ? 2 : 1];
+                    if (fields.textShadowY) fields.textShadowY.value = tm[colorFirst ? 3 : 2];
+                    if (fields.textShadowBlur) fields.textShadowBlur.value = tm[colorFirst ? 4 : 3] || '';
+                    if (fields.textShadowColor) {
+                        const c = normalizeColorToHex(tm[ci]);
+                        if (c) fields.textShadowColor.value = c;
+                        else unmanagedExtra.push('text-shadow');
+                    }
+                } else {
+                    unmanagedExtra.push('text-shadow');
+                }
+            } else {
+                fields.textShadowEnable.checked = false;
+            }
+        }
+
         if (fields.position) {
             fields.position.value = declarations['position'] || '';
             ensureSelectRefresh(fields.position);
@@ -6508,6 +6576,14 @@ function initCssAssistant() {
             push('box-shadow', `${x}px ${y}px ${blur}px ${spread}px ${color}`);
         }
 
+        if (fields.textShadowEnable && fields.textShadowEnable.checked) {
+            const x = fields.textShadowX && fields.textShadowX.value !== '' ? fields.textShadowX.value : '0';
+            const y = fields.textShadowY && fields.textShadowY.value !== '' ? fields.textShadowY.value : '0';
+            const blur = fields.textShadowBlur && fields.textShadowBlur.value !== '' ? fields.textShadowBlur.value : '0';
+            const color = fields.textShadowColor && fields.textShadowColor.value ? fields.textShadowColor.value : '#000000';
+            push('text-shadow', `${x}px ${y}px ${blur}px ${color}`);
+        }
+
         if (fields.position && fields.position.value) push('position', fields.position.value);
         if (fields.zIndex && fields.zIndex.value !== '') push('z-index', fields.zIndex.value);
         const pushPx = (prop, el) => {
@@ -6566,6 +6642,17 @@ function initCssAssistant() {
                     set('box-shadow', 'none');
                 } else {
                     set('box-shadow', `${fields.shadowX?.value || 0}px ${fields.shadowY?.value || 0}px ${fields.shadowBlur?.value || 0}px ${fields.shadowSpread?.value || 0}px ${fields.shadowColor?.value || '#000000'}`);
+                }
+                break;
+            case fields.textShadowEnable:
+            case fields.textShadowX:
+            case fields.textShadowY:
+            case fields.textShadowBlur:
+            case fields.textShadowColor:
+                if (!fields.textShadowEnable?.checked) {
+                    set('text-shadow', 'none');
+                } else {
+                    set('text-shadow', `${fields.textShadowX?.value || 0}px ${fields.textShadowY?.value || 0}px ${fields.textShadowBlur?.value || 0}px ${fields.textShadowColor?.value || '#000000'}`);
                 }
                 break;
             case fields.position: set('position', fields.position.value); break;

@@ -130,6 +130,21 @@ export function buildOverlayCache(scaleFactor) {
             }
         }
 
+        // text-shadow : couleur puis deux longueurs, flou optionnel (pas de
+        // spread ni d'inset contrairement à box-shadow). Première ombre
+        // seulement — le style calculé place la couleur en tête.
+        const textShadowRaw = style.textShadow && style.textShadow !== 'none' ? style.textShadow : null;
+        let tsColor = 'rgba(0,0,0,0)', tsBlur = 0, tsOffX = 0, tsOffY = 0;
+        if (textShadowRaw) {
+            const tsParts = textShadowRaw.match(/(rgba?\([^\)]+\))\s+([-0-9.]+)px\s+([-0-9.]+)px(?:\s+([-0-9.]+)px)?/);
+            if (tsParts) {
+                tsColor = tsParts[1];
+                tsOffX = parseFloat(tsParts[2]) * scaleFactor;
+                tsOffY = parseFloat(tsParts[3]) * scaleFactor;
+                tsBlur = (parseFloat(tsParts[4]) || 0) * scaleFactor;
+            }
+        }
+
         const padB = (parseFloat(style.paddingBottom) || 0) * scaleFactor;
         const lineHeightCss = parseFloat(style.lineHeight);
 
@@ -167,6 +182,7 @@ export function buildOverlayCache(scaleFactor) {
             el, x, y, w, h, bg, color, radius, padL, padR, hidden,
             padT, padB, font, fontPx, textAlignCss, hasShadow: !!shadowRaw,
             shColor, shBlur, shSpread, shOffX, shOffY,
+            hasTextShadow: !!textShadowRaw, tsColor, tsBlur, tsOffX, tsOffY,
             borders,
             opacity: Number.isFinite(parsedOpacity) ? Math.max(0, Math.min(1, parsedOpacity)) : 1,
             letterSpacing: (parseFloat(style.letterSpacing) || 0) * scaleFactor,
@@ -235,6 +251,7 @@ export function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor 
 
             const { x, y, w, h, bg, color, radius, padL, padR, padT, padB, font, fontPx, textAlignCss, tabularNums,
                     hasShadow, shColor, shBlur, shSpread, shOffX, shOffY, lineGap,
+                    hasTextShadow, tsColor, tsBlur, tsOffX, tsOffY,
                     borders, opacity, letterSpacing, textTransform, backgroundImage,
                     whiteSpace,
                     leftGap, rightGap, topGap, bottomGap,
@@ -318,6 +335,14 @@ export function addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, scaleFactor 
             if (textAlignCss === 'center') paintCtx.textAlign = 'center';
             else if (textAlignCss === 'right' || textAlignCss === 'end') paintCtx.textAlign = 'right';
             else paintCtx.textAlign = 'left';
+            // L'ombre du texte est posée après celle de la boîte (réinitialisée
+            // plus haut) : seuls les fillText qui suivent la consomment.
+            if (hasTextShadow) {
+                paintCtx.shadowColor = tsColor;
+                paintCtx.shadowBlur = tsBlur;
+                paintCtx.shadowOffsetX = tsOffX;
+                paintCtx.shadowOffsetY = tsOffY;
+            }
 
             // Comme un bloc CSS, la première boîte de ligne commence après la
             // bordure et le padding supérieurs. Une hauteur explicite laisse donc

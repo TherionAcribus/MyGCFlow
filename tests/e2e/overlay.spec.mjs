@@ -431,6 +431,70 @@ test('une hauteur de boîte modifiée hors des API invalide le cache', async ({ 
 });
 
 
+test('les couleurs nommées remplissent les pastilles de l’assistant', async ({ page }) => {
+  // normalizeColorToHex ne savait décoder que #hex et rgb() : une couleur
+  // nommée (red, rebeccapurple) ou une fonction CSS (hsl) retombait en
+  // « non géré ». Le style calculé les convertit désormais en rgb().
+  await page.locator('a[href="#style"]').click();
+  await page.locator('a[href="#tabTitles"]').click();
+  await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    app.changeTitleCssValues('color: rebeccapurple; text-shadow: 1px 1px red;');
+    window.gcCssAssistantSyncFromTextareas();
+  });
+  const values = await page.evaluate(() => ({
+    text: document.getElementById('gcCssTextColor').value,
+    shadowEnable: document.getElementById('gcCssTextShadowEnable').checked,
+    shadow: document.getElementById('gcCssTextShadowColor').value,
+  }));
+  expect(values.text).toBe('#663399');
+  expect(values.shadowEnable).toBe(true);
+  expect(values.shadow).toBe('#ff0000');
+});
+
+
+test('le renderer Canvas applique text-shadow au texte', async ({ page }) => {
+  // text-shadow n'est pas filtré par l'assainissement : la preview le montre,
+  // la vidéo doit donc le dessiner. Ombre nette rouge décalée à droite d'un
+  // texte noir sur fond transparent : seuls les pixels d'ombre sont rouges.
+  const metrics = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    app.options.infos.title.display = true;
+    app.options.infos.numberOfCaches.display = false;
+    app.options.infos.currentDate.display = false;
+    app.updateTitleFrame('X');
+    app.changeTitleCssValues([
+      'position:absolute', 'top:10px', 'left:10px', 'padding:8px',
+      'font:bold 40px Arial', 'color:rgb(0,0,0)',
+      'background-color:rgba(255,255,255,0)', 'border:none', 'box-shadow:none',
+      'text-shadow:12px 0px 0px rgb(255,0,0)',
+    ].join(';'));
+    document.getElementById('titleFrame').style.display = 'block';
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 300;
+    canvas.height = 120;
+    const ctx = canvas.getContext('2d');
+    app.addOverlaysToCanvas(ctx, canvas.width, canvas.height, 1);
+    const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    let redDominant = 0;
+    let darkCount = 0;
+    for (let i = 0; i < pixels.length; i += 4) {
+      const r = pixels[i];
+      const g = pixels[i + 1];
+      const b = pixels[i + 2];
+      const a = pixels[i + 3];
+      if (!a) continue;
+      if (r > 180 && g < 100 && b < 100) redDominant += 1;
+      if (r < 80 && g < 80 && b < 80) darkCount += 1;
+    }
+    return { redDominant, darkCount };
+  });
+  expect(metrics.darkCount).toBeGreaterThan(0);
+  expect(metrics.redDominant).toBeGreaterThan(50);
+});
+
+
 test('un grand compteur reste sur une seule ligne dans le rendu Canvas', async ({ page }) => {
   const metrics = await page.evaluate(async () => {
     const app = await import('/static/js/index.js');

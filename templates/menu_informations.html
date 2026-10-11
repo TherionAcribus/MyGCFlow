@@ -185,6 +185,7 @@
 
         <!-- Panneau Ombre -->
         <div id="gcCssPaneShadow" class="gc-css-pane pt-2" role="tabpanel" aria-labelledby="gcCssTabShadow">
+            <div class="form-label mb-1">{{ _("Boîte") }}</div>
             <div class="form-check mb-2">
                 <input class="form-check-input" type="checkbox" id="gcCssBoxShadowEnable" aria-labelledby="gcCssBoxShadowEnableLabel">
                 <label class="form-check-label" id="gcCssBoxShadowEnableLabel" for="gcCssBoxShadowEnable">{{ _("Activer") }}</label>
@@ -211,6 +212,34 @@
                 <div class="col-12">
                     <label class="form-label" for="gcCssShadowColor">{{ _("Couleur") }}</label>
                     <input id="gcCssShadowColor" type="color" class="form-control form-control-color gc-css-color">
+                </div>
+            </div>
+
+            <!-- Ombre du texte (text-shadow) : reproduite par le rendu vidéo
+                 (overlay_canvas.js), contrairement à backdrop-filter. -->
+            <div class="form-label mb-1 mt-3">{{ _("Texte") }}</div>
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="gcCssTextShadowEnable" aria-labelledby="gcCssTextShadowEnableLabel">
+                <label class="form-check-label" id="gcCssTextShadowEnableLabel" for="gcCssTextShadowEnable">{{ _("Activer") }}</label>
+            </div>
+            <div class="row g-2 infos-advanced">
+                <div class="col-4">
+                    <label class="form-label" for="gcCssTextShadowX">{{ _("Décalage X") }}</label>
+                    <input id="gcCssTextShadowX" type="number" class="form-control" step="1">
+                </div>
+                <div class="col-4">
+                    <label class="form-label" for="gcCssTextShadowY">{{ _("Décalage Y") }}</label>
+                    <input id="gcCssTextShadowY" type="number" class="form-control" step="1">
+                </div>
+                <div class="col-4">
+                    <label class="form-label" for="gcCssTextShadowBlur">{{ _("Flou") }}</label>
+                    <input id="gcCssTextShadowBlur" type="number" class="form-control" min="0" step="1">
+                </div>
+            </div>
+            <div class="row g-2 mt-0">
+                <div class="col-12">
+                    <label class="form-label" for="gcCssTextShadowColor">{{ _("Couleur") }}</label>
+                    <input id="gcCssTextShadowColor" type="color" class="form-control form-control-color gc-css-color">
                 </div>
             </div>
         </div>
