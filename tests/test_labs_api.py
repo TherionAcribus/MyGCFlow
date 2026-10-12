@@ -241,6 +241,19 @@ class LabsApiTests(unittest.TestCase):
         row = db.session.query(LabDiscovery).filter_by(stage_uuid=STAGE_1).one()
         self.assertAlmostEqual(row.latitude, 45.5)  # correction conservée
 
+    def test_user_date_correction_survives_reimport(self):
+        self._import_history()
+        rv = self.client.post(f'/api/labs/discoveries/{STAGE_1}/resolve',
+                              json={"found_date": "2024-06-01"})
+        self.assertEqual(rv.status_code, 200)
+        self._import_history()
+        db.session.expire_all()
+        row = db.session.query(LabDiscovery).filter_by(stage_uuid=STAGE_1).one()
+        self.assertEqual(row.found_date.isoformat(), "2024-06-01")
+        self.assertEqual(row.date_basis, "user_correction")
+        self.assertEqual(row.date_precision, "day")
+        self.assertIsNone(row.found_at_utc)
+
     # --- clear / export ------------------------------------------------------
 
     def test_clear_only_labs(self):

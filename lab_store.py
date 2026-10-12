@@ -97,26 +97,48 @@ def _diff_draft(draft, row) -> tuple[dict, list]:
     fill_or_keep("adventure_title", draft.adventure_title)
     fill_or_keep("stage_title", draft.stage_title)
     fill_or_keep("adventure_url", draft.adventure_url)
-    fill_or_keep("date_precision", draft.date_precision)
-    fill_or_keep("date_basis", draft.date_basis)
-    fill_or_keep("source_date_text", draft.source_date_text)
     fill_or_keep("source_record_key", draft.source_record_key)
-    fill_or_keep("found_at_offset_minutes", draft.found_at_offset_minutes)
 
     # Date : deux valeurs fiables différentes → conflit, on conserve l'existante.
-    if draft.found_date is not None:
+    # Précision, base, texte source et offset décrivent `found_date` : ils ne
+    # sont écrits qu'avec elle, jamais rafraîchis seuls — sinon une date
+    # conservée (conflit, correction manuelle) porterait la provenance d'une autre.
+    date_meta = {
+        "date_precision": draft.date_precision,
+        "date_basis": draft.date_basis,
+        "source_date_text": draft.source_date_text,
+        "found_at_offset_minutes": draft.found_at_offset_minutes,
+    }
+    if draft.found_date is None:
         if row.found_date is None:
-            updates["found_date"] = draft.found_date
-            updates["found_at_utc"] = draft.found_at_utc
-        elif row.found_date != draft.found_date or (
-            row.found_at_utc and draft.found_at_utc and row.found_at_utc != draft.found_at_utc
-        ):
+            # Aucune date exploitable des deux côtés : garder la trace source.
+            fill_or_keep("source_date_text", draft.source_date_text)
+    elif row.found_date is None:
+        updates["found_date"] = draft.found_date
+        updates["found_at_utc"] = draft.found_at_utc
+        updates.update(date_meta)
+    elif row.date_basis == USER_CORRECTION:
+        # Correction manuelle : prioritaire, comme pour les coordonnées.
+        if row.found_date != draft.found_date:
             conflicts.append({
                 "field": "found_date", "existing": str(row.found_date),
                 "incoming": str(draft.found_date),
+                "protected": USER_CORRECTION,
             })
-        elif row.found_at_utc is None and draft.found_at_utc is not None:
+    elif row.found_date != draft.found_date or (
+        row.found_at_utc and draft.found_at_utc and row.found_at_utc != draft.found_at_utc
+    ):
+        conflicts.append({
+            "field": "found_date", "existing": str(row.found_date),
+            "incoming": str(draft.found_date),
+        })
+    elif draft.found_at_utc is not None or row.found_at_utc is None:
+        # Même date : la source peut préciser (instant, offset), jamais
+        # dégrader un instant connu en simple date.
+        if row.found_at_utc is None and draft.found_at_utc is not None:
             updates["found_at_utc"] = draft.found_at_utc
+        for attr, incoming in date_meta.items():
+            fill_or_keep(attr, incoming)
 
     # Coordonnées portées par l'historique (rare) : même règle de conflit.
     if draft.latitude is not None and draft.longitude is not None:

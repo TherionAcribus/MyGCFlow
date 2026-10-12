@@ -137,6 +137,69 @@ class LabStoreTests(unittest.TestCase):
         self.assertEqual(self._discovery("57a9e000-0000-4000-8000-000000000101")
                          .found_date, date(2024, 5, 14))
 
+    def test_date_conflict_keeps_existing_date_metadata(self):
+        lab_store.commit_history(db.session, self._history())
+        uuid = "57a9e000-0000-4000-8000-000000000101"
+        before = self._discovery(uuid)
+        kept = (before.date_precision, before.date_basis, before.source_date_text,
+                before.found_at_offset_minutes, before.found_at_utc)
+        changed = self._history()
+        for draft in changed.drafts:
+            if draft.stage_uuid == uuid:
+                draft.found_date = date(2024, 5, 15)
+                draft.found_at_utc = None
+                draft.found_at_offset_minutes = None
+                draft.date_precision = "day"
+                draft.date_basis = "source_date_only"
+                draft.source_date_text = "2024-05-15"
+        summary = lab_store.commit_history(db.session, changed)
+        self.assertEqual(summary["conflicts"], 1)
+        self.assertEqual(summary["updated"], 0)
+        d = self._discovery(uuid)
+        self.assertEqual((d.date_precision, d.date_basis, d.source_date_text,
+                          d.found_at_offset_minutes, d.found_at_utc), kept)
+
+    def test_user_date_correction_survives_reimport(self):
+        lab_store.commit_history(db.session, self._history())
+        uuid = "57a9e000-0000-4000-8000-000000000101"
+        row = self._discovery(uuid)
+        row.found_date = date(2024, 6, 1)
+        row.date_precision = "day"
+        row.date_basis = lab_store.USER_CORRECTION
+        row.found_at_utc = None
+        row.found_at_offset_minutes = None
+        db.session.commit()
+        for _ in range(2):   # stable d'un réimport à l'autre
+            summary = lab_store.commit_history(db.session, self._history())
+            self.assertEqual(summary["conflicts"], 1)
+            self.assertEqual(summary["updated"], 0)
+            self.assertEqual(summary["unchanged"], 12)
+            self.assertEqual(summary["conflicts_detail"][0]["protected"],
+                             lab_store.USER_CORRECTION)
+            d = self._discovery(uuid)
+            self.assertEqual(d.found_date, date(2024, 6, 1))
+            self.assertEqual(d.date_basis, lab_store.USER_CORRECTION)
+            self.assertEqual(d.date_precision, "day")
+            self.assertIsNone(d.found_at_utc)
+
+    def test_same_date_never_downgrades_instant(self):
+        lab_store.commit_history(db.session, self._history())
+        uuid = "57a9e000-0000-4000-8000-000000000101"
+        self.assertEqual(self._discovery(uuid).date_precision, "instant")
+        day_only = self._history()
+        for draft in day_only.drafts:
+            if draft.stage_uuid == uuid:
+                draft.found_at_utc = None
+                draft.found_at_offset_minutes = None
+                draft.date_precision = "day"
+                draft.date_basis = "source_date_only"
+                draft.source_date_text = "2024-05-14"
+        summary = lab_store.commit_history(db.session, day_only)
+        self.assertEqual(summary["unchanged"], 12)
+        d = self._discovery(uuid)
+        self.assertEqual(d.date_precision, "instant")
+        self.assertIsNotNone(d.found_at_utc)
+
     def test_empty_fields_never_erase_reliable_data(self):
         lab_store.commit_history(db.session, self._history())
         sparse = self._history()

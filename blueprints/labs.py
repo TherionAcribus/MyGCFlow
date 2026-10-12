@@ -538,7 +538,10 @@ def resolve_discovery(local_uid):
                                 'message': _("Date invalide (format attendu : AAAA-MM-JJ)")}), 400
             row.found_date = pd.found_date
             row.date_precision = "day"
-            row.date_basis = "user_correction"
+            row.date_basis = lab_store.USER_CORRECTION
+            # L'instant source décrivait l'ancienne date : ne pas le garder.
+            row.found_at_utc = None
+            row.found_at_offset_minutes = None
         row.updated_at = lab_store._utcnow()
         collection.revision = (collection.revision or 0) + 1
         db.session.commit()
