@@ -5,6 +5,7 @@ import shutil
 import tempfile
 import time
 import unittest
+import urllib.error
 from dataclasses import replace
 from datetime import date
 from pathlib import Path
@@ -288,6 +289,17 @@ class LabsApiTests(unittest.TestCase):
         self.assertEqual(self.client.get('/api/labs/export').status_code, 404)
 
 
+def _fake_fetch(fail_after=None):
+    """Double de `fetch_gpx_batches` : livre le GPX de test via `on_payload`
+    comme le vrai provider, puis abandonne si `fail_after` est fourni."""
+    def fake(uuids, user_guid=None, progress=None, on_payload=None, **_kw):
+        on_payload("auto-001.gpx", COORDS.read_bytes())
+        if fail_after is not None:
+            raise fail_after
+        return lcp.FetchResult(fetched_adventures=3)
+    return fake
+
+
 class LabsAutomationTests(LabsApiTests):
     """Automatisation : /api/labs/fetch-coordinates (provider mocké),
     /api/labs/receive (CORS+jeton) et /api/labs/bookmarklet."""
@@ -428,11 +440,8 @@ class LabsAutomationTests(LabsApiTests):
 
     def test_fetch_coordinates_task_resolves_discoveries(self):
         self._import_history()
-        result = lcp.FetchResult(
-            payloads=[("auto-001.gpx", COORDS.read_bytes())],
-            fetched_adventures=3)
         with mock.patch.object(lcp, "fetch_gpx_batches",
-                               return_value=result) as m:
+                               side_effect=_fake_fetch()) as m:
             rv = self.client.post('/api/labs/fetch-coordinates')
             self.assertEqual(rv.status_code, 202, rv.get_json())
             st = self._wait_task(rv.get_json()["task_id"])
@@ -444,13 +453,36 @@ class LabsAutomationTests(LabsApiTests):
         self.assertTrue(requested)
         self.assertTrue(all(u for u in requested))
 
+    def test_fetch_interrupted_keeps_downloaded_batches(self):
+        """Le service lâche après un lot : ce lot reste enregistré et la
+        tâche rend un bilan partiel au lieu d'échouer."""
+        self._import_history()
+        boom = urllib.error.URLError("down")
+        with mock.patch.object(lcp, "fetch_gpx_batches",
+                               side_effect=_fake_fetch(fail_after=boom)):
+            rv = self.client.post('/api/labs/fetch-coordinates')
+            st = self._wait_task(rv.get_json()["task_id"])
+        self.assertEqual(st.state, "finished", st.error)
+        self.assertTrue(st.result["interrupted"])
+        self.assertIn("down", st.result["error"])
+        self.assertEqual(st.result["resolved"], 8)
+        db.session.expire_all()
+        self.assertEqual(lab_store.collection_status(db.session)["ready"], 8)
+
+    def test_fetch_failing_before_any_batch_fails_the_task(self):
+        self._import_history()
+        with mock.patch.object(lcp, "fetch_gpx_batches",
+                               side_effect=urllib.error.URLError("down")):
+            rv = self.client.post('/api/labs/fetch-coordinates')
+            st = self._wait_task(rv.get_json()["task_id"])
+        self.assertEqual(st.state, "failed")
+        db.session.expire_all()
+        self.assertEqual(lab_store.collection_status(db.session)["ready"], 0)
+
     def test_autofetch_chains_after_import_when_enabled(self):
         self.client.put('/api/settings', json={"labs_auto_fetch_coords": True})
-        result = lcp.FetchResult(
-            payloads=[("auto-001.gpx", COORDS.read_bytes())],
-            fetched_adventures=3)
         with mock.patch.object(lcp, "fetch_gpx_batches",
-                               return_value=result) as m:
+                               side_effect=_fake_fetch()) as m:
             import_result = self._import_history()
             self.assertEqual(import_result["added"], 12)
             # La tâche de fetch a été soumise par _maybe_autofetch.

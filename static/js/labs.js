@@ -6,7 +6,7 @@
 
 import * as pkg from './index.js';
 import { CONFIG } from './init.js';
-import { showSuccess, showError, showInfo, showConfirmation, t } from './notifications.js';
+import { showSuccess, showError, showWarning, showInfo, showConfirmation, t } from './notifications.js';
 import { showBsModal, hideBsModal } from './ui_bootstrap.js';
 
 const PENDING_PAGE_SIZE = 50;
@@ -454,7 +454,15 @@ async function onFetchFinished(result) {
     if (pending > 0) {
         msg += ' ' + t('${n} étape(s) restent en attente.', { n: pending });
     }
-    showSuccess(msg, t('Lab Caches'));
+    if (result.interrupted) {
+        // Bilan partiel : les lots déjà reçus sont enregistrés, le reste
+        // attend une relance.
+        console.warn('[LABS] récupération interrompue:', result.error);
+        msg += ' ' + t('Le service a cessé de répondre avant la fin — relancez la récupération pour terminer.');
+        showWarning(msg, t('Lab Caches'));
+    } else {
+        showSuccess(msg, t('Lab Caches'));
+    }
     refreshLabsStatus();
     pkg.reloadMainDatasetAfterMutation?.();
 }

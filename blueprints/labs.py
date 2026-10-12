@@ -15,6 +15,7 @@ si elle a bougé depuis l'aperçu).
 
 from __future__ import annotations
 
+import http.client
 import io
 import json
 import secrets
@@ -276,37 +277,54 @@ def run_lab_fetch_task(status, app, uuids, user_guid, locale=None):
             with ctx:
                 try:
                     total = len(uuids)
-
-                    def progress(done, _total):
-                        status.set_progress(
-                            int(90 * done / max(_total, 1)),
-                            _("Coordonnées Labs : %(done)s/%(total)s Adventures",
-                              done=done, total=_total))
-
-                    result = lab_coords_provider.fetch_gpx_batches(
-                        uuids, user_guid=user_guid, progress=progress)
-
                     totals = {"resolved": 0, "ignored": 0, "updated": 0,
                               "unchanged": 0, "conflicts": 0}
                     warnings = []
-                    n = len(result.payloads)
-                    for i, (_name, raw) in enumerate(result.payloads):
+                    committed = 0
+
+                    def progress(done, _total):
+                        status.set_progress(
+                            int(95 * done / max(_total, 1)),
+                            _("Coordonnées Labs : %(done)s/%(total)s Adventures",
+                              done=done, total=_total))
+
+                    def enrich(_name, raw):
+                        # Enrichissement lot par lot : un abandon ultérieur du
+                        # service ne perd pas ce qui est déjà téléchargé.
+                        nonlocal committed
                         parsed = lf.parse_lab2gpx_gpx(raw)
                         summary = lab_store.commit_coordinates(db.session, parsed)
+                        committed += 1
                         for k in totals:
                             totals[k] += int(summary.get(k, 0))
                         warnings.extend(summary.get("warnings", []))
-                        status.set_progress(
-                            90 + int(10 * (i + 1) / max(n, 1)),
-                            _("Coordonnées Labs : enrichissement"))
 
-                    _invalidate_after_mutation("labs_fetch_coords")
+                    interrupted = None
+                    failed_uuids, fetched = [], None
+                    try:
+                        result = lab_coords_provider.fetch_gpx_batches(
+                            uuids, user_guid=user_guid, progress=progress,
+                            on_payload=enrich)
+                        failed_uuids = result.failed_uuids
+                        fetched = result.fetched_adventures
+                    except (OSError, http.client.HTTPException) as exc:
+                        # Panne réseau/service : sans aucun lot enregistré,
+                        # c'est un échec ; sinon un bilan partiel, relançable.
+                        if not committed:
+                            raise
+                        interrupted = str(exc)
+                    finally:
+                        if committed:
+                            _invalidate_after_mutation("labs_fetch_coords")
+
                     stats = lab_store.collection_status(db.session)
                     status.set_result({
                         "success": True,
+                        "interrupted": interrupted is not None,
+                        "error": interrupted,
                         "adventures_requested": total,
-                        "adventures_fetched": result.fetched_adventures,
-                        "failed_uuids": _cap_items(result.failed_uuids),
+                        "adventures_fetched": fetched,
+                        "failed_uuids": _cap_items(failed_uuids),
                         **totals,
                         "ready_total": stats["ready"],
                         "unresolved": stats["unresolved"],

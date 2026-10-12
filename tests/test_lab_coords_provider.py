@@ -55,6 +55,29 @@ class FetchBatchesTests(unittest.TestCase):
         self.assertEqual([d for d, _ in seen], [2, 4, 5])
         self.assertTrue(all(t == 5 for _, t in seen))
 
+    def test_on_payload_receives_batches_before_abort(self):
+        """Chaque GPX est remis dès son téléchargement : un abandon au lot
+        suivant ne reprend pas ce qui a déjà été livré."""
+        got = []
+
+        def side_effect(payload):
+            if "u2" in payload["uuidsToFetch"]:
+                raise urllib.error.URLError("down")
+            return b"<gpx/>"
+
+        with self.assertRaises(urllib.error.URLError):
+            self._run(["u0", "u1", "u2", "u3"], side_effect, batch_size=2,
+                      on_payload=lambda name, data: got.append((name, data)))
+        self.assertEqual(got, [("lab2gpx-auto-001.gpx", b"<gpx/>")])
+
+    def test_on_payload_replaces_accumulation(self):
+        got = []
+        result, _ = self._run(["u0", "u1", "u2"], lambda p: b"<gpx/>",
+                              batch_size=2, on_payload=lambda n, d: got.append(n))
+        self.assertEqual(len(got), 2)
+        self.assertEqual(result.payloads, [])
+        self.assertEqual(result.fetched_adventures, 3)
+
     def test_bisection_isolates_bad_uuid(self):
         def side_effect(payload):
             if "bad" in payload["uuidsToFetch"]:

@@ -101,11 +101,14 @@ def fetch_gpx_batches(
     delay: float = DEFAULT_DELAY_S,
     progress=None,
     sleep=time.sleep,
+    on_payload=None,
 ) -> FetchResult:
     """Télécharge un GPX par lot d'UUID, en isolant les UUID fautifs.
 
     `progress(fait, total)` est appelé après chaque lot résolu ou isolé ;
-    `sleep` est injectable pour les tests.
+    `sleep` est injectable pour les tests. `on_payload(nom, gpx)` reçoit
+    chaque GPX dès son téléchargement, au lieu de `result.payloads` : ce
+    qui est déjà traité survit ainsi à un abandon ultérieur.
 
     Stratégie d'erreur (calquée sur tools/fetch_lab2gpx.py) :
     - HTTPError quel que soit le code → bissection : les Adventures cassées
@@ -145,7 +148,11 @@ def fetch_gpx_batches(
             fetch_batch(batch[mid:], f"{tag}b")
             return
         consecutive_failures = 0
-        result.payloads.append((f"lab2gpx-auto-{tag}.gpx", data))
+        name = f"lab2gpx-auto-{tag}.gpx"
+        if on_payload:
+            on_payload(name, data)
+        else:
+            result.payloads.append((name, data))
         done += len(batch)
         report()
         sleep(delay)
