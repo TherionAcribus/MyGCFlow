@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-12 19:37+0200\n"
+"POT-Creation-Date: 2026-10-12 19:59+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -599,41 +599,47 @@ msgstr ""
 msgid "Historique Labs reçu — import lancé"
 msgstr ""
 
-#: blueprints/labs.py:792
+#: blueprints/labs.py:828
 msgid "MyGCFlow : démarrage…"
 msgstr ""
 
-#: blueprints/labs.py:793
+#: blueprints/labs.py:829
 msgid "MyGCFlow — GUID public du joueur :"
 msgstr ""
 
-#: blueprints/labs.py:794
+#: blueprints/labs.py:830
 msgid "Annulé."
 msgstr ""
 
-#: blueprints/labs.py:795
+#: blueprints/labs.py:831
 msgid "GUID refusé par le site."
 msgstr ""
 
-#: blueprints/labs.py:796
+#: blueprints/labs.py:832
 #, python-brace-format
 msgid "MyGCFlow : ${adv} Adventures, ${disc} étapes…"
 msgstr ""
 
-#: blueprints/labs.py:797
+#: blueprints/labs.py:833
 msgid "MyGCFlow : envoi à l'application…"
 msgstr ""
 
-#: blueprints/labs.py:798
+#: blueprints/labs.py:834
+msgid ""
+"MyGCFlow : faites défiler un peu votre historique pour détecter votre "
+"compte…"
+msgstr ""
+
+#: blueprints/labs.py:836
 #, python-brace-format
 msgid "✔ Envoyé à MyGCFlow — import en cours (${adv} Adventures, ${disc} étapes)"
 msgstr ""
 
-#: blueprints/labs.py:800
+#: blueprints/labs.py:838
 msgid "MyGCFlow : erreur"
 msgstr ""
 
-#: blueprints/labs.py:801
+#: blueprints/labs.py:839
 msgid "MyGCFlow :"
 msgstr ""
 

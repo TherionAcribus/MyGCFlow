@@ -479,8 +479,15 @@ def import_commit():
 
 @labs_bp.route('/api/labs/status')
 def labs_status():
-    return jsonify({'success': True,
-                    **lab_store.collection_status(db.session)})
+    payload = {'success': True, **lab_store.collection_status(db.session)}
+    # Un import peut être lancé hors de cet onglet (favori → /api/labs/
+    # receive) : exposer la tâche en cours pour que l'UI la suive et
+    # recharge la carte à sa fin.
+    active = task_manager.get_active(TASK_TYPE_LAB_IMPORT) \
+        or task_manager.get_active(TASK_TYPE_LAB_FETCH)
+    if active is not None:
+        payload['active_task'] = active.to_dict()
+    return jsonify(payload)
 
 
 @labs_bp.route('/api/labs/unresolved')
@@ -720,7 +727,7 @@ _BOOKMARKLET_JS = (
     "var O=__ORIGIN__,T=__TOKEN__,U='/Logs/GetLogsByAdventureGrouping/';"
     "var L={start:__T_START__,prompt:__T_PROMPT__,cancelled:__T_CANCELLED__,"
     "guidbad:__T_GUIDBAD__,progress:__T_PROGRESS__,sending:__T_SENDING__,"
-    "sent:__T_SENT__,error:__T_ERROR__,prefix:__T_PREFIX__};"
+    "sent:__T_SENT__,error:__T_ERROR__,prefix:__T_PREFIX__,scroll:__T_SCROLL__};"
     "var say=(function(){var d=document.createElement('div');"
     "d.style.cssText='position:fixed;top:12px;right:12px;z-index:2147483647;"
     "background:#082747;color:#fff;padding:10px 14px;border-radius:8px;"
@@ -729,26 +736,75 @@ _BOOKMARKLET_JS = (
     "var fmt=function(s,a,b){return s.replace('${adv}',a).replace('${disc}',b)};"
     "try{say(L.start);"
     "var K='mygcflow:playerId';"
-    "var ok=async function(id){try{var r=await fetch(U,{method:'POST',"
+    "var ask=async function(id){var r=await fetch(U,{method:'POST',"
     "headers:{'Content-Type':'application/json','Accept':'application/json'},"
     "credentials:'include',body:JSON.stringify({id:id,skip:0,take:1})});"
-    "return r.ok}catch(e){return false}};"
+    "return r};"
+    "var ok=async function(id){try{return (await ask(id)).ok}"
+    "catch(e){return false}};"
+    # probe strict : le bon GUID renvoie au moins une ligne d'historique ;
+    # un GUID étranger (Adventure, etc.) répond 200 avec items vide.
+    "var probe=async function(id){try{var r=await ask(id);if(!r.ok)return false;"
+    "var d=await r.json();return (d.items||[]).length>0}catch(e){return false}};"
     "var pid=localStorage.getItem(K)||null;"
-    "if(pid&&!(await ok(pid))){pid=null;localStorage.removeItem(K)}"
-    "var pick=null;"
-    "if(pid)pick=pid;else{"
+    # pick : identifiant trouvé ; found le distingue de « pas trouvé » car
+    # pick===null est VALIDE (le serveur déduit alors le joueur de la
+    # session — et 200 avec items l'a confirmé).
+    "var pick,found=false;"
+    "if(pid&&await probe(pid)){pick=pid;found=true}"
+    "if(pid&&!found){localStorage.removeItem(K)}"
+    "if(!found){"
     "var cands=[null],h=document.documentElement.innerHTML,m;"
+    # Le frontend peut aussi garder l'identifiant dans un cookie lisible
+    # (non HttpOnly) ou dans le storage — sources gratuites à balayer.
+    "try{h+=';'+document.cookie+';'+JSON.stringify(localStorage)"
+    "+';'+JSON.stringify(sessionStorage)}catch(e){}"
     "var res=[/profile[^\"']*guid=([0-9a-f-]{36})/ig,"
     "/\"(?:publicGuid|playerGuid|playerId|player_id)\"\\s*:\\s*"
     "\"([0-9a-f-]{36})\"/ig];"
     "for(var i=0;i<res.length;i++){while((m=res[i].exec(h)))"
     "if(cands.indexOf(m[1])<0)cands.push(m[1])}"
-    "for(var j=0;j<cands.length&&!pick;j++){"
-    "if(await ok(cands[j]))pick=cands[j]}}"
-    "if(!pick){pid=prompt(L.prompt);"
+    # Dernier recours automatique : balayer tous les GUIDs présents dans la
+    # page — la page /logs connaît l'identifiant du joueur connecté.
+    "var g=/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/ig;"
+    "while((m=g.exec(h))&&cands.length<80){var x=m[0].toLowerCase();"
+    "if(cands.indexOf(x)<0)cands.push(x)}"
+    # Le GUID n'apparaît pas toujours dans le HTML : la page peut l'obtenir
+    # via un appel API interne. Filet armé dès maintenant : intercepter la
+    # prochaine requête que la page émet elle-même quand l'utilisateur fait
+    # défiler son historique (le site connaît l'id, quel que soit le nom de
+    # variable). Nos propres probes sont exclus via cands.
+    "var unhook=function(){};"
+    "var hooked=new Promise(function(done){"
+    "var of=window.fetch,XO=XMLHttpRequest.prototype.open,"
+    "XS=XMLHttpRequest.prototype.send;"
+    "unhook=function(){window.fetch=of;XMLHttpRequest.prototype.open=XO;"
+    "XMLHttpRequest.prototype.send=XS};"
+    "var hit=function(v){unhook();done(v)};"
+    "var grab=function(u,bd){try{var s=String(u&&u.url||u);"
+    "if(s.indexOf('GetLogsByAdventureGrouping')>=0&&bd){"
+    "var b=JSON.parse(bd);if(b&&b.id&&cands.indexOf(b.id)<0)hit(b.id)}}"
+    "catch(e){}};"
+    "window.fetch=function(u,o){var r=of.apply(this,arguments);"
+    "grab(u,o&&o.body);return r};"
+    "XMLHttpRequest.prototype.open=function(mm,u){this.__u=u;"
+    "return XO.apply(this,arguments)};"
+    "XMLHttpRequest.prototype.send=function(bd){grab(this.__u,bd);"
+    "return XS.apply(this,arguments)};"
+    "setTimeout(function(){hit(null)},90000)});"
+    "var stop=false;hooked.then(function(v){stop=true;"
+    "if(v!==null){pick=v;found=true}});"
+    "for(var j=0;j<cands.length&&!found&&!stop;j+=5){"
+    "var hits=await Promise.all(cands.slice(j,j+5).map(probe));"
+    "for(var q=0;q<hits.length&&!found;q++){"
+    "if(hits[q]){pick=cands[j+q];found=true}}}}"
+    "if(found){unhook()}"
+    "else if(!stop){say(L.scroll);var hv=await hooked;"
+    "if(hv!==null){pick=hv;found=true}}"
+    "if(!found){pid=prompt(L.prompt);"
     "if(!pid){say(L.cancelled);return}pid=pid.trim();"
-    "if(!(await ok(pid))){say(L.guidbad);return}pick=pid}"
-    "if(pick)localStorage.setItem(K,pick);"
+    "if(!(await ok(pid))){say(L.guidbad);return}pick=pid;found=true}"
+    "if(found&&pick!==null)localStorage.setItem(K,pick);"
     "var take=100,disc=[],adv=new Set(),seen=new Set(),skip=0,guard=0;"
     "while(true){var r=await fetch(U,{method:'POST',"
     "headers:{'Content-Type':'application/json','Accept':'application/json'},"
@@ -795,6 +851,8 @@ def _bookmarklet_strings():
         '__T_GUIDBAD__': _("GUID refusé par le site."),
         '__T_PROGRESS__': _("MyGCFlow : ${adv} Adventures, ${disc} étapes…"),
         '__T_SENDING__': _("MyGCFlow : envoi à l'application…"),
+        '__T_SCROLL__': _("MyGCFlow : faites défiler un peu votre historique "
+                          "pour détecter votre compte…"),
         '__T_SENT__': _("✔ Envoyé à MyGCFlow — import en cours "
                         "(${adv} Adventures, ${disc} étapes)"),
         '__T_ERROR__': _("MyGCFlow : erreur"),

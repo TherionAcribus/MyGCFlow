@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-12 19:37+0200\n"
+"POT-Creation-Date: 2026-10-12 19:59+0200\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -616,41 +616,47 @@ msgstr "Récupération des coordonnées lancée"
 msgid "Historique Labs reçu — import lancé"
 msgstr "Historique Labs reçu — import lancé"
 
-#: blueprints/labs.py:792
+#: blueprints/labs.py:828
 msgid "MyGCFlow : démarrage…"
 msgstr "MyGCFlow : démarrage…"
 
-#: blueprints/labs.py:793
+#: blueprints/labs.py:829
 msgid "MyGCFlow — GUID public du joueur :"
 msgstr "MyGCFlow — GUID public du joueur :"
 
-#: blueprints/labs.py:794
+#: blueprints/labs.py:830
 msgid "Annulé."
 msgstr "Annulé."
 
-#: blueprints/labs.py:795
+#: blueprints/labs.py:831
 msgid "GUID refusé par le site."
 msgstr "GUID refusé par le site."
 
-#: blueprints/labs.py:796
+#: blueprints/labs.py:832
 #, python-brace-format
 msgid "MyGCFlow : ${adv} Adventures, ${disc} étapes…"
 msgstr "MyGCFlow : ${adv} Adventures, ${disc} étapes…"
 
-#: blueprints/labs.py:797
+#: blueprints/labs.py:833
 msgid "MyGCFlow : envoi à l'application…"
 msgstr "MyGCFlow : envoi à l'application…"
 
-#: blueprints/labs.py:798
+#: blueprints/labs.py:834
+msgid ""
+"MyGCFlow : faites défiler un peu votre historique pour détecter votre "
+"compte…"
+msgstr "MyGCFlow : faites défiler un peu votre historique pour détecter votre compte…"
+
+#: blueprints/labs.py:836
 #, python-brace-format
 msgid "✔ Envoyé à MyGCFlow — import en cours (${adv} Adventures, ${disc} étapes)"
 msgstr "✔ Envoyé à MyGCFlow — import en cours (${adv} Adventures, ${disc} étapes)"
 
-#: blueprints/labs.py:800
+#: blueprints/labs.py:838
 msgid "MyGCFlow : erreur"
 msgstr "MyGCFlow : erreur"
 
-#: blueprints/labs.py:801
+#: blueprints/labs.py:839
 msgid "MyGCFlow :"
 msgstr "MyGCFlow :"
 
@@ -1299,7 +1305,9 @@ msgstr "Erreur lors du chargement des couleurs GC (${status}): ${statusText}"
 msgid ""
 "Glissez ce bouton dans la barre de favoris de votre navigateur, puis "
 "cliquez-le depuis la page de vos logs Adventure Lab."
-msgstr "Glissez ce bouton dans la barre de favoris de votre navigateur, puis cliquez-le depuis la page de vos logs Adventure Lab."
+msgstr ""
+"Glissez ce bouton dans la barre de favoris de votre navigateur, puis "
+"cliquez-le depuis la page de vos logs Adventure Lab."
 
 #: static/js/labs.js:49 templates/menu_data.html:125
 msgid "Envoyer vers MyGCFlow"
@@ -5115,7 +5123,9 @@ msgstr ""
 msgid ""
 "Glissez ce bouton dans vos favoris, puis cliquez-le sur la page de vos "
 "logs Adventure Lab."
-msgstr "Glissez ce bouton dans vos favoris, puis cliquez-le sur la page de vos logs Adventure Lab."
+msgstr ""
+"Glissez ce bouton dans vos favoris, puis cliquez-le sur la page de vos "
+"logs Adventure Lab."
 
 #: templates/menu_data.html:138
 msgid "Récupérer les coordonnées"
@@ -5133,7 +5143,9 @@ msgstr "Récupérer automatiquement les coordonnées après import"
 msgid ""
 "Interroge le service public lab2gpx avec les identifiants de vos "
 "Adventures — aucun identifiant de compte n'est transmis."
-msgstr "Interroge le service public lab2gpx avec les identifiants de vos Adventures — aucun identifiant de compte n'est transmis."
+msgstr ""
+"Interroge le service public lab2gpx avec les identifiants de vos "
+"Adventures — aucun identifiant de compte n'est transmis."
 
 #: templates/menu_data.html:194
 msgid "Importer mes Lab Caches"
@@ -5147,7 +5159,9 @@ msgstr "La méthode simple — en un clic"
 msgid ""
 "Glissez le bouton « Envoyer vers MyGCFlow » (carte Mes Lab Caches) dans "
 "la barre de favoris de votre navigateur — une seule fois."
-msgstr "Glissez le bouton « Envoyer vers MyGCFlow » (carte Mes Lab Caches) dans la barre de favoris de votre navigateur — une seule fois."
+msgstr ""
+"Glissez le bouton « Envoyer vers MyGCFlow » (carte Mes Lab Caches) dans "
+"la barre de favoris de votre navigateur — une seule fois."
 
 #: templates/menu_data.html:204
 msgid "Connectez-vous sur"
@@ -5157,14 +5171,19 @@ msgstr "Connectez-vous sur"
 msgid ""
 "puis cliquez ce favori : votre historique est envoyé directement à "
 "l'application."
-msgstr "puis cliquez ce favori : votre historique est envoyé directement à l'application."
+msgstr ""
+"puis cliquez ce favori : votre historique est envoyé directement à "
+"l'application."
 
 #: templates/menu_data.html:209
 msgid ""
 "Si « Récupérer automatiquement les coordonnées » est cochée, les étapes "
 "se placent seules sur la carte. Sinon, complétez-les par fichier ou à la "
 "main."
-msgstr "Si « Récupérer automatiquement les coordonnées » est cochée, les étapes se placent seules sur la carte. Sinon, complétez-les par fichier ou à la main."
+msgstr ""
+"Si « Récupérer automatiquement les coordonnées » est cochée, les étapes "
+"se placent seules sur la carte. Sinon, complétez-les par fichier ou à la "
+"main."
 
 #: templates/menu_data.html:213
 msgid "La méthode manuelle — deux fichiers"
@@ -5179,7 +5198,10 @@ msgid ""
 "Sur labs.geocaching.com/logs, ouvrez la console du navigateur (F12), "
 "renseignez votre GUID joueur dans le script ci-dessous et exécutez-le : "
 "il télécharge votre historique complet."
-msgstr "Sur labs.geocaching.com/logs, ouvrez la console du navigateur (F12), renseignez votre GUID joueur dans le script ci-dessous et exécutez-le : il télécharge votre historique complet."
+msgstr ""
+"Sur labs.geocaching.com/logs, ouvrez la console du navigateur (F12), "
+"renseignez votre GUID joueur dans le script ci-dessous et exécutez-le : "
+"il télécharge votre historique complet."
 
 #: templates/menu_data.html:218
 msgid "Télécharger le script d'export"
@@ -5194,20 +5216,28 @@ msgid ""
 "Générez un fichier Lab2Gpx contenant les étapes de vos Adventures (mode "
 "UUID, une étape par waypoint) — inutile si la récupération automatique "
 "est activée."
-msgstr "Générez un fichier Lab2Gpx contenant les étapes de vos Adventures (mode UUID, une étape par waypoint) — inutile si la récupération automatique est activée."
+msgstr ""
+"Générez un fichier Lab2Gpx contenant les étapes de vos Adventures (mode "
+"UUID, une étape par waypoint) — inutile si la récupération automatique "
+"est activée."
 
 #: templates/menu_data.html:226
 msgid ""
 "Déposez les fichiers ici — ensemble ou séparément. Les étapes sans "
 "coordonnées restent conservées et complétables ensuite."
-msgstr "Déposez les fichiers ici — ensemble ou séparément. Les étapes sans coordonnées restent conservées et complétables ensuite."
+msgstr ""
+"Déposez les fichiers ici — ensemble ou séparément. Les étapes sans "
+"coordonnées restent conservées et complétables ensuite."
 
 #: templates/menu_data.html:230
 msgid ""
 "Aucune donnée ne quitte l'application : les fichiers sont analysés "
 "localement. La récupération automatique envoie uniquement les "
 "identifiants d'Adventures au service public lab2gpx."
-msgstr "Aucune donnée ne quitte l'application : les fichiers sont analysés localement. La récupération automatique envoie uniquement les identifiants d'Adventures au service public lab2gpx."
+msgstr ""
+"Aucune donnée ne quitte l'application : les fichiers sont analysés "
+"localement. La récupération automatique envoie uniquement les "
+"identifiants d'Adventures au service public lab2gpx."
 
 #: templates/menu_data.html:245
 msgid "Aperçu de l'import Lab Caches"

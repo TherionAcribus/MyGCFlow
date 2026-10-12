@@ -21,10 +21,15 @@ Aucune connexion à l'API officielle n'est requise. Deux chemins coexistent :
    en régénérant — le favori existant devient alors invalide).
 2. Sur `labs.geocaching.com/logs` connecté : cliquer le favori. Il pagine le
    même endpoint JSON que la page (`/Logs/GetLogsByAdventureGrouping/`, avec
-   les cookies de session), détecte le GUID joueur seul (session → lien
-   profil de la page → invite en dernier recours, mémorisé en
-   `localStorage`), puis POSTe l'export `mygcflow-lab-finds` à
-   `POST /api/labs/receive`.
+   les cookies de session), détecte le GUID joueur seul (session → GUIDs
+   nommés et liens profil de la page → balayage validé de tous les GUIDs
+   présents dans le HTML, les cookies lisibles et le storage → interception
+   de la prochaine requête que la page émet elle-même quand on fait défiler
+   l'historique → invite en dernier recours, mémorisé en `localStorage`),
+   puis POSTe l'export `mygcflow-lab-finds` à `POST /api/labs/receive`.
+   Chaque candidat automatique est validé par un appel `take:1` exigeant
+   des `items` non vides — le site répond HTTP 500 (ou une liste vide) pour
+   tout GUID qui n'est pas le joueur.
 3. `/api/labs/receive` n'accepte que l'origine `https://labs.geocaching.com`
    (CORS + Private-Network-Access) **et** le jeton local ; le payload est
    ensuite importé par la tâche habituelle. C'est la seule route exemptée du

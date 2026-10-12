@@ -59,6 +59,15 @@ export function initLabsUI() {
         pkg.reloadMainDatasetAfterMutation?.();
     });
 
+    // Un import peut démarrer hors de cet onglet (favori « Envoyer vers
+    // MyGCFlow » → /api/labs/receive) : au retour sur l'onglet, le statut
+    // expose la tâche active et watchActiveTask prend le relais — sinon le
+    // favori importerait en silence, sans retour visuel.
+    window.addEventListener('focus', refreshLabsStatus);
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) refreshLabsStatus();
+    });
+
     refreshLabsStatus();
 }
 
@@ -72,6 +81,7 @@ export async function refreshLabsStatus() {
         const data = await r.json();
         if (!data.success) throw new Error(data.message || 'statut indisponible');
         renderLabsStatus(data);
+        watchActiveTask(data.active_task);
     } catch (e) {
         console.warn('[LABS] statut indisponible:', e);
         statusEl.textContent = t('Statut indisponible');
@@ -109,6 +119,24 @@ function renderLabsStatus(st) {
     }
     if (clearBtn) clearBtn.style.display = total > 0 ? '' : 'none';
     if (exportBtn) exportBtn.style.display = total > 0 ? '' : 'none';
+}
+
+// Suit une tâche Labs lancée hors de cet onglet (favori bookmarklet →
+// /api/labs/receive) : même polling et même bilan que si l'UI l'avait
+// démarrée — progression affichée, puis statut rafraîchi + carte rechargée.
+let watchingTaskId = null;
+function watchActiveTask(active) {
+    if (!active || !active.task_id || watchingTaskId === active.task_id) return;
+    watchingTaskId = active.task_id;
+    const isFetch = active.type === 'lab_fetch_coords';
+    pollLabTask(active.task_id, {
+        onFinished: isFetch ? onFetchFinished : onImportFinished,
+        onProgress: isFetch
+            ? (p) => setFetchProgress(`${t('Récupération des coordonnées…')} ${p}%`)
+            : null,   // défaut de pollLabTask : « Import en cours… »
+    }).catch(e => {
+        showError(e.message || t('Erreur de récupération'), t('Lab Caches'));
+    }).finally(() => { watchingTaskId = null; });
 }
 
 // ---------------------------------------------------------------- import
@@ -239,7 +267,11 @@ async function onPreviewConfirm() {
         if (!resp.ok || !data.success || !data.task_id) {
             throw new Error(data.message || t('Import refusé'));
         }
+        // Marque la tâche comme suivie pour que watchActiveTask ne démarre
+        // pas un second poller sur un focus/visibilitychange.
+        watchingTaskId = data.task_id;
         await pollLabTask(data.task_id);
+        watchingTaskId = null;
     } catch (e) {
         setImportProgress('');
         showError(e.message || t("Erreur lors de l'import"), t('Import Lab Caches'));
@@ -392,6 +424,7 @@ async function onFetchNow() {
         if (!resp.ok || !data.success || !data.task_id) {
             throw new Error(data.message || t('Récupération refusée'));
         }
+        watchingTaskId = data.task_id;   // déjà suivi — voir watchActiveTask
         await pollLabTask(data.task_id, {
             onFinished: onFetchFinished,
             onProgress: (p) => setFetchProgress(`${t('Récupération des coordonnées…')} ${p}%`),
@@ -400,6 +433,7 @@ async function onFetchNow() {
         setFetchProgress('');
         showError(e.message || t('Erreur de récupération'), t('Lab Caches'));
     } finally {
+        watchingTaskId = null;
         if (btn) btn.disabled = false;
     }
 }
