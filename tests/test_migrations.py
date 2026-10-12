@@ -29,9 +29,14 @@ class SchemaMigrationTests(unittest.TestCase):
         # sqlite3 en `with` valide la transaction mais ne ferme pas la connexion.
         return closing(sqlite3.connect(self.db_path, isolation_level=None))
 
-    def _columns(self):
+    def _columns(self, table='geocache'):
         with self._connect() as conn:
-            return {row[1] for row in conn.execute("PRAGMA table_info(geocache)")}
+            return {row[1] for row in conn.execute(f"PRAGMA table_info({table})")}
+
+    def _tables(self):
+        with self._connect() as conn:
+            return {row[0] for row in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'")}
 
     def _user_version(self):
         with self._connect() as conn:
@@ -68,6 +73,30 @@ class SchemaMigrationTests(unittest.TestCase):
 
         # Déjà à jour : aucune sauvegarde, aucune migration rejouée.
         self.assertFalse(os.path.exists(self.db_path + f'.v{migrations.LATEST_VERSION}.bak'))
+
+    def test_old_database_gains_lab_tables(self):
+        # Base d'avant la fonctionnalité Labs (user_version=1, schéma complet
+        # des géocaches mais aucune table lab_*).
+        self._create_app()
+        with self._connect() as conn:
+            conn.execute("DROP TABLE lab_collection")
+            conn.execute("DROP TABLE lab_discovery")
+            conn.execute("PRAGMA user_version = 1")
+
+        self._create_app()
+
+        self.assertIn('lab_collection', self._tables())
+        self.assertIn('lab_discovery', self._tables())
+        self.assertIn('local_uid', self._columns('lab_discovery'))
+        self.assertIn('coordinate_status', self._columns('lab_discovery'))
+        self.assertEqual(self._user_version(), migrations.LATEST_VERSION)
+
+    def test_new_database_has_lab_tables(self):
+        self._create_app()
+
+        self.assertIn('lab_collection', self._tables())
+        self.assertIn('lab_discovery', self._tables())
+        self.assertEqual(self._user_version(), migrations.LATEST_VERSION)
 
 
 if __name__ == '__main__':

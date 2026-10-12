@@ -28,8 +28,55 @@ def _v1_colonnes_et_index(db):
     ensure_geocache_indexes(db)
 
 
+def _v2_tables_lab(db):
+    # Tables Adventure Lab (historique + découvertes). Idempotent :
+    # db.create_all() les crée déjà sur base neuve ; cette migration couvre
+    # les bases où create_all aurait été sauté ou partiellement appliqué.
+    from sqlalchemy import text
+    with db.engine.begin() as conn:
+        conn.execute(text(
+            "CREATE TABLE IF NOT EXISTS lab_collection ("
+            "id INTEGER PRIMARY KEY, uid VARCHAR(64) UNIQUE NOT NULL, "
+            "account_label VARCHAR(255), revision INTEGER NOT NULL DEFAULT 0, "
+            "last_import_at DATETIME, last_exported_at DATETIME, "
+            "last_coverage VARCHAR(16), last_import_summary TEXT, "
+            "created_at DATETIME)"
+        ))
+        conn.execute(text(
+            "CREATE TABLE IF NOT EXISTS lab_discovery ("
+            "id INTEGER PRIMARY KEY, "
+            "collection_id INTEGER NOT NULL REFERENCES lab_collection (id), "
+            "local_uid VARCHAR(64) NOT NULL, "
+            "adventure_uuid VARCHAR(64), stage_uuid VARCHAR(64), "
+            "adventure_title VARCHAR(255), stage_title VARCHAR(255), "
+            "adventure_url VARCHAR(512), "
+            "found_date DATE, found_at_utc DATETIME, "
+            "found_at_offset_minutes INTEGER, "
+            "date_precision VARCHAR(16), date_basis VARCHAR(32), "
+            "source_date_text VARCHAR(64), "
+            "latitude FLOAT, longitude FLOAT, "
+            "coordinate_scope VARCHAR(16), coordinate_source VARCHAR(32), "
+            "coordinate_status VARCHAR(16), "
+            "source_format VARCHAR(32), source_record_key VARCHAR(128), "
+            "is_archived BOOLEAN DEFAULT 0, "
+            "imported_at DATETIME, updated_at DATETIME, "
+            "CONSTRAINT uq_lab_discovery_stage UNIQUE (collection_id, stage_uuid), "
+            "CONSTRAINT uq_lab_discovery_local_uid UNIQUE (collection_id, local_uid))"
+        ))
+        for idx in (
+            "CREATE INDEX IF NOT EXISTS ix_lab_discovery_found_date "
+            "ON lab_discovery (collection_id, found_date)",
+            "CREATE INDEX IF NOT EXISTS ix_lab_discovery_adventure "
+            "ON lab_discovery (collection_id, adventure_uuid)",
+            "CREATE INDEX IF NOT EXISTS ix_lab_discovery_coord_status "
+            "ON lab_discovery (collection_id, coordinate_status)",
+        ):
+            conn.execute(text(idx))
+
+
 MIGRATIONS = [
     (1, _v1_colonnes_et_index),
+    (2, _v2_tables_lab),
 ]
 
 LATEST_VERSION = MIGRATIONS[-1][0]

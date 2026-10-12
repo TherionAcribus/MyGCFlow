@@ -9,7 +9,7 @@
 // Network → GetLogsByAdventureGrouping → Payload). C'est le GUID public du
 // joueur — le même que Lab2Gpx demande dans « Calling user's public GUID ».
 (async () => {
-  const PLAYER_ID = "b19d6e80-a3cd-49f5-8bad-35351a14681c";
+  const PLAYER_ID = "COLLER_LE_GUID_JOUEUR_ICI";
   let take = 100;                   // repli automatique vers take=10 (500 si trop grand)
   const DELAY_MS = 300;             // débit modéré
   const API_URL = "/Logs/GetLogsByAdventureGrouping/";

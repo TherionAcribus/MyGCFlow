@@ -28,5 +28,73 @@ class Geocache(db.Model):
         db.Index('ix_geocache_country_state', 'country', 'state'),
     )
 
+
+class LabCollection(db.Model):
+    """Historique Adventure Lab importé d'un joueur (une collection en V1)."""
+    __tablename__ = 'lab_collection'
+
+    id = db.Column(db.Integer, primary_key=True)
+    uid = db.Column(db.String(64), unique=True, nullable=False)
+    account_label = db.Column(db.String(255))
+    # Révision incrémentée à chaque mutation : contrôle optimiste du commit.
+    revision = db.Column(db.Integer, nullable=False, default=0)
+    last_import_at = db.Column(db.DateTime)
+    last_exported_at = db.Column(db.DateTime)
+    last_coverage = db.Column(db.String(16))
+    last_import_summary = db.Column(db.Text)
+    created_at = db.Column(db.DateTime)
+
+
+class LabDiscovery(db.Model):
+    """Une étape Adventure Lab découverte — une ligne = une étape trouvée."""
+    __tablename__ = 'lab_discovery'
+
+    COORD_MISSING = 'missing'
+    COORD_RESOLVED = 'resolved'
+    COORD_AMBIGUOUS = 'ambiguous'
+    COORD_INVALID = 'invalid'
+
+    id = db.Column(db.Integer, primary_key=True)
+    collection_id = db.Column(db.Integer, db.ForeignKey('lab_collection.id'), nullable=False)
+    local_uid = db.Column(db.String(64), nullable=False)
+    adventure_uuid = db.Column(db.String(64))
+    stage_uuid = db.Column(db.String(64))
+    adventure_title = db.Column(db.String(255))
+    stage_title = db.Column(db.String(255))
+    adventure_url = db.Column(db.String(512))
+    # Date civile de découverte utilisée par l'animation (nullable : une
+    # ligne sans date reste stockée, jamais affichée comme faux point).
+    found_date = db.Column(db.Date)
+    found_at_utc = db.Column(db.DateTime)
+    found_at_offset_minutes = db.Column(db.Integer)
+    date_precision = db.Column(db.String(16))
+    date_basis = db.Column(db.String(32))
+    source_date_text = db.Column(db.String(64))
+    latitude = db.Column(db.Float)
+    longitude = db.Column(db.Float)
+    coordinate_scope = db.Column(db.String(16))
+    coordinate_source = db.Column(db.String(32))
+    coordinate_status = db.Column(db.String(16), default=COORD_MISSING)
+    source_format = db.Column(db.String(32))
+    source_record_key = db.Column(db.String(128))
+    is_archived = db.Column(db.Boolean, default=False)
+    imported_at = db.Column(db.DateTime)
+    updated_at = db.Column(db.DateTime)
+
+    collection = db.relationship(
+        'LabCollection',
+        backref=db.backref('discoveries', cascade='all, delete-orphan'),
+    )
+
+    __table_args__ = (
+        # SQLite autorise plusieurs NULL : la contrainte n'agit que pour les
+        # stage_uuid présents ; les lignes sans UUID s'appuient sur local_uid.
+        db.UniqueConstraint('collection_id', 'stage_uuid', name='uq_lab_discovery_stage'),
+        db.UniqueConstraint('collection_id', 'local_uid', name='uq_lab_discovery_local_uid'),
+        db.Index('ix_lab_discovery_found_date', 'collection_id', 'found_date'),
+        db.Index('ix_lab_discovery_adventure', 'collection_id', 'adventure_uuid'),
+        db.Index('ix_lab_discovery_coord_status', 'collection_id', 'coordinate_status'),
+    )
+
     def __repr__(self):
         return f"<Geocache {self.id}, {self.latitude}, {self.longitude}, {self.gc_code}, {self.cache_name}, {self.date_find}, {self.cache_type}>"
