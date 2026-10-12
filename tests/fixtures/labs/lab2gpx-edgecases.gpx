@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<gpx xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.0" creator="Lab2Gpx" xsi:schemaLocation="http://www.topografix.com/GPX/1/0 http://www.topografix.com/GPX/1/0/gpx.xsd http://www.groundspeak.com/cache/1/0/1 http://www.groundspeak.com/cache/1/0/1/cache.xsd" xmlns="http://www.topografix.com/GPX/1/0">
+    <name>Adventure Labs — cas limites</name>
+    <!-- wpt sans gsak:Guid : pas d'UUID d'étape, injoignable -->
+    <wpt lat="47.21510" lon="-1.55420">
+        <time>2020-03-10T08:00:00.000</time>
+        <name>LCZZZ1-1</name>
+        <desc>Étape sans identifiant</desc>
+        <url>https://labs.geocaching.com/goto/fa1e0000-0000-4000-8000-000000000001</url>
+        <urlname>S1 Circuit des Moulins</urlname>
+        <sym>Geocache</sym>
+        <type>Geocache|Lab Cache</type>
+        <gsak:wptExtension xmlns:gsak="http://www.gsak.net/xmlv1/6">
+            <gsak:Code>LCZZZ1-1</gsak:Code>
+        </gsak:wptExtension>
+        <lab2gpx:adventureLab xmlns:lab2gpx="https://lab2gpx.gcutils.de/ns/lab2gpx/1">
+            <lab2gpx:uuid>fa1e0000-0000-4000-8000-000000000001</lab2gpx:uuid>
+            <lab2gpx:stagesTotal>5</lab2gpx:stagesTotal>
+            <lab2gpx:stagesCompleted>0</lab2gpx:stagesCompleted>
+        </lab2gpx:adventureLab>
+    </wpt>
+    <!-- latitude hors bornes : rejet de validation -->
+    <wpt lat="95.00000" lon="-1.55420">
+        <time>2020-03-10T08:00:00.000</time>
+        <name>LCZZZ2-1</name>
+        <desc>Latitude invalide</desc>
+        <url>https://labs.geocaching.com/goto/fa1e0000-0000-4000-8000-000000000001</url>
+        <urlname>S2 Circuit des Moulins</urlname>
+        <sym>Geocache</sym>
+        <type>Geocache|Lab Cache</type>
+        <gsak:wptExtension xmlns:gsak="http://www.gsak.net/xmlv1/6">
+            <gsak:Code>LCZZZ2-1</gsak:Code>
+            <gsak:Guid>57a9e000-0000-4000-8000-000000000901</gsak:Guid>
+        </gsak:wptExtension>
+        <lab2gpx:adventureLab xmlns:lab2gpx="https://lab2gpx.gcutils.de/ns/lab2gpx/1">
+            <lab2gpx:uuid>fa1e0000-0000-4000-8000-000000000001</lab2gpx:uuid>
+            <lab2gpx:stagesTotal>5</lab2gpx:stagesTotal>
+            <lab2gpx:stagesCompleted>0</lab2gpx:stagesCompleted>
+        </lab2gpx:adventureLab>
+    </wpt>
+    <!-- (0,0) : sentinelle possible — signalé, pas rejeté en bloc -->
+    <wpt lat="0.00000" lon="0.00000">
+        <time>2020-03-10T08:00:00.000</time>
+        <name>LCZZZ3-1</name>
+        <desc>Coordonnées nulles</desc>
+        <url>https://labs.geocaching.com/goto/fa1e0000-0000-4000-8000-000000000001</url>
+        <urlname>S3 Circuit des Moulins</urlname>
+        <sym>Geocache</sym>
+        <type>Geocache|Lab Cache</type>
+        <gsak:wptExtension xmlns:gsak="http://www.gsak.net/xmlv1/6">
+            <gsak:Code>LCZZZ3-1</gsak:Code>
+            <gsak:Guid>57a9e000-0000-4000-8000-000000000902</gsak:Guid>
+        </gsak:wptExtension>
+        <lab2gpx:adventureLab xmlns:lab2gpx="https://lab2gpx.gcutils.de/ns/lab2gpx/1">
+            <lab2gpx:uuid>fa1e0000-0000-4000-8000-000000000001</lab2gpx:uuid>
+            <lab2gpx:stagesTotal>5</lab2gpx:stagesTotal>
+            <lab2gpx:stagesCompleted>0</lab2gpx:stagesCompleted>
+        </lab2gpx:adventureLab>
+    </wpt>
+    <!-- bloc lab2gpx absent : pas d'UUID d'Adventure de contrôle -->
+    <wpt lat="47.21510" lon="-1.55420">
+        <time>2020-03-10T08:00:00.000</time>
+        <name>LCZZZ4-1</name>
+        <desc>Sans bloc adventureLab</desc>
+        <url>https://labs.geocaching.com/goto/fa1e0000-0000-4000-8000-000000000001</url>
+        <urlname>S4 Circuit des Moulins</urlname>
+        <sym>Geocache Found</sym>
+        <type>Geocache|Lab Cache</type>
+        <gsak:wptExtension xmlns:gsak="http://www.gsak.net/xmlv1/6">
+            <gsak:Code>LCZZZ4-1</gsak:Code>
+            <gsak:Guid>57a9e000-0000-4000-8000-000000000903</gsak:Guid>
+        </gsak:wptExtension>
+    </wpt>
+</gpx>

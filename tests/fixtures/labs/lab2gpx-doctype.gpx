@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE gpx [
+  <!ENTITY xxe SYSTEM "file:///etc/passwd">
+]>
+<gpx version="1.0" creator="Lab2Gpx" xmlns="http://www.topografix.com/GPX/1/0">
+    <name>Adventure Labs — DTD à rejeter</name>
+    <wpt lat="47.21510" lon="-1.55420">
+        <desc>&xxe;</desc>
+    </wpt>
+</gpx>

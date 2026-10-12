@@ -13,6 +13,7 @@ instance/
 *.gpx
 !tests/e2e/fixtures/my-finds.gpx
 !tests/e2e/fixtures/my-finds-locationless.gpx
+!tests/fixtures/labs/*.gpx
 captured/
 static/geojson_data.json
 static/json/country_state.json
@@ -34,3 +35,8 @@ debug.log
 # Fichier vide laissé par la chaîne de compilation Windows (nom de périphérique
 # réservé). Git refuse de l'indexer et faisait échouer « git add -A ».
 nul
+
+# Exports réels Adventure Lab déposés pour analyse (données personnelles) :
+# seules les fixtures anonymisées dérivées dans tests/fixtures/labs/ sont
+# versionnées.
+labs_sources/

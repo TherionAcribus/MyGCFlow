@@ -1,0 +1,424 @@
+<?xml version="1.0" encoding="utf-8"?>
+<gpx xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.0" creator="Lab2Gpx" xsi:schemaLocation="http://www.topografix.com/GPX/1/0 http://www.topografix.com/GPX/1/0/gpx.xsd http://www.groundspeak.com/cache/1/0/1 http://www.groundspeak.com/cache/1/0/1/cache.xsd" xmlns="http://www.topografix.com/GPX/1/0">
+    <name>Adventure Labs</name>
+    <wpt lat="47.21510" lon="-1.55420">
+        <time>2020-03-10T08:00:00.000</time>
+        <name>LCAAA1-1</name>
+        <desc>Le Moulin Rouge</desc>
+        <url>https://labs.geocaching.com/goto/fa1e0000-0000-4000-8000-000000000001</url>
+        <urlname>S1 Circuit des Moulins</urlname>
+        <sym>Geocache Found</sym>
+        <type>Geocache|Lab Cache</type>
+        <gsak:wptExtension xmlns:gsak="http://www.gsak.net/xmlv1/6">
+            <gsak:Code>LCAAA1-1</gsak:Code>
+            <gsak:Guid>57a9e000-0000-4000-8000-000000000101</gsak:Guid>
+        </gsak:wptExtension>
+        <lab2gpx:adventureLab xmlns:lab2gpx="https://lab2gpx.gcutils.de/ns/lab2gpx/1">
+            <lab2gpx:uuid>fa1e0000-0000-4000-8000-000000000001</lab2gpx:uuid>
+            <lab2gpx:stagesTotal>5</lab2gpx:stagesTotal>
+            <lab2gpx:stagesCompleted>5</lab2gpx:stagesCompleted>
+        </lab2gpx:adventureLab>
+        <groundspeak:cache id="9000001" available="True" archived="False" xmlns:groundspeak="http://www.groundspeak.com/cache/1/0/1">
+            <groundspeak:name>Circuit des Moulins : S1 Le Moulin Rouge</groundspeak:name>
+            <groundspeak:placed_by>Testeur_Fictif</groundspeak:placed_by>
+            <groundspeak:owner>Testeur_Fictif</groundspeak:owner>
+            <groundspeak:type>Lab Cache</groundspeak:type>
+            <groundspeak:container>Virtual</groundspeak:container>
+            <groundspeak:difficulty>1</groundspeak:difficulty>
+            <groundspeak:terrain>1</groundspeak:terrain>
+            <groundspeak:country />
+            <groundspeak:state />
+            <groundspeak:logs />
+        </groundspeak:cache>
+    </wpt>
+    <wpt lat="47.21538" lon="-1.55387">
+        <time>2020-03-10T08:00:00.000</time>
+        <name>LCAAA1-2</name>
+        <desc>L'Horloge</desc>
+        <url>https://labs.geocaching.com/goto/fa1e0000-0000-4000-8000-000000000001</url>
+        <urlname>S2 Circuit des Moulins</urlname>
+        <sym>Geocache Found</sym>
+        <type>Geocache|Lab Cache</type>
+        <gsak:wptExtension xmlns:gsak="http://www.gsak.net/xmlv1/6">
+            <gsak:Code>LCAAA1-2</gsak:Code>
+            <gsak:Guid>57a9e000-0000-4000-8000-000000000102</gsak:Guid>
+        </gsak:wptExtension>
+        <lab2gpx:adventureLab xmlns:lab2gpx="https://lab2gpx.gcutils.de/ns/lab2gpx/1">
+            <lab2gpx:uuid>fa1e0000-0000-4000-8000-000000000001</lab2gpx:uuid>
+            <lab2gpx:stagesTotal>5</lab2gpx:stagesTotal>
+            <lab2gpx:stagesCompleted>5</lab2gpx:stagesCompleted>
+        </lab2gpx:adventureLab>
+        <groundspeak:cache id="9000002" available="True" archived="False" xmlns:groundspeak="http://www.groundspeak.com/cache/1/0/1">
+            <groundspeak:name>Circuit des Moulins : S2 L&#039;Horloge</groundspeak:name>
+            <groundspeak:placed_by>Testeur_Fictif</groundspeak:placed_by>
+            <groundspeak:owner>Testeur_Fictif</groundspeak:owner>
+            <groundspeak:type>Lab Cache</groundspeak:type>
+            <groundspeak:container>Virtual</groundspeak:container>
+            <groundspeak:difficulty>1</groundspeak:difficulty>
+            <groundspeak:terrain>1</groundspeak:terrain>
+            <groundspeak:country />
+            <groundspeak:state />
+            <groundspeak:logs />
+        </groundspeak:cache>
+    </wpt>
+    <wpt lat="47.21572" lon="-1.55340">
+        <time>2020-03-10T08:00:00.000</time>
+        <name>LCAAA1-3</name>
+        <desc>La Meule</desc>
+        <url>https://labs.geocaching.com/goto/fa1e0000-0000-4000-8000-000000000001</url>
+        <urlname>S3 Circuit des Moulins</urlname>
+        <sym>Geocache Found</sym>
+        <type>Geocache|Lab Cache</type>
+        <gsak:wptExtension xmlns:gsak="http://www.gsak.net/xmlv1/6">
+            <gsak:Code>LCAAA1-3</gsak:Code>
+            <gsak:Guid>57a9e000-0000-4000-8000-000000000103</gsak:Guid>
+        </gsak:wptExtension>
+        <lab2gpx:adventureLab xmlns:lab2gpx="https://lab2gpx.gcutils.de/ns/lab2gpx/1">
+            <lab2gpx:uuid>fa1e0000-0000-4000-8000-000000000001</lab2gpx:uuid>
+            <lab2gpx:stagesTotal>5</lab2gpx:stagesTotal>
+            <lab2gpx:stagesCompleted>5</lab2gpx:stagesCompleted>
+        </lab2gpx:adventureLab>
+        <groundspeak:cache id="9000003" available="True" archived="False" xmlns:groundspeak="http://www.groundspeak.com/cache/1/0/1">
+            <groundspeak:name>Circuit des Moulins : S3 La Meule</groundspeak:name>
+            <groundspeak:placed_by>Testeur_Fictif</groundspeak:placed_by>
+            <groundspeak:owner>Testeur_Fictif</groundspeak:owner>
+            <groundspeak:type>Lab Cache</groundspeak:type>
+            <groundspeak:container>Virtual</groundspeak:container>
+            <groundspeak:difficulty>1</groundspeak:difficulty>
+            <groundspeak:terrain>1</groundspeak:terrain>
+            <groundspeak:country />
+            <groundspeak:state />
+            <groundspeak:logs />
+        </groundspeak:cache>
+    </wpt>
+    <wpt lat="47.21605" lon="-1.55298">
+        <time>2020-03-10T08:00:00.000</time>
+        <name>LCAAA1-4</name>
+        <desc>Pierre &amp; Fil</desc>
+        <url>https://labs.geocaching.com/goto/fa1e0000-0000-4000-8000-000000000001</url>
+        <urlname>S4 Circuit des Moulins</urlname>
+        <sym>Geocache Found</sym>
+        <type>Geocache|Lab Cache</type>
+        <gsak:wptExtension xmlns:gsak="http://www.gsak.net/xmlv1/6">
+            <gsak:Code>LCAAA1-4</gsak:Code>
+            <gsak:Guid>57a9e000-0000-4000-8000-000000000104</gsak:Guid>
+        </gsak:wptExtension>
+        <lab2gpx:adventureLab xmlns:lab2gpx="https://lab2gpx.gcutils.de/ns/lab2gpx/1">
+            <lab2gpx:uuid>fa1e0000-0000-4000-8000-000000000001</lab2gpx:uuid>
+            <lab2gpx:stagesTotal>5</lab2gpx:stagesTotal>
+            <lab2gpx:stagesCompleted>5</lab2gpx:stagesCompleted>
+        </lab2gpx:adventureLab>
+        <groundspeak:cache id="9000004" available="True" archived="False" xmlns:groundspeak="http://www.groundspeak.com/cache/1/0/1">
+            <groundspeak:name>Circuit des Moulins : S4 Pierre &amp; Fil</groundspeak:name>
+            <groundspeak:placed_by>Testeur_Fictif</groundspeak:placed_by>
+            <groundspeak:owner>Testeur_Fictif</groundspeak:owner>
+            <groundspeak:type>Lab Cache</groundspeak:type>
+            <groundspeak:container>Virtual</groundspeak:container>
+            <groundspeak:difficulty>1</groundspeak:difficulty>
+            <groundspeak:terrain>1</groundspeak:terrain>
+            <groundspeak:country />
+            <groundspeak:state />
+            <groundspeak:logs />
+        </groundspeak:cache>
+    </wpt>
+    <wpt lat="47.21649" lon="-1.55251">
+        <time>2020-03-10T08:00:00.000</time>
+        <name>LCAAA1-5</name>
+        <desc>Le Vieux Chêne</desc>
+        <url>https://labs.geocaching.com/goto/fa1e0000-0000-4000-8000-000000000001</url>
+        <urlname>S5 Circuit des Moulins</urlname>
+        <sym>Geocache Found</sym>
+        <type>Geocache|Lab Cache</type>
+        <gsak:wptExtension xmlns:gsak="http://www.gsak.net/xmlv1/6">
+            <gsak:Code>LCAAA1-5</gsak:Code>
+            <gsak:Guid>57a9e000-0000-4000-8000-000000000105</gsak:Guid>
+        </gsak:wptExtension>
+        <lab2gpx:adventureLab xmlns:lab2gpx="https://lab2gpx.gcutils.de/ns/lab2gpx/1">
+            <lab2gpx:uuid>fa1e0000-0000-4000-8000-000000000001</lab2gpx:uuid>
+            <lab2gpx:stagesTotal>5</lab2gpx:stagesTotal>
+            <lab2gpx:stagesCompleted>5</lab2gpx:stagesCompleted>
+        </lab2gpx:adventureLab>
+        <groundspeak:cache id="9000005" available="True" archived="False" xmlns:groundspeak="http://www.groundspeak.com/cache/1/0/1">
+            <groundspeak:name>Circuit des Moulins : S5 Le Vieux Chêne</groundspeak:name>
+            <groundspeak:placed_by>Testeur_Fictif</groundspeak:placed_by>
+            <groundspeak:owner>Testeur_Fictif</groundspeak:owner>
+            <groundspeak:type>Lab Cache</groundspeak:type>
+            <groundspeak:container>Virtual</groundspeak:container>
+            <groundspeak:difficulty>1</groundspeak:difficulty>
+            <groundspeak:terrain>1</groundspeak:terrain>
+            <groundspeak:country />
+            <groundspeak:state />
+            <groundspeak:logs />
+        </groundspeak:cache>
+    </wpt>
+    <wpt lat="47.22010" lon="-1.56011">
+        <time>2021-07-22T14:30:00.000</time>
+        <name>LCBBB2-1</name>
+        <desc>L'Auberge</desc>
+        <url>https://labs.geocaching.com/goto/fa1e0000-0000-4000-8000-000000000002</url>
+        <urlname>S1 Sentier du Vieux Pont</urlname>
+        <sym>Geocache Found</sym>
+        <type>Geocache|Lab Cache</type>
+        <gsak:wptExtension xmlns:gsak="http://www.gsak.net/xmlv1/6">
+            <gsak:Code>LCBBB2-1</gsak:Code>
+            <gsak:Guid>57a9e000-0000-4000-8000-000000000201</gsak:Guid>
+        </gsak:wptExtension>
+        <lab2gpx:adventureLab xmlns:lab2gpx="https://lab2gpx.gcutils.de/ns/lab2gpx/1">
+            <lab2gpx:uuid>fa1e0000-0000-4000-8000-000000000002</lab2gpx:uuid>
+            <lab2gpx:stagesTotal>5</lab2gpx:stagesTotal>
+            <lab2gpx:stagesCompleted>3</lab2gpx:stagesCompleted>
+        </lab2gpx:adventureLab>
+        <groundspeak:cache id="9000011" available="True" archived="False" xmlns:groundspeak="http://www.groundspeak.com/cache/1/0/1">
+            <groundspeak:name>Sentier du Vieux Pont : S1 L&#039;Auberge</groundspeak:name>
+            <groundspeak:placed_by>Testeur_Fictif</groundspeak:placed_by>
+            <groundspeak:owner>Testeur_Fictif</groundspeak:owner>
+            <groundspeak:type>Lab Cache</groundspeak:type>
+            <groundspeak:container>Virtual</groundspeak:container>
+            <groundspeak:difficulty>1</groundspeak:difficulty>
+            <groundspeak:terrain>1</groundspeak:terrain>
+            <groundspeak:country />
+            <groundspeak:state />
+            <groundspeak:logs />
+        </groundspeak:cache>
+    </wpt>
+    <wpt lat="47.22052" lon="-1.55966">
+        <time>2021-07-22T14:30:00.000</time>
+        <name>LCBBB2-2</name>
+        <desc>Le Calvaire</desc>
+        <url>https://labs.geocaching.com/goto/fa1e0000-0000-4000-8000-000000000002</url>
+        <urlname>S2 Sentier du Vieux Pont</urlname>
+        <sym>Geocache</sym>
+        <type>Geocache|Lab Cache</type>
+        <gsak:wptExtension xmlns:gsak="http://www.gsak.net/xmlv1/6">
+            <gsak:Code>LCBBB2-2</gsak:Code>
+            <gsak:Guid>57a9e000-0000-4000-8000-000000000202</gsak:Guid>
+        </gsak:wptExtension>
+        <lab2gpx:adventureLab xmlns:lab2gpx="https://lab2gpx.gcutils.de/ns/lab2gpx/1">
+            <lab2gpx:uuid>fa1e0000-0000-4000-8000-000000000002</lab2gpx:uuid>
+            <lab2gpx:stagesTotal>5</lab2gpx:stagesTotal>
+            <lab2gpx:stagesCompleted>3</lab2gpx:stagesCompleted>
+        </lab2gpx:adventureLab>
+        <groundspeak:cache id="9000012" available="True" archived="False" xmlns:groundspeak="http://www.groundspeak.com/cache/1/0/1">
+            <groundspeak:name>Sentier du Vieux Pont : S2 Le Calvaire</groundspeak:name>
+            <groundspeak:placed_by>Testeur_Fictif</groundspeak:placed_by>
+            <groundspeak:owner>Testeur_Fictif</groundspeak:owner>
+            <groundspeak:type>Lab Cache</groundspeak:type>
+            <groundspeak:container>Virtual</groundspeak:container>
+            <groundspeak:difficulty>1</groundspeak:difficulty>
+            <groundspeak:terrain>1</groundspeak:terrain>
+            <groundspeak:country />
+            <groundspeak:state />
+            <groundspeak:logs />
+        </groundspeak:cache>
+    </wpt>
+    <wpt lat="47.22091" lon="-1.55928">
+        <time>2021-07-22T14:30:00.000</time>
+        <name>LCBBB2-3</name>
+        <desc>La Source</desc>
+        <url>https://labs.geocaching.com/goto/fa1e0000-0000-4000-8000-000000000002</url>
+        <urlname>S3 Sentier du Vieux Pont</urlname>
+        <sym>Geocache Found</sym>
+        <type>Geocache|Lab Cache</type>
+        <gsak:wptExtension xmlns:gsak="http://www.gsak.net/xmlv1/6">
+            <gsak:Code>LCBBB2-3</gsak:Code>
+            <gsak:Guid>57a9e000-0000-4000-8000-000000000203</gsak:Guid>
+        </gsak:wptExtension>
+        <lab2gpx:adventureLab xmlns:lab2gpx="https://lab2gpx.gcutils.de/ns/lab2gpx/1">
+            <lab2gpx:uuid>fa1e0000-0000-4000-8000-000000000002</lab2gpx:uuid>
+            <lab2gpx:stagesTotal>5</lab2gpx:stagesTotal>
+            <lab2gpx:stagesCompleted>3</lab2gpx:stagesCompleted>
+        </lab2gpx:adventureLab>
+        <groundspeak:cache id="9000013" available="True" archived="False" xmlns:groundspeak="http://www.groundspeak.com/cache/1/0/1">
+            <groundspeak:name>Sentier du Vieux Pont : S3 La Source</groundspeak:name>
+            <groundspeak:placed_by>Testeur_Fictif</groundspeak:placed_by>
+            <groundspeak:owner>Testeur_Fictif</groundspeak:owner>
+            <groundspeak:type>Lab Cache</groundspeak:type>
+            <groundspeak:container>Virtual</groundspeak:container>
+            <groundspeak:difficulty>1</groundspeak:difficulty>
+            <groundspeak:terrain>1</groundspeak:terrain>
+            <groundspeak:country />
+            <groundspeak:state />
+            <groundspeak:logs />
+        </groundspeak:cache>
+    </wpt>
+    <wpt lat="47.22135" lon="-1.55883">
+        <time>2021-07-22T14:30:00.000</time>
+        <name>LCBBB2-4</name>
+        <desc>Le Lavoir</desc>
+        <url>https://labs.geocaching.com/goto/fa1e0000-0000-4000-8000-000000000002</url>
+        <urlname>S4 Sentier du Vieux Pont</urlname>
+        <sym>Geocache Found</sym>
+        <type>Geocache|Lab Cache</type>
+        <gsak:wptExtension xmlns:gsak="http://www.gsak.net/xmlv1/6">
+            <gsak:Code>LCBBB2-4</gsak:Code>
+            <gsak:Guid>57a9e000-0000-4000-8000-000000000204</gsak:Guid>
+        </gsak:wptExtension>
+        <lab2gpx:adventureLab xmlns:lab2gpx="https://lab2gpx.gcutils.de/ns/lab2gpx/1">
+            <lab2gpx:uuid>fa1e0000-0000-4000-8000-000000000002</lab2gpx:uuid>
+            <lab2gpx:stagesTotal>5</lab2gpx:stagesTotal>
+            <lab2gpx:stagesCompleted>3</lab2gpx:stagesCompleted>
+        </lab2gpx:adventureLab>
+        <groundspeak:cache id="9000014" available="True" archived="False" xmlns:groundspeak="http://www.groundspeak.com/cache/1/0/1">
+            <groundspeak:name>Sentier du Vieux Pont : S4 Le Lavoir</groundspeak:name>
+            <groundspeak:placed_by>Testeur_Fictif</groundspeak:placed_by>
+            <groundspeak:owner>Testeur_Fictif</groundspeak:owner>
+            <groundspeak:type>Lab Cache</groundspeak:type>
+            <groundspeak:container>Virtual</groundspeak:container>
+            <groundspeak:difficulty>1</groundspeak:difficulty>
+            <groundspeak:terrain>1</groundspeak:terrain>
+            <groundspeak:country />
+            <groundspeak:state />
+            <groundspeak:logs />
+        </groundspeak:cache>
+    </wpt>
+    <wpt lat="47.22178" lon="-1.55840">
+        <time>2021-07-22T14:30:00.000</time>
+        <name>LCBBB2-5</name>
+        <desc>Le Pigeonnier</desc>
+        <url>https://labs.geocaching.com/goto/fa1e0000-0000-4000-8000-000000000002</url>
+        <urlname>S5 Sentier du Vieux Pont</urlname>
+        <sym>Geocache</sym>
+        <type>Geocache|Lab Cache</type>
+        <gsak:wptExtension xmlns:gsak="http://www.gsak.net/xmlv1/6">
+            <gsak:Code>LCBBB2-5</gsak:Code>
+            <gsak:Guid>57a9e000-0000-4000-8000-000000000205</gsak:Guid>
+        </gsak:wptExtension>
+        <lab2gpx:adventureLab xmlns:lab2gpx="https://lab2gpx.gcutils.de/ns/lab2gpx/1">
+            <lab2gpx:uuid>fa1e0000-0000-4000-8000-000000000002</lab2gpx:uuid>
+            <lab2gpx:stagesTotal>5</lab2gpx:stagesTotal>
+            <lab2gpx:stagesCompleted>3</lab2gpx:stagesCompleted>
+        </lab2gpx:adventureLab>
+        <groundspeak:cache id="9000015" available="True" archived="False" xmlns:groundspeak="http://www.groundspeak.com/cache/1/0/1">
+            <groundspeak:name>Sentier du Vieux Pont : S5 Le Pigeonnier</groundspeak:name>
+            <groundspeak:placed_by>Testeur_Fictif</groundspeak:placed_by>
+            <groundspeak:owner>Testeur_Fictif</groundspeak:owner>
+            <groundspeak:type>Lab Cache</groundspeak:type>
+            <groundspeak:container>Virtual</groundspeak:container>
+            <groundspeak:difficulty>1</groundspeak:difficulty>
+            <groundspeak:terrain>1</groundspeak:terrain>
+            <groundspeak:country />
+            <groundspeak:state />
+            <groundspeak:logs />
+        </groundspeak:cache>
+    </wpt>
+    <wpt lat="47.23010" lon="-1.57020">
+        <time>2022-04-18T10:15:00.000</time>
+        <name>LCDDD4-1</name>
+        <desc>Point 1</desc>
+        <url>https://labs.geocaching.com/goto/fa1e0000-0000-4000-8000-000000000004</url>
+        <urlname>S1 Promenade des Remparts</urlname>
+        <sym>Geocache</sym>
+        <type>Geocache|Lab Cache</type>
+        <gsak:wptExtension xmlns:gsak="http://www.gsak.net/xmlv1/6">
+            <gsak:Code>LCDDD4-1</gsak:Code>
+            <gsak:Guid>57a9e000-0000-4000-8000-000000000491</gsak:Guid>
+        </gsak:wptExtension>
+        <lab2gpx:adventureLab xmlns:lab2gpx="https://lab2gpx.gcutils.de/ns/lab2gpx/1">
+            <lab2gpx:uuid>fa1e0000-0000-4000-8000-000000000004</lab2gpx:uuid>
+            <lab2gpx:stagesTotal>5</lab2gpx:stagesTotal>
+            <lab2gpx:stagesCompleted>0</lab2gpx:stagesCompleted>
+        </lab2gpx:adventureLab>
+        <groundspeak:cache id="9000021" available="True" archived="False" xmlns:groundspeak="http://www.groundspeak.com/cache/1/0/1">
+            <groundspeak:name>Promenade des Remparts : S1 Point 1</groundspeak:name>
+            <groundspeak:placed_by>Testeur_Fictif</groundspeak:placed_by>
+            <groundspeak:owner>Testeur_Fictif</groundspeak:owner>
+            <groundspeak:type>Lab Cache</groundspeak:type>
+            <groundspeak:container>Virtual</groundspeak:container>
+            <groundspeak:difficulty>1</groundspeak:difficulty>
+            <groundspeak:terrain>1</groundspeak:terrain>
+            <groundspeak:country />
+            <groundspeak:state />
+            <groundspeak:logs />
+        </groundspeak:cache>
+    </wpt>
+    <wpt lat="47.23048" lon="-1.56980">
+        <time>2022-04-18T10:15:00.000</time>
+        <name>LCDDD4-2</name>
+        <desc>Point 2</desc>
+        <url>https://labs.geocaching.com/goto/fa1e0000-0000-4000-8000-000000000004</url>
+        <urlname>S2 Promenade des Remparts</urlname>
+        <sym>Geocache</sym>
+        <type>Geocache|Lab Cache</type>
+        <gsak:wptExtension xmlns:gsak="http://www.gsak.net/xmlv1/6">
+            <gsak:Code>LCDDD4-2</gsak:Code>
+            <gsak:Guid>57a9e000-0000-4000-8000-000000000492</gsak:Guid>
+        </gsak:wptExtension>
+        <lab2gpx:adventureLab xmlns:lab2gpx="https://lab2gpx.gcutils.de/ns/lab2gpx/1">
+            <lab2gpx:uuid>fa1e0000-0000-4000-8000-000000000004</lab2gpx:uuid>
+            <lab2gpx:stagesTotal>5</lab2gpx:stagesTotal>
+            <lab2gpx:stagesCompleted>0</lab2gpx:stagesCompleted>
+        </lab2gpx:adventureLab>
+        <groundspeak:cache id="9000022" available="True" archived="False" xmlns:groundspeak="http://www.groundspeak.com/cache/1/0/1">
+            <groundspeak:name>Promenade des Remparts : S2 Point 2</groundspeak:name>
+            <groundspeak:placed_by>Testeur_Fictif</groundspeak:placed_by>
+            <groundspeak:owner>Testeur_Fictif</groundspeak:owner>
+            <groundspeak:type>Lab Cache</groundspeak:type>
+            <groundspeak:container>Virtual</groundspeak:container>
+            <groundspeak:difficulty>1</groundspeak:difficulty>
+            <groundspeak:terrain>1</groundspeak:terrain>
+            <groundspeak:country />
+            <groundspeak:state />
+            <groundspeak:logs />
+        </groundspeak:cache>
+    </wpt>
+    <wpt lat="47.24010" lon="-1.58030">
+        <time>2023-09-05T18:45:00.000</time>
+        <name>LCFFF6-1</name>
+        <desc>La Serre</desc>
+        <url>https://labs.geocaching.com/goto/fa1e0000-0000-4000-8000-000000000006</url>
+        <urlname>S1 Jardin Suspendu</urlname>
+        <sym>Geocache</sym>
+        <type>Geocache|Lab Cache</type>
+        <gsak:wptExtension xmlns:gsak="http://www.gsak.net/xmlv1/6">
+            <gsak:Code>LCFFF6-1</gsak:Code>
+            <gsak:Guid>57a9e000-0000-4000-8000-000000000601</gsak:Guid>
+        </gsak:wptExtension>
+        <lab2gpx:adventureLab xmlns:lab2gpx="https://lab2gpx.gcutils.de/ns/lab2gpx/1">
+            <lab2gpx:uuid>fa1e0000-0000-4000-8000-000000000006</lab2gpx:uuid>
+            <lab2gpx:stagesTotal>4</lab2gpx:stagesTotal>
+            <lab2gpx:stagesCompleted>0</lab2gpx:stagesCompleted>
+        </lab2gpx:adventureLab>
+        <groundspeak:cache id="9000031" available="True" archived="False" xmlns:groundspeak="http://www.groundspeak.com/cache/1/0/1">
+            <groundspeak:name>Jardin Suspendu : S1 La Serre</groundspeak:name>
+            <groundspeak:placed_by>Testeur_Fictif</groundspeak:placed_by>
+            <groundspeak:owner>Testeur_Fictif</groundspeak:owner>
+            <groundspeak:type>Lab Cache</groundspeak:type>
+            <groundspeak:container>Virtual</groundspeak:container>
+            <groundspeak:difficulty>1</groundspeak:difficulty>
+            <groundspeak:terrain>1</groundspeak:terrain>
+            <groundspeak:country />
+            <groundspeak:state />
+            <groundspeak:logs />
+        </groundspeak:cache>
+    </wpt>
+    <wpt lat="47.24044" lon="-1.57990">
+        <time>2023-09-05T18:45:00.000</time>
+        <name>LCFFF6-2</name>
+        <desc>La Volière</desc>
+        <url>https://labs.geocaching.com/goto/fa1e0000-0000-4000-8000-000000000006</url>
+        <urlname>S2 Jardin Suspendu</urlname>
+        <sym>Geocache</sym>
+        <type>Geocache|Lab Cache</type>
+        <gsak:wptExtension xmlns:gsak="http://www.gsak.net/xmlv1/6">
+            <gsak:Code>LCFFF6-2</gsak:Code>
+            <gsak:Guid>57a9e000-0000-4000-8000-000000000602</gsak:Guid>
+        </gsak:wptExtension>
+        <lab2gpx:adventureLab xmlns:lab2gpx="https://lab2gpx.gcutils.de/ns/lab2gpx/1">
+            <lab2gpx:uuid>fa1e0000-0000-4000-8000-000000000006</lab2gpx:uuid>
+            <lab2gpx:stagesTotal>4</lab2gpx:stagesTotal>
+            <lab2gpx:stagesCompleted>0</lab2gpx:stagesCompleted>
+        </lab2gpx:adventureLab>
+        <groundspeak:cache id="9000032" available="True" archived="False" xmlns:groundspeak="http://www.groundspeak.com/cache/1/0/1">
+            <groundspeak:name>Jardin Suspendu : S2 La Volière</groundspeak:name>
+            <groundspeak:placed_by>Testeur_Fictif</groundspeak:placed_by>
+            <groundspeak:owner>Testeur_Fictif</groundspeak:owner>
+            <groundspeak:type>Lab Cache</groundspeak:type>
+            <groundspeak:container>Virtual</groundspeak:container>
+            <groundspeak:difficulty>1</groundspeak:difficulty>
+            <groundspeak:terrain>1</groundspeak:terrain>
+            <groundspeak:country />
+            <groundspeak:state />
+            <groundspeak:logs />
+        </groundspeak:cache>
+    </wpt>
+</gpx>
