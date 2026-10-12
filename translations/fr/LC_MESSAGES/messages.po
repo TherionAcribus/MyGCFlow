@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-11 21:39+0200\n"
+"POT-Creation-Date: 2026-10-12 08:29+0200\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -581,8 +581,8 @@ msgstr ""
 "Certaines tuiles de la carte n'ont pas pu être chargées (connexion "
 "instable ?)."
 
-#: static/js/basemaps.js:236 static/js/basemaps.js:273 static/js/ui.js:2550
-#: static/js/ui.js:2597 static/js/ui.js:2619
+#: static/js/basemaps.js:236 static/js/basemaps.js:273 static/js/ui.js:2562
+#: static/js/ui.js:2609 static/js/ui.js:2631
 msgid "Carte"
 msgstr "Carte"
 
@@ -725,7 +725,7 @@ msgstr "Erreur lors du chargement du fichier"
 #: static/js/evolution_data.js:912 static/js/evolution_data.js:1262
 #: static/js/evolution_data.js:1300 static/js/evolution_data.js:1308
 #: static/js/notifications.js:379 static/js/recording_perf.js:187
-#: static/js/ui.js:1500
+#: static/js/ui.js:1512
 msgid "Erreur"
 msgstr "Erreur"
 
@@ -1326,7 +1326,7 @@ msgstr ""
 msgid "Envoi des dernières images..."
 msgstr "Envoi des dernières images..."
 
-#: static/js/mapgl.js:4460 static/js/ui.js:6562
+#: static/js/mapgl.js:4460 static/js/ui.js:6615
 msgid "Assemblage en cours"
 msgstr "Assemblage en cours"
 
@@ -2155,7 +2155,7 @@ msgstr ""
 msgid "La musique (${m}) se termine avant la fin de la vidéo (${v})."
 msgstr "La musique (${m}) se termine avant la fin de la vidéo (${v})."
 
-#: static/js/ui.js:1329
+#: static/js/ui.js:1341
 msgid ""
 "Ce format vidéo n'est pas supporté par votre navigateur et sera ignoré au"
 " démarrage de l'enregistrement."
@@ -2163,27 +2163,27 @@ msgstr ""
 "Ce format vidéo n'est pas supporté par votre navigateur et sera ignoré au"
 " démarrage de l'enregistrement."
 
-#: static/js/ui.js:1330 static/js/ui.js:2859
+#: static/js/ui.js:1342 static/js/ui.js:2871
 msgid "Format non supporté"
 msgstr "Format non supporté"
 
-#: static/js/ui.js:1410
+#: static/js/ui.js:1422
 msgid "Chargement de la musique..."
 msgstr "Chargement de la musique..."
 
-#: static/js/ui.js:1444 static/js/ui.js:1496
+#: static/js/ui.js:1456 static/js/ui.js:1508
 msgid "Durée de l'animation calée sur la musique"
 msgstr "Durée de l'animation calée sur la musique"
 
-#: static/js/ui.js:1444 static/js/ui.js:1496 templates/menu_animation.html:257
+#: static/js/ui.js:1456 static/js/ui.js:1508 templates/menu_animation.html:259
 msgid "Musique"
 msgstr "Musique"
 
-#: static/js/ui.js:1500
+#: static/js/ui.js:1512
 msgid "Erreur lors de la lecture du fichier audio"
 msgstr "Erreur lors de la lecture du fichier audio"
 
-#: static/js/ui.js:1554
+#: static/js/ui.js:1566
 #, python-brace-format
 msgid ""
 "Sortie estimée : ${size}. La capture rapide enregistre en temps réel : si"
@@ -2194,7 +2194,7 @@ msgstr ""
 " la vidéo saccade, choisissez une résolution plus basse ou passez en « "
 "Rendu image par image »."
 
-#: static/js/ui.js:1555
+#: static/js/ui.js:1567
 #, python-brace-format
 msgid ""
 "Sortie estimée : ${size}. En mode images, l'enregistrement devient "
@@ -2205,7 +2205,7 @@ msgstr ""
 "beaucoup plus lent : chaque image est capturée, encodée et envoyée une "
 "par une. La vidéo, elle, ne perdra aucune image."
 
-#: static/js/ui.js:1564
+#: static/js/ui.js:1576
 #, python-brace-format
 msgid ""
 "Même au débit maximal (${max} Mbit/s), cette résolution restera "
@@ -2216,42 +2216,42 @@ msgstr ""
 "compressée : baisser les images par seconde ou la résolution donnera une "
 "image plus propre."
 
-#: static/js/ui.js:1568
+#: static/js/ui.js:1580
 #, python-brace-format
 msgid "Débit ajusté à ${bitrate} Mbit/s pour cette résolution."
 msgstr "Débit ajusté à ${bitrate} Mbit/s pour cette résolution."
 
-#: static/js/ui.js:2550
+#: static/js/ui.js:2562
 msgid "Enregistrement du centre par défaut impossible"
 msgstr "Enregistrement du centre par défaut impossible"
 
-#: static/js/ui.js:2597
+#: static/js/ui.js:2609
 msgid "Coordonnées invalides. Ex: 48.85, 2.35 ou N 49° 16.029 E 006° 07.512"
 msgstr "Coordonnées invalides. Ex: 48.85, 2.35 ou N 49° 16.029 E 006° 07.512"
 
-#: static/js/ui.js:2619
+#: static/js/ui.js:2631
 msgid "Coordonnées invalides. Ex: N 49° 16.029 / E 006° 07.512"
 msgstr "Coordonnées invalides. Ex: N 49° 16.029 / E 006° 07.512"
 
-#: static/js/ui.js:2858
+#: static/js/ui.js:2870
 #, python-brace-format
 msgid "Le format vidéo sauvegardé (${mime}) n'est pas supporté par ce navigateur."
 msgstr "Le format vidéo sauvegardé (${mime}) n'est pas supporté par ce navigateur."
 
-#: static/js/ui.js:2943
+#: static/js/ui.js:2955
 msgid "Fermer MyGCFlow ? Le serveur local sera arrêté."
 msgstr "Fermer MyGCFlow ? Le serveur local sera arrêté."
 
-#: static/js/ui.js:2944 static/js/ui.js:2947 static/js/ui.js:2967
-#: static/js/ui.js:2974 static/js/ui.js:2982 templates/app.html:92
+#: static/js/ui.js:2956 static/js/ui.js:2959 static/js/ui.js:2979
+#: static/js/ui.js:2986 static/js/ui.js:2994 templates/app.html:92
 msgid "Quitter"
 msgstr "Quitter"
 
-#: static/js/ui.js:2967 static/js/ui.js:2982
+#: static/js/ui.js:2979 static/js/ui.js:2994
 msgid "MyGCFlow n'a pas pu être arrêté."
 msgstr "MyGCFlow n'a pas pu être arrêté."
 
-#: static/js/ui.js:2973
+#: static/js/ui.js:2985
 msgid ""
 "Un import ou un traitement vidéo est en cours. Il sera interrompu. "
 "Quitter quand même ?"
@@ -2259,19 +2259,19 @@ msgstr ""
 "Un import ou un traitement vidéo est en cours. Il sera interrompu. "
 "Quitter quand même ?"
 
-#: static/js/ui.js:2977
+#: static/js/ui.js:2989
 msgid "Quitter quand même"
 msgstr "Quitter quand même"
 
-#: static/js/ui.js:2997
+#: static/js/ui.js:3009
 msgid "MyGCFlow est fermé"
 msgstr "MyGCFlow est fermé"
 
-#: static/js/ui.js:2998
+#: static/js/ui.js:3010
 msgid "Vous pouvez fermer cet onglet."
 msgstr "Vous pouvez fermer cet onglet."
 
-#: static/js/ui.js:4094 templates/_filter_cache_attrs.html:37
+#: static/js/ui.js:4106 templates/_filter_cache_attrs.html:37
 #: templates/_filter_cache_attrs.html:55 templates/_filter_cache_attrs.html:79
 #: templates/_filter_cache_attrs.html:100
 #: templates/_filter_country_state.html:12
@@ -2280,181 +2280,181 @@ msgstr "Vous pouvez fermer cet onglet."
 msgid "Aucun"
 msgstr "Aucun"
 
-#: static/js/ui.js:4247 templates/_filter_county.html:10
+#: static/js/ui.js:4259 templates/_filter_county.html:10
 msgid "Filtrer par département"
 msgstr "Filtrer par département"
 
-#: static/js/ui.js:4285 templates/_filter_country_state.html:8
+#: static/js/ui.js:4297 templates/_filter_country_state.html:8
 msgid "Filtrer par pays"
 msgstr "Filtrer par pays"
 
-#: static/js/ui.js:4314 static/js/ui.js:4365
+#: static/js/ui.js:4326 static/js/ui.js:4377
 #: templates/_filter_country_state.html:18
 msgid "Filtrer par région/état"
 msgstr "Filtrer par région/état"
 
-#: static/js/ui.js:5586
+#: static/js/ui.js:5598
 msgid "Pause non disponible pendant l'enregistrement - utilisez Arrêter"
 msgstr "Pause non disponible pendant l'enregistrement - utilisez Arrêter"
 
-#: static/js/ui.js:6035
+#: static/js/ui.js:6051
 msgid "Valeur requise."
 msgstr "Valeur requise."
 
-#: static/js/ui.js:6037
+#: static/js/ui.js:6053
 msgid "Format attendu : mm:ss (ex. 4:55)."
 msgstr "Format attendu : mm:ss (ex. 4:55)."
 
-#: static/js/ui.js:6038
+#: static/js/ui.js:6054
 msgid "Nombre attendu."
 msgstr "Nombre attendu."
 
-#: static/js/ui.js:6039
+#: static/js/ui.js:6055
 msgid "La valeur doit être strictement positive."
 msgstr "La valeur doit être strictement positive."
 
-#: static/js/ui.js:6041
+#: static/js/ui.js:6057
 #, python-brace-format
 msgid "Entre ${min} et ${max} jours/s."
 msgstr "Entre ${min} et ${max} jours/s."
 
-#: static/js/ui.js:6042
+#: static/js/ui.js:6058
 #, python-brace-format
 msgid "Entre ${min} et ${max} s."
 msgstr "Entre ${min} et ${max} s."
 
-#: static/js/ui.js:6043
+#: static/js/ui.js:6059
 #, python-brace-format
 msgid "Maximum ${max} s."
 msgstr "Maximum ${max} s."
 
-#: static/js/ui.js:6044
+#: static/js/ui.js:6060
 msgid "Entre 100 et 10000 ms."
 msgstr "Entre 100 et 10000 ms."
 
-#: static/js/ui.js:6045
+#: static/js/ui.js:6061
 msgid "Hors limites."
 msgstr "Hors limites."
 
-#: static/js/ui.js:6046
+#: static/js/ui.js:6062
 msgid "Valeur invalide."
 msgstr "Valeur invalide."
 
-#: static/js/ui.js:6118
+#: static/js/ui.js:6154
 #, python-brace-format
 msgid "${n} jours"
 msgstr "${n} jours"
 
-#: static/js/ui.js:6119
+#: static/js/ui.js:6155
 #, python-brace-format
 msgid "${n} jours/s"
 msgstr "${n} jours/s"
 
-#: static/js/ui.js:6121
+#: static/js/ui.js:6157
 #, python-brace-format
 msgid "animation minimale ${d}"
 msgstr "animation minimale ${d}"
 
-#: static/js/ui.js:6122
+#: static/js/ui.js:6158
 #, python-brace-format
 msgid "animation ${d}"
 msgstr "animation ${d}"
 
-#: static/js/ui.js:6123
+#: static/js/ui.js:6159
 #, python-brace-format
 msgid "fin ${d}"
 msgstr "fin ${d}"
 
-#: static/js/ui.js:6126
+#: static/js/ui.js:6162
 #, python-brace-format
 msgid "dont trajets de caméra ${d}"
 msgstr "dont trajets de caméra ${d}"
 
-#: static/js/ui.js:6134
+#: static/js/ui.js:6170
 #, python-brace-format
 msgid "dont approche caméra ${d}"
 msgstr "dont approche caméra ${d}"
 
-#: static/js/ui.js:6140
+#: static/js/ui.js:6176
 #, python-brace-format
 msgid "dont pauses caméra ${d}"
 msgstr "dont pauses caméra ${d}"
 
-#: static/js/ui.js:6148
+#: static/js/ui.js:6184
 #, python-brace-format
 msgid "dont retour caméra ${d}"
 msgstr "dont retour caméra ${d}"
 
-#: static/js/ui.js:6150
+#: static/js/ui.js:6186
 #, python-brace-format
 msgid "+ ${d} additionnel"
 msgstr "+ ${d} additionnel"
 
-#: static/js/ui.js:6152
+#: static/js/ui.js:6188
 #, python-brace-format
 msgid "vidéo minimale ${d}"
 msgstr "vidéo minimale ${d}"
 
-#: static/js/ui.js:6153
+#: static/js/ui.js:6189
 #, python-brace-format
 msgid "vidéo ${d}"
 msgstr "vidéo ${d}"
 
-#: static/js/ui.js:6155
+#: static/js/ui.js:6191
 #, python-brace-format
 msgid "${n} images minimum"
 msgstr "${n} images minimum"
 
-#: static/js/ui.js:6156
+#: static/js/ui.js:6192
 #, python-brace-format
 msgid "${n} images"
 msgstr "${n} images"
 
-#: static/js/ui.js:6158
+#: static/js/ui.js:6194
 #, python-brace-format
 msgid "≈ ${n} jours par image"
 msgstr "≈ ${n} jours par image"
 
-#: static/js/ui.js:6183
+#: static/js/ui.js:6219
 #, python-brace-format
 msgid "Vidéo ~${d}"
 msgstr "Vidéo ~${d}"
 
-#: static/js/ui.js:6191
+#: static/js/ui.js:6227
 msgid "musique incluse"
 msgstr "musique incluse"
 
-#: static/js/ui.js:6192
+#: static/js/ui.js:6228
 msgid "sans musique"
 msgstr "sans musique"
 
-#: static/js/ui.js:6198
+#: static/js/ui.js:6234
 #, python-brace-format
 msgid "destination : ${d}"
 msgstr "destination : ${d}"
 
-#: static/js/ui.js:6237
+#: static/js/ui.js:6273
 #, python-brace-format
 msgid "Exemple : ${name}"
 msgstr "Exemple : ${name}"
 
-#: static/js/ui.js:6240
+#: static/js/ui.js:6276
 msgid "Vide : nom du thème actif."
 msgstr "Vide : nom du thème actif."
 
-#: static/js/ui.js:6272
+#: static/js/ui.js:6308
 msgid "La plage de dates est invalide ou vide."
 msgstr "La plage de dates est invalide ou vide."
 
-#: static/js/ui.js:6273
+#: static/js/ui.js:6309
 msgid "Sélectionnez un fichier audio pour le mode « Sur la musique »."
 msgstr "Sélectionnez un fichier audio pour le mode « Sur la musique »."
 
-#: static/js/ui.js:6280
+#: static/js/ui.js:6316
 msgid "En attente de la lecture de la durée de la musique."
 msgstr "En attente de la lecture de la durée de la musique."
 
-#: static/js/ui.js:6291
+#: static/js/ui.js:6327
 #, python-brace-format
 msgid ""
 "Durée demandée (${req}) trop courte pour afficher chaque jour (minimum "
@@ -2463,7 +2463,7 @@ msgstr ""
 "Durée demandée (${req}) trop courte pour afficher chaque jour (minimum "
 "${min}) : ${app} appliquée."
 
-#: static/js/ui.js:6314
+#: static/js/ui.js:6350
 msgid ""
 "Le suivi de caméra met les dates en pause pendant chaque déplacement. La "
 "durée et le nombre d'images affichés sont des minimums ; le résultat sera"
@@ -2473,7 +2473,7 @@ msgstr ""
 "durée et le nombre d'images affichés sont des minimums ; le résultat sera"
 " plus long et peut dépasser la durée de la musique."
 
-#: static/js/ui.js:6318
+#: static/js/ui.js:6354
 #, python-brace-format
 msgid ""
 "Les trajets de caméra dureraient ${travel}, trop pour la durée demandée :"
@@ -2484,7 +2484,7 @@ msgstr ""
 " ils sont accélérés pour tenir en ${applied}. Pour des déplacements plus "
 "posés, baissez le dynamisme ou allongez la vidéo."
 
-#: static/js/ui.js:6323
+#: static/js/ui.js:6359
 #, python-brace-format
 msgid ""
 "Le suivi de caméra met les dates en pause pendant chaque déplacement : "
@@ -2495,7 +2495,7 @@ msgstr ""
 "depuis ce cadrage, ${n} trajets ajoutent environ ${d} à la vidéo. Pour "
 "tenir une durée précise, choisissez « Par durée » ou « Sur la musique »."
 
-#: static/js/ui.js:6339
+#: static/js/ui.js:6375
 #, python-brace-format
 msgid ""
 "${n} trajets de caméra mettront les dates en pause (+${d} au total) pour "
@@ -2506,7 +2506,7 @@ msgstr ""
 "que chaque jour soit cadré à son affichage. Réduisez le dynamisme ou le "
 "rythme pour l'éviter."
 
-#: static/js/ui.js:6386
+#: static/js/ui.js:6422
 #, python-brace-format
 msgid ""
 "Charge élevée : jusqu'à ~${n} flashs simultanés. Pistes : raccourcir la "
@@ -2515,7 +2515,7 @@ msgstr ""
 "Charge élevée : jusqu'à ~${n} flashs simultanés. Pistes : raccourcir la "
 "durée du flash, ralentir l'animation, ou utiliser le mode Images."
 
-#: static/js/ui.js:6390
+#: static/js/ui.js:6426
 #, python-brace-format
 msgid ""
 "${n} images à produire (~${d} en mode Images). Envisagez un fps plus bas "
@@ -2524,65 +2524,65 @@ msgstr ""
 "${n} images à produire (~${d} en mode Images). Envisagez un fps plus bas "
 "ou une animation plus courte."
 
-#: static/js/ui.js:6558
+#: static/js/ui.js:6611
 msgid "Images de capture supprimées"
 msgstr "Images de capture supprimées"
 
-#: static/js/ui.js:6558
+#: static/js/ui.js:6611
 msgid "Nettoyage"
 msgstr "Nettoyage"
 
-#: static/js/ui.js:6582
+#: static/js/ui.js:6635
 #, python-brace-format
 msgid "Dossier vidéo: ${folder}"
 msgstr "Dossier vidéo: ${folder}"
 
-#: static/js/ui.js:6582 static/js/ui.js:6584 static/js/ui.js:6589
+#: static/js/ui.js:6635 static/js/ui.js:6637 static/js/ui.js:6642
 msgid "Ouverture"
 msgstr "Ouverture"
 
-#: static/js/ui.js:6584
+#: static/js/ui.js:6637
 msgid "Impossible d’ouvrir le dossier vidéo"
 msgstr "Impossible d’ouvrir le dossier vidéo"
 
-#: static/js/ui.js:6589
+#: static/js/ui.js:6642
 msgid "Erreur lors de l’ouverture du dossier vidéo"
 msgstr "Erreur lors de l’ouverture du dossier vidéo"
 
-#: static/js/ui.js:8789
+#: static/js/ui.js:8842
 msgid "Sélectionnez d'abord un fichier audio"
 msgstr "Sélectionnez d'abord un fichier audio"
 
-#: static/js/ui.js:8836 templates/menu_animation.html:276
+#: static/js/ui.js:8889 templates/menu_animation.html:278
 msgid "Aucune musique sélectionnée"
 msgstr "Aucune musique sélectionnée"
 
-#: static/js/ui.js:8869
+#: static/js/ui.js:8922
 msgid "Non disponible"
 msgstr "Non disponible"
 
-#: static/js/ui.js:8876 templates/_filter_cache_attrs.html:42
+#: static/js/ui.js:8929 templates/_filter_cache_attrs.html:42
 #: templates/_filter_cache_attrs.html:43
 msgid "Taille"
 msgstr "Taille"
 
-#: static/js/ui.js:8877
+#: static/js/ui.js:8930
 msgid "Type"
 msgstr "Type"
 
-#: static/js/ui.js:8878
+#: static/js/ui.js:8931
 msgid "Durée"
 msgstr "Durée"
 
-#: static/js/ui.js:8879
+#: static/js/ui.js:8932
 msgid "Modifié"
 msgstr "Modifié"
 
-#: static/js/ui.js:8934
+#: static/js/ui.js:8987
 msgid "Erreur lors du chargement du fichier audio"
 msgstr "Erreur lors du chargement du fichier audio"
 
-#: static/js/ui.js:9033
+#: static/js/ui.js:9086
 #, python-brace-format
 msgid "Blanc de ${s} s détecté à la fin de la musique."
 msgstr "Blanc de ${s} s détecté à la fin de la musique."
@@ -3686,7 +3686,7 @@ msgstr "Réglez le rythme"
 msgid "Le"
 msgstr "Le"
 
-#: templates/guide.html:247 templates/menu_animation.html:115
+#: templates/guide.html:247 templates/menu_animation.html:117
 msgid "Rythme de l'animation"
 msgstr "Rythme de l'animation"
 
@@ -3694,7 +3694,7 @@ msgstr "Rythme de l'animation"
 msgid "offre trois modes exclusifs :"
 msgstr "offre trois modes exclusifs :"
 
-#: templates/guide.html:249 templates/menu_animation.html:122
+#: templates/guide.html:249 templates/menu_animation.html:124
 msgid "Par rythme"
 msgstr "Par rythme"
 
@@ -3702,7 +3702,7 @@ msgstr "Par rythme"
 msgid "vous fixez la vitesse en jours par seconde ; la durée finale est calculée."
 msgstr "vous fixez la vitesse en jours par seconde ; la durée finale est calculée."
 
-#: templates/guide.html:250 templates/menu_animation.html:126
+#: templates/guide.html:250 templates/menu_animation.html:128
 msgid "Par durée"
 msgstr "Par durée"
 
@@ -3711,7 +3711,7 @@ msgid "vous fixez la durée finale de la vidéo (mm:ss) ; le rythme est calculé
 msgstr "vous fixez la durée finale de la vidéo (mm:ss) ; le rythme est calculé."
 
 #: templates/guide.html:251 templates/guide.html:272
-#: templates/menu_animation.html:130
+#: templates/menu_animation.html:132
 msgid "Sur la musique"
 msgstr "Sur la musique"
 
@@ -3723,7 +3723,7 @@ msgstr "la durée suit celle du morceau choisi plus bas."
 msgid "Un"
 msgstr "Un"
 
-#: templates/guide.html:253 templates/menu_animation.html:152
+#: templates/guide.html:253 templates/menu_animation.html:154
 msgid "Préréglage"
 msgstr "Préréglage"
 
@@ -3731,7 +3731,7 @@ msgstr "Préréglage"
 msgid "(Lent, Normal, Rapide) règle le rythme en un clic. Le"
 msgstr "(Lent, Normal, Rapide) règle le rythme en un clic. Le"
 
-#: templates/guide.html:253 templates/menu_animation.html:179
+#: templates/guide.html:253 templates/menu_animation.html:181
 msgid "Temps additionnel en fin (sec)"
 msgstr "Temps additionnel en fin (sec)"
 
@@ -3759,7 +3759,7 @@ msgstr "Suivi de caméra (expérimental)"
 msgid "Cochez"
 msgstr "Cochez"
 
-#: templates/guide.html:257 templates/menu_animation.html:199
+#: templates/guide.html:257 templates/menu_animation.html:201
 msgid "Activer le suivi de caméra"
 msgstr "Activer le suivi de caméra"
 
@@ -3767,7 +3767,7 @@ msgstr "Activer le suivi de caméra"
 msgid "pour que la vue glisse vers les caches du jour, puis choisissez le"
 msgstr "pour que la vue glisse vers les caches du jour, puis choisissez le"
 
-#: templates/guide.html:257 templates/menu_animation.html:210
+#: templates/guide.html:257 templates/menu_animation.html:212
 msgid "Dynamisme de la caméra"
 msgstr "Dynamisme de la caméra"
 
@@ -3783,7 +3783,7 @@ msgstr ""
 msgid "La"
 msgstr "La"
 
-#: templates/guide.html:258 templates/menu_animation.html:203
+#: templates/guide.html:258 templates/menu_animation.html:205
 msgid "Cible du suivi"
 msgstr "Cible du suivi"
 
@@ -3803,7 +3803,7 @@ msgstr ""
 msgid "Avec"
 msgstr "Avec"
 
-#: templates/guide.html:259 templates/menu_animation.html:229
+#: templates/guide.html:259 templates/menu_animation.html:231
 msgid "Revenir au cadrage de départ à la fin"
 msgstr "Revenir au cadrage de départ à la fin"
 
@@ -3817,7 +3817,7 @@ msgstr ""
 " et le zoom du lancement, avant la pause de fin. Ce retour est compté "
 "dans la durée, comme les autres trajets."
 
-#: templates/guide.html:260 templates/menu_animation.html:222
+#: templates/guide.html:260 templates/menu_animation.html:224
 msgid "Privilégier le cadrage de départ"
 msgstr "Privilégier le cadrage de départ"
 
@@ -3859,7 +3859,7 @@ msgstr ""
 msgid "Ajoutez une musique (optionnel)"
 msgstr "Ajoutez une musique (optionnel)"
 
-#: templates/guide.html:272 templates/menu_animation.html:264
+#: templates/guide.html:272 templates/menu_animation.html:266
 msgid "Inclure la musique"
 msgstr "Inclure la musique"
 
@@ -3867,7 +3867,7 @@ msgstr "Inclure la musique"
 msgid "sélectionnez un fichier audio et ajustez le volume. Le bouton"
 msgstr "sélectionnez un fichier audio et ajustez le volume. Le bouton"
 
-#: templates/guide.html:272 templates/menu_animation.html:299
+#: templates/guide.html:272 templates/menu_animation.html:301
 msgid "Caler sur la musique"
 msgstr "Caler sur la musique"
 
@@ -3875,7 +3875,7 @@ msgstr "Caler sur la musique"
 msgid "synchronise la durée sur celle du morceau — le bouton"
 msgstr "synchronise la durée sur celle du morceau — le bouton"
 
-#: templates/guide.html:272 templates/menu_animation.html:304
+#: templates/guide.html:272 templates/menu_animation.html:306
 msgid "Dissocier"
 msgstr "Dissocier"
 
@@ -4409,92 +4409,100 @@ msgstr "Dernière cache de la sélection filtrée"
 msgid "Date de fin saisie dans le filtre"
 msgstr "Date de fin saisie dans le filtre"
 
-#: templates/menu_animation.html:138
+#: templates/menu_animation.html:140
 msgid "Rythme (jours par seconde)"
 msgstr "Rythme (jours par seconde)"
 
-#: templates/menu_animation.html:145
+#: templates/menu_animation.html:140
+msgid "calculé"
+msgstr "calculé"
+
+#: templates/menu_animation.html:147
 msgid "Durée finale de la vidéo (mm:ss)"
 msgstr "Durée finale de la vidéo (mm:ss)"
 
-#: templates/menu_animation.html:156
+#: templates/menu_animation.html:147
+msgid "calculée"
+msgstr "calculée"
+
+#: templates/menu_animation.html:158
 msgid "Lent"
 msgstr "Lent"
 
-#: templates/menu_animation.html:156 templates/menu_animation.html:157
-#: templates/menu_animation.html:158
+#: templates/menu_animation.html:158 templates/menu_animation.html:159
+#: templates/menu_animation.html:160
 msgid "jours/s"
 msgstr "jours/s"
 
-#: templates/menu_animation.html:157 templates/menu_informations.html:133
+#: templates/menu_animation.html:159 templates/menu_informations.html:133
 msgid "Normal"
 msgstr "Normal"
 
-#: templates/menu_animation.html:158
+#: templates/menu_animation.html:160
 msgid "Rapide"
 msgstr "Rapide"
 
-#: templates/menu_animation.html:159 templates/menu_informations.html:274
+#: templates/menu_animation.html:161 templates/menu_informations.html:274
 msgid "Personnalisé"
 msgstr "Personnalisé"
 
-#: templates/menu_animation.html:161
+#: templates/menu_animation.html:163
 msgid "Préréglage global, indépendant du thème."
 msgstr "Préréglage global, indépendant du thème."
 
-#: templates/menu_animation.html:168
+#: templates/menu_animation.html:170
 msgid "Détail"
 msgstr "Détail"
 
-#: templates/menu_animation.html:169
+#: templates/menu_animation.html:171
 msgid "(animation)"
 msgstr "(animation)"
 
-#: templates/menu_animation.html:170
+#: templates/menu_animation.html:172
 msgid "(pause automatique de fin)"
 msgstr "(pause automatique de fin)"
 
-#: templates/menu_animation.html:171
+#: templates/menu_animation.html:173
 msgid "(temps additionnel)"
 msgstr "(temps additionnel)"
 
-#: templates/menu_animation.html:180
+#: templates/menu_animation.html:182
 msgid "Temps additionnel (sec)"
 msgstr "Temps additionnel (sec)"
 
-#: templates/menu_animation.html:193
+#: templates/menu_animation.html:195
 msgid "Suivi de caméra"
 msgstr "Suivi de caméra"
 
-#: templates/menu_animation.html:205
+#: templates/menu_animation.html:207
 msgid "Chaque jour, quand il s'affiche"
 msgstr "Chaque jour, quand il s'affiche"
 
-#: templates/menu_animation.html:206
+#: templates/menu_animation.html:208
 msgid "La tête du trajet"
 msgstr "La tête du trajet"
 
-#: templates/menu_animation.html:212
+#: templates/menu_animation.html:214
 msgid "1 — Minimal : hors champ uniquement"
 msgstr "1 — Minimal : hors champ uniquement"
 
-#: templates/menu_animation.html:213
+#: templates/menu_animation.html:215
 msgid "2 — Discret : hors champ ou très périphérique"
 msgstr "2 — Discret : hors champ ou très périphérique"
 
-#: templates/menu_animation.html:214
+#: templates/menu_animation.html:216
 msgid "3 — Dynamique : hors zone centrale"
 msgstr "3 — Dynamique : hors zone centrale"
 
-#: templates/menu_animation.html:215
+#: templates/menu_animation.html:217
 msgid "4 — Intense : recentrage et zoom systématiques"
 msgstr "4 — Intense : recentrage et zoom systématiques"
 
-#: templates/menu_animation.html:217
+#: templates/menu_animation.html:219
 msgid "Sans effet avec cette cible : la caméra suit le stylo en continu."
 msgstr "Sans effet avec cette cible : la caméra suit le stylo en continu."
 
-#: templates/menu_animation.html:224
+#: templates/menu_animation.html:226
 msgid ""
 "Quand les caches d'un jour tiennent dans le cadrage de départ, la caméra "
 "revient sur ce cadrage au lieu de se centrer sur elles. Sans effet avec "
@@ -4504,7 +4512,7 @@ msgstr ""
 "revient sur ce cadrage au lieu de se centrer sur elles. Sans effet avec "
 "la cible « La tête du trajet »."
 
-#: templates/menu_animation.html:231
+#: templates/menu_animation.html:233
 msgid ""
 "Après la dernière date, la caméra retrouve la position et le zoom du "
 "lancement : la dernière image ne dépend plus de l'endroit où se trouvent "
@@ -4514,50 +4522,50 @@ msgstr ""
 "lancement : la dernière image ne dépend plus de l'endroit où se trouvent "
 "les dernières caches."
 
-#: templates/menu_animation.html:237
+#: templates/menu_animation.html:239
 msgid "Le trajet est désactivé : le suivi reste par jour."
 msgstr "Le trajet est désactivé : le suivi reste par jour."
 
-#: templates/menu_animation.html:238
+#: templates/menu_animation.html:240
 msgid "Ouvrir Style › Trajet"
 msgstr "Ouvrir Style › Trajet"
 
-#: templates/menu_animation.html:243
-msgid ""
-"La vue glisse vers les caches du jour. Les trajets sont comptés dans la "
-"durée : en « Par durée » ou « Sur la musique », la vidéo garde la durée "
-"demandée."
-msgstr ""
-"La vue glisse vers les caches du jour. Les trajets sont comptés dans la "
-"durée : en « Par durée » ou « Sur la musique », la vidéo garde la durée "
-"demandée."
-
-#: templates/menu_animation.html:244
-msgid ""
-"La vue glisse derrière le stylo qui dessine le trajet et adapte son zoom "
-"à la vitesse du parcours."
-msgstr ""
-"La vue glisse derrière le stylo qui dessine le trajet et adapte son zoom "
-"à la vitesse du parcours."
-
 #: templates/menu_animation.html:245
+msgid ""
+"La vue glisse vers les caches du jour. Les trajets sont comptés dans la "
+"durée : en « Par durée » ou « Sur la musique », la vidéo garde la durée "
+"demandée."
+msgstr ""
+"La vue glisse vers les caches du jour. Les trajets sont comptés dans la "
+"durée : en « Par durée » ou « Sur la musique », la vidéo garde la durée "
+"demandée."
+
+#: templates/menu_animation.html:246
+msgid ""
+"La vue glisse derrière le stylo qui dessine le trajet et adapte son zoom "
+"à la vitesse du parcours."
+msgstr ""
+"La vue glisse derrière le stylo qui dessine le trajet et adapte son zoom "
+"à la vitesse du parcours."
+
+#: templates/menu_animation.html:247
 msgid "En savoir plus"
 msgstr "En savoir plus"
 
-#: templates/menu_animation.html:269
+#: templates/menu_animation.html:271
 msgid "Fichier de musique"
 msgstr "Fichier de musique"
 
-#: templates/menu_animation.html:271
+#: templates/menu_animation.html:273
 msgid "Choisir un fichier audio"
 msgstr "Choisir un fichier audio"
 
-#: templates/menu_animation.html:272 templates/menu_data.html:28
+#: templates/menu_animation.html:274 templates/menu_data.html:28
 #: templates/menu_data_evolution.html:53
 msgid "Parcourir…"
 msgstr "Parcourir…"
 
-#: templates/menu_animation.html:287
+#: templates/menu_animation.html:289
 msgid ""
 "La durée de la musique est comptée sans son blanc de fin : une vidéo "
 "calée dessus se termine avec le dernier son."
@@ -4565,27 +4573,27 @@ msgstr ""
 "La durée de la musique est comptée sans son blanc de fin : une vidéo "
 "calée dessus se termine avec le dernier son."
 
-#: templates/menu_animation.html:287
+#: templates/menu_animation.html:289
 msgid "Ignorer le blanc de fin"
 msgstr "Ignorer le blanc de fin"
 
-#: templates/menu_animation.html:291
+#: templates/menu_animation.html:293
 msgid "Volume musique"
 msgstr "Volume musique"
 
-#: templates/menu_animation.html:298
+#: templates/menu_animation.html:300
 msgid "Caler la durée de la vidéo sur celle de la musique"
 msgstr "Caler la durée de la vidéo sur celle de la musique"
 
-#: templates/menu_animation.html:302
+#: templates/menu_animation.html:304
 msgid "Calé sur la musique"
 msgstr "Calé sur la musique"
 
-#: templates/menu_animation.html:305
+#: templates/menu_animation.html:307
 msgid "Différence"
 msgstr "Différence"
 
-#: templates/menu_animation.html:312
+#: templates/menu_animation.html:314
 msgid ""
 "La musique reprend au début chaque fois qu'elle se termine, jusqu'à la "
 "fin de la vidéo."
@@ -4593,11 +4601,11 @@ msgstr ""
 "La musique reprend au début chaque fois qu'elle se termine, jusqu'à la "
 "fin de la vidéo."
 
-#: templates/menu_animation.html:312
+#: templates/menu_animation.html:314
 msgid "Répéter la musique en boucle"
 msgstr "Répéter la musique en boucle"
 
-#: templates/menu_animation.html:319
+#: templates/menu_animation.html:321
 msgid ""
 "Le volume de la musique baisse progressivement sur les 3 dernières "
 "secondes de la vidéo, au lieu d'une coupure nette."
@@ -4605,7 +4613,7 @@ msgstr ""
 "Le volume de la musique baisse progressivement sur les 3 dernières "
 "secondes de la vidéo, au lieu d'une coupure nette."
 
-#: templates/menu_animation.html:319
+#: templates/menu_animation.html:321
 msgid "Terminer la musique en fondu"
 msgstr "Terminer la musique en fondu"
 

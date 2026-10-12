@@ -2019,6 +2019,30 @@ background: rgba(33, 150, 243, 0.04);
     margin-top: 8px;
 }
 
+/* Champs de tempo : celui qui pilote est mis en avant, l'autre affiche un
+   résultat calculé (atténué, mais toujours saisissable hors mode musique). */
+.rhythm-computed-hint {
+    display: none;
+    margin-left: 0.4rem;
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: var(--color-text-muted);
+}
+.rhythm-field.is-computed .rhythm-computed-hint {
+    display: inline;
+}
+.rhythm-field.is-computed .form-control:not(:focus) {
+    color: var(--color-text-muted);
+}
+.rhythm-field.is-driving .form-label {
+    font-weight: 600;
+    color: var(--color-accent-text);
+}
+.rhythm-field.is-driving .form-control:not(.is-invalid) {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 1px var(--color-accent);
+}
+
 /* Chip de synchronisation filtre -> animation */
 .filter-sync-chip {
     border: 1px solid var(--color-warning);

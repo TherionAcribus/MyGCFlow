@@ -53,8 +53,10 @@ test.beforeEach(async ({ page }) => {
 // tests les modifient (choisir une musique cale la vidéo dessus), et les specs
 // suivants s'attendent au mode jours/seconde. On remet donc l'état initial.
 test.afterEach(async ({ page }) => {
+  // Seulement en « Par durée » : saisir une durée depuis un autre mode y
+  // basculerait, et le retour au rythme adopterait le rythme calculé.
   const duration = page.locator('#inputTotalDuration');
-  if (await duration.isEditable()) {
+  if (await page.locator('#rhythmModeDuration').isChecked()) {
     await duration.fill('01:00');
     await duration.blur();
   }

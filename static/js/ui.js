@@ -642,9 +642,9 @@ const btnRecordAnimation = document.getElementById('btnRecordAnimation');
     if (btnRecordAnimation) btnRecordAnimation.addEventListener('click', clickRecordAnimation);
 
     inputDaysPerSecond = document.getElementById('inputDaysPerSecond');
-    if (inputDaysPerSecond) inputDaysPerSecond.addEventListener('input', changeAnimationValues);
+    if (inputDaysPerSecond) inputDaysPerSecond.addEventListener('input', () => editRhythmField('rate'));
     inputTotalDuration = document.getElementById('inputTotalDuration');
-    if (inputTotalDuration) inputTotalDuration.addEventListener('input', changeAnimationValues);
+    if (inputTotalDuration) inputTotalDuration.addEventListener('input', () => editRhythmField('duration'));
     inputExtraEndTime = document.getElementById('inputExtraEndTime');
     if (inputExtraEndTime) inputExtraEndTime.addEventListener('input', changeAnimationValues);
     selectRhythmPreset = document.getElementById('selectRhythmPreset');
@@ -662,7 +662,15 @@ const btnRecordAnimation = document.getElementById('btnRecordAnimation');
     // Modes de rythme exclusifs : rate / duration / music.
     for (const [id, mode] of [['rhythmModeRate', 'rate'], ['rhythmModeDuration', 'duration'], ['rhythmModeMusic', 'music']]) {
         const radio = document.getElementById(id);
-        if (radio) radio.addEventListener('change', () => { if (radio.checked) setRhythmMode(mode); });
+        if (!radio) continue;
+        radio.addEventListener('change', () => { if (radio.checked) setRhythmMode(mode); });
+        // Clic sur le bouton : amener le curseur dans le champ qu'il pilote.
+        // Seulement au pointeur (cible ≠ radio) : au clavier, les flèches
+        // doivent continuer à parcourir le groupe de boutons. Différé, car
+        // l'activation du label rend le focus au radio après ce handler.
+        radio.closest('label')?.addEventListener('click', (event) => {
+            if (event.target !== radio) setTimeout(() => focusRhythmField(mode), 0);
+        });
     }
     const btnUnlinkAudio = document.getElementById('btnUnlinkAudio');
     if (btnUnlinkAudio) {
@@ -4779,8 +4787,10 @@ function toggleButtonAnimationPauseAndRestart(reinitialisation = false){
 //   'rate'     — jours par seconde (champ éditable) ;
 //   'duration' — durée finale de la vidéo en mm:ss (champ éditable) ;
 //   'music'    — calé sur la durée du fichier audio sélectionné.
-// Dans chaque mode, les deux autres valeurs sont des résultats calculés
-// affichés en lecture seule.
+// Dans chaque mode, les deux autres valeurs sont des résultats calculés.
+// Rythme et durée restent saisissables l'un comme l'autre : écrire dans un
+// champ sélectionne son mode (editRhythmField). Seul 'music' les verrouille,
+// la durée y étant imposée par le fichier.
 
 // Mode Évolution : des décennies de données, donc des préréglages plus rapides
 // (libellés assortis dans menu_animation.html).
@@ -5076,16 +5086,27 @@ function timingErrorText(kind, parsed) {
     }
 }
 
-// Rend les deux champs de tempo exclusifs : le champ du mode actif reste
-// éditable, les autres affichent le résultat calculé en lecture seule.
+// Marque un champ de tempo comme pilote (mis en avant) ou résultat calculé.
+function markRhythmField(input, driving) {
+    const field = input.closest('.rhythm-field');
+    if (!field) return;
+    field.classList.toggle('is-driving', driving);
+    field.classList.toggle('is-computed', !driving);
+}
+
+// Aligne boutons et champs de tempo sur le mode actif : son champ est mis en
+// avant, l'autre affiche le résultat calculé. Les deux restent saisissables,
+// sauf en mode musique (lecture seule).
 function syncRhythmControls(plan) {
     const mode = rhythmMode();
+    const locked = mode === 'music';
     for (const [id, m] of [['rhythmModeRate', 'rate'], ['rhythmModeDuration', 'duration'], ['rhythmModeMusic', 'music']]) {
         const radio = document.getElementById(id);
         if (radio) radio.checked = (m === mode);
     }
     if (inputDaysPerSecond) {
-        inputDaysPerSecond.readOnly = mode !== 'rate';
+        inputDaysPerSecond.readOnly = locked;
+        markRhythmField(inputDaysPerSecond, mode === 'rate');
         if (mode !== 'rate' && plan?.valid && Number.isFinite(plan.daysPerSecond)) {
             inputDaysPerSecond.value = String(Number(plan.daysPerSecond.toFixed(2)));
         } else if (mode === 'rate' && document.activeElement !== inputDaysPerSecond) {
@@ -5094,7 +5115,8 @@ function syncRhythmControls(plan) {
         }
     }
     if (inputTotalDuration) {
-        inputTotalDuration.readOnly = mode !== 'duration';
+        inputTotalDuration.readOnly = locked;
+        markRhythmField(inputTotalDuration, mode === 'duration');
         if (mode !== 'duration' && plan?.valid) {
             inputTotalDuration.value = formatMmSs(plan.totalDurationMs);
         } else if (mode === 'duration' && document.activeElement !== inputTotalDuration) {
@@ -5103,7 +5125,11 @@ function syncRhythmControls(plan) {
         }
     }
     if (selectRhythmPreset) {
-        const dps = Number(pkg.options.animation.daysPerSecond);
+        // Rythme affiché : hors mode jours/seconde, c'est le résultat calculé
+        // (arrondi comme dans le champ), pas le dernier rythme saisi.
+        const dps = mode === 'rate'
+            ? Number(pkg.options.animation.daysPerSecond)
+            : (plan?.valid ? Number(Number(plan.daysPerSecond).toFixed(2)) : NaN);
         const match = Object.entries(RHYTHM_PRESETS).find(([, v]) => Math.abs(v - dps) < 1e-9);
         selectRhythmPreset.value = match ? match[0] : 'custom';
     }
@@ -5376,6 +5402,21 @@ function setRhythmMode(mode) {
     if (!animation || !['rate', 'duration', 'music'].includes(mode)) return;
     animation.rhythmMode = mode;
     refreshTimingPlan();
+}
+
+// Saisie dans un champ de tempo : il devient la valeur qui pilote, son bouton
+// est sélectionné. Sans effet en mode musique (champs en lecture seule).
+function editRhythmField(mode) {
+    const animation = pkg.options?.animation;
+    if (animation && rhythmMode() !== 'music') animation.rhythmMode = mode;
+    refreshTimingPlan();
+}
+
+function focusRhythmField(mode) {
+    const field = mode === 'rate' ? inputDaysPerSecond : mode === 'duration' ? inputTotalDuration : null;
+    if (!field || field.readOnly || rhythmMode() !== mode) return;
+    field.focus();
+    field.select();
 }
 
 // recupère tous les changements liés aux champs de timing

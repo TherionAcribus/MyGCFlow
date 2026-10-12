@@ -109,8 +109,10 @@
                     </div>
 
                     <!-- Trois façons exclusives de définir le tempo : une seule
-                         valeur est éditable, les deux autres sont des résultats
-                         calculés en lecture seule (voir ui.js, refreshTimingPlan). -->
+                         valeur pilote, les autres sont des résultats calculés.
+                         Rythme et durée restent saisissables : y écrire
+                         sélectionne leur mode. Seul « Sur la musique » les
+                         verrouille (voir ui.js, refreshTimingPlan). -->
                     <div class="anim-section-divider mt-3 mb-2">
                         <span class="anim-section-label" id="labelRhythmMode">{{ _("Rythme de l'animation") }}{{ global_scope_badge() }}</span>
                     </div>
@@ -134,15 +136,15 @@
                     </div>
                     <div class="row g-2 align-items-start">
                         <div class="col-12 col-md-4">
-                            <div class="mb-3">
-                                <label for="inputDaysPerSecond" class="form-label">{{ _("Rythme (jours par seconde)") }}</label>
+                            <div class="mb-3 rhythm-field">
+                                <label for="inputDaysPerSecond" class="form-label">{{ _("Rythme (jours par seconde)") }}<span class="rhythm-computed-hint">{{ _("calculé") }}</span></label>
                                 <input id="inputDaysPerSecond" type="number" class="form-control" min="0.01" max="1000" step="0.01" placeholder="20" aria-describedby="feedbackDaysPerSecond">
                                 <div class="invalid-feedback" id="feedbackDaysPerSecond"></div>
                             </div>
                         </div>
                         <div class="col-12 col-md-4">
-                            <div class="mb-3">
-                                <label for="inputTotalDuration" id="labelTotalDuration" class="form-label">{{ _("Durée finale de la vidéo (mm:ss)") }}</label>
+                            <div class="mb-3 rhythm-field">
+                                <label for="inputTotalDuration" id="labelTotalDuration" class="form-label">{{ _("Durée finale de la vidéo (mm:ss)") }}<span class="rhythm-computed-hint">{{ _("calculée") }}</span></label>
                                 <input id="inputTotalDuration" type="text" class="form-control" inputmode="numeric" placeholder="4:55" aria-describedby="feedbackTotalDuration">
                                 <div class="invalid-feedback" id="feedbackTotalDuration"></div>
                             </div>

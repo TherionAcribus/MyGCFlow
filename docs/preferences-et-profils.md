@@ -51,8 +51,10 @@ module : la durée affichée est celle qui est produite, à une frame près.
 
 Trois modes de rythme **exclusifs** (`options.animation.rhythmMode`) : `rate`
 (jours par seconde), `duration` (durée finale mm:ss), `music` (calé sur le
-fichier audio). Un seul champ est éditable à la fois ; les autres affichent le
-résultat calculé en lecture seule.
+fichier audio). Une seule valeur pilote ; les autres affichent le résultat
+calculé. Rythme et durée restent saisissables l'un comme l'autre : écrire dans
+un champ sélectionne son mode, cliquer un bouton place le curseur dans son
+champ. Seul `music` verrouille les deux champs en lecture seule.
 
 ## Ce que l'interface montre
 
