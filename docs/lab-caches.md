@@ -5,11 +5,52 @@ côtés des géocaches ou seules, dans la même carte, la même animation et la
 même vidéo. Une **découverte = une étape** (pas un point par Adventure) :
 5 étapes d'une même Adventure donnent 5 points.
 
-Aucune connexion à l'API officielle n'est requise : tout se fait par fichiers
-fournis par l'utilisateur, importés depuis la section « Mes Lab Caches » de
-l'onglet Données.
+Aucune connexion à l'API officielle n'est requise. Deux chemins coexistent :
 
-## Les deux fichiers à fournir
+- **le favori « Envoyer vers MyGCFlow »** — un clic depuis la page `/logs`
+  connectée envoie l'historique directement à l'application ;
+- **l'import de fichiers** — historique `.json` + coordonnées `.gpx`/`.zip`
+  déposés dans la carte « Mes Lab Caches » de l'onglet Données.
+
+## La méthode « un clic »
+
+1. **Une fois** : glisser le bouton **« Envoyer vers MyGCFlow »** de la carte
+   « Mes Lab Caches » dans la barre de favoris du navigateur. Le lien
+   `javascript:` est généré par `GET /api/labs/bookmarklet` avec l'origine
+   locale réelle et un jeton d'installation (`labs_receive_token`, révocable
+   en régénérant — le favori existant devient alors invalide).
+2. Sur `labs.geocaching.com/logs` connecté : cliquer le favori. Il pagine le
+   même endpoint JSON que la page (`/Logs/GetLogsByAdventureGrouping/`, avec
+   les cookies de session), détecte le GUID joueur seul (session → lien
+   profil de la page → invite en dernier recours, mémorisé en
+   `localStorage`), puis POSTe l'export `mygcflow-lab-finds` à
+   `POST /api/labs/receive`.
+3. `/api/labs/receive` n'accepte que l'origine `https://labs.geocaching.com`
+   (CORS + Private-Network-Access) **et** le jeton local ; le payload est
+   ensuite importé par la tâche habituelle. C'est la seule route exemptée du
+   garde inter-sites global (`security.py`).
+
+### Récupération automatique des coordonnées (opt-in)
+
+Quand **« Récupérer automatiquement les coordonnées »** est cochée
+(`labs_auto_fetch_coords`, défaut désactivé), chaque import réussi enchaîne
+une tâche `lab_fetch_coords` : le serveur appelle l'API publique
+`api.lab2gpx.gcutils.de/download` avec les UUID d'Adventures des étapes en
+attente (`lab_coords_provider.py` — lots de 50, débit modéré, reprises, et
+bissection des lots en échec pour isoler les UUID cassés ou archivés qui
+répondent en erreur). Les GPX reçus sont reparsés par le même chemin qu'un
+import Lab2Gpx : jointure par UUID d'étape exact, provenance `lab2gpx`,
+échecs conservés en attente.
+
+Le bouton **« Récupérer les coordonnées »** (alerte des étapes en attente)
+déclenche la même tâche à la demande.
+
+Transparence : cette option envoie les **identifiants d'Adventures** au
+service tiers lab2gpx — jamais d'identifiant de compte —, c'est pourquoi elle
+est opt-in. Les étapes que le service ne connaît pas (Adventures archivées ou
+cassées) restent en attente et se complètent par fichier ou à la main.
+
+## Les deux fichiers à fournir (méthode manuelle)
 
 L'affichage complet exige deux exports, qu'on peut importer ensemble ou l'un
 après l'autre :
@@ -24,7 +65,8 @@ après l'autre :
    `docs/notes/lab-caches-sources.md` pour l'état des lieux).
 2. **Les coordonnées des étapes** — un ou plusieurs GPX **Lab2Gpx**
    (`lab2gpx` produit un waypoint par étape, nommé `LC…` / UUID d'étape).
-   Les `.zip` produits par Lab2Gpx sont acceptés tels quels.
+   Les `.zip` produits par Lab2Gpx sont acceptés tels quels. Inutile si la
+   récupération automatique est activée.
 
 Un fichier seul suffit pour enregistrer les découvertes : elles restent
 stockées « en attente » tant que les coordonnées (ou la date) manquent, et
@@ -154,9 +196,12 @@ pour détecter un commit obsolète.
 
 ## Limites connues
 
-- Pas d'accès à l'API officielle : seuls les deux fichiers décrits sont
-  exploitables. Un fournisseur réseau éventuel reste une extension future
-  (voir plan §12).
+- Pas d'accès à l'API officielle : historique et coordonnées passent par les
+  canaux communautaires décrits ci-dessus (endpoint same-origin de `/logs`,
+  API publique lab2gpx) — aucune clé consommateur Groundspeak n'est utilisée
+  ni usurpée.
+- La récupération automatique dépend de la disponibilité et du contenu de
+  lab2gpx : les UUID qu'il ne résout pas restent en attente.
 - La jointure exige l'UUID d'étape : les étapes présentes dans l'historique
   mais absentes de tout GPX importé restent en attente (197 sur 4 953 sur
   les données réelles de test — Adventures non exportées).

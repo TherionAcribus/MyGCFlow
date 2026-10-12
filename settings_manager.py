@@ -334,6 +334,14 @@ class AppSettings:
     # filtres sous `sources: ["geocache", ...]` ; jamais dans un MapProfile :
     # changer de thème ne doit pas changer les données affichées.
     main_discovery_sources: str = "geocaches"  # "geocaches" | "labs" | "both"
+    # Récupération automatique des coordonnées Lab après import historique
+    # (API publique lab2gpx — envoie les UUID d'Adventures à un tiers : opt-in).
+    labs_auto_fetch_coords: bool = False
+    # Jeton embarqué dans le bookmarklet « Envoyer vers MyGCFlow » : protège
+    # /api/labs/receive contre un POST forgé par un site tiers (CSRF local).
+    # Généré à la première demande du bookmarklet ; conservé au reset — c'est
+    # un identifiant d'installation, pas une préférence.
+    labs_receive_token: str = ""
     recording: RecordingSettings = field(default_factory=RecordingSettings)
     # True dès que l'utilisateur a enregistré des réglages vidéo côté serveur.
     # Sert uniquement à la reprise des anciens réglages : tant qu'il est False,
@@ -888,6 +896,14 @@ def coerce_settings(d: dict) -> AppSettings:
             d.get("locationless_display"), s.locationless_display)
         s.main_discovery_sources = coerce_discovery_sources(
             d.get("main_discovery_sources"), s.main_discovery_sources)
+        # Opt-in réseau : seul un vrai booléen l'active — une valeur corrompue
+        # (« oui », 1…) conservant la valeur précédente, jamais d'activation
+        # implicite d'un envoi d'UUID vers un tiers.
+        raw_fetch = d.get("labs_auto_fetch_coords")
+        if isinstance(raw_fetch, bool):
+            s.labs_auto_fetch_coords = raw_fetch
+        token = d.get("labs_receive_token")
+        s.labs_receive_token = str(token) if token else ""
         # Un settings.json antérieur à la migration n'a pas de bloc `recording` :
         # il compte comme « jamais configuré ».
         s.recording_configured = bool(d.get("recording_configured", "recording" in d))
@@ -2370,6 +2386,9 @@ class SettingsManager:
             lambda current: AppSettings(
                 examples_seeded=current.examples_seeded,
                 examples_version=current.examples_version,
+                # Identifiant d'installation du bookmarklet Labs, pas une
+                # préférence : le régénérer casserait le favori déjà installé.
+                labs_receive_token=current.labs_receive_token,
             )
         )
 

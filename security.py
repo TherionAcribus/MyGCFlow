@@ -24,6 +24,12 @@ from flask import abort, request
 ALLOWED_HOSTNAMES = frozenset({"127.0.0.1", "localhost", "::1"})
 SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
 
+# Routes qui font elles-mêmes leur contrôle inter-sites : /api/labs/receive
+# existe précisément pour un POST cross-origin (le bookmarklet s'exécute sur
+# labs.geocaching.com) — jeton local + CORS dédié dans le blueprint. Le
+# contrôle Host ci-dessous (DNS rebinding) reste appliqué en amont.
+SELF_GUARDED_ENDPOINTS = frozenset({"labs.labs_receive"})
+
 
 def _hostname(host: str) -> str:
     # « 127.0.0.1:51730 », « [::1]:51730 », « localhost »
@@ -34,6 +40,8 @@ def check_request() -> None:
     if _hostname(request.host) not in ALLOWED_HOSTNAMES:
         abort(403)
     if request.method in SAFE_METHODS:
+        return
+    if request.endpoint in SELF_GUARDED_ENDPOINTS:
         return
     origin = request.headers.get("Origin")
     if origin is not None:

@@ -253,4 +253,20 @@ réels (voir README local) :
 **Lot 0 terminé** : schémas confirmés sur données réelles, jointure UUID
 validée, limites identifiées, fixtures prêtes pour le Lot 1.
 
+## Addendum — automatisation (2026-10-12)
+
+Le pipeline « fichier GPX manuel » est devenu un appel serveur direct :
+`lab_coords_provider.py` encapsule `POST /download` (mêmes lots de 50,
+reprises exponentielles, bissection des lots en échec pour isoler les UUID
+fautifs, budget d'échecs consécutifs contre une panne 5xx persistante).
+La tâche `lab_fetch_coords` (`POST /api/labs/fetch-coordinates`, opt-in
+`labs_auto_fetch_coords`) enchaîne automatiquement après chaque import.
+
+Côté historique, le bookmarklet `GET /api/labs/bookmarklet` rejoue la boucle
+de `tools/export_lab_logs.js` dans la page `/logs` et POSTe le payload à
+`POST /api/labs/receive` (origine `labs.geocaching.com` + jeton local
+`labs_receive_token`, CORS + Private-Network-Access ; seule route exemptée
+du garde inter-sites de `security.py`). Le GUID joueur est auto-détecté
+(session → lien profil → invite, mémorisé en localStorage).
+
 

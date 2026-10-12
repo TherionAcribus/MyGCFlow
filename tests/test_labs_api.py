@@ -1,13 +1,18 @@
 import io
 import json
 import os
+import shutil
 import tempfile
 import time
 import unittest
+from dataclasses import replace
 from datetime import date
 from pathlib import Path
+from unittest import mock
 
+import lab_coords_provider as lcp
 import lab_store
+import settings_manager
 from app import create_app
 from extensions import db
 from models import Geocache, LabDiscovery
@@ -268,6 +273,181 @@ class LabsApiTests(unittest.TestCase):
 
     def test_export_empty_collection(self):
         self.assertEqual(self.client.get('/api/labs/export').status_code, 404)
+
+
+class LabsAutomationTests(LabsApiTests):
+    """Automatisation : /api/labs/fetch-coordinates (provider mocké),
+    /api/labs/receive (CORS+jeton) et /api/labs/bookmarklet."""
+
+    def setUp(self):
+        super().setUp()
+        # Réglages isolés : ni l'opt-in ni le jeton ne doivent écrire dans la
+        # configuration réelle de l'utilisateur (même pattern que
+        # SettingsApiTests — les constantes du module sont redirigées).
+        cfg = Path(tempfile.mkdtemp(prefix="mygcflow-labs-cfg-"))
+        self.addCleanup(shutil.rmtree, cfg, True)
+        for name, value in {
+            "CONFIG_DIR": cfg,
+            "PROFILES_DIR": cfg / "profiles",
+            "SETTINGS_PATH": cfg / "settings.json",
+        }.items():
+            patcher = mock.patch.object(settings_manager, name, value)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+        settings_manager.write_json(settings_manager.SETTINGS_PATH, {
+            "examples_seeded": True,
+            "examples_version": settings_manager.EXAMPLES_VERSION,
+        })
+        self.manager = settings_manager.SettingsManager()
+
+        import blueprints.labs as labs_mod
+        import blueprints.profiles as profiles_mod
+
+        for target, value in (
+            (labs_mod, self.manager),          # get_settings_manager()
+            (profiles_mod, self.manager),      # alias de module `settings_manager`
+        ):
+            attr = "get_settings_manager" if target is labs_mod else "settings_manager"
+            patcher = mock.patch.object(target, attr,
+                                        (lambda m: (lambda: m))(self.manager)
+                                        if attr == "get_settings_manager" else value)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    # --- /api/labs/bookmarklet ---------------------------------------------
+
+    def test_bookmarklet_generates_stable_token_and_link(self):
+        rv = self.client.get('/api/labs/bookmarklet')
+        self.assertEqual(rv.status_code, 200)
+        body = rv.get_json()
+        self.assertTrue(body["success"])
+        js = body["bookmarklet"]
+        self.assertTrue(js.startswith("javascript:"))
+        token = self.manager.get_app_settings().labs_receive_token
+        self.assertTrue(token)
+        self.assertIn(json.dumps(token), js)
+        # L'origine locale réelle est celle de la requête.
+        self.assertIn("/api/labs/receive", js)
+        # Idempotent : le jeton n'est pas régénéré (le favori resterait valide).
+        self.assertEqual(
+            self.client.get('/api/labs/bookmarklet').status_code, 200)
+        self.assertEqual(
+            self.manager.get_app_settings().labs_receive_token, token)
+
+    # --- /api/labs/receive --------------------------------------------------
+
+    def _set_token(self, value="tok-receive"):
+        self.manager.update_app_settings(
+            lambda s: replace(s, labs_receive_token=value))
+
+    def test_receive_rejects_missing_or_wrong_token(self):
+        self._set_token()
+        for headers in ({}, {"X-MyGCFlow-Token": "mauvais"}):
+            rv = self.client.post('/api/labs/receive',
+                                  data=HISTORY.read_bytes(),
+                                  content_type='application/json',
+                                  headers=headers)
+            self.assertEqual(rv.status_code, 403, headers)
+        # Sans jeton configuré du tout : refusé aussi (pas de bypass).
+        self.manager.update_app_settings(
+            lambda s: replace(s, labs_receive_token=""))
+        rv = self.client.post('/api/labs/receive',
+                              data=HISTORY.read_bytes(),
+                              content_type='application/json',
+                              headers={"X-MyGCFlow-Token": "x"})
+        self.assertEqual(rv.status_code, 403)
+
+    def test_receive_imports_history_and_is_cors_scoped(self):
+        self._set_token()
+        rv = self.client.post('/api/labs/receive',
+                              data=HISTORY.read_bytes(),
+                              content_type='application/json',
+                              headers={"X-MyGCFlow-Token": "tok-receive",
+                                       "Origin": "https://labs.geocaching.com"})
+        self.assertEqual(rv.status_code, 202, rv.get_json())
+        self.assertEqual(rv.headers.get("Access-Control-Allow-Origin"),
+                         "https://labs.geocaching.com")
+        st = self._wait_task(rv.get_json()["task_id"])
+        self.assertEqual(st.state, "finished", st.error)
+        self.assertEqual(st.result["added"], 12)
+        self.assertEqual(db.session.query(LabDiscovery).count(), 12)
+
+    def test_receive_rejects_non_lab_payload(self):
+        self._set_token()
+        rv = self.client.post('/api/labs/receive',
+                              data=b'<html>page</html>',
+                              content_type='application/json',
+                              headers={"X-MyGCFlow-Token": "tok-receive"})
+        self.assertEqual(rv.status_code, 400)
+
+    def test_receive_options_grants_only_labs_origin(self):
+        rv = self.client.options('/api/labs/receive',
+                                 headers={"Origin": "https://labs.geocaching.com"})
+        self.assertEqual(rv.status_code, 204)
+        self.assertEqual(rv.headers.get("Access-Control-Allow-Origin"),
+                         "https://labs.geocaching.com")
+        self.assertEqual(rv.headers.get("Access-Control-Allow-Private-Network"),
+                         "true")
+        rv = self.client.options('/api/labs/receive',
+                                 headers={"Origin": "https://evil.example"})
+        self.assertIsNone(rv.headers.get("Access-Control-Allow-Origin"))
+
+    # --- /api/labs/fetch-coordinates ---------------------------------------
+
+    def test_fetch_coordinates_needs_pending(self):
+        rv = self.client.post('/api/labs/fetch-coordinates')
+        self.assertEqual(rv.status_code, 400)
+
+    def test_fetch_coordinates_task_resolves_discoveries(self):
+        self._import_history()
+        result = lcp.FetchResult(
+            payloads=[("auto-001.gpx", COORDS.read_bytes())],
+            fetched_adventures=3)
+        with mock.patch.object(lcp, "fetch_gpx_batches",
+                               return_value=result) as m:
+            rv = self.client.post('/api/labs/fetch-coordinates')
+            self.assertEqual(rv.status_code, 202, rv.get_json())
+            st = self._wait_task(rv.get_json()["task_id"])
+        self.assertEqual(st.state, "finished", st.error)
+        self.assertEqual(st.result["resolved"], 8)
+        self.assertEqual(st.result["ready_total"], 8)
+        # Le provider a reçu les UUID d'Adventures des étapes en attente.
+        requested = m.call_args[0][0]
+        self.assertTrue(requested)
+        self.assertTrue(all(u for u in requested))
+
+    def test_autofetch_chains_after_import_when_enabled(self):
+        self.client.put('/api/settings', json={"labs_auto_fetch_coords": True})
+        result = lcp.FetchResult(
+            payloads=[("auto-001.gpx", COORDS.read_bytes())],
+            fetched_adventures=3)
+        with mock.patch.object(lcp, "fetch_gpx_batches",
+                               return_value=result) as m:
+            import_result = self._import_history()
+            self.assertEqual(import_result["added"], 12)
+            # La tâche de fetch a été soumise par _maybe_autofetch.
+            fetch_task = None
+            deadline = time.time() + 10
+            while time.time() < deadline:
+                fetch_task = task_manager.get_last("lab_fetch_coords")
+                if fetch_task is not None:
+                    break
+                time.sleep(0.05)
+            self.assertIsNotNone(fetch_task, "auto-fetch non soumis")
+            st = self._wait_task(fetch_task.id)
+        self.assertEqual(st.state, "finished", st.error)
+        self.assertEqual(st.result["resolved"], 8)
+        self.assertTrue(m.called)
+
+    def test_no_autofetch_when_opt_in_off(self):
+        # task_manager est un singleton : un fetch d'un test précédent reste
+        # enregistré — on compare l'identité, pas la présence.
+        before = task_manager.get_last("lab_fetch_coords")
+        with mock.patch.object(lcp, "fetch_gpx_batches") as m:
+            self._import_history()
+            time.sleep(0.3)   # laisser le temps à un éventuel enchaînement
+            self.assertFalse(m.called)
+            self.assertIs(task_manager.get_last("lab_fetch_coords"), before)
 
 
 if __name__ == "__main__":

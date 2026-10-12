@@ -427,6 +427,33 @@ class DiscoverySourcesTests(unittest.TestCase):
             "geocaches")
 
 
+class LabsAutomationSettingsCoercionTests(unittest.TestCase):
+    """Réglages de l'automatisation Labs : opt-in coordonnées + jeton local.
+
+    `labs_auto_fetch_coords` envoie les UUID d'Adventures à un service tiers :
+    défaut obligatoirement à False. `labs_receive_token` est un identifiant
+    d'installation lu tel quel — jamais de coercion qui le modifierait.
+    """
+
+    def test_auto_fetch_defaults_to_off(self):
+        self.assertFalse(coerce_settings({}).labs_auto_fetch_coords)
+
+    def test_auto_fetch_accepts_only_true_booleans(self):
+        # Opt-in réseau : une valeur corrompue ne doit jamais l'activer.
+        self.assertTrue(coerce_settings({"labs_auto_fetch_coords": True}).labs_auto_fetch_coords)
+        for bad in ("oui", 1, "true", ["x"]):
+            self.assertFalse(
+                coerce_settings({"labs_auto_fetch_coords": bad}).labs_auto_fetch_coords, bad)
+        self.assertFalse(coerce_settings({"labs_auto_fetch_coords": False}).labs_auto_fetch_coords)
+
+    def test_receive_token_round_trips_and_empty_is_empty(self):
+        self.assertEqual(
+            coerce_settings({"labs_receive_token": "abc123"}).labs_receive_token, "abc123")
+        self.assertEqual(coerce_settings({}).labs_receive_token, "")
+        self.assertEqual(
+            coerce_settings({"labs_receive_token": None}).labs_receive_token, "")
+
+
 class RecordingConfiguredFlagTests(unittest.TestCase):
     """Drapeau qui pilote la reprise des anciens réglages du localStorage.
 
@@ -542,6 +569,24 @@ class SettingsApiTests(unittest.TestCase):
 
         self.assertEqual(
             self.client.get('/api/settings').get_json()['main_discovery_sources'], 'labs')
+
+    def test_labs_auto_fetch_defaults_to_off_and_round_trips(self):
+        self.assertFalse(
+            self.client.get('/api/settings').get_json()['labs_auto_fetch_coords'])
+        self.assertEqual(
+            self.client.put('/api/settings', json={'labs_auto_fetch_coords': True}).status_code, 200)
+        self.assertTrue(
+            self.client.get('/api/settings').get_json()['labs_auto_fetch_coords'])
+
+    def test_receive_token_survives_settings_patch(self):
+        # Le jeton est un identifiant d'installation : aucun PATCH de
+        # préférences ne doit l'écraser ni le révéler en écriture.
+        from dataclasses import replace
+        self.manager.update_app_settings(
+            lambda s: replace(s, labs_receive_token="tok-test"))
+        self.client.put('/api/settings', json={'theme': 'dark'})
+        self.assertEqual(
+            self.manager.get_app_settings().labs_receive_token, "tok-test")
 
     def test_an_invalid_date_format_leaves_the_stored_one_untouched(self):
         self.client.put('/api/settings', json={'date_format': 'eu'})

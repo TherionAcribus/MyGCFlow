@@ -35,6 +35,22 @@ export function initLabsUI() {
     el('labsPendingNext')?.addEventListener('click', () => loadPendingPage(pendingOffset + PENDING_PAGE_SIZE));
     el('clearLabsBtn')?.addEventListener('click', onClearLabs);
     el('labsExportBtn')?.addEventListener('click', onExportLabs);
+    el('labsAutoFetch')?.addEventListener('change', onAutoFetchToggle);
+    el('labsFetchBtn')?.addEventListener('click', onFetchNow);
+
+    // Le favori « Envoyer vers MyGCFlow » est fait pour être glissé dans la
+    // barre de favoris : un clic dessus depuis l'app serait un no-op.
+    const bm = el('labsBookmarkletLink');
+    if (bm) {
+        bm.addEventListener('click', (e) => {
+            e.preventDefault();
+            showInfo(
+                t('Glissez ce bouton dans la barre de favoris de votre navigateur, puis cliquez-le depuis la page de vos logs Adventure Lab.'),
+                t('Envoyer vers MyGCFlow'));
+        });
+        loadBookmarklet(bm);
+    }
+    loadAutoFetchSetting();
 
     // Recharger la carte si des coordonnées ont été corrigées dans la modale.
     el('labsPendingModal')?.addEventListener('hidden.bs.modal', () => {
@@ -231,8 +247,11 @@ async function onPreviewConfirm() {
 }
 
 // Suivi de la tâche d'import : même mécanique que pollGeojsonTask (bdd.js)
-// mais locale — le résultat est un résumé, pas un GeoJSON.
-function pollLabTask(taskId, { intervalMs = 500, stallTimeoutMs = 120000 } = {}) {
+// mais locale — le résultat est un résumé, pas un GeoJSON. `onFinished` et
+// `onProgress` sont injectables : la tâche de récupération de coordonnées
+// réutilise le même polling avec ses propres rendus.
+function pollLabTask(taskId, { intervalMs = 500, stallTimeoutMs = 120000,
+                               onFinished = onImportFinished, onProgress = null } = {}) {
     return new Promise((resolve, reject) => {
         let lastActivityAt = Date.now();
         let consecutiveErrors = 0;
@@ -247,7 +266,7 @@ function pollLabTask(taskId, { intervalMs = 500, stallTimeoutMs = 120000 } = {})
                     lastActivityAt = Date.now();
                     consecutiveErrors = 0;
                     if (status?.state === 'finished') {
-                        onImportFinished(status.result || {});
+                        onFinished(status.result || {});
                         resolve(status.result);
                         return;
                     }
@@ -256,7 +275,8 @@ function pollLabTask(taskId, { intervalMs = 500, stallTimeoutMs = 120000 } = {})
                         return;
                     }
                     if (typeof status?.progress === 'number') {
-                        setImportProgress(`${t('Import en cours…')} ${status.progress}%`);
+                        if (onProgress) onProgress(status.progress);
+                        else setImportProgress(`${t('Import en cours…')} ${status.progress}%`);
                     }
                     setTimeout(tick, intervalMs);
                 })
@@ -307,6 +327,102 @@ async function suggestSourceAfterImport(readyCount, totalCount) {
     } catch (e) {
         console.warn('[LABS] bascule des sources après import:', e);
     }
+}
+
+// --------------------------------------- récupération auto des coordonnées
+//
+// Opt-in documenté : les UUID d'Adventures sont envoyés au service public
+// lab2gpx (aucun identifiant de compte). Le serveur fait les appels, parse
+// les GPX retournés et enrichit les étapes par le même chemin que l'import.
+
+async function loadBookmarklet(link) {
+    try {
+        const r = await fetch(`${CONFIG.BASE_URL}/api/labs/bookmarklet`);
+        const d = await r.json();
+        if (d.success && d.bookmarklet) link.href = d.bookmarklet;
+    } catch (e) {
+        console.warn('[LABS] bookmarklet indisponible:', e);
+    }
+}
+
+async function loadAutoFetchSetting() {
+    const box = el('labsAutoFetch');
+    if (!box) return;
+    try {
+        const r = await fetch(`${CONFIG.BASE_URL}/api/settings`);
+        const d = await r.json();
+        box.checked = !!d.labs_auto_fetch_coords;
+    } catch (e) {
+        console.warn('[LABS] réglage auto-fetch illisible:', e);
+    }
+}
+
+async function onAutoFetchToggle() {
+    const box = el('labsAutoFetch');
+    if (!box) return;
+    const wanted = box.checked;
+    try {
+        const r = await fetch(`${CONFIG.BASE_URL}/api/settings`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ labs_auto_fetch_coords: wanted }),
+        });
+        if (!r.ok) throw new Error('refusé');
+        // Cocher avec des étapes déjà en attente déclenche tout de suite —
+        // c'est l'effet attendu du réglage, pas seulement pour les imports futurs.
+        if (wanted && (pendingTotal || 0) > 0) onFetchNow();
+    } catch (e) {
+        box.checked = !wanted;
+        showError(t('Réglage non enregistré'), t('Lab Caches'));
+    }
+}
+
+function setFetchProgress(text) {
+    const progressEl = el('labsFetchProgress');
+    if (progressEl) progressEl.textContent = text || '';
+}
+
+async function onFetchNow() {
+    const btn = el('labsFetchBtn');
+    if (btn) btn.disabled = true;
+    setFetchProgress(t('Récupération des coordonnées…'));
+    try {
+        const resp = await fetch(`${CONFIG.BASE_URL}/api/labs/fetch-coordinates`, { method: 'POST' });
+        const data = await resp.json().catch(() => ({}));
+        if (!resp.ok || !data.success || !data.task_id) {
+            throw new Error(data.message || t('Récupération refusée'));
+        }
+        await pollLabTask(data.task_id, {
+            onFinished: onFetchFinished,
+            onProgress: (p) => setFetchProgress(`${t('Récupération des coordonnées…')} ${p}%`),
+        });
+    } catch (e) {
+        setFetchProgress('');
+        showError(e.message || t('Erreur de récupération'), t('Lab Caches'));
+    } finally {
+        if (btn) btn.disabled = false;
+    }
+}
+
+async function onFetchFinished(result) {
+    setFetchProgress('');
+    if (!result || result.success === false) {
+        showError(t('La récupération a échoué'), t('Lab Caches'));
+        return;
+    }
+    const resolved = result.resolved || 0;
+    const failed = (result.failed_uuids || []).length;
+    const pending = result.unresolved || 0;
+    let msg = t('${n} étape(s) ont reçu des coordonnées.', { n: resolved });
+    if (failed > 0) {
+        msg += ' ' + t('${n} Adventure(s) introuvable(s) par le service.', { n: failed });
+    }
+    if (pending > 0) {
+        msg += ' ' + t('${n} étape(s) restent en attente.', { n: pending });
+    }
+    showSuccess(msg, t('Lab Caches'));
+    refreshLabsStatus();
+    pkg.reloadMainDatasetAfterMutation?.();
 }
 
 // ------------------------------------------------- étapes en attente

@@ -93,6 +93,8 @@ def api_get_settings():
         'map_framing': s.map_framing,
         'locationless_display': s.locationless_display,
         'main_discovery_sources': s.main_discovery_sources,
+        'labs_auto_fetch_coords': s.labs_auto_fetch_coords,
+        'labs_receive_token': s.labs_receive_token,
         'recording': asdict(s.recording),
         'recording_configured': s.recording_configured,
         'animation': asdict(s.animation),
@@ -276,6 +278,11 @@ def api_put_settings():
             map_framing=map_framing,
             locationless_display=locationless_display,
             main_discovery_sources=main_discovery_sources,
+            labs_auto_fetch_coords=(
+                data['labs_auto_fetch_coords']
+                if isinstance(data.get('labs_auto_fetch_coords'), bool)
+                else current.labs_auto_fetch_coords),
+            labs_receive_token=current.labs_receive_token,
             recording=recording,
             recording_configured=recording_configured,
             animation=animation,

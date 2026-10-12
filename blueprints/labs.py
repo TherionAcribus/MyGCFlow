@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import io
 import json
+import secrets
 import shutil
 import tempfile
 import uuid
@@ -28,6 +29,7 @@ from pathlib import Path
 from flask import Blueprint, current_app, jsonify, request
 from flask_babel import force_locale, gettext as _
 
+import lab_coords_provider
 import lab_formats as lf
 import lab_store
 import paths
@@ -35,11 +37,18 @@ from bdd import geojson_cache
 from extensions import db
 from localization import get_locale
 from models import LabDiscovery
+from settings_manager import get_settings_manager
 from task_manager import TaskAlreadyRunning, task_manager
 
 labs_bp = Blueprint('labs', __name__)
 
 TASK_TYPE_LAB_IMPORT = "lab_import"
+TASK_TYPE_LAB_FETCH = "lab_fetch_coords"
+
+# Seule origine autorisée à poster sur /api/labs/receive (le bookmarklet
+# s'exécute sur la page /logs). Toute autre page web ne peut pas nous atteindre
+# en CORS ; le jeton couvre les clients sans CORS (curl & co).
+LABS_ORIGIN = "https://labs.geocaching.com"
 
 # Jetons d'import en attente : dossier temporaire dédié, TTL court.
 PENDING_TTL_SECONDS = 30 * 60
@@ -219,6 +228,10 @@ def run_lab_import_task(status, app, folder_path: str, manifest_rev, locale=None
                 except Exception as exc:  # noqa: BLE001 — toute erreur doit passer en failed
                     db.session.rollback()
                     status.fail(exc)
+        # Hors du bloc d'import : la récupération a sa propre tâche/session,
+        # et l'éventuel échec du lancement n'invalide pas l'import réussi.
+        if status.state != "failed":
+            _maybe_autofetch(app, locale)
     finally:
         shutil.rmtree(folder, ignore_errors=True)
 
@@ -233,6 +246,98 @@ def _slim_summary(summary: dict) -> dict:
     proposals = summary.get("proposals") or []
     slim["proposals"] = _cap_items(proposals, 20)
     return slim
+
+
+# ---------------------------------------------------------------------------
+# Récupération des coordonnées via lab2gpx (fournisseur fichier → réseau)
+# ---------------------------------------------------------------------------
+
+def _unresolved_coord_uuids(session) -> list[str]:
+    """UUID d'Adventures ayant au moins une découverte sans coordonnées."""
+    collection = lab_store.get_collection(session)
+    if collection is None:
+        return []
+    rows = session.query(LabDiscovery.adventure_uuid).filter(
+        LabDiscovery.collection_id == collection.id,
+        LabDiscovery.adventure_uuid.isnot(None),
+        (LabDiscovery.coordinate_status != LabDiscovery.COORD_RESOLVED)
+        | LabDiscovery.latitude.is_(None)
+        | LabDiscovery.longitude.is_(None),
+    ).distinct().all()
+    return [r[0] for r in rows]
+
+
+def run_lab_fetch_task(status, app, uuids, user_guid, locale=None):
+    """Télécharge les GPX lab2gpx par lots puis enrichit les découvertes
+    (même chemin `commit_coordinates` que l'import GPX manuel)."""
+    try:
+        with app.app_context():
+            ctx = force_locale(locale) if locale else nullcontext()
+            with ctx:
+                try:
+                    total = len(uuids)
+
+                    def progress(done, _total):
+                        status.set_progress(
+                            int(90 * done / max(_total, 1)),
+                            _("Coordonnées Labs : %(done)s/%(total)s Adventures",
+                              done=done, total=_total))
+
+                    result = lab_coords_provider.fetch_gpx_batches(
+                        uuids, user_guid=user_guid, progress=progress)
+
+                    totals = {"resolved": 0, "ignored": 0, "updated": 0,
+                              "unchanged": 0, "conflicts": 0}
+                    warnings = []
+                    n = len(result.payloads)
+                    for i, (_name, raw) in enumerate(result.payloads):
+                        parsed = lf.parse_lab2gpx_gpx(raw)
+                        summary = lab_store.commit_coordinates(db.session, parsed)
+                        for k in totals:
+                            totals[k] += int(summary.get(k, 0))
+                        warnings.extend(summary.get("warnings", []))
+                        status.set_progress(
+                            90 + int(10 * (i + 1) / max(n, 1)),
+                            _("Coordonnées Labs : enrichissement"))
+
+                    _invalidate_after_mutation("labs_fetch_coords")
+                    stats = lab_store.collection_status(db.session)
+                    status.set_result({
+                        "success": True,
+                        "adventures_requested": total,
+                        "adventures_fetched": result.fetched_adventures,
+                        "failed_uuids": _cap_items(result.failed_uuids),
+                        **totals,
+                        "ready_total": stats["ready"],
+                        "unresolved": stats["unresolved"],
+                        "warnings": _cap_items(warnings),
+                    })
+                except Exception as exc:  # noqa: BLE001 — échec visible en tâche
+                    db.session.rollback()
+                    status.fail(exc)
+    except Exception:
+        raise
+
+
+def _maybe_autofetch(app_obj, locale=None) -> str | None:
+    """Enchaîne la récupération lab2gpx après un import si l'opt-in est actif
+    et qu'il reste des coordonnées à résoudre. Renvoie l'id de tâche ou None."""
+    try:
+        if not get_settings_manager().get_app_settings().labs_auto_fetch_coords:
+            return None
+        with app_obj.app_context():
+            uuids = _unresolved_coord_uuids(db.session)
+        if not uuids:
+            return None
+        task_status = task_manager.submit(
+            TASK_TYPE_LAB_FETCH, run_lab_fetch_task,
+            app_obj, uuids, None, locale, exclusive=True)
+        return task_status.id
+    except TaskAlreadyRunning:
+        return None
+    except Exception as exc:  # noqa: BLE001 — l'import reste valable sans fetch
+        app_obj.logger.warning(f"[LABS] auto-fetch non lancé : {exc}")
+        return None
 
 
 # ---------------------------------------------------------------------------
@@ -498,3 +603,199 @@ def labs_export():
     response.headers['Content-Disposition'] = \
         'attachment; filename="mygcflow-lab-finds-export.json"'
     return response
+
+
+# ---------------------------------------------------------------------------
+# Récupération des coordonnées (opt-in) + réception directe bookmarklet
+# ---------------------------------------------------------------------------
+
+@labs_bp.route('/api/labs/fetch-coordinates', methods=['POST'])
+def labs_fetch_coordinates():
+    """Lance la récupération lab2gpx des coordonnées manquantes (opt-in UI)."""
+    uuids = _unresolved_coord_uuids(db.session)
+    if not uuids:
+        return jsonify({'success': False,
+                        'message': _("Aucune étape en attente de coordonnées")}), 400
+    if task_manager.get_active(TASK_TYPE_LAB_IMPORT) is not None \
+            or task_manager.get_active(TASK_TYPE_LAB_FETCH) is not None:
+        return jsonify({'success': False,
+                        'message': _("Une opération Labs est déjà en cours")}), 409
+    data = request.get_json(silent=True) or {}
+    user_guid = data.get("user_guid") or None
+    app_obj = current_app._get_current_object()
+    try:
+        task_status = task_manager.submit(
+            TASK_TYPE_LAB_FETCH, run_lab_fetch_task,
+            app_obj, uuids, user_guid, get_locale(), exclusive=True)
+    except TaskAlreadyRunning as e:
+        return jsonify({'success': False, 'message': str(e)}), 409
+    return jsonify({'success': True,
+                    'message': _("Récupération des coordonnées lancée"),
+                    'task_id': task_status.id,
+                    'adventures': len(uuids)}), 202
+
+
+def _receive_cors_headers(resp):
+    """CORS + Private-Network-Access restreints à labs.geocaching.com.
+
+    Le bookmarklet poste depuis https://labs.geocaching.com vers
+    http://127.0.0.1 — Chrome exige une preflight PNA. Toute autre origine
+    ne reçoit aucun en-tête : le navigateur bloque la requête."""
+    if request.headers.get("Origin") == LABS_ORIGIN:
+        resp.headers["Access-Control-Allow-Origin"] = LABS_ORIGIN
+        resp.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+        resp.headers["Access-Control-Allow-Headers"] = \
+            "Content-Type, X-MyGCFlow-Token"
+        resp.headers["Access-Control-Allow-Private-Network"] = "true"
+        resp.headers["Access-Control-Max-Age"] = "600"
+        resp.headers["Vary"] = "Origin"
+    return resp
+
+
+@labs_bp.route('/api/labs/receive', methods=['POST', 'OPTIONS'])
+def labs_receive():
+    """Réception directe d'un export « mygcflow-lab-finds » depuis le
+    bookmarklet exécuté sur labs.geocaching.com/logs.
+
+    Double protection : jeton local (anti-CSRF, généré par installation) et
+    CORS limité à l'origine officielle. Le payload est stocké puis importé
+    par la tâche habituelle — l'auto-fetch enchaîne si l'opt-in est actif."""
+    if request.method == 'OPTIONS':
+        return _receive_cors_headers(current_app.make_response(('', 204)))
+
+    def reject(msgid, code):
+        return _receive_cors_headers(
+            jsonify({'success': False, 'message': _(msgid)})), code
+
+    expected = get_settings_manager().get_app_settings().labs_receive_token
+    token = request.headers.get('X-MyGCFlow-Token', '')
+    if not expected or not secrets.compare_digest(token, expected):
+        return reject(
+            "Jeton de réception invalide — régénérer le bookmarklet", 403)
+
+    raw = request.get_data(cache=False)
+    if not raw or len(raw) > MAX_LAB_FILE_BYTES:
+        return reject("Contenu absent ou trop volumineux", 400)
+    fmt = lf.detect_lab_file_format(raw)
+    if fmt is None:
+        return reject("Format non reconnu (export mygcflow-lab-finds attendu)", 400)
+
+    if task_manager.get_active(TASK_TYPE_LAB_IMPORT) is not None \
+            or task_manager.get_active(TASK_TYPE_LAB_FETCH) is not None:
+        return reject("Une opération Labs est déjà en cours", 409)
+
+    _purge_expired_pending()
+    _token, folder = _store_pending(
+        [{"name": "bookmarklet-lab-finds.json", "format": fmt, "raw": raw}])
+    manifest = json.loads((folder / "manifest.json").read_text("utf-8"))
+    manifest["_consumed"] = True
+    (folder / "manifest.json").write_text(
+        json.dumps(manifest, ensure_ascii=False), "utf-8")
+
+    app_obj = current_app._get_current_object()
+    try:
+        task_status = task_manager.submit(
+            TASK_TYPE_LAB_IMPORT, run_lab_import_task,
+            app_obj, str(folder), manifest.get("collection_revision"),
+            get_locale(), exclusive=True)
+    except TaskAlreadyRunning as e:
+        shutil.rmtree(folder, ignore_errors=True)
+        return reject(str(e), 409)
+
+    resp = jsonify({'success': True,
+                    'message': _("Historique Labs reçu — import lancé"),
+                    'task_id': task_status.id})
+    return _receive_cors_headers(resp), 202
+
+
+# Bookmarklet « Envoyer vers MyGCFlow » — généré avec l'origine locale réelle
+# et le jeton d'installation (__ORIGIN__/__TOKEN__ remplacés à la demande).
+# Même boucle de pagination que tools/export_lab_logs.js ; le GUID joueur est
+# détecté seul (id null côté session → lien profil de la page → invite),
+# mémorisé en localStorage pour les clics suivants.
+_BOOKMARKLET_JS = (
+    "javascript:(async()=>{"
+    "var O=__ORIGIN__,T=__TOKEN__,U='/Logs/GetLogsByAdventureGrouping/';"
+    "var say=(function(){var d=document.createElement('div');"
+    "d.style.cssText='position:fixed;top:12px;right:12px;z-index:2147483647;"
+    "background:#082747;color:#fff;padding:10px 14px;border-radius:8px;"
+    "font:13px system-ui;box-shadow:0 2px 12px #0007;max-width:340px';"
+    "document.body.appendChild(d);return function(t){d.textContent=t}})();"
+    "try{say('MyGCFlow : démarrage…');"
+    "var K='mygcflow:playerId';"
+    "var ok=async function(id){try{var r=await fetch(U,{method:'POST',"
+    "headers:{'Content-Type':'application/json','Accept':'application/json'},"
+    "credentials:'include',body:JSON.stringify({id:id,skip:0,take:1})});"
+    "return r.ok}catch(e){return false}};"
+    "var pid=localStorage.getItem(K)||null;"
+    "if(pid&&!(await ok(pid))){pid=null;localStorage.removeItem(K)}"
+    "var pick=null;"
+    "if(pid)pick=pid;else{"
+    "var cands=[null],h=document.documentElement.innerHTML,m;"
+    "var res=[/profile[^\"']*guid=([0-9a-f-]{36})/ig,"
+    "/\"(?:publicGuid|playerGuid|playerId|player_id)\"\\s*:\\s*"
+    "\"([0-9a-f-]{36})\"/ig];"
+    "for(var i=0;i<res.length;i++){while((m=res[i].exec(h)))"
+    "if(cands.indexOf(m[1])<0)cands.push(m[1])}"
+    "for(var j=0;j<cands.length&&!pick;j++){"
+    "if(await ok(cands[j]))pick=cands[j]}}"
+    "if(!pick){pid=prompt('MyGCFlow — GUID public du joueur :');"
+    "if(!pid){say('Annulé.');return}pid=pid.trim();"
+    "if(!(await ok(pid))){say('GUID refusé par le site.');return}pick=pid}"
+    "if(pick)localStorage.setItem(K,pick);"
+    "var take=100,disc=[],adv=new Set(),seen=new Set(),skip=0,guard=0;"
+    "while(true){var r=await fetch(U,{method:'POST',"
+    "headers:{'Content-Type':'application/json','Accept':'application/json'},"
+    "credentials:'include',body:JSON.stringify({id:pick,skip:skip,take:take})});"
+    "if(!r.ok){if(take>10){take=Math.max(10,Math.floor(take/2));continue}"
+    "throw new Error('HTTP '+r.status)}"
+    "var d=await r.json(),items=d.items||[],before=adv.size;"
+    "for(var k=0;k<items.length;k++){var it=items[k];adv.add(it.adventureId);"
+    "var logs=it.playerLogs||[];"
+    "for(var l=0;l<logs.length;l++){var lo=logs[l];if(seen.has(lo.id))continue;"
+    "seen.add(lo.id);var day=/^\\d{4}-\\d{2}-\\d{2}/.exec(lo.dateLogged||'');"
+    "disc.push({adventure_id:it.adventureId||null,stage_id:lo.stageId||null,"
+    "adventure_title:it.adventureTitle||null,stage_title:lo.stageTitle||null,"
+    "found_date:day?day[0]:null,found_at:lo.dateLogged||null,"
+    "date_precision:'instant',date_basis:'source_offset',latitude:null,"
+    "longitude:null,coordinate_scope:null,adventure_url:null,"
+    "log_id:lo.id==null?null:lo.id,is_archived:!!lo.isArchived,"
+    "adventure_is_archived:!!it.isArchived})}}"
+    "say('MyGCFlow : '+adv.size+' Adventures, '+disc.length+' étapes…');"
+    "skip+=items.length;"
+    "if(items.length===0||adv.size===before||++guard>500)break;"
+    "await new Promise(function(res){setTimeout(res,300)})}"
+    "var payload={format:'mygcflow-lab-finds',schema_version:1,"
+    "exported_at:new Date().toISOString(),account:{username:null},"
+    "source:'labs.geocaching.com/logs',coverage:'complete',discoveries:disc};"
+    "say('MyGCFlow : envoi à l’application…');"
+    "var resp=await fetch(O+'/api/labs/receive',{method:'POST',mode:'cors',"
+    "credentials:'omit',headers:{'Content-Type':'application/json',"
+    "'X-MyGCFlow-Token':T},body:JSON.stringify(payload)});"
+    "if(resp.status===202){say('✔ Envoyé à MyGCFlow — import en cours "
+    "('+adv.size+' Adventures, '+disc.length+' étapes)')}"
+    "else{var t='';try{t=await resp.text()}catch(e){}"
+    "say('MyGCFlow : erreur '+resp.status+' — '+t.slice(0,160))}"
+    "}catch(e){say('MyGCFlow : '+(e&&e.message?e.message:e))}})();"
+)
+
+
+@labs_bp.route('/api/labs/bookmarklet')
+def labs_bookmarklet():
+    """Renvoie le lien `javascript:` à glisser dans les favoris.
+
+    Le jeton de réception est généré à la première demande et persiste dans
+    les réglages : c'est un identifiant d'installation, révocable en le
+    régénérant (le favori existant devient alors invalide)."""
+    def ensure_token(s):
+        if s.labs_receive_token:
+            return s
+        from dataclasses import replace
+        return replace(s, labs_receive_token=secrets.token_urlsafe(24))
+
+    settings = get_settings_manager().update_app_settings(ensure_token)
+    origin = request.host_url.rstrip('/')
+    js = (_BOOKMARKLET_JS
+          .replace('__ORIGIN__', json.dumps(origin))
+          .replace('__TOKEN__', json.dumps(settings.labs_receive_token)))
+    return jsonify({'success': True, 'origin': origin, 'bookmarklet': js})

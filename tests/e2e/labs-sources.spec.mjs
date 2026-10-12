@@ -45,7 +45,8 @@ test.afterEach(async ({ page, request }) => {
   await page.evaluate(() => fetch('/api/settings', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ main_discovery_sources: 'geocaches' }),
+    body: JSON.stringify({ main_discovery_sources: 'geocaches',
+                           labs_auto_fetch_coords: false }),
   })).catch(() => {});
   await request.post('/api/labs/clear').catch(() => {});
   await request.post('/clear_database').catch(() => {});
@@ -232,6 +233,50 @@ test('en mixte, chaque source affiche et compte son propre jeu', async ({ page }
   await expect(page.locator('#filtersCounter')).toContainText('8 / 14', { timeout: 20_000 });
   await select.selectOption('both');
   await expect(page.locator('#filtersCounter')).toContainText('14 / 14', { timeout: 20_000 });
+});
+
+
+test('le favori « Envoyer vers MyGCFlow » porte origine locale et jeton', async ({ page }) => {
+  await openReadyApp(page);
+
+  const link = page.locator('#labsBookmarkletLink');
+  await expect(link).toBeVisible();
+  const href = await link.getAttribute('href');
+  expect(href).toMatch(/^javascript:/);
+  // Le lien généré embarque l'endpoint de réception et un jeton local.
+  expect(href).toContain('/api/labs/receive');
+  expect(href).toContain('X-MyGCFlow-Token');
+});
+
+
+test('la case de récupération automatique persiste le réglage serveur', async ({ page }) => {
+  await openReadyApp(page);
+
+  const box = page.locator('#labsAutoFetch');
+  await expect(box).toBeVisible();
+  await expect(box).not.toBeChecked();
+
+  await box.check();
+  await expect.poll(async () =>
+    (await readServerSettings(page)).labs_auto_fetch_coords,
+  ).toBe(true);
+
+  // Décocher revient au défaut — l'opt-in n'est pas collant.
+  await box.uncheck();
+  await expect.poll(async () =>
+    (await readServerSettings(page)).labs_auto_fetch_coords,
+  ).toBe(false);
+});
+
+
+test('le bouton de récupération est visible quand des étapes sont en attente', async ({ page }) => {
+  await openReadyApp(page);
+  await importLabs(page);
+
+  // 4 étapes restent en attente : les deux issues de résolution coexistent.
+  await expect(page.locator('#labsPendingAlert')).toBeVisible();
+  await expect(page.locator('#labsFetchBtn')).toBeVisible();
+  await expect(page.locator('#labsPendingBtn')).toBeVisible();
 });
 
 

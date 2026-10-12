@@ -115,6 +115,17 @@
                     <div class="form-hint text-muted mb-2">
                         {{ _("Historique de découvertes (.json) et coordonnées des étapes (.gpx ou .zip), importables ensemble ou séparément.") }}
                     </div>
+                    <!-- Import « un clic » : lien javascript: généré par
+                         /api/labs/bookmarklet (origine + jeton locaux). Glissé
+                         dans les favoris, il envoie l'historique directement
+                         depuis labs.geocaching.com/logs. Un clic sur la page
+                         serait un no-op trompeur → bloqué côté labs.js. -->
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <a id="labsBookmarkletLink" class="btn btn-sm btn-outline-primary" href="#" draggable="true">
+                            <i class="ti ti-bookmark me-1" aria-hidden="true"></i>{{ _("Envoyer vers MyGCFlow") }}
+                        </a>
+                        <span class="form-hint text-muted">{{ _("Glissez ce bouton dans vos favoris, puis cliquez-le sur la page de vos logs Adventure Lab.") }}</span>
+                    </div>
                     <div id="labsStatus" class="form-hint text-muted" aria-live="polite">
                         {{ _("Aucune étape importée") }}
                     </div>
@@ -123,10 +134,26 @@
                          qui ne s'applique pas ici. -->
                     <div id="labsPendingAlert" class="alert alert-warning mt-2 mb-0 py-2 px-3 d-none" role="status">
                         <div class="small" id="labsPendingText"></div>
-                        <button type="button" id="labsPendingBtn" class="btn btn-sm btn-warning mt-1">
-                            <i class="ti ti-map-pin-plus me-1" aria-hidden="true"></i>{{ _("Compléter les coordonnées") }}
+                        <button type="button" id="labsFetchBtn" class="btn btn-sm btn-primary mt-1 me-1">
+                            <i class="ti ti-cloud-download me-1" aria-hidden="true"></i>{{ _("Récupérer les coordonnées") }}
+                        </button>
+                        <button type="button" id="labsPendingBtn" class="btn btn-sm btn-outline-warning mt-1">
+                            <i class="ti ti-map-pin-plus me-1" aria-hidden="true"></i>{{ _("Compléter à la main") }}
                         </button>
                     </div>
+                    <!-- Opt-in réseau : les UUID d'Adventures partent vers le
+                         service public lab2gpx (aucun identifiant de compte).
+                         L'utilisateur doit le savoir avant de cocher. -->
+                    <div class="form-check form-switch mt-2 mb-1">
+                        <input class="form-check-input" type="checkbox" id="labsAutoFetch">
+                        <label class="form-check-label small" for="labsAutoFetch">
+                            {{ _("Récupérer automatiquement les coordonnées après import") }}
+                        </label>
+                    </div>
+                    <div class="form-hint text-muted mb-2">
+                        {{ _("Interroge le service public lab2gpx avec les identifiants de vos Adventures — aucun identifiant de compte n'est transmis.") }}
+                    </div>
+                    <div id="labsFetchProgress" class="form-hint text-muted" aria-live="polite"></div>
                     <div id="labsImportProgress" class="mt-2" aria-live="polite"></div>
                     <div class="d-flex justify-content-between align-items-center gap-2 mt-3">
                         <button id="labsExportBtn" class="btn btn-outline-secondary btn-sm" style="display:none;">
@@ -168,26 +195,39 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ _('Fermer') }}"></button>
                 </div>
                 <div class="modal-body">
-                    <p>{{ _("Deux fichiers suffisent pour afficher vos étapes d'Adventure Lab, sans API officielle :") }}</p>
+                    <p><strong>{{ _("La méthode simple — en un clic") }}</strong></p>
+                    <ol class="mb-3">
+                        <li class="mb-2">
+                            {{ _("Glissez le bouton « Envoyer vers MyGCFlow » (carte Mes Lab Caches) dans la barre de favoris de votre navigateur — une seule fois.") }}
+                        </li>
+                        <li class="mb-2">
+                            {{ _("Connectez-vous sur") }}
+                            <a href="https://labs.geocaching.com/logs" target="_blank" rel="noopener noreferrer">labs.geocaching.com/logs</a>
+                            {{ _("puis cliquez ce favori : votre historique est envoyé directement à l'application.") }}
+                        </li>
+                        <li>
+                            {{ _("Si « Récupérer automatiquement les coordonnées » est cochée, les étapes se placent seules sur la carte. Sinon, complétez-les par fichier ou à la main.") }}
+                        </li>
+                    </ol>
+                    <hr>
+                    <p><strong>{{ _("La méthode manuelle — deux fichiers") }}</strong></p>
                     <ol class="mb-3">
                         <li class="mb-2">
                             <strong>{{ _("Historique des découvertes (.json)") }}</strong><br>
-                            {{ _("Connectez-vous sur") }}
-                            <a href="https://labs.geocaching.com/logs" target="_blank" rel="noopener noreferrer">labs.geocaching.com/logs</a>,
-                            {{ _("ouvrez la console du navigateur (F12), renseignez votre GUID joueur dans le script ci-dessous et exécutez-le : il télécharge votre historique complet.") }}
+                            {{ _("Sur labs.geocaching.com/logs, ouvrez la console du navigateur (F12), renseignez votre GUID joueur dans le script ci-dessous et exécutez-le : il télécharge votre historique complet.") }}
                             <a href="{{ url_for('static', filename='labs/export_lab_logs.js') }}" download>{{ _("Télécharger le script d'export") }}</a>
                         </li>
                         <li class="mb-2">
                             <strong>{{ _("Coordonnées des étapes (.gpx ou .zip)") }}</strong><br>
-                            {{ _("Générez un fichier Lab2Gpx contenant les étapes de vos Adventures (mode UUID, une étape par waypoint).") }}
+                            {{ _("Générez un fichier Lab2Gpx contenant les étapes de vos Adventures (mode UUID, une étape par waypoint) — inutile si la récupération automatique est activée.") }}
                         </li>
                         <li>
                             <strong>{{ _("Import") }}</strong><br>
-                            {{ _("Déposez les deux fichiers ici — ensemble ou séparément. Les étapes sans coordonnées restent conservées et complétables ensuite.") }}
+                            {{ _("Déposez les fichiers ici — ensemble ou séparément. Les étapes sans coordonnées restent conservées et complétables ensuite.") }}
                         </li>
                     </ol>
                     <p class="form-hint text-muted mb-0">
-                        {{ _("Aucune donnée ne quitte l'application : les fichiers sont analysés localement.") }}
+                        {{ _("Aucune donnée ne quitte l'application : les fichiers sont analysés localement. La récupération automatique envoie uniquement les identifiants d'Adventures au service public lab2gpx.") }}
                     </p>
                 </div>
                 <div class="modal-footer">
