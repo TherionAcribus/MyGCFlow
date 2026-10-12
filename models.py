@@ -28,6 +28,9 @@ class Geocache(db.Model):
         db.Index('ix_geocache_country_state', 'country', 'state'),
     )
 
+    def __repr__(self):
+        return f"<Geocache {self.id}, {self.latitude}, {self.longitude}, {self.gc_code}, {self.cache_name}, {self.date_find}, {self.cache_type}>"
+
 
 class LabCollection(db.Model):
     """Historique Adventure Lab importé d'un joueur (une collection en V1)."""
@@ -100,4 +103,4 @@ class LabDiscovery(db.Model):
     )
 
     def __repr__(self):
-        return f"<Geocache {self.id}, {self.latitude}, {self.longitude}, {self.gc_code}, {self.cache_name}, {self.date_find}, {self.cache_type}>"
+        return f"<LabDiscovery {self.id}, {self.latitude}, {self.longitude}, {self.local_uid}, {self.stage_title}, {self.found_date}, {self.coordinate_status}>"
