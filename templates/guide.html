@@ -240,6 +240,7 @@
                 <ol class="guide-steps">
                     <li>
                         <h3>{{ _("Définissez la période") }}</h3>
+                        <p>{{ _("Dates et rythme se règlent dans le sous-onglet") }} <span class="ui-chip">{{ _("Dates & rythme") }}</span>. {{ _("Au-dessus des sous-onglets, une ligne de synthèse rappelle en permanence la durée obtenue.") }}</p>
                         <p>{{ _("Renseignez la") }} <span class="ui-chip">{{ _("Date de début") }}</span> {{ _("et la") }} <span class="ui-chip">{{ _("Date de fin") }}</span> {{ _("de l'animation. Par défaut elles couvrent toutes vos données. Sous chaque champ, des raccourcis reprennent la première ou la dernière cache de toutes les données, celle de la sélection filtrée, ou la date saisie dans le filtre.") }}</p>
                     </li>
                     <li>
@@ -248,12 +249,13 @@
                         <ul class="sub">
                             <li><strong>{{ _("Par rythme") }}</strong> — {{ _("vous fixez la vitesse en jours par seconde ; la durée finale est calculée.") }}</li>
                             <li><strong>{{ _("Par durée") }}</strong> — {{ _("vous fixez la durée finale de la vidéo (mm:ss) ; le rythme est calculé.") }}</li>
-                            <li><strong>{{ _("Sur la musique") }}</strong> — {{ _("la durée suit celle du morceau choisi plus bas.") }}</li>
+                            <li><strong>{{ _("Sur la musique") }}</strong> — {{ _("la durée suit celle du morceau choisi dans le sous-onglet Musique.") }}</li>
                         </ul>
                         <p>{{ _("Un") }} <strong>{{ _("Préréglage") }}</strong> {{ _("(Lent, Normal, Rapide) règle le rythme en un clic. Le") }} <strong>{{ _("Temps additionnel en fin (sec)") }}</strong> {{ _("laisse la carte finale visible. La") }} <strong>{{ _("Durée du flash (ms)") }}</strong> {{ _("se règle dans l'onglet Style > Flash : c'est un réglage de thème, comme la forme et la couleur.") }}</p>
                     </li>
                     <li>
                         <h3>{{ _("Suivi de caméra (expérimental)") }}</h3>
+                        <p>{{ _("Ces réglages se trouvent dans le sous-onglet") }} <span class="ui-chip">{{ _("Caméra") }}</span>.</p>
                         <p>{{ _("Cochez") }} <span class="ui-chip">{{ _("Activer le suivi de caméra") }}</span> {{ _("pour que la vue glisse vers les caches du jour, puis choisissez le") }} <strong>{{ _("Dynamisme de la caméra") }}</strong> {{ _("de 1 (minimal) à 4 (intense). Pour un grand trajet, la carte dézoome temporairement puis revient au niveau initial.") }}</p>
                         <p>{{ _("La") }} <strong>{{ _("Cible du suivi") }}</strong> {{ _("choisit ce que la caméra accompagne : chaque jour au moment où il s'affiche, ou la tête du trajet, que la vue suit alors en continu. Dans ce second cas, le trajet doit être activé dans Style > Trajet et le dynamisme est sans effet.") }}</p>
                         <p>{{ _("Avec") }} <span class="ui-chip">{{ _("Revenir au cadrage de départ à la fin") }}</span> {{ _("(coché par défaut), la caméra retrouve après la dernière date la position et le zoom du lancement, avant la pause de fin. Ce retour est compté dans la durée, comme les autres trajets.") }}</p>
@@ -269,6 +271,7 @@
                     </li>
                     <li>
                         <h3>{{ _("Ajoutez une musique (optionnel)") }}</h3>
+                        <p>{{ _("Ces réglages se trouvent dans le sous-onglet") }} <span class="ui-chip">{{ _("Musique") }}</span>.</p>
                         <p>{{ _("Cochez") }} <span class="ui-chip">{{ _("Inclure la musique") }}</span>, {{ _("sélectionnez un fichier audio et ajustez le volume. Le bouton") }} <span class="ui-chip"><i class="ti ti-music"></i> {{ _("Caler sur la musique") }}</span> {{ _("synchronise la durée sur celle du morceau — le bouton") }} <span class="ui-chip">{{ _("Dissocier") }}</span> {{ _("annule cette liaison. Vous pouvez aussi choisir directement le mode de rythme") }} <strong>{{ _("Sur la musique") }}</strong>.</p>
                     </li>
                     <li>

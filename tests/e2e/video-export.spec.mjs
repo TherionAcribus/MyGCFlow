@@ -51,6 +51,7 @@ async function importFixture(page) {
 // côté serveur après un court délai. On attend qu'elle y soit, sans quoi le
 // rechargement du test suivant retrouverait l'ancienne valeur.
 async function setCameraReturnHome(page, checked) {
+  await page.locator('#cameraConfigTab').click();
   await page.locator('#cbCameraReturnHome').setChecked(checked);
   await expect.poll(async () => {
     const { animation } = await (await page.request.get('/api/settings')).json();
@@ -185,6 +186,7 @@ test('les options MediaRecorder de l\'interface produisent un MP4 validé par ff
   // Tom Select (multi-sélection), mais les selects d'enregistrement sont des
   // <select> natifs depuis b724def : Playwright les pilote directement.
   await page.locator('a[href="#animation"]').click();
+  await page.locator('#animationConfigTab').click();
   await page.locator('#inputDaysPerSecond').fill('12.5');
   await page.locator('#inputExtraEndTime').fill('0');
   await page.locator('#recordingConfigTab').click();
@@ -314,6 +316,7 @@ test('traitement ffmpeg en échec : le repli navigateur livre quand même la vid
   await selectTraditionalCaches(page);
 
   await page.locator('a[href="#animation"]').click();
+  await page.locator('#animationConfigTab').click();
   await page.locator('#inputDaysPerSecond').fill('12.5');
   await page.locator('#inputExtraEndTime').fill('0');
   await page.locator('#recordingConfigTab').click();
@@ -377,6 +380,7 @@ test('le mode images rend la carte à la résolution demandée', async ({ page }
   await selectTraditionalCaches(page);
 
   await page.locator('a[href="#animation"]').click();
+  await page.locator('#animationConfigTab').click();
   await page.locator('#inputDaysPerSecond').fill('12.5');
   await page.locator('#inputExtraEndTime').fill('0');
   await page.locator('#recordingConfigTab').click();
@@ -453,6 +457,7 @@ test('le mode MediaRecorder rend aussi la carte à la résolution demandée', as
   await selectTraditionalCaches(page);
 
   await page.locator('a[href="#animation"]').click();
+  await page.locator('#animationConfigTab').click();
   await page.locator('#inputDaysPerSecond').fill('12.5');
   await page.locator('#inputExtraEndTime').fill('0');
   await page.locator('#recordingConfigTab').click();
@@ -642,6 +647,7 @@ test('le réglage Couleurs choisit le format de pixels du fichier final', async 
   await selectTraditionalCaches(page);
 
   await page.locator('a[href="#animation"]').click();
+  await page.locator('#animationConfigTab').click();
   await page.locator('#inputDaysPerSecond').fill('12.5');
   await page.locator('#inputExtraEndTime').fill('0');
   await page.locator('#recordingConfigTab').click();
@@ -699,6 +705,7 @@ test('le suivi de caméra glisse vers les caches, se stabilise et rend la main',
   // Le retour suit l'interrupteur du suivi : grisé tant qu'il est coupé.
   // (Décoché d'abord : le suivi est une préférence globale, qu'une spec
   // précédente a pu laisser active sur ce runtime partagé.)
+  await page.locator('#cameraConfigTab').click();
   await page.locator('#switchCameraFollow').uncheck();
   await expect(page.locator('#cbCameraReturnHome')).toBeDisabled();
   await page.locator('#switchCameraFollow').check();
@@ -706,6 +713,7 @@ test('le suivi de caméra glisse vers les caches, se stabilise et rend la main',
   // Décoché ici : ce test observe où le suivi amène la caméra et comment elle
   // s'y stabilise, pas le retour au cadrage de départ qui s'ensuivrait.
   await setCameraReturnHome(page, false);
+  await page.locator('#cameraConfigTab').click();
   await page.locator('#selectCameraDynamism').selectOption('2');
   // Caches dans le champ : aucun trajet prévu, donc rien à signaler.
   await expect(page.locator('#cameraTimingWarnings')).not.toContainText('dates en pause');
@@ -832,6 +840,7 @@ test('le suivi de caméra glisse vers les caches, se stabilise et rend la main',
   expect(suivi.resteOuLUtilisateurLAMise).toBe(true);
 
   await setCameraReturnHome(page, true);
+  await page.locator('#cameraConfigTab').click();
   await page.locator('#switchCameraFollow').uncheck();
   await expect.poll(() => page.evaluate(async () => {
     const app = await import('/static/js/index.js');
@@ -845,6 +854,7 @@ test('le suivi de caméra glisse vers les caches, se stabilise et rend la main',
 
 test('« Privilégier le cadrage de départ » ramène la caméra sur ce cadrage', async ({ page }) => {
   await page.locator('a[href="#animation"]').click();
+  await page.locator('#cameraConfigTab').click();
   await page.locator('#switchCameraFollow').check();
   await expect(page.locator('#cbCameraPreferHome')).toBeEnabled();
   await expect(page.locator('#cbCameraPreferHome')).not.toBeChecked();
@@ -900,6 +910,7 @@ test('« Privilégier le cadrage de départ » ramène la caméra sur ce cadrage
 
 test('la caméra franchit l’antiméridien sans faire le tour du monde', async ({ page }) => {
   await page.locator('a[href="#animation"]').click();
+  await page.locator('#cameraConfigTab').click();
   await page.locator('#switchCameraFollow').check();
   await page.locator('#selectCameraTarget').selectOption('days');
   await page.locator('#selectCameraDynamism').selectOption('4');
@@ -947,6 +958,7 @@ test('la caméra franchit l’antiméridien sans faire le tour du monde', async 
 
 test('une interaction suspend le suivi par jour jusqu\'au prochain lancement', async ({ page }) => {
   await page.locator('a[href="#animation"]').click();
+  await page.locator('#cameraConfigTab').click();
   await page.locator('#switchCameraFollow').check();
   await page.locator('#selectCameraTarget').selectOption('days');
 
@@ -1016,7 +1028,9 @@ test('une interaction suspend le suivi par jour jusqu\'au prochain lancement', a
 
 test('le jour « grappe + isolée » est cadré sur son étendue, pas son barycentre', async ({ page }) => {
   await page.locator('a[href="#animation"]').click();
+  await page.locator('#cameraConfigTab').click();
   await page.locator('#switchCameraFollow').check();
+  await page.locator('#animationConfigTab').click();
   await page.locator('#inputDaysPerSecond').fill('2');
   await page.locator('#inputExtraEndTime').fill('0');
 
@@ -1082,13 +1096,16 @@ test('le jour « grappe + isolée » est cadré sur son étendue, pas son baryce
     .toBeLessThan(150_000);
   expect(Math.abs(final - releve.barycentreX)).toBeGreaterThan(250_000);
 
+  await page.locator('#cameraConfigTab').click();
   await page.locator('#switchCameraFollow').uncheck();
 });
 
 
 test('sans « cadrer le jour », le même jour vise son barycentre au zoom de départ', async ({ page }) => {
   await page.locator('a[href="#animation"]').click();
+  await page.locator('#cameraConfigTab').click();
   await page.locator('#switchCameraFollow').check();
+  await page.locator('#animationConfigTab').click();
   await page.locator('#inputDaysPerSecond').fill('2');
   await page.locator('#inputExtraEndTime').fill('0');
 
@@ -1151,6 +1168,7 @@ test('sans « cadrer le jour », le même jour vise son barycentre au zoom de d�
   const zoomSurPlace = releve.zooms[releve.positions.indexOf(final)];
   expect(Math.abs(zoomSurPlace - releve.zoomDepart)).toBeLessThanOrEqual(0.1);
 
+  await page.locator('#cameraConfigTab').click();
   await page.locator('#switchCameraFollow').uncheck();
 });
 
@@ -1161,8 +1179,10 @@ test('un enregistrement avec suivi de caméra déplace la vue, puis la ramène a
   await selectTraditionalCaches(page);
 
   await page.locator('a[href="#animation"]').click();
+  await page.locator('#animationConfigTab').click();
   await page.locator('#inputDaysPerSecond').fill('12.5');
   await page.locator('#inputExtraEndTime').fill('0');
+  await page.locator('#cameraConfigTab').click();
   await page.locator('#switchCameraFollow').check();
   await page.locator('#recordingConfigTab').click();
   await expect(page.locator('#recordingConfigPane')).toBeVisible();
@@ -1246,9 +1266,11 @@ async function setUpCameraRoundTrips(page, duration) {
   expect(await page.evaluate(async () => (await import('/static/js/index.js')).pointsByDate.size)).toBe(3);
 
   await page.locator('a[href="#animation"]').click();
+  await page.locator('#animationConfigTab').click();
   await page.locator('#inputExtraEndTime').fill('0');
   await page.locator('#rhythmModeDuration').check({ force: true });
   await page.locator('#inputTotalDuration').fill(duration);
+  await page.locator('#cameraConfigTab').click();
   await page.locator('#switchCameraFollow').check();
   await setCameraReturnHome(page, true);
 
@@ -1384,7 +1406,9 @@ test('avec le suivi de caméra, la lecture « Par durée » finit à l\'heure', 
 
 test('le plan annonce les pauses de dates quand le rythme est trop rapide', async ({ page }) => {
   await page.locator('a[href="#animation"]').click();
+  await page.locator('#cameraConfigTab').click();
   await page.locator('#switchCameraFollow').check();
+  await page.locator('#animationConfigTab').click();
   await page.locator('#inputExtraEndTime').fill('0');
   // Caches alternant New York / Paris chaque jour : chaque jour impose un
   // trajet transatlantique (~4 s) qui ne peut pas tenir dans 50 ms/jour —
@@ -1508,6 +1532,7 @@ test('le plan annonce les pauses de dates quand le rythme est trop rapide', asyn
   expect(releve.nbOfImages).toBe(releve.totalFrameCount);
 
   // Réglages caméra globaux et persistés : on les rend comme les autres tests.
+  await page.locator('#cameraConfigTab').click();
   await page.locator('#switchCameraFollow').uncheck();
 });
 
@@ -1525,9 +1550,11 @@ test('avec le suivi de caméra, la lecture « Par durée » congestionnée finit
   expect(await page.evaluate(async () => (await import('/static/js/index.js')).pointsByDate.size)).toBe(3);
 
   await page.locator('a[href="#animation"]').click();
+  await page.locator('#animationConfigTab').click();
   await page.locator('#inputExtraEndTime').fill('0');
   await page.locator('#rhythmModeDuration').check({ force: true });
   await page.locator('#inputTotalDuration').fill('0:20');
+  await page.locator('#cameraConfigTab').click();
   await page.locator('#switchCameraFollow').check();
   await setCameraReturnHome(page, true);
 
@@ -1593,6 +1620,7 @@ function mp4Names() {
 async function prepareSlowRecording(page, mode, daysPerSecond = '1') {
   await selectTraditionalCaches(page);
   await page.locator('a[href="#animation"]').click();
+  await page.locator('#animationConfigTab').click();
   await page.locator('#inputDaysPerSecond').fill(daysPerSecond);
   await page.locator('#inputExtraEndTime').fill('0');
   await page.locator('#recordingConfigTab').click();

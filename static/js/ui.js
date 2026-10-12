@@ -296,6 +296,12 @@ export function audioFadeOutPlan() {
 // Badge « Calé sur la musique » + bouton Dissocier + zone d'état aria-live.
 // Le mode n'est plus signalé par une couleur de label seule : le badge et le
 // statut textuel portent l'information, accessible aux lecteurs d'écran.
+// Pastille du sous-onglet Musique : une musique sera jouée et exportée.
+function syncMusicTabDot() {
+    const dot = document.getElementById('musicTabDot');
+    if (dot) dot.hidden = !(cbRecordAudioEnable?.checked && inputAudioFile?.files?.length);
+}
+
 function updateMusicSyncUi(plan = lastTimingPlan) {
     const badge = document.getElementById('musicSyncBadge');
     const btnUnlink = document.getElementById('btnUnlinkAudio');
@@ -304,6 +310,7 @@ function updateMusicSyncUi(plan = lastTimingPlan) {
     const locked = isMusicLocked();
     const hasFile = !!(inputAudioFile?.files?.length);
 
+    syncMusicTabDot();
     if (badge) badge.style.display = locked ? '' : 'none';
     if (btnUnlink) btnUnlink.style.display = locked ? '' : 'none';
     if (indicator) indicator.style.display = 'none';
@@ -669,7 +676,13 @@ const btnRecordAnimation = document.getElementById('btnRecordAnimation');
         // doivent continuer à parcourir le groupe de boutons. Différé, car
         // l'activation du label rend le focus au radio après ce handler.
         radio.closest('label')?.addEventListener('click', (event) => {
-            if (event.target !== radio) setTimeout(() => focusRhythmField(mode), 0);
+            if (event.target === radio) return;
+            // « Sur la musique » grisé faute de fichier : mener là où on le choisit.
+            if (radio.disabled) {
+                if (mode === 'music') showBsTab(document.getElementById('musicConfigTab'));
+                return;
+            }
+            setTimeout(() => focusRhythmField(mode), 0);
         });
     }
     const btnUnlinkAudio = document.getElementById('btnUnlinkAudio');
@@ -1162,7 +1175,7 @@ function initOptionsElements() {
     if (cbRecordNormalize) cbRecordNormalize.addEventListener('change', () => changeRecordValues());
     // Audio utilisateur
     cbRecordAudioEnable = document.getElementById('cbRecordAudioEnable');
-    if (cbRecordAudioEnable) cbRecordAudioEnable.addEventListener('change', () => changeRecordValues());
+    if (cbRecordAudioEnable) cbRecordAudioEnable.addEventListener('change', () => { changeRecordValues(); syncMusicTabDot(); });
     inputAudioVolume = document.getElementById('inputAudioVolume');
     if (inputAudioVolume) {
         inputAudioVolume.addEventListener('input', () => {
@@ -4869,6 +4882,9 @@ function syncCameraFollowControls() {
     if (helpTrail) helpTrail.hidden = !trailRequested;
     const fallback = document.getElementById('cameraTrailFallbackWarning');
     if (fallback) fallback.hidden = !(enabled && trailRequested && !trailActive);
+    // Pastille du sous-onglet : le suivi pèse sur la durée même onglet fermé.
+    const tabDot = document.getElementById('cameraTabDot');
+    if (tabDot) tabDot.hidden = !enabled;
 }
 
 // Recalcule le plan depuis l'état courant, répercute les valeurs dérivées
@@ -7489,6 +7505,7 @@ function updateAudioDurationButton() {
             cbAudio.checked = true;
         }
     }
+    syncMusicTabDot();
 }
 
 // Fonction pour afficher les informations du fichier audio (maintenant seulement la tooltip)

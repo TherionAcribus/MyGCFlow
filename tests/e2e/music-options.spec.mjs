@@ -46,6 +46,7 @@ test.beforeEach(async ({ page }) => {
   await page.locator('#file-input').setInputFiles(FIXTURE);
   await expect(page.locator('#filtersCounter')).toContainText('6 / 6', { timeout: 45_000 });
   await page.locator('a[href="#animation"]').click();
+  await page.locator('#musicConfigTab').click();
 });
 
 
@@ -53,6 +54,7 @@ test.beforeEach(async ({ page }) => {
 // tests les modifient (choisir une musique cale la vidéo dessus), et les specs
 // suivants s'attendent au mode jours/seconde. On remet donc l'état initial.
 test.afterEach(async ({ page }) => {
+  await page.locator('#animationConfigTab').click();
   // Seulement en « Par durée » : saisir une durée depuis un autre mode y
   // basculerait, et le retour au rythme adopterait le rythme calculé.
   const duration = page.locator('#inputTotalDuration');
@@ -111,7 +113,7 @@ test('une musique plus longue que la vidéo peut se terminer en fondu', async ({
 
   // Retour au rythme en jours/seconde : la vidéo (quelques secondes pour les
   // 6 caches de la fixture) devient bien plus courte que la musique.
-  await page.locator('label:has(#rhythmModeRate)').click();
+  await page.locator('#btnUnlinkAudio').click();
   await expect(box).toBeVisible();
   await expect(fade).not.toBeChecked();
   await expect(status).toContainText('elle sera coupée en fin de vidéo');
@@ -146,9 +148,11 @@ test('une musique plus courte que la vidéo peut être répétée en boucle', as
   await page.locator('#inputAudioFile').setInputFiles(wavFile('courte.wav', 2, 2));
   await expect(status).toContainText('Durée calée sur la musique');
   await expect(loopBox).toBeHidden();
+  await page.locator('#animationConfigTab').click();
   await page.locator('label:has(#rhythmModeDuration)').click();
   await page.locator('#inputTotalDuration').fill('00:30');
   await page.locator('#inputTotalDuration').blur();
+  await page.locator('#musicConfigTab').click();
 
   await expect(loopBox).toBeVisible();
   await expect(loop).not.toBeChecked();

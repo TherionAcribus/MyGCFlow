@@ -38,6 +38,14 @@ Autres repères :
   cale la vidéo dessus) doit y revenir, sinon `#inputDaysPerSecond` reste en
   lecture seule pour les specs suivants — exemple dans `music-options.spec.mjs`
   (`afterEach`).
+- L'onglet Animation & vidéo a quatre sous-onglets (`#animationConfigTab`
+  « Dates & rythme », `#cameraConfigTab`, `#musicConfigTab`,
+  `#recordingConfigTab`). Un contrôle d'un sous-onglet fermé n'est pas
+  visible : l'ouvrir avant tout `fill`/`check`/`toBeVisible` — et un
+  `toBeHidden` y passerait à tort. Recliquer `a[href="#animation"]` ne
+  ramène pas au premier sous-onglet : celui qui était ouvert le reste.
+  `#timingSummary`, `#timingErrors` et `#timingWarnings` vivent au-dessus des
+  sous-onglets, visibles depuis les quatre.
 - Vider les processus orphelins si un run est tué : `taskkill /F /T /PID <id>`
   sur les `node.exe`/`python.exe` dont la ligne de commande contient
   `cli.js`/`run_server.py`. Sous Linux : `pkill -f cli.js` /

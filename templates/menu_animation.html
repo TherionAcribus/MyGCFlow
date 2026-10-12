@@ -9,7 +9,18 @@
                 <div class="card-body">
                     <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="animationConfigTab" data-bs-toggle="tab" data-bs-target="#animationConfigPane" type="button" role="tab" aria-controls="animationConfigPane" aria-selected="true">{{ _("Animation") }}</button>
+                            <button class="nav-link active" id="animationConfigTab" data-bs-toggle="tab" data-bs-target="#animationConfigPane" type="button" role="tab" aria-controls="animationConfigPane" aria-selected="true">{{ _("Dates & rythme") }}</button>
+                        </li>
+                        <!-- Pastilles : signalent ce qui pèse sur la vidéo sans
+                             ouvrir le sous-onglet (suivi activé, musique
+                             incluse) — bascule dans ui.js. -->
+                        {% if mode != 'evolution' %}
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="cameraConfigTab" data-bs-toggle="tab" data-bs-target="#cameraConfigPane" type="button" role="tab" aria-controls="cameraConfigPane" aria-selected="false">{{ _("Caméra") }}<span id="cameraTabDot" class="subtab-dot" hidden><span class="visually-hidden">{{ _("suivi activé") }}</span></span></button>
+                        </li>
+                        {% endif %}
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="musicConfigTab" data-bs-toggle="tab" data-bs-target="#musicConfigPane" type="button" role="tab" aria-controls="musicConfigPane" aria-selected="false">{{ _("Musique") }}<span id="musicTabDot" class="subtab-dot" hidden><span class="visually-hidden">{{ _("musique incluse") }}</span></span></button>
                         </li>
                         <li class="nav-item" role="presentation">
                             <button class="nav-link" id="recordingConfigTab" data-bs-toggle="tab" data-bs-target="#recordingConfigPane" type="button" role="tab" aria-controls="recordingConfigPane" aria-selected="false">{{ _("Export vidéo") }}</button>
@@ -45,6 +56,16 @@
                         <button type="button" class="btn btn-secondary" id="btnStopAnimation" style="display: none;">
                             <i class="ti ti-player-stop me-1"></i>{{ _("Arrêter") }}
                         </button>
+                    </div>
+
+                    <!-- Résultat commun aux sous-onglets (dates, rythme, caméra
+                         et musique pèsent tous sur la durée) : visible quel
+                         que soit celui qui est ouvert.
+                         Synthèse lisible : « 5 841 jours · 20 jours/s · animation 4:52 · fin 3 s · vidéo 4:55 · 8 852 images » -->
+                    <div id="animTimingBar" class="pt-3">
+                        <p class="form-hint text-muted mb-0" id="timingSummary"></p>
+                        <div id="timingErrors" class="alert alert-danger py-2 px-3 mt-2 mb-0" role="alert" style="display:none;"></div>
+                        <div id="timingWarnings" class="alert alert-warning py-2 px-3 mt-2 mb-0" role="status" aria-live="polite" style="display:none;"></div>
                     </div>
 
                     <div class="tab-content pt-3">
@@ -164,8 +185,6 @@
                             </div>
                         </div>
                     </div>
-                    <!-- Synthèse lisible : « 5 841 jours · 20 jours/s · animation 4:52 · fin 3 s · vidéo 4:55 · 8 852 images » -->
-                    <p class="form-hint text-muted mb-1" id="timingSummary"></p>
                     <p class="form-hint text-muted">
                         {{ _("Détail") }} :
                         <span id="spanBaseTime"></span> {{ _("(animation)") }}
@@ -173,8 +192,6 @@
                         + <span id="spanExtraTime"></span> {{ _("(temps additionnel)") }}
                         = <strong><span id="spanTotalTime"></span></strong>
                     </p>
-                    <div id="timingErrors" class="alert alert-danger py-2 px-3" role="alert" style="display:none;"></div>
-                    <div id="timingWarnings" class="alert alert-warning py-2 px-3" role="status" aria-live="polite" style="display:none;"></div>
                     <div class="row g-2">
                         <div class="col-12 col-md-6">
                             <div class="mb-3">
@@ -189,9 +206,12 @@
                         </div>
                     </div>
 
+                    </div>
+
                     {# Suivi de caméra : sans objet en mode Évolution (des milliers de caches à la fois). #}
                     {% if mode != 'evolution' %}
-                    <div class="anim-section-divider mt-3 mb-2">
+                    <div class="tab-pane fade" id="cameraConfigPane" role="tabpanel" aria-labelledby="cameraConfigTab" tabindex="0">
+                    <div class="anim-section-divider mt-0 mb-2">
                         <span class="anim-section-label">{{ _("Suivi de caméra") }}{{ experimental_badge() }}{{ global_scope_badge() }}</span>
                     </div>
                     <div class="row g-2">
@@ -248,14 +268,16 @@
                             </small>
                             <!-- Avertissements propres au suivi (trajets, pauses de dates) :
                                  affichés ici, près du réglage qui les provoque — pas dans
-                                 la zone de la section Rythme (voir renderTimingMessages). -->
+                                 la zone commune aux sous-onglets (voir renderTimingMessages). -->
                             <div id="cameraTimingWarnings" class="alert alert-warning py-2 px-3 mt-2 mb-0" role="status" aria-live="polite" style="display:none;"></div>
                         </div>
+                    </div>
                     </div>
                     {% endif %}
 
                     <!-- Audio utilisateur (lecture/record) -->
-                    <div class="anim-section-divider mt-3 mb-2">
+                    <div class="tab-pane fade" id="musicConfigPane" role="tabpanel" aria-labelledby="musicConfigTab" tabindex="0">
+                    <div class="anim-section-divider mt-0 mb-2">
                         <span class="anim-section-label">{{ _("Musique") }}{{ global_scope_badge() }}</span>
                     </div>
                     <div class="row g-2">

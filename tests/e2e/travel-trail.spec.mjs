@@ -51,6 +51,7 @@ async function enableTrail(page) {
 
 async function setRhythm(page, daysPerSecond) {
   await page.locator('a[href="#animation"]').click();
+  await page.locator('#animationConfigTab').click();
   await page.locator('#inputDaysPerSecond').fill(String(daysPerSecond));
   await page.locator('#inputExtraEndTime').fill('0');
 }
@@ -271,6 +272,7 @@ test('la cible tête du trait suit l\'état réel du trajet', async ({ page }) =
   });
 
   await page.locator('a[href="#animation"]').click();
+  await page.locator('#cameraConfigTab').click();
   await page.locator('#switchCameraFollow').check();
   await page.locator('#selectCameraTarget').selectOption('trail');
   await expect(page.locator('#helpCameraTargetTrail')).toBeVisible();
@@ -285,6 +287,7 @@ test('la cible tête du trait suit l\'état réel du trajet', async ({ page }) =
   await page.locator('#btnGoTrailTab').click();
   await page.locator('#switchTrail').check();
   await page.locator('a[href="#animation"]').click();
+  await page.locator('#cameraConfigTab').click();
   await expect(page.locator('#cameraTrailFallbackWarning')).toBeHidden();
   await expect(page.locator('#selectCameraDynamism')).toBeDisabled();
   // …et la raison du grisage est dite sous le sélecteur.
@@ -297,6 +300,7 @@ test('la cible tête du trait suit l\'état réel du trajet', async ({ page }) =
   await page.locator('#switchTrail').uncheck();
   await page.locator('a[href="#animation"]').click();
   await expect(page.locator('#selectCameraDynamism')).toBeEnabled();
+  await page.locator('#cameraConfigTab').click();
   await expect(page.locator('#helpCameraDynamismTrail')).toBeHidden();
   await expect(page.locator('#timingSummary')).toContainText('trajets de caméra');
   await expect(page.locator('#cameraTrailFallbackWarning')).toBeVisible();
@@ -314,6 +318,7 @@ test('le suivi « tête du trait » fait glisser la caméra derrière le stylo',
 
   // Le choix de cible est proposé dans l'onglet Animation, activé par le suivi.
   await page.locator('a[href="#animation"]').click();
+  await page.locator('#cameraConfigTab').click();
   await page.locator('#switchCameraFollow').check();
   await expect(page.locator('#selectCameraTarget')).toBeEnabled();
   // Retour au cadrage de départ : coché par défaut, vérifié plus bas.
@@ -398,6 +403,7 @@ test('le suivi « tête du trait » fait glisser la caméra derrière le stylo',
   expect(Math.abs(centreFinal[1] - centrePose[1])).toBeLessThan(1);
 
   // Préférences globales : les restaurer pour les specs suivantes (page partagée).
+  await page.locator('#cameraConfigTab').click();
   await page.locator('#selectCameraTarget').selectOption('days');
   await page.locator('#switchCameraFollow').uncheck();
 });
@@ -409,6 +415,7 @@ test("le suivi « tête du trait » écarte le zoom quand le stylo avance vite",
   await enableTrail(page);
 
   await page.locator('a[href="#animation"]').click();
+  await page.locator('#cameraConfigTab').click();
   await page.locator('#switchCameraFollow').check();
   await page.locator('#selectCameraTarget').selectOption('trail');
   // Rythme rapide : chaque tronçon se trace en ~un quart de seconde, assez
@@ -462,6 +469,7 @@ test("le suivi « tête du trait » écarte le zoom quand le stylo avance vite",
   expect(distinct.size).toBeGreaterThan(1);
 
   // Préférences globales : les restaurer pour les specs suivantes (page partagée).
+  await page.locator('#cameraConfigTab').click();
   await page.locator('#selectCameraTarget').selectOption('days');
   await page.locator('#switchCameraFollow').uncheck();
 });

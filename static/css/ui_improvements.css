@@ -2019,6 +2019,20 @@ background: rgba(33, 150, 243, 0.04);
     margin-top: 8px;
 }
 
+/* Pastille d'un sous-onglet Animation : réglage actif (suivi, musique). */
+.subtab-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-left: 6px;
+    border-radius: 50%;
+    background-color: var(--color-accent);
+    vertical-align: middle;
+}
+.subtab-dot[hidden] {
+    display: none;
+}
+
 /* Champs de tempo : celui qui pilote est mis en avant, l'autre affiche un
    résultat calculé (atténué, mais toujours saisissable hors mode musique). */
 .rhythm-computed-hint {
