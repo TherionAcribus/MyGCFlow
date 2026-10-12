@@ -10,7 +10,8 @@ fichiers validés dans un dossier temporaire indexé par un jeton opaque
 (TTL, taille bornée, consommé une fois). La tâche d'import relit ces
 fichiers, reparse puis applique les upserts — les diffs sont donc toujours
 recalculés sur l'état courant de la base (révision vérifiée, avertissement
-si elle a bougé depuis l'aperçu).
+si elle a bougé depuis l'aperçu). Le commit ne transmet que le jeton et les
+conflits que l'utilisateur tranche pour la valeur reçue (`overrides`).
 """
 
 from __future__ import annotations
@@ -61,6 +62,7 @@ PENDING_TTL_SECONDS = 30 * 60
 MAX_LAB_FILE_BYTES = 64 * 1024 * 1024       # loin au-dessus des exports réels
 MAX_LAB_FILES = 64                           # les exports Lab2Gpx sont batchés
 MAX_DETAIL_ITEMS = 100                       # bornage des diagnostics renvoyés
+MAX_OVERRIDES = 1000                         # choix « remplacer » par commit
 PENDING_ROOT = Path(tempfile.gettempdir()) / "mygcflow-lab-imports"
 
 # Ordre d'application : l'historique crée les découvertes, les coordonnées
@@ -174,6 +176,30 @@ def _load_pending(token: str) -> tuple[dict | None, Path | None, str | None]:
     return manifest, folder, None
 
 
+def _clean_overrides(raw) -> list:
+    """Choix « remplacer » reçus du client, réduits aux entrées bien formées
+    (stockables telles quelles dans le manifest)."""
+    kept = []
+    for item in (raw if isinstance(raw, list) else [])[:MAX_OVERRIDES]:
+        if not isinstance(item, dict):
+            continue
+        uid, field, incoming = (item.get(k) for k in ("local_uid", "field", "incoming"))
+        if not isinstance(uid, str) or field not in lab_store.OVERRIDABLE_FIELDS:
+            continue
+        try:
+            lab_store.override_key(uid, field, incoming)
+        except (TypeError, ValueError):
+            continue
+        kept.append({"local_uid": uid, "field": field, "incoming": incoming})
+    return kept
+
+
+def _override_keys(items) -> frozenset:
+    return frozenset(
+        lab_store.override_key(o["local_uid"], o["field"], o["incoming"])
+        for o in _clean_overrides(items))
+
+
 def _cap_items(items, limit=MAX_DETAIL_ITEMS):
     return items[:limit] + ([{"truncated": len(items) - limit}] if len(items) > limit else [])
 
@@ -197,6 +223,7 @@ def run_lab_import_task(status, app, folder_path: str, manifest_rev, locale=None
                                            "resolved": 0, "ignored": 0, "rejected": 0,
                                            "conflicts": 0}
                     warnings = []
+                    overrides = _override_keys(manifest.get("overrides"))
                     n = len(files)
                     for i, entry in enumerate(files):
                         status.set_progress(
@@ -204,7 +231,8 @@ def run_lab_import_task(status, app, folder_path: str, manifest_rev, locale=None
                             _("Import Labs : %(name)s", name=entry["name"]))
                         raw = (folder / entry["stored"]).read_bytes()
                         parsed = _PARSE_BY_FORMAT[entry["format"]](raw)
-                        summary = _COMMIT_BY_FORMAT[entry["format"]](db.session, parsed)
+                        summary = _COMMIT_BY_FORMAT[entry["format"]](
+                            db.session, parsed, overrides=overrides)
                         results.append({"name": entry["name"], "format": entry["format"],
                                         "summary": _slim_summary(summary)})
                         for k in totals:
@@ -217,8 +245,8 @@ def run_lab_import_task(status, app, folder_path: str, manifest_rev, locale=None
                             and rev_now != manifest_rev + n:
                         warnings.append({
                             "field": "collection_revision",
-                            "reason": "la collection a été modifiée entre l'aperçu et "
-                                      "l'enregistrement — diff recalculé sur l'état courant"})
+                            "reason": _("la collection a été modifiée entre l'aperçu et "
+                                        "l'enregistrement — diff recalculé sur l'état courant")})
                     status.set_progress(98, _("Import Labs : finalisation"))
                     _invalidate_after_mutation("labs_import")
                     stats = lab_store.collection_status(db.session)
@@ -489,8 +517,8 @@ def import_preview():
 
 @labs_bp.route('/api/labs/import/commit', methods=['POST'])
 def import_commit():
-    token = (request.get_json(silent=True) or {}).get("import_token") \
-        or request.form.get("import_token")
+    body = request.get_json(silent=True) or {}
+    token = body.get("import_token") or request.form.get("import_token")
     manifest, folder, error = _load_pending(token)
     if error:
         return jsonify({'success': False, 'message': _(error)}), 400
@@ -503,6 +531,7 @@ def import_commit():
     # Le jeton est consommé dès la soumission : un second commit avec le même
     # jeton échouera, même si la tâche plante ensuite.
     manifest["_consumed"] = True
+    manifest["overrides"] = _clean_overrides(body.get("overrides"))
     try:
         (folder / "manifest.json").write_text(
             json.dumps(manifest, ensure_ascii=False), "utf-8")
@@ -596,6 +625,7 @@ def resolve_discovery(local_uid):
             row.coordinate_source = lab_store.USER_CORRECTION
             row.coordinate_status = LabDiscovery.COORD_RESOLVED
             row.coord_fetch_failed_at = None
+            row.suggested_latitude = row.suggested_longitude = None
         if has_date:
             row.found_date = pd.found_date
             row.date_precision = "day"

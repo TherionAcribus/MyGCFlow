@@ -1,6 +1,6 @@
 """Formats et parsing Adventure Lab — historique et coordonnées.
 
-Module pur (sans Flask), testable sur fichiers. Deux formats supportés :
+Module sans dépendance obligatoire à Flask, testable sur fichiers. Deux formats supportés :
 
 - `mygcflow-lab-finds` v1 : export JSON de l'historique `/logs` produit par
   `tools/export_lab_logs.js` — identifiants d'étapes + dates de découverte,
@@ -33,6 +33,15 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, timezone, timedelta
 from io import BytesIO
 from pathlib import Path
+
+# Les raisons (erreurs, avertissements) remontent jusqu'à l'interface : elles
+# passent par gettext quand Flask-Babel est là, sans en faire une dépendance —
+# hors application, le texte source français est rendu tel quel.
+try:
+    from flask_babel import gettext as _
+except ImportError:  # module utilisé seul (outils, scripts)
+    def _(message, **variables):
+        return message % variables if variables else message
 
 FORMAT_LAB_FINDS = "mygcflow-lab-finds"
 LAB_FINDS_SCHEMA_VERSION = 1
@@ -97,9 +106,9 @@ def parse_lab_datetime(found_at, found_date_field=None) -> ParsedDate:
         try:
             declared = date.fromisoformat(found_date_field.strip())
         except ValueError:
-            out.warnings.append("found_date invalide (jour inexistant)")
+            out.warnings.append(_("found_date invalide (jour inexistant)"))
     elif found_date_field not in (None, ""):
-        out.warnings.append("found_date au format non ISO — valeur ignorée")
+        out.warnings.append(_("found_date au format non ISO — valeur ignorée"))
 
     text = found_at.strip() if isinstance(found_at, str) else None
     if text:
@@ -108,7 +117,7 @@ def parse_lab_datetime(found_at, found_date_field=None) -> ParsedDate:
             try:
                 dt = datetime.fromisoformat(iso)
             except ValueError:
-                out.warnings.append("found_at illisible")
+                out.warnings.append(_("found_at illisible"))
                 dt = None
             if dt is not None:
                 if dt.tzinfo is not None:
@@ -126,17 +135,17 @@ def parse_lab_datetime(found_at, found_date_field=None) -> ParsedDate:
                     out.found_date = dt.date()
                     out.precision = "day"
                     out.basis = "source_naive_instant"
-                    out.warnings.append("found_at sans fuseau — date civile seule retenue")
+                    out.warnings.append(_("found_at sans fuseau — date civile seule retenue"))
         elif ISO_DATE_RE.match(text):
             try:
                 out.found_date = date.fromisoformat(text)
                 out.precision = "day"
                 out.basis = "source_date_only"
             except ValueError:
-                out.warnings.append("found_at date seule invalide")
+                out.warnings.append(_("found_at date seule invalide"))
         else:
             # Format ambigu ou non ISO (ex. 14/05/2024) : jamais deviné.
-            out.warnings.append("found_at ambigu ou non ISO — rejeté")
+            out.warnings.append(_("found_at ambigu ou non ISO — rejeté"))
     elif declared is not None:
         out.precision = "day"
         out.basis = "source_date_only"
@@ -144,7 +153,7 @@ def parse_lab_datetime(found_at, found_date_field=None) -> ParsedDate:
     if out.found_date is None:
         out.found_date = declared
     elif declared is not None and declared != out.found_date:
-        out.warnings.append("found_date en désaccord avec l'instant — instant retenu")
+        out.warnings.append(_("found_date en désaccord avec l'instant — instant retenu"))
 
     if out.found_date is None:
         out.precision = None
@@ -171,18 +180,18 @@ def validate_coordinates(lat_raw, lon_raw) -> CoordCheck:
         lat = float(lat_raw)
         lon = float(lon_raw)
     except (TypeError, ValueError):
-        out.warnings.append("coordonnées non numériques")
+        out.warnings.append(_("coordonnées non numériques"))
         return out
     if not (lat == lat and lon == lon) or lat in (float("inf"), -float("inf")) \
             or lon in (float("inf"), -float("inf")):
-        out.warnings.append("coordonnées non finies")
+        out.warnings.append(_("coordonnées non finies"))
         return out
     if not (-90.0 <= lat <= 90.0) or not (-180.0 <= lon <= 180.0):
-        out.warnings.append("coordonnées hors bornes")
+        out.warnings.append(_("coordonnées hors bornes"))
         return out
     out.latitude, out.longitude, out.ok = lat, lon, True
     if lat == 0.0 and lon == 0.0:
-        out.warnings.append("(0,0) — sentinelle possible, à vérifier")
+        out.warnings.append(_("(0,0) — sentinelle possible, à vérifier"))
     return out
 
 
@@ -295,21 +304,22 @@ def parse_lab_finds(data: bytes | str) -> HistoryParseResult:
     try:
         doc = json.loads(text)
     except (json.JSONDecodeError, ValueError) as exc:
-        res.errors.append({"field": None, "reason": f"JSON invalide : {exc}"})
+        res.errors.append({"field": None, "reason": _("JSON invalide : %(error)s", error=exc)})
         return res
     if not isinstance(doc, dict) or doc.get("format") != FORMAT_LAB_FINDS:
-        res.errors.append({"field": "format", "reason": "pas un export mygcflow-lab-finds"})
+        res.errors.append({"field": "format", "reason": _("pas un export mygcflow-lab-finds")})
         return res
     if doc.get("schema_version") != LAB_FINDS_SCHEMA_VERSION:
         res.errors.append({"field": "schema_version",
-                           "reason": f"version non supportée : {doc.get('schema_version')!r}"})
+                           "reason": _("version non supportée : %(version)s",
+                                       version=repr(doc.get('schema_version')))})
         return res
     items = doc.get("discoveries")
     if not isinstance(items, list):
-        res.errors.append({"field": "discoveries", "reason": "absent ou n'est pas une liste"})
+        res.errors.append({"field": "discoveries", "reason": _("absent ou n'est pas une liste")})
         return res
     if len(items) > _MAX_DISCOVERIES:
-        res.errors.append({"field": "discoveries", "reason": "trop d'enregistrements"})
+        res.errors.append({"field": "discoveries", "reason": _("trop d'enregistrements")})
         return res
 
     exported_at = None
@@ -333,7 +343,7 @@ def parse_lab_finds(data: bytes | str) -> HistoryParseResult:
     seen_keys = set()
     for idx, rec in enumerate(items):
         if not isinstance(rec, dict):
-            res.rejected.append((idx, "enregistrement non objet"))
+            res.rejected.append((idx, _("enregistrement non objet")))
             continue
 
         stage_raw = rec.get("stage_id")
@@ -341,22 +351,22 @@ def parse_lab_finds(data: bytes | str) -> HistoryParseResult:
         adventure_uuid = normalize_uuid(rec.get("adventure_id"))
         warnings = []
         if stage_raw not in (None, "") and stage_uuid is None:
-            warnings.append("stage_id non UUID — identifiant ignoré")
+            warnings.append(_("stage_id non UUID — identifiant ignoré"))
         if rec.get("adventure_id") not in (None, "") and adventure_uuid is None:
-            warnings.append("adventure_id non UUID — identifiant ignoré")
+            warnings.append(_("adventure_id non UUID — identifiant ignoré"))
 
         log_id = rec.get("log_id")
         local_key, record_key = _local_key(stage_uuid, log_id, adventure_uuid, idx)
         if local_key is None:
             stage_title = rec.get("stage_title")
             if stage_uuid is None and not stage_title:
-                res.rejected.append((idx, "aucune identité exploitable (ni UUID, ni log_id, ni titre)"))
+                res.rejected.append((idx, _("aucune identité exploitable (ni UUID, ni log_id, ni titre)")))
                 continue
             digest = hashlib.sha256(
                 f"{adventure_uuid}|{stage_title}|{idx}".encode("utf-8")
             ).hexdigest()[:16]
             local_key = f"row:{digest}"
-            warnings.append("identité dérivée de la ligne — reimport non garanti")
+            warnings.append(_("identité dérivée de la ligne — reimport non garanti"))
 
         if local_key in seen_keys:
             res.duplicates += 1
@@ -374,7 +384,7 @@ def parse_lab_finds(data: bytes | str) -> HistoryParseResult:
             if cc.ok:
                 lat, lon = cc.latitude, cc.longitude
             else:
-                warnings.append("coordonnées historique invalides — ignorées")
+                warnings.append(_("coordonnées historique invalides — ignorées"))
 
         res.drafts.append(DiscoveryDraft(
             local_key=local_key,
@@ -445,18 +455,18 @@ def parse_lab2gpx_gpx(data: bytes | str) -> CoordParseResult:
     else:
         raw = str(data).encode("utf-8")
     if DTD_RE.search(raw.decode("utf-8", "replace")):
-        res.errors.append({"field": None, "reason": "DOCTYPE/ENTITY interdit (XML non sûr)"})
+        res.errors.append({"field": None, "reason": _("DOCTYPE/ENTITY interdit (XML non sûr)")})
         return res
     try:
         events = ET.iterparse(BytesIO(raw), events=("end",))
-        for _, elem in events:
+        for _event, elem in events:
             if _local_name(elem.tag) != "wpt":
                 continue
             idx = len(res.stages) + len(res.rejected)
             warnings = []
             cc = validate_coordinates(elem.get("lat"), elem.get("lon"))
             if not cc.ok:
-                res.rejected.append((idx, "; ".join(cc.warnings) or "coordonnées invalides"))
+                res.rejected.append((idx, "; ".join(cc.warnings) or _("coordonnées invalides")))
                 elem.clear()
                 continue
             warnings.extend(cc.warnings)
@@ -466,11 +476,11 @@ def parse_lab2gpx_gpx(data: bytes | str) -> CoordParseResult:
             adv_el = _find(elem, "uuid")
             adventure_uuid = normalize_uuid(adv_el.text if adv_el is not None else None)
             if stage_uuid is None:
-                res.rejected.append((idx, "pas d'UUID d'étape (gsak:Guid absent ou mal formé)"))
+                res.rejected.append((idx, _("pas d'UUID d'étape (gsak:Guid absent ou mal formé)")))
                 elem.clear()
                 continue
             if guid_el is not None and stage_uuid is None:
-                warnings.append("gsak:Guid non UUID")
+                warnings.append(_("gsak:Guid non UUID"))
 
             desc = _child_text(elem, "desc")
             url = _child_text(elem, "url")
@@ -481,7 +491,7 @@ def parse_lab2gpx_gpx(data: bytes | str) -> CoordParseResult:
                 stages_total = _safe_int(_child_text(adv_block, "stagesTotal"))
                 stages_completed = _safe_int(_child_text(adv_block, "stagesCompleted"))
             if adventure_uuid is None:
-                warnings.append("UUID d'Adventure absent — contrôle de cohérence impossible")
+                warnings.append(_("UUID d'Adventure absent — contrôle de cohérence impossible"))
 
             res.stages.append(StageCoord(
                 index=idx,
@@ -498,7 +508,7 @@ def parse_lab2gpx_gpx(data: bytes | str) -> CoordParseResult:
             ))
             elem.clear()
     except ET.ParseError as exc:
-        res.errors.append({"field": None, "reason": f"XML illisible : {exc}"})
+        res.errors.append({"field": None, "reason": _("XML illisible : %(error)s", error=exc)})
         return res
 
     res.meta = {"format": FORMAT_LAB2GPX_GPX, "wpt_seen": len(res.stages) + len(res.rejected)}

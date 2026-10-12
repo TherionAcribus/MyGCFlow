@@ -81,6 +81,10 @@ class LabDiscovery(db.Model):
     # Dernière fois où lab2gpx n'a pas su servir l'Adventure de cette étape
     # (archivée, cassée) : l'auto-fetch ne la redemande pas tout de suite.
     coord_fetch_failed_at = db.Column(db.DateTime)
+    # Coordonnées proposées (même titre dans l'Adventure, UUID d'étape
+    # différent) : jamais appliquées seules, l'utilisateur les valide.
+    suggested_latitude = db.Column(db.Float)
+    suggested_longitude = db.Column(db.Float)
     source_format = db.Column(db.String(32))
     source_record_key = db.Column(db.String(128))
     is_archived = db.Column(db.Boolean, default=False)

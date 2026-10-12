@@ -14,14 +14,20 @@ Règles du plan implémentées :
 - `coordinate_source == 'user_correction'` a priorité sur tout
   enrichissement fichier ultérieur ;
 - correspondance par UUID d'étape uniquement (automatique) ; le titre dans
-  une Adventure connue n'est qu'une proposition listée, jamais appliquée.
+  une Adventure connue n'est qu'une proposition, mémorisée sur l'étape quand
+  elle est unique et jamais appliquée sans validation ;
+- un conflit de date ou de coordonnées ne cède que sur choix explicite
+  (`overrides`), valable pour la seule valeur montrée à l'aperçu.
 """
 
 from __future__ import annotations
 
 import json
 import threading
+from collections import Counter
 from datetime import datetime, timezone
+
+from flask_babel import gettext as _
 
 from lab_formats import (
     SOURCE_LAB2GPX, SOURCE_LAB_FINDS, normalize_title,
@@ -31,6 +37,12 @@ from models import LabCollection, LabDiscovery
 COLLECTION_UID = "default"
 USER_CORRECTION = "user_correction"
 
+# Conflits que l'utilisateur peut trancher en faveur de la valeur reçue ; un
+# identifiant contradictoire (adventure_uuid, stage_uuid) n'en fait pas partie.
+OVERRIDABLE_FIELDS = ("found_date", "coordinates")
+# ~1 m : en deçà, deux positions sont la même (arrondis d'une source à l'autre).
+COORD_TOLERANCE_DEG = 1e-5
+
 # Les mutations Labs (imports, résolutions, clear) se font sous ce verrou :
 # l'exclusivité ne peut pas reposer sur les seuls boutons désactivés côté UI.
 LAB_MUTATION_LOCK = threading.Lock()
@@ -38,6 +50,38 @@ LAB_MUTATION_LOCK = threading.Lock()
 
 def _utcnow() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+def override_key(local_uid, field, incoming) -> tuple:
+    """Clé d'un choix « remplacer ». La valeur reçue en fait partie : le
+    choix ne vaut que pour le conflit montré, pas pour une autre valeur
+    qu'apporterait un fichier différent. Lève TypeError/ValueError si
+    `incoming` n'a pas la forme du champ."""
+    if field == "coordinates":
+        lat, lon = incoming
+        return (local_uid, field, (float(lat), float(lon)))
+    return (local_uid, field, str(incoming))
+
+
+def _same_coords(lat_a, lon_a, lat_b, lon_b) -> bool:
+    if None in (lat_a, lon_a, lat_b, lon_b):
+        return False
+    return (abs(lat_a - lat_b) <= COORD_TOLERANCE_DEG
+            and abs(lon_a - lon_b) <= COORD_TOLERANCE_DEG)
+
+
+def _conflict(row, field, existing, incoming, **extra) -> dict:
+    """Conflit décrit pour l'interface : de quoi nommer l'étape et rejouer
+    le choix (`local_uid` + `field` + `incoming`)."""
+    return {"local_uid": row.local_uid, "stage_title": row.stage_title,
+            "adventure_title": row.adventure_title, "field": field,
+            "existing": existing, "incoming": incoming, **extra}
+
+
+def _reason_counts(field, reasons) -> list:
+    """Avertissements par ligne regroupés : une entrée par raison, comptée."""
+    return [{"field": field, "reason": reason, "count": count}
+            for reason, count in Counter(reasons).most_common()]
 
 
 def get_collection(session) -> LabCollection | None:
@@ -66,12 +110,22 @@ def _index_existing(session, collection_id):
     return by_uuid, by_local
 
 
-def _diff_draft(draft, row) -> tuple[dict, list]:
+def _diff_draft(draft, row, overrides=frozenset()) -> tuple[dict, list]:
     """Calcule les champs à écrire et les conflits pour un existant.
 
     Retourne (updates, conflicts) — updates vide signifie 'unchanged'.
     """
     updates, conflicts = {}, []
+
+    def date_conflict(**extra):
+        incoming = str(draft.found_date)
+        if override_key(row.local_uid, "found_date", incoming) in overrides:
+            updates["found_date"] = draft.found_date
+            updates["found_at_utc"] = draft.found_at_utc
+            updates.update(date_meta)
+        else:
+            conflicts.append(_conflict(row, "found_date", str(row.found_date),
+                                       incoming, **extra))
 
     def fill_or_keep(attr, incoming):
         if incoming in (None, ""):
@@ -90,7 +144,7 @@ def _diff_draft(draft, row) -> tuple[dict, list]:
         if current in (None, ""):
             updates[attr] = incoming
         elif current != incoming:
-            conflicts.append({"field": label, "existing": current, "incoming": incoming})
+            conflicts.append(_conflict(row, label, current, incoming))
 
     fill_or_conflict("adventure_uuid", draft.adventure_uuid, "adventure_uuid")
     fill_or_conflict("stage_uuid", draft.stage_uuid, "stage_uuid")
@@ -120,18 +174,11 @@ def _diff_draft(draft, row) -> tuple[dict, list]:
     elif row.date_basis == USER_CORRECTION:
         # Correction manuelle : prioritaire, comme pour les coordonnées.
         if row.found_date != draft.found_date:
-            conflicts.append({
-                "field": "found_date", "existing": str(row.found_date),
-                "incoming": str(draft.found_date),
-                "protected": USER_CORRECTION,
-            })
+            date_conflict(protected=USER_CORRECTION)
     elif row.found_date != draft.found_date or (
         row.found_at_utc and draft.found_at_utc and row.found_at_utc != draft.found_at_utc
     ):
-        conflicts.append({
-            "field": "found_date", "existing": str(row.found_date),
-            "incoming": str(draft.found_date),
-        })
+        date_conflict()
     elif draft.found_at_utc is not None or row.found_at_utc is None:
         # Même date : la source peut préciser (instant, offset), jamais
         # dégrader un instant connu en simple date.
@@ -142,19 +189,23 @@ def _diff_draft(draft, row) -> tuple[dict, list]:
 
     # Coordonnées portées par l'historique (rare) : même règle de conflit.
     if draft.latitude is not None and draft.longitude is not None:
-        if row.latitude is None or row.longitude is None:
+        incoming = [draft.latitude, draft.longitude]
+        take = row.latitude is None or row.longitude is None
+        if not take and row.coordinate_source != USER_CORRECTION and not _same_coords(
+                row.latitude, row.longitude, draft.latitude, draft.longitude):
+            if override_key(row.local_uid, "coordinates", incoming) in overrides:
+                take = True
+            else:
+                conflicts.append(_conflict(
+                    row, "coordinates", [row.latitude, row.longitude], incoming))
+        if take:
             updates.update({
                 "latitude": draft.latitude, "longitude": draft.longitude,
                 "coordinate_scope": draft.coordinate_scope or "stage",
                 "coordinate_source": SOURCE_LAB_FINDS,
                 "coordinate_status": LabDiscovery.COORD_RESOLVED,
-            })
-        elif (row.latitude != draft.latitude or row.longitude != draft.longitude) \
-                and row.coordinate_source != USER_CORRECTION:
-            conflicts.append({
-                "field": "coordinates",
-                "existing": [row.latitude, row.longitude],
-                "incoming": [draft.latitude, draft.longitude],
+                "coord_fetch_failed_at": None,
+                "suggested_latitude": None, "suggested_longitude": None,
             })
 
     if draft.is_archived and not row.is_archived:
@@ -163,7 +214,7 @@ def _diff_draft(draft, row) -> tuple[dict, list]:
     return updates, conflicts
 
 
-def _apply_history(session, parsed, commit: bool) -> dict:
+def _apply_history(session, parsed, commit: bool, overrides=frozenset()) -> dict:
     collection = get_or_create_collection(session) if commit else get_collection(session)
     collection_id = collection.id if collection else None
     by_uuid, by_local = _index_existing(session, collection_id) if collection_id else ({}, {})
@@ -215,10 +266,10 @@ def _apply_history(session, parsed, commit: bool) -> dict:
                 ))
             continue
 
-        updates, row_conflicts = _diff_draft(draft, row)
+        updates, row_conflicts = _diff_draft(draft, row, overrides)
         if row_conflicts:
             counts["conflicts"] += 1
-            conflicts.extend({**c, "local_uid": row.local_uid} for c in row_conflicts)
+            conflicts.extend(row_conflicts)
         if updates:
             counts["updated"] += 1
             if commit:
@@ -231,7 +282,12 @@ def _apply_history(session, parsed, commit: bool) -> dict:
     rejected = len(parsed.rejected)
     if parsed.duplicates:
         warnings.append({"field": "discoveries",
-                         "reason": f"{parsed.duplicates} doublon(s) dédoublonné(s)"})
+                         "reason": _("%(n)s doublon(s) dédoublonné(s)",
+                                     n=parsed.duplicates)})
+    warnings.extend(_reason_counts(
+        "discoveries",
+        [w for d in parsed.drafts for w in d.warnings]
+        + [reason for _idx, reason in parsed.rejected]))
 
     summary = {**counts, "rejected": rejected, "conflicts_detail": conflicts,
                "warnings": warnings}
@@ -246,7 +302,7 @@ def _apply_history(session, parsed, commit: bool) -> dict:
                 collection.account_label = label
             elif collection.account_label != label:
                 warnings.append({"field": "account",
-                                 "reason": "pseudo différent de la collection — mélange possible"})
+                                 "reason": _("pseudo différent de la collection — mélange possible")})
         collection.revision = (collection.revision or 0) + 1
     return summary
 
@@ -264,12 +320,12 @@ def _collection_stats(session, collection_id) -> dict:
     return {"total": total, "ready": ready, "unresolved": unresolved}
 
 
-def commit_history(session, parsed) -> dict:
+def commit_history(session, parsed, overrides=frozenset()) -> dict:
     """Applique un export historique analysé. Retourne le résumé complet."""
     if not parsed.ok:
         raise ValueError("import refusé : le fichier a des erreurs structurelles")
     with LAB_MUTATION_LOCK:
-        summary = _apply_history(session, parsed, commit=True)
+        summary = _apply_history(session, parsed, commit=True, overrides=overrides)
         collection = get_collection(session)
         stats = _collection_stats(session, collection.id)
         summary.update(stats)
@@ -297,8 +353,11 @@ def preview_history(session, parsed) -> dict:
 # Enrichissement coordonnées
 # ---------------------------------------------------------------------------
 
-def _proposals(session, collection_id, coords_by_adv, resolved_uuids):
-    """Propositions titre-dans-Adventure (règle 3) : listées, jamais appliquées."""
+def _proposals(session, collection_id, coords_by_adv, resolved_uuids, store):
+    """Propositions titre-dans-Adventure (règle 3) : listées, jamais appliquées.
+
+    `store` mémorise sur l'étape la proposition unique, pour la soumettre à
+    l'utilisateur plus tard ; plusieurs candidates ne désignent rien."""
     proposals = []
     rows = session.query(LabDiscovery).filter(
         LabDiscovery.collection_id == collection_id,
@@ -314,6 +373,9 @@ def _proposals(session, collection_id, coords_by_adv, resolved_uuids):
         ]
         if not candidates:
             continue
+        if store and len(candidates) == 1:
+            row.suggested_latitude = candidates[0].latitude
+            row.suggested_longitude = candidates[0].longitude
         proposals.append({
             "local_uid": row.local_uid,
             "stage_title": row.stage_title,
@@ -327,7 +389,7 @@ def _proposals(session, collection_id, coords_by_adv, resolved_uuids):
     return proposals
 
 
-def _apply_coords(session, parsed, commit: bool) -> dict:
+def _apply_coords(session, parsed, commit: bool, overrides=frozenset()) -> dict:
     collection = get_or_create_collection(session) if commit else get_collection(session)
     collection_id = collection.id if collection else None
     by_uuid = {}
@@ -338,11 +400,28 @@ def _apply_coords(session, parsed, commit: bool) -> dict:
         ):
             by_uuid[row.stage_uuid] = row
 
-    counts = {"resolved": 0, "unchanged": 0, "ignored": 0, "conflicts": 0}
+    counts = {"resolved": 0, "updated": 0, "unchanged": 0, "ignored": 0,
+              "conflicts": 0}
     conflicts, warnings = [], list(parsed.errors)
     resolved_uuids = set()
     coords_by_adv = {}
     found_flag_mismatch = 0
+
+    def write(row, stage):
+        row.latitude = stage.latitude
+        row.longitude = stage.longitude
+        row.coordinate_scope = "stage"
+        row.coordinate_source = SOURCE_LAB2GPX
+        row.coordinate_status = LabDiscovery.COORD_RESOLVED
+        row.coord_fetch_failed_at = None
+        row.suggested_latitude = row.suggested_longitude = None
+        if not row.adventure_uuid:
+            row.adventure_uuid = stage.adventure_uuid
+        if not row.adventure_url and stage.adventure_url:
+            row.adventure_url = stage.adventure_url
+        if not row.stage_title and stage.stage_title:
+            row.stage_title = stage.stage_title
+        row.updated_at = _utcnow()
 
     for stage in parsed.stages:
         if stage.adventure_uuid:
@@ -358,54 +437,44 @@ def _apply_coords(session, parsed, commit: bool) -> dict:
         if (row.adventure_uuid and stage.adventure_uuid
                 and row.adventure_uuid != stage.adventure_uuid):
             counts["conflicts"] += 1
-            conflicts.append({"local_uid": row.local_uid, "field": "adventure_uuid",
-                              "existing": row.adventure_uuid, "incoming": stage.adventure_uuid})
-            continue
-
-        if row.coordinate_source == USER_CORRECTION:
-            if row.latitude != stage.latitude or row.longitude != stage.longitude:
-                counts["conflicts"] += 1
-                conflicts.append({"local_uid": row.local_uid, "field": "coordinates",
-                                  "existing": [row.latitude, row.longitude],
-                                  "incoming": [stage.latitude, stage.longitude],
-                                  "protected": "user_correction"})
-            else:
-                counts["unchanged"] += 1
+            conflicts.append(_conflict(row, "adventure_uuid",
+                                       row.adventure_uuid, stage.adventure_uuid))
             continue
 
         if row.latitude is not None and row.longitude is not None:
-            if row.latitude == stage.latitude and row.longitude == stage.longitude:
+            incoming = [stage.latitude, stage.longitude]
+            if _same_coords(row.latitude, row.longitude, *incoming):
                 counts["unchanged"] += 1
+            elif override_key(row.local_uid, "coordinates", incoming) in overrides:
+                # Choix explicite de l'aperçu — prime aussi sur une
+                # correction manuelle, puisque l'utilisateur la remplace.
+                counts["updated"] += 1
+                if commit:
+                    write(row, stage)
             else:
                 counts["conflicts"] += 1
-                conflicts.append({"local_uid": row.local_uid, "field": "coordinates",
-                                  "existing": [row.latitude, row.longitude],
-                                  "incoming": [stage.latitude, stage.longitude]})
+                protected = {"protected": USER_CORRECTION} \
+                    if row.coordinate_source == USER_CORRECTION else {}
+                conflicts.append(_conflict(
+                    row, "coordinates", [row.latitude, row.longitude], incoming,
+                    **protected))
             continue
 
         counts["resolved"] += 1
         if commit:
-            row.latitude = stage.latitude
-            row.longitude = stage.longitude
-            row.coordinate_scope = "stage"
-            row.coordinate_source = SOURCE_LAB2GPX
-            row.coordinate_status = LabDiscovery.COORD_RESOLVED
-            row.coord_fetch_failed_at = None
-            if not row.adventure_uuid:
-                row.adventure_uuid = stage.adventure_uuid
-            if not row.adventure_url and stage.adventure_url:
-                row.adventure_url = stage.adventure_url
-            if not row.stage_title and stage.stage_title:
-                row.stage_title = stage.stage_title
-            row.updated_at = _utcnow()
+            write(row, stage)
 
     if found_flag_mismatch:
         warnings.append({"field": "sym",
-                         "reason": f"{found_flag_mismatch} étape(s) de l'historique "
-                                   "non marquées trouvées dans le GPX"})
+                         "reason": _("%(n)s étape(s) de l'historique non marquées "
+                                     "trouvées dans le GPX", n=found_flag_mismatch)})
+    warnings.extend(_reason_counts(
+        "stages",
+        [w for s in parsed.stages for w in s.warnings]
+        + [reason for _idx, reason in parsed.rejected]))
 
-    proposals = _proposals(session, collection_id, coords_by_adv, resolved_uuids) \
-        if collection_id else []
+    proposals = _proposals(session, collection_id, coords_by_adv, resolved_uuids,
+                           store=commit) if collection_id else []
 
     summary = {**counts, "rejected": len(parsed.rejected),
                "conflicts_detail": conflicts, "warnings": warnings,
@@ -416,12 +485,12 @@ def _apply_coords(session, parsed, commit: bool) -> dict:
     return summary
 
 
-def commit_coordinates(session, parsed) -> dict:
+def commit_coordinates(session, parsed, overrides=frozenset()) -> dict:
     """Enrichit les découvertes avec un fichier coordonnées analysé."""
     if not parsed.ok:
         raise ValueError("import refusé : le fichier a des erreurs structurelles")
     with LAB_MUTATION_LOCK:
-        summary = _apply_coords(session, parsed, commit=True)
+        summary = _apply_coords(session, parsed, commit=True, overrides=overrides)
         collection = get_collection(session)
         stats = _collection_stats(session, collection.id) if collection else \
             {"total": 0, "ready": 0, "unresolved": 0}
@@ -540,6 +609,12 @@ def unresolved_discoveries(session, limit=200, offset=0) -> list:
                 "found_date": r.found_date.isoformat() if r.found_date else None,
                 "is_archived": r.is_archived,
                 "reasons": reasons,
+                "suggestion": (
+                    {"latitude": r.suggested_latitude,
+                     "longitude": r.suggested_longitude}
+                    if r.suggested_latitude is not None
+                    and r.suggested_longitude is not None
+                    and (r.latitude is None or r.longitude is None) else None),
             })
     return out[offset:offset + limit]
 

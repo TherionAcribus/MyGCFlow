@@ -104,6 +104,19 @@ class SchemaMigrationTests(unittest.TestCase):
         self.assertIn('coord_fetch_failed_at', self._columns('lab_discovery'))
         self.assertEqual(self._user_version(), migrations.LATEST_VERSION)
 
+    def test_lab_table_gains_suggestion_columns(self):
+        self._create_app()
+        with self._connect() as conn:
+            conn.execute("ALTER TABLE lab_discovery DROP COLUMN suggested_latitude")
+            conn.execute("ALTER TABLE lab_discovery DROP COLUMN suggested_longitude")
+            conn.execute("PRAGMA user_version = 3")
+
+        self._create_app()
+
+        self.assertTrue({'suggested_latitude', 'suggested_longitude'}
+                        <= self._columns('lab_discovery'))
+        self.assertEqual(self._user_version(), migrations.LATEST_VERSION)
+
     def test_new_database_has_lab_tables(self):
         self._create_app()
 

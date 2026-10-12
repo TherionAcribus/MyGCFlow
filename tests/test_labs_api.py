@@ -128,6 +128,66 @@ class LabsApiTests(unittest.TestCase):
         self.assertEqual(st.result["resolved"], 8)
         self.assertEqual(st.result["ready_total"], 8)
 
+    def _preview_bytes(self, name, raw):
+        return self.client.post(
+            '/api/labs/import/preview',
+            data={'files': [(io.BytesIO(raw), name)]},
+            content_type='multipart/form-data')
+
+    def _moved_gpx(self):
+        # STAGE_1 déplacée dans le GPX : 47.21510 → 47.30000.
+        raw = COORDS.read_bytes()
+        self.assertEqual(raw.count(b'lat="47.21510"'), 1)
+        return raw.replace(b'lat="47.21510"', b'lat="47.30000"')
+
+    def test_preview_conflict_kept_by_default_then_replaced_on_choice(self):
+        self._import_history()
+        self._import_coords()
+
+        body = self._preview_bytes("moved.gpx", self._moved_gpx()).get_json()
+        self.assertEqual(body["totals"]["conflicts"], 1)
+        conflict = body["conflicts_detail"][0]
+        self.assertEqual(conflict["local_uid"], STAGE_1)
+        self.assertEqual(conflict["stage_title"], "Le Moulin Rouge")
+        self.assertEqual(conflict["field"], "coordinates")
+
+        # Sans choix : la valeur existante est conservée.
+        rv = self._commit(body["import_token"])
+        st = self._wait_task(rv.get_json()["task_id"])
+        self.assertEqual(st.result["conflicts"], 1)
+        db.session.expire_all()
+        row = db.session.query(LabDiscovery).filter_by(stage_uuid=STAGE_1).one()
+        self.assertAlmostEqual(row.latitude, 47.21510)
+
+        # « Remplacer » : le choix renvoyé tel que reçu de l'aperçu.
+        body = self._preview_bytes("moved.gpx", self._moved_gpx()).get_json()
+        conflict = body["conflicts_detail"][0]
+        rv = self.client.post('/api/labs/import/commit', json={
+            'import_token': body["import_token"],
+            'overrides': [{k: conflict[k] for k in ("local_uid", "field", "incoming")}],
+        })
+        st = self._wait_task(rv.get_json()["task_id"])
+        self.assertEqual(st.state, "finished", st.error)
+        self.assertEqual(st.result["conflicts"], 0)
+        self.assertEqual(st.result["updated"], 1)
+        db.session.expire_all()
+        row = db.session.query(LabDiscovery).filter_by(stage_uuid=STAGE_1).one()
+        self.assertAlmostEqual(row.latitude, 47.3)
+
+    def test_commit_ignores_malformed_overrides(self):
+        self._import_history()
+        self._import_coords()
+        body = self._preview_bytes("moved.gpx", self._moved_gpx()).get_json()
+        rv = self.client.post('/api/labs/import/commit', json={
+            'import_token': body["import_token"],
+            'overrides': ["x", {"local_uid": STAGE_1, "field": "stage_uuid", "incoming": "y"},
+                          {"local_uid": STAGE_1, "field": "coordinates", "incoming": "nope"},
+                          {"local_uid": 3, "field": "coordinates", "incoming": [1, 2]}],
+        })
+        st = self._wait_task(rv.get_json()["task_id"])
+        self.assertEqual(st.state, "finished", st.error)
+        self.assertEqual(st.result["conflicts"], 1)   # rien de tranché
+
     def test_preview_runs_under_mutation_lock(self):
         """L'aperçu écrit dans sa transaction avant de l'annuler : il doit
         tenir le verrou des mutations, puis le rendre."""
@@ -265,6 +325,25 @@ class LabsApiTests(unittest.TestCase):
         self.assertEqual(self.client.post(
             '/api/labs/discoveries/inconnu/resolve',
             json={"latitude": 45, "longitude": 3}).status_code, 404)
+
+    def test_suggestion_is_listed_then_cleared_once_resolved(self):
+        self._import_history()
+        row = db.session.query(LabDiscovery).filter_by(stage_uuid=STAGE_REMOVED).one()
+        row.suggested_latitude, row.suggested_longitude = 47.2301, -1.5702
+        db.session.commit()
+
+        items = self.client.get('/api/labs/unresolved').get_json()["items"]
+        item = next(i for i in items if i["stage_uuid"] == STAGE_REMOVED)
+        self.assertEqual(item["suggestion"], {"latitude": 47.2301, "longitude": -1.5702})
+
+        rv = self.client.post(f'/api/labs/discoveries/{STAGE_REMOVED}/resolve',
+                              json=item["suggestion"])
+        self.assertEqual(rv.status_code, 200)
+        db.session.expire_all()
+        row = db.session.query(LabDiscovery).filter_by(stage_uuid=STAGE_REMOVED).one()
+        self.assertAlmostEqual(row.latitude, 47.2301)
+        self.assertEqual(row.coordinate_source, "user_correction")
+        self.assertIsNone(row.suggested_latitude)
 
     def test_resolve_invalid_date_applies_nothing(self):
         """Coordonnées valides + date invalide : refus entier, la ligne

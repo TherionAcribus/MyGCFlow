@@ -213,6 +213,144 @@ class LabStoreTests(unittest.TestCase):
         self.assertEqual(d.found_date, date(2024, 5, 14))
         self.assertEqual(summary["unchanged"], 12)
 
+    # --- conflits tranchés (overrides) ---------------------------------------
+
+    STAGE = "57a9e000-0000-4000-8000-000000000101"
+
+    def _moved_coords(self, lat=47.3, lon=-1.6):
+        moved = self._coords()
+        for stage in moved.stages:
+            if stage.stage_uuid == self.STAGE:
+                stage.latitude, stage.longitude = lat, lon
+        return moved
+
+    def test_coordinates_within_tolerance_are_not_a_conflict(self):
+        lab_store.commit_history(db.session, self._history())
+        lab_store.commit_coordinates(db.session, self._coords())
+        summary = lab_store.commit_coordinates(
+            db.session, self._moved_coords(47.21510 + 4e-6, -1.55420 - 4e-6))
+        self.assertEqual(summary["conflicts"], 0)
+        self.assertEqual(summary["unchanged"], 8)
+
+    def test_coordinate_conflict_describes_the_stage(self):
+        lab_store.commit_history(db.session, self._history())
+        lab_store.commit_coordinates(db.session, self._coords())
+        summary = lab_store.commit_coordinates(db.session, self._moved_coords())
+        self.assertEqual(summary["conflicts"], 1)
+        detail = summary["conflicts_detail"][0]
+        self.assertEqual(detail["local_uid"], self.STAGE)
+        self.assertEqual(detail["stage_title"], "Le Moulin Rouge")
+        self.assertEqual(detail["field"], "coordinates")
+        self.assertEqual(detail["incoming"], [47.3, -1.6])
+        self.assertAlmostEqual(self._discovery(self.STAGE).latitude, 47.21510)
+
+    def test_override_replaces_conflicting_coordinates(self):
+        lab_store.commit_history(db.session, self._history())
+        lab_store.commit_coordinates(db.session, self._coords())
+        overrides = {lab_store.override_key(self.STAGE, "coordinates", [47.3, -1.6])}
+        summary = lab_store.commit_coordinates(
+            db.session, self._moved_coords(), overrides=overrides)
+        self.assertEqual(summary["conflicts"], 0)
+        self.assertEqual(summary["updated"], 1)
+        row = self._discovery(self.STAGE)
+        self.assertAlmostEqual(row.latitude, 47.3)
+        self.assertEqual(row.coordinate_source, "lab2gpx-gpx")
+
+    def test_override_also_replaces_a_user_correction(self):
+        lab_store.commit_history(db.session, self._history())
+        lab_store.commit_coordinates(db.session, self._coords())
+        row = self._discovery(self.STAGE)
+        row.latitude, row.longitude = 47.5, -1.2
+        row.coordinate_source = lab_store.USER_CORRECTION
+        db.session.commit()
+        overrides = {lab_store.override_key(self.STAGE, "coordinates", [47.3, -1.6])}
+        summary = lab_store.commit_coordinates(
+            db.session, self._moved_coords(), overrides=overrides)
+        self.assertEqual(summary["conflicts"], 0)
+        self.assertAlmostEqual(self._discovery(self.STAGE).latitude, 47.3)
+
+    def test_override_only_applies_to_the_value_shown(self):
+        """Le choix porte sur la valeur vue à l'aperçu : un autre fichier
+        apportant une autre position reste un conflit."""
+        lab_store.commit_history(db.session, self._history())
+        lab_store.commit_coordinates(db.session, self._coords())
+        overrides = {lab_store.override_key(self.STAGE, "coordinates", [47.3, -1.6])}
+        summary = lab_store.commit_coordinates(
+            db.session, self._moved_coords(48.0, -2.0), overrides=overrides)
+        self.assertEqual(summary["conflicts"], 1)
+        self.assertAlmostEqual(self._discovery(self.STAGE).latitude, 47.21510)
+
+    def test_override_replaces_conflicting_date(self):
+        lab_store.commit_history(db.session, self._history())
+        changed = self._history()
+        for draft in changed.drafts:
+            if draft.stage_uuid == self.STAGE:
+                draft.found_date = date(2024, 5, 15)
+                draft.found_at_utc = None
+                draft.found_at_offset_minutes = None
+                draft.date_precision = "day"
+                draft.date_basis = "source_date_only"
+                draft.source_date_text = "2024-05-15"
+        overrides = {lab_store.override_key(self.STAGE, "found_date", "2024-05-15")}
+        summary = lab_store.commit_history(db.session, changed, overrides=overrides)
+        self.assertEqual(summary["conflicts"], 0)
+        self.assertEqual(summary["updated"], 1)
+        row = self._discovery(self.STAGE)
+        self.assertEqual(row.found_date, date(2024, 5, 15))
+        # La provenance suit la date retenue.
+        self.assertEqual(row.date_basis, "source_date_only")
+        self.assertIsNone(row.found_at_utc)
+
+    # --- propositions et avertissements --------------------------------------
+
+    REMOVED = "57a9e000-0000-4000-8000-000000000401"   # « La Porte Nord »
+
+    def _coords_with_renamed_stage(self, *reworked_uuids):
+        """GPX où des étapes remaniées (UUID inconnus de l'historique)
+        portent le titre de l'étape trouvée."""
+        coords = self._coords()
+        for stage in coords.stages:
+            if stage.stage_uuid in reworked_uuids:
+                stage.stage_title = "  la porte NORD "
+        return coords
+
+    def test_unique_title_match_is_stored_as_suggestion_not_applied(self):
+        lab_store.commit_history(db.session, self._history())
+        summary = lab_store.commit_coordinates(
+            db.session,
+            self._coords_with_renamed_stage("57a9e000-0000-4000-8000-000000000491"))
+        self.assertTrue(any(p["local_uid"] == self.REMOVED and p["unique"]
+                            for p in summary["proposals"]))
+        row = self._discovery(self.REMOVED)
+        self.assertIsNone(row.latitude)                       # jamais appliquée
+        self.assertEqual(row.coordinate_status, LabDiscovery.COORD_MISSING)
+        self.assertAlmostEqual(row.suggested_latitude, 47.23010)
+        self.assertAlmostEqual(row.suggested_longitude, -1.57020)
+        item = next(u for u in lab_store.unresolved_discoveries(db.session)
+                    if u["local_uid"] == self.REMOVED)
+        self.assertAlmostEqual(item["suggestion"]["latitude"], 47.23010)
+
+    def test_ambiguous_title_match_stores_nothing(self):
+        lab_store.commit_history(db.session, self._history())
+        lab_store.commit_coordinates(db.session, self._coords_with_renamed_stage(
+            "57a9e000-0000-4000-8000-000000000491",
+            "57a9e000-0000-4000-8000-000000000492"))
+        row = self._discovery(self.REMOVED)
+        self.assertIsNone(row.suggested_latitude)
+        item = next(u for u in lab_store.unresolved_discoveries(db.session)
+                    if u["local_uid"] == self.REMOVED)
+        self.assertIsNone(item["suggestion"])
+
+    def test_row_warnings_are_grouped_by_reason(self):
+        history = self._history()
+        for draft in history.drafts[:3]:
+            draft.warnings.append("found_at sans fuseau")
+        history.drafts[3].warnings.append("autre")
+        summary = lab_store.commit_history(db.session, history)
+        grouped = {w["reason"]: w.get("count") for w in summary["warnings"]}
+        self.assertEqual(grouped["found_at sans fuseau"], 3)
+        self.assertEqual(grouped["autre"], 1)
+
     # --- isolation des sources ----------------------------------------------
 
     def test_geocache_table_untouched(self):

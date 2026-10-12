@@ -14,6 +14,7 @@ const PENDING_PAGE_SIZE = 50;
 let elementsBound = false;
 let labsFileInput = null;
 let importToken = null;        // jeton opaque retourné par /import/preview
+let previewConflicts = [];     // conflits tranchables de l'aperçu affiché
 let pendingOffset = 0;
 let pendingTotal = null;       // nombre d'étapes en attente (statut serveur)
 let pendingDirty = false;      // une correction a été enregistrée → recharger
@@ -146,7 +147,6 @@ async function onLabsFilesChosen() {
     labsFileInput.value = '';   // même fichier re-sélectionnable
     if (!files.length) return;
 
-    const progress = el('labsImportProgress');
     setImportProgress(t('Analyse des fichiers…'));
     try {
         const fd = new FormData();
@@ -154,8 +154,7 @@ async function onLabsFilesChosen() {
         const resp = await fetch(`${CONFIG.BASE_URL}/api/labs/import/preview`, { method: 'POST', body: fd });
         const data = await resp.json().catch(() => ({}));
         if (!resp.ok || !data.success) {
-            renderPreviewErrors(data);
-            throw new Error(data.message || t('Import impossible'));
+            throw new Error(previewErrorMessage(data));
         }
         importToken = data.import_token;
         renderPreviewModal(data);
@@ -172,15 +171,20 @@ function setImportProgress(text) {
     if (progress) progress.textContent = text || '';
 }
 
-// Rapport par fichier quand l'aperçu échoue complètement (ex. aucun fichier
-// exploitable) : chaque erreur est attribuée à son fichier, pas globale.
-function renderPreviewErrors(data) {
-    const reports = data?.files || [];
-    for (const rep of reports) {
-        if (rep.status === 'error' && rep.error) {
-            console.warn(`[LABS] ${rep.name}: ${rep.error}`);
-        }
+// Message d'échec complet de l'aperçu (ex. aucun fichier exploitable) :
+// chaque erreur est attribuée à son fichier, pas seulement résumée.
+const PREVIEW_ERRORS_SHOWN = 3;
+function previewErrorMessage(data) {
+    const base = data?.message || t('Import impossible');
+    const errors = (data?.files || [])
+        .filter(rep => rep.status === 'error' && rep.error)
+        .map(rep => `${rep.name} : ${rep.error}`);
+    if (!errors.length) return base;
+    const shown = errors.slice(0, PREVIEW_ERRORS_SHOWN);
+    if (errors.length > shown.length) {
+        shown.push(t('… et ${n} autre(s)', { n: errors.length - shown.length }));
     }
+    return `${base} — ${shown.join(' ; ')}`;
 }
 
 function fmtLabel(format) {
@@ -233,10 +237,11 @@ function renderPreviewModal(data) {
     if (summaryEl) {
         const totals = data.totals || {};
         const bits = summaryBits(totals);
-        const conflictNote = (data.conflicts_detail?.length || 0) > 0
-            ? ` — ${t('les conflits sont listés dans le détail serveur')}` : '';
-        summaryEl.textContent = `${t('Total')} : ${bits.join(', ') || t('aucun changement')}${conflictNote}`;
+        summaryEl.textContent = `${t('Total')} : ${bits.join(', ') || t('aucun changement')}`;
     }
+
+    renderPreviewConflicts(data.conflicts_detail || []);
+    renderPreviewWarnings(data.warnings || []);
 
     if (projectedEl) {
         const p = data.projected;
@@ -250,7 +255,150 @@ function renderPreviewModal(data) {
     }
 }
 
+// Les listes de diagnostics sont bornées côté serveur : la dernière entrée
+// `{truncated: n}` dit combien manquent.
+function splitTruncated(items) {
+    const last = items[items.length - 1];
+    return typeof last?.truncated === 'number'
+        ? { shown: items.slice(0, -1), hidden: last.truncated }
+        : { shown: items, hidden: 0 };
+}
+
+function conflictValue(field, value) {
+    if (field === 'coordinates' && Array.isArray(value)) {
+        return value.map(v => Number(v).toFixed(5)).join(', ');
+    }
+    return value == null ? '—' : String(value);
+}
+
+function conflictFieldLabel(field) {
+    return field === 'coordinates' ? t('coordonnées')
+        : field === 'found_date' ? t('date')
+        : field === 'adventure_uuid' ? t("identifiant d'Adventure")
+        : field === 'stage_uuid' ? t("identifiant d'étape")
+        : field;
+}
+
+// Conflits : la valeur existante est conservée par défaut. Date et
+// coordonnées se tranchent ici (radios) ; un identifiant contradictoire est
+// seulement signalé. Titres en textContent — données importées.
+function renderPreviewConflicts(items) {
+    const box = el('labsPreviewConflicts');
+    if (!box) return;
+    const { shown, hidden } = splitTruncated(items);
+    previewConflicts = shown;
+    box.textContent = '';
+    box.classList.toggle('d-none', shown.length === 0);
+    if (!shown.length) return;
+
+    const title = document.createElement('div');
+    title.className = 'fw-bold small mb-1';
+    title.textContent = t('Conflits (${n}) — sans choix de votre part, la valeur existante est conservée',
+        { n: shown.length + hidden });
+    box.appendChild(title);
+
+    shown.forEach((c, i) => {
+        const item = document.createElement('div');
+        item.className = 'border rounded p-2 mb-1 small';
+        item.dataset.conflictIndex = String(i);
+
+        const head = document.createElement('div');
+        const stage = document.createElement('strong');
+        stage.textContent = c.stage_title || t('(étape sans titre)');
+        head.appendChild(stage);
+        const what = document.createElement('span');
+        what.className = 'text-muted';
+        const adventure = c.adventure_title ? ` — ${c.adventure_title}` : '';
+        what.textContent = `${adventure} · ${conflictFieldLabel(c.field)}`;
+        head.appendChild(what);
+        item.appendChild(head);
+
+        const values = document.createElement('div');
+        // Libellés résolus hors template literal pour l'extracteur Babel.
+        const keptLabel = t('conservé');
+        const receivedLabel = t('reçu');
+        const manualLabel = t('(correction manuelle)');
+        const manual = c.protected === 'user_correction' ? ` ${manualLabel}` : '';
+        values.textContent = `${keptLabel} : ${conflictValue(c.field, c.existing)}${manual} · `
+            + `${receivedLabel} : ${conflictValue(c.field, c.incoming)}`;
+        item.appendChild(values);
+
+        if (c.field === 'coordinates' || c.field === 'found_date') {
+            const choices = document.createElement('div');
+            choices.className = 'mt-1';
+            for (const [value, label] of [['keep', t('Garder')], ['replace', t('Remplacer')]]) {
+                const wrap = document.createElement('label');
+                wrap.className = 'form-check form-check-inline mb-0';
+                const radio = document.createElement('input');
+                radio.type = 'radio';
+                radio.className = 'form-check-input';
+                radio.name = `lab-conflict-${i}`;
+                radio.value = value;
+                radio.checked = value === 'keep';
+                const text = document.createElement('span');
+                text.className = 'form-check-label';
+                text.textContent = label;
+                wrap.appendChild(radio);
+                wrap.appendChild(text);
+                choices.appendChild(wrap);
+            }
+            item.appendChild(choices);
+        }
+        box.appendChild(item);
+    });
+
+    if (hidden > 0) {
+        const more = document.createElement('div');
+        more.className = 'form-hint text-muted';
+        more.textContent = t('… et ${n} autre(s)', { n: hidden });
+        box.appendChild(more);
+    }
+}
+
+// Conflits que l'utilisateur tranche pour la valeur reçue : la valeur fait
+// partie du choix, le serveur ne l'applique qu'à ce conflit précis.
+function collectOverrides() {
+    const box = el('labsPreviewConflicts');
+    if (!box) return [];
+    const overrides = [];
+    previewConflicts.forEach((c, i) => {
+        const picked = box.querySelector(`input[name="lab-conflict-${i}"]:checked`);
+        if (picked?.value === 'replace') {
+            overrides.push({ local_uid: c.local_uid, field: c.field, incoming: c.incoming });
+        }
+    });
+    return overrides;
+}
+
+function renderPreviewWarnings(items) {
+    const box = el('labsPreviewWarnings');
+    if (!box) return;
+    const { shown, hidden } = splitTruncated(items);
+    box.textContent = '';
+    box.open = false;
+    box.classList.toggle('d-none', shown.length === 0);
+    if (!shown.length) return;
+
+    const summary = document.createElement('summary');
+    summary.textContent = t('Avertissements (${n})', { n: shown.length + hidden });
+    box.appendChild(summary);
+    const list = document.createElement('ul');
+    list.className = 'mb-0 ps-3';
+    for (const w of shown) {
+        const li = document.createElement('li');
+        li.textContent = w.count > 1 ? `${w.reason} (×${w.count})` : (w.reason || '');
+        list.appendChild(li);
+    }
+    if (hidden > 0) {
+        const li = document.createElement('li');
+        li.textContent = t('… et ${n} autre(s)', { n: hidden });
+        list.appendChild(li);
+    }
+    box.appendChild(list);
+}
+
 async function onPreviewConfirm() {
+    const overrides = collectOverrides();
     hideBsModal(el('labsPreviewModal'));
     if (!importToken) return;
     const token = importToken;
@@ -261,7 +409,7 @@ async function onPreviewConfirm() {
         const resp = await fetch(`${CONFIG.BASE_URL}/api/labs/import/commit`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ import_token: token }),
+            body: JSON.stringify({ import_token: token, overrides }),
         });
         const data = await resp.json().catch(() => ({}));
         if (!resp.ok || !data.success || !data.task_id) {
@@ -331,10 +479,13 @@ async function onImportFinished(result) {
     const total = result.total || 0;
     const ready = result.ready_total || 0;
     const unresolved = result.unresolved || 0;
-    showSuccess(
-        t('${added} étape(s) importée(s) — ${ready} affichable(s), ${pending} en attente.',
-          { added: (result.added || 0) + (result.updated || 0), ready, pending: unresolved }),
-        t('Import Lab Caches'));
+    let msg = t('${added} étape(s) importée(s) — ${ready} affichable(s), ${pending} en attente.',
+        { added: (result.added || 0) + (result.updated || 0), ready, pending: unresolved });
+    if ((result.conflicts || 0) > 0) {
+        // Import sans aperçu (favori) ou conflits laissés tels quels.
+        msg += ' ' + t('${n} conflit(s) — valeurs existantes conservées.', { n: result.conflicts });
+    }
+    showSuccess(msg, t('Import Lab Caches'));
     refreshLabsStatus();
     await suggestSourceAfterImport(ready, total);
     pkg.reloadMainDatasetAfterMutation?.();
@@ -553,6 +704,31 @@ function buildPendingRow(item) {
         : r);
     reasons.textContent = reasonLabels.join(' · ');
     row.appendChild(reasons);
+
+    // Proposition (même titre dans l'Adventure, étape remaniée) : elle ne
+    // fait que préremplir les champs — « Enregistrer » reste la validation.
+    const suggestion = item.suggestion;
+    if (suggestion) {
+        const hint = document.createElement('div');
+        hint.className = 'small mb-2';
+        const text = document.createElement('span');
+        text.textContent = t("Suggestion : ${lat}, ${lon} — même titre dans l'Adventure", {
+            lat: Number(suggestion.latitude).toFixed(5),
+            lon: Number(suggestion.longitude).toFixed(5),
+        }) + ' ';
+        hint.appendChild(text);
+        const useBtn = document.createElement('button');
+        useBtn.type = 'button';
+        useBtn.className = 'btn btn-sm btn-outline-primary';
+        useBtn.dataset.action = 'use-suggestion';
+        useBtn.textContent = t('Utiliser la suggestion');
+        useBtn.addEventListener('click', () => {
+            row.querySelector('input[data-field="lat"]').value = String(suggestion.latitude);
+            row.querySelector('input[data-field="lon"]').value = String(suggestion.longitude);
+        });
+        hint.appendChild(useBtn);
+        row.appendChild(hint);
+    }
 
     const form = document.createElement('div');
     form.className = 'd-flex flex-wrap gap-2 align-items-end';

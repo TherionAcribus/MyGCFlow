@@ -85,10 +85,22 @@ def _v3_lab_echec_recuperation(db):
                 "ALTER TABLE lab_discovery ADD COLUMN coord_fetch_failed_at DATETIME")
 
 
+def _v4_lab_coordonnees_proposees(db):
+    # Proposition de coordonnées en attente de validation. Idempotent, comme v3.
+    with db.engine.begin() as conn:
+        columns = {row[1] for row in
+                   conn.exec_driver_sql("PRAGMA table_info(lab_discovery)")}
+        for name in ("suggested_latitude", "suggested_longitude"):
+            if name not in columns:
+                conn.exec_driver_sql(
+                    f"ALTER TABLE lab_discovery ADD COLUMN {name} FLOAT")
+
+
 MIGRATIONS = [
     (1, _v1_colonnes_et_index),
     (2, _v2_tables_lab),
     (3, _v3_lab_echec_recuperation),
+    (4, _v4_lab_coordonnees_proposees),
 ]
 
 LATEST_VERSION = MIGRATIONS[-1][0]

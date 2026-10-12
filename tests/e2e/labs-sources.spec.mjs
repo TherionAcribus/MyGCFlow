@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
@@ -277,6 +278,79 @@ test('le bouton de récupération est visible quand des étapes sont en attente'
   await expect(page.locator('#labsPendingAlert')).toBeVisible();
   await expect(page.locator('#labsFetchBtn')).toBeVisible();
   await expect(page.locator('#labsPendingBtn')).toBeVisible();
+});
+
+
+const STAGE_MOULIN = '57a9e000-0000-4000-8000-000000000101';
+const STAGE_PORTE_NORD = '57a9e000-0000-4000-8000-000000000401';
+
+// GPX de la fixture avec une substitution unique (échec si le motif bouge).
+function patchedCoords(search, replacement) {
+  const text = readFileSync(COORDS, 'utf-8');
+  expect(text.split(search).length - 1).toBe(1);
+  return { name: 'lab2gpx-patched.gpx', mimeType: 'application/gpx+xml',
+           buffer: Buffer.from(text.replace(search, replacement), 'utf-8') };
+}
+
+async function exportedStage(page, stageId) {
+  return page.evaluate(async (id) => {
+    const payload = await (await fetch('/api/labs/export')).json();
+    return payload.discoveries.find(d => d.stage_id === id) || null;
+  }, stageId);
+}
+
+
+test('un conflit de coordonnées se tranche dans l\'aperçu : garder par défaut, remplacer sur choix', async ({ page }) => {
+  await openReadyApp(page);
+  await importLabs(page);
+
+  // Même étape, position déplacée dans le GPX : conflit avec l'existant.
+  const moved = patchedCoords('lat="47.21510"', 'lat="47.30000"');
+  await page.locator('#labs-file-input').setInputFiles(moved);
+  await expect(page.locator('#labsPreviewModal')).toBeVisible({ timeout: 20_000 });
+
+  const conflicts = page.locator('#labsPreviewConflicts');
+  await expect(conflicts).toBeVisible();
+  await expect(conflicts).toContainText('Le Moulin Rouge');
+  await expect(conflicts).toContainText('47.30000');
+  await expect(conflicts.locator('input[value="keep"]')).toBeChecked();
+
+  await conflicts.locator('input[value="replace"]').check();
+  await page.locator('#labsPreviewConfirmBtn').click();
+
+  await expect.poll(async () => (await exportedStage(page, STAGE_MOULIN))?.latitude,
+                    { timeout: 30_000 }).toBeCloseTo(47.3, 5);
+});
+
+
+test('une étape remaniée reçoit une suggestion à valider dans « Étapes en attente »', async ({ page }) => {
+  await openReadyApp(page);
+
+  // L'étape du GPX porte le titre de l'étape trouvée, sous un autre UUID :
+  // proposition mémorisée, jamais appliquée seule.
+  const renamed = patchedCoords('<desc>Point 1</desc>', '<desc>La Porte Nord</desc>');
+  await page.locator('#labs-file-input').setInputFiles([HISTORY]);
+  await expect(page.locator('#labsPreviewModal')).toBeVisible({ timeout: 20_000 });
+  await page.locator('#labsPreviewConfirmBtn').click();
+  await expect(page.locator('#labsStatus')).toContainText('12', { timeout: 60_000 });
+
+  await page.locator('#labs-file-input').setInputFiles(renamed);
+  await expect(page.locator('#labsPreviewModal')).toBeVisible({ timeout: 20_000 });
+  await page.locator('#labsPreviewConfirmBtn').click();
+  await expect(page.locator('#labsStatus')).toContainText('8', { timeout: 60_000 });
+  expect((await exportedStage(page, STAGE_PORTE_NORD)).latitude).toBeNull();
+
+  await page.locator('#labsPendingBtn').click();
+  const row = page.locator(`#labsPendingList [data-local-uid="${STAGE_PORTE_NORD}"]`);
+  await expect(row).toContainText('47.23010');
+
+  await row.locator('[data-action="use-suggestion"]').click();
+  await expect(row.locator('input[data-field="lat"]')).toHaveValue('47.2301');
+  await expect(row.locator('input[data-field="lon"]')).toHaveValue('-1.5702');
+  await row.getByRole('button', { name: 'Enregistrer' }).click();
+
+  await expect.poll(async () => (await exportedStage(page, STAGE_PORTE_NORD))?.latitude,
+                    { timeout: 30_000 }).toBeCloseTo(47.2301, 5);
 });
 
 
