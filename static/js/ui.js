@@ -3606,6 +3606,14 @@ function rebuildCountyOptions() {
     updateFilterInfos();
 }
 
+// Valeur des options « Non renseigné » : identique à UNKNOWN_GEO côté serveur
+// (geojson_cache.py). Les features sans pays/région — Labs compris — n'y
+// correspondent que sous sélection géographique réelle.
+const UNKNOWN_GEO = '__unknown__';
+const geoOptionLabel = (v) => v === UNKNOWN_GEO
+    ? (pkg.t ? pkg.t('Non renseigné') : 'Non renseigné')
+    : v;
+
 function populateCountryStateSelects(tree){
     const selCountry = document.getElementById('selectCountry');
     const selState = document.getElementById('selectState');
@@ -3632,7 +3640,7 @@ function populateCountryStateSelects(tree){
     const fragC = document.createDocumentFragment();
     for (const c of countries){
         const opt = document.createElement('option');
-        opt.value = c; opt.textContent = c; opt.selected = true;
+        opt.value = c; opt.textContent = geoOptionLabel(c); opt.selected = true;
         fragC.appendChild(opt);
     }
     selCountry.appendChild(fragC);
@@ -3656,7 +3664,7 @@ function populateCountryStateSelects(tree){
     const fragS = document.createDocumentFragment();
     for (const s of Array.from(statesSet).sort((a,b)=>a.localeCompare(b))){
         const opt = document.createElement('option');
-        opt.value = s; opt.textContent = s; opt.selected = true;
+        opt.value = s; opt.textContent = geoOptionLabel(s); opt.selected = true;
         fragS.appendChild(opt);
     }
     selState.appendChild(fragS);
@@ -3698,7 +3706,7 @@ function populateCountryStateSelects(tree){
         const frag = document.createDocumentFragment();
         Array.from(sset).sort((a,b)=>a.localeCompare(b)).forEach(s => {
             const opt = document.createElement('option');
-            opt.value = s; opt.textContent = s; opt.selected = selected.length > 0; // si aucun pays, rien sélectionné
+            opt.value = s; opt.textContent = geoOptionLabel(s); opt.selected = selected.length > 0; // si aucun pays, rien sélectionné
             frag.appendChild(opt);
         });
         selState.appendChild(frag);

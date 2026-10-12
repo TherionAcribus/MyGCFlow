@@ -13,6 +13,16 @@ import paths
 # mémoire consommée en évictant l'entrée la moins récemment utilisée.
 FILTER_CACHE_MAX_SIZE = 32
 
+# Clé d'index pour les features sans pays/région connue (ex. Labs) : rend la
+# valeur inconnue sélectionnable explicitement — l'option « Non renseigné »
+# des listes pays/région porte cette valeur.
+UNKNOWN_GEO = "__unknown__"
+
+# Version du contenu persisté (geojson_data.json + index). Une base écrite
+# par une ancienne version n'a ni features Labs ni index source : le mtime
+# de la base ne changeant pas, seul un numéro de version l'invalide.
+PERSIST_VERSION = 2
+
 
 def _parse_date(value) -> Optional[date]:
     """Convertit une valeur en date (YYYY-MM-DD) ou retourne None."""
@@ -29,6 +39,15 @@ def _parse_date(value) -> Optional[date]:
     return None
 
 
+def _count_by_source(features: List[Dict]) -> Dict[str, int]:
+    """Ventilation par source_kind ; features anciennes sans le champ → geocache."""
+    counts: Dict[str, int] = defaultdict(int)
+    for f in features:
+        kind = (f.get("properties") or {}).get("source_kind") or "geocache"
+        counts[kind] += 1
+    return dict(counts)
+
+
 def build_metadata_from_features(features: List[Dict]) -> Dict:
     """Calcule les métadonnées de base (bornes de dates, nombre, publication)."""
     if not features:
@@ -37,6 +56,7 @@ def build_metadata_from_features(features: List[Dict]) -> Dict:
             "endDate": None,
             "deltaDays": None,
             "numberOfCaches": 0,
+            "countBySource": {},
             "publishedStartDate": None,
             "publishedEndDate": None,
         }
@@ -75,6 +95,7 @@ def build_metadata_from_features(features: List[Dict]) -> Dict:
         "endDate": end_date.strftime("%Y-%m-%d") if end_date else None,
         "deltaDays": delta_days,
         "numberOfCaches": len(features),
+        "countBySource": _count_by_source(features),
         "publishedStartDate": published_start_str,
         "publishedEndDate": published_end_str,
     }
@@ -103,6 +124,7 @@ def _normalize_filter_key(selected_values: Dict) -> Tuple:
     published_dates = selected_values.get("published_dates") or {}
 
     return (
+        _list_key(selected_values.get("sources") or []),
         _list_key(selected_values.get("type") or []),
         _list_key(selected_values.get("terrain") or []),
         _list_key(selected_values.get("difficulty") or []),
@@ -145,6 +167,7 @@ class GeojsonIndexCache:
             "type": defaultdict(list),
             "country": defaultdict(list),
             "state": defaultdict(list),
+            "source": defaultdict(list),
         }
         self._db_mtime = db_mtime
 
@@ -178,6 +201,7 @@ class GeojsonIndexCache:
         try:
             os.makedirs(os.path.dirname(self.persist_path), exist_ok=True)
             payload = {
+                "version": PERSIST_VERSION,
                 "db_mtime": self._db_mtime,
                 "indexes": {
                     name: {k: v for k, v in idx.items()} for name, idx in self._indexes.items()
@@ -198,6 +222,11 @@ class GeojsonIndexCache:
             with open(self.persist_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
 
+            # Version du contenu persisté : un fichier d'avant Labs est ignoré
+            # même si le mtime de la base correspond.
+            if data.get("version") != PERSIST_VERSION:
+                return False
+
             persisted_mtime = data.get("db_mtime")
             if current_mtime is not None and persisted_mtime != current_mtime:
                 return False
@@ -215,6 +244,7 @@ class GeojsonIndexCache:
                     "type": defaultdict(list, indexes.get("type") or {}),
                     "country": defaultdict(list, indexes.get("country") or {}),
                     "state": defaultdict(list, indexes.get("state") or {}),
+                    "source": defaultdict(list, indexes.get("source") or {}),
                 }
                 self._filter_cache = OrderedDict()
             return True
@@ -258,6 +288,7 @@ class GeojsonIndexCache:
             "type": defaultdict(list),
             "country": defaultdict(list),
             "state": defaultdict(list),
+            "source": defaultdict(list),
         }
         for idx, feature in enumerate(features):
             props = feature.get("properties") or {}
@@ -270,13 +301,13 @@ class GeojsonIndexCache:
             if cache_type:
                 indexes["type"][cache_type].append(idx)
 
-            country = props.get("country")
-            if country:
-                indexes["country"][country].append(idx)
+            # Valeur inconnue indexée sous la sentinelle : sélectionnable
+            # explicitement, comme les pays/régions nommés.
+            indexes["country"][props.get("country") or UNKNOWN_GEO].append(idx)
+            indexes["state"][props.get("state") or UNKNOWN_GEO].append(idx)
 
-            state = props.get("state")
-            if state:
-                indexes["state"][state].append(idx)
+            source_kind = props.get("source_kind") or "geocache"
+            indexes["source"][source_kind].append(idx)
 
         self._indexes = indexes
 
@@ -345,15 +376,37 @@ class GeojsonIndexCache:
             return None
 
         features = (self._base_geojson or {}).get("features", [])
+
+        # Neutralité géographique : une sélection couvrant tout le périmètre
+        # offert est « tous » et inclut les valeurs inconnues. Calculée ici car
+        # _matches_filters n'a pas accès aux index ; le périmètre des états est
+        # restreint aux candidats (un pays sans état n'offre pas d'options).
+        sources = selected_values.get("sources")
+        sel_countries = {str(v) for v in (selected_values.get("countries") or [])}
+        sel_states = {str(v) for v in (selected_values.get("states") or [])}
+        candidate_set = set(candidate_ids)
+        with self._lock:
+            offered_countries = set(self._indexes["country"].keys())
+            state_scope = {
+                s for s in self._indexes["state"].keys()
+                if set(self._indexes["state"].get(s) or []) & candidate_set
+            }
         precomputed = {
             "types": set(selected_values.get("type") or []),
+            "allowed_sources": set(sources) if isinstance(sources, list) and sources else None,
             # terrain/difficulty sont des floats en base (db.Float) ; on compare
             # donc en float pour éviter str(5.0)="5.0" != "5" (sélection du <select>).
             "terrain": _float_set(selected_values.get("terrain") or []),
             "difficulty": _float_set(selected_values.get("difficulty") or []),
             "container": {str(v) for v in (selected_values.get("container") or [])},
-            "countries": {str(v) for v in (selected_values.get("countries") or [])},
-            "states": {str(v) for v in (selected_values.get("states") or [])},
+            "countries": sel_countries,
+            "states": sel_states,
+            "geo_neutral_country": not isinstance(selected_values.get("countries"), list)
+                or not offered_countries
+                or offered_countries <= sel_countries,
+            "geo_neutral_state": not isinstance(selected_values.get("states"), list)
+                or not state_scope
+                or state_scope <= sel_states,
             "date_start": _parse_date((selected_values.get("dates") or {}).get("startDate")),
             "date_end": _parse_date((selected_values.get("dates") or {}).get("endDate")),
             "pub_start": _parse_date((selected_values.get("published_dates") or {}).get("startDate")),
@@ -380,6 +433,12 @@ class GeojsonIndexCache:
         with self._lock:
             indexes = self._indexes
 
+        # Restriction de sources explicite : liste vide = aucun résultat ;
+        # champ absent = pas de restriction (toutes sources).
+        sources = selected_values.get("sources")
+        if isinstance(sources, list) and len(sources) == 0:
+            return []
+
         # Type de cache obligatoire (comportement identique au filtrage SQL actuel)
         types = selected_values.get("type") or []
         if not isinstance(types, list) or len(types) == 0:
@@ -391,9 +450,27 @@ class GeojsonIndexCache:
         if not candidates:
             return []
 
-        countries = selected_values.get("countries") or []
+        if isinstance(sources, list) and sources:
+            source_ids = set()
+            for s in sources:
+                source_ids.update(indexes["source"].get(s, []))
+            candidates &= source_ids
+            if not candidates:
+                return []
+
+        # Pays : une sélection couvrant toutes les options offertes (nommées +
+        # « Non renseigné ») est neutre — état « tous », les valeurs inconnues
+        # (Labs comprises) y restent visibles. Une sélection partielle est
+        # géographique : les inconnues n'y passent que via la sentinelle. Une
+        # liste vide n'est « Aucun » (aucun résultat) que si la dimension
+        # offrait des options — sinon elle est inactive (selectHasRealOptions).
+        offered_countries = set(indexes["country"].keys())
+        countries = selected_values.get("countries")
         if isinstance(countries, list):
-            if len(countries) > 0:
+            if len(countries) == 0:
+                if offered_countries:
+                    return []
+            elif not offered_countries <= set(countries):
                 country_ids = set()
                 for c in countries:
                     country_ids.update(indexes["country"].get(c, []))
@@ -401,9 +478,20 @@ class GeojsonIndexCache:
                 if not candidates:
                     return []
 
-        states = selected_values.get("states") or []
+        # Régions : mêmes règles, mais la dimension n'est « offerte » que si des
+        # états existent dans le périmètre déjà restreint (un pays sans état
+        # n'offre pas d'options régionales — sélection vide = inactive). La
+        # sentinelle fait partie des options offertes comme les nommés.
+        states = selected_values.get("states")
         if isinstance(states, list):
-            if len(states) > 0:
+            state_scope = {
+                s for s in indexes["state"].keys()
+                if set(indexes["state"].get(s) or []) & candidates
+            }
+            if len(states) == 0:
+                if state_scope:
+                    return []
+            elif not state_scope <= set(states):
                 state_ids = set()
                 for s in states:
                     state_ids.update(indexes["state"].get(s, []))
@@ -428,8 +516,16 @@ class GeojsonIndexCache:
 
     def _matches_filters(self, props: Dict, precomputed: Dict) -> bool:
         """Filtre final (terrain/difficulté/container/publication) après indexation."""
+        # Restriction explicite de sources (absence = pas de restriction).
+        kind = props.get("source_kind") or "geocache"
+        allowed = precomputed["allowed_sources"]
+        if allowed is not None and kind not in allowed:
+            return False
+
         if props.get("cache_type") not in precomputed["types"]:
             return False
+
+        is_lab = kind == "lab"
 
         def _m(val, value_set):
             return not value_set or str(val) in value_set
@@ -442,27 +538,35 @@ class GeojsonIndexCache:
             except (TypeError, ValueError):
                 return False
 
-        if not _m_float(props.get("terrain"), precomputed["terrain"]):
-            return False
-        if not _m_float(props.get("difficulty"), precomputed["difficulty"]):
-            return False
-        if not _m(props.get("container"), precomputed["container"]):
-            return False
-        if not _m(props.get("country"), precomputed["countries"]):
-            return False
-        if not _m(props.get("state"), precomputed["states"]):
-            return False
+        # Difficulté/terrain/taille/publication : non applicables aux Labs,
+        # ils ne retirent jamais une feature Lab (plan §9.2).
+        if not is_lab:
+            if not _m_float(props.get("terrain"), precomputed["terrain"]):
+                return False
+            if not _m_float(props.get("difficulty"), precomputed["difficulty"]):
+                return False
+            if not _m(props.get("container"), precomputed["container"]):
+                return False
+            # Date de publication : non applicable aux Labs en V1.
+            if precomputed["pub_start"] and precomputed["pub_end"]:
+                published_date = _parse_date(props.get("published_date"))
+                if not published_date or not (precomputed["pub_start"] <= published_date <= precomputed["pub_end"]):
+                    return False
+
+        # Pays/région : sous sélection neutre (« tous »), les valeurs inconnues
+        # passent ; sous sélection géographique réelle, la valeur inconnue ne
+        # correspond qu'à la sentinelle « Non renseigné ».
+        if not precomputed["geo_neutral_country"]:
+            if not _m(props.get("country") or UNKNOWN_GEO, precomputed["countries"]):
+                return False
+        if not precomputed["geo_neutral_state"]:
+            if not _m(props.get("state") or UNKNOWN_GEO, precomputed["states"]):
+                return False
 
         # Date de trouvaille (seule la date par feature est à parser, les bornes sont précalculées)
         if precomputed["date_start"] and precomputed["date_end"]:
             find_date = _parse_date(props.get("date_find"))
             if not find_date or not (precomputed["date_start"] <= find_date <= precomputed["date_end"]):
-                return False
-
-        # Date de publication
-        if precomputed["pub_start"] and precomputed["pub_end"]:
-            published_date = _parse_date(props.get("published_date"))
-            if not published_date or not (precomputed["pub_start"] <= published_date <= precomputed["pub_end"]):
                 return False
 
         return True

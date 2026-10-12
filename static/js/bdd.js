@@ -646,7 +646,27 @@ function selectHasRealOptions(selectId) {
     return Array.from(el.options).some(o => !o.disabled && o.value !== '');
 }
 
+// Sentinelle des valeurs géographiques inconnues — identique à UNKNOWN_GEO
+// côté serveur (geojson_cache.py). Les Labs n'ont ni pays ni région : sous
+// sélection neutre (« tous ») ils restent visibles ; sous sélection réelle
+// ils ne passent que via cette valeur.
+const UNKNOWN_GEO = '__unknown__';
+
+// Vrai si toutes les options réelles du <select> sont sélectionnées (état «
+// tous » neutre). Sans options réelles, la dimension est inactive = neutre.
+function allRealOptionsSelected(selectId, selSet) {
+    const el = document.getElementById(selectId);
+    if (!el) return true;
+    const real = Array.from(el.options).filter(o => !o.disabled && o.value !== '');
+    return real.length === 0 || real.every(o => selSet.has(o.value));
+}
+
 function filterFeaturesClientSide(features, sel) {
+    // Restriction de sources explicite : liste vide = aucun résultat ;
+    // champ absent = pas de restriction (même règle que le serveur).
+    const sources = sel.sources;
+    if (Array.isArray(sources) && sources.length === 0) return [];
+
     const types = new Set(sel.type || []);
     // Aucun type sélectionné => aucun résultat (comportement identique au serveur).
     if (types.size === 0) return [];
@@ -657,16 +677,18 @@ function filterFeaturesClientSide(features, sel) {
     const countries = toStrSet(sel.countries);
     const states = toStrSet(sel.states);
 
-    // "Aucun" (aucune option sélectionnée) => aucun résultat, comme pour le type.
-    // terrain / difficulté / taille ont toujours des options fixes : un ensemble
-    // vide y signifie donc sans ambiguïté "Aucun" et non "pas de filtre".
-    if (terrains.size === 0 || difficulties.size === 0 || containers.size === 0) return [];
-
     // Pays / régions sont peuplés dynamiquement. Un ensemble vide veut dire "Aucun"
     // seulement si le <select> possède réellement des options ; sinon (aucune donnée
     // géographique disponible) la dimension est inactive et ne doit pas filtrer.
+    // "Aucun" exclut aussi les Labs : aucune région n'est alors sélectionnée,
+    // pas même « Non renseigné ».
     if (selectHasRealOptions('selectCountry') && countries.size === 0) return [];
     if (selectHasRealOptions('selectState') && states.size === 0) return [];
+
+    // Neutralité géographique : la sélection couvre toutes les options nommées
+    // connues => état « tous », les valeurs inconnues (Labs comprises) passent.
+    const countryNeutral = allRealOptionsSelected('selectCountry', countries);
+    const stateNeutral = allRealOptionsSelected('selectState', states);
 
     const dStart = normIsoDate(sel.dates?.startDate);
     const dEnd = normIsoDate(sel.dates?.endDate);
@@ -686,19 +708,30 @@ function filterFeaturesClientSide(features, sel) {
     const out = [];
     for (const f of features) {
         const p = (f && f.properties) || {};
+        const kind = p.source_kind || 'geocache';
+        if (Array.isArray(sources) && !sources.includes(kind)) continue;
         if (!types.has(p.cache_type)) continue;
-        if (!matchFloat(p.terrain, terrains)) continue;
-        if (!matchFloat(p.difficulty, difficulties)) continue;
-        if (!matchStr(p.container, containers)) continue;
-        if (!matchStr(p.country, countries)) continue;
-        if (!matchStr(p.state, states)) continue;
+
+        const isLab = kind === 'lab';
+        if (!isLab) {
+            // "Aucun" (ensemble vide) exclut les géocaches ; les Labs, auxquels
+            // ces dimensions ne s'appliquent pas, ne sont jamais retirés ici.
+            if (terrains.size === 0 || !matchFloat(p.terrain, terrains)) continue;
+            if (difficulties.size === 0 || !matchFloat(p.difficulty, difficulties)) continue;
+            if (containers.size === 0 || !matchStr(p.container, containers)) continue;
+            if (pubActive) {
+                const pd = normIsoDate(p.published_date);
+                if (!pd || pd < pStart || pd > pEnd) continue;
+            }
+        }
+        // Sous sélection géographique réelle, la valeur inconnue ne correspond
+        // qu'à la sentinelle « Non renseigné ».
+        if (!countryNeutral && !countries.has(p.country || UNKNOWN_GEO)) continue;
+        if (!stateNeutral && !states.has(p.state || UNKNOWN_GEO)) continue;
+
         if (dateActive) {
             const df = normIsoDate(p.date_find);
             if (!df || df < dStart || df > dEnd) continue;
-        }
-        if (pubActive) {
-            const pd = normIsoDate(p.published_date);
-            if (!pd || pd < pStart || pd > pEnd) continue;
         }
         out.push(f);
     }

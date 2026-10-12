@@ -47,6 +47,7 @@ def get_geojson_points():
 
 @filters_bp.route('/api/country_state', methods=['GET'])
 def api_country_state():
+    from geojson_cache import UNKNOWN_GEO
     try:
         path = paths.country_state_path()
         if not path.exists():
@@ -58,6 +59,18 @@ def api_country_state():
                 return jsonify({})
         with open(path, 'r', encoding='utf-8') as f:
             data = _json.load(f)
+        if UNKNOWN_GEO not in data:
+            # Arbre écrit par une ancienne version : l'option « Non renseigné »
+            # manque alors que des valeurs inconnues existent -> reconstruire.
+            from lab_geojson import has_ready_labs
+            from sqlalchemy import or_
+            unknown_exists = has_ready_labs(db.session) or db.session.query(
+                Geocache.id).filter(
+                    or_(Geocache.country.is_(None), Geocache.country == '')).first()
+            if unknown_exists:
+                build_country_state_tree(db, Geocache)
+                with open(path, 'r', encoding='utf-8') as f:
+                    data = _json.load(f)
         return jsonify(data)
     except Exception as e:
         return jsonify({'error': str(e)}), 500

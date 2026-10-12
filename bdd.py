@@ -2,7 +2,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask import jsonify, current_app
 from flask_babel import gettext as _, force_locale
 import xml.etree.ElementTree as ET
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 import os
 import json
@@ -10,6 +10,8 @@ import zipfile
 from typing import Optional
 
 import paths
+import lab_geojson
+import lab_store
 from extensions import db
 from geojson_cache import GeojsonIndexCache, build_metadata_from_features
 from task_manager import TaskStatus, task_manager
@@ -577,45 +579,56 @@ def db_infos(Geocache):
     size = get_database_size(db_path)
     
     if exists:
-        # Compter le nombre total d'entrées
-        total_points = Geocache.query.count()
-        
-        if total_points > 0:
+        geocache_count = Geocache.query.count()
+        # Ventilation par source : les Labs exploitables comptent dans le jeu
+        # animable, les non résolus restent distingués (importés, en attente).
+        lab_stats = lab_store.collection_status(db.session)
+        labs_ready = lab_stats["ready"]
+        labs_pending = lab_stats["unresolved"]
+        animable = geocache_count + labs_ready
+        sources = {
+            'geocaches': geocache_count,
+            'labs': {'ready': labs_ready, 'pending': labs_pending},
+        }
+
+        if animable > 0:
             # Base de données existe et contient des données
             startDate, endDate = get_database_start_end(Geocache)
             # Date de dernière modification du fichier de base de données
             import datetime
             modification_time = os.path.getmtime(db_path)
             load_date = datetime.datetime.fromtimestamp(modification_time).strftime('%Y-%m-%d %H:%M:%S')
-            
+
             return jsonify({
-                'exists': exists, 
-                'size': size, 
+                'exists': exists,
+                'size': size,
                 'isEmpty': False,
-                'totalPoints': total_points,
-                'startDate': startDate, 
+                'totalPoints': animable,
+                'startDate': startDate,
                 'endDate': endDate,
-                'loadDate': load_date
+                'loadDate': load_date,
+                'sources': sources
             })
         else:
-            # Base de données existe mais est vide
+            # Base de données existe mais est vide (ou sans Labs exploitables)
             return jsonify({
-                'exists': exists, 
-                'size': size, 
+                'exists': exists,
+                'size': size,
                 'isEmpty': True,
                 'totalPoints': 0,
-                'startDate': None, 
+                'startDate': None,
                 'endDate': None,
-                'loadDate': None
+                'loadDate': None,
+                'sources': sources
             })
     else:
         # Base de données n'existe pas
         return jsonify({
-            'exists': exists, 
-            'size': 0, 
+            'exists': exists,
+            'size': 0,
             'isEmpty': None,  # N/A car n'existe pas
             'totalPoints': 0,
-            'startDate': None, 
+            'startDate': None,
             'endDate': None,
             'loadDate': None
         })
@@ -626,19 +639,29 @@ def get_database_size(db_path):
 
 
 def get_database_start_end(Geocache):
-    """Premiere et derniere date de la base de données"""
+    """Premiere et derniere date de la base de données (toutes sources)."""
     first_entry = Geocache.query.order_by(Geocache.date_find).first()
     last_entry = Geocache.query.order_by(Geocache.date_find.desc()).first()
-    startDate = first_entry.date_find if first_entry else None
-    endDate = last_entry.date_find if last_entry else None
-    return startDate, endDate
+    # geocache.date_find est un datetime, lab found_date une date : on
+    # normalise en date avant comparaison (format conservé par jsonify).
+    dates = [
+        d.date() if isinstance(d, datetime) else d
+        for d in (first_entry.date_find if first_entry else None,
+                  last_entry.date_find if last_entry else None) if d
+    ]
+    lab_bounds = lab_store.lab_date_bounds(db.session)
+    dates.extend(d for d in lab_bounds if d)
+    return (min(dates), max(dates)) if dates else (None, None)
 
 
 def database_exists(db_path):
     return os.path.exists(db_path)
 
 
-def create_geojson(query, Geocache, status: Optional[TaskStatus] = None, persist: bool = True):
+def create_geojson(query, Geocache, status: Optional[TaskStatus] = None, persist: bool = True,
+                   extra_features: Optional[list] = None):
+    """GeoJSON des géocaches, fusionné le cas échéant avec des features
+    supplémentaires (Labs) avant tri date puis identité stable."""
     query = query.order_by(Geocache.date_find)
     total_points = query.count() if status else None
 
@@ -651,6 +674,7 @@ def create_geojson(query, Geocache, status: Optional[TaskStatus] = None, persist
                 "coordinates": [point.longitude, point.latitude]
             },
             "properties": {
+                "source_kind": "geocache",
                 "date_find": point.date_find.strftime('%Y-%m-%d') if point.date_find else None,
                 "time_find": getattr(point, 'time_find', None),
                 "found": bool(getattr(point, 'found', False)),
@@ -674,6 +698,9 @@ def create_geojson(query, Geocache, status: Optional[TaskStatus] = None, persist
             progress_value = ((idx + 1) / total_points) * 100
             _update_progress(status, progress_value,
                          _("Génération du GeoJSON (%(idx)s/%(total)s)", idx=idx + 1, total=total_points))
+
+    if extra_features:
+        features = lab_geojson.merge_sorted(features, extra_features)
 
     geojson = {
         "type": "FeatureCollection",
@@ -761,11 +788,75 @@ def ensure_geocache_indexes(db):
 
 
 def filter_session(db, Geocache, selectedValues, status: Optional[TaskStatus] = None):
-    """Filtre la BDD et retourne un GeoJSON généré en tâche de fond si status fourni."""
+    """Filtre la BDD et retourne un GeoJSON généré en tâche de fond si status fourni.
+
+    Politique de filtrage partagée avec le cache indexé et le filtrage client
+    (plan §9.2/9.3) : champ `sources` explicite, dimensions D/T/taille/
+    publication non applicables aux Labs, neutralité géographique et
+    sentinelle « Non renseigné » pour les valeurs inconnues.
+    """
+    from geojson_cache import UNKNOWN_GEO
+    from sqlalchemy import or_
+
     logger.debug("selectedValues: %s", selectedValues)
 
+    # Restriction de sources : liste vide = aucun résultat ; champ absent =
+    # pas de restriction (compatibilité MVP avant le sélecteur de sources).
+    sources = selectedValues.get("sources")
+    if isinstance(sources, list) and len(sources) == 0:
+        return {"type": "FeatureCollection", "features": []}
+    sources_given = isinstance(sources, list) and len(sources) > 0
+    want_caches = not sources_given or "geocache" in sources
+    want_labs = not sources_given or "lab" in sources
+
+    # Neutralité géographique : la sélection couvre toutes les options offertes
+    # (nommées + « Non renseigné ») => état « tous », les valeurs inconnues y
+    # restent visibles. Une liste vide n'est « Aucun » (aucun résultat) que si
+    # la dimension offrait des options — sinon inactive (selectHasRealOptions).
+    named_countries = {r[0] for r in db.session.query(Geocache.country).distinct() if r[0]}
+    unknown_country_exists = db.session.query(Geocache.id).filter(
+        or_(Geocache.country.is_(None), Geocache.country == '')).first() is not None \
+        or lab_geojson.has_ready_labs(db.session)
+    offered_countries = set(named_countries)
+    if unknown_country_exists:
+        offered_countries.add(UNKNOWN_GEO)
+    countries = selectedValues.get("countries")
+    if not isinstance(countries, list):
+        countries = None
+    states = selectedValues.get("states")
+    if not isinstance(states, list):
+        states = None
+    country_strict = countries is not None and (
+        (len(countries) == 0 and bool(offered_countries))
+        or (len(countries) > 0 and not offered_countries <= set(countries))
+    )
+    neutral_country = not country_strict
+
+    # Périmètre des états offerts : états des pays sélectionnés sous sélection
+    # stricte, tous les états sinon ; les valeurs inconnues offrent la
+    # sentinelle comme les nommés.
+    if country_strict and countries:
+        named_sel_countries = [c for c in countries if c != UNKNOWN_GEO]
+        scope_rows = db.session.query(Geocache.state).filter(
+            Geocache.country.in_(named_sel_countries or ['__NONE__'])).distinct().all()
+    else:
+        scope_rows = db.session.query(Geocache.state).distinct().all()
+    state_scope = {(r[0] or UNKNOWN_GEO) for r in scope_rows}
+    # Labs dans le périmètre pays : leur état est inconnu -> sentinelle offerte.
+    if lab_geojson.has_ready_labs(db.session) and (
+            not country_strict or UNKNOWN_GEO in set(countries or [])):
+        state_scope.add(UNKNOWN_GEO)
+    state_strict = states is not None and (
+        (len(states) == 0 and bool(state_scope))
+        or (len(states) > 0 and not state_scope <= set(states))
+    )
+    neutral_state = not state_strict
+
     query = db.session.query(Geocache)
-    # Utilisez db.session pour faire la requête
+    if not want_caches:
+        # Source « geocache » non demandée : branche SQL vide.
+        query = query.filter(Geocache.id == -1)
+
     # Appliquer les filtres de type de cache
     types = selectedValues.get("type") or []
     if len(types) > 0:
@@ -780,17 +871,28 @@ def filter_session(db, Geocache, selectedValues, status: Optional[TaskStatus] = 
     if selectedValues.get("container"):
         query = query.filter(Geocache.container.in_(selectedValues["container"]))
 
-    # Filtrage par pays
-    countries = selectedValues.get("countries") or []
-    if isinstance(countries, list):
-        if len(countries) > 0:
-            query = query.filter(Geocache.country.in_(countries))
+    # Filtrage par pays — uniquement sous sélection géographique réelle ;
+    # la sentinelle « Non renseigné » sélectionne les valeurs inconnues.
+    if country_strict:
+        named_sel = [c for c in countries if c != UNKNOWN_GEO]
+        conds = []
+        if named_sel:
+            conds.append(Geocache.country.in_(named_sel))
+        if UNKNOWN_GEO in countries:
+            # Valeurs « inconnues » : NULL ou chaîne vide (falsy partout ailleurs).
+            conds.append(or_(Geocache.country.is_(None), Geocache.country == ''))
+        # Sélection vide (« Aucun ») ou sentinelle seule sans correspondance.
+        query = query.filter(or_(*conds) if conds else Geocache.country == '__NONE__')
 
-    # Filtrage par états/régions
-    states = selectedValues.get("states") or []
-    if isinstance(states, list):
-        if len(states) > 0:
-            query = query.filter(Geocache.state.in_(states))
+    # Filtrage par états/régions — même règle.
+    if state_strict:
+        named_sel = [s for s in states if s != UNKNOWN_GEO]
+        conds = []
+        if named_sel:
+            conds.append(Geocache.state.in_(named_sel))
+        if UNKNOWN_GEO in states:
+            conds.append(or_(Geocache.state.is_(None), Geocache.state == ''))
+        query = query.filter(or_(*conds) if conds else Geocache.state == '__NONE__')
 
     # Filtrage par plage de dates (trouvaille)
     dates = selectedValues.get("dates") or {}
@@ -798,7 +900,10 @@ def filter_session(db, Geocache, selectedValues, status: Optional[TaskStatus] = 
         start_date = convert_str_to_date(dates.get('startDate'))
         end_date = convert_str_to_date(dates.get('endDate'))
         if start_date and end_date:
-            query = query.filter(Geocache.date_find >= start_date, Geocache.date_find <= end_date)
+            # date_find est DateTime : la borne inclusive devient « < fin+1j »,
+            # sinon toute trouvaille du dernier jour est exclue sous SQLite.
+            query = query.filter(Geocache.date_find >= start_date,
+                                 Geocache.date_find < end_date + timedelta(days=1))
 
     # Filtrage par plage de dates de publication
     published_dates = selectedValues.get("published_dates") or {}
@@ -806,9 +911,14 @@ def filter_session(db, Geocache, selectedValues, status: Optional[TaskStatus] = 
         published_start_date = convert_str_to_date(published_dates.get('startDate'))
         published_end_date = convert_str_to_date(published_dates.get('endDate'))
         if published_start_date and published_end_date:
-            query = query.filter(Geocache.published_date >= published_start_date, Geocache.published_date <= published_end_date)
-    
-    geocaches_data = create_geojson(query, Geocache, status, persist=False)
+            query = query.filter(Geocache.published_date >= published_start_date,
+                                 Geocache.published_date < published_end_date + timedelta(days=1))
+
+    geo_ctx = {"neutral_country": neutral_country, "neutral_state": neutral_state}
+    lab_features = lab_geojson.build_lab_features_matching(
+        db.session, selectedValues, geo=geo_ctx) if want_labs else []
+    geocaches_data = create_geojson(query, Geocache, status, persist=False,
+                                  extra_features=lab_features)
 
     return geocaches_data
 
@@ -820,21 +930,32 @@ def convert_str_to_date(date_str):
 
 
 def build_country_state_tree(db, Geocache):
-    """Construit un dictionnaire Country -> [States] depuis la BDD et l'écrit dans paths.country_state_path()"""
+    """Construit un dictionnaire Country -> [States] depuis la BDD et l'écrit dans paths.country_state_path()
+
+    Les valeurs inconnues (NULL/vides, et les Labs qui n'ont pas de pays)
+    apparaissent sous la clé sentinelle UNKNOWN_GEO — l'option « Non
+    renseigné » des listes pays/région (plan §9.2).
+    """
+    from geojson_cache import UNKNOWN_GEO
     try:
         rows = db.session.query(Geocache.country, Geocache.state).distinct().all()
         tree = {}
         for country, state in rows:
-            if not country:
-                continue
-            key = country.strip()
-            val = (state or '').strip() if state else None
+            key = (country or '').strip() or UNKNOWN_GEO
+            val = (state or '').strip() if state else ''
             if key not in tree:
                 tree[key] = set()
-            if val:
-                tree[key].add(val)
-        # Convertir les sets en listes triées
-        tree_sorted = { c: sorted(list(states)) for c, states in sorted(tree.items(), key=lambda x: x[0].lower()) }
+            tree[key].add(val or UNKNOWN_GEO)
+        # Labs exploitables : valeur géographique inconnue, option explicite.
+        if lab_geojson.has_ready_labs(db.session):
+            tree.setdefault(UNKNOWN_GEO, set()).add(UNKNOWN_GEO)
+        # Convertir les sets en listes triées, sentinelle en dernier.
+        def _k(item):
+            return (item[0] == UNKNOWN_GEO, item[0].lower())
+        tree_sorted = {
+            c: sorted(list(states), key=lambda s: (s == UNKNOWN_GEO, s.lower()))
+            for c, states in sorted(tree.items(), key=_k)
+        }
 
         # Écriture JSON
         out_path = paths.country_state_path()
@@ -907,7 +1028,9 @@ def _generate_geojson_dataset(status: TaskStatus, db, Geocache, selected_values:
             status.set_progress(30, _("GeoJSON servi depuis le cache"))
         else:
             status.set_progress(5, _("Génération du GeoJSON complet..."))
-            geojson = create_geojson(db.session.query(Geocache), Geocache, status)
+            geojson = create_geojson(
+                db.session.query(Geocache), Geocache, status,
+                extra_features=lab_geojson.build_lab_features(db.session))
             metadata = get_metadata_from_geojson(geojson["features"])
             geojson_cache.set_base_dataset(geojson, metadata, db_mtime)
     else:
@@ -918,7 +1041,9 @@ def _generate_geojson_dataset(status: TaskStatus, db, Geocache, selected_values:
         else:
             if geojson_cache.get_base_dataset_if_current(db_mtime) is None:
                 status.set_progress(5, _("Pré-calcul du GeoJSON complet pour indexer les filtres..."))
-                base_geojson = create_geojson(db.session.query(Geocache), Geocache, status)
+                base_geojson = create_geojson(
+                    db.session.query(Geocache), Geocache, status,
+                    extra_features=lab_geojson.build_lab_features(db.session))
                 base_metadata = get_metadata_from_geojson(base_geojson["features"])
                 geojson_cache.set_base_dataset(base_geojson, base_metadata, db_mtime)
             status.set_progress(45, _("Application des index mémoire (date/type/région)..."))

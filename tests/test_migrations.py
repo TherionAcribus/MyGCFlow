@@ -13,7 +13,7 @@ class SchemaMigrationTests(unittest.TestCase):
     """Une base créée par une ancienne version doit rester utilisable."""
 
     def setUp(self):
-        self.tmpdir = tempfile.TemporaryDirectory()
+        self.tmpdir = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
         self.addCleanup(self.tmpdir.cleanup)
         self.db_path = os.path.join(self.tmpdir.name, 'geocaching.db')
 

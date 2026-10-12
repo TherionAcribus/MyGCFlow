@@ -31,6 +31,13 @@
             <option value="GPS Adventures Exhibit" selected>{{ _("GPS Adventures Exhibit") }}</option>
             <option value="Locationless (Reverse) Cache" selected>{{ _("Locationless (Reverse) Cache") }}</option>
         </optgroup>
+        {# Option Labs : réservée au mode Normal — le mode Évolution partage ce
+           partial sans définir show_lab_option (cf. menu_filtre.html). #}
+        {% if show_lab_option %}
+        <optgroup label="{{ _("Lab Caches") }}">
+            <option value="Adventure Lab" selected>{{ _("Adventure Lab") }}</option>
+        </optgroup>
+        {% endif %}
     </select>
     <div class="filter-actions mt-1">
         <button type="button" id="btnAllType" class="btn btn-link btn-sm p-0 me-2"><i class="ti ti-checks me-1"></i>{{ _("Tout") }}</button>

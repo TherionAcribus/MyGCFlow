@@ -428,6 +428,23 @@ def preview_coordinates(session, parsed) -> dict:
 # Lecture / suppression
 # ---------------------------------------------------------------------------
 
+def lab_date_bounds(session) -> tuple:
+    """(min, max) des found_date des découvertes exploitables — db_infos."""
+    from sqlalchemy import func
+    collection = get_collection(session)
+    if collection is None:
+        return (None, None)
+    row = session.query(
+        func.min(LabDiscovery.found_date),
+        func.max(LabDiscovery.found_date),
+    ).filter(
+        LabDiscovery.collection_id == collection.id,
+        LabDiscovery.coordinate_status == LabDiscovery.COORD_RESOLVED,
+        LabDiscovery.found_date.isnot(None),
+    ).one()
+    return (row[0], row[1])
+
+
 def collection_status(session) -> dict:
     """Compteurs pour /api/labs/status : importées, exploitables, en attente."""
     collection = get_collection(session)

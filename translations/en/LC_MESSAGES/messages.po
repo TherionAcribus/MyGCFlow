@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-12 09:23+0200\n"
+"POT-Creation-Date: 2026-10-12 15:01+0200\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -18,98 +18,98 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
-#: bdd.py:114
+#: bdd.py:116
 msgid "Aucun fichier envoyé"
 msgstr "No file was sent"
 
-#: bdd.py:118 static/js/bdd.js:69 static/js/evolution_data.js:210
+#: bdd.py:120 static/js/bdd.js:69 static/js/evolution_data.js:210
 #: templates/menu_data.html:30 templates/menu_data_evolution.html:55
 msgid "Aucun fichier sélectionné"
 msgstr "No file selected"
 
-#: bdd.py:136
+#: bdd.py:138
 msgid "Le fichier fourni n'est pas un fichier GPX valide"
 msgstr "The provided file is not a valid GPX file"
 
-#: bdd.py:153 static/js/bdd.js:196
+#: bdd.py:155 static/js/bdd.js:196
 msgid "Le fichier GPX n'est pas un fichier produit par Groundspeak."
 msgstr "This GPX file was not produced by Groundspeak."
 
-#: bdd.py:157 static/js/bdd.js:200
+#: bdd.py:159 static/js/bdd.js:200
 msgid "Le fichier GPX est une Pocket Query et non un fichier My Finds."
 msgstr "This GPX file is a Pocket Query, not a My Finds file."
 
-#: bdd.py:159
+#: bdd.py:161
 msgid "Fichier reçu avec succès"
 msgstr "File received successfully"
 
-#: bdd.py:192
+#: bdd.py:194
 msgid "L'archive .zip ne contient aucun fichier .gpx."
 msgstr "The .zip archive does not contain any .gpx file."
 
-#: bdd.py:207 bdd.py:218 static/js/bdd.js:217
+#: bdd.py:209 bdd.py:220 static/js/bdd.js:217
 msgid "Le fichier est trop volumineux (200 Mo max)"
 msgstr "The file is too large (200 MB max)"
 
-#: bdd.py:222
+#: bdd.py:224
 msgid "L'archive .zip est illisible ou corrompue."
 msgstr "The .zip archive is unreadable or corrupted."
 
-#: bdd.py:269
+#: bdd.py:271
 msgid "Lecture du fichier GPX..."
 msgstr "Reading GPX file..."
 
-#: bdd.py:322
+#: bdd.py:324
 msgid "Fichier GPX invalide"
 msgstr "Invalid GPX file"
 
-#: bdd.py:329
+#: bdd.py:331
 msgid "Aucun waypoint trouvé dans le fichier GPX"
 msgstr "No waypoint found in the GPX file"
 
-#: bdd.py:509
+#: bdd.py:511
 #, python-format
 msgid "Ajout du point %(count)s sur %(total)s à la base de données"
 msgstr "Adding point %(count)s of %(total)s to the database"
 
-#: bdd.py:530
+#: bdd.py:532
 msgid "Enregistrement en base de données..."
 msgstr "Saving to the database..."
 
-#: bdd.py:556
+#: bdd.py:558
 msgid "Import terminé"
 msgstr "Import finished"
 
-#: bdd.py:676
+#: bdd.py:700
 #, python-format
 msgid "Génération du GeoJSON (%(idx)s/%(total)s)"
 msgstr "Generating GeoJSON (%(idx)s/%(total)s)"
 
-#: bdd.py:897
+#: bdd.py:1018
 msgid "Préparation des données GeoJSON..."
 msgstr "Preparing GeoJSON data..."
 
-#: bdd.py:907
+#: bdd.py:1028
 msgid "GeoJSON servi depuis le cache"
 msgstr "GeoJSON served from cache"
 
-#: bdd.py:909
+#: bdd.py:1030
 msgid "Génération du GeoJSON complet..."
 msgstr "Generating full GeoJSON..."
 
-#: bdd.py:917
+#: bdd.py:1040
 msgid "Résultat filtré servi depuis le cache"
 msgstr "Filtered result served from cache"
 
-#: bdd.py:920
+#: bdd.py:1043
 msgid "Pré-calcul du GeoJSON complet pour indexer les filtres..."
 msgstr "Pre-computing full GeoJSON to index filters..."
 
-#: bdd.py:924
+#: bdd.py:1049
 msgid "Application des index mémoire (date/type/région)..."
 msgstr "Applying in-memory indexes (date/type/region)..."
 
-#: bdd.py:927
+#: bdd.py:1052
 msgid "Filtrage direct en base (fallback)..."
 msgstr "Direct database filtering (fallback)..."
 
@@ -345,9 +345,9 @@ msgstr "Settings"
 #: templates/app.html:209 templates/guide.html:47 templates/guide.html:79
 #: templates/guide.html:101 templates/guide.html:124 templates/guide.html:144
 #: templates/guide.html:371 templates/menu_animation.html:83
-#: templates/menu_animation.html:113 templates/menu_filtre.html:24
-#: templates/menu_filtre.html:33 templates/menu_filtre.html:49
-#: templates/menu_filtre.html:58 test_translations.py:30
+#: templates/menu_animation.html:113 templates/menu_filtre.html:26
+#: templates/menu_filtre.html:35 templates/menu_filtre.html:51
+#: templates/menu_filtre.html:60 test_translations.py:30
 msgid "Données"
 msgstr "Data"
 
@@ -454,7 +454,7 @@ msgstr "A dataset already has this name"
 msgid "Un import est en cours : réessayez une fois terminé"
 msgstr "An import is running: try again once it is done"
 
-#: blueprints/evolution.py:158 blueprints/gpx.py:37
+#: blueprints/evolution.py:158 blueprints/gpx.py:37 blueprints/labs.py:247
 msgid "Aucun fichier fourni"
 msgstr "No file provided"
 
@@ -509,6 +509,74 @@ msgstr "Database cleared successfully. %(count)s entries deleted."
 #, python-format
 msgid "Erreur lors du vidage de la base de données: %(error)s"
 msgstr "Error while clearing the database: %(error)s"
+
+#: blueprints/labs.py:189
+#, python-format
+msgid "Import Labs : %(name)s"
+msgstr "Lab import: %(name)s"
+
+#: blueprints/labs.py:207
+msgid "Import Labs : finalisation"
+msgstr "Lab import: finishing up"
+
+#: blueprints/labs.py:250
+#, python-format
+msgid "Trop de fichiers (maximum %(max)s)"
+msgstr "Too many files (maximum %(max)s)"
+
+#: blueprints/labs.py:261
+msgid "Fichier trop volumineux"
+msgstr "File too large"
+
+#: blueprints/labs.py:270
+msgid "Format non reconnu (ni export historique, ni GPX Lab2Gpx)"
+msgstr "Unrecognized format (neither history export nor Lab2Gpx GPX)"
+
+#: blueprints/labs.py:286
+msgid "Aucun fichier exploitable"
+msgstr "No usable file"
+
+#: blueprints/labs.py:312
+#, python-format
+msgid "Erreur lors de l'analyse : %(error)s"
+msgstr "Error while parsing: %(error)s"
+
+#: blueprints/labs.py:345
+msgid "Un import Labs est déjà en cours"
+msgstr "A Lab import is already running"
+
+#: blueprints/labs.py:369
+msgid "Import Labs lancé en tâche de fond"
+msgstr "Lab import started in background"
+
+#: blueprints/labs.py:387
+msgid "Pagination invalide"
+msgstr "Invalid pagination"
+
+#: blueprints/labs.py:401
+msgid "Aucune correction fournie"
+msgstr "No correction provided"
+
+#: blueprints/labs.py:409
+msgid "Découverte inconnue"
+msgstr "Unknown discovery"
+
+#: blueprints/labs.py:416
+msgid "Coordonnées invalides"
+msgstr "Invalid coordinates"
+
+#: blueprints/labs.py:426
+msgid "Date invalide (format attendu : AAAA-MM-JJ)"
+msgstr "Invalid date (expected format: YYYY-MM-DD)"
+
+#: blueprints/labs.py:452
+#, python-format
+msgid "Collection Labs vidée (%(count)s entrées supprimées)."
+msgstr "Lab collection emptied (%(count)s entries deleted)."
+
+#: blueprints/labs.py:462
+msgid "Aucune collection Labs à exporter"
+msgstr "No Lab collection to export"
 
 #: blueprints/media.py:85
 msgid ""
@@ -597,7 +665,7 @@ msgstr "The selected file is empty"
 msgid "Un import est déjà en cours, veuillez patienter."
 msgstr "An import is already running, please wait."
 
-#: static/js/bdd.js:240 static/js/bdd.js:1300
+#: static/js/bdd.js:240 static/js/bdd.js:1333
 msgid "Import en cours"
 msgstr "Import in progress"
 
@@ -605,7 +673,7 @@ msgstr "Import in progress"
 msgid "Analyse du fichier GPX en cours..."
 msgstr "Analyzing GPX file..."
 
-#: static/js/bdd.js:250 static/js/bdd.js:995 static/js/bdd.js:1088
+#: static/js/bdd.js:250 static/js/bdd.js:1028 static/js/bdd.js:1121
 #: static/js/evolution_data.js:327 static/js/notifications.js:266
 #: static/js/notifications.js:311
 msgid "Chargement"
@@ -656,61 +724,61 @@ msgstr "imported ${when}"
 msgid "Aucune trouvaille chargée"
 msgstr "No finds loaded"
 
-#: static/js/bdd.js:923 static/js/bdd.js:1003
+#: static/js/bdd.js:956 static/js/bdd.js:1036
 #, python-brace-format
 msgid "Envoi du fichier : ${pct}%"
 msgstr "Uploading file: ${pct}%"
 
-#: static/js/bdd.js:935
+#: static/js/bdd.js:968
 msgid "Réponse invalide du serveur"
 msgstr "Invalid server response"
 
-#: static/js/bdd.js:939
+#: static/js/bdd.js:972
 msgid "Impossible de lancer l'import GPX"
 msgstr "Unable to start the GPX import"
 
-#: static/js/bdd.js:946 static/js/bdd.js:950 static/js/bdd.js:1045
+#: static/js/bdd.js:979 static/js/bdd.js:983 static/js/bdd.js:1078
 msgid "Traitement du fichier en cours..."
 msgstr "Processing file..."
 
-#: static/js/bdd.js:955 static/js/evolution_data.js:861
+#: static/js/bdd.js:988 static/js/evolution_data.js:861
 msgid "Erreur réseau lors de l'envoi du fichier"
 msgstr "Network error while uploading the file"
 
-#: static/js/bdd.js:956 static/js/evolution_data.js:862
+#: static/js/bdd.js:989 static/js/evolution_data.js:862
 msgid "Envoi du fichier annulé"
 msgstr "File upload cancelled"
 
-#: static/js/bdd.js:970
+#: static/js/bdd.js:1003
 msgid "Veuillez sélectionner un fichier .gpx"
 msgstr "Please select a .gpx file"
 
-#: static/js/bdd.js:970
+#: static/js/bdd.js:1003
 msgid "Aucun fichier"
 msgstr "No file"
 
-#: static/js/bdd.js:995 static/js/bdd.js:996 static/js/bdd.js:1001
+#: static/js/bdd.js:1028 static/js/bdd.js:1029 static/js/bdd.js:1034
 msgid "Préparation de l'envoi..."
 msgstr "Preparing upload..."
 
-#: static/js/bdd.js:1014
+#: static/js/bdd.js:1047
 msgid "Fichier chargé avec succès !"
 msgstr "File uploaded successfully!"
 
-#: static/js/bdd.js:1014 static/js/mapgl.js:5420
+#: static/js/bdd.js:1047 static/js/mapgl.js:5420
 msgid "Terminé"
 msgstr "Done"
 
-#: static/js/bdd.js:1024 static/js/bdd.js:1381
+#: static/js/bdd.js:1057 static/js/bdd.js:1414
 msgid "Chargement et affichage des points..."
 msgstr "Loading and displaying points..."
 
-#: static/js/bdd.js:1044 static/js/bdd.js:1052
+#: static/js/bdd.js:1077 static/js/bdd.js:1085
 msgid "Erreur lors du chargement du fichier"
 msgstr "Error while uploading the file"
 
-#: static/js/bdd.js:1044 static/js/bdd.js:1052 static/js/bdd.js:1164
-#: static/js/bdd.js:1172 static/js/bdd.js:1367 static/js/evolution_data.js:246
+#: static/js/bdd.js:1077 static/js/bdd.js:1085 static/js/bdd.js:1197
+#: static/js/bdd.js:1205 static/js/bdd.js:1400 static/js/evolution_data.js:246
 #: static/js/evolution_data.js:350 static/js/evolution_data.js:908
 #: static/js/evolution_data.js:912 static/js/evolution_data.js:1262
 #: static/js/evolution_data.js:1300 static/js/evolution_data.js:1308
@@ -719,36 +787,36 @@ msgstr "Error while uploading the file"
 msgid "Erreur"
 msgstr "Error"
 
-#: static/js/bdd.js:1086 static/js/bdd.js:1088
+#: static/js/bdd.js:1119 static/js/bdd.js:1121
 msgid "Chargement de l'application..."
 msgstr "Loading the application..."
 
-#: static/js/bdd.js:1103
+#: static/js/bdd.js:1136
 msgid "Impossible de lancer le chargement des données"
 msgstr "Unable to start loading the data"
 
-#: static/js/bdd.js:1164 static/js/bdd.js:1172
+#: static/js/bdd.js:1197 static/js/bdd.js:1205
 msgid "Erreur lors du chargement des données"
 msgstr "Error while loading data"
 
-#: static/js/bdd.js:1237
+#: static/js/bdd.js:1270
 #, python-brace-format
 msgid "${selected} / ${total}"
 msgstr "${selected} / ${total}"
 
-#: static/js/bdd.js:1263
+#: static/js/bdd.js:1296
 msgid "Aucune cache ne correspond aux critères sélectionnés par les filtres."
 msgstr "No cache matches the criteria selected by the filters."
 
-#: static/js/bdd.js:1263
+#: static/js/bdd.js:1296
 msgid "Aucune cache visible"
 msgstr "No visible cache"
 
-#: static/js/bdd.js:1300
+#: static/js/bdd.js:1333
 msgid "Un import est en cours, veuillez patienter avant de supprimer les données."
 msgstr "An import is in progress, please wait before deleting the data."
 
-#: static/js/bdd.js:1310
+#: static/js/bdd.js:1343
 msgid ""
 "Êtes-vous sûr de vouloir supprimer toutes vos trouvailles ? Cette action "
 "est irréversible."
@@ -756,51 +824,51 @@ msgstr ""
 "Are you sure you want to delete all your finds? This action is "
 "irreversible."
 
-#: static/js/bdd.js:1311
+#: static/js/bdd.js:1344
 msgid "Confirmation de suppression"
 msgstr "Deletion confirmation"
 
-#: static/js/bdd.js:1314 templates/guide.html:159 templates/menu_data.html:59
+#: static/js/bdd.js:1347 templates/guide.html:159 templates/menu_data.html:59
 msgid "Supprimer mes géocaches"
 msgstr "Delete my geocaches"
 
-#: static/js/bdd.js:1319
+#: static/js/bdd.js:1352
 msgid "Confirmation non disponible, action annulée."
 msgstr "Confirmation unavailable, action cancelled."
 
-#: static/js/bdd.js:1319 static/js/bdd.js:1330
+#: static/js/bdd.js:1352 static/js/bdd.js:1363
 msgid "Suppression"
 msgstr "Deletion"
 
-#: static/js/bdd.js:1330
+#: static/js/bdd.js:1363
 msgid "Suppression des trouvailles..."
 msgstr "Deleting finds..."
 
-#: static/js/bdd.js:1356
+#: static/js/bdd.js:1389
 msgid "Trouvailles supprimées avec succès"
 msgstr "Finds deleted successfully"
 
-#: static/js/bdd.js:1356
+#: static/js/bdd.js:1389
 msgid "Suppression réussie"
 msgstr "Deletion successful"
 
-#: static/js/bdd.js:1367
+#: static/js/bdd.js:1400
 msgid "Erreur lors de la suppression des trouvailles: "
 msgstr "Error while deleting finds: "
 
-#: static/js/bdd.js:1381 static/js/mapgl.js:908 static/js/notifications.js:337
+#: static/js/bdd.js:1414 static/js/mapgl.js:908 static/js/notifications.js:337
 msgid "Affichage des points"
 msgstr "Points display"
 
-#: static/js/bdd.js:1387
+#: static/js/bdd.js:1420
 msgid "Impossible de lancer la génération du GeoJSON"
 msgstr "Unable to start GeoJSON generation"
 
-#: static/js/bdd.js:1399 static/js/bdd.js:1454 static/js/bdd.js:1462
+#: static/js/bdd.js:1432 static/js/bdd.js:1487 static/js/bdd.js:1495
 msgid "Erreur lors de l'affichage des points sur la carte"
 msgstr "Error while displaying the points on the map"
 
-#: static/js/bdd.js:1399 static/js/bdd.js:1454 static/js/bdd.js:1462
+#: static/js/bdd.js:1432 static/js/bdd.js:1487 static/js/bdd.js:1495
 msgid "Erreur d'affichage"
 msgstr "Display error"
 
@@ -1314,7 +1382,7 @@ msgstr "Task monitoring stopped after ${count} consecutive errors: ${detail}"
 msgid "Envoi des dernières images..."
 msgstr "Sending last images..."
 
-#: static/js/mapgl.js:4460 static/js/ui.js:6634
+#: static/js/mapgl.js:4460 static/js/ui.js:6645
 msgid "Assemblage en cours"
 msgstr "Assembly in progress"
 
@@ -2245,9 +2313,9 @@ msgstr "MyGCFlow is closed"
 msgid "Vous pouvez fermer cet onglet."
 msgstr "You can close this tab."
 
-#: static/js/ui.js:4121 templates/_filter_cache_attrs.html:37
-#: templates/_filter_cache_attrs.html:55 templates/_filter_cache_attrs.html:79
-#: templates/_filter_cache_attrs.html:100
+#: static/js/ui.js:4121 templates/_filter_cache_attrs.html:44
+#: templates/_filter_cache_attrs.html:62 templates/_filter_cache_attrs.html:86
+#: templates/_filter_cache_attrs.html:107
 #: templates/_filter_country_state.html:12
 #: templates/_filter_country_state.html:22 templates/_filter_county.html:14
 #: templates/menu_trail.html:129
@@ -2258,177 +2326,181 @@ msgstr "None"
 msgid "Filtrer par département"
 msgstr "Filter by county"
 
-#: static/js/ui.js:4312 templates/_filter_country_state.html:8
+#: static/js/ui.js:4299
+msgid "Non renseigné"
+msgstr "Not specified"
+
+#: static/js/ui.js:4323 templates/_filter_country_state.html:8
 msgid "Filtrer par pays"
 msgstr "Filter by country"
 
-#: static/js/ui.js:4341 static/js/ui.js:4392
+#: static/js/ui.js:4352 static/js/ui.js:4403
 #: templates/_filter_country_state.html:18
 msgid "Filtrer par région/état"
 msgstr "Filter by region/state"
 
-#: static/js/ui.js:5613
+#: static/js/ui.js:5624
 msgid "Pause non disponible pendant l'enregistrement - utilisez Arrêter"
 msgstr "Pause unavailable while recording - use Stop"
 
-#: static/js/ui.js:6070
+#: static/js/ui.js:6081
 msgid "Valeur requise."
 msgstr "Value required."
 
-#: static/js/ui.js:6072
+#: static/js/ui.js:6083
 msgid "Format attendu : mm:ss (ex. 4:55)."
 msgstr "Expected format: mm:ss (e.g. 4:55)."
 
-#: static/js/ui.js:6073
+#: static/js/ui.js:6084
 msgid "Nombre attendu."
 msgstr "Number expected."
 
-#: static/js/ui.js:6074
+#: static/js/ui.js:6085
 msgid "La valeur doit être strictement positive."
 msgstr "The value must be strictly positive."
 
-#: static/js/ui.js:6076
+#: static/js/ui.js:6087
 #, python-brace-format
 msgid "Entre ${min} et ${max} jours/s."
 msgstr "Between ${min} and ${max} days/s."
 
-#: static/js/ui.js:6077
+#: static/js/ui.js:6088
 #, python-brace-format
 msgid "Entre ${min} et ${max} s."
 msgstr "Between ${min} and ${max} s."
 
-#: static/js/ui.js:6078
+#: static/js/ui.js:6089
 #, python-brace-format
 msgid "Maximum ${max} s."
 msgstr "Maximum ${max} s."
 
-#: static/js/ui.js:6079
+#: static/js/ui.js:6090
 msgid "Entre 100 et 10000 ms."
 msgstr "Between 100 and 10000 ms."
 
-#: static/js/ui.js:6080
+#: static/js/ui.js:6091
 msgid "Hors limites."
 msgstr "Out of bounds."
 
-#: static/js/ui.js:6081
+#: static/js/ui.js:6092
 msgid "Valeur invalide."
 msgstr "Invalid value."
 
-#: static/js/ui.js:6173
+#: static/js/ui.js:6184
 #, python-brace-format
 msgid "${n} jours"
 msgstr "${n} days"
 
-#: static/js/ui.js:6174
+#: static/js/ui.js:6185
 #, python-brace-format
 msgid "${n} jours/s"
 msgstr "${n} days/s"
 
-#: static/js/ui.js:6176
+#: static/js/ui.js:6187
 #, python-brace-format
 msgid "animation minimale ${d}"
 msgstr "minimum animation ${d}"
 
-#: static/js/ui.js:6177
+#: static/js/ui.js:6188
 #, python-brace-format
 msgid "animation ${d}"
 msgstr "animation ${d}"
 
-#: static/js/ui.js:6178
+#: static/js/ui.js:6189
 #, python-brace-format
 msgid "fin ${d}"
 msgstr "end ${d}"
 
-#: static/js/ui.js:6181
+#: static/js/ui.js:6192
 #, python-brace-format
 msgid "dont trajets de caméra ${d}"
 msgstr "incl. camera travel ${d}"
 
-#: static/js/ui.js:6189
+#: static/js/ui.js:6200
 #, python-brace-format
 msgid "dont approche caméra ${d}"
 msgstr "incl. camera lead-in ${d}"
 
-#: static/js/ui.js:6195
+#: static/js/ui.js:6206
 #, python-brace-format
 msgid "dont pauses caméra ${d}"
 msgstr "incl. camera pauses ${d}"
 
-#: static/js/ui.js:6203
+#: static/js/ui.js:6214
 #, python-brace-format
 msgid "dont retour caméra ${d}"
 msgstr "incl. camera return ${d}"
 
-#: static/js/ui.js:6205
+#: static/js/ui.js:6216
 #, python-brace-format
 msgid "+ ${d} additionnel"
 msgstr "+ ${d} extra"
 
-#: static/js/ui.js:6207
+#: static/js/ui.js:6218
 #, python-brace-format
 msgid "vidéo minimale ${d}"
 msgstr "minimum video ${d}"
 
-#: static/js/ui.js:6208
+#: static/js/ui.js:6219
 #, python-brace-format
 msgid "vidéo ${d}"
 msgstr "video ${d}"
 
-#: static/js/ui.js:6210
+#: static/js/ui.js:6221
 #, python-brace-format
 msgid "${n} images minimum"
 msgstr "${n} frames minimum"
 
-#: static/js/ui.js:6211
+#: static/js/ui.js:6222
 #, python-brace-format
 msgid "${n} images"
 msgstr "${n} frames"
 
-#: static/js/ui.js:6213
+#: static/js/ui.js:6224
 #, python-brace-format
 msgid "≈ ${n} jours par image"
 msgstr "≈ ${n} days per frame"
 
-#: static/js/ui.js:6238
+#: static/js/ui.js:6249
 #, python-brace-format
 msgid "Vidéo ~${d}"
 msgstr "Video ~${d}"
 
-#: static/js/ui.js:6246 templates/menu_animation.html:23
+#: static/js/ui.js:6257 templates/menu_animation.html:23
 msgid "musique incluse"
 msgstr "music included"
 
-#: static/js/ui.js:6247
+#: static/js/ui.js:6258
 msgid "sans musique"
 msgstr "no music"
 
-#: static/js/ui.js:6253
+#: static/js/ui.js:6264
 #, python-brace-format
 msgid "destination : ${d}"
 msgstr "destination: ${d}"
 
-#: static/js/ui.js:6292
+#: static/js/ui.js:6303
 #, python-brace-format
 msgid "Exemple : ${name}"
 msgstr "Example: ${name}"
 
-#: static/js/ui.js:6295
+#: static/js/ui.js:6306
 msgid "Vide : nom du thème actif."
 msgstr "Empty: name of the active theme."
 
-#: static/js/ui.js:6327
+#: static/js/ui.js:6338
 msgid "La plage de dates est invalide ou vide."
 msgstr "The date range is invalid or empty."
 
-#: static/js/ui.js:6328
+#: static/js/ui.js:6339
 msgid "Sélectionnez un fichier audio pour le mode « Sur la musique »."
 msgstr "Select an audio file for the \"Sync to music\" mode."
 
-#: static/js/ui.js:6335
+#: static/js/ui.js:6346
 msgid "En attente de la lecture de la durée de la musique."
 msgstr "Waiting for the music duration to be read."
 
-#: static/js/ui.js:6346
+#: static/js/ui.js:6357
 #, python-brace-format
 msgid ""
 "Durée demandée (${req}) trop courte pour afficher chaque jour (minimum "
@@ -2437,7 +2509,7 @@ msgstr ""
 "Requested duration (${req}) too short to show every day (minimum ${min}):"
 " ${app} applied."
 
-#: static/js/ui.js:6369
+#: static/js/ui.js:6380
 msgid ""
 "Le suivi de caméra met les dates en pause pendant chaque déplacement. La "
 "durée et le nombre d'images affichés sont des minimums ; le résultat sera"
@@ -2447,7 +2519,7 @@ msgstr ""
 "and frame count are minimums; the result will be longer and may exceed "
 "the music duration."
 
-#: static/js/ui.js:6373
+#: static/js/ui.js:6384
 #, python-brace-format
 msgid ""
 "Les trajets de caméra dureraient ${travel}, trop pour la durée demandée :"
@@ -2458,7 +2530,7 @@ msgstr ""
 "it is sped up to fit in ${applied}. For calmer moves, lower the dynamism "
 "or lengthen the video."
 
-#: static/js/ui.js:6378
+#: static/js/ui.js:6389
 #, python-brace-format
 msgid ""
 "Le suivi de caméra met les dates en pause pendant chaque déplacement : "
@@ -2469,7 +2541,7 @@ msgstr ""
 "moves add about ${d} to the video. To hit an exact duration, choose “By "
 "duration” or “Sync to music”."
 
-#: static/js/ui.js:6394
+#: static/js/ui.js:6405
 #, python-brace-format
 msgid ""
 "${n} trajets de caméra mettront les dates en pause (+${d} au total) pour "
@@ -2479,7 +2551,7 @@ msgstr ""
 "${n} camera journeys will pause the dates (+${d} in total) so each day is"
 " framed when it appears. Reduce the dynamism or the pace to avoid it."
 
-#: static/js/ui.js:6441
+#: static/js/ui.js:6452
 #, python-brace-format
 msgid ""
 "Charge élevée : jusqu'à ~${n} flashs simultanés. Pistes : raccourcir la "
@@ -2488,7 +2560,7 @@ msgstr ""
 "High load: up to ~${n} simultaneous flashes. Suggestions: shorten the "
 "flash duration, slow down the animation, or use Images mode."
 
-#: static/js/ui.js:6445
+#: static/js/ui.js:6456
 #, python-brace-format
 msgid ""
 "${n} images à produire (~${d} en mode Images). Envisagez un fps plus bas "
@@ -2497,65 +2569,65 @@ msgstr ""
 "${n} frames to produce (~${d} in Images mode). Consider a lower fps or a "
 "shorter animation."
 
-#: static/js/ui.js:6630
+#: static/js/ui.js:6641
 msgid "Images de capture supprimées"
 msgstr "Capture images deleted"
 
-#: static/js/ui.js:6630
+#: static/js/ui.js:6641
 msgid "Nettoyage"
 msgstr "Cleanup"
 
-#: static/js/ui.js:6654
+#: static/js/ui.js:6665
 #, python-brace-format
 msgid "Dossier vidéo: ${folder}"
 msgstr "Video folder: ${folder}"
 
-#: static/js/ui.js:6654 static/js/ui.js:6656 static/js/ui.js:6661
+#: static/js/ui.js:6665 static/js/ui.js:6667 static/js/ui.js:6672
 msgid "Ouverture"
 msgstr "Opening"
 
-#: static/js/ui.js:6656
+#: static/js/ui.js:6667
 msgid "Impossible d’ouvrir le dossier vidéo"
 msgstr "Unable to open the video folder"
 
-#: static/js/ui.js:6661
+#: static/js/ui.js:6672
 msgid "Erreur lors de l’ouverture du dossier vidéo"
 msgstr "Error opening the video folder"
 
-#: static/js/ui.js:8861
+#: static/js/ui.js:8872
 msgid "Sélectionnez d'abord un fichier audio"
 msgstr "Select an audio file first"
 
-#: static/js/ui.js:8909 templates/menu_animation.html:300
+#: static/js/ui.js:8920 templates/menu_animation.html:300
 msgid "Aucune musique sélectionnée"
 msgstr "No music selected"
 
-#: static/js/ui.js:8942
+#: static/js/ui.js:8953
 msgid "Non disponible"
 msgstr "Not available"
 
-#: static/js/ui.js:8949 templates/_filter_cache_attrs.html:42
-#: templates/_filter_cache_attrs.html:43
+#: static/js/ui.js:8960 templates/_filter_cache_attrs.html:49
+#: templates/_filter_cache_attrs.html:50
 msgid "Taille"
 msgstr "Size"
 
-#: static/js/ui.js:8950
+#: static/js/ui.js:8961
 msgid "Type"
 msgstr "Type"
 
-#: static/js/ui.js:8951
+#: static/js/ui.js:8962
 msgid "Durée"
 msgstr "Duration"
 
-#: static/js/ui.js:8952
+#: static/js/ui.js:8963
 msgid "Modifié"
 msgstr "Modified"
 
-#: static/js/ui.js:9007
+#: static/js/ui.js:9018
 msgid "Erreur lors du chargement du fichier audio"
 msgstr "Error loading the audio file"
 
-#: static/js/ui.js:9106
+#: static/js/ui.js:9117
 #, python-brace-format
 msgid "Blanc de ${s} s détecté à la fin de la musique."
 msgstr "${s} s of silence detected at the end of the music."
@@ -2759,58 +2831,66 @@ msgstr "GPS Adventures Exhibit"
 msgid "Locationless (Reverse) Cache"
 msgstr "Locationless (Reverse) Cache"
 
-#: templates/_filter_cache_attrs.html:36 templates/_filter_cache_attrs.html:54
-#: templates/_filter_cache_attrs.html:78 templates/_filter_cache_attrs.html:99
+#: templates/_filter_cache_attrs.html:37
+msgid "Lab Caches"
+msgstr "Lab Caches"
+
+#: templates/_filter_cache_attrs.html:38
+msgid "Adventure Lab"
+msgstr "Adventure Lab"
+
+#: templates/_filter_cache_attrs.html:43 templates/_filter_cache_attrs.html:61
+#: templates/_filter_cache_attrs.html:85 templates/_filter_cache_attrs.html:106
 #: templates/_filter_country_state.html:11
 #: templates/_filter_country_state.html:21 templates/_filter_county.html:13
 msgid "Tout"
 msgstr "All"
 
-#: templates/_filter_cache_attrs.html:44
+#: templates/_filter_cache_attrs.html:51
 msgid "Filtrer par taille"
 msgstr "Filter by size"
 
-#: templates/_filter_cache_attrs.html:45
+#: templates/_filter_cache_attrs.html:52
 msgid "Small"
 msgstr "Small"
 
-#: templates/_filter_cache_attrs.html:46
+#: templates/_filter_cache_attrs.html:53
 msgid "Micro"
 msgstr "Micro"
 
-#: templates/_filter_cache_attrs.html:47
+#: templates/_filter_cache_attrs.html:54
 msgid "Regular"
 msgstr "Regular"
 
-#: templates/_filter_cache_attrs.html:48
+#: templates/_filter_cache_attrs.html:55
 msgid "Large"
 msgstr "Large"
 
-#: templates/_filter_cache_attrs.html:49
+#: templates/_filter_cache_attrs.html:56
 msgid "Other"
 msgstr "Other"
 
-#: templates/_filter_cache_attrs.html:50
+#: templates/_filter_cache_attrs.html:57
 msgid "Virtual"
 msgstr "Virtual"
 
-#: templates/_filter_cache_attrs.html:51
+#: templates/_filter_cache_attrs.html:58
 msgid "Not chosen"
 msgstr "Not chosen"
 
-#: templates/_filter_cache_attrs.html:64 templates/_filter_cache_attrs.html:65
+#: templates/_filter_cache_attrs.html:71 templates/_filter_cache_attrs.html:72
 msgid "Difficultés"
 msgstr "Difficulties"
 
-#: templates/_filter_cache_attrs.html:66
+#: templates/_filter_cache_attrs.html:73
 msgid "Filtrer par difficulté"
 msgstr "Filter by difficulty"
 
-#: templates/_filter_cache_attrs.html:85 templates/_filter_cache_attrs.html:86
+#: templates/_filter_cache_attrs.html:92 templates/_filter_cache_attrs.html:93
 msgid "Terrain"
 msgstr "Terrain"
 
-#: templates/_filter_cache_attrs.html:87
+#: templates/_filter_cache_attrs.html:94
 msgid "Filtrer par terrain"
 msgstr "Filter by terrain"
 
@@ -3249,8 +3329,8 @@ msgstr "shows how many caches are selected out of the total."
 msgid "Sous les filtres, le réglage"
 msgstr "Below the filters, the"
 
-#: templates/guide.html:155 templates/menu_filtre.html:78
-#: templates/menu_filtre.html:79
+#: templates/guide.html:155 templates/menu_filtre.html:80
+#: templates/menu_filtre.html:81
 msgid "Caches sans localisation (locationless)"
 msgstr "Locationless caches"
 
@@ -3629,16 +3709,16 @@ msgid "Renseignez la"
 msgstr "Fill in the"
 
 #: templates/guide.html:244 templates/menu_animation.html:79
-#: templates/menu_animation.html:80 templates/menu_filtre.html:20
-#: templates/menu_filtre.html:21 templates/menu_filtre.html:45
-#: templates/menu_filtre.html:46
+#: templates/menu_animation.html:80 templates/menu_filtre.html:22
+#: templates/menu_filtre.html:23 templates/menu_filtre.html:47
+#: templates/menu_filtre.html:48
 msgid "Date de début"
 msgstr "Start date"
 
 #: templates/guide.html:244 templates/menu_animation.html:109
-#: templates/menu_animation.html:110 templates/menu_filtre.html:29
-#: templates/menu_filtre.html:30 templates/menu_filtre.html:54
-#: templates/menu_filtre.html:55
+#: templates/menu_animation.html:110 templates/menu_filtre.html:31
+#: templates/menu_filtre.html:32 templates/menu_filtre.html:56
+#: templates/menu_filtre.html:57
 msgid "Date de fin"
 msgstr "End date"
 
@@ -4260,7 +4340,7 @@ msgstr "tab, the"
 
 #: templates/guide.html:371
 msgid "passe d'un mode à l'autre. Chaque mode garde ses propres données."
-msgstr ""
+msgstr "switches from one mode to the other. Each mode keeps its own data."
 "switch lets you move from one mode to the other. Each mode keeps its own "
 "data."
 
@@ -4701,28 +4781,28 @@ msgstr ""
 "Arbitrary delay: just long enough to see the appearance, then the "
 "disappearance."
 
-#: templates/menu_filtre.html:17
+#: templates/menu_filtre.html:19
 msgid "Période de découverte"
 msgstr "Found period"
 
-#: templates/menu_filtre.html:23 templates/menu_filtre.html:32
-#: templates/menu_filtre.html:48 templates/menu_filtre.html:57
+#: templates/menu_filtre.html:25 templates/menu_filtre.html:34
+#: templates/menu_filtre.html:50 templates/menu_filtre.html:59
 msgid "Date par défaut (toutes les données)"
 msgstr "Default date (all data)"
 
-#: templates/menu_filtre.html:42
+#: templates/menu_filtre.html:44
 msgid "Période de pose"
 msgstr "Published period"
 
-#: templates/menu_filtre.html:80
+#: templates/menu_filtre.html:82
 msgid "Comptées, sans point sur la carte"
 msgstr "Counted, with no point on the map"
 
-#: templates/menu_filtre.html:81
+#: templates/menu_filtre.html:83
 msgid "Comptées et affichées sur la carte"
 msgstr "Counted and shown on the map"
 
-#: templates/menu_filtre.html:84
+#: templates/menu_filtre.html:86
 msgid ""
 "Leur position dans le fichier est fictive : affichée, elle trace un point"
 " là où vous n'êtes pas allé."

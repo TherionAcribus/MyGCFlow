@@ -9,7 +9,9 @@
     </div>
 
     <!-- Lignes Type / Taille / Difficultés / Terrain (partagées avec le mode Évolution) -->
+    {% set show_lab_option = true %}
     {% include '_filter_cache_attrs.html' %}
+    {% set show_lab_option = false %}
 
     <!-- Ligne 3 : Période de découverte (dates) -->
     <div class="row g-2">

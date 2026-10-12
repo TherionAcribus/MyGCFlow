@@ -19,7 +19,9 @@ class LabStoreTests(unittest.TestCase):
     """Upserts, enrichissement et idempotence sur une vraie base SQLite."""
 
     def setUp(self):
-        self.tmpdir = tempfile.TemporaryDirectory()
+        # ignore_cleanup_errors : Windows garde parfois le SQLite/WAL ouvert
+        # une fraction de seconde après la libération du moteur.
+        self.tmpdir = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
         self.addCleanup(self.tmpdir.cleanup)
         self.db_path = os.path.join(self.tmpdir.name, 'geocaching.db')
         self.app = create_app({'SQLALCHEMY_DATABASE_URI': f"sqlite:///{self.db_path}"})
