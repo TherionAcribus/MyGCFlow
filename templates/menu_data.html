@@ -90,6 +90,55 @@
                 </div>
             </div>
 
+            <!-- Section Lab Caches : source indépendante (import propre,
+                 statut et suppression séparés — jamais via le bouton
+                 « Supprimer mes géocaches » ni la zone GPX ci-dessus, qui
+                 reste réservée aux fichiers de trouvailles). -->
+            <h5 class="gc-section-title mt-3">
+                <i class="ti ti-compass text-muted me-1"></i>{{ _("Mes Lab Caches") }}
+            </h5>
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <!-- Même pattern que #file-input : input natif masqué,
+                             bouton visible. Multi-fichiers acceptés (historique
+                             .json + coordonnées .gpx/.zip importés en un lot). -->
+                        <input type="file" class="visually-hidden" id="labs-file-input" accept=".json,.gpx,.zip" multiple
+                               aria-label="{{ _('Fichiers Lab Caches (.json, .gpx ou .zip)') }}" />
+                        <button type="button" id="labs-file-btn" class="btn btn-outline-primary btn-sm gcm-file-btn">
+                            <i class="ti ti-folder-open me-1" aria-hidden="true"></i>{{ _("Importer un fichier…") }}
+                        </button>
+                        <button type="button" id="labs-help-btn" class="btn btn-link btn-sm px-1">
+                            {{ _("Comment obtenir mes fichiers ?") }}
+                        </button>
+                    </div>
+                    <div class="form-hint text-muted mb-2">
+                        {{ _("Historique de découvertes (.json) et coordonnées des étapes (.gpx ou .zip), importables ensemble ou séparément.") }}
+                    </div>
+                    <div id="labsStatus" class="form-hint text-muted" aria-live="polite">
+                        {{ _("Aucune étape importée") }}
+                    </div>
+                    <!-- Étapes en attente de coordonnées/date : alerte propre
+                         aux Labs — à distinguer de #dataNoResults (filtres)
+                         qui ne s'applique pas ici. -->
+                    <div id="labsPendingAlert" class="alert alert-warning mt-2 mb-0 py-2 px-3 d-none" role="status">
+                        <div class="small" id="labsPendingText"></div>
+                        <button type="button" id="labsPendingBtn" class="btn btn-sm btn-warning mt-1">
+                            <i class="ti ti-map-pin-plus me-1" aria-hidden="true"></i>{{ _("Compléter les coordonnées") }}
+                        </button>
+                    </div>
+                    <div id="labsImportProgress" class="mt-2" aria-live="polite"></div>
+                    <div class="d-flex justify-content-between align-items-center gap-2 mt-3">
+                        <button id="labsExportBtn" class="btn btn-outline-secondary btn-sm" style="display:none;">
+                            <i class="ti ti-download me-1" aria-hidden="true"></i>{{ _("Exporter") }}
+                        </button>
+                        <button id="clearLabsBtn" class="btn btn-outline-danger btn-sm ms-auto" style="display:none;">
+                            <i class="ti ti-trash me-1" aria-hidden="true"></i>{{ _("Supprimer mes Lab Caches") }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
         <!-- Section Filtres -->
@@ -103,6 +152,93 @@
             <div class="card">
                 <div class="card-body">
                     {% include 'menu_filtre.html' %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== Modales Lab Caches ===================== -->
+
+    <!-- Aide : où obtenir l'historique et les coordonnées -->
+    <div id="labsHelpModal" class="modal bs-modal" tabindex="-1" aria-labelledby="labsHelpModal-title" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 id="labsHelpModal-title" class="modal-title">{{ _("Importer mes Lab Caches") }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ _('Fermer') }}"></button>
+                </div>
+                <div class="modal-body">
+                    <p>{{ _("Deux fichiers suffisent pour afficher vos étapes d'Adventure Lab, sans API officielle :") }}</p>
+                    <ol class="mb-3">
+                        <li class="mb-2">
+                            <strong>{{ _("Historique des découvertes (.json)") }}</strong><br>
+                            {{ _("Connectez-vous sur") }}
+                            <a href="https://labs.geocaching.com/logs" target="_blank" rel="noopener noreferrer">labs.geocaching.com/logs</a>,
+                            {{ _("ouvrez la console du navigateur (F12), renseignez votre GUID joueur dans le script ci-dessous et exécutez-le : il télécharge votre historique complet.") }}
+                            <a href="{{ url_for('static', filename='labs/export_lab_logs.js') }}" download>{{ _("Télécharger le script d'export") }}</a>
+                        </li>
+                        <li class="mb-2">
+                            <strong>{{ _("Coordonnées des étapes (.gpx ou .zip)") }}</strong><br>
+                            {{ _("Générez un fichier Lab2Gpx contenant les étapes de vos Adventures (mode UUID, une étape par waypoint).") }}
+                        </li>
+                        <li>
+                            <strong>{{ _("Import") }}</strong><br>
+                            {{ _("Déposez les deux fichiers ici — ensemble ou séparément. Les étapes sans coordonnées restent conservées et complétables ensuite.") }}
+                        </li>
+                    </ol>
+                    <p class="form-hint text-muted mb-0">
+                        {{ _("Aucune donnée ne quitte l'application : les fichiers sont analysés localement.") }}
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _("Fermer") }}</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Aperçu de l'import : diagnostics par fichier, totaux et projection -->
+    <div id="labsPreviewModal" class="modal bs-modal" tabindex="-1" aria-labelledby="labsPreviewModal-title" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 id="labsPreviewModal-title" class="modal-title">{{ _("Aperçu de l'import Lab Caches") }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ _('Fermer') }}"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="labsPreviewFiles" class="mb-3"></div>
+                    <div id="labsPreviewSummary" class="mb-2"></div>
+                    <div id="labsPreviewProjected" class="alert alert-info small mb-0 d-none"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _("Annuler") }}</button>
+                    <button type="button" id="labsPreviewConfirmBtn" class="btn btn-primary">{{ _("Importer") }}</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Complétion : étapes importées sans coordonnées ni date exploitables -->
+    <div id="labsPendingModal" class="modal bs-modal" tabindex="-1" aria-labelledby="labsPendingModal-title" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 id="labsPendingModal-title" class="modal-title">{{ _("Étapes en attente") }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ _('Fermer') }}"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="form-hint text-muted">
+                        {{ _("Ces étapes sont conservées mais non affichées : renseignez leurs coordonnées (latitude/longitude décimales) ou leur date de découverte pour les rendre affichables.") }}
+                    </p>
+                    <div id="labsPendingList"></div>
+                    <div class="d-flex justify-content-between align-items-center mt-2">
+                        <button type="button" id="labsPendingPrev" class="btn btn-sm btn-outline-secondary">{{ _("Précédent") }}</button>
+                        <span id="labsPendingPage" class="small text-muted"></span>
+                        <button type="button" id="labsPendingNext" class="btn btn-sm btn-outline-secondary">{{ _("Suivant") }}</button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _("Fermer") }}</button>
                 </div>
             </div>
         </div>

@@ -152,6 +152,13 @@ def validate_gpx_header(name_text, desc_text, author_text):
     )
 
     if not is_ground_speak:
+        # Un fichier de coordonnées Lab2Gpx déposé ici par mégarde : le
+        # diriger vers « Mes Lab Caches » plutôt qu'un rejet générique
+        # (son en-tête <name> vaut « Adventure Labs »).
+        if name_text and "adventure lab" in name_text.lower():
+            return {'success': False, 'message': _(
+                "Ce fichier contient des étapes Adventure Lab : importez-le "
+                "depuis la section « Mes Lab Caches » de l'onglet Données.")}
         return {'success': False, 'message': _("Le fichier GPX n'est pas un fichier produit par Groundspeak.")}
 
     # Vérifier que le fichier est bien un "My Finds"

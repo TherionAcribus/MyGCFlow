@@ -21,6 +21,7 @@ from settings_manager import (
     coerce_animation_settings,
     coerce_dataset_id,
     coerce_date_format,
+    coerce_discovery_sources,
     coerce_evolution_animation,
     coerce_infos_template,
     coerce_locationless_display,
@@ -91,6 +92,7 @@ def api_get_settings():
         'map_default_zoom': s.map_default_zoom,
         'map_framing': s.map_framing,
         'locationless_display': s.locationless_display,
+        'main_discovery_sources': s.main_discovery_sources,
         'recording': asdict(s.recording),
         'recording_configured': s.recording_configured,
         'animation': asdict(s.animation),
@@ -248,6 +250,14 @@ def api_put_settings():
                 data.get('locationless_display'), current.locationless_display
             )
 
+        # Sources affichées en mode Normal : réécrit seulement si envoyé,
+        # comme les autres préférences globales.
+        main_discovery_sources = current.main_discovery_sources
+        if 'main_discovery_sources' in data:
+            main_discovery_sources = coerce_discovery_sources(
+                data.get('main_discovery_sources'), current.main_discovery_sources
+            )
+
         return AppSettings(
             version=current.version,
             language=language,
@@ -265,6 +275,7 @@ def api_put_settings():
             map_default_zoom=map_default_zoom,
             map_framing=map_framing,
             locationless_display=locationless_display,
+            main_discovery_sources=main_discovery_sources,
             recording=recording,
             recording_configured=recording_configured,
             animation=animation,

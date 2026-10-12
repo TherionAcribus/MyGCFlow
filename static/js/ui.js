@@ -98,6 +98,7 @@ var inputMapCenterLat, inputMapCenterLon, inputMapCenterCombined, inputMapDefaul
 var btnUseCurrentMapCenter;
 var selectMapFraming, mapFramingFitBlock, mapFramingCustomBlock, btnFitDataView;
 var selectLocationlessDisplay;
+var selectDiscoverySources;
 var latLonModeCombined, latLonModeSplit, fieldLat, fieldLon, fieldCombined;
 let isCombinedLatLonMode = true;
 // Enregistrement
@@ -1071,6 +1072,14 @@ const btnStopAnimation = document.getElementById('btnStopAnimation');
         selectLocationlessDisplay.addEventListener('change', onLocationlessDisplayChange);
     }
 
+    // Sources affichées (géocaches / Lab Caches / les deux) : préférence
+    // globale du mode principal — le select n'existe pas sur la page
+    // Évolution (menu_data_evolution.html n'inclut pas menu_filtre.html).
+    selectDiscoverySources = document.getElementById('selectDiscoverySources');
+    if (selectDiscoverySources) {
+        selectDiscoverySources.addEventListener('change', onDiscoverySourcesChange);
+    }
+
     // Segmented control : chaque radio porte le mode qu'il active, plutôt qu'un
     // unique bouton dont l'effet dépendait de l'état courant.
     latLonModeCombined = document.getElementById('latLonModeCombined');
@@ -1918,6 +1927,15 @@ export function init_ui() {
         if (selectLocationlessDisplay) {
             selectLocationlessDisplay.value = (s && s.locationless_display === 'shown') ? 'shown' : 'hidden';
         }
+        // Sources affichées : « geocaches » par défaut (installations
+        // existantes sans Labs importés). La normalisation partagée
+        // (normalizeDiscoverySourcesMode) rejette les valeurs inconnues.
+        if (selectDiscoverySources) {
+            selectDiscoverySources.value = normalizeDiscoverySourcesMode(s?.main_discovery_sources);
+            // Ajustements « Labs seuls » limités au mode Normal : sur la page
+            // Évolution le sélecteur n'existe pas et rien ne doit changer.
+            applyDiscoverySourceMode(getDiscoverySourcesMode());
+        }
     } catch(_) {}
 
     // Charger l'arbre Country/State et peupler selects
@@ -2368,6 +2386,99 @@ async function onLocationlessDisplayChange() {
     } catch(e) {
         try { markSaveError(selectLocationlessDisplay); } catch(_) {}
         console.warn('Erreur sauvegarde du sort des locationless:', e);
+    }
+}
+
+// ---------- Sources affichées (géocaches / Lab Caches) -------------------
+// Correspondance mode de préférence -> valeurs source_kind des features
+// GeoJSON. « geocaches » reste le défaut : installations existantes sans
+// Labs importés.
+const DISCOVERY_SOURCE_KINDS = {
+    geocaches: ['geocache'],
+    labs: ['lab'],
+    both: ['geocache', 'lab'],
+};
+
+function normalizeDiscoverySourcesMode(mode) {
+    return DISCOVERY_SOURCE_KINDS[mode] ? mode : 'geocaches';
+}
+
+// Mode courant : le select fait foi quand il existe (mode Normal), sinon la
+// préférence déjà chargée dans window.userSettings.
+export function getDiscoverySourcesMode() {
+    if (selectDiscoverySources) return normalizeDiscoverySourcesMode(selectDiscoverySources.value);
+    return normalizeDiscoverySourcesMode(window.userSettings?.main_discovery_sources);
+}
+
+// Liste `sources` envoyée au filtrage (changeSelect / filter_caches).
+export function getDiscoverySourceKinds() {
+    return DISCOVERY_SOURCE_KINDS[getDiscoverySourcesMode()];
+}
+
+// Change le mode de sources (sélecteur ou appel programmatique — ex. après
+// un premier import Labs). Persiste la préférence puis refiltre l'affichage.
+export async function setDiscoverySourcesMode(mode, { save = true } = {}) {
+    mode = normalizeDiscoverySourcesMode(mode);
+    if (selectDiscoverySources) selectDiscoverySources.value = mode;
+    try { if (window.userSettings) window.userSettings.main_discovery_sources = mode; } catch(_) {}
+    if (save) await saveSettingsPatch({ main_discovery_sources: mode });
+    applyDiscoverySourceMode(mode);
+    applySelectionChange();
+}
+
+async function onDiscoverySourcesChange() {
+    try {
+        if (!selectDiscoverySources) return;
+        const mode = normalizeDiscoverySourcesMode(selectDiscoverySources.value);
+        selectDiscoverySources.value = mode;
+        try { if (window.userSettings) window.userSettings.main_discovery_sources = mode; } catch(_) {}
+        await reportSave(selectDiscoverySources, saveSettingsPatch({ main_discovery_sources: mode }));
+        applyDiscoverySourceMode(mode);
+        applySelectionChange();
+    } catch(e) {
+        try { markSaveError(selectDiscoverySources); } catch(_) {}
+        console.warn('Erreur sauvegarde des sources affichées:', e);
+    }
+}
+
+// Ajustements d'interface selon le mode de sources. En « Lab Caches » seuls,
+// les filtres sans équivalent Lab (D/T, taille, période de pose) sont
+// désactivés et « Adventure Lab » est garanti dans la sélection de types —
+// un type désélectionné produirait un écran vide inattendu. No-op hors mode
+// Normal (pas de sélecteur de sources sur la page Évolution).
+function applyDiscoverySourceMode(mode) {
+    if (!selectDiscoverySources) return;
+    const labsOnly = mode === 'labs';
+    for (const sel of [selectDifficulty, selectTerrain, selectContainer]) {
+        if (!sel) continue;
+        const ts = getTomSelect(sel);
+        if (ts) { labsOnly ? ts.disable() : ts.enable(); }
+        else { sel.disabled = labsOnly; }
+    }
+    for (const dpId of ['publishedDatePickerStart', 'publishedDatePickerEnd']) {
+        const dp = document.getElementById(dpId);
+        if (!dp) continue;
+        const td = getTempusDominus(dp);
+        try { td ? (labsOnly ? td.disable() : td.enable()) : (dp.disabled = labsOnly); } catch(_) { dp.disabled = labsOnly; }
+    }
+    const panel = document.getElementById('filterPanel');
+    if (panel) {
+        if (labsOnly) panel.setAttribute('data-labs-only', '');
+        else panel.removeAttribute('data-labs-only');
+    }
+    const hint = document.getElementById('discoverySourcesHint');
+    if (hint) {
+        hint.textContent = labsOnly
+            ? t('Difficulté, terrain, taille et période de pose ne s\'appliquent pas aux Lab Caches.')
+            : '';
+    }
+    if (labsOnly && selectType) {
+        const hasLabType = Array.from(selectType.options).some(o => o.value === 'Adventure Lab' && o.selected);
+        if (!hasLabType) {
+            Array.from(selectType.options).forEach(o => { if (o.value === 'Adventure Lab') o.selected = true; });
+            refreshTomSelect(selectType);
+            updateFilterInfos();
+        }
     }
 }
 
@@ -3415,6 +3526,12 @@ function collectSelectedValues(){
     };
     selectedValues["dates"] = {startDate: toIsoDate('#datePickerStart'), endDate: toIsoDate('#datePickerEnd')};
     selectedValues["published_dates"] = {startDate: toIsoDate('#publishedDatePickerStart'), endDate: toIsoDate('#publishedDatePickerEnd')};
+    // Sources affichées : préférence globale (pas un filtre du panneau) —
+    // toujours explicite pour que le filtrage ne dépende pas du réflexe
+    // « champ absent = pas de restriction ».
+    if (!isEvolutionPage()) {
+        selectedValues["sources"] = getDiscoverySourceKinds();
+    }
     return selectedValues;
 }
 

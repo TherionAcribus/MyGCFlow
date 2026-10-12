@@ -47,7 +47,10 @@ test('filtres compacts : résumé fermé, actions dans le dropdown, tooltip des 
     await expect(field.locator('.ts-dropdown .filter-actions')).toBeAttached();
     await expect(field.locator('.filter-info-badge')).toHaveCount(0);
   }
-  expect((await typeControl(page)).summary).toBe('Tout (16)');
+  // Nombre de types proposés (16 caches + « Adventure Lab » en mode
+  // Normal) : lu dans le DOM pour ne pas casser à chaque ajout.
+  const typeCount = await page.locator('#selectType option:not([disabled]):not([value=""])').count();
+  expect((await typeControl(page)).summary).toBe(`Tout (${typeCount})`);
 
   // Ouvert : les actions Tout/Aucun apparaissent dans la zone de recherche
   // du dropdown ; « Tout » est inerte puisque tout est déjà sélectionné.
@@ -65,7 +68,7 @@ test('filtres compacts : résumé fermé, actions dans le dropdown, tooltip des 
 
   // « Tout » resélectionne tout depuis le dropdown toujours ouvert.
   await dropdown.locator('#btnAllType').click();
-  expect((await typeControl(page)).summary).toBe('Tout (16)');
+  expect((await typeControl(page)).summary).toBe(`Tout (${typeCount})`);
   await expect(dropdown.locator('#btnAllType')).toHaveClass(/filter-btn-disabled/);
 
   // Sélection partielle : le résumé passe au compteur et le tooltip liste
@@ -75,9 +78,9 @@ test('filtres compacts : résumé fermé, actions dans le dropdown, tooltip des 
     const ts = el.tomselect;
     ts.removeItem(ts.getValue()[0]);
   });
-  await expect.poll(async () => (await typeControl(page)).summary).toBe('15 / 16');
+  await expect.poll(async () => (await typeControl(page)).summary).toBe(`${typeCount - 1} / ${typeCount}`);
   const partial = await typeControl(page);
-  expect(partial.summary).toBe('15 / 16');
+  expect(partial.summary).toBe(`${typeCount - 1} / ${typeCount}`);
   expect(partial.title).toContain('Multi-cache');
-  expect(partial.title.split(',').length).toBe(15);
+  expect(partial.title.split(',').length).toBe(typeCount - 1);
 });

@@ -329,6 +329,11 @@ class AppSettings:
     #   suivi de caméra, mais elles restent comptées (compteurs, « n / total »).
     # "shown" : affichées comme les autres caches.
     locationless_display: str = "hidden"  # "hidden" | "shown"
+    # Sources affichées en mode Normal : « geocaches » (défaut, compatibilité
+    # des installations existantes), « labs » ou « both ». Transmis dans les
+    # filtres sous `sources: ["geocache", ...]` ; jamais dans un MapProfile :
+    # changer de thème ne doit pas changer les données affichées.
+    main_discovery_sources: str = "geocaches"  # "geocaches" | "labs" | "both"
     recording: RecordingSettings = field(default_factory=RecordingSettings)
     # True dès que l'utilisateur a enregistré des réglages vidéo côté serveur.
     # Sert uniquement à la reprise des anciens réglages : tant qu'il est False,
@@ -830,10 +835,18 @@ def coerce_undated_archives(value, fallback: str = "hide") -> str:
 
 LOCATIONLESS_DISPLAYS = ("hidden", "shown")
 
+# Valeurs du sélecteur de sources du mode Normal (menu_data.html).
+DISCOVERY_SOURCES = ("geocaches", "labs", "both")
+
 
 def coerce_locationless_display(value, fallback: str = "hidden") -> str:
     """Sort des caches sans localisation ; inconnu → repli."""
     return value if value in LOCATIONLESS_DISPLAYS else fallback
+
+
+def coerce_discovery_sources(value, fallback: str = "geocaches") -> str:
+    """Sources affichées en mode Normal ; inconnu → repli."""
+    return value if value in DISCOVERY_SOURCES else fallback
 
 
 def coerce_infos_template(value, fallback: str = '{date} · {actives}') -> str:
@@ -873,6 +886,8 @@ def coerce_settings(d: dict) -> AppSettings:
             d.get("evolution_undated_archives"), s.evolution_undated_archives)
         s.locationless_display = coerce_locationless_display(
             d.get("locationless_display"), s.locationless_display)
+        s.main_discovery_sources = coerce_discovery_sources(
+            d.get("main_discovery_sources"), s.main_discovery_sources)
         # Un settings.json antérieur à la migration n'a pas de bloc `recording` :
         # il compte comme « jamais configuré ».
         s.recording_configured = bool(d.get("recording_configured", "recording" in d))

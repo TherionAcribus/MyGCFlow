@@ -401,6 +401,32 @@ class LocationlessDisplayTests(unittest.TestCase):
             coerce_settings({"locationless_display": 42}).locationless_display, "hidden")
 
 
+class DiscoverySourcesTests(unittest.TestCase):
+    """Sources affichées en mode Normal (géocaches / Lab Caches / les deux).
+
+    « geocaches » est le défaut : une installation existante sans Labs
+    importés ne doit pas voir son affichage changer à la mise à jour. Une
+    valeur inconnue retombe sur ce repli plutôt que de masquer les caches.
+    """
+
+    def test_the_default_is_geocaches(self):
+        self.assertEqual(coerce_settings({}).main_discovery_sources, "geocaches")
+
+    def test_known_values_are_kept(self):
+        for value in ("geocaches", "labs", "both"):
+            self.assertEqual(
+                coerce_settings({"main_discovery_sources": value}).main_discovery_sources,
+                value)
+
+    def test_an_unknown_value_falls_back_to_geocaches(self):
+        self.assertEqual(
+            coerce_settings({"main_discovery_sources": "tout"}).main_discovery_sources,
+            "geocaches")
+        self.assertEqual(
+            coerce_settings({"main_discovery_sources": ["labs"]}).main_discovery_sources,
+            "geocaches")
+
+
 class RecordingConfiguredFlagTests(unittest.TestCase):
     """Drapeau qui pilote la reprise des anciens réglages du localStorage.
 
@@ -491,6 +517,31 @@ class SettingsApiTests(unittest.TestCase):
 
         self.assertEqual(
             self.client.get('/api/settings').get_json()['locationless_display'], 'shown')
+
+    def test_main_discovery_sources_defaults_to_geocaches(self):
+        self.assertEqual(
+            self.client.get('/api/settings').get_json()['main_discovery_sources'],
+            'geocaches')
+
+    def test_main_discovery_sources_survives_a_round_trip(self):
+        self.assertEqual(
+            self.client.put('/api/settings', json={'main_discovery_sources': 'labs'}).status_code, 200)
+        self.assertEqual(
+            self.client.get('/api/settings').get_json()['main_discovery_sources'], 'labs')
+
+    def test_an_invalid_main_discovery_sources_leaves_the_stored_one_untouched(self):
+        self.client.put('/api/settings', json={'main_discovery_sources': 'both'})
+        self.client.put('/api/settings', json={'main_discovery_sources': 'tout'})
+
+        self.assertEqual(
+            self.client.get('/api/settings').get_json()['main_discovery_sources'], 'both')
+
+    def test_a_patch_without_main_discovery_sources_preserves_it(self):
+        self.client.put('/api/settings', json={'main_discovery_sources': 'labs'})
+        self.client.put('/api/settings', json={'language': 'en'})
+
+        self.assertEqual(
+            self.client.get('/api/settings').get_json()['main_discovery_sources'], 'labs')
 
     def test_an_invalid_date_format_leaves_the_stored_one_untouched(self):
         self.client.put('/api/settings', json={'date_format': 'eu'})

@@ -1,4 +1,23 @@
 <section id="filterPanel">
+    <!-- Sources affichées : choix d'affichage global (préférence
+         main_discovery_sources dans settings.json), pas un filtre de
+         sélection — comme les locationless plus bas. Pas de classe
+         filter-select : il ne doit ni entrer dans getSelectedFilters ni
+         marquer le panneau « filtre actif ». Absent de la page Évolution :
+         menu_data_evolution.html n'inclut pas ce gabarit. -->
+    <div class="row g-2 mb-2">
+        <div class="col-12 col-md-6" id="discoverySourcesField">
+            <label class="form-label" for="selectDiscoverySources">{{ _("Découvertes affichées") }}</label>
+            <select id="selectDiscoverySources" class="form-select" aria-label="{{ _('Découvertes affichées') }}">
+                <option value="geocaches">{{ _("Géocaches") }}</option>
+                <option value="labs">{{ _("Lab Caches") }}</option>
+                <option value="both">{{ _("Géocaches et Lab Caches") }}</option>
+            </select>
+            <p class="form-hint text-muted mb-0" id="discoverySourcesHint"></p>
+        </div>
+    </div>
+    <hr class="my-2">
+
     <!-- Barre d'actions : reset global. Secondaire au repos ; data-filters-active
          sur #filterPanel (posé par bdd.js quand un filtre sort de l'état neutre)
          le repasse en rouge via ui_improvements.css. -->

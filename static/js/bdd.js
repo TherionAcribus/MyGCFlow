@@ -738,6 +738,28 @@ function filterFeaturesClientSide(features, sel) {
     return out;
 }
 
+// La préférence « sources affichées » (main_discovery_sources) s'applique
+// dès l'affichage initial — contrairement aux filtres de sélection qui
+// n'agissent qu'au premier changement. Filtrage sur la seule dimension
+// sources : filterFeaturesClientSide donnerait à « type »/pays absents le
+// sens « Aucun sélectionné » des widgets, ce qui viderait le résultat.
+function applyDiscoverySourcesAtLoad(features) {
+    if (!Array.isArray(features)) return features;
+    const kinds = pkg.getDiscoverySourceKinds?.();
+    if (!kinds) return features;
+    return features.filter(f => kinds.includes(f?.properties?.source_kind || 'geocache'));
+}
+
+// Recharge le jeu principal après une mutation (import ou vidage d'une
+// source) : la carte, les compteurs et l'état vide reflètent ce qui
+// subsiste — par ex. des Lab Caches après « Supprimer mes géocaches ».
+export function reloadMainDatasetAfterMutation() {
+    clearLocalData();
+    clearMap();
+    updateUIAfterClear();
+    loadAndDisplayPoints();
+}
+
 function buildMetadataClientSide(features) {
     if (!features || features.length === 0) {
         return {
@@ -1152,17 +1174,22 @@ export function readBdd(){
                     return;
                 }
                 console.log('[readBdd] onSuccess - features:', result.geojson?.features?.length, 'metadata:', result.metadata);
-                json_data = result.geojson;
                 // Conserver le jeu complet pour le filtrage client-side ultérieur.
                 baseGeojson = result.geojson;
-                setMetadata(result.metadata || {});
+                // La préférence « sources affichées » s'applique dès le
+                // chargement, contrairement aux filtres de sélection qui
+                // attendent le premier changement (comportement historique).
+                const displayFeatures = applyDiscoverySourcesAtLoad(result.geojson?.features || []);
+                const displayGeojson = { type: 'FeatureCollection', features: displayFeatures };
+                json_data = displayGeojson;
+                setMetadata({ ...(result.metadata || {}), ...buildMetadataClientSide(displayFeatures) });
 
-                // Mémoriser le total de caches initial
-                totalCaches = metadata.numberOfCaches || (result.geojson?.features?.length || 0);
+                // Mémoriser le total de caches initial (toutes sources)
+                totalCaches = result.metadata?.numberOfCaches || (result.geojson?.features?.length || 0);
                 lastDbHasData = totalCaches > 0;
 
                 // Pré-calcul de l'index des points par date pour optimiser l'animation
-                buildPointsByDateIndex(result.geojson?.features || []);
+                buildPointsByDateIndex(displayFeatures);
 
                 // conversion en objet date
                 dateStrToDate();
@@ -1174,8 +1201,8 @@ export function readBdd(){
                 pkg.setPickerDates(metadata);
                 // mise à jour des options en fonction de la BDD (dates début et fin)
                 updateOptionsValues(metadata);
-                console.log('[readBdd] Appel addVector avec', result.geojson?.features?.length, 'features');
-                pkg.addVector(result.geojson);
+                console.log('[readBdd] Appel addVector avec', displayFeatures.length, 'features');
+                pkg.addVector(displayGeojson);
 
                 // Cadrage « fit » : la vue s'ajuste sur l'emprise des données.
                 fitViewOnData();
@@ -1373,15 +1400,11 @@ async function clearDatabase() {
         const result = await response.json();
         
         if (result.success) {
-            // Vider les données locales
-            clearLocalData();
-            
-            // Vider la carte
-            clearMap();
-            
-            // Mettre à jour l'interface
-            updateUIAfterClear();
-            
+            // Vidage limité aux géocaches : des Lab Caches peuvent rester
+            // affichables — le rechargement reflète ce qui subsiste (base
+            // complètement vide incluse).
+            reloadMainDatasetAfterMutation();
+
             // Masquer le toast de chargement et afficher le succès
             if (clearingToast) {
                 pkg.hideToast(clearingToast);
@@ -1436,17 +1459,21 @@ function loadAndDisplayPoints({ onProgress: onDisplayProgress = null, onDone = n
                     const geojson = result.geojson;
                     const meta = result.metadata || {};
 
-                    json_data = geojson;
                     // Conserver le jeu complet pour le filtrage client-side ultérieur.
                     baseGeojson = geojson;
-                    setMetadata(meta);
+                    // « Sources affichées » appliquée dès l'affichage initial
+                    // (cf. readBdd).
+                    const displayFeatures = applyDiscoverySourcesAtLoad(geojson?.features || []);
+                    const displayGeojson = { type: 'FeatureCollection', features: displayFeatures };
+                    json_data = displayGeojson;
+                    setMetadata({ ...meta, ...buildMetadataClientSide(displayFeatures) });
 
-                    // Mémoriser le total de caches initial
-                    totalCaches = metadata.numberOfCaches || (geojson?.features?.length || 0);
+                    // Mémoriser le total de caches initial (toutes sources)
+                    totalCaches = meta.numberOfCaches || (geojson?.features?.length || 0);
                     lastDbHasData = totalCaches > 0;
 
                     // Pré-calcul de l'index des points par date pour optimiser l'animation
-                    buildPointsByDateIndex(geojson?.features || []);
+                    buildPointsByDateIndex(displayFeatures);
 
                     // conversion en objet date
                     dateStrToDate();
@@ -1460,7 +1487,7 @@ function loadAndDisplayPoints({ onProgress: onDisplayProgress = null, onDone = n
                     updateOptionsValues(metadata);
 
                     // Ajouter les points à la carte
-                    pkg.addVector(geojson);
+                    pkg.addVector(displayGeojson);
 
                     // Cadrage « fit » : après un import, la vue s'ajuste sur
                     // l'emprise des données fraîchement chargées.
