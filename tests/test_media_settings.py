@@ -72,3 +72,37 @@ class AudioFadeOutFilterTests(unittest.TestCase):
         self.assertEqual(capture._safe_fade_out(9999), capture.MAX_AUDIO_FADE_OUT_SECONDS)
         for value in (None, "", "abc", -2, 0, float("nan"), float("inf")):
             self.assertEqual(capture._safe_fade_out(value), 0.0)
+
+
+class AudioLoopFilterTests(unittest.TestCase):
+    """Répétition de la musique quand elle est plus courte que la vidéo."""
+
+    def test_the_whole_track_is_looped_before_the_final_padding(self):
+        self.assertEqual(
+            capture._audio_filter_chain(1.0, 60.0, loop=True),
+            "volume=1.0,aloop=loop=-1:size=2147483647,apad",
+        )
+
+    def test_the_loop_stops_before_an_ignored_trailing_silence(self):
+        self.assertEqual(
+            capture._audio_filter_chain(1.0, 60.0, loop=True, loop_end=42.5),
+            "volume=1.0,atrim=end=42.500,aloop=loop=-1:size=2147483647,apad",
+        )
+
+    def test_a_looped_track_can_still_fade_out_at_the_end_of_the_video(self):
+        self.assertEqual(
+            capture._audio_filter_chain(1.0, 60.0, 3.0, loop=True),
+            "volume=1.0,aloop=loop=-1:size=2147483647,afade=t=out:st=57.000:d=3.000,apad",
+        )
+
+    def test_no_endless_loop_without_a_known_output_duration(self):
+        self.assertEqual(capture._audio_filter_chain(1.0, None, loop=True, pad=False), "volume=1.0")
+
+    def test_client_values_are_sanitised(self):
+        for value in (True, 1, "1", "true", "on"):
+            self.assertTrue(capture._truthy(value))
+        for value in (False, 0, None, "", "0", "false"):
+            self.assertFalse(capture._truthy(value))
+        self.assertEqual(capture._safe_loop_end("12.5"), 12.5)
+        for value in (None, "abc", -1, 0, float("nan"), float("inf")):
+            self.assertEqual(capture._safe_loop_end(value), 0.0)

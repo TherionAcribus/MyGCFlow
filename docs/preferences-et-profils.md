@@ -249,7 +249,8 @@ pourrait écraser un réglage plus récent.
     "audio_enabled": false,
     "audio_volume": 1.0,
     "audio_trim_silence": false,
-    "audio_fade_out": false
+    "audio_fade_out": false,
+    "audio_loop": false
   },
   "recording_configured": false,
   "animation": {

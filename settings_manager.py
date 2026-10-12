@@ -276,6 +276,8 @@ class RecordingSettings:
     # Terminer la musique en fondu quand elle est plus longue que la vidéo,
     # au lieu de la couper net.
     audio_fade_out: bool = False
+    # Répéter la musique en boucle quand elle est plus courte que la vidéo.
+    audio_loop: bool = False
 
 
 @dataclass
@@ -769,6 +771,7 @@ def coerce_recording_settings(d: dict) -> RecordingSettings:
     r.audio_volume = _clamp_float(d.get("audio_volume"), r.audio_volume, 0.0, 1.0)
     r.audio_trim_silence = bool(d.get("audio_trim_silence", r.audio_trim_silence))
     r.audio_fade_out = bool(d.get("audio_fade_out", r.audio_fade_out))
+    r.audio_loop = bool(d.get("audio_loop", r.audio_loop))
     return r
 
 

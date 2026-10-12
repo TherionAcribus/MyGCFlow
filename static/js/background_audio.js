@@ -12,19 +12,37 @@ import { isRecordingActive } from './mapgl.js';
 
 let bgAudioCtx = null, bgAudioEl = null, bgAudioSource = null, bgAudioGain = null, bgAudioActive = false;
 let blockBackgroundAudioPlayback = false;
-let bgAudioFadeTimer = null;
+let bgAudioWatchTimer = null;
 
-// Fondu de sortie de l'aperçu (cf. audioFadeOutPlan dans ui.js) : le gain suit
-// la position de lecture de la piste, qui avance et se met en pause avec
-// l'animation — pas besoin de reprogrammer quoi que ce soit à la reprise.
-function startFadeOutWatch(volume) {
+// Boucle et fondu de sortie de l'aperçu (cf. audioLoopPlan / audioFadeOutPlan
+// dans ui.js). Tout se règle sur la position de lecture de la piste, qui
+// avance et se met en pause avec l'animation — rien à reprogrammer à la
+// reprise. Le temps écoulé depuis le début de la vidéo est la somme des tours
+// de boucle déjà joués et de la position courante.
+function startPlaybackWatch(volume) {
     const fade = pkg.audioFadeOutPlan?.();
-    if (!fade) return;
-    const endS = fade.endMs / 1000;
-    bgAudioFadeTimer = setInterval(() => {
+    const loop = pkg.audioLoopPlan?.();
+    if (!fade && !loop) return;
+    // Boucle sur le fichier entier : le navigateur s'en charge. Avec un point
+    // de bouclage (blanc de fin ignoré), on revient au début nous-mêmes.
+    const loopEndS = loop?.endMs ? loop.endMs / 1000 : 0;
+    if (loop && !loopEndS) bgAudioEl.loop = true;
+    let playedLoopsS = 0, lastPosition = 0;
+    bgAudioWatchTimer = setInterval(() => {
         if (!bgAudioEl || !bgAudioGain) return;
-        const remaining = endS - bgAudioEl.currentTime;
-        bgAudioGain.gain.value = volume * Math.max(0, Math.min(1, remaining / fade.seconds));
+        let position = bgAudioEl.currentTime;
+        if (loopEndS && position >= loopEndS) {
+            playedLoopsS += position;
+            bgAudioEl.currentTime = position = 0;
+        } else if (position < lastPosition) {
+            // Le navigateur vient de reboucler.
+            playedLoopsS += lastPosition;
+        }
+        lastPosition = position;
+        if (fade) {
+            const remaining = fade.endMs / 1000 - (playedLoopsS + position);
+            bgAudioGain.gain.value = volume * Math.max(0, Math.min(1, remaining / fade.seconds));
+        }
     }, 50);
 }
 
@@ -64,7 +82,7 @@ export function startBackgroundMusicIfAny(){
         bgAudioGain = bgAudioCtx.createGain();
         bgAudioGain.gain.value = Math.max(0, Math.min(1, volume));
         bgAudioSource.connect(bgAudioGain).connect(bgAudioCtx.destination);
-        startFadeOutWatch(bgAudioGain.gain.value);
+        startPlaybackWatch(bgAudioGain.gain.value);
 
         try { bgAudioCtx.resume().catch(()=>{}); } catch(_) {}
         bgAudioEl.play().then(()=>{ bgAudioActive = true; }).catch(e => console.warn('Lecture audio bloquée:', e));
@@ -106,7 +124,7 @@ export function resumeBackgroundMusic(){
 }
 
 export function stopBackgroundMusic(){
-    if (bgAudioFadeTimer) { clearInterval(bgAudioFadeTimer); bgAudioFadeTimer = null; }
+    if (bgAudioWatchTimer) { clearInterval(bgAudioWatchTimer); bgAudioWatchTimer = null; }
     try { if (bgAudioEl) { bgAudioEl.pause(); URL.revokeObjectURL(bgAudioEl.src); } } catch(_) {}
     try { if (bgAudioCtx) { bgAudioCtx.close(); } } catch(_) {}
     bgAudioEl = bgAudioCtx = bgAudioSource = bgAudioGain = null;

@@ -105,7 +105,7 @@ let isCombinedLatLonMode = true;
 // sauvegardé, quand ce navigateur ne sait pas encoder ce dernier ; null sinon.
 var recordMimeShownFallback = null;
 var selectRecordMode, selectRecordQualityProfile, recordAdvancedSettings, inputRecordFps, inputRecordBitrate, selectRecordMime, inputRecordSlowdown, inputRecordScaleFactor, inputRecordFileName, cbRecordNormalize, selectRecordResolution, selectRecordColorFidelity;
-var cbRecordAudioEnable, inputAudioFile, inputAudioVolume, cbAudioTrimSilence, cbAudioFadeOut;
+var cbRecordAudioEnable, inputAudioFile, inputAudioVolume, cbAudioTrimSilence, cbAudioFadeOut, cbAudioLoop;
 // Passe à true à la première synchro déclenchée par une résolution de
 // données (chargement, filtrage, vidage). L'état vide de la carte ne se
 // révèle qu'à ce moment-là : l'afficher dès l'init le ferait flasher
@@ -199,7 +199,7 @@ const RECORD_SETTINGS_FIELDS = [
     'selectRecordMode', 'selectRecordQualityProfile', 'inputRecordFps', 'inputRecordBitrate',
     'inputRecordSlowdown', 'inputRecordScaleFactor', 'selectRecordMime',
     'inputRecordFileName', 'cbRecordNormalize',
-    'cbRecordAudioEnable', 'inputAudioVolume', 'cbAudioTrimSilence', 'cbAudioFadeOut',
+    'cbRecordAudioEnable', 'inputAudioVolume', 'cbAudioTrimSilence', 'cbAudioFadeOut', 'cbAudioLoop',
     'selectRecordResolution',
     'selectRecordColorFidelity',
 ];
@@ -256,12 +256,40 @@ function musicOutlastsVideo(plan = lastTimingPlan) {
         && musicDurationMs > plan.totalDurationMs + MUSIC_VIDEO_TOLERANCE_MS;
 }
 
+// Vrai quand la musique (durée utile) s'arrête avant la fin de la vidéo : la
+// fin de la vidéo est alors muette — ou la musique répétée si l'option de
+// boucle est cochée.
+function musicEndsBeforeVideo(plan = lastTimingPlan) {
+    return !!(inputAudioFile?.files?.length) && !!plan?.valid
+        && Number.isFinite(musicDurationMs) && musicDurationMs > 0
+        && musicDurationMs < plan.totalDurationMs - MUSIC_VIDEO_TOLERANCE_MS;
+}
+
+// Vrai quand la musique sera répétée en boucle jusqu'à la fin de la vidéo.
+function musicLoops(plan = lastTimingPlan) {
+    return !!pkg.options?.record?.audio?.loop && musicEndsBeforeVideo(plan);
+}
+
+// Vrai quand la musique joue encore à la fin de la vidéo — plus longue
+// qu'elle, ou répétée en boucle : c'est là qu'un fondu de sortie a un sens.
+function musicCutAtVideoEnd(plan = lastTimingPlan) {
+    return musicOutlastsVideo(plan) || musicLoops(plan);
+}
+
+// Boucle à appliquer à la musique, ou null. `endMs` : point où reprendre au
+// début quand le blanc de fin est ignoré (null = fin du fichier). Mêmes
+// lecteurs que audioFadeOutPlan.
+export function audioLoopPlan() {
+    if (!pkg.options?.record?.audio?.enabled || !musicLoops()) return null;
+    return { endMs: musicDurationMs < musicFileDurationMs ? musicDurationMs : null };
+}
+
 // Fondu de sortie à appliquer à la musique, ou null : `seconds` de fondu se
 // terminant à `endMs` (fin prévue de la vidéo). Lu par l'aperçu
 // (background_audio.js) et par les deux pipelines d'enregistrement (mapgl.js).
 export function audioFadeOutPlan() {
     const audio = pkg.options?.record?.audio;
-    if (!audio?.enabled || !audio.fadeOut || !musicOutlastsVideo()) return null;
+    if (!audio?.enabled || !audio.fadeOut || !musicCutAtVideoEnd()) return null;
     return { seconds: AUDIO_FADE_OUT_SECONDS, endMs: lastTimingPlan.totalDurationMs };
 }
 
@@ -279,9 +307,12 @@ function updateMusicSyncUi(plan = lastTimingPlan) {
     if (badge) badge.style.display = locked ? '' : 'none';
     if (btnUnlink) btnUnlink.style.display = locked ? '' : 'none';
     if (indicator) indicator.style.display = 'none';
-    // L'option de fondu n'a de sens que si la musique déborde de la vidéo.
+    // Chaque option n'apparaît que là où elle a un effet : la boucle quand la
+    // musique est trop courte, le fondu quand elle joue encore en fin de vidéo.
+    const loopBox = document.getElementById('audioLoopBox');
+    if (loopBox) loopBox.style.display = musicEndsBeforeVideo(plan) ? '' : 'none';
     const fadeBox = document.getElementById('audioFadeOutBox');
-    if (fadeBox) fadeBox.style.display = musicOutlastsVideo(plan) ? '' : 'none';
+    if (fadeBox) fadeBox.style.display = musicCutAtVideoEnd(plan) ? '' : 'none';
 
     if (!status) return;
     const lines = [];
@@ -289,27 +320,36 @@ function updateMusicSyncUi(plan = lastTimingPlan) {
         lines.push(t('Musique : ${d}', { d: formatDurationHuman(musicDurationMs) }));
         if (musicDurationMs < musicFileDurationMs) lines.push(t('(blanc de fin ignoré)'));
     }
+    const fadeOut = !!pkg.options?.record?.audio?.fadeOut;
     if (locked && plan?.valid) {
         if (plan.clampedToMinimum) {
             // Musique plus courte que la durée minimale réalisable : la vidéo
             // sera PLUS LONGUE que la musique — ne pas prétendre au calage.
-            lines.push(t('Musique plus courte que la durée minimale (${min}) : durée ${d} appliquée, la musique s\'arrêtera avant la fin.', {
+            const values = {
                 min: formatDurationHuman(plan.minimumTotalDurationMs),
                 d: formatDurationHuman(plan.totalDurationMs),
-            }));
+            };
+            lines.push(musicLoops(plan)
+                ? t('Musique plus courte que la durée minimale (${min}) : durée ${d} appliquée, la musique sera répétée en boucle.', values)
+                : t('Musique plus courte que la durée minimale (${min}) : durée ${d} appliquée, la musique s\'arrêtera avant la fin.', values));
+            if (musicLoops(plan) && fadeOut) lines.push(t('Elle se terminera en fondu.'));
         } else {
             lines.push(t('Durée calée sur la musique (${d}).', { d: formatDurationHuman(plan.totalDurationMs) }));
         }
     } else if (hasFile && plan?.valid && Number.isFinite(musicDurationMs)) {
         if (musicOutlastsVideo(plan)) {
             const durations = { m: formatDurationHuman(musicDurationMs), v: formatDurationHuman(plan.totalDurationMs) };
-            lines.push(pkg.options?.record?.audio?.fadeOut
+            lines.push(fadeOut
                 ? t('La musique (${m}) est plus longue que la vidéo (${v}) : elle se terminera en fondu.', durations)
                 : t('La musique (${m}) est plus longue que la vidéo (${v}) : elle sera coupée en fin de vidéo.', durations));
-        } else if (musicDurationMs < plan.totalDurationMs - MUSIC_VIDEO_TOLERANCE_MS) {
-            lines.push(t('La musique (${m}) se termine avant la fin de la vidéo (${v}).', {
-                m: formatDurationHuman(musicDurationMs), v: formatDurationHuman(plan.totalDurationMs),
-            }));
+        } else if (musicEndsBeforeVideo(plan)) {
+            const durations = { m: formatDurationHuman(musicDurationMs), v: formatDurationHuman(plan.totalDurationMs) };
+            if (musicLoops(plan)) {
+                lines.push(t('La musique (${m}) est plus courte que la vidéo (${v}) : elle sera répétée en boucle.', durations));
+                if (fadeOut) lines.push(t('Elle se terminera en fondu.'));
+            } else {
+                lines.push(t('La musique (${m}) se termine avant la fin de la vidéo (${v}).', durations));
+            }
         }
     }
     status.textContent = lines.join(' ');
@@ -1127,6 +1167,8 @@ function initOptionsElements() {
     if (cbAudioTrimSilence) cbAudioTrimSilence.addEventListener('change', () => changeRecordValues());
     cbAudioFadeOut = document.getElementById('cbAudioFadeOut');
     if (cbAudioFadeOut) cbAudioFadeOut.addEventListener('change', () => changeRecordValues());
+    cbAudioLoop = document.getElementById('cbAudioLoop');
+    if (cbAudioLoop) cbAudioLoop.addEventListener('change', () => changeRecordValues());
     // Après la déclaration de tous les champs : mémorise le dernier manipulé
     // pour cibler l'indicateur « Enregistré ✓ ».
     trackRecordFieldTouches();
@@ -2396,6 +2438,7 @@ function initOptionsUI() {
             }
             if (cbAudioTrimSilence) cbAudioTrimSilence.checked = !!pkg.options.record.audio.trimSilence;
             if (cbAudioFadeOut) cbAudioFadeOut.checked = !!pkg.options.record.audio.fadeOut;
+            if (cbAudioLoop) cbAudioLoop.checked = !!pkg.options.record.audio.loop;
             applyMusicSilenceTrim();
         } catch(e) { console.warn('Init audio UI error:', e); }
 
@@ -2680,6 +2723,7 @@ function changeRecordValues(field = undefined) {
                 pkg.options.record.audio.volume = vol;
             }
             if (cbAudioFadeOut) pkg.options.record.audio.fadeOut = !!cbAudioFadeOut.checked;
+            if (cbAudioLoop) pkg.options.record.audio.loop = !!cbAudioLoop.checked;
             if (cbAudioTrimSilence) {
                 pkg.options.record.audio.trimSilence = !!cbAudioTrimSilence.checked;
                 // La durée utile de la musique change : le plan recalculé
@@ -2732,6 +2776,7 @@ function recordSettingsPayload() {
         audio_volume: (typeof audio.volume === 'number') ? audio.volume : 1,
         audio_trim_silence: !!audio.trimSilence,
         audio_fade_out: !!audio.fadeOut,
+        audio_loop: !!audio.loop,
     };
 }
 
@@ -2757,6 +2802,7 @@ function applyRecordSettingsPayload(recording) {
         (typeof recording.audio_volume === 'number') ? recording.audio_volume : 1;
     pkg.options.record.audio.trimSilence = !!recording.audio_trim_silence;
     pkg.options.record.audio.fadeOut = !!recording.audio_fade_out;
+    pkg.options.record.audio.loop = !!recording.audio_loop;
     return true;
 }
 

@@ -153,6 +153,9 @@ def start_create_video():
                 get_locale(),
                 expected_frames=expected_frames,
                 audio_fade_out=audio_fade_out,
+                # Boucle de la musique : validée par capture._assemble_pictures.
+                audio_loop=_param('audio_loop', False),
+                audio_loop_end=_param('audio_loop_end', 0),
                 exclusive=True,
             )
         except TaskAlreadyRunning as exc:

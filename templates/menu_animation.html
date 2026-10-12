@@ -304,8 +304,15 @@
                                 <button type="button" class="btn btn-sm btn-outline-secondary" id="btnUnlinkAudio" style="display:none;">{{ _("Dissocier") }}</button>
                                 <span id="durationMatchIndicator" class="small" style="display:none;" data-difference-text="{{ _('Différence') }}"></span>
                             </div>
-                            <!-- Affiché seulement quand la musique est plus longue
+                            <!-- Affiché seulement quand la musique est plus courte
                                  que la vidéo (updateMusicSyncUi, ui.js). -->
+                            <div id="audioLoopBox" class="form-check mt-2 mb-0" style="display:none;">
+                                <input id="cbAudioLoop" class="form-check-input" type="checkbox">
+                                <label class="form-check-label" for="cbAudioLoop"
+                                       title="{{ _('La musique reprend au début chaque fois qu\'elle se termine, jusqu\'à la fin de la vidéo.') }}">{{ _("Répéter la musique en boucle") }}</label>
+                            </div>
+                            <!-- Affiché seulement quand la musique joue encore à la
+                                 fin de la vidéo (updateMusicSyncUi, ui.js). -->
                             <div id="audioFadeOutBox" class="form-check mt-2 mb-0" style="display:none;">
                                 <input id="cbAudioFadeOut" class="form-check-input" type="checkbox">
                                 <label class="form-check-label" for="cbAudioFadeOut"

@@ -32,6 +32,12 @@ Autres repères :
 - Base vide → l'app force le retour sur l'onglet Données à chaque résolution
   du statut ; `updateDataAvailabilityUI` saute ce bascule quand l'URL porte
   un hash — les specs qui ont besoin de l'onglet Style doivent ouvrir `/#style`.
+- Le mode de rythme (`animation.rhythm_mode`) et la durée totale sont des
+  préférences globales persistées, partagées par tous les specs d'un run :
+  un spec qui quitte le mode jours/seconde (choisir une musique suffit, elle
+  cale la vidéo dessus) doit y revenir, sinon `#inputDaysPerSecond` reste en
+  lecture seule pour les specs suivants — exemple dans `music-options.spec.mjs`
+  (`afterEach`).
 - Vider les processus orphelins si un run est tué : `taskkill /F /T /PID <id>`
   sur les `node.exe`/`python.exe` dont la ligne de commande contient
   `cli.js`/`run_server.py`. Sous Linux : `pkill -f cli.js` /

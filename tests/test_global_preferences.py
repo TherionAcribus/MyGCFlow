@@ -73,6 +73,10 @@ class RecordingCoercionTests(unittest.TestCase):
         self.assertFalse(coerce_recording_settings({}).audio_fade_out)
         self.assertTrue(coerce_recording_settings({"audio_fade_out": True}).audio_fade_out)
 
+    def test_music_loop_is_opt_in(self):
+        self.assertFalse(coerce_recording_settings({}).audio_loop)
+        self.assertTrue(coerce_recording_settings({"audio_loop": True}).audio_loop)
+
     def test_garbage_payload_yields_defaults(self):
         self.assertEqual(coerce_recording_settings(None), coerce_recording_settings({}))
 

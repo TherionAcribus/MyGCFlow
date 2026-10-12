@@ -135,7 +135,8 @@ export function normalizeRecordedVideoSpeed(sourceBlob, factor){
 
 // `fadeOut` ({ seconds, endMs } ou null, cf. audioFadeOutPlan dans ui.js) :
 // fondu de sortie de la musique se terminant à la fin prévue de la vidéo.
-export function muxRecordedVideoWithAudio(sourceBlob, audioFile, fadeOut = null){
+// `loop` ({ endMs } ou null, cf. audioLoopPlan) : musique répétée en boucle.
+export function muxRecordedVideoWithAudio(sourceBlob, audioFile, fadeOut = null, loop = null){
     return new Promise((resolve, reject) => {
         try {
             const video = document.createElement('video');
@@ -159,6 +160,10 @@ export function muxRecordedVideoWithAudio(sourceBlob, audioFile, fadeOut = null)
                 audioBuffer = await audioCtx.decodeAudioData(arr);
                 audioNode = audioCtx.createBufferSource();
                 audioNode.buffer = audioBuffer;
+                if (loop) {
+                    audioNode.loop = true;
+                    if (loop.endMs > 0) audioNode.loopEnd = loop.endMs / 1000;
+                }
                 audioNode.connect(audioGain);
             };
 

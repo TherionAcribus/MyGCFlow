@@ -49,6 +49,23 @@ test.beforeEach(async ({ page }) => {
 });
 
 
+// Le mode de rythme et la durée totale sont des préférences globales : ces
+// tests les modifient (choisir une musique cale la vidéo dessus), et les specs
+// suivants s'attendent au mode jours/seconde. On remet donc l'état initial.
+test.afterEach(async ({ page }) => {
+  const duration = page.locator('#inputTotalDuration');
+  if (await duration.isEditable()) {
+    await duration.fill('01:00');
+    await duration.blur();
+  }
+  await page.locator('label:has(#rhythmModeRate)').click();
+  await expect.poll(async () => page.evaluate(async () => {
+    const { animation } = await (await fetch('/api/settings')).json();
+    return [animation.rhythm_mode, animation.total_duration_seconds];
+  })).toEqual(['rate', 60]);
+});
+
+
 test('un blanc de fin est signalé et peut être ignoré', async ({ page }) => {
   const box = page.locator('#audioTrailingSilence');
   const trim = page.locator('#cbAudioTrimSilence');
@@ -110,6 +127,61 @@ test('une musique plus longue que la vidéo peut se terminer en fondu', async ({
   await fade.uncheck();
   await expect(status).toContainText('elle sera coupée en fin de vidéo');
   await expect.poll(async () => (await recordingSettings(page)).audio_fade_out).toBe(false);
+});
+
+
+test('une musique plus courte que la vidéo peut être répétée en boucle', async ({ page }) => {
+  const loopBox = page.locator('#audioLoopBox');
+  const loop = page.locator('#cbAudioLoop');
+  const fadeBox = page.locator('#audioFadeOutBox');
+  const status = page.locator('#musicSyncStatus');
+  const plans = () => page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    return { loop: app.audioLoopPlan(), fade: app.audioFadeOutPlan() };
+  });
+
+  // 2 s de son + 2 s de blanc ; vidéo imposée à 30 s, bien plus longue.
+  await page.locator('#inputAudioFile').setInputFiles(wavFile('courte.wav', 2, 2));
+  await expect(status).toContainText('Durée calée sur la musique');
+  await expect(loopBox).toBeHidden();
+  await page.locator('label:has(#rhythmModeDuration)').click();
+  await page.locator('#inputTotalDuration').fill('00:30');
+  await page.locator('#inputTotalDuration').blur();
+
+  await expect(loopBox).toBeVisible();
+  await expect(loop).not.toBeChecked();
+  // Musique trop courte et non répétée : rien à fondre en fin de vidéo.
+  await expect(fadeBox).toBeHidden();
+  await expect(status).toContainText('se termine avant la fin de la vidéo');
+  expect((await plans()).loop).toBeNull();
+
+  await loop.check();
+  await expect(status).toContainText('elle sera répétée en boucle');
+  await expect.poll(async () => (await recordingSettings(page)).audio_loop).toBe(true);
+  // Boucle sur le fichier entier tant que le blanc de fin n'est pas ignoré.
+  expect((await plans()).loop).toEqual({ endMs: null });
+  // Une musique en boucle joue encore à la fin : le fondu redevient pertinent.
+  await expect(fadeBox).toBeVisible();
+
+  // Blanc de fin ignoré : la boucle reprend dès la fin du son (2 s + marge).
+  await page.locator('#cbAudioTrimSilence').check();
+  // À quelques millisecondes près : la piste est rééchantillonnée pour l'analyse.
+  expect((await plans()).loop.endMs).toBeGreaterThan(2250);
+  expect((await plans()).loop.endMs).toBeLessThan(2350);
+
+  await page.locator('#cbAudioFadeOut').check();
+  await expect(status).toContainText('Elle se terminera en fondu.');
+  expect((await plans()).fade).toEqual({ seconds: 3, endMs: 30_000 });
+
+  // Remet les préférences globales dans leur état initial.
+  await page.locator('#cbAudioFadeOut').uncheck();
+  await page.locator('#cbAudioTrimSilence').uncheck();
+  await loop.uncheck();
+  await expect(fadeBox).toBeHidden();
+  await expect.poll(async () => {
+    const r = await recordingSettings(page);
+    return [r.audio_loop, r.audio_fade_out, r.audio_trim_silence];
+  }).toEqual([false, false, false]);
 });
 
 

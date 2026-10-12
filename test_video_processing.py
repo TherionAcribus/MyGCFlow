@@ -255,6 +255,67 @@ class VideoProcessingTests(unittest.TestCase):
                     else:
                         self.assertLess(abs(drop), 3)
 
+    def _process_with_music(self, tmp_path, pipeline, **audio_options):
+        """Vidéo de 6 s avec la piste audio/tone.wav, par le pipeline demandé."""
+        output = tmp_path / "out.mp4"
+        with mock.patch.dict(os.environ, {"MYGCFLOW_DATA_DIR": str(tmp_path)}):
+            if pipeline == "images":
+                self._create_image_sequence(tmp_path / "captured", 6, 10)
+                result = _assemble_pictures(
+                    str(tmp_path / "captured"), str(output), fps=10,
+                    audio_path="tone.wav", status=_SilentStatus(), **audio_options,
+                )
+            else:
+                self._create_raw_video(tmp_path / "raw.webm", 6, 10)
+                result = _process_recorded_video(
+                    str(tmp_path / "raw.webm"), str(output), fps=10,
+                    audio_path="tone.wav", **audio_options,
+                )
+        self.assertTrue(result["success"], result)
+        validation = validate_video(str(output), {"duration_seconds": 6, "has_audio": True})
+        self.assertTrue(validation.success, "; ".join(validation.errors))
+        return output
+
+    def test_music_shorter_than_the_video_can_loop(self):
+        """Musique de 2 s sur une vidéo de 6 s : muette après 2 s, sauf en boucle."""
+        for pipeline in ("images", "mediarecorder"):
+            for loop in (False, True):
+                with self.subTest(pipeline=pipeline, loop=loop), tempfile.TemporaryDirectory() as tmp:
+                    tmp_path = Path(tmp)
+                    (tmp_path / "audio").mkdir()
+                    self._create_audio(tmp_path / "audio" / "tone.wav", 2)
+                    output = self._process_with_music(tmp_path, pipeline, audio_loop=loop)
+                    drop = self._mean_volume_db(output, 0.5, 1) - self._mean_volume_db(output, 4.5, 1)
+                    if loop:
+                        self.assertLess(abs(drop), 3)
+                    else:
+                        self.assertGreater(drop, 30)
+
+    def test_the_loop_skips_an_ignored_trailing_silence(self):
+        """Piste de 2 s de son + 2 s de blanc, bouclée à 2 s : plus aucun blanc.
+
+        Sans point de bouclage, le blanc est rejoué à chaque tour (entre 2 et
+        4 s) ; avec, la musique reprend dès la fin du son.
+        """
+        for pipeline in ("images", "mediarecorder"):
+            for loop_end, silent_gap in ((0.0, True), (2.0, False)):
+                with self.subTest(pipeline=pipeline, loop_end=loop_end), tempfile.TemporaryDirectory() as tmp:
+                    tmp_path = Path(tmp)
+                    (tmp_path / "audio").mkdir()
+                    self._run_quiet([
+                        self.ffmpeg, "-y", "-f", "lavfi", "-t", "2",
+                        "-i", "sine=frequency=440:sample_rate=44100",
+                        "-af", "apad=whole_dur=4", str(tmp_path / "audio" / "tone.wav"),
+                    ])
+                    output = self._process_with_music(
+                        tmp_path, pipeline, audio_loop=True, audio_loop_end=loop_end,
+                    )
+                    drop = self._mean_volume_db(output, 0.5, 1) - self._mean_volume_db(output, 2.5, 1)
+                    if silent_gap:
+                        self.assertGreater(drop, 30)
+                    else:
+                        self.assertLess(abs(drop), 3)
+
     def test_rate_parser(self):
         self.assertEqual(_parse_rate("30000/1001"), 30000 / 1001)
         self.assertEqual(_parse_rate("24/1"), 24)
