@@ -241,6 +241,7 @@ Release GitHub.
 - [docs/preferences-et-profils.md](docs/preferences-et-profils.md) — réglages globaux vs profils
 - [docs/async-tasks.md](docs/async-tasks.md) — API des tâches de fond
 - [docs/mode-evolution.md](docs/mode-evolution.md) — mode Évolution (apparition et disparition des caches d'une zone, imports CSV)
+- [docs/lab-caches.md](docs/lab-caches.md) — étapes Adventure Lab (exports par fichiers, import, sources affichées, cas en attente)
 - [docs/traits-de-deplacement.md](docs/traits-de-deplacement.md) — traits de déplacement (calcul du trajet, synchronisation, coût)
 - [docs/translations.md](docs/translations.md) — règles d'internationalisation
 - [docs/notes/README_TESTS_VIDEO.md](docs/notes/README_TESTS_VIDEO.md) — matrice des tests vidéo

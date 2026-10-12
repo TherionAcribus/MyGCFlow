@@ -226,6 +226,7 @@ GitHub Release.
 - [docs/preferences-et-profils.md](docs/preferences-et-profils.md) — global settings vs. profiles
 - [docs/async-tasks.md](docs/async-tasks.md) — background tasks API
 - [docs/mode-evolution.md](docs/mode-evolution.md) — Evolution mode (caches of an area appearing and disappearing, CSV imports)
+- [docs/lab-caches.md](docs/lab-caches.md) — Adventure Lab stages (file exports, import, displayed sources, pending cases)
 - [docs/traits-de-deplacement.md](docs/traits-de-deplacement.md) — travel trail (route computation, timing, cost)
 - [docs/translations.md](docs/translations.md) — i18n rules
 - [docs/notes/README_TESTS_VIDEO.md](docs/notes/README_TESTS_VIDEO.md) — video test matrix

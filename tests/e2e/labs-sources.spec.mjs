@@ -8,6 +8,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES = path.join(HERE, '..', 'fixtures', 'labs');
 const HISTORY = path.join(FIXTURES, 'lab-finds-valid.json');
 const COORDS = path.join(FIXTURES, 'lab2gpx-stages.gpx');
+const GPX_FINDS = path.join(HERE, 'fixtures', 'my-finds.gpx');
 
 // Sélecteur « Découvertes affichées » + panneau « Mes Lab Caches » (mode
 // Normal) : la fixture couvre 12 découvertes dont 8 résolues par UUID — soit
@@ -195,6 +196,42 @@ test('le popup d\'une étape Labs affiche étape, Adventure, lien et date', asyn
   expect(await link.getAttribute('href')).toMatch(/^https:\/\/labs\.geocaching\.com\//);
   const linkText = await link.textContent();
   expect(point.adventures).toContain(linkText.trim());
+});
+
+
+// Critère final du plan : en mixte, chaque choix de source affiche et
+// compte son propre jeu (ici 6 géocaches + 8 étapes Labs).
+test('en mixte, chaque source affiche et compte son propre jeu', async ({ page }) => {
+  await openReadyApp(page);
+
+  await page.locator('#file-input').setInputFiles(GPX_FINDS);
+  await expect(page.locator('#filtersCounter')).toContainText('6 / 6', { timeout: 45_000 });
+
+  await importLabs(page);
+  // Des géocaches existent : l'import bascule sur « both ».
+  const select = page.locator('#selectDiscoverySources');
+  await expect(select).toHaveValue('both');
+  await expect(page.locator('#filtersCounter')).toContainText('14 / 14', { timeout: 60_000 });
+
+  // Les deux sources sont dans l'index d'animation.
+  const counts = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    let labs = 0, geocaches = 0;
+    for (const features of app.pointsByDate.values()) {
+      for (const f of features) {
+        (f.properties?.source_kind === 'lab' ? labs++ : geocaches++);
+      }
+    }
+    return { labs, geocaches };
+  });
+  expect(counts).toEqual({ labs: 8, geocaches: 6 });
+
+  await select.selectOption('geocaches');
+  await expect(page.locator('#filtersCounter')).toContainText('6 / 14', { timeout: 20_000 });
+  await select.selectOption('labs');
+  await expect(page.locator('#filtersCounter')).toContainText('8 / 14', { timeout: 20_000 });
+  await select.selectOption('both');
+  await expect(page.locator('#filtersCounter')).toContainText('14 / 14', { timeout: 20_000 });
 });
 
 
