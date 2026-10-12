@@ -30,9 +30,12 @@ class FetchBatchesTests(unittest.TestCase):
     def _run(self, uuids, side_effect, **kw):
         calls = []
 
-        def fake_post(payload):
+        def fake_post(payload, retry_server_errors=True):
             calls.append(payload["uuidsToFetch"])
+            self.retry_flags.append(retry_server_errors)
             return side_effect(payload)
+
+        self.retry_flags = []
 
         with patch.object(lcp, "post_download", side_effect=fake_post):
             result = lcp.fetch_gpx_batches(uuids, delay=0, sleep=lambda s: None, **kw)
@@ -92,6 +95,21 @@ class FetchBatchesTests(unittest.TestCase):
         self.assertIn("a,bad", calls)
         self.assertIn("c,d", calls)
         self.assertIn("bad", calls)
+        # Un 500 n'est retenté sur place que pour l'UUID seul : pour un lot
+        # divisible, la bissection est déjà la reprise.
+        self.assertEqual(self.retry_flags,
+                         [len(c.split(",")) == 1 for c in calls])
+
+    def test_on_failed_reports_isolated_uuid(self):
+        def side_effect(payload):
+            if "bad" in payload["uuidsToFetch"]:
+                raise _http_error(500)
+            return b"<gpx/>"
+
+        failed = []
+        self._run(["a", "bad", "c", "d"], side_effect, batch_size=4,
+                  on_failed=failed.append)
+        self.assertEqual(failed, ["bad"])
 
     def test_single_uuid_error_marked_failed(self):
         """Un UUID seul en échec (4xx comme 500 : les Adventures cassées
@@ -155,6 +173,23 @@ class PostDownloadTests(unittest.TestCase):
                 self.assertRaises(urllib.error.HTTPError):
             lcp.post_download({"x": 1}, retries=3)
         self.assertEqual(calls["n"], 1)
+
+    def test_5xx_raised_at_once_when_retries_disabled(self):
+        calls, fake = self._urlopen_side_effect([_http_error(500)])
+        with patch.object(lcp.urllib.request, "urlopen", side_effect=fake), \
+                patch.object(lcp.time, "sleep"), \
+                self.assertRaises(urllib.error.HTTPError):
+            lcp.post_download({"x": 1}, retries=3, retry_server_errors=False)
+        self.assertEqual(calls["n"], 1)
+
+    def test_429_still_retried_when_retries_disabled(self):
+        calls, fake = self._urlopen_side_effect([_http_error(429), b"<gpx/>"])
+        with patch.object(lcp.urllib.request, "urlopen", side_effect=fake), \
+                patch.object(lcp.time, "sleep"):
+            data = lcp.post_download({"x": 1}, retries=3,
+                                     retry_server_errors=False)
+        self.assertEqual(data, b"<gpx/>")
+        self.assertEqual(calls["n"], 2)
 
     def test_network_error_retries_then_raises(self):
         calls, fake = self._urlopen_side_effect(

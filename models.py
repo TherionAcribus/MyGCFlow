@@ -75,6 +75,9 @@ class LabDiscovery(db.Model):
     coordinate_scope = db.Column(db.String(16))
     coordinate_source = db.Column(db.String(32))
     coordinate_status = db.Column(db.String(16), default=COORD_MISSING)
+    # Dernière fois où lab2gpx n'a pas su servir l'Adventure de cette étape
+    # (archivée, cassée) : l'auto-fetch ne la redemande pas tout de suite.
+    coord_fetch_failed_at = db.Column(db.DateTime)
     source_format = db.Column(db.String(32))
     source_record_key = db.Column(db.String(128))
     is_archived = db.Column(db.Boolean, default=False)

@@ -62,11 +62,14 @@ def build_payload(uuids: list[str], user_guid: str | None = None) -> dict:
 
 
 def post_download(payload: dict, retries: int = MAX_RETRIES,
-                  timeout: int = REQUEST_TIMEOUT_S) -> bytes:
+                  timeout: int = REQUEST_TIMEOUT_S,
+                  retry_server_errors: bool = True) -> bytes:
     """Un POST /download avec reprise exponentielle sur HTTP 5xx et timeouts.
 
     Les erreurs non transitoires (4xx) ne sont pas retentées : ce sont les
-    mêmes réponses que le bissection doit isoler."""
+    mêmes réponses que le bissection doit isoler. `retry_server_errors=False`
+    remonte aussi un 5xx sans attendre (429 reste retenté) : pour un lot
+    encore divisible, la bissection est déjà la reprise."""
     body = json.dumps(payload).encode("utf-8")
     last_exc = None
     for attempt in range(1, retries + 1):
@@ -87,6 +90,8 @@ def post_download(payload: dict, retries: int = MAX_RETRIES,
             # suite pour la bissection ; 5xx/429 : transitoire, réessayer.
             if 400 <= exc.code < 500 and exc.code != 429:
                 raise
+            if not retry_server_errors and exc.code != 429:
+                raise
         except (urllib.error.URLError, TimeoutError) as exc:
             last_exc = exc
         if attempt < retries:
@@ -102,18 +107,21 @@ def fetch_gpx_batches(
     progress=None,
     sleep=time.sleep,
     on_payload=None,
+    on_failed=None,
 ) -> FetchResult:
     """Télécharge un GPX par lot d'UUID, en isolant les UUID fautifs.
 
     `progress(fait, total)` est appelé après chaque lot résolu ou isolé ;
     `sleep` est injectable pour les tests. `on_payload(nom, gpx)` reçoit
     chaque GPX dès son téléchargement, au lieu de `result.payloads` : ce
-    qui est déjà traité survit ainsi à un abandon ultérieur.
+    qui est déjà traité survit ainsi à un abandon ultérieur. `on_failed(uuid)`
+    signale de même chaque UUID isolé comme irrécupérable.
 
     Stratégie d'erreur (calquée sur tools/fetch_lab2gpx.py) :
     - HTTPError quel que soit le code → bissection : les Adventures cassées
       ou archivées font échouer tout le lot, souvent en 500 — les isoler est
-      le seul moyen de sauver le reste ;
+      le seul moyen de sauver le reste. Un 500 n'est donc retenté sur place
+      que pour un UUID seul, où il décide du verdict « irrécupérable » ;
     - erreur réseau/timeout épuisée → abandon : un service ou une connexion
       en panne n'est pas une donnée à isoler ;
     - budget d'échecs HTTP consécutifs → abandon : borne la panne 5xx
@@ -133,13 +141,16 @@ def fetch_gpx_batches(
         if not batch:
             return
         try:
-            data = post_download(build_payload(batch, user_guid))
+            data = post_download(build_payload(batch, user_guid),
+                                 retry_server_errors=len(batch) == 1)
         except urllib.error.HTTPError as exc:
             consecutive_failures += 1
             if consecutive_failures > 12:
                 raise   # panne persistante côté service — pas des données
             if len(batch) == 1:
                 result.failed_uuids.append(batch[0])
+                if on_failed:
+                    on_failed(batch[0])
                 done += 1
                 report()
                 return

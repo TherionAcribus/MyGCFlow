@@ -74,9 +74,21 @@ def _v2_tables_lab(db):
             conn.execute(text(idx))
 
 
+def _v3_lab_echec_recuperation(db):
+    # Mémoire des Adventures que lab2gpx n'a pas su servir. Idempotent :
+    # db.create_all() pose déjà la colonne sur une table créée à l'instant.
+    with db.engine.begin() as conn:
+        columns = {row[1] for row in
+                   conn.exec_driver_sql("PRAGMA table_info(lab_discovery)")}
+        if "coord_fetch_failed_at" not in columns:
+            conn.exec_driver_sql(
+                "ALTER TABLE lab_discovery ADD COLUMN coord_fetch_failed_at DATETIME")
+
+
 MIGRATIONS = [
     (1, _v1_colonnes_et_index),
     (2, _v2_tables_lab),
+    (3, _v3_lab_echec_recuperation),
 ]
 
 LATEST_VERSION = MIGRATIONS[-1][0]

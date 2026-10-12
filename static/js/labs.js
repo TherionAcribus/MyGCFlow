@@ -549,6 +549,7 @@ function buildPendingRow(item) {
     const reasonLabels = (item.reasons || []).map(r =>
         r === 'missing_date' ? t('date manquante')
         : r === 'missing_coordinates' ? t('coordonnées manquantes')
+        : r === 'coordinates_unavailable' ? t('introuvables par le service lab2gpx')
         : r);
     reasons.textContent = reasonLabels.join(' · ');
     row.appendChild(reasons);

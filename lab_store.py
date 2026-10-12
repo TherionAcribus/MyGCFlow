@@ -390,6 +390,7 @@ def _apply_coords(session, parsed, commit: bool) -> dict:
             row.coordinate_scope = "stage"
             row.coordinate_source = SOURCE_LAB2GPX
             row.coordinate_status = LabDiscovery.COORD_RESOLVED
+            row.coord_fetch_failed_at = None
             if not row.adventure_uuid:
                 row.adventure_uuid = stage.adventure_uuid
             if not row.adventure_url and stage.adventure_url:
@@ -431,6 +432,30 @@ def commit_coordinates(session, parsed) -> dict:
         session.commit()
     summary["success"] = True
     return summary
+
+
+def mark_coords_fetch_failed(session, adventure_uuids) -> int:
+    """Date l'échec de récupération sur les étapes encore sans coordonnées
+    des Adventures données. Retourne le nombre d'étapes marquées."""
+    uuids = list(dict.fromkeys(u for u in adventure_uuids if u))
+    if not uuids:
+        return 0
+    with LAB_MUTATION_LOCK:
+        collection = get_collection(session)
+        if collection is None:
+            return 0
+        marked, now = 0, _utcnow()
+        for i in range(0, len(uuids), 500):   # borne des variables SQLite
+            marked += session.query(LabDiscovery).filter(
+                LabDiscovery.collection_id == collection.id,
+                LabDiscovery.adventure_uuid.in_(uuids[i:i + 500]),
+                (LabDiscovery.coordinate_status != LabDiscovery.COORD_RESOLVED)
+                | LabDiscovery.latitude.is_(None)
+                | LabDiscovery.longitude.is_(None),
+            ).update({LabDiscovery.coord_fetch_failed_at: now},
+                     synchronize_session=False)
+        session.commit()
+    return marked
 
 
 def preview_coordinates(session, parsed) -> dict:
@@ -501,6 +526,8 @@ def unresolved_discoveries(session, limit=200, offset=0) -> list:
             reasons.append("missing_date")
         if r.latitude is None or r.longitude is None:
             reasons.append("missing_coordinates")
+            if r.coord_fetch_failed_at is not None:
+                reasons.append("coordinates_unavailable")
         elif r.coordinate_status != LabDiscovery.COORD_RESOLVED:
             reasons.append(f"coordinate_{r.coordinate_status}")
         if reasons:

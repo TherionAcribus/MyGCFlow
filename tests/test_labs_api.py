@@ -7,7 +7,7 @@ import time
 import unittest
 import urllib.error
 from dataclasses import replace
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 from unittest import mock
 
@@ -27,6 +27,7 @@ DOCTYPE = FIXTURES / "lab2gpx-doctype.gpx"
 
 STAGE_1 = "57a9e000-0000-4000-8000-000000000101"
 STAGE_REMOVED = "57a9e000-0000-4000-8000-000000000401"
+ADVENTURE_REMOVED = "fa1e0000-0000-4000-8000-000000000004"
 
 
 class LabsApiTests(unittest.TestCase):
@@ -289,11 +290,18 @@ class LabsApiTests(unittest.TestCase):
         self.assertEqual(self.client.get('/api/labs/export').status_code, 404)
 
 
-def _fake_fetch(fail_after=None):
+def _fake_fetch(fail_after=None, failed_before=(), failed_after=()):
     """Double de `fetch_gpx_batches` : livre le GPX de test via `on_payload`
-    comme le vrai provider, puis abandonne si `fail_after` est fourni."""
-    def fake(uuids, user_guid=None, progress=None, on_payload=None, **_kw):
+    comme le vrai provider, puis abandonne si `fail_after` est fourni.
+    `failed_before`/`failed_after` : UUID signalés irrécupérables avant/après
+    ce lot."""
+    def fake(uuids, user_guid=None, progress=None, on_payload=None,
+             on_failed=None, **_kw):
+        for u in failed_before:
+            on_failed(u)
         on_payload("auto-001.gpx", COORDS.read_bytes())
+        for u in failed_after:
+            on_failed(u)
         if fail_after is not None:
             raise fail_after
         return lcp.FetchResult(fetched_adventures=3)
@@ -478,6 +486,73 @@ class LabsAutomationTests(LabsApiTests):
         self.assertEqual(st.state, "failed")
         db.session.expire_all()
         self.assertEqual(lab_store.collection_status(db.session)["ready"], 0)
+
+    def _fetch(self, **fake_kwargs):
+        with mock.patch.object(lcp, "fetch_gpx_batches",
+                               side_effect=_fake_fetch(**fake_kwargs)):
+            rv = self.client.post('/api/labs/fetch-coordinates')
+            st = self._wait_task(rv.get_json()["task_id"])
+        self.assertEqual(st.state, "finished", st.error)
+        db.session.expire_all()
+        return st.result
+
+    def test_unrecoverable_adventure_is_remembered(self):
+        """Une Adventure refusée par lab2gpx n'est plus redemandée par
+        l'auto-fetch avant le délai ; la récupération manuelle la retente."""
+        import blueprints.labs as labs_mod
+        self._import_history()
+        result = self._fetch(failed_after=[ADVENTURE_REMOVED])
+        self.assertEqual(result["failed_uuids"], [ADVENTURE_REMOVED])
+
+        row = db.session.query(LabDiscovery).filter_by(stage_uuid=STAGE_REMOVED).one()
+        self.assertIsNotNone(row.coord_fetch_failed_at)
+        # Les étapes résolues ne portent jamais la marque.
+        self.assertIsNone(db.session.query(LabDiscovery).filter_by(
+            stage_uuid=STAGE_1).one().coord_fetch_failed_at)
+
+        self.assertIn(ADVENTURE_REMOVED, labs_mod._unresolved_coord_uuids(db.session))
+        self.assertNotIn(ADVENTURE_REMOVED, labs_mod._unresolved_coord_uuids(
+            db.session, skip_recent_failures=True))
+
+        items = self.client.get('/api/labs/unresolved').get_json()["items"]
+        reasons = next(i["reasons"] for i in items if i["stage_uuid"] == STAGE_REMOVED)
+        self.assertIn("coordinates_unavailable", reasons)
+
+        # Délai écoulé : l'auto-fetch la redemande.
+        row.coord_fetch_failed_at -= timedelta(days=labs_mod.FETCH_RETRY_AFTER_DAYS + 1)
+        db.session.commit()
+        self.assertIn(ADVENTURE_REMOVED, labs_mod._unresolved_coord_uuids(
+            db.session, skip_recent_failures=True))
+
+    def test_failures_before_an_abort_are_not_remembered(self):
+        """Des échecs suivis d'un abandon tiennent plus de la panne que de
+        la donnée : ils ne sont ni rapportés ni mémorisés."""
+        self._import_history()
+        result = self._fetch(failed_after=[ADVENTURE_REMOVED],
+                             fail_after=urllib.error.URLError("down"))
+        self.assertTrue(result["interrupted"])
+        self.assertEqual(result["failed_uuids"], [])
+        row = db.session.query(LabDiscovery).filter_by(stage_uuid=STAGE_REMOVED).one()
+        self.assertIsNone(row.coord_fetch_failed_at)
+
+    def test_confirmed_failures_survive_an_interruption(self):
+        self._import_history()
+        result = self._fetch(failed_before=[ADVENTURE_REMOVED],
+                             fail_after=urllib.error.URLError("down"))
+        self.assertTrue(result["interrupted"])
+        self.assertEqual(result["failed_uuids"], [ADVENTURE_REMOVED])
+        row = db.session.query(LabDiscovery).filter_by(stage_uuid=STAGE_REMOVED).one()
+        self.assertIsNotNone(row.coord_fetch_failed_at)
+
+    def test_manual_coordinates_clear_the_failure_mark(self):
+        self._import_history()
+        self._fetch(failed_after=[ADVENTURE_REMOVED])
+        rv = self.client.post(f'/api/labs/discoveries/{STAGE_REMOVED}/resolve',
+                              json={"latitude": 45.5, "longitude": 3.25})
+        self.assertEqual(rv.status_code, 200)
+        db.session.expire_all()
+        row = db.session.query(LabDiscovery).filter_by(stage_uuid=STAGE_REMOVED).one()
+        self.assertIsNone(row.coord_fetch_failed_at)
 
     def test_autofetch_chains_after_import_when_enabled(self):
         self.client.put('/api/settings', json={"labs_auto_fetch_coords": True})

@@ -91,6 +91,19 @@ class SchemaMigrationTests(unittest.TestCase):
         self.assertIn('coordinate_status', self._columns('lab_discovery'))
         self.assertEqual(self._user_version(), migrations.LATEST_VERSION)
 
+    def test_lab_table_gains_fetch_failure_column(self):
+        # Base v2 : tables Labs présentes, sans la mémoire des échecs lab2gpx.
+        self._create_app()
+        with self._connect() as conn:
+            conn.execute("ALTER TABLE lab_discovery DROP COLUMN coord_fetch_failed_at")
+            conn.execute("PRAGMA user_version = 2")
+        self.assertNotIn('coord_fetch_failed_at', self._columns('lab_discovery'))
+
+        self._create_app()
+
+        self.assertIn('coord_fetch_failed_at', self._columns('lab_discovery'))
+        self.assertEqual(self._user_version(), migrations.LATEST_VERSION)
+
     def test_new_database_has_lab_tables(self):
         self._create_app()
 

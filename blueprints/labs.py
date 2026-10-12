@@ -46,6 +46,11 @@ labs_bp = Blueprint('labs', __name__)
 TASK_TYPE_LAB_IMPORT = "lab_import"
 TASK_TYPE_LAB_FETCH = "lab_fetch_coords"
 
+# Une Adventure que lab2gpx n'a pas su servir (archivée, cassée) n'est pas
+# redemandée par l'auto-fetch avant ce délai — sinon chaque import rejouerait
+# la même bissection. Le bouton de récupération manuelle, lui, retente tout.
+FETCH_RETRY_AFTER_DAYS = 30
+
 # Seule origine autorisée à poster sur /api/labs/receive (le bookmarklet
 # s'exécute sur la page /logs). Toute autre page web ne peut pas nous atteindre
 # en CORS ; le jeton couvre les clients sans CORS (curl & co).
@@ -253,19 +258,27 @@ def _slim_summary(summary: dict) -> dict:
 # Récupération des coordonnées via lab2gpx (fournisseur fichier → réseau)
 # ---------------------------------------------------------------------------
 
-def _unresolved_coord_uuids(session) -> list[str]:
-    """UUID d'Adventures ayant au moins une découverte sans coordonnées."""
+def _unresolved_coord_uuids(session, skip_recent_failures=False) -> list[str]:
+    """UUID d'Adventures ayant au moins une découverte sans coordonnées.
+
+    `skip_recent_failures` écarte les étapes dont l'Adventure a déjà été
+    refusée par lab2gpx depuis moins de FETCH_RETRY_AFTER_DAYS."""
     collection = lab_store.get_collection(session)
     if collection is None:
         return []
-    rows = session.query(LabDiscovery.adventure_uuid).filter(
+    query = session.query(LabDiscovery.adventure_uuid).filter(
         LabDiscovery.collection_id == collection.id,
         LabDiscovery.adventure_uuid.isnot(None),
         (LabDiscovery.coordinate_status != LabDiscovery.COORD_RESOLVED)
         | LabDiscovery.latitude.is_(None)
         | LabDiscovery.longitude.is_(None),
-    ).distinct().all()
-    return [r[0] for r in rows]
+    )
+    if skip_recent_failures:
+        cutoff = lab_store._utcnow() - timedelta(days=FETCH_RETRY_AFTER_DAYS)
+        query = query.filter(
+            LabDiscovery.coord_fetch_failed_at.is_(None)
+            | (LabDiscovery.coord_fetch_failed_at < cutoff))
+    return [r[0] for r in query.distinct().all()]
 
 
 def run_lab_fetch_task(status, app, uuids, user_guid, locale=None):
@@ -299,13 +312,27 @@ def run_lab_fetch_task(status, app, uuids, user_guid, locale=None):
                             totals[k] += int(summary.get(k, 0))
                         warnings.extend(summary.get("warnings", []))
 
+                    # Un échec isolé n'est retenu qu'une fois suivi d'un lot
+                    # réussi (ou de la fin normale) : ceux qui précèdent un
+                    # abandon sont plus probablement la panne que la donnée.
+                    failed_uuids, unconfirmed = [], []
+
+                    def confirm_failures():
+                        failed_uuids.extend(unconfirmed)
+                        unconfirmed.clear()
+
+                    def on_payload(name, raw):
+                        enrich(name, raw)
+                        confirm_failures()
+
                     interrupted = None
-                    failed_uuids, fetched = [], None
+                    fetched = None
                     try:
                         result = lab_coords_provider.fetch_gpx_batches(
                             uuids, user_guid=user_guid, progress=progress,
-                            on_payload=enrich)
-                        failed_uuids = result.failed_uuids
+                            on_payload=on_payload,
+                            on_failed=unconfirmed.append)
+                        confirm_failures()
                         fetched = result.fetched_adventures
                     except (OSError, http.client.HTTPException) as exc:
                         # Panne réseau/service : sans aucun lot enregistré,
@@ -316,6 +343,7 @@ def run_lab_fetch_task(status, app, uuids, user_guid, locale=None):
                     finally:
                         if committed:
                             _invalidate_after_mutation("labs_fetch_coords")
+                    lab_store.mark_coords_fetch_failed(db.session, failed_uuids)
 
                     stats = lab_store.collection_status(db.session)
                     status.set_result({
@@ -344,7 +372,8 @@ def _maybe_autofetch(app_obj, locale=None) -> str | None:
         if not get_settings_manager().get_app_settings().labs_auto_fetch_coords:
             return None
         with app_obj.app_context():
-            uuids = _unresolved_coord_uuids(db.session)
+            uuids = _unresolved_coord_uuids(
+                db.session, skip_recent_failures=True)
         if not uuids:
             return None
         task_status = task_manager.submit(
@@ -549,6 +578,7 @@ def resolve_discovery(local_uid):
             row.coordinate_scope = "stage"
             row.coordinate_source = lab_store.USER_CORRECTION
             row.coordinate_status = LabDiscovery.COORD_RESOLVED
+            row.coord_fetch_failed_at = None
         if has_date:
             pd = lf.parse_lab_datetime(body.get("found_date"))
             if pd.found_date is None:
