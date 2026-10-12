@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-12 19:00+0200\n"
+"POT-Creation-Date: 2026-10-12 19:37+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -597,6 +597,44 @@ msgstr ""
 
 #: blueprints/labs.py:706
 msgid "Historique Labs reçu — import lancé"
+msgstr ""
+
+#: blueprints/labs.py:792
+msgid "MyGCFlow : démarrage…"
+msgstr ""
+
+#: blueprints/labs.py:793
+msgid "MyGCFlow — GUID public du joueur :"
+msgstr ""
+
+#: blueprints/labs.py:794
+msgid "Annulé."
+msgstr ""
+
+#: blueprints/labs.py:795
+msgid "GUID refusé par le site."
+msgstr ""
+
+#: blueprints/labs.py:796
+#, python-brace-format
+msgid "MyGCFlow : ${adv} Adventures, ${disc} étapes…"
+msgstr ""
+
+#: blueprints/labs.py:797
+msgid "MyGCFlow : envoi à l'application…"
+msgstr ""
+
+#: blueprints/labs.py:798
+#, python-brace-format
+msgid "✔ Envoyé à MyGCFlow — import en cours (${adv} Adventures, ${disc} étapes)"
+msgstr ""
+
+#: blueprints/labs.py:800
+msgid "MyGCFlow : erreur"
+msgstr ""
+
+#: blueprints/labs.py:801
+msgid "MyGCFlow :"
 msgstr ""
 
 #: blueprints/media.py:85

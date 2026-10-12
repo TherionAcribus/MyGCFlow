@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-12 19:00+0200\n"
+"POT-Creation-Date: 2026-10-12 19:37+0200\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -284,7 +284,9 @@ msgstr "Missing video fragment"
 msgid ""
 "Le nom '%(name)s' ne contient aucun caractère utilisable (au moins une "
 "lettre ou un chiffre est nécessaire)"
-msgstr "The name '%(name)s' contains no usable characters (at least one letter or digit is required)"
+msgstr ""
+"The name '%(name)s' contains no usable characters (at least one letter or"
+" digit is required)"
 
 #: blueprints/profiles.py:480 settings_manager.py:2462 settings_manager.py:2539
 #: settings_manager.py:2591
@@ -298,7 +300,7 @@ msgid "Aucun thème trouvé avec l'UUID: %(uid)s"
 msgstr "No theme found with UUID: %(uid)s"
 
 #: settings_manager.py:2519 settings_manager.py:2544
-#, python-brace-format, python-format
+#, python-format
 msgid "Un thème nommé '%(name)s' existe déjà"
 msgstr "A theme named '%(name)s' already exists"
 
@@ -595,24 +597,58 @@ msgid "Aucune collection Labs à exporter"
 msgstr "No Lab collection to export"
 
 #: blueprints/labs.py:618
-#
 msgid "Aucune étape en attente de coordonnées"
 msgstr "No stage pending coordinates"
 
 #: blueprints/labs.py:622
-#
 msgid "Une opération Labs est déjà en cours"
 msgstr "A Labs operation is already running"
 
 #: blueprints/labs.py:633
-#
 msgid "Récupération des coordonnées lancée"
 msgstr "Coordinate retrieval started"
 
 #: blueprints/labs.py:706
-#
 msgid "Historique Labs reçu — import lancé"
 msgstr "Labs history received — import started"
+
+#: blueprints/labs.py:792
+msgid "MyGCFlow : démarrage…"
+msgstr "MyGCFlow: starting…"
+
+#: blueprints/labs.py:793
+msgid "MyGCFlow — GUID public du joueur :"
+msgstr "MyGCFlow — player public GUID:"
+
+#: blueprints/labs.py:794
+msgid "Annulé."
+msgstr "Cancelled."
+
+#: blueprints/labs.py:795
+msgid "GUID refusé par le site."
+msgstr "GUID rejected by the site."
+
+#: blueprints/labs.py:796
+#, python-brace-format
+msgid "MyGCFlow : ${adv} Adventures, ${disc} étapes…"
+msgstr "MyGCFlow: ${adv} Adventures, ${disc} stages…"
+
+#: blueprints/labs.py:797
+msgid "MyGCFlow : envoi à l'application…"
+msgstr "MyGCFlow: sending to the app…"
+
+#: blueprints/labs.py:798
+#, python-brace-format
+msgid "✔ Envoyé à MyGCFlow — import en cours (${adv} Adventures, ${disc} étapes)"
+msgstr "✔ Sent to MyGCFlow — import running (${adv} Adventures, ${disc} stages)"
+
+#: blueprints/labs.py:800
+msgid "MyGCFlow : erreur"
+msgstr "MyGCFlow: error"
+
+#: blueprints/labs.py:801
+msgid "MyGCFlow :"
+msgstr "MyGCFlow:"
 
 #: blueprints/media.py:85
 msgid ""
@@ -1254,10 +1290,11 @@ msgstr "Error loading GC colors (${status}): ${statusText}"
 msgid ""
 "Glissez ce bouton dans la barre de favoris de votre navigateur, puis "
 "cliquez-le depuis la page de vos logs Adventure Lab."
-msgstr "Drag this button into your browser's bookmarks bar, then click it from your Adventure Lab logs page."
+msgstr ""
+"Drag this button into your browser's bookmarks bar, then click it from "
+"your Adventure Lab logs page."
 
 #: static/js/labs.js:49 templates/menu_data.html:125
-#
 msgid "Envoyer vers MyGCFlow"
 msgstr "Send to MyGCFlow"
 
@@ -1399,22 +1436,18 @@ msgid "Lab Caches"
 msgstr "Lab Caches"
 
 #: static/js/labs.js:376
-#
 msgid "Réglage non enregistré"
 msgstr "Setting not saved"
 
 #: static/js/labs.js:388
-#
 msgid "Récupération des coordonnées…"
 msgstr "Fetching coordinates…"
 
 #: static/js/labs.js:393
-#
 msgid "Récupération refusée"
 msgstr "Retrieval refused"
 
 #: static/js/labs.js:401
-#
 msgid "Erreur de récupération"
 msgstr "Retrieval error"
 
@@ -5027,10 +5060,11 @@ msgstr ""
 msgid ""
 "Glissez ce bouton dans vos favoris, puis cliquez-le sur la page de vos "
 "logs Adventure Lab."
-msgstr "Drag this button into your bookmarks, then click it on your Adventure Lab logs page."
+msgstr ""
+"Drag this button into your bookmarks, then click it on your Adventure Lab"
+" logs page."
 
 #: templates/menu_data.html:138
-#
 msgid "Récupérer les coordonnées"
 msgstr "Fetch coordinates"
 
@@ -5046,7 +5080,9 @@ msgstr "Automatically fetch coordinates after import"
 msgid ""
 "Interroge le service public lab2gpx avec les identifiants de vos "
 "Adventures — aucun identifiant de compte n'est transmis."
-msgstr "Queries the public lab2gpx service with your Adventure identifiers — no account credentials are sent."
+msgstr ""
+"Queries the public lab2gpx service with your Adventure identifiers — no "
+"account credentials are sent."
 
 #: templates/menu_data.html:194
 msgid "Importer mes Lab Caches"
@@ -5060,7 +5096,9 @@ msgstr "The easy way — one click"
 msgid ""
 "Glissez le bouton « Envoyer vers MyGCFlow » (carte Mes Lab Caches) dans "
 "la barre de favoris de votre navigateur — une seule fois."
-msgstr "Drag the “Send to MyGCFlow” button (My Lab Caches card) into your browser's bookmarks bar — once only."
+msgstr ""
+"Drag the “Send to MyGCFlow” button (My Lab Caches card) into your "
+"browser's bookmarks bar — once only."
 
 #: templates/menu_data.html:204
 msgid "Connectez-vous sur"
@@ -5070,14 +5108,18 @@ msgstr "Sign in on"
 msgid ""
 "puis cliquez ce favori : votre historique est envoyé directement à "
 "l'application."
-msgstr "then click that bookmark: your history is sent straight to the application."
+msgstr ""
+"then click that bookmark: your history is sent straight to the "
+"application."
 
 #: templates/menu_data.html:209
 msgid ""
 "Si « Récupérer automatiquement les coordonnées » est cochée, les étapes "
 "se placent seules sur la carte. Sinon, complétez-les par fichier ou à la "
 "main."
-msgstr "If “Automatically fetch coordinates” is checked, stages land on the map by themselves. Otherwise, complete them by file or by hand."
+msgstr ""
+"If “Automatically fetch coordinates” is checked, stages land on the map "
+"by themselves. Otherwise, complete them by file or by hand."
 
 #: templates/menu_data.html:213
 msgid "La méthode manuelle — deux fichiers"
@@ -5092,7 +5134,10 @@ msgid ""
 "Sur labs.geocaching.com/logs, ouvrez la console du navigateur (F12), "
 "renseignez votre GUID joueur dans le script ci-dessous et exécutez-le : "
 "il télécharge votre historique complet."
-msgstr "On labs.geocaching.com/logs, open the browser console (F12), fill in your player GUID in the script below and run it: it downloads your full history."
+msgstr ""
+"On labs.geocaching.com/logs, open the browser console (F12), fill in your"
+" player GUID in the script below and run it: it downloads your full "
+"history."
 
 #: templates/menu_data.html:218
 msgid "Télécharger le script d'export"
@@ -5107,21 +5152,26 @@ msgid ""
 "Générez un fichier Lab2Gpx contenant les étapes de vos Adventures (mode "
 "UUID, une étape par waypoint) — inutile si la récupération automatique "
 "est activée."
-msgstr "Generate a Lab2Gpx file containing your Adventure stages (UUID mode, one stage per waypoint) — unnecessary if automatic retrieval is enabled."
+msgstr ""
+"Generate a Lab2Gpx file containing your Adventure stages (UUID mode, one "
+"stage per waypoint) — unnecessary if automatic retrieval is enabled."
 
 #: templates/menu_data.html:226
 msgid ""
 "Déposez les fichiers ici — ensemble ou séparément. Les étapes sans "
 "coordonnées restent conservées et complétables ensuite."
-msgstr "Drop the files here — together or separately. Stages without coordinates are kept and can be completed later."
+msgstr ""
+"Drop the files here — together or separately. Stages without coordinates "
+"are kept and can be completed later."
 
 #: templates/menu_data.html:230
-#
 msgid ""
 "Aucune donnée ne quitte l'application : les fichiers sont analysés "
 "localement. La récupération automatique envoie uniquement les "
 "identifiants d'Adventures au service public lab2gpx."
-msgstr "No data leaves the application: files are parsed locally. Automatic retrieval only sends Adventure identifiers to the public lab2gpx service."
+msgstr ""
+"No data leaves the application: files are parsed locally. Automatic "
+"retrieval only sends Adventure identifiers to the public lab2gpx service."
 
 #: templates/menu_data.html:245
 msgid "Aperçu de l'import Lab Caches"
@@ -8483,5 +8533,4 @@ msgstr "Save a copy as…"
 #~ "Two files are enough to display "
 #~ "your Adventure Lab stages, with no "
 #~ "official API:"
-
 

@@ -713,15 +713,21 @@ def labs_receive():
 # Même boucle de pagination que tools/export_lab_logs.js ; le GUID joueur est
 # détecté seul (id null côté session → lien profil de la page → invite),
 # mémorisé en localStorage pour les clics suivants.
+# Les messages affichés sur la page sont traduits côté serveur (__T_*) :
+# le favori parle la langue de l'interface.
 _BOOKMARKLET_JS = (
     "javascript:(async()=>{"
     "var O=__ORIGIN__,T=__TOKEN__,U='/Logs/GetLogsByAdventureGrouping/';"
+    "var L={start:__T_START__,prompt:__T_PROMPT__,cancelled:__T_CANCELLED__,"
+    "guidbad:__T_GUIDBAD__,progress:__T_PROGRESS__,sending:__T_SENDING__,"
+    "sent:__T_SENT__,error:__T_ERROR__,prefix:__T_PREFIX__};"
     "var say=(function(){var d=document.createElement('div');"
     "d.style.cssText='position:fixed;top:12px;right:12px;z-index:2147483647;"
     "background:#082747;color:#fff;padding:10px 14px;border-radius:8px;"
     "font:13px system-ui;box-shadow:0 2px 12px #0007;max-width:340px';"
     "document.body.appendChild(d);return function(t){d.textContent=t}})();"
-    "try{say('MyGCFlow : démarrage…');"
+    "var fmt=function(s,a,b){return s.replace('${adv}',a).replace('${disc}',b)};"
+    "try{say(L.start);"
     "var K='mygcflow:playerId';"
     "var ok=async function(id){try{var r=await fetch(U,{method:'POST',"
     "headers:{'Content-Type':'application/json','Accept':'application/json'},"
@@ -739,9 +745,9 @@ _BOOKMARKLET_JS = (
     "if(cands.indexOf(m[1])<0)cands.push(m[1])}"
     "for(var j=0;j<cands.length&&!pick;j++){"
     "if(await ok(cands[j]))pick=cands[j]}}"
-    "if(!pick){pid=prompt('MyGCFlow — GUID public du joueur :');"
-    "if(!pid){say('Annulé.');return}pid=pid.trim();"
-    "if(!(await ok(pid))){say('GUID refusé par le site.');return}pick=pid}"
+    "if(!pick){pid=prompt(L.prompt);"
+    "if(!pid){say(L.cancelled);return}pid=pid.trim();"
+    "if(!(await ok(pid))){say(L.guidbad);return}pick=pid}"
     "if(pick)localStorage.setItem(K,pick);"
     "var take=100,disc=[],adv=new Set(),seen=new Set(),skip=0,guard=0;"
     "while(true){var r=await fetch(U,{method:'POST',"
@@ -761,23 +767,39 @@ _BOOKMARKLET_JS = (
     "longitude:null,coordinate_scope:null,adventure_url:null,"
     "log_id:lo.id==null?null:lo.id,is_archived:!!lo.isArchived,"
     "adventure_is_archived:!!it.isArchived})}}"
-    "say('MyGCFlow : '+adv.size+' Adventures, '+disc.length+' étapes…');"
+    "say(fmt(L.progress,adv.size,disc.length));"
     "skip+=items.length;"
     "if(items.length===0||adv.size===before||++guard>500)break;"
     "await new Promise(function(res){setTimeout(res,300)})}"
     "var payload={format:'mygcflow-lab-finds',schema_version:1,"
     "exported_at:new Date().toISOString(),account:{username:null},"
     "source:'labs.geocaching.com/logs',coverage:'complete',discoveries:disc};"
-    "say('MyGCFlow : envoi à l’application…');"
+    "say(L.sending);"
     "var resp=await fetch(O+'/api/labs/receive',{method:'POST',mode:'cors',"
     "credentials:'omit',headers:{'Content-Type':'application/json',"
     "'X-MyGCFlow-Token':T},body:JSON.stringify(payload)});"
-    "if(resp.status===202){say('✔ Envoyé à MyGCFlow — import en cours "
-    "('+adv.size+' Adventures, '+disc.length+' étapes)')}"
+    "if(resp.status===202){say(fmt(L.sent,adv.size,disc.length))}"
     "else{var t='';try{t=await resp.text()}catch(e){}"
-    "say('MyGCFlow : erreur '+resp.status+' — '+t.slice(0,160))}"
-    "}catch(e){say('MyGCFlow : '+(e&&e.message?e.message:e))}})();"
+    "say(L.error+' '+resp.status+' — '+t.slice(0,160))}"
+    "}catch(e){say(L.prefix+' '+(e&&e.message?e.message:e))}})();"
 )
+
+def _bookmarklet_strings():
+    # Messages du bookmarklet, évalués à la requête : le favori s'affiche sur
+    # labs.geocaching.com, hors portée des catalogues JS du client — la
+    # traduction se fait côté serveur, dans la langue de l'interface.
+    return {
+        '__T_START__': _("MyGCFlow : démarrage…"),
+        '__T_PROMPT__': _("MyGCFlow — GUID public du joueur :"),
+        '__T_CANCELLED__': _("Annulé."),
+        '__T_GUIDBAD__': _("GUID refusé par le site."),
+        '__T_PROGRESS__': _("MyGCFlow : ${adv} Adventures, ${disc} étapes…"),
+        '__T_SENDING__': _("MyGCFlow : envoi à l'application…"),
+        '__T_SENT__': _("✔ Envoyé à MyGCFlow — import en cours "
+                        "(${adv} Adventures, ${disc} étapes)"),
+        '__T_ERROR__': _("MyGCFlow : erreur"),
+        '__T_PREFIX__': _("MyGCFlow :"),
+    }
 
 
 @labs_bp.route('/api/labs/bookmarklet')
@@ -798,4 +820,6 @@ def labs_bookmarklet():
     js = (_BOOKMARKLET_JS
           .replace('__ORIGIN__', json.dumps(origin))
           .replace('__TOKEN__', json.dumps(settings.labs_receive_token)))
+    for key, text in _bookmarklet_strings().items():
+        js = js.replace(key, json.dumps(text))
     return jsonify({'success': True, 'origin': origin, 'bookmarklet': js})

@@ -328,11 +328,26 @@ class LabsAutomationTests(LabsApiTests):
         self.assertIn(json.dumps(token), js)
         # L'origine locale réelle est celle de la requête.
         self.assertIn("/api/labs/receive", js)
+        # Tous les placeholders de traduction sont remplacés.
+        self.assertNotIn("__T_", js)
         # Idempotent : le jeton n'est pas régénéré (le favori resterait valide).
         self.assertEqual(
             self.client.get('/api/labs/bookmarklet').status_code, 200)
         self.assertEqual(
             self.manager.get_app_settings().labs_receive_token, token)
+
+    def test_bookmarklet_strings_follow_ui_language(self):
+        from flask_babel import force_locale
+        from blueprints.labs import _bookmarklet_strings
+        # Langue par défaut (fr) : messages en français.
+        self.assertEqual(
+            _bookmarklet_strings()['__T_START__'], "MyGCFlow : démarrage…")
+        # Locale en : le favori généré parle anglais (messages traduits
+        # côté serveur, injectés dans le javascript:).
+        with force_locale('en'):
+            strings_en = _bookmarklet_strings()
+        self.assertEqual(strings_en['__T_START__'], "MyGCFlow: starting…")
+        self.assertEqual(strings_en['__T_CANCELLED__'], "Cancelled.")
 
     # --- /api/labs/receive --------------------------------------------------
 
