@@ -55,6 +55,9 @@ export async function requetedefaultGcColors(){
             'Community Celebration Event': '#FF0000',
             'Geocaching HQ Block Party': '#FF0000',
             'GPS Adventures Exhibit': '#FF0000',
+            // Choix MyGCFlow (pas de couleur officielle attestée) : turquoise
+            // de la palette MyGCFlow, distinct des types existants.
+            'Adventure Lab': '#00C5A1',
             'Locationless (Reverse) Cache': '#FFFFFF'
         };
         console.warn('Utilisation des couleurs GC par défaut suite à une erreur de chargement');

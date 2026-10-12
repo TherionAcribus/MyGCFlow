@@ -84,6 +84,7 @@ export function buildPointStyle(pointOptions, { evolution = false } = {}) {
                 'Virtual Cache': 'virtual',
                 'Wherigo Cache': 'wherigo',
                 'Lab Cache': 'lab',
+                'Adventure Lab': 'adventurelab',
                 'Cache In Trash Out Event': 'cito',
                 'Community Celebration Event': 'event',
                 'Geocaching HQ Block Party': 'hq',

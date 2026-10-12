@@ -378,6 +378,10 @@ h5, h6 { color: var(--color-heading); font-weight: 600; }
     pointer-events: auto;
     cursor: pointer;
 }
+.gc-popup-note {
+    font-size: 11px;
+    opacity: 0.75;
+}
 
 /* =====================================================================
    Dark mode — overrides des surfaces custom à couleurs codées en dur

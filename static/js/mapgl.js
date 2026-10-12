@@ -798,6 +798,29 @@ export function initPopupOverlay(){
         const publishedLabel = publishedDate ? t('Publié le ${date}', { date: publishedDate }) : '';
         const dateFindLabel = dateFind ? t('le ${date}', { date: dateFind }) : '';
 
+        // Popup dédié aux étapes Adventure Lab : D/T et taille sans objet,
+        // pas de code GC ni de lien coord.info. Seuls l'étape, l'Adventure
+        // (liée si l'URL importée est une URL HTTPS de confiance) et la date
+        // de découverte sont affichés.
+        if (props.source_kind === 'lab') {
+            const labUrl = trustedLabUrl(props.adventure_url);
+            const labAdventure = sanitize(props.adventure_title);
+            const labAdventureHtml = labAdventure
+                ? (labUrl ? `<a href="${labUrl}" target="_blank" rel="noopener noreferrer" class="gc-popup-link">${labAdventure}</a>` : labAdventure)
+                : '';
+            const labHtml = `
+                <div class="gc-popup-title">${nameLabel}</div>
+                ${labAdventureHtml ? `<div>${labAdventureHtml}</div>` : ''}
+                <div>${type || 'Adventure Lab'}</div>
+                <div>${foundLabel} ${dateFindLabel}</div>
+                ${props.coordinate_scope === 'adventure' ? `<div class="gc-popup-note">${t('Position approximative (centre de l’Adventure)')}</div>` : ''}`;
+            const contentEl = popupEl.querySelector('.gc-popup-content') || popupEl;
+            contentEl.innerHTML = labHtml;
+            popupEl.classList.add('is-visible');
+            popupOverlay.setPosition(evt.coordinate);
+            return;
+        }
+
         const html = `
             <div class="gc-popup-title">${linkHref ? `<a href=\"${linkHref}\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"gc-popup-link\">` : ''}${gcEsc}${linkHref ? '</a>' : ''} - ${nameLabel}</div>
             <div>${type || '-'}, ${cont || '-'}, ${dif||'-'}/${ter||'-'}</div>
@@ -831,6 +854,23 @@ function hidePopup(){
 function sanitize(v){
     if (v == null) return '';
     return String(v).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+
+// URL d'Adventure digne de confiance pour un lien dans le popup : HTTPS
+// uniquement, sur un hôte Adventure Lab connu. Toute autre valeur importée
+// est ignorée (aucune URL coord.info n'est fabriquée pour les Labs).
+function trustedLabUrl(raw){
+    if (!raw || typeof raw !== 'string') return null;
+    try {
+        const u = new URL(raw);
+        if (u.protocol !== 'https:') return null;
+        const h = u.hostname;
+        if (h === 'labs.geocaching.com' || h === 'adventurelab.page.link'
+            || h.endsWith('.labs.geocaching.com')) {
+            return u.href;
+        }
+    } catch (e) { /* URL invalide ou relative : pas de lien */ }
+    return null;
 }
 
 
