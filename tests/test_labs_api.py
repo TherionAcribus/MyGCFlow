@@ -128,6 +128,38 @@ class LabsApiTests(unittest.TestCase):
         self.assertEqual(st.result["resolved"], 8)
         self.assertEqual(st.result["ready_total"], 8)
 
+    def test_preview_runs_under_mutation_lock(self):
+        """L'aperçu écrit dans sa transaction avant de l'annuler : il doit
+        tenir le verrou des mutations, puis le rendre."""
+        import blueprints.labs as labs_mod
+        held = []
+
+        def spy(apply):
+            def wrapper(*args, **kwargs):
+                held.append(lab_store.LAB_MUTATION_LOCK.locked())
+                return apply(*args, **kwargs)
+            return wrapper
+
+        spied = {fmt: spy(fn) for fmt, fn in labs_mod._APPLY_BY_FORMAT.items()}
+        with mock.patch.dict(labs_mod._APPLY_BY_FORMAT, spied):
+            rv = self._preview(HISTORY, COORDS)
+        self.assertEqual(rv.status_code, 200)
+        self.assertEqual(held, [True, True])
+        self.assertFalse(lab_store.LAB_MUTATION_LOCK.locked())
+
+    def test_preview_error_releases_lock_and_writes_nothing(self):
+        import blueprints.labs as labs_mod
+
+        def boom(*_args, **_kwargs):
+            raise RuntimeError("boom")
+
+        with mock.patch.dict(labs_mod._APPLY_BY_FORMAT,
+                             {fmt: boom for fmt in labs_mod._APPLY_BY_FORMAT}):
+            rv = self._preview(HISTORY)
+        self.assertEqual(rv.status_code, 500)
+        self.assertFalse(lab_store.LAB_MUTATION_LOCK.locked())
+        self.assertEqual(db.session.query(LabDiscovery).count(), 0)
+
     def test_full_pipeline_history_then_coords(self):
         self._import_history()
         result = self._import_coords()
@@ -233,6 +265,20 @@ class LabsApiTests(unittest.TestCase):
         self.assertEqual(self.client.post(
             '/api/labs/discoveries/inconnu/resolve',
             json={"latitude": 45, "longitude": 3}).status_code, 404)
+
+    def test_resolve_invalid_date_applies_nothing(self):
+        """Coordonnées valides + date invalide : refus entier, la ligne
+        ne garde pas les coordonnées."""
+        self._import_history()
+        rv = self.client.post(f'/api/labs/discoveries/{STAGE_1}/resolve',
+                              json={"latitude": 45.5, "longitude": 3.25,
+                                    "found_date": "14/05/2024"})
+        self.assertEqual(rv.status_code, 400)
+        self.assertFalse(lab_store.LAB_MUTATION_LOCK.locked())
+        db.session.expire_all()
+        row = db.session.query(LabDiscovery).filter_by(stage_uuid=STAGE_1).one()
+        self.assertIsNone(row.latitude)
+        self.assertEqual(row.coordinate_status, LabDiscovery.COORD_MISSING)
 
     def test_user_correction_survives_reimport(self):
         self._import_history()

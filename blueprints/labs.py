@@ -441,29 +441,33 @@ def import_preview():
     # Aperçu du lot complet : les fichiers sont appliqués dans l'ordre dans
     # UNE transaction unique — l'aperçu des coordonnées voit l'historique du
     # même lot — puis tout est annulé par un seul rollback.
+    # Sous le verrou des mutations, rollback compris : l'aperçu écrit pour de
+    # bon dans sa transaction et croiserait sinon un import ou une
+    # récupération en cours (« database is locked »).
     parsed_files.sort(key=lambda f: _FORMAT_ORDER[f["format"]])
     totals = {"added": 0, "updated": 0, "unchanged": 0, "resolved": 0,
               "ignored": 0, "rejected": 0, "conflicts": 0}
     warnings, conflicts_detail, proposals = [], [], []
-    try:
-        for f in parsed_files:
-            summary = _APPLY_BY_FORMAT[f["format"]](db.session, f["parsed"], commit=True)
-            f["report"]["summary"] = _slim_summary(summary)
-            for k in totals:
-                totals[k] += int(summary.get(k, 0))
-            warnings.extend(summary.get("warnings", []))
-            conflicts_detail.extend(summary.get("conflicts_detail", []))
-            proposals.extend(summary.get("proposals", []))
-        # État projeté si le lot était enregistré tel quel.
-        _coll = lab_store.get_collection(db.session)
-        projected = lab_store._collection_stats(db.session, _coll.id) \
-            if _coll else {"total": 0, "ready": 0, "unresolved": 0}
-    except Exception as exc:
-        current_app.logger.error(f"[LABS] preview failed: {exc}")
-        return jsonify({'success': False,
-                        'message': _("Erreur lors de l'analyse : %(error)s", error=str(exc))}), 500
-    finally:
-        db.session.rollback()  # l'aperçu ne persiste rien
+    with lab_store.LAB_MUTATION_LOCK:
+        try:
+            for f in parsed_files:
+                summary = _APPLY_BY_FORMAT[f["format"]](db.session, f["parsed"], commit=True)
+                f["report"]["summary"] = _slim_summary(summary)
+                for k in totals:
+                    totals[k] += int(summary.get(k, 0))
+                warnings.extend(summary.get("warnings", []))
+                conflicts_detail.extend(summary.get("conflicts_detail", []))
+                proposals.extend(summary.get("proposals", []))
+            # État projeté si le lot était enregistré tel quel.
+            _coll = lab_store.get_collection(db.session)
+            projected = lab_store._collection_stats(db.session, _coll.id) \
+                if _coll else {"total": 0, "ready": 0, "unresolved": 0}
+        except Exception as exc:
+            current_app.logger.error(f"[LABS] preview failed: {exc}")
+            return jsonify({'success': False,
+                            'message': _("Erreur lors de l'analyse : %(error)s", error=str(exc))}), 500
+        finally:
+            db.session.rollback()  # l'aperçu ne persiste rien
 
     token, _folder = _store_pending(parsed_files)
 
@@ -559,31 +563,40 @@ def resolve_discovery(local_uid):
         return jsonify({'success': False,
                         'message': _("Aucune correction fournie")}), 400
 
-    collection = lab_store.get_collection(db.session)
-    row = None
-    if collection:
-        row = db.session.query(LabDiscovery).filter_by(
-            collection_id=collection.id, local_uid=local_uid).one_or_none()
-    if row is None:
-        return jsonify({'success': False, 'message': _("Découverte inconnue")}), 404
+    # Tout est validé avant de toucher la ligne : une date invalide ne laisse
+    # pas des coordonnées à moitié appliquées dans la session.
+    cc = pd = None
+    if has_coords:
+        cc = lf.validate_coordinates(body.get("latitude"), body.get("longitude"))
+        if not cc.ok:
+            return jsonify({'success': False,
+                            'message': _("Coordonnées invalides"),
+                            'warnings': cc.warnings}), 400
+    if has_date:
+        pd = lf.parse_lab_datetime(body.get("found_date"))
+        if pd.found_date is None:
+            return jsonify({'success': False,
+                            'message': _("Date invalide (format attendu : AAAA-MM-JJ)")}), 400
 
+    # Lecture comprise sous le verrou : la ligne modifiée est celle que
+    # laisse l'import ou la récupération qui vient de s'achever.
     with lab_store.LAB_MUTATION_LOCK:
+        collection = lab_store.get_collection(db.session)
+        row = None
+        if collection:
+            row = db.session.query(LabDiscovery).filter_by(
+                collection_id=collection.id, local_uid=local_uid).one_or_none()
+        if row is None:
+            db.session.rollback()
+            return jsonify({'success': False, 'message': _("Découverte inconnue")}), 404
+
         if has_coords:
-            cc = lf.validate_coordinates(body.get("latitude"), body.get("longitude"))
-            if not cc.ok:
-                return jsonify({'success': False,
-                                'message': _("Coordonnées invalides"),
-                                'warnings': cc.warnings}), 400
             row.latitude, row.longitude = cc.latitude, cc.longitude
             row.coordinate_scope = "stage"
             row.coordinate_source = lab_store.USER_CORRECTION
             row.coordinate_status = LabDiscovery.COORD_RESOLVED
             row.coord_fetch_failed_at = None
         if has_date:
-            pd = lf.parse_lab_datetime(body.get("found_date"))
-            if pd.found_date is None:
-                return jsonify({'success': False,
-                                'message': _("Date invalide (format attendu : AAAA-MM-JJ)")}), 400
             row.found_date = pd.found_date
             row.date_precision = "day"
             row.date_basis = lab_store.USER_CORRECTION
