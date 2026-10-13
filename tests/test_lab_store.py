@@ -391,6 +391,54 @@ class LabStoreTests(unittest.TestCase):
         self.assertAlmostEqual(row.latitude, 47.5)             # position conservée
         self.assertEqual(row.published_date, date(2020, 3, 10))
 
+    # --- compteurs et pagination ----------------------------------------------
+
+    def test_unresolved_listing_is_paginated(self):
+        lab_store.commit_history(db.session, self._history())
+        lab_store.commit_coordinates(db.session, self._coords())
+        everything = lab_store.unresolved_discoveries(db.session)
+        self.assertEqual(len(everything), 4)
+        pages = (lab_store.unresolved_discoveries(db.session, limit=3, offset=0)
+                 + lab_store.unresolved_discoveries(db.session, limit=3, offset=3))
+        self.assertEqual([p["local_uid"] for p in pages],
+                         [e["local_uid"] for e in everything])
+        self.assertEqual(lab_store.unresolved_discoveries(db.session, offset=4), [])
+
+    def test_counts_and_listing_agree_on_every_state(self):
+        """Compteurs, liste des étapes en attente et bornes de dates reposent
+        sur la même définition, y compris pour les états limites."""
+        lab_store.commit_history(db.session, self._history())
+        lab_store.commit_coordinates(db.session, self._coords())
+        ready = db.session.query(LabDiscovery).filter(
+            LabDiscovery.ready_clause()).order_by(LabDiscovery.id).all()
+        self.assertEqual(len(ready), 8)
+        ready[0].coordinate_status = None            # statut jamais renseigné
+        ready[1].found_date = None                   # date manquante
+        ready[2].longitude = None                    # position incomplète
+        ready[3].coordinate_status = LabDiscovery.COORD_AMBIGUOUS
+        db.session.commit()
+
+        status = lab_store.collection_status(db.session)
+        self.assertEqual((status["total"], status["ready"], status["unresolved"]),
+                         (12, 4, 8))
+        listed = lab_store.unresolved_discoveries(db.session)
+        self.assertEqual(len(listed), 8)
+        self.assertTrue(all(item["reasons"] for item in listed))
+        reasons = {item["local_uid"]: item["reasons"] for item in listed}
+        self.assertEqual(reasons[ready[0].local_uid], ["coordinate_missing"])
+        self.assertEqual(reasons[ready[1].local_uid], ["missing_date"])
+        self.assertEqual(reasons[ready[2].local_uid], ["missing_coordinates"])
+        self.assertEqual(reasons[ready[3].local_uid], ["coordinate_ambiguous"])
+
+    def test_date_bounds_ignore_stages_without_position(self):
+        lab_store.commit_history(db.session, self._history())
+        # Aucune position : rien d'affichable, donc aucune borne.
+        self.assertEqual(lab_store.lab_date_bounds(db.session), (None, None))
+        lab_store.commit_coordinates(db.session, self._coords())
+        low, high = lab_store.lab_date_bounds(db.session)
+        self.assertIsNotNone(low)
+        self.assertLessEqual(low, high)
+
     # --- isolation des sources ----------------------------------------------
 
     def test_geocache_table_untouched(self):

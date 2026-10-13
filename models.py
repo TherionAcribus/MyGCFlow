@@ -109,5 +109,29 @@ class LabDiscovery(db.Model):
         db.Index('ix_lab_discovery_coord_status', 'collection_id', 'coordinate_status'),
     )
 
+    # Les trois états qui pilotent tout le reste (compteurs, GeoJSON, liste
+    # des étapes en attente, récupération) : définis ici une seule fois.
+    # Écrits sans négation SQL — un coordinate_status NULL compte comme
+    # « non résolu », ce qu'un simple `!=` laisserait passer.
+
+    @classmethod
+    def coords_missing_clause(cls):
+        """Étape sans position exploitable."""
+        return db.or_(cls.coordinate_status.is_(None),
+                      cls.coordinate_status != cls.COORD_RESOLVED,
+                      cls.latitude.is_(None), cls.longitude.is_(None))
+
+    @classmethod
+    def ready_clause(cls):
+        """Étape affichable : position résolue ET date de découverte."""
+        return db.and_(cls.coordinate_status == cls.COORD_RESOLVED,
+                       cls.latitude.isnot(None), cls.longitude.isnot(None),
+                       cls.found_date.isnot(None))
+
+    @classmethod
+    def unresolved_clause(cls):
+        """Complément exact de `ready_clause`."""
+        return db.or_(cls.found_date.is_(None), cls.coords_missing_clause())
+
     def __repr__(self):
         return f"<LabDiscovery {self.id}, {self.latitude}, {self.longitude}, {self.local_uid}, {self.stage_title}, {self.found_date}, {self.coordinate_status}>"

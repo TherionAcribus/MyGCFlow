@@ -28,6 +28,7 @@ from collections import Counter
 from datetime import datetime, timezone
 
 from flask_babel import gettext as _
+from sqlalchemy import func
 
 from lab_formats import (
     SOURCE_LAB2GPX, SOURCE_LAB_FINDS, normalize_title,
@@ -308,16 +309,13 @@ def _apply_history(session, parsed, commit: bool, overrides=frozenset()) -> dict
 
 
 def _collection_stats(session, collection_id) -> dict:
-    rows = session.query(LabDiscovery).filter_by(collection_id=collection_id)
-    total = unresolved = ready = 0
-    for r in rows:
-        total += 1
-        if r.found_date and r.coordinate_status == LabDiscovery.COORD_RESOLVED \
-                and r.latitude is not None and r.longitude is not None:
-            ready += 1
-        else:
-            unresolved += 1
-    return {"total": total, "ready": ready, "unresolved": unresolved}
+    # Deux comptages SQL : /api/labs/status est interrogé à chaque retour
+    # sur l'onglet, la table n'a pas à être chargée pour autant.
+    base = session.query(func.count(LabDiscovery.id)).filter(
+        LabDiscovery.collection_id == collection_id)
+    total = base.scalar() or 0
+    ready = base.filter(LabDiscovery.ready_clause()).scalar() or 0
+    return {"total": total, "ready": ready, "unresolved": total - ready}
 
 
 def commit_history(session, parsed, overrides=frozenset()) -> dict:
@@ -361,7 +359,7 @@ def _proposals(session, collection_id, coords_by_adv, resolved_uuids, store):
     proposals = []
     rows = session.query(LabDiscovery).filter(
         LabDiscovery.collection_id == collection_id,
-        LabDiscovery.coordinate_status != LabDiscovery.COORD_RESOLVED,
+        LabDiscovery.coords_missing_clause(),
         LabDiscovery.adventure_uuid.isnot(None),
         LabDiscovery.stage_title.isnot(None),
     )
@@ -533,9 +531,7 @@ def mark_coords_fetch_failed(session, adventure_uuids) -> int:
             marked += session.query(LabDiscovery).filter(
                 LabDiscovery.collection_id == collection.id,
                 LabDiscovery.adventure_uuid.in_(uuids[i:i + 500]),
-                (LabDiscovery.coordinate_status != LabDiscovery.COORD_RESOLVED)
-                | LabDiscovery.latitude.is_(None)
-                | LabDiscovery.longitude.is_(None),
+                LabDiscovery.coords_missing_clause(),
             ).update({LabDiscovery.coord_fetch_failed_at: now},
                      synchronize_session=False)
         session.commit()
@@ -561,7 +557,6 @@ def preview_coordinates(session, parsed) -> dict:
 
 def lab_date_bounds(session) -> tuple:
     """(min, max) des found_date des découvertes exploitables — db_infos."""
-    from sqlalchemy import func
     collection = get_collection(session)
     if collection is None:
         return (None, None)
@@ -570,8 +565,7 @@ def lab_date_bounds(session) -> tuple:
         func.max(LabDiscovery.found_date),
     ).filter(
         LabDiscovery.collection_id == collection.id,
-        LabDiscovery.coordinate_status == LabDiscovery.COORD_RESOLVED,
-        LabDiscovery.found_date.isnot(None),
+        LabDiscovery.ready_clause(),
     ).one()
     return (row[0], row[1])
 
@@ -599,10 +593,12 @@ def unresolved_discoveries(session, limit=200, offset=0) -> list:
     collection = get_collection(session)
     if collection is None:
         return []
+    # Filtre et pagination en SQL : seule la page demandée est chargée.
     rows = session.query(LabDiscovery).filter(
         LabDiscovery.collection_id == collection.id,
+        LabDiscovery.unresolved_clause(),
     ).order_by(LabDiscovery.found_date.is_(None), LabDiscovery.found_date,
-               LabDiscovery.id).all()
+               LabDiscovery.id).offset(offset).limit(limit).all()
     out = []
     for r in rows:
         reasons = []
@@ -613,25 +609,24 @@ def unresolved_discoveries(session, limit=200, offset=0) -> list:
             if r.coord_fetch_failed_at is not None:
                 reasons.append("coordinates_unavailable")
         elif r.coordinate_status != LabDiscovery.COORD_RESOLVED:
-            reasons.append(f"coordinate_{r.coordinate_status}")
-        if reasons:
-            out.append({
-                "local_uid": r.local_uid,
-                "adventure_uuid": r.adventure_uuid,
-                "stage_uuid": r.stage_uuid,
-                "adventure_title": r.adventure_title,
-                "stage_title": r.stage_title,
-                "found_date": r.found_date.isoformat() if r.found_date else None,
-                "is_archived": r.is_archived,
-                "reasons": reasons,
-                "suggestion": (
-                    {"latitude": r.suggested_latitude,
-                     "longitude": r.suggested_longitude}
-                    if r.suggested_latitude is not None
-                    and r.suggested_longitude is not None
-                    and (r.latitude is None or r.longitude is None) else None),
-            })
-    return out[offset:offset + limit]
+            reasons.append(f"coordinate_{r.coordinate_status or LabDiscovery.COORD_MISSING}")
+        out.append({
+            "local_uid": r.local_uid,
+            "adventure_uuid": r.adventure_uuid,
+            "stage_uuid": r.stage_uuid,
+            "adventure_title": r.adventure_title,
+            "stage_title": r.stage_title,
+            "found_date": r.found_date.isoformat() if r.found_date else None,
+            "is_archived": r.is_archived,
+            "reasons": reasons,
+            "suggestion": (
+                {"latitude": r.suggested_latitude,
+                 "longitude": r.suggested_longitude}
+                if r.suggested_latitude is not None
+                and r.suggested_longitude is not None
+                and (r.latitude is None or r.longitude is None) else None),
+        })
+    return out
 
 
 def clear_labs(session) -> dict:

@@ -297,9 +297,7 @@ def _unresolved_coord_uuids(session, skip_recent_failures=False) -> list[str]:
     query = session.query(LabDiscovery.adventure_uuid).filter(
         LabDiscovery.collection_id == collection.id,
         LabDiscovery.adventure_uuid.isnot(None),
-        (LabDiscovery.coordinate_status != LabDiscovery.COORD_RESOLVED)
-        | LabDiscovery.latitude.is_(None)
-        | LabDiscovery.longitude.is_(None),
+        LabDiscovery.coords_missing_clause(),
     )
     if skip_recent_failures:
         cutoff = lab_store._utcnow() - timedelta(days=FETCH_RETRY_AFTER_DAYS)

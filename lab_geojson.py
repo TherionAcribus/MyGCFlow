@@ -66,10 +66,7 @@ def _ready_query(session):
         return None, []
     rows = session.query(LabDiscovery).filter(
         LabDiscovery.collection_id == collection.id,
-        LabDiscovery.coordinate_status == LabDiscovery.COORD_RESOLVED,
-        LabDiscovery.latitude.isnot(None),
-        LabDiscovery.longitude.isnot(None),
-        LabDiscovery.found_date.isnot(None),
+        LabDiscovery.ready_clause(),
     ).all()
     return collection.uid, rows
 
@@ -87,10 +84,7 @@ def has_ready_labs(session) -> bool:
         return False
     return session.query(LabDiscovery.id).filter(
         LabDiscovery.collection_id == collection.id,
-        LabDiscovery.coordinate_status == LabDiscovery.COORD_RESOLVED,
-        LabDiscovery.latitude.isnot(None),
-        LabDiscovery.longitude.isnot(None),
-        LabDiscovery.found_date.isnot(None),
+        LabDiscovery.ready_clause(),
     ).first() is not None
 
 
