@@ -102,12 +102,17 @@ def get_or_create_collection(session) -> LabCollection:
 # ---------------------------------------------------------------------------
 
 def _index_existing(session, collection_id):
-    by_uuid, by_local = {}, {}
+    # `by_record` fait le pont entre les deux identités d'une même ligne :
+    # `source_record_key` (`log:<id>`) est stable, que `local_uid` porte
+    # encore l'identité de repli ou déjà l'UUID d'étape.
+    by_uuid, by_local, by_record = {}, {}, {}
     for row in session.query(LabDiscovery).filter_by(collection_id=collection_id):
         if row.stage_uuid:
             by_uuid[row.stage_uuid] = row
         by_local[row.local_uid] = row
-    return by_uuid, by_local
+        if row.source_record_key:
+            by_record[row.source_record_key] = row
+    return by_uuid, by_local, by_record
 
 
 def _diff_draft(draft, row, overrides=frozenset()) -> tuple[dict, list]:
@@ -222,7 +227,8 @@ def _diff_draft(draft, row, overrides=frozenset()) -> tuple[dict, list]:
 def _apply_history(session, parsed, commit: bool, overrides=frozenset()) -> dict:
     collection = get_or_create_collection(session) if commit else get_collection(session)
     collection_id = collection.id if collection else None
-    by_uuid, by_local = _index_existing(session, collection_id) if collection_id else ({}, {})
+    by_uuid, by_local, by_record = _index_existing(session, collection_id) \
+        if collection_id else ({}, {}, {})
 
     counts = {"added": 0, "updated": 0, "unchanged": 0, "conflicts": 0}
     conflicts = []
@@ -238,6 +244,12 @@ def _apply_history(session, parsed, commit: bool, overrides=frozenset()) -> dict
             row = by_uuid.get(draft.stage_uuid)
         if row is None:
             row = by_local.get(draft.local_key)
+        via_record = False
+        if row is None and draft.source_record_key:
+            # La clé locale a changé entre deux imports (`log:<id>` → UUID) :
+            # la clé d'enregistrement source, stable, retrouve la ligne.
+            row = by_record.get(draft.source_record_key)
+            via_record = row is not None
         if row is None:
             counts["added"] += 1
             if commit:
@@ -275,6 +287,14 @@ def _apply_history(session, parsed, commit: bool, overrides=frozenset()) -> dict
             continue
 
         updates, row_conflicts = _diff_draft(draft, row, overrides)
+        if via_record and draft.stage_uuid and not row.stage_uuid \
+                and draft.local_key != row.local_uid:
+            # Migration d'identité : la ligne avait été enregistrée sous son
+            # identité de repli `log:<id>` ; l'UUID qui vient d'arriver devient
+            # sa clé locale (règle de `_local_key` — l'UUID dès qu'il est
+            # connu). Aucune collision possible sur (collection_id, local_uid) :
+            # by_uuid et by_local n'ont rien trouvé pour ces clés.
+            updates["local_uid"] = draft.local_key
         if row_conflicts:
             counts["conflicts"] += 1
             conflicts.extend(row_conflicts)

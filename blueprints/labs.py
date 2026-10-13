@@ -709,6 +709,12 @@ def resolve_discovery(local_uid):
 
 @labs_bp.route('/api/labs/clear', methods=['POST'])
 def labs_clear():
+    # Un « Vider » entre deux fichiers d'un import (ou deux lots d'un fetch)
+    # supprimerait la collection que le lot suivant recrée à moitié.
+    if task_manager.get_active(TASK_TYPE_LAB_IMPORT) is not None \
+            or task_manager.get_active(TASK_TYPE_LAB_FETCH) is not None:
+        return jsonify({'success': False,
+                        'message': _("Une opération Labs est déjà en cours")}), 409
     result = lab_store.clear_labs(db.session)
     _invalidate_after_mutation("labs_clear")
     return jsonify({'success': True,

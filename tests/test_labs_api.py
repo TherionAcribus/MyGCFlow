@@ -508,6 +508,22 @@ class LabsApiTests(unittest.TestCase):
         self.assertEqual(db.session.query(LabDiscovery).count(), 0)
         self.assertEqual(db.session.query(Geocache).count(), 1)
 
+    def test_clear_refused_while_a_lab_task_runs(self):
+        """Un « Vider » entre deux fichiers d'un import (ou deux lots d'un
+        fetch) supprimerait la collection que le lot suivant recrée :
+        refusé tant qu'une tâche Labs est active."""
+        self._import_history()
+        busy = SimpleNamespace(id="tâche-factice", state="running")
+        with mock.patch.object(task_manager, "get_active", return_value=busy):
+            rv = self.client.post('/api/labs/clear')
+        self.assertEqual(rv.status_code, 409)
+        self.assertFalse(rv.get_json()["success"])
+        self.assertEqual(db.session.query(LabDiscovery).count(), 12)
+        # La tâche terminée, le même appel vide bien la collection.
+        rv = self.client.post('/api/labs/clear')
+        self.assertEqual(rv.status_code, 200)
+        self.assertEqual(db.session.query(LabDiscovery).count(), 0)
+
     def test_export_enriched(self):
         self._import_history()
         self._import_coords()

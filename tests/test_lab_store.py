@@ -1,3 +1,4 @@
+import json
 import os
 import tempfile
 import unittest
@@ -71,6 +72,62 @@ class LabStoreTests(unittest.TestCase):
         self.assertEqual(summary["unchanged"], 12)
         self.assertEqual(summary["updated"], 0)
         self.assertEqual(self._count(LabDiscovery), 12)
+
+    # --- fusion d'identité log:<id> → stage_uuid -----------------------------
+
+    LOG_STAGE = "57a9e000-0000-4000-8000-000000000777"
+
+    def _log_finds(self, stage_id):
+        """Export `mygcflow-lab-finds` minimal : un seul log, dont l'étape
+        n'a d'UUID que si `stage_id` est fourni."""
+        return lf.parse_lab_finds(json.dumps({
+            "format": lf.FORMAT_LAB_FINDS,
+            "schema_version": lf.LAB_FINDS_SCHEMA_VERSION,
+            "discoveries": [{
+                "adventure_id": "fa1e0000-0000-4000-8000-000000000001",
+                "stage_id": stage_id,
+                "adventure_title": "Circuit des Moulins",
+                "stage_title": "Le Moulin Rouge",
+                "found_date": "2024-05-14",
+                "log_id": 424242,
+            }],
+        }))
+
+    def test_log_identity_merges_into_stage_uuid(self):
+        """Le même log importé sans puis avec `stage_id` : la ligne créée
+        sous `log:<id>` est retrouvée via `source_record_key` — jamais de
+        doublon — et son identité locale migre vers l'UUID."""
+        summary = lab_store.commit_history(db.session, self._log_finds(None))
+        self.assertEqual(summary["added"], 1)
+        row = db.session.query(LabDiscovery).one()
+        self.assertEqual(row.local_uid, "log:424242")
+        self.assertIsNone(row.stage_uuid)
+        self.assertEqual(row.source_record_key, "log:424242")
+
+        summary = lab_store.commit_history(
+            db.session, self._log_finds(self.LOG_STAGE))
+        self.assertEqual(summary["added"], 0)
+        self.assertEqual(summary["updated"], 1)
+        self.assertEqual(self._count(LabDiscovery), 1)
+        db.session.expire_all()
+        row = db.session.query(LabDiscovery).one()
+        self.assertEqual(row.stage_uuid, self.LOG_STAGE)
+        self.assertEqual(row.local_uid, self.LOG_STAGE)      # identité migrée
+        self.assertEqual(row.source_record_key, "log:424242")
+
+    def test_log_identity_still_found_after_uuid_migration(self):
+        """Après la migration vers l'UUID, un réimport sans `stage_id`
+        (clé `log:`) retrouve la ligne par `source_record_key` — sans
+        redescendre l'identité locale vers `log:`."""
+        lab_store.commit_history(db.session, self._log_finds(None))
+        lab_store.commit_history(db.session, self._log_finds(self.LOG_STAGE))
+        summary = lab_store.commit_history(db.session, self._log_finds(None))
+        self.assertEqual(summary["added"], 0)
+        self.assertEqual(self._count(LabDiscovery), 1)
+        db.session.expire_all()
+        row = db.session.query(LabDiscovery).one()
+        self.assertEqual(row.local_uid, self.LOG_STAGE)
+        self.assertEqual(row.stage_uuid, self.LOG_STAGE)
 
     # --- enrichissement coordonnées ----------------------------------------
 
