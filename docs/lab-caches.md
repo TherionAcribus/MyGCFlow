@@ -174,8 +174,9 @@ sont indépendantes ; l'affichage bascule sur la source restante.
   `static/json/defaultGcColors.json` ; utilisée par les points en mode
   « Couleurs GC », les bordures et les flashs.
 - **Icône** : slot `adventurelab` ajouté dans les sprites
-  `static/img/geocaching-sprite*.png` (carré arrondi turquoise à anneau
-  blanc), mappé dans `point_webgl_style.js`. En mode « forme » (cercle /
+  `static/img/geocaching-sprite*.png` (icône officielle Adventure Lab,
+  détourée en disque avec le liseré blanc des autres icônes), mappé dans
+  `point_webgl_style.js`. En mode « forme » (cercle /
   triangle), les étapes suivent le style du thème comme les géocaches.
 - **Popup** : titre de l'étape, titre de l'Adventure, date de découverte.
   Pas de D/T/taille (sans objet), pas de code GC ni de lien `coord.info`.

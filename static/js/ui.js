@@ -4209,8 +4209,8 @@ const ICON_SETS = {
             { key: 'unknown',     x: 1300, y:  0, w:50, h:50, label: 'Unknown' },
             { key: 'letterbox',      x: 1400, y:  0, w:50, h:50, label: 'Letterbox' },
             { key: 'wherigo',   x: 1500, y:  0, w:50, h:50, label: 'Wherigo' },
-            // Slot MyGCFlow ajouté pour les étapes Adventure Lab (aucune
-            // icône officielle n'existe dans la feuille Geocaching).
+            // Slot ajouté pour les étapes Adventure Lab : icône officielle,
+            // collée à la suite de la feuille Geocaching qui ne la contient pas.
             { key: 'adventurelab', x: 1800, y:  0, w:50, h:50, label: 'Adventure Lab' },
             // Autres à ajouter éventuellement)
         ]
