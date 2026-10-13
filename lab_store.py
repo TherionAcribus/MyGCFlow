@@ -407,6 +407,19 @@ def _apply_coords(session, parsed, commit: bool, overrides=frozenset()) -> dict:
     coords_by_adv = {}
     found_flag_mismatch = 0
 
+    def describe(row, stage) -> bool:
+        # Propriétaire et publication décrivent l'étape quelle que soit la
+        # position retenue : complétés aussi sur une étape déjà résolue, ce
+        # qui rattrape les imports antérieurs à ces champs.
+        changed = False
+        if stage.owner and row.owner != stage.owner:
+            row.owner, changed = stage.owner, True
+        if stage.published_date and row.published_date != stage.published_date:
+            row.published_date, changed = stage.published_date, True
+        if changed:
+            row.updated_at = _utcnow()
+        return changed
+
     def write(row, stage):
         row.latitude = stage.latitude
         row.longitude = stage.longitude
@@ -441,10 +454,12 @@ def _apply_coords(session, parsed, commit: bool, overrides=frozenset()) -> dict:
                                        row.adventure_uuid, stage.adventure_uuid))
             continue
 
+        described = describe(row, stage) if commit else False
+
         if row.latitude is not None and row.longitude is not None:
             incoming = [stage.latitude, stage.longitude]
             if _same_coords(row.latitude, row.longitude, *incoming):
-                counts["unchanged"] += 1
+                counts["updated" if described else "unchanged"] += 1
             elif override_key(row.local_uid, "coordinates", incoming) in overrides:
                 # Choix explicite de l'aperçu — prime aussi sur une
                 # correction manuelle, puisque l'utilisateur la remplace.

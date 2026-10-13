@@ -2442,8 +2442,9 @@ async function onDiscoverySourcesChange() {
 }
 
 // Ajustements d'interface selon le mode de sources. En « Lab Caches » seuls,
-// les filtres sans équivalent Lab (D/T, taille, période de pose) sont
-// désactivés et « Adventure Lab » est garanti dans la sélection de types —
+// les filtres sans équivalent Lab (D/T, taille) sont désactivés — la période
+// de pose reste active, les Labs portant leur date de publication — et
+// « Adventure Lab » est garanti dans la sélection de types —
 // un type désélectionné produirait un écran vide inattendu. No-op hors mode
 // Normal (pas de sélecteur de sources sur la page Évolution).
 function applyDiscoverySourceMode(mode) {
@@ -2455,12 +2456,6 @@ function applyDiscoverySourceMode(mode) {
         if (ts) { labsOnly ? ts.disable() : ts.enable(); }
         else { sel.disabled = labsOnly; }
     }
-    for (const dpId of ['publishedDatePickerStart', 'publishedDatePickerEnd']) {
-        const dp = document.getElementById(dpId);
-        if (!dp) continue;
-        const td = getTempusDominus(dp);
-        try { td ? (labsOnly ? td.disable() : td.enable()) : (dp.disabled = labsOnly); } catch(_) { dp.disabled = labsOnly; }
-    }
     const panel = document.getElementById('filterPanel');
     if (panel) {
         if (labsOnly) panel.setAttribute('data-labs-only', '');
@@ -2469,7 +2464,7 @@ function applyDiscoverySourceMode(mode) {
     const hint = document.getElementById('discoverySourcesHint');
     if (hint) {
         hint.textContent = labsOnly
-            ? t('Difficulté, terrain, taille et période de pose ne s\'appliquent pas aux Lab Caches.')
+            ? t('Difficulté, terrain et taille ne s\'appliquent pas aux Lab Caches.')
             : '';
     }
     if (labsOnly && selectType) {

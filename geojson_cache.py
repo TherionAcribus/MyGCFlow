@@ -538,16 +538,22 @@ class GeojsonIndexCache:
             except (TypeError, ValueError):
                 return False
 
-        # Difficulté/terrain/taille/publication : non applicables aux Labs,
-        # ils ne retirent jamais une feature Lab (plan §9.2).
-        if not is_lab:
+        # Difficulté/terrain/taille : non applicables aux Labs, ils ne
+        # retirent jamais une feature Lab (plan §9.2). Période de pose : un
+        # Lab n'y est soumis que si sa publication est connue (lue dans le
+        # GPX) — inconnue, elle ne le retire pas.
+        if is_lab:
+            published_date = _parse_date(props.get("published_date"))
+            if published_date and precomputed["pub_start"] and precomputed["pub_end"] \
+                    and not (precomputed["pub_start"] <= published_date <= precomputed["pub_end"]):
+                return False
+        else:
             if not _m_float(props.get("terrain"), precomputed["terrain"]):
                 return False
             if not _m_float(props.get("difficulty"), precomputed["difficulty"]):
                 return False
             if not _m(props.get("container"), precomputed["container"]):
                 return False
-            # Date de publication : non applicable aux Labs en V1.
             if precomputed["pub_start"] and precomputed["pub_end"]:
                 published_date = _parse_date(props.get("published_date"))
                 if not published_date or not (precomputed["pub_start"] <= published_date <= precomputed["pub_end"]):

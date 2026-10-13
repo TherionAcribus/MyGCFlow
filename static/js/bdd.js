@@ -723,6 +723,11 @@ function filterFeaturesClientSide(features, sel) {
                 const pd = normIsoDate(p.published_date);
                 if (!pd || pd < pStart || pd > pEnd) continue;
             }
+        } else if (pubActive) {
+            // Période de pose : un Lab n'y est soumis que si sa publication
+            // est connue — inconnue, elle ne le retire pas.
+            const pd = normIsoDate(p.published_date);
+            if (pd && (pd < pStart || pd > pEnd)) continue;
         }
         // Sous sélection géographique réelle, la valeur inconnue ne correspond
         // qu'à la sentinelle « Non renseigné ».

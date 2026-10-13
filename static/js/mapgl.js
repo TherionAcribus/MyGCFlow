@@ -799,9 +799,10 @@ export function initPopupOverlay(){
         const dateFindLabel = dateFind ? t('le ${date}', { date: dateFind }) : '';
 
         // Popup dédié aux étapes Adventure Lab : D/T et taille sans objet,
-        // pas de code GC ni de lien coord.info. Seuls l'étape, l'Adventure
-        // (liée si l'URL importée est une URL HTTPS de confiance) et la date
-        // de découverte sont affichés.
+        // pas de code GC ni de lien coord.info. L'étape, l'Adventure (liée
+        // si l'URL importée est une URL HTTPS de confiance), le propriétaire
+        // et la publication quand le GPX les a fournis, et la date de
+        // découverte sont affichés.
         if (props.source_kind === 'lab') {
             const labUrl = trustedLabUrl(props.adventure_url);
             const labAdventure = sanitize(props.adventure_title);
@@ -812,6 +813,8 @@ export function initPopupOverlay(){
                 <div class="gc-popup-title">${nameLabel}</div>
                 ${labAdventureHtml ? `<div>${labAdventureHtml}</div>` : ''}
                 <div>${type || 'Adventure Lab'}</div>
+                ${owner ? `<div>${owner}</div>` : ''}
+                ${publishedLabel ? `<div>${publishedLabel}</div>` : ''}
                 <div>${foundLabel} ${dateFindLabel}</div>
                 ${props.coordinate_scope === 'adventure' ? `<div class="gc-popup-note">${t('Position approximative (centre de l’Adventure)')}</div>` : ''}`;
             const contentEl = popupEl.querySelector('.gc-popup-content') || popupEl;

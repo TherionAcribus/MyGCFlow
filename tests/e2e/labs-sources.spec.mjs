@@ -90,6 +90,9 @@ test('le mode « labs » désactive les filtres non applicables', async ({ page 
 
   // D/T/taille désactivés, « Adventure Lab » resté sélectionné dans les types.
   await expect(page.locator('#filterPanel')).toHaveAttribute('data-labs-only', '');
+  // La période de pose reste utilisable : les Labs portent leur publication.
+  await expect(page.locator('#publishedDatePickerStart')).toBeEnabled();
+  await expect(page.locator('#publishedDatePickerEnd')).toBeEnabled();
   const adventureSelected = await page.evaluate(() =>
     Array.from(document.getElementById('selectType').selectedOptions)
       .some(o => o.value === 'Adventure Lab'));
@@ -190,6 +193,9 @@ test('le popup d\'une étape Labs affiche étape, Adventure, lien et date', asyn
   await expect(popup).toBeVisible({ timeout: 10_000 });
   await expect(popup.locator('.gc-popup-title')).toHaveText(new RegExp(`^(${point.stages.map(s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})$`));
   await expect(popup).toContainText('Trouvé');
+  // Propriétaire et publication lus dans le GPX.
+  await expect(popup).toContainText('Testeur_Fictif');
+  await expect(popup).toContainText('Publié le');
   // Pas de ligne D/T/taille ni de code GC ; le lien de l'Adventure vient de
   // l'URL importée (hôte labs.geocaching.com uniquement).
   await expect(popup).not.toContainText('-/-');
@@ -351,6 +357,22 @@ test('une étape remaniée reçoit une suggestion à valider dans « Étapes en 
 
   await expect.poll(async () => (await exportedStage(page, STAGE_PORTE_NORD))?.latitude,
                     { timeout: 30_000 }).toBeCloseTo(47.2301, 5);
+});
+
+
+test('la période de pose filtre les Labs sur leur date de publication', async ({ page }) => {
+  await openReadyApp(page);
+  await importLabs(page);
+  await expect(page.locator('#filtersCounter')).toContainText('8 / 8', { timeout: 60_000 });
+
+  // Fixture : 5 des 8 étapes affichables sont d'Adventures publiées en 2020,
+  // les 3 autres plus tard. « 01/01/2021 » se lit pareil en jj/mm et mm/jj.
+  await page.evaluate(() => {
+    const start = document.getElementById('publishedDatePickerStart');
+    start.value = '01/01/2021';
+    start.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  await expect(page.locator('#filtersCounter')).toContainText('3 / 8', { timeout: 30_000 });
 });
 
 

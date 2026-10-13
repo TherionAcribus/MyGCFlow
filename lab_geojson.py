@@ -50,9 +50,10 @@ def lab_feature(row, collection_uid: str) -> dict:
             "container": None,
             "country": None,
             "state": None,
-            "owner": None,
+            "owner": row.owner,
             "placed_by": None,
-            "published_date": None,
+            "published_date": row.published_date.strftime("%Y-%m-%d")
+            if row.published_date else None,
             "attributes": None,
         },
     }
@@ -112,8 +113,10 @@ def build_lab_features_matching(session, selected_values: dict,
       (champ non transmis => pas de restriction, compatibilité MVP avant
       le sélecteur de sources) ;
     - sélection de type obligatoire et contenant « Adventure Lab » ;
-    - difficulté/terrain/taille/publication : non applicables aux Labs,
-      ils ne retirent jamais une feature Lab ;
+    - difficulté/terrain/taille : non applicables aux Labs, ils ne retirent
+      jamais une feature Lab ;
+    - période de pose : appliquée aux Labs dont la publication est connue
+      (lue dans le GPX) ; une publication inconnue ne retire jamais un Lab ;
     - pays/région : l'état neutre « tous » inclut les valeurs inconnues ;
       sous sélection géographique réelle, une valeur inconnue ne passe que
       via la sentinelle « Non renseigné » (`UNKNOWN_GEO`) ;
@@ -147,9 +150,15 @@ def build_lab_features_matching(session, selected_values: dict,
     dates = selected_values.get("dates") or {}
     start = _parse_date(dates.get("startDate"))
     end = _parse_date(dates.get("endDate"))
+    published = selected_values.get("published_dates") or {}
+    pub_start = _parse_date(published.get("startDate"))
+    pub_end = _parse_date(published.get("endDate"))
     features = []
     for r in rows:
         if start and end and not (start <= r.found_date <= end):
+            continue
+        if pub_start and pub_end and r.published_date \
+                and not (pub_start <= r.published_date <= pub_end):
             continue
         features.append(lab_feature(r, collection_uid))
     features.sort(key=_feature_sort_key)

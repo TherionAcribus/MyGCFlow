@@ -351,6 +351,46 @@ class LabStoreTests(unittest.TestCase):
         self.assertEqual(grouped["found_at sans fuseau"], 3)
         self.assertEqual(grouped["autre"], 1)
 
+    # --- propriétaire et publication ------------------------------------------
+
+    def test_coords_bring_owner_and_publication(self):
+        lab_store.commit_history(db.session, self._history())
+        lab_store.commit_coordinates(db.session, self._coords())
+        row = self._discovery(self.STAGE)
+        self.assertEqual(row.owner, "Testeur_Fictif")
+        self.assertEqual(row.published_date, date(2020, 3, 10))
+
+    def test_already_resolved_stage_is_completed_on_reimport(self):
+        """Étapes résolues avant que ces champs existent : un nouveau passage
+        du GPX les complète, sans conflit ni changement de position."""
+        lab_store.commit_history(db.session, self._history())
+        lab_store.commit_coordinates(db.session, self._coords())
+        db.session.query(LabDiscovery).update(
+            {LabDiscovery.owner: None, LabDiscovery.published_date: None})
+        db.session.commit()
+        summary = lab_store.commit_coordinates(db.session, self._coords())
+        self.assertEqual(summary["updated"], 8)
+        self.assertEqual(summary["unchanged"], 0)
+        self.assertEqual(summary["conflicts"], 0)
+        row = self._discovery(self.STAGE)
+        self.assertEqual(row.owner, "Testeur_Fictif")
+        self.assertAlmostEqual(row.latitude, 47.21510)
+        # Stable ensuite.
+        again = lab_store.commit_coordinates(db.session, self._coords())
+        self.assertEqual(again["unchanged"], 8)
+
+    def test_user_corrected_position_still_gets_owner_and_publication(self):
+        lab_store.commit_history(db.session, self._history())
+        row = self._discovery(self.STAGE)
+        row.latitude, row.longitude = 47.5, -1.2
+        row.coordinate_status = LabDiscovery.COORD_RESOLVED
+        row.coordinate_source = lab_store.USER_CORRECTION
+        db.session.commit()
+        lab_store.commit_coordinates(db.session, self._coords())
+        row = self._discovery(self.STAGE)
+        self.assertAlmostEqual(row.latitude, 47.5)             # position conservée
+        self.assertEqual(row.published_date, date(2020, 3, 10))
+
     # --- isolation des sources ----------------------------------------------
 
     def test_geocache_table_untouched(self):

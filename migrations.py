@@ -96,11 +96,23 @@ def _v4_lab_coordonnees_proposees(db):
                     f"ALTER TABLE lab_discovery ADD COLUMN {name} FLOAT")
 
 
+def _v5_lab_proprietaire_publication(db):
+    # Propriétaire et date de publication lus dans le GPX. Idempotent, comme v3.
+    with db.engine.begin() as conn:
+        columns = {row[1] for row in
+                   conn.exec_driver_sql("PRAGMA table_info(lab_discovery)")}
+        for name, sql_type in (("owner", "VARCHAR(255)"), ("published_date", "DATE")):
+            if name not in columns:
+                conn.exec_driver_sql(
+                    f"ALTER TABLE lab_discovery ADD COLUMN {name} {sql_type}")
+
+
 MIGRATIONS = [
     (1, _v1_colonnes_et_index),
     (2, _v2_tables_lab),
     (3, _v3_lab_echec_recuperation),
     (4, _v4_lab_coordonnees_proposees),
+    (5, _v5_lab_proprietaire_publication),
 ]
 
 LATEST_VERSION = MIGRATIONS[-1][0]

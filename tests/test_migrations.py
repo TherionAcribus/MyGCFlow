@@ -117,6 +117,18 @@ class SchemaMigrationTests(unittest.TestCase):
                         <= self._columns('lab_discovery'))
         self.assertEqual(self._user_version(), migrations.LATEST_VERSION)
 
+    def test_lab_table_gains_owner_and_publication_columns(self):
+        self._create_app()
+        with self._connect() as conn:
+            conn.execute("ALTER TABLE lab_discovery DROP COLUMN owner")
+            conn.execute("ALTER TABLE lab_discovery DROP COLUMN published_date")
+            conn.execute("PRAGMA user_version = 4")
+
+        self._create_app()
+
+        self.assertTrue({'owner', 'published_date'} <= self._columns('lab_discovery'))
+        self.assertEqual(self._user_version(), migrations.LATEST_VERSION)
+
     def test_new_database_has_lab_tables(self):
         self._create_app()
 

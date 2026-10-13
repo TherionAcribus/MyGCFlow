@@ -69,7 +69,9 @@ class LabGeojsonTests(unittest.TestCase):
         self.assertEqual(p["date_find"], "2024-05-14")
         self.assertEqual(p["found"], True)
         self.assertEqual(p["difficulty"], None)
-        self.assertEqual(p["published_date"], None)
+        # Lus dans le GPX : publication de l'Adventure et propriétaire.
+        self.assertEqual(p["published_date"], "2020-03-10")
+        self.assertEqual(p["owner"], "Testeur_Fictif")
         self.assertEqual(p["adventure_url"],
                          "https://labs.geocaching.com/goto/fa1e0000-0000-4000-8000-000000000001")
 
@@ -217,11 +219,39 @@ class LabGeojsonTests(unittest.TestCase):
         result = filter_session(
             db, Geocache,
             {"type": ["Adventure Lab"], "difficulty": ["3"],
-             "terrain": ["4"], "container": ["Small"],
-             "published_dates": {"startDate": "2020-01-01", "endDate": "2020-12-31"}})
+             "terrain": ["4"], "container": ["Small"]})
         kinds = {f["properties"]["source_kind"] for f in result["features"]}
         self.assertEqual(kinds, {"lab"})
         self.assertEqual(len(result["features"]), 8)
+
+    def test_published_range_filters_labs_with_known_publication(self):
+        """Période de pose : appliquée aux Labs dont la publication est
+        connue (5 des 8 étapes affichables sont de 2020 dans la fixture)."""
+        self._import_all()
+        result = filter_session(
+            db, Geocache,
+            {"type": ["Adventure Lab"],
+             "published_dates": {"startDate": "2020-01-01", "endDate": "2020-12-31"}})
+        published = {f["properties"]["published_date"] for f in result["features"]}
+        self.assertEqual(published, {"2020-03-10"})
+        self.assertEqual(len(result["features"]), 5)
+
+    def test_published_range_keeps_labs_with_unknown_publication(self):
+        """Publication inconnue (coordonnées saisies à la main, hors GPX) :
+        la période de pose ne retire pas l'étape."""
+        self._import_all()
+        row = db.session.query(LabDiscovery).filter_by(stage_uuid=STAGE_REMOVED).one()
+        row.latitude, row.longitude = 45.5, 3.25
+        row.coordinate_status = LabDiscovery.COORD_RESOLVED
+        row.coordinate_source = lab_store.USER_CORRECTION
+        db.session.commit()
+        self.assertIsNone(row.published_date)
+        result = filter_session(
+            db, Geocache,
+            {"type": ["Adventure Lab"],
+             "published_dates": {"startDate": "1990-01-01", "endDate": "1990-12-31"}})
+        self.assertEqual([f["properties"]["stage_id"] for f in result["features"]],
+                         [STAGE_REMOVED])
 
     def test_filter_session_sources_restriction(self):
         """sources explicite : « lab » seul, « geocache » seul, vide = rien."""
@@ -277,6 +307,10 @@ class LabGeojsonTests(unittest.TestCase):
              "sources": ["lab"]},                            # sources
             {"type": ["Adventure Lab", "Traditional Cache"],
              "dates": {"startDate": "2024-05-14", "endDate": "2024-05-14"}},
+            {"type": ["Adventure Lab", "Traditional Cache"],    # période de pose
+             "published_dates": {"startDate": "2020-01-01", "endDate": "2020-12-31"}},
+            {"type": ["Adventure Lab"],
+             "published_dates": {"startDate": "2021-01-01", "endDate": "2022-12-31"}},
         ]
         try:
             for sel in selections:

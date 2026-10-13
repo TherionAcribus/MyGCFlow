@@ -85,6 +85,9 @@ class LabDiscovery(db.Model):
     # différent) : jamais appliquées seules, l'utilisateur les valide.
     suggested_latitude = db.Column(db.Float)
     suggested_longitude = db.Column(db.Float)
+    # Portés par le fichier coordonnées (GPX Lab2Gpx), absents de l'historique.
+    owner = db.Column(db.String(255))
+    published_date = db.Column(db.Date)   # publication de l'Adventure
     source_format = db.Column(db.String(32))
     source_record_key = db.Column(db.String(128))
     is_archived = db.Column(db.Boolean, default=False)

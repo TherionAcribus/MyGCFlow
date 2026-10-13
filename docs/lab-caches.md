@@ -152,7 +152,8 @@ suppression de source, et survit au rechargement.
 | Dimension | Comportement |
 |---|---|
 | Type | `Adventure Lab` est un type comme les autres (sélection type vide → rien, Labs comprises) |
-| Difficulté / Terrain / Taille / Période de pose | **Non applicables** : ils ne retirent jamais une étape Lab ; en mode « Labs seuls » ils sont désactivés |
+| Difficulté / Terrain / Taille | **Non applicables** : ils ne retirent jamais une étape Lab ; en mode « Labs seuls » ils sont désactivés |
+| Période de pose | Appliquée aux étapes dont la date de publication de l'Adventure est connue (lue dans le GPX Lab2Gpx) ; une publication inconnue (coordonnées saisies à la main) ne retire jamais l'étape |
 | Pays / Région | Valeurs inconnues → option **« Non renseigné »** (sentinelle interne `__unknown__`) ; incluses à l'état neutre, exclues d'une sélection réelle sauf si « Non renseigné » est coché |
 | Date de découverte | Appliquée à `found_date` des étapes |
 

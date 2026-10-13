@@ -196,6 +196,22 @@ class GpxEdgeCasesTests(unittest.TestCase):
 
 
 class GpxSecurityTests(unittest.TestCase):
+    def test_owner_and_publication_are_read(self):
+        res = lf.parse_lab2gpx_gpx((FIXTURES / "lab2gpx-stages.gpx").read_bytes())
+        stage = next(s for s in res.stages
+                     if s.stage_uuid == "57a9e000-0000-4000-8000-000000000101")
+        self.assertEqual(stage.owner, "Testeur_Fictif")
+        self.assertEqual(stage.published_date, date(2020, 3, 10))
+
+    def test_unreadable_publication_time_is_ignored(self):
+        raw = (FIXTURES / "lab2gpx-stages.gpx").read_bytes().replace(
+            b"<time>2020-03-10T08:00:00.000</time>", b"<time>bientot</time>")
+        res = lf.parse_lab2gpx_gpx(raw)
+        self.assertTrue(res.ok)
+        stage = next(s for s in res.stages
+                     if s.stage_uuid == "57a9e000-0000-4000-8000-000000000101")
+        self.assertIsNone(stage.published_date)
+
     def test_doctype_rejected(self):
         res = lf.parse_lab2gpx_gpx((FIXTURES / "lab2gpx-doctype.gpx").read_bytes())
         self.assertFalse(res.ok)

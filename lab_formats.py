@@ -7,7 +7,8 @@ Module sans dépendance obligatoire à Flask, testable sur fichiers. Deux format
   pas de coordonnées.
 - GPX Lab2Gpx « un waypoint par étape » : `gsak:Guid` (UUID d'étape),
   `lab2gpx:uuid` (UUID d'Adventure), coordonnées réelles ; `<time>` porte la
-  publication de l'Adventure et n'est jamais une date de découverte.
+  publication de l'Adventure et n'est jamais une date de découverte — elle
+  est lue comme telle, avec le propriétaire (`groundspeak:owner`).
 
 Règles du plan implémentées ici :
 
@@ -236,6 +237,8 @@ class StageCoord:
     stages_total: int | None
     stages_completed: int | None
     warnings: list = field(default_factory=list)
+    owner: str | None = None
+    published_date: date | None = None   # publication de l'Adventure
 
 
 @dataclass
@@ -440,6 +443,16 @@ def _find(element, local_name: str):
     return None
 
 
+def _leading_date(value) -> date | None:
+    """Date civile en tête d'un horodatage ISO ; None si absente ou invalide."""
+    if not isinstance(value, str):
+        return None
+    try:
+        return date.fromisoformat(value.strip()[:10])
+    except ValueError:
+        return None
+
+
 def _safe_int(value):
     try:
         return int(value)
@@ -485,6 +498,7 @@ def parse_lab2gpx_gpx(data: bytes | str) -> CoordParseResult:
             desc = _child_text(elem, "desc")
             url = _child_text(elem, "url")
             sym = _child_text(elem, "sym")
+            owner_el = _find(elem, "owner")
             adv_block = _find(elem, "adventureLab")
             stages_total = stages_completed = None
             if adv_block is not None:
@@ -505,6 +519,8 @@ def parse_lab2gpx_gpx(data: bytes | str) -> CoordParseResult:
                 stages_total=stages_total,
                 stages_completed=stages_completed,
                 warnings=warnings,
+                owner=_clean_str(owner_el.text if owner_el is not None else None),
+                published_date=_leading_date(_child_text(elem, "time")),
             ))
             elem.clear()
     except ET.ParseError as exc:
