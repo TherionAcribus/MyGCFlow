@@ -78,10 +78,6 @@ _APPLY_BY_FORMAT = {
     lf.FORMAT_LAB_FINDS: lab_store._apply_history,
     lf.FORMAT_LAB2GPX_GPX: lab_store._apply_coords,
 }
-_COMMIT_BY_FORMAT = {
-    lf.FORMAT_LAB_FINDS: lab_store.commit_history,
-    lf.FORMAT_LAB2GPX_GPX: lab_store.commit_coordinates,
-}
 
 
 def _invalidate_after_mutation(reason: str) -> None:
@@ -263,14 +259,21 @@ def run_lab_import_task(status, app, folder_path: str, manifest_rev, locale=None
                     warnings = []
                     overrides = _override_keys(manifest.get("overrides"))
                     n = len(files)
+                    # Lecture et analyse de tout le lot d'abord : le commit
+                    # applique ensuite l'ensemble en UNE transaction — tout
+                    # ou rien, l'atomicité promise par l'aperçu.
+                    batch = []
                     for i, entry in enumerate(files):
                         status.set_progress(
-                            int(95 * i / max(n, 1)),
+                            int(90 * i / max(n, 1)),
                             _("Import Labs : %(name)s", name=entry["name"]))
                         raw = (folder / entry["stored"]).read_bytes()
-                        parsed = _PARSE_BY_FORMAT[entry["format"]](raw)
-                        summary = _COMMIT_BY_FORMAT[entry["format"]](
-                            db.session, parsed, overrides=overrides)
+                        batch.append((entry["format"],
+                                      _PARSE_BY_FORMAT[entry["format"]](raw)))
+
+                    summaries = lab_store.commit_import_batch(
+                        db.session, batch, overrides=overrides)
+                    for entry, summary in zip(files, summaries):
                         results.append({"name": entry["name"], "format": entry["format"],
                                         "summary": _slim_summary(summary)})
                         for k in totals:

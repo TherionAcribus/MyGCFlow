@@ -509,6 +509,40 @@ class LabStoreTests(unittest.TestCase):
         self.assertIsNone(lab_store.get_collection(db.session))
         self.assertEqual(self._count(Geocache), 1)
 
+    # --- lot d'import atomique ------------------------------------------------
+
+    def test_import_batch_is_atomic(self):
+        """Un fichier en échec annule le lot entier : le premier, bien
+        qu'appliqué dans la session, n'est jamais persisté."""
+        bad = self._coords()
+        bad.ok = False     # erreurs structurelles détectées à l'analyse
+        with self.assertRaises(ValueError):
+            lab_store.commit_import_batch(
+                db.session,
+                [(lf.FORMAT_LAB_FINDS, self._history()),
+                 (lf.FORMAT_LAB2GPX_GPX, bad)])
+        db.session.rollback()
+        self.assertIsNone(lab_store.get_collection(db.session))
+        self.assertEqual(self._count(LabDiscovery), 0)
+
+    def test_import_batch_applies_all_files(self):
+        """Historique puis coordonnées du même lot : appliqués en un seul
+        appel/commit, résumés rendus dans l'ordre des fichiers."""
+        summaries = lab_store.commit_import_batch(
+            db.session,
+            [(lf.FORMAT_LAB_FINDS, self._history()),
+             (lf.FORMAT_LAB2GPX_GPX, self._coords())])
+        self.assertEqual(len(summaries), 2)
+        self.assertTrue(all(s["success"] for s in summaries))
+        self.assertEqual(summaries[0]["added"], 12)      # historique d'abord
+        self.assertEqual(summaries[1]["resolved"], 8)    # coords ensuite
+        self.assertEqual(self._count(LabDiscovery), 12)
+        status = lab_store.collection_status(db.session)
+        self.assertEqual(status["ready"], 8)
+        self.assertEqual(status["unresolved"], 4)
+        # Une révision par fichier appliqué, comme deux imports individuels.
+        self.assertEqual(status["collection"]["revision"], 2)
+
     # --- lectures -----------------------------------------------------------
 
     def test_status_and_unresolved(self):

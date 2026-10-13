@@ -31,7 +31,8 @@ from flask_babel import gettext as _
 from sqlalchemy import func
 
 from lab_formats import (
-    SOURCE_LAB2GPX, SOURCE_LAB_FINDS, USER_CORRECTION, normalize_title,
+    FORMAT_LAB2GPX_GPX, FORMAT_LAB_FINDS, SOURCE_LAB2GPX, SOURCE_LAB_FINDS,
+    USER_CORRECTION, normalize_title,
 )
 from models import LabCollection, LabDiscovery
 
@@ -528,6 +529,47 @@ def commit_coordinates(session, parsed, overrides=frozenset()) -> dict:
         session.commit()
     summary["success"] = True
     return summary
+
+
+# Mêmes fonctions d'application que l'aperçu, indexées par format : le
+# commit d'un lot rejoue exactement ce que l'aperçu a montré.
+_APPLY_BY_FORMAT = {
+    FORMAT_LAB_FINDS: _apply_history,
+    FORMAT_LAB2GPX_GPX: _apply_coords,
+}
+
+
+def commit_import_batch(session, entries, overrides=frozenset()) -> list:
+    """Applique tout le lot d'import en UNE transaction — comme l'aperçu.
+
+    entries : [(format, parsed)] déjà ordonnés par l'appelant (historique
+    avant coordonnées). Retourne les résumés par fichier, même ordre.
+    Un échec sur l'un des fichiers annule le lot entier : rien n'est
+    persisté, et le résumé n'est publié que si tout a été appliqué.
+
+    Chaque `_apply_*` écrit `last_import_at` et incrémente
+    `collection.revision` comme pour un import individuel (+1 par fichier
+    appliqué — la révision mesure les mutations) ; l'atomicité vient du
+    `commit` unique en fin de lot, pas du compteur.
+    """
+    with LAB_MUTATION_LOCK:
+        summaries = []
+        for fmt, parsed in entries:
+            if not parsed.ok:
+                raise ValueError(
+                    "import refusé : le fichier a des erreurs structurelles")
+            summaries.append(_APPLY_BY_FORMAT[fmt](
+                session, parsed, commit=True, overrides=overrides))
+        collection = get_collection(session)
+        if collection is not None:
+            stats = _collection_stats(session, collection.id)
+            combined = {"files": summaries, **stats,
+                        "collection_revision": collection.revision}
+            collection.last_import_summary = json.dumps(combined, default=str)
+        session.commit()
+    for summary in summaries:
+        summary["success"] = True
+    return summaries
 
 
 def mark_coords_fetch_failed(session, adventure_uuids) -> int:
