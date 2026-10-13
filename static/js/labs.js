@@ -142,10 +142,19 @@ function watchActiveTask(active) {
 
 // ---------------------------------------------------------------- import
 
-async function onLabsFilesChosen() {
+function onLabsFilesChosen() {
     const files = Array.from(labsFileInput?.files || []);
     labsFileInput.value = '';   // même fichier re-sélectionnable
-    if (!files.length) return;
+    return importLabFiles(files);
+}
+
+// Aperçu puis import d'un lot de fichiers Lab Caches. Point d'entrée commun
+// au bouton « Importer un fichier… » et au glisser-déposer sur la fenêtre
+// (bdd.js y route les fichiers Labs reconnus). No-op sur une page sans carte
+// Labs (Évolution).
+export async function importLabFiles(files) {
+    files = Array.from(files || []);
+    if (!files.length || !el('labsPreviewModal')) return;
 
     setImportProgress(t('Analyse des fichiers…'));
     try {

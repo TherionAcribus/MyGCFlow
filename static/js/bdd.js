@@ -229,9 +229,42 @@ async function validateGpxFile(file) {
     return { ok: true };
 }
 
+// Fichier Adventure Lab : export d'historique (.json) ou GPX Lab2Gpx, reconnu
+// à son en-tête. Il ne passe pas par le pipeline « My Finds », qui le
+// refuserait (« Fichier invalide ») : il est confié à l'import Labs. Un .zip
+// reste indécidable sans le décompresser — cf. routeDroppedFiles.
+async function isLabFile(file) {
+    if (!file) return false;
+    if (/\.json$/i.test(file.name || '')) return true;
+    if (!isGpxFile(file)) return false;
+    try {
+        return /lab2gpx/i.test(await file.slice(0, GPX_HEADER_SNIFF_BYTES).text());
+    } catch (_) {
+        return false;
+    }
+}
+
+// Aiguillage d'un dépôt : dès qu'un fichier Lab est reconnu, le lot part vers
+// l'import Labs — avec les .zip qui l'accompagnent, un GPX Lab2Gpx pouvant
+// être compressé. Sinon, le premier fichier suit le chargement « My Finds ».
+async function routeDroppedFiles(files) {
+    if (!files.length) return;
+    const isLab = await Promise.all(files.map(isLabFile));
+    if (isLab.some(Boolean)) {
+        pkg.importLabFiles?.(files.filter((f, i) => isLab[i] || isZipFile(f)));
+        return;
+    }
+    handleGpxFile(files[0]);
+}
+
 // Point d'entrée unique pour tout fichier GPX à charger (sélection via input
 // ou glisser-déposer) : valide localement, puis lance l'upload.
 async function handleGpxFile(file) {
+    // Un fichier Lab choisi par le sélecteur des géocaches : même aiguillage.
+    if (await isLabFile(file)) {
+        pkg.importLabFiles?.([file]);
+        return;
+    }
     if (importInProgress) {
         // Les inputs/bouton sont désactivés pendant un import, mais le drag &
         // drop passe par des listeners globaux sur window : cette garde le
@@ -285,7 +318,7 @@ function setupGpxDragAndDrop() {
             '<div class="gpx-drop-overlay__inner">' +
             '<i class="ti ti-file-upload"></i>' +
             '<div class="gpx-drop-overlay__text">' +
-            t('Déposez votre fichier .gpx pour le charger') +
+            t('Déposez votre fichier (.gpx, .zip ou export Lab Caches) pour le charger') +
             '</div></div>';
         document.body.appendChild(overlay);
     }
@@ -317,8 +350,7 @@ function setupGpxDragAndDrop() {
         if (!dragHasFiles(e)) return;
         e.preventDefault();
         hide();
-        const file = e.dataTransfer.files && e.dataTransfer.files[0];
-        if (file) handleGpxFile(file);
+        routeDroppedFiles(Array.from(e.dataTransfer.files || []));
     });
     // Sécurité : si le drag est abandonné hors fenêtre, masquer l'overlay.
     window.addEventListener('dragend', hide);

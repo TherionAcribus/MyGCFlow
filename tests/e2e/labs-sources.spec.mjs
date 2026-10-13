@@ -376,6 +376,68 @@ test('la période de pose filtre les Labs sur leur date de publication', async (
 });
 
 
+// Dépôt de fichiers sur la fenêtre, comme un glisser-déposer depuis le bureau.
+async function dropFiles(page, files) {
+  await page.evaluate((items) => {
+    const transfer = new DataTransfer();
+    for (const item of items) {
+      transfer.items.add(new File([item.text], item.name, { type: item.type || '' }));
+    }
+    window.dispatchEvent(new DragEvent('drop', {
+      dataTransfer: transfer, bubbles: true, cancelable: true,
+    }));
+  }, files);
+}
+
+
+test('un export Lab Caches déposé sur la fenêtre part vers l\'import Labs', async ({ page }) => {
+  await openReadyApp(page);
+  await importLabs(page);
+
+  // Le parcours signalé : exporter, vider, puis redéposer le fichier.
+  const exported = await page.evaluate(async () => (await fetch('/api/labs/export')).text());
+  await page.evaluate(() => fetch('/api/labs/clear', { method: 'POST' }));
+  await page.evaluate(async () => (await import('/static/js/index.js')).refreshLabsStatus());
+  await expect(page.locator('#labsStatus')).not.toContainText('12');
+
+  await dropFiles(page, [{ name: 'mygcflow-lab-finds-export.json', text: exported,
+                           type: 'application/json' }]);
+  await expect(page.locator('#labsPreviewModal')).toBeVisible({ timeout: 20_000 });
+  await expect(page.locator('#labsPreviewFiles')).toContainText('mygcflow-lab-finds-export.json');
+  await page.locator('#labsPreviewConfirmBtn').click();
+
+  // L'export porte les coordonnées : les 8 étapes sont de nouveau affichables.
+  await expect(page.locator('#labsStatus')).toContainText('12', { timeout: 60_000 });
+  await expect(page.locator('#labsStatus')).toContainText('8');
+});
+
+
+test('historique et GPX Lab2Gpx déposés ensemble forment un seul lot Labs', async ({ page }) => {
+  await openReadyApp(page);
+
+  await dropFiles(page, [
+    { name: 'lab2gpx.gpx', text: readFileSync(COORDS, 'utf-8') },
+    { name: 'historique.json', text: readFileSync(HISTORY, 'utf-8') },
+  ]);
+  await expect(page.locator('#labsPreviewModal')).toBeVisible({ timeout: 20_000 });
+  await expect(page.locator('#labsPreviewFiles')).toContainText('lab2gpx.gpx');
+  await expect(page.locator('#labsPreviewFiles')).toContainText('historique.json');
+  await page.locator('#labsPreviewConfirmBtn').click();
+  await expect(page.locator('#labsStatus')).toContainText('8', { timeout: 60_000 });
+});
+
+
+test('un GPX Lab2Gpx choisi par le sélecteur des géocaches part vers l\'import Labs', async ({ page }) => {
+  await openReadyApp(page);
+
+  await page.locator('#file-input').setInputFiles(COORDS);
+  // Plus de « Fichier invalide » : l'aperçu Labs s'ouvre (le GPX seul ne
+  // crée aucune découverte, ses étapes sont comptées « ignorées »).
+  await expect(page.locator('#labsPreviewModal')).toBeVisible({ timeout: 20_000 });
+  await expect(page.locator('#labsPreviewFiles')).toContainText('lab2gpx-stages.gpx');
+});
+
+
 test('couleur et icône dédiées Adventure Lab sont déclarées', async ({ page }) => {
   await openReadyApp(page);
 
