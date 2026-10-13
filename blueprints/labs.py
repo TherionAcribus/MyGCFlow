@@ -807,130 +807,42 @@ def labs_receive():
     return _receive_cors_headers(resp), 202
 
 
-# Bookmarklet « Envoyer vers MyGCFlow » — généré avec l'origine locale réelle
-# et le jeton d'installation (__ORIGIN__/__TOKEN__ remplacés à la demande).
-# Même boucle de pagination que tools/export_lab_logs.js ; le GUID joueur est
-# détecté seul (id null côté session → lien profil de la page → invite),
-# mémorisé en localStorage pour les clics suivants.
-# Les messages affichés sur la page sont traduits côté serveur (__T_*) :
-# le favori parle la langue de l'interface.
-_BOOKMARKLET_JS = (
-    "javascript:(async()=>{"
-    "var O=__ORIGIN__,T=__TOKEN__,U='/Logs/GetLogsByAdventureGrouping/';"
-    "var L={start:__T_START__,prompt:__T_PROMPT__,cancelled:__T_CANCELLED__,"
-    "guidbad:__T_GUIDBAD__,progress:__T_PROGRESS__,sending:__T_SENDING__,"
-    "sent:__T_SENT__,error:__T_ERROR__,prefix:__T_PREFIX__,scroll:__T_SCROLL__};"
-    "var say=(function(){var d=document.createElement('div');"
-    "d.style.cssText='position:fixed;top:12px;right:12px;z-index:2147483647;"
-    "background:#082747;color:#fff;padding:10px 14px;border-radius:8px;"
-    "font:13px system-ui;box-shadow:0 2px 12px #0007;max-width:340px';"
-    "document.body.appendChild(d);return function(t){d.textContent=t}})();"
-    "var fmt=function(s,a,b){return s.replace('${adv}',a).replace('${disc}',b)};"
-    "try{say(L.start);"
-    "var K='mygcflow:playerId';"
-    "var ask=async function(id){var r=await fetch(U,{method:'POST',"
-    "headers:{'Content-Type':'application/json','Accept':'application/json'},"
-    "credentials:'include',body:JSON.stringify({id:id,skip:0,take:1})});"
-    "return r};"
-    "var ok=async function(id){try{return (await ask(id)).ok}"
-    "catch(e){return false}};"
-    # probe strict : le bon GUID renvoie au moins une ligne d'historique ;
-    # un GUID étranger (Adventure, etc.) répond 200 avec items vide.
-    "var probe=async function(id){try{var r=await ask(id);if(!r.ok)return false;"
-    "var d=await r.json();return (d.items||[]).length>0}catch(e){return false}};"
-    "var pid=localStorage.getItem(K)||null;"
-    # pick : identifiant trouvé ; found le distingue de « pas trouvé » car
-    # pick===null est VALIDE (le serveur déduit alors le joueur de la
-    # session — et 200 avec items l'a confirmé).
-    "var pick,found=false;"
-    "if(pid&&await probe(pid)){pick=pid;found=true}"
-    "if(pid&&!found){localStorage.removeItem(K)}"
-    "if(!found){"
-    "var cands=[null],h=document.documentElement.innerHTML,m;"
-    # Le frontend peut aussi garder l'identifiant dans un cookie lisible
-    # (non HttpOnly) ou dans le storage — sources gratuites à balayer.
-    "try{h+=';'+document.cookie+';'+JSON.stringify(localStorage)"
-    "+';'+JSON.stringify(sessionStorage)}catch(e){}"
-    "var res=[/profile[^\"']*guid=([0-9a-f-]{36})/ig,"
-    "/\"(?:publicGuid|playerGuid|playerId|player_id)\"\\s*:\\s*"
-    "\"([0-9a-f-]{36})\"/ig];"
-    "for(var i=0;i<res.length;i++){while((m=res[i].exec(h)))"
-    "if(cands.indexOf(m[1])<0)cands.push(m[1])}"
-    # Dernier recours automatique : balayer tous les GUIDs présents dans la
-    # page — la page /logs connaît l'identifiant du joueur connecté.
-    "var g=/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/ig;"
-    "while((m=g.exec(h))&&cands.length<80){var x=m[0].toLowerCase();"
-    "if(cands.indexOf(x)<0)cands.push(x)}"
-    # Le GUID n'apparaît pas toujours dans le HTML : la page peut l'obtenir
-    # via un appel API interne. Filet armé dès maintenant : intercepter la
-    # prochaine requête que la page émet elle-même quand l'utilisateur fait
-    # défiler son historique (le site connaît l'id, quel que soit le nom de
-    # variable). Nos propres probes sont exclus via cands.
-    "var unhook=function(){};"
-    "var hooked=new Promise(function(done){"
-    "var of=window.fetch,XO=XMLHttpRequest.prototype.open,"
-    "XS=XMLHttpRequest.prototype.send;"
-    "unhook=function(){window.fetch=of;XMLHttpRequest.prototype.open=XO;"
-    "XMLHttpRequest.prototype.send=XS};"
-    "var hit=function(v){unhook();done(v)};"
-    "var grab=function(u,bd){try{var s=String(u&&u.url||u);"
-    "if(s.indexOf('GetLogsByAdventureGrouping')>=0&&bd){"
-    "var b=JSON.parse(bd);if(b&&b.id&&cands.indexOf(b.id)<0)hit(b.id)}}"
-    "catch(e){}};"
-    "window.fetch=function(u,o){var r=of.apply(this,arguments);"
-    "grab(u,o&&o.body);return r};"
-    "XMLHttpRequest.prototype.open=function(mm,u){this.__u=u;"
-    "return XO.apply(this,arguments)};"
-    "XMLHttpRequest.prototype.send=function(bd){grab(this.__u,bd);"
-    "return XS.apply(this,arguments)};"
-    "setTimeout(function(){hit(null)},90000)});"
-    "var stop=false;hooked.then(function(v){stop=true;"
-    "if(v!==null){pick=v;found=true}});"
-    "for(var j=0;j<cands.length&&!found&&!stop;j+=5){"
-    "var hits=await Promise.all(cands.slice(j,j+5).map(probe));"
-    "for(var q=0;q<hits.length&&!found;q++){"
-    "if(hits[q]){pick=cands[j+q];found=true}}}}"
-    "if(found){unhook()}"
-    "else if(!stop){say(L.scroll);var hv=await hooked;"
-    "if(hv!==null){pick=hv;found=true}}"
-    "if(!found){pid=prompt(L.prompt);"
-    "if(!pid){say(L.cancelled);return}pid=pid.trim();"
-    "if(!(await ok(pid))){say(L.guidbad);return}pick=pid;found=true}"
-    "if(found&&pick!==null)localStorage.setItem(K,pick);"
-    "var take=100,disc=[],adv=new Set(),seen=new Set(),skip=0,guard=0;"
-    "while(true){var r=await fetch(U,{method:'POST',"
-    "headers:{'Content-Type':'application/json','Accept':'application/json'},"
-    "credentials:'include',body:JSON.stringify({id:pick,skip:skip,take:take})});"
-    "if(!r.ok){if(take>10){take=Math.max(10,Math.floor(take/2));continue}"
-    "throw new Error('HTTP '+r.status)}"
-    "var d=await r.json(),items=d.items||[],before=adv.size;"
-    "for(var k=0;k<items.length;k++){var it=items[k];adv.add(it.adventureId);"
-    "var logs=it.playerLogs||[];"
-    "for(var l=0;l<logs.length;l++){var lo=logs[l];if(seen.has(lo.id))continue;"
-    "seen.add(lo.id);var day=/^\\d{4}-\\d{2}-\\d{2}/.exec(lo.dateLogged||'');"
-    "disc.push({adventure_id:it.adventureId||null,stage_id:lo.stageId||null,"
-    "adventure_title:it.adventureTitle||null,stage_title:lo.stageTitle||null,"
-    "found_date:day?day[0]:null,found_at:lo.dateLogged||null,"
-    "date_precision:'instant',date_basis:'source_offset',latitude:null,"
-    "longitude:null,coordinate_scope:null,adventure_url:null,"
-    "log_id:lo.id==null?null:lo.id,is_archived:!!lo.isArchived,"
-    "adventure_is_archived:!!it.isArchived})}}"
-    "say(fmt(L.progress,adv.size,disc.length));"
-    "skip+=items.length;"
-    "if(items.length===0||adv.size===before||++guard>500)break;"
-    "await new Promise(function(res){setTimeout(res,300)})}"
-    "var payload={format:'mygcflow-lab-finds',schema_version:1,"
-    "exported_at:new Date().toISOString(),account:{username:null},"
-    "source:'labs.geocaching.com/logs',coverage:'complete',discoveries:disc};"
-    "say(L.sending);"
-    "var resp=await fetch(O+'/api/labs/receive',{method:'POST',mode:'cors',"
-    "credentials:'omit',headers:{'Content-Type':'application/json',"
-    "'X-MyGCFlow-Token':T},body:JSON.stringify(payload)});"
-    "if(resp.status===202){say(fmt(L.sent,adv.size,disc.length))}"
-    "else{var t='';try{t=await resp.text()}catch(e){}"
-    "say(L.error+' '+resp.status+' — '+t.slice(0,160))}"
-    "}catch(e){say(L.prefix+' '+(e&&e.message?e.message:e))}})();"
-)
+# Favori « Envoyer vers MyGCFlow » et script d'export manuel : sources JS
+# lisibles dans static/labs/, assemblées à la demande. Les deux incluent
+# lab_logs_core.js — seule copie de la boucle de pagination de /logs.
+_JS_INCLUDE_MARKER = "// @include lab_logs_core.js"
+
+
+def _labs_js_source(name: str) -> str:
+    """Source `static/labs/<name>` avec le cœur partagé inclus à son repère."""
+    folder = Path(current_app.static_folder) / "labs"
+    source = (folder / name).read_text("utf-8")
+    if source.count(_JS_INCLUDE_MARKER) != 1:
+        raise ValueError(f"{name} : repère d'inclusion absent ou répété")
+    return source.replace(
+        _JS_INCLUDE_MARKER, (folder / "lab_logs_core.js").read_text("utf-8"))
+
+
+def _single_line_js(source: str) -> str:
+    """Met une source sur une ligne pour un lien `javascript:` (le navigateur
+    y supprime les sauts de ligne : un commentaire `//` avalerait la suite).
+
+    Volontairement naïf — lignes vides et lignes de commentaire retirées, le
+    reste joint par une espace — d'où la contrainte d'écriture rappelée en
+    tête des sources : commentaires en lignes entières, instructions
+    terminées par un point-virgule, pas de chaîne multi-ligne."""
+    lines = (line.strip() for line in source.splitlines())
+    return " ".join(line for line in lines if line and not line.startswith("//"))
+
+
+def _build_bookmarklet(origin: str, token: str) -> str:
+    js = _single_line_js(_labs_js_source("bookmarklet.src.js"))
+    js = js.replace('__ORIGIN__', json.dumps(origin)) \
+           .replace('__TOKEN__', json.dumps(token))
+    for key, text in _bookmarklet_strings().items():
+        js = js.replace(key, json.dumps(text))
+    return "javascript:" + js
+
 
 def _bookmarklet_strings():
     # Messages du bookmarklet, évalués à la requête : le favori s'affiche sur
@@ -967,9 +879,17 @@ def labs_bookmarklet():
 
     settings = get_settings_manager().update_app_settings(ensure_token)
     origin = request.host_url.rstrip('/')
-    js = (_BOOKMARKLET_JS
-          .replace('__ORIGIN__', json.dumps(origin))
-          .replace('__TOKEN__', json.dumps(settings.labs_receive_token)))
-    for key, text in _bookmarklet_strings().items():
-        js = js.replace(key, json.dumps(text))
+    js = _build_bookmarklet(origin, settings.labs_receive_token)
     return jsonify({'success': True, 'origin': origin, 'bookmarklet': js})
+
+
+@labs_bp.route('/api/labs/export-script')
+def labs_export_script():
+    """Script d'export manuel à coller dans la console de /logs — laissé
+    lisible : l'utilisateur doit y renseigner son GUID joueur."""
+    response = current_app.response_class(
+        _labs_js_source("export_lab_logs.src.js"),
+        mimetype='text/javascript')
+    response.headers['Content-Disposition'] = \
+        'attachment; filename="export_lab_logs.js"'
+    return response

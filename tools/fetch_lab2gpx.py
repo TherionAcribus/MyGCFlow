@@ -6,8 +6,8 @@ L'API publique `POST https://api.lab2gpx.gcutils.de/download` accepte un mode
 api/src/request/download-by-uuid.http dans https://github.com/mirsch/lab2gpx.
 
 Entrée : fichier texte d'UUID d'Adventures séparés par virgules ou retours
-ligne (produit par tools/export_lab_logs.js). Sortie : un GPX par lot dans le
-dossier cible. Les UUID qui font échouer le serveur (500 — typiquement des
+ligne (produit par le script d'export, /api/labs/export-script). Sortie : un
+GPX par lot dans le dossier cible. Les UUID qui font échouer le serveur (500 — typiquement des
 Adventures archivées/cassées) sont isolés par bissection et listés dans
 fetch-failed-uuids.txt. Relançable : les lots déjà écrits sont sautés.
 

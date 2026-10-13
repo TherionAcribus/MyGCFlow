@@ -61,13 +61,13 @@ L'affichage complet exige deux exports, qu'on peut importer ensemble ou l'un
 après l'autre :
 
 1. **L'historique de découvertes** (`labs.geocaching.com/logs`) — qui a été
-   trouvé, et quand. Obtenu avec le script
-   `static/labs/export_lab_logs.js`, téléchargeable depuis la modale d'aide
-   de « Mes Lab Caches » : à exécuter dans la console du navigateur sur la
-   page `/logs` connectée ; il produit un JSON `mygcflow-lab-finds` (le
-   script interroge le même endpoint JSON que la page, avec les cookies de
-   session — voir `tools/export_lab_logs.js` et
-   `docs/notes/lab-caches-sources.md` pour l'état des lieux).
+   trouvé, et quand. Obtenu avec le script d'export, téléchargeable depuis
+   la modale d'aide de « Mes Lab Caches » (`/api/labs/export-script`) : à
+   exécuter dans la console du navigateur sur la page `/logs` connectée ; il
+   produit un JSON `mygcflow-lab-finds` (le script interroge le même
+   endpoint JSON que la page, avec les cookies de session — sources dans
+   `static/labs/export_lab_logs.src.js` et `static/labs/lab_logs_core.js`,
+   état des lieux dans `docs/notes/lab-caches-sources.md`).
 2. **Les coordonnées des étapes** — un ou plusieurs GPX **Lab2Gpx**
    (`lab2gpx` produit un waypoint par étape, nommé `LC…` / UUID d'étape).
    Les `.zip` produits par Lab2Gpx sont acceptés tels quels. Inutile si la

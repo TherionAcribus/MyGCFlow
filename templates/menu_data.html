@@ -215,7 +215,7 @@
                         <li class="mb-2">
                             <strong>{{ _("Historique des découvertes (.json)") }}</strong><br>
                             {{ _("Sur labs.geocaching.com/logs, ouvrez la console du navigateur (F12), renseignez votre GUID joueur dans le script ci-dessous et exécutez-le : il télécharge votre historique complet.") }}
-                            <a href="{{ url_for('static', filename='labs/export_lab_logs.js') }}" download>{{ _("Télécharger le script d'export") }}</a>
+                            <a href="{{ url_for('labs.labs_export_script') }}" download="export_lab_logs.js">{{ _("Télécharger le script d'export") }}</a>
                         </li>
                         <li class="mb-2">
                             <strong>{{ _("Coordonnées des étapes (.gpx ou .zip)") }}</strong><br>

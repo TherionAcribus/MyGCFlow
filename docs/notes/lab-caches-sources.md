@@ -263,7 +263,7 @@ La tâche `lab_fetch_coords` (`POST /api/labs/fetch-coordinates`, opt-in
 `labs_auto_fetch_coords`) enchaîne automatiquement après chaque import.
 
 Côté historique, le bookmarklet `GET /api/labs/bookmarklet` rejoue la boucle
-de `tools/export_lab_logs.js` dans la page `/logs` et POSTe le payload à
+de `static/labs/lab_logs_core.js` dans la page `/logs` et POSTe le payload à
 `POST /api/labs/receive` (origine `labs.geocaching.com` + jeton local
 `labs_receive_token`, CORS + Private-Network-Access ; seule route exemptée
 du garde inter-sites de `security.py`). Le GUID joueur est auto-détecté

@@ -2,6 +2,7 @@ import io
 import json
 import os
 import shutil
+import subprocess
 import tempfile
 import time
 import unittest
@@ -12,6 +13,7 @@ from pathlib import Path
 from unittest import mock
 
 import lab_coords_provider as lcp
+import lab_formats as lf
 import lab_store
 import settings_manager
 from app import create_app
@@ -27,6 +29,18 @@ DOCTYPE = FIXTURES / "lab2gpx-doctype.gpx"
 
 STAGE_1 = "57a9e000-0000-4000-8000-000000000101"
 STAGE_REMOVED = "57a9e000-0000-4000-8000-000000000401"
+BOOKMARKLET_HARNESS = FIXTURES / "bookmarklet_harness.cjs"
+NODE = shutil.which("node")
+PLAYER_GUID = "11111111-1111-4111-8111-111111111111"
+
+
+def _lab_logs_page(adventure, *log_ids):
+    """Une Adventure de l'historique /logs, telle que le site la renvoie."""
+    return {"adventureId": adventure, "adventureTitle": f"Adventure {adventure}",
+            "isArchived": False,
+            "playerLogs": [{"id": i, "stageId": f"stage-{i}", "stageTitle": f"Étape {i}",
+                            "dateLogged": "2024-05-14T10:00:00+02:00",
+                            "isArchived": False} for i in log_ids]}
 ADVENTURE_REMOVED = "fa1e0000-0000-4000-8000-000000000004"
 
 
@@ -493,6 +507,109 @@ class LabsAutomationTests(LabsApiTests):
             self.client.get('/api/labs/bookmarklet').status_code, 200)
         self.assertEqual(
             self.manager.get_app_settings().labs_receive_token, token)
+
+    def test_bookmarklet_is_a_single_comment_free_line(self):
+        """Le navigateur retire les sauts de ligne d'un lien javascript: —
+        un commentaire `//` resté dans le code avalerait toute la suite."""
+        js = self.client.get('/api/labs/bookmarklet').get_json()["bookmarklet"]
+        self.assertNotIn("\n", js)
+        self.assertNotIn("//", js.replace("://", ""))
+        self.assertNotIn("@include", js)
+        self.assertNotIn("__ORIGIN__", js)
+        self.assertNotIn("__TOKEN__", js)
+        # Le cœur partagé est bien inclus.
+        self.assertIn("mygcflowCollectLabLogs", js)
+
+    def _run_bookmarklet(self, **scenario):
+        js = self.client.get('/api/labs/bookmarklet').get_json()["bookmarklet"]
+        folder = Path(tempfile.mkdtemp(prefix="mygcflow-bookmarklet-"))
+        self.addCleanup(shutil.rmtree, folder, True)
+        link = folder / "bookmarklet.txt"
+        link.write_text(js, encoding="utf-8")
+        done = subprocess.run(
+            [NODE, str(BOOKMARKLET_HARNESS), str(link), json.dumps(scenario)],
+            capture_output=True, timeout=60)
+        self.assertEqual(done.returncode, 0, done.stderr.decode("utf-8", "replace"))
+        return json.loads(done.stdout.decode("utf-8"))
+
+    @unittest.skipUnless(NODE, "node introuvable")
+    def test_bookmarklet_collects_every_page_and_posts_the_export(self):
+        pages = [[_lab_logs_page("adv-1", 1, 2)], [_lab_logs_page("adv-2", 3)]]
+        out = self._run_bookmarklet(playerId=None, pages=pages)
+
+        received = out["received"]
+        self.assertIsNotNone(received, out["said"])
+        self.assertTrue(received["url"].endswith("/api/labs/receive"))
+        self.assertEqual(received["credentials"], "omit")
+        token = self.manager.get_app_settings().labs_receive_token
+        self.assertEqual(received["headers"]["X-MyGCFlow-Token"], token)
+        body = received["body"]
+        self.assertEqual(body["format"], "mygcflow-lab-finds")
+        self.assertEqual([d["log_id"] for d in body["discoveries"]], [1, 2, 3])
+        self.assertEqual(body["discoveries"][0]["found_date"], "2024-05-14")
+        self.assertEqual(body["discoveries"][2]["adventure_id"], "adv-2")
+        # Joueur déduit de la session : rien à mémoriser.
+        self.assertIsNone(out["remembered"])
+        self.assertTrue(out["fetchRestored"])
+        # Le fichier produit est bien celui que l'import accepte.
+        parsed = lf.parse_lab_finds(json.dumps(body))
+        self.assertTrue(parsed.ok, parsed.errors)
+        self.assertEqual(len(parsed.drafts), 3)
+
+    @unittest.skipUnless(NODE, "node introuvable")
+    def test_bookmarklet_works_again_with_a_remembered_player(self):
+        """Deuxième clic : l'identifiant mémorisé suffit, la détection est
+        sautée — le favori plantait alors sur « unhook is not a function »."""
+        out = self._run_bookmarklet(remembered=PLAYER_GUID, playerId=PLAYER_GUID,
+                                    pages=[[_lab_logs_page("adv-1", 1)]])
+        self.assertIsNotNone(out["received"], out["said"])
+        self.assertEqual(len(out["received"]["body"]["discoveries"]), 1)
+        self.assertEqual(out["remembered"], PLAYER_GUID)
+        self.assertFalse(any("unhook" in text for text in out["said"]), out["said"])
+
+    @unittest.skipUnless(NODE, "node introuvable")
+    def test_bookmarklet_finds_the_player_guid_in_the_page(self):
+        html = f'<a href="/profile?guid={PLAYER_GUID}">moi</a>'
+        out = self._run_bookmarklet(playerId=PLAYER_GUID, html=html,
+                                    pages=[[_lab_logs_page("adv-1", 1, 2)]])
+        self.assertIsNotNone(out["received"], out["said"])
+        self.assertEqual(len(out["received"]["body"]["discoveries"]), 2)
+        self.assertEqual(out["remembered"], PLAYER_GUID)   # mémorisé pour la suite
+        self.assertTrue(out["fetchRestored"])
+
+    @unittest.skipUnless(NODE, "node introuvable")
+    def test_bookmarklet_falls_back_to_smaller_pages(self):
+        pages = [[_lab_logs_page(f"adv-{i}", i) for i in range(1, 31)]]
+        out = self._run_bookmarklet(playerId=None, pages=pages, refuseTakeAbove=25)
+        self.assertIsNotNone(out["received"], out["said"])
+        self.assertEqual(len(out["received"]["body"]["discoveries"]), 30)
+        # 100 puis 50 refusés, 25 accepté (les sondes d'identifiant prennent 1).
+        self.assertEqual({r["take"] for r in out["requests"] if r["take"] > 1},
+                         {100, 50, 25})
+
+    @unittest.skipUnless(NODE, "node introuvable")
+    def test_bookmarklet_cancelled_prompt_sends_nothing(self):
+        # Aucun identifiant ne répond et l'invite est annulée. L'interception
+        # de la page n'aboutit pas : le banc d'essai la laisse expirer.
+        out = self._run_bookmarklet(playerId="introuvable", pages=[], prompt=None,
+                                    expireHook=True)
+        self.assertIsNone(out["received"])
+
+    def test_export_script_embeds_the_shared_core(self):
+        rv = self.client.get('/api/labs/export-script')
+        self.assertEqual(rv.status_code, 200)
+        self.assertIn('export_lab_logs.js', rv.headers['Content-Disposition'])
+        script = rv.get_data(as_text=True)
+        self.assertIn("COLLER_LE_GUID_JOUEUR_ICI", script)
+        self.assertIn("async function mygcflowCollectLabLogs", script)
+        self.assertNotIn("@include", script)
+        if NODE:
+            folder = Path(tempfile.mkdtemp(prefix="mygcflow-export-script-"))
+            self.addCleanup(shutil.rmtree, folder, True)
+            (folder / "export.cjs").write_text(script, encoding="utf-8")
+            done = subprocess.run([NODE, "--check", str(folder / "export.cjs")],
+                                  capture_output=True, timeout=60)
+            self.assertEqual(done.returncode, 0, done.stderr.decode("utf-8", "replace"))
 
     def test_bookmarklet_strings_follow_ui_language(self):
         from flask_babel import force_locale

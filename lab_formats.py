@@ -3,8 +3,8 @@
 Module sans dépendance obligatoire à Flask, testable sur fichiers. Deux formats supportés :
 
 - `mygcflow-lab-finds` v1 : export JSON de l'historique `/logs` produit par
-  `tools/export_lab_logs.js` — identifiants d'étapes + dates de découverte,
-  pas de coordonnées.
+  le script d'export (`static/labs/export_lab_logs.src.js`) — identifiants
+  d'étapes + dates de découverte, pas de coordonnées.
 - GPX Lab2Gpx « un waypoint par étape » : `gsak:Guid` (UUID d'étape),
   `lab2gpx:uuid` (UUID d'Adventure), coordonnées réelles ; `<time>` porte la
   publication de l'Adventure et n'est jamais une date de découverte — elle
