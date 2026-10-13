@@ -7,6 +7,7 @@ import tempfile
 import time
 import unittest
 import urllib.error
+import zipfile
 from dataclasses import replace
 from datetime import date, timedelta
 from pathlib import Path
@@ -201,6 +202,77 @@ class LabsApiTests(unittest.TestCase):
         st = self._wait_task(rv.get_json()["task_id"])
         self.assertEqual(st.state, "finished", st.error)
         self.assertEqual(st.result["conflicts"], 1)   # rien de tranché
+
+    # --- archives zip ---------------------------------------------------------
+
+    def _zip(self, members):
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+            for name, data in members.items():
+                zf.writestr(name, data)
+        return buffer.getvalue()
+
+    def _split_coords(self):
+        """La fixture GPX coupée en deux fichiers valides (7 étapes chacun)."""
+        text = COORDS.read_text("utf-8")
+        head, *waypoints = text.split("<wpt ")
+        tail = "</gpx>"
+        waypoints = ["<wpt " + w.replace(tail, "") for w in waypoints]
+        self.assertEqual(len(waypoints), 14)
+        return [(head + "".join(part) + tail).encode("utf-8")
+                for part in (waypoints[:7], waypoints[7:])]
+
+    def test_zip_with_several_gpx_imports_them_all(self):
+        """Seul le premier GPX d'une archive était lu, sans le dire."""
+        self._import_history()
+        first, second = self._split_coords()
+        archive = self._zip({"lot-1.gpx": first, "sous-dossier/lot-2.gpx": second,
+                             "__MACOSX/._lot-1.gpx": b"bruit", "lisez-moi.txt": b"-"})
+        body = self._preview_bytes("lab2gpx.zip", archive).get_json()
+        self.assertTrue(body["success"], body)
+        self.assertEqual([f["name"] for f in body["files"]],
+                         ["lab2gpx.zip › lot-1.gpx",
+                          "lab2gpx.zip › sous-dossier/lot-2.gpx"])
+        # Même résultat que le GPX entier : 8 étapes résolues.
+        self.assertEqual(body["totals"]["resolved"], 8)
+        rv = self._commit(body["import_token"])
+        st = self._wait_task(rv.get_json()["task_id"])
+        self.assertEqual(st.state, "finished", st.error)
+        self.assertEqual(st.result["ready_total"], 8)
+
+    def test_zip_with_single_gpx_keeps_the_archive_name(self):
+        self._import_history()
+        archive = self._zip({"export.gpx": COORDS.read_bytes()})
+        body = self._preview_bytes("lab2gpx.zip", archive).get_json()
+        self.assertEqual([f["name"] for f in body["files"]], ["lab2gpx.zip"])
+        self.assertEqual(body["totals"]["resolved"], 8)
+
+    def test_zip_without_gpx_is_reported_as_unrecognised(self):
+        rv = self._preview_bytes("photos.zip", self._zip({"a.txt": b"x"}))
+        self.assertEqual(rv.status_code, 400)
+        report = rv.get_json()["files"][0]
+        self.assertEqual(report["status"], "error")
+        self.assertIn("Format non reconnu", report["error"])
+
+    def test_zip_bounds_apply_to_decompressed_size(self):
+        import blueprints.labs as labs_mod
+        archive = self._zip({"gros.gpx": b"<gpx>" + b" " * 4096 + b"</gpx>"})
+        with mock.patch.object(labs_mod, "MAX_LAB_FILE_BYTES", 1024):
+            rv = self._preview_bytes("bombe.zip", archive)
+        self.assertEqual(rv.status_code, 400)
+        self.assertEqual(rv.get_json()["files"][0]["error"], "Fichier trop volumineux")
+
+    def test_token_errors_are_translated(self):
+        """Ces messages passaient par une variable : jamais extraits, ils
+        restaient en français dans l'interface anglaise."""
+        from flask_babel import force_locale
+        import blueprints.labs as labs_mod
+        with self.app.test_request_context():
+            self.assertEqual(labs_mod._load_pending("???")[2], "Jeton d'import invalide")
+            with force_locale('en'):
+                self.assertEqual(labs_mod._load_pending("???")[2], "Invalid import token")
+                self.assertEqual(labs_mod._load_pending("abc123")[2],
+                                 "Unknown or already used import token")
 
     def test_preview_runs_under_mutation_lock(self):
         """L'aperçu écrit dans sa transaction avant de l'annuler : il doit

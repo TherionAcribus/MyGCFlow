@@ -6,7 +6,7 @@
 
 import * as pkg from './index.js';
 import { CONFIG } from './init.js';
-import { showSuccess, showError, showWarning, showInfo, showConfirmation, t } from './notifications.js';
+import { showSuccess, showError, showWarning, showInfo, t } from './notifications.js';
 import { showBsModal, hideBsModal } from './ui_bootstrap.js';
 
 const PENDING_PAGE_SIZE = 50;
@@ -419,10 +419,11 @@ async function onPreviewConfirm() {
         // pas un second poller sur un focus/visibilitychange.
         watchingTaskId = data.task_id;
         await pollLabTask(data.task_id);
-        watchingTaskId = null;
     } catch (e) {
         setImportProgress('');
         showError(e.message || t("Erreur lors de l'import"), t('Import Lab Caches'));
+    } finally {
+        watchingTaskId = null;
     }
 }
 

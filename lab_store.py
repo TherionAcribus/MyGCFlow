@@ -334,19 +334,6 @@ def commit_history(session, parsed, overrides=frozenset()) -> dict:
     return summary
 
 
-def preview_history(session, parsed) -> dict:
-    """Même diff que commit_history sans écrire (transaction annulée)."""
-    if not parsed.ok:
-        raise ValueError("import refusé : le fichier a des erreurs structurelles")
-    with LAB_MUTATION_LOCK:
-        collection = get_or_create_collection(session)
-        summary = _apply_history(session, parsed, commit=True)
-        stats = _collection_stats(session, collection.id)
-        summary.update(stats)
-        session.rollback()  # l'aperçu ne persiste rien
-    return summary
-
-
 # ---------------------------------------------------------------------------
 # Enrichissement coordonnées
 # ---------------------------------------------------------------------------
@@ -536,19 +523,6 @@ def mark_coords_fetch_failed(session, adventure_uuids) -> int:
                      synchronize_session=False)
         session.commit()
     return marked
-
-
-def preview_coordinates(session, parsed) -> dict:
-    """Même diff que commit_coordinates sans écrire."""
-    if not parsed.ok:
-        raise ValueError("import refusé : le fichier a des erreurs structurelles")
-    with LAB_MUTATION_LOCK:
-        collection = get_or_create_collection(session)
-        summary = _apply_coords(session, parsed, commit=True)
-        stats = _collection_stats(session, collection.id)
-        summary.update(stats)
-        session.rollback()
-    return summary
 
 
 # ---------------------------------------------------------------------------

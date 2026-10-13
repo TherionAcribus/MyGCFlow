@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-12 21:24+0200\n"
+"POT-Creation-Date: 2026-10-13 07:28+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -270,131 +270,127 @@ msgstr ""
 msgid "Fragment vidéo absent"
 msgstr ""
 
-#: lab_formats.py:110
+#: lab_formats.py:109
 msgid "found_date invalide (jour inexistant)"
 msgstr ""
 
-#: lab_formats.py:112
+#: lab_formats.py:111
 msgid "found_date au format non ISO — valeur ignorée"
 msgstr ""
 
-#: lab_formats.py:121
+#: lab_formats.py:120
 msgid "found_at illisible"
 msgstr ""
 
-#: lab_formats.py:139
+#: lab_formats.py:138
 msgid "found_at sans fuseau — date civile seule retenue"
 msgstr ""
 
-#: lab_formats.py:146
+#: lab_formats.py:145
 msgid "found_at date seule invalide"
 msgstr ""
 
-#: lab_formats.py:149
+#: lab_formats.py:148
 msgid "found_at ambigu ou non ISO — rejeté"
 msgstr ""
 
-#: lab_formats.py:157
+#: lab_formats.py:156
 msgid "found_date en désaccord avec l'instant — instant retenu"
 msgstr ""
 
-#: lab_formats.py:184
+#: lab_formats.py:183
 msgid "coordonnées non numériques"
 msgstr ""
 
-#: lab_formats.py:188
+#: lab_formats.py:187
 msgid "coordonnées non finies"
 msgstr ""
 
-#: lab_formats.py:191
+#: lab_formats.py:190
 msgid "coordonnées hors bornes"
 msgstr ""
 
-#: lab_formats.py:195
+#: lab_formats.py:194
 msgid "(0,0) — sentinelle possible, à vérifier"
 msgstr ""
 
-#: lab_formats.py:310
+#: lab_formats.py:309
 #, python-format
 msgid "JSON invalide : %(error)s"
 msgstr ""
 
-#: lab_formats.py:313
+#: lab_formats.py:312
 msgid "pas un export mygcflow-lab-finds"
 msgstr ""
 
-#: lab_formats.py:317
+#: lab_formats.py:316
 #, python-format
 msgid "version non supportée : %(version)s"
 msgstr ""
 
-#: lab_formats.py:322
+#: lab_formats.py:321
 msgid "absent ou n'est pas une liste"
 msgstr ""
 
-#: lab_formats.py:325
+#: lab_formats.py:324
 msgid "trop d'enregistrements"
 msgstr ""
 
-#: lab_formats.py:349
+#: lab_formats.py:348
 msgid "enregistrement non objet"
 msgstr ""
 
-#: lab_formats.py:357
+#: lab_formats.py:356
 msgid "stage_id non UUID — identifiant ignoré"
 msgstr ""
 
-#: lab_formats.py:359
+#: lab_formats.py:358
 msgid "adventure_id non UUID — identifiant ignoré"
 msgstr ""
 
-#: lab_formats.py:366
+#: lab_formats.py:365
 msgid "aucune identité exploitable (ni UUID, ni log_id, ni titre)"
 msgstr ""
 
-#: lab_formats.py:372
+#: lab_formats.py:371
 msgid "identité dérivée de la ligne — reimport non garanti"
 msgstr ""
 
-#: lab_formats.py:390
+#: lab_formats.py:389
 msgid "coordonnées historique invalides — ignorées"
 msgstr ""
 
-#: lab_formats.py:471
+#: lab_formats.py:470
 msgid "DOCTYPE/ENTITY interdit (XML non sûr)"
 msgstr ""
 
-#: lab_formats.py:482
+#: lab_formats.py:481
 msgid "coordonnées invalides"
 msgstr ""
 
-#: lab_formats.py:492
+#: lab_formats.py:491
 msgid "pas d'UUID d'étape (gsak:Guid absent ou mal formé)"
 msgstr ""
 
-#: lab_formats.py:496
-msgid "gsak:Guid non UUID"
-msgstr ""
-
-#: lab_formats.py:508
+#: lab_formats.py:505
 msgid "UUID d'Adventure absent — contrôle de cohérence impossible"
 msgstr ""
 
-#: lab_formats.py:527
+#: lab_formats.py:524
 #, python-format
 msgid "XML illisible : %(error)s"
 msgstr ""
 
-#: lab_store.py:285
+#: lab_store.py:286
 #, python-format
 msgid "%(n)s doublon(s) dédoublonné(s)"
 msgstr ""
 
-#: lab_store.py:305
+#: lab_store.py:306
 msgid "pseudo différent de la collection — mélange possible"
 msgstr ""
 
-#: lab_store.py:484
+#: lab_store.py:469
 #, python-format
 msgid "%(n)s étape(s) de l'historique non marquées trouvées dans le GPX"
 msgstr ""
@@ -542,11 +538,11 @@ msgstr ""
 msgid "GC code"
 msgstr ""
 
-#: blueprints/evolution.py:40 static/js/labs.js:797
+#: blueprints/evolution.py:40 static/js/labs.js:798
 msgid "Latitude"
 msgstr ""
 
-#: blueprints/evolution.py:41 static/js/labs.js:798
+#: blueprints/evolution.py:41 static/js/labs.js:799
 msgid "Longitude"
 msgstr ""
 
@@ -579,7 +575,7 @@ msgstr ""
 msgid "Un import est en cours : réessayez une fois terminé"
 msgstr ""
 
-#: blueprints/evolution.py:158 blueprints/gpx.py:37 blueprints/labs.py:427
+#: blueprints/evolution.py:158 blueprints/gpx.py:37 blueprints/labs.py:458
 msgid "Aucun fichier fourni"
 msgstr ""
 
@@ -635,142 +631,174 @@ msgstr ""
 msgid "Erreur lors du vidage de la base de données: %(error)s"
 msgstr ""
 
-#: blueprints/labs.py:231
+#: blueprints/labs.py:174
+msgid "Jeton d'import invalide"
+msgstr ""
+
+#: blueprints/labs.py:180
+msgid "Jeton d'import inconnu ou déjà consommé"
+msgstr ""
+
+#: blueprints/labs.py:182
+msgid "Jeton d'import déjà consommé"
+msgstr ""
+
+#: blueprints/labs.py:186
+msgid "Jeton d'import illisible"
+msgstr ""
+
+#: blueprints/labs.py:189
+msgid "Jeton d'import expiré — relancer l'aperçu"
+msgstr ""
+
+#: blueprints/labs.py:267
 #, python-format
 msgid "Import Labs : %(name)s"
 msgstr ""
 
-#: blueprints/labs.py:248
+#: blueprints/labs.py:284
 msgid ""
 "la collection a été modifiée entre l'aperçu et l'enregistrement — diff "
 "recalculé sur l'état courant"
 msgstr ""
 
-#: blueprints/labs.py:250
+#: blueprints/labs.py:286
 msgid "Import Labs : finalisation"
 msgstr ""
 
-#: blueprints/labs.py:329
+#: blueprints/labs.py:362
 #, python-format
 msgid "Coordonnées Labs : %(done)s/%(total)s Adventures"
 msgstr ""
 
-#: blueprints/labs.py:430
+#: blueprints/labs.py:461 blueprints/labs.py:496
 #, python-format
 msgid "Trop de fichiers (maximum %(max)s)"
 msgstr ""
 
-#: blueprints/labs.py:441
+#: blueprints/labs.py:471
 msgid "Fichier trop volumineux"
 msgstr ""
 
-#: blueprints/labs.py:450
+#: blueprints/labs.py:502
 msgid "Format non reconnu (ni export historique, ni GPX Lab2Gpx)"
 msgstr ""
 
-#: blueprints/labs.py:466
+#: blueprints/labs.py:518
 msgid "Aucun fichier exploitable"
 msgstr ""
 
-#: blueprints/labs.py:496
+#: blueprints/labs.py:548
 #, python-format
 msgid "Erreur lors de l'analyse : %(error)s"
 msgstr ""
 
-#: blueprints/labs.py:529
+#: blueprints/labs.py:581
 msgid "Un import Labs est déjà en cours"
 msgstr ""
 
-#: blueprints/labs.py:554
+#: blueprints/labs.py:591
 msgid "Import Labs lancé en tâche de fond"
 msgstr ""
 
-#: blueprints/labs.py:579
+#: blueprints/labs.py:616
 msgid "Pagination invalide"
 msgstr ""
 
-#: blueprints/labs.py:593
+#: blueprints/labs.py:630
 msgid "Aucune correction fournie"
 msgstr ""
 
-#: blueprints/labs.py:602
+#: blueprints/labs.py:639
 msgid "Coordonnées invalides"
 msgstr ""
 
-#: blueprints/labs.py:608
+#: blueprints/labs.py:645
 msgid "Date invalide (format attendu : AAAA-MM-JJ)"
 msgstr ""
 
-#: blueprints/labs.py:620
+#: blueprints/labs.py:657
 msgid "Découverte inconnue"
 msgstr ""
 
-#: blueprints/labs.py:658
+#: blueprints/labs.py:695
 #, python-format
 msgid "Collection Labs vidée (%(count)s entrées supprimées)."
 msgstr ""
 
-#: blueprints/labs.py:668
+#: blueprints/labs.py:705
 msgid "Aucune collection Labs à exporter"
 msgstr ""
 
-#: blueprints/labs.py:719
+#: blueprints/labs.py:756
 msgid "Aucune étape en attente de coordonnées"
 msgstr ""
 
-#: blueprints/labs.py:723
+#: blueprints/labs.py:760 blueprints/labs.py:823
 msgid "Une opération Labs est déjà en cours"
 msgstr ""
 
-#: blueprints/labs.py:734
+#: blueprints/labs.py:771
 msgid "Récupération des coordonnées lancée"
 msgstr ""
 
-#: blueprints/labs.py:807
+#: blueprints/labs.py:812
+msgid "Jeton de réception invalide — régénérer le bookmarklet"
+msgstr ""
+
+#: blueprints/labs.py:816
+msgid "Contenu absent ou trop volumineux"
+msgstr ""
+
+#: blueprints/labs.py:819
+msgid "Format non reconnu (export mygcflow-lab-finds attendu)"
+msgstr ""
+
+#: blueprints/labs.py:835
 msgid "Historique Labs reçu — import lancé"
 msgstr ""
 
-#: blueprints/labs.py:942
+#: blueprints/labs.py:882
 msgid "MyGCFlow : démarrage…"
 msgstr ""
 
-#: blueprints/labs.py:943
+#: blueprints/labs.py:883
 msgid "MyGCFlow — GUID public du joueur :"
 msgstr ""
 
-#: blueprints/labs.py:944
+#: blueprints/labs.py:884
 msgid "Annulé."
 msgstr ""
 
-#: blueprints/labs.py:945
+#: blueprints/labs.py:885
 msgid "GUID refusé par le site."
 msgstr ""
 
-#: blueprints/labs.py:946
+#: blueprints/labs.py:886
 #, python-brace-format
 msgid "MyGCFlow : ${adv} Adventures, ${disc} étapes…"
 msgstr ""
 
-#: blueprints/labs.py:947
+#: blueprints/labs.py:887
 msgid "MyGCFlow : envoi à l'application…"
 msgstr ""
 
-#: blueprints/labs.py:948
+#: blueprints/labs.py:888
 msgid ""
 "MyGCFlow : faites défiler un peu votre historique pour détecter votre "
 "compte…"
 msgstr ""
 
-#: blueprints/labs.py:950
+#: blueprints/labs.py:890
 #, python-brace-format
 msgid "✔ Envoyé à MyGCFlow — import en cours (${adv} Adventures, ${disc} étapes)"
 msgstr ""
 
-#: blueprints/labs.py:952
+#: blueprints/labs.py:892
 msgid "MyGCFlow : erreur"
 msgstr ""
 
-#: blueprints/labs.py:953
+#: blueprints/labs.py:893
 msgid "MyGCFlow :"
 msgstr ""
 
@@ -972,7 +1000,7 @@ msgstr ""
 #: static/js/evolution_data.js:350 static/js/evolution_data.js:908
 #: static/js/evolution_data.js:912 static/js/evolution_data.js:1262
 #: static/js/evolution_data.js:1300 static/js/evolution_data.js:1308
-#: static/js/labs.js:870 static/js/labs.js:913 static/js/notifications.js:379
+#: static/js/labs.js:871 static/js/labs.js:914 static/js/notifications.js:379
 #: static/js/recording_perf.js:187 static/js/ui.js:1539
 msgid "Erreur"
 msgstr ""
@@ -1012,7 +1040,7 @@ msgid ""
 "est irréversible."
 msgstr ""
 
-#: static/js/bdd.js:1376 static/js/labs.js:887
+#: static/js/bdd.js:1376 static/js/labs.js:888
 msgid "Confirmation de suppression"
 msgstr ""
 
@@ -1036,7 +1064,7 @@ msgstr ""
 msgid "Trouvailles supprimées avec succès"
 msgstr ""
 
-#: static/js/bdd.js:1417 static/js/labs.js:911
+#: static/js/bdd.js:1417 static/js/labs.js:912
 msgid "Suppression réussie"
 msgstr ""
 
@@ -1168,7 +1196,7 @@ msgstr ""
 msgid "Import en cours..."
 msgstr ""
 
-#: static/js/evolution_data.js:831 static/js/labs.js:517
+#: static/js/evolution_data.js:831 static/js/labs.js:518
 msgid "L'import a échoué"
 msgstr ""
 
@@ -1427,13 +1455,13 @@ msgid ""
 " non affichées."
 msgstr ""
 
-#: static/js/labs.js:162 static/js/labs.js:639
+#: static/js/labs.js:162 static/js/labs.js:640
 msgid "Erreur de récupération"
 msgstr ""
 
-#: static/js/labs.js:162 static/js/labs.js:555 static/js/labs.js:612
-#: static/js/labs.js:639 static/js/labs.js:649 static/js/labs.js:669
-#: static/js/labs.js:671 templates/_filter_cache_attrs.html:37
+#: static/js/labs.js:162 static/js/labs.js:556 static/js/labs.js:613
+#: static/js/labs.js:640 static/js/labs.js:650 static/js/labs.js:670
+#: static/js/labs.js:672 templates/_filter_cache_attrs.html:37
 #: templates/menu_filtre.html:13
 msgid "Lab Caches"
 msgstr ""
@@ -1446,8 +1474,8 @@ msgstr ""
 msgid "Erreur lors de l'analyse"
 msgstr ""
 
-#: static/js/labs.js:188 static/js/labs.js:462 static/js/labs.js:517
-#: static/js/labs.js:530
+#: static/js/labs.js:188 static/js/labs.js:461 static/js/labs.js:518
+#: static/js/labs.js:531
 msgid "Import Lab Caches"
 msgstr ""
 
@@ -1525,7 +1553,7 @@ msgid ""
 "conservée"
 msgstr ""
 
-#: static/js/labs.js:339 static/js/labs.js:744
+#: static/js/labs.js:339 static/js/labs.js:745
 msgid "(étape sans titre)"
 msgstr ""
 
@@ -1562,145 +1590,145 @@ msgstr ""
 msgid "Import refusé"
 msgstr ""
 
-#: static/js/labs.js:462
+#: static/js/labs.js:461
 msgid "Erreur lors de l'import"
 msgstr ""
 
-#: static/js/labs.js:481
+#: static/js/labs.js:482
 msgid "Délai d'attente dépassé"
 msgstr ""
 
-#: static/js/labs.js:495 static/js/profiles.js:325
+#: static/js/labs.js:496 static/js/profiles.js:325
 msgid "Import échoué"
 msgstr ""
 
-#: static/js/labs.js:524
+#: static/js/labs.js:525
 #, python-brace-format
 msgid ""
 "${added} étape(s) importée(s) — ${ready} affichable(s), ${pending} en "
 "attente."
 msgstr ""
 
-#: static/js/labs.js:528
+#: static/js/labs.js:529
 #, python-brace-format
 msgid "${n} conflit(s) — valeurs existantes conservées."
 msgstr ""
 
-#: static/js/labs.js:555
+#: static/js/labs.js:556
 msgid ""
 "Les Lab Caches sont maintenant affichés (réglable via « Découvertes "
 "affichées »)."
 msgstr ""
 
-#: static/js/labs.js:612
+#: static/js/labs.js:613
 msgid "Réglage non enregistré"
 msgstr ""
 
-#: static/js/labs.js:624
+#: static/js/labs.js:625
 msgid "Récupération des coordonnées…"
 msgstr ""
 
-#: static/js/labs.js:629
+#: static/js/labs.js:630
 msgid "Récupération refusée"
 msgstr ""
 
-#: static/js/labs.js:649
+#: static/js/labs.js:650
 msgid "La récupération a échoué"
 msgstr ""
 
-#: static/js/labs.js:655
+#: static/js/labs.js:656
 #, python-brace-format
 msgid "${n} étape(s) ont reçu des coordonnées."
 msgstr ""
 
-#: static/js/labs.js:657
+#: static/js/labs.js:658
 #, python-brace-format
 msgid "${n} Adventure(s) introuvable(s) par le service."
 msgstr ""
 
-#: static/js/labs.js:660
+#: static/js/labs.js:661
 #, python-brace-format
 msgid "${n} étape(s) restent en attente."
 msgstr ""
 
-#: static/js/labs.js:668
+#: static/js/labs.js:669
 msgid ""
 "Le service a cessé de répondre avant la fin — relancez la récupération "
 "pour terminer."
 msgstr ""
 
-#: static/js/labs.js:697
+#: static/js/labs.js:698
 msgid "Chargement impossible"
 msgstr ""
 
-#: static/js/labs.js:721
+#: static/js/labs.js:722
 msgid "Aucune étape en attente sur cette page."
 msgstr ""
 
-#: static/js/labs.js:753
+#: static/js/labs.js:754
 msgid "archivée"
 msgstr ""
 
-#: static/js/labs.js:761
+#: static/js/labs.js:762
 msgid "date manquante"
 msgstr ""
 
-#: static/js/labs.js:762
+#: static/js/labs.js:763
 msgid "coordonnées manquantes"
 msgstr ""
 
-#: static/js/labs.js:763
+#: static/js/labs.js:764
 msgid "introuvables par le service lab2gpx"
 msgstr ""
 
-#: static/js/labs.js:779
+#: static/js/labs.js:780
 #, python-brace-format
 msgid "Suggestion : ${lat}, ${lon} — même titre dans l'Adventure"
 msgstr ""
 
-#: static/js/labs.js:786
+#: static/js/labs.js:787
 msgid "Utiliser la suggestion"
 msgstr ""
 
-#: static/js/labs.js:799
+#: static/js/labs.js:800
 msgid "Date de découverte"
 msgstr ""
 
-#: static/js/labs.js:807
+#: static/js/labs.js:808
 msgid "Enregistrer"
 msgstr ""
 
-#: static/js/labs.js:847
+#: static/js/labs.js:848
 msgid "Rien à enregistrer"
 msgstr ""
 
-#: static/js/labs.js:857
+#: static/js/labs.js:858
 msgid "Correction refusée"
 msgstr ""
 
-#: static/js/labs.js:866 static/js/saved_indicator.mjs:114
+#: static/js/labs.js:867 static/js/saved_indicator.mjs:114
 msgid "Enregistré"
 msgstr ""
 
-#: static/js/labs.js:886
+#: static/js/labs.js:887
 msgid ""
 "Supprimer toutes vos étapes Lab Caches ? Vos géocaches sont conservées. "
 "Cette action est irréversible."
 msgstr ""
 
-#: static/js/labs.js:890 templates/menu_data.html:163
+#: static/js/labs.js:891 templates/menu_data.html:163
 msgid "Supprimer mes Lab Caches"
 msgstr ""
 
-#: static/js/labs.js:896
+#: static/js/labs.js:897
 msgid "Erreur inconnue"
 msgstr ""
 
-#: static/js/labs.js:911
+#: static/js/labs.js:912
 msgid "Lab Caches supprimés"
 msgstr ""
 
-#: static/js/labs.js:913
+#: static/js/labs.js:914
 msgid "Erreur lors de la suppression"
 msgstr ""
 

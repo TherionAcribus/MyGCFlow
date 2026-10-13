@@ -64,12 +64,6 @@ class LabStoreTests(unittest.TestCase):
         self.assertEqual(d.coordinate_status, LabDiscovery.COORD_MISSING)
         self.assertEqual(d.local_uid, d.stage_uuid)
 
-    def test_preview_writes_nothing(self):
-        summary = lab_store.preview_history(db.session, self._history())
-        self.assertEqual(summary["added"], 12)
-        self.assertEqual(self._count(LabDiscovery), 0)
-        self.assertIsNone(lab_store.get_collection(db.session))
-
     def test_reimport_is_idempotent(self):
         lab_store.commit_history(db.session, self._history())
         summary = lab_store.commit_history(db.session, self._history())

@@ -31,9 +31,8 @@ import re
 import unicodedata
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
-from datetime import date, datetime, timezone, timedelta
+from datetime import date, datetime, timezone
 from io import BytesIO
-from pathlib import Path
 
 # Les raisons (erreurs, avertissements) remontent jusqu'à l'interface : elles
 # passent par gettext quand Flask-Babel est là, sans en faire une dépendance —
@@ -291,7 +290,7 @@ def detect_lab_file_format(data: bytes) -> str | None:
 _MAX_DISCOVERIES = 500_000
 
 
-def _local_key(stage_uuid, log_id, adventure_uuid, index) -> tuple[str, str | None]:
+def _local_key(stage_uuid, log_id) -> tuple[str | None, str | None]:
     """Clé locale stable + clé source (dédoublonnage sans UUID)."""
     if stage_uuid:
         return stage_uuid, None
@@ -359,7 +358,7 @@ def parse_lab_finds(data: bytes | str) -> HistoryParseResult:
             warnings.append(_("adventure_id non UUID — identifiant ignoré"))
 
         log_id = rec.get("log_id")
-        local_key, record_key = _local_key(stage_uuid, log_id, adventure_uuid, idx)
+        local_key, record_key = _local_key(stage_uuid, log_id)
         if local_key is None:
             stage_title = rec.get("stage_title")
             if stage_uuid is None and not stage_title:
@@ -492,8 +491,6 @@ def parse_lab2gpx_gpx(data: bytes | str) -> CoordParseResult:
                 res.rejected.append((idx, _("pas d'UUID d'étape (gsak:Guid absent ou mal formé)")))
                 elem.clear()
                 continue
-            if guid_el is not None and stage_uuid is None:
-                warnings.append(_("gsak:Guid non UUID"))
 
             desc = _child_text(elem, "desc")
             url = _child_text(elem, "url")
@@ -530,14 +527,3 @@ def parse_lab2gpx_gpx(data: bytes | str) -> CoordParseResult:
     res.meta = {"format": FORMAT_LAB2GPX_GPX, "wpt_seen": len(res.stages) + len(res.rejected)}
     res.ok = True
     return res
-
-
-def load_lab_file(path: str | Path):
-    """Lit un fichier, détecte son format et délègue au parseur ad hoc."""
-    data = Path(path).read_bytes()
-    fmt = detect_lab_file_format(data)
-    if fmt == FORMAT_LAB_FINDS:
-        return fmt, parse_lab_finds(data)
-    if fmt == FORMAT_LAB2GPX_GPX:
-        return fmt, parse_lab2gpx_gpx(data)
-    return None, None

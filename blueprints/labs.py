@@ -76,6 +76,10 @@ _APPLY_BY_FORMAT = {
     lf.FORMAT_LAB_FINDS: lab_store._apply_history,
     lf.FORMAT_LAB2GPX_GPX: lab_store._apply_coords,
 }
+_COMMIT_BY_FORMAT = {
+    lf.FORMAT_LAB_FINDS: lab_store.commit_history,
+    lf.FORMAT_LAB2GPX_GPX: lab_store.commit_coordinates,
+}
 
 
 def _invalidate_after_mutation(reason: str) -> None:
@@ -87,10 +91,6 @@ def _invalidate_after_mutation(reason: str) -> None:
         paths.country_state_path().unlink(missing_ok=True)
     except OSError:
         pass
-_COMMIT_BY_FORMAT = {
-    lf.FORMAT_LAB_FINDS: lab_store.commit_history,
-    lf.FORMAT_LAB2GPX_GPX: lab_store.commit_coordinates,
-}
 
 
 # ---------------------------------------------------------------------------
@@ -116,20 +116,34 @@ def _purge_expired_pending():
         print(f"[LABS] Purge des imports en attente impossible : {exc}")
 
 
-def _extract_first_gpx(raw: bytes) -> bytes | None:
-    """Extrait le premier .gpx d'un zip Lab2Gpx (aucune validation « My Finds »)."""
+class ArchiveTooLarge(ValueError):
+    """Zip dont les GPX dépassent, décompressés, les bornes d'un import."""
+
+
+def _zip_gpx_members(raw: bytes) -> list[tuple[str, bytes]]:
+    """Tous les .gpx d'un zip Lab2Gpx, dans l'ordre de l'archive : (nom, contenu).
+
+    Liste vide si l'archive est illisible ou n'en contient aucun. Les bornes
+    portent sur les tailles réellement décompressées, pas sur celles que
+    l'archive déclare — ArchiveTooLarge au-delà."""
+    members, total = [], 0
     try:
         with zipfile.ZipFile(io.BytesIO(raw)) as zf:
             for info in zf.infolist():
                 if info.is_dir() or not info.filename.lower().endswith('.gpx') \
                         or info.filename.startswith('__MACOSX/'):
                     continue
-                if info.file_size > MAX_LAB_FILE_BYTES:
-                    return None
-                return zf.read(info)
+                if len(members) >= MAX_LAB_FILES:
+                    raise ArchiveTooLarge(info.filename)
+                with zf.open(info) as fh:
+                    data = fh.read(MAX_LAB_FILE_BYTES - total + 1)
+                total += len(data)
+                if total > MAX_LAB_FILE_BYTES:
+                    raise ArchiveTooLarge(info.filename)
+                members.append((info.filename, data))
     except zipfile.BadZipFile:
-        return None
-    return None
+        return []
+    return members
 
 
 def _store_pending(files: list[dict]) -> tuple[str, Path]:
@@ -155,24 +169,24 @@ def _store_pending(files: list[dict]) -> tuple[str, Path]:
 
 
 def _load_pending(token: str) -> tuple[dict | None, Path | None, str | None]:
-    """Charge un manifest valide : (manifest, dossier, erreur_msgid)."""
+    """Charge un manifest valide : (manifest, dossier, message d'erreur)."""
     if not token or not token.isalnum():
-        return None, None, "Jeton d'import invalide"
+        return None, None, _("Jeton d'import invalide")
     folder = PENDING_ROOT / token
     manifest_path = folder / "manifest.json"
     try:
         manifest = json.loads(manifest_path.read_text("utf-8"))
     except Exception:
-        return None, None, "Jeton d'import inconnu ou déjà consommé"
+        return None, None, _("Jeton d'import inconnu ou déjà consommé")
     if manifest.get("_consumed"):
-        return None, None, "Jeton d'import déjà consommé"
+        return None, None, _("Jeton d'import déjà consommé")
     try:
         created = datetime.fromisoformat(manifest["created_at"])
     except Exception:
-        return None, None, "Jeton d'import illisible"
+        return None, None, _("Jeton d'import illisible")
     if datetime.now(timezone.utc) - created > timedelta(seconds=PENDING_TTL_SECONDS):
         shutil.rmtree(folder, ignore_errors=True)
-        return None, None, "Jeton d'import expiré — relancer l'aperçu"
+        return None, None, _("Jeton d'import expiré — relancer l'aperçu")
     return manifest, folder, None
 
 
@@ -198,6 +212,28 @@ def _override_keys(items) -> frozenset:
     return frozenset(
         lab_store.override_key(o["local_uid"], o["field"], o["incoming"])
         for o in _clean_overrides(items))
+
+
+def _submit_import(folder: Path, manifest: dict):
+    """Consomme le jeton puis lance la tâche d'import des fichiers en attente.
+
+    Le jeton est consommé dès la soumission : un second commit avec le même
+    jeton échouera, même si la tâche plante ensuite. Si une tâche tourne
+    déjà, le dossier est supprimé et TaskAlreadyRunning remonte."""
+    manifest["_consumed"] = True
+    try:
+        (folder / "manifest.json").write_text(
+            json.dumps(manifest, ensure_ascii=False), "utf-8")
+    except OSError:
+        pass
+    try:
+        return task_manager.submit(
+            TASK_TYPE_LAB_IMPORT, run_lab_import_task,
+            current_app._get_current_object(), str(folder),
+            manifest.get("collection_revision"), get_locale(), exclusive=True)
+    except TaskAlreadyRunning:
+        shutil.rmtree(folder, ignore_errors=True)
+        raise
 
 
 def _cap_items(items, limit=MAX_DETAIL_ITEMS):
@@ -310,85 +346,82 @@ def _unresolved_coord_uuids(session, skip_recent_failures=False) -> list[str]:
 def run_lab_fetch_task(status, app, uuids, user_guid, locale=None):
     """Télécharge les GPX lab2gpx par lots puis enrichit les découvertes
     (même chemin `commit_coordinates` que l'import GPX manuel)."""
-    try:
-        with app.app_context():
-            ctx = force_locale(locale) if locale else nullcontext()
-            with ctx:
+    with app.app_context():
+        ctx = force_locale(locale) if locale else nullcontext()
+        with ctx:
+            try:
+                total = len(uuids)
+                totals = {"resolved": 0, "ignored": 0, "updated": 0,
+                          "unchanged": 0, "conflicts": 0}
+                warnings = []
+                committed = 0
+
+                def progress(done, _total):
+                    status.set_progress(
+                        int(95 * done / max(_total, 1)),
+                        _("Coordonnées Labs : %(done)s/%(total)s Adventures",
+                          done=done, total=_total))
+
+                def enrich(_name, raw):
+                    # Enrichissement lot par lot : un abandon ultérieur du
+                    # service ne perd pas ce qui est déjà téléchargé.
+                    nonlocal committed
+                    parsed = lf.parse_lab2gpx_gpx(raw)
+                    summary = lab_store.commit_coordinates(db.session, parsed)
+                    committed += 1
+                    for k in totals:
+                        totals[k] += int(summary.get(k, 0))
+                    warnings.extend(summary.get("warnings", []))
+
+                # Un échec isolé n'est retenu qu'une fois suivi d'un lot
+                # réussi (ou de la fin normale) : ceux qui précèdent un
+                # abandon sont plus probablement la panne que la donnée.
+                failed_uuids, unconfirmed = [], []
+
+                def confirm_failures():
+                    failed_uuids.extend(unconfirmed)
+                    unconfirmed.clear()
+
+                def on_payload(name, raw):
+                    enrich(name, raw)
+                    confirm_failures()
+
+                interrupted = None
+                fetched = None
                 try:
-                    total = len(uuids)
-                    totals = {"resolved": 0, "ignored": 0, "updated": 0,
-                              "unchanged": 0, "conflicts": 0}
-                    warnings = []
-                    committed = 0
+                    result = lab_coords_provider.fetch_gpx_batches(
+                        uuids, user_guid=user_guid, progress=progress,
+                        on_payload=on_payload,
+                        on_failed=unconfirmed.append)
+                    confirm_failures()
+                    fetched = result.fetched_adventures
+                except (OSError, http.client.HTTPException) as exc:
+                    # Panne réseau/service : sans aucun lot enregistré,
+                    # c'est un échec ; sinon un bilan partiel, relançable.
+                    if not committed:
+                        raise
+                    interrupted = str(exc)
+                finally:
+                    if committed:
+                        _invalidate_after_mutation("labs_fetch_coords")
+                lab_store.mark_coords_fetch_failed(db.session, failed_uuids)
 
-                    def progress(done, _total):
-                        status.set_progress(
-                            int(95 * done / max(_total, 1)),
-                            _("Coordonnées Labs : %(done)s/%(total)s Adventures",
-                              done=done, total=_total))
-
-                    def enrich(_name, raw):
-                        # Enrichissement lot par lot : un abandon ultérieur du
-                        # service ne perd pas ce qui est déjà téléchargé.
-                        nonlocal committed
-                        parsed = lf.parse_lab2gpx_gpx(raw)
-                        summary = lab_store.commit_coordinates(db.session, parsed)
-                        committed += 1
-                        for k in totals:
-                            totals[k] += int(summary.get(k, 0))
-                        warnings.extend(summary.get("warnings", []))
-
-                    # Un échec isolé n'est retenu qu'une fois suivi d'un lot
-                    # réussi (ou de la fin normale) : ceux qui précèdent un
-                    # abandon sont plus probablement la panne que la donnée.
-                    failed_uuids, unconfirmed = [], []
-
-                    def confirm_failures():
-                        failed_uuids.extend(unconfirmed)
-                        unconfirmed.clear()
-
-                    def on_payload(name, raw):
-                        enrich(name, raw)
-                        confirm_failures()
-
-                    interrupted = None
-                    fetched = None
-                    try:
-                        result = lab_coords_provider.fetch_gpx_batches(
-                            uuids, user_guid=user_guid, progress=progress,
-                            on_payload=on_payload,
-                            on_failed=unconfirmed.append)
-                        confirm_failures()
-                        fetched = result.fetched_adventures
-                    except (OSError, http.client.HTTPException) as exc:
-                        # Panne réseau/service : sans aucun lot enregistré,
-                        # c'est un échec ; sinon un bilan partiel, relançable.
-                        if not committed:
-                            raise
-                        interrupted = str(exc)
-                    finally:
-                        if committed:
-                            _invalidate_after_mutation("labs_fetch_coords")
-                    lab_store.mark_coords_fetch_failed(db.session, failed_uuids)
-
-                    stats = lab_store.collection_status(db.session)
-                    status.set_result({
-                        "success": True,
-                        "interrupted": interrupted is not None,
-                        "error": interrupted,
-                        "adventures_requested": total,
-                        "adventures_fetched": fetched,
-                        "failed_uuids": _cap_items(failed_uuids),
-                        **totals,
-                        "ready_total": stats["ready"],
-                        "unresolved": stats["unresolved"],
-                        "warnings": _cap_items(warnings),
-                    })
-                except Exception as exc:  # noqa: BLE001 — échec visible en tâche
-                    db.session.rollback()
-                    status.fail(exc)
-    except Exception:
-        raise
+                stats = lab_store.collection_status(db.session)
+                status.set_result({
+                    "success": True,
+                    "interrupted": interrupted is not None,
+                    "error": interrupted,
+                    "adventures_requested": total,
+                    "adventures_fetched": fetched,
+                    "failed_uuids": _cap_items(failed_uuids),
+                    **totals,
+                    "ready_total": stats["ready"],
+                    "unresolved": stats["unresolved"],
+                    "warnings": _cap_items(warnings),
+                })
+            except Exception as exc:  # noqa: BLE001 — échec visible en tâche
+                db.session.rollback()
+                status.fail(exc)
 
 
 def _maybe_autofetch(app_obj, locale=None) -> str | None:
@@ -431,19 +464,40 @@ def import_preview():
 
     parsed_files = []   # {name, format, raw, parsed}
     file_reports = []
+    entries = []        # (nom affiché, contenu) — un zip en fournit plusieurs
+
+    def too_large(name):
+        file_reports.append({"name": name, "format": None, "status": "error",
+                             "error": _("Fichier trop volumineux")})
+
     for up in uploads:
         name = up.filename or "fichier"
         raw = up.read(MAX_LAB_FILE_BYTES + 1)
-        report = {"name": name, "format": None, "status": "error"}
         if len(raw) > MAX_LAB_FILE_BYTES:
-            report["error"] = _("Fichier trop volumineux")
-            file_reports.append(report)
+            too_large(name)
             continue
+        if lf.detect_lab_file_format(raw) is None and zipfile.is_zipfile(io.BytesIO(raw)):
+            try:
+                members = _zip_gpx_members(raw)
+            except ArchiveTooLarge:
+                too_large(name)
+                continue
+            if len(members) == 1:
+                entries.append((name, members[0][1]))
+                continue
+            if members:
+                # Chaque GPX de l'archive est un fichier du lot à part entière.
+                entries.extend((f"{name} › {inner}", data) for inner, data in members)
+                continue
+        entries.append((name, raw))
+
+    if len(entries) > MAX_LAB_FILES:
+        return jsonify({'success': False,
+                        'message': _("Trop de fichiers (maximum %(max)s)", max=MAX_LAB_FILES)}), 400
+
+    for name, raw in entries:
+        report = {"name": name, "format": None, "status": "error"}
         fmt = lf.detect_lab_file_format(raw)
-        if fmt is None and zipfile.is_zipfile(io.BytesIO(raw)):
-            inner = _extract_first_gpx(raw)
-            if inner is not None:
-                raw, fmt = inner, lf.detect_lab_file_format(inner)
         if fmt is None:
             report["error"] = _("Format non reconnu (ni export historique, ni GPX Lab2Gpx)")
             file_reports.append(report)
@@ -519,32 +573,17 @@ def import_commit():
     token = body.get("import_token") or request.form.get("import_token")
     manifest, folder, error = _load_pending(token)
     if error:
-        return jsonify({'success': False, 'message': _(error)}), 400
+        return jsonify({'success': False, 'message': error}), 400
 
     # Refus avant de consommer le jeton : l'utilisateur garde la main.
     if task_manager.get_active(TASK_TYPE_LAB_IMPORT) is not None:
         return jsonify({'success': False,
                         'message': _("Un import Labs est déjà en cours")}), 409
 
-    # Le jeton est consommé dès la soumission : un second commit avec le même
-    # jeton échouera, même si la tâche plante ensuite.
-    manifest["_consumed"] = True
     manifest["overrides"] = _clean_overrides(body.get("overrides"))
     try:
-        (folder / "manifest.json").write_text(
-            json.dumps(manifest, ensure_ascii=False), "utf-8")
-    except OSError:
-        pass
-
-    app_obj = current_app._get_current_object()
-    locale = get_locale()
-    try:
-        task_status = task_manager.submit(
-            TASK_TYPE_LAB_IMPORT, run_lab_import_task,
-            app_obj, str(folder), manifest.get("collection_revision"), locale,
-            exclusive=True)
+        task_status = _submit_import(folder, manifest)
     except TaskAlreadyRunning as e:
-        shutil.rmtree(folder, ignore_errors=True)
         return jsonify({'success': False, 'message': str(e)}), 409
 
     return jsonify({
@@ -762,43 +801,34 @@ def labs_receive():
     if request.method == 'OPTIONS':
         return _receive_cors_headers(current_app.make_response(('', 204)))
 
-    def reject(msgid, code):
+    def reject(message, code):
         return _receive_cors_headers(
-            jsonify({'success': False, 'message': _(msgid)})), code
+            jsonify({'success': False, 'message': message})), code
 
     expected = get_settings_manager().get_app_settings().labs_receive_token
     token = request.headers.get('X-MyGCFlow-Token', '')
     if not expected or not secrets.compare_digest(token, expected):
         return reject(
-            "Jeton de réception invalide — régénérer le bookmarklet", 403)
+            _("Jeton de réception invalide — régénérer le bookmarklet"), 403)
 
     raw = request.get_data(cache=False)
     if not raw or len(raw) > MAX_LAB_FILE_BYTES:
-        return reject("Contenu absent ou trop volumineux", 400)
+        return reject(_("Contenu absent ou trop volumineux"), 400)
     fmt = lf.detect_lab_file_format(raw)
     if fmt is None:
-        return reject("Format non reconnu (export mygcflow-lab-finds attendu)", 400)
+        return reject(_("Format non reconnu (export mygcflow-lab-finds attendu)"), 400)
 
     if task_manager.get_active(TASK_TYPE_LAB_IMPORT) is not None \
             or task_manager.get_active(TASK_TYPE_LAB_FETCH) is not None:
-        return reject("Une opération Labs est déjà en cours", 409)
+        return reject(_("Une opération Labs est déjà en cours"), 409)
 
     _purge_expired_pending()
     _token, folder = _store_pending(
         [{"name": "bookmarklet-lab-finds.json", "format": fmt, "raw": raw}])
     manifest = json.loads((folder / "manifest.json").read_text("utf-8"))
-    manifest["_consumed"] = True
-    (folder / "manifest.json").write_text(
-        json.dumps(manifest, ensure_ascii=False), "utf-8")
-
-    app_obj = current_app._get_current_object()
     try:
-        task_status = task_manager.submit(
-            TASK_TYPE_LAB_IMPORT, run_lab_import_task,
-            app_obj, str(folder), manifest.get("collection_revision"),
-            get_locale(), exclusive=True)
+        task_status = _submit_import(folder, manifest)
     except TaskAlreadyRunning as e:
-        shutil.rmtree(folder, ignore_errors=True)
         return reject(str(e), 409)
 
     resp = jsonify({'success': True,
