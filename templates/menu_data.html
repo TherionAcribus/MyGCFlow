@@ -99,70 +99,124 @@
             </h5>
             <div class="card">
                 <div class="card-body">
-                    <div class="d-flex align-items-center gap-2 mb-1">
-                        <!-- Même pattern que #file-input : input natif masqué,
-                             bouton visible. Multi-fichiers acceptés (historique
-                             .json + coordonnées .gpx/.zip importés en un lot). -->
-                        <input type="file" class="visually-hidden" id="labs-file-input" accept=".json,.gpx,.zip" multiple
-                               aria-label="{{ _('Fichiers Lab Caches (.json, .gpx ou .zip)') }}" />
-                        <button type="button" id="labs-file-btn" class="btn btn-outline-primary btn-sm gcm-file-btn">
-                            <i class="ti ti-folder-open me-1" aria-hidden="true"></i>{{ _("Importer un fichier…") }}
-                        </button>
-                        <button type="button" id="labs-help-btn" class="btn btn-link btn-sm px-1">
-                            {{ _("Comment obtenir mes fichiers ?") }}
-                        </button>
+                    <!-- État de la collection, en clair (rempli par labs.js). -->
+                    <div id="labsStatus" class="fw-medium mb-2" aria-live="polite">
+                        {{ _("Aucun Lab Cache importé") }}
                     </div>
-                    <div class="form-hint text-muted mb-2">
-                        {{ _("Historique de découvertes (.json) et coordonnées des étapes (.gpx ou .zip), importables ensemble ou séparément.") }}
+
+                    <!-- Activité en cours : analyse, import, récupération des
+                         positions. Toujours au même endroit, avec le nom de
+                         l'étape et une barre — un import lancé par le favori
+                         (hors de cet onglet) s'y affiche aussi. -->
+                    <div id="labsActivity" class="alert alert-info py-2 px-3 mb-2" hidden aria-live="polite">
+                        <!-- .alert est un conteneur flex en ligne : un seul
+                             enfant porte le contenu, empilé. -->
+                        <div class="flex-fill">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <span class="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true"></span>
+                                <span class="labs-activity-title fw-medium"></span>
+                            </div>
+                            <div class="progress progress-sm mb-1">
+                                <div class="progress-bar progress-bar-indeterminate labs-activity-bar" role="progressbar" style="width: 100%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <div class="labs-activity-detail form-hint text-muted"></div>
+                        </div>
                     </div>
-                    <!-- Import « un clic » : lien javascript: généré par
+
+                    <!-- Étapes pas encore sur la carte : alerte propre aux
+                         Labs — à distinguer de #dataNoResults (filtres). -->
+                    <div id="labsPendingAlert" class="alert alert-warning py-2 px-3 mb-2 d-none" role="status">
+                        <div class="flex-fill">
+                            <div class="small mb-1" id="labsPendingText"></div>
+                            <button type="button" id="labsFetchBtn" class="btn btn-sm btn-primary me-1">
+                                <i class="ti ti-cloud-download me-1" aria-hidden="true"></i>{{ _("Récupérer les positions") }}
+                            </button>
+                            <button type="button" id="labsPendingBtn" class="btn btn-sm btn-outline-warning">
+                                <i class="ti ti-map-pin-plus me-1" aria-hidden="true"></i>{{ _("Compléter à la main") }}
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Parcours en un clic : lien javascript: généré par
                          /api/labs/bookmarklet (origine + jeton locaux). Glissé
                          dans les favoris, il envoie l'historique directement
                          depuis labs.geocaching.com/logs. Un clic sur la page
-                         serait un no-op trompeur → bloqué côté labs.js. -->
-                    <div class="d-flex align-items-center gap-2 mb-2">
-                        <a id="labsBookmarkletLink" class="btn btn-sm btn-outline-primary" href="#" draggable="true">
-                            <i class="ti ti-bookmark me-1" aria-hidden="true"></i>{{ _("Envoyer vers MyGCFlow") }}
-                        </a>
-                        <span class="form-hint text-muted">{{ _("Glissez ce bouton dans vos favoris, puis cliquez-le sur la page de vos logs Adventure Lab.") }}</span>
+                         serait un no-op trompeur → bloqué côté labs.js.
+                         Affiché d'office tant que rien n'est importé ; ensuite
+                         replié derrière « Mettre à jour ». -->
+                    <div id="labsGuide">
+                        <ol class="ps-3 mb-2">
+                            <li class="mb-2">
+                                {{ _("Glissez ce bouton dans la barre de favoris de votre navigateur (une seule fois) :") }}
+                                <div class="mt-1">
+                                    <a id="labsBookmarkletLink" class="btn btn-sm btn-primary" href="#" draggable="true">
+                                        <i class="ti ti-bookmark me-1" aria-hidden="true"></i>{{ _("Envoyer vers MyGCFlow") }}
+                                    </a>
+                                </div>
+                            </li>
+                            <li>
+                                {{ _("Ouvrez") }}
+                                <a href="https://labs.geocaching.com/logs" target="_blank" rel="noopener noreferrer">{{ _("vos logs Adventure Lab") }}</a>{{ _(", connectez-vous, puis cliquez ce favori.") }}
+                            </li>
+                        </ol>
+                        <div class="form-hint text-muted mb-2">
+                            {{ _("Vos étapes arrivent ici et se placent seules sur la carte, grâce au service public lab2gpx (réglable dans les options avancées).") }}
+                        </div>
                     </div>
-                    <div id="labsStatus" class="form-hint text-muted" aria-live="polite">
-                        {{ _("Aucune étape importée") }}
-                    </div>
-                    <!-- Étapes en attente de coordonnées/date : alerte propre
-                         aux Labs — à distinguer de #dataNoResults (filtres)
-                         qui ne s'applique pas ici. -->
-                    <div id="labsPendingAlert" class="alert alert-warning mt-2 mb-0 py-2 px-3 d-none" role="status">
-                        <div class="small" id="labsPendingText"></div>
-                        <button type="button" id="labsFetchBtn" class="btn btn-sm btn-primary mt-1 me-1">
-                            <i class="ti ti-cloud-download me-1" aria-hidden="true"></i>{{ _("Récupérer les coordonnées") }}
-                        </button>
-                        <button type="button" id="labsPendingBtn" class="btn btn-sm btn-outline-warning mt-1">
-                            <i class="ti ti-map-pin-plus me-1" aria-hidden="true"></i>{{ _("Compléter à la main") }}
-                        </button>
-                    </div>
-                    <!-- Opt-in réseau : les UUID d'Adventures partent vers le
-                         service public lab2gpx (aucun identifiant de compte).
-                         L'utilisateur doit le savoir avant de cocher. -->
-                    <div class="form-check form-switch mt-2 mb-1">
-                        <input class="form-check-input" type="checkbox" id="labsAutoFetch">
-                        <label class="form-check-label small" for="labsAutoFetch">
-                            {{ _("Récupérer automatiquement les coordonnées après import") }}
-                        </label>
-                    </div>
-                    <div class="form-hint text-muted mb-2">
-                        {{ _("Interroge le service public lab2gpx avec les identifiants de vos Adventures — aucun identifiant de compte n'est transmis.") }}
-                    </div>
-                    <div id="labsFetchProgress" class="form-hint text-muted" aria-live="polite"></div>
-                    <div id="labsImportProgress" class="mt-2" aria-live="polite"></div>
-                    <div class="d-flex justify-content-between align-items-center gap-2 mt-3">
-                        <button id="labsExportBtn" class="btn btn-outline-secondary btn-sm" style="display:none;">
-                            <i class="ti ti-download me-1" aria-hidden="true"></i>{{ _("Exporter") }}
+
+                    <div class="d-flex justify-content-between align-items-center gap-2">
+                        <button type="button" id="labsUpdateBtn" class="btn btn-outline-primary btn-sm" style="display:none;" aria-expanded="false" aria-controls="labsGuide">
+                            <i class="ti ti-refresh me-1" aria-hidden="true"></i>{{ _("Mettre à jour") }}
                         </button>
                         <button id="clearLabsBtn" class="btn btn-outline-danger btn-sm ms-auto" style="display:none;">
                             <i class="ti ti-trash me-1" aria-hidden="true"></i>{{ _("Supprimer mes Lab Caches") }}
                         </button>
                     </div>
+
+                    <!-- Tout ce dont le parcours en un clic se passe : import
+                         de fichiers, réglage de la récupération, export. -->
+                    <details id="labsAdvanced" class="mt-3">
+                        <summary class="small text-muted">{{ _("Options avancées") }}</summary>
+                        <div class="pt-2">
+                            <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
+                                <!-- Même pattern que #file-input : input natif masqué,
+                                     bouton visible. Multi-fichiers acceptés (historique
+                                     .json + coordonnées .gpx/.zip importés en un lot). -->
+                                <input type="file" class="visually-hidden" id="labs-file-input" accept=".json,.gpx,.zip" multiple
+                                       aria-label="{{ _('Fichiers Lab Caches (.json, .gpx ou .zip)') }}" />
+                                <button type="button" id="labs-file-btn" class="btn btn-outline-primary btn-sm gcm-file-btn">
+                                    <i class="ti ti-folder-open me-1" aria-hidden="true"></i>{{ _("Importer des fichiers…") }}
+                                </button>
+                                <button id="labsExportBtn" class="btn btn-outline-secondary btn-sm" style="display:none;">
+                                    <i class="ti ti-download me-1" aria-hidden="true"></i>{{ _("Exporter") }}
+                                </button>
+                                <button type="button" id="labs-help-btn" class="btn btn-link btn-sm px-1">
+                                    {{ _("Comment obtenir mes fichiers ?") }}
+                                </button>
+                            </div>
+                            <div class="form-hint text-muted mb-3">
+                                {{ _("Historique de découvertes (.json) et coordonnées des étapes (.gpx ou .zip), importables ensemble ou séparément.") }}
+                            </div>
+                            <!-- Réseau : les UUID d'Adventures partent vers le
+                                 service public lab2gpx (aucun identifiant de
+                                 compte). Activé par défaut, donc dit ici. -->
+                            <div class="form-check form-switch mb-1">
+                                <input class="form-check-input" type="checkbox" id="labsAutoFetch">
+                                <label class="form-check-label small" for="labsAutoFetch">
+                                    {{ _("Placer automatiquement les étapes sur la carte après un import") }}
+                                </label>
+                            </div>
+                            <div class="form-hint text-muted">
+                                {{ _("Interroge le service public lab2gpx avec les identifiants de vos Adventures — aucun identifiant de compte n'est transmis.") }}
+                            </div>
+                            <!-- Relance explicite : n'apparaît que lorsque la
+                                 carte ne propose plus la récupération, toutes
+                                 les étapes restantes ayant déjà été tentées. -->
+                            <button type="button" id="labsRetryFetchBtn" class="btn btn-link btn-sm px-0 mt-2" style="display:none;">
+                                {{ _("Réessayer de récupérer les positions manquantes") }}
+                            </button>
+                        </div>
+                    </details>
                 </div>
             </div>
 
@@ -206,7 +260,7 @@
                             {{ _("puis cliquez ce favori : votre historique est envoyé directement à l'application.") }}
                         </li>
                         <li>
-                            {{ _("Si « Récupérer automatiquement les coordonnées » est cochée, les étapes se placent seules sur la carte. Sinon, complétez-les par fichier ou à la main.") }}
+                            {{ _("Les étapes se placent seules sur la carte. Si vous avez désactivé ce placement automatique (options avancées), complétez-les par fichier ou à la main.") }}
                         </li>
                     </ol>
                     <hr>

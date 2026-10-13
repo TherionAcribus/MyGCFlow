@@ -47,9 +47,11 @@ labs_bp = Blueprint('labs', __name__)
 TASK_TYPE_LAB_IMPORT = "lab_import"
 TASK_TYPE_LAB_FETCH = "lab_fetch_coords"
 
-# Une Adventure que lab2gpx n'a pas su servir (archivée, cassée) n'est pas
-# redemandée par l'auto-fetch avant ce délai — sinon chaque import rejouerait
-# la même bissection. Le bouton de récupération manuelle, lui, retente tout.
+# Une étape pour laquelle lab2gpx n'a rien donné (Adventure archivée ou
+# cassée, étape absente de la réponse) n'est pas redemandée par l'auto-fetch
+# avant ce délai — sinon chaque import rejouerait la même bissection — et
+# l'interface cesse de proposer la récupération tant qu'il ne reste qu'elles.
+# La relance explicite (options avancées), elle, retente tout.
 FETCH_RETRY_AFTER_DAYS = 30
 
 # Seule origine autorisée à poster sur /api/labs/receive (le bookmarklet
@@ -286,6 +288,13 @@ def run_lab_import_task(status, app, folder_path: str, manifest_rev, locale=None
                     status.set_progress(98, _("Import Labs : finalisation"))
                     _invalidate_after_mutation("labs_import")
                     stats = lab_store.collection_status(db.session)
+                    # La récupération des coordonnées est lancée AVANT de
+                    # publier le bilan, qui en porte l'identifiant : l'interface
+                    # enchaîne ainsi son suivi sans trou, au lieu de croire
+                    # l'opération terminée. Elle a sa propre tâche/session, et
+                    # un lancement impossible n'invalide pas l'import réussi
+                    # (_maybe_autofetch ne lève jamais).
+                    fetch_task_id = _maybe_autofetch(app, locale)
                     status.set_result({
                         "success": True,
                         **totals,
@@ -294,14 +303,11 @@ def run_lab_import_task(status, app, folder_path: str, manifest_rev, locale=None
                         "unresolved": stats["unresolved"],
                         "files": results,
                         "warnings": _cap_items(warnings),
+                        "fetch_task_id": fetch_task_id,
                     })
                 except Exception as exc:  # noqa: BLE001 — toute erreur doit passer en failed
                     db.session.rollback()
                     status.fail(exc)
-        # Hors du bloc d'import : la récupération a sa propre tâche/session,
-        # et l'éventuel échec du lancement n'invalide pas l'import réussi.
-        if status.state != "failed":
-            _maybe_autofetch(app, locale)
     finally:
         shutil.rmtree(folder, ignore_errors=True)
 
@@ -382,8 +388,14 @@ def run_lab_fetch_task(status, app, uuids, user_guid, locale=None):
                     failed_uuids.extend(unconfirmed)
                     unconfirmed.clear()
 
-                def on_payload(name, raw):
+                # Adventures auxquelles le service a répondu : leurs étapes
+                # encore sans position après coup ne sont pas dans sa réponse
+                # (étape remaniée) — une nouvelle demande ne les donnerait pas.
+                answered = []
+
+                def on_payload(name, raw, batch):
                     enrich(name, raw)
+                    answered.extend(batch)
                     confirm_failures()
 
                 interrupted = None
@@ -404,7 +416,8 @@ def run_lab_fetch_task(status, app, uuids, user_guid, locale=None):
                 finally:
                     if committed:
                         _invalidate_after_mutation("labs_fetch_coords")
-                lab_store.mark_coords_fetch_failed(db.session, failed_uuids)
+                lab_store.mark_coords_fetch_failed(
+                    db.session, failed_uuids + answered)
 
                 stats = lab_store.collection_status(db.session)
                 status.set_result({
@@ -597,6 +610,11 @@ def import_commit():
 @labs_bp.route('/api/labs/status')
 def labs_status():
     payload = {'success': True, **lab_store.collection_status(db.session)}
+    # Adventures pour lesquelles une récupération a encore un sens : celles
+    # déjà tentées sans résultat récemment n'en font pas partie, et
+    # l'interface ne propose le bouton que s'il en reste.
+    payload['fetchable_adventures'] = len(
+        _unresolved_coord_uuids(db.session, skip_recent_failures=True))
     # Un import peut être lancé hors de cet onglet (favori → /api/labs/
     # receive) : exposer la tâche en cours pour que l'UI la suive et
     # recharge la carte à sa fin.

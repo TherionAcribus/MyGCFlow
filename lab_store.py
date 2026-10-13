@@ -504,8 +504,10 @@ def commit_coordinates(session, parsed, overrides=frozenset()) -> dict:
 
 
 def mark_coords_fetch_failed(session, adventure_uuids) -> int:
-    """Date l'échec de récupération sur les étapes encore sans coordonnées
-    des Adventures données. Retourne le nombre d'étapes marquées."""
+    """Date la tentative sur les étapes encore sans coordonnées des
+    Adventures données — celles que le service a refusées comme celles
+    auxquelles il a répondu sans fournir l'étape. Retourne le nombre d'étapes
+    marquées."""
     uuids = list(dict.fromkeys(u for u in adventure_uuids if u))
     if not uuids:
         return 0

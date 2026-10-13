@@ -1,12 +1,20 @@
-// Interface « Mes Lab Caches » (onglet Données, mode Normal) :
-// import multi-fichiers avec aperçu, statut de la collection, complétion
-// des étapes sans coordonnées/date, export et suppression dédiés.
+// Interface « Mes Lab Caches » (onglet Données, mode Normal).
+//
+// La carte montre l'essentiel : l'état de la collection, le parcours en un
+// clic (favori « Envoyer vers MyGCFlow ») et, pendant toute opération, un
+// bloc d'activité qui nomme l'étape en cours. Le reste — import de fichiers
+// avec aperçu, réglage du placement automatique, export — vit dans « Options
+// avancées ». Complétion des étapes sans position/date et suppression
+// gardent leurs boutons.
 // Les éléments n'existent que sur la page principale : toutes les
 // fonctions se replient en no-op en mode Évolution.
 
 import * as pkg from './index.js';
 import { CONFIG } from './init.js';
-import { showSuccess, showError, showWarning, showInfo, t } from './notifications.js';
+import {
+    showSuccess, showError, showWarning, showInfo, t,
+    showLoadingToast, updateToastMessage, updateToastProgress, setIndeterminateProgress, hideToast,
+} from './notifications.js';
 import { showBsModal, hideBsModal } from './ui_bootstrap.js';
 
 const PENDING_PAGE_SIZE = 50;
@@ -17,7 +25,16 @@ let importToken = null;        // jeton opaque retourné par /import/preview
 let previewConflicts = [];     // conflits tranchables de l'aperçu affiché
 let pendingOffset = 0;
 let pendingTotal = null;       // nombre d'étapes en attente (statut serveur)
+let fetchableAdventures = 0;   // Adventures qu'une récupération peut encore servir
 let pendingDirty = false;      // une correction a été enregistrée → recharger
+let guideOpen = false;         // parcours du favori rouvert via « Mettre à jour »
+let knownCounts = null;        // derniers compteurs affichés ({ total, ready })
+let watchingTaskId = null;     // tâche serveur suivie par le bloc d'activité
+let activityToast = null;
+
+// Relevé périodique du statut : un import lancé par le favori démarre hors de
+// cette page, et l'onglet peut rester affiché sans jamais reprendre le focus.
+const STATUS_POLL_MS = 4000;
 
 function el(id) { return document.getElementById(id); }
 
@@ -38,6 +55,11 @@ export function initLabsUI() {
     el('labsExportBtn')?.addEventListener('click', onExportLabs);
     el('labsAutoFetch')?.addEventListener('change', onAutoFetchToggle);
     el('labsFetchBtn')?.addEventListener('click', onFetchNow);
+    el('labsRetryFetchBtn')?.addEventListener('click', onFetchNow);
+    el('labsUpdateBtn')?.addEventListener('click', () => {
+        guideOpen = !guideOpen;
+        renderGuide();
+    });
 
     // Le favori « Envoyer vers MyGCFlow » est fait pour être glissé dans la
     // barre de favoris : un clic dessus depuis l'app serait un no-op.
@@ -61,31 +83,50 @@ export function initLabsUI() {
     });
 
     // Un import peut démarrer hors de cet onglet (favori « Envoyer vers
-    // MyGCFlow » → /api/labs/receive) : au retour sur l'onglet, le statut
-    // expose la tâche active et watchActiveTask prend le relais — sinon le
-    // favori importerait en silence, sans retour visuel.
-    window.addEventListener('focus', refreshLabsStatus);
-    document.addEventListener('visibilitychange', () => {
-        if (!document.hidden) refreshLabsStatus();
-    });
+    // MyGCFlow » → /api/labs/receive) : le statut expose la tâche active et
+    // le bloc d'activité prend le relais — sinon le favori importerait en
+    // silence. Relevé au retour sur l'onglet, et périodiquement tant qu'il
+    // est affiché.
+    const checkOutside = () => {
+        if (!document.hidden && !watchingTaskId) refreshLabsStatus({ detectOutside: true });
+    };
+    window.addEventListener('focus', checkOutside);
+    document.addEventListener('visibilitychange', checkOutside);
+    setInterval(checkOutside, STATUS_POLL_MS);
 
     refreshLabsStatus();
 }
 
 // ---------------------------------------------------------------- statut
 
-export async function refreshLabsStatus() {
+// Relit le statut serveur et l'affiche. `detectOutside` : relevé de
+// surveillance — si les compteurs ont bougé sans tâche en cours ni action de
+// cette page (import du favori déjà terminé), la carte est rechargée.
+export async function refreshLabsStatus({ detectOutside = false } = {}) {
     const statusEl = el('labsStatus');
-    if (!statusEl) return;
+    if (!statusEl) return null;
     try {
         const r = await fetch(`${CONFIG.BASE_URL}/api/labs/status`);
         const data = await r.json();
         if (!data.success) throw new Error(data.message || 'statut indisponible');
+        const total = data.total || 0;
+        const ready = data.ready || 0;
+        const moved = knownCounts !== null
+            && (knownCounts.total !== total || knownCounts.ready !== ready);
+        knownCounts = { total, ready };
         renderLabsStatus(data);
-        watchActiveTask(data.active_task);
+        if (data.active_task) {
+            watchActiveTask(data.active_task);
+        } else if (detectOutside && moved && !watchingTaskId) {
+            await suggestSourceAfterImport(ready, total);
+            showInfo(t('Vos Lab Caches ont été mis à jour.'), t('Lab Caches'));
+            pkg.reloadMainDatasetAfterMutation?.();
+        }
+        return data;
     } catch (e) {
         console.warn('[LABS] statut indisponible:', e);
         statusEl.textContent = t('Statut indisponible');
+        return null;
     }
 }
 
@@ -93,51 +134,118 @@ function renderLabsStatus(st) {
     const statusEl = el('labsStatus');
     const pendingAlert = el('labsPendingAlert');
     const pendingText = el('labsPendingText');
-    const clearBtn = el('clearLabsBtn');
-    const exportBtn = el('labsExportBtn');
     const total = st?.total || 0;
     const ready = st?.ready || 0;
     const unresolved = st?.unresolved || 0;
     pendingTotal = unresolved;
+    fetchableAdventures = st?.fetchable_adventures || 0;
+    // Proposer la récupération seulement si elle peut encore aboutir : quand
+    // il ne reste que des étapes déjà tentées sans résultat, le bouton
+    // inviterait à cliquer sans fin pour rien.
+    const canFetch = fetchableAdventures > 0;
 
     if (statusEl) {
         if (total === 0) {
-            statusEl.textContent = t('Aucune étape importée');
+            statusEl.textContent = t('Aucun Lab Cache importé');
         } else {
             // Libellés résolus hors template literal pour l'extracteur Babel.
-            const stepLabel = total > 1 ? t('étapes importées') : t('étape importée');
-            const readyLabel = ready > 1 ? t('affichables') : t('affichable');
+            const stepLabel = total > 1 ? t('étapes') : t('étape');
+            const readyLabel = t('sur la carte');
+            const pendingLabel = t('à compléter');
             const parts = [`${total} ${stepLabel}`, `${ready} ${readyLabel}`];
-            if (unresolved > 0) parts.push(`${unresolved} ${t('en attente')}`);
+            if (unresolved > 0) parts.push(`${unresolved} ${pendingLabel}`);
             statusEl.textContent = parts.join(' · ');
         }
     }
     if (pendingAlert && pendingText) {
-        pendingAlert.classList.toggle('d-none', unresolved === 0);
+        // Pendant une opération, le bloc d'activité dit déjà ce qui se
+        // passe : pas d'appel à l'action concurrent.
+        pendingAlert.classList.toggle('d-none', unresolved === 0 || activityRunning());
         if (unresolved > 0) {
-            pendingText.textContent = t('${count} étape(s) sans coordonnées ni date exploitables — conservées mais non affichées.', { count: unresolved });
+            pendingText.textContent = canFetch
+                ? t('${count} étape(s) ne sont pas encore sur la carte : position ou date manquante.', { count: unresolved })
+                : t("${count} étape(s) n'ont pas pu être placées automatiquement : leur position est introuvable. Vous pouvez les compléter à la main.", { count: unresolved });
         }
     }
-    if (clearBtn) clearBtn.style.display = total > 0 ? '' : 'none';
-    if (exportBtn) exportBtn.style.display = total > 0 ? '' : 'none';
+    const fetchBtn = el('labsFetchBtn');
+    if (fetchBtn) fetchBtn.style.display = canFetch ? '' : 'none';
+    const retryBtn = el('labsRetryFetchBtn');
+    if (retryBtn) retryBtn.style.display = (unresolved > 0 && !canFetch) ? '' : 'none';
+    for (const id of ['clearLabsBtn', 'labsExportBtn', 'labsUpdateBtn']) {
+        const btn = el(id);
+        if (btn) btn.style.display = total > 0 ? '' : 'none';
+    }
+    renderGuide();
 }
 
-// Suit une tâche Labs lancée hors de cet onglet (favori bookmarklet →
-// /api/labs/receive) : même polling et même bilan que si l'UI l'avait
-// démarrée — progression affichée, puis statut rafraîchi + carte rechargée.
-let watchingTaskId = null;
+// Le parcours du favori s'affiche d'office tant que rien n'est importé ;
+// ensuite il se replie derrière « Mettre à jour ».
+function renderGuide() {
+    const guide = el('labsGuide');
+    if (!guide) return;
+    const empty = (knownCounts?.total || 0) === 0;
+    guide.hidden = !(empty || guideOpen);
+    el('labsUpdateBtn')?.setAttribute('aria-expanded', String(!guide.hidden));
+}
+
+// ---------------------------------------------------------------- activité
+//
+// Un seul endroit dit qu'un travail est en cours : le bloc #labsActivity de
+// la carte, doublé d'un toast visible depuis les autres onglets. Titre =
+// étape en clair ; détail = message de progression du serveur.
+
+function activityRunning() {
+    const box = el('labsActivity');
+    return !!box && !box.hidden;
+}
+
+function showActivity(title, { pct = null, detail = '' } = {}) {
+    const box = el('labsActivity');
+    if (box) {
+        box.hidden = false;
+        const titleEl = box.querySelector('.labs-activity-title');
+        const detailEl = box.querySelector('.labs-activity-detail');
+        const bar = box.querySelector('.labs-activity-bar');
+        if (titleEl) titleEl.textContent = title;
+        if (detailEl) detailEl.textContent = detail || '';
+        if (bar) {
+            const known = typeof pct === 'number' && isFinite(pct) && pct > 0;
+            const value = known ? Math.min(100, Math.max(0, pct)) : 0;
+            bar.classList.toggle('progress-bar-indeterminate', !known);
+            bar.style.width = known ? `${value}%` : '100%';
+            bar.setAttribute('aria-valuenow', String(value));
+        }
+    }
+    el('labsPendingAlert')?.classList.add('d-none');
+    for (const id of ['labs-file-btn', 'labsFetchBtn', 'labsRetryFetchBtn']) {
+        const btn = el(id);
+        if (btn) btn.disabled = true;
+    }
+    try {
+        if (!activityToast) activityToast = showLoadingToast(title, t('Lab Caches'));
+        else updateToastMessage(activityToast, detail ? `${title} ${detail}` : title);
+        if (typeof pct === 'number' && pct > 0) updateToastProgress(activityToast, pct);
+        else setIndeterminateProgress(activityToast);
+    } catch (_) { /* le bloc de la carte suffit */ }
+}
+
+function hideActivity() {
+    const box = el('labsActivity');
+    if (box) box.hidden = true;
+    for (const id of ['labs-file-btn', 'labsFetchBtn', 'labsRetryFetchBtn']) {
+        const btn = el(id);
+        if (btn) btn.disabled = false;
+    }
+    try { if (activityToast) hideToast(activityToast); } catch (_) {}
+    activityToast = null;
+}
+
+// Tâche Labs trouvée en cours au relevé du statut (lancée par le favori ou
+// par un autre onglet) : même suivi que si cette page l'avait démarrée.
 function watchActiveTask(active) {
-    if (!active || !active.task_id || watchingTaskId === active.task_id) return;
-    watchingTaskId = active.task_id;
-    const isFetch = active.type === 'lab_fetch_coords';
-    pollLabTask(active.task_id, {
-        onFinished: isFetch ? onFetchFinished : onImportFinished,
-        onProgress: isFetch
-            ? (p) => setFetchProgress(`${t('Récupération des coordonnées…')} ${p}%`)
-            : null,   // défaut de pollLabTask : « Import en cours… »
-    }).catch(e => {
-        showError(e.message || t('Erreur de récupération'), t('Lab Caches'));
-    }).finally(() => { watchingTaskId = null; });
+    if (!active || !active.task_id || watchingTaskId) return;
+    if (active.type === 'lab_fetch_coords') followFetch(active.task_id);
+    else followImport(active.task_id);
 }
 
 // ---------------------------------------------------------------- import
@@ -149,14 +257,14 @@ function onLabsFilesChosen() {
 }
 
 // Aperçu puis import d'un lot de fichiers Lab Caches. Point d'entrée commun
-// au bouton « Importer un fichier… » et au glisser-déposer sur la fenêtre
+// au bouton « Importer des fichiers… » et au glisser-déposer sur la fenêtre
 // (bdd.js y route les fichiers Labs reconnus). No-op sur une page sans carte
 // Labs (Évolution).
 export async function importLabFiles(files) {
     files = Array.from(files || []);
     if (!files.length || !el('labsPreviewModal')) return;
 
-    setImportProgress(t('Analyse des fichiers…'));
+    showActivity(t('Analyse de vos fichiers…'));
     try {
         const fd = new FormData();
         files.forEach(f => fd.append('files', f));
@@ -171,13 +279,9 @@ export async function importLabFiles(files) {
     } catch (e) {
         showError(e.message || t("Erreur lors de l'analyse"), t('Import Lab Caches'));
     } finally {
-        setImportProgress('');
+        hideActivity();
+        refreshLabsStatus();
     }
-}
-
-function setImportProgress(text) {
-    const progress = el('labsImportProgress');
-    if (progress) progress.textContent = text || '';
 }
 
 // Message d'échec complet de l'aperçu (ex. aucun fichier exploitable) :
@@ -413,7 +517,7 @@ async function onPreviewConfirm() {
     const token = importToken;
     importToken = null;
 
-    setImportProgress(t('Import en cours…'));
+    showActivity(t('Import de vos Lab Caches…'));
     try {
         const resp = await fetch(`${CONFIG.BASE_URL}/api/labs/import/commit`, {
             method: 'POST',
@@ -424,24 +528,18 @@ async function onPreviewConfirm() {
         if (!resp.ok || !data.success || !data.task_id) {
             throw new Error(data.message || t('Import refusé'));
         }
-        // Marque la tâche comme suivie pour que watchActiveTask ne démarre
-        // pas un second poller sur un focus/visibilitychange.
-        watchingTaskId = data.task_id;
-        await pollLabTask(data.task_id);
+        await followImport(data.task_id);
     } catch (e) {
-        setImportProgress('');
+        hideActivity();
+        refreshLabsStatus();
         showError(e.message || t("Erreur lors de l'import"), t('Import Lab Caches'));
-    } finally {
-        watchingTaskId = null;
     }
 }
 
-// Suivi de la tâche d'import : même mécanique que pollGeojsonTask (bdd.js)
-// mais locale — le résultat est un résumé, pas un GeoJSON. `onFinished` et
-// `onProgress` sont injectables : la tâche de récupération de coordonnées
-// réutilise le même polling avec ses propres rendus.
-function pollLabTask(taskId, { intervalMs = 500, stallTimeoutMs = 120000,
-                               onFinished = onImportFinished, onProgress = null } = {}) {
+// Interroge une tâche serveur jusqu'à son terme : résout avec son résultat,
+// rejette si elle échoue ou si le serveur ne répond plus. `onProgress` reçoit
+// le pourcentage et le message de progression de la tâche.
+function pollLabTask(taskId, onProgress, { intervalMs = 500, stallTimeoutMs = 120000 } = {}) {
     return new Promise((resolve, reject) => {
         let lastActivityAt = Date.now();
         let consecutiveErrors = 0;
@@ -456,18 +554,14 @@ function pollLabTask(taskId, { intervalMs = 500, stallTimeoutMs = 120000,
                     lastActivityAt = Date.now();
                     consecutiveErrors = 0;
                     if (status?.state === 'finished') {
-                        onFinished(status.result || {});
-                        resolve(status.result);
+                        resolve(status.result || {});
                         return;
                     }
                     if (status?.state === 'failed') {
                         reject(new Error(status?.error || t('Import échoué')));
                         return;
                     }
-                    if (typeof status?.progress === 'number') {
-                        if (onProgress) onProgress(status.progress);
-                        else setImportProgress(`${t('Import en cours…')} ${status.progress}%`);
-                    }
+                    onProgress?.(status?.progress, status?.message || '');
                     setTimeout(tick, intervalMs);
                 })
                 .catch(err => {
@@ -480,25 +574,70 @@ function pollLabTask(taskId, { intervalMs = 500, stallTimeoutMs = 120000,
     });
 }
 
-async function onImportFinished(result) {
-    setImportProgress('');
-    if (!result || result.success === false) {
-        showError(t("L'import a échoué"), t('Import Lab Caches'));
-        return;
+// Suit une tâche en alimentant le bloc d'activité sous le titre donné.
+function followTask(taskId, title) {
+    watchingTaskId = taskId;
+    showActivity(title);
+    return pollLabTask(taskId, (pct, detail) => showActivity(title, { pct, detail }));
+}
+
+// Fin commune d'une séquence suivie : bloc retiré, compteurs relus, carte
+// rechargée si des données ont changé.
+async function settleActivity(changed) {
+    watchingTaskId = null;
+    hideActivity();
+    const status = await refreshLabsStatus();
+    if (!changed) return;
+    if (status) await suggestSourceAfterImport(status.ready || 0, status.total || 0);
+    pkg.reloadMainDatasetAfterMutation?.();
+}
+
+// Import, puis placement des étapes si le serveur l'enchaîne (son bilan porte
+// alors `fetch_task_id`) : une seule séquence, bloc d'activité continu — c'est
+// entre ces deux tâches que l'application semblait ne plus rien faire.
+async function followImport(taskId) {
+    let changed = false;
+    try {
+        const result = await followTask(taskId, t('Import de vos Lab Caches…'));
+        if (result.success === false) throw new Error(t("L'import a échoué"));
+        changed = true;
+        reportImport(result);
+        if (result.fetch_task_id) {
+            reportFetch(await followTask(result.fetch_task_id, t('Placement de vos étapes sur la carte…')));
+        }
+    } catch (e) {
+        showError(e.message || t("Erreur lors de l'import"), t('Import Lab Caches'));
+    } finally {
+        await settleActivity(changed);
     }
-    const total = result.total || 0;
-    const ready = result.ready_total || 0;
-    const unresolved = result.unresolved || 0;
-    let msg = t('${added} étape(s) importée(s) — ${ready} affichable(s), ${pending} en attente.',
-        { added: (result.added || 0) + (result.updated || 0), ready, pending: unresolved });
+}
+
+async function followFetch(taskId) {
+    let changed = false;
+    try {
+        const result = await followTask(taskId, t('Placement de vos étapes sur la carte…'));
+        changed = true;
+        reportFetch(result);
+    } catch (e) {
+        showError(e.message || t('Erreur de récupération'), t('Lab Caches'));
+    } finally {
+        await settleActivity(changed);
+    }
+}
+
+function reportImport(result) {
+    const added = (result.added || 0) + (result.updated || 0);
+    let msg = result.fetch_task_id
+        // Les compteurs « sur la carte » n'ont pas encore de sens : le
+        // placement démarre tout juste.
+        ? t('${added} étape(s) importée(s). Placement sur la carte en cours…', { added })
+        : t('${added} étape(s) importée(s) — ${ready} affichable(s), ${pending} en attente.',
+            { added, ready: result.ready_total || 0, pending: result.unresolved || 0 });
     if ((result.conflicts || 0) > 0) {
         // Import sans aperçu (favori) ou conflits laissés tels quels.
         msg += ' ' + t('${n} conflit(s) — valeurs existantes conservées.', { n: result.conflicts });
     }
     showSuccess(msg, t('Import Lab Caches'));
-    refreshLabsStatus();
-    await suggestSourceAfterImport(ready, total);
-    pkg.reloadMainDatasetAfterMutation?.();
 }
 
 // Après un premier import Labs visible : les proposer à l'affichage.
@@ -522,11 +661,12 @@ async function suggestSourceAfterImport(readyCount, totalCount) {
     }
 }
 
-// --------------------------------------- récupération auto des coordonnées
+// ------------------------------------- placement automatique des étapes
 //
-// Opt-in documenté : les UUID d'Adventures sont envoyés au service public
-// lab2gpx (aucun identifiant de compte). Le serveur fait les appels, parse
-// les GPX retournés et enrichit les étapes par le même chemin que l'import.
+// Les UUID d'Adventures sont envoyés au service public lab2gpx (aucun
+// identifiant de compte) — activé par défaut, annoncé dans la carte et
+// réglable dans les options avancées. Le serveur fait les appels, parse les
+// GPX retournés et enrichit les étapes par le même chemin que l'import.
 
 async function loadBookmarklet(link) {
     try {
@@ -563,44 +703,30 @@ async function onAutoFetchToggle() {
         if (!r.ok) throw new Error('refusé');
         // Cocher avec des étapes déjà en attente déclenche tout de suite —
         // c'est l'effet attendu du réglage, pas seulement pour les imports futurs.
-        if (wanted && (pendingTotal || 0) > 0) onFetchNow();
+        if (wanted && fetchableAdventures > 0) onFetchNow();
     } catch (e) {
         box.checked = !wanted;
         showError(t('Réglage non enregistré'), t('Lab Caches'));
     }
 }
 
-function setFetchProgress(text) {
-    const progressEl = el('labsFetchProgress');
-    if (progressEl) progressEl.textContent = text || '';
-}
-
 async function onFetchNow() {
-    const btn = el('labsFetchBtn');
-    if (btn) btn.disabled = true;
-    setFetchProgress(t('Récupération des coordonnées…'));
+    showActivity(t('Placement de vos étapes sur la carte…'));
     try {
         const resp = await fetch(`${CONFIG.BASE_URL}/api/labs/fetch-coordinates`, { method: 'POST' });
         const data = await resp.json().catch(() => ({}));
         if (!resp.ok || !data.success || !data.task_id) {
             throw new Error(data.message || t('Récupération refusée'));
         }
-        watchingTaskId = data.task_id;   // déjà suivi — voir watchActiveTask
-        await pollLabTask(data.task_id, {
-            onFinished: onFetchFinished,
-            onProgress: (p) => setFetchProgress(`${t('Récupération des coordonnées…')} ${p}%`),
-        });
+        await followFetch(data.task_id);
     } catch (e) {
-        setFetchProgress('');
+        hideActivity();
+        refreshLabsStatus();
         showError(e.message || t('Erreur de récupération'), t('Lab Caches'));
-    } finally {
-        watchingTaskId = null;
-        if (btn) btn.disabled = false;
     }
 }
 
-async function onFetchFinished(result) {
-    setFetchProgress('');
+function reportFetch(result) {
     if (!result || result.success === false) {
         showError(t('La récupération a échoué'), t('Lab Caches'));
         return;
@@ -608,12 +734,12 @@ async function onFetchFinished(result) {
     const resolved = result.resolved || 0;
     const failed = (result.failed_uuids || []).length;
     const pending = result.unresolved || 0;
-    let msg = t('${n} étape(s) ont reçu des coordonnées.', { n: resolved });
+    let msg = t('${n} étape(s) placée(s) sur la carte.', { n: resolved });
     if (failed > 0) {
         msg += ' ' + t('${n} Adventure(s) introuvable(s) par le service.', { n: failed });
     }
     if (pending > 0) {
-        msg += ' ' + t('${n} étape(s) restent en attente.', { n: pending });
+        msg += ' ' + t('${n} étape(s) restent à compléter.', { n: pending });
     }
     if (result.interrupted) {
         // Bilan partiel : les lots déjà reçus sont enregistrés, le reste
@@ -624,8 +750,6 @@ async function onFetchFinished(result) {
     } else {
         showSuccess(msg, t('Lab Caches'));
     }
-    refreshLabsStatus();
-    pkg.reloadMainDatasetAfterMutation?.();
 }
 
 // ------------------------------------------------- étapes en attente

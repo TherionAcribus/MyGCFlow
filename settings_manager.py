@@ -335,8 +335,10 @@ class AppSettings:
     # changer de thème ne doit pas changer les données affichées.
     main_discovery_sources: str = "geocaches"  # "geocaches" | "labs" | "both"
     # Récupération automatique des coordonnées Lab après import historique
-    # (API publique lab2gpx — envoie les UUID d'Adventures à un tiers : opt-in).
-    labs_auto_fetch_coords: bool = False
+    # (API publique lab2gpx — envoie les UUID d'Adventures à un tiers).
+    # Activée par défaut : sans elle, un historique importé n'affiche rien
+    # sur la carte. L'interface l'annonce et permet de la couper.
+    labs_auto_fetch_coords: bool = True
     # Jeton embarqué dans le bookmarklet « Envoyer vers MyGCFlow » : protège
     # /api/labs/receive contre un POST forgé par un site tiers (CSRF local).
     # Généré à la première demande du bookmarklet ; conservé au reset — c'est
@@ -896,12 +898,12 @@ def coerce_settings(d: dict) -> AppSettings:
             d.get("locationless_display"), s.locationless_display)
         s.main_discovery_sources = coerce_discovery_sources(
             d.get("main_discovery_sources"), s.main_discovery_sources)
-        # Opt-in réseau : seul un vrai booléen l'active — une valeur corrompue
-        # (« oui », 1…) conservant la valeur précédente, jamais d'activation
-        # implicite d'un envoi d'UUID vers un tiers.
+        # Envoi d'UUID vers un tiers : absent, le réglage garde son défaut
+        # (activé) ; présent, seul un vrai booléen fait foi — une valeur
+        # corrompue (« oui », 1…) le coupe plutôt que de l'activer.
         raw_fetch = d.get("labs_auto_fetch_coords")
-        if isinstance(raw_fetch, bool):
-            s.labs_auto_fetch_coords = raw_fetch
+        if raw_fetch is not None:
+            s.labs_auto_fetch_coords = raw_fetch is True
         token = d.get("labs_receive_token")
         s.labs_receive_token = str(token) if token else ""
         # Un settings.json antérieur à la migration n'a pas de bloc `recording` :

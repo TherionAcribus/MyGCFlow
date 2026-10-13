@@ -11,6 +11,7 @@ import zipfile
 from dataclasses import replace
 from datetime import date, timedelta
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
 
 import lab_coords_provider as lcp
@@ -59,6 +60,34 @@ class LabsApiTests(unittest.TestCase):
         self.ctx = self.app.app_context()
         self.ctx.push()
         self.client = self.app.test_client()
+
+        # Aucun test ne doit joindre le vrai service lab2gpx : la récupération
+        # automatique, activée par défaut, est coupée ici (LabsAutomationTests
+        # branche ses propres réglages) et la primitive réseau est condamnée.
+        import blueprints.labs as labs_mod
+        quiet = SimpleNamespace(get_app_settings=lambda: SimpleNamespace(
+            labs_auto_fetch_coords=False, labs_receive_token=""))
+        for target, attr, value in (
+            (labs_mod, "get_settings_manager", lambda: quiet),
+            (lcp, "post_download", mock.Mock(
+                side_effect=AssertionError("accès réseau interdit dans les tests"))),
+        ):
+            patcher = mock.patch.object(target, attr, value)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+        # Enregistré après les substitutions, donc exécuté avant leur retrait :
+        # une tâche qu'un test n'attend pas ne doit pas finir sur les vrais
+        # réglages ni déborder sur le test suivant.
+        self.addCleanup(self._wait_for_idle_lab_tasks)
+
+    @staticmethod
+    def _wait_for_idle_lab_tasks(timeout=15):
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            if not any(task_manager.get_active(kind)
+                       for kind in ("lab_import", "lab_fetch_coords")):
+                return
+            time.sleep(0.02)
 
     def _dispose(self):
         db.session.remove()
@@ -510,7 +539,11 @@ def _fake_fetch(fail_after=None, failed_before=(), failed_after=()):
              on_failed=None, **_kw):
         for u in failed_before:
             on_failed(u)
-        on_payload("auto-001.gpx", COORDS.read_bytes())
+        # Le service « répond » pour toutes les Adventures demandées, sauf
+        # celles qu'il refuse.
+        refused = set(failed_before) | set(failed_after)
+        on_payload("auto-001.gpx", COORDS.read_bytes(),
+                   [u for u in uuids if u not in refused])
         for u in failed_after:
             on_failed(u)
         if fail_after is not None:
@@ -541,6 +574,8 @@ class LabsAutomationTests(LabsApiTests):
         settings_manager.write_json(settings_manager.SETTINGS_PATH, {
             "examples_seeded": True,
             "examples_version": settings_manager.EXAMPLES_VERSION,
+            # Point de départ coupé : chaque test l'active explicitement.
+            "labs_auto_fetch_coords": False,
         })
         self.manager = settings_manager.SettingsManager()
 
@@ -805,6 +840,7 @@ class LabsAutomationTests(LabsApiTests):
         with mock.patch.object(lcp, "fetch_gpx_batches",
                                side_effect=_fake_fetch(**fake_kwargs)):
             rv = self.client.post('/api/labs/fetch-coordinates')
+            self.assertEqual(rv.status_code, 202, rv.get_json())
             st = self._wait_task(rv.get_json()["task_id"])
         self.assertEqual(st.state, "finished", st.error)
         db.session.expire_all()
@@ -837,6 +873,45 @@ class LabsAutomationTests(LabsApiTests):
         db.session.commit()
         self.assertIn(ADVENTURE_REMOVED, labs_mod._unresolved_coord_uuids(
             db.session, skip_recent_failures=True))
+
+    def test_stage_missing_from_the_answer_is_not_offered_again(self):
+        """Adventure servie, mais sans l'étape trouvée (remaniée depuis) :
+        une nouvelle demande ne la donnerait pas — elle n'est plus proposée."""
+        self._import_history()
+        before = self.client.get('/api/labs/status').get_json()
+        self.assertEqual(before["unresolved"], 12)
+        self.assertGreater(before["fetchable_adventures"], 0)
+
+        self._fetch()          # tout est servi ; 4 étapes absentes de la réponse
+
+        after = self.client.get('/api/labs/status').get_json()
+        self.assertEqual(after["unresolved"], 4)
+        self.assertEqual(after["fetchable_adventures"], 0)
+        import blueprints.labs as labs_mod
+        self.assertEqual(
+            labs_mod._unresolved_coord_uuids(db.session, skip_recent_failures=True), [])
+        # La relance explicite reste possible : elle retente tout.
+        self.assertTrue(labs_mod._unresolved_coord_uuids(db.session))
+        items = self.client.get('/api/labs/unresolved').get_json()["items"]
+        self.assertTrue(all("coordinates_unavailable" in i["reasons"] for i in items))
+
+    def test_interrupted_fetch_leaves_unanswered_adventures_offered(self):
+        """Service tombé avant d'avoir répondu : rien n'est conclu pour les
+        Adventures non servies, la récupération reste proposée."""
+        self._import_history()
+
+        def fake(uuids, user_guid=None, progress=None, on_payload=None, **_kw):
+            on_payload("auto-001.gpx", COORDS.read_bytes(), uuids[:1])
+            raise urllib.error.URLError("down")
+
+        with mock.patch.object(lcp, "fetch_gpx_batches", side_effect=fake):
+            rv = self.client.post('/api/labs/fetch-coordinates')
+            st = self._wait_task(rv.get_json()["task_id"])
+        self.assertTrue(st.result["interrupted"])
+        db.session.expire_all()
+        status = self.client.get('/api/labs/status').get_json()
+        self.assertEqual(status["unresolved"], 4)
+        self.assertGreater(status["fetchable_adventures"], 0)
 
     def test_failures_before_an_abort_are_not_remembered(self):
         """Des échecs suivis d'un abandon tiennent plus de la panne que de
@@ -887,15 +962,18 @@ class LabsAutomationTests(LabsApiTests):
         self.assertEqual(st.state, "finished", st.error)
         self.assertEqual(st.result["resolved"], 8)
         self.assertTrue(m.called)
+        # Le bilan d'import annonce la tâche : l'interface enchaîne son suivi.
+        self.assertEqual(import_result["fetch_task_id"], fetch_task.id)
 
     def test_no_autofetch_when_opt_in_off(self):
         # task_manager est un singleton : un fetch d'un test précédent reste
         # enregistré — on compare l'identité, pas la présence.
         before = task_manager.get_last("lab_fetch_coords")
         with mock.patch.object(lcp, "fetch_gpx_batches") as m:
-            self._import_history()
+            import_result = self._import_history()
             time.sleep(0.3)   # laisser le temps à un éventuel enchaînement
             self.assertFalse(m.called)
+            self.assertIsNone(import_result["fetch_task_id"])
             self.assertIs(task_manager.get_last("lab_fetch_coords"), before)
 
 

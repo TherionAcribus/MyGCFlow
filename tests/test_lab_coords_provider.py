@@ -70,13 +70,14 @@ class FetchBatchesTests(unittest.TestCase):
 
         with self.assertRaises(urllib.error.URLError):
             self._run(["u0", "u1", "u2", "u3"], side_effect, batch_size=2,
-                      on_payload=lambda name, data: got.append((name, data)))
-        self.assertEqual(got, [("lab2gpx-auto-001.gpx", b"<gpx/>")])
+                      on_payload=lambda name, data, batch: got.append((name, data, batch)))
+        # Le lot accompagne le GPX : l'appelant sait à qui le service a répondu.
+        self.assertEqual(got, [("lab2gpx-auto-001.gpx", b"<gpx/>", ["u0", "u1"])])
 
     def test_on_payload_replaces_accumulation(self):
         got = []
         result, _ = self._run(["u0", "u1", "u2"], lambda p: b"<gpx/>",
-                              batch_size=2, on_payload=lambda n, d: got.append(n))
+                              batch_size=2, on_payload=lambda n, d, b: got.append(n))
         self.assertEqual(len(got), 2)
         self.assertEqual(result.payloads, [])
         self.assertEqual(result.fetched_adventures, 3)

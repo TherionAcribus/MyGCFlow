@@ -112,9 +112,10 @@ def fetch_gpx_batches(
     """Télécharge un GPX par lot d'UUID, en isolant les UUID fautifs.
 
     `progress(fait, total)` est appelé après chaque lot résolu ou isolé ;
-    `sleep` est injectable pour les tests. `on_payload(nom, gpx)` reçoit
-    chaque GPX dès son téléchargement, au lieu de `result.payloads` : ce
-    qui est déjà traité survit ainsi à un abandon ultérieur. `on_failed(uuid)`
+    `sleep` est injectable pour les tests. `on_payload(nom, gpx, uuids)`
+    reçoit chaque GPX dès son téléchargement, avec les UUID du lot auquel le
+    service vient de répondre, au lieu de `result.payloads` : ce qui est déjà
+    traité survit ainsi à un abandon ultérieur. `on_failed(uuid)`
     signale de même chaque UUID isolé comme irrécupérable.
 
     Stratégie d'erreur (calquée sur tools/fetch_lab2gpx.py) :
@@ -161,7 +162,7 @@ def fetch_gpx_batches(
         consecutive_failures = 0
         name = f"lab2gpx-auto-{tag}.gpx"
         if on_payload:
-            on_payload(name, data)
+            on_payload(name, data, list(batch))
         else:
             result.payloads.append((name, data))
         done += len(batch)

@@ -431,15 +431,17 @@ class LabsAutomationSettingsCoercionTests(unittest.TestCase):
     """Réglages de l'automatisation Labs : opt-in coordonnées + jeton local.
 
     `labs_auto_fetch_coords` envoie les UUID d'Adventures à un service tiers :
-    défaut obligatoirement à False. `labs_receive_token` est un identifiant
+    activé par défaut (annoncé dans l'interface), mais jamais par une valeur
+    corrompue. `labs_receive_token` est un identifiant
     d'installation lu tel quel — jamais de coercion qui le modifierait.
     """
 
-    def test_auto_fetch_defaults_to_off(self):
-        self.assertFalse(coerce_settings({}).labs_auto_fetch_coords)
+    def test_auto_fetch_defaults_to_on(self):
+        self.assertTrue(coerce_settings({}).labs_auto_fetch_coords)
 
     def test_auto_fetch_accepts_only_true_booleans(self):
-        # Opt-in réseau : une valeur corrompue ne doit jamais l'activer.
+        # Envoi vers un tiers : une valeur corrompue le coupe, sans retomber
+        # sur le défaut activé.
         self.assertTrue(coerce_settings({"labs_auto_fetch_coords": True}).labs_auto_fetch_coords)
         for bad in ("oui", 1, "true", ["x"]):
             self.assertFalse(
@@ -570,12 +572,12 @@ class SettingsApiTests(unittest.TestCase):
         self.assertEqual(
             self.client.get('/api/settings').get_json()['main_discovery_sources'], 'labs')
 
-    def test_labs_auto_fetch_defaults_to_off_and_round_trips(self):
-        self.assertFalse(
+    def test_labs_auto_fetch_defaults_to_on_and_round_trips(self):
+        self.assertTrue(
             self.client.get('/api/settings').get_json()['labs_auto_fetch_coords'])
         self.assertEqual(
-            self.client.put('/api/settings', json={'labs_auto_fetch_coords': True}).status_code, 200)
-        self.assertTrue(
+            self.client.put('/api/settings', json={'labs_auto_fetch_coords': False}).status_code, 200)
+        self.assertFalse(
             self.client.get('/api/settings').get_json()['labs_auto_fetch_coords'])
 
     def test_receive_token_survives_settings_patch(self):

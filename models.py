@@ -78,8 +78,10 @@ class LabDiscovery(db.Model):
     coordinate_scope = db.Column(db.String(16))
     coordinate_source = db.Column(db.String(32))
     coordinate_status = db.Column(db.String(16), default=COORD_MISSING)
-    # Dernière fois où lab2gpx n'a pas su servir l'Adventure de cette étape
-    # (archivée, cassée) : l'auto-fetch ne la redemande pas tout de suite.
+    # Dernière récupération lab2gpx restée sans résultat pour cette étape :
+    # Adventure que le service n'a pas su servir (archivée, cassée), ou
+    # servie sans cette étape (remaniée depuis). Elle n'est alors ni
+    # redemandée tout de suite, ni proposée à nouveau à l'utilisateur.
     coord_fetch_failed_at = db.Column(db.DateTime)
     # Coordonnées proposées (même titre dans l'Adventure, UUID d'étape
     # différent) : jamais appliquées seules, l'utilisateur les valide.

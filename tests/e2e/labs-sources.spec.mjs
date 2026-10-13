@@ -39,6 +39,14 @@ async function readServerSettings(page) {
 }
 
 
+// Le placement automatique des étapes est activé par défaut et interroge le
+// service public lab2gpx : aucun test ne doit le laisser partir sur le réseau
+// avec les UUID de la fixture.
+test.beforeEach(async ({ request }) => {
+  await request.put('/api/settings', { data: { labs_auto_fetch_coords: false } });
+});
+
+
 // Le sélecteur est une préférence serveur partagée par le runtime de test :
 // toujours revenir à « geocaches » et vider la collection Labs pour ne pas
 // influencer les autres specs.
@@ -123,7 +131,7 @@ test('« Supprimer mes Lab Caches » vide la collection Labs uniquement', async 
   await page.locator('#clearLabsBtn').click();
   await page.locator('.gcm-confirm-modal.show [data-gcm-role="confirm"]').click();
 
-  await expect(page.locator('#labsStatus')).toContainText('Aucune étape', { timeout: 30_000 });
+  await expect(page.locator('#labsStatus')).toContainText('Aucun Lab Cache importé', { timeout: 30_000 });
 });
 
 
@@ -259,7 +267,10 @@ test('le favori « Envoyer vers MyGCFlow » porte origine locale et jeton', asyn
 test('la case de récupération automatique persiste le réglage serveur', async ({ page }) => {
   await openReadyApp(page);
 
+  // Réglage rangé dans les options avancées, repliées par défaut.
   const box = page.locator('#labsAutoFetch');
+  await expect(box).toBeHidden();
+  await page.locator('#labsAdvanced > summary').click();
   await expect(box).toBeVisible();
   await expect(box).not.toBeChecked();
 
@@ -435,6 +446,111 @@ test('un GPX Lab2Gpx choisi par le sélecteur des géocaches part vers l\'import
   // crée aucune découverte, ses étapes sont comptées « ignorées »).
   await expect(page.locator('#labsPreviewModal')).toBeVisible({ timeout: 20_000 });
   await expect(page.locator('#labsPreviewFiles')).toContainText('lab2gpx-stages.gpx');
+});
+
+
+test('la carte montre le parcours du favori, puis le replie une fois des Labs importés', async ({ page }) => {
+  await openReadyApp(page);
+
+  // Rien d'importé : état en clair, parcours en deux étapes, pas d'options
+  // avancées dépliées.
+  await expect(page.locator('#labsStatus')).toHaveText('Aucun Lab Cache importé');
+  await expect(page.locator('#labsGuide')).toBeVisible();
+  await expect(page.locator('#labsBookmarkletLink')).toBeVisible();
+  await expect(page.locator('#labs-file-btn')).toBeHidden();
+  await expect(page.locator('#labsUpdateBtn')).toBeHidden();
+
+  await importLabs(page);
+
+  await expect(page.locator('#labsStatus')).toHaveText('12 étapes · 8 sur la carte · 4 à compléter');
+  await expect(page.locator('#labsGuide')).toBeHidden();
+  const update = page.locator('#labsUpdateBtn');
+  await expect(update).toBeVisible();
+  await update.click();
+  await expect(page.locator('#labsGuide')).toBeVisible();
+  await expect(update).toHaveAttribute('aria-expanded', 'true');
+});
+
+
+test('import puis placement des étapes s\'affichent comme une seule activité suivie', async ({ page }) => {
+  await openReadyApp(page);
+
+  // Tâches serveur simulées : seule la séquence d'affichage est testée, sans
+  // import réel ni appel au service lab2gpx.
+  let importPolls = 0;
+  let fetchPolls = 0;
+  let releaseFetch = false;
+  await page.route('**/api/labs/import/commit', route => route.fulfill({
+    status: 202, json: { success: true, task_id: 'fake-import' } }));
+  await page.route('**/tasks/fake-import*', route => {
+    importPolls += 1;
+    route.fulfill({ json: importPolls < 3
+      ? { task_id: 'fake-import', type: 'lab_import', state: 'running', progress: 40,
+          message: 'Import Labs : historique.json' }
+      : { task_id: 'fake-import', type: 'lab_import', state: 'finished', progress: 100,
+          result: { success: true, added: 12, updated: 0, total: 12, ready_total: 0,
+                    unresolved: 12, fetch_task_id: 'fake-fetch' } } });
+  });
+  await page.route('**/tasks/fake-fetch*', route => {
+    fetchPolls += 1;
+    route.fulfill({ json: !releaseFetch
+      ? { task_id: 'fake-fetch', type: 'lab_fetch_coords', state: 'running', progress: 50,
+          message: 'Coordonnées Labs : 2/4 Adventures' }
+      : { task_id: 'fake-fetch', type: 'lab_fetch_coords', state: 'finished', progress: 100,
+          result: { success: true, resolved: 8, unresolved: 4, failed_uuids: [] } } });
+  });
+
+  const activity = page.locator('#labsActivity');
+  await expect(activity).toBeHidden();
+
+  await page.locator('#labs-file-input').setInputFiles([HISTORY]);
+  await expect(page.locator('#labsPreviewModal')).toBeVisible({ timeout: 20_000 });
+  await page.locator('#labsPreviewConfirmBtn').click();
+
+  // Étape 1 : import, avec le message de progression du serveur.
+  await expect(activity).toBeVisible();
+  await expect(activity.locator('.labs-activity-title')).toHaveText('Import de vos Lab Caches…');
+  await expect(activity.locator('.labs-activity-detail')).toHaveText('Import Labs : historique.json');
+
+  // Étape 2 : enchaînée sans que le bloc disparaisse.
+  await expect(activity.locator('.labs-activity-title'))
+    .toHaveText('Placement de vos étapes sur la carte…', { timeout: 15_000 });
+  await expect(activity.locator('.labs-activity-detail')).toHaveText('Coordonnées Labs : 2/4 Adventures');
+  await expect(activity.locator('.labs-activity-bar')).toHaveAttribute('aria-valuenow', '50');
+  await expect(activity).toBeVisible();
+  // Pas d'appel à l'action concurrent pendant l'opération.
+  await expect(page.locator('#labsPendingAlert')).toBeHidden();
+
+  releaseFetch = true;
+  await expect(activity).toBeHidden({ timeout: 15_000 });
+  expect(fetchPolls).toBeGreaterThan(0);
+});
+
+
+test('la récupération n\'est plus proposée quand il ne reste que des étapes déjà tentées', async ({ page }) => {
+  await openReadyApp(page);
+  await importLabs(page);
+  await expect(page.locator('#labsFetchBtn')).toBeVisible();
+
+  // Statut tel que le serveur le rend après une récupération restée sans
+  // résultat pour les 4 étapes restantes.
+  await page.route('**/api/labs/status', async (route) => {
+    const response = await route.fetch();
+    const body = await response.json();
+    await route.fulfill({ response, json: { ...body, fetchable_adventures: 0 } });
+  });
+  await page.evaluate(async () => (await import('/static/js/index.js')).refreshLabsStatus());
+
+  await expect(page.locator('#labsPendingAlert')).toBeVisible();
+  await expect(page.locator('#labsPendingText')).toContainText('introuvable');
+  await expect(page.locator('#labsFetchBtn')).toBeHidden();
+  await expect(page.locator('#labsPendingBtn')).toBeVisible();
+
+  // La relance reste possible, mais rangée dans les options avancées.
+  const retry = page.locator('#labsRetryFetchBtn');
+  await expect(retry).toBeHidden();
+  await page.locator('#labsAdvanced > summary').click();
+  await expect(retry).toBeVisible();
 });
 
 

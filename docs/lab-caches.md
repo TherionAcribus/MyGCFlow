@@ -35,10 +35,11 @@ Aucune connexion à l'API officielle n'est requise. Deux chemins coexistent :
    ensuite importé par la tâche habituelle. C'est la seule route exemptée du
    garde inter-sites global (`security.py`).
 
-### Récupération automatique des coordonnées (opt-in)
+### Placement automatique des étapes
 
-Quand **« Récupérer automatiquement les coordonnées »** est cochée
-(`labs_auto_fetch_coords`, défaut désactivé), chaque import réussi enchaîne
+Tant que **« Placer automatiquement les étapes sur la carte après un
+import »** reste cochée (options avancées de la carte « Mes Lab Caches » —
+`labs_auto_fetch_coords`, activée par défaut), chaque import réussi enchaîne
 une tâche `lab_fetch_coords` : le serveur appelle l'API publique
 `api.lab2gpx.gcutils.de/download` avec les UUID d'Adventures des étapes en
 attente (`lab_coords_provider.py` — lots de 50, débit modéré, reprises, et
@@ -47,13 +48,19 @@ répondent en erreur). Les GPX reçus sont reparsés par le même chemin qu'un
 import Lab2Gpx : jointure par UUID d'étape exact, provenance `lab2gpx`,
 échecs conservés en attente.
 
-Le bouton **« Récupérer les coordonnées »** (alerte des étapes en attente)
-déclenche la même tâche à la demande.
+Le bilan de l'import porte l'identifiant de cette tâche (`fetch_task_id`) :
+l'interface suit les deux à la suite dans un même bloc d'activité, sans
+laisser croire que tout est fini entre l'une et l'autre.
+
+Le bouton **« Récupérer les positions »** (alerte des étapes pas encore sur
+la carte) déclenche la même tâche à la demande.
 
 Transparence : cette option envoie les **identifiants d'Adventures** au
-service tiers lab2gpx — jamais d'identifiant de compte —, c'est pourquoi elle
-est opt-in. Les étapes que le service ne connaît pas (Adventures archivées ou
-cassées) restent en attente et se complètent par fichier ou à la main.
+service tiers lab2gpx — jamais d'identifiant de compte. Elle est activée par
+défaut, sans quoi un historique importé n'affiche rien ; la carte le dit en
+clair et le réglage se coupe dans les options avancées. Les étapes que le
+service ne connaît pas (Adventures archivées ou cassées) restent à compléter,
+par fichier ou à la main.
 
 ## Les deux fichiers à fournir (méthode manuelle)
 
