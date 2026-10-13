@@ -442,6 +442,19 @@ class LabStoreTests(unittest.TestCase):
         self.assertAlmostEqual(row.latitude, 47.5)             # position conservée
         self.assertEqual(row.published_date, date(2020, 3, 10))
 
+    def test_preview_counts_owner_completion_as_update(self):
+        """Parité aperçu/commit : compléter owner/publication sur une étape
+        déjà résolue est compté « mis à jour » même sans commit."""
+        lab_store.commit_history(db.session, self._history())
+        lab_store.commit_coordinates(db.session, self._coords())
+        db.session.query(LabDiscovery).update(
+            {LabDiscovery.owner: None, LabDiscovery.published_date: None})
+        db.session.commit()
+        summary = lab_store._apply_coords(
+            db.session, self._coords(), commit=False)
+        self.assertEqual(summary["updated"], 8)
+        self.assertEqual(summary["unchanged"], 0)
+
     # --- compteurs et pagination ----------------------------------------------
 
     def test_unresolved_listing_is_paginated(self):
@@ -542,6 +555,27 @@ class LabStoreTests(unittest.TestCase):
         self.assertEqual(status["unresolved"], 4)
         # Une révision par fichier appliqué, comme deux imports individuels.
         self.assertEqual(status["collection"]["revision"], 2)
+
+    # --- résumé persisté -----------------------------------------------------
+
+    def test_stored_summary_is_bounded(self):
+        """`last_import_summary` borne les détails persistés : des milliers
+        de conflits ne doivent pas gonfler le TEXT — le résumé retourné à
+        l'appelant garde tout."""
+        summary = {
+            "conflicts_detail": [{"i": i} for i in range(25)],
+            "proposals": [{"i": i} for i in range(22)],
+            "warnings": [{"i": i} for i in range(60)],
+        }
+        stored = json.loads(json.dumps(
+            lab_store._slim_for_storage(summary), default=str))
+        self.assertEqual(len(stored["conflicts_detail"]), 21)
+        self.assertEqual(stored["conflicts_detail"][-1], {"truncated": 5})
+        self.assertEqual(stored["proposals"][-1], {"truncated": 2})
+        self.assertEqual(len(stored["warnings"]), 51)
+        self.assertEqual(stored["warnings"][-1], {"truncated": 10})
+        # L'original, lui, n'est pas tronqué.
+        self.assertEqual(len(summary["conflicts_detail"]), 25)
 
     # --- lectures -----------------------------------------------------------
 

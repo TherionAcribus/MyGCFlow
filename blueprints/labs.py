@@ -147,8 +147,11 @@ def _zip_gpx_members(raw: bytes) -> list[tuple[str, bytes]]:
 def _store_pending(files: list[dict]) -> tuple[str, Path]:
     """Persiste les fichiers validés + manifest ; retourne (jeton, dossier)."""
     token = uuid.uuid4().hex
+    # Historique de trouvailles : données personnelles, dossiers privés
+    # (le mode est ignoré sous Windows).
+    PENDING_ROOT.mkdir(mode=0o700, exist_ok=True)
     folder = PENDING_ROOT / token
-    folder.mkdir(parents=True, exist_ok=True)
+    folder.mkdir(mode=0o700, exist_ok=True)
     entries = []
     for i, f in enumerate(files):
         stored = f"f{i:02d}.bin"
@@ -331,14 +334,15 @@ def _slim_summary(summary: dict) -> dict:
 # Récupération des coordonnées via lab2gpx (fournisseur fichier → réseau)
 # ---------------------------------------------------------------------------
 
-def _unresolved_coord_uuids(session, skip_recent_failures=False) -> list[str]:
-    """UUID d'Adventures ayant au moins une découverte sans coordonnées.
+def _unresolved_coord_query(session, skip_recent_failures=False):
+    """Requête `distinct` des UUID d'Adventures ayant au moins une
+    découverte sans coordonnées — None sans collection.
 
     `skip_recent_failures` écarte les étapes dont l'Adventure a déjà été
     refusée par lab2gpx depuis moins de FETCH_RETRY_AFTER_DAYS."""
     collection = lab_store.get_collection(session)
     if collection is None:
-        return []
+        return None
     query = session.query(LabDiscovery.adventure_uuid).filter(
         LabDiscovery.collection_id == collection.id,
         LabDiscovery.adventure_uuid.isnot(None),
@@ -349,7 +353,13 @@ def _unresolved_coord_uuids(session, skip_recent_failures=False) -> list[str]:
         query = query.filter(
             LabDiscovery.coord_fetch_failed_at.is_(None)
             | (LabDiscovery.coord_fetch_failed_at < cutoff))
-    return [r[0] for r in query.distinct().all()]
+    return query.distinct()
+
+
+def _unresolved_coord_uuids(session, skip_recent_failures=False) -> list[str]:
+    """UUID d'Adventures ayant au moins une découverte sans coordonnées."""
+    query = _unresolved_coord_query(session, skip_recent_failures)
+    return [r[0] for r in query.all()] if query is not None else []
 
 
 def run_lab_fetch_task(status, app, uuids, user_guid, locale=None):
@@ -615,9 +625,10 @@ def labs_status():
     payload = {'success': True, **lab_store.collection_status(db.session)}
     # Adventures pour lesquelles une récupération a encore un sens : celles
     # déjà tentées sans résultat récemment n'en font pas partie, et
-    # l'interface ne propose le bouton que s'il en reste.
-    payload['fetchable_adventures'] = len(
-        _unresolved_coord_uuids(db.session, skip_recent_failures=True))
+    # l'interface ne propose le bouton que s'il en reste. COUNT DISTINCT en
+    # SQL : l'interface sonde ce endpoint en boucle, rien n'est chargé.
+    query = _unresolved_coord_query(db.session, skip_recent_failures=True)
+    payload['fetchable_adventures'] = query.count() if query is not None else 0
     # Un import peut être lancé hors de cet onglet (favori → /api/labs/
     # receive) : exposer la tâche en cours pour que l'UI la suive et
     # recharge la carte à sa fin.

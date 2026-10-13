@@ -346,6 +346,19 @@ def _collection_stats(session, collection_id) -> dict:
     return {"total": total, "ready": ready, "unresolved": total - ready}
 
 
+def _slim_for_storage(summary: dict) -> dict:
+    """Copie bornée d'un résumé pour `last_import_summary` : le TEXT
+    persisté n'a pas à embarquer des milliers d'entrées de détail — le
+    résumé rendu à l'appelant, lui, garde tout."""
+    slim = dict(summary)
+    for key, limit in (("conflicts_detail", 20), ("proposals", 20),
+                       ("warnings", 50)):
+        items = slim.get(key) or []
+        if len(items) > limit:
+            slim[key] = items[:limit] + [{"truncated": len(items) - limit}]
+    return slim
+
+
 def commit_history(session, parsed, overrides=frozenset()) -> dict:
     """Applique un export historique analysé. Retourne le résumé complet."""
     if not parsed.ok:
@@ -356,7 +369,8 @@ def commit_history(session, parsed, overrides=frozenset()) -> dict:
         stats = _collection_stats(session, collection.id)
         summary.update(stats)
         summary["collection_revision"] = collection.revision
-        collection.last_import_summary = json.dumps(summary, default=str)
+        collection.last_import_summary = json.dumps(
+            _slim_for_storage(summary), default=str)
         session.commit()
     summary["success"] = True
     return summary
@@ -420,18 +434,17 @@ def _apply_coords(session, parsed, commit: bool, overrides=frozenset()) -> dict:
     coords_by_adv = {}
     found_flag_mismatch = 0
 
-    def describe(row, stage) -> bool:
+    def describe_diff(row, stage) -> dict:
         # Propriétaire et publication décrivent l'étape quelle que soit la
         # position retenue : complétés aussi sur une étape déjà résolue, ce
-        # qui rattrape les imports antérieurs à ces champs.
-        changed = False
+        # qui rattrape les imports antérieurs à ces champs. Diff pur —
+        # l'aperçu compte « mis à jour » les mêmes lignes que le commit.
+        changes = {}
         if stage.owner and row.owner != stage.owner:
-            row.owner, changed = stage.owner, True
+            changes["owner"] = stage.owner
         if stage.published_date and row.published_date != stage.published_date:
-            row.published_date, changed = stage.published_date, True
-        if changed:
-            row.updated_at = _utcnow()
-        return changed
+            changes["published_date"] = stage.published_date
+        return changes
 
     def write(row, stage):
         row.latitude = stage.latitude
@@ -467,7 +480,11 @@ def _apply_coords(session, parsed, commit: bool, overrides=frozenset()) -> dict:
                                        row.adventure_uuid, stage.adventure_uuid))
             continue
 
-        described = describe(row, stage) if commit else False
+        described = describe_diff(row, stage)
+        if commit and described:
+            for attr, value in described.items():
+                setattr(row, attr, value)
+            row.updated_at = _utcnow()
 
         if row.latitude is not None and row.longitude is not None:
             incoming = [stage.latitude, stage.longitude]
@@ -525,7 +542,8 @@ def commit_coordinates(session, parsed, overrides=frozenset()) -> dict:
         summary.update(stats)
         summary["collection_revision"] = collection.revision if collection else 0
         if collection:
-            collection.last_import_summary = json.dumps(summary, default=str)
+            collection.last_import_summary = json.dumps(
+                _slim_for_storage(summary), default=str)
         session.commit()
     summary["success"] = True
     return summary
@@ -563,8 +581,8 @@ def commit_import_batch(session, entries, overrides=frozenset()) -> list:
         collection = get_collection(session)
         if collection is not None:
             stats = _collection_stats(session, collection.id)
-            combined = {"files": summaries, **stats,
-                        "collection_revision": collection.revision}
+            combined = {"files": [_slim_for_storage(s) for s in summaries],
+                        **stats, "collection_revision": collection.revision}
             collection.last_import_summary = json.dumps(combined, default=str)
         session.commit()
     for summary in summaries:

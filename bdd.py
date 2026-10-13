@@ -821,9 +821,11 @@ def filter_session(db, Geocache, selectedValues, status: Optional[TaskStatus] = 
     # restent visibles. Une liste vide n'est « Aucun » (aucun résultat) que si
     # la dimension offrait des options — sinon inactive (selectHasRealOptions).
     named_countries = {r[0] for r in db.session.query(Geocache.country).distinct() if r[0]}
+    # Une seule requête « labs prêts » pour tout le filtrage (pays + états).
+    labs_ready = lab_geojson.has_ready_labs(db.session)
     unknown_country_exists = db.session.query(Geocache.id).filter(
         or_(Geocache.country.is_(None), Geocache.country == '')).first() is not None \
-        or lab_geojson.has_ready_labs(db.session)
+        or labs_ready
     offered_countries = set(named_countries)
     if unknown_country_exists:
         offered_countries.add(UNKNOWN_GEO)
@@ -850,7 +852,7 @@ def filter_session(db, Geocache, selectedValues, status: Optional[TaskStatus] = 
         scope_rows = db.session.query(Geocache.state).distinct().all()
     state_scope = {(r[0] or UNKNOWN_GEO) for r in scope_rows}
     # Labs dans le périmètre pays : leur état est inconnu -> sentinelle offerte.
-    if lab_geojson.has_ready_labs(db.session) and (
+    if labs_ready and (
             not country_strict or UNKNOWN_GEO in set(countries or [])):
         state_scope.add(UNKNOWN_GEO)
     state_strict = states is not None and (
