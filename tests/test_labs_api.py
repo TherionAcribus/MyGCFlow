@@ -529,6 +529,52 @@ class LabsApiTests(unittest.TestCase):
     def test_export_empty_collection(self):
         self.assertEqual(self.client.get('/api/labs/export').status_code, 404)
 
+    def test_export_survives_a_correction_round_trip(self):
+        """Export → vidage → réimport : une correction manuelle (date et
+        coordonnées) et les champs du GPX (owner, publication) ne se
+        perdent pas — le found_at réémis décrivait autrefois l'ancienne
+        date, le réimport la faisait alors gagner sur la correction."""
+        self._import_history()
+        self._import_coords()
+        rv = self.client.post(f'/api/labs/discoveries/{STAGE_1}/resolve',
+                              json={"found_date": "2024-06-01",
+                                    "latitude": 45.5, "longitude": 3.25})
+        self.assertEqual(rv.status_code, 200)
+        # owner/published_date sont portés par le GPX Lab2Gpx : posés en
+        # base ici, comme le ferait l'enrichissement.
+        row = db.session.query(LabDiscovery).filter_by(stage_uuid=STAGE_1).one()
+        row.owner, row.published_date = "Testeur_Fictif", date(2020, 3, 10)
+        db.session.commit()
+
+        payload = json.loads(self.client.get('/api/labs/export').data)
+        exported = next(d for d in payload["discoveries"]
+                        if d["stage_id"] == STAGE_1)
+        self.assertEqual(exported["found_at"], "2024-06-01")
+        self.assertEqual(exported["date_basis"], "user_correction")
+        self.assertEqual(exported["coordinate_source"], "user_correction")
+        self.assertEqual(exported["owner"], "Testeur_Fictif")
+        self.assertEqual(exported["published_date"], "2020-03-10")
+
+        rv = self.client.post('/api/labs/clear')
+        self.assertEqual(rv.status_code, 200)
+        self.assertEqual(db.session.query(LabDiscovery).count(), 0)
+
+        parsed = lf.parse_lab_finds(json.dumps(payload))
+        self.assertTrue(parsed.ok, parsed.errors)
+        lab_store.commit_history(db.session, parsed)
+
+        self.assertEqual(db.session.query(LabDiscovery).count(), 12)
+        db.session.expire_all()
+        row = db.session.query(LabDiscovery).filter_by(stage_uuid=STAGE_1).one()
+        # La date corrigée a survécu — pas l'ancien instant du 2024-05-14.
+        self.assertEqual(row.found_date, date(2024, 6, 1))
+        self.assertEqual(row.date_basis, "user_correction")
+        self.assertAlmostEqual(row.latitude, 45.5)
+        self.assertAlmostEqual(row.longitude, 3.25)
+        self.assertEqual(row.coordinate_source, "user_correction")
+        self.assertEqual(row.owner, "Testeur_Fictif")
+        self.assertEqual(row.published_date, date(2020, 3, 10))
+
 
 def _fake_fetch(fail_after=None, failed_before=(), failed_after=()):
     """Double de `fetch_gpx_batches` : livre le GPX de test via `on_payload`

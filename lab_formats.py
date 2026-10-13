@@ -4,7 +4,11 @@ Module sans dépendance obligatoire à Flask, testable sur fichiers. Deux format
 
 - `mygcflow-lab-finds` v1 : export JSON de l'historique `/logs` produit par
   le script d'export (`static/labs/export_lab_logs.src.js`) — identifiants
-  d'étapes + dates de découverte, pas de coordonnées.
+  d'étapes + dates de découverte, pas de coordonnées. Le réexport émis par
+  l'application (`/api/labs/export`) reste en schema_version 1 : ses champs
+  additifs (coordonnées, `owner`, `published_date`, provenance
+  `user_correction`) sont relus — une correction manuelle survit ainsi à
+  un aller-retour export → réimport.
 - GPX Lab2Gpx « un waypoint par étape » : `gsak:Guid` (UUID d'étape),
   `lab2gpx:uuid` (UUID d'Adventure), coordonnées réelles ; `<time>` porte la
   publication de l'Adventure et n'est jamais une date de découverte — elle
@@ -48,6 +52,9 @@ LAB_FINDS_SCHEMA_VERSION = 1
 FORMAT_LAB2GPX_GPX = "lab2gpx-gpx"
 SOURCE_LAB_FINDS = "mygcflow-lab-finds"
 SOURCE_LAB2GPX = "lab2gpx-gpx"
+# Provenance d'une correction manuelle : prioritaire sur toute source
+# fichier, réémise puis relue par le réexport mygcflow-lab-finds.
+USER_CORRECTION = "user_correction"
 
 COVERAGE_VALUES = {"unknown", "partial", "complete"}
 
@@ -220,6 +227,11 @@ class DiscoveryDraft:
     coordinate_scope: str | None
     is_archived: bool
     warnings: list = field(default_factory=list)
+    # Champs additifs du réexport MyGCFlow : absents d'un export /logs brut,
+    # relus quand ils sont présents (schema_version 1 inchangé).
+    coordinate_source: str | None = None
+    owner: str | None = None
+    published_date: date | None = None
 
 
 @dataclass
@@ -388,6 +400,13 @@ def parse_lab_finds(data: bytes | str) -> HistoryParseResult:
             else:
                 warnings.append(_("coordonnées historique invalides — ignorées"))
 
+        # Réexport MyGCFlow : la sentinelle « correction manuelle » est la
+        # seule provenance entrante honorée — tout autre date_basis /
+        # coordinate_source déclaré est ignoré et recalculé (ici pour la
+        # date, dans la couche store pour les coordonnées).
+        user_corrected = rec.get("date_basis") == USER_CORRECTION \
+            and pd.found_date is not None
+
         res.drafts.append(DiscoveryDraft(
             local_key=local_key,
             adventure_uuid=adventure_uuid,
@@ -400,13 +419,18 @@ def parse_lab_finds(data: bytes | str) -> HistoryParseResult:
             found_at_utc=pd.found_at_utc,
             found_at_offset_minutes=pd.offset_minutes,
             date_precision=pd.precision,
-            date_basis=pd.basis,
+            date_basis=USER_CORRECTION if user_corrected else pd.basis,
             source_date_text=_clean_str(rec.get("found_at")) or _clean_str(rec.get("found_date")),
             latitude=lat,
             longitude=lon,
             coordinate_scope=scope if scope in ("stage", "adventure") else None,
             is_archived=bool(rec.get("is_archived") or rec.get("adventure_is_archived")),
             warnings=warnings,
+            coordinate_source=(USER_CORRECTION
+                               if rec.get("coordinate_source") == USER_CORRECTION
+                               else None),
+            owner=_clean_str(rec.get("owner")),
+            published_date=_leading_date(rec.get("published_date")),
         ))
 
     res.ok = True

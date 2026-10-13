@@ -31,12 +31,11 @@ from flask_babel import gettext as _
 from sqlalchemy import func
 
 from lab_formats import (
-    SOURCE_LAB2GPX, SOURCE_LAB_FINDS, normalize_title,
+    SOURCE_LAB2GPX, SOURCE_LAB_FINDS, USER_CORRECTION, normalize_title,
 )
 from models import LabCollection, LabDiscovery
 
 COLLECTION_UID = "default"
-USER_CORRECTION = "user_correction"
 
 # Conflits que l'utilisateur peut trancher en faveur de la valeur reçue ; un
 # identifiant contradictoire (adventure_uuid, stage_uuid) n'en fait pas partie.
@@ -153,6 +152,11 @@ def _diff_draft(draft, row, overrides=frozenset()) -> tuple[dict, list]:
     fill_or_keep("stage_title", draft.stage_title)
     fill_or_keep("adventure_url", draft.adventure_url)
     fill_or_keep("source_record_key", draft.source_record_key)
+    # Propriétaire et publication arrivent aussi par le réexport
+    # mygcflow-lab-finds, pas seulement par le GPX.
+    fill_or_keep("owner", draft.owner)
+    if draft.published_date is not None and row.published_date != draft.published_date:
+        updates["published_date"] = draft.published_date
 
     # Date : deux valeurs fiables différentes → conflit, on conserve l'existante.
     # Précision, base, texte source et offset décrivent `found_date` : ils ne
@@ -203,7 +207,7 @@ def _diff_draft(draft, row, overrides=frozenset()) -> tuple[dict, list]:
             updates.update({
                 "latitude": draft.latitude, "longitude": draft.longitude,
                 "coordinate_scope": draft.coordinate_scope or "stage",
-                "coordinate_source": SOURCE_LAB_FINDS,
+                "coordinate_source": draft.coordinate_source or SOURCE_LAB_FINDS,
                 "coordinate_status": LabDiscovery.COORD_RESOLVED,
                 "coord_fetch_failed_at": None,
                 "suggested_latitude": None, "suggested_longitude": None,
@@ -255,7 +259,10 @@ def _apply_history(session, parsed, commit: bool, overrides=frozenset()) -> dict
                     latitude=draft.latitude,
                     longitude=draft.longitude,
                     coordinate_scope=draft.coordinate_scope,
-                    coordinate_source=SOURCE_LAB_FINDS if draft.latitude is not None else None,
+                    coordinate_source=draft.coordinate_source or (
+                        SOURCE_LAB_FINDS if draft.latitude is not None else None),
+                    owner=draft.owner,
+                    published_date=draft.published_date,
                     coordinate_status=(
                         LabDiscovery.COORD_RESOLVED if draft.latitude is not None
                         else LabDiscovery.COORD_MISSING

@@ -685,7 +685,10 @@ def resolve_discovery(local_uid):
             row.found_date = pd.found_date
             row.date_precision = "day"
             row.date_basis = lab_store.USER_CORRECTION
-            # L'instant source décrivait l'ancienne date : ne pas le garder.
+            # L'instant et le texte source décrivaient l'ancienne date : le
+            # texte doit décrire la nouvelle pour que l'export réémette une
+            # valeur cohérente, l'instant précis n'a plus lieu d'être.
+            row.source_date_text = pd.found_date.isoformat()
             row.found_at_utc = None
             row.found_at_offset_minutes = None
         row.updated_at = lab_store._utcnow()
@@ -731,13 +734,19 @@ def labs_export():
         "adventure_title": r.adventure_title,
         "stage_title": r.stage_title,
         "found_date": r.found_date.isoformat() if r.found_date else None,
-        "found_at": r.source_date_text,
+        # Correction manuelle : le texte source peut décrire l'ancienne date
+        # (lignes corrigées avant ce fix) — réémettre la date corrigée,
+        # sinon le réimport ferait gagner l'ancien instant.
+        "found_at": (r.found_date.isoformat() if r.found_date else None)
+        if r.date_basis == lab_store.USER_CORRECTION else r.source_date_text,
         "date_precision": r.date_precision,
         "date_basis": r.date_basis,
         "latitude": r.latitude,
         "longitude": r.longitude,
         "coordinate_scope": r.coordinate_scope,
         "coordinate_source": r.coordinate_source,
+        "owner": r.owner,
+        "published_date": r.published_date.isoformat() if r.published_date else None,
         "adventure_url": r.adventure_url,
         "log_id": int(r.source_record_key[4:])
         if r.source_record_key and r.source_record_key.startswith("log:")
