@@ -579,6 +579,12 @@ def _safe_loop_end(audio_loop_end):
     return seconds if math.isfinite(seconds) and seconds > 0 else 0.0
 
 
+def _safe_start(audio_start):
+    """Point de départ dans la musique (secondes, 0 = début du fichier)."""
+    # Même règle qu'un point de bouclage : positif et fini, sinon 0.
+    return _safe_loop_end(audio_start)
+
+
 def _truthy(value):
     """Booléen reçu du client (JSON ou champ de formulaire)."""
     if isinstance(value, str):
@@ -586,22 +592,30 @@ def _truthy(value):
     return bool(value)
 
 
-def _audio_filter_chain(vol, out_dur=None, fade_out=0.0, pad=True, loop=False, loop_end=0.0):
-    """Chaîne de filtres de la piste musicale : volume, boucle, fondu de sortie, silence.
+def _audio_filter_chain(vol, out_dur=None, fade_out=0.0, pad=True, loop=False, loop_end=0.0, start=0.0):
+    """Chaîne de filtres de la piste musicale : volume, départ, boucle, fondu de sortie, silence.
+
+    `start` (secondes) saute le début de la musique (une intro) : la vidéo
+    commence sur ce point.
 
     `loop` répète la musique jusqu'à la fin de la vidéo quand elle est plus
-    courte ; `loop_end` (secondes) raccourcit le motif répété, pour ne pas
-    rejouer le blanc de fin que l'utilisateur a choisi d'ignorer. La boucle
-    est infinie : elle n'est posée que si `out_dur` borne la sortie (-t).
+    courte ; `loop_end` (secondes, position dans le fichier) raccourcit le
+    motif répété, pour ne pas rejouer le blanc de fin que l'utilisateur a
+    choisi d'ignorer. Le motif va du départ à `loop_end`. La boucle est
+    infinie : elle n'est posée que si `out_dur` borne la sortie (-t).
 
     Le fondu se termine exactement à la fin de la vidéo (`out_dur`) : il sert
     quand la musique est plus longue que la vidéo et serait sinon coupée net.
     Il doit précéder apad, et n'est posé que si la durée de sortie est connue.
     """
     filters = [f"volume={vol}"]
+    if start > 0:
+        # asetpts : la piste découpée repart de zéro, sinon aloop et afade
+        # compteraient depuis le début du fichier.
+        filters.append(f"atrim=start={start:.3f},asetpts=PTS-STARTPTS")
     if loop and out_dur and out_dur > 0:
-        if loop_end > 0:
-            filters.append(f"atrim=end={loop_end:.3f}")
+        if loop_end > start:
+            filters.append(f"atrim=end={loop_end - start:.3f}")
         # size : nombre maximal d'échantillons mis en boucle ; la valeur
         # maximale revient à « toute la piste ».
         filters.append("aloop=loop=-1:size=2147483647")
@@ -825,7 +839,7 @@ def _write_concat_list(image_files, fps, list_path):
 
 def _assemble_pictures(image_folder, output_video, fps=24, audio_path=None, audio_volume=1.0, status=None,
                        audio_fade_out=0.0, audio_loop=False, audio_loop_end=0.0,
-                       color_fidelity=DEFAULT_COLOR_FIDELITY, expected_frames=0):
+                       color_fidelity=DEFAULT_COLOR_FIDELITY, expected_frames=0, audio_start=0.0):
     """Coeur de l'assemblage vidéo. Retourne un dict {'success', 'message', ...}.
 
     Met à jour un TaskStatus optionnel (`status`) pour le suivi de progression,
@@ -899,6 +913,7 @@ def _assemble_pictures(image_folder, output_video, fps=24, audio_path=None, audi
     vol = _safe_volume(audio_volume)
     fade_out = _safe_fade_out(audio_fade_out)
     loop, loop_end = _truthy(audio_loop), _safe_loop_end(audio_loop_end)
+    start = _safe_start(audio_start)
 
     ffmpeg = _get_ffmpeg_exe()
     # Le script ffconcat est temporaire et propre à cet encodage : il ne doit pas
@@ -924,7 +939,7 @@ def _assemble_pictures(image_folder, output_video, fps=24, audio_path=None, audi
                 '-i', audio_file,
                 '-filter_complex',
                 f"[0:v]{_EVEN_DIMENSIONS_FILTER}[v];"
-                f"[1:a]{_audio_filter_chain(vol, out_dur, fade_out, loop=loop, loop_end=loop_end)}[a]",
+                f"[1:a]{_audio_filter_chain(vol, out_dur, fade_out, loop=loop, loop_end=loop_end, start=start)}[a]",
                 '-map', '[v]', '-map', '[a]',
             ] + _AAC_OUTPUT_ARGS
             print(f"[assemble] Audio attaché (vol={vol}, durée vidéo={out_dur:.1f}s)")
@@ -968,7 +983,8 @@ def assemble_pictures_directory(image_folder, output_video, fps=24, audio_path=N
 
 def run_assemble_video_task(status, app, image_folder, output_video, fps=24, audio_path=None,
                             audio_volume=1.0, color_fidelity=DEFAULT_COLOR_FIDELITY, locale=None,
-                            expected_frames=0, audio_fade_out=0.0, audio_loop=False, audio_loop_end=0.0):
+                            expected_frames=0, audio_fade_out=0.0, audio_loop=False, audio_loop_end=0.0,
+                            audio_start=0.0):
     """Tâche de fond : assemble la vidéo et met à jour la progression via TaskStatus.
 
     Exécutée par le TaskManager dans un thread, ce qui évite l'expiration du
@@ -980,7 +996,8 @@ def run_assemble_video_task(status, app, image_folder, output_video, fps=24, aud
         result = _assemble_pictures(image_folder, output_video, fps, audio_path, audio_volume,
                                     status=status, color_fidelity=color_fidelity,
                                     expected_frames=expected_frames, audio_fade_out=audio_fade_out,
-                                    audio_loop=audio_loop, audio_loop_end=audio_loop_end)
+                                    audio_loop=audio_loop, audio_loop_end=audio_loop_end,
+                                    audio_start=audio_start)
         if not result.get('success'):
             status.fail(result.get('message', _("Échec de l'assemblage")))
             return
@@ -1001,7 +1018,7 @@ TASK_TYPE_VIDEO_PROCESS = "video_processing"
 
 def _process_recorded_video(input_path, output_path, slowdown=1.0, audio_path=None, audio_volume=1.0, fps=None,
                             status=None, color_fidelity=DEFAULT_COLOR_FIDELITY, audio_fade_out=0.0,
-                            audio_loop=False, audio_loop_end=0.0):
+                            audio_loop=False, audio_loop_end=0.0, audio_start=0.0):
     """Normalise la vitesse (setpts) et mux l'audio en UNE passe ffmpeg → MP4 H.264/AAC.
 
     Remplace l'ancien pipeline navigateur (jusqu'à 3 ré-encodages temps réel,
@@ -1024,6 +1041,7 @@ def _process_recorded_video(input_path, output_path, slowdown=1.0, audio_path=No
     vol = _safe_volume(audio_volume)
     fade_out = _safe_fade_out(audio_fade_out)
     loop, loop_end = _truthy(audio_loop), _safe_loop_end(audio_loop_end)
+    start = _safe_start(audio_start)
     # fps de sortie : setpts accélère la vidéo sans redécimer (le framerate serait
     # multiplié par sd). On force le fps cible pour un résultat propre et compact.
     try:
@@ -1056,7 +1074,7 @@ def _process_recorded_video(input_path, output_path, slowdown=1.0, audio_path=No
             cmd += [
                 '-filter_complex',
                 f"[0:v]setpts=PTS/{sd},{_EVEN_DIMENSIONS_FILTER}[v];"
-                f"[1:a]{_audio_filter_chain(vol, out_dur, fade_out, loop=loop, loop_end=loop_end)}[a]",
+                f"[1:a]{_audio_filter_chain(vol, out_dur, fade_out, loop=loop, loop_end=loop_end, start=start)}[a]",
                 '-map', '[v]', '-map', '[a]',
                 '-t', f"{out_dur:.3f}",
             ] + _AAC_OUTPUT_ARGS
@@ -1101,7 +1119,7 @@ def _process_recorded_video(input_path, output_path, slowdown=1.0, audio_path=No
 
 def run_process_video_task(status, app, input_path, output_path, slowdown=1.0, audio_path=None,
                            audio_volume=1.0, fps=None, color_fidelity=DEFAULT_COLOR_FIDELITY, locale=None,
-                           audio_fade_out=0.0, audio_loop=False, audio_loop_end=0.0):
+                           audio_fade_out=0.0, audio_loop=False, audio_loop_end=0.0, audio_start=0.0):
     """Tâche de fond : post-traite un enregistrement MediaRecorder via ffmpeg.
 
     `app`/`locale` viennent de la requête appelante (même raison que
@@ -1111,7 +1129,8 @@ def run_process_video_task(status, app, input_path, output_path, slowdown=1.0, a
         result = _process_recorded_video(input_path, output_path, slowdown, audio_path, audio_volume,
                                          fps=fps, status=status, color_fidelity=color_fidelity,
                                          audio_fade_out=audio_fade_out,
-                                         audio_loop=audio_loop, audio_loop_end=audio_loop_end)
+                                         audio_loop=audio_loop, audio_loop_end=audio_loop_end,
+                                         audio_start=audio_start)
         if not result.get('success'):
             status.fail(result.get('message', _("Échec du traitement vidéo")))
             return
@@ -1137,7 +1156,7 @@ def process_recorded_video(request):
     Autres champs :
       - 'audio' (fichier) OU 'audio' (nom déjà présent dans audio/) : piste audio optionnelle
       - 'slowdown', 'audio_volume', 'audio_fade_out' (secondes), 'audio_loop',
-        'audio_loop_end' (secondes), 'color_fidelity' : options
+        'audio_loop_end' (secondes), 'audio_start' (secondes), 'color_fidelity' : options
       - 'fileName' : nom de base de la vidéo (cf. video_output_path)
     """
     from task_manager import task_manager
@@ -1181,6 +1200,7 @@ def process_recorded_video(request):
         audio_fade_out=audio_fade_out,
         audio_loop=request.form.get('audio_loop'),
         audio_loop_end=_num('audio_loop_end', 0.0),
+        audio_start=_num('audio_start', 0.0),
     )
     return jsonify({
         'success': True,

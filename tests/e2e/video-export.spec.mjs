@@ -329,6 +329,9 @@ test('la musique part au serveur à sa sélection, l\'export n\'en transmet que 
   await expect(page.locator('#btnUnlinkAudio')).toBeVisible();
   await page.locator('#btnUnlinkAudio').click();
   await expect(page.locator('#rhythmModeRate')).toBeChecked();
+  // Intro d'une seconde sautée : le point de départ part avec l'export.
+  await page.locator('#inputAudioStart').fill('1');
+  await page.locator('#inputAudioStart').blur();
 
   await prepareSlowRecording(page, 'mediarecorder', '12.5');
   await page.locator('#btnQuickExport').click({ force: true });
@@ -343,6 +346,7 @@ test('la musique part au serveur à sa sélection, l\'export n\'en transmet que 
   const form = processed[0].postDataBuffer().toString('latin1');
   expect(form).toMatch(new RegExp(`name="audio"\\r\\n\\r\\n${serverName.replace('.', '\\.')}\\r\\n`));
   expect(form).not.toMatch(/name="audio"; filename=/);
+  expect(form).toMatch(/name="audio_start"\r\n\r\n1\r\n/);
 
   const expectationPath = path.join(RUNTIME, 'music-video-expectation.json');
   writeFileSync(expectationPath, JSON.stringify({ has_audio: true, video_codec: 'h264', min_size_bytes: 1_000 }));

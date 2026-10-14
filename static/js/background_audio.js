@@ -15,34 +15,43 @@ import { includedMusicFile } from './music_track.js';
 let bgAudioCtx = null, bgAudioEl = null, bgAudioSource = null, bgAudioGain = null, bgAudioActive = false;
 let blockBackgroundAudioPlayback = false;
 let bgAudioWatchTimer = null;
+// La lecture ne part qu'une fois la piste placée sur son point de départ
+// (`bgAudioBegun`) ; `bgAudioWanted` dit si elle doit jouer à ce moment-là
+// (une pause a pu survenir pendant le chargement).
+let bgAudioBegun = false, bgAudioWanted = false;
+
+function playBackgroundAudio(context) {
+    try { bgAudioCtx.resume().catch(()=>{}); } catch(_) {}
+    bgAudioEl.play().then(()=>{ bgAudioActive = true; }).catch(e => console.warn(`${context} audio bloquée:`, e));
+}
 
 // Boucle et fondu de sortie de l'aperçu (cf. audioLoopPlan / audioFadeOutPlan
 // dans ui.js). Tout se règle sur la position de lecture de la piste, qui
 // avance et se met en pause avec l'animation — rien à reprogrammer à la
 // reprise. Le temps écoulé depuis le début de la vidéo est la somme des tours
-// de boucle déjà joués et de la position courante.
-function startPlaybackWatch(volume) {
+// de boucle déjà joués et du chemin parcouru depuis le point de départ.
+// La boucle est faite ici, pas par le navigateur : la sienne reprendrait au
+// début du fichier, intro comprise.
+function startPlaybackWatch(volume, startS) {
     const fade = pkg.audioFadeOutPlan?.();
     const loop = pkg.audioLoopPlan?.();
     if (!fade && !loop) return;
-    // Boucle sur le fichier entier : le navigateur s'en charge. Avec un point
-    // de bouclage (blanc de fin ignoré), on revient au début nous-mêmes.
-    const loopEndS = loop?.endMs ? loop.endMs / 1000 : 0;
-    if (loop && !loopEndS) bgAudioEl.loop = true;
-    let playedLoopsS = 0, lastPosition = 0;
+    const loopStartS = loop ? loop.startMs / 1000 : startS;
+    let playedLoopsS = 0;
     bgAudioWatchTimer = setInterval(() => {
-        if (!bgAudioEl || !bgAudioGain) return;
+        if (!bgAudioEl || !bgAudioGain || !bgAudioBegun) return;
         let position = bgAudioEl.currentTime;
-        if (loopEndS && position >= loopEndS) {
-            playedLoopsS += position;
-            bgAudioEl.currentTime = position = 0;
-        } else if (position < lastPosition) {
-            // Le navigateur vient de reboucler.
-            playedLoopsS += lastPosition;
+        if (loop) {
+            const loopEndS = loop.endMs ? loop.endMs / 1000 : bgAudioEl.duration;
+            if (bgAudioEl.ended || (loopEndS > loopStartS && position >= loopEndS)) {
+                playedLoopsS += Math.min(position, loopEndS || position) - loopStartS;
+                bgAudioEl.currentTime = position = loopStartS;
+                // Arrivée en fin de fichier, la piste s'est arrêtée d'elle-même.
+                if (bgAudioEl.paused && bgAudioWanted) playBackgroundAudio('Boucle');
+            }
         }
-        lastPosition = position;
         if (fade) {
-            const remaining = fade.endMs / 1000 - (playedLoopsS + position);
+            const remaining = fade.endMs / 1000 - (playedLoopsS + position - startS);
             bgAudioGain.gain.value = volume * Math.max(0, Math.min(1, remaining / fade.seconds));
         }
     }, 50);
@@ -73,17 +82,29 @@ export function startBackgroundMusicIfAny(){
 
         bgAudioEl = new Audio(URL.createObjectURL(file));
         bgAudioEl.preload = 'auto';
-        // Lecture unique : le son ne doit pas se relancer automatiquement en fin de piste
+        // Jamais la boucle du navigateur : elle reprendrait au début du
+        // fichier, intro comprise (la boucle est faite par startPlaybackWatch).
         bgAudioEl.loop = false;
 
         bgAudioSource = bgAudioCtx.createMediaElementSource(bgAudioEl);
         bgAudioGain = bgAudioCtx.createGain();
         bgAudioGain.gain.value = volume;
         bgAudioSource.connect(bgAudioGain).connect(bgAudioCtx.destination);
-        startPlaybackWatch(bgAudioGain.gain.value);
-
-        try { bgAudioCtx.resume().catch(()=>{}); } catch(_) {}
-        bgAudioEl.play().then(()=>{ bgAudioActive = true; }).catch(e => console.warn('Lecture audio bloquée:', e));
+        // Point de départ (intro sautée) : la position ne peut être posée
+        // qu'une fois les métadonnées lues ; jouer avant ferait entendre un
+        // éclat d'intro.
+        const startS = (pkg.audioStartMs?.() || 0) / 1000;
+        startPlaybackWatch(bgAudioGain.gain.value, startS);
+        bgAudioWanted = true;
+        const el = bgAudioEl;
+        const begin = () => {
+            if (el !== bgAudioEl) return; // arrêtée ou remplacée entre-temps
+            if (startS > 0) el.currentTime = startS;
+            bgAudioBegun = true;
+            if (bgAudioWanted) playBackgroundAudio('Lecture');
+        };
+        if (startS > 0 && el.readyState < 1) el.addEventListener('loadedmetadata', begin, { once: true });
+        else begin();
     } catch(e) {
         console.warn('startBackgroundMusicIfAny error:', e);
     }
@@ -92,6 +113,7 @@ export function startBackgroundMusicIfAny(){
 // Pause douce : conserve l'élément, le contexte et la position de lecture pour
 // que resumeBackgroundMusic reprenne exactement où la musique s'était arrêtée.
 export function pauseBackgroundMusic(){
+    bgAudioWanted = false;
     try { if (bgAudioEl) bgAudioEl.pause(); } catch(_) {}
     try { if (bgAudioCtx) bgAudioCtx.suspend().catch(()=>{}); } catch(_) {}
     bgAudioActive = false;
@@ -109,13 +131,16 @@ export function resumeBackgroundMusic(){
             startBackgroundMusicIfAny();
             return;
         }
-        // Piste déjà finie au moment de la pause : ne pas la relancer depuis zéro
-        if (bgAudioEl.ended) {
+        // Piste déjà finie au moment de la pause : ne pas la relancer depuis
+        // zéro (une boucle, elle, la replace d'elle-même sur son départ).
+        if (bgAudioEl.ended && !pkg.audioLoopPlan?.()) {
             stopBackgroundMusic();
             return;
         }
-        try { bgAudioCtx.resume().catch(()=>{}); } catch(_) {}
-        bgAudioEl.play().then(()=>{ bgAudioActive = true; }).catch(e => console.warn('Reprise audio bloquée:', e));
+        bgAudioWanted = true;
+        // Pas encore placée sur son point de départ : elle partira d'elle-même.
+        if (!bgAudioBegun) return;
+        playBackgroundAudio('Reprise');
     } catch(e) {
         console.warn('resumeBackgroundMusic error:', e);
     }
@@ -127,6 +152,7 @@ export function stopBackgroundMusic(){
     try { if (bgAudioCtx) { bgAudioCtx.close(); } } catch(_) {}
     bgAudioEl = bgAudioCtx = bgAudioSource = bgAudioGain = null;
     bgAudioActive = false;
+    bgAudioBegun = bgAudioWanted = false;
 }
 
 // Bouton « Parcourir… » de l'input musique (masqué visuellement) : le

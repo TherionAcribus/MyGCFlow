@@ -114,6 +114,35 @@ class AudioLoopFilterTests(unittest.TestCase):
             self.assertEqual(capture._safe_loop_end(value), 0.0)
 
 
+class AudioStartFilterTests(unittest.TestCase):
+    """Point de départ dans la musique (intro sautée)."""
+
+    def test_the_intro_is_skipped_and_the_track_restarts_at_zero(self):
+        self.assertEqual(
+            capture._audio_filter_chain(1.0, 60.0, start=12.5),
+            "volume=1.0,atrim=start=12.500,asetpts=PTS-STARTPTS,apad",
+        )
+
+    def test_the_loop_repeats_from_the_start_point_to_the_loop_end(self):
+        # loop_end est une position dans le fichier : 42,5 s − 12,5 s de départ.
+        self.assertEqual(
+            capture._audio_filter_chain(1.0, 60.0, 3.0, loop=True, loop_end=42.5, start=12.5),
+            "volume=1.0,atrim=start=12.500,asetpts=PTS-STARTPTS,atrim=end=30.000,"
+            "aloop=loop=-1:size=2147483647,afade=t=out:st=57.000:d=3.000,apad",
+        )
+
+    def test_a_loop_end_before_the_start_is_ignored(self):
+        self.assertEqual(
+            capture._audio_filter_chain(1.0, 60.0, loop=True, loop_end=5.0, start=12.5),
+            "volume=1.0,atrim=start=12.500,asetpts=PTS-STARTPTS,aloop=loop=-1:size=2147483647,apad",
+        )
+
+    def test_client_values_are_sanitised(self):
+        self.assertEqual(capture._safe_start("12.5"), 12.5)
+        for value in (None, "abc", -1, 0, float("nan"), float("inf")):
+            self.assertEqual(capture._safe_start(value), 0.0)
+
+
 class UploadedAudioStorageTests(unittest.TestCase):
     """Musiques reçues : rangées dans audio/ sous un nom tiré de leur contenu."""
 

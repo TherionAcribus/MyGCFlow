@@ -84,6 +84,12 @@ class RecordingCoercionTests(unittest.TestCase):
         self.assertEqual(coerce_recording_settings({"audio_file": "../../secret.txt"}).audio_file, "secret.txt")
         self.assertEqual(coerce_recording_settings({"audio_file": 12}).audio_file, "")
 
+    def test_the_music_start_point_is_a_bounded_number_of_seconds(self):
+        self.assertEqual(coerce_recording_settings({}).audio_start_seconds, 0.0)
+        self.assertEqual(coerce_recording_settings({"audio_start_seconds": 12.5}).audio_start_seconds, 12.5)
+        for value in (-3, "abc", None):
+            self.assertEqual(coerce_recording_settings({"audio_start_seconds": value}).audio_start_seconds, 0.0)
+
     def test_no_display_name_without_a_saved_music(self):
         r = coerce_recording_settings({"audio_file": "", "audio_file_name": "Ma musique.mp3"})
         self.assertEqual((r.audio_file, r.audio_file_name), ("", ""))

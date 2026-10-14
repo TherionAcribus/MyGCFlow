@@ -35,7 +35,7 @@ import { isEvolutionPage } from './app_mode.mjs';
 import { resolveCameraFollowMode } from './camera_follow.mjs';
 import { hasNotableTrailingSilence, trimmedDurationMs } from './audio_silence.mjs';
 import { analyzeMusicFile } from './music_analysis.mjs';
-import { musicTimeline, timelineX, waveformPath } from './music_waveform.mjs';
+import { musicTimeline, sourceMsAt, timelineMsAt, timelineX, waveformPath } from './music_waveform.mjs';
 import { musicTrack } from './music_track.js';
 import {
     buildTrailPath,
@@ -110,7 +110,7 @@ let isCombinedLatLonMode = true;
 // sauvegardé, quand ce navigateur ne sait pas encoder ce dernier ; null sinon.
 var recordMimeShownFallback = null;
 var selectRecordMode, selectRecordQualityProfile, recordAdvancedSettings, inputRecordFps, inputRecordBitrate, selectRecordMime, inputRecordSlowdown, inputRecordScaleFactor, inputRecordFileName, cbRecordNormalize, selectRecordResolution, selectRecordColorFidelity;
-var cbRecordAudioEnable, inputAudioFile, inputAudioVolume, cbAudioTrimSilence, cbAudioFadeOut, cbAudioLoop;
+var cbRecordAudioEnable, inputAudioFile, inputAudioVolume, cbAudioTrimSilence, cbAudioFadeOut, cbAudioLoop, inputAudioStart;
 // Passe à true à la première synchro déclenchée par une résolution de
 // données (chargement, filtrage, vidage). L'état vide de la carte ne se
 // révèle qu'à ce moment-là : l'afficher dès l'init le ferait flasher
@@ -137,12 +137,18 @@ const audioDurationCache = new Map();
 const musicAnalysisCache = new Map();
 let audioReadToken = 0;
 // musicDurationMs est la durée UTILE de la musique, celle sur laquelle le plan
-// de timing se cale : la durée du fichier (musicFileDurationMs), moins son
-// blanc de fin (musicTrailingSilenceMs) quand l'utilisateur a choisi de
-// l'ignorer. Recalculée par applyMusicSilenceTrim().
+// de timing se cale : de son point de départ (musicStartMs, intro sautée) à sa
+// fin utile (musicEndMs) — la fin du fichier (musicFileDurationMs), ou celle
+// du son quand l'utilisateur a choisi d'ignorer le blanc de fin
+// (musicTrailingSilenceMs). Départ et fin sont des positions dans le fichier.
+// Recalculés par applyMusicBounds().
 var musicDurationMs = null;
 var musicFileDurationMs = null;
 var musicTrailingSilenceMs = 0;
+var musicStartMs = 0;
+var musicEndMs = null;
+// Musique gardée au minimum après le point de départ.
+const MIN_MUSIC_AFTER_START_MS = 1000;
 // Pics de la forme d'onde (0 à 1), null si la piste n'a pas pu être décodée.
 var musicPeaks = null;
 // Durée du fondu de sortie appliqué à une musique plus longue que la vidéo.
@@ -210,6 +216,7 @@ const RECORD_SETTINGS_FIELDS = [
     'inputRecordSlowdown', 'inputRecordScaleFactor', 'selectRecordMime',
     'inputRecordFileName', 'cbRecordNormalize',
     'cbRecordAudioEnable', 'inputAudioVolume', 'cbAudioTrimSilence', 'cbAudioFadeOut', 'cbAudioLoop',
+    'inputAudioStart',
     'selectRecordResolution',
     'selectRecordColorFidelity',
 ];
@@ -286,12 +293,19 @@ function musicCutAtVideoEnd(plan = lastTimingPlan) {
     return musicOutlastsVideo(plan) || musicLoops(plan);
 }
 
-// Boucle à appliquer à la musique, ou null. `endMs` : point où reprendre au
-// début quand le blanc de fin est ignoré (null = fin du fichier). Mêmes
-// lecteurs que audioFadeOutPlan.
+// Boucle à appliquer à la musique, ou null : le motif répété va de `startMs`
+// (point de départ) à `endMs` (fin utile, avant le blanc de fin s'il est
+// ignoré) — deux positions dans le fichier. Mêmes lecteurs que
+// audioFadeOutPlan.
 export function audioLoopPlan() {
     if (!pkg.options?.record?.audio?.enabled || !musicLoops()) return null;
-    return { endMs: musicDurationMs < musicFileDurationMs ? musicDurationMs : null };
+    return { startMs: musicStartMs, endMs: musicEndMs };
+}
+
+// Point de départ dans la musique (ms, position dans le fichier) : l'intro
+// sautée. Lu par l'aperçu et par les deux pipelines d'enregistrement.
+export function audioStartMs() {
+    return musicTrack.hasFile() ? musicStartMs : 0;
 }
 
 // Fondu de sortie à appliquer à la musique, ou null : `seconds` de fondu se
@@ -336,7 +350,8 @@ function updateMusicSyncUi(plan = lastTimingPlan) {
     const lines = [];
     if (hasFile && Number.isFinite(musicDurationMs) && musicDurationMs > 0) {
         lines.push(t('Musique : ${d}', { d: formatDurationHuman(musicDurationMs) }));
-        if (musicDurationMs < musicFileDurationMs) lines.push(t('(blanc de fin ignoré)'));
+        if (musicStartMs > 0) lines.push(t('(à partir de ${s})', { s: formatDurationHuman(musicStartMs) }));
+        if (musicEndMs < musicFileDurationMs) lines.push(t('(blanc de fin ignoré)'));
     }
     const fadeOut = !!pkg.options?.record?.audio?.fadeOut;
     if (locked && plan?.valid) {
@@ -379,20 +394,24 @@ function updateMusicSyncUi(plan = lastTimingPlan) {
 // variables CSS du thème clair/sombre. Mêmes règles que le texte d'état
 // (musicLoops, musicCutAtVideoEnd), qui en est l'équivalent accessible.
 function renderMusicWaveform(plan = lastTimingPlan) {
+    syncMusicStartField();
     const box = document.getElementById('musicWaveform');
     if (!box) return;
     if (!musicTrack.hasFile() || !musicPeaks?.length || !(musicFileDurationMs > 0)) {
         box.hidden = true;
+        lastMusicTimeline = null;
         return;
     }
     const fadeOut = !!pkg.options?.record?.audio?.fadeOut && musicCutAtVideoEnd(plan);
     const timeline = musicTimeline({
         fileMs: musicFileDurationMs,
+        startMs: musicStartMs,
         videoMs: plan?.valid ? plan.totalDurationMs : 0,
         loopMs: musicLoops(plan) ? musicDurationMs : 0,
         fadeMs: fadeOut ? AUDIO_FADE_OUT_SECONDS * 1000 : 0,
         toleranceMs: MUSIC_VIDEO_TOLERANCE_MS,
     });
+    lastMusicTimeline = timeline;
     const x = (ms) => timelineX(ms, timeline);
     const span = (el, region) => {
         el.setAttribute('x', region ? x(region.startMs) : 0);
@@ -400,6 +419,11 @@ function renderMusicWaveform(plan = lastTimingPlan) {
     };
 
     box.querySelector('.mw-wave').setAttribute('d', waveformPath(musicPeaks, timeline, musicFileDurationMs));
+    span(box.querySelector('.mw-intro'), timeline.intro);
+    const startLine = box.querySelector('.mw-start');
+    startLine.style.display = timeline.intro ? '' : 'none';
+    startLine.setAttribute('x1', x(timeline.startMs));
+    startLine.setAttribute('x2', x(timeline.startMs));
     span(box.querySelector('.mw-cut'), timeline.cut);
     span(box.querySelector('.mw-fade'), timeline.fade);
     const silent = box.querySelector('.mw-silent');
@@ -423,9 +447,42 @@ function renderMusicWaveform(plan = lastTimingPlan) {
 
     const spanLabel = document.getElementById('musicWaveformSpan');
     if (spanLabel) spanLabel.textContent = formatDurationHuman(timeline.spanMs);
-    const legend = { cut: timeline.cut, fade: timeline.fade, loop: timeline.loopPoints.length, silent: timeline.silent };
+    const legend = {
+        intro: timeline.intro, cut: timeline.cut, fade: timeline.fade,
+        loop: timeline.loopPoints.length, silent: timeline.silent,
+    };
     box.querySelectorAll('[data-legend]').forEach((item) => { item.hidden = !legend[item.dataset.legend]; });
     box.hidden = false;
+}
+
+// Chronologie affichée, pour traduire un clic en position dans la musique.
+let lastMusicTimeline = null;
+
+// Clic sur la forme d'onde : la musique démarrera à la position cliquée (dans
+// une reprise de boucle, la position correspondante du motif). Le champ
+// « Commencer à » en est l'équivalent au clavier.
+function setMusicStartFromWaveform(event) {
+    const graph = event.currentTarget;
+    if (!lastMusicTimeline || !inputAudioStart || !graph?.clientWidth) return;
+    const rect = graph.getBoundingClientRect();
+    const ms = timelineMsAt(event.clientX - rect.left, lastMusicTimeline, rect.width);
+    const source = sourceMsAt(ms, lastMusicTimeline);
+    if (source === null) return; // fin de vidéo sans musique
+    // Un clic tout près du début revient au début du fichier.
+    const seconds = source < 300 ? 0 : Math.round(source / 100) / 10;
+    inputAudioStart.value = String(seconds);
+    changeRecordValues(inputAudioStart);
+}
+
+// Champ « Commencer à » : visible avec une musique, et ramené à la valeur
+// réellement appliquée (bornée par la durée de la musique) — sauf pendant la
+// saisie, et tant que la durée n'est pas connue (musique en chargement).
+function syncMusicStartField() {
+    const row = document.getElementById('audioStartRow');
+    if (row) row.hidden = !musicTrack.hasFile();
+    if (!inputAudioStart || document.activeElement === inputAudioStart || !(musicEndMs > 0)) return;
+    const applied = Math.round(musicStartMs / 100) / 10;
+    if (Number(inputAudioStart.value) !== applied) inputAudioStart.value = String(applied);
 }
 
 // États de l'application
@@ -1264,6 +1321,13 @@ function initOptionsElements() {
     if (cbAudioFadeOut) cbAudioFadeOut.addEventListener('change', () => changeRecordValues());
     cbAudioLoop = document.getElementById('cbAudioLoop');
     if (cbAudioLoop) cbAudioLoop.addEventListener('change', () => changeRecordValues());
+    // Point de départ : appliqué à la validation du champ (pas à chaque
+    // frappe, qui recalculerait le plan sur une valeur incomplète).
+    inputAudioStart = document.getElementById('inputAudioStart');
+    if (inputAudioStart) inputAudioStart.addEventListener('change', () => changeRecordValues());
+    // Un clic sur la forme d'onde choisit le point de départ.
+    document.querySelector('#musicWaveform .music-waveform-graph')
+        ?.addEventListener('click', (event) => setMusicStartFromWaveform(event));
     // Après la déclaration de tous les champs : mémorise le dernier manipulé
     // pour cibler l'indicateur « Enregistré ✓ ».
     trackRecordFieldTouches();
@@ -2592,7 +2656,8 @@ function initOptionsUI() {
             if (cbAudioTrimSilence) cbAudioTrimSilence.checked = !!pkg.options.record.audio.trimSilence;
             if (cbAudioFadeOut) cbAudioFadeOut.checked = !!pkg.options.record.audio.fadeOut;
             if (cbAudioLoop) cbAudioLoop.checked = !!pkg.options.record.audio.loop;
-            applyMusicSilenceTrim();
+            if (inputAudioStart) inputAudioStart.value = String(Math.max(0, Number(pkg.options.record.audio.startSeconds) || 0));
+            applyMusicBounds();
         } catch(e) { console.warn('Init audio UI error:', e); }
 
         // Mettre à jour la visibilité après l'initialisation
@@ -2862,6 +2927,22 @@ function changeRecordValues(field = undefined) {
         // ------- AUDIO UTILISATEUR -------
         try {
             pkg.options.record.audio = pkg.options.record.audio || {};
+            // Bornes de la musique lues EN PREMIER : updateMusicSyncUi (plus
+            // bas) ramène le champ « Commencer à » sur la valeur appliquée, ce
+            // qui effacerait une saisie pas encore lue.
+            if (inputAudioStart && inputAudioStart.value !== '') {
+                const seconds = Number(inputAudioStart.value);
+                pkg.options.record.audio.startSeconds = Number.isFinite(seconds) ? Math.max(0, seconds) : 0;
+            }
+            if (cbAudioTrimSilence) {
+                pkg.options.record.audio.trimSilence = !!cbAudioTrimSilence.checked;
+            }
+            // La durée utile de la musique (départ, blanc de fin) change : le
+            // plan recalculé plus bas (refreshTimingPlan) s'appuie dessus.
+            applyMusicBounds();
+            // Départ saisi au-delà de la musique : c'est la valeur ramenée,
+            // affichée dans le champ, qui est enregistrée.
+            if (musicEndMs > 0) pkg.options.record.audio.startSeconds = Math.round(musicStartMs / 100) / 10;
             if (cbRecordAudioEnable) {
                 const wasEnabled = pkg.options.record.audio.enabled;
                 pkg.options.record.audio.enabled = !!cbRecordAudioEnable.checked;
@@ -2878,12 +2959,6 @@ function changeRecordValues(field = undefined) {
             }
             if (cbAudioFadeOut) pkg.options.record.audio.fadeOut = !!cbAudioFadeOut.checked;
             if (cbAudioLoop) pkg.options.record.audio.loop = !!cbAudioLoop.checked;
-            if (cbAudioTrimSilence) {
-                pkg.options.record.audio.trimSilence = !!cbAudioTrimSilence.checked;
-                // La durée utile de la musique change : le plan recalculé
-                // plus bas (refreshTimingPlan) s'appuie dessus.
-                applyMusicSilenceTrim();
-            }
         } catch(e) { console.warn('changeRecordValues audio error:', e); }
 
         // Sauvegarder automatiquement les paramètres d'enregistrement
@@ -2933,6 +3008,7 @@ function recordSettingsPayload() {
         audio_loop: !!audio.loop,
         audio_file: audio.file || '',
         audio_file_name: audio.fileName || '',
+        audio_start_seconds: Math.max(0, Number(audio.startSeconds) || 0),
     };
 }
 
@@ -2962,6 +3038,7 @@ function applyRecordSettingsPayload(recording) {
     // Dernière musique choisie, rechargée par restoreSavedMusic.
     pkg.options.record.audio.file = (typeof recording.audio_file === 'string') ? recording.audio_file : '';
     pkg.options.record.audio.fileName = (typeof recording.audio_file_name === 'string') ? recording.audio_file_name : '';
+    pkg.options.record.audio.startSeconds = Math.max(0, Number(recording.audio_start_seconds) || 0);
     return true;
 }
 
@@ -7793,6 +7870,8 @@ async function selectMusic(file) {
     musicTrack.select(file);
     rememberMusic(file);
     if (cbRecordAudioEnable) cbRecordAudioEnable.checked = true;
+    // Le point de départ appartient à la musique précédente.
+    if (inputAudioStart) inputAudioStart.value = '0';
     // Le réglage qui change ici est « Inclure la musique », coché juste
     // au-dessus : c'est lui que l'indicateur doit confirmer. Le champ fichier
     // n'est pas suivi, sans quoi l'indicateur s'allumerait sur le dernier
@@ -7814,7 +7893,8 @@ function clearMusic() {
     musicTrack.clear();
     if (inputAudioFile) inputAudioFile.value = '';
     const audio = pkg.options?.record?.audio;
-    if (audio) { audio.file = ''; audio.fileName = ''; }
+    if (audio) { audio.file = ''; audio.fileName = ''; audio.startSeconds = 0; }
+    if (inputAudioStart) inputAudioStart.value = '0';
     hideAudioFileInfo();
     // Revenir au mode rythme si la durée était calée sur cette musique.
     if (isMusicLocked()) setRhythmMode('rate');
@@ -7909,7 +7989,7 @@ async function refreshMusicDuration() {
         musicFileDurationMs = null;
         musicTrailingSilenceMs = 0;
         musicPeaks = null;
-        applyMusicSilenceTrim();
+        applyMusicBounds();
         refreshTimingPlan();
         return null;
     }
@@ -7942,7 +8022,7 @@ async function refreshMusicDuration() {
             console.warn('Durée audio illisible:', e);
         }
     }
-    applyMusicSilenceTrim();
+    applyMusicBounds();
     refreshTimingPlan();
     return musicDurationMs;
 }
@@ -7962,14 +8042,22 @@ function getMusicAnalysis(file) {
 // Recalcule la durée utile de la musique et met à jour l'encart « blanc de
 // fin ». L'encart (et donc l'option) n'apparaît que si un blanc a été détecté.
 // Ne recalcule pas le plan de timing : c'est à l'appelant de le faire.
-function applyMusicSilenceTrim() {
+function applyMusicBounds() {
     const notable = !!musicFileDurationMs && hasNotableTrailingSilence(musicTrailingSilenceMs)
         // Piste entièrement muette : rien à proposer.
         && musicTrailingSilenceMs < musicFileDurationMs;
     const trim = notable && !!pkg.options?.record?.audio?.trimSilence;
-    musicDurationMs = trim
+    musicEndMs = trim
         ? trimmedDurationMs(musicFileDurationMs, musicTrailingSilenceMs)
         : musicFileDurationMs;
+    // Point de départ demandé, borné pour laisser au moins
+    // MIN_MUSIC_AFTER_START_MS de musique : un départ au-delà (fichier plus
+    // court que prévu, blanc ignoré entre-temps) est ramené, pas refusé.
+    const wantedMs = Math.max(0, Number(pkg.options?.record?.audio?.startSeconds) || 0) * 1000;
+    musicStartMs = musicEndMs > 0
+        ? Math.min(wantedMs, Math.max(0, musicEndMs - MIN_MUSIC_AFTER_START_MS))
+        : 0;
+    musicDurationMs = musicEndMs > 0 ? musicEndMs - musicStartMs : musicEndMs;
 
     const box = document.getElementById('audioTrailingSilence');
     if (!box) return;

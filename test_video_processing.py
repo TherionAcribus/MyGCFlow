@@ -316,6 +316,34 @@ class VideoProcessingTests(unittest.TestCase):
                     else:
                         self.assertLess(abs(drop), 3)
 
+    def test_a_skipped_intro_is_not_heard(self):
+        """Piste de 3 s de blanc puis 6 s de son : la vidéo commence par le blanc,
+        sauf si la musique démarre à 3 s — elle sonne alors dès le début, et la
+        boucle reprend au point de départ, pas sur le blanc d'intro."""
+        for pipeline in ("images", "mediarecorder"):
+            for start, loop, silent_intro in ((0.0, False, True), (3.0, False, False), (3.0, True, False)):
+                with self.subTest(pipeline=pipeline, start=start, loop=loop), \
+                        tempfile.TemporaryDirectory() as tmp:
+                    tmp_path = Path(tmp)
+                    (tmp_path / "audio").mkdir()
+                    # Bouclée, la musique ne garde que 2 s de son (fin à 5 s) :
+                    # un tour reprenant au début du fichier rejouerait le blanc.
+                    self._run_quiet([
+                        self.ffmpeg, "-y", "-f", "lavfi", "-t", "6",
+                        "-i", "sine=frequency=440:sample_rate=44100",
+                        "-af", "adelay=3000:all=1", str(tmp_path / "audio" / "tone.wav"),
+                    ])
+                    options = {"audio_start": start}
+                    if loop:
+                        options.update(audio_loop=True, audio_loop_end=5.0)
+                    output = self._process_with_music(tmp_path, pipeline, **options)
+                    intro = self._mean_volume_db(output, 0.5, 1)
+                    later = self._mean_volume_db(output, 4.5, 1)
+                    if silent_intro:
+                        self.assertGreater(later - intro, 30)
+                    else:
+                        self.assertLess(abs(later - intro), 3)
+
     def test_rate_parser(self):
         self.assertEqual(_parse_rate("30000/1001"), 30000 / 1001)
         self.assertEqual(_parse_rate("24/1"), 24)

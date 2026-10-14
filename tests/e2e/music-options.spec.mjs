@@ -162,7 +162,7 @@ test('une musique plus courte que la vidéo peut être répétée en boucle', as
   await expect(waveform.locator('[data-legend="silent"]')).toBeHidden();
   await expect.poll(async () => (await recordingSettings(page)).audio_loop).toBe(true);
   // Boucle sur le fichier entier tant que le blanc de fin n'est pas ignoré.
-  expect((await plans()).loop).toEqual({ endMs: null });
+  expect((await plans()).loop).toEqual({ startMs: 0, endMs: 4000 });
   // Une musique en boucle joue encore à la fin : le fondu redevient pertinent.
   await expect(fadeBox).toBeVisible();
 
@@ -282,6 +282,58 @@ test('la dernière musique est rechargée au démarrage, avec le calage sur elle
   await reopen();
   await expect(info).toContainText('Aucune musique sélectionnée');
   await expect(remove).toBeHidden();
+});
+
+
+test('la musique peut démarrer plus loin, au clavier ou d\'un clic sur la forme d\'onde', async ({ page }) => {
+  const start = page.locator('#inputAudioStart');
+  const status = page.locator('#musicSyncStatus');
+  const savedStart = async () => (await recordingSettings(page)).audio_start_seconds;
+  const startMs = () => page.evaluate(async () => (await import('/static/js/index.js')).audioStartMs());
+
+  await expect(page.locator('#audioStartRow')).toBeHidden();
+  await page.locator('#inputAudioFile').setInputFiles(wavFile('intro.wav', 20, 0));
+  await expect(status).toContainText('Durée calée sur la musique (20 s)');
+  await expect(start).toHaveValue('0');
+
+  // Intro de 8 s sautée : la vidéo se cale sur les 12 s restantes.
+  await start.fill('8');
+  await start.blur();
+  await expect(status).toContainText('Musique : 12 s (à partir de 8 s)');
+  await expect(status).toContainText('Durée calée sur la musique (12 s)');
+  await expect(page.locator('#musicWaveform [data-legend="intro"]')).toBeVisible();
+  expect(await startMs()).toBe(8000);
+  await expect.poll(savedStart).toBe(8);
+
+  // Au-delà de la musique : ramené pour en garder une seconde.
+  await start.fill('60');
+  await start.blur();
+  await expect(start).toHaveValue('19');
+  await expect.poll(savedStart).toBe(19);
+
+  // Un clic au quart de la forme d'onde y place le départ.
+  const graph = page.locator('#musicWaveform .music-waveform-graph');
+  const box = await graph.boundingBox();
+  await graph.click({ position: { x: box.width / 4, y: box.height / 2 } });
+  await expect.poll(async () => Number(await start.inputValue())).toBeGreaterThan(4);
+  expect(Number(await start.inputValue())).toBeLessThan(6.5);
+
+  // Retenu avec la musique au démarrage suivant…
+  const clicked = await start.inputValue();
+  await expect.poll(savedStart).toBe(Number(clicked));
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.mygcflowReady === true);
+  await dismissFirstUseModal(page);
+  await page.locator('a[href="#animation"]').click();
+  await page.locator('#musicConfigTab').click();
+  await expect(page.locator('#audioFileInfo')).toContainText('intro.wav');
+  await expect(start).toHaveValue(clicked);
+
+  // … et remis à zéro pour une autre musique.
+  await page.locator('#inputAudioFile').setInputFiles(wavFile('autre.wav', 6, 0));
+  await expect(start).toHaveValue('0');
+  await expect.poll(savedStart).toBe(0);
+  await expect(page.locator('#musicWaveform [data-legend="intro"]')).toBeHidden();
 });
 
 

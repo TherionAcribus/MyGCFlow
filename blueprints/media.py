@@ -157,6 +157,8 @@ def start_create_video():
                 # Boucle de la musique : validée par capture._assemble_pictures.
                 audio_loop=_param('audio_loop', False),
                 audio_loop_end=_param('audio_loop_end', 0),
+                # Point de départ dans la musique (secondes), validé de même.
+                audio_start=_param('audio_start', 0),
                 exclusive=True,
             )
         except TaskAlreadyRunning as exc:

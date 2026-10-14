@@ -136,8 +136,9 @@ export function normalizeRecordedVideoSpeed(sourceBlob, factor){
 
 // `fadeOut` ({ seconds, endMs } ou null, cf. audioFadeOutPlan dans ui.js) :
 // fondu de sortie de la musique se terminant à la fin prévue de la vidéo.
-// `loop` ({ endMs } ou null, cf. audioLoopPlan) : musique répétée en boucle.
-export function muxRecordedVideoWithAudio(sourceBlob, audioFile, fadeOut = null, loop = null){
+// `loop` ({ startMs, endMs } ou null, cf. audioLoopPlan) : musique répétée en boucle.
+// `startMs` (cf. audioStartMs) : point de départ dans la musique, intro sautée.
+export function muxRecordedVideoWithAudio(sourceBlob, audioFile, fadeOut = null, loop = null, startMs = 0){
     return new Promise((resolve, reject) => {
         try {
             const video = document.createElement('video');
@@ -163,6 +164,8 @@ export function muxRecordedVideoWithAudio(sourceBlob, audioFile, fadeOut = null,
                 audioNode.buffer = audioBuffer;
                 if (loop) {
                     audioNode.loop = true;
+                    // Motif répété : du point de départ à la fin utile.
+                    audioNode.loopStart = (loop.startMs || 0) / 1000;
                     if (loop.endMs > 0) audioNode.loopEnd = loop.endMs / 1000;
                 }
                 audioNode.connect(audioGain);
@@ -271,7 +274,8 @@ export function muxRecordedVideoWithAudio(sourceBlob, audioFile, fadeOut = null,
                             try { audioCtx.resume().catch(()=>{}); } catch(_) {}
                             try { video.currentTime = 0; } catch(_) {}
                             try {
-                                audioNode.start(0);
+                                // Décalage : l'intro sautée n'est pas jouée.
+                                audioNode.start(0, startMs / 1000);
                                 if (fadeOut && fadeOut.seconds > 0 && fadeOut.endMs > 0) {
                                     const end = audioCtx.currentTime + fadeOut.endMs / 1000;
                                     const start = Math.max(audioCtx.currentTime, end - fadeOut.seconds);

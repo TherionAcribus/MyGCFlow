@@ -35,46 +35,73 @@ export function waveformPeaks(channels, count = WAVEFORM_PEAK_COUNT) {
 }
 
 // Chronologie de la vidéo vue depuis la musique (toutes durées en ms).
+// L'axe est celui du fichier : la vidéo commence au point de départ choisi
+// (`startMs`), ce qui laisse voir l'intro sautée et permet de désigner un
+// instant de la musique d'un clic.
 //   fileMs   : durée du fichier ;  videoMs : durée de la vidéo (0 = inconnue)
-//   loopMs   : longueur du motif répété, ou 0 sans boucle
+//   startMs  : point de départ dans la musique (0 = début du fichier)
+//   loopMs   : longueur du motif répété (depuis le départ), ou 0 sans boucle
 //   fadeMs   : durée du fondu de sortie, ou 0
 //   toleranceMs : écart en deçà duquel musique et vidéo sont de même durée
 //                 (ni partie coupée, ni fin muette : même règle que le texte
 //                 d'état de l'interface)
 // Renvoie l'étendue affichée et ses éléments :
 //   segments  : copies de la musique posées sur la chronologie
-//               { startMs, endMs, sourceStartMs } — une seule sans boucle
-//   loopPoints: instants où la boucle reprend au début
+//               { startMs, endMs, sourceStartMs } — une seule sans boucle ;
+//               en boucle, la première montre aussi l'intro sautée
+//   startMs   : début de la vidéo sur l'axe (le point de départ)
+//   intro     : début de la musique sauté, ou null
+//   loopPoints: instants où la boucle reprend au point de départ
 //   cut       : partie de la musique au-delà de la fin de la vidéo (non jouée) ;
 //               son début marque la fin de la vidéo
 //   silent    : fin de vidéo sans musique (musique plus courte, sans boucle)
 //   fade      : fondu de sortie
-export function musicTimeline({ fileMs, videoMs = 0, loopMs = 0, fadeMs = 0, toleranceMs = 0 }) {
-    const empty = { spanMs: 0, segments: [], loopPoints: [], cut: null, silent: null, fade: null };
+export function musicTimeline({ fileMs, startMs = 0, videoMs = 0, loopMs = 0, fadeMs = 0, toleranceMs = 0 }) {
+    const empty = { spanMs: 0, startMs: 0, segments: [], intro: null, loopPoints: [], cut: null, silent: null, fade: null };
     if (!(fileMs > 0)) return empty;
+    const start = Math.max(0, Math.min(Number(startMs) || 0, fileMs));
     const hasVideo = videoMs > 0;
     const loop = hasVideo && loopMs > 0;
-    const spanMs = loop ? videoMs : Math.max(fileMs, hasVideo ? videoMs : 0);
+    const videoEnd = start + (hasVideo ? videoMs : 0);
+    const spanMs = loop ? videoEnd : Math.max(fileMs, videoEnd);
     const beyond = (a, b) => a - b > toleranceMs;
 
     const segments = [];
     const loopPoints = [];
     if (loop) {
-        for (let start = 0; start < videoMs; start += loopMs) {
-            if (start > 0) loopPoints.push(start);
-            segments.push({ startMs: start, endMs: Math.min(start + loopMs, videoMs), sourceStartMs: 0 });
+        segments.push({ startMs: 0, endMs: Math.min(start + loopMs, videoEnd), sourceStartMs: 0 });
+        for (let at = start + loopMs; at < videoEnd; at += loopMs) {
+            loopPoints.push(at);
+            segments.push({ startMs: at, endMs: Math.min(at + loopMs, videoEnd), sourceStartMs: start });
         }
     } else {
         segments.push({ startMs: 0, endMs: fileMs, sourceStartMs: 0 });
     }
     return {
         spanMs,
+        startMs: start,
         segments,
+        intro: start > 0 ? { startMs: 0, endMs: start } : null,
         loopPoints,
-        cut: hasVideo && beyond(spanMs, videoMs) ? { startMs: videoMs, endMs: spanMs } : null,
-        silent: hasVideo && !loop && beyond(videoMs, fileMs) ? { startMs: fileMs, endMs: videoMs } : null,
-        fade: hasVideo && fadeMs > 0 ? { startMs: Math.max(0, videoMs - fadeMs), endMs: videoMs } : null,
+        cut: hasVideo && beyond(spanMs, videoEnd) ? { startMs: videoEnd, endMs: spanMs } : null,
+        silent: hasVideo && !loop && beyond(videoEnd, fileMs) ? { startMs: fileMs, endMs: videoEnd } : null,
+        fade: hasVideo && fadeMs > 0 ? { startMs: Math.max(start, videoEnd - fadeMs), endMs: videoEnd } : null,
     };
+}
+
+// Position dans le fichier de la musique entendue à l'instant `ms` de la
+// chronologie (une reprise de boucle renvoie dans le motif), ou null là où la
+// vidéo n'a pas de musique.
+export function sourceMsAt(ms, timeline) {
+    const segment = timeline?.segments?.find((s) => ms >= s.startMs && ms < s.endMs);
+    return segment ? segment.sourceStartMs + (ms - segment.startMs) : null;
+}
+
+// Instant de la chronologie sous une position (0 à `width`) : l'inverse de
+// timelineX, pour choisir le point de départ d'un clic.
+export function timelineMsAt(x, timeline, width = 1000) {
+    if (!(timeline?.spanMs > 0) || !(width > 0)) return 0;
+    return Math.max(0, Math.min(1, x / width)) * timeline.spanMs;
 }
 
 // Tracé SVG (attribut `d`) de la forme d'onde sur la chronologie, symétrique

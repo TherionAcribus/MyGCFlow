@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { musicTimeline, timelineX, waveformPath, waveformPeaks } from './static/js/music_waveform.mjs';
+import {
+    musicTimeline, sourceMsAt, timelineMsAt, timelineX, waveformPath, waveformPeaks,
+} from './static/js/music_waveform.mjs';
 import { analyzeChannels } from './static/js/music_analysis.mjs';
 
 test('les pics gardent le plus fort échantillon de chaque tranche, tous canaux confondus', () => {
@@ -84,9 +86,51 @@ test('le tracé suit les pics et reste plat là où la vidéo n\'a pas de musiqu
     assert.equal(waveformPath([], tl, 1_000), '');
 });
 
+test('un point de départ décale la vidéo sur la musique et montre l\'intro sautée', () => {
+    // Musique de 60 s démarrée à 10 s, vidéo de 20 s : jouée de 10 à 30 s.
+    const tl = musicTimeline({ fileMs: 60_000, startMs: 10_000, videoMs: 20_000, fadeMs: 3_000 });
+    assert.equal(tl.spanMs, 60_000);
+    assert.equal(tl.startMs, 10_000);
+    assert.deepEqual(tl.intro, { startMs: 0, endMs: 10_000 });
+    assert.deepEqual(tl.cut, { startMs: 30_000, endMs: 60_000 });
+    assert.deepEqual(tl.fade, { startMs: 27_000, endMs: 30_000 });
+    // Musique trop courte une fois l'intro sautée : fin de vidéo muette.
+    const short = musicTimeline({ fileMs: 20_000, startMs: 10_000, videoMs: 20_000 });
+    assert.equal(short.spanMs, 30_000);
+    assert.deepEqual(short.silent, { startMs: 20_000, endMs: 30_000 });
+});
+
+test('en boucle, chaque reprise repart du point de départ, pas du début du fichier', () => {
+    // Musique de 12 s démarrée à 2 s : motif de 10 s, vidéo de 25 s.
+    const tl = musicTimeline({ fileMs: 12_000, startMs: 2_000, videoMs: 25_000, loopMs: 10_000 });
+    assert.equal(tl.spanMs, 27_000);
+    assert.deepEqual(tl.loopPoints, [12_000, 22_000]);
+    assert.deepEqual(
+        tl.segments.map((s) => [s.startMs, s.endMs, s.sourceStartMs]),
+        [[0, 12_000, 0], [12_000, 22_000, 2_000], [22_000, 27_000, 2_000]],
+    );
+});
+
+test('un instant de la chronologie renvoie à la position entendue dans le fichier', () => {
+    const tl = musicTimeline({ fileMs: 12_000, startMs: 2_000, videoMs: 25_000, loopMs: 10_000 });
+    assert.equal(sourceMsAt(5_000, tl), 5_000);
+    // Deuxième tour : 3 s après la reprise, soit 2 s + 3 s dans le fichier.
+    assert.equal(sourceMsAt(15_000, tl), 5_000);
+    const silent = musicTimeline({ fileMs: 10_000, videoMs: 30_000 });
+    assert.equal(sourceMsAt(20_000, silent), null);
+});
+
+test('un point de départ hors de la musique est ramené dans ses bornes', () => {
+    assert.equal(musicTimeline({ fileMs: 5_000, startMs: 9_000 }).startMs, 5_000);
+    assert.equal(musicTimeline({ fileMs: 5_000, startMs: -1 }).intro, null);
+});
+
 test('les positions sont bornées à l\'étendue affichée', () => {
     const tl = musicTimeline({ fileMs: 10_000 });
     assert.equal(timelineX(2_500, tl, 1000), 250);
     assert.equal(timelineX(-5, tl, 1000), 0);
     assert.equal(timelineX(20_000, tl, 1000), 1000);
+    assert.equal(timelineMsAt(250, tl, 1000), 2_500);
+    assert.equal(timelineMsAt(-10, tl, 1000), 0);
+    assert.equal(timelineMsAt(2000, tl, 1000), 10_000);
 });

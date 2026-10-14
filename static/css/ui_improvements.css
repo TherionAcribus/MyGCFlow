@@ -2632,9 +2632,26 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
 .music-waveform-graph .mw-wave {
     fill: var(--color-accent);
 }
-.music-waveform-graph .mw-cut {
+.music-waveform-graph {
+    /* Un clic choisit le point de départ (setMusicStartFromWaveform). */
+    cursor: crosshair;
+}
+.music-waveform-graph .mw-cut,
+.music-waveform-graph .mw-intro {
     fill: var(--color-surface);
     fill-opacity: 0.75;
+}
+.music-waveform-graph .mw-start {
+    stroke: var(--color-accent-strong);
+    stroke-width: 2;
+}
+/* Assez large pour « 123.4 » sans déborder sur l'indication. */
+.audio-start-input {
+    width: 7.5rem;
+}
+/* `hidden` doit l'emporter sur le d-flex de Bootstrap. */
+#audioStartRow[hidden] {
+    display: none !important;
 }
 .music-waveform-graph .mw-fade-from {
     stop-color: var(--color-surface);
@@ -2693,6 +2710,11 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
     background: var(--color-accent);
     opacity: 0.3;
     box-shadow: inset 2px 0 0 var(--color-text);
+}
+.mw-key-intro {
+    background: var(--color-accent);
+    opacity: 0.3;
+    box-shadow: inset -2px 0 0 var(--color-accent-strong);
 }
 .mw-key-fade {
     background: linear-gradient(to right, var(--color-accent), transparent);

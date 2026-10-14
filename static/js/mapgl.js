@@ -3520,6 +3520,7 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos, sess
                     body.audio = audioFileName;
                     body.audio_volume = audioVol;
                     body.audio_fade_out = pkg.audioFadeOutPlan()?.seconds || 0;
+                    body.audio_start = pkg.audioStartMs() / 1000;
                     const loop = pkg.audioLoopPlan();
                     if (loop) {
                         body.audio_loop = true;
@@ -4295,7 +4296,7 @@ function finalizeMediaRecorderVideo(){
         const doMux = (videoBlob) => {
             if (audioFile) {
                 try { pkg.updateTextsModal(pkg.t('Ajout audio'), pkg.t('Fusion de la piste audio avec la vidéo en cours...')); } catch(_) {}
-                muxRecordedVideoWithAudio(videoBlob, audioFile, pkg.audioFadeOutPlan(), pkg.audioLoopPlan()).then((mixed) => {
+                muxRecordedVideoWithAudio(videoBlob, audioFile, pkg.audioFadeOutPlan(), pkg.audioLoopPlan(), pkg.audioStartMs()).then((mixed) => {
                     proceedWith(mixed || videoBlob);
                 }).catch((e) => {
                     console.warn('Mux audio échoué, utilisation de la vidéo seule:', e);
@@ -4373,6 +4374,7 @@ function finalizeMediaRecorderVideo(){
                     else fd.append('audio', audioFile, audioFile.name || 'music');
                     fd.append('audio_volume', String(normalizeAudioVolume(pkg.options?.record?.audio?.volume)));
                     fd.append('audio_fade_out', String(pkg.audioFadeOutPlan()?.seconds || 0));
+                    fd.append('audio_start', String(pkg.audioStartMs() / 1000));
                     const loop = pkg.audioLoopPlan();
                     if (loop) {
                         fd.append('audio_loop', '1');

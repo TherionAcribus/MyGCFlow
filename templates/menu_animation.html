@@ -318,24 +318,39 @@
                                         </linearGradient>
                                     </defs>
                                     <path class="mw-wave" d=""></path>
+                                    <rect class="mw-intro" x="0" y="0" width="0" height="100"></rect>
                                     <rect class="mw-cut" x="0" y="0" width="0" height="100"></rect>
                                     <rect class="mw-fade" x="0" y="0" width="0" height="100" fill="url(#musicWaveformFadeGradient)"></rect>
                                     <line class="mw-silent" x1="0" x2="0" y1="50" y2="50"></line>
                                     <g class="mw-loops"></g>
                                     <line class="mw-video-end" x1="0" x2="0" y1="0" y2="100"></line>
+                                    <line class="mw-start" x1="0" x2="0" y1="0" y2="100"></line>
                                 </svg>
                                 <div class="music-waveform-scale">
                                     <span>0:00</span><span id="musicWaveformSpan"></span>
                                 </div>
                                 <div class="music-waveform-legend">
+                                    <span data-legend="intro" hidden><i class="mw-key mw-key-intro" aria-hidden="true"></i>{{ _("Début sauté") }}</span>
                                     <span data-legend="cut" hidden><i class="mw-key mw-key-cut" aria-hidden="true"></i>{{ _("Après la fin de la vidéo (non jouée)") }}</span>
                                     <span data-legend="fade" hidden><i class="mw-key mw-key-fade" aria-hidden="true"></i>{{ _("Fondu") }}</span>
                                     <span data-legend="loop" hidden><i class="mw-key mw-key-loop" aria-hidden="true"></i>{{ _("Reprise de la boucle") }}</span>
                                     <span data-legend="silent" hidden><i class="mw-key mw-key-silent" aria-hidden="true"></i>{{ _("Fin de vidéo sans musique") }}</span>
                                 </div>
                             </div>
+                            <!-- Point de départ dans la musique (intro sautée) : aussi
+                                 réglable d'un clic sur la forme d'onde. Visible avec une
+                                 musique (syncMusicStartField, ui.js). -->
+                            <div id="audioStartRow" class="mt-2 d-flex align-items-center gap-2 flex-wrap" hidden>
+                                <label class="form-label mb-0" for="inputAudioStart">{{ _("Commencer la musique à") }}</label>
+                                <div class="input-group input-group-sm audio-start-input">
+                                    <input id="inputAudioStart" type="number" min="0" step="0.1" value="0" class="form-control"
+                                           aria-describedby="audioStartHint">
+                                    <span class="input-group-text">s</span>
+                                </div>
+                                <small id="audioStartHint" class="form-hint text-muted mb-0">{{ _("ou cliquez sur la forme d'onde") }}</small>
+                            </div>
                             <!-- Affiché seulement quand la piste se termine par un
-                                 blanc (applyMusicSilenceTrim, ui.js). -->
+                                 blanc (applyMusicBounds, ui.js). -->
                             <div id="audioTrailingSilence" class="mt-2" style="display:none;">
                                 <div class="form-hint" aria-live="polite">
                                     <i class="ti ti-info-circle me-1" aria-hidden="true"></i><span id="audioTrailingSilenceText"></span>

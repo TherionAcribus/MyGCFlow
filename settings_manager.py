@@ -286,6 +286,9 @@ class RecordingSettings:
     # et son nom d'origine, affiché dans l'interface. Vides = aucune.
     audio_file: str = ""
     audio_file_name: str = ""
+    # Point de départ dans cette musique (secondes) : saute une intro. Propre
+    # à la musique choisie, remis à 0 quand l'utilisateur en change.
+    audio_start_seconds: float = 0.0
 
 
 @dataclass
@@ -802,6 +805,9 @@ def coerce_recording_settings(d: dict) -> RecordingSettings:
     audio_file_name = d.get("audio_file_name")
     if isinstance(audio_file_name, str) and r.audio_file:
         r.audio_file_name = audio_file_name.strip()[:AUDIO_FILE_NAME_MAX_LENGTH]
+    # Borne haute large (une journée) : le client le ramène sous la durée
+    # réelle de la musique, inconnue ici.
+    r.audio_start_seconds = _clamp_float(d.get("audio_start_seconds"), r.audio_start_seconds, 0.0, 86400.0)
     return r
 
 
