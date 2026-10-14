@@ -17,7 +17,9 @@
 import * as pkg from './index.js';
 import { isRecordingActive } from './mapgl.js';
 import { includedMusicFile, musicTrack } from './music_track.js';
-import { playbackGain, sourcePositionAt } from './music_playback.mjs';
+import {
+    crossfadedLoopBuffer, crossfadedLoopOffsetMs, playbackGain, sourcePositionAt,
+} from './music_playback.mjs';
 
 // Écoute seule : « la fin » rejoue ces dernières secondes de la vidéo.
 export const LISTEN_END_MS = 8000;
@@ -40,7 +42,55 @@ function notifyPlayback(state, elapsedMs = 0) {
 
 function playBackgroundAudio(context) {
     try { bgAudioCtx.resume().catch(()=>{}); } catch(_) {}
+    // Lecture par piste construite (raccord fondu) : reprendre le contexte suffit.
+    if (!bgAudioEl) { bgAudioActive = true; return; }
     bgAudioEl.play().then(()=>{ bgAudioActive = true; }).catch(e => console.warn(`${context} audio bloquée:`, e));
+}
+
+// Reprises en fondu enchaîné : un élément <audio> ne peut pas se superposer à
+// lui-même. La piste est alors décodée et construite avec ses raccords
+// (crossfadedLoopBuffer, même forme que ffmpeg), puis lue en boucle par Web
+// Audio. Le temps écoulé suit l'horloge du contexte, qui s'arrête quand la
+// pause le suspend.
+let bgBufferNode = null;
+
+function startBufferPlayback(file, plan, { fromVideoMs, stopAtVideoEnd }) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    const ctx = bgAudioCtx = new AC();
+    bgAudioGain = ctx.createGain();
+    bgAudioGain.gain.value = playbackGain(fromVideoMs, plan);
+    bgAudioGain.connect(ctx.destination);
+    let startedAt = null; // horloge du contexte au départ de la piste
+    file.arrayBuffer()
+        .then((data) => ctx.decodeAudioData(data))
+        .then((decoded) => {
+            if (ctx !== bgAudioCtx) return; // arrêtée pendant le décodage
+            const joined = crossfadedLoopBuffer(ctx, decoded, plan.loop);
+            const node = bgBufferNode = ctx.createBufferSource();
+            node.buffer = joined.buffer;
+            node.loop = true;
+            node.loopStart = joined.loopStartSeconds;
+            node.loopEnd = joined.buffer.duration;
+            node.connect(bgAudioGain);
+            node.start(0, crossfadedLoopOffsetMs(fromVideoMs, plan.loop) / 1000);
+            startedAt = ctx.currentTime;
+            bgAudioBegun = true;
+            // Une pause a pu survenir pendant le décodage.
+            if (bgAudioWanted) playBackgroundAudio('Lecture');
+            else ctx.suspend().catch(()=>{});
+        })
+        .catch((e) => console.warn('Musique non décodable pour le raccord fondu:', e));
+    const videoS = plan.videoMs / 1000;
+    bgAudioWatchTimer = setInterval(() => {
+        if (ctx !== bgAudioCtx || startedAt === null) return;
+        const elapsedS = fromVideoMs / 1000 + (ctx.currentTime - startedAt);
+        if (stopAtVideoEnd && videoS > 0 && elapsedS >= videoS) {
+            stopBackgroundMusic();
+            return;
+        }
+        bgAudioGain.gain.value = playbackGain(elapsedS * 1000, plan);
+        notifyPlayback('position', elapsedS * 1000);
+    }, 50);
 }
 
 // Lit `file` comme la vidéo l'utilisera, à partir de l'instant `fromVideoMs`
@@ -54,6 +104,13 @@ function playBackgroundAudio(context) {
 function startPlayback(file, { mode, fromVideoMs = 0, stopAtVideoEnd = false }) {
     stopBackgroundMusic();
     const plan = pkg.musicPlaybackPlan?.() || { startMs: 0, loop: null, fadeInMs: 0, fadeOutMs: 0, videoMs: 0, volume: 1 };
+    bgAudioMode = mode;
+    bgAudioWanted = true;
+    if (plan.loop?.crossfadeMs > 0) {
+        startBufferPlayback(file, plan, { fromVideoMs, stopAtVideoEnd });
+        notifyPlayback('playing', fromVideoMs);
+        return;
+    }
     const { sourceMs, playedLoopsMs } = sourcePositionAt(fromVideoMs, plan);
     const loop = plan.loop;
     const AC = window.AudioContext || window.webkitAudioContext;
@@ -66,7 +123,6 @@ function startPlayback(file, { mode, fromVideoMs = 0, stopAtVideoEnd = false }) 
     // Gain de l'instant de départ : 0 pour un fondu d'entrée, sans éclat.
     bgAudioGain.gain.value = playbackGain(fromVideoMs, plan);
     bgAudioSource.connect(bgAudioGain).connect(bgAudioCtx.destination);
-    bgAudioMode = mode;
 
     let playedLoopsS = playedLoopsMs / 1000;
     const startS = plan.startMs / 1000;
@@ -94,7 +150,6 @@ function startPlayback(file, { mode, fromVideoMs = 0, stopAtVideoEnd = false }) 
     // Position de départ (intro sautée, ou fin de vidéo pour l'écoute) : elle
     // ne peut être posée qu'une fois les métadonnées lues ; jouer avant ferait
     // entendre un éclat du début du fichier.
-    bgAudioWanted = true;
     const el = bgAudioEl;
     const begin = () => {
         if (el !== bgAudioEl) return; // arrêtée ou remplacée entre-temps
@@ -167,13 +222,13 @@ export function resumeBackgroundMusic(){
             stopBackgroundMusic();
             return;
         }
-        if (!bgAudioEl || !bgAudioCtx) {
+        if (!bgAudioCtx) {
             startBackgroundMusicIfAny();
             return;
         }
         // Piste déjà finie au moment de la pause : ne pas la relancer depuis
         // zéro (une boucle, elle, la replace d'elle-même sur son départ).
-        if (bgAudioEl.ended && !pkg.musicPlaybackPlan?.().loop) {
+        if (bgAudioEl?.ended && !pkg.musicPlaybackPlan?.().loop) {
             stopBackgroundMusic();
             return;
         }
@@ -188,7 +243,9 @@ export function resumeBackgroundMusic(){
 
 export function stopBackgroundMusic(){
     if (bgAudioWatchTimer) { clearInterval(bgAudioWatchTimer); bgAudioWatchTimer = null; }
-    const wasPlaying = !!bgAudioEl;
+    const wasPlaying = !!bgAudioCtx;
+    try { if (bgBufferNode) bgBufferNode.stop(); } catch(_) {}
+    bgBufferNode = null;
     try { if (bgAudioEl) { bgAudioEl.pause(); URL.revokeObjectURL(bgAudioEl.src); } } catch(_) {}
     try { if (bgAudioCtx) { bgAudioCtx.close(); } } catch(_) {}
     bgAudioEl = bgAudioCtx = bgAudioSource = bgAudioGain = null;

@@ -79,6 +79,12 @@ class RecordingCoercionTests(unittest.TestCase):
         r = coerce_recording_settings({"audio_fade_in": True, "audio_fade_in_seconds": 90, "audio_fade_out_seconds": 0})
         self.assertEqual((r.audio_fade_in, r.audio_fade_in_seconds, r.audio_fade_out_seconds), (True, 30.0, 0.5))
 
+    def test_loop_crossfade_is_opt_in_and_bounded(self):
+        r = coerce_recording_settings({})
+        self.assertEqual((r.audio_loop_crossfade, r.audio_loop_crossfade_seconds), (False, 1.0))
+        r = coerce_recording_settings({"audio_loop_crossfade": True, "audio_loop_crossfade_seconds": 0.1})
+        self.assertEqual((r.audio_loop_crossfade, r.audio_loop_crossfade_seconds), (True, 0.5))
+
     def test_music_loop_is_opt_in(self):
         self.assertFalse(coerce_recording_settings({}).audio_loop)
         self.assertTrue(coerce_recording_settings({"audio_loop": True}).audio_loop)

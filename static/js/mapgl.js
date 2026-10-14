@@ -3526,6 +3526,7 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos, sess
                     if (loop) {
                         body.audio_loop = true;
                         body.audio_loop_end = (loop.endMs || 0) / 1000;
+                        body.audio_loop_crossfade = (loop.crossfadeMs || 0) / 1000;
                     }
                 }
                 return postStartCreateVideo(body);
@@ -4386,6 +4387,7 @@ function finalizeMediaRecorderVideo(){
                     if (loop) {
                         fd.append('audio_loop', '1');
                         fd.append('audio_loop_end', String((loop.endMs || 0) / 1000));
+                        fd.append('audio_loop_crossfade', String((loop.crossfadeMs || 0) / 1000));
                     }
                 }
                 try { pkg.updateProgressBar({ progress: 0, message: pkg.t('Traitement serveur...') }); } catch(_) {}

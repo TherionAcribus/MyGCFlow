@@ -177,7 +177,27 @@ test('une musique plus courte que la vidéo peut être répétée en boucle', as
   await expect(waveform.locator('[data-legend="silent"]')).toBeHidden();
   await expect.poll(async () => (await recordingSettings(page)).audio_loop).toBe(true);
   // Boucle sur le fichier entier tant que le blanc de fin n'est pas ignoré.
-  expect((await plans()).loop).toEqual({ startMs: 0, endMs: 4000 });
+  expect((await plans()).loop).toEqual({ startMs: 0, endMs: 4000, crossfadeMs: 0 });
+
+  // Reprises en fondu enchaîné : chaque reprise arrive 1 s plus tôt (une
+  // toutes les 3 s au lieu de 4 : 9 reprises sur 30 s au lieu de 7).
+  const crossfade = page.locator('#cbAudioLoopCrossfade');
+  await expect(crossfade).toBeEnabled();
+  await expect(page.locator('#inputAudioLoopCrossfadeSeconds')).toBeDisabled();
+  await crossfade.check();
+  await expect(page.locator('#inputAudioLoopCrossfadeSeconds')).toBeEnabled();
+  expect((await plans()).loop).toEqual({ startMs: 0, endMs: 4000, crossfadeMs: 1000 });
+  await expect(status).toContainText('Les reprises s\'enchaînent en fondu.');
+  await expect(waveform.locator('.mw-loops line')).toHaveCount(9);
+  // L'écoute passe alors par la piste construite (Web Audio) : elle avance.
+  const head = waveform.locator('.mw-playhead');
+  await page.locator('#btnMusicListen').click();
+  await expect.poll(async () => Number(await head.getAttribute('x1'))).toBeGreaterThan(5);
+  await page.locator('#btnMusicListen').click();
+  await expect(page.locator('#btnMusicListen')).toHaveAttribute('aria-pressed', 'false');
+  await crossfade.uncheck();
+  await expect.poll(async () => (await recordingSettings(page)).audio_loop_crossfade).toBe(false);
+  await expect(waveform.locator('.mw-loops line')).toHaveCount(7);
   // Une musique en boucle joue encore à la fin : le fondu redevient pertinent.
   await expect(fadeBox).toBeVisible();
 

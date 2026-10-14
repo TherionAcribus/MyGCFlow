@@ -137,6 +137,36 @@ class AudioFadeInFilterTests(unittest.TestCase):
         )
 
 
+class AudioLoopCrossfadeGraphTests(unittest.TestCase):
+    """Raccord fondu entre les reprises de la boucle."""
+
+    def test_without_crossfade_the_graph_is_the_plain_chain(self):
+        self.assertEqual(
+            capture._audio_filter_graph(1.0, 60.0, loop=True, loop_end=10.0),
+            "[1:a]volume=1.0,atrim=end=10.000,aloop=loop=-1:size=2147483647,apad[a]",
+        )
+
+    def test_the_motif_is_joined_to_itself_then_looped(self):
+        graph = capture._audio_filter_graph(1.0, 60.0, 3.0, loop=True, loop_end=12.0, start=2.0,
+                                            fade_in=1.0, crossfade=1.5)
+        self.assertEqual(graph.split(";"), [
+            "[1:a]volume=1.0,atrim=start=2.000,asetpts=PTS-STARTPTS,atrim=end=10.000,"
+            "asplit=4[mfirst][mtail][mhead][mmid]",
+            "[mfirst]atrim=end=8.500[m0]",
+            "[mtail]atrim=start=8.500,asetpts=PTS-STARTPTS,afade=t=out:st=0:d=1.500:curve=qsin[mt]",
+            "[mhead]atrim=end=1.500,afade=t=in:st=0:d=1.500:curve=qsin[mh]",
+            "[mt][mh]amix=inputs=2:normalize=0:duration=longest[mx]",
+            "[mmid]atrim=start=1.500:end=8.500,asetpts=PTS-STARTPTS[mm]",
+            "[mx][mm]concat=n=2:v=0:a=1,aloop=loop=-1:size=2147483647[mu]",
+            "[m0][mu]concat=n=2:v=0:a=1,afade=t=in:st=0:d=1.000,afade=t=out:st=57.000:d=3.000,apad[a]",
+        ])
+
+    def test_a_motif_too_short_for_two_joins_loops_without_crossfade(self):
+        self.assertNotIn("amix", capture._audio_filter_graph(1.0, 60.0, loop=True, loop_end=2.0, crossfade=1.5))
+        # Fin de motif inconnue : pas de raccord possible.
+        self.assertNotIn("amix", capture._audio_filter_graph(1.0, 60.0, loop=True, crossfade=1.0))
+
+
 class AudioStartFilterTests(unittest.TestCase):
     """Point de départ dans la musique (intro sautée)."""
 

@@ -287,6 +287,9 @@ class RecordingSettings:
     audio_fade_in_seconds: float = 2.0
     # Répéter la musique en boucle quand elle est plus courte que la vidéo.
     audio_loop: bool = False
+    # Enchaîner les reprises de la boucle en fondu plutôt que d'un raccord net.
+    audio_loop_crossfade: bool = False
+    audio_loop_crossfade_seconds: float = 1.0
     # Dernière musique choisie, rechargée au démarrage : son nom dans le
     # dossier audio/ (tiré de son contenu, cf. capture._save_uploaded_audio)
     # et son nom d'origine, affiché dans l'interface. Vides = aucune.
@@ -811,6 +814,10 @@ def coerce_recording_settings(d: dict) -> RecordingSettings:
     r.audio_fade_in_seconds = _clamp_float(
         d.get("audio_fade_in_seconds"), r.audio_fade_in_seconds, AUDIO_FADE_MIN_SECONDS, AUDIO_FADE_MAX_SECONDS)
     r.audio_loop = bool(d.get("audio_loop", r.audio_loop))
+    r.audio_loop_crossfade = bool(d.get("audio_loop_crossfade", r.audio_loop_crossfade))
+    r.audio_loop_crossfade_seconds = _clamp_float(
+        d.get("audio_loop_crossfade_seconds"), r.audio_loop_crossfade_seconds,
+        AUDIO_FADE_MIN_SECONDS, AUDIO_FADE_MAX_SECONDS)
     audio_file = d.get("audio_file")
     if isinstance(audio_file, str):
         # Un nom de fichier du dossier audio/, jamais un chemin.

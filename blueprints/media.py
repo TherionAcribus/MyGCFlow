@@ -161,6 +161,8 @@ def start_create_video():
                 audio_start=_param('audio_start', 0),
                 # Fondu d'entrée (secondes), borné comme le fondu de sortie.
                 audio_fade_in=_param('audio_fade_in', 0),
+                # Raccord fondu des reprises de la boucle (secondes).
+                audio_loop_crossfade=_param('audio_loop_crossfade', 0),
                 exclusive=True,
             )
         except TaskAlreadyRunning as exc:

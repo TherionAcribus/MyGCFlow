@@ -12,6 +12,7 @@ import {
     normalizeRecordingBitrateMbps,
     normalizeRecordingFps,
 } from './recording_settings.mjs';
+import { crossfadedLoopBuffer } from './music_playback.mjs';
 
 // Flag de debug local (cf. DEBUG_MAPGL dans mapgl.js).
 const DEBUG_VIDEO_POST = false;
@@ -138,7 +139,7 @@ export function normalizeRecordedVideoSpeed(sourceBlob, factor){
 //   fadeOut ({ seconds, endMs } ou null, cf. audioFadeOutPlan) : fondu de
 //           sortie se terminant à la fin prévue de la vidéo ;
 //   fadeIn  ({ seconds } ou null, cf. audioFadeInPlan) : montée au début ;
-//   loop    ({ startMs, endMs } ou null, cf. audioLoopPlan) : boucle ;
+//   loop    ({ startMs, endMs, crossfadeMs } ou null, cf. audioLoopPlan) : boucle ;
 //   startMs (cf. audioStartMs) : point de départ dans la musique, intro sautée.
 export function muxRecordedVideoWithAudio(sourceBlob, audioFile, { fadeOut = null, fadeIn = null, loop = null, startMs = 0 } = {}){
     return new Promise((resolve, reject) => {
@@ -154,6 +155,9 @@ export function muxRecordedVideoWithAudio(sourceBlob, audioFile, { fadeOut = nul
             const AC = window.AudioContext || window.webkitAudioContext;
             let audioCtx = window.mrMuxAudioCtx || null, audioGain = null, audioDest = null, audioBuffer = null, audioNode = null;
             let audioUrl = null; // conservé pour cleanup si nécessaire
+            // Position de départ dans la piste lue (l'intro sautée, sauf pour une
+            // piste construite à raccord fondu, qui commence déjà au départ).
+            let startOffsetS = startMs / 1000;
             const loadAudioBuffer = async () => {
                 const arr = await audioFile.arrayBuffer();
                 if (!audioCtx) audioCtx = new AC();
@@ -163,12 +167,23 @@ export function muxRecordedVideoWithAudio(sourceBlob, audioFile, { fadeOut = nul
                 audioGain.connect(audioDest);
                 audioBuffer = await audioCtx.decodeAudioData(arr);
                 audioNode = audioCtx.createBufferSource();
-                audioNode.buffer = audioBuffer;
-                if (loop) {
+                if (loop && loop.crossfadeMs > 0) {
+                    // Reprises en fondu enchaîné : la piste est construite (même
+                    // forme que ffmpeg), elle commence déjà au point de départ.
+                    const joined = crossfadedLoopBuffer(audioCtx, audioBuffer, loop);
+                    audioNode.buffer = joined.buffer;
                     audioNode.loop = true;
-                    // Motif répété : du point de départ à la fin utile.
-                    audioNode.loopStart = (loop.startMs || 0) / 1000;
-                    if (loop.endMs > 0) audioNode.loopEnd = loop.endMs / 1000;
+                    audioNode.loopStart = joined.loopStartSeconds;
+                    audioNode.loopEnd = joined.buffer.duration;
+                    startOffsetS = 0;
+                } else {
+                    audioNode.buffer = audioBuffer;
+                    if (loop) {
+                        audioNode.loop = true;
+                        // Motif répété : du point de départ à la fin utile.
+                        audioNode.loopStart = (loop.startMs || 0) / 1000;
+                        if (loop.endMs > 0) audioNode.loopEnd = loop.endMs / 1000;
+                    }
                 }
                 audioNode.connect(audioGain);
             };
@@ -277,7 +292,7 @@ export function muxRecordedVideoWithAudio(sourceBlob, audioFile, { fadeOut = nul
                             try { video.currentTime = 0; } catch(_) {}
                             try {
                                 // Décalage : l'intro sautée n'est pas jouée.
-                                audioNode.start(0, startMs / 1000);
+                                audioNode.start(0, startOffsetS);
                                 // Fondus planifiés sur l'horloge audio. Ils ne se
                                 // chevauchent pas : clampFades (ui.js) les a bornés.
                                 const now = audioCtx.currentTime;

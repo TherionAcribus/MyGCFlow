@@ -612,17 +612,32 @@ def _audio_filter_chain(vol, out_dur=None, fade_out=0.0, pad=True, loop=False, l
     quand la musique est plus longue que la vidéo et serait sinon coupée net.
     Il doit précéder apad, et n'est posé que si la durée de sortie est connue.
     """
+    filters = _audio_head_filters(vol, start)
+    if loop and out_dur and out_dur > 0:
+        if loop_end > start:
+            filters.append(f"atrim=end={loop_end - start:.3f}")
+        filters.append(_AUDIO_ENDLESS_LOOP)
+    return ",".join(filters + _audio_tail_filters(out_dur, fade_out, fade_in, pad))
+
+
+# size : nombre maximal d'échantillons mis en boucle ; la valeur maximale
+# revient à « toute la piste ».
+_AUDIO_ENDLESS_LOOP = "aloop=loop=-1:size=2147483647"
+
+
+def _audio_head_filters(vol, start):
+    """Début de chaîne : volume et point de départ."""
     filters = [f"volume={vol}"]
     if start > 0:
         # asetpts : la piste découpée repart de zéro, sinon aloop et afade
         # compteraient depuis le début du fichier.
         filters.append(f"atrim=start={start:.3f},asetpts=PTS-STARTPTS")
-    if loop and out_dur and out_dur > 0:
-        if loop_end > start:
-            filters.append(f"atrim=end={loop_end - start:.3f}")
-        # size : nombre maximal d'échantillons mis en boucle ; la valeur
-        # maximale revient à « toute la piste ».
-        filters.append("aloop=loop=-1:size=2147483647")
+    return filters
+
+
+def _audio_tail_filters(out_dur, fade_out, fade_in, pad):
+    """Fin de chaîne, après la boucle : fondus de la vidéo, puis silence."""
+    filters = []
     if fade_in > 0:
         duration = min(fade_in, out_dur) if out_dur and out_dur > 0 else fade_in
         filters.append(f"afade=t=in:st=0:d={duration:.3f}")
@@ -631,7 +646,44 @@ def _audio_filter_chain(vol, out_dur=None, fade_out=0.0, pad=True, loop=False, l
         filters.append(f"afade=t=out:st={out_dur - duration:.3f}:d={duration:.3f}")
     if pad:
         filters.append("apad")
-    return ",".join(filters)
+    return filters
+
+
+def _audio_filter_graph(vol, out_dur=None, fade_out=0.0, loop=False, loop_end=0.0, start=0.0, fade_in=0.0,
+                        crossfade=0.0):
+    """Graphe complet de la piste musicale, de l'entrée [1:a] à la sortie [a].
+
+    Sans raccord fondu, c'est la chaîne de _audio_filter_chain. Avec
+    `crossfade` (secondes), chaque reprise de la boucle chevauche la fin du
+    tour précédent : la fin s'efface pendant que le début remonte (courbes en
+    quart de sinus, à puissance constante). aloop ne sait pas faire ce
+    raccord ; on construit donc une fois le motif raccordé, puis on le boucle :
+
+        tour 1  : motif[0, m-c]
+        reprise : (motif[m-c, m] qui s'efface + motif[0, c] qui monte) + motif[c, m-c]
+
+    La reprise dure m - c et s'enchaîne à elle-même comme au premier tour.
+    Exige un motif connu (loop_end après le départ) d'au moins deux raccords ;
+    sinon, boucle simple.
+    """
+    motif = loop_end - start if loop_end > start else 0.0
+    if not (loop and out_dur and out_dur > 0 and crossfade > 0 and motif > 2 * crossfade):
+        chain = _audio_filter_chain(vol, out_dur, fade_out, loop=loop, loop_end=loop_end, start=start,
+                                    fade_in=fade_in)
+        return f"[1:a]{chain}[a]"
+    c, m = crossfade, motif
+    head = ",".join(_audio_head_filters(vol, start) + [f"atrim=end={m:.3f}", "asplit=4[mfirst][mtail][mhead][mmid]"])
+    tail = ",".join(_audio_tail_filters(out_dur, fade_out, fade_in, True))
+    return ";".join([
+        f"[1:a]{head}",
+        f"[mfirst]atrim=end={m - c:.3f}[m0]",
+        f"[mtail]atrim=start={m - c:.3f},asetpts=PTS-STARTPTS,afade=t=out:st=0:d={c:.3f}:curve=qsin[mt]",
+        f"[mhead]atrim=end={c:.3f},afade=t=in:st=0:d={c:.3f}:curve=qsin[mh]",
+        "[mt][mh]amix=inputs=2:normalize=0:duration=longest[mx]",
+        f"[mmid]atrim=start={c:.3f}:end={m - c:.3f},asetpts=PTS-STARTPTS[mm]",
+        f"[mx][mm]concat=n=2:v=0:a=1,{_AUDIO_ENDLESS_LOOP}[mu]",
+        f"[m0][mu]concat=n=2:v=0:a=1,{tail}[a]",
+    ])
 
 
 def _save_uploaded_audio(file_storage):
@@ -846,7 +898,8 @@ def _write_concat_list(image_files, fps, list_path):
 
 def _assemble_pictures(image_folder, output_video, fps=24, audio_path=None, audio_volume=1.0, status=None,
                        audio_fade_out=0.0, audio_loop=False, audio_loop_end=0.0,
-                       color_fidelity=DEFAULT_COLOR_FIDELITY, expected_frames=0, audio_start=0.0, audio_fade_in=0.0):
+                       color_fidelity=DEFAULT_COLOR_FIDELITY, expected_frames=0, audio_start=0.0, audio_fade_in=0.0,
+                       audio_loop_crossfade=0.0):
     """Coeur de l'assemblage vidéo. Retourne un dict {'success', 'message', ...}.
 
     Met à jour un TaskStatus optionnel (`status`) pour le suivi de progression,
@@ -923,6 +976,7 @@ def _assemble_pictures(image_folder, output_video, fps=24, audio_path=None, audi
     start = _safe_start(audio_start)
     # Mêmes bornes qu'un fondu de sortie.
     fade_in = _safe_fade_out(audio_fade_in)
+    crossfade = _safe_fade_out(audio_loop_crossfade)
 
     ffmpeg = _get_ffmpeg_exe()
     # Le script ffconcat est temporaire et propre à cet encodage : il ne doit pas
@@ -948,7 +1002,8 @@ def _assemble_pictures(image_folder, output_video, fps=24, audio_path=None, audi
                 '-i', audio_file,
                 '-filter_complex',
                 f"[0:v]{_EVEN_DIMENSIONS_FILTER}[v];"
-                f"[1:a]{_audio_filter_chain(vol, out_dur, fade_out, loop=loop, loop_end=loop_end, start=start, fade_in=fade_in)}[a]",
+                + _audio_filter_graph(vol, out_dur, fade_out, loop=loop, loop_end=loop_end, start=start,
+                                      fade_in=fade_in, crossfade=crossfade),
                 '-map', '[v]', '-map', '[a]',
             ] + _AAC_OUTPUT_ARGS
             print(f"[assemble] Audio attaché (vol={vol}, durée vidéo={out_dur:.1f}s)")
@@ -993,7 +1048,7 @@ def assemble_pictures_directory(image_folder, output_video, fps=24, audio_path=N
 def run_assemble_video_task(status, app, image_folder, output_video, fps=24, audio_path=None,
                             audio_volume=1.0, color_fidelity=DEFAULT_COLOR_FIDELITY, locale=None,
                             expected_frames=0, audio_fade_out=0.0, audio_loop=False, audio_loop_end=0.0,
-                            audio_start=0.0, audio_fade_in=0.0):
+                            audio_start=0.0, audio_fade_in=0.0, audio_loop_crossfade=0.0):
     """Tâche de fond : assemble la vidéo et met à jour la progression via TaskStatus.
 
     Exécutée par le TaskManager dans un thread, ce qui évite l'expiration du
@@ -1006,7 +1061,8 @@ def run_assemble_video_task(status, app, image_folder, output_video, fps=24, aud
                                     status=status, color_fidelity=color_fidelity,
                                     expected_frames=expected_frames, audio_fade_out=audio_fade_out,
                                     audio_loop=audio_loop, audio_loop_end=audio_loop_end,
-                                    audio_start=audio_start, audio_fade_in=audio_fade_in)
+                                    audio_start=audio_start, audio_fade_in=audio_fade_in,
+                                    audio_loop_crossfade=audio_loop_crossfade)
         if not result.get('success'):
             status.fail(result.get('message', _("Échec de l'assemblage")))
             return
@@ -1027,7 +1083,7 @@ TASK_TYPE_VIDEO_PROCESS = "video_processing"
 
 def _process_recorded_video(input_path, output_path, slowdown=1.0, audio_path=None, audio_volume=1.0, fps=None,
                             status=None, color_fidelity=DEFAULT_COLOR_FIDELITY, audio_fade_out=0.0,
-                            audio_loop=False, audio_loop_end=0.0, audio_start=0.0, audio_fade_in=0.0):
+                            audio_loop=False, audio_loop_end=0.0, audio_start=0.0, audio_fade_in=0.0, audio_loop_crossfade=0.0):
     """Normalise la vitesse (setpts) et mux l'audio en UNE passe ffmpeg → MP4 H.264/AAC.
 
     Remplace l'ancien pipeline navigateur (jusqu'à 3 ré-encodages temps réel,
@@ -1053,6 +1109,7 @@ def _process_recorded_video(input_path, output_path, slowdown=1.0, audio_path=No
     start = _safe_start(audio_start)
     # Mêmes bornes qu'un fondu de sortie.
     fade_in = _safe_fade_out(audio_fade_in)
+    crossfade = _safe_fade_out(audio_loop_crossfade)
     # fps de sortie : setpts accélère la vidéo sans redécimer (le framerate serait
     # multiplié par sd). On force le fps cible pour un résultat propre et compact.
     try:
@@ -1085,7 +1142,8 @@ def _process_recorded_video(input_path, output_path, slowdown=1.0, audio_path=No
             cmd += [
                 '-filter_complex',
                 f"[0:v]setpts=PTS/{sd},{_EVEN_DIMENSIONS_FILTER}[v];"
-                f"[1:a]{_audio_filter_chain(vol, out_dur, fade_out, loop=loop, loop_end=loop_end, start=start, fade_in=fade_in)}[a]",
+                + _audio_filter_graph(vol, out_dur, fade_out, loop=loop, loop_end=loop_end, start=start,
+                                      fade_in=fade_in, crossfade=crossfade),
                 '-map', '[v]', '-map', '[a]',
                 '-t', f"{out_dur:.3f}",
             ] + _AAC_OUTPUT_ARGS
@@ -1130,7 +1188,8 @@ def _process_recorded_video(input_path, output_path, slowdown=1.0, audio_path=No
 
 def run_process_video_task(status, app, input_path, output_path, slowdown=1.0, audio_path=None,
                            audio_volume=1.0, fps=None, color_fidelity=DEFAULT_COLOR_FIDELITY, locale=None,
-                           audio_fade_out=0.0, audio_loop=False, audio_loop_end=0.0, audio_start=0.0, audio_fade_in=0.0):
+                           audio_fade_out=0.0, audio_loop=False, audio_loop_end=0.0, audio_start=0.0, audio_fade_in=0.0,
+                           audio_loop_crossfade=0.0):
     """Tâche de fond : post-traite un enregistrement MediaRecorder via ffmpeg.
 
     `app`/`locale` viennent de la requête appelante (même raison que
@@ -1141,7 +1200,8 @@ def run_process_video_task(status, app, input_path, output_path, slowdown=1.0, a
                                          fps=fps, status=status, color_fidelity=color_fidelity,
                                          audio_fade_out=audio_fade_out,
                                          audio_loop=audio_loop, audio_loop_end=audio_loop_end,
-                                         audio_start=audio_start, audio_fade_in=audio_fade_in)
+                                         audio_start=audio_start, audio_fade_in=audio_fade_in,
+                                         audio_loop_crossfade=audio_loop_crossfade)
         if not result.get('success'):
             status.fail(result.get('message', _("Échec du traitement vidéo")))
             return
@@ -1168,7 +1228,7 @@ def process_recorded_video(request):
       - 'audio' (fichier) OU 'audio' (nom déjà présent dans audio/) : piste audio optionnelle
       - 'slowdown', 'audio_volume', 'audio_fade_out' (secondes), 'audio_loop',
         'audio_loop_end' (secondes), 'audio_start' (secondes), 'audio_fade_in'
-        (secondes), 'color_fidelity' : options
+        (secondes), 'audio_loop_crossfade' (secondes), 'color_fidelity' : options
       - 'fileName' : nom de base de la vidéo (cf. video_output_path)
     """
     from task_manager import task_manager
@@ -1214,6 +1274,7 @@ def process_recorded_video(request):
         audio_loop_end=_num('audio_loop_end', 0.0),
         audio_start=_num('audio_start', 0.0),
         audio_fade_in=_num('audio_fade_in', 0.0),
+        audio_loop_crossfade=_num('audio_loop_crossfade', 0.0),
     )
     return jsonify({
         'success': True,

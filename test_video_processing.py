@@ -363,6 +363,32 @@ class VideoProcessingTests(unittest.TestCase):
                     else:
                         self.assertLess(abs(second_loop - opening), 3)
 
+    def test_the_loop_joins_can_crossfade(self):
+        """Motif de 3 s : 1 s de blanc puis 2 s de son, bouclé sur 6 s.
+
+        Sans raccord, chaque reprise retombe dans le blanc (3,1 à 3,6 s muet).
+        Avec un raccord de 1 s, ce blanc se fond dans la fin du tour précédent :
+        la reprise enchaîne directement sur le son.
+        """
+        for pipeline in ("images", "mediarecorder"):
+            for crossfade, gap in ((0.0, True), (1.0, False)):
+                with self.subTest(pipeline=pipeline, crossfade=crossfade), tempfile.TemporaryDirectory() as tmp:
+                    tmp_path = Path(tmp)
+                    (tmp_path / "audio").mkdir()
+                    self._run_quiet([
+                        self.ffmpeg, "-y", "-f", "lavfi", "-t", "2",
+                        "-i", "sine=frequency=440:sample_rate=44100",
+                        "-af", "adelay=1000:all=1", str(tmp_path / "audio" / "tone.wav"),
+                    ])
+                    output = self._process_with_music(
+                        tmp_path, pipeline, audio_loop=True, audio_loop_end=3.0, audio_loop_crossfade=crossfade,
+                    )
+                    drop = self._mean_volume_db(output, 1.4, 0.5) - self._mean_volume_db(output, 3.1, 0.5)
+                    if gap:
+                        self.assertGreater(drop, 30)
+                    else:
+                        self.assertLess(abs(drop), 3)
+
     def test_rate_parser(self):
         self.assertEqual(_parse_rate("30000/1001"), 30000 / 1001)
         self.assertEqual(_parse_rate("24/1"), 24)

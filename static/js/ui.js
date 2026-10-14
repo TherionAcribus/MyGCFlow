@@ -35,6 +35,7 @@ import { isEvolutionPage } from './app_mode.mjs';
 import { resolveCameraFollowMode } from './camera_follow.mjs';
 import { hasNotableTrailingSilence, trimmedDurationMs } from './audio_silence.mjs';
 import { analyzeMusicFile } from './music_analysis.mjs';
+import { loopCrossfadeMs, loopPeriodMs } from './music_playback.mjs';
 import {
     clampFades, musicTimeline, normalizeFadeSeconds, sourceMsAt, timelineMsAt, timelineX, waveformPath,
 } from './music_waveform.mjs';
@@ -114,6 +115,7 @@ var recordMimeShownFallback = null;
 var selectRecordMode, selectRecordQualityProfile, recordAdvancedSettings, inputRecordFps, inputRecordBitrate, selectRecordMime, inputRecordSlowdown, inputRecordScaleFactor, inputRecordFileName, cbRecordNormalize, selectRecordResolution, selectRecordColorFidelity;
 var cbRecordAudioEnable, inputAudioFile, inputAudioVolume, cbAudioTrimSilence, cbAudioFadeOut, cbAudioLoop, inputAudioStart;
 var cbAudioFadeIn, inputAudioFadeInSeconds, inputAudioFadeOutSeconds;
+var cbAudioLoopCrossfade, inputAudioLoopCrossfadeSeconds;
 // Passe à true à la première synchro déclenchée par une résolution de
 // données (chargement, filtrage, vidage). L'état vide de la carte ne se
 // révèle qu'à ce moment-là : l'afficher dès l'init le ferait flasher
@@ -157,6 +159,7 @@ var musicPeaks = null;
 // Durées par défaut des fondus (secondes) ; réglables, bornées par FADE_LIMITS.
 const AUDIO_FADE_OUT_SECONDS = 3;
 const AUDIO_FADE_IN_SECONDS = 2;
+const AUDIO_LOOP_CROSSFADE_SECONDS = 1;
 // En deçà de cet écart, musique et vidéo sont considérées de même durée.
 const MUSIC_VIDEO_TOLERANCE_MS = 1000;
 
@@ -221,6 +224,7 @@ const RECORD_SETTINGS_FIELDS = [
     'inputRecordFileName', 'cbRecordNormalize',
     'cbRecordAudioEnable', 'inputAudioVolume', 'cbAudioTrimSilence', 'cbAudioFadeOut', 'cbAudioLoop',
     'inputAudioStart', 'cbAudioFadeIn', 'inputAudioFadeInSeconds', 'inputAudioFadeOutSeconds',
+    'cbAudioLoopCrossfade', 'inputAudioLoopCrossfadeSeconds',
     'selectRecordResolution',
     'selectRecordColorFidelity',
 ];
@@ -302,8 +306,24 @@ function musicCutAtVideoEnd(plan = lastTimingPlan) {
 // ignoré) — deux positions dans le fichier. Mêmes lecteurs que
 // audioFadeOutPlan.
 export function audioLoopPlan() {
-    if (!pkg.options?.record?.audio?.enabled || !musicLoops()) return null;
-    return { startMs: musicStartMs, endMs: musicEndMs };
+    if (!pkg.options?.record?.audio?.enabled) return null;
+    return musicLoop();
+}
+
+// Boucle de la musique pour le plan courant, ou null : motif (positions dans
+// le fichier) et raccord fondu effectif entre les reprises (cf.
+// loopCrossfadeMs, borné par la longueur du motif). Source commune des
+// exports, de la lecture à l'écran et de la forme d'onde.
+function musicLoop(plan = lastTimingPlan) {
+    if (!musicLoops(plan) || !(musicEndMs > musicStartMs)) return null;
+    const audio = pkg.options?.record?.audio || {};
+    const wantedMs = audio.loopCrossfade
+        ? normalizeFadeSeconds(audio.loopCrossfadeSeconds, AUDIO_LOOP_CROSSFADE_SECONDS) * 1000 : 0;
+    return {
+        startMs: musicStartMs,
+        endMs: musicEndMs,
+        crossfadeMs: loopCrossfadeMs(musicEndMs - musicStartMs, wantedMs),
+    };
 }
 
 // Point de départ dans la musique (ms, position dans le fichier) : l'intro
@@ -338,7 +358,7 @@ export function musicPlaybackPlan(plan = lastTimingPlan) {
     const fades = musicFades(plan);
     return {
         startMs: musicStartMs,
-        loop: musicLoops(plan) && musicEndMs > musicStartMs ? { startMs: musicStartMs, endMs: musicEndMs } : null,
+        loop: musicLoop(plan),
         fadeInMs: fades.fadeInMs,
         fadeOutMs: fades.fadeOutMs,
         videoMs: plan?.valid ? plan.totalDurationMs : 0,
@@ -392,6 +412,11 @@ function updateMusicSyncUi(plan = lastTimingPlan) {
     // Une durée ne se règle que pour un fondu demandé.
     if (inputAudioFadeOutSeconds) inputAudioFadeOutSeconds.disabled = !cbAudioFadeOut?.checked;
     if (inputAudioFadeInSeconds) inputAudioFadeInSeconds.disabled = !cbAudioFadeIn?.checked;
+    // Raccord fondu : sans objet hors boucle.
+    if (cbAudioLoopCrossfade) cbAudioLoopCrossfade.disabled = !cbAudioLoop?.checked;
+    if (inputAudioLoopCrossfadeSeconds) {
+        inputAudioLoopCrossfadeSeconds.disabled = !cbAudioLoop?.checked || !cbAudioLoopCrossfade?.checked;
+    }
     renderMusicWaveform(plan);
     syncListenButtons(plan);
 
@@ -428,6 +453,7 @@ function updateMusicSyncUi(plan = lastTimingPlan) {
             const durations = { m: formatDurationHuman(musicDurationMs), v: formatDurationHuman(plan.totalDurationMs) };
             if (musicLoops(plan)) {
                 lines.push(t('La musique (${m}) est plus courte que la vidéo (${v}) : elle sera répétée en boucle.', durations));
+                if (musicLoop(plan)?.crossfadeMs > 0) lines.push(t('Les reprises s\'enchaînent en fondu.'));
                 if (fadeOut) lines.push(t('Elle se terminera en fondu.'));
             } else {
                 lines.push(t('La musique (${m}) se termine avant la fin de la vidéo (${v}).', durations));
@@ -457,7 +483,8 @@ function renderMusicWaveform(plan = lastTimingPlan) {
         fileMs: musicFileDurationMs,
         startMs: musicStartMs,
         videoMs: plan?.valid ? plan.totalDurationMs : 0,
-        loopMs: musicLoops(plan) ? musicDurationMs : 0,
+        // Avec un raccord fondu, les reprises arrivent plus tôt d'autant.
+        loopMs: loopPeriodMs(musicLoop(plan)),
         fadeMs: fades.fadeOutMs,
         fadeInMs: fades.fadeInMs,
         toleranceMs: MUSIC_VIDEO_TOLERANCE_MS,
@@ -1438,6 +1465,10 @@ function initOptionsElements() {
     if (inputAudioFadeInSeconds) inputAudioFadeInSeconds.addEventListener('change', () => changeRecordValues());
     inputAudioFadeOutSeconds = document.getElementById('inputAudioFadeOutSeconds');
     if (inputAudioFadeOutSeconds) inputAudioFadeOutSeconds.addEventListener('change', () => changeRecordValues());
+    cbAudioLoopCrossfade = document.getElementById('cbAudioLoopCrossfade');
+    if (cbAudioLoopCrossfade) cbAudioLoopCrossfade.addEventListener('change', () => changeRecordValues());
+    inputAudioLoopCrossfadeSeconds = document.getElementById('inputAudioLoopCrossfadeSeconds');
+    if (inputAudioLoopCrossfadeSeconds) inputAudioLoopCrossfadeSeconds.addEventListener('change', () => changeRecordValues());
     // Point de départ : appliqué à la validation du champ (pas à chaque
     // frappe, qui recalculerait le plan sur une valeur incomplète).
     inputAudioStart = document.getElementById('inputAudioStart');
@@ -2785,6 +2816,11 @@ function initOptionsUI() {
             if (inputAudioFadeOutSeconds) {
                 inputAudioFadeOutSeconds.value = String(normalizeFadeSeconds(pkg.options.record.audio.fadeOutSeconds, AUDIO_FADE_OUT_SECONDS));
             }
+            if (cbAudioLoopCrossfade) cbAudioLoopCrossfade.checked = !!pkg.options.record.audio.loopCrossfade;
+            if (inputAudioLoopCrossfadeSeconds) {
+                inputAudioLoopCrossfadeSeconds.value = String(normalizeFadeSeconds(
+                    pkg.options.record.audio.loopCrossfadeSeconds, AUDIO_LOOP_CROSSFADE_SECONDS));
+            }
             applyMusicBounds();
         } catch(e) { console.warn('Init audio UI error:', e); }
 
@@ -3088,10 +3124,12 @@ function changeRecordValues(field = undefined) {
             if (cbAudioFadeOut) pkg.options.record.audio.fadeOut = !!cbAudioFadeOut.checked;
             if (cbAudioLoop) pkg.options.record.audio.loop = !!cbAudioLoop.checked;
             if (cbAudioFadeIn) pkg.options.record.audio.fadeIn = !!cbAudioFadeIn.checked;
+            if (cbAudioLoopCrossfade) pkg.options.record.audio.loopCrossfade = !!cbAudioLoopCrossfade.checked;
             // Durées bornées, et le champ ramené à la valeur retenue.
             for (const [input, key, fallback] of [
                 [inputAudioFadeInSeconds, 'fadeInSeconds', AUDIO_FADE_IN_SECONDS],
                 [inputAudioFadeOutSeconds, 'fadeOutSeconds', AUDIO_FADE_OUT_SECONDS],
+                [inputAudioLoopCrossfadeSeconds, 'loopCrossfadeSeconds', AUDIO_LOOP_CROSSFADE_SECONDS],
             ]) {
                 if (!input) continue;
                 const seconds = normalizeFadeSeconds(input.value, pkg.options.record.audio[key] ?? fallback);
@@ -3151,6 +3189,8 @@ function recordSettingsPayload() {
         audio_fade_out_seconds: normalizeFadeSeconds(audio.fadeOutSeconds, AUDIO_FADE_OUT_SECONDS),
         audio_fade_in: !!audio.fadeIn,
         audio_fade_in_seconds: normalizeFadeSeconds(audio.fadeInSeconds, AUDIO_FADE_IN_SECONDS),
+        audio_loop_crossfade: !!audio.loopCrossfade,
+        audio_loop_crossfade_seconds: normalizeFadeSeconds(audio.loopCrossfadeSeconds, AUDIO_LOOP_CROSSFADE_SECONDS),
     };
 }
 
@@ -3184,6 +3224,9 @@ function applyRecordSettingsPayload(recording) {
     pkg.options.record.audio.fadeOutSeconds = normalizeFadeSeconds(recording.audio_fade_out_seconds, AUDIO_FADE_OUT_SECONDS);
     pkg.options.record.audio.fadeIn = !!recording.audio_fade_in;
     pkg.options.record.audio.fadeInSeconds = normalizeFadeSeconds(recording.audio_fade_in_seconds, AUDIO_FADE_IN_SECONDS);
+    pkg.options.record.audio.loopCrossfade = !!recording.audio_loop_crossfade;
+    pkg.options.record.audio.loopCrossfadeSeconds = normalizeFadeSeconds(
+        recording.audio_loop_crossfade_seconds, AUDIO_LOOP_CROSSFADE_SECONDS);
     return true;
 }
 

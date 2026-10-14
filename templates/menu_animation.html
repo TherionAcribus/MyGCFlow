@@ -406,6 +406,17 @@
                                 <input id="cbAudioLoop" class="form-check-input" type="checkbox">
                                 <label class="form-check-label" for="cbAudioLoop"
                                        title="{{ _('La musique reprend à son point de départ chaque fois qu\'elle se termine, jusqu\'à la fin de la vidéo.') }}">{{ _("Répéter la musique en boucle") }}</label>
+                                <!-- Raccord des reprises : actif seulement avec la boucle. -->
+                                <div class="form-check mt-1 mb-0 audio-fade-row">
+                                    <input id="cbAudioLoopCrossfade" class="form-check-input" type="checkbox">
+                                    <label class="form-check-label" for="cbAudioLoopCrossfade"
+                                           title="{{ _('La fin de la musique s\'efface pendant que son début remonte, au lieu d\'un raccord net.') }}">{{ _("Enchaîner les reprises en fondu") }}</label>
+                                    <span class="audio-fade-duration">
+                                        <input id="inputAudioLoopCrossfadeSeconds" type="number" min="0.5" max="30" step="0.5" value="1"
+                                               class="form-control form-control-sm" aria-label="{{ _('Durée du fondu entre les reprises, en secondes') }}">
+                                        <span aria-hidden="true">s</span>
+                                    </span>
+                                </div>
                             </div>
                             <!-- Fondus : durée réglable à côté de chaque case, active
                                  seulement quand le fondu est demandé (updateMusicSyncUi,
