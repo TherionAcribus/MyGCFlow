@@ -21,6 +21,7 @@ import {
     recommendedBitrateMbps,
     isValidRecordingInteger,
     isValidRecordingNumber,
+    normalizeAudioVolume,
     normalizeRecordingBitrateMbps,
     normalizeRecordingFps,
     normalizeRecordingScaleFactor,
@@ -2846,8 +2847,7 @@ function changeRecordValues(field = undefined) {
                 updateMusicSyncUi();
             }
             if (inputAudioVolume && inputAudioVolume.value !== '') {
-                const vol = Math.max(0, Math.min(1, parseFloat(inputAudioVolume.value) || 1));
-                pkg.options.record.audio.volume = vol;
+                pkg.options.record.audio.volume = normalizeAudioVolume(inputAudioVolume.value);
             }
             if (cbAudioFadeOut) pkg.options.record.audio.fadeOut = !!cbAudioFadeOut.checked;
             if (cbAudioLoop) pkg.options.record.audio.loop = !!cbAudioLoop.checked;

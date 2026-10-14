@@ -8,6 +8,7 @@ import fixWebmDuration from './fix-webm-duration.js';
 import { clampPlaybackRate, MAX_BROWSER_PLAYBACK_RATE } from './video_timing.mjs';
 import {
     browserRecorderMimeType,
+    normalizeAudioVolume,
     normalizeRecordingBitrateMbps,
     normalizeRecordingFps,
 } from './recording_settings.mjs';
@@ -154,7 +155,7 @@ export function muxRecordedVideoWithAudio(sourceBlob, audioFile, fadeOut = null,
                 const arr = await audioFile.arrayBuffer();
                 if (!audioCtx) audioCtx = new AC();
                 audioGain = audioCtx.createGain();
-                audioGain.gain.value = Math.max(0, Math.min(1, Number(pkg.options?.record?.audio?.volume) || 1));
+                audioGain.gain.value = normalizeAudioVolume(pkg.options?.record?.audio?.volume);
                 audioDest = audioCtx.createMediaStreamDestination();
                 audioGain.connect(audioDest);
                 audioBuffer = await audioCtx.decodeAudioData(arr);

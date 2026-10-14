@@ -5,6 +5,7 @@ import {
     RECORDING_LIMITS,
     isValidRecordingInteger,
     isValidRecordingNumber,
+    normalizeAudioVolume,
     normalizeRecordingBitrateMbps,
     normalizeRecordingFps,
     normalizeRecordingScaleFactor,
@@ -74,6 +75,20 @@ test("le facteur d'échelle est borné et aligné sur des pas de 0,25", () => {
     assert.equal(normalizeRecordingScaleFactor('1.62'), 1.5);
     assert.equal(isValidRecordingNumber('1.5', RECORDING_LIMITS.scaleFactor), true);
     assert.equal(isValidRecordingNumber('1.6', RECORDING_LIMITS.scaleFactor), false);
+});
+
+test('un volume à 0 reste muet, il ne retombe pas sur 100 %', () => {
+    assert.equal(normalizeAudioVolume(0), 0);
+    assert.equal(normalizeAudioVolume('0'), 0);
+    assert.equal(normalizeAudioVolume('0.35'), 0.35);
+});
+
+test('le volume est borné entre 0 et 1, plein par défaut', () => {
+    assert.equal(normalizeAudioVolume(4.5), 1);
+    assert.equal(normalizeAudioVolume(-1), 0);
+    for (const missing of [undefined, null, '', 'abc', NaN]) {
+        assert.equal(normalizeAudioVolume(missing), 1);
+    }
 });
 
 test('les profils sont détectés uniquement sur une correspondance exacte', () => {

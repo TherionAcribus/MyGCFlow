@@ -9,6 +9,7 @@
 // avec ui.js qui l'initialise au clic).
 import * as pkg from './index.js';
 import { isRecordingActive } from './mapgl.js';
+import { normalizeAudioVolume } from './recording_settings.mjs';
 
 let bgAudioCtx = null, bgAudioEl = null, bgAudioSource = null, bgAudioGain = null, bgAudioActive = false;
 let blockBackgroundAudioPlayback = false;
@@ -69,7 +70,7 @@ export function startBackgroundMusicIfAny(){
         const file = input?.files?.[0];
         if (!file) return;
 
-        const volume = Number(pkg.options?.record?.audio?.volume) || 1;
+        const volume = normalizeAudioVolume(pkg.options?.record?.audio?.volume);
         const AC = window.AudioContext || window.webkitAudioContext;
         bgAudioCtx = new AC();
 
@@ -80,7 +81,7 @@ export function startBackgroundMusicIfAny(){
 
         bgAudioSource = bgAudioCtx.createMediaElementSource(bgAudioEl);
         bgAudioGain = bgAudioCtx.createGain();
-        bgAudioGain.gain.value = Math.max(0, Math.min(1, volume));
+        bgAudioGain.gain.value = volume;
         bgAudioSource.connect(bgAudioGain).connect(bgAudioCtx.destination);
         startPlaybackWatch(bgAudioGain.gain.value);
 

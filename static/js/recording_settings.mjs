@@ -45,6 +45,16 @@ export function normalizeRecordingScaleFactor(value) {
     return normalizeNumber(value, RECORDING_LIMITS.scaleFactor);
 }
 
+// Volume de la musique (gain 0 à 1). Le 0 est un vrai réglage, pas une valeur
+// absente : un `Number(v) || 1` le transformait en 100 %. Seule une valeur
+// manquante ou illisible retombe sur le volume plein.
+export function normalizeAudioVolume(value) {
+    if (value === null || value === undefined || value === '') return 1;
+    const number = Number(value);
+    if (!Number.isFinite(number)) return 1;
+    return Math.max(0, Math.min(1, number));
+}
+
 // Débit conseillé pour une sortie donnée.
 //
 // Le débit ne suivait pas la résolution : 6 Mbit/s convient en 1080p, mais la

@@ -78,6 +78,7 @@ import {
 import {
     browserRecorderMimeType,
     DEFAULT_RECORDER_MIME,
+    normalizeAudioVolume,
     normalizeRecordingBitrateMbps,
     normalizeRecordingFps,
     recorderMimeLabel,
@@ -3506,7 +3507,7 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos, sess
                 const input = document.getElementById('inputAudioFile');
                 const file = input?.files?.[0];
                 const audioEnabled = !!(pkg.options?.record?.audio?.enabled);
-                const audioVol = (typeof pkg.options?.record?.audio?.volume === 'number') ? pkg.options.record.audio.volume : 1;
+                const audioVol = normalizeAudioVolume(pkg.options?.record?.audio?.volume);
                 if (audioEnabled && file) {
                     const fd = new FormData();
                     fd.append('audio', file);
@@ -4381,8 +4382,7 @@ function finalizeMediaRecorderVideo(){
                 fd.append('fileName', baseName);
                 if (audioEnabled && audioFile) {
                     fd.append('audio', audioFile, audioFile.name || 'music');
-                    const vol = (typeof pkg.options?.record?.audio?.volume === 'number') ? pkg.options.record.audio.volume : 1;
-                    fd.append('audio_volume', String(vol));
+                    fd.append('audio_volume', String(normalizeAudioVolume(pkg.options?.record?.audio?.volume)));
                     fd.append('audio_fade_out', String(pkg.audioFadeOutPlan()?.seconds || 0));
                     const loop = pkg.audioLoopPlan();
                     if (loop) {
