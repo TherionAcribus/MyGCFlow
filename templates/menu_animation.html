@@ -295,6 +295,12 @@
                                         aria-label="{{ _('Choisir un fichier audio') }}">
                                     <i class="ti ti-music me-1" aria-hidden="true"></i>{{ _('Parcourir…') }}
                                 </button>
+                                <!-- Visible quand une musique est chargée
+                                     (updateAudioDurationButton, ui.js). -->
+                                <button type="button" id="btnAudioFileRemove" class="btn btn-sm btn-outline-secondary" hidden
+                                        aria-label="{{ _('Retirer la musique') }}">
+                                    <i class="ti ti-x me-1" aria-hidden="true"></i>{{ _('Retirer') }}
+                                </button>
                             </div>
                             <div id="audioFileInfo" class="form-hint text-muted mt-2" aria-live="polite">
                                 <em>{{ _("Aucune musique sélectionnée") }}</em>

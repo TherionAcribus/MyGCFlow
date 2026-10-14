@@ -13,6 +13,8 @@ import time
 import uuid
 from typing import Callable, Dict, Tuple, Optional, List
 
+from werkzeug.utils import secure_filename
+
 
 APP_NAME = "MyGCFlow"
 # Nom historique (GCMap) : sert à reprendre la configuration d'une installation
@@ -226,6 +228,7 @@ def write_json(path: Path, obj: dict) -> None:
 
 # Même borne que le champ de saisie (maxlength) de l'onglet Export.
 RECORDING_FILE_NAME_MAX_LENGTH = 80
+AUDIO_FILE_NAME_MAX_LENGTH = 255
 
 
 @dataclass
@@ -278,6 +281,11 @@ class RecordingSettings:
     audio_fade_out: bool = False
     # Répéter la musique en boucle quand elle est plus courte que la vidéo.
     audio_loop: bool = False
+    # Dernière musique choisie, rechargée au démarrage : son nom dans le
+    # dossier audio/ (tiré de son contenu, cf. capture._save_uploaded_audio)
+    # et son nom d'origine, affiché dans l'interface. Vides = aucune.
+    audio_file: str = ""
+    audio_file_name: str = ""
 
 
 @dataclass
@@ -787,6 +795,13 @@ def coerce_recording_settings(d: dict) -> RecordingSettings:
     r.audio_trim_silence = bool(d.get("audio_trim_silence", r.audio_trim_silence))
     r.audio_fade_out = bool(d.get("audio_fade_out", r.audio_fade_out))
     r.audio_loop = bool(d.get("audio_loop", r.audio_loop))
+    audio_file = d.get("audio_file")
+    if isinstance(audio_file, str):
+        # Un nom de fichier du dossier audio/, jamais un chemin.
+        r.audio_file = secure_filename(os.path.basename(audio_file))[:AUDIO_FILE_NAME_MAX_LENGTH]
+    audio_file_name = d.get("audio_file_name")
+    if isinstance(audio_file_name, str) and r.audio_file:
+        r.audio_file_name = audio_file_name.strip()[:AUDIO_FILE_NAME_MAX_LENGTH]
     return r
 
 

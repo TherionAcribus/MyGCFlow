@@ -38,6 +38,10 @@ Autres repères :
   cale la vidéo dessus) doit y revenir, sinon `#inputDaysPerSecond` reste en
   lecture seule pour les specs suivants — exemple dans `music-options.spec.mjs`
   (`afterEach`).
+- Même piège pour la musique : la dernière choisie est retenue
+  (`recording.audio_file`) et rechargée à chaque démarrage. Un spec qui en
+  choisit une doit la retirer (`#btnAudioFileRemove`) et attendre
+  `audio_file === ''`, sinon tous les specs suivants démarrent avec elle.
 - L'onglet Animation & vidéo a quatre sous-onglets (`#animationConfigTab`
   « Dates & rythme », `#cameraConfigTab`, `#musicConfigTab`,
   `#recordingConfigTab`). Un contrôle d'un sous-onglet fermé n'est pas

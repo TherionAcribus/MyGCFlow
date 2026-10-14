@@ -29,6 +29,13 @@ test.beforeEach(async ({ page }) => {
 // tests les modifient (choisir une musique cale la vidéo dessus), et les specs
 // suivants s'attendent au mode jours/seconde. On remet donc l'état initial.
 test.afterEach(async ({ page }) => {
+  // La musique choisie est retenue (préférence globale) et rechargée au
+  // démarrage : la retirer, sans quoi les specs suivantes l'auraient.
+  await page.locator('#musicConfigTab').click();
+  const remove = page.locator('#btnAudioFileRemove');
+  if (await remove.isVisible()) await remove.click();
+  await expect.poll(async () => (await recordingSettings(page)).audio_file).toBe('');
+
   await page.locator('#animationConfigTab').click();
   // Seulement en « Par durée » : saisir une durée depuis un autre mode y
   // basculerait, et le retour au rythme adopterait le rythme calculé.
@@ -202,6 +209,64 @@ test('le nom du fichier est affiché en texte, son infobulle suit la sélection'
   await info.hover();
   await expect(tooltip).toHaveCount(0);
   expect(await info.getAttribute('data-bs-toggle')).toBeNull();
+});
+
+
+test('la dernière musique est rechargée au démarrage, avec le calage sur elle', async ({ page }) => {
+  const info = page.locator('#audioFileInfo');
+  const include = page.locator('#cbRecordAudioEnable');
+  const remove = page.locator('#btnAudioFileRemove');
+  const rhythmMode = async () => (await (await page.request.get('/api/settings')).json()).animation.rhythm_mode;
+  const reopen = async () => {
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => window.mygcflowReady === true);
+    await dismissFirstUseModal(page);
+    await page.locator('a[href="#animation"]').click();
+    await page.locator('#musicConfigTab').click();
+  };
+  const uploads = [];
+  page.on('request', (request) => { if (request.url().includes('/upload_audio')) uploads.push(request.url()); });
+
+  await expect(remove).toBeHidden();
+  // 6 s : au-dessus de la durée minimale de la vidéo (fin comprise).
+  await page.locator('#inputAudioFile').setInputFiles(wavFile('reprise.wav', 6, 0));
+  await expect(remove).toBeVisible();
+  // Retenue une fois copiée sur le serveur, avec son nom d'origine.
+  await expect.poll(async () => {
+    const r = await recordingSettings(page);
+    return [r.audio_file.replace(/[0-9a-f]{16}/, 'H'), r.audio_file_name];
+  }).toEqual(['reprise-H.wav', 'reprise.wav']);
+  await expect.poll(rhythmMode).toBe('music');
+
+  // Au redémarrage : la musique revient, sans nouvel envoi, et la vidéo
+  // est de nouveau calée dessus.
+  await reopen();
+  await expect(info).toContainText('reprise.wav');
+  await expect(include).toBeChecked();
+  await expect(remove).toBeVisible();
+  await expect(page.locator('#musicSyncStatus')).toContainText('Durée calée sur la musique (6 s)');
+  await expect(page.locator('#rhythmModeMusic')).toBeChecked();
+  expect(uploads).toHaveLength(1);
+
+  // « Inclure la musique » décochée : elle est rechargée sans être forcée.
+  await include.uncheck();
+  await expect.poll(async () => (await recordingSettings(page)).audio_enabled).toBe(false);
+  await reopen();
+  await expect(info).toContainText('reprise.wav');
+  await expect(include).not.toBeChecked();
+  await expect(page.locator('#musicTabDot')).toBeHidden();
+  await include.check();
+  await expect.poll(async () => (await recordingSettings(page)).audio_enabled).toBe(true);
+
+  // Retirée : oubliée, y compris au démarrage suivant.
+  await remove.click();
+  await expect(info).toContainText('Aucune musique sélectionnée');
+  await expect(remove).toBeHidden();
+  await expect(include).toBeDisabled();
+  await expect.poll(async () => (await recordingSettings(page)).audio_file).toBe('');
+  await reopen();
+  await expect(info).toContainText('Aucune musique sélectionnée');
+  await expect(remove).toBeHidden();
 });
 
 

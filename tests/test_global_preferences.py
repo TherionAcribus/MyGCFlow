@@ -77,6 +77,17 @@ class RecordingCoercionTests(unittest.TestCase):
         self.assertFalse(coerce_recording_settings({}).audio_loop)
         self.assertTrue(coerce_recording_settings({"audio_loop": True}).audio_loop)
 
+    def test_the_saved_music_is_a_file_name_of_the_audio_folder(self):
+        r = coerce_recording_settings({"audio_file": "musique-0123abcd.mp3", "audio_file_name": " Ma musique.mp3 "})
+        self.assertEqual((r.audio_file, r.audio_file_name), ("musique-0123abcd.mp3", "Ma musique.mp3"))
+        # Jamais un chemin : seul le nom de fichier est gardé.
+        self.assertEqual(coerce_recording_settings({"audio_file": "../../secret.txt"}).audio_file, "secret.txt")
+        self.assertEqual(coerce_recording_settings({"audio_file": 12}).audio_file, "")
+
+    def test_no_display_name_without_a_saved_music(self):
+        r = coerce_recording_settings({"audio_file": "", "audio_file_name": "Ma musique.mp3"})
+        self.assertEqual((r.audio_file, r.audio_file_name), ("", ""))
+
     def test_garbage_payload_yields_defaults(self):
         self.assertEqual(coerce_recording_settings(None), coerce_recording_settings({}))
 

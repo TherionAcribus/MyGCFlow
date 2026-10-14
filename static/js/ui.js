@@ -120,6 +120,9 @@ var dataStateResolved = false;
 // ('rate' | 'duration' | 'music'), plus dans un flag à part — une seule
 // source de vérité pour le mode de rythme.
 const isMusicLocked = () => pkg.options?.animation?.rhythmMode === 'music';
+// Mode 'music' de la session précédente, en attente du rechargement de la
+// musique (cf. applyAnimationSettingsPayload, restoreSavedMusic).
+let musicRhythmToRestore = false;
 // Dernier plan de timing calculé et validité courante des entrées : les
 // boutons Démarrer/Enregistrer restent désactivés tant qu'un champ est
 // invalide (cf. updateDataAvailabilityUI).
@@ -1208,60 +1211,17 @@ function initOptionsElements() {
     inputAudioFile = document.getElementById('inputAudioFile');
     if (inputAudioFile) {
         // Gérer la sélection/désélection d'un fichier audio
-        inputAudioFile.addEventListener('change', async function() {
-            if (this.files && this.files.length > 0) {
-                const file = this.files[0];
-                // Devient la musique courante ; sa copie vers le serveur part
-                // aussitôt, en tâche de fond.
-                musicTrack.select(file);
-                // Indicateur de chargement : le fichier n'est utilisable qu'une
-                // fois ses métadonnées lues (durée via refreshMusicDuration).
-                const infoDiv = document.getElementById('audioFileInfo');
-                if (infoDiv) {
-                    infoDiv.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>' + t('Chargement de la musique...');
-                }
-                const btnDuration = document.getElementById('btnSetDurationFromAudio');
-                if (btnDuration) btnDuration.classList.add('disabled');
-                // Fichier sélectionné - cocher automatiquement la checkbox
-                if (cbRecordAudioEnable) {
-                    cbRecordAudioEnable.checked = true;
-                }
-                // Le réglage qui change ici est « Inclure la musique », coché
-                // juste au-dessus : c'est lui que l'indicateur doit confirmer.
-                // Le champ fichier n'est pas suivi, sans quoi l'indicateur
-                // s'allumerait sur le dernier champ manipulé, sans rapport.
-                changeRecordValues(cbRecordAudioEnable); // Met à jour les options
-                // Attendre la lecture des métadonnées (mise en cache,
-                // anti-course) : le fichier est alors utilisable.
-                const duration = await refreshMusicDuration();
-                // Une musique choisie cale d'office la durée de la vidéo
-                // dessus — équivalent du bouton « Caler sur la musique ».
-                // null = lecture périmée (un autre fichier a suivi) ou
-                // durée illisible : on ne change alors pas le mode.
-                if (Number.isFinite(duration) && duration > 0) {
-                    setRhythmMode('music');
-                    pkg.showToast && pkg.showToast(t('Durée de l\'animation calée sur la musique'), 'info', t('Musique'), 3000);
-                }
-                // Un autre fichier a pu être choisi entre-temps : n'afficher
-                // les infos que si c'est toujours celui-ci.
-                if (musicTrack.file() === file) {
-                    await displayAudioFileInfo(file);
-                }
-            } else {
-                // Aucun fichier - masquer les infos et revenir au mode rythme
-                // si la durée était calée sur cette musique.
-                musicTrack.clear();
-                hideAudioFileInfo();
-                if (isMusicLocked()) setRhythmMode('rate');
-                if (cbRecordAudioEnable) {
-                    cbRecordAudioEnable.checked = false;
-                    cbRecordAudioEnable.disabled = true;
-                }
-                refreshMusicDuration();
-            }
-            // Activer/désactiver le bouton de calage et la checkbox selon si un fichier est chargé
-            updateAudioDurationButton();
+        inputAudioFile.addEventListener('change', function() {
+            if (this.files && this.files.length > 0) selectMusic(this.files[0]);
+            else clearMusic();
         });
+    }
+    // La musique rechargée au démarrage n'est pas dans le champ fichier : ce
+    // bouton est le seul moyen de s'en défaire (« Inclure » ne fait que
+    // l'exclure de la vidéo).
+    const btnAudioFileRemove = document.getElementById('btnAudioFileRemove');
+    if (btnAudioFileRemove) {
+        btnAudioFileRemove.addEventListener('click', () => clearMusic());
     }
 
     // Bouton « Caler sur la musique » : bascule le rythme en mode musique. La
@@ -2585,6 +2545,8 @@ function initOptionsUI() {
         updateAudioDurationButton();
         // Initialiser l'état de synchronisation musique (badge + statut)
         updateMusicSyncUi();
+        // Dernière musique choisie : rechargée en tâche de fond.
+        restoreSavedMusic();
     } catch(e) { console.warn('Init enregistrement UI error:', e); }
 }
 
@@ -2909,6 +2871,8 @@ function recordSettingsPayload() {
         audio_trim_silence: !!audio.trimSilence,
         audio_fade_out: !!audio.fadeOut,
         audio_loop: !!audio.loop,
+        audio_file: audio.file || '',
+        audio_file_name: audio.fileName || '',
     };
 }
 
@@ -2935,6 +2899,9 @@ function applyRecordSettingsPayload(recording) {
     pkg.options.record.audio.trimSilence = !!recording.audio_trim_silence;
     pkg.options.record.audio.fadeOut = !!recording.audio_fade_out;
     pkg.options.record.audio.loop = !!recording.audio_loop;
+    // Dernière musique choisie, rechargée par restoreSavedMusic.
+    pkg.options.record.audio.file = (typeof recording.audio_file === 'string') ? recording.audio_file : '';
+    pkg.options.record.audio.fileName = (typeof recording.audio_file_name === 'string') ? recording.audio_file_name : '';
     return true;
 }
 
@@ -3064,9 +3031,9 @@ export function saveAnimationSettings() {
 }
 
 // Applique la clé `animation` des préférences serveur sur pkg.options.
-// Un mode 'music' persisté ne peut pas être restauré au démarrage (aucun
-// fichier n'est encore sélectionné) : on retombe sur 'rate' avec le dernier
-// rythme, sans perdre la valeur.
+// Un mode 'music' persisté ne peut pas s'appliquer d'emblée (la musique n'est
+// pas encore rechargée) : on part sur 'rate' avec le dernier rythme, et
+// restoreSavedMusic le rétablit une fois la musique lue.
 function applyAnimationSettingsPayload(anim) {
     if (!anim || typeof anim !== 'object') return false;
     pkg.options.animation = pkg.options.animation || {};
@@ -3106,6 +3073,7 @@ function applyAnimationSettingsPayload(anim) {
     }
     const mode = anim.rhythm_mode;
     a.rhythmMode = (mode === 'duration') ? 'duration' : 'rate';
+    musicRhythmToRestore = mode === 'music';
     // timePerDay : valeur canonique dérivée du rythme ; recalée sur le plan
     // dès que le nombre de jours est connu.
     a.timePerDay = 1000 / (a.daysPerSecond || TIMING_LIMITS.daysPerSecond.fallback);
@@ -5544,6 +5512,9 @@ function renderLoadEstimate(plan) {
 function setRhythmMode(mode) {
     const animation = pkg.options?.animation;
     if (!animation || !['rate', 'duration', 'music'].includes(mode)) return;
+    // Un mode choisi avant la fin du rechargement de la musique prime sur
+    // celui de la session précédente.
+    musicRhythmToRestore = false;
     animation.rhythmMode = mode;
     refreshTimingPlan();
 }
@@ -5551,6 +5522,7 @@ function setRhythmMode(mode) {
 // Saisie dans un champ de tempo : il devient la valeur qui pilote, son bouton
 // est sélectionné. Sans effet en mode musique (champs en lecture seule).
 function editRhythmField(mode) {
+    musicRhythmToRestore = false;
     const animation = pkg.options?.animation;
     if (animation && rhythmMode() !== 'music') animation.rhythmMode = mode;
     refreshTimingPlan();
@@ -7621,17 +7593,15 @@ function updateAudioDurationButton() {
         if (wrapper) wrapper.title = hasFile ? '' : t('Sélectionnez d\'abord un fichier audio');
     }
 
-    // Checkbox
+    // Checkbox : décochée sans fichier. Avec un fichier, elle garde l'état
+    // posé par l'appelant (cochée pour une musique choisie, la préférence
+    // pour une musique rechargée au démarrage).
     if (cbAudio) {
         cbAudio.disabled = !hasFile;
-        if (!hasFile) {
-            cbAudio.checked = false; // Décocher si pas de fichier
-        }
-        // Si fichier chargé et checkbox pas encore cochée, la cocher (sécurité)
-        if (hasFile && !cbAudio.checked) {
-            cbAudio.checked = true;
-        }
+        if (!hasFile) cbAudio.checked = false;
     }
+    const btnRemove = document.getElementById('btnAudioFileRemove');
+    if (btnRemove) btnRemove.hidden = !hasFile;
     syncMusicTabDot();
 }
 
@@ -7750,6 +7720,119 @@ async function getAudioDuration(file) {
     // permettre une nouvelle tentative.
     promise.catch(() => audioDurationCache.delete(key));
     return promise;
+}
+
+// Musique choisie par l'utilisateur dans le sélecteur de fichier.
+async function selectMusic(file) {
+    // Devient la musique courante ; sa copie vers le serveur part aussitôt,
+    // en tâche de fond.
+    musicTrack.select(file);
+    rememberMusic(file);
+    if (cbRecordAudioEnable) cbRecordAudioEnable.checked = true;
+    // Le réglage qui change ici est « Inclure la musique », coché juste
+    // au-dessus : c'est lui que l'indicateur doit confirmer. Le champ fichier
+    // n'est pas suivi, sans quoi l'indicateur s'allumerait sur le dernier
+    // champ manipulé, sans rapport.
+    changeRecordValues(cbRecordAudioEnable);
+    const duration = await showCurrentMusic(file);
+    // Une musique choisie cale d'office la durée de la vidéo dessus —
+    // équivalent du bouton « Caler sur la musique ». null = lecture périmée
+    // (un autre fichier a suivi) ou durée illisible : on ne change alors pas
+    // le mode.
+    if (Number.isFinite(duration) && duration > 0) {
+        setRhythmMode('music');
+        pkg.showToast && pkg.showToast(t('Durée de l\'animation calée sur la musique'), 'info', t('Musique'), 3000);
+    }
+}
+
+// Plus de musique : champ vidé (sélecteur annulé, ou bouton « Retirer »).
+function clearMusic() {
+    musicTrack.clear();
+    if (inputAudioFile) inputAudioFile.value = '';
+    const audio = pkg.options?.record?.audio;
+    if (audio) { audio.file = ''; audio.fileName = ''; }
+    hideAudioFileInfo();
+    // Revenir au mode rythme si la durée était calée sur cette musique.
+    if (isMusicLocked()) setRhythmMode('rate');
+    if (cbRecordAudioEnable) {
+        cbRecordAudioEnable.checked = false;
+        cbRecordAudioEnable.disabled = true;
+    }
+    refreshMusicDuration();
+    updateAudioDurationButton();
+    saveRecordSettings(null);
+}
+
+// Affiche la musique devenue courante et lit sa durée : le fichier n'est
+// utilisable qu'une fois ses métadonnées lues. Renvoie la durée utile (ms),
+// ou null si un autre fichier a suivi ou si la durée est illisible.
+async function showCurrentMusic(file) {
+    const infoDiv = document.getElementById('audioFileInfo');
+    if (infoDiv) {
+        infoDiv.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>' + t('Chargement de la musique...');
+    }
+    const btnDuration = document.getElementById('btnSetDurationFromAudio');
+    if (btnDuration) btnDuration.classList.add('disabled');
+    const duration = await refreshMusicDuration();
+    // Un autre fichier a pu être choisi entre-temps : n'afficher les infos
+    // que si c'est toujours celui-ci.
+    if (musicTrack.file() === file) await displayAudioFileInfo(file);
+    updateAudioDurationButton();
+    return duration;
+}
+
+// Retient la musique dans les préférences, pour la recharger au prochain
+// démarrage — une fois sa copie sur le serveur faite. D'ici là, la musique
+// précédente est oubliée : en cas d'échec de copie, on ne recharge pas une
+// musique que l'utilisateur a remplacée.
+function rememberMusic(file) {
+    const audio = pkg.options?.record?.audio;
+    if (!audio) return;
+    audio.file = '';
+    audio.fileName = '';
+    musicTrack.serverName(file).then((name) => {
+        if (!name || musicTrack.file() !== file) return;
+        audio.file = name;
+        audio.fileName = file.name;
+        saveRecordSettings(null);
+    });
+}
+
+// Recharge au démarrage la dernière musique choisie, depuis le dossier
+// audio/ du serveur (préférence recording.audio_file). Le mode « Sur la
+// musique » est rétabli s'il était actif : il ne pouvait pas l'être avant
+// (cf. applyAnimationSettingsPayload).
+async function restoreSavedMusic() {
+    const saved = pkg.options?.record?.audio;
+    const name = saved?.file;
+    if (!name || musicTrack.hasFile()) return;
+    let blob;
+    try {
+        const response = await fetch(`/audio/${encodeURIComponent(name)}`);
+        if (response.status === 404) {
+            // Retirée du dossier audio/ : oublier la référence. Une autre
+            // erreur (serveur occupé) la garde pour le prochain démarrage.
+            if (saved.file === name) {
+                saved.file = '';
+                saved.fileName = '';
+                saveRecordSettings(null);
+            }
+            return;
+        }
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        blob = await response.blob();
+    } catch (e) {
+        console.warn('Musique enregistrée non rechargée:', e);
+        return;
+    }
+    // L'utilisateur a pu choisir une autre musique pendant le chargement.
+    if (musicTrack.hasFile() || saved.file !== name) return;
+    const file = new File([blob], saved.fileName || name, { type: blob.type });
+    musicTrack.select(file, { serverName: name });
+    // « Inclure la musique » suit la préférence, sans forcer.
+    if (cbRecordAudioEnable) cbRecordAudioEnable.checked = !!saved.enabled;
+    const duration = await showCurrentMusic(file);
+    if (musicRhythmToRestore && Number.isFinite(duration) && duration > 0) setRhythmMode('music');
 }
 
 // Relit la durée du fichier sélectionné et recalcule le plan. Le jeton

@@ -156,6 +156,21 @@ class UploadedAudioStorageTests(unittest.TestCase):
     def test_an_unusual_extension_is_dropped(self):
         self.assertRegex(self.save("piste.mp3;rm", b"son"), r"^piste-[0-9a-f]{16}$")
 
+    def test_a_stored_track_is_served_back_by_its_name(self):
+        from app import create_app
+        name = self.save("music.mp3", b"son")
+        app = create_app({"SQLALCHEMY_DATABASE_URI": f"sqlite:///{self.folder.parent / 'test.db'}"})
+        client = app.test_client()
+        response = client.get(f"/audio/{name}")
+        self.assertEqual((response.status_code, response.data), (200, b"son"))
+        response.close()
+        for missing in ("absent.mp3", "..%2F..%2Fsettings.json"):
+            with self.subTest(missing=missing):
+                self.assertEqual(client.get(f"/audio/{missing}").status_code, 404)
+        with app.app_context():
+            from extensions import db
+            db.engine.dispose()
+
     def test_no_temporary_file_is_left_behind(self):
         self.save("music.mp3", b"son")
         self.save("music.mp3", b"son")

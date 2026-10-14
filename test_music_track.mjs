@@ -99,6 +99,15 @@ test('reprendre une musique déjà copiée ne la renvoie pas', async () => {
     assert.equal(await track.serverName(), 'a-0123.mp3');
 });
 
+test('une musique rechargée depuis le serveur n\'y est pas renvoyée', async () => {
+    const { calls, upload } = fakeUpload();
+    const track = createMusicTrack({ upload });
+    track.select({ name: 'a.mp3' }, { serverName: 'a-0123.mp3' });
+    await flush();
+    assert.equal(calls.length, 0);
+    assert.equal(await track.serverName(), 'a-0123.mp3');
+});
+
 test('sans musique, pas de nom ni d\'envoi', async () => {
     const { calls, upload } = fakeUpload();
     const track = createMusicTrack({ upload });

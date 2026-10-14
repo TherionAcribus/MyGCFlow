@@ -46,11 +46,15 @@ export function createMusicTrack({ upload, onUploadError = () => {} }) {
 
     return {
         // Nouvelle musique : sa copie vers le serveur démarre aussitôt.
-        select(file) {
+        // `serverName` : musique déjà sur le serveur (rechargée au démarrage),
+        // rien à envoyer. Un échec de copie n'est signalé qu'à qui attend le
+        // nom (serverName) : il n'est pas définitif.
+        select(file, { serverName = null } = {}) {
             if (!file) { current = null; return; }
             current = entryFor(file);
+            if (serverName) current.name = serverName;
             if (!current.name && !current.pending) {
-                startUpload(current).catch((err) => onUploadError(err, file));
+                startUpload(current).catch(() => {});
             }
         },
         clear() {

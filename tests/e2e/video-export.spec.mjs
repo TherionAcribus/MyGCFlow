@@ -357,6 +357,14 @@ test('la musique part au serveur à sa sélection, l\'export n\'en transmet que 
   expect(validation.status, `${validation.stdout}\n${validation.stderr}`).toBe(0);
   await testInfo.attach('ffprobe-report.json', { body: Buffer.from(validation.stdout), contentType: 'application/json' });
   await page.locator('#modal_video_ready .modal-footer [data-bs-dismiss="modal"]').click();
+
+  // Musique retenue (préférence globale, rechargée au démarrage) : la
+  // retirer pour les specs suivantes.
+  await page.locator('#musicConfigTab').click();
+  await page.locator('#btnAudioFileRemove').click();
+  await expect.poll(async () => (
+    await (await page.request.get('/api/settings')).json()
+  ).recording.audio_file).toBe('');
 });
 
 test('traitement ffmpeg en échec : le repli navigateur livre quand même la vidéo', async ({ page }) => {

@@ -4,6 +4,7 @@ from dataclasses import replace
 
 from flask import Blueprint, abort, current_app, jsonify, request, send_from_directory
 from flask_babel import gettext as _babel_gettext
+from werkzeug.utils import secure_filename
 
 from capture import (
     TASK_TYPE_VIDEO,
@@ -215,6 +216,18 @@ def route_upload_video():
 @media_bp.route('/upload_audio', methods=['POST'])
 def route_upload_audio():
     return upload_audio(request)
+
+
+@media_bp.route('/audio/<path:filename>', methods=['GET'])
+def route_audio(filename):
+    # Rend une musique déjà copiée dans audio/ : le client recharge ainsi au
+    # démarrage la dernière musique choisie (préférence recording.audio_file).
+    # Nom passé par secure_filename : aucune sortie du dossier possible.
+    name = secure_filename(os.path.basename(filename))
+    folder = paths.audio_dir()
+    if not name or not os.path.isfile(os.path.join(folder, name)):
+        abort(404)
+    return send_from_directory(folder, name)
 
 
 # ---- Flux vidéo MediaRecorder (délestage mémoire) ----
