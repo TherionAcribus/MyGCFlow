@@ -34,7 +34,7 @@ import { t } from './notifications.js';
 import { isEvolutionPage } from './app_mode.mjs';
 import { resolveCameraFollowMode } from './camera_follow.mjs';
 import { hasNotableTrailingSilence, trimmedDurationMs } from './audio_silence.mjs';
-import { analyzeMusicFile } from './music_analysis.mjs';
+import { analyzeMusicFile, gainDb, normalizationGain } from './music_analysis.mjs';
 import { loopCrossfadeMs, loopPeriodMs } from './music_playback.mjs';
 import {
     clampFades, musicTimeline, normalizeFadeSeconds, sourceMsAt, timelineMsAt, timelineX, waveformPath,
@@ -115,7 +115,7 @@ var recordMimeShownFallback = null;
 var selectRecordMode, selectRecordQualityProfile, recordAdvancedSettings, inputRecordFps, inputRecordBitrate, selectRecordMime, inputRecordSlowdown, inputRecordScaleFactor, inputRecordFileName, cbRecordNormalize, selectRecordResolution, selectRecordColorFidelity;
 var cbRecordAudioEnable, inputAudioFile, inputAudioVolume, cbAudioTrimSilence, cbAudioFadeOut, cbAudioLoop, inputAudioStart;
 var cbAudioFadeIn, inputAudioFadeInSeconds, inputAudioFadeOutSeconds;
-var cbAudioLoopCrossfade, inputAudioLoopCrossfadeSeconds;
+var cbAudioLoopCrossfade, inputAudioLoopCrossfadeSeconds, cbAudioNormalize;
 // Passe à true à la première synchro déclenchée par une résolution de
 // données (chargement, filtrage, vidage). L'état vide de la carte ne se
 // révèle qu'à ce moment-là : l'afficher dès l'init le ferait flasher
@@ -156,6 +156,9 @@ var musicEndMs = null;
 const MIN_MUSIC_AFTER_START_MS = 1000;
 // Pics de la forme d'onde (0 à 1), null si la piste n'a pas pu être décodée.
 var musicPeaks = null;
+// Niveau mesuré de la musique ({ loudnessDb, peak }, cf. loudnessStats), null
+// si la piste n'a pas pu être décodée : pas d'harmonisation possible.
+var musicLoudness = null;
 // Durées par défaut des fondus (secondes) ; réglables, bornées par FADE_LIMITS.
 const AUDIO_FADE_OUT_SECONDS = 3;
 const AUDIO_FADE_IN_SECONDS = 2;
@@ -224,7 +227,7 @@ const RECORD_SETTINGS_FIELDS = [
     'inputRecordFileName', 'cbRecordNormalize',
     'cbRecordAudioEnable', 'inputAudioVolume', 'cbAudioTrimSilence', 'cbAudioFadeOut', 'cbAudioLoop',
     'inputAudioStart', 'cbAudioFadeIn', 'inputAudioFadeInSeconds', 'inputAudioFadeOutSeconds',
-    'cbAudioLoopCrossfade', 'inputAudioLoopCrossfadeSeconds',
+    'cbAudioLoopCrossfade', 'inputAudioLoopCrossfadeSeconds', 'cbAudioNormalize',
     'selectRecordResolution',
     'selectRecordColorFidelity',
 ];
@@ -362,8 +365,22 @@ export function musicPlaybackPlan(plan = lastTimingPlan) {
         fadeInMs: fades.fadeInMs,
         fadeOutMs: fades.fadeOutMs,
         videoMs: plan?.valid ? plan.totalDurationMs : 0,
-        volume: normalizeAudioVolume(pkg.options?.record?.audio?.volume),
+        volume: audioOutputVolume(),
     };
+}
+
+// Gain d'harmonisation du volume de la musique courante : 1 si l'option est
+// décochée ou si la piste n'a pas pu être mesurée (cf. normalizationGain).
+function musicNormalizationGain() {
+    if (!pkg.options?.record?.audio?.normalize || !musicTrack.hasFile()) return 1;
+    return normalizationGain(musicLoudness || undefined);
+}
+
+// Volume effectif de la musique : celui du curseur, harmonisé si demandé. Le
+// même pour l'aperçu, l'écoute et les deux exports — il peut dépasser 1 quand
+// l'harmonisation relève un morceau calme (sans saturer, cf. normalizationGain).
+export function audioOutputVolume() {
+    return normalizeAudioVolume(pkg.options?.record?.audio?.volume) * musicNormalizationGain();
 }
 
 // Durées effectives des fondus (ms) : celles demandées, réduites ensemble si
@@ -412,6 +429,7 @@ function updateMusicSyncUi(plan = lastTimingPlan) {
     // Une durée ne se règle que pour un fondu demandé.
     if (inputAudioFadeOutSeconds) inputAudioFadeOutSeconds.disabled = !cbAudioFadeOut?.checked;
     if (inputAudioFadeInSeconds) inputAudioFadeInSeconds.disabled = !cbAudioFadeIn?.checked;
+    syncNormalizeInfo();
     // Raccord fondu : sans objet hors boucle.
     if (cbAudioLoopCrossfade) cbAudioLoopCrossfade.disabled = !cbAudioLoop?.checked;
     if (inputAudioLoopCrossfadeSeconds) {
@@ -536,6 +554,24 @@ function renderMusicWaveform(plan = lastTimingPlan) {
 
 // Chronologie affichée, pour traduire un clic en position dans la musique.
 let lastMusicTimeline = null;
+
+// Ajustement appliqué par « Harmoniser le volume », affiché à côté de la case
+// (« +4,2 dB »), ou la raison pour laquelle il n'y en a pas.
+function syncNormalizeInfo() {
+    const info = document.getElementById('audioNormalizeInfo');
+    if (!info) return;
+    const wanted = !!pkg.options?.record?.audio?.normalize && musicTrack.hasFile();
+    info.hidden = !wanted;
+    if (!wanted) return;
+    if (!musicLoudness) {
+        // Pas encore analysée, ou format que le navigateur ne décode pas.
+        info.textContent = musicFileDurationMs > 0 ? t('mesure impossible pour ce format') : '';
+        return;
+    }
+    const db = gainDb(musicNormalizationGain());
+    const value = `${db >= 0 ? '+' : '−'}${Math.abs(db).toFixed(1)}`;
+    info.textContent = t('niveau ajusté de ${d} dB', { d: value });
+}
 
 // Écoute en cours : `true` pour « la fin », `false` pour l'écoute complète,
 // null sans écoute.
@@ -1465,6 +1501,8 @@ function initOptionsElements() {
     if (inputAudioFadeInSeconds) inputAudioFadeInSeconds.addEventListener('change', () => changeRecordValues());
     inputAudioFadeOutSeconds = document.getElementById('inputAudioFadeOutSeconds');
     if (inputAudioFadeOutSeconds) inputAudioFadeOutSeconds.addEventListener('change', () => changeRecordValues());
+    cbAudioNormalize = document.getElementById('cbAudioNormalize');
+    if (cbAudioNormalize) cbAudioNormalize.addEventListener('change', () => changeRecordValues());
     cbAudioLoopCrossfade = document.getElementById('cbAudioLoopCrossfade');
     if (cbAudioLoopCrossfade) cbAudioLoopCrossfade.addEventListener('change', () => changeRecordValues());
     inputAudioLoopCrossfadeSeconds = document.getElementById('inputAudioLoopCrossfadeSeconds');
@@ -2817,6 +2855,7 @@ function initOptionsUI() {
                 inputAudioFadeOutSeconds.value = String(normalizeFadeSeconds(pkg.options.record.audio.fadeOutSeconds, AUDIO_FADE_OUT_SECONDS));
             }
             if (cbAudioLoopCrossfade) cbAudioLoopCrossfade.checked = !!pkg.options.record.audio.loopCrossfade;
+            if (cbAudioNormalize) cbAudioNormalize.checked = !!pkg.options.record.audio.normalize;
             if (inputAudioLoopCrossfadeSeconds) {
                 inputAudioLoopCrossfadeSeconds.value = String(normalizeFadeSeconds(
                     pkg.options.record.audio.loopCrossfadeSeconds, AUDIO_LOOP_CROSSFADE_SECONDS));
@@ -3125,6 +3164,7 @@ function changeRecordValues(field = undefined) {
             if (cbAudioLoop) pkg.options.record.audio.loop = !!cbAudioLoop.checked;
             if (cbAudioFadeIn) pkg.options.record.audio.fadeIn = !!cbAudioFadeIn.checked;
             if (cbAudioLoopCrossfade) pkg.options.record.audio.loopCrossfade = !!cbAudioLoopCrossfade.checked;
+            if (cbAudioNormalize) pkg.options.record.audio.normalize = !!cbAudioNormalize.checked;
             // Durées bornées, et le champ ramené à la valeur retenue.
             for (const [input, key, fallback] of [
                 [inputAudioFadeInSeconds, 'fadeInSeconds', AUDIO_FADE_IN_SECONDS],
@@ -3190,6 +3230,7 @@ function recordSettingsPayload() {
         audio_fade_in: !!audio.fadeIn,
         audio_fade_in_seconds: normalizeFadeSeconds(audio.fadeInSeconds, AUDIO_FADE_IN_SECONDS),
         audio_loop_crossfade: !!audio.loopCrossfade,
+        audio_normalize: !!audio.normalize,
         audio_loop_crossfade_seconds: normalizeFadeSeconds(audio.loopCrossfadeSeconds, AUDIO_LOOP_CROSSFADE_SECONDS),
     };
 }
@@ -3225,6 +3266,7 @@ function applyRecordSettingsPayload(recording) {
     pkg.options.record.audio.fadeIn = !!recording.audio_fade_in;
     pkg.options.record.audio.fadeInSeconds = normalizeFadeSeconds(recording.audio_fade_in_seconds, AUDIO_FADE_IN_SECONDS);
     pkg.options.record.audio.loopCrossfade = !!recording.audio_loop_crossfade;
+    pkg.options.record.audio.normalize = !!recording.audio_normalize;
     pkg.options.record.audio.loopCrossfadeSeconds = normalizeFadeSeconds(
         recording.audio_loop_crossfade_seconds, AUDIO_LOOP_CROSSFADE_SECONDS);
     return true;
@@ -8180,6 +8222,7 @@ async function refreshMusicDuration() {
         musicFileDurationMs = null;
         musicTrailingSilenceMs = 0;
         musicPeaks = null;
+        musicLoudness = null;
         applyMusicBounds();
         refreshTimingPlan();
         return null;
@@ -8197,7 +8240,9 @@ async function refreshMusicDuration() {
         musicFileDurationMs = analysis.durationMs;
         musicTrailingSilenceMs = analysis.trailingSilenceMs;
         musicPeaks = analysis.peaks;
+        musicLoudness = { loudnessDb: analysis.loudnessDb, peak: analysis.peak };
     } else {
+        musicLoudness = null;
         // Format que le navigateur ne décode pas (ffmpeg le lira peut-être à
         // l'export) : durée estimée par les métadonnées, sans blanc de fin ni
         // forme d'onde.

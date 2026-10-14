@@ -137,6 +137,16 @@ class AudioFadeInFilterTests(unittest.TestCase):
         )
 
 
+class AudioVolumeTests(unittest.TestCase):
+    def test_a_normalized_volume_above_one_is_kept_within_bounds(self):
+        # L'harmonisation peut relever un morceau calme au-delà de 1.
+        self.assertEqual(capture._safe_volume("2.5"), 2.5)
+        self.assertEqual(capture._safe_volume(50), capture.MAX_AUDIO_VOLUME)
+        self.assertEqual(capture._safe_volume(-1), 0.0)
+        for value in (None, "abc", float("nan"), float("inf")):
+            self.assertEqual(capture._safe_volume(value), 1.0)
+
+
 class AudioLoopCrossfadeGraphTests(unittest.TestCase):
     """Raccord fondu entre les reprises de la boucle."""
 

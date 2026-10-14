@@ -547,12 +547,21 @@ def _probe_duration_seconds(input_path):
     return None
 
 
+# Volume maximal accepté du client : le curseur va jusqu'à 1, mais
+# l'harmonisation du volume peut relever un morceau calme (gain borné à 10,
+# sans saturation, cf. static/js/music_analysis.mjs).
+MAX_AUDIO_VOLUME = 10.0
+
+
 def _safe_volume(audio_volume):
-    """Volume audio normalisé (float >= 0), 1.0 si la valeur est inexploitable."""
+    """Volume audio normalisé (0 à MAX_AUDIO_VOLUME), 1.0 si la valeur est inexploitable."""
     try:
-        return max(0.0, float(audio_volume))
+        volume = float(audio_volume)
     except (TypeError, ValueError):
         return 1.0
+    if not math.isfinite(volume):
+        return 1.0
+    return min(MAX_AUDIO_VOLUME, max(0.0, volume))
 
 
 # Durée maximale d'un fondu de sortie demandé par le client (secondes).

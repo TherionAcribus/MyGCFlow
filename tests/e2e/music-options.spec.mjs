@@ -361,6 +361,39 @@ test('la musique s\'écoute seule, telle que la vidéo l\'utilisera', async ({ p
 });
 
 
+test('le volume d\'un morceau peut être harmonisé, à l\'identique partout', async ({ page }) => {
+  const normalize = page.locator('#cbAudioNormalize');
+  const info = page.locator('#audioNormalizeInfo');
+  const volumes = () => page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    return { output: app.audioOutputVolume(), playback: app.musicPlaybackPlan().volume };
+  });
+
+  // Sinusoïde d'amplitude 0,49 : environ −9 dBFS, plus fort que la cible
+  // (−16) d'environ 7 dB.
+  await page.locator('#inputAudioFile').setInputFiles(wavFile('fort.wav', 6, 0));
+  await expect(page.locator('#musicSyncStatus')).toContainText('Musique : 6 s');
+  await expect(info).toBeHidden();
+  expect(await volumes()).toEqual({ output: 1, playback: 1 });
+
+  await normalize.check();
+  await expect(info).toBeVisible();
+  await expect(info).toHaveText(/^niveau ajusté de −(6\.[5-9]|7\.[0-2]) dB$/);
+  const normalized = await volumes();
+  // Même volume pour l'aperçu et pour les exports.
+  expect(normalized.output).toBe(normalized.playback);
+  expect(normalized.output).toBeGreaterThan(0.4);
+  expect(normalized.output).toBeLessThan(0.5);
+  await expect.poll(async () => (await recordingSettings(page)).audio_normalize).toBe(true);
+
+  // Remet la préférence globale dans son état initial.
+  await normalize.uncheck();
+  await expect(info).toBeHidden();
+  expect(await volumes()).toEqual({ output: 1, playback: 1 });
+  await expect.poll(async () => (await recordingSettings(page)).audio_normalize).toBe(false);
+});
+
+
 test('la musique peut commencer en fondu, une seule fois', async ({ page }) => {
   const box = page.locator('#audioFadeInBox');
   const fadeIn = page.locator('#cbAudioFadeIn');

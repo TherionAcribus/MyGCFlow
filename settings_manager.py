@@ -275,6 +275,9 @@ class RecordingSettings:
     offline_normalization: bool = True
     audio_enabled: bool = False
     audio_volume: float = 1.0
+    # Harmoniser le volume : gain fixe par morceau, calculé par le client
+    # (static/js/music_analysis.mjs) et appliqué à l'aperçu comme aux exports.
+    audio_normalize: bool = False
     # Compter la durée de la musique sans son blanc de fin (détecté côté
     # client, cf. static/js/audio_silence.mjs).
     audio_trim_silence: bool = False
@@ -804,6 +807,7 @@ def coerce_recording_settings(d: dict) -> RecordingSettings:
     r.offline_normalization = bool(d.get("offline_normalization", r.offline_normalization))
     r.audio_enabled = bool(d.get("audio_enabled", r.audio_enabled))
     r.audio_volume = _clamp_float(d.get("audio_volume"), r.audio_volume, 0.0, 1.0)
+    r.audio_normalize = bool(d.get("audio_normalize", r.audio_normalize))
     r.audio_trim_silence = bool(d.get("audio_trim_silence", r.audio_trim_silence))
     r.audio_fade_out = bool(d.get("audio_fade_out", r.audio_fade_out))
     # Durées de fondu : mêmes bornes que l'interface (static/js/music_waveform.mjs,

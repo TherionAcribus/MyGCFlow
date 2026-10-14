@@ -78,7 +78,6 @@ import {
 import {
     browserRecorderMimeType,
     DEFAULT_RECORDER_MIME,
-    normalizeAudioVolume,
     normalizeRecordingBitrateMbps,
     normalizeRecordingFps,
     recorderMimeLabel,
@@ -3504,7 +3503,8 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos, sess
             try {
                 const file = includedMusicFile();
                 const audioFileName = file ? await musicTrack.serverName(file) : null;
-                const audioVol = normalizeAudioVolume(pkg.options?.record?.audio?.volume);
+                // Volume effectif : curseur, harmonisé si demandé (cf. audioOutputVolume).
+                const audioVol = pkg.audioOutputVolume();
                 // FPS configurable : doit correspondre à celui utilisé pour calculer
                 // les frames, sinon la vitesse de lecture est faussée côté serveur.
                 const fps = normalizeRecordingFps(pkg.options?.record?.fps);
@@ -4299,6 +4299,7 @@ function finalizeMediaRecorderVideo(){
             if (audioFile) {
                 try { pkg.updateTextsModal(pkg.t('Ajout audio'), pkg.t('Fusion de la piste audio avec la vidéo en cours...')); } catch(_) {}
                 muxRecordedVideoWithAudio(videoBlob, audioFile, {
+                    volume: pkg.audioOutputVolume(),
                     fadeOut: pkg.audioFadeOutPlan(),
                     fadeIn: pkg.audioFadeInPlan(),
                     loop: pkg.audioLoopPlan(),
@@ -4379,7 +4380,7 @@ function finalizeMediaRecorderVideo(){
                 if (audioFile) {
                     if (musicName) fd.append('audio', musicName);
                     else fd.append('audio', audioFile, audioFile.name || 'music');
-                    fd.append('audio_volume', String(normalizeAudioVolume(pkg.options?.record?.audio?.volume)));
+                    fd.append('audio_volume', String(pkg.audioOutputVolume()));
                     fd.append('audio_fade_out', String(pkg.audioFadeOutPlan()?.seconds || 0));
                     fd.append('audio_start', String(pkg.audioStartMs() / 1000));
                     fd.append('audio_fade_in', String(pkg.audioFadeInPlan()?.seconds || 0));

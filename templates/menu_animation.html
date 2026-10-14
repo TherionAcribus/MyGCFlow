@@ -389,6 +389,15 @@
                                     <input id="inputAudioVolume" type="range" min="0" max="1" step="0.05" value="1" class="form-range vector-slider">
                                     <span id="spanAudioVolumeDisplay" class="vector-slider-value">100%</span>
                                 </div>
+                                <!-- Gain fixe par morceau, appliqué à l'aperçu comme aux
+                                     exports (audioOutputVolume, ui.js) ; l'ajustement est
+                                     affiché par syncNormalizeInfo. -->
+                                <div class="form-check mt-1 mb-0">
+                                    <input id="cbAudioNormalize" class="form-check-input" type="checkbox">
+                                    <label class="form-check-label" for="cbAudioNormalize"
+                                           title="{{ _('Ramène chaque morceau à un niveau sonore commun, sans jamais le faire saturer : un morceau enregistré trop fort est baissé, un morceau trop calme relevé.') }}">{{ _("Harmoniser le volume") }}</label>
+                                    <small id="audioNormalizeInfo" class="form-hint text-muted ms-1" aria-live="polite" hidden></small>
+                                </div>
                             </div>
                             <div class="mt-2 d-flex align-items-center gap-2 flex-wrap">
                                 <button type="button" class="btn btn-sm btn-secondary disabled" id="btnSetDurationFromAudio" title="{{ _('Caler la durée de la vidéo sur celle de la musique') }}">

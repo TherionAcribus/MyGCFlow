@@ -8,7 +8,6 @@ import fixWebmDuration from './fix-webm-duration.js';
 import { clampPlaybackRate, MAX_BROWSER_PLAYBACK_RATE } from './video_timing.mjs';
 import {
     browserRecorderMimeType,
-    normalizeAudioVolume,
     normalizeRecordingBitrateMbps,
     normalizeRecordingFps,
 } from './recording_settings.mjs';
@@ -136,12 +135,15 @@ export function normalizeRecordedVideoSpeed(sourceBlob, factor){
 }
 
 // Options de la musique (plans calculés par ui.js) :
+//   volume  (cf. audioOutputVolume) : volume effectif, harmonisé si demandé ;
 //   fadeOut ({ seconds, endMs } ou null, cf. audioFadeOutPlan) : fondu de
 //           sortie se terminant à la fin prévue de la vidéo ;
 //   fadeIn  ({ seconds } ou null, cf. audioFadeInPlan) : montée au début ;
 //   loop    ({ startMs, endMs, crossfadeMs } ou null, cf. audioLoopPlan) : boucle ;
 //   startMs (cf. audioStartMs) : point de départ dans la musique, intro sautée.
-export function muxRecordedVideoWithAudio(sourceBlob, audioFile, { fadeOut = null, fadeIn = null, loop = null, startMs = 0 } = {}){
+export function muxRecordedVideoWithAudio(sourceBlob, audioFile, {
+    volume = 1, fadeOut = null, fadeIn = null, loop = null, startMs = 0,
+} = {}){
     return new Promise((resolve, reject) => {
         try {
             const video = document.createElement('video');
@@ -162,7 +164,7 @@ export function muxRecordedVideoWithAudio(sourceBlob, audioFile, { fadeOut = nul
                 const arr = await audioFile.arrayBuffer();
                 if (!audioCtx) audioCtx = new AC();
                 audioGain = audioCtx.createGain();
-                audioGain.gain.value = normalizeAudioVolume(pkg.options?.record?.audio?.volume);
+                audioGain.gain.value = volume;
                 audioDest = audioCtx.createMediaStreamDestination();
                 audioGain.connect(audioDest);
                 audioBuffer = await audioCtx.decodeAudioData(arr);
