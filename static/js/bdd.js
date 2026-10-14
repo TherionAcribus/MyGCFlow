@@ -5,6 +5,7 @@ import { clearMap } from './mapgl.js';
 import { showBsModal } from './ui_bootstrap.js';
 import { inclusiveDayCount } from './video_timing.mjs';
 import { isEvolutionPage } from './app_mode.mjs';
+import { isAudioFile } from './music_track.mjs';
 
 export let json_data = null;
 export const metadata = {};
@@ -244,10 +245,17 @@ async function isLabFile(file) {
     }
 }
 
-// Aiguillage d'un dépôt : dès qu'un fichier Lab est reconnu, le lot part vers
-// l'import Labs — avec les .zip qui l'accompagnent, un GPX Lab2Gpx pouvant
-// être compressé. Sinon, le premier fichier suit le chargement « My Finds ».
+// Aiguillage d'un dépôt : une musique rejoint le sous-onglet Musique (la
+// première, s'il y en a plusieurs) ; dès qu'un fichier Lab est reconnu, le
+// lot part vers l'import Labs — avec les .zip qui l'accompagnent, un GPX
+// Lab2Gpx pouvant être compressé. Sinon, le premier fichier suit le
+// chargement « My Finds ».
 async function routeDroppedFiles(files) {
+    const music = files.find(isAudioFile);
+    if (music) {
+        pkg.dropMusicFile?.(music);
+        files = files.filter((f) => !isAudioFile(f));
+    }
     if (!files.length) return;
     const isLab = await Promise.all(files.map(isLabFile));
     if (isLab.some(Boolean)) {
@@ -318,7 +326,7 @@ function setupGpxDragAndDrop() {
             '<div class="gpx-drop-overlay__inner">' +
             '<i class="ti ti-file-upload"></i>' +
             '<div class="gpx-drop-overlay__text">' +
-            t('Déposez votre fichier (.gpx, .zip ou export Lab Caches) pour le charger') +
+            t('Déposez votre fichier (.gpx, .zip ou export Lab Caches) pour le charger, ou une musique') +
             '</div></div>';
         document.body.appendChild(overlay);
     }

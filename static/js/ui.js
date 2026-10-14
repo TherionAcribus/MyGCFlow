@@ -8093,7 +8093,24 @@ async function getAudioDuration(file) {
     return promise;
 }
 
-// Musique choisie par l'utilisateur dans le sélecteur de fichier.
+// Musique déposée sur la fenêtre (glisser-déposer, cf. bdd.js et
+// evolution_data.js) : ouvre Animation > Musique pour qu'on la voie arriver,
+// puis la traite comme une musique choisie au sélecteur.
+export function dropMusicFile(file) {
+    // Pendant une capture, la musique de la vidéo en cours changerait.
+    if (pkg.isRecordingActive?.()) {
+        pkg.showToast?.(t('Attendez la fin de l\'enregistrement pour changer de musique.'), 'warning', t('Musique'), 4000);
+        return null;
+    }
+    showBsTab(document.querySelector('#mainTabs a[href="#animation"]'));
+    showBsTab(document.getElementById('musicConfigTab'));
+    // Le champ fichier garde l'ancienne sélection : le vider évite qu'un
+    // « Parcourir… » annulé ensuite ne la fasse revenir.
+    if (inputAudioFile) inputAudioFile.value = '';
+    return selectMusic(file);
+}
+
+// Musique choisie par l'utilisateur (sélecteur de fichier ou dépôt).
 async function selectMusic(file) {
     // Une écoute en cours jouerait encore l'ancienne musique.
     if (pkg.isListeningToMusic?.()) pkg.stopBackgroundMusic();

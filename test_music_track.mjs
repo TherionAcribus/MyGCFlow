@@ -1,7 +1,24 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { createMusicTrack } from './static/js/music_track.mjs';
+import { createMusicTrack, isAudioFile } from './static/js/music_track.mjs';
+
+test('un fichier de musique est reconnu à son type ou à son extension', () => {
+    assert.equal(isAudioFile({ name: 'piste', type: 'audio/mpeg' }), true);
+    // Sans type MIME (fréquent sous Windows) : l'extension suffit.
+    for (const name of ['a.mp3', 'a.FLAC', 'a.opus', 'a.m4a', 'a.wav', 'a.wma']) {
+        assert.equal(isAudioFile({ name, type: '' }), true, name);
+    }
+    for (const file of [
+        { name: 'trouvailles.gpx', type: 'application/gpx+xml' },
+        { name: 'export.zip', type: 'application/zip' },
+        { name: 'clip.webm', type: 'video/webm' },
+        { name: 'clip.mp4', type: '' },
+        null,
+    ]) {
+        assert.equal(isAudioFile(file), false, file?.name);
+    }
+});
 
 // Envoi simulé : chaque appel est noté et reste en attente jusqu'à ce que le
 // test le résolve (nom) ou le rejette (erreur).

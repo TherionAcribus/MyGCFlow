@@ -361,6 +361,42 @@ test('la musique s\'écoute seule, telle que la vidéo l\'utilisera', async ({ p
 });
 
 
+// Dépose `files` ({ name, type, buffer }) sur la fenêtre, comme depuis
+// l'explorateur de fichiers.
+async function dropFiles(page, files) {
+  const dataTransfer = await page.evaluateHandle((list) => {
+    const dt = new DataTransfer();
+    for (const { name, type, bytes } of list) dt.items.add(new File([new Uint8Array(bytes)], name, { type }));
+    return dt;
+  }, files.map(({ name, type, buffer }) => ({ name, type, bytes: [...buffer] })));
+  await page.dispatchEvent('body', 'dragenter', { dataTransfer });
+  await page.dispatchEvent('body', 'drop', { dataTransfer });
+}
+
+
+test('une musique déposée sur la fenêtre rejoint le sous-onglet Musique', async ({ page }) => {
+  const uploads = [];
+  page.on('request', (request) => { if (request.url().includes('/upload')) uploads.push(request.url()); });
+  // Depuis un autre onglet : le dépôt y ramène.
+  await page.locator('a[href="#style"]').click();
+  await expect(page.locator('#musicConfigPane')).toBeHidden();
+
+  await dropFiles(page, [wavFile('deposee.wav', 3, 0)]);
+  await expect(page.locator('#musicConfigPane')).toBeVisible();
+  await expect(page.locator('#audioFileInfo')).toContainText('deposee.wav');
+  await expect(page.locator('#musicSyncStatus')).toContainText('Musique : 3 s');
+  await expect(page.locator('#gpxDropOverlay')).not.toHaveClass(/is-visible/);
+  // Copiée comme une musique, pas importée comme des trouvailles.
+  await expect.poll(() => uploads.filter((u) => u.includes('/upload_audio')).length).toBe(1);
+  expect(uploads.filter((u) => !u.includes('/upload_audio'))).toEqual([]);
+
+  // Sans type MIME (fréquent sous Windows) : reconnue à son extension.
+  const untyped = { ...wavFile('sans-type.wav', 2, 0), type: '' };
+  await dropFiles(page, [untyped]);
+  await expect(page.locator('#audioFileInfo')).toContainText('sans-type.wav');
+});
+
+
 test('le volume d\'un morceau peut être harmonisé, à l\'identique partout', async ({ page }) => {
   const normalize = page.locator('#cbAudioNormalize');
   const info = page.locator('#audioNormalizeInfo');

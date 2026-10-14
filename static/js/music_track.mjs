@@ -10,6 +10,20 @@
 // Module pur : l'envoi est injecté (cf. music_track.js pour le navigateur,
 // test_music_track.mjs pour les tests).
 
+// Extensions de musique reconnues quand le navigateur ne donne pas de type
+// MIME (fréquent sous Windows pour .flac, .opus, .m4a). Les formats que le
+// navigateur ne sait pas décoder (.wma, .aiff) passent quand même : ffmpeg
+// les lira à l'export.
+const AUDIO_EXTENSIONS = /\.(mp3|wav|wave|ogg|oga|opus|m4a|aac|flac|aif|aiff|wma)$/i;
+
+// Vrai pour un fichier de musique (glisser-déposer : le sélecteur filtre déjà
+// sur audio/*). Une vidéo .webm ou .mp4 n'en est pas une.
+export function isAudioFile(file) {
+    if (!file) return false;
+    if (typeof file.type === 'string' && file.type.startsWith('audio/')) return true;
+    return AUDIO_EXTENSIONS.test(file.name || '');
+}
+
 export function createMusicTrack({ upload, onUploadError = () => {} }) {
     // Par fichier, { file, name, pending } : `name` est le nom sur le serveur
     // une fois la copie faite, `pending` la copie en cours. Indexé par le
