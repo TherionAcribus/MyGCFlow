@@ -2613,3 +2613,98 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
 .infos-editor-mode .btn-group .btn.active {
     font-weight: 600;
 }
+
+/* ===== Forme d'onde de la musique ===== */
+/* Sous-onglet Musique (templates/menu_animation.html, ui.js::renderMusicWaveform).
+   Le SVG est étiré à la largeur (preserveAspectRatio="none") : les traits
+   gardent leur épaisseur grâce à vector-effect. Toutes les couleurs viennent
+   des variables du thème, d'où un passage clair/sombre sans redessin. Le
+   fond du graphe est celui de la surface : les voiles (partie non jouée,
+   fondu) en reprennent la couleur pour estomper l'onde. */
+.music-waveform-graph {
+    display: block;
+    width: 100%;
+    height: 44px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+}
+.music-waveform-graph .mw-wave {
+    fill: var(--color-accent);
+}
+.music-waveform-graph .mw-cut {
+    fill: var(--color-surface);
+    fill-opacity: 0.75;
+}
+.music-waveform-graph .mw-fade-from {
+    stop-color: var(--color-surface);
+    stop-opacity: 0;
+}
+.music-waveform-graph .mw-fade-to {
+    stop-color: var(--color-surface);
+    stop-opacity: 0.9;
+}
+.music-waveform-graph line {
+    vector-effect: non-scaling-stroke;
+    stroke-width: 1.5;
+}
+.music-waveform-graph .mw-video-end {
+    stroke: var(--color-text);
+}
+.music-waveform-graph .mw-loops line {
+    stroke: var(--color-accent-strong);
+    stroke-dasharray: 3 3;
+}
+.music-waveform-graph .mw-silent {
+    stroke: var(--color-text-muted);
+    stroke-dasharray: 4 3;
+}
+.music-waveform-scale {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    font-variant-numeric: tabular-nums;
+}
+.music-waveform-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 12px;
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+}
+.music-waveform-legend > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+/* `hidden` doit l'emporter sur display:inline-flex ci-dessus. */
+.music-waveform-legend > span[hidden] {
+    display: none;
+}
+/* Pastilles de légende : mêmes couleurs que les éléments du graphe. */
+.mw-key {
+    display: inline-block;
+    width: 14px;
+    height: 10px;
+    border-radius: 2px;
+}
+.mw-key-cut {
+    background: var(--color-accent);
+    opacity: 0.3;
+    box-shadow: inset 2px 0 0 var(--color-text);
+}
+.mw-key-fade {
+    background: linear-gradient(to right, var(--color-accent), transparent);
+}
+.mw-key-loop {
+    width: 2px;
+    height: 12px;
+    background: repeating-linear-gradient(to bottom, var(--color-accent-strong) 0 3px, transparent 3px 5px);
+    border-radius: 0;
+}
+.mw-key-silent {
+    height: 0;
+    border-top: 2px dashed var(--color-text-muted);
+    border-radius: 0;
+}

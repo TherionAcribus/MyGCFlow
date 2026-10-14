@@ -100,9 +100,17 @@ test('une musique plus longue que la vidéo peut se terminer en fondu', async ({
   await expect(fade).not.toBeChecked();
   await expect(status).toContainText('elle sera coupée en fin de vidéo');
   expect(await fadePlan()).toBeNull();
+  // La forme d'onde montre la partie de la musique que la vidéo ne joue pas.
+  const waveform = page.locator('#musicWaveform');
+  await expect(waveform).toBeVisible();
+  await expect(waveform.locator('[data-legend="cut"]')).toBeVisible();
+  await expect(waveform.locator('[data-legend="fade"]')).toBeHidden();
+  await expect(page.locator('#musicWaveformSpan')).toHaveText('1 min');
 
   await fade.check();
   await expect(status).toContainText('elle se terminera en fondu');
+  await expect(waveform.locator('[data-legend="fade"]')).toBeVisible();
+  expect(Number(await waveform.locator('.mw-fade').getAttribute('width'))).toBeGreaterThan(0);
   await expect.poll(async () => (await recordingSettings(page)).audio_fade_out).toBe(true);
   const plan = await fadePlan();
   expect(plan.seconds).toBe(3);
@@ -142,9 +150,16 @@ test('une musique plus courte que la vidéo peut être répétée en boucle', as
   await expect(fadeBox).toBeHidden();
   await expect(status).toContainText('se termine avant la fin de la vidéo');
   expect((await plans()).loop).toBeNull();
+  const waveform = page.locator('#musicWaveform');
+  await expect(waveform.locator('[data-legend="silent"]')).toBeVisible();
+  await expect(waveform.locator('.mw-loops line')).toHaveCount(0);
 
   await loop.check();
   await expect(status).toContainText('elle sera répétée en boucle');
+  // 4 s de musique sur 30 s de vidéo : 7 reprises, plus de fin muette.
+  await expect(waveform.locator('.mw-loops line')).toHaveCount(7);
+  await expect(waveform.locator('[data-legend="loop"]')).toBeVisible();
+  await expect(waveform.locator('[data-legend="silent"]')).toBeHidden();
   await expect.poll(async () => (await recordingSettings(page)).audio_loop).toBe(true);
   // Boucle sur le fichier entier tant que le blanc de fin n'est pas ignoré.
   expect((await plans()).loop).toEqual({ endMs: null });

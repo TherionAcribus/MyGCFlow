@@ -33,7 +33,9 @@ import { reportSave, markSaveError } from './saved_indicator.mjs';
 import { t } from './notifications.js';
 import { isEvolutionPage } from './app_mode.mjs';
 import { resolveCameraFollowMode } from './camera_follow.mjs';
-import { detectTrailingSilenceMs, hasNotableTrailingSilence, trimmedDurationMs } from './audio_silence.mjs';
+import { hasNotableTrailingSilence, trimmedDurationMs } from './audio_silence.mjs';
+import { analyzeMusicFile } from './music_analysis.mjs';
+import { musicTimeline, timelineX, waveformPath } from './music_waveform.mjs';
 import { musicTrack } from './music_track.js';
 import {
     buildTrailPath,
@@ -132,7 +134,7 @@ var lastTimingPlan = null;
 // une lecture de métadonnées démarrée pour le fichier A ne doit pas écraser
 // l'état quand l'utilisateur a depuis choisi le fichier B.
 const audioDurationCache = new Map();
-const audioSilenceCache = new Map();
+const musicAnalysisCache = new Map();
 let audioReadToken = 0;
 // musicDurationMs est la durée UTILE de la musique, celle sur laquelle le plan
 // de timing se cale : la durée du fichier (musicFileDurationMs), moins son
@@ -141,6 +143,8 @@ let audioReadToken = 0;
 var musicDurationMs = null;
 var musicFileDurationMs = null;
 var musicTrailingSilenceMs = 0;
+// Pics de la forme d'onde (0 à 1), null si la piste n'a pas pu être décodée.
+var musicPeaks = null;
 // Durée du fondu de sortie appliqué à une musique plus longue que la vidéo.
 const AUDIO_FADE_OUT_SECONDS = 3;
 // En deçà de cet écart, musique et vidéo sont considérées de même durée.
@@ -326,6 +330,7 @@ function updateMusicSyncUi(plan = lastTimingPlan) {
     if (loopBox) loopBox.style.display = musicEndsBeforeVideo(plan) ? '' : 'none';
     const fadeBox = document.getElementById('audioFadeOutBox');
     if (fadeBox) fadeBox.style.display = musicCutAtVideoEnd(plan) ? '' : 'none';
+    renderMusicWaveform(plan);
 
     if (!status) return;
     const lines = [];
@@ -366,6 +371,61 @@ function updateMusicSyncUi(plan = lastTimingPlan) {
         }
     }
     status.textContent = lines.join(' ');
+}
+
+// Mini forme d'onde de la musique, avec ce qu'en fera la vidéo (cf.
+// music_waveform.mjs). SVG dans un repère fixe de 1000 x 100 étiré à la
+// largeur : aucun redessin au redimensionnement, et les couleurs viennent des
+// variables CSS du thème clair/sombre. Mêmes règles que le texte d'état
+// (musicLoops, musicCutAtVideoEnd), qui en est l'équivalent accessible.
+function renderMusicWaveform(plan = lastTimingPlan) {
+    const box = document.getElementById('musicWaveform');
+    if (!box) return;
+    if (!musicTrack.hasFile() || !musicPeaks?.length || !(musicFileDurationMs > 0)) {
+        box.hidden = true;
+        return;
+    }
+    const fadeOut = !!pkg.options?.record?.audio?.fadeOut && musicCutAtVideoEnd(plan);
+    const timeline = musicTimeline({
+        fileMs: musicFileDurationMs,
+        videoMs: plan?.valid ? plan.totalDurationMs : 0,
+        loopMs: musicLoops(plan) ? musicDurationMs : 0,
+        fadeMs: fadeOut ? AUDIO_FADE_OUT_SECONDS * 1000 : 0,
+        toleranceMs: MUSIC_VIDEO_TOLERANCE_MS,
+    });
+    const x = (ms) => timelineX(ms, timeline);
+    const span = (el, region) => {
+        el.setAttribute('x', region ? x(region.startMs) : 0);
+        el.setAttribute('width', region ? Math.max(0, x(region.endMs) - x(region.startMs)) : 0);
+    };
+
+    box.querySelector('.mw-wave').setAttribute('d', waveformPath(musicPeaks, timeline, musicFileDurationMs));
+    span(box.querySelector('.mw-cut'), timeline.cut);
+    span(box.querySelector('.mw-fade'), timeline.fade);
+    const silent = box.querySelector('.mw-silent');
+    silent.setAttribute('x1', timeline.silent ? x(timeline.silent.startMs) : 0);
+    silent.setAttribute('x2', timeline.silent ? x(timeline.silent.endMs) : 0);
+    const videoEnd = box.querySelector('.mw-video-end');
+    videoEnd.style.display = timeline.cut ? '' : 'none';
+    if (timeline.cut) {
+        videoEnd.setAttribute('x1', x(timeline.cut.startMs));
+        videoEnd.setAttribute('x2', x(timeline.cut.startMs));
+    }
+    const loops = box.querySelector('.mw-loops');
+    loops.replaceChildren(...timeline.loopPoints.map((ms) => {
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', x(ms));
+        line.setAttribute('x2', x(ms));
+        line.setAttribute('y1', 0);
+        line.setAttribute('y2', 100);
+        return line;
+    }));
+
+    const spanLabel = document.getElementById('musicWaveformSpan');
+    if (spanLabel) spanLabel.textContent = formatDurationHuman(timeline.spanMs);
+    const legend = { cut: timeline.cut, fade: timeline.fade, loop: timeline.loopPoints.length, silent: timeline.silent };
+    box.querySelectorAll('[data-legend]').forEach((item) => { item.hidden = !legend[item.dataset.legend]; });
+    box.hidden = false;
 }
 
 // États de l'application
@@ -7653,7 +7713,11 @@ async function addAudioMetadataTooltip(file, element) {
     if (!Tooltip) return;
     let duration = t('Non disponible');
     try {
-        const seconds = await getAudioDuration(file);
+        // Durée exacte (décodée) déjà connue pour la musique courante ; les
+        // métadonnées n'en sont qu'une estimation.
+        const seconds = (musicTrack.file() === file && Number.isFinite(musicFileDurationMs))
+            ? musicFileDurationMs / 1000
+            : await getAudioDuration(file);
         if (Number.isFinite(seconds) && seconds > 0) {
             duration = `${Math.floor(seconds / 60)}:${Math.floor(seconds % 60).toString().padStart(2, '0')}`;
         }
@@ -7844,45 +7908,54 @@ async function refreshMusicDuration() {
     if (!file) {
         musicFileDurationMs = null;
         musicTrailingSilenceMs = 0;
+        musicPeaks = null;
         applyMusicSilenceTrim();
         refreshTimingPlan();
         return null;
     }
+    // Durée, blanc de fin et forme d'onde viennent d'un même décodage : la
+    // durée y est exacte (cf. music_analysis.mjs).
+    let analysis = null;
     try {
-        const seconds = await getAudioDuration(file);
-        if (token !== audioReadToken) return null; // lecture périmée
-        musicFileDurationMs = Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : null;
+        analysis = await getMusicAnalysis(file);
     } catch (e) {
-        if (token !== audioReadToken) return null;
-        musicFileDurationMs = null;
-        console.warn('Durée audio illisible:', e);
+        console.warn('Musique non décodable, durée des métadonnées:', e);
     }
-    // Le blanc de fin demande de décoder la piste : format non décodable ou
-    // navigateur sans Web Audio → on fait comme s'il n'y en avait pas.
-    let silenceMs = 0;
-    if (musicFileDurationMs) {
+    if (token !== audioReadToken) return null; // lecture périmée
+    if (analysis && analysis.durationMs > 0) {
+        musicFileDurationMs = analysis.durationMs;
+        musicTrailingSilenceMs = analysis.trailingSilenceMs;
+        musicPeaks = analysis.peaks;
+    } else {
+        // Format que le navigateur ne décode pas (ffmpeg le lira peut-être à
+        // l'export) : durée estimée par les métadonnées, sans blanc de fin ni
+        // forme d'onde.
+        musicTrailingSilenceMs = 0;
+        musicPeaks = null;
         try {
-            silenceMs = await getAudioTrailingSilence(file);
+            const seconds = await getAudioDuration(file);
+            if (token !== audioReadToken) return null;
+            musicFileDurationMs = Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : null;
         } catch (e) {
-            console.warn('Blanc de fin non mesurable:', e);
+            if (token !== audioReadToken) return null;
+            musicFileDurationMs = null;
+            console.warn('Durée audio illisible:', e);
         }
-        if (token !== audioReadToken) return null;
     }
-    musicTrailingSilenceMs = silenceMs;
     applyMusicSilenceTrim();
     refreshTimingPlan();
     return musicDurationMs;
 }
 
-// Blanc de fin (ms) d'un fichier audio, mis en cache comme sa durée : le
-// décodage complet de la piste coûte bien plus cher que la lecture des
-// métadonnées.
-function getAudioTrailingSilence(file) {
+// Analyse (durée, blanc de fin, forme d'onde) d'un fichier audio, mise en
+// cache comme sa durée : décoder toute la piste coûte bien plus cher que lire
+// des métadonnées.
+function getMusicAnalysis(file) {
     const key = `${file.name}|${file.size}|${file.lastModified}`;
-    if (audioSilenceCache.has(key)) return audioSilenceCache.get(key);
-    const promise = detectTrailingSilenceMs(file);
-    audioSilenceCache.set(key, promise);
-    promise.catch(() => audioSilenceCache.delete(key));
+    if (musicAnalysisCache.has(key)) return musicAnalysisCache.get(key);
+    const promise = analyzeMusicFile(file);
+    musicAnalysisCache.set(key, promise);
+    promise.catch(() => musicAnalysisCache.delete(key));
     return promise;
 }
 

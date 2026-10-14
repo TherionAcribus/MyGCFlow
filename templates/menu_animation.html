@@ -305,6 +305,35 @@
                             <div id="audioFileInfo" class="form-hint text-muted mt-2" aria-live="polite">
                                 <em>{{ _("Aucune musique sélectionnée") }}</em>
                             </div>
+                            <!-- Forme d'onde et ce qu'en fera la vidéo (renderMusicWaveform,
+                                 ui.js). Décorative : #musicSyncStatus en donne la version
+                                 texte, annoncée aux lecteurs d'écran. -->
+                            <div id="musicWaveform" class="music-waveform mt-2" hidden>
+                                <svg class="music-waveform-graph" viewBox="0 0 1000 100" preserveAspectRatio="none"
+                                     aria-hidden="true" focusable="false">
+                                    <defs>
+                                        <linearGradient id="musicWaveformFadeGradient" x1="0" x2="1" y1="0" y2="0">
+                                            <stop offset="0" class="mw-fade-from"></stop>
+                                            <stop offset="1" class="mw-fade-to"></stop>
+                                        </linearGradient>
+                                    </defs>
+                                    <path class="mw-wave" d=""></path>
+                                    <rect class="mw-cut" x="0" y="0" width="0" height="100"></rect>
+                                    <rect class="mw-fade" x="0" y="0" width="0" height="100" fill="url(#musicWaveformFadeGradient)"></rect>
+                                    <line class="mw-silent" x1="0" x2="0" y1="50" y2="50"></line>
+                                    <g class="mw-loops"></g>
+                                    <line class="mw-video-end" x1="0" x2="0" y1="0" y2="100"></line>
+                                </svg>
+                                <div class="music-waveform-scale">
+                                    <span>0:00</span><span id="musicWaveformSpan"></span>
+                                </div>
+                                <div class="music-waveform-legend">
+                                    <span data-legend="cut" hidden><i class="mw-key mw-key-cut" aria-hidden="true"></i>{{ _("Après la fin de la vidéo (non jouée)") }}</span>
+                                    <span data-legend="fade" hidden><i class="mw-key mw-key-fade" aria-hidden="true"></i>{{ _("Fondu") }}</span>
+                                    <span data-legend="loop" hidden><i class="mw-key mw-key-loop" aria-hidden="true"></i>{{ _("Reprise de la boucle") }}</span>
+                                    <span data-legend="silent" hidden><i class="mw-key mw-key-silent" aria-hidden="true"></i>{{ _("Fin de vidéo sans musique") }}</span>
+                                </div>
+                            </div>
                             <!-- Affiché seulement quand la piste se termine par un
                                  blanc (applyMusicSilenceTrim, ui.js). -->
                             <div id="audioTrailingSilence" class="mt-2" style="display:none;">
