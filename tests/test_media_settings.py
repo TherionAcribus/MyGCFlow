@@ -1,4 +1,10 @@
+import io
+import tempfile
 import unittest
+from pathlib import Path
+from unittest import mock
+
+from werkzeug.datastructures import FileStorage
 
 import capture
 from blueprints.media import DEFAULT_FPS, _parse_fps
@@ -106,3 +112,51 @@ class AudioLoopFilterTests(unittest.TestCase):
         self.assertEqual(capture._safe_loop_end("12.5"), 12.5)
         for value in (None, "abc", -1, 0, float("nan"), float("inf")):
             self.assertEqual(capture._safe_loop_end(value), 0.0)
+
+
+class UploadedAudioStorageTests(unittest.TestCase):
+    """Musiques reçues : rangées dans audio/ sous un nom tiré de leur contenu."""
+
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.folder = Path(tmp.name) / "audio"
+        patcher = mock.patch.object(capture.paths, "audio_dir", return_value=self.folder)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def save(self, filename, content):
+        return capture._save_uploaded_audio(FileStorage(stream=io.BytesIO(content), filename=filename))
+
+    def test_the_saved_file_keeps_the_content_and_a_readable_name(self):
+        name = self.save("Ma musique.MP3", b"son")
+        self.assertRegex(name, r"^Ma_musique-[0-9a-f]{16}\.mp3$")
+        self.assertEqual((self.folder / name).read_bytes(), b"son")
+
+    def test_two_different_tracks_with_the_same_name_do_not_overwrite_each_other(self):
+        first = self.save("music.mp3", b"premier")
+        second = self.save("music.mp3", b"second")
+        self.assertNotEqual(first, second)
+        self.assertEqual((self.folder / first).read_bytes(), b"premier")
+        self.assertEqual((self.folder / second).read_bytes(), b"second")
+
+    def test_sending_the_same_track_again_reuses_the_stored_file(self):
+        self.assertEqual(self.save("music.mp3", b"son"), self.save("music.mp3", b"son"))
+        self.assertEqual(len(list(self.folder.iterdir())), 1)
+
+    def test_a_name_emptied_by_sanitising_still_gives_a_usable_file(self):
+        # secure_filename vide ces noms : la sauvegarde visait alors le dossier.
+        for filename in ("音楽.mp3", "...", "", "<>.wav"):
+            with self.subTest(filename=filename):
+                name = self.save(filename, filename.encode() or b"x")
+                self.assertTrue(name.startswith("music-"), name)
+                self.assertTrue((self.folder / name).is_file())
+        self.assertTrue(self.save("音楽.mp3", b"y").endswith(".mp3"))
+
+    def test_an_unusual_extension_is_dropped(self):
+        self.assertRegex(self.save("piste.mp3;rm", b"son"), r"^piste-[0-9a-f]{16}$")
+
+    def test_no_temporary_file_is_left_behind(self):
+        self.save("music.mp3", b"son")
+        self.save("music.mp3", b"son")
+        self.assertEqual([p.name for p in self.folder.iterdir() if p.name.startswith(".upload-")], [])

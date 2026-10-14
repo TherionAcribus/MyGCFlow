@@ -12,6 +12,7 @@ def _(msgid, **kwargs):
 import os
 import re
 import base64
+import hashlib
 import math
 import shutil
 import uuid
@@ -612,6 +613,48 @@ def _audio_filter_chain(vol, out_dur=None, fade_out=0.0, pad=True, loop=False, l
     return ",".join(filters)
 
 
+def _save_uploaded_audio(file_storage):
+    """Enregistre une musique reçue dans audio/ et renvoie son nom de fichier.
+
+    Le nom porte une empreinte du contenu : deux musiques homonymes venues de
+    dossiers différents ne s'écrasent plus, et renvoyer la même musique la
+    retrouve au lieu de la dupliquer. Le nom d'origine est gardé en préfixe
+    pour rester lisible dans le dossier ; `secure_filename` peut le vider
+    entièrement (nom tout en caractères non latins, « ... »), d'où le repli
+    sur « music ».
+    """
+    # L'extension est prise sur le nom brut : passé entier dans
+    # secure_filename, « 音楽.mp3 » devenait « mp3 », sans point.
+    raw_stem, raw_ext = os.path.splitext(os.path.basename(file_storage.filename or ''))
+    ext = raw_ext.lower() if re.fullmatch(r'\.[A-Za-z0-9]{1,10}', raw_ext) else ''
+    stem = secure_filename(raw_stem)[:60] or 'music'
+
+    folder = paths.ensure_dir(paths.audio_dir())
+    digest = hashlib.sha256()
+    fd, tmp_path = tempfile.mkstemp(dir=folder, prefix='.upload-', suffix='.part')
+    try:
+        with os.fdopen(fd, 'wb') as out:
+            for chunk in iter(lambda: file_storage.stream.read(1024 * 1024), b''):
+                digest.update(chunk)
+                out.write(chunk)
+        name = f"{stem}-{digest.hexdigest()[:16]}{ext}"
+        final_path = os.path.join(folder, name)
+        if os.path.exists(final_path):
+            # Contenu déjà présent : on garde l'existant, qu'un traitement en
+            # cours peut être en train de lire (os.replace échouerait alors
+            # sous Windows).
+            os.remove(tmp_path)
+        else:
+            os.replace(tmp_path, final_path)
+        return name
+    except BaseException:
+        try:
+            os.remove(tmp_path)
+        except OSError:
+            pass
+        raise
+
+
 def _resolve_audio_file(audio_path, log_prefix='ffmpeg'):
     """Chemin de la piste audio dans audio/, ou None si absente/non demandée.
 
@@ -1111,10 +1154,7 @@ def process_recorded_video(request):
     # Audio : soit un fichier uploadé ici, soit un nom déjà présent dans audio/
     audio_path = None
     if 'audio' in request.files and request.files['audio'].filename:
-        af = request.files['audio']
-        aname = secure_filename(af.filename or 'music.mp3')
-        af.save(os.path.join(paths.ensure_dir(paths.audio_dir()), aname))
-        audio_path = aname
+        audio_path = _save_uploaded_audio(request.files['audio'])
     else:
         audio_path = request.form.get('audio') or None
 
@@ -1189,10 +1229,8 @@ def upload_audio(request):
         if not request.files or 'audio' not in request.files:
             return jsonify({'success': False, 'message': _('Aucun fichier audio fourni')}), 400
 
-        audio_file = request.files['audio']
-        file_name = secure_filename(audio_file.filename or 'music.mp3')
-        save_path = os.path.join(paths.ensure_dir(paths.audio_dir()), file_name)
-        audio_file.save(save_path)
+        file_name = _save_uploaded_audio(request.files['audio'])
+        save_path = os.path.join(paths.audio_dir(), file_name)
         return jsonify({'success': True, 'file': file_name, 'path': save_path})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
