@@ -369,6 +369,7 @@ test('la musique part au serveur à sa sélection, l\'export n\'en transmet que 
   await expect.poll(async () => (
     await (await page.request.get('/api/settings')).json()
   ).recording.audio_file).toBe('');
+  await page.request.put('/api/settings', { data: { recording: { audio_recent: [] } } });
 });
 
 test('traitement ffmpeg en échec : le repli navigateur livre quand même la vidéo', async ({ page }) => {

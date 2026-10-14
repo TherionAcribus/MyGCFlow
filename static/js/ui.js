@@ -40,6 +40,7 @@ import {
     clampFades, musicTimeline, normalizeFadeSeconds, sourceMsAt, timelineMsAt, timelineX, waveformPath,
 } from './music_waveform.mjs';
 import { musicTrack } from './music_track.js';
+import { withoutRecentMusic, withRecentMusic, withRecentStart } from './music_track.mjs';
 import {
     buildTrailPath,
     buildTrailRoute,
@@ -1514,6 +1515,11 @@ function initOptionsElements() {
     // Un clic sur la forme d'onde choisit le point de départ.
     document.querySelector('#musicWaveform .music-waveform-graph')
         ?.addEventListener('click', (event) => setMusicStartFromWaveform(event));
+    // Menu des musiques récentes (rempli par renderRecentMusicMenu).
+    document.getElementById('recentMusicMenu')?.addEventListener('click', (event) => {
+        const item = event.target.closest('[data-file]');
+        if (item) loadRecentMusic(item.dataset.file);
+    });
     // Écoute seule, et tête de lecture de la forme d'onde.
     document.getElementById('btnMusicListen')?.addEventListener('click', () => toggleMusicListening(false));
     document.getElementById('btnMusicListenEnd')?.addEventListener('click', () => toggleMusicListening(true));
@@ -2873,7 +2879,8 @@ function initOptionsUI() {
         updateAudioDurationButton();
         // Initialiser l'état de synchronisation musique (badge + statut)
         updateMusicSyncUi();
-        // Dernière musique choisie : rechargée en tâche de fond.
+        // Musiques récentes, puis la dernière choisie, rechargée en tâche de fond.
+        renderRecentMusicMenu();
         restoreSavedMusic();
     } catch(e) { console.warn('Init enregistrement UI error:', e); }
 }
@@ -3146,6 +3153,11 @@ function changeRecordValues(field = undefined) {
             // Départ saisi au-delà de la musique : c'est la valeur ramenée,
             // affichée dans le champ, qui est enregistrée.
             if (musicEndMs > 0) pkg.options.record.audio.startSeconds = Math.round(musicStartMs / 100) / 10;
+            // La musique récente garde son point de départ.
+            if (pkg.options.record.audio.file) {
+                pkg.options.record.audio.recent = withRecentStart(pkg.options.record.audio.recent,
+                    pkg.options.record.audio.file, pkg.options.record.audio.startSeconds || 0);
+            }
             if (cbRecordAudioEnable) {
                 const wasEnabled = pkg.options.record.audio.enabled;
                 pkg.options.record.audio.enabled = !!cbRecordAudioEnable.checked;
@@ -3226,6 +3238,7 @@ function recordSettingsPayload() {
         audio_file: audio.file || '',
         audio_file_name: audio.fileName || '',
         audio_start_seconds: Math.max(0, Number(audio.startSeconds) || 0),
+        audio_recent: Array.isArray(audio.recent) ? audio.recent : [],
         audio_fade_out_seconds: normalizeFadeSeconds(audio.fadeOutSeconds, AUDIO_FADE_OUT_SECONDS),
         audio_fade_in: !!audio.fadeIn,
         audio_fade_in_seconds: normalizeFadeSeconds(audio.fadeInSeconds, AUDIO_FADE_IN_SECONDS),
@@ -3262,6 +3275,7 @@ function applyRecordSettingsPayload(recording) {
     pkg.options.record.audio.file = (typeof recording.audio_file === 'string') ? recording.audio_file : '';
     pkg.options.record.audio.fileName = (typeof recording.audio_file_name === 'string') ? recording.audio_file_name : '';
     pkg.options.record.audio.startSeconds = Math.max(0, Number(recording.audio_start_seconds) || 0);
+    pkg.options.record.audio.recent = Array.isArray(recording.audio_recent) ? recording.audio_recent : [];
     pkg.options.record.audio.fadeOutSeconds = normalizeFadeSeconds(recording.audio_fade_out_seconds, AUDIO_FADE_OUT_SECONDS);
     pkg.options.record.audio.fadeIn = !!recording.audio_fade_in;
     pkg.options.record.audio.fadeInSeconds = normalizeFadeSeconds(recording.audio_fade_in_seconds, AUDIO_FADE_IN_SECONDS);
@@ -8110,21 +8124,30 @@ export function dropMusicFile(file) {
     return selectMusic(file);
 }
 
-// Musique choisie par l'utilisateur (sélecteur de fichier ou dépôt).
-async function selectMusic(file) {
+// Musique choisie par l'utilisateur (sélecteur de fichier, dépôt, ou liste
+// des récentes). `serverName` : déjà copiée sur le serveur (musique récente),
+// rien à renvoyer ; `startSeconds` : son point de départ.
+async function selectMusic(file, { serverName = null, startSeconds = 0 } = {}) {
     // Une écoute en cours jouerait encore l'ancienne musique.
     if (pkg.isListeningToMusic?.()) pkg.stopBackgroundMusic();
     // Devient la musique courante ; sa copie vers le serveur part aussitôt,
-    // en tâche de fond.
-    musicTrack.select(file);
-    rememberMusic(file);
+    // en tâche de fond (sauf si elle y est déjà).
+    musicTrack.select(file, { serverName });
+    // Durée de l'ancienne musique oubliée : le point de départ ne doit pas
+    // être borné par elle en attendant l'analyse de la nouvelle.
+    musicFileDurationMs = null;
+    applyMusicBounds();
     if (cbRecordAudioEnable) cbRecordAudioEnable.checked = true;
-    // Le point de départ appartient à la musique précédente.
-    if (inputAudioStart) inputAudioStart.value = '0';
+    // Le point de départ de la musique précédente ne vaut pas pour celle-ci.
+    if (inputAudioStart) inputAudioStart.value = String(startSeconds);
     // Le réglage qui change ici est « Inclure la musique », coché juste
     // au-dessus : c'est lui que l'indicateur doit confirmer. Le champ fichier
     // n'est pas suivi, sans quoi l'indicateur s'allumerait sur le dernier
-    // champ manipulé, sans rapport.
+    // champ manipulé, sans rapport. La musique précédente est oubliée avant
+    // (rememberMusic) : cette sauvegarde ne doit plus la retenir. Le point de
+    // départ, lui, est relu par rememberMusic une fois la copie connue, donc
+    // après changeRecordValues.
+    rememberMusic(file);
     changeRecordValues(cbRecordAudioEnable);
     const duration = await showCurrentMusic(file);
     // Une musique choisie cale d'office la durée de la vidéo dessus —
@@ -8154,6 +8177,8 @@ function clearMusic() {
     }
     refreshMusicDuration();
     updateAudioDurationButton();
+    // Plus de musique courante : la liste propose toutes les récentes.
+    renderRecentMusicMenu();
     saveRecordSettings(null);
 }
 
@@ -8188,8 +8213,94 @@ function rememberMusic(file) {
         if (!name || musicTrack.file() !== file) return;
         audio.file = name;
         audio.fileName = file.name;
+        // En tête des musiques récentes, avec son point de départ.
+        audio.recent = withRecentMusic(audio.recent, {
+            file: name, name: file.name, start: Math.max(0, Number(audio.startSeconds) || 0),
+        });
+        renderRecentMusicMenu();
         saveRecordSettings(null);
     });
+}
+
+// Menu « Récentes » : les musiques déjà utilisées, la courante cochée. Masqué
+// tant qu'il n'offre rien d'autre que la musique courante.
+function renderRecentMusicMenu() {
+    const wrapper = document.getElementById('recentMusicDropdown');
+    const menu = document.getElementById('recentMusicMenu');
+    if (!wrapper || !menu) return;
+    const audio = pkg.options?.record?.audio || {};
+    const recent = Array.isArray(audio.recent) ? audio.recent : [];
+    const current = musicTrack.hasFile() ? audio.file : '';
+    wrapper.hidden = !recent.some((r) => r.file !== current);
+    menu.replaceChildren(...recent.map((entry) => {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'dropdown-item d-flex align-items-center gap-2';
+        item.dataset.file = entry.file;
+        const isCurrent = entry.file === current;
+        if (isCurrent) {
+            item.classList.add('active');
+            item.setAttribute('aria-current', 'true');
+        }
+        const check = document.createElement('i');
+        check.className = `ti ti-check${isCurrent ? '' : ' invisible'}`;
+        check.setAttribute('aria-hidden', 'true');
+        const name = document.createElement('span');
+        name.className = 'text-truncate';
+        name.textContent = entry.name;
+        item.append(check, name);
+        if (entry.start > 0) {
+            const start = document.createElement('small');
+            start.className = 'text-muted ms-auto';
+            start.textContent = t('à partir de ${s}', { s: formatDurationHuman(entry.start * 1000) });
+            item.append(start);
+        }
+        const li = document.createElement('li');
+        li.append(item);
+        return li;
+    }));
+}
+
+// Reprend une musique récente : déjà sur le serveur, elle n'est pas renvoyée,
+// et retrouve son point de départ. Disparue du dossier audio/, elle quitte la
+// liste.
+async function loadRecentMusic(serverName) {
+    const audio = pkg.options?.record?.audio;
+    const entry = audio?.recent?.find((r) => r.file === serverName);
+    if (!entry || (musicTrack.hasFile() && audio.file === serverName)) return;
+    if (pkg.isRecordingActive?.()) {
+        pkg.showToast?.(t('Attendez la fin de l\'enregistrement pour changer de musique.'), 'warning', t('Musique'), 4000);
+        return;
+    }
+    let file;
+    try {
+        file = await fetchServerMusic(entry.file, entry.name);
+    } catch (e) {
+        console.warn('Musique récente non rechargée:', e);
+        pkg.showToast?.(t('Erreur lors de la lecture du fichier audio'), 'error', t('Musique'), 4000);
+        return;
+    }
+    if (!file) {
+        audio.recent = withoutRecentMusic(audio.recent, entry.file);
+        renderRecentMusicMenu();
+        saveRecordSettings(null);
+        pkg.showToast?.(t('« ${name} » n\'est plus disponible : elle a été retirée de la liste.', { name: entry.name }),
+            'warning', t('Musique'), 5000);
+        return;
+    }
+    if (inputAudioFile) inputAudioFile.value = '';
+    await selectMusic(file, { serverName: entry.file, startSeconds: entry.start || 0 });
+}
+
+// Musique déjà copiée dans le dossier audio/ du serveur, rechargée sous son
+// nom d'origine. null si elle n'y est plus (404) ; rejette sur une autre
+// erreur (serveur occupé), qui ne prouve pas qu'elle a disparu.
+async function fetchServerMusic(serverName, displayName) {
+    const response = await fetch(`/audio/${encodeURIComponent(serverName)}`);
+    if (response.status === 404) return null;
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const blob = await response.blob();
+    return new File([blob], displayName || serverName, { type: blob.type });
 }
 
 // Recharge au démarrage la dernière musique choisie, depuis le dossier
@@ -8200,29 +8311,36 @@ async function restoreSavedMusic() {
     const saved = pkg.options?.record?.audio;
     const name = saved?.file;
     if (!name || musicTrack.hasFile()) return;
-    let blob;
+    let file;
     try {
-        const response = await fetch(`/audio/${encodeURIComponent(name)}`);
-        if (response.status === 404) {
-            // Retirée du dossier audio/ : oublier la référence. Une autre
-            // erreur (serveur occupé) la garde pour le prochain démarrage.
-            if (saved.file === name) {
-                saved.file = '';
-                saved.fileName = '';
-                saveRecordSettings(null);
-            }
-            return;
-        }
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        blob = await response.blob();
+        file = await fetchServerMusic(name, saved.fileName);
     } catch (e) {
         console.warn('Musique enregistrée non rechargée:', e);
         return;
     }
+    if (!file) {
+        // Retirée du dossier audio/ : oublier la référence. Une autre
+        // erreur (serveur occupé) la garde pour le prochain démarrage.
+        if (saved.file === name) {
+            saved.file = '';
+            saved.fileName = '';
+            saved.recent = withoutRecentMusic(saved.recent, name);
+            renderRecentMusicMenu();
+            saveRecordSettings(null);
+        }
+        return;
+    }
     // L'utilisateur a pu choisir une autre musique pendant le chargement.
     if (musicTrack.hasFile() || saved.file !== name) return;
-    const file = new File([blob], saved.fileName || name, { type: blob.type });
     musicTrack.select(file, { serverName: name });
+    // Préférences d'avant la liste des récentes : la musique y entre.
+    if (!saved.recent?.some((r) => r.file === name)) {
+        saved.recent = withRecentMusic(saved.recent, {
+            file: name, name: file.name, start: Math.max(0, Number(saved.startSeconds) || 0),
+        });
+    }
+    // La musique rechargée est désormais la courante : la cocher.
+    renderRecentMusicMenu();
     // « Inclure la musique » suit la préférence, sans forcer.
     if (cbRecordAudioEnable) cbRecordAudioEnable.checked = !!saved.enabled;
     const duration = await showCurrentMusic(file);

@@ -301,6 +301,9 @@ class RecordingSettings:
     # Point de départ dans cette musique (secondes) : saute une intro. Propre
     # à la musique choisie, remis à 0 quand l'utilisateur en change.
     audio_start_seconds: float = 0.0
+    # Musiques récentes, la plus récente d'abord : [{file, name, start}] —
+    # nom dans audio/, nom d'origine, point de départ. Tenue par le client.
+    audio_recent: list = field(default_factory=list)
 
 
 @dataclass
@@ -832,7 +835,33 @@ def coerce_recording_settings(d: dict) -> RecordingSettings:
     # Borne haute large (une journée) : le client le ramène sous la durée
     # réelle de la musique, inconnue ici.
     r.audio_start_seconds = _clamp_float(d.get("audio_start_seconds"), r.audio_start_seconds, 0.0, 86400.0)
+    r.audio_recent = _coerce_recent_music(d.get("audio_recent"))
     return r
+
+
+AUDIO_RECENT_MAX = 8
+
+
+def _coerce_recent_music(value) -> list:
+    """Musiques récentes : entrées valides, sans doublon, AUDIO_RECENT_MAX au plus."""
+    recent, seen = [], set()
+    for item in value if isinstance(value, list) else []:
+        if not isinstance(item, dict) or not isinstance(item.get("file"), str):
+            continue
+        # Un nom de fichier du dossier audio/, jamais un chemin.
+        file_name = secure_filename(os.path.basename(item["file"]))[:AUDIO_FILE_NAME_MAX_LENGTH]
+        if not file_name or file_name in seen:
+            continue
+        seen.add(file_name)
+        name = item.get("name")
+        recent.append({
+            "file": file_name,
+            "name": name.strip()[:AUDIO_FILE_NAME_MAX_LENGTH] if isinstance(name, str) and name.strip() else file_name,
+            "start": _clamp_float(item.get("start"), 0.0, 0.0, 86400.0),
+        })
+        if len(recent) >= AUDIO_RECENT_MAX:
+            break
+    return recent
 
 
 ANIMATION_RHYTHM_MODES = ("rate", "duration", "music")

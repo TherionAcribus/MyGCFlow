@@ -42,6 +42,8 @@ Autres repères :
   (`recording.audio_file`) et rechargée à chaque démarrage. Un spec qui en
   choisit une doit la retirer (`#btnAudioFileRemove`) et attendre
   `audio_file === ''`, sinon tous les specs suivants démarrent avec elle.
+  La liste des musiques récentes (`recording.audio_recent`) survit au retrait :
+  la vider par `PUT /api/settings` `{recording: {audio_recent: []}}`.
 - L'onglet Animation & vidéo a quatre sous-onglets (`#animationConfigTab`
   « Dates & rythme », `#cameraConfigTab`, `#musicConfigTab`,
   `#recordingConfigTab`). Un contrôle d'un sous-onglet fermé n'est pas

@@ -1,7 +1,25 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { createMusicTrack, isAudioFile } from './static/js/music_track.mjs';
+import {
+    createMusicTrack, isAudioFile, RECENT_MUSIC_MAX, withoutRecentMusic, withRecentMusic, withRecentStart,
+} from './static/js/music_track.mjs';
+
+test('une musique choisie passe en tête des récentes, sans doublon', () => {
+    const recent = [{ file: 'a', name: 'A', start: 0 }, { file: 'b', name: 'B', start: 5 }];
+    assert.deepEqual(withRecentMusic(recent, { file: 'b', name: 'B', start: 5 }).map((r) => r.file), ['b', 'a']);
+    assert.deepEqual(withRecentMusic(recent, { file: 'c', name: 'C', start: 0 }).map((r) => r.file), ['c', 'a', 'b']);
+    assert.deepEqual(withRecentMusic(undefined, { file: 'c', name: 'C', start: 0 }).map((r) => r.file), ['c']);
+    const many = Array.from({ length: 20 }, (_, i) => ({ file: `m${i}`, name: `m${i}`, start: 0 }));
+    assert.equal(withRecentMusic(many, { file: 'x', name: 'X', start: 0 }).length, RECENT_MUSIC_MAX);
+});
+
+test('le point de départ d\'une musique récente suit ses changements', () => {
+    const recent = [{ file: 'a', name: 'A', start: 0 }, { file: 'b', name: 'B', start: 5 }];
+    assert.deepEqual(withRecentStart(recent, 'a', 12), [{ file: 'a', name: 'A', start: 12 }, recent[1]]);
+    assert.deepEqual(withRecentStart(recent, 'z', 12), recent);
+    assert.deepEqual(withoutRecentMusic(recent, 'a'), [recent[1]]);
+});
 
 test('un fichier de musique est reconnu à son type ou à son extension', () => {
     assert.equal(isAudioFile({ name: 'piste', type: 'audio/mpeg' }), true);

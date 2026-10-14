@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { rmSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
@@ -35,6 +36,9 @@ test.afterEach(async ({ page }) => {
   const remove = page.locator('#btnAudioFileRemove');
   if (await remove.isVisible()) await remove.click();
   await expect.poll(async () => (await recordingSettings(page)).audio_file).toBe('');
+  // Les musiques récentes aussi sont retenues : repartir d'une liste vide.
+  await page.request.put('/api/settings', { data: { recording: { audio_recent: [] } } });
+  await expect.poll(async () => (await recordingSettings(page)).audio_recent).toEqual([]);
 
   await page.locator('#animationConfigTab').click();
   // Seulement en « Par durée » : saisir une durée depuis un autre mode y
@@ -358,6 +362,63 @@ test('la musique s\'écoute seule, telle que la vidéo l\'utilisera', async ({ p
   await expect.poll(headX).toBeGreaterThanOrEqual(600);
   await expect(listenEnd).toHaveAttribute('aria-pressed', 'false', { timeout: 15_000 });
   expect(await headShown()).toBe(false);
+});
+
+
+test('une musique récente se reprend en un clic, avec son point de départ', async ({ page }) => {
+  const dropdown = page.locator('#recentMusicDropdown');
+  const menu = page.locator('#recentMusicMenu');
+  const start = page.locator('#inputAudioStart');
+  const uploads = [];
+  page.on('request', (request) => { if (request.url().includes('/upload_audio')) uploads.push(request.url()); });
+  const recent = async () => (await recordingSettings(page)).audio_recent;
+
+  await expect(dropdown).toBeHidden();
+  // Première musique, démarrée à 3 s.
+  await page.locator('#inputAudioFile').setInputFiles(wavFile('premiere.wav', 10, 0));
+  await expect(page.locator('#musicSyncStatus')).toContainText('Musique : 10 s');
+  await start.fill('3');
+  await start.blur();
+  await expect.poll(async () => (await recent()).map((r) => [r.name, r.start])).toEqual([['premiere.wav', 3]]);
+  // Seule musique connue, et c'est la courante : rien d'autre à proposer.
+  await expect(dropdown).toBeHidden();
+
+  // Une seconde musique : la première devient « récente ».
+  await page.locator('#inputAudioFile').setInputFiles(wavFile('seconde.wav', 8, 0));
+  await expect(dropdown).toBeVisible();
+  await expect.poll(async () => (await recent()).map((r) => r.name)).toEqual(['seconde.wav', 'premiere.wav']);
+  await page.locator('#btnRecentMusic').click();
+  await expect(menu.locator('.dropdown-item')).toHaveCount(2);
+  await expect(menu.locator('.dropdown-item.active')).toContainText('seconde.wav');
+  await expect(menu.locator('.dropdown-item').nth(1)).toContainText('à partir de 3 s');
+
+  // Reprise : sans nouvel envoi, avec son point de départ.
+  expect(uploads).toHaveLength(2);
+  await menu.locator('.dropdown-item', { hasText: 'premiere.wav' }).click();
+  await expect(page.locator('#audioFileInfo')).toContainText('premiere.wav');
+  await expect(start).toHaveValue('3');
+  await expect(page.locator('#musicSyncStatus')).toContainText('Musique : 7 s (à partir de 3 s)');
+  await expect.poll(async () => (await recordingSettings(page)).audio_file).toMatch(/^premiere-/);
+  expect(uploads).toHaveLength(2);
+
+  // Retenue d'une session à l'autre.
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.mygcflowReady === true);
+  await dismissFirstUseModal(page);
+  await page.locator('a[href="#animation"]').click();
+  await page.locator('#musicConfigTab').click();
+  await expect(page.locator('#audioFileInfo')).toContainText('premiere.wav');
+  await expect(dropdown).toBeVisible();
+
+  // Musique retirée du dossier audio/ entre-temps : elle quitte la liste.
+  const gone = (await recent()).find((r) => r.name === 'seconde.wav');
+  rmSync(path.join(process.env.MYGCFLOW_E2E_RUNTIME, 'audio', gone.file));
+  await page.locator('#btnRecentMusic').click();
+  await menu.locator('.dropdown-item', { hasText: 'seconde.wav' }).click();
+  await expect(page.locator('.gcm-toast', { hasText: 'n\'est plus disponible' })).toBeVisible();
+  await expect.poll(async () => (await recent()).map((r) => r.name)).toEqual(['premiere.wav']);
+  await expect(page.locator('#audioFileInfo')).toContainText('premiere.wav');
+  await expect(dropdown).toBeHidden();
 });
 
 

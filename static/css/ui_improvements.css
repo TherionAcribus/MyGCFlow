@@ -2652,6 +2652,13 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
 #musicListenRow[hidden] {
     display: none !important;
 }
+/* Musiques récentes : noms longs tronqués, menu borné en largeur. */
+.recent-music-menu {
+    max-width: 22rem;
+}
+.recent-music-menu .dropdown-item {
+    min-width: 0;
+}
 /* Assez large pour « 123.4 » sans déborder sur l'indication. */
 .audio-start-input {
     width: 7.5rem;

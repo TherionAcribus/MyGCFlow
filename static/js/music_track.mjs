@@ -24,6 +24,26 @@ export function isAudioFile(file) {
     return AUDIO_EXTENSIONS.test(file.name || '');
 }
 
+// Musiques récentes ({ file, name, start }, la plus récente d'abord) : même
+// borne que le serveur (settings_manager.AUDIO_RECENT_MAX).
+export const RECENT_MUSIC_MAX = 8;
+
+// Liste avec `entry` en tête, sans doublon (même fichier sur le serveur).
+export function withRecentMusic(recent, entry) {
+    const others = (Array.isArray(recent) ? recent : []).filter((r) => r?.file && r.file !== entry.file);
+    return [entry, ...others].slice(0, RECENT_MUSIC_MAX);
+}
+
+// Liste où la musique `file` a le point de départ `start` (secondes).
+export function withRecentStart(recent, file, start) {
+    return (Array.isArray(recent) ? recent : []).map((r) => (r.file === file ? { ...r, start } : r));
+}
+
+// Liste sans la musique `file` (retirée du dossier audio/).
+export function withoutRecentMusic(recent, file) {
+    return (Array.isArray(recent) ? recent : []).filter((r) => r.file !== file);
+}
+
 export function createMusicTrack({ upload, onUploadError = () => {} }) {
     // Par fichier, { file, name, pending } : `name` est le nom sur le serveur
     // une fois la copie faite, `pending` la copie en cours. Indexé par le

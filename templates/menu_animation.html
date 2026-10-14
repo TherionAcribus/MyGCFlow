@@ -295,6 +295,16 @@
                                         aria-label="{{ _('Choisir un fichier audio') }}">
                                     <i class="ti ti-music me-1" aria-hidden="true"></i>{{ _('Parcourir…') }}
                                 </button>
+                                <!-- Musiques déjà utilisées, rechargées sans nouvel envoi
+                                     (renderRecentMusicMenu, ui.js). Masqué tant qu'il n'y en
+                                     a pas d'autre que la courante. -->
+                                <div id="recentMusicDropdown" class="dropdown" hidden>
+                                    <button type="button" id="btnRecentMusic" class="btn btn-sm btn-outline-secondary dropdown-toggle"
+                                            data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="ti ti-clock me-1" aria-hidden="true"></i>{{ _("Récentes") }}
+                                    </button>
+                                    <ul id="recentMusicMenu" class="dropdown-menu recent-music-menu"></ul>
+                                </div>
                                 <!-- Visible quand une musique est chargée
                                      (updateAudioDurationButton, ui.js). -->
                                 <button type="button" id="btnAudioFileRemove" class="btn btn-sm btn-outline-secondary" hidden

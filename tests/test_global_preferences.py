@@ -79,6 +79,23 @@ class RecordingCoercionTests(unittest.TestCase):
         r = coerce_recording_settings({"audio_fade_in": True, "audio_fade_in_seconds": 90, "audio_fade_out_seconds": 0})
         self.assertEqual((r.audio_fade_in, r.audio_fade_in_seconds, r.audio_fade_out_seconds), (True, 30.0, 0.5))
 
+    def test_recent_music_entries_are_cleaned_and_bounded(self):
+        r = coerce_recording_settings({"audio_recent": [
+            {"file": "a-0123.mp3", "name": " Ma musique.mp3 ", "start": 12.5},
+            {"file": "../../secret.txt", "name": "x", "start": -4},
+            {"file": "a-0123.mp3", "name": "doublon"},
+            {"file": "", "name": "vide"},
+            "pas un objet",
+            {"name": "sans fichier"},
+        ]})
+        self.assertEqual(r.audio_recent, [
+            {"file": "a-0123.mp3", "name": "Ma musique.mp3", "start": 12.5},
+            {"file": "secret.txt", "name": "x", "start": 0.0},
+        ])
+        many = [{"file": f"m{i}.mp3", "name": f"m{i}"} for i in range(20)]
+        self.assertEqual(len(coerce_recording_settings({"audio_recent": many}).audio_recent), 8)
+        self.assertEqual(coerce_recording_settings({"audio_recent": "abc"}).audio_recent, [])
+
     def test_volume_normalization_is_opt_in(self):
         self.assertFalse(coerce_recording_settings({}).audio_normalize)
         self.assertTrue(coerce_recording_settings({"audio_normalize": True}).audio_normalize)
