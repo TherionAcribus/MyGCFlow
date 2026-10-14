@@ -4,6 +4,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
+import { wavFile } from './wav.mjs';
 
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -307,6 +308,55 @@ test('les options MediaRecorder de l\'interface produisent un MP4 validé par ff
     body: Buffer.from(JSON.stringify(report, null, 2)),
     contentType: 'application/json',
   });
+});
+
+test('la musique part au serveur à sa sélection, l\'export n\'en transmet que le nom', async ({ page }, testInfo) => {
+  const uploads = [];
+  const processed = [];
+  page.on('request', (request) => {
+    if (request.url().includes('/upload_audio')) uploads.push(request);
+    if (request.url().includes('/process_recorded_video')) processed.push(request);
+  });
+
+  await page.locator('a[href="#animation"]').click();
+  await page.locator('#musicConfigTab').click();
+  const uploaded = page.waitForResponse((response) => response.url().includes('/upload_audio'));
+  await page.locator('#inputAudioFile').setInputFiles(wavFile('musique.wav', 3, 0));
+  const { file: serverName } = await (await uploaded).json();
+  expect(serverName).toMatch(/^musique-[0-9a-f]{16}\.wav$/);
+  // Choisir une musique cale la vidéo dessus ; on revient au rythme en
+  // jours/seconde (préférence globale, attendue par les specs suivantes).
+  await expect(page.locator('#btnUnlinkAudio')).toBeVisible();
+  await page.locator('#btnUnlinkAudio').click();
+  await expect(page.locator('#rhythmModeRate')).toBeChecked();
+
+  await prepareSlowRecording(page, 'mediarecorder', '12.5');
+  await page.locator('#btnQuickExport').click({ force: true });
+  await expect(page.locator('#modal_video_ready')).toBeVisible({ timeout: 75_000 });
+  await expect.poll(latestCompletedMp4, { timeout: 15_000 }).not.toBeNull();
+  const videoPath = latestCompletedMp4();
+
+  // Une seule copie de la musique, à sa sélection ; le traitement ne reçoit
+  // que son nom (champ texte, pas de fichier joint).
+  expect(uploads).toHaveLength(1);
+  expect(processed).toHaveLength(1);
+  const form = processed[0].postDataBuffer().toString('latin1');
+  expect(form).toMatch(new RegExp(`name="audio"\\r\\n\\r\\n${serverName.replace('.', '\\.')}\\r\\n`));
+  expect(form).not.toMatch(/name="audio"; filename=/);
+
+  const expectationPath = path.join(RUNTIME, 'music-video-expectation.json');
+  writeFileSync(expectationPath, JSON.stringify({ has_audio: true, video_codec: 'h264', min_size_bytes: 1_000 }));
+  const python = process.env.MYGCFLOW_E2E_PYTHON
+    || process.env.PYTHON
+    || (process.platform === 'win32' ? 'python' : 'python3');
+  const validation = spawnSync(
+    python,
+    [path.join(ROOT, 'video_validator.py'), videoPath, '--expect', expectationPath, '--json'],
+    { encoding: 'utf8' },
+  );
+  expect(validation.status, `${validation.stdout}\n${validation.stderr}`).toBe(0);
+  await testInfo.attach('ffprobe-report.json', { body: Buffer.from(validation.stdout), contentType: 'application/json' });
+  await page.locator('#modal_video_ready .modal-footer [data-bs-dismiss="modal"]').click();
 });
 
 test('traitement ffmpeg en échec : le repli navigateur livre quand même la vidéo', async ({ page }) => {

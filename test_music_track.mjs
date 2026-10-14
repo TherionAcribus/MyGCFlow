@@ -1,0 +1,114 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
+import { createMusicTrack } from './static/js/music_track.mjs';
+
+// Envoi simulé : chaque appel est noté et reste en attente jusqu'à ce que le
+// test le résolve (nom) ou le rejette (erreur).
+function fakeUpload() {
+    const calls = [];
+    const upload = (file) => new Promise((resolve, reject) => calls.push({ file, resolve, reject }));
+    return { calls, upload };
+}
+
+const flush = () => new Promise((resolve) => setImmediate(resolve));
+
+test('choisir une musique la copie aussitôt sur le serveur', async () => {
+    const { calls, upload } = fakeUpload();
+    const track = createMusicTrack({ upload });
+    const file = { name: 'a.mp3' };
+    track.select(file);
+    await flush();
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].file, file);
+    assert.equal(track.file(), file);
+    assert.equal(track.hasFile(), true);
+});
+
+test('un export attend la copie en cours au lieu de renvoyer le fichier', async () => {
+    const { calls, upload } = fakeUpload();
+    const track = createMusicTrack({ upload });
+    track.select({ name: 'a.mp3' });
+    const pending = track.serverName();
+    await flush();
+    calls[0].resolve('a-0123.mp3');
+    assert.equal(await pending, 'a-0123.mp3');
+    // Copie faite : les exports suivants ne renvoient plus rien.
+    assert.equal(await track.serverName(), 'a-0123.mp3');
+    assert.equal(calls.length, 1);
+});
+
+test('une copie échouée est retentée au prochain besoin, pas mémorisée', async () => {
+    const { calls, upload } = fakeUpload();
+    const errors = [];
+    const track = createMusicTrack({ upload, onUploadError: (err) => errors.push(err.message) });
+    track.select({ name: 'a.mp3' });
+    await flush();
+    calls[0].reject(new Error('hors ligne'));
+    const failed = track.serverName();
+    assert.equal(await failed, null);
+    assert.ok(errors.includes('hors ligne'));
+
+    const retry = track.serverName();
+    await flush();
+    assert.equal(calls.length, 2);
+    calls[1].resolve('a-0123.mp3');
+    assert.equal(await retry, 'a-0123.mp3');
+});
+
+test('la copie d\'une musique remplacée entre-temps ne devient pas celle de la nouvelle', async () => {
+    const { calls, upload } = fakeUpload();
+    const track = createMusicTrack({ upload });
+    const first = { name: 'a.mp3' };
+    const second = { name: 'b.mp3' };
+    track.select(first);
+    track.select(second);
+    await flush();
+    calls[0].resolve('a-0123.mp3');
+    calls[1].resolve('b-4567.mp3');
+    assert.equal(await track.serverName(), 'b-4567.mp3');
+});
+
+test('un export garde la musique qu\'il a prise au départ', async () => {
+    const { calls, upload } = fakeUpload();
+    const track = createMusicTrack({ upload });
+    const first = { name: 'a.mp3' };
+    track.select(first);
+    await flush();
+    calls[0].resolve('a-0123.mp3');
+    track.select({ name: 'b.mp3' });
+    // L'export a figé `first` : il reçoit son nom, sans nouvel envoi, et la
+    // musique courante reste la nouvelle.
+    assert.equal(await track.serverName(first), 'a-0123.mp3');
+    assert.equal(calls.filter((c) => c.file === first).length, 1);
+    assert.equal(track.file().name, 'b.mp3');
+});
+
+test('reprendre une musique déjà copiée ne la renvoie pas', async () => {
+    const { calls, upload } = fakeUpload();
+    const track = createMusicTrack({ upload });
+    const file = { name: 'a.mp3' };
+    track.select(file);
+    await flush();
+    calls[0].resolve('a-0123.mp3');
+    await track.serverName();
+    track.clear();
+    track.select(file);
+    await flush();
+    assert.equal(calls.length, 1);
+    assert.equal(await track.serverName(), 'a-0123.mp3');
+});
+
+test('sans musique, pas de nom ni d\'envoi', async () => {
+    const { calls, upload } = fakeUpload();
+    const track = createMusicTrack({ upload });
+    assert.equal(await track.serverName(), null);
+    track.select({ name: 'a.mp3' });
+    track.clear();
+    assert.equal(track.hasFile(), false);
+    assert.equal(track.file(), null);
+    assert.equal(await track.serverName(), null);
+    track.select(null);
+    assert.equal(track.hasFile(), false);
+    assert.equal(calls.length, 1);
+});

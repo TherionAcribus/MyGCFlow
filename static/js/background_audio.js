@@ -10,6 +10,7 @@
 import * as pkg from './index.js';
 import { isRecordingActive } from './mapgl.js';
 import { normalizeAudioVolume } from './recording_settings.mjs';
+import { includedMusicFile } from './music_track.js';
 
 let bgAudioCtx = null, bgAudioEl = null, bgAudioSource = null, bgAudioGain = null, bgAudioActive = false;
 let blockBackgroundAudioPlayback = false;
@@ -63,11 +64,7 @@ export function startBackgroundMusicIfAny(){
         // sans passage par resumeBackgroundMusic) pour ne pas fuiter de contexte.
         stopBackgroundMusic();
 
-        const enabled = !!(pkg.options?.record?.audio?.enabled);
-        if (!enabled) return;
-
-        const input = document.getElementById('inputAudioFile');
-        const file = input?.files?.[0];
+        const file = includedMusicFile();
         if (!file) return;
 
         const volume = normalizeAudioVolume(pkg.options?.record?.audio?.volume);

@@ -34,6 +34,7 @@ import { t } from './notifications.js';
 import { isEvolutionPage } from './app_mode.mjs';
 import { resolveCameraFollowMode } from './camera_follow.mjs';
 import { detectTrailingSilenceMs, hasNotableTrailingSilence, trimmedDurationMs } from './audio_silence.mjs';
+import { musicTrack } from './music_track.js';
 import {
     buildTrailPath,
     buildTrailRoute,
@@ -253,7 +254,7 @@ function applyRecordingQualityProfile() {
 // coupée en fin de vidéo — ou terminée en fondu si l'option est cochée. La
 // durée de la vidéo comprend le temps additionnel de fin.
 function musicOutlastsVideo(plan = lastTimingPlan) {
-    return !!(inputAudioFile?.files?.length) && !!plan?.valid
+    return musicTrack.hasFile() && !!plan?.valid
         && Number.isFinite(musicDurationMs)
         && musicDurationMs > plan.totalDurationMs + MUSIC_VIDEO_TOLERANCE_MS;
 }
@@ -262,7 +263,7 @@ function musicOutlastsVideo(plan = lastTimingPlan) {
 // fin de la vidéo est alors muette — ou la musique répétée si l'option de
 // boucle est cochée.
 function musicEndsBeforeVideo(plan = lastTimingPlan) {
-    return !!(inputAudioFile?.files?.length) && !!plan?.valid
+    return musicTrack.hasFile() && !!plan?.valid
         && Number.isFinite(musicDurationMs) && musicDurationMs > 0
         && musicDurationMs < plan.totalDurationMs - MUSIC_VIDEO_TOLERANCE_MS;
 }
@@ -301,7 +302,7 @@ export function audioFadeOutPlan() {
 // Pastille du sous-onglet Musique : une musique sera jouée et exportée.
 function syncMusicTabDot() {
     const dot = document.getElementById('musicTabDot');
-    if (dot) dot.hidden = !(cbRecordAudioEnable?.checked && inputAudioFile?.files?.length);
+    if (dot) dot.hidden = !(cbRecordAudioEnable?.checked && musicTrack.hasFile());
 }
 
 function updateMusicSyncUi(plan = lastTimingPlan) {
@@ -310,7 +311,7 @@ function updateMusicSyncUi(plan = lastTimingPlan) {
     const status = document.getElementById('musicSyncStatus');
     const indicator = document.getElementById('durationMatchIndicator');
     const locked = isMusicLocked();
-    const hasFile = !!(inputAudioFile?.files?.length);
+    const hasFile = musicTrack.hasFile();
 
     syncMusicTabDot();
     if (badge) badge.style.display = locked ? '' : 'none';
@@ -1210,6 +1211,9 @@ function initOptionsElements() {
         inputAudioFile.addEventListener('change', async function() {
             if (this.files && this.files.length > 0) {
                 const file = this.files[0];
+                // Devient la musique courante ; sa copie vers le serveur part
+                // aussitôt, en tâche de fond.
+                musicTrack.select(file);
                 // Indicateur de chargement : le fichier n'est utilisable qu'une
                 // fois ses métadonnées lues (durée via refreshMusicDuration).
                 const infoDiv = document.getElementById('audioFileInfo');
@@ -1240,12 +1244,13 @@ function initOptionsElements() {
                 }
                 // Un autre fichier a pu être choisi entre-temps : n'afficher
                 // les infos que si c'est toujours celui-ci.
-                if (inputAudioFile.files && inputAudioFile.files[0] === file) {
+                if (musicTrack.file() === file) {
                     await displayAudioFileInfo(file);
                 }
             } else {
                 // Aucun fichier - masquer les infos et revenir au mode rythme
                 // si la durée était calée sur cette musique.
+                musicTrack.clear();
                 hideAudioFileInfo();
                 if (isMusicLocked()) setRhythmMode('rate');
                 if (cbRecordAudioEnable) {
@@ -1273,7 +1278,7 @@ function initOptionsElements() {
                     try { window.mrMuxAudioCtx.resume().catch(()=>{}); } catch(_) {}
                 }
             } catch(_) {}
-            if (inputAudioFile && inputAudioFile.files && inputAudioFile.files.length > 0) {
+            if (musicTrack.hasFile()) {
                 try {
                     await refreshMusicDuration();
                     if (Number.isFinite(musicDurationMs) && musicDurationMs > 0) {
@@ -2554,7 +2559,7 @@ function initOptionsUI() {
             pkg.options.record.audio = pkg.options.record.audio || {};
             if (cbRecordAudioEnable) {
                 // Ne cocher que si explicitement activé ET qu'un fichier est chargé
-                const hasFile = inputAudioFile && inputAudioFile.files && inputAudioFile.files.length > 0;
+                const hasFile = musicTrack.hasFile();
                 cbRecordAudioEnable.checked = !!pkg.options.record.audio.enabled && hasFile;
                 cbRecordAudioEnable.disabled = !hasFile; // Désactiver si pas de fichier
             }
@@ -5363,7 +5368,7 @@ function updateExportSummary() {
     const resText = selectRecordResolution?.selectedOptions?.[0]?.textContent?.trim();
     if (resText) parts.push(resText);
     parts.push(
-        (cbRecordAudioEnable?.checked && inputAudioFile?.files?.length)
+        (cbRecordAudioEnable?.checked && musicTrack.hasFile())
             ? t('musique incluse')
             : t('sans musique'));
 
@@ -7597,10 +7602,9 @@ function toggleFullscreenFromButton(){
 // une erreur obscure au clic.
 function updateAudioDurationButton() {
     const btn = document.getElementById('btnSetDurationFromAudio');
-    const inputAudio = document.getElementById('inputAudioFile');
     const cbAudio = document.getElementById('cbRecordAudioEnable');
     const radioMusic = document.getElementById('rhythmModeMusic');
-    const hasFile = !!(inputAudio && inputAudio.files && inputAudio.files.length > 0);
+    const hasFile = musicTrack.hasFile();
 
     // Bouton de durée
     if (btn) {
@@ -7686,7 +7690,7 @@ async function addAudioMetadataTooltip(file, element) {
     } catch(_) { /* durée illisible : « Non disponible » */ }
     // Un autre fichier a pu être choisi, ou la musique retirée, pendant la
     // lecture de la durée : ne pas accrocher une infobulle périmée.
-    if (inputAudioFile?.files?.[0] !== file) return;
+    if (musicTrack.file() !== file) return;
 
     const sizeKB = Math.round(file.size / 1024);
     const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
@@ -7752,7 +7756,7 @@ async function getAudioDuration(file) {
 // audioReadToken garantit qu'une lecture périmée (fichier changé entre-temps)
 // ne peut pas écraser l'état courant.
 async function refreshMusicDuration() {
-    const file = inputAudioFile?.files?.[0];
+    const file = musicTrack.file();
     const token = ++audioReadToken;
     if (!file) {
         musicFileDurationMs = null;

@@ -174,6 +174,7 @@ import { IMPULSE_MAX_STAGGER_MS, staggerDelayFrames, staggerDelayMs } from './fl
 import { COUNTER_ANIMATION_MS, createCountAnimator } from './overlay_counter.mjs';
 import { renderInfosTemplate } from './infos_template.mjs';
 import { fetchWithTimeout, FETCH_TIMEOUTS } from './fetch_with_timeout.mjs';
+import { includedMusicFile, musicTrack } from './music_track.js';
 import { createPausableTimeout } from './pausable_timer.mjs';
 import { createVideoStream } from './video_stream.mjs';
 
@@ -2963,11 +2964,8 @@ function startRecordingProcess(session){
     try {
         setBackgroundAudioBlocked(true);
         stopBackgroundMusic();
-        const input = document.getElementById('inputAudioFile');
-        const file = input?.files?.[0];
-        const audioEnabled = !!(pkg.options?.record?.audio?.enabled);
-        if (audioEnabled && file) {
-            _captureAudioNote = pkg.t(' ♪ La musique sera intégrée automatiquement après la capture.');
+        if (includedMusicFile()) {
+            _captureAudioNote =pkg.t(' ♪ La musique sera intégrée automatiquement après la capture.');
         }
     } catch(_) {}
 
@@ -3500,21 +3498,13 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos, sess
         // Réutiliser la modal/loader existante pour garantir l'affichage (système qui marche déjà chez toi)
         try { pkg.openModalLoading(pkg.t('Assemblage en cours'), pkg.t('Création de la vidéo à partir des images...')); } catch(e) { console.warn('openModalLoading erreur:', e); }
 
-        // Si un audio utilisateur est activé en mode images, l'uploader et passer son nom à l'assemblage
+        // Musique incluse : elle est déjà sur le serveur depuis sa sélection
+        // (copie attendue si elle n'est pas finie) ; l'assemblage reçoit son nom.
         const tryAssembleWithAudio = async () => {
             try {
-                let audioFileName = null;
-                const input = document.getElementById('inputAudioFile');
-                const file = input?.files?.[0];
-                const audioEnabled = !!(pkg.options?.record?.audio?.enabled);
+                const file = includedMusicFile();
+                const audioFileName = file ? await musicTrack.serverName(file) : null;
                 const audioVol = normalizeAudioVolume(pkg.options?.record?.audio?.volume);
-                if (audioEnabled && file) {
-                    const fd = new FormData();
-                    fd.append('audio', file);
-                    const up = await fetchWithTimeout(`${CONFIG.BASE_URL}/upload_audio`, { method: 'POST', body: fd }, { timeoutMs: FETCH_TIMEOUTS.upload, t: pkg.t });
-                    const upRes = await up.json().catch(()=>({success:false}));
-                    if (upRes?.success && upRes?.file) audioFileName = upRes.file;
-                }
                 // FPS configurable : doit correspondre à celui utilisé pour calculer
                 // les frames, sinon la vitesse de lecture est faussée côté serveur.
                 const fps = normalizeRecordingFps(pkg.options?.record?.fps);
@@ -3717,11 +3707,8 @@ function recordAnimationMediaRecorder(){
     try {
         setBackgroundAudioBlocked(true);
         stopBackgroundMusic();
-        const input = document.getElementById('inputAudioFile');
-        const file = input?.files?.[0];
-        const audioEnabled = !!(pkg.options?.record?.audio?.enabled);
-        if (audioEnabled && file) {
-            _mrAudioNote = pkg.t(' ♪ La musique sera intégrée automatiquement après la capture.');
+        if (includedMusicFile()) {
+            _mrAudioNote =pkg.t(' ♪ La musique sera intégrée automatiquement après la capture.');
             // Débloquer un AudioContext PENDANT le geste utilisateur (clic Enregistrer).
             // Le mux audio s'exécute après la capture, hors geste : un contexte créé à ce
             // moment-là resterait "suspended" et produirait une vidéo muette. On le pré-crée
@@ -4148,7 +4135,7 @@ async function startMediaRecorderPipeline(totalDurationMs, timelineScale = 1, se
     mrProgressIntervalId = setInterval(() => {
         const elapsed = mrActiveElapsedMs();
         const progress = Math.min(100, Math.max(0, (elapsed / totalDurationMs) * 100));
-        const _hasAudio = !!(pkg.options?.record?.audio?.enabled) && !!document.getElementById('inputAudioFile')?.files?.[0];
+        const _hasAudio = !!includedMusicFile();
         const msg = `${progress.toFixed(1)}% | capture .webm${_hasAudio ? ' ♪' : ''}`;
         try { pkg.updateProgressBar({ progress, message: msg }); } catch(_) {}
     }, 200);
@@ -4300,15 +4287,13 @@ function finalizeMediaRecorderVideo(){
                 .then((fixedBlob) => deliver(fixedBlob || finalBlob));
         };
 
-        // Audio utilisateur éventuellement sélectionné
-        const fileInput = document.getElementById('inputAudioFile');
-        const audioFile = fileInput && fileInput.files && fileInput.files[0];
-        const audioEnabled = !!(pkg.options?.record?.audio?.enabled);
+        // Musique à intégrer, figée pour toute la suite du traitement.
+        const audioFile = includedMusicFile();
 
         // ---- Repli navigateur (ancien pipeline) : normalisation playbackRate + mux par re-capture ----
         // Lent et doublement lossy, conservé uniquement en secours si le serveur échoue.
         const doMux = (videoBlob) => {
-            if (audioEnabled && audioFile) {
+            if (audioFile) {
                 try { pkg.updateTextsModal(pkg.t('Ajout audio'), pkg.t('Fusion de la piste audio avec la vidéo en cours...')); } catch(_) {}
                 muxRecordedVideoWithAudio(videoBlob, audioFile, pkg.audioFadeOutPlan(), pkg.audioLoopPlan()).then((mixed) => {
                     proceedWith(mixed || videoBlob);
@@ -4363,7 +4348,10 @@ function finalizeMediaRecorderVideo(){
         // Rapide, robuste, sans onglet actif obligatoire. Remplace jusqu'à 3 ré-encodages navigateur.
         const processOnServer = () => new Promise((resolve, reject) => {
             try { pkg.updateTextsModal(pkg.t('Traitement serveur'), pkg.t('Envoi de la vidéo au serveur...')); } catch(_) {}
-            const launchProcessing = () => {
+            // Musique : déjà sur le serveur depuis sa sélection, seul son nom
+            // est transmis. Si cette copie a échoué, le fichier part ici.
+            const musicServerName = () => (audioFile ? musicTrack.serverName(audioFile) : Promise.resolve(null));
+            const launchProcessing = () => musicServerName().then((musicName) => {
                 const fd = new FormData();
                 if (streamedFile) {
                     // Le .webm est déjà sur le serveur (flux délesté) : on désigne
@@ -4380,8 +4368,9 @@ function finalizeMediaRecorderVideo(){
                 // Fidélité de couleur de l'encodage final (cf. color_fidelity.mjs).
                 fd.append('color_fidelity', normalizeColorFidelity(pkg.options?.record?.colorFidelity));
                 fd.append('fileName', baseName);
-                if (audioEnabled && audioFile) {
-                    fd.append('audio', audioFile, audioFile.name || 'music');
+                if (audioFile) {
+                    if (musicName) fd.append('audio', musicName);
+                    else fd.append('audio', audioFile, audioFile.name || 'music');
                     fd.append('audio_volume', String(normalizeAudioVolume(pkg.options?.record?.audio?.volume)));
                     fd.append('audio_fade_out', String(pkg.audioFadeOutPlan()?.seconds || 0));
                     const loop = pkg.audioLoopPlan();
@@ -4391,20 +4380,21 @@ function finalizeMediaRecorderVideo(){
                     }
                 }
                 try { pkg.updateProgressBar({ progress: 0, message: pkg.t('Traitement serveur...') }); } catch(_) {}
-                fetchWithTimeout(`${CONFIG.BASE_URL}/process_recorded_video`, { method: 'POST', body: fd }, { timeoutMs: FETCH_TIMEOUTS.videoUpload, t: pkg.t })
-                    .then(r => r.json())
-                    .then(data => {
-                        if (!data || !data.task_id) throw new Error(data && data.message ? data.message : pkg.t('Traitement serveur non démarré'));
-                        return pollTaskStatus(data.task_id, {
-                            onProgress: (p, msg) => { try { pkg.updateProgressBar({ progress: p, message: msg || pkg.t('Traitement serveur...') }); } catch(_) {} }
-                        });
-                    })
-                    .then(result => {
-                        afterAll(result);
-                        resolve();
-                    })
-                    .catch(reject);
-            };
+                return fetchWithTimeout(`${CONFIG.BASE_URL}/process_recorded_video`, { method: 'POST', body: fd }, { timeoutMs: FETCH_TIMEOUTS.videoUpload, t: pkg.t });
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (!data || !data.task_id) throw new Error(data && data.message ? data.message : pkg.t('Traitement serveur non démarré'));
+                    return pollTaskStatus(data.task_id, {
+                        onProgress: (p, msg) => { try { pkg.updateProgressBar({ progress: p, message: msg || pkg.t('Traitement serveur...') }); } catch(_) {} }
+                    });
+                })
+                .then(result => {
+                    afterAll(result);
+                    resolve();
+                })
+                .catch(reject);
+
             if (stream) {
                 // Les fragments ont été poussés au fil de l'eau : on attend la
                 // file d'envoi puis on demande le remux serveur, qui répare au
