@@ -191,6 +191,45 @@ test('une musique plus courte que la vidéo peut être répétée en boucle', as
 });
 
 
+test('le nom du fichier est affiché en texte, son infobulle suit la sélection', async ({ page }) => {
+  const info = page.locator('#audioFileInfo');
+  const tooltip = page.locator('.tooltip');
+  const showTooltip = async () => {
+    // L'infobulle est posée une fois la durée lue : attendre son instance.
+    await expect.poll(() => info.getAttribute('data-bs-toggle')).toBe('tooltip');
+    await page.mouse.move(0, 0);
+    await info.hover();
+  };
+
+  // Un nom de fichier peut contenir du balisage (permis sous Linux) : il ne
+  // doit jamais être interprété, ni dans la zone d'info ni dans l'infobulle.
+  await page.locator('#inputAudioFile').setInputFiles(wavFile('<b>gras</b>.wav', 2, 0));
+  await expect(info.locator('strong')).toHaveText('<b>gras</b>.wav');
+  await expect(info.locator('b')).toHaveCount(0);
+  await showTooltip();
+  await expect(tooltip).toHaveCount(1);
+  await expect(tooltip).toContainText('<b>gras</b>.wav');
+  await expect(tooltip.locator('b')).toHaveCount(0);
+
+  // Un autre fichier remplace l'infobulle au lieu d'en empiler une seconde.
+  await page.locator('#inputAudioFile').setInputFiles(wavFile('second.wav', 2, 0));
+  await expect(info).toContainText('second.wav');
+  await showTooltip();
+  await expect(tooltip).toHaveCount(1);
+  await expect(tooltip).toContainText('second.wav');
+  await expect(tooltip).not.toContainText('gras');
+
+  // Musique retirée : plus aucune infobulle sur le message par défaut.
+  await page.locator('#inputAudioFile').setInputFiles([]);
+  await expect(info).toContainText('Aucune musique sélectionnée');
+  await expect(tooltip).toHaveCount(0);
+  await page.mouse.move(0, 0);
+  await info.hover();
+  await expect(tooltip).toHaveCount(0);
+  expect(await info.getAttribute('data-bs-toggle')).toBeNull();
+});
+
+
 test('une musique sans blanc de fin ne propose pas l\'option', async ({ page }) => {
   await page.locator('#inputAudioFile').setInputFiles(wavFile('sans-blanc.wav', 4, 0));
 

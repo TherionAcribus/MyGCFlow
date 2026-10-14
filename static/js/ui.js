@@ -7631,94 +7631,87 @@ function updateAudioDurationButton() {
     syncMusicTabDot();
 }
 
-// Fonction pour afficher les informations du fichier audio (maintenant seulement la tooltip)
+// Nom du fichier audio choisi, avec ses métadonnées en infobulle. Le nom vient
+// du disque : il est posé en texte, jamais interprété comme du HTML (un `<`
+// est permis dans un nom de fichier sous Linux).
 async function displayAudioFileInfo(file) {
     const infoDiv = document.getElementById('audioFileInfo');
-
     if (!infoDiv) return;
-
+    const name = document.createElement('strong');
+    name.textContent = file.name;
+    infoDiv.replaceChildren(name);
     try {
-        // Afficher le nom complet du fichier sélectionné
-        const fileName = file.name;
-        infoDiv.innerHTML = `<strong>${fileName}</strong>`;
-
-        // Ajouter la tooltip avec métadonnées détaillées sur le nom du fichier
         await addAudioMetadataTooltip(file, infoDiv);
-
     } catch(e) {
         console.warn('Erreur lors de l\'affichage des infos audio:', e);
-        infoDiv.innerHTML = `<strong>${file.name}</strong>`;
     }
 }
 
-// Fonction pour masquer les informations du fichier audio (remettre le message par défaut)
+// Remet le message par défaut — et retire l'infobulle du fichier précédent,
+// qui restait sinon accrochée à « Aucune musique sélectionnée ».
 function hideAudioFileInfo() {
     const infoDiv = document.getElementById('audioFileInfo');
-    if (infoDiv) {
-        infoDiv.innerHTML = '<em>' + pkg.t('Aucune musique sélectionnée') + '</em>';
-    }
+    if (!infoDiv) return;
+    disposeAudioFileTooltip(infoDiv);
+    const empty = document.createElement('em');
+    empty.textContent = t('Aucune musique sélectionnée');
+    infoDiv.replaceChildren(empty);
 }
 
-// Fonction pour ajouter une tooltip avec les métadonnées audio
+// Tabler 1.4.0 n'expose pas window.bootstrap : l'API est publiée sous
+// window.tabler. On résout l'une ou l'autre.
+function audioTooltipApi() {
+    const BS = window.bootstrap || window.tabler;
+    return BS && BS.Tooltip ? BS.Tooltip : null;
+}
+
+function disposeAudioFileTooltip(element) {
+    try { audioTooltipApi()?.getInstance(element)?.dispose(); } catch(_) {}
+    element.removeAttribute('data-bs-toggle');
+}
+
+// Infobulle des métadonnées du fichier. Son contenu est un nœud DOM rempli en
+// texte (pas une chaîne HTML) : nom et type de fichier n'y sont jamais
+// interprétés. L'infobulle précédente est supprimée avant d'en poser une
+// nouvelle, sinon chaque sélection en empilait une de plus sur l'élément.
 async function addAudioMetadataTooltip(file, element) {
+    const Tooltip = audioTooltipApi();
+    if (!Tooltip) return;
+    let duration = t('Non disponible');
     try {
-        // Informations de base du fichier
-        const sizeKB = Math.round(file.size / 1024);
-        const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
-        const type = file.type || 'Type inconnu';
-
-        // Essayer d'extraire plus de métadonnées si disponible
-        let metadata = {
-            name: file.name,
-            size: `${sizeKB} KB (${sizeMB} MB)`,
-            type: type,
-            lastModified: pkg.formatDateDisplay(new Date(file.lastModified))
-        };
-
-        // Essayer d'extraire la durée via Web Audio
-        try {
-            const duration = await getAudioDuration(file);
-            if (duration && duration > 0) {
-                const minutes = Math.floor(duration / 60);
-                const seconds = Math.floor(duration % 60);
-                metadata.duration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-            }
-        } catch(e) {
-            metadata.duration = t('Non disponible');
+        const seconds = await getAudioDuration(file);
+        if (Number.isFinite(seconds) && seconds > 0) {
+            duration = `${Math.floor(seconds / 60)}:${Math.floor(seconds % 60).toString().padStart(2, '0')}`;
         }
+    } catch(_) { /* durée illisible : « Non disponible » */ }
+    // Un autre fichier a pu être choisi, ou la musique retirée, pendant la
+    // lecture de la durée : ne pas accrocher une infobulle périmée.
+    if (inputAudioFile?.files?.[0] !== file) return;
 
-        // Créer le contenu de la tooltip (les libellés sont traduits hors du
-        // template literal : l'extracteur Babel ne voit pas les t() imbriqués).
-        const lblSize = t('Taille');
-        const lblType = t('Type');
-        const lblDuration = t('Durée');
-        const lblModified = t('Modifié');
-        const tooltipContent = `
-            <div style="max-width:300px;">
-                <strong>${metadata.name}</strong><br>
-                <small>
-                    ${lblSize}: ${metadata.size}<br>
-                    ${lblType}: ${metadata.type}<br>
-                    ${lblDuration}: ${metadata.duration}<br>
-                    ${lblModified}: ${metadata.lastModified}
-                </small>
-            </div>
-        `;
-
-        // Ajouter la tooltip Bootstrap 5
-        element.setAttribute('data-bs-toggle', 'tooltip');
-        element.setAttribute('data-bs-html', 'true');
-        element.setAttribute('data-bs-title', tooltipContent);
-        // Tabler 1.4.0 n'expose pas window.bootstrap : l'API est publiée sous
-        // window.tabler. On résout l'une ou l'autre avant d'instancier la tooltip.
-        const BS = window.bootstrap || window.tabler;
-        if (BS && BS.Tooltip) {
-            new BS.Tooltip(element, { html: true, placement: 'top' });
-        }
-
-    } catch(e) {
-        console.warn('Erreur lors de l\'extraction des métadonnées:', e);
+    const sizeKB = Math.round(file.size / 1024);
+    const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+    // Libellés traduits hors des template literals : l'extracteur Babel ne
+    // voit pas les t() imbriqués.
+    const rows = [
+        [t('Taille'), `${sizeKB} KB (${sizeMB} MB)`],
+        [t('Type'), file.type || t('Type inconnu')],
+        [t('Durée'), duration],
+        [t('Modifié'), pkg.formatDateDisplay(new Date(file.lastModified))],
+    ];
+    const content = document.createElement('div');
+    content.style.maxWidth = '300px';
+    const title = document.createElement('strong');
+    title.textContent = file.name;
+    const details = document.createElement('small');
+    for (const [label, value] of rows) {
+        details.append(document.createElement('br'), `${label}: ${value}`);
     }
+    content.append(title, details);
+
+    disposeAudioFileTooltip(element);
+    // data-bs-toggle seul : il sert au masquage au clic (initBsTooltips).
+    element.setAttribute('data-bs-toggle', 'tooltip');
+    new Tooltip(element, { title: content, html: true, placement: 'top' });
 }
 
 // Fonction pour extraire la durée d'un fichier audio.

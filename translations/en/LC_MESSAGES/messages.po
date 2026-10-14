@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-13 08:20+0200\n"
+"POT-Creation-Date: 2026-10-14 07:35+0200\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -93,31 +93,31 @@ msgstr "Import finished"
 msgid "Génération du GeoJSON (%(idx)s/%(total)s)"
 msgstr "Generating GeoJSON (%(idx)s/%(total)s)"
 
-#: bdd.py:1025
+#: bdd.py:1027
 msgid "Préparation des données GeoJSON..."
 msgstr "Preparing GeoJSON data..."
 
-#: bdd.py:1035
+#: bdd.py:1037
 msgid "GeoJSON servi depuis le cache"
 msgstr "GeoJSON served from cache"
 
-#: bdd.py:1037
+#: bdd.py:1039
 msgid "Génération du GeoJSON complet..."
 msgstr "Generating full GeoJSON..."
 
-#: bdd.py:1047
+#: bdd.py:1049
 msgid "Résultat filtré servi depuis le cache"
 msgstr "Filtered result served from cache"
 
-#: bdd.py:1050
+#: bdd.py:1052
 msgid "Pré-calcul du GeoJSON complet pour indexer les filtres..."
 msgstr "Pre-computing full GeoJSON to index filters..."
 
-#: bdd.py:1056
+#: bdd.py:1058
 msgid "Application des index mémoire (date/type/région)..."
 msgstr "Applying in-memory indexes (date/type/region)..."
 
-#: bdd.py:1059
+#: bdd.py:1061
 msgid "Filtrage direct en base (fallback)..."
 msgstr "Direct database filtering (fallback)..."
 
@@ -238,7 +238,7 @@ msgstr "Video processing"
 msgid "Traitement ffmpeg"
 msgstr "ffmpeg processing"
 
-#: capture.py:1050 static/js/mapgl.js:4229 templates/guide.html:306
+#: capture.py:1050 static/js/mapgl.js:4230 templates/guide.html:306
 #: templates/modal_video_ready.html:9
 msgid "Vidéo prête"
 msgstr "Video ready"
@@ -279,127 +279,127 @@ msgstr "Out-of-sequence video fragment"
 msgid "Fragment vidéo absent"
 msgstr "Missing video fragment"
 
-#: lab_formats.py:109
+#: lab_formats.py:116
 msgid "found_date invalide (jour inexistant)"
 msgstr "invalid found_date (no such day)"
 
-#: lab_formats.py:111
+#: lab_formats.py:118
 msgid "found_date au format non ISO — valeur ignorée"
 msgstr "found_date is not in ISO format — value ignored"
 
-#: lab_formats.py:120
+#: lab_formats.py:127
 msgid "found_at illisible"
 msgstr "unreadable found_at"
 
-#: lab_formats.py:138
+#: lab_formats.py:145
 msgid "found_at sans fuseau — date civile seule retenue"
 msgstr "found_at has no time zone — only the calendar date is kept"
 
-#: lab_formats.py:145
+#: lab_formats.py:152
 msgid "found_at date seule invalide"
 msgstr "invalid date-only found_at"
 
-#: lab_formats.py:148
+#: lab_formats.py:155
 msgid "found_at ambigu ou non ISO — rejeté"
 msgstr "ambiguous or non-ISO found_at — rejected"
 
-#: lab_formats.py:156
+#: lab_formats.py:163
 msgid "found_date en désaccord avec l'instant — instant retenu"
 msgstr "found_date disagrees with the timestamp — timestamp kept"
 
-#: lab_formats.py:183
+#: lab_formats.py:190
 msgid "coordonnées non numériques"
 msgstr "non-numeric coordinates"
 
-#: lab_formats.py:187
+#: lab_formats.py:194
 msgid "coordonnées non finies"
 msgstr "non-finite coordinates"
 
-#: lab_formats.py:190
+#: lab_formats.py:197
 msgid "coordonnées hors bornes"
 msgstr "coordinates out of range"
 
-#: lab_formats.py:194
+#: lab_formats.py:201
 msgid "(0,0) — sentinelle possible, à vérifier"
 msgstr "(0,0) — possibly a placeholder, please check"
 
-#: lab_formats.py:309
+#: lab_formats.py:321
 #, python-format
 msgid "JSON invalide : %(error)s"
 msgstr "Invalid JSON: %(error)s"
 
-#: lab_formats.py:312
+#: lab_formats.py:324
 msgid "pas un export mygcflow-lab-finds"
 msgstr "not a mygcflow-lab-finds export"
 
-#: lab_formats.py:316
+#: lab_formats.py:328
 #, python-format
 msgid "version non supportée : %(version)s"
 msgstr "unsupported version: %(version)s"
 
-#: lab_formats.py:321
+#: lab_formats.py:333
 msgid "absent ou n'est pas une liste"
 msgstr "missing or not a list"
 
-#: lab_formats.py:324
+#: lab_formats.py:336
 msgid "trop d'enregistrements"
 msgstr "too many records"
 
-#: lab_formats.py:348
+#: lab_formats.py:360
 msgid "enregistrement non objet"
 msgstr "record is not an object"
 
-#: lab_formats.py:356
+#: lab_formats.py:368
 msgid "stage_id non UUID — identifiant ignoré"
 msgstr "stage_id is not a UUID — identifier ignored"
 
-#: lab_formats.py:358
+#: lab_formats.py:370
 msgid "adventure_id non UUID — identifiant ignoré"
 msgstr "adventure_id is not a UUID — identifier ignored"
 
-#: lab_formats.py:365
+#: lab_formats.py:377
 msgid "aucune identité exploitable (ni UUID, ni log_id, ni titre)"
 msgstr "no usable identity (no UUID, log_id or title)"
 
-#: lab_formats.py:371
+#: lab_formats.py:383
 msgid "identité dérivée de la ligne — reimport non garanti"
 msgstr "identity derived from the row — re-import not guaranteed"
 
-#: lab_formats.py:389
+#: lab_formats.py:401
 msgid "coordonnées historique invalides — ignorées"
 msgstr "invalid coordinates in the history — ignored"
 
-#: lab_formats.py:470
+#: lab_formats.py:494
 msgid "DOCTYPE/ENTITY interdit (XML non sûr)"
 msgstr "DOCTYPE/ENTITY not allowed (unsafe XML)"
 
-#: lab_formats.py:481
+#: lab_formats.py:505
 msgid "coordonnées invalides"
 msgstr "invalid coordinates"
 
-#: lab_formats.py:491
+#: lab_formats.py:515
 msgid "pas d'UUID d'étape (gsak:Guid absent ou mal formé)"
 msgstr "no stage UUID (gsak:Guid missing or malformed)"
 
-#: lab_formats.py:505
+#: lab_formats.py:529
 msgid "UUID d'Adventure absent — contrôle de cohérence impossible"
 msgstr "Adventure UUID missing — consistency check not possible"
 
-#: lab_formats.py:524
+#: lab_formats.py:548
 #, python-format
 msgid "XML illisible : %(error)s"
 msgstr "Unreadable XML: %(error)s"
 
-#: lab_store.py:286
+#: lab_store.py:314
 #, python-format
 msgid "%(n)s doublon(s) dédoublonné(s)"
 msgstr "%(n)s duplicate(s) removed"
 
-#: lab_store.py:306
+#: lab_store.py:334
 msgid "pseudo différent de la collection — mélange possible"
 msgstr "username differs from the collection's — data may be mixed"
 
-#: lab_store.py:469
+#: lab_store.py:514
 #, python-format
 msgid "%(n)s étape(s) de l'historique non marquées trouvées dans le GPX"
 msgstr "%(n)s stage(s) from the history not marked as found in the GPX"
@@ -588,7 +588,7 @@ msgstr "A dataset already has this name"
 msgid "Un import est en cours : réessayez une fois terminé"
 msgstr "An import is running: try again once it is done"
 
-#: blueprints/evolution.py:158 blueprints/gpx.py:37 blueprints/labs.py:471
+#: blueprints/evolution.py:158 blueprints/gpx.py:37 blueprints/labs.py:484
 msgid "Aucun fichier fourni"
 msgstr "No file provided"
 
@@ -644,32 +644,32 @@ msgstr "Database cleared successfully. %(count)s entries deleted."
 msgid "Erreur lors du vidage de la base de données: %(error)s"
 msgstr "Error while clearing the database: %(error)s"
 
-#: blueprints/labs.py:176
+#: blueprints/labs.py:175
 msgid "Jeton d'import invalide"
 msgstr "Invalid import token"
 
-#: blueprints/labs.py:182
+#: blueprints/labs.py:181
 msgid "Jeton d'import inconnu ou déjà consommé"
 msgstr "Unknown or already used import token"
 
-#: blueprints/labs.py:184
+#: blueprints/labs.py:183
 msgid "Jeton d'import déjà consommé"
 msgstr "Import token already used"
 
-#: blueprints/labs.py:188
+#: blueprints/labs.py:187
 msgid "Jeton d'import illisible"
 msgstr "Unreadable import token"
 
-#: blueprints/labs.py:191
+#: blueprints/labs.py:190
 msgid "Jeton d'import expiré — relancer l'aperçu"
 msgstr "Import token expired — run the preview again"
 
-#: blueprints/labs.py:269
+#: blueprints/labs.py:272
 #, python-format
 msgid "Import Labs : %(name)s"
 msgstr "Lab import: %(name)s"
 
-#: blueprints/labs.py:286
+#: blueprints/labs.py:292
 msgid ""
 "la collection a été modifiée entre l'aperçu et l'enregistrement — diff "
 "recalculé sur l'état courant"
@@ -677,143 +677,143 @@ msgstr ""
 "the collection changed between preview and import — changes recomputed on"
 " the current state"
 
-#: blueprints/labs.py:288
+#: blueprints/labs.py:294
 msgid "Import Labs : finalisation"
 msgstr "Lab import: finishing up"
 
-#: blueprints/labs.py:368
+#: blueprints/labs.py:381
 #, python-format
 msgid "Coordonnées Labs : %(done)s/%(total)s Adventures"
 msgstr "Lab coordinates: %(done)s/%(total)s Adventures"
 
-#: blueprints/labs.py:474 blueprints/labs.py:509
+#: blueprints/labs.py:487 blueprints/labs.py:522
 #, python-format
 msgid "Trop de fichiers (maximum %(max)s)"
 msgstr "Too many files (maximum %(max)s)"
 
-#: blueprints/labs.py:484
+#: blueprints/labs.py:497
 msgid "Fichier trop volumineux"
 msgstr "File too large"
 
-#: blueprints/labs.py:515
+#: blueprints/labs.py:528
 msgid "Format non reconnu (ni export historique, ni GPX Lab2Gpx)"
 msgstr "Unrecognized format (neither history export nor Lab2Gpx GPX)"
 
-#: blueprints/labs.py:531
+#: blueprints/labs.py:544
 msgid "Aucun fichier exploitable"
 msgstr "No usable file"
 
-#: blueprints/labs.py:561
+#: blueprints/labs.py:574
 #, python-format
 msgid "Erreur lors de l'analyse : %(error)s"
 msgstr "Error while parsing: %(error)s"
 
-#: blueprints/labs.py:594
+#: blueprints/labs.py:607
 msgid "Un import Labs est déjà en cours"
 msgstr "A Lab import is already running"
 
-#: blueprints/labs.py:604
+#: blueprints/labs.py:617
 msgid "Import Labs lancé en tâche de fond"
 msgstr "Lab import started in background"
 
-#: blueprints/labs.py:634
+#: blueprints/labs.py:648
 msgid "Pagination invalide"
 msgstr "Invalid pagination"
 
-#: blueprints/labs.py:648
+#: blueprints/labs.py:662
 msgid "Aucune correction fournie"
 msgstr "No correction provided"
 
-#: blueprints/labs.py:657
+#: blueprints/labs.py:671
 msgid "Coordonnées invalides"
 msgstr "Invalid coordinates"
 
-#: blueprints/labs.py:663
+#: blueprints/labs.py:677
 msgid "Date invalide (format attendu : AAAA-MM-JJ)"
 msgstr "Invalid date (expected format: YYYY-MM-DD)"
 
-#: blueprints/labs.py:675
+#: blueprints/labs.py:689
 msgid "Découverte inconnue"
 msgstr "Unknown discovery"
 
-#: blueprints/labs.py:713
+#: blueprints/labs.py:731 blueprints/labs.py:807 blueprints/labs.py:870
+msgid "Une opération Labs est déjà en cours"
+msgstr "A Labs operation is already running"
+
+#: blueprints/labs.py:736
 #, python-format
 msgid "Collection Labs vidée (%(count)s entrées supprimées)."
 msgstr "Lab collection emptied (%(count)s entries deleted)."
 
-#: blueprints/labs.py:723
+#: blueprints/labs.py:746
 msgid "Aucune collection Labs à exporter"
 msgstr "No Lab collection to export"
 
-#: blueprints/labs.py:774
+#: blueprints/labs.py:803
 msgid "Aucune étape en attente de coordonnées"
 msgstr "No stage pending coordinates"
 
-#: blueprints/labs.py:778 blueprints/labs.py:841
-msgid "Une opération Labs est déjà en cours"
-msgstr "A Labs operation is already running"
-
-#: blueprints/labs.py:789
+#: blueprints/labs.py:818
 msgid "Récupération des coordonnées lancée"
 msgstr "Coordinate retrieval started"
 
-#: blueprints/labs.py:830
+#: blueprints/labs.py:859
 msgid "Jeton de réception invalide — régénérer le bookmarklet"
 msgstr "Invalid receive token — regenerate the bookmarklet"
 
-#: blueprints/labs.py:834
+#: blueprints/labs.py:863
 msgid "Contenu absent ou trop volumineux"
 msgstr "Content missing or too large"
 
-#: blueprints/labs.py:837
+#: blueprints/labs.py:866
 msgid "Format non reconnu (export mygcflow-lab-finds attendu)"
 msgstr "Unrecognised format (mygcflow-lab-finds export expected)"
 
-#: blueprints/labs.py:853
+#: blueprints/labs.py:882
 msgid "Historique Labs reçu — import lancé"
 msgstr "Labs history received — import started"
 
-#: blueprints/labs.py:900
+#: blueprints/labs.py:929
 msgid "MyGCFlow : démarrage…"
 msgstr "MyGCFlow: starting…"
 
-#: blueprints/labs.py:901
+#: blueprints/labs.py:930
 msgid "MyGCFlow — GUID public du joueur :"
 msgstr "MyGCFlow — player public GUID:"
 
-#: blueprints/labs.py:902
+#: blueprints/labs.py:931
 msgid "Annulé."
 msgstr "Cancelled."
 
-#: blueprints/labs.py:903
+#: blueprints/labs.py:932
 msgid "GUID refusé par le site."
 msgstr "GUID rejected by the site."
 
-#: blueprints/labs.py:904
+#: blueprints/labs.py:933
 #, python-brace-format
 msgid "MyGCFlow : ${adv} Adventures, ${disc} étapes…"
 msgstr "MyGCFlow: ${adv} Adventures, ${disc} stages…"
 
-#: blueprints/labs.py:905
+#: blueprints/labs.py:934
 msgid "MyGCFlow : envoi à l'application…"
 msgstr "MyGCFlow: sending to the app…"
 
-#: blueprints/labs.py:906
+#: blueprints/labs.py:935
 msgid ""
 "MyGCFlow : faites défiler un peu votre historique pour détecter votre "
 "compte…"
 msgstr "MyGCFlow: scroll your history a little to detect your account…"
 
-#: blueprints/labs.py:908
+#: blueprints/labs.py:937
 #, python-brace-format
 msgid "✔ Envoyé à MyGCFlow — import en cours (${adv} Adventures, ${disc} étapes)"
 msgstr "✔ Sent to MyGCFlow — import running (${adv} Adventures, ${disc} stages)"
 
-#: blueprints/labs.py:910
+#: blueprints/labs.py:939
 msgid "MyGCFlow : erreur"
 msgstr "MyGCFlow: error"
 
-#: blueprints/labs.py:911
+#: blueprints/labs.py:940
 msgid "MyGCFlow :"
 msgstr "MyGCFlow:"
 
@@ -878,8 +878,8 @@ msgid ""
 "instable ?)."
 msgstr "Some map tiles could not be loaded (unstable connection?)."
 
-#: static/js/basemaps.js:236 static/js/basemaps.js:273 static/js/ui.js:2603
-#: static/js/ui.js:2650 static/js/ui.js:2672
+#: static/js/basemaps.js:236 static/js/basemaps.js:273 static/js/ui.js:2604
+#: static/js/ui.js:2651 static/js/ui.js:2673
 msgid "Carte"
 msgstr "Map"
 
@@ -926,7 +926,7 @@ msgstr "Invalid file"
 msgid "Déposez votre fichier (.gpx, .zip ou export Lab Caches) pour le charger"
 msgstr "Drop your file (.gpx, .zip or Lab Caches export) to load it"
 
-#: static/js/bdd.js:395 static/js/bdd.js:420 static/js/mapgl.js:1117
+#: static/js/bdd.js:395 static/js/bdd.js:420 static/js/mapgl.js:1118
 #, python-brace-format
 msgid "le ${date}"
 msgstr "on ${date}"
@@ -1004,7 +1004,7 @@ msgstr "Preparing upload..."
 msgid "Fichier chargé avec succès !"
 msgstr "File uploaded successfully!"
 
-#: static/js/bdd.js:1106 static/js/mapgl.js:5471
+#: static/js/bdd.js:1106 static/js/mapgl.js:5472
 msgid "Terminé"
 msgstr "Done"
 
@@ -1022,7 +1022,7 @@ msgstr "Error while uploading the file"
 #: static/js/evolution_data.js:912 static/js/evolution_data.js:1262
 #: static/js/evolution_data.js:1300 static/js/evolution_data.js:1308
 #: static/js/labs.js:1038 static/js/labs.js:1081 static/js/notifications.js:379
-#: static/js/recording_perf.js:187 static/js/ui.js:1539
+#: static/js/recording_perf.js:187 static/js/ui.js:1540
 msgid "Erreur"
 msgstr "Error"
 
@@ -1095,7 +1095,7 @@ msgstr "Deletion successful"
 msgid "Erreur lors de la suppression des trouvailles: "
 msgstr "Error while deleting finds: "
 
-#: static/js/bdd.js:1474 static/js/mapgl.js:908 static/js/notifications.js:337
+#: static/js/bdd.js:1474 static/js/mapgl.js:909 static/js/notifications.js:337
 msgid "Affichage des points"
 msgstr "Points display"
 
@@ -1139,8 +1139,8 @@ msgid "Arrêtez l'animation avant de changer de base."
 msgstr "Stop the animation before switching datasets."
 
 #: static/js/evolution_data.js:308 static/js/evolution_data.js:1292
-#: static/js/mapgl.js:3604 static/js/mapgl.js:3656 static/js/mapgl.js:3663
-#: static/js/mapgl.js:4750 static/js/notifications.js:383
+#: static/js/mapgl.js:3605 static/js/mapgl.js:3657 static/js/mapgl.js:3664
+#: static/js/mapgl.js:4751 static/js/notifications.js:383
 msgid "Attention"
 msgstr "Warning"
 
@@ -1797,252 +1797,252 @@ msgstr "Lab Caches deleted"
 msgid "Erreur lors de la suppression"
 msgstr "Error while deleting"
 
-#: static/js/mapgl.js:275
+#: static/js/mapgl.js:276
 msgid "Impossible de charger html2canvas"
 msgstr "Unable to load html2canvas"
 
-#: static/js/mapgl.js:909
+#: static/js/mapgl.js:910
 msgid "Mise à jour de l'affichage des points..."
 msgstr "Updating point display..."
 
-#: static/js/mapgl.js:993
+#: static/js/mapgl.js:994
 #, python-brace-format
 msgid "${count} caches regroupées"
 msgstr "${count} grouped caches"
 
-#: static/js/mapgl.js:994
+#: static/js/mapgl.js:995
 msgid "1 cache"
 msgstr "1 cache"
 
-#: static/js/mapgl.js:997
+#: static/js/mapgl.js:998
 #, python-brace-format
 msgid "Étape ${index} sur ${total}"
 msgstr "Stop ${index} of ${total}"
 
-#: static/js/mapgl.js:1114
+#: static/js/mapgl.js:1115
 msgid "Sans nom"
 msgstr "Unnamed"
 
-#: static/js/mapgl.js:1115
+#: static/js/mapgl.js:1116
 msgid "Trouvé"
 msgstr "Found"
 
-#: static/js/mapgl.js:1115
+#: static/js/mapgl.js:1116
 msgid "DNF"
 msgstr "DNF"
 
-#: static/js/mapgl.js:1116
+#: static/js/mapgl.js:1117
 #, python-brace-format
 msgid "Publié le ${date}"
 msgstr "Published on ${date}"
 
-#: static/js/mapgl.js:1142
+#: static/js/mapgl.js:1143
 msgid "Position approximative (centre de l’Adventure)"
 msgstr "Approximate position (Adventure center)"
 
-#: static/js/mapgl.js:3449
+#: static/js/mapgl.js:3450
 msgid "Aucune vidéo n'a été créée."
 msgstr "No video was created."
 
-#: static/js/mapgl.js:3449
+#: static/js/mapgl.js:3450
 msgid "Arrêt de l'enregistrement"
 msgstr "Recording stopped"
 
-#: static/js/mapgl.js:3595
+#: static/js/mapgl.js:3596
 msgid "Capture rapide non supportée, bascule en mode image par image."
 msgstr "Fast capture not supported, switching to frame-by-frame mode."
 
-#: static/js/mapgl.js:3595 static/js/mapgl.js:5066
+#: static/js/mapgl.js:3596 static/js/mapgl.js:5067
 msgid "Compatibilité"
 msgstr "Compatibility"
 
-#: static/js/mapgl.js:3604
+#: static/js/mapgl.js:3605
 msgid "Données en cours de chargement. Veuillez réessayer."
 msgstr "Data is still loading. Please try again."
 
-#: static/js/mapgl.js:3624
+#: static/js/mapgl.js:3625
 msgid "Préparation de l'enregistrement..."
 msgstr "Preparing the recording..."
 
-#: static/js/mapgl.js:3624
+#: static/js/mapgl.js:3625
 msgid "Nettoyage initial"
 msgstr "Initial cleanup"
 
-#: static/js/mapgl.js:3648
+#: static/js/mapgl.js:3649
 msgid "Un assemblage vidéo est en cours. Réessayez à la fin du traitement."
 msgstr "A video assembly is running. Try again when processing is done."
 
-#: static/js/mapgl.js:3649
+#: static/js/mapgl.js:3650
 msgid "Enregistrement annulé"
 msgstr "Recording cancelled"
 
-#: static/js/mapgl.js:3654
+#: static/js/mapgl.js:3655
 msgid "Répertoire d’images nettoyé."
 msgstr "Image directory cleaned."
 
-#: static/js/mapgl.js:3654
+#: static/js/mapgl.js:3655
 msgid "Préparation"
 msgstr "Preparation"
 
-#: static/js/mapgl.js:3656
+#: static/js/mapgl.js:3657
 msgid "Nettoyage initial impossible. Poursuite de l'enregistrement."
 msgstr "Initial cleanup failed. Continuing with the recording."
 
-#: static/js/mapgl.js:3663
+#: static/js/mapgl.js:3664
 msgid "Erreur nettoyage initial. Poursuite."
 msgstr "Initial cleanup error. Continuing."
 
-#: static/js/mapgl.js:3826
+#: static/js/mapgl.js:3827
 msgid "0% | préparation..."
 msgstr "0% | preparing..."
 
-#: static/js/mapgl.js:3838 static/js/mapgl.js:4765
+#: static/js/mapgl.js:3839 static/js/mapgl.js:4766
 msgid " ♪ La musique sera intégrée automatiquement après la capture."
 msgstr " ♪ The music will be added automatically after capture."
 
-#: static/js/mapgl.js:3845
+#: static/js/mapgl.js:3846
 msgid "Capture en cours – Ne pas bouger la fenêtre"
 msgstr "Capturing – Do not move the window"
 
-#: static/js/mapgl.js:3846
+#: static/js/mapgl.js:3847
 msgid "Préparation de la capture..."
 msgstr "Preparing capture..."
 
-#: static/js/mapgl.js:3878
+#: static/js/mapgl.js:3879
 msgid "Capture en pause : revenez sur cet onglet pour la poursuivre."
 msgstr "Capture paused: return to this tab to resume."
 
-#: static/js/mapgl.js:3878 static/js/mapgl.js:5299
+#: static/js/mapgl.js:3879 static/js/mapgl.js:5300
 msgid "Onglet masqué"
 msgstr "Tab hidden"
 
-#: static/js/mapgl.js:3981
+#: static/js/mapgl.js:3982
 msgid "Le rendu initial de la carte n'a pas abouti (timeout)"
 msgstr "The initial map render did not complete (timeout)"
 
-#: static/js/mapgl.js:4108
+#: static/js/mapgl.js:4109
 msgid "Nettoyage en cours..."
 msgstr "Cleaning up..."
 
-#: static/js/mapgl.js:4207
+#: static/js/mapgl.js:4208
 msgid "erreur inconnue"
 msgstr "unknown error"
 
-#: static/js/mapgl.js:4209
+#: static/js/mapgl.js:4210
 #, python-brace-format
 msgid "La capture a été interrompue suite à une erreur : ${message}"
 msgstr "The capture was interrupted by an error: ${message}"
 
-#: static/js/mapgl.js:4211
+#: static/js/mapgl.js:4212
 msgid "Capture interrompue"
 msgstr "Capture interrupted"
 
-#: static/js/mapgl.js:4229 static/js/mapgl.js:4908 static/js/mapgl.js:5173
-#: static/js/mapgl.js:5191 static/js/mapgl.js:5587 static/js/mapgl.js:5682
+#: static/js/mapgl.js:4230 static/js/mapgl.js:4909 static/js/mapgl.js:5174
+#: static/js/mapgl.js:5192 static/js/mapgl.js:5588 static/js/mapgl.js:5682
 #: static/js/mapgl.js:5686
 msgid "Enregistrement"
 msgstr "Recording"
 
-#: static/js/mapgl.js:4270
+#: static/js/mapgl.js:4271
 msgid "task_id manquant"
 msgstr "missing task_id"
 
-#: static/js/mapgl.js:4271
+#: static/js/mapgl.js:4272
 msgid "Délai d'assemblage dépassé"
 msgstr "Assembly timed out"
 
-#: static/js/mapgl.js:4284
+#: static/js/mapgl.js:4285
 msgid "Tâche introuvable sur le serveur (purgée ou serveur redémarré)"
 msgstr "Task not found on the server (purged or server restarted)"
 
-#: static/js/mapgl.js:4298
+#: static/js/mapgl.js:4299
 msgid "Tâche échouée"
 msgstr "Task failed"
 
-#: static/js/mapgl.js:4305
+#: static/js/mapgl.js:4306
 #, python-brace-format
 msgid ""
 "Suivi de la tâche interrompu après ${count} erreurs consécutives : "
 "${detail}"
 msgstr "Task monitoring stopped after ${count} consecutive errors: ${detail}"
 
-#: static/js/mapgl.js:4417
+#: static/js/mapgl.js:4418
 msgid "Envoi des dernières images..."
 msgstr "Sending last images..."
 
-#: static/js/mapgl.js:4511 static/js/ui.js:6788
+#: static/js/mapgl.js:4512 static/js/ui.js:6788
 msgid "Assemblage en cours"
 msgstr "Assembly in progress"
 
-#: static/js/mapgl.js:4511
+#: static/js/mapgl.js:4512
 msgid "Création de la vidéo à partir des images..."
 msgstr "Creating video from images..."
 
-#: static/js/mapgl.js:4582
+#: static/js/mapgl.js:4583
 msgid "Impossible de lancer l'assemblage vidéo"
 msgstr "Unable to start the GPX import"
 
-#: static/js/mapgl.js:4589
+#: static/js/mapgl.js:4590
 msgid "Création de la vidéo..."
 msgstr "Creating the video..."
 
-#: static/js/mapgl.js:4596
+#: static/js/mapgl.js:4597
 msgid "Vidéo créée. Nettoyage des images..."
 msgstr "Video created. Cleaning up images..."
 
-#: static/js/mapgl.js:4597
+#: static/js/mapgl.js:4598
 msgid "Nettoyage en cours"
 msgstr "Cleaning up..."
 
-#: static/js/mapgl.js:4597
+#: static/js/mapgl.js:4598
 msgid "Vidéo créée avec succès. Nettoyage des images..."
 msgstr "Video created successfully. Cleaning up images..."
 
-#: static/js/mapgl.js:4614
+#: static/js/mapgl.js:4615
 msgid "Nettoyage terminé"
 msgstr "Cleanup finished"
 
-#: static/js/mapgl.js:4628
+#: static/js/mapgl.js:4629
 #, python-brace-format
 msgid "Erreur lors du traitement automatique: ${message}"
 msgstr "Error during automatic processing: ${message}"
 
-#: static/js/mapgl.js:4630
+#: static/js/mapgl.js:4631
 msgid "Erreur chaîne"
 msgstr "Pipeline error"
 
-#: static/js/mapgl.js:4750
+#: static/js/mapgl.js:4751
 msgid "Données en cours de chargement. Réessayez."
 msgstr "Data is still loading. Try again."
 
-#: static/js/mapgl.js:4858
+#: static/js/mapgl.js:4859
 msgid "Enregistrement en cours – Ne pas bouger la fenêtre"
 msgstr "Recording in progress – Do not move the window"
 
-#: static/js/mapgl.js:4859
+#: static/js/mapgl.js:4860
 msgid "Démarrage de la capture..."
 msgstr "Starting capture..."
 
-#: static/js/mapgl.js:4908
+#: static/js/mapgl.js:4909
 msgid "Erreur de la capture rapide, bascule en mode image par image."
 msgstr "Fast capture error, switching to frame-by-frame mode."
 
-#: static/js/mapgl.js:5065
+#: static/js/mapgl.js:5066
 #, python-brace-format
 msgid ""
 "Format ${wanted} non pris en charge par ce navigateur : enregistrement en"
 " ${used}."
 msgstr "${wanted} format not supported by this browser: recording in ${used}."
 
-#: static/js/mapgl.js:5127
+#: static/js/mapgl.js:5128
 msgid "Résolution réduite aux capacités du navigateur."
 msgstr "Resolution reduced to what the browser can handle."
 
-#: static/js/mapgl.js:5173
+#: static/js/mapgl.js:5174
 msgid "La copie de la vidéo a échoué. Arrêt de l'enregistrement."
 msgstr "Copying the video failed. Stopping the recording."
 
-#: static/js/mapgl.js:5191
+#: static/js/mapgl.js:5192
 msgid ""
 "Erreur de l'encodeur vidéo. Arrêt de l'enregistrement et récupération de "
 "la séquence déjà capturée."
@@ -2050,50 +2050,50 @@ msgstr ""
 "Video encoder error. Stopping the recording and recovering the captured "
 "sequence."
 
-#: static/js/mapgl.js:5299
+#: static/js/mapgl.js:5300
 msgid ""
 "Enregistrement en pause : revenez sur cet onglet pour reprendre la "
 "capture."
 msgstr "Recording paused: return to this tab to resume capture."
 
-#: static/js/mapgl.js:5495
+#: static/js/mapgl.js:5496
 msgid "Copie vers le dossier vidéo échouée"
 msgstr "Copy to video folder failed"
 
-#: static/js/mapgl.js:5519
+#: static/js/mapgl.js:5520
 msgid "Finalisation"
 msgstr "Finalizing"
 
-#: static/js/mapgl.js:5519
+#: static/js/mapgl.js:5520
 msgid "Écriture de la durée de la vidéo..."
 msgstr "Writing video duration..."
 
-#: static/js/mapgl.js:5537
+#: static/js/mapgl.js:5538
 msgid "Ajout audio"
 msgstr "Adding audio"
 
-#: static/js/mapgl.js:5537
+#: static/js/mapgl.js:5538
 msgid "Fusion de la piste audio avec la vidéo en cours..."
 msgstr "Merging audio track with video..."
 
-#: static/js/mapgl.js:5572 static/js/video_postprocess.js:30
+#: static/js/mapgl.js:5573 static/js/video_postprocess.js:31
 msgid "Normalisation"
 msgstr "Normalization"
 
-#: static/js/mapgl.js:5572
+#: static/js/mapgl.js:5573
 #, python-brace-format
 msgid "Accélération x${applicable} pour lecture à vitesse normale..."
 msgstr "Speeding up x${applicable} for normal-speed playback..."
 
-#: static/js/mapgl.js:5587
+#: static/js/mapgl.js:5588
 msgid "La vidéo n'a pas pu être assemblée."
 msgstr "The video could not be assembled."
 
-#: static/js/mapgl.js:5596
+#: static/js/mapgl.js:5597
 msgid "Traitement serveur"
 msgstr "Server processing"
 
-#: static/js/mapgl.js:5596
+#: static/js/mapgl.js:5597
 msgid "Envoi de la vidéo au serveur..."
 msgstr "Sending video to server..."
 
@@ -2713,16 +2713,16 @@ msgstr "Saving…"
 msgid "Non enregistré"
 msgstr "Not saved"
 
-#: static/js/ui.js:403
+#: static/js/ui.js:404
 #, python-brace-format
 msgid "Musique : ${d}"
 msgstr "Music: ${d}"
 
-#: static/js/ui.js:404
+#: static/js/ui.js:405
 msgid "(blanc de fin ignoré)"
 msgstr "(trailing silence ignored)"
 
-#: static/js/ui.js:418
+#: static/js/ui.js:419
 #, python-brace-format
 msgid ""
 "Musique plus courte que la durée minimale (${min}) : durée ${d} "
@@ -2731,7 +2731,7 @@ msgstr ""
 "Music shorter than the minimum duration (${min}): duration ${d} applied, "
 "the music will be looped."
 
-#: static/js/ui.js:419
+#: static/js/ui.js:420
 #, python-brace-format
 msgid ""
 "Musique plus courte que la durée minimale (${min}) : durée ${d} "
@@ -2740,16 +2740,16 @@ msgstr ""
 "Music shorter than the minimum duration (${min}): duration ${d} applied, "
 "the music will stop before the end."
 
-#: static/js/ui.js:420 static/js/ui.js:434
+#: static/js/ui.js:421 static/js/ui.js:435
 msgid "Elle se terminera en fondu."
 msgstr "It will fade out at the end."
 
-#: static/js/ui.js:422
+#: static/js/ui.js:423
 #, python-brace-format
 msgid "Durée calée sur la musique (${d})."
 msgstr "Duration synced to the music (${d})."
 
-#: static/js/ui.js:428
+#: static/js/ui.js:429
 #, python-brace-format
 msgid ""
 "La musique (${m}) est plus longue que la vidéo (${v}) : elle se terminera"
@@ -2758,7 +2758,7 @@ msgstr ""
 "The music (${m}) is longer than the video (${v}): it will fade out at the"
 " end."
 
-#: static/js/ui.js:429
+#: static/js/ui.js:430
 #, python-brace-format
 msgid ""
 "La musique (${m}) est plus longue que la vidéo (${v}) : elle sera coupée "
@@ -2767,19 +2767,19 @@ msgstr ""
 "The music (${m}) is longer than the video (${v}): it will be cut at the "
 "end of the video."
 
-#: static/js/ui.js:433
+#: static/js/ui.js:434
 #, python-brace-format
 msgid ""
 "La musique (${m}) est plus courte que la vidéo (${v}) : elle sera répétée"
 " en boucle."
 msgstr "The music (${m}) is shorter than the video (${v}): it will be looped."
 
-#: static/js/ui.js:436
+#: static/js/ui.js:437
 #, python-brace-format
 msgid "La musique (${m}) se termine avant la fin de la vidéo (${v})."
 msgstr "The music (${m}) ends before the end of the video (${v})."
 
-#: static/js/ui.js:1368
+#: static/js/ui.js:1369
 msgid ""
 "Ce format vidéo n'est pas supporté par votre navigateur et sera ignoré au"
 " démarrage de l'enregistrement."
@@ -2787,28 +2787,28 @@ msgstr ""
 "This video format is not supported by your browser and will be ignored "
 "when recording starts."
 
-#: static/js/ui.js:1369 static/js/ui.js:3015
+#: static/js/ui.js:1370 static/js/ui.js:3016
 msgid "Format non supporté"
 msgstr "Unsupported format"
 
-#: static/js/ui.js:1449
+#: static/js/ui.js:1450
 msgid "Chargement de la musique..."
 msgstr "Loading music..."
 
-#: static/js/ui.js:1483 static/js/ui.js:1535
+#: static/js/ui.js:1484 static/js/ui.js:1536
 msgid "Durée de l'animation calée sur la musique"
 msgstr "Animation duration synced to the music"
 
-#: static/js/ui.js:1483 static/js/ui.js:1535 templates/guide.html:274
+#: static/js/ui.js:1484 static/js/ui.js:1536 templates/guide.html:274
 #: templates/menu_animation.html:23 templates/menu_animation.html:281
 msgid "Musique"
 msgstr "Music"
 
-#: static/js/ui.js:1539
+#: static/js/ui.js:1540
 msgid "Erreur lors de la lecture du fichier audio"
 msgstr "Error reading the audio file"
 
-#: static/js/ui.js:1593
+#: static/js/ui.js:1594
 #, python-brace-format
 msgid ""
 "Sortie estimée : ${size}. La capture rapide enregistre en temps réel : si"
@@ -2819,7 +2819,7 @@ msgstr ""
 "video stutters, choose a lower resolution or switch to frame-by-frame "
 "rendering."
 
-#: static/js/ui.js:1594
+#: static/js/ui.js:1595
 #, python-brace-format
 msgid ""
 "Sortie estimée : ${size}. En mode images, l'enregistrement devient "
@@ -2830,7 +2830,7 @@ msgstr ""
 " every frame is captured, encoded and uploaded one by one. The video "
 "itself will not drop a single frame."
 
-#: static/js/ui.js:1603
+#: static/js/ui.js:1604
 #, python-brace-format
 msgid ""
 "Même au débit maximal (${max} Mbit/s), cette résolution restera "
@@ -2841,46 +2841,46 @@ msgstr ""
 "compressed: lowering the frame rate or the resolution will give a cleaner"
 " image."
 
-#: static/js/ui.js:1607
+#: static/js/ui.js:1608
 #, python-brace-format
 msgid "Débit ajusté à ${bitrate} Mbit/s pour cette résolution."
 msgstr "Bitrate raised to ${bitrate} Mbit/s for this resolution."
 
-#: static/js/ui.js:2603
+#: static/js/ui.js:2604
 msgid "Enregistrement du centre par défaut impossible"
 msgstr "Could not save the default map center"
 
-#: static/js/ui.js:2650
+#: static/js/ui.js:2651
 msgid "Coordonnées invalides. Ex: 48.85, 2.35 ou N 49° 16.029 E 006° 07.512"
 msgstr "Invalid coordinates. E.g. 48.85, 2.35 or N 49° 16.029 E 006° 07.512"
 
-#: static/js/ui.js:2672
+#: static/js/ui.js:2673
 msgid "Coordonnées invalides. Ex: N 49° 16.029 / E 006° 07.512"
 msgstr "Invalid coordinates. E.g. N 49° 16.029 / E 006° 07.512"
 
-#: static/js/ui.js:2943
+#: static/js/ui.js:2944
 msgid "Difficulté, terrain et taille ne s'appliquent pas aux Lab Caches."
 msgstr "Difficulty, terrain and size do not apply to Lab Caches."
 
-#: static/js/ui.js:3014
+#: static/js/ui.js:3015
 #, python-brace-format
 msgid "Le format vidéo sauvegardé (${mime}) n'est pas supporté par ce navigateur."
 msgstr "The saved video format (${mime}) is not supported by this browser."
 
-#: static/js/ui.js:3099
+#: static/js/ui.js:3100
 msgid "Fermer MyGCFlow ? Le serveur local sera arrêté."
 msgstr "Close MyGCFlow? The local server will be stopped."
 
-#: static/js/ui.js:3100 static/js/ui.js:3103 static/js/ui.js:3123
-#: static/js/ui.js:3130 static/js/ui.js:3138 templates/app.html:92
+#: static/js/ui.js:3101 static/js/ui.js:3104 static/js/ui.js:3124
+#: static/js/ui.js:3131 static/js/ui.js:3139 templates/app.html:92
 msgid "Quitter"
 msgstr "Quit"
 
-#: static/js/ui.js:3123 static/js/ui.js:3138
+#: static/js/ui.js:3124 static/js/ui.js:3139
 msgid "MyGCFlow n'a pas pu être arrêté."
 msgstr "MyGCFlow could not be stopped."
 
-#: static/js/ui.js:3129
+#: static/js/ui.js:3130
 msgid ""
 "Un import ou un traitement vidéo est en cours. Il sera interrompu. "
 "Quitter quand même ?"
@@ -2888,15 +2888,15 @@ msgstr ""
 "An import or a video processing task is running. It will be interrupted. "
 "Quit anyway?"
 
-#: static/js/ui.js:3133
+#: static/js/ui.js:3134
 msgid "Quitter quand même"
 msgstr "Quit anyway"
 
-#: static/js/ui.js:3153
+#: static/js/ui.js:3154
 msgid "MyGCFlow est fermé"
 msgstr "MyGCFlow is closed"
 
-#: static/js/ui.js:3154
+#: static/js/ui.js:3155
 msgid "Vous pouvez fermer cet onglet."
 msgstr "You can close this tab."
 
@@ -3189,32 +3189,36 @@ msgstr "Select an audio file first"
 msgid "Aucune musique sélectionnée"
 msgstr "No music selected"
 
-#: static/js/ui.js:9096
+#: static/js/ui.js:9092
 msgid "Non disponible"
 msgstr "Not available"
 
-#: static/js/ui.js:9103 templates/_filter_cache_attrs.html:49
+#: static/js/ui.js:9112 templates/_filter_cache_attrs.html:49
 #: templates/_filter_cache_attrs.html:50
 msgid "Taille"
 msgstr "Size"
 
-#: static/js/ui.js:9104
+#: static/js/ui.js:9113
 msgid "Type"
 msgstr "Type"
 
-#: static/js/ui.js:9105
+#: static/js/ui.js:9113
+msgid "Type inconnu"
+msgstr "Unknown type"
+
+#: static/js/ui.js:9114
 msgid "Durée"
 msgstr "Duration"
 
-#: static/js/ui.js:9106
+#: static/js/ui.js:9115
 msgid "Modifié"
 msgstr "Modified"
 
-#: static/js/ui.js:9161
+#: static/js/ui.js:9157
 msgid "Erreur lors du chargement du fichier audio"
 msgstr "Error loading the audio file"
 
-#: static/js/ui.js:9260
+#: static/js/ui.js:9256
 #, python-brace-format
 msgid "Blanc de ${s} s détecté à la fin de la musique."
 msgstr "${s} s of silence detected at the end of the music."
@@ -3234,7 +3238,7 @@ msgstr ""
 msgid "Le dossier des vidéos n’a pas pu être modifié."
 msgstr "The videos folder could not be changed."
 
-#: static/js/video_postprocess.js:29
+#: static/js/video_postprocess.js:30
 #, python-brace-format
 msgid ""
 "Le navigateur limite l'accélération à x${effective} (x${requested} "
@@ -3245,61 +3249,61 @@ msgstr ""
 " the video will be about ${ratio}x slower than expected. Use server "
 "processing for an exact speed."
 
-#: static/js/video_postprocess.js:81
+#: static/js/video_postprocess.js:82
 msgid "captureStream non supporté pour la normalisation"
 msgstr "captureStream not supported for normalization"
 
-#: static/js/video_postprocess.js:89
+#: static/js/video_postprocess.js:90
 #, python-brace-format
 msgid "Timeout normalisation vidéo (${timeout}s) : lecture bloquée ?"
 msgstr "Video normalization timeout (${timeout}s): playback stalled?"
 
-#: static/js/video_postprocess.js:103 static/js/video_postprocess.js:259
+#: static/js/video_postprocess.js:104 static/js/video_postprocess.js:260
 msgid "inconnue"
 msgstr "unknown"
 
-#: static/js/video_postprocess.js:104
+#: static/js/video_postprocess.js:105
 #, python-brace-format
 msgid "Erreur encodeur lors de la normalisation : ${detail}"
 msgstr "Encoder error during normalization: ${detail}"
 
-#: static/js/video_postprocess.js:111
+#: static/js/video_postprocess.js:112
 #, python-brace-format
 msgid "Normalisation ${p}%"
 msgstr "animation ${d}"
 
-#: static/js/video_postprocess.js:111
+#: static/js/video_postprocess.js:112
 msgid "Normalisation en cours"
 msgstr "Import in progress"
 
-#: static/js/video_postprocess.js:128
+#: static/js/video_postprocess.js:129
 msgid "Erreur lecture vidéo pour normalisation"
 msgstr "Video playback error during normalization"
 
-#: static/js/video_postprocess.js:205
+#: static/js/video_postprocess.js:206
 msgid "captureStream non supporté pour mux audio"
 msgstr "captureStream not supported for audio muxing"
 
-#: static/js/video_postprocess.js:219
+#: static/js/video_postprocess.js:220
 #, python-brace-format
 msgid "Timeout mux audio (${timeout}s) : lecture bloquée ?"
 msgstr "Audio mux timeout (${timeout}s): playback stalled?"
 
-#: static/js/video_postprocess.js:232
+#: static/js/video_postprocess.js:233
 msgid "Aucune piste vidéo disponible pour le mux audio"
 msgstr "No video track available for audio muxing"
 
-#: static/js/video_postprocess.js:260
+#: static/js/video_postprocess.js:261
 #, python-brace-format
 msgid "Erreur encodeur lors du mux audio : ${detail}"
 msgstr "Encoder error during audio muxing: ${detail}"
 
-#: static/js/video_postprocess.js:282
+#: static/js/video_postprocess.js:283
 #, python-brace-format
 msgid "Impossible de démarrer la piste audio : ${detail}"
 msgstr "Could not start audio track: ${detail}"
 
-#: static/js/video_postprocess.js:296
+#: static/js/video_postprocess.js:297
 msgid "Erreur lecture vidéo pour mux audio"
 msgstr "Video playback error during audio muxing"
 
