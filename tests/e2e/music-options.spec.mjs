@@ -300,6 +300,47 @@ test('la dernière musique est rechargée au démarrage, avec le calage sur elle
 });
 
 
+test('la musique s\'écoute seule, telle que la vidéo l\'utilisera', async ({ page }) => {
+  const row = page.locator('#musicListenRow');
+  const listen = page.locator('#btnMusicListen');
+  const listenEnd = page.locator('#btnMusicListenEnd');
+  const head = page.locator('#musicWaveform .mw-playhead');
+  const headX = async () => Number(await head.getAttribute('x1'));
+  // Une ligne verticale a une boîte de largeur nulle : toBeVisible la dirait
+  // toujours masquée. On lit donc son affichage.
+  const headShown = () => head.evaluate((el) => el.style.display !== 'none');
+
+  await expect(row).toBeHidden();
+  // 20 s de musique démarrée à 5 s : vidéo calée sur les 15 s restantes.
+  await page.locator('#inputAudioFile').setInputFiles(wavFile('ecoute.wav', 20, 0));
+  await expect(row).toBeVisible();
+  await page.locator('#inputAudioStart').fill('5');
+  await page.locator('#inputAudioStart').blur();
+  await expect(page.locator('#musicSyncStatus')).toContainText('Durée calée sur la musique (15 s)');
+
+  // Écoute complète : depuis le point de départ (5 s sur 20, x = 250).
+  await listen.click();
+  await expect(listen).toHaveAttribute('aria-pressed', 'true');
+  await expect(listen).toContainText('Arrêter');
+  await expect.poll(headShown).toBe(true);
+  await expect.poll(headX).toBeGreaterThan(255);
+  expect(await headX()).toBeLessThan(500);
+  await listen.click();
+  await expect(listen).toHaveAttribute('aria-pressed', 'false');
+  await expect(listen).toContainText('Écouter');
+  expect(await headShown()).toBe(false);
+
+  // Écouter la fin : les 8 dernières secondes de la vidéo (de 12 à 20 s du
+  // fichier, x ≥ 600), puis arrêt automatique avec la vidéo.
+  await expect(listenEnd).toBeEnabled();
+  await listenEnd.click();
+  await expect(listenEnd).toHaveAttribute('aria-pressed', 'true');
+  await expect.poll(headX).toBeGreaterThanOrEqual(600);
+  await expect(listenEnd).toHaveAttribute('aria-pressed', 'false', { timeout: 15_000 });
+  expect(await headShown()).toBe(false);
+});
+
+
 test('la musique peut commencer en fondu, une seule fois', async ({ page }) => {
   const box = page.locator('#audioFadeInBox');
   const fadeIn = page.locator('#cbAudioFadeIn');

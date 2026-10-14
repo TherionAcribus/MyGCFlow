@@ -330,6 +330,22 @@ export function audioFadeInPlan() {
     return ms > 0 ? { seconds: ms / 1000 } : null;
 }
 
+// Ce que la vidéo fera de la musique, pour la lire à l'écran (aperçu de
+// l'animation, bouton « Écouter ») : cf. music_playback.mjs. Indépendant de
+// « Inclure la musique », pour que l'écoute reste possible ; les exports
+// passent par audioLoopPlan & co, qui en tiennent compte.
+export function musicPlaybackPlan(plan = lastTimingPlan) {
+    const fades = musicFades(plan);
+    return {
+        startMs: musicStartMs,
+        loop: musicLoops(plan) && musicEndMs > musicStartMs ? { startMs: musicStartMs, endMs: musicEndMs } : null,
+        fadeInMs: fades.fadeInMs,
+        fadeOutMs: fades.fadeOutMs,
+        videoMs: plan?.valid ? plan.totalDurationMs : 0,
+        volume: normalizeAudioVolume(pkg.options?.record?.audio?.volume),
+    };
+}
+
 // Durées effectives des fondus (ms) : celles demandées, réduites ensemble si
 // elles dépassent la vidéo (cf. clampFades). Le fondu de sortie ne compte que
 // là où il a un effet (musique encore jouée en fin de vidéo).
@@ -377,6 +393,7 @@ function updateMusicSyncUi(plan = lastTimingPlan) {
     if (inputAudioFadeOutSeconds) inputAudioFadeOutSeconds.disabled = !cbAudioFadeOut?.checked;
     if (inputAudioFadeInSeconds) inputAudioFadeInSeconds.disabled = !cbAudioFadeIn?.checked;
     renderMusicWaveform(plan);
+    syncListenButtons(plan);
 
     if (!status) return;
     const lines = [];
@@ -492,6 +509,64 @@ function renderMusicWaveform(plan = lastTimingPlan) {
 
 // Chronologie affichée, pour traduire un clic en position dans la musique.
 let lastMusicTimeline = null;
+
+// Écoute en cours : `true` pour « la fin », `false` pour l'écoute complète,
+// null sans écoute.
+let musicListeningFromEnd = null;
+
+function toggleMusicListening(fromEnd) {
+    if (pkg.isListeningToMusic?.() && musicListeningFromEnd === fromEnd) {
+        pkg.stopBackgroundMusic();
+        return;
+    }
+    if (pkg.isAnimationInProgress?.()) {
+        pkg.showToast?.(t('Arrêtez l\'animation pour écouter la musique seule.'), 'info', t('Musique'), 4000);
+        return;
+    }
+    musicListeningFromEnd = pkg.listenToMusic?.({ fromEnd }) ? fromEnd : null;
+    syncListenButtons();
+}
+
+// Lecture à l'écran (écoute ou aperçu de l'animation, background_audio.js) :
+// tête de lecture sur la forme d'onde, et état des boutons d'écoute. Le
+// temps écoulé est celui de la vidéo, qui démarre au point de départ sur
+// l'axe de la chronologie.
+function onMusicPlayback({ state, elapsedMs }) {
+    const head = document.querySelector('#musicWaveform .mw-playhead');
+    if (head) {
+        const visible = state !== 'stopped' && !!lastMusicTimeline;
+        head.style.display = visible ? '' : 'none';
+        if (visible) {
+            const x = timelineX(lastMusicTimeline.startMs + elapsedMs, lastMusicTimeline);
+            head.setAttribute('x1', x);
+            head.setAttribute('x2', x);
+        }
+    }
+    if (state === 'stopped') musicListeningFromEnd = null;
+    if (state !== 'position') syncListenButtons();
+}
+
+// Boutons d'écoute : visibles avec une musique ; celui de l'écoute en cours
+// devient « Arrêter ». « Écouter la fin » n'a de sens que pour une vidéo plus
+// longue que l'extrait joué.
+function syncListenButtons(plan = lastTimingPlan) {
+    const row = document.getElementById('musicListenRow');
+    if (row) row.hidden = !musicTrack.hasFile();
+    const listening = !!pkg.isListeningToMusic?.();
+    for (const [id, fromEnd, label] of [
+        ['btnMusicListen', false, t('Écouter')],
+        ['btnMusicListenEnd', true, t('Écouter la fin')],
+    ]) {
+        const btn = document.getElementById(id);
+        if (!btn) continue;
+        const active = listening && musicListeningFromEnd === fromEnd;
+        btn.setAttribute('aria-pressed', String(active));
+        btn.querySelector('i')?.setAttribute('class', `ti ${active ? 'ti-player-stop' : 'ti-player-play'} me-1`);
+        const text = btn.querySelector('span');
+        if (text) text.textContent = active ? t('Arrêter') : label;
+        if (fromEnd) btn.disabled = !active && !(plan?.valid && plan.totalDurationMs > (pkg.LISTEN_END_MS || 0));
+    }
+}
 
 // Clic sur la forme d'onde : la musique démarrera à la position cliquée (dans
 // une reprise de boucle, la position correspondante du motif). Le champ
@@ -1370,6 +1445,10 @@ function initOptionsElements() {
     // Un clic sur la forme d'onde choisit le point de départ.
     document.querySelector('#musicWaveform .music-waveform-graph')
         ?.addEventListener('click', (event) => setMusicStartFromWaveform(event));
+    // Écoute seule, et tête de lecture de la forme d'onde.
+    document.getElementById('btnMusicListen')?.addEventListener('click', () => toggleMusicListening(false));
+    document.getElementById('btnMusicListenEnd')?.addEventListener('click', () => toggleMusicListening(true));
+    document.addEventListener('mygcflow:music-playback', (event) => onMusicPlayback(event.detail));
     // Après la déclaration de tous les champs : mémorise le dernier manipulé
     // pour cibler l'indicateur « Enregistré ✓ ».
     trackRecordFieldTouches();
@@ -7931,6 +8010,8 @@ async function getAudioDuration(file) {
 
 // Musique choisie par l'utilisateur dans le sélecteur de fichier.
 async function selectMusic(file) {
+    // Une écoute en cours jouerait encore l'ancienne musique.
+    if (pkg.isListeningToMusic?.()) pkg.stopBackgroundMusic();
     // Devient la musique courante ; sa copie vers le serveur part aussitôt,
     // en tâche de fond.
     musicTrack.select(file);
@@ -7956,6 +8037,7 @@ async function selectMusic(file) {
 
 // Plus de musique : champ vidé (sélecteur annulé, ou bouton « Retirer »).
 function clearMusic() {
+    if (pkg.isListeningToMusic?.()) pkg.stopBackgroundMusic();
     musicTrack.clear();
     if (inputAudioFile) inputAudioFile.value = '';
     const audio = pkg.options?.record?.audio;

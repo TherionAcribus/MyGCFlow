@@ -331,6 +331,8 @@
                                     <g class="mw-loops"></g>
                                     <line class="mw-video-end" x1="0" x2="0" y1="0" y2="100"></line>
                                     <line class="mw-start" x1="0" x2="0" y1="0" y2="100"></line>
+                                    <!-- Tête de lecture : suit l'écoute et l'aperçu de l'animation. -->
+                                    <line class="mw-playhead" x1="0" x2="0" y1="0" y2="100" style="display:none;"></line>
                                 </svg>
                                 <div class="music-waveform-scale">
                                     <span>0:00</span><span id="musicWaveformSpan"></span>
@@ -343,6 +345,19 @@
                                     <span data-legend="loop" hidden><i class="mw-key mw-key-loop" aria-hidden="true"></i>{{ _("Reprise de la boucle") }}</span>
                                     <span data-legend="silent" hidden><i class="mw-key mw-key-silent" aria-hidden="true"></i>{{ _("Fin de vidéo sans musique") }}</span>
                                 </div>
+                            </div>
+                            <!-- Écoute de la musique seule, telle que la vidéo l'utilisera
+                                 (listenToMusic, background_audio.js ; boutons tenus à jour
+                                 par syncListenButtons, ui.js). -->
+                            <div id="musicListenRow" class="mt-2 d-flex gap-2 flex-wrap" hidden>
+                                <button type="button" id="btnMusicListen" class="btn btn-sm btn-outline-primary" aria-pressed="false"
+                                        title="{{ _('Entendre la musique comme dans la vidéo : départ, fondus, boucle, fin.') }}">
+                                    <i class="ti ti-player-play me-1" aria-hidden="true"></i><span>{{ _("Écouter") }}</span>
+                                </button>
+                                <button type="button" id="btnMusicListenEnd" class="btn btn-sm btn-outline-secondary" aria-pressed="false"
+                                        title="{{ _('Entendre seulement les dernières secondes de la vidéo, pour juger la fin de la musique.') }}">
+                                    <i class="ti ti-player-play me-1" aria-hidden="true"></i><span>{{ _("Écouter la fin") }}</span>
+                                </button>
                             </div>
                             <!-- Point de départ dans la musique (intro sautée) : aussi
                                  réglable d'un clic sur la forme d'onde. Visible avec une

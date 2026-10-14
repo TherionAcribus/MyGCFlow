@@ -2645,6 +2645,13 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
     stroke: var(--color-accent-strong);
     stroke-width: 2;
 }
+.music-waveform-graph .mw-playhead {
+    stroke: var(--color-warning);
+    stroke-width: 2;
+}
+#musicListenRow[hidden] {
+    display: none !important;
+}
 /* Assez large pour « 123.4 » sans déborder sur l'indication. */
 .audio-start-input {
     width: 7.5rem;

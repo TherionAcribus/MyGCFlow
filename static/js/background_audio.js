@@ -1,65 +1,110 @@
-// Musique de fond jouée pendant la prévisualisation de l'animation.
+// Musique jouée à l'écran : pendant l'aperçu de l'animation, et seule via le
+// bouton « Écouter » du sous-onglet Musique.
 //
 // Extrait de mapgl.js. Concerne uniquement la lecture « à l'écran » : pendant un
 // enregistrement la piste n'est pas jouée mais muxée après coup dans la vidéo
 // (cf. muxRecordedVideoWithAudio dans video_postprocess.js).
+//
+// Les deux lectures appliquent le même plan (musicPlaybackPlan, ui.js) : on
+// entend à l'écoute ce que la vidéo contiendra. Leur état est diffusé par
+// l'évènement `mygcflow:music-playback` sur document (detail : state
+// 'playing' | 'position' | 'stopped', mode, elapsedMs) — la forme d'onde y
+// pose sa tête de lecture.
 //
 // Le contexte audio « déverrouillé » par un geste utilisateur pour ce mux
 // post-enregistrement est stocké sur window.mrMuxAudioCtx (voie unique, partagée
 // avec ui.js qui l'initialise au clic).
 import * as pkg from './index.js';
 import { isRecordingActive } from './mapgl.js';
-import { normalizeAudioVolume } from './recording_settings.mjs';
-import { includedMusicFile } from './music_track.js';
+import { includedMusicFile, musicTrack } from './music_track.js';
+import { playbackGain, sourcePositionAt } from './music_playback.mjs';
+
+// Écoute seule : « la fin » rejoue ces dernières secondes de la vidéo.
+export const LISTEN_END_MS = 8000;
 
 let bgAudioCtx = null, bgAudioEl = null, bgAudioSource = null, bgAudioGain = null, bgAudioActive = false;
 let blockBackgroundAudioPlayback = false;
 let bgAudioWatchTimer = null;
-// La lecture ne part qu'une fois la piste placée sur son point de départ
+// La lecture ne part qu'une fois la piste placée sur sa position de départ
 // (`bgAudioBegun`) ; `bgAudioWanted` dit si elle doit jouer à ce moment-là
 // (une pause a pu survenir pendant le chargement).
 let bgAudioBegun = false, bgAudioWanted = false;
+// 'preview' (aperçu de l'animation) ou 'listen' (écoute seule), null à l'arrêt.
+let bgAudioMode = null;
+
+function notifyPlayback(state, elapsedMs = 0) {
+    document.dispatchEvent(new CustomEvent('mygcflow:music-playback', {
+        detail: { state, mode: bgAudioMode, elapsedMs },
+    }));
+}
 
 function playBackgroundAudio(context) {
     try { bgAudioCtx.resume().catch(()=>{}); } catch(_) {}
     bgAudioEl.play().then(()=>{ bgAudioActive = true; }).catch(e => console.warn(`${context} audio bloquée:`, e));
 }
 
-// Boucle et fondu de sortie de l'aperçu (cf. audioLoopPlan / audioFadeOutPlan
-// dans ui.js). Tout se règle sur la position de lecture de la piste, qui
-// avance et se met en pause avec l'animation — rien à reprogrammer à la
-// reprise. Le temps écoulé depuis le début de la vidéo est la somme des tours
-// de boucle déjà joués et du chemin parcouru depuis le point de départ.
-// La boucle est faite ici, pas par le navigateur : la sienne reprendrait au
-// début du fichier, intro comprise.
-function startPlaybackWatch(volume, startS) {
-    const fade = pkg.audioFadeOutPlan?.();
-    const fadeIn = pkg.audioFadeInPlan?.();
-    const loop = pkg.audioLoopPlan?.();
-    if (!fade && !fadeIn && !loop) return;
+// Lit `file` comme la vidéo l'utilisera, à partir de l'instant `fromVideoMs`
+// de la vidéo. Boucle et fondus se règlent sur la position de lecture de la
+// piste, qui avance et se met en pause avec l'animation — rien à reprogrammer
+// à la reprise. Le temps écoulé depuis le début de la vidéo est la somme des
+// tours de boucle déjà joués et du chemin parcouru depuis la position de
+// départ. La boucle est faite ici, pas par le navigateur : la sienne
+// reprendrait au début du fichier, intro comprise.
+// `stopAtVideoEnd` : l'écoute seule s'arrête d'elle-même avec la vidéo.
+function startPlayback(file, { mode, fromVideoMs = 0, stopAtVideoEnd = false }) {
+    stopBackgroundMusic();
+    const plan = pkg.musicPlaybackPlan?.() || { startMs: 0, loop: null, fadeInMs: 0, fadeOutMs: 0, videoMs: 0, volume: 1 };
+    const { sourceMs, playedLoopsMs } = sourcePositionAt(fromVideoMs, plan);
+    const loop = plan.loop;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    bgAudioCtx = new AC();
+    bgAudioEl = new Audio(URL.createObjectURL(file));
+    bgAudioEl.preload = 'auto';
+    bgAudioEl.loop = false;
+    bgAudioSource = bgAudioCtx.createMediaElementSource(bgAudioEl);
+    bgAudioGain = bgAudioCtx.createGain();
+    // Gain de l'instant de départ : 0 pour un fondu d'entrée, sans éclat.
+    bgAudioGain.gain.value = playbackGain(fromVideoMs, plan);
+    bgAudioSource.connect(bgAudioGain).connect(bgAudioCtx.destination);
+    bgAudioMode = mode;
+
+    let playedLoopsS = playedLoopsMs / 1000;
+    const startS = plan.startMs / 1000;
     const loopStartS = loop ? loop.startMs / 1000 : startS;
-    let playedLoopsS = 0;
+    const loopEndS = loop ? loop.endMs / 1000 : 0;
+    const videoS = plan.videoMs / 1000;
     bgAudioWatchTimer = setInterval(() => {
         if (!bgAudioEl || !bgAudioGain || !bgAudioBegun) return;
         let position = bgAudioEl.currentTime;
-        if (loop) {
-            const loopEndS = loop.endMs ? loop.endMs / 1000 : bgAudioEl.duration;
-            if (bgAudioEl.ended || (loopEndS > loopStartS && position >= loopEndS)) {
-                playedLoopsS += Math.min(position, loopEndS || position) - loopStartS;
-                bgAudioEl.currentTime = position = loopStartS;
-                // Arrivée en fin de fichier, la piste s'est arrêtée d'elle-même.
-                if (bgAudioEl.paused && bgAudioWanted) playBackgroundAudio('Boucle');
-            }
+        if (loop && (bgAudioEl.ended || position >= loopEndS)) {
+            playedLoopsS += Math.min(position, loopEndS) - loopStartS;
+            bgAudioEl.currentTime = position = loopStartS;
+            // Arrivée en fin de fichier, la piste s'est arrêtée d'elle-même.
+            if (bgAudioEl.paused && bgAudioWanted) playBackgroundAudio('Boucle');
         }
-        // Les deux fondus se multiplient : ils ne se chevauchent que sur une
-        // vidéo très courte, où clampFades les a déjà réduits.
-        const elapsed = playedLoopsS + position - startS;
-        const unit = (v) => Math.max(0, Math.min(1, v));
-        let gain = volume;
-        if (fadeIn) gain *= unit(elapsed / fadeIn.seconds);
-        if (fade) gain *= unit((fade.endMs / 1000 - elapsed) / fade.seconds);
-        bgAudioGain.gain.value = gain;
+        const elapsedS = playedLoopsS + position - startS;
+        if (stopAtVideoEnd && ((videoS > 0 && elapsedS >= videoS) || (!loop && bgAudioEl.ended))) {
+            stopBackgroundMusic();
+            return;
+        }
+        bgAudioGain.gain.value = playbackGain(elapsedS * 1000, plan);
+        notifyPlayback('position', elapsedS * 1000);
     }, 50);
+
+    // Position de départ (intro sautée, ou fin de vidéo pour l'écoute) : elle
+    // ne peut être posée qu'une fois les métadonnées lues ; jouer avant ferait
+    // entendre un éclat du début du fichier.
+    bgAudioWanted = true;
+    const el = bgAudioEl;
+    const begin = () => {
+        if (el !== bgAudioEl) return; // arrêtée ou remplacée entre-temps
+        if (sourceMs > 0) el.currentTime = sourceMs / 1000;
+        bgAudioBegun = true;
+        if (bgAudioWanted) playBackgroundAudio('Lecture');
+    };
+    if (sourceMs > 0 && el.readyState < 1) el.addEventListener('loadedmetadata', begin, { once: true });
+    else begin();
+    notifyPlayback('playing', fromVideoMs);
 }
 
 // Posé par les pipelines d'enregistrement : la musique ne doit pas démarrer
@@ -73,47 +118,36 @@ export function startBackgroundMusicIfAny(){
         // Ne pas jouer pendant l'enregistrement ni si bloqué explicitement
         if (isRecordingActive()) return;
         if (blockBackgroundAudioPlayback) return;
-
         // Nettoyer une éventuelle instance précédente (ex. relance après pause
-        // sans passage par resumeBackgroundMusic) pour ne pas fuiter de contexte.
+        // sans passage par resumeBackgroundMusic, ou écoute en cours) pour ne
+        // pas fuiter de contexte.
         stopBackgroundMusic();
-
         const file = includedMusicFile();
         if (!file) return;
-
-        const volume = normalizeAudioVolume(pkg.options?.record?.audio?.volume);
-        const AC = window.AudioContext || window.webkitAudioContext;
-        bgAudioCtx = new AC();
-
-        bgAudioEl = new Audio(URL.createObjectURL(file));
-        bgAudioEl.preload = 'auto';
-        // Jamais la boucle du navigateur : elle reprendrait au début du
-        // fichier, intro comprise (la boucle est faite par startPlaybackWatch).
-        bgAudioEl.loop = false;
-
-        bgAudioSource = bgAudioCtx.createMediaElementSource(bgAudioEl);
-        bgAudioGain = bgAudioCtx.createGain();
-        // Fondu d'entrée : partir du silence, la montée suit (startPlaybackWatch).
-        bgAudioGain.gain.value = pkg.audioFadeInPlan?.() ? 0 : volume;
-        bgAudioSource.connect(bgAudioGain).connect(bgAudioCtx.destination);
-        // Point de départ (intro sautée) : la position ne peut être posée
-        // qu'une fois les métadonnées lues ; jouer avant ferait entendre un
-        // éclat d'intro.
-        const startS = (pkg.audioStartMs?.() || 0) / 1000;
-        startPlaybackWatch(volume, startS);
-        bgAudioWanted = true;
-        const el = bgAudioEl;
-        const begin = () => {
-            if (el !== bgAudioEl) return; // arrêtée ou remplacée entre-temps
-            if (startS > 0) el.currentTime = startS;
-            bgAudioBegun = true;
-            if (bgAudioWanted) playBackgroundAudio('Lecture');
-        };
-        if (startS > 0 && el.readyState < 1) el.addEventListener('loadedmetadata', begin, { once: true });
-        else begin();
+        startPlayback(file, { mode: 'preview' });
     } catch(e) {
         console.warn('startBackgroundMusicIfAny error:', e);
     }
+}
+
+// Écoute seule de la musique choisie, telle que la vidéo l'utilisera — même
+// si « Inclure la musique » est décochée. `fromEnd` : seulement les
+// dernières secondes, pour juger la fin (coupure, fondu) sans attendre.
+// Refusée pendant l'animation ou une capture, qui ont la main sur la musique.
+export function listenToMusic({ fromEnd = false } = {}) {
+    const file = musicTrack.file();
+    if (!file || isRecordingActive() || pkg.isAnimationInProgress?.()) return false;
+    const videoMs = pkg.musicPlaybackPlan?.().videoMs || 0;
+    startPlayback(file, {
+        mode: 'listen',
+        fromVideoMs: fromEnd ? Math.max(0, videoMs - LISTEN_END_MS) : 0,
+        stopAtVideoEnd: true,
+    });
+    return true;
+}
+
+export function isListeningToMusic() {
+    return bgAudioMode === 'listen';
 }
 
 // Pause douce : conserve l'élément, le contexte et la position de lecture pour
@@ -139,7 +173,7 @@ export function resumeBackgroundMusic(){
         }
         // Piste déjà finie au moment de la pause : ne pas la relancer depuis
         // zéro (une boucle, elle, la replace d'elle-même sur son départ).
-        if (bgAudioEl.ended && !pkg.audioLoopPlan?.()) {
+        if (bgAudioEl.ended && !pkg.musicPlaybackPlan?.().loop) {
             stopBackgroundMusic();
             return;
         }
@@ -154,11 +188,14 @@ export function resumeBackgroundMusic(){
 
 export function stopBackgroundMusic(){
     if (bgAudioWatchTimer) { clearInterval(bgAudioWatchTimer); bgAudioWatchTimer = null; }
+    const wasPlaying = !!bgAudioEl;
     try { if (bgAudioEl) { bgAudioEl.pause(); URL.revokeObjectURL(bgAudioEl.src); } } catch(_) {}
     try { if (bgAudioCtx) { bgAudioCtx.close(); } } catch(_) {}
     bgAudioEl = bgAudioCtx = bgAudioSource = bgAudioGain = null;
     bgAudioActive = false;
     bgAudioBegun = bgAudioWanted = false;
+    if (wasPlaying) notifyPlayback('stopped');
+    bgAudioMode = null;
 }
 
 // Bouton « Parcourir… » de l'input musique (masqué visuellement) : le
