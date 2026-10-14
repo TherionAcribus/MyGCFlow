@@ -159,6 +159,8 @@ def start_create_video():
                 audio_loop_end=_param('audio_loop_end', 0),
                 # Point de départ dans la musique (secondes), validé de même.
                 audio_start=_param('audio_start', 0),
+                # Fondu d'entrée (secondes), borné comme le fondu de sortie.
+                audio_fade_in=_param('audio_fade_in', 0),
                 exclusive=True,
             )
         except TaskAlreadyRunning as exc:

@@ -34,8 +34,9 @@ function playBackgroundAudio(context) {
 // début du fichier, intro comprise.
 function startPlaybackWatch(volume, startS) {
     const fade = pkg.audioFadeOutPlan?.();
+    const fadeIn = pkg.audioFadeInPlan?.();
     const loop = pkg.audioLoopPlan?.();
-    if (!fade && !loop) return;
+    if (!fade && !fadeIn && !loop) return;
     const loopStartS = loop ? loop.startMs / 1000 : startS;
     let playedLoopsS = 0;
     bgAudioWatchTimer = setInterval(() => {
@@ -50,10 +51,14 @@ function startPlaybackWatch(volume, startS) {
                 if (bgAudioEl.paused && bgAudioWanted) playBackgroundAudio('Boucle');
             }
         }
-        if (fade) {
-            const remaining = fade.endMs / 1000 - (playedLoopsS + position - startS);
-            bgAudioGain.gain.value = volume * Math.max(0, Math.min(1, remaining / fade.seconds));
-        }
+        // Les deux fondus se multiplient : ils ne se chevauchent que sur une
+        // vidéo très courte, où clampFades les a déjà réduits.
+        const elapsed = playedLoopsS + position - startS;
+        const unit = (v) => Math.max(0, Math.min(1, v));
+        let gain = volume;
+        if (fadeIn) gain *= unit(elapsed / fadeIn.seconds);
+        if (fade) gain *= unit((fade.endMs / 1000 - elapsed) / fade.seconds);
+        bgAudioGain.gain.value = gain;
     }, 50);
 }
 
@@ -88,13 +93,14 @@ export function startBackgroundMusicIfAny(){
 
         bgAudioSource = bgAudioCtx.createMediaElementSource(bgAudioEl);
         bgAudioGain = bgAudioCtx.createGain();
-        bgAudioGain.gain.value = volume;
+        // Fondu d'entrée : partir du silence, la montée suit (startPlaybackWatch).
+        bgAudioGain.gain.value = pkg.audioFadeInPlan?.() ? 0 : volume;
         bgAudioSource.connect(bgAudioGain).connect(bgAudioCtx.destination);
         // Point de départ (intro sautée) : la position ne peut être posée
         // qu'une fois les métadonnées lues ; jouer avant ferait entendre un
         // éclat d'intro.
         const startS = (pkg.audioStartMs?.() || 0) / 1000;
-        startPlaybackWatch(bgAudioGain.gain.value, startS);
+        startPlaybackWatch(volume, startS);
         bgAudioWanted = true;
         const el = bgAudioEl;
         const begin = () => {

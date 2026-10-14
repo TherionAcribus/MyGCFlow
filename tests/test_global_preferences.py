@@ -73,6 +73,12 @@ class RecordingCoercionTests(unittest.TestCase):
         self.assertFalse(coerce_recording_settings({}).audio_fade_out)
         self.assertTrue(coerce_recording_settings({"audio_fade_out": True}).audio_fade_out)
 
+    def test_fade_durations_have_defaults_and_bounds(self):
+        r = coerce_recording_settings({})
+        self.assertEqual((r.audio_fade_in, r.audio_fade_in_seconds, r.audio_fade_out_seconds), (False, 2.0, 3.0))
+        r = coerce_recording_settings({"audio_fade_in": True, "audio_fade_in_seconds": 90, "audio_fade_out_seconds": 0})
+        self.assertEqual((r.audio_fade_in, r.audio_fade_in_seconds, r.audio_fade_out_seconds), (True, 30.0, 0.5))
+
     def test_music_loop_is_opt_in(self):
         self.assertFalse(coerce_recording_settings({}).audio_loop)
         self.assertTrue(coerce_recording_settings({"audio_loop": True}).audio_loop)

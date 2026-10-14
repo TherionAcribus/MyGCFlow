@@ -344,6 +344,25 @@ class VideoProcessingTests(unittest.TestCase):
                     else:
                         self.assertLess(abs(later - intro), 3)
 
+    def test_the_music_can_fade_in_once_even_when_looped(self):
+        """Musique de 2 s bouclée sur 6 s, fondu d'entrée de 1,5 s : le début
+        est plus faible que le premier tour plein, mais pas les reprises."""
+        for pipeline in ("images", "mediarecorder"):
+            for fade_in in (0.0, 1.5):
+                with self.subTest(pipeline=pipeline, fade_in=fade_in), tempfile.TemporaryDirectory() as tmp:
+                    tmp_path = Path(tmp)
+                    (tmp_path / "audio").mkdir()
+                    self._create_audio(tmp_path / "audio" / "tone.wav", 2)
+                    output = self._process_with_music(tmp_path, pipeline, audio_loop=True, audio_fade_in=fade_in)
+                    opening = self._mean_volume_db(output, 0, 0.5)
+                    second_loop = self._mean_volume_db(output, 2.1, 0.5)
+                    third_loop = self._mean_volume_db(output, 4.1, 0.5)
+                    self.assertLess(abs(second_loop - third_loop), 3)
+                    if fade_in:
+                        self.assertGreater(second_loop - opening, 6)
+                    else:
+                        self.assertLess(abs(second_loop - opening), 3)
+
     def test_rate_parser(self):
         self.assertEqual(_parse_rate("30000/1001"), 30000 / 1001)
         self.assertEqual(_parse_rate("24/1"), 24)

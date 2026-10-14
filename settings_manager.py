@@ -229,6 +229,8 @@ def write_json(path: Path, obj: dict) -> None:
 # Même borne que le champ de saisie (maxlength) de l'onglet Export.
 RECORDING_FILE_NAME_MAX_LENGTH = 80
 AUDIO_FILE_NAME_MAX_LENGTH = 255
+AUDIO_FADE_MIN_SECONDS = 0.5
+AUDIO_FADE_MAX_SECONDS = 30.0
 
 
 @dataclass
@@ -279,6 +281,10 @@ class RecordingSettings:
     # Terminer la musique en fondu quand elle est plus longue que la vidéo,
     # au lieu de la couper net.
     audio_fade_out: bool = False
+    audio_fade_out_seconds: float = 3.0
+    # Faire monter la musique en fondu au début de la vidéo.
+    audio_fade_in: bool = False
+    audio_fade_in_seconds: float = 2.0
     # Répéter la musique en boucle quand elle est plus courte que la vidéo.
     audio_loop: bool = False
     # Dernière musique choisie, rechargée au démarrage : son nom dans le
@@ -797,6 +803,13 @@ def coerce_recording_settings(d: dict) -> RecordingSettings:
     r.audio_volume = _clamp_float(d.get("audio_volume"), r.audio_volume, 0.0, 1.0)
     r.audio_trim_silence = bool(d.get("audio_trim_silence", r.audio_trim_silence))
     r.audio_fade_out = bool(d.get("audio_fade_out", r.audio_fade_out))
+    # Durées de fondu : mêmes bornes que l'interface (static/js/music_waveform.mjs,
+    # FADE_LIMITS) et que capture._safe_fade_out pour le plafond.
+    r.audio_fade_out_seconds = _clamp_float(
+        d.get("audio_fade_out_seconds"), r.audio_fade_out_seconds, AUDIO_FADE_MIN_SECONDS, AUDIO_FADE_MAX_SECONDS)
+    r.audio_fade_in = bool(d.get("audio_fade_in", r.audio_fade_in))
+    r.audio_fade_in_seconds = _clamp_float(
+        d.get("audio_fade_in_seconds"), r.audio_fade_in_seconds, AUDIO_FADE_MIN_SECONDS, AUDIO_FADE_MAX_SECONDS)
     r.audio_loop = bool(d.get("audio_loop", r.audio_loop))
     audio_file = d.get("audio_file")
     if isinstance(audio_file, str):

@@ -2719,6 +2719,20 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
 .mw-key-fade {
     background: linear-gradient(to right, var(--color-accent), transparent);
 }
+.mw-key-fade-in {
+    background: linear-gradient(to right, transparent, var(--color-accent));
+}
+/* Durée de fondu à côté de sa case : sur la même ligne, compacte. */
+.audio-fade-duration {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 8px;
+    vertical-align: middle;
+}
+.audio-fade-duration .form-control {
+    width: 4.5rem;
+}
 .mw-key-loop {
     width: 2px;
     height: 12px;

@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    musicTimeline, sourceMsAt, timelineMsAt, timelineX, waveformPath, waveformPeaks,
+    clampFades, FADE_LIMITS, musicTimeline, normalizeFadeSeconds, sourceMsAt, timelineMsAt, timelineX,
+    waveformPath, waveformPeaks,
 } from './static/js/music_waveform.mjs';
 import { analyzeChannels } from './static/js/music_analysis.mjs';
 
@@ -123,6 +124,26 @@ test('un instant de la chronologie renvoie à la position entendue dans le fichi
 test('un point de départ hors de la musique est ramené dans ses bornes', () => {
     assert.equal(musicTimeline({ fileMs: 5_000, startMs: 9_000 }).startMs, 5_000);
     assert.equal(musicTimeline({ fileMs: 5_000, startMs: -1 }).intro, null);
+});
+
+test('le fondu d\'entrée part du point de départ', () => {
+    const tl = musicTimeline({ fileMs: 60_000, startMs: 10_000, videoMs: 20_000, fadeInMs: 2_000 });
+    assert.deepEqual(tl.fadeIn, { startMs: 10_000, endMs: 12_000 });
+    assert.equal(musicTimeline({ fileMs: 60_000, fadeInMs: 2_000 }).fadeIn, null);
+});
+
+test('deux fondus plus longs que la vidéo sont réduits dans les mêmes proportions', () => {
+    assert.deepEqual(clampFades({ videoMs: 10_000, fadeInMs: 2_000, fadeOutMs: 3_000 }), { fadeInMs: 2_000, fadeOutMs: 3_000 });
+    assert.deepEqual(clampFades({ videoMs: 4_000, fadeInMs: 2_000, fadeOutMs: 6_000 }), { fadeInMs: 1_000, fadeOutMs: 3_000 });
+    assert.deepEqual(clampFades({ videoMs: 0, fadeInMs: 2_000 }), { fadeInMs: 2_000, fadeOutMs: 0 });
+});
+
+test('une durée de fondu saisie est bornée', () => {
+    assert.equal(normalizeFadeSeconds('4.5', 3), 4.5);
+    assert.equal(normalizeFadeSeconds(0, 3), FADE_LIMITS.min);
+    assert.equal(normalizeFadeSeconds(120, 3), FADE_LIMITS.max);
+    assert.equal(normalizeFadeSeconds('', 3), 3);
+    assert.equal(normalizeFadeSeconds('abc', 2), 2);
 });
 
 test('les positions sont bornées à l\'étendue affichée', () => {

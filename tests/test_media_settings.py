@@ -114,6 +114,29 @@ class AudioLoopFilterTests(unittest.TestCase):
             self.assertEqual(capture._safe_loop_end(value), 0.0)
 
 
+class AudioFadeInFilterTests(unittest.TestCase):
+    """Fondu d'entrée de la musique, au début de la vidéo."""
+
+    def test_the_music_rises_at_the_start_of_the_video(self):
+        self.assertEqual(
+            capture._audio_filter_chain(1.0, 60.0, fade_in=2.0),
+            "volume=1.0,afade=t=in:st=0:d=2.000,apad",
+        )
+
+    def test_the_fade_in_follows_the_loop_so_it_is_played_once(self):
+        self.assertEqual(
+            capture._audio_filter_chain(1.0, 60.0, 3.0, loop=True, start=1.0, fade_in=2.0),
+            "volume=1.0,atrim=start=1.000,asetpts=PTS-STARTPTS,aloop=loop=-1:size=2147483647,"
+            "afade=t=in:st=0:d=2.000,afade=t=out:st=57.000:d=3.000,apad",
+        )
+
+    def test_the_fade_in_never_lasts_longer_than_the_video(self):
+        self.assertEqual(
+            capture._audio_filter_chain(1.0, 1.5, fade_in=2.0),
+            "volume=1.0,afade=t=in:st=0:d=1.500,apad",
+        )
+
+
 class AudioStartFilterTests(unittest.TestCase):
     """Point de départ dans la musique (intro sautée)."""
 

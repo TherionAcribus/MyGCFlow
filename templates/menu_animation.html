@@ -316,11 +316,17 @@
                                             <stop offset="0" class="mw-fade-from"></stop>
                                             <stop offset="1" class="mw-fade-to"></stop>
                                         </linearGradient>
+                                        <!-- Fondu d'entrée : le voile s'efface au lieu de s'épaissir. -->
+                                        <linearGradient id="musicWaveformFadeInGradient" x1="0" x2="1" y1="0" y2="0">
+                                            <stop offset="0" class="mw-fade-to"></stop>
+                                            <stop offset="1" class="mw-fade-from"></stop>
+                                        </linearGradient>
                                     </defs>
                                     <path class="mw-wave" d=""></path>
                                     <rect class="mw-intro" x="0" y="0" width="0" height="100"></rect>
                                     <rect class="mw-cut" x="0" y="0" width="0" height="100"></rect>
                                     <rect class="mw-fade" x="0" y="0" width="0" height="100" fill="url(#musicWaveformFadeGradient)"></rect>
+                                    <rect class="mw-fade-in" x="0" y="0" width="0" height="100" fill="url(#musicWaveformFadeInGradient)"></rect>
                                     <line class="mw-silent" x1="0" x2="0" y1="50" y2="50"></line>
                                     <g class="mw-loops"></g>
                                     <line class="mw-video-end" x1="0" x2="0" y1="0" y2="100"></line>
@@ -332,7 +338,8 @@
                                 <div class="music-waveform-legend">
                                     <span data-legend="intro" hidden><i class="mw-key mw-key-intro" aria-hidden="true"></i>{{ _("Début sauté") }}</span>
                                     <span data-legend="cut" hidden><i class="mw-key mw-key-cut" aria-hidden="true"></i>{{ _("Après la fin de la vidéo (non jouée)") }}</span>
-                                    <span data-legend="fade" hidden><i class="mw-key mw-key-fade" aria-hidden="true"></i>{{ _("Fondu") }}</span>
+                                    <span data-legend="fadeIn" hidden><i class="mw-key mw-key-fade-in" aria-hidden="true"></i>{{ _("Fondu d'entrée") }}</span>
+                                    <span data-legend="fade" hidden><i class="mw-key mw-key-fade" aria-hidden="true"></i>{{ _("Fondu de sortie") }}</span>
                                     <span data-legend="loop" hidden><i class="mw-key mw-key-loop" aria-hidden="true"></i>{{ _("Reprise de la boucle") }}</span>
                                     <span data-legend="silent" hidden><i class="mw-key mw-key-silent" aria-hidden="true"></i>{{ _("Fin de vidéo sans musique") }}</span>
                                 </div>
@@ -383,14 +390,32 @@
                             <div id="audioLoopBox" class="form-check mt-2 mb-0" style="display:none;">
                                 <input id="cbAudioLoop" class="form-check-input" type="checkbox">
                                 <label class="form-check-label" for="cbAudioLoop"
-                                       title="{{ _('La musique reprend au début chaque fois qu\'elle se termine, jusqu\'à la fin de la vidéo.') }}">{{ _("Répéter la musique en boucle") }}</label>
+                                       title="{{ _('La musique reprend à son point de départ chaque fois qu\'elle se termine, jusqu\'à la fin de la vidéo.') }}">{{ _("Répéter la musique en boucle") }}</label>
+                            </div>
+                            <!-- Fondus : durée réglable à côté de chaque case, active
+                                 seulement quand le fondu est demandé (updateMusicSyncUi,
+                                 ui.js). Le fondu d'entrée est affiché avec toute musique. -->
+                            <div id="audioFadeInBox" class="form-check mt-2 mb-0 audio-fade-row" style="display:none;">
+                                <input id="cbAudioFadeIn" class="form-check-input" type="checkbox">
+                                <label class="form-check-label" for="cbAudioFadeIn"
+                                       title="{{ _('Le volume de la musique monte progressivement au début de la vidéo.') }}">{{ _("Commencer la musique en fondu") }}</label>
+                                <span class="audio-fade-duration">
+                                    <input id="inputAudioFadeInSeconds" type="number" min="0.5" max="30" step="0.5" value="2"
+                                           class="form-control form-control-sm" aria-label="{{ _('Durée du fondu d\'entrée, en secondes') }}">
+                                    <span aria-hidden="true">s</span>
+                                </span>
                             </div>
                             <!-- Affiché seulement quand la musique joue encore à la
                                  fin de la vidéo (updateMusicSyncUi, ui.js). -->
-                            <div id="audioFadeOutBox" class="form-check mt-2 mb-0" style="display:none;">
+                            <div id="audioFadeOutBox" class="form-check mt-2 mb-0 audio-fade-row" style="display:none;">
                                 <input id="cbAudioFadeOut" class="form-check-input" type="checkbox">
                                 <label class="form-check-label" for="cbAudioFadeOut"
-                                       title="{{ _('Le volume de la musique baisse progressivement sur les 3 dernières secondes de la vidéo, au lieu d\'une coupure nette.') }}">{{ _("Terminer la musique en fondu") }}</label>
+                                       title="{{ _('Le volume de la musique baisse progressivement à la fin de la vidéo, au lieu d\'une coupure nette.') }}">{{ _("Terminer la musique en fondu") }}</label>
+                                <span class="audio-fade-duration">
+                                    <input id="inputAudioFadeOutSeconds" type="number" min="0.5" max="30" step="0.5" value="3"
+                                           class="form-control form-control-sm" aria-label="{{ _('Durée du fondu de sortie, en secondes') }}">
+                                    <span aria-hidden="true">s</span>
+                                </span>
                             </div>
                             <!-- État textuel de la synchronisation, annoncé aux
                                  lecteurs d'écran (le badge seul ne suffit pas). -->

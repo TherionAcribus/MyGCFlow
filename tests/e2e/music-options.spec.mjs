@@ -117,8 +117,23 @@ test('une musique plus longue que la vidéo peut se terminer en fondu', async ({
   expect(plan.endMs).toBeGreaterThan(0);
   expect(plan.endMs).toBeLessThan(60_000);
 
+  // Durée réglable, bornée à 30 s.
+  const seconds = page.locator('#inputAudioFadeOutSeconds');
+  await expect(seconds).toBeEnabled();
+  await seconds.fill('1.5');
+  await seconds.blur();
+  await expect.poll(async () => (await fadePlan()).seconds).toBe(1.5);
+  await expect.poll(async () => (await recordingSettings(page)).audio_fade_out_seconds).toBe(1.5);
+  await seconds.fill('99');
+  await seconds.blur();
+  await expect(seconds).toHaveValue('30');
+  await seconds.fill('3');
+  await seconds.blur();
+  await expect.poll(async () => (await recordingSettings(page)).audio_fade_out_seconds).toBe(3);
+
   // Remet la préférence globale dans son état initial pour les specs suivantes.
   await fade.uncheck();
+  await expect(seconds).toBeDisabled();
   await expect(status).toContainText('elle sera coupée en fin de vidéo');
   await expect.poll(async () => (await recordingSettings(page)).audio_fade_out).toBe(false);
 });
@@ -282,6 +297,47 @@ test('la dernière musique est rechargée au démarrage, avec le calage sur elle
   await reopen();
   await expect(info).toContainText('Aucune musique sélectionnée');
   await expect(remove).toBeHidden();
+});
+
+
+test('la musique peut commencer en fondu, une seule fois', async ({ page }) => {
+  const box = page.locator('#audioFadeInBox');
+  const fadeIn = page.locator('#cbAudioFadeIn');
+  const seconds = page.locator('#inputAudioFadeInSeconds');
+  const status = page.locator('#musicSyncStatus');
+  const fadeInPlan = () => page.evaluate(async () => (await import('/static/js/index.js')).audioFadeInPlan());
+
+  await expect(box).toBeHidden();
+  await page.locator('#inputAudioFile').setInputFiles(wavFile('fondu.wav', 20, 0));
+  // Toujours utile : proposé dès qu'il y a une musique, durée inactive tant
+  // que la case n'est pas cochée.
+  await expect(box).toBeVisible();
+  await expect(fadeIn).not.toBeChecked();
+  await expect(seconds).toBeDisabled();
+  expect(await fadeInPlan()).toBeNull();
+
+  await fadeIn.check();
+  await expect(seconds).toBeEnabled();
+  await expect(status).toContainText('Elle commencera en fondu.');
+  await expect(page.locator('#musicWaveform [data-legend="fadeIn"]')).toBeVisible();
+  expect(await fadeInPlan()).toEqual({ seconds: 2 });
+  await seconds.fill('4');
+  await seconds.blur();
+  await expect.poll(fadeInPlan).toEqual({ seconds: 4 });
+  await expect.poll(async () => {
+    const r = await recordingSettings(page);
+    return [r.audio_fade_in, r.audio_fade_in_seconds];
+  }).toEqual([true, 4]);
+
+  // Remet les préférences globales dans leur état initial.
+  await seconds.fill('2');
+  await seconds.blur();
+  await fadeIn.uncheck();
+  await expect(page.locator('#musicWaveform [data-legend="fadeIn"]')).toBeHidden();
+  await expect.poll(async () => {
+    const r = await recordingSettings(page);
+    return [r.audio_fade_in, r.audio_fade_in_seconds];
+  }).toEqual([false, 2]);
 });
 
 

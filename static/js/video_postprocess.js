@@ -134,11 +134,13 @@ export function normalizeRecordedVideoSpeed(sourceBlob, factor){
     });
 }
 
-// `fadeOut` ({ seconds, endMs } ou null, cf. audioFadeOutPlan dans ui.js) :
-// fondu de sortie de la musique se terminant à la fin prévue de la vidéo.
-// `loop` ({ startMs, endMs } ou null, cf. audioLoopPlan) : musique répétée en boucle.
-// `startMs` (cf. audioStartMs) : point de départ dans la musique, intro sautée.
-export function muxRecordedVideoWithAudio(sourceBlob, audioFile, fadeOut = null, loop = null, startMs = 0){
+// Options de la musique (plans calculés par ui.js) :
+//   fadeOut ({ seconds, endMs } ou null, cf. audioFadeOutPlan) : fondu de
+//           sortie se terminant à la fin prévue de la vidéo ;
+//   fadeIn  ({ seconds } ou null, cf. audioFadeInPlan) : montée au début ;
+//   loop    ({ startMs, endMs } ou null, cf. audioLoopPlan) : boucle ;
+//   startMs (cf. audioStartMs) : point de départ dans la musique, intro sautée.
+export function muxRecordedVideoWithAudio(sourceBlob, audioFile, { fadeOut = null, fadeIn = null, loop = null, startMs = 0 } = {}){
     return new Promise((resolve, reject) => {
         try {
             const video = document.createElement('video');
@@ -276,10 +278,18 @@ export function muxRecordedVideoWithAudio(sourceBlob, audioFile, fadeOut = null,
                             try {
                                 // Décalage : l'intro sautée n'est pas jouée.
                                 audioNode.start(0, startMs / 1000);
+                                // Fondus planifiés sur l'horloge audio. Ils ne se
+                                // chevauchent pas : clampFades (ui.js) les a bornés.
+                                const now = audioCtx.currentTime;
+                                const volume = audioGain.gain.value;
+                                if (fadeIn && fadeIn.seconds > 0) {
+                                    audioGain.gain.setValueAtTime(0, now);
+                                    audioGain.gain.linearRampToValueAtTime(volume, now + fadeIn.seconds);
+                                }
                                 if (fadeOut && fadeOut.seconds > 0 && fadeOut.endMs > 0) {
-                                    const end = audioCtx.currentTime + fadeOut.endMs / 1000;
-                                    const start = Math.max(audioCtx.currentTime, end - fadeOut.seconds);
-                                    audioGain.gain.setValueAtTime(audioGain.gain.value, start);
+                                    const end = now + fadeOut.endMs / 1000;
+                                    const start = Math.max(now, end - fadeOut.seconds);
+                                    audioGain.gain.setValueAtTime(volume, start);
                                     audioGain.gain.linearRampToValueAtTime(0, end);
                                 }
                             } catch(e) {

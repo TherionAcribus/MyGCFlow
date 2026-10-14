@@ -5,6 +5,30 @@
 // Module pur (testé par test_music_waveform.mjs) : calcul des pics, de la
 // chronologie et du tracé. Le dessin SVG est fait par ui.js.
 
+// Bornes des durées de fondu (secondes) : mêmes valeurs côté serveur
+// (settings_manager.AUDIO_FADE_*_SECONDS).
+export const FADE_LIMITS = Object.freeze({ min: 0.5, max: 30, step: 0.5 });
+
+// Durée de fondu saisie, bornée ; `fallback` si la valeur est illisible.
+export function normalizeFadeSeconds(value, fallback) {
+    const n = Number(value);
+    if (value === '' || value === null || value === undefined || !Number.isFinite(n)) return fallback;
+    return Math.max(FADE_LIMITS.min, Math.min(FADE_LIMITS.max, n));
+}
+
+// Fondus d'entrée et de sortie appliqués à une vidéo de `videoMs` : réduits
+// dans les mêmes proportions quand, ensemble, ils dépassent la vidéo — sinon
+// la musique ne remonterait jamais à son plein volume. Calcul unique, lu par
+// l'aperçu, les deux exports et la forme d'onde.
+export function clampFades({ videoMs, fadeInMs = 0, fadeOutMs = 0 }) {
+    const fadeIn = Math.max(0, fadeInMs || 0);
+    const fadeOut = Math.max(0, fadeOutMs || 0);
+    const total = fadeIn + fadeOut;
+    if (!(videoMs > 0) || total <= videoMs) return { fadeInMs: fadeIn, fadeOutMs: fadeOut };
+    const ratio = videoMs / total;
+    return { fadeInMs: fadeIn * ratio, fadeOutMs: fadeOut * ratio };
+}
+
 // Nombre de pics gardés d'une piste : bien plus que de colonnes affichées,
 // pour rester net quand la boucle ne montre qu'une partie de la piste.
 export const WAVEFORM_PEAK_COUNT = 2000;
@@ -42,6 +66,7 @@ export function waveformPeaks(channels, count = WAVEFORM_PEAK_COUNT) {
 //   startMs  : point de départ dans la musique (0 = début du fichier)
 //   loopMs   : longueur du motif répété (depuis le départ), ou 0 sans boucle
 //   fadeMs   : durée du fondu de sortie, ou 0
+//   fadeInMs : durée du fondu d'entrée, ou 0
 //   toleranceMs : écart en deçà duquel musique et vidéo sont de même durée
 //                 (ni partie coupée, ni fin muette : même règle que le texte
 //                 d'état de l'interface)
@@ -55,9 +80,11 @@ export function waveformPeaks(channels, count = WAVEFORM_PEAK_COUNT) {
 //   cut       : partie de la musique au-delà de la fin de la vidéo (non jouée) ;
 //               son début marque la fin de la vidéo
 //   silent    : fin de vidéo sans musique (musique plus courte, sans boucle)
-//   fade      : fondu de sortie
-export function musicTimeline({ fileMs, startMs = 0, videoMs = 0, loopMs = 0, fadeMs = 0, toleranceMs = 0 }) {
-    const empty = { spanMs: 0, startMs: 0, segments: [], intro: null, loopPoints: [], cut: null, silent: null, fade: null };
+//   fade      : fondu de sortie ;  fadeIn : fondu d'entrée
+export function musicTimeline({ fileMs, startMs = 0, videoMs = 0, loopMs = 0, fadeMs = 0, fadeInMs = 0, toleranceMs = 0 }) {
+    const empty = {
+        spanMs: 0, startMs: 0, segments: [], intro: null, loopPoints: [], cut: null, silent: null, fade: null, fadeIn: null,
+    };
     if (!(fileMs > 0)) return empty;
     const start = Math.max(0, Math.min(Number(startMs) || 0, fileMs));
     const hasVideo = videoMs > 0;
@@ -86,6 +113,7 @@ export function musicTimeline({ fileMs, startMs = 0, videoMs = 0, loopMs = 0, fa
         cut: hasVideo && beyond(spanMs, videoEnd) ? { startMs: videoEnd, endMs: spanMs } : null,
         silent: hasVideo && !loop && beyond(videoEnd, fileMs) ? { startMs: fileMs, endMs: videoEnd } : null,
         fade: hasVideo && fadeMs > 0 ? { startMs: Math.max(start, videoEnd - fadeMs), endMs: videoEnd } : null,
+        fadeIn: hasVideo && fadeInMs > 0 ? { startMs: start, endMs: Math.min(videoEnd, start + fadeInMs) } : null,
     };
 }
 
