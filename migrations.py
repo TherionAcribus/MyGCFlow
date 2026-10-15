@@ -107,12 +107,26 @@ def _v5_lab_proprietaire_publication(db):
                     f"ALTER TABLE lab_discovery ADD COLUMN {name} {sql_type}")
 
 
+def _v6_lab_rang_et_images(db):
+    # Rang de l'étape, nombre d'étapes et images (popup). Idempotent, comme v3.
+    with db.engine.begin() as conn:
+        columns = {row[1] for row in
+                   conn.exec_driver_sql("PRAGMA table_info(lab_discovery)")}
+        for name, sql_type in (("stage_number", "INTEGER"), ("stages_total", "INTEGER"),
+                               ("stage_image_url", "VARCHAR(512)"),
+                               ("adventure_image_url", "VARCHAR(512)")):
+            if name not in columns:
+                conn.exec_driver_sql(
+                    f"ALTER TABLE lab_discovery ADD COLUMN {name} {sql_type}")
+
+
 MIGRATIONS = [
     (1, _v1_colonnes_et_index),
     (2, _v2_tables_lab),
     (3, _v3_lab_echec_recuperation),
     (4, _v4_lab_coordonnees_proposees),
     (5, _v5_lab_proprietaire_publication),
+    (6, _v6_lab_rang_et_images),
 ]
 
 LATEST_VERSION = MIGRATIONS[-1][0]

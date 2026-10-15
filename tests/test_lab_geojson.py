@@ -75,6 +75,21 @@ class LabGeojsonTests(unittest.TestCase):
         self.assertEqual(p["adventure_url"],
                          "https://labs.geocaching.com/goto/fa1e0000-0000-4000-8000-000000000001")
 
+    def test_popup_fields(self):
+        """Rang, nombre d'étapes, avancement de l'Adventure et image."""
+        self._import_all()
+        props = {f["properties"]["stage_id"]: f["properties"]
+                 for f in lab_geojson.build_lab_features(db.session)}
+        first = props[STAGE_1]
+        self.assertEqual((first["stage_number"], first["stages_total"]), (1, 5))
+        self.assertEqual(first["adventure_found_stages"], 5)          # complète
+        self.assertTrue(first["image_url"].endswith("000000000101"))  # image d'étape
+        # Adventure partielle : 3 étapes trouvées sur 5.
+        partial = props["57a9e000-0000-4000-8000-000000000201"]
+        self.assertEqual((partial["adventure_found_stages"], partial["stages_total"]), (3, 5))
+        # Image refusée à l'import et pas d'image d'Adventure : aucune.
+        self.assertIsNone(props["57a9e000-0000-4000-8000-000000000102"]["image_url"])
+
     def test_found_local_time_is_the_source_wall_clock(self):
         """L'heure de /logs est lue telle quelle (heure locale du joueur sous
         une étiquette du Pacifique) : 09:12:33, pas 16:12 UTC."""

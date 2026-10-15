@@ -89,6 +89,45 @@ class CoordinateValidationTests(unittest.TestCase):
         self.assertTrue(cc.warnings)
 
 
+class PopupFieldsTests(unittest.TestCase):
+    """Images de /logs et rang d'étape du GPX (popup des étapes)."""
+
+    def test_image_url_only_from_the_lab_media_host(self):
+        ok = "https://gsmediadata.blob.core.windows.net/mediacontainer/abc"
+        self.assertEqual(lf.trusted_lab_image_url(ok), ok)
+        for bad in (None, "", 42, "http://gsmediadata.blob.core.windows.net/x",
+                    "https://images.example.com/x.png",
+                    "https://gsmediadata.blob.core.windows.net.evil.example/x",
+                    "https://user@gsmediadata.blob.core.windows.net/x",
+                    "https://gsmediadata.blob.core.windows.net:8443/x",
+                    "https://gsmediadata.blob.core.windows.net:99999/x",
+                    "javascript:alert(1)",
+                    "https://gsmediadata.blob.core.windows.net/" + "a" * 600):
+            self.assertIsNone(lf.trusted_lab_image_url(bad), repr(bad))
+
+    def test_history_keeps_trusted_images_only(self):
+        res = lf.parse_lab_finds((FIXTURES / "lab-finds-valid.json").read_bytes())
+        by_stage = {d.stage_uuid: d for d in res.drafts}
+        first = by_stage["57a9e000-0000-4000-8000-000000000101"]
+        self.assertTrue(first.stage_image_url.endswith("000000000101"))
+        self.assertTrue(first.adventure_image_url.endswith("000000000001"))
+        # URL HTTP d'un autre hôte : écartée.
+        self.assertIsNone(by_stage["57a9e000-0000-4000-8000-000000000102"].stage_image_url)
+
+    def test_gpx_stage_rank_and_total(self):
+        res = lf.parse_lab2gpx_gpx((FIXTURES / "lab2gpx-stages.gpx").read_bytes())
+        by_stage = {s.stage_uuid: s for s in res.stages}
+        self.assertEqual(by_stage["57a9e000-0000-4000-8000-000000000101"].stage_number, 1)
+        self.assertEqual(by_stage["57a9e000-0000-4000-8000-000000000105"].stage_number, 5)
+        self.assertEqual(by_stage["57a9e000-0000-4000-8000-000000000105"].stages_total, 5)
+
+    def test_stage_rank_from_urlname_then_code(self):
+        self.assertEqual(lf._stage_rank("S3 Le Vieux Colmar", "LC18RD-3"), 3)
+        self.assertEqual(lf._stage_rank(None, "LC18RD-4"), 4)
+        self.assertEqual(lf._stage_rank("Sentier du port", "LC18RD"), None)
+        self.assertEqual(lf._stage_rank("S0 Départ", None), None)     # hors 1–99
+
+
 class CoordinateTextTests(unittest.TestCase):
     """Saisie libre d'une position (modale « Étapes en attente »)."""
 

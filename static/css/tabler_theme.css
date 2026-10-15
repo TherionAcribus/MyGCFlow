@@ -382,6 +382,14 @@ h5, h6 { color: var(--color-heading); font-weight: 600; }
     font-size: 11px;
     opacity: 0.75;
 }
+/* Image d'étape Adventure Lab (popup des Labs). */
+.gc-popup-image {
+    display: block;
+    width: 100%;
+    max-height: 140px;
+    object-fit: cover;
+    border-radius: 4px;
+}
 
 /* =====================================================================
    Dark mode — overrides des surfaces custom à couleurs codées en dur

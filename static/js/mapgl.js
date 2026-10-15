@@ -807,20 +807,43 @@ export function initPopupOverlay(){
         // découverte sont affichés.
         if (props.source_kind === 'lab') {
             const labUrl = trustedLabUrl(props.adventure_url);
+            const labImage = trustedLabImageUrl(props.image_url);
             const labAdventure = sanitize(props.adventure_title);
             const labAdventureHtml = labAdventure
                 ? (labUrl ? `<a href="${labUrl}" target="_blank" rel="noopener noreferrer" class="gc-popup-link">${labAdventure}</a>` : labAdventure)
                 : '';
+            // Rang de l'étape et avancement de l'Adventure, quand le GPX
+            // Lab2Gpx les a fournis. Libellés résolus hors template literal
+            // pour l'extracteur Babel.
+            const count = (v) => (Number.isInteger(v) && v > 0 ? v : null);
+            const rank = count(props.stage_number);
+            const total = count(props.stages_total);
+            const found = count(props.adventure_found_stages);
+            const meta = [];
+            if (rank) meta.push(total ? t('Étape ${n}/${total}', { n: rank, total }) : t('Étape ${n}', { n: rank }));
+            if (total && found) {
+                meta.push(found >= total
+                    ? t('Adventure complète')
+                    : t('${found}/${total} étapes trouvées', { found, total }));
+            }
+            const metaLabel = meta.join(' · ');
+            const approxLabel = props.coordinate_scope === 'adventure'
+                ? t('Position approximative (centre de l’Adventure)') : '';
             const labHtml = `
+                ${labImage ? `<img class="gc-popup-image" src="${labImage}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}
                 <div class="gc-popup-title">${nameLabel}</div>
                 ${labAdventureHtml ? `<div>${labAdventureHtml}</div>` : ''}
+                ${metaLabel ? `<div>${metaLabel}</div>` : ''}
                 <div>${type || 'Adventure Lab'}</div>
                 ${owner ? `<div>${owner}</div>` : ''}
                 ${publishedLabel ? `<div>${publishedLabel}</div>` : ''}
                 <div>${foundLabel} ${dateFindLabel}</div>
-                ${props.coordinate_scope === 'adventure' ? `<div class="gc-popup-note">${t('Position approximative (centre de l’Adventure)')}</div>` : ''}`;
+                ${approxLabel ? `<div class="gc-popup-note">${approxLabel}</div>` : ''}`;
             const contentEl = popupEl.querySelector('.gc-popup-content') || popupEl;
             contentEl.innerHTML = labHtml;
+            // Image injoignable (hors ligne, supprimée) : pas de cadre vide.
+            const img = contentEl.querySelector('img.gc-popup-image');
+            img?.addEventListener('error', () => img.remove(), { once: true });
             popupEl.classList.add('is-visible');
             popupOverlay.setPosition(evt.coordinate);
             return;
@@ -875,6 +898,20 @@ function trustedLabUrl(raw){
             return u.href;
         }
     } catch (e) { /* URL invalide ou relative : pas de lien */ }
+    return null;
+}
+
+// Image d'étape Adventure Lab : HTTPS sur l'hôte des médias de /logs
+// (même liste que LAB_IMAGE_HOSTS côté serveur), sinon rien.
+function trustedLabImageUrl(raw){
+    if (!raw || typeof raw !== 'string') return null;
+    try {
+        const u = new URL(raw);
+        if (u.protocol === 'https:' && u.hostname === 'gsmediadata.blob.core.windows.net'
+            && !u.username && !u.password && !u.port) {
+            return u.href;
+        }
+    } catch (e) { /* URL invalide : pas d'image */ }
     return null;
 }
 

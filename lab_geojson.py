@@ -145,9 +145,22 @@ def lab_geo_pairs(session) -> set:
     return set(geo.values())
 
 
-def lab_feature(row, collection_uid: str, geo=(None, None)) -> dict:
+def _found_by_adventure(session) -> dict:
+    """UUID d'Adventure → nombre d'étapes trouvées (toutes les découvertes,
+    placées ou non : une étape en attente n'en est pas moins trouvée)."""
+    collection = _get_collection(session)
+    if collection is None:
+        return {}
+    return dict(session.query(LabDiscovery.adventure_uuid, func.count(LabDiscovery.id))
+                .filter(LabDiscovery.collection_id == collection.id,
+                        LabDiscovery.adventure_uuid.isnot(None))
+                .group_by(LabDiscovery.adventure_uuid).all())
+
+
+def lab_feature(row, collection_uid: str, geo=(None, None), found_in_adventure=None) -> dict:
     """Feature GeoJSON d'une découverte exploitable (cf. plan §8). `geo` :
-    (pays, région) empruntés (`borrowed_geo`)."""
+    (pays, région) empruntés (`borrowed_geo`) ; `found_in_adventure` :
+    étapes trouvées dans son Adventure (`_found_by_adventure`)."""
     uid = lab_record_uid(collection_uid, row)
     return {
         "type": "Feature",
@@ -182,6 +195,12 @@ def lab_feature(row, collection_uid: str, geo=(None, None)) -> dict:
             "published_date": row.published_date.strftime("%Y-%m-%d")
             if row.published_date else None,
             "attributes": None,
+            # Popup : rang « Étape 2/5 », avancement de l'Adventure, image
+            # de l'étape (celle de l'Adventure à défaut, hôte vérifié à l'import).
+            "stage_number": row.stage_number,
+            "stages_total": row.stages_total,
+            "adventure_found_stages": found_in_adventure,
+            "image_url": row.stage_image_url or row.adventure_image_url,
         },
     }
 
@@ -222,7 +241,9 @@ def build_lab_features(session) -> list:
     collection_uid, rows, geo = _ready_query(session)
     if not rows:
         return []
-    features = [lab_feature(r, collection_uid, geo.get(r.id, (None, None)))
+    found = _found_by_adventure(session)
+    features = [lab_feature(r, collection_uid, geo.get(r.id, (None, None)),
+                            found.get(r.adventure_uuid))
                 for r in rows]
     features.sort(key=_feature_sort_key)
     return features
@@ -275,6 +296,7 @@ def build_lab_features_matching(session, selected_values: dict,
     published = selected_values.get("published_dates") or {}
     pub_start = _parse_date(published.get("startDate"))
     pub_end = _parse_date(published.get("endDate"))
+    found = _found_by_adventure(session) if rows else {}
     features = []
     for r in rows:
         country, state = borrowed.get(r.id, (None, None))
@@ -287,7 +309,8 @@ def build_lab_features_matching(session, selected_values: dict,
         if pub_start and pub_end and r.published_date \
                 and not (pub_start <= r.published_date <= pub_end):
             continue
-        features.append(lab_feature(r, collection_uid, (country, state)))
+        features.append(lab_feature(r, collection_uid, (country, state),
+                                    found.get(r.adventure_uuid)))
     features.sort(key=_feature_sort_key)
     return features
 

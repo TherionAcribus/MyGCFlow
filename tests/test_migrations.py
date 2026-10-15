@@ -129,6 +129,19 @@ class SchemaMigrationTests(unittest.TestCase):
         self.assertTrue({'owner', 'published_date'} <= self._columns('lab_discovery'))
         self.assertEqual(self._user_version(), migrations.LATEST_VERSION)
 
+    def test_lab_table_gains_stage_rank_and_image_columns(self):
+        self._create_app()
+        added = ('stage_number', 'stages_total', 'stage_image_url', 'adventure_image_url')
+        with self._connect() as conn:
+            for name in added:
+                conn.execute(f"ALTER TABLE lab_discovery DROP COLUMN {name}")
+            conn.execute("PRAGMA user_version = 5")
+
+        self._create_app()
+
+        self.assertTrue(set(added) <= self._columns('lab_discovery'))
+        self.assertEqual(self._user_version(), migrations.LATEST_VERSION)
+
     def test_new_database_has_lab_tables(self):
         self._create_app()
 

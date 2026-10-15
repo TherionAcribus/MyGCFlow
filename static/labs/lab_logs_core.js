@@ -13,7 +13,8 @@
 async function mygcflowCollectLabLogs(playerId, onPage) {
   var API_URL = '/Logs/GetLogsByAdventureGrouping/';
   var DELAY_MS = 300;
-  var take = 100;
+  // 50 : le plus grand lot que le site accepte (100 et 200 → HTTP 500).
+  var take = 50;
   var skip = 0;
   var guard = 0;
   var discoveries = [];
@@ -65,6 +66,8 @@ async function mygcflowCollectLabLogs(playerId, onPage) {
           longitude: null,
           coordinate_scope: null,
           adventure_url: null,
+          stage_image_url: log.stageKeyImageUrl || null,
+          adventure_image_url: item.adventureKeyImageUrl || null,
           log_id: log.id == null ? null : log.id,
           is_archived: !!log.isArchived,
           adventure_is_archived: !!item.isArchived

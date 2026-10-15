@@ -93,6 +93,13 @@ class LabDiscovery(db.Model):
     # Portés par le fichier coordonnées (GPX Lab2Gpx), absents de l'historique.
     owner = db.Column(db.String(255))
     published_date = db.Column(db.Date)   # publication de l'Adventure
+    # Rang de l'étape et nombre d'étapes de l'Adventure (GPX Lab2Gpx) ;
+    # images d'étape et d'Adventure (historique /logs, hôte vérifié).
+    # Affichage seulement : le popup de l'étape.
+    stage_number = db.Column(db.Integer)
+    stages_total = db.Column(db.Integer)
+    stage_image_url = db.Column(db.String(512))
+    adventure_image_url = db.Column(db.String(512))
     source_format = db.Column(db.String(32))
     source_record_key = db.Column(db.String(128))
     is_archived = db.Column(db.Boolean, default=False)

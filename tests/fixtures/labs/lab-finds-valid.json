@@ -19,6 +19,8 @@
       "longitude": null,
       "coordinate_scope": null,
       "adventure_url": null,
+      "stage_image_url": "https://gsmediadata.blob.core.windows.net/mediacontainer/00000000-0000-4000-8000-000000000101",
+      "adventure_image_url": "https://gsmediadata.blob.core.windows.net/mediacontainer/00000000-0000-4000-8000-000000000001",
       "log_id": 900001,
       "is_archived": false,
       "adventure_is_archived": false
@@ -36,6 +38,7 @@
       "longitude": null,
       "coordinate_scope": null,
       "adventure_url": null,
+      "stage_image_url": "http://images.example.com/etape.png",
       "log_id": 900002,
       "is_archived": false,
       "adventure_is_archived": false

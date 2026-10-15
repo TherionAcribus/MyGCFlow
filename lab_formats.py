@@ -37,6 +37,7 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from datetime import date, datetime, timezone
 from io import BytesIO
+from urllib.parse import urlsplit
 
 # Les raisons (erreurs, avertissements) remontent jusqu'à l'interface : elles
 # passent par gettext quand Flask-Babel est là, sans en faire une dépendance —
@@ -341,6 +342,11 @@ class DiscoveryDraft:
     coordinate_source: str | None = None
     owner: str | None = None
     published_date: date | None = None
+    # Images (export /logs) et rang (réexport) : affichage du popup.
+    stage_image_url: str | None = None
+    adventure_image_url: str | None = None
+    stage_number: int | None = None
+    stages_total: int | None = None
 
 
 @dataclass
@@ -359,6 +365,7 @@ class StageCoord:
     warnings: list = field(default_factory=list)
     owner: str | None = None
     published_date: date | None = None   # publication de l'Adventure
+    stage_number: int | None = None      # rang de l'étape (S1, S2…)
 
 
 @dataclass
@@ -540,6 +547,10 @@ def parse_lab_finds(data: bytes | str) -> HistoryParseResult:
                                else None),
             owner=_clean_str(rec.get("owner")),
             published_date=_leading_date(rec.get("published_date")),
+            stage_image_url=trusted_lab_image_url(rec.get("stage_image_url")),
+            adventure_image_url=trusted_lab_image_url(rec.get("adventure_image_url")),
+            stage_number=_stage_count(rec.get("stage_number")),
+            stages_total=_stage_count(rec.get("stages_total")),
         ))
 
     res.ok = True
@@ -551,6 +562,50 @@ def _clean_str(value) -> str | None:
         return None
     v = value.strip()
     return v or None
+
+
+# Hôte des images de /logs (stageKeyImageUrl, adventureKeyImageUrl). Toute
+# autre URL est écartée : le popup charge l'image telle quelle.
+LAB_IMAGE_HOSTS = ("gsmediadata.blob.core.windows.net",)
+_MAX_URL_LENGTH = 512
+
+
+def trusted_lab_image_url(value) -> str | None:
+    """URL d'image Adventure Lab retenue : HTTPS, hôte connu, longueur bornée."""
+    url = _clean_str(value)
+    if url is None or len(url) > _MAX_URL_LENGTH:
+        return None
+    try:
+        parts = urlsplit(url)
+        # .port lève ValueError sur un port mal formé : même verdict.
+        if parts.scheme != "https" or parts.hostname not in LAB_IMAGE_HOSTS \
+                or parts.username or parts.password or parts.port:
+            return None
+    except ValueError:
+        return None
+    return url
+
+
+def _stage_count(value) -> int | None:
+    """Rang ou nombre d'étapes : entier de 1 à 99, sinon inconnu."""
+    if isinstance(value, bool):
+        return None
+    n = _safe_int(value)
+    return n if n is not None and 1 <= n <= 99 else None
+
+
+# Rang d'étape d'un waypoint Lab2Gpx : « S3 Titre » dans <urlname>, ou le
+# suffixe « -3 » du code généré (LC18RD-3).
+_URLNAME_RANK = re.compile(r"^S(\d{1,2})\b")
+_CODE_RANK = re.compile(r"-(\d{1,2})$")
+
+
+def _stage_rank(urlname, code) -> int | None:
+    for pattern, text in ((_URLNAME_RANK, urlname), (_CODE_RANK, code)):
+        match = pattern.search((text or "").strip())
+        if match:
+            return _stage_count(match.group(1))
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -651,6 +706,8 @@ def parse_lab2gpx_gpx(data: bytes | str) -> CoordParseResult:
                 warnings=warnings,
                 owner=_clean_str(owner_el.text if owner_el is not None else None),
                 published_date=_leading_date(_child_text(elem, "time")),
+                stage_number=_stage_rank(_child_text(elem, "urlname"),
+                                         _child_text(elem, "name")),
             ))
             elem.clear()
     except ET.ParseError as exc:

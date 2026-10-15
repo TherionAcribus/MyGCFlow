@@ -163,6 +163,9 @@ def _diff_draft(draft, row, overrides=frozenset()) -> tuple[dict, list]:
     fill_or_keep("owner", draft.owner)
     if draft.published_date is not None and row.published_date != draft.published_date:
         updates["published_date"] = draft.published_date
+    # Affichage du popup : images de /logs, rang du réexport MyGCFlow.
+    for attr in ("stage_image_url", "adventure_image_url", "stage_number", "stages_total"):
+        fill_or_keep(attr, getattr(draft, attr))
 
     # Date : deux valeurs fiables différentes → conflit, on conserve l'existante.
     # Précision, base, texte source et offset décrivent `found_date` : ils ne
@@ -276,6 +279,10 @@ def _apply_history(session, parsed, commit: bool, overrides=frozenset()) -> dict
                         SOURCE_LAB_FINDS if draft.latitude is not None else None),
                     owner=draft.owner,
                     published_date=draft.published_date,
+                    stage_image_url=draft.stage_image_url,
+                    adventure_image_url=draft.adventure_image_url,
+                    stage_number=draft.stage_number,
+                    stages_total=draft.stages_total,
                     coordinate_status=(
                         LabDiscovery.COORD_RESOLVED if draft.latitude is not None
                         else LabDiscovery.COORD_MISSING
@@ -444,6 +451,11 @@ def _apply_coords(session, parsed, commit: bool, overrides=frozenset()) -> dict:
             changes["owner"] = stage.owner
         if stage.published_date and row.published_date != stage.published_date:
             changes["published_date"] = stage.published_date
+        # Rang « S3 » et nombre d'étapes : l'Adventure a pu être remaniée.
+        if stage.stage_number and row.stage_number != stage.stage_number:
+            changes["stage_number"] = stage.stage_number
+        if stage.stages_total and row.stages_total != stage.stages_total:
+            changes["stages_total"] = stage.stages_total
         return changes
 
     def write(row, stage):

@@ -815,6 +815,10 @@ def labs_export():
         "owner": r.owner,
         "published_date": r.published_date.isoformat() if r.published_date else None,
         "adventure_url": r.adventure_url,
+        "stage_number": r.stage_number,
+        "stages_total": r.stages_total,
+        "stage_image_url": r.stage_image_url,
+        "adventure_image_url": r.adventure_image_url,
         "log_id": int(r.source_record_key[4:])
         if r.source_record_key and r.source_record_key.startswith("log:")
         and r.source_record_key[4:].isdigit() else None,

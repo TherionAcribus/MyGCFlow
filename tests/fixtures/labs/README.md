@@ -19,6 +19,12 @@ coordonnées inventés). Calquées sur les formats réels documentés dans
 Champs `latitude`/`longitude`/`adventure_url` à `null` — conformes à la
 réalité (l'historique ne porte ni coords ni URL).
 
+Images (`stage_image_url`, `adventure_image_url`, lues dans
+`stageKeyImageUrl`/`adventureKeyImageUrl` de `/logs`) : `…0101` porte les
+deux, sur l'hôte réel `gsmediadata.blob.core.windows.net` (GUID fictifs —
+les tests e2e interceptent la requête) ; `…0102` porte une URL HTTP d'un
+autre hôte, **à écarter**.
+
 ## `lab2gpx-stages.gpx` — fichier coordonnées
 
 Structure Lab2Gpx « un waypoint par étape » réduite (sans descriptions).

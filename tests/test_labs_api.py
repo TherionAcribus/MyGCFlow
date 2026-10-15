@@ -619,6 +619,25 @@ class LabsApiTests(unittest.TestCase):
         self.assertTrue(reparsed.ok)
         self.assertEqual(len(reparsed.drafts), 12)
 
+    def test_export_round_trip_keeps_popup_fields(self):
+        """Rang, nombre d'étapes et images survivent à « Exporter » puis à un
+        réimport dans une collection vidée."""
+        self._import_history()
+        self._import_coords()
+        exported = self.client.get('/api/labs/export').data
+        first = next(d for d in json.loads(exported)["discoveries"]
+                     if d["stage_id"] == STAGE_1)
+        self.assertEqual((first["stage_number"], first["stages_total"]), (1, 5))
+        self.assertTrue(first["stage_image_url"].endswith("000000000101"))
+
+        self.assertEqual(self.client.post('/api/labs/clear').status_code, 200)
+        import lab_formats as lf
+        lab_store.commit_history(db.session, lf.parse_lab_finds(exported))
+        row = db.session.query(LabDiscovery).filter_by(stage_uuid=STAGE_1).one()
+        self.assertEqual((row.stage_number, row.stages_total), (1, 5))
+        self.assertTrue(row.stage_image_url.endswith("000000000101"))
+        self.assertTrue(row.adventure_image_url.endswith("000000000001"))
+
     def test_export_empty_collection(self):
         self.assertEqual(self.client.get('/api/labs/export').status_code, 404)
 
@@ -829,9 +848,9 @@ class LabsAutomationTests(LabsApiTests):
         out = self._run_bookmarklet(playerId=None, pages=pages, refuseTakeAbove=25)
         self.assertIsNotNone(out["received"], out["said"])
         self.assertEqual(len(out["received"]["body"]["discoveries"]), 30)
-        # 100 puis 50 refusés, 25 accepté (les sondes d'identifiant prennent 1).
+        # 50 refusé, 25 accepté (les sondes d'identifiant prennent 1).
         self.assertEqual({r["take"] for r in out["requests"] if r["take"] > 1},
-                         {100, 50, 25})
+                         {50, 25})
 
     @unittest.skipUnless(NODE, "node introuvable")
     def test_bookmarklet_cancelled_prompt_sends_nothing(self):

@@ -193,7 +193,21 @@ sont indépendantes ; l'affichage bascule sur la source restante.
   détourée en disque avec le liseré blanc des autres icônes), mappé dans
   `point_webgl_style.js`. En mode « forme » (cercle /
   triangle), les étapes suivent le style du thème comme les géocaches.
-- **Popup** : titre de l'étape, titre de l'Adventure, date de découverte.
+- **Popup** : image de l'étape (celle de l'Adventure à défaut), titre de
+  l'étape, titre de l'Adventure, rang et avancement (« Étape 2/5 ·
+  Adventure complète » ou « 3/5 étapes trouvées »), propriétaire,
+  publication, date de découverte.
+  - Images : `stageKeyImageUrl`/`adventureKeyImageUrl` de `/logs`, relevées
+    par le favori et le script d'export ; retenues seulement en HTTPS sur
+    `gsmediadata.blob.core.windows.net` (`lab_formats.LAB_IMAGE_HOSTS`, même
+    contrôle côté popup), chargées sans référent, retirées si injoignables.
+    Une collection importée avant leur prise en charge les obtient en
+    repassant le favori (réimport additif).
+  - Rang (`S3` du `<urlname>` Lab2Gpx, à défaut le suffixe `-3` du code) et
+    nombre d'étapes (`stagesTotal`) viennent du GPX ; l'avancement compte
+    toutes les étapes trouvées de l'Adventure, placées ou en attente.
+  - Ces champs (migration v6) suivent « Exporter » et le réimport.
+
   Pas de D/T/taille (sans objet), pas de code GC ni de lien `coord.info`.
   Le titre de l'Adventure devient un lien **uniquement** quand l'URL
   importée est une URL HTTPS sur `labs.geocaching.com` ou

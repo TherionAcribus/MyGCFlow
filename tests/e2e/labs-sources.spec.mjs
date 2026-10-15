@@ -10,6 +10,8 @@ const FIXTURES = path.join(HERE, '..', 'fixtures', 'labs');
 const HISTORY = path.join(FIXTURES, 'lab-finds-valid.json');
 const COORDS = path.join(FIXTURES, 'lab2gpx-stages.gpx');
 const GPX_FINDS = path.join(HERE, 'fixtures', 'my-finds.gpx');
+// Étape 1 de « Circuit des Moulins » (5/5 trouvées), avec image /logs.
+const STAGE_1 = '57a9e000-0000-4000-8000-000000000101';
 
 // Sélecteur « Découvertes affichées » + panneau « Mes Lab Caches » (mode
 // Normal) : la fixture couvre 12 découvertes dont 8 résolues par UUID — soit
@@ -217,6 +219,47 @@ test('le popup d\'une étape Labs affiche étape, Adventure, lien et date', asyn
   expect(await link.getAttribute('href')).toMatch(/^https:\/\/labs\.geocaching\.com\//);
   const linkText = await link.textContent();
   expect(point.adventures).toContain(linkText.trim());
+});
+
+
+// PNG 1×1 servi à la place des images de /logs : aucun accès réseau réel.
+const PIXEL_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+  'base64');
+
+test('le popup d\'une étape montre son rang, l\'avancement de l\'Adventure et son image', async ({ page }) => {
+  const imageRequests = [];
+  await page.route('https://gsmediadata.blob.core.windows.net/**', (route) => {
+    imageRequests.push(route.request().url());
+    return route.fulfill({ status: 200, contentType: 'image/png', body: PIXEL_PNG });
+  });
+  await openReadyApp(page);
+  await importLabs(page);
+  await expect(page.locator('#filtersCounter')).toContainText('8 / 8', { timeout: 60_000 });
+
+  // Zoom maximal sur l'étape 1 : ses voisines (~40 m) ne la recouvrent plus.
+  const point = await page.evaluate(async (stageId) => {
+    const app = await import('/static/js/index.js');
+    const map = app.getMap();
+    const feature = app.json_data.features.find(f => f.properties?.stage_id === stageId);
+    const center = ol.proj.fromLonLat(feature.geometry.coordinates);
+    map.getView().setCenter(center);
+    map.getView().setZoom(19);
+    map.renderSync();
+    const px = map.getPixelFromCoordinate(center);
+    const rect = map.getTargetElement().getBoundingClientRect();
+    return { x: px[0] + rect.x, y: px[1] + rect.y };
+  }, STAGE_1);
+
+  await page.mouse.click(point.x, point.y);
+  const popup = page.locator('#gcPopup.is-visible');
+  await expect(popup).toBeVisible({ timeout: 10_000 });
+  await expect(popup.locator('.gc-popup-title')).toHaveText('Le Moulin Rouge');
+  await expect(popup).toContainText('Étape 1/5 · Adventure complète');
+  const image = popup.locator('img.gc-popup-image');
+  await expect(image).toHaveAttribute('src', /^https:\/\/gsmediadata\.blob\.core\.windows\.net\/.*000000000101$/);
+  await expect.poll(() => image.evaluate(img => img.complete && img.naturalWidth)).toBe(1);
+  expect(imageRequests.length).toBeGreaterThan(0);
 });
 
 
