@@ -37,7 +37,8 @@ import { hasNotableTrailingSilence, trimmedDurationMs } from './audio_silence.mj
 import { analyzeMusicFile, gainDb, normalizationGain } from './music_analysis.mjs';
 import { LOOP_JOIN_MS, loopCrossfadeMs, loopPeriodMs } from './music_playback.mjs';
 import {
-    clampFades, musicTimeline, normalizeFadeSeconds, sourceMsAt, timelineMsAt, timelineX, waveformPath,
+    clampFades, formatStartTime, listenFromTimelineMs, musicStartForKey, musicTimeline, normalizeFadeSeconds,
+    timelineMsAt, timelineX, waveformPath,
 } from './music_waveform.mjs';
 import { musicTrack } from './music_track.js';
 import { withoutRecentMusic, withRecentMusic, withRecentStart } from './music_track.mjs';
@@ -115,6 +116,7 @@ let isCombinedLatLonMode = true;
 var recordMimeShownFallback = null;
 var selectRecordMode, selectRecordQualityProfile, recordAdvancedSettings, inputRecordFps, inputRecordBitrate, selectRecordMime, inputRecordSlowdown, inputRecordScaleFactor, inputRecordFileName, cbRecordNormalize, selectRecordResolution, selectRecordColorFidelity;
 var cbRecordAudioEnable, inputAudioFile, inputAudioVolume, cbAudioTrimSilence, cbAudioFadeOut, cbAudioLoop, inputAudioStart;
+var cbAudioKeepEnding;
 var cbAudioFadeIn, inputAudioFadeInSeconds, inputAudioFadeOutSeconds;
 var cbAudioLoopCrossfade, inputAudioLoopCrossfadeSeconds, cbAudioNormalize;
 // Passe à true à la première synchro déclenchée par une résolution de
@@ -228,7 +230,7 @@ const RECORD_SETTINGS_FIELDS = [
     'inputRecordFileName', 'cbRecordNormalize',
     'cbRecordAudioEnable', 'inputAudioVolume', 'cbAudioTrimSilence', 'cbAudioFadeOut', 'cbAudioLoop',
     'inputAudioStart', 'cbAudioFadeIn', 'inputAudioFadeInSeconds', 'inputAudioFadeOutSeconds',
-    'cbAudioLoopCrossfade', 'inputAudioLoopCrossfadeSeconds', 'cbAudioNormalize',
+    'cbAudioLoopCrossfade', 'inputAudioLoopCrossfadeSeconds', 'cbAudioNormalize', 'cbAudioKeepEnding',
     'selectRecordResolution',
     'selectRecordColorFidelity',
 ];
@@ -428,6 +430,9 @@ function updateMusicSyncUi(plan = lastTimingPlan) {
     // Le fondu d'entrée a toujours un effet : visible dès qu'il y a une musique.
     const fadeInBox = document.getElementById('audioFadeInBox');
     if (fadeInBox) fadeInBox.style.display = hasFile ? '' : 'none';
+    // Garder la fin : seulement quand la musique déborde de la vidéo.
+    const keepEndingBox = document.getElementById('audioKeepEndingBox');
+    if (keepEndingBox) keepEndingBox.style.display = keepEndingOffered(plan) ? '' : 'none';
     // Une durée ne se règle que pour un fondu demandé.
     if (inputAudioFadeOutSeconds) inputAudioFadeOutSeconds.disabled = !cbAudioFadeOut?.checked;
     if (inputAudioFadeInSeconds) inputAudioFadeInSeconds.disabled = !cbAudioFadeIn?.checked;
@@ -463,6 +468,8 @@ function updateMusicSyncUi(plan = lastTimingPlan) {
         } else {
             lines.push(t('Durée calée sur la musique (${d}).', { d: formatDurationHuman(plan.totalDurationMs) }));
         }
+    } else if (keepEndingApplies(plan)) {
+        lines.push(t('Elle commence plus loin pour finir avec la vidéo.'));
     } else if (hasFile && plan?.valid && Number.isFinite(musicDurationMs)) {
         if (musicOutlastsVideo(plan)) {
             const durations = { m: formatDurationHuman(musicDurationMs), v: formatDurationHuman(plan.totalDurationMs) };
@@ -519,10 +526,7 @@ function renderMusicWaveform(plan = lastTimingPlan) {
 
     box.querySelector('.mw-wave').setAttribute('d', waveformPath(musicPeaks, timeline, musicFileDurationMs));
     span(box.querySelector('.mw-intro'), timeline.intro);
-    const startLine = box.querySelector('.mw-start');
-    startLine.style.display = timeline.intro ? '' : 'none';
-    startLine.setAttribute('x1', x(timeline.startMs));
-    startLine.setAttribute('x2', x(timeline.startMs));
+    syncMusicStartHandle(timeline);
     span(box.querySelector('.mw-cut'), timeline.cut);
     span(box.querySelector('.mw-fade'), timeline.fade);
     span(box.querySelector('.mw-fade-in'), timeline.fadeIn);
@@ -634,29 +638,118 @@ function syncListenButtons(plan = lastTimingPlan) {
     }
 }
 
-// Clic sur la forme d'onde : la musique démarrera à la position cliquée (dans
-// une reprise de boucle, la position correspondante du motif). Le champ
-// « Commencer à » en est l'équivalent au clavier.
-function setMusicStartFromWaveform(event) {
+// Clic sur la forme d'onde : écoute de la musique telle que la vidéo la
+// jouera, à partir de l'instant cliqué (un clic pendant l'écoute y saute).
+// Il choisissait auparavant le point de départ : un réglage enregistré changé
+// d'un simple clic, quand on s'attendait à entendre ce passage. Le départ se
+// règle désormais par sa poignée (setupMusicStartHandle).
+function listenFromWaveform(event) {
     const graph = event.currentTarget;
-    if (!lastMusicTimeline || !inputAudioStart || !graph?.clientWidth) return;
+    if (!lastMusicTimeline || !graph?.clientWidth) return;
+    if (pkg.isAnimationInProgress?.()) {
+        pkg.showToast?.(t('Arrêtez l\'animation pour écouter la musique seule.'), 'info', t('Musique'), 4000);
+        return;
+    }
     const rect = graph.getBoundingClientRect();
     const ms = timelineMsAt(event.clientX - rect.left, lastMusicTimeline, rect.width);
-    const source = sourceMsAt(ms, lastMusicTimeline);
-    if (source === null) return; // fin de vidéo sans musique
-    // Un clic tout près du début revient au début du fichier.
-    const seconds = source < 300 ? 0 : Math.round(source / 100) / 10;
+    const fromVideoMs = listenFromTimelineMs(ms, lastMusicTimeline, {
+        videoMs: lastTimingPlan?.valid ? lastTimingPlan.totalDurationMs : 0,
+        listenEndMs: pkg.LISTEN_END_MS || 0,
+    });
+    // Le bouton « Écouter » devient « Arrêter » : il arrête cette écoute.
+    musicListeningFromEnd = pkg.listenToMusic?.({ fromVideoMs }) ? false : null;
+    syncListenButtons();
+}
+
+// Glissement en cours de la poignée du point de départ : chronologie et
+// rectangle du graphe figés à son début (l'axe bouge avec le départ — boucle,
+// musique plus courte que la vidéo — et la poignée fuirait sous le pointeur),
+// et instant visé (ms dans le fichier), null tant que le pointeur n'a pas bougé.
+let musicStartDrag = null;
+
+// Poignée posée sur le point de départ appliqué, et son état de curseur
+// accessible. Figée (aria-disabled) quand « Garder la fin du morceau » le
+// calcule. Laissée sous le pointeur pendant un glissement.
+function syncMusicStartHandle(timeline) {
+    const handle = document.getElementById('musicStartHandle');
+    if (!handle || musicStartDrag) return;
+    handle.style.left = `${timelineX(timeline.startMs, timeline) / 10}%`;
+    handle.setAttribute('aria-valuemax', String(Math.round(maxMusicStartMs() / 100) / 10));
+    handle.setAttribute('aria-valuenow', String(Math.round(musicStartMs / 100) / 10));
+    handle.setAttribute('aria-valuetext', formatDurationHuman(musicStartMs));
+    handle.setAttribute('aria-disabled', String(keepEndingApplies()));
+}
+
+// Nouveau point de départ (ms dans le fichier), arrondi au dixième de seconde
+// comme le champ « Commencer à », par lequel il passe. `snapToStart` : un
+// glissement lâché tout près du début revient au début du fichier.
+function commitMusicStart(ms, { snapToStart = false } = {}) {
+    if (!inputAudioStart || inputAudioStart.disabled) return;
+    const seconds = snapToStart && ms < 300 ? 0 : Math.round(ms / 100) / 10;
     inputAudioStart.value = String(seconds);
     changeRecordValues(inputAudioStart);
+}
+
+function setupMusicStartHandle() {
+    const handle = document.getElementById('musicStartHandle');
+    const graph = document.querySelector('#musicWaveform .music-waveform-graph');
+    if (!handle || !graph) return;
+    const label = handle.querySelector('.mw-start-time');
+    const frozen = () => handle.getAttribute('aria-disabled') === 'true';
+
+    handle.addEventListener('pointerdown', (event) => {
+        if (frozen() || !lastMusicTimeline || event.button !== 0) return;
+        event.preventDefault();
+        handle.focus();
+        try { handle.setPointerCapture(event.pointerId); } catch (_) {}
+        musicStartDrag = { rect: graph.getBoundingClientRect(), timeline: lastMusicTimeline, ms: null };
+        handle.classList.add('dragging');
+        if (label) label.textContent = formatStartTime(musicStartMs);
+    });
+    handle.addEventListener('pointermove', (event) => {
+        if (!musicStartDrag) return;
+        const { rect, timeline } = musicStartDrag;
+        const x = Math.max(0, Math.min(rect.width, event.clientX - rect.left));
+        // Sur l'axe, le point de départ est sa propre position dans le fichier.
+        const ms = Math.min(timelineMsAt(x, timeline, rect.width), maxMusicStartMs());
+        musicStartDrag.ms = ms;
+        handle.style.left = `${timelineX(ms, timeline) / 10}%`;
+        if (label) label.textContent = formatStartTime(ms);
+    });
+    const endDrag = (commit) => {
+        if (!musicStartDrag) return;
+        const { ms } = musicStartDrag;
+        musicStartDrag = null;
+        handle.classList.remove('dragging');
+        if (commit && ms !== null) commitMusicStart(ms, { snapToStart: true });
+        else renderMusicWaveform(); // la poignée revient au départ appliqué
+    };
+    handle.addEventListener('pointerup', () => endDrag(true));
+    handle.addEventListener('pointercancel', () => endDrag(false));
+    handle.addEventListener('lostpointercapture', () => endDrag(true));
+
+    handle.addEventListener('keydown', (event) => {
+        const next = musicStartForKey(event.key, {
+            currentMs: musicStartMs, maxMs: maxMusicStartMs(), shift: event.shiftKey,
+        });
+        if (next === null) return;
+        event.preventDefault();
+        if (!frozen()) commitMusicStart(next);
+    });
 }
 
 // Champ « Commencer à » : visible avec une musique, et ramené à la valeur
 // réellement appliquée (bornée par la durée de la musique) — sauf pendant la
 // saisie, et tant que la durée n'est pas connue (musique en chargement).
+// Désactivé quand « Garder la fin du morceau » calcule le départ : il
+// l'affiche alors, sans que ce départ calculé ne remplace celui choisi.
 function syncMusicStartField() {
     const row = document.getElementById('audioStartRow');
     if (row) row.hidden = !musicTrack.hasFile();
-    if (!inputAudioStart || document.activeElement === inputAudioStart || !(musicEndMs > 0)) return;
+    if (!inputAudioStart) return;
+    inputAudioStart.disabled = keepEndingApplies();
+    if (!(musicEndMs > 0)) return;
+    if (!inputAudioStart.disabled && document.activeElement === inputAudioStart) return;
     const applied = Math.round(musicStartMs / 100) / 10;
     if (Number(inputAudioStart.value) !== applied) inputAudioStart.value = String(applied);
 }
@@ -1493,6 +1586,8 @@ function initOptionsElements() {
     }
     cbAudioTrimSilence = document.getElementById('cbAudioTrimSilence');
     if (cbAudioTrimSilence) cbAudioTrimSilence.addEventListener('change', () => changeRecordValues());
+    cbAudioKeepEnding = document.getElementById('cbAudioKeepEnding');
+    if (cbAudioKeepEnding) cbAudioKeepEnding.addEventListener('change', () => changeRecordValues());
     cbAudioFadeOut = document.getElementById('cbAudioFadeOut');
     if (cbAudioFadeOut) cbAudioFadeOut.addEventListener('change', () => changeRecordValues());
     cbAudioLoop = document.getElementById('cbAudioLoop');
@@ -1514,9 +1609,11 @@ function initOptionsElements() {
     // frappe, qui recalculerait le plan sur une valeur incomplète).
     inputAudioStart = document.getElementById('inputAudioStart');
     if (inputAudioStart) inputAudioStart.addEventListener('change', () => changeRecordValues());
-    // Un clic sur la forme d'onde choisit le point de départ.
+    // Un clic sur la forme d'onde fait écouter à partir de là ; sa poignée
+    // règle le point de départ.
     document.querySelector('#musicWaveform .music-waveform-graph')
-        ?.addEventListener('click', (event) => setMusicStartFromWaveform(event));
+        ?.addEventListener('click', (event) => listenFromWaveform(event));
+    setupMusicStartHandle();
     // Menu des musiques récentes (rempli par renderRecentMusicMenu).
     document.getElementById('recentMusicMenu')?.addEventListener('click', (event) => {
         const item = event.target.closest('[data-file]');
@@ -2852,6 +2949,7 @@ function initOptionsUI() {
                 if (display) display.textContent = Math.round(vol * 100) + '%';
             }
             if (cbAudioTrimSilence) cbAudioTrimSilence.checked = !!pkg.options.record.audio.trimSilence;
+            if (cbAudioKeepEnding) cbAudioKeepEnding.checked = !!pkg.options.record.audio.keepEnding;
             if (cbAudioFadeOut) cbAudioFadeOut.checked = !!pkg.options.record.audio.fadeOut;
             if (cbAudioLoop) cbAudioLoop.checked = !!pkg.options.record.audio.loop;
             if (inputAudioStart) inputAudioStart.value = String(Math.max(0, Number(pkg.options.record.audio.startSeconds) || 0));
@@ -3142,19 +3240,24 @@ function changeRecordValues(field = undefined) {
             // Bornes de la musique lues EN PREMIER : updateMusicSyncUi (plus
             // bas) ramène le champ « Commencer à » sur la valeur appliquée, ce
             // qui effacerait une saisie pas encore lue.
-            if (inputAudioStart && inputAudioStart.value !== '') {
+            // Champ désactivé : il affiche le départ calculé par « Garder la
+            // fin du morceau », pas un choix à retenir.
+            if (inputAudioStart && !inputAudioStart.disabled && inputAudioStart.value !== '') {
                 const seconds = Number(inputAudioStart.value);
                 pkg.options.record.audio.startSeconds = Number.isFinite(seconds) ? Math.max(0, seconds) : 0;
             }
             if (cbAudioTrimSilence) {
                 pkg.options.record.audio.trimSilence = !!cbAudioTrimSilence.checked;
             }
+            if (cbAudioKeepEnding) pkg.options.record.audio.keepEnding = !!cbAudioKeepEnding.checked;
             // La durée utile de la musique (départ, blanc de fin) change : le
             // plan recalculé plus bas (refreshTimingPlan) s'appuie dessus.
             applyMusicBounds();
             // Départ saisi au-delà de la musique : c'est la valeur ramenée,
             // affichée dans le champ, qui est enregistrée.
-            if (musicEndMs > 0) pkg.options.record.audio.startSeconds = Math.round(musicStartMs / 100) / 10;
+            if (musicEndMs > 0 && !keepEndingApplies()) {
+                pkg.options.record.audio.startSeconds = Math.round(musicStartMs / 100) / 10;
+            }
             // La musique récente garde son point de départ.
             if (pkg.options.record.audio.file) {
                 pkg.options.record.audio.recent = withRecentStart(pkg.options.record.audio.recent,
@@ -3235,6 +3338,7 @@ function recordSettingsPayload() {
         audio_enabled: audio.enabled || false,
         audio_volume: (typeof audio.volume === 'number') ? audio.volume : 1,
         audio_trim_silence: !!audio.trimSilence,
+        audio_keep_ending: !!audio.keepEnding,
         audio_fade_out: !!audio.fadeOut,
         audio_loop: !!audio.loop,
         audio_file: audio.file || '',
@@ -3271,6 +3375,7 @@ function applyRecordSettingsPayload(recording) {
     pkg.options.record.audio.volume =
         (typeof recording.audio_volume === 'number') ? recording.audio_volume : 1;
     pkg.options.record.audio.trimSilence = !!recording.audio_trim_silence;
+    pkg.options.record.audio.keepEnding = !!recording.audio_keep_ending;
     pkg.options.record.audio.fadeOut = !!recording.audio_fade_out;
     pkg.options.record.audio.loop = !!recording.audio_loop;
     // Dernière musique choisie, rechargée par restoreSavedMusic.
@@ -5548,6 +5653,9 @@ export function refreshTimingPlan({ save = true } = {}) {
         plan.cameraHoldCount = cameraHoldCount;
     }
     lastTimingPlan = plan;
+    // « Garder la fin du morceau » : le départ suit la durée de la vidéo,
+    // qui vient de changer peut-être.
+    applyMusicStart(plan);
 
     if (plan.valid && Number.isFinite(plan.timePerDayMs)) {
         // Valeur canonique consommée par le moteur d'animation et les deux
@@ -8436,6 +8544,45 @@ function getMusicAnalysis(file) {
 // Recalcule la durée utile de la musique et met à jour l'encart « blanc de
 // fin ». L'encart (et donc l'option) n'apparaît que si un blanc a été détecté.
 // Ne recalcule pas le plan de timing : c'est à l'appelant de le faire.
+// Point de départ demandé, borné pour laisser au moins
+// MIN_MUSIC_AFTER_START_MS de musique : un départ au-delà (fichier plus court
+// que prévu, blanc ignoré entre-temps) est ramené, pas refusé.
+function maxMusicStartMs() {
+    return musicEndMs > 0 ? Math.max(0, musicEndMs - MIN_MUSIC_AFTER_START_MS) : 0;
+}
+
+function wantedMusicStartMs() {
+    const wantedMs = Math.max(0, Number(pkg.options?.record?.audio?.startSeconds) || 0) * 1000;
+    return Math.min(wantedMs, maxMusicStartMs());
+}
+
+// « Garder la fin du morceau » proposé : musique (fin utile) plus longue que
+// la vidéo, comptée depuis le début du fichier, hors mode « Sur la musique »
+// — la vidéo y prend la durée de la musique, rien n'est coupé. Le départ
+// choisi n'entre pas en compte : c'est lui que l'option remplace.
+function keepEndingOffered(plan = lastTimingPlan) {
+    return musicTrack.hasFile() && !isMusicLocked() && !!plan?.valid
+        && musicEndMs > plan.totalDurationMs + MUSIC_VIDEO_TOLERANCE_MS;
+}
+
+// L'option est proposée et cochée : le point de départ est calculé.
+function keepEndingApplies(plan = lastTimingPlan) {
+    return !!pkg.options?.record?.audio?.keepEnding && keepEndingOffered(plan);
+}
+
+// Point de départ effectif et durée utile qui en découle. « Garder la fin du
+// morceau » fait commencer la musique pour qu'elle finisse avec la vidéo ;
+// sinon, le départ choisi. Le départ choisi (startSeconds) n'est pas touché :
+// décocher l'option le retrouve. Sans circularité : l'option n'existe pas en
+// mode « Sur la musique », seul mode où la durée de la vidéo dépend de celle
+// de la musique.
+function applyMusicStart(plan = lastTimingPlan) {
+    musicStartMs = keepEndingApplies(plan)
+        ? musicEndMs - plan.totalDurationMs
+        : wantedMusicStartMs();
+    musicDurationMs = musicEndMs > 0 ? musicEndMs - musicStartMs : musicEndMs;
+}
+
 function applyMusicBounds() {
     const notable = !!musicFileDurationMs && hasNotableTrailingSilence(musicTrailingSilenceMs)
         // Piste entièrement muette : rien à proposer.
@@ -8444,14 +8591,7 @@ function applyMusicBounds() {
     musicEndMs = trim
         ? trimmedDurationMs(musicFileDurationMs, musicTrailingSilenceMs)
         : musicFileDurationMs;
-    // Point de départ demandé, borné pour laisser au moins
-    // MIN_MUSIC_AFTER_START_MS de musique : un départ au-delà (fichier plus
-    // court que prévu, blanc ignoré entre-temps) est ramené, pas refusé.
-    const wantedMs = Math.max(0, Number(pkg.options?.record?.audio?.startSeconds) || 0) * 1000;
-    musicStartMs = musicEndMs > 0
-        ? Math.min(wantedMs, Math.max(0, musicEndMs - MIN_MUSIC_AFTER_START_MS))
-        : 0;
-    musicDurationMs = musicEndMs > 0 ? musicEndMs - musicStartMs : musicEndMs;
+    applyMusicStart();
 
     const box = document.getElementById('audioTrailingSilence');
     if (!box) return;

@@ -69,6 +69,10 @@ class RecordingCoercionTests(unittest.TestCase):
         self.assertFalse(coerce_recording_settings({}).audio_trim_silence)
         self.assertTrue(coerce_recording_settings({"audio_trim_silence": True}).audio_trim_silence)
 
+    def test_keeping_the_music_ending_is_opt_in(self):
+        self.assertFalse(coerce_recording_settings({}).audio_keep_ending)
+        self.assertTrue(coerce_recording_settings({"audio_keep_ending": True}).audio_keep_ending)
+
     def test_music_fade_out_is_opt_in(self):
         self.assertFalse(coerce_recording_settings({}).audio_fade_out)
         self.assertTrue(coerce_recording_settings({"audio_fade_out": True}).audio_fade_out)

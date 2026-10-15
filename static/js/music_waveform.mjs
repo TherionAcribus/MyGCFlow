@@ -117,16 +117,8 @@ export function musicTimeline({ fileMs, startMs = 0, videoMs = 0, loopMs = 0, fa
     };
 }
 
-// Position dans le fichier de la musique entendue à l'instant `ms` de la
-// chronologie (une reprise de boucle renvoie dans le motif), ou null là où la
-// vidéo n'a pas de musique.
-export function sourceMsAt(ms, timeline) {
-    const segment = timeline?.segments?.find((s) => ms >= s.startMs && ms < s.endMs);
-    return segment ? segment.sourceStartMs + (ms - segment.startMs) : null;
-}
-
 // Instant de la chronologie sous une position (0 à `width`) : l'inverse de
-// timelineX, pour choisir le point de départ d'un clic.
+// timelineX, pour traduire un clic ou un glissement.
 export function timelineMsAt(x, timeline, width = 1000) {
     if (!(timeline?.spanMs > 0) || !(width > 0)) return 0;
     return Math.max(0, Math.min(1, x / width)) * timeline.spanMs;
@@ -162,4 +154,41 @@ export function waveformPath(peaks, timeline, fileMs, { width = 1000, height = 1
 export function timelineX(ms, timeline, width = 1000) {
     if (!(timeline?.spanMs > 0)) return 0;
     return Math.round((Math.max(0, Math.min(ms, timeline.spanMs)) / timeline.spanMs) * width * 10) / 10;
+}
+
+// Instant de la vidéo à écouter après un clic sur la chronologie à `ms` :
+// dans l'intro sautée, le début de la vidéo ; au-delà de sa fin (partie non
+// jouée), ses `listenEndMs` dernières millisecondes, comme « Écouter la fin ».
+export function listenFromTimelineMs(ms, timeline, { videoMs = 0, listenEndMs = 0 } = {}) {
+    const from = Math.max(0, ms - (timeline?.startMs || 0));
+    if (videoMs > 0 && from >= videoMs) return Math.max(0, videoMs - listenEndMs);
+    return from;
+}
+
+// Point de départ après une touche sur sa poignée (curseur accessible) : les
+// flèches le déplacent d'un dixième de seconde (d'une seconde avec Maj),
+// Page haut/bas de dix secondes, Début/Fin le portent aux bornes. null pour
+// une autre touche.
+export function musicStartForKey(key, { currentMs = 0, maxMs = 0, shift = false } = {}) {
+    const step = shift ? 1000 : 100;
+    const moves = {
+        ArrowRight: currentMs + step,
+        ArrowUp: currentMs + step,
+        ArrowLeft: currentMs - step,
+        ArrowDown: currentMs - step,
+        PageUp: currentMs + 10_000,
+        PageDown: currentMs - 10_000,
+        Home: 0,
+        End: maxMs,
+    };
+    if (!(key in moves)) return null;
+    return Math.max(0, Math.min(maxMs, moves[key]));
+}
+
+// Instant affiché sur la poignée pendant son glissement : « 1:05.3 ».
+export function formatStartTime(ms) {
+    const tenths = Math.max(0, Math.round((Number(ms) || 0) / 100));
+    const minutes = Math.floor(tenths / 600);
+    const seconds = (tenths % 600) / 10;
+    return `${minutes}:${seconds.toFixed(1).padStart(4, '0')}`;
 }

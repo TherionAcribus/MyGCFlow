@@ -601,7 +601,7 @@ test('la musique peut commencer en fondu, une seule fois', async ({ page }) => {
 });
 
 
-test('la musique peut démarrer plus loin, au clavier ou d\'un clic sur la forme d\'onde', async ({ page }) => {
+test('la musique peut démarrer plus loin, au clavier ou par la poignée de la forme d\'onde', async ({ page }) => {
   const start = page.locator('#inputAudioStart');
   const status = page.locator('#musicSyncStatus');
   const savedStart = async () => (await recordingSettings(page)).audio_start_seconds;
@@ -627,12 +627,28 @@ test('la musique peut démarrer plus loin, au clavier ou d\'un clic sur la forme
   await expect(start).toHaveValue('19');
   await expect.poll(savedStart).toBe(19);
 
-  // Un clic au quart de la forme d'onde y place le départ.
+  // La poignée de la forme d'onde, glissée au quart, y place le départ.
   const graph = page.locator('#musicWaveform .music-waveform-graph');
+  const handle = page.locator('#musicStartHandle');
   const box = await graph.boundingBox();
-  await graph.click({ position: { x: box.width / 4, y: box.height / 2 } });
+  const grip = await handle.boundingBox();
+  await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 4, box.y + box.height / 2, { steps: 8 });
+  await expect(handle.locator('.mw-start-time')).toBeVisible();
+  await page.mouse.up();
   await expect.poll(async () => Number(await start.inputValue())).toBeGreaterThan(4);
   expect(Number(await start.inputValue())).toBeLessThan(6.5);
+  await expect(handle.locator('.mw-start-time')).toBeHidden();
+
+  // Au clavier : un dixième de seconde par flèche, une seconde avec Maj.
+  const dragged = Number(await start.inputValue());
+  await handle.focus();
+  await page.keyboard.press('ArrowRight');
+  await expect.poll(async () => Number(await start.inputValue())).toBeCloseTo(dragged + 0.1, 5);
+  await page.keyboard.press('Shift+ArrowLeft');
+  await expect.poll(async () => Number(await start.inputValue())).toBeCloseTo(dragged - 0.9, 5);
+  await expect(handle).toHaveAttribute('aria-valuenow', String(Math.round((dragged - 0.9) * 10) / 10));
 
   // Retenu avec la musique au démarrage suivant…
   const clicked = await start.inputValue();
@@ -650,6 +666,86 @@ test('la musique peut démarrer plus loin, au clavier ou d\'un clic sur la forme
   await expect(start).toHaveValue('0');
   await expect.poll(savedStart).toBe(0);
   await expect(page.locator('#musicWaveform [data-legend="intro"]')).toBeHidden();
+});
+
+
+test('un clic sur la forme d\'onde fait écouter à partir de là, sans toucher au départ', async ({ page }) => {
+  const listen = page.locator('#btnMusicListen');
+  const head = page.locator('#musicWaveform .mw-playhead');
+  const savedStart = async () => (await recordingSettings(page)).audio_start_seconds;
+
+  await page.locator('#inputAudioFile').setInputFiles(wavFile('clic.wav', 20, 0));
+  await expect(page.locator('#musicSyncStatus')).toContainText('Durée calée sur la musique (20 s)');
+
+  // Aux trois quarts (15 s sur 20) : l'écoute part de là.
+  const graph = page.locator('#musicWaveform .music-waveform-graph');
+  const box = await graph.boundingBox();
+  await graph.click({ position: { x: box.width * 0.75, y: box.height / 2 } });
+  await expect(listen).toHaveAttribute('aria-pressed', 'true');
+  await expect.poll(async () => Number(await head.getAttribute('x1'))).toBeGreaterThanOrEqual(740);
+  // Le point de départ, lui, n'a pas bougé.
+  await expect(page.locator('#inputAudioStart')).toHaveValue('0');
+  expect(await savedStart()).toBe(0);
+
+  // « Écouter », devenu « Arrêter », arrête cette écoute.
+  await listen.click();
+  await expect(listen).toHaveAttribute('aria-pressed', 'false');
+});
+
+
+test('« Garder la fin du morceau » fait finir la musique avec la vidéo', async ({ page }) => {
+  const box = page.locator('#audioKeepEndingBox');
+  const keep = page.locator('#cbAudioKeepEnding');
+  const start = page.locator('#inputAudioStart');
+  const status = page.locator('#musicSyncStatus');
+  const startMs = () => page.evaluate(async () => (await import('/static/js/index.js')).audioStartMs());
+  const setVideoDuration = async (text) => {
+    await page.locator('#animationConfigTab').click();
+    if (!(await page.locator('#rhythmModeDuration').isChecked())) {
+      await page.locator('label:has(#rhythmModeDuration)').click();
+    }
+    await page.locator('#inputTotalDuration').fill(text);
+    await page.locator('#inputTotalDuration').blur();
+    await page.locator('#musicConfigTab').click();
+  };
+
+  await page.locator('#inputAudioFile').setInputFiles(wavFile('fin.wav', 30, 0));
+  await expect(status).toContainText('Durée calée sur la musique (30 s)');
+  // Vidéo calée sur la musique : rien n'est coupé, rien à proposer.
+  await expect(box).toBeHidden();
+
+  // Vidéo de 10 s : la musique déborde, sa fin serait coupée.
+  await setVideoDuration('00:10');
+  await expect(box).toBeVisible();
+  await expect(keep).not.toBeChecked();
+  await expect(status).toContainText('elle sera coupée en fin de vidéo');
+
+  await keep.check();
+  await expect(status).toContainText('Elle commence plus loin pour finir avec la vidéo.');
+  await expect(status).toContainText('(à partir de 20 s)');
+  await expect.poll(startMs).toBe(20_000);
+  // Départ calculé : affiché, ni saisissable ni déplaçable.
+  await expect(start).toBeDisabled();
+  await expect(start).toHaveValue('20');
+  await expect(page.locator('#musicStartHandle')).toHaveAttribute('aria-disabled', 'true');
+  // Plus rien de coupé : pas de fondu de sortie à proposer.
+  await expect(page.locator('#audioFadeOutBox')).toBeHidden();
+  // Le départ choisi (0) est conservé à côté de l'option.
+  await expect.poll(async () => {
+    const r = await recordingSettings(page);
+    return [r.audio_keep_ending, r.audio_start_seconds];
+  }).toEqual([true, 0]);
+
+  // La vidéo s'allonge : le départ suit.
+  await setVideoDuration('00:15');
+  await expect.poll(startMs).toBe(15_000);
+
+  // Décocher rend le départ choisi.
+  await keep.uncheck();
+  await expect(start).toBeEnabled();
+  await expect(start).toHaveValue('0');
+  await expect.poll(startMs).toBe(0);
+  await expect.poll(async () => (await recordingSettings(page)).audio_keep_ending).toBe(false);
 });
 
 

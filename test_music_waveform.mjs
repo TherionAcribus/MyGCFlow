@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    clampFades, FADE_LIMITS, musicTimeline, normalizeFadeSeconds, sourceMsAt, timelineMsAt, timelineX,
-    waveformPath, waveformPeaks,
+    clampFades, FADE_LIMITS, formatStartTime, listenFromTimelineMs, musicStartForKey, musicTimeline,
+    normalizeFadeSeconds, timelineMsAt, timelineX, waveformPath, waveformPeaks,
 } from './static/js/music_waveform.mjs';
 import { analyzeChannels } from './static/js/music_analysis.mjs';
 
@@ -112,15 +112,6 @@ test('en boucle, chaque reprise repart du point de départ, pas du début du fic
     );
 });
 
-test('un instant de la chronologie renvoie à la position entendue dans le fichier', () => {
-    const tl = musicTimeline({ fileMs: 12_000, startMs: 2_000, videoMs: 25_000, loopMs: 10_000 });
-    assert.equal(sourceMsAt(5_000, tl), 5_000);
-    // Deuxième tour : 3 s après la reprise, soit 2 s + 3 s dans le fichier.
-    assert.equal(sourceMsAt(15_000, tl), 5_000);
-    const silent = musicTimeline({ fileMs: 10_000, videoMs: 30_000 });
-    assert.equal(sourceMsAt(20_000, silent), null);
-});
-
 test('un point de départ hors de la musique est ramené dans ses bornes', () => {
     assert.equal(musicTimeline({ fileMs: 5_000, startMs: 9_000 }).startMs, 5_000);
     assert.equal(musicTimeline({ fileMs: 5_000, startMs: -1 }).intro, null);
@@ -154,4 +145,37 @@ test('les positions sont bornées à l\'étendue affichée', () => {
     assert.equal(timelineMsAt(250, tl, 1000), 2_500);
     assert.equal(timelineMsAt(-10, tl, 1000), 0);
     assert.equal(timelineMsAt(2000, tl, 1000), 10_000);
+});
+
+test('un clic sur la forme d’onde fait écouter la vidéo à partir de cet instant', () => {
+    // Musique de 60 s démarrée à 10 s, vidéo de 30 s : axe de 0 à 60 s.
+    const timeline = musicTimeline({ fileMs: 60_000, startMs: 10_000, videoMs: 30_000 });
+    const options = { videoMs: 30_000, listenEndMs: 8_000 };
+    assert.equal(listenFromTimelineMs(25_000, timeline, options), 15_000);
+    // Dans l'intro sautée : depuis le début de la vidéo.
+    assert.equal(listenFromTimelineMs(4_000, timeline, options), 0);
+    // Après la fin de la vidéo : ses 8 dernières secondes.
+    assert.equal(listenFromTimelineMs(50_000, timeline, options), 22_000);
+    // Durée de vidéo inconnue : pas de borne.
+    assert.equal(listenFromTimelineMs(50_000, timeline, {}), 40_000);
+});
+
+test('la poignée du point de départ se règle au clavier, dans ses bornes', () => {
+    const at = (key, currentMs, shift = false) => musicStartForKey(key, { currentMs, maxMs: 19_000, shift });
+    assert.equal(at('ArrowRight', 5_000), 5_100);
+    assert.equal(at('ArrowLeft', 5_000, true), 4_000);
+    assert.equal(at('ArrowUp', 18_950), 19_000);
+    assert.equal(at('ArrowDown', 50), 0);
+    assert.equal(at('PageUp', 5_000), 15_000);
+    assert.equal(at('PageDown', 5_000), 0);
+    assert.equal(at('Home', 5_000), 0);
+    assert.equal(at('End', 5_000), 19_000);
+    assert.equal(at('Enter', 5_000), null);
+});
+
+test('l’instant de la poignée s’affiche au dixième de seconde', () => {
+    assert.equal(formatStartTime(0), '0:00.0');
+    assert.equal(formatStartTime(5_340), '0:05.3');
+    assert.equal(formatStartTime(65_250), '1:05.3');
+    assert.equal(formatStartTime(599_960), '10:00.0');
 });

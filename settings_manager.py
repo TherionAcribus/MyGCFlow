@@ -285,6 +285,10 @@ class RecordingSettings:
     # au lieu de la couper net.
     audio_fade_out: bool = False
     audio_fade_out_seconds: float = 3.0
+    # Quand la musique est plus longue que la vidéo, la faire commencer plus
+    # loin pour que sa fin tombe avec celle de la vidéo (au lieu de la couper) :
+    # point de départ calculé par le client, audio_start_seconds conservé.
+    audio_keep_ending: bool = False
     # Faire monter la musique en fondu au début de la vidéo.
     audio_fade_in: bool = False
     audio_fade_in_seconds: float = 2.0
@@ -817,6 +821,7 @@ def coerce_recording_settings(d: dict) -> RecordingSettings:
     # FADE_LIMITS) et que capture._safe_fade_out pour le plafond.
     r.audio_fade_out_seconds = _clamp_float(
         d.get("audio_fade_out_seconds"), r.audio_fade_out_seconds, AUDIO_FADE_MIN_SECONDS, AUDIO_FADE_MAX_SECONDS)
+    r.audio_keep_ending = bool(d.get("audio_keep_ending", r.audio_keep_ending))
     r.audio_fade_in = bool(d.get("audio_fade_in", r.audio_fade_in))
     r.audio_fade_in_seconds = _clamp_float(
         d.get("audio_fade_in_seconds"), r.audio_fade_in_seconds, AUDIO_FADE_MIN_SECONDS, AUDIO_FADE_MAX_SECONDS)

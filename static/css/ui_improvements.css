@@ -2633,17 +2633,78 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
     fill: var(--color-accent);
 }
 .music-waveform-graph {
-    /* Un clic choisit le point de départ (setMusicStartFromWaveform). */
-    cursor: crosshair;
+    /* Un clic fait écouter à partir de là (listenFromWaveform). */
+    cursor: pointer;
 }
 .music-waveform-graph .mw-cut,
 .music-waveform-graph .mw-intro {
     fill: var(--color-surface);
     fill-opacity: 0.75;
 }
-.music-waveform-graph .mw-start {
-    stroke: var(--color-accent-strong);
-    stroke-width: 2;
+/* Poignée du point de départ (setupMusicStartHandle, ui.js) : posée sur la
+   piste en HTML, hors du SVG étiré qui la déformerait. Zone de prise large,
+   trait fin et pastille au sommet. */
+.music-waveform-track {
+    position: relative;
+}
+.mw-start-handle {
+    position: absolute;
+    top: -4px;
+    bottom: -4px;
+    width: 16px;
+    margin-left: -8px;
+    cursor: ew-resize;
+    touch-action: none;
+}
+.mw-start-handle::before {
+    content: "";
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    left: 7px;
+    width: 2px;
+    background: var(--color-accent-strong);
+}
+.mw-start-handle::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 3px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--color-accent-strong);
+    border: 2px solid var(--color-surface);
+}
+.mw-start-handle:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 1px;
+    border-radius: 4px;
+}
+/* Instant visé pendant le glissement. */
+.mw-start-handle.dragging > .mw-start-time {
+    display: block;
+}
+.mw-start-time {
+    display: none;
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 2px;
+    padding: 0 4px;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-surface);
+    background: var(--color-accent-strong);
+    pointer-events: none;
+}
+/* Point de départ calculé (« Garder la fin du morceau ») : affiché, pas déplaçable. */
+.mw-start-handle[aria-disabled="true"] {
+    cursor: default;
+    opacity: 0.6;
 }
 .music-waveform-graph .mw-playhead {
     stroke: var(--color-warning);

@@ -239,13 +239,17 @@ export function startBackgroundMusicIfAny(){
 // si « Inclure la musique » est décochée. `fromEnd` : seulement les
 // dernières secondes, pour juger la fin (coupure, fondu) sans attendre.
 // Refusée pendant l'animation ou une capture, qui ont la main sur la musique.
-export function listenToMusic({ fromEnd = false } = {}) {
+// `fromVideoMs` : à partir de cet instant de la vidéo (clic sur la forme
+// d'onde).
+export function listenToMusic({ fromEnd = false, fromVideoMs = null } = {}) {
     const file = musicTrack.file();
     if (!file || isRecordingActive() || pkg.isAnimationInProgress?.()) return false;
     const videoMs = pkg.musicPlaybackPlan?.().videoMs || 0;
+    let from = fromEnd ? Math.max(0, videoMs - LISTEN_END_MS) : 0;
+    if (Number.isFinite(fromVideoMs)) from = Math.max(0, fromVideoMs);
     startPlayback(file, {
         mode: 'listen',
-        fromVideoMs: fromEnd ? Math.max(0, videoMs - LISTEN_END_MS) : 0,
+        fromVideoMs: from,
         stopAtVideoEnd: true,
     });
     return true;

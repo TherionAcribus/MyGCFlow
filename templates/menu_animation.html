@@ -317,10 +317,15 @@
                             </div>
                             <!-- Forme d'onde et ce qu'en fera la vidéo (renderMusicWaveform,
                                  ui.js). Décorative : #musicSyncStatus en donne la version
-                                 texte, annoncée aux lecteurs d'écran. -->
+                                 texte, annoncée aux lecteurs d'écran. Un clic y fait
+                                 écouter la musique à partir de cet endroit ; la poignée
+                                 #musicStartHandle (curseur accessible au clavier) règle le
+                                 point de départ. -->
                             <div id="musicWaveform" class="music-waveform mt-2" hidden>
+                                <div class="music-waveform-track">
                                 <svg class="music-waveform-graph" viewBox="0 0 1000 100" preserveAspectRatio="none"
                                      aria-hidden="true" focusable="false">
+                                    <title>{{ _("Cliquez pour écouter à partir d'ici") }}</title>
                                     <defs>
                                         <linearGradient id="musicWaveformFadeGradient" x1="0" x2="1" y1="0" y2="0">
                                             <stop offset="0" class="mw-fade-from"></stop>
@@ -340,10 +345,15 @@
                                     <line class="mw-silent" x1="0" x2="0" y1="50" y2="50"></line>
                                     <g class="mw-loops"></g>
                                     <line class="mw-video-end" x1="0" x2="0" y1="0" y2="100"></line>
-                                    <line class="mw-start" x1="0" x2="0" y1="0" y2="100"></line>
                                     <!-- Tête de lecture : suit l'écoute et l'aperçu de l'animation. -->
                                     <line class="mw-playhead" x1="0" x2="0" y1="0" y2="100" style="display:none;"></line>
                                 </svg>
+                                <!-- Hors du SVG étiré : la poignée garde sa forme. -->
+                                <div id="musicStartHandle" class="mw-start-handle" role="slider" tabindex="0"
+                                     aria-label="{{ _('Point de départ de la musique') }}"
+                                     aria-valuemin="0" aria-valuemax="0" aria-valuenow="0"
+                                     title="{{ _('Faites glisser pour choisir où commence la musique') }}"><span class="mw-start-time" aria-hidden="true"></span></div>
+                                </div>
                                 <div class="music-waveform-scale">
                                     <span>0:00</span><span id="musicWaveformSpan"></span>
                                 </div>
@@ -370,8 +380,8 @@
                                 </button>
                             </div>
                             <!-- Point de départ dans la musique (intro sautée) : aussi
-                                 réglable d'un clic sur la forme d'onde. Visible avec une
-                                 musique (syncMusicStartField, ui.js). -->
+                                 réglable par la poignée de la forme d'onde. Visible avec
+                                 une musique (syncMusicStartField, ui.js). -->
                             <div id="audioStartRow" class="mt-2 d-flex align-items-center gap-2 flex-wrap" hidden>
                                 <label class="form-label mb-0" for="inputAudioStart">{{ _("Commencer la musique à") }}</label>
                                 <div class="input-group input-group-sm audio-start-input">
@@ -379,7 +389,15 @@
                                            aria-describedby="audioStartHint">
                                     <span class="input-group-text">s</span>
                                 </div>
-                                <small id="audioStartHint" class="form-hint text-muted mb-0">{{ _("ou cliquez sur la forme d'onde") }}</small>
+                                <small id="audioStartHint" class="form-hint text-muted mb-0">{{ _("ou faites glisser le repère de la forme d'onde") }}</small>
+                            </div>
+                            <!-- Proposé seulement quand la musique est plus longue que la
+                                 vidéo, hors mode « Sur la musique » (updateMusicSyncUi,
+                                 ui.js) : le point de départ est alors calculé. -->
+                            <div id="audioKeepEndingBox" class="form-check mt-2 mb-0" style="display:none;">
+                                <input id="cbAudioKeepEnding" class="form-check-input" type="checkbox">
+                                <label class="form-check-label" for="cbAudioKeepEnding"
+                                       title="{{ _('La musique commence plus loin, pour que sa vraie fin tombe avec celle de la vidéo au lieu d\'être coupée.') }}">{{ _("Garder la fin du morceau") }}</label>
                             </div>
                             <!-- Affiché seulement quand la piste se termine par un
                                  blanc (applyMusicBounds, ui.js). -->
