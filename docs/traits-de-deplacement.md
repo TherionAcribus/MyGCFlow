@@ -25,7 +25,22 @@ trajet relie donc des **étapes** :
 2. **Ordre de passage** : plus proche voisin depuis la position précédente (le
    trajet enchaîne naturellement d'un jour à l'autre), puis 2-opt pour défaire
    les croisements des journées de moins de 120 étapes. L'heure des logs
-   (`time_find`) n'est pas utilisée : dans les GPX elle est souvent fictive.
+   (`time_find`) n'est pas utilisée : dans les GPX elle est fictive (19:00 ou
+   20:00 UTC — minuit du Pacifique — sur 96 % d'une base réelle de 19 600
+   caches).
+
+   **Exception, les Lab Caches** : chaque étape porte son heure de validation
+   réelle (`found_local_time`, lue dans `/logs`). Quand au moins deux étapes
+   d'un jour en portent une (en mode groupes, un groupe prend l'heure de son
+   passage le plus tôt), l'ordre chronologique fait foi
+   (`orderTimedStops`) : les étapes datées forment l'ossature, et chaque
+   étape sans heure — les géocaches du même jour — s'insère là où elle
+   allonge le moins le chemin (insertion la moins coûteuse, depuis la
+   position de la veille), sans 2-opt qui casserait la chronologie. Sur
+   un historique réel (4 756 étapes Labs placées, 212 jours) : l'ordre change
+   pour 46 des 95 journées à plusieurs étapes en mode groupes, 188 sur 205 en
+   mode toutes les caches, pour une distance intra-journée à peine plus
+   longue (+2 % et +6,5 %) — le vrai parcours, pas le plus court.
 3. **Grands sauts** (au-delà d'un seuil, 150 km par défaut) : arc « comme un
    vol » (toujours à gauche du sens de parcours, un aller-retour dessine deux
    arcs distincts), pointillés, trait normal, ou masqué (le géocacheur se

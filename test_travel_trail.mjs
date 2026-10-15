@@ -15,6 +15,7 @@ import {
     normalizeTrailOptions,
     opacityBucket,
     orderStops,
+    orderTimedStops,
     penLengthAt,
     PERMANENT_FLOOR_OPACITY,
     pointAtLength,
@@ -23,6 +24,7 @@ import {
     SEGMENT_JUMP_DASHED,
     SEGMENT_NORMAL,
     splitTrailRuns,
+    timeOfDaySeconds,
     TRAIL_DEFAULTS,
     trailOpacity,
     visibleVertexRange,
@@ -505,4 +507,72 @@ test('précalcul d\'une journée de 2000 étapes isolées (mesure)', () => {
     assert.deepEqual([...route.fallbackDays], [1]);
     // Garde-fou anti-régression quadratique, pas un seuil serré.
     assert.ok(t1 - t0 < 3000);
+});
+
+
+// --- Ordre horaire (étapes Lab Caches) ------------------------------------------
+
+test('timeOfDaySeconds lit HH:MM[:SS] et refuse le reste', () => {
+    assert.equal(timeOfDaySeconds('09:30:15'), 9 * 3600 + 30 * 60 + 15);
+    assert.equal(timeOfDaySeconds('18:05'), 18 * 3600 + 5 * 60);
+    for (const bad of [null, undefined, '', '9:30', '24:00:00', '12:60', '12:00:00Z', 3600]) {
+        assert.equal(timeOfDaySeconds(bad), null, String(bad));
+    }
+});
+
+test('les heures imposent l\'ordre, même contre la géométrie', () => {
+    // Sur une ligne est-ouest : le géocacheur a fait D, puis A, puis C.
+    const stops = [PARIS, east(PARIS, 2), east(PARIS, 3)];
+    assert.deepEqual(orderTimedStops(stops, [36000, 39600, 32400]), [2, 0, 1]);
+});
+
+test('moins de deux heures : rien à respecter, ordre géométrique', () => {
+    const stops = [PARIS, east(PARIS, 1), east(PARIS, 2)];
+    assert.equal(orderTimedStops(stops, [36000, null, null]), null);
+    assert.equal(orderTimedStops(stops, null), null);
+    assert.equal(orderTimedStops(stops, [null, null, null]), null);
+});
+
+test('les étapes sans heure s\'insèrent au plus court dans la chronologie', () => {
+    // A (9 h) et E (12 h) datées ; B, C, D sans heure, en vrac, entre les deux.
+    const A = PARIS;
+    const B = east(PARIS, 1);
+    const C = east(PARIS, 2);
+    const D = east(PARIS, 3);
+    const E = east(PARIS, 4);
+    const stops = [D, A, B, E, C];
+    const order = orderTimedStops(stops, [null, 32400, null, 43200, null]);
+    assert.deepEqual(order.map((i) => stops[i]), [A, B, C, D, E]);
+});
+
+test('une étape sans heure proche du départ de la veille passe en premier', () => {
+    // Départ à Versailles : la cache de Versailles est faite avant les deux
+    // étapes datées de Paris.
+    const stops = [PARIS, east(PARIS, 1), VERSAILLES];
+    const order = orderTimedStops(stops, [36000, 39600, null], VERSAILLES);
+    assert.deepEqual(order, [2, 0, 1]);
+});
+
+test('buildTrailRoute suit les heures de la journée', () => {
+    // Étapes datées D (9 h), A (10 h), C (11 h) ; une cache sans heure juste
+    // au nord de A se fait en arrivant sur A.
+    const nearA = [PARIS[0], PARIS[1] + 0.3 / 110.574];
+    const points = [PARIS, nearA, east(PARIS, 2), east(PARIS, 3)];
+    const timed = buildTrailRoute(
+        [{ day: 1, points, times: [36000, null, 39600, 32400] }], { routing: 'all' });
+    assert.deepEqual([...timed.lon], [3, 1, 0, 2].map((i) => points[i][0]));
+    // Sans heures, l'ordre reste celui de la géométrie (balayage de la ligne).
+    const untimed = buildTrailRoute([{ day: 1, points }], { routing: 'all' });
+    assert.notDeepEqual([...untimed.lon], [...timed.lon]);
+});
+
+test('mode « groupes » : un groupe prend l\'heure de son passage le plus tôt', () => {
+    // Paris l'après-midi, Versailles le matin (deux groupes à 2 km de rayon).
+    const points = [PARIS, east(PARIS, 0.5), VERSAILLES, east(VERSAILLES, 0.5)];
+    const route = buildTrailRoute(
+        [{ day: 1, points, times: [54000, null, 32400, 33000] }],
+        { routing: 'clusters', clusterKm: 2 });
+    assert.equal(route.lon.length, 2);
+    assert.ok(Math.abs(route.lon[0] - VERSAILLES[0]) < 0.01, 'Versailles d\'abord');
+    assert.ok(Math.abs(route.lon[1] - PARIS[0]) < 0.01);
 });

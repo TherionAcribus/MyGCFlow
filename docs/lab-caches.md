@@ -207,7 +207,10 @@ sont indépendantes ; l'affichage bascule sur la source restante.
 Les étapes résolues entrent dans le même index `pointsByDate` (clé =
 `date_find`) que les géocaches : elles participent à la lecture
 chronologique, aux flashs, au trajet et au suivi de caméra sans code
-spécifique — et donc à l'export vidéo, qui capture le même rendu. Une étape
+spécifique — et donc à l'export vidéo, qui capture le même rendu. Seule
+différence : le trajet ordonne une journée selon l'heure de validation des
+étapes (`found_local_time`, heure de `/logs` lue telle quelle) au lieu de la
+deviner par la géométrie — détail dans `docs/traits-de-deplacement.md`. Une étape
 compte pour **une** découverte dans les balises `{trouvees}` / `{total}` ;
 les étapes en attente n'existent dans aucun de ces totaux.
 

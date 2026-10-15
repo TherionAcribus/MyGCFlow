@@ -9,9 +9,32 @@ en base et dans /api/labs/status — elles n'émettent jamais de point factice
 
 from __future__ import annotations
 
+import re
+
 from models import LabDiscovery
 
 LAB_CACHE_TYPE = "Adventure Lab"
+
+_SOURCE_WALL_CLOCK = re.compile(r"^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2}:\d{2})")
+
+
+def found_local_time(row) -> str | None:
+    """Heure de la découverte (`HH:MM:SS`), lue telle quelle dans l'instant
+    source — pour /logs, l'heure locale du joueur sous une étiquette d'offset
+    du Pacifique (docs/notes/lab-caches-sources.md), jamais convertie.
+
+    Seulement quand la source porte un vrai instant de la même journée que
+    `found_date` : une date corrigée à la main ou sans heure n'en a pas. Sert
+    à ordonner les étapes d'une journée dans le trajet ; distincte de
+    `time_find`, que les géocaches remplissent d'une heure factice (19:00 /
+    20:00 UTC, minuit du Pacifique) et qui ne dit rien de l'ordre."""
+    if row.date_basis != "source_offset" or row.date_precision != "instant" \
+            or row.found_date is None:
+        return None
+    match = _SOURCE_WALL_CLOCK.match(row.source_date_text or "")
+    if not match or match.group(1) != row.found_date.isoformat():
+        return None
+    return match.group(2)
 
 
 def lab_record_uid(collection_uid: str, row) -> str:
@@ -42,6 +65,7 @@ def lab_feature(row, collection_uid: str) -> dict:
             "adventure_url": row.adventure_url,
             "date_find": row.found_date.strftime("%Y-%m-%d") if row.found_date else None,
             "time_find": None,
+            "found_local_time": found_local_time(row),
             "found": True,
             "date_precision": row.date_precision,
             "coordinate_scope": row.coordinate_scope,

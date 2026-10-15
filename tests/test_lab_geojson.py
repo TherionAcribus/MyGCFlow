@@ -75,6 +75,33 @@ class LabGeojsonTests(unittest.TestCase):
         self.assertEqual(p["adventure_url"],
                          "https://labs.geocaching.com/goto/fa1e0000-0000-4000-8000-000000000001")
 
+    def test_found_local_time_is_the_source_wall_clock(self):
+        """L'heure de /logs est lue telle quelle (heure locale du joueur sous
+        une étiquette du Pacifique) : 09:12:33, pas 16:12 UTC."""
+        self._import_all()
+        f = next(x for x in lab_geojson.build_lab_features(db.session)
+                 if x["properties"]["stage_id"] == STAGE_1)
+        self.assertEqual(f["properties"]["found_local_time"], "09:12:33")
+        # Le champ factice des géocaches reste vide : ce n'est pas lui qui sert.
+        self.assertIsNone(f["properties"]["time_find"])
+
+    def test_found_local_time_absent_without_a_real_instant(self):
+        self._import_all()
+        row = db.session.query(LabDiscovery).filter_by(stage_uuid=STAGE_1).one()
+        self.assertEqual(lab_geojson.found_local_time(row), "09:12:33")
+        # Date corrigée à la main : plus d'heure de source qui tienne.
+        row.date_basis, row.date_precision = "user_correction", "day"
+        self.assertIsNone(lab_geojson.found_local_time(row))
+        # Texte source d'une autre journée que la date retenue : ignoré.
+        row.date_basis, row.date_precision = "source_offset", "instant"
+        row.found_date = date(2024, 5, 15)
+        self.assertIsNone(lab_geojson.found_local_time(row))
+        # Date seule : pas d'heure.
+        row.found_date = date(2024, 5, 14)
+        row.source_date_text = "2024-05-14"
+        self.assertIsNone(lab_geojson.found_local_time(row))
+        db.session.rollback()
+
     def test_unresolved_emit_no_feature(self):
         self._import_all()
         ids = {f["properties"]["stage_id"]

@@ -147,17 +147,22 @@ test('les étapes Labs alimentent l\'index d\'animation et la lecture les joue',
   const index = await page.evaluate(async () => {
     const app = await import('/static/js/index.js');
     let labPoints = 0;
+    let timed = 0;
     for (const features of app.pointsByDate.values()) {
-      labPoints += features.filter(f => f.properties?.source_kind === 'lab').length;
+      const labs = features.filter(f => f.properties?.source_kind === 'lab');
+      labPoints += labs.length;
+      // Heure de validation, qui ordonne la journée dans le trajet.
+      timed += labs.filter(f => /^\d{2}:\d{2}:\d{2}$/.test(f.properties.found_local_time || '')).length;
     }
     return {
       days: app.pointsByDate.size,
       labPoints,
+      timed,
       revision: app.pointsByDateRevision,
       total: app.metadata?.numberOfCaches,
     };
   });
-  expect(index).toMatchObject({ days: 3, labPoints: 8, total: 8 });
+  expect(index).toMatchObject({ days: 3, labPoints: 8, timed: 8, total: 8 });
   expect(index.revision).toBeGreaterThan(0);
 
   // Lecture complète : le compteur atteint le total de la sélection et la

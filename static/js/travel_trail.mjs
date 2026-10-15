@@ -6,7 +6,10 @@
 // proximité, chaque groupe est représenté par sa cache la plus centrale (le
 // trait passe sur une vraie cache, jamais au milieu d'un lac), et les étapes du
 // jour sont ordonnées automatiquement : plus proche voisin depuis la position
-// précédente, puis 2-opt sur les petites journées.
+// précédente, puis 2-opt sur les petites journées. Exception : les étapes Lab
+// Caches portent leur heure de validation — quand au moins deux étapes d'un
+// jour en ont une, l'ordre chronologique fait foi et les autres s'y insèrent
+// au plus court (orderTimedStops).
 //
 // Le trajet complet est précalculé au lancement : pour que le trait ARRIVE sur
 // les caches au moment où elles apparaissent, il faut connaître le prochain jour
@@ -297,6 +300,92 @@ export function groupAnchor(points, indices) {
 
 // --- Ordre de passage ---------------------------------------------------------
 
+// Heure du jour « HH:MM[:SS] » → secondes depuis minuit, null sinon.
+export function timeOfDaySeconds(value) {
+    const m = typeof value === 'string' ? /^(\d{2}):(\d{2})(?::(\d{2}))?$/.exec(value) : null;
+    if (!m) return null;
+    const [h, min, s] = [Number(m[1]), Number(m[2]), Number(m[3] || 0)];
+    if (h > 23 || min > 59 || s > 59) return null;
+    return h * 3600 + min * 60 + s;
+}
+
+// Au-delà (insertions × positions × candidats), l'insertion des étapes sans
+// heure se fait en une passe plutôt qu'en choisissant à chaque fois la moins
+// coûteuse.
+const CHEAPEST_INSERTION_MAX_WORK = 2e6;
+
+// Ordre d'une journée dont des étapes portent une heure de passage fiable
+// (Lab Caches : heure de validation de l'étape). Les étapes datées à l'heure
+// forment l'ossature, dans l'ordre chronologique ; chaque étape sans heure
+// (géocache : sa date de log ne dit rien de l'heure) est insérée là où elle
+// allonge le moins le chemin — en partant de `start`, la position de la
+// veille. Retourne null s'il y a moins de deux heures : rien à respecter,
+// l'ordre géométrique (orderStops) s'applique.
+export function orderTimedStops(stops, times, start = null) {
+    const n = stops?.length || 0;
+    if (n < 2 || !Array.isArray(times)) return null;
+    const timed = [];
+    const untimed = [];
+    for (let i = 0; i < n; i++) (Number.isFinite(times[i]) ? timed : untimed).push(i);
+    if (timed.length < 2) return null;
+    timed.sort((a, b) => times[a] - times[b] || a - b);
+    if (untimed.length === 0) return timed;
+
+    // Coûts en coordonnées locales km, départ compris (dernier index).
+    const hasStart = isValidPoint(start);
+    const nodes = hasStart ? [...stops, start] : stops;
+    const loc = localKm(nodes, nodes.map((_, i) => i));
+    const startIdx = hasStart ? n : -1;
+    const dist = (a, b) => Math.hypot(loc.xs[a] - loc.xs[b], loc.ys[a] - loc.ys[b]);
+
+    const path = [...timed];
+    // Surcoût d'une insertion de `u` avant path[k] (k = path.length : à la fin).
+    const cost = (u, k) => {
+        const prev = k > 0 ? path[k - 1] : startIdx;
+        const next = k < path.length ? path[k] : -1;
+        if (prev < 0) return dist(u, next);
+        if (next < 0) return dist(prev, u);
+        return dist(prev, u) + dist(u, next) - dist(prev, next);
+    };
+    const bestPosition = (u) => {
+        let bestK = 0;
+        let bestCost = Infinity;
+        for (let k = 0; k <= path.length; k++) {
+            const c = cost(u, k);
+            if (c < bestCost) {
+                bestK = k;
+                bestCost = c;
+            }
+        }
+        return [bestK, bestCost];
+    };
+
+    if (untimed.length * untimed.length * n > CHEAPEST_INSERTION_MAX_WORK) {
+        for (const u of untimed) path.splice(bestPosition(u)[0], 0, u);
+        return path;
+    }
+    // Insertion la moins coûteuse d'abord : une chaîne de caches entre deux
+    // étapes datées s'y enfile de proche en proche. Égalités : plus petit
+    // index, première position — déterministe.
+    const remaining = [...untimed];
+    while (remaining.length > 0) {
+        let pick = 0;
+        let pickK = 0;
+        let pickCost = Infinity;
+        remaining.forEach((u, r) => {
+            const [k, c] = bestPosition(u);
+            if (c < pickCost) {
+                pick = r;
+                pickK = k;
+                pickCost = c;
+            }
+        });
+        path.splice(pickK, 0, remaining[pick]);
+        remaining.splice(pick, 1);
+    }
+    return path;
+}
+
 // Ordre de visite des étapes d'une journée : plus proche voisin depuis `start`
 // (dernière position connue, [lon, lat], ou null), puis 2-opt sur les petites
 // journées pour défaire les croisements. Chemin ouvert : départ fixé, arrivée
@@ -418,11 +507,14 @@ function twoOpt(order, stops, start) {
 // Étapes d'une journée selon le mode de tracé : index des caches retenues et,
 // pour chacune, le nombre de points valides qu'elle représente (taille du
 // groupe ; 1 en mode « toutes les caches »). La taille alimente l'inspection
-// des étapes au clic (« N caches regroupées »).
-function dayStops(points, options) {
+// des étapes au clic (« N caches regroupées »). `times` (secondes depuis
+// minuit, null si inconnue) donne à chaque étape l'heure de passage la plus
+// tôt de son groupe : null si aucun de ses points n'en porte.
+function dayStops(points, options, times = null) {
+    const timeOf = (i) => (times && Number.isFinite(times[i]) ? times[i] : null);
     if (options.routing === 'all' && points.length <= ALL_MAX_PER_DAY) {
         const indices = points.map((_, i) => i).filter((i) => isValidPoint(points[i]));
-        return { indices, sizes: indices.map(() => 1) };
+        return { indices, sizes: indices.map(() => 1), stopTimes: indices.map(timeOf) };
     }
     const groups = options.routing === 'day'
         ? [points.map((_, i) => i)]
@@ -434,18 +526,28 @@ function dayStops(points, options) {
     const loc = localKm(points, points.map((_, i) => i).filter((i) => isValidPoint(points[i])));
     const indices = [];
     const sizes = [];
+    const stopTimes = [];
     for (const group of groups) {
         const valid = group.filter((i) => isValidPoint(points[i]));
         const anchor = groupAnchorXY(loc.xs, loc.ys, valid);
         if (anchor < 0) continue;
         indices.push(anchor);
         sizes.push(valid.length);
+        let earliest = null;
+        for (const i of valid) {
+            const t = timeOf(i);
+            if (t !== null && (earliest === null || t < earliest)) earliest = t;
+        }
+        stopTimes.push(earliest);
     }
-    return { indices, sizes };
+    return { indices, sizes, stopTimes };
 }
 
 // Trajet complet à partir des jours de trouvailles, triés ou non :
-// `days` = [{ day: numéro de jour (entier), points: [[lon, lat], ...] }].
+// `days` = [{ day: numéro de jour (entier), points: [[lon, lat], ...],
+// times?: [secondes depuis minuit | null, ...] }]. Les heures, quand au moins
+// deux étapes du jour en portent, imposent l'ordre de passage
+// (orderTimedStops) ; sinon il est déduit de la géométrie (orderStops).
 // Retourne les étapes en colonnes (lon, lat, day) et, pour chaque jour
 // ayant au moins une étape, l'index de sa dernière étape.
 export function buildTrailRoute(days, rawOptions = {}) {
@@ -465,12 +567,12 @@ export function buildTrailRoute(days, rawOptions = {}) {
     const fallbackDays = [];
     let previous = null;
 
-    for (const { day, points } of sorted) {
+    for (const { day, points, times } of sorted) {
         const fallback = options.routing === 'all' && points.length > ALL_MAX_PER_DAY;
-        const { indices, sizes } = dayStops(points, options);
+        const { indices, sizes, stopTimes } = dayStops(points, options, times);
         if (indices.length === 0) continue;
         const stops = indices.map((i) => points[i]);
-        const order = orderStops(stops, previous);
+        const order = orderTimedStops(stops, stopTimes, previous) ?? orderStops(stops, previous);
         for (const k of order) {
             lon.push(stops[k][0]);
             lat.push(stops[k][1]);

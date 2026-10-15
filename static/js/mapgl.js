@@ -163,6 +163,7 @@ import {
     SEGMENT_JUMP_DASHED,
     SEGMENT_NORMAL,
     splitTrailRuns,
+    timeOfDaySeconds,
     TRAIL_DEFAULTS,
     trailOpacity,
     visibleVertexRange,
@@ -5044,7 +5045,13 @@ function getTrailGeometry(opts) {
         // l'animation (le passé avant la date de début reste inclus : il
         // positionne le stylo).
         if (Number.isFinite(endDay) && day > endDay) continue;
-        days.push({ day, points: points.map((feature) => feature.geometry.coordinates) });
+        days.push({
+            day,
+            points: points.map((feature) => feature.geometry.coordinates),
+            // Heure de passage fiable (étapes Labs) : elle ordonne la
+            // journée. Le `time_find` des géocaches est factice, jamais lu ici.
+            times: points.map((feature) => timeOfDaySeconds(feature.properties?.found_local_time)),
+        });
     }
     const route = buildTrailRoute(days, opts);
     const path = buildTrailPath(route, {
