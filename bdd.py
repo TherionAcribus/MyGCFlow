@@ -272,6 +272,19 @@ def _read_gpx_header(source):
     return name_text, desc_text, author_text
 
 
+# geocaching.com écrit <groundspeak:state>None</groundspeak:state> pour un pays
+# sans découpage en régions (Luxembourg, Malte, Réunion, Slovénie…) : c'est
+# l'absence de région, pas une région nommée « None ». Même règle pour le pays,
+# par prudence (jamais observé). Partagé avec la migration v7.
+GEO_PLACEHOLDERS = frozenset({"none"})
+
+
+def clean_geo_text(value):
+    """Pays ou région d'un GPX : texte nettoyé, None si vide ou factice."""
+    text = (value or "").strip()
+    return None if not text or text.lower() in GEO_PLACEHOLDERS else text
+
+
 def uploadBdd(file_path, Geocache, db, status: Optional[TaskStatus] = None):
     # initialisation de l'état du chargement
     loading_state.reset()
@@ -423,11 +436,11 @@ def uploadBdd(file_path, Geocache, db, status: Optional[TaskStatus] = None):
                 if pb is not None and pb.text:
                     placed_by = pb.text
                 co_ = cache_data.find('groundspeak:country', ns)
-                if co_ is not None and co_.text:
-                    country = co_.text
+                if co_ is not None:
+                    country = clean_geo_text(co_.text)
                 st_ = cache_data.find('groundspeak:state', ns)
-                if st_ is not None and st_.text:
-                    state = st_.text
+                if st_ is not None:
+                    state = clean_geo_text(st_.text)
 
                 # Attributs (peut être vide)
                 attrs = cache_data.find('groundspeak:attributes', ns)

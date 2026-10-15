@@ -129,6 +129,33 @@ class SchemaMigrationTests(unittest.TestCase):
         self.assertTrue({'owner', 'published_date'} <= self._columns('lab_discovery'))
         self.assertEqual(self._user_version(), migrations.LATEST_VERSION)
 
+    def test_placeholder_region_none_is_cleared(self):
+        """Région « None » des GPX geocaching.com (pays sans régions) : remise
+        à vide, arbre pays/régions en cache jeté ; les vraies valeurs restent."""
+        from unittest import mock
+        self._create_app()
+        with self._connect() as conn:
+            conn.executemany(
+                "INSERT INTO geocache (gc_code, country, state) VALUES (?, ?, ?)",
+                [("GC1", "Luxembourg", "None"), ("GC2", "Malta", " none "),
+                 ("GC3", "France", "Bretagne"), ("GC4", "France", None)])
+            conn.execute("PRAGMA user_version = 6")
+        tree = os.path.join(self.tmpdir.name, 'country_state.json')
+        with open(tree, 'w', encoding='utf-8') as fh:
+            fh.write('{"Luxembourg": ["None"]}')
+
+        with mock.patch('paths.country_state_path',
+                        return_value=__import__('pathlib').Path(tree)):
+            self._create_app()
+
+        with self._connect() as conn:
+            rows = dict(conn.execute("SELECT gc_code, state FROM geocache"))
+            countries = dict(conn.execute("SELECT gc_code, country FROM geocache"))
+        self.assertEqual(rows, {"GC1": None, "GC2": None, "GC3": "Bretagne", "GC4": None})
+        self.assertEqual(countries["GC1"], "Luxembourg")
+        self.assertFalse(os.path.exists(tree))
+        self.assertEqual(self._user_version(), migrations.LATEST_VERSION)
+
     def test_lab_table_gains_stage_rank_and_image_columns(self):
         self._create_app()
         added = ('stage_number', 'stages_total', 'stage_image_url', 'adventure_image_url')

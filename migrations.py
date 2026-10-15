@@ -120,6 +120,29 @@ def _v6_lab_rang_et_images(db):
                     f"ALTER TABLE lab_discovery ADD COLUMN {name} {sql_type}")
 
 
+def _v7_region_factice(db):
+    # Région « None » des GPX geocaching.com (pays sans régions) : remise à
+    # NULL, comme le fait désormais l'import (bdd.clean_geo_text). Idempotent.
+    # L'arbre pays/régions en cache est jeté pour être reconstruit ; le cache
+    # GeoJSON persistant suit déjà la date de modification de la base.
+    from bdd import GEO_PLACEHOLDERS
+    import paths
+    placeholders = sorted(GEO_PLACEHOLDERS)
+    marks = ", ".join("?" for _ in placeholders)
+    changed = 0
+    with db.engine.begin() as conn:
+        for column in ("country", "state"):
+            changed += conn.exec_driver_sql(
+                f"UPDATE geocache SET {column} = NULL "
+                f"WHERE lower(trim({column})) IN ({marks})", tuple(placeholders)).rowcount
+    if changed:
+        logger.info("Région/pays factices remis à vide : %s géocache(s)", changed)
+        try:
+            paths.country_state_path().unlink(missing_ok=True)
+        except OSError:
+            pass
+
+
 MIGRATIONS = [
     (1, _v1_colonnes_et_index),
     (2, _v2_tables_lab),
@@ -127,6 +150,7 @@ MIGRATIONS = [
     (4, _v4_lab_coordonnees_proposees),
     (5, _v5_lab_proprietaire_publication),
     (6, _v6_lab_rang_et_images),
+    (7, _v7_region_factice),
 ]
 
 LATEST_VERSION = MIGRATIONS[-1][0]
