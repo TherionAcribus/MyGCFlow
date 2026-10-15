@@ -2720,6 +2720,22 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
 .recent-music-menu .dropdown-item {
     min-width: 0;
 }
+/* Une musique et son bouton de retrait sur la même ligne. */
+.recent-music-menu .recent-music-entry {
+    display: flex;
+    align-items: center;
+}
+.recent-music-menu .recent-music-entry > .dropdown-item {
+    flex: 1 1 auto;
+}
+.recent-music-menu .recent-music-remove {
+    flex: none;
+    margin-right: 0.25rem;
+    padding: 0.125rem 0.375rem;
+}
+.recent-music-menu li[hidden] {
+    display: none;
+}
 /* Assez large pour « 123.4 » sans déborder sur l'indication. */
 .audio-start-input {
     width: 7.5rem;

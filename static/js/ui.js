@@ -40,7 +40,7 @@ import {
     clampFades, formatStartTime, listenFromTimelineMs, musicStartForKey, musicTimeline, normalizeFadeSeconds,
     timelineMsAt, timelineX, waveformPath,
 } from './music_waveform.mjs';
-import { musicTrack } from './music_track.js';
+import { ensurePlayableMusic, musicTrack } from './music_track.js';
 import { withoutRecentMusic, withRecentMusic, withRecentStart } from './music_track.mjs';
 import {
     buildTrailPath,
@@ -1616,9 +1616,17 @@ function initOptionsElements() {
     setupMusicStartHandle();
     // Menu des musiques récentes (rempli par renderRecentMusicMenu).
     document.getElementById('recentMusicMenu')?.addEventListener('click', (event) => {
+        const remove = event.target.closest('[data-remove-file]');
+        if (remove) {
+            // Le menu reste ouvert : plusieurs musiques peuvent être retirées.
+            event.stopPropagation();
+            removeRecentMusic(remove.dataset.removeFile);
+            return;
+        }
         const item = event.target.closest('[data-file]');
         if (item) loadRecentMusic(item.dataset.file);
     });
+    document.getElementById('btnRecentMusic')?.addEventListener('show.bs.dropdown', refreshRecentMusicStorage);
     // Écoute seule, et tête de lecture de la forme d'onde.
     document.getElementById('btnMusicListen')?.addEventListener('click', () => toggleMusicListening(false));
     document.getElementById('btnMusicListenEnd')?.addEventListener('click', () => toggleMusicListening(true));
@@ -8108,9 +8116,11 @@ function updateAudioDurationButton() {
     // Checkbox : décochée sans fichier. Avec un fichier, elle garde l'état
     // posé par l'appelant (cochée pour une musique choisie, la préférence
     // pour une musique rechargée au démarrage).
+    // Musique illisible : elle ne peut pas être incluse (excludeUnreadableMusic).
     if (cbAudio) {
-        cbAudio.disabled = !hasFile;
-        if (!hasFile) cbAudio.checked = false;
+        const includable = hasFile && !musicTrack.isUnreadable();
+        cbAudio.disabled = !includable;
+        if (!includable) cbAudio.checked = false;
     }
     const btnRemove = document.getElementById('btnAudioFileRemove');
     if (btnRemove) btnRemove.hidden = !hasFile;
@@ -8363,7 +8373,7 @@ function renderRecentMusicMenu() {
     const recent = Array.isArray(audio.recent) ? audio.recent : [];
     const current = musicTrack.hasFile() ? audio.file : '';
     wrapper.hidden = !recent.some((r) => r.file !== current);
-    menu.replaceChildren(...recent.map((entry) => {
+    const items = recent.map((entry) => {
         const item = document.createElement('button');
         item.type = 'button';
         item.className = 'dropdown-item d-flex align-items-center gap-2';
@@ -8387,9 +8397,80 @@ function renderRecentMusicMenu() {
             item.append(start);
         }
         const li = document.createElement('li');
+        li.className = 'recent-music-entry';
         li.append(item);
+        // Retrait de la liste, avec sa copie du dossier audio/ — pas pour la
+        // musique courante, que l'export peut encore lire.
+        if (!isCurrent) {
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.className = 'btn btn-sm btn-ghost-secondary recent-music-remove';
+            remove.dataset.removeFile = entry.file;
+            const label = t('Retirer « ${name} » des musiques récentes', { name: entry.name });
+            remove.setAttribute('aria-label', label);
+            remove.title = label;
+            const icon = document.createElement('i');
+            icon.className = 'ti ti-x';
+            icon.setAttribute('aria-hidden', 'true');
+            remove.append(icon);
+            li.append(remove);
+        }
         return li;
-    }));
+    });
+    // Place occupée par les copies (refreshRecentMusicStorage, à l'ouverture).
+    const divider = document.createElement('li');
+    const hr = document.createElement('hr');
+    hr.className = 'dropdown-divider';
+    divider.append(hr);
+    const storage = document.createElement('li');
+    const storageText = document.createElement('span');
+    storageText.id = 'recentMusicStorage';
+    storageText.className = 'dropdown-item-text small text-muted';
+    storageText.title = t('Les musiques choisies sont copiées pour l\'export ; les copies qui ne servent plus sont supprimées.');
+    storage.append(storageText);
+    menu.replaceChildren(...items, divider, storage);
+    refreshRecentMusicStorage();
+}
+
+// Place occupée par les copies des musiques (dossier audio/ du serveur).
+async function refreshRecentMusicStorage() {
+    const text = document.getElementById('recentMusicStorage');
+    if (!text) return;
+    try {
+        const data = await (await fetch('/api/audio')).json();
+        const size = pkg.formatVideoSize?.(data?.total_bytes) || '';
+        text.textContent = size ? t('Copies des musiques : ${size}', { size }) : '';
+        text.parentElement.hidden = !size;
+    } catch (e) {
+        text.parentElement.hidden = true;
+    }
+}
+
+// Retire une musique des récentes, et sa copie du dossier audio/ du serveur
+// (l'original, chez l'utilisateur, n'est pas touché). Refusé pendant un
+// export, qui peut la lire : elle reste alors dans la liste.
+async function removeRecentMusic(serverName) {
+    const audio = pkg.options?.record?.audio;
+    if (!audio?.recent?.some((r) => r.file === serverName)) return;
+    if (musicTrack.hasFile() && audio.file === serverName) return;
+    let result = null;
+    try {
+        const response = await fetch('/api/audio/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ file: serverName }),
+        });
+        result = await response.json().catch(() => null);
+    } catch (e) {
+        console.warn('Musique récente non retirée:', e);
+    }
+    if (!result?.success) {
+        pkg.showToast?.(result?.message || t('La musique n\'a pas pu être retirée.'), 'error', t('Musique'), 5000);
+        return;
+    }
+    audio.recent = withoutRecentMusic(audio.recent, serverName);
+    renderRecentMusicMenu();
+    saveRecordSettings(null);
 }
 
 // Reprend une musique récente : déjà sur le serveur, elle n'est pas renvoyée,
@@ -8497,9 +8578,23 @@ async function refreshMusicDuration() {
     // durée y est exacte (cf. music_analysis.mjs).
     let analysis = null;
     try {
-        analysis = await getMusicAnalysis(file);
+        analysis = await getMusicAnalysis(musicTrack.playable(file));
     } catch (e) {
-        console.warn('Musique non décodable, durée des métadonnées:', e);
+        // Format que le navigateur ne décode pas (.wma, .aiff…) : le serveur
+        // en fait une version lisible (ffmpeg lit bien plus de formats),
+        // analysée et écoutée à sa place — l'export garde l'original.
+        console.warn('Musique non décodable par le navigateur, conversion demandée:', e);
+        const converted = await ensurePlayableMusic(file);
+        if (token !== audioReadToken) return null;
+        if (converted?.playable) {
+            try {
+                analysis = await getMusicAnalysis(converted.playable);
+            } catch (err) {
+                console.warn('Version lisible de la musique non décodable:', err);
+            }
+        } else if (converted?.unreadable) {
+            excludeUnreadableMusic();
+        }
     }
     if (token !== audioReadToken) return null; // lecture périmée
     if (analysis && analysis.durationMs > 0) {
@@ -8527,6 +8622,21 @@ async function refreshMusicDuration() {
     applyMusicBounds();
     refreshTimingPlan();
     return musicDurationMs;
+}
+
+// Musique que ni le navigateur ni ffmpeg ne lisent (fichier endommagé,
+// format inconnu) : l'inclure ferait échouer l'export entier, au moment de
+// l'assemblage. « Inclure la musique » est décochée et bloquée
+// (updateAudioDurationButton), et l'utilisateur prévenu dès le choix.
+function excludeUnreadableMusic() {
+    if (cbRecordAudioEnable?.checked) {
+        cbRecordAudioEnable.checked = false;
+        changeRecordValues(cbRecordAudioEnable);
+    }
+    pkg.showToast?.(
+        t('Cette musique est illisible (format inconnu ou fichier endommagé) : elle ne sera pas ajoutée à la vidéo.'),
+        'warning', t('Musique'), 8000,
+    );
 }
 
 // Analyse (durée, blanc de fin, forme d'onde) d'un fichier audio, mise en

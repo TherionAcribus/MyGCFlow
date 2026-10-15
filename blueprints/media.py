@@ -6,8 +6,10 @@ from flask import Blueprint, abort, current_app, jsonify, request, send_from_dir
 from flask_babel import gettext as _babel_gettext
 from werkzeug.utils import secure_filename
 
+import audio_library
 from capture import (
     TASK_TYPE_VIDEO,
+    TASK_TYPE_VIDEO_PROCESS,
     captured_session_dir,
     clear_pictures_directory,
     count_captured_pictures,
@@ -219,9 +221,74 @@ def route_upload_video():
     return upload_video(request)
 
 
+def _audio_in_use():
+    """Vrai pendant un export : ffmpeg lit peut-être une musique du dossier."""
+    return any(status.type in (TASK_TYPE_VIDEO, TASK_TYPE_VIDEO_PROCESS)
+               for status in task_manager.active_tasks())
+
+
+def _referenced_audio_files():
+    return audio_library.referenced_audio_files(get_settings_manager().get_app_settings().recording)
+
+
 @media_bp.route('/upload_audio', methods=['POST'])
 def route_upload_audio():
-    return upload_audio(request)
+    response = upload_audio(request)
+    # Une nouvelle musique arrive : les copies que plus rien ne désigne
+    # (sorties des musiques récentes) sont balayées — jamais pendant un export.
+    if not _audio_in_use():
+        try:
+            audio_library.sweep_audio_dir(_referenced_audio_files())
+        except Exception as e:
+            print(f"[audio] balayage impossible: {e}")
+    return response
+
+
+# ---- Copies des musiques (dossier audio/) ----
+
+@media_bp.route('/api/audio', methods=['GET'])
+def route_list_audio():
+    # Place occupée par les copies, affichée sous les musiques récentes.
+    return jsonify({'success': True, **audio_library.list_audio_files(_referenced_audio_files())})
+
+
+@media_bp.route('/api/audio/delete', methods=['POST'])
+def route_delete_audio():
+    # Retrait d'une musique récente : sa copie (et sa version lisible) quitte
+    # le dossier. L'original, sur le disque de l'utilisateur, n'est pas touché.
+    payload = request.get_json(silent=True) or {}
+    name = audio_library.safe_audio_name(payload.get('file'))
+    if not name:
+        return jsonify({'success': False, 'message': _('Musique inconnue')}), 400
+    if name == get_settings_manager().get_app_settings().recording.audio_file:
+        return jsonify({'success': False, 'message': _("La musique choisie ne peut pas être retirée.")}), 409
+    if _audio_in_use():
+        return _busy_response(None, _("Un export vidéo est en cours : réessayez une fois la vidéo terminée."))
+    try:
+        audio_library.delete_audio_file(name)
+    except OSError as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    return jsonify({'success': True})
+
+
+@media_bp.route('/api/audio/playable', methods=['POST'])
+def route_playable_audio():
+    # Version lisible par le navigateur d'une musique qu'il ne sait pas
+    # décoder (cf. audio_library.playable_audio).
+    payload = request.get_json(silent=True) or {}
+    try:
+        name = audio_library.playable_audio(payload.get('file'))
+    except FileNotFoundError:
+        return jsonify({'success': False, 'message': _('Musique introuvable sur le serveur')}), 404
+    except audio_library.UnreadableAudio:
+        return jsonify({
+            'success': False,
+            'unreadable': True,
+            'message': _("Cette musique est illisible (format inconnu ou fichier endommagé)."),
+        }), 422
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    return jsonify({'success': True, 'file': name})
 
 
 @media_bp.route('/audio/<path:filename>', methods=['GET'])

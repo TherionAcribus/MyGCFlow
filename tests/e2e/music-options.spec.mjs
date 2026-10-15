@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
-import { rmSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
@@ -417,20 +419,86 @@ test('l\'aperçu se met en pause quand l\'onglet passe en arrière-plan, et repr
 });
 
 
-test('une musique que le navigateur ne sait pas lire est signalée à l\'écoute', async ({ page }) => {
+test('une musique illisible partout est signalée dès le choix, et tenue hors de la vidéo', async ({ page }) => {
   const listen = page.locator('#btnMusicListen');
+  const include = page.locator('#cbRecordAudioEnable');
 
-  // Format accepté (ffmpeg le lira à l'export), mais illisible ici.
+  // Ni le navigateur ni ffmpeg ne la lisent : l'inclure ferait échouer l'export.
   await page.locator('#inputAudioFile').setInputFiles({
     name: 'illisible.wma', mimeType: 'audio/x-ms-wma', buffer: Buffer.from('pas de la musique'),
   });
   await expect(page.locator('#audioFileInfo')).toContainText('illisible.wma');
+  await expect(page.locator('.gcm-toast', { hasText: 'Cette musique est illisible' })).toBeVisible();
+  await expect(include).not.toBeChecked();
+  await expect(include).toBeDisabled();
+  await expect.poll(async () => (await recordingSettings(page)).audio_enabled).toBe(false);
 
   // Auparavant : « Arrêter » affiché sur un silence, sans fin.
   await listen.click();
-  await expect(page.locator('.gcm-toast', { hasText: 'ne sait pas lire cette musique' })).toBeVisible();
+  await expect(page.locator('.gcm-toast', { hasText: 'ne peut pas être lue' })).toBeVisible();
   await expect(listen).toHaveAttribute('aria-pressed', 'false');
   await expect(listen).toContainText('Écouter');
+});
+
+
+test('un format que le navigateur ne décode pas s\'écoute par une version convertie', async ({ page }) => {
+  // Vrai .wma, produit par le ffmpeg de l'application : aucun navigateur ne
+  // le décode, ffmpeg si.
+  const folder = mkdtempSync(path.join(tmpdir(), 'mygcflow-wma-'));
+  const target = path.join(folder, 'morceau.wma');
+  const made = spawnSync(process.env.MYGCFLOW_E2E_PYTHON, ['-c', [
+    'import subprocess, sys, imageio_ffmpeg',
+    'subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), "-y", "-v", "error", "-f", "lavfi", "-t", "6",'
+      + ' "-i", "sine=frequency=440:sample_rate=44100", "-c:a", "wmav2", sys.argv[1]], check=True)',
+  ].join('\n'), target], { encoding: 'utf8' });
+  expect(made.status, made.stderr).toBe(0);
+  const listen = page.locator('#btnMusicListen');
+  const head = page.locator('#musicWaveform .mw-playhead');
+
+  await page.locator('#inputAudioFile').setInputFiles({
+    name: 'morceau.wma', mimeType: 'audio/x-ms-wma', buffer: readFileSync(target),
+  });
+  rmSync(folder, { recursive: true, force: true });
+  // Mesurée sur la version convertie : durée, forme d'onde, calage.
+  await expect(page.locator('#musicSyncStatus')).toContainText('Durée calée sur la musique (6 s)');
+  await expect(page.locator('#musicWaveform')).toBeVisible();
+  await expect(page.locator('#cbRecordAudioEnable')).toBeChecked();
+  await expect(page.locator('#cbRecordAudioEnable')).toBeEnabled();
+
+  await listen.click();
+  await expect.poll(async () => Number(await head.getAttribute('x1'))).toBeGreaterThan(50);
+  await listen.click();
+  await expect(listen).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.locator('.gcm-toast', { hasText: /illisible|ne peut pas être lue/ })).toHaveCount(0);
+  // L'export garde l'original.
+  await expect.poll(async () => (await recordingSettings(page)).audio_file).toMatch(/^morceau-[0-9a-f]{16}\.wma$/);
+});
+
+
+test('une musique récente se retire de la liste, avec sa copie', async ({ page }) => {
+  const dropdown = page.locator('#recentMusicDropdown');
+  const menu = page.locator('#recentMusicMenu');
+  const recent = async () => (await recordingSettings(page)).audio_recent;
+  const storedFiles = async () => (await (await page.request.get('/api/audio')).json()).files.map((f) => f.file);
+
+  await page.locator('#inputAudioFile').setInputFiles(wavFile('a-retirer.wav', 3, 0));
+  await expect(page.locator('#musicSyncStatus')).toContainText('Musique : 3 s');
+  await page.locator('#inputAudioFile').setInputFiles(wavFile('a-garder.wav', 4, 0));
+  await expect.poll(async () => (await recent()).map((r) => r.name)).toEqual(['a-garder.wav', 'a-retirer.wav']);
+  const removed = (await recent()).find((r) => r.name === 'a-retirer.wav').file;
+  expect(await storedFiles()).toContain(removed);
+
+  await page.locator('#btnRecentMusic').click();
+  // Place occupée par les copies, sous la liste.
+  await expect(menu.locator('#recentMusicStorage')).toContainText(/Copies des musiques : .* (Mo|Go)/);
+  // La musique courante ne se retire pas d'ici.
+  await expect(menu.locator('.recent-music-remove')).toHaveCount(1);
+  await menu.getByRole('button', { name: 'Retirer « a-retirer.wav » des musiques récentes' }).click();
+
+  await expect.poll(async () => (await recent()).map((r) => r.name)).toEqual(['a-garder.wav']);
+  expect(await storedFiles()).not.toContain(removed);
+  // Plus rien d'autre que la musique courante : le menu disparaît.
+  await expect(dropdown).toBeHidden();
 });
 
 

@@ -94,10 +94,11 @@ function playBackgroundAudio(context) {
 // explicitement, le redonne à chaque fois).
 const previewFailureNotified = new WeakSet();
 
-// Le navigateur ne sait pas lire la musique (format non pris en charge — .wma,
-// .aiff… — ou fichier endommagé). Sans cela, l'écoute affichait « Arrêter »
-// sur un silence, sans fin. La lecture est arrêtée et l'utilisateur prévenu :
-// l'export, lui, passe par ffmpeg, qui lit bien plus de formats.
+// La musique ne se décode pas — ni l'original ni sa version lisible
+// convertie par le serveur (cf. ensurePlayableMusic) : fichier endommagé,
+// format inconnu, ou version lisible pas encore obtenue. Sans cela, l'écoute
+// affichait « Arrêter » sur un silence, sans fin. La lecture est arrêtée et
+// l'utilisateur prévenu.
 function playbackFailed(error) {
     if (!bgAudioMode) return; // déjà arrêtée
     console.warn('Musique illisible par le navigateur:', error);
@@ -109,7 +110,7 @@ function playbackFailed(error) {
         previewFailureNotified.add(file);
     }
     pkg.showToast?.(
-        pkg.t('Le navigateur ne sait pas lire cette musique : elle ne peut pas être écoutée ici. L\'export vidéo, qui passe par ffmpeg, peut tout de même l\'intégrer.'),
+        pkg.t('Cette musique ne peut pas être lue (format non pris en charge ou fichier endommagé).'),
         'warning', pkg.t('Musique'), 8000,
     );
 }
@@ -229,7 +230,8 @@ export function startBackgroundMusicIfAny(){
         stopBackgroundMusic();
         const file = includedMusicFile();
         if (!file) return;
-        startPlayback(file, { mode: 'preview' });
+        // Version lisible si le navigateur ne sait pas décoder l'original.
+        startPlayback(musicTrack.playable(file), { mode: 'preview' });
     } catch(e) {
         console.warn('startBackgroundMusicIfAny error:', e);
     }
@@ -242,7 +244,7 @@ export function startBackgroundMusicIfAny(){
 // `fromVideoMs` : à partir de cet instant de la vidéo (clic sur la forme
 // d'onde).
 export function listenToMusic({ fromEnd = false, fromVideoMs = null } = {}) {
-    const file = musicTrack.file();
+    const file = musicTrack.playable();
     if (!file || isRecordingActive() || pkg.isAnimationInProgress?.()) return false;
     const videoMs = pkg.musicPlaybackPlan?.().videoMs || 0;
     let from = fromEnd ? Math.max(0, videoMs - LISTEN_END_MS) : 0;

@@ -44,6 +44,10 @@ Autres repères :
   `audio_file === ''`, sinon tous les specs suivants démarrent avec elle.
   La liste des musiques récentes (`recording.audio_recent`) survit au retrait :
   la vider par `PUT /api/settings` `{recording: {audio_recent: []}}`.
+- Le Chromium de Playwright (comme Chromium sous Linux) n'a pas les codecs
+  propriétaires : il ne décode ni AAC ni H.264 (`decodeAudioData` →
+  `EncodingError`). Tout audio destiné au navigateur (version lisible d'un
+  .wma, cf. `audio_library.py`) est donc produit en FLAC, pas en AAC/M4A.
 - L'onglet Animation & vidéo a quatre sous-onglets (`#animationConfigTab`
   « Dates & rythme », `#cameraConfigTab`, `#musicConfigTab`,
   `#recordingConfigTab`). Un contrôle d'un sous-onglet fermé n'est pas

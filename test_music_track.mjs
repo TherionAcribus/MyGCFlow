@@ -156,3 +156,32 @@ test('sans musique, pas de nom ni d\'envoi', async () => {
     assert.equal(track.hasFile(), false);
     assert.equal(calls.length, 1);
 });
+
+test('une version lisible remplace l’original pour l’écran seulement', async () => {
+    const track = createMusicTrack({ upload: async (file) => `${file.name}-copie` });
+    const original = { name: 'morceau.wma' };
+    const lisible = { name: 'morceau.wma.m4a' };
+    track.select(original);
+    assert.equal(track.playable(), original);
+    track.setPlayable(original, lisible);
+    assert.equal(track.playable(), lisible);
+    assert.equal(track.playable(original), lisible);
+    // La musique, et donc ce qui part à l'export, reste l'original.
+    assert.equal(track.file(), original);
+    assert.equal(await track.serverName(), 'morceau.wma-copie');
+    track.clear();
+    assert.equal(track.playable(), null);
+});
+
+test('une musique illisible le reste, pour elle seule', () => {
+    const track = createMusicTrack({ upload: async () => 'x' });
+    const illisible = { name: 'casse.wma' };
+    const autre = { name: 'bonne.mp3' };
+    track.select(illisible);
+    assert.equal(track.isUnreadable(), false);
+    track.markUnreadable(illisible);
+    assert.equal(track.isUnreadable(), true);
+    track.select(autre);
+    assert.equal(track.isUnreadable(), false);
+    assert.equal(track.isUnreadable(illisible), true);
+});

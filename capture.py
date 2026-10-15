@@ -724,8 +724,15 @@ def _save_uploaded_audio(file_storage):
         if os.path.exists(final_path):
             # Contenu déjà présent : on garde l'existant, qu'un traitement en
             # cours peut être en train de lire (os.replace échouerait alors
-            # sous Windows).
+            # sous Windows). Sa date est rafraîchie : de nouveau choisie, la
+            # musique ne doit pas être balayée comme une copie oubliée
+            # (audio_library.sweep_audio_dir) avant d'entrer dans les
+            # préférences.
             os.remove(tmp_path)
+            try:
+                os.utime(final_path)
+            except OSError:
+                pass
         else:
             os.replace(tmp_path, final_path)
         return name

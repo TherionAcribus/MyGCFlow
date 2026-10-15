@@ -45,18 +45,22 @@ export function withoutRecentMusic(recent, file) {
 }
 
 export function createMusicTrack({ upload, onUploadError = () => {} }) {
-    // Par fichier, { file, name, pending } : `name` est le nom sur le serveur
-    // une fois la copie faite, `pending` la copie en cours. Indexé par le
-    // fichier lui-même : la copie d'une musique remplacée entre-temps ne peut
-    // rien écraser, et un export qui a figé l'ancienne la retrouve sans la
-    // renvoyer. La WeakMap ne retient aucun fichier en mémoire.
+    // Par fichier, { file, name, pending, playable, unreadable } : `name` est
+    // le nom sur le serveur une fois la copie faite, `pending` la copie en
+    // cours. Indexé par le fichier lui-même : la copie d'une musique remplacée
+    // entre-temps ne peut rien écraser, et un export qui a figé l'ancienne la
+    // retrouve sans la renvoyer. La WeakMap ne retient aucun fichier en
+    // mémoire.
+    // `playable` : version que le navigateur sait décoder, quand il ne sait
+    // pas lire l'original (.wma…) — pour l'écran seulement, l'export garde
+    // l'original. `unreadable` : ni le navigateur ni ffmpeg ne la lisent.
     const entries = new WeakMap();
     let current = null;
 
     function entryFor(file) {
         let entry = entries.get(file);
         if (!entry) {
-            entry = { file, name: null, pending: null };
+            entry = { file, name: null, pending: null, playable: null, unreadable: false };
             entries.set(file, entry);
         }
         return entry;
@@ -99,6 +103,23 @@ export function createMusicTrack({ upload, onUploadError = () => {} }) {
         },
         hasFile() {
             return !!current;
+        },
+        // Fichier à décoder pour l'écran (forme d'onde, mesure, écoute) : la
+        // version lisible si l'original ne l'est pas. Sans argument : la
+        // musique courante.
+        playable(file = current?.file) {
+            if (!file) return null;
+            return entries.get(file)?.playable || file;
+        },
+        setPlayable(file, playable) {
+            if (file) entryFor(file).playable = playable || null;
+        },
+        // Musique illisible partout : elle n'est ni écoutée ni exportée.
+        isUnreadable(file = current?.file) {
+            return !!file && !!entries.get(file)?.unreadable;
+        },
+        markUnreadable(file) {
+            if (file) entryFor(file).unreadable = true;
         },
         // Nom de `file` sur le serveur, ou null si la copie échoue (à
         // l'appelant de se replier). Sans argument : la musique courante.
