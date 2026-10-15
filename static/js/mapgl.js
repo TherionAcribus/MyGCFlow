@@ -3303,14 +3303,30 @@ function abortRecordingOnError(error) {
 // Fin d'export réussie : l'écran « Vidéo prête » présente le fichier et les
 // actions pour y accéder. Sans fichier côté serveur (repli navigateur avec
 // téléchargement seul), il n'y a rien à présenter : simple toast.
-function announceVideoReady(video) {
+// Avertissements : ceux du serveur (`video.warnings`) et `clientWarnings`,
+// ce que le navigateur n'a pas pu faire (ex. musique non transmise).
+function announceVideoReady(video, clientWarnings = []) {
     let shown = false;
+    const warnings = [...(video?.warnings || []), ...clientWarnings];
     // La capture est terminée : redimensionner la carte n'affecte plus la vidéo.
     try { pkg.leaveFullscreenMode?.(); } catch (e) { console.warn('[RECORD END] Sortie du plein écran impossible:', e); }
-    try { shown = !!pkg.showVideoReady?.(video); } catch (e) { console.warn('[RECORD END] Écran de fin indisponible:', e); }
-    if (!shown) pkg.showToast && pkg.showToast(pkg.t('Vidéo prête'), 'success', pkg.t('Enregistrement'));
+    try { shown = !!pkg.showVideoReady?.(video && { ...video, warnings }); } catch (e) { console.warn('[RECORD END] Écran de fin indisponible:', e); }
+    if (!shown) {
+        pkg.showToast && pkg.showToast(pkg.t('Vidéo prête'), 'success', pkg.t('Enregistrement'));
+        for (const message of warnings) pkg.showToast?.(message, 'warning', pkg.t('Musique'), 10000);
+    }
     // La liste « Dernières vidéos » de l'onglet Export se met à jour.
     window.dispatchEvent(new CustomEvent('mygcflow:video-exported'));
+}
+
+// Musique demandée qui n'a pas pu rejoindre la vidéo, côté navigateur (le
+// serveur signale lui-même une musique introuvable, cf. capture._audio_warnings).
+function musicNotSentWarning() {
+    return pkg.t('La musique n\'a pas pu être envoyée au serveur : la vidéo a été créée sans musique.');
+}
+
+function musicNotMixedWarning() {
+    return pkg.t('La musique n\'a pas pu être ajoutée à la vidéo : elle a été créée sans musique.');
 }
 
 // Lancement de l'assemblage vidéo. En POST : la route déclenche un encodage, et
@@ -3537,10 +3553,15 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos, sess
 
         // Musique incluse : elle est déjà sur le serveur depuis sa sélection
         // (copie attendue si elle n'est pas finie) ; l'assemblage reçoit son nom.
+        // Vrai quand la vidéo sortira sans la musique demandée : l'écran de
+        // fin le dit, au lieu d'une vidéo muette sans explication.
+        let musicDropped = false;
         const tryAssembleWithAudio = async () => {
             try {
                 const file = includedMusicFile();
+                // null : la copie vers le serveur a échoué, même retentée.
                 const audioFileName = file ? await musicTrack.serverName(file) : null;
+                if (file && !audioFileName) musicDropped = true;
                 // Volume effectif : curseur, harmonisé si demandé (cf. audioOutputVolume).
                 const audioVol = pkg.audioOutputVolume();
                 // FPS configurable : doit correspondre à celui utilisé pour calculer
@@ -3570,6 +3591,7 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos, sess
                 return postStartCreateVideo(body);
             } catch(e) {
                 console.warn('Assemblage avec audio: fallback sans audio', e);
+                if (includedMusicFile()) musicDropped = true;
                 const fps = normalizeRecordingFps(pkg.options?.record?.fps);
                 return postStartCreateVideo({
                     fps,
@@ -3623,7 +3645,7 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos, sess
               dbgMapgl('[RECORD END] Nettoyage automatique terminé');
               try { pkg.updateProgressBar({progress: 100, message: pkg.t('Nettoyage terminé')}); } catch(e) {}
               setTimeout(() => { try { pkg.closeModalLoading(); } catch(e) {} }, 400);
-              announceVideoReady(assembledVideo);
+              announceVideoReady(assembledVideo, musicDropped ? [musicNotSentWarning()] : []);
               warnIfTileErrors();
             } else {
               if (cleanData) console.warn('[RECORD END] Échec du nettoyage:', cleanData.message);
@@ -4277,13 +4299,17 @@ function finalizeMediaRecorderVideo(){
         const wantsNorm = !!pkg.options?.record?.mediaRecorder?.offlineNormalization;
         const doNormalize = wantsNorm && slowdown > 1;
 
+        // Ce que le repli navigateur n'a pas pu faire (musique non ajoutée),
+        // annoncé avec la vidéo.
+        const clientWarnings = [];
+
         // `video` : description du fichier produit dans le dossier des vidéos
         // (absente si la vidéo n'a été que téléchargée par le navigateur).
         const afterAll = (video) => {
             // Réactiver boutons et fermer loader
             try { pkg.updateProgressBar({ progress: 100, message: pkg.t('Terminé') }); } catch(_) {}
             setTimeout(() => { try { pkg.closeModalLoading(); } catch(_) {} }, 400);
-            announceVideoReady(video);
+            announceVideoReady(video, clientWarnings);
             warnIfTileErrors();
             // Débloquer la lecture de fond après enregistrement MR
             try { setBackgroundAudioBlocked(false); } catch(_) {}
@@ -4343,9 +4369,11 @@ function finalizeMediaRecorderVideo(){
                     loop: pkg.audioLoopPlan(),
                     startMs: pkg.audioStartMs(),
                 }).then((mixed) => {
+                    if (!mixed) clientWarnings.push(musicNotMixedWarning());
                     proceedWith(mixed || videoBlob);
                 }).catch((e) => {
                     console.warn('Mux audio échoué, utilisation de la vidéo seule:', e);
+                    clientWarnings.push(musicNotMixedWarning());
                     proceedWith(videoBlob);
                 });
             } else {

@@ -272,9 +272,35 @@ class VideoProcessingTests(unittest.TestCase):
                     audio_path="tone.wav", **audio_options,
                 )
         self.assertTrue(result["success"], result)
+        self.assertEqual(result["warnings"], [])
         validation = validate_video(str(output), {"duration_seconds": 6, "has_audio": True})
         self.assertTrue(validation.success, "; ".join(validation.errors))
         return output
+
+    def test_a_missing_music_is_reported(self):
+        """Musique demandée mais absente du dossier audio/ : la vidéo sort sans
+        piste audio, et le résultat le dit au lieu de réussir en silence."""
+        for pipeline in ("images", "mediarecorder"):
+            with self.subTest(pipeline=pipeline), tempfile.TemporaryDirectory() as tmp:
+                tmp_path = Path(tmp)
+                output = tmp_path / "out.mp4"
+                with mock.patch.dict(os.environ, {"MYGCFLOW_DATA_DIR": str(tmp_path)}):
+                    if pipeline == "images":
+                        self._create_image_sequence(tmp_path / "captured", 2, 10)
+                        result = _assemble_pictures(
+                            str(tmp_path / "captured"), str(output), fps=10,
+                            audio_path="disparue.mp3", status=_SilentStatus(),
+                        )
+                    else:
+                        self._create_raw_video(tmp_path / "raw.webm", 2, 10)
+                        result = _process_recorded_video(
+                            str(tmp_path / "raw.webm"), str(output), fps=10, audio_path="disparue.mp3",
+                        )
+                self.assertTrue(result["success"], result)
+                self.assertEqual(len(result["warnings"]), 1)
+                self.assertIn("sans musique", result["warnings"][0])
+                validation = validate_video(str(output), {"has_audio": False})
+                self.assertTrue(validation.success, "; ".join(validation.errors))
 
     def test_music_shorter_than_the_video_can_loop(self):
         """Musique de 2 s sur une vidéo de 6 s : muette après 2 s, sauf en boucle."""

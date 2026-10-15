@@ -372,6 +372,37 @@ test('la musique part au serveur à sa sélection, l\'export n\'en transmet que 
   await page.request.put('/api/settings', { data: { recording: { audio_recent: [] } } });
 });
 
+test('musique restée hors du serveur : l\'écran de fin dit que la vidéo est sans musique', async ({ page }) => {
+  // Copie de la musique impossible (serveur injoignable à ce moment-là) : le
+  // mode images assemblait alors une vidéo muette, sans un mot.
+  await page.route('**/upload_audio', (route) => route.abort());
+
+  await page.locator('a[href="#animation"]').click();
+  await page.locator('#musicConfigTab').click();
+  await page.locator('#inputAudioFile').setInputFiles(wavFile('perdue.wav', 3, 0));
+  // Retour au rythme en jours/seconde (préférence globale, cf. plus haut).
+  await expect(page.locator('#btnUnlinkAudio')).toBeVisible();
+  await page.locator('#btnUnlinkAudio').click();
+  await expect(page.locator('#rhythmModeRate')).toBeChecked();
+
+  await prepareSlowRecording(page, 'images', '12.5');
+  await page.locator('#btnQuickExport').click({ force: true });
+  const ready = page.locator('#modal_video_ready');
+  await expect(ready).toBeVisible({ timeout: 120_000 });
+  await expect(ready.locator('#videoReadyWarnings')).toBeVisible();
+  await expect(ready.locator('#videoReadyWarnings')).toContainText('créée sans musique');
+  await ready.locator('.modal-footer [data-bs-dismiss="modal"]').click();
+
+  await page.unroute('**/upload_audio');
+  await page.locator('a[href="#animation"]').click();
+  await page.locator('#musicConfigTab').click();
+  await page.locator('#btnAudioFileRemove').click();
+  await expect.poll(async () => (
+    await (await page.request.get('/api/settings')).json()
+  ).recording.audio_file).toBe('');
+  await page.request.put('/api/settings', { data: { recording: { audio_recent: [] } } });
+});
+
 test('traitement ffmpeg en échec : le repli navigateur livre quand même la vidéo', async ({ page }) => {
   // Le traitement serveur refuse : le navigateur récupère l'enregistrement brut
   // dans le dossier de travail du serveur (/recorded_video), le finalise et le

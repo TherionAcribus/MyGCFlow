@@ -753,6 +753,15 @@ def _resolve_audio_file(audio_path, log_prefix='ffmpeg'):
     return None
 
 
+def _audio_warnings(audio_path, audio_file):
+    """Avertissements à joindre au résultat d'un export : une musique demandée
+    mais introuvable donne une vidéo sans musique, que l'utilisateur doit
+    savoir (elle n'était signalée que dans la console du serveur)."""
+    if audio_path and not audio_file:
+        return [_("La musique choisie est introuvable sur le serveur : la vidéo a été créée sans musique.")]
+    return []
+
+
 def _run_ffmpeg(cmd, out_dur=None, status=None, progress_start=2.0, progress_end=98.0,
                 progress_label="Traitement vidéo", error_label="Traitement ffmpeg",
                 log_prefix="ffmpeg"):
@@ -1040,7 +1049,7 @@ def _assemble_pictures(image_folder, output_video, fps=24, audio_path=None, audi
 
     _progress(100, _("Vidéo créée avec succès"))
     return {'success': True, 'message': _('Vidéo créée avec succès'), 'output': output_video,
-            **describe_video(output_video)}
+            'warnings': _audio_warnings(audio_path, audio_file), **describe_video(output_video)}
 
 
 def assemble_pictures_directory(image_folder, output_video, fps=24, audio_path=None, audio_volume=1.0,
@@ -1191,6 +1200,7 @@ def _process_recorded_video(input_path, output_path, slowdown=1.0, audio_path=No
         'success': True,
         'message': _('Vidéo traitée avec succès'),
         'output': output_path,
+        'warnings': _audio_warnings(audio_path, audio_file),
         **describe_video(output_path),
     }
 

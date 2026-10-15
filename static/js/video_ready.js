@@ -137,7 +137,9 @@ function bindOnce() {
 
 /**
  * Ouvre l'écran de fin d'export pour une vidéo du dossier des vidéos.
- * @param {{file?: string, folder?: string, size_bytes?: number, duration_seconds?: number}} info
+ * `warnings` : ce que l'export n'a pas pu faire (ex. vidéo sans la musique
+ * demandée), affiché en tête de la modale.
+ * @param {{file?: string, folder?: string, size_bytes?: number, duration_seconds?: number, warnings?: string[]}} info
  * @returns {boolean} false si la modale n'a pas pu être affichée (fichier
  *   inconnu, page sans modale) : à l'appelant de prévenir autrement.
  */
@@ -147,6 +149,18 @@ export function showVideoReady(info) {
     if (!file || !modal) return false;
     bindOnce();
     currentFile = file;
+
+    const warningsEl = document.getElementById('videoReadyWarnings');
+    if (warningsEl) {
+        const warnings = (info.warnings || []).filter(Boolean);
+        // En texte : un message serveur n'est jamais interprété comme du HTML.
+        warningsEl.replaceChildren(...warnings.map((message) => {
+            const line = document.createElement('div');
+            line.textContent = message;
+            return line;
+        }));
+        warningsEl.hidden = !warnings.length;
+    }
 
     const fileEl = document.getElementById('videoReadyFile');
     if (fileEl) fileEl.textContent = file;

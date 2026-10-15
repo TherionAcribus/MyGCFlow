@@ -365,6 +365,23 @@ test('la musique s\'écoute seule, telle que la vidéo l\'utilisera', async ({ p
 });
 
 
+test('une musique que le navigateur ne sait pas lire est signalée à l\'écoute', async ({ page }) => {
+  const listen = page.locator('#btnMusicListen');
+
+  // Format accepté (ffmpeg le lira à l'export), mais illisible ici.
+  await page.locator('#inputAudioFile').setInputFiles({
+    name: 'illisible.wma', mimeType: 'audio/x-ms-wma', buffer: Buffer.from('pas de la musique'),
+  });
+  await expect(page.locator('#audioFileInfo')).toContainText('illisible.wma');
+
+  // Auparavant : « Arrêter » affiché sur un silence, sans fin.
+  await listen.click();
+  await expect(page.locator('.gcm-toast', { hasText: 'ne sait pas lire cette musique' })).toBeVisible();
+  await expect(listen).toHaveAttribute('aria-pressed', 'false');
+  await expect(listen).toContainText('Écouter');
+});
+
+
 test('une musique récente se reprend en un clic, avec son point de départ', async ({ page }) => {
   const dropdown = page.locator('#recentMusicDropdown');
   const menu = page.locator('#recentMusicMenu');

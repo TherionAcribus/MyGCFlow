@@ -44,7 +44,38 @@ function playBackgroundAudio(context) {
     try { bgAudioCtx.resume().catch(()=>{}); } catch(_) {}
     // Lecture par piste construite (raccord fondu) : reprendre le contexte suffit.
     if (!bgAudioEl) { bgAudioActive = true; return; }
-    bgAudioEl.play().then(()=>{ bgAudioActive = true; }).catch(e => console.warn(`${context} audio bloquée:`, e));
+    const el = bgAudioEl;
+    el.play().then(()=>{ bgAudioActive = true; }).catch((e) => {
+        console.warn(`${context} audio bloquée:`, e);
+        // Lecture refusée par la politique d'autoplay : rien à signaler, un
+        // prochain geste la débloquera. Toute autre erreur : piste illisible.
+        if (e?.name !== 'NotAllowedError' && el === bgAudioEl) playbackFailed(e);
+    });
+}
+
+// Musiques déjà signalées illisibles pendant l'aperçu : l'avertissement n'est
+// pas répété à chaque lancement de l'animation (l'écoute, demandée
+// explicitement, le redonne à chaque fois).
+const previewFailureNotified = new WeakSet();
+
+// Le navigateur ne sait pas lire la musique (format non pris en charge — .wma,
+// .aiff… — ou fichier endommagé). Sans cela, l'écoute affichait « Arrêter »
+// sur un silence, sans fin. La lecture est arrêtée et l'utilisateur prévenu :
+// l'export, lui, passe par ffmpeg, qui lit bien plus de formats.
+function playbackFailed(error) {
+    if (!bgAudioMode) return; // déjà arrêtée
+    console.warn('Musique illisible par le navigateur:', error);
+    const mode = bgAudioMode;
+    const file = musicTrack.file();
+    stopBackgroundMusic();
+    if (mode === 'preview') {
+        if (!file || previewFailureNotified.has(file)) return;
+        previewFailureNotified.add(file);
+    }
+    pkg.showToast?.(
+        pkg.t('Le navigateur ne sait pas lire cette musique : elle ne peut pas être écoutée ici. L\'export vidéo, qui passe par ffmpeg, peut tout de même l\'intégrer.'),
+        'warning', pkg.t('Musique'), 8000,
+    );
 }
 
 // Reprises en fondu enchaîné : un élément <audio> ne peut pas se superposer à
@@ -79,7 +110,9 @@ function startBufferPlayback(file, plan, { fromVideoMs, stopAtVideoEnd }) {
             if (bgAudioWanted) playBackgroundAudio('Lecture');
             else ctx.suspend().catch(()=>{});
         })
-        .catch((e) => console.warn('Musique non décodable pour le raccord fondu:', e));
+        .catch((e) => {
+            if (ctx === bgAudioCtx) playbackFailed(e);
+        });
     const videoS = plan.videoMs / 1000;
     bgAudioWatchTimer = setInterval(() => {
         if (ctx !== bgAudioCtx || startedAt === null) return;
@@ -123,6 +156,12 @@ function startPlayback(file, { mode, fromVideoMs = 0, stopAtVideoEnd = false }) 
     // Gain de l'instant de départ : 0 pour un fondu d'entrée, sans éclat.
     bgAudioGain.gain.value = playbackGain(fromVideoMs, plan);
     bgAudioSource.connect(bgAudioGain).connect(bgAudioCtx.destination);
+    // Source illisible : signalée par l'élément dès le chargement, avant même
+    // la lecture (cf. playbackFailed).
+    const failedEl = bgAudioEl;
+    failedEl.addEventListener('error', () => {
+        if (failedEl === bgAudioEl) playbackFailed(failedEl.error);
+    }, { once: true });
 
     let playedLoopsS = playedLoopsMs / 1000;
     const startS = plan.startMs / 1000;
