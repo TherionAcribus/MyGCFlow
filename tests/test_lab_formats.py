@@ -89,6 +89,50 @@ class CoordinateValidationTests(unittest.TestCase):
         self.assertTrue(cc.warnings)
 
 
+class CoordinateTextTests(unittest.TestCase):
+    """Saisie libre d'une position (modale « Étapes en attente »)."""
+
+    def assertParsed(self, text, lat, lon):
+        cc = lf.parse_coordinates_text(text)
+        self.assertTrue(cc.ok, f"{text!r} : {cc.warnings}")
+        self.assertAlmostEqual(cc.latitude, lat, places=5, msg=text)
+        self.assertAlmostEqual(cc.longitude, lon, places=5, msg=text)
+
+    def test_decimal(self):
+        for text in ("48.8584, 2.2945", "48.8584 2.2945", "48.8584;2.2945",
+                     "48,8584 2,2945", "48,8584; 2,2945"):
+            self.assertParsed(text, 48.8584, 2.2945)
+        self.assertParsed("-33.8568, 151.2153", -33.8568, 151.2153)
+
+    def test_degrees_minutes_geocaching_format(self):
+        for text in ("N 48° 51.504 E 002° 17.670", "N48 51.504 E2 17.670",
+                     "n 48 51.504 e 2 17.670", "E 002° 17.670 N 48° 51.504",
+                     "48 51.504 2 17.670"):
+            self.assertParsed(text, 48.8584, 2.2945)
+        self.assertParsed("S 33° 51.408 W 151° 12.918", -33.8568, -151.2153)
+        self.assertParsed("N 48° 51.504 O 001° 17.670", 48.8584, -1.2945)
+
+    def test_degrees_minutes_seconds(self):
+        self.assertParsed("48°51'30.2\"N 2°17'40.2\"E", 48.8583889, 2.2945)
+        self.assertParsed("48°51′30.2″N, 2°17′40.2″O", 48.8583889, -2.2945)
+        self.assertParsed("48 51 30.2 2 17 40.2", 48.8583889, 2.2945)
+
+    def test_ambiguous_or_malformed_rejected(self):
+        for text in ("", "   ", None, "abc", "48.8584", "1 2 3",
+                     "48,8584,2,2945",          # virgules : décimale ou séparateur ?
+                     "N 48 75.0 E 2 17",        # minutes ≥ 60
+                     "N 48.5 30 E 2 17",        # degrés décimaux suivis de minutes
+                     "N 48 51 N 2 17",          # deux latitudes
+                     "N -48 51 E 2 17",         # signe et lettre à la fois
+                     "48.8 2.2 N"):             # une seule lettre
+            self.assertFalse(lf.parse_coordinates_text(text).ok, repr(text))
+
+    def test_out_of_range_rejected(self):
+        cc = lf.parse_coordinates_text("95, 2")
+        self.assertFalse(cc.ok)
+        self.assertTrue(cc.warnings)
+
+
 class HistoryParseTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

@@ -300,6 +300,10 @@ test('le bouton de récupération est visible quand des étapes sont en attente'
 
 const STAGE_MOULIN = '57a9e000-0000-4000-8000-000000000101';
 const STAGE_PORTE_NORD = '57a9e000-0000-4000-8000-000000000401';
+// Adventure archivée de la fixture : absente du GPX, ses 2 étapes attendent.
+const ADVENTURE_ARCHIVED = 'fa1e0000-0000-4000-8000-000000000003';
+const ARCHIVED_STAGES = ['57a9e000-0000-4000-8000-000000000301',
+                         '57a9e000-0000-4000-8000-000000000302'];
 
 // GPX de la fixture avec une substitution unique (échec si le motif bouge).
 function patchedCoords(search, replacement) {
@@ -362,12 +366,44 @@ test('une étape remaniée reçoit une suggestion à valider dans « Étapes en 
   await expect(row).toContainText('47.23010');
 
   await row.locator('[data-action="use-suggestion"]').click();
-  await expect(row.locator('input[data-field="lat"]')).toHaveValue('47.2301');
-  await expect(row.locator('input[data-field="lon"]')).toHaveValue('-1.5702');
+  await expect(row.locator('input[data-field="coords"]')).toHaveValue('47.2301, -1.5702');
   await row.getByRole('button', { name: 'Enregistrer' }).click();
 
   await expect.poll(async () => (await exportedStage(page, STAGE_PORTE_NORD))?.latitude,
                     { timeout: 30_000 }).toBeCloseTo(47.2301, 5);
+});
+
+
+test('« Étapes en attente » groupe par Adventure et place toutes ses étapes en une saisie', async ({ page }) => {
+  await openReadyApp(page);
+  await importLabs(page);
+
+  await page.locator('#labsPendingBtn').click();
+  // 4 étapes en attente dans 3 Adventures ; l'archivée en compte 2.
+  await expect(page.locator('#labsPendingList [data-adventure-key]')).toHaveCount(3);
+  const card = page.locator(`#labsPendingList [data-adventure-key="${ADVENTURE_ARCHIVED}"]`);
+  await expect(card).toContainText('Labyrinthe du Port');
+
+  // Saisie au format geocaching.com, lue et confirmée en décimal.
+  await card.locator('input[data-field="adventure-coords"]').fill('N 47° 12.000 W 001° 33.000');
+  await card.locator('[data-action="place-adventure"]').click();
+  await expect(card).toContainText('47.20000, -1.55000');
+  await expect(page.locator('#labsStatus')).toContainText('10 sur la carte');
+
+  // Les deux étapes sont placées à la même position, signalée approximative.
+  for (const stageId of ARCHIVED_STAGES) {
+    const stage = await exportedStage(page, stageId);
+    expect(stage.latitude).toBeCloseTo(47.2, 5);
+    expect(stage.longitude).toBeCloseTo(-1.55, 5);
+    expect(stage.coordinate_scope).toBe('adventure');
+  }
+
+  // Une saisie illisible est refusée avec un message, sans rien placer.
+  const single = page.locator(`#labsPendingList [data-local-uid="${STAGE_PORTE_NORD}"]`);
+  await single.locator('input[data-field="coords"]').fill('48,85,2,29');
+  await single.getByRole('button', { name: 'Enregistrer' }).click();
+  await expect(single).toContainText('format de coordonnées non reconnu');
+  expect((await exportedStage(page, STAGE_PORTE_NORD)).latitude).toBeNull();
 });
 
 

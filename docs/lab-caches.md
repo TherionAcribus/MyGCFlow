@@ -132,9 +132,24 @@ permanence dans la carte, avec accès à la liste des étapes en attente.
 Une découverte n'apparaît **jamais** comme point — ni dans la carte, ni dans
 l'animation, ni dans les compteurs vidéo — tant qu'il lui manque une
 coordonnée ou une date. Elle reste conservée en base. Le bouton « Compléter
-les coordonnées » ouvre la modale des étapes en attente, où saisir à la main
-coordonnée et/ou date manquantes ; ces corrections sont enregistrées comme
-`user_correction` et survivent aux réimports.
+les coordonnées » ouvre la modale des étapes en attente, **groupées par
+Adventure** (`GET /api/labs/unresolved/adventures`, paginé par Adventure) :
+
+- **une position pour toute l'Adventure** quand plusieurs de ses étapes en
+  manquent — cas typique des Adventures archivées, dont aucun service ne
+  rend plus les étapes (`POST /api/labs/adventures/<uuid>/place`). Seules
+  les étapes sans position sont placées, en portée `adventure` : le popup
+  les signale comme approximatives ;
+- **par étape**, position et/ou date propres
+  (`POST /api/labs/discoveries/<local_uid>/resolve`).
+
+La position se saisit en un seul champ, aux formats du géocacheur
+(`lab_formats.parse_coordinates_text`) : `N 48° 51.504 E 002° 17.670`
+(geocaching.com), décimal `48.8584, 2.2945` (virgule décimale acceptée :
+`48,8584 2,2945`), DMS `48°51'30.2"N 2°17'40.2"E`, lettres devant ou
+derrière, `O` pour Ouest. Une saisie ambiguë est refusée, jamais devinée ;
+la position retenue est réaffichée en décimal. Ces corrections sont
+enregistrées comme `user_correction` et survivent aux réimports.
 
 Motifs d'attente remontés par `GET /api/labs/unresolved` :
 `missing_coordinates` (UUID d'étape inconnu des GPX fournis — typiquement

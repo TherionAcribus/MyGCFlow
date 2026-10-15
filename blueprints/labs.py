@@ -651,25 +651,55 @@ def labs_unresolved():
                     'limit': limit, 'offset': offset, 'count': len(items)})
 
 
+@labs_bp.route('/api/labs/unresolved/adventures')
+def labs_unresolved_adventures():
+    """Étapes en attente regroupées par Adventure (modale « Étapes en attente »)."""
+    try:
+        limit = max(1, min(int(request.args.get('limit', 20)), 100))
+        offset = max(0, int(request.args.get('offset', 0)))
+    except ValueError:
+        return jsonify({'success': False, 'message': _("Pagination invalide")}), 400
+    page = lab_store.unresolved_adventures(db.session, limit=limit, offset=offset)
+    return jsonify({'success': True, **page, 'limit': limit, 'offset': offset})
+
+
+def _body_coordinates(body):
+    """Position fournie dans une correction : texte libre (`coordinates`,
+    formats du géocacheur) ou couple `latitude`/`longitude`. Retourne
+    (CoordCheck, None) ou (None, None) si rien n'est fourni, ou
+    (None, réponse d'erreur)."""
+    text = body.get("coordinates")
+    if isinstance(text, str) and text.strip():
+        cc = lf.parse_coordinates_text(text)
+    elif body.get("latitude") is not None or body.get("longitude") is not None:
+        cc = lf.validate_coordinates(body.get("latitude"), body.get("longitude"))
+    else:
+        return None, None
+    if not cc.ok:
+        reason = cc.warnings[0] if cc.warnings else ""
+        return None, (jsonify({'success': False,
+                               'message': _("Coordonnées invalides : %(reason)s",
+                                            reason=reason),
+                               'warnings': cc.warnings}), 400)
+    return cc, None
+
+
 @labs_bp.route('/api/labs/discoveries/<local_uid>/resolve', methods=['POST'])
 def resolve_discovery(local_uid):
     """Correction manuelle : coordonnées et/ou date confirmées par l'utilisateur."""
     body = request.get_json(silent=True) or {}
-    has_coords = body.get("latitude") is not None or body.get("longitude") is not None
+    # Tout est validé avant de toucher la ligne : une date invalide ne laisse
+    # pas des coordonnées à moitié appliquées dans la session.
+    cc, error = _body_coordinates(body)
+    if error:
+        return error
+    has_coords = cc is not None
     has_date = bool(body.get("found_date"))
     if not has_coords and not has_date:
         return jsonify({'success': False,
                         'message': _("Aucune correction fournie")}), 400
 
-    # Tout est validé avant de toucher la ligne : une date invalide ne laisse
-    # pas des coordonnées à moitié appliquées dans la session.
-    cc = pd = None
-    if has_coords:
-        cc = lf.validate_coordinates(body.get("latitude"), body.get("longitude"))
-        if not cc.ok:
-            return jsonify({'success': False,
-                            'message': _("Coordonnées invalides"),
-                            'warnings': cc.warnings}), 400
+    pd = None
     if has_date:
         pd = lf.parse_lab_datetime(body.get("found_date"))
         if pd.found_date is None:
@@ -689,12 +719,7 @@ def resolve_discovery(local_uid):
             return jsonify({'success': False, 'message': _("Découverte inconnue")}), 404
 
         if has_coords:
-            row.latitude, row.longitude = cc.latitude, cc.longitude
-            row.coordinate_scope = "stage"
-            row.coordinate_source = lab_store.USER_CORRECTION
-            row.coordinate_status = LabDiscovery.COORD_RESOLVED
-            row.coord_fetch_failed_at = None
-            row.suggested_latitude = row.suggested_longitude = None
+            lab_store.apply_user_coordinates(row, cc.latitude, cc.longitude)
         if has_date:
             row.found_date = pd.found_date
             row.date_precision = "day"
@@ -718,6 +743,28 @@ def resolve_discovery(local_uid):
                         'found_date': row.found_date.isoformat() if row.found_date else None,
                         'coordinate_status': row.coordinate_status,
                     },
+                    **lab_store.collection_status(db.session)})
+
+
+@labs_bp.route('/api/labs/adventures/<adventure_uuid>/place', methods=['POST'])
+def place_adventure(adventure_uuid):
+    """Une position pour toutes les étapes sans position d'une Adventure
+    (correction manuelle, portée `adventure`)."""
+    body = request.get_json(silent=True) or {}
+    cc, error = _body_coordinates(body)
+    if error:
+        return error
+    if cc is None:
+        return jsonify({'success': False,
+                        'message': _("Aucune correction fournie")}), 400
+    placed = lab_store.place_adventure(
+        db.session, adventure_uuid, cc.latitude, cc.longitude)
+    if not placed:
+        return jsonify({'success': False,
+                        'message': _("Aucune étape de cette Adventure n'attend de position")}), 404
+    _invalidate_after_mutation("labs_place_adventure")
+    return jsonify({'success': True, 'placed': placed,
+                    'latitude': cc.latitude, 'longitude': cc.longitude,
                     **lab_store.collection_status(db.session)})
 
 

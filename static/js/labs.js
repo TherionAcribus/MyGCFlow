@@ -17,14 +17,15 @@ import {
 } from './notifications.js';
 import { showBsModal, hideBsModal } from './ui_bootstrap.js';
 
-const PENDING_PAGE_SIZE = 50;
+// Adventures (groupes d'étapes en attente) par page de la modale.
+const PENDING_PAGE_SIZE = 20;
 
 let elementsBound = false;
 let labsFileInput = null;
 let importToken = null;        // jeton opaque retourné par /import/preview
 let previewConflicts = [];     // conflits tranchables de l'aperçu affiché
 let pendingOffset = 0;
-let pendingTotal = null;       // nombre d'étapes en attente (statut serveur)
+let pendingGroupTotal = 0;     // Adventures ayant des étapes en attente
 let fetchableAdventures = 0;   // Adventures qu'une récupération peut encore servir
 let pendingDirty = false;      // une correction a été enregistrée → recharger
 let guideOpen = false;         // parcours du favori rouvert via « Mettre à jour »
@@ -157,7 +158,6 @@ function renderLabsStatus(st) {
     const total = st?.total || 0;
     const ready = st?.ready || 0;
     const unresolved = st?.unresolved || 0;
-    pendingTotal = unresolved;
     fetchableAdventures = st?.fetchable_adventures || 0;
     // Proposer la récupération seulement si elle peut encore aboutir : quand
     // il ne reste que des étapes déjà tentées sans résultat, le bouton
@@ -810,6 +810,11 @@ function reportFetch(result) {
 }
 
 // ------------------------------------------------- étapes en attente
+//
+// Une carte par Adventure : les étapes d'une Adventure archivée attendent
+// ensemble, et une seule position (saisie au format du géocacheur) peut toutes
+// les placer. Le détail des étapes reste disponible pour une position ou une
+// date propre à chacune.
 
 async function openPendingModal() {
     pendingOffset = 0;
@@ -821,10 +826,11 @@ async function loadPendingPage(offset) {
     const listEl = el('labsPendingList');
     if (!listEl) return;
     try {
-        const r = await fetch(`${CONFIG.BASE_URL}/api/labs/unresolved?limit=${PENDING_PAGE_SIZE}&offset=${Math.max(0, offset)}`);
+        const r = await fetch(`${CONFIG.BASE_URL}/api/labs/unresolved/adventures?limit=${PENDING_PAGE_SIZE}&offset=${Math.max(0, offset)}`);
         const data = await r.json();
         if (!data.success) throw new Error(data.message || 'erreur');
         pendingOffset = data.offset || 0;
+        pendingGroupTotal = data.total || 0;
         renderPendingList(data.items || []);
         updatePendingPager();
     } catch (e) {
@@ -836,58 +842,132 @@ function updatePendingPager() {
     const prev = el('labsPendingPrev');
     const next = el('labsPendingNext');
     const page = el('labsPendingPage');
-    const total = pendingTotal || 0;
+    const total = pendingGroupTotal || 0;
     if (prev) prev.disabled = pendingOffset <= 0;
     if (next) next.disabled = pendingOffset + PENDING_PAGE_SIZE >= total;
     if (page) {
         const start = total === 0 ? 0 : pendingOffset + 1;
         const end = Math.min(pendingOffset + PENDING_PAGE_SIZE, total);
-        page.textContent = `${start}–${end} / ${total}`;
+        const unit = t('Adventure(s)');
+        page.textContent = `${start}–${end} / ${total} ${unit}`;
     }
 }
 
-function renderPendingList(items) {
+function renderPendingList(groups) {
     const listEl = el('labsPendingList');
     listEl.textContent = '';
-    if (!items.length) {
+    if (!groups.length) {
         const empty = document.createElement('p');
         empty.className = 'form-hint text-muted';
         empty.textContent = t('Aucune étape en attente sur cette page.');
         listEl.appendChild(empty);
         return;
     }
-    for (const item of items) {
-        listEl.appendChild(buildPendingRow(item));
+    for (const group of groups) {
+        listEl.appendChild(buildPendingGroup(group));
     }
 }
 
-// Une ligne par étape : titres (textContent — jamais innerHTML, données
-// importées), motifs de l'attente, champs latitude/longitude/date et
-// enregistrement individuel.
-function buildPendingRow(item) {
-    const row = document.createElement('div');
-    row.className = 'border rounded p-2 mb-2';
-    row.dataset.localUid = item.local_uid;
+function fmtCoord(value) {
+    return Number(value).toFixed(5);
+}
+
+// Carte d'une Adventure : titre (textContent — données importées), état,
+// position commune quand plusieurs étapes en manquent, détail des étapes.
+function buildPendingGroup(group) {
+    const stages = group.stages || [];
+    const card = document.createElement('div');
+    card.className = 'border rounded p-2 mb-2';
+    card.dataset.adventureKey = group.key;
 
     const head = document.createElement('div');
-    head.className = 'small mb-1';
-    const stage = document.createElement('strong');
-    stage.textContent = item.stage_title || t('(étape sans titre)');
-    head.appendChild(stage);
-    const adv = document.createElement('span');
-    adv.className = 'text-muted';
-    adv.textContent = ` — ${item.adventure_title || ''}`;
-    head.appendChild(adv);
-    if (item.is_archived) {
+    head.className = 'small';
+    const title = document.createElement('strong');
+    title.textContent = group.adventure_title || t('Adventure inconnue');
+    head.appendChild(title);
+    if (group.is_archived) {
         const badge = document.createElement('span');
         badge.className = 'badge bg-secondary-lt ms-1';
         badge.textContent = t('archivée');
         head.appendChild(badge);
     }
+    const count = document.createElement('span');
+    count.className = 'text-muted';
+    const countLabel = t('${n} étape(s) en attente', { n: stages.length });
+    count.textContent = ` — ${countLabel}`;
+    head.appendChild(count);
+    card.appendChild(head);
+
+    const placeAll = !!group.adventure_uuid && (group.missing_coordinates || 0) > 1;
+    if (placeAll) card.appendChild(buildPlaceAdventureRow(card, group));
+
+    if (stages.length === 1) {
+        card.appendChild(buildPendingRow(stages[0]));
+        return card;
+    }
+    const details = document.createElement('details');
+    details.className = 'mt-2';
+    // Ouvert d'office quand une position commune ne suffit pas : pas de
+    // placement groupé, suggestion à valider ou date à compléter.
+    details.open = !placeAll || stages.some(s =>
+        s.suggestion || (s.reasons || []).includes('missing_date'));
+    const summary = document.createElement('summary');
+    summary.className = 'small';
+    summary.textContent = t('Détail des étapes');
+    details.appendChild(summary);
+    for (const stage of stages) details.appendChild(buildPendingRow(stage));
+    card.appendChild(details);
+    return card;
+}
+
+// Position commune : toutes les étapes sans position de l'Adventure, portée
+// « adventure » (le popup la dit approximative).
+function buildPlaceAdventureRow(card, group) {
+    const wrap = document.createElement('div');
+    wrap.className = 'mt-2';
+    const form = document.createElement('div');
+    form.className = 'd-flex flex-wrap gap-2 align-items-end';
+    const field = makePendingInput('adventure-coords', t("Position de l'Adventure"), '', 'N 48° 51.504 E 002° 17.670');
+    field.classList.add('flex-grow-1');
+    form.appendChild(field);
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-sm btn-primary';
+    btn.dataset.action = 'place-adventure';
+    btn.textContent = t('Placer les ${n} étapes ici', { n: group.missing_coordinates });
+    btn.addEventListener('click', () => onPlaceAdventure(card, wrap, group));
+    form.appendChild(btn);
+    submitOnEnter(form, btn);
+    wrap.appendChild(form);
+
+    const hint = document.createElement('div');
+    hint.className = 'form-hint text-muted';
+    hint.textContent = t('Toutes ses étapes sans position y seront placées, signalées comme approximatives.');
+    wrap.appendChild(hint);
+    const feedback = document.createElement('div');
+    feedback.className = 'small';
+    feedback.dataset.role = 'feedback';
+    wrap.appendChild(feedback);
+    return wrap;
+}
+
+// Une ligne par étape : titre, motifs de l'attente, position (un seul champ,
+// formats du géocacheur), date et enregistrement individuel.
+function buildPendingRow(item) {
+    const row = document.createElement('div');
+    row.className = 'border-top pt-2 mt-2';
+    row.dataset.localUid = item.local_uid;
+
+    const head = document.createElement('div');
+    head.className = 'small';
+    const stage = document.createElement('span');
+    stage.className = 'fw-medium';
+    stage.textContent = item.stage_title || t('(étape sans titre)');
+    head.appendChild(stage);
     row.appendChild(head);
 
     const reasons = document.createElement('div');
-    reasons.className = 'form-hint text-muted mb-2';
+    reasons.className = 'form-hint text-muted mb-1';
     const reasonLabels = (item.reasons || []).map(r =>
         r === 'missing_date' ? t('date manquante')
         : r === 'missing_coordinates' ? t('coordonnées manquantes')
@@ -896,16 +976,22 @@ function buildPendingRow(item) {
     reasons.textContent = reasonLabels.join(' · ');
     row.appendChild(reasons);
 
+    const form = document.createElement('div');
+    form.className = 'd-flex flex-wrap gap-2 align-items-end';
+    const coordsField = makePendingInput('coords', t('Position'), '', 'N 48° 51.504 E 002° 17.670');
+    coordsField.classList.add('flex-grow-1');
+    form.appendChild(coordsField);
+
     // Proposition (même titre dans l'Adventure, étape remaniée) : elle ne
-    // fait que préremplir les champs — « Enregistrer » reste la validation.
+    // fait que préremplir le champ — « Enregistrer » reste la validation.
     const suggestion = item.suggestion;
     if (suggestion) {
         const hint = document.createElement('div');
-        hint.className = 'small mb-2';
+        hint.className = 'small mb-1';
         const text = document.createElement('span');
         text.textContent = t("Suggestion : ${lat}, ${lon} — même titre dans l'Adventure", {
-            lat: Number(suggestion.latitude).toFixed(5),
-            lon: Number(suggestion.longitude).toFixed(5),
+            lat: fmtCoord(suggestion.latitude),
+            lon: fmtCoord(suggestion.longitude),
         }) + ' ';
         hint.appendChild(text);
         const useBtn = document.createElement('button');
@@ -914,17 +1000,12 @@ function buildPendingRow(item) {
         useBtn.dataset.action = 'use-suggestion';
         useBtn.textContent = t('Utiliser la suggestion');
         useBtn.addEventListener('click', () => {
-            row.querySelector('input[data-field="lat"]').value = String(suggestion.latitude);
-            row.querySelector('input[data-field="lon"]').value = String(suggestion.longitude);
+            coordsField.querySelector('input').value = `${suggestion.latitude}, ${suggestion.longitude}`;
         });
         hint.appendChild(useBtn);
         row.appendChild(hint);
     }
 
-    const form = document.createElement('div');
-    form.className = 'd-flex flex-wrap gap-2 align-items-end';
-    form.appendChild(makePendingInput('lat', t('Latitude'), item.latitude, '48.8584'));
-    form.appendChild(makePendingInput('lon', t('Longitude'), item.longitude, '2.2945'));
     const dateWrap = makePendingInput('date', t('Date de découverte'), item.found_date || '', 'AAAA-MM-JJ');
     const dateInput = dateWrap.querySelector('input');
     if (dateInput) dateInput.setAttribute('type', 'date');
@@ -936,11 +1017,13 @@ function buildPendingRow(item) {
     saveBtn.textContent = t('Enregistrer');
     saveBtn.addEventListener('click', () => onResolveRow(row, item.local_uid));
     form.appendChild(saveBtn);
-
-    const feedback = document.createElement('span');
-    feedback.className = 'small';
-    form.appendChild(feedback);
+    submitOnEnter(form, saveBtn);
     row.appendChild(form);
+
+    const feedback = document.createElement('div');
+    feedback.className = 'small';
+    feedback.dataset.role = 'feedback';
+    row.appendChild(feedback);
     return row;
 }
 
@@ -963,39 +1046,88 @@ function makePendingInput(key, label, value, placeholder) {
     return wrap;
 }
 
-async function onResolveRow(row, localUid) {
-    const val = (key) => row.querySelector(`input[data-field="${key}"]`)?.value?.trim() || '';
-    const feedback = row.querySelector('span.small');
-    const body = {};
-    if (val('lat') || val('lon')) {
-        body.latitude = val('lat');
-        body.longitude = val('lon');
+// Entrée dans un champ = clic sur le bouton de sa ligne.
+function submitOnEnter(form, button) {
+    form.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && e.target instanceof HTMLInputElement) {
+            e.preventDefault();
+            button.click();
+        }
+    });
+}
+
+function setFeedback(container, kind, text) {
+    const fb = container.querySelector(':scope > [data-role="feedback"]');
+    if (!fb) return;
+    fb.className = `small text-${kind}`;
+    fb.textContent = text;
+}
+
+// Après une correction : compteurs relus, carte rechargée à la fermeture de
+// la modale, modale fermée s'il ne reste rien.
+function afterPendingCorrection(data) {
+    pendingDirty = true;
+    if (typeof data.unresolved === 'number' && data.unresolved <= 0) {
+        hideBsModal(el('labsPendingModal'));
     }
-    if (val('date')) body.found_date = val('date');
-    if (!Object.keys(body).length) {
-        if (feedback) { feedback.className = 'small text-warning'; feedback.textContent = t('Rien à enregistrer'); }
+    refreshLabsStatus();
+}
+
+async function postCorrection(url, body) {
+    const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok || !data.success) throw new Error(data.message || t('Correction refusée'));
+    return data;
+}
+
+async function onPlaceAdventure(card, wrap, group) {
+    const text = wrap.querySelector('input[data-field="adventure-coords"]')?.value?.trim() || '';
+    if (!text) {
+        setFeedback(wrap, 'warning', t('Rien à enregistrer'));
         return;
     }
     try {
-        const resp = await fetch(`${CONFIG.BASE_URL}/api/labs/discoveries/${encodeURIComponent(localUid)}/resolve`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
-        });
-        const data = await resp.json().catch(() => ({}));
-        if (!resp.ok || !data.success) throw new Error(data.message || t('Correction refusée'));
-        pendingDirty = true;
-        pendingTotal = data.unresolved;
-        if (typeof data.unresolved === 'number' && data.unresolved <= 0) {
-            // Plus rien en attente : la ligne disparaît avec la modale.
-            hideBsModal(el('labsPendingModal'));
-        } else {
-            row.classList.add('border-success');
-            if (feedback) { feedback.className = 'small text-success'; feedback.textContent = t('Enregistré'); }
-        }
-        refreshLabsStatus();
+        const data = await postCorrection(
+            `${CONFIG.BASE_URL}/api/labs/adventures/${encodeURIComponent(group.adventure_uuid)}/place`,
+            { coordinates: text });
+        card.classList.add('border-success');
+        wrap.querySelector('[data-action="place-adventure"]')?.setAttribute('disabled', '');
+        setFeedback(wrap, 'success', t('${n} étape(s) placée(s) en ${lat}, ${lon}.', {
+            n: data.placed, lat: fmtCoord(data.latitude), lon: fmtCoord(data.longitude),
+        }));
+        afterPendingCorrection(data);
     } catch (e) {
-        if (feedback) { feedback.className = 'small text-danger'; feedback.textContent = e.message || t('Erreur'); }
+        setFeedback(wrap, 'danger', e.message || t('Erreur'));
+    }
+}
+
+async function onResolveRow(row, localUid) {
+    const val = (key) => row.querySelector(`input[data-field="${key}"]`)?.value?.trim() || '';
+    const body = {};
+    if (val('coords')) body.coordinates = val('coords');
+    if (val('date')) body.found_date = val('date');
+    if (!Object.keys(body).length) {
+        setFeedback(row, 'warning', t('Rien à enregistrer'));
+        return;
+    }
+    try {
+        const data = await postCorrection(
+            `${CONFIG.BASE_URL}/api/labs/discoveries/${encodeURIComponent(localUid)}/resolve`, body);
+        row.classList.add('text-success');
+        // La position retenue, en décimal : l'utilisateur voit comment sa
+        // saisie a été lue.
+        const d = data.discovery || {};
+        const saved = t('Enregistré');
+        setFeedback(row, 'success', body.coordinates && d.latitude != null
+            ? `${saved} : ${fmtCoord(d.latitude)}, ${fmtCoord(d.longitude)}`
+            : saved);
+        afterPendingCorrection(data);
+    } catch (e) {
+        setFeedback(row, 'danger', e.message || t('Erreur'));
     }
 }
 

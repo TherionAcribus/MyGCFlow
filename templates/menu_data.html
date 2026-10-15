@@ -326,7 +326,10 @@
                 </div>
                 <div class="modal-body">
                     <p class="form-hint text-muted">
-                        {{ _("Ces étapes sont conservées mais non affichées : renseignez leurs coordonnées (latitude/longitude décimales) ou leur date de découverte pour les rendre affichables.") }}
+                        {{ _("Ces étapes sont conservées mais non affichées : renseignez leur position ou leur date de découverte pour les rendre affichables. Une seule position suffit pour placer toutes les étapes d'une Adventure.") }}
+                    </p>
+                    <p class="form-hint text-muted">
+                        {{ _("Formats acceptés : N 48° 51.504 E 002° 17.670 (geocaching.com), 48.8584, 2.2945 (décimal) ou 48°51′30″N 2°17′40″E.") }}
                     </p>
                     <div id="labsPendingList"></div>
                     <div class="d-flex justify-content-between align-items-center mt-2">

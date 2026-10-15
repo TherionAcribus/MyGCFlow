@@ -44,6 +44,8 @@ def _lab_logs_page(adventure, *log_ids):
                             "dateLogged": "2024-05-14T10:00:00+02:00",
                             "isArchived": False} for i in log_ids]}
 ADVENTURE_REMOVED = "fa1e0000-0000-4000-8000-000000000004"
+ADVENTURE_PARTIAL = "fa1e0000-0000-4000-8000-000000000002"
+ADVENTURE_ARCHIVED = "fa1e0000-0000-4000-8000-000000000003"
 
 
 class LabsApiTests(unittest.TestCase):
@@ -459,6 +461,81 @@ class LabsApiTests(unittest.TestCase):
         self.assertAlmostEqual(row.latitude, 47.2301)
         self.assertEqual(row.coordinate_source, "user_correction")
         self.assertIsNone(row.suggested_latitude)
+
+    def test_resolve_accepts_geocaching_coordinate_text(self):
+        self._import_history()
+        rv = self.client.post(f'/api/labs/discoveries/{STAGE_REMOVED}/resolve',
+                              json={"coordinates": "N 47° 13.806 W 001° 34.212"})
+        self.assertEqual(rv.status_code, 200, rv.get_json())
+        body = rv.get_json()["discovery"]
+        self.assertAlmostEqual(body["latitude"], 47.2301, places=5)
+        self.assertAlmostEqual(body["longitude"], -1.5702, places=5)
+
+        rv = self.client.post(f'/api/labs/discoveries/{STAGE_1}/resolve',
+                              json={"coordinates": "48,8584,2,2945"})
+        self.assertEqual(rv.status_code, 400)
+        self.assertIn("format de coordonnées non reconnu", rv.get_json()["message"])
+
+    def test_unresolved_grouped_by_adventure(self):
+        self._import_history()
+        self._import_coords()
+        body = self.client.get('/api/labs/unresolved/adventures').get_json()
+        self.assertTrue(body["success"])
+        # 4 étapes en attente, 3 Adventures : l'archivée en compte 2.
+        self.assertEqual(body["total"], 3)
+        by_adv = {g["adventure_uuid"]: g for g in body["items"]}
+        archived = by_adv[ADVENTURE_ARCHIVED]
+        self.assertEqual(len(archived["stages"]), 2)
+        self.assertEqual(archived["missing_coordinates"], 2)
+        self.assertTrue(archived["is_archived"])
+        self.assertEqual(archived["adventure_title"], "Labyrinthe du Port")
+        self.assertEqual(sum(len(g["stages"]) for g in body["items"]), 4)
+
+        first = self.client.get('/api/labs/unresolved/adventures?limit=2').get_json()
+        rest = self.client.get(
+            '/api/labs/unresolved/adventures?limit=2&offset=2').get_json()
+        self.assertEqual([g["key"] for g in first["items"] + rest["items"]],
+                         [g["key"] for g in body["items"]])
+
+    def test_place_adventure_places_every_missing_stage(self):
+        self._import_history()
+        self._import_coords()
+        rv = self.client.post(f'/api/labs/adventures/{ADVENTURE_ARCHIVED}/place',
+                              json={"coordinates": "N 47° 12.000 W 001° 33.000"})
+        self.assertEqual(rv.status_code, 200, rv.get_json())
+        body = rv.get_json()
+        self.assertEqual(body["placed"], 2)
+        self.assertEqual(body["ready"], 10)
+        rows = db.session.query(LabDiscovery).filter_by(
+            adventure_uuid=ADVENTURE_ARCHIVED).all()
+        self.assertEqual(len(rows), 2)
+        for row in rows:
+            self.assertAlmostEqual(row.latitude, 47.2)
+            self.assertAlmostEqual(row.longitude, -1.55)
+            self.assertEqual(row.coordinate_scope, "adventure")
+            self.assertEqual(row.coordinate_source, "user_correction")
+
+        # Plus rien à placer : refus explicite, sans mutation.
+        again = self.client.post(f'/api/labs/adventures/{ADVENTURE_ARCHIVED}/place',
+                                 json={"latitude": 1, "longitude": 1})
+        self.assertEqual(again.status_code, 404)
+        self.assertEqual(self.client.post(
+            f'/api/labs/adventures/{ADVENTURE_ARCHIVED}/place', json={}).status_code, 400)
+
+    def test_place_adventure_leaves_placed_stages_alone(self):
+        """L'Adventure partielle `…0002` : ses étapes placées par le GPX ne
+        bougent pas — et il n'en reste aucune à placer."""
+        self._import_history()
+        self._import_coords()
+        before = {r.stage_uuid: (r.latitude, r.longitude) for r in
+                  db.session.query(LabDiscovery).filter_by(adventure_uuid=ADVENTURE_PARTIAL)}
+        rv = self.client.post(f'/api/labs/adventures/{ADVENTURE_PARTIAL}/place',
+                              json={"coordinates": "45, 3"})
+        self.assertEqual(rv.status_code, 404)
+        db.session.expire_all()
+        after = {r.stage_uuid: (r.latitude, r.longitude) for r in
+                 db.session.query(LabDiscovery).filter_by(adventure_uuid=ADVENTURE_PARTIAL)}
+        self.assertEqual(before, after)
 
     def test_resolve_invalid_date_applies_nothing(self):
         """Coordonnées valides + date invalide : refus entier, la ligne

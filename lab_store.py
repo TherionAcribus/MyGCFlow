@@ -652,6 +652,35 @@ def collection_status(session) -> dict:
     }
 
 
+def _unresolved_item(r) -> dict:
+    """Une étape en attente telle que l'interface la présente."""
+    reasons = []
+    if r.found_date is None:
+        reasons.append("missing_date")
+    if r.latitude is None or r.longitude is None:
+        reasons.append("missing_coordinates")
+        if r.coord_fetch_failed_at is not None:
+            reasons.append("coordinates_unavailable")
+    elif r.coordinate_status != LabDiscovery.COORD_RESOLVED:
+        reasons.append(f"coordinate_{r.coordinate_status or LabDiscovery.COORD_MISSING}")
+    return {
+        "local_uid": r.local_uid,
+        "adventure_uuid": r.adventure_uuid,
+        "stage_uuid": r.stage_uuid,
+        "adventure_title": r.adventure_title,
+        "stage_title": r.stage_title,
+        "found_date": r.found_date.isoformat() if r.found_date else None,
+        "is_archived": r.is_archived,
+        "reasons": reasons,
+        "suggestion": (
+            {"latitude": r.suggested_latitude,
+             "longitude": r.suggested_longitude}
+            if r.suggested_latitude is not None
+            and r.suggested_longitude is not None
+            and (r.latitude is None or r.longitude is None) else None),
+    }
+
+
 def unresolved_discoveries(session, limit=200, offset=0) -> list:
     collection = get_collection(session)
     if collection is None:
@@ -662,34 +691,83 @@ def unresolved_discoveries(session, limit=200, offset=0) -> list:
         LabDiscovery.unresolved_clause(),
     ).order_by(LabDiscovery.found_date.is_(None), LabDiscovery.found_date,
                LabDiscovery.id).offset(offset).limit(limit).all()
-    out = []
-    for r in rows:
-        reasons = []
-        if r.found_date is None:
-            reasons.append("missing_date")
-        if r.latitude is None or r.longitude is None:
-            reasons.append("missing_coordinates")
-            if r.coord_fetch_failed_at is not None:
-                reasons.append("coordinates_unavailable")
-        elif r.coordinate_status != LabDiscovery.COORD_RESOLVED:
-            reasons.append(f"coordinate_{r.coordinate_status or LabDiscovery.COORD_MISSING}")
-        out.append({
-            "local_uid": r.local_uid,
-            "adventure_uuid": r.adventure_uuid,
-            "stage_uuid": r.stage_uuid,
-            "adventure_title": r.adventure_title,
-            "stage_title": r.stage_title,
-            "found_date": r.found_date.isoformat() if r.found_date else None,
-            "is_archived": r.is_archived,
-            "reasons": reasons,
-            "suggestion": (
-                {"latitude": r.suggested_latitude,
-                 "longitude": r.suggested_longitude}
-                if r.suggested_latitude is not None
-                and r.suggested_longitude is not None
-                and (r.latitude is None or r.longitude is None) else None),
+    return [_unresolved_item(r) for r in rows]
+
+
+def unresolved_adventures(session, limit=20, offset=0) -> dict:
+    """Étapes en attente regroupées par Adventure, paginées par groupe.
+
+    Les étapes d'une Adventure archivée attendent ensemble : une seule
+    position peut toutes les placer (`place_adventure`). Une étape sans
+    Adventure connue forme son propre groupe. Ordre : première découverte
+    du groupe, groupes sans date à la fin. Retourne {total, items}."""
+    collection = get_collection(session)
+    if collection is None:
+        return {"total": 0, "items": []}
+    key = func.coalesce(LabDiscovery.adventure_uuid, "stage:" + LabDiscovery.local_uid)
+    scope = (LabDiscovery.collection_id == collection.id,
+             LabDiscovery.unresolved_clause())
+    total = session.query(key).filter(*scope).distinct().count()
+    first_found = func.min(LabDiscovery.found_date)
+    keys = [k for (k,) in session.query(key).filter(*scope).group_by(key).order_by(
+        first_found.is_(None), first_found, key).offset(offset).limit(limit)]
+    if not keys:
+        return {"total": total, "items": []}
+
+    groups = {k: [] for k in keys}
+    rows = session.query(LabDiscovery, key).filter(*scope, key.in_(keys)).order_by(
+        LabDiscovery.found_date.is_(None), LabDiscovery.found_date, LabDiscovery.id)
+    for row, k in rows:
+        groups[k].append(row)
+    items = []
+    for k, stages in groups.items():
+        items.append({
+            "key": k,
+            "adventure_uuid": stages[0].adventure_uuid,
+            "adventure_title": next(
+                (s.adventure_title for s in stages if s.adventure_title), None),
+            "is_archived": any(s.is_archived for s in stages),
+            "missing_coordinates": sum(
+                1 for s in stages if s.latitude is None or s.longitude is None
+                or s.coordinate_status != LabDiscovery.COORD_RESOLVED),
+            "stages": [_unresolved_item(s) for s in stages],
         })
-    return out
+    return {"total": total, "items": items}
+
+
+def apply_user_coordinates(row, latitude, longitude, scope="stage") -> None:
+    """Position saisie par l'utilisateur : prioritaire sur tout fichier
+    ultérieur (`user_correction`), suggestions et échecs de récupération
+    effacés. `scope` dit si elle vise l'étape ou l'Adventure entière."""
+    row.latitude, row.longitude = latitude, longitude
+    row.coordinate_scope = scope
+    row.coordinate_source = USER_CORRECTION
+    row.coordinate_status = LabDiscovery.COORD_RESOLVED
+    row.coord_fetch_failed_at = None
+    row.suggested_latitude = row.suggested_longitude = None
+    row.updated_at = _utcnow()
+
+
+def place_adventure(session, adventure_uuid, latitude, longitude) -> int:
+    """Place à une même position toutes les étapes sans position d'une
+    Adventure — typiquement archivée, dont aucun service ne rend plus les
+    étapes. Portée `adventure` : le popup la dit approximative. Les étapes
+    déjà placées ne bougent pas. Retourne le nombre d'étapes placées."""
+    with LAB_MUTATION_LOCK:
+        collection = get_collection(session)
+        if collection is None or not adventure_uuid:
+            return 0
+        rows = session.query(LabDiscovery).filter(
+            LabDiscovery.collection_id == collection.id,
+            LabDiscovery.adventure_uuid == adventure_uuid,
+            LabDiscovery.coords_missing_clause(),
+        ).all()
+        for row in rows:
+            apply_user_coordinates(row, latitude, longitude, scope="adventure")
+        if rows:
+            collection.revision = (collection.revision or 0) + 1
+            session.commit()
+        return len(rows)
 
 
 def clear_labs(session) -> dict:

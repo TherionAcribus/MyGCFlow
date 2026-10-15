@@ -205,6 +205,112 @@ def validate_coordinates(lat_raw, lon_raw) -> CoordCheck:
     return out
 
 
+# Saisie libre d'une position : symboles de degrés/minutes/secondes lus comme
+# des espaces, « O » (Ouest) comme « W ».
+_COORD_SYMBOLS = re.compile("[°º˚'’′\"”″]")
+_COORD_TOKEN = re.compile(r"\s*([NSEWO]|-?\d+(?:\.\d+)?|[,;])")
+_DECIMAL_COMMA = re.compile(r"(\d),(\d)")
+
+
+def _coord_part(numbers: list[str], negative_allowed: bool) -> float | None:
+    """Degrés [minutes [secondes]] → degrés décimaux ; None si mal formé."""
+    if not 1 <= len(numbers) <= 3:
+        return None
+    if any(n.startswith("-") for n in numbers[1:]) \
+            or (numbers[0].startswith("-") and not negative_allowed):
+        return None
+    sign = -1.0 if numbers[0].startswith("-") else 1.0
+    values = [abs(float(n)) for n in numbers]
+    # Seule la dernière composante peut porter des décimales, et minutes et
+    # secondes restent sous 60 : « 48.5 30 » ou « 48 75 » ne veulent rien dire.
+    if any(not v.is_integer() for v in values[:-1]) \
+            or any(v >= 60 for v in values[1:]):
+        return None
+    deg = values[0] + sum(v / 60 ** i for i, v in enumerate(values[1:], start=1))
+    return sign * deg
+
+
+def parse_coordinates_text(text) -> CoordCheck:
+    """Position saisie en une chaîne, dans les formats courants du géocacheur :
+
+    - décimal : `48.8584, 2.2945` — `48,8584 2,2945` (virgule décimale) ;
+    - degrés-minutes : `N 48° 51.504 E 002° 17.670` (format geocaching.com) ;
+    - degrés-minutes-secondes : `48°51'30.2"N 2°17'40.2"E` ;
+    - lettres N/S et E/W/O devant ou derrière, latitude en premier sans lettre.
+
+    Jamais deviné : toute forme ambiguë est refusée. Bornes et (0,0) passent
+    ensuite par `validate_coordinates`."""
+    unreadable = CoordCheck(None, None, False, [_("format de coordonnées non reconnu")])
+    if not isinstance(text, str) or not text.strip():
+        return unreadable
+    norm = _COORD_SYMBOLS.sub(" ", unicodedata.normalize("NFKC", text).upper()).strip()
+    if "." not in norm:
+        norm = _DECIMAL_COMMA.sub(r"\1.\2", norm)
+
+    tokens, pos = [], 0
+    while pos < len(norm):
+        match = _COORD_TOKEN.match(norm, pos)
+        if not match:
+            if norm[pos:].strip():
+                return unreadable
+            break
+        tokens.append(match.group(1))
+        pos = match.end()
+
+    letters = [tok for tok in tokens if tok.isalpha()]
+    if letters:
+        if len(letters) != 2:
+            return unreadable
+        # Lettre devant (N 48 51.504) ou derrière (48 51 30.2 N) : chaque
+        # groupe de nombres s'attache à la lettre de son côté.
+        prefix = tokens[0].isalpha()
+        if not prefix and not tokens[-1].isalpha():
+            return unreadable
+        groups, current = [], []
+        for tok in tokens:
+            if tok in (",", ";"):
+                continue
+            if tok.isalpha():
+                if prefix:
+                    current = []
+                    groups.append((tok, current))
+                else:
+                    groups.append((tok, current))
+                    current = []
+            else:
+                current.append(tok)
+        if (prefix and len(groups) != 2) or (not prefix and current):
+            return unreadable
+        values = {}
+        for letter, numbers in groups:
+            value = _coord_part(numbers, negative_allowed=False)
+            if value is None:
+                return unreadable
+            axis = "lat" if letter in "NS" else "lon"
+            if axis in values:
+                return unreadable
+            values[axis] = -value if letter in "SWO" else value
+        if len(values) != 2:
+            return unreadable
+        lat, lon = values["lat"], values["lon"]
+    else:
+        seps = [i for i, tok in enumerate(tokens) if tok in (",", ";")]
+        numbers = [tok for tok in tokens if tok not in (",", ";")]
+        if len(seps) == 1:
+            first, second = tokens[:seps[0]], tokens[seps[0] + 1:]
+        elif not seps and len(numbers) in (2, 4, 6):
+            # Sans séparateur ni lettre : autant de composantes de chaque côté.
+            half = len(numbers) // 2
+            first, second = numbers[:half], numbers[half:]
+        else:
+            return unreadable
+        lat = _coord_part(first, negative_allowed=True)
+        lon = _coord_part(second, negative_allowed=True)
+        if lat is None or lon is None:
+            return unreadable
+    return validate_coordinates(lat, lon)
+
+
 # ---------------------------------------------------------------------------
 # Résultats
 # ---------------------------------------------------------------------------
