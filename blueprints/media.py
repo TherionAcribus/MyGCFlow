@@ -36,7 +36,7 @@ from capture import (
 import folder_picker
 import paths
 from localization import get_locale
-from settings_manager import get_settings_manager
+from settings_manager import AUDIO_FADE_MAX_SECONDS, PLAYLIST_MAX, get_settings_manager
 from task_manager import TaskAlreadyRunning, task_manager
 
 media_bp = Blueprint('media', __name__)
@@ -269,6 +269,33 @@ def route_delete_audio():
     except OSError as e:
         return jsonify({'success': False, 'message': str(e)}), 500
     return jsonify({'success': True})
+
+
+@media_bp.route('/api/audio/mix', methods=['POST'])
+def route_audio_mix():
+    # Enchaînement de plusieurs morceaux, assemblé en une seule musique (cf.
+    # audio_library.build_playlist_mix) — ou retrouvé s'il existe déjà.
+    payload = request.get_json(silent=True) or {}
+    tracks = payload.get('tracks')
+    if not isinstance(tracks, list) or not 2 <= len(tracks) <= PLAYLIST_MAX:
+        return jsonify({'success': False, 'message': _('Un enchaînement compte de 2 à %(max)d morceaux.',
+                                                      max=PLAYLIST_MAX)}), 400
+    try:
+        crossfade = float(payload.get('crossfade_seconds') or 0)
+    except (TypeError, ValueError):
+        crossfade = 0.0
+    crossfade = min(max(crossfade, 0.0), AUDIO_FADE_MAX_SECONDS)
+    try:
+        result = audio_library.build_playlist_mix(tracks, crossfade)
+    except FileNotFoundError:
+        return jsonify({'success': False, 'message': _('Un des morceaux est introuvable sur le serveur.')}), 404
+    except ValueError:
+        return jsonify({'success': False, 'message': _('Musique inconnue')}), 400
+    except audio_library.MixError:
+        return jsonify({'success': False, 'message': _("Les morceaux n'ont pas pu être enchaînés : l'un d'eux est peut-être illisible.")}), 422
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    return jsonify({'success': True, **result})
 
 
 @media_bp.route('/api/audio/playable', methods=['POST'])

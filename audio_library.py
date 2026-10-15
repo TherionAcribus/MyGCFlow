@@ -13,7 +13,10 @@ de formats. Elle ne sert qu'à l'écran (forme d'onde, mesure, écoute) : l'expo
 garde l'original, pour ne pas ajouter une compression à la vidéo.
 """
 
+import hashlib
+import json
 import os
+import re
 import subprocess
 import tempfile
 import time
@@ -21,7 +24,7 @@ import time
 from werkzeug.utils import secure_filename
 
 import paths
-from capture import _SUBPROCESS_FLAGS, _get_ffmpeg_exe
+from capture import _SUBPROCESS_FLAGS, _get_ffmpeg_exe, _probe_duration_seconds
 
 # Version lisible d'une musique : son nom suivi de ce suffixe.
 PLAYABLE_SUFFIX = '.playable.flac'
@@ -52,11 +55,19 @@ def original_name(name):
 
 
 def referenced_audio_files(recording):
-    """Musiques que les préférences désignent : la courante et les récentes."""
+    """Musiques que les préférences désignent : la courante et les récentes,
+    et, pour un enchaînement, chacun de ses morceaux (pour pouvoir le
+    modifier)."""
     names = {recording.audio_file} if recording.audio_file else set()
+    playlists = [getattr(recording, 'audio_playlist', None) or []]
     for entry in recording.audio_recent or []:
         if isinstance(entry, dict) and entry.get('file'):
             names.add(entry['file'])
+            playlists.append(entry.get('playlist') or [])
+    for playlist in playlists:
+        for track in playlist:
+            if isinstance(track, dict) and track.get('file'):
+                names.add(track['file'])
     return names
 
 
@@ -166,6 +177,154 @@ def playable_audio(name):
             raise UnreadableAudio(safe)
         os.replace(tmp_path, target)
         return target_name
+    finally:
+        if os.path.exists(tmp_path):
+            try:
+                os.remove(tmp_path)
+            except OSError:
+                pass
+
+
+# --------- Enchaînement de plusieurs morceaux ---------
+#
+# Les morceaux sont assemblés une fois pour toutes en un seul fichier du
+# dossier, que l'application traite ensuite comme n'importe quelle musique :
+# départ, boucle, fondus, forme d'onde, écoute et exports n'ont rien de
+# particulier à savoir. FLAC : sans perte (l'export compresse une seule fois),
+# et lisible par tous les navigateurs.
+
+# Version de l'assemblage : la changer invalide les enchaînements déjà faits
+# (leur nom en dépend).
+MIX_VERSION = 1
+MIX_PREFIX = 'enchainement-'
+MIX_TIMEOUT_S = 600
+
+# Équilibrage des morceaux : chacun ramené au même niveau moyen, sans que ses
+# crêtes ne dépassent PEAK_CEILING_DB — mêmes valeurs que l'harmonisation du
+# volume côté navigateur (static/js/music_analysis.mjs).
+LOUDNESS_TARGET_DB = -16.0
+PEAK_CEILING_DB = -0.9
+MAX_GAIN_DB = 20.0
+# Seuil des blancs retirés aux raccords (même que audio_silence.mjs), et
+# traîne gardée en fin de morceau pour ne pas couper une réverbération.
+SILENCE_THRESHOLD_DB = -50
+SILENCE_TAIL_KEPT_S = 0.3
+# Part maximale du plus court morceau que peut occuper un fondu enchaîné.
+MAX_CROSSFADE_SHARE = 0.4
+
+_MEAN_VOLUME_RE = re.compile(r'mean_volume:\s*(-?[\d.]+|-inf) dB')
+_MAX_VOLUME_RE = re.compile(r'max_volume:\s*(-?[\d.]+|-inf) dB')
+
+
+class MixError(Exception):
+    """L'assemblage a échoué (morceau illisible, trop court pour le fondu…)."""
+
+
+def _run(cmd, timeout):
+    return subprocess.run(
+        cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
+        universal_newlines=True, encoding='utf-8', errors='replace',
+        timeout=timeout, creationflags=_SUBPROCESS_FLAGS,
+    )
+
+
+def track_gain_db(path):
+    """Gain (dB) qui amène un morceau au niveau commun, sans saturer : niveau
+    moyen et crête mesurés par ffmpeg (volumedetect). 0 pour un morceau muet
+    ou non mesurable."""
+    proc = _run([_get_ffmpeg_exe(), '-v', 'info', '-nostats', '-i', path,
+                 '-map', '0:a:0', '-af', 'volumedetect', '-f', 'null', '-'], MIX_TIMEOUT_S)
+    mean = _MEAN_VOLUME_RE.search(proc.stderr or '')
+    peak = _MAX_VOLUME_RE.search(proc.stderr or '')
+    if proc.returncode != 0:
+        raise MixError(os.path.basename(path))
+    if not mean or not peak or '-inf' in (mean.group(1), peak.group(1)):
+        return 0.0
+    wanted = LOUDNESS_TARGET_DB - float(mean.group(1))
+    headroom = PEAK_CEILING_DB - float(peak.group(1))
+    return max(-MAX_GAIN_DB, min(MAX_GAIN_DB, wanted, headroom))
+
+
+def mix_name(tracks, crossfade_s):
+    """Nom de l'enchaînement de ces morceaux : tiré de ses paramètres, il est
+    retrouvé tel quel au lieu d'être refait."""
+    key = json.dumps([MIX_VERSION, list(tracks), round(float(crossfade_s), 3)])
+    return f"{MIX_PREFIX}{hashlib.sha256(key.encode('utf-8')).hexdigest()[:16]}.flac"
+
+
+def mix_filter_graph(gains_db, crossfade_s):
+    """Graphe ffmpeg de l'enchaînement, des entrées [0:a]… à la sortie [out].
+
+    Chaque morceau est mis au même format, équilibré (gain), et débarrassé des
+    blancs qui le séparent de ses voisins : le début des suivants, la fin des
+    précédents (une traîne courte gardée). Puis ils s'enchaînent, en fondu
+    (acrossfade, quart de sinus comme les reprises de boucle) ou bout à bout.
+    """
+    count = len(gains_db)
+    silence = f"silenceremove=start_periods=1:start_threshold={SILENCE_THRESHOLD_DB}dB"
+    parts = []
+    for i, gain in enumerate(gains_db):
+        chain = [f"aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo",
+                 f"volume={gain:.2f}dB"]
+        if i > 0:
+            chain.append(silence)
+        if i < count - 1:
+            chain += ['areverse', f"{silence}:start_silence={SILENCE_TAIL_KEPT_S}", 'areverse']
+        parts.append(f"[{i}:a]{','.join(chain)}[t{i}]")
+    if crossfade_s > 0:
+        previous = 't0'
+        for i in range(1, count):
+            label = 'out' if i == count - 1 else f"m{i}"
+            parts.append(f"[{previous}][t{i}]acrossfade=d={crossfade_s:.3f}:c1=qsin:c2=qsin[{label}]")
+            previous = label
+    else:
+        inputs = ''.join(f"[t{i}]" for i in range(count))
+        parts.append(f"{inputs}concat=n={count}:v=0:a=1[out]")
+    return ';'.join(parts)
+
+
+def build_playlist_mix(tracks, crossfade_s=0.0):
+    """Assemble les morceaux `tracks` (noms du dossier, dans l'ordre) en un
+    enchaînement, ou retrouve celui déjà fait. Renvoie {'file', 'tracks':
+    [{'file', 'duration_seconds'}]}. FileNotFoundError si un morceau manque ;
+    MixError si ffmpeg échoue."""
+    names = [safe_audio_name(t) for t in tracks]
+    if len(names) < 2 or not all(names):
+        raise ValueError('tracks')
+    folder = str(paths.audio_dir())
+    sources = [os.path.join(folder, n) for n in names]
+    for source in sources:
+        if not os.path.isfile(source):
+            raise FileNotFoundError(os.path.basename(source))
+    durations = [_probe_duration_seconds(source) or 0.0 for source in sources]
+    described = [{'file': n, 'duration_seconds': d} for n, d in zip(names, durations)]
+    # Fondu borné par le plus court morceau (acrossfade exige des morceaux
+    # plus longs que lui).
+    crossfade = max(0.0, float(crossfade_s or 0))
+    shortest = min(d for d in durations if d > 0) if any(d > 0 for d in durations) else 0.0
+    if crossfade > 0 and shortest > 0:
+        crossfade = min(crossfade, shortest * MAX_CROSSFADE_SHARE)
+    name = mix_name(names, crossfade)
+    target = os.path.join(folder, name)
+    if os.path.isfile(target):
+        os.utime(target)  # de nouveau demandé : pas une copie oubliée
+        return {'file': name, 'tracks': described}
+
+    gains = [track_gain_db(source) for source in sources]
+    fd, tmp_path = tempfile.mkstemp(dir=folder, prefix=_UPLOAD_PART_PREFIX, suffix='.flac')
+    os.close(fd)
+    try:
+        cmd = [_get_ffmpeg_exe(), '-y', '-v', 'error']
+        for source in sources:
+            cmd += ['-i', source]
+        cmd += ['-filter_complex', mix_filter_graph(gains, crossfade), '-map', '[out]',
+                '-c:a', 'flac', '-f', 'flac', tmp_path]
+        proc = _run(cmd, MIX_TIMEOUT_S)
+        if proc.returncode != 0 or os.path.getsize(tmp_path) == 0:
+            print(f"[audio] enchaînement impossible: {(proc.stderr or '').strip()[:500]}")
+            raise MixError(name)
+        os.replace(tmp_path, target)
+        return {'file': name, 'tracks': described}
     finally:
         if os.path.exists(tmp_path):
             try:

@@ -315,6 +315,33 @@
                             <div id="audioFileInfo" class="form-hint text-muted mt-2" aria-live="polite">
                                 <em>{{ _("Aucune musique sélectionnée") }}</em>
                             </div>
+                            <!-- Enchaînement de plusieurs morceaux (renderPlaylistEditor,
+                                 ui.js) : le serveur les assemble en une seule musique, que
+                                 la suite de l'onglet traite comme une autre. Visible avec
+                                 une musique ; la liste, à partir de deux morceaux. -->
+                            <div id="musicPlaylist" class="music-playlist mt-2" hidden>
+                                <ol id="musicPlaylistTracks" class="music-playlist-tracks mb-2" hidden
+                                    aria-label="{{ _('Morceaux enchaînés') }}"></ol>
+                                <div class="d-flex align-items-center gap-3 flex-wrap">
+                                    <input id="inputAudioAddFile" type="file" accept="audio/*" class="visually-hidden"
+                                           aria-label="{{ _('Morceau à ajouter') }}">
+                                    <button type="button" id="btnAudioAddTrack" class="btn btn-sm btn-outline-primary"
+                                            title="{{ _('Enchaîner un autre morceau après celui-ci') }}">
+                                        <i class="ti ti-playlist-add me-1" aria-hidden="true"></i>{{ _("Ajouter un morceau à la suite") }}
+                                    </button>
+                                    <div id="audioPlaylistCrossfadeBox" class="form-check mb-0 audio-fade-row" hidden>
+                                        <input id="cbAudioPlaylistCrossfade" class="form-check-input" type="checkbox">
+                                        <label class="form-check-label" for="cbAudioPlaylistCrossfade"
+                                               title="{{ _('La fin de chaque morceau s\'efface pendant que le suivant monte, au lieu de s\'enchaîner bout à bout.') }}">{{ _("Enchaîner en fondu") }}</label>
+                                        <span class="audio-fade-duration">
+                                            <input id="inputAudioPlaylistCrossfadeSeconds" type="number" min="0.5" max="30" step="0.5" value="3"
+                                                   class="form-control form-control-sm" aria-label="{{ _('Durée du fondu entre les morceaux, en secondes') }}">
+                                            <span aria-hidden="true">s</span>
+                                        </span>
+                                    </div>
+                                </div>
+                                <div id="musicPlaylistStatus" class="form-hint text-muted mt-1" aria-live="polite" hidden></div>
+                            </div>
                             <!-- Forme d'onde et ce qu'en fera la vidéo (renderMusicWaveform,
                                  ui.js). Décorative : #musicSyncStatus en donne la version
                                  texte, annoncée aux lecteurs d'écran. Un clic y fait

@@ -817,6 +817,83 @@ test('« Garder la fin du morceau » fait finir la musique avec la vidéo', asyn
 });
 
 
+test('plusieurs morceaux s\'enchaînent en une seule musique, modifiable', async ({ page }) => {
+  const status = page.locator('#musicSyncStatus');
+  const list = page.locator('#musicPlaylistTracks');
+  const tracks = list.locator('li');
+  const crossfade = page.locator('#cbAudioPlaylistCrossfade');
+  const seconds = page.locator('#inputAudioPlaylistCrossfadeSeconds');
+  const settings = () => recordingSettings(page);
+
+  await page.locator('#inputAudioFile').setInputFiles(wavFile('un.wav', 4, 0));
+  await expect(status).toContainText('Durée calée sur la musique (4 s)');
+  await expect(page.locator('#btnAudioAddTrack')).toBeVisible();
+  await expect(list).toBeHidden();
+
+  // Un second morceau : fondu par défaut, borné à 40 % du plus court (1,6 s).
+  await page.locator('#inputAudioAddFile').setInputFiles(wavFile('deux.wav', 6, 0));
+  await expect(tracks).toHaveCount(2);
+  await expect(tracks.nth(0)).toContainText('un.wav');
+  await expect(tracks.nth(1)).toContainText('deux.wav');
+  await expect(tracks.nth(1)).toContainText('0:06');
+  await expect(page.locator('#audioFileInfo')).toContainText('un.wav + deux.wav');
+  await expect(crossfade).toBeChecked();
+  // 4 + 6 − 1,6 s : la vidéo reste calée sur la musique.
+  await expect(status).toContainText('Durée calée sur la musique (8 s)');
+  await expect(page.locator('#musicWaveform')).toBeVisible();
+
+  // Fondu d'une seconde, puis sans fondu : l'enchaînement est refait.
+  await seconds.fill('1');
+  await seconds.blur();
+  await expect(status).toContainText('Durée calée sur la musique (9 s)');
+  await crossfade.uncheck();
+  await expect(status).toContainText('Durée calée sur la musique (10 s)');
+  await expect(seconds).toBeDisabled();
+
+  // Ordre inversé.
+  await list.getByRole('button', { name: 'Monter « deux.wav »' }).click();
+  await expect(tracks.nth(0)).toContainText('deux.wav');
+  await expect(page.locator('#audioFileInfo')).toContainText('deux.wav + un.wav');
+  await expect.poll(async () => {
+    const r = await settings();
+    return [r.audio_file.startsWith('enchainement-'), r.audio_playlist.map((t) => t.name)];
+  }).toEqual([true, ['deux.wav', 'un.wav']]);
+  // Les retouches ne s'empilent pas dans les musiques récentes : la dernière
+  // version de l'enchaînement, et le premier morceau choisi seul.
+  await expect.poll(async () => (await settings()).audio_recent.map((r) => r.name))
+    .toEqual(['deux.wav + un.wav', 'un.wav']);
+  expect((await settings()).audio_recent[0].playlist.map((t) => t.name)).toEqual(['deux.wav', 'un.wav']);
+
+  // Retrouvé tel quel au démarrage suivant.
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.mygcflowReady === true);
+  await dismissFirstUseModal(page);
+  await page.locator('a[href="#animation"]').click();
+  await page.locator('#musicConfigTab').click();
+  await expect(tracks).toHaveCount(2);
+  await expect(tracks.nth(0)).toContainText('deux.wav');
+  await expect(status).toContainText('Durée calée sur la musique (10 s)');
+
+  // Un morceau retiré : il n'en reste qu'un, qui redevient une musique seule.
+  await list.getByRole('button', { name: 'Retirer « un.wav » de l\'enchaînement' }).click();
+  await expect(list).toBeHidden();
+  await expect(page.locator('#audioFileInfo')).toContainText('deux.wav');
+  await expect(status).toContainText('Durée calée sur la musique (6 s)');
+  await expect.poll(async () => (await settings()).audio_playlist).toEqual([]);
+
+  // Remet le fondu par défaut (préférence globale).
+  await page.locator('#inputAudioAddFile').setInputFiles(wavFile('trois.wav', 3, 0));
+  await expect(tracks).toHaveCount(2);
+  await crossfade.check();
+  await seconds.fill('3');
+  await seconds.blur();
+  await expect.poll(async () => {
+    const r = await settings();
+    return [r.audio_playlist_crossfade, r.audio_playlist_crossfade_seconds];
+  }).toEqual([true, 3]);
+});
+
+
 test('une musique sans blanc de fin ne propose pas l\'option', async ({ page }) => {
   await page.locator('#inputAudioFile').setInputFiles(wavFile('sans-blanc.wav', 4, 0));
 

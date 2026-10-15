@@ -69,6 +69,24 @@ class RecordingCoercionTests(unittest.TestCase):
         self.assertFalse(coerce_recording_settings({}).audio_trim_silence)
         self.assertTrue(coerce_recording_settings({"audio_trim_silence": True}).audio_trim_silence)
 
+    def test_a_playlist_needs_two_valid_tracks(self):
+        tracks = [{"file": "../a.mp3", "name": " A ", "duration": 12.5}, {"file": "b.mp3"}, {"name": "sans fichier"}]
+        self.assertEqual(coerce_recording_settings({"audio_playlist": tracks}).audio_playlist, [
+            {"file": "a.mp3", "name": "A", "duration": 12.5},
+            {"file": "b.mp3", "name": "b.mp3", "duration": 0.0},
+        ])
+        self.assertEqual(coerce_recording_settings({"audio_playlist": [{"file": "a.mp3"}]}).audio_playlist, [])
+        self.assertEqual(coerce_recording_settings({}).audio_playlist, [])
+        self.assertTrue(coerce_recording_settings({}).audio_playlist_crossfade)
+
+    def test_a_recent_playlist_keeps_its_tracks(self):
+        recent = coerce_recording_settings({"audio_recent": [
+            {"file": "mix.flac", "name": "A + B", "playlist": [{"file": "a.mp3"}, {"file": "b.mp3"}]},
+            {"file": "seule.mp3", "playlist": "pas une liste"},
+        ]}).audio_recent
+        self.assertEqual([t["file"] for t in recent[0]["playlist"]], ["a.mp3", "b.mp3"])
+        self.assertNotIn("playlist", recent[1])
+
     def test_keeping_the_music_ending_is_opt_in(self):
         self.assertFalse(coerce_recording_settings({}).audio_keep_ending)
         self.assertTrue(coerce_recording_settings({"audio_keep_ending": True}).audio_keep_ending)

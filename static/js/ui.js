@@ -43,6 +43,9 @@ import {
 import { ensurePlayableMusic, musicTrack } from './music_track.js';
 import { withoutRecentMusic, withRecentMusic, withRecentStart } from './music_track.mjs';
 import {
+    PLAYLIST_MAX, playlistDisplayName, playlistMoved, playlistWith, playlistWithout, trackDurationText,
+} from './music_playlist.mjs';
+import {
     buildTrailPath,
     buildTrailRoute,
     normalizeTrailOptions,
@@ -116,7 +119,7 @@ let isCombinedLatLonMode = true;
 var recordMimeShownFallback = null;
 var selectRecordMode, selectRecordQualityProfile, recordAdvancedSettings, inputRecordFps, inputRecordBitrate, selectRecordMime, inputRecordSlowdown, inputRecordScaleFactor, inputRecordFileName, cbRecordNormalize, selectRecordResolution, selectRecordColorFidelity;
 var cbRecordAudioEnable, inputAudioFile, inputAudioVolume, cbAudioTrimSilence, cbAudioFadeOut, cbAudioLoop, inputAudioStart;
-var cbAudioKeepEnding;
+var cbAudioKeepEnding, cbAudioPlaylistCrossfade, inputAudioPlaylistCrossfadeSeconds;
 var cbAudioFadeIn, inputAudioFadeInSeconds, inputAudioFadeOutSeconds;
 var cbAudioLoopCrossfade, inputAudioLoopCrossfadeSeconds, cbAudioNormalize;
 // Passe à true à la première synchro déclenchée par une résolution de
@@ -166,6 +169,7 @@ var musicLoudness = null;
 const AUDIO_FADE_OUT_SECONDS = 3;
 const AUDIO_FADE_IN_SECONDS = 2;
 const AUDIO_LOOP_CROSSFADE_SECONDS = 1;
+const AUDIO_PLAYLIST_CROSSFADE_SECONDS = 3;
 // En deçà de cet écart, musique et vidéo sont considérées de même durée.
 const MUSIC_VIDEO_TOLERANCE_MS = 1000;
 
@@ -231,6 +235,7 @@ const RECORD_SETTINGS_FIELDS = [
     'cbRecordAudioEnable', 'inputAudioVolume', 'cbAudioTrimSilence', 'cbAudioFadeOut', 'cbAudioLoop',
     'inputAudioStart', 'cbAudioFadeIn', 'inputAudioFadeInSeconds', 'inputAudioFadeOutSeconds',
     'cbAudioLoopCrossfade', 'inputAudioLoopCrossfadeSeconds', 'cbAudioNormalize', 'cbAudioKeepEnding',
+    'cbAudioPlaylistCrossfade', 'inputAudioPlaylistCrossfadeSeconds',
     'selectRecordResolution',
     'selectRecordColorFidelity',
 ];
@@ -1586,6 +1591,7 @@ function initOptionsElements() {
     }
     cbAudioTrimSilence = document.getElementById('cbAudioTrimSilence');
     if (cbAudioTrimSilence) cbAudioTrimSilence.addEventListener('change', () => changeRecordValues());
+    setupPlaylistEditor();
     cbAudioKeepEnding = document.getElementById('cbAudioKeepEnding');
     if (cbAudioKeepEnding) cbAudioKeepEnding.addEventListener('change', () => changeRecordValues());
     cbAudioFadeOut = document.getElementById('cbAudioFadeOut');
@@ -2958,6 +2964,11 @@ function initOptionsUI() {
             }
             if (cbAudioTrimSilence) cbAudioTrimSilence.checked = !!pkg.options.record.audio.trimSilence;
             if (cbAudioKeepEnding) cbAudioKeepEnding.checked = !!pkg.options.record.audio.keepEnding;
+            if (cbAudioPlaylistCrossfade) cbAudioPlaylistCrossfade.checked = pkg.options.record.audio.playlistCrossfade !== false;
+            if (inputAudioPlaylistCrossfadeSeconds) {
+                inputAudioPlaylistCrossfadeSeconds.value = String(normalizeFadeSeconds(
+                    pkg.options.record.audio.playlistCrossfadeSeconds, AUDIO_PLAYLIST_CROSSFADE_SECONDS));
+            }
             if (cbAudioFadeOut) cbAudioFadeOut.checked = !!pkg.options.record.audio.fadeOut;
             if (cbAudioLoop) cbAudioLoop.checked = !!pkg.options.record.audio.loop;
             if (inputAudioStart) inputAudioStart.value = String(Math.max(0, Number(pkg.options.record.audio.startSeconds) || 0));
@@ -3290,11 +3301,13 @@ function changeRecordValues(field = undefined) {
             if (cbAudioFadeIn) pkg.options.record.audio.fadeIn = !!cbAudioFadeIn.checked;
             if (cbAudioLoopCrossfade) pkg.options.record.audio.loopCrossfade = !!cbAudioLoopCrossfade.checked;
             if (cbAudioNormalize) pkg.options.record.audio.normalize = !!cbAudioNormalize.checked;
+            if (cbAudioPlaylistCrossfade) pkg.options.record.audio.playlistCrossfade = !!cbAudioPlaylistCrossfade.checked;
             // Durées bornées, et le champ ramené à la valeur retenue.
             for (const [input, key, fallback] of [
                 [inputAudioFadeInSeconds, 'fadeInSeconds', AUDIO_FADE_IN_SECONDS],
                 [inputAudioFadeOutSeconds, 'fadeOutSeconds', AUDIO_FADE_OUT_SECONDS],
                 [inputAudioLoopCrossfadeSeconds, 'loopCrossfadeSeconds', AUDIO_LOOP_CROSSFADE_SECONDS],
+                [inputAudioPlaylistCrossfadeSeconds, 'playlistCrossfadeSeconds', AUDIO_PLAYLIST_CROSSFADE_SECONDS],
             ]) {
                 if (!input) continue;
                 const seconds = normalizeFadeSeconds(input.value, pkg.options.record.audio[key] ?? fallback);
@@ -3353,6 +3366,9 @@ function recordSettingsPayload() {
         audio_file_name: audio.fileName || '',
         audio_start_seconds: Math.max(0, Number(audio.startSeconds) || 0),
         audio_recent: Array.isArray(audio.recent) ? audio.recent : [],
+        audio_playlist: Array.isArray(audio.playlist) ? audio.playlist : [],
+        audio_playlist_crossfade: audio.playlistCrossfade !== false,
+        audio_playlist_crossfade_seconds: normalizeFadeSeconds(audio.playlistCrossfadeSeconds, AUDIO_PLAYLIST_CROSSFADE_SECONDS),
         audio_fade_out_seconds: normalizeFadeSeconds(audio.fadeOutSeconds, AUDIO_FADE_OUT_SECONDS),
         audio_fade_in: !!audio.fadeIn,
         audio_fade_in_seconds: normalizeFadeSeconds(audio.fadeInSeconds, AUDIO_FADE_IN_SECONDS),
@@ -3391,6 +3407,10 @@ function applyRecordSettingsPayload(recording) {
     pkg.options.record.audio.fileName = (typeof recording.audio_file_name === 'string') ? recording.audio_file_name : '';
     pkg.options.record.audio.startSeconds = Math.max(0, Number(recording.audio_start_seconds) || 0);
     pkg.options.record.audio.recent = Array.isArray(recording.audio_recent) ? recording.audio_recent : [];
+    pkg.options.record.audio.playlist = Array.isArray(recording.audio_playlist) ? recording.audio_playlist : [];
+    pkg.options.record.audio.playlistCrossfade = recording.audio_playlist_crossfade !== false;
+    pkg.options.record.audio.playlistCrossfadeSeconds = normalizeFadeSeconds(
+        recording.audio_playlist_crossfade_seconds, AUDIO_PLAYLIST_CROSSFADE_SECONDS);
     pkg.options.record.audio.fadeOutSeconds = normalizeFadeSeconds(recording.audio_fade_out_seconds, AUDIO_FADE_OUT_SECONDS);
     pkg.options.record.audio.fadeIn = !!recording.audio_fade_in;
     pkg.options.record.audio.fadeInSeconds = normalizeFadeSeconds(recording.audio_fade_in_seconds, AUDIO_FADE_IN_SECONDS);
@@ -8125,6 +8145,7 @@ function updateAudioDurationButton() {
     const btnRemove = document.getElementById('btnAudioFileRemove');
     if (btnRemove) btnRemove.hidden = !hasFile;
     syncMusicTabDot();
+    renderPlaylistEditor();
 }
 
 // Nom du fichier audio choisi, avec ses métadonnées en infobulle. Le nom vient
@@ -8268,9 +8289,17 @@ export function dropMusicFile(file) {
 // Musique choisie par l'utilisateur (sélecteur de fichier, dépôt, ou liste
 // des récentes). `serverName` : déjà copiée sur le serveur (musique récente),
 // rien à renvoyer ; `startSeconds` : son point de départ.
-async function selectMusic(file, { serverName = null, startSeconds = 0 } = {}) {
+// `playlist` : morceaux dont `file` est l'enchaînement (vide pour une musique
+// seule) ; `lockRhythm` : caler la durée de la vidéo sur elle — sauf à la
+// recomposition d'un enchaînement, qui garde le mode de rythme en cours.
+// `replacesRecent` : musique récente que celle-ci remplace (version précédente
+// d'un enchaînement en cours de modification).
+async function selectMusic(file, {
+    serverName = null, startSeconds = 0, playlist = [], lockRhythm = true, replacesRecent = null,
+} = {}) {
     // Une écoute en cours jouerait encore l'ancienne musique.
     if (pkg.isListeningToMusic?.()) pkg.stopBackgroundMusic();
+    if (pkg.options?.record?.audio) pkg.options.record.audio.playlist = playlist;
     // Devient la musique courante ; sa copie vers le serveur part aussitôt,
     // en tâche de fond (sauf si elle y est déjà).
     musicTrack.select(file, { serverName });
@@ -8288,16 +8317,17 @@ async function selectMusic(file, { serverName = null, startSeconds = 0 } = {}) {
     // (rememberMusic) : cette sauvegarde ne doit plus la retenir. Le point de
     // départ, lui, est relu par rememberMusic une fois la copie connue, donc
     // après changeRecordValues.
-    rememberMusic(file);
+    rememberMusic(file, { replacesRecent });
     changeRecordValues(cbRecordAudioEnable);
     const duration = await showCurrentMusic(file);
     // Une musique choisie cale d'office la durée de la vidéo dessus —
     // équivalent du bouton « Caler sur la musique ». null = lecture périmée
     // (un autre fichier a suivi) ou durée illisible : on ne change alors pas
     // le mode.
-    if (Number.isFinite(duration) && duration > 0) {
+    if (lockRhythm && Number.isFinite(duration) && duration > 0) {
+        const wasLocked = isMusicLocked();
         setRhythmMode('music');
-        pkg.showToast && pkg.showToast(t('Durée de l\'animation calée sur la musique'), 'info', t('Musique'), 3000);
+        if (!wasLocked) pkg.showToast && pkg.showToast(t('Durée de l\'animation calée sur la musique'), 'info', t('Musique'), 3000);
     }
 }
 
@@ -8307,7 +8337,7 @@ function clearMusic() {
     musicTrack.clear();
     if (inputAudioFile) inputAudioFile.value = '';
     const audio = pkg.options?.record?.audio;
-    if (audio) { audio.file = ''; audio.fileName = ''; audio.startSeconds = 0; }
+    if (audio) { audio.file = ''; audio.fileName = ''; audio.startSeconds = 0; audio.playlist = []; }
     if (inputAudioStart) inputAudioStart.value = '0';
     hideAudioFileInfo();
     // Revenir au mode rythme si la durée était calée sur cette musique.
@@ -8345,7 +8375,7 @@ async function showCurrentMusic(file) {
 // démarrage — une fois sa copie sur le serveur faite. D'ici là, la musique
 // précédente est oubliée : en cas d'échec de copie, on ne recharge pas une
 // musique que l'utilisateur a remplacée.
-function rememberMusic(file) {
+function rememberMusic(file, { replacesRecent = null } = {}) {
     const audio = pkg.options?.record?.audio;
     if (!audio) return;
     audio.file = '';
@@ -8354,10 +8384,13 @@ function rememberMusic(file) {
         if (!name || musicTrack.file() !== file) return;
         audio.file = name;
         audio.fileName = file.name;
-        // En tête des musiques récentes, avec son point de départ.
-        audio.recent = withRecentMusic(audio.recent, {
-            file: name, name: file.name, start: Math.max(0, Number(audio.startSeconds) || 0),
-        });
+        // En tête des musiques récentes, avec son point de départ — et ses
+        // morceaux pour un enchaînement, qui se remodifie une fois repris.
+        const entry = { file: name, name: file.name, start: Math.max(0, Number(audio.startSeconds) || 0) };
+        if (audio.playlist?.length) entry.playlist = audio.playlist;
+        const kept = replacesRecent && replacesRecent !== name
+            ? withoutRecentMusic(audio.recent, replacesRecent) : audio.recent;
+        audio.recent = withRecentMusic(kept, entry);
         renderRecentMusicMenu();
         saveRecordSettings(null);
     });
@@ -8473,6 +8506,219 @@ async function removeRecentMusic(serverName) {
     saveRecordSettings(null);
 }
 
+// ----- Enchaînement de plusieurs morceaux -----
+//
+// Le serveur assemble les morceaux en une seule musique
+// (audio_library.build_playlist_mix : volumes équilibrés, blancs retirés aux
+// raccords, fondu enchaîné), choisie ensuite comme une autre (selectMusic) :
+// départ, boucle, fondus, forme d'onde, écoute et exports n'ont rien de
+// particulier à savoir. La liste (audio.playlist) est gardée pour être
+// modifiée : chaque modification refait l'assemblage — ou le retrouve, le
+// serveur le nommant d'après ses morceaux.
+
+// Jeton de la dernière recomposition demandée : une demande plus récente rend
+// les précédentes caduques. `playlistBusy` : envoi ou assemblage en cours,
+// commandes de la liste inactives. `var` : renderPlaylistEditor peut servir
+// pendant l'évaluation du module (initUIElements), avant cette ligne.
+var playlistToken = 0;
+var playlistBusy = false;
+
+function setPlaylistStatus(text) {
+    const status = document.getElementById('musicPlaylistStatus');
+    if (!status) return;
+    status.textContent = text || '';
+    status.hidden = !text;
+}
+
+// Liste des morceaux et ses commandes. Visible avec une musique lisible ; la
+// liste et le fondu, à partir de deux morceaux.
+function renderPlaylistEditor() {
+    const box = document.getElementById('musicPlaylist');
+    const list = document.getElementById('musicPlaylistTracks');
+    if (!box || !list) return;
+    const audio = pkg.options?.record?.audio || {};
+    const playlist = Array.isArray(audio.playlist) ? audio.playlist : [];
+    const chained = playlist.length >= 2;
+    box.hidden = !musicTrack.hasFile() || musicTrack.isUnreadable();
+    list.hidden = !chained;
+    const crossfadeBox = document.getElementById('audioPlaylistCrossfadeBox');
+    if (crossfadeBox) crossfadeBox.hidden = !chained;
+    if (cbAudioPlaylistCrossfade) cbAudioPlaylistCrossfade.disabled = playlistBusy;
+    if (inputAudioPlaylistCrossfadeSeconds) {
+        inputAudioPlaylistCrossfadeSeconds.disabled = playlistBusy || !cbAudioPlaylistCrossfade?.checked;
+    }
+    const add = document.getElementById('btnAudioAddTrack');
+    if (add) add.disabled = playlistBusy || playlist.length >= PLAYLIST_MAX;
+
+    list.replaceChildren(...playlist.map((track, index) => {
+        const row = document.createElement('div');
+        row.className = 'music-playlist-track-row';
+        const name = document.createElement('span');
+        name.className = 'music-playlist-track-name';
+        name.textContent = track.name;
+        name.title = track.name;
+        const duration = document.createElement('small');
+        duration.className = 'text-muted music-playlist-track-duration';
+        duration.textContent = trackDurationText(track.duration);
+        row.append(name, duration);
+        const values = { name: track.name };
+        for (const [action, icon, label, atEdge] of [
+            ['up', 'ti-arrow-up', t('Monter « ${name} »', values), index === 0],
+            ['down', 'ti-arrow-down', t('Descendre « ${name} »', values), index === playlist.length - 1],
+            ['remove', 'ti-x', t('Retirer « ${name} » de l\'enchaînement', values), false],
+        ]) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'btn btn-sm btn-ghost-secondary';
+            button.dataset.action = action;
+            button.dataset.index = String(index);
+            button.setAttribute('aria-label', label);
+            button.title = label;
+            button.disabled = atEdge || playlistBusy;
+            const i = document.createElement('i');
+            i.className = `ti ${icon}`;
+            i.setAttribute('aria-hidden', 'true');
+            button.append(i);
+            row.append(button);
+        }
+        const li = document.createElement('li');
+        li.className = 'music-playlist-track';
+        li.append(row);
+        return li;
+    }));
+}
+
+// Recompose la musique à partir de `tracks` : l'enchaînement assemblé par le
+// serveur, ou le morceau seul s'il n'en reste qu'un. Le point de départ et le
+// mode de rythme sont gardés.
+async function applyPlaylist(tracks) {
+    const audio = pkg.options?.record?.audio;
+    if (!audio || !tracks?.length) return;
+    if (pkg.isRecordingActive?.()) {
+        pkg.showToast?.(t('Attendez la fin de l\'enregistrement pour changer de musique.'), 'warning', t('Musique'), 4000);
+        return;
+    }
+    const token = ++playlistToken;
+    playlistBusy = true;
+    setPlaylistStatus(t('Préparation de l\'enchaînement…'));
+    renderPlaylistEditor();
+    try {
+        let serverName;
+        let displayName;
+        let playlist = [];
+        if (tracks.length >= 2) {
+            const response = await fetch('/api/audio/mix', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    tracks: tracks.map((track) => track.file),
+                    crossfade_seconds: audio.playlistCrossfade !== false
+                        ? normalizeFadeSeconds(audio.playlistCrossfadeSeconds, AUDIO_PLAYLIST_CROSSFADE_SECONDS) : 0,
+                }),
+            });
+            const result = await response.json().catch(() => null);
+            if (token !== playlistToken) return;
+            if (!result?.success || !result.file) {
+                throw new Error(result?.message || t('Les morceaux n\'ont pas pu être enchaînés.'));
+            }
+            playlist = tracks.map((track, index) => ({
+                file: track.file,
+                name: track.name,
+                duration: result.tracks?.[index]?.duration_seconds || track.duration || 0,
+            }));
+            serverName = result.file;
+            displayName = playlistDisplayName(playlist);
+        } else {
+            // Un seul morceau restant : il redevient une musique seule.
+            serverName = tracks[0].file;
+            displayName = tracks[0].name;
+        }
+        const file = await fetchServerMusic(serverName, displayName);
+        if (token !== playlistToken) return;
+        if (!file) throw new Error(t('Un des morceaux est introuvable sur le serveur.'));
+        if (inputAudioFile) inputAudioFile.value = '';
+        await selectMusic(file, {
+            serverName,
+            startSeconds: Math.max(0, Number(audio.startSeconds) || 0),
+            playlist,
+            lockRhythm: isMusicLocked(),
+            // L'enchaînement modifié remplace sa version précédente dans les
+            // musiques récentes, au lieu de s'y ajouter à chaque retouche.
+            replacesRecent: audio.playlist?.length >= 2 ? audio.file : null,
+        });
+    } catch (e) {
+        if (token !== playlistToken) return;
+        console.warn('Enchaînement non appliqué:', e);
+        pkg.showToast?.(e?.message || t('Les morceaux n\'ont pas pu être enchaînés.'), 'error', t('Musique'), 6000);
+    } finally {
+        if (token === playlistToken) {
+            playlistBusy = false;
+            setPlaylistStatus('');
+            renderPlaylistEditor();
+        }
+    }
+}
+
+// Ajoute `file` après la musique courante (ou à la fin de l'enchaînement) :
+// le morceau est d'abord copié sur le serveur, comme toute musique.
+async function addPlaylistTrack(file) {
+    if (!file || !musicTrack.hasFile() || playlistBusy) return;
+    const audio = pkg.options?.record?.audio;
+    if (!audio) return;
+    playlistBusy = true;
+    setPlaylistStatus(t('Envoi du morceau…'));
+    renderPlaylistEditor();
+    const [currentName, addedName] = await Promise.all([musicTrack.serverName(), musicTrack.serverName(file)]);
+    playlistBusy = false;
+    setPlaylistStatus('');
+    if (!currentName || !addedName) {
+        renderPlaylistEditor();
+        pkg.showToast?.(t('Le morceau n\'a pas pu être envoyé au serveur.'), 'error', t('Musique'), 6000);
+        return;
+    }
+    const current = {
+        file: currentName,
+        name: audio.fileName || musicTrack.file()?.name || currentName,
+        duration: (musicFileDurationMs || 0) / 1000,
+    };
+    await applyPlaylist(playlistWith(audio.playlist, current, { file: addedName, name: file.name, duration: 0 }));
+}
+
+// Le fondu entre les morceaux a changé : l'enchaînement est refait.
+function rebuildPlaylist() {
+    const playlist = pkg.options?.record?.audio?.playlist;
+    if (playlist?.length >= 2) applyPlaylist(playlist);
+    else renderPlaylistEditor();
+}
+
+function setupPlaylistEditor() {
+    const input = document.getElementById('inputAudioAddFile');
+    document.getElementById('btnAudioAddTrack')?.addEventListener('click', () => input?.click());
+    input?.addEventListener('change', () => {
+        const file = input.files?.[0];
+        // Vidé : choisir de nouveau le même fichier redéclenche 'change'.
+        input.value = '';
+        if (file) addPlaylistTrack(file);
+    });
+    document.getElementById('musicPlaylistTracks')?.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-action]');
+        if (!button || playlistBusy) return;
+        const playlist = pkg.options?.record?.audio?.playlist || [];
+        const index = Number(button.dataset.index);
+        if (button.dataset.action === 'up') applyPlaylist(playlistMoved(playlist, index, -1));
+        else if (button.dataset.action === 'down') applyPlaylist(playlistMoved(playlist, index, 1));
+        else if (button.dataset.action === 'remove') applyPlaylist(playlistWithout(playlist, index));
+    });
+    cbAudioPlaylistCrossfade = document.getElementById('cbAudioPlaylistCrossfade');
+    inputAudioPlaylistCrossfadeSeconds = document.getElementById('inputAudioPlaylistCrossfadeSeconds');
+    for (const field of [cbAudioPlaylistCrossfade, inputAudioPlaylistCrossfadeSeconds]) {
+        field?.addEventListener('change', () => {
+            changeRecordValues();
+            rebuildPlaylist();
+        });
+    }
+}
+
 // Reprend une musique récente : déjà sur le serveur, elle n'est pas renvoyée,
 // et retrouve son point de départ. Disparue du dossier audio/, elle quitte la
 // liste.
@@ -8501,7 +8747,7 @@ async function loadRecentMusic(serverName) {
         return;
     }
     if (inputAudioFile) inputAudioFile.value = '';
-    await selectMusic(file, { serverName: entry.file, startSeconds: entry.start || 0 });
+    await selectMusic(file, { serverName: entry.file, startSeconds: entry.start || 0, playlist: entry.playlist || [] });
 }
 
 // Musique déjà copiée dans le dossier audio/ du serveur, rechargée sous son

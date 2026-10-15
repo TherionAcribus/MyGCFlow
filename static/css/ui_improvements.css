@@ -2720,6 +2720,46 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
 .recent-music-menu .dropdown-item {
     min-width: 0;
 }
+/* Enchaînement : un morceau par ligne, numéroté, avec ses commandes. */
+.music-playlist[hidden],
+.music-playlist-tracks[hidden],
+#audioPlaylistCrossfadeBox[hidden],
+#musicPlaylistStatus[hidden] {
+    display: none !important;
+}
+.music-playlist-tracks {
+    padding-left: 1.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: var(--color-surface);
+}
+.music-playlist-track {
+    padding: 2px 4px 2px 0;
+}
+.music-playlist-track + .music-playlist-track {
+    border-top: 1px solid var(--color-border);
+}
+.music-playlist-track-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+.music-playlist-track-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.music-playlist-track-duration {
+    flex: none;
+    font-variant-numeric: tabular-nums;
+}
+.music-playlist-track .btn {
+    flex: none;
+    padding: 0.125rem 0.3rem;
+}
 /* Une musique et son bouton de retrait sur la même ligne. */
 .recent-music-menu .recent-music-entry {
     display: flex;

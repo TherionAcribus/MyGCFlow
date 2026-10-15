@@ -229,6 +229,8 @@ def write_json(path: Path, obj: dict) -> None:
 # Même borne que le champ de saisie (maxlength) de l'onglet Export.
 RECORDING_FILE_NAME_MAX_LENGTH = 80
 AUDIO_FILE_NAME_MAX_LENGTH = 255
+# Morceaux d'un enchaînement, au plus.
+PLAYLIST_MAX = 20
 AUDIO_FADE_MIN_SECONDS = 0.5
 AUDIO_FADE_MAX_SECONDS = 30.0
 
@@ -307,7 +309,15 @@ class RecordingSettings:
     audio_start_seconds: float = 0.0
     # Musiques récentes, la plus récente d'abord : [{file, name, start}] —
     # nom dans audio/, nom d'origine, point de départ. Tenue par le client.
+    # Un enchaînement y garde aussi ses morceaux (`playlist`, cf. ci-dessous).
     audio_recent: list = field(default_factory=list)
+    # Morceaux enchaînés dont audio_file est l'assemblage (cf.
+    # audio_library.build_playlist_mix) : [{file, name, duration}], dans l'ordre. Vide
+    # pour une musique seule. Gardés pour pouvoir modifier l'enchaînement.
+    audio_playlist: list = field(default_factory=list)
+    # Fondu entre deux morceaux de l'enchaînement, plutôt qu'un raccord direct.
+    audio_playlist_crossfade: bool = True
+    audio_playlist_crossfade_seconds: float = 3.0
 
 
 @dataclass
@@ -841,10 +851,37 @@ def coerce_recording_settings(d: dict) -> RecordingSettings:
     # réelle de la musique, inconnue ici.
     r.audio_start_seconds = _clamp_float(d.get("audio_start_seconds"), r.audio_start_seconds, 0.0, 86400.0)
     r.audio_recent = _coerce_recent_music(d.get("audio_recent"))
+    r.audio_playlist = _coerce_playlist(d.get("audio_playlist"))
+    r.audio_playlist_crossfade = bool(d.get("audio_playlist_crossfade", r.audio_playlist_crossfade))
+    r.audio_playlist_crossfade_seconds = _clamp_float(
+        d.get("audio_playlist_crossfade_seconds"), r.audio_playlist_crossfade_seconds,
+        AUDIO_FADE_MIN_SECONDS, AUDIO_FADE_MAX_SECONDS)
     return r
 
 
 AUDIO_RECENT_MAX = 8
+
+
+def _coerce_playlist(value) -> list:
+    """Morceaux d'un enchaînement : [{file, name, duration}] valides (durée
+    en secondes, affichée dans la liste), PLAYLIST_MAX au plus. Moins de deux
+    morceaux ne font pas un enchaînement : liste vide."""
+    tracks = []
+    for item in value if isinstance(value, list) else []:
+        if not isinstance(item, dict) or not isinstance(item.get("file"), str):
+            continue
+        file_name = secure_filename(os.path.basename(item["file"]))[:AUDIO_FILE_NAME_MAX_LENGTH]
+        if not file_name:
+            continue
+        name = item.get("name")
+        tracks.append({
+            "file": file_name,
+            "name": name.strip()[:AUDIO_FILE_NAME_MAX_LENGTH] if isinstance(name, str) and name.strip() else file_name,
+            "duration": _clamp_float(item.get("duration"), 0.0, 0.0, 86400.0),
+        })
+        if len(tracks) >= PLAYLIST_MAX:
+            break
+    return tracks if len(tracks) >= 2 else []
 
 
 def _coerce_recent_music(value) -> list:
@@ -859,11 +896,15 @@ def _coerce_recent_music(value) -> list:
             continue
         seen.add(file_name)
         name = item.get("name")
-        recent.append({
+        entry = {
             "file": file_name,
             "name": name.strip()[:AUDIO_FILE_NAME_MAX_LENGTH] if isinstance(name, str) and name.strip() else file_name,
             "start": _clamp_float(item.get("start"), 0.0, 0.0, 86400.0),
-        })
+        }
+        playlist = _coerce_playlist(item.get("playlist"))
+        if playlist:
+            entry["playlist"] = playlist
+        recent.append(entry)
         if len(recent) >= AUDIO_RECENT_MAX:
             break
     return recent
