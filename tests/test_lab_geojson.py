@@ -349,6 +349,113 @@ class LabGeojsonTests(unittest.TestCase):
         finally:
             geojson_cache._reset(None)
 
+    # --- pays et région empruntés à la géocache la plus proche -----------------
+
+    def _setup_borrowed_geo(self):
+        """8 étapes à Nantes, une géocache nantaise, une parisienne, une
+        allemande ; STAGE_1 déplacée loin de toute géocache."""
+        self._import_all()
+        for code, lat, lon, country, state in (
+                ("GCNANT", 47.2180, -1.5560, "France", "Pays de la Loire"),
+                ("GCPARI", 48.8566, 2.3522, "France", "Île-de-France"),
+                ("GCBERL", 52.5200, 13.4050, "Germany", "Berlin")):
+            db.session.add(Geocache(latitude=lat, longitude=lon, gc_code=code,
+                                    cache_name=code, date_find=date(2024, 5, 14),
+                                    cache_type="Traditional Cache",
+                                    country=country, state=state))
+        row = db.session.query(LabDiscovery).filter_by(stage_uuid=STAGE_1).one()
+        row.latitude, row.longitude = 44.0, 7.0          # Alpes, aucune géocache
+        db.session.commit()
+
+    def _labs_geo(self):
+        return {f["properties"]["stage_id"]: (f["properties"]["country"],
+                                              f["properties"]["state"])
+                for f in lab_geojson.build_lab_features(db.session)}
+
+    def _lab_ids(self, selection):
+        result = filter_session(db, Geocache, selection)
+        return sorted(f["properties"]["stage_id"] for f in result["features"]
+                      if f["properties"]["source_kind"] == "lab")
+
+    def test_labs_borrow_country_and_state_from_nearest_geocache(self):
+        self._setup_borrowed_geo()
+        geo = self._labs_geo()
+        self.assertEqual(geo.pop(STAGE_1), (None, None))     # > 10 km de tout
+        self.assertEqual(len(geo), 7)
+        self.assertEqual(set(geo.values()), {("France", "Pays de la Loire")})
+
+    def test_borrowed_geo_follows_geocache_changes(self):
+        """Mémorisé, mais recalculé quand les géocaches changent — même sans
+        changer leur nombre (un import remplace toute la table)."""
+        self._setup_borrowed_geo()
+        self.assertIn(("France", "Pays de la Loire"), set(self._labs_geo().values()))
+        gc = db.session.query(Geocache).filter_by(gc_code="GCNANT").one()
+        gc.country, gc.state = "Belgium", "Namur"
+        db.session.commit()
+        self.assertEqual(set(self._labs_geo().values()) - {(None, None)},
+                         {("Belgium", "Namur")})
+
+    def test_filter_session_by_country_and_state_includes_borrowed_labs(self):
+        from geojson_cache import UNKNOWN_GEO
+        self._setup_borrowed_geo()
+        types = ["Adventure Lab", "Traditional Cache"]
+        nantes = sorted(k for k in self._labs_geo() if k != STAGE_1)
+        self.assertEqual(self._lab_ids({"type": types, "countries": ["France"]}), nantes)
+        self.assertEqual(self._lab_ids({"type": types, "countries": ["Germany"]}), [])
+        self.assertEqual(self._lab_ids({"type": types, "countries": [UNKNOWN_GEO]}),
+                         [STAGE_1])
+        self.assertEqual(self._lab_ids({"type": types, "countries": ["France"],
+                                        "states": ["Pays de la Loire"]}), nantes)
+        self.assertEqual(self._lab_ids({"type": types, "countries": ["France"],
+                                        "states": ["Île-de-France"]}), [])
+        # Neutre (toutes les options, sentinelle comprise) : tout passe.
+        self.assertEqual(len(self._lab_ids(
+            {"type": types, "countries": ["France", "Germany", UNKNOWN_GEO]})), 8)
+
+    def test_country_tree_lists_borrowed_geo(self):
+        from unittest import mock
+        from bdd import build_country_state_tree
+        from geojson_cache import UNKNOWN_GEO
+        self._setup_borrowed_geo()
+        out = Path(self.tmpdir.name) / "country_state.json"
+        with mock.patch("paths.country_state_path", return_value=out):
+            build_country_state_tree(db, Geocache)
+        tree = json.loads(out.read_text("utf-8"))
+        self.assertIn("Pays de la Loire", tree["France"])
+        # STAGE_1 sans géocache proche : l'option « Non renseigné » reste offerte.
+        self.assertEqual(tree[UNKNOWN_GEO], [UNKNOWN_GEO])
+
+    def test_index_path_matches_sql_with_borrowed_geo(self):
+        from bdd import geojson_cache
+        from geojson_cache import UNKNOWN_GEO
+        self._setup_borrowed_geo()
+        base = create_geojson(
+            db.session.query(Geocache), Geocache, persist=False,
+            extra_features=lab_geojson.build_lab_features(db.session))
+        geojson_cache.set_base_dataset(base, {}, None)
+
+        def ids_of(result):
+            gj = result[0] if isinstance(result, tuple) else result
+            return sorted(f["properties"].get("record_uid") or f["properties"]["gc_code"]
+                          for f in gj["features"])
+
+        types = ["Adventure Lab", "Traditional Cache"]
+        selections = [
+            {"type": types, "countries": ["France"]},
+            {"type": types, "countries": ["Germany", UNKNOWN_GEO]},
+            {"type": types, "countries": ["France"], "states": ["Pays de la Loire"]},
+            {"type": types, "countries": ["France"], "states": ["Île-de-France"]},
+            {"type": types, "countries": ["France", "Germany", UNKNOWN_GEO]},
+        ]
+        try:
+            for sel in selections:
+                via_index = geojson_cache.filter_with_indexes(sel, db_mtime=None)
+                self.assertIsNotNone(via_index, f"index path returned None: {sel}")
+                self.assertEqual(ids_of(via_index), ids_of(filter_session(db, Geocache, dict(sel))),
+                                 f"divergence index/SQL pour {sel}")
+        finally:
+            geojson_cache._reset(None)
+
     def test_filter_session_labs_date_range(self):
         self._import_all()
         result = filter_session(

@@ -821,11 +821,13 @@ def filter_session(db, Geocache, selectedValues, status: Optional[TaskStatus] = 
     # restent visibles. Une liste vide n'est « Aucun » (aucun résultat) que si
     # la dimension offrait des options — sinon inactive (selectHasRealOptions).
     named_countries = {r[0] for r in db.session.query(Geocache.country).distinct() if r[0]}
-    # Une seule requête « labs prêts » pour tout le filtrage (pays + états).
-    labs_ready = lab_geojson.has_ready_labs(db.session)
+    # Pays/région des Labs (empruntés à la géocache la plus proche, inconnus
+    # au-delà) : une seule lecture, mémorisée, pour tout le filtrage.
+    lab_pairs = lab_geojson.lab_geo_pairs(db.session)
+    named_countries |= {c for c, _s in lab_pairs if c}
     unknown_country_exists = db.session.query(Geocache.id).filter(
         or_(Geocache.country.is_(None), Geocache.country == '')).first() is not None \
-        or labs_ready
+        or any(c is None for c, _s in lab_pairs)
     offered_countries = set(named_countries)
     if unknown_country_exists:
         offered_countries.add(UNKNOWN_GEO)
@@ -851,10 +853,11 @@ def filter_session(db, Geocache, selectedValues, status: Optional[TaskStatus] = 
     else:
         scope_rows = db.session.query(Geocache.state).distinct().all()
     state_scope = {(r[0] or UNKNOWN_GEO) for r in scope_rows}
-    # Labs dans le périmètre pays : leur état est inconnu -> sentinelle offerte.
-    if labs_ready and (
-            not country_strict or UNKNOWN_GEO in set(countries or [])):
-        state_scope.add(UNKNOWN_GEO)
+    # Régions des Labs dans le périmètre pays (inconnue -> sentinelle).
+    selected_countries = set(countries or [])
+    for country, state in lab_pairs:
+        if not country_strict or (country or UNKNOWN_GEO) in selected_countries:
+            state_scope.add(state or UNKNOWN_GEO)
     state_strict = states is not None and (
         (len(states) == 0 and bool(state_scope))
         or (len(states) > 0 and not state_scope <= set(states))
@@ -941,7 +944,8 @@ def convert_str_to_date(date_str):
 def build_country_state_tree(db, Geocache):
     """Construit un dictionnaire Country -> [States] depuis la BDD et l'écrit dans paths.country_state_path()
 
-    Les valeurs inconnues (NULL/vides, et les Labs qui n'ont pas de pays)
+    Les Labs y figurent avec les pays/régions empruntés à la géocache la plus
+    proche. Les valeurs inconnues (NULL/vides, Labs sans géocache proche)
     apparaissent sous la clé sentinelle UNKNOWN_GEO — l'option « Non
     renseigné » des listes pays/région (plan §9.2).
     """
@@ -955,9 +959,9 @@ def build_country_state_tree(db, Geocache):
             if key not in tree:
                 tree[key] = set()
             tree[key].add(val or UNKNOWN_GEO)
-        # Labs exploitables : valeur géographique inconnue, option explicite.
-        if lab_geojson.has_ready_labs(db.session):
-            tree.setdefault(UNKNOWN_GEO, set()).add(UNKNOWN_GEO)
+        # Labs exploitables : pays/région empruntés, sentinelle si inconnus.
+        for country, state in lab_geojson.lab_geo_pairs(db.session):
+            tree.setdefault(country or UNKNOWN_GEO, set()).add(state or UNKNOWN_GEO)
         # Convertir les sets en listes triées, sentinelle en dernier.
         def _k(item):
             return (item[0] == UNKNOWN_GEO, item[0].lower())

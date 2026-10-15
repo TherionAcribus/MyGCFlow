@@ -62,10 +62,10 @@ def api_country_state():
         if UNKNOWN_GEO not in data:
             # Arbre écrit par une ancienne version : l'option « Non renseigné »
             # manque alors que des valeurs inconnues existent -> reconstruire.
-            from lab_geojson import has_ready_labs
+            from lab_geojson import lab_geo_pairs
             from sqlalchemy import or_
-            unknown_exists = has_ready_labs(db.session) or db.session.query(
-                Geocache.id).filter(
+            unknown_exists = any(c is None for c, _s in lab_geo_pairs(db.session)) \
+                or db.session.query(Geocache.id).filter(
                     or_(Geocache.country.is_(None), Geocache.country == '')).first()
             if unknown_exists:
                 build_country_state_tree(db, Geocache)
