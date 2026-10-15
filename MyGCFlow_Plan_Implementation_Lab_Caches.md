@@ -181,7 +181,7 @@ V1 : une collection Labs active. Réimporter dans cette collection ; en cas de p
 | `adventure_title`, `stage_title` | Libellés indépendants |
 | `adventure_url` | Lien validé, nullable |
 | `found_date` | Date civile utilisée par l’animation, nullable |
-| `found_at_utc` | Instant réel si fourni et interprétable, nullable |
+| `found_at_utc` | Instant si fourni et interprétable, nullable — pour `/logs`, décalé (heure locale sous étiquette Pacifique, voir `docs/notes/lab-caches-sources.md`) |
 | `date_precision`, `date_basis`, `source_date_text` | Précision et origine de la date |
 | `latitude`, `longitude` | Coordonnées de l’étape, nullable |
 | `coordinate_scope`, `coordinate_source` | Qualité et provenance des coordonnées |

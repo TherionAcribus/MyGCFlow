@@ -68,6 +68,9 @@ class LabDiscovery(db.Model):
     # Date civile de découverte utilisée par l'animation (nullable : une
     # ligne sans date reste stockée, jamais affichée comme faux point).
     found_date = db.Column(db.Date)
+    # Pour /logs : instant calculé depuis une heure locale étiquetée avec
+    # l'offset du Pacifique — décalé de plusieurs heures, il ne sert qu'à
+    # comparer deux imports (docs/notes/lab-caches-sources.md).
     found_at_utc = db.Column(db.DateTime)
     found_at_offset_minutes = db.Column(db.Integer)
     date_precision = db.Column(db.String(16))

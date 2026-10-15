@@ -48,16 +48,31 @@ réel**. Vérifié le 12 octobre 2026.
 - `playerLogs[].id` : ID numérique de log — clé de dédoublonnage stable.
 - `stageId` : **vrai UUID d'étape**, le même que `gsak:Guid` du GPX
   Lab2Gpx → jointure automatique par UUID (règle 1 du plan).
-- `dateLogged` : instant ISO **avec offset `-07:00`** (heure du Pacifique,
-  timezone de Groundspeak/Seattle, pas UTC malgré le nom
-  `dateLastLoggedUtc`). La date affichée par la page correspond à la date
-  civile **dans cet offset**.
+- `dateLogged` : ISO **avec offset `-07:00`/`-08:00`** — mais l'heure est
+  l'**heure locale du joueur** au moment de la découverte, étiquetée avec
+  l'offset du Pacifique (Groundspeak/Seattle) en vigueur à cette date ; pas
+  UTC non plus, malgré le nom `dateLastLoggedUtc`. Vérifié le 2026-10-15
+  sur l'export réel (4953 étapes, trouvées en Europe) : lues telles quelles,
+  les heures s'étalent de 7 h à 21 h (pics 10 h et 19 h) ; converties
+  depuis le Pacifique vers Paris, elles tomberaient de 16 h à 6 h du matin.
+  L'offset suit le changement d'heure américain (`-08:00` jusqu'à mi-mars
+  et dès novembre, `-07:00` entre les deux), pas celui du lieu.
+  Conséquences :
+  - la **date civile** lue telle quelle (`2026-09-17` dans
+    `2026-09-17T18:35:48-07:00`) est la bonne — c'est celle qu'affiche la
+    page — et l'**heure** aussi (heure murale du lieu de découverte) ;
+  - l'**instant** obtenu en appliquant l'offset est faux de plusieurs
+    heures (8 à 9 h pour l'Europe) : `lab_discovery.found_at_utc` le stocke
+    tel quel et ne sert qu'à comparer deux imports de la même source —
+    ne jamais le convertir en heure locale ni le comparer à l'heure d'une
+    géocache.
 - Pagination **vérifiée** : `POST /Logs/GetLogsByAdventureGrouping/` avec
   corps JSON `{id: "<GUID public joueur>", skip, take}`. `take=100/200`
   → HTTP 500 ; `take=50` OK. Boucler sur `skip` jusqu'à page vide ; la
   page hors borne renvoie `totalCount: 0` (bizarrerie, sans impact).
   Export complet réel : 1117 Adventures / 4953 étapes (2015-07 → 2026-09),
-  tout `stageId` et `dateLogged` renseignés, offsets `-07:00`/`-08:00`.
+  tout `stageId` et `dateLogged` renseignés, offsets `-07:00`/`-08:00`
+  (étiquette du Pacifique, voir `dateLogged` ci-dessus).
 - `playerLogs[].id` : ID numérique de log — clé de dédoublonnage stable.
 - Le nombre de `playerLogs` par Adventure reflète les étapes trouvées — une
   Adventure partielle n'en liste que les étapes trouvées.

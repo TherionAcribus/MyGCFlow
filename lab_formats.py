@@ -132,7 +132,10 @@ def parse_lab_datetime(found_at, found_date_field=None) -> ParsedDate:
                     out.offset_minutes = int(off.total_seconds() // 60) if off else 0
                     out.found_at_utc = dt.astimezone(timezone.utc).replace(tzinfo=None)
                     # Date civile dans l'offset de la source — celle que la
-                    # page /logs affiche (jamais la date UTC).
+                    # page /logs affiche (jamais la date UTC). /logs y met
+                    # l'heure locale du joueur sous une étiquette d'offset du
+                    # Pacifique : date et heure lues telles quelles sont
+                    # justes, l'instant UTC qui en découle ne l'est pas.
                     out.found_date = dt.date()
                     out.precision = "instant"
                     out.basis = "source_offset"

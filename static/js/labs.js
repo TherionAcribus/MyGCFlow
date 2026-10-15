@@ -34,9 +34,23 @@ let activityToast = null;
 
 // Relevé périodique du statut : un import lancé par le favori démarre hors de
 // cette page, et l'onglet peut rester affiché sans jamais reprendre le focus.
+// Seulement sur l'onglet Données, jamais pendant une animation ou une capture.
 const STATUS_POLL_MS = 4000;
+// Suivi d'une tâche serveur pendant une animation ou une capture : plus espacé.
+const TASK_POLL_BUSY_MS = 2000;
+// Attente du repos de la carte avant d'y appliquer un changement Labs.
+const IDLE_CHECK_MS = 1000;
+
+let deferredMapUpdate = null;  // { source } en attente du repos de la carte
+let idleWaitTimer = null;
 
 function el(id) { return document.getElementById(id); }
+
+// Animation en lecture ou en pause, ou capture vidéo : la carte n'affiche
+// qu'une partie des points et ne doit être ni vidée ni refiltrée.
+function mapBusy() {
+    return !!(pkg.isAnimationInProgress?.() || pkg.isRecordingActive?.());
+}
 
 export function initLabsUI() {
     if (elementsBound) return;
@@ -79,20 +93,27 @@ export function initLabsUI() {
     el('labsPendingModal')?.addEventListener('hidden.bs.modal', () => {
         if (!pendingDirty) return;
         pendingDirty = false;
-        pkg.reloadMainDatasetAfterMutation?.();
+        updateMapAfterLabsChange();
     });
 
     // Un import peut démarrer hors de cet onglet (favori « Envoyer vers
     // MyGCFlow » → /api/labs/receive) : le statut expose la tâche active et
     // le bloc d'activité prend le relais — sinon le favori importerait en
-    // silence. Relevé au retour sur l'onglet, et périodiquement tant qu'il
-    // est affiché.
+    // silence. Relevé au retour sur la fenêtre ou sur l'onglet Données, et
+    // périodiquement tant que celui-ci est affiché. Rien pendant une
+    // opération de cette page (elle suit déjà sa tâche : un second suivi
+    // doublerait bilans et rechargements) ni pendant une animation ou une
+    // capture.
     const checkOutside = () => {
-        if (!document.hidden && !watchingTaskId) refreshLabsStatus({ detectOutside: true });
+        if (document.hidden || watchingTaskId || activityRunning() || mapBusy()) return;
+        refreshLabsStatus({ detectOutside: true });
     };
     window.addEventListener('focus', checkOutside);
     document.addEventListener('visibilitychange', checkOutside);
-    setInterval(checkOutside, STATUS_POLL_MS);
+    document.querySelector('a[href="#data"]')?.addEventListener('shown.bs.tab', checkOutside);
+    setInterval(() => {
+        if (el('data')?.classList.contains('active')) checkOutside();
+    }, STATUS_POLL_MS);
 
     refreshLabsStatus();
 }
@@ -118,9 +139,8 @@ export async function refreshLabsStatus({ detectOutside = false } = {}) {
         if (data.active_task) {
             watchActiveTask(data.active_task);
         } else if (detectOutside && moved && !watchingTaskId) {
-            await suggestSourceAfterImport(ready, total);
             showInfo(t('Vos Lab Caches ont été mis à jour.'), t('Lab Caches'));
-            pkg.reloadMainDatasetAfterMutation?.();
+            await updateMapAfterLabsChange('suggest');
         }
         return data;
     } catch (e) {
@@ -543,6 +563,7 @@ function pollLabTask(taskId, onProgress, { intervalMs = 500, stallTimeoutMs = 12
     return new Promise((resolve, reject) => {
         let lastActivityAt = Date.now();
         let consecutiveErrors = 0;
+        const nextDelay = () => (mapBusy() ? Math.max(intervalMs, TASK_POLL_BUSY_MS) : intervalMs);
         const tick = () => {
             if (Date.now() - lastActivityAt > stallTimeoutMs) {
                 reject(new Error(t("Délai d'attente dépassé")));
@@ -562,12 +583,12 @@ function pollLabTask(taskId, onProgress, { intervalMs = 500, stallTimeoutMs = 12
                         return;
                     }
                     onProgress?.(status?.progress, status?.message || '');
-                    setTimeout(tick, intervalMs);
+                    setTimeout(tick, nextDelay());
                 })
                 .catch(err => {
                     consecutiveErrors++;
                     if (consecutiveErrors >= 10) { reject(err); return; }
-                    setTimeout(tick, intervalMs);
+                    setTimeout(tick, nextDelay());
                 });
         };
         tick();
@@ -588,7 +609,43 @@ async function settleActivity(changed) {
     hideActivity();
     const status = await refreshLabsStatus();
     if (!changed) return;
-    if (status) await suggestSourceAfterImport(status.ready || 0, status.total || 0);
+    await updateMapAfterLabsChange(status ? 'suggest' : null);
+}
+
+// Report des changements Labs sur la carte : choix des sources affichées
+// (`source` : 'suggest' après un import, 'reset' après un vidage) puis
+// rechargement du jeu principal. Pendant une animation ou une capture —
+// un placement d'étapes dure plusieurs minutes et peut s'achever en plein
+// enregistrement — vider la carte casserait la vidéo : la mise à jour attend
+// le retour au repos. Une seule mise à jour en attente suffit, elle relit
+// l'état courant du serveur ; la dernière source demandée l'emporte.
+function updateMapAfterLabsChange(source = null) {
+    if (!mapBusy()) return applyMapUpdate(source);
+    deferredMapUpdate = { source: source || deferredMapUpdate?.source || null };
+    if (!idleWaitTimer) {
+        idleWaitTimer = setInterval(() => {
+            if (mapBusy()) return;
+            clearInterval(idleWaitTimer);
+            idleWaitTimer = null;
+            const pending = deferredMapUpdate;
+            deferredMapUpdate = null;
+            if (pending) applyMapUpdate(pending.source);
+        }, IDLE_CHECK_MS);
+    }
+    return Promise.resolve();
+}
+
+async function applyMapUpdate(source) {
+    if (source === 'suggest' && knownCounts) {
+        await suggestSourceAfterImport(knownCounts.ready, knownCounts.total);
+    } else if (source === 'reset') {
+        // Plus de Labs : revenir aux géocaches AVANT le rechargement pour
+        // que l'affichage applique directement le nouveau mode.
+        const mode = pkg.getDiscoverySourcesMode?.();
+        if (mode === 'labs' || mode === 'both') {
+            try { await pkg.setDiscoverySourcesMode?.('geocaches'); } catch (_) {}
+        }
+    }
     pkg.reloadMainDatasetAfterMutation?.();
 }
 
@@ -964,15 +1021,9 @@ async function onClearLabs() {
         const data = await resp.json().catch(() => ({}));
         if (!resp.ok || !data.success) throw new Error(data.message || t('Erreur inconnue'));
         refreshLabsStatus();
-        // Plus de Labs : revenir aux géocaches AVANT le rechargement pour
-        // que l'affichage applique directement le nouveau mode.
-        const mode = pkg.getDiscoverySourcesMode?.();
-        if (mode === 'labs' || mode === 'both') {
-            try { await pkg.setDiscoverySourcesMode?.('geocaches'); } catch (_) {}
-        }
         // Les géocaches peuvent subsister : le rechargement affiche la
         // source restante au lieu de laisser un écran vide.
-        pkg.reloadMainDatasetAfterMutation?.();
+        await updateMapAfterLabsChange('reset');
         showSuccess(t('Lab Caches supprimés'), t('Suppression réussie'));
     } catch (e) {
         showError(e.message || t('Erreur lors de la suppression'), t('Erreur'));

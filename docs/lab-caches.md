@@ -203,10 +203,16 @@ les étapes en attente n'existent dans aucun de ces totaux.
 dans MyGCFlow pour sauvegarde ou transfert.
 
 Données conservées par découverte (`models.py` → `lab_discovery`) : UUIDs
-Adventure et étape, date (civile, UTC, offset, précision, base), coordonnées
+Adventure et étape, date (civile, instant, offset, précision, base), coordonnées
 (portée `stage`/`adventure`, source `lab2gpx`/`user_correction`, statut),
 provenance du fichier source, archivage. Révision de collection utilisée
 pour détecter un commit obsolète.
+
+**Dates de `/logs`** : `dateLogged` porte l'heure locale du joueur avec une
+étiquette d'offset du Pacifique (`-07:00`/`-08:00`). La date civile et
+l'heure lues telles quelles sont justes ; l'instant `found_at_utc` qui en
+découle est décalé (8 à 9 h pour l'Europe) et ne sert qu'à comparer deux
+imports — détail et mesures dans `docs/notes/lab-caches-sources.md`.
 
 ## Limites connues
 
