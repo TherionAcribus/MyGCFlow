@@ -389,6 +389,21 @@ class VideoProcessingTests(unittest.TestCase):
                     else:
                         self.assertLess(abs(second_loop - opening), 3)
 
+    def test_the_minimal_loop_join_keeps_the_music_continuous(self):
+        """Raccord de 10 ms (envoyé par le client quand aucun fondu n'est
+        demandé, contre le clic d'une coupe nette) : ffmpeg l'accepte et la
+        boucle reste continue, sans trou ni baisse de niveau."""
+        for pipeline in ("images", "mediarecorder"):
+            with self.subTest(pipeline=pipeline), tempfile.TemporaryDirectory() as tmp:
+                tmp_path = Path(tmp)
+                (tmp_path / "audio").mkdir()
+                self._create_audio(tmp_path / "audio" / "tone.wav", 2)
+                output = self._process_with_music(
+                    tmp_path, pipeline, audio_loop=True, audio_loop_end=2.0, audio_loop_crossfade=0.01,
+                )
+                drop = self._mean_volume_db(output, 0.5, 1) - self._mean_volume_db(output, 4.5, 1)
+                self.assertLess(abs(drop), 3)
+
     def test_the_loop_joins_can_crossfade(self):
         """Motif de 3 s : 1 s de blanc puis 2 s de son, bouclé sur 6 s.
 

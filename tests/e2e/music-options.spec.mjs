@@ -181,7 +181,10 @@ test('une musique plus courte que la vidéo peut être répétée en boucle', as
   await expect(waveform.locator('[data-legend="silent"]')).toBeHidden();
   await expect.poll(async () => (await recordingSettings(page)).audio_loop).toBe(true);
   // Boucle sur le fichier entier tant que le blanc de fin n'est pas ignoré.
-  expect((await plans()).loop).toEqual({ startMs: 0, endMs: 4000, crossfadeMs: 0 });
+  // Sans fondu demandé, le raccord minimal de 10 ms (pas de clic à la
+  // reprise), qui ne s'annonce pas.
+  expect((await plans()).loop).toEqual({ startMs: 0, endMs: 4000, crossfadeMs: 10 });
+  await expect(status).not.toContainText('enchaînent en fondu');
 
   // Reprises en fondu enchaîné : chaque reprise arrive 1 s plus tôt (une
   // toutes les 3 s au lieu de 4 : 9 reprises sur 30 s au lieu de 7).
@@ -193,7 +196,7 @@ test('une musique plus courte que la vidéo peut être répétée en boucle', as
   expect((await plans()).loop).toEqual({ startMs: 0, endMs: 4000, crossfadeMs: 1000 });
   await expect(status).toContainText('Les reprises s\'enchaînent en fondu.');
   await expect(waveform.locator('.mw-loops line')).toHaveCount(9);
-  // L'écoute passe alors par la piste construite (Web Audio) : elle avance.
+  // L'écoute joue la reprise construite avec son raccord : elle avance.
   const head = waveform.locator('.mw-playhead');
   await page.locator('#btnMusicListen').click();
   await expect.poll(async () => Number(await head.getAttribute('x1'))).toBeGreaterThan(5);
@@ -362,6 +365,55 @@ test('la musique s\'écoute seule, telle que la vidéo l\'utilisera', async ({ p
   await expect.poll(headX).toBeGreaterThanOrEqual(600);
   await expect(listenEnd).toHaveAttribute('aria-pressed', 'false', { timeout: 15_000 });
   expect(await headShown()).toBe(false);
+});
+
+
+test('l\'aperçu se met en pause quand l\'onglet passe en arrière-plan, et reprend au retour', async ({ page }) => {
+  // Onglet masqué : le rendu (rAF) s'arrête, l'animation se fige ; la musique
+  // continuait et se retrouvait en avance au retour.
+  const pause = page.locator('#btnPauseAnimation');
+  const setHidden = (hidden) => page.evaluate((h) => {
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => h });
+    Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => (h ? 'hidden' : 'visible') });
+    document.dispatchEvent(new Event('visibilitychange'));
+  }, hidden);
+  // Dernière position de la musique annoncée par la lecture (ms de vidéo).
+  const lastPosition = () => page.evaluate(() => window.musicPositions.at(-1) ?? 0);
+
+  await page.locator('#inputAudioFile').setInputFiles(wavFile('apercu.wav', 20, 0));
+  await expect(page.locator('#musicSyncStatus')).toContainText('Durée calée sur la musique (20 s)');
+  await page.evaluate(() => {
+    window.musicPositions = [];
+    document.addEventListener('mygcflow:music-playback', (event) => {
+      if (event.detail.state === 'position') window.musicPositions.push(event.detail.elapsedMs);
+    });
+  });
+
+  await page.locator('#btnQuickPreview').click();
+  await expect(pause).toHaveClass(/\bpause\b/);
+  await expect.poll(lastPosition).toBeGreaterThan(300);
+
+  await setHidden(true);
+  await expect(pause).toHaveClass(/\brestart\b/);
+  // Contexte audio suspendu : la musique ne bouge plus.
+  const frozen = await lastPosition();
+  await page.waitForTimeout(500);
+  expect(await lastPosition() - frozen).toBeLessThan(100);
+
+  await setHidden(false);
+  await expect(pause).toHaveClass(/\bpause\b/);
+  await expect.poll(lastPosition).toBeGreaterThan(frozen + 200);
+
+  // Pause demandée par l'utilisateur : revenir sur l'onglet ne la lève pas.
+  await page.locator('#btnQuickPause').click();
+  await expect(pause).toHaveClass(/\brestart\b/);
+  await setHidden(true);
+  await setHidden(false);
+  await page.waitForTimeout(300);
+  await expect(pause).toHaveClass(/\brestart\b/);
+
+  await page.locator('#btnQuickStop').click();
+  await expect(page.locator('#controlBar')).toHaveAttribute('data-playback-state', 'idle');
 });
 
 

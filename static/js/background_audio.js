@@ -11,28 +11,73 @@
 // 'playing' | 'position' | 'stopped', mode, elapsedMs) — la forme d'onde y
 // pose sa tête de lecture.
 //
+// Tout passe par Web Audio, sur l'horloge du contexte audio : la piste
+// décodée est programmée à l'échantillon près (boucle et raccords comme
+// ffmpeg), le volume des fondus suit une rampe programmée, et une pause
+// suspend le contexte — horloge, pistes et rampes s'arrêtent ensemble, rien
+// n'est à reprogrammer à la reprise. Auparavant, un élément <audio> surveillé
+// toutes les 50 ms bouclait en retard (jusqu'à une seconde en arrière-plan)
+// et posait le volume des fondus par paliers.
+//
 // Le contexte audio « déverrouillé » par un geste utilisateur pour ce mux
 // post-enregistrement est stocké sur window.mrMuxAudioCtx (voie unique, partagée
 // avec ui.js qui l'initialise au clic).
 import * as pkg from './index.js';
 import { isRecordingActive } from './mapgl.js';
 import { includedMusicFile, musicTrack } from './music_track.js';
-import {
-    crossfadedLoopBuffer, crossfadedLoopOffsetMs, playbackGain, sourcePositionAt,
-} from './music_playback.mjs';
+import { gainSchedule, loopEntry, loopRepriseBuffer, playbackGain } from './music_playback.mjs';
 
 // Écoute seule : « la fin » rejoue ces dernières secondes de la vidéo.
 export const LISTEN_END_MS = 8000;
 
-let bgAudioCtx = null, bgAudioEl = null, bgAudioSource = null, bgAudioGain = null, bgAudioActive = false;
+// Avance entre la programmation des pistes et leur départ sur l'horloge
+// audio : une piste programmée dans le passé partirait tronquée.
+const SCHEDULE_LEAD_S = 0.02;
+
+// Une piste décodée est gardée une minute après l'arrêt : réécouter, ou
+// relancer l'aperçu, repart sans redécoder. Au-delà, sa mémoire (~90 Mo pour
+// 4 min en stéréo) est rendue.
+const DECODED_KEEP_MS = 60_000;
+
+let bgAudioCtx = null, bgAudioGain = null;
+// Pistes programmées de la lecture en cours (fichier, reprise de boucle).
+let bgSourceNodes = [];
 let blockBackgroundAudioPlayback = false;
 let bgAudioWatchTimer = null;
-// La lecture ne part qu'une fois la piste placée sur sa position de départ
+// La lecture ne part qu'une fois la piste décodée et programmée
 // (`bgAudioBegun`) ; `bgAudioWanted` dit si elle doit jouer à ce moment-là
-// (une pause a pu survenir pendant le chargement).
+// (une pause a pu survenir pendant le décodage).
 let bgAudioBegun = false, bgAudioWanted = false;
 // 'preview' (aperçu de l'animation) ou 'listen' (écoute seule), null à l'arrêt.
 let bgAudioMode = null;
+
+// Dernière musique décodée ({ file, promise }) et minuteur qui l'oublie.
+let decodedMusic = null;
+let decodedForgetTimer = null;
+
+// Piste décodée de `file`, à la fréquence de `sampleRate`. Décodée par un
+// contexte à part : arrêter la lecture (fermer son contexte) pendant le
+// décodage n'interrompt pas celui-ci, que la lecture suivante réutilise.
+function decodeMusic(file, sampleRate) {
+    clearTimeout(decodedForgetTimer);
+    decodedForgetTimer = null;
+    if (decodedMusic?.file !== file) {
+        const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+        const promise = file.arrayBuffer().then((data) => new OAC(1, 1, sampleRate).decodeAudioData(data));
+        decodedMusic = { file, promise };
+        // Un échec n'est pas retenu : la prochaine lecture retente.
+        promise.catch(() => { if (decodedMusic?.promise === promise) decodedMusic = null; });
+    }
+    return decodedMusic.promise;
+}
+
+function forgetDecodedMusicLater() {
+    clearTimeout(decodedForgetTimer);
+    decodedForgetTimer = setTimeout(() => {
+        decodedMusic = null;
+        decodedForgetTimer = null;
+    }, DECODED_KEEP_MS);
+}
 
 function notifyPlayback(state, elapsedMs = 0) {
     document.dispatchEvent(new CustomEvent('mygcflow:music-playback', {
@@ -41,16 +86,7 @@ function notifyPlayback(state, elapsedMs = 0) {
 }
 
 function playBackgroundAudio(context) {
-    try { bgAudioCtx.resume().catch(()=>{}); } catch(_) {}
-    // Lecture par piste construite (raccord fondu) : reprendre le contexte suffit.
-    if (!bgAudioEl) { bgAudioActive = true; return; }
-    const el = bgAudioEl;
-    el.play().then(()=>{ bgAudioActive = true; }).catch((e) => {
-        console.warn(`${context} audio bloquée:`, e);
-        // Lecture refusée par la politique d'autoplay : rien à signaler, un
-        // prochain geste la débloquera. Toute autre erreur : piste illisible.
-        if (e?.name !== 'NotAllowedError' && el === bgAudioEl) playbackFailed(e);
-    });
+    bgAudioCtx?.resume().catch((e) => console.warn(`${context} audio bloquée:`, e));
 }
 
 // Musiques déjà signalées illisibles pendant l'aperçu : l'avertissement n'est
@@ -78,126 +114,101 @@ function playbackFailed(error) {
     );
 }
 
-// Reprises en fondu enchaîné : un élément <audio> ne peut pas se superposer à
-// lui-même. La piste est alors décodée et construite avec ses raccords
-// (crossfadedLoopBuffer, même forme que ffmpeg), puis lue en boucle par Web
-// Audio. Le temps écoulé suit l'horloge du contexte, qui s'arrête quand la
-// pause le suspend.
-let bgBufferNode = null;
+// Programme la musique à l'instant `when` de l'horloge audio, depuis
+// l'instant `fromMs` de la vidéo. Sans boucle, une piste : le fichier, depuis
+// le point de départ. En boucle, deux pistes qui s'enchaînent à l'échantillon
+// près : le reste du premier tour, lu dans le fichier, puis la reprise
+// (raccord compris, cf. loopRepriseBuffer) répétée sans fin. La boucle est
+// faite ici, pas par la piste du fichier : elle reprendrait au début du
+// fichier, intro comprise, et sans raccord.
+function scheduleSources(ctx, decoded, plan, fromMs, when) {
+    const nodes = [];
+    const play = (buffer, at, offsetS, { durationS, loop = false } = {}) => {
+        const node = ctx.createBufferSource();
+        node.buffer = buffer;
+        node.loop = loop;
+        node.connect(bgAudioGain);
+        if (durationS === undefined) node.start(at, offsetS);
+        else node.start(at, offsetS, durationS);
+        nodes.push(node);
+    };
+    if (!plan.loop) {
+        const offsetS = (plan.startMs + fromMs) / 1000;
+        if (offsetS < decoded.duration) play(decoded, when, offsetS);
+        return nodes;
+    }
+    const entry = loopEntry(fromMs, plan.loop);
+    if (entry.first) {
+        play(decoded, when, entry.first.sourceMs / 1000, { durationS: entry.first.durationMs / 1000 });
+    }
+    play(loopRepriseBuffer(ctx, decoded, plan.loop), when + entry.repriseDelayMs / 1000,
+        entry.repriseOffsetMs / 1000, { loop: true });
+    return nodes;
+}
 
-function startBufferPlayback(file, plan, { fromVideoMs, stopAtVideoEnd }) {
-    const AC = window.AudioContext || window.webkitAudioContext;
-    const ctx = bgAudioCtx = new AC();
-    bgAudioGain = ctx.createGain();
-    bgAudioGain.gain.value = playbackGain(fromVideoMs, plan);
-    bgAudioGain.connect(ctx.destination);
-    let startedAt = null; // horloge du contexte au départ de la piste
-    file.arrayBuffer()
-        .then((data) => ctx.decodeAudioData(data))
-        .then((decoded) => {
-            if (ctx !== bgAudioCtx) return; // arrêtée pendant le décodage
-            const joined = crossfadedLoopBuffer(ctx, decoded, plan.loop);
-            const node = bgBufferNode = ctx.createBufferSource();
-            node.buffer = joined.buffer;
-            node.loop = true;
-            node.loopStart = joined.loopStartSeconds;
-            node.loopEnd = joined.buffer.duration;
-            node.connect(bgAudioGain);
-            node.start(0, crossfadedLoopOffsetMs(fromVideoMs, plan.loop) / 1000);
-            startedAt = ctx.currentTime;
-            bgAudioBegun = true;
-            // Une pause a pu survenir pendant le décodage.
-            if (bgAudioWanted) playBackgroundAudio('Lecture');
-            else ctx.suspend().catch(()=>{});
-        })
-        .catch((e) => {
-            if (ctx === bgAudioCtx) playbackFailed(e);
-        });
-    const videoS = plan.videoMs / 1000;
-    bgAudioWatchTimer = setInterval(() => {
-        if (ctx !== bgAudioCtx || startedAt === null) return;
-        const elapsedS = fromVideoMs / 1000 + (ctx.currentTime - startedAt);
-        if (stopAtVideoEnd && videoS > 0 && elapsedS >= videoS) {
-            stopBackgroundMusic();
-            return;
-        }
-        bgAudioGain.gain.value = playbackGain(elapsedS * 1000, plan);
-        notifyPlayback('position', elapsedS * 1000);
-    }, 50);
+// Volume programmé depuis l'instant `fromMs` de la vidéo (cf. gainSchedule).
+function scheduleGain(param, plan, fromMs, when) {
+    const [first, ...rest] = gainSchedule(plan, fromMs);
+    param.cancelScheduledValues(0);
+    param.setValueAtTime(first.gain, when);
+    for (const point of rest) param.linearRampToValueAtTime(point.gain, when + (point.ms - fromMs) / 1000);
 }
 
 // Lit `file` comme la vidéo l'utilisera, à partir de l'instant `fromVideoMs`
-// de la vidéo. Boucle et fondus se règlent sur la position de lecture de la
-// piste, qui avance et se met en pause avec l'animation — rien à reprogrammer
-// à la reprise. Le temps écoulé depuis le début de la vidéo est la somme des
-// tours de boucle déjà joués et du chemin parcouru depuis la position de
-// départ. La boucle est faite ici, pas par le navigateur : la sienne
-// reprendrait au début du fichier, intro comprise.
+// de la vidéo.
 // `stopAtVideoEnd` : l'écoute seule s'arrête d'elle-même avec la vidéo.
 function startPlayback(file, { mode, fromVideoMs = 0, stopAtVideoEnd = false }) {
     stopBackgroundMusic();
     const plan = pkg.musicPlaybackPlan?.() || { startMs: 0, loop: null, fadeInMs: 0, fadeOutMs: 0, videoMs: 0, volume: 1 };
     bgAudioMode = mode;
     bgAudioWanted = true;
-    if (plan.loop?.crossfadeMs > 0) {
-        startBufferPlayback(file, plan, { fromVideoMs, stopAtVideoEnd });
-        notifyPlayback('playing', fromVideoMs);
-        return;
-    }
-    const { sourceMs, playedLoopsMs } = sourcePositionAt(fromVideoMs, plan);
-    const loop = plan.loop;
     const AC = window.AudioContext || window.webkitAudioContext;
-    bgAudioCtx = new AC();
-    bgAudioEl = new Audio(URL.createObjectURL(file));
-    bgAudioEl.preload = 'auto';
-    bgAudioEl.loop = false;
-    bgAudioSource = bgAudioCtx.createMediaElementSource(bgAudioEl);
-    bgAudioGain = bgAudioCtx.createGain();
+    const ctx = bgAudioCtx = new AC();
+    const gain = bgAudioGain = ctx.createGain();
     // Gain de l'instant de départ : 0 pour un fondu d'entrée, sans éclat.
-    bgAudioGain.gain.value = playbackGain(fromVideoMs, plan);
-    bgAudioSource.connect(bgAudioGain).connect(bgAudioCtx.destination);
-    // Source illisible : signalée par l'élément dès le chargement, avant même
-    // la lecture (cf. playbackFailed).
-    const failedEl = bgAudioEl;
-    failedEl.addEventListener('error', () => {
-        if (failedEl === bgAudioEl) playbackFailed(failedEl.error);
-    }, { once: true });
+    gain.gain.value = playbackGain(fromVideoMs, plan);
+    gain.connect(ctx.destination);
 
-    let playedLoopsS = playedLoopsMs / 1000;
-    const startS = plan.startMs / 1000;
-    const loopStartS = loop ? loop.startMs / 1000 : startS;
-    const loopEndS = loop ? loop.endMs / 1000 : 0;
-    const videoS = plan.videoMs / 1000;
+    // Instant de la vidéo où la musique démarre, horloge audio de ce départ,
+    // et durée de musique au-delà de laquelle l'écoute n'a plus rien à jouer
+    // (musique plus courte que la vidéo, sans boucle).
+    let baseMs = fromVideoMs, startedAt = null, musicOverMs = Infinity;
+    decodeMusic(file, ctx.sampleRate)
+        .then((decoded) => {
+            if (ctx !== bgAudioCtx) return; // arrêtée pendant le décodage
+            const when = ctx.currentTime + SCHEDULE_LEAD_S;
+            // L'aperçu rattrape le temps du décodage : l'animation, elle, n'a
+            // pas attendu. L'horloge du contexte, partie de zéro avec la
+            // demande et figée par une pause, mesure exactement ce retard.
+            if (mode === 'preview') baseMs = fromVideoMs + when * 1000;
+            bgSourceNodes = scheduleSources(ctx, decoded, plan, baseMs, when);
+            scheduleGain(gain.gain, plan, baseMs, when);
+            if (stopAtVideoEnd && plan.videoMs > 0) {
+                const endAt = when + Math.max(0, plan.videoMs - baseMs) / 1000;
+                bgSourceNodes.forEach((node) => node.stop(endAt));
+            }
+            if (!plan.loop) musicOverMs = decoded.duration * 1000 - plan.startMs;
+            startedAt = when;
+            bgAudioBegun = true;
+            // Une pause a pu survenir pendant le décodage.
+            if (bgAudioWanted) playBackgroundAudio('Lecture');
+            else ctx.suspend().catch(() => {});
+        })
+        .catch((e) => {
+            if (ctx === bgAudioCtx) playbackFailed(e);
+        });
+
+    // Tête de lecture et fin de l'écoute seule : rien de sonore ne dépend de
+    // ce minuteur.
     bgAudioWatchTimer = setInterval(() => {
-        if (!bgAudioEl || !bgAudioGain || !bgAudioBegun) return;
-        let position = bgAudioEl.currentTime;
-        if (loop && (bgAudioEl.ended || position >= loopEndS)) {
-            playedLoopsS += Math.min(position, loopEndS) - loopStartS;
-            bgAudioEl.currentTime = position = loopStartS;
-            // Arrivée en fin de fichier, la piste s'est arrêtée d'elle-même.
-            if (bgAudioEl.paused && bgAudioWanted) playBackgroundAudio('Boucle');
-        }
-        const elapsedS = playedLoopsS + position - startS;
-        if (stopAtVideoEnd && ((videoS > 0 && elapsedS >= videoS) || (!loop && bgAudioEl.ended))) {
+        if (ctx !== bgAudioCtx || startedAt === null) return;
+        const elapsedMs = baseMs + Math.max(0, ctx.currentTime - startedAt) * 1000;
+        if (stopAtVideoEnd && ((plan.videoMs > 0 && elapsedMs >= plan.videoMs) || elapsedMs >= musicOverMs)) {
             stopBackgroundMusic();
             return;
         }
-        bgAudioGain.gain.value = playbackGain(elapsedS * 1000, plan);
-        notifyPlayback('position', elapsedS * 1000);
+        notifyPlayback('position', elapsedMs);
     }, 50);
-
-    // Position de départ (intro sautée, ou fin de vidéo pour l'écoute) : elle
-    // ne peut être posée qu'une fois les métadonnées lues ; jouer avant ferait
-    // entendre un éclat du début du fichier.
-    const el = bgAudioEl;
-    const begin = () => {
-        if (el !== bgAudioEl) return; // arrêtée ou remplacée entre-temps
-        if (sourceMs > 0) el.currentTime = sourceMs / 1000;
-        bgAudioBegun = true;
-        if (bgAudioWanted) playBackgroundAudio('Lecture');
-    };
-    if (sourceMs > 0 && el.readyState < 1) el.addEventListener('loadedmetadata', begin, { once: true });
-    else begin();
     notifyPlayback('playing', fromVideoMs);
 }
 
@@ -244,13 +255,12 @@ export function isListeningToMusic() {
     return bgAudioMode === 'listen';
 }
 
-// Pause douce : conserve l'élément, le contexte et la position de lecture pour
-// que resumeBackgroundMusic reprenne exactement où la musique s'était arrêtée.
+// Pause douce : suspendre le contexte fige son horloge, et avec elle les
+// pistes programmées et les rampes de volume ; resumeBackgroundMusic reprend
+// exactement où la musique s'était arrêtée.
 export function pauseBackgroundMusic(){
     bgAudioWanted = false;
-    try { if (bgAudioEl) bgAudioEl.pause(); } catch(_) {}
     try { if (bgAudioCtx) bgAudioCtx.suspend().catch(()=>{}); } catch(_) {}
-    bgAudioActive = false;
 }
 
 // Reprend la piste en pause à sa position courante. Si rien n'était en pause
@@ -265,14 +275,8 @@ export function resumeBackgroundMusic(){
             startBackgroundMusicIfAny();
             return;
         }
-        // Piste déjà finie au moment de la pause : ne pas la relancer depuis
-        // zéro (une boucle, elle, la replace d'elle-même sur son départ).
-        if (bgAudioEl?.ended && !pkg.musicPlaybackPlan?.().loop) {
-            stopBackgroundMusic();
-            return;
-        }
         bgAudioWanted = true;
-        // Pas encore placée sur son point de départ : elle partira d'elle-même.
+        // Pas encore décodée : elle partira d'elle-même.
         if (!bgAudioBegun) return;
         playBackgroundAudio('Reprise');
     } catch(e) {
@@ -283,14 +287,17 @@ export function resumeBackgroundMusic(){
 export function stopBackgroundMusic(){
     if (bgAudioWatchTimer) { clearInterval(bgAudioWatchTimer); bgAudioWatchTimer = null; }
     const wasPlaying = !!bgAudioCtx;
-    try { if (bgBufferNode) bgBufferNode.stop(); } catch(_) {}
-    bgBufferNode = null;
-    try { if (bgAudioEl) { bgAudioEl.pause(); URL.revokeObjectURL(bgAudioEl.src); } } catch(_) {}
-    try { if (bgAudioCtx) { bgAudioCtx.close(); } } catch(_) {}
-    bgAudioEl = bgAudioCtx = bgAudioSource = bgAudioGain = null;
-    bgAudioActive = false;
+    for (const node of bgSourceNodes) {
+        try { node.stop(); } catch(_) {}
+    }
+    bgSourceNodes = [];
+    try { if (bgAudioCtx) bgAudioCtx.close().catch(()=>{}); } catch(_) {}
+    bgAudioCtx = bgAudioGain = null;
     bgAudioBegun = bgAudioWanted = false;
-    if (wasPlaying) notifyPlayback('stopped');
+    if (wasPlaying) {
+        notifyPlayback('stopped');
+        forgetDecodedMusicLater();
+    }
     bgAudioMode = null;
 }
 

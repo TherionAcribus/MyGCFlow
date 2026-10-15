@@ -2,21 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    crossfadedLoopChannels, crossfadedLoopOffsetMs, loopCrossfadeMs, loopPeriodMs, playbackGain, sourcePositionAt,
+    crossfadedLoopChannels, gainSchedule, LOOP_JOIN_MS, loopCrossfadeMs, loopEntry,
+    loopPeriodMs, loopRepriseChannels, playbackGain,
 } from './static/js/music_playback.mjs';
-
-test('sans boucle, la vidéo avance dans le fichier depuis le point de départ', () => {
-    assert.deepEqual(sourcePositionAt(0, { startMs: 8_000 }), { sourceMs: 8_000, playedLoopsMs: 0 });
-    assert.deepEqual(sourcePositionAt(5_000, { startMs: 8_000 }), { sourceMs: 13_000, playedLoopsMs: 0 });
-    assert.deepEqual(sourcePositionAt(-3, {}), { sourceMs: 0, playedLoopsMs: 0 });
-});
-
-test('en boucle, une position de la vidéo retombe dans le motif répété', () => {
-    // Motif de 2 s à 12 s (10 s) : à 25 s de vidéo, deux tours joués, 5 s dans le troisième.
-    const plan = { startMs: 2_000, loop: { startMs: 2_000, endMs: 12_000 } };
-    assert.deepEqual(sourcePositionAt(25_000, plan), { sourceMs: 7_000, playedLoopsMs: 20_000 });
-    assert.deepEqual(sourcePositionAt(10_000, plan), { sourceMs: 2_000, playedLoopsMs: 10_000 });
-});
 
 test('un raccord fondu est borné à 40 % du motif', () => {
     assert.equal(loopCrossfadeMs(10_000, 1_000), 1_000);
@@ -27,14 +15,10 @@ test('un raccord fondu est borné à 40 % du motif', () => {
 
 test('avec un raccord fondu, chaque reprise arrive plus tôt d\'autant', () => {
     // Motif de 10 s, raccord de 2 s : une reprise toutes les 8 s.
-    const plan = { startMs: 2_000, loop: { startMs: 2_000, endMs: 12_000, crossfadeMs: 2_000 } };
-    assert.equal(loopPeriodMs(plan.loop), 8_000);
+    const loop = { startMs: 2_000, endMs: 12_000, crossfadeMs: 2_000 };
+    assert.equal(loopPeriodMs(loop), 8_000);
     // À 9 s de vidéo : 1 s dans la première reprise (pendant le raccord).
-    assert.deepEqual(sourcePositionAt(9_000, plan), { sourceMs: 3_000, playedLoopsMs: 8_000 });
-    // La piste construite : premier tour (0 à 8 s), puis la reprise répétée.
-    assert.equal(crossfadedLoopOffsetMs(5_000, plan.loop), 5_000);
-    assert.equal(crossfadedLoopOffsetMs(9_000, plan.loop), 9_000);
-    assert.equal(crossfadedLoopOffsetMs(17_000, plan.loop), 9_000);
+    assert.deepEqual(loopEntry(9_000, loop), { first: null, repriseDelayMs: 0, repriseOffsetMs: 1_000 });
 });
 
 test('la piste à raccord fondu enchaîne la fin qui s\'efface sur le début qui monte', () => {
@@ -71,4 +55,66 @@ test('sans fondu, le volume est plein ; sans durée de vidéo, pas de fondu de s
     assert.equal(playbackGain(5_000, { volume: 0.5 }), 0.5);
     assert.equal(playbackGain(5_000, { volume: 1, fadeOutMs: 3_000, videoMs: 0 }), 1);
     assert.equal(playbackGain(5_000, {}), 1);
+});
+
+test('la reprise seule : le raccord puis la suite du motif, sans le premier tour', () => {
+    // Mêmes données que la piste complète : la reprise en est la seconde moitié.
+    const data = Float32Array.from({ length: 12 }, (_, i) => i + 1);
+    const loop = { startMs: 1, endMs: 11, crossfadeMs: 2 };
+    const { channels, motifStart, period } = loopRepriseChannels([data], 1000, loop);
+    assert.equal(motifStart, 1);
+    assert.equal(period, 8);
+    const [full] = crossfadedLoopChannels([data], 1000, loop).channels;
+    assert.deepEqual([...channels[0]], [...full.subarray(8)]);
+});
+
+test('sans raccord, la reprise est le motif tel quel', () => {
+    const data = Float32Array.from({ length: 12 }, (_, i) => i + 1);
+    const { channels, period } = loopRepriseChannels([data], 1000, { startMs: 1, endMs: 11, crossfadeMs: 0 });
+    assert.equal(period, 10);
+    assert.deepEqual([...channels[0]], [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+});
+
+test('le raccord minimal tient dans tout motif réaliste', () => {
+    assert.equal(loopCrossfadeMs(2_000, LOOP_JOIN_MS), LOOP_JOIN_MS);
+    // Motif minuscule : borné comme un raccord demandé.
+    assert.equal(loopCrossfadeMs(20, LOOP_JOIN_MS), 8);
+});
+
+test('entrée dans une boucle : le reste du premier tour, puis la reprise', () => {
+    // Motif de 2 s à 12 s, raccord de 2 s : une reprise toutes les 8 s.
+    const loop = { startMs: 2_000, endMs: 12_000, crossfadeMs: 2_000 };
+    assert.deepEqual(loopEntry(0, loop), {
+        first: { sourceMs: 2_000, durationMs: 8_000 }, repriseDelayMs: 8_000, repriseOffsetMs: 0,
+    });
+    assert.deepEqual(loopEntry(5_000, loop), {
+        first: { sourceMs: 7_000, durationMs: 3_000 }, repriseDelayMs: 3_000, repriseOffsetMs: 0,
+    });
+    // Deux reprises plus loin, même position dans la reprise.
+    assert.deepEqual(loopEntry(17_000, loop), { first: null, repriseDelayMs: 0, repriseOffsetMs: 1_000 });
+});
+
+test('le volume programmé suit les fondus par segments linéaires', () => {
+    const plan = { volume: 0.8, fadeInMs: 2_000, fadeOutMs: 4_000, videoMs: 20_000 };
+    assert.deepEqual(gainSchedule(plan, 0), [
+        { ms: 0, gain: 0 }, { ms: 2_000, gain: 0.8 }, { ms: 16_000, gain: 0.8 }, { ms: 20_000, gain: 0 },
+    ]);
+    // Départ au milieu du fondu d'entrée (reprise d'écoute) ; puis après lui.
+    assert.deepEqual(gainSchedule(plan, 1_000)[0], { ms: 1_000, gain: 0.4 });
+    const late = gainSchedule(plan, 17_000);
+    assert.deepEqual(late.map((p) => p.ms), [17_000, 20_000]);
+    assert.ok(Math.abs(late[0].gain - 0.6) < 1e-12);
+    assert.equal(late[1].gain, 0);
+    // Sans fondu ni durée connue : volume constant.
+    assert.deepEqual(gainSchedule({ volume: 0.5 }, 3_000), [{ ms: 3_000, gain: 0.5 }]);
+});
+
+test('là où les deux fondus se chevauchent, le volume est échantillonné finement', () => {
+    // Vidéo de 4 s, fondus de 3 s : chevauchement de 1 s à 3 s.
+    const plan = { volume: 1, fadeInMs: 3_000, fadeOutMs: 3_000, videoMs: 4_000 };
+    const points = gainSchedule(plan, 0);
+    const inside = points.filter((p) => p.ms > 1_000 && p.ms < 3_000);
+    assert.equal(inside.length, 15);
+    for (const p of points) assert.ok(Math.abs(p.gain - playbackGain(p.ms, plan)) < 1e-12);
+    assert.equal(points.at(-1).ms, 4_000);
 });

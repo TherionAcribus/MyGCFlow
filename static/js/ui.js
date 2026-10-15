@@ -35,7 +35,7 @@ import { isEvolutionPage } from './app_mode.mjs';
 import { resolveCameraFollowMode } from './camera_follow.mjs';
 import { hasNotableTrailingSilence, trimmedDurationMs } from './audio_silence.mjs';
 import { analyzeMusicFile, gainDb, normalizationGain } from './music_analysis.mjs';
-import { loopCrossfadeMs, loopPeriodMs } from './music_playback.mjs';
+import { LOOP_JOIN_MS, loopCrossfadeMs, loopPeriodMs } from './music_playback.mjs';
 import {
     clampFades, musicTimeline, normalizeFadeSeconds, sourceMsAt, timelineMsAt, timelineX, waveformPath,
 } from './music_waveform.mjs';
@@ -317,12 +317,13 @@ export function audioLoopPlan() {
 // Boucle de la musique pour le plan courant, ou null : motif (positions dans
 // le fichier) et raccord fondu effectif entre les reprises (cf.
 // loopCrossfadeMs, borné par la longueur du motif). Source commune des
-// exports, de la lecture à l'écran et de la forme d'onde.
+// exports, de la lecture à l'écran et de la forme d'onde. Sans fondu
+// demandé, le raccord minimal (LOOP_JOIN_MS) évite le clic d'une coupe nette.
 function musicLoop(plan = lastTimingPlan) {
     if (!musicLoops(plan) || !(musicEndMs > musicStartMs)) return null;
     const audio = pkg.options?.record?.audio || {};
     const wantedMs = audio.loopCrossfade
-        ? normalizeFadeSeconds(audio.loopCrossfadeSeconds, AUDIO_LOOP_CROSSFADE_SECONDS) * 1000 : 0;
+        ? normalizeFadeSeconds(audio.loopCrossfadeSeconds, AUDIO_LOOP_CROSSFADE_SECONDS) * 1000 : LOOP_JOIN_MS;
     return {
         startMs: musicStartMs,
         endMs: musicEndMs,
@@ -472,7 +473,8 @@ function updateMusicSyncUi(plan = lastTimingPlan) {
             const durations = { m: formatDurationHuman(musicDurationMs), v: formatDurationHuman(plan.totalDurationMs) };
             if (musicLoops(plan)) {
                 lines.push(t('La musique (${m}) est plus courte que la vidéo (${v}) : elle sera répétée en boucle.', durations));
-                if (musicLoop(plan)?.crossfadeMs > 0) lines.push(t('Les reprises s\'enchaînent en fondu.'));
+                // Le raccord minimal (sans fondu demandé) ne s'annonce pas.
+                if (pkg.options?.record?.audio?.loopCrossfade) lines.push(t('Les reprises s\'enchaînent en fondu.'));
                 if (fadeOut) lines.push(t('Elle se terminera en fondu.'));
             } else {
                 lines.push(t('La musique (${m}) se termine avant la fin de la vidéo (${v}).', durations));
@@ -5265,6 +5267,27 @@ function toggleButtonAnimationPauseAndRestart(reinitialisation = false){
     // Mettre à jour les contrôles
     updateControlBar();
 }
+
+// Aperçu de l'animation pendant que l'onglet passe en arrière-plan : le
+// navigateur y suspend le rendu (rAF), l'animation se fige… mais pas la
+// musique, qui se retrouvait en avance au retour. L'aperçu est donc mis en
+// pause comme par le bouton, et reprend au retour sur l'onglet — sauf si
+// l'utilisateur l'avait déjà mis en pause lui-même. L'enregistrement a sa
+// propre garde (cf. mapgl.js, C8).
+let previewPausedByHiddenTab = false;
+document.addEventListener('visibilitychange', () => {
+    const btn = document.getElementById('btnPauseAnimation');
+    const previewActive = () => !!btn && playbackUiState === 'running'
+        && !!pkg.isAnimationInProgress?.() && !pkg.isRecordingActive?.();
+    if (document.hidden) {
+        if (!previewActive() || !btn.classList.contains('pause')) return;
+        previewPausedByHiddenTab = true;
+        toggleButtonAnimationPauseAndRestart();
+    } else if (previewPausedByHiddenTab) {
+        previewPausedByHiddenTab = false;
+        if (previewActive() && btn.classList.contains('restart')) toggleButtonAnimationPauseAndRestart();
+    }
+});
 
 
 // ---------------- TIMING DE L'ANIMATION ----------------
