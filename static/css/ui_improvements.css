@@ -2727,6 +2727,22 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
 #musicListenRow[hidden] {
     display: none !important;
 }
+/* Icône d'aide (infobulle) à côté d'un réglage : discrète, focalisable. */
+.audio-help {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 4px;
+    color: var(--color-text-muted);
+    cursor: help;
+}
+.audio-help:hover,
+.audio-help:focus-visible {
+    color: var(--color-accent);
+}
+/* Le niveau standard dit ce qu'il a fait sous le curseur et sa case. */
+#audioNormalizeInfo[hidden] {
+    display: none !important;
+}
 /* Musiques récentes : noms longs tronqués, menu borné en largeur. */
 .recent-music-menu {
     max-width: 22rem;

@@ -45,14 +45,48 @@ export function normalizeRecordingScaleFactor(value) {
     return normalizeNumber(value, RECORDING_LIMITS.scaleFactor);
 }
 
-// Volume de la musique (gain 0 à 1). Le 0 est un vrai réglage, pas une valeur
+// Volume de la musique : part du volume du fichier d'origine (1 = tel quel),
+// de 0 à AUDIO_VOLUME_MAX. Au-delà de 1, un morceau calme est relevé.
+export const AUDIO_VOLUME_MAX = 4;
+
+// Volume lu ou saisi, borné. Le 0 est un vrai réglage, pas une valeur
 // absente : un `Number(v) || 1` le transformait en 100 %. Seule une valeur
-// manquante ou illisible retombe sur le volume plein.
+// manquante ou illisible retombe sur le volume d'origine.
 export function normalizeAudioVolume(value) {
     if (value === null || value === undefined || value === '') return 1;
     const number = Number(value);
     if (!Number.isFinite(number)) return 1;
-    return Math.max(0, Math.min(1, number));
+    return Math.max(0, Math.min(AUDIO_VOLUME_MAX, number));
+}
+
+// Curseur du volume, de 0 à VOLUME_SLIDER_STEPS : 100 % au milieu. La moitié
+// gauche va de 0 à 100 %, la droite de 100 % à AUDIO_VOLUME_MAX — sinon les
+// réglages courants (0 à 100 %) n'occuperaient qu'un quart de sa largeur.
+export const VOLUME_SLIDER_STEPS = 1000;
+
+// Volume à une position du curseur, arrondi au pour cent affiché.
+export function volumeFromSlider(position) {
+    const p = Math.max(0, Math.min(1, (Number(position) || 0) / VOLUME_SLIDER_STEPS));
+    const volume = p <= 0.5 ? p * 2 : 1 + (p - 0.5) * 2 * (AUDIO_VOLUME_MAX - 1);
+    return Math.round(volume * 100) / 100;
+}
+
+// Position du curseur pour un volume.
+export function sliderFromVolume(volume) {
+    const v = normalizeAudioVolume(volume);
+    const p = v <= 1 ? v / 2 : 0.5 + (v - 1) / (2 * (AUDIO_VOLUME_MAX - 1));
+    return Math.round(p * VOLUME_SLIDER_STEPS);
+}
+
+// Volume du niveau sonore standard pour le gain calculé d'un morceau (cf.
+// normalizationGain, music_analysis.mjs), arrondi au pour cent. `limited` :
+// il en faudrait davantage que ce que permet le curseur (morceau très faible).
+export function standardLevelVolume(gain) {
+    if (!(gain > 0)) return { volume: 1, limited: false };
+    return {
+        volume: Math.round(Math.min(gain, AUDIO_VOLUME_MAX) * 100) / 100,
+        limited: gain > AUDIO_VOLUME_MAX + 0.005,
+    };
 }
 
 // Débit conseillé pour une sortie donnée.

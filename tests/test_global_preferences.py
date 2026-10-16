@@ -43,7 +43,7 @@ class RecordingCoercionTests(unittest.TestCase):
         self.assertEqual(r.bitrate_mbps, 1)
         self.assertEqual(r.scale_factor, 3.0)
         self.assertEqual(r.slowdown_factor, 1)
-        self.assertEqual(r.audio_volume, 1.0)
+        self.assertEqual(r.audio_volume, 4.0)
 
     def test_unknown_mode_and_empty_mime_fall_back_to_defaults(self):
         r = coerce_recording_settings({"mode": "quantique", "mime_type": ""})
@@ -125,9 +125,9 @@ class RecordingCoercionTests(unittest.TestCase):
         self.assertEqual(len(coerce_recording_settings({"audio_recent": many}).audio_recent), 8)
         self.assertEqual(coerce_recording_settings({"audio_recent": "abc"}).audio_recent, [])
 
-    def test_volume_normalization_is_opt_in(self):
-        self.assertFalse(coerce_recording_settings({}).audio_normalize)
-        self.assertTrue(coerce_recording_settings({"audio_normalize": True}).audio_normalize)
+    def test_the_standard_sound_level_is_on_by_default(self):
+        self.assertTrue(coerce_recording_settings({}).audio_normalize)
+        self.assertFalse(coerce_recording_settings({"audio_normalize": False}).audio_normalize)
 
     def test_loop_crossfade_is_opt_in_and_bounded(self):
         r = coerce_recording_settings({})

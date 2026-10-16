@@ -229,6 +229,8 @@ def write_json(path: Path, obj: dict) -> None:
 # Même borne que le champ de saisie (maxlength) de l'onglet Export.
 RECORDING_FILE_NAME_MAX_LENGTH = 80
 AUDIO_FILE_NAME_MAX_LENGTH = 255
+# Volume maximal de la musique : 4 fois celui du fichier (+12 dB).
+AUDIO_VOLUME_MAX = 4.0
 # Morceaux d'un enchaînement, au plus.
 PLAYLIST_MAX = 20
 AUDIO_FADE_MIN_SECONDS = 0.5
@@ -277,9 +279,10 @@ class RecordingSettings:
     offline_normalization: bool = True
     audio_enabled: bool = False
     audio_volume: float = 1.0
-    # Harmoniser le volume : gain fixe par morceau, calculé par le client
+    # Niveau sonore standard : gain fixe par morceau, calculé par le client
     # (static/js/music_analysis.mjs) et appliqué à l'aperçu comme aux exports.
-    audio_normalize: bool = False
+    # Actif par défaut : les vidéos sonnent aussi fort, quel que soit le morceau.
+    audio_normalize: bool = True
     # Compter la durée de la musique sans son blanc de fin (détecté côté
     # client, cf. static/js/audio_silence.mjs).
     audio_trim_silence: bool = False
@@ -827,7 +830,9 @@ def coerce_recording_settings(d: dict) -> RecordingSettings:
         r.output_dir = d["output_dir"].strip()
     r.offline_normalization = bool(d.get("offline_normalization", r.offline_normalization))
     r.audio_enabled = bool(d.get("audio_enabled", r.audio_enabled))
-    r.audio_volume = _clamp_float(d.get("audio_volume"), r.audio_volume, 0.0, 1.0)
+    # Part du volume du fichier : au-delà de 1, un morceau calme est relevé
+    # (cf. static/js/recording_settings.mjs, AUDIO_VOLUME_MAX).
+    r.audio_volume = _clamp_float(d.get("audio_volume"), r.audio_volume, 0.0, AUDIO_VOLUME_MAX)
     r.audio_normalize = bool(d.get("audio_normalize", r.audio_normalize))
     r.audio_trim_silence = bool(d.get("audio_trim_silence", r.audio_trim_silence))
     r.audio_fade_out = bool(d.get("audio_fade_out", r.audio_fade_out))

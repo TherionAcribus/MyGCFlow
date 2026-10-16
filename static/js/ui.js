@@ -22,6 +22,9 @@ import {
     isValidRecordingInteger,
     isValidRecordingNumber,
     normalizeAudioVolume,
+    sliderFromVolume,
+    standardLevelVolume,
+    volumeFromSlider,
     normalizeRecordingBitrateMbps,
     normalizeRecordingFps,
     normalizeRecordingScaleFactor,
@@ -405,18 +408,45 @@ export function musicPlaybackPlan(plan = lastTimingPlan) {
     };
 }
 
-// Gain d'harmonisation du volume de la musique courante : 1 si l'option est
+// Gain du niveau sonore standard de la musique courante : 1 si l'option est
 // décochée ou si la piste n'a pas pu être mesurée (cf. normalizationGain).
 function musicNormalizationGain() {
-    if (!pkg.options?.record?.audio?.normalize || !musicTrack.hasFile()) return 1;
+    if (pkg.options?.record?.audio?.normalize === false || !musicTrack.hasFile()) return 1;
     return normalizationGain(musicLoudness || undefined);
 }
 
-// Volume effectif de la musique : celui du curseur, harmonisé si demandé. Le
-// même pour l'aperçu, l'écoute et les deux exports — il peut dépasser 1 quand
-// l'harmonisation relève un morceau calme (sans saturer, cf. normalizationGain).
+// Volume effectif de la musique : celui du curseur, en part du volume du
+// fichier — le même pour l'aperçu, l'écoute et les deux exports. Il dépasse 1
+// quand un morceau calme est relevé. « Niveau sonore standard » ne s'y ajoute
+// pas : il place le curseur (applyStandardLevel).
 export function audioOutputVolume() {
-    return normalizeAudioVolume(pkg.options?.record?.audio?.volume) * musicNormalizationGain();
+    return normalizeAudioVolume(pkg.options?.record?.audio?.volume);
+}
+
+// Curseur du volume et son affichage, sur `volume` (part du volume du fichier).
+function showAudioVolume(volume) {
+    const v = normalizeAudioVolume(volume);
+    const text = `${Math.round(v * 100)} %`;
+    if (inputAudioVolume) {
+        inputAudioVolume.value = String(sliderFromVolume(v));
+        inputAudioVolume.setAttribute('aria-valuetext', text);
+    }
+    const display = document.getElementById('spanAudioVolumeDisplay');
+    if (display) display.textContent = text;
+}
+
+// « Niveau sonore standard » coché : le curseur est placé sur le volume qui
+// amène la musique courante au niveau standard, et le suit quand elle change.
+// Déplacer le curseur à la main décoche la case (cf. son écouteur 'input').
+function applyStandardLevel() {
+    const audio = pkg.options?.record?.audio;
+    if (!audio || audio.normalize === false || !musicTrack.hasFile() || !musicLoudness) return;
+    const { volume } = standardLevelVolume(musicNormalizationGain());
+    showAudioVolume(volume);
+    if (audio.volume !== volume) {
+        audio.volume = volume;
+        saveRecordSettings(null);
+    }
 }
 
 // Durées effectives des fondus (ms) : celles demandées, réduites ensemble si
@@ -602,20 +632,40 @@ let lastMusicTimeline = null;
 
 // Ajustement appliqué par « Harmoniser le volume », affiché à côté de la case
 // (« +4,2 dB »), ou la raison pour laquelle il n'y en a pas.
+// Ce qu'a fait « Niveau sonore standard », en clair : le morceau était-il
+// trop fort ou trop faible, et où il a placé le curseur.
 function syncNormalizeInfo() {
     const info = document.getElementById('audioNormalizeInfo');
     if (!info) return;
-    const wanted = !!pkg.options?.record?.audio?.normalize && musicTrack.hasFile();
+    const wanted = pkg.options?.record?.audio?.normalize !== false && musicTrack.hasFile();
     info.hidden = !wanted;
     if (!wanted) return;
     if (!musicLoudness) {
         // Pas encore analysée, ou format que le navigateur ne décode pas.
-        info.textContent = musicFileDurationMs > 0 ? t('mesure impossible pour ce format') : '';
+        info.textContent = musicFileDurationMs > 0 ? t('Mesure impossible pour ce format : le curseur règle le volume.') : '';
         return;
     }
-    const db = gainDb(musicNormalizationGain());
-    const value = `${db >= 0 ? '+' : '−'}${Math.abs(db).toFixed(1)}`;
-    info.textContent = t('niveau ajusté de ${d} dB', { d: value });
+    const gain = musicNormalizationGain();
+    const { volume, limited } = standardLevelVolume(gain);
+    const p = `${Math.round(volume * 100)} %`;
+    let text;
+    if (limited) {
+        text = t('Morceau très faible : niveau standard limité à ${p} (il faudrait ${need}).', {
+            p, need: `${Math.round(gain * 100)} %`,
+        });
+    } else if (Math.abs(gainDb(gain)) < 0.5) {
+        text = t('Morceau déjà au niveau standard : ${p} du fichier.', { p });
+    } else if (volume < 1) {
+        text = t('Morceau enregistré fort : niveau standard à ${p} du fichier.', { p });
+    } else {
+        text = t('Morceau enregistré faiblement : niveau standard à ${p} du fichier.', { p });
+    }
+    // Enchaînement : l'équilibre entre ses morceaux est déjà fait à
+    // l'assemblage ; l'option règle le niveau de l'ensemble.
+    if (pkg.options?.record?.audio?.playlist?.length >= 2) {
+        text += ' ' + t('Les morceaux de l\'enchaînement sont déjà équilibrés entre eux.');
+    }
+    info.textContent = text;
 }
 
 // Écoute en cours : `true` pour « la fin », `false` pour l'écoute complète,
@@ -1672,8 +1722,9 @@ function initOptionsElements() {
     inputAudioVolume = document.getElementById('inputAudioVolume');
     if (inputAudioVolume) {
         inputAudioVolume.addEventListener('input', () => {
-            const display = document.getElementById('spanAudioVolumeDisplay');
-            if (display) display.textContent = Math.round(parseFloat(inputAudioVolume.value) * 100) + '%';
+            showAudioVolume(volumeFromSlider(inputAudioVolume.value));
+            // Réglé à la main : ce n'est plus le niveau standard.
+            if (cbAudioNormalize?.checked) cbAudioNormalize.checked = false;
             changeRecordValues();
         });
     }
@@ -3047,12 +3098,7 @@ function initOptionsUI() {
                 cbRecordAudioEnable.checked = !!pkg.options.record.audio.enabled && hasFile;
                 cbRecordAudioEnable.disabled = !hasFile; // Désactiver si pas de fichier
             }
-            if (inputAudioVolume) {
-                const vol = (typeof pkg.options.record.audio.volume === 'number') ? pkg.options.record.audio.volume : 1;
-                inputAudioVolume.value = vol;
-                const display = document.getElementById('spanAudioVolumeDisplay');
-                if (display) display.textContent = Math.round(vol * 100) + '%';
-            }
+            showAudioVolume(pkg.options.record.audio.volume);
             if (cbAudioTrimSilence) cbAudioTrimSilence.checked = !!pkg.options.record.audio.trimSilence;
             if (cbAudioKeepEnding) cbAudioKeepEnding.checked = !!pkg.options.record.audio.keepEnding;
             if (cbAudioPlaylistCrossfade) cbAudioPlaylistCrossfade.checked = pkg.options.record.audio.playlistCrossfade !== false;
@@ -3075,7 +3121,7 @@ function initOptionsUI() {
                 inputAudioFadeOutSeconds.value = String(normalizeFadeSeconds(pkg.options.record.audio.fadeOutSeconds, AUDIO_FADE_OUT_SECONDS));
             }
             if (cbAudioLoopCrossfade) cbAudioLoopCrossfade.checked = !!pkg.options.record.audio.loopCrossfade;
-            if (cbAudioNormalize) cbAudioNormalize.checked = !!pkg.options.record.audio.normalize;
+            if (cbAudioNormalize) cbAudioNormalize.checked = pkg.options.record.audio.normalize !== false;
             if (inputAudioLoopCrossfadeSeconds) {
                 inputAudioLoopCrossfadeSeconds.value = String(normalizeFadeSeconds(
                     pkg.options.record.audio.loopCrossfadeSeconds, AUDIO_LOOP_CROSSFADE_SECONDS));
@@ -3401,13 +3447,15 @@ function changeRecordValues(field = undefined) {
                 updateMusicSyncUi();
             }
             if (inputAudioVolume && inputAudioVolume.value !== '') {
-                pkg.options.record.audio.volume = normalizeAudioVolume(inputAudioVolume.value);
+                pkg.options.record.audio.volume = volumeFromSlider(inputAudioVolume.value);
             }
             if (cbAudioFadeOut) pkg.options.record.audio.fadeOut = !!cbAudioFadeOut.checked;
             if (cbAudioLoop) pkg.options.record.audio.loop = !!cbAudioLoop.checked;
             if (cbAudioFadeIn) pkg.options.record.audio.fadeIn = !!cbAudioFadeIn.checked;
             if (cbAudioLoopCrossfade) pkg.options.record.audio.loopCrossfade = !!cbAudioLoopCrossfade.checked;
             if (cbAudioNormalize) pkg.options.record.audio.normalize = !!cbAudioNormalize.checked;
+            // Cochée : le curseur rejoint le niveau standard de cette musique.
+            applyStandardLevel();
             if (cbAudioPlaylistCrossfade) pkg.options.record.audio.playlistCrossfade = !!cbAudioPlaylistCrossfade.checked;
             // Durées bornées, et le champ ramené à la valeur retenue.
             for (const [input, key, fallback] of [
@@ -3481,7 +3529,7 @@ function recordSettingsPayload() {
         audio_fade_in: !!audio.fadeIn,
         audio_fade_in_seconds: normalizeFadeSeconds(audio.fadeInSeconds, AUDIO_FADE_IN_SECONDS),
         audio_loop_crossfade: !!audio.loopCrossfade,
-        audio_normalize: !!audio.normalize,
+        audio_normalize: audio.normalize !== false,
         audio_loop_crossfade_seconds: normalizeFadeSeconds(audio.loopCrossfadeSeconds, AUDIO_LOOP_CROSSFADE_SECONDS),
     };
 }
@@ -3524,7 +3572,7 @@ function applyRecordSettingsPayload(recording) {
     pkg.options.record.audio.fadeIn = !!recording.audio_fade_in;
     pkg.options.record.audio.fadeInSeconds = normalizeFadeSeconds(recording.audio_fade_in_seconds, AUDIO_FADE_IN_SECONDS);
     pkg.options.record.audio.loopCrossfade = !!recording.audio_loop_crossfade;
-    pkg.options.record.audio.normalize = !!recording.audio_normalize;
+    pkg.options.record.audio.normalize = recording.audio_normalize !== false;
     pkg.options.record.audio.loopCrossfadeSeconds = normalizeFadeSeconds(
         recording.audio_loop_crossfade_seconds, AUDIO_LOOP_CROSSFADE_SECONDS);
     return true;
@@ -8972,6 +9020,7 @@ async function refreshMusicDuration() {
         musicTrailingSilenceMs = analysis.trailingSilenceMs;
         musicPeaks = analysis.peaks;
         musicLoudness = { loudnessDb: analysis.loudnessDb, peak: analysis.peak };
+        applyStandardLevel();
     } else {
         musicLoudness = null;
         // Format que le navigateur ne décode pas (ffmpeg le lira peut-être à

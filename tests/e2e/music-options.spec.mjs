@@ -597,7 +597,7 @@ test('une musique déposée sur la fenêtre rejoint le sous-onglet Musique', asy
 });
 
 
-test('le volume d\'un morceau peut être harmonisé, à l\'identique partout', async ({ page }) => {
+test('le niveau sonore standard ajuste chaque morceau, à l\'identique partout, et s\'explique', async ({ page }) => {
   const normalize = page.locator('#cbAudioNormalize');
   const info = page.locator('#audioNormalizeInfo');
   const volumes = () => page.evaluate(async () => {
@@ -605,28 +605,59 @@ test('le volume d\'un morceau peut être harmonisé, à l\'identique partout', a
     return { output: app.audioOutputVolume(), playback: app.musicPlaybackPlan().volume };
   });
 
-  // Sinusoïde d'amplitude 0,49 : environ −9 dBFS, plus fort que la cible
-  // (−16) d'environ 7 dB.
+  // Actif par défaut.
+  await expect(normalize).toBeChecked();
+  // Sinusoïde d'amplitude 0,49 : environ −9 dBFS, plus fort que le niveau
+  // standard (−16) d'environ 7 dB.
   await page.locator('#inputAudioFile').setInputFiles(wavFile('fort.wav', 6, 0));
   await expect(page.locator('#musicSyncStatus')).toContainText('Musique : 6 s');
-  await expect(info).toBeHidden();
-  expect(await volumes()).toEqual({ output: 1, playback: 1 });
-
-  await normalize.check();
+  // Le niveau standard place le curseur, en part du volume du fichier.
+  const slider = page.locator('#inputAudioVolume');
+  const display = page.locator('#spanAudioVolumeDisplay');
   await expect(info).toBeVisible();
-  await expect(info).toHaveText(/^niveau ajusté de −(6\.[5-9]|7\.[0-2]) dB$/);
+  await expect(info).toHaveText(/^Morceau enregistré fort : niveau standard à 4[3-7] % du fichier\.$/);
+  await expect(display).toHaveText(/^4[3-7] %$/);
+  const standard = await display.textContent();
+  await expect(slider).toHaveAttribute('aria-valuetext', standard);
+  // Le curseur et la case renvoient à l'explication.
+  await expect(slider).toHaveAttribute('aria-describedby', 'audioNormalizeInfo');
   const normalized = await volumes();
-  // Même volume pour l'aperçu et pour les exports.
+  // Ce que montre le curseur est ce qui sort, à l'aperçu comme aux exports.
   expect(normalized.output).toBe(normalized.playback);
-  expect(normalized.output).toBeGreaterThan(0.4);
-  expect(normalized.output).toBeLessThan(0.5);
-  await expect.poll(async () => (await recordingSettings(page)).audio_normalize).toBe(true);
+  expect(Math.round(normalized.output * 100)).toBe(parseInt(standard, 10));
 
-  // Remet la préférence globale dans son état initial.
-  await normalize.uncheck();
+  // Infobulle d'aide, au clavier comme à la souris.
+  await page.locator('#cbAudioNormalize ~ .audio-help').focus();
+  await expect(page.locator('.tooltip')).toContainText('niveau standard');
+
+  // Curseur déplacé à la main (au milieu : 100 %) : la case se décoche.
+  await slider.fill('500');
+  await expect(normalize).not.toBeChecked();
+  await expect(display).toHaveText('100 %');
   await expect(info).toBeHidden();
   expect(await volumes()).toEqual({ output: 1, playback: 1 });
-  await expect.poll(async () => (await recordingSettings(page)).audio_normalize).toBe(false);
+  await expect.poll(async () => {
+    const r = await recordingSettings(page);
+    return [r.audio_normalize, r.audio_volume];
+  }).toEqual([false, 1]);
+  // Au-delà de 100 % : un morceau peut être relevé (curseur aux trois quarts).
+  await slider.fill('750');
+  await expect(display).toHaveText('250 %');
+  expect((await volumes()).output).toBe(2.5);
+
+  // Recochée : le curseur revient au niveau standard.
+  await normalize.check();
+  await expect(display).toHaveText(standard);
+
+  // Remet les préférences globales dans leur état initial : sans musique,
+  // le niveau standard n'a rien à placer et le volume reste à 100 %.
+  await slider.fill('500');
+  await page.locator('#btnAudioFileRemove').click();
+  await normalize.check();
+  await expect.poll(async () => {
+    const r = await recordingSettings(page);
+    return [r.audio_normalize, r.audio_volume];
+  }).toEqual([true, 1]);
 });
 
 

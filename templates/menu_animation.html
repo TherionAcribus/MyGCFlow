@@ -453,21 +453,39 @@
                                            title="{{ _('La durée de la musique est comptée sans son blanc de fin : une vidéo calée dessus se termine avec le dernier son.') }}">{{ _("Ignorer le blanc de fin") }}</label>
                                 </div>
                             </div>
-                            <div class="mt-3">
-                                <label class="form-label d-block mb-1" for="inputAudioVolume">{{ _("Volume musique") }}</label>
+                            <!-- Volume de la musique : le niveau standard (gain fixe par
+                                 morceau) puis le curseur, appliqués tels quels à l'aperçu
+                                 comme aux exports (audioOutputVolume, ui.js). La ligne
+                                 #audioNormalizeInfo dit ce qu'a fait le niveau standard
+                                 (syncNormalizeInfo) ; le curseur la cite en description. -->
+                            <div class="mt-3 audio-volume-group">
+                                <div class="d-flex align-items-center gap-1 mb-1">
+                                    <label class="form-label mb-0" for="inputAudioVolume">{{ _("Volume musique") }}</label>
+                                    <span class="audio-help" tabindex="0" data-bs-toggle="tooltip"
+                                          aria-label="{{ _('Aide : volume de la musique') }}"
+                                          data-bs-title="{{ _('Volume de la musique dans la vidéo, en part du volume du fichier : au-delà de 100 %, un morceau calme est relevé. « Niveau sonore standard » y place le curseur ; le déplacer à la main reprend la main.') }}">
+                                        <i class="ti ti-info-circle" aria-hidden="true"></i>
+                                    </span>
+                                </div>
                                 <div class="vector-slider-container">
-                                    <input id="inputAudioVolume" type="range" min="0" max="1" step="0.05" value="1" class="form-range vector-slider">
-                                    <span id="spanAudioVolumeDisplay" class="vector-slider-value">100%</span>
+                                    <!-- Positions 0 à 1000, 100 % au milieu (volumeFromSlider,
+                                         recording_settings.mjs). -->
+                                    <input id="inputAudioVolume" type="range" min="0" max="1000" step="1" value="500"
+                                           class="form-range vector-slider" aria-describedby="audioNormalizeInfo"
+                                           aria-valuetext="100 %">
+                                    <span id="spanAudioVolumeDisplay" class="vector-slider-value">100 %</span>
                                 </div>
-                                <!-- Gain fixe par morceau, appliqué à l'aperçu comme aux
-                                     exports (audioOutputVolume, ui.js) ; l'ajustement est
-                                     affiché par syncNormalizeInfo. -->
                                 <div class="form-check mt-1 mb-0">
-                                    <input id="cbAudioNormalize" class="form-check-input" type="checkbox">
-                                    <label class="form-check-label" for="cbAudioNormalize"
-                                           title="{{ _('Ramène chaque morceau à un niveau sonore commun, sans jamais le faire saturer : un morceau enregistré trop fort est baissé, un morceau trop calme relevé.') }}">{{ _("Harmoniser le volume") }}</label>
-                                    <small id="audioNormalizeInfo" class="form-hint text-muted ms-1" aria-live="polite" hidden></small>
+                                    <input id="cbAudioNormalize" class="form-check-input" type="checkbox"
+                                           aria-describedby="audioNormalizeInfo">
+                                    <label class="form-check-label" for="cbAudioNormalize">{{ _("Niveau sonore standard") }}</label>
+                                    <span class="audio-help" tabindex="0" data-bs-toggle="tooltip"
+                                          aria-label="{{ _('Aide : niveau sonore standard') }}"
+                                          data-bs-title="{{ _('Mesure le niveau moyen du morceau, sans ses silences, et place le curseur Volume sur ce qui l\'amène à un niveau standard, sans jamais le faire saturer : vos vidéos sonnent aussi fort, quel que soit le morceau. Tout le morceau monte ou descend d\'un bloc, les passages doux restent doux.') }}">
+                                        <i class="ti ti-info-circle" aria-hidden="true"></i>
+                                    </span>
                                 </div>
+                                <div id="audioNormalizeInfo" class="form-hint text-muted" aria-live="polite" hidden></div>
                             </div>
                             <div class="mt-2 d-flex align-items-center gap-2 flex-wrap">
                                 <button type="button" class="btn btn-sm btn-secondary disabled" id="btnSetDurationFromAudio" title="{{ _('Caler la durée de la vidéo sur celle de la musique') }}">

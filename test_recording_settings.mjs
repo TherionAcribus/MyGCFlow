@@ -6,6 +6,9 @@ import {
     isValidRecordingInteger,
     isValidRecordingNumber,
     normalizeAudioVolume,
+    sliderFromVolume,
+    standardLevelVolume,
+    volumeFromSlider,
     normalizeRecordingBitrateMbps,
     normalizeRecordingFps,
     normalizeRecordingScaleFactor,
@@ -83,8 +86,9 @@ test('un volume à 0 reste muet, il ne retombe pas sur 100 %', () => {
     assert.equal(normalizeAudioVolume('0.35'), 0.35);
 });
 
-test('le volume est borné entre 0 et 1, plein par défaut', () => {
-    assert.equal(normalizeAudioVolume(4.5), 1);
+test('le volume est borné entre 0 et 400 %, celui du fichier par défaut', () => {
+    assert.equal(normalizeAudioVolume(4.5), 4);
+    assert.equal(normalizeAudioVolume(1.8), 1.8);
     assert.equal(normalizeAudioVolume(-1), 0);
     for (const missing of [undefined, null, '', 'abc', NaN]) {
         assert.equal(normalizeAudioVolume(missing), 1);
@@ -131,3 +135,22 @@ test('des dimensions absentes ou absurdes donnent le débit minimal', () => {
     }
 });
 
+
+test('le curseur du volume a 100 % en son milieu', () => {
+    assert.equal(volumeFromSlider(0), 0);
+    assert.equal(volumeFromSlider(250), 0.5);
+    assert.equal(volumeFromSlider(500), 1);
+    assert.equal(volumeFromSlider(750), 2.5);
+    assert.equal(volumeFromSlider(1000), 4);
+    for (const volume of [0, 0.46, 1, 1.8, 4]) {
+        assert.equal(volumeFromSlider(sliderFromVolume(volume)), volume);
+    }
+    assert.equal(sliderFromVolume(9), 1000);
+});
+
+test('le niveau standard place le volume, borné par le curseur', () => {
+    assert.deepEqual(standardLevelVolume(0.4571), { volume: 0.46, limited: false });
+    assert.deepEqual(standardLevelVolume(1.8), { volume: 1.8, limited: false });
+    assert.deepEqual(standardLevelVolume(6.3), { volume: 4, limited: true });
+    assert.deepEqual(standardLevelVolume(undefined), { volume: 1, limited: false });
+});
