@@ -419,14 +419,20 @@ def run_lab_fetch_task(status, app, uuids, user_guid, locale=None):
                     confirm_failures()
 
                 interrupted = None
+                cancelled = False
                 fetched = None
                 try:
                     result = lab_coords_provider.fetch_gpx_batches(
                         uuids, user_guid=user_guid, progress=progress,
                         on_payload=on_payload,
-                        on_failed=unconfirmed.append)
+                        on_failed=unconfirmed.append,
+                        is_cancelled=status.is_cancel_requested)
                     confirm_failures()
                     fetched = result.fetched_adventures
+                except lab_coords_provider.FetchCancelled:
+                    # Arrêt demandé : les lots déjà committés sont
+                    # conservés, le bilan le dit explicitement.
+                    cancelled = True
                 except (OSError, http.client.HTTPException) as exc:
                     # Panne réseau/service : sans aucun lot enregistré,
                     # c'est un échec ; sinon un bilan partiel, relançable.
@@ -443,6 +449,7 @@ def run_lab_fetch_task(status, app, uuids, user_guid, locale=None):
                 status.set_result({
                     "success": True,
                     "interrupted": interrupted is not None,
+                    "cancelled": cancelled,
                     "error": interrupted,
                     "adventures_requested": total,
                     "adventures_fetched": fetched,

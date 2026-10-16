@@ -1121,6 +1121,67 @@ test('des erreurs HTTP répétées abandonnent le suivi sans boucler', async ({ 
 });
 
 
+test('la récupération est annulable et le bilan le dit', async ({ page }) => {
+  await openReadyApp(page);
+
+  // Import simulé qui enchaîne un placement tenu jusqu'à annulation.
+  let importPolls = 0;
+  let releaseFetch = false;
+  let cancelCalls = 0;
+  await page.route('**/api/labs/import/commit', route => route.fulfill({
+    status: 202, json: { success: true, task_id: 'fake-import' } }));
+  await page.route('**/tasks/fake-import?*', route => {
+    importPolls += 1;
+    route.fulfill({ json: importPolls < 2
+      ? { task_id: 'fake-import', type: 'lab_import', state: 'running', progress: 40,
+          message: 'Import Labs : historique.json' }
+      : { task_id: 'fake-import', type: 'lab_import', state: 'finished', progress: 100,
+          result: { success: true, added: 12, total: 12, ready_total: 0,
+                    unresolved: 12, fetch_task_id: 'fake-fetch' } } });
+  });
+  await page.route('**/tasks/fake-fetch/cancel', route => {
+    cancelCalls += 1;
+    route.fulfill({ json: { success: true } });
+  });
+  await page.route('**/tasks/fake-fetch?*', route => {
+    route.fulfill({ json: !releaseFetch
+      ? { task_id: 'fake-fetch', type: 'lab_fetch_coords', state: 'running', progress: 50,
+          message: 'Coordonnées Labs : 2/4 Adventures' }
+      : { task_id: 'fake-fetch', type: 'lab_fetch_coords', state: 'finished', progress: 100,
+          result: { success: true, cancelled: true, resolved: 6, unresolved: 4,
+                    failed_uuids: [] } } });
+  });
+
+  await page.locator('#labs-file-input').setInputFiles([HISTORY]);
+  await expect(page.locator('#labsPreviewModal')).toBeVisible({ timeout: 20_000 });
+  await page.locator('#labsPreviewConfirmBtn').click();
+
+  // Pendant l'import atomique : pas de bouton Annuler.
+  const activity = page.locator('#labsActivity');
+  const cancelBtn = page.locator('#labsActivityCancelBtn');
+  await expect(activity).toContainText('Import de vos Lab Caches', { timeout: 15_000 });
+  await expect(cancelBtn).toBeHidden();
+
+  // Placement : Annuler apparaît, un clic appelle /cancel une fois.
+  await expect(activity).toContainText('Placement de vos étapes', { timeout: 15_000 });
+  await expect(cancelBtn).toBeVisible();
+  await cancelBtn.click();
+  await expect(cancelBtn).toBeDisabled();
+  await expect(activity).toContainText('Annulation en cours');
+  await expect.poll(() => cancelCalls).toBe(1);
+
+  // La tâche finit son lot puis rend un bilan annulé — un seul toast.
+  releaseFetch = true;
+  await expect(activity).toBeHidden({ timeout: 15_000 });
+  await expect(cancelBtn).toBeHidden();
+  const toast = page.locator('.gcm-toast.show');
+  await expect(toast).toHaveCount(1, { timeout: 20_000 });
+  await expect(toast).toContainText('6 étape(s) placée(s) sur la carte.');
+  await expect(toast).toContainText('Récupération interrompue');
+  await expect(toast).toContainText('déjà obtenues sont conservées');
+});
+
+
 test('couleur et icône dédiées Adventure Lab sont déclarées', async ({ page }) => {
   await openReadyApp(page);
 

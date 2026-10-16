@@ -1004,6 +1004,68 @@ class LabsAutomationTests(LabsApiTests):
         db.session.expire_all()
         return st.result
 
+    # --- /tasks/<id>/cancel ------------------------------------------------
+
+    def test_cancel_unknown_task_404(self):
+        rv = self.client.post('/tasks/inconnu/cancel')
+        self.assertEqual(rv.status_code, 404)
+
+    def test_cancel_wrong_task_type_400(self):
+        """Seule `lab_fetch_coords` est annulable — un commit d'import est
+        atomique : sa tâche refuse l'annulation même encore en cours."""
+        # Tâche non-fetch encore active (le nettoyage l'attend de toute façon).
+        st = task_manager.submit("lab_import", lambda s: time.sleep(1))
+        rv = self.client.post(f'/tasks/{st.id}/cancel')
+        self.assertEqual(rv.status_code, 400)
+
+    def test_cancel_finished_task_409(self):
+        self._import_history()
+        with mock.patch.object(lcp, "fetch_gpx_batches",
+                               side_effect=_fake_fetch()):
+            rv = self.client.post('/api/labs/fetch-coordinates')
+            st = self._wait_task(rv.get_json()["task_id"])
+        rv = self.client.post(f'/tasks/{st.id}/cancel')
+        self.assertEqual(rv.status_code, 409)
+
+    def test_cancel_fetch_keeps_committed_and_reports(self):
+        """Annulation demandée pendant le parcours : la tâche s'arrête au
+        point de contrôle, les lots déjà enregistrés survivent et le bilan
+        porte `cancelled` — pas un échec."""
+        self._import_history()
+        committed = {"n": 0}
+
+        def fake(uuids, is_cancelled=None, on_payload=None, **_kw):
+            # Premier lot livré, puis l'attente du drapeau comme le vrai
+            # provider le ferait à son point de contrôle.
+            on_payload("auto-001.gpx", COORDS.read_bytes(), list(uuids))
+            committed["n"] += 1
+            deadline = time.time() + 10
+            while not (is_cancelled and is_cancelled()):
+                self.assertLess(time.time(), deadline,
+                                "annulation jamais prise en compte")
+                time.sleep(0.02)
+            raise lcp.FetchCancelled()
+
+        with mock.patch.object(lcp, "fetch_gpx_batches", side_effect=fake):
+            rv = self.client.post('/api/labs/fetch-coordinates')
+            self.assertEqual(rv.status_code, 202, rv.get_json())
+            task_id = rv.get_json()["task_id"]
+            # Attendre que le premier lot soit committé avant d'annuler.
+            deadline = time.time() + 10
+            while not committed["n"] and time.time() < deadline:
+                time.sleep(0.02)
+            rv2 = self.client.post(f'/tasks/{task_id}/cancel')
+            self.assertEqual(rv2.status_code, 200, rv2.get_json())
+            self.assertTrue(rv2.get_json()["success"])
+            st = self._wait_task(task_id)
+
+        self.assertEqual(st.state, "finished", st.error)
+        self.assertTrue(st.result["cancelled"])
+        self.assertFalse(st.result["interrupted"])
+        self.assertEqual(st.result["resolved"], 8)  # le lot livré est gardé
+        db.session.expire_all()
+        self.assertEqual(lab_store.collection_status(db.session)["ready"], 8)
+
     def test_unrecoverable_adventure_is_remembered(self):
         """Une Adventure refusée par lab2gpx n'est plus redemandée par
         l'auto-fetch avant le délai ; la récupération manuelle la retente."""

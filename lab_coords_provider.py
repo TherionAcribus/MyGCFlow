@@ -39,6 +39,12 @@ class FetchResult:
     fetched_adventures: int = 0
 
 
+class FetchCancelled(Exception):
+    """Annulation demandée par l'utilisateur : le parcours s'arrête au
+    prochain point de contrôle (lot, bissection, reprise ou pause) — ce qui
+    est déjà téléchargé et remis via `on_payload` reste acquis."""
+
+
 def build_payload(uuids: list[str], user_guid: str | None = None) -> dict:
     """Corps de la requête /download en mode uuidsToFetch (cf. fetch_lab2gpx.py)."""
     return {
@@ -63,16 +69,20 @@ def build_payload(uuids: list[str], user_guid: str | None = None) -> dict:
 
 def post_download(payload: dict, retries: int = MAX_RETRIES,
                   timeout: int = REQUEST_TIMEOUT_S,
-                  retry_server_errors: bool = True) -> bytes:
+                  retry_server_errors: bool = True,
+                  is_cancelled=None) -> bytes:
     """Un POST /download avec reprise exponentielle sur HTTP 5xx et timeouts.
 
     Les erreurs non transitoires (4xx) ne sont pas retentées : ce sont les
     mêmes réponses que le bissection doit isoler. `retry_server_errors=False`
     remonte aussi un 5xx sans attendre (429 reste retenté) : pour un lot
-    encore divisible, la bissection est déjà la reprise."""
+    encore divisible, la bissection est déjà la reprise. `is_cancelled()`
+    est vérifié avant chaque tentative — une annulation évite la reprise."""
     body = json.dumps(payload).encode("utf-8")
     last_exc = None
     for attempt in range(1, retries + 1):
+        if is_cancelled and is_cancelled():
+            raise FetchCancelled()
         try:
             req = urllib.request.Request(
                 API_URL, data=body,
@@ -108,6 +118,7 @@ def fetch_gpx_batches(
     sleep=time.sleep,
     on_payload=None,
     on_failed=None,
+    is_cancelled=None,
 ) -> FetchResult:
     """Télécharge un GPX par lot d'UUID, en isolant les UUID fautifs.
 
@@ -117,6 +128,9 @@ def fetch_gpx_batches(
     service vient de répondre, au lieu de `result.payloads` : ce qui est déjà
     traité survit ainsi à un abandon ultérieur. `on_failed(uuid)`
     signale de même chaque UUID isolé comme irrécupérable.
+    `is_cancelled()` rend un arrêt coopératif (`FetchCancelled`), vérifié
+    entre deux lots, avant une bissection, avant chaque reprise et pendant
+    la pause entre lots.
 
     Stratégie d'erreur (calquée sur tools/fetch_lab2gpx.py) :
     - HTTPError quel que soit le code → bissection : les Adventures cassées
@@ -133,17 +147,35 @@ def fetch_gpx_batches(
     done = 0
     consecutive_failures = 0
 
+    def check_cancel():
+        if is_cancelled and is_cancelled():
+            raise FetchCancelled()
+
     def report():
         if progress:
             progress(done, total)
+
+    def pause(seconds: float):
+        # Pause entre lots : vérifiée par tranches courtes — une annulation
+        # n'attend pas la fin de la pause (l'arrêt reste coopératif).
+        remaining = seconds
+        while remaining > 0:
+            check_cancel()
+            step = min(0.25, remaining)
+            sleep(step)
+            remaining -= step
 
     def fetch_batch(batch: list[str], tag: str):
         nonlocal done, consecutive_failures
         if not batch:
             return
+        # Point de contrôle : entre deux lots comme avant chaque moitié
+        # d'une bissection (les appels récursifs repassent ici).
+        check_cancel()
         try:
             data = post_download(build_payload(batch, user_guid),
-                                 retry_server_errors=len(batch) == 1)
+                                 retry_server_errors=len(batch) == 1,
+                                 is_cancelled=is_cancelled)
         except urllib.error.HTTPError as exc:
             consecutive_failures += 1
             if consecutive_failures > 12:
@@ -167,7 +199,7 @@ def fetch_gpx_batches(
             result.payloads.append((name, data))
         done += len(batch)
         report()
-        sleep(delay)
+        pause(delay)
 
     for i in range(0, len(uuids), batch_size):
         fetch_batch(uuids[i:i + batch_size], f"{i // batch_size + 1:03d}")

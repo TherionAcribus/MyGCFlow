@@ -1,7 +1,9 @@
 from flask import Blueprint, jsonify, request
+from flask_babel import gettext as _
 
 from task_manager import task_manager
 from bdd import TASK_TYPE_GEOJSON, geojson_cache
+from blueprints.labs import TASK_TYPE_LAB_FETCH
 
 tasks_bp = Blueprint('tasks', __name__)
 
@@ -53,3 +55,23 @@ def get_task_status(task_id: str):
             data["result"] = status.result
     
     return jsonify(data)
+
+
+@tasks_bp.route('/tasks/<task_id>/cancel', methods=['POST'])
+def cancel_task(task_id: str):
+    """Annulation coopérative d'une tâche en cours.
+
+    Seule `lab_fetch_coords` est annulable : elle vérifie le drapeau entre
+    deux lots, avant une bissection, une reprise ou la pause — les lots déjà
+    enregistrés sont conservés. Un commit d'import atomique, lui, ne peut
+    pas être interrompu proprement : refusé."""
+    status = task_manager.get(task_id)
+    if status is None:
+        return jsonify({'error': 'Task not found'}), 404
+    if status.type != TASK_TYPE_LAB_FETCH:
+        return jsonify({'success': False,
+                        'message': _("Cette tâche ne peut pas être annulée")}), 400
+    if not status.request_cancel():
+        return jsonify({'success': False,
+                        'message': _("La tâche est déjà terminée")}), 409
+    return jsonify({'success': True})

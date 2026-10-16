@@ -30,7 +30,7 @@ class FetchBatchesTests(unittest.TestCase):
     def _run(self, uuids, side_effect, **kw):
         calls = []
 
-        def fake_post(payload, retry_server_errors=True):
+        def fake_post(payload, retry_server_errors=True, **_ignored):
             calls.append(payload["uuidsToFetch"])
             self.retry_flags.append(retry_server_errors)
             return side_effect(payload)
@@ -139,6 +139,64 @@ class FetchBatchesTests(unittest.TestCase):
 
         with self.assertRaises(urllib.error.URLError):
             self._run(["a", "b"], side_effect, batch_size=2)
+
+
+class CancellationTests(unittest.TestCase):
+    """Annulation coopérative : le drapeau `is_cancelled` est vérifié entre
+    deux lots, avant une bissection, avant chaque reprise et pendant la
+    pause — les lots déjà remis via `on_payload` restent acquis."""
+
+    def test_cancel_between_batches_keeps_done(self):
+        flag = {"cancel": False}
+        got = []
+
+        def fake(payload, **_kw):
+            flag["cancel"] = True   # demandée pendant le 1er lot
+            return b"<gpx/>"
+
+        with patch.object(lcp, "post_download", side_effect=fake):
+            with self.assertRaises(lcp.FetchCancelled):
+                lcp.fetch_gpx_batches(
+                    ["u0", "u1", "u2", "u3"], batch_size=2, delay=0,
+                    sleep=lambda s: None,
+                    on_payload=lambda n, d, b: got.append(b),
+                    is_cancelled=lambda: flag["cancel"])
+        # Le 1er lot a été livré avant l'arrêt ; le 2e n'est jamais parti.
+        self.assertEqual(got, [["u0", "u1"]])
+
+    def test_cancel_during_pause(self):
+        """La pause entre lots est découpée : l'arrêt n'attend pas sa fin."""
+        flag = {"cancel": False}
+        slept = []
+
+        def fake_sleep(s):
+            slept.append(s)
+            if len(slept) >= 2:
+                flag["cancel"] = True
+
+        with patch.object(lcp, "post_download", side_effect=lambda p, **_kw: b"<gpx/>"):
+            with self.assertRaises(lcp.FetchCancelled):
+                lcp.fetch_gpx_batches(
+                    ["u0", "u1"], batch_size=1, delay=10,
+                    sleep=fake_sleep,
+                    is_cancelled=lambda: flag["cancel"])
+        # Sortie après ~2 tranches de 0,25 s, pas après la pause de 10 s.
+        self.assertLess(len(slept), 10)
+
+    def test_cancel_before_retry(self):
+        """Le drapeau est vérifié avant chaque nouvelle tentative HTTP."""
+        calls = {"n": 0}
+
+        def fake_urlopen(req, timeout=None):
+            calls["n"] += 1
+            raise urllib.error.URLError("down")
+
+        with patch.object(lcp.urllib.request, "urlopen", side_effect=fake_urlopen), \
+                patch.object(lcp.time, "sleep"), \
+                self.assertRaises(lcp.FetchCancelled):
+            lcp.post_download({"x": 1}, retries=4,
+                              is_cancelled=lambda: calls["n"] >= 1)
+        self.assertEqual(calls["n"], 1)   # une seule tentative, pas de reprise
 
 
 class PostDownloadTests(unittest.TestCase):

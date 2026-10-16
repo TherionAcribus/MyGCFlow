@@ -88,6 +88,11 @@
                             <div class="d-flex align-items-center gap-2 mb-2">
                                 <span class="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true"></span>
                                 <span class="labs-activity-title fw-medium"></span>
+                                <!-- Action temporaire : uniquement pendant la
+                                     récupération des coordonnées, seule tâche
+                                     annulable (l'arrêt est coopératif, les
+                                     lots déjà enregistrés sont conservés). -->
+                                <button type="button" id="labsActivityCancelBtn" class="btn btn-sm btn-outline-danger ms-auto py-0" hidden>{{ _("Annuler") }}</button>
                             </div>
                             <div class="progress progress-sm mb-1">
                                 <div class="progress-bar progress-bar-indeterminate labs-activity-bar" role="progressbar" style="width: 100%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>

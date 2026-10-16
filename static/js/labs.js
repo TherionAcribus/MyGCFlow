@@ -129,6 +129,7 @@ export function initLabsUI() {
     // réapparaît à sa fermeture si l'activité continue hors onglet.
     document.addEventListener('shown.bs.modal', () => syncActivityToast());
     document.addEventListener('hidden.bs.modal', () => syncActivityToast());
+    el('labsActivityCancelBtn')?.addEventListener('click', onCancelActivity);
     setInterval(() => {
         if (el('data')?.classList.contains('active')) checkOutside();
     }, STATUS_POLL_MS);
@@ -278,6 +279,35 @@ function renderGuide() {
 // serveur.
 
 let lastActivity = null;    // { title, detail, pct } — re-servi au toast hors onglet
+let activityCancelTaskId = null; // tâche annulable en cours (lab_fetch_coords)
+
+// Le bouton « Annuler » du bloc n'existe que pour la récupération des
+// coordonnées — un commit d'import atomique ne peut pas être interrompu
+// proprement. L'arrêt est coopératif : la tâche finit son lot en cours.
+function setActivityCancellable(taskId) {
+    activityCancelTaskId = taskId || null;
+    const btn = el('labsActivityCancelBtn');
+    if (!btn) return;
+    btn.hidden = !activityCancelTaskId;
+    btn.disabled = false;
+}
+
+async function onCancelActivity() {
+    const taskId = activityCancelTaskId;
+    if (!taskId) return;
+    const btn = el('labsActivityCancelBtn');
+    if (btn) btn.disabled = true;
+    try {
+        await fetch(`${CONFIG.BASE_URL}/tasks/${encodeURIComponent(taskId)}/cancel`,
+            { method: 'POST' });
+        // Le suivi continue jusqu'au bilan : la tâche rend la main au
+        // prochain lot et conserve ce qui est déjà enregistré.
+        showActivity(lastActivity?.title || t('Placement de vos étapes sur la carte…'),
+            { pct: lastActivity?.pct ?? null, detail: t('Annulation en cours…') });
+    } catch (_) {
+        if (btn) btn.disabled = false;
+    }
+}
 
 function activityRunning() {
     const box = el('labsActivity');
@@ -337,6 +367,7 @@ function showActivity(title, { pct = null, detail = '' } = {}) {
 
 function hideActivity() {
     lastActivity = null;
+    setActivityCancellable(null);
     const box = el('labsActivity');
     if (box) box.hidden = true;
     for (const id of ['labs-file-btn', 'labsFetchBtn', 'labsRetryFetchBtn']) {
@@ -713,9 +744,12 @@ function pollLabTask(taskId, onProgress, { intervalMs = 500 } = {}) {
 }
 
 // Suit une tâche en alimentant le bloc d'activité sous le titre donné.
-function followTask(taskId, title) {
+// `cancellable` : la récupération des coordonnées est la seule tâche
+// proposant « Annuler » (coopérative, par lots).
+function followTask(taskId, title, { cancellable = false } = {}) {
     watchingTaskId = taskId;
     showActivity(title);
+    setActivityCancellable(cancellable ? taskId : null);
     return pollLabTask(taskId, (pct, detail) => showActivity(title, { pct, detail }));
 }
 
@@ -816,7 +850,8 @@ async function followImport(taskId) {
         sequenceReport.importMsg = importSummary(importResult);
         if (importResult.fetch_task_id) {
             sequenceReport.fetch = fetchSummary(
-                await followTask(importResult.fetch_task_id, t('Placement de vos étapes sur la carte…')));
+                await followTask(importResult.fetch_task_id,
+                    t('Placement de vos étapes sur la carte…'), { cancellable: true }));
         }
     } catch (e) {
         sequenceReport = null;
@@ -832,7 +867,8 @@ async function followFetch(taskId) {
     let changed = false;
     sequenceReport = sequenceReport || {};
     try {
-        const result = await followTask(taskId, t('Placement de vos étapes sur la carte…'));
+        const result = await followTask(taskId, t('Placement de vos étapes sur la carte…'),
+            { cancellable: true });
         changed = true;
         sequenceReport.fetch = fetchSummary(result);
     } catch (e) {
@@ -971,6 +1007,11 @@ function fetchSummary(result) {
     }
     if (pending > 0) {
         msg += ' ' + t('${n} étape(s) restent à compléter.', { n: pending });
+    }
+    if (result.cancelled) {
+        // Arrêt demandé par l'utilisateur : bilan partiel, pas un échec.
+        msg += ' ' + t('Récupération interrompue — les positions déjà obtenues sont conservées.');
+        return { msg, warning: true };
     }
     if (result.interrupted) {
         // Bilan partiel : les lots déjà reçus sont enregistrés, le reste

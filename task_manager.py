@@ -44,6 +44,9 @@ class TaskStatus:
         self.error = None
         self.started_at = datetime.now(timezone.utc)
         self.finished_at = None
+        # Annulation coopérative : la tâche le vérifie à ses points de reprise
+        # (entre lots, avant une reprise…) — jamais une interruption forcée.
+        self.cancel_requested = False
         self._lock = threading.Lock()
 
     def set_state(self, state: str, message: Optional[str] = None):
@@ -71,6 +74,19 @@ class TaskStatus:
             self.error = str(error)
             self.finished_at = datetime.now(timezone.utc)
 
+    def request_cancel(self) -> bool:
+        """Demande l'annulation de la tâche. False si déjà terminée —
+        une tâche finie n'a plus rien à annuler."""
+        with self._lock:
+            if self.state not in ACTIVE_STATES:
+                return False
+            self.cancel_requested = True
+            return True
+
+    def is_cancel_requested(self) -> bool:
+        with self._lock:
+            return self.cancel_requested
+
     def to_dict(self, include_result: bool = False):
         data = {
             "task_id": self.id,
@@ -79,6 +95,7 @@ class TaskStatus:
             "progress": self.progress,
             "message": self.message,
             "error": self.error,
+            "cancel_requested": self.cancel_requested,
         }
         if include_result and self.result is not None:
             data["result"] = self.result
