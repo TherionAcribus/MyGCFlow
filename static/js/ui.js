@@ -446,6 +446,7 @@ function applyStandardLevel() {
     if (audio.volume !== volume) {
         audio.volume = volume;
         saveRecordSettings(null);
+        pkg.setPlaybackVolume?.(volume);
     }
 }
 
@@ -3469,6 +3470,8 @@ function changeRecordValues(field = undefined) {
                 pkg.options.record.audio[key] = seconds;
                 input.value = String(seconds);
             }
+            // Aperçu ou écoute en cours : le nouveau volume s'entend aussitôt.
+            pkg.setPlaybackVolume?.(audioOutputVolume());
         } catch(e) { console.warn('changeRecordValues audio error:', e); }
 
         // Sauvegarder automatiquement les paramètres d'enregistrement

@@ -39,7 +39,14 @@ const SCHEDULE_LEAD_S = 0.02;
 // 4 min en stéréo) est rendue.
 const DECODED_KEEP_MS = 60_000;
 
-let bgAudioCtx = null, bgAudioGain = null;
+// Deux étages de volume : `bgAudioGain` porte l'enveloppe des fondus,
+// programmée une fois au départ ; `bgLevelGain` le volume choisi (curseur,
+// niveau standard), réglable pendant la lecture (setPlaybackVolume).
+let bgAudioCtx = null, bgAudioGain = null, bgLevelGain = null;
+
+// Lissage d'un changement de volume en cours de lecture (constante de temps,
+// s) : assez court pour suivre le curseur, assez long pour ne pas claquer.
+const LEVEL_SMOOTHING_S = 0.03;
 // Pistes programmées de la lecture en cours (fichier, reprise de boucle).
 let bgSourceNodes = [];
 let blockBackgroundAudioPlayback = false;
@@ -162,15 +169,21 @@ function scheduleGain(param, plan, fromMs, when) {
 // `stopAtVideoEnd` : l'écoute seule s'arrête d'elle-même avec la vidéo.
 function startPlayback(file, { mode, fromVideoMs = 0, stopAtVideoEnd = false }) {
     stopBackgroundMusic();
-    const plan = pkg.musicPlaybackPlan?.() || { startMs: 0, loop: null, fadeInMs: 0, fadeOutMs: 0, videoMs: 0, volume: 1 };
+    let plan = pkg.musicPlaybackPlan?.() || { startMs: 0, loop: null, fadeInMs: 0, fadeOutMs: 0, videoMs: 0, volume: 1 };
     bgAudioMode = mode;
     bgAudioWanted = true;
     const AC = window.AudioContext || window.webkitAudioContext;
     const ctx = bgAudioCtx = new AC();
+    // L'enveloppe des fondus est programmée à volume plein ; le volume choisi
+    // s'applique après elle, et peut changer pendant la lecture.
+    const level = bgLevelGain = ctx.createGain();
+    level.gain.value = plan.volume ?? 1;
+    level.connect(ctx.destination);
+    plan = { ...plan, volume: 1 };
     const gain = bgAudioGain = ctx.createGain();
     // Gain de l'instant de départ : 0 pour un fondu d'entrée, sans éclat.
     gain.gain.value = playbackGain(fromVideoMs, plan);
-    gain.connect(ctx.destination);
+    gain.connect(level);
 
     // Instant de la vidéo où la musique démarre, horloge audio de ce départ,
     // et durée de musique au-delà de laquelle l'écoute n'a plus rien à jouer
@@ -216,6 +229,18 @@ function startPlayback(file, { mode, fromVideoMs = 0, stopAtVideoEnd = false }) 
         notifyPlayback('position', elapsedMs);
     }, 50);
     notifyPlayback('playing', fromVideoMs);
+}
+
+// Volume choisi modifié (curseur, niveau standard) pendant l'aperçu ou
+// l'écoute : la lecture en cours le suit aussitôt, en douceur.
+export function setPlaybackVolume(volume) {
+    if (!bgAudioCtx || !bgLevelGain || !Number.isFinite(volume)) return;
+    bgLevelGain.gain.setTargetAtTime(Math.max(0, volume), bgAudioCtx.currentTime, LEVEL_SMOOTHING_S);
+}
+
+// Volume de la lecture en cours (étage du volume choisi), null à l'arrêt.
+export function playbackVolume() {
+    return bgLevelGain ? bgLevelGain.gain.value : null;
 }
 
 // Posé par les pipelines d'enregistrement : la musique ne doit pas démarrer
@@ -303,7 +328,7 @@ export function stopBackgroundMusic(){
     }
     bgSourceNodes = [];
     try { if (bgAudioCtx) bgAudioCtx.close().catch(()=>{}); } catch(_) {}
-    bgAudioCtx = bgAudioGain = null;
+    bgAudioCtx = bgAudioGain = bgLevelGain = null;
     bgAudioBegun = bgAudioWanted = false;
     if (wasPlaying) {
         notifyPlayback('stopped');

@@ -661,6 +661,45 @@ test('le niveau sonore standard ajuste chaque morceau, à l\'identique partout, 
 });
 
 
+test('le volume change aussi pendant l\'écoute, sans la relancer', async ({ page }) => {
+  const listen = page.locator('#btnMusicListen');
+  const slider = page.locator('#inputAudioVolume');
+  const normalize = page.locator('#cbAudioNormalize');
+  const app = (expression) => page.evaluate(async (expr) => {
+    const pkg = await import('/static/js/index.js');
+    return expr === 'playback' ? pkg.playbackVolume() : pkg.audioOutputVolume();
+  }, expression);
+
+  await page.locator('#inputAudioFile').setInputFiles(wavFile('direct.wav', 20, 0));
+  await expect(page.locator('#musicSyncStatus')).toContainText('Musique : 20 s');
+  await slider.fill('500'); // 100 %, la case se décoche
+  await listen.click();
+  await expect(listen).toHaveAttribute('aria-pressed', 'true');
+  await expect.poll(() => app('playback')).toBeCloseTo(1, 2);
+
+  // Curseur à 50 % : la lecture en cours suit, sans s'interrompre.
+  await slider.fill('250');
+  await expect.poll(() => app('playback')).toBeCloseTo(0.5, 2);
+  await expect(listen).toHaveAttribute('aria-pressed', 'true');
+  // Niveau standard recoché : la lecture le suit aussi.
+  await normalize.check();
+  const standard = await app('output');
+  expect(standard).toBeLessThan(0.5);
+  await expect.poll(() => app('playback')).toBeCloseTo(standard, 2);
+  await listen.click();
+  await expect(listen).toHaveAttribute('aria-pressed', 'false');
+
+  // Remet les préférences globales dans leur état initial.
+  await slider.fill('500');
+  await page.locator('#btnAudioFileRemove').click();
+  await normalize.check();
+  await expect.poll(async () => {
+    const r = await recordingSettings(page);
+    return [r.audio_normalize, r.audio_volume];
+  }).toEqual([true, 1]);
+});
+
+
 test('la musique peut commencer en fondu, une seule fois', async ({ page }) => {
   const box = page.locator('#audioFadeInBox');
   const fadeIn = page.locator('#cbAudioFadeIn');
