@@ -274,6 +274,11 @@ def run_lab_import_task(status, app, folder_path: str, manifest_rev, locale=None
                         batch.append((entry["format"],
                                       _PARSE_BY_FORMAT[entry["format"]](raw)))
 
+                    # Compteurs avant mutation : la suggestion de source
+                    # côté client ne bascule que pour un premier import —
+                    # une collection déjà pourvue d'étapes affichables ne
+                    # doit pas faire oublier un choix manuel « géocaches ».
+                    before_stats = lab_store.collection_status(db.session)
                     summaries = lab_store.commit_import_batch(
                         db.session, batch, overrides=overrides)
                     for entry, summary in zip(files, summaries):
@@ -307,6 +312,8 @@ def run_lab_import_task(status, app, folder_path: str, manifest_rev, locale=None
                         "total": stats["total"],
                         "ready_total": stats["ready"],
                         "unresolved": stats["unresolved"],
+                        "total_before": before_stats["total"],
+                        "ready_before": before_stats["ready"],
                         "files": results,
                         "warnings": _cap_items(warnings),
                         "fetch_task_id": fetch_task_id,

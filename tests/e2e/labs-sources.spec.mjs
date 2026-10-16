@@ -169,6 +169,74 @@ test('la prochaine étape globale est visible avec des Labs seuls', async ({ pag
 });
 
 
+test('un import tout en attente ne bascule pas vers « labs » et met en avant les issues', async ({ page }) => {
+  await openReadyApp(page);
+
+  // Historique seul, sans coordonnées : 12 étapes importées, 0 affichable.
+  await page.locator('#labs-file-input').setInputFiles([HISTORY]);
+  await expect(page.locator('#labsPreviewModal')).toBeVisible({ timeout: 20_000 });
+  await page.locator('#labsPreviewConfirmBtn').click();
+  await expect(page.locator('#labsStatus')).toContainText('aucune encore prête', { timeout: 60_000 });
+
+  // Rien d'affichable : le sélecteur ne bouge pas…
+  const select = page.locator('#selectDiscoverySources');
+  await expect(select).toHaveValue('geocaches');
+  expect((await readServerSettings(page)).main_discovery_sources).toBe('geocaches');
+
+  // …et l'alerte met en avant les deux issues de résolution.
+  await expect(page.locator('#labsPendingAlert')).toBeVisible();
+  await expect(page.locator('#labsFetchBtn')).toBeVisible();
+  await expect(page.locator('#labsPendingBtn')).toBeVisible();
+});
+
+
+test('un réimport Labs préserve un choix manuel « géocaches »', async ({ page }) => {
+  await openReadyApp(page);
+  await importLabs(page);
+
+  const select = page.locator('#selectDiscoverySources');
+  await expect(select).toHaveValue('labs');
+
+  // Choix volontaire : ne voir que les géocaches.
+  await select.selectOption('geocaches');
+  await expect(select).toHaveValue('geocaches');
+  await expect(page.locator('#filtersCounter')).toContainText('0 / 8', { timeout: 20_000 });
+
+  // Réimport du même lot : la collection comptait déjà 8 étapes prêtes —
+  // le choix explicite ne doit pas être écrasé.
+  await page.locator('#labs-file-input').setInputFiles([HISTORY, COORDS]);
+  await expect(page.locator('#labsPreviewModal')).toBeVisible({ timeout: 20_000 });
+  await page.locator('#labsPreviewConfirmBtn').click();
+  // Fin réelle de l'import : le bloc d'activité apparaît puis disparaît ;
+  // la suggestion, si elle rejouait, basculerait juste après.
+  await expect(page.locator('#labsActivity')).toBeVisible({ timeout: 20_000 });
+  await expect(page.locator('#labsActivity')).toBeHidden({ timeout: 60_000 });
+  await page.waitForTimeout(1000);
+
+  await expect(select).toHaveValue('geocaches');
+  expect((await readServerSettings(page)).main_discovery_sources).toBe('geocaches');
+});
+
+
+test('après suppression complète, la suggestion de source est rejouée', async ({ page }) => {
+  await openReadyApp(page);
+  await importLabs(page);
+  await expect(page.locator('#selectDiscoverySources')).toHaveValue('labs');
+
+  // Suppression complète : le mode revient à « geocaches » (reset).
+  await page.locator('#clearLabsBtn').click();
+  await page.locator('.gcm-confirm-modal.show [data-gcm-role="confirm"]').click();
+  await expect(page.locator('#labsStatus')).toContainText('Aucun Lab Cache importé', { timeout: 30_000 });
+  await expect(page.locator('#selectDiscoverySources')).toHaveValue('geocaches', { timeout: 30_000 });
+
+  // Nouvel import sur collection redevenue vide : premier affichage de
+  // Labs, la suggestion repart — la carte redevient visible.
+  await importLabs(page);
+  await expect(page.locator('#selectDiscoverySources')).toHaveValue('labs', { timeout: 30_000 });
+  expect((await readServerSettings(page)).main_discovery_sources).toBe('labs');
+});
+
+
 test('« Supprimer mes Lab Caches » vide la collection Labs uniquement', async ({ page }) => {
   await openReadyApp(page);
   await importLabs(page);

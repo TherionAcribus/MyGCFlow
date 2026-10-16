@@ -135,13 +135,16 @@ export async function refreshLabsStatus({ detectOutside = false } = {}) {
         const ready = data.ready || 0;
         const moved = knownCounts !== null
             && (knownCounts.total !== total || knownCounts.ready !== ready);
+        // Compteurs « avant » de la mutation détectée : la suggestion de
+        // source en a besoin pour ne basculer que sur un premier affichage.
+        const prevReady = knownCounts?.ready ?? 0;
         knownCounts = { total, ready };
         renderLabsStatus(data);
         if (data.active_task) {
             watchActiveTask(data.active_task);
         } else if (detectOutside && moved && !watchingTaskId) {
             showInfo(t('Vos Lab Caches ont été mis à jour.'), t('Lab Caches'));
-            await updateMapAfterLabsChange('suggest');
+            await updateMapAfterLabsChange('suggest', { readyBefore: prevReady });
         }
         return data;
     } catch (e) {
@@ -167,6 +170,10 @@ function renderLabsStatus(st) {
     if (statusEl) {
         if (total === 0) {
             statusEl.textContent = t('Aucun Lab Cache importé');
+        } else if (ready === 0) {
+            // Tout est en attente : le statut le dit en clair — l'alerte
+            // « à compléter » porte les deux issues (récupération, saisie).
+            statusEl.textContent = t('${total} étape(s) importée(s) — aucune encore prête', { total });
         } else {
             // Libellés résolus hors template literal pour l'extracteur Babel.
             const stepLabel = total > 1 ? t('étapes') : t('étape');
@@ -603,13 +610,16 @@ function followTask(taskId, title) {
 }
 
 // Fin commune d'une séquence suivie : bloc retiré, compteurs relus, carte
-// rechargée si des données ont changé.
-async function settleActivity(changed) {
+// rechargée si des données ont changé. `readyBefore` : étapes affichables
+// avant l'opération — ready_before remonté par la tâche d'import quand il
+// existe, sinon le dernier statut connu (capturé AVANT la relecture).
+async function settleActivity(changed, { readyBefore = null } = {}) {
     watchingTaskId = null;
     hideActivity();
+    const before = readyBefore ?? knownCounts?.ready ?? null;
     const status = await refreshLabsStatus();
     if (!changed) return;
-    await updateMapAfterLabsChange(status ? 'suggest' : null);
+    await updateMapAfterLabsChange(status ? 'suggest' : null, { readyBefore: before });
 }
 
 // Report des changements Labs sur la carte : choix des sources affichées
@@ -619,9 +629,12 @@ async function settleActivity(changed) {
 // enregistrement — vider la carte casserait la vidéo : la mise à jour attend
 // le retour au repos. Une seule mise à jour en attente suffit, elle relit
 // l'état courant du serveur ; la dernière source demandée l'emporte.
-function updateMapAfterLabsChange(source = null) {
-    if (!mapBusy()) return applyMapUpdate(source);
-    deferredMapUpdate = { source: source || deferredMapUpdate?.source || null };
+function updateMapAfterLabsChange(source = null, suggestInfo = null) {
+    if (!mapBusy()) return applyMapUpdate(source, suggestInfo);
+    deferredMapUpdate = {
+        source: source || deferredMapUpdate?.source || null,
+        suggestInfo: suggestInfo || deferredMapUpdate?.suggestInfo || null,
+    };
     if (!idleWaitTimer) {
         idleWaitTimer = setInterval(() => {
             if (mapBusy()) return;
@@ -629,15 +642,15 @@ function updateMapAfterLabsChange(source = null) {
             idleWaitTimer = null;
             const pending = deferredMapUpdate;
             deferredMapUpdate = null;
-            if (pending) applyMapUpdate(pending.source);
+            if (pending) applyMapUpdate(pending.source, pending.suggestInfo);
         }, IDLE_CHECK_MS);
     }
     return Promise.resolve();
 }
 
-async function applyMapUpdate(source) {
+async function applyMapUpdate(source, suggestInfo = null) {
     if (source === 'suggest' && knownCounts) {
-        await suggestSourceAfterImport(knownCounts.ready, knownCounts.total);
+        await suggestSourceAfterImport(suggestInfo || {});
     } else if (source === 'reset') {
         // Plus de Labs : revenir aux géocaches AVANT le rechargement pour
         // que l'affichage applique directement le nouveau mode.
@@ -654,18 +667,21 @@ async function applyMapUpdate(source) {
 // entre ces deux tâches que l'application semblait ne plus rien faire.
 async function followImport(taskId) {
     let changed = false;
+    let importResult = null;
     try {
-        const result = await followTask(taskId, t('Import de vos Lab Caches…'));
-        if (result.success === false) throw new Error(t("L'import a échoué"));
+        importResult = await followTask(taskId, t('Import de vos Lab Caches…'));
+        if (importResult.success === false) throw new Error(t("L'import a échoué"));
         changed = true;
-        reportImport(result);
-        if (result.fetch_task_id) {
-            reportFetch(await followTask(result.fetch_task_id, t('Placement de vos étapes sur la carte…')));
+        reportImport(importResult);
+        if (importResult.fetch_task_id) {
+            reportFetch(await followTask(importResult.fetch_task_id, t('Placement de vos étapes sur la carte…')));
         }
     } catch (e) {
         showError(e.message || t("Erreur lors de l'import"), t('Import Lab Caches'));
     } finally {
-        await settleActivity(changed);
+        const before = importResult && Number.isFinite(importResult.ready_before)
+            ? importResult.ready_before : null;
+        await settleActivity(changed, { readyBefore: before });
     }
 }
 
@@ -697,11 +713,17 @@ function reportImport(result) {
     showSuccess(msg, t('Import Lab Caches'));
 }
 
-// Après un premier import Labs visible : les proposer à l'affichage.
-// « geocaches » seul les masquerait — « both » si des géocaches existent,
-// « labs » sinon (données immédiatement visibles).
-async function suggestSourceAfterImport(readyCount, totalCount) {
-    if (readyCount <= 0 && totalCount <= 0) return;
+// Après un premier import de Labs affichables : les proposer à l'affichage.
+// La bascule n'a lieu QUE si la collection ne comptait aucune étape prête
+// avant l'opération (readyBefore === 0) et en compte désormais : un réimport
+// sur une collection déjà affichable préserve le mode choisi, y compris un
+// « geocaches » sélectionné à la main. Tout-en-attente (rien d'affichable
+// après coup) : jamais de bascule — l'alerte de la carte porte les issues.
+// « both » si des géocaches existent, « labs » sinon.
+async function suggestSourceAfterImport({ readyBefore = null } = {}) {
+    const readyAfter = knownCounts?.ready || 0;
+    if (readyAfter <= 0) return;
+    if ((readyBefore ?? 0) > 0) return;   // réimport : préserver le choix courant
     try {
         const mode = pkg.getDiscoverySourcesMode?.() || 'geocaches';
         if (mode !== 'geocaches') return;   // Labs déjà affichés
