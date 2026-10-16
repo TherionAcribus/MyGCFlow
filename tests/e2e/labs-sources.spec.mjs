@@ -751,6 +751,146 @@ test('la récupération n\'est plus proposée quand il ne reste que des étapes 
 });
 
 
+// ---------------------------------------------------------------- révision
+//
+// Détection des mutations externes (favori, autre onglet) par la révision de
+// la collection : compteurs identiques ≠ « rien n'a changé ».
+
+const STATUS_POLL_MS = 4000;   // labs.js : intervalle du relevé de surveillance
+
+const readPointsRevision = (page) => page.evaluate(async () =>
+  (await import('/static/js/index.js')).pointsByDateRevision);
+const refreshStatusOutside = (page) => page.evaluate(async () =>
+  (await import('/static/js/index.js')).refreshLabsStatus({ detectOutside: true }));
+
+
+test('une mutation à compteurs identiques est détectée par la révision', async ({ page, request }) => {
+  await openReadyApp(page);
+  await importLabs(page);
+  await expect(page.locator('#filtersCounter')).toContainText('8 / 8', { timeout: 60_000 });
+
+  // Lectures répétées sans changement de révision : la carte ne recharge pas.
+  const rev0 = await readPointsRevision(page);
+  await refreshStatusOutside(page);
+  await refreshStatusOutside(page);
+  expect(await readPointsRevision(page)).toBe(rev0);
+
+  // Mutation externe à compteurs identiques : une date corrigée sur une
+  // étape sans position — total/ready figés (12/8), révision +1.
+  const uid = await request.get('/api/labs/unresolved')
+    .then(r => r.json()).then(d => d.items[0].local_uid);
+  expect(uid).toBeTruthy();
+  const res = await request.post(`/api/labs/discoveries/${uid}/resolve`,
+    { data: { found_date: '2024-07-01' } });
+  expect(res.ok()).toBeTruthy();
+  const status = await request.get('/api/labs/status').then(r => r.json());
+  expect([status.total, status.ready]).toEqual([12, 8]);
+
+  // Le relevé de surveillance suivant voit la révision bouger → rechargement.
+  await refreshStatusOutside(page);
+  await expect.poll(() => readPointsRevision(page), { timeout: 20_000 }).toBeGreaterThan(rev0);
+});
+
+
+test('une correction initiée depuis l\'interface ne recharge la carte qu\'une fois', async ({ page }) => {
+  await openReadyApp(page);
+  // Un rechargement du jeu = exactement un POST /get_geojson_points
+  // (loadAndDisplayPoints) — le compteur de rechargements réel.
+  let geojsonPosts = 0;
+  await page.route('**/get_geojson_points', route => { geojsonPosts += 1; route.continue(); });
+  await importLabs(page);
+  await expect(page.locator('#filtersCounter')).toContainText('8 / 8', { timeout: 60_000 });
+  const posts0 = geojsonPosts;
+
+  // Correction via la modale « Étapes en attente » : date seule sur une
+  // étape sans position — la ligne reste en attente, la modale reste ouverte.
+  await page.locator('#labsPendingBtn').click();
+  const row = page.locator(`#labsPendingList [data-local-uid="${STAGE_PORTE_NORD}"]`);
+  await row.locator('input[data-field="date"]').fill('2024-07-01');
+
+  // Geler le relevé périodique pendant la mesure : sans onglet Données
+  // actif, aucun poll ne peut intercepter la mutation entre le commit et la
+  // relecture post-commit de l'action (ce qui compterait un rechargement de
+  // détection externe en plus). La modale est rattachée à <body> lors de son
+  // ouverture (getBsModal) : elle reste visible hors de l'onglet.
+  await page.evaluate(() => document.getElementById('data').classList.remove('active'));
+  await row.getByRole('button', { name: 'Enregistrer' }).click();
+  await expect(row).toContainText('Enregistré', { timeout: 20_000 });
+
+  // Fermeture de la modale → un rechargement (correction en attente).
+  await page.locator('#labsPendingModal .btn-close').click();
+  await expect.poll(() => geojsonPosts, { timeout: 20_000 }).toBe(posts0 + 1);
+
+  // L'action a relu le statut postérieur à son commit : le relevé périodique
+  // suivant (4 s) ne voit plus de mutation — aucun second rechargement.
+  await page.evaluate(() => document.getElementById('data').classList.add('active'));
+  await page.waitForTimeout(STATUS_POLL_MS + 1500);
+  expect(geojsonPosts).toBe(posts0 + 1);
+  await page.unroute('**/get_geojson_points');
+});
+
+
+test('les relevés simultanés partagent une seule requête de statut en vol', async ({ page }) => {
+  await openReadyApp(page);
+  await importLabs(page);
+
+  // Mesure déterministe : le relevé périodique (4 s) est gelé en désactivant
+  // l'onglet Données — seuls les déclencheurs explicites comptent.
+  await page.evaluate(() => document.getElementById('data').classList.remove('active'));
+
+  let inFlight = 0;
+  let maxInFlight = 0;
+  let total = 0;
+  let release;
+  let gate = new Promise(r => { release = r; });
+  await page.route('**/api/labs/status', async (route) => {
+    total += 1;
+    inFlight += 1;
+    maxInFlight = Math.max(maxInFlight, inFlight);
+    await gate;
+    inFlight -= 1;
+    await route.continue();
+  });
+
+  // focus + retour de visibilité + relevé périodique peuvent se produire en
+  // même temps : une seule requête part, les appelants partagent la promesse
+  // (la première étant « dehors », la détection est faite pour tous).
+  const joined = page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    return Promise.all([
+      app.refreshLabsStatus({ detectOutside: true }),
+      app.refreshLabsStatus(),
+      app.refreshLabsStatus({ detectOutside: true }),
+    ]);
+  });
+  await expect.poll(() => total).toBe(1);
+  release();
+  await joined;
+  expect(maxInFlight).toBe(1);
+  expect(total).toBe(1);
+
+  // `fresh` (fin d'une action de cette page) enchaîne une relecture APRÈS la
+  // requête en vol — séquentielle, jamais parallèle : des réponses HTTP ne
+  // peuvent donc pas revenir dans le désordre.
+  total = 0;
+  gate = new Promise(r => { release = r; });
+  const chained = page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    return Promise.all([
+      app.refreshLabsStatus({ fresh: true }),
+      app.refreshLabsStatus({ fresh: true }),
+    ]);
+  });
+  await expect.poll(() => total).toBe(1);
+  release();
+  await expect.poll(() => total).toBe(2);
+  await chained;
+  expect(maxInFlight).toBe(1);
+  await page.unroute('**/api/labs/status');
+  await page.evaluate(() => document.getElementById('data').classList.add('active'));
+});
+
+
 test('couleur et icône dédiées Adventure Lab sont déclarées', async ({ page }) => {
   await openReadyApp(page);
 

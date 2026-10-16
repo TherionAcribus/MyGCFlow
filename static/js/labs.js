@@ -29,7 +29,14 @@ let pendingGroupTotal = 0;     // Adventures ayant des étapes en attente
 let fetchableAdventures = 0;   // Adventures qu'une récupération peut encore servir
 let pendingDirty = false;      // une correction a été enregistrée → recharger
 let guideOpen = false;         // parcours du favori rouvert via « Mettre à jour »
-let knownCounts = null;        // derniers compteurs affichés ({ total, ready })
+// Dernier statut appliqué : la révision de la collection (absente → 0) change
+// à TOUTE mutation — titre, image, date ou coordonnée corrigée — même quand
+// total/ready restent identiques.
+let knownLabsStatus = { revision: 0, total: 0, ready: 0 };
+let statusSeen = false;          // le premier relevé pose la base de comparaison
+let statusRequestPromise = null; // requête /api/labs/status en vol (partagée)
+let statusRequestDetectOutside = false; // la requête en vol détecte-t-elle l'externe ?
+let statusRequestSeq = 0;        // jeton croissant des requêtes lancées
 let watchingTaskId = null;     // tâche serveur suivie par le bloc d'activité
 let activityToast = null;
 
@@ -122,36 +129,70 @@ export function initLabsUI() {
 // ---------------------------------------------------------------- statut
 
 // Relit le statut serveur et l'affiche. `detectOutside` : relevé de
-// surveillance — si les compteurs ont bougé sans tâche en cours ni action de
+// surveillance — si la collection a bougé sans tâche en cours ni action de
 // cette page (import du favori déjà terminé), la carte est rechargée.
-export async function refreshLabsStatus({ detectOutside = false } = {}) {
+// Une seule requête en vol : focus, visibilitychange et le relevé périodique
+// peuvent se chevaucher — les appelants passifs partagent la promesse en
+// cours ; `fresh` (fin d'une action de cette page) enchaîne une relecture
+// après celle en vol, pour garantir des données postérieures à la mutation.
+// Jamais deux requêtes parallèles : les réponses ne peuvent plus revenir
+// dans le désordre — `statusRequestSeq` verrouille le cas où une promesse
+// orpheline se résoudrait quand même après une relecture plus récente.
+export function refreshLabsStatus({ detectOutside = false, fresh = false } = {}) {
     const statusEl = el('labsStatus');
-    if (!statusEl) return null;
-    try {
-        const r = await fetch(`${CONFIG.BASE_URL}/api/labs/status`);
-        const data = await r.json();
-        if (!data.success) throw new Error(data.message || 'statut indisponible');
-        const total = data.total || 0;
-        const ready = data.ready || 0;
-        const moved = knownCounts !== null
-            && (knownCounts.total !== total || knownCounts.ready !== ready);
-        // Compteurs « avant » de la mutation détectée : la suggestion de
-        // source en a besoin pour ne basculer que sur un premier affichage.
-        const prevReady = knownCounts?.ready ?? 0;
-        knownCounts = { total, ready };
-        renderLabsStatus(data);
-        if (data.active_task) {
-            watchActiveTask(data.active_task);
-        } else if (detectOutside && moved && !watchingTaskId) {
-            showInfo(t('Vos Lab Caches ont été mis à jour.'), t('Lab Caches'));
-            await updateMapAfterLabsChange('suggest', { readyBefore: prevReady });
+    if (!statusEl) return Promise.resolve(null);
+    if (statusRequestPromise) {
+        // Enchaîner — jamais en parallèle — quand l'appelant attend un
+        // traitement que la requête en vol ne fera pas : relevé postérieur
+        // à sa propre mutation (`fresh`), ou détection externe alors que la
+        // requête en vol est passive.
+        if (fresh || (detectOutside && !statusRequestDetectOutside)) {
+            return statusRequestPromise.then(() => refreshLabsStatus({ detectOutside, fresh }));
         }
-        return data;
-    } catch (e) {
-        console.warn('[LABS] statut indisponible:', e);
-        statusEl.textContent = t('Statut indisponible');
-        return null;
+        return statusRequestPromise.then(() => null);
     }
+    statusRequestDetectOutside = detectOutside;
+    const seq = ++statusRequestSeq;
+    statusRequestPromise = (async () => {
+        try {
+            const r = await fetch(`${CONFIG.BASE_URL}/api/labs/status`);
+            const data = await r.json();
+            // Une relecture plus récente a été demandée entre-temps : cette
+            // réponse, potentiellement plus ancienne, ne rétablit rien.
+            if (seq !== statusRequestSeq) return null;
+            if (!data.success) throw new Error(data.message || 'statut indisponible');
+            const total = data.total || 0;
+            const ready = data.ready || 0;
+            // Collection absente → révision 0 : sa suppression est vue comme
+            // une mutation (révision positive → 0).
+            const revision = Number(data.collection?.revision) || 0;
+            const prev = knownLabsStatus;
+            const moved = statusSeen
+                && (revision !== prev.revision
+                    || total !== prev.total || ready !== prev.ready);
+            // Compteurs « avant » de la mutation détectée : la suggestion de
+            // source en a besoin pour ne basculer que sur un premier affichage.
+            const prevReady = prev.ready;
+            knownLabsStatus = { revision, total, ready };
+            statusSeen = true;
+            renderLabsStatus(data);
+            if (data.active_task) {
+                watchActiveTask(data.active_task);
+            } else if (detectOutside && moved && !watchingTaskId) {
+                showInfo(t('Vos Lab Caches ont été mis à jour.'), t('Lab Caches'));
+                await updateMapAfterLabsChange('suggest', { readyBefore: prevReady });
+            }
+            return data;
+        } catch (e) {
+            console.warn('[LABS] statut indisponible:', e);
+            statusEl.textContent = t('Statut indisponible');
+            return null;
+        } finally {
+            statusRequestPromise = null;
+            statusRequestDetectOutside = false;
+        }
+    })();
+    return statusRequestPromise;
 }
 
 function renderLabsStatus(st) {
@@ -210,7 +251,7 @@ function renderLabsStatus(st) {
 function renderGuide() {
     const guide = el('labsGuide');
     if (!guide) return;
-    const empty = (knownCounts?.total || 0) === 0;
+    const empty = knownLabsStatus.total === 0;
     guide.hidden = !(empty || guideOpen);
     el('labsUpdateBtn')?.setAttribute('aria-expanded', String(!guide.hidden));
 }
@@ -616,8 +657,12 @@ function followTask(taskId, title) {
 async function settleActivity(changed, { readyBefore = null } = {}) {
     watchingTaskId = null;
     hideActivity();
-    const before = readyBefore ?? knownCounts?.ready ?? null;
-    const status = await refreshLabsStatus();
+    const before = readyBefore ?? knownLabsStatus.ready;
+    // `fresh` : une relecture passive peut être en vol depuis avant la fin de
+    // la tâche — enchaîner pour lire un statut postérieur au commit, sinon le
+    // relevé suivant verrait une « mutation externe » déjà vue et rechargerait
+    // une seconde fois.
+    const status = await refreshLabsStatus({ fresh: true });
     if (!changed) return;
     await updateMapAfterLabsChange(status ? 'suggest' : null, { readyBefore: before });
 }
@@ -649,7 +694,7 @@ function updateMapAfterLabsChange(source = null, suggestInfo = null) {
 }
 
 async function applyMapUpdate(source, suggestInfo = null) {
-    if (source === 'suggest' && knownCounts) {
+    if (source === 'suggest' && statusSeen) {
         await suggestSourceAfterImport(suggestInfo || {});
     } else if (source === 'reset') {
         // Plus de Labs : revenir aux géocaches AVANT le rechargement pour
@@ -721,7 +766,7 @@ function reportImport(result) {
 // après coup) : jamais de bascule — l'alerte de la carte porte les issues.
 // « both » si des géocaches existent, « labs » sinon.
 async function suggestSourceAfterImport({ readyBefore = null } = {}) {
-    const readyAfter = knownCounts?.ready || 0;
+    const readyAfter = knownLabsStatus.ready;
     if (readyAfter <= 0) return;
     if ((readyBefore ?? 0) > 0) return;   // réimport : préserver le choix courant
     try {
@@ -1092,7 +1137,7 @@ function afterPendingCorrection(data) {
     if (typeof data.unresolved === 'number' && data.unresolved <= 0) {
         hideBsModal(el('labsPendingModal'));
     }
-    refreshLabsStatus();
+    refreshLabsStatus({ fresh: true });
 }
 
 async function postCorrection(url, body) {
@@ -1174,7 +1219,7 @@ async function onClearLabs() {
         const resp = await fetch(`${CONFIG.BASE_URL}/api/labs/clear`, { method: 'POST' });
         const data = await resp.json().catch(() => ({}));
         if (!resp.ok || !data.success) throw new Error(data.message || t('Erreur inconnue'));
-        refreshLabsStatus();
+        refreshLabsStatus({ fresh: true });
         // Les géocaches peuvent subsister : le rechargement affiche la
         // source restante au lieu de laisser un écran vide.
         await updateMapAfterLabsChange('reset');

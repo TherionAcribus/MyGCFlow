@@ -29,6 +29,16 @@ Autres repères :
   (résumés de la simulation caméra, trajet du trail) restent figées. Appeler
   `app.bumpPointsByDateRevision()` après la mutation — exemple dans
   `video-export.spec.mjs`.
+- `pointsByDateRevision` n'est pas un compteur de rechargements : il bump à
+  chaque reconstruction de l'index (`clearLocalData`, `buildPointsByDateIndex`,
+  `changeSelect`…), donc plusieurs fois par rechargement. Pour compter les
+  rechargements du jeu de données, intercepter `POST /get_geojson_points`
+  (un par rechargement) — exemple dans `labs-sources.spec.mjs`.
+- Le relevé périodique du statut Labs (`refreshLabsStatus`, toutes les 4 s)
+  ne tourne que quand l'onglet Données porte la classe `active`. Un test qui
+  veut une fenêtre de mesure déterministe peut geler ce relevé via
+  `document.getElementById('data').classList.remove('active')` ; les modales
+  affichées restent utilisables car `getBsModal` les rattache à `<body>`.
 - Base vide → l'app force le retour sur l'onglet Données à chaque résolution
   du statut ; `updateDataAvailabilityUI` saute ce bascule quand l'URL porte
   un hash — les specs qui ont besoin de l'onglet Style doivent ouvrir `/#style`.
