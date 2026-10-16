@@ -818,7 +818,10 @@ function applyDiscoverySourcesAtLoad(features) {
 // Recharge le jeu principal après une mutation (import ou vidage d'une
 // source) : la carte, les compteurs et l'état vide reflètent ce qui
 // subsiste — par ex. des Lab Caches après « Supprimer mes géocaches ».
-export function reloadMainDatasetAfterMutation() {
+// `onDone` est appelé une fois les points affichés (ou l'échec acté) — la
+// séquence Labs s'en sert pour n'émettre son bilan qu'après l'indicateur de
+// chargement, jamais empilé dessus.
+export function reloadMainDatasetAfterMutation({ onDone = null } = {}) {
     clearLocalData();
     clearMap();
     updateUIAfterClear();
@@ -826,7 +829,7 @@ export function reloadMainDatasetAfterMutation() {
     // d'infos de la carte et le compteur geocachesCount suivent ce qui
     // subsiste — updateUIAfterClear ne pose qu'un intitulé provisoire.
     readBddValues();
-    loadAndDisplayPoints();
+    loadAndDisplayPoints({ onDone });
 }
 
 // Nombre de géocaches du jeu chargé : la ventilation countBySource du

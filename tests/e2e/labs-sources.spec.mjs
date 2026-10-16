@@ -891,6 +891,150 @@ test('les relevés simultanés partagent une seule requête de statut en vol', a
 });
 
 
+// --------------------------------------------------- activité / toasts
+//
+// Lot 2.1 : une séquence = un seul indicateur. Pendant l'opération, le bloc
+// #labsActivity suffit (toast seulement hors onglet Données) ; le bilan
+// n'arrive qu'après le rechargement, fusionné avec la bascule de source.
+
+// Surveillant : mémorise le maximum de toasts visibles simultanément.
+async function watchToastCount(page) {
+  await page.evaluate(() => {
+    window.__labsToastMax = 0;
+    const count = () => document.querySelectorAll('.gcm-toast.show').length;
+    window.__labsToastObs = new MutationObserver(() => {
+      window.__labsToastMax = Math.max(window.__labsToastMax, count());
+    });
+    window.__labsToastObs.observe(document.body,
+      { subtree: true, childList: true, attributes: true, attributeFilter: ['class'] });
+  });
+}
+const maxToastsSeen = (page) => page.evaluate(() => window.__labsToastMax || 0);
+
+
+test('un import produit au plus un toast à la fois et un seul bilan final', async ({ page }) => {
+  await openReadyApp(page);
+  await watchToastCount(page);
+  await importLabs(page);
+  await expect(page.locator('#filtersCounter')).toContainText('8 / 8', { timeout: 60_000 });
+
+  // Pendant toute la séquence : jamais plus d'un toast visible.
+  expect(await maxToastsSeen(page)).toBeLessThanOrEqual(1);
+
+  // Bilan unique après rechargement : import + bascule de source fusionnés.
+  const toast = page.locator('.gcm-toast.show');
+  await expect(toast).toHaveCount(1);
+  await expect(toast).toContainText('12 étape(s) importée(s)');
+  await expect(toast).toContainText('affichable');
+  await expect(toast).toContainText('maintenant affichés');
+});
+
+
+test('le même parcours à 390 px n\'empile pas les toasts', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openReadyApp(page);
+  await watchToastCount(page);
+  await importLabs(page);
+  await expect(page.locator('#filtersCounter')).toContainText('8 / 8', { timeout: 60_000 });
+
+  expect(await maxToastsSeen(page)).toBeLessThanOrEqual(1);
+  const toast = page.locator('.gcm-toast.show');
+  await expect(toast).toHaveCount(1);
+  await expect(toast).toContainText('importée');
+});
+
+
+test('un import suivi d\'un placement produit un seul bilan final', async ({ page }) => {
+  await openReadyApp(page);
+  await watchToastCount(page);
+
+  // Tâches simulées : import puis placement enchaîné, placement tenu jusqu'à
+  // relâche — la fenêtre de vérification est maîtrisée.
+  let importPolls = 0;
+  let releaseFetch = false;
+  await page.route('**/api/labs/import/commit', route => route.fulfill({
+    status: 202, json: { success: true, task_id: 'fake-import' } }));
+  await page.route('**/tasks/fake-import*', route => {
+    importPolls += 1;
+    route.fulfill({ json: importPolls < 2
+      ? { task_id: 'fake-import', type: 'lab_import', state: 'running', progress: 40,
+          message: 'Import Labs : historique.json' }
+      : { task_id: 'fake-import', type: 'lab_import', state: 'finished', progress: 100,
+          result: { success: true, added: 12, updated: 0, total: 12, ready_total: 0,
+                    unresolved: 12, fetch_task_id: 'fake-fetch' } } });
+  });
+  await page.route('**/tasks/fake-fetch*', route => {
+    route.fulfill({ json: !releaseFetch
+      ? { task_id: 'fake-fetch', type: 'lab_fetch_coords', state: 'running', progress: 50,
+          message: 'Coordonnées Labs : 2/4 Adventures' }
+      : { task_id: 'fake-fetch', type: 'lab_fetch_coords', state: 'finished', progress: 100,
+          result: { success: true, resolved: 8, unresolved: 4, failed_uuids: [] } } });
+  });
+
+  await page.locator('#labs-file-input').setInputFiles([HISTORY]);
+  await expect(page.locator('#labsPreviewModal')).toBeVisible({ timeout: 20_000 });
+  await page.locator('#labsPreviewConfirmBtn').click();
+
+  // Le placement automatique tourne : aucun bilan tant qu'il n'est pas fini.
+  const activity = page.locator('#labsActivity');
+  await expect(activity).toContainText('Placement de vos étapes', { timeout: 15_000 });
+  expect(await page.locator('.gcm-toast.show').count()).toBe(0);
+
+  releaseFetch = true;
+  await expect(activity).toBeHidden({ timeout: 15_000 });
+
+  // Un seul toast, portant l'import ET le placement.
+  const toast = page.locator('.gcm-toast.show');
+  await expect(toast).toHaveCount(1, { timeout: 20_000 });
+  await expect(toast).toContainText('12 étape(s) importée(s)');
+  await expect(toast).toContainText('8 étape(s) placée(s)');
+  await expect(toast).toContainText('4 étape(s) restent à compléter');
+  expect(await maxToastsSeen(page)).toBeLessThanOrEqual(1);
+});
+
+
+test('l\'activité se transforme en un toast unique hors de l\'onglet Données', async ({ page }) => {
+  await openReadyApp(page);
+
+  // Import tenu en cours par une tâche simulée : la fenêtre de bascule
+  // d'onglet est maîtrisée.
+  let release = false;
+  await page.route('**/api/labs/import/commit', route => route.fulfill({
+    status: 202, json: { success: true, task_id: 'fake-import' } }));
+  await page.route('**/tasks/fake-import*', route => {
+    route.fulfill({ json: !release
+      ? { task_id: 'fake-import', type: 'lab_import', state: 'running', progress: 40,
+          message: 'Import Labs : historique.json' }
+      : { task_id: 'fake-import', type: 'lab_import', state: 'finished', progress: 100,
+          result: { success: true, added: 1, total: 1, ready_total: 0, unresolved: 1 } } });
+  });
+
+  await page.locator('#labs-file-input').setInputFiles([HISTORY]);
+  await expect(page.locator('#labsPreviewModal')).toBeVisible({ timeout: 20_000 });
+  await page.locator('#labsPreviewConfirmBtn').click();
+  const activity = page.locator('#labsActivity');
+  await expect(activity).toBeVisible({ timeout: 15_000 });
+
+  // Sur l'onglet Données : le bloc seul, aucun toast Labs.
+  expect(await page.locator('.gcm-toast.show', { hasText: 'Lab Caches' }).count()).toBe(0);
+
+  // Quitter l'onglet : l'activité devient un toast global unique.
+  await page.locator('a[href="#animation"]').click();
+  const toast = page.locator('.gcm-toast.show', { hasText: 'Lab Caches' });
+  await expect(toast).toHaveCount(1);
+  await expect(toast).toContainText('Import de vos Lab Caches');
+  await expect(activity).toBeHidden();
+
+  // Retour : le bloc reprend le relais, le toast disparaît.
+  await page.locator('a[href="#data"]').click();
+  await expect(toast).toHaveCount(0);
+  await expect(activity).toBeVisible();
+
+  release = true;
+  await expect(activity).toBeHidden({ timeout: 15_000 });
+});
+
+
 test('couleur et icône dédiées Adventure Lab sont déclarées', async ({ page }) => {
   await openReadyApp(page);
 

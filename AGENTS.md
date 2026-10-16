@@ -39,6 +39,11 @@ Autres repères :
   veut une fenêtre de mesure déterministe peut geler ce relevé via
   `document.getElementById('data').classList.remove('active')` ; les modales
   affichées restent utilisables car `getBsModal` les rattache à `<body>`.
+- Pour compter les toasts visibles dans un test, observer
+  `.gcm-toast.show` (MutationObserver) plutôt que `.gcm-toast` : les nœuds
+  survivent ~300 ms après fermeture, sans la classe `show`. `.show` est
+  ajoutée par `setTimeout(10)` — un toast masqué dans cette fenêtre ne doit
+  pas « revivre » (garde `_gcmHiding` dans `notifications.js`).
 - Base vide → l'app force le retour sur l'onglet Données à chaque résolution
   du statut ; `updateDataAvailabilityUI` saute ce bascule quand l'URL porte
   un hash — les specs qui ont besoin de l'onglet Style doivent ouvrir `/#style`.
@@ -90,3 +95,11 @@ corriger le msgstr, des textes sans rapport s'affichent (ex. le bouton
 Après un `update`, `grep fuzzy translations/*/LC_MESSAGES/messages.po` et
 corriger avant `compile` — ou lancer `pybabel update` avec
 `--no-fuzzy-matching` et traduire les chaînes vides ensuite.
+
+**Piège `nul` (Windows) :** un fichier littéralement nommé `nul` à la racine
+(créé par un redirect `> nul` sous Git Bash — nom réservé Win32) fait
+**avorter `pybabel extract` en silence** : `messages.pot` ressort vide et
+l'`update` suivant obsolète tout le catalogue (`#~` partout). Vérifier
+`grep -c "^msgid" messages.pot` après l'extract (~1500+ attendu). Suppression
+du fichier : `cmd //c "del nul"` échoue, utiliser
+`python -c "import os; os.remove(r'\\?\C:\chemin\nul')"`.

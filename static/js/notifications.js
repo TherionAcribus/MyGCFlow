@@ -113,8 +113,12 @@ class NotificationManager {
 
         this.container.appendChild(toast);
 
-        // Animation d'entrée
-        setTimeout(() => toast.classList.add('show'), 10);
+        // Animation d'entrée — pas de « réveil » si le toast a été masqué
+        // dans la fenêtre des 10 ms (chargements qui s'enchaînent : le toast
+        // des points peut être remplacé avant même d'apparaître).
+        setTimeout(() => {
+            if (!toast._gcmHiding) toast.classList.add('show');
+        }, 10);
 
         // Auto-suppression si durée définie. Le minuteur est mémorisé pour
         // pouvoir être relancé (déduplication) ou annulé (hide).

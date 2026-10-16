@@ -38,7 +38,8 @@ let statusRequestPromise = null; // requête /api/labs/status en vol (partagée)
 let statusRequestDetectOutside = false; // la requête en vol détecte-t-elle l'externe ?
 let statusRequestSeq = 0;        // jeton croissant des requêtes lancées
 let watchingTaskId = null;     // tâche serveur suivie par le bloc d'activité
-let activityToast = null;
+let activityToast = null;      // relais de l'activité quand l'onglet Données est masqué
+let sequenceReport = null;     // { importMsg, fetch, sourceSwitched } — bilan unique en fin de séquence
 
 // Relevé périodique du statut : un import lancé par le favori démarre hors de
 // cette page, et l'onglet peut rester affiché sans jamais reprendre le focus.
@@ -118,7 +119,16 @@ export function initLabsUI() {
     };
     window.addEventListener('focus', checkOutside);
     document.addEventListener('visibilitychange', checkOutside);
-    document.querySelector('a[href="#data"]')?.addEventListener('shown.bs.tab', checkOutside);
+    const dataTabLink = document.querySelector('a[href="#data"]');
+    // Quitter l'onglet Données pendant une séquence : l'activité se transforme
+    // en un toast global unique ; y revenir rend la main au bloc de la carte.
+    dataTabLink?.addEventListener('shown.bs.tab', () => { syncActivityToast(); checkOutside(); });
+    dataTabLink?.addEventListener('hidden.bs.tab', () => syncActivityToast());
+    // Une modale ouverte (aperçu, étapes en attente…) prend le pas : le toast
+    // d'activité, persistant, ne doit pas la masquer durablement — il
+    // réapparaît à sa fermeture si l'activité continue hors onglet.
+    document.addEventListener('shown.bs.modal', () => syncActivityToast());
+    document.addEventListener('hidden.bs.modal', () => syncActivityToast());
     setInterval(() => {
         if (el('data')?.classList.contains('active')) checkOutside();
     }, STATUS_POLL_MS);
@@ -179,8 +189,10 @@ export function refreshLabsStatus({ detectOutside = false, fresh = false } = {})
             if (data.active_task) {
                 watchActiveTask(data.active_task);
             } else if (detectOutside && moved && !watchingTaskId) {
-                showInfo(t('Vos Lab Caches ont été mis à jour.'), t('Lab Caches'));
-                await updateMapAfterLabsChange('suggest', { readyBefore: prevReady });
+                // Le toast « mis à jour » n'est émis qu'après le rechargement
+                // (finishSequence) : jamais avant, jamais doublé.
+                await updateMapAfterLabsChange('suggest',
+                    { readyBefore: prevReady, notifyExternal: true });
             }
             return data;
         } catch (e) {
@@ -259,15 +271,46 @@ function renderGuide() {
 // ---------------------------------------------------------------- activité
 //
 // Un seul endroit dit qu'un travail est en cours : le bloc #labsActivity de
-// la carte, doublé d'un toast visible depuis les autres onglets. Titre =
-// étape en clair ; détail = message de progression du serveur.
+// la carte. Quand l'onglet Données n'est pas affiché, le bloc est invisible :
+// l'activité est alors transformée en UN toast global (jamais empilé, jamais
+// doublé avec le bloc — onglet Données visible = bloc seul, autre onglet =
+// toast seul). Titre = étape en clair ; détail = message de progression du
+// serveur.
+
+let lastActivity = null;    // { title, detail, pct } — re-servi au toast hors onglet
 
 function activityRunning() {
     const box = el('labsActivity');
     return !!box && !box.hidden;
 }
 
+function dataTabVisible() {
+    return !!el('data')?.classList.contains('active');
+}
+
+// Le toast d'activité n'existe que quand le bloc de la carte n'est pas
+// visible ; il disparaît au retour sur l'onglet Données et au rechargement
+// (l'indicateur générique « Affichage des points » prend le relais).
+function syncActivityToast() {
+    try {
+        // Modale ouverte : pas de toast persistant — il la recouvrirait
+        // durablement (la fermeture réévalue et le recrée au besoin).
+        const modalOpen = !!document.querySelector('.modal.show, .modal.showing');
+        if (!activityRunning() || dataTabVisible() || modalOpen) {
+            if (activityToast) { hideToast(activityToast); activityToast = null; }
+            return;
+        }
+        const { title, detail = '', pct = null } = lastActivity || {};
+        if (!title) return;
+        if (!activityToast) activityToast = showLoadingToast(title, t('Lab Caches'));
+        else updateToastMessage(activityToast, detail ? `${title} ${detail}` : title);
+        if (typeof pct === 'number' && pct > 0) updateToastProgress(activityToast, pct);
+        else setIndeterminateProgress(activityToast);
+    } catch (_) { /* le bloc de la carte suffit */ }
+}
+
 function showActivity(title, { pct = null, detail = '' } = {}) {
+    lastActivity = { title, detail, pct };
     const box = el('labsActivity');
     if (box) {
         box.hidden = false;
@@ -289,15 +332,11 @@ function showActivity(title, { pct = null, detail = '' } = {}) {
         const btn = el(id);
         if (btn) btn.disabled = true;
     }
-    try {
-        if (!activityToast) activityToast = showLoadingToast(title, t('Lab Caches'));
-        else updateToastMessage(activityToast, detail ? `${title} ${detail}` : title);
-        if (typeof pct === 'number' && pct > 0) updateToastProgress(activityToast, pct);
-        else setIndeterminateProgress(activityToast);
-    } catch (_) { /* le bloc de la carte suffit */ }
+    syncActivityToast();
 }
 
 function hideActivity() {
+    lastActivity = null;
     const box = el('labsActivity');
     if (box) box.hidden = true;
     for (const id of ['labs-file-btn', 'labsFetchBtn', 'labsRetryFetchBtn']) {
@@ -663,7 +702,7 @@ async function settleActivity(changed, { readyBefore = null } = {}) {
     // relevé suivant verrait une « mutation externe » déjà vue et rechargerait
     // une seconde fois.
     const status = await refreshLabsStatus({ fresh: true });
-    if (!changed) return;
+    if (!changed) { sequenceReport = null; return; }
     await updateMapAfterLabsChange(status ? 'suggest' : null, { readyBefore: before });
 }
 
@@ -694,8 +733,9 @@ function updateMapAfterLabsChange(source = null, suggestInfo = null) {
 }
 
 async function applyMapUpdate(source, suggestInfo = null) {
+    let switched = false;
     if (source === 'suggest' && statusSeen) {
-        await suggestSourceAfterImport(suggestInfo || {});
+        switched = await suggestSourceAfterImport(suggestInfo || {});
     } else if (source === 'reset') {
         // Plus de Labs : revenir aux géocaches AVANT le rechargement pour
         // que l'affichage applique directement le nouveau mode.
@@ -704,7 +744,32 @@ async function applyMapUpdate(source, suggestInfo = null) {
             try { await pkg.setDiscoverySourcesMode?.('geocaches'); } catch (_) {}
         }
     }
-    pkg.reloadMainDatasetAfterMutation?.();
+    // Le toast d'activité passe le relais à l'indicateur générique des points
+    // — il ne doit jamais s'empiler avec lui.
+    if (activityToast) { try { hideToast(activityToast); } catch (_) {} activityToast = null; }
+    pkg.reloadMainDatasetAfterMutation?.({
+        onDone: () => finishSequence(suggestInfo, switched),
+    });
+}
+
+// Bilan unique, émis une fois les points rechargés : jamais de toast pendant
+// la séquence (le bloc d'activité — ou son relais hors onglet — suffit), et
+// jamais avant la fin du placement automatique. Une bascule de source ou une
+// mutation détectée de l'extérieur est fusionnée dans le même message.
+function finishSequence(suggestInfo, switched) {
+    const rep = sequenceReport;
+    sequenceReport = null;
+    const note = switched
+        ? ' ' + t('Les Lab Caches sont maintenant affichés (réglable via « Découvertes affichées »).')
+        : '';
+    if (rep && (rep.importMsg || rep.fetch)) {
+        let msg = rep.importMsg || '';
+        if (rep.fetch?.msg) msg += (msg ? ' ' : '') + rep.fetch.msg;
+        msg += note;
+        (rep.fetch?.warning ? showWarning : showSuccess)(msg, t('Lab Caches'));
+    } else if (suggestInfo?.notifyExternal || switched) {
+        showInfo(t('Vos Lab Caches ont été mis à jour.') + note, t('Lab Caches'));
+    }
 }
 
 // Import, puis placement des étapes si le serveur l'enchaîne (son bilan porte
@@ -713,15 +778,18 @@ async function applyMapUpdate(source, suggestInfo = null) {
 async function followImport(taskId) {
     let changed = false;
     let importResult = null;
+    sequenceReport = {};
     try {
         importResult = await followTask(taskId, t('Import de vos Lab Caches…'));
         if (importResult.success === false) throw new Error(t("L'import a échoué"));
         changed = true;
-        reportImport(importResult);
+        sequenceReport.importMsg = importSummary(importResult);
         if (importResult.fetch_task_id) {
-            reportFetch(await followTask(importResult.fetch_task_id, t('Placement de vos étapes sur la carte…')));
+            sequenceReport.fetch = fetchSummary(
+                await followTask(importResult.fetch_task_id, t('Placement de vos étapes sur la carte…')));
         }
     } catch (e) {
+        sequenceReport = null;
         showError(e.message || t("Erreur lors de l'import"), t('Import Lab Caches'));
     } finally {
         const before = importResult && Number.isFinite(importResult.ready_before)
@@ -732,10 +800,11 @@ async function followImport(taskId) {
 
 async function followFetch(taskId) {
     let changed = false;
+    sequenceReport = sequenceReport || {};
     try {
         const result = await followTask(taskId, t('Placement de vos étapes sur la carte…'));
         changed = true;
-        reportFetch(result);
+        sequenceReport.fetch = fetchSummary(result);
     } catch (e) {
         showError(e.message || t('Erreur de récupération'), t('Lab Caches'));
     } finally {
@@ -743,19 +812,22 @@ async function followFetch(taskId) {
     }
 }
 
-function reportImport(result) {
+// Résumé de l'import pour le bilan final — aucun toast ici : la séquence
+// n'affiche qu'un message, émis après le rechargement de la carte.
+function importSummary(result) {
     const added = (result.added || 0) + (result.updated || 0);
     let msg = result.fetch_task_id
         // Les compteurs « sur la carte » n'ont pas encore de sens : le
-        // placement démarre tout juste.
-        ? t('${added} étape(s) importée(s). Placement sur la carte en cours…', { added })
+        // placement démarre tout juste — le bilan des étapes prêtes vient
+        // du résumé de récupération qui suit.
+        ? t('${added} étape(s) importée(s).', { added })
         : t('${added} étape(s) importée(s) — ${ready} affichable(s), ${pending} en attente.',
             { added, ready: result.ready_total || 0, pending: result.unresolved || 0 });
     if ((result.conflicts || 0) > 0) {
         // Import sans aperçu (favori) ou conflits laissés tels quels.
         msg += ' ' + t('${n} conflit(s) — valeurs existantes conservées.', { n: result.conflicts });
     }
-    showSuccess(msg, t('Import Lab Caches'));
+    return msg;
 }
 
 // Après un premier import de Labs affichables : les proposer à l'affichage.
@@ -764,14 +836,16 @@ function reportImport(result) {
 // sur une collection déjà affichable préserve le mode choisi, y compris un
 // « geocaches » sélectionné à la main. Tout-en-attente (rien d'affichable
 // après coup) : jamais de bascule — l'alerte de la carte porte les issues.
-// « both » si des géocaches existent, « labs » sinon.
+// « both » si des géocaches existent, « labs » sinon. Retourne true quand la
+// bascule a eu lieu — l'information est fusionnée au bilan final de la
+// séquence plutôt qu'affichée en toast immédiat.
 async function suggestSourceAfterImport({ readyBefore = null } = {}) {
     const readyAfter = knownLabsStatus.ready;
-    if (readyAfter <= 0) return;
-    if ((readyBefore ?? 0) > 0) return;   // réimport : préserver le choix courant
+    if (readyAfter <= 0) return false;
+    if ((readyBefore ?? 0) > 0) return false;   // réimport : préserver le choix courant
     try {
         const mode = pkg.getDiscoverySourcesMode?.() || 'geocaches';
-        if (mode !== 'geocaches') return;   // Labs déjà affichés
+        if (mode !== 'geocaches') return false;   // Labs déjà affichés
         let hasGeocaches = false;
         try {
             const r = await fetch(`${CONFIG.BASE_URL}/db_status`);
@@ -779,9 +853,10 @@ async function suggestSourceAfterImport({ readyBefore = null } = {}) {
             hasGeocaches = (s?.sources?.geocaches || 0) > 0;
         } catch (_) { /* repli : afficher les deux */ }
         await pkg.setDiscoverySourcesMode?.(hasGeocaches ? 'both' : 'labs');
-        showInfo(t('Les Lab Caches sont maintenant affichés (réglable via « Découvertes affichées »).'), t('Lab Caches'));
+        return true;
     } catch (e) {
         console.warn('[LABS] bascule des sources après import:', e);
+        return false;
     }
 }
 
@@ -850,10 +925,12 @@ async function onFetchNow() {
     }
 }
 
-function reportFetch(result) {
+// Résumé de la récupération pour le bilan final : { msg, warning } — le
+// toast d'échec reste immédiat (il n'y a plus rien à attendre).
+function fetchSummary(result) {
     if (!result || result.success === false) {
         showError(t('La récupération a échoué'), t('Lab Caches'));
-        return;
+        return null;
     }
     const resolved = result.resolved || 0;
     const failed = (result.failed_uuids || []).length;
@@ -870,10 +947,9 @@ function reportFetch(result) {
         // attend une relance.
         console.warn('[LABS] récupération interrompue:', result.error);
         msg += ' ' + t('Le service a cessé de répondre avant la fin — relancez la récupération pour terminer.');
-        showWarning(msg, t('Lab Caches'));
-    } else {
-        showSuccess(msg, t('Lab Caches'));
+        return { msg, warning: true };
     }
+    return { msg, warning: false };
 }
 
 // ------------------------------------------------- étapes en attente

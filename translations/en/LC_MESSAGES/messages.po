@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-16 19:56+0200\n"
+"POT-Creation-Date: 2026-10-16 20:39+0200\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -972,7 +972,7 @@ msgstr "The selected file is empty"
 msgid "Un import est déjà en cours, veuillez patienter."
 msgstr "An import is already running, please wait."
 
-#: static/js/bdd.js:287 static/js/bdd.js:1446
+#: static/js/bdd.js:287 static/js/bdd.js:1449
 msgid "Import en cours"
 msgstr "Import in progress"
 
@@ -980,7 +980,7 @@ msgstr "Import in progress"
 msgid "Analyse du fichier GPX en cours..."
 msgstr "Analyzing GPX file..."
 
-#: static/js/bdd.js:297 static/js/bdd.js:1132 static/js/bdd.js:1225
+#: static/js/bdd.js:297 static/js/bdd.js:1135 static/js/bdd.js:1228
 #: static/js/evolution_data.js:328 static/js/notifications.js:266
 #: static/js/notifications.js:311
 msgid "Chargement"
@@ -1035,100 +1035,100 @@ msgstr "imported ${when}"
 msgid "Aucune géocache chargée"
 msgstr "No geocaches loaded"
 
-#: static/js/bdd.js:1060 static/js/bdd.js:1140
+#: static/js/bdd.js:1063 static/js/bdd.js:1143
 #, python-brace-format
 msgid "Envoi du fichier : ${pct}%"
 msgstr "Uploading file: ${pct}%"
 
-#: static/js/bdd.js:1072
+#: static/js/bdd.js:1075
 msgid "Réponse invalide du serveur"
 msgstr "Invalid server response"
 
-#: static/js/bdd.js:1076
+#: static/js/bdd.js:1079
 msgid "Impossible de lancer l'import GPX"
 msgstr "Unable to start the GPX import"
 
-#: static/js/bdd.js:1083 static/js/bdd.js:1087 static/js/bdd.js:1182
+#: static/js/bdd.js:1086 static/js/bdd.js:1090 static/js/bdd.js:1185
 msgid "Traitement du fichier en cours..."
 msgstr "Processing file..."
 
-#: static/js/bdd.js:1092 static/js/evolution_data.js:862
+#: static/js/bdd.js:1095 static/js/evolution_data.js:862
 msgid "Erreur réseau lors de l'envoi du fichier"
 msgstr "Network error while uploading the file"
 
-#: static/js/bdd.js:1093 static/js/evolution_data.js:863
+#: static/js/bdd.js:1096 static/js/evolution_data.js:863
 msgid "Envoi du fichier annulé"
 msgstr "File upload cancelled"
 
-#: static/js/bdd.js:1107
+#: static/js/bdd.js:1110
 msgid "Veuillez sélectionner un fichier .gpx"
 msgstr "Please select a .gpx file"
 
-#: static/js/bdd.js:1107
+#: static/js/bdd.js:1110
 msgid "Aucun fichier"
 msgstr "No file"
 
-#: static/js/bdd.js:1132 static/js/bdd.js:1133 static/js/bdd.js:1138
+#: static/js/bdd.js:1135 static/js/bdd.js:1136 static/js/bdd.js:1141
 msgid "Préparation de l'envoi..."
 msgstr "Preparing upload..."
 
-#: static/js/bdd.js:1151
+#: static/js/bdd.js:1154
 msgid "Fichier chargé avec succès !"
 msgstr "File uploaded successfully!"
 
-#: static/js/bdd.js:1151 static/js/mapgl.js:4314
+#: static/js/bdd.js:1154 static/js/mapgl.js:4314
 msgid "Terminé"
 msgstr "Done"
 
-#: static/js/bdd.js:1161 static/js/bdd.js:1523
+#: static/js/bdd.js:1164 static/js/bdd.js:1526
 msgid "Chargement et affichage des points..."
 msgstr "Loading and displaying points..."
 
-#: static/js/bdd.js:1181 static/js/bdd.js:1189
+#: static/js/bdd.js:1184 static/js/bdd.js:1192
 msgid "Erreur lors du chargement du fichier"
 msgstr "Error while uploading the file"
 
-#: static/js/bdd.js:1181 static/js/bdd.js:1189 static/js/bdd.js:1307
-#: static/js/bdd.js:1315 static/js/bdd.js:1509 static/js/evolution_data.js:247
+#: static/js/bdd.js:1184 static/js/bdd.js:1192 static/js/bdd.js:1310
+#: static/js/bdd.js:1318 static/js/bdd.js:1512 static/js/evolution_data.js:247
 #: static/js/evolution_data.js:351 static/js/evolution_data.js:909
 #: static/js/evolution_data.js:913 static/js/evolution_data.js:1263
 #: static/js/evolution_data.js:1301 static/js/evolution_data.js:1309
-#: static/js/labs.js:1265 static/js/labs.js:1293 static/js/labs.js:1328
+#: static/js/labs.js:1429 static/js/labs.js:1457 static/js/labs.js:1492
 #: static/js/notifications.js:379 static/js/recording_perf.js:187
 #: static/js/ui.js:1827
 msgid "Erreur"
 msgstr "Error"
 
-#: static/js/bdd.js:1223 static/js/bdd.js:1225
+#: static/js/bdd.js:1226 static/js/bdd.js:1228
 msgid "Chargement de l'application..."
 msgstr "Loading the application..."
 
-#: static/js/bdd.js:1240
+#: static/js/bdd.js:1243
 msgid "Impossible de lancer le chargement des données"
 msgstr "Unable to start loading the data"
 
-#: static/js/bdd.js:1307 static/js/bdd.js:1315
+#: static/js/bdd.js:1310 static/js/bdd.js:1318
 msgid "Erreur lors du chargement des données"
 msgstr "Error while loading data"
 
-#: static/js/bdd.js:1383
+#: static/js/bdd.js:1386
 #, python-brace-format
 msgid "${selected} / ${total}"
 msgstr "${selected} / ${total}"
 
-#: static/js/bdd.js:1409
+#: static/js/bdd.js:1412
 msgid "Aucune cache ne correspond aux critères sélectionnés par les filtres."
 msgstr "No cache matches the criteria selected by the filters."
 
-#: static/js/bdd.js:1409
+#: static/js/bdd.js:1412
 msgid "Aucune cache visible"
 msgstr "No visible cache"
 
-#: static/js/bdd.js:1446
+#: static/js/bdd.js:1449
 msgid "Un import est en cours, veuillez patienter avant de supprimer les données."
 msgstr "An import is in progress, please wait before deleting the data."
 
-#: static/js/bdd.js:1456
+#: static/js/bdd.js:1459
 msgid ""
 "Êtes-vous sûr de vouloir supprimer toutes vos trouvailles ? Cette action "
 "est irréversible."
@@ -1136,51 +1136,51 @@ msgstr ""
 "Are you sure you want to delete all your finds? This action is "
 "irreversible."
 
-#: static/js/bdd.js:1457 static/js/labs.js:1310
+#: static/js/bdd.js:1460 static/js/labs.js:1474
 msgid "Confirmation de suppression"
 msgstr "Deletion confirmation"
 
-#: static/js/bdd.js:1460 templates/guide.html:159 templates/menu_data.html:60
+#: static/js/bdd.js:1463 templates/guide.html:159 templates/menu_data.html:60
 msgid "Supprimer mes géocaches"
 msgstr "Delete my geocaches"
 
-#: static/js/bdd.js:1465
+#: static/js/bdd.js:1468
 msgid "Confirmation non disponible, action annulée."
 msgstr "Confirmation unavailable, action cancelled."
 
-#: static/js/bdd.js:1465 static/js/bdd.js:1476
+#: static/js/bdd.js:1468 static/js/bdd.js:1479
 msgid "Suppression"
 msgstr "Deletion"
 
-#: static/js/bdd.js:1476
+#: static/js/bdd.js:1479
 msgid "Suppression des trouvailles..."
 msgstr "Deleting finds..."
 
-#: static/js/bdd.js:1498
+#: static/js/bdd.js:1501
 msgid "Trouvailles supprimées avec succès"
 msgstr "Finds deleted successfully"
 
-#: static/js/bdd.js:1498 static/js/labs.js:1326
+#: static/js/bdd.js:1501 static/js/labs.js:1490
 msgid "Suppression réussie"
 msgstr "Deletion successful"
 
-#: static/js/bdd.js:1509
+#: static/js/bdd.js:1512
 msgid "Erreur lors de la suppression des trouvailles: "
 msgstr "Error while deleting finds: "
 
-#: static/js/bdd.js:1523 static/js/mapgl.js:626 static/js/notifications.js:337
+#: static/js/bdd.js:1526 static/js/mapgl.js:626 static/js/notifications.js:337
 msgid "Affichage des points"
 msgstr "Points display"
 
-#: static/js/bdd.js:1529
+#: static/js/bdd.js:1532
 msgid "Impossible de lancer la génération du GeoJSON"
 msgstr "Unable to start GeoJSON generation"
 
-#: static/js/bdd.js:1541 static/js/bdd.js:1601 static/js/bdd.js:1609
+#: static/js/bdd.js:1544 static/js/bdd.js:1604 static/js/bdd.js:1612
 msgid "Erreur lors de l'affichage des points sur la carte"
 msgstr "Error while displaying the points on the map"
 
-#: static/js/bdd.js:1541 static/js/bdd.js:1601 static/js/bdd.js:1609
+#: static/js/bdd.js:1544 static/js/bdd.js:1604 static/js/bdd.js:1612
 msgid "Erreur d'affichage"
 msgstr "Display error"
 
@@ -1294,7 +1294,7 @@ msgstr "Uploading files..."
 msgid "Import en cours..."
 msgstr "Import in progress..."
 
-#: static/js/evolution_data.js:832 static/js/labs.js:771
+#: static/js/evolution_data.js:832 static/js/labs.js:918
 msgid "L'import a échoué"
 msgstr "The import failed"
 
@@ -1431,7 +1431,7 @@ msgstr "Unrecognized sizes (kept as is): ${sizes}"
 msgid "code GC"
 msgstr "GC code"
 
-#: static/js/evolution_data.js:1142 static/js/labs.js:402 static/js/labs.js:487
+#: static/js/evolution_data.js:1142 static/js/labs.js:508 static/js/labs.js:593
 msgid "coordonnées"
 msgstr "coordinates"
 
@@ -1526,7 +1526,7 @@ msgstr "The local server is not responding (timed out)"
 msgid "Erreur lors du chargement des couleurs GC (${status}): ${statusText}"
 msgstr "Error loading GC colors (${status}): ${statusText}"
 
-#: static/js/labs.js:116
+#: static/js/labs.js:132
 msgid ""
 "Glissez ce bouton dans la barre de favoris de votre navigateur, puis "
 "cliquez-le depuis la page de vos logs Adventure Lab."
@@ -1534,58 +1534,47 @@ msgstr ""
 "Drag this button into your browser's bookmarks bar, then click it from "
 "your Adventure Lab logs page."
 
-#: static/js/labs.js:117 templates/menu_data.html:126
+#: static/js/labs.js:133 templates/menu_data.html:126
 msgid "Envoyer vers MyGCFlow"
 msgstr "Send to MyGCFlow"
 
-#: static/js/labs.js:191
-msgid "Vos Lab Caches ont été mis à jour."
-msgstr "Your Lab Caches have been updated."
-
-#: static/js/labs.js:191 static/js/labs.js:312 static/js/labs.js:793
-#: static/js/labs.js:847 static/js/labs.js:906 static/js/labs.js:922
-#: static/js/labs.js:928 static/js/labs.js:948 static/js/labs.js:950
-#: templates/_filter_cache_attrs.html:37 templates/menu_filtre.html:13
-msgid "Lab Caches"
-msgstr "Lab Caches"
-
-#: static/js/labs.js:197
+#: static/js/labs.js:267
 msgid "Statut indisponible"
 msgstr "Status unavailable"
 
-#: static/js/labs.js:220 templates/menu_data.html:77
+#: static/js/labs.js:295 templates/menu_data.html:77
 msgid "Aucun Lab Cache importé"
 msgstr "No Lab Caches imported"
 
-#: static/js/labs.js:226
+#: static/js/labs.js:301
 #, python-brace-format
 msgid "${total} étape(s) importée(s) — aucune encore prête"
 msgstr "${total} stage(s) imported — none ready yet"
 
-#: static/js/labs.js:230
+#: static/js/labs.js:305
 msgid "étapes"
 msgstr "stages"
 
-#: static/js/labs.js:230
+#: static/js/labs.js:305
 msgid "étape"
 msgstr "stage"
 
-#: static/js/labs.js:231
+#: static/js/labs.js:306
 msgid "sur la carte"
 msgstr "on the map"
 
-#: static/js/labs.js:232
+#: static/js/labs.js:307
 msgid "à compléter"
 msgstr "to complete"
 
-#: static/js/labs.js:246
+#: static/js/labs.js:321
 #, python-brace-format
 msgid ""
 "${count} étape(s) ne sont pas encore sur la carte : position ou date "
 "manquante."
 msgstr "${count} stage(s) are not on the map yet: position or date missing."
 
-#: static/js/labs.js:247
+#: static/js/labs.js:322
 #, python-brace-format
 msgid ""
 "${count} étape(s) n'ont pas pu être placées automatiquement : leur "
@@ -1594,68 +1583,74 @@ msgstr ""
 "${count} stage(s) could not be placed automatically: their position "
 "cannot be found. You can complete them by hand."
 
-#: static/js/labs.js:362
+#: static/js/labs.js:391 static/js/labs.js:900 static/js/labs.js:902
+#: static/js/labs.js:943 static/js/labs.js:1067 static/js/labs.js:1083
+#: static/js/labs.js:1093 templates/_filter_cache_attrs.html:37
+#: templates/menu_filtre.html:13
+msgid "Lab Caches"
+msgstr "Lab Caches"
+
+#: static/js/labs.js:468
 msgid "Analyse de vos fichiers…"
 msgstr "Analysing your files…"
 
-#: static/js/labs.js:375
+#: static/js/labs.js:481
 msgid "Erreur lors de l'analyse"
 msgstr "Error while analyzing"
 
-#: static/js/labs.js:375 static/js/labs.js:640 static/js/labs.js:778
-#: static/js/labs.js:814
+#: static/js/labs.js:481 static/js/labs.js:746 static/js/labs.js:927
 msgid "Import Lab Caches"
 msgstr "Lab Caches import"
 
-#: static/js/labs.js:388
+#: static/js/labs.js:494
 msgid "Import impossible"
 msgstr "Import not possible"
 
-#: static/js/labs.js:395 static/js/labs.js:569 static/js/labs.js:612
+#: static/js/labs.js:501 static/js/labs.js:675 static/js/labs.js:718
 #, python-brace-format
 msgid "… et ${n} autre(s)"
 msgstr "… and ${n} more"
 
-#: static/js/labs.js:401
+#: static/js/labs.js:507
 msgid "historique"
 msgstr "history"
 
-#: static/js/labs.js:409
+#: static/js/labs.js:515
 #, python-brace-format
 msgid "${n} nouvelle(s)"
 msgstr "${n} new"
 
-#: static/js/labs.js:410
+#: static/js/labs.js:516
 #, python-brace-format
 msgid "${n} mise(s) à jour"
 msgstr "${n} updated"
 
-#: static/js/labs.js:411
+#: static/js/labs.js:517
 #, python-brace-format
 msgid "${n} identique(s)"
 msgstr "${n} unchanged"
 
-#: static/js/labs.js:412
+#: static/js/labs.js:518
 #, python-brace-format
 msgid "${n} résolue(s)"
 msgstr "${n} resolved"
 
-#: static/js/labs.js:413
+#: static/js/labs.js:519
 #, python-brace-format
 msgid "${n} ignorée(s)"
 msgstr "${n} ignored"
 
-#: static/js/labs.js:414
+#: static/js/labs.js:520
 #, python-brace-format
 msgid "${n} rejetée(s)"
 msgstr "${n} rejected"
 
-#: static/js/labs.js:415
+#: static/js/labs.js:521
 #, python-brace-format
 msgid "${n} conflit(s)"
 msgstr "${n} conflict(s)"
 
-#: static/js/labs.js:460
+#: static/js/labs.js:566
 #, python-brace-format
 msgid ""
 "Après import : ${total} étape(s), dont ${ready} affichable(s) et "
@@ -1664,133 +1659,137 @@ msgstr ""
 "After import: ${total} stage(s), of which ${ready} displayable and "
 "${pending} pending."
 
-#: static/js/labs.js:488
+#: static/js/labs.js:594
 msgid "date"
 msgstr "date"
 
-#: static/js/labs.js:489
+#: static/js/labs.js:595
 msgid "identifiant d'Adventure"
 msgstr "Adventure identifier"
 
-#: static/js/labs.js:490
+#: static/js/labs.js:596
 msgid "identifiant d'étape"
 msgstr "stage identifier"
 
-#: static/js/labs.js:511
+#: static/js/labs.js:617
 #, python-brace-format
 msgid ""
 "Conflits (${n}) — sans choix de votre part, la valeur existante est "
 "conservée"
 msgstr "Conflicts (${n}) — unless you choose otherwise, the existing value is kept"
 
-#: static/js/labs.js:522 static/js/labs.js:1121
+#: static/js/labs.js:628 static/js/labs.js:1285
 msgid "(étape sans titre)"
 msgstr "(untitled stage)"
 
-#: static/js/labs.js:534
+#: static/js/labs.js:640
 msgid "conservé"
 msgstr "kept"
 
-#: static/js/labs.js:535
+#: static/js/labs.js:641
 msgid "reçu"
 msgstr "received"
 
-#: static/js/labs.js:536
+#: static/js/labs.js:642
 msgid "(correction manuelle)"
 msgstr "(manual correction)"
 
-#: static/js/labs.js:545
+#: static/js/labs.js:651
 msgid "Garder"
 msgstr "Keep"
 
-#: static/js/labs.js:545 templates/menu_style.html:384
+#: static/js/labs.js:651 templates/menu_style.html:384
 msgid "Remplacer"
 msgstr "Replace"
 
-#: static/js/labs.js:601
+#: static/js/labs.js:707
 #, python-brace-format
 msgid "Avertissements (${n})"
 msgstr "Warnings (${n})"
 
-#: static/js/labs.js:625 static/js/labs.js:770
+#: static/js/labs.js:731 static/js/labs.js:917
 msgid "Import de vos Lab Caches…"
 msgstr "Importing your Lab Caches…"
 
-#: static/js/labs.js:634
+#: static/js/labs.js:740
 msgid "Import refusé"
 msgstr "Import refused"
 
-#: static/js/labs.js:640 static/js/labs.js:778
+#: static/js/labs.js:746 static/js/labs.js:927
 msgid "Erreur lors de l'import"
 msgstr "Error while importing"
 
-#: static/js/labs.js:657
+#: static/js/labs.js:763
 msgid "Délai d'attente dépassé"
 msgstr "Timeout exceeded"
 
-#: static/js/labs.js:670 static/js/profiles.js:325
+#: static/js/labs.js:776 static/js/profiles.js:325
 msgid "Import échoué"
 msgstr "Import failed"
 
-#: static/js/labs.js:775 static/js/labs.js:789 static/js/labs.js:911
+#: static/js/labs.js:894
+msgid ""
+"Les Lab Caches sont maintenant affichés (réglable via « Découvertes "
+"affichées »)."
+msgstr "Lab Caches are now displayed (adjustable via “Discoveries shown”)."
+
+#: static/js/labs.js:902
+msgid "Vos Lab Caches ont été mis à jour."
+msgstr "Your Lab Caches have been updated."
+
+#: static/js/labs.js:923 static/js/labs.js:939 static/js/labs.js:1072
 msgid "Placement de vos étapes sur la carte…"
 msgstr "Placing your stages on the map…"
 
-#: static/js/labs.js:793 static/js/labs.js:922
+#: static/js/labs.js:943 static/js/labs.js:1083
 msgid "Erreur de récupération"
 msgstr "Retrieval error"
 
-#: static/js/labs.js:806
+#: static/js/labs.js:962
 #, python-brace-format
-msgid "${added} étape(s) importée(s). Placement sur la carte en cours…"
-msgstr "${added} stage(s) imported. Placing them on the map…"
+msgid "${added} étape(s) importée(s)."
+msgstr "${added} stage(s) imported."
 
-#: static/js/labs.js:807
+#: static/js/labs.js:963
 #, python-brace-format
 msgid ""
 "${added} étape(s) importée(s) — ${ready} affichable(s), ${pending} en "
 "attente."
 msgstr "${added} stage(s) imported — ${ready} displayable, ${pending} pending."
 
-#: static/js/labs.js:812
+#: static/js/labs.js:968
 #, python-brace-format
 msgid "${n} conflit(s) — valeurs existantes conservées."
 msgstr "${n} conflict(s) — existing values kept."
 
-#: static/js/labs.js:847
-msgid ""
-"Les Lab Caches sont maintenant affichés (réglable via « Découvertes "
-"affichées »)."
-msgstr "Lab Caches are now displayed (adjustable via “Discoveries shown”)."
-
-#: static/js/labs.js:906
+#: static/js/labs.js:1067
 msgid "Réglage non enregistré"
 msgstr "Setting not saved"
 
-#: static/js/labs.js:916
+#: static/js/labs.js:1077
 msgid "Récupération refusée"
 msgstr "Retrieval refused"
 
-#: static/js/labs.js:928
+#: static/js/labs.js:1093
 msgid "La récupération a échoué"
 msgstr "The retrieval failed"
 
-#: static/js/labs.js:934
+#: static/js/labs.js:1099
 #, python-brace-format
 msgid "${n} étape(s) placée(s) sur la carte."
 msgstr "${n} stage(s) placed on the map."
 
-#: static/js/labs.js:936
+#: static/js/labs.js:1101
 #, python-brace-format
 msgid "${n} Adventure(s) introuvable(s) par le service."
 msgstr "${n} Adventure(s) not found by the service."
 
-#: static/js/labs.js:939
+#: static/js/labs.js:1104
 #, python-brace-format
 msgid "${n} étape(s) restent à compléter."
 msgstr "${n} stage(s) still to complete."
 
-#: static/js/labs.js:947
+#: static/js/labs.js:1112
 msgid ""
 "Le service a cessé de répondre avant la fin — relancez la récupération "
 "pour terminer."
@@ -1798,45 +1797,45 @@ msgstr ""
 "The service stopped responding before the end — run the fetch again to "
 "finish."
 
-#: static/js/labs.js:985
+#: static/js/labs.js:1149
 msgid "Chargement impossible"
 msgstr "Unable to load"
 
-#: static/js/labs.js:999
+#: static/js/labs.js:1163
 msgid "Adventure(s)"
 msgstr "Adventure(s)"
 
-#: static/js/labs.js:1010
+#: static/js/labs.js:1174
 msgid "Aucune étape en attente sur cette page."
 msgstr "No pending stage on this page."
 
-#: static/js/labs.js:1036
+#: static/js/labs.js:1200
 msgid "Adventure inconnue"
 msgstr "Unknown Adventure"
 
-#: static/js/labs.js:1041
+#: static/js/labs.js:1205
 msgid "archivée"
 msgstr "archived"
 
-#: static/js/labs.js:1046
+#: static/js/labs.js:1210
 #, python-brace-format
 msgid "${n} étape(s) en attente"
 msgstr "${n} pending stage(s)"
 
-#: static/js/labs.js:1068
+#: static/js/labs.js:1232
 msgid "Détail des étapes"
 msgstr "Stage details"
 
-#: static/js/labs.js:1084
+#: static/js/labs.js:1248
 msgid "Position de l'Adventure"
 msgstr "Adventure position"
 
-#: static/js/labs.js:1091
+#: static/js/labs.js:1255
 #, python-brace-format
 msgid "Placer les ${n} étapes ici"
 msgstr "Place the ${n} stages here"
 
-#: static/js/labs.js:1099
+#: static/js/labs.js:1263
 msgid ""
 "Toutes ses étapes sans position y seront placées, signalées comme "
 "approximatives."
@@ -1844,58 +1843,58 @@ msgstr ""
 "All its stages without a position will be placed there, marked as "
 "approximate."
 
-#: static/js/labs.js:1128
+#: static/js/labs.js:1292
 msgid "date manquante"
 msgstr "missing date"
 
-#: static/js/labs.js:1129
+#: static/js/labs.js:1293
 msgid "coordonnées manquantes"
 msgstr "missing coordinates"
 
-#: static/js/labs.js:1130
+#: static/js/labs.js:1294
 msgid "introuvables par le service lab2gpx"
 msgstr "not found by the lab2gpx service"
 
-#: static/js/labs.js:1137 templates/guide.html:213
+#: static/js/labs.js:1301 templates/guide.html:213
 #: templates/menu_informations.html:99
 msgid "Position"
 msgstr "Position"
 
-#: static/js/labs.js:1152
+#: static/js/labs.js:1316
 #, python-brace-format
 msgid "Suggestion : ${lat}, ${lon} — même titre dans l'Adventure"
 msgstr "Suggestion: ${lat}, ${lon} — same title in the Adventure"
 
-#: static/js/labs.js:1159
+#: static/js/labs.js:1323
 msgid "Utiliser la suggestion"
 msgstr "Use suggestion"
 
-#: static/js/labs.js:1167
+#: static/js/labs.js:1331
 msgid "Date de découverte"
 msgstr "Discovery date"
 
-#: static/js/labs.js:1175
+#: static/js/labs.js:1339
 msgid "Enregistrer"
 msgstr "Save"
 
-#: static/js/labs.js:1244
+#: static/js/labs.js:1408
 msgid "Correction refusée"
 msgstr "Correction refused"
 
-#: static/js/labs.js:1251 static/js/labs.js:1275
+#: static/js/labs.js:1415 static/js/labs.js:1439
 msgid "Rien à enregistrer"
 msgstr "Nothing to save"
 
-#: static/js/labs.js:1261
+#: static/js/labs.js:1425
 #, python-brace-format
 msgid "${n} étape(s) placée(s) en ${lat}, ${lon}."
 msgstr "${n} stage(s) placed at ${lat}, ${lon}."
 
-#: static/js/labs.js:1287 static/js/saved_indicator.mjs:114
+#: static/js/labs.js:1451 static/js/saved_indicator.mjs:114
 msgid "Enregistré"
 msgstr "Saved"
 
-#: static/js/labs.js:1309
+#: static/js/labs.js:1473
 msgid ""
 "Supprimer toutes vos étapes Lab Caches ? Vos géocaches sont conservées. "
 "Cette action est irréversible."
@@ -1903,19 +1902,19 @@ msgstr ""
 "Delete all your Lab Cache stages? Your geocaches are kept. This action "
 "cannot be undone."
 
-#: static/js/labs.js:1313 templates/menu_data.html:145
+#: static/js/labs.js:1477 templates/menu_data.html:145
 msgid "Supprimer mes Lab Caches"
 msgstr "Delete my Lab Caches"
 
-#: static/js/labs.js:1319
+#: static/js/labs.js:1483
 msgid "Erreur inconnue"
 msgstr "Unknown error"
 
-#: static/js/labs.js:1326
+#: static/js/labs.js:1490
 msgid "Lab Caches supprimés"
 msgstr "Lab Caches deleted"
 
-#: static/js/labs.js:1328
+#: static/js/labs.js:1492
 msgid "Erreur lors de la suppression"
 msgstr "Error while deleting"
 
@@ -9547,4 +9546,7 @@ msgstr "Save a copy as…"
 
 #~ msgid "Aucune trouvaille chargée"
 #~ msgstr "No finds loaded"
+
+#~ msgid "${added} étape(s) importée(s). Placement sur la carte en cours…"
+#~ msgstr "${added} stage(s) imported. Placing them on the map…"
 
