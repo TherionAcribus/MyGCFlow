@@ -643,23 +643,44 @@ async function onPreviewConfirm() {
     }
 }
 
+// Bornes du suivi d'une tâche, distinctes :
+// - réseau : chaque requête est abandonnée après `taskHttpTimeoutMs`
+//   (AbortController) et dix erreurs consécutives mettent fin au suivi ;
+// - tâche figée : la signature `état|progression|message` doit évoluer sous
+//   `taskStallTimeoutMs` — répondre running/50 % en boucle n'est pas une
+//   activité et finit signalé comme blocage.
+// Surchargées par les tests (les valeurs réelles sont longues : 10 s et 5 min).
+let taskStallTimeoutMs = 5 * 60 * 1000;
+let taskHttpTimeoutMs = 10 * 1000;
+
+export function setLabTaskPollLimits({ stallMs = null, httpMs = null } = {}) {
+    if (Number.isFinite(stallMs)) taskStallTimeoutMs = stallMs;
+    if (Number.isFinite(httpMs)) taskHttpTimeoutMs = httpMs;
+}
+
 // Interroge une tâche serveur jusqu'à son terme : résout avec son résultat,
-// rejette si elle échoue ou si le serveur ne répond plus. `onProgress` reçoit
-// le pourcentage et le message de progression de la tâche.
-function pollLabTask(taskId, onProgress, { intervalMs = 500, stallTimeoutMs = 120000 } = {}) {
+// rejette si elle échoue, si le serveur ne répond plus ou si la tâche n'évolue
+// plus. `onProgress` n'est appelé que lorsque la progression change.
+function pollLabTask(taskId, onProgress, { intervalMs = 500 } = {}) {
     return new Promise((resolve, reject) => {
-        let lastActivityAt = Date.now();
+        let lastProgressAt = Date.now(); // dernière évolution de la signature
+        let lastSignature = null;
         let consecutiveErrors = 0;
         const nextDelay = () => (mapBusy() ? Math.max(intervalMs, TASK_POLL_BUSY_MS) : intervalMs);
         const tick = () => {
-            if (Date.now() - lastActivityAt > stallTimeoutMs) {
-                reject(new Error(t("Délai d'attente dépassé")));
+            if (Date.now() - lastProgressAt > taskStallTimeoutMs) {
+                reject(new Error(t('La tâche semble bloquée — aucune progression depuis plusieurs minutes.')));
                 return;
             }
-            fetch(`${CONFIG.BASE_URL}/tasks/${encodeURIComponent(taskId)}?include_result=true`)
-                .then(r => r.json())
+            const ctrl = new AbortController();
+            const httpTimer = setTimeout(() => ctrl.abort(), taskHttpTimeoutMs);
+            fetch(`${CONFIG.BASE_URL}/tasks/${encodeURIComponent(taskId)}?include_result=true`, { signal: ctrl.signal })
+                .then(r => {
+                    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                    return r.json();
+                })
                 .then(status => {
-                    lastActivityAt = Date.now();
+                    clearTimeout(httpTimer);
                     consecutiveErrors = 0;
                     if (status?.state === 'finished') {
                         resolve(status.result || {});
@@ -669,12 +690,21 @@ function pollLabTask(taskId, onProgress, { intervalMs = 500, stallTimeoutMs = 12
                         reject(new Error(status?.error || t('Import échoué')));
                         return;
                     }
-                    onProgress?.(status?.progress, status?.message || '');
+                    const signature = `${status?.state}|${status?.progress}|${status?.message}`;
+                    if (signature !== lastSignature) {
+                        lastSignature = signature;
+                        lastProgressAt = Date.now();
+                        onProgress?.(status?.progress, status?.message || '');
+                    }
                     setTimeout(tick, nextDelay());
                 })
-                .catch(err => {
+                .catch(() => {
+                    clearTimeout(httpTimer);
                     consecutiveErrors++;
-                    if (consecutiveErrors >= 10) { reject(err); return; }
+                    if (consecutiveErrors >= 10) {
+                        reject(new Error(t('Le serveur ne répond plus — vérifiez sa disponibilité.')));
+                        return;
+                    }
                     setTimeout(tick, nextDelay());
                 });
         };

@@ -1035,6 +1035,92 @@ test('l\'activité se transforme en un toast unique hors de l\'onglet Données',
 });
 
 
+// ------------------------------------------------- suivi de tâche (délais)
+//
+// Lot 2.2 : le suivi abandonne une tâche figée (signature
+// état|progression|message inchangée) et des erreurs HTTP répétées ; une
+// tâche qui progresse, aussi longue soit-elle, n'est jamais interrompue.
+
+async function setShortTaskLimits(page) {
+  await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    app.setLabTaskPollLimits({ stallMs: 2000, httpMs: 1500 });
+  });
+}
+
+async function startFakeImport(page, { taskBody }) {
+  await page.route('**/api/labs/import/commit', route => route.fulfill({
+    status: 202, json: { success: true, task_id: 'fake-import' } }));
+  await page.route('**/tasks/fake-import*', taskBody);
+  await page.locator('#labs-file-input').setInputFiles([HISTORY]);
+  await expect(page.locator('#labsPreviewModal')).toBeVisible({ timeout: 20_000 });
+  await page.locator('#labsPreviewConfirmBtn').click();
+}
+
+
+test('une tâche figée running/50 % finit signalée comme bloquée', async ({ page }) => {
+  await openReadyApp(page);
+  await setShortTaskLimits(page);
+  // running/50 % éternel : la signature ne change jamais.
+  await startFakeImport(page, { taskBody: route => route.fulfill({ json: {
+    task_id: 'fake-import', type: 'lab_import', state: 'running',
+    progress: 50, message: 'Import Labs : historique.json' } }) });
+  const activity = page.locator('#labsActivity');
+  await expect(activity).toBeVisible({ timeout: 15_000 });
+
+  // Blocage signalé (~2 s), bloc retiré, un seul toast d'erreur.
+  await expect(page.locator('.gcm-toast.show', { hasText: 'bloquée' }))
+    .toHaveCount(1, { timeout: 15_000 });
+  await expect(activity).toBeHidden();
+});
+
+
+test('une tâche longue qui progresse n\'est jamais interrompue', async ({ page }) => {
+  await openReadyApp(page);
+  await setShortTaskLimits(page);
+  // Dix relevés à ~500 ms = ~5 s > 2 s de délai figé : chaque relevé fait
+  // évoluer la signature (progression + message), le délai est repoussé.
+  let polls = 0;
+  await startFakeImport(page, { taskBody: route => {
+    polls += 1;
+    route.fulfill({ json: polls < 10
+      ? { task_id: 'fake-import', type: 'lab_import', state: 'running',
+          progress: polls * 10, message: `Import Labs : ${polls}/10` }
+      : { task_id: 'fake-import', type: 'lab_import', state: 'finished', progress: 100,
+          result: { success: true, added: 2, total: 2, ready_total: 0, unresolved: 2 } } });
+  } });
+  const activity = page.locator('#labsActivity');
+  await expect(activity).toBeVisible({ timeout: 15_000 });
+
+  // Aucun toast de blocage : la tâche va à son terme et le bilan arrive.
+  await expect(activity).toBeHidden({ timeout: 15_000 });
+  await expect(page.locator('.gcm-toast.show', { hasText: 'bloquée' })).toHaveCount(0);
+  await expect(page.locator('.gcm-toast.show', { hasText: 'importée' }))
+    .toHaveCount(1, { timeout: 15_000 });
+});
+
+
+test('des erreurs HTTP répétées abandonnent le suivi sans boucler', async ({ page }) => {
+  await openReadyApp(page);
+  let polls = 0;
+  await startFakeImport(page, { taskBody: route => {
+    polls += 1;
+    route.fulfill({ status: 500, json: { error: 'boom' } });
+  } });
+  await expect(page.locator('#labsActivity')).toBeVisible({ timeout: 15_000 });
+
+  // Dix erreurs consécutives (~5 s) : abandon, message clair, bloc retiré.
+  await expect(page.locator('.gcm-toast.show', { hasText: 'ne répond plus' }))
+    .toHaveCount(1, { timeout: 20_000 });
+  await expect(page.locator('#labsActivity')).toBeHidden();
+
+  // Le suivi est vraiment arrêté : plus de requêtes ensuite.
+  const atStop = polls;
+  await page.waitForTimeout(2000);
+  expect(polls).toBeLessThanOrEqual(atStop + 1);
+});
+
+
 test('couleur et icône dédiées Adventure Lab sont déclarées', async ({ page }) => {
   await openReadyApp(page);
 
