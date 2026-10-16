@@ -307,6 +307,10 @@ class RecordingSettings:
     # Point de départ dans cette musique (secondes) : saute une intro. Propre
     # à la musique choisie, remis à 0 quand l'utilisateur en change.
     audio_start_seconds: float = 0.0
+    # Point de fin dans cette musique (secondes, position dans le fichier) :
+    # elle s'arrête là. 0 = jusqu'à la fin du fichier. Remis à 0 comme le
+    # point de départ.
+    audio_end_seconds: float = 0.0
     # Musiques récentes, la plus récente d'abord : [{file, name, start}] —
     # nom dans audio/, nom d'origine, point de départ. Tenue par le client.
     # Un enchaînement y garde aussi ses morceaux (`playlist`, cf. ci-dessous).
@@ -850,6 +854,7 @@ def coerce_recording_settings(d: dict) -> RecordingSettings:
     # Borne haute large (une journée) : le client le ramène sous la durée
     # réelle de la musique, inconnue ici.
     r.audio_start_seconds = _clamp_float(d.get("audio_start_seconds"), r.audio_start_seconds, 0.0, 86400.0)
+    r.audio_end_seconds = _clamp_float(d.get("audio_end_seconds"), r.audio_end_seconds, 0.0, 86400.0)
     r.audio_recent = _coerce_recent_music(d.get("audio_recent"))
     r.audio_playlist = _coerce_playlist(d.get("audio_playlist"))
     r.audio_playlist_crossfade = bool(d.get("audio_playlist_crossfade", r.audio_playlist_crossfade))
@@ -900,6 +905,7 @@ def _coerce_recent_music(value) -> list:
             "file": file_name,
             "name": name.strip()[:AUDIO_FILE_NAME_MAX_LENGTH] if isinstance(name, str) and name.strip() else file_name,
             "start": _clamp_float(item.get("start"), 0.0, 0.0, 86400.0),
+            "end": _clamp_float(item.get("end"), 0.0, 0.0, 86400.0),
         }
         playlist = _coerce_playlist(item.get("playlist"))
         if playlist:

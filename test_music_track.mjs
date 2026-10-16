@@ -16,7 +16,8 @@ test('une musique choisie passe en tête des récentes, sans doublon', () => {
 
 test('le point de départ d\'une musique récente suit ses changements', () => {
     const recent = [{ file: 'a', name: 'A', start: 0 }, { file: 'b', name: 'B', start: 5 }];
-    assert.deepEqual(withRecentStart(recent, 'a', 12), [{ file: 'a', name: 'A', start: 12 }, recent[1]]);
+    assert.deepEqual(withRecentStart(recent, 'a', 12), [{ file: 'a', name: 'A', start: 12, end: 0 }, recent[1]]);
+    assert.deepEqual(withRecentStart(recent, 'a', 12, 40)[0], { file: 'a', name: 'A', start: 12, end: 40 });
     assert.deepEqual(withRecentStart(recent, 'z', 12), recent);
     assert.deepEqual(withoutRecentMusic(recent, 'a'), [recent[1]]);
 });

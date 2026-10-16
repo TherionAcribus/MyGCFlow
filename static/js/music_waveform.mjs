@@ -64,8 +64,11 @@ export function waveformPeaks(channels, count = WAVEFORM_PEAK_COUNT) {
 // instant de la musique d'un clic.
 //   fileMs   : durée du fichier ;  videoMs : durée de la vidéo (0 = inconnue)
 //   startMs  : point de départ dans la musique (0 = début du fichier)
+//   endMs    : point de fin dans la musique (0 = fin du fichier)
 //   loopMs   : longueur du motif répété (depuis le départ), ou 0 sans boucle
 //   fadeMs   : durée du fondu de sortie, ou 0
+//   fadeEndMs: instant de la vidéo où il finit (là où la musique s'arrête ;
+//              0 = fin de la vidéo)
 //   fadeInMs : durée du fondu d'entrée, ou 0
 //   toleranceMs : écart en deçà duquel musique et vidéo sont de même durée
 //                 (ni partie coupée, ni fin muette : même règle que le texte
@@ -75,23 +78,33 @@ export function waveformPeaks(channels, count = WAVEFORM_PEAK_COUNT) {
 //               { startMs, endMs, sourceStartMs } — une seule sans boucle ;
 //               en boucle, la première montre aussi l'intro sautée
 //   startMs   : début de la vidéo sur l'axe (le point de départ)
+//   endMs     : point de fin sur l'axe
+//   videoEndMs: fin de la vidéo sur l'axe, ou null (inconnue, ou au bout de l'axe)
 //   intro     : début de la musique sauté, ou null
 //   loopPoints: instants où la boucle reprend au point de départ
-//   cut       : partie de la musique au-delà de la fin de la vidéo (non jouée) ;
-//               son début marque la fin de la vidéo
+//   cut       : partie de la musique qui n'est pas jouée, après son point de
+//               fin ou après la fin de la vidéo
 //   silent    : fin de vidéo sans musique (musique plus courte, sans boucle)
 //   fade      : fondu de sortie ;  fadeIn : fondu d'entrée
-export function musicTimeline({ fileMs, startMs = 0, videoMs = 0, loopMs = 0, fadeMs = 0, fadeInMs = 0, toleranceMs = 0 }) {
+export function musicTimeline({
+    fileMs, startMs = 0, endMs = 0, videoMs = 0, loopMs = 0, fadeMs = 0, fadeEndMs = 0, fadeInMs = 0, toleranceMs = 0,
+}) {
     const empty = {
-        spanMs: 0, startMs: 0, segments: [], intro: null, loopPoints: [], cut: null, silent: null, fade: null, fadeIn: null,
+        spanMs: 0, startMs: 0, endMs: 0, videoEndMs: null, segments: [], intro: null, loopPoints: [],
+        cut: null, silent: null, fade: null, fadeIn: null,
     };
     if (!(fileMs > 0)) return empty;
     const start = Math.max(0, Math.min(Number(startMs) || 0, fileMs));
+    const end = endMs > start ? Math.min(endMs, fileMs) : fileMs;
     const hasVideo = videoMs > 0;
     const loop = hasVideo && loopMs > 0;
     const videoEnd = start + (hasVideo ? videoMs : 0);
     const spanMs = loop ? videoEnd : Math.max(fileMs, videoEnd);
     const beyond = (a, b) => a - b > toleranceMs;
+    // Fin de la musique entendue : la vidéo en boucle, sinon le point de fin
+    // ou la fin de la vidéo, le premier atteint.
+    const playedEnd = loop ? videoEnd : (hasVideo ? Math.min(end, videoEnd) : end);
+    const fadeEnd = start + (fadeEndMs > 0 ? fadeEndMs : videoMs);
 
     const segments = [];
     const loopPoints = [];
@@ -107,12 +120,15 @@ export function musicTimeline({ fileMs, startMs = 0, videoMs = 0, loopMs = 0, fa
     return {
         spanMs,
         startMs: start,
+        endMs: end,
+        videoEndMs: hasVideo && videoEnd < spanMs ? videoEnd : null,
         segments,
         intro: start > 0 ? { startMs: 0, endMs: start } : null,
         loopPoints,
-        cut: hasVideo && beyond(spanMs, videoEnd) ? { startMs: videoEnd, endMs: spanMs } : null,
-        silent: hasVideo && !loop && beyond(videoEnd, fileMs) ? { startMs: fileMs, endMs: videoEnd } : null,
-        fade: hasVideo && fadeMs > 0 ? { startMs: Math.max(start, videoEnd - fadeMs), endMs: videoEnd } : null,
+        // Jusqu'à la fin du fichier : au-delà, c'est la fin muette (silent).
+        cut: !loop && beyond(fileMs, playedEnd) ? { startMs: playedEnd, endMs: fileMs } : null,
+        silent: hasVideo && !loop && beyond(videoEnd, end) ? { startMs: end, endMs: videoEnd } : null,
+        fade: fadeMs > 0 && fadeEnd > start ? { startMs: Math.max(start, fadeEnd - fadeMs), endMs: fadeEnd } : null,
         fadeIn: hasVideo && fadeInMs > 0 ? { startMs: start, endMs: Math.min(videoEnd, start + fadeInMs) } : null,
     };
 }
@@ -165,11 +181,11 @@ export function listenFromTimelineMs(ms, timeline, { videoMs = 0, listenEndMs = 
     return from;
 }
 
-// Point de départ après une touche sur sa poignée (curseur accessible) : les
-// flèches le déplacent d'un dixième de seconde (d'une seconde avec Maj),
-// Page haut/bas de dix secondes, Début/Fin le portent aux bornes. null pour
-// une autre touche.
-export function musicStartForKey(key, { currentMs = 0, maxMs = 0, shift = false } = {}) {
+// Point de départ (ou de fin) après une touche sur sa poignée (curseur
+// accessible) : les flèches le déplacent d'un dixième de seconde (d'une
+// seconde avec Maj), Page haut/bas de dix secondes, Début/Fin le portent aux
+// bornes `minMs` / `maxMs`. null pour une autre touche.
+export function musicStartForKey(key, { currentMs = 0, minMs = 0, maxMs = 0, shift = false } = {}) {
     const step = shift ? 1000 : 100;
     const moves = {
         ArrowRight: currentMs + step,
@@ -178,11 +194,11 @@ export function musicStartForKey(key, { currentMs = 0, maxMs = 0, shift = false 
         ArrowDown: currentMs - step,
         PageUp: currentMs + 10_000,
         PageDown: currentMs - 10_000,
-        Home: 0,
+        Home: minMs,
         End: maxMs,
     };
     if (!(key in moves)) return null;
-    return Math.max(0, Math.min(maxMs, moves[key]));
+    return Math.max(minMs, Math.min(maxMs, moves[key]));
 }
 
 // Instant affiché sur la poignée pendant son glissement : « 1:05.3 ».

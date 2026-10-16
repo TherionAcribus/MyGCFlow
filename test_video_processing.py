@@ -389,6 +389,26 @@ class VideoProcessingTests(unittest.TestCase):
                     else:
                         self.assertLess(abs(second_loop - opening), 3)
 
+    def test_an_end_point_stops_the_music_and_its_fade_out_ends_with_it(self):
+        """Musique de 6 s arrêtée à 3 s : la vidéo de 6 s continue en silence.
+        Avec un fondu de sortie d'1 s fini à 3 s, la musique baisse avant."""
+        for pipeline in ("images", "mediarecorder"):
+            for fade in (0.0, 1.0):
+                with self.subTest(pipeline=pipeline, fade=fade), tempfile.TemporaryDirectory() as tmp:
+                    tmp_path = Path(tmp)
+                    (tmp_path / "audio").mkdir()
+                    self._create_audio(tmp_path / "audio" / "tone.wav", 6)
+                    output = self._process_with_music(
+                        tmp_path, pipeline, audio_end=3.0, audio_fade_out=fade, audio_fade_out_end=3.0,
+                    )
+                    playing = self._mean_volume_db(output, 0.5, 1)
+                    self.assertGreater(playing - self._mean_volume_db(output, 4, 1), 30)
+                    fading = playing - self._mean_volume_db(output, 2.5, 0.4)
+                    if fade:
+                        self.assertGreater(fading, 6)
+                    else:
+                        self.assertLess(abs(fading), 3)
+
     def test_the_minimal_loop_join_keeps_the_music_continuous(self):
         """Raccord de 10 ms (envoyé par le client quand aucun fondu n'est
         demandé, contre le clic d'une coupe nette) : ffmpeg l'accepte et la

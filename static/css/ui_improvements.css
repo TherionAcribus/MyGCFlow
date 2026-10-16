@@ -2641,13 +2641,13 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
     fill: var(--color-surface);
     fill-opacity: 0.75;
 }
-/* Poignée du point de départ (setupMusicStartHandle, ui.js) : posée sur la
-   piste en HTML, hors du SVG étiré qui la déformerait. Zone de prise large,
-   trait fin et pastille au sommet. */
+/* Poignées des points de départ et de fin (setupMusicBoundHandles, ui.js) :
+   posées sur la piste en HTML, hors du SVG étiré qui les déformerait. Zone
+   de prise large, trait fin et pastille. */
 .music-waveform-track {
     position: relative;
 }
-.mw-start-handle {
+.mw-bound-handle {
     position: absolute;
     top: -4px;
     bottom: -4px;
@@ -2656,7 +2656,7 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
     cursor: ew-resize;
     touch-action: none;
 }
-.mw-start-handle::before {
+.mw-bound-handle::before {
     content: "";
     position: absolute;
     top: 4px;
@@ -2665,7 +2665,7 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
     width: 2px;
     background: var(--color-accent-strong);
 }
-.mw-start-handle::after {
+.mw-bound-handle::after {
     content: "";
     position: absolute;
     top: 0;
@@ -2676,16 +2676,16 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
     background: var(--color-accent-strong);
     border: 2px solid var(--color-surface);
 }
-.mw-start-handle:focus-visible {
+.mw-bound-handle:focus-visible {
     outline: 2px solid var(--color-accent);
     outline-offset: 1px;
     border-radius: 4px;
 }
 /* Instant visé pendant le glissement. */
-.mw-start-handle.dragging > .mw-start-time {
+.mw-bound-handle.dragging > .mw-handle-time {
     display: block;
 }
-.mw-start-time {
+.mw-handle-time {
     display: none;
     position: absolute;
     bottom: 100%;
@@ -2701,8 +2701,22 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
     background: var(--color-accent-strong);
     pointer-events: none;
 }
+/* Point de fin : pastille en bas, pour ne pas la confondre avec le départ. */
+.mw-end-handle::after {
+    top: auto;
+    bottom: 0;
+}
+.mw-end-handle > .mw-handle-time {
+    bottom: auto;
+    top: 100%;
+    margin-bottom: 0;
+    margin-top: 2px;
+}
+#audioEndRow[hidden] {
+    display: none !important;
+}
 /* Point de départ calculé (« Garder la fin du morceau ») : affiché, pas déplaçable. */
-.mw-start-handle[aria-disabled="true"] {
+.mw-bound-handle[aria-disabled="true"] {
     cursor: default;
     opacity: 0.6;
 }

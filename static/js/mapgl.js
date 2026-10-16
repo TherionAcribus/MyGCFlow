@@ -3580,6 +3580,10 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos, sess
                     body.audio_volume = audioVol;
                     body.audio_fade_out = pkg.audioFadeOutPlan()?.seconds || 0;
                     body.audio_start = pkg.audioStartMs() / 1000;
+                    // Point de fin dans la musique, et fin de son fondu de
+                    // sortie dans la vidéo (là où la musique s'arrête).
+                    body.audio_end = pkg.audioEndMs() / 1000;
+                    body.audio_fade_out_end = (pkg.audioFadeOutPlan()?.endMs || 0) / 1000;
                     body.audio_fade_in = pkg.audioFadeInPlan()?.seconds || 0;
                     const loop = pkg.audioLoopPlan();
                     if (loop) {
@@ -4368,6 +4372,7 @@ function finalizeMediaRecorderVideo(){
                     fadeIn: pkg.audioFadeInPlan(),
                     loop: pkg.audioLoopPlan(),
                     startMs: pkg.audioStartMs(),
+                    endMs: pkg.audioEndMs(),
                 }).then((mixed) => {
                     if (!mixed) clientWarnings.push(musicNotMixedWarning());
                     proceedWith(mixed || videoBlob);
@@ -4449,6 +4454,8 @@ function finalizeMediaRecorderVideo(){
                     fd.append('audio_volume', String(pkg.audioOutputVolume()));
                     fd.append('audio_fade_out', String(pkg.audioFadeOutPlan()?.seconds || 0));
                     fd.append('audio_start', String(pkg.audioStartMs() / 1000));
+                    fd.append('audio_end', String(pkg.audioEndMs() / 1000));
+                    fd.append('audio_fade_out_end', String((pkg.audioFadeOutPlan()?.endMs || 0) / 1000));
                     fd.append('audio_fade_in', String(pkg.audioFadeInPlan()?.seconds || 0));
                     const loop = pkg.audioLoopPlan();
                     if (loop) {

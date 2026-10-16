@@ -179,3 +179,30 @@ test('l’instant de la poignée s’affiche au dixième de seconde', () => {
     assert.equal(formatStartTime(65_250), '1:05.3');
     assert.equal(formatStartTime(599_960), '10:00.0');
 });
+
+test('un point de fin coupe la musique : la suite n\'est pas jouée, le fondu finit avec elle', () => {
+    // Musique de 60 s jouée de 5 à 25 s, dans une vidéo de 30 s.
+    const tl = musicTimeline({
+        fileMs: 60_000, startMs: 5_000, endMs: 25_000, videoMs: 30_000, fadeMs: 3_000, fadeEndMs: 20_000,
+    });
+    assert.equal(tl.endMs, 25_000);
+    assert.deepEqual(tl.cut, { startMs: 25_000, endMs: 60_000 });
+    // La vidéo continue 10 s sans musique, après le point de fin.
+    assert.deepEqual(tl.silent, { startMs: 25_000, endMs: 35_000 });
+    assert.equal(tl.videoEndMs, 35_000);
+    assert.deepEqual(tl.fade, { startMs: 22_000, endMs: 25_000 });
+});
+
+test('sans point de fin, la musique va au bout du fichier', () => {
+    const tl = musicTimeline({ fileMs: 60_000, videoMs: 60_000 });
+    assert.equal(tl.endMs, 60_000);
+    assert.equal(tl.cut, null);
+    assert.equal(tl.videoEndMs, null);
+});
+
+test('la poignée de fin se règle au clavier, sans passer sous sa borne basse', () => {
+    const at = (key, currentMs) => musicStartForKey(key, { currentMs, minMs: 6_000, maxMs: 60_000 });
+    assert.equal(at('ArrowLeft', 6_050), 6_000);
+    assert.equal(at('Home', 30_000), 6_000);
+    assert.equal(at('End', 30_000), 60_000);
+});

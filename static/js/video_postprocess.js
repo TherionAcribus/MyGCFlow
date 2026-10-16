@@ -137,12 +137,14 @@ export function normalizeRecordedVideoSpeed(sourceBlob, factor){
 // Options de la musique (plans calculés par ui.js) :
 //   volume  (cf. audioOutputVolume) : volume effectif, harmonisé si demandé ;
 //   fadeOut ({ seconds, endMs } ou null, cf. audioFadeOutPlan) : fondu de
-//           sortie se terminant à la fin prévue de la vidéo ;
+//           sortie se terminant à `endMs` de la vidéo, là où la musique
+//           s'arrête ;
 //   fadeIn  ({ seconds } ou null, cf. audioFadeInPlan) : montée au début ;
 //   loop    ({ startMs, endMs, crossfadeMs } ou null, cf. audioLoopPlan) : boucle ;
-//   startMs (cf. audioStartMs) : point de départ dans la musique, intro sautée.
+//   startMs (cf. audioStartMs) : point de départ dans la musique, intro sautée ;
+//   endMs   (cf. audioEndMs) : point de fin dans la musique, 0 = fin du fichier.
 export function muxRecordedVideoWithAudio(sourceBlob, audioFile, {
-    volume = 1, fadeOut = null, fadeIn = null, loop = null, startMs = 0,
+    volume = 1, fadeOut = null, fadeIn = null, loop = null, startMs = 0, endMs = 0,
 } = {}){
     return new Promise((resolve, reject) => {
         try {
@@ -294,7 +296,9 @@ export function muxRecordedVideoWithAudio(sourceBlob, audioFile, {
                             try { video.currentTime = 0; } catch(_) {}
                             try {
                                 // Décalage : l'intro sautée n'est pas jouée.
-                                audioNode.start(0, startOffsetS);
+                                // Sans boucle, la musique s'arrête à son point de fin.
+                                if (!loop && endMs > startMs) audioNode.start(0, startOffsetS, (endMs - startMs) / 1000);
+                                else audioNode.start(0, startOffsetS);
                                 // Fondus planifiés sur l'horloge audio. Ils ne se
                                 // chevauchent pas : clampFades (ui.js) les a bornés.
                                 const now = audioCtx.currentTime;

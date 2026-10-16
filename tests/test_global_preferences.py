@@ -87,6 +87,13 @@ class RecordingCoercionTests(unittest.TestCase):
         self.assertEqual([t["file"] for t in recent[0]["playlist"]], ["a.mp3", "b.mp3"])
         self.assertNotIn("playlist", recent[1])
 
+    def test_the_music_end_point_defaults_to_the_end_of_the_file(self):
+        self.assertEqual(coerce_recording_settings({}).audio_end_seconds, 0.0)
+        self.assertEqual(coerce_recording_settings({"audio_end_seconds": 62.5}).audio_end_seconds, 62.5)
+        self.assertEqual(coerce_recording_settings({"audio_end_seconds": -4}).audio_end_seconds, 0.0)
+        recent = coerce_recording_settings({"audio_recent": [{"file": "a.mp3", "end": 30}]}).audio_recent
+        self.assertEqual(recent[0]["end"], 30.0)
+
     def test_keeping_the_music_ending_is_opt_in(self):
         self.assertFalse(coerce_recording_settings({}).audio_keep_ending)
         self.assertTrue(coerce_recording_settings({"audio_keep_ending": True}).audio_keep_ending)
@@ -111,8 +118,8 @@ class RecordingCoercionTests(unittest.TestCase):
             {"name": "sans fichier"},
         ]})
         self.assertEqual(r.audio_recent, [
-            {"file": "a-0123.mp3", "name": "Ma musique.mp3", "start": 12.5},
-            {"file": "secret.txt", "name": "x", "start": 0.0},
+            {"file": "a-0123.mp3", "name": "Ma musique.mp3", "start": 12.5, "end": 0.0},
+            {"file": "secret.txt", "name": "x", "start": 0.0, "end": 0.0},
         ])
         many = [{"file": f"m{i}.mp3", "name": f"m{i}"} for i in range(20)]
         self.assertEqual(len(coerce_recording_settings({"audio_recent": many}).audio_recent), 8)

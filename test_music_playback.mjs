@@ -118,3 +118,15 @@ test('là où les deux fondus se chevauchent, le volume est échantillonné fine
     for (const p of points) assert.ok(Math.abs(p.gain - playbackGain(p.ms, plan)) < 1e-12);
     assert.equal(points.at(-1).ms, 4_000);
 });
+
+test('le fondu de sortie finit là où la musique s\'arrête, avant la fin de la vidéo', () => {
+    // Musique arrêtée à 20 s dans une vidéo de 30 s, fondu de 4 s.
+    const plan = { volume: 1, fadeOutMs: 4_000, fadeOutEndMs: 20_000, videoMs: 30_000 };
+    assert.equal(playbackGain(10_000, plan), 1);
+    assert.equal(playbackGain(18_000, plan), 0.5);
+    assert.equal(playbackGain(20_000, plan), 0);
+    assert.equal(playbackGain(25_000, plan), 0);
+    assert.deepEqual(gainSchedule(plan, 0).map((p) => [p.ms, p.gain]), [
+        [0, 1], [16_000, 1], [20_000, 0], [30_000, 0],
+    ]);
+});

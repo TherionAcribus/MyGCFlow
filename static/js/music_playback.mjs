@@ -6,7 +6,10 @@
 //   startMs   : point de départ dans le fichier (intro sautée)
 //   loop      : { startMs, endMs, crossfadeMs } — motif répété, positions dans
 //               le fichier, et raccord fondu entre les reprises (0 = net) — ou null
-//   fadeInMs, fadeOutMs : fondus, déjà bornés à la vidéo (clampFades)
+//   endMs     : point de fin dans le fichier (la musique s'y arrête), ou 0
+//   fadeInMs, fadeOutMs : fondus, déjà bornés à la musique jouée (clampFades)
+//   fadeOutEndMs : instant de la vidéo où finit le fondu de sortie — là où la
+//               musique s'arrête —, à défaut la fin de la vidéo
 //   videoMs   : durée de la vidéo (0 = inconnue)
 //   volume    : gain plein (0 à 1)
 
@@ -123,8 +126,16 @@ export function playbackGain(elapsedMs, plan) {
     const unit = (v) => Math.max(0, Math.min(1, v));
     let gain = plan?.volume ?? 1;
     if (plan?.fadeInMs > 0) gain *= unit(elapsedMs / plan.fadeInMs);
-    if (plan?.fadeOutMs > 0 && plan.videoMs > 0) gain *= unit((plan.videoMs - elapsedMs) / plan.fadeOutMs);
+    const fadeOutEnd = fadeOutEndMs(plan);
+    if (plan?.fadeOutMs > 0 && fadeOutEnd > 0) gain *= unit((fadeOutEnd - elapsedMs) / plan.fadeOutMs);
     return gain;
+}
+
+// Fin du fondu de sortie (ms de vidéo) : là où la musique s'arrête, à défaut
+// la fin de la vidéo ; 0 si aucune n'est connue.
+function fadeOutEndMs(plan) {
+    if (plan?.fadeOutEndMs > 0) return plan.fadeOutEndMs;
+    return plan?.videoMs > 0 ? plan.videoMs : 0;
 }
 
 // Nombre de paliers d'une portion où les deux fondus se chevauchent (vidéo
@@ -140,8 +151,9 @@ export function gainSchedule(plan, fromMs = 0) {
     const from = Math.max(0, fromMs || 0);
     const videoMs = plan?.videoMs > 0 ? plan.videoMs : 0;
     const fadeInEnd = plan?.fadeInMs > 0 ? plan.fadeInMs : 0;
-    const fadeOutStart = videoMs && plan?.fadeOutMs > 0 ? videoMs - plan.fadeOutMs : 0;
-    const marks = [from, fadeInEnd, fadeOutStart, videoMs]
+    const fadeOutEnd = plan?.fadeOutMs > 0 ? fadeOutEndMs(plan) : 0;
+    const fadeOutStart = fadeOutEnd ? fadeOutEnd - plan.fadeOutMs : 0;
+    const marks = [from, fadeInEnd, fadeOutStart, fadeOutEnd, videoMs]
         .filter((ms) => ms >= from && (!videoMs || ms <= videoMs));
     const times = [...new Set(marks)].sort((a, b) => a - b);
     const points = [];

@@ -135,7 +135,9 @@ function scheduleSources(ctx, decoded, plan, fromMs, when) {
     };
     if (!plan.loop) {
         const offsetS = (plan.startMs + fromMs) / 1000;
-        if (offsetS < decoded.duration) play(decoded, when, offsetS);
+        // Jusqu'au point de fin, à défaut jusqu'au bout du fichier.
+        const endS = plan.endMs > 0 ? Math.min(plan.endMs / 1000, decoded.duration) : decoded.duration;
+        if (offsetS < endS) play(decoded, when, offsetS, { durationS: endS - offsetS });
         return nodes;
     }
     const entry = loopEntry(fromMs, plan.loop);
@@ -188,7 +190,10 @@ function startPlayback(file, { mode, fromVideoMs = 0, stopAtVideoEnd = false }) 
                 const endAt = when + Math.max(0, plan.videoMs - baseMs) / 1000;
                 bgSourceNodes.forEach((node) => node.stop(endAt));
             }
-            if (!plan.loop) musicOverMs = decoded.duration * 1000 - plan.startMs;
+            if (!plan.loop) {
+                const endMs = plan.endMs > 0 ? Math.min(plan.endMs, decoded.duration * 1000) : decoded.duration * 1000;
+                musicOverMs = endMs - plan.startMs;
+            }
             startedAt = when;
             bgAudioBegun = true;
             // Une pause a pu survenir pendant le décodage.

@@ -95,9 +95,10 @@ test('une musique plus longue que la vidéo peut se terminer en fondu', async ({
 
   await page.locator('#inputAudioFile').setInputFiles(wavFile('longue.wav', 60, 0));
 
-  // Choisir une musique cale la vidéo dessus : rien à couper, pas d'option.
+  // Choisir une musique cale la vidéo dessus : rien n'est coupé, mais le
+  // fondu de sortie reste proposé, comme celui d'entrée — il finira avec elle.
   await expect(status).toContainText('Durée calée sur la musique');
-  await expect(box).toBeHidden();
+  await expect(box).toBeVisible();
 
   // Retour au rythme en jours/seconde : la vidéo (quelques secondes pour les
   // 6 caches de la fixture) devient bien plus courte que la musique.
@@ -167,8 +168,9 @@ test('une musique plus courte que la vidéo peut être répétée en boucle', as
 
   await expect(loopBox).toBeVisible();
   await expect(loop).not.toBeChecked();
-  // Musique trop courte et non répétée : rien à fondre en fin de vidéo.
-  await expect(fadeBox).toBeHidden();
+  // Musique trop courte et non répétée : le fondu de sortie, proposé avec
+  // toute musique, finirait avec elle, avant la fin de la vidéo.
+  await expect(fadeBox).toBeVisible();
   await expect(status).toContainText('se termine avant la fin de la vidéo');
   expect((await plans()).loop).toBeNull();
   const waveform = page.locator('#musicWaveform');
@@ -224,7 +226,7 @@ test('une musique plus courte que la vidéo peut être répétée en boucle', as
   await page.locator('#cbAudioFadeOut').uncheck();
   await page.locator('#cbAudioTrimSilence').uncheck();
   await loop.uncheck();
-  await expect(fadeBox).toBeHidden();
+  await expect(loop).not.toBeChecked();
   await expect.poll(async () => {
     const r = await recordingSettings(page);
     return [r.audio_loop, r.audio_fade_out, r.audio_trim_silence];
@@ -703,11 +705,11 @@ test('la musique peut démarrer plus loin, au clavier ou par la poignée de la f
   await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2);
   await page.mouse.down();
   await page.mouse.move(box.x + box.width / 4, box.y + box.height / 2, { steps: 8 });
-  await expect(handle.locator('.mw-start-time')).toBeVisible();
+  await expect(handle.locator('.mw-handle-time')).toBeVisible();
   await page.mouse.up();
   await expect.poll(async () => Number(await start.inputValue())).toBeGreaterThan(4);
   expect(Number(await start.inputValue())).toBeLessThan(6.5);
-  await expect(handle.locator('.mw-start-time')).toBeHidden();
+  await expect(handle.locator('.mw-handle-time')).toBeHidden();
 
   // Au clavier : un dixième de seconde par flèche, une seconde avec Maj.
   const dragged = Number(await start.inputValue());
@@ -796,8 +798,8 @@ test('« Garder la fin du morceau » fait finir la musique avec la vidéo', asyn
   await expect(start).toBeDisabled();
   await expect(start).toHaveValue('20');
   await expect(page.locator('#musicStartHandle')).toHaveAttribute('aria-disabled', 'true');
-  // Plus rien de coupé : pas de fondu de sortie à proposer.
-  await expect(page.locator('#audioFadeOutBox')).toBeHidden();
+  // La musique finit avec la vidéo : un fondu de sortie y reste possible.
+  await expect(page.locator('#audioFadeOutBox')).toBeVisible();
   // Le départ choisi (0) est conservé à côté de l'option.
   await expect.poll(async () => {
     const r = await recordingSettings(page);
@@ -891,6 +893,53 @@ test('plusieurs morceaux s\'enchaînent en une seule musique, modifiable', async
     const r = await settings();
     return [r.audio_playlist_crossfade, r.audio_playlist_crossfade_seconds];
   }).toEqual([true, 3]);
+});
+
+
+test('la musique peut s\'arrêter plus tôt, au clavier ou par sa poignée, et finir en fondu', async ({ page }) => {
+  const end = page.locator('#inputAudioEnd');
+  const status = page.locator('#musicSyncStatus');
+  const plans = () => page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    return { end: app.audioEndMs(), fade: app.audioFadeOutPlan() };
+  });
+  const savedEnd = async () => (await recordingSettings(page)).audio_end_seconds;
+
+  await page.locator('#inputAudioFile').setInputFiles(wavFile('arret.wav', 20, 0));
+  await expect(status).toContainText('Durée calée sur la musique (20 s)');
+  // Sans point de fin : la fin du morceau, affichée, sans coupe.
+  await expect(end).toHaveValue('20');
+  expect((await plans()).end).toBe(0);
+
+  // Arrêt à 12 s : la vidéo, calée sur la musique, dure 12 s.
+  await end.fill('12');
+  await end.blur();
+  await expect(status).toContainText('Musique : 12 s (jusqu\'à 12 s)');
+  await expect(status).toContainText('Durée calée sur la musique (12 s)');
+  await expect.poll(async () => (await plans()).end).toBe(12_000);
+  await expect(page.locator('#musicWaveform [data-legend="cut"]')).toBeVisible();
+  await expect.poll(savedEnd).toBe(12);
+
+  // Fondu de sortie, même calé sur la musique : il finit avec elle.
+  await page.locator('#cbAudioFadeOut').check();
+  await expect.poll(async () => (await plans()).fade).toEqual({ seconds: 3, endMs: 12_000 });
+  await expect(page.locator('#musicWaveform [data-legend="fade"]')).toBeVisible();
+
+  // Poignée de fin au clavier : une seconde de plus avec Maj.
+  const handle = page.locator('#musicEndHandle');
+  await handle.focus();
+  await page.keyboard.press('Shift+ArrowRight');
+  await expect(end).toHaveValue('13');
+  await expect(handle).toHaveAttribute('aria-valuenow', '13');
+  // Fin : retour au bout du morceau, plus de coupe.
+  await page.keyboard.press('End');
+  await expect.poll(async () => (await plans()).end).toBe(0);
+  await expect(end).toHaveValue('20');
+  await expect.poll(savedEnd).toBe(0);
+
+  // Remet la préférence globale dans son état initial.
+  await page.locator('#cbAudioFadeOut').uncheck();
+  await expect.poll(async () => (await recordingSettings(page)).audio_fade_out).toBe(false);
 });
 
 

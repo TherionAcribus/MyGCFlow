@@ -34,9 +34,10 @@ export function withRecentMusic(recent, entry) {
     return [entry, ...others].slice(0, RECENT_MUSIC_MAX);
 }
 
-// Liste où la musique `file` a le point de départ `start` (secondes).
-export function withRecentStart(recent, file, start) {
-    return (Array.isArray(recent) ? recent : []).map((r) => (r.file === file ? { ...r, start } : r));
+// Liste où la musique `file` a le point de départ `start` et le point de fin
+// `end` (secondes ; 0 = fin du fichier).
+export function withRecentStart(recent, file, start, end = 0) {
+    return (Array.isArray(recent) ? recent : []).map((r) => (r.file === file ? { ...r, start, end } : r));
 }
 
 // Liste sans la musique `file` (retirée du dossier audio/).
