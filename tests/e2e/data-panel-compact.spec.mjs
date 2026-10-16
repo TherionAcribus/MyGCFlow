@@ -1,8 +1,8 @@
-// Onglet Données compact : sans base, la zone d'import détaillée guide le
-// premier chargement ; une fois une base chargée (#data.has-data posé par
-// updateDataAvailabilityUI), elle cède la place à une commande secondaire
-// « Importer un autre fichier… » et le bloc « prochaine étape » tient sur
-// une ligne — les filtres remontent dans le champ visible.
+// Onglet Données compact : sans géocaches, la zone d'import détaillée guide
+// le premier chargement ; une fois un GPX chargé (#data.has-geocaches posé
+// par updateDataAvailabilityUI), elle cède la place à une commande
+// secondaire « Importer un autre fichier… » et le bloc « prochaine étape »
+// tient sur une ligne — les filtres remontent dans le champ visible.
 import { expect, test } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -23,7 +23,7 @@ test('base vide : import détaillé visible, commande compacte masquée', async 
 
   await openReadyApp(page);
 
-  await expect(page.locator('#data')).not.toHaveClass(/has-data/);
+  await expect(page.locator('#data')).not.toHaveClass(/has-geocaches/);
   await expect(page.locator('#data .data-empty-only')).toBeVisible();
   await expect(page.locator('#file-input-btn-compact')).toBeHidden();
   await expect(page.locator('#dataNextStep')).toBeHidden();
@@ -40,7 +40,7 @@ test('base chargée : import compact, étape suivante sur une ligne, retour apr�
 
   // La zone d'import détaillée disparaît, la commande compacte la remplace
   // et reste fonctionnelle (délégation au même #file-input).
-  await expect(page.locator('#data')).toHaveClass(/has-data/);
+  await expect(page.locator('#data')).toHaveClass(/has-geocaches/);
   await expect(page.locator('#data .data-empty-only')).toBeHidden();
   const chooserPromise = page.waitForEvent('filechooser');
   await page.locator('#file-input-btn-compact').click();
@@ -58,7 +58,7 @@ test('base chargée : import compact, étape suivante sur une ligne, retour apr�
     .getByRole('button', { name: 'Supprimer mes géocaches' })
     .click();
   await expect(page.locator('#filtersCounter')).toContainText('0 / 0', { timeout: 30_000 });
-  await expect(page.locator('#data')).not.toHaveClass(/has-data/);
+  await expect(page.locator('#data')).not.toHaveClass(/has-geocaches/);
   await expect(page.locator('#data .data-empty-only')).toBeVisible();
   await expect(page.locator('#file-input-btn-compact')).toBeHidden();
 });

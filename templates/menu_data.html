@@ -10,10 +10,11 @@
             <div class="card">
                 <div class="card-body">
                     <form id="uploadBddForm">
-                        <!-- État « base vide » : l'import occupe toute la carte.
-                             Une base chargée bascule ce bloc en compact via la
-                             classe .has-data posée sur #data par
-                             updateDataAvailabilityUI (ui.js). -->
+                        <!-- État « aucune géocache » : l'import occupe toute la
+                             carte. Un GPX chargé bascule ce bloc en compact via
+                             la classe .has-geocaches posée sur #data par
+                             updateDataAvailabilityUI (ui.js) — des Lab Caches
+                             seuls ne la compactent pas. -->
                         <div class="mb-3 data-empty-only">
                             <label for="file-input" class="form-label">{{ _("Sélectionner et charger un fichier .gpx") }}</label>
                             <div class="gpx-dropzone">
@@ -35,7 +36,7 @@
                             </div>
                         </div>
 
-                        <!-- État « base chargée » : la réimportation reste
+                        <!-- État « géocaches chargées » : la réimportation reste
                              disponible en second plan — la zone complète est
                              masquée et remplacée par cette commande compacte.
                              Le glisser-déposer sur la page reste actif dans les
@@ -53,38 +54,10 @@
                          en vis-à-vis du compteur de trouvailles. -->
                     <div class="d-flex justify-content-between align-items-center gap-2 mt-3">
                         <div id="infosBDD" class="form-hint text-muted">
-                            {{ _("Aucune trouvaille chargée") }}
+                            {{ _("Aucune géocache chargée") }}
                         </div>
                         <button id="clearDatabaseBtn" class="btn btn-outline-danger btn-sm flex-shrink-0" style="display: none;">
                             <i class="ti ti-trash me-1"></i>{{ _("Supprimer mes géocaches") }}
-                        </button>
-                    </div>
-
-                    <!-- Prochaine étape suggérée après import : affiché tant que
-                         des données sont chargées (updateDataAvailabilityUI).
-                         Une seule ligne quand la largeur le permet, sinon le
-                         libellé passe au-dessus des boutons (flex-wrap). -->
-                    <div id="dataNextStep" class="alert alert-success mt-3 mb-0 py-2 px-3 align-items-center gap-2 flex-wrap" hidden>
-                        <span class="small">{{ _("Vos trouvailles sont prêtes.") }}</span>
-                        <div class="d-flex gap-2 flex-wrap ms-auto">
-                            <button type="button" id="btnGoStyleTab" class="btn btn-sm btn-success">
-                                <i class="ti ti-palette me-1" aria-hidden="true"></i>{{ _("Choisir un style") }}
-                            </button>
-                            <button type="button" id="btnGoPreview" class="btn btn-sm btn-outline-success">
-                                <i class="ti ti-player-play me-1" aria-hidden="true"></i>{{ _("Prévisualiser") }}
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Sélection vide : base chargée mais les filtres
-                         excluent toutes les caches (hasDb sans hasData dans
-                         updateDataAvailabilityUI). Distinct de l'état
-                         « aucune donnée importée » : le problème est la
-                         sélection, la solution est la réinitialisation. -->
-                    <div id="dataNoResults" class="alert alert-warning mt-3 mb-0 py-2 px-3 align-items-center gap-2 flex-wrap" hidden>
-                        <span class="small">{{ _("Aucune cache ne correspond aux filtres actuels.") }}</span>
-                        <button type="button" id="btnResetFiltersFromData" class="btn btn-sm btn-warning ms-auto">
-                            <i class="ti ti-refresh me-1" aria-hidden="true"></i>{{ _("Réinitialiser les filtres") }}
                         </button>
                     </div>
                 </div>
@@ -218,6 +191,38 @@
                         </div>
                     </details>
                 </div>
+            </div>
+
+            <!-- Messages du jeu global (toutes sources confondues) : vivent
+                 sous les deux cartes de sources, pas dans la carte « Mes
+                 Géocaches » — des Lab Caches seuls les concernent aussi
+                 (updateDataAvailabilityUI). -->
+            <!-- Prochaine étape suggérée après import : affichée tant que
+                 des données sont chargées. Une seule ligne quand la largeur
+                 le permet, sinon le libellé passe au-dessus des boutons
+                 (flex-wrap). -->
+            <div id="dataNextStep" class="alert alert-success mt-3 mb-0 py-2 px-3 align-items-center gap-2 flex-wrap" hidden>
+                <span class="small">{{ _("Vos trouvailles sont prêtes.") }}</span>
+                <div class="d-flex gap-2 flex-wrap ms-auto">
+                    <button type="button" id="btnGoStyleTab" class="btn btn-sm btn-success">
+                        <i class="ti ti-palette me-1" aria-hidden="true"></i>{{ _("Choisir un style") }}
+                    </button>
+                    <button type="button" id="btnGoPreview" class="btn btn-sm btn-outline-success">
+                        <i class="ti ti-player-play me-1" aria-hidden="true"></i>{{ _("Prévisualiser") }}
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sélection vide : données chargées mais les filtres excluent
+                 toutes les caches (hasDb sans hasData dans
+                 updateDataAvailabilityUI). Distinct de l'état « aucune
+                 donnée importée » : le problème est la sélection, la
+                 solution est la réinitialisation. -->
+            <div id="dataNoResults" class="alert alert-warning mt-3 mb-0 py-2 px-3 align-items-center gap-2 flex-wrap" hidden>
+                <span class="small">{{ _("Aucune cache ne correspond aux filtres actuels.") }}</span>
+                <button type="button" id="btnResetFiltersFromData" class="btn btn-sm btn-warning ms-auto">
+                    <i class="ti ti-refresh me-1" aria-hidden="true"></i>{{ _("Réinitialiser les filtres") }}
+                </button>
             </div>
 
         </div>

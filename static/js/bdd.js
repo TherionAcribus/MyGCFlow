@@ -20,6 +20,12 @@ export const hiddenPointsByDate = new Map();
 // comme clé de mémoïsation.
 export let pointsByDateRevision = 0;
 export let totalCaches = 0;
+// Compteur des seules géocaches GPX (hors Lab Caches) : pilote la
+// présentation de la carte « Mes Géocaches » (classe has-geocaches posée par
+// updateDataAvailabilityUI), son état vide et son bouton de suppression.
+// Alimenté par /db_status (sources.geocaches) et par la ventilation
+// countBySource du GeoJSON chargé.
+export let geocachesCount = 0;
 
 // À appeler quand les features indexées ont été modifiées en place (coordonnées
 // mutées sans reconstruction de l'index — scénarios de test notamment) : les
@@ -430,9 +436,11 @@ function formatBddLoadWhen(d, locale) {
 
 function formatBddInfos(data) {
     const locale = bddInfoLocale();
-    const total = data.totalPoints ?? 0;
-    const start = parseBddInfoDate(data.startDate);
-    const end = parseBddInfoDate(data.endDate);
+    // La carte « Mes Géocaches » ne décrit que la source GPX : le total et
+    // les bornes du jeu animable incluent les étapes Labs, exclues ici.
+    const total = Number(data.sources?.geocaches ?? data.totalPoints) || 0;
+    const start = parseBddInfoDate(data.geocachesStartDate ?? data.startDate);
+    const end = parseBddInfoDate(data.geocachesEndDate ?? data.endDate);
     const load = parseBddInfoDate(data.loadDate);
 
     // Libellé singulier/pluriel résolu hors du template literal pour que
@@ -467,14 +475,25 @@ export function readBddValues({ settleFirstUse = false } = {}){
             const hasData = !!(data && data.exists && data.isEmpty === false);
             lastDbHasData = hasData;
 
-            const text = hasData
+            // Ventilation par source : « Mes Géocaches » ne reflète que le
+            // fichier GPX — les Lab Caches ont leur propre carte et statut.
+            const sources = data?.sources;
+            geocachesCount = sources
+                ? (Number(sources.geocaches) || 0)
+                : (hasData ? (Number(data?.totalPoints) || 0) : 0);
+
+            const text = geocachesCount > 0
                 ? formatBddInfos(data)
-                : t('Aucune trouvaille chargée');
+                : t('Aucune géocache chargée');
 
             if (infos) infos.textContent = text;
 
             const btn = document.getElementById('clearDatabaseBtn');
-            if (btn) btn.style.display = hasData ? '' : 'none';
+            if (btn) btn.style.display = geocachesCount > 0 ? '' : 'none';
+
+            // La présentation compacte/détaillée de la carte dépend de ce
+            // compteur : réévaluer sans attendre le prochain recalcul.
+            try { pkg.updateDataAvailabilityUI?.(); } catch (e) {}
 
             // Appel du démarrage : la question « première utilisation » est
             // tranchée, quel que soit le verdict.
@@ -536,6 +555,7 @@ function clearLocalData() {
     for (const k of Object.keys(metadata)) delete metadata[k];
     selectionExtentStart = null;
     selectionExtentEnd = null;
+    geocachesCount = 0;
     pointsByDate.clear();
     hiddenPointsByDate.clear();
     pointsByDateRevision++;
@@ -604,7 +624,7 @@ function updateUIAfterClear() {
     const infos = document.getElementById('infosBDD');
     const btn = document.getElementById('clearDatabaseBtn');
 
-    if (infos) infos.textContent = t('Aucune trouvaille chargée');
+    if (infos) infos.textContent = t('Aucune géocache chargée');
     if (btn) btn.style.display = 'none';
     // Compteur « 0 / 0 », badge d'onglet, toast « aucune cache » et état
     // « filtre actif » du panneau passent tous par l'écrivain unique.
@@ -802,7 +822,24 @@ export function reloadMainDatasetAfterMutation() {
     clearLocalData();
     clearMap();
     updateUIAfterClear();
+    // /db_status relit la ventilation réelle (géocaches vs Labs) : la ligne
+    // d'infos de la carte et le compteur geocachesCount suivent ce qui
+    // subsiste — updateUIAfterClear ne pose qu'un intitulé provisoire.
+    readBddValues();
     loadAndDisplayPoints();
+}
+
+// Nombre de géocaches du jeu chargé : la ventilation countBySource du
+// serveur quand elle est là, sinon décompte direct des features (les non
+// marquées sont des géocaches — même convention que geojson_cache.py).
+function countGeocachesInResult(result) {
+    const bySource = result?.metadata?.countBySource;
+    if (bySource && typeof bySource === 'object') {
+        return Number(bySource.geocache) || 0;
+    }
+    return (result?.geojson?.features || [])
+        .filter(f => (f?.properties?.source_kind || 'geocache') === 'geocache')
+        .length;
 }
 
 function buildMetadataClientSide(features) {
@@ -1232,6 +1269,7 @@ export function readBdd(){
                 // Mémoriser le total de caches initial (toutes sources)
                 totalCaches = result.metadata?.numberOfCaches || (result.geojson?.features?.length || 0);
                 lastDbHasData = totalCaches > 0;
+                geocachesCount = countGeocachesInResult(result);
 
                 // Pré-calcul de l'index des points par date pour optimiser l'animation
                 buildPointsByDateIndex(displayFeatures);
@@ -1256,7 +1294,7 @@ export function readBdd(){
                 updateFiltersCounter(metadata.numberOfCaches || 0, totalCaches);
 
                 const btn = document.getElementById('clearDatabaseBtn');
-                if (btn) btn.style.display = totalCaches > 0 ? '' : 'none';
+                if (btn) btn.style.display = geocachesCount > 0 ? '' : 'none';
 
                 finishReadIndicators();
             },
@@ -1327,6 +1365,9 @@ export function setExternalDatasetState(meta, { selected = 0, total = 0 } = {}) 
     pointsByDateRevision++;
     setMetadata(meta || {});
     totalCaches = Math.max(0, Number(total) || 0);
+    // Les bases Évolution ne sont pas la base des trouvailles : la carte
+    // « Mes Géocaches » (absente de ce mode) resterait en état vide.
+    geocachesCount = 0;
     updateOptionsValues(metadata);
     updateFiltersCounter(selected, totalCaches);
     // Boutons « Sélection » de l'onglet Animation : l'étendue a pu changer.
@@ -1516,6 +1557,7 @@ function loadAndDisplayPoints({ onProgress: onDisplayProgress = null, onDone = n
                     // Mémoriser le total de caches initial (toutes sources)
                     totalCaches = meta.numberOfCaches || (geojson?.features?.length || 0);
                     lastDbHasData = totalCaches > 0;
+                    geocachesCount = countGeocachesInResult(result);
 
                     // Pré-calcul de l'index des points par date pour optimiser l'animation
                     buildPointsByDateIndex(displayFeatures);
@@ -1542,7 +1584,7 @@ function loadAndDisplayPoints({ onProgress: onDisplayProgress = null, onDone = n
                     updateFiltersCounter(metadata.numberOfCaches || 0, totalCaches);
 
                     const btn = document.getElementById('clearDatabaseBtn');
-                    if (btn) btn.style.display = '';
+                    if (btn) btn.style.display = geocachesCount > 0 ? '' : 'none';
 
                     // L'arbre pays/régions n'est chargé qu'à l'init : après un
                     // premier import sur base vide il faut le recharger pour

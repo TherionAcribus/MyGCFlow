@@ -610,6 +610,11 @@ def db_infos(Geocache):
             'geocaches': geocache_count,
             'labs': {'ready': labs_ready, 'pending': labs_pending},
         }
+        # Bornes des géocaches seules : la carte « Mes Géocaches » affiche la
+        # plage du fichier GPX, pas celle du jeu global étendu par les Labs.
+        geocaches_start = geocaches_end = None
+        if geocache_count:
+            geocaches_start, geocaches_end = get_geocache_date_bounds(Geocache)
 
         if animable > 0:
             # Base de données existe et contient des données
@@ -627,7 +632,9 @@ def db_infos(Geocache):
                 'startDate': startDate,
                 'endDate': endDate,
                 'loadDate': load_date,
-                'sources': sources
+                'sources': sources,
+                'geocachesStartDate': geocaches_start,
+                'geocachesEndDate': geocaches_end
             })
         else:
             # Base de données existe mais est vide (ou sans Labs exploitables)
@@ -639,7 +646,9 @@ def db_infos(Geocache):
                 'startDate': None,
                 'endDate': None,
                 'loadDate': None,
-                'sources': sources
+                'sources': sources,
+                'geocachesStartDate': None,
+                'geocachesEndDate': None
             })
     else:
         # Base de données n'existe pas
@@ -650,7 +659,10 @@ def db_infos(Geocache):
             'totalPoints': 0,
             'startDate': None,
             'endDate': None,
-            'loadDate': None
+            'loadDate': None,
+            'sources': {'geocaches': 0, 'labs': {'ready': 0, 'pending': 0}},
+            'geocachesStartDate': None,
+            'geocachesEndDate': None
         })
 
 
@@ -658,17 +670,25 @@ def get_database_size(db_path):
     return os.path.getsize(db_path) if os.path.exists(db_path) else 0
 
 
-def get_database_start_end(Geocache):
-    """Premiere et derniere date de la base de données (toutes sources)."""
+def get_geocache_date_bounds(Geocache):
+    """Première et dernière date de trouvaille des géocaches seules (sans Labs)."""
     first_entry = Geocache.query.order_by(Geocache.date_find).first()
     last_entry = Geocache.query.order_by(Geocache.date_find.desc()).first()
-    # geocache.date_find est un datetime, lab found_date une date : on
-    # normalise en date avant comparaison (format conservé par jsonify).
+    # geocache.date_find est un datetime : normalisé en date avant comparaison
+    # (format conservé par jsonify), comme dans get_database_start_end.
     dates = [
         d.date() if isinstance(d, datetime) else d
         for d in (first_entry.date_find if first_entry else None,
                   last_entry.date_find if last_entry else None) if d
     ]
+    return (min(dates), max(dates)) if dates else (None, None)
+
+
+def get_database_start_end(Geocache):
+    """Premiere et derniere date de la base de données (toutes sources)."""
+    # lab found_date est une date : la normalisation est déjà faite dans
+    # get_geocache_date_bounds pour les géocaches.
+    dates = [d for d in get_geocache_date_bounds(Geocache) if d]
     lab_bounds = lab_store.lab_date_bounds(db.session)
     dates.extend(d for d in lab_bounds if d)
     return (min(dates), max(dates)) if dates else (None, None)

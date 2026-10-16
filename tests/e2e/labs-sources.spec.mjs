@@ -124,6 +124,51 @@ test('« géocaches » masque les Labs ; « both » les réaffiche', async ({ pa
 });
 
 
+test('des Labs seuls ne font pas croire qu\'un GPX géocache est déjà chargé', async ({ page }) => {
+  await openReadyApp(page);
+  await importLabs(page);
+  await expect(page.locator('#filtersCounter')).toContainText('8 / 8', { timeout: 60_000 });
+
+  // La carte « Mes Géocaches » reste en présentation détaillée : aucun GPX
+  // n'a été importé, la commande compacte et le bouton de suppression ne
+  // doivent pas apparaître.
+  await expect(page.locator('#data')).not.toHaveClass(/has-geocaches/);
+  await expect(page.locator('#data .data-empty-only')).toBeVisible();
+  await expect(page.locator('#file-input-btn-compact')).toBeHidden();
+  await expect(page.locator('#infosBDD')).toHaveText('Aucune géocache chargée');
+  await expect(page.locator('#clearDatabaseBtn')).toBeHidden();
+});
+
+
+test('les filtres sont actifs avec des Labs seuls', async ({ page }) => {
+  await openReadyApp(page);
+  await importLabs(page);
+  await expect(page.locator('#filtersCounter')).toContainText('8 / 8', { timeout: 60_000 });
+
+  // Les Labs comptent dans le jeu animable : le panneau de filtres n'est ni
+  // inerte ni estompé.
+  const panel = page.locator('#filterPanel');
+  expect(await panel.evaluate(el => el.inert)).toBe(false);
+  await expect(panel).not.toHaveClass(/data-disabled/);
+});
+
+
+test('la prochaine étape globale est visible avec des Labs seuls', async ({ page }) => {
+  await openReadyApp(page);
+  await importLabs(page);
+  await expect(page.locator('#filtersCounter')).toContainText('8 / 8', { timeout: 60_000 });
+
+  // Le message concerne le jeu global : il vit sous les deux cartes de
+  // sources, pas dans la carte « Mes Géocaches ».
+  const nextStep = page.locator('#dataNextStep');
+  await expect(nextStep).toBeVisible();
+  await expect(nextStep).toContainText('Vos trouvailles sont prêtes');
+  await expect(nextStep.locator('#btnGoStyleTab')).toBeVisible();
+  await expect(nextStep.locator('#btnGoPreview')).toBeVisible();
+  await expect(page.locator('#dataNoResults')).toBeHidden();
+});
+
+
 test('« Supprimer mes Lab Caches » vide la collection Labs uniquement', async ({ page }) => {
   await openReadyApp(page);
   await importLabs(page);

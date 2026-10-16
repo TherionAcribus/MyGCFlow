@@ -8000,6 +8000,19 @@ export function hasDatabase() {
     }
 }
 
+// Vrai quand la base des trouvailles contient au moins une géocache issue
+// d'un GPX — les Lab Caches n'y comptent pas. Pilote la présentation de la
+// carte « Mes Géocaches » (import détaillé tant que hasGeocaches est faux,
+// commande compacte ensuite), indépendamment du jeu animable global.
+export function hasGeocaches() {
+    // Même garde TDZ que hasDatabase : geocachesCount vit dans bdd.js.
+    try {
+        return (Number(pkg.geocachesCount) || 0) > 0;
+    } catch (e) {
+        return false;
+    }
+}
+
 // Synchronise l'UI avec la présence de données :
 // - sans base chargée, la carte affiche l'état vide (message + bouton d'import)
 //   et le panneau de filtres est inerte ;
@@ -8031,19 +8044,22 @@ export function updateDataAvailabilityUI({ dataResolved = false } = {}) {
         if (dataTab) showBsTab(dataTab);
     }
 
-    // Suggestion « prochaine étape » dans la carte Mes Géocaches : visible
-    // uniquement quand une base est chargée ET la sélection non vide — sinon
-    // c'est l'avertissement « aucun résultat » qui prend le relais.
+    // Suggestion « prochaine étape », sous les deux cartes de sources :
+    // visible uniquement quand une base est chargée ET la sélection non
+    // vide — sinon c'est l'avertissement « aucun résultat » qui prend le
+    // relais. Le jeu animable fait foi : des Lab Caches seuls suffisent.
     const nextStep = document.getElementById('dataNextStep');
     if (nextStep) nextStep.hidden = !hasDb || !hasData;
     const noResults = document.getElementById('dataNoResults');
     if (noResults) noResults.hidden = !hasDb || hasData;
 
-    // État compact de la carte Mes Géocaches : avec une base chargée,
+    // État compact de la carte Mes Géocaches : avec des géocaches chargées,
     // la zone d'import détaillée cède la place à une commande secondaire
     // (cf. .data-empty-only / .data-has-only dans ui_improvements.css).
+    // Des Lab Caches seuls ne compactent pas la carte — aucun GPX n'a
+    // encore été importé.
     const dataPane = document.getElementById('data');
-    if (dataPane) dataPane.classList.toggle('has-data', hasDb);
+    if (dataPane) dataPane.classList.toggle('has-geocaches', hasGeocaches());
 
     // inert bloque interactions, focus et lecture d'écran ; .data-disabled
     // estompe visuellement la section.
