@@ -137,7 +137,7 @@ class StatsApiTests(unittest.TestCase):
     def test_put_stores_normalised_panels(self):
         response = self.client.put('/api/settings', json={'stats': {'panels': [
             {'id': 'aaaaaa01', 'kind': 'grid', 'metric': 'dt', 'position': {'anchor': 'bottom-left', 'width': 5}},
-            {'id': 'bbbbbb01', 'kind': 'donut', 'metric': 'cache_type'},
+            {'id': 'bbbbbb01', 'kind': 'radar', 'metric': 'cache_type'},
         ]}})
 
         self.assertEqual(response.status_code, 200)

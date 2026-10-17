@@ -4,7 +4,10 @@ Ajouter un onglet principal « Stats » qui permet de poser sur la carte des pan
 
 ## 0. État d'avancement (2026-10-17)
 
-Lots 0, 1, 2 et 2 bis implémentés (grilles D/T, Jasmer, calendrier 366 ; histogrammes ; onglet ; vidéo) — doc technique dans `docs/panneaux-stats.md`. Reste : mesure de perf manuelle (§6), notes de version 0.0.7, lot 3.
+Lots 0, 1, 2 et 2 bis implémentés (grilles D/T, Jasmer, calendrier 366 ; histogrammes ; onglet ; vidéo), commités en « Stats > MVP » — doc technique dans `docs/panneaux-stats.md`.
+
+Lot 3 implémenté (2026-10-17) : anneaux/camemberts (`donut`), courbe cumulée (`line`), compteurs (`counter` : jours, record, plus longue série, types, pays, régions), métriques pays/régions, course de barres (`sort: race`), valeurs animées (`createTweenStore`), glisser-déposer en position libre (`position.mode: free`, x/y normalisés), contournement automatique du titre et des infos, avertissement de chevauchement entre panneaux.
+Non faits, volontairement : mode Évolution, export/import du bloc dans un thème. Reste aussi : mesure de perf manuelle (§6), notes de version 0.0.7.
 
 Écarts par rapport au plan ci-dessous, décidés en cours de route :
 - **Pas de bloc `stats` dans `defaultValues.json`** : ce fichier alimente `pkg.options` (réglages de thème), où `stats` n'a rien à faire. Les défauts vivent dans `stats_settings.py` et `stats_model.mjs`, verrouillés par des vecteurs de test partagés (`tests/fixtures/stats/settings_cases.json`).

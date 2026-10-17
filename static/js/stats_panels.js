@@ -25,15 +25,21 @@ import {
     STATS_DEFAULTS,
     UNKNOWN_KEY,
     barModel,
+    counterValues,
     countFeatures,
     createStatsAccumulator,
+    createTweenStore,
+    dayNumberOfDate,
     featuresUpTo,
     gridModel,
     hasActiveHighlights,
+    highlightLevel,
     layoutPanels,
+    lineModel,
     metricsForPanels,
     normalizeStatsSettings,
     rectsOverlap,
+    ymdOfDay,
 } from './stats_model.mjs';
 import { STATS_RENDERERS, drawStatsPanel, measureStatsPanel } from './stats_render.mjs';
 
@@ -49,6 +55,10 @@ let current = createStatsAccumulator();
 let animation = null;   // { startDate, endDate, lastDate, highlightMs }
 let lastNow = Number.NaN;
 let highlightWasActive = false;
+
+// Valeurs animées (barres, parts d'anneau, compteurs, tête de courbe) : elles
+// glissent vers leur cible à l'horloge des points, immédiates au repos.
+const tweens = createTweenStore(DEFAULT_HIGHLIGHT_MS);
 
 let totalsMemo = null;      // { key, acc }
 let referenceMemo = null;   // { key, acc }
@@ -187,6 +197,7 @@ export function resetStatsForAnimation({ startDate, endDate, highlightMs } = {})
     };
     mode = 'animating';
     rebuildCurrent();
+    tweens.clear(animation.highlightMs);
     layoutDirty = true;
     touch();
 }
@@ -213,6 +224,7 @@ export function showStatsTotals() {
     mode = 'rest';
     animation = null;
     current = createStatsAccumulator(metrics);
+    tweens.clear();
     layoutDirty = true;
     touch();
 }
@@ -226,6 +238,7 @@ export function refreshStatsPanels() {
         mode = 'rest';
         animation = null;
         current = createStatsAccumulator(metrics);
+        tweens.clear();
     }
     layoutDirty = true;
     touch();
@@ -241,7 +254,7 @@ export function tickStatsPanels(now) {
     }
     const panels = visiblePanels();
     const active = panels.length > 0
-        && hasActiveHighlights(current, panels, lastNow, animation.highlightMs);
+        && (tweens.isActive(lastNow) || hasActiveHighlights(current, panels, lastNow, animation.highlightMs));
     // Une surbrillance qui vient de s'éteindre demande une dernière frame.
     if (active || highlightWasActive) {
         revision += 1;
@@ -297,6 +310,10 @@ export function defaultStatsPanelTitle(panel) {
         case 'difficulty': return pkg.t('Difficulté');
         case 'terrain': return pkg.t('Terrain');
         case 'year': return pkg.t('Trouvailles par année');
+        case 'country': return pkg.t('Pays');
+        case 'state': return pkg.t('Régions');
+        case 'cumulative': return pkg.t('Progression des trouvailles');
+        case 'summary': return pkg.t('Chiffres clés');
         default: return '';
     }
 }
@@ -321,6 +338,7 @@ function excludedLine(metric, n) {
         case 'difficulty': return pkg.t('Sans difficulté : ${n}', { n });
         case 'terrain': return pkg.t('Sans terrain : ${n}', { n });
         case 'jasmer': return pkg.t('Sans date de publication : ${n}', { n });
+        case 'day': return pkg.t('Sans date de trouvaille : ${n}', { n });
         default: return pkg.t('Sans date : ${n}', { n });
     }
 }
@@ -350,9 +368,51 @@ function jasmerEnd() {
     return { y: date.getFullYear(), m: date.getMonth() + 1 };
 }
 
+// Indice de couleur stable d'une catégorie (palette « multi ») : son rang dans
+// la référence, pour qu'elle garde sa couleur quand elle change de place.
+function colorIndexer(reference, metric) {
+    const ranks = new Map(
+        [...(reference.counts.get(metric) || new Map()).entries()]
+            .sort((a, b) => b[1] - a[1] || String(a[0]).localeCompare(String(b[0])))
+            .map(([key], i) => [key, i]),
+    );
+    return (key) => ranks.get(key) ?? ranks.size;
+}
+
+let dateFormat = null;
+function formatDay(day) {
+    const lang = locale();
+    if (!dateFormat || dateFormat.lang !== lang) {
+        dateFormat = { lang, fmt: new Intl.DateTimeFormat(lang, { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) };
+    }
+    const { y, m, d } = ymdOfDay(day);
+    return dateFormat.fmt.format(new Date(Date.UTC(y, m - 1, d)));
+}
+
+const COUNTER_LABELS = {
+    days: () => pkg.t('Jours avec trouvaille'),
+    best_day: () => pkg.t('Record sur une journée'),
+    streak: () => pkg.t('Plus longue série (jours)'),
+    types: () => pkg.t('Types de caches différents'),
+    countries: () => pkg.t('Pays'),
+    states: () => pkg.t('Régions'),
+};
+
+// Valeurs animées des lignes d'un histogramme ou d'un anneau ; course de
+// barres : la place de chaque ligne glisse aussi.
+function animateRows(panel, model, now) {
+    model.rows.forEach((row, i) => {
+        row.shown = tweens.set(`${panel.id}:v:${row.key}`, row.count, now);
+        if (model.race) row.slot = tweens.set(`${panel.id}:s:${row.key}`, i, now);
+    });
+    model.shownMax = tweens.set(`${panel.id}:max`, model.max, now);
+}
+
 function buildView(panel) {
     const reference = mode === 'animating' ? animationReference() : selectionTotals();
     const state = mode === 'animating' ? current : reference;
+    // Horloge des valeurs animées : aucune au repos (valeurs immédiates).
+    const now = mode === 'animating' ? lastNow : Number.NaN;
     const { number, percent } = formatters();
     const metric = panel.metric;
     const view = {
@@ -397,15 +457,77 @@ function buildView(panel) {
         return view;
     }
 
+    if (panel.kind === 'line') {
+        const headDay = mode === 'animating' && animation?.lastDate ? dayNumberOfDate(animation.lastDate) : undefined;
+        const endDay = mode === 'animating' && animation?.endDate ? dayNumberOfDate(animation.endDate) : undefined;
+        const model = lineModel(state, reference, { headDay, endDay });
+        model.shownTotal = tweens.set(`${panel.id}:total`, model.total, now);
+        model.shownHeadDay = tweens.set(`${panel.id}:head`, model.headDay, now);
+        view.model = model;
+        view.showArea = panel.options.show_area;
+        // Axe : années, ou dates complètes si la période tient dans une année.
+        if (!model.empty) {
+            const sameYear = ymdOfDay(model.first).y === ymdOfDay(model.last).y;
+            view.startLabel = sameYear ? formatDay(model.first) : String(ymdOfDay(model.first).y);
+            view.endLabel = sameYear ? formatDay(model.last) : String(ymdOfDay(model.last).y);
+        }
+        // Halo de la tête tant que la dernière trouvaille est fraîche.
+        const lastDay = model.points.at(-1)?.day;
+        view.headLevel = mode === 'animating' && animation && lastDay !== undefined
+            ? highlightLevel(current.lastHit.get('day')?.get(lastDay), now, animation.highlightMs,
+                panel.options.highlight === 'none' ? 'none' : 'every')
+            : 0;
+        if ((reference.excluded.get('day') || 0) > 0) view.footer.push(excludedLine('day', model.excluded));
+        return view;
+    }
+
+    if (panel.kind === 'counter') {
+        const values = counterValues(state, panel.options.items);
+        view.columns = panel.options.columns;
+        view.tiles = panel.options.items.map((item) => {
+            const entry = values[item] || { value: 0 };
+            const key = `${panel.id}:c:${item}`;
+            const shown = tweens.set(key, entry.value, now);
+            let detail = '';
+            if (item === 'best_day' && entry.value > 0 && entry.day !== null) detail = formatDay(entry.day);
+            if (item === 'streak' && entry.value > 1) detail = `${formatDay(entry.start)} → ${formatDay(entry.end)}`;
+            return {
+                value: number(Math.round(shown)),
+                label: COUNTER_LABELS[item](),
+                detail,
+                level: panel.options.highlight === 'none' ? 0 : tweens.level(key, now),
+            };
+        });
+        return view;
+    }
+
     const labelOf = labelFor(metric, number);
+    view.labelOf = labelOf;
+    view.palette = panel.style.palette;
+    view.colorOf = (key) => pkg.defaultGcColors?.[key] || null;
+    view.colorIndex = colorIndexer(reference, metric);
+
+    if (panel.kind === 'donut') {
+        const model = barModel(metric, state, reference, { sort: 'count', max_items: panel.options.max_items }, labelOf);
+        animateRows(panel, model, now);
+        view.model = model;
+        view.hole = panel.options.hole;
+        view.showLegend = panel.options.show_legend;
+        view.centerLabel = pkg.t('trouvailles');
+        return view;
+    }
+
     const model = barModel(metric, state, reference, panel.options, labelOf);
+    if (model.race) {
+        // Places fixes : la hauteur ne varie pas quand des catégories entrent.
+        const known = new Set([...(reference.counts.get(metric) || new Map()).keys(), ...model.rows.map((r) => r.key)]);
+        model.slots = Math.max(1, Math.min(panel.options.max_items, known.size));
+    }
+    animateRows(panel, model, now);
     view.model = model;
     view.orientation = panel.options.orientation;
-    view.palette = panel.style.palette;
-    view.labelOf = labelOf;
-    view.colorOf = (key) => pkg.defaultGcColors?.[key] || null;
-    view.sum = model.rows.reduce((s, row) => s + row.count, 0);
-    if (refExcluded > 0 && metric !== 'cache_type' && metric !== 'container') {
+    view.sum = model.rows.reduce((s, row) => s + Math.max(0, row.shown), 0);
+    if (refExcluded > 0 && !['cache_type', 'container', 'country', 'state'].includes(metric)) {
         view.footer.push(excludedLine(metric, model.excluded));
     }
     return view;
@@ -464,8 +586,8 @@ function removeStalePanels(keep) {
     }
 }
 
-// Rects de #titleFrame et #infosFrame dans le repère du conteneur, pour
-// signaler un chevauchement (pas de déplacement automatique).
+// Rects de #titleFrame et #infosFrame dans le repère du conteneur : les piles
+// de coin les contournent, un panneau libre qui les chevauche est signalé.
 function overlayRects(host) {
     const base = host.getBoundingClientRect();
     const rects = [];
@@ -498,14 +620,18 @@ function flush() {
         const width = Math.min(panel.position.width, containerSize.width);
         return {
             id: panel.id,
+            mode: panel.position.mode,
             anchor: panel.position.anchor,
             dx: panel.position.dx,
             dy: panel.position.dy,
+            x: panel.position.x,
+            y: panel.position.y,
             width,
             height: measureStatsPanel(views.get(panel.id), panel.style, Math.max(1, width)),
         };
     });
-    const layout = layoutPanels(items, containerSize);
+    // Les piles de coin contournent le titre et les infos.
+    const layout = layoutPanels(items, containerSize, overlayRectsCache);
     const warnings = [];
 
     const dpr = Math.max(1, window.devicePixelRatio || 1);
@@ -540,17 +666,37 @@ function flush() {
                 views.get(panel.id), panel.style, lastNow, rect.width);
             node.drawnKey = key;
         }
+        node.canvas.classList.toggle('is-free', panel.position.mode === 'free');
         if (rect.overflow) warnings.push({ id: panel.id, kind: 'overflow' });
         for (const overlay of overlayRectsCache) {
             if (rectsOverlap(rect, overlay)) warnings.push({ id: panel.id, kind: 'overlap', with: overlay.id });
         }
     }
+    // Deux panneaux de coins différents (ou un panneau libre) qui se recouvrent :
+    // l'empilement ne règle que les panneaux d'une même pile.
+    for (let i = 0; i < panels.length; i++) {
+        for (let j = i + 1; j < panels.length; j++) {
+            if (rectsOverlap(layout.get(panels[i].id), layout.get(panels[j].id))) {
+                warnings.push({ id: panels[j].id, kind: 'panels', with: panels[i].id });
+            }
+        }
+    }
+    // Fin de la première passe d'une animation : les catégories qui
+    // apparaîtront désormais pousseront depuis 0.
+    if (mode === 'animating') tweens.settle();
     if (JSON.stringify(warnings) !== JSON.stringify(layoutWarnings)) {
         layoutWarnings = warnings;
         try {
             document.dispatchEvent(new CustomEvent('mygcflow:stats-layout', { detail: { warnings } }));
         } catch (_) {}
     }
+}
+
+// Rect logique (px CSS, repère du conteneur) d'un panneau affiché, et taille
+// du conteneur : le glisser-déposer de stats_ui.js en déduit x/y normalisés.
+export function getStatsPanelRect(id) {
+    const rect = panelNodes.get(id)?.layout;
+    return rect ? { ...rect, container: { ...containerSize } } : null;
 }
 
 export function getStatsLayoutWarnings() {

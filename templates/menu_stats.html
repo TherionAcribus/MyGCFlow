@@ -41,6 +41,16 @@
                             <li><button type="button" class="dropdown-item" data-stats-preset="difficulty-terrain">{{ _("Difficulté + terrain") }}</button></li>
                             <li><button type="button" class="dropdown-item" data-stats-preset="jasmer">{{ _("Grille Jasmer") }}</button></li>
                             <li><button type="button" class="dropdown-item" data-stats-preset="calendar">{{ _("Calendrier 366") }}</button></li>
+                            <li><button type="button" class="dropdown-item" data-stats-preset="summary-progress">{{ _("Chiffres clés + progression") }}</button></li>
+                            <li><button type="button" class="dropdown-item" data-stats-preset="types-donut">{{ _("Types en anneau") }}</button></li>
+                            <li><button type="button" class="dropdown-item" data-stats-preset="race">{{ _("Course des pays") }}</button></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header">{{ _("Panneau seul") }}</h6></li>
+                            <li><button type="button" class="dropdown-item" data-stats-add="counter:summary">{{ _("Chiffres clés") }}</button></li>
+                            <li><button type="button" class="dropdown-item" data-stats-add="line:cumulative">{{ _("Progression des trouvailles") }}</button></li>
+                            <li><button type="button" class="dropdown-item" data-stats-add="donut:cache_type">{{ _("Anneau des types") }}</button></li>
+                            <li><button type="button" class="dropdown-item" data-stats-add="donut:container">{{ _("Anneau des tailles") }}</button></li>
+                            <li><button type="button" class="dropdown-item" data-stats-add="donut:country">{{ _("Anneau des pays") }}</button></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><h6 class="dropdown-header">{{ _("Histogramme seul") }}</h6></li>
                             <li><button type="button" class="dropdown-item" data-stats-add="bar:cache_type">{{ _("Types de caches") }}</button></li>
@@ -48,6 +58,8 @@
                             <li><button type="button" class="dropdown-item" data-stats-add="bar:difficulty">{{ _("Difficulté") }}</button></li>
                             <li><button type="button" class="dropdown-item" data-stats-add="bar:terrain">{{ _("Terrain") }}</button></li>
                             <li><button type="button" class="dropdown-item" data-stats-add="bar:year">{{ _("Trouvailles par année") }}</button></li>
+                            <li><button type="button" class="dropdown-item" data-stats-add="bar:country">{{ _("Pays") }}</button></li>
+                            <li><button type="button" class="dropdown-item" data-stats-add="bar:state">{{ _("Régions") }}</button></li>
                         </ul>
                     </div>
                 </div>
@@ -111,8 +123,9 @@
                                 <option value="natural">{{ _("Ordre naturel") }}</option>
                                 <option value="count">{{ _("Nombre de trouvailles") }}</option>
                                 <option value="label">{{ _("Alphabétique") }}</option>
+                                <option value="race">{{ _("Course (les lignes se doublent)") }}</option>
                             </select>
-                            <small id="helpStatsSort" class="form-hint text-muted">{{ _("L'ordre est fixé sur les totaux de fin d'animation : les lignes ne changent pas de place pendant la lecture.") }}</small>
+                            <small id="helpStatsSort" class="form-hint text-muted">{{ _("L'ordre est fixé sur les totaux de fin d'animation : les lignes ne changent pas de place pendant la lecture. En « Course », elles se doublent au fil des trouvailles.") }}</small>
                         </div>
                         <div class="col-12 col-md-6" data-stats-kind="bar">
                             <label class="form-label" for="selectStatsOrientation">{{ _("Barres") }}</label>
@@ -121,7 +134,7 @@
                                 <option value="vertical">{{ _("Verticales") }}</option>
                             </select>
                         </div>
-                        <div class="col-12 col-md-6" data-stats-kind="bar" data-stats-categorical>
+                        <div class="col-12 col-md-6" data-stats-kind="bar donut" data-stats-categorical>
                             <label class="form-label" for="inputStatsMaxItems">{{ _("Lignes au maximum") }}</label>
                             <input id="inputStatsMaxItems" type="number" class="form-control" min="3" max="30" step="1" aria-describedby="helpStatsMaxItems">
                             <small id="helpStatsMaxItems" class="form-hint text-muted">{{ _("Les catégories suivantes sont regroupées dans « Autres ».") }}</small>
@@ -131,16 +144,62 @@
                                 <input class="form-check-input" type="checkbox" id="switchStatsHideEmpty" role="switch">
                                 <label class="form-check-label" for="switchStatsHideEmpty">{{ _("Masquer les lignes vides") }}</label>
                             </div>
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="switchStatsPercent" role="switch">
-                                <label class="form-check-label" for="switchStatsPercent">{{ _("Afficher les pourcentages") }}</label>
+                        </div>
+
+                        <!-- Anneaux -->
+                        <div class="col-12 col-md-6" data-stats-kind="donut">
+                            <label class="form-label" for="rangeStatsHole">{{ _("Trou central") }} <span id="valueStatsHole" class="text-muted"></span></label>
+                            <input type="range" class="form-range" id="rangeStatsHole" min="0" max="85" step="5" aria-describedby="helpStatsHole">
+                            <small id="helpStatsHole" class="form-hint text-muted">{{ _("À 0 %, l'anneau devient un camembert.") }}</small>
+                        </div>
+                        <div class="col-12 col-md-6" data-stats-kind="donut">
+                            <div class="form-check form-switch mt-md-4">
+                                <input class="form-check-input" type="checkbox" id="switchStatsLegend" role="switch">
+                                <label class="form-check-label" for="switchStatsLegend">{{ _("Afficher la légende") }}</label>
                             </div>
                         </div>
 
-                        <div class="col-12 col-md-6">
+                        <!-- Courbe -->
+                        <div class="col-12 col-md-6" data-stats-kind="line">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="switchStatsArea" role="switch">
+                                <label class="form-check-label" for="switchStatsArea">{{ _("Remplir sous la courbe") }}</label>
+                            </div>
+                        </div>
+
+                        <!-- Compteurs -->
+                        <div class="col-12" data-stats-kind="counter">
+                            <span class="form-label d-block" id="labelStatsCounterItems">{{ _("Chiffres affichés") }}</span>
+                            <div id="statsCounterItems" class="stats-counter-items" role="group" aria-labelledby="labelStatsCounterItems">
+                                {% for item, label in [
+                                    ('days', _('Jours avec trouvaille')), ('best_day', _('Record sur une journée')),
+                                    ('streak', _('Plus longue série (jours)')), ('types', _('Types de caches différents')),
+                                    ('countries', _('Pays')), ('states', _('Régions'))] %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="statsCounter-{{ item }}" data-counter-item="{{ item }}">
+                                    <label class="form-check-label" for="statsCounter-{{ item }}">{{ label }}</label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <small class="form-hint text-muted">{{ _("Au moins un chiffre : décocher le dernier n'a pas d'effet.") }}</small>
+                        </div>
+                        <div class="col-12 col-md-6" data-stats-kind="counter">
+                            <label class="form-label" for="selectStatsColumns">{{ _("Colonnes") }}</label>
+                            <select id="selectStatsColumns" class="form-select">
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12 col-md-6" data-stats-kind="grid bar donut line">
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" id="switchStatsValues" role="switch">
                                 <label class="form-check-label" for="switchStatsValues">{{ _("Afficher les nombres") }}</label>
+                            </div>
+                            <div class="form-check form-switch" data-stats-kind="bar donut">
+                                <input class="form-check-input" type="checkbox" id="switchStatsPercent" role="switch">
+                                <label class="form-check-label" for="switchStatsPercent">{{ _("Afficher les pourcentages") }}</label>
                             </div>
                         </div>
                         <div class="col-12 col-md-6">
@@ -185,7 +244,15 @@
                                     <input id="inputStatsWidth" type="number" class="form-control" min="120" max="1200" step="10">
                                 </div>
                             </div>
-                            <small class="form-hint text-muted d-block mt-1">{{ _("Les panneaux qui partagent un coin s'empilent automatiquement ; la marge verticale sert alors d'espacement avec le panneau précédent.") }}</small>
+                            <small class="form-hint text-muted d-block mt-1">{{ _("Les panneaux qui partagent un coin s'empilent automatiquement et contournent le titre et les infos ; la marge verticale sert alors d'espacement avec le panneau précédent.") }}</small>
+                        </div>
+                        <div class="col-12">
+                            <div id="statsFreePosition" class="alert alert-info py-2 px-3 mb-0 small align-items-center gap-2" hidden>
+                                <i class="ti ti-hand-move" aria-hidden="true"></i>
+                                <span class="flex-grow-1">{{ _("Position libre : ce panneau a été glissé sur la carte.") }}</span>
+                                <button type="button" id="btnStatsBackToAnchor" class="btn btn-sm btn-outline-secondary">{{ _("Revenir au coin d'ancrage") }}</button>
+                            </div>
+                            <small class="form-hint text-muted d-block mt-1">{{ _("Tant que cet onglet est ouvert, vous pouvez glisser un panneau sur la carte pour le placer librement.") }}</small>
                         </div>
                     </div>
 
@@ -207,10 +274,11 @@
                             <label class="form-label" for="rangeStatsOpacity">{{ _("Opacité du fond") }} <span id="valueStatsOpacity" class="text-muted"></span></label>
                             <input type="range" class="form-range" id="rangeStatsOpacity" min="0" max="100" step="5">
                         </div>
-                        <div class="col-12 col-md-6" data-stats-kind="bar">
-                            <label class="form-label" for="selectStatsPalette">{{ _("Couleur des barres") }}</label>
+                        <div class="col-12 col-md-6" data-stats-kind="bar donut">
+                            <label class="form-label" for="selectStatsPalette">{{ _("Couleurs") }}</label>
                             <select id="selectStatsPalette" class="form-select">
                                 <option value="gc">{{ _("Couleurs des types de caches") }}</option>
+                                <option value="multi">{{ _("Une couleur par catégorie") }}</option>
                                 <option value="accent">{{ _("Couleur principale") }}</option>
                                 <option value="heat">{{ _("Dégradé selon le nombre") }}</option>
                             </select>

@@ -3003,3 +3003,24 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
 .stats-anchor-grid .btn-check:checked + .btn::after {
     opacity: 1;
 }
+
+/* Onglet Stats ouvert, au repos : les panneaux se saisissent à la souris
+   (stats_ui.js › bindDragAndDrop). Hors de ce mode, ils laissent passer les
+   événements vers la carte. */
+#mapWithFrames.stats-editing > .stats-panel {
+    pointer-events: auto;
+    cursor: grab;
+    outline: 1px dashed rgba(255, 255, 255, 0.7);
+    outline-offset: 2px;
+}
+#mapWithFrames.stats-editing > .stats-panel.is-dragging {
+    cursor: grabbing;
+    outline-style: solid;
+}
+
+/* Chiffres du panneau de compteurs : deux colonnes de cases à cocher. */
+.stats-counter-items {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+    column-gap: 1rem;
+}

@@ -66,10 +66,13 @@
           "show_title": true,
           "title": "",
           "position": {
+            "mode": "anchor",
             "anchor": "top-left",
             "dx": 16,
             "dy": 16,
-            "width": 280
+            "width": 280,
+            "x": 0,
+            "y": 0
           },
           "options": {
             "show_values": true,
@@ -119,10 +122,13 @@
           "show_title": true,
           "title": "",
           "position": {
+            "mode": "anchor",
             "anchor": "top-left",
             "dx": 16,
             "dy": 16,
-            "width": 280
+            "width": 280,
+            "x": 0,
+            "y": 0
           },
           "options": {
             "show_values": true,
@@ -150,10 +156,13 @@
           "show_title": true,
           "title": "",
           "position": {
+            "mode": "anchor",
             "anchor": "top-left",
             "dx": 16,
             "dy": 16,
-            "width": 280
+            "width": 280,
+            "x": 0,
+            "y": 0
           },
           "options": {
             "show_values": true,
@@ -213,10 +222,13 @@
           "show_title": true,
           "title": "",
           "position": {
+            "mode": "anchor",
             "anchor": "top-left",
             "dx": 16,
             "dy": 16,
-            "width": 280
+            "width": 280,
+            "x": 0,
+            "y": 0
           },
           "options": {
             "show_values": true,
@@ -246,10 +258,13 @@
           "show_title": true,
           "title": "",
           "position": {
+            "mode": "anchor",
             "anchor": "top-left",
             "dx": 16,
             "dy": 16,
-            "width": 280
+            "width": 280,
+            "x": 0,
+            "y": 0
           },
           "options": {
             "show_values": true,
@@ -279,10 +294,13 @@
           "show_title": true,
           "title": "",
           "position": {
+            "mode": "anchor",
             "anchor": "top-left",
             "dx": 16,
             "dy": 16,
-            "width": 280
+            "width": 280,
+            "x": 0,
+            "y": 0
           },
           "options": {
             "show_values": true,
@@ -312,10 +330,13 @@
           "show_title": true,
           "title": "",
           "position": {
+            "mode": "anchor",
             "anchor": "top-left",
             "dx": 16,
             "dy": 16,
-            "width": 280
+            "width": 280,
+            "x": 0,
+            "y": 0
           },
           "options": {
             "show_values": true,
@@ -378,10 +399,13 @@
           "show_title": true,
           "title": "",
           "position": {
+            "mode": "anchor",
             "anchor": "top-left",
             "dx": 16,
             "dy": 16,
-            "width": 280
+            "width": 280,
+            "x": 0,
+            "y": 0
           },
           "options": {
             "show_values": true,
@@ -446,10 +470,13 @@
           "show_title": true,
           "title": "",
           "position": {
+            "mode": "anchor",
             "anchor": "bottom-right",
             "dx": 0,
             "dy": 41,
-            "width": 1200
+            "width": 1200,
+            "x": 0,
+            "y": 0
           },
           "options": {
             "show_values": true,
@@ -511,10 +538,13 @@
           "show_title": true,
           "title": "",
           "position": {
+            "mode": "anchor",
             "anchor": "top-left",
             "dx": 16,
             "dy": 16,
-            "width": 300
+            "width": 300,
+            "x": 0,
+            "y": 0
           },
           "options": {
             "show_values": true,
@@ -569,10 +599,13 @@
           "show_title": true,
           "title": "",
           "position": {
+            "mode": "anchor",
             "anchor": "top-left",
             "dx": 16,
             "dy": 16,
-            "width": 280
+            "width": 280,
+            "x": 0,
+            "y": 0
           },
           "options": {
             "show_values": true,
@@ -622,10 +655,13 @@
           "show_title": true,
           "title": "",
           "position": {
+            "mode": "anchor",
             "anchor": "top-left",
             "dx": 16,
             "dy": 16,
-            "width": 280
+            "width": 280,
+            "x": 0,
+            "y": 0
           },
           "options": {
             "show_values": true,
@@ -686,10 +722,13 @@
           "show_title": false,
           "title": "Ma grille D/T",
           "position": {
+            "mode": "anchor",
             "anchor": "top-left",
             "dx": 16,
             "dy": 16,
-            "width": 280
+            "width": 280,
+            "x": 0,
+            "y": 0
           },
           "options": {
             "show_values": true,
@@ -717,10 +756,13 @@
           "show_title": true,
           "title": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
           "position": {
+            "mode": "anchor",
             "anchor": "top-left",
             "dx": 16,
             "dy": 16,
-            "width": 280
+            "width": 280,
+            "x": 0,
+            "y": 0
           },
           "options": {
             "show_values": true,
@@ -748,10 +790,13 @@
           "show_title": true,
           "title": "",
           "position": {
+            "mode": "anchor",
             "anchor": "top-left",
             "dx": 16,
             "dy": 16,
-            "width": 280
+            "width": 280,
+            "x": 0,
+            "y": 0
           },
           "options": {
             "show_values": true,
@@ -766,6 +811,595 @@
             "text_color": "#ffffff",
             "accent_color": "#29d34e",
             "palette": "heat",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "lot 3 : défauts des anneaux, courbe et compteurs",
+    "input": {
+      "panels": [
+        {
+          "id": "a1a1a1a1",
+          "kind": "donut",
+          "metric": "cache_type"
+        },
+        {
+          "id": "a1a1a1a2",
+          "kind": "donut",
+          "metric": "country"
+        },
+        {
+          "id": "a1a1a1a3",
+          "kind": "line",
+          "metric": "cumulative"
+        },
+        {
+          "id": "a1a1a1a4",
+          "kind": "counter",
+          "metric": "summary"
+        },
+        {
+          "id": "a1a1a1a5",
+          "kind": "bar",
+          "metric": "state"
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "panels": [
+        {
+          "id": "a1a1a1a1",
+          "kind": "donut",
+          "metric": "cache_type",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 300,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "show_values": true,
+            "show_percent": true,
+            "highlight": "every",
+            "max_items": 6,
+            "hole": 55,
+            "show_legend": true
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "gc",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        },
+        {
+          "id": "a1a1a1a2",
+          "kind": "donut",
+          "metric": "country",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 300,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "show_values": true,
+            "show_percent": true,
+            "highlight": "every",
+            "max_items": 6,
+            "hole": 55,
+            "show_legend": true
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "multi",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        },
+        {
+          "id": "a1a1a1a3",
+          "kind": "line",
+          "metric": "cumulative",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 320,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "show_values": true,
+            "highlight": "every",
+            "show_area": true
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "accent",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        },
+        {
+          "id": "a1a1a1a4",
+          "kind": "counter",
+          "metric": "summary",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 280,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "highlight": "every",
+            "items": [
+              "days",
+              "best_day",
+              "streak",
+              "types"
+            ],
+            "columns": 2
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "accent",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        },
+        {
+          "id": "a1a1a1a5",
+          "kind": "bar",
+          "metric": "state",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 280,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "show_values": true,
+            "show_percent": false,
+            "highlight": "every",
+            "sort": "count",
+            "orientation": "horizontal",
+            "max_items": 8,
+            "hide_empty": false
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "accent",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "lot 3 : combinaisons invalides écartées",
+    "input": {
+      "panels": [
+        {
+          "id": "b1b1b1b1",
+          "kind": "donut",
+          "metric": "year"
+        },
+        {
+          "id": "b1b1b1b2",
+          "kind": "line",
+          "metric": "dt"
+        },
+        {
+          "id": "b1b1b1b3",
+          "kind": "counter",
+          "metric": "days"
+        },
+        {
+          "id": "b1b1b1b4",
+          "kind": "line",
+          "metric": "cumulative",
+          "options": {
+            "sort": "race",
+            "show_area": "non"
+          }
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "panels": [
+        {
+          "id": "b1b1b1b4",
+          "kind": "line",
+          "metric": "cumulative",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 320,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "show_values": true,
+            "highlight": "every",
+            "show_area": true
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "accent",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "lot 3 : compteurs choisis, dédoublonnés, défaut si vide",
+    "input": {
+      "panels": [
+        {
+          "id": "c1c1c1c1",
+          "kind": "counter",
+          "metric": "summary",
+          "options": {
+            "items": [
+              "streak",
+              "streak",
+              "inconnu",
+              "countries",
+              3
+            ],
+            "columns": 9
+          }
+        },
+        {
+          "id": "c1c1c1c2",
+          "kind": "counter",
+          "metric": "summary",
+          "options": {
+            "items": [],
+            "columns": "1"
+          }
+        },
+        {
+          "id": "c1c1c1c3",
+          "kind": "counter",
+          "metric": "summary",
+          "options": {
+            "items": "days"
+          }
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "panels": [
+        {
+          "id": "c1c1c1c1",
+          "kind": "counter",
+          "metric": "summary",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 280,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "highlight": "every",
+            "items": [
+              "streak",
+              "countries"
+            ],
+            "columns": 3
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "accent",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        },
+        {
+          "id": "c1c1c1c2",
+          "kind": "counter",
+          "metric": "summary",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 280,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "highlight": "every",
+            "items": [
+              "days",
+              "best_day",
+              "streak",
+              "types"
+            ],
+            "columns": 1
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "accent",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        },
+        {
+          "id": "c1c1c1c3",
+          "kind": "counter",
+          "metric": "summary",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 280,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "highlight": "every",
+            "items": [
+              "days",
+              "best_day",
+              "streak",
+              "types"
+            ],
+            "columns": 2
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "accent",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "lot 3 : position libre normalisée et arrondie",
+    "input": {
+      "panels": [
+        {
+          "id": "d1d1d1d1",
+          "kind": "donut",
+          "metric": "container",
+          "position": {
+            "mode": "free",
+            "x": 0.123456,
+            "y": "0.98765"
+          },
+          "options": {
+            "hole": 99,
+            "show_legend": false,
+            "max_items": 2
+          },
+          "style": {
+            "palette": "multi"
+          }
+        },
+        {
+          "id": "d1d1d1d2",
+          "kind": "bar",
+          "metric": "country",
+          "position": {
+            "mode": "flottant",
+            "x": 1.5,
+            "y": -2
+          },
+          "options": {
+            "sort": "race"
+          }
+        },
+        {
+          "id": "d1d1d1d3",
+          "kind": "line",
+          "metric": "cumulative",
+          "position": {
+            "mode": "free",
+            "x": "abc",
+            "y": true
+          }
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "panels": [
+        {
+          "id": "d1d1d1d1",
+          "kind": "donut",
+          "metric": "container",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "free",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 300,
+            "x": 0.1235,
+            "y": 0.9877
+          },
+          "options": {
+            "show_values": true,
+            "show_percent": true,
+            "highlight": "every",
+            "max_items": 3,
+            "hole": 85,
+            "show_legend": false
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "multi",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        },
+        {
+          "id": "d1d1d1d2",
+          "kind": "bar",
+          "metric": "country",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 280,
+            "x": 1.0,
+            "y": 0.0
+          },
+          "options": {
+            "show_values": true,
+            "show_percent": false,
+            "highlight": "every",
+            "sort": "race",
+            "orientation": "horizontal",
+            "max_items": 8,
+            "hide_empty": false
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "accent",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        },
+        {
+          "id": "d1d1d1d3",
+          "kind": "line",
+          "metric": "cumulative",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "free",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 320,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "show_values": true,
+            "highlight": "every",
+            "show_area": true
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "accent",
             "font_size": 12,
             "radius": 10,
             "inherit_font": true
@@ -831,10 +1465,13 @@
           "show_title": true,
           "title": "",
           "position": {
+            "mode": "anchor",
             "anchor": "top-left",
             "dx": 16,
             "dy": 16,
-            "width": 280
+            "width": 280,
+            "x": 0,
+            "y": 0
           },
           "options": {
             "show_values": true,
@@ -864,10 +1501,13 @@
           "show_title": true,
           "title": "",
           "position": {
+            "mode": "anchor",
             "anchor": "top-left",
             "dx": 16,
             "dy": 16,
-            "width": 280
+            "width": 280,
+            "x": 0,
+            "y": 0
           },
           "options": {
             "show_values": true,
@@ -897,10 +1537,13 @@
           "show_title": true,
           "title": "",
           "position": {
+            "mode": "anchor",
             "anchor": "top-left",
             "dx": 16,
             "dy": 16,
-            "width": 280
+            "width": 280,
+            "x": 0,
+            "y": 0
           },
           "options": {
             "show_values": true,
@@ -930,10 +1573,13 @@
           "show_title": true,
           "title": "",
           "position": {
+            "mode": "anchor",
             "anchor": "top-left",
             "dx": 16,
             "dy": 16,
-            "width": 280
+            "width": 280,
+            "x": 0,
+            "y": 0
           },
           "options": {
             "show_values": true,
@@ -963,10 +1609,13 @@
           "show_title": true,
           "title": "",
           "position": {
+            "mode": "anchor",
             "anchor": "top-left",
             "dx": 16,
             "dy": 16,
-            "width": 280
+            "width": 280,
+            "x": 0,
+            "y": 0
           },
           "options": {
             "show_values": true,
@@ -996,10 +1645,13 @@
           "show_title": true,
           "title": "",
           "position": {
+            "mode": "anchor",
             "anchor": "top-left",
             "dx": 16,
             "dy": 16,
-            "width": 280
+            "width": 280,
+            "x": 0,
+            "y": 0
           },
           "options": {
             "show_values": true,

@@ -30,9 +30,12 @@ video (with a music track if you want one).
 - **Travel trail** — optional line that follows the geocacher from one stop to
   the next and reaches the new caches just as they appear (grouping radius,
   curves, long-jump arcs, color, width, pattern, glow, head, fading trail).
-- **Statistics panels** — D/T grid, Jasmer grid, 366-day calendar and bar
-  charts (types, sizes, difficulty, terrain, years) placed on the map, filling
-  up as the animation plays and rendered into the video.
+- **Statistics panels** — D/T grid, Jasmer grid, 366-day calendar, bar charts
+  (types, sizes, difficulty, terrain, years, countries, regions, optionally as a
+  bar chart race), donut or pie charts, a cumulative progress curve and key
+  figures (best day, longest streak…), placed on the map — anchored to a corner
+  or dragged with the mouse — filling up as the animation plays and rendered
+  into the video.
 - **Overlay** — title and info block (find count, current date), styled through
   text/box/shadow/position controls or raw CSS.
 - **Animation** — start/end dates, duration per day or total target duration,

@@ -24,7 +24,13 @@ export const STATS_MAX_PANELS = 6;
 
 export const STATS_METRICS_BY_KIND = Object.freeze({
     grid: Object.freeze(['dt', 'jasmer', 'calendar']),
-    bar: Object.freeze(['cache_type', 'container', 'difficulty', 'terrain', 'year']),
+    bar: Object.freeze(['cache_type', 'container', 'difficulty', 'terrain', 'year', 'country', 'state']),
+    // Anneau (camembert si le trou vaut 0) : catégories seulement.
+    donut: Object.freeze(['cache_type', 'container', 'country', 'state']),
+    // Courbe des trouvailles cumulées.
+    line: Object.freeze(['cumulative']),
+    // Tuiles de chiffres clés (STATS_COUNTER_ITEMS).
+    counter: Object.freeze(['summary']),
 });
 export const STATS_KINDS = Object.freeze(Object.keys(STATS_METRICS_BY_KIND));
 
@@ -34,11 +40,18 @@ export const STATS_ANCHORS = Object.freeze([
     'bottom-left', 'bottom-center', 'bottom-right',
 ]);
 
+// « anchor » : coin + marges, empilé avec les panneaux du même coin ; « free » :
+// glissé à la souris, position normalisée (x, y) dans l'espace libre du cadre.
+export const STATS_POSITION_MODES = Object.freeze(['anchor', 'free']);
+
 export const STATS_HIGHLIGHTS = Object.freeze(['new', 'every', 'none']);
 export const STATS_CELL_MODES = Object.freeze(['count', 'filled', 'heat']);
-export const STATS_SORTS = Object.freeze(['natural', 'count', 'label']);
+// « race » : course de barres, l'ordre suit l'état courant.
+export const STATS_SORTS = Object.freeze(['natural', 'count', 'label', 'race']);
 export const STATS_ORIENTATIONS = Object.freeze(['horizontal', 'vertical']);
-export const STATS_PALETTES = Object.freeze(['gc', 'accent', 'heat']);
+// « multi » : une couleur distincte par catégorie.
+export const STATS_PALETTES = Object.freeze(['gc', 'accent', 'heat', 'multi']);
+export const STATS_COUNTER_ITEMS = Object.freeze(['days', 'best_day', 'streak', 'types', 'countries', 'states']);
 
 export const STATS_OFFSET_RANGE = Object.freeze([0, 2000]);
 export const STATS_WIDTH_RANGE = Object.freeze([120, 1200]);
@@ -46,6 +59,8 @@ export const STATS_MAX_ITEMS_RANGE = Object.freeze([3, 30]);
 export const STATS_OPACITY_RANGE = Object.freeze([0, 100]);
 export const STATS_FONT_SIZE_RANGE = Object.freeze([8, 32]);
 export const STATS_RADIUS_RANGE = Object.freeze([0, 40]);
+export const STATS_HOLE_RANGE = Object.freeze([0, 85]);
+export const STATS_COLUMNS_RANGE = Object.freeze([1, 3]);
 export const STATS_TITLE_MAX = 80;
 
 export const STATS_DEFAULTS = Object.freeze({ enabled: true, panels: Object.freeze([]) });
@@ -55,14 +70,37 @@ const HEX_RE = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 // Même règle que _NUMERIC_RE côté serveur : « 12 », « -3 », « 12.5 », rien d'autre.
 const NUMERIC_RE = /^[ \t]*-?[0-9]+(?:\.[0-9]+)?[ \t]*$/;
 
-function intIn(value, fallback, [min, max]) {
+// Nombre fini lu d'un nombre JSON ou d'une chaîne numérique simple, sinon null.
+function numberOf(value) {
     let number = null;
     if (typeof value === 'number') number = value;
     else if (typeof value === 'string' && NUMERIC_RE.test(value)) number = Number(value);
-    if (number === null || !Number.isFinite(number)) return fallback;
+    return number !== null && Number.isFinite(number) ? number : null;
+}
+
+function intIn(value, fallback, [min, max]) {
+    const number = numberOf(value);
+    if (number === null) return fallback;
     // Math.round = arrondi au demi supérieur, que le serveur reproduit
     // (floor(x + 0.5)) plutôt que l'arrondi au pair de round().
     return Math.max(min, Math.min(max, Math.round(number)));
+}
+
+// Fraction [0, 1] arrondie à 1e-4 — même opération que _unit côté serveur.
+function unit(value, fallback) {
+    const number = numberOf(value);
+    if (number === null) return fallback;
+    return Math.floor(Math.max(0, Math.min(1, number)) * 10000 + 0.5) / 10000;
+}
+
+// Liste de choix connus, sans doublon ; vide ou invalide → défaut.
+function choices(value, allowed, fallback) {
+    if (!Array.isArray(value)) return [...fallback];
+    const out = [];
+    for (const item of value) {
+        if (typeof item === 'string' && allowed.includes(item) && !out.includes(item)) out.push(item);
+    }
+    return out.length ? out : [...fallback];
 }
 
 const bool = (value, fallback) => (typeof value === 'boolean' ? value : fallback);
@@ -85,9 +123,13 @@ function title(value) {
     return Array.from(flat).slice(0, STATS_TITLE_MAX).join('');
 }
 
-// Valeurs par défaut d'un panneau, fonction de sa métrique : les grandeurs
-// ordonnées (tailles, D/T, années) gardent leur ordre naturel, seuls les
-// types — sans ordre propre — sont triés par nombre de trouvailles.
+const CATEGORICAL_METRICS = ['cache_type', 'container', 'country', 'state'];
+const DEFAULT_WIDTH = { grid: 280, bar: 280, donut: 300, line: 320, counter: 280 };
+
+// Valeurs par défaut d'un panneau, fonction de son type et de sa métrique :
+// les grandeurs ordonnées (tailles, D/T, années) gardent leur ordre naturel,
+// les catégories sans ordre propre (types, pays, régions) sont triées par
+// nombre de trouvailles.
 export function statsPanelDefaults(kind, metric) {
     let options;
     let palette;
@@ -100,23 +142,42 @@ export function statsPanelDefaults(kind, metric) {
             show_coverage: true,
         };
         palette = 'heat';
-    } else {
+    } else if (kind === 'bar') {
         options = {
             show_values: true,
             show_percent: false,
             highlight: 'every',
-            sort: metric === 'cache_type' ? 'count' : 'natural',
-            orientation: metric === 'cache_type' || metric === 'container' ? 'horizontal' : 'vertical',
+            sort: ['cache_type', 'country', 'state'].includes(metric) ? 'count' : 'natural',
+            orientation: CATEGORICAL_METRICS.includes(metric) ? 'horizontal' : 'vertical',
             max_items: 8,
             hide_empty: false,
         };
         palette = metric === 'cache_type' ? 'gc' : 'accent';
+    } else if (kind === 'donut') {
+        options = {
+            show_values: true,
+            show_percent: true,
+            highlight: 'every',
+            max_items: 6,
+            hole: 55,
+            show_legend: true,
+        };
+        palette = metric === 'cache_type' ? 'gc' : 'multi';
+    } else if (kind === 'line') {
+        options = { show_values: true, highlight: 'every', show_area: true };
+        palette = 'accent';
+    } else {
+        options = { highlight: 'every', items: ['days', 'best_day', 'streak', 'types'], columns: 2 };
+        palette = 'accent';
     }
     return {
         enabled: true,
         show_title: true,
         title: '',
-        position: { anchor: 'top-left', dx: 16, dy: 16, width: 280 },
+        position: {
+            mode: 'anchor', anchor: 'top-left', dx: 16, dy: 16,
+            width: DEFAULT_WIDTH[kind] || 280, x: 0, y: 0,
+        },
         options,
         style: {
             background: '#0b1a2b',
@@ -141,6 +202,21 @@ const OPTION_COERCERS = {
     orientation: (v, d) => choice(v, STATS_ORIENTATIONS, d),
     max_items: (v, d) => intIn(v, d, STATS_MAX_ITEMS_RANGE),
     hide_empty: bool,
+    hole: (v, d) => intIn(v, d, STATS_HOLE_RANGE),
+    show_legend: bool,
+    show_area: bool,
+    items: (v, d) => choices(v, STATS_COUNTER_ITEMS, d),
+    columns: (v, d) => intIn(v, d, STATS_COLUMNS_RANGE),
+};
+
+const POSITION_COERCERS = {
+    mode: (v, d) => choice(v, STATS_POSITION_MODES, d),
+    anchor: (v, d) => choice(v, STATS_ANCHORS, d),
+    dx: (v, d) => intIn(v, d, STATS_OFFSET_RANGE),
+    dy: (v, d) => intIn(v, d, STATS_OFFSET_RANGE),
+    width: (v, d) => intIn(v, d, STATS_WIDTH_RANGE),
+    x: unit,
+    y: unit,
 };
 
 const STYLE_COERCERS = {
@@ -174,8 +250,6 @@ export function normalizeStatsPanel(raw) {
     if (typeof kind !== 'string' || !Object.hasOwn(STATS_METRICS_BY_KIND, kind)) return null;
     if (!STATS_METRICS_BY_KIND[kind].includes(metric)) return null;
     const defaults = statsPanelDefaults(kind, metric);
-    const position = isObject(raw.position) ? raw.position : {};
-    const pd = defaults.position;
     return {
         id: typeof raw.id === 'string' && ID_RE.test(raw.id) ? raw.id : '',
         kind,
@@ -183,12 +257,7 @@ export function normalizeStatsPanel(raw) {
         enabled: bool(raw.enabled, defaults.enabled),
         show_title: bool(raw.show_title, defaults.show_title),
         title: title(raw.title),
-        position: {
-            anchor: choice(position.anchor, STATS_ANCHORS, pd.anchor),
-            dx: intIn(position.dx, pd.dx, STATS_OFFSET_RANGE),
-            dy: intIn(position.dy, pd.dy, STATS_OFFSET_RANGE),
-            width: intIn(position.width, pd.width, STATS_WIDTH_RANGE),
-        },
+        position: coerceBlock(raw.position, defaults.position, POSITION_COERCERS),
         options: coerceBlock(raw.options, defaults.options, OPTION_COERCERS),
         style: coerceBlock(raw.style, defaults.style, STYLE_COERCERS),
     };
@@ -238,13 +307,34 @@ export function createStatsPanel(kind, metric, overrides = {}, newId = newStatsP
     });
 }
 
+// Compteurs → métriques de l'accumulateur dont ils dépendent.
+const COUNTER_DEPENDENCIES = {
+    days: 'day',
+    best_day: 'day',
+    streak: 'day',
+    types: 'cache_type',
+    countries: 'country',
+    states: 'state',
+};
+
+// Métriques de l'accumulateur nécessaires à un panneau. La courbe et les
+// compteurs se calculent à partir des comptes par jour, types, pays…
+export function accumulatorMetricsFor(panel) {
+    if (panel.kind === 'line') return ['day'];
+    if (panel.kind === 'counter') {
+        return [...new Set((panel.options?.items || []).map((item) => COUNTER_DEPENDENCIES[item]).filter(Boolean))];
+    }
+    return [panel.metric];
+}
+
 // Métriques à compter pour une liste de panneaux : seuls les panneaux actifs
 // coûtent quelque chose.
 export function metricsForPanels(settings) {
     const metrics = new Set();
     if (!settings?.enabled) return metrics;
     for (const panel of settings.panels || []) {
-        if (panel.enabled) metrics.add(panel.metric);
+        if (!panel.enabled) continue;
+        for (const metric of accumulatorMetricsFor(panel)) metrics.add(metric);
     }
     return metrics;
 }
@@ -278,6 +368,29 @@ export const JASMER_START = Object.freeze({ y: 2000, m: 5 });
 
 export const UNKNOWN_KEY = 'unknown';
 
+const DAY_MS = 86400000;
+
+// Jour civil → numéro de jour (jours depuis le 01/01/1970) : entier, donc
+// consécutif d'un jour au suivant, sans fuseau ni heure d'été.
+export function dayNumber({ y, m, d }) {
+    return Date.UTC(y, m - 1, d) / DAY_MS;
+}
+
+// Date locale (minuit, convention de pointsByDate) → numéro de jour.
+export function dayNumberOfDate(date) {
+    return dayNumber({ y: date.getFullYear(), m: date.getMonth() + 1, d: date.getDate() });
+}
+
+export function ymdOfDay(day) {
+    const date = new Date(day * DAY_MS);
+    return { y: date.getUTCFullYear(), m: date.getUTCMonth() + 1, d: date.getUTCDate() };
+}
+
+function textKey(value) {
+    const text = typeof value === 'string' ? value.trim() : '';
+    return text && text.toLowerCase() !== 'unknown' ? text : UNKNOWN_KEY;
+}
+
 const KEY_OF = {
     dt(p) {
         const d = dtIndex(p.difficulty);
@@ -298,8 +411,7 @@ const KEY_OF = {
         return typeof p.cache_type === 'string' && p.cache_type.trim() ? p.cache_type : UNKNOWN_KEY;
     },
     container(p) {
-        const value = typeof p.container === 'string' ? p.container.trim() : '';
-        return value && value.toLowerCase() !== 'unknown' ? value : UNKNOWN_KEY;
+        return textKey(p.container);
     },
     difficulty(p) {
         const i = dtIndex(p.difficulty);
@@ -312,6 +424,17 @@ const KEY_OF = {
     year(p) {
         const date = parseYmd(p.date_find);
         return date ? date.y : null;
+    },
+    // Jour de trouvaille : courbe cumulée et compteurs (jours, record, série).
+    day(p) {
+        const date = parseYmd(p.date_find);
+        return date ? dayNumber(date) : null;
+    },
+    country(p) {
+        return textKey(p.country);
+    },
+    state(p) {
+        return textKey(p.state);
     },
 };
 
@@ -541,7 +664,7 @@ export const CONTAINER_ORDER = Object.freeze([
     'Nano', 'Micro', 'Small', 'Regular', 'Large', 'Other', 'Virtual', 'Not chosen',
 ]);
 
-const CATEGORICAL = new Set(['cache_type', 'container']);
+const CATEGORICAL = new Set(CATEGORICAL_METRICS);
 
 function naturalCompare(metric, labelOf) {
     if (metric === 'container') {
@@ -552,7 +675,7 @@ function naturalCompare(metric, labelOf) {
         };
         return (a, b) => rank(a) - rank(b) || String(labelOf(a)).localeCompare(String(labelOf(b)));
     }
-    if (metric === 'cache_type') {
+    if (CATEGORICAL.has(metric)) {
         return (a, b) => (a === UNKNOWN_KEY) - (b === UNKNOWN_KEY)
             || String(labelOf(a)).localeCompare(String(labelOf(b)));
     }
@@ -592,6 +715,17 @@ export function barModel(metric, current, reference, options = {}, labelOf = Str
 
     const natural = naturalCompare(metric, labelOf);
     const sort = options.sort || 'natural';
+    const maxItems = Number.isInteger(options.max_items) ? options.max_items : 8;
+    if (sort === 'race') {
+        // Course de barres : ordre et top-N suivent l'ÉTAT COURANT (les lignes
+        // se doublent), l'échelle le meneur du moment. Pas de ligne « Autres » :
+        // une catégorie qui sort du top disparaît, celle qui y entre apparaît.
+        keys.sort((a, b) => countOf(b) - countOf(a) || natural(a, b));
+        const rows = keys.slice(0, maxItems)
+            .map((key) => ({ key, keys: [key], count: countOf(key), refCount: refOf(key) }));
+        const max = rows.reduce((m, row) => Math.max(m, row.count), 0);
+        return { rows, max, race: true, excluded: current.excluded.get(metric) || 0, total: ref.total };
+    }
     if (sort === 'count') {
         keys.sort((a, b) => refOf(b) - refOf(a) || natural(a, b));
     } else if (sort === 'label') {
@@ -604,7 +738,6 @@ export function barModel(metric, current, reference, options = {}, labelOf = Str
 
     // Top-N + « Autres » : seulement pour les catégories (types, tailles). Les
     // grandeurs ordonnées (D/T, années) s'affichent en entier, sans trou.
-    const maxItems = Number.isInteger(options.max_items) ? options.max_items : 8;
     if (CATEGORICAL.has(metric) && rows.length > maxItems) {
         // Les gardées : les plus fréquentes de la RÉFÉRENCE, affichées dans
         // l'ordre choisi — un type qui dépasse un autre en cours d'animation
@@ -634,6 +767,8 @@ export function barModel(metric, current, reference, options = {}, labelOf = Str
 // ---------------------------------------------------------------------------
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+// Espace laissé entre une pile et la boîte (titre, infos) qu'elle contourne.
+const STACK_GAP = 8;
 
 // Positionne les panneaux visibles dans un conteneur `{ width, height }`.
 // items : [{ id, anchor, dx, dy, width, height }] dans l'ordre de la liste.
@@ -646,12 +781,26 @@ const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 // Renvoie Map id → { x, y, width, height, css, overflow } ; `css` exprime la
 // position par rapport à l'ancre (left/right, top/bottom), convention relue
 // par overlay_canvas.js pour la vidéo.
-export function layoutPanels(items, container) {
+export function layoutPanels(items, container, obstacles = []) {
     const W = Math.max(0, container?.width || 0);
     const H = Math.max(0, container?.height || 0);
     const result = new Map();
     const groups = new Map();
     for (const item of items) {
+        if (item.mode === 'free') {
+            // Position libre : fraction de l'espace restant, donc toujours dans
+            // le cadre quelle que soit sa taille (aperçu redimensionné, vidéo).
+            const width = Math.min(Math.max(0, item.width || 0), W);
+            const height = Math.max(0, item.height || 0);
+            const x = Math.max(0, W - width) * clamp(item.x || 0, 0, 1);
+            const y = Math.max(0, H - height) * clamp(item.y || 0, 0, 1);
+            result.set(item.id, {
+                x, y, width, height,
+                css: { left: Math.round(x), top: Math.round(y) },
+                overflow: height > H || width < (item.width || 0),
+            });
+            continue;
+        }
         const anchor = STATS_ANCHORS.includes(item.anchor) ? item.anchor : 'top-left';
         if (!groups.has(anchor)) groups.set(anchor, []);
         groups.get(anchor).push(item);
@@ -667,6 +816,29 @@ export function layoutPanels(items, container) {
         if (vertical === 'top') cursor = group[0].dy || 0;
         else if (vertical === 'bottom') cursor = H - (group[0].dy || 0);
         else cursor = (H - total) / 2;
+
+        // Évitement du titre et des infos : une pile de coin qui démarrerait
+        // sur l'une de ces boîtes commence juste après elle.
+        if (vertical !== 'middle' && obstacles.length) {
+            const xs = group.map((item) => {
+                const width = Math.min(Math.max(0, item.width || 0), W);
+                if (horizontal === 'left') return [item.dx || 0, (item.dx || 0) + width];
+                if (horizontal === 'right') return [W - (item.dx || 0) - width, W - (item.dx || 0)];
+                return [(W - width) / 2, (W + width) / 2];
+            });
+            const left = Math.min(...xs.map(([a]) => a));
+            const right = Math.max(...xs.map(([, b]) => b));
+            const firstH = heights[0];
+            const sorted = [...obstacles].sort((a, b) => (vertical === 'top' ? a.y - b.y : b.y - a.y));
+            for (const box of sorted) {
+                if (box.x >= right || box.x + box.width <= left) continue;
+                const top = vertical === 'top' ? cursor : cursor - firstH;
+                if (box.y >= top + firstH || box.y + box.height <= top) continue;
+                cursor = vertical === 'top'
+                    ? box.y + box.height + STACK_GAP
+                    : box.y - STACK_GAP;
+            }
+        }
         const stackOverflow = (vertical === 'middle' ? total : total + (group[0].dy || 0)) > H;
 
         group.forEach((item, i) => {
@@ -706,4 +878,155 @@ export function rectsOverlap(a, b) {
     if (!a || !b) return false;
     return a.x < b.x + b.width && b.x < a.x + a.width
         && a.y < b.y + b.height && b.y < a.y + a.height;
+}
+
+// ---------------------------------------------------------------------------
+// Courbe de progression (trouvailles cumulées)
+// ---------------------------------------------------------------------------
+
+// `context.headDay` : jour affiché par l'animation (la courbe s'y prolonge à
+// plat s'il n'y a pas eu de trouvaille) ; `context.endDay` : fin de l'axe des
+// x si l'animation s'arrête après la dernière trouvaille.
+// Axe des y : total de la référence, pour que la courbe finisse en haut.
+export function lineModel(current, reference, context = {}) {
+    const ref = reference || current;
+    const refDays = [...(ref.counts.get('day') || new Map()).keys()].sort((a, b) => a - b);
+    const counts = current.counts.get('day') || new Map();
+    const days = [...counts.keys()].sort((a, b) => a - b);
+    if (!refDays.length && !days.length) {
+        return { empty: true, points: [], first: 0, last: 0, max: 0, total: 0, excluded: current.excluded.get('day') || 0 };
+    }
+    const first = Math.min(refDays[0] ?? Infinity, days[0] ?? Infinity);
+    let last = Math.max(refDays.at(-1) ?? -Infinity, days.at(-1) ?? -Infinity);
+    if (Number.isFinite(context.endDay)) last = Math.max(last, context.endDay);
+    let refTotal = 0;
+    for (const n of (ref.counts.get('day') || new Map()).values()) refTotal += n;
+
+    const points = [];
+    let total = 0;
+    for (const day of days) {
+        total += counts.get(day);
+        points.push({ day, total });
+    }
+    let headDay = days.at(-1) ?? first;
+    if (Number.isFinite(context.headDay)) headDay = Math.max(headDay, Math.min(last, context.headDay));
+    return {
+        empty: false,
+        points,
+        first,
+        last: Math.max(last, first + 1),
+        max: Math.max(refTotal, total),
+        total,
+        headDay,
+        excluded: current.excluded.get('day') || 0,
+    };
+}
+
+// ---------------------------------------------------------------------------
+// Compteurs
+// ---------------------------------------------------------------------------
+
+function knownKeys(acc, metric) {
+    let n = 0;
+    for (const key of (acc.counts.get(metric) || new Map()).keys()) if (key !== UNKNOWN_KEY) n += 1;
+    return n;
+}
+
+// Valeurs des tuiles demandées. Égalités : la journée record la plus ancienne,
+// la série la plus ancienne (celle qui a été atteinte en premier).
+export function counterValues(acc, items) {
+    const values = {};
+    const dayCounts = acc.counts.get('day') || new Map();
+    for (const item of items) {
+        if (item === 'days') {
+            values.days = { value: dayCounts.size };
+        } else if (item === 'best_day') {
+            let best = { value: 0, day: null };
+            for (const [day, n] of dayCounts) {
+                if (n > best.value || (n === best.value && best.day !== null && day < best.day)) best = { value: n, day };
+            }
+            values.best_day = best;
+        } else if (item === 'streak') {
+            const days = [...dayCounts.keys()].sort((a, b) => a - b);
+            let best = { value: 0, start: null, end: null };
+            let start = null;
+            for (let i = 0; i < days.length; i++) {
+                if (i === 0 || days[i] !== days[i - 1] + 1) start = days[i];
+                const length = days[i] - start + 1;
+                if (length > best.value) best = { value: length, start, end: days[i] };
+            }
+            values.streak = best;
+        } else if (item === 'types') {
+            values.types = { value: knownKeys(acc, 'cache_type') };
+        } else if (item === 'countries') {
+            values.countries = { value: knownKeys(acc, 'country') };
+        } else if (item === 'states') {
+            values.states = { value: knownKeys(acc, 'state') };
+        }
+    }
+    return values;
+}
+
+// ---------------------------------------------------------------------------
+// Valeurs animées
+// ---------------------------------------------------------------------------
+
+// Une valeur qui change (longueur de barre, part d'anneau, compteur) glisse
+// vers sa nouvelle cible au lieu de sauter, en `durationMs` à l'horloge des
+// points — reproductible en capture image par image. Sans horloge (repos),
+// tout est immédiat.
+//
+// Une clé vue pour la première fois part de 0 (une catégorie qui apparaît
+// pousse), sauf pendant la première passe après clear(instant) : l'état
+// initial d'une animation s'affiche d'emblée.
+export function createTweenStore(durationMs = 600) {
+    const entries = new Map();
+    let duration = durationMs;
+    let lastAt = -Infinity;
+    let instant = true;
+    const ease = (p) => 1 - (1 - p) ** 3;
+    const store = {
+        get(key, now) {
+            const entry = entries.get(key);
+            if (!entry) return undefined;
+            if (!Number.isFinite(now) || !(duration > 0)) return entry.to;
+            const p = Math.max(0, Math.min(1, (now - entry.at) / duration));
+            return entry.from + (entry.to - entry.from) * ease(p);
+        },
+        // Pose la cible et renvoie la valeur à afficher à `now`.
+        set(key, target, now) {
+            const entry = entries.get(key);
+            if (entry && entry.to === target) return store.get(key, now);
+            if (!Number.isFinite(now) || instant || !(duration > 0)) {
+                entries.set(key, { from: target, to: target, at: -Infinity });
+                return target;
+            }
+            const from = entry ? store.get(key, now) : 0;
+            entries.set(key, { from, to: target, at: now });
+            lastAt = Math.max(lastAt, now);
+            return store.get(key, now);
+        },
+        isActive(now) {
+            return Number.isFinite(now) && now - lastAt < duration;
+        },
+        // Éclat d'une valeur qui vient de changer : 1 au changement, 0 une fois
+        // arrivée (surbrillance des tuiles de compteurs).
+        level(key, now) {
+            const entry = entries.get(key);
+            if (!entry || !Number.isFinite(now) || !Number.isFinite(entry.at) || !(duration > 0)) return 0;
+            const p = (now - entry.at) / duration;
+            return p >= 0 && p < 1 ? 1 - p : 0;
+        },
+        // Fin de la première passe : les clés nouvelles pousseront désormais.
+        settle() {
+            instant = false;
+        },
+        clear(nextDuration = duration) {
+            entries.clear();
+            duration = nextDuration;
+            lastAt = -Infinity;
+            instant = true;
+        },
+    };
+    return store;
 }

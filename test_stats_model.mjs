@@ -5,6 +5,13 @@ import { readFileSync } from 'node:fs';
 import {
     STATS_DEFAULTS,
     STATS_MAX_PANELS,
+    accumulatorMetricsFor,
+    counterValues,
+    createTweenStore,
+    dayNumber,
+    dayNumberOfDate,
+    lineModel,
+    ymdOfDay,
     UNKNOWN_KEY,
     OTHERS_KEY,
     barModel,
@@ -379,4 +386,130 @@ test('débordement : rect ramené dans le cadre et signalé', () => {
     assert.equal(layout.get('wide').width, 1000);
     assert.equal(layout.get('wide').overflow, true);
     assert.equal(layout.get('a').overflow, true);  // même pile
+});
+
+// ---------------------------------------------------------------------------
+// Lot 3 : anneaux, courbe, compteurs, course de barres, position libre
+// ---------------------------------------------------------------------------
+
+const onDay = (date, extra = {}) => geocache(1, 1, { date_find: date, ...extra });
+
+test('jours : numéro entier consécutif, aller-retour, date locale', () => {
+    const a = dayNumber({ y: 2024, m: 2, d: 28 });
+    assert.equal(dayNumber({ y: 2024, m: 2, d: 29 }), a + 1);
+    assert.equal(dayNumber({ y: 2024, m: 3, d: 1 }), a + 2);
+    assert.deepEqual(ymdOfDay(a + 2), { y: 2024, m: 3, d: 1 });
+    // Changement d'heure : la date locale à minuit donne toujours le jour civil.
+    assert.equal(dayNumberOfDate(new Date(2026, 2, 29)), dayNumber({ y: 2026, m: 3, d: 29 }));
+    assert.equal(statsKeyOf('day', { date_find: '2024-02-29' }), a + 1);
+    assert.equal(statsKeyOf('country', { country: ' France ' }), 'France');
+    assert.equal(statsKeyOf('state', { state: null }), UNKNOWN_KEY);
+});
+
+test('dépendances : courbe et compteurs comptent ce dont ils ont besoin', () => {
+    assert.deepEqual(accumulatorMetricsFor({ kind: 'line', metric: 'cumulative' }), ['day']);
+    assert.deepEqual(
+        accumulatorMetricsFor({ kind: 'counter', metric: 'summary', options: { items: ['streak', 'days', 'countries'] } }),
+        ['day', 'country'],
+    );
+    assert.deepEqual(accumulatorMetricsFor({ kind: 'donut', metric: 'state' }), ['state']);
+    const settings = normalizeStatsSettings({ panels: [
+        { id: 'aaaaaa01', kind: 'line', metric: 'cumulative' },
+        { id: 'aaaaaa02', kind: 'counter', metric: 'summary', options: { items: ['types', 'states'] } },
+    ] });
+    assert.deepEqual([...metricsForPanels(settings)].sort(), ['cache_type', 'day', 'state']);
+});
+
+test('compteurs : jours, record (le plus ancien à égalité), plus longue série, distincts connus', () => {
+    const acc = countFeatures([
+        onDay('2024-01-01', { country: 'France', state: 'Bretagne' }),
+        onDay('2024-01-02', { country: 'France', state: 'Normandie' }),
+        onDay('2024-01-02', { country: 'Belgique', cache_type: 'Multi-cache' }),
+        onDay('2024-01-03'),
+        onDay('2024-01-05'),
+        onDay('2024-01-05'),
+        onDay('2024-01-06', { country: null }),
+    ], ['day', 'cache_type', 'country', 'state']);
+    const v = counterValues(acc, ['days', 'best_day', 'streak', 'types', 'countries', 'states']);
+    assert.equal(v.days.value, 5);
+    assert.equal(v.best_day.value, 2);
+    assert.equal(v.best_day.day, dayNumber({ y: 2024, m: 1, d: 2 }));
+    assert.equal(v.streak.value, 3);
+    assert.equal(v.streak.start, dayNumber({ y: 2024, m: 1, d: 1 }));
+    assert.equal(v.types.value, 2);
+    assert.equal(v.countries.value, 2);     // « inconnu » ne compte pas
+    assert.equal(v.states.value, 2);
+});
+
+test('courbe : cumul par jour, axe calé sur la référence, tête prolongée à plat', () => {
+    const reference = countFeatures([
+        onDay('2024-01-01'), onDay('2024-01-03'), onDay('2024-01-03'), onDay('2024-01-10'),
+    ], ['day']);
+    const current = countFeatures([onDay('2024-01-01'), onDay('2024-01-03'), onDay('2024-01-03')], ['day']);
+    const head = dayNumber({ y: 2024, m: 1, d: 6 });
+    const model = lineModel(current, reference, { headDay: head });
+    assert.equal(model.max, 4);
+    assert.equal(model.first, dayNumber({ y: 2024, m: 1, d: 1 }));
+    assert.equal(model.last, dayNumber({ y: 2024, m: 1, d: 10 }));
+    assert.deepEqual(model.points.map((p) => p.total), [1, 3]);
+    assert.equal(model.total, 3);
+    assert.equal(model.headDay, head);
+    // Fin d'animation après la dernière trouvaille : l'axe s'étend.
+    const later = dayNumber({ y: 2024, m: 2, d: 1 });
+    assert.equal(lineModel(current, reference, { endDay: later }).last, later);
+    assert.equal(lineModel(countFeatures([], ['day']), countFeatures([], ['day'])).empty, true);
+});
+
+test('course de barres : ordre et top-N suivent l’état courant, échelle du meneur', () => {
+    const reference = countFeatures(types({ A: 10, B: 8, C: 1 }), ['cache_type']);
+    const current = countFeatures(types({ A: 1, B: 3, C: 1 }), ['cache_type']);
+    const model = barModel('cache_type', current, reference, { sort: 'race', max_items: 2 });
+    assert.equal(model.race, true);
+    assert.deepEqual(model.rows.map((r) => r.key), ['B', 'A']);
+    assert.equal(model.max, 3);
+    assert.equal(model.rows.some((r) => r.key === OTHERS_KEY), false);
+});
+
+test('valeurs animées : immédiates au départ, glissent ensuite, figées au repos', () => {
+    const tween = createTweenStore(600);
+    assert.equal(tween.set('a', 10, 1000), 10);          // première passe : immédiat
+    tween.settle();
+    assert.equal(tween.set('b', 4, 1000), 0);            // nouvelle clé : part de 0
+    assert.equal(tween.set('a', 20, 2000), 10);
+    const mid = tween.get('a', 2300);
+    assert.ok(mid > 15 && mid < 20, `mi-parcours ${mid}`);
+    assert.equal(tween.get('a', 2600), 20);
+    assert.equal(tween.isActive(2300), true);
+    assert.equal(tween.isActive(2600), false);
+    // Cible relancée en cours de route : repart de la valeur affichée.
+    tween.set('a', 30, 2300);
+    assert.equal(tween.get('a', 2300), mid);
+    // Sans horloge (repos) : valeur finale.
+    assert.equal(tween.set('a', 50, Number.NaN), 50);
+    tween.clear();
+    assert.equal(tween.get('a', 0), undefined);
+});
+
+test('position libre : fraction de l’espace restant, hors des piles', () => {
+    const layout = layoutPanels([
+        { id: 'f', mode: 'free', x: 0.5, y: 1, width: 200, height: 100 },
+        item('a', 'top-left'),
+        item('b', 'top-left'),
+    ], box);
+    assert.deepEqual(layout.get('f').css, { left: 400, top: 500 });
+    // Le panneau libre ne pousse pas la pile du coin.
+    assert.equal(layout.get('b').y, 16 + 100 + 16);
+});
+
+test('évitement : la pile d’un coin démarre sous le titre ou au-dessus d’une boîte basse', () => {
+    const title = { x: 10, y: 10, width: 250, height: 50 };
+    const top = layoutPanels([item('a', 'top-left'), item('b', 'top-left')], box, [title]);
+    assert.equal(top.get('a').y, 10 + 50 + 8);
+    assert.equal(top.get('b').y, 10 + 50 + 8 + 100 + 16);
+    // Boîte d'un autre côté : rien ne bouge.
+    const right = layoutPanels([item('r', 'top-right')], box, [title]);
+    assert.equal(right.get('r').y, 16);
+    const low = { x: 700, y: 560, width: 290, height: 30 };
+    const bottom = layoutPanels([item('c', 'bottom-right')], box, [low]);
+    assert.equal(bottom.get('c').y + 100, 560 - 8);
 });

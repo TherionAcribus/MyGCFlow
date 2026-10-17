@@ -33,9 +33,12 @@ exportez le résultat en vidéo (avec une musique si vous le souhaitez).
   à l'autre et arrive sur les nouvelles caches au moment où elles apparaissent
   (rayon de regroupement, courbes, arcs pour les grands sauts, couleur,
   épaisseur, motif, lueur, tête, traînée qui s'efface).
-- **Panneaux de statistiques** — matrice D/T, grille Jasmer, calendrier 366 et
-  histogrammes (types, tailles, difficulté, terrain, années) posés sur la carte,
-  qui se remplissent au fil de l'animation et apparaissent dans la vidéo.
+- **Panneaux de statistiques** — matrice D/T, grille Jasmer, calendrier 366,
+  histogrammes (types, tailles, difficulté, terrain, années, pays, régions, en
+  course de barres si on le souhaite), anneaux ou camemberts, courbe de
+  progression et chiffres clés (record, plus longue série…), posés sur la carte
+  — en coin ou glissés à la souris — qui se remplissent au fil de l'animation
+  et apparaissent dans la vidéo.
 - **Overlay** — titre et cartouche d'informations (nombre de caches, date en
   cours), stylés via les onglets texte / boîte / ombre / position ou en CSS.
 - **Animation** — dates de début et de fin, durée par jour ou durée totale

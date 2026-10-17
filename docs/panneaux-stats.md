@@ -9,7 +9,10 @@ n'est dessiné.
 | Type (`kind`) | Métriques (`metric`) |
 |---|---|
 | `grid` | `dt` (matrice D/T 9×9), `jasmer` (année × mois de publication, depuis mai 2000), `calendar` (mois × jour de trouvaille, 366 cases) |
-| `bar` | `cache_type`, `container`, `difficulty`, `terrain`, `year` |
+| `bar` | `cache_type`, `container`, `difficulty`, `terrain`, `year`, `country`, `state` |
+| `donut` | `cache_type`, `container`, `country`, `state` — anneau, camembert si `hole` vaut 0 |
+| `line` | `cumulative` — trouvailles cumulées, en escalier |
+| `counter` | `summary` — tuiles choisies dans `options.items` : `days` (jours avec trouvaille), `best_day` (record sur une journée), `streak` (plus longue série de jours consécutifs), `types`, `countries`, `states` (valeurs distinctes connues) |
 
 Six panneaux au maximum, dans l'ordre de la liste (ordre de dessin et
 d'empilement).
@@ -50,6 +53,12 @@ proportionnel aux nouvelles caches, pas au nombre de panneaux ni à la taille de
 la sélection. Les locationless masquées (`hiddenPointsByDate`) comptent comme
 pour le compteur de caches.
 
+Les métriques de l'accumulateur ne sont pas toujours celles des panneaux :
+`accumulatorMetricsFor` traduit la courbe en `day` (jour de trouvaille, en
+numéro de jour entier) et les compteurs en `day`, `cache_type`, `country`,
+`state` selon les tuiles choisies. Les comptes par jour suffisent pour le
+record, le nombre de jours et la plus longue série (`counterValues`).
+
 Une cache sans valeur pour une métrique (Lab sans D/T ni taille, GPX sans date
 de publication) est **exclue** de cette métrique mais comptée dans le total ;
 le pied du panneau l'annonce (« Sans D/T : 12 ») pour que la somme ne
@@ -70,6 +79,11 @@ courant : sinon les barres se redimensionneraient et changeraient de rang à
 chaque jour. Les catégories (`cache_type`, `container`) passent au-delà de
 `max_items` dans une ligne « Autres » ; les grandeurs ordonnées (D/T, années)
 s'affichent en entier.
+
+Exception voulue : **`sort: "race"`** (course de barres). L'ordre et le top-N
+suivent alors l'état courant et l'échelle le meneur du moment ; pas de ligne
+« Autres ». Le nombre de places reste fixe (`model.slots`), pour que la hauteur
+du panneau ne change pas quand des catégories entrent dans le classement.
 
 ### Cycle de vie (branchements dans `mapgl.js`)
 
@@ -101,6 +115,20 @@ reproductible. Tant qu'elle est visible, `updateStatsPanels` tient le
 compositing MediaRecorder sauterait les frames d'une carte immobile et la
 surbrillance resterait figée.
 
+### Valeurs animées
+
+Longueurs de barres, parts d'anneau, tête de la courbe et compteurs glissent
+vers leur nouvelle valeur au lieu de sauter (`createTweenStore`, même durée
+que la surbrillance, à l'horloge des points). La première passe après un
+démarrage est immédiate (l'état initial ne « pousse » pas) ; ensuite, une
+catégorie qui apparaît part de 0. Au repos, tout est immédiat. Tant qu'une
+valeur glisse, `tickStatsPanels` renvoie vrai, comme pour la surbrillance.
+En course de barres, la place de chaque ligne est elle aussi animée.
+
+Couleurs `multi` (anneaux hors types) : dix teintes, indexées sur le rang de
+la catégorie dans la référence — une catégorie garde sa couleur quand elle
+change de place.
+
 ## Rendu
 
 Les renderers ne lisent jamais le DOM. `stats_panels.js` prépare une **vue**
@@ -127,10 +155,24 @@ calcule en px CSS depuis la seule largeur, ce qui donne la hauteur
 `layoutPanels` (pur) : les panneaux d'une même ancre forment une pile, du coin
 vers l'intérieur ; le premier est placé par `dx`/`dy`, les suivants à la suite,
 leur `dy` servant d'espacement. Colonne centrale : centré horizontalement
-(`dx` ignoré) ; ligne médiane : la pile entière est centrée. Un panneau ramené
-dans le cadre (pile trop haute, largeur supérieure à la carte) ou qui chevauche
-`#titleFrame`/`#infosFrame` déclenche un avertissement dans l'onglet
-(événement `mygcflow:stats-layout`) — pas de déplacement automatique.
+(`dx` ignoré) ; ligne médiane : la pile entière est centrée.
+
+Une pile de coin **contourne** `#titleFrame` et `#infosFrame` (rects mesurés à
+l'invalidation, passés en obstacles) : si son premier panneau tomberait sur
+l'une de ces boîtes, elle démarre juste après (8 px d'écart).
+
+**Position libre** (`position.mode: "free"`) : `x`/`y` sont des fractions
+[0, 1] de l'espace restant du cadre (`(W − w) · x`), donc le panneau reste
+dans le cadre à toute taille d'aperçu ou de vidéo. Un panneau libre sort de sa
+pile. Il s'obtient en glissant le panneau sur la carte tant que l'onglet Stats
+est ouvert et qu'aucune animation ne tourne (classe `stats-editing` sur
+`#mapWithFrames`, qui rend les canvas saisissables) ; choisir un coin dans le
+formulaire le remet en mode `anchor`.
+
+Avertissements dans l'onglet (événement `mygcflow:stats-layout`) : panneau
+ramené dans le cadre (pile trop haute, largeur supérieure à la carte), panneau
+qui chevauche le titre ou les infos (panneau libre), deux panneaux de piles
+différentes qui se recouvrent.
 
 ## Tests
 
@@ -141,14 +183,20 @@ dans le cadre (pile trop haute, largeur supérieure à la carte) ou qui chevauch
 - `tests/e2e/stats-panels.spec.mjs` — modèle posé et ancré, empilement,
   persistance, remplissage pendant la lecture, totaux après un nouveau filtre,
   export qui repart de zéro et dessine les panneaux, interrupteur général, mode
-  Évolution. `stats` est une préférence globale partagée par tous les specs :
+  Évolution ; anneau, courbe, compteurs et course pendant une lecture (sans
+  erreur de page), glisser-déposer puis retour au coin, pile qui démarre sous
+  le titre. `stats` est une préférence globale partagée par tous les specs :
   chaque test remet la liste vide en sortant.
 
-## Évolutions prévues
+## Ajouter un type de panneau
 
-- Anneaux (`donut`), courbe cumulée (`line`), compteurs (`counter`) : une
-  entrée dans `STATS_RENDERERS`, un schéma d'options (`stats_settings.py` et
-  `stats_model.mjs`), un formulaire.
-- Nouvelle grille : une entrée dans `gridSpec`, sans nouveau renderer.
-- Position libre par glisser-déposer : `position.mode: "anchor" | "free"` avec
-  `x`/`y` normalisés [0, 1] ; un panneau libre sort de sa pile d'ancre.
+Une entrée dans `STATS_RENDERERS` (`measure` + `draw`), la liste de ses
+métriques et le schéma de ses options des deux côtés (`stats_settings.py`,
+`stats_model.mjs`, avec des vecteurs dans `settings_cases.json`), sa vue dans
+`stats_panels.js › buildView`, ses champs dans `menu_stats.html`
+(`data-stats-kind`) et `stats_ui.js › FIELDS`. Une nouvelle grille, elle, n'est
+qu'une entrée dans `gridSpec`.
+
+Non couverts : le mode Évolution (ses compteurs viennent d'`evolution_data.js`,
+pas de l'index des trouvailles) et l'export/import du bloc `stats` dans un
+thème.

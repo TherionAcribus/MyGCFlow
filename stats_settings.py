@@ -4,7 +4,7 @@ Préférence GLOBALE (bloc `stats` de settings.json), jamais une section de
 thème : changer de thème ne doit pas faire disparaître les panneaux.
 
 Miroir exact de `normalizeStatsSettings` (static/js/stats_model.mjs) : les deux
-côtés passent les mêmes vecteurs de test (tests/fixtures/stats_settings_cases.json),
+côtés passent les mêmes vecteurs de test (tests/fixtures/stats/settings_cases.json),
 toute règle modifiée ici doit l'être là-bas.
 
 Les options d'un panneau dépendent de son type (`kind`) et leurs valeurs par
@@ -25,7 +25,13 @@ STATS_METRICS_BY_KIND = {
     # Grilles : matrice D/T 9×9, Jasmer (année × mois de publication),
     # calendrier 366 (mois × jour de trouvaille).
     "grid": ("dt", "jasmer", "calendar"),
-    "bar": ("cache_type", "container", "difficulty", "terrain", "year"),
+    "bar": ("cache_type", "container", "difficulty", "terrain", "year", "country", "state"),
+    # Anneau (camembert si le trou vaut 0) : catégories seulement.
+    "donut": ("cache_type", "container", "country", "state"),
+    # Courbe des trouvailles cumulées.
+    "line": ("cumulative",),
+    # Tuiles de chiffres clés (cf. STATS_COUNTER_ITEMS).
+    "counter": ("summary",),
 }
 STATS_KINDS = tuple(STATS_METRICS_BY_KIND)
 
@@ -34,12 +40,19 @@ STATS_ANCHORS = (
     "middle-left", "middle-center", "middle-right",
     "bottom-left", "bottom-center", "bottom-right",
 )
+# « anchor » : coin + marges, empilé avec les panneaux du même coin ; « free » :
+# glissé à la souris, position normalisée (x, y) dans l'espace libre du cadre.
+STATS_POSITION_MODES = ("anchor", "free")
 
 STATS_HIGHLIGHTS = ("new", "every", "none")
 STATS_CELL_MODES = ("count", "filled", "heat")
-STATS_SORTS = ("natural", "count", "label")
+# « race » : course de barres, l'ordre suit l'état courant et les lignes se
+# doublent en glissant.
+STATS_SORTS = ("natural", "count", "label", "race")
 STATS_ORIENTATIONS = ("horizontal", "vertical")
-STATS_PALETTES = ("gc", "accent", "heat")
+# « multi » : une couleur distincte par catégorie (anneaux hors types).
+STATS_PALETTES = ("gc", "accent", "heat", "multi")
+STATS_COUNTER_ITEMS = ("days", "best_day", "streak", "types", "countries", "states")
 
 STATS_OFFSET_RANGE = (0, 2000)
 STATS_WIDTH_RANGE = (120, 1200)
@@ -47,6 +60,8 @@ STATS_MAX_ITEMS_RANGE = (3, 30)
 STATS_OPACITY_RANGE = (0, 100)
 STATS_FONT_SIZE_RANGE = (8, 32)
 STATS_RADIUS_RANGE = (0, 40)
+STATS_HOLE_RANGE = (0, 85)
+STATS_COLUMNS_RANGE = (1, 3)
 STATS_TITLE_MAX = 80
 
 # Toujours appliquées par fullmatch, en classes ASCII explicites : `$` admet
@@ -72,18 +87,33 @@ def _round_half_up(value: float) -> int:
     return int(math.floor(value + 0.5))
 
 
-def _int_in(value, default: int, bounds: tuple) -> int:
+def _number(value):
+    """Nombre fini lu d'un nombre JSON ou d'une chaîne numérique simple, sinon None."""
     if isinstance(value, bool):
-        number = None
-    elif isinstance(value, (int, float)):
+        return None
+    if isinstance(value, (int, float)):
         number = float(value)
     elif isinstance(value, str) and _NUMERIC_RE.fullmatch(value):
         number = float(value)
     else:
-        number = None
-    if number is None or not math.isfinite(number):
+        return None
+    return number if math.isfinite(number) else None
+
+
+def _int_in(value, default: int, bounds: tuple) -> int:
+    number = _number(value)
+    if number is None:
         return default
     return max(bounds[0], min(bounds[1], _round_half_up(number)))
+
+
+def _unit(value, default: float) -> float:
+    """Fraction [0, 1] arrondie à 1e-4, même opération que le client."""
+    number = _number(value)
+    if number is None:
+        return default
+    number = max(0.0, min(1.0, number))
+    return math.floor(number * 10000 + 0.5) / 10000
 
 
 def _bool(value, default: bool) -> bool:
@@ -92,6 +122,18 @@ def _bool(value, default: bool) -> bool:
 
 def _choice(value, choices: tuple, default: str) -> str:
     return value if isinstance(value, str) and value in choices else default
+
+
+def _choices(value, choices: tuple, default: list) -> list:
+    """Liste de choix connus, sans doublon, dans l'ordre donné ; vide ou
+    invalide → défaut (un panneau de compteurs sans compteur n'a pas de sens)."""
+    if not isinstance(value, list):
+        return list(default)
+    out = []
+    for item in value:
+        if isinstance(item, str) and item in choices and item not in out:
+            out.append(item)
+    return out or list(default)
 
 
 def _color(value, default: str) -> str:
@@ -111,11 +153,17 @@ def _title(value) -> str:
     return flat[:STATS_TITLE_MAX]
 
 
+_CATEGORICAL = ("cache_type", "container", "country", "state")
+
+_DEFAULT_WIDTH = {"grid": 280, "bar": 280, "donut": 300, "line": 320, "counter": 280}
+
+
 def stats_panel_defaults(kind: str, metric: str) -> dict:
-    """Valeurs par défaut d'un panneau, qui dépendent de sa métrique.
+    """Valeurs par défaut d'un panneau, qui dépendent de son type et de sa métrique.
 
     Les grandeurs ordonnées (tailles, D/T, années) gardent leur ordre naturel ;
-    seuls les types, sans ordre propre, sont triés par nombre de trouvailles.
+    les catégories sans ordre propre (types, pays, régions) sont triées par
+    nombre de trouvailles.
     """
     if kind == "grid":
         options = {
@@ -126,24 +174,49 @@ def stats_panel_defaults(kind: str, metric: str) -> dict:
             "show_coverage": True,
         }
         palette = "heat"
-    else:
+    elif kind == "bar":
         options = {
             "show_values": True,
             "show_percent": False,
             "highlight": "every",
-            "sort": "count" if metric == "cache_type" else "natural",
-            "orientation": (
-                "horizontal" if metric in ("cache_type", "container") else "vertical"
-            ),
+            "sort": "count" if metric in ("cache_type", "country", "state") else "natural",
+            "orientation": "horizontal" if metric in _CATEGORICAL else "vertical",
             "max_items": 8,
             "hide_empty": False,
         }
         palette = "gc" if metric == "cache_type" else "accent"
+    elif kind == "donut":
+        options = {
+            "show_values": True,
+            "show_percent": True,
+            "highlight": "every",
+            "max_items": 6,
+            "hole": 55,
+            "show_legend": True,
+        }
+        palette = "gc" if metric == "cache_type" else "multi"
+    elif kind == "line":
+        options = {
+            "show_values": True,
+            "highlight": "every",
+            "show_area": True,
+        }
+        palette = "accent"
+    else:
+        options = {
+            "highlight": "every",
+            "items": ["days", "best_day", "streak", "types"],
+            "columns": 2,
+        }
+        palette = "accent"
     return {
         "enabled": True,
         "show_title": True,
         "title": "",
-        "position": {"anchor": "top-left", "dx": 16, "dy": 16, "width": 280},
+        "position": {
+            "mode": "anchor", "anchor": "top-left", "dx": 16, "dy": 16,
+            "width": _DEFAULT_WIDTH.get(kind, 280), "x": 0, "y": 0,
+        },
         "options": options,
         "style": {
             "background": "#0b1a2b",
@@ -170,6 +243,21 @@ _OPTION_COERCERS = {
     "orientation": lambda v, d: _choice(v, STATS_ORIENTATIONS, d),
     "max_items": lambda v, d: _int_in(v, d, STATS_MAX_ITEMS_RANGE),
     "hide_empty": lambda v, d: _bool(v, d),
+    "hole": lambda v, d: _int_in(v, d, STATS_HOLE_RANGE),
+    "show_legend": lambda v, d: _bool(v, d),
+    "show_area": lambda v, d: _bool(v, d),
+    "items": lambda v, d: _choices(v, STATS_COUNTER_ITEMS, d),
+    "columns": lambda v, d: _int_in(v, d, STATS_COLUMNS_RANGE),
+}
+
+_POSITION_COERCERS = {
+    "mode": lambda v, d: _choice(v, STATS_POSITION_MODES, d),
+    "anchor": lambda v, d: _choice(v, STATS_ANCHORS, d),
+    "dx": lambda v, d: _int_in(v, d, STATS_OFFSET_RANGE),
+    "dy": lambda v, d: _int_in(v, d, STATS_OFFSET_RANGE),
+    "width": lambda v, d: _int_in(v, d, STATS_WIDTH_RANGE),
+    "x": _unit,
+    "y": _unit,
 }
 
 _STYLE_COERCERS = {
@@ -182,6 +270,11 @@ _STYLE_COERCERS = {
     "radius": lambda v, d: _int_in(v, d, STATS_RADIUS_RANGE),
     "inherit_font": lambda v, d: _bool(v, d),
 }
+
+
+def _coerce_block(raw, defaults: dict, coercers: dict) -> dict:
+    source = raw if isinstance(raw, dict) else {}
+    return {key: coercers[key](source.get(key), default) for key, default in defaults.items()}
 
 
 def _new_id() -> str:
@@ -201,28 +294,6 @@ def coerce_stats_panel(raw) -> dict | None:
     if kind not in STATS_METRICS_BY_KIND or metric not in STATS_METRICS_BY_KIND[kind]:
         return None
     defaults = stats_panel_defaults(kind, metric)
-
-    position_in = raw.get("position") if isinstance(raw.get("position"), dict) else {}
-    pd = defaults["position"]
-    position = {
-        "anchor": _choice(position_in.get("anchor"), STATS_ANCHORS, pd["anchor"]),
-        "dx": _int_in(position_in.get("dx"), pd["dx"], STATS_OFFSET_RANGE),
-        "dy": _int_in(position_in.get("dy"), pd["dy"], STATS_OFFSET_RANGE),
-        "width": _int_in(position_in.get("width"), pd["width"], STATS_WIDTH_RANGE),
-    }
-
-    options_in = raw.get("options") if isinstance(raw.get("options"), dict) else {}
-    options = {
-        key: _OPTION_COERCERS[key](options_in.get(key), default)
-        for key, default in defaults["options"].items()
-    }
-
-    style_in = raw.get("style") if isinstance(raw.get("style"), dict) else {}
-    style = {
-        key: _STYLE_COERCERS[key](style_in.get(key), default)
-        for key, default in defaults["style"].items()
-    }
-
     raw_id = raw.get("id")
     return {
         "id": raw_id if isinstance(raw_id, str) and _ID_RE.fullmatch(raw_id) else "",
@@ -231,9 +302,9 @@ def coerce_stats_panel(raw) -> dict | None:
         "enabled": _bool(raw.get("enabled"), defaults["enabled"]),
         "show_title": _bool(raw.get("show_title"), defaults["show_title"]),
         "title": _title(raw.get("title")),
-        "position": position,
-        "options": options,
-        "style": style,
+        "position": _coerce_block(raw.get("position"), defaults["position"], _POSITION_COERCERS),
+        "options": _coerce_block(raw.get("options"), defaults["options"], _OPTION_COERCERS),
+        "style": _coerce_block(raw.get("style"), defaults["style"], _STYLE_COERCERS),
     }
 
 

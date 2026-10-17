@@ -212,3 +212,82 @@ test('pas d\'onglet ni de panneau en mode Évolution', async ({ page }) => {
   await expect(page.locator('#stats')).toHaveCount(0);
   await expect(page.locator('canvas.stats-panel')).toHaveCount(0);
 });
+
+test('anneau, courbe et compteurs se remplissent pendant la lecture', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await putStats(page, { enabled: true, panels: [
+    { id: 'cccccc01', kind: 'counter', metric: 'summary', position: { anchor: 'top-left' },
+      options: { items: ['days', 'best_day', 'streak', 'types', 'countries', 'states'] } },
+    { id: 'cccccc02', kind: 'line', metric: 'cumulative', position: { anchor: 'bottom-left' } },
+    { id: 'cccccc03', kind: 'donut', metric: 'cache_type', position: { anchor: 'top-right' } },
+    { id: 'cccccc04', kind: 'bar', metric: 'country', position: { anchor: 'bottom-right' }, options: { sort: 'race' } },
+  ] });
+  await openWithFixture(page);
+  await expect(page.locator('canvas.stats-panel')).toHaveCount(4);
+
+  // Au repos : les métriques dont dépendent courbe et compteurs sont comptées.
+  let state = await snapshot(page);
+  expect(state.metrics.sort()).toEqual(['cache_type', 'country', 'day', 'state']);
+  expect(Object.keys(state.counts.day)).toHaveLength(6);
+  expect(state.counts.country).toEqual({ France: 6 });
+
+  await setRhythm(page, 2);
+  await page.locator('#btnQuickPreview').click();
+  await expect.poll(async () => {
+    const s = await snapshot(page);
+    return s.mode === 'animating' && s.total > 0 && s.total < 6;
+  }, { intervals: [50], timeout: 10_000 }).toBe(true);
+  await expect(page.locator('#btnQuickPreview')).toBeVisible({ timeout: 15_000 });
+  await expect.poll(async () => (await snapshot(page)).total, { timeout: 10_000 }).toBe(6);
+  state = await snapshot(page);
+  expect(Object.keys(state.counts.day)).toHaveLength(6);
+  expect(errors).toEqual([]);
+});
+
+test('un panneau glissé passe en position libre, choisir un coin l’y ramène', async ({ page }) => {
+  await putStats(page, { enabled: true, panels: [
+    { id: 'dddddd01', kind: 'grid', metric: 'dt', position: { anchor: 'bottom-left', width: 240 } },
+  ] });
+  await openWithFixture(page, '#stats');
+  await page.locator('a[href="#stats"]').click();
+  // Onglet ouvert, au repos : les panneaux se saisissent à la souris.
+  await expect(page.locator('#mapWithFrames')).toHaveClass(/stats-editing/);
+  const panel = page.locator('canvas.stats-panel');
+  const box = await panel.boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 + 150, box.y + box.height / 2 - 120, { steps: 8 });
+  await page.mouse.up();
+
+  await expect.poll(async () => (await savedStats(page)).panels[0].position.mode).toBe('free');
+  const { position } = (await savedStats(page)).panels[0];
+  expect(position.x).toBeGreaterThan(0);
+  expect(position.x).toBeLessThan(1);
+  expect(position.y).toBeGreaterThan(0);
+  expect(position.y).toBeLessThan(1);
+  const moved = await panel.boundingBox();
+  expect(Math.abs(moved.x - (box.x + 150))).toBeLessThan(4);
+  expect(Math.abs(moved.y - (box.y - 120))).toBeLessThan(4);
+  await expect(page.locator('#statsFreePosition')).toBeVisible();
+
+  // Un coin choisi dans le formulaire remet le panneau dans sa pile.
+  await page.locator('label[for="statsAnchor-top-right"]').click();
+  await expect.poll(async () => (await savedStats(page)).panels[0].position)
+    .toMatchObject({ mode: 'anchor', anchor: 'top-right' });
+  await expect(page.locator('#statsFreePosition')).toBeHidden();
+});
+
+test('une pile de coin démarre sous le titre au lieu de le recouvrir', async ({ page }) => {
+  await putStats(page, { enabled: true, panels: [
+    { id: 'eeeeee01', kind: 'counter', metric: 'summary', position: { anchor: 'top-left', dx: 16, dy: 16 } },
+  ] });
+  await openWithFixture(page);
+  const title = page.locator('#titleFrame');
+  test.skip(!(await title.isVisible()), 'Le thème courant ne montre pas de titre.');
+  const titleBox = await title.boundingBox();
+  const panelBox = await page.locator('canvas.stats-panel').boundingBox();
+  const overlapsHorizontally = panelBox.x < titleBox.x + titleBox.width && titleBox.x < panelBox.x + panelBox.width;
+  expect(overlapsHorizontally).toBe(true);
+  expect(panelBox.y).toBeGreaterThanOrEqual(titleBox.y + titleBox.height);
+});

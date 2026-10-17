@@ -8,6 +8,7 @@ import { isEvolutionPage } from './app_mode.mjs';
 import { makeDebouncedSettingsSaver } from './settings_api.mjs';
 import { reportSave } from './saved_indicator.mjs';
 import {
+    STATS_COUNTER_ITEMS,
     STATS_MAX_PANELS,
     STATS_METRICS_BY_KIND,
     createStatsPanel,
@@ -18,15 +19,20 @@ const saveStatsDebounced = makeDebouncedSettingsSaver(500);
 let selectedId = null;
 let initialized = false;
 
-// Modèles : un clic pose un ou deux panneaux pré-réglés et pré-placés, sur
-// des coins laissés libres par le titre (haut gauche) et les infos (haut
-// droite) dans leur position par défaut.
+// Modèles : un clic pose un ou deux panneaux pré-réglés et pré-placés. Les
+// piles de coin contournent d'elles-mêmes le titre et les infos.
 const PRESETS = {
     dt: [['grid', 'dt', { position: { anchor: 'bottom-left', width: 300 } }]],
     'types-sizes': [
-        ['bar', 'cache_type', { position: { anchor: 'top-right', dy: 64, width: 260 } }],
+        ['bar', 'cache_type', { position: { anchor: 'top-right', width: 260 } }],
         ['bar', 'container', { position: { anchor: 'top-right', dy: 8, width: 260 } }],
     ],
+    'summary-progress': [
+        ['counter', 'summary', { position: { anchor: 'top-left' } }],
+        ['line', 'cumulative', { position: { anchor: 'bottom-left', width: 340 } }],
+    ],
+    'types-donut': [['donut', 'cache_type', { position: { anchor: 'top-right', width: 300 } }]],
+    race: [['bar', 'country', { position: { anchor: 'top-right' }, options: { sort: 'race', max_items: 6 } }]],
     'difficulty-terrain': [
         ['bar', 'difficulty', { position: { anchor: 'bottom-right', width: 240 } }],
         ['bar', 'terrain', { position: { anchor: 'bottom-right', dy: 8, width: 240 } }],
@@ -34,6 +40,16 @@ const PRESETS = {
     jasmer: [['grid', 'jasmer', { position: { anchor: 'bottom-left', width: 220 } }]],
     calendar: [['grid', 'calendar', { position: { anchor: 'bottom-center', width: 440 } }]],
 };
+
+const KIND_ICONS = {
+    grid: 'ti-layout-grid',
+    bar: 'ti-chart-bar',
+    donut: 'ti-chart-donut',
+    line: 'ti-chart-line',
+    counter: 'ti-123',
+};
+
+const CATEGORICAL = ['cache_type', 'container', 'country', 'state'];
 
 const $ = (id) => document.getElementById(id);
 
@@ -107,7 +123,7 @@ function renderList() {
         toggle.setAttribute('aria-label', pkg.t('Afficher ce panneau'));
 
         const icon = document.createElement('i');
-        icon.className = `ti ${panel.kind === 'grid' ? 'ti-layout-grid' : 'ti-chart-bar'} text-muted`;
+        icon.className = `ti ${KIND_ICONS[panel.kind] || 'ti-chart-bar'} text-muted`;
         icon.setAttribute('aria-hidden', 'true');
 
         const name = document.createElement('button');
@@ -205,7 +221,7 @@ function addPanels(specs) {
 
 function setValue(id, value) {
     const el = $(id);
-    if (!el || document.activeElement === el) return;
+    if (!el || value === undefined || document.activeElement === el) return;
     if (el.type === 'checkbox') el.checked = !!value;
     else el.value = value;
 }
@@ -238,40 +254,59 @@ function renderForm() {
     setValue('switchStatsShowTitle', panel.show_title);
     if (titleInput) titleInput.disabled = !panel.show_title;
 
+    // Options : seules celles du type du panneau existent (les autres restent
+    // indéfinies, setValue les ignore).
     const o = panel.options;
     setValue('switchStatsValues', o.show_values);
     setValue('selectStatsHighlight', o.highlight);
-    if (panel.kind === 'grid') {
-        setValue('selectStatsCellMode', o.cell_mode);
-        setValue('switchStatsCoverage', o.show_coverage);
-        const values = $('switchStatsValues');
-        if (values) values.disabled = o.cell_mode !== 'count';
-    } else {
-        setValue('selectStatsSort', o.sort);
-        setValue('selectStatsOrientation', o.orientation);
-        setValue('inputStatsMaxItems', o.max_items);
-        setValue('switchStatsHideEmpty', o.hide_empty);
-        setValue('switchStatsPercent', o.show_percent);
-        const values = $('switchStatsValues');
-        if (values) values.disabled = false;
-    }
-    document.querySelectorAll('#statsPanelForm [data-stats-kind]').forEach((el) => {
-        el.hidden = el.dataset.statsKind !== panel.kind;
+    setValue('selectStatsCellMode', o.cell_mode);
+    setValue('switchStatsCoverage', o.show_coverage);
+    setValue('selectStatsSort', o.sort);
+    setValue('selectStatsOrientation', o.orientation);
+    setValue('inputStatsMaxItems', o.max_items);
+    setValue('switchStatsHideEmpty', o.hide_empty);
+    setValue('switchStatsPercent', o.show_percent);
+    setValue('rangeStatsHole', o.hole);
+    const holeValue = $('valueStatsHole');
+    if (holeValue && o.hole !== undefined) holeValue.textContent = `${o.hole} %`;
+    setValue('switchStatsLegend', o.show_legend);
+    setValue('switchStatsArea', o.show_area);
+    if (o.columns !== undefined) setValue('selectStatsColumns', String(o.columns));
+    document.querySelectorAll('#statsCounterItems [data-counter-item]').forEach((box) => {
+        box.checked = (o.items || []).includes(box.dataset.counterItem);
     });
-    const categorical = panel.metric === 'cache_type' || panel.metric === 'container';
+    // Grille : les nombres ne s'affichent qu'en mode « nombre de trouvailles ».
+    const values = $('switchStatsValues');
+    if (values) values.disabled = panel.kind === 'grid' && o.cell_mode !== 'count';
+
+    document.querySelectorAll('#statsPanelForm [data-stats-kind]').forEach((el) => {
+        el.hidden = !el.dataset.statsKind.split(' ').includes(panel.kind);
+    });
+    // Nombre de lignes : catégories des histogrammes, et anneaux.
+    const categorical = CATEGORICAL.includes(panel.metric);
     document.querySelectorAll('#statsPanelForm [data-stats-categorical]').forEach((el) => {
-        el.hidden = panel.kind !== 'bar' || !categorical;
+        el.hidden = !(panel.kind === 'donut' || (panel.kind === 'bar' && categorical));
     });
 
     const p = panel.position;
-    const anchor = document.getElementById(`statsAnchor-${p.anchor}`);
-    if (anchor) anchor.checked = true;
+    const free = p.mode === 'free';
+    document.querySelectorAll('input[name="statsAnchor"]').forEach((radio) => {
+        radio.checked = !free && radio.value === p.anchor;
+    });
+    const freeBox = $('statsFreePosition');
+    if (freeBox) {
+        freeBox.hidden = !free;
+        freeBox.classList.toggle('d-flex', free);
+    }
     setValue('inputStatsDx', p.dx);
     setValue('inputStatsDy', p.dy);
     setValue('inputStatsWidth', p.width);
-    // Colonne centrale : le panneau est centré, la marge horizontale ne sert pas.
+    // Colonne centrale : le panneau est centré, la marge horizontale ne sert
+    // pas ; position libre : aucune marge ne sert.
     const dx = $('inputStatsDx');
-    if (dx) dx.disabled = p.anchor.endsWith('-center');
+    if (dx) dx.disabled = free || p.anchor.endsWith('-center');
+    const dy = $('inputStatsDy');
+    if (dy) dy.disabled = free;
 
     const s = panel.style;
     setValue('inputStatsBackground', s.background);
@@ -300,6 +335,10 @@ const FIELDS = [
     ['inputStatsMaxItems', 'options.max_items', 'number'],
     ['switchStatsHideEmpty', 'options.hide_empty', 'bool'],
     ['switchStatsPercent', 'options.show_percent', 'bool'],
+    ['rangeStatsHole', 'options.hole', 'number'],
+    ['switchStatsLegend', 'options.show_legend', 'bool'],
+    ['switchStatsArea', 'options.show_area', 'bool'],
+    ['selectStatsColumns', 'options.columns', 'number'],
     ['inputStatsDx', 'position.dx', 'number'],
     ['inputStatsDy', 'position.dy', 'number'],
     ['inputStatsWidth', 'position.width', 'number'],
@@ -345,6 +384,10 @@ function bindFormFields() {
                 const out = $('valueStatsOpacity');
                 if (out) out.textContent = `${value} %`;
             }
+            if (path === 'options.hole') {
+                const out = $('valueStatsHole');
+                if (out) out.textContent = `${value} %`;
+            }
         });
         if (live === 'input') el.addEventListener('change', () => renderForm());
     }
@@ -357,18 +400,122 @@ function bindFormFields() {
             const fresh = createStatsPanel(panel.kind, metric, {});
             panel.metric = metric;
             panel.options = fresh.options;
-            if (panel.kind === 'bar') panel.style.palette = fresh.style.palette;
+            if (panel.kind === 'bar' || panel.kind === 'donut') panel.style.palette = fresh.style.palette;
         }, event.target);
         renderStatsTab();
     });
 
+    // Choisir un coin ramène un panneau glissé à la souris dans sa pile.
     document.querySelectorAll('input[name="statsAnchor"]').forEach((radio) => {
         radio.addEventListener('change', () => {
             if (!radio.checked) return;
-            updateSelected((panel) => { panel.position.anchor = radio.value; }, radio.closest('.stats-anchor-grid'));
+            updateSelected((panel) => {
+                panel.position.anchor = radio.value;
+                panel.position.mode = 'anchor';
+            }, radio.closest('.stats-anchor-grid'));
             renderForm();
         });
     });
+    $('btnStatsBackToAnchor')?.addEventListener('click', (event) => {
+        updateSelected((panel) => { panel.position.mode = 'anchor'; }, event.currentTarget);
+        renderForm();
+    });
+
+    // Compteurs : au moins un chiffre ; l'ordre affiché suit celui de la liste.
+    $('statsCounterItems')?.addEventListener('change', (event) => {
+        const checked = [...document.querySelectorAll('#statsCounterItems [data-counter-item]')]
+            .filter((box) => box.checked)
+            .map((box) => box.dataset.counterItem);
+        const items = STATS_COUNTER_ITEMS.filter((item) => checked.includes(item));
+        if (!items.length) {
+            event.target.checked = true;
+            return;
+        }
+        updateSelected((panel) => { panel.options.items = items; }, event.target);
+    });
+}
+
+// ---------------------------------------------------------------------------
+// Glisser-déposer
+// ---------------------------------------------------------------------------
+
+// Tant que l'onglet Stats est ouvert et qu'aucune animation ne tourne, les
+// panneaux de la carte se saisissent à la souris : déposés, ils passent en
+// position libre (x, y normalisés dans l'espace restant du cadre, donc
+// valables à toute taille d'aperçu et de vidéo).
+function syncDragMode() {
+    const host = $('mapWithFrames');
+    if (!host) return;
+    const tabOpen = !!$('stats')?.classList.contains('active');
+    const idle = !(pkg.isAnimationInProgress?.() ?? false);
+    host.classList.toggle('stats-editing', tabOpen && idle);
+}
+
+function withFreePosition(id, x, y) {
+    const settings = currentSettings();
+    return {
+        ...settings,
+        panels: settings.panels.map((panel) => (panel.id === id
+            ? { ...panel, position: { ...panel.position, mode: 'free', x, y } }
+            : panel)),
+    };
+}
+
+function bindDragAndDrop() {
+    const host = $('mapWithFrames');
+    if (!host) return;
+    let drag = null;
+    const clamp01 = (v) => Math.max(0, Math.min(1, v));
+    const positionFor = (event) => {
+        const left = event.clientX - drag.base.left - drag.offsetX;
+        const top = event.clientY - drag.base.top - drag.offsetY;
+        const freeW = drag.container.width - drag.width;
+        const freeH = drag.container.height - drag.height;
+        return {
+            x: freeW > 0 ? clamp01(left / freeW) : 0,
+            y: freeH > 0 ? clamp01(top / freeH) : 0,
+        };
+    };
+    host.addEventListener('pointerdown', (event) => {
+        const canvas = event.target.closest?.('canvas.stats-panel');
+        if (!canvas || event.button !== 0 || !host.classList.contains('stats-editing')) return;
+        if (pkg.isAnimationInProgress?.()) return;
+        const rect = pkg.getStatsPanelRect?.(canvas.dataset.panelId);
+        if (!rect) return;
+        const base = host.getBoundingClientRect();
+        drag = {
+            id: canvas.dataset.panelId,
+            pointerId: event.pointerId,
+            canvas,
+            base,
+            offsetX: event.clientX - base.left - rect.x,
+            offsetY: event.clientY - base.top - rect.y,
+            width: rect.width,
+            height: rect.height,
+            container: rect.container,
+            last: null,
+        };
+        canvas.setPointerCapture?.(event.pointerId);
+        canvas.classList.add('is-dragging');
+        event.preventDefault();
+        selectedId = drag.id;
+        renderStatsTab();
+    });
+    host.addEventListener('pointermove', (event) => {
+        if (!drag || event.pointerId !== drag.pointerId) return;
+        drag.last = positionFor(event);
+        // Aperçu en direct, sans écriture : l'enregistrement part au dépôt.
+        pkg.applyStatsSettings(withFreePosition(drag.id, drag.last.x, drag.last.y));
+    });
+    const end = (event) => {
+        if (!drag || event.pointerId !== drag.pointerId) return;
+        drag.canvas.classList.remove('is-dragging');
+        if (drag.last) commit(withFreePosition(drag.id, drag.last.x, drag.last.y));
+        drag = null;
+        renderForm();
+    };
+    host.addEventListener('pointerup', end);
+    host.addEventListener('pointercancel', end);
 }
 
 function renderWarnings(warnings = pkg.getStatsLayoutWarnings?.() || []) {
@@ -386,6 +533,9 @@ function renderWarnings(warnings = pkg.getStatsLayoutWarnings?.() || []) {
         } else if (warning.kind === 'overlap') {
             const other = warning.with === 'titleFrame' ? pkg.t('le titre') : pkg.t('les infos');
             lines.push(pkg.t('« ${name} » chevauche ${other}.', { name: name(warning.id), other }));
+        } else if (warning.kind === 'panels') {
+            lines.push(pkg.t('« ${name} » chevauche « ${other} » : changez de coin ou réduisez une largeur.',
+                { name: name(warning.id), other: name(warning.with) }));
         }
     }
     box.replaceChildren(...lines.map((line) => {
@@ -407,6 +557,7 @@ export function renderStatsTab() {
     renderList();
     renderForm();
     renderWarnings();
+    syncDragMode();
 }
 
 export function initStatsTab() {
@@ -432,7 +583,15 @@ export function initStatsTab() {
     list?.addEventListener('click', onListClick);
     list?.addEventListener('change', onListChange);
     bindFormFields();
+    bindDragAndDrop();
     document.addEventListener('mygcflow:stats-layout', (event) => renderWarnings(event.detail?.warnings));
+    // Saisie à la souris : onglet ouvert/fermé, lecture lancée/arrêtée.
+    document.addEventListener('shown.bs.tab', syncDragMode);
+    document.addEventListener('hidden.bs.tab', syncDragMode);
+    const controlBar = $('controlBar');
+    if (controlBar && typeof MutationObserver !== 'undefined') {
+        new MutationObserver(syncDragMode).observe(controlBar, { attributes: true, attributeFilter: ['data-playback-state'] });
+    }
     renderStatsTab();
 }
 
