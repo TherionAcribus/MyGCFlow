@@ -188,6 +188,29 @@ différentes qui se recouvrent.
   le titre. `stats` est une préférence globale partagée par tous les specs :
   chaque test remet la liste vide en sortant.
 
+## Mesures (2026-10-17)
+
+Enregistrement MediaRecorder réel, échelle 2 (canvas 1984×1912), 30 i/s,
+Chromium de Playwright sous Windows (rendu logiciel : temps absolus élevés,
+seule la comparaison compte), fixture de 6 caches, alternance A/B/A/B :
+
+| | frames composées | moyenne | médiane | p95 |
+|---|---|---|---|---|
+| sans panneau | 231 | 51,0 ms | 53,2 ms | 57,9 ms |
+| 3 panneaux (matrice D/T, course des types, courbe) | 229 | 50,5 ms | 53,3 ms | 55,9 ms |
+
+Aucun écart mesurable : la différence est sous le bruit entre deux passes
+d'une même configuration (~5 %). Le nombre de frames composées ne bouge pas
+non plus.
+
+Coût isolé d'`addStatsPanelsToCanvas` pour ces 3 panneaux à l'échelle 2 :
+~0,01 ms quand le cache hors écran sert (révision inchangée) ; 1,9 ms en
+moyenne (médiane 1,4 ms, p95 5 ms) quand tout est redessiné — aperçu DOM et
+canvas vidéo —, ce qui n'arrive que les frames où un jour s'ajoute ou
+pendant une surbrillance ou une valeur qui glisse. Non mesurés : les grandes
+grilles (Jasmer, calendrier 366, ~300-370 cases) et une base réelle de
+plusieurs milliers de caches.
+
 ## Ajouter un type de panneau
 
 Une entrée dans `STATS_RENDERERS` (`measure` + `draw`), la liste de ses
