@@ -9,6 +9,16 @@ from unittest import mock
 import paths
 import settings_manager
 
+# Ces tests simulent un système POSIX en patchant os.name et sys.platform,
+# mais les chemins restent construits par pathlib, qui instancie un PosixPath
+# — impossible sous Windows (NotImplementedError). Le comportement XDG qu'ils
+# vérifient ne s'exécute de toute façon que sur Linux et macOS, où la CI les
+# fait tourner. Sans cette garde, ils faisaient échouer le job Windows.
+if os.name != "posix":
+    raise unittest.SkipTest(
+        "chemins POSIX : ces tests instancient des PosixPath, indisponibles sous Windows"
+    )
+
 
 def _plateforme_posix(home, platform="linux"):
     """Empile les patchs simulant Linux/macOS : os.name, sys.platform, home.
