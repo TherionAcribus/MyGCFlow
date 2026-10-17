@@ -16,6 +16,7 @@ import {
     showLoadingToast, updateToastMessage, updateToastProgress, setIndeterminateProgress, hideToast,
 } from './notifications.js';
 import { showBsModal, hideBsModal } from './ui_bootstrap.js';
+import { countLabel } from './utils.js';
 
 // Adventures (groupes d'étapes en attente) par page de la modale.
 const PENDING_PAGE_SIZE = 20;
@@ -275,7 +276,10 @@ function renderLabsStatus(st) {
         } else if (ready === 0) {
             // Tout est en attente : le statut le dit en clair — l'alerte
             // « à compléter » porte les deux issues (récupération, saisie).
-            statusEl.textContent = t('${total} étape(s) importée(s) — aucune encore prête', { total });
+            // Libellés hors template literal pour l'extracteur Babel.
+            const importedLabel = countLabel(total, t('étape importée'), t('étapes importées'));
+            const noneReadyLabel = t('aucune encore prête');
+            statusEl.textContent = `${importedLabel} — ${noneReadyLabel}`;
         } else {
             // Libellés résolus hors template literal pour l'extracteur Babel.
             const stepLabel = total > 1 ? t('étapes') : t('étape');
@@ -292,8 +296,12 @@ function renderLabsStatus(st) {
         pendingAlert.classList.toggle('d-none', unresolved === 0 || activityRunning());
         if (unresolved > 0) {
             pendingText.textContent = canFetch
-                ? t('${count} étape(s) ne sont pas encore sur la carte : position ou date manquante.', { count: unresolved })
-                : t("${count} étape(s) n'ont pas pu être placées automatiquement : leur position est introuvable. Vous pouvez les compléter à la main.", { count: unresolved });
+                ? (unresolved === 1
+                    ? t("Une étape n'est pas encore sur la carte : position ou date manquante.")
+                    : t('${count} étapes ne sont pas encore sur la carte : position ou date manquante.', { count: unresolved }))
+                : (unresolved === 1
+                    ? t("Une étape n'a pas pu être placée automatiquement : sa position est introuvable. Vous pouvez la compléter à la main.")
+                    : t("${count} étapes n'ont pas pu être placées automatiquement : leur position est introuvable. Vous pouvez les compléter à la main.", { count: unresolved }));
         }
     }
     const fetchBtn = el('labsFetchBtn');
@@ -481,9 +489,14 @@ function previewErrorMessage(data) {
     if (!errors.length) return base;
     const shown = errors.slice(0, PREVIEW_ERRORS_SHOWN);
     if (errors.length > shown.length) {
-        shown.push(t('… et ${n} autre(s)', { n: errors.length - shown.length }));
+        shown.push(moreLabel(errors.length - shown.length));
     }
     return `${base} — ${shown.join(' ; ')}`;
+}
+
+// « … et N autres » — ligne de troncature partagée par les listes bornées.
+function moreLabel(n) {
+    return n === 1 ? t('… et 1 autre') : t('… et ${n} autres', { n });
 }
 
 function fmtLabel(format) {
@@ -492,16 +505,32 @@ function fmtLabel(format) {
         : format || '?';
 }
 
-function summaryBits(summary) {
+// Diff technique de l'aperçu, en mots utilisateur : aucun compteur interne
+// (resolved, ignored, unchanged…) ne s'affiche tel quel — « ignoré » devient
+// la raison réelle (« waypoint sans découverte correspondante »).
+// `format` précise le nombril (découverte vs étape/waypoint) ; absent, les
+// libellés restent génériques pour le total du lot.
+function summaryBits(summary, format = null) {
     if (!summary) return [];
+    const history = format === 'mygcflow-lab-finds';
+    const gpx = format === 'lab2gpx-gpx';
     const bits = [];
-    if (summary.added) bits.push(t('${n} nouvelle(s)', { n: summary.added }));
-    if (summary.updated) bits.push(t('${n} mise(s) à jour', { n: summary.updated }));
-    if (summary.unchanged) bits.push(t('${n} identique(s)', { n: summary.unchanged }));
-    if (summary.resolved) bits.push(t('${n} résolue(s)', { n: summary.resolved }));
-    if (summary.ignored) bits.push(t('${n} ignorée(s)', { n: summary.ignored }));
-    if (summary.rejected) bits.push(t('${n} rejetée(s)', { n: summary.rejected }));
-    if (summary.conflicts) bits.push(t('${n} conflit(s)', { n: summary.conflicts }));
+    const push = (n, singular, plural) => { if (n) bits.push(countLabel(n, singular, plural)); };
+    push(summary.added, t('nouvelle découverte'), t('nouvelles découvertes'));
+    push(summary.resolved, t('étape associée'), t('étapes associées'));
+    push(summary.updated,
+        history ? t('découverte mise à jour') : gpx ? t('étape mise à jour') : t('élément mis à jour'),
+        history ? t('découvertes mises à jour') : gpx ? t('étapes mises à jour') : t('éléments mis à jour'));
+    push(summary.ignored,
+        t('waypoint sans découverte correspondante'),
+        t('waypoints sans découverte correspondante'));
+    push(summary.rejected,
+        gpx ? t('waypoint illisible') : t('ligne illisible'),
+        gpx ? t('waypoints illisibles') : t('lignes illisibles'));
+    push(summary.conflicts, t('conflit à trancher'), t('conflits à trancher'));
+    push(summary.unchanged,
+        history ? t('découverte déjà connue') : gpx ? t('étape déjà positionnée') : t('élément déjà à jour'),
+        history ? t('découvertes déjà connues') : gpx ? t('étapes déjà positionnées') : t('éléments déjà à jour'));
     return bits;
 }
 
@@ -509,8 +538,40 @@ function renderPreviewModal(data) {
     const filesEl = el('labsPreviewFiles');
     const summaryEl = el('labsPreviewSummary');
     const projectedEl = el('labsPreviewProjected');
+    const detailsEl = el('labsPreviewDetails');
+    const confirmBtn = el('labsPreviewConfirmBtn');
     if (!filesEl) return;
 
+    // Le résumé parle résultat, pas mécanique : l'état de la collection
+    // une fois importée — en premier, avant tout détail technique.
+    if (projectedEl) {
+        const p = data.projected;
+        if (p && typeof p.total === 'number') {
+            projectedEl.textContent = '';
+            projectedEl.classList.remove('d-none');
+            const title = document.createElement('div');
+            title.className = 'fw-bold mb-1';
+            title.textContent = t('Après import');
+            projectedEl.appendChild(title);
+            for (const line of [
+                countLabel(p.total, t('découverte enregistrée'), t('découvertes enregistrées')),
+                countLabel(p.ready, t('prête à afficher'), t('prêtes à afficher')),
+                `${p.unresolved} ${t('à compléter')}`,
+            ]) {
+                const div = document.createElement('div');
+                div.textContent = line;
+                projectedEl.appendChild(div);
+            }
+        } else {
+            projectedEl.classList.add('d-none');
+        }
+    }
+
+    // Conflits et avertissements : action ou signal — visibles hors repli.
+    renderPreviewConflicts(data.conflicts_detail || []);
+    renderPreviewWarnings(data.warnings || []);
+
+    // Détail des fichiers : dans un <details>, la lecture n'est pas subie.
     filesEl.textContent = '';
     const list = document.createElement('ul');
     list.className = 'list-unstyled mb-0 small';
@@ -523,10 +584,11 @@ function renderPreviewModal(data) {
         const tail = document.createElement('span');
         if (rep.status === 'error') {
             tail.className = 'text-danger';
-            tail.textContent = ` — ${rep.error || t('illisible')}`;
+            tail.textContent = ' — ' + (rep.error || t('illisible'));
         } else {
-            const bits = summaryBits(rep.summary);
-            tail.textContent = ` (${fmtLabel(rep.format)}) : ${bits.join(', ') || t('rien de nouveau')}`;
+            const bits = summaryBits(rep.summary, rep.format);
+            const detail = bits.join(', ') || t('rien de nouveau');
+            tail.textContent = ` (${fmtLabel(rep.format)}) : ${detail}`;
         }
         li.appendChild(tail);
         list.appendChild(li);
@@ -536,21 +598,19 @@ function renderPreviewModal(data) {
     if (summaryEl) {
         const totals = data.totals || {};
         const bits = summaryBits(totals);
-        summaryEl.textContent = `${t('Total')} : ${bits.join(', ') || t('aucun changement')}`;
+        const summaryDetail = bits.join(', ') || t('aucun changement');
+        summaryEl.textContent = `${t('Total')} : ${summaryDetail}`;
     }
+    if (detailsEl) detailsEl.open = false;
 
-    renderPreviewConflicts(data.conflicts_detail || []);
-    renderPreviewWarnings(data.warnings || []);
-
-    if (projectedEl) {
-        const p = data.projected;
-        if (p && typeof p.total === 'number') {
-            projectedEl.classList.remove('d-none');
-            projectedEl.textContent = t('Après import : ${total} étape(s), dont ${ready} affichable(s) et ${pending} en attente.',
-                { total: p.total, ready: p.ready, pending: p.unresolved });
-        } else {
-            projectedEl.classList.add('d-none');
-        }
+    // Rien d'exploitable (tout est déjà connu ou illisible) : Importer ne
+    // servirait à rien, on le désactive plutôt que laisser un import vide.
+    // Un conflit reste exploitable : l'utilisateur peut choisir « remplacer ».
+    if (confirmBtn) {
+        const totals = data.totals || {};
+        const actionable = (totals.added || 0) + (totals.updated || 0)
+            + (totals.resolved || 0) + (totals.conflicts || 0);
+        confirmBtn.disabled = actionable <= 0;
     }
 }
 
@@ -592,8 +652,9 @@ function renderPreviewConflicts(items) {
 
     const title = document.createElement('div');
     title.className = 'fw-bold small mb-1';
-    title.textContent = t('Conflits (${n}) — sans choix de votre part, la valeur existante est conservée',
-        { n: shown.length + hidden });
+    const conflictCount = countLabel(shown.length + hidden, t('conflit'), t('conflits'));
+    const conflictNote = t('sans choix de votre part, la valeur existante est conservée');
+    title.textContent = `${conflictCount} — ${conflictNote}`;
     box.appendChild(title);
 
     shown.forEach((c, i) => {
@@ -649,7 +710,7 @@ function renderPreviewConflicts(items) {
     if (hidden > 0) {
         const more = document.createElement('div');
         more.className = 'form-hint text-muted';
-        more.textContent = t('… et ${n} autre(s)', { n: hidden });
+        more.textContent = moreLabel(hidden);
         box.appendChild(more);
     }
 }
@@ -690,7 +751,7 @@ function renderPreviewWarnings(items) {
     }
     if (hidden > 0) {
         const li = document.createElement('li');
-        li.textContent = t('… et ${n} autre(s)', { n: hidden });
+        li.textContent = moreLabel(hidden);
         list.appendChild(li);
     }
     box.appendChild(list);
@@ -943,16 +1004,22 @@ async function followFetch(taskId) {
 // n'affiche qu'un message, émis après le rechargement de la carte.
 function importSummary(result) {
     const added = (result.added || 0) + (result.updated || 0);
-    let msg = result.fetch_task_id
-        // Les compteurs « sur la carte » n'ont pas encore de sens : le
+    const imported = countLabel(added, t('étape importée'), t('étapes importées'));
+    let msg = `${imported}.`;
+    if (!result.fetch_task_id) {
+        // Les compteurs « sur la carte » n'ont pas encore de sens quand le
         // placement démarre tout juste — le bilan des étapes prêtes vient
         // du résumé de récupération qui suit.
-        ? t('${added} étape(s) importée(s).', { added })
-        : t('${added} étape(s) importée(s) — ${ready} affichable(s), ${pending} en attente.',
-            { added, ready: result.ready_total || 0, pending: result.unresolved || 0 });
+        const readyLabel = countLabel(result.ready_total || 0, t('affichable'), t('affichables'));
+        const pendingWord = t('en attente');
+        const pendingLabel = `${result.unresolved || 0} ${pendingWord}`;
+        msg = `${imported} — ${readyLabel}, ${pendingLabel}.`;
+    }
     if ((result.conflicts || 0) > 0) {
         // Import sans aperçu (favori) ou conflits laissés tels quels.
-        msg += ' ' + t('${n} conflit(s) — valeurs existantes conservées.', { n: result.conflicts });
+        const conflictCount = countLabel(result.conflicts, t('conflit'), t('conflits'));
+        const keptNote = t('valeurs existantes conservées.');
+        msg += ` ${conflictCount} — ${keptNote}`;
     }
     return msg;
 }
@@ -1123,12 +1190,16 @@ function fetchSummary(result) {
     const resolved = result.resolved || 0;
     const failed = (result.failed_uuids || []).length;
     const pending = result.unresolved || 0;
-    let msg = t('${n} étape(s) placée(s) sur la carte.', { n: resolved });
+    const placed = countLabel(resolved, t('étape placée sur la carte'), t('étapes placées sur la carte'));
+    let msg = `${placed}.`;
     if (failed > 0) {
-        msg += ' ' + t('${n} Adventure(s) introuvable(s) par le service.', { n: failed });
+        const failedLabel = countLabel(failed, t('Adventure introuvable par le service'),
+                                       t('Adventures introuvables par le service'));
+        msg += ` ${failedLabel}.`;
     }
     if (pending > 0) {
-        msg += ' ' + t('${n} étape(s) restent à compléter.', { n: pending });
+        const toComplete = countLabel(pending, t('étape reste à compléter'), t('étapes restent à compléter'));
+        msg += ` ${toComplete}.`;
     }
     if (result.cancelled) {
         // Arrêt demandé par l'utilisateur : bilan partiel, pas un échec.
@@ -1184,7 +1255,7 @@ function updatePendingPager() {
     if (page) {
         const start = total === 0 ? 0 : pendingOffset + 1;
         const end = Math.min(pendingOffset + PENDING_PAGE_SIZE, total);
-        const unit = t('Adventure(s)');
+        const unit = total === 1 ? t('Adventure') : t('Adventures');
         page.textContent = `${start}–${end} / ${total} ${unit}`;
     }
 }
@@ -1229,8 +1300,8 @@ function buildPendingGroup(group) {
     }
     const count = document.createElement('span');
     count.className = 'text-muted';
-    const countLabel = t('${n} étape(s) en attente', { n: stages.length });
-    count.textContent = ` — ${countLabel}`;
+    const pendingCount = countLabel(stages.length, t('étape en attente'), t('étapes en attente'));
+    count.textContent = ` — ${pendingCount}`;
     head.appendChild(count);
     card.appendChild(head);
 
@@ -1432,9 +1503,11 @@ async function onPlaceAdventure(card, wrap, group) {
             { coordinates: text });
         card.classList.add('border-success');
         wrap.querySelector('[data-action="place-adventure"]')?.setAttribute('disabled', '');
-        setFeedback(wrap, 'success', t('${n} étape(s) placée(s) en ${lat}, ${lon}.', {
-            n: data.placed, lat: fmtCoord(data.latitude), lon: fmtCoord(data.longitude),
-        }));
+        const placedLabel = countLabel(data.placed, t('étape placée'), t('étapes placées'));
+        const coords = t('en ${lat}, ${lon}.', {
+            lat: fmtCoord(data.latitude), lon: fmtCoord(data.longitude),
+        });
+        setFeedback(wrap, 'success', `${placedLabel} ${coords}`);
         afterPendingCorrection(data);
     } catch (e) {
         setFeedback(wrap, 'danger', e.message || t('Erreur'));

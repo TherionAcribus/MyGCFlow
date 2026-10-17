@@ -318,8 +318,9 @@ def _apply_history(session, parsed, commit: bool, overrides=frozenset()) -> dict
     rejected = len(parsed.rejected)
     if parsed.duplicates:
         warnings.append({"field": "discoveries",
-                         "reason": _("%(n)s doublon(s) dédoublonné(s)",
-                                     n=parsed.duplicates)})
+                         "reason": (_("%(n)s doublon dédoublonné", n=parsed.duplicates)
+                                    if parsed.duplicates == 1 else
+                                    _("%(n)s doublons dédoublonnés", n=parsed.duplicates))})
     warnings.extend(_reason_counts(
         "discoveries",
         [w for d in parsed.drafts for w in d.warnings]
@@ -524,8 +525,11 @@ def _apply_coords(session, parsed, commit: bool, overrides=frozenset()) -> dict:
 
     if found_flag_mismatch:
         warnings.append({"field": "sym",
-                         "reason": _("%(n)s étape(s) de l'historique non marquées "
-                                     "trouvées dans le GPX", n=found_flag_mismatch)})
+                         "reason": (_("%(n)s étape de l'historique non marquée "
+                                      "trouvée dans le GPX", n=found_flag_mismatch)
+                                    if found_flag_mismatch == 1 else
+                                    _("%(n)s étapes de l'historique non marquées "
+                                      "trouvées dans le GPX", n=found_flag_mismatch))})
     warnings.extend(_reason_counts(
         "stages",
         [w for s in parsed.stages for w in s.warnings]

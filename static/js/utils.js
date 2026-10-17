@@ -192,3 +192,9 @@ export function convertToMinutesAndSeconds(timeInFraction) {
 }
 
 
+
+// Pluriel lisible : `${count} ${forme}` en choisissant la forme accordée —
+// remplace les « (s) » paresseux (« 12 étape(s) » → « 12 étapes »).
+export function countLabel(count, singular, plural) {
+    return `${count} ${count === 1 ? singular : plural}`;
+}

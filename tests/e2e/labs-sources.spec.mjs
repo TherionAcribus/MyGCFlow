@@ -8,6 +8,7 @@ import { dismissFirstUseModal } from './first-use.mjs';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES = path.join(HERE, '..', 'fixtures', 'labs');
 const HISTORY = path.join(FIXTURES, 'lab-finds-valid.json');
+const HISTORY_PLUS_ONE = path.join(FIXTURES, 'lab-finds-plus-one.json');
 const COORDS = path.join(FIXTURES, 'lab2gpx-stages.gpx');
 const GPX_FINDS = path.join(HERE, 'fixtures', 'my-finds.gpx');
 // Étape 1 de « Circuit des Moulins » (5/5 trouvées), avec image /logs.
@@ -202,9 +203,11 @@ test('un réimport Labs préserve un choix manuel « géocaches »', async ({ pa
   await expect(select).toHaveValue('geocaches');
   await expect(page.locator('#filtersCounter')).toContainText('0 / 8', { timeout: 20_000 });
 
-  // Réimport du même lot : la collection comptait déjà 8 étapes prêtes —
-  // le choix explicite ne doit pas être écrasé.
-  await page.locator('#labs-file-input').setInputFiles([HISTORY, COORDS]);
+  // Réimport d'un lot enrichi (une découverte de plus — un lot strictement
+  // identique est inerte et garde le bouton Importer désactivé) : la
+  // collection comptait déjà 8 étapes prêtes — le choix explicite ne doit
+  // pas être écrasé.
+  await page.locator('#labs-file-input').setInputFiles([HISTORY_PLUS_ONE, COORDS]);
   await expect(page.locator('#labsPreviewModal')).toBeVisible({ timeout: 20_000 });
   await page.locator('#labsPreviewConfirmBtn').click();
   // Fin réelle de l'import : le bloc d'activité apparaît puis disparaît ;
@@ -928,7 +931,7 @@ test('un import produit au plus un toast à la fois et un seul bilan final', asy
   // Bilan unique après rechargement : import + bascule de source fusionnés.
   const toast = page.locator('.gcm-toast.show');
   await expect(toast).toHaveCount(1);
-  await expect(toast).toContainText('12 étape(s) importée(s)');
+  await expect(toast).toContainText('12 étapes importées');
   await expect(toast).toContainText('affichable');
   await expect(toast).toContainText('maintenant affichés');
 });
@@ -990,9 +993,9 @@ test('un import suivi d\'un placement produit un seul bilan final', async ({ pag
   // Un seul toast, portant l'import ET le placement.
   const toast = page.locator('.gcm-toast.show');
   await expect(toast).toHaveCount(1, { timeout: 20_000 });
-  await expect(toast).toContainText('12 étape(s) importée(s)');
-  await expect(toast).toContainText('8 étape(s) placée(s)');
-  await expect(toast).toContainText('4 étape(s) restent à compléter');
+  await expect(toast).toContainText('12 étapes importées');
+  await expect(toast).toContainText('8 étapes placées');
+  await expect(toast).toContainText('4 étapes restent à compléter');
   expect(await maxToastsSeen(page)).toBeLessThanOrEqual(1);
 });
 
@@ -1180,7 +1183,7 @@ test('la récupération est annulable et le bilan le dit', async ({ page }) => {
   await expect(cancelBtn).toBeHidden();
   const toast = page.locator('.gcm-toast.show');
   await expect(toast).toHaveCount(1, { timeout: 20_000 });
-  await expect(toast).toContainText('6 étape(s) placée(s) sur la carte.');
+  await expect(toast).toContainText('6 étapes placées sur la carte.');
   await expect(toast).toContainText('Récupération interrompue');
   await expect(toast).toContainText('déjà obtenues sont conservées');
 });
@@ -1467,4 +1470,54 @@ test('le palier de sondage respecte ses bornes', async ({ page }) => {
   expect(delays.tiers).toEqual([500, 500, 500, 1000, 1000, 1000, 2000, 2000]);
   // Animation en cours : jamais sous 2 s, même dans le palier dense.
   expect(delays.busy).toBe(2000);
+});
+
+
+// Lot 4.1 : l'aperçu parle résultat — la projection de la collection en
+// premier, le détail technique dans un <details>, Importer inerte quand rien
+// ne peut changer.
+test('l\'aperçu montre d\'abord l\'état projeté et replie le détail technique', async ({ page }) => {
+  await openReadyApp(page);
+  await page.locator('#labs-file-input').setInputFiles([HISTORY, COORDS]);
+  await expect(page.locator('#labsPreviewModal')).toBeVisible({ timeout: 20_000 });
+
+  // Résumé orienté utilisateur : trois lignes, aucun terme interne.
+  const projected = page.locator('#labsPreviewProjected');
+  await expect(projected).toBeVisible();
+  await expect(projected).toContainText('Après import');
+  await expect(projected).toContainText('12 découvertes enregistrées');
+  await expect(projected).toContainText('8 prêtes à afficher');
+  await expect(projected).toContainText('4 à compléter');
+  await expect(projected).not.toContainText('resolved');
+  await expect(projected).not.toContainText('ignoré');
+
+  // Le détail vit dans un <details> fermé à l'ouverture, raisons explicites.
+  const details = page.locator('#labsPreviewDetails');
+  await expect(details).toBeVisible();
+  await expect(details.locator('summary')).toContainText('Détail des fichiers');
+  expect(await details.evaluate(el => el.open)).toBe(false);
+  await details.locator('summary').click();
+  await expect(page.locator('#labsPreviewFiles')).toContainText('nouvelles découvertes');
+  await expect(page.locator('#labsPreviewFiles')).toContainText('étapes associées');
+  // Jamais de pluriel paresseux.
+  await expect(page.locator('#labsPreviewModal')).not.toContainText('(s)');
+
+  await page.locator('#labsPreviewConfirmBtn').click();
+  await expect(page.locator('#labsStatus')).toContainText('8', { timeout: 60_000 });
+});
+
+
+test('Importer reste inerte quand le lot ne changerait rien', async ({ page }) => {
+  await openReadyApp(page);
+  await importLabs(page);
+
+  // Réimport identique : tout est « déjà connu », aucun changement
+  // exploitable — la projection reste lisible mais Importer est désactivé.
+  await page.locator('#labs-file-input').setInputFiles([HISTORY, COORDS]);
+  await expect(page.locator('#labsPreviewModal')).toBeVisible({ timeout: 20_000 });
+  const confirm = page.locator('#labsPreviewConfirmBtn');
+  await expect(confirm).toBeDisabled();
+  const details = page.locator('#labsPreviewDetails');
+  await details.locator('summary').click();
+  await expect(page.locator('#labsPreviewSummary')).toContainText('déjà');
 });
