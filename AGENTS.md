@@ -53,6 +53,12 @@ Autres repères :
   cale la vidéo dessus) doit y revenir, sinon `#inputDaysPerSecond` reste en
   lecture seule pour les specs suivants — exemple dans `music-options.spec.mjs`
   (`afterEach`).
+- Même famille : `animation.camera_follow_mode` (cible « tête du trait ») est
+  une préférence globale. La sauvegarde étant debouncée (500 ms), remettre la
+  valeur par l'UI ne suffit pas : la navigation du spec suivant peut précéder
+  le PUT, qui part alors sur une machine plus lente (échec CI de
+  `travel-trail.spec.mjs` › « glisser la caméra », 2026-10-17). Après la
+  restauration, attendre la persistance via `GET /api/settings`.
 - Même piège pour la musique : la dernière choisie est retenue
   (`recording.audio_file`) et rechargée à chaque démarrage. Un spec qui en
   choisit une doit la retirer (`#btnAudioFileRemove`) et attendre

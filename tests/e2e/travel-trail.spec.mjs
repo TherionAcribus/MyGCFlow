@@ -305,8 +305,16 @@ test('la cible tête du trait suit l\'état réel du trajet', async ({ page }) =
   await expect(page.locator('#timingSummary')).toContainText('trajets de caméra');
   await expect(page.locator('#cameraTrailFallbackWarning')).toBeVisible();
 
+  // La cible est une préférence globale persistée : la remettre à « jours »
+  // pour les specs suivants — AVANT de couper le suivi, qui la grise. Et
+  // attendre l'enregistrement (debouncé) : le prochain test navigue aussitôt,
+  // un PUT en vol pourrait ne jamais partir.
+  await page.locator('#selectCameraTarget').selectOption('days');
   await page.locator('#switchCameraFollow').uncheck();
   await expect(page.locator('#cameraTrailFallbackWarning')).toBeHidden();
+  await expect.poll(async () => (
+    (await (await page.request.get('/api/settings')).json()).animation?.camera_follow_mode
+  ), { timeout: 5_000 }).toBe('days');
 });
 
 
@@ -323,6 +331,9 @@ test('le suivi « tête du trait » fait glisser la caméra derrière le stylo',
   await expect(page.locator('#selectCameraTarget')).toBeEnabled();
   // Retour au cadrage de départ : coché par défaut, vérifié plus bas.
   await page.locator('#cbCameraReturnHome').check();
+  // La cible est persistée entre les specs : repartir du mode par jour, sans
+  // présumer de l'état laissé au chargement.
+  await page.locator('#selectCameraTarget').selectOption('days');
   // Une seule aide à la fois : celle du suivi par jour cède la place.
   await expect(page.locator('#helpCameraTargetDays')).toBeVisible();
   await expect(page.locator('#helpCameraTargetTrail')).toBeHidden();
