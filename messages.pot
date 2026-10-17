@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-16 21:51+0200\n"
+"POT-Creation-Date: 2026-10-17 07:34+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -585,7 +585,7 @@ msgstr ""
 msgid "Un import est en cours : réessayez une fois terminé"
 msgstr ""
 
-#: blueprints/evolution.py:158 blueprints/gpx.py:37 blueprints/labs.py:498
+#: blueprints/evolution.py:158 blueprints/gpx.py:37 blueprints/labs.py:512
 msgid "Aucun fichier fourni"
 msgstr ""
 
@@ -641,179 +641,184 @@ msgstr ""
 msgid "Erreur lors du vidage de la base de données: %(error)s"
 msgstr ""
 
-#: blueprints/labs.py:175
+#: blueprints/labs.py:189
 msgid "Jeton d'import invalide"
 msgstr ""
 
-#: blueprints/labs.py:181
+#: blueprints/labs.py:195
 msgid "Jeton d'import inconnu ou déjà consommé"
 msgstr ""
 
-#: blueprints/labs.py:183
+#: blueprints/labs.py:197
 msgid "Jeton d'import déjà consommé"
 msgstr ""
 
-#: blueprints/labs.py:187
+#: blueprints/labs.py:201
 msgid "Jeton d'import illisible"
 msgstr ""
 
-#: blueprints/labs.py:190
+#: blueprints/labs.py:204
 msgid "Jeton d'import expiré — relancer l'aperçu"
 msgstr ""
 
-#: blueprints/labs.py:272
+#: blueprints/labs.py:286
 #, python-format
 msgid "Import Labs : %(name)s"
 msgstr ""
 
-#: blueprints/labs.py:297
+#: blueprints/labs.py:311
 msgid ""
 "la collection a été modifiée entre l'aperçu et l'enregistrement — diff "
 "recalculé sur l'état courant"
 msgstr ""
 
-#: blueprints/labs.py:299
+#: blueprints/labs.py:313
 msgid "Import Labs : finalisation"
 msgstr ""
 
-#: blueprints/labs.py:388
+#: blueprints/labs.py:402
 #, python-format
 msgid "Coordonnées Labs : %(done)s/%(total)s Adventures"
 msgstr ""
 
-#: blueprints/labs.py:501 blueprints/labs.py:536
+#: blueprints/labs.py:515 blueprints/labs.py:569
 #, python-format
 msgid "Trop de fichiers (maximum %(max)s)"
 msgstr ""
 
-#: blueprints/labs.py:511
+#: blueprints/labs.py:526
 msgid "Fichier trop volumineux"
 msgstr ""
 
-#: blueprints/labs.py:542
+#: blueprints/labs.py:533
+#, python-format
+msgid "Lot trop volumineux — maximum %(max)s Mo au total"
+msgstr ""
+
+#: blueprints/labs.py:575
 msgid "Format non reconnu (ni export historique, ni GPX Lab2Gpx)"
 msgstr ""
 
-#: blueprints/labs.py:558
+#: blueprints/labs.py:591
 msgid "Aucun fichier exploitable"
 msgstr ""
 
-#: blueprints/labs.py:588
+#: blueprints/labs.py:621
 #, python-format
 msgid "Erreur lors de l'analyse : %(error)s"
 msgstr ""
 
-#: blueprints/labs.py:621
+#: blueprints/labs.py:654
 msgid "Un import Labs est déjà en cours"
 msgstr ""
 
-#: blueprints/labs.py:631
+#: blueprints/labs.py:664
 msgid "Import Labs lancé en tâche de fond"
 msgstr ""
 
-#: blueprints/labs.py:662 blueprints/labs.py:675
+#: blueprints/labs.py:695 blueprints/labs.py:708
 msgid "Pagination invalide"
 msgstr ""
 
-#: blueprints/labs.py:695
+#: blueprints/labs.py:728
 #, python-format
 msgid "Coordonnées invalides : %(reason)s"
 msgstr ""
 
-#: blueprints/labs.py:714 blueprints/labs.py:773
+#: blueprints/labs.py:747 blueprints/labs.py:806
 msgid "Aucune correction fournie"
 msgstr ""
 
-#: blueprints/labs.py:721
+#: blueprints/labs.py:754
 msgid "Date invalide (format attendu : AAAA-MM-JJ)"
 msgstr ""
 
-#: blueprints/labs.py:733
+#: blueprints/labs.py:766
 msgid "Découverte inconnue"
 msgstr ""
 
-#: blueprints/labs.py:778
+#: blueprints/labs.py:811
 msgid "Aucune étape de cette Adventure n'attend de position"
 msgstr ""
 
-#: blueprints/labs.py:792 blueprints/labs.py:872 blueprints/labs.py:935
+#: blueprints/labs.py:825 blueprints/labs.py:905 blueprints/labs.py:968
 msgid "Une opération Labs est déjà en cours"
 msgstr ""
 
-#: blueprints/labs.py:797
+#: blueprints/labs.py:830
 #, python-format
 msgid "Collection Labs vidée (%(count)s entrées supprimées)."
 msgstr ""
 
-#: blueprints/labs.py:807
+#: blueprints/labs.py:840
 msgid "Aucune collection Labs à exporter"
 msgstr ""
 
-#: blueprints/labs.py:868
+#: blueprints/labs.py:901
 msgid "Aucune étape en attente de coordonnées"
 msgstr ""
 
-#: blueprints/labs.py:883
+#: blueprints/labs.py:916
 msgid "Récupération des coordonnées lancée"
 msgstr ""
 
-#: blueprints/labs.py:924
+#: blueprints/labs.py:957
 msgid "Jeton de réception invalide — régénérer le bookmarklet"
 msgstr ""
 
-#: blueprints/labs.py:928
+#: blueprints/labs.py:961
 msgid "Contenu absent ou trop volumineux"
 msgstr ""
 
-#: blueprints/labs.py:931
+#: blueprints/labs.py:964
 msgid "Format non reconnu (export mygcflow-lab-finds attendu)"
 msgstr ""
 
-#: blueprints/labs.py:947
+#: blueprints/labs.py:980
 msgid "Historique Labs reçu — import lancé"
 msgstr ""
 
-#: blueprints/labs.py:994
+#: blueprints/labs.py:1027
 msgid "MyGCFlow : démarrage…"
 msgstr ""
 
-#: blueprints/labs.py:995
+#: blueprints/labs.py:1028
 msgid "MyGCFlow — GUID public du joueur :"
 msgstr ""
 
-#: blueprints/labs.py:996
+#: blueprints/labs.py:1029
 msgid "Annulé."
 msgstr ""
 
-#: blueprints/labs.py:997
+#: blueprints/labs.py:1030
 msgid "GUID refusé par le site."
 msgstr ""
 
-#: blueprints/labs.py:998
+#: blueprints/labs.py:1031
 #, python-brace-format
 msgid "MyGCFlow : ${adv} Adventures, ${disc} étapes…"
 msgstr ""
 
-#: blueprints/labs.py:999
+#: blueprints/labs.py:1032
 msgid "MyGCFlow : envoi à l'application…"
 msgstr ""
 
-#: blueprints/labs.py:1000
+#: blueprints/labs.py:1033
 msgid ""
 "MyGCFlow : faites défiler un peu votre historique pour détecter votre "
 "compte…"
 msgstr ""
 
-#: blueprints/labs.py:1002
+#: blueprints/labs.py:1035
 #, python-brace-format
 msgid "✔ Envoyé à MyGCFlow — import en cours (${adv} Adventures, ${disc} étapes)"
 msgstr ""
 
-#: blueprints/labs.py:1004
+#: blueprints/labs.py:1037
 msgid "MyGCFlow : erreur"
 msgstr ""
 
-#: blueprints/labs.py:1005
+#: blueprints/labs.py:1038
 msgid "MyGCFlow :"
 msgstr ""
 

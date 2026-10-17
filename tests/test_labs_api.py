@@ -293,6 +293,72 @@ class LabsApiTests(unittest.TestCase):
         self.assertEqual(rv.status_code, 400)
         self.assertEqual(rv.get_json()["files"][0]["error"], "Fichier trop volumineux")
 
+    # --- limite cumulée du lot ----------------------------------------------
+
+    def _preview_named(self, named_files):
+        return self.client.post(
+            '/api/labs/import/preview',
+            data={'files': [(io.BytesIO(raw), name) for name, raw in named_files]},
+            content_type='multipart/form-data')
+
+    def test_batch_limit_accepts_64_small_files(self):
+        """64 fichiers restent admis : la borne lot (128 Mo) ne doit pas
+        casser l'usage Lab2Gpx qui batchait ses exports."""
+        import blueprints.labs as labs_mod
+        history = HISTORY.read_bytes()
+        # Pile à la borne : 64 × taille == limite → admis.
+        with mock.patch.object(labs_mod, "MAX_LAB_BATCH_BYTES",
+                               64 * len(history)):
+            rv = self._preview_named(
+                [(f"export-{i:02d}.json", history) for i in range(64)])
+        self.assertEqual(rv.status_code, 200, rv.get_json())
+        self.assertEqual(len(rv.get_json()["files"]), 64)
+
+    def test_batch_limit_counts_files_cumulatively(self):
+        """Deux fichiers chacun sous 64 Mo mais dont le TOTAL dépasse le
+        lot : refusés ensemble, avec le message dédié."""
+        import blueprints.labs as labs_mod
+        history = HISTORY.read_bytes()
+        with mock.patch.object(labs_mod, "MAX_LAB_BATCH_BYTES",
+                               2 * len(history) - 1):
+            rv = self._preview_named([("h1.json", history), ("h2.json", history)])
+        self.assertEqual(rv.status_code, 400)
+        self.assertIn("Lot trop volumineux", rv.get_json()["message"])
+
+    def test_batch_limit_counts_zip_decompressed_members(self):
+        """Une archive compacte dont les membres décompressés dépassent la
+        borne du lot : c'est le contenu décompressé qui compte."""
+        import blueprints.labs as labs_mod
+        member = COORDS.read_bytes() + b" " * 4096   # ~4 ko de plus, décompressé
+        archive = self._zip({"gros.gpx": member})
+        self.assertLess(len(archive), len(member))   # deflate tient parole
+        with mock.patch.object(labs_mod, "MAX_LAB_BATCH_BYTES", 4096):
+            rv = self._preview_bytes("gros.zip", archive)
+        self.assertEqual(rv.status_code, 400)
+        self.assertIn("Lot trop volumineux", rv.get_json()["message"])
+
+    def test_batch_limit_mixes_zip_and_plain_files(self):
+        """ZIP + JSON : leurs octets décompressés s'additionnent ; pile à la
+        borne → admis, un octet de plus → refusé."""
+        import blueprints.labs as labs_mod
+        history = HISTORY.read_bytes()
+        gpx = COORDS.read_bytes()
+        archive = self._zip({"coords.gpx": gpx})
+        post = lambda: self._preview_named(
+            [("coords.zip", archive), ("h.json", history)])
+
+        with mock.patch.object(labs_mod, "MAX_LAB_BATCH_BYTES",
+                               len(history) + len(gpx) - 1):
+            rv = post()
+        self.assertEqual(rv.status_code, 400)
+        self.assertIn("Lot trop volumineux", rv.get_json()["message"])
+
+        with mock.patch.object(labs_mod, "MAX_LAB_BATCH_BYTES",
+                               len(history) + len(gpx)):
+            rv = post()
+        self.assertEqual(rv.status_code, 200, rv.get_json())
+        self.assertTrue(rv.get_json()["success"])
+
     def test_token_errors_are_translated(self):
         """Ces messages passaient par une variable : jamais extraits, ils
         restaient en français dans l'interface anglaise."""

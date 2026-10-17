@@ -63,6 +63,10 @@ LABS_ORIGIN = "https://labs.geocaching.com"
 PENDING_TTL_SECONDS = 30 * 60
 MAX_LAB_FILE_BYTES = 64 * 1024 * 1024       # loin au-dessus des exports réels
 MAX_LAB_FILES = 64                           # les exports Lab2Gpx sont batchés
+# Limite CUMULÉE du lot : 64 fichiers de 64 Mo épuiseraient la mémoire. Les
+# octets comptés sont ceux réellement manipulés — contenu décompressé pour
+# les membres ZIP, pas la taille déclarée de l'archive.
+MAX_LAB_BATCH_BYTES = 128 * 1024 * 1024
 MAX_DETAIL_ITEMS = 100                       # bornage des diagnostics renvoyés
 MAX_OVERRIDES = 1000                         # choix « remplacer » par commit
 PENDING_ROOT = Path(tempfile.gettempdir()) / "mygcflow-lab-imports"
@@ -115,15 +119,22 @@ def _purge_expired_pending():
 
 
 class ArchiveTooLarge(ValueError):
-    """Zip dont les GPX dépassent, décompressés, les bornes d'un import."""
+    """Zip dont un GPX dépasse, décompressé, la borne par fichier."""
 
 
-def _zip_gpx_members(raw: bytes) -> list[tuple[str, bytes]]:
+class BatchTooLarge(ValueError):
+    """Zip dont les GPX cumulés dépassent le budget décompressé du lot."""
+
+
+def _zip_gpx_members(raw: bytes, budget: int) -> list[tuple[str, bytes]]:
     """Tous les .gpx d'un zip Lab2Gpx, dans l'ordre de l'archive : (nom, contenu).
 
     Liste vide si l'archive est illisible ou n'en contient aucun. Les bornes
     portent sur les tailles réellement décompressées, pas sur celles que
-    l'archive déclare — ArchiveTooLarge au-delà."""
+    l'archive déclare : chaque membre compte comme un fichier du lot
+    (MAX_LAB_FILE_BYTES — ArchiveTooLarge) et le total ne dépasse pas le
+    `budget` restant du lot (MAX_LAB_BATCH_BYTES moins ce qui est déjà lu —
+    BatchTooLarge)."""
     members, total = [], 0
     try:
         with zipfile.ZipFile(io.BytesIO(raw)) as zf:
@@ -134,10 +145,13 @@ def _zip_gpx_members(raw: bytes) -> list[tuple[str, bytes]]:
                 if len(members) >= MAX_LAB_FILES:
                     raise ArchiveTooLarge(info.filename)
                 with zf.open(info) as fh:
-                    data = fh.read(MAX_LAB_FILE_BYTES - total + 1)
-                total += len(data)
-                if total > MAX_LAB_FILE_BYTES:
+                    data = fh.read(min(MAX_LAB_FILE_BYTES,
+                                       budget - total) + 1)
+                if len(data) > MAX_LAB_FILE_BYTES:
                     raise ArchiveTooLarge(info.filename)
+                total += len(data)
+                if total > budget:
+                    raise BatchTooLarge(info.filename)
                 members.append((info.filename, data))
     except zipfile.BadZipFile:
         return []
@@ -505,10 +519,19 @@ def import_preview():
     parsed_files = []   # {name, format, raw, parsed}
     file_reports = []
     entries = []        # (nom affiché, contenu) — un zip en fournit plusieurs
+    batch_bytes = 0     # octets réellement retenus (décompressés pour les zip)
 
     def too_large(name):
         file_reports.append({"name": name, "format": None, "status": "error",
                              "error": _("Fichier trop volumineux")})
+
+    def batch_too_large():
+        # Le rejet porte sur le LOT entier : garder seulement les fichiers
+        # sous la ligne produirait un import partiel invisible pour
+        # l'utilisateur.
+        return jsonify({'success': False,
+                        'message': _("Lot trop volumineux — maximum %(max)s Mo au total",
+                                     max=MAX_LAB_BATCH_BYTES // (1024 * 1024))}), 400
 
     for up in uploads:
         name = up.filename or "fichier"
@@ -518,18 +541,28 @@ def import_preview():
             continue
         if lf.detect_lab_file_format(raw) is None and zipfile.is_zipfile(io.BytesIO(raw)):
             try:
-                members = _zip_gpx_members(raw)
+                members = _zip_gpx_members(raw, MAX_LAB_BATCH_BYTES - batch_bytes)
+            except BatchTooLarge:
+                return batch_too_large()
             except ArchiveTooLarge:
                 too_large(name)
                 continue
             if len(members) == 1:
                 entries.append((name, members[0][1]))
-                continue
-            if members:
+            elif members:
                 # Chaque GPX de l'archive est un fichier du lot à part entière.
                 entries.extend((f"{name} › {inner}", data) for inner, data in members)
-                continue
-        entries.append((name, raw))
+            if members:
+                batch_bytes += sum(len(data) for _inner, data in members)
+            else:
+                # Zip sans .gpx : conservé brut pour le diagnostic « format ».
+                entries.append((name, raw))
+                batch_bytes += len(raw)
+        else:
+            entries.append((name, raw))
+            batch_bytes += len(raw)
+        if batch_bytes > MAX_LAB_BATCH_BYTES:
+            return batch_too_large()
 
     if len(entries) > MAX_LAB_FILES:
         return jsonify({'success': False,
