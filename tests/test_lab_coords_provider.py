@@ -140,6 +140,61 @@ class FetchBatchesTests(unittest.TestCase):
         with self.assertRaises(urllib.error.URLError):
             self._run(["a", "b"], side_effect, batch_size=2)
 
+    def test_no_pause_after_last_batch(self):
+        """La pause borne le débit entre requêtes : après le dernier lot,
+        il n'y a rien à attendre."""
+        slept = []
+        with patch.object(lcp, "post_download", side_effect=lambda p, **_kw: b"<gpx/>"):
+            lcp.fetch_gpx_batches(
+                ["u0", "u1", "u2"], batch_size=1, delay=1.0,
+                sleep=slept.append)
+        # 2 pauses (entre 3 lots), chacune en tranches de 0,25 s → 8 tranches.
+        self.assertEqual(slept, [0.25] * 8)
+
+    def test_too_large_response_is_bisected(self):
+        """Une réponse hors borne est une erreur de lot : la bissection fait
+        repasser chaque moitié sous la borne."""
+        def side_effect(payload):
+            if "," in payload["uuidsToFetch"]:
+                raise lcp.ResponseTooLarge("trop gros")
+            return b"<gpx/>"
+
+        result, calls = self._run(["a", "b"], side_effect, batch_size=2)
+        self.assertEqual(result.failed_uuids, [])
+        self.assertEqual(result.fetched_adventures, 2)
+        self.assertEqual(calls, ["a,b", "a", "b"])
+
+    def test_too_large_single_uuid_marked_failed(self):
+        result, _ = self._run(
+            ["x"], lambda p: (_ for _ in ()).throw(lcp.ResponseTooLarge("trop gros")),
+            batch_size=50)
+        self.assertEqual(result.failed_uuids, ["x"])
+        self.assertEqual(result.payloads, [])
+
+    def test_deadline_stops_run_and_keeps_committed(self):
+        """La borne de durée arrête le parcours comme une panne : ce qui a
+        été remis via `on_payload` reste acquis."""
+        clock = {"t": 0.0}
+        got = []
+
+        def fake_sleep(s):
+            clock["t"] += s
+
+        def fake_post(payload, **_kw):
+            clock["t"] += 2.0   # chaque lot « coûte » 2 s
+            return b"<gpx/>"
+
+        with patch.object(lcp, "post_download", side_effect=fake_post):
+            with self.assertRaises(TimeoutError):
+                lcp.fetch_gpx_batches(
+                    ["u0", "u1", "u2", "u3"], batch_size=2, delay=1.0,
+                    sleep=fake_sleep, now=lambda: clock["t"],
+                    max_duration_s=2.5,
+                    on_payload=lambda n, d, b: got.append(b))
+        # lot 1 livré à t=2 ; la deadline 2,5 tombe pendant la pause — le
+        # 2e lot ne part jamais, le 1er reste remis.
+        self.assertEqual(got, [["u0", "u1"]])
+
 
 class CancellationTests(unittest.TestCase):
     """Annulation coopérative : le drapeau `is_cancelled` est vérifié entre
@@ -210,7 +265,13 @@ class PostDownloadTests(unittest.TestCase):
             if isinstance(out, Exception):
                 raise out
             class R:
-                def read(self): return out
+                def __init__(self): self._pos = 0
+                def read(self, n=-1):
+                    if self._pos >= len(out):
+                        return b""
+                    chunk = out[self._pos:] if n < 0 else out[self._pos:self._pos + n]
+                    self._pos += len(chunk)
+                    return chunk
                 def __enter__(self): return self
                 def __exit__(self, *a): return False
             return R()
@@ -258,6 +319,53 @@ class PostDownloadTests(unittest.TestCase):
                 self.assertRaises(urllib.error.URLError):
             lcp.post_download({"x": 1}, retries=3)
         self.assertEqual(calls["n"], 3)
+
+    def test_response_bounded_in_chunks(self):
+        """La lecture est bornée : un flux au-delà de `max_bytes` est coupé
+        sans être chargé entièrement."""
+        calls, fake = self._urlopen_side_effect([b"x" * 100])
+        with patch.object(lcp.urllib.request, "urlopen", side_effect=fake), \
+                self.assertRaises(lcp.ResponseTooLarge):
+            lcp.post_download({"x": 1}, max_bytes=10)
+        self.assertEqual(calls["n"], 1)
+
+    def test_deadline_clamps_request_timeout(self):
+        """La borne de durée resserre le timeout de la tentative courante et,
+        passée, interdit toute nouvelle tentative."""
+        calls, fake = self._urlopen_side_effect([b"<gpx/>"])
+        timeouts = []
+
+        def recording(req, timeout=None):
+            timeouts.append(timeout)
+            return fake(req, timeout)
+
+        with patch.object(lcp.urllib.request, "urlopen", side_effect=recording):
+            lcp.post_download({"x": 1}, timeout=120,
+                              deadline=30.0, now=lambda: 10.0)
+        self.assertEqual(timeouts, [20])   # min(120, 30 − 10)
+
+        with patch.object(lcp.urllib.request, "urlopen", side_effect=fake), \
+                self.assertRaises(TimeoutError):
+            lcp.post_download({"x": 1}, deadline=30.0, now=lambda: 31.0)
+        self.assertEqual(calls["n"], 1)   # aucune tentative nouvelle
+
+    def test_cancel_during_retry_backoff(self):
+        """L'attente de reprise est découpée : une annulation en cours de
+        backoff interrompt sans attendre ni retenter."""
+        calls, fake = self._urlopen_side_effect([urllib.error.URLError("down")])
+        flag = {"cancel": False}
+        slept = []
+
+        def fake_sleep(s):
+            slept.append(s)
+            flag["cancel"] = True
+
+        with patch.object(lcp.urllib.request, "urlopen", side_effect=fake), \
+                self.assertRaises(lcp.FetchCancelled):
+            lcp.post_download({"x": 1}, retries=4, sleep=fake_sleep,
+                              is_cancelled=lambda: flag["cancel"])
+        self.assertEqual(calls["n"], 1)
+        self.assertLess(len(slept), 8)   # backoff de 2 s tronqué à ~0,5 s
 
 
 if __name__ == "__main__":
