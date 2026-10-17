@@ -43,8 +43,19 @@ let sequenceReport = null;     // { importMsg, fetch, sourceSwitched } — bilan
 
 // Relevé périodique du statut : un import lancé par le favori démarre hors de
 // cette page, et l'onglet peut rester affiché sans jamais reprendre le focus.
-// Seulement sur l'onglet Données, jamais pendant une animation ou une capture.
-const STATUS_POLL_MS = 4000;
+// Cadence adaptative — dense juste après un retour de focus ou une mutation
+// (le moment où une activité externe est probable), puis espacée ; suspendue
+// quand l'onglet navigateur est masqué. Jamais pendant une animation ou une
+// capture (checkOutside le verrouille déjà).
+const STATUS_POLL_FAST_MS = 4000;    // fenêtre dense : 30 s après focus/import
+const STATUS_POLL_SLOW_MS = 15000;   // régime de croisière
+const STATUS_POLL_FAST_WINDOW_MS = 30000;
+let statusPollTimer = null;
+let statusPollUntil = 0;   // fin de la fenêtre dense
+let bumpStatusPoll = () => {};  // défini par initLabsUI (horloge partagée)
+// ETag du dernier statut connu : renvoyé en If-None-Match — le serveur
+// répond 304 quand la révision n'a pas bougé, zéro recalcul côté client.
+let statusETag = null;
 // Suivi d'une tâche serveur pendant une animation ou une capture : plus espacé.
 const TASK_POLL_BUSY_MS = 2000;
 // Attente du repos de la carte avant d'y appliquer un changement Labs.
@@ -125,8 +136,34 @@ export function initLabsUI() {
         if (document.hidden || watchingTaskId || activityRunning() || mapBusy()) return;
         refreshLabsStatus({ detectOutside: true });
     };
-    window.addEventListener('focus', checkOutside);
-    document.addEventListener('visibilitychange', checkOutside);
+    // Relevé chaîné (setTimeout replanifié, jamais setInterval) : le délai
+    // se recalcule à chaque tick — fenêtre dense après focus/import, puis
+    // croisière ; rien ne part quand l'onglet navigateur est masqué.
+    const scheduleStatusPoll = () => {
+        if (statusPollTimer) return;
+        const delay = Date.now() < statusPollUntil
+            ? STATUS_POLL_FAST_MS : STATUS_POLL_SLOW_MS;
+        statusPollTimer = setTimeout(() => {
+            statusPollTimer = null;
+            if (el('data')?.classList.contains('active')) checkOutside();
+            scheduleStatusPoll();
+        }, delay);
+    };
+    const suspendStatusPoll = () => {
+        if (statusPollTimer) { clearTimeout(statusPollTimer); statusPollTimer = null; }
+    };
+    bumpStatusPoll = () => {
+        statusPollUntil = Date.now() + STATUS_POLL_FAST_WINDOW_MS;
+        // Un relevé espacé armé est avancé dans la fenêtre dense.
+        suspendStatusPoll();
+        scheduleStatusPoll();
+    };
+    window.addEventListener('focus', () => { checkOutside(); bumpStatusPoll(); });
+    document.addEventListener('visibilitychange', () => {
+        checkOutside();
+        if (document.hidden) suspendStatusPoll();
+        else bumpStatusPoll();
+    });
     const dataTabLink = document.querySelector('a[href="#data"]');
     // Quitter l'onglet Données pendant une séquence : l'activité se transforme
     // en un toast global unique ; y revenir rend la main au bloc de la carte.
@@ -138,9 +175,7 @@ export function initLabsUI() {
     document.addEventListener('shown.bs.modal', () => syncActivityToast());
     document.addEventListener('hidden.bs.modal', () => syncActivityToast());
     el('labsActivityCancelBtn')?.addEventListener('click', onCancelActivity);
-    setInterval(() => {
-        if (el('data')?.classList.contains('active')) checkOutside();
-    }, STATUS_POLL_MS);
+    bumpStatusPoll();       // démarrage = fenêtre dense
 
     refreshLabsStatus();
 }
@@ -174,12 +209,17 @@ export function refreshLabsStatus({ detectOutside = false, fresh = false } = {})
     const seq = ++statusRequestSeq;
     statusRequestPromise = (async () => {
         try {
-            const r = await fetch(`${CONFIG.BASE_URL}/api/labs/status`);
+            const r = await fetch(`${CONFIG.BASE_URL}/api/labs/status`, {
+                headers: statusETag ? { 'If-None-Match': statusETag } : {},
+            });
+            // Révision inchangée : rien à recalculer ni à recharger.
+            if (r.status === 304) return null;
             const data = await r.json();
             // Une relecture plus récente a été demandée entre-temps : cette
             // réponse, potentiellement plus ancienne, ne rétablit rien.
             if (seq !== statusRequestSeq) return null;
             if (!data.success) throw new Error(data.message || 'statut indisponible');
+            statusETag = r.headers.get('etag') || statusETag;
             const total = data.total || 0;
             const ready = data.ready || 0;
             // Collection absente → révision 0 : sa suppression est vue comme
@@ -697,15 +737,25 @@ export function setLabTaskPollLimits({ stallMs = null, httpMs = null } = {}) {
     if (Number.isFinite(httpMs)) taskHttpTimeoutMs = httpMs;
 }
 
+// Palier d'interrogation d'une tâche : dense au début (un import court
+// reste réactif), espacé sur la durée (une récupération lab2gpx dure des
+// minutes — pas besoin de 2 requêtes/s indéfiniment). Pendant une animation
+// ou une capture, le palier monté ne descend jamais sous 2 s.
+export function taskPollDelay(elapsedMs, busy = false) {
+    const delay = elapsedMs < 10_000 ? 500 : elapsedMs < 60_000 ? 1000 : 2000;
+    return busy ? Math.max(delay, TASK_POLL_BUSY_MS) : delay;
+}
+
 // Interroge une tâche serveur jusqu'à son terme : résout avec son résultat,
 // rejette si elle échoue, si le serveur ne répond plus ou si la tâche n'évolue
 // plus. `onProgress` n'est appelé que lorsque la progression change.
-function pollLabTask(taskId, onProgress, { intervalMs = 500 } = {}) {
+function pollLabTask(taskId, onProgress) {
     return new Promise((resolve, reject) => {
-        let lastProgressAt = Date.now(); // dernière évolution de la signature
+        const startedAt = Date.now();
+        let lastProgressAt = startedAt;  // dernière évolution de la signature
         let lastSignature = null;
         let consecutiveErrors = 0;
-        const nextDelay = () => (mapBusy() ? Math.max(intervalMs, TASK_POLL_BUSY_MS) : intervalMs);
+        const nextDelay = () => taskPollDelay(Date.now() - startedAt, mapBusy());
         const tick = () => {
             if (Date.now() - lastProgressAt > taskStallTimeoutMs) {
                 reject(new Error(t('La tâche semble bloquée — aucune progression depuis plusieurs minutes.')));
@@ -776,6 +826,9 @@ async function settleActivity(changed, { readyBefore = null } = {}) {
     const status = await refreshLabsStatus({ fresh: true });
     if (!changed) { sequenceReport = null; return; }
     await updateMapAfterLabsChange(status ? 'suggest' : null, { readyBefore: before });
+    // Les instants après un import sont ceux où l'activité externe est
+    // probable (envoi du favori, correction) : relevé dense 30 s.
+    bumpStatusPoll();
 }
 
 // Report des changements Labs sur la carte : choix des sources affichées

@@ -28,7 +28,7 @@ from collections import Counter
 from datetime import datetime, timezone
 
 from flask_babel import gettext as _
-from sqlalchemy import func
+from sqlalchemy import case, func
 
 from lab_formats import (
     FORMAT_LAB2GPX_GPX, FORMAT_LAB_FINDS, SOURCE_LAB2GPX, SOURCE_LAB_FINDS,
@@ -344,12 +344,13 @@ def _apply_history(session, parsed, commit: bool, overrides=frozenset()) -> dict
 
 
 def _collection_stats(session, collection_id) -> dict:
-    # Deux comptages SQL : /api/labs/status est interrogé à chaque retour
-    # sur l'onglet, la table n'a pas à être chargée pour autant.
-    base = session.query(func.count(LabDiscovery.id)).filter(
-        LabDiscovery.collection_id == collection_id)
-    total = base.scalar() or 0
-    ready = base.filter(LabDiscovery.ready_clause()).scalar() or 0
+    # Un SEUL comptage agrégé : /api/labs/status est sondé en boucle, la
+    # table ne doit pas être parcourue deux fois par relevé.
+    total, ready = session.query(
+        func.count(LabDiscovery.id),
+        func.coalesce(func.sum(
+            case((LabDiscovery.ready_clause(), 1), else_=0)), 0),
+    ).filter(LabDiscovery.collection_id == collection_id).one()
     return {"total": total, "ready": ready, "unresolved": total - ready}
 
 

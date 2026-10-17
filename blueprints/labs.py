@@ -681,9 +681,24 @@ def labs_status():
     # recharge la carte à sa fin.
     active = task_manager.get_active(TASK_TYPE_LAB_IMPORT) \
         or task_manager.get_active(TASK_TYPE_LAB_FETCH)
+    task_sig = 'none'
     if active is not None:
         payload['active_task'] = active.to_dict()
-    return jsonify(payload)
+        task_sig = f'{active.id}:{active.state}'
+    # ETag révision+tâche : la révision change à TOUTE mutation de la
+    # collection, la présence de la tâche est dans le tag car sa fin
+    # (disparition) change le payload ; sa progression seule ne l'est pas —
+    # le client la suit déjà sur /tasks/<id>. Les sondes répétées sans
+    # changement reçoivent 304 et ne recalculent ni ne rechargent rien.
+    revision = payload['collection']['revision'] if payload['collection'] else 0
+    etag = f'labs-r{revision}-{task_sig}-{payload["fetchable_adventures"]}'
+    if request.if_none_match.contains(etag):
+        resp = current_app.response_class(response='', status=304)
+        resp.set_etag(etag)
+        return resp
+    resp = jsonify(payload)
+    resp.set_etag(etag)
+    return resp
 
 
 @labs_bp.route('/api/labs/unresolved')

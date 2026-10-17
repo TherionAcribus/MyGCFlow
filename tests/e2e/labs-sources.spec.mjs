@@ -732,7 +732,11 @@ test('la récupération n\'est plus proposée quand il ne reste que des étapes 
   // Statut tel que le serveur le rend après une récupération restée sans
   // résultat pour les 4 étapes restantes.
   await page.route('**/api/labs/status', async (route) => {
-    const response = await route.fetch();
+    // Le client envoie If-None-Match : sans son retrait, un 304 (corps vide)
+    // rendrait le payload illisible — ce test veut toujours le JSON complet.
+    const headers = { ...route.request().headers() };
+    delete headers['if-none-match'];
+    const response = await route.fetch({ headers });
     const body = await response.json();
     await route.fulfill({ response, json: { ...body, fetchable_adventures: 0 } });
   });
@@ -1367,4 +1371,100 @@ test('la régénération du jeton invalide l\'ancien favori', async ({ page }) =
     return [await probe(oldT), await probe(newT)];
   }, [oldToken, newToken]);
   expect(results).toEqual([403, 400]);
+});
+
+
+// --- Lot 5.2 — sondages réduits ------------------------------------------------
+
+test('le statut est sondé en cadence adaptative et 304 quand rien n\'a bougé', async ({ page }) => {
+  // Réponses /api/labs/status observées au fil du réseau : le premier relevé
+  // n'a pas de tag (200) ; les suivants le renvoient en If-None-Match → 304
+  // tant que la révision est inchangée.
+  const hits = [];
+  page.on('response', r => {
+    if (r.url().includes('/api/labs/status')) {
+      hits.push({ status: r.status(),
+                  inm: r.request().headers()['if-none-match'] || null });
+    }
+  });
+  await openReadyApp(page);
+
+  // ~9 s de fenêtre dense → init + ~2 relevés à 4 s, pas plus.
+  await page.waitForTimeout(9000);
+  expect(hits.length).toBeGreaterThanOrEqual(2);
+  expect(hits.length).toBeLessThanOrEqual(5);
+  expect(hits[0].status).toBe(200);
+  expect(hits[0].inm).toBeNull();
+  for (const h of hits.slice(1)) {
+    expect(h.inm).toBeTruthy();
+    expect(h.status).toBe(304);
+  }
+});
+
+
+test('le relevé de statut est suspendu hors de l\'onglet Données', async ({ page }) => {
+  const polls = [];
+  page.on('request', r => {
+    if (r.url().includes('/api/labs/status')) polls.push(Date.now());
+  });
+  // Base vide → l'app force l'onglet Données sauf si l'URL porte un hash :
+  // /#style maintient l'onglet Style actif sans que le statut ne re-bascule.
+  await page.goto('/#style', { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.mygcflowReady === true);
+  await dismissFirstUseModal(page);
+  await expect(page.locator('#data')).not.toHaveClass(/active/);
+
+  // Le relevé d'init peut encore partir ; après, plus rien pendant 6 s —
+  // même dans la fenêtre dense de 30 s.
+  await page.waitForTimeout(6000);
+  const active = await page.evaluate(() =>
+    document.getElementById('data').classList.contains('active'));
+  expect(active).toBe(false);
+  // Au plus le relevé d'init : rien ensuite hors de l'onglet Données.
+  expect(polls.length).toBeLessThanOrEqual(1);
+});
+
+
+test('le suivi de tâche monte en palier : 500 ms, 1 s, puis 2 s', async ({ page }) => {
+  // Tâche bloquée à « running » : les relevés mesurent la cadence réelle.
+  const hits = [];
+  await page.route('**/tasks/fake-slow*', route => {
+    hits.push(Date.now());
+    route.fulfill({ json: { task_id: 'fake-slow', type: 'lab_import',
+      state: 'running', progress: 50, message: 'Import Labs : historique.json' } });
+  });
+  await page.route('**/api/labs/import/commit', route => route.fulfill({
+    status: 202, json: { success: true, task_id: 'fake-slow' } }));
+  await openReadyApp(page);
+
+  await page.locator('#labs-file-input').setInputFiles(HISTORY);
+  await expect(page.locator('#labsPreviewModal')).toBeVisible({ timeout: 20_000 });
+  await page.locator('#labsPreviewConfirmBtn').click();
+
+  // Palier dense : ≥ 5 relevés dans les ~3 premières secondes.
+  await page.waitForTimeout(3200);
+  expect(hits.length).toBeGreaterThanOrEqual(5);
+  // Après 10 s écoulés : les relevés passent à ~1 s (palier intermédiaire).
+  await page.waitForTimeout(9200);
+  const t0 = hits[0];
+  const late = hits.filter(t => t - t0 >= 10800);
+  const lateGaps = late.slice(1).map((t, i) => t - late[i]);
+  expect(lateGaps.length).toBeGreaterThanOrEqual(1);
+  expect(Math.min(...lateGaps)).toBeGreaterThanOrEqual(900);
+});
+
+
+test('le palier de sondage respecte ses bornes', async ({ page }) => {
+  await openReadyApp(page);
+  const delays = await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    return {
+      tiers: [0, 5000, 9999, 10000, 30000, 59999, 60000, 120000]
+        .map(t => app.taskPollDelay(t)),
+      busy: app.taskPollDelay(0, true),
+    };
+  });
+  expect(delays.tiers).toEqual([500, 500, 500, 1000, 1000, 1000, 2000, 2000]);
+  // Animation en cours : jamais sous 2 s, même dans le palier dense.
+  expect(delays.busy).toBe(2000);
 });

@@ -474,6 +474,74 @@ class LabsApiTests(unittest.TestCase):
         self.assertEqual(body["unresolved"], 4)
         self.assertEqual(body["collection"]["revision"], 2)
 
+    def test_status_etag_short_circuits_unchanged_polls(self):
+        """Les sondes répétées sans mutation reçoivent 304 — la réponse
+        complète n'est ni recalculée ni renvoyée."""
+        rv = self.client.get('/api/labs/status')
+        self.assertEqual(rv.status_code, 200)
+        etag = rv.headers.get('ETag')
+        self.assertTrue(etag)
+
+        # Tag identique → 304 sans corps ; tag périmé → 200 avec un nouveau.
+        rv = self.client.get('/api/labs/status',
+                             headers={'If-None-Match': etag})
+        self.assertEqual(rv.status_code, 304)
+        self.assertEqual(rv.get_data(), b'')
+        self.assertEqual(rv.headers.get('ETag'), etag)
+        rv = self.client.get('/api/labs/status',
+                             headers={'If-None-Match': '"labs-r99-none-0"'})
+        self.assertEqual(rv.status_code, 200)
+
+        # Une mutation bump la révision → le même tag ne suffit plus.
+        self._import_history()
+        rv = self.client.get('/api/labs/status',
+                             headers={'If-None-Match': etag})
+        self.assertEqual(rv.status_code, 200)
+        self.assertNotEqual(rv.headers.get('ETag'), etag)
+
+    def test_status_etag_changes_with_active_task(self):
+        """La présence d'une tâche est dans le tag : sa fin seule est un
+        changement de payload (la progression, elle, est suivie sur /tasks)."""
+        self._import_history()
+        etag_idle = self.client.get('/api/labs/status').headers.get('ETag')
+
+        def slow_fetch(uuids, on_payload=None, on_failed=None, **_kw):
+            time.sleep(0.3)   # assez long pour sonder pendant l'exécution
+            on_payload("auto-001.gpx", COORDS.read_bytes(), list(uuids))
+            return lcp.FetchResult(fetched_adventures=1)
+
+        with mock.patch.object(lcp, "fetch_gpx_batches", side_effect=slow_fetch):
+            rv = self.client.post('/api/labs/fetch-coordinates')
+            self.assertEqual(rv.status_code, 202)
+            rv = self.client.get('/api/labs/status',
+                                 headers={'If-None-Match': etag_idle})
+            # Tâche en cours → tag différent → payload complet (active_task).
+            self.assertEqual(rv.status_code, 200)
+            self.assertIn('active_task', rv.get_json())
+            self._wait_task(rv.get_json()['active_task']['task_id'])
+
+        rv = self.client.get('/api/labs/status',
+                             headers={'If-None-Match': etag_idle})
+        # Tâche finie : le tag a encore changé (la collection a été enrichie).
+        self.assertEqual(rv.status_code, 200)
+
+    def test_collection_stats_runs_a_single_query(self):
+        """Le statut sondé en boucle ne doit pas payer deux comptages."""
+        from sqlalchemy import event
+        self._import_history()
+        coll = lab_store.get_collection(db.session)
+        statements = []
+
+        def count_sql(*_a, **_k):
+            statements.append(1)
+        event.listen(db.engine, "before_cursor_execute", count_sql)
+        try:
+            stats = lab_store._collection_stats(db.session, coll.id)
+        finally:
+            event.remove(db.engine, "before_cursor_execute", count_sql)
+        self.assertEqual(len(statements), 1)
+        self.assertEqual(stats, {"total": 12, "ready": 0, "unresolved": 12})
+
     def test_unresolved_listing(self):
         self._import_history()
         self._import_coords()
