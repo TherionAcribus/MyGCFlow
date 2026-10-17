@@ -1201,3 +1201,170 @@ test('couleur et icône dédiées Adventure Lab sont déclarées', async ({ page
   expect(style.flat[idx + 1]).toBe('#00C5A1');
   expect(style.sprite).toMatchObject({ x: 1800, y: 0, w: 50, h: 50 });
 });
+
+
+// --- Lot 3.2 — favori accessible ----------------------------------------------
+
+test('le favori est inerte tant que son lien charge, puis devient glissable', async ({ page }) => {
+  let releaseBookmarklet;
+  const hold = new Promise(resolve => { releaseBookmarklet = resolve; });
+  await page.route('**/api/labs/bookmarklet', async route => {
+    await hold;
+    await route.fulfill({ json: { success: true,
+      bookmarklet: 'javascript:void(console.log("bm"))' } });
+  });
+  await openReadyApp(page);
+
+  const link = page.locator('#labsBookmarkletLink');
+  // Pendant le chargement : texte de préparation, pas glissable, désactivé
+  // pour les lecteurs d'écran et retiré de la navigation clavier — aucun
+  // « # » ne peut être glissé.
+  await expect(link).toContainText('Préparation du favori');
+  await expect(link).toHaveAttribute('aria-disabled', 'true');
+  await expect(link).toHaveAttribute('tabindex', '-1');
+  expect(await link.getAttribute('draggable')).not.toBe('true');
+  expect(await link.getAttribute('href')).toBe('#');
+  // Rien à copier tant que le vrai lien n'existe pas.
+  await expect(page.locator('#labsCopyLinkBtn')).toBeDisabled();
+
+  releaseBookmarklet();
+  // Prêt : vrai javascript:, glissable, de nouveau accessible au clavier.
+  await expect(link).toContainText('Envoyer vers MyGCFlow');
+  await expect(link).toHaveAttribute('draggable', 'true');
+  expect(await link.getAttribute('aria-disabled')).toBeNull();
+  expect(await link.getAttribute('tabindex')).toBeNull();
+  expect(await link.getAttribute('href')).toMatch(/^javascript:/);
+  await expect(page.locator('#labsCopyLinkBtn')).toBeEnabled();
+});
+
+
+test('un favori impossible à préparer propose l\'import de fichiers', async ({ page }) => {
+  await page.route('**/api/labs/bookmarklet', route =>
+    route.fulfill({ status: 500, json: { success: false } }));
+  await openReadyApp(page);
+
+  // Échec visible : message explicite + bouton resté inerte et non glissable.
+  const errBox = page.locator('#labsBookmarkletError');
+  await expect(errBox).toBeVisible();
+  await expect(errBox).toContainText('pas pu être préparé');
+  const link = page.locator('#labsBookmarkletLink');
+  await expect(link).toContainText('Favori indisponible');
+  expect(await link.getAttribute('draggable')).not.toBe('true');
+  await expect(link).toHaveAttribute('aria-disabled', 'true');
+
+  // Le repli proposé déclenche bien le sélecteur de fichiers du panneau.
+  await page.evaluate(() => {
+    window.__labsFileOpened = false;
+    document.getElementById('labs-file-input')
+      .addEventListener('click', () => { window.__labsFileOpened = true; });
+  });
+  await page.locator('#labsBookmarkletFallbackBtn').click();
+  expect(await page.evaluate(() => window.__labsFileOpened)).toBe(true);
+});
+
+
+test('« Copier le lien » copie le favori au clavier et l\'annonce en aria-live', async ({ page }) => {
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+  await openReadyApp(page);
+
+  const copyBtn = page.locator('#labsCopyLinkBtn');
+  await expect(copyBtn).toBeEnabled();
+  // Parcours clavier : focus + Entrée sur un vrai <button> déclenche la copie.
+  await copyBtn.focus();
+  await page.keyboard.press('Enter');
+
+  const status = page.locator('#labsBookmarkletStatus');
+  await expect(status).toHaveText('Lien copié');
+  expect(await status.getAttribute('aria-live')).toBe('polite');
+  expect(await page.evaluate(() => navigator.clipboard.readText()))
+    .toMatch(/^javascript:/);
+});
+
+
+test('le bouton du guide est « Afficher les instructions d\'import »', async ({ page }) => {
+  await openReadyApp(page);
+  await importLabs(page);
+
+  const update = page.locator('#labsUpdateBtn');
+  await expect(update).toBeVisible();
+  await expect(update).toContainText("Afficher les instructions d'import");
+  await update.click();
+  await expect(page.locator('#labsGuide')).toBeVisible();
+});
+
+
+test('sur petit écran, l\'import de fichiers précède le favori', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 800 });
+  await openReadyApp(page);
+
+  const mobile = page.locator('.labs-mobile-import');
+  await expect(mobile).toBeVisible();
+  await expect(page.locator('#labs-file-btn-guide')).toBeVisible();
+  // Le raccourci est placé avant les instructions du favori dans le DOM.
+  const order = await page.evaluate(() => {
+    const guide = document.getElementById('labsGuide');
+    const first = guide.querySelector('.labs-mobile-import');
+    const list = guide.querySelector('ol');
+    return Boolean(
+      first.compareDocumentPosition(list) & Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+  expect(order).toBe(true);
+  // Et il ouvre bien le sélecteur de fichiers.
+  await page.evaluate(() => {
+    window.__labsFileOpened = false;
+    document.getElementById('labs-file-input')
+      .addEventListener('click', () => { window.__labsFileOpened = true; });
+  });
+  await page.locator('#labs-file-btn-guide').click();
+  expect(await page.evaluate(() => window.__labsFileOpened)).toBe(true);
+
+  // Grand écran sans tactile : le raccourci disparaît, le parcours favori
+  // reste en tête (l'entrée fichier reste dans les options avancées).
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await expect(mobile).toBeHidden();
+});
+
+
+test('la régénération du jeton invalide l\'ancien favori', async ({ page }) => {
+  await openReadyApp(page);
+
+  const link = page.locator('#labsBookmarkletLink');
+  await expect(link).toHaveAttribute('draggable', 'true');
+  const oldHref = await link.getAttribute('href');
+  const oldToken = (await readServerSettings(page)).labs_receive_token;
+  expect(oldToken).toBeTruthy();
+  expect(oldHref).toContain(oldToken);
+
+  // Action destructive dans les options avancées : la confirmation dit
+  // clairement que l'ancien favori sera invalidé.
+  await page.locator('#labsAdvanced').evaluate(el => { el.open = true; });
+  const regenBtn = page.locator('#labsRegenTokenBtn');
+  await expect(regenBtn).toBeVisible();
+  await regenBtn.click();
+  const confirm = page.locator('.gcm-confirm-modal');
+  await expect(confirm).toBeVisible();
+  await expect(confirm).toContainText('cessera de fonctionner');
+
+  await confirm.locator('[data-gcm-role="confirm"]').click();
+  await expect(page.locator('#labsBookmarkletStatus'))
+    .toContainText('Nouveau favori prêt');
+
+  const newToken = (await readServerSettings(page)).labs_receive_token;
+  const newHref = await link.getAttribute('href');
+  expect(newToken).toBeTruthy();
+  expect(newToken).not.toBe(oldToken);
+  expect(newHref).toContain(newToken);
+  expect(newHref).not.toBe(oldHref);
+
+  // Côté serveur : l'ancien jeton est refusé (403), le nouveau passe la
+  // porte jeton (400 = payload non reconnu, authentification réussie).
+  const results = await page.evaluate(async ([oldT, newT]) => {
+    const probe = token => fetch('/api/labs/receive', {
+      method: 'POST',
+      headers: { 'X-MyGCFlow-Token': token, 'Content-Type': 'application/json' },
+      body: '<html>page</html>',
+    }).then(r => r.status);
+    return [await probe(oldT), await probe(newT)];
+  }, [oldToken, newToken]);
+  expect(results).toEqual([403, 400]);
+});

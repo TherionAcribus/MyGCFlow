@@ -785,6 +785,41 @@ class LabsAutomationTests(LabsApiTests):
         # Le cœur partagé est bien inclus.
         self.assertIn("mygcflowCollectLabLogs", js)
 
+    def test_bookmarklet_regenerate_is_post_only(self):
+        self.assertEqual(
+            self.client.get('/api/labs/bookmarklet/regenerate').status_code,
+            405)
+
+    def test_bookmarklet_regenerate_replaces_token_and_invalidates_old(self):
+        old_js = self.client.get('/api/labs/bookmarklet') \
+            .get_json()["bookmarklet"]
+        old_token = self.manager.get_app_settings().labs_receive_token
+        self.assertTrue(old_token)
+
+        rv = self.client.post('/api/labs/bookmarklet/regenerate')
+        self.assertEqual(rv.status_code, 200)
+        body = rv.get_json()
+        self.assertTrue(body["success"])
+        new_js = body["bookmarklet"]
+        new_token = self.manager.get_app_settings().labs_receive_token
+        self.assertTrue(new_token)
+        self.assertNotEqual(new_token, old_token)
+        self.assertIn(json.dumps(new_token), new_js)
+        self.assertNotIn(json.dumps(old_token), new_js)
+        # Le GET suivant ne régénère pas : le lien servi reste celui-ci.
+        again = self.client.get('/api/labs/bookmarklet') \
+            .get_json()["bookmarklet"]
+        self.assertEqual(again, new_js)
+
+        # L'ancien favori est mort (403 jeton) ; le nouveau passe la porte
+        # jeton (le payload non-Lab échoue ensuite en 400).
+        for token, expected in ((old_token, 403), (new_token, 400)):
+            rv = self.client.post('/api/labs/receive',
+                                  data=b'<html>page</html>',
+                                  content_type='application/json',
+                                  headers={"X-MyGCFlow-Token": token})
+            self.assertEqual(rv.status_code, expected, token)
+
     def _run_bookmarklet(self, **scenario):
         js = self.client.get('/api/labs/bookmarklet').get_json()["bookmarklet"]
         folder = Path(tempfile.mkdtemp(prefix="mygcflow-bookmarklet-"))

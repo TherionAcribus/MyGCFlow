@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-16 21:18+0200\n"
+"POT-Creation-Date: 2026-10-16 21:51+0200\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -480,7 +480,7 @@ msgstr "Base de données"
 
 #: blueprints/core.py:188 static/js/evolution_data.js:430
 #: templates/guide.html:148 templates/guide.html:154
-#: templates/menu_data.html:241 templates/menu_data_evolution.html:108
+#: templates/menu_data.html:272 templates/menu_data_evolution.html:108
 #: test_translations.py:28
 msgid "Filtres"
 msgstr "Filtres"
@@ -554,7 +554,7 @@ msgid "Confirmer"
 msgstr "Confirmer"
 
 #: blueprints/core.py:221 static/js/notifications.js:412
-#: templates/menu_data.html:95 templates/menu_data.html:322
+#: templates/menu_data.html:95 templates/menu_data.html:353
 #: templates/menu_style.html:246 templates/menu_style.html:271
 #: templates/menu_style.html:296 templates/menu_style.html:324
 #: templates/menu_style.html:355 templates/menu_style.html:383
@@ -1116,7 +1116,7 @@ msgstr "Erreur lors du chargement du fichier"
 #: static/js/evolution_data.js:351 static/js/evolution_data.js:909
 #: static/js/evolution_data.js:913 static/js/evolution_data.js:1263
 #: static/js/evolution_data.js:1301 static/js/evolution_data.js:1309
-#: static/js/labs.js:1530 static/js/labs.js:1558 static/js/labs.js:1593
+#: static/js/labs.js:1611 static/js/labs.js:1639 static/js/labs.js:1674
 #: static/js/notifications.js:385 static/js/recording_perf.js:187
 #: static/js/ui.js:1827
 msgid "Erreur"
@@ -1159,7 +1159,7 @@ msgstr ""
 "Êtes-vous sûr de vouloir supprimer toutes vos trouvailles ? Cette action "
 "est irréversible."
 
-#: static/js/bdd.js:1460 static/js/labs.js:1575
+#: static/js/bdd.js:1460 static/js/labs.js:1656
 msgid "Confirmation de suppression"
 msgstr "Confirmation de suppression"
 
@@ -1183,7 +1183,7 @@ msgstr "Suppression des trouvailles..."
 msgid "Trouvailles supprimées avec succès"
 msgstr "Trouvailles supprimées avec succès"
 
-#: static/js/bdd.js:1501 static/js/labs.js:1591
+#: static/js/bdd.js:1501 static/js/labs.js:1672
 msgid "Suppression réussie"
 msgstr "Suppression réussie"
 
@@ -1286,7 +1286,7 @@ msgstr "Placée le ${date}"
 
 #: static/js/evolution_data.js:752 static/js/evolution_data.js:756
 #: static/js/evolution_data.js:766 static/js/evolution_data.js:783
-#: templates/menu_data.html:289
+#: templates/menu_data.html:320
 msgid "Import"
 msgstr "Import"
 
@@ -1317,7 +1317,7 @@ msgstr "Envoi des fichiers..."
 msgid "Import en cours..."
 msgstr "Import en cours..."
 
-#: static/js/evolution_data.js:832 static/js/labs.js:1011
+#: static/js/evolution_data.js:832 static/js/labs.js:1022
 msgid "L'import a échoué"
 msgstr "L'import a échoué"
 
@@ -1454,7 +1454,7 @@ msgstr "Tailles non reconnues (gardées telles quelles) : ${sizes}"
 msgid "code GC"
 msgstr "code GC"
 
-#: static/js/evolution_data.js:1142 static/js/labs.js:558 static/js/labs.js:643
+#: static/js/evolution_data.js:1142 static/js/labs.js:569 static/js/labs.js:654
 msgid "coordonnées"
 msgstr "coordonnées"
 
@@ -1549,7 +1549,7 @@ msgstr "Le serveur local ne répond pas (délai dépassé)"
 msgid "Erreur lors du chargement des couleurs GC (${status}): ${statusText}"
 msgstr "Erreur lors du chargement des couleurs GC (${status}): ${statusText}"
 
-#: static/js/labs.js:132
+#: static/js/labs.js:139
 msgid ""
 "Glissez ce bouton dans la barre de favoris de votre navigateur, puis "
 "cliquez-le depuis la page de vos logs Adventure Lab."
@@ -1557,40 +1557,40 @@ msgstr ""
 "Glissez ce bouton dans la barre de favoris de votre navigateur, puis "
 "cliquez-le depuis la page de vos logs Adventure Lab."
 
-#: static/js/labs.js:133 templates/menu_data.html:131
+#: static/js/labs.js:140 static/js/labs.js:1143
 msgid "Envoyer vers MyGCFlow"
 msgstr "Envoyer vers MyGCFlow"
 
-#: static/js/labs.js:276
+#: static/js/labs.js:287
 msgid "Statut indisponible"
 msgstr "Statut indisponible"
 
-#: static/js/labs.js:304 templates/menu_data.html:77
+#: static/js/labs.js:315 templates/menu_data.html:77
 msgid "Aucun Lab Cache importé"
 msgstr "Aucun Lab Cache importé"
 
-#: static/js/labs.js:310
+#: static/js/labs.js:321
 #, python-brace-format
 msgid "${total} étape(s) importée(s) — aucune encore prête"
 msgstr "${total} étape(s) importée(s) — aucune encore prête"
 
-#: static/js/labs.js:314
+#: static/js/labs.js:325
 msgid "étapes"
 msgstr "étapes"
 
-#: static/js/labs.js:314
+#: static/js/labs.js:325
 msgid "étape"
 msgstr "étape"
 
-#: static/js/labs.js:315
+#: static/js/labs.js:326
 msgid "sur la carte"
 msgstr "sur la carte"
 
-#: static/js/labs.js:316
+#: static/js/labs.js:327
 msgid "à compléter"
 msgstr "à compléter"
 
-#: static/js/labs.js:330
+#: static/js/labs.js:341
 #, python-brace-format
 msgid ""
 "${count} étape(s) ne sont pas encore sur la carte : position ou date "
@@ -1599,7 +1599,7 @@ msgstr ""
 "${count} étape(s) ne sont pas encore sur la carte : position ou date "
 "manquante."
 
-#: static/js/labs.js:331
+#: static/js/labs.js:342
 #, python-brace-format
 msgid ""
 "${count} étape(s) n'ont pas pu être placées automatiquement : leur "
@@ -1608,83 +1608,83 @@ msgstr ""
 "${count} étape(s) n'ont pas pu être placées automatiquement : leur "
 "position est introuvable. Vous pouvez les compléter à la main."
 
-#: static/js/labs.js:405 static/js/labs.js:1017 static/js/labs.js:1033
-#: static/js/labs.js:1167
+#: static/js/labs.js:416 static/js/labs.js:1028 static/js/labs.js:1044
+#: static/js/labs.js:1248
 msgid "Placement de vos étapes sur la carte…"
 msgstr "Placement de vos étapes sur la carte…"
 
-#: static/js/labs.js:406
+#: static/js/labs.js:417
 msgid "Annulation en cours…"
 msgstr "Annulation en cours…"
 
-#: static/js/labs.js:440 static/js/labs.js:993 static/js/labs.js:995
-#: static/js/labs.js:1038 static/js/labs.js:1162 static/js/labs.js:1178
-#: static/js/labs.js:1188 templates/_filter_cache_attrs.html:37
-#: templates/menu_filtre.html:13
+#: static/js/labs.js:451 static/js/labs.js:1004 static/js/labs.js:1006
+#: static/js/labs.js:1049 static/js/labs.js:1208 static/js/labs.js:1243
+#: static/js/labs.js:1259 static/js/labs.js:1269
+#: templates/_filter_cache_attrs.html:37 templates/menu_filtre.html:13
 msgid "Lab Caches"
 msgstr "Lab Caches"
 
-#: static/js/labs.js:518
+#: static/js/labs.js:529
 msgid "Analyse de vos fichiers…"
 msgstr "Analyse de vos fichiers…"
 
-#: static/js/labs.js:531
+#: static/js/labs.js:542
 msgid "Erreur lors de l'analyse"
 msgstr "Erreur lors de l'analyse"
 
-#: static/js/labs.js:531 static/js/labs.js:796 static/js/labs.js:1021
+#: static/js/labs.js:542 static/js/labs.js:807 static/js/labs.js:1032
 msgid "Import Lab Caches"
 msgstr "Import Lab Caches"
 
-#: static/js/labs.js:544
+#: static/js/labs.js:555
 msgid "Import impossible"
 msgstr "Import impossible"
 
-#: static/js/labs.js:551 static/js/labs.js:725 static/js/labs.js:768
+#: static/js/labs.js:562 static/js/labs.js:736 static/js/labs.js:779
 #, python-brace-format
 msgid "… et ${n} autre(s)"
 msgstr "… et ${n} autre(s)"
 
-#: static/js/labs.js:557
+#: static/js/labs.js:568
 msgid "historique"
 msgstr "historique"
 
-#: static/js/labs.js:565
+#: static/js/labs.js:576
 #, python-brace-format
 msgid "${n} nouvelle(s)"
 msgstr "${n} nouvelle(s)"
 
-#: static/js/labs.js:566
+#: static/js/labs.js:577
 #, python-brace-format
 msgid "${n} mise(s) à jour"
 msgstr "${n} mise(s) à jour"
 
-#: static/js/labs.js:567
+#: static/js/labs.js:578
 #, python-brace-format
 msgid "${n} identique(s)"
 msgstr "${n} identique(s)"
 
-#: static/js/labs.js:568
+#: static/js/labs.js:579
 #, python-brace-format
 msgid "${n} résolue(s)"
 msgstr "${n} résolue(s)"
 
-#: static/js/labs.js:569
+#: static/js/labs.js:580
 #, python-brace-format
 msgid "${n} ignorée(s)"
 msgstr "${n} ignorée(s)"
 
-#: static/js/labs.js:570
+#: static/js/labs.js:581
 #, python-brace-format
 msgid "${n} rejetée(s)"
 msgstr "${n} rejetée(s)"
 
-#: static/js/labs.js:571
+#: static/js/labs.js:582
 #, python-brace-format
 msgid "${n} conflit(s)"
 msgstr "${n} conflit(s)"
 
-#: static/js/labs.js:616
+#: static/js/labs.js:627
 #, python-brace-format
 msgid ""
 "Après import : ${total} étape(s), dont ${ready} affichable(s) et "
@@ -1693,19 +1693,19 @@ msgstr ""
 "Après import : ${total} étape(s), dont ${ready} affichable(s) et "
 "${pending} en attente."
 
-#: static/js/labs.js:644
+#: static/js/labs.js:655
 msgid "date"
 msgstr "date"
 
-#: static/js/labs.js:645
+#: static/js/labs.js:656
 msgid "identifiant d'Adventure"
 msgstr "identifiant d'Adventure"
 
-#: static/js/labs.js:646
+#: static/js/labs.js:657
 msgid "identifiant d'étape"
 msgstr "identifiant d'étape"
 
-#: static/js/labs.js:667
+#: static/js/labs.js:678
 #, python-brace-format
 msgid ""
 "Conflits (${n}) — sans choix de votre part, la valeur existante est "
@@ -1714,60 +1714,60 @@ msgstr ""
 "Conflits (${n}) — sans choix de votre part, la valeur existante est "
 "conservée"
 
-#: static/js/labs.js:678 static/js/labs.js:1386
+#: static/js/labs.js:689 static/js/labs.js:1467
 msgid "(étape sans titre)"
 msgstr "(étape sans titre)"
 
-#: static/js/labs.js:690
+#: static/js/labs.js:701
 msgid "conservé"
 msgstr "conservé"
 
-#: static/js/labs.js:691
+#: static/js/labs.js:702
 msgid "reçu"
 msgstr "reçu"
 
-#: static/js/labs.js:692
+#: static/js/labs.js:703
 msgid "(correction manuelle)"
 msgstr "(correction manuelle)"
 
-#: static/js/labs.js:701
+#: static/js/labs.js:712
 msgid "Garder"
 msgstr "Garder"
 
-#: static/js/labs.js:701 templates/menu_style.html:384
+#: static/js/labs.js:712 templates/menu_style.html:384
 msgid "Remplacer"
 msgstr "Remplacer"
 
-#: static/js/labs.js:757
+#: static/js/labs.js:768
 #, python-brace-format
 msgid "Avertissements (${n})"
 msgstr "Avertissements (${n})"
 
-#: static/js/labs.js:781 static/js/labs.js:1010
+#: static/js/labs.js:792 static/js/labs.js:1021
 msgid "Import de vos Lab Caches…"
 msgstr "Import de vos Lab Caches…"
 
-#: static/js/labs.js:790
+#: static/js/labs.js:801
 msgid "Import refusé"
 msgstr "Import refusé"
 
-#: static/js/labs.js:796 static/js/labs.js:1021
+#: static/js/labs.js:807 static/js/labs.js:1032
 msgid "Erreur lors de l'import"
 msgstr "Erreur lors de l'import"
 
-#: static/js/labs.js:837
+#: static/js/labs.js:848
 msgid "La tâche semble bloquée — aucune progression depuis plusieurs minutes."
 msgstr "La tâche semble bloquée — aucune progression depuis plusieurs minutes."
 
-#: static/js/labs.js:855 static/js/profiles.js:325
+#: static/js/labs.js:866 static/js/profiles.js:325
 msgid "Import échoué"
 msgstr "Import échoué"
 
-#: static/js/labs.js:870
+#: static/js/labs.js:881
 msgid "Le serveur ne répond plus — vérifiez sa disponibilité."
 msgstr "Le serveur ne répond plus — vérifiez sa disponibilité."
 
-#: static/js/labs.js:987
+#: static/js/labs.js:998
 msgid ""
 "Les Lab Caches sont maintenant affichés (réglable via « Découvertes "
 "affichées »)."
@@ -1775,20 +1775,20 @@ msgstr ""
 "Les Lab Caches sont maintenant affichés (réglable via « Découvertes "
 "affichées »)."
 
-#: static/js/labs.js:995
+#: static/js/labs.js:1006
 msgid "Vos Lab Caches ont été mis à jour."
 msgstr "Vos Lab Caches ont été mis à jour."
 
-#: static/js/labs.js:1038 static/js/labs.js:1178
+#: static/js/labs.js:1049 static/js/labs.js:1259
 msgid "Erreur de récupération"
 msgstr "Erreur de récupération"
 
-#: static/js/labs.js:1057
+#: static/js/labs.js:1068
 #, python-brace-format
 msgid "${added} étape(s) importée(s)."
 msgstr "${added} étape(s) importée(s)."
 
-#: static/js/labs.js:1058
+#: static/js/labs.js:1069
 #, python-brace-format
 msgid ""
 "${added} étape(s) importée(s) — ${ready} affichable(s), ${pending} en "
@@ -1797,43 +1797,75 @@ msgstr ""
 "${added} étape(s) importée(s) — ${ready} affichable(s), ${pending} en "
 "attente."
 
-#: static/js/labs.js:1063
+#: static/js/labs.js:1074
 #, python-brace-format
 msgid "${n} conflit(s) — valeurs existantes conservées."
 msgstr "${n} conflit(s) — valeurs existantes conservées."
 
-#: static/js/labs.js:1162
+#: static/js/labs.js:1163
+msgid "Favori indisponible"
+msgstr "Favori indisponible"
+
+#: static/js/labs.js:1182
+msgid "Lien copié"
+msgstr "Lien copié"
+
+#: static/js/labs.js:1184
+msgid "Copie impossible — glissez le bouton à la place."
+msgstr "Copie impossible — glissez le bouton à la place."
+
+#: static/js/labs.js:1194
+msgid ""
+"Régénérer le jeton ? Le favori actuel cessera de fonctionner : il faudra "
+"glisser à nouveau le bouton « Envoyer vers MyGCFlow » dans vos favoris."
+msgstr ""
+"Régénérer le jeton ? Le favori actuel cessera de fonctionner : il faudra "
+"glisser à nouveau le bouton « Envoyer vers MyGCFlow » dans vos favoris."
+
+#: static/js/labs.js:1195
+msgid "Jeton du favori"
+msgstr "Jeton du favori"
+
+#: static/js/labs.js:1206
+msgid "Nouveau favori prêt — remplacez l'ancien dans vos favoris."
+msgstr "Nouveau favori prêt — remplacez l'ancien dans vos favoris."
+
+#: static/js/labs.js:1208
+msgid "Jeton non régénéré"
+msgstr "Jeton non régénéré"
+
+#: static/js/labs.js:1243
 msgid "Réglage non enregistré"
 msgstr "Réglage non enregistré"
 
-#: static/js/labs.js:1172
+#: static/js/labs.js:1253
 msgid "Récupération refusée"
 msgstr "Récupération refusée"
 
-#: static/js/labs.js:1188
+#: static/js/labs.js:1269
 msgid "La récupération a échoué"
 msgstr "La récupération a échoué"
 
-#: static/js/labs.js:1194
+#: static/js/labs.js:1275
 #, python-brace-format
 msgid "${n} étape(s) placée(s) sur la carte."
 msgstr "${n} étape(s) placée(s) sur la carte."
 
-#: static/js/labs.js:1196
+#: static/js/labs.js:1277
 #, python-brace-format
 msgid "${n} Adventure(s) introuvable(s) par le service."
 msgstr "${n} Adventure(s) introuvable(s) par le service."
 
-#: static/js/labs.js:1199
+#: static/js/labs.js:1280
 #, python-brace-format
 msgid "${n} étape(s) restent à compléter."
 msgstr "${n} étape(s) restent à compléter."
 
-#: static/js/labs.js:1204
+#: static/js/labs.js:1285
 msgid "Récupération interrompue — les positions déjà obtenues sont conservées."
 msgstr "Récupération interrompue — les positions déjà obtenues sont conservées."
 
-#: static/js/labs.js:1213
+#: static/js/labs.js:1294
 msgid ""
 "Le service a cessé de répondre avant la fin — relancez la récupération "
 "pour terminer."
@@ -1841,45 +1873,45 @@ msgstr ""
 "Le service a cessé de répondre avant la fin — relancez la récupération "
 "pour terminer."
 
-#: static/js/labs.js:1250
+#: static/js/labs.js:1331
 msgid "Chargement impossible"
 msgstr "Chargement impossible"
 
-#: static/js/labs.js:1264
+#: static/js/labs.js:1345
 msgid "Adventure(s)"
 msgstr "Adventure(s)"
 
-#: static/js/labs.js:1275
+#: static/js/labs.js:1356
 msgid "Aucune étape en attente sur cette page."
 msgstr "Aucune étape en attente sur cette page."
 
-#: static/js/labs.js:1301
+#: static/js/labs.js:1382
 msgid "Adventure inconnue"
 msgstr "Adventure inconnue"
 
-#: static/js/labs.js:1306
+#: static/js/labs.js:1387
 msgid "archivée"
 msgstr "archivée"
 
-#: static/js/labs.js:1311
+#: static/js/labs.js:1392
 #, python-brace-format
 msgid "${n} étape(s) en attente"
 msgstr "${n} étape(s) en attente"
 
-#: static/js/labs.js:1333
+#: static/js/labs.js:1414
 msgid "Détail des étapes"
 msgstr "Détail des étapes"
 
-#: static/js/labs.js:1349
+#: static/js/labs.js:1430
 msgid "Position de l'Adventure"
 msgstr "Position de l'Adventure"
 
-#: static/js/labs.js:1356
+#: static/js/labs.js:1437
 #, python-brace-format
 msgid "Placer les ${n} étapes ici"
 msgstr "Placer les ${n} étapes ici"
 
-#: static/js/labs.js:1364
+#: static/js/labs.js:1445
 msgid ""
 "Toutes ses étapes sans position y seront placées, signalées comme "
 "approximatives."
@@ -1887,58 +1919,58 @@ msgstr ""
 "Toutes ses étapes sans position y seront placées, signalées comme "
 "approximatives."
 
-#: static/js/labs.js:1393
+#: static/js/labs.js:1474
 msgid "date manquante"
 msgstr "date manquante"
 
-#: static/js/labs.js:1394
+#: static/js/labs.js:1475
 msgid "coordonnées manquantes"
 msgstr "coordonnées manquantes"
 
-#: static/js/labs.js:1395
+#: static/js/labs.js:1476
 msgid "introuvables par le service lab2gpx"
 msgstr "introuvables par le service lab2gpx"
 
-#: static/js/labs.js:1402 templates/guide.html:213
+#: static/js/labs.js:1483 templates/guide.html:213
 #: templates/menu_informations.html:99
 msgid "Position"
 msgstr "Position"
 
-#: static/js/labs.js:1417
+#: static/js/labs.js:1498
 #, python-brace-format
 msgid "Suggestion : ${lat}, ${lon} — même titre dans l'Adventure"
 msgstr "Suggestion : ${lat}, ${lon} — même titre dans l'Adventure"
 
-#: static/js/labs.js:1424
+#: static/js/labs.js:1505
 msgid "Utiliser la suggestion"
 msgstr "Utiliser la suggestion"
 
-#: static/js/labs.js:1432
+#: static/js/labs.js:1513
 msgid "Date de découverte"
 msgstr "Date de découverte"
 
-#: static/js/labs.js:1440
+#: static/js/labs.js:1521
 msgid "Enregistrer"
 msgstr "Enregistrer"
 
-#: static/js/labs.js:1509
+#: static/js/labs.js:1590
 msgid "Correction refusée"
 msgstr "Correction refusée"
 
-#: static/js/labs.js:1516 static/js/labs.js:1540
+#: static/js/labs.js:1597 static/js/labs.js:1621
 msgid "Rien à enregistrer"
 msgstr "Rien à enregistrer"
 
-#: static/js/labs.js:1526
+#: static/js/labs.js:1607
 #, python-brace-format
 msgid "${n} étape(s) placée(s) en ${lat}, ${lon}."
 msgstr "${n} étape(s) placée(s) en ${lat}, ${lon}."
 
-#: static/js/labs.js:1552 static/js/saved_indicator.mjs:114
+#: static/js/labs.js:1633 static/js/saved_indicator.mjs:114
 msgid "Enregistré"
 msgstr "Enregistré"
 
-#: static/js/labs.js:1574
+#: static/js/labs.js:1655
 msgid ""
 "Supprimer toutes vos étapes Lab Caches ? Vos géocaches sont conservées. "
 "Cette action est irréversible."
@@ -1946,19 +1978,19 @@ msgstr ""
 "Supprimer toutes vos étapes Lab Caches ? Vos géocaches sont conservées. "
 "Cette action est irréversible."
 
-#: static/js/labs.js:1578 templates/menu_data.html:150
+#: static/js/labs.js:1659 templates/menu_data.html:170
 msgid "Supprimer mes Lab Caches"
 msgstr "Supprimer mes Lab Caches"
 
-#: static/js/labs.js:1584
+#: static/js/labs.js:1665
 msgid "Erreur inconnue"
 msgstr "Erreur inconnue"
 
-#: static/js/labs.js:1591
+#: static/js/labs.js:1672
 msgid "Lab Caches supprimés"
 msgstr "Lab Caches supprimés"
 
-#: static/js/labs.js:1593
+#: static/js/labs.js:1674
 msgid "Erreur lors de la suppression"
 msgstr "Erreur lors de la suppression"
 
@@ -2370,9 +2402,9 @@ msgstr ""
 "points."
 
 #: static/js/notifications.js:114 static/js/notifications.js:448
-#: templates/menu_data.html:259 templates/menu_data.html:298
-#: templates/menu_data.html:310 templates/menu_data.html:335
-#: templates/menu_data.html:352 templates/menu_style.html:52
+#: templates/menu_data.html:290 templates/menu_data.html:329
+#: templates/menu_data.html:341 templates/menu_data.html:366
+#: templates/menu_data.html:383 templates/menu_style.html:52
 #: templates/menu_style.html:233 templates/menu_style.html:265
 #: templates/menu_style.html:290 templates/menu_style.html:318
 #: templates/menu_style.html:341 templates/menu_style.html:377
@@ -2587,7 +2619,7 @@ msgstr "Renommer"
 
 #: static/js/profiles.js:965 templates/app.html:220 templates/app.html:221
 #: templates/guide.html:106 templates/guide.html:298 templates/guide.html:304
-#: templates/menu_animation.html:47 templates/menu_data.html:169
+#: templates/menu_animation.html:47 templates/menu_data.html:189
 msgid "Exporter"
 msgstr "Exporter"
 
@@ -4007,7 +4039,7 @@ msgstr "Réglages"
 
 #: templates/app.html:216 templates/app.html:217 templates/guide.html:106
 #: templates/guide.html:297 templates/guide.html:304
-#: templates/menu_animation.html:44 templates/menu_data.html:216
+#: templates/menu_animation.html:44 templates/menu_data.html:247
 msgid "Prévisualiser"
 msgstr "Prévisualiser"
 
@@ -4612,7 +4644,7 @@ msgstr "Nouveau"
 msgid "crée un thème,"
 msgstr "crée un thème,"
 
-#: templates/guide.html:226 templates/menu_data.html:323
+#: templates/guide.html:226 templates/menu_data.html:354
 #: templates/menu_style.html:64 templates/modal_evolution.html:61
 msgid "Importer"
 msgstr "Importer"
@@ -5888,55 +5920,75 @@ msgstr "Récupérer les positions"
 msgid "Compléter à la main"
 msgstr "Compléter à la main"
 
-#: templates/menu_data.html:128
-msgid ""
-"Glissez ce bouton dans la barre de favoris de votre navigateur (une seule"
-" fois) :"
-msgstr ""
-"Glissez ce bouton dans la barre de favoris de votre navigateur (une seule"
-" fois) :"
+#: templates/menu_data.html:133
+msgid "Sur cet appareil, le plus simple est d'importer vos fichiers :"
+msgstr "Sur cet appareil, le plus simple est d'importer vos fichiers :"
 
-#: templates/menu_data.html:136
-msgid "Ouvrez"
-msgstr "Ouvrez"
-
-#: templates/menu_data.html:137
-msgid "vos logs Adventure Lab"
-msgstr "vos logs Adventure Lab"
-
-#: templates/menu_data.html:137
-msgid ", connectez-vous, puis cliquez ce favori."
-msgstr ", connectez-vous, puis cliquez ce favori."
-
-#: templates/menu_data.html:141
-msgid ""
-"Vos étapes arrivent ici et se placent seules sur la carte, grâce au "
-"service public lab2gpx (réglable dans les options avancées)."
-msgstr ""
-"Vos étapes arrivent ici et se placent seules sur la carte, grâce au "
-"service public lab2gpx (réglable dans les options avancées)."
-
-#: templates/menu_data.html:147
-msgid "Mettre à jour"
-msgstr "Mettre à jour"
-
-#: templates/menu_data.html:157
-msgid "Options avancées"
-msgstr "Options avancées"
-
-#: templates/menu_data.html:164
-msgid "Fichiers Lab Caches (.json, .gpx ou .zip)"
-msgstr "Fichiers Lab Caches (.json, .gpx ou .zip)"
-
-#: templates/menu_data.html:166
+#: templates/menu_data.html:135 templates/menu_data.html:186
 msgid "Importer des fichiers…"
 msgstr "Importer des fichiers…"
 
-#: templates/menu_data.html:172
+#: templates/menu_data.html:140
+msgid ""
+"Glissez ce bouton dans la barre de favoris de votre navigateur (une seule"
+" fois) :"
+msgstr ""
+"Glissez ce bouton dans la barre de favoris de votre navigateur (une seule"
+" fois) :"
+
+#: templates/menu_data.html:143
+msgid "Préparation du favori…"
+msgstr "Préparation du favori…"
+
+#: templates/menu_data.html:146
+msgid "Copier le lien"
+msgstr "Copier le lien"
+
+#: templates/menu_data.html:151
+msgid "Le favori n'a pas pu être préparé."
+msgstr "Le favori n'a pas pu être préparé."
+
+#: templates/menu_data.html:152
+msgid "Importer des fichiers à la place"
+msgstr "Importer des fichiers à la place"
+
+#: templates/menu_data.html:156
+msgid "Ouvrez"
+msgstr "Ouvrez"
+
+#: templates/menu_data.html:157
+msgid "vos logs Adventure Lab"
+msgstr "vos logs Adventure Lab"
+
+#: templates/menu_data.html:157
+msgid ", connectez-vous, puis cliquez ce favori."
+msgstr ", connectez-vous, puis cliquez ce favori."
+
+#: templates/menu_data.html:161
+msgid ""
+"Vos étapes arrivent ici et se placent seules sur la carte, grâce au "
+"service public lab2gpx (réglable dans les options avancées)."
+msgstr ""
+"Vos étapes arrivent ici et se placent seules sur la carte, grâce au "
+"service public lab2gpx (réglable dans les options avancées)."
+
+#: templates/menu_data.html:167
+msgid "Afficher les instructions d'import"
+msgstr "Afficher les instructions d'import"
+
+#: templates/menu_data.html:177
+msgid "Options avancées"
+msgstr "Options avancées"
+
+#: templates/menu_data.html:184
+msgid "Fichiers Lab Caches (.json, .gpx ou .zip)"
+msgstr "Fichiers Lab Caches (.json, .gpx ou .zip)"
+
+#: templates/menu_data.html:192
 msgid "Comment obtenir mes fichiers ?"
 msgstr "Comment obtenir mes fichiers ?"
 
-#: templates/menu_data.html:176
+#: templates/menu_data.html:196
 msgid ""
 "Historique de découvertes (.json) et coordonnées des étapes (.gpx ou "
 ".zip), importables ensemble ou séparément."
@@ -5944,11 +5996,11 @@ msgstr ""
 "Historique de découvertes (.json) et coordonnées des étapes (.gpx ou "
 ".zip), importables ensemble ou séparément."
 
-#: templates/menu_data.html:184
+#: templates/menu_data.html:204
 msgid "Placer automatiquement les étapes sur la carte après un import"
 msgstr "Placer automatiquement les étapes sur la carte après un import"
 
-#: templates/menu_data.html:188
+#: templates/menu_data.html:208
 msgid ""
 "Interroge le service public lab2gpx avec les identifiants de vos "
 "Adventures — aucun identifiant de compte n'est transmis."
@@ -5956,35 +6008,47 @@ msgstr ""
 "Interroge le service public lab2gpx avec les identifiants de vos "
 "Adventures — aucun identifiant de compte n'est transmis."
 
-#: templates/menu_data.html:194
+#: templates/menu_data.html:214
 msgid "Réessayer de récupérer les positions manquantes"
 msgstr "Réessayer de récupérer les positions manquantes"
 
-#: templates/menu_data.html:210
+#: templates/menu_data.html:221
+msgid "Régénérer le jeton du favori"
+msgstr "Régénérer le jeton du favori"
+
+#: templates/menu_data.html:224
+msgid ""
+"L'ancien favori cessera de fonctionner : glissez à nouveau le bouton « "
+"Envoyer vers MyGCFlow » dans votre barre de favoris."
+msgstr ""
+"L'ancien favori cessera de fonctionner : glissez à nouveau le bouton « "
+"Envoyer vers MyGCFlow » dans votre barre de favoris."
+
+#: templates/menu_data.html:241
 msgid "Vos trouvailles sont prêtes."
 msgstr "Vos trouvailles sont prêtes."
 
-#: templates/menu_data.html:213 templates/menu_data_evolution.html:92
+#: templates/menu_data.html:244 templates/menu_data_evolution.html:92
 msgid "Choisir un style"
 msgstr "Choisir un style"
 
-#: templates/menu_data.html:227
+#: templates/menu_data.html:258
 msgid "Aucune cache ne correspond aux filtres actuels."
 msgstr "Aucune cache ne correspond aux filtres actuels."
 
-#: templates/menu_data.html:229
+#: templates/menu_data.html:260
 msgid "Réinitialiser les filtres"
 msgstr "Réinitialiser les filtres"
 
-#: templates/menu_data.html:258
+#: templates/menu_data.html:289
 msgid "Importer mes Lab Caches"
 msgstr "Importer mes Lab Caches"
 
-#: templates/menu_data.html:262
+#: templates/menu_data.html:293
 msgid "La méthode simple — en un clic"
 msgstr "La méthode simple — en un clic"
 
-#: templates/menu_data.html:265
+#: templates/menu_data.html:296
 msgid ""
 "Glissez le bouton « Envoyer vers MyGCFlow » (carte Mes Lab Caches) dans "
 "la barre de favoris de votre navigateur — une seule fois."
@@ -5992,11 +6056,11 @@ msgstr ""
 "Glissez le bouton « Envoyer vers MyGCFlow » (carte Mes Lab Caches) dans "
 "la barre de favoris de votre navigateur — une seule fois."
 
-#: templates/menu_data.html:268
+#: templates/menu_data.html:299
 msgid "Connectez-vous sur"
 msgstr "Connectez-vous sur"
 
-#: templates/menu_data.html:270
+#: templates/menu_data.html:301
 msgid ""
 "puis cliquez ce favori : votre historique est envoyé directement à "
 "l'application."
@@ -6004,7 +6068,7 @@ msgstr ""
 "puis cliquez ce favori : votre historique est envoyé directement à "
 "l'application."
 
-#: templates/menu_data.html:273
+#: templates/menu_data.html:304
 msgid ""
 "Les étapes se placent seules sur la carte. Si vous avez désactivé ce "
 "placement automatique (options avancées), complétez-les par fichier ou à "
@@ -6014,15 +6078,15 @@ msgstr ""
 "placement automatique (options avancées), complétez-les par fichier ou à "
 "la main."
 
-#: templates/menu_data.html:277
+#: templates/menu_data.html:308
 msgid "La méthode manuelle — deux fichiers"
 msgstr "La méthode manuelle — deux fichiers"
 
-#: templates/menu_data.html:280
+#: templates/menu_data.html:311
 msgid "Historique des découvertes (.json)"
 msgstr "Historique des découvertes (.json)"
 
-#: templates/menu_data.html:281
+#: templates/menu_data.html:312
 msgid ""
 "Sur labs.geocaching.com/logs, ouvrez la console du navigateur (F12), "
 "renseignez votre GUID joueur dans le script ci-dessous et exécutez-le : "
@@ -6032,15 +6096,15 @@ msgstr ""
 "renseignez votre GUID joueur dans le script ci-dessous et exécutez-le : "
 "il télécharge votre historique complet."
 
-#: templates/menu_data.html:282
+#: templates/menu_data.html:313
 msgid "Télécharger le script d'export"
 msgstr "Télécharger le script d'export"
 
-#: templates/menu_data.html:285
+#: templates/menu_data.html:316
 msgid "Coordonnées des étapes (.gpx ou .zip)"
 msgstr "Coordonnées des étapes (.gpx ou .zip)"
 
-#: templates/menu_data.html:286
+#: templates/menu_data.html:317
 msgid ""
 "Générez un fichier Lab2Gpx contenant les étapes de vos Adventures (mode "
 "UUID, une étape par waypoint) — inutile si la récupération automatique "
@@ -6050,7 +6114,7 @@ msgstr ""
 "UUID, une étape par waypoint) — inutile si la récupération automatique "
 "est activée."
 
-#: templates/menu_data.html:290
+#: templates/menu_data.html:321
 msgid ""
 "Déposez les fichiers ici — ensemble ou séparément. Les étapes sans "
 "coordonnées restent conservées et complétables ensuite."
@@ -6058,7 +6122,7 @@ msgstr ""
 "Déposez les fichiers ici — ensemble ou séparément. Les étapes sans "
 "coordonnées restent conservées et complétables ensuite."
 
-#: templates/menu_data.html:294
+#: templates/menu_data.html:325
 msgid ""
 "Aucune donnée ne quitte l'application : les fichiers sont analysés "
 "localement. La récupération automatique envoie uniquement les "
@@ -6068,15 +6132,15 @@ msgstr ""
 "localement. La récupération automatique envoie uniquement les "
 "identifiants d'Adventures au service public lab2gpx."
 
-#: templates/menu_data.html:309
+#: templates/menu_data.html:340
 msgid "Aperçu de l'import Lab Caches"
 msgstr "Aperçu de l'import Lab Caches"
 
-#: templates/menu_data.html:334
+#: templates/menu_data.html:365
 msgid "Étapes en attente"
 msgstr "Étapes en attente"
 
-#: templates/menu_data.html:339
+#: templates/menu_data.html:370
 msgid ""
 "Ces étapes sont conservées mais non affichées : renseignez leur position "
 "ou leur date de découverte pour les rendre affichables. Une seule "
@@ -6086,7 +6150,7 @@ msgstr ""
 "ou leur date de découverte pour les rendre affichables. Une seule "
 "position suffit pour placer toutes les étapes d'une Adventure."
 
-#: templates/menu_data.html:342
+#: templates/menu_data.html:373
 msgid ""
 "Formats acceptés : N 48° 51.504 E 002° 17.670 (geocaching.com), 48.8584, "
 "2.2945 (décimal) ou 48°51′30″N 2°17′40″E."
@@ -6094,11 +6158,11 @@ msgstr ""
 "Formats acceptés : N 48° 51.504 E 002° 17.670 (geocaching.com), 48.8584, "
 "2.2945 (décimal) ou 48°51′30″N 2°17′40″E."
 
-#: templates/menu_data.html:346
+#: templates/menu_data.html:377
 msgid "Précédent"
 msgstr "Précédent"
 
-#: templates/menu_data.html:348
+#: templates/menu_data.html:379
 msgid "Suivant"
 msgstr "Suivant"
 
@@ -9697,4 +9761,7 @@ msgstr "Enregistrer une copie sous…"
 
 #~ msgid "Délai d'attente dépassé"
 #~ msgstr "Délai d'attente dépassé"
+
+#~ msgid "Mettre à jour"
+#~ msgstr "Mettre à jour"
 

@@ -1025,6 +1025,21 @@ def labs_bookmarklet():
     return jsonify({'success': True, 'origin': origin, 'bookmarklet': js})
 
 
+@labs_bp.route('/api/labs/bookmarklet/regenerate', methods=['POST'])
+def labs_bookmarklet_regenerate():
+    """Remplace le jeton de réception et renvoie le favori régénéré.
+
+    L'ancien `javascript:` devient immédiatement invalide côté /receive :
+    l'interface le présente comme action destructive (options avancées) et
+    recharge le lien à glisser avec cette réponse."""
+    from dataclasses import replace
+    settings = get_settings_manager().update_app_settings(
+        lambda s: replace(s, labs_receive_token=secrets.token_urlsafe(24)))
+    origin = request.host_url.rstrip('/')
+    js = _build_bookmarklet(origin, settings.labs_receive_token)
+    return jsonify({'success': True, 'origin': origin, 'bookmarklet': js})
+
+
 @labs_bp.route('/api/labs/export-script')
 def labs_export_script():
     """Script d'export manuel à coller dans la console de /logs — laissé

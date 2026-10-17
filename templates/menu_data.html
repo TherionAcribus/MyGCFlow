@@ -121,15 +121,35 @@
                          depuis labs.geocaching.com/logs. Un clic sur la page
                          serait un no-op trompeur → bloqué côté labs.js.
                          Affiché d'office tant que rien n'est importé ; ensuite
-                         replié derrière « Mettre à jour ». -->
+                         replié derrière « Afficher les instructions d'import ».
+                         Avant le chargement du lien, le bouton est inerte
+                         (aria-disabled, non glissable, hors tabulation) —
+                         « Copier le lien » offre l'alternative clavier. -->
                     <div id="labsGuide">
+                        <!-- Petit écran ou appareil tactile : pas de barre de
+                             favoris où glisser — l'import de fichiers passe
+                             en premier (masqué sur ordinateur, cf. CSS). -->
+                        <div class="labs-mobile-import mb-2">
+                            <div class="small mb-1">{{ _("Sur cet appareil, le plus simple est d'importer vos fichiers :") }}</div>
+                            <button type="button" id="labs-file-btn-guide" class="btn btn-primary btn-sm gcm-file-btn">
+                                <i class="ti ti-folder-open me-1" aria-hidden="true"></i>{{ _("Importer des fichiers…") }}
+                            </button>
+                        </div>
                         <ol class="ps-3 mb-2">
                             <li class="mb-2">
                                 {{ _("Glissez ce bouton dans la barre de favoris de votre navigateur (une seule fois) :") }}
-                                <div class="mt-1">
-                                    <a id="labsBookmarkletLink" class="btn btn-sm btn-primary" href="#" draggable="true">
-                                        <i class="ti ti-bookmark me-1" aria-hidden="true"></i>{{ _("Envoyer vers MyGCFlow") }}
+                                <div class="mt-1 d-flex align-items-center gap-2 flex-wrap">
+                                    <a id="labsBookmarkletLink" class="btn btn-sm btn-primary" href="#" draggable="false" aria-disabled="true" tabindex="-1">
+                                        <i class="ti ti-bookmark me-1" aria-hidden="true"></i><span id="labsBookmarkletLabel">{{ _("Préparation du favori…") }}</span>
                                     </a>
+                                    <button type="button" id="labsCopyLinkBtn" class="btn btn-outline-secondary btn-sm" disabled>
+                                        <i class="ti ti-copy me-1" aria-hidden="true"></i>{{ _("Copier le lien") }}
+                                    </button>
+                                </div>
+                                <span id="labsBookmarkletStatus" class="form-hint text-success d-inline-block mt-1" aria-live="polite"></span>
+                                <div id="labsBookmarkletError" class="form-hint text-danger mt-1" role="alert" hidden>
+                                    {{ _("Le favori n'a pas pu être préparé.") }}
+                                    <button type="button" id="labsBookmarkletFallbackBtn" class="btn btn-link btn-sm p-0 align-baseline">{{ _("Importer des fichiers à la place") }}</button>
                                 </div>
                             </li>
                             <li>
@@ -144,7 +164,7 @@
 
                     <div class="d-flex justify-content-between align-items-center gap-2">
                         <button type="button" id="labsUpdateBtn" class="btn btn-outline-primary btn-sm" style="display:none;" aria-expanded="false" aria-controls="labsGuide">
-                            <i class="ti ti-refresh me-1" aria-hidden="true"></i>{{ _("Mettre à jour") }}
+                            <i class="ti ti-help me-1" aria-hidden="true"></i>{{ _("Afficher les instructions d'import") }}
                         </button>
                         <button id="clearLabsBtn" class="btn btn-outline-danger btn-sm ms-auto" style="display:none;">
                             <i class="ti ti-trash me-1" aria-hidden="true"></i>{{ _("Supprimer mes Lab Caches") }}
@@ -193,6 +213,17 @@
                             <button type="button" id="labsRetryFetchBtn" class="btn btn-link btn-sm px-0 mt-2" style="display:none;">
                                 {{ _("Réessayer de récupérer les positions manquantes") }}
                             </button>
+                            <!-- Jeton du favori : le régénérer invalide le
+                                 favori déjà installé — dit explicitement pour
+                                 éviter un favori mort silencieux. -->
+                            <div class="mt-3 pt-2 border-top">
+                                <button type="button" id="labsRegenTokenBtn" class="btn btn-link btn-sm px-0 text-danger">
+                                    <i class="ti ti-refresh me-1" aria-hidden="true"></i>{{ _("Régénérer le jeton du favori") }}
+                                </button>
+                                <div class="form-hint text-muted">
+                                    {{ _("L'ancien favori cessera de fonctionner : glissez à nouveau le bouton « Envoyer vers MyGCFlow » dans votre barre de favoris.") }}
+                                </div>
+                            </div>
                         </div>
                     </details>
                 </div>

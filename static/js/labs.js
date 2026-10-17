@@ -28,7 +28,7 @@ let pendingOffset = 0;
 let pendingGroupTotal = 0;     // Adventures ayant des étapes en attente
 let fetchableAdventures = 0;   // Adventures qu'une récupération peut encore servir
 let pendingDirty = false;      // une correction a été enregistrée → recharger
-let guideOpen = false;         // parcours du favori rouvert via « Mettre à jour »
+let guideOpen = false;         // parcours du favori rouvert via « Afficher les instructions d'import »
 // Dernier statut appliqué : la révision de la collection (absente → 0) change
 // à TOUTE mutation — titre, image, date ou coordonnée corrigée — même quand
 // total/ready restent identiques.
@@ -85,17 +85,25 @@ export function initLabsUI() {
     });
 
     // Le favori « Envoyer vers MyGCFlow » est fait pour être glissé dans la
-    // barre de favoris : un clic dessus depuis l'app serait un no-op.
+    // barre de favoris : un clic dessus depuis l'app serait un no-op. Tant
+    // que le lien réel n'est pas chargé il est inerte (aria-disabled, non
+    // glissable, hors tabulation) ; en échec, l'import de fichiers prend le
+    // relais. « Copier le lien » rend le parcours possible au clavier.
     const bm = el('labsBookmarkletLink');
     if (bm) {
         bm.addEventListener('click', (e) => {
             e.preventDefault();
+            if (bm.getAttribute('aria-disabled') === 'true') return;
             showInfo(
                 t('Glissez ce bouton dans la barre de favoris de votre navigateur, puis cliquez-le depuis la page de vos logs Adventure Lab.'),
                 t('Envoyer vers MyGCFlow'));
         });
         loadBookmarklet(bm);
     }
+    el('labsCopyLinkBtn')?.addEventListener('click', onCopyBookmarklet);
+    el('labsBookmarkletFallbackBtn')?.addEventListener('click', () => labsFileInput.click());
+    el('labs-file-btn-guide')?.addEventListener('click', () => labsFileInput.click());
+    el('labsRegenTokenBtn')?.addEventListener('click', onRegenBookmarkletToken);
     loadAutoFetchSetting();
 
     // Recharger la carte si des coordonnées ont été corrigées dans la modale.
@@ -260,7 +268,7 @@ function renderLabsStatus(st) {
 }
 
 // Le parcours du favori s'affiche d'office tant que rien n'est importé ;
-// ensuite il se replie derrière « Mettre à jour ».
+// ensuite il se replie derrière « Afficher les instructions d'import ».
 function renderGuide() {
     const guide = el('labsGuide');
     if (!guide) return;
@@ -933,14 +941,75 @@ async function suggestSourceAfterImport({ readyBefore = null } = {}) {
 // réglable dans les options avancées. Le serveur fait les appels, parse les
 // GPX retournés et enrichit les étapes par le même chemin que l'import.
 
+// Bascule le bouton en favori prêt : vrai lien javascript:, glissable,
+// annoncé et atteignable au clavier, copie autorisée.
+function markBookmarkletReady(link, bookmarklet) {
+    link.href = bookmarklet;
+    link.draggable = true;
+    link.removeAttribute('aria-disabled');
+    link.removeAttribute('tabindex');
+    const label = el('labsBookmarkletLabel');
+    if (label) label.textContent = t('Envoyer vers MyGCFlow');
+    const copyBtn = el('labsCopyLinkBtn');
+    if (copyBtn) copyBtn.disabled = false;
+    const errBox = el('labsBookmarkletError');
+    if (errBox) errBox.hidden = true;
+}
+
 async function loadBookmarklet(link) {
     try {
         const r = await fetch(`${CONFIG.BASE_URL}/api/labs/bookmarklet`);
-        const d = await r.json();
-        if (d.success && d.bookmarklet) link.href = d.bookmarklet;
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok || !d.success || !d.bookmarklet) throw new Error('indisponible');
+        markBookmarkletReady(link, d.bookmarklet);
     } catch (e) {
         console.warn('[LABS] bookmarklet indisponible:', e);
+        // Le bouton reste inerte ; le message visible propose le repli
+        // « importer des fichiers » plutôt qu'un favori muet.
+        const label = el('labsBookmarkletLabel');
+        if (label) label.textContent = t('Favori indisponible');
+        const errBox = el('labsBookmarkletError');
+        if (errBox) errBox.hidden = false;
     }
+}
+
+// Copie du lien javascript: dans le presse-papiers — alternative clavier au
+// glisser-déposer (un favori peut être créé à la main avec ce contenu).
+// L'annonce « Lien copié » passe par la zone aria-live à côté du bouton.
+async function onCopyBookmarklet() {
+    const link = el('labsBookmarkletLink');
+    const statusEl = el('labsBookmarkletStatus');
+    const href = link?.getAttribute('href');
+    if (!href || href === '#') return;
+    try {
+        await navigator.clipboard.writeText(href);
+        if (statusEl) statusEl.textContent = t('Lien copié');
+    } catch (_) {
+        if (statusEl) statusEl.textContent = t('Copie impossible — glissez le bouton à la place.');
+    }
+}
+
+// Régénération du jeton : explicite sur l'invalidation de l'ancien favori
+// (confirmation) puis le lien est rechargé avec le nouveau jeton.
+function onRegenBookmarkletToken() {
+    pkg.showConfirmation?.(
+        t('Régénérer le jeton ? Le favori actuel cessera de fonctionner : il faudra glisser à nouveau le bouton « Envoyer vers MyGCFlow » dans vos favoris.'),
+        t('Jeton du favori'),
+        async () => {
+            try {
+                const r = await fetch(`${CONFIG.BASE_URL}/api/labs/bookmarklet/regenerate`,
+                    { method: 'POST' });
+                const d = await r.json().catch(() => ({}));
+                if (!r.ok || !d.success || !d.bookmarklet) throw new Error('refusé');
+                const link = el('labsBookmarkletLink');
+                if (link) markBookmarkletReady(link, d.bookmarklet);
+                const statusEl = el('labsBookmarkletStatus');
+                if (statusEl) statusEl.textContent =
+                    t('Nouveau favori prêt — remplacez l\'ancien dans vos favoris.');
+            } catch (e) {
+                showError(t('Jeton non régénéré'), t('Lab Caches'));
+            }
+        });
 }
 
 async function loadAutoFetchSetting() {

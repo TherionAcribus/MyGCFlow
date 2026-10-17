@@ -2906,3 +2906,12 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
     border-top: 2px dashed var(--color-text-muted);
     border-radius: 0;
 }
+
+/* Guide Lab Caches — l'import de fichiers d'abord sur appareil tactile ou
+   petit écran : le glisser-déposer dans la barre de favoris n'y existe pas.
+   Sur ordinateur, ce raccourci reste masqué (l'entrée fichier est dans les
+   options avancées). */
+.labs-mobile-import { display: none; }
+@media (pointer: coarse), (max-width: 575.98px) {
+    .labs-mobile-import { display: block; }
+}
