@@ -91,7 +91,13 @@ jobs:
             dist/MyGCFlow-*-portable.zip
 
   build-linux:
-    runs-on: ubuntu-latest
+    # Version figée, et volontairement ancienne : un exécutable PyInstaller
+    # exige la glibc de la machine qui l'a construit, ou plus récente. Bâti sur
+    # ubuntu-22.04 (glibc 2.35), il démarre sur Ubuntu 22.04+, Debian 12,
+    # Mint 21+ et les Fedora récentes. `ubuntu-latest` produirait un binaire
+    # inutilisable sur la plupart des machines installées — d'autant que ce
+    # label bascule vers Ubuntu 26 à partir du 19 octobre 2026.
+    runs-on: ubuntu-22.04
     timeout-minutes: 30
 
     steps:
