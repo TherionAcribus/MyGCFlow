@@ -52,8 +52,11 @@
                 <a href="#animation" class="guide-nav-link">
                     <span class="nav-num">3</span>{{ _("Animation & vidéo") }}
                 </a>
+                <a href="#stats" class="guide-nav-link">
+                    <span class="nav-num">4</span>{{ _("Stats") }}
+                </a>
                 <a href="#settings" class="guide-nav-link">
-                    <span class="nav-num">4</span>{{ _("Préférences") }}
+                    <span class="nav-num">5</span>{{ _("Préférences") }}
                 </a>
 
                 <div class="guide-nav-section-title">{{ _("Autre source") }}</div>
@@ -332,10 +335,43 @@
             </section>
 
             <!-- ===================== 4. PRÉFÉRENCES ===================== -->
+            <section id="stats" class="guide-section">
+                <div class="guide-section-head">
+                    <span class="sec-badge"><i class="ti ti-chart-bar"></i></span>
+                    <h2>4. {{ _("Stats") }}</h2>
+                </div>
+                <p class="guide-section-intro">{{ _("Posez sur la carte des tableaux de statistiques qui se remplissent au fil de l'animation et apparaissent dans la vidéo. Ils se règlent dans l'onglet") }} <span class="ui-chip">{{ _("Stats") }}</span>, {{ _("enregistré automatiquement quel que soit le thème.") }}</p>
+
+                <ol class="guide-steps">
+                    <li>
+                        <h3>{{ _("Ajoutez un panneau") }}</h3>
+                        <p>{{ _("Le bouton") }} <span class="ui-chip"><i class="ti ti-plus"></i> {{ _("Ajouter") }}</span> {{ _("propose des modèles prêts à l'emploi et des histogrammes seuls, six panneaux au maximum :") }}</p>
+                        <ul class="sub">
+                            <li><strong>{{ _("Matrice D/T") }}</strong> — {{ _("les 81 combinaisons de difficulté et de terrain, qui se remplissent case par case.") }}</li>
+                            <li><strong>{{ _("Grille Jasmer") }}</strong> — {{ _("un mois de publication par case, de mai 2000 à votre dernière trouvaille.") }}</li>
+                            <li><strong>{{ _("Calendrier 366") }}</strong> — {{ _("un jour de l'année par case, d'après vos dates de trouvaille.") }}</li>
+                            <li><strong>{{ _("Histogrammes") }}</strong> — {{ _("types de caches, tailles, difficulté, terrain ou trouvailles par année.") }}</li>
+                        </ul>
+                    </li>
+                    <li>
+                        <h3>{{ _("Placez-le et réglez son apparence") }}</h3>
+                        <p>{{ _("Choisissez un coin d'ancrage, des marges et une largeur : les panneaux qui partagent un coin s'empilent automatiquement. Un avertissement signale un panneau qui dépasse de la carte ou chevauche le titre ou les infos.") }}</p>
+                    </li>
+                    <li>
+                        <h3>{{ _("Regardez-les se remplir") }}</h3>
+                        <p>{{ _("Les panneaux partent des caches trouvées avant la date de début, puis se remplissent jour après jour ; les nouveautés (une case obtenue, une nouvelle catégorie) sont surlignées. L'échelle et l'ordre des lignes sont calculés sur la fin de l'animation : rien ne bouge en cours de route. Au repos, les panneaux montrent les totaux de la sélection.") }}</p>
+                        <div class="guide-callout info">
+                            <i class="ti ti-info-circle"></i>
+                            <div>{{ _("Les Lab Caches n'ont ni difficulté, ni terrain, ni taille : elles comptent dans les types de caches, pas dans la matrice D/T. Le pied du panneau indique combien de caches sont ainsi laissées de côté.") }}</div>
+                        </div>
+                    </li>
+                </ol>
+            </section>
+
             <section id="settings" class="guide-section">
                 <div class="guide-section-head">
                     <span class="sec-badge"><i class="ti ti-settings"></i></span>
-                    <h2>4. {{ _("Préférences") }}</h2>
+                    <h2>5. {{ _("Préférences") }}</h2>
                 </div>
                 <p class="guide-section-intro">{{ _("Réglez une fois pour toutes le comportement de l'application dans l'onglet") }} <span class="ui-chip">{{ _("Préférences") }}</span>.</p>
 

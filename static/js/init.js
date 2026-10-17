@@ -281,6 +281,16 @@ function applyUserSettings(userSettings) {
         if (inp) inp.value = pkg.mainInfosTemplateText?.() ?? '';
     }
 
+    // Panneaux de statistiques : préférence globale, propre au mode principal.
+    if (!isEvolutionPage() && userSettings.stats) {
+        try {
+            pkg.applyStatsSettings?.(userSettings.stats);
+            pkg.renderStatsTab?.();
+        } catch (e) {
+            console.warn('📥 [USER_SETTINGS] Panneaux de stats ignorés:', e?.message || e);
+        }
+    }
+
     // Le thème a déjà été appliqué depuis le miroir localStorage par le script
     // anti-FOUC ; ici on réaligne sur la préférence serveur, qui fait référence.
     try {

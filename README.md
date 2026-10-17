@@ -30,6 +30,9 @@ video (with a music track if you want one).
 - **Travel trail** — optional line that follows the geocacher from one stop to
   the next and reaches the new caches just as they appear (grouping radius,
   curves, long-jump arcs, color, width, pattern, glow, head, fading trail).
+- **Statistics panels** — D/T grid, Jasmer grid, 366-day calendar and bar
+  charts (types, sizes, difficulty, terrain, years) placed on the map, filling
+  up as the animation plays and rendered into the video.
 - **Overlay** — title and info block (find count, current date), styled through
   text/box/shadow/position controls or raw CSS.
 - **Animation** — start/end dates, duration per day or total target duration,
@@ -228,6 +231,7 @@ GitHub Release.
 - [docs/mode-evolution.md](docs/mode-evolution.md) — Evolution mode (caches of an area appearing and disappearing, CSV imports)
 - [docs/lab-caches.md](docs/lab-caches.md) — Adventure Lab stages (file exports, import, displayed sources, pending cases)
 - [docs/traits-de-deplacement.md](docs/traits-de-deplacement.md) — travel trail (route computation, timing, cost)
+- [docs/panneaux-stats.md](docs/panneaux-stats.md) — statistics panels (incremental counting, scale reference, preview/video rendering)
 - [docs/translations.md](docs/translations.md) — i18n rules
 - [docs/notes/README_TESTS_VIDEO.md](docs/notes/README_TESTS_VIDEO.md) — video test matrix
 

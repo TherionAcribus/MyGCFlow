@@ -1,0 +1,237 @@
+{% from '_scope_badges.html' import global_scope_badge with context %}
+<!-- Panneaux de statistiques posés sur la carte (matrice D/T, grilles,
+     histogrammes). Préférence globale : la liste est enregistrée
+     automatiquement et ne dépend pas du thème. Contrôles pilotés par
+     static/js/stats_ui.js ; dessin par stats_panels.js / stats_render.mjs. -->
+<div id="stats" class="col-12 tab-pane fade">
+    <h5 class="gc-section-title">
+        <i class="ti ti-chart-bar text-muted me-1"></i>{{ _("Statistiques sur la carte") }}{{ global_scope_badge() }}
+    </h5>
+    <p class="form-hint text-muted mb-2">
+        {{ _("Des tableaux posés sur la carte, qui se remplissent au fil de l'animation et apparaissent dans la vidéo. Au repos, ils montrent les totaux de la sélection. Enregistrés automatiquement, quel que soit le thème chargé.") }}
+    </p>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="switchStats" role="switch" checked>
+                <label class="form-check-label" for="switchStats">{{ _("Afficher les panneaux sur la carte") }}</label>
+            </div>
+            <div id="statsLayoutWarnings" class="alert alert-warning py-2 px-3 mt-2 mb-0 small" role="status" hidden></div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <!-- Liste des panneaux -->
+        <div class="col-12 col-lg-5">
+            <div class="card h-100">
+                <div class="card-header d-flex align-items-center justify-content-between gap-2">
+                    <h6 class="card-title m-0">
+                        <i class="ti ti-layout-grid text-muted me-1"></i>{{ _("Panneaux") }}
+                    </h6>
+                    <div class="dropdown">
+                        <button type="button" id="btnStatsAdd" class="btn btn-sm btn-primary dropdown-toggle"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="ti ti-plus me-1" aria-hidden="true"></i>{{ _("Ajouter") }}
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" id="statsAddMenu">
+                            <li><h6 class="dropdown-header">{{ _("Modèles") }}</h6></li>
+                            <li><button type="button" class="dropdown-item" data-stats-preset="dt">{{ _("Matrice D/T") }}</button></li>
+                            <li><button type="button" class="dropdown-item" data-stats-preset="types-sizes">{{ _("Types + tailles") }}</button></li>
+                            <li><button type="button" class="dropdown-item" data-stats-preset="difficulty-terrain">{{ _("Difficulté + terrain") }}</button></li>
+                            <li><button type="button" class="dropdown-item" data-stats-preset="jasmer">{{ _("Grille Jasmer") }}</button></li>
+                            <li><button type="button" class="dropdown-item" data-stats-preset="calendar">{{ _("Calendrier 366") }}</button></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header">{{ _("Histogramme seul") }}</h6></li>
+                            <li><button type="button" class="dropdown-item" data-stats-add="bar:cache_type">{{ _("Types de caches") }}</button></li>
+                            <li><button type="button" class="dropdown-item" data-stats-add="bar:container">{{ _("Tailles") }}</button></li>
+                            <li><button type="button" class="dropdown-item" data-stats-add="bar:difficulty">{{ _("Difficulté") }}</button></li>
+                            <li><button type="button" class="dropdown-item" data-stats-add="bar:terrain">{{ _("Terrain") }}</button></li>
+                            <li><button type="button" class="dropdown-item" data-stats-add="bar:year">{{ _("Trouvailles par année") }}</button></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p id="statsEmpty" class="form-hint text-muted mb-0">
+                        {{ _("Aucun panneau. Commencez par un modèle : la matrice D/T, par exemple, se remplit case par case au fil de vos trouvailles.") }}
+                    </p>
+                    <ul id="statsPanelList" class="list-group stats-panel-list" aria-label="{{ _('Panneaux de statistiques') }}"></ul>
+                    <p id="statsLimitHint" class="form-hint text-muted small mt-2 mb-0" hidden>{{ _("Six panneaux au maximum.") }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panneau sélectionné -->
+        <div class="col-12 col-lg-7">
+            <div class="card h-100" id="statsPanelForm" hidden>
+                <div class="card-header">
+                    <h6 class="card-title m-0" id="statsFormTitle">
+                        <i class="ti ti-adjustments text-muted me-1"></i>{{ _("Panneau sélectionné") }}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <h6 class="gc-subsection-title">{{ _("Contenu") }}</h6>
+                    <div class="row g-2">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label" for="selectStatsMetric">{{ _("Statistique") }}</label>
+                            <select id="selectStatsMetric" class="form-select"></select>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label" for="inputStatsTitle">{{ _("Titre") }}</label>
+                            <input id="inputStatsTitle" type="text" class="form-control" maxlength="80">
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="switchStatsShowTitle" role="switch">
+                                <label class="form-check-label" for="switchStatsShowTitle">{{ _("Afficher le titre") }}</label>
+                            </div>
+                        </div>
+
+                        <!-- Grilles -->
+                        <div class="col-12 col-md-6" data-stats-kind="grid">
+                            <label class="form-label" for="selectStatsCellMode">{{ _("Cases") }}</label>
+                            <select id="selectStatsCellMode" class="form-select" aria-describedby="helpStatsCellMode">
+                                <option value="count">{{ _("Nombre de trouvailles") }}</option>
+                                <option value="heat">{{ _("Intensité de couleur") }}</option>
+                                <option value="filled">{{ _("Remplie ou vide") }}</option>
+                            </select>
+                            <small id="helpStatsCellMode" class="form-hint text-muted">{{ _("« Remplie ou vide » montre seulement les cases déjà obtenues, comme une grille de défi.") }}</small>
+                        </div>
+                        <div class="col-12 col-md-6" data-stats-kind="grid">
+                            <div class="form-check form-switch mt-md-4">
+                                <input class="form-check-input" type="checkbox" id="switchStatsCoverage" role="switch">
+                                <label class="form-check-label" for="switchStatsCoverage">{{ _("Afficher le nombre de cases remplies") }}</label>
+                            </div>
+                        </div>
+
+                        <!-- Histogrammes -->
+                        <div class="col-12 col-md-6" data-stats-kind="bar">
+                            <label class="form-label" for="selectStatsSort">{{ _("Ordre") }}</label>
+                            <select id="selectStatsSort" class="form-select" aria-describedby="helpStatsSort">
+                                <option value="natural">{{ _("Ordre naturel") }}</option>
+                                <option value="count">{{ _("Nombre de trouvailles") }}</option>
+                                <option value="label">{{ _("Alphabétique") }}</option>
+                            </select>
+                            <small id="helpStatsSort" class="form-hint text-muted">{{ _("L'ordre est fixé sur les totaux de fin d'animation : les lignes ne changent pas de place pendant la lecture.") }}</small>
+                        </div>
+                        <div class="col-12 col-md-6" data-stats-kind="bar">
+                            <label class="form-label" for="selectStatsOrientation">{{ _("Barres") }}</label>
+                            <select id="selectStatsOrientation" class="form-select">
+                                <option value="horizontal">{{ _("Horizontales") }}</option>
+                                <option value="vertical">{{ _("Verticales") }}</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6" data-stats-kind="bar" data-stats-categorical>
+                            <label class="form-label" for="inputStatsMaxItems">{{ _("Lignes au maximum") }}</label>
+                            <input id="inputStatsMaxItems" type="number" class="form-control" min="3" max="30" step="1" aria-describedby="helpStatsMaxItems">
+                            <small id="helpStatsMaxItems" class="form-hint text-muted">{{ _("Les catégories suivantes sont regroupées dans « Autres ».") }}</small>
+                        </div>
+                        <div class="col-12 col-md-6" data-stats-kind="bar">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="switchStatsHideEmpty" role="switch">
+                                <label class="form-check-label" for="switchStatsHideEmpty">{{ _("Masquer les lignes vides") }}</label>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="switchStatsPercent" role="switch">
+                                <label class="form-check-label" for="switchStatsPercent">{{ _("Afficher les pourcentages") }}</label>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="switchStatsValues" role="switch">
+                                <label class="form-check-label" for="switchStatsValues">{{ _("Afficher les nombres") }}</label>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label" for="selectStatsHighlight">{{ _("Surligner pendant l'animation") }}</label>
+                            <select id="selectStatsHighlight" class="form-select">
+                                <option value="new">{{ _("Les nouveautés (case ou catégorie obtenue)") }}</option>
+                                <option value="every">{{ _("Chaque trouvaille") }}</option>
+                                <option value="none">{{ _("Rien") }}</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <h6 class="gc-subsection-title mt-4">{{ _("Position") }}</h6>
+                    <div class="row g-2 align-items-start">
+                        <div class="col-auto">
+                            <span class="form-label d-block" id="labelStatsAnchor">{{ _("Coin d'ancrage") }}</span>
+                            <div class="stats-anchor-grid" role="radiogroup" aria-labelledby="labelStatsAnchor">
+                                {% for anchor, label in [
+                                    ('top-left', _('En haut à gauche')), ('top-center', _('En haut au centre')), ('top-right', _('En haut à droite')),
+                                    ('middle-left', _('Au milieu à gauche')), ('middle-center', _('Au centre')), ('middle-right', _('Au milieu à droite')),
+                                    ('bottom-left', _('En bas à gauche')), ('bottom-center', _('En bas au centre')), ('bottom-right', _('En bas à droite'))] %}
+                                {# Nom accessible sur le bouton radio, seul à recevoir le focus ;
+                                   le libellé (vide, il figure la position) porte l'infobulle de survol. #}
+                                <input type="radio" class="btn-check" name="statsAnchor" id="statsAnchor-{{ anchor }}" value="{{ anchor }}"
+                                       aria-label="{{ label }}">
+                                <label class="btn btn-sm btn-outline-secondary" for="statsAnchor-{{ anchor }}" title="{{ label }}"></label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <label class="form-label" for="inputStatsDx">{{ _("Marge horizontale (px)") }}</label>
+                                    <input id="inputStatsDx" type="number" class="form-control" min="0" max="2000" step="1">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label" for="inputStatsDy">{{ _("Marge verticale (px)") }}</label>
+                                    <input id="inputStatsDy" type="number" class="form-control" min="0" max="2000" step="1">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label" for="inputStatsWidth">{{ _("Largeur (px)") }}</label>
+                                    <input id="inputStatsWidth" type="number" class="form-control" min="120" max="1200" step="10">
+                                </div>
+                            </div>
+                            <small class="form-hint text-muted d-block mt-1">{{ _("Les panneaux qui partagent un coin s'empilent automatiquement ; la marge verticale sert alors d'espacement avec le panneau précédent.") }}</small>
+                        </div>
+                    </div>
+
+                    <h6 class="gc-subsection-title mt-4">{{ _("Apparence") }}</h6>
+                    <div class="row g-2">
+                        <div class="col-6 col-md-4">
+                            <label class="form-label" for="inputStatsBackground">{{ _("Fond") }}</label>
+                            <input type="color" class="form-control form-control-color" id="inputStatsBackground">
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label class="form-label" for="inputStatsText">{{ _("Texte") }}</label>
+                            <input type="color" class="form-control form-control-color" id="inputStatsText">
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label class="form-label" for="inputStatsAccent">{{ _("Couleur principale") }}</label>
+                            <input type="color" class="form-control form-control-color" id="inputStatsAccent">
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label" for="rangeStatsOpacity">{{ _("Opacité du fond") }} <span id="valueStatsOpacity" class="text-muted"></span></label>
+                            <input type="range" class="form-range" id="rangeStatsOpacity" min="0" max="100" step="5">
+                        </div>
+                        <div class="col-12 col-md-6" data-stats-kind="bar">
+                            <label class="form-label" for="selectStatsPalette">{{ _("Couleur des barres") }}</label>
+                            <select id="selectStatsPalette" class="form-select">
+                                <option value="gc">{{ _("Couleurs des types de caches") }}</option>
+                                <option value="accent">{{ _("Couleur principale") }}</option>
+                                <option value="heat">{{ _("Dégradé selon le nombre") }}</option>
+                            </select>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label class="form-label" for="inputStatsFontSize">{{ _("Taille du texte") }}</label>
+                            <input id="inputStatsFontSize" type="number" class="form-control" min="8" max="32" step="1">
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label class="form-label" for="inputStatsRadius">{{ _("Arrondi") }}</label>
+                            <input id="inputStatsRadius" type="number" class="form-control" min="0" max="40" step="1">
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="form-check form-switch mt-md-4">
+                                <input class="form-check-input" type="checkbox" id="switchStatsInheritFont" role="switch">
+                                <label class="form-check-label" for="switchStatsInheritFont">{{ _("Police de la cartouche d'infos") }}</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

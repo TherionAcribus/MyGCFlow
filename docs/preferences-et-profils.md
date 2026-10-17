@@ -13,8 +13,12 @@ mécanisme sous-jacent.
 | **Enregistrement** | mode de capture, FPS, bitrate, codec, ralentissement, échelle, résolution, destinations, musique (volume `audio_volume`, en part du volume du fichier, de 0 à 4 ; « Niveau sonore standard » `audio_normalize`, vrai par défaut, y place le curseur pour ramener chaque morceau à un même niveau sans saturer — déplacer le curseur à la main le décoche —, inclusion, fondus d'entrée et de sortie avec leurs durées, boucle et raccord fondu de ses reprises, dernière musique choisie — copiée dans le dossier `audio/` des données et rechargée au démarrage, avec le mode « Sur la musique » s'il était actif — et ses points de départ `audio_start_seconds` et de fin `audio_end_seconds` (0 = jusqu'au bout), remis à 0 à chaque nouvelle musique — ou calculé pour que la fin du morceau tombe avec celle de la vidéo, `audio_keep_ending`, faux par défaut ; les 8 musiques récentes `audio_recent`, avec leur point de départ, reprises sans nouvel envoi et retirables une à une ; un enchaînement de plusieurs morceaux, assemblé par le serveur en une seule musique (`audio_library.build_playlist_mix`), garde ses morceaux dans `audio_playlist` — et dans son entrée des récentes — avec le fondu entre eux, `audio_playlist_crossfade` (vrai par défaut) et `audio_playlist_crossfade_seconds` (3 s) ; les copies du dossier `audio/` que plus aucune de ces préférences ne désigne sont supprimées à l'envoi d'une nouvelle musique, passé une heure — cf. `audio_library.py`, qui y range aussi la version FLAC lisible par le navigateur d'un format qu'il ne décode pas) | clé `recording` de `settings.json` | automatique, à chaque modification |
 | **Session** | centre et zoom courants de la carte, plage de dates de l'animation | mémoire uniquement (vue courante) ; le cadrage par défaut reste une préférence globale : `map_framing` (« fit » = emprise des données au chargement, « custom » = `map_default_center`/`map_default_zoom`) | non persistée |
 
-Un réglage global (Animation, Enregistrement, préférences) suit l'utilisateur
-quel que soit le thème chargé. Un réglage de thème est appliqué immédiatement
+Les **panneaux de statistiques** (onglet Stats : matrice D/T, grilles,
+histogrammes) sont eux aussi une préférence globale, clé `stats` de
+`settings.json`, enregistrée automatiquement — cf. `docs/panneaux-stats.md`.
+
+Un réglage global (Animation, Enregistrement, panneaux de stats, préférences)
+suit l'utilisateur quel que soit le thème chargé. Un réglage de thème est appliqué immédiatement
 à la carte mais n'existe sur disque qu'après un clic sur **Sauvegarder**.
 
 **Règle d'isolation** : appliquer un thème ne modifie jamais le timing, les
@@ -283,7 +287,9 @@ récurrent à chaque démarrage.
 `PUT /api/settings` accepte ces clés en patch partiel ; `recording` et
 `animation` sont fusionnés avec la valeur enregistrée, donc
 `{"recording": {"fps": 24}}` ne touche pas au bitrate et
-`{"animation": {"extra_end_seconds": 4}}` ne touche pas au rythme. Les valeurs
+`{"animation": {"extra_end_seconds": 4}}` ne touche pas au rythme. `stats` est
+fusionné au premier niveau seulement : `{"stats": {"enabled": false}}` garde
+les panneaux, mais `panels`, s'il est envoyé, remplace la liste. Les valeurs
 sont bornées côté serveur (`coerce_recording_settings`,
 `coerce_animation_settings`) : `settings.json` est éditable à la main et ne doit
 pas pouvoir produire un enregistrement ou une animation impossible.

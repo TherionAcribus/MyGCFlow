@@ -88,6 +88,8 @@ def main(argv: list[str] | None = None) -> int:
         ),
         ("Calculs du trajet JavaScript", ["node", "--test", "test_travel_trail.mjs"]),
         ("Réglages du trajet côté serveur", [sys.executable, "-m", "unittest", "-v", "tests.test_trail_profile"]),
+        ("Comptage et mise en page des panneaux de stats", ["node", "--test", "test_stats_model.mjs"]),
+        ("Réglages des panneaux de stats côté serveur", [sys.executable, "-m", "unittest", "-v", "tests.test_stats_settings"]),
     ]
     if args.quick:
         stages.append((

@@ -748,6 +748,16 @@ main.fullscreen-mode ~ .tooltip {
     max-height: calc(100vh - 88px);
 }
 
+/* Panneaux de statistiques (matrice D/T, histogrammes…) : un <canvas> par
+   panneau, positionné en ligne par stats_panels.js depuis son ancre. Sous le
+   titre et les infos (z-index 100), comme dans la vidéo où ces deux boîtes
+   sont dessinées après les panneaux. Purement décoratifs : aucun événement. */
+#mapWithFrames > .stats-panel {
+    position: absolute;
+    z-index: 90;
+    pointer-events: none;
+}
+
 #mapTabsResizer {
     position: relative;
     height: 8px;
@@ -2914,4 +2924,82 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
 .labs-mobile-import { display: none; }
 @media (pointer: coarse), (max-width: 575.98px) {
     .labs-mobile-import { display: block; }
+}
+
+/* --- Onglet Stats (templates/menu_stats.html) --------------------------- */
+
+/* Sous-sections du formulaire d'un panneau (Contenu, Position, Apparence). */
+.gc-subsection-title {
+    margin: 0 0 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+}
+
+/* Liste des panneaux : la ligne sélectionnée porte la couleur d'accent. */
+.stats-panel-list .list-group-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+.stats-panel-list .list-group-item.is-selected {
+    border-left: 3px solid var(--color-accent, #0072c6);
+    background: rgba(var(--color-accent-rgb, 0, 114, 198), 0.08);
+}
+.stats-panel-list .list-group-item {
+    padding-top: 0.4rem;
+    padding-bottom: 0.4rem;
+}
+/* Bouton « nom » : texte aligné à gauche, sans la hauteur ni le centrage
+   que .btn impose. */
+.stats-panel-list .stats-panel-name {
+    display: block;
+    height: auto;
+    min-height: 0;
+    border: 0;
+    font-weight: 500;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.stats-panel-list .stats-panel-name.is-disabled {
+    opacity: 0.55;
+}
+.stats-panel-list .btn-group .btn {
+    padding: 0.15rem 0.35rem;
+}
+
+/* Grille 3×3 du coin d'ancrage : chaque bouton figure la position du
+   panneau dans la carte (petit carré plein dans le coin choisi). */
+.stats-anchor-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 2rem);
+    grid-auto-rows: 2rem;
+    gap: 0.25rem;
+}
+.stats-anchor-grid .btn {
+    position: relative;
+    padding: 0;
+    width: 2rem;
+    height: 2rem;
+}
+.stats-anchor-grid .btn::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 0.5rem;
+    height: 0.5rem;
+    margin: -0.25rem 0 0 -0.25rem;
+    border-radius: 2px;
+    background: currentColor;
+    opacity: 0.45;
+}
+.stats-anchor-grid .btn-check:checked + .btn::after {
+    opacity: 1;
 }

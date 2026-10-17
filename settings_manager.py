@@ -15,6 +15,8 @@ from typing import Callable, Dict, Tuple, Optional, List
 
 from werkzeug.utils import secure_filename
 
+from stats_settings import StatsSettings, coerce_stats_settings
+
 
 APP_NAME = "MyGCFlow"
 # Nom historique (GCMap) : sert à reprendre la configuration d'une installation
@@ -418,6 +420,10 @@ class AppSettings:
     # « nombre de caches » / « date » pilotent la ligne comme avant ; rempli :
     # le modèle prend la main sur elles.
     infos_template: str = ''
+    # Panneaux de statistiques posés sur la carte (matrice D/T, histogrammes…) :
+    # préférence globale, comme infos_template — changer de thème ne doit pas
+    # les faire disparaître. Schéma et coercition dans stats_settings.py.
+    stats: StatsSettings = field(default_factory=StatsSettings)
     # Mode Évolution : sort des caches archivées sans date d'archivage.
     # "hide" (défaut) : elles ne figurent ni sur la carte ni dans les
     #   compteurs (on ne sait pas quand elles ont disparu, rien à animer).
@@ -1023,6 +1029,7 @@ def coerce_settings(d: dict) -> AppSettings:
             d.get("evolution_infos_template"), s.evolution_infos_template)
         s.infos_template = coerce_infos_template(
             d.get("infos_template"), s.infos_template)
+        s.stats = coerce_stats_settings(d.get("stats"))
         s.evolution_undated_archives = coerce_undated_archives(
             d.get("evolution_undated_archives"), s.evolution_undated_archives)
         s.locationless_display = coerce_locationless_display(

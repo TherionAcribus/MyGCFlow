@@ -1066,6 +1066,23 @@ function extendPointsAnimation(until) {
     }
 }
 
+// Panneaux de stats : dessine ce qui a changé à l'horloge de cette frame.
+// Tant qu'une case ou une barre reste en surbrillance, chaque frame diffère :
+// comme pour l'apparition des points, le compositing MediaRecorder ne doit
+// alors rien sauter (la révision des stats change, mais encore faut-il qu'une
+// frame soit demandée pour la faire avancer).
+let statsHighlighting = false;
+function updateStatsPanels(now) {
+    let active = false;
+    try { active = pkg.tickStatsPanels?.(now) === true; } catch (e) { console.warn('tickStatsPanels error:', e); }
+    if (active !== statsHighlighting) {
+        statsHighlighting = active;
+        if (active) mapDirtyTracker.beginAnimation();
+        else mapDirtyTracker.endAnimation();
+    }
+    return active;
+}
+
 // Avant chaque rendu : avance l'horloge des points, et entretient le rendu tant
 // qu'une apparition est en cours (en lecture live, rien d'autre ne redemande de
 // rendu si le flash est désactivé).
@@ -1100,6 +1117,7 @@ function updatePointAppearClock() {
     }
     if (updateCameraFollow(now)) pending = true;
     if (updateTravelTrail(now)) pending = true;
+    if (updateStatsPanels(now)) pending = true;
 
     // Capture image par image et MediaRecorder pilotent eux-mêmes leurs rendus.
     if (pending && !isRecording && !isMediaRecording) map.render();
@@ -2144,6 +2162,7 @@ function resetCacheCount(value = 0) {
 function showRestInfos() {
     resetCacheCount(Math.max(0, Number(pkg.metadata?.numberOfCaches) || 0));
     if (pkg.metadata?.endDate) pkg.updateCurrentDate(pkg.metadata.endDate);
+    pkg.showStatsTotals?.();
 }
 
 // Mode Évolution : pose les trois compteurs sans animation et réécrit la
@@ -2253,6 +2272,20 @@ function animationEndDate() {
     return pkg.options.animation.dateEnd instanceof Date
         ? pkg.options.animation.dateEnd
         : pkg.metadata.endDate;
+}
+
+// Panneaux de stats : l'accumulateur repart des caches antérieures à la date
+// de début, comme la carte et le compteur. Appelé par les TROIS démarrages
+// (aperçu, capture image par image, MediaRecorder) : un oubli ferait partir
+// la vidéo des compteurs laissés par l'aperçu.
+function resetStatsPanelsForAnimation() {
+    try {
+        pkg.resetStatsForAnimation?.({
+            startDate: animationStartDate(),
+            endDate: animationEndDate(),
+            highlightMs: animationMsPerDay(),
+        });
+    } catch (e) { console.warn('resetStatsForAnimation error:', e); }
 }
 
 // Fonction helper pour récupérer tous les points filtrés jusqu'à la date de début d'animation
@@ -2471,6 +2504,7 @@ export function startAnimation(restart=false) {
         createFlashElements();
         resetCameraFollow();
         resetTravelTrail();
+        resetStatsPanelsForAnimation();
         infos = createObjectInfos(filteredPointsAtStart.length + countHiddenPointsBefore(animationStartDate()));
         // Démarrer la musique de fond si activée (lecture seule)
         try { startBackgroundMusicIfAny(); } catch(e) { console.warn('startBackgroundMusicIfAny error:', e); }
@@ -3073,6 +3107,7 @@ function startRecordingProcess(session){
         // resetCameraFollow a déjà été fait avant prepareCameraPacing, plus haut.
         createFlashElements();
         resetTravelTrail();
+        resetStatsPanelsForAnimation();
         initialCount = filteredPointsAtStart.length + countHiddenPointsBefore(animationStartDate());
     }
     // creation objet pour stocker les infos liées aux Frames (dt nombre de caches)
@@ -3834,6 +3869,7 @@ function recordAnimationMediaRecorder(){
         // startMediaRecorderPipeline, plus bas — sans `silent`, les toasts
         // d'info apparaîtraient au lancement de l'enregistrement.
         resetTravelTrail(true);
+        resetStatsPanelsForAnimation();
         initialCount = filteredPointsAtStart.length + countHiddenPointsBefore(animationStartDate());
     }
     animationDatesComplete = false;
@@ -3970,6 +4006,8 @@ function startMrDrawLoop() {
             const h = mrOutCanvas.height;
             mrOutCtx.clearRect(0, 0, w, h);
             canvasList.forEach(c => { if (c.width > 0 && c.height > 0) mrOutCtx.drawImage(c, 0, 0, w, h); });
+            // Panneaux de stats sous le titre et les infos, comme dans l'aperçu.
+            pkg.addStatsPanelsToCanvas?.(mrOutCtx, w, h, effScale);
             addOverlaysToCanvas(mrOutCtx, w, h, effScale);
             mapDirtyTracker.noteDraw(frameStart, signature);
         } catch(e) {
@@ -3991,7 +4029,10 @@ function startMrDrawLoop() {
 function overlayContentSignature() {
     try {
         const { title, infos } = getOverlayTextContent();
-        return `${getOverlayCacheRevision()}\u0000${title}\u0000${infos}`;
+        // Panneaux de stats : une matrice qui se remplit sur une carte
+        // immobile doit quand même produire des frames.
+        const stats = pkg.getStatsRevision?.() ?? 0;
+        return `${getOverlayCacheRevision()}\u0000${stats}\u0000${title}\u0000${infos}`;
     } catch(_) {
         // Contenu illisible : on ne prend pas le risque d'une frame périmée.
         mapDirtyTracker.markDirty();
@@ -4632,6 +4673,8 @@ async function captureElement() {
                     });
 
                     // Ajouter les overlays (titre, date, nombre de caches) à l'échelle dpr
+                    // Panneaux de stats sous le titre et les infos, comme dans l'aperçu.
+                    pkg.addStatsPanelsToCanvas?.(ctx, canvasWidth, canvasHeight, dpr);
                     addOverlaysToCanvas(ctx, canvasWidth, canvasHeight, dpr);
 
                     // Convertir en WebP Blob puis uploader SANS bloquer la capture suivante.
@@ -4789,6 +4832,9 @@ function displayFeaturesForDates(dates, pointOptions, flashOptions, record, info
     // dernier jour du lot, le compteur reçoit le total des points ajoutés —
     // locationless masquées comprises (comptées, jamais dessinées).
     displayInfosForDate(infos, dates[dates.length - 1], newFeatures, countHiddenPointsFor(dates));
+    // Panneaux de stats : mêmes caches que le compteur (locationless masquées
+    // comprises), relues dans l'index par stats_panels.js.
+    pkg.accumulateStatsForDates?.(dates, sampleAppearClock());
 
     // Mode piste : la caméra suit la piste précalculée (updateCameraFollow) —
     // aucune cible réactive à poser, sinon elle se superposerait à la piste.

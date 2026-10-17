@@ -34,6 +34,7 @@ from settings_manager import (
     coerce_undated_archives,
     get_settings_manager,
 )
+from stats_settings import coerce_stats_settings
 
 profiles_bp = Blueprint('profiles', __name__)
 
@@ -102,6 +103,7 @@ def api_get_settings():
         'evolution_dataset_id': s.evolution_dataset_id,
         'evolution_infos_template': s.evolution_infos_template,
         'infos_template': s.infos_template,
+        'stats': asdict(s.stats),
         'evolution_undated_archives': s.evolution_undated_archives,
     })
     response.set_cookie(
@@ -185,6 +187,12 @@ def api_put_settings():
         if 'infos_template' in data:
             infos_template = coerce_infos_template(
                 data.get('infos_template'), current.infos_template)
+
+        # Panneaux de statistiques : patch de premier niveau (`enabled` seul
+        # garde les panneaux) ; `panels`, s'il est envoyé, remplace la liste.
+        stats = current.stats
+        if 'stats' in data and isinstance(data.get('stats'), dict):
+            stats = coerce_stats_settings(data['stats'], current.stats)
 
         # Sort des archivées sans date (mode Évolution) : réécrit seulement
         # si le client l'envoie, comme les autres préférences.
@@ -290,6 +298,7 @@ def api_put_settings():
             evolution_dataset_id=evolution_dataset_id,
             evolution_infos_template=evolution_infos_template,
             infos_template=infos_template,
+            stats=stats,
             evolution_undated_archives=evolution_undated_archives,
             examples_seeded=current.examples_seeded,
             # Sans cette reprise, toute écriture de préférence ramenait le lot

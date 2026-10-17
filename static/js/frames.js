@@ -108,6 +108,9 @@ export function syncOverlayVisibility(){
     }
     updateInfosSpansVisibility();
     try { pkg.invalidateOverlayCache?.(); } catch(_) {}
+    // Mêmes conditions pour les panneaux de stats (base absente…), et la
+    // police héritée de #infosFrame a pu changer avec son style.
+    try { pkg.syncStatsPanelsVisibility?.(); } catch(_) {}
 }
 
 // Affiche/masque nombre de caches, date et le séparateur "-" selon les options.

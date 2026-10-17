@@ -561,6 +561,7 @@ function clearLocalData() {
     pointsByDateRevision++;
     totalCaches = 0;
     lastDbHasData = false;
+    pkg.refreshStatsPanels?.();
 }
 
 // Emprise [ouest, sud, est, nord] (EPSG:4326) des points chargés, null si
@@ -661,6 +662,10 @@ function buildPointsByDateIndex(features = []) {
         }
     } catch (e) {
         console.warn('buildPointsByDateIndex error:', e);
+    } finally {
+        // Panneaux de stats : leurs totaux, mémoïsés sur la révision, se
+        // recalculent au prochain dessin — encore faut-il en demander un.
+        pkg.refreshStatsPanels?.();
     }
 }
 

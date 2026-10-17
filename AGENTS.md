@@ -77,6 +77,13 @@ Autres repères :
   ramène pas au premier sous-onglet : celui qui était ouvert le reste.
   `#timingSummary`, `#timingErrors` et `#timingWarnings` vivent au-dessus des
   sous-onglets, visibles depuis les quatre.
+- Même famille : `stats` (panneaux de l'onglet Stats) est une préférence
+  globale. Un spec qui pose des panneaux doit remettre
+  `PUT /api/settings {stats: {enabled: true, panels: []}}` en sortant, sinon
+  les suivants démarrent avec des canvas `.stats-panel` sur la carte —
+  exemple dans `stats-panels.spec.mjs` (`afterEach`). Pour lire les comptes :
+  `app.getStatsSnapshot()` (mode, total, comptes par métrique,
+  `videoDrawCount`).
 - Vider les processus orphelins si un run est tué : `taskkill /F /T /PID <id>`
   sur les `node.exe`/`python.exe` dont la ligne de commande contient
   `cli.js`/`run_server.py`. Sous Linux : `pkill -f cli.js` /
@@ -84,6 +91,18 @@ Autres repères :
 - Sous Linux, config et données suivent la spec XDG : préférences et thèmes
   dans `$XDG_CONFIG_HOME/MyGCFlow` (`~/.config`), données dans
   `$XDG_DATA_HOME/MyGCFlow` (`~/.local/share`).
+
+## Ordre d'évaluation des modules
+
+`ui.js` appelle ses fonctions d'init (`initUIElements`) **pendant sa propre
+évaluation**, et `index.js` évalue les modules dans l'ordre de ses `export *`.
+Un appel depuis `initUIElements` vers un module listé plus loin dans
+`index.js` (ex. `stats_ui.js`) tombe dans la zone morte de ses `let` :
+`ReferenceError`, tout le graphe échoue, et la page n'atteint jamais
+`mygcflowReady` (symptôme E2E : tous les specs expirent sur
+`waitForFunction(() => window.mygcflowReady === true)`, avec en cascade des
+« Cannot access 'defaultGcColors' / 'lastDbHasData' before initialization »).
+Un tel module s'initialise lui-même en fin de fichier (cf. `stats_ui.js`).
 
 ## Traductions
 

@@ -8,6 +8,8 @@ export * from './gc_colors.js';
 export * from './point_webgl_style.js';
 export * from './flash_styles.js';
 export * from './overlay_canvas.js';
+export * from './stats_panels.js';
+export * from './stats_ui.js';
 export * from './recording_perf.js';
 export * from './upload_queue.js';
 export * from './background_audio.js';
