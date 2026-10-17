@@ -56,6 +56,11 @@
                     <span class="nav-num">4</span>{{ _("Préférences") }}
                 </a>
 
+                <div class="guide-nav-section-title">{{ _("Autre source") }}</div>
+                <a href="#labs" class="guide-nav-link">
+                    <i class="ti ti-compass"></i>{{ _("Mes Lab Caches") }}
+                </a>
+
                 <div class="guide-nav-section-title">{{ _("Autre mode") }}</div>
                 <a href="#evolution" class="guide-nav-link">
                     <i class="ti ti-stack"></i>{{ _("Évolution d'une zone") }}
@@ -142,21 +147,24 @@
                     <li>
                         <h3>{{ _("Chargez le fichier dans MyGCFlow") }}</h3>
                         <p>{{ _("Dans l'onglet") }} <span class="ui-chip">{{ _("Données") }}</span>, {{ _("section") }} <strong>{{ _("Mes Géocaches") }}</strong>, {{ _("cliquez sur") }} <span class="ui-chip"><i class="ti ti-cloud-upload"></i> {{ _("Sélectionner et charger un fichier .gpx") }}</span> {{ _("et choisissez votre fichier — ou glissez-déposez-le n'importe où sur la page. Le nombre de caches importées s'affiche une fois le chargement terminé.") }}</p>
+                        <p>{{ _("La carte") }} <strong>{{ _("Mes Lab Caches") }}</strong>, {{ _("juste en dessous, accueille vos étapes d'Adventure Lab — une autre source de découvertes, décrite dans la section") }} <a href="#labs">{{ _("Mes Lab Caches") }}</a> {{ _("de ce guide.") }}</p>
                     </li>
                     <li>
                         <h3>{{ _("Filtrez vos caches") }}</h3>
                         <p>{{ _("Dans la section") }} <strong>{{ _("Filtres") }}</strong>, {{ _("affinez la sélection selon vos besoins :") }}</p>
                         <ul class="sub">
-                            <li>{{ _("par type de cache (Traditional, Mystery, Multi…)") }}</li>
-                            <li>{{ _("par période (dates de début et de fin)") }}</li>
+                            <li>{{ _("par type de cache (Traditional, Mystery, Multi…, Adventure Lab pour les étapes Lab)") }}</li>
+                            <li>{{ _("par taille, difficulté ou terrain") }}</li>
+                            <li>{{ _("par période — de découverte ou de pose (dates de début et de fin)") }}</li>
                             <li>{{ _("par pays ou région") }}</li>
                         </ul>
+                        <p>{{ _("En tête du panneau, le sélecteur") }} <strong>{{ _("Découvertes affichées") }}</strong> {{ _("choisit la source des points : les géocaches, les étapes Lab, ou les deux mélangées chronologiquement.") }}</p>
                         <p>{{ _("Le badge") }} <span class="ui-chip">0 / 0</span> {{ _("dans le titre de la carte") }} <strong>{{ _("Filtres") }}</strong> {{ _("indique combien de caches sont retenues par rapport au total.") }}</p>
                         <p>{{ _("Sous les filtres, le réglage") }} <strong>{{ _("Caches sans localisation (locationless)") }}</strong> {{ _("décide si ces caches, toujours comptées, ont aussi un point sur la carte : leur position dans le fichier est fictive.") }}</p>
                     </li>
                     <li>
                         <h3>{{ _("Repartir de zéro (optionnel)") }}</h3>
-                        <p>{{ _("Le bouton") }} <span class="ui-chip"><i class="ti ti-trash"></i> {{ _("Supprimer mes géocaches") }}</span> {{ _("supprime les données chargées si vous voulez importer un autre fichier.") }}</p>
+                        <p>{{ _("Le bouton") }} <span class="ui-chip"><i class="ti ti-trash"></i> {{ _("Supprimer mes géocaches") }}</span> {{ _("supprime les données chargées si vous voulez importer un autre fichier.") }} {{ _("La carte") }} <strong>{{ _("Mes Lab Caches") }}</strong> {{ _("a son propre bouton") }} <span class="ui-chip"><i class="ti ti-trash"></i> {{ _("Supprimer mes Lab Caches") }}</span>, {{ _("indépendant.") }}</p>
                     </li>
                 </ol>
             </section>
@@ -210,7 +218,7 @@
                         <p>{{ _("Dans le sous-onglet") }} <span class="ui-chip">{{ _("Titres") }}</span>, {{ _("activez") }} <span class="ui-chip">{{ _("Afficher un titre") }}</span> {{ _("et saisissez votre texte. Vous pouvez aussi afficher le nombre de caches trouvées et la date.") }}</p>
                         <ul class="sub">
                             <li>{{ _("Basculez entre la cible") }} <strong>{{ _("Titre") }}</strong> {{ _("et") }} <strong>{{ _("Infos") }}</strong> {{ _("pour les styliser séparément.") }}</li>
-                            <li>{{ _("Réglez le") }} <strong>{{ _("Texte") }}</strong>, {{ _("la") }} <strong>{{ _("Boîte") }}</strong>, {{ _("l'") }}<strong>{{ _("Ombre") }}</strong> {{ _("et la") }} <strong>{{ _("Position") }}</strong> {{ _("via les onglets dédiés.") }}</li>
+                            <li>{{ _("Réglez le") }} <strong>{{ _("Texte") }}</strong>, {{ _("la") }} <strong>{{ _("Boîte") }}</strong>, {{ _("l'") }}<strong>{{ _("Ombre") }}</strong> {{ _("et la") }} <strong>{{ _("Position") }}</strong> {{ _("via les onglets dédiés — l'ombre se règle séparément pour la boîte et pour le texte.") }}</li>
                             <li>{{ _("Pour un contrôle total, cochez") }} <span class="ui-chip">CSS</span> {{ _("et éditez le style à la main.") }}</li>
                         </ul>
                         <div class="guide-callout info">
@@ -272,10 +280,17 @@
                     <li>
                         <h3>{{ _("Ajoutez une musique (optionnel)") }}</h3>
                         <p>{{ _("Ces réglages se trouvent dans le sous-onglet") }} <span class="ui-chip">{{ _("Musique") }}</span>.</p>
-                        <p>{{ _("Cochez") }} <span class="ui-chip">{{ _("Inclure la musique") }}</span>, {{ _("sélectionnez un fichier audio et ajustez le volume. Le bouton") }} <span class="ui-chip"><i class="ti ti-music"></i> {{ _("Caler sur la musique") }}</span> {{ _("synchronise la durée sur celle du morceau — le bouton") }} <span class="ui-chip">{{ _("Dissocier") }}</span> {{ _("annule cette liaison. Vous pouvez aussi choisir directement le mode de rythme") }} <strong>{{ _("Sur la musique") }}</strong>.</p>
-                        <p>{{ _("Pour sauter l'introduction d'un morceau, indiquez où le faire commencer dans") }} <span class="ui-chip">{{ _("Commencer la musique à") }}</span>, {{ _("ou cliquez sur la forme d'onde. Elle montre aussi ce que la vidéo fera de la musique : partie coupée, fondu, reprises de la boucle.") }}</p>
-                        <p>{{ _("Le bouton") }} <span class="ui-chip"><i class="ti ti-player-play"></i> {{ _("Écouter") }}</span> {{ _("fait entendre la musique comme dans la vidéo, sans lancer l'animation ;") }} <span class="ui-chip">{{ _("Écouter la fin") }}</span> {{ _("n'en joue que les dernières secondes, pour juger un fondu ou une coupure.") }}</p>
-                        <p>{{ _("La dernière musique choisie est retrouvée au prochain démarrage, avec le calage de la durée sur elle. Le bouton") }} <span class="ui-chip"><i class="ti ti-x"></i> {{ _("Retirer") }}</span> {{ _("l'oublie.") }}</p>
+                        <p>{{ _("Cochez") }} <span class="ui-chip">{{ _("Inclure la musique") }}</span>, {{ _("puis choisissez un fichier avec") }} <span class="ui-chip"><i class="ti ti-music"></i> {{ _("Parcourir…") }}</span> {{ _("ou glissez-le sur la page. Le menu") }} <span class="ui-chip"><i class="ti ti-clock"></i> {{ _("Récentes") }}</span> {{ _("reprend un morceau déjà utilisé sans le renvoyer, et") }} <span class="ui-chip"><i class="ti ti-x"></i> {{ _("Retirer") }}</span> {{ _("oublie la sélection.") }}</p>
+                        <p><span class="ui-chip"><i class="ti ti-playlist-add"></i> {{ _("Ajouter un morceau à la suite") }}</span> {{ _("enchaîne plusieurs musiques en une seule : leurs niveaux sont équilibrés et les blancs aux raccords retirés. Cochez") }} <span class="ui-chip">{{ _("Enchaîner en fondu") }}</span> {{ _("pour que la fin de chaque morceau s'efface pendant que le suivant monte.") }}</p>
+                        <p>{{ _("La forme d'onde montre ce que la vidéo fera de la musique — début sauté, partie non jouée, fondus, reprises de la boucle, fin sans musique. Un clic y fait écouter le morceau à partir de cet endroit ; ses deux poignées règlent où il commence et où il s'arrête, comme les champs") }} <span class="ui-chip">{{ _("Commencer la musique à") }}</span> {{ _("et") }} <span class="ui-chip">{{ _("Terminer la musique à") }}</span>.</p>
+                        <ul class="sub">
+                            <li>{{ _("Musique plus courte que la vidéo :") }} <strong>{{ _("Répéter la musique en boucle") }}</strong> {{ _("la fait reprendre à son point de départ,") }} <strong>{{ _("Enchaîner les reprises en fondu") }}</strong> {{ _("adoucit chaque raccord.") }}</li>
+                            <li>{{ _("Musique plus longue que la vidéo :") }} <strong>{{ _("Garder la fin du morceau") }}</strong> {{ _("décale le départ pour que sa vraie fin tombe avec celle de la vidéo, et") }} <strong>{{ _("Terminer la musique en fondu") }}</strong> {{ _("évite une coupure nette. Si la piste se termine par un blanc,") }} <strong>{{ _("Ignorer le blanc de fin") }}</strong> {{ _("le retire de la durée.") }}</li>
+                            <li><strong>{{ _("Commencer la musique en fondu") }}</strong> {{ _("monte progressivement le volume au début de la vidéo.") }}</li>
+                            <li><strong>{{ _("Volume musique") }}</strong> {{ _("règle le niveau (au-delà de 100 % pour relever un morceau calme) ;") }} <strong>{{ _("Niveau sonore standard") }}</strong>, {{ _("coché par défaut, place le curseur pour que vos vidéos sonnent aussi fort quel que soit le morceau.") }}</li>
+                        </ul>
+                        <p>{{ _("Le bouton") }} <span class="ui-chip"><i class="ti ti-player-play"></i> {{ _("Écouter") }}</span> {{ _("fait entendre la musique comme dans la vidéo, sans lancer l'animation — le curseur de volume agit pendant l'écoute ;") }} <span class="ui-chip">{{ _("Écouter la fin") }}</span> {{ _("n'en joue que les dernières secondes, pour juger un fondu ou une coupure.") }}</p>
+                        <p>{{ _("Le bouton") }} <span class="ui-chip"><i class="ti ti-music"></i> {{ _("Caler sur la musique") }}</span> {{ _("synchronise la durée sur celle du morceau —") }} <span class="ui-chip">{{ _("Dissocier") }}</span> {{ _("annule cette liaison. Vous pouvez aussi choisir directement le mode de rythme") }} <strong>{{ _("Sur la musique") }}</strong>. {{ _("La dernière musique choisie — et son enchaînement — est retrouvée au prochain démarrage, avec le calage de la durée sur elle.") }}</p>
                     </li>
                     <li>
                         <h3>{{ _("Qualité d'export") }}</h3>
@@ -358,6 +373,49 @@
                         <i class="ti ti-arrow-left"></i>{{ _("Retour à l'application") }}
                     </a>
                 </div>
+            </section>
+
+            <!-- ===================== AUTRE SOURCE : LAB CACHES ===================== -->
+            <section id="labs" class="guide-section">
+                <div class="guide-section-head">
+                    <span class="sec-badge"><i class="ti ti-compass"></i></span>
+                    <h2>{{ _("Autre source : les Lab Caches") }}</h2>
+                </div>
+                <p class="guide-section-intro">{{ _("Les étapes d'Adventure Lab que vous avez découvertes peuvent rejoindre vos géocaches sur la carte : chaque étape compte pour une trouvaille et apparaît à sa date, dans la même animation et la même vidéo.") }}</p>
+
+                <ol class="guide-steps">
+                    <li>
+                        <h3>{{ _("Importez votre historique") }}</h3>
+                        <p>{{ _("Tout se passe dans la carte") }} <strong>{{ _("Mes Lab Caches") }}</strong> {{ _("de l'onglet Données. Deux méthodes coexistent :") }}</p>
+                        <ul class="sub">
+                            <li><strong>{{ _("La plus simple — le favori") }}</strong> — {{ _("glissez le bouton") }} <span class="ui-chip"><i class="ti ti-bookmark"></i> {{ _("Envoyer vers MyGCFlow") }}</span> {{ _("dans la barre de favoris de votre navigateur (une seule fois), ouvrez") }} <a href="https://labs.geocaching.com/logs" target="_blank" rel="noopener noreferrer">labs.geocaching.com/logs</a> {{ _("connecté à votre compte, puis cliquez ce favori : votre historique arrive directement dans l'application.") }}</li>
+                            <li><strong>{{ _("L'import de fichiers") }}</strong> — <span class="ui-chip"><i class="ti ti-folder-open"></i> {{ _("Importer des fichiers…") }}</span> {{ _("accepte l'historique .json et les coordonnées .gpx ou .zip (exports Lab2Gpx), ensemble ou séparément. Un aperçu montre ce que le lot changera avant que vous ne validiez.") }}</li>
+                        </ul>
+                        <div class="guide-callout info">
+                            <i class="ti ti-help"></i>
+                            <div>{{ _("Le bouton") }} <span class="ui-chip"><i class="ti ti-help"></i> {{ _("Afficher les instructions d'import") }}</span> {{ _("détaille comment obtenir ces fichiers, dont le script qui télécharge l'historique .json depuis la page de vos logs.") }}</div>
+                        </div>
+                    </li>
+                    <li>
+                        <h3>{{ _("Laissez les étapes se placer") }}</h3>
+                        <p>{{ _("Après un import, l'application récupère seule les positions des étapes auprès du service public lab2gpx — seuls les identifiants d'Adventures sont envoyés, jamais d'identifiant de compte. Ce placement automatique se coupe dans les") }} <strong>{{ _("Options avancées") }}</strong> {{ _("de la carte (« Placer automatiquement les étapes sur la carte après un import »).") }}</p>
+                        <p>{{ _("Les étapes que le service ne connaît pas restent « en attente » : conservées mais non affichées.") }} <span class="ui-chip"><i class="ti ti-map-pin-plus"></i> {{ _("Compléter à la main") }}</span> {{ _("les liste regroupées par Adventure : saisissez une position — une seule suffit pour toutes les étapes d'une même Adventure — ou une date, aux formats du géocacheur (N 48° 51.504 E 002° 17.670, décimal ou degrés-minutes-secondes).") }} <span class="ui-chip"><i class="ti ti-cloud-download"></i> {{ _("Récupérer les positions") }}</span> {{ _("relance la récupération automatique à la demande.") }}</p>
+                        <div class="guide-callout tip">
+                            <i class="ti ti-bulb"></i>
+                            <div>{{ _("Vos corrections manuelles sont précieuses : un réimport ultérieur ne les efface jamais.") }}</div>
+                        </div>
+                    </li>
+                    <li>
+                        <h3>{{ _("Choisissez ce que la carte affiche") }}</h3>
+                        <p>{{ _("En tête des Filtres, le sélecteur") }} <strong>{{ _("Découvertes affichées") }}</strong> {{ _("offre trois sources :") }} <strong>{{ _("Géocaches") }}</strong>, <strong>{{ _("Lab Caches") }}</strong> {{ _("ou") }} <strong>{{ _("Géocaches et Lab Caches") }}</strong> {{ _("mélangées chronologiquement. Les étapes participent à tout le reste — compteur, trajet, caméra et vidéo — comme des trouvailles ordinaires.") }}</p>
+                        <ul class="sub">
+                            <li>{{ _("« Adventure Lab » est un type de cache comme les autres ; taille, difficulté et terrain ne s'appliquent pas aux étapes (désactivés quand seules les Lab Caches sont affichées).") }}</li>
+                            <li>{{ _("Pays et région d'une étape sont empruntés à la géocache la plus proche de votre base — les fichiers de coordonnées n'en portent pas ; au-delà de dix kilomètres, elles restent « Non renseigné ».") }}</li>
+                            <li>{{ _("Le clic sur un point montre son image, le titre de l'étape, celui de son Adventure et votre avancement (« 3/5 étapes trouvées »).") }}</li>
+                        </ul>
+                        <p>{{ _("Côté gestion :") }} <span class="ui-chip"><i class="ti ti-download"></i> {{ _("Exporter") }}</span> {{ _("produit un fichier réimportable pour sauvegarde ou transfert,") }} <span class="ui-chip"><i class="ti ti-trash"></i> {{ _("Supprimer mes Lab Caches") }}</span> {{ _("vide la collection sans toucher aux géocaches, et") }} <span class="ui-chip"><i class="ti ti-refresh"></i> {{ _("Régénérer le jeton du favori") }}</span> {{ _("(options avancées) invalide un favori perdu ou partagé par erreur — il faudra alors glisser le nouveau dans la barre de favoris.") }}</p>
+                    </li>
+                </ol>
             </section>
 
             <!-- ===================== AUTRE MODE : ÉVOLUTION ===================== -->

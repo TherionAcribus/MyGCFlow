@@ -22,11 +22,14 @@
 .ti-adjustments:before { content: "\ea03"; }
 .ti-alert-circle:before { content: "\ea05"; }
 .ti-alert-triangle:before { content: "\ea06"; }
+.ti-arrow-down:before { content: "\ea16"; }
 .ti-arrow-left:before { content: "\ea19"; }
 .ti-arrow-right:before { content: "\ea1f"; }
+.ti-arrow-up:before { content: "\ea25"; }
 .ti-arrows-exchange:before { content: "\f1f4"; }
 .ti-bell-off:before { content: "\ece9"; }
 .ti-bolt:before { content: "\ea38"; }
+.ti-bookmark:before { content: "\ea3a"; }
 .ti-border-outer:before { content: "\ea41"; }
 .ti-brand-github:before { content: "\ec1c"; }
 .ti-brush:before { content: "\ebb8"; }
@@ -40,6 +43,7 @@
 .ti-circle-check:before { content: "\ea67"; }
 .ti-circle-filled:before { content: "\f671"; }
 .ti-clock:before { content: "\ea70"; }
+.ti-cloud-download:before { content: "\ea71"; }
 .ti-cloud-upload:before { content: "\ea75"; }
 .ti-color-swatch:before { content: "\eb61"; }
 .ti-compass:before { content: "\ea79"; }
@@ -82,6 +86,7 @@
 .ti-mail:before { content: "\eae5"; }
 .ti-map:before { content: "\eae9"; }
 .ti-map-pin:before { content: "\eae8"; }
+.ti-map-pin-plus:before { content: "\f956"; }
 .ti-map-route:before { content: "\fc79"; }
 .ti-maximize:before { content: "\eaea"; }
 .ti-menu-2:before { content: "\ec42"; }
@@ -96,6 +101,7 @@
 .ti-player-pause:before { content: "\ed45"; }
 .ti-player-play:before { content: "\ed46"; }
 .ti-player-stop:before { content: "\ed4a"; }
+.ti-playlist-add:before { content: "\f008"; }
 .ti-plus:before { content: "\eb0b"; }
 .ti-power:before { content: "\eb0d"; }
 .ti-refresh:before { content: "\eb13"; }
