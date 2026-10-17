@@ -103,3 +103,26 @@ l'`update` suivant obsolète tout le catalogue (`#~` partout). Vérifier
 `grep -c "^msgid" messages.pot` après l'extract (~1500+ attendu). Suppression
 du fichier : `cmd //c "del nul"` échoue, utiliser
 `python -c "import os; os.remove(r'\\?\C:\chemin\nul')"`.
+
+## Benchmark aperçu → commit Labs (lot 5.4)
+
+`tools/bench_lab_import.py [tailles]` mesure le parcours réel (test client
+Flask) en enveloppant les vraies fonctions : parsing, simulation SQL de
+l'aperçu (`_APPLY_BY_FORMAT` + rollback), écriture temporaire
+(`_store_pending`), reparse + `commit_import_batch` du commit.
+
+Mesures de référence (2026-10, Windows, SQLite local) — lot combiné
+historique JSON + GPX lab2gpx à UUID joints :
+
+| étapes | aperçu e2e | (parse + simul) | commit e2e | (parse + apply) |
+|--------|-----------|-----------------|-----------|-----------------|
+| 1 000  | 0,20 s | 31 ms + 126 ms | 0,22 s | 31 ms + 107 ms |
+| 5 000  | 0,72 s | 162 ms + 499 ms | 0,77 s | 147 ms + 520 ms |
+| 10 000 | 2,11 s | 397 ms + 1 616 ms | 2,40 s | 642 ms + 1 576 ms |
+
+Objectif retenu : **aperçu < 2 s pour 5 000 étapes** → 0,72 s, respecté avec
+~2,8× de marge → pas d'optimisation entreprise. Le coût dominant est la
+simulation SQL (60-77 % de l'aperçu) ; l'écriture temporaire est négligeable
+(quelques ms). Si une optimisation devient nécessaire (représentation
+normalisée temporaire), le commit doit continuer à recalculer les conflits
+sur l'état courant — `_load_pending` vérifie déjà `collection_revision`.
