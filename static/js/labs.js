@@ -27,6 +27,7 @@ let importToken = null;        // jeton opaque retourné par /import/preview
 let previewConflicts = [];     // conflits tranchables de l'aperçu affiché
 let pendingOffset = 0;
 let pendingGroupTotal = 0;     // Adventures ayant des étapes en attente
+let pendingLoadSeq = 0;        // une réponse ancienne ne doit pas écraser une plus récente
 let fetchableAdventures = 0;   // Adventures qu'une récupération peut encore servir
 let pendingDirty = false;      // une correction a été enregistrée → recharger
 let guideOpen = false;         // parcours du favori rouvert via « Afficher les instructions d'import »
@@ -1232,16 +1233,39 @@ async function openPendingModal() {
 async function loadPendingPage(offset) {
     const listEl = el('labsPendingList');
     if (!listEl) return;
+    // Numéro de requête : une page lente ne remplace pas une page demandée
+    // après elle.
+    const seq = ++pendingLoadSeq;
+    const prev = el('labsPendingPrev');
+    const next = el('labsPendingNext');
+    if (prev) prev.disabled = true;
+    if (next) next.disabled = true;
+    listEl.textContent = '';
+    const spinner = document.createElement('div');
+    spinner.className = 'd-flex justify-content-center align-items-center gap-2 py-3';
+    spinner.setAttribute('role', 'status');
+    const wheel = document.createElement('div');
+    wheel.className = 'spinner-border spinner-border-sm';
+    wheel.setAttribute('aria-hidden', 'true');
+    spinner.appendChild(wheel);
+    const spinText = document.createElement('span');
+    spinText.className = 'small text-muted';
+    spinText.textContent = t('Chargement');
+    spinner.appendChild(spinText);
+    listEl.appendChild(spinner);
     try {
         const r = await fetch(`${CONFIG.BASE_URL}/api/labs/unresolved/adventures?limit=${PENDING_PAGE_SIZE}&offset=${Math.max(0, offset)}`);
         const data = await r.json();
+        if (seq !== pendingLoadSeq) return;  // réponse périmée
         if (!data.success) throw new Error(data.message || 'erreur');
         pendingOffset = data.offset || 0;
         pendingGroupTotal = data.total || 0;
         renderPendingList(data.items || []);
         updatePendingPager();
     } catch (e) {
+        if (seq !== pendingLoadSeq) return;
         listEl.textContent = t('Chargement impossible');
+        updatePendingPager();
     }
 }
 
@@ -1300,6 +1324,7 @@ function buildPendingGroup(group) {
     }
     const count = document.createElement('span');
     count.className = 'text-muted';
+    count.dataset.role = 'count';
     const pendingCount = countLabel(stages.length, t('étape en attente'), t('étapes en attente'));
     count.textContent = ` — ${pendingCount}`;
     head.appendChild(count);
@@ -1332,9 +1357,18 @@ function buildPendingGroup(group) {
 function buildPlaceAdventureRow(card, group) {
     const wrap = document.createElement('div');
     wrap.className = 'mt-2';
+    wrap.dataset.role = 'place-all';
     const form = document.createElement('div');
     form.className = 'd-flex flex-wrap gap-2 align-items-end';
-    const field = makePendingInput('adventure-coords', t("Position de l'Adventure"), '', 'N 48° 51.504 E 002° 17.670');
+    const feedback = document.createElement('div');
+    feedback.className = 'small';
+    feedback.dataset.role = 'feedback';
+    feedback.id = `lab-pending-fb-${Math.random().toString(36).slice(2, 8)}`;
+    feedback.setAttribute('role', 'status');
+    feedback.setAttribute('aria-live', 'polite');
+
+    const field = makePendingInput('adventure-coords', t("Position de l'Adventure"), '',
+        'N 48° 51.504 E 002° 17.670', feedback.id);
     field.classList.add('flex-grow-1');
     form.appendChild(field);
     const btn = document.createElement('button');
@@ -1351,19 +1385,41 @@ function buildPlaceAdventureRow(card, group) {
     hint.className = 'form-hint text-muted';
     hint.textContent = t('Toutes ses étapes sans position y seront placées, signalées comme approximatives.');
     wrap.appendChild(hint);
-    const feedback = document.createElement('div');
-    feedback.className = 'small';
-    feedback.dataset.role = 'feedback';
     wrap.appendChild(feedback);
     return wrap;
 }
 
-// Une ligne par étape : titre, motifs de l'attente, position (un seul champ,
-// formats du géocacheur), date et enregistrement individuel.
+// Une ligne par étape : titre, motifs de l'attente, puis uniquement les
+// champs qui manquent réellement (position absente ou incohérente, date
+// absente). Les deux présentes = état incohérent, dit explicitement.
+function rowNeedsCoords(item) {
+    const reasons = item.reasons || [];
+    return reasons.includes('missing_coordinates')
+        || reasons.some(r => r.startsWith('coordinate_'));
+}
+
+function rowNeedsDate(item) {
+    return (item.reasons || []).includes('missing_date');
+}
+
+function pendingReasonLabel(r) {
+    return r === 'missing_date' ? t('date manquante')
+        : r === 'missing_coordinates' ? t('coordonnées manquantes')
+        : r === 'coordinates_unavailable' ? t('introuvables par le service lab2gpx')
+        : r === 'coordinate_ambiguous' ? t('position connue mais ambiguë — à confirmer')
+        : r === 'coordinate_invalid' ? t('position connue mais invalide — à ressaisir')
+        : r.startsWith('coordinate_') ? t('position présente mais statut incohérent — à ressaisir')
+        : r;
+}
+
 function buildPendingRow(item) {
+    const needsCoords = rowNeedsCoords(item);
+    const needsDate = rowNeedsDate(item);
     const row = document.createElement('div');
-    row.className = 'border-top pt-2 mt-2';
+    row.className = 'border-top pt-2 mt-2 labs-pending-row';
     row.dataset.localUid = item.local_uid;
+    row.tabIndex = -1;  // cible de focus quand la ligne précédente disparaît
+    row._pendingItem = item;
 
     const head = document.createElement('div');
     head.className = 'small';
@@ -1375,26 +1431,45 @@ function buildPendingRow(item) {
 
     const reasons = document.createElement('div');
     reasons.className = 'form-hint text-muted mb-1';
-    const reasonLabels = (item.reasons || []).map(r =>
-        r === 'missing_date' ? t('date manquante')
-        : r === 'missing_coordinates' ? t('coordonnées manquantes')
-        : r === 'coordinates_unavailable' ? t('introuvables par le service lab2gpx')
-        : r);
-    reasons.textContent = reasonLabels.join(' · ');
+    reasons.dataset.role = 'reasons';
+    reasons.textContent = (item.reasons || []).map(pendingReasonLabel).join(' · ');
     row.appendChild(reasons);
+
+    const feedback = document.createElement('div');
+    feedback.className = 'small';
+    feedback.dataset.role = 'feedback';
+    feedback.id = `lab-pending-fb-${Math.random().toString(36).slice(2, 8)}`;
+    feedback.setAttribute('role', 'status');
+    feedback.setAttribute('aria-live', 'polite');
+
+    if (!needsCoords && !needsDate) {
+        // Position et date présentes mais statut non résolu : incohérence
+        // interne, rien à saisir — le problème est expliqué, pas masqué.
+        const note = document.createElement('div');
+        note.className = 'small text-warning';
+        note.textContent = t('Position et date sont présentes mais leur état est incohérent — aucune correction possible ici.');
+        row.appendChild(note);
+        row.appendChild(feedback);
+        return row;
+    }
 
     const form = document.createElement('div');
     form.className = 'd-flex flex-wrap gap-2 align-items-end';
-    const coordsField = makePendingInput('coords', t('Position'), '', 'N 48° 51.504 E 002° 17.670');
-    coordsField.classList.add('flex-grow-1');
-    form.appendChild(coordsField);
+    let coordsField = null;
+    if (needsCoords) {
+        coordsField = makePendingInput('coords', t('Position'), '',
+            'N 48° 51.504 E 002° 17.670', feedback.id);
+        coordsField.classList.add('flex-grow-1');
+        form.appendChild(coordsField);
+    }
 
     // Proposition (même titre dans l'Adventure, étape remaniée) : elle ne
     // fait que préremplir le champ — « Enregistrer » reste la validation.
-    const suggestion = item.suggestion;
+    const suggestion = needsCoords ? item.suggestion : null;
     if (suggestion) {
         const hint = document.createElement('div');
         hint.className = 'small mb-1';
+        hint.dataset.role = 'suggestion';
         const text = document.createElement('span');
         text.textContent = t("Suggestion : ${lat}, ${lon} — même titre dans l'Adventure", {
             lat: fmtCoord(suggestion.latitude),
@@ -1413,29 +1488,30 @@ function buildPendingRow(item) {
         row.appendChild(hint);
     }
 
-    const dateWrap = makePendingInput('date', t('Date de découverte'), item.found_date || '', 'AAAA-MM-JJ');
-    const dateInput = dateWrap.querySelector('input');
-    if (dateInput) dateInput.setAttribute('type', 'date');
-    form.appendChild(dateWrap);
+    if (needsDate) {
+        const dateWrap = makePendingInput('date', t('Date de découverte'),
+            item.found_date || '', 'AAAA-MM-JJ', feedback.id);
+        const dateInput = dateWrap.querySelector('input');
+        if (dateInput) dateInput.setAttribute('type', 'date');
+        form.appendChild(dateWrap);
+    }
 
     const saveBtn = document.createElement('button');
     saveBtn.type = 'button';
     saveBtn.className = 'btn btn-sm btn-primary';
+    saveBtn.dataset.role = 'save';
     saveBtn.textContent = t('Enregistrer');
     saveBtn.addEventListener('click', () => onResolveRow(row, item.local_uid));
     form.appendChild(saveBtn);
     submitOnEnter(form, saveBtn);
     row.appendChild(form);
-
-    const feedback = document.createElement('div');
-    feedback.className = 'small';
-    feedback.dataset.role = 'feedback';
     row.appendChild(feedback);
     return row;
 }
 
-function makePendingInput(key, label, value, placeholder) {
+function makePendingInput(key, label, value, placeholder, describedById) {
     const wrap = document.createElement('div');
+    wrap.dataset.fieldWrap = key;
     const lab = document.createElement('label');
     lab.className = 'form-label small mb-0';
     lab.textContent = label;
@@ -1448,6 +1524,7 @@ function makePendingInput(key, label, value, placeholder) {
     const id = `lab-pending-${key}-${Math.random().toString(36).slice(2, 8)}`;
     lab.setAttribute('for', id);
     input.id = id;
+    if (describedById) input.setAttribute('aria-describedby', describedById);
     wrap.appendChild(lab);
     wrap.appendChild(input);
     return wrap;
@@ -1491,26 +1568,157 @@ async function postCorrection(url, body) {
     return data;
 }
 
-async function onPlaceAdventure(card, wrap, group) {
-    const text = wrap.querySelector('input[data-field="adventure-coords"]')?.value?.trim() || '';
-    if (!text) {
-        setFeedback(wrap, 'warning', t('Rien à enregistrer'));
+// Erreur de correction : le champ fautif est marqué pour le lecteur
+// d'écran (aria-invalid + description par le feedback, déjà aria-live) et
+// reçoit le focus. `container` est la ligne ou le bloc « position commune ».
+function markPendingInvalid(container, msg) {
+    const fb = container.querySelector(':scope > [data-role="feedback"]');
+    const lower = (msg || '').toLowerCase();
+    let target = null;
+    if (lower.includes('date')) {
+        target = container.querySelector('input[data-field="date"]');
+    } else if (lower.includes('coordonn') || lower.includes('position')) {
+        target = container.querySelector('input[data-field="coords"], input[data-field="adventure-coords"]');
+    }
+    if (!target) {
+        target = container.querySelector('input[data-field="coords"], input[data-field="date"], input[data-field="adventure-coords"]');
+    }
+    if (target) {
+        target.setAttribute('aria-invalid', 'true');
+        if (fb) target.setAttribute('aria-describedby', fb.id);
+        target.focus();
+    }
+    setFeedback(container, 'danger', msg);
+}
+
+// Après une correction partielle (date posée, position encore absente, ou
+// l'inverse) : le champ enregistré disparaît, les motifs sont relus.
+function refreshPendingRowAfterSave(row, item, d, body) {
+    if (body.found_date && d.found_date) {
+        item.found_date = d.found_date;
+        item.reasons = (item.reasons || []).filter(r => r !== 'missing_date');
+        row.querySelector('input[data-field="date"]')?.closest('[data-field-wrap]')?.classList.add('d-none');
+    }
+    if (body.coordinates && d.latitude != null && d.coordinate_status === 'resolved') {
+        item.reasons = (item.reasons || []).filter(r =>
+            r !== 'missing_coordinates' && r !== 'coordinates_unavailable'
+            && !r.startsWith('coordinate_'));
+        row.querySelector('input[data-field="coords"]')?.closest('[data-field-wrap]')?.classList.add('d-none');
+        row.querySelector('[data-role="suggestion"]')?.classList.add('d-none');
+    }
+    const reasonsEl = row.querySelector('[data-role="reasons"]');
+    if (reasonsEl) reasonsEl.textContent = (item.reasons || []).map(pendingReasonLabel).join(' · ');
+    row.querySelectorAll('[aria-invalid]').forEach(i => i.removeAttribute('aria-invalid'));
+}
+
+// Le placement commun a résolu la position d'une étape : résolue → ligne
+// retirée ; encore sans date → seul le champ date reste.
+function refreshPendingRowAfterPlace(row) {
+    const item = row._pendingItem;
+    if (!item || !rowNeedsCoords(item)) return false;
+    item.reasons = (item.reasons || []).filter(r =>
+        r !== 'missing_coordinates' && r !== 'coordinates_unavailable'
+        && !r.startsWith('coordinate_'));
+    if ((item.reasons || []).length > 0) {
+        refreshPendingRowAfterSave(row, item,
+            { latitude: 0, coordinate_status: 'resolved' }, { coordinates: 'x' });
+        return false;
+    }
+    return true;  // tout est là : la ligne part
+}
+
+// Retrait d'une ligne résolue : focus vers la ligne suivante, sinon le
+// groupe suivant, sinon Fermer ; compteurs et pagination corrigés sans
+// fermer la modale.
+function removePendingRow(row) {
+    const card = row.closest('[data-adventure-key]');
+    const listEl = el('labsPendingList');
+    const modal = el('labsPendingModal');
+    const closeBtn = modal?.querySelector('#labsPendingClose, .modal-footer [data-bs-dismiss="modal"]');
+    const siblings = [...(card?.querySelectorAll('.labs-pending-row') || [])];
+    const nextRow = siblings[siblings.indexOf(row) + 1] || siblings.find(r => r !== row);
+    const nextCard = card?.nextElementSibling?.matches?.('[data-adventure-key]')
+        ? card.nextElementSibling : null;
+    if (nextCard) nextCard.tabIndex = -1;
+    const target = nextRow || nextCard || closeBtn;
+    row.remove();
+
+    if (card) {
+        const remaining = card.querySelectorAll('.labs-pending-row').length;
+        if (remaining === 0) {
+            card.remove();
+            pendingGroupTotal = Math.max(0, pendingGroupTotal - 1);
+        } else {
+            const countEl = card.querySelector('[data-role="count"]');
+            if (countEl) {
+                countEl.textContent = ` — ${countLabel(remaining, t('étape en attente'), t('étapes en attente'))}`;
+            }
+            updatePlaceAllAfterRemoval(card);
+        }
+    }
+    updatePendingPager();
+
+    if (listEl && !listEl.querySelector('[data-adventure-key]')) {
+        // La page s'est vidée : reculer d'une page plutôt qu'afficher du
+        // vide (la première page vide = plus rien en attente, la modale se
+        // ferme via afterPendingCorrection).
+        closeBtn?.focus();
+        loadPendingPage(pendingOffset > 0 ? pendingOffset - PENDING_PAGE_SIZE : 0);
+    } else {
+        target?.focus();
+    }
+}
+
+function updatePlaceAllAfterRemoval(card) {
+    const wrap = card.querySelector('[data-role="place-all"]');
+    if (!wrap) return;
+    const remaining = [...card.querySelectorAll('.labs-pending-row')]
+        .filter(r => rowNeedsCoords(r._pendingItem || {})).length;
+    if (remaining === 0) {
+        wrap.remove();
         return;
     }
+    const btn = wrap.querySelector('[data-action="place-adventure"]');
+    if (btn) btn.textContent = t('Placer les ${n} étapes ici', { n: remaining });
+}
+
+async function onPlaceAdventure(card, wrap, group) {
+    const input = wrap.querySelector('input[data-field="adventure-coords"]');
+    const text = input?.value?.trim() || '';
+    if (!text) {
+        setFeedback(wrap, 'warning', t('Rien à enregistrer'));
+        input?.focus();
+        return;
+    }
+    const btn = wrap.querySelector('[data-action="place-adventure"]');
+    if (btn) btn.disabled = true;
+    wrap.setAttribute('aria-busy', 'true');
+    input?.removeAttribute('aria-invalid');
     try {
         const data = await postCorrection(
             `${CONFIG.BASE_URL}/api/labs/adventures/${encodeURIComponent(group.adventure_uuid)}/place`,
             { coordinates: text });
-        card.classList.add('border-success');
-        wrap.querySelector('[data-action="place-adventure"]')?.setAttribute('disabled', '');
-        const placedLabel = countLabel(data.placed, t('étape placée'), t('étapes placées'));
-        const coords = t('en ${lat}, ${lon}.', {
-            lat: fmtCoord(data.latitude), lon: fmtCoord(data.longitude),
-        });
-        setFeedback(wrap, 'success', `${placedLabel} ${coords}`);
+        // Les étapes dont la position vient d'être placée : résolue →
+        // ligne retirée ; date encore absente → seul son champ reste.
+        for (const row of [...card.querySelectorAll('.labs-pending-row')]) {
+            if (refreshPendingRowAfterPlace(row)) removePendingRow(row);
+        }
+        if (card.isConnected) {
+            card.classList.add('border-success');
+            if (input) input.setAttribute('disabled', '');
+            if (btn) btn.setAttribute('disabled', '');
+            const placedLabel = countLabel(data.placed, t('étape placée'), t('étapes placées'));
+            const coords = t('en ${lat}, ${lon}.', {
+                lat: fmtCoord(data.latitude), lon: fmtCoord(data.longitude),
+            });
+            setFeedback(wrap, 'success', `${placedLabel} ${coords}`);
+        }
         afterPendingCorrection(data);
     } catch (e) {
-        setFeedback(wrap, 'danger', e.message || t('Erreur'));
+        markPendingInvalid(wrap, e.message || t('Erreur'));
+        if (btn) btn.disabled = false;
+    } finally {
+        wrap.removeAttribute('aria-busy');
     }
 }
 
@@ -1519,24 +1727,41 @@ async function onResolveRow(row, localUid) {
     const body = {};
     if (val('coords')) body.coordinates = val('coords');
     if (val('date')) body.found_date = val('date');
+    const saveBtn = row.querySelector('[data-role="save"]');
     if (!Object.keys(body).length) {
         setFeedback(row, 'warning', t('Rien à enregistrer'));
+        (row.querySelector('input[data-field="coords"]')
+            || row.querySelector('input[data-field="date"]'))?.focus();
         return;
     }
+    if (saveBtn) saveBtn.disabled = true;
+    row.setAttribute('aria-busy', 'true');
+    row.querySelectorAll('[aria-invalid]').forEach(i => i.removeAttribute('aria-invalid'));
     try {
         const data = await postCorrection(
             `${CONFIG.BASE_URL}/api/labs/discoveries/${encodeURIComponent(localUid)}/resolve`, body);
-        row.classList.add('text-success');
+        const d = data.discovery || {};
+        const resolved = d.latitude != null && d.coordinate_status === 'resolved' && d.found_date;
         // La position retenue, en décimal : l'utilisateur voit comment sa
         // saisie a été lue.
-        const d = data.discovery || {};
         const saved = t('Enregistré');
-        setFeedback(row, 'success', body.coordinates && d.latitude != null
-            ? `${saved} : ${fmtCoord(d.latitude)}, ${fmtCoord(d.longitude)}`
-            : saved);
+        const item = row._pendingItem;
+        if (resolved) {
+            removePendingRow(row);
+        } else {
+            setFeedback(row, 'success', body.coordinates && d.latitude != null
+                ? `${saved} : ${fmtCoord(d.latitude)}, ${fmtCoord(d.longitude)}`
+                : saved);
+            if (item) refreshPendingRowAfterSave(row, item, d, body);
+        }
         afterPendingCorrection(data);
     } catch (e) {
-        setFeedback(row, 'danger', e.message || t('Erreur'));
+        markPendingInvalid(row, e.message || t('Erreur'));
+    } finally {
+        if (row.isConnected) {
+            row.removeAttribute('aria-busy');
+            if (saveBtn) saveBtn.disabled = false;
+        }
     }
 }
 

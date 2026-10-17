@@ -9,6 +9,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES = path.join(HERE, '..', 'fixtures', 'labs');
 const HISTORY = path.join(FIXTURES, 'lab-finds-valid.json');
 const HISTORY_PLUS_ONE = path.join(FIXTURES, 'lab-finds-plus-one.json');
+const HISTORY_NO_DATE = path.join(FIXTURES, 'lab-finds-no-date.json');
 const COORDS = path.join(FIXTURES, 'lab2gpx-stages.gpx');
 const GPX_FINDS = path.join(HERE, 'fixtures', 'my-finds.gpx');
 // Étape 1 de « Circuit des Moulins » (5/5 trouvées), avec image /logs.
@@ -548,11 +549,14 @@ test('« Étapes en attente » groupe par Adventure et place toutes ses étapes 
   const card = page.locator(`#labsPendingList [data-adventure-key="${ADVENTURE_ARCHIVED}"]`);
   await expect(card).toContainText('Labyrinthe du Port');
 
-  // Saisie au format geocaching.com, lue et confirmée en décimal.
+  // Saisie au format geocaching.com : les deux étapes sont placées et
+  // résolues — leurs lignes partent, le groupe vidé disparaît, il n'en
+  // reste que 2 et la pagination est corrigée.
   await card.locator('input[data-field="adventure-coords"]').fill('N 47° 12.000 W 001° 33.000');
   await card.locator('[data-action="place-adventure"]').click();
-  await expect(card).toContainText('47.20000, -1.55000');
   await expect(page.locator('#labsStatus')).toContainText('10 sur la carte');
+  await expect(page.locator('#labsPendingList [data-adventure-key]')).toHaveCount(2);
+  await expect(page.locator('#labsPendingPage')).toContainText('/ 2');
 
   // Les deux étapes sont placées à la même position, signalée approximative.
   for (const stageId of ARCHIVED_STAGES) {
@@ -568,6 +572,38 @@ test('« Étapes en attente » groupe par Adventure et place toutes ses étapes 
   await single.getByRole('button', { name: 'Enregistrer' }).click();
   await expect(single).toContainText('format de coordonnées non reconnu');
   expect((await exportedStage(page, STAGE_PORTE_NORD)).latitude).toBeNull();
+});
+
+
+test('« Étapes en attente » n\'affiche que les champs manquants et retire les lignes résolues', async ({ page }) => {
+  await openReadyApp(page);
+  await importLabs(page);
+
+  await page.locator('#labsPendingBtn').click();
+  await expect(page.locator('#labsPendingList [data-adventure-key]')).toHaveCount(3);
+
+  // « La Porte Nord » a une date mais pas de position : seul le champ
+  // Position est proposé — jamais un champ Date superflu.
+  const row = page.locator(`#labsPendingList [data-local-uid="${STAGE_PORTE_NORD}"]`);
+  await expect(row.locator('input[data-field="coords"]')).toBeVisible();
+  await expect(row.locator('input[data-field="date"]')).toHaveCount(0);
+  await expect(row.locator('input[data-field="coords"]')).toHaveAttribute('aria-describedby', /.+/);
+
+  // Une saisie illisible : champ marqué aria-invalid, erreur annoncée dans
+  // la zone aria-live, focus rendu au champ.
+  await row.locator('input[data-field="coords"]').fill('nimporte quoi');
+  await row.getByRole('button', { name: 'Enregistrer' }).click();
+  await expect(row.locator('input[data-field="coords"]')).toHaveAttribute('aria-invalid', 'true');
+  await expect(row.locator('[data-role="feedback"]')).toContainText('non reconnu');
+  await expect(row.locator('input[data-field="coords"]')).toBeFocused();
+
+  // Une position valide résout l'étape : la ligne part, son groupe vidé
+  // disparaît, la pagination suit.
+  await row.locator('input[data-field="coords"]').fill('47.2301, -1.5702');
+  await row.getByRole('button', { name: 'Enregistrer' }).click();
+  await expect(row).toHaveCount(0, { timeout: 20_000 });
+  await expect(page.locator('#labsPendingList [data-adventure-key]')).toHaveCount(2);
+  await expect(page.locator('#labsPendingPage')).toContainText('/ 2');
 });
 
 
@@ -807,12 +843,19 @@ test('une correction initiée depuis l\'interface ne recharge la carte qu\'une f
   await page.route('**/get_geojson_points', route => { geojsonPosts += 1; route.continue(); });
   await importLabs(page);
   await expect(page.locator('#filtersCounter')).toContainText('8 / 8', { timeout: 60_000 });
-  const posts0 = geojsonPosts;
 
   // Correction via la modale « Étapes en attente » : date seule sur une
-  // étape sans position — la ligne reste en attente, la modale reste ouverte.
+  // étape sans position ni date — la ligne reste en attente (position
+  // encore absente), la modale reste ouverte.
+  await page.locator('#labs-file-input').setInputFiles([HISTORY_NO_DATE]);
+  await expect(page.locator('#labsPreviewModal')).toBeVisible({ timeout: 20_000 });
+  await page.locator('#labsPreviewConfirmBtn').click();
+  await expect(page.locator('#labsPendingBtn')).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator('#labsActivity')).toBeHidden({ timeout: 60_000 });
+  // Ligne de base : le second import a fini de recharger la carte.
+  const posts0 = geojsonPosts;
   await page.locator('#labsPendingBtn').click();
-  const row = page.locator(`#labsPendingList [data-local-uid="${STAGE_PORTE_NORD}"]`);
+  const row = page.locator('#labsPendingList .labs-pending-row', { hasText: 'La Date Perdue' });
   await row.locator('input[data-field="date"]').fill('2024-07-01');
 
   // Geler le relevé périodique pendant la mesure : sans onglet Données

@@ -1,0 +1,31 @@
+{
+  "format": "mygcflow-lab-finds",
+  "schema_version": 1,
+  "exported_at": "2026-01-15T10:00:00Z",
+  "account": {
+    "username": null
+  },
+  "source": "labs.geocaching.com/logs",
+  "coverage": "complete",
+  "discoveries": [
+    {
+      "adventure_id": "fa1e0000-0000-4000-8000-000000000777",
+      "stage_id": "57a9e000-0000-4000-8000-000000000777",
+      "adventure_title": "Sans Repère",
+      "stage_title": "La Date Perdue",
+      "found_date": null,
+      "found_at": null,
+      "date_precision": null,
+      "date_basis": null,
+      "latitude": null,
+      "longitude": null,
+      "coordinate_scope": null,
+      "adventure_url": null,
+      "stage_image_url": "https://gsmediadata.blob.core.windows.net/mediacontainer/00000000-0000-4000-8000-000000000101",
+      "adventure_image_url": "https://gsmediadata.blob.core.windows.net/mediacontainer/00000000-0000-4000-8000-000000000001",
+      "log_id": 900777,
+      "is_archived": false,
+      "adventure_is_archived": false
+    }
+  ]
+}
