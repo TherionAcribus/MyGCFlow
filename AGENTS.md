@@ -97,7 +97,10 @@ Autres repères :
   les suivants démarrent avec des canvas `.stats-panel` sur la carte —
   exemple dans `stats-panels.spec.mjs` (`afterEach`). Pour lire les comptes :
   `app.getStatsSnapshot()` (mode, total, comptes par métrique,
-  `videoDrawCount`).
+  `videoDrawCount`). Un `id` de panneau posé dans un spec doit être
+  hexadécimal (`/^[0-9a-f]{6,32}$/`, `ID_RE` de stats_model.mjs) : un id
+  invalide (`sel00001`, `a11y0001`…) est silencieusement régénéré et le
+  `data-panel-id` cherché n'existe jamais.
 - Vider les processus orphelins si un run est tué : `taskkill /F /T /PID <id>`
   sur les `node.exe`/`python.exe` dont la ligne de commande contient
   `cli.js`/`run_server.py`. Sous Linux : `pkill -f cli.js` /

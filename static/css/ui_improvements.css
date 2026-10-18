@@ -3039,6 +3039,12 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
     cursor: grabbing;
     outline-style: solid;
 }
+/* Panneau sélectionné dans la liste : liseré franc de la couleur d'accent. */
+#mapWithFrames.stats-editing > .stats-panel.is-selected {
+    outline: 2px solid var(--color-accent, #0072c6);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px rgba(var(--color-accent-rgb, 0, 114, 198), 0.35);
+}
 
 /* Chiffres du panneau de compteurs : deux colonnes de cases à cocher. */
 .stats-counter-items {

@@ -423,9 +423,9 @@ test('un patch partiel conserve les panneaux courants', async ({ page }) => {
 
 test('chaque panneau expose un équivalent textuel accessible', async ({ page }) => {
   await putStats(page, { enabled: true, panels: [
-    { id: 'a11y0001', kind: 'counter', metric: 'summary', position: { anchor: 'top-left' } },
-    { id: 'a11y0002', kind: 'bar', metric: 'cache_type', position: { anchor: 'top-left' } },
-    { id: 'a11y0003', kind: 'line', metric: 'cumulative', position: { anchor: 'bottom-left' } },
+    { id: 'a11ce001', kind: 'counter', metric: 'summary', position: { anchor: 'top-left' } },
+    { id: 'a11ce002', kind: 'bar', metric: 'cache_type', position: { anchor: 'top-left' } },
+    { id: 'a11ce003', kind: 'line', metric: 'cumulative', position: { anchor: 'bottom-left' } },
   ] });
   await openWithFixture(page, '', GAP_FIXTURE, '2 / 2');
   const canvases = page.locator('canvas.stats-panel');
@@ -472,4 +472,33 @@ test('chaque panneau expose un équivalent textuel accessible', async ({ page })
   });
   await expect(line).toContainText('2 trouvailles au 6 janv.');
   await expect(types).toContainText('Traditional Cache : 2');
+});
+
+test('le panneau choisi dans la liste porte le repère de sélection sur la carte', async ({ page }) => {
+  await putStats(page, { enabled: true, panels: [
+    { id: '5e100001', kind: 'bar', metric: 'cache_type', position: { anchor: 'top-left' } },
+    { id: '5e100002', kind: 'bar', metric: 'container', position: { anchor: 'top-left' } },
+  ] });
+  await openWithFixture(page, '#stats');
+  await page.locator('a[href="#stats"]').click();
+
+  const first = page.locator('canvas.stats-panel[data-panel-id="5e100001"]');
+  const second = page.locator('canvas.stats-panel[data-panel-id="5e100002"]');
+  await expect(first).toBeVisible();
+  await expect(second).toBeVisible();
+  // Sans choix explicite, le premier panneau est sélectionné.
+  await expect(first).toHaveClass(/is-selected/);
+  await expect(second).not.toHaveClass(/is-selected/);
+
+  // Choisir l'autre panneau dans la liste déplace le repère sur son canvas.
+  await page.locator('li[data-panel-id="5e100002"] .stats-panel-name').click();
+  await expect(second).toHaveClass(/is-selected/);
+  await expect(first).not.toHaveClass(/is-selected/);
+
+  // Le liseré n'est visible qu'en mode édition : il disparaît quand on quitte
+  // l'onglet, sans perdre la sélection.
+  await expect(page.locator('#mapWithFrames')).toHaveClass(/stats-editing/);
+  await page.locator('a[href="#style"]').click();
+  await expect(page.locator('#mapWithFrames')).not.toHaveClass(/stats-editing/);
+  await expect(second).toHaveClass(/is-selected/);
 });

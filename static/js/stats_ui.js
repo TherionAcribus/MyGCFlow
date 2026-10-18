@@ -604,6 +604,8 @@ export function renderStatsTab() {
     if (!settings.panels.some((panel) => panel.id === selectedId)) {
         selectedId = settings.panels[0]?.id || null;
     }
+    // Le liseré du panneau choisi suit la sélection (visible en mode édition).
+    pkg.setStatsPanelSelection?.(selectedId);
     setValue('switchStats', settings.enabled);
     renderList();
     renderForm();

@@ -73,6 +73,9 @@ let revision = 0;
 let settingsRev = 0;
 
 const panelNodes = new Map();   // id → { canvas, alt, layout, cssWidth, drawnKey }
+// Panneau sélectionné dans l'onglet Stats : le canvas porte `is-selected`,
+// dont le liseré n'apparaît qu'en mode édition (cf. ui_improvements.css).
+let selectedPanelId = null;
 let layoutDirty = true;
 let drawDirty = true;
 let frameRequest = 0;
@@ -588,6 +591,7 @@ function nodeFor(panel, host) {
         canvas.className = 'stats-panel';
         canvas.dataset.panelId = panel.id;
         canvas.setAttribute('aria-hidden', 'true');
+        canvas.classList.toggle('is-selected', panel.id === selectedPanelId);
         // Sous le titre et les infos (z-index 100), comme dans la vidéo où ils
         // sont dessinés après les panneaux.
         const map = document.getElementById('map');
@@ -799,6 +803,15 @@ export function getStatsPanelRect(id) {
 
 export function getStatsLayoutWarnings() {
     return layoutWarnings;
+}
+
+// Panneau sélectionné dans l'onglet Stats : son canvas prend `is-selected`.
+// Pur repère visuel de l'aperçu — la vidéo ne lit jamais les classes DOM.
+export function setStatsPanelSelection(id) {
+    selectedPanelId = id || null;
+    for (const [pid, node] of panelNodes) {
+        node.canvas.classList.toggle('is-selected', pid === selectedPanelId);
+    }
 }
 
 // Base vidée, page Évolution, interrupteur : la visibilité se recalcule au
