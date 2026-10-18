@@ -651,7 +651,7 @@ test('« Réorganiser » répartit les panneaux en conflit sur des coins distinc
 
 test('le panneau sélectionné s\'exporte en PNG et en CSV', async ({ page }) => {
   await putStats(page, { enabled: true, panels: [
-    { id: '5e0a0001', kind: 'bar', metric: 'cache_type', position: { anchor: 'top-left' } },
+    { id: '5e0a0001', kind: 'bar', metric: 'cache_type', title: 'Mes types', position: { anchor: 'top-left' } },
     { id: '5e0a0002', kind: 'counter', metric: 'summary', position: { anchor: 'top-right' },
       options: { items: ['days', 'types'] } },
   ] });
@@ -659,11 +659,13 @@ test('le panneau sélectionné s\'exporte en PNG et en CSV', async ({ page }) =>
   await page.locator('a[href="#stats"]').click();
   await expect(page.locator('canvas.stats-panel')).toHaveCount(2);
 
+  // Nom de fichier : le titre du panneau en slug ASCII (« Mes types » →
+  // « stats-mes-types.png ») ; sans titre, le titre par défaut est slugué.
   const [png] = await Promise.all([
     page.waitForEvent('download'),
     page.locator('#btnStatsExportPng').click(),
   ]);
-  expect(png.suggestedFilename()).toBe('stats-bar-cache_type.png');
+  expect(png.suggestedFilename()).toBe('stats-mes-types.png');
   const signature = fs.readFileSync(await png.path()).subarray(0, 8);
   expect([...signature]).toEqual([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
 
@@ -671,19 +673,20 @@ test('le panneau sélectionné s\'exporte en PNG et en CSV', async ({ page }) =>
     page.waitForEvent('download'),
     page.locator('#btnStatsExportCsv').click(),
   ]);
-  expect(csv.suggestedFilename()).toBe('stats-bar-cache_type.csv');
+  expect(csv.suggestedFilename()).toBe('stats-mes-types.csv');
   const content = fs.readFileSync(await csv.path(), 'utf8');
   expect(content.charCodeAt(0)).toBe(0xFEFF);
   expect(content).toContain('Catégorie;Nombre;Pourcentage');
   expect(content).toContain('Traditional Cache;3');
 
-  // L'export suit le panneau sélectionné dans la liste.
+  // L'export suit le panneau sélectionné dans la liste ; sans titre propre
+  // c'est le titre par défaut (« Chiffres clés » → « stats-chiffres-cles »).
   await page.locator('#statsPanelList').getByText('Chiffres clés').click();
   const [csv2] = await Promise.all([
     page.waitForEvent('download'),
     page.locator('#btnStatsExportCsv').click(),
   ]);
-  expect(csv2.suggestedFilename()).toBe('stats-counter-summary.csv');
+  expect(csv2.suggestedFilename()).toBe('stats-chiffres-cles.csv');
   const content2 = fs.readFileSync(await csv2.path(), 'utf8');
   expect(content2).toContain('Chiffre;Valeur;Détail');
   expect(content2).toContain('Jours avec trouvaille;6');
@@ -810,6 +813,27 @@ test('les panneaux s\'exportent en JSON et se ré-importent', async ({ page }) =
   } finally {
     fs.unlinkSync(badPath);
   }
+
+  // Un fichier lisible mais sans panneau exploitable est refusé AVANT tout
+  // commit : la liste courante (2 panneaux) n'est pas vidée par l'import.
+  const emptyPath = path.join(HERE, 'fixtures', '_empty-panels.json');
+  const nopePath = path.join(HERE, 'fixtures', '_nope-panels.json');
+  fs.writeFileSync(emptyPath, JSON.stringify({ mode: 'finds', panels: [] }));
+  fs.writeFileSync(nopePath, JSON.stringify([{ kind: 'nope' }]));
+  try {
+    await page.setInputFiles('#statsPanelsImportFile', emptyPath);
+    await expect(page.locator('.gcm-toast.show').filter({ hasText: 'Import impossible' })).toHaveCount(1);
+    await expect(page.locator('canvas.stats-panel')).toHaveCount(2);
+    await expect.poll(async () => (await savedStats(page)).panels).toHaveLength(2);
+
+    await page.setInputFiles('#statsPanelsImportFile', nopePath);
+    await expect(page.locator('.gcm-toast.show').filter({ hasText: 'Import impossible' }).last()).toHaveCount(1);
+    await expect(page.locator('canvas.stats-panel')).toHaveCount(2);
+    await expect.poll(async () => (await savedStats(page)).panels).toHaveLength(2);
+  } finally {
+    fs.unlinkSync(emptyPath);
+    fs.unlinkSync(nopePath);
+  }
 });
 
 test('« Lignes au maximum » est proposé pour les métriques à catégories', async ({ page }) => {
@@ -916,4 +940,17 @@ test('le panneau sélectionné a un aperçu dans l\'onglet', async ({ page }) =>
   await page.locator('#inputStatsWidth').fill('400');
   await page.locator('#inputStatsWidth').press('Tab');
   await expect.poll(() => preview.evaluate((c) => c.width)).toBe(400);
+});
+
+test('la ligne de couverture d\'une grille affiche le pourcentage', async ({ page }) => {
+  // 6 combinaisons D/T distinctes sur 81 : « Combinaisons : 6/81 (7 %) ».
+  await putStats(page, { enabled: true, panels: [
+    { id: 'c0fe0001', kind: 'grid', metric: 'dt', position: { anchor: 'bottom-left' },
+      options: { show_coverage: true } },
+  ] });
+  await openWithFixture(page);
+  await expect(page.locator('canvas.stats-panel')).toHaveCount(1);
+  const alt = page.locator('.stats-panel-alt');
+  await expect(alt).toContainText('Combinaisons : 6/81');
+  await expect(alt).toContainText('%');
 });

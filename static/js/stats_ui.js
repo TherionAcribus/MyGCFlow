@@ -17,6 +17,7 @@ import {
     STATS_METRICS_BY_KIND,
     createStatsPanel,
     normalizeStatsConfig,
+    normalizeStatsPanel,
     statsPanelsKey,
 } from './stats_model.mjs';
 
@@ -869,17 +870,27 @@ function downloadBlob(blob, filename) {
     URL.revokeObjectURL(url);
 }
 
+// Nom de fichier d'export : le titre du panneau (ou son titre par défaut)
+// en slug ASCII — « Ma D/T ! » → « stats-ma-dt.png » ; repli sur
+// « stats-bar-cache_type » quand le slug est vide (titre non latin…).
+function exportFileName(panel, ext) {
+    const label = (panel.title || pkg.defaultStatsPanelTitle(panel) || '')
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    return `stats-${label || `${panel.kind}-${panel.metric}`}.${ext}`;
+}
+
 async function exportPanelPng() {
     const panel = selectedPanel();
     const blob = panel ? await pkg.statsPanelPngBlob?.(panel.id) : null;
-    if (blob) downloadBlob(blob, `stats-${panel.kind}-${panel.metric}.png`);
+    if (blob) downloadBlob(blob, exportFileName(panel, 'png'));
 }
 
 function exportPanelCsv() {
     const panel = selectedPanel();
     const csv = panel ? pkg.statsPanelCsv?.(panel.id) : null;
     if (csv) downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }),
-        `stats-${panel.kind}-${panel.metric}.csv`);
+        exportFileName(panel, 'csv'));
 }
 
 // Export/import de la liste du mode courant — pour qui veut la copier
@@ -916,6 +927,12 @@ async function importPanels(file) {
         panels = importedPanels(JSON.parse(await file.text()));
     } catch (e) { /* JSON illisible → toast d'erreur plus bas */ }
     if (!panels) {
+        pkg.showToast?.(pkg.t('Import impossible : fichier de panneaux invalide'));
+        return;
+    }
+    // Un fichier lisible mais sans panneau exploitable est refusé sans
+    // toucher la liste courante (sinon l'import la viderait).
+    if (!panels.some((raw) => normalizeStatsPanel(raw))) {
         pkg.showToast?.(pkg.t('Import impossible : fichier de panneaux invalide'));
         return;
     }

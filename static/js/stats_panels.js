@@ -528,10 +528,10 @@ function excludedLine(metric, n) {
     }
 }
 
-function coverageLine(metric, filled, available) {
-    if (metric === 'dt') return pkg.t('Combinaisons : ${filled}/${available}', { filled, available });
-    if (metric === 'jasmer') return pkg.t('Mois : ${filled}/${available}', { filled, available });
-    return pkg.t('Jours : ${filled}/${available}', { filled, available });
+function coverageLine(metric, filled, available, pct) {
+    if (metric === 'dt') return pkg.t('Combinaisons : ${filled}/${available} (${pct})', { filled, available, pct });
+    if (metric === 'jasmer') return pkg.t('Mois : ${filled}/${available} (${pct})', { filled, available, pct });
+    return pkg.t('Jours : ${filled}/${available} (${pct})', { filled, available, pct });
 }
 
 function resolveFontFamily(panel) {
@@ -660,7 +660,10 @@ function buildView(panel) {
         view.model = model;
         view.cellMode = panel.options.cell_mode;
         Object.assign(view, gridAxisLabels(metric, model, number));
-        if (panel.options.show_coverage) view.footer.push(coverageLine(metric, model.filled, model.available));
+        if (panel.options.show_coverage) {
+            view.footer.push(coverageLine(metric, model.filled, model.available,
+                percent(model.available > 0 ? model.filled / model.available : 0)));
+        }
         if (refExcluded > 0) view.footer.push(excludedLine(metric, model.excluded));
         return view;
     }

@@ -107,6 +107,11 @@ le pied du panneau l'annonce (« Sans D/T : 12 ») pour que la somme ne
 surprenne pas. La présence de cette ligne est décidée sur la référence : la
 hauteur du panneau ne change pas au premier Lab rencontré.
 
+Les grilles affichent aussi une ligne de **couverture** en pied
+(`options.show_coverage`, activée par défaut) : « Combinaisons : 45/81
+(56 %) » pour la matrice D/T, « Mois : n/N (p %) » pour Jasmer, « Jours :
+n/N (p %) » pour le calendrier — le pourcentage suit le format de la langue.
+
 ### Deux références
 
 - **Totaux de la sélection** — clé `pointsByDateRevision` : ce qu'affichent
@@ -293,8 +298,17 @@ métriques et le schéma de ses options des deux côtés (`stats_settings.py`,
 (`data-stats-kind`) et `stats_ui.js › FIELDS`. Une nouvelle grille, elle, n'est
 qu'une entrée dans `gridSpec`.
 
+Le panneau sélectionné s'exporte en **PNG** (instantané du canvas) et en
+**CSV** (ses valeurs) depuis le formulaire. Le nom du fichier est le titre
+du panneau — ou son titre par défaut — en slug ASCII (« Ma D/T ! » →
+`stats-ma-dt.png`) ; un titre dont le slug serait vide (écriture non latine)
+retombe sur `stats-{kind}-{metric}`.
+
 La liste du mode courant s'exporte en JSON et se ré-importe depuis le menu
 « Configurations » (`stats-panneaux-{mode}.json` : `{mode, panels}` ; à
 l'import, la liste est lue dans un tableau, `panels`, `evolution_panels` ou
 un bloc `stats` complet, puis normalisée comme une configuration appliquée).
+Un fichier lisible mais sans panneau exploitable (liste vide, panneaux tous
+invalides) est refusé **avant** le commit — la liste courante n'est jamais
+vidée par un import raté.
 Non couvert : l'inclusion du bloc `stats` dans un thème.
