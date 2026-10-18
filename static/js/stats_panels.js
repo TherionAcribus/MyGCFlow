@@ -1229,6 +1229,29 @@ export function addStatsPanelsToCanvas(ctx, canvasWidth, canvasHeight, scaleFact
 // Exports
 // ---------------------------------------------------------------------------
 
+// Mini-aperçu du panneau sélectionné dans l'onglet (stats_ui.js) : la vue
+// courante dessinée dans un canvas du formulaire — même pipeline que la
+// carte et la vidéo, à la largeur réelle du panneau. false si le panneau
+// n'est pas dessinable ici (inconnu, métrique étrangère au mode).
+export function drawStatsPanelPreview(id, canvas) {
+    const list = isEvolutionPage() ? settings.evolution_panels : settings.panels;
+    const panel = (list || []).find((p) => p.id === id);
+    const registry = isEvolutionPage() ? EVOLUTION_METRICS_BY_KIND : STATS_METRICS_BY_KIND;
+    if (!panel || !canvas || !(registry[panel.kind] || []).includes(panel.metric)) return false;
+    if (drawDirty) flush();
+    const view = buildView(panel);
+    const cssWidth = Math.max(1, Math.round(panel.position.width || 280));
+    const height = measureStatsPanel(view, panel.style, cssWidth);
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    canvas.width = Math.round(cssWidth * dpr);
+    canvas.height = Math.max(1, Math.round(height * dpr));
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cssWidth, height);
+    drawStatsPanel(ctx, { x: 0, y: 0, width: cssWidth, height }, view, panel.style, lastNow, cssWidth);
+    return true;
+}
+
 // Instantané PNG : le bitmap déjà dessiné pour l'aperçu (résolution écran).
 // null si le panneau n'est pas affiché (désactivé, base vide, Évolution).
 export function statsPanelPngBlob(id) {

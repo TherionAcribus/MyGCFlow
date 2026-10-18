@@ -871,3 +871,32 @@ test('la forme d\'un panneau catégoriel se change sans perdre ses réglages', a
     return p && `${p.kind}|${p.title}|${p.position.mode}|${typeof p.options.hole}`;
   }).toBe('donut|Mes types|free|number');
 });
+
+test('le panneau sélectionné a un aperçu dans l\'onglet', async ({ page }) => {
+  await putStats(page, { enabled: true, panels: [
+    { id: 'b0a1e001', kind: 'bar', metric: 'cache_type',
+      position: { anchor: 'top-left' } },
+  ] });
+  await openWithFixture(page, '#stats');
+  await page.locator('a[href="#stats"]').click();
+  await page.locator('#statsPanelList li').locator('[data-action="select"]').click();
+  const preview = page.locator('#statsPanelPreview');
+  await expect(preview).toBeVisible();
+  // Bitmap à la largeur réelle du panneau (280 par défaut), non vide.
+  const { width, painted } = await preview.evaluate((c) => {
+    const data = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+    let painted = false;
+    for (let i = 3; i < data.length; i += 4) {
+      if (data[i] > 0) { painted = true; break; }
+    }
+    return { width: c.width, painted };
+  });
+  expect(width).toBe(280);
+  expect(painted).toBe(true);
+  // L'aperçu suit la largeur quand le champ change : la section Position est
+  // repliée par défaut, et le réaffichage part de l'événement « change ».
+  await page.locator('#statsSectionPosition summary').click();
+  await page.locator('#inputStatsWidth').fill('400');
+  await page.locator('#inputStatsWidth').press('Tab');
+  await expect.poll(() => preview.evaluate((c) => c.width)).toBe(400);
+});

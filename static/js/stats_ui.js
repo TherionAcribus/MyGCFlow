@@ -515,6 +515,16 @@ function renderForm() {
     setValue('inputStatsFontSize', s.font_size);
     setValue('inputStatsRadius', s.radius);
     setValue('switchStatsInheritFont', s.inherit_font);
+
+    // Mini-aperçu : le panneau dessiné à sa taille réelle — utile quand la
+    // carte est hors vue (écran étroit). Masqué si non dessinable.
+    const preview = $('statsPanelPreview');
+    if (preview) {
+        const drawn = pkg.drawStatsPanelPreview?.(panel.id, preview);
+        preview.hidden = !drawn;
+        preview.style.opacity = panel.enabled ? '' : '0.45';
+        if (drawn) preview.style.width = `${Math.round(panel.position.width)}px`;
+    }
 }
 
 // Champ du formulaire → chemin dans le panneau. `number` : valeur numérique

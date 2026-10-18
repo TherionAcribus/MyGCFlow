@@ -47,7 +47,11 @@ Le select « Forme » du formulaire (section Contenu) propose les types qui
 savent dessiner la métrique courante — il n'apparaît que quand il y en a
 plusieurs, donc pour les métriques catégorielles partagées entre barres et
 anneau. Changer un histogramme en anneau garde titre, position et apparence ;
-les options reprennent les défauts du type choisi.
+les options reprennent les défauts du type choisi. Un aperçu du panneau
+sélectionné est dessiné en tête du formulaire avec le même pipeline que la
+carte (`drawStatsPanelPreview`), à la largeur réelle du panneau — utile sur
+écran étroit, quand la carte est hors vue pendant le réglage ; un panneau
+à métrique étrangère au mode n'y est pas dessiné, comme sur la carte.
 
 ## Modules
 
