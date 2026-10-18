@@ -8,7 +8,10 @@ archivées, pas des trouvailles).
 
 Deux listes de panneaux indépendantes : `stats.panels` pour le mode
 principal, `stats.evolution_panels` pour `/evolution`. Chaque liste compte
-au plus six panneaux, dans l'ordre de dessin et d'empilement ; les
+au plus six panneaux, dans l'ordre de dessin et d'empilement. L'ordre se
+règle dans l'onglet par glisser-déposer à la souris ou par les boutons
+Monter/Descendre de chaque ligne — les flèches restent la voie du clavier
+et du tactile, que le glisser-déposer HTML5 ne couvre pas. Les
 configurations nommées (`stats.configs`) s'appliquent à la liste du mode
 courant. Chaque configuration retient le mode où elle a été enregistrée
 (`mode` : `finds` / `evolution`, `finds` pour les enregistrements
@@ -254,8 +257,8 @@ différentes qui se recouvrent.
   persistance, remplissage pendant la lecture, totaux après un nouveau filtre,
   export qui repart de zéro et dessine les panneaux, interrupteur général, mode
   Évolution ; anneau, courbe, compteurs et course pendant une lecture (sans
-  erreur de page), glisser-déposer puis retour au coin, pile qui démarre sous
-  le titre. `stats` est une préférence globale partagée par tous les specs :
+  erreur de page), glisser-déposer puis retour au coin, réordonnancement de
+  la liste à la souris, pile qui démarre sous le titre. `stats` est une préférence globale partagée par tous les specs :
   chaque test remet la liste vide en sortant.
 
 ## Mesures (2026-10-17)

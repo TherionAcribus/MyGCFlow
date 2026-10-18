@@ -334,6 +334,23 @@ test('une suppression se signale, s\'enregistre aussitôt et s\'annule', async (
     .toEqual(['aa000001', 'aa000002']);
 });
 
+test('la liste des panneaux se réordonne à la souris', async ({ page }) => {
+  await putStats(page, { enabled: true, panels: [
+    { id: 'aa000001', kind: 'grid', metric: 'dt', position: { anchor: 'top-left' } },
+    { id: 'aa000002', kind: 'counter', metric: 'summary', position: { anchor: 'top-right' } },
+    { id: 'aa000003', kind: 'bar', metric: 'cache_type', position: { anchor: 'bottom-left' } },
+  ] });
+  await openWithFixture(page, '#stats');
+  await page.locator('a[href="#stats"]').click();
+  const items = page.locator('#statsPanelList li');
+  // Premier item déposé dans la moitié basse du troisième → après lui.
+  const target = items.nth(2);
+  const box = await target.boundingBox();
+  await items.nth(0).dragTo(target, { targetPosition: { x: 20, y: box.height - 4 } });
+  await expect.poll(async () => (await savedStats(page)).panels.map((p) => p.id).join(','))
+      .toBe('aa000002,aa000003,aa000001');
+});
+
 test('un panneau glissé passe en position libre, choisir un coin l’y ramène', async ({ page }) => {
   await putStats(page, { enabled: true, panels: [
     { id: 'dddddd01', kind: 'grid', metric: 'dt', position: { anchor: 'bottom-left', width: 240 } },

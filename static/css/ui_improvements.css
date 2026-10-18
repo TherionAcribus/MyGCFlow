@@ -3023,6 +3023,21 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
     padding: 0.15rem 0.35rem;
 }
 
+/* Réordonnancement de la liste à la souris : liseré d'insertion et
+   source estompée (stats_ui.js › bindListReorder). */
+.stats-panel-list .list-group-item[draggable="true"] {
+    cursor: grab;
+}
+.stats-panel-list .list-group-item.is-drag-source {
+    opacity: 0.45;
+}
+.stats-panel-list .list-group-item.drop-before {
+    box-shadow: inset 0 2px 0 var(--color-accent, #0072c6);
+}
+.stats-panel-list .list-group-item.drop-after {
+    box-shadow: inset 0 -2px 0 var(--color-accent, #0072c6);
+}
+
 /* Menu « Configurations » : le nom s'élide (flex + truncate demande
    min-width: 0), la poubelle reste accessible à droite. */
 #statsConfigMenu [data-config-entry] .dropdown-item {

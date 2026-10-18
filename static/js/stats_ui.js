@@ -177,6 +177,7 @@ function renderList() {
         const item = document.createElement('li');
         item.className = `list-group-item${panel.id === selectedId ? ' is-selected' : ''}`;
         item.dataset.panelId = panel.id;
+        item.draggable = true;
 
         const toggle = document.createElement('input');
         toggle.type = 'checkbox';
@@ -303,6 +304,63 @@ function showUndoForDelete(panel, index) {
             renderStatsTab();
         } },
     );
+}
+
+// Réordonnancement de la liste à la souris (HTML5 DnD — les flèches restent
+// pour le clavier et le tactile). Commit immédiat, comme les flèches.
+let draggedPanelId = null;
+
+function clearDropMarks(list) {
+    list.querySelectorAll('.drop-before, .drop-after')
+        .forEach((el) => el.classList.remove('drop-before', 'drop-after'));
+    list.querySelector('.is-drag-source')?.classList.remove('is-drag-source');
+}
+
+function bindListReorder(list) {
+    list.addEventListener('dragstart', (event) => {
+        const item = event.target.closest('li[data-panel-id]');
+        if (!item) return;
+        draggedPanelId = item.dataset.panelId;
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', draggedPanelId);
+        item.classList.add('is-drag-source');
+    });
+    list.addEventListener('dragover', (event) => {
+        if (!draggedPanelId) return;
+        event.preventDefault();   // indispensable pour autoriser le drop
+        event.dataTransfer.dropEffect = 'move';
+        clearDropMarks(list);
+        const item = event.target.closest('li[data-panel-id]');
+        list.querySelector(`li[data-panel-id="${draggedPanelId}"]`)?.classList.add('is-drag-source');
+        if (item && item.dataset.panelId !== draggedPanelId) {
+            const r = item.getBoundingClientRect();
+            item.classList.add(event.clientY > r.top + r.height / 2 ? 'drop-after' : 'drop-before');
+        }
+    });
+    list.addEventListener('drop', (event) => {
+        if (!draggedPanelId) return;
+        event.preventDefault();
+        const item = event.target.closest('li[data-panel-id]');
+        // Sans item sous le curseur (fond de liste) : déposer en fin.
+        const after = item ? event.clientY > item.getBoundingClientRect().top + item.getBoundingClientRect().height / 2 : true;
+        const targetId = item?.dataset.panelId;
+        updatePanels((panels) => {
+            const from = panels.findIndex((p) => p.id === draggedPanelId);
+            let to = targetId
+                ? panels.findIndex((p) => p.id === targetId) + (after ? 1 : 0)
+                : panels.length;
+            if (from < 0 || to === from || to === from + 1) return panels;
+            const [moved] = panels.splice(from, 1);
+            if (to > from) to -= 1;
+            panels.splice(to, 0, moved);
+            return panels;
+        }, STATS_SAVE_STATUS, { immediate: true });
+        renderStatsTab();
+    });
+    list.addEventListener('dragend', () => {
+        draggedPanelId = null;
+        clearDropMarks(list);
+    });
 }
 
 function onListChange(event) {
@@ -1113,6 +1171,7 @@ export function initStatsTab() {
     const list = $('statsPanelList');
     list?.addEventListener('click', onListClick);
     list?.addEventListener('change', onListChange);
+    if (list) bindListReorder(list);
     $('btnStatsExportPng')?.addEventListener('click', exportPanelPng);
     $('btnStatsExportCsv')?.addEventListener('click', exportPanelCsv);
     $('statsConfigMenu')?.addEventListener('click', (event) => {
