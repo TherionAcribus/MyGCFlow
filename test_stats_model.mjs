@@ -477,6 +477,42 @@ test('barres : axes fixes mois (12) et jours de semaine (7, lundi en tête)', ()
     assert.equal(model.rows.at(-1).count, 12);
 });
 
+test('barres : mémoïsé par révision, lignes retournées isolées du cache', () => {
+    const acc = createStatsAccumulator(['cache_type']);
+    acc.add(types({ Traditional: 3, Multi: 2, Mystery: 1 }));
+    const options = { sort: 'count', max_items: 8 };
+    const m1 = barModel('cache_type', acc, acc, options);
+    const m2 = barModel('cache_type', acc, acc, options);
+    // animateRows écrit shown/slot sur les lignes (et slots sur le modèle) :
+    // les copies renvoyées ne doivent pas polluer les appels suivants.
+    m1.rows[0].shown = 999;
+    m1.rows[0].slot = 7;
+    m1.slots = 4;
+    assert.equal(m2.rows[0].shown, undefined);
+    assert.equal(m2.rows[0].slot, undefined);
+    assert.equal(m2.slots, undefined);
+    assert.deepEqual(m2.rows.map((r) => r.key), ['Traditional', 'Multi', 'Mystery']);
+    // Nouvelle révision → valeurs recalculées.
+    acc.add(types({ Traditional: 1 }));
+    const m3 = barModel('cache_type', acc, acc, options);
+    assert.equal(m3.rows.find((r) => r.key === 'Traditional').count, 4);
+});
+
+test('barres : tri « label » — un autre labelOf force le recalcul', () => {
+    const acc = createStatsAccumulator(['cache_type']);
+    acc.add(types({ Aaa: 3, Bbb: 2 }));
+    const options = { sort: 'label', max_items: 8 };
+    const m1 = barModel('cache_type', acc, acc, options, String);
+    assert.deepEqual(m1.rows.map((r) => r.key), ['Aaa', 'Bbb']);
+    // labelOf comparé par identité : une autre fonction → autre ordre servi.
+    const reverse = barModel('cache_type', acc, acc, options,
+        (key) => (key === 'Aaa' ? 'z' : 'a'));
+    assert.deepEqual(reverse.rows.map((r) => r.key), ['Bbb', 'Aaa']);
+    // Le même labelOf qu'au premier appel recalcule (le cache porte l'autre).
+    const again = barModel('cache_type', acc, acc, options, String);
+    assert.deepEqual(again.rows.map((r) => r.key), ['Aaa', 'Bbb']);
+});
+
 // ---------------------------------------------------------------------------
 // Mise en page
 // ---------------------------------------------------------------------------

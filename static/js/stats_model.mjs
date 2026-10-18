@@ -1112,6 +1112,15 @@ function naturalCompare(metric, labelOf) {
     return (a, b) => a - b;
 }
 
+// Modèle mémoïsé par (révision courante, référence, signature d'options) :
+// la vue est reconstruite à chaque frame d'un tween alors que le tri des
+// clés ne change qu'à l'ajout d'un lot. Le modèle stocké n'est JAMAIS rendu
+// tel quel — animateRows mute les lignes (shown/slot), chaque appel renvoie
+// donc des copies. `labelOf` n'entre dans la clé que quand il peut changer
+// l'ordre (sort 'label' ou métrique catégorique) ; les appelants passent
+// alors toujours la même fonction.
+const barModelCache = new WeakMap();  // current → WeakMap<ref → {curRev, refRev, bySig}>
+
 // Lignes d'un histogramme.
 //   options   : options normalisées du panneau (sort, max_items, hide_empty)
 //   labelOf   : clé → libellé affiché (tri « label », ordre des catégories)
@@ -1123,6 +1132,23 @@ export function barModel(metric, current, reference, options = {}, labelOf = Str
     const refCounts = ref.counts.get(metric) || new Map();
     const countOf = (key) => counts.get(key) || 0;
     const refOf = (key) => Math.max(refCounts.get(key) || 0, countOf(key));
+
+    const sort = options.sort || 'natural';
+    const maxItems = Number.isInteger(options.max_items) ? options.max_items : 8;
+    const sig = `${metric}|${sort}|${maxItems}|${options.hide_empty ? 1 : 0}`;
+    const labelMatters = sort === 'label' || CATEGORICAL.has(metric);
+
+    let byRef = barModelCache.get(current);
+    let entry = byRef?.get(ref);
+    if (!entry || entry.curRev !== current.revision || entry.refRev !== ref.revision) {
+        entry = { curRev: current.revision, refRev: ref.revision, bySig: new Map() };
+        if (!byRef) { byRef = new WeakMap(); barModelCache.set(current, byRef); }
+        byRef.set(ref, entry);
+    }
+    const cached = entry.bySig.get(sig);
+    if (cached && (!labelMatters || cached.labelOf === labelOf)) {
+        return { ...cached.model, rows: cached.model.rows.map((row) => ({ ...row })) };
+    }
 
     let keys;
     if (metric === 'difficulty' || metric === 'terrain') {
@@ -1148,8 +1174,7 @@ export function barModel(metric, current, reference, options = {}, labelOf = Str
     if (options.hide_empty) keys = keys.filter((key) => refOf(key) > 0);
 
     const natural = naturalCompare(metric, labelOf);
-    const sort = options.sort || 'natural';
-    const maxItems = Number.isInteger(options.max_items) ? options.max_items : 8;
+    let model;
     if (sort === 'race') {
         // Course de barres : ordre et top-N suivent l'ÉTAT COURANT (les lignes
         // se doublent), l'échelle le meneur du moment. Pas de ligne « Autres » :
@@ -1158,42 +1183,45 @@ export function barModel(metric, current, reference, options = {}, labelOf = Str
         const rows = keys.slice(0, maxItems)
             .map((key) => ({ key, keys: [key], count: countOf(key), refCount: refOf(key) }));
         const max = rows.reduce((m, row) => Math.max(m, row.count), 0);
-        return { rows, max, race: true, excluded: current.excluded.get(metric) || 0, total: ref.total };
-    }
-    if (sort === 'count') {
-        keys.sort((a, b) => refOf(b) - refOf(a) || natural(a, b));
-    } else if (sort === 'label') {
-        keys.sort((a, b) => String(labelOf(a)).localeCompare(String(labelOf(b))) || natural(a, b));
+        model = { rows, max, race: true, excluded: current.excluded.get(metric) || 0, total: ref.total };
     } else {
-        keys.sort(natural);
+        if (sort === 'count') {
+            keys.sort((a, b) => refOf(b) - refOf(a) || natural(a, b));
+        } else if (sort === 'label') {
+            keys.sort((a, b) => String(labelOf(a)).localeCompare(String(labelOf(b))) || natural(a, b));
+        } else {
+            keys.sort(natural);
+        }
+
+        let rows = keys.map((key) => ({ key, keys: [key], count: countOf(key), refCount: refOf(key) }));
+
+        // Top-N + « Autres » : seulement pour les catégories (types, tailles).
+        // Les grandeurs ordonnées (D/T, années) s'affichent en entier, sans trou.
+        if (CATEGORICAL.has(metric) && rows.length > maxItems) {
+            // Les gardées : les plus fréquentes de la RÉFÉRENCE, affichées dans
+            // l'ordre choisi — un type qui dépasse un autre en cours
+            // d'animation ne change ni de rang ni d'appartenance au top.
+            const kept = new Set(
+                [...rows].sort((a, b) => b.refCount - a.refCount || natural(a.key, b.key))
+                    .slice(0, maxItems - 1)
+                    .map((row) => row.key),
+            );
+            const others = { key: OTHERS_KEY, keys: [], count: 0, refCount: 0 };
+            rows = rows.filter((row) => {
+                if (kept.has(row.key)) return true;
+                others.keys.push(row.key);
+                others.count += row.count;
+                others.refCount += row.refCount;
+                return false;
+            });
+            rows.push(others);
+        }
+
+        const max = rows.reduce((m, row) => Math.max(m, row.refCount), 0);
+        model = { rows, max, excluded: current.excluded.get(metric) || 0, total: ref.total };
     }
-
-    let rows = keys.map((key) => ({ key, keys: [key], count: countOf(key), refCount: refOf(key) }));
-
-    // Top-N + « Autres » : seulement pour les catégories (types, tailles). Les
-    // grandeurs ordonnées (D/T, années) s'affichent en entier, sans trou.
-    if (CATEGORICAL.has(metric) && rows.length > maxItems) {
-        // Les gardées : les plus fréquentes de la RÉFÉRENCE, affichées dans
-        // l'ordre choisi — un type qui dépasse un autre en cours d'animation
-        // ne change ni de rang ni d'appartenance au top.
-        const kept = new Set(
-            [...rows].sort((a, b) => b.refCount - a.refCount || natural(a.key, b.key))
-                .slice(0, maxItems - 1)
-                .map((row) => row.key),
-        );
-        const others = { key: OTHERS_KEY, keys: [], count: 0, refCount: 0 };
-        rows = rows.filter((row) => {
-            if (kept.has(row.key)) return true;
-            others.keys.push(row.key);
-            others.count += row.count;
-            others.refCount += row.refCount;
-            return false;
-        });
-        rows.push(others);
-    }
-
-    const max = rows.reduce((m, row) => Math.max(m, row.refCount), 0);
-    return { rows, max, excluded: current.excluded.get(metric) || 0, total: ref.total };
+    entry.bySig.set(sig, { labelOf, model });
+    return { ...model, rows: model.rows.map((row) => ({ ...row })) };
 }
 
 // ---------------------------------------------------------------------------

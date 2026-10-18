@@ -568,13 +568,29 @@ function gridAxisLabels(metric, model, number) {
 
 // Indice de couleur stable d'une catégorie (palette « multi ») : son rang dans
 // la référence, pour qu'elle garde sa couleur quand elle change de place.
+// Rang mémoïsé par révision de la référence : le tri des clés ne change qu'à
+// l'ajout d'un lot, pas à chaque frame. Sans révision (accumulateur factice) :
+// calcul direct.
+const colorRankCache = new WeakMap();  // ref → Map<metric, {revision, ranks}>
+
 function colorIndexer(reference, metric) {
-    const ranks = new Map(
+    const compute = () => new Map(
         [...(reference.counts.get(metric) || new Map()).entries()]
             .sort((a, b) => b[1] - a[1] || String(a[0]).localeCompare(String(b[0])))
             .map(([key], i) => [key, i]),
     );
-    return (key) => ranks.get(key) ?? ranks.size;
+    if (!Number.isFinite(reference?.revision)) {
+        const ranks = compute();
+        return (key) => ranks.get(key) ?? ranks.size;
+    }
+    let perMetric = colorRankCache.get(reference);
+    let cached = perMetric?.get(metric);
+    if (!cached || cached.revision !== reference.revision) {
+        cached = { revision: reference.revision, ranks: compute() };
+        if (!perMetric) { perMetric = new Map(); colorRankCache.set(reference, perMetric); }
+        perMetric.set(metric, cached);
+    }
+    return (key) => cached.ranks.get(key) ?? cached.ranks.size;
 }
 
 let dateFormat = null;

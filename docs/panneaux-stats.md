@@ -180,7 +180,12 @@ La vue est reconstruite à chaque frame d'un tween : les calculs qui ne
 dépendent que des comptes — jours triés, points cumulés de la courbe, record
 du jour et plus longue série des compteurs — sont mémoïsés par révision
 d'accumulateur (`dayIndex` dans `stats_model.mjs`), donc recalculés à
-l'ajout d'un lot, pas à chaque frame.
+l'ajout d'un lot, pas à chaque frame. De même le tri des clés des
+histogrammes (`barModel`, indexé sur les révisions de l'état courant et de
+la référence + la signature d'options) et le rang des couleurs `multi`
+(`colorIndexer`, par révision de la référence). `barModel` renvoie des
+**copies** de ses lignes : l'animation y écrit `shown`/`slot` et le modèle
+en cache ne doit jamais être pollué.
 
 - **Aperçu** : un `<canvas class="stats-panel">` par panneau dans
   `#mapWithFrames`, bitmap = taille CSS × `devicePixelRatio`, `z-index: 90`
