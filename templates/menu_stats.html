@@ -373,9 +373,10 @@
                         </div>
                         <div class="col-12 col-md-6">
                             <div class="form-check form-switch mt-md-4">
-                                <input class="form-check-input" type="checkbox" id="switchStatsInheritFont" role="switch">
-                                <label class="form-check-label" for="switchStatsInheritFont">{{ _("Police de la cartouche d'infos") }}</label>
+                                <input class="form-check-input" type="checkbox" id="switchStatsInheritFont" role="switch" aria-describedby="helpStatsInheritFont">
+                                <label class="form-check-label" for="switchStatsInheritFont">{{ _("Utiliser la police du cartouche d'infos") }}</label>
                             </div>
+                            <small id="helpStatsInheritFont" class="form-hint text-muted d-block">{{ _("Celle réglée dans l'onglet Style → Informations ; sinon, police de l'interface.") }}</small>
                         </div>
                         </div>
                     </details>

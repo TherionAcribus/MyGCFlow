@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-18 16:09+0200\n"
+"POT-Creation-Date: 2026-10-18 16:25+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -8030,22 +8030,28 @@ msgid "Arrondi"
 msgstr ""
 
 #: templates/menu_stats.html:377
-msgid "Police de la cartouche d'infos"
+msgid "Utiliser la police du cartouche d'infos"
 msgstr ""
 
-#: templates/menu_stats.html:384
-msgid "Exporter ce panneau"
+#: templates/menu_stats.html:379
+msgid ""
+"Celle réglée dans l'onglet Style → Informations ; sinon, police de "
+"l'interface."
 msgstr ""
 
 #: templates/menu_stats.html:385
+msgid "Exporter ce panneau"
+msgstr ""
+
+#: templates/menu_stats.html:386
 msgid "Le panneau tel qu'il est affiché, ou ses valeurs en tableau."
 msgstr ""
 
-#: templates/menu_stats.html:388
+#: templates/menu_stats.html:389
 msgid "Image (PNG)"
 msgstr ""
 
-#: templates/menu_stats.html:391
+#: templates/menu_stats.html:392
 msgid "Valeurs (CSV)"
 msgstr ""
 
