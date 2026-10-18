@@ -417,11 +417,11 @@ function hasActiveEvolutionHighlights(panels, now, durationMs) {
         if (!mode || mode === 'none') continue;
         if (panel.kind !== 'bar' && panel.kind !== 'donut') continue;
         if (panel.metric === 'status') continue;
-        const hits = evoCurrent.sets[panel.options.counted || 'active']?.lastHit.get(panel.metric);
-        if (!hits) continue;
-        for (const hit of hits.values()) {
-            if (highlightLevel(hit, now, durationMs, mode) > 0) return true;
-        }
+        // Même test O(1) que hasActiveHighlights : le max des horloges de la
+        // métrique décide pour toutes les clés (at monotone ≤ now, cf.
+        // stats_model.mjs).
+        const latest = evoCurrent.sets[panel.options.counted || 'active']?.latestHit?.get(panel.metric);
+        if (latest && highlightLevel(latest, now, durationMs, mode) > 0) return true;
     }
     return false;
 }

@@ -613,6 +613,10 @@ export function statsKeyOf(metric, properties) {
 // lastHit[metric] : clé → { at, newAt } — horloge du dernier incrément et du
 // déblocage (passage de 0 à 1). Sert au surlignage ; ajouter sans horloge
 // (`at` null : état initial, totaux) ne surligne rien.
+// latestHit[metric] : { at, newAt } — les mêmes horloges réduites à leur
+// maximum par métrique. Sert au test O(1) « encore des surbrillances ? »
+// (hasActiveHighlights) : pour `at` et `newAt`, le plus récent décide pour
+// toutes les clés — si lui est hors fenêtre, aucune ne surligne.
 export function createStatsAccumulator(metrics = []) {
     const list = [...new Set(metrics)].filter((m) => Object.hasOwn(KEY_OF, m));
     const acc = {
@@ -621,6 +625,7 @@ export function createStatsAccumulator(metrics = []) {
         counts: new Map(),
         excluded: new Map(),
         lastHit: new Map(),
+        latestHit: new Map(),
         revision: 0,
         reset() {
             acc.total = 0;
@@ -628,6 +633,7 @@ export function createStatsAccumulator(metrics = []) {
                 acc.counts.set(metric, new Map());
                 acc.excluded.set(metric, 0);
                 acc.lastHit.set(metric, new Map());
+                acc.latestHit.set(metric, { at: null, newAt: null });
             }
             acc.revision += 1;
             return acc;
@@ -657,6 +663,13 @@ export function createStatsAccumulator(metrics = []) {
                             hit.at = at;
                             if (before === 0) hit.newAt = at;
                             hits.set(k, hit);
+                            // Max par métrique pour le test O(1) de
+                            // hasActiveHighlights (invariant ci-dessous).
+                            const latest = acc.latestHit.get(metric);
+                            if (!Number.isFinite(latest.at) || at > latest.at) latest.at = at;
+                            if (before === 0 && (!Number.isFinite(latest.newAt) || at > latest.newAt)) {
+                                latest.newAt = at;
+                            }
                         }
                     }
                 }
@@ -704,15 +717,21 @@ export function highlightLevel(hit, now, durationMs, mode) {
 
 // Une surbrillance est-elle encore visible pour l'un des panneaux ? Tant que
 // oui, ils se redessinent à chaque frame ; ensuite ils se rendorment.
+//
+// Lecture O(1) par panneau : on teste seulement le MAX des horloges de la
+// métrique (latestHit), pas chaque clé. Correct parce que `at` est l'horloge
+// du lot au moment de l'accumulation (accumulateStatsForDates → add(f, now)) :
+// monotone et `at ≤ now` pendant une animation. Le `at`/`newAt` le plus
+// récent est donc le plus à même d'être encore dans la fenêtre
+// (now - durationMs, now] : s'il l'a dépassée, tous les autres l'ont aussi ;
+// s'il est dedans, il y a une surbrillance. Sans latestHit (accumulateur
+// externe), on ne surligne pas — seuls nos accumulateurs passent ici.
 export function hasActiveHighlights(acc, panels, now, durationMs) {
     for (const panel of panels) {
         const mode = panel.options?.highlight;
         if (!mode || mode === 'none') continue;
-        const hits = acc.lastHit.get(panel.metric);
-        if (!hits) continue;
-        for (const hit of hits.values()) {
-            if (highlightLevel(hit, now, durationMs, mode) > 0) return true;
-        }
+        const latest = acc.latestHit?.get(panel.metric);
+        if (latest && highlightLevel(latest, now, durationMs, mode) > 0) return true;
     }
     return false;
 }
@@ -733,7 +752,7 @@ const propertiesOf = (feature) => feature?.properties || feature?.getProperties?
 
 export function createEvolutionStatsAccumulator(metrics = []) {
     const list = [...new Set(metrics)].filter((m) => Object.hasOwn(KEY_OF, m));
-    const newSet = () => ({ counts: new Map(), excluded: new Map(), lastHit: new Map(), total: 0 });
+    const newSet = () => ({ counts: new Map(), excluded: new Map(), lastHit: new Map(), latestHit: new Map(), total: 0 });
     const sets = { active: newSet(), placed: newSet(), archived: newSet() };
     const acc = {
         metrics: list,
@@ -741,11 +760,13 @@ export function createEvolutionStatsAccumulator(metrics = []) {
         revision: 0,
         reset() {
             for (const set of Object.values(sets)) {
-                set.counts.clear(); set.excluded.clear(); set.lastHit.clear(); set.total = 0;
+                set.counts.clear(); set.excluded.clear(); set.lastHit.clear();
+                set.latestHit.clear(); set.total = 0;
                 for (const metric of list) {
                     set.counts.set(metric, new Map());
                     set.excluded.set(metric, 0);
                     set.lastHit.set(metric, new Map());
+                    set.latestHit.set(metric, { at: null, newAt: null });
                 }
             }
             acc.revision += 1;
@@ -793,11 +814,19 @@ export function createEvolutionStatsAccumulator(metrics = []) {
                 const hitSet = delta > 0 ? targets[0] : null;
                 if (hasClock && hitSet && key !== null && keys.length > 0) {
                     const hits = hitSet.lastHit.get(metric);
+                    const latest = hitSet.latestHit.get(metric);
                     for (const k of keys) {
+                        // Déblocage : la clé vient de passer de 0 à 1 (hitSet
+                        // n'existe que pour delta > 0, donc seuil = 1).
+                        const isNew = (hitSet.counts.get(metric).get(k) || 0) === (delta > 0 ? 1 : 0);
                         const hit = hits.get(k) || { at: null, newAt: null };
                         hit.at = at;
-                        if ((hitSet.counts.get(metric).get(k) || 0) === (delta > 0 ? 1 : 0)) hit.newAt = at;
+                        if (isNew) hit.newAt = at;
                         hits.set(k, hit);
+                        // Max par métrique pour le test O(1) de
+                        // hasActiveHighlights (invariant : cf. plus haut).
+                        if (!Number.isFinite(latest.at) || at > latest.at) latest.at = at;
+                        if (isNew && (!Number.isFinite(latest.newAt) || at > latest.newAt)) latest.newAt = at;
                     }
                 }
             }

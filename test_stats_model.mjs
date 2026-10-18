@@ -302,6 +302,41 @@ test('surlignage : déblocage seulement au passage de 0 à 1', () => {
     assert.equal(hasActiveHighlights(acc, panels, 2700, 600), false);
 });
 
+test('surlignage O(1) : latestHit, le dernier at décide pour toutes les clés', () => {
+    const acc = createStatsAccumulator(['dt']);
+    // Trois lots à horloges croissantes, trois cases D/T distinctes.
+    acc.add([geocache(1, 1)], 1000);
+    acc.add([geocache(2, 2)], 2000);
+    acc.add([geocache(3, 3)], 3000);
+    const latest = acc.latestHit.get('dt');
+    assert.equal(latest.at, 3000);
+    assert.equal(latest.newAt, 3000);
+
+    const panels = [{ metric: 'dt', options: { highlight: 'every' } }];
+    // Le dernier at (3000) est dans la fenêtre (2900, 3500] → surbrillance.
+    assert.equal(hasActiveHighlights(acc, panels, 3500, 600), true);
+    // Il l'a dépassée (3000 ∉ (3000, 3600]) → plus rien, comme le scan des
+    // clés : at monotone ≤ now, le plus récent est le dernier à s'éteindre.
+    assert.equal(hasActiveHighlights(acc, panels, 3600, 600), false);
+    // Horloge non finie → jamais de surbrillance.
+    assert.equal(hasActiveHighlights(acc, panels, NaN, 600), false);
+    assert.equal(hasActiveHighlights(acc, panels, Infinity, 600), false);
+});
+
+test("surlignage O(1) : mode 'new' lit le dernier déblocage, pas le dernier incrément", () => {
+    const acc = createStatsAccumulator(['dt']);
+    acc.add([geocache(1, 1)], 1000);              // déblocage de la case
+    acc.add([geocache(1, 1)], 3000);              // re-incrément de la même case
+    assert.equal(acc.latestHit.get('dt').at, 3000);
+    assert.equal(acc.latestHit.get('dt').newAt, 1000);
+
+    const every = [{ metric: 'dt', options: { highlight: 'every' } }];
+    const news = [{ metric: 'dt', options: { highlight: 'new' } }];
+    // at=3000 ∈ (2500, 3100] mais newAt=1000 hors fenêtre.
+    assert.equal(hasActiveHighlights(acc, every, 3100, 600), true);
+    assert.equal(hasActiveHighlights(acc, news, 3100, 600), false);
+});
+
 test('featuresUpTo : coupe à la date incluse, clés toDateString', () => {
     const index = new Map([
         [new Date(2021, 0, 1).toDateString(), [geocache(1, 1)]],
@@ -670,6 +705,29 @@ test('évolution : accumulateur à trois univers, add et remove', () => {
     assert.equal(acc.setView('active').total, 1);
     // Le cumul des poses ne redescend jamais.
     assert.equal(acc.setView('placed').total, 2);
+});
+
+test('évolution : latestHit porte le max des horloges par univers', () => {
+    const acc = createEvolutionStatsAccumulator(['cache_type']);
+    acc.add([evoFeature(0)], 1000);                        // T0 débloquée
+    acc.add([evoFeature(0), evoFeature(1)], 2000);         // T0 ré-incrémentée, T1 débloquée
+    // Seul le premier univers cible (actives à la pose) reçoit l'horloge.
+    assert.equal(acc.sets.active.latestHit.get('cache_type').at, 2000);
+    assert.equal(acc.sets.active.latestHit.get('cache_type').newAt, 2000);  // déblocage de T1
+    assert.equal(acc.sets.placed.latestHit.get('cache_type').at, null);
+    // L'archivage alimente « archivées », sans toucher à l'actif.
+    acc.remove([evoFeature(0)], 3000);
+    assert.equal(acc.sets.archived.latestHit.get('cache_type').at, 3000);
+    assert.equal(acc.sets.archived.latestHit.get('cache_type').newAt, 3000);
+    assert.equal(acc.sets.active.latestHit.get('cache_type').at, 2000);
+    // setView propage latestHit : c'est ce que hasActiveEvolutionHighlights lit.
+    assert.equal(acc.setView('active').latestHit, acc.sets.active.latestHit);
+    assert.equal(acc.setView('archived').latestHit, acc.sets.archived.latestHit);
+    // Le même test O(1) que l'accumulateur principal s'applique à la vue.
+    const accView = { latestHit: acc.setView('active').latestHit };
+    const panels = [{ metric: 'cache_type', options: { highlight: 'every' } }];
+    assert.equal(hasActiveHighlights(accView, panels, 2500, 600), true);
+    assert.equal(hasActiveHighlights(accView, panels, 2600, 600), false);
 });
 
 test('évolution : evolutionStateAt rejoue les événements, pas les jours', () => {

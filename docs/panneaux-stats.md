@@ -142,7 +142,11 @@ points (`sampleAppearClock`) : temps vidéo en capture image par image, donc
 reproductible. Tant qu'elle est visible, `updateStatsPanels` tient le
 `mapDirtyTracker` en animation (`beginAnimation`/`endAnimation`) : sinon le
 compositing MediaRecorder sauterait les frames d'une carte immobile et la
-surbrillance resterait figée.
+surbrillance resterait figée. Le test « encore une surbrillance ? », relu à
+chaque frame, ne scanne pas les clés de la métrique : `latestHit` garde les
+max `at`/`newAt` par métrique, et `at` étant monotone et ≤ `now` pendant
+l'animation, le plus récent décide pour toutes les clés — lecture O(1) par
+panneau, quel que soit leur nombre (owner, attribute…).
 
 L'option « nouveautés » n'est proposée qu'aux types où un déblocage diffère
 d'un incrément (grille, barres, anneau) : courbe et compteurs la traitent
