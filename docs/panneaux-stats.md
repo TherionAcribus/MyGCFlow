@@ -203,7 +203,11 @@ dans le cadre à toute taille d'aperçu ou de vidéo. Un panneau libre sort de s
 pile. Il s'obtient en glissant le panneau sur la carte tant que l'onglet Stats
 est ouvert et qu'aucune animation ne tourne (classe `stats-editing` sur
 `#mapWithFrames`, qui rend les canvas saisissables) ; choisir un coin dans le
-formulaire le remet en mode `anchor`.
+formulaire le remet en mode `anchor`. Pendant le glisser, chaque `pointermove`
+applique la position en place via `previewStatsPanelPosition` — sans
+renormaliser le bloc ni toucher `settingsRev`, ce qui éviterait de reconstruire
+les textes alternatifs à chaque mouvement ; le `commit` au dépôt renormalise
+et persiste comme d'habitude.
 
 Avertissements dans l'onglet (événement `mygcflow:stats-layout`) : panneau
 ramené dans le cadre (pile trop haute, largeur supérieure à la carte), panneau

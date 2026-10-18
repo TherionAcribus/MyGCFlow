@@ -367,6 +367,38 @@ test('un panneau glissé passe en position libre, choisir un coin l’y ramène'
   await expect(page.locator('#statsFreePosition')).toBeHidden();
 });
 
+test('le glisser d\'un panneau ne reconstruit pas son équivalent textuel', async ({ page }) => {
+  await putStats(page, { enabled: true, panels: [
+    { id: 'd0a97001', kind: 'grid', metric: 'dt', position: { anchor: 'bottom-left' } },
+  ] });
+  await openWithFixture(page, '#stats');
+  await page.locator('a[href="#stats"]').click();
+  const canvas = page.locator('canvas.stats-panel');
+  await expect(canvas).toHaveCount(1);
+
+  // Chaque mutation du texte alternatif est comptée : pendant le glisser, la
+  // position est appliquée en place (previewStatsPanelPosition), sans
+  // renormalisation — sinon settingsRev changerait à chaque pointermove et
+  // toutes les <li> de l'équivalent seraient recréées par mouvement.
+  await page.evaluate(() => {
+    const alt = document.querySelector('.stats-panel-alt');
+    window.__altMutations = 0;
+    window.__altObserver = new MutationObserver(() => { window.__altMutations += 1; });
+    window.__altObserver.observe(alt, { childList: true, subtree: true });
+  });
+  const box = await canvas.boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 + 60, box.y + box.height / 2 + 40, { steps: 5 });
+  // Pendant le glisser : zéro reconstruction — la position n'entre pas dans
+  // la clé a11y. (La reconstruction unique au dépôt, via le commit
+  // renormalisé, est voulue : elle est mesurée avant le mouse.up.)
+  expect(await page.evaluate(() => window.__altMutations)).toBe(0);
+  await page.mouse.up();
+  // Le dépôt a bien persisté la position libre (commit renormalisé).
+  await expect.poll(async () => (await savedStats(page)).panels[0].position.mode).toBe('free');
+});
+
 test('une pile de coin démarre sous le titre au lieu de le recouvrir', async ({ page }) => {
   await putStats(page, { enabled: true, panels: [
     { id: 'eeeeee01', kind: 'counter', metric: 'summary', position: { anchor: 'top-left', dx: 16, dy: 16 } },

@@ -869,6 +869,23 @@ export function invalidateStatsLayout() {
     touch();
 }
 
+// Aperçu en direct du glisser-déposer (stats_ui.js › pointermove) : la
+// position libre est écrite en place puis la mise en page invalidée, SANS
+// renormaliser le bloc ni toucher `settingsRev` — sinon le texte alternatif
+// de chaque panneau serait reconstruit à chaque mouvement (des centaines de
+// <li> pour un calendrier). Le commit au dépôt (stats_ui.js) renormalise.
+export function previewStatsPanelPosition(id, x, y) {
+    if (pkg.isAnimationInProgress?.()) return;
+    const list = settings[isEvolutionPage() ? 'evolution_panels' : 'panels'] || [];
+    const panel = list.find((p) => p.id === id);
+    if (!panel || !Number.isFinite(x) || !Number.isFinite(y)) return;
+    panel.position.mode = 'free';
+    panel.position.x = Math.max(0, Math.min(1, x));
+    panel.position.y = Math.max(0, Math.min(1, y));
+    layoutDirty = true;
+    touch();
+}
+
 function scheduleFlush() {
     if (frameRequest || typeof requestAnimationFrame === 'undefined') return;
     frameRequest = requestAnimationFrame(() => {

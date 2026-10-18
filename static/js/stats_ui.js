@@ -678,8 +678,9 @@ function bindDragAndDrop() {
     host.addEventListener('pointermove', (event) => {
         if (!drag || event.pointerId !== drag.pointerId) return;
         drag.last = positionFor(event);
-        // Aperçu en direct, sans écriture : l'enregistrement part au dépôt.
-        pkg.applyStatsSettings(withFreePosition(drag.id, drag.last.x, drag.last.y));
+        // Aperçu en direct : la position est écrite en place, sans
+        // renormalisation ni envoi — le commit au dépôt fait les deux.
+        pkg.previewStatsPanelPosition?.(drag.id, drag.last.x, drag.last.y);
     });
     const end = (event) => {
         if (!drag || event.pointerId !== drag.pointerId) return;
