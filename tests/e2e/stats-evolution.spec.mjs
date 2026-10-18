@@ -177,3 +177,20 @@ test('les panneaux Évolution comptent les trois univers et suivent l\'animation
     // Retour au repos sur l'état de fin.
     expect((await snapshot(page)).total).toBe(5);
 });
+
+test('le champ « Surligner » se masque quand il est sans effet', async ({ page }) => {
+  await openEvolution(page);
+  await page.locator('a[href="#stats"]').click();
+  const list = page.locator('#statsPanelList');
+  const field = page.locator('#statsHighlightField');
+  // Statut : aucun surlignage possible → champ masqué.
+  await list.locator('li', { hasText: 'Statut' }).locator('[data-action="select"]').click();
+  await expect(field).toBeHidden();
+  // Courbe Évolution : idem.
+  await list.locator('li', { hasText: 'Courbe actives' }).locator('[data-action="select"]').click();
+  await expect(field).toBeHidden();
+  // Compteurs : le champ reste, mais « Les nouveautés » est retirée.
+  await list.locator('li', { hasText: 'Compteurs' }).locator('[data-action="select"]').click();
+  await expect(field).toBeVisible();
+  await expect(page.locator('#selectStatsHighlight option[value="new"]')).toBeDisabled();
+});

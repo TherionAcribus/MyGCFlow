@@ -138,6 +138,12 @@ reproductible. Tant qu'elle est visible, `updateStatsPanels` tient le
 compositing MediaRecorder sauterait les frames d'une carte immobile et la
 surbrillance resterait figée.
 
+L'option « nouveautés » n'est proposée qu'aux types où un déblocage diffère
+d'un incrément (grille, barres, anneau) : courbe et compteurs la traitent
+comme « chaque trouvaille », le choix n'apparaît donc pas. En Évolution, la
+métrique « statut » et les courbes n'ont aucun surlignage : le champ entier
+est masqué dans le formulaire.
+
 ### Valeurs animées
 
 Longueurs de barres, parts d'anneau, tête de la courbe et compteurs glissent

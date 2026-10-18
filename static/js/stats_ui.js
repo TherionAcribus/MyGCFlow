@@ -377,7 +377,20 @@ function renderForm() {
     // indéfinies, setValue les ignore).
     const o = panel.options;
     setValue('switchStatsValues', o.show_values);
-    setValue('selectStatsHighlight', o.highlight);
+    // « Les nouveautés » n'a de sens que là où un déblocage diffère d'un
+    // incrément (grille, barres, anneau) : la courbe et les compteurs le
+    // traitent comme « Chaque trouvaille » — l'option est retirée.
+    const highlightSelect = $('selectStatsHighlight');
+    const offersNew = ['grid', 'bar', 'donut'].includes(panel.kind);
+    const newOption = highlightSelect?.querySelector('option[value="new"]');
+    if (newOption) {
+        newOption.hidden = !offersNew;
+        newOption.disabled = !offersNew;
+    }
+    setValue('selectStatsHighlight', !offersNew && o.highlight === 'new' ? 'every' : o.highlight);
+    // Sans effet du tout (Évolution : statut, courbes) : le champ se masque.
+    const highlightField = $('statsHighlightField');
+    if (highlightField) highlightField.hidden = evolutionMode && (panel.metric === 'status' || panel.kind === 'line');
     setValue('selectStatsCellMode', o.cell_mode);
     setValue('switchStatsCoverage', o.show_coverage);
     setValue('selectStatsSort', o.sort);

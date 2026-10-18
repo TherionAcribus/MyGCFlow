@@ -744,3 +744,19 @@ test('« Lignes au maximum » est proposé pour les métriques à catégories', 
   await page.locator('#selectStatsMetric').selectOption('year');
   await expect(maxItems).toBeHidden();
 });
+
+test('« Les nouveautés » n\'est proposé qu\'aux types qui la distinguent', async ({ page }) => {
+  await putStats(page, { enabled: true, panels: [
+    { id: '9h1ghl01', kind: 'counter', metric: 'summary', position: { anchor: 'top-left' } },
+    { id: '9h1ghl02', kind: 'bar', metric: 'cache_type', position: { anchor: 'bottom-left' } },
+  ] });
+  await openWithFixture(page, '#stats');
+  await page.locator('a[href="#stats"]').click();
+  const list = page.locator('#statsPanelList');
+  const newOption = page.locator('#selectStatsHighlight option[value="new"]');
+  // Compteurs : « new » indisponible ; barres : proposée.
+  await list.locator('li', { hasText: 'Chiffres clés' }).locator('[data-action="select"]').click();
+  await expect(newOption).toBeDisabled();
+  await list.locator('li', { hasText: 'Types de caches' }).locator('[data-action="select"]').click();
+  await expect(newOption).toBeEnabled();
+});
