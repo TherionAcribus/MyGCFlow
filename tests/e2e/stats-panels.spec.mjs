@@ -16,6 +16,7 @@ import { dismissFirstUseModal } from './first-use.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE = path.join(HERE, 'fixtures', 'my-finds.gpx');
+const GAP_FIXTURE = path.join(HERE, 'fixtures', 'my-finds-gap.gpx');
 const DEFAULT_STATS = { enabled: true, panels: [] };
 
 async function putStats(page, stats) {
@@ -27,16 +28,16 @@ async function savedStats(page) {
   return (await (await page.request.get('/api/settings')).json()).stats;
 }
 
-async function openWithFixture(page, hash = '') {
+async function openWithFixture(page, hash = '', fixture = FIXTURE, expectedCount = '6 / 6') {
   await page.goto(`/${hash}`, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.mygcflowReady === true);
   await dismissFirstUseModal(page);
-  await page.locator('#file-input').setInputFiles(FIXTURE);
+  await page.locator('#file-input').setInputFiles(fixture);
   await expect(page.locator('.gcm-toast').filter({ hasText: 'Fichier chargé avec succès' }).last())
     .toBeVisible({ timeout: 45_000 });
   await expect(page.locator('.gcm-toast').filter({ hasText: 'Chargement et affichage des points' }).first())
     .toBeHidden({ timeout: 30_000 });
-  await expect(page.locator('#filtersCounter')).toContainText('6 / 6');
+  await expect(page.locator('#filtersCounter')).toContainText(expectedCount);
   // Les filtres se réappliquent encore un peu après l'import, chacun par une
   // reconstruction de l'index : attendre qu'il ne bouge plus.
   let previous = -1;
@@ -243,6 +244,34 @@ test('anneau, courbe et compteurs se remplissent pendant la lecture', async ({ p
   state = await snapshot(page);
   expect(Object.keys(state.counts.day)).toHaveLength(6);
   expect(errors).toEqual([]);
+});
+
+test('la courbe avance pendant les jours sans trouvaille', async ({ page }) => {
+  // Numéro de jour du 01/01/2026, convention dayNumber (jours depuis l'epoch).
+  const DAY1 = Date.UTC(2026, 0, 1) / 86400000;
+  await putStats(page, { enabled: true, panels: [
+    { id: 'eeeeee02', kind: 'line', metric: 'cumulative', position: { anchor: 'bottom-left' } },
+  ] });
+  // Fixture : trouvailles les 1er et 6 janvier, quatre jours vides entre les deux.
+  await openWithFixture(page, '', GAP_FIXTURE, '2 / 2');
+  await expect(page.locator('canvas.stats-panel')).toHaveCount(1);
+  // 1 j/s : au-delà de la durée des tweens (~600 ms), aucun redessin ne
+  // survit entre deux lots sans accumulateStatsForDates.
+  await setRhythm(page, 1);
+
+  await page.locator('#btnQuickPreview').click();
+  // Pendant le trou (total bloqué à 1), la tête dessinée continue d'avancer
+  // au lieu de rester sur la dernière trouvaille.
+  await expect.poll(async () => {
+    const s = await snapshot(page);
+    return s.mode === 'animating' && s.total === 1 ? s.drawnHeads?.eeeeee02 : null;
+  }, { intervals: [50], timeout: 10_000 }).toBeGreaterThan(DAY1 + 1);
+
+  // Fin naturelle : les deux trouvailles comptées, tête sur le dernier jour.
+  await expect(page.locator('#btnQuickPreview')).toBeVisible({ timeout: 15_000 });
+  await expect.poll(async () => (await snapshot(page)).total, { timeout: 10_000 }).toBe(2);
+  await expect.poll(async () => (await snapshot(page)).drawnHeads?.eeeeee02,
+    { timeout: 10_000 }).toBe(DAY1 + 5);
 });
 
 test('un panneau glissé passe en position libre, choisir un coin l’y ramène', async ({ page }) => {

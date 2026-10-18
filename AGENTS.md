@@ -77,6 +77,14 @@ Autres repères :
   ramène pas au premier sous-onglet : celui qui était ouvert le reste.
   `#timingSummary`, `#timingErrors` et `#timingWarnings` vivent au-dessus des
   sous-onglets, visibles depuis les quatre.
+- Tester qu'une courbe Stats avance pendant les jours sans trouvaille exige
+  un rythme **lent** (`inputDaysPerSecond` = 1) : à ~2 j/s et plus, les lots
+  arrivent dans la fenêtre des tweens (~600 ms) et le mécanisme de
+  surbrillance redessine assez souvent pour masquer l'absence de `touch()`
+  dans `accumulateStatsForDates` (le bug ne se voit que quand
+  `msPerDay > duration`). `getStatsSnapshot().drawnHeads` expose le dernier
+  jour peint par la tête de chaque courbe — exemple dans
+  `stats-panels.spec.mjs` (fixture `my-finds-gap.gpx`).
 - Même famille : `stats` (panneaux de l'onglet Stats) est une préférence
   globale. Un spec qui pose des panneaux doit remettre
   `PUT /api/settings {stats: {enabled: true, panels: []}}` en sortant, sinon

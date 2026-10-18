@@ -210,9 +210,14 @@ export function accumulateStatsForDates(dates, now) {
         return;
     }
     animation.lastDate = dates[dates.length - 1];
-    const features = featuresOfDates(dates);
-    if (features.length === 0) return;
     if (Number.isFinite(now)) lastNow = now;
+    const features = featuresOfDates(dates);
+    if (features.length === 0) {
+        // Jours sans trouvaille : rien à compter, mais la tête d'une courbe
+        // avance quand même sur l'axe des dates — il faut redessiner.
+        if (visiblePanels().some((panel) => panel.kind === 'line')) touch();
+        return;
+    }
     current.add(features, Number.isFinite(now) ? now : null);
     touch();
 }
@@ -665,6 +670,7 @@ function flush() {
             drawStatsPanel(ctx, { x: 0, y: 0, width: bw, height: bh },
                 views.get(panel.id), panel.style, lastNow, rect.width);
             node.drawnKey = key;
+            node.drawnHeadDay = views.get(panel.id)?.model?.shownHeadDay ?? null;
         }
         node.canvas.classList.toggle('is-free', panel.position.mode === 'free');
         if (rect.overflow) warnings.push({ id: panel.id, kind: 'overflow' });
@@ -754,6 +760,7 @@ export function addStatsPanelsToCanvas(ctx, canvasWidth, canvasHeight, scaleFact
             drawStatsPanel(offCtx, { x: 0, y: 0, width: w, height: h },
                 views.get(panel.id), panel.style, lastNow, rect.width);
             cached.key = key;
+            node.drawnHeadDay = views.get(panel.id)?.model?.shownHeadDay ?? null;
         }
         ctx.drawImage(cached.canvas, x, y);
     }
@@ -782,5 +789,10 @@ export function getStatsSnapshot() {
         revision,
         videoDrawCount,
         visible: visiblePanels().map((panel) => panel.id),
+        // Dernier jour peint par la tête de chaque courbe : les tests E2E
+        // vérifient qu'elle avance pendant les jours sans trouvaille.
+        drawnHeads: Object.fromEntries(visiblePanels()
+            .filter((panel) => panel.kind === 'line')
+            .map((panel) => [panel.id, panelNodes.get(panel.id)?.drawnHeadDay ?? null])),
     };
 }

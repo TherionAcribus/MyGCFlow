@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.0" creator="Groundspeak Pocket Query"
+     xmlns="http://www.topografix.com/GPX/1/0"
+     xmlns:groundspeak="http://www.groundspeak.com/cache/1/0/1">
+  <name>My Finds Pocket Query - MyGCFlow E2E (jours vides)</name>
+  <desc>Deux trouvailles separees par quatre jours sans cache</desc>
+  <author>Groundspeak</author>
+  <wpt lat="48.8501" lon="2.3501"><time>2025-01-01T00:00:00Z</time><name>GCE2EG01</name><urlname>Avant le trou</urlname><groundspeak:cache><groundspeak:name>Avant le trou</groundspeak:name><groundspeak:type>Traditional Cache</groundspeak:type><groundspeak:container>Micro</groundspeak:container><groundspeak:difficulty>1.5</groundspeak:difficulty><groundspeak:terrain>1.5</groundspeak:terrain><groundspeak:country>France</groundspeak:country><groundspeak:state>Île-de-France</groundspeak:state><groundspeak:logs><groundspeak:log><groundspeak:date>2026-01-01T10:00:00Z</groundspeak:date><groundspeak:type>Found it</groundspeak:type></groundspeak:log></groundspeak:logs></groundspeak:cache></wpt>
+  <wpt lat="48.8556" lon="2.3556"><time>2025-01-06T00:00:00Z</time><name>GCE2EG02</name><urlname>Après le trou</urlname><groundspeak:cache><groundspeak:name>Après le trou</groundspeak:name><groundspeak:type>Traditional Cache</groundspeak:type><groundspeak:container>Small</groundspeak:container><groundspeak:difficulty>2.0</groundspeak:difficulty><groundspeak:terrain>2.0</groundspeak:terrain><groundspeak:country>France</groundspeak:country><groundspeak:state>Île-de-France</groundspeak:state><groundspeak:logs><groundspeak:log><groundspeak:date>2026-01-06T10:00:00Z</groundspeak:date><groundspeak:type>Found it</groundspeak:type></groundspeak:log></groundspeak:logs></groundspeak:cache></wpt>
+</gpx>

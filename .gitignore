@@ -12,6 +12,7 @@ instance/
 # Données générées
 *.gpx
 !tests/e2e/fixtures/my-finds.gpx
+!tests/e2e/fixtures/my-finds-gap.gpx
 !tests/e2e/fixtures/my-finds-locationless.gpx
 !tests/fixtures/labs/*.gpx
 captured/
