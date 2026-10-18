@@ -893,6 +893,7 @@ function deleteConfig(name) {
 const REORG_ANCHORS = ['bottom-left', 'bottom-right', 'top-left', 'top-right', 'middle-left', 'middle-right'];
 
 function reorganizePanels() {
+    const previous = structuredClone(modePanels(currentSettings()));
     updatePanels((panels) => {
         panels.forEach((panel, i) => {
             panel.position = {
@@ -904,6 +905,14 @@ function reorganizePanels() {
         return panels;
     }, STATS_SAVE_STATUS, { immediate: true });
     renderStatsTab();
+    // Réversible, comme une suppression : la liste d'avant revient entière.
+    pkg.showActionToast?.(
+        pkg.t('Panneaux réorganisés'),
+        { label: 'Annuler', onClick: () => {
+            commit({ ...currentSettings(), [panelsKey()]: previous },
+                STATS_SAVE_STATUS, { immediate: true });
+            renderStatsTab();
+        } });
 }
 
 function renderWarnings(warnings = pkg.getStatsLayoutWarnings?.() || []) {

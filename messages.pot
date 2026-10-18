@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-18 12:32+0200\n"
+"POT-Creation-Date: 2026-10-18 13:29+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2680,7 +2680,7 @@ msgid "Aucun thème"
 msgstr ""
 
 #: static/js/profiles.js:958 static/js/profiles.js:2748
-#: static/js/stats_ui.js:206
+#: static/js/stats_ui.js:205
 msgid "Dupliquer"
 msgstr ""
 
@@ -2705,8 +2705,8 @@ msgid "Réinitialiser"
 msgstr ""
 
 #: static/js/profiles.js:967 static/js/recent_videos.js:60
-#: static/js/recent_videos.js:121 static/js/stats_ui.js:207
-#: static/js/stats_ui.js:783 templates/menu_style.html:272
+#: static/js/recent_videos.js:121 static/js/stats_ui.js:206
+#: static/js/stats_ui.js:807 templates/menu_style.html:272
 #: templates/modal_evolution.html:85
 msgid "Supprimer"
 msgstr ""
@@ -3258,94 +3258,98 @@ msgstr ""
 msgid "Pourcentage"
 msgstr ""
 
-#: static/js/stats_ui.js:178
+#: static/js/stats_ui.js:177
 msgid "Afficher ce panneau"
 msgstr ""
 
-#: static/js/stats_ui.js:197
+#: static/js/stats_ui.js:196 static/js/stats_ui.js:804
 msgid "Pas affiché dans ce mode"
 msgstr ""
 
-#: static/js/stats_ui.js:204
+#: static/js/stats_ui.js:203
 msgid "Monter"
 msgstr ""
 
-#: static/js/stats_ui.js:205
+#: static/js/stats_ui.js:204
 msgid "Descendre"
 msgstr ""
 
-#: static/js/stats_ui.js:217
+#: static/js/stats_ui.js:216
 msgid ""
 "Aucun panneau. Commencez par un modèle : les chiffres de la chronologie, "
 "par exemple, comptent actives, poses et archivages."
 msgstr ""
 
-#: static/js/stats_ui.js:218 templates/menu_stats.html:105
+#: static/js/stats_ui.js:217 templates/menu_stats.html:105
 msgid ""
 "Aucun panneau. Commencez par un modèle : la matrice D/T, par exemple, se "
 "remplit case par case au fil de vos trouvailles."
 msgstr ""
 
-#: static/js/stats_ui.js:241
+#: static/js/stats_ui.js:240
 #, python-brace-format
 msgid "${n} places requises"
 msgstr ""
 
-#: static/js/stats_ui.js:288
+#: static/js/stats_ui.js:287
 #, python-brace-format
 msgid "« ${name} » supprimé"
 msgstr ""
 
-#: static/js/stats_ui.js:732
+#: static/js/stats_ui.js:746
 msgid "Import impossible : fichier de panneaux invalide"
 msgstr ""
 
-#: static/js/stats_ui.js:742
+#: static/js/stats_ui.js:756
 #, python-brace-format
 msgid "${count} panneau(x) importé(s)"
 msgstr ""
 
-#: static/js/stats_ui.js:821
+#: static/js/stats_ui.js:846
 #, python-brace-format
 msgid "Configuration « ${name} » enregistrée"
 msgstr ""
 
-#: static/js/stats_ui.js:835
+#: static/js/stats_ui.js:860
 #, python-brace-format
 msgid "Configuration « ${name} » appliquée"
 msgstr ""
 
-#: static/js/stats_ui.js:854
+#: static/js/stats_ui.js:879
 #, python-brace-format
 msgid "« ${name} » supprimée"
 msgstr ""
 
-#: static/js/stats_ui.js:895
+#: static/js/stats_ui.js:910
+msgid "Panneaux réorganisés"
+msgstr ""
+
+#: static/js/stats_ui.js:929
 #, python-brace-format
 msgid "« ${name} » dépasse de la carte : réduisez sa largeur ou changez de coin."
 msgstr ""
 
-#: static/js/stats_ui.js:897
+#: static/js/stats_ui.js:931
 msgid "le titre"
 msgstr ""
 
-#: static/js/stats_ui.js:897
+#: static/js/stats_ui.js:931
 msgid "les infos"
 msgstr ""
 
-#: static/js/stats_ui.js:898
+#: static/js/stats_ui.js:932
 #, python-brace-format
 msgid "« ${name} » chevauche ${other}."
 msgstr ""
 
-#: static/js/stats_ui.js:901
+#: static/js/stats_ui.js:935
 #, python-brace-format
 msgid ""
 "« ${name} » chevauche « ${other} » : changez de coin ou réduisez une "
 "largeur."
 msgstr ""
 
-#: static/js/stats_ui.js:913
+#: static/js/stats_ui.js:947
 msgid "Réorganiser automatiquement"
 msgstr ""
 

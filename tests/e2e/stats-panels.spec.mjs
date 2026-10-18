@@ -566,6 +566,13 @@ test('« Réorganiser » répartit les panneaux en conflit sur des coins distinc
     .toEqual(['bottom-left', 'bottom-right']);
   await expect.poll(async () => (await savedStats(page)).panels.map((p) => p.position.mode))
     .toEqual(['anchor', 'anchor']);
+
+  // Réversible : le toast « Annuler » restaure les positions libres d'avant.
+  const toast = page.locator('.gcm-toast.show').filter({ hasText: /réorganis/i });
+  await expect(toast).toBeVisible();
+  await toast.locator('.gcm-toast-action').filter({ hasText: 'Annuler' }).click();
+  await expect.poll(async () => (await savedStats(page)).panels.map((p) => p.position.mode))
+    .toEqual(['free', 'free']);
 });
 
 test('le panneau sélectionné s\'exporte en PNG et en CSV', async ({ page }) => {
