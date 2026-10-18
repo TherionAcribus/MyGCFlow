@@ -502,3 +502,34 @@ test('le panneau choisi dans la liste porte le repère de sélection sur la cart
   await expect(page.locator('#mapWithFrames')).not.toHaveClass(/stats-editing/);
   await expect(second).toHaveClass(/is-selected/);
 });
+
+test('les sections Position et Apparence du formulaire sont repliées', async ({ page }) => {
+  await putStats(page, { enabled: true, panels: [
+    { id: '5ec70001', kind: 'bar', metric: 'cache_type', position: { anchor: 'top-left' } },
+    { id: '5ec70002', kind: 'bar', metric: 'container', position: { mode: 'free', x: 0.3, y: 0.4 } },
+  ] });
+  await openWithFixture(page, '#stats');
+  await page.locator('a[href="#stats"]').click();
+
+  const position = page.locator('#statsSectionPosition');
+  const appearance = page.locator('#statsSectionAppearance');
+  // Repliées par défaut : leurs contrôles sont hors de vue.
+  await expect(position).toHaveJSProperty('open', false);
+  await expect(appearance).toHaveJSProperty('open', false);
+  await expect(page.locator('#inputStatsWidth')).toBeHidden();
+  await expect(page.locator('#inputStatsBackground')).toBeHidden();
+
+  // Le résumé déplie la section au clic.
+  await position.locator('summary').click();
+  await expect(position).toHaveJSProperty('open', true);
+  await expect(page.locator('#inputStatsWidth')).toBeVisible();
+  await position.locator('summary').click();
+  await expect(position).toHaveJSProperty('open', false);
+
+  // Un panneau glissé sur la carte (position libre) l'ouvre d'elle-même :
+  // l'alerte « Revenir au coin d'ancrage » doit rester trouvable.
+  await page.locator('li[data-panel-id="5ec70002"] .stats-panel-name').click();
+  await expect(position).toHaveJSProperty('open', true);
+  await expect(page.locator('#statsFreePosition')).toBeVisible();
+  await expect(appearance).toHaveJSProperty('open', false);
+});

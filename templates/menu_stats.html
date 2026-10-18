@@ -212,8 +212,9 @@
                         </div>
                     </div>
 
-                    <h6 class="gc-subsection-title mt-4">{{ _("Position") }}</h6>
-                    <div class="row g-2 align-items-start">
+                    <details class="stats-form-section" id="statsSectionPosition">
+                        <summary class="gc-subsection-title mt-4"><i class="ti ti-chevron-right stats-form-chevron" aria-hidden="true"></i>{{ _("Position") }}</summary>
+                        <div class="row g-2 align-items-start">
                         <div class="col-auto">
                             <span class="form-label d-block" id="labelStatsAnchor">{{ _("Coin d'ancrage") }}</span>
                             <div class="stats-anchor-grid" role="radiogroup" aria-labelledby="labelStatsAnchor">
@@ -254,10 +255,12 @@
                             </div>
                             <small class="form-hint text-muted d-block mt-1">{{ _("Tant que cet onglet est ouvert, vous pouvez glisser un panneau sur la carte pour le placer librement.") }}</small>
                         </div>
-                    </div>
+                        </div>
+                    </details>
 
-                    <h6 class="gc-subsection-title mt-4">{{ _("Apparence") }}</h6>
-                    <div class="row g-2">
+                    <details class="stats-form-section" id="statsSectionAppearance">
+                        <summary class="gc-subsection-title mt-4"><i class="ti ti-chevron-right stats-form-chevron" aria-hidden="true"></i>{{ _("Apparence") }}</summary>
+                        <div class="row g-2">
                         <div class="col-6 col-md-4">
                             <label class="form-label" for="inputStatsBackground">{{ _("Fond") }}</label>
                             <input type="color" class="form-control form-control-color" id="inputStatsBackground">
@@ -297,7 +300,8 @@
                                 <label class="form-check-label" for="switchStatsInheritFont">{{ _("Police de la cartouche d'infos") }}</label>
                             </div>
                         </div>
-                    </div>
+                        </div>
+                    </details>
                 </div>
             </div>
         </div>

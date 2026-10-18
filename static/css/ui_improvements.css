@@ -2960,6 +2960,33 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
     color: var(--color-text-muted);
 }
 
+/* Sous-sections repliables du formulaire d'un panneau (Position, Apparence) :
+   <details> natif — replié par défaut, le chevron bascule à l'ouverture. */
+.stats-form-section > summary {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    cursor: pointer;
+    user-select: none;
+}
+.stats-form-section > summary::-webkit-details-marker {
+    display: none;
+}
+.stats-form-section > summary:hover {
+    color: var(--color-text);
+}
+.stats-form-section .stats-form-chevron {
+    font-size: 0.9rem;
+    transition: transform 0.15s ease;
+}
+.stats-form-section[open] .stats-form-chevron {
+    transform: rotate(90deg);
+}
+.stats-form-section[open] > summary {
+    margin-bottom: 0.5rem;
+}
+
 /* Liste des panneaux : la ligne sélectionnée porte la couleur d'accent. */
 .stats-panel-list .list-group-item {
     display: flex;

@@ -348,6 +348,9 @@ function renderForm() {
         freeBox.hidden = !free;
         freeBox.classList.toggle('d-flex', free);
     }
+    // Position libre : la section repliée s'ouvre d'elle-même, sinon l'alerte
+    // « Revenir au coin d'ancrage » resterait introuvable.
+    if (free) $('statsSectionPosition')?.setAttribute('open', '');
     setValue('inputStatsDx', p.dx);
     setValue('inputStatsDy', p.dy);
     setValue('inputStatsWidth', p.width);
