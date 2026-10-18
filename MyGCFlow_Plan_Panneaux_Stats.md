@@ -8,7 +8,7 @@ Lots 0, 1, 2 et 2 bis implémentés (grilles D/T, Jasmer, calendrier 366 ; histo
 
 Lot 3 implémenté (2026-10-17) : anneaux/camemberts (`donut`), courbe cumulée (`line`), compteurs (`counter` : jours, record, plus longue série, types, pays, régions), métriques pays/régions, course de barres (`sort: race`), valeurs animées (`createTweenStore`), glisser-déposer en position libre (`position.mode: free`, x/y normalisés), contournement automatique du titre et des infos, avertissement de chevauchement entre panneaux.
 
-Audit traité + ergonomie (2026-10-18) : tête de courbe sur jours vides, modèles atomiques, retour de sauvegarde + « Annuler », validation stricte des dates/D-T, recalcul des obstacles titre/infos, patch partiel contre l'état courant, équivalent textuel accessible ; surlignage du panneau sélectionné (`is-selected`), sections « Position »/« Apparence » repliables, « Réorganiser automatiquement » dans l'alerte de mise en page, export PNG/CSV du panneau sélectionné.
+Audit traité + ergonomie (2026-10-18) : tête de courbe sur jours vides, modèles atomiques, retour de sauvegarde + « Annuler », validation stricte des dates/D-T, recalcul des obstacles titre/infos, patch partiel contre l'état courant, équivalent textuel accessible ; surlignage du panneau sélectionné (`is-selected`), sections « Position »/« Apparence » repliables, « Réorganiser automatiquement » dans l'alerte de mise en page, export PNG/CSV du panneau sélectionné, configurations nommées (`stats.configs` : `{name, panels}` ≤ 40 car., ≤ 12, appliquer = remplacer la liste avec « Annuler »).
 Non faits, volontairement : mode Évolution, export/import du bloc dans un thème. Perf (§6) mesurée le 2026-10-17 : aucun écart mesurable en MediaRecorder 2× avec 3 panneaux (détail dans `docs/panneaux-stats.md` › Mesures). Reste : notes de version 0.0.7.
 
 Écarts par rapport au plan ci-dessous, décidés en cours de route :
@@ -108,6 +108,10 @@ Export dans `static/js/index.js` (`export * from './stats_panels.js'`) comme `ov
                                    // palette ∈ "gc" (couleurs par type), "accent" (une couleur), "heat" (dégradé accent)
                                    // inherit_font : famille de police calculée de #infosFrame, sinon police de l'app
     }
+  ],
+  "configs": [                     // configurations nommées : instantanés de "panels" (max 12)
+    { "name": "Ma mise en page",   // aplati, ≤ 40 car. ; vide → entrée écartée ; premier nom gagnant
+      "panels": [ /* même schéma que "panels" */ ] }
   ]
 }
 ```
@@ -171,7 +175,7 @@ Règles de coercition (serveur **et** client `normalizeStatsSettings`, même esp
 ### 3.5 Onglet « Stats » (`templates/menu_stats.html`, `stats_ui.js`)
 
 - `app.html` : 5e `<li>` (`href="#stats"`, libellé « Stats » / court « Stats »), inclus `{% if mode != 'evolution' %}` ; `tab-pane` `#stats`. Icône Tabler `ti-chart-bar` (vérifier la présence dans le subset `static/vendor/tabler-icons/tabler-icons-subset.css`, sinon régénérer comme dans `99acf98`).
-- Contenu : interrupteur général ; **liste des panneaux** (cartes compactes : type + métrique, case activer, boutons monter/descendre/dupliquer/supprimer) ; bouton « Ajouter un panneau » (menu : Grille → D/T, Jasmer, Calendrier 366 ; Histogramme → métrique) ; **modèles en un clic** pour ne pas laisser un onglet vide intimidant (« Matrice D/T », « Types + tailles », « Difficulté + terrain », puis « Jasmer », « Calendrier 366 » au lot 2 bis), chacun posant un ou deux panneaux pré-réglés et pré-placés ; **formulaire du panneau sélectionné** en deux blocs : « Contenu » (afficher le titre + titre, métrique, options du kind : mode de case, couverture, tri, orientation, max items, valeurs/%, surlignage) et « Position & style » (ancre en grille 3×3 de boutons radio, dx/dy, largeur, couleurs, opacité, taille de police, police héritée, rayon). Message d'état vide (« Aucun panneau » + modèles) et note « non disponible en mode Évolution ». Avertissement de chevauchement/débordement (§3.3).
+- Contenu : interrupteur général ; **liste des panneaux** (cartes compactes : type + métrique, case activer, boutons monter/descendre/dupliquer/supprimer) ; menu « Configurations » (nommées : enregistrer la liste courante, ré-appliquer, supprimer — avec toast « Annuler ») ; bouton « Ajouter un panneau » (menu : Grille → D/T, Jasmer, Calendrier 366 ; Histogramme → métrique) ; **modèles en un clic** pour ne pas laisser un onglet vide intimidant (« Matrice D/T », « Types + tailles », « Difficulté + terrain », puis « Jasmer », « Calendrier 366 » au lot 2 bis), chacun posant un ou deux panneaux pré-réglés et pré-placés ; **formulaire du panneau sélectionné** en deux blocs : « Contenu » (afficher le titre + titre, métrique, options du kind : mode de case, couverture, tri, orientation, max items, valeurs/%, surlignage) et « Position & style » (ancre en grille 3×3 de boutons radio, dx/dy, largeur, couleurs, opacité, taille de police, police héritée, rayon). Message d'état vide (« Aucun panneau » + modèles) et note « non disponible en mode Évolution ». Avertissement de chevauchement/débordement (§3.3).
 - Sauvegarde : `saveStatsSettings()` debouncée 500 ms via `settings_api.mjs` en **bloc complet** `{ stats: {...} }` (comme `recording`, cf. commentaire d'`updateLocalCache`) ; aperçu mis à jour immédiatement (sans attendre le PUT). Chargement : `window.userSettings.stats` au démarrage → `normalizeStatsSettings`.
 - Réutiliser les patrons d'UI existants : `form-hint`, `gc-section-title`, pickers couleur de `menu_trail.html`, tooltips `data-bs-toggle="tooltip"` (initBsTooltips), `pkg.t()` hors template literal pour les chaînes JS. Libellés de types traduits comme dans le filtre types ; nombres formatés selon la locale.
 
@@ -238,7 +242,8 @@ Règles de coercition (serveur **et** client `normalizeStatsSettings`, même esp
   5. Export vidéo (patron `video-export.spec.mjs`) après un aperçu complet : au premier jour enregistré, le snapshot repart de l'état initial (pas de l'état de fin d'aperçu) ; l'export aboutit ; `addStatsPanelsToCanvas` a été appelé (compteur exposé en test) ou pixel non vide dans la zone du panneau d'une frame image.
   6. Accessibilité : un `.stats-panel-alt.visually-hidden` par `canvas.stats-panel` (titre + comptes réels + pieds), mis à jour quand les comptes bougent — rejouer l'animation jour par jour change la liste, jours vides compris pour la tête de courbe.
   7. Export : `waitForEvent('download')` sur les boutons PNG/CSV — signature PNG (`89 50 4E 47`), BOM UTF-8 + en-têtes localisés + lignes de comptes dans le CSV ; l'export suit le panneau sélectionné dans la liste.
-  8. `afterEach` : `PUT /api/settings {stats: défauts}` et attendre `panels.length === 0`.
+  8. Configurations nommées : menu « Configurations » → enregistrer sous un nom (persisté dans `stats.configs`), vider la liste par l'UI, ré-appliquer → les panneaux reviennent par `id` ; supprimer → toast « Annuler ».
+  9. `afterEach` : `PUT /api/settings {stats: défauts}` et attendre `panels.length === 0`.
 - **Perf manuelle** : 3 panneaux (dont une grille Jasmer), MediaRecorder 2×, fixture — lire les temps de frame du moniteur ; comparer avec panneaux désactivés.
 - **Traductions** : `pybabel extract` → vérifier `grep -c "^msgid" messages.pot` (~1500+), `update --no-fuzzy-matching`, traduire FR/EN, `compile`, `python check_missing_translations.py`, `python -m pytest tests/test_translations.py tests/test_ui_localization.py`.
 - **Non-régression ciblée** : `overlay.spec.mjs`, `video-export.spec.mjs`, `travel-trail.spec.mjs`, `tab-memory.spec.mjs`, `tests/test_global_preferences.py`, `tests/test_offline_assets.py`.

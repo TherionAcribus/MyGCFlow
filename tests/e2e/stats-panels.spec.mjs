@@ -600,3 +600,37 @@ test('le panneau sélectionné s\'exporte en PNG et en CSV', async ({ page }) =>
   expect(content2).toContain('Jours avec trouvaille;6');
   expect(content2).toContain('Types de caches différents;3');
 });
+
+test('une configuration nommée enregistre et ré-applique la liste de panneaux', async ({ page }) => {
+  await putStats(page, { enabled: true, panels: [
+    { id: 'c0f60001', kind: 'bar', metric: 'cache_type', position: { anchor: 'top-left' } },
+    { id: 'c0f60002', kind: 'grid', metric: 'dt', position: { anchor: 'bottom-left' } },
+  ] });
+  await openWithFixture(page, '#stats');
+  await page.locator('a[href="#stats"]').click();
+  await expect(page.locator('canvas.stats-panel')).toHaveCount(2);
+
+  // Enregistrer la configuration actuelle sous un nom.
+  await page.locator('#btnStatsConfigs').click();
+  await page.locator('[data-stats-config-save]').click();
+  await page.locator('#inputStatsConfigName').fill('Ma config');
+  await page.locator('#btnStatsConfigSaveOk').click();
+  await expect.poll(async () => (await savedStats(page)).configs?.map((c) => c.name))
+    .toEqual(['Ma config']);
+
+  // Liste vidée par l'UI, puis la configuration ré-applique tout.
+  const deletes = page.locator('#statsPanelList [data-action="delete"]');
+  while (await deletes.count()) await deletes.first().click();
+  await expect(page.locator('canvas.stats-panel')).toHaveCount(0);
+
+  await page.locator('#btnStatsConfigs').click();
+  await page.locator('[data-config-apply="Ma config"]').click();
+  await expect(page.locator('canvas.stats-panel')).toHaveCount(2);
+  await expect.poll(async () => (await savedStats(page)).panels.map((p) => p.id))
+    .toEqual(['c0f60001', 'c0f60002']);
+
+  // La configuration peut ensuite être supprimée du menu.
+  await page.locator('#btnStatsConfigs').click();
+  await page.locator('[data-config-delete="Ma config"]').click();
+  await expect.poll(async () => (await savedStats(page)).configs).toEqual([]);
+});

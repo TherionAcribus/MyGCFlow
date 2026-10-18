@@ -4,7 +4,8 @@
     "input": null,
     "expected": {
       "enabled": true,
-      "panels": []
+      "panels": [],
+      "configs": []
     }
   },
   {
@@ -12,7 +13,8 @@
     "input": "oui",
     "expected": {
       "enabled": true,
-      "panels": []
+      "panels": [],
+      "configs": []
     }
   },
   {
@@ -20,7 +22,8 @@
     "input": {},
     "expected": {
       "enabled": true,
-      "panels": []
+      "panels": [],
+      "configs": []
     }
   },
   {
@@ -30,7 +33,8 @@
     },
     "expected": {
       "enabled": false,
-      "panels": []
+      "panels": [],
+      "configs": []
     }
   },
   {
@@ -41,7 +45,8 @@
     },
     "expected": {
       "enabled": true,
-      "panels": []
+      "panels": [],
+      "configs": []
     }
   },
   {
@@ -92,7 +97,8 @@
             "inherit_font": true
           }
         }
-      ]
+      ],
+      "configs": []
     }
   },
   {
@@ -182,7 +188,8 @@
             "inherit_font": true
           }
         }
-      ]
+      ],
+      "configs": []
     }
   },
   {
@@ -358,7 +365,8 @@
             "inherit_font": true
           }
         }
-      ]
+      ],
+      "configs": []
     }
   },
   {
@@ -427,7 +435,8 @@
             "inherit_font": true
           }
         }
-      ]
+      ],
+      "configs": []
     }
   },
   {
@@ -498,7 +507,8 @@
             "inherit_font": true
           }
         }
-      ]
+      ],
+      "configs": []
     }
   },
   {
@@ -564,7 +574,8 @@
             "inherit_font": false
           }
         }
-      ]
+      ],
+      "configs": []
     }
   },
   {
@@ -625,7 +636,8 @@
             "inherit_font": true
           }
         }
-      ]
+      ],
+      "configs": []
     }
   },
   {
@@ -683,7 +695,8 @@
             "inherit_font": true
           }
         }
-      ]
+      ],
+      "configs": []
     }
   },
   {
@@ -816,7 +829,8 @@
             "inherit_font": true
           }
         }
-      ]
+      ],
+      "configs": []
     }
   },
   {
@@ -1028,7 +1042,8 @@
             "inherit_font": true
           }
         }
-      ]
+      ],
+      "configs": []
     }
   },
   {
@@ -1096,7 +1111,8 @@
             "inherit_font": true
           }
         }
-      ]
+      ],
+      "configs": []
     }
   },
   {
@@ -1249,7 +1265,8 @@
             "inherit_font": true
           }
         }
-      ]
+      ],
+      "configs": []
     }
   },
   {
@@ -1405,7 +1422,8 @@
             "inherit_font": true
           }
         }
-      ]
+      ],
+      "configs": []
     }
   },
   {
@@ -1672,6 +1690,382 @@
             "radius": 10,
             "inherit_font": true
           }
+        }
+      ],
+      "configs": []
+    }
+  },
+  {
+    "name": "configuration nommee",
+    "input": {
+      "configs": [
+        {
+          "name": "Ma mise en page",
+          "panels": [
+            {
+              "id": "aaaaaa01",
+              "kind": "grid",
+              "metric": "dt"
+            }
+          ]
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "panels": [],
+      "configs": [
+        {
+          "name": "Ma mise en page",
+          "panels": [
+            {
+              "id": "aaaaaa01",
+              "kind": "grid",
+              "metric": "dt",
+              "enabled": true,
+              "show_title": true,
+              "title": "",
+              "position": {
+                "mode": "anchor",
+                "anchor": "top-left",
+                "dx": 16,
+                "dy": 16,
+                "width": 280,
+                "x": 0,
+                "y": 0
+              },
+              "options": {
+                "show_values": true,
+                "show_percent": false,
+                "highlight": "new",
+                "cell_mode": "count",
+                "show_coverage": true
+              },
+              "style": {
+                "background": "#0b1a2b",
+                "background_opacity": 85,
+                "text_color": "#ffffff",
+                "accent_color": "#29d34e",
+                "palette": "heat",
+                "font_size": 12,
+                "radius": 10,
+                "inherit_font": true
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "configuration a nom vide ecartee",
+    "input": {
+      "configs": [
+        {
+          "name": "  \n ",
+          "panels": []
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "panels": [],
+      "configs": []
+    }
+  },
+  {
+    "name": "configuration non objet ecartee",
+    "input": {
+      "configs": [
+        "x",
+        42,
+        {
+          "name": "Ok",
+          "panels": []
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "panels": [],
+      "configs": [
+        {
+          "name": "Ok",
+          "panels": []
+        }
+      ]
+    }
+  },
+  {
+    "name": "configurations de meme nom : la premiere gagne",
+    "input": {
+      "configs": [
+        {
+          "name": "Dup",
+          "panels": [
+            {
+              "id": "aaaaaa01",
+              "kind": "grid",
+              "metric": "dt"
+            }
+          ]
+        },
+        {
+          "name": "Dup",
+          "panels": []
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "panels": [],
+      "configs": [
+        {
+          "name": "Dup",
+          "panels": [
+            {
+              "id": "aaaaaa01",
+              "kind": "grid",
+              "metric": "dt",
+              "enabled": true,
+              "show_title": true,
+              "title": "",
+              "position": {
+                "mode": "anchor",
+                "anchor": "top-left",
+                "dx": 16,
+                "dy": 16,
+                "width": 280,
+                "x": 0,
+                "y": 0
+              },
+              "options": {
+                "show_values": true,
+                "show_percent": false,
+                "highlight": "new",
+                "cell_mode": "count",
+                "show_coverage": true
+              },
+              "style": {
+                "background": "#0b1a2b",
+                "background_opacity": 85,
+                "text_color": "#ffffff",
+                "accent_color": "#29d34e",
+                "palette": "heat",
+                "font_size": 12,
+                "radius": 10,
+                "inherit_font": true
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "nom de configuration tronque a 40",
+    "input": {
+      "configs": [
+        {
+          "name": "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
+          "panels": []
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "panels": [],
+      "configs": [
+        {
+          "name": "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
+          "panels": []
+        }
+      ]
+    }
+  },
+  {
+    "name": "configuration : panneaux invalides ecartes",
+    "input": {
+      "configs": [
+        {
+          "name": "C",
+          "panels": [
+            {
+              "kind": "wat",
+              "metric": "dt"
+            },
+            {
+              "id": "aaaaaa01",
+              "kind": "grid",
+              "metric": "dt"
+            }
+          ]
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "panels": [],
+      "configs": [
+        {
+          "name": "C",
+          "panels": [
+            {
+              "id": "aaaaaa01",
+              "kind": "grid",
+              "metric": "dt",
+              "enabled": true,
+              "show_title": true,
+              "title": "",
+              "position": {
+                "mode": "anchor",
+                "anchor": "top-left",
+                "dx": 16,
+                "dy": 16,
+                "width": 280,
+                "x": 0,
+                "y": 0
+              },
+              "options": {
+                "show_values": true,
+                "show_percent": false,
+                "highlight": "new",
+                "cell_mode": "count",
+                "show_coverage": true
+              },
+              "style": {
+                "background": "#0b1a2b",
+                "background_opacity": 85,
+                "text_color": "#ffffff",
+                "accent_color": "#29d34e",
+                "palette": "heat",
+                "font_size": 12,
+                "radius": 10,
+                "inherit_font": true
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "configurations tronquees a 12",
+    "input": {
+      "configs": [
+        {
+          "name": "cfg0",
+          "panels": []
+        },
+        {
+          "name": "cfg1",
+          "panels": []
+        },
+        {
+          "name": "cfg2",
+          "panels": []
+        },
+        {
+          "name": "cfg3",
+          "panels": []
+        },
+        {
+          "name": "cfg4",
+          "panels": []
+        },
+        {
+          "name": "cfg5",
+          "panels": []
+        },
+        {
+          "name": "cfg6",
+          "panels": []
+        },
+        {
+          "name": "cfg7",
+          "panels": []
+        },
+        {
+          "name": "cfg8",
+          "panels": []
+        },
+        {
+          "name": "cfg9",
+          "panels": []
+        },
+        {
+          "name": "cfg10",
+          "panels": []
+        },
+        {
+          "name": "cfg11",
+          "panels": []
+        },
+        {
+          "name": "cfg12",
+          "panels": []
+        },
+        {
+          "name": "cfg13",
+          "panels": []
+        },
+        {
+          "name": "cfg14",
+          "panels": []
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "panels": [],
+      "configs": [
+        {
+          "name": "cfg0",
+          "panels": []
+        },
+        {
+          "name": "cfg1",
+          "panels": []
+        },
+        {
+          "name": "cfg2",
+          "panels": []
+        },
+        {
+          "name": "cfg3",
+          "panels": []
+        },
+        {
+          "name": "cfg4",
+          "panels": []
+        },
+        {
+          "name": "cfg5",
+          "panels": []
+        },
+        {
+          "name": "cfg6",
+          "panels": []
+        },
+        {
+          "name": "cfg7",
+          "panels": []
+        },
+        {
+          "name": "cfg8",
+          "panels": []
+        },
+        {
+          "name": "cfg9",
+          "panels": []
+        },
+        {
+          "name": "cfg10",
+          "panels": []
+        },
+        {
+          "name": "cfg11",
+          "panels": []
         }
       ]
     }

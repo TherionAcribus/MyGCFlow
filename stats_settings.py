@@ -63,6 +63,9 @@ STATS_RADIUS_RANGE = (0, 40)
 STATS_HOLE_RANGE = (0, 85)
 STATS_COLUMNS_RANGE = (1, 3)
 STATS_TITLE_MAX = 80
+# Configurations nommées : instantanés de la liste de panneaux.
+STATS_MAX_CONFIGS = 12
+STATS_CONFIG_NAME_MAX = 40
 
 # Toujours appliquées par fullmatch, en classes ASCII explicites : `$` admet
 # un saut de ligne final et `\d` les chiffres non latins en Python, pas en JS.
@@ -79,6 +82,8 @@ class StatsSettings:
     enabled: bool = True
     # Panneaux normalisés (dict), dans l'ordre de dessin et d'empilement.
     panels: list = field(default_factory=list)
+    # Configurations nommées : {name, panels}, instantanés de la liste.
+    configs: list = field(default_factory=list)
 
 
 def _round_half_up(value: float) -> int:
@@ -151,6 +156,15 @@ def _title(value) -> str:
         return ""
     flat = value.replace("\r\n", " ").replace("\r", " ").replace("\n", " ")
     return flat[:STATS_TITLE_MAX]
+
+
+def _config_name(value) -> str:
+    # Aplati comme un titre, blancs de bord enlevés : un nom vide écarte
+    # la configuration.
+    if not isinstance(value, str):
+        return ""
+    flat = value.replace("\r\n", " ").replace("\r", " ").replace("\n", " ").strip()
+    return flat[:STATS_CONFIG_NAME_MAX]
 
 
 _CATEGORICAL = ("cache_type", "container", "country", "state")
@@ -308,19 +322,9 @@ def coerce_stats_panel(raw) -> dict | None:
     }
 
 
-def coerce_stats_settings(raw, current: StatsSettings | None = None) -> StatsSettings:
-    """Bloc `stats` normalisé.
-
-    Patch de premier niveau : une clé absente (`enabled`, `panels`) garde la
-    valeur courante. Les panneaux invalides sont écartés sans rejeter les
-    autres ; au-delà de STATS_MAX_PANELS, la liste est tronquée. Un identifiant
-    manquant ou déjà vu est régénéré."""
-    base = current if isinstance(current, StatsSettings) else StatsSettings()
-    if not isinstance(raw, dict):
-        return StatsSettings(enabled=base.enabled, panels=list(base.panels))
-
-    enabled = _bool(raw.get("enabled"), base.enabled)
-    source = raw.get("panels") if "panels" in raw else base.panels
+def _coerce_panel_list(source) -> list:
+    """Liste de panneaux normalisée : invalides écartés, identifiants manquants
+    ou en double régénérés, tronquée à STATS_MAX_PANELS."""
     panels = []
     seen = set()
     for item in source if isinstance(source, list) else []:
@@ -335,4 +339,46 @@ def coerce_stats_settings(raw, current: StatsSettings | None = None) -> StatsSet
         panels.append(panel)
         if len(panels) >= STATS_MAX_PANELS:
             break
-    return StatsSettings(enabled=enabled, panels=panels)
+    return panels
+
+
+def coerce_stats_config(raw) -> dict | None:
+    """Configuration nommée normalisée {name, panels}, ou None si le nom est
+    vide après aplatissement. Les panneaux suivent les mêmes règles que la
+    liste courante (identifiants uniques dans la configuration)."""
+    if not isinstance(raw, dict):
+        return None
+    name = _config_name(raw.get("name"))
+    if not name:
+        return None
+    return {"name": name, "panels": _coerce_panel_list(raw.get("panels"))}
+
+
+def coerce_stats_settings(raw, current: StatsSettings | None = None) -> StatsSettings:
+    """Bloc `stats` normalisé.
+
+    Patch de premier niveau : une clé absente (`enabled`, `panels`, `configs`)
+    garde la valeur courante. Les panneaux invalides sont écartés sans rejeter
+    les autres ; au-delà de STATS_MAX_PANELS, la liste est tronquée. Un
+    identifiant manquant ou déjà vu est régénéré. Configurations : premier
+    nom gagnant (un doublon serait impossible à distinguer), au-delà de
+    STATS_MAX_CONFIGS la liste est tronquée."""
+    base = current if isinstance(current, StatsSettings) else StatsSettings()
+    if not isinstance(raw, dict):
+        return StatsSettings(
+            enabled=base.enabled, panels=list(base.panels), configs=list(base.configs))
+
+    enabled = _bool(raw.get("enabled"), base.enabled)
+    panels = _coerce_panel_list(raw["panels"] if "panels" in raw else base.panels)
+    configs = []
+    names = set()
+    config_source = raw["configs"] if "configs" in raw else base.configs
+    for item in config_source if isinstance(config_source, list) else []:
+        config = coerce_stats_config(item)
+        if config is None or config["name"] in names:
+            continue
+        names.add(config["name"])
+        configs.append(config)
+        if len(configs) >= STATS_MAX_CONFIGS:
+            break
+    return StatsSettings(enabled=enabled, panels=panels, configs=configs)

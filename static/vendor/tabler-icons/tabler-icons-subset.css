@@ -31,6 +31,7 @@
 .ti-bell-off:before { content: "\ece9"; }
 .ti-bolt:before { content: "\ea38"; }
 .ti-bookmark:before { content: "\ea3a"; }
+.ti-bookmarks:before { content: "\ed08"; }
 .ti-border-outer:before { content: "\ea41"; }
 .ti-brand-github:before { content: "\ec1c"; }
 .ti-brush:before { content: "\ebb8"; }

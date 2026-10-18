@@ -9,9 +9,11 @@ import { makeDebouncedSettingsSaver } from './settings_api.mjs';
 import { reportSave } from './saved_indicator.mjs';
 import {
     STATS_COUNTER_ITEMS,
+    STATS_MAX_CONFIGS,
     STATS_MAX_PANELS,
     STATS_METRICS_BY_KIND,
     createStatsPanel,
+    normalizeStatsConfig,
 } from './stats_model.mjs';
 
 const saveStatsDebounced = makeDebouncedSettingsSaver(500);
@@ -603,6 +605,118 @@ function exportPanelCsv() {
         `stats-${panel.kind}-${panel.metric}.csv`);
 }
 
+// ---------------------------------------------------------------------------
+// Configurations nommées : instantané de la liste de panneaux, ré-applicable.
+// ---------------------------------------------------------------------------
+
+// Entrées du menu entre l'en-tête « Enregistrées » et le séparateur ; chaque
+// ligne porte le nom (clic = appliquer) et une croix de suppression.
+function renderConfigMenu() {
+    const menu = $('statsConfigMenu');
+    if (!menu) return;
+    const settings = currentSettings();
+    const configs = settings.configs || [];
+    menu.querySelectorAll('[data-config-entry]').forEach((el) => el.remove());
+    const header = $('statsConfigHeader');
+    if (header) header.hidden = configs.length === 0;
+    const empty = $('statsConfigEmpty');
+    if (empty) empty.hidden = configs.length > 0;
+    const sep = $('statsConfigSep');
+    for (const config of configs) {
+        const item = document.createElement('li');
+        item.className = 'd-flex align-items-center';
+        item.dataset.configEntry = '';
+
+        const apply = document.createElement('button');
+        apply.type = 'button';
+        apply.className = 'dropdown-item text-truncate flex-grow-1';
+        apply.dataset.configApply = config.name;
+        apply.textContent = config.name;
+        const count = document.createElement('span');
+        count.className = 'text-muted ms-1';
+        count.textContent = `(${config.panels.length})`;
+        apply.appendChild(count);
+
+        const del = iconButton('ti-trash', pkg.t('Supprimer'), 'config-delete');
+        del.classList.add('btn-sm', 'px-2');
+        del.dataset.configDelete = config.name;
+        item.append(apply, del);
+        sep?.before(item);
+    }
+    const save = menu.querySelector('[data-stats-config-save]');
+    // Sans panneau rien à enregistrer ; la liste est bornée à STATS_MAX_CONFIGS.
+    if (save) save.disabled = !settings.panels.length || configs.length >= STATS_MAX_CONFIGS;
+}
+
+function showConfigSave() {
+    const row = $('statsConfigSave');
+    if (!row) return;
+    row.hidden = false;
+    $('inputStatsConfigName')?.focus();
+}
+
+function hideConfigSave() {
+    const row = $('statsConfigSave');
+    if (row) row.hidden = true;
+    const input = $('inputStatsConfigName');
+    if (input) input.value = '';
+}
+
+function saveCurrentConfig() {
+    const settings = currentSettings();
+    const entry = normalizeStatsConfig({
+        name: $('inputStatsConfigName')?.value,
+        panels: settings.panels,
+    });
+    if (!entry) return;
+    // À nom égal, la configuration est remplacée — la mise à jour passe par là.
+    const configs = (settings.configs || []).filter((c) => c.name !== entry.name);
+    configs.push(entry);
+    commit({ ...settings, configs }, STATS_SAVE_STATUS, { immediate: true });
+    hideConfigSave();
+    renderStatsTab();
+    pkg.showToast?.(pkg.t('Configuration « ${name} » enregistrée', { name: entry.name }));
+}
+
+function applyConfig(name) {
+    const settings = currentSettings();
+    const config = (settings.configs || []).find((c) => c.name === name);
+    if (!config) return;
+    const previous = settings.panels;
+    const applied = commit({ ...settings, panels: config.panels },
+        STATS_SAVE_STATUS, { immediate: true });
+    selectedId = applied.panels[0]?.id || null;
+    renderStatsTab();
+    pkg.showActionToast?.(
+        pkg.t('Configuration « ${name} » appliquée', { name }),
+        { label: 'Annuler', onClick: () => {
+            commit({ ...currentSettings(), panels: previous },
+                STATS_SAVE_STATUS, { immediate: true });
+            selectedId = previous[0]?.id || null;
+            renderStatsTab();
+        } });
+}
+
+function deleteConfig(name) {
+    const settings = currentSettings();
+    const configs = settings.configs || [];
+    const index = configs.findIndex((c) => c.name === name);
+    if (index < 0) return;
+    const removed = configs[index];
+    commit({ ...settings, configs: configs.filter((c) => c.name !== name) },
+        STATS_SAVE_STATUS, { immediate: true });
+    renderStatsTab();
+    pkg.showActionToast?.(
+        pkg.t('« ${name} » supprimée', { name }),
+        { label: 'Annuler', onClick: () => {
+            const current = currentSettings();
+            const list = (current.configs || []).slice();
+            list.splice(Math.min(index, list.length), 0, removed);
+            commit({ ...current, configs: list }, STATS_SAVE_STATUS, { immediate: true });
+            renderStatsTab();
+        } });
+}
+
 // « Réorganiser » de l'alerte de mise en page : chaque panneau repart sur un
 // coin distinct, dans l'ordre de la liste — une pile par ancre ne peut plus
 // chevaucher ni les autres panneaux ni les cartouches. `middle-center` est
@@ -670,6 +784,7 @@ export function renderStatsTab() {
     pkg.setStatsPanelSelection?.(selectedId);
     setValue('switchStats', settings.enabled);
     renderList();
+    renderConfigMenu();
     renderForm();
     renderWarnings();
     syncDragMode();
@@ -700,6 +815,25 @@ export function initStatsTab() {
     list?.addEventListener('change', onListChange);
     $('btnStatsExportPng')?.addEventListener('click', exportPanelPng);
     $('btnStatsExportCsv')?.addEventListener('click', exportPanelCsv);
+    $('statsConfigMenu')?.addEventListener('click', (event) => {
+        const apply = event.target.closest('[data-config-apply]');
+        if (apply) {
+            applyConfig(apply.dataset.configApply);
+            return;
+        }
+        const del = event.target.closest('[data-config-delete]');
+        if (del) {
+            deleteConfig(del.dataset.configDelete);
+            return;
+        }
+        if (event.target.closest('[data-stats-config-save]')) showConfigSave();
+    });
+    $('btnStatsConfigSaveOk')?.addEventListener('click', saveCurrentConfig);
+    $('btnStatsConfigSaveCancel')?.addEventListener('click', hideConfigSave);
+    $('inputStatsConfigName')?.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') saveCurrentConfig();
+        else if (event.key === 'Escape') hideConfigSave();
+    });
     bindFormFields();
     bindDragAndDrop();
     document.addEventListener('mygcflow:stats-layout', (event) => renderWarnings(event.detail?.warnings));

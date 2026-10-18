@@ -29,6 +29,20 @@
                     <h6 class="card-title m-0">
                         <i class="ti ti-layout-grid text-muted me-1"></i>{{ _("Panneaux") }}<span id="statsSaveStatus" class="gc-saved-indicator" role="status" aria-live="polite"></span>
                     </h6>
+                    <div class="d-flex gap-2">
+                    <div class="dropdown">
+                        <button type="button" id="btnStatsConfigs" class="btn btn-sm btn-outline-secondary dropdown-toggle"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="ti ti-bookmarks me-1" aria-hidden="true"></i>{{ _("Configurations") }}
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" id="statsConfigMenu">
+                            <li><h6 class="dropdown-header" id="statsConfigHeader" hidden>{{ _("Enregistrées") }}</h6></li>
+                            <li id="statsConfigEmpty"><span class="dropdown-item-text text-muted small">{{ _("Aucune configuration enregistrée") }}</span></li>
+                            <li id="statsConfigSep"><hr class="dropdown-divider"></li>
+                            <li><button type="button" class="dropdown-item" data-stats-config-save>
+                                <i class="ti ti-device-floppy me-1" aria-hidden="true"></i>{{ _("Enregistrer la configuration actuelle") }}</button></li>
+                        </ul>
+                    </div>
                     <div class="dropdown">
                         <button type="button" id="btnStatsAdd" class="btn btn-sm btn-primary dropdown-toggle"
                                 data-bs-toggle="dropdown" aria-expanded="false">
@@ -62,12 +76,22 @@
                             <li><button type="button" class="dropdown-item" data-stats-add="bar:state">{{ _("Régions") }}</button></li>
                         </ul>
                     </div>
+                    </div>
                 </div>
                 <div class="card-body">
                     <p id="statsEmpty" class="form-hint text-muted mb-0">
                         {{ _("Aucun panneau. Commencez par un modèle : la matrice D/T, par exemple, se remplit case par case au fil de vos trouvailles.") }}
                     </p>
                     <ul id="statsPanelList" class="list-group stats-panel-list" aria-label="{{ _('Panneaux de statistiques') }}"></ul>
+                    <div id="statsConfigSave" class="input-group input-group-sm mt-2" hidden>
+                        <input id="inputStatsConfigName" type="text" class="form-control" maxlength="40"
+                               placeholder="{{ _('Nom de la configuration') }}"
+                               aria-label="{{ _('Nom de la configuration') }}">
+                        <button type="button" id="btnStatsConfigSaveOk" class="btn btn-primary">{{ _("Enregistrer") }}</button>
+                        <button type="button" id="btnStatsConfigSaveCancel" class="btn btn-outline-secondary" aria-label="{{ _('Annuler') }}">
+                            <i class="ti ti-x" aria-hidden="true"></i>
+                        </button>
+                    </div>
                     <p id="statsLimitHint" class="form-hint text-muted small mt-2 mb-0" hidden>{{ _("Six panneaux au maximum.") }}</p>
                 </div>
             </div>

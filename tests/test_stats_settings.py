@@ -132,7 +132,7 @@ class StatsApiTests(unittest.TestCase):
         return self.client.get('/api/settings').get_json()['stats']
 
     def test_get_exposes_the_default_block(self):
-        self.assertEqual(self.stats(), {"enabled": True, "panels": []})
+        self.assertEqual(self.stats(), {"enabled": True, "panels": [], "configs": []})
 
     def test_put_stores_normalised_panels(self):
         response = self.client.put('/api/settings', json={'stats': {'panels': [
@@ -175,13 +175,25 @@ class StatsApiTests(unittest.TestCase):
 
         self.assertEqual(len(self.stats()['panels']), 1)
 
+    def test_configs_survive_a_panels_patch(self):
+        self.client.put('/api/settings', json={'stats': {'configs': [
+            {'name': 'Ma mise en page', 'panels': [
+                {'id': 'aaaaaa01', 'kind': 'grid', 'metric': 'dt'}]}]}})
+
+        self.client.put('/api/settings', json={'stats': {'panels': []}})
+
+        stats = self.stats()
+        self.assertEqual(len(stats['configs']), 1)
+        self.assertEqual(stats['configs'][0]['name'], 'Ma mise en page')
+        self.assertEqual(stats['configs'][0]['panels'][0]['id'], 'aaaaaa01')
+
     def test_reset_restores_the_defaults(self):
         self.client.put('/api/settings', json={'stats': {'enabled': False, 'panels': [
             {'id': 'aaaaaa01', 'kind': 'grid', 'metric': 'dt'}]}})
 
         self.client.post('/api/settings/reset')
 
-        self.assertEqual(self.stats(), {"enabled": True, "panels": []})
+        self.assertEqual(self.stats(), {"enabled": True, "panels": [], "configs": []})
 
 
 if __name__ == "__main__":

@@ -62,8 +62,13 @@ export const STATS_RADIUS_RANGE = Object.freeze([0, 40]);
 export const STATS_HOLE_RANGE = Object.freeze([0, 85]);
 export const STATS_COLUMNS_RANGE = Object.freeze([1, 3]);
 export const STATS_TITLE_MAX = 80;
+// Configurations nommées : instantanés de la liste de panneaux.
+export const STATS_MAX_CONFIGS = 12;
+export const STATS_CONFIG_NAME_MAX = 40;
 
-export const STATS_DEFAULTS = Object.freeze({ enabled: true, panels: Object.freeze([]) });
+export const STATS_DEFAULTS = Object.freeze({
+    enabled: true, panels: Object.freeze([]), configs: Object.freeze([]),
+});
 
 const ID_RE = /^[0-9a-f]{6,32}$/;
 const HEX_RE = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
@@ -121,6 +126,14 @@ function title(value) {
     const flat = value.replace(/\r\n/g, ' ').replace(/\r/g, ' ').replace(/\n/g, ' ');
     // Tronqué en points de code, comme le slicing Python (un emoji = 1).
     return Array.from(flat).slice(0, STATS_TITLE_MAX).join('');
+}
+
+// Nom d'une configuration : aplati comme un titre, blancs de bord enlevés —
+// un nom vide écarte la configuration.
+function configName(value) {
+    if (typeof value !== 'string') return '';
+    const flat = value.replace(/\r\n/g, ' ').replace(/\r/g, ' ').replace(/\n/g, ' ').trim();
+    return Array.from(flat).slice(0, STATS_CONFIG_NAME_MAX).join('');
 }
 
 const CATEGORICAL_METRICS = ['cache_type', 'container', 'country', 'state'];
@@ -269,15 +282,9 @@ export function newStatsPanelId(random = Math.random) {
     return id;
 }
 
-// Bloc `stats` normalisé. Patch de premier niveau, comme le serveur : une
-// clé absente garde la valeur de `current`.
-export function normalizeStatsSettings(raw, current = STATS_DEFAULTS, newId = newStatsPanelId) {
-    const base = isObject(current) ? current : STATS_DEFAULTS;
-    if (!isObject(raw)) {
-        return { enabled: bool(base.enabled, true), panels: Array.isArray(base.panels) ? [...base.panels] : [] };
-    }
-    const enabled = bool(raw.enabled, bool(base.enabled, true));
-    const source = Object.hasOwn(raw, 'panels') ? raw.panels : base.panels;
+// Liste de panneaux normalisée : invalides écartés, identifiants manquants
+// ou en double régénérés, tronquée à STATS_MAX_PANELS.
+function normalizePanelList(source, newId) {
     const panels = [];
     const seen = new Set();
     for (const item of Array.isArray(source) ? source : []) {
@@ -288,7 +295,44 @@ export function normalizeStatsSettings(raw, current = STATS_DEFAULTS, newId = ne
         panels.push(panel);
         if (panels.length >= STATS_MAX_PANELS) break;
     }
-    return { enabled, panels };
+    return panels;
+}
+
+// Configuration nommée : { name, panels }. Un nom vide après aplatissement
+// écarte l'entrée ; les panneaux suivent les mêmes règles que la liste
+// courante (identifiants uniques dans la configuration).
+export function normalizeStatsConfig(raw, newId = newStatsPanelId) {
+    if (!isObject(raw)) return null;
+    const name = configName(raw.name);
+    if (!name) return null;
+    return { name, panels: normalizePanelList(raw.panels, newId) };
+}
+
+// Bloc `stats` normalisé. Patch de premier niveau, comme le serveur : une
+// clé absente garde la valeur de `current`.
+export function normalizeStatsSettings(raw, current = STATS_DEFAULTS, newId = newStatsPanelId) {
+    const base = isObject(current) ? current : STATS_DEFAULTS;
+    if (!isObject(raw)) {
+        return {
+            enabled: bool(base.enabled, true),
+            panels: Array.isArray(base.panels) ? [...base.panels] : [],
+            configs: Array.isArray(base.configs) ? [...base.configs] : [],
+        };
+    }
+    const enabled = bool(raw.enabled, bool(base.enabled, true));
+    const panels = normalizePanelList(Object.hasOwn(raw, 'panels') ? raw.panels : base.panels, newId);
+    // Premier nom gagnant : un doublon serait impossible à distinguer.
+    const configSource = Object.hasOwn(raw, 'configs') ? raw.configs : base.configs;
+    const configs = [];
+    const names = new Set();
+    for (const item of Array.isArray(configSource) ? configSource : []) {
+        const config = normalizeStatsConfig(item, newId);
+        if (!config || names.has(config.name)) continue;
+        names.add(config.name);
+        configs.push(config);
+        if (configs.length >= STATS_MAX_CONFIGS) break;
+    }
+    return { enabled, panels, configs };
 }
 
 // Nouveau panneau prêt à l'emploi (bouton « Ajouter », modèles) : défauts de

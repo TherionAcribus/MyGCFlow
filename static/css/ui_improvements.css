@@ -3023,6 +3023,15 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
     padding: 0.15rem 0.35rem;
 }
 
+/* Menu « Configurations » : le nom s'élide (flex + truncate demande
+   min-width: 0), la poubelle reste accessible à droite. */
+#statsConfigMenu [data-config-entry] .dropdown-item {
+    min-width: 0;
+}
+#statsConfigMenu [data-config-entry] .btn {
+    border: 0;
+}
+
 /* Grille 3×3 du coin d'ancrage : chaque bouton figure la position du
    panneau dans la carte (petit carré plein dans le coin choisi). */
 .stats-anchor-grid {

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-18 09:39+0200\n"
+"POT-Creation-Date: 2026-10-18 09:51+0200\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -565,11 +565,12 @@ msgstr "Confirmer"
 
 #: blueprints/core.py:221 static/js/notifications.js:448
 #: templates/menu_data.html:95 templates/menu_data.html:361
-#: templates/menu_style.html:246 templates/menu_style.html:271
-#: templates/menu_style.html:296 templates/menu_style.html:324
-#: templates/menu_style.html:355 templates/menu_style.html:383
-#: templates/modal_evolution.html:18 templates/modal_evolution.html:60
-#: templates/modal_evolution.html:84 templates/modal_loading.html:14
+#: templates/menu_stats.html:90 templates/menu_style.html:246
+#: templates/menu_style.html:271 templates/menu_style.html:296
+#: templates/menu_style.html:324 templates/menu_style.html:355
+#: templates/menu_style.html:383 templates/modal_evolution.html:18
+#: templates/modal_evolution.html:60 templates/modal_evolution.html:84
+#: templates/modal_loading.html:14
 msgid "Annuler"
 msgstr "Annuler"
 
@@ -2091,7 +2092,7 @@ msgstr ""
 "correction possible ici."
 
 #: static/js/labs.js:1722 templates/guide.html:224
-#: templates/menu_informations.html:99 templates/menu_stats.html:216
+#: templates/menu_informations.html:99 templates/menu_stats.html:239
 msgid "Position"
 msgstr "Position"
 
@@ -2108,7 +2109,7 @@ msgstr "Utiliser la suggestion"
 msgid "Date de découverte"
 msgstr "Date de découverte"
 
-#: static/js/labs.js:1767
+#: static/js/labs.js:1767 templates/menu_stats.html:89
 msgid "Enregistrer"
 msgstr "Enregistrer"
 
@@ -2773,7 +2774,7 @@ msgid "Aucun thème"
 msgstr "Aucun thème"
 
 #: static/js/profiles.js:958 static/js/profiles.js:2748
-#: static/js/stats_ui.js:149
+#: static/js/stats_ui.js:151
 msgid "Dupliquer"
 msgstr "Dupliquer"
 
@@ -2798,8 +2799,9 @@ msgid "Réinitialiser"
 msgstr "Réinitialiser"
 
 #: static/js/profiles.js:967 static/js/recent_videos.js:60
-#: static/js/recent_videos.js:121 static/js/stats_ui.js:150
-#: templates/menu_style.html:272 templates/modal_evolution.html:85
+#: static/js/recent_videos.js:121 static/js/stats_ui.js:152
+#: static/js/stats_ui.js:640 templates/menu_style.html:272
+#: templates/modal_evolution.html:85
 msgid "Supprimer"
 msgstr "Supprimer"
 
@@ -3131,60 +3133,60 @@ msgid "Non enregistré"
 msgstr "Non enregistré"
 
 #: static/js/stats_panels.js:320 templates/guide.html:350
-#: templates/menu_stats.html:39
+#: templates/menu_stats.html:53
 msgid "Matrice D/T"
 msgstr "Matrice D/T"
 
 #: static/js/stats_panels.js:321 templates/guide.html:351
-#: templates/menu_stats.html:42
+#: templates/menu_stats.html:56
 msgid "Grille Jasmer"
 msgstr "Grille Jasmer"
 
 #: static/js/stats_panels.js:322 templates/guide.html:352
-#: templates/menu_stats.html:43
+#: templates/menu_stats.html:57
 msgid "Calendrier 366"
 msgstr "Calendrier 366"
 
-#: static/js/stats_panels.js:323 templates/menu_stats.html:56
+#: static/js/stats_panels.js:323 templates/menu_stats.html:70
 msgid "Types de caches"
 msgstr "Types de caches"
 
-#: static/js/stats_panels.js:324 templates/menu_stats.html:57
+#: static/js/stats_panels.js:324 templates/menu_stats.html:71
 msgid "Tailles"
 msgstr "Tailles"
 
-#: static/js/stats_panels.js:325 templates/menu_stats.html:58
+#: static/js/stats_panels.js:325 templates/menu_stats.html:72
 msgid "Difficulté"
 msgstr "Difficulté"
 
 #: static/js/stats_panels.js:326 templates/_filter_cache_attrs.html:92
-#: templates/_filter_cache_attrs.html:93 templates/menu_stats.html:59
+#: templates/_filter_cache_attrs.html:93 templates/menu_stats.html:73
 msgid "Terrain"
 msgstr "Terrain"
 
-#: static/js/stats_panels.js:327 templates/menu_stats.html:60
+#: static/js/stats_panels.js:327 templates/menu_stats.html:74
 msgid "Trouvailles par année"
 msgstr "Trouvailles par année"
 
-#: static/js/stats_panels.js:328 static/js/stats_panels.js:412
+#: static/js/stats_panels.js:328 static/js/stats_panels.js:426
 #: templates/_filter_country_state.html:6
-#: templates/_filter_country_state.html:7 templates/menu_stats.html:61
-#: templates/menu_stats.html:177
+#: templates/_filter_country_state.html:7 templates/menu_stats.html:75
+#: templates/menu_stats.html:200
 msgid "Pays"
 msgstr "Pays"
 
-#: static/js/stats_panels.js:329 static/js/stats_panels.js:413
-#: templates/menu_stats.html:62 templates/menu_stats.html:177
+#: static/js/stats_panels.js:329 static/js/stats_panels.js:427
+#: templates/menu_stats.html:76 templates/menu_stats.html:200
 msgid "Régions"
 msgstr "Régions"
 
 #: static/js/stats_panels.js:330 templates/guide.html:355
-#: templates/menu_stats.html:50
+#: templates/menu_stats.html:64
 msgid "Progression des trouvailles"
 msgstr "Progression des trouvailles"
 
 #: static/js/stats_panels.js:331 templates/guide.html:356
-#: templates/menu_stats.html:49
+#: templates/menu_stats.html:63
 msgid "Chiffres clés"
 msgstr "Chiffres clés"
 
@@ -3242,19 +3244,19 @@ msgstr "Mois : ${filled}/${available}"
 msgid "Jours : ${filled}/${available}"
 msgstr "Jours : ${filled}/${available}"
 
-#: static/js/stats_panels.js:408 templates/menu_stats.html:175
+#: static/js/stats_panels.js:422 templates/menu_stats.html:198
 msgid "Jours avec trouvaille"
 msgstr "Jours avec trouvaille"
 
-#: static/js/stats_panels.js:409 templates/menu_stats.html:175
+#: static/js/stats_panels.js:423 templates/menu_stats.html:198
 msgid "Record sur une journée"
 msgstr "Record sur une journée"
 
-#: static/js/stats_panels.js:410 templates/menu_stats.html:176
+#: static/js/stats_panels.js:424 templates/menu_stats.html:199
 msgid "Plus longue série (jours)"
 msgstr "Plus longue série (jours)"
 
-#: static/js/stats_panels.js:411 templates/menu_stats.html:176
+#: static/js/stats_panels.js:425 templates/menu_stats.html:199
 msgid "Types de caches différents"
 msgstr "Types de caches différents"
 
@@ -3271,85 +3273,88 @@ msgstr "${n} trouvailles au ${date}"
 msgid "Aucune trouvaille"
 msgstr "Aucune trouvaille"
 
-#: static/js/stats_panels.js:901
-msgid "Chiffre"
-msgstr "Chiffre"
-
-#: static/js/stats_panels.js:901
-msgid "Valeur"
-msgstr "Valeur"
-
-#: static/js/stats_panels.js:901 templates/menu_animation.html:189
-msgid "Détail"
-msgstr "Détail"
-
-#: static/js/stats_panels.js:904 templates/menu_informations.html:57
+#: static/js/stats_panels.js:913 templates/menu_informations.html:57
 #: templates/menu_informations.html:81
 msgid "Date"
 msgstr "Date"
 
-#: static/js/stats_panels.js:904 templates/menu_informations.html:61
+#: static/js/stats_panels.js:913 templates/menu_informations.html:61
 #: templates/menu_informations.html:83
 msgid "Total"
 msgstr "Total"
 
-#: static/js/stats_panels.js:907
+#: static/js/stats_panels.js:916
 msgid "Case"
 msgstr "Case"
 
-#: static/js/stats_panels.js:907 static/js/stats_panels.js:915
+#: static/js/stats_panels.js:916 static/js/stats_panels.js:928
 msgid "Nombre"
 msgstr "Nombre"
 
-#: static/js/stats_panels.js:915
+#: static/js/stats_panels.js:928
 msgid "Catégorie"
 msgstr "Catégorie"
 
-#: static/js/stats_panels.js:915 templates/menu_informations.html:84
+#: static/js/stats_panels.js:928 templates/menu_informations.html:84
 msgid "Pourcentage"
 msgstr "Pourcentage"
 
-#: static/js/stats_ui.js:131
+#: static/js/stats_ui.js:133
 msgid "Afficher ce panneau"
 msgstr "Afficher ce panneau"
 
-#: static/js/stats_ui.js:147
+#: static/js/stats_ui.js:149
 msgid "Monter"
 msgstr "Monter"
 
-#: static/js/stats_ui.js:148
+#: static/js/stats_ui.js:150
 msgid "Descendre"
 msgstr "Descendre"
 
-#: static/js/stats_ui.js:179
+#: static/js/stats_ui.js:181
 #, python-brace-format
 msgid "${n} places requises"
 msgstr "${n} places requises"
 
-#: static/js/stats_ui.js:226
+#: static/js/stats_ui.js:228
 #, python-brace-format
 msgid "« ${name} » supprimé"
 msgstr "« ${name} » supprimé"
 
-#: static/js/stats_ui.js:637
+#: static/js/stats_ui.js:678
+#, python-brace-format
+msgid "Configuration « ${name} » enregistrée"
+msgstr "Configuration « ${name} » enregistrée"
+
+#: static/js/stats_ui.js:691
+#, python-brace-format
+msgid "Configuration « ${name} » appliquée"
+msgstr "Configuration « ${name} » appliquée"
+
+#: static/js/stats_ui.js:710
+#, python-brace-format
+msgid "« ${name} » supprimée"
+msgstr "« ${name} » supprimée"
+
+#: static/js/stats_ui.js:751
 #, python-brace-format
 msgid "« ${name} » dépasse de la carte : réduisez sa largeur ou changez de coin."
 msgstr "« ${name} » dépasse de la carte : réduisez sa largeur ou changez de coin."
 
-#: static/js/stats_ui.js:639
+#: static/js/stats_ui.js:753
 msgid "le titre"
 msgstr "le titre"
 
-#: static/js/stats_ui.js:639
+#: static/js/stats_ui.js:753
 msgid "les infos"
 msgstr "les infos"
 
-#: static/js/stats_ui.js:640
+#: static/js/stats_ui.js:754
 #, python-brace-format
 msgid "« ${name} » chevauche ${other}."
 msgstr "« ${name} » chevauche ${other}."
 
-#: static/js/stats_ui.js:643
+#: static/js/stats_ui.js:757
 #, python-brace-format
 msgid ""
 "« ${name} » chevauche « ${other} » : changez de coin ou réduisez une "
@@ -3358,7 +3363,7 @@ msgstr ""
 "« ${name} » chevauche « ${other} » : changez de coin ou réduisez une "
 "largeur."
 
-#: static/js/stats_ui.js:655
+#: static/js/stats_ui.js:769
 msgid "Réorganiser automatiquement"
 msgstr "Réorganiser automatiquement"
 
@@ -4332,7 +4337,7 @@ msgid "Guide"
 msgstr "Guide"
 
 #: templates/app.html:80 templates/guide.html:211 templates/guide.html:388
-#: templates/menu_options.html:30 templates/menu_stats.html:262
+#: templates/menu_options.html:30 templates/menu_stats.html:285
 #: templates/menu_trail.html:94
 msgid "Apparence"
 msgstr "Apparence"
@@ -4983,7 +4988,7 @@ msgstr "Basculez entre la cible"
 
 #: templates/guide.html:223 templates/menu_informations.html:22
 #: templates/menu_informations.html:45 templates/menu_informations.html:46
-#: templates/menu_stats.html:92
+#: templates/menu_stats.html:115
 msgid "Titre"
 msgstr "Titre"
 
@@ -5001,7 +5006,7 @@ msgid "Réglez le"
 msgstr "Réglez le"
 
 #: templates/guide.html:224 templates/menu_informations.html:96
-#: templates/menu_informations.html:237 templates/menu_stats.html:269
+#: templates/menu_informations.html:237 templates/menu_stats.html:292
 msgid "Texte"
 msgstr "Texte"
 
@@ -5605,7 +5610,7 @@ msgstr ""
 "cadrage) et les"
 
 #: templates/guide.html:305 templates/menu_recording.html:46
-#: templates/menu_stats.html:281
+#: templates/menu_stats.html:304
 msgid "Couleurs"
 msgstr "Couleurs"
 
@@ -5812,7 +5817,7 @@ msgstr "enregistré automatiquement quel que soit le thème."
 msgid "Ajoutez un panneau"
 msgstr "Ajoutez un panneau"
 
-#: templates/guide.html:348 templates/menu_stats.html:35
+#: templates/guide.html:348 templates/menu_stats.html:49
 msgid "Ajouter"
 msgstr "Ajouter"
 
@@ -6486,6 +6491,10 @@ msgstr "Personnalisé"
 #: templates/menu_animation.html:184
 msgid "Préréglage global, indépendant du thème."
 msgstr "Préréglage global, indépendant du thème."
+
+#: templates/menu_animation.html:189
+msgid "Détail"
+msgstr "Détail"
 
 #: templates/menu_animation.html:190
 msgid "(animation)"
@@ -7411,7 +7420,7 @@ msgstr "Centré"
 msgid "À droite"
 msgstr "À droite"
 
-#: templates/menu_informations.html:164 templates/menu_stats.html:265
+#: templates/menu_informations.html:164 templates/menu_stats.html:288
 msgid "Fond"
 msgstr "Fond"
 
@@ -7472,19 +7481,19 @@ msgstr "Étendue"
 msgid "Emplacement"
 msgstr "Emplacement"
 
-#: templates/menu_informations.html:275 templates/menu_stats.html:222
+#: templates/menu_informations.html:275 templates/menu_stats.html:245
 msgid "En haut à gauche"
 msgstr "En haut à gauche"
 
-#: templates/menu_informations.html:276 templates/menu_stats.html:222
+#: templates/menu_informations.html:276 templates/menu_stats.html:245
 msgid "En haut à droite"
 msgstr "En haut à droite"
 
-#: templates/menu_informations.html:277 templates/menu_stats.html:224
+#: templates/menu_informations.html:277 templates/menu_stats.html:247
 msgid "En bas à gauche"
 msgstr "En bas à gauche"
 
-#: templates/menu_informations.html:278 templates/menu_stats.html:224
+#: templates/menu_informations.html:278 templates/menu_stats.html:247
 msgid "En bas à droite"
 msgstr "En bas à droite"
 
@@ -8066,51 +8075,67 @@ msgstr "Afficher les panneaux sur la carte"
 msgid "Panneaux"
 msgstr "Panneaux"
 
-#: templates/menu_stats.html:38
+#: templates/menu_stats.html:36
+msgid "Configurations"
+msgstr "Configurations"
+
+#: templates/menu_stats.html:39
+msgid "Enregistrées"
+msgstr "Enregistrées"
+
+#: templates/menu_stats.html:40
+msgid "Aucune configuration enregistrée"
+msgstr "Aucune configuration enregistrée"
+
+#: templates/menu_stats.html:43
+msgid "Enregistrer la configuration actuelle"
+msgstr "Enregistrer la configuration actuelle"
+
+#: templates/menu_stats.html:52
 msgid "Modèles"
 msgstr "Modèles"
 
-#: templates/menu_stats.html:40
+#: templates/menu_stats.html:54
 msgid "Types + tailles"
 msgstr "Types + tailles"
 
-#: templates/menu_stats.html:41
+#: templates/menu_stats.html:55
 msgid "Difficulté + terrain"
 msgstr "Difficulté + terrain"
 
-#: templates/menu_stats.html:44
+#: templates/menu_stats.html:58
 msgid "Chiffres clés + progression"
 msgstr "Chiffres clés + progression"
 
-#: templates/menu_stats.html:45
+#: templates/menu_stats.html:59
 msgid "Types en anneau"
 msgstr "Types en anneau"
 
-#: templates/menu_stats.html:46
+#: templates/menu_stats.html:60
 msgid "Course des pays"
 msgstr "Course des pays"
 
-#: templates/menu_stats.html:48
+#: templates/menu_stats.html:62
 msgid "Panneau seul"
 msgstr "Panneau seul"
 
-#: templates/menu_stats.html:51
+#: templates/menu_stats.html:65
 msgid "Anneau des types"
 msgstr "Anneau des types"
 
-#: templates/menu_stats.html:52
+#: templates/menu_stats.html:66
 msgid "Anneau des tailles"
 msgstr "Anneau des tailles"
 
-#: templates/menu_stats.html:53
+#: templates/menu_stats.html:67
 msgid "Anneau des pays"
 msgstr "Anneau des pays"
 
-#: templates/menu_stats.html:55
+#: templates/menu_stats.html:69
 msgid "Histogramme seul"
 msgstr "Histogramme seul"
 
-#: templates/menu_stats.html:68
+#: templates/menu_stats.html:82
 msgid ""
 "Aucun panneau. Commencez par un modèle : la matrice D/T, par exemple, se "
 "remplit case par case au fil de vos trouvailles."
@@ -8118,47 +8143,51 @@ msgstr ""
 "Aucun panneau. Commencez par un modèle : la matrice D/T, par exemple, se "
 "remplit case par case au fil de vos trouvailles."
 
-#: templates/menu_stats.html:70
+#: templates/menu_stats.html:84
 msgid "Panneaux de statistiques"
 msgstr "Panneaux de statistiques"
 
-#: templates/menu_stats.html:71
+#: templates/menu_stats.html:87 templates/menu_stats.html:88
+msgid "Nom de la configuration"
+msgstr "Nom de la configuration"
+
+#: templates/menu_stats.html:94
 msgid "Six panneaux au maximum."
 msgstr "Six panneaux au maximum."
 
-#: templates/menu_stats.html:81
+#: templates/menu_stats.html:104
 msgid "Panneau sélectionné"
 msgstr "Panneau sélectionné"
 
-#: templates/menu_stats.html:85
+#: templates/menu_stats.html:108
 msgid "Contenu"
 msgstr "Contenu"
 
-#: templates/menu_stats.html:88
+#: templates/menu_stats.html:111
 msgid "Statistique"
 msgstr "Statistique"
 
-#: templates/menu_stats.html:98
+#: templates/menu_stats.html:121
 msgid "Afficher le titre"
 msgstr "Afficher le titre"
 
-#: templates/menu_stats.html:104
+#: templates/menu_stats.html:127
 msgid "Cases"
 msgstr "Cases"
 
-#: templates/menu_stats.html:106 templates/menu_stats.html:124
+#: templates/menu_stats.html:129 templates/menu_stats.html:147
 msgid "Nombre de trouvailles"
 msgstr "Nombre de trouvailles"
 
-#: templates/menu_stats.html:107
+#: templates/menu_stats.html:130
 msgid "Intensité de couleur"
 msgstr "Intensité de couleur"
 
-#: templates/menu_stats.html:108
+#: templates/menu_stats.html:131
 msgid "Remplie ou vide"
 msgstr "Remplie ou vide"
 
-#: templates/menu_stats.html:110
+#: templates/menu_stats.html:133
 msgid ""
 "« Remplie ou vide » montre seulement les cases déjà obtenues, comme une "
 "grille de défi."
@@ -8166,27 +8195,27 @@ msgstr ""
 "« Remplie ou vide » montre seulement les cases déjà obtenues, comme une "
 "grille de défi."
 
-#: templates/menu_stats.html:115
+#: templates/menu_stats.html:138
 msgid "Afficher le nombre de cases remplies"
 msgstr "Afficher le nombre de cases remplies"
 
-#: templates/menu_stats.html:121
+#: templates/menu_stats.html:144
 msgid "Ordre"
 msgstr "Ordre"
 
-#: templates/menu_stats.html:123
+#: templates/menu_stats.html:146
 msgid "Ordre naturel"
 msgstr "Ordre naturel"
 
-#: templates/menu_stats.html:125
+#: templates/menu_stats.html:148
 msgid "Alphabétique"
 msgstr "Alphabétique"
 
-#: templates/menu_stats.html:126
+#: templates/menu_stats.html:149
 msgid "Course (les lignes se doublent)"
 msgstr "Course (les lignes se doublent)"
 
-#: templates/menu_stats.html:128
+#: templates/menu_stats.html:151
 msgid ""
 "L'ordre est fixé sur les totaux de fin d'animation : les lignes ne "
 "changent pas de place pendant la lecture. En « Course », elles se "
@@ -8196,119 +8225,119 @@ msgstr ""
 "changent pas de place pendant la lecture. En « Course », elles se "
 "doublent au fil des trouvailles."
 
-#: templates/menu_stats.html:131
+#: templates/menu_stats.html:154
 msgid "Barres"
 msgstr "Barres"
 
-#: templates/menu_stats.html:133
+#: templates/menu_stats.html:156
 msgid "Horizontales"
 msgstr "Horizontales"
 
-#: templates/menu_stats.html:134
+#: templates/menu_stats.html:157
 msgid "Verticales"
 msgstr "Verticales"
 
-#: templates/menu_stats.html:138
+#: templates/menu_stats.html:161
 msgid "Lignes au maximum"
 msgstr "Lignes au maximum"
 
-#: templates/menu_stats.html:140
+#: templates/menu_stats.html:163
 msgid "Les catégories suivantes sont regroupées dans « Autres »."
 msgstr "Les catégories suivantes sont regroupées dans « Autres »."
 
-#: templates/menu_stats.html:145
+#: templates/menu_stats.html:168
 msgid "Masquer les lignes vides"
 msgstr "Masquer les lignes vides"
 
-#: templates/menu_stats.html:151
+#: templates/menu_stats.html:174
 msgid "Trou central"
 msgstr "Trou central"
 
-#: templates/menu_stats.html:153
+#: templates/menu_stats.html:176
 msgid "À 0 %, l'anneau devient un camembert."
 msgstr "À 0 %, l'anneau devient un camembert."
 
-#: templates/menu_stats.html:158
+#: templates/menu_stats.html:181
 msgid "Afficher la légende"
 msgstr "Afficher la légende"
 
-#: templates/menu_stats.html:166
+#: templates/menu_stats.html:189
 msgid "Remplir sous la courbe"
 msgstr "Remplir sous la courbe"
 
-#: templates/menu_stats.html:172
+#: templates/menu_stats.html:195
 msgid "Chiffres affichés"
 msgstr "Chiffres affichés"
 
-#: templates/menu_stats.html:184
+#: templates/menu_stats.html:207
 msgid "Au moins un chiffre : décocher le dernier n'a pas d'effet."
 msgstr "Au moins un chiffre : décocher le dernier n'a pas d'effet."
 
-#: templates/menu_stats.html:187
+#: templates/menu_stats.html:210
 msgid "Colonnes"
 msgstr "Colonnes"
 
-#: templates/menu_stats.html:198
+#: templates/menu_stats.html:221
 msgid "Afficher les nombres"
 msgstr "Afficher les nombres"
 
-#: templates/menu_stats.html:202
+#: templates/menu_stats.html:225
 msgid "Afficher les pourcentages"
 msgstr "Afficher les pourcentages"
 
-#: templates/menu_stats.html:206
+#: templates/menu_stats.html:229
 msgid "Surligner pendant l'animation"
 msgstr "Surligner pendant l'animation"
 
-#: templates/menu_stats.html:208
+#: templates/menu_stats.html:231
 msgid "Les nouveautés (case ou catégorie obtenue)"
 msgstr "Les nouveautés (case ou catégorie obtenue)"
 
-#: templates/menu_stats.html:209
+#: templates/menu_stats.html:232
 msgid "Chaque trouvaille"
 msgstr "Chaque trouvaille"
 
-#: templates/menu_stats.html:210
+#: templates/menu_stats.html:233
 msgid "Rien"
 msgstr "Rien"
 
-#: templates/menu_stats.html:219
+#: templates/menu_stats.html:242
 msgid "Coin d'ancrage"
 msgstr "Coin d'ancrage"
 
-#: templates/menu_stats.html:222
+#: templates/menu_stats.html:245
 msgid "En haut au centre"
 msgstr "En haut au centre"
 
-#: templates/menu_stats.html:223
+#: templates/menu_stats.html:246
 msgid "Au milieu à gauche"
 msgstr "Au milieu à gauche"
 
-#: templates/menu_stats.html:223
+#: templates/menu_stats.html:246
 msgid "Au centre"
 msgstr "Au centre"
 
-#: templates/menu_stats.html:223
+#: templates/menu_stats.html:246
 msgid "Au milieu à droite"
 msgstr "Au milieu à droite"
 
-#: templates/menu_stats.html:224
+#: templates/menu_stats.html:247
 msgid "En bas au centre"
 msgstr "En bas au centre"
 
-#: templates/menu_stats.html:236
+#: templates/menu_stats.html:259
 msgid "Marge horizontale (px)"
 msgstr "Marge horizontale (px)"
 
-#: templates/menu_stats.html:240
+#: templates/menu_stats.html:263
 msgid "Marge verticale (px)"
 msgstr "Marge verticale (px)"
 
-#: templates/menu_stats.html:244
+#: templates/menu_stats.html:267
 msgid "Largeur (px)"
 msgstr "Largeur (px)"
 
-#: templates/menu_stats.html:248
+#: templates/menu_stats.html:271
 msgid ""
 "Les panneaux qui partagent un coin s'empilent automatiquement et "
 "contournent le titre et les infos ; la marge verticale sert alors "
@@ -8318,15 +8347,15 @@ msgstr ""
 "contournent le titre et les infos ; la marge verticale sert alors "
 "d'espacement avec le panneau précédent."
 
-#: templates/menu_stats.html:253
+#: templates/menu_stats.html:276
 msgid "Position libre : ce panneau a été glissé sur la carte."
 msgstr "Position libre : ce panneau a été glissé sur la carte."
 
-#: templates/menu_stats.html:254
+#: templates/menu_stats.html:277
 msgid "Revenir au coin d'ancrage"
 msgstr "Revenir au coin d'ancrage"
 
-#: templates/menu_stats.html:256
+#: templates/menu_stats.html:279
 msgid ""
 "Tant que cet onglet est ouvert, vous pouvez glisser un panneau sur la "
 "carte pour le placer librement."
@@ -8334,43 +8363,43 @@ msgstr ""
 "Tant que cet onglet est ouvert, vous pouvez glisser un panneau sur la "
 "carte pour le placer librement."
 
-#: templates/menu_stats.html:273 templates/menu_stats.html:285
+#: templates/menu_stats.html:296 templates/menu_stats.html:308
 msgid "Couleur principale"
 msgstr "Couleur principale"
 
-#: templates/menu_stats.html:277
+#: templates/menu_stats.html:300
 msgid "Opacité du fond"
 msgstr "Opacité du fond"
 
-#: templates/menu_stats.html:283
+#: templates/menu_stats.html:306
 msgid "Couleurs des types de caches"
 msgstr "Couleurs des types de caches"
 
-#: templates/menu_stats.html:284
+#: templates/menu_stats.html:307
 msgid "Une couleur par catégorie"
 msgstr "Une couleur par catégorie"
 
-#: templates/menu_stats.html:286
+#: templates/menu_stats.html:309
 msgid "Dégradé selon le nombre"
 msgstr "Dégradé selon le nombre"
 
-#: templates/menu_stats.html:290
+#: templates/menu_stats.html:313
 msgid "Taille du texte"
 msgstr "Taille du texte"
 
-#: templates/menu_stats.html:294
+#: templates/menu_stats.html:317
 msgid "Arrondi"
 msgstr "Arrondi"
 
-#: templates/menu_stats.html:300
+#: templates/menu_stats.html:323
 msgid "Police de la cartouche d'infos"
 msgstr "Police de la cartouche d'infos"
 
-#: templates/menu_stats.html:308
+#: templates/menu_stats.html:331
 msgid "Image (PNG)"
 msgstr "Image (PNG)"
 
-#: templates/menu_stats.html:311
+#: templates/menu_stats.html:334
 msgid "Valeurs (CSV)"
 msgstr "Valeurs (CSV)"
 
@@ -11066,4 +11095,10 @@ msgstr "Enregistrer une copie sous…"
 #~ " panneau qui dépasse de la carte "
 #~ "ou chevauche le titre ou les "
 #~ "infos."
+
+#~ msgid "Chiffre"
+#~ msgstr "Chiffre"
+
+#~ msgid "Valeur"
+#~ msgstr "Valeur"
 
