@@ -371,3 +371,28 @@ test('une pile de coin démarre sous le titre au lieu de le recouvrir', async ({
   expect(overlapsHorizontally).toBe(true);
   expect(panelBox.y).toBeGreaterThanOrEqual(titleBox.y + titleBox.height);
 });
+
+test('la pile de coin se replace quand le cartouche d’infos grandit', async ({ page }) => {
+  await putStats(page, { enabled: true, panels: [
+    { id: 'eeeeee02', kind: 'counter', metric: 'summary', position: { anchor: 'top-right', dx: 16, dy: 16 } },
+  ] });
+  await openWithFixture(page);
+  const infos = page.locator('#infosFrame');
+  const panel = page.locator('canvas.stats-panel');
+  test.skip(!(await infos.isVisible()), 'Le profil courant ne montre pas la boîte d’infos.');
+  await expect(panel).toBeVisible();
+
+  // La pile démarre sous la boîte (coin haut-droit = celui des infos).
+  const startsBelow = async () => {
+    const infosBox = await infos.boundingBox();
+    const panelBox = await panel.boundingBox();
+    return panelBox.y >= infosBox.y + infosBox.height;
+  };
+  await expect.poll(startsBelow).toBe(true);
+
+  // Le cartouche peut grandir sans que la carte bouge (compteur plus long,
+  // modèle d'infos, style appliqué) : la pile doit se replier sous la boîte
+  // élargie, pas rester à la hauteur mesurée avant.
+  await page.evaluate(() => { document.getElementById('infosFrame').style.fontSize = '64px'; });
+  await expect.poll(startsBelow).toBe(true);
+});

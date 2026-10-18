@@ -550,6 +550,15 @@ function ensureResizeObserver(host) {
     if (resizeObserver || typeof ResizeObserver === 'undefined') return;
     resizeObserver = new ResizeObserver(() => invalidateStatsLayout());
     resizeObserver.observe(host);
+    // Le titre et les infos sont des obstacles pour les piles de coin : leur
+    // taille peut changer sans que le conteneur bouge — titre retapé, modèle
+    // d'infos, style ou police appliqués, bascule d'affichage (display none →
+    // grid notifie aussi). Sans ça, overlayRectsCache garde la taille d'avant
+    // et la pile chevauche la boîte qui a grandi (ou laisse un vide).
+    for (const id of ['titleFrame', 'infosFrame']) {
+        const el = document.getElementById(id);
+        if (el) resizeObserver.observe(el);
+    }
 }
 
 export function invalidateStatsLayout() {
