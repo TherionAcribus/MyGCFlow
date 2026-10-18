@@ -398,6 +398,28 @@
     margin: 0;
 }
 
+/* Boutons d'action dans un toast (« Annuler » une suppression…) */
+.gcm-toast-actions {
+    margin-top: 6px;
+    display: flex;
+    gap: 8px;
+}
+
+.gcm-toast-action {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-accent-text, #0d6efd);
+    text-decoration: underline;
+}
+
+.gcm-toast-action:hover {
+    filter: brightness(0.85);
+}
+
 .gcm-toast-close {
     background: none;
     border: none;

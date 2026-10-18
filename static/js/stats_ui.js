@@ -16,6 +16,10 @@ import {
 
 const saveStatsDebounced = makeDebouncedSettingsSaver(500);
 
+// Élément du titre « Panneaux » qui porte le retour « Enregistré ✓ » des
+// actions sans champ dédié (ajout, suppression, réordonnancement, dépôt).
+const STATS_SAVE_STATUS = 'statsSaveStatus';
+
 let selectedId = null;
 let initialized = false;
 
@@ -62,20 +66,24 @@ function selectedPanel() {
 }
 
 // Applique puis enregistre. `field` : élément qui porte l'indicateur
-// « Enregistré ✓ ».
-function commit(next, field = null) {
+// « Enregistré ✓ ». `immediate` vide la file sans attendre le debounce :
+// les actions discrètes (ajout, suppression, dépôt) ne doivent pas rester
+// dans le minuteur si la page est quittée ou rechargée entre-temps — et le
+// patch envoyé emporte alors l'état complet, champ en cours de saisie inclus.
+function commit(next, field = null, { immediate = false } = {}) {
     const applied = pkg.applyStatsSettings(next);
     if (window.userSettings) window.userSettings.stats = applied;
     const saving = saveStatsDebounced({ stats: applied });
+    if (immediate) saveStatsDebounced.flush();
     if (field) reportSave(field, saving);
     return applied;
 }
 
-function updatePanels(mutate, field = null) {
+function updatePanels(mutate, field = null, options = {}) {
     const settings = currentSettings();
     const panels = settings.panels.map((panel) => structuredClone(panel));
     const result = mutate(panels);
-    commit({ ...settings, panels: result || panels }, field);
+    commit({ ...settings, panels: result || panels }, field, options);
 }
 
 function updateSelected(mutate, field) {
@@ -150,8 +158,29 @@ function renderList() {
     const full = panels.length >= STATS_MAX_PANELS;
     const limit = $('statsLimitHint');
     if (limit) limit.hidden = !full;
+    const available = STATS_MAX_PANELS - panels.length;
     document.querySelectorAll('#statsAddMenu [data-stats-preset], #statsAddMenu [data-stats-add]')
-        .forEach((button) => { button.disabled = full; });
+        .forEach((button) => {
+            // Modèles atomiques : celui qui demande plus de places qu'il n'en
+            // reste est désactivé, avec la raison affichée (une entrée
+            // désactivée ne montre pas d'infobulle).
+            const needed = button.dataset.statsPreset
+                ? (PRESETS[button.dataset.statsPreset] || []).length || 1
+                : 1;
+            const missing = needed > available;
+            button.disabled = missing;
+            let hint = button.querySelector('.stats-slots-hint');
+            if (missing && needed > 1) {
+                if (!hint) {
+                    hint = document.createElement('span');
+                    hint.className = 'stats-slots-hint d-block small fst-italic';
+                    button.appendChild(hint);
+                }
+                hint.textContent = pkg.t('${n} places requises', { n: needed });
+            } else {
+                hint?.remove();
+            }
+        });
 }
 
 function onListClick(event) {
@@ -166,6 +195,8 @@ function onListClick(event) {
         return;
     }
     if (action === 'toggle') return;   // géré par « change »
+    let removed = null;
+    let removedIndex = -1;
     updatePanels((panels) => {
         const index = panels.findIndex((panel) => panel.id === id);
         if (index < 0) return panels;
@@ -178,12 +209,30 @@ function onListClick(event) {
             panels.splice(index + 1, 0, copy);
             selectedId = copy.id;
         } else if (action === 'delete') {
-            panels.splice(index, 1);
+            [removed] = panels.splice(index, 1);
+            removedIndex = index;
             if (selectedId === id) selectedId = panels[Math.min(index, panels.length - 1)]?.id || null;
         }
         return panels;
-    });
+    }, STATS_SAVE_STATUS, { immediate: true });
     renderStatsTab();
+    // La suppression est réversible tant que le toast est visible.
+    if (removed) showUndoForDelete(removed, removedIndex);
+}
+
+// « Annuler » du toast de suppression : le panneau revient à sa place.
+function showUndoForDelete(panel, index) {
+    pkg.showActionToast?.(
+        pkg.t('« ${name} » supprimé', { name: panel.title || pkg.defaultStatsPanelTitle(panel) }),
+        { label: 'Annuler', onClick: () => {
+            updatePanels((panels) => {
+                panels.splice(Math.min(index, panels.length), 0, structuredClone(panel));
+                return panels;
+            }, STATS_SAVE_STATUS, { immediate: true });
+            selectedId = panel.id;
+            renderStatsTab();
+        } },
+    );
 }
 
 function onListChange(event) {
@@ -195,22 +244,23 @@ function onListChange(event) {
         const panel = panels.find((p) => p.id === id);
         if (panel) panel.enabled = toggle.checked;
         return panels;
-    }, toggle);
+    }, toggle, { immediate: true });
     renderList();
 }
 
 function addPanels(specs) {
     let lastId = null;
     updatePanels((panels) => {
+        // Modèle atomique : s'il ne rentre pas entier, on ne pose rien.
+        if (specs.length > STATS_MAX_PANELS - panels.length) return panels;
         for (const [kind, metric, overrides] of specs) {
-            if (panels.length >= STATS_MAX_PANELS) break;
             const panel = createStatsPanel(kind, metric, overrides);
             if (!panel) continue;
             panels.push(panel);
             lastId = panel.id;
         }
         return panels;
-    });
+    }, STATS_SAVE_STATUS, { immediate: true });
     if (lastId) selectedId = lastId;
     renderStatsTab();
 }
@@ -510,7 +560,8 @@ function bindDragAndDrop() {
     const end = (event) => {
         if (!drag || event.pointerId !== drag.pointerId) return;
         drag.canvas.classList.remove('is-dragging');
-        if (drag.last) commit(withFreePosition(drag.id, drag.last.x, drag.last.y));
+        if (drag.last) commit(withFreePosition(drag.id, drag.last.x, drag.last.y),
+            STATS_SAVE_STATUS, { immediate: true });
         drag = null;
         renderForm();
     };
@@ -565,7 +616,8 @@ export function initStatsTab() {
     initialized = true;
 
     $('switchStats')?.addEventListener('change', (event) => {
-        commit({ ...currentSettings(), enabled: event.target.checked }, event.target);
+        commit({ ...currentSettings(), enabled: event.target.checked },
+            event.target, { immediate: true });
     });
     $('statsAddMenu')?.addEventListener('click', (event) => {
         const preset = event.target.closest('[data-stats-preset]');

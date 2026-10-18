@@ -44,6 +44,9 @@ function hostFor(field) {
 }
 
 function indicatorFor(field) {
+    // Cible directe : un élément qui EST l'indicateur (statut global d'une
+    // carte, sans champ hôte — ex. en-tête « Panneaux » de l'onglet Stats).
+    if (field.classList?.contains(INDICATOR_CLASS)) return field;
     const host = hostFor(field);
     if (!host) return null;
     let indicator = host.querySelector(`:scope > .${INDICATOR_CLASS}`);

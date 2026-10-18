@@ -63,20 +63,34 @@ export function makeDebouncedSettingsSaver(delayMs = 400) {
     let pending = {};
     let resolvers = [];
 
-    return function saveDebounced(patch) {
+    async function drain() {
+        const toSave = pending;
+        const toResolve = resolvers;
+        pending = {};
+        resolvers = [];
+        clearTimeout(timer);
+        timer = null;
+        const ok = await saveSettingsPatch(toSave);
+        toResolve.forEach(fn => fn(ok));
+        return ok;
+    }
+
+    function saveDebounced(patch) {
         pending = Object.assign(pending, patch || {});
         clearTimeout(timer);
         return new Promise(resolve => {
             resolvers.push(resolve);
-            timer = setTimeout(async () => {
-                const toSave = pending;
-                const toResolve = resolvers;
-                pending = {};
-                resolvers = [];
-                timer = null;
-                const ok = await saveSettingsPatch(toSave);
-                toResolve.forEach(fn => fn(ok));
-            }, delayMs);
+            timer = setTimeout(drain, delayMs);
         });
+    }
+
+    // Écrit tout de suite ce qui est en attente : les changements discrets
+    // (suppression, réordonnancement) ne doivent pas risquer de rester dans
+    // le minuteur si la page est quittée ou rechargée entre-temps. Renvoie
+    // la promesse de l'écriture (true si rien n'était en attente).
+    saveDebounced.flush = function flush() {
+        return timer ? drain() : Promise.resolve(true);
     };
+
+    return saveDebounced;
 }

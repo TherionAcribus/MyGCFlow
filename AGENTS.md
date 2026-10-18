@@ -85,6 +85,12 @@ Autres repères :
   `msPerDay > duration`). `getStatsSnapshot().drawnHeads` expose le dernier
   jour peint par la tête de chaque courbe — exemple dans
   `stats-panels.spec.mjs` (fixture `my-finds-gap.gpx`).
+- `makeDebouncedSettingsSaver` expose `flush()` : il envoie tout de suite le
+  patch en attente. Les actions discrètes (suppression, réordonnancement…)
+  doivent l'appeler — sinon leur écriture peut mourir dans le minuteur si la
+  page est rechargée juste après (`commit(..., { immediate: true })` dans
+  stats_ui.js). Le retour visuel global des actions Stats vit dans
+  `#statsSaveStatus` (titre « Panneaux »).
 - Même famille : `stats` (panneaux de l'onglet Stats) est une préférence
   globale. Un spec qui pose des panneaux doit remettre
   `PUT /api/settings {stats: {enabled: true, panels: []}}` en sortant, sinon

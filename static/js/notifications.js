@@ -41,16 +41,21 @@ class NotificationManager {
      * @param {number} duration - Durée en ms (0 = manuel)
      * @param {boolean} showProgress - Afficher une progress bar
      * @param {number} progress - Valeur initiale du progrès (0-100)
+     * @param {object} options - { actions: [{ label, onClick, className }] } —
+     *   boutons d'action rendus sous le message ; chaque clic exécute onClick
+     *   puis ferme le toast.
      */
-    show(message, type = 'info', title = '', duration = 5000, showProgress = false, progress = 0) {
+    show(message, type = 'info', title = '', duration = 5000, showProgress = false, progress = 0, options = {}) {
         this.ensureContainer();
+        const actions = Array.isArray(options.actions) ? options.actions : [];
 
         // Déduplication : un toast déjà affiché avec exactement le même
         // titre et le même message n'est pas réempilé — sa durée est
         // simplement relancée (évite les piles de notifications identiques
-        // sur des actions répétées).
+        // sur des actions répétées). Un toast à actions est toujours nouveau :
+        // deux « Annuler » identiques ne restaureraient pas la même chose.
         const dedupKey = `${title}\n${message}`;
-        const existing = [...this.container.querySelectorAll('.gcm-toast')]
+        const existing = !actions.length && [...this.container.querySelectorAll('.gcm-toast')]
             .find(el => !el._gcmHiding && el._gcmDedupKey === dedupKey);
         if (existing) {
             if (existing._gcmHideTimer) {
@@ -102,6 +107,24 @@ class NotificationManager {
 
         // Le × seul n'a pas de nom accessible pour les lecteurs d'écran.
         toast.querySelector('.gcm-toast-close').setAttribute('aria-label', t('Fermer'));
+
+        // Boutons d'action (ex. « Annuler » après une suppression).
+        if (actions.length) {
+            const bar = document.createElement('div');
+            bar.className = 'gcm-toast-actions';
+            for (const action of actions) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = `gcm-toast-action ${action.className || ''}`.trim();
+                btn.textContent = action.label;
+                btn.addEventListener('click', () => {
+                    if (action.onClick) action.onClick();
+                    this.hide(toast);
+                });
+                bar.appendChild(btn);
+            }
+            toast.querySelector('.gcm-toast-content').appendChild(bar);
+        }
 
         // Métadonnées internes : clé de déduplication (le titre est conservé
         // à part pour que updateMessage puisse la recalculer), durée et
@@ -299,6 +322,15 @@ export function setIndeterminateProgress(toast) {
 
 export function hideToast(toast) {
     notificationManager.hide(toast);
+}
+
+// Toast avec un bouton d'action (ex. « Annuler » une suppression). Jamais
+// dédupliqué : chaque exemplaire porte son propre rappel.
+export function showActionToast(message, action, { type = 'info', title = '', duration = 6000 } = {}) {
+    const msg = (typeof message === 'string') ? t(message) : message;
+    const ttl = (typeof title === 'string' && title) ? t(title) : title;
+    const act = { ...action, label: typeof action?.label === 'string' ? t(action.label) : action?.label };
+    return notificationManager.show(msg, type, ttl, duration, false, 0, { actions: [act] });
 }
 
 // Gestion centralisée des toasts d'affichage des points

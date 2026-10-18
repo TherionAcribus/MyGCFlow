@@ -116,6 +116,31 @@ test('un modèle pose la matrice D/T, ancrée, empilée et retrouvée au redéma
   await expect(page.locator('canvas.stats-panel')).toHaveCount(3, { timeout: 15_000 });
 });
 
+test('un modèle à deux panneaux se désactive quand il ne reste qu\'une place', async ({ page }) => {
+  const five = ['f0000001', 'f0000002', 'f0000003', 'f0000004', 'f0000005']
+    .map((id, i) => ({ id, kind: 'bar', metric: 'cache_type', position: { anchor: 'top-right', dy: i * 8 } }));
+  await putStats(page, { enabled: true, panels: five });
+  await openWithFixture(page, '#stats');
+  await page.locator('a[href="#stats"]').click();
+
+  // Une seule place sur six : les modèles à deux panneaux sont désactivés
+  // avec la raison affichée ; les panneaux seuls restent proposés.
+  await page.locator('#btnStatsAdd').click();
+  const preset = page.locator('[data-stats-preset="types-sizes"]');
+  await expect(preset).toBeDisabled();
+  await expect(preset.locator('.stats-slots-hint')).toHaveText('2 places requises');
+  await expect(page.locator('[data-stats-add="bar:year"]')).toBeEnabled();
+
+  // Une suppression libère la place : le modèle redevient cliquable et pose
+  // bien ses deux panneaux d'un coup. (Un second clic replie le menu, sinon
+  // il intercepte les clics de la liste.)
+  await page.locator('#btnStatsAdd').click();
+  await page.locator('#statsPanelList [data-action="delete"]').first().click();
+  await page.locator('#btnStatsAdd').click();
+  await preset.click();
+  await expect(page.locator('canvas.stats-panel')).toHaveCount(6);
+});
+
 test('la lecture remplit les panneaux jour après jour, l\'arrêt rend les totaux', async ({ page }) => {
   await putStats(page, { enabled: true, panels: [
     { id: 'aaaaaa01', kind: 'grid', metric: 'dt' },
@@ -272,6 +297,32 @@ test('la courbe avance pendant les jours sans trouvaille', async ({ page }) => {
   await expect.poll(async () => (await snapshot(page)).total, { timeout: 10_000 }).toBe(2);
   await expect.poll(async () => (await snapshot(page)).drawnHeads?.eeeeee02,
     { timeout: 10_000 }).toBe(DAY1 + 5);
+});
+
+test('une suppression se signale, s\'enregistre aussitôt et s\'annule', async ({ page }) => {
+  await putStats(page, { enabled: true, panels: [
+    { id: 'aa000001', kind: 'bar', metric: 'cache_type', title: 'Types test' },
+    { id: 'aa000002', kind: 'grid', metric: 'dt' },
+  ] });
+  await openWithFixture(page, '#stats');
+  await page.locator('a[href="#stats"]').click();
+  await expect(page.locator('#statsPanelList li')).toHaveCount(2);
+
+  await page.locator('#statsPanelList [data-action="delete"]').first().click();
+  // Statut global : l'écriture structurelle est confirmée sous « Panneaux ».
+  await expect(page.locator('#statsSaveStatus')).toHaveClass(/is-saved/, { timeout: 10_000 });
+  await expect(page.locator('#statsPanelList li')).toHaveCount(1);
+  const undo = page.locator('.gcm-toast.show .gcm-toast-action').filter({ hasText: 'Annuler' });
+  await expect(undo).toBeVisible();
+  // Enregistrement immédiat : le serveur a déjà la liste à jour.
+  await expect.poll(async () => (await savedStats(page)).panels.map((p) => p.id))
+    .toEqual(['aa000002']);
+
+  // « Annuler » : le panneau revient à sa place, sauvegarde repartie.
+  await undo.click();
+  await expect(page.locator('#statsPanelList li')).toHaveCount(2);
+  await expect.poll(async () => (await savedStats(page)).panels.map((p) => p.id))
+    .toEqual(['aa000001', 'aa000002']);
 });
 
 test('un panneau glissé passe en position libre, choisir un coin l’y ramène', async ({ page }) => {
