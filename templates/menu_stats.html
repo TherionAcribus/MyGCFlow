@@ -41,7 +41,13 @@
                             <li id="statsConfigSep"><hr class="dropdown-divider"></li>
                             <li><button type="button" class="dropdown-item" data-stats-config-save>
                                 <i class="ti ti-device-floppy me-1" aria-hidden="true"></i>{{ _("Enregistrer la configuration actuelle") }}</button></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><button type="button" class="dropdown-item" data-stats-panels-export>
+                                <i class="ti ti-download me-1" aria-hidden="true"></i>{{ _("Exporter les panneaux (JSON)") }}</button></li>
+                            <li><button type="button" class="dropdown-item" data-stats-panels-import>
+                                <i class="ti ti-upload me-1" aria-hidden="true"></i>{{ _("Importer des panneaux…") }}</button></li>
                         </ul>
+                        <input type="file" id="statsPanelsImportFile" accept=".json,application/json" hidden>
                     </div>
                     <div class="dropdown">
                         <button type="button" id="btnStatsAdd" class="btn btn-sm btn-primary dropdown-toggle"

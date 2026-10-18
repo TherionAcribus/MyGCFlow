@@ -687,3 +687,46 @@ test('les nouvelles métriques (mois, semaine, attributs, propriétaires) se com
   await expect(attribute).not.toContainText('Available during winter');
   await expect(owner).toContainText('Therion : 6');
 });
+
+test('les panneaux s\'exportent en JSON et se ré-importent', async ({ page }) => {
+  await putStats(page, { enabled: true, panels: [
+    { id: 'e9e00101', kind: 'bar', metric: 'cache_type', position: { anchor: 'top-left' } },
+    { id: 'e9e00102', kind: 'grid', metric: 'dt', position: { anchor: 'bottom-left' } },
+  ] });
+  await openWithFixture(page, '#stats');
+  await page.locator('a[href="#stats"]').click();
+  await expect(page.locator('canvas.stats-panel')).toHaveCount(2);
+
+  // Export de la liste du mode courant depuis le menu « Configurations ».
+  await page.locator('#btnStatsConfigs').click();
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page.locator('[data-stats-panels-export]').click(),
+  ]);
+  expect(download.suggestedFilename()).toBe('stats-panneaux-finds.json');
+  const jsonPath = await download.path();
+  const json = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+  expect(json.mode).toBe('finds');
+  expect(json.panels).toHaveLength(2);
+
+  // Liste vidée par l'UI : l'import la restaure depuis le fichier.
+  const deletes = page.locator('#statsPanelList [data-action="delete"]');
+  while (await deletes.count()) await deletes.first().click();
+  await expect(page.locator('canvas.stats-panel')).toHaveCount(0);
+  await page.setInputFiles('#statsPanelsImportFile', jsonPath);
+  await expect(page.locator('canvas.stats-panel')).toHaveCount(2);
+  await expect.poll(async () => (await savedStats(page)).panels.map((p) => p.id))
+    .toEqual(['e9e00101', 'e9e00102']);
+  await expect(page.locator('.gcm-toast.show').filter({ hasText: 'importé' })).toHaveCount(1);
+
+  // Un fichier illisible est refusé proprement.
+  const badPath = path.join(HERE, 'fixtures', '_bad-panels.json');
+  fs.writeFileSync(badPath, '{ invalide');
+  try {
+    await page.setInputFiles('#statsPanelsImportFile', badPath);
+    await expect(page.locator('.gcm-toast.show').filter({ hasText: 'Import impossible' })).toHaveCount(1);
+    await expect(page.locator('canvas.stats-panel')).toHaveCount(2);
+  } finally {
+    fs.unlinkSync(badPath);
+  }
+});

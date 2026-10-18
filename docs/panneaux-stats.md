@@ -243,4 +243,8 @@ métriques et le schéma de ses options des deux côtés (`stats_settings.py`,
 (`data-stats-kind`) et `stats_ui.js › FIELDS`. Une nouvelle grille, elle, n'est
 qu'une entrée dans `gridSpec`.
 
-Non couvert : l'export/import du bloc `stats` dans un thème.
+La liste du mode courant s'exporte en JSON et se ré-importe depuis le menu
+« Configurations » (`stats-panneaux-{mode}.json` : `{mode, panels}` ; à
+l'import, la liste est lue dans un tableau, `panels`, `evolution_panels` ou
+un bloc `stats` complet, puis normalisée comme une configuration appliquée).
+Non couvert : l'inclusion du bloc `stats` dans un thème.

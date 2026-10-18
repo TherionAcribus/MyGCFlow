@@ -695,6 +695,59 @@ function exportPanelCsv() {
         `stats-${panel.kind}-${panel.metric}.csv`);
 }
 
+// Export/import de la liste du mode courant — pour qui veut la copier
+// ailleurs : la normalisation reprend tout à l'import (métriques
+// incompatibles filtrées, ids en doublon régénérés), comme l'application
+// d'une configuration nommée.
+function exportPanels() {
+    const settings = currentSettings();
+    const payload = {
+        mode: evolutionMode ? 'evolution' : 'finds',
+        panels: modePanels(settings),
+    };
+    const json = JSON.stringify(payload, null, 2);
+    downloadBlob(new Blob([json], { type: 'application/json;charset=utf-8' }),
+        `stats-panneaux-${payload.mode}.json`);
+}
+
+// Accepte : un tableau de panneaux, { panels: [...] }, { evolution_panels:
+// [...] } ou un bloc { stats: {...} } complet — la liste du mode courant est
+// lue dedans dans cet ordre de priorité.
+function importedPanels(data) {
+    if (Array.isArray(data)) return data;
+    const key = panelsKey();
+    if (Array.isArray(data?.[key])) return data[key];
+    if (Array.isArray(data?.panels)) return data.panels;
+    if (Array.isArray(data?.stats?.[key])) return data.stats[key];
+    if (Array.isArray(data?.stats?.panels)) return data.stats.panels;
+    return null;
+}
+
+async function importPanels(file) {
+    let panels = null;
+    try {
+        panels = importedPanels(JSON.parse(await file.text()));
+    } catch (e) { /* JSON illisible → toast d'erreur plus bas */ }
+    if (!panels) {
+        pkg.showToast?.(pkg.t('Import impossible : fichier de panneaux invalide'));
+        return;
+    }
+    const key = panelsKey();
+    const previous = modePanels(currentSettings());
+    const applied = commit({ ...currentSettings(), [key]: panels },
+        STATS_SAVE_STATUS, { immediate: true });
+    selectedId = applied[key][0]?.id || null;
+    renderStatsTab();
+    pkg.showActionToast?.(
+        pkg.t('${count} panneau(x) importé(s)', { count: applied[key].length }),
+        { label: 'Annuler', onClick: () => {
+            commit({ ...currentSettings(), [key]: previous },
+                STATS_SAVE_STATUS, { immediate: true });
+            selectedId = previous[0]?.id || null;
+            renderStatsTab();
+        } });
+}
+
 // ---------------------------------------------------------------------------
 // Configurations nommées : instantané de la liste de panneaux, ré-applicable.
 // ---------------------------------------------------------------------------
@@ -925,6 +978,13 @@ export function initStatsTab() {
             return;
         }
         if (event.target.closest('[data-stats-config-save]')) showConfigSave();
+        if (event.target.closest('[data-stats-panels-export]')) exportPanels();
+        if (event.target.closest('[data-stats-panels-import]')) $('statsPanelsImportFile')?.click();
+    });
+    $('statsPanelsImportFile')?.addEventListener('change', (event) => {
+        const file = event.target.files?.[0];
+        event.target.value = '';
+        if (file) importPanels(file);
     });
     $('btnStatsConfigSaveOk')?.addEventListener('click', saveCurrentConfig);
     $('btnStatsConfigSaveCancel')?.addEventListener('click', hideConfigSave);
