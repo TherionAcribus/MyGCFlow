@@ -385,6 +385,10 @@ test('un panneau glissé passe en position libre, choisir un coin l’y ramène'
   const moved = await panel.boundingBox();
   expect(Math.abs(moved.x - (box.x + 150))).toBeLessThan(4);
   expect(Math.abs(moved.y - (box.y - 120))).toBeLessThan(4);
+  // La section Position ne s'ouvre plus d'elle-même : son sous-libellé signale
+  // la position libre, l'alerte se retrouve en dépliant.
+  await expect(page.locator('#statsPositionHintFree')).toBeVisible();
+  await page.locator('#statsSectionPosition summary').click();
   await expect(page.locator('#statsFreePosition')).toBeVisible();
 
   // Un coin choisi dans le formulaire remet le panneau dans sa pile.
@@ -596,7 +600,7 @@ test('le panneau choisi dans la liste porte le repère de sélection sur la cart
   await expect(second).toHaveClass(/is-selected/);
 });
 
-test('les sections Position et Apparence du formulaire sont repliées', async ({ page }) => {
+test('les sections Position et Apparence sont repliées par défaut et mémorisent leur état', async ({ page }) => {
   await putStats(page, { enabled: true, panels: [
     { id: '5ec70001', kind: 'bar', metric: 'cache_type', position: { anchor: 'top-left' } },
     { id: '5ec70002', kind: 'bar', metric: 'container', position: { mode: 'free', x: 0.3, y: 0.4 } },
@@ -619,11 +623,34 @@ test('les sections Position et Apparence du formulaire sont repliées', async ({
   await position.locator('summary').click();
   await expect(position).toHaveJSProperty('open', false);
 
-  // Un panneau glissé sur la carte (position libre) l'ouvre d'elle-même :
-  // l'alerte « Revenir au coin d'ancrage » doit rester trouvable.
+  // Un panneau glissé sur la carte (position libre) n'ouvre plus la section :
+  // c'est le sous-libellé du summary qui signale le mode courant.
   await page.locator('li[data-panel-id="5ec70002"] .stats-panel-name').click();
+  await expect(position).toHaveJSProperty('open', false);
+  await expect(page.locator('#statsFreePosition')).toBeHidden();
+  await expect(page.locator('#statsPositionHintFree')).toBeVisible();
+  await expect(page.locator('#statsPositionHintAnchored')).toBeHidden();
+  await position.locator('summary').click();
   await expect(position).toHaveJSProperty('open', true);
   await expect(page.locator('#statsFreePosition')).toBeVisible();
+
+  // L'état ouvert/fermé est mémorisé en localStorage et restauré au rechargement.
+  await appearance.locator('summary').click();
+  await expect(appearance).toHaveJSProperty('open', true);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.mygcflowReady === true);
+  await page.locator('a[href="#stats"]').click();
+  await page.locator('li[data-panel-id="5ec70001"] .stats-panel-name').click();
+  await expect(position).toHaveJSProperty('open', true);
+  await expect(appearance).toHaveJSProperty('open', true);
+
+  await appearance.locator('summary').click();
+  await expect(appearance).toHaveJSProperty('open', false);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.mygcflowReady === true);
+  await page.locator('a[href="#stats"]').click();
+  await page.locator('li[data-panel-id="5ec70001"] .stats-panel-name').click();
+  await expect(position).toHaveJSProperty('open', true);
   await expect(appearance).toHaveJSProperty('open', false);
 });
 

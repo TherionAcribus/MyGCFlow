@@ -538,9 +538,12 @@ function renderForm() {
         freeBox.hidden = !free;
         freeBox.classList.toggle('d-flex', free);
     }
-    // Position libre : la section repliée s'ouvre d'elle-même, sinon l'alerte
-    // « Revenir au coin d'ancrage » resterait introuvable.
-    if (free) $('statsSectionPosition')?.setAttribute('open', '');
+    // Position libre : le sous-libellé du summary reflète le mode courant, la
+    // section reste repliée (l'alerte se retrouve en l'ouvrant).
+    const hintAnchored = $('statsPositionHintAnchored');
+    if (hintAnchored) hintAnchored.hidden = free;
+    const hintFree = $('statsPositionHintFree');
+    if (hintFree) hintFree.hidden = !free;
     setValue('inputStatsDx', p.dx);
     setValue('inputStatsDy', p.dy);
     setValue('inputStatsWidth', p.width);
@@ -764,6 +767,32 @@ function withWidth(id, width) {
             ? { ...panel, position: { ...panel.position, width } }
             : panel)),
     };
+}
+
+// État ouvert/fermé des sections repliables du formulaire : préférence
+// d'interface locale au navigateur (localStorage), non synchronisée serveur.
+const FORM_SECTIONS_KEY = 'statsFormSections';
+
+function readFormSections() {
+    try {
+        const parsed = JSON.parse(localStorage.getItem(FORM_SECTIONS_KEY));
+        return (parsed && typeof parsed === 'object') ? parsed : {};
+    } catch (_) {
+        return {};
+    }
+}
+
+function bindFormSections() {
+    const sections = document.querySelectorAll('details.stats-form-section[id]');
+    const saved = readFormSections();
+    sections.forEach((section) => {
+        section.open = !!saved[section.id];
+        section.addEventListener('toggle', () => {
+            const state = readFormSections();
+            state[section.id] = section.open;
+            try { localStorage.setItem(FORM_SECTIONS_KEY, JSON.stringify(state)); } catch (_) { /* quota */ }
+        });
+    });
 }
 
 function bindDragAndDrop() {
@@ -1218,6 +1247,7 @@ export function initStatsTab() {
         else if (event.key === 'Escape') hideConfigSave();
     });
     bindFormFields();
+    bindFormSections();
     bindDragAndDrop();
     document.addEventListener('mygcflow:stats-layout', (event) => renderWarnings(event.detail?.warnings));
     // Saisie à la souris : onglet ouvert/fermé, lecture lancée/arrêtée.
