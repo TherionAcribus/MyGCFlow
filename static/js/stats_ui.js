@@ -303,6 +303,9 @@ function renderForm() {
     setValue('inputStatsTitle', panel.title);
     setValue('switchStatsShowTitle', panel.show_title);
     if (titleInput) titleInput.disabled = !panel.show_title;
+    // Pas de canvas pour un panneau masqué : l'export PNG n'a rien à offrir.
+    const pngBtn = $('btnStatsExportPng');
+    if (pngBtn) pngBtn.disabled = !panel.enabled;
 
     // Options : seules celles du type du panneau existent (les autres restent
     // indéfinies, setValue les ignore).
@@ -572,6 +575,34 @@ function bindDragAndDrop() {
     host.addEventListener('pointercancel', end);
 }
 
+// ---------------------------------------------------------------------------
+// Export du panneau sélectionné (instantané PNG, valeurs CSV)
+// ---------------------------------------------------------------------------
+
+function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+}
+
+async function exportPanelPng() {
+    const panel = selectedPanel();
+    const blob = panel ? await pkg.statsPanelPngBlob?.(panel.id) : null;
+    if (blob) downloadBlob(blob, `stats-${panel.kind}-${panel.metric}.png`);
+}
+
+function exportPanelCsv() {
+    const panel = selectedPanel();
+    const csv = panel ? pkg.statsPanelCsv?.(panel.id) : null;
+    if (csv) downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }),
+        `stats-${panel.kind}-${panel.metric}.csv`);
+}
+
 // « Réorganiser » de l'alerte de mise en page : chaque panneau repart sur un
 // coin distinct, dans l'ordre de la liste — une pile par ancre ne peut plus
 // chevaucher ni les autres panneaux ni les cartouches. `middle-center` est
@@ -667,6 +698,8 @@ export function initStatsTab() {
     const list = $('statsPanelList');
     list?.addEventListener('click', onListClick);
     list?.addEventListener('change', onListChange);
+    $('btnStatsExportPng')?.addEventListener('click', exportPanelPng);
+    $('btnStatsExportCsv')?.addEventListener('click', exportPanelCsv);
     bindFormFields();
     bindDragAndDrop();
     document.addEventListener('mygcflow:stats-layout', (event) => renderWarnings(event.detail?.warnings));

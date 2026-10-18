@@ -7,6 +7,8 @@ Ajouter un onglet principal « Stats » qui permet de poser sur la carte des pan
 Lots 0, 1, 2 et 2 bis implémentés (grilles D/T, Jasmer, calendrier 366 ; histogrammes ; onglet ; vidéo), commités en « Stats > MVP » — doc technique dans `docs/panneaux-stats.md`.
 
 Lot 3 implémenté (2026-10-17) : anneaux/camemberts (`donut`), courbe cumulée (`line`), compteurs (`counter` : jours, record, plus longue série, types, pays, régions), métriques pays/régions, course de barres (`sort: race`), valeurs animées (`createTweenStore`), glisser-déposer en position libre (`position.mode: free`, x/y normalisés), contournement automatique du titre et des infos, avertissement de chevauchement entre panneaux.
+
+Audit traité + ergonomie (2026-10-18) : tête de courbe sur jours vides, modèles atomiques, retour de sauvegarde + « Annuler », validation stricte des dates/D-T, recalcul des obstacles titre/infos, patch partiel contre l'état courant, équivalent textuel accessible ; surlignage du panneau sélectionné (`is-selected`), sections « Position »/« Apparence » repliables, « Réorganiser automatiquement » dans l'alerte de mise en page, export PNG/CSV du panneau sélectionné.
 Non faits, volontairement : mode Évolution, export/import du bloc dans un thème. Perf (§6) mesurée le 2026-10-17 : aucun écart mesurable en MediaRecorder 2× avec 3 panneaux (détail dans `docs/panneaux-stats.md` › Mesures). Reste : notes de version 0.0.7.
 
 Écarts par rapport au plan ci-dessous, décidés en cours de route :
@@ -154,6 +156,7 @@ Règles de coercition (serveur **et** client `normalizeStatsSettings`, même esp
 - **Signature MediaRecorder** : `overlayContentSignature()` concatène `getStatsRevision()` (incrémenté à chaque `add`/`reset`/changement de réglage/surbrillance active). Sans cela, les frames « carte immobile, matrice qui se remplit » seraient sautées.
 - Invalidation : resize fenêtre, `ResizeObserver` du conteneur, changement de réglages → `invalidateStatsLayout()` (repositionne, recalcule DPR, bump revision). Fonts : s'aligner sur `document.fonts` (`ready` + `loadingdone`) comme `overlay_canvas.js`.
 - Visibilité : masqués si `!pkg.hasDatabase()`, si `stats.enabled === false`, ou sur `/evolution` (`isEvolutionPage()`), même règle que `syncOverlayVisibility`.
+- **Exports du panneau sélectionné** (`stats_panels.js`, boutons de l'onglet) : `statsPanelPngBlob(id)` renvoie le bitmap déjà dessiné de l'aperçu (`canvas.toBlob`, résolution écran — `null` si le panneau n'est pas affiché) ; `statsPanelCsv(id)` sérialise les comptes **réels** — recalculés depuis `selectionTotals()` avec les fonctions pures du modèle, jamais l'état d'animation ni les tweens — en CSV `;` + BOM UTF-8 (convention Excel francophone) : `Catégorie/Nombre/Pourcentage` (barres, anneaux), `Date/Total` (courbe), `Case/Nombre` (grilles, libellés `gridAxisLabels` partagés avec la vue), `Chiffre/Valeur/Détail` (compteurs). Téléchargement : Blob + `<a download>` + toast, convention `evolution`.
 - **Budget** : grille 9×9 ≈ 81 rects + ≤ 81 textes + 18 libellés : < 1 ms en Canvas 2D ; Jasmer (~27×12) et calendrier (12×31) restent sous ~400 cases ; barres : négligeable. Objectif mesurable : ≤ 1 ms par panneau par redessin en 1×, et **zéro redessin** quand rien ne change. Vérifier avec `recordingPerformanceMonitor` (log du temps de frame existant) sur `my-finds.gpx` avec 3 panneaux à 2× : la frame composée ne doit pas croître de plus de ~10 %.
 
 ### 3.4 Intégration à l'animation (`mapgl.js`, modifications minimales)
@@ -234,7 +237,8 @@ Règles de coercition (serveur **et** client `normalizeStatsSettings`, même esp
   4. Masquage : `stats.enabled=false` → panneaux cachés ; `/evolution` → aucun `canvas.stats-panel` et pas d'onglet.
   5. Export vidéo (patron `video-export.spec.mjs`) après un aperçu complet : au premier jour enregistré, le snapshot repart de l'état initial (pas de l'état de fin d'aperçu) ; l'export aboutit ; `addStatsPanelsToCanvas` a été appelé (compteur exposé en test) ou pixel non vide dans la zone du panneau d'une frame image.
   6. Accessibilité : un `.stats-panel-alt.visually-hidden` par `canvas.stats-panel` (titre + comptes réels + pieds), mis à jour quand les comptes bougent — rejouer l'animation jour par jour change la liste, jours vides compris pour la tête de courbe.
-  7. `afterEach` : `PUT /api/settings {stats: défauts}` et attendre `panels.length === 0`.
+  7. Export : `waitForEvent('download')` sur les boutons PNG/CSV — signature PNG (`89 50 4E 47`), BOM UTF-8 + en-têtes localisés + lignes de comptes dans le CSV ; l'export suit le panneau sélectionné dans la liste.
+  8. `afterEach` : `PUT /api/settings {stats: défauts}` et attendre `panels.length === 0`.
 - **Perf manuelle** : 3 panneaux (dont une grille Jasmer), MediaRecorder 2×, fixture — lire les temps de frame du moniteur ; comparer avec panneaux désactivés.
 - **Traductions** : `pybabel extract` → vérifier `grep -c "^msgid" messages.pot` (~1500+), `update --no-fuzzy-matching`, traduire FR/EN, `compile`, `python check_missing_translations.py`, `python -m pytest tests/test_translations.py tests/test_ui_localization.py`.
 - **Non-régression ciblée** : `overlay.spec.mjs`, `video-export.spec.mjs`, `travel-trail.spec.mjs`, `tab-memory.spec.mjs`, `tests/test_global_preferences.py`, `tests/test_offline_assets.py`.

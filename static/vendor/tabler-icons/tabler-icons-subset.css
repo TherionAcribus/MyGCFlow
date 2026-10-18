@@ -43,6 +43,7 @@
 .ti-check:before { content: "\ea5e"; }
 .ti-checks:before { content: "\ebaa"; }
 .ti-chevron-down:before { content: "\ea5f"; }
+.ti-chevron-right:before { content: "\ea61"; }
 .ti-chevron-up:before { content: "\ea62"; }
 .ti-circle-check:before { content: "\ea67"; }
 .ti-circle-filled:before { content: "\f671"; }
@@ -67,6 +68,7 @@
 .ti-external-link:before { content: "\ea99"; }
 .ti-eye:before { content: "\ea9a"; }
 .ti-eye-off:before { content: "\ecf0"; }
+.ti-file-type-csv:before { content: "\fb09"; }
 .ti-file-upload:before { content: "\ec91"; }
 .ti-filter:before { content: "\eaa5"; }
 .ti-flask:before { content: "\ebd2"; }
@@ -104,6 +106,7 @@
 .ti-packages:before { content: "\f2c9"; }
 .ti-palette:before { content: "\eb01"; }
 .ti-pencil:before { content: "\eb04"; }
+.ti-photo:before { content: "\eb0a"; }
 .ti-player-pause:before { content: "\ed45"; }
 .ti-player-play:before { content: "\ed46"; }
 .ti-player-stop:before { content: "\ed4a"; }

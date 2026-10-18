@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-18 09:27+0200\n"
+"POT-Creation-Date: 2026-10-18 09:39+0200\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -3271,6 +3271,44 @@ msgstr "${n} trouvailles au ${date}"
 msgid "Aucune trouvaille"
 msgstr "Aucune trouvaille"
 
+#: static/js/stats_panels.js:901
+msgid "Chiffre"
+msgstr "Chiffre"
+
+#: static/js/stats_panels.js:901
+msgid "Valeur"
+msgstr "Valeur"
+
+#: static/js/stats_panels.js:901 templates/menu_animation.html:189
+msgid "Détail"
+msgstr "Détail"
+
+#: static/js/stats_panels.js:904 templates/menu_informations.html:57
+#: templates/menu_informations.html:81
+msgid "Date"
+msgstr "Date"
+
+#: static/js/stats_panels.js:904 templates/menu_informations.html:61
+#: templates/menu_informations.html:83
+msgid "Total"
+msgstr "Total"
+
+#: static/js/stats_panels.js:907
+msgid "Case"
+msgstr "Case"
+
+#: static/js/stats_panels.js:907 static/js/stats_panels.js:915
+msgid "Nombre"
+msgstr "Nombre"
+
+#: static/js/stats_panels.js:915
+msgid "Catégorie"
+msgstr "Catégorie"
+
+#: static/js/stats_panels.js:915 templates/menu_informations.html:84
+msgid "Pourcentage"
+msgstr "Pourcentage"
+
 #: static/js/stats_ui.js:131
 msgid "Afficher ce panneau"
 msgstr "Afficher ce panneau"
@@ -3293,25 +3331,25 @@ msgstr "${n} places requises"
 msgid "« ${name} » supprimé"
 msgstr "« ${name} » supprimé"
 
-#: static/js/stats_ui.js:606
+#: static/js/stats_ui.js:637
 #, python-brace-format
 msgid "« ${name} » dépasse de la carte : réduisez sa largeur ou changez de coin."
 msgstr "« ${name} » dépasse de la carte : réduisez sa largeur ou changez de coin."
 
-#: static/js/stats_ui.js:608
+#: static/js/stats_ui.js:639
 msgid "le titre"
 msgstr "le titre"
 
-#: static/js/stats_ui.js:608
+#: static/js/stats_ui.js:639
 msgid "les infos"
 msgstr "les infos"
 
-#: static/js/stats_ui.js:609
+#: static/js/stats_ui.js:640
 #, python-brace-format
 msgid "« ${name} » chevauche ${other}."
 msgstr "« ${name} » chevauche ${other}."
 
-#: static/js/stats_ui.js:612
+#: static/js/stats_ui.js:643
 #, python-brace-format
 msgid ""
 "« ${name} » chevauche « ${other} » : changez de coin ou réduisez une "
@@ -3320,7 +3358,7 @@ msgstr ""
 "« ${name} » chevauche « ${other} » : changez de coin ou réduisez une "
 "largeur."
 
-#: static/js/stats_ui.js:624
+#: static/js/stats_ui.js:655
 msgid "Réorganiser automatiquement"
 msgstr "Réorganiser automatiquement"
 
@@ -6449,10 +6487,6 @@ msgstr "Personnalisé"
 msgid "Préréglage global, indépendant du thème."
 msgstr "Préréglage global, indépendant du thème."
 
-#: templates/menu_animation.html:189
-msgid "Détail"
-msgstr "Détail"
-
 #: templates/menu_animation.html:190
 msgid "(animation)"
 msgstr "(animation)"
@@ -7284,10 +7318,6 @@ msgstr "CSS"
 msgid "Insérer une balise"
 msgstr "Insérer une balise"
 
-#: templates/menu_informations.html:57 templates/menu_informations.html:81
-msgid "Date"
-msgstr "Date"
-
 #: templates/menu_informations.html:58
 msgid "Actives"
 msgstr "Actives"
@@ -7299,10 +7329,6 @@ msgstr "Placées"
 #: templates/menu_informations.html:60
 msgid "Archivées"
 msgstr "Archivées"
-
-#: templates/menu_informations.html:61 templates/menu_informations.html:83
-msgid "Total"
-msgstr "Total"
 
 #: templates/menu_informations.html:63
 #, python-brace-format
@@ -7330,10 +7356,6 @@ msgstr "Ligne d'informations personnalisée"
 #: templates/menu_informations.html:82
 msgid "Trouvées"
 msgstr "Trouvées"
-
-#: templates/menu_informations.html:84
-msgid "Pourcentage"
-msgstr "Pourcentage"
 
 #: templates/menu_informations.html:86
 #, python-brace-format
@@ -8343,6 +8365,14 @@ msgstr "Arrondi"
 #: templates/menu_stats.html:300
 msgid "Police de la cartouche d'infos"
 msgstr "Police de la cartouche d'infos"
+
+#: templates/menu_stats.html:308
+msgid "Image (PNG)"
+msgstr "Image (PNG)"
+
+#: templates/menu_stats.html:311
+msgid "Valeurs (CSV)"
+msgstr "Valeurs (CSV)"
 
 #: templates/menu_style.html:20
 msgid "Sauvegarder le thème actif"

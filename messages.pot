@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-18 09:27+0200\n"
+"POT-Creation-Date: 2026-10-18 09:39+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -3154,6 +3154,44 @@ msgstr ""
 msgid "Aucune trouvaille"
 msgstr ""
 
+#: static/js/stats_panels.js:901
+msgid "Chiffre"
+msgstr ""
+
+#: static/js/stats_panels.js:901
+msgid "Valeur"
+msgstr ""
+
+#: static/js/stats_panels.js:901 templates/menu_animation.html:189
+msgid "Détail"
+msgstr ""
+
+#: static/js/stats_panels.js:904 templates/menu_informations.html:57
+#: templates/menu_informations.html:81
+msgid "Date"
+msgstr ""
+
+#: static/js/stats_panels.js:904 templates/menu_informations.html:61
+#: templates/menu_informations.html:83
+msgid "Total"
+msgstr ""
+
+#: static/js/stats_panels.js:907
+msgid "Case"
+msgstr ""
+
+#: static/js/stats_panels.js:907 static/js/stats_panels.js:915
+msgid "Nombre"
+msgstr ""
+
+#: static/js/stats_panels.js:915
+msgid "Catégorie"
+msgstr ""
+
+#: static/js/stats_panels.js:915 templates/menu_informations.html:84
+msgid "Pourcentage"
+msgstr ""
+
 #: static/js/stats_ui.js:131
 msgid "Afficher ce panneau"
 msgstr ""
@@ -3176,32 +3214,32 @@ msgstr ""
 msgid "« ${name} » supprimé"
 msgstr ""
 
-#: static/js/stats_ui.js:606
+#: static/js/stats_ui.js:637
 #, python-brace-format
 msgid "« ${name} » dépasse de la carte : réduisez sa largeur ou changez de coin."
 msgstr ""
 
-#: static/js/stats_ui.js:608
+#: static/js/stats_ui.js:639
 msgid "le titre"
 msgstr ""
 
-#: static/js/stats_ui.js:608
+#: static/js/stats_ui.js:639
 msgid "les infos"
 msgstr ""
 
-#: static/js/stats_ui.js:609
+#: static/js/stats_ui.js:640
 #, python-brace-format
 msgid "« ${name} » chevauche ${other}."
 msgstr ""
 
-#: static/js/stats_ui.js:612
+#: static/js/stats_ui.js:643
 #, python-brace-format
 msgid ""
 "« ${name} » chevauche « ${other} » : changez de coin ou réduisez une "
 "largeur."
 msgstr ""
 
-#: static/js/stats_ui.js:624
+#: static/js/stats_ui.js:655
 msgid "Réorganiser automatiquement"
 msgstr ""
 
@@ -6034,10 +6072,6 @@ msgstr ""
 msgid "Préréglage global, indépendant du thème."
 msgstr ""
 
-#: templates/menu_animation.html:189
-msgid "Détail"
-msgstr ""
-
 #: templates/menu_animation.html:190
 msgid "(animation)"
 msgstr ""
@@ -6789,10 +6823,6 @@ msgstr ""
 msgid "Insérer une balise"
 msgstr ""
 
-#: templates/menu_informations.html:57 templates/menu_informations.html:81
-msgid "Date"
-msgstr ""
-
 #: templates/menu_informations.html:58
 msgid "Actives"
 msgstr ""
@@ -6803,10 +6833,6 @@ msgstr ""
 
 #: templates/menu_informations.html:60
 msgid "Archivées"
-msgstr ""
-
-#: templates/menu_informations.html:61 templates/menu_informations.html:83
-msgid "Total"
 msgstr ""
 
 #: templates/menu_informations.html:63
@@ -6831,10 +6857,6 @@ msgstr ""
 
 #: templates/menu_informations.html:82
 msgid "Trouvées"
-msgstr ""
-
-#: templates/menu_informations.html:84
-msgid "Pourcentage"
 msgstr ""
 
 #: templates/menu_informations.html:86
@@ -7773,6 +7795,14 @@ msgstr ""
 
 #: templates/menu_stats.html:300
 msgid "Police de la cartouche d'infos"
+msgstr ""
+
+#: templates/menu_stats.html:308
+msgid "Image (PNG)"
+msgstr ""
+
+#: templates/menu_stats.html:311
+msgid "Valeurs (CSV)"
 msgstr ""
 
 #: templates/menu_style.html:20

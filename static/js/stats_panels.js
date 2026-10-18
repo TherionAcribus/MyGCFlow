@@ -377,10 +377,24 @@ function resolveFontFamily(panel) {
 
 // Fin de la grille Jasmer : on ne peut pas avoir trouvé une cache publiée
 // après sa dernière trouvaille.
+function jasmerEndOf(date) {
+    const d = date instanceof Date && !Number.isNaN(date.getTime()) ? date : new Date();
+    return { y: d.getFullYear(), m: d.getMonth() + 1 };
+}
 function jasmerEnd() {
-    const end = (mode === 'animating' && animation?.endDate) || pkg.metadata?.endDate;
-    const date = end instanceof Date && !Number.isNaN(end.getTime()) ? end : new Date();
-    return { y: date.getFullYear(), m: date.getMonth() + 1 };
+    return jasmerEndOf((mode === 'animating' && animation?.endDate) || pkg.metadata?.endDate);
+}
+
+// Libellés d'axes d'une grille — partagés entre la vue et l'export CSV.
+function gridAxisLabels(metric, model, number) {
+    if (metric === 'dt') {
+        // Lignes D, colonnes T : abréviations communes au français et à l'anglais.
+        return { rowLabels: DT_LABELS.map(number), colLabels: DT_LABELS.map(number), corner: 'D/T' };
+    }
+    if (metric === 'jasmer') {
+        return { rowLabels: model.rowKeys.map(String), colLabels: monthNames('narrow'), corner: '' };
+    }
+    return { rowLabels: monthNames('short'), colLabels: model.colKeys.map(String), corner: '' };
 }
 
 // Indice de couleur stable d'une catégorie (palette « multi ») : son rang dans
@@ -452,21 +466,7 @@ function buildView(panel) {
         const model = gridModel(metric, state, reference, { end: jasmerEnd() });
         view.model = model;
         view.cellMode = panel.options.cell_mode;
-        if (metric === 'dt') {
-            view.rowLabels = DT_LABELS.map(number);
-            view.colLabels = DT_LABELS.map(number);
-            // Lignes D, colonnes T : abréviations communes au français et à l'anglais.
-            view.corner = 'D/T';
-        } else if (metric === 'jasmer') {
-            const narrow = monthNames('narrow');
-            view.rowLabels = model.rowKeys.map(String);
-            view.colLabels = narrow;
-            view.corner = '';
-        } else {
-            view.rowLabels = monthNames('short');
-            view.colLabels = model.colKeys.map(String);
-            view.corner = '';
-        }
+        Object.assign(view, gridAxisLabels(metric, model, number));
         if (panel.options.show_coverage) view.footer.push(coverageLine(metric, model.filled, model.available));
         if (refExcluded > 0) view.footer.push(excludedLine(metric, model.excluded));
         return view;
@@ -869,6 +869,74 @@ export function addStatsPanelsToCanvas(ctx, canvasWidth, canvasHeight, scaleFact
         }
         ctx.drawImage(cached.canvas, x, y);
     }
+}
+
+// ---------------------------------------------------------------------------
+// Exports
+// ---------------------------------------------------------------------------
+
+// Instantané PNG : le bitmap déjà dessiné pour l'aperçu (résolution écran).
+// null si le panneau n'est pas affiché (désactivé, base vide, Évolution).
+export function statsPanelPngBlob(id) {
+    const node = panelNodes.get(id);
+    if (!node) return Promise.resolve(null);
+    return new Promise((resolve) => node.canvas.toBlob(resolve, 'image/png'));
+}
+
+// Valeurs du panneau en CSV : séparateur « ; » (convention Excel francophone)
+// et BOM pour que l'UTF-8 s'ouvre sans assistant. Comptes réels de la
+// sélection, calculés depuis selectionTotals() avec les fonctions pures du
+// modèle — jamais l'état d'animation, et sans toucher aux tweens.
+// null sans panneau.
+export function statsPanelCsv(id) {
+    const panel = settings.panels.find((p) => p.id === id);
+    if (!panel) return null;
+    const { number, percent } = formatters();
+    const ref = selectionTotals();
+    const cell = (v) => {
+        const s = String(v ?? '');
+        return /[;"\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const rows = [];
+    const push = (...cols) => rows.push(cols.map(cell).join(';'));
+    if (panel.kind === 'counter') {
+        push(pkg.t('Chiffre'), pkg.t('Valeur'), pkg.t('Détail'));
+        const values = counterValues(ref, panel.options.items);
+        for (const item of panel.options.items) {
+            const entry = values[item] || { value: 0 };
+            let detail = '';
+            if (item === 'best_day' && entry.value > 0 && entry.day !== null) detail = formatDay(entry.day);
+            if (item === 'streak' && entry.value > 1) detail = `${formatDay(entry.start)} → ${formatDay(entry.end)}`;
+            push(COUNTER_LABELS[item](), number(entry.value), detail);
+        }
+    } else if (panel.kind === 'line') {
+        push(pkg.t('Date'), pkg.t('Total'));
+        for (const p of lineModel(ref, ref).points) push(formatDay(p.day), p.total);
+    } else if (panel.kind === 'grid') {
+        push(pkg.t('Case'), pkg.t('Nombre'));
+        const model = gridModel(panel.metric, ref, ref, { end: jasmerEndOf(pkg.metadata?.endDate) });
+        if (model) {
+            const labels = gridAxisLabels(panel.metric, model, number);
+            for (let r = 0; r < model.rows; r++) {
+                for (let c = 0; c < model.cols; c++) {
+                    const count = model.cells[r * model.cols + c].count;
+                    if (count) push(gridCellLabel({ metric: panel.metric, ...labels }, r, c), count);
+                }
+            }
+        }
+    } else {
+        push(pkg.t('Catégorie'), pkg.t('Nombre'), pkg.t('Pourcentage'));
+        const labelOf = labelFor(panel.metric, number);
+        const options = panel.kind === 'donut'
+            ? { sort: 'count', max_items: panel.options.max_items }
+            : panel.options;
+        const model = barModel(panel.metric, ref, ref, options, labelOf);
+        for (const row of model.rows) {
+            push(labelOf(row.key), row.count,
+                model.total ? percent(row.count / model.total) : '');
+        }
+    }
+    return '\uFEFF' + rows.join('\r\n') + '\r\n';
 }
 
 // ---------------------------------------------------------------------------

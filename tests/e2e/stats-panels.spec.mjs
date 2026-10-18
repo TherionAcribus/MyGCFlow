@@ -10,6 +10,7 @@
 // `stats` est une préférence globale partagée par tous les specs d'un run :
 // chaque test repart de la liste vide et la remet en place en sortant.
 import { expect, test } from '@playwright/test';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dismissFirstUseModal } from './first-use.mjs';
@@ -557,4 +558,45 @@ test('« Réorganiser » répartit les panneaux en conflit sur des coins distinc
     .toEqual(['bottom-left', 'bottom-right']);
   await expect.poll(async () => (await savedStats(page)).panels.map((p) => p.position.mode))
     .toEqual(['anchor', 'anchor']);
+});
+
+test('le panneau sélectionné s\'exporte en PNG et en CSV', async ({ page }) => {
+  await putStats(page, { enabled: true, panels: [
+    { id: '5e0a0001', kind: 'bar', metric: 'cache_type', position: { anchor: 'top-left' } },
+    { id: '5e0a0002', kind: 'counter', metric: 'summary', position: { anchor: 'top-right' },
+      options: { items: ['days', 'types'] } },
+  ] });
+  await openWithFixture(page, '#stats');
+  await page.locator('a[href="#stats"]').click();
+  await expect(page.locator('canvas.stats-panel')).toHaveCount(2);
+
+  const [png] = await Promise.all([
+    page.waitForEvent('download'),
+    page.locator('#btnStatsExportPng').click(),
+  ]);
+  expect(png.suggestedFilename()).toBe('stats-bar-cache_type.png');
+  const signature = fs.readFileSync(await png.path()).subarray(0, 8);
+  expect([...signature]).toEqual([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
+
+  const [csv] = await Promise.all([
+    page.waitForEvent('download'),
+    page.locator('#btnStatsExportCsv').click(),
+  ]);
+  expect(csv.suggestedFilename()).toBe('stats-bar-cache_type.csv');
+  const content = fs.readFileSync(await csv.path(), 'utf8');
+  expect(content.charCodeAt(0)).toBe(0xFEFF);
+  expect(content).toContain('Catégorie;Nombre;Pourcentage');
+  expect(content).toContain('Traditional Cache;3');
+
+  // L'export suit le panneau sélectionné dans la liste.
+  await page.locator('#statsPanelList').getByText('Chiffres clés').click();
+  const [csv2] = await Promise.all([
+    page.waitForEvent('download'),
+    page.locator('#btnStatsExportCsv').click(),
+  ]);
+  expect(csv2.suggestedFilename()).toBe('stats-counter-summary.csv');
+  const content2 = fs.readFileSync(await csv2.path(), 'utf8');
+  expect(content2).toContain('Chiffre;Valeur;Détail');
+  expect(content2).toContain('Jours avec trouvaille;6');
+  expect(content2).toContain('Types de caches différents;3');
 });
