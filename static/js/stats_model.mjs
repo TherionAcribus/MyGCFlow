@@ -179,11 +179,11 @@ export function statsPanelDefaults(kind, metric) {
     let palette;
     if (kind === 'grid') {
         options = {
-            show_values: true,
             show_percent: false,
             highlight: 'new',
             cell_mode: metric === 'dt' ? 'count' : 'filled',
             show_coverage: true,
+            show_loops: false,
         };
         palette = 'heat';
     } else if (kind === 'bar') {
@@ -242,6 +242,7 @@ const OPTION_COERCERS = {
     highlight: (v, d) => choice(v, STATS_HIGHLIGHTS, d),
     cell_mode: (v, d) => choice(v, STATS_CELL_MODES, d),
     show_coverage: bool,
+    show_loops: bool,
     sort: (v, d) => choice(v, STATS_SORTS, d),
     orientation: (v, d) => choice(v, STATS_ORIENTATIONS, d),
     max_items: (v, d) => intIn(v, d, STATS_MAX_ITEMS_RANGE),
@@ -1058,7 +1059,9 @@ export function gridSpec(metric, context = {}) {
     return null;
 }
 
-// Modèle d'affichage d'une grille : cases, max de référence, couverture.
+// Modèle d'affichage d'une grille : cases, max de référence, couverture,
+// tours (nombre minimal de trouvailles sur les cases disponibles — un
+// « tour de matrice » est complet quand chaque case a été trouvée).
 //   current   : accumulateur courant (ce qui est déjà apparu)
 //   reference : accumulateur de référence (fin d'animation) — échelle
 export function gridModel(metric, current, reference, context = {}) {
@@ -1069,6 +1072,7 @@ export function gridModel(metric, current, reference, context = {}) {
     let max = 0;
     let available = 0;
     let filled = 0;
+    let loops = Infinity;
     const cells = new Array(spec.rows * spec.cols);
     for (let r = 0; r < spec.rows; r++) {
         for (let c = 0; c < spec.cols; c++) {
@@ -1078,6 +1082,7 @@ export function gridModel(metric, current, reference, context = {}) {
             if (!disabled) {
                 available += 1;
                 if (count > 0) filled += 1;
+                if (count < loops) loops = count;
                 max = Math.max(max, refCounts.get(key) || 0, count);
             }
             cells[r * spec.cols + c] = { key, count, disabled };
@@ -1089,6 +1094,7 @@ export function gridModel(metric, current, reference, context = {}) {
         max,
         filled,
         available,
+        loops: available > 0 ? loops : 0,
         excluded: current.excluded.get(metric) || 0,
     };
 }

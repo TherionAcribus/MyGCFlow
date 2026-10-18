@@ -363,7 +363,23 @@ test('grille D/T : 81 cases, échelle de la référence, couverture', () => {
     assert.equal(model.filled, 1);
     assert.equal(model.max, 3);
     assert.equal(model.excluded, 1);
+    assert.equal(model.loops, 0);
     assert.equal(model.cells[0].count, 1);
+});
+
+test('grille D/T : tours de matrice = compte minimal sur les 81 cases', () => {
+    // Les 81 combinaisons (demi-points de 1 à 5 sur D et T), deux fois chacune
+    // sauf la case 5/5 trouvée une seule fois → un tour complet.
+    const values = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5];
+    const combo = () => values.flatMap((d) => values.map((t) => geocache(d, t)));
+    const twoPasses = [...combo(), ...combo().filter((f) => !(f.properties.difficulty === 5 && f.properties.terrain === 5))];
+    const acc = countFeatures(twoPasses, ['dt']);
+    let model = gridModel('dt', acc, acc);
+    assert.equal(model.filled, 81);
+    assert.equal(model.loops, 1);
+    // Une troisième passe complète : la case faible atteint 2 → deux tours.
+    model = gridModel('dt', countFeatures([...twoPasses, ...combo()], ['dt']), acc);
+    assert.equal(model.loops, 2);
 });
 
 test('grille Jasmer : mai 2000 → mois de fin, cases hors plage désactivées', () => {

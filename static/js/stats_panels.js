@@ -535,6 +535,10 @@ function coverageLine(metric, filled, available, pct) {
     return pkg.t('Jours : ${filled}/${available} (${pct})', { filled, available, pct });
 }
 
+function loopsLine(n) {
+    return pkg.t('Tours de matrice : ${n}', { n });
+}
+
 function resolveFontFamily(panel) {
     if (!fontFamilyCache) {
         const infos = document.getElementById('infosFrame');
@@ -664,6 +668,9 @@ function buildView(panel) {
         if (panel.options.show_coverage) {
             view.footer.push(coverageLine(metric, model.filled, model.available,
                 percent(model.available > 0 ? model.filled / model.available : 0)));
+        }
+        if (metric === 'dt' && panel.options.show_loops) {
+            view.footer.push(loopsLine(number(model.loops)));
         }
         if (refExcluded > 0) view.footer.push(excludedLine(metric, model.excluded));
         return view;

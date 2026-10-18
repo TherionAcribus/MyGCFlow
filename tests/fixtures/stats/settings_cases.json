@@ -85,11 +85,11 @@
             "y": 0
           },
           "options": {
-            "show_values": true,
             "show_percent": false,
             "highlight": "new",
             "cell_mode": "count",
-            "show_coverage": true
+            "show_coverage": true,
+            "show_loops": false
           },
           "style": {
             "background": "#0b1a2b",
@@ -143,11 +143,11 @@
             "y": 0
           },
           "options": {
-            "show_values": true,
             "show_percent": false,
             "highlight": "new",
             "cell_mode": "filled",
-            "show_coverage": true
+            "show_coverage": true,
+            "show_loops": false
           },
           "style": {
             "background": "#0b1a2b",
@@ -177,11 +177,11 @@
             "y": 0
           },
           "options": {
-            "show_values": true,
             "show_percent": false,
             "highlight": "new",
             "cell_mode": "filled",
-            "show_coverage": true
+            "show_coverage": true,
+            "show_loops": false
           },
           "style": {
             "background": "#0b1a2b",
@@ -567,11 +567,11 @@
             "y": 0
           },
           "options": {
-            "show_values": true,
             "show_percent": false,
             "highlight": "every",
             "cell_mode": "heat",
-            "show_coverage": true
+            "show_coverage": true,
+            "show_loops": false
           },
           "style": {
             "background": "#0b1a2b",
@@ -630,11 +630,11 @@
             "y": 0
           },
           "options": {
-            "show_values": true,
             "show_percent": false,
             "highlight": "new",
             "cell_mode": "count",
-            "show_coverage": true
+            "show_coverage": true,
+            "show_loops": false
           },
           "style": {
             "background": "#0b1a2b",
@@ -757,11 +757,11 @@
             "y": 0
           },
           "options": {
-            "show_values": true,
             "show_percent": false,
             "highlight": "new",
             "cell_mode": "count",
-            "show_coverage": true
+            "show_coverage": true,
+            "show_loops": false
           },
           "style": {
             "background": "#0b1a2b",
@@ -791,11 +791,11 @@
             "y": 0
           },
           "options": {
-            "show_values": true,
             "show_percent": false,
             "highlight": "new",
             "cell_mode": "count",
-            "show_coverage": true
+            "show_coverage": true,
+            "show_loops": false
           },
           "style": {
             "background": "#0b1a2b",
@@ -825,11 +825,11 @@
             "y": 0
           },
           "options": {
-            "show_values": true,
             "show_percent": false,
             "highlight": "new",
             "cell_mode": "count",
-            "show_coverage": true
+            "show_coverage": true,
+            "show_loops": false
           },
           "style": {
             "background": "#0b1a2b",
@@ -1756,11 +1756,11 @@
                 "y": 0
               },
               "options": {
-                "show_values": true,
                 "show_percent": false,
                 "highlight": "new",
                 "cell_mode": "count",
-                "show_coverage": true
+                "show_coverage": true,
+                "show_loops": false
               },
               "style": {
                 "background": "#0b1a2b",
@@ -1866,11 +1866,11 @@
                 "y": 0
               },
               "options": {
-                "show_values": true,
                 "show_percent": false,
                 "highlight": "new",
                 "cell_mode": "count",
-                "show_coverage": true
+                "show_coverage": true,
+                "show_loops": false
               },
               "style": {
                 "background": "#0b1a2b",
@@ -1957,11 +1957,11 @@
                 "y": 0
               },
               "options": {
-                "show_values": true,
                 "show_percent": false,
                 "highlight": "new",
                 "cell_mode": "count",
-                "show_coverage": true
+                "show_coverage": true,
+                "show_loops": false
               },
               "style": {
                 "background": "#0b1a2b",
@@ -2422,11 +2422,11 @@
             "y": 0
           },
           "options": {
-            "show_values": true,
             "show_percent": false,
             "highlight": "new",
             "cell_mode": "count",
-            "show_coverage": true
+            "show_coverage": true,
+            "show_loops": false
           },
           "style": {
             "background": "#0b1a2b",
@@ -2640,6 +2640,105 @@
           "panels": []
         }
       ]
+    }
+  },
+  {
+    "name": "grille : show_loops normalisé en booléen, show_values étranger supprimé",
+    "input": {
+      "panels": [
+        {
+          "id": "a0000001",
+          "kind": "grid",
+          "metric": "dt",
+          "options": {
+            "show_loops": "oui"
+          }
+        },
+        {
+          "id": "a0000002",
+          "kind": "grid",
+          "metric": "dt",
+          "options": {
+            "show_loops": true,
+            "show_values": false
+          }
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "panels": [
+        {
+          "id": "a0000001",
+          "kind": "grid",
+          "metric": "dt",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 280,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "show_percent": false,
+            "highlight": "new",
+            "cell_mode": "count",
+            "show_coverage": true,
+            "show_loops": false
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "heat",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        },
+        {
+          "id": "a0000002",
+          "kind": "grid",
+          "metric": "dt",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 280,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "show_percent": false,
+            "highlight": "new",
+            "cell_mode": "count",
+            "show_coverage": true,
+            "show_loops": true
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "heat",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        }
+      ],
+      "evolution_panels": [],
+      "configs": []
     }
   }
 ]

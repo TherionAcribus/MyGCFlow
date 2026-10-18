@@ -181,7 +181,7 @@ function drawGrid(ctx, view, style, width, now) {
 
     const mode = view.cellMode;
     const valueSize = Math.min(L.fontSize * 0.85, L.cell * 0.5);
-    const showValues = mode === 'count' && view.showValues && valueSize >= 7;
+    const showValues = mode === 'count' && valueSize >= 7;
     const empty = hexToRgba(style.text_color, 0.07);
     for (let r = 0; r < model.rows; r++) {
         for (let c = 0; c < model.cols; c++) {

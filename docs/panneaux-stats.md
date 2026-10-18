@@ -111,6 +111,10 @@ Les grilles affichent aussi une ligne de **couverture** en pied
 (`options.show_coverage`, activée par défaut) : « Combinaisons : 45/81
 (56 %) » pour la matrice D/T, « Mois : n/N (p %) » pour Jasmer, « Jours :
 n/N (p %) » pour le calendrier — le pourcentage suit le format de la langue.
+La matrice D/T peut en plus afficher « Tours de matrice : n »
+(`options.show_loops`, désactivée par défaut) : n est le nombre minimal de
+trouvailles sur les 81 combinaisons — un tour est complet quand chacune a
+été trouvée au moins une fois.
 
 ### Deux références
 

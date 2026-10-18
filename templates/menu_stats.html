@@ -166,6 +166,13 @@
                                 <label class="form-check-label" for="switchStatsCoverage">{{ _("Afficher le nombre de cases remplies") }}</label>
                             </div>
                         </div>
+                        <div class="col-12" data-stats-kind="grid" data-stats-metric="dt">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="switchStatsLoops" role="switch" aria-describedby="helpStatsLoops">
+                                <label class="form-check-label" for="switchStatsLoops">{{ _("Afficher le nombre de tours de matrice") }}</label>
+                            </div>
+                            <small id="helpStatsLoops" class="form-hint text-muted">{{ _("Un tour est complet quand chacune des 81 combinaisons D/T a été trouvée au moins une fois.") }}</small>
+                        </div>
 
                         <!-- Histogrammes -->
                         <div class="col-12 col-md-6" data-stats-kind="bar">
@@ -262,7 +269,7 @@
                             </select>
                         </div>
 
-                        <div class="col-12 col-md-6" data-stats-kind="grid bar donut line">
+                        <div class="col-12 col-md-6" data-stats-kind="bar donut line">
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" id="switchStatsValues" role="switch">
                                 <label class="form-check-label" for="switchStatsValues">{{ _("Afficher les nombres") }}</label>

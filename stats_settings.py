@@ -212,11 +212,11 @@ def stats_panel_defaults(kind: str, metric: str) -> dict:
     """
     if kind == "grid":
         options = {
-            "show_values": True,
             "show_percent": False,
             "highlight": "new",
             "cell_mode": "count" if metric == "dt" else "filled",
             "show_coverage": True,
+            "show_loops": False,
         }
         palette = "heat"
     elif kind == "bar":
@@ -284,6 +284,7 @@ _OPTION_COERCERS = {
     "highlight": lambda v, d: _choice(v, STATS_HIGHLIGHTS, d),
     "cell_mode": lambda v, d: _choice(v, STATS_CELL_MODES, d),
     "show_coverage": lambda v, d: _bool(v, d),
+    "show_loops": lambda v, d: _bool(v, d),
     "sort": lambda v, d: _choice(v, STATS_SORTS, d),
     "orientation": lambda v, d: _choice(v, STATS_ORIENTATIONS, d),
     "max_items": lambda v, d: _int_in(v, d, STATS_MAX_ITEMS_RANGE),

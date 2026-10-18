@@ -487,6 +487,7 @@ function renderForm() {
     if (highlightField) highlightField.hidden = evolutionMode && (panel.metric === 'status' || panel.kind === 'line');
     setValue('selectStatsCellMode', o.cell_mode);
     setValue('switchStatsCoverage', o.show_coverage);
+    setValue('switchStatsLoops', o.show_loops);
     setValue('selectStatsSort', o.sort);
     setValue('selectStatsOrientation', o.orientation);
     setValue('inputStatsMaxItems', o.max_items);
@@ -507,10 +508,6 @@ function renderForm() {
         if (wrap) wrap.hidden = !(wrap.dataset.statsModes || '').split(' ').includes(mode);
         box.checked = (o.items || []).includes(box.dataset.counterItem);
     });
-    // Grille : les nombres ne s'affichent qu'en mode « nombre de trouvailles ».
-    const values = $('switchStatsValues');
-    if (values) values.disabled = panel.kind === 'grid' && o.cell_mode !== 'count';
-
     document.querySelectorAll('#statsPanelForm [data-stats-kind]').forEach((el) => {
         const kindOk = el.dataset.statsKind.split(' ').includes(panel.kind);
         // Marqueur data-stats-evo : contrôle du mode Évolution (univers
@@ -518,7 +515,11 @@ function renderForm() {
         // l'univers).
         const evoOk = !el.hasAttribute('data-stats-evo')
             || (evolutionMode && panel.metric !== 'status');
-        el.hidden = !kindOk || !evoOk;
+        // Marqueur data-stats-metric : contrôle réservé à certaines
+        // métriques (même syntaxe « séparé par espaces » que kind).
+        const metricOk = !el.hasAttribute('data-stats-metric')
+            || (el.dataset.statsMetric || '').split(' ').includes(panel.metric);
+        el.hidden = !kindOk || !evoOk || !metricOk;
     });
     // Nombre de lignes : catégories des histogrammes, et anneaux.
     // Top-N : uniquement les métriques catégorielles qui peuvent le dépasser
@@ -598,6 +599,7 @@ const FIELDS = [
     ['selectStatsHighlight', 'options.highlight', 'text'],
     ['selectStatsCellMode', 'options.cell_mode', 'text'],
     ['switchStatsCoverage', 'options.show_coverage', 'bool'],
+    ['switchStatsLoops', 'options.show_loops', 'bool'],
     ['selectStatsSort', 'options.sort', 'text'],
     ['selectStatsOrientation', 'options.orientation', 'text'],
     ['inputStatsMaxItems', 'options.max_items', 'number'],

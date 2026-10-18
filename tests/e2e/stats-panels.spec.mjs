@@ -991,3 +991,14 @@ test('la ligne de couverture d\'une grille affiche le pourcentage', async ({ pag
   await expect(alt).toContainText('Combinaisons : 6/81');
   await expect(alt).toContainText('%');
 });
+
+test('la matrice D/T affiche les tours quand l\'option est activée', async ({ page }) => {
+  // 6 combinaisons remplies sur 81 : aucun tour complet → « Tours de matrice : 0 ».
+  await putStats(page, { enabled: true, panels: [
+    { id: 'c0fe0002', kind: 'grid', metric: 'dt', position: { anchor: 'bottom-left' },
+      options: { show_loops: true } },
+  ] });
+  await openWithFixture(page);
+  await expect(page.locator('canvas.stats-panel')).toHaveCount(1);
+  await expect(page.locator('.stats-panel-alt')).toContainText('Tours de matrice : 0');
+});
