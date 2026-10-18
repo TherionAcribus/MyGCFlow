@@ -80,6 +80,15 @@ const KIND_ICONS = {
     counter: 'ti-123',
 };
 
+// Libellés du select « Forme » (options reconstruites comme la métrique).
+const KIND_LABELS = {
+    grid: () => pkg.t('Grille'),
+    bar: () => pkg.t('Histogramme'),
+    donut: () => pkg.t('Anneau'),
+    line: () => pkg.t('Courbe'),
+    counter: () => pkg.t('Chiffres clés'),
+};
+
 const $ = (id) => document.getElementById(id);
 
 function currentSettings() {
@@ -364,6 +373,32 @@ function renderForm() {
         metricSelect.value = panel.metric;
     }
 
+    // Types capables de dessiner la métrique (registre du mode ; panneau
+    // étranger au mode : registre principal en secours, comme la métrique).
+    // Une seule possibilité (grille, courbe, compteurs…) : le champ se masque.
+    const kindSelect = $('selectStatsKind');
+    const kindField = $('statsKindField');
+    if (kindSelect && kindField) {
+        let kinds = Object.keys(metricRegistry)
+            .filter((kind) => (metricRegistry[kind] || []).includes(panel.metric));
+        if (!kinds.length) {
+            kinds = Object.keys(STATS_METRICS_BY_KIND)
+                .filter((kind) => STATS_METRICS_BY_KIND[kind].includes(panel.metric));
+        }
+        const wanted = kinds.join(',');
+        if (kindSelect.dataset.kinds !== wanted) {
+            kindSelect.replaceChildren(...kinds.map((kind) => {
+                const option = document.createElement('option');
+                option.value = kind;
+                option.textContent = KIND_LABELS[kind] ? KIND_LABELS[kind]() : kind;
+                return option;
+            }));
+            kindSelect.dataset.kinds = wanted;
+        }
+        kindSelect.value = panel.kind;
+        kindField.hidden = kinds.length < 2;
+    }
+
     const titleInput = $('inputStatsTitle');
     if (titleInput) titleInput.placeholder = pkg.defaultStatsPanelTitle(panel);
     setValue('inputStatsTitle', panel.title);
@@ -562,6 +597,18 @@ function bindFormFields() {
             panel.metric = metric;
             panel.options = fresh.options;
             if (panel.kind === 'bar' || panel.kind === 'donut') panel.style.palette = fresh.style.palette;
+        }, event.target);
+        renderStatsTab();
+    });
+
+    $('selectStatsKind')?.addEventListener('change', (event) => {
+        updateSelected((panel) => {
+            // Nouvelle forme : ses options par défaut (trou, légende, ordre…),
+            // en gardant titre, position, apparence et métrique.
+            const fresh = createStatsPanel(event.target.value, panel.metric, {});
+            if (!fresh) return;
+            panel.kind = event.target.value;
+            panel.options = fresh.options;
         }, event.target);
         renderStatsTab();
     });

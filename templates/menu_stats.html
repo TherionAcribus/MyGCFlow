@@ -130,11 +130,15 @@
                 <div class="card-body">
                     <h6 class="gc-subsection-title">{{ _("Contenu") }}</h6>
                     <div class="row g-2">
-                        <div class="col-12 col-md-6">
+                        <div class="col-12 col-md-5">
                             <label class="form-label" for="selectStatsMetric">{{ _("Statistique") }}</label>
                             <select id="selectStatsMetric" class="form-select"></select>
                         </div>
-                        <div class="col-12 col-md-6">
+                        <div class="col-12 col-md-3" id="statsKindField">
+                            <label class="form-label" for="selectStatsKind">{{ _("Forme") }}</label>
+                            <select id="selectStatsKind" class="form-select"></select>
+                        </div>
+                        <div class="col-12 col-md-4">
                             <label class="form-label" for="inputStatsTitle">{{ _("Titre") }}</label>
                             <input id="inputStatsTitle" type="text" class="form-control" maxlength="80">
                         </div>

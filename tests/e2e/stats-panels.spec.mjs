@@ -819,3 +819,30 @@ test('la palette « types de caches » n\'est proposée qu\'à la métrique type
   await expect(gcOption).toBeDisabled();
   await expect(page.locator('#selectStatsPalette')).toHaveValue('accent');
 });
+
+test('la forme d\'un panneau catégoriel se change sans perdre ses réglages', async ({ page }) => {
+  await putStats(page, { enabled: true, panels: [
+    { id: 'f0be0001', kind: 'bar', metric: 'cache_type', title: 'Mes types',
+      position: { mode: 'free', x: 0.4, y: 0.5 } },
+    { id: 'f0be0002', kind: 'bar', metric: 'year', position: { anchor: 'top-right' } },
+  ] });
+  await openWithFixture(page, '#stats');
+  await page.locator('a[href="#stats"]').click();
+  const list = page.locator('#statsPanelList');
+  const kindSelect = page.locator('#selectStatsKind');
+
+  // Métrique unique au type « bar » : pas de select de forme.
+  await list.locator('li', { hasText: 'Trouvailles par année' }).locator('[data-action="select"]').click();
+  await expect(page.locator('#statsKindField')).toBeHidden();
+
+  // Types de caches : barres ou anneau.
+  await list.locator('li', { hasText: 'Mes types' }).locator('[data-action="select"]').click();
+  await expect(kindSelect).toBeVisible();
+  await kindSelect.selectOption('donut');
+  // Même panneau (id, titre, position libre), options d'anneau (trou).
+  await expect.poll(async () => {
+    const s = await savedStats(page);
+    const p = s.panels.find((x) => x.id === 'f0be0001');
+    return p && `${p.kind}|${p.title}|${p.position.mode}|${typeof p.options.hole}`;
+  }).toBe('donut|Mes types|free|number');
+});

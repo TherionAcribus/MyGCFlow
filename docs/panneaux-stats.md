@@ -43,6 +43,12 @@ Les barres et anneaux Évolution acceptent `options.counted` :
 rejouent la chronologie (`placedOrder`/`archivedOrder` de
 `evolution_timeline.mjs`) au jour affiché ou au jour de fin de plage.
 
+Le select « Forme » du formulaire (section Contenu) propose les types qui
+savent dessiner la métrique courante — il n'apparaît que quand il y en a
+plusieurs, donc pour les métriques catégorielles partagées entre barres et
+anneau. Changer un histogramme en anneau garde titre, position et apparence ;
+les options reprennent les défauts du type choisi.
+
 ## Modules
 
 | Fichier | Rôle |
