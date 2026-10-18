@@ -533,3 +533,28 @@ test('les sections Position et Apparence du formulaire sont repliées', async ({
   await expect(page.locator('#statsFreePosition')).toBeVisible();
   await expect(appearance).toHaveJSProperty('open', false);
 });
+
+test('« Réorganiser » répartit les panneaux en conflit sur des coins distincts', async ({ page }) => {
+  await putStats(page, { enabled: true, panels: [
+    { id: '5e080001', kind: 'bar', metric: 'cache_type', position: { mode: 'free', x: 0.1, y: 0.1 } },
+    { id: '5e080002', kind: 'bar', metric: 'container', position: { mode: 'free', x: 0.1, y: 0.1 } },
+  ] });
+  await openWithFixture(page, '#stats');
+  await page.locator('a[href="#stats"]').click();
+
+  // Les deux panneaux libres se recouvrent : l'alerte propose la réorganisation.
+  const warnings = page.locator('#statsLayoutWarnings');
+  await expect(warnings).toBeVisible();
+  await expect(warnings).toContainText('chevauche');
+  await warnings.getByRole('button', { name: 'Réorganiser automatiquement' }).click();
+
+  // Chaque panneau repart sur un coin distinct : plus aucun avertissement.
+  await expect(warnings).toBeHidden();
+  const first = page.locator('canvas.stats-panel[data-panel-id="5e080001"]');
+  await expect(first).toHaveCSS('left', '16px');
+  await expect(first).toHaveCSS('bottom', '16px');
+  await expect.poll(async () => (await savedStats(page)).panels.map((p) => p.position.anchor))
+    .toEqual(['bottom-left', 'bottom-right']);
+  await expect.poll(async () => (await savedStats(page)).panels.map((p) => p.position.mode))
+    .toEqual(['anchor', 'anchor']);
+});

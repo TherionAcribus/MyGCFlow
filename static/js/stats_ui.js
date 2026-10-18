@@ -572,6 +572,26 @@ function bindDragAndDrop() {
     host.addEventListener('pointercancel', end);
 }
 
+// « Réorganiser » de l'alerte de mise en page : chaque panneau repart sur un
+// coin distinct, dans l'ordre de la liste — une pile par ancre ne peut plus
+// chevaucher ni les autres panneaux ni les cartouches. `middle-center` est
+// volontairement exclu (un panneau au milieu de la carte, non).
+const REORG_ANCHORS = ['bottom-left', 'bottom-right', 'top-left', 'top-right', 'middle-left', 'middle-right'];
+
+function reorganizePanels() {
+    updatePanels((panels) => {
+        panels.forEach((panel, i) => {
+            panel.position = {
+                ...panel.position,
+                mode: 'anchor', anchor: REORG_ANCHORS[i % REORG_ANCHORS.length],
+                dx: 16, dy: 16,
+            };
+        });
+        return panels;
+    }, STATS_SAVE_STATUS, { immediate: true });
+    renderStatsTab();
+}
+
 function renderWarnings(warnings = pkg.getStatsLayoutWarnings?.() || []) {
     const box = $('statsLayoutWarnings');
     if (!box) return;
@@ -597,6 +617,14 @@ function renderWarnings(warnings = pkg.getStatsLayoutWarnings?.() || []) {
         div.textContent = line;
         return div;
     }));
+    if (lines.length) {
+        const action = document.createElement('button');
+        action.type = 'button';
+        action.className = 'btn btn-sm btn-outline-warning mt-2';
+        action.textContent = pkg.t('Réorganiser automatiquement');
+        action.addEventListener('click', reorganizePanels);
+        box.appendChild(action);
+    }
     box.hidden = lines.length === 0;
 }
 
