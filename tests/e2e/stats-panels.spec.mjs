@@ -396,3 +396,27 @@ test('la pile de coin se replace quand le cartouche d’infos grandit', async ({
   await page.evaluate(() => { document.getElementById('infosFrame').style.fontSize = '64px'; });
   await expect.poll(startsBelow).toBe(true);
 });
+
+test('un patch partiel conserve les panneaux courants', async ({ page }) => {
+  await putStats(page, { enabled: true, panels: [
+    { id: 'eeeeee03', kind: 'counter', metric: 'summary' },
+  ] });
+  await openWithFixture(page);
+  await expect(page.locator('canvas.stats-panel')).toHaveCount(1);
+
+  // Le serveur traite `stats` comme un patch de premier niveau : une clé
+  // absente garde sa valeur. Le client doit tenir le même contrat — sinon
+  // { enabled: false } viderait localement la liste gardée côté serveur.
+  const applied = await page.evaluate(async () =>
+    (await import('/static/js/index.js')).applyStatsSettings({ enabled: false }));
+  expect(applied.enabled).toBe(false);
+  expect(applied.panels).toHaveLength(1);
+  expect(applied.panels[0].id).toBe('eeeeee03');
+  await expect(page.locator('canvas.stats-panel')).toHaveCount(0);
+
+  // Réactivation symétrique : la liste a survécu, le panneau réapparaît.
+  const restored = await page.evaluate(async () =>
+    (await import('/static/js/index.js')).applyStatsSettings({ enabled: true }));
+  expect(restored.panels).toHaveLength(1);
+  await expect(page.locator('canvas.stats-panel')).toHaveCount(1);
+});

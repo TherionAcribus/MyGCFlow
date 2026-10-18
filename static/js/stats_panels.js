@@ -93,7 +93,10 @@ export function getStatsSettings() {
 // Applique des réglages (chargement, onglet Stats). L'aperçu suit aussitôt ;
 // la persistance est l'affaire de stats_ui.js.
 export function applyStatsSettings(raw) {
-    settings = normalizeStatsSettings(raw, STATS_DEFAULTS);
+    // Patch de premier niveau, comme le serveur : une clé absente garde la
+    // valeur COURANTE — sinon applyStatsSettings({ enabled: false }) viderait
+    // localement la liste des panneaux que le serveur aurait conservée.
+    settings = normalizeStatsSettings(raw, settings);
     const nextMetrics = metricsForPanels(settings);
     const nextKey = [...nextMetrics].sort().join(',');
     if (nextKey !== metricsKey) {
