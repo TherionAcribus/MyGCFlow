@@ -10,7 +10,11 @@ Deux listes de panneaux indépendantes : `stats.panels` pour le mode
 principal, `stats.evolution_panels` pour `/evolution`. Chaque liste compte
 au plus six panneaux, dans l'ordre de dessin et d'empilement ; les
 configurations nommées (`stats.configs`) s'appliquent à la liste du mode
-courant. La normalisation accepte l'union des deux registres de métriques :
+courant. Chaque configuration retient le mode où elle a été enregistrée
+(`mode` : `finds` / `evolution`, `finds` pour les enregistrements
+antérieurs) : dans le menu, une configuration de l'autre mode est marquée
+« (Trouvailles) » / « (Évolution) » et non applicable — sa suppression reste
+possible. La normalisation accepte l'union des deux registres de métriques :
 un panneau à métrique étrangère peut figurer dans une liste — il est marqué
 « (Trouvailles) » / « (Évolution) » dans l'onglet et n'est pas dessiné.
 
@@ -60,8 +64,10 @@ schéma ou de défaut.
 
 Pièges de parité traités : arrondi au demi supérieur (`Math.round`, reproduit
 par `floor(x + 0.5)` côté Python), regex appliquées en `fullmatch` avec des
-classes ASCII (`$` et `\d` diffèrent entre Python et JS), titre tronqué en
-points de code (`Array.from` côté JS).
+classes ASCII (`$` et `\d` diffèrent entre Python et JS), titre aplati,
+blancs de bord retirés puis tronqué en points de code (`Array.from` côté
+JS — un titre réduit à des espaces est vide et retombe sur le titre par
+défaut).
 
 `PUT /api/settings` accepte `{ stats: {...} }` en patch de premier niveau :
 `enabled` seul garde les panneaux ; `panels` ou `evolution_panels`, s'ils

@@ -1737,6 +1737,7 @@
       "configs": [
         {
           "name": "Ma mise en page",
+          "mode": "finds",
           "panels": [
             {
               "id": "aaaaaa01",
@@ -1813,6 +1814,7 @@
       "configs": [
         {
           "name": "Ok",
+          "mode": "finds",
           "panels": []
         }
       ]
@@ -1845,6 +1847,7 @@
       "configs": [
         {
           "name": "Dup",
+          "mode": "finds",
           "panels": [
             {
               "id": "aaaaaa01",
@@ -1902,6 +1905,7 @@
       "configs": [
         {
           "name": "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
+          "mode": "finds",
           "panels": []
         }
       ]
@@ -1934,6 +1938,7 @@
       "configs": [
         {
           "name": "C",
+          "mode": "finds",
           "panels": [
             {
               "id": "aaaaaa01",
@@ -2047,50 +2052,62 @@
       "configs": [
         {
           "name": "cfg0",
+          "mode": "finds",
           "panels": []
         },
         {
           "name": "cfg1",
+          "mode": "finds",
           "panels": []
         },
         {
           "name": "cfg2",
+          "mode": "finds",
           "panels": []
         },
         {
           "name": "cfg3",
+          "mode": "finds",
           "panels": []
         },
         {
           "name": "cfg4",
+          "mode": "finds",
           "panels": []
         },
         {
           "name": "cfg5",
+          "mode": "finds",
           "panels": []
         },
         {
           "name": "cfg6",
+          "mode": "finds",
           "panels": []
         },
         {
           "name": "cfg7",
+          "mode": "finds",
           "panels": []
         },
         {
           "name": "cfg8",
+          "mode": "finds",
           "panels": []
         },
         {
           "name": "cfg9",
+          "mode": "finds",
           "panels": []
         },
         {
           "name": "cfg10",
+          "mode": "finds",
           "panels": []
         },
         {
           "name": "cfg11",
+          "mode": "finds",
           "panels": []
         }
       ]
@@ -2463,6 +2480,166 @@
         }
       ],
       "configs": []
+    }
+  },
+  {
+    "name": "titre réduit aux espaces : vide",
+    "input": {
+      "panels": [
+        {
+          "id": "ab12cd",
+          "kind": "bar",
+          "metric": "cache_type",
+          "title": "   "
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "panels": [
+        {
+          "id": "ab12cd",
+          "kind": "bar",
+          "metric": "cache_type",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 280,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "show_values": true,
+            "show_percent": false,
+            "highlight": "every",
+            "sort": "count",
+            "orientation": "horizontal",
+            "max_items": 8,
+            "hide_empty": false
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "gc",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        }
+      ],
+      "evolution_panels": [],
+      "configs": []
+    }
+  },
+  {
+    "name": "titre : blancs de bord enlevés",
+    "input": {
+      "panels": [
+        {
+          "id": "ab12ce",
+          "kind": "bar",
+          "metric": "cache_type",
+          "title": "  Matrice  "
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "panels": [
+        {
+          "id": "ab12ce",
+          "kind": "bar",
+          "metric": "cache_type",
+          "enabled": true,
+          "show_title": true,
+          "title": "Matrice",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 280,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "show_values": true,
+            "show_percent": false,
+            "highlight": "every",
+            "sort": "count",
+            "orientation": "horizontal",
+            "max_items": 8,
+            "hide_empty": false
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "gc",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        }
+      ],
+      "evolution_panels": [],
+      "configs": []
+    }
+  },
+  {
+    "name": "configuration : le mode évolution est conservé",
+    "input": {
+      "configs": [
+        {
+          "name": "E",
+          "mode": "evolution",
+          "panels": []
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "panels": [],
+      "evolution_panels": [],
+      "configs": [
+        {
+          "name": "E",
+          "mode": "evolution",
+          "panels": []
+        }
+      ]
+    }
+  },
+  {
+    "name": "configuration : un mode inconnu retombe sur finds",
+    "input": {
+      "configs": [
+        {
+          "name": "F",
+          "mode": "bizarre",
+          "panels": []
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "panels": [],
+      "evolution_panels": [],
+      "configs": [
+        {
+          "name": "F",
+          "mode": "finds",
+          "panels": []
+        }
+      ]
     }
   }
 ]

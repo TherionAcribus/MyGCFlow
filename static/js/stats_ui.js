@@ -793,6 +793,16 @@ function renderConfigMenu() {
         count.className = 'text-muted ms-1';
         count.textContent = `(${config.panels.length})`;
         apply.appendChild(count);
+        // Enregistrée dans l'autre mode : ses panneaux rempliraient la liste
+        // du mauvais mode — marquée et non applicable, la suppression reste.
+        if (config.mode !== (evolutionMode ? 'evolution' : 'finds')) {
+            const badge = document.createElement('span');
+            badge.className = 'text-muted small ms-1';
+            badge.textContent = `(${evolutionMode ? pkg.t('Trouvailles') : pkg.t('Évolution')})`;
+            apply.appendChild(badge);
+            apply.disabled = true;
+            apply.title = pkg.t('Pas affiché dans ce mode');
+        }
 
         const del = iconButton('ti-trash', pkg.t('Supprimer'), 'config-delete');
         del.classList.add('btn-sm', 'px-2');
@@ -823,6 +833,7 @@ function saveCurrentConfig() {
     const settings = currentSettings();
     const entry = normalizeStatsConfig({
         name: $('inputStatsConfigName')?.value,
+        mode: evolutionMode ? 'evolution' : 'finds',
         panels: modePanels(settings),
     });
     if (!entry) return;

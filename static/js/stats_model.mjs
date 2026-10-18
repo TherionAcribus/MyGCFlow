@@ -89,6 +89,10 @@ export const STATS_TITLE_MAX = 80;
 // Configurations nommées : instantanés de la liste de panneaux.
 export const STATS_MAX_CONFIGS = 12;
 export const STATS_CONFIG_NAME_MAX = 40;
+// Mode de la page où la configuration a été enregistrée (mêmes valeurs que
+// le `mode` du JSON exporté par exportPanels) ; 'finds' par défaut — les
+// configurations antérieures viennent de la page principale.
+export const STATS_CONFIG_MODES = Object.freeze(['finds', 'evolution']);
 
 export const STATS_DEFAULTS = Object.freeze({
     enabled: true, panels: Object.freeze([]),
@@ -148,7 +152,9 @@ function color(value, fallback) {
 
 function title(value) {
     if (typeof value !== 'string') return '';
-    const flat = value.replace(/\r\n/g, ' ').replace(/\r/g, ' ').replace(/\n/g, ' ');
+    // Aplati puis blancs de bord enlevés, comme configName : un titre
+    // réduit à des espaces est vide et retombe sur le titre par défaut.
+    const flat = value.replace(/\r\n/g, ' ').replace(/\r/g, ' ').replace(/\n/g, ' ').trim();
     // Tronqué en points de code, comme le slicing Python (un emoji = 1).
     return Array.from(flat).slice(0, STATS_TITLE_MAX).join('');
 }
@@ -345,14 +351,20 @@ function normalizePanelList(source, newId) {
     return panels;
 }
 
-// Configuration nommée : { name, panels }. Un nom vide après aplatissement
-// écarte l'entrée ; les panneaux suivent les mêmes règles que la liste
-// courante (identifiants uniques dans la configuration).
+// Configuration nommée : { name, mode, panels }. Un nom vide après
+// aplatissement écarte l'entrée ; les panneaux suivent les mêmes règles que
+// la liste courante (identifiants uniques dans la configuration). `mode`
+// retient la page d'enregistrement : une configuration de l'autre mode est
+// marquée dans le menu et non applicable (stats_ui › renderConfigMenu).
 export function normalizeStatsConfig(raw, newId = newStatsPanelId) {
     if (!isObject(raw)) return null;
     const name = configName(raw.name);
     if (!name) return null;
-    return { name, panels: normalizePanelList(raw.panels, newId) };
+    return {
+        name,
+        mode: choice(raw.mode, STATS_CONFIG_MODES, 'finds'),
+        panels: normalizePanelList(raw.panels, newId),
+    };
 }
 
 // Bloc `stats` normalisé. Patch de premier niveau, comme le serveur : une

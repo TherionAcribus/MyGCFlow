@@ -19,7 +19,7 @@ import { fileURLToPath } from 'node:url';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE_A = path.join(HERE, 'fixtures', 'evolution-a.csv');
 const FIXTURE_B = path.join(HERE, 'fixtures', 'evolution-b.csv');
-const DEFAULT_STATS = { enabled: true, panels: [], evolution_panels: [] };
+const DEFAULT_STATS = { enabled: true, panels: [], evolution_panels: [], configs: [] };
 
 const PANELS = [
     { kind: 'counter', metric: 'summary', title: 'Compteurs', options: { items: ['actives', 'placees', 'archivees', 'peak'] } },
@@ -193,4 +193,38 @@ test('le champ « Surligner » se masque quand il est sans effet', async ({ page
   await list.locator('li', { hasText: 'Compteurs' }).locator('[data-action="select"]').click();
   await expect(field).toBeVisible();
   await expect(page.locator('#selectStatsHighlight option[value="new"]')).toBeDisabled();
+});
+
+test('les configurations nommées retiennent leur mode', async ({ page }) => {
+  // Une configuration de chaque mode : seule celle du mode courant s'applique.
+  await putStats(page, { enabled: true, evolution_panels: PANELS,
+    panels: [{ kind: 'counter', metric: 'summary', title: 'Trouvailles' }],
+    configs: [
+      { name: 'Conf finds', mode: 'finds', panels: [] },
+      { name: 'Conf evo', mode: 'evolution', panels: [] },
+    ] });
+  await openEvolution(page);
+  await page.locator('a[href="#stats"]').click();
+  await page.locator('#btnStatsConfigs').click();
+
+  const evo = page.locator('[data-config-apply="Conf evo"]');
+  const finds = page.locator('[data-config-apply="Conf finds"]');
+  await expect(evo).toBeEnabled();
+  // Marquée « (Trouvailles) » et non applicable ; la croix reste active.
+  await expect(finds).toBeDisabled();
+  await expect(finds).toContainText('(Trouvailles)');
+  await expect(finds).toHaveAttribute('title', 'Pas affiché dans ce mode');
+  await expect(page.locator('[data-config-delete="Conf finds"]')).toBeEnabled();
+  await page.keyboard.press('Escape');
+
+  // Enregistrée depuis l'UI Évolution, une configuration porte son mode.
+  await page.locator('#btnStatsConfigs').click();
+  await page.locator('[data-stats-config-save]').click();
+  await page.locator('#inputStatsConfigName').fill('De test');
+  await page.locator('#btnStatsConfigSaveOk').click();
+  await expect.poll(async () => {
+    const res = await page.request.get('/api/settings');
+    const stats = (await res.json()).stats;
+    return stats.configs.find((c) => c.name === 'De test')?.mode;
+  }).toBe('evolution');
 });

@@ -89,6 +89,10 @@ STATS_TITLE_MAX = 80
 # Configurations nommées : instantanés de la liste de panneaux.
 STATS_MAX_CONFIGS = 12
 STATS_CONFIG_NAME_MAX = 40
+# Mode de la page où la configuration a été enregistrée (mêmes valeurs que
+# le « mode » du JSON exporté côté client) ; « finds » par défaut — les
+# configurations antérieures viennent de la page principale.
+STATS_CONFIG_MODES = ("finds", "evolution")
 
 # Toujours appliquées par fullmatch, en classes ASCII explicites : `$` admet
 # un saut de ligne final et `\d` les chiffres non latins en Python, pas en JS.
@@ -107,7 +111,7 @@ class StatsSettings:
     panels: list = field(default_factory=list)
     # Liste propre au mode Évolution (/evolution), même schéma.
     evolution_panels: list = field(default_factory=list)
-    # Configurations nommées : {name, panels}, instantanés de la liste.
+    # Configurations nommées : {name, mode, panels}, instantanés de la liste.
     configs: list = field(default_factory=list)
 
 
@@ -179,7 +183,9 @@ def _color(value, default: str) -> str:
 def _title(value) -> str:
     if not isinstance(value, str):
         return ""
-    flat = value.replace("\r\n", " ").replace("\r", " ").replace("\n", " ")
+    # Aplati puis blancs de bord enlevés, comme _config_name : un titre
+    # réduit à des espaces est vide et retombe sur le titre par défaut.
+    flat = value.replace("\r\n", " ").replace("\r", " ").replace("\n", " ").strip()
     return flat[:STATS_TITLE_MAX]
 
 
@@ -380,15 +386,21 @@ def _coerce_panel_list(source) -> list:
 
 
 def coerce_stats_config(raw) -> dict | None:
-    """Configuration nommée normalisée {name, panels}, ou None si le nom est
-    vide après aplatissement. Les panneaux suivent les mêmes règles que la
-    liste courante (identifiants uniques dans la configuration)."""
+    """Configuration nommée normalisée {name, mode, panels}, ou None si le nom
+    est vide après aplatissement. Les panneaux suivent les mêmes règles que la
+    liste courante (identifiants uniques dans la configuration). « mode »
+    retient la page d'enregistrement : une configuration de l'autre mode est
+    marquée dans le menu et non applicable (stats_ui › renderConfigMenu)."""
     if not isinstance(raw, dict):
         return None
     name = _config_name(raw.get("name"))
     if not name:
         return None
-    return {"name": name, "panels": _coerce_panel_list(raw.get("panels"))}
+    return {
+        "name": name,
+        "mode": _choice(raw.get("mode"), STATS_CONFIG_MODES, "finds"),
+        "panels": _coerce_panel_list(raw.get("panels")),
+    }
 
 
 def coerce_stats_settings(raw, current: StatsSettings | None = None) -> StatsSettings:
