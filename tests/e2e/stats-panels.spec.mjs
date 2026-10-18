@@ -413,6 +413,31 @@ test('une pile de coin démarre sous le titre au lieu de le recouvrir', async ({
   expect(panelBox.y).toBeGreaterThanOrEqual(titleBox.y + titleBox.height);
 });
 
+test('un panneau se redimensionne par son bord droit', async ({ page }) => {
+  await putStats(page, { enabled: true, panels: [
+    { id: 'e5e00001', kind: 'bar', metric: 'cache_type',
+      position: { anchor: 'top-left' } },
+  ] });
+  await openWithFixture(page, '#stats');
+  await page.locator('a[href="#stats"]').click();
+  const canvas = page.locator('canvas.stats-panel');
+  await expect(canvas).toHaveCount(1);
+  // Mode édition : le tactile glisse/redimensionne au lieu de défiler.
+  await expect(canvas).toHaveCSS('touch-action', 'none');
+
+  const box = await canvas.boundingBox();
+  const midY = box.y + box.height / 2;
+  // Survol du bord droit : curseur de redimensionnement.
+  await page.mouse.move(box.x + box.width - 4, midY);
+  await expect(canvas).toHaveCSS('cursor', 'ew-resize');
+  // Glisser depuis le bord droit élargit le panneau (~80 px).
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width - 4 + 80, midY, { steps: 4 });
+  await page.mouse.up();
+  await expect.poll(async () => (await savedStats(page)).panels[0].position.width)
+      .toBeGreaterThanOrEqual(355);  // 280 par défaut + ~80, marges de clamp
+});
+
 test('la pile de coin se replace quand le cartouche d’infos grandit', async ({ page }) => {
   await putStats(page, { enabled: true, panels: [
     { id: 'eeeeee02', kind: 'counter', metric: 'summary', position: { anchor: 'top-right', dx: 16, dy: 16 } },

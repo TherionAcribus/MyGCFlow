@@ -3067,12 +3067,21 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
    événements vers la carte. */
 #mapWithFrames.stats-editing > .stats-panel {
     pointer-events: auto;
+    /* Sans cela, un geste tactile sur le panneau est pris pour un
+       défilement au lieu d'un glisser/redimensionner. */
+    touch-action: none;
     cursor: grab;
     outline: 1px dashed rgba(255, 255, 255, 0.7);
     outline-offset: 2px;
 }
 #mapWithFrames.stats-editing > .stats-panel.is-dragging {
     cursor: grabbing;
+    outline-style: solid;
+}
+/* Bord droit : poignée de redimensionnement de la largeur (le curseur
+   « ew-resize » est aussi posé en ligne au survol par stats_ui.js). */
+#mapWithFrames.stats-editing > .stats-panel.is-resizing {
+    cursor: ew-resize;
     outline-style: solid;
 }
 /* Panneau sélectionné dans la liste : liseré franc de la couleur d'accent. */

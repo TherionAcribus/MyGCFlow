@@ -228,7 +228,12 @@ formulaire le remet en mode `anchor`. Pendant le glisser, chaque `pointermove`
 applique la position en place via `previewStatsPanelPosition` — sans
 renormaliser le bloc ni toucher `settingsRev`, ce qui éviterait de reconstruire
 les textes alternatifs à chaque mouvement ; le `commit` au dépôt renormalise
-et persiste comme d'habitude.
+et persiste comme d'habitude. En mode édition, le bord droit du canvas est une
+poignée de largeur (curseur `ew-resize`) : glissé, il change `position.width`
+en aperçu via `previewStatsPanelWidth` (même mutation en place, la hauteur se
+réadapte au prochain flush puisque `measure` dépend de la largeur) puis en
+commit au dépôt. `touch-action: none` sur les panneaux éditables empêche le
+navigateur d'interpréter le geste tactile comme un défilement.
 
 Avertissements dans l'onglet (événement `mygcflow:stats-layout`) : panneau
 ramené dans le cadre (pile trop haute, largeur supérieure à la carte), panneau

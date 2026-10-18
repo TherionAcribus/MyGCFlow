@@ -672,12 +672,27 @@ function syncDragMode() {
     host.classList.toggle('stats-editing', tabOpen && idle);
 }
 
+// Largeur de la poignée de redimensionnement, mesurée depuis le bord droit
+// du canvas : un pointeur qui s'y abaisse change la largeur au lieu de
+// déplacer le panneau (la hauteur suit, measure dépend de la largeur).
+const RESIZE_GRIP = 14;
+
 function withFreePosition(id, x, y) {
     const settings = currentSettings();
     return {
         ...settings,
         [panelsKey()]: modePanels(settings).map((panel) => (panel.id === id
             ? { ...panel, position: { ...panel.position, mode: 'free', x, y } }
+            : panel)),
+    };
+}
+
+function withWidth(id, width) {
+    const settings = currentSettings();
+    return {
+        ...settings,
+        [panelsKey()]: modePanels(settings).map((panel) => (panel.id === id
+            ? { ...panel, position: { ...panel.position, width } }
             : panel)),
     };
 }
@@ -704,26 +719,52 @@ function bindDragAndDrop() {
         const rect = pkg.getStatsPanelRect?.(canvas.dataset.panelId);
         if (!rect) return;
         const base = host.getBoundingClientRect();
+        const canvasRect = canvas.getBoundingClientRect();
+        const resizing = event.clientX >= canvasRect.right - RESIZE_GRIP;
         drag = {
             id: canvas.dataset.panelId,
             pointerId: event.pointerId,
             canvas,
             base,
-            offsetX: event.clientX - base.left - rect.x,
-            offsetY: event.clientY - base.top - rect.y,
+            mode: resizing ? 'resize' : 'move',
+            offsetX: resizing ? 0 : event.clientX - base.left - rect.x,
+            offsetY: resizing ? 0 : event.clientY - base.top - rect.y,
+            startClientX: event.clientX,
+            startWidth: canvasRect.width,
             width: rect.width,
             height: rect.height,
             container: rect.container,
             last: null,
+            lastWidth: null,
         };
         canvas.setPointerCapture?.(event.pointerId);
-        canvas.classList.add('is-dragging');
+        // Le curseur en ligne posé au survol cède la place à la classe.
+        canvas.style.cursor = '';
+        canvas.classList.add(resizing ? 'is-resizing' : 'is-dragging');
         event.preventDefault();
         selectedId = drag.id;
         renderStatsTab();
     });
     host.addEventListener('pointermove', (event) => {
-        if (!drag || event.pointerId !== drag.pointerId) return;
+        if (!drag) {
+            // Survol hors glisser : le curseur annonce la poignée du bord
+            // droit (curseur en ligne — le CSS ne connaît pas la position).
+            const canvas = event.target?.closest?.('canvas.stats-panel');
+            if (canvas && host.classList.contains('stats-editing')) {
+                const canvasRect = canvas.getBoundingClientRect();
+                canvas.style.cursor = event.clientX >= canvasRect.right - RESIZE_GRIP
+                    ? 'ew-resize' : 'grab';
+            }
+            return;
+        }
+        if (event.pointerId !== drag.pointerId) return;
+        if (drag.mode === 'resize') {
+            drag.lastWidth = drag.startWidth + (event.clientX - drag.startClientX);
+            // Aperçu en direct de la largeur, comme la position : écrite en
+            // place, sans renormalisation ni envoi — le commit les fait.
+            pkg.previewStatsPanelWidth?.(drag.id, drag.lastWidth);
+            return;
+        }
         drag.last = positionFor(event);
         // Aperçu en direct : la position est écrite en place, sans
         // renormalisation ni envoi — le commit au dépôt fait les deux.
@@ -731,9 +772,13 @@ function bindDragAndDrop() {
     });
     const end = (event) => {
         if (!drag || event.pointerId !== drag.pointerId) return;
-        drag.canvas.classList.remove('is-dragging');
-        if (drag.last) commit(withFreePosition(drag.id, drag.last.x, drag.last.y),
-            STATS_SAVE_STATUS, { immediate: true });
+        drag.canvas.classList.remove('is-dragging', 'is-resizing');
+        if (drag.mode === 'resize' && drag.lastWidth != null) {
+            commit(withWidth(drag.id, drag.lastWidth), STATS_SAVE_STATUS, { immediate: true });
+        } else if (drag.last) {
+            commit(withFreePosition(drag.id, drag.last.x, drag.last.y),
+                STATS_SAVE_STATUS, { immediate: true });
+        }
         drag = null;
         renderForm();
     };

@@ -25,6 +25,7 @@ import {
     OTHERS_KEY,
     STATS_DEFAULTS,
     STATS_METRICS_BY_KIND,
+    STATS_WIDTH_RANGE,
     UNKNOWN_KEY,
     barModel,
     counterValues,
@@ -898,6 +899,21 @@ export function previewStatsPanelPosition(id, x, y) {
     panel.position.mode = 'free';
     panel.position.x = Math.max(0, Math.min(1, x));
     panel.position.y = Math.max(0, Math.min(1, y));
+    layoutDirty = true;
+    touch();
+}
+
+// Même aperçu en direct pour la largeur (poignée du bord droit,
+// stats_ui.js › bindDragAndDrop) : la hauteur se réadapte au prochain flush
+// (measure dépend de la largeur). Le commit au dépôt renormalise.
+export function previewStatsPanelWidth(id, width) {
+    if (pkg.isAnimationInProgress?.()) return;
+    const list = settings[isEvolutionPage() ? 'evolution_panels' : 'panels'] || [];
+    const panel = list.find((p) => p.id === id);
+    const w = Number(width);
+    if (!panel || !Number.isFinite(w)) return;
+    const [min, max] = STATS_WIDTH_RANGE;
+    panel.position.width = Math.max(min, Math.min(max, Math.round(w)));
     layoutDirty = true;
     touch();
 }
