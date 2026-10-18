@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-18 08:22+0200\n"
+"POT-Creation-Date: 2026-10-18 08:57+0200\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -3094,137 +3094,145 @@ msgstr "Saving…"
 msgid "Non enregistré"
 msgstr "Not saved"
 
-#: static/js/stats_panels.js:310 templates/guide.html:350
+#: static/js/stats_panels.js:317 templates/guide.html:350
 #: templates/menu_stats.html:39
 msgid "Matrice D/T"
 msgstr "D/T grid"
 
-#: static/js/stats_panels.js:311 templates/guide.html:351
+#: static/js/stats_panels.js:318 templates/guide.html:351
 #: templates/menu_stats.html:42
 msgid "Grille Jasmer"
 msgstr "Jasmer grid"
 
-#: static/js/stats_panels.js:312 templates/guide.html:352
+#: static/js/stats_panels.js:319 templates/guide.html:352
 #: templates/menu_stats.html:43
 msgid "Calendrier 366"
 msgstr "366-day calendar"
 
-#: static/js/stats_panels.js:313 templates/menu_stats.html:56
+#: static/js/stats_panels.js:320 templates/menu_stats.html:56
 msgid "Types de caches"
 msgstr "Cache types"
 
-#: static/js/stats_panels.js:314 templates/menu_stats.html:57
+#: static/js/stats_panels.js:321 templates/menu_stats.html:57
 msgid "Tailles"
 msgstr "Sizes"
 
-#: static/js/stats_panels.js:315 templates/menu_stats.html:58
+#: static/js/stats_panels.js:322 templates/menu_stats.html:58
 msgid "Difficulté"
 msgstr "Difficulty"
 
-#: static/js/stats_panels.js:316 templates/_filter_cache_attrs.html:92
+#: static/js/stats_panels.js:323 templates/_filter_cache_attrs.html:92
 #: templates/_filter_cache_attrs.html:93 templates/menu_stats.html:59
 msgid "Terrain"
 msgstr "Terrain"
 
-#: static/js/stats_panels.js:317 templates/menu_stats.html:60
+#: static/js/stats_panels.js:324 templates/menu_stats.html:60
 msgid "Trouvailles par année"
 msgstr "Finds per year"
 
-#: static/js/stats_panels.js:318 static/js/stats_panels.js:402
+#: static/js/stats_panels.js:325 static/js/stats_panels.js:409
 #: templates/_filter_country_state.html:6
 #: templates/_filter_country_state.html:7 templates/menu_stats.html:61
 #: templates/menu_stats.html:177
 msgid "Pays"
 msgstr "Country"
 
-#: static/js/stats_panels.js:319 static/js/stats_panels.js:403
+#: static/js/stats_panels.js:326 static/js/stats_panels.js:410
 #: templates/menu_stats.html:62 templates/menu_stats.html:177
 msgid "Régions"
 msgstr "Regions"
 
-#: static/js/stats_panels.js:320 templates/guide.html:355
+#: static/js/stats_panels.js:327 templates/guide.html:355
 #: templates/menu_stats.html:50
 msgid "Progression des trouvailles"
 msgstr "Finds over time"
 
-#: static/js/stats_panels.js:321 templates/guide.html:356
+#: static/js/stats_panels.js:328 templates/guide.html:356
 #: templates/menu_stats.html:49
 msgid "Chiffres clés"
 msgstr "Key figures"
 
-#: static/js/stats_panels.js:327 static/js/stats_panels.js:334
+#: static/js/stats_panels.js:334 static/js/stats_panels.js:341
 #: templates/_filter_cache_attrs.html:30
 msgid "Autres"
 msgstr "Others"
 
-#: static/js/stats_panels.js:328
+#: static/js/stats_panels.js:335
 msgid "Inconnu"
 msgstr "Unknown"
 
-#: static/js/stats_panels.js:342
+#: static/js/stats_panels.js:349
 #, python-brace-format
 msgid "Sans D/T : ${n}"
 msgstr "No D/T: ${n}"
 
-#: static/js/stats_panels.js:343
+#: static/js/stats_panels.js:350
 #, python-brace-format
 msgid "Sans difficulté : ${n}"
 msgstr "No difficulty: ${n}"
 
-#: static/js/stats_panels.js:344
+#: static/js/stats_panels.js:351
 #, python-brace-format
 msgid "Sans terrain : ${n}"
 msgstr "No terrain: ${n}"
 
-#: static/js/stats_panels.js:345
+#: static/js/stats_panels.js:352
 #, python-brace-format
 msgid "Sans date de publication : ${n}"
 msgstr "No publication date: ${n}"
 
-#: static/js/stats_panels.js:346
+#: static/js/stats_panels.js:353
 #, python-brace-format
 msgid "Sans date de trouvaille : ${n}"
 msgstr "No find date: ${n}"
 
-#: static/js/stats_panels.js:347
+#: static/js/stats_panels.js:354
 #, python-brace-format
 msgid "Sans date : ${n}"
 msgstr "No date: ${n}"
 
-#: static/js/stats_panels.js:352
+#: static/js/stats_panels.js:359
 #, python-brace-format
 msgid "Combinaisons : ${filled}/${available}"
 msgstr "Combinations: ${filled}/${available}"
 
-#: static/js/stats_panels.js:353
+#: static/js/stats_panels.js:360
 #, python-brace-format
 msgid "Mois : ${filled}/${available}"
 msgstr "Months: ${filled}/${available}"
 
-#: static/js/stats_panels.js:354
+#: static/js/stats_panels.js:361
 #, python-brace-format
 msgid "Jours : ${filled}/${available}"
 msgstr "Days: ${filled}/${available}"
 
-#: static/js/stats_panels.js:398 templates/menu_stats.html:175
+#: static/js/stats_panels.js:405 templates/menu_stats.html:175
 msgid "Jours avec trouvaille"
 msgstr "Days with finds"
 
-#: static/js/stats_panels.js:399 templates/menu_stats.html:175
+#: static/js/stats_panels.js:406 templates/menu_stats.html:175
 msgid "Record sur une journée"
 msgstr "Best day"
 
-#: static/js/stats_panels.js:400 templates/menu_stats.html:176
+#: static/js/stats_panels.js:407 templates/menu_stats.html:176
 msgid "Plus longue série (jours)"
 msgstr "Longest streak (days)"
 
-#: static/js/stats_panels.js:401 templates/menu_stats.html:176
+#: static/js/stats_panels.js:408 templates/menu_stats.html:176
 msgid "Types de caches différents"
 msgstr "Different cache types"
 
-#: static/js/stats_panels.js:521
+#: static/js/stats_panels.js:528
 msgid "trouvailles"
 msgstr "finds"
+
+#: static/js/stats_panels.js:668
+msgid "${n} trouvailles au ${date}"
+msgstr "${n} finds on ${date}"
+
+#: static/js/stats_panels.js:686
+msgid "Aucune trouvaille"
+msgstr "No finds"
 
 #: static/js/stats_ui.js:131
 msgid "Afficher ce panneau"

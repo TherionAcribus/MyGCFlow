@@ -420,3 +420,56 @@ test('un patch partiel conserve les panneaux courants', async ({ page }) => {
   expect(restored.panels).toHaveLength(1);
   await expect(page.locator('canvas.stats-panel')).toHaveCount(1);
 });
+
+test('chaque panneau expose un équivalent textuel accessible', async ({ page }) => {
+  await putStats(page, { enabled: true, panels: [
+    { id: 'a11y0001', kind: 'counter', metric: 'summary', position: { anchor: 'top-left' } },
+    { id: 'a11y0002', kind: 'bar', metric: 'cache_type', position: { anchor: 'top-left' } },
+    { id: 'a11y0003', kind: 'line', metric: 'cumulative', position: { anchor: 'bottom-left' } },
+  ] });
+  await openWithFixture(page, '', GAP_FIXTURE, '2 / 2');
+  const canvases = page.locator('canvas.stats-panel');
+  await expect(canvases).toHaveCount(3);
+  // Le canvas reste muet ; son double hors écran porte les mêmes chiffres.
+  await expect(canvases.first()).toHaveAttribute('aria-hidden', 'true');
+  const alts = page.locator('.stats-panel-alt');
+  await expect(alts).toHaveCount(3);
+  await expect(alts.first()).toHaveClass(/visually-hidden/);
+
+  // Le titre est le premier nœud : ^… évite que « Types de caches » matche
+  // aussi la tuile « Types de caches différents » du compteur.
+  const counter = alts.filter({ hasText: /^Chiffres clés/ });
+  await expect(counter).toContainText('Jours avec trouvaille : 2');
+  const types = alts.filter({ hasText: /^Types de caches/ });
+  await expect(types).toContainText('Traditional Cache : 2');
+  const line = alts.filter({ hasText: /^Progression des trouvailles/ });
+  await expect(line).toContainText('2 trouvailles au');
+
+  // Le texte suit les comptes, jour par jour : rejouer l'animation met la
+  // liste à jour (tête de courbe comprise pendant les jours vides).
+  await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    app.resetStatsForAnimation({ startDate: new Date(2026, 0, 1) });
+    app.accumulateStatsForDates([new Date(2026, 0, 1)], performance.now());
+    app.tickStatsPanels(performance.now());
+  });
+  await expect(types).toContainText('Traditional Cache : 1');
+  await expect(line).toContainText('1 trouvailles au 1 janv.');
+
+  // Jours vides : les comptes ne bougent pas mais la tête de la courbe, oui.
+  await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    app.accumulateStatsForDates([new Date(2026, 0, 2), new Date(2026, 0, 3)], performance.now());
+    app.tickStatsPanels(performance.now());
+  });
+  await expect(line).toContainText('1 trouvailles au 3 janv.');
+
+  await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    app.accumulateStatsForDates(
+      [new Date(2026, 0, 4), new Date(2026, 0, 5), new Date(2026, 0, 6)], performance.now());
+    app.tickStatsPanels(performance.now());
+  });
+  await expect(line).toContainText('2 trouvailles au 6 janv.');
+  await expect(types).toContainText('Traditional Cache : 2');
+});

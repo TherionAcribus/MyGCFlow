@@ -68,8 +68,11 @@ let referenceMemo = null;   // { key, acc }
 // des frames MediaRecorder : une matrice qui se remplit sur une carte immobile
 // doit quand même produire des frames.
 let revision = 0;
+// Version des réglages appliqués : entre dans la clé du texte alternatif,
+// dont le contenu dépend aussi du titre et des options affichées.
+let settingsRev = 0;
 
-const panelNodes = new Map();   // id → { canvas, layout, cssWidth, drawnKey }
+const panelNodes = new Map();   // id → { canvas, alt, layout, cssWidth, drawnKey }
 let layoutDirty = true;
 let drawDirty = true;
 let frameRequest = 0;
@@ -97,6 +100,7 @@ export function applyStatsSettings(raw) {
     // valeur COURANTE — sinon applyStatsSettings({ enabled: false }) viderait
     // localement la liste des panneaux que le serveur aurait conservée.
     settings = normalizeStatsSettings(raw, settings);
+    settingsRev += 1;
     const nextMetrics = metricsForPanels(settings);
     const nextKey = [...nextMetrics].sort().join(',');
     if (nextKey !== metricsKey) {
@@ -588,7 +592,12 @@ function nodeFor(panel, host) {
         // sont dessinés après les panneaux.
         const map = document.getElementById('map');
         host.insertBefore(canvas, map ? map.nextSibling : host.firstChild);
-        node = { canvas, layout: null, cssWidth: 0, drawnKey: '', cssKey: '' };
+        // Équivalent textuel du canvas pour les technologies d'assistance :
+        // hors écran mais dans le DOM, juste après sa boîte.
+        const alt = document.createElement('div');
+        alt.className = 'stats-panel-alt visually-hidden';
+        canvas.insertAdjacentElement('afterend', alt);
+        node = { canvas, alt, layout: null, cssWidth: 0, drawnKey: '', cssKey: '', a11yKey: '' };
         panelNodes.set(panel.id, node);
     }
     return node;
@@ -598,6 +607,7 @@ function removeStalePanels(keep) {
     for (const [id, node] of panelNodes) {
         if (keep.has(id)) continue;
         node.canvas.remove();
+        node.alt?.remove();
         panelNodes.delete(id);
         videoCache.delete(id);
     }
@@ -617,6 +627,67 @@ function overlayRects(host) {
     return rects;
 }
 
+// Libellé d'une case de grille pour le texte alternatif : « D2/T3 »,
+// « 2010-06 » ou « 14 mars » selon la métrique.
+function gridCellLabel(view, r, c) {
+    if (view.metric === 'dt') return `D${view.rowLabels[r]}/T${view.colLabels[c]}`;
+    if (view.metric === 'jasmer') return `${view.rowLabels[r]}-${String(c + 1).padStart(2, '0')}`;
+    return `${c + 1} ${view.rowLabels[r]}`;
+}
+
+// Équivalent textuel du canvas pour les technologies d'assistance : titre,
+// comptes (les vrais, pas les valeurs animées) et lignes de pied, en liste.
+// Reconstruit seulement quand `key` change — comptes, mode, sélection ou
+// réglages — jamais à chaque frame de surbrillance. Pas de région « live » :
+// le texte est lu quand l'utilisateur s'y arrête, il n'annonce rien de
+// lui-même.
+function refreshAltText(node, panel, view, key) {
+    if (node.a11yKey === key) return;
+    node.a11yKey = key;
+    const { number, percent } = formatters();
+    const model = view.model;
+    node.alt.replaceChildren();
+    const caption = document.createElement('p');
+    caption.textContent = view.title || defaultStatsPanelTitle(panel);
+    node.alt.appendChild(caption);
+    const list = document.createElement('ul');
+    const add = (text) => {
+        const li = document.createElement('li');
+        li.textContent = text;
+        list.appendChild(li);
+    };
+    let empty = true;
+    if (view.kind === 'counter') {
+        for (const tile of view.tiles) {
+            add(`${tile.label} : ${tile.value}${tile.detail ? ` (${tile.detail})` : ''}`);
+            empty = false;
+        }
+    } else if (view.kind === 'line') {
+        if (!model.empty) {
+            empty = false;
+            add(pkg.t('${n} trouvailles au ${date}', { n: number(model.total), date: formatDay(model.headDay) }));
+        }
+    } else if (view.kind === 'grid') {
+        for (let r = 0; r < model.rows; r++) {
+            for (let c = 0; c < model.cols; c++) {
+                const count = model.cells[r * model.cols + c].count;
+                if (!count) continue;
+                empty = false;
+                add(`${gridCellLabel(view, r, c)} : ${number(count)}`);
+            }
+        }
+    } else {
+        for (const row of model.rows) {
+            const label = `${view.labelOf(row.key)} : ${number(row.count)}`;
+            add(view.showPercent && model.total ? `${label} (${percent(row.count / model.total)})` : label);
+            empty = false;
+        }
+    }
+    if (empty) add(pkg.t('Aucune trouvaille'));
+    for (const line of view.footer || []) add(line);
+    node.alt.appendChild(list);
+}
+
 function flush() {
     drawDirty = false;
     const host = container();
@@ -633,6 +704,11 @@ function flush() {
         containerSize = { width: host.clientWidth, height: host.clientHeight };
         overlayRectsCache = panels.length ? overlayRects(host) : [];
     }
+    // Clé de contenu des textes alternatifs : comptes (révision de
+    // l'accumulateur), mode, sélection et réglages — pas `revision`, qui
+    // bouge à chaque estompe de surbrillance sans changer les chiffres.
+    const altState = mode === 'animating' ? current : selectionTotals();
+    const a11yBase = `${mode}|${settingsRev}|${indexRevision()}|${altState?.revision || 0}`;
     const items = panels.map((panel) => {
         const width = Math.min(panel.position.width, containerSize.width);
         return {
@@ -657,6 +733,10 @@ function flush() {
         const node = nodeFor(panel, host);
         node.layout = rect;
         node.cssWidth = rect.width;
+        // Texte alternatif : reconstruit quand les comptes bougent. La tête de
+        // courbe dépend aussi du jour affiché (jours vides compris).
+        const view = views.get(panel.id);
+        refreshAltText(node, panel, view, `${a11yBase}|${view.model?.headDay ?? ''}`);
         const css = rect.css;
         const cssKey = `${css.left}|${css.right}|${css.top}|${css.bottom}|${rect.width}|${rect.height}`;
         if (node.cssKey !== cssKey) {
