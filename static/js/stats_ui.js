@@ -8,6 +8,7 @@ import { isEvolutionPage } from './app_mode.mjs';
 import { makeDebouncedSettingsSaver } from './settings_api.mjs';
 import { reportSave } from './saved_indicator.mjs';
 import {
+    CATEGORICAL_METRICS,
     EVOLUTION_COUNTER_ITEMS,
     EVOLUTION_METRICS_BY_KIND,
     STATS_COUNTER_ITEMS,
@@ -78,8 +79,6 @@ const KIND_ICONS = {
     line: 'ti-chart-line',
     counter: 'ti-123',
 };
-
-const CATEGORICAL = ['cache_type', 'container', 'country', 'state'];
 
 const $ = (id) => document.getElementById(id);
 
@@ -415,7 +414,9 @@ function renderForm() {
         el.hidden = !kindOk || !evoOk;
     });
     // Nombre de lignes : catégories des histogrammes, et anneaux.
-    const categorical = CATEGORICAL.includes(panel.metric);
+    // Top-N : uniquement les métriques catégorielles qui peuvent le dépasser
+    // — « status » (actives/archivées) n'a jamais que deux lignes.
+    const categorical = CATEGORICAL_METRICS.includes(panel.metric) && panel.metric !== 'status';
     document.querySelectorAll('#statsPanelForm [data-stats-categorical]').forEach((el) => {
         el.hidden = !(panel.kind === 'donut' || (panel.kind === 'bar' && categorical));
     });

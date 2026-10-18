@@ -161,7 +161,7 @@ function configName(value) {
     return Array.from(flat).slice(0, STATS_CONFIG_NAME_MAX).join('');
 }
 
-const CATEGORICAL_METRICS = ['cache_type', 'container', 'country', 'state', 'county', 'status', 'attribute', 'owner'];
+export const CATEGORICAL_METRICS = Object.freeze(['cache_type', 'container', 'country', 'state', 'county', 'status', 'attribute', 'owner']);
 const DEFAULT_WIDTH = { grid: 280, bar: 280, donut: 300, line: 320, counter: 280 };
 
 // Valeurs par défaut d'un panneau, fonction de son type et de sa métrique :

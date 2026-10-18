@@ -730,3 +730,17 @@ test('les panneaux s\'exportent en JSON et se ré-importent', async ({ page }) =
     fs.unlinkSync(badPath);
   }
 });
+
+test('« Lignes au maximum » est proposé pour les métriques à catégories', async ({ page }) => {
+  await putStats(page, { enabled: true, panels: [
+    { id: '7ab1e501', kind: 'bar', metric: 'attribute', position: { anchor: 'top-left' } },
+  ] });
+  await openWithFixture(page, '#stats');
+  await page.locator('a[href="#stats"]').click();
+  // Le panneau unique est sélectionné par défaut ; attributs = catégoriel.
+  const maxItems = page.locator('#inputStatsMaxItems');
+  await expect(maxItems).toBeVisible();
+  // Passage à une métrique ordonnée : plus de top-N, le champ se masque.
+  await page.locator('#selectStatsMetric').selectOption('year');
+  await expect(maxItems).toBeHidden();
+});
