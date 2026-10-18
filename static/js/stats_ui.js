@@ -8,12 +8,15 @@ import { isEvolutionPage } from './app_mode.mjs';
 import { makeDebouncedSettingsSaver } from './settings_api.mjs';
 import { reportSave } from './saved_indicator.mjs';
 import {
+    EVOLUTION_COUNTER_ITEMS,
+    EVOLUTION_METRICS_BY_KIND,
     STATS_COUNTER_ITEMS,
     STATS_MAX_CONFIGS,
     STATS_MAX_PANELS,
     STATS_METRICS_BY_KIND,
     createStatsPanel,
     normalizeStatsConfig,
+    statsPanelsKey,
 } from './stats_model.mjs';
 
 const saveStatsDebounced = makeDebouncedSettingsSaver(500);
@@ -24,6 +27,18 @@ const STATS_SAVE_STATUS = 'statsSaveStatus';
 
 let selectedId = null;
 let initialized = false;
+
+// Page /evolution : métriques, modèles et chiffres des compteurs différent.
+// Chaque mode a sa liste de panneaux (`stats.panels` / `stats.evolution_panels`),
+// indépendante : ajouter ou retirer un panneau ici ne touche pas l'autre page.
+const evolutionMode = isEvolutionPage();
+const panelsKey = () => statsPanelsKey(evolutionMode);
+const modePanels = (s) => s[panelsKey()] || [];
+const metricRegistry = evolutionMode ? EVOLUTION_METRICS_BY_KIND : STATS_METRICS_BY_KIND;
+const counterItems = evolutionMode ? EVOLUTION_COUNTER_ITEMS : STATS_COUNTER_ITEMS;
+// Tuiles du compteur « Chiffres clés » créé en Évolution : les chiffres de la
+// chronologie, pas ceux des trouvailles.
+const COUNTER_DEFAULT_ITEMS = evolutionMode ? ['actives', 'placees', 'archivees', 'peak'] : null;
 
 // Modèles : un clic pose un ou deux panneaux pré-réglés et pré-placés. Les
 // piles de coin contournent d'elles-mêmes le titre et les infos.
@@ -45,6 +60,15 @@ const PRESETS = {
     ],
     jasmer: [['grid', 'jasmer', { position: { anchor: 'bottom-left', width: 220 } }]],
     calendar: [['grid', 'calendar', { position: { anchor: 'bottom-center', width: 440 } }]],
+    'evo-overview': [
+        ['counter', 'summary', { position: { anchor: 'top-left' }, options: { items: ['actives', 'placees', 'archivees', 'peak'] } }],
+        ['line', 'actives', { position: { anchor: 'bottom-left', width: 340 } }],
+    ],
+    'evo-status': [['bar', 'status', { position: { anchor: 'top-right', width: 260 } }]],
+    'evo-geo': [
+        ['bar', 'country', { position: { anchor: 'top-right', width: 260 } }],
+        ['bar', 'county', { position: { anchor: 'top-right', dy: 8, width: 260 } }],
+    ],
 };
 
 const KIND_ICONS = {
@@ -64,7 +88,7 @@ function currentSettings() {
 }
 
 function selectedPanel() {
-    return currentSettings().panels.find((panel) => panel.id === selectedId) || null;
+    return modePanels(currentSettings()).find((panel) => panel.id === selectedId) || null;
 }
 
 // Applique puis enregistre. `field` : élément qui porte l'indicateur
@@ -83,9 +107,10 @@ function commit(next, field = null, { immediate = false } = {}) {
 
 function updatePanels(mutate, field = null, options = {}) {
     const settings = currentSettings();
-    const panels = settings.panels.map((panel) => structuredClone(panel));
+    const key = panelsKey();
+    const panels = (settings[key] || []).map((panel) => structuredClone(panel));
     const result = mutate(panels);
-    commit({ ...settings, panels: result || panels }, field, options);
+    commit({ ...settings, [key]: result || panels }, field, options);
 }
 
 function updateSelected(mutate, field) {
@@ -94,6 +119,26 @@ function updateSelected(mutate, field) {
         if (panel) mutate(panel);
         return panels;
     }, field);
+}
+
+// Entrées du menu « Ajouter » selon le mode : chaque item porte
+// data-stats-modes (« main », « evolution », les deux) ; un en-tête ou un
+// séparateur n'est affiché que si un item visible le suit (menu sans sections
+// vides). Le mode ne change pas au fil de la page : filtrage unique à l'init.
+function syncAddMenuMode() {
+    const mode = evolutionMode ? 'evolution' : 'main';
+    const entries = [...document.querySelectorAll('#statsAddMenu > li')];
+    let hasVisible = false;
+    for (let i = entries.length - 1; i >= 0; i--) {
+        const entry = entries[i];
+        if (entry.dataset.statsModes) {
+            entry.hidden = !entry.dataset.statsModes.split(' ').includes(mode);
+            if (!entry.hidden) hasVisible = true;
+        } else {
+            entry.hidden = !hasVisible;
+            hasVisible = false;
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -118,7 +163,7 @@ function iconButton(icon, label, action, disabled = false) {
 function renderList() {
     const list = $('statsPanelList');
     if (!list) return;
-    const { panels } = currentSettings();
+    const panels = modePanels(currentSettings());
     list.replaceChildren();
     panels.forEach((panel, index) => {
         const item = document.createElement('li');
@@ -142,6 +187,16 @@ function renderList() {
         name.dataset.action = 'select';
         name.textContent = panel.title || pkg.defaultStatsPanelTitle(panel);
         name.setAttribute('aria-pressed', String(panel.id === selectedId));
+        // Un panneau dont la métrique n'existe pas dans le mode courant
+        // (réglages bidouillés, configuration appliquée d'un mode à l'autre)
+        // est marqué : il reste éditable, juste non dessiné.
+        if (!(metricRegistry[panel.kind] || []).includes(panel.metric)) {
+            const badge = document.createElement('span');
+            badge.className = 'text-muted small ms-1';
+            badge.textContent = `(${evolutionMode ? pkg.t('Trouvailles') : pkg.t('Évolution')})`;
+            badge.title = pkg.t('Pas affiché dans ce mode');
+            name.appendChild(badge);
+        }
 
         const actions = document.createElement('div');
         actions.className = 'btn-group btn-group-sm';
@@ -156,7 +211,12 @@ function renderList() {
         list.appendChild(item);
     });
     const empty = $('statsEmpty');
-    if (empty) empty.hidden = panels.length > 0;
+    if (empty) {
+        empty.hidden = panels.length > 0;
+        empty.textContent = evolutionMode
+            ? pkg.t('Aucun panneau. Commencez par un modèle : les chiffres de la chronologie, par exemple, comptent actives, poses et archivages.')
+            : pkg.t('Aucun panneau. Commencez par un modèle : la matrice D/T, par exemple, se remplit case par case au fil de vos trouvailles.');
+    }
     const full = panels.length >= STATS_MAX_PANELS;
     const limit = $('statsLimitHint');
     if (limit) limit.hidden = !full;
@@ -287,9 +347,14 @@ function renderForm() {
 
     const metricSelect = $('selectStatsMetric');
     if (metricSelect) {
-        const wanted = STATS_METRICS_BY_KIND[panel.kind].join(',');
+        // Métriques du mode courant ; un type sans registre ici (grilles en
+        // Évolution) retombe sur celui du mode principal.
+        const offered = metricRegistry[panel.kind]?.length
+            ? metricRegistry[panel.kind]
+            : STATS_METRICS_BY_KIND[panel.kind];
+        const wanted = offered.join(',');
         if (metricSelect.dataset.kind !== wanted) {
-            metricSelect.replaceChildren(...STATS_METRICS_BY_KIND[panel.kind].map((metric) => {
+            metricSelect.replaceChildren(...offered.map((metric) => {
                 const option = document.createElement('option');
                 option.value = metric;
                 option.textContent = pkg.defaultStatsPanelTitle({ metric });
@@ -326,8 +391,14 @@ function renderForm() {
     if (holeValue && o.hole !== undefined) holeValue.textContent = `${o.hole} %`;
     setValue('switchStatsLegend', o.show_legend);
     setValue('switchStatsArea', o.show_area);
+    setValue('selectStatsCounted', o.counted || 'active');
     if (o.columns !== undefined) setValue('selectStatsColumns', String(o.columns));
+    // Tuiles : seules celles du mode courant sont proposées (les autres restent
+    // dans options.items, préservées à l'enregistrement).
+    const mode = evolutionMode ? 'evolution' : 'main';
     document.querySelectorAll('#statsCounterItems [data-counter-item]').forEach((box) => {
+        const wrap = box.closest('[data-stats-modes]');
+        if (wrap) wrap.hidden = !(wrap.dataset.statsModes || '').split(' ').includes(mode);
         box.checked = (o.items || []).includes(box.dataset.counterItem);
     });
     // Grille : les nombres ne s'affichent qu'en mode « nombre de trouvailles ».
@@ -335,7 +406,13 @@ function renderForm() {
     if (values) values.disabled = panel.kind === 'grid' && o.cell_mode !== 'count';
 
     document.querySelectorAll('#statsPanelForm [data-stats-kind]').forEach((el) => {
-        el.hidden = !el.dataset.statsKind.split(' ').includes(panel.kind);
+        const kindOk = el.dataset.statsKind.split(' ').includes(panel.kind);
+        // Marqueur data-stats-evo : contrôle du mode Évolution (univers
+        // « Compter » — sans objet pour la métrique « statut », qui ignore
+        // l'univers).
+        const evoOk = !el.hasAttribute('data-stats-evo')
+            || (evolutionMode && panel.metric !== 'status');
+        el.hidden = !kindOk || !evoOk;
     });
     // Nombre de lignes : catégories des histogrammes, et anneaux.
     const categorical = CATEGORICAL.includes(panel.metric);
@@ -480,16 +557,29 @@ function bindFormFields() {
     });
 
     // Compteurs : au moins un chiffre ; l'ordre affiché suit celui de la liste.
+    // Les tuiles de l'autre mode (invisibles ici) ne sont pas perdues.
     $('statsCounterItems')?.addEventListener('change', (event) => {
         const checked = [...document.querySelectorAll('#statsCounterItems [data-counter-item]')]
             .filter((box) => box.checked)
             .map((box) => box.dataset.counterItem);
-        const items = STATS_COUNTER_ITEMS.filter((item) => checked.includes(item));
+        const items = counterItems.filter((item) => checked.includes(item));
         if (!items.length) {
             event.target.checked = true;
             return;
         }
-        updateSelected((panel) => { panel.options.items = items; }, event.target);
+        updateSelected((panel) => {
+            const kept = (panel.options.items || []).filter((item) => !counterItems.includes(item));
+            panel.options.items = [...kept, ...items];
+        }, event.target);
+    });
+
+    // Univers compté (Évolution) : 'active' est le défaut — la clé est ôtée
+    // plutôt que sérialisée (les panneaux principaux ne la portent pas).
+    $('selectStatsCounted')?.addEventListener('change', (event) => {
+        updateSelected((panel) => {
+            if (event.target.value === 'active') delete panel.options.counted;
+            else panel.options.counted = event.target.value;
+        }, event.target);
     });
 }
 
@@ -513,7 +603,7 @@ function withFreePosition(id, x, y) {
     const settings = currentSettings();
     return {
         ...settings,
-        panels: settings.panels.map((panel) => (panel.id === id
+        [panelsKey()]: modePanels(settings).map((panel) => (panel.id === id
             ? { ...panel, position: { ...panel.position, mode: 'free', x, y } }
             : panel)),
     };
@@ -645,7 +735,7 @@ function renderConfigMenu() {
     }
     const save = menu.querySelector('[data-stats-config-save]');
     // Sans panneau rien à enregistrer ; la liste est bornée à STATS_MAX_CONFIGS.
-    if (save) save.disabled = !settings.panels.length || configs.length >= STATS_MAX_CONFIGS;
+    if (save) save.disabled = !modePanels(settings).length || configs.length >= STATS_MAX_CONFIGS;
 }
 
 function showConfigSave() {
@@ -666,7 +756,7 @@ function saveCurrentConfig() {
     const settings = currentSettings();
     const entry = normalizeStatsConfig({
         name: $('inputStatsConfigName')?.value,
-        panels: settings.panels,
+        panels: modePanels(settings),
     });
     if (!entry) return;
     // À nom égal, la configuration est remplacée — la mise à jour passe par là.
@@ -682,15 +772,16 @@ function applyConfig(name) {
     const settings = currentSettings();
     const config = (settings.configs || []).find((c) => c.name === name);
     if (!config) return;
-    const previous = settings.panels;
-    const applied = commit({ ...settings, panels: config.panels },
+    const key = panelsKey();
+    const previous = modePanels(settings);
+    const applied = commit({ ...settings, [key]: config.panels },
         STATS_SAVE_STATUS, { immediate: true });
-    selectedId = applied.panels[0]?.id || null;
+    selectedId = applied[key][0]?.id || null;
     renderStatsTab();
     pkg.showActionToast?.(
         pkg.t('Configuration « ${name} » appliquée', { name }),
         { label: 'Annuler', onClick: () => {
-            commit({ ...currentSettings(), panels: previous },
+            commit({ ...currentSettings(), [key]: previous },
                 STATS_SAVE_STATUS, { immediate: true });
             selectedId = previous[0]?.id || null;
             renderStatsTab();
@@ -740,7 +831,7 @@ function reorganizePanels() {
 function renderWarnings(warnings = pkg.getStatsLayoutWarnings?.() || []) {
     const box = $('statsLayoutWarnings');
     if (!box) return;
-    const panels = currentSettings().panels;
+    const panels = modePanels(currentSettings());
     const name = (id) => {
         const panel = panels.find((p) => p.id === id);
         return panel ? (panel.title || pkg.defaultStatsPanelTitle(panel)) : '';
@@ -777,8 +868,9 @@ function renderWarnings(warnings = pkg.getStatsLayoutWarnings?.() || []) {
 export function renderStatsTab() {
     if (!$('stats')) return;
     const settings = currentSettings();
-    if (!settings.panels.some((panel) => panel.id === selectedId)) {
-        selectedId = settings.panels[0]?.id || null;
+    const list = modePanels(settings);
+    if (!list.some((panel) => panel.id === selectedId)) {
+        selectedId = list[0]?.id || null;
     }
     // Le liseré du panneau choisi suit la sélection (visible en mode édition).
     pkg.setStatsPanelSelection?.(selectedId);
@@ -791,8 +883,9 @@ export function renderStatsTab() {
 }
 
 export function initStatsTab() {
-    if (initialized || isEvolutionPage() || !$('stats')) return;
+    if (initialized || !$('stats')) return;
     initialized = true;
+    syncAddMenuMode();
 
     $('switchStats')?.addEventListener('change', (event) => {
         commit({ ...currentSettings(), enabled: event.target.checked },
@@ -807,7 +900,12 @@ export function initStatsTab() {
         const add = event.target.closest('[data-stats-add]');
         if (add) {
             const [kind, metric] = add.dataset.statsAdd.split(':');
-            addPanels([[kind, metric, {}]]);
+            // Compteur en Évolution : les tuiles de la chronologie, pas celles
+            // des trouvailles (défauts du mode principal).
+            const overrides = kind === 'counter' && COUNTER_DEFAULT_ITEMS
+                ? { options: { items: COUNTER_DEFAULT_ITEMS } }
+                : {};
+            addPanels([[kind, metric, overrides]]);
         }
     });
     const list = $('statsPanelList');

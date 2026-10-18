@@ -281,8 +281,9 @@ function applyUserSettings(userSettings) {
         if (inp) inp.value = pkg.mainInfosTemplateText?.() ?? '';
     }
 
-    // Panneaux de statistiques : préférence globale, propre au mode principal.
-    if (!isEvolutionPage() && userSettings.stats) {
+    // Panneaux de statistiques : préférence globale, commune aux deux modes
+    // (le rendu filtre les métriques étrangères au mode courant).
+    if (userSettings.stats) {
         try {
             pkg.applyStatsSettings?.(userSettings.stats);
             pkg.renderStatsTab?.();

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-18 10:50+0200\n"
+"POT-Creation-Date: 2026-10-18 12:01+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -21,7 +21,7 @@ msgstr ""
 msgid "Aucun fichier envoyé"
 msgstr ""
 
-#: bdd.py:120 static/js/bdd.js:76 static/js/evolution_data.js:211
+#: bdd.py:120 static/js/bdd.js:76 static/js/evolution_data.js:213
 #: templates/menu_data.html:31 templates/menu_data_evolution.html:55
 msgid "Aucun fichier sélectionné"
 msgstr ""
@@ -473,7 +473,7 @@ msgstr ""
 msgid "Base de données"
 msgstr ""
 
-#: blueprints/core.py:188 static/js/evolution_data.js:430
+#: blueprints/core.py:188 static/js/evolution_data.js:432
 #: templates/guide.html:157 templates/guide.html:165
 #: templates/menu_data.html:272 templates/menu_data_evolution.html:108
 #: test_translations.py:28
@@ -546,7 +546,7 @@ msgstr ""
 
 #: blueprints/core.py:221 static/js/notifications.js:448
 #: templates/menu_data.html:95 templates/menu_data.html:361
-#: templates/menu_stats.html:97 templates/menu_style.html:246
+#: templates/menu_stats.html:107 templates/menu_style.html:246
 #: templates/menu_style.html:271 templates/menu_style.html:296
 #: templates/menu_style.html:324 templates/menu_style.html:355
 #: templates/menu_style.html:383 templates/modal_evolution.html:18
@@ -620,7 +620,7 @@ msgstr ""
 msgid "%(name)s : colonnes obligatoires absentes (%(columns)s)"
 msgstr ""
 
-#: blueprints/evolution.py:207 static/js/evolution_data.js:752
+#: blueprints/evolution.py:207 static/js/evolution_data.js:786
 msgid "Un import est déjà en cours"
 msgstr ""
 
@@ -982,7 +982,7 @@ msgid "Analyse du fichier GPX en cours..."
 msgstr ""
 
 #: static/js/bdd.js:297 static/js/bdd.js:1140 static/js/bdd.js:1233
-#: static/js/evolution_data.js:328 static/js/labs.js:1502
+#: static/js/evolution_data.js:330 static/js/labs.js:1502
 #: static/js/notifications.js:297 static/js/notifications.js:342
 msgid "Chargement"
 msgstr ""
@@ -1017,7 +1017,7 @@ msgstr ""
 msgid "hier à ${time}"
 msgstr ""
 
-#: static/js/bdd.js:448
+#: static/js/bdd.js:448 static/js/stats_panels.js:826
 msgid "caches"
 msgstr ""
 
@@ -1051,11 +1051,11 @@ msgstr ""
 msgid "Traitement du fichier en cours..."
 msgstr ""
 
-#: static/js/bdd.js:1100 static/js/evolution_data.js:862
+#: static/js/bdd.js:1100 static/js/evolution_data.js:896
 msgid "Erreur réseau lors de l'envoi du fichier"
 msgstr ""
 
-#: static/js/bdd.js:1101 static/js/evolution_data.js:863
+#: static/js/bdd.js:1101 static/js/evolution_data.js:897
 msgid "Envoi du fichier annulé"
 msgstr ""
 
@@ -1088,10 +1088,10 @@ msgid "Erreur lors du chargement du fichier"
 msgstr ""
 
 #: static/js/bdd.js:1189 static/js/bdd.js:1197 static/js/bdd.js:1315
-#: static/js/bdd.js:1323 static/js/bdd.js:1517 static/js/evolution_data.js:247
-#: static/js/evolution_data.js:351 static/js/evolution_data.js:909
-#: static/js/evolution_data.js:913 static/js/evolution_data.js:1263
-#: static/js/evolution_data.js:1301 static/js/evolution_data.js:1309
+#: static/js/bdd.js:1323 static/js/bdd.js:1517 static/js/evolution_data.js:249
+#: static/js/evolution_data.js:353 static/js/evolution_data.js:943
+#: static/js/evolution_data.js:947 static/js/evolution_data.js:1297
+#: static/js/evolution_data.js:1335 static/js/evolution_data.js:1343
 #: static/js/labs.js:2001 static/js/labs.js:2044 static/js/labs.js:2084
 #: static/js/notifications.js:421 static/js/recording_perf.js:187
 #: static/js/ui.js:1827
@@ -1181,320 +1181,320 @@ msgstr ""
 msgid "Erreur d'affichage"
 msgstr ""
 
-#: static/js/evolution_data.js:213
+#: static/js/evolution_data.js:215
 #, python-brace-format
 msgid "${n} fichiers sélectionnés"
 msgstr ""
 
-#: static/js/evolution_data.js:247
+#: static/js/evolution_data.js:249
 msgid "Impossible de lire la liste des bases"
 msgstr ""
 
-#: static/js/evolution_data.js:275 static/js/evolution_data.js:962
+#: static/js/evolution_data.js:277 static/js/evolution_data.js:996
 #, python-brace-format
 msgid "${name} (${n} caches)"
 msgstr ""
 
-#: static/js/evolution_data.js:307
+#: static/js/evolution_data.js:309
 msgid "La base sera affichée à la fin de l'animation."
 msgstr ""
 
-#: static/js/evolution_data.js:307 templates/menu_data_evolution.html:14
+#: static/js/evolution_data.js:309 templates/menu_data_evolution.html:14
 #: templates/menu_data_evolution.html:20
 msgid "Base de caches"
 msgstr ""
 
-#: static/js/evolution_data.js:309
+#: static/js/evolution_data.js:311
 msgid "Arrêtez l'animation avant de changer de base."
 msgstr ""
 
-#: static/js/evolution_data.js:309 static/js/evolution_data.js:1293
+#: static/js/evolution_data.js:311 static/js/evolution_data.js:1327
 #: static/js/mapgl.js:2859 static/js/mapgl.js:2901 static/js/mapgl.js:2908
 #: static/js/mapgl.js:3802 static/js/notifications.js:425
 msgid "Attention"
 msgstr ""
 
-#: static/js/evolution_data.js:328
+#: static/js/evolution_data.js:330
 msgid "Chargement de la base..."
 msgstr ""
 
-#: static/js/evolution_data.js:351
+#: static/js/evolution_data.js:353
 #, python-brace-format
 msgid "Impossible de charger la base : ${message}"
 msgstr ""
 
-#: static/js/evolution_data.js:430
+#: static/js/evolution_data.js:432
 msgid "Le filtre s'appliquera à la fin de l'animation."
 msgstr ""
 
-#: static/js/evolution_data.js:472
+#: static/js/evolution_data.js:478
 #, python-brace-format
 msgid ""
 "${n} caches affichées : la carte peut devenir lente. Filtrez par pays ou "
 "région pour alléger."
 msgstr ""
 
-#: static/js/evolution_data.js:473
+#: static/js/evolution_data.js:479
 msgid "Grosse sélection"
 msgstr ""
 
-#: static/js/evolution_data.js:705
+#: static/js/evolution_data.js:739
 #, python-brace-format
 msgid "Archivée le ${date}"
 msgstr ""
 
-#: static/js/evolution_data.js:706
+#: static/js/evolution_data.js:740
 msgid "Archivée (date inconnue)"
 msgstr ""
 
-#: static/js/evolution_data.js:706
+#: static/js/evolution_data.js:740
 msgid "Active"
 msgstr ""
 
-#: static/js/evolution_data.js:724
+#: static/js/evolution_data.js:758
 #, python-brace-format
 msgid "Placée le ${date}"
 msgstr ""
 
-#: static/js/evolution_data.js:752 static/js/evolution_data.js:756
-#: static/js/evolution_data.js:766 static/js/evolution_data.js:783
+#: static/js/evolution_data.js:786 static/js/evolution_data.js:790
+#: static/js/evolution_data.js:800 static/js/evolution_data.js:817
 #: templates/menu_data.html:320
 msgid "Import"
 msgstr ""
 
-#: static/js/evolution_data.js:756 static/js/evolution_data.js:783
+#: static/js/evolution_data.js:790 static/js/evolution_data.js:817
 msgid "Arrêtez l'animation avant d'importer."
 msgstr ""
 
-#: static/js/evolution_data.js:761
+#: static/js/evolution_data.js:795
 #, python-brace-format
 msgid "${name} : seuls les fichiers .csv sont acceptés"
 msgstr ""
 
-#: static/js/evolution_data.js:762
+#: static/js/evolution_data.js:796
 #, python-brace-format
 msgid "${name} : fichier vide"
 msgstr ""
 
-#: static/js/evolution_data.js:763
+#: static/js/evolution_data.js:797
 #, python-brace-format
 msgid "${name} : fichier trop volumineux (500 Mo au plus)"
 msgstr ""
 
-#: static/js/evolution_data.js:799
+#: static/js/evolution_data.js:833
 msgid "Envoi des fichiers..."
 msgstr ""
 
-#: static/js/evolution_data.js:814 static/js/evolution_data.js:827
+#: static/js/evolution_data.js:848 static/js/evolution_data.js:861
 msgid "Import en cours..."
 msgstr ""
 
-#: static/js/evolution_data.js:832 static/js/labs.js:1173
+#: static/js/evolution_data.js:866 static/js/labs.js:1173
 msgid "L'import a échoué"
 msgstr ""
 
-#: static/js/evolution_data.js:851
+#: static/js/evolution_data.js:885
 #, python-brace-format
 msgid "Envoi des fichiers : ${pct}%"
 msgstr ""
 
-#: static/js/evolution_data.js:859
+#: static/js/evolution_data.js:893
 msgid "Impossible de lancer l'import"
 msgstr ""
 
-#: static/js/evolution_data.js:893
+#: static/js/evolution_data.js:927
 msgid "Ma zone"
 msgstr ""
 
-#: static/js/evolution_data.js:909 static/js/evolution_data.js:913
+#: static/js/evolution_data.js:943 static/js/evolution_data.js:947
 msgid "Impossible de créer la base"
 msgstr ""
 
-#: static/js/evolution_data.js:937
+#: static/js/evolution_data.js:971
 #, python-brace-format
 msgid "${files} ne correspondent pas aux exports déjà importés dans « ${name} »."
 msgstr ""
 
-#: static/js/evolution_data.js:938
+#: static/js/evolution_data.js:972
 #, python-brace-format
 msgid "${file} ne correspond pas aux exports déjà importés dans « ${name} »."
 msgstr ""
 
-#: static/js/evolution_data.js:943
+#: static/js/evolution_data.js:977
 #, python-brace-format
 msgid "Créer une nouvelle base « ${name} »"
 msgstr ""
 
-#: static/js/evolution_data.js:950
+#: static/js/evolution_data.js:984
 #, python-brace-format
 msgid "Ajouter à la base ouverte « ${name} » (${n} caches)"
 msgstr ""
 
-#: static/js/evolution_data.js:1049
+#: static/js/evolution_data.js:1083
 msgid "Erreur d'import"
 msgstr ""
 
-#: static/js/evolution_data.js:1082
+#: static/js/evolution_data.js:1116
 #, python-brace-format
 msgid ""
 "${read} lignes lues : ${added} nouvelles, ${updated} mises à jour, "
 "${unchanged} inchangées"
 msgstr ""
 
-#: static/js/evolution_data.js:1086
+#: static/js/evolution_data.js:1120
 #, python-brace-format
 msgid "${n} caches archivées depuis le précédent export"
 msgstr ""
 
-#: static/js/evolution_data.js:1089
+#: static/js/evolution_data.js:1123
 #, python-brace-format
 msgid "${n} lignes plus anciennes que la version déjà connue, ignorées"
 msgstr ""
 
-#: static/js/evolution_data.js:1092
+#: static/js/evolution_data.js:1126
 #, python-brace-format
 msgid "${n} doublons dans le fichier (version la plus récente retenue)"
 msgstr ""
 
-#: static/js/evolution_data.js:1095
+#: static/js/evolution_data.js:1129
 #, python-brace-format
 msgid ""
 "${n} caches archivées sans date d'archivage : non affichées (option dans "
 "les filtres)"
 msgstr ""
 
-#: static/js/evolution_data.js:1099
+#: static/js/evolution_data.js:1133
 #, python-brace-format
 msgid "${n} lignes invalides ignorées (${reasons})"
 msgstr ""
 
-#: static/js/evolution_data.js:1102
+#: static/js/evolution_data.js:1136
 #, python-brace-format
 msgid ""
 "${n} dates d'archivage antérieures au placement (disparition le jour du "
 "placement)"
 msgstr ""
 
-#: static/js/evolution_data.js:1105
+#: static/js/evolution_data.js:1139
 #, python-brace-format
 msgid "${n} caches réactivées : leur ancienne date d'archivage est ignorée"
 msgstr ""
 
-#: static/js/evolution_data.js:1112
+#: static/js/evolution_data.js:1146
 #, python-brace-format
 msgid ""
 "${n} dates d'archivage illisibles, ignorées (formats lus : AAAA-MM-JJ, "
 "JJ/MM/AAAA)"
 msgstr ""
 
-#: static/js/evolution_data.js:1123
+#: static/js/evolution_data.js:1157
 msgid ""
 "Colonne « Ajouté » absente ou vide : les caches déjà connues par un "
 "export daté ne sont pas mises à jour"
 msgstr ""
 
-#: static/js/evolution_data.js:1124
+#: static/js/evolution_data.js:1158
 #, python-brace-format
 msgid ""
 "${n} lignes sans date d'export (colonne « Ajouté ») : elles ne mettent "
 "pas à jour les caches déjà connues par un export daté"
 msgstr ""
 
-#: static/js/evolution_data.js:1130
+#: static/js/evolution_data.js:1164
 #, python-brace-format
 msgid "Types non reconnus (couleur par défaut) : ${types}"
 msgstr ""
 
-#: static/js/evolution_data.js:1134
+#: static/js/evolution_data.js:1168
 #, python-brace-format
 msgid "Tailles non reconnues (gardées telles quelles) : ${sizes}"
 msgstr ""
 
-#: static/js/evolution_data.js:1141
+#: static/js/evolution_data.js:1175
 msgid "code GC"
 msgstr ""
 
-#: static/js/evolution_data.js:1142 static/js/labs.js:641 static/js/labs.js:785
+#: static/js/evolution_data.js:1176 static/js/labs.js:641 static/js/labs.js:785
 msgid "coordonnées"
 msgstr ""
 
-#: static/js/evolution_data.js:1143
+#: static/js/evolution_data.js:1177
 msgid "date de placement"
 msgstr ""
 
-#: static/js/evolution_data.js:1156
+#: static/js/evolution_data.js:1190
 msgid "Base vide : importez un export CSV."
 msgstr ""
 
-#: static/js/evolution_data.js:1160
+#: static/js/evolution_data.js:1194
 #, python-brace-format
 msgid "${n} caches"
 msgstr ""
 
-#: static/js/evolution_data.js:1161
+#: static/js/evolution_data.js:1195
 #, python-brace-format
 msgid "${n} actives"
 msgstr ""
 
-#: static/js/evolution_data.js:1162
+#: static/js/evolution_data.js:1196
 #, python-brace-format
 msgid "${n} archivées"
 msgstr ""
 
-#: static/js/evolution_data.js:1165
+#: static/js/evolution_data.js:1199
 #, python-brace-format
 msgid "${n} archivées sans date"
 msgstr ""
 
-#: static/js/evolution_data.js:1170
+#: static/js/evolution_data.js:1204
 #, python-brace-format
 msgid "placements du ${from} au ${to}"
 msgstr ""
 
-#: static/js/evolution_data.js:1174
+#: static/js/evolution_data.js:1208
 #, python-brace-format
 msgid "export du ${date}"
 msgstr ""
 
-#: static/js/evolution_data.js:1207
+#: static/js/evolution_data.js:1241
 #, python-brace-format
 msgid "${date} · ${file} : ${added} nouvelles, ${updated} mises à jour"
 msgstr ""
 
-#: static/js/evolution_data.js:1221 templates/menu_data_evolution.html:26
+#: static/js/evolution_data.js:1255 templates/menu_data_evolution.html:26
 msgid "Renommer la base"
 msgstr ""
 
-#: static/js/evolution_data.js:1221 templates/menu_data_evolution.html:22
+#: static/js/evolution_data.js:1255 templates/menu_data_evolution.html:22
 #: templates/modal_evolution.html:8
 msgid "Nouvelle base"
 msgstr ""
 
-#: static/js/evolution_data.js:1250
+#: static/js/evolution_data.js:1284
 msgid "Nom refusé"
 msgstr ""
 
-#: static/js/evolution_data.js:1263 static/js/evolution_data.js:1309
+#: static/js/evolution_data.js:1297 static/js/evolution_data.js:1343
 #, python-brace-format
 msgid "Erreur : ${message}"
 msgstr ""
 
-#: static/js/evolution_data.js:1284
+#: static/js/evolution_data.js:1318
 #, python-brace-format
 msgid ""
 "Supprimer la base « ${name} » et ses ${n} caches ? Les fichiers CSV "
 "d'origine ne sont pas touchés."
 msgstr ""
 
-#: static/js/evolution_data.js:1293
+#: static/js/evolution_data.js:1327
 msgid "Arrêtez l'animation avant de supprimer la base."
 msgstr ""
 
-#: static/js/evolution_data.js:1301
+#: static/js/evolution_data.js:1335
 msgid "Suppression impossible"
 msgstr ""
 
-#: static/js/evolution_data.js:1328
+#: static/js/evolution_data.js:1362
 msgid "Déposez vos exports CSV pour les ajouter à la base, ou une musique"
 msgstr ""
 
@@ -2016,7 +2016,7 @@ msgid ""
 msgstr ""
 
 #: static/js/labs.js:1722 templates/guide.html:224
-#: templates/menu_informations.html:99 templates/menu_stats.html:247
+#: templates/menu_informations.html:99 templates/menu_stats.html:275
 msgid "Position"
 msgstr ""
 
@@ -2033,7 +2033,7 @@ msgstr ""
 msgid "Date de découverte"
 msgstr ""
 
-#: static/js/labs.js:1767 templates/menu_stats.html:96
+#: static/js/labs.js:1767 templates/menu_stats.html:106
 msgid "Enregistrer"
 msgstr ""
 
@@ -2446,31 +2446,31 @@ msgstr ""
 msgid "Échec conversion canvas en blob"
 msgstr ""
 
-#: static/js/mapgl.js:5214 static/js/mapgl.js:5289
+#: static/js/mapgl.js:5220 static/js/mapgl.js:5295
 msgid "Aucun déplacement à tracer pour cette sélection."
 msgstr ""
 
-#: static/js/mapgl.js:5214 static/js/mapgl.js:5216 static/js/mapgl.js:5289
+#: static/js/mapgl.js:5220 static/js/mapgl.js:5222 static/js/mapgl.js:5295
 #: templates/guide.html:208 templates/menu_style.html:82
 msgid "Trajet"
 msgstr ""
 
-#: static/js/mapgl.js:5216
+#: static/js/mapgl.js:5222
 msgid ""
 "Journées très chargées : regroupement automatique appliqué sur le rayon "
 "choisi."
 msgstr ""
 
-#: static/js/mapgl.js:5802
+#: static/js/mapgl.js:5808
 msgid "Choisissez d’abord une forme de flash."
 msgstr ""
 
-#: static/js/mapgl.js:5802 static/js/mapgl.js:5806 templates/guide.html:204
+#: static/js/mapgl.js:5808 static/js/mapgl.js:5812 templates/guide.html:204
 #: templates/menu_style.html:79
 msgid "Flash"
 msgstr ""
 
-#: static/js/mapgl.js:5806
+#: static/js/mapgl.js:5812
 msgid ""
 "Aucune cache visible à l’écran : déplacez la carte au-dessus de vos "
 "points."
@@ -2680,7 +2680,7 @@ msgid "Aucun thème"
 msgstr ""
 
 #: static/js/profiles.js:958 static/js/profiles.js:2748
-#: static/js/stats_ui.js:151
+#: static/js/stats_ui.js:206
 msgid "Dupliquer"
 msgstr ""
 
@@ -2693,7 +2693,7 @@ msgstr ""
 msgid "Renommer"
 msgstr ""
 
-#: static/js/profiles.js:965 templates/app.html:223 templates/app.html:224
+#: static/js/profiles.js:965 templates/app.html:221 templates/app.html:222
 #: templates/guide.html:114 templates/guide.html:316 templates/guide.html:322
 #: templates/guide.html:456 templates/menu_animation.html:47
 #: templates/menu_data.html:189
@@ -2705,8 +2705,8 @@ msgid "Réinitialiser"
 msgstr ""
 
 #: static/js/profiles.js:967 static/js/recent_videos.js:60
-#: static/js/recent_videos.js:121 static/js/stats_ui.js:152
-#: static/js/stats_ui.js:640 templates/menu_style.html:272
+#: static/js/recent_videos.js:121 static/js/stats_ui.js:207
+#: static/js/stats_ui.js:730 templates/menu_style.html:272
 #: templates/modal_evolution.html:85
 msgid "Supprimer"
 msgstr ""
@@ -3015,265 +3015,328 @@ msgstr ""
 msgid "Non enregistré"
 msgstr ""
 
-#: static/js/stats_panels.js:331 templates/guide.html:350
+#: static/js/stats_panels.js:473 templates/guide.html:350
 #: templates/menu_stats.html:53
 msgid "Matrice D/T"
 msgstr ""
 
-#: static/js/stats_panels.js:332 templates/guide.html:351
+#: static/js/stats_panels.js:474 templates/guide.html:351
 #: templates/menu_stats.html:56
 msgid "Grille Jasmer"
 msgstr ""
 
-#: static/js/stats_panels.js:333 templates/guide.html:352
+#: static/js/stats_panels.js:475 templates/guide.html:352
 #: templates/menu_stats.html:57
 msgid "Calendrier 366"
 msgstr ""
 
-#: static/js/stats_panels.js:334 templates/menu_stats.html:72
+#: static/js/stats_panels.js:476 templates/menu_stats.html:80
 msgid "Types de caches"
 msgstr ""
 
-#: static/js/stats_panels.js:335 templates/menu_stats.html:73
+#: static/js/stats_panels.js:477 templates/menu_stats.html:81
 msgid "Tailles"
 msgstr ""
 
-#: static/js/stats_panels.js:336 templates/menu_stats.html:74
+#: static/js/stats_panels.js:478 templates/menu_stats.html:82
 msgid "Difficulté"
 msgstr ""
 
-#: static/js/stats_panels.js:337 templates/_filter_cache_attrs.html:92
-#: templates/_filter_cache_attrs.html:93 templates/menu_stats.html:75
+#: static/js/stats_panels.js:479 templates/_filter_cache_attrs.html:92
+#: templates/_filter_cache_attrs.html:93 templates/menu_stats.html:83
 msgid "Terrain"
 msgstr ""
 
-#: static/js/stats_panels.js:338 templates/menu_stats.html:76
+#: static/js/stats_panels.js:480 templates/menu_stats.html:84
 msgid "Trouvailles par année"
 msgstr ""
 
-#: static/js/stats_panels.js:339 templates/menu_stats.html:77
+#: static/js/stats_panels.js:481 templates/menu_stats.html:85
 msgid "Trouvailles par mois"
 msgstr ""
 
-#: static/js/stats_panels.js:340 templates/menu_stats.html:78
+#: static/js/stats_panels.js:482 templates/menu_stats.html:86
 msgid "Jours de la semaine"
 msgstr ""
 
-#: static/js/stats_panels.js:341 templates/menu_stats.html:81
+#: static/js/stats_panels.js:483 templates/menu_stats.html:89
 msgid "Attributs"
 msgstr ""
 
-#: static/js/stats_panels.js:342 templates/menu_stats.html:82
+#: static/js/stats_panels.js:484 templates/menu_stats.html:90
 msgid "Propriétaires"
 msgstr ""
 
-#: static/js/stats_panels.js:343 static/js/stats_panels.js:445
+#: static/js/stats_panels.js:485 static/js/stats_panels.js:595
 #: templates/_filter_country_state.html:6
-#: templates/_filter_country_state.html:7 templates/menu_stats.html:79
-#: templates/menu_stats.html:207
+#: templates/_filter_country_state.html:7 templates/menu_stats.html:87
+#: templates/menu_stats.html:229
 msgid "Pays"
 msgstr ""
 
-#: static/js/stats_panels.js:344 static/js/stats_panels.js:446
-#: templates/menu_stats.html:80 templates/menu_stats.html:207
+#: static/js/stats_panels.js:486 static/js/stats_panels.js:596
+#: templates/menu_stats.html:88 templates/menu_stats.html:230
 msgid "Régions"
 msgstr ""
 
-#: static/js/stats_panels.js:345 templates/guide.html:355
-#: templates/menu_stats.html:64
+#: static/js/stats_panels.js:487 templates/menu_stats.html:92
+msgid "Départements"
+msgstr ""
+
+#: static/js/stats_panels.js:488 templates/menu_stats.html:91
+msgid "Statut des caches"
+msgstr ""
+
+#: static/js/stats_panels.js:489 static/js/stats_panels.js:512
+#: static/js/stats_panels.js:599 templates/menu_stats.html:181
+#: templates/menu_stats.html:233
+msgid "Caches actives"
+msgstr ""
+
+#: static/js/stats_panels.js:490 templates/menu_stats.html:182
+msgid "Poses cumulées"
+msgstr ""
+
+#: static/js/stats_panels.js:491 templates/menu_stats.html:183
+msgid "Archivages cumulés"
+msgstr ""
+
+#: static/js/stats_panels.js:492 templates/guide.html:355
+#: templates/menu_stats.html:67
 msgid "Progression des trouvailles"
 msgstr ""
 
-#: static/js/stats_panels.js:346 templates/guide.html:356
-#: templates/menu_stats.html:63
+#: static/js/stats_panels.js:493 templates/guide.html:356
+#: templates/menu_stats.html:66
 msgid "Chiffres clés"
 msgstr ""
 
-#: static/js/stats_panels.js:352 static/js/stats_panels.js:359
+#: static/js/stats_panels.js:499 static/js/stats_panels.js:506
 #: templates/_filter_cache_attrs.html:30
 msgid "Autres"
 msgstr ""
 
-#: static/js/stats_panels.js:353
+#: static/js/stats_panels.js:500
 msgid "Inconnu"
 msgstr ""
 
-#: static/js/stats_panels.js:369
+#: static/js/stats_panels.js:512 static/js/stats_panels.js:601
+#: templates/menu_stats.html:235
+msgid "Caches archivées"
+msgstr ""
+
+#: static/js/stats_panels.js:519
 #, python-brace-format
 msgid "Sans D/T : ${n}"
 msgstr ""
 
-#: static/js/stats_panels.js:370
+#: static/js/stats_panels.js:520
 #, python-brace-format
 msgid "Sans difficulté : ${n}"
 msgstr ""
 
-#: static/js/stats_panels.js:371
+#: static/js/stats_panels.js:521
 #, python-brace-format
 msgid "Sans terrain : ${n}"
 msgstr ""
 
-#: static/js/stats_panels.js:372
+#: static/js/stats_panels.js:522
 #, python-brace-format
 msgid "Sans date de publication : ${n}"
 msgstr ""
 
-#: static/js/stats_panels.js:374
+#: static/js/stats_panels.js:524
 #, python-brace-format
 msgid "Sans date de trouvaille : ${n}"
 msgstr ""
 
-#: static/js/stats_panels.js:375
+#: static/js/stats_panels.js:525
 #, python-brace-format
 msgid "Sans attribut : ${n}"
 msgstr ""
 
-#: static/js/stats_panels.js:376
+#: static/js/stats_panels.js:526
 #, python-brace-format
 msgid "Sans date : ${n}"
 msgstr ""
 
-#: static/js/stats_panels.js:381
+#: static/js/stats_panels.js:531
 #, python-brace-format
 msgid "Combinaisons : ${filled}/${available}"
 msgstr ""
 
-#: static/js/stats_panels.js:382
+#: static/js/stats_panels.js:532
 #, python-brace-format
 msgid "Mois : ${filled}/${available}"
 msgstr ""
 
-#: static/js/stats_panels.js:383
+#: static/js/stats_panels.js:533
 #, python-brace-format
 msgid "Jours : ${filled}/${available}"
 msgstr ""
 
-#: static/js/stats_panels.js:441 templates/menu_stats.html:205
+#: static/js/stats_panels.js:591 templates/menu_stats.html:225
 msgid "Jours avec trouvaille"
 msgstr ""
 
-#: static/js/stats_panels.js:442 templates/menu_stats.html:205
+#: static/js/stats_panels.js:592 templates/menu_stats.html:226
 msgid "Record sur une journée"
 msgstr ""
 
-#: static/js/stats_panels.js:443 templates/menu_stats.html:206
+#: static/js/stats_panels.js:593 templates/menu_stats.html:227
 msgid "Plus longue série (jours)"
 msgstr ""
 
-#: static/js/stats_panels.js:444 templates/menu_stats.html:206
+#: static/js/stats_panels.js:594 templates/menu_stats.html:228
 msgid "Types de caches différents"
 msgstr ""
 
-#: static/js/stats_panels.js:447 templates/menu_stats.html:208
+#: static/js/stats_panels.js:597 templates/menu_stats.html:231
 msgid "Attributs différents"
 msgstr ""
 
-#: static/js/stats_panels.js:448 templates/menu_stats.html:208
+#: static/js/stats_panels.js:598 templates/menu_stats.html:232
 msgid "Propriétaires différents"
 msgstr ""
 
-#: static/js/stats_panels.js:552
+#: static/js/stats_panels.js:600 templates/menu_stats.html:234
+msgid "Caches posées"
+msgstr ""
+
+#: static/js/stats_panels.js:602 templates/menu_stats.html:236
+msgid "Pic de caches actives"
+msgstr ""
+
+#: static/js/stats_panels.js:707
 msgid "trouvailles"
 msgstr ""
 
-#: static/js/stats_panels.js:699
+#: static/js/stats_panels.js:967
 #, python-brace-format
 msgid "${n} trouvailles au ${date}"
 msgstr ""
 
-#: static/js/stats_panels.js:717
+#: static/js/stats_panels.js:985
+msgid "Aucune cache"
+msgstr ""
+
+#: static/js/stats_panels.js:985
 msgid "Aucune trouvaille"
 msgstr ""
 
-#: static/js/stats_panels.js:940 templates/menu_informations.html:57
+#: static/js/stats_panels.js:1262
+msgid "Chiffre"
+msgstr ""
+
+#: static/js/stats_panels.js:1262
+msgid "Valeur"
+msgstr ""
+
+#: static/js/stats_panels.js:1262 templates/menu_animation.html:189
+msgid "Détail"
+msgstr ""
+
+#: static/js/stats_panels.js:1269 templates/menu_informations.html:57
 #: templates/menu_informations.html:81
 msgid "Date"
 msgstr ""
 
-#: static/js/stats_panels.js:940 templates/menu_informations.html:61
+#: static/js/stats_panels.js:1269 templates/menu_informations.html:61
 #: templates/menu_informations.html:83
 msgid "Total"
 msgstr ""
 
-#: static/js/stats_panels.js:943
-msgid "Case"
-msgstr ""
-
-#: static/js/stats_panels.js:943 static/js/stats_panels.js:955
-msgid "Nombre"
-msgstr ""
-
-#: static/js/stats_panels.js:955
+#: static/js/stats_panels.js:1274
 msgid "Catégorie"
 msgstr ""
 
-#: static/js/stats_panels.js:955 templates/menu_informations.html:84
+#: static/js/stats_panels.js:1274
+msgid "Nombre"
+msgstr ""
+
+#: static/js/stats_panels.js:1274 templates/menu_informations.html:84
 msgid "Pourcentage"
 msgstr ""
 
-#: static/js/stats_ui.js:133
+#: static/js/stats_ui.js:178
 msgid "Afficher ce panneau"
 msgstr ""
 
-#: static/js/stats_ui.js:149
+#: static/js/stats_ui.js:197
+msgid "Pas affiché dans ce mode"
+msgstr ""
+
+#: static/js/stats_ui.js:204
 msgid "Monter"
 msgstr ""
 
-#: static/js/stats_ui.js:150
+#: static/js/stats_ui.js:205
 msgid "Descendre"
 msgstr ""
 
-#: static/js/stats_ui.js:181
+#: static/js/stats_ui.js:217
+msgid ""
+"Aucun panneau. Commencez par un modèle : les chiffres de la chronologie, "
+"par exemple, comptent actives, poses et archivages."
+msgstr ""
+
+#: static/js/stats_ui.js:218 templates/menu_stats.html:99
+msgid ""
+"Aucun panneau. Commencez par un modèle : la matrice D/T, par exemple, se "
+"remplit case par case au fil de vos trouvailles."
+msgstr ""
+
+#: static/js/stats_ui.js:241
 #, python-brace-format
 msgid "${n} places requises"
 msgstr ""
 
-#: static/js/stats_ui.js:228
+#: static/js/stats_ui.js:288
 #, python-brace-format
 msgid "« ${name} » supprimé"
 msgstr ""
 
-#: static/js/stats_ui.js:678
+#: static/js/stats_ui.js:768
 #, python-brace-format
 msgid "Configuration « ${name} » enregistrée"
 msgstr ""
 
-#: static/js/stats_ui.js:691
+#: static/js/stats_ui.js:782
 #, python-brace-format
 msgid "Configuration « ${name} » appliquée"
 msgstr ""
 
-#: static/js/stats_ui.js:710
+#: static/js/stats_ui.js:801
 #, python-brace-format
 msgid "« ${name} » supprimée"
 msgstr ""
 
-#: static/js/stats_ui.js:751
+#: static/js/stats_ui.js:842
 #, python-brace-format
 msgid "« ${name} » dépasse de la carte : réduisez sa largeur ou changez de coin."
 msgstr ""
 
-#: static/js/stats_ui.js:753
+#: static/js/stats_ui.js:844
 msgid "le titre"
 msgstr ""
 
-#: static/js/stats_ui.js:753
+#: static/js/stats_ui.js:844
 msgid "les infos"
 msgstr ""
 
-#: static/js/stats_ui.js:754
+#: static/js/stats_ui.js:845
 #, python-brace-format
 msgid "« ${name} » chevauche ${other}."
 msgstr ""
 
-#: static/js/stats_ui.js:757
+#: static/js/stats_ui.js:848
 #, python-brace-format
 msgid ""
 "« ${name} » chevauche « ${other} » : changez de coin ou réduisez une "
 "largeur."
 msgstr ""
 
-#: static/js/stats_ui.js:769
+#: static/js/stats_ui.js:860
 msgid "Réorganiser automatiquement"
 msgstr ""
 
@@ -3399,7 +3462,7 @@ msgstr ""
 msgid "Écouter la fin"
 msgstr ""
 
-#: static/js/ui.js:725 templates/app.html:232 templates/app.html:233
+#: static/js/ui.js:725 templates/app.html:230 templates/app.html:231
 #: templates/guide.html:114 templates/guide.html:317
 #: templates/menu_animation.html:57
 msgid "Arrêter"
@@ -4189,7 +4252,7 @@ msgid "Guide"
 msgstr ""
 
 #: templates/app.html:80 templates/guide.html:211 templates/guide.html:388
-#: templates/menu_options.html:30 templates/menu_stats.html:293
+#: templates/menu_options.html:30 templates/menu_stats.html:321
 #: templates/menu_trail.html:94
 msgid "Apparence"
 msgstr ""
@@ -4275,57 +4338,57 @@ msgstr ""
 msgid "Animation & vidéo"
 msgstr ""
 
-#: templates/app.html:213 templates/guide.html:56 templates/guide.html:341
+#: templates/app.html:212 templates/guide.html:56 templates/guide.html:341
 #: templates/guide.html:343
 msgid "Stats"
 msgstr ""
 
-#: templates/app.html:215 templates/guide.html:59 templates/guide.html:102
+#: templates/app.html:213 templates/guide.html:59 templates/guide.html:102
 #: templates/guide.html:109 templates/guide.html:378 templates/guide.html:380
 msgid "Préférences"
 msgstr ""
 
-#: templates/app.html:215 templates/menu_informations.html:10
+#: templates/app.html:213 templates/menu_informations.html:10
 msgid "Réglages"
 msgstr ""
 
-#: templates/app.html:219 templates/app.html:220 templates/guide.html:114
+#: templates/app.html:217 templates/app.html:218 templates/guide.html:114
 #: templates/guide.html:315 templates/guide.html:322
 #: templates/menu_animation.html:44 templates/menu_data.html:247
 msgid "Prévisualiser"
 msgstr ""
 
-#: templates/app.html:227 templates/app.html:228 templates/app.html:229
+#: templates/app.html:225 templates/app.html:226 templates/app.html:227
 #: templates/guide.html:114 templates/guide.html:317
 #: templates/menu_animation.html:53 templates/menu_animation.html:54
 msgid "Pause"
 msgstr ""
 
-#: templates/app.html:228 templates/menu_animation.html:53
+#: templates/app.html:226 templates/menu_animation.html:53
 msgid "Continuer"
 msgstr ""
 
-#: templates/app.html:240
+#: templates/app.html:238
 msgid "Disposition carte / réglages"
 msgstr ""
 
-#: templates/app.html:242 templates/app.html:243
+#: templates/app.html:240 templates/app.html:241
 msgid "Grande carte"
 msgstr ""
 
-#: templates/app.html:247 templates/app.html:248
+#: templates/app.html:245 templates/app.html:246
 msgid "Disposition équilibrée"
 msgstr ""
 
-#: templates/app.html:252 templates/app.html:253
+#: templates/app.html:250 templates/app.html:251
 msgid "Grands réglages"
 msgstr ""
 
-#: templates/app.html:257 templates/app.html:258
+#: templates/app.html:255 templates/app.html:256
 msgid "Panneau latéral"
 msgstr ""
 
-#: templates/app.html:267 templates/app.html:268 templates/guide.html:318
+#: templates/app.html:265 templates/app.html:266 templates/guide.html:318
 msgid "Plein écran"
 msgstr ""
 
@@ -4786,7 +4849,7 @@ msgstr ""
 
 #: templates/guide.html:223 templates/menu_informations.html:22
 #: templates/menu_informations.html:45 templates/menu_informations.html:46
-#: templates/menu_stats.html:122
+#: templates/menu_stats.html:132
 msgid "Titre"
 msgstr ""
 
@@ -4804,7 +4867,7 @@ msgid "Réglez le"
 msgstr ""
 
 #: templates/guide.html:224 templates/menu_informations.html:96
-#: templates/menu_informations.html:237 templates/menu_stats.html:300
+#: templates/menu_informations.html:237 templates/menu_stats.html:328
 msgid "Texte"
 msgstr ""
 
@@ -5350,7 +5413,7 @@ msgid ""
 msgstr ""
 
 #: templates/guide.html:305 templates/menu_recording.html:46
-#: templates/menu_stats.html:312
+#: templates/menu_stats.html:340
 msgid "Couleurs"
 msgstr ""
 
@@ -5524,6 +5587,13 @@ msgstr ""
 
 #: templates/guide.html:343
 msgid "enregistré automatiquement quel que soit le thème."
+msgstr ""
+
+#: templates/guide.html:343
+msgid ""
+"En mode Évolution, des panneaux dédiés comptent les caches posées, "
+"archivées et présentes à la date affichée, indépendamment des panneaux "
+"des trouvailles."
 msgstr ""
 
 #: templates/guide.html:347
@@ -6104,10 +6174,6 @@ msgstr ""
 
 #: templates/menu_animation.html:184
 msgid "Préréglage global, indépendant du thème."
-msgstr ""
-
-#: templates/menu_animation.html:189
-msgid "Détail"
 msgstr ""
 
 #: templates/menu_animation.html:190
@@ -6948,7 +7014,7 @@ msgstr ""
 msgid "À droite"
 msgstr ""
 
-#: templates/menu_informations.html:164 templates/menu_stats.html:296
+#: templates/menu_informations.html:164 templates/menu_stats.html:324
 msgid "Fond"
 msgstr ""
 
@@ -7009,19 +7075,19 @@ msgstr ""
 msgid "Emplacement"
 msgstr ""
 
-#: templates/menu_informations.html:275 templates/menu_stats.html:253
+#: templates/menu_informations.html:275 templates/menu_stats.html:281
 msgid "En haut à gauche"
 msgstr ""
 
-#: templates/menu_informations.html:276 templates/menu_stats.html:253
+#: templates/menu_informations.html:276 templates/menu_stats.html:281
 msgid "En haut à droite"
 msgstr ""
 
-#: templates/menu_informations.html:277 templates/menu_stats.html:255
+#: templates/menu_informations.html:277 templates/menu_stats.html:283
 msgid "En bas à gauche"
 msgstr ""
 
-#: templates/menu_informations.html:278 templates/menu_stats.html:255
+#: templates/menu_informations.html:278 templates/menu_stats.html:283
 msgid "En bas à droite"
 msgstr ""
 
@@ -7587,287 +7653,323 @@ msgstr ""
 msgid "Course des pays"
 msgstr ""
 
+#: templates/menu_stats.html:61
+msgid "Chiffres + activité"
+msgstr ""
+
 #: templates/menu_stats.html:62
-msgid "Panneau seul"
+msgid "Actives et archivées"
+msgstr ""
+
+#: templates/menu_stats.html:63
+msgid "Pays + départements"
 msgstr ""
 
 #: templates/menu_stats.html:65
-msgid "Anneau des types"
-msgstr ""
-
-#: templates/menu_stats.html:66
-msgid "Anneau des tailles"
-msgstr ""
-
-#: templates/menu_stats.html:67
-msgid "Anneau des pays"
+msgid "Panneau seul"
 msgstr ""
 
 #: templates/menu_stats.html:68
-msgid "Anneau des attributs"
+msgid "Courbe des caches actives"
 msgstr ""
 
 #: templates/menu_stats.html:69
-msgid "Anneau des propriétaires"
+msgid "Courbe des poses cumulées"
+msgstr ""
+
+#: templates/menu_stats.html:70
+msgid "Courbe des archivages cumulés"
 msgstr ""
 
 #: templates/menu_stats.html:71
+msgid "Anneau des types"
+msgstr ""
+
+#: templates/menu_stats.html:72
+msgid "Anneau des tailles"
+msgstr ""
+
+#: templates/menu_stats.html:73
+msgid "Anneau des pays"
+msgstr ""
+
+#: templates/menu_stats.html:74
+msgid "Anneau des attributs"
+msgstr ""
+
+#: templates/menu_stats.html:75
+msgid "Anneau des propriétaires"
+msgstr ""
+
+#: templates/menu_stats.html:76
+msgid "Anneau du statut"
+msgstr ""
+
+#: templates/menu_stats.html:77
+msgid "Anneau des départements"
+msgstr ""
+
+#: templates/menu_stats.html:79
 msgid "Histogramme seul"
 msgstr ""
 
-#: templates/menu_stats.html:89
-msgid ""
-"Aucun panneau. Commencez par un modèle : la matrice D/T, par exemple, se "
-"remplit case par case au fil de vos trouvailles."
-msgstr ""
-
-#: templates/menu_stats.html:91
+#: templates/menu_stats.html:101
 msgid "Panneaux de statistiques"
 msgstr ""
 
-#: templates/menu_stats.html:94 templates/menu_stats.html:95
+#: templates/menu_stats.html:104 templates/menu_stats.html:105
 msgid "Nom de la configuration"
 msgstr ""
 
-#: templates/menu_stats.html:101
+#: templates/menu_stats.html:111
 msgid "Six panneaux au maximum."
 msgstr ""
 
-#: templates/menu_stats.html:111
+#: templates/menu_stats.html:121
 msgid "Panneau sélectionné"
 msgstr ""
 
-#: templates/menu_stats.html:115
+#: templates/menu_stats.html:125
 msgid "Contenu"
 msgstr ""
 
-#: templates/menu_stats.html:118
+#: templates/menu_stats.html:128
 msgid "Statistique"
 msgstr ""
 
-#: templates/menu_stats.html:128
+#: templates/menu_stats.html:138
 msgid "Afficher le titre"
 msgstr ""
 
-#: templates/menu_stats.html:134
+#: templates/menu_stats.html:144
 msgid "Cases"
 msgstr ""
 
-#: templates/menu_stats.html:136 templates/menu_stats.html:154
+#: templates/menu_stats.html:146 templates/menu_stats.html:164
 msgid "Nombre de trouvailles"
 msgstr ""
 
-#: templates/menu_stats.html:137
+#: templates/menu_stats.html:147
 msgid "Intensité de couleur"
 msgstr ""
 
-#: templates/menu_stats.html:138
+#: templates/menu_stats.html:148
 msgid "Remplie ou vide"
 msgstr ""
 
-#: templates/menu_stats.html:140
+#: templates/menu_stats.html:150
 msgid ""
 "« Remplie ou vide » montre seulement les cases déjà obtenues, comme une "
 "grille de défi."
 msgstr ""
 
-#: templates/menu_stats.html:145
+#: templates/menu_stats.html:155
 msgid "Afficher le nombre de cases remplies"
 msgstr ""
 
-#: templates/menu_stats.html:151
+#: templates/menu_stats.html:161
 msgid "Ordre"
 msgstr ""
 
-#: templates/menu_stats.html:153
+#: templates/menu_stats.html:163
 msgid "Ordre naturel"
 msgstr ""
 
-#: templates/menu_stats.html:155
+#: templates/menu_stats.html:165
 msgid "Alphabétique"
 msgstr ""
 
-#: templates/menu_stats.html:156
+#: templates/menu_stats.html:166
 msgid "Course (les lignes se doublent)"
 msgstr ""
 
-#: templates/menu_stats.html:158
+#: templates/menu_stats.html:168
 msgid ""
 "L'ordre est fixé sur les totaux de fin d'animation : les lignes ne "
 "changent pas de place pendant la lecture. En « Course », elles se "
 "doublent au fil des trouvailles."
 msgstr ""
 
-#: templates/menu_stats.html:161
+#: templates/menu_stats.html:171
 msgid "Barres"
 msgstr ""
 
-#: templates/menu_stats.html:163
+#: templates/menu_stats.html:173
 msgid "Horizontales"
 msgstr ""
 
-#: templates/menu_stats.html:164
+#: templates/menu_stats.html:174
 msgid "Verticales"
 msgstr ""
 
-#: templates/menu_stats.html:168
-msgid "Lignes au maximum"
+#: templates/menu_stats.html:179
+msgid "Compter"
 msgstr ""
 
-#: templates/menu_stats.html:170
-msgid "Les catégories suivantes sont regroupées dans « Autres »."
-msgstr ""
-
-#: templates/menu_stats.html:175
-msgid "Masquer les lignes vides"
-msgstr ""
-
-#: templates/menu_stats.html:181
-msgid "Trou central"
-msgstr ""
-
-#: templates/menu_stats.html:183
-msgid "À 0 %, l'anneau devient un camembert."
+#: templates/menu_stats.html:185
+msgid ""
+"Ensemble compté : les caches présentes à la date affichée, ou le cumul "
+"des poses et des archivages."
 msgstr ""
 
 #: templates/menu_stats.html:188
+msgid "Lignes au maximum"
+msgstr ""
+
+#: templates/menu_stats.html:190
+msgid "Les catégories suivantes sont regroupées dans « Autres »."
+msgstr ""
+
+#: templates/menu_stats.html:195
+msgid "Masquer les lignes vides"
+msgstr ""
+
+#: templates/menu_stats.html:201
+msgid "Trou central"
+msgstr ""
+
+#: templates/menu_stats.html:203
+msgid "À 0 %, l'anneau devient un camembert."
+msgstr ""
+
+#: templates/menu_stats.html:208
 msgid "Afficher la légende"
 msgstr ""
 
-#: templates/menu_stats.html:196
+#: templates/menu_stats.html:216
 msgid "Remplir sous la courbe"
 msgstr ""
 
-#: templates/menu_stats.html:202
+#: templates/menu_stats.html:222
 msgid "Chiffres affichés"
 msgstr ""
 
-#: templates/menu_stats.html:215
+#: templates/menu_stats.html:243
 msgid "Au moins un chiffre : décocher le dernier n'a pas d'effet."
 msgstr ""
 
-#: templates/menu_stats.html:218
+#: templates/menu_stats.html:246
 msgid "Colonnes"
 msgstr ""
 
-#: templates/menu_stats.html:229
+#: templates/menu_stats.html:257
 msgid "Afficher les nombres"
 msgstr ""
 
-#: templates/menu_stats.html:233
+#: templates/menu_stats.html:261
 msgid "Afficher les pourcentages"
 msgstr ""
 
-#: templates/menu_stats.html:237
+#: templates/menu_stats.html:265
 msgid "Surligner pendant l'animation"
 msgstr ""
 
-#: templates/menu_stats.html:239
+#: templates/menu_stats.html:267
 msgid "Les nouveautés (case ou catégorie obtenue)"
 msgstr ""
 
-#: templates/menu_stats.html:240
+#: templates/menu_stats.html:268
 msgid "Chaque trouvaille"
 msgstr ""
 
-#: templates/menu_stats.html:241
+#: templates/menu_stats.html:269
 msgid "Rien"
 msgstr ""
 
-#: templates/menu_stats.html:250
+#: templates/menu_stats.html:278
 msgid "Coin d'ancrage"
 msgstr ""
 
-#: templates/menu_stats.html:253
+#: templates/menu_stats.html:281
 msgid "En haut au centre"
 msgstr ""
 
-#: templates/menu_stats.html:254
+#: templates/menu_stats.html:282
 msgid "Au milieu à gauche"
 msgstr ""
 
-#: templates/menu_stats.html:254
+#: templates/menu_stats.html:282
 msgid "Au centre"
 msgstr ""
 
-#: templates/menu_stats.html:254
+#: templates/menu_stats.html:282
 msgid "Au milieu à droite"
 msgstr ""
 
-#: templates/menu_stats.html:255
+#: templates/menu_stats.html:283
 msgid "En bas au centre"
 msgstr ""
 
-#: templates/menu_stats.html:267
+#: templates/menu_stats.html:295
 msgid "Marge horizontale (px)"
 msgstr ""
 
-#: templates/menu_stats.html:271
+#: templates/menu_stats.html:299
 msgid "Marge verticale (px)"
 msgstr ""
 
-#: templates/menu_stats.html:275
+#: templates/menu_stats.html:303
 msgid "Largeur (px)"
 msgstr ""
 
-#: templates/menu_stats.html:279
+#: templates/menu_stats.html:307
 msgid ""
 "Les panneaux qui partagent un coin s'empilent automatiquement et "
 "contournent le titre et les infos ; la marge verticale sert alors "
 "d'espacement avec le panneau précédent."
 msgstr ""
 
-#: templates/menu_stats.html:284
+#: templates/menu_stats.html:312
 msgid "Position libre : ce panneau a été glissé sur la carte."
 msgstr ""
 
-#: templates/menu_stats.html:285
+#: templates/menu_stats.html:313
 msgid "Revenir au coin d'ancrage"
 msgstr ""
 
-#: templates/menu_stats.html:287
+#: templates/menu_stats.html:315
 msgid ""
 "Tant que cet onglet est ouvert, vous pouvez glisser un panneau sur la "
 "carte pour le placer librement."
 msgstr ""
 
-#: templates/menu_stats.html:304 templates/menu_stats.html:316
+#: templates/menu_stats.html:332 templates/menu_stats.html:344
 msgid "Couleur principale"
 msgstr ""
 
-#: templates/menu_stats.html:308
+#: templates/menu_stats.html:336
 msgid "Opacité du fond"
 msgstr ""
 
-#: templates/menu_stats.html:314
+#: templates/menu_stats.html:342
 msgid "Couleurs des types de caches"
 msgstr ""
 
-#: templates/menu_stats.html:315
+#: templates/menu_stats.html:343
 msgid "Une couleur par catégorie"
 msgstr ""
 
-#: templates/menu_stats.html:317
+#: templates/menu_stats.html:345
 msgid "Dégradé selon le nombre"
 msgstr ""
 
-#: templates/menu_stats.html:321
+#: templates/menu_stats.html:349
 msgid "Taille du texte"
 msgstr ""
 
-#: templates/menu_stats.html:325
+#: templates/menu_stats.html:353
 msgid "Arrondi"
 msgstr ""
 
-#: templates/menu_stats.html:331
+#: templates/menu_stats.html:359
 msgid "Police de la cartouche d'infos"
 msgstr ""
 
-#: templates/menu_stats.html:339
+#: templates/menu_stats.html:367
 msgid "Image (PNG)"
 msgstr ""
 
-#: templates/menu_stats.html:342
+#: templates/menu_stats.html:370
 msgid "Valeurs (CSV)"
 msgstr ""
 

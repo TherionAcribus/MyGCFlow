@@ -209,9 +209,7 @@
                     <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#data" role="tab" aria-selected="true">{{ _("Données") }}<span id="dataTabBadge" class="data-tab-badge" style="display:none;"></span></a></li>
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#style" role="tab" aria-selected="false">{{ _("Style") }}</a></li>
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#animation" role="tab" aria-selected="false"><span class="tab-label-full">{{ _("Animation & vidéo") }}</span><span class="tab-label-short">{{ _("Animation") }}</span></a></li>
-                    {% if mode != 'evolution' %}
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#stats" role="tab" aria-selected="false">{{ _("Stats") }}</a></li>
-                    {% endif %}
                     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#settings" role="tab" aria-selected="false"><span class="tab-label-full">{{ _("Préférences") }}</span><span class="tab-label-short">{{ _("Réglages") }}</span></a></li>
                 </ul>
                 <div id="quickActions">
@@ -289,9 +287,7 @@
                         {% include 'menu_animation.html' %}
 
                         <!-- Onglet Stats (mode principal seulement) -->
-                        {% if mode != 'evolution' %}
                         {% include 'menu_stats.html' %}
-                        {% endif %}
 
                         <!-- Onglet Préférences -->
                         {% include 'menu_options.html' %}

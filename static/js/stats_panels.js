@@ -21,8 +21,10 @@ import * as pkg from './index.js';
 import { isEvolutionPage } from './app_mode.mjs';
 import {
     DT_LABELS,
+    EVOLUTION_METRICS_BY_KIND,
     OTHERS_KEY,
     STATS_DEFAULTS,
+    STATS_METRICS_BY_KIND,
     UNKNOWN_KEY,
     barModel,
     counterValues,
@@ -30,6 +32,11 @@ import {
     createStatsAccumulator,
     createTweenStore,
     dayNumberOfDate,
+    evolutionActivePeaks,
+    evolutionCounterValues,
+    evolutionLineModel,
+    evolutionStateAt,
+    evolutionStatusAcc,
     featuresUpTo,
     gridModel,
     hasActiveHighlights,
@@ -55,6 +62,14 @@ let current = createStatsAccumulator();
 let animation = null;   // { startDate, endDate, lastDate, highlightMs }
 let lastNow = Number.NaN;
 let highlightWasActive = false;
+
+// Mode Évolution : accumulateur à trois univers (actives / placées /
+// archivées), alimenté par les événements de la chronologie ; le jour
+// appliqué est un index depuis l'origin du jeu (evolution_timeline.mjs).
+let evoCurrent = null;
+let evoAppliedDay = null;
+let evoRestMemo = null;      // { key, acc } — état des trois univers au repos
+let evoPeaksMemo = null;     // { key, ref } — pics de l'ensemble actif (échelle)
 
 // Valeurs animées (barres, parts d'anneau, compteurs, tête de courbe) : elles
 // glissent vers leur cible à l'horloge des points, immédiates au repos.
@@ -104,17 +119,27 @@ export function applyStatsSettings(raw) {
     // localement la liste des panneaux que le serveur aurait conservée.
     settings = normalizeStatsSettings(raw, settings);
     settingsRev += 1;
-    const nextMetrics = metricsForPanels(settings);
+    const evolution = isEvolutionPage();
+    const nextMetrics = metricsForPanels(settings, { evolution });
     const nextKey = [...nextMetrics].sort().join(',');
     if (nextKey !== metricsKey) {
         metrics = nextMetrics;
         metricsKey = nextKey;
         totalsMemo = null;
         referenceMemo = null;
+        evoRestMemo = null;
+        evoPeaksMemo = null;
         // Métrique ajoutée en pleine animation : l'accumulateur est reconstruit
         // jusqu'au dernier jour affiché, sans relancer l'animation.
-        if (mode === 'animating') rebuildCurrent();
-        else current = createStatsAccumulator(metrics);
+        if (mode === 'animating') {
+            if (evolution && evolutionIndex()) {
+                evoCurrent = evolutionStateAt(evolutionIndex(), metrics, evoAppliedDay ?? -1);
+            } else if (!evolution) {
+                rebuildCurrent();
+            }
+        } else if (!evolution) {
+            current = createStatsAccumulator(metrics);
+        }
     }
     videoCache.clear();
     fontFamilyCache = null;
@@ -123,9 +148,26 @@ export function applyStatsSettings(raw) {
 }
 
 function visiblePanels() {
-    if (!settings.enabled || isEvolutionPage()) return [];
+    if (!settings.enabled) return [];
+    // Une liste par mode (stats.panels / stats.evolution_panels) ; le filtre
+    // par registre masque un éventuel panneau à métrique étrangère, gardé
+    // tel quel dans sa liste (badge « autre mode » côté stats_ui).
+    if (isEvolutionPage()) {
+        if (!evolutionIndex()) return [];
+        return (settings.evolution_panels || []).filter((panel) => panel.enabled
+            && STATS_RENDERERS[panel.kind]
+            && (EVOLUTION_METRICS_BY_KIND[panel.kind] || []).includes(panel.metric));
+    }
     if (!(pkg.hasDatabase?.() ?? false)) return [];
-    return settings.panels.filter((panel) => panel.enabled && STATS_RENDERERS[panel.kind]);
+    return (settings.panels || []).filter((panel) => panel.enabled && STATS_RENDERERS[panel.kind]
+        && (STATS_METRICS_BY_KIND[panel.kind] || []).includes(panel.metric));
+}
+
+// Index de la sélection Évolution (chronologie + features + révision), ou
+// null tant qu'aucune base n'est ouverte — evolution_data.js ›
+// evolutionStatsIndex.
+function evolutionIndex() {
+    return pkg.evolutionStatsIndex?.() || null;
 }
 
 // ---------------------------------------------------------------------------
@@ -186,6 +228,72 @@ function featuresOfDates(dates) {
     return out;
 }
 
+// --- Mode Évolution ------------------------------------------------------------
+//
+// État des trois univers au jour de repos (fin de plage affichée) — l'échelle
+// des cumuls placées/archivées, l'état de l'ensemble actif au repos et les
+// catégories distinctes des compteurs.
+function evolutionRestAcc() {
+    const index = evolutionIndex();
+    if (!index) return null;
+    // restDay dépend de la date de fin choisie (onglet Animation), pas de la
+    // révision des données : il fait partie de la clé, sinon l'état calculé
+    // avant le changement de borne resterait servi indéfiniment.
+    const key = `${index.revision}|${index.restDay}|${metricsKey}`;
+    if (evoRestMemo?.key !== key) {
+        evoRestMemo = { key, acc: evolutionStateAt(index, metrics, index.restDay) };
+    }
+    return evoRestMemo.acc;
+}
+
+// Référence « échelle fixe » de l'univers actif : maximum de chaque clé sur
+// toute la plage (les barres ne changent pas d'échelle quand l'ensemble fond).
+function evolutionActivePeaksRef() {
+    const index = evolutionIndex();
+    if (!index) return null;
+    const key = `${index.revision}|${index.restDay}|${metricsKey}`;
+    if (evoPeaksMemo?.key !== key) {
+        evoPeaksMemo = { key, ref: evolutionActivePeaks(index, metrics, index.restDay) };
+    }
+    return evoPeaksMemo.ref;
+}
+
+// Événements d'un lot de jours affichés par l'animation Évolution : poses et
+// archivages (features dans l'ordre de la chronologie). Un début de lot
+// antérieur au curseur — reprise d'une autre date de début — reconstruit
+// l'état au jour précédent plutôt que d'appliquer par-dessus.
+export function accumulateEvolutionStats(dates, placed, archived, now) {
+    if (!isEvolutionPage() || !dates?.length) return;
+    const index = evolutionIndex();
+    if (!index) return;
+    const first = index.dayOf(dates[0]);
+    const last = index.dayOf(dates[dates.length - 1]);
+    if (!Number.isFinite(first) || !Number.isFinite(last)) return;
+    if (mode !== 'animating' || !animation?.evolution) {
+        mode = 'animating';
+        // resetStatsForAnimation a déjà posé la vitesse réelle (ms/jour) —
+        // l'objet est remplacé (drapeau `evolution`), la vitesse conservée.
+        animation = {
+            endDate: pkg.metadata?.endDate instanceof Date ? pkg.metadata.endDate : null,
+            lastDate: dates[dates.length - 1],
+            highlightMs: animation?.highlightMs ?? DEFAULT_HIGHLIGHT_MS,
+            evolution: true,
+        };
+        tweens.clear(animation.highlightMs);
+        evoCurrent = null;
+    }
+    animation.lastDate = dates[dates.length - 1];
+    if (!evoCurrent || evoAppliedDay !== first - 1) {
+        evoCurrent = evolutionStateAt(index, metrics, first - 1);
+    }
+    const at = Number.isFinite(now) ? now : null;
+    evoCurrent.add(placed, at);
+    evoCurrent.remove(archived, at);
+    evoAppliedDay = last;
+    if (Number.isFinite(now)) lastNow = now;
+    touch();
+}
+
 function touch() {
     revision += 1;
     drawDirty = true;
@@ -206,7 +314,18 @@ export function resetStatsForAnimation({ startDate, endDate, highlightMs } = {})
             : DEFAULT_HIGHLIGHT_MS,
     };
     mode = 'animating';
-    rebuildCurrent();
+    if (isEvolutionPage()) {
+        // Évolution : les trois univers repartent de l'état juste avant la
+        // date de début — les panneaux affichent le départ dès la première
+        // frame, sans attendre le premier lot de displayEvolutionDates.
+        animation.evolution = true;
+        const index = evolutionIndex();
+        const day = index?.dayOf?.(startDate);
+        evoAppliedDay = Number.isFinite(day) ? day - 1 : null;
+        evoCurrent = index ? evolutionStateAt(index, metrics, evoAppliedDay ?? -1) : null;
+    } else {
+        rebuildCurrent();
+    }
     tweens.clear(animation.highlightMs);
     layoutDirty = true;
     touch();
@@ -239,6 +358,7 @@ export function showStatsTotals() {
     mode = 'rest';
     animation = null;
     current = createStatsAccumulator(metrics);
+    evoCurrent = null;
     tweens.clear();
     layoutDirty = true;
     touch();
@@ -253,6 +373,7 @@ export function refreshStatsPanels() {
         mode = 'rest';
         animation = null;
         current = createStatsAccumulator(metrics);
+        evoCurrent = null;
         tweens.clear();
     }
     layoutDirty = true;
@@ -268,8 +389,10 @@ export function tickStatsPanels(now) {
         return false;
     }
     const panels = visiblePanels();
-    const active = panels.length > 0
-        && (tweens.isActive(lastNow) || hasActiveHighlights(current, panels, lastNow, animation.highlightMs));
+    const highlightActive = isEvolutionPage()
+        ? hasActiveEvolutionHighlights(panels, lastNow, animation.highlightMs)
+        : hasActiveHighlights(current, panels, lastNow, animation.highlightMs);
+    const active = panels.length > 0 && (tweens.isActive(lastNow) || highlightActive);
     // Une surbrillance qui vient de s'éteindre demande une dernière frame.
     if (active || highlightWasActive) {
         revision += 1;
@@ -282,6 +405,25 @@ export function tickStatsPanels(now) {
 
 export function getStatsRevision() {
     return revision;
+}
+
+// Surbrillance Évolution : chaque panneau lit l'horloge de SON univers
+// (actives/placées à la pose, archivées à l'archivage) ; statut, courbe et
+// compteurs ne surlignent pas.
+function hasActiveEvolutionHighlights(panels, now, durationMs) {
+    if (!evoCurrent) return false;
+    for (const panel of panels) {
+        const mode = panel.options?.highlight;
+        if (!mode || mode === 'none') continue;
+        if (panel.kind !== 'bar' && panel.kind !== 'donut') continue;
+        if (panel.metric === 'status') continue;
+        const hits = evoCurrent.sets[panel.options.counted || 'active']?.lastHit.get(panel.metric);
+        if (!hits) continue;
+        for (const hit of hits.values()) {
+            if (highlightLevel(hit, now, durationMs, mode) > 0) return true;
+        }
+    }
+    return false;
 }
 
 // ---------------------------------------------------------------------------
@@ -342,6 +484,11 @@ export function defaultStatsPanelTitle(panel) {
         case 'owner': return pkg.t('Propriétaires');
         case 'country': return pkg.t('Pays');
         case 'state': return pkg.t('Régions');
+        case 'county': return pkg.t('Départements');
+        case 'status': return pkg.t('Statut des caches');
+        case 'actives': return pkg.t('Caches actives');
+        case 'placees': return pkg.t('Poses cumulées');
+        case 'archivees': return pkg.t('Archivages cumulés');
         case 'cumulative': return pkg.t('Progression des trouvailles');
         case 'summary': return pkg.t('Chiffres clés');
         default: return '';
@@ -361,6 +508,9 @@ function labelFor(metric, number) {
     if (metric === 'year') return (key) => String(key);
     if (metric === 'month') return (key) => monthNames('short')[key - 1] ?? String(key);
     if (metric === 'weekday') return (key) => weekdayNames('short')[key] ?? String(key);
+    if (metric === 'status') {
+        return (key) => key === 'active' ? pkg.t('Caches actives') : pkg.t('Caches archivées');
+    }
     return categoryLabel;
 }
 
@@ -446,6 +596,10 @@ const COUNTER_LABELS = {
     states: () => pkg.t('Régions'),
     attributes: () => pkg.t('Attributs différents'),
     owners: () => pkg.t('Propriétaires différents'),
+    actives: () => pkg.t('Caches actives'),
+    placees: () => pkg.t('Caches posées'),
+    archivees: () => pkg.t('Caches archivées'),
+    peak: () => pkg.t('Pic de caches actives'),
 };
 
 // Valeurs animées des lignes d'un histogramme ou d'un anneau ; course de
@@ -459,6 +613,7 @@ function animateRows(panel, model, now) {
 }
 
 function buildView(panel) {
+    if (isEvolutionPage()) return buildEvolutionView(panel);
     const reference = mode === 'animating' ? animationReference() : selectionTotals();
     const state = mode === 'animating' ? current : reference;
     // Horloge des valeurs animées : aucune au repos (valeurs immédiates).
@@ -570,6 +725,117 @@ function buildView(panel) {
     view.orientation = panel.options.orientation;
     view.sum = model.rows.reduce((s, row) => s + Math.max(0, row.shown), 0);
     if (refExcluded > 0 && !['cache_type', 'container', 'country', 'state', 'owner'].includes(metric)) {
+        view.footer.push(excludedLine(metric, model.excluded));
+    }
+    return view;
+}
+
+// Vue d'un panneau en mode Évolution : l'état courant est l'univers compté
+// par le panneau (actives / placées / archivées) au dernier jour affiché ;
+// la référence est figée sur la fin de plage — pics de l'ensemble actif pour
+// « actives », état final pour les cumuls — comme les totaux du mode
+// principal.
+function buildEvolutionView(panel) {
+    const index = evolutionIndex();
+    const animating = mode === 'animating' && !!evoCurrent;
+    const day = animating ? evoAppliedDay : (index?.restDay ?? 0);
+    const acc = animating ? evoCurrent : evolutionRestAcc();
+    const counted = panel.options.counted || 'active';
+    const now = animating ? lastNow : Number.NaN;
+    const { number, percent } = formatters();
+    const metric = panel.metric;
+    const view = {
+        kind: panel.kind,
+        metric,
+        title: panel.show_title ? (panel.title || defaultStatsPanelTitle(panel)) : '',
+        fontFamily: resolveFontFamily(panel),
+        formatNumber: number,
+        formatPercent: percent,
+        showValues: panel.options.show_values,
+        showPercent: panel.options.show_percent,
+        footer: [],
+        highlight: null,
+    };
+    if (animating && (panel.kind === 'bar' || panel.kind === 'donut') && metric !== 'status') {
+        view.highlight = {
+            mode: panel.options.highlight,
+            durationMs: animation.highlightMs,
+            hits: acc.sets[counted]?.lastHit.get(metric) || null,
+        };
+    }
+
+    if (panel.kind === 'line') {
+        const model = evolutionLineModel(index, metric, day);
+        model.shownTotal = tweens.set(`${panel.id}:total`, model.total, now);
+        model.shownHeadDay = tweens.set(`${panel.id}:head`, model.headDay, now);
+        view.model = model;
+        view.showArea = panel.options.show_area;
+        if (!model.empty) {
+            const sameYear = ymdOfDay(model.first).y === ymdOfDay(model.last).y;
+            view.startLabel = sameYear ? formatDay(model.first) : String(ymdOfDay(model.first).y);
+            view.endLabel = sameYear ? formatDay(model.last) : String(ymdOfDay(model.last).y);
+        }
+        view.headLevel = 0;
+        return view;
+    }
+
+    if (panel.kind === 'counter') {
+        const values = evolutionCounterValues(index, day, acc?.setView('active'), panel.options.items);
+        view.columns = panel.options.columns;
+        view.tiles = panel.options.items.map((item) => {
+            const entry = values[item] || { value: 0 };
+            const key = `${panel.id}:c:${item}`;
+            const shown = tweens.set(key, entry.value, now);
+            return {
+                value: number(Math.round(shown)),
+                label: COUNTER_LABELS[item](),
+                detail: '',
+                level: panel.options.highlight === 'none' ? 0 : tweens.level(key, now),
+            };
+        });
+        return view;
+    }
+
+    // Barres et anneaux : l'univers compté par « Compter », ou le statut
+    // (actives vs archivées — indifférent à l'option).
+    const labelOf = labelFor(metric, number);
+    view.labelOf = labelOf;
+    view.palette = panel.style.palette;
+    view.colorOf = (key) => pkg.defaultGcColors?.[key] || null;
+    let currentView;
+    let referenceView;
+    if (metric === 'status') {
+        currentView = evolutionStatusAcc(index, day);
+        referenceView = evolutionStatusAcc(index, index?.restDay ?? day, { reference: true });
+    } else {
+        currentView = acc?.setView(counted) || acc?.setView('active');
+        referenceView = counted === 'active'
+            ? evolutionActivePeaksRef()
+            : evolutionRestAcc()?.setView(counted);
+    }
+    if (!currentView) currentView = { counts: new Map(), excluded: new Map(), total: 0 };
+    if (!referenceView) referenceView = currentView;
+    view.colorIndex = colorIndexer(referenceView, metric);
+    const refExcluded = referenceView.excluded.get(metric) || 0;
+
+    let model;
+    if (panel.kind === 'donut') {
+        model = barModel(metric, currentView, referenceView, { sort: 'count', max_items: panel.options.max_items }, labelOf);
+        view.hole = panel.options.hole;
+        view.showLegend = panel.options.show_legend;
+        view.centerLabel = pkg.t('caches');
+    } else {
+        model = barModel(metric, currentView, referenceView, panel.options, labelOf);
+        if (model.race) {
+            const known = new Set([...(referenceView.counts.get(metric) || new Map()).keys(), ...model.rows.map((r) => r.key)]);
+            model.slots = Math.max(1, Math.min(panel.options.max_items, known.size));
+        }
+        view.orientation = panel.options.orientation;
+    }
+    animateRows(panel, model, now);
+    view.model = model;
+    if (panel.kind !== 'donut') view.sum = model.rows.reduce((s, row) => s + Math.max(0, row.shown), 0);
+    if (refExcluded > 0 && !['cache_type', 'container', 'country', 'state', 'county', 'status'].includes(metric)) {
         view.footer.push(excludedLine(metric, model.excluded));
     }
     return view;
@@ -696,7 +962,9 @@ function refreshAltText(node, panel, view, key) {
     } else if (view.kind === 'line') {
         if (!model.empty) {
             empty = false;
-            add(pkg.t('${n} trouvailles au ${date}', { n: number(model.total), date: formatDay(model.headDay) }));
+            add(isEvolutionPage()
+                ? `${COUNTER_LABELS[view.metric]?.() || view.metric} : ${number(model.total)} (${formatDay(model.headDay)})`
+                : pkg.t('${n} trouvailles au ${date}', { n: number(model.total), date: formatDay(model.headDay) }));
         }
     } else if (view.kind === 'grid') {
         for (let r = 0; r < model.rows; r++) {
@@ -714,7 +982,7 @@ function refreshAltText(node, panel, view, key) {
             empty = false;
         }
     }
-    if (empty) add(pkg.t('Aucune trouvaille'));
+    if (empty) add(isEvolutionPage() ? pkg.t('Aucune cache') : pkg.t('Aucune trouvaille'));
     for (const line of view.footer || []) add(line);
     node.alt.appendChild(list);
 }
@@ -738,8 +1006,18 @@ function flush() {
     // Clé de contenu des textes alternatifs : comptes (révision de
     // l'accumulateur), mode, sélection et réglages — pas `revision`, qui
     // bouge à chaque estompe de surbrillance sans changer les chiffres.
-    const altState = mode === 'animating' ? current : selectionTotals();
-    const a11yBase = `${mode}|${settingsRev}|${indexRevision()}|${altState?.revision || 0}`;
+    const evolution = isEvolutionPage();
+    const altState = evolution
+        ? (mode === 'animating' ? evoCurrent : evolutionRestAcc())
+        : (mode === 'animating' ? current : selectionTotals());
+    // En Évolution l'état de repos dépend aussi du jour de fin choisi
+    // (`restDay`) : l'accumulateur rejoué repart de revision 1, sans quoi
+    // un changement de date de fin laisserait les textes (et dessins) figés.
+    const evoIndex = evolution ? evolutionIndex() : null;
+    const altIndexRev = evolution
+        ? `${evoIndex?.revision || 0}:${evoIndex?.restDay ?? 0}`
+        : indexRevision();
+    const a11yBase = `${mode}|${settingsRev}|${altIndexRev}|${altState?.revision || 0}`;
     const items = panels.map((panel) => {
         const width = Math.min(panel.position.width, containerSize.width);
         return {
@@ -916,9 +1194,11 @@ export function statsPanelPngBlob(id) {
 // modèle — jamais l'état d'animation, et sans toucher aux tweens.
 // null sans panneau.
 export function statsPanelCsv(id) {
-    const panel = settings.panels.find((p) => p.id === id);
+    const list = isEvolutionPage() ? settings.evolution_panels : settings.panels;
+    const panel = (list || []).find((p) => p.id === id);
     if (!panel) return null;
     const { number, percent } = formatters();
+    if (isEvolutionPage()) return statsPanelCsvEvolution(panel, number, percent);
     const ref = selectionTotals();
     const cell = (v) => {
         const s = String(v ?? '');
@@ -966,6 +1246,50 @@ export function statsPanelCsv(id) {
     return '\uFEFF' + rows.join('\r\n') + '\r\n';
 }
 
+// CSV d'un panneau Évolution : valeurs réelles au jour de repos (fin de
+// plage), mêmes en-têtes et conventions que le mode principal.
+function statsPanelCsvEvolution(panel, number, percent) {
+    const index = evolutionIndex();
+    const day = index?.restDay ?? 0;
+    const acc = evolutionRestAcc();
+    const cell = (v) => {
+        const s = String(v ?? '');
+        return /[;"\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const rows = [];
+    const push = (...cols) => rows.push(cols.map(cell).join(';'));
+    if (panel.kind === 'counter') {
+        push(pkg.t('Chiffre'), pkg.t('Valeur'), pkg.t('Détail'));
+        const values = evolutionCounterValues(index, day, acc?.setView('active'), panel.options.items);
+        for (const item of panel.options.items) {
+            const entry = values[item] || { value: 0 };
+            push(COUNTER_LABELS[item](), number(entry.value), '');
+        }
+    } else if (panel.kind === 'line') {
+        push(pkg.t('Date'), pkg.t('Total'));
+        for (const p of evolutionLineModel(index, panel.metric, day).points) {
+            push(formatDay(p.day), p.total);
+        }
+    } else {
+        push(pkg.t('Catégorie'), pkg.t('Nombre'), pkg.t('Pourcentage'));
+        const metric = panel.metric;
+        const labelOf = labelFor(metric, number);
+        const counted = panel.options.counted || 'active';
+        const current = metric === 'status'
+            ? evolutionStatusAcc(index, day)
+            : acc?.setView(counted) || { counts: new Map(), excluded: new Map(), total: 0 };
+        const options = panel.kind === 'donut'
+            ? { sort: 'count', max_items: panel.options.max_items }
+            : panel.options;
+        const model = barModel(metric, current, current, options, labelOf);
+        for (const row of model.rows) {
+            push(labelOf(row.key), row.count,
+                model.total ? percent(row.count / model.total) : '');
+        }
+    }
+    return '\uFEFF' + rows.join('\r\n') + '\r\n';
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -973,6 +1297,43 @@ export function statsPanelCsv(id) {
 // État courant, sérialisable : utilisé par les tests E2E pour comparer les
 // comptes au compteur de caches affiché.
 export function getStatsSnapshot() {
+    if (isEvolutionPage()) {
+        const acc = (mode === 'animating' && evoCurrent) ? evoCurrent : evolutionRestAcc();
+        const activeView = acc?.setView('active');
+        const counts = {};
+        const excluded = {};
+        for (const metric of metrics) {
+            counts[metric] = Object.fromEntries(activeView?.counts.get(metric) || new Map());
+            excluded[metric] = activeView?.excluded.get(metric) || 0;
+        }
+        // Les trois univers complets : vérifiables par les tests (un panneau
+        // « Compter : poses cumulées » lit `placed`, invisible dans `counts`).
+        const universes = {};
+        if (acc) {
+            for (const name of ['active', 'placed', 'archived']) {
+                const set = acc.sets[name];
+                const setCounts = {};
+                for (const metric of metrics) {
+                    setCounts[metric] = Object.fromEntries(set?.counts.get(metric) || new Map());
+                }
+                universes[name] = { total: set?.total || 0, counts: setCounts };
+            }
+        }
+        return {
+            mode,
+            total: activeView?.total || 0,
+            metrics: [...metrics],
+            counts,
+            excluded,
+            universes,
+            revision,
+            videoDrawCount,
+            visible: visiblePanels().map((panel) => panel.id),
+            drawnHeads: Object.fromEntries(visiblePanels()
+                .filter((panel) => panel.kind === 'line')
+                .map((panel) => [panel.id, panelNodes.get(panel.id)?.drawnHeadDay ?? null])),
+        };
+    }
     const state = mode === 'animating' ? current : selectionTotals();
     const counts = {};
     const excluded = {};

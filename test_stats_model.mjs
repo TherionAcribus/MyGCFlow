@@ -3,13 +3,20 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 import {
+    EVOLUTION_METRICS_BY_KIND,
     STATS_DEFAULTS,
     STATS_MAX_PANELS,
     accumulatorMetricsFor,
     counterValues,
+    createEvolutionStatsAccumulator,
     createTweenStore,
     dayNumber,
     dayNumberOfDate,
+    evolutionActivePeaks,
+    evolutionCounterValues,
+    evolutionLineModel,
+    evolutionStateAt,
+    evolutionStatusAcc,
     lineModel,
     ymdOfDay,
     UNKNOWN_KEY,
@@ -31,6 +38,8 @@ import {
     rectsOverlap,
     statsKeyOf,
 } from './static/js/stats_model.mjs';
+import { buildTimeline } from './static/js/evolution_timeline.mjs';
+import { EVO_NEVER_DAY } from './static/js/evolution_style.mjs';
 
 const cache = (properties) => ({ type: 'Feature', properties });
 const geocache = (difficulty, terrain, extra = {}) => cache({
@@ -623,4 +632,107 @@ test('évitement : la pile d’un coin démarre sous le titre ou au-dessus d’u
     const low = { x: 700, y: 560, width: 290, height: 30 };
     const bottom = layoutPanels([item('c', 'bottom-right')], box, [low]);
     assert.equal(bottom.get('c').y + 100, 560 - 8);
+});
+
+
+// ---------------------------------------------------------------------------
+// Mode Évolution : trois univers (actives / poses / archivages)
+// ---------------------------------------------------------------------------
+
+const evoFeature = (i) => ({ properties: { cache_type: `T${i}`, country: 'France' } });
+
+// Chronologie jouet : 4 caches — poses aux jours 0, 1, 2 et 20 ; archivages
+// aux jours 3 (T0) et 10 (T2). Les jours sont des indices depuis l'origin.
+function evolutionIndex() {
+    const base = {
+        placed: Int32Array.from([0, 1, 2, 20]),
+        archived: Int32Array.from([3, EVO_NEVER_DAY, 10, EVO_NEVER_DAY]),
+    };
+    const rows = [0, 1, 2, 3];
+    return {
+        timeline: buildTimeline(base, rows),
+        features: rows.map(evoFeature),
+        originDay: 0,
+    };
+}
+
+test('évolution : accumulateur à trois univers, add et remove', () => {
+    const acc = createEvolutionStatsAccumulator(['cache_type']);
+    acc.add([evoFeature(0), evoFeature(1)], null);
+    assert.deepEqual(Object.fromEntries(acc.setView('active').counts.get('cache_type')), { T0: 1, T1: 1 });
+    assert.deepEqual(Object.fromEntries(acc.setView('placed').counts.get('cache_type')), { T0: 1, T1: 1 });
+    assert.equal(acc.setView('archived').total, 0);
+    acc.remove([evoFeature(0)], null);
+    // Une clé archivée reste à 0 dans l'ensemble actif : la barre glisse vers
+    // 0 au fil de l'animation plutôt que de disparaître d'un coup.
+    assert.deepEqual(Object.fromEntries(acc.setView('active').counts.get('cache_type')), { T0: 0, T1: 1 });
+    assert.deepEqual(Object.fromEntries(acc.setView('archived').counts.get('cache_type')), { T0: 1 });
+    assert.equal(acc.setView('active').total, 1);
+    // Le cumul des poses ne redescend jamais.
+    assert.equal(acc.setView('placed').total, 2);
+});
+
+test('évolution : evolutionStateAt rejoue les événements, pas les jours', () => {
+    const index = evolutionIndex();
+    // Au jour 10 : poses des jours 0-2 (3 caches), archivages des jours 3 et
+    // 10 (2 caches) — le placement du jour 20 n'est pas encore arrivé. Un
+    // slice par nombre de jours lirait trop loin dans les ordres.
+    const acc = evolutionStateAt(index, ['cache_type'], 10);
+    assert.equal(acc.setView('placed').total, 3);
+    assert.equal(acc.setView('archived').total, 2);
+    assert.equal(acc.setView('active').total, 1);
+    assert.deepEqual(Object.fromEntries(acc.setView('active').counts.get('cache_type')),
+        { T0: 0, T1: 1, T2: 0 });
+    // Le jour 20 : les quatre caches ont été posées.
+    const end = evolutionStateAt(index, ['cache_type'], 20);
+    assert.equal(end.setView('placed').total, 4);
+    assert.equal(end.setView('active').total, 2);
+});
+
+test('évolution : référence « pics » et ligne de statut', () => {
+    const index = evolutionIndex();
+    // Pics de l'ensemble actif : chaque type n'a jamais dépassé 1 en même
+    // temps (T3 posée au jour 20 compte aussi).
+    const peaks = evolutionActivePeaks(index, ['cache_type'], 20);
+    assert.equal(peaks.total, 3);
+    assert.deepEqual(Object.fromEntries(peaks.counts.get('cache_type')),
+        { T0: 1, T1: 1, T2: 1, T3: 1 });
+    // Statut au jour 10 : 1 active, 2 archivées ; la référence fige le pic.
+    const status = evolutionStatusAcc(index, 10);
+    assert.deepEqual(Object.fromEntries(status.counts.get('status')), { active: 1, archived: 2 });
+    const ref = evolutionStatusAcc(index, 20, { reference: true });
+    assert.deepEqual(Object.fromEntries(ref.counts.get('status')), { active: 3, archived: 2 });
+});
+
+test('évolution : courbe et tuiles de compteurs', () => {
+    const index = evolutionIndex();
+    const model = evolutionLineModel(index, 'actives', 10);
+    assert.equal(model.points.length, 11);
+    assert.equal(model.points.at(-1).total, 1);
+    assert.equal(model.max, 3);          // pic d'actives sur toute la plage
+    assert.equal(model.headDay, 10);
+    // Compteurs au jour 10 + catégories distinctes de l'ensemble actif.
+    const acc = evolutionStateAt(index, ['cache_type', 'country'], 10);
+    const values = evolutionCounterValues(index, 10, acc.setView('active'),
+        ['actives', 'placees', 'archivees', 'peak', 'types', 'countries']);
+    assert.equal(values.actives.value, 1);
+    assert.equal(values.placees.value, 3);
+    assert.equal(values.archivees.value, 2);
+    assert.equal(values.peak.value, 3);
+    assert.equal(values.types.value, 1);
+    assert.equal(values.countries.value, 1);
+});
+
+test('évolution : métriques acceptées par la normalisation', () => {
+    for (const [kind, metrics] of Object.entries(EVOLUTION_METRICS_BY_KIND)) {
+        for (const metric of metrics) {
+            assert.ok(createStatsPanel(kind, metric), `${kind}:${metric}`);
+        }
+    }
+    // Un panneau barre accepte l'univers « Compter » quand il est fourni ;
+    // absent, la clé n'est pas sérialisée (vecteurs du mode principal).
+    const panel = createStatsPanel('bar', 'county', { options: { counted: 'placed' } });
+    assert.equal(panel.options.counted, 'placed');
+    const plain = createStatsPanel('bar', 'county', {});
+    assert.equal('counted' in plain.options, false);
 });

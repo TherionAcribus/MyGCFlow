@@ -4968,6 +4968,8 @@ export function showEvolutionRestState() {
     if (!rest) return;
     if (rest.date) pkg.updateCurrentDate(rest.date);
     resetEvolutionCounters(rest.values);
+    // Panneaux Stats : retour aux totaux de l'état de fin (repos).
+    pkg.refreshStatsPanels?.();
     mapDirtyTracker.markDirty();
     try { map.render(); } catch (_) {}
 }
@@ -5011,6 +5013,10 @@ function displayEvolutionDates(dates, flashOptions, record, infos) {
     const at = sampleAppearClock();
     const ev = pkg.evolutionStep?.(dates, at);
     if (!ev) return;
+
+    // Panneaux Stats : poses et archivages alimentent l'accumulateur à trois
+    // univers (actives / placées / archivées).
+    pkg.accumulateEvolutionStats?.(dates, ev.placed, ev.archived, at);
 
     if (flashOptions.mode !== 'none' && ev.placed.length > 0) {
         pushFeatureFlashes(ev.placed, flashOptions, record, flashOptions.mode === 'impulse');

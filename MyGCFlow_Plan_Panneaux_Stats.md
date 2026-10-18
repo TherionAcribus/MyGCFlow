@@ -11,7 +11,9 @@ Lot 3 implémenté (2026-10-17) : anneaux/camemberts (`donut`), courbe cumulée 
 Audit traité + ergonomie (2026-10-18) : tête de courbe sur jours vides, modèles atomiques, retour de sauvegarde + « Annuler », validation stricte des dates/D-T, recalcul des obstacles titre/infos, patch partiel contre l'état courant, équivalent textuel accessible ; surlignage du panneau sélectionné (`is-selected`), sections « Position »/« Apparence » repliables, « Réorganiser automatiquement » dans l'alerte de mise en page, export PNG/CSV du panneau sélectionné, configurations nommées (`stats.configs` : `{name, panels}` ≤ 40 car., ≤ 12, appliquer = remplacer la liste avec « Annuler »).
 
 Nouvelles métriques (2026-10-18) : `month` (axe fixe 1–12 sur `date_find`) et `weekday` (axe fixe lundi→dimanche ISO) en barres ; `attribute` et `owner` en barres et anneaux ; tuiles de compteur `attributes`/`owners` (clés distinctes). `attribute` est la première métrique **multi-valuée** : `KEY_OF` peut renvoyer une liste de clés (une cache compte dans chaque attribut porté ; `inc` 0/« 0 »/false = forme négative → ignorée ; liste vide = exclue, pied « Sans attribut : n »). Libellés mois/jours via `Intl` (mémoïsés par locale).
-Non faits, volontairement : mode Évolution, export/import du bloc dans un thème, comparaison de périodes. Perf (§6) mesurée le 2026-10-17 : aucun écart mesurable en MediaRecorder 2× avec 3 panneaux (détail dans `docs/panneaux-stats.md` › Mesures). Reste : notes de version 0.0.7.
+
+Mode Évolution (2026-10-18) : l'onglet Stats existe aussi sur `/evolution`. **Liste propre `stats.evolution_panels`** (indépendante de `stats.panels` — retour utilisateur : la liste partagée avec badge « autre mode » était plus confuse qu'utile ; un panneau à métrique étrangère dans une liste reste néanmoins marqué et non dessiné). Trois univers comptés en parallèle : `active` (ensemble vivant à la date affichée), `placed`/`archived` (cumuls des événements) — accumulateur `createEvolutionStatsAccumulator` alimenté par `accumulateEvolutionStats` depuis `evolutionStep`, état de repos = fin de plage (`restDay`, mémos clés sur `index.restDay`). Option `counted` (actives/placées/archivées) sur barres et anneaux ; métrique `status` (actives vs archivées) ; courbes `actives`/`placees`/`archivees` ; compteurs `actives`, `placees`, `archivees`, `peak`, `types`, `countries`, `states`. Même renderer, mise en page, exports PNG/CSV, accessibilité et configurations que le mode principal (une configuration s'applique à la liste du mode courant).
+Non faits, volontairement : export/import du bloc dans un thème, comparaison de périodes. Perf (§6) mesurée le 2026-10-17 : aucun écart mesurable en MediaRecorder 2× avec 3 panneaux (détail dans `docs/panneaux-stats.md` › Mesures). Reste : notes de version 0.0.7.
 
 Écarts par rapport au plan ci-dessous, décidés en cours de route :
 - **Pas de bloc `stats` dans `defaultValues.json`** : ce fichier alimente `pkg.options` (réglages de thème), où `stats` n'a rien à faire. Les défauts vivent dans `stats_settings.py` et `stats_model.mjs`, verrouillés par des vecteurs de test partagés (`tests/fixtures/stats/settings_cases.json`).
@@ -212,7 +214,7 @@ Règles de coercition (serveur **et** client `normalizeStatsSettings`, même esp
 - mode « course de barres » (`sort: race`) ;
 - position libre par glisser-déposer (§9) ; évitement automatique des cartouches titre/infos ;
 - import des panneaux dans un thème si l'utilisateur change d'avis (le bloc est autonome, cf. §9) ;
-- mode Évolution (barres placées/archivées par type, sur `evolution_data.js`).
+- ~~mode Évolution~~ — fait (voir §0 : `stats.evolution_panels`, trois univers actives/posées/archivées).
 
 ## 5. Fichiers à modifier / créer
 

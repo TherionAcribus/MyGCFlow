@@ -132,7 +132,7 @@ class StatsApiTests(unittest.TestCase):
         return self.client.get('/api/settings').get_json()['stats']
 
     def test_get_exposes_the_default_block(self):
-        self.assertEqual(self.stats(), {"enabled": True, "panels": [], "configs": []})
+        self.assertEqual(self.stats(), {"enabled": True, "panels": [], "evolution_panels": [], "configs": []})
 
     def test_put_stores_normalised_panels(self):
         response = self.client.put('/api/settings', json={'stats': {'panels': [
@@ -193,7 +193,7 @@ class StatsApiTests(unittest.TestCase):
 
         self.client.post('/api/settings/reset')
 
-        self.assertEqual(self.stats(), {"enabled": True, "panels": [], "configs": []})
+        self.assertEqual(self.stats(), {"enabled": True, "panels": [], "evolution_panels": [], "configs": []})
 
 
 if __name__ == "__main__":

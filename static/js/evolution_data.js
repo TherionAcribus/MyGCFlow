@@ -66,6 +66,7 @@ let pendingTimer = null;     // attente de la fin d'un enregistrement
 let largeWarnedFor = null;   // base déjà signalée comme « grosse sélection »
 let importing = false;
 let loadSeq = 0;             // seul le dernier chargement demandé s'applique
+let dataRevision = 0;        // +1 à chaque sélection/base : mémos des stats
 let nameModalMode = 'create';
 let targetChoicePending = false; // modale « Où importer ces exports ? » ouverte
 let importedFilenames = [];  // exports déjà reçus par la base ouverte (historique)
@@ -357,6 +358,7 @@ function applySelection(selection, { resetDates = false } = {}) {
     rows = filterRows(base, selection);
     timeline = buildTimeline(base, rows);
     olFeatures = buildFeatures(rows);
+    dataRevision += 1;
 
     // Les archivées sans date masquées ne font pas partie du jeu affiché :
     // le « total » du compteur de sélection les exclut aussi, sinon la badge
@@ -370,6 +372,8 @@ function applySelection(selection, { resetDates = false } = {}) {
     if (resetDates) pkg.setPickerDates?.(pkg.metadata);
     pkg.updateAnimationMenuAfterReadBdd?.(pkg.metadata);
     pkg.setEvolutionFeatures(olFeatures);
+    // Chronologie reconstruite : les panneaux Stats recomptent leur état.
+    pkg.refreshStatsPanels?.();
 
     // Une fois par base : le répéter à chaque changement de filtre lasse sans
     // rien apprendre de plus.
@@ -395,6 +399,14 @@ function buildFeatures(rows) {
         features[k] = new ol.Feature({
             geometry: new ol.geom.Point(ol.proj.fromLonLat([lon, lat])),
             cache_type: base.types[base.type[i]] || '',
+            // Catégories comptées par les panneaux Stats (noms de propriétés
+            // alignés sur le mode principal ; libellés internés des tables).
+            container: base.sizes[base.size[i]] || '',
+            difficulty: base.difficulties[base.difficulty[i]] || '',
+            terrain: base.terrains[base.terrain[i]] || '',
+            country: base.countries[base.country[i]] || '',
+            state: base.regions[base.region[i]] || '',
+            county: base.counties[base.county[i]] || '',
             placedDay: base.placed[i],
             archivedDay: base.archived[i],
             // Décalage de la vague du flash impulsion, fixe par position.
@@ -502,6 +514,21 @@ export function evolutionFrameVars(now, msPerDay) {
 export function evolutionEnd() {
     endEvolution(clock);
     applyPendingChanges();
+}
+
+// Vue de l'index pour les panneaux Stats : la chronologie et les features
+// (dans l'ordre de `rows`, celui des index d'événements), l'offset epoch des
+// dates de points, la révision de la sélection (mémos) et le jour de repos.
+export function evolutionStatsIndex() {
+    if (!base || !timeline) return null;
+    return {
+        timeline,
+        features: olFeatures,
+        originDay: base.originDay,
+        revision: dataRevision,
+        restDay: dayIndexOf(base, restEndDate()),
+        dayOf: (date) => dayIndexOf(base, date),
+    };
 }
 
 // Changements reportés pendant l'animation : base à recharger (import terminé,

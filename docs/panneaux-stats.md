@@ -2,20 +2,42 @@
 
 Préférence globale (onglet **Stats**, bloc `stats` de `settings.json`) : des
 panneaux posés sur la carte — grilles et histogrammes — qui se remplissent au
-fil de l'animation et sont dessinés à l'identique dans la vidéo. Mode
-principal seulement : sur `/evolution`, l'onglet n'existe pas et aucun panneau
-n'est dessiné.
+fil de l'animation et sont dessinés à l'identique dans la vidéo. L'onglet
+existe aussi sur `/evolution`, avec des métriques propres (caches posées et
+archivées, pas des trouvailles).
+
+Deux listes de panneaux indépendantes : `stats.panels` pour le mode
+principal, `stats.evolution_panels` pour `/evolution`. Chaque liste compte
+au plus six panneaux, dans l'ordre de dessin et d'empilement ; les
+configurations nommées (`stats.configs`) s'appliquent à la liste du mode
+courant. La normalisation accepte l'union des deux registres de métriques :
+un panneau à métrique étrangère peut figurer dans une liste — il est marqué
+« (Trouvailles) » / « (Évolution) » dans l'onglet et n'est pas dessiné.
+
+Mode principal (`stats.panels`) :
 
 | Type (`kind`) | Métriques (`metric`) |
 |---|---|
 | `grid` | `dt` (matrice D/T 9×9), `jasmer` (année × mois de publication, depuis mai 2000), `calendar` (mois × jour de trouvaille, 366 cases) |
-| `bar` | `cache_type`, `container`, `difficulty`, `terrain`, `year`, `country`, `state` |
-| `donut` | `cache_type`, `container`, `country`, `state` — anneau, camembert si `hole` vaut 0 |
+| `bar` | `cache_type`, `container`, `difficulty`, `terrain`, `year`, `month`, `weekday`, `country`, `state`, `attribute`, `owner` |
+| `donut` | `cache_type`, `container`, `country`, `state`, `attribute`, `owner` — anneau, camembert si `hole` vaut 0 |
 | `line` | `cumulative` — trouvailles cumulées, en escalier |
-| `counter` | `summary` — tuiles choisies dans `options.items` : `days` (jours avec trouvaille), `best_day` (record sur une journée), `streak` (plus longue série de jours consécutifs), `types`, `countries`, `states` (valeurs distinctes connues) |
+| `counter` | `summary` — tuiles choisies dans `options.items` : `days` (jours avec trouvaille), `best_day` (record sur une journée), `streak` (plus longue série de jours consécutifs), `types`, `countries`, `states`, `attributes`, `owners` (valeurs distinctes connues) |
 
-Six panneaux au maximum, dans l'ordre de la liste (ordre de dessin et
-d'empilement).
+Mode Évolution (`stats.evolution_panels`) :
+
+| Type (`kind`) | Métriques (`metric`) |
+|---|---|
+| `bar` | `cache_type`, `container`, `difficulty`, `terrain`, `country`, `state`, `county`, `status` (actives vs archivées) |
+| `donut` | `cache_type`, `container`, `country`, `state`, `county`, `status` |
+| `line` | `actives` (présentes à la date), `placees`, `archivees` (cumuls) |
+| `counter` | `summary` — tuiles : `actives`, `placees`, `archivees`, `peak` (pic d'actives), `types`, `countries`, `states` |
+
+Les barres et anneaux Évolution acceptent `options.counted` :
+`active` (ensemble vivant à la date affichée, défaut), `placed` ou
+`archived` (cumuls des événements). `status` l'ignore. Les comptes
+rejouent la chronologie (`placedOrder`/`archivedOrder` de
+`evolution_timeline.mjs`) au jour affiché ou au jour de fin de plage.
 
 ## Modules
 
@@ -42,8 +64,9 @@ classes ASCII (`$` et `\d` diffèrent entre Python et JS), titre tronqué en
 points de code (`Array.from` côté JS).
 
 `PUT /api/settings` accepte `{ stats: {...} }` en patch de premier niveau :
-`enabled` seul garde les panneaux ; `panels`, s'il est envoyé, remplace la
-liste. L'onglet envoie toujours le bloc complet.
+`enabled` seul garde les panneaux ; `panels` ou `evolution_panels`, s'ils
+sont envoyés, remplacent la liste correspondante. L'onglet envoie toujours
+le bloc complet.
 
 ## Comptage
 
@@ -220,6 +243,4 @@ métriques et le schéma de ses options des deux côtés (`stats_settings.py`,
 (`data-stats-kind`) et `stats_ui.js › FIELDS`. Une nouvelle grille, elle, n'est
 qu'une entrée dans `gridSpec`.
 
-Non couverts : le mode Évolution (ses compteurs viennent d'`evolution_data.js`,
-pas de l'index des trouvailles) et l'export/import du bloc `stats` dans un
-thème.
+Non couvert : l'export/import du bloc `stats` dans un thème.

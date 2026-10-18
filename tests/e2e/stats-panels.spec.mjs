@@ -18,7 +18,7 @@ import { dismissFirstUseModal } from './first-use.mjs';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE = path.join(HERE, 'fixtures', 'my-finds.gpx');
 const GAP_FIXTURE = path.join(HERE, 'fixtures', 'my-finds-gap.gpx');
-const DEFAULT_STATS = { enabled: true, panels: [] };
+const DEFAULT_STATS = { enabled: true, panels: [], evolution_panels: [] };
 
 async function putStats(page, stats) {
   const response = await page.request.put('/api/settings', { data: { stats } });
@@ -231,13 +231,21 @@ test('l\'interrupteur général masque les panneaux sans perdre la liste', async
   await expect.poll(async () => (await savedStats(page)).enabled).toBe(true);
 });
 
-test('pas d\'onglet ni de panneau en mode Évolution', async ({ page }) => {
-  await putStats(page, { enabled: true, panels: [{ id: 'aaaaaa01', kind: 'grid', metric: 'dt' }] });
-  await page.goto('/evolution', { waitUntil: 'domcontentloaded' });
+test('onglet Stats en mode Évolution : listes indépendantes, panneau étranger masqué', async ({ page }) => {
+  // Deux listes séparées : un panneau du mode principal n'apparaît pas en
+  // Évolution ; un panneau à métrique étrangère dans `evolution_panels`
+  // reste listé, marqué « (Trouvailles) », mais n'est pas dessiné.
+  await putStats(page, { enabled: true,
+    panels: [{ id: 'aaaaaa01', kind: 'grid', metric: 'dt' }],
+    evolution_panels: [{ id: 'bbbbbb02', kind: 'grid', metric: 'dt' }] });
+  await page.goto('/evolution#stats', { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.mygcflowReady === true);
-  await expect(page.locator('a[href="#stats"]')).toHaveCount(0);
-  await expect(page.locator('#stats')).toHaveCount(0);
+  await expect(page.locator('a[href="#stats"]')).toHaveCount(1);
+  await expect(page.locator('#stats')).toHaveCount(1);
   await expect(page.locator('canvas.stats-panel')).toHaveCount(0);
+  const list = page.locator('#statsPanelList li');
+  await expect(list).toHaveCount(1);
+  await expect(list).toContainText('(Trouvailles)');
 });
 
 test('anneau, courbe et compteurs se remplissent pendant la lecture', async ({ page }) => {

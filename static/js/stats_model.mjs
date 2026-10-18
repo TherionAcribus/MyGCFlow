@@ -15,6 +15,8 @@
 // (test_stats_model.mjs). Le dessin vit dans stats_render.mjs, le cycle de vie
 // dans stats_panels.js.
 
+import { counterAt, counterMaxFor } from './evolution_timeline.mjs';
+
 // ---------------------------------------------------------------------------
 // Réglages — miroir exact de stats_settings.py. Les deux côtés passent les
 // mêmes vecteurs (tests/fixtures/stats/settings_cases.json).
@@ -32,6 +34,23 @@ export const STATS_METRICS_BY_KIND = Object.freeze({
     // Tuiles de chiffres clés (STATS_COUNTER_ITEMS).
     counter: Object.freeze(['summary']),
 });
+
+// Mode Évolution (page /evolution) : le jeu compte des CACHES (poses et
+// archivages), pas des trouvailles. Registre distinct des métriques et liste
+// de panneaux propre (`stats.evolution_panels`) ; la normalisation accepte
+// l'union des deux registres, le rendu filtre par mode (visiblePanels).
+export const EVOLUTION_METRICS_BY_KIND = Object.freeze({
+    grid: Object.freeze([]),
+    bar: Object.freeze(['cache_type', 'container', 'difficulty', 'terrain', 'country', 'state', 'county', 'status']),
+    donut: Object.freeze(['cache_type', 'container', 'country', 'state', 'county', 'status']),
+    line: Object.freeze(['actives', 'placees', 'archivees']),
+    counter: Object.freeze(['summary']),
+});
+
+// Univers comptés par un panneau catégoriel Évolution (« Compter ») :
+// 'active' = caches présentes à la date affichée (ensemble vivant),
+// 'placed'/'archived' = cumuls monotone des événements.
+export const STATS_COUNTED = Object.freeze(['active', 'placed', 'archived']);
 export const STATS_KINDS = Object.freeze(Object.keys(STATS_METRICS_BY_KIND));
 
 export const STATS_ANCHORS = Object.freeze([
@@ -52,6 +71,11 @@ export const STATS_ORIENTATIONS = Object.freeze(['horizontal', 'vertical']);
 // « multi » : une couleur distincte par catégorie.
 export const STATS_PALETTES = Object.freeze(['gc', 'accent', 'heat', 'multi']);
 export const STATS_COUNTER_ITEMS = Object.freeze(['days', 'best_day', 'streak', 'types', 'countries', 'states', 'attributes', 'owners']);
+// Tuiles du mode Évolution : compteurs de la chronologie (actives, cumuls
+// placées/archivées, pic d'actives) et catégories distinctes de l'ensemble
+// actif (types, pays, régions — mêmes clés qu'en mode principal).
+export const EVOLUTION_COUNTER_ITEMS = Object.freeze(['actives', 'placees', 'archivees', 'peak', 'types', 'countries', 'states']);
+const ALL_COUNTER_ITEMS = [...STATS_COUNTER_ITEMS, ...EVOLUTION_COUNTER_ITEMS];
 
 export const STATS_OFFSET_RANGE = Object.freeze([0, 2000]);
 export const STATS_WIDTH_RANGE = Object.freeze([120, 1200]);
@@ -67,7 +91,8 @@ export const STATS_MAX_CONFIGS = 12;
 export const STATS_CONFIG_NAME_MAX = 40;
 
 export const STATS_DEFAULTS = Object.freeze({
-    enabled: true, panels: Object.freeze([]), configs: Object.freeze([]),
+    enabled: true, panels: Object.freeze([]),
+    evolution_panels: Object.freeze([]), configs: Object.freeze([]),
 });
 
 const ID_RE = /^[0-9a-f]{6,32}$/;
@@ -136,7 +161,7 @@ function configName(value) {
     return Array.from(flat).slice(0, STATS_CONFIG_NAME_MAX).join('');
 }
 
-const CATEGORICAL_METRICS = ['cache_type', 'container', 'country', 'state', 'attribute', 'owner'];
+const CATEGORICAL_METRICS = ['cache_type', 'container', 'country', 'state', 'county', 'status', 'attribute', 'owner'];
 const DEFAULT_WIDTH = { grid: 280, bar: 280, donut: 300, line: 320, counter: 280 };
 
 // Valeurs par défaut d'un panneau, fonction de son type et de sa métrique :
@@ -160,7 +185,7 @@ export function statsPanelDefaults(kind, metric) {
             show_values: true,
             show_percent: false,
             highlight: 'every',
-            sort: ['cache_type', 'country', 'state', 'attribute', 'owner'].includes(metric) ? 'count' : 'natural',
+            sort: ['cache_type', 'country', 'state', 'county', 'status', 'attribute', 'owner'].includes(metric) ? 'count' : 'natural',
             orientation: CATEGORICAL_METRICS.includes(metric) ? 'horizontal' : 'vertical',
             max_items: 8,
             hide_empty: false,
@@ -218,7 +243,8 @@ const OPTION_COERCERS = {
     hole: (v, d) => intIn(v, d, STATS_HOLE_RANGE),
     show_legend: bool,
     show_area: bool,
-    items: (v, d) => choices(v, STATS_COUNTER_ITEMS, d),
+    items: (v, d) => choices(v, ALL_COUNTER_ITEMS, d),
+    counted: (v, d) => choice(v, STATS_COUNTED, d),
     columns: (v, d) => intIn(v, d, STATS_COLUMNS_RANGE),
 };
 
@@ -254,6 +280,20 @@ function coerceBlock(raw, defaults, coercers) {
     return out;
 }
 
+// Liste de panneaux propre à chaque mode : `stats.panels` pour le mode
+// principal (trouvailles), `stats.evolution_panels` pour /evolution.
+export function statsPanelsKey(evolution) {
+    return evolution ? 'evolution_panels' : 'panels';
+}
+
+// La normalisation accepte l'union des deux registres (principal + Évolution) :
+// un panneau à métrique étrangère peut figurer dans une liste, c'est le rendu
+// qui le masque (stats_panels › visiblePanels — badge dans la liste).
+export function metricValidForKind(kind, metric) {
+    return (STATS_METRICS_BY_KIND[kind] || []).includes(metric)
+        || (EVOLUTION_METRICS_BY_KIND[kind] || []).includes(metric);
+}
+
 // Panneau normalisé, ou null s'il n'est pas représentable (type ou métrique
 // inconnus, combinaison invalide). L'unicité de l'identifiant est vérifiée
 // par normalizeStatsSettings.
@@ -261,8 +301,15 @@ export function normalizeStatsPanel(raw) {
     if (!isObject(raw)) return null;
     const { kind, metric } = raw;
     if (typeof kind !== 'string' || !Object.hasOwn(STATS_METRICS_BY_KIND, kind)) return null;
-    if (!STATS_METRICS_BY_KIND[kind].includes(metric)) return null;
+    if (!metricValidForKind(kind, metric)) return null;
     const defaults = statsPanelDefaults(kind, metric);
+    const options = coerceBlock(raw.options, defaults.options, OPTION_COERCERS);
+    // « Compter » (univers actives/placées/archivées) : option des barres et
+    // anneaux en mode Évolution, conservée seulement si fournie — les
+    // panneaux du mode principal ne la portent pas (absent = 'active').
+    if ((kind === 'bar' || kind === 'donut') && isObject(raw.options) && Object.hasOwn(raw.options, 'counted')) {
+        options.counted = OPTION_COERCERS.counted(raw.options.counted, 'active');
+    }
     return {
         id: typeof raw.id === 'string' && ID_RE.test(raw.id) ? raw.id : '',
         kind,
@@ -271,7 +318,7 @@ export function normalizeStatsPanel(raw) {
         show_title: bool(raw.show_title, defaults.show_title),
         title: title(raw.title),
         position: coerceBlock(raw.position, defaults.position, POSITION_COERCERS),
-        options: coerceBlock(raw.options, defaults.options, OPTION_COERCERS),
+        options,
         style: coerceBlock(raw.style, defaults.style, STYLE_COERCERS),
     };
 }
@@ -316,11 +363,14 @@ export function normalizeStatsSettings(raw, current = STATS_DEFAULTS, newId = ne
         return {
             enabled: bool(base.enabled, true),
             panels: Array.isArray(base.panels) ? [...base.panels] : [],
+            evolution_panels: Array.isArray(base.evolution_panels) ? [...base.evolution_panels] : [],
             configs: Array.isArray(base.configs) ? [...base.configs] : [],
         };
     }
     const enabled = bool(raw.enabled, bool(base.enabled, true));
     const panels = normalizePanelList(Object.hasOwn(raw, 'panels') ? raw.panels : base.panels, newId);
+    const evolutionPanels = normalizePanelList(
+        Object.hasOwn(raw, 'evolution_panels') ? raw.evolution_panels : base.evolution_panels, newId);
     // Premier nom gagnant : un doublon serait impossible à distinguer.
     const configSource = Object.hasOwn(raw, 'configs') ? raw.configs : base.configs;
     const configs = [];
@@ -332,7 +382,7 @@ export function normalizeStatsSettings(raw, current = STATS_DEFAULTS, newId = ne
         configs.push(config);
         if (configs.length >= STATS_MAX_CONFIGS) break;
     }
-    return { enabled, panels, configs };
+    return { enabled, panels, evolution_panels: evolutionPanels, configs };
 }
 
 // Nouveau panneau prêt à l'emploi (bouton « Ajouter », modèles) : défauts de
@@ -365,7 +415,16 @@ const COUNTER_DEPENDENCIES = {
 
 // Métriques de l'accumulateur nécessaires à un panneau. La courbe et les
 // compteurs se calculent à partir des comptes par jour, types, pays…
-export function accumulatorMetricsFor(panel) {
+// En mode Évolution, la courbe, le statut et les compteurs de la chronologie
+// lisent la timeline, pas l'accumulateur : seules les catégories comptent.
+export function accumulatorMetricsFor(panel, { evolution = false } = {}) {
+    if (evolution) {
+        if (panel.kind === 'line' || panel.metric === 'status') return [];
+        if (panel.kind === 'counter') {
+            return [...new Set((panel.options?.items || []).map((item) => COUNTER_DEPENDENCIES[item]).filter(Boolean))];
+        }
+        return [panel.metric];
+    }
     if (panel.kind === 'line') return ['day'];
     if (panel.kind === 'counter') {
         return [...new Set((panel.options?.items || []).map((item) => COUNTER_DEPENDENCIES[item]).filter(Boolean))];
@@ -375,12 +434,14 @@ export function accumulatorMetricsFor(panel) {
 
 // Métriques à compter pour une liste de panneaux : seuls les panneaux actifs
 // coûtent quelque chose.
-export function metricsForPanels(settings) {
+export function metricsForPanels(settings, { evolution = false } = {}) {
     const metrics = new Set();
     if (!settings?.enabled) return metrics;
-    for (const panel of settings.panels || []) {
+    for (const panel of settings?.[statsPanelsKey(evolution)] || []) {
         if (!panel.enabled) continue;
-        for (const metric of accumulatorMetricsFor(panel)) metrics.add(metric);
+        if (evolution && !(EVOLUTION_METRICS_BY_KIND[panel.kind] || []).includes(panel.metric)) continue;
+        if (!evolution && !(STATS_METRICS_BY_KIND[panel.kind] || []).includes(panel.metric)) continue;
+        for (const metric of accumulatorMetricsFor(panel, { evolution })) metrics.add(metric);
     }
     return metrics;
 }
@@ -520,6 +581,9 @@ const KEY_OF = {
     state(p) {
         return textKey(p.state);
     },
+    county(p) {
+        return textKey(p.county);
+    },
 };
 
 export function statsKeyOf(metric, properties) {
@@ -639,6 +703,242 @@ export function hasActiveHighlights(acc, panels, now, durationMs) {
         }
     }
     return false;
+}
+
+// ---------------------------------------------------------------------------
+// Mode Évolution : accumulateur à trois univers
+// ---------------------------------------------------------------------------
+//
+// La chronologie (evolution_timeline.mjs › buildTimeline) liste, par jour,
+// les poses et les archivages de la sélection. Chaque univers est compté en
+// parallèle dans une structure identique à l'accumulateur principal
+// (counts/excluded/lastHit par métrique + total) : barModel, counterValues
+// et le surlignage le lisent sans adaptation.
+//   add(features)    : événements « posée »   → active++, placed++
+//   remove(features) : événements « archivée » → active--, archived++
+
+const propertiesOf = (feature) => feature?.properties || feature?.getProperties?.() || {};
+
+export function createEvolutionStatsAccumulator(metrics = []) {
+    const list = [...new Set(metrics)].filter((m) => Object.hasOwn(KEY_OF, m));
+    const newSet = () => ({ counts: new Map(), excluded: new Map(), lastHit: new Map(), total: 0 });
+    const sets = { active: newSet(), placed: newSet(), archived: newSet() };
+    const acc = {
+        metrics: list,
+        sets,
+        revision: 0,
+        reset() {
+            for (const set of Object.values(sets)) {
+                set.counts.clear(); set.excluded.clear(); set.lastHit.clear(); set.total = 0;
+                for (const metric of list) {
+                    set.counts.set(metric, new Map());
+                    set.excluded.set(metric, 0);
+                    set.lastHit.set(metric, new Map());
+                }
+            }
+            acc.revision += 1;
+            return acc;
+        },
+        add(features, at = null) {
+            applyEvents(features, at, [sets.active, sets.placed], +1);
+            return acc;
+        },
+        remove(features, at = null) {
+            // L'ensemble actif décrémente (sans surlignage) ; le cumul des
+            // archivées incrémente et reçoit l'horloge de surlignage — une
+            // barre « archivées » monte quand une cache archivée disparaît.
+            applyEvents(features, at, [sets.active], -1);
+            applyEvents(features, at, [sets.archived], +1);
+            return acc;
+        },
+        // Vue d'un univers au format accumulateur principal (lecture seule).
+        setView(name) {
+            const set = sets[name] || sets.active;
+            return { ...set, total: set.total, revision: acc.revision };
+        },
+    };
+    function applyEvents(features, at, targets, delta) {
+        if (!features || features.length === 0) return;
+        const hasClock = Number.isFinite(at);
+        for (const feature of features) {
+            const properties = propertiesOf(feature);
+            for (const metric of list) {
+                const key = KEY_OF[metric](properties);
+                const keys = Array.isArray(key) ? key : [key];
+                for (const set of targets) {
+                    if (key === null || keys.length === 0) {
+                        set.excluded.set(metric, Math.max(0, set.excluded.get(metric) + delta));
+                        continue;
+                    }
+                    const counts = set.counts.get(metric);
+                    for (const k of keys) {
+                        const before = counts.get(k) || 0;
+                        counts.set(k, Math.max(0, before + delta));
+                    }
+                }
+                // Surlignage sur l'univers qui monte (placed/active à la pose,
+                // archived à l'archivage) — jamais sur l'ensemble qui fond.
+                const hitSet = delta > 0 ? targets[0] : null;
+                if (hasClock && hitSet && key !== null && keys.length > 0) {
+                    const hits = hitSet.lastHit.get(metric);
+                    for (const k of keys) {
+                        const hit = hits.get(k) || { at: null, newAt: null };
+                        hit.at = at;
+                        if ((hitSet.counts.get(metric).get(k) || 0) === (delta > 0 ? 1 : 0)) hit.newAt = at;
+                        hits.set(k, hit);
+                    }
+                }
+            }
+            for (const set of targets) set.total = Math.max(0, set.total + delta);
+        }
+        acc.revision += 1;
+    }
+    return acc.reset();
+}
+
+// État des trois univers au jour `day` (index depuis l'origin) : rejoue les
+// événements en deux lots (poses puis archivages) sans horloge de surlignage.
+// `index` = { timeline, features } (stats_panels › evolutionStatsIndex).
+export function evolutionStateAt(index, metrics, day) {
+    const acc = createEvolutionStatsAccumulator(metrics);
+    const timeline = index?.timeline;
+    if (!timeline || timeline.count === 0) return acc;
+    const span = timeline.lastDay - timeline.firstDay + 1;
+    // `upto` = nombre de JOURS rejoués ; les ordres se tranchent par nombre
+    // d'événements (placedStart/archivedStart sont cumulatifs).
+    const upto = Math.max(0, Math.min(day - timeline.firstDay + 1, span));
+    const features = index.features || [];
+    // Array.from (pas .map) : les ordres sont des Int32Array, et .map() sur
+    // un tableau typé renverrait un Int32Array — les features y deviendraient
+    // des 0.
+    acc.add(Array.from(timeline.placedOrder.subarray(0, timeline.placedStart[upto]),
+        (k) => features[k]), null);
+    acc.remove(Array.from(timeline.archivedOrder.subarray(0, timeline.archivedStart[upto]),
+        (k) => features[k]), null);
+    return acc;
+}
+
+// Référence « échelle fixe » de l'univers actif : maximum atteint par chaque
+// clé en rejouant la chronologie jusqu'à `day` (les barres ne changent pas
+// d'échelle quand des caches disparaissent). total = pic d'actives global.
+export function evolutionActivePeaks(index, metrics, day) {
+    const ref = { counts: new Map(), excluded: new Map(), total: 0 };
+    const timeline = index?.timeline;
+    const list = [...new Set(metrics)].filter((m) => Object.hasOwn(KEY_OF, m));
+    for (const metric of list) ref.counts.set(metric, new Map());
+    if (!timeline || timeline.count === 0) return ref;
+    const span = timeline.lastDay - timeline.firstDay + 1;
+    const upto = Math.max(0, Math.min(day - timeline.firstDay + 1, span));
+    const features = index.features || [];
+    const live = new Map();  // metric → Map(clé → compte courant)
+    for (const metric of list) live.set(metric, new Map());
+    let activeTotal = 0;
+    const dayEvents = (order, starts, d) => order.subarray(starts[d], starts[d + 1]);
+    for (let d = 0; d < upto; d++) {
+        for (const k of dayEvents(timeline.placedOrder, timeline.placedStart, d)) {
+            const p = propertiesOf(features[k]);
+            activeTotal += 1;
+            for (const metric of list) {
+                const key = KEY_OF[metric](p);
+                const keys = Array.isArray(key) ? key : [key];
+                if (key === null || keys.length === 0) continue;
+                const counts = live.get(metric);
+                for (const kk of keys) {
+                    const next = (counts.get(kk) || 0) + 1;
+                    counts.set(kk, next);
+                    if (next > (ref.counts.get(metric).get(kk) || 0)) ref.counts.get(metric).set(kk, next);
+                }
+            }
+        }
+        for (const k of dayEvents(timeline.archivedOrder, timeline.archivedStart, d)) {
+            const p = propertiesOf(features[k]);
+            activeTotal = Math.max(0, activeTotal - 1);
+            for (const metric of list) {
+                const key = KEY_OF[metric](p);
+                const keys = Array.isArray(key) ? key : [key];
+                if (key === null || keys.length === 0) continue;
+                const counts = live.get(metric);
+                for (const kk of keys) counts.set(kk, Math.max(0, (counts.get(kk) || 0) - 1));
+            }
+        }
+        if (activeTotal > ref.total) ref.total = activeTotal;
+    }
+    return ref;
+}
+
+// Série d'une courbe Évolution : valeur du compteur jour par jour jusqu'à
+// `uptoDay` (index origin). Même forme que lineModel ; les dates des points
+// sont des jours epoch (originDay + index) pour les libellés existants.
+// `metric` : 'actives' | 'placees' | 'archivees'.
+export function evolutionLineModel(index, metric, uptoDay, context = {}) {
+    const timeline = index?.timeline;
+    const originDay = index?.originDay || 0;
+    const mode = metric === 'placees' ? 'placed' : metric === 'archivees' ? 'archived' : 'active';
+    if (!timeline || timeline.count === 0) {
+        return { empty: true, points: [], first: 0, last: 0, max: 0, total: 0, headDay: 0, excluded: 0 };
+    }
+    const upto = Math.max(timeline.firstDay, Math.min(uptoDay, timeline.lastDay));
+    const points = [];
+    for (let d = timeline.firstDay; d <= upto; d++) {
+        points.push({ day: originDay + d, total: counterAt(timeline, d, mode) });
+    }
+    const total = points.length ? points.at(-1).total : 0;
+    return {
+        empty: false,
+        points,
+        first: originDay + timeline.firstDay,
+        last: Math.max(originDay + timeline.lastDay, originDay + timeline.firstDay + 1),
+        max: Math.max(counterMaxFor(timeline, mode), total),
+        total,
+        headDay: originDay + upto,
+        excluded: 0,
+    };
+}
+
+// Vue « statut » (actives vs archivées à la date affichée) sous forme
+// d'accumulateur factice : barModel et l'anneau s'y branchent directement.
+export function evolutionStatusAcc(index, day, { reference = false } = {}) {
+    const timeline = index?.timeline;
+    const statusCounts = new Map();
+    let total = 0;
+    if (timeline && timeline.count > 0) {
+        if (reference) {
+            // Échelle fixe : pic d'actives et total des archivages sur toute
+            // la sélection.
+            const span = timeline.lastDay - timeline.firstDay + 1;
+            statusCounts.set('active', timeline.peakActive);
+            statusCounts.set('archived', timeline.archivedStart[span]);
+        } else {
+            statusCounts.set('active', counterAt(timeline, day, 'active'));
+            statusCounts.set('archived', counterAt(timeline, day, 'archived'));
+        }
+        total = (statusCounts.get('active') || 0) + (statusCounts.get('archived') || 0);
+    }
+    return {
+        counts: new Map([['status', statusCounts]]),
+        excluded: new Map([['status', 0]]),
+        lastHit: new Map(),
+        total,
+    };
+}
+
+// Valeurs des tuiles Évolution : compteurs de la chronologie au jour `day`,
+// catégories distinctes de l'ensemble actif (`activeView`). Même forme que
+// counterValues.
+const EMPTY_VIEW = { counts: new Map() };
+export function evolutionCounterValues(index, day, activeView, items) {
+    const timeline = index?.timeline;
+    const values = {};
+    for (const item of items || []) {
+        if (item === 'actives') values.actives = { value: counterAt(timeline, day, 'active') };
+        else if (item === 'placees') values.placees = { value: counterAt(timeline, day, 'placed') };
+        else if (item === 'archivees') values.archivees = { value: counterAt(timeline, day, 'archived') };
+        else if (item === 'peak') values.peak = { value: timeline?.peakActive || 0 };
+        else if (item === 'types') values.types = { value: knownKeys(activeView || EMPTY_VIEW, 'cache_type') };
+        else if (item === 'countries') values.countries = { value: knownKeys(activeView || EMPTY_VIEW, 'country') };
+        else if (item === 'states') values.states = { value: knownKeys(activeView || EMPTY_VIEW, 'state') };
+    }
+    return values;
 }
 
 // ---------------------------------------------------------------------------
@@ -1021,7 +1321,11 @@ export function lineModel(current, reference, context = {}) {
 
 function knownKeys(acc, metric) {
     let n = 0;
-    for (const key of (acc.counts.get(metric) || new Map()).keys()) if (key !== UNKNOWN_KEY) n += 1;
+    // Seules les clés présentes comptent : en Évolution une clé peut rester
+    // à 0 après un archivage (la barre glisse vers 0 avant de disparaître).
+    for (const [key, count] of (acc.counts.get(metric) || new Map())) {
+        if (key !== UNKNOWN_KEY && count > 0) n += 1;
+    }
     return n;
 }
 
