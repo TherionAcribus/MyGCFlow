@@ -758,6 +758,10 @@ main.fullscreen-mode ~ .tooltip {
        (#titleFrame, #infosFrame, .control-bar) : sans positionnement ici, ils
        se résolvaient contre le document plutôt que contre ce cadre. */
     position: relative;
+    /* Un panneau Stats plus grand que le cadre (carte réduite au séparateur)
+       est rogné au bord, comme dans la vidéo — sans cela, il se dessinait
+       par-dessus la zone des onglets. */
+    overflow: hidden;
     /* Hauteur par défaut avant que initMapTabsSplitPane() (ui.js) ne restaure la
        valeur sauvegardée en localStorage ou n'applique le repli (préréglage
        « balanced » à 45 % sous 1280 px de large, « sidebar » au-delà).
