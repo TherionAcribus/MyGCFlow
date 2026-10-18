@@ -81,6 +81,7 @@
             "dx": 16,
             "dy": 16,
             "width": 280,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -139,6 +140,7 @@
             "dx": 16,
             "dy": 16,
             "width": 280,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -173,6 +175,7 @@
             "dx": 16,
             "dy": 16,
             "width": 280,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -241,6 +244,7 @@
             "dx": 16,
             "dy": 16,
             "width": 280,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -277,6 +281,7 @@
             "dx": 16,
             "dy": 16,
             "width": 280,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -313,6 +318,7 @@
             "dx": 16,
             "dy": 16,
             "width": 280,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -349,6 +355,7 @@
             "dx": 16,
             "dy": 16,
             "width": 280,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -420,6 +427,7 @@
             "dx": 16,
             "dy": 16,
             "width": 280,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -493,6 +501,7 @@
             "dx": 0,
             "dy": 41,
             "width": 1200,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -563,6 +572,7 @@
             "dx": 16,
             "dy": 16,
             "width": 300,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -626,6 +636,7 @@
             "dx": 16,
             "dy": 16,
             "width": 280,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -684,6 +695,7 @@
             "dx": 16,
             "dy": 16,
             "width": 280,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -753,6 +765,7 @@
             "dx": 16,
             "dy": 16,
             "width": 280,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -787,6 +800,7 @@
             "dx": 16,
             "dy": 16,
             "width": 280,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -821,6 +835,7 @@
             "dx": 16,
             "dy": 16,
             "width": 280,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -894,6 +909,7 @@
             "dx": 16,
             "dy": 16,
             "width": 300,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -929,6 +945,7 @@
             "dx": 16,
             "dy": 16,
             "width": 300,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -964,6 +981,7 @@
             "dx": 16,
             "dy": 16,
             "width": 320,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -996,6 +1014,7 @@
             "dx": 16,
             "dy": 16,
             "width": 280,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -1033,6 +1052,7 @@
             "dx": 16,
             "dy": 16,
             "width": 280,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -1107,6 +1127,7 @@
             "dx": 16,
             "dy": 16,
             "width": 320,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -1185,6 +1206,7 @@
             "dx": 16,
             "dy": 16,
             "width": 280,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -1220,6 +1242,7 @@
             "dx": 16,
             "dy": 16,
             "width": 280,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -1257,6 +1280,7 @@
             "dx": 16,
             "dy": 16,
             "width": 280,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -1349,6 +1373,7 @@
             "dx": 16,
             "dy": 16,
             "width": 300,
+            "height": null,
             "x": 0.1235,
             "y": 0.9877
           },
@@ -1384,6 +1409,7 @@
             "dx": 16,
             "dy": 16,
             "width": 280,
+            "height": null,
             "x": 1.0,
             "y": 0.0
           },
@@ -1420,6 +1446,7 @@
             "dx": 16,
             "dy": 16,
             "width": 320,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -1506,6 +1533,7 @@
             "dx": 16,
             "dy": 16,
             "width": 280,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -1542,6 +1570,7 @@
             "dx": 16,
             "dy": 16,
             "width": 280,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -1578,6 +1607,7 @@
             "dx": 16,
             "dy": 16,
             "width": 280,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -1614,6 +1644,7 @@
             "dx": 16,
             "dy": 16,
             "width": 280,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -1650,6 +1681,7 @@
             "dx": 16,
             "dy": 16,
             "width": 280,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -1686,6 +1718,7 @@
             "dx": 16,
             "dy": 16,
             "width": 280,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -1752,6 +1785,7 @@
                 "dx": 16,
                 "dy": 16,
                 "width": 280,
+                "height": null,
                 "x": 0,
                 "y": 0
               },
@@ -1862,6 +1896,7 @@
                 "dx": 16,
                 "dy": 16,
                 "width": 280,
+                "height": null,
                 "x": 0,
                 "y": 0
               },
@@ -1953,6 +1988,7 @@
                 "dx": 16,
                 "dy": 16,
                 "width": 280,
+                "height": null,
                 "x": 0,
                 "y": 0
               },
@@ -2175,6 +2211,7 @@
             "dx": 16,
             "dy": 16,
             "width": 280,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -2211,6 +2248,7 @@
             "dx": 16,
             "dy": 16,
             "width": 280,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -2247,6 +2285,7 @@
             "dx": 16,
             "dy": 16,
             "width": 280,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -2283,6 +2322,7 @@
             "dx": 16,
             "dy": 16,
             "width": 280,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -2319,6 +2359,7 @@
             "dx": 16,
             "dy": 16,
             "width": 300,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -2354,6 +2395,7 @@
             "dx": 16,
             "dy": 16,
             "width": 300,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -2418,6 +2460,7 @@
             "dx": 16,
             "dy": 16,
             "width": 280,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -2454,6 +2497,7 @@
             "dx": 16,
             "dy": 16,
             "width": 280,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -2510,6 +2554,7 @@
             "dx": 16,
             "dy": 16,
             "width": 280,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -2566,6 +2611,7 @@
             "dx": 16,
             "dy": 16,
             "width": 280,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -2681,6 +2727,7 @@
             "dx": 16,
             "dy": 16,
             "width": 280,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -2715,6 +2762,7 @@
             "dx": 16,
             "dy": 16,
             "width": 280,
+            "height": null,
             "x": 0,
             "y": 0
           },
@@ -2731,6 +2779,197 @@
             "text_color": "#ffffff",
             "accent_color": "#29d34e",
             "palette": "heat",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        }
+      ],
+      "evolution_panels": [],
+      "configs": []
+    }
+  },
+  {
+    "name": "hauteur imposée : nullable, bornée, ignorée si non numérique",
+    "input": {
+      "panels": [
+        {
+          "id": "aaaaaa01",
+          "kind": "bar",
+          "metric": "year",
+          "position": {
+            "height": 400
+          }
+        },
+        {
+          "id": "aaaaaa02",
+          "kind": "bar",
+          "metric": "year",
+          "position": {
+            "height": "abc"
+          }
+        },
+        {
+          "id": "aaaaaa03",
+          "kind": "line",
+          "metric": "cumulative",
+          "position": {
+            "height": 5000
+          }
+        },
+        {
+          "id": "aaaaaa04",
+          "kind": "counter",
+          "metric": "summary",
+          "position": {
+            "height": 10
+          }
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "panels": [
+        {
+          "id": "aaaaaa01",
+          "kind": "bar",
+          "metric": "year",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 280,
+            "height": 400,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "show_values": true,
+            "show_percent": false,
+            "highlight": "every",
+            "sort": "natural",
+            "orientation": "vertical",
+            "max_items": 8,
+            "hide_empty": false
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "accent",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        },
+        {
+          "id": "aaaaaa02",
+          "kind": "bar",
+          "metric": "year",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 280,
+            "height": null,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "show_values": true,
+            "show_percent": false,
+            "highlight": "every",
+            "sort": "natural",
+            "orientation": "vertical",
+            "max_items": 8,
+            "hide_empty": false
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "accent",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        },
+        {
+          "id": "aaaaaa03",
+          "kind": "line",
+          "metric": "cumulative",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 320,
+            "height": 1200,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "show_values": true,
+            "highlight": "every",
+            "show_area": true
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "accent",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        },
+        {
+          "id": "aaaaaa04",
+          "kind": "counter",
+          "metric": "summary",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 280,
+            "height": 60,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "highlight": "every",
+            "items": [
+              "days",
+              "best_day",
+              "streak",
+              "types"
+            ],
+            "columns": 2
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "accent",
             "font_size": 12,
             "radius": 10,
             "inherit_font": true

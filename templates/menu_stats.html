@@ -321,6 +321,11 @@
                                     <label class="form-label" for="inputStatsWidth">{{ _("Largeur (px)") }}</label>
                                     <input id="inputStatsWidth" type="number" class="form-control" min="120" max="1200" step="10">
                                 </div>
+                                <div class="col-6" data-stats-kind="bar donut line counter">
+                                    <label class="form-label" for="inputStatsHeight">{{ _("Hauteur (px)") }}</label>
+                                    <input id="inputStatsHeight" type="number" class="form-control" min="60" max="1200" step="10" placeholder="{{ _('auto') }}" aria-describedby="helpStatsHeight">
+                                    <small id="helpStatsHeight" class="form-hint text-muted">{{ _("Vide : hauteur automatique ; ignoré pour les grilles (cases carrées).") }}</small>
+                                </div>
                             </div>
                             <small class="form-hint text-muted d-block mt-1">{{ _("Les panneaux qui partagent un coin s'empilent automatiquement et contournent le titre et les infos ; la marge verticale sert alors d'espacement avec le panneau précédent.") }}</small>
                         </div>

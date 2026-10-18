@@ -6,9 +6,10 @@
 //
 // Aucune lecture du DOM ici. Le panneau reçoit une « vue » préparée par
 // stats_panels.js (modèle de stats_model.mjs + libellés traduits + couleurs) ;
-// la géométrie se calcule en px CSS à partir de la seule largeur, ce qui
-// permet de connaître la hauteur (measure) avant de dessiner, puis de
-// dessiner à n'importe quelle échelle (DPR de l'écran, facteur de la vidéo).
+// la géométrie se calcule en px CSS à partir de la largeur — et d'une hauteur
+// optionnelle imposée (position.height) — ce qui permet de connaître la
+// hauteur (measure) avant de dessiner, puis de dessiner à n'importe quelle
+// échelle (DPR de l'écran, facteur de la vidéo).
 //
 // Registre STATS_RENDERERS : ajouter un type de panneau = ajouter une entrée
 // (grille, histogramme, anneau, courbe, compteurs).
@@ -134,6 +135,10 @@ function highlightFor(view, keys, now) {
 // fixe par métrique pour que measure() n'ait pas besoin de mesurer du texte.
 const GRID_ROW_LABEL_EM = { dt: 2.4, jasmer: 2.6, calendar: 3 };
 
+// La hauteur imposée (targetH, px CSS de la hauteur TOTALE du panneau) est
+// optionnelle : chaque layout la convertit en hauteur de zone graphique,
+// bornée à un plancher de lisibilité — on peut étirer ET compresser, jamais
+// sous le plancher. Les grilles l'ignorent (cases carrées).
 function gridLayout(view, style, width) {
     const frame = frameMetrics(view, style);
     const model = view.model;
@@ -147,7 +152,7 @@ function gridLayout(view, style, width) {
     return { ...frame, rowLabelW, headerH, cell, gridTop, height };
 }
 
-function drawGrid(ctx, view, style, width, now) {
+function drawGrid(ctx, view, style, width, _targetH, now) {
     const L = gridLayout(view, style, width);
     const model = view.model;
     drawFrame(ctx, view, style, width, L.height, L);
@@ -260,7 +265,7 @@ function valueText(view, row) {
 // Histogramme
 // ---------------------------------------------------------------------------
 
-function barLayout(view, style, width) {
+function barLayout(view, style, width, targetH) {
     const frame = frameMetrics(view, style);
     // Course de barres : un nombre de places fixe (model.slots), pour que la
     // hauteur ne change pas quand des catégories entrent dans le classement.
@@ -270,15 +275,23 @@ function barLayout(view, style, width) {
     if (view.orientation === 'vertical') {
         // Valeurs au-dessus, libellés dessous : la hauteur suit la largeur.
         chartH = Math.round(Math.max(frame.fontSize * 6, (width - frame.pad * 2) * 0.5) + frame.fontSize * 3);
+        if (Number.isFinite(targetH)) {
+            // Plancher : barres plus hautes que large ne seraient plus lisibles.
+            chartH = Math.max(frame.fontSize * 5, Math.round(targetH - top - frame.footH - frame.pad));
+        }
     } else {
         chartH = Math.max(1, rows) * Math.round(frame.fontSize * 1.75);
+        if (Number.isFinite(targetH)) {
+            // Plancher : une ligne par rang, assez haute pour y lire le libellé.
+            chartH = Math.max(rows * frame.fontSize * 1.3, Math.round(targetH - top - frame.footH - frame.pad));
+        }
     }
     const height = Math.ceil(top + chartH + frame.footH + frame.pad);
     return { ...frame, top, chartH, height, rows };
 }
 
-function drawBars(ctx, view, style, width, now) {
-    const L = barLayout(view, style, width);
+function drawBars(ctx, view, style, width, targetH, now) {
+    const L = barLayout(view, style, width, targetH);
     drawFrame(ctx, view, style, width, L.height, L);
     const { rows, max } = view.model;
     const scaleMax = Number.isFinite(view.model.shownMax) && view.model.shownMax > 0 ? view.model.shownMax : max;
@@ -394,18 +407,23 @@ function drawBars(ctx, view, style, width, now) {
 // Anneau (camembert si le trou vaut 0)
 // ---------------------------------------------------------------------------
 
-function donutLayout(view, style, width) {
+function donutLayout(view, style, width, targetH) {
     const frame = frameMetrics(view, style);
     const innerW = Math.max(1, width - frame.pad * 2);
     const rows = view.model.rows.length;
     const legend = view.showLegend && rows > 0;
-    const diameter = Math.round(legend
-        ? Math.max(60, Math.min(220, innerW * 0.46))
-        : Math.max(60, Math.min(320, innerW)));
+    const top = frame.pad + frame.titleH;
     const rowH = Math.round(frame.fontSize * 1.55);
     const legendH = legend ? rows * rowH : 0;
+    // Plafond naturel du diamètre (220 avec légende, 320 sans) : dépassé
+    // quand une hauteur imposée laisse plus de place — l'anneau s'étire mais
+    // ne se compresse jamais sous sa taille naturelle (60 px minimum). La
+    // légende plus haute que l'anneau commande comme d'habitude.
+    const widthCap = legend ? innerW * 0.46 : innerW;
+    const cap = legend ? 220 : 320;
+    const diameter = Math.round(Math.max(60, Math.min(widthCap,
+        Math.max(cap, Number.isFinite(targetH) ? targetH - top - frame.footH - frame.pad : cap))));
     const chartH = Math.max(diameter, legendH);
-    const top = frame.pad + frame.titleH;
     const height = Math.ceil(top + chartH + frame.footH + frame.pad);
     return { ...frame, top, innerW, diameter, legend, rowH, legendH, chartH, height };
 }
@@ -418,8 +436,8 @@ function ringPath(ctx, cx, cy, outer, inner, start, end) {
     ctx.closePath();
 }
 
-function drawDonut(ctx, view, style, width, now) {
-    const L = donutLayout(view, style, width);
+function drawDonut(ctx, view, style, width, targetH, now) {
+    const L = donutLayout(view, style, width, targetH);
     drawFrame(ctx, view, style, width, L.height, L);
     const { rows, max } = view.model;
     const cx = L.legend ? L.pad + L.diameter / 2 : width / 2;
@@ -510,18 +528,21 @@ function drawDonut(ctx, view, style, width, now) {
 // Courbe de progression
 // ---------------------------------------------------------------------------
 
-function lineLayout(view, style, width) {
+function lineLayout(view, style, width, targetH) {
     const frame = frameMetrics(view, style);
     const innerW = Math.max(1, width - frame.pad * 2);
-    const plotH = Math.round(Math.max(frame.fontSize * 6, innerW * 0.38));
     const axisH = Math.round(frame.fontSize * 1.5);
     const top = frame.pad + frame.titleH;
+    // Plancher : en dessous, la courbe n'est plus qu'un trait illisible.
+    const plotH = Number.isFinite(targetH)
+        ? Math.max(frame.fontSize * 3.5, Math.round(targetH - top - axisH - frame.footH - frame.pad))
+        : Math.round(Math.max(frame.fontSize * 6, innerW * 0.38));
     const height = Math.ceil(top + plotH + axisH + frame.footH + frame.pad);
     return { ...frame, top, innerW, plotH, axisH, height };
 }
 
-function drawLine(ctx, view, style, width, now) {
-    const L = lineLayout(view, style, width);
+function drawLine(ctx, view, style, width, targetH, now) {
+    const L = lineLayout(view, style, width, targetH);
     drawFrame(ctx, view, style, width, L.height, L);
     const model = view.model;
     // Marge haute pour la valeur posée au-dessus de la tête.
@@ -656,21 +677,27 @@ function drawLine(ctx, view, style, width, now) {
 // Compteurs
 // ---------------------------------------------------------------------------
 
-function counterLayout(view, style, width) {
+function counterLayout(view, style, width, targetH) {
     const frame = frameMetrics(view, style);
     const tiles = view.tiles.length;
     const columns = Math.max(1, Math.min(view.columns || 1, tiles || 1));
     const rows = Math.max(1, Math.ceil(tiles / columns));
     const gap = Math.round(frame.fontSize * 0.5);
-    const tileH = Math.round(frame.fontSize * 4.4);
     const top = frame.pad + frame.titleH;
+    let tileH = Math.round(frame.fontSize * 4.4);
+    if (Number.isFinite(targetH)) {
+        // Les tuiles se répartissent la hauteur disponible ; plancher : le
+        // chiffre (×1,9 la police) et son libellé restent lisibles.
+        const avail = targetH - top - frame.footH - frame.pad;
+        tileH = Math.max(frame.fontSize * 3.4, (avail - (rows - 1) * gap) / rows);
+    }
     const chartH = rows * tileH + (rows - 1) * gap;
     const height = Math.ceil(top + chartH + frame.footH + frame.pad);
     return { ...frame, top, columns, rows, gap, tileH, chartH, height };
 }
 
-function drawCounters(ctx, view, style, width) {
-    const L = counterLayout(view, style, width);
+function drawCounters(ctx, view, style, width, targetH) {
+    const L = counterLayout(view, style, width, targetH);
     drawFrame(ctx, view, style, width, L.height, L);
     const tileW = (width - L.pad * 2 - (L.columns - 1) * L.gap) / L.columns;
     view.tiles.forEach((tile, i) => {
@@ -714,40 +741,46 @@ export const STATS_RENDERERS = Object.freeze({
         draw: drawGrid,
     },
     bar: {
-        measure: (view, style, width) => barLayout(view, style, width).height,
+        measure: (view, style, width, height) => barLayout(view, style, width, height).height,
         draw: drawBars,
     },
     donut: {
-        measure: (view, style, width) => donutLayout(view, style, width).height,
+        measure: (view, style, width, height) => donutLayout(view, style, width, height).height,
         draw: drawDonut,
     },
     line: {
-        measure: (view, style, width) => lineLayout(view, style, width).height,
+        measure: (view, style, width, height) => lineLayout(view, style, width, height).height,
         draw: drawLine,
     },
     counter: {
-        measure: (view, style, width) => counterLayout(view, style, width).height,
+        measure: (view, style, width, height) => counterLayout(view, style, width, height).height,
         draw: drawCounters,
     },
 });
 
-// Hauteur en px CSS d'un panneau de largeur `width`.
-export function measureStatsPanel(view, style, width) {
+// Hauteur en px CSS d'un panneau de largeur `width` ; `height` (optionnelle)
+// impose la hauteur totale — étirée ou compressée jusqu'au plancher de
+// lisibilité de chaque type (les grilles l'ignorent : cases carrées).
+export function measureStatsPanel(view, style, width, height) {
     const renderer = STATS_RENDERERS[view?.kind];
-    return renderer ? renderer.measure(view, style, width) : 0;
+    return renderer ? renderer.measure(view, style, width, height) : 0;
 }
 
 // Dessine un panneau dans `rect` (px du canvas cible). `cssWidth` est la
 // largeur logique : le dessin se fait en px CSS, mis à l'échelle de `rect`.
+// La hauteur logique est déduite du même rapport et re-résolue par le layout
+// comme une hauteur imposée — max(x, plancher) est idempotent, le dessin
+// remplit donc exactement `rect`, en aperçu comme en vidéo.
 export function drawStatsPanel(ctx, rect, view, style, now, cssWidth) {
     const renderer = STATS_RENDERERS[view?.kind];
     if (!renderer || !(rect.width > 0) || !(cssWidth > 0)) return;
     const scale = rect.width / cssWidth;
+    const cssHeight = rect.height > 0 ? rect.height / scale : null;
     ctx.save();
     ctx.translate(rect.x, rect.y);
     ctx.scale(scale, scale);
     try {
-        renderer.draw(ctx, view, style, cssWidth, now);
+        renderer.draw(ctx, view, style, cssWidth, cssHeight, now);
     } finally {
         ctx.restore();
     }

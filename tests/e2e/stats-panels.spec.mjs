@@ -469,6 +469,80 @@ test('un panneau se redimensionne par son bord droit', async ({ page }) => {
       .toBeGreaterThanOrEqual(355);  // 280 par défaut + ~80, marges de clamp
 });
 
+test('un panneau s\'étire en hauteur : champ, bord bas ; les grilles l\'ignorent', async ({ page }) => {
+  await putStats(page, { enabled: true, panels: [
+    { id: 'e5e00002', kind: 'bar', metric: 'cache_type',
+      position: { anchor: 'top-left', height: 400 } },
+  ] });
+  await openWithFixture(page, '#stats');
+  await page.locator('a[href="#stats"]').click();
+  const canvas = page.locator('canvas.stats-panel');
+  await expect(canvas).toHaveCount(1);
+
+  // Hauteur imposée au chargement : le canvas fait ~400 px CSS de haut.
+  await expect.poll(async () => (await canvas.boundingBox()).height)
+    .toBeGreaterThan(396);
+  await expect.poll(async () => (await canvas.boundingBox()).height)
+    .toBeLessThan(404);
+
+  // Le champ « Hauteur » reflète la valeur ; le modifier étire le panneau.
+  await page.locator('#statsSectionPosition summary').click();
+  const heightInput = page.locator('#inputStatsHeight');
+  await expect(heightInput).toHaveValue('400');
+  await heightInput.fill('500');
+  await heightInput.press('Tab');
+  await expect.poll(async () => (await savedStats(page)).panels[0].position.height).toBe(500);
+  await expect.poll(async () => (await canvas.boundingBox()).height)
+    .toBeGreaterThan(496);
+
+  // Champ vidé : retour à la hauteur automatique (position.height = null).
+  await heightInput.fill('');
+  await heightInput.press('Tab');
+  await expect.poll(async () => (await savedStats(page)).panels[0].position.height).toBeNull();
+  const naturalHeight = (await canvas.boundingBox()).height;
+  expect(naturalHeight).toBeLessThan(300);
+
+  // Bord bas : curseur ns-resize au survol, glisser qui impose la hauteur.
+  const box = await canvas.boundingBox();
+  const midX = box.x + box.width / 2;
+  await page.mouse.move(midX, box.y + box.height - 4);
+  await expect(canvas).toHaveCSS('cursor', 'ns-resize');
+  await page.mouse.down();
+  await page.mouse.move(midX, box.y + box.height - 4 + 80, { steps: 4 });
+  await page.mouse.up();
+  await expect.poll(async () => (await savedStats(page)).panels[0].position.height)
+    .toBeGreaterThanOrEqual(Math.round(box.height) + 60);
+
+  // Coin bas-droit : les deux axes d'un coup (nwse-resize).
+  const corner = await canvas.boundingBox();
+  await page.mouse.move(corner.x + corner.width - 4, corner.y + corner.height - 4);
+  await expect(canvas).toHaveCSS('cursor', 'nwse-resize');
+  await page.mouse.down();
+  await page.mouse.move(corner.x + corner.width - 4 + 40, corner.y + corner.height - 4 + 60, { steps: 4 });
+  await page.mouse.up();
+  await expect.poll(async () => {
+    const p = (await savedStats(page)).panels[0].position;
+    return p.width >= Math.round(corner.width) + 30 && p.height >= Math.round(corner.height) + 50;
+  }).toBe(true);
+
+  // Grille : champ masqué et hauteur stockée ignorée (cases carrées).
+  await putStats(page, { enabled: true, panels: [
+    { id: 'e5e00005', kind: 'grid', metric: 'dt',
+      position: { anchor: 'top-left', height: 700 } },
+  ] });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.mygcflowReady === true);
+  await page.locator('a[href="#stats"]').click();
+  await expect(canvas).toHaveCount(1);
+  await page.locator('#statsSectionPosition summary').click();
+  await expect(heightInput).toBeHidden();
+  const gridBox = await canvas.boundingBox();
+  expect(Math.abs(gridBox.height - 700)).toBeGreaterThan(50);
+  // Ni curseur ns-resize, ni poignée basse sur une grille.
+  await page.mouse.move(gridBox.x + gridBox.width / 2, gridBox.y + gridBox.height - 4);
+  await expect(canvas).toHaveCSS('cursor', 'grab');
+});
+
 test('la pile de coin se replace quand le cartouche d’infos grandit', async ({ page }) => {
   await putStats(page, { enabled: true, panels: [
     { id: 'eeeeee02', kind: 'counter', metric: 'summary', position: { anchor: 'top-right', dx: 16, dy: 16 } },

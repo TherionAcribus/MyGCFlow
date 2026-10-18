@@ -64,6 +64,26 @@ class PanelIdentityTests(unittest.TestCase):
         self.assertEqual(len(coerce_stats_settings({"panels": raw}).panels), STATS_MAX_PANELS)
 
 
+class PositionHeightTests(unittest.TestCase):
+    """Hauteur optionnelle : None = automatique, sinon bornée — miroir du
+    coercer `height` de POSITION_COERCERS (stats_model.mjs)."""
+
+    def height_of(self, position):
+        panel = coerce_stats_panel({"kind": "bar", "metric": "year", "position": position})
+        return panel["position"]["height"]
+
+    def test_nullable_and_bounded(self):
+        self.assertIsNone(self.height_of({}))
+        self.assertIsNone(self.height_of({"height": None}))
+        self.assertEqual(self.height_of({"height": 90}), 90)
+        self.assertEqual(self.height_of({"height": "300"}), 300)
+        # Non numérique → None (automatique), comme intIn côté client.
+        self.assertIsNone(self.height_of({"height": "abc"}))
+        self.assertEqual(self.height_of({"height": 5000}), 1200)
+        # Sous le plancher : bornée comme la largeur (0 → 60), pas annulée.
+        self.assertEqual(self.height_of({"height": 0}), 60)
+
+
 class StatsPatchTests(unittest.TestCase):
     def test_absent_keys_keep_the_current_value(self):
         current = coerce_stats_settings({"panels": [{"id": "aaaaaa01", "kind": "grid", "metric": "dt"}]})

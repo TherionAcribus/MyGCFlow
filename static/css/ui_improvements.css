@@ -3143,11 +3143,18 @@ main.fullscreen-mode #mapTabsContainer > #mapWithFrames {
     cursor: grabbing;
     outline-style: solid;
 }
-/* Bord droit : poignée de redimensionnement de la largeur (le curseur
-   « ew-resize » est aussi posé en ligne au survol par stats_ui.js). */
+/* Bord droit : poignée de redimensionnement de la largeur ; bord bas :
+   hauteur ; coin bas-droit : les deux (les curseurs sont aussi posés en
+   ligne au survol par stats_ui.js, qui sait où pointe le curseur). */
 #mapWithFrames.stats-editing > .stats-panel.is-resizing {
     cursor: ew-resize;
     outline-style: solid;
+}
+#mapWithFrames.stats-editing > .stats-panel.is-resizing-h {
+    cursor: ns-resize;
+}
+#mapWithFrames.stats-editing > .stats-panel.is-resizing-both {
+    cursor: nwse-resize;
 }
 /* Panneau sélectionné dans la liste : liseré franc de la couleur d'accent. */
 #mapWithFrames.stats-editing > .stats-panel.is-selected {

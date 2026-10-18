@@ -5,7 +5,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { labelsMaxWidth } from './static/js/stats_render.mjs';
+import { labelsMaxWidth, measureStatsPanel } from './static/js/stats_render.mjs';
 
 function fakeCtx() {
     return {
@@ -38,4 +38,67 @@ test('labelsMaxWidth : mémoïsée par tableau, remesurée par signature de poli
     // Un autre tableau, même contenu : cache distinct (clé = identité).
     assert.equal(labelsMaxWidth(ctx, ['aa', 'bbbbb'], 'f1'), 50);
     assert.equal(ctx.calls, calls + 4);
+});
+
+// ---------------------------------------------------------------------------
+// Hauteur imposée (position.height) : measureStatsPanel(view, style, w, h)
+// ---------------------------------------------------------------------------
+
+// Vues minimales : seuls les champs lus par les layouts sont nécessaires.
+const style = { font_size: 12 };
+// font_size 12 → pad 10, titre (si présent) 21, pied vide.
+const barView = {
+    kind: 'bar', title: 'Types', footer: [], orientation: 'horizontal',
+    model: { slots: 4, rows: [], max: 1 },
+};
+const gridView = { kind: 'grid', metric: 'dt', title: '', footer: [], model: { cols: 9, rows: 9 } };
+const lineView = { kind: 'line', title: '', footer: [], model: {} };
+const counterView = { kind: 'counter', title: '', footer: [], columns: 2, tiles: [{}, {}, {}, {}] };
+const donutView = { kind: 'donut', title: '', footer: [], showLegend: true, model: { rows: [{}, {}, {}] } };
+
+test('mesure : l\'histogramme horizontal suit la hauteur imposée jusqu\'au plancher', () => {
+    // Chrome : pad 10 + titre 21 en haut, pad 10 en bas (pas de pied) → 41.
+    // Naturel : 4 lignes × round(12 × 1,75) = 84.
+    assert.equal(measureStatsPanel(barView, style, 280), 41 + 84);
+    // Étirement : la hauteur totale rejoint la cible, les lignes s'épaississent.
+    assert.equal(measureStatsPanel(barView, style, 280, 400), 400);
+    // Compression sous la naturelle : jusqu'au plancher (4 × 12 × 1,3 = 62,4).
+    assert.equal(measureStatsPanel(barView, style, 280, 100), Math.ceil(41 + 62.4));
+    // Sous le plancher : jamais en dessous.
+    assert.equal(measureStatsPanel(barView, style, 280, 60), Math.ceil(41 + 62.4));
+});
+
+test('mesure : les grilles ignorent la hauteur imposée (cases carrées)', () => {
+    const natural = measureStatsPanel(gridView, style, 280);
+    assert.ok(natural > 0);
+    assert.equal(measureStatsPanel(gridView, style, 280, 900), natural);
+    assert.equal(measureStatsPanel(gridView, style, 280, 60), natural);
+});
+
+test('mesure : la courbe suit la hauteur imposée jusqu\'au plancher', () => {
+    // Naturel : pad 10, plot = max(72, 260 × 0,38 ≈ 99) = 99, axe 18.
+    assert.equal(measureStatsPanel(lineView, style, 280), 10 + 99 + 18 + 10);
+    assert.equal(measureStatsPanel(lineView, style, 280, 400), 400);
+    // Plancher : 12 × 3,5 = 42 de zone de tracé.
+    assert.equal(measureStatsPanel(lineView, style, 280, 60), 10 + 42 + 18 + 10);
+});
+
+test('mesure : les compteurs répartissent la hauteur imposée dans les tuiles', () => {
+    // Naturel : pad 10 × 2 ; 2×2 tuiles de round(12 × 4,4) = 53 + gap 6 → 112.
+    assert.equal(measureStatsPanel(counterView, style, 280), 10 + 112 + 10);
+    assert.equal(measureStatsPanel(counterView, style, 280, 400), 400);
+    // Plancher : 2 tuiles de 12 × 3,4 = 40,8 + gap 6 → 87,6 de zone.
+    assert.equal(measureStatsPanel(counterView, style, 280, 60), Math.ceil(10 + 87.6 + 10));
+});
+
+test('mesure : l\'anneau s\'étire au-delà de son plafond quand la largeur le permet', () => {
+    // 600 px de large, légende : innerW 580 → diamètre plafonné à 220
+    // (la largeur offrirait 580 × 0,46 ≈ 267).
+    const natural = measureStatsPanel(donutView, style, 600);
+    assert.equal(natural, 10 + 220 + 10);
+    // Hauteur imposée : le plafond saute, le diamètre suit la largeur (267).
+    assert.equal(measureStatsPanel(donutView, style, 600, 500), 10 + 267 + 10);
+    // Sous la naturelle : pas de compression — la taille naturelle est le
+    // plancher de l'anneau (légende plus haute : elle commanderait pareil).
+    assert.equal(measureStatsPanel(donutView, style, 600, 100), natural);
 });

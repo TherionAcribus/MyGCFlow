@@ -79,6 +79,9 @@ const ALL_COUNTER_ITEMS = [...STATS_COUNTER_ITEMS, ...EVOLUTION_COUNTER_ITEMS];
 
 export const STATS_OFFSET_RANGE = Object.freeze([0, 2000]);
 export const STATS_WIDTH_RANGE = Object.freeze([120, 1200]);
+// Hauteur optionnelle d'un panneau (px CSS) : null = hauteur automatique,
+// déduite de la largeur et du contenu (measureStatsPanel).
+export const STATS_HEIGHT_RANGE = Object.freeze([60, 1200]);
 export const STATS_MAX_ITEMS_RANGE = Object.freeze([3, 30]);
 export const STATS_OPACITY_RANGE = Object.freeze([0, 100]);
 export const STATS_FONT_SIZE_RANGE = Object.freeze([8, 32]);
@@ -220,7 +223,7 @@ export function statsPanelDefaults(kind, metric) {
         title: '',
         position: {
             mode: 'anchor', anchor: 'top-left', dx: 16, dy: 16,
-            width: DEFAULT_WIDTH[kind] || 280, x: 0, y: 0,
+            width: DEFAULT_WIDTH[kind] || 280, height: null, x: 0, y: 0,
         },
         options,
         style: {
@@ -261,6 +264,9 @@ const POSITION_COERCERS = {
     dx: (v, d) => intIn(v, d, STATS_OFFSET_RANGE),
     dy: (v, d) => intIn(v, d, STATS_OFFSET_RANGE),
     width: (v, d) => intIn(v, d, STATS_WIDTH_RANGE),
+    // Hauteur imposée, nullable : null (ou non numérique) = automatique ;
+    // un nombre est borné comme la largeur (0 → 60, pas annulé).
+    height: (v) => (v == null ? null : intIn(v, null, STATS_HEIGHT_RANGE)),
     x: unit,
     y: unit,
 };

@@ -79,6 +79,9 @@ _ALL_COUNTER_ITEMS = STATS_COUNTER_ITEMS + EVOLUTION_COUNTER_ITEMS
 
 STATS_OFFSET_RANGE = (0, 2000)
 STATS_WIDTH_RANGE = (120, 1200)
+# Hauteur optionnelle d'un panneau (px CSS) : None = hauteur automatique,
+# déduite de la largeur et du contenu (measureStatsPanel côté client).
+STATS_HEIGHT_RANGE = (60, 1200)
 STATS_MAX_ITEMS_RANGE = (3, 30)
 STATS_OPACITY_RANGE = (0, 100)
 STATS_FONT_SIZE_RANGE = (8, 32)
@@ -260,7 +263,7 @@ def stats_panel_defaults(kind: str, metric: str) -> dict:
         "title": "",
         "position": {
             "mode": "anchor", "anchor": "top-left", "dx": 16, "dy": 16,
-            "width": _DEFAULT_WIDTH.get(kind, 280), "x": 0, "y": 0,
+            "width": _DEFAULT_WIDTH.get(kind, 280), "height": None, "x": 0, "y": 0,
         },
         "options": options,
         "style": {
@@ -303,6 +306,9 @@ _POSITION_COERCERS = {
     "dx": lambda v, d: _int_in(v, d, STATS_OFFSET_RANGE),
     "dy": lambda v, d: _int_in(v, d, STATS_OFFSET_RANGE),
     "width": lambda v, d: _int_in(v, d, STATS_WIDTH_RANGE),
+    # Hauteur imposée, nullable : None (ou non numérique) = automatique ;
+    # un nombre est borné comme la largeur (0 → 60, pas annulé).
+    "height": lambda v, d: None if v is None else _int_in(v, None, STATS_HEIGHT_RANGE),
     "x": _unit,
     "y": _unit,
 }

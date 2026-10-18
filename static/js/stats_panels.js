@@ -24,6 +24,7 @@ import {
     EVOLUTION_METRICS_BY_KIND,
     OTHERS_KEY,
     STATS_DEFAULTS,
+    STATS_HEIGHT_RANGE,
     STATS_METRICS_BY_KIND,
     STATS_WIDTH_RANGE,
     UNKNOWN_KEY,
@@ -933,6 +934,22 @@ export function previewStatsPanelWidth(id, width) {
     touch();
 }
 
+// Même aperçu en direct pour la hauteur (poignée du bord bas, ou du coin
+// bas-droit avec la largeur) : position.height — jusque-là automatique —
+// prend la valeur glissée, bornée. Vider le champ du formulaire la rend à
+// l'automatique (null). Les grilles l'ignorent (cases carrées).
+export function previewStatsPanelHeight(id, height) {
+    if (pkg.isAnimationInProgress?.()) return;
+    const list = settings[isEvolutionPage() ? 'evolution_panels' : 'panels'] || [];
+    const panel = list.find((p) => p.id === id);
+    const h = Number(height);
+    if (!panel || panel.kind === 'grid' || !Number.isFinite(h)) return;
+    const [min, max] = STATS_HEIGHT_RANGE;
+    panel.position.height = Math.max(min, Math.min(max, Math.round(h)));
+    layoutDirty = true;
+    touch();
+}
+
 function scheduleFlush() {
     if (frameRequest || typeof requestAnimationFrame === 'undefined') return;
     frameRequest = requestAnimationFrame(() => {
@@ -1093,7 +1110,10 @@ function flush() {
             x: panel.position.x,
             y: panel.position.y,
             width,
-            height: measureStatsPanel(views.get(panel.id), panel.style, Math.max(1, width)),
+            // Hauteur imposée optionnelle — les grilles l'ignorent même si
+            // une valeur était stockée (cases carrées).
+            height: measureStatsPanel(views.get(panel.id), panel.style, Math.max(1, width),
+                panel.kind === 'grid' ? null : panel.position.height),
         };
     });
     // Les piles de coin contournent le titre et les infos.
@@ -1163,11 +1183,15 @@ function flush() {
     }
 }
 
-// Rect logique (px CSS, repère du conteneur) d'un panneau affiché, et taille
-// du conteneur : le glisser-déposer de stats_ui.js en déduit x/y normalisés.
+// Rect logique (px CSS, repère du conteneur) d'un panneau affiché, son type
+// (le glisser-déposer en déduit les axes redimensionnables : hauteur hors
+// grilles) et la taille du conteneur — x/y normalisés pour stats_ui.js.
 export function getStatsPanelRect(id) {
     const rect = panelNodes.get(id)?.layout;
-    return rect ? { ...rect, container: { ...containerSize } } : null;
+    if (!rect) return null;
+    const list = settings[isEvolutionPage() ? 'evolution_panels' : 'panels'] || [];
+    const kind = list.find((p) => p.id === id)?.kind || null;
+    return { ...rect, kind, container: { ...containerSize } };
 }
 
 export function getStatsLayoutWarnings() {
@@ -1256,7 +1280,8 @@ export function drawStatsPanelPreview(id, canvas) {
     if (drawDirty) flush();
     const view = buildView(panel);
     const cssWidth = Math.max(1, Math.round(panel.position.width || 280));
-    const height = measureStatsPanel(view, panel.style, cssWidth);
+    const height = measureStatsPanel(view, panel.style, cssWidth,
+        panel.kind === 'grid' ? null : panel.position.height);
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     canvas.width = Math.round(cssWidth * dpr);
     canvas.height = Math.max(1, Math.round(height * dpr));

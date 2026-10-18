@@ -199,8 +199,11 @@ cache », les autres métriques n'ayant pas de couleur Groundspeak dédiée.
 
 Les renderers ne lisent jamais le DOM. `stats_panels.js` prépare une **vue**
 (modèle + libellés traduits + couleurs + formats de nombres) ; la géométrie se
-calcule en px CSS depuis la seule largeur, ce qui donne la hauteur
+calcule en px CSS depuis la largeur — et une hauteur totale optionnelle
+(`position.height`, ignorée des grilles) — ce qui donne la hauteur
 (`measure`) avant de dessiner, puis le dessin à n'importe quelle échelle.
+`drawStatsPanel` déduit la hauteur logique de `rect` au même rapport :
+re-résolue comme une hauteur imposée, idempotente, le dessin remplit le rect.
 
 La vue est reconstruite à chaque frame d'un tween : les calculs qui ne
 dépendent que des comptes — jours triés, points cumulés de la courbe, record
@@ -260,8 +263,23 @@ et persiste comme d'habitude. En mode édition, le bord droit du canvas est une
 poignée de largeur (curseur `ew-resize`) : glissé, il change `position.width`
 en aperçu via `previewStatsPanelWidth` (même mutation en place, la hauteur se
 réadapte au prochain flush puisque `measure` dépend de la largeur) puis en
-commit au dépôt. `touch-action: none` sur les panneaux éditables empêche le
-navigateur d'interpréter le geste tactile comme un défilement.
+commit au dépôt. Le bord bas est de même une poignée de hauteur (`ns-resize`),
+et le coin bas-droit règle les deux axes (`nwse-resize`) — hors grilles, dont
+les cases carrées ne laissent rien à régler. `touch-action: none` sur les
+panneaux éditables empêche le navigateur d'interpréter le geste tactile comme
+un défilement.
+
+**Hauteur optionnelle** (`position.height`, `null` par défaut, bornée à
+60-1200 px CSS comme la largeur) : à `null`, la hauteur est déduite de la
+largeur et du contenu (`measureStatsPanel`) ; renseignée — champ « Hauteur »
+de la section Position, ou glisser du bord bas — elle est transmise aux
+layouts, qui étirent ou compressent leur zone graphique jusqu'à un plancher
+de lisibilité propre à chaque type (barres : une ligne lisible par rang ;
+courbe : ~3,5 corps de texte ; compteurs : tuiles réparties ; anneau : son
+diamètre grandit au-delà de son plafond quand la largeur l'offre, sans jamais
+se compresser). Une hauteur stockée sur une grille reste ignorée : le champ
+est masqué et `measure` n'en tient pas compte (cases carrées). Vider le champ
+rend la hauteur à l'automatique.
 
 Avertissements dans l'onglet (événement `mygcflow:stats-layout`) : panneau
 ramené dans le cadre (pile trop haute, largeur supérieure à la carte), panneau
@@ -273,7 +291,8 @@ différentes qui se recouvrent.
 - `node --test test_stats_model.mjs test_stats_render.mjs` — vecteurs
   partagés, clés, accumulateur, surlignage, grilles (Jasmer, 29 février…),
   ordre figé, top-N, empilement, jalons d'années, mesure mémoïsée des
-  étiquettes de course.
+  étiquettes de course, hauteur imposée (étirement, planchers, grille
+  épargnée).
 - `python -m unittest tests.test_stats_settings` — vecteurs partagés, ids,
   patch, fichier sans bloc `stats`, API GET/PUT/reset.
 - `tests/e2e/stats-panels.spec.mjs` — modèle posé et ancré, empilement,

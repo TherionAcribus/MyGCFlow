@@ -548,6 +548,9 @@ function renderForm() {
     setValue('inputStatsDx', p.dx);
     setValue('inputStatsDy', p.dy);
     setValue('inputStatsWidth', p.width);
+    // Hauteur imposée : vide quand automatique (null). Le champ porte
+    // data-stats-kind sans « grid » — cases carrées, il est masqué.
+    setValue('inputStatsHeight', p.height ?? '');
     // Colonne centrale : le panneau est centré, la marge horizontale ne sert
     // pas ; position libre : aucune marge ne sert.
     const dx = $('inputStatsDx');
@@ -662,6 +665,21 @@ function bindFormFields() {
         if (live === 'input') el.addEventListener('change', () => renderForm());
     }
 
+    // Hauteur imposée : un champ vide vaut « automatique » (null) — le
+    // binder générique ne produit pas null, d'où ce handler dédié. La
+    // normalisation borne la valeur à l'écriture.
+    const heightInput = $('inputStatsHeight');
+    if (heightInput) {
+        heightInput.addEventListener('input', () => {
+            const raw = heightInput.value.trim();
+            const height = Number(raw);
+            updateSelected((panel) => {
+                panel.position.height = raw === '' || !Number.isFinite(height) ? null : height;
+            }, heightInput);
+        });
+        heightInput.addEventListener('change', () => renderForm());
+    }
+
     $('selectStatsMetric')?.addEventListener('change', (event) => {
         const metric = event.target.value;
         updateSelected((panel) => {
@@ -746,9 +764,10 @@ function syncDragMode() {
     host.classList.toggle('stats-editing', tabOpen && idle);
 }
 
-// Largeur de la poignée de redimensionnement, mesurée depuis le bord droit
-// du canvas : un pointeur qui s'y abaisse change la largeur au lieu de
-// déplacer le panneau (la hauteur suit, measure dépend de la largeur).
+// Largeur des poignées de redimensionnement, mesurées depuis les bords droit
+// et bas du canvas : un pointeur qui s'y abaisse change la taille au lieu de
+// déplacer le panneau. Le bord bas impose position.height (les grilles,
+// à cases carrées, ne l'offrent pas) ; le coin bas-droit règle les deux axes.
 const RESIZE_GRIP = 14;
 
 function withFreePosition(id, x, y) {
@@ -761,15 +780,18 @@ function withFreePosition(id, x, y) {
     };
 }
 
-function withWidth(id, width) {
+function withPositionPatch(id, patch) {
     const settings = currentSettings();
     return {
         ...settings,
         [panelsKey()]: modePanels(settings).map((panel) => (panel.id === id
-            ? { ...panel, position: { ...panel.position, width } }
+            ? { ...panel, position: { ...panel.position, ...patch } }
             : panel)),
     };
 }
+
+const withWidth = (id, width) => withPositionPatch(id, { width });
+const withHeight = (id, height) => withPositionPatch(id, { height });
 
 // État ouvert/fermé des sections repliables du formulaire : préférence
 // d'interface locale au navigateur (localStorage), non synchronisée serveur.
@@ -812,6 +834,18 @@ function bindDragAndDrop() {
             y: freeH > 0 ? clamp01(top / freeH) : 0,
         };
     };
+    // Axes redimensionnables au point (x, y) du canvas : 'resize-w' au bord
+    // droit, 'resize-h' au bord bas (hors grilles), 'resize-both' au coin
+    // bas-droit, 'move' partout ailleurs.
+    const dragModeFor = (canvasRect, resizableH, x, y) => {
+        const nearRight = x >= canvasRect.right - RESIZE_GRIP;
+        const nearBottom = resizableH && y >= canvasRect.bottom - RESIZE_GRIP;
+        if (nearRight && nearBottom) return 'resize-both';
+        if (nearRight) return 'resize-w';
+        if (nearBottom) return 'resize-h';
+        return 'move';
+    };
+    const cursorFor = { move: 'grab', 'resize-w': 'ew-resize', 'resize-h': 'ns-resize', 'resize-both': 'nwse-resize' };
     host.addEventListener('pointerdown', (event) => {
         const canvas = event.target.closest?.('canvas.stats-panel');
         if (!canvas || event.button !== 0 || !host.classList.contains('stats-editing')) return;
@@ -820,49 +854,66 @@ function bindDragAndDrop() {
         if (!rect) return;
         const base = host.getBoundingClientRect();
         const canvasRect = canvas.getBoundingClientRect();
-        const resizing = event.clientX >= canvasRect.right - RESIZE_GRIP;
+        const mode = dragModeFor(canvasRect, rect.kind !== 'grid', event.clientX, event.clientY);
         drag = {
             id: canvas.dataset.panelId,
             pointerId: event.pointerId,
             canvas,
             base,
-            mode: resizing ? 'resize' : 'move',
-            offsetX: resizing ? 0 : event.clientX - base.left - rect.x,
-            offsetY: resizing ? 0 : event.clientY - base.top - rect.y,
+            mode,
+            offsetX: mode === 'move' ? event.clientX - base.left - rect.x : 0,
+            offsetY: mode === 'move' ? event.clientY - base.top - rect.y : 0,
             startClientX: event.clientX,
+            startClientY: event.clientY,
             startWidth: canvasRect.width,
+            // Hauteur de départ du glisser : le canvas affiché, qu'elle soit
+            // automatique ou déjà imposée.
+            startHeight: canvasRect.height,
             width: rect.width,
             height: rect.height,
             container: rect.container,
             last: null,
             lastWidth: null,
+            lastHeight: null,
         };
         canvas.setPointerCapture?.(event.pointerId);
         // Le curseur en ligne posé au survol cède la place à la classe.
         canvas.style.cursor = '';
-        canvas.classList.add(resizing ? 'is-resizing' : 'is-dragging');
+        canvas.classList.add(mode === 'move' ? 'is-dragging' : 'is-resizing');
+        if (mode === 'resize-h') canvas.classList.add('is-resizing-h');
+        else if (mode === 'resize-both') canvas.classList.add('is-resizing-both');
         event.preventDefault();
         selectedId = drag.id;
         renderStatsTab();
     });
     host.addEventListener('pointermove', (event) => {
         if (!drag) {
-            // Survol hors glisser : le curseur annonce la poignée du bord
-            // droit (curseur en ligne — le CSS ne connaît pas la position).
+            // Survol hors glisser : le curseur annonce les poignées des bords
+            // droit et bas (curseur en ligne — le CSS ne connaît pas la
+            // position). Le bord bas n'existe que sur les panneaux étirables
+            // (hors grilles, à cases carrées).
             const canvas = event.target?.closest?.('canvas.stats-panel');
             if (canvas && host.classList.contains('stats-editing')) {
+                const rect = pkg.getStatsPanelRect?.(canvas.dataset.panelId);
                 const canvasRect = canvas.getBoundingClientRect();
-                canvas.style.cursor = event.clientX >= canvasRect.right - RESIZE_GRIP
-                    ? 'ew-resize' : 'grab';
+                canvas.style.cursor = rect
+                    ? cursorFor[dragModeFor(canvasRect, rect.kind !== 'grid', event.clientX, event.clientY)]
+                    : 'grab';
             }
             return;
         }
         if (event.pointerId !== drag.pointerId) return;
-        if (drag.mode === 'resize') {
-            drag.lastWidth = drag.startWidth + (event.clientX - drag.startClientX);
-            // Aperçu en direct de la largeur, comme la position : écrite en
+        if (drag.mode !== 'move') {
+            // Aperçu en direct de la taille, comme la position : écrite en
             // place, sans renormalisation ni envoi — le commit les fait.
-            pkg.previewStatsPanelWidth?.(drag.id, drag.lastWidth);
+            if (drag.mode !== 'resize-h') {
+                drag.lastWidth = drag.startWidth + (event.clientX - drag.startClientX);
+                pkg.previewStatsPanelWidth?.(drag.id, drag.lastWidth);
+            }
+            if (drag.mode !== 'resize-w') {
+                drag.lastHeight = drag.startHeight + (event.clientY - drag.startClientY);
+                pkg.previewStatsPanelHeight?.(drag.id, drag.lastHeight);
+            }
             return;
         }
         drag.last = positionFor(event);
@@ -872,9 +923,16 @@ function bindDragAndDrop() {
     });
     const end = (event) => {
         if (!drag || event.pointerId !== drag.pointerId) return;
-        drag.canvas.classList.remove('is-dragging', 'is-resizing');
-        if (drag.mode === 'resize' && drag.lastWidth != null) {
-            commit(withWidth(drag.id, drag.lastWidth), STATS_SAVE_STATUS, { immediate: true });
+        drag.canvas.classList.remove('is-dragging', 'is-resizing', 'is-resizing-h', 'is-resizing-both');
+        if (drag.mode !== 'move') {
+            if (drag.lastWidth != null && drag.lastHeight != null) {
+                commit(withPositionPatch(drag.id, { width: drag.lastWidth, height: drag.lastHeight }),
+                    STATS_SAVE_STATUS, { immediate: true });
+            } else if (drag.lastWidth != null) {
+                commit(withWidth(drag.id, drag.lastWidth), STATS_SAVE_STATUS, { immediate: true });
+            } else if (drag.lastHeight != null) {
+                commit(withHeight(drag.id, drag.lastHeight), STATS_SAVE_STATUS, { immediate: true });
+            }
         } else if (drag.last) {
             commit(withFreePosition(drag.id, drag.last.x, drag.last.y),
                 STATS_SAVE_STATUS, { immediate: true });

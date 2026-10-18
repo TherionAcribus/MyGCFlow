@@ -109,6 +109,21 @@ test('createStatsPanel : défauts de la métrique, surcharges, id neuf', () => {
     assert.equal(createStatsPanel('grid', 'year'), null);
 });
 
+test('position.height : null par défaut, nullable et bornée', () => {
+    const heightOf = (position) => normalizeStatsSettings({ panels: [
+        { kind: 'bar', metric: 'year', position },
+    ] }).panels[0].position.height;
+    assert.equal(heightOf({}), null);
+    assert.equal(heightOf({ height: null }), null);
+    assert.equal(heightOf({ height: 90 }), 90);
+    assert.equal(heightOf({ height: '300' }), 300);
+    // Non numérique → null (automatique), comme le serveur (_int_in None).
+    assert.equal(heightOf({ height: 'abc' }), null);
+    assert.equal(heightOf({ height: 5000 }), 1200);
+    // Sous le plancher : bornée comme la largeur (0 → 60), pas annulée.
+    assert.equal(heightOf({ height: 0 }), 60);
+});
+
 test('metricsForPanels : seulement les panneaux actifs, rien si coupé', () => {
     const settings = normalizeStatsSettings({ panels: [
         { id: 'aaaaaa01', kind: 'grid', metric: 'dt' },
