@@ -9,7 +9,9 @@ Lots 0, 1, 2 et 2 bis implémentés (grilles D/T, Jasmer, calendrier 366 ; histo
 Lot 3 implémenté (2026-10-17) : anneaux/camemberts (`donut`), courbe cumulée (`line`), compteurs (`counter` : jours, record, plus longue série, types, pays, régions), métriques pays/régions, course de barres (`sort: race`), valeurs animées (`createTweenStore`), glisser-déposer en position libre (`position.mode: free`, x/y normalisés), contournement automatique du titre et des infos, avertissement de chevauchement entre panneaux.
 
 Audit traité + ergonomie (2026-10-18) : tête de courbe sur jours vides, modèles atomiques, retour de sauvegarde + « Annuler », validation stricte des dates/D-T, recalcul des obstacles titre/infos, patch partiel contre l'état courant, équivalent textuel accessible ; surlignage du panneau sélectionné (`is-selected`), sections « Position »/« Apparence » repliables, « Réorganiser automatiquement » dans l'alerte de mise en page, export PNG/CSV du panneau sélectionné, configurations nommées (`stats.configs` : `{name, panels}` ≤ 40 car., ≤ 12, appliquer = remplacer la liste avec « Annuler »).
-Non faits, volontairement : mode Évolution, export/import du bloc dans un thème. Perf (§6) mesurée le 2026-10-17 : aucun écart mesurable en MediaRecorder 2× avec 3 panneaux (détail dans `docs/panneaux-stats.md` › Mesures). Reste : notes de version 0.0.7.
+
+Nouvelles métriques (2026-10-18) : `month` (axe fixe 1–12 sur `date_find`) et `weekday` (axe fixe lundi→dimanche ISO) en barres ; `attribute` et `owner` en barres et anneaux ; tuiles de compteur `attributes`/`owners` (clés distinctes). `attribute` est la première métrique **multi-valuée** : `KEY_OF` peut renvoyer une liste de clés (une cache compte dans chaque attribut porté ; `inc` 0/« 0 »/false = forme négative → ignorée ; liste vide = exclue, pied « Sans attribut : n »). Libellés mois/jours via `Intl` (mémoïsés par locale).
+Non faits, volontairement : mode Évolution, export/import du bloc dans un thème, comparaison de périodes. Perf (§6) mesurée le 2026-10-17 : aucun écart mesurable en MediaRecorder 2× avec 3 panneaux (détail dans `docs/panneaux-stats.md` › Mesures). Reste : notes de version 0.0.7.
 
 Écarts par rapport au plan ci-dessous, décidés en cours de route :
 - **Pas de bloc `stats` dans `defaultValues.json`** : ce fichier alimente `pkg.options` (réglages de thème), où `stats` n'a rien à faire. Les défauts vivent dans `stats_settings.py` et `stats_model.mjs`, verrouillés par des vecteurs de test partagés (`tests/fixtures/stats/settings_cases.json`).
@@ -83,6 +85,10 @@ Export dans `static/js/index.js` (`export * from './stats_panels.js'`) comme `ov
       "kind": "grid",              // "grid" | "bar"   (plus tard : "donut", "line", "counter"…)
       "metric": "dt",              // grid : dt | jasmer | calendar
                                    // bar  : cache_type | container | difficulty | terrain | year
+                                   //      | month | weekday | country | state | attribute | owner
+                                   // donut: cache_type | container | country | state | attribute | owner
+                                   // line : cumulative ; counter : summary (items : days, best_day,
+                                   //      streak, types, countries, states, attributes, owners)
       "enabled": true,
       "show_title": true,
       "title": "",                 // vide → titre par défaut traduit du kind/metric
@@ -243,7 +249,8 @@ Règles de coercition (serveur **et** client `normalizeStatsSettings`, même esp
   6. Accessibilité : un `.stats-panel-alt.visually-hidden` par `canvas.stats-panel` (titre + comptes réels + pieds), mis à jour quand les comptes bougent — rejouer l'animation jour par jour change la liste, jours vides compris pour la tête de courbe.
   7. Export : `waitForEvent('download')` sur les boutons PNG/CSV — signature PNG (`89 50 4E 47`), BOM UTF-8 + en-têtes localisés + lignes de comptes dans le CSV ; l'export suit le panneau sélectionné dans la liste.
   8. Configurations nommées : menu « Configurations » → enregistrer sous un nom (persisté dans `stats.configs`), vider la liste par l'UI, ré-appliquer → les panneaux reviennent par `id` ; supprimer → toast « Annuler ».
-  9. `afterEach` : `PUT /api/settings {stats: défauts}` et attendre `panels.length === 0`.
+  9. Nouvelles métriques : barres `month`/`weekday` (axes fixes), anneau `attribute` (« Sans attribut » quand absents) et barre `owner` (« Inconnu ») — injection d'`attributes`/`owner` dans `pointsByDate` + `bumpPointsByDateRevision()` + `refreshStatsPanels()` → les comptes suivent, `inc: 0` ignoré.
+  10. `afterEach` : `PUT /api/settings {stats: défauts}` et attendre `panels.length === 0`.
 - **Perf manuelle** : 3 panneaux (dont une grille Jasmer), MediaRecorder 2×, fixture — lire les temps de frame du moniteur ; comparer avec panneaux désactivés.
 - **Traductions** : `pybabel extract` → vérifier `grep -c "^msgid" messages.pot` (~1500+), `update --no-fuzzy-matching`, traduire FR/EN, `compile`, `python check_missing_translations.py`, `python -m pytest tests/test_translations.py tests/test_ui_localization.py`.
 - **Non-régression ciblée** : `overlay.spec.mjs`, `video-export.spec.mjs`, `travel-trail.spec.mjs`, `tab-memory.spec.mjs`, `tests/test_global_preferences.py`, `tests/test_offline_assets.py`.

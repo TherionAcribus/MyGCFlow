@@ -24,9 +24,9 @@ export const STATS_MAX_PANELS = 6;
 
 export const STATS_METRICS_BY_KIND = Object.freeze({
     grid: Object.freeze(['dt', 'jasmer', 'calendar']),
-    bar: Object.freeze(['cache_type', 'container', 'difficulty', 'terrain', 'year', 'country', 'state']),
+    bar: Object.freeze(['cache_type', 'container', 'difficulty', 'terrain', 'year', 'month', 'weekday', 'country', 'state', 'attribute', 'owner']),
     // Anneau (camembert si le trou vaut 0) : catégories seulement.
-    donut: Object.freeze(['cache_type', 'container', 'country', 'state']),
+    donut: Object.freeze(['cache_type', 'container', 'country', 'state', 'attribute', 'owner']),
     // Courbe des trouvailles cumulées.
     line: Object.freeze(['cumulative']),
     // Tuiles de chiffres clés (STATS_COUNTER_ITEMS).
@@ -51,7 +51,7 @@ export const STATS_SORTS = Object.freeze(['natural', 'count', 'label', 'race']);
 export const STATS_ORIENTATIONS = Object.freeze(['horizontal', 'vertical']);
 // « multi » : une couleur distincte par catégorie.
 export const STATS_PALETTES = Object.freeze(['gc', 'accent', 'heat', 'multi']);
-export const STATS_COUNTER_ITEMS = Object.freeze(['days', 'best_day', 'streak', 'types', 'countries', 'states']);
+export const STATS_COUNTER_ITEMS = Object.freeze(['days', 'best_day', 'streak', 'types', 'countries', 'states', 'attributes', 'owners']);
 
 export const STATS_OFFSET_RANGE = Object.freeze([0, 2000]);
 export const STATS_WIDTH_RANGE = Object.freeze([120, 1200]);
@@ -136,7 +136,7 @@ function configName(value) {
     return Array.from(flat).slice(0, STATS_CONFIG_NAME_MAX).join('');
 }
 
-const CATEGORICAL_METRICS = ['cache_type', 'container', 'country', 'state'];
+const CATEGORICAL_METRICS = ['cache_type', 'container', 'country', 'state', 'attribute', 'owner'];
 const DEFAULT_WIDTH = { grid: 280, bar: 280, donut: 300, line: 320, counter: 280 };
 
 // Valeurs par défaut d'un panneau, fonction de son type et de sa métrique :
@@ -160,7 +160,7 @@ export function statsPanelDefaults(kind, metric) {
             show_values: true,
             show_percent: false,
             highlight: 'every',
-            sort: ['cache_type', 'country', 'state'].includes(metric) ? 'count' : 'natural',
+            sort: ['cache_type', 'country', 'state', 'attribute', 'owner'].includes(metric) ? 'count' : 'natural',
             orientation: CATEGORICAL_METRICS.includes(metric) ? 'horizontal' : 'vertical',
             max_items: 8,
             hide_empty: false,
@@ -359,6 +359,8 @@ const COUNTER_DEPENDENCIES = {
     types: 'cache_type',
     countries: 'country',
     states: 'state',
+    attributes: 'attribute',
+    owners: 'owner',
 };
 
 // Métriques de l'accumulateur nécessaires à un panneau. La courbe et les
@@ -481,6 +483,32 @@ const KEY_OF = {
         const date = parseYmd(p.date_find);
         return date ? date.y : null;
     },
+    month(p) {
+        const date = parseYmd(p.date_find);
+        return date ? date.m : null;
+    },
+    // Jour de la semaine ISO (lundi = 0) du jour de trouvaille, sans allouer
+    // de Date par feature : le jour 0 (01/01/1970) était un jeudi.
+    weekday(p) {
+        const date = parseYmd(p.date_find);
+        return date ? (((dayNumber(date) + 3) % 7) + 7) % 7 : null;
+    },
+    // Attributs Groundspeak ({name, inc}) : une cache porte plusieurs clés —
+    // la valeur de retour est alors une LISTE (tableau de clés). inc 0 / « 0 »
+    // / false est la forme négative de l'attribut (« pas de… ») : ignorée.
+    attribute(p) {
+        const list = Array.isArray(p.attributes) ? p.attributes : [];
+        const keys = [];
+        for (const attr of list) {
+            const name = typeof attr?.name === 'string' ? attr.name.trim() : '';
+            if (!name || attr.inc === 0 || attr.inc === '0' || attr.inc === false) continue;
+            keys.push(name);
+        }
+        return keys;
+    },
+    owner(p) {
+        return textKey(p.owner);
+    },
     // Jour de trouvaille : courbe cumulée et compteurs (jours, record, série).
     day(p) {
         const date = parseYmd(p.date_find);
@@ -536,19 +564,24 @@ export function createStatsAccumulator(metrics = []) {
                 acc.total += 1;
                 for (const metric of list) {
                     const key = KEY_OF[metric](properties);
-                    if (key === null) {
+                    // Une métrique multi-valuée (attributs) renvoie une liste
+                    // de clés ; null ou liste vide = feature exclue.
+                    const keys = Array.isArray(key) ? key : [key];
+                    if (key === null || keys.length === 0) {
                         acc.excluded.set(metric, acc.excluded.get(metric) + 1);
                         continue;
                     }
                     const counts = acc.counts.get(metric);
-                    const before = counts.get(key) || 0;
-                    counts.set(key, before + 1);
-                    if (hasClock) {
-                        const hits = acc.lastHit.get(metric);
-                        const hit = hits.get(key) || { at: null, newAt: null };
-                        hit.at = at;
-                        if (before === 0) hit.newAt = at;
-                        hits.set(key, hit);
+                    const hits = acc.lastHit.get(metric);
+                    for (const k of keys) {
+                        const before = counts.get(k) || 0;
+                        counts.set(k, before + 1);
+                        if (hasClock) {
+                            const hit = hits.get(k) || { at: null, newAt: null };
+                            hit.at = at;
+                            if (before === 0) hit.newAt = at;
+                            hits.set(k, hit);
+                        }
                     }
                 }
             }
@@ -753,6 +786,10 @@ export function barModel(metric, current, reference, options = {}, labelOf = Str
     let keys;
     if (metric === 'difficulty' || metric === 'terrain') {
         keys = Array.from({ length: 9 }, (_, i) => i);
+    } else if (metric === 'month') {
+        keys = Array.from({ length: 12 }, (_, i) => i + 1);
+    } else if (metric === 'weekday') {
+        keys = Array.from({ length: 7 }, (_, i) => i);
     } else if (metric === 'year') {
         const years = [...refCounts.keys(), ...counts.keys()];
         if (years.length) {
@@ -1018,6 +1055,10 @@ export function counterValues(acc, items) {
             values.countries = { value: knownKeys(acc, 'country') };
         } else if (item === 'states') {
             values.states = { value: knownKeys(acc, 'state') };
+        } else if (item === 'attributes') {
+            values.attributes = { value: knownKeys(acc, 'attribute') };
+        } else if (item === 'owners') {
+            values.owners = { value: knownKeys(acc, 'owner') };
         }
     }
     return values;

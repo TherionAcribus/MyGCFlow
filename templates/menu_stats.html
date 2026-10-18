@@ -65,6 +65,8 @@
                             <li><button type="button" class="dropdown-item" data-stats-add="donut:cache_type">{{ _("Anneau des types") }}</button></li>
                             <li><button type="button" class="dropdown-item" data-stats-add="donut:container">{{ _("Anneau des tailles") }}</button></li>
                             <li><button type="button" class="dropdown-item" data-stats-add="donut:country">{{ _("Anneau des pays") }}</button></li>
+                            <li><button type="button" class="dropdown-item" data-stats-add="donut:attribute">{{ _("Anneau des attributs") }}</button></li>
+                            <li><button type="button" class="dropdown-item" data-stats-add="donut:owner">{{ _("Anneau des propriétaires") }}</button></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><h6 class="dropdown-header">{{ _("Histogramme seul") }}</h6></li>
                             <li><button type="button" class="dropdown-item" data-stats-add="bar:cache_type">{{ _("Types de caches") }}</button></li>
@@ -72,8 +74,12 @@
                             <li><button type="button" class="dropdown-item" data-stats-add="bar:difficulty">{{ _("Difficulté") }}</button></li>
                             <li><button type="button" class="dropdown-item" data-stats-add="bar:terrain">{{ _("Terrain") }}</button></li>
                             <li><button type="button" class="dropdown-item" data-stats-add="bar:year">{{ _("Trouvailles par année") }}</button></li>
+                            <li><button type="button" class="dropdown-item" data-stats-add="bar:month">{{ _("Trouvailles par mois") }}</button></li>
+                            <li><button type="button" class="dropdown-item" data-stats-add="bar:weekday">{{ _("Jours de la semaine") }}</button></li>
                             <li><button type="button" class="dropdown-item" data-stats-add="bar:country">{{ _("Pays") }}</button></li>
                             <li><button type="button" class="dropdown-item" data-stats-add="bar:state">{{ _("Régions") }}</button></li>
+                            <li><button type="button" class="dropdown-item" data-stats-add="bar:attribute">{{ _("Attributs") }}</button></li>
+                            <li><button type="button" class="dropdown-item" data-stats-add="bar:owner">{{ _("Propriétaires") }}</button></li>
                         </ul>
                     </div>
                     </div>
@@ -198,7 +204,8 @@
                                 {% for item, label in [
                                     ('days', _('Jours avec trouvaille')), ('best_day', _('Record sur une journée')),
                                     ('streak', _('Plus longue série (jours)')), ('types', _('Types de caches différents')),
-                                    ('countries', _('Pays')), ('states', _('Régions'))] %}
+                                    ('countries', _('Pays')), ('states', _('Régions')),
+                                    ('attributes', _('Attributs différents')), ('owners', _('Propriétaires différents'))] %}
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" id="statsCounter-{{ item }}" data-counter-item="{{ item }}">
                                     <label class="form-check-label" for="statsCounter-{{ item }}">{{ label }}</label>

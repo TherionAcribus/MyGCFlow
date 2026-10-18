@@ -2069,5 +2069,272 @@
         }
       ]
     }
+  },
+  {
+    "name": "nouvelles métriques : mois et semaine ordonnés, attributs et propriétaires en catégories",
+    "input": {
+      "panels": [
+        {
+          "id": "cc000001",
+          "kind": "bar",
+          "metric": "month"
+        },
+        {
+          "id": "cc000002",
+          "kind": "bar",
+          "metric": "weekday"
+        },
+        {
+          "id": "cc000003",
+          "kind": "bar",
+          "metric": "attribute"
+        },
+        {
+          "id": "cc000004",
+          "kind": "bar",
+          "metric": "owner"
+        },
+        {
+          "id": "cc000005",
+          "kind": "donut",
+          "metric": "attribute"
+        },
+        {
+          "id": "cc000006",
+          "kind": "donut",
+          "metric": "owner"
+        },
+        {
+          "id": "cc000007",
+          "kind": "line",
+          "metric": "month"
+        },
+        {
+          "id": "cc000008",
+          "kind": "grid",
+          "metric": "weekday"
+        }
+      ]
+    },
+    "expected": {
+      "enabled": true,
+      "panels": [
+        {
+          "id": "cc000001",
+          "kind": "bar",
+          "metric": "month",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 280,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "show_values": true,
+            "show_percent": false,
+            "highlight": "every",
+            "sort": "natural",
+            "orientation": "vertical",
+            "max_items": 8,
+            "hide_empty": false
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "accent",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        },
+        {
+          "id": "cc000002",
+          "kind": "bar",
+          "metric": "weekday",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 280,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "show_values": true,
+            "show_percent": false,
+            "highlight": "every",
+            "sort": "natural",
+            "orientation": "vertical",
+            "max_items": 8,
+            "hide_empty": false
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "accent",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        },
+        {
+          "id": "cc000003",
+          "kind": "bar",
+          "metric": "attribute",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 280,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "show_values": true,
+            "show_percent": false,
+            "highlight": "every",
+            "sort": "count",
+            "orientation": "horizontal",
+            "max_items": 8,
+            "hide_empty": false
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "accent",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        },
+        {
+          "id": "cc000004",
+          "kind": "bar",
+          "metric": "owner",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 280,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "show_values": true,
+            "show_percent": false,
+            "highlight": "every",
+            "sort": "count",
+            "orientation": "horizontal",
+            "max_items": 8,
+            "hide_empty": false
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "accent",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        },
+        {
+          "id": "cc000005",
+          "kind": "donut",
+          "metric": "attribute",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 300,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "show_values": true,
+            "show_percent": true,
+            "highlight": "every",
+            "max_items": 6,
+            "hole": 55,
+            "show_legend": true
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "multi",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        },
+        {
+          "id": "cc000006",
+          "kind": "donut",
+          "metric": "owner",
+          "enabled": true,
+          "show_title": true,
+          "title": "",
+          "position": {
+            "mode": "anchor",
+            "anchor": "top-left",
+            "dx": 16,
+            "dy": 16,
+            "width": 300,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "show_values": true,
+            "show_percent": true,
+            "highlight": "every",
+            "max_items": 6,
+            "hole": 55,
+            "show_legend": true
+          },
+          "style": {
+            "background": "#0b1a2b",
+            "background_opacity": 85,
+            "text_color": "#ffffff",
+            "accent_color": "#29d34e",
+            "palette": "multi",
+            "font_size": 12,
+            "radius": 10,
+            "inherit_font": true
+          }
+        }
+      ],
+      "configs": []
+    }
   }
 ]

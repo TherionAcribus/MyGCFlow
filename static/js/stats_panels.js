@@ -313,6 +313,17 @@ function monthNames(style) {
     return monthNamesCache.get(key);
 }
 
+const weekdayNamesCache = new Map();
+function weekdayNames(style) {
+    const key = `${locale()}|${style}`;
+    if (!weekdayNamesCache.has(key)) {
+        const fmt = new Intl.DateTimeFormat(locale(), { weekday: style, timeZone: 'UTC' });
+        // 2024-01-01 est un lundi : l'ordre ISO commence la semaine par lundi.
+        weekdayNamesCache.set(key, Array.from({ length: 7 }, (_, i) => fmt.format(new Date(Date.UTC(2024, 0, 1 + i)))));
+    }
+    return weekdayNamesCache.get(key);
+}
+
 // Titre par défaut d'un panneau, d'après sa métrique — aussi le nom affiché
 // dans la liste de l'onglet Stats.
 export function defaultStatsPanelTitle(panel) {
@@ -325,6 +336,10 @@ export function defaultStatsPanelTitle(panel) {
         case 'difficulty': return pkg.t('Difficulté');
         case 'terrain': return pkg.t('Terrain');
         case 'year': return pkg.t('Trouvailles par année');
+        case 'month': return pkg.t('Trouvailles par mois');
+        case 'weekday': return pkg.t('Jours de la semaine');
+        case 'attribute': return pkg.t('Attributs');
+        case 'owner': return pkg.t('Propriétaires');
         case 'country': return pkg.t('Pays');
         case 'state': return pkg.t('Régions');
         case 'cumulative': return pkg.t('Progression des trouvailles');
@@ -344,6 +359,8 @@ function labelFor(metric, number) {
         return (key) => (key === OTHERS_KEY ? pkg.t('Autres') : number(DT_LABELS[key]));
     }
     if (metric === 'year') return (key) => String(key);
+    if (metric === 'month') return (key) => monthNames('short')[key - 1] ?? String(key);
+    if (metric === 'weekday') return (key) => weekdayNames('short')[key] ?? String(key);
     return categoryLabel;
 }
 
@@ -353,7 +370,9 @@ function excludedLine(metric, n) {
         case 'difficulty': return pkg.t('Sans difficulté : ${n}', { n });
         case 'terrain': return pkg.t('Sans terrain : ${n}', { n });
         case 'jasmer': return pkg.t('Sans date de publication : ${n}', { n });
-        case 'day': return pkg.t('Sans date de trouvaille : ${n}', { n });
+        case 'day': case 'month': case 'weekday':
+            return pkg.t('Sans date de trouvaille : ${n}', { n });
+        case 'attribute': return pkg.t('Sans attribut : ${n}', { n });
         default: return pkg.t('Sans date : ${n}', { n });
     }
 }
@@ -425,6 +444,8 @@ const COUNTER_LABELS = {
     types: () => pkg.t('Types de caches différents'),
     countries: () => pkg.t('Pays'),
     states: () => pkg.t('Régions'),
+    attributes: () => pkg.t('Attributs différents'),
+    owners: () => pkg.t('Propriétaires différents'),
 };
 
 // Valeurs animées des lignes d'un histogramme ou d'un anneau ; course de
@@ -529,6 +550,12 @@ function buildView(panel) {
         view.hole = panel.options.hole;
         view.showLegend = panel.options.show_legend;
         view.centerLabel = pkg.t('trouvailles');
+        // Même pied « exclus » que les barres : seule `attribute` peut en
+        // produire parmi les catégories (une cache sans attribut n'a pas de
+        // ligne « Inconnu », elle est hors sujet).
+        if (refExcluded > 0 && !['cache_type', 'container', 'country', 'state', 'owner'].includes(metric)) {
+            view.footer.push(excludedLine(metric, model.excluded));
+        }
         return view;
     }
 
@@ -542,7 +569,7 @@ function buildView(panel) {
     view.model = model;
     view.orientation = panel.options.orientation;
     view.sum = model.rows.reduce((s, row) => s + Math.max(0, row.shown), 0);
-    if (refExcluded > 0 && !['cache_type', 'container', 'country', 'state'].includes(metric)) {
+    if (refExcluded > 0 && !['cache_type', 'container', 'country', 'state', 'owner'].includes(metric)) {
         view.footer.push(excludedLine(metric, model.excluded));
     }
     return view;

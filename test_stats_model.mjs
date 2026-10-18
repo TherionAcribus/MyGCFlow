@@ -163,6 +163,37 @@ test('clés par métrique : Jasmer depuis mai 2000, calendrier mois×jour, taill
     assert.equal(statsKeyOf('difficulty', lab().properties), null);
 });
 
+test('clés month/weekday : mois 1-12, semaine ISO lundi = 0', () => {
+    assert.equal(statsKeyOf('month', { date_find: '2021-03-14' }), 3);
+    assert.equal(statsKeyOf('month', { date_find: '2021-02-31' }), null);
+    // 2021-03-14 était un dimanche → 6 ; le lendemain lundi → 0.
+    assert.equal(statsKeyOf('weekday', { date_find: '2021-03-14' }), 6);
+    assert.equal(statsKeyOf('weekday', { date_find: '2021-03-15' }), 0);
+    // 1970-01-01, le jour 0, était un jeudi → 3 (y compris avant, via modulo).
+    assert.equal(statsKeyOf('weekday', { date_find: '1970-01-01' }), 3);
+    assert.equal(statsKeyOf('weekday', { date_find: '1969-12-29' }), 0);
+    assert.equal(statsKeyOf('weekday', { date_find: 'pfff' }), null);
+});
+
+test('clés attribute/owner : liste multi-valuée, inc négatif ignoré', () => {
+    const props = {
+        owner: '  René  ',
+        attributes: [
+            { name: 'Scenic view', inc: 1 },
+            { name: 'Available during winter', inc: 0 },   // forme « négative »
+            { name: 'Dogs allowed', inc: '0' },            // idem en chaîne
+            { name: '  ' },                                 // nom vide : ignoré
+            { name: 'Picnic tables nearby' },              // inc absent = positif
+        ],
+    };
+    assert.deepEqual(statsKeyOf('attribute', props), ['Scenic view', 'Picnic tables nearby']);
+    assert.deepEqual(statsKeyOf('attribute', { attributes: 'pas une liste' }), []);
+    assert.deepEqual(statsKeyOf('attribute', {}), []);
+    assert.equal(statsKeyOf('owner', props), 'René');
+    assert.equal(statsKeyOf('owner', {}), UNKNOWN_KEY);
+    assert.equal(statsKeyOf('owner', { owner: ' ' }), UNKNOWN_KEY);
+});
+
 // ---------------------------------------------------------------------------
 // Accumulateur
 // ---------------------------------------------------------------------------
@@ -217,6 +248,26 @@ test('accumulateur : features OpenLayers (getProperties) acceptées', () => {
     const olFeature = { getProperties: () => geocache(2, 2).properties };
     const acc = createStatsAccumulator(['dt']).add([olFeature]);
     assert.equal(acc.count('dt', 2 * 9 + 2), 1);
+});
+
+test('accumulateur : attributs multi-valués, exclue si aucun', () => {
+    const acc = createStatsAccumulator(['attribute', 'owner', 'weekday']);
+    acc.add([
+        geocache(1, 1, { attributes: [{ name: 'Scenic view' }, { name: 'Bikes allowed' }], owner: 'A' }),
+        geocache(2, 2, { attributes: [{ name: 'Scenic view' }], owner: 'A' }),
+        geocache(3, 3, { attributes: [{ name: 'Dogs allowed', inc: 0 }] }),   // négatif seul → exclue
+        geocache(4, 4, { owner: 'B' }),                                       // pas d'attributs → exclue
+    ]);
+
+    assert.equal(acc.count('attribute', 'Scenic view'), 2);
+    assert.equal(acc.count('attribute', 'Bikes allowed'), 1);
+    assert.equal(acc.count('attribute', 'Dogs allowed'), 0);   // inc 0 : pas comptée
+    assert.equal(acc.excluded.get('attribute'), 2);
+    assert.equal(acc.count('owner', 'A'), 2);
+    assert.equal(acc.count('owner', UNKNOWN_KEY), 1);          // la cache sans owner
+    // Somme des comptes ≠ total pour une métrique multi-valuée : une cache
+    // compte une fois par attribut porté, zéro si elle n'en a pas.
+    assert.equal(acc.count('weekday', 6), 4);                  // les 4 au dimanche
 });
 
 test('surlignage : déblocage seulement au passage de 0 à 1', () => {
@@ -358,6 +409,30 @@ test('barres : les grandeurs ordonnées ne passent jamais par « Autres »', () 
     assert.equal(model.rows.length, 12);
 });
 
+test('barres : axes fixes mois (12) et jours de semaine (7, lundi en tête)', () => {
+    const acc = countFeatures([
+        geocache(1, 1, { date_find: '2021-01-05' }),       // mardi
+        geocache(1, 1, { date_find: '2021-03-14' }),       // dimanche
+        geocache(1, 1, { date_find: '2021-03-14' }),
+    ], ['month', 'weekday']);
+    const month = barModel('month', acc, acc, { sort: 'natural' });
+    assert.equal(month.rows.length, 12);                 // axe fixe, trous visibles
+    assert.equal(month.rows[0].key, 1);
+    assert.equal(month.rows[0].count, 1);                // janvier
+    assert.equal(month.rows[2].count, 2);                // mars
+    const weekday = barModel('weekday', acc, acc, {});
+    assert.equal(weekday.rows.length, 7);
+    assert.equal(weekday.rows[0].key, 0);                // lundi en tête
+    assert.equal(weekday.rows[1].count, 1);              // mardi
+    assert.equal(weekday.rows[6].count, 2);              // dimanche
+    // Attributs et propriétaires : catégories → top-N + « Autres ».
+    const lots = countFeatures(Array.from({ length: 15 }, (_, i) =>
+        geocache(1, 1, { owner: `CO${i}` })), ['owner']);
+    const model = barModel('owner', lots, lots, { max_items: 4 });
+    assert.equal(model.rows.at(-1).key, OTHERS_KEY);
+    assert.equal(model.rows.at(-1).count, 12);
+});
+
 // ---------------------------------------------------------------------------
 // Mise en page
 // ---------------------------------------------------------------------------
@@ -459,16 +534,22 @@ test('compteurs : jours, record (le plus ancien à égalité), plus longue séri
         onDay('2024-01-05'),
         onDay('2024-01-05'),
         onDay('2024-01-06', { country: null }),
-    ], ['day', 'cache_type', 'country', 'state']);
-    const v = counterValues(acc, ['days', 'best_day', 'streak', 'types', 'countries', 'states']);
-    assert.equal(v.days.value, 5);
+        onDay('2024-01-07', { attributes: [{ name: 'Scenic view' }, { name: 'Bikes allowed' }], owner: 'A' }),
+        onDay('2024-01-08', { attributes: [{ name: 'Scenic view' }], owner: 'B' }),
+    ], ['day', 'cache_type', 'country', 'state', 'attribute', 'owner']);
+    const v = counterValues(acc,
+        ['days', 'best_day', 'streak', 'types', 'countries', 'states', 'attributes', 'owners']);
+    assert.equal(v.days.value, 7);
     assert.equal(v.best_day.value, 2);
     assert.equal(v.best_day.day, dayNumber({ y: 2024, m: 1, d: 2 }));
-    assert.equal(v.streak.value, 3);
-    assert.equal(v.streak.start, dayNumber({ y: 2024, m: 1, d: 1 }));
+    assert.equal(v.streak.value, 4);
+    assert.equal(v.streak.start, dayNumber({ y: 2024, m: 1, d: 5 }));
     assert.equal(v.types.value, 2);
     assert.equal(v.countries.value, 2);     // « inconnu » ne compte pas
     assert.equal(v.states.value, 2);
+    // Attributs distincts : une cache peut en porter plusieurs.
+    assert.equal(v.attributes.value, 2);
+    assert.equal(v.owners.value, 2);
 });
 
 test('courbe : cumul par jour, axe calé sur la référence, tête prolongée à plat', () => {

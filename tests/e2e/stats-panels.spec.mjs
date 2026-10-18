@@ -634,3 +634,48 @@ test('une configuration nommée enregistre et ré-applique la liste de panneaux'
   await page.locator('[data-config-delete="Ma config"]').click();
   await expect.poll(async () => (await savedStats(page)).configs).toEqual([]);
 });
+
+test('les nouvelles métriques (mois, semaine, attributs, propriétaires) se comptent', async ({ page }) => {
+  await putStats(page, { enabled: true, panels: [
+    { id: 'f00ba001', kind: 'bar', metric: 'month', position: { anchor: 'top-left' } },
+    { id: 'f00ba002', kind: 'bar', metric: 'weekday', position: { anchor: 'top-right' } },
+    { id: 'f00ba003', kind: 'donut', metric: 'attribute', position: { anchor: 'bottom-left' } },
+    { id: 'f00ba004', kind: 'bar', metric: 'owner', position: { anchor: 'bottom-right' } },
+  ] });
+  await openWithFixture(page, '#stats');
+  await page.locator('a[href="#stats"]').click();
+  const alts = page.locator('.stats-panel-alt');
+  await expect(alts).toHaveCount(4);
+
+  // La fixture : 6 trouvailles du jeudi 01/01 au mardi 06/01/2026.
+  const month = alts.filter({ hasText: /^Trouvailles par mois/ });
+  await expect(month).toContainText('janv. : 6');
+  const weekday = alts.filter({ hasText: /^Jours de la semaine/ });
+  await expect(weekday).toContainText('dim. : 1');
+  await expect(weekday).toContainText('mar. : 1');
+
+  // La fixture ne porte ni attributs ni propriétaire : exclus et « Inconnu ».
+  const attribute = alts.filter({ hasText: /^Attributs/ });
+  const owner = alts.filter({ hasText: /^Propriétaires/ });
+  await expect(attribute).toContainText('Sans attribut : 6');
+  await expect(owner).toContainText('Inconnu : 6');
+
+  // Injectés dans les features de l'index, puis relevé : les comptes suivent.
+  await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    for (const features of app.pointsByDate.values()) {
+      for (const f of features) {
+        f.properties.owner = 'Therion';
+        f.properties.attributes = [
+          { name: 'Scenic view', inc: 1 },
+          { name: 'Available during winter', inc: 0 },   // forme négative
+        ];
+      }
+    }
+    app.bumpPointsByDateRevision();
+    app.refreshStatsPanels();
+  });
+  await expect(attribute).toContainText('Scenic view : 6');
+  await expect(attribute).not.toContainText('Available during winter');
+  await expect(owner).toContainText('Therion : 6');
+});

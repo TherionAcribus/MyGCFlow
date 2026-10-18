@@ -25,9 +25,9 @@ STATS_METRICS_BY_KIND = {
     # Grilles : matrice D/T 9×9, Jasmer (année × mois de publication),
     # calendrier 366 (mois × jour de trouvaille).
     "grid": ("dt", "jasmer", "calendar"),
-    "bar": ("cache_type", "container", "difficulty", "terrain", "year", "country", "state"),
+    "bar": ("cache_type", "container", "difficulty", "terrain", "year", "month", "weekday", "country", "state", "attribute", "owner"),
     # Anneau (camembert si le trou vaut 0) : catégories seulement.
-    "donut": ("cache_type", "container", "country", "state"),
+    "donut": ("cache_type", "container", "country", "state", "attribute", "owner"),
     # Courbe des trouvailles cumulées.
     "line": ("cumulative",),
     # Tuiles de chiffres clés (cf. STATS_COUNTER_ITEMS).
@@ -52,7 +52,7 @@ STATS_SORTS = ("natural", "count", "label", "race")
 STATS_ORIENTATIONS = ("horizontal", "vertical")
 # « multi » : une couleur distincte par catégorie (anneaux hors types).
 STATS_PALETTES = ("gc", "accent", "heat", "multi")
-STATS_COUNTER_ITEMS = ("days", "best_day", "streak", "types", "countries", "states")
+STATS_COUNTER_ITEMS = ("days", "best_day", "streak", "types", "countries", "states", "attributes", "owners")
 
 STATS_OFFSET_RANGE = (0, 2000)
 STATS_WIDTH_RANGE = (120, 1200)
@@ -167,7 +167,7 @@ def _config_name(value) -> str:
     return flat[:STATS_CONFIG_NAME_MAX]
 
 
-_CATEGORICAL = ("cache_type", "container", "country", "state")
+_CATEGORICAL = ("cache_type", "container", "country", "state", "attribute", "owner")
 
 _DEFAULT_WIDTH = {"grid": 280, "bar": 280, "donut": 300, "line": 320, "counter": 280}
 
@@ -193,7 +193,7 @@ def stats_panel_defaults(kind: str, metric: str) -> dict:
             "show_values": True,
             "show_percent": False,
             "highlight": "every",
-            "sort": "count" if metric in ("cache_type", "country", "state") else "natural",
+            "sort": "count" if metric in ("cache_type", "country", "state", "attribute", "owner") else "natural",
             "orientation": "horizontal" if metric in _CATEGORICAL else "vertical",
             "max_items": 8,
             "hide_empty": False,
