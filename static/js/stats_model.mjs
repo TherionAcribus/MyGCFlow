@@ -343,22 +343,34 @@ export function metricsForPanels(settings) {
 // Bucketisation : clé d'une cache pour une métrique, ou null (exclue).
 // ---------------------------------------------------------------------------
 
-// Difficulté/terrain 1 → 5 par demi-points : index 0 → 8. Non numérique (Labs,
-// donnée absente) → -1.
+// Difficulté/terrain : demi-points entre 1 et 5 → index 0 → 8. Tout le reste
+// (hors bornes, pas un demi-point, non numérique — Labs, donnée corrompue) →
+// -1, exclu et compté dans `excluded` plutôt que rabattu sur la case la plus
+// proche : 7 n'est pas un D/T, et 1.2 ne doit pas s'afficher comme 1.
 export function dtIndex(value) {
     if (typeof value === 'string' && value.trim() !== '') value = Number(value);
     if (typeof value !== 'number' || !Number.isFinite(value)) return -1;
-    return Math.max(0, Math.min(8, Math.round((value - 1) * 2)));
+    if (value < 1 || value > 5 || value !== Math.round(value * 2) / 2) return -1;
+    return Math.round((value - 1) * 2);
 }
 
-// « YYYY-MM-DD » → { y, m, d } sans passer par Date (une par cache sinon).
+// Jours par mois (février à part, selon l'année bissextile).
+const MONTH_DAYS = [31, 0, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+const isLeapYear = (y) => y % 4 === 0 && (y % 100 !== 0 || y % 400 === 0);
+
+// « YYYY-MM-DD » → { y, m, d } si la date existe vraiment (calendrier
+// grégorien, pas de Date allouée par feature). « 2021-02-31 » est rejeté :
+// sans ce contrôle Date.UTC le rabattrait sur le 3 mars et la cache serait
+// comptée au mauvais jour.
 export function parseYmd(value) {
     if (typeof value !== 'string' || value.length < 10) return null;
     const y = Number(value.slice(0, 4));
     const m = Number(value.slice(5, 7));
     const d = Number(value.slice(8, 10));
     if (!Number.isInteger(y) || !Number.isInteger(m) || !Number.isInteger(d)) return null;
-    if (m < 1 || m > 12 || d < 1 || d > 31) return null;
+    if (m < 1 || m > 12) return null;
+    const maxDay = m === 2 ? (isLeapYear(y) ? 29 : 28) : MONTH_DAYS[m - 1];
+    if (d < 1 || d > maxDay) return null;
     return { y, m, d };
 }
 

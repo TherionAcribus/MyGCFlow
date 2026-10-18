@@ -114,14 +114,20 @@ test('metricsForPanels : seulement les panneaux actifs, rien si coupé', () => {
 // Bucketisation
 // ---------------------------------------------------------------------------
 
-test('dtIndex : demi-points 1 → 5 sur 0 → 8, bornés, -1 sinon', () => {
+test('dtIndex : demi-points 1 → 5 sur 0 → 8, -1 sinon', () => {
     assert.equal(dtIndex(1), 0);
     assert.equal(dtIndex(1.5), 1);
     assert.equal(dtIndex(5), 8);
-    assert.equal(dtIndex(4.75), 8);
-    assert.equal(dtIndex(7), 8);
-    assert.equal(dtIndex(0), 0);
+    assert.equal(dtIndex(3), 4);
+    // Hors bornes ou pas un demi-point : donnée invalide, exclue, pas rabattue.
+    assert.equal(dtIndex(4.75), -1);
+    assert.equal(dtIndex(7), -1);
+    assert.equal(dtIndex(0), -1);
+    assert.equal(dtIndex(0.5), -1);
+    assert.equal(dtIndex(5.5), -1);
+    assert.equal(dtIndex(1.2), -1);
     assert.equal(dtIndex('2.5'), 3);
+    assert.equal(dtIndex('7'), -1);
     assert.equal(dtIndex(null), -1);
     assert.equal(dtIndex(undefined), -1);
     assert.equal(dtIndex(''), -1);
@@ -134,6 +140,13 @@ test('parseYmd : découpe sans Date, rejette les dates impossibles', () => {
     assert.equal(parseYmd('2021-13-01'), null);
     assert.equal(parseYmd('2021-3-1'), null);
     assert.equal(parseYmd(null), null);
+    // Calendrier réel : « 31 février » rejeté au lieu d'être rabattu sur mars.
+    assert.equal(parseYmd('2021-02-31'), null);
+    assert.equal(parseYmd('2021-04-31'), null);
+    assert.equal(parseYmd('2021-02-29'), null);
+    assert.deepEqual(parseYmd('2020-02-29'), { y: 2020, m: 2, d: 29 });
+    assert.equal(parseYmd('1900-02-29'), null);
+    assert.deepEqual(parseYmd('2000-02-29'), { y: 2000, m: 2, d: 29 });
 });
 
 test('clés par métrique : Jasmer depuis mai 2000, calendrier mois×jour, tailles inconnues', () => {
@@ -170,6 +183,23 @@ test('accumulateur : Lab compté en type, exclu de D/T', () => {
     // contre le compteur de caches affiché.
     const dtSum = [...acc.counts.get('dt').values()].reduce((s, n) => s + n, 0);
     assert.equal(dtSum + acc.excluded.get('dt'), acc.total);
+});
+
+test('accumulateur : D/T hors plage et dates impossibles comptés en exclus', () => {
+    const acc = createStatsAccumulator(['dt', 'calendar', 'day']);
+    acc.add([
+        geocache(7, 3),                                // difficulté > 5
+        geocache(1.2, 3),                              // pas un demi-point
+        geocache(2, 3, { date_find: '2021-02-31' }),   // jour inexistant
+        geocache(2, 3),                                // valide
+    ]);
+
+    assert.equal(acc.total, 4);
+    assert.equal(acc.excluded.get('dt'), 2);
+    assert.equal(acc.count('dt', 2 * 9 + 4), 2);       // les deux caches valides en D/T (D2/T3)
+    assert.equal(acc.excluded.get('calendar'), 1);
+    assert.equal(acc.excluded.get('day'), 1);
+    assert.equal(acc.count('calendar', 314), 3);       // les trois caches au 14/03
 });
 
 test('accumulateur : métriques non demandées non calculées, reset', () => {

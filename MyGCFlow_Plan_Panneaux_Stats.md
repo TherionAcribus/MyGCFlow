@@ -127,11 +127,11 @@ Règles de coercition (serveur **et** client `normalizeStatsSettings`, même esp
 
 - **Un seul accumulateur partagé** par tous les panneaux : `createStatsAccumulator(metrics)` ne calcule que les métriques demandées par les panneaux actifs (ensemble recalculé à chaque changement de réglages). Tranches : `dt: Uint32Array(81)`, `jasmer: Uint32Array(nbAnnées × 12)`, `calendar: Uint32Array(12 × 31)`, `byType: Map`, `byContainer: Map`, `byDifficulty: Uint32Array(9)`, `byTerrain: Uint32Array(9)`, `byYear: Map`, `total`, `excluded: { dt, jasmer }`. Méthodes `add(features, now)`, `reset()`, `snapshot()` (revision++). Chaque panneau lit sa tranche : coût par jour O(nouvelles caches), pas O(panneaux × caches).
 - **Grilles génériques** : `GRID_SPECS[metric] = { rows, cols, index(feature) → i | -1, disabled(r, c), rowLabel, colLabel }`.
-  - `dt` : 9×9, lignes D 1→5, colonnes T 1→5 (convention project-gc) ; `dtIndex(v)` = `Math.round((v - 1) * 2)` borné à [0, 8], non numérique → -1.
+  - `dt` : 9×9, lignes D 1→5, colonnes T 1→5 (convention project-gc) ; `dtIndex(v)` = `Math.round((v - 1) * 2)` → index 0→8, **seulement** pour les demi-points entre 1 et 5 ; hors bornes (`0`, `7`) ou pas un demi-point (`1.2`, `4.75`) → -1, exclu plutôt que rabattu sur la case la plus proche.
   - `jasmer` : lignes années de publication 2000 → année de `animationEndDate()`, colonnes janvier → décembre ; cases avant mai 2000 et postérieures à la date de fin `disabled` ; `published_date` null → -1.
   - `calendar` : 12 mois × 31 jours sur `date_find` ; cases inexistantes (30-31 février, 31 avril…) `disabled`, 29 février valide.
   - Index -1 → exclu de la grille, mais compté dans `total` et `excluded[metric]` ; le pied l'annonce (« 12 caches sans D/T », « 30 sans date de publication ») pour que la somme ne surprenne pas.
-- Hors grilles : D ou T non numérique (Labs, données corrompues) → exclu des barres D/T, compté dans `total` et dans « par type » (type `"Adventure Lab"`) ; `container` null → bucket « Inconnu » (clé interne stable, libellé traduit à l'affichage). Parsing des dates par découpe de la chaîne `YYYY-MM-DD` (pas de `new Date` par feature).
+- Hors grilles : D ou T non numérique (Labs, données corrompues) → exclu des barres D/T, compté dans `total` et dans « par type » (type `"Adventure Lab"`) ; `container` null → bucket « Inconnu » (clé interne stable, libellé traduit à l'affichage). Parsing des dates par découpe de la chaîne `YYYY-MM-DD` (pas de `new Date` par feature) **avec validation du calendrier** : « 2021-02-31 » est rejeté — sinon `Date.UTC` le rabattrait sur le 3 mars et la cache serait comptée au mauvais jour.
 - **Deux références mémoïsées** :
   - **Totaux au repos** = toute la sélection filtrée (`pointsByDate` + `hiddenPointsByDate`), clé `pointsByDateRevision` — c'est ce qu'affichent `showRestInfos` et la carte au repos.
   - **Référence d'animation** = comptes à `animationEndDate()` inclus (caches antérieures au début comprises), clé `(pointsByDateRevision, animationEndDate)`. Égale aux totaux quand aucune date de fin n'est imposée → un seul calcul.
@@ -220,7 +220,7 @@ Règles de coercition (serveur **et** client `normalizeStatsSettings`, même esp
 ## 6. Tests et vérification
 
 - **Unitaires JS** : `node --test test_stats_model.mjs` —
-  - index : `dtIndex` (1→0, 1.5→1, 5→8, 4.75→8 borné, null→-1) ; Jasmer (2000-05 valide, 2000-04 `disabled`, null→-1) ; calendrier (29 février valide, 31 avril `disabled`) ;
+  - index : `dtIndex` (1→0, 1.5→1, 5→8, 4.75→-1 pas un demi-point, 7→-1, null→-1) ; Jasmer (2000-05 valide, 2000-04 `disabled`, null→-1) ; calendrier (29 février valide, 31 avril `disabled`, 2021-02-31 rejeté) ;
   - accumulateur : `add` de features mixtes geocache/lab/locationless (`total`, `excluded`, `dt[...]`, `byType` avec `"Adventure Lab"`, Lab compté en type mais pas en D/T) ; `reset` ; métriques non demandées non calculées ; `isNew` au passage 0→1 seulement ;
   - références : référence d'animation ≠ totaux quand la date de fin est imposée, identique sinon ;
   - ordre : `sort: count` figé sur la référence (un état intermédiaire où un type dépasse un autre ne change pas l'ordre), `topN` + « Autres », défauts `natural` par métrique ;
