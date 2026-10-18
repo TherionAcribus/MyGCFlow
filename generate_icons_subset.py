@@ -23,6 +23,7 @@ Nécessite fontTools[woff] (brotli/zopfli pour la sortie woff2) — voir
 requirements-build.txt.
 """
 
+import hashlib
 import re
 import sys
 from pathlib import Path
@@ -108,6 +109,10 @@ def main():
     subsetter.populate(unicodes=codepoints)
     subsetter.subset(font)
     subset.save_font(font, str(FONT_OUT), options)
+    # Version de la fonte dans son URL : Flask ne fixe aucune durée de cache,
+    # le navigateur garderait sinon l'ancienne fonte (icônes ajoutées absentes)
+    # jusqu'à un rechargement forcé.
+    font_version = hashlib.sha256(FONT_OUT.read_bytes()).hexdigest()[:10]
 
     # --- CSS : @font-face (woff2 seul : tous les navigateurs récents), base .ti,
     # puis une règle par icône utilisée ---
@@ -120,7 +125,7 @@ def main():
         '    font-family: "tabler-icons";',
         '    font-style: normal;',
         '    font-weight: 400;',
-        '    src: url("./fonts/tabler-icons-subset.woff2") format("woff2");',
+        f'    src: url("./fonts/tabler-icons-subset.woff2?v={font_version}") format("woff2");',
         '}',
         '.ti {',
         '    font-family: "tabler-icons" !important;',

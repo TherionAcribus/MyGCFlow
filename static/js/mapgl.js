@@ -382,6 +382,13 @@ const pointAppearClock = createAppearClock();
 // 'mediarecorder' (enregistrement, où la pause n'existe pas).
 let livePausedAt = null;
 let livePauseOffsetMs = 0;
+// Barre de chronologie (timeline_bar.js) : déroulé de l'aperçu tel qu'il
+// était planifié au lancement (pré-roll de la piste, durée d'un jour, pauses
+// par jour), pour retrouver l'instant de la vidéo — donc de la musique — qui
+// correspond à une date après un saut. seekDayMs garde le rythme de la piste
+// une fois celle-ci abandonnée par le saut.
+let previewTimeline = null;
+let seekDayMs = null;
 // glowMs : durée de la fenêtre de persistance des points récents, en temps
 // d'animation. Toujours >= 1, les expressions de style divisant par elle.
 // Les variables evo* pilotent le mode Évolution (voir evolution_style.mjs) :
@@ -2544,7 +2551,16 @@ export function startAnimation(restart=false) {
     // Durée imposée : partage du temps entre dates et trajets de caméra. Pas à
     // la reprise d'une pause, ni en capture rapide (qui arrive ici par
     // restart=true après avoir fait son propre partage, ralentissement compris).
-    if (!restart) prepareCameraPacing();
+    if (!restart) {
+        prepareCameraPacing();
+        seekDayMs = null;
+        previewTimeline = {
+            leadMs: cameraTrack?.leadMs || 0,
+            dayMs: cameraTrack?.dayMs ?? baseDayDuration,
+            holdsByDay: cameraTrack?.holdsByDay || null,
+        };
+        pkg.refreshTimelineBar?.();
+    }
 
     // Repart avec un accumulateur neutre : la reprise (restart=true) ne rattrape
     // pas le temps écoulé pendant la pause, exactement comme l'ancien
@@ -2604,7 +2620,10 @@ export function startAnimation(restart=false) {
             // La limite à 1 jour/frame ne se justifie qu'en mode réactif, où
             // chaque date affichée peut figer l'animation pour un trajet. En
             // mode piste les dates ne s'arrêtent pas : rattrapage normal.
-            : (pkg.options.animation?.cameraFollow && !cameraTrack ? 1 : MAX_DAYS_PER_FRAME);
+            // Suivi suspendu (interaction, saut dans la chronologie) : plus
+            // aucun trajet ne fige les dates.
+            : (pkg.options.animation?.cameraFollow && !cameraTrack && !cameraFollowSuspended
+                ? 1 : MAX_DAYS_PER_FRAME);
         // Durée imposée avec suivi de caméra : le temps d'une date se déduit de
         // ce qui reste une fois les trajets à venir retranchés. Le temps déjà
         // accumulé vers la date suivante est exclu du temps écoulé : le
@@ -2620,8 +2639,9 @@ export function startAnimation(restart=false) {
                 defaultOverheadMs: CAMERA_LIVE_OVERHEAD_ESTIMATE_MS,
             })
             // Mode piste en durée imposée : le rythme réel est celui choisi par
-            // fitCameraTrackDayMs (pauses comprises), pas la préférence.
-            : (cameraTrack?.dayMs ?? baseDayDuration);
+            // fitCameraTrackDayMs (pauses comprises), pas la préférence —
+            // conservé après un saut, qui abandonne la piste.
+            : (cameraTrack?.dayMs ?? seekDayMs ?? baseDayDuration);
         animationAccMs += Math.min(ts - animationLastTs, dayDuration * Math.max(MAX_DAYS_PER_FRAME, maxDaysThisFrame));
         animationLastTs = ts;
 
@@ -2829,6 +2849,130 @@ export function pauseAnimation() {
     // Mettre la musique de fond en pause (elle reprendra à la reprise)
     try { pauseBackgroundMusic(); } catch(e) { console.warn('pauseAnimation pauseBackgroundMusic error:', e); }
     // La carte, vectorSource, les points et currentDate sont conservés tels quels
+}
+
+// --- Barre de chronologie -----------------------------------------------------
+//
+// timeline_bar.js montre la plage de l'animation et y place un curseur : le
+// dernier jour affiché pendant une animation, la fin au repos (la carte montre
+// alors toute la sélection). Un saut n'est permis que sur un aperçu en pause —
+// la barre met elle-même l'aperçu en pause, ou l'ouvre en pause depuis le repos.
+
+function startOfDay(date) {
+    if (!(date instanceof Date) || !Number.isFinite(date.getTime())) return null;
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+export function getTimelineState() {
+    const start = startOfDay(animationStartDate());
+    const end = startOfDay(animationEndDate());
+    if (!start || !end || end < start || !hasTimelineData()) return null;
+    const recording = isRecordingActive();
+    const active = !!animationInProgress || recording;
+    let position = end;
+    if (active && currentDate instanceof Date) {
+        // currentDate est le prochain jour à afficher : la veille au plus tôt
+        // la date de début (rien de la plage n'est encore affiché).
+        const last = startOfDay(currentDate);
+        last.setDate(last.getDate() - 1);
+        position = last < start ? start : (last > end ? end : last);
+    }
+    return {
+        start,
+        end,
+        position,
+        active,
+        recording,
+        paused: !!animationInProgress && !recording && livePausedAt !== null,
+    };
+}
+
+// Amène l'aperçu en pause à la fin du jour `date` (bornée à la plage) : carte,
+// compteur, date, traits et panneaux Stats prennent l'état qu'ils auraient
+// après l'affichage de ce jour, sans flash ni apparition — comme un lancement
+// dont la date de début serait le lendemain. La reprise continue de là.
+export function seekAnimationToDate(date) {
+    if (!animationInProgress || livePausedAt === null || isRecordingActive()) return false;
+    const range = getTimelineState();
+    let day = startOfDay(date);
+    if (!range || !day) return false;
+    if (day < range.start) day = range.start;
+    if (day > range.end) day = range.end;
+    const next = new Date(day);
+    next.setDate(next.getDate() + 1);
+    const now = sampleAppearClock();
+
+    // La piste de caméra, la durée imposée et le retour au cadrage sont
+    // planifiés pour un déroulé continu depuis la date de début : après un
+    // saut, le suivi est suspendu comme après une interaction sur la carte
+    // (le prochain lancement le réactive). Le rythme de la piste est gardé.
+    if (cameraTrack && seekDayMs === null) seekDayMs = cameraTrack.dayMs ?? null;
+    cancelCameraFollowMotion();
+    cameraFollowSuspended = true;
+    cameraPacing = null;
+    endHoldTimer.clear();
+
+    const showDate = pkg.options.infos?.currentDate?.display === true;
+    if (isEvolutionPage()) {
+        createFlashElements();
+        // La date avant les compteurs : la ligne d'infos à balises la relit.
+        pkg.updateCurrentDate(day);
+        infos = createObjectInfos(beginEvolutionTimeline(next));
+    } else {
+        const points = getPointsUpToDate(day);
+        if (window.vectorSource) window.vectorSource.clear();
+        if (points.length > 0) displayWebGLPoints(points, pkg.options.point);
+        createFlashElements();
+        if (showDate) pkg.updateCurrentDate(day);
+        infos = createObjectInfos(points.length + countHiddenPointsBefore(next));
+        seekTravelTrail(dateToDayNumber(day), now);
+    }
+    pkg.seekStatsToDate?.(day);
+
+    currentDate = next;
+    cameraPacingState.dayIndex = dateToDayNumber(next) - dateToDayNumber(range.start);
+    animationAccMs = 0;
+    animationLastTs = null;
+    animationDatesComplete = currentDate > pkg.metadata.endDate;
+    mapDirtyTracker.markDirty();
+    try { map.render(); } catch (_) {}
+    pkg.refreshTimelineBar?.();
+    return true;
+}
+
+// Instant de la vidéo qui correspond à l'état affiché : pré-roll, jours déjà
+// déroulés (avec les pauses de la piste qui les précédaient) et temps déjà
+// accumulé vers le jour suivant.
+function previewVideoMs() {
+    const plan = previewTimeline;
+    if (!plan) return 0;
+    const shown = Math.max(0, cameraPacingState.dayIndex);
+    let holdsMs = 0;
+    if (plan.holdsByDay) {
+        for (let i = 0; i < shown && i < plan.holdsByDay.length; i++) holdsMs += plan.holdsByDay[i] || 0;
+    }
+    return plan.leadMs + holdsMs + shown * plan.dayMs + Math.max(0, animationAccMs);
+}
+
+// Après un saut : la musique de l'aperçu repart de l'instant correspondant.
+// Appelé une fois le saut confirmé (relâchement, fin de frappe) — relancer la
+// lecture à chaque mouvement recréerait un contexte audio par frame.
+export function resyncPreviewMusic() {
+    if (!animationInProgress || isRecordingActive()) return;
+    pkg.seekBackgroundMusic?.(previewVideoMs(), { playing: livePausedAt === null });
+}
+
+// Le stylo est posé sur la dernière étape atteinte au jour `day`, puis le
+// trait vers l'étape suivante est planifié comme après l'affichage de ce jour.
+function seekTravelTrail(day, now) {
+    const state = trailState;
+    if (!state || !Number.isFinite(day)) return;
+    const { route, path } = state;
+    const idx = nextDayIndex(route, day);
+    const len = Math.max(state.startLen, idx > 0 ? lengthAtDay(route, path, idx - 1) : 0);
+    state.pen = { fromLen: len, toLen: len, startAt: -Infinity, endAt: -Infinity };
+    state.scheduledIdx = -1;
+    scheduleTravelTrail(day, now);
 }
 
 // Renvoie false quand l'enregistrement n'a pas été lancé : l'appelant laisse
@@ -4782,6 +4926,9 @@ function displayFeaturesForDate(date, pointOptions, flashOptions, record, infos)
 // frame rAF. Les enregistrements (frame par frame) passent toujours un jour unique.
 function displayFeaturesForDates(dates, pointOptions, flashOptions, record, infos) {
     if (!dates || dates.length === 0) return;
+    // Le curseur de la barre de chronologie suit les jours affichés (le
+    // dessin est regroupé à la frame suivante).
+    pkg.refreshTimelineBar?.();
     if (isEvolutionPage()) {
         displayEvolutionDates(dates, flashOptions, record, infos);
         return;

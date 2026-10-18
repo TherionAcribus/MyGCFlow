@@ -320,6 +320,26 @@ export function resumeBackgroundMusic(){
     }
 }
 
+// Barre de chronologie : l'aperçu a sauté à un autre instant de la vidéo, la
+// musique repart de là — en pause si l'animation l'est (la reprise passe
+// ensuite par resumeBackgroundMusic). La piste décodée est réutilisée. Sans
+// musique d'aperçu en cours (aucune, ou déjà finie), rien à faire.
+export function seekBackgroundMusic(fromVideoMs, { playing = false } = {}) {
+    try {
+        if (bgAudioMode !== 'preview' || !bgAudioCtx) return;
+        if (isRecordingActive() || blockBackgroundAudioPlayback) return;
+        const file = includedMusicFile();
+        if (!file) return;
+        startPlayback(musicTrack.playable(file), {
+            mode: 'preview',
+            fromVideoMs: Math.max(0, Number(fromVideoMs) || 0),
+        });
+        if (!playing) pauseBackgroundMusic();
+    } catch (e) {
+        console.warn('seekBackgroundMusic error:', e);
+    }
+}
+
 export function stopBackgroundMusic(){
     if (bgAudioWatchTimer) { clearInterval(bgAudioWatchTimer); bgAudioWatchTimer = null; }
     const wasPlaying = !!bgAudioCtx;

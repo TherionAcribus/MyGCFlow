@@ -101,6 +101,18 @@ Autres repères :
   hexadécimal (`/^[0-9a-f]{6,32}$/`, `ID_RE` de stats_model.mjs) : un id
   invalide (`sel00001`, `a11y0001`…) est silencieusement régénéré et le
   `data-panel-id` cherché n'existe jamais.
+- Après un clic sur un bouton de `#layoutPresets` (préréglages, plein écran,
+  `#btnTimelineBar`), sa bulle d'aide réapparaît tant qu'il garde le focus et
+  intercepte les clics sur ses voisins : `document.activeElement.blur()`
+  avant de cliquer le suivant — exemple dans `timeline-bar.spec.mjs`
+  (`hideToolbarTooltip`). Pour lancer l'aperçu depuis un spec, passer par
+  `#btnQuickPreview` / `#btnQuickPause` / `#btnQuickStop` (barre d'outils,
+  toujours visibles) plutôt que les boutons de l'onglet Animation.
+- Barre de chronologie (`timeline_bar.js`) : un saut n'est accepté que sur un
+  aperçu en pause (`seekAnimationToDate`, mapgl.js) ; la barre ouvre l'aperçu
+  en pause depuis le repos (`startPausedPreview`, ui.js). L'état s'observe par
+  `getTimelineBarSnapshot()` (`valueNow` = jour depuis la date de début) et
+  `previewPlaybackState()` (`idle`/`playing`/`paused`/`recording`).
 - Vider les processus orphelins si un run est tué : `taskkill /F /T /PID <id>`
   sur les `node.exe`/`python.exe` dont la ligne de commande contient
   `cli.js`/`run_server.py`. Sous Linux : `pkill -f cli.js` /
@@ -128,7 +140,9 @@ Source en français (`msgid`), anglais en `msgstr` — et dans le catalogue FR,
 comme `Cancel`→`Annuler`). Commandes dans README.md
 (pybabel extract/update/compile + `check_missing_translations.py`).
 Côté JS, seul helper : `t()` via `pkg.t(...)` ; l'appeler **hors** d'un
-template literal, sinon pybabel ne l'extrait pas.
+template literal, sinon pybabel ne l'extrait pas — et sans chaînage
+optionnel : `pkg.t?.('…')` n'est pas extrait non plus (chaîne absente du
+`.pot`, jamais traduite).
 
 **Piège fuzzy :** `pybabel update` apparie les msgids nouveaux/renommés aux
 msgstr les plus proches et marque `#, fuzzy`. Si le drapeau est retiré sans

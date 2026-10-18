@@ -29,6 +29,8 @@ export * from './theme.js';
 export * from './evolution_data.js';
 export * from './infos_editor.js';
 export * from './labs.js';
+// Après ui.js : s'initialise lui-même (cf. AGENTS.md, ordre d'évaluation).
+export * from './timeline_bar.js';
 
 // Scripts de démonstration (fonctions window.demo*/test* à appeler depuis la
 // console), réservés au développement. Le drapeau vient de Flask : tester

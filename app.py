@@ -1,3 +1,4 @@
+import hashlib
 import os
 
 from flask import Flask
@@ -40,11 +41,29 @@ def create_app(config_object=None):
     register_blueprints(app)
 
     app.jinja_env.globals['_'] = _
+    app.jinja_env.globals['icons_css_version'] = _static_version(
+        app, 'vendor/tabler-icons/tabler-icons-subset.css')
     with app.app_context():
         db.create_all()
         migrations.upgrade(db)
 
     return app
+
+
+def _static_version(app, relative_path):
+    """Empreinte courte d'un fichier statique, à passer en `?v=` dans son URL.
+
+    Flask ne fixe aucune durée de cache aux fichiers statiques : le navigateur
+    les garde alors selon une heuristique (une fraction de leur âge), et un
+    fichier régénéré — sous-ensemble d'icônes après l'ajout d'une icône —
+    resterait périmé jusqu'à un rechargement forcé. L'empreinte suit le
+    contenu, donc l'URL aussi.
+    """
+    try:
+        with open(os.path.join(app.static_folder, relative_path), 'rb') as f:
+            return hashlib.sha256(f.read()).hexdigest()[:10]
+    except OSError:
+        return '0'
 
 
 app = create_app()

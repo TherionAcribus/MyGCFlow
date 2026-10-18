@@ -374,6 +374,7 @@ function applySelection(selection, { resetDates = false } = {}) {
     pkg.setEvolutionFeatures(olFeatures);
     // Chronologie reconstruite : les panneaux Stats recomptent leur état.
     pkg.refreshStatsPanels?.();
+    pkg.refreshTimelineBar?.();
 
     // Une fois par base : le répéter à chaque changement de filtre lasse sans
     // rien apprendre de plus.

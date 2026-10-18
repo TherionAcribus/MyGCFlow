@@ -2102,10 +2102,19 @@ function initMapTabsSplitPane() {
         if (persist) localStorage.setItem(MODE_KEY, on ? 'sidebar' : 'rows');
     }
 
+    // Barre de chronologie affichée (timeline_bar.js) : en bandeau, elle
+    // s'intercale sous la carte et prend sa hauteur sur le panneau ; en
+    // latéral, elle vit dans la colonne de la carte.
+    function timelineBarSize() {
+        if (sidebarMode) return 0;
+        const bar = document.getElementById('timelineBar');
+        return bar && !bar.hidden ? bar.getBoundingClientRect().height : 0;
+    }
+
     function clampMapHeightPx(mapHeightPx) {
         const size = containerSize();
         const resizerSize = getResizerSize();
-        const maxMapPx = Math.max(MIN_MAP_PX, size - minTabsSize() - resizerSize);
+        const maxMapPx = Math.max(MIN_MAP_PX, size - minTabsSize() - resizerSize - timelineBarSize());
         const clamped = Math.max(MIN_MAP_PX, Math.min(mapHeightPx, maxMapPx));
         return { clamped, containerHeight: size };
     }
@@ -5561,6 +5570,32 @@ function toggleButtonAnimationPauseAndRestart(reinitialisation = false){
     updateControlBar();
 }
 
+// Barre de chronologie (timeline_bar.js) : état de la lecture, et pause /
+// reprise par les mêmes chemins que les boutons pour que l'interface suive.
+export function previewPlaybackState() {
+    if (pkg.isRecordingActive?.()) return 'recording';
+    if (isPlaybackIdle()) return 'idle';
+    const btn = document.getElementById('btnPauseAnimation');
+    return btn?.classList.contains('restart') ? 'paused' : 'playing';
+}
+
+export function setPreviewPaused(paused) {
+    const state = previewPlaybackState();
+    if ((paused && state === 'playing') || (!paused && state === 'paused')) {
+        toggleButtonAnimationPauseAndRestart();
+    }
+}
+
+// Un saut depuis le repos ouvre l'aperçu, aussitôt mis en pause : la
+// carte est alors prête à recevoir la date choisie.
+export function startPausedPreview() {
+    if (previewPlaybackState() !== 'idle' || !hasAnimationData()) return false;
+    clickStartAnimation();
+    if (previewPlaybackState() !== 'playing') return false;
+    toggleButtonAnimationPauseAndRestart();
+    return previewPlaybackState() === 'paused';
+}
+
 // Aperçu de l'animation pendant que l'onglet passe en arrière-plan : le
 // navigateur y suspend le rendu (rAF), l'animation se fige… mais pas la
 // musique, qui se retrouvait en avance au retour. L'aperçu est donc mis en
@@ -5689,6 +5724,8 @@ function syncCameraFollowControls() {
 export function refreshTimingPlan({ save = true } = {}) {
     const animation = pkg.options?.animation;
     if (!animation) return;
+    // Plage de dates éventuellement changée : la barre de chronologie suit.
+    pkg.refreshTimelineBar?.();
     const mode = rhythmMode();
     const dayCount = currentDayCount();
 
@@ -8088,6 +8125,9 @@ export function updateDataAvailabilityUI({ dataResolved = false } = {}) {
 
 function updateControlBar() {
     dbgUi("=== updateControlBar ===");
+    // Tous les changements d'état de lecture passent par ici : la barre de
+    // chronologie suit (curseur, désactivation pendant l'enregistrement).
+    pkg.refreshTimelineBar?.();
     const controlBar = document.getElementById('controlBar');
     const btnStartBar = document.getElementById('btnStartBar');
     const btnRecordBar = document.getElementById('btnRecordBar');

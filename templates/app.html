@@ -18,7 +18,7 @@
              Sous-ensemble généré par generate_icons_subset.py (~4 Ko de CSS +
              ~17 Ko de woff2 au lieu de ~1 Mo) ; la fonte complète reste
              disponible en tabler-icons.min.css si besoin. -->
-        <link rel="stylesheet" href="../static/vendor/tabler-icons/tabler-icons-subset.css">
+        <link rel="stylesheet" href="../static/vendor/tabler-icons/tabler-icons-subset.css?v={{ icons_css_version }}">
         <!-- Tom Select 2.x — multi-selects avec checkboxes/recherche/tags -->
         <link rel="stylesheet" href="../static/vendor/tom-select/tom-select.bootstrap5.css">
         <!-- Tempus Dominus 6.x — datepickers Bootstrap 5 natif -->
@@ -183,6 +183,39 @@
                     </div>
                 </div>
 
+                <!-- Barre de chronologie (timeline_bar.js) : hors de
+                     #mapWithFrames, donc jamais capturée dans la vidéo. Le
+                     curseur (role="slider") amène la carte et les Stats à une
+                     date ; affichée par le bouton #btnTimelineBar. -->
+                <div id="timelineBar" class="timeline-bar" hidden>
+                    <span id="timelineBarStart" class="timeline-bar-edge"></span>
+                    <div id="timelineBarTrack" class="timeline-bar-track" role="slider" tabindex="0"
+                         aria-label="{{ _('Chronologie de l\'animation') }}"
+                         aria-valuemin="0" aria-valuemax="0" aria-valuenow="0">
+                        <canvas id="timelineBarCanvas" aria-hidden="true"></canvas>
+                    </div>
+                    <span id="timelineBarEnd" class="timeline-bar-edge"></span>
+                    <span id="timelineBarDate" class="timeline-bar-date" aria-hidden="true"></span>
+                    <div class="btn-group timeline-bar-styles" role="group"
+                         aria-label="{{ _('Style de la barre de chronologie') }}">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-timeline-style="simple" aria-pressed="false"
+                                aria-label="{{ _('Barre simple') }}"
+                                data-bs-toggle="tooltip" data-bs-title="{{ _('Barre simple') }}">
+                            <i class="ti ti-minus" aria-hidden="true"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-timeline-style="histogram" aria-pressed="true"
+                                aria-label="{{ _('Histogramme des trouvailles') if mode != 'evolution' else _('Histogramme des poses et archivages') }}"
+                                data-bs-toggle="tooltip" data-bs-title="{{ _('Histogramme des trouvailles') if mode != 'evolution' else _('Histogramme des poses et archivages') }}">
+                            <i class="ti ti-chart-bar" aria-hidden="true"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-timeline-style="curve" aria-pressed="false"
+                                aria-label="{{ _('Courbe de progression') if mode != 'evolution' else _('Courbe des caches actives') }}"
+                                data-bs-toggle="tooltip" data-bs-title="{{ _('Courbe de progression') if mode != 'evolution' else _('Courbe des caches actives') }}">
+                            <i class="ti ti-chart-line" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Gabarit de la popup d'information OpenLayers (clic sur un point).
                      Cloné une fois par mapgl.js::initPopupOverlay() et rattaché à
                      <body> (l'overlay OL le repositionne ensuite lui-même). Le
@@ -255,6 +288,13 @@
                             aria-label="{{ _('Panneau latéral') }}"
                             data-bs-toggle="tooltip" data-bs-title="{{ _('Panneau latéral') }}">
                         <i class="ti ti-layout-sidebar-right" aria-hidden="true"></i>
+                    </button>
+                    <!-- Barre de chronologie sous la carte (timeline_bar.js) :
+                         sans data-layout, hors de syncLayoutPresets. -->
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnTimelineBar" aria-pressed="false"
+                            aria-label="{{ _('Barre de chronologie') }}"
+                            data-bs-toggle="tooltip" data-bs-title="{{ _('Barre de chronologie') }}">
+                        <i class="ti ti-timeline" aria-hidden="true"></i>
                     </button>
                     <!-- Plein écran : accolé aux préréglages (la disposition
                          « carte maximale »). Sans data-layout pour rester hors

@@ -358,6 +358,36 @@ export function accumulateStatsForDates(dates, now) {
     touch();
 }
 
+// Saut dans la chronologie (barre de chronologie, aperçu en pause) : l'état à
+// la fin du jour `date`, reconstruit depuis l'index, sans surbrillance — rien
+// ne vient d'être trouvé. Les échelles restent celles de la référence.
+export function seekStatsToDate(date) {
+    if (!(date instanceof Date)) return;
+    if (isEvolutionPage()) {
+        const index = evolutionIndex();
+        const day = index?.dayOf?.(date);
+        if (!Number.isFinite(day)) return;
+        // Comme le premier lot de accumulateEvolutionStats : l'aperçu a pu
+        // être mis en pause avant d'avoir affiché le moindre jour.
+        mode = 'animating';
+        animation = {
+            ...(animation || {}),
+            endDate: pkg.metadata?.endDate instanceof Date ? pkg.metadata.endDate : null,
+            lastDate: date,
+            highlightMs: animation?.highlightMs ?? DEFAULT_HIGHLIGHT_MS,
+            evolution: true,
+        };
+        evoAppliedDay = day;
+        evoCurrent = evolutionStateAt(index, metrics, day);
+    } else {
+        if (mode !== 'animating' || !animation) return;
+        animation.lastDate = date;
+        rebuildCurrent();
+    }
+    tweens.clear(animation.highlightMs);
+    touch();
+}
+
 // Retour au repos (arrêt, abandon d'enregistrement) : totaux de la sélection.
 // La fin naturelle de l'animation n'y passe pas — l'état final reste affiché,
 // comme le compteur de caches.
