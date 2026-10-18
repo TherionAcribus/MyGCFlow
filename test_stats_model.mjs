@@ -615,6 +615,18 @@ test('courbe : cumul par jour, axe calé sur la référence, tête prolongée à
     assert.equal(lineModel(countFeatures([], ['day']), countFeatures([], ['day'])).empty, true);
 });
 
+test('lineModel : jours et points mémoïsés par révision d\'accumulateur', () => {
+    const acc = createStatsAccumulator(['day']);
+    acc.add([onDay('2024-01-01'), onDay('2024-01-03'), onDay('2024-01-03')], null);
+    const m1 = lineModel(acc, acc);
+    const m2 = lineModel(acc, acc);
+    assert.equal(m2.points, m1.points);                 // même tableau, pas recalculé
+    acc.add([onDay('2024-01-10')], null);
+    const m3 = lineModel(acc, acc);
+    assert.notEqual(m3.points, m1.points);              // révision → recalculé
+    assert.equal(m3.total, m1.total + 1);               // et le compte suit
+});
+
 test('course de barres : ordre et top-N suivent l’état courant, échelle du meneur', () => {
     const reference = countFeatures(types({ A: 10, B: 8, C: 1 }), ['cache_type']);
     const current = countFeatures(types({ A: 1, B: 3, C: 1 }), ['cache_type']);

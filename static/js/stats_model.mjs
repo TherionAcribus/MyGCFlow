@@ -1315,6 +1315,71 @@ export function rectsOverlap(a, b) {
 }
 
 // ---------------------------------------------------------------------------
+// Index de jours
+// ---------------------------------------------------------------------------
+
+// Index des jours d'un accumulateur : clés triées, puis champs paresseux
+// (`points` cumulés, `total`, `bestDay`, `streak`) calculés à la première
+// demande. Mémoïsé par révision (WeakMap) : les vues sont reconstruites à
+// chaque frame d'un tween, les comptes ne changent qu'à l'ajout d'un lot
+// (acc.revision). NE JAMAIS muter `days`, `points` ni les objets paresseux
+// retournés : ils sont partagés entre les appels.
+const dayIndexCache = new WeakMap();  // acc → { revision, counts, days, ... }
+
+function dayIndex(acc) {
+    const counts = acc?.counts?.get('day');
+    if (!counts) return { counts: new Map(), days: [] };
+    if (Number.isFinite(acc?.revision)) {
+        let index = dayIndexCache.get(acc);
+        if (!index || index.revision !== acc.revision) {
+            index = { revision: acc.revision, counts, days: [...counts.keys()].sort((a, b) => a - b) };
+            dayIndexCache.set(acc, index);
+        }
+        return index;
+    }
+    // Accumulateur factice sans révision (evolutionStatusAcc, référence de
+    // pics…), ou objet frais à chaque appel : calcul direct, sans cache.
+    return { counts, days: [...counts.keys()].sort((a, b) => a - b) };
+}
+
+function dayPoints(index) {
+    if (!index.points) {
+        let total = 0;
+        index.points = index.days.map((day) => ({ day, total: (total += index.counts.get(day)) }));
+        index.total = total;
+    }
+    return index.points;
+}
+
+function dayBestDay(index) {
+    if (!index.bestDay) {
+        let best = { value: 0, day: null };
+        for (const [day, n] of index.counts) {
+            if (n > best.value || (n === best.value && best.day !== null && day < best.day)) {
+                best = { value: n, day };
+            }
+        }
+        index.bestDay = best;
+    }
+    return index.bestDay;
+}
+
+function dayStreak(index) {
+    if (!index.streak) {
+        let best = { value: 0, start: null, end: null };
+        let start = null;
+        const days = index.days;
+        for (let i = 0; i < days.length; i++) {
+            if (i === 0 || days[i] !== days[i - 1] + 1) start = days[i];
+            const length = days[i] - start + 1;
+            if (length > best.value) best = { value: length, start, end: days[i] };
+        }
+        index.streak = best;
+    }
+    return index.streak;
+}
+
+// ---------------------------------------------------------------------------
 // Courbe de progression (trouvailles cumulées)
 // ---------------------------------------------------------------------------
 
@@ -1324,29 +1389,26 @@ export function rectsOverlap(a, b) {
 // Axe des y : total de la référence, pour que la courbe finisse en haut.
 export function lineModel(current, reference, context = {}) {
     const ref = reference || current;
-    const refDays = [...(ref.counts.get('day') || new Map()).keys()].sort((a, b) => a - b);
-    const counts = current.counts.get('day') || new Map();
-    const days = [...counts.keys()].sort((a, b) => a - b);
+    const refIndex = dayIndex(ref);
+    const index = dayIndex(current);
+    const refDays = refIndex.days;
+    const days = index.days;
     if (!refDays.length && !days.length) {
-        return { empty: true, points: [], first: 0, last: 0, max: 0, total: 0, excluded: current.excluded.get('day') || 0 };
+        return { empty: true, points: [], first: 0, last: 0, max: 0, total: 0,
+            excluded: current.excluded.get('day') || 0 };
     }
     const first = Math.min(refDays[0] ?? Infinity, days[0] ?? Infinity);
     let last = Math.max(refDays.at(-1) ?? -Infinity, days.at(-1) ?? -Infinity);
     if (Number.isFinite(context.endDay)) last = Math.max(last, context.endDay);
-    let refTotal = 0;
-    for (const n of (ref.counts.get('day') || new Map()).values()) refTotal += n;
-
-    const points = [];
-    let total = 0;
-    for (const day of days) {
-        total += counts.get(day);
-        points.push({ day, total });
-    }
+    dayPoints(index);
+    if (refDays.length) dayPoints(refIndex);
+    const refTotal = refIndex.total || 0;
+    const total = index.total || 0;
     let headDay = days.at(-1) ?? first;
     if (Number.isFinite(context.headDay)) headDay = Math.max(headDay, Math.min(last, context.headDay));
     return {
         empty: false,
-        points,
+        points: index.points,
         first,
         last: Math.max(last, first + 1),
         max: Math.max(refTotal, total),
@@ -1379,21 +1441,10 @@ export function counterValues(acc, items) {
         if (item === 'days') {
             values.days = { value: dayCounts.size };
         } else if (item === 'best_day') {
-            let best = { value: 0, day: null };
-            for (const [day, n] of dayCounts) {
-                if (n > best.value || (n === best.value && best.day !== null && day < best.day)) best = { value: n, day };
-            }
-            values.best_day = best;
+            // Copie : l'objet de l'index est partagé entre les appels.
+            values.best_day = { ...dayBestDay(dayIndex(acc)) };
         } else if (item === 'streak') {
-            const days = [...dayCounts.keys()].sort((a, b) => a - b);
-            let best = { value: 0, start: null, end: null };
-            let start = null;
-            for (let i = 0; i < days.length; i++) {
-                if (i === 0 || days[i] !== days[i - 1] + 1) start = days[i];
-                const length = days[i] - start + 1;
-                if (length > best.value) best = { value: length, start, end: days[i] };
-            }
-            values.streak = best;
+            values.streak = { ...dayStreak(dayIndex(acc)) };
         } else if (item === 'types') {
             values.types = { value: knownKeys(acc, 'cache_type') };
         } else if (item === 'countries') {

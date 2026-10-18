@@ -176,6 +176,12 @@ Les renderers ne lisent jamais le DOM. `stats_panels.js` prépare une **vue**
 calcule en px CSS depuis la seule largeur, ce qui donne la hauteur
 (`measure`) avant de dessiner, puis le dessin à n'importe quelle échelle.
 
+La vue est reconstruite à chaque frame d'un tween : les calculs qui ne
+dépendent que des comptes — jours triés, points cumulés de la courbe, record
+du jour et plus longue série des compteurs — sont mémoïsés par révision
+d'accumulateur (`dayIndex` dans `stats_model.mjs`), donc recalculés à
+l'ajout d'un lot, pas à chaque frame.
+
 - **Aperçu** : un `<canvas class="stats-panel">` par panneau dans
   `#mapWithFrames`, bitmap = taille CSS × `devicePixelRatio`, `z-index: 90`
   (sous le titre et les infos), `pointer-events: none`. Redessin seulement
