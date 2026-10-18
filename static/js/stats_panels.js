@@ -47,6 +47,7 @@ import {
     metricsForPanels,
     normalizeStatsSettings,
     rectsOverlap,
+    yearTicks,
     ymdOfDay,
 } from './stats_model.mjs';
 import { STATS_RENDERERS, drawStatsPanel, measureStatsPanel } from './stats_render.mjs';
@@ -676,12 +677,15 @@ function buildView(panel) {
         model.shownHeadDay = tweens.set(`${panel.id}:head`, model.headDay, now);
         view.model = model;
         view.showArea = panel.options.show_area;
-        // Axe : années, ou dates complètes si la période tient dans une année.
+        // Axe : années, ou dates complètes si la période tient dans une année ;
+        // jalons annuels entre les deux bords (le dessin éclaircit les
+        // collisions — axe court, dates complètes plus larges qu'une année).
         if (!model.empty) {
             const sameYear = ymdOfDay(model.first).y === ymdOfDay(model.last).y;
             view.startLabel = sameYear ? formatDay(model.first) : String(ymdOfDay(model.first).y);
             view.endLabel = sameYear ? formatDay(model.last) : String(ymdOfDay(model.last).y);
         }
+        view.ticks = model.empty ? [] : yearTicks(model.first, model.last);
         // Halo de la tête tant que la dernière trouvaille est fraîche.
         const lastDay = model.points.at(-1)?.day;
         view.headLevel = mode === 'animating' && animation && lastDay !== undefined
@@ -795,6 +799,7 @@ function buildEvolutionView(panel) {
             view.startLabel = sameYear ? formatDay(model.first) : String(ymdOfDay(model.first).y);
             view.endLabel = sameYear ? formatDay(model.last) : String(ymdOfDay(model.last).y);
         }
+        view.ticks = model.empty ? [] : yearTicks(model.first, model.last);
         view.headLevel = 0;
         return view;
     }

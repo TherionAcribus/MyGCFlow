@@ -58,6 +58,26 @@ function fitText(ctx, text, maxWidth) {
     return lo > 0 ? `${glyphs.slice(0, lo).join('')}…` : '';
 }
 
+// Cache de mesure des libellés : clé = le TABLEAU (identité stable tant que
+// la révision de l'accumulateur ne change pas — `allLabels` de barModel),
+// valeur = largeur en px par signature de police. Les tableaux éphémères
+// (libellés des lignes affichées, refaits à chaque frame) n'y entrent pas :
+// ils rendraient la mémoïsation inutile.
+const labelWidthCache = new WeakMap();
+
+// Largeur du plus long libellé du tableau, mémoïsée par (tableau, police).
+export function labelsMaxWidth(ctx, labels, fontSig) {
+    let byFont = labelWidthCache.get(labels);
+    if (!byFont) { byFont = new Map(); labelWidthCache.set(labels, byFont); }
+    let width = byFont.get(fontSig);
+    if (width === undefined) {
+        width = 0;
+        for (const label of labels) width = Math.max(width, ctx.measureText(label).width);
+        byFont.set(fontSig, width);
+    }
+    return width;
+}
+
 // Cadre commun : marges, titre, pied. Toutes les valeurs en px CSS.
 function frameMetrics(view, style) {
     const fontSize = style.font_size;
@@ -314,7 +334,12 @@ function drawBars(ctx, view, style, width, now) {
     const rowH = L.chartH / Math.max(1, L.rows);
     ctx.font = font(500, L.fontSize, view.fontFamily);
     const labels = rows.map((row) => view.labelOf(row.key));
-    const labelW = Math.min(innerW * 0.42, Math.max(...labels.map((l) => ctx.measureText(l).width), 0));
+    // Course de barres : la colonne d'étiquettes se mesure sur TOUTES les
+    // catégories (allLabels, stable par révision) — un nom long qui entre
+    // dans le top-N ne décale plus les barres en pleine animation.
+    const labelW = Math.min(innerW * 0.42, view.model.allLabels
+        ? labelsMaxWidth(ctx, view.model.allLabels, `500|${L.fontSize}|${view.fontFamily || ''}`)
+        : Math.max(...labels.map((l) => ctx.measureText(l).width), 0));
     ctx.font = font(600, L.fontSize * 0.9, view.fontFamily);
     // Largeur réservée aux valeurs : celle des valeurs FINALES (référence),
     // pour que les barres ne raccourcissent pas quand un nombre gagne un chiffre.
@@ -527,10 +552,38 @@ function drawLine(ctx, view, style, width, now) {
     ctx.font = font(500, Math.max(7, L.fontSize * 0.85), view.fontFamily);
     ctx.fillStyle = hexToRgba(style.text_color, 0.75);
     const axisY = bottom + L.axisH / 2;
+    const wStart = ctx.measureText(view.startLabel || '').width;
+    const wEnd = ctx.measureText(view.endLabel || '').width;
     ctx.textAlign = 'left';
     ctx.fillText(view.startLabel || '', left, axisY);
     ctx.textAlign = 'right';
     ctx.fillText(view.endLabel || '', right, axisY);
+
+    // Jalons annuels : un trait sous la ligne de base pour chacun ; l'année
+    // centrée dessous, sauf collision avec les libellés de bord ou le jalon
+    // précédent (éclaircissage — l'axe peut être court en Évolution).
+    const ticks = view.ticks || [];
+    if (ticks.length) {
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = hexToRgba(style.text_color, 0.2);
+        ctx.beginPath();
+        for (const tick of ticks) {
+            const x = xOf(tick.day);
+            ctx.moveTo(x, bottom);
+            ctx.lineTo(x, bottom + 3);
+        }
+        ctx.stroke();
+        ctx.textAlign = 'center';
+        let lastRight = left + wStart;
+        for (const tick of ticks) {
+            const x = xOf(tick.day);
+            const w = ctx.measureText(tick.label).width;
+            if (x - w / 2 >= lastRight + 4 && x + w / 2 <= right - wEnd - 4) {
+                ctx.fillText(tick.label, x, axisY);
+                lastRight = x + w / 2;
+            }
+        }
+    }
     if (!model.empty) {
         ctx.textAlign = 'left';
         ctx.fillText(view.formatNumber(model.max), left + 2, plotTop - L.fontSize * 0.55);

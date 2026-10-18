@@ -117,6 +117,16 @@ test('un modèle pose la matrice D/T, ancrée, empilée et retrouvée au redéma
   await expect(page.locator('canvas.stats-panel')).toHaveCount(3, { timeout: 15_000 });
 });
 
+test('un panneau apparaît en fondu à sa création', async ({ page }) => {
+  await putStats(page, { enabled: true, panels: [{ id: 'aaaaaa01', kind: 'grid', metric: 'dt' }] });
+  await openWithFixture(page);
+  const canvas = page.locator('canvas.stats-panel');
+  await expect(canvas).toHaveCount(1);
+  // Le nom d'animation reste posé après la fin du fondu : pas de chronométrage
+  // d'opacité (flaky).
+  await expect(canvas).toHaveCSS('animation-name', 'stats-panel-in');
+});
+
 test('un modèle à deux panneaux se désactive quand il ne reste qu\'une place', async ({ page }) => {
   const five = ['f0000001', 'f0000002', 'f0000003', 'f0000004', 'f0000005']
     .map((id, i) => ({ id, kind: 'bar', metric: 'cache_type', position: { anchor: 'top-right', dy: i * 8 } }));

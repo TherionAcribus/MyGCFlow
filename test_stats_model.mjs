@@ -37,6 +37,7 @@ import {
     parseYmd,
     rectsOverlap,
     statsKeyOf,
+    yearTicks,
 } from './static/js/stats_model.mjs';
 import { buildTimeline } from './static/js/evolution_timeline.mjs';
 import { EVO_NEVER_DAY } from './static/js/evolution_style.mjs';
@@ -632,6 +633,21 @@ test('compteurs : jours, record (le plus ancien à égalité), plus longue séri
     assert.equal(v.owners.value, 2);
 });
 
+test('jalons d\'années : les 1ᵉʳ janvier strictement entre les bornes', () => {
+    const mid = (y) => dayNumber({ y, m: 6, d: 15 });
+    // Début et fin dans la même année : aucun jalon.
+    assert.deepEqual(yearTicks(mid(2021), dayNumber({ y: 2021, m: 11, d: 1 })), []);
+    // Mi-2010 → mi-2023 : 13 jalons, 2011…2023.
+    const ticks = yearTicks(mid(2010), mid(2023));
+    assert.deepEqual(ticks.map((t) => t.label), Array.from({ length: 13 }, (_, i) => String(2011 + i)));
+    assert.equal(ticks[0].day, dayNumber({ y: 2011, m: 1, d: 1 }));
+    // Un 1ᵉʳ janvier en borne n'est pas répété.
+    assert.deepEqual(yearTicks(dayNumber({ y: 2015, m: 1, d: 1 }), mid(2017)).map((t) => t.label),
+        ['2016', '2017']);
+    assert.deepEqual(yearTicks(mid(2015), dayNumber({ y: 2017, m: 1, d: 1 })).map((t) => t.label),
+        ['2016']);
+});
+
 test('courbe : cumul par jour, axe calé sur la référence, tête prolongée à plat', () => {
     const reference = countFeatures([
         onDay('2024-01-01'), onDay('2024-01-03'), onDay('2024-01-03'), onDay('2024-01-10'),
@@ -671,6 +687,20 @@ test('course de barres : ordre et top-N suivent l’état courant, échelle du m
     assert.deepEqual(model.rows.map((r) => r.key), ['B', 'A']);
     assert.equal(model.max, 3);
     assert.equal(model.rows.some((r) => r.key === OTHERS_KEY), false);
+});
+
+test('course de barres : allLabels liste toutes les clés classées, hors top-N compris', () => {
+    const reference = countFeatures(
+        types({ A: 10, B: 8, C: 5, 'Un nom de catégorie très long': 1 }), ['cache_type']);
+    const options = { sort: 'race', max_items: 2 };
+    const model = barModel('cache_type', reference, reference, options, String);
+    assert.deepEqual(model.rows.map((r) => r.key), ['A', 'B']);
+    // Le pool d'étiquettes dépasse le top-N : le long nom hors classement y est.
+    assert.deepEqual(model.allLabels, ['A', 'B', 'C', 'Un nom de catégorie très long']);
+    // Modèle mémoïsé : même tableau servi tant que la révision ne change pas —
+    // c'est ce qui rend la mémoïsation de mesure du dessin efficace.
+    const again = barModel('cache_type', reference, reference, options, String);
+    assert.equal(again.allLabels, model.allLabels);
 });
 
 test('valeurs animées : immédiates au départ, glissent ensuite, figées au repos', () => {

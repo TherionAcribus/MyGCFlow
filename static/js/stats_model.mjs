@@ -517,6 +517,17 @@ export function ymdOfDay(day) {
     return { y: date.getUTCFullYear(), m: date.getUTCMonth() + 1, d: date.getUTCDate() };
 }
 
+// Jalons d'années de la courbe : les 1ᵉʳ janvier strictement entre `first`
+// et `last` (numéros de jours) — les extrémités portent déjà leurs libellés.
+export function yearTicks(first, last) {
+    const ticks = [];
+    for (let y = ymdOfDay(first).y; y <= ymdOfDay(last).y; y++) {
+        const day = dayNumber({ y, m: 1, d: 1 });
+        if (day > first && day < last) ticks.push({ day, label: String(y) });
+    }
+    return ticks;
+}
+
 function textKey(value) {
     const text = typeof value === 'string' ? value.trim() : '';
     return text && text.toLowerCase() !== 'unknown' ? text : UNKNOWN_KEY;
@@ -1183,7 +1194,11 @@ export function barModel(metric, current, reference, options = {}, labelOf = Str
         const rows = keys.slice(0, maxItems)
             .map((key) => ({ key, keys: [key], count: countOf(key), refCount: refOf(key) }));
         const max = rows.reduce((m, row) => Math.max(m, row.count), 0);
-        model = { rows, max, race: true, excluded: current.excluded.get(metric) || 0, total: ref.total };
+        // allLabels : libellés de TOUTES les clés classées (avant le top-N) —
+        // le dessin y mesure la colonne d'étiquettes, fixe pendant la course.
+        model = { rows, max, race: true,
+            allLabels: keys.map((key) => String(labelOf(key))),
+            excluded: current.excluded.get(metric) || 0, total: ref.total };
     } else {
         if (sort === 'count') {
             keys.sort((a, b) => refOf(b) - refOf(a) || natural(a, b));

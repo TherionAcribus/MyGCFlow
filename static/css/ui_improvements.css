@@ -778,6 +778,15 @@ main.fullscreen-mode ~ .tooltip {
     position: absolute;
     z-index: 90;
     pointer-events: none;
+    /* Apparition en fondu : à la création du nœud (ajout, activation,
+       chargement) — rejouée à chaque insertion. */
+    animation: stats-panel-in 0.28s ease-out;
+}
+@keyframes stats-panel-in {
+    from { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+    #mapWithFrames > .stats-panel { animation: none; }
 }
 
 #mapTabsResizer {

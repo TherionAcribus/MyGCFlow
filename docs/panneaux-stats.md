@@ -130,7 +130,11 @@ s'affichent en entier.
 Exception voulue : **`sort: "race"`** (course de barres). L'ordre et le top-N
 suivent alors l'état courant et l'échelle le meneur du moment ; pas de ligne
 « Autres ». Le nombre de places reste fixe (`model.slots`), pour que la hauteur
-du panneau ne change pas quand des catégories entrent dans le classement.
+du panneau ne change pas quand des catégories entrent dans le classement. De
+même, la largeur de la colonne d'étiquettes est mesurée sur **toutes** les
+catégories classées (`model.allLabels`, mémoïsé par révision), pas seulement
+le top-N affiché : un nom long qui entre dans le classement ne décale plus
+les barres en pleine animation.
 
 ### Cycle de vie (branchements dans `mapgl.js`)
 
@@ -205,11 +209,19 @@ la référence + la signature d'options) et le rang des couleurs `multi`
 **copies** de ses lignes : l'animation y écrit `shown`/`slot` et le modèle
 en cache ne doit jamais être pollué.
 
+La courbe (`line`) porte sous son axe des **jalons annuels** : un trait au
+1ᵉʳ janvier de chaque année strictement entre les bornes (`yearTicks`), les
+extrémités gardant leurs libellés. Le libellé d'un jalon est masqué quand il
+chevaucherait les libellés de bord ou le jalon précédent — axe court, ou
+dates complètes quand la période tient dans une année.
+
 - **Aperçu** : un `<canvas class="stats-panel">` par panneau dans
   `#mapWithFrames`, bitmap = taille CSS × `devicePixelRatio`, `z-index: 90`
-  (sous le titre et les infos), `pointer-events: none`. Redessin seulement
-  quand la révision change ; les lectures de géométrie DOM n'ont lieu que sur
-  invalidation (resize, `ResizeObserver`, réglages), jamais par frame.
+  (sous le titre et les infos), `pointer-events: none`. Chaque canvas
+  apparaît en fondu (~0,3 s, désactivé si `prefers-reduced-motion`).
+  Redessin seulement quand la révision change ; les lectures de géométrie DOM
+  n'ont lieu que sur invalidation (resize, `ResizeObserver`, réglages),
+  jamais par frame.
 - **Vidéo** : `addStatsPanelsToCanvas(ctx, w, h, scaleFactor)` est appelé dans
   les deux pipelines **avant** `addOverlaysToCanvas`, pour le même empilement
   que l'aperçu. Géométrie = mise en page de l'aperçu × `scaleFactor`, ancrée
@@ -254,8 +266,10 @@ différentes qui se recouvrent.
 
 ## Tests
 
-- `node --test test_stats_model.mjs` — vecteurs partagés, clés, accumulateur,
-  surlignage, grilles (Jasmer, 29 février…), ordre figé, top-N, empilement.
+- `node --test test_stats_model.mjs test_stats_render.mjs` — vecteurs
+  partagés, clés, accumulateur, surlignage, grilles (Jasmer, 29 février…),
+  ordre figé, top-N, empilement, jalons d'années, mesure mémoïsée des
+  étiquettes de course.
 - `python -m unittest tests.test_stats_settings` — vecteurs partagés, ids,
   patch, fichier sans bloc `stats`, API GET/PUT/reset.
 - `tests/e2e/stats-panels.spec.mjs` — modèle posé et ancré, empilement,
